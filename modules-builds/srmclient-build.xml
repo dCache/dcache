@@ -49,7 +49,9 @@
 			<filename name="**/SRMCopyClientV2.java" />
 			<filename name="**/SRMCopyClientV1.java" />
 			<filename name="**/SRMStageClientV1.java" />
-		</and>
+			<filename name="**/SRMGetRequestSummaryClientV2.java" />
+			<filename name="**/SRMGetRequestTokensClientV2.java" />
+             </and>
 	</selector>
 
 	<selector id="srmclient.classpath.selector">
@@ -116,6 +118,8 @@
 			<include name="gov/fnal/srm/util/SRMCopyClientV2.java" />
 			<include name="gov/fnal/srm/util/SRMCopyClientV1.java" />
 			<include name="gov/fnal/srm/util/SRMStageClientV1.java" />
+			<include name="gov/fnal/srm/util/SRMGetRequestSummaryClientV2.java" />
+			<include name="gov/fnal/srm/util/SRMGetRequestTokensClientV2.java" />
 
 		</javac>
 
@@ -172,6 +176,7 @@
 		<copy file="${sourceDir}/bin/gridftplist" todir="${binDir}/srm/bin/" />
 		<copy file="${sourceDir}/bin/srm-get-request-status" todir="${binDir}/srm/bin/" />
 		<copy file="${sourceDir}/bin/srm-get-request-summary" todir="${binDir}/srm/bin/" />
+		<copy file="${sourceDir}/bin/srm-get-request-tokens" todir="${binDir}/srm/bin/" />
 		<copy file="${sourceDir}/bin/srmcp" todir="${binDir}/srm/bin/" />
 		<copy file="${sourceDir}/bin/srmls" todir="${binDir}/srm/bin/" />
 		<copy file="${sourceDir}/bin/srmrm" todir="${binDir}/srm/bin/" />
