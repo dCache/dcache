@@ -1,0 +1,6 @@
+#! /bin/sh -x
+LAMBDA_DIR=/home/netadmin/cdcvs/lambdastation/ls
+#rsh nws-lab-mgm "export LAMBDA=/home/netadmin/cdcvs/lambdastation/ls; /home/netadmin/cdcvs/lambdastation/ls/appls/ost2 --srcSite $1 --dstSite $2" 2>/dev/null
+su -c 'rsh nws-lab-mgm "export LAMBDA=/home/netadmin/cdcvs/lambdastation/ls;/home/netadmin/cdcvs/lambdastation/ls/appls/ost2 $1"' moibenko
+#rsh nws-lab-mgm "export LAMBDA=/home/netadmin/cdcvs/lambdastation/ls;/home/netadmin/cdcvs/lambdastation/ls/appls/ost2 $1" 
+#ssh nws-lab-mgm "export LAMBDA=/home/netadmin/cdcvs/lambdastation/ls;/home/netadmin/cdcvs/lambdastation/ls/appls/ost2 $1"

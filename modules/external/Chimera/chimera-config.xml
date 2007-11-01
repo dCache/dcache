@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<!-- $Id: chimera-config.xml,v 1.2 2007-08-22 13:29:20 tigran Exp $      -->
+
+<config>
+
+<!-- 
+	<db fsid="0" url="jdbc:oracle:thin:@localhost:1521:XE" drv="oracle.jdbc.driver.OracleDriver" user="himera" pass="himera" dialect="Oracle" />
+ -->
+	<db fsid="0" url="jdbc:postgresql://localhost/chimera?prepareThreshold=3" drv="org.postgresql.Driver" user="postgres" pass="" dialect="PgSQL" />
+
+	
+	<nfs>
+		<port>2049</port>
+		<logLevel>0</logLevel>
+		<logFile>/tmp/himera.log</logFile>
+	</nfs>
+	
+</config>

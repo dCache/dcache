@@ -1,0 +1,78 @@
+<!-- $Id: junit-build.xml,v 1.4 2007-10-25 14:05:31 tigran Exp $ -->
+
+<project name="Cells" basedir=".">
+
+
+        <!-- import the common part -->
+
+        <import file="${buildTop}/common/common.xml"/>
+
+	
+	   <!-- JUnit test suite -->
+
+	    <path id="junit.classpath">
+	        <pathelement location="${classesDir}/cells.jar"/>
+	        <pathelement location="${classesDir}/dcache.jar"/>
+	        <pathelement location="${libDir}/junit/junit-4.3.1.jar"/>
+	        <pathelement location="${libDir}/log4j/log4j-1.2.8.jar"/>
+	        <pathelement location="${buildDir}/junit"/>
+                <pathelement location="${buildTop}/modules/dCache/diskCacheV111/config" />
+	    </path>
+	
+	    <target name="run_junit.core">
+
+	        <mkdir dir="${buildDir}/junit" />
+	        <javac classpathref="junit.classpath" destdir="${buildDir}/junit" source="${javac.source}" target="${javac.target}" debug="${javac.debug}" verbose="${javac.verbose}"  encoding="${javac.encoding}">
+	            <src path="${sourceDir}" />
+	        </javac>
+
+
+	        <junit>
+	            <classpath refid="junit.classpath" />
+	            <formatter type="brief" usefile="false" />
+	            <test name="org.dcache.tests.poolmanager.PoolSelectionUnit" />
+	        </junit>
+
+	        <junit>
+	            <classpath refid="junit.classpath" />
+	            <formatter type="brief" usefile="false" />
+	            <test name="org.dcache.tests.repository.PoolRepository" />
+	        </junit>
+
+	        <junit>
+	            <classpath refid="junit.classpath" />
+	            <formatter type="brief" usefile="false" />
+	            <test name="org.dcache.tests.util.ChecksumTestCase" />
+	        </junit>
+
+
+	        <junit>
+	            <classpath refid="junit.classpath" />
+	            <formatter type="brief" usefile="false" />
+	            <test name="org.dcache.tests.hsm.MultiHSM" />
+	        </junit>
+	        <junit>
+	            <classpath refid="junit.classpath" />
+	            <formatter type="brief" usefile="false" />
+	            <test name="org.dcache.tests.ftp.RangesTest" />
+	        </junit>
+	        <junit>
+	            <classpath refid="junit.classpath" />
+	            <formatter type="brief" usefile="false" />
+	            <test name="org.dcache.tests.util.DcapURLTest" />
+	        </junit>
+	        <junit>
+	            <classpath refid="junit.classpath" />
+	            <formatter type="brief" usefile="false" />
+	            <test name="org.dcache.tests.util.FsPathTest" />
+	        </junit>
+	        <junit>
+	            <classpath refid="junit.classpath" />
+	            <formatter type="brief" usefile="false" />
+	            <test name="org.dcache.tests.cells.CellPathTest" />
+	        </junit>
+
+
+	    </target>
+	
+</project>

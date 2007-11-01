@@ -1,0 +1,74 @@
+set printout ${thisCell} all
+#
+#  global setup 
+#
+set context doorClass           dmg.apps.psdl.cells.PsdlDoor 
+set context doorListenPort      22223
+set context poolLocation        /export/home/patrick/pools
+set context hsmPropertiesClass  dmg.apps.psdl.HsmPropertiesOSM
+set context trashDirectory      /uss/db/trash
+#
+set printout default all
+#
+#  the doorListener excepts connections on the specified listen port
+#  and forks the corresponding door instance.
+#
+create dmg.cells.network.GNLCell Door  "${doorClass} ${doorListenPort}"
+#
+#   this is the setup for the pnfsManager
+#
+define context PnfsMgrSetup defineEnd
+#   set printout         7
+   set db PnfsDbMgr-XX  ...
+   set db PnfsDbMgr-00  4 5  6
+defineEnd
+#
+create dmg.apps.psdl.cells.PnfsManager    PnfsMgr
+#
+# and now the PnfsDbManager
+#
+define context PnfsDbMgrSetup endDefine
+#   set printout         7
+   set mountpoint       /pnfs/fs
+   set hsmPropertyClass dmg.apps.psdl.vehicles.HsmPropertiesOSM
+endDefine
+#
+create dmg.apps.psdl.cells.PnfsDbManager  PnfsDbMgr-XX  "!PnfsDbMgrSetup PoolMgr-A"
+#
+#
+define context PoolMgr-ASetup endDefine
+#  set printout 7
+   set hsmmgr HsmMgr-A
+endDefine
+create dmg.apps.psdl.cells.PoolManager    PoolMgr-A
+#
+#  the a pool and its movers
+#
+#    >>>>>   pool-a  <<<<<<
+#
+#set context pool-aSetup "set deny on"
+#
+create dmg.apps.psdl.cells.PoolObserver pool-a     "pool-a ${poolLocation}/pool-a PoolMgr-A"
+create dmg.apps.psdl.cells.PoolObserver pool-b     "pool-b ${poolLocation}/pool-b PoolMgr-A"
+#
+create dmg.apps.psdl.cells.DataMover    d-moverA*  "pool-a ${poolLocation}/pool-a"
+create dmg.apps.psdl.cells.DataMover    d-moverA*  "pool-a ${poolLocation}/pool-a"
+#
+define context HsmMgr-ASetup endDefine
+#   set result "No More Space on HSM Storage Group"
+endDefine
+create dmg.apps.psdl.cells.HsmManager   HsmMgr-A
+#
+#
+#create dmg.apps.psdl.HsmMover     h-moverA*  "pool-a /export/home/patrick/pools/pool-a"
+#
+#  the b pool and its movers
+#
+#create dmg.apps.psdl.PoolObserver pool-b   "pool-b ${poolLocation}/pool-b"
+#create dmg.apps.psdl.DataMover    moverB*  "pool-b ${poolLocation}/pool-b"
+# 
+#  and some additional deamons
+#
+#create dmg.apps.psdl.RemoveCell   rmDeamon "${trashDirectory} PnfsMgr ${hsmPropertiesClass}"
+
+set printout default none

@@ -1,0 +1,211 @@
+<html>
+<head><title>dCache service</title></head>
+<body background="/images/bg-home.jpg" text="#000000" link="#000000" vlink="#000000" alink="#000000">
+<br>
+<br>
+<center>
+<h1 style="font-size:300%"><font color="#003399"><em>dCache service</em></font></h1>
+</center>
+<center>
+<br>
+<br>
+<table  border="1" bgcolor="#003399" width="90%" cellspacing=1 cellpadding=4>
+  <tr>
+  <td colspan=2 bgcolor="#6699cc">
+     <h1><em>Quick Finder</em></h1>
+     <table border=0 width="100%" cellpadding=0>
+     <tr>
+        <td width="25%" align=center>
+           <a href="/cellInfo"><h3><em><font color=white>Cell&nbsp;Services</font></em></h3></a>
+        </td>
+        <td width="25%" align=center>
+           <a href="/usageInfo"><h3><em><font color=white>Pool&nbsp;Usage</font></em></h3></a>
+        </td>
+        <td width="25%" align=center>
+           <a href="/poolInfo/restoreHandler/*"><h3><em><font color=white>Tape&nbsp;Transfer&nbsp;Queue</font></em></h3></a>
+        </td>
+        <td width="25%" align=center>
+           <a href="/poolInfo/restoreHandler/lazy"><h3><em><font color=white>Detailed&nbsp;Tape&nbsp;Transfer&nbsp;Queue</font></em></h3></a>
+        </td>
+     </tr>
+     <tr>
+        <td width="25%" align=center>
+           <a href="/queueInfo"><h3><em><font color=white>Pool&nbsp;Transfer&nbsp;Queues</font></em></h3></a>
+        </td>
+        <td width="25%" align=center>
+           <a href="/billing/"><h3><em><font color=white>Action&nbsp;Log</font></em></h3></a>
+        </td>
+        <td width="25%" align=center>
+           <a href="/statistics/"><h3><em><font color=white>Statistics</font></em></h3></a>
+        </td>
+        <td width="25%" align=center>
+           <!--
+           <a href="/history"><h3><em><font color=white>History</font></em></h3></a>
+           -->
+           &nbsp;
+        </td>
+     </tr>
+     <tr>
+        <td colspan=4 width="25%" align=center>
+           <a href="/poolInfo"><h3><em><font color=yellow>Pool Selection Configuration</font></em></h3></a>
+        </td>
+        <!--
+        <td width="25%" align=center>
+           &nbsp;
+        </td>
+        <td width="25%" align=center>
+           &nbsp;
+        </td>
+        <td width="25%" align=center>
+           &nbsp;
+        </td>
+        -->
+     </tr>
+     </table>
+  </td>
+  <tr>
+  <tr>
+    <td align=left bgcolor="#6699cc" valign=top>
+        <h1><em>Status</em></h1>
+        <blockquote>
+            <table cellpadding=10>
+                <tr>
+                    <td>
+                        <a href="/cellInfo"><h3><font color=white>Cell&nbsp;Services</font></h3></a>
+                    </td>
+                    <td>
+                        Availability and response times of pools and major services
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <a href="/usageInfo"><h3><font color=white>Pool&nbsp;Usage</font></h3></a>
+                    </td>
+                    <td>
+                        Pool Space Usage (total,used,cached,sticky)
+                    </td>
+                </tr>
+            </table>
+        </blockquote>
+    </td>
+
+    <td align=left bgcolor="#6699cc" valign=top>
+        <h1><em>Various Queues</em></h1>
+        <blockquote>
+            <table border=0 cellpadding=10 width="100%">
+                <tr>
+                    <td>
+                        <a href="/poolInfo/restoreHandler/*"><h3><font color=white>Tape&nbsp;Transfer&nbsp;Queue</font></h3></a>
+                    </td>
+                    <td>
+                        Data Tranfer Queue from Tape to dCache disks.
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <a href="/queueInfo"><h3><font color=white>Pool&nbsp;Mover&nbsp;Queues</font></h3></a>
+                    </td>
+                    <td>
+                        Mover and mover queues per pool.
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <h3><a href="/context/transfers.html"><font color=white>Active&nbsp;Transfers</font></a>&nbsp;<a href="/context/transfers.txt"><font color=white>(Text)</font></a></h3>
+                    </td>
+                    <td>
+                        List of active transfers. 
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <!--
+                        <a href="/context/QueueHistograms.html"><h3><font color=white>Queue&nbsp;Histograms</font></h3></a>
+                        -->
+                        <h3><font color=white>Queue&nbsp;Histograms</font></h3>
+                    </td>
+                    <td>
+                         Transfer and Tape Restore histograms (<font color=red>Module not installed</font>)
+                    </td>
+                </tr>
+            </table>
+        </blockquote>
+    </td>
+
+  </tr><tr>
+
+    <td align=left bgcolor="#6699cc" valign=top>
+        <h1><em>Statistics <font color=red>Module not installed</font></em></h1>
+        <blockquote>
+            <table border=0 cellpadding=10>
+                <tr>
+                    <td>
+                        <a href="/statistics/"><h3><font color=white>Statistics</font></h3></a>
+                    </td>
+                    <td>
+                        Daily, Weekly transfer and repository statistics.
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <!--
+                        <a href="/history"><h3><font color=white>History</font></h3></a>
+                        -->
+                        <h3><font color=white>History</font></h3>
+                    </td>
+                    <td>
+                        Daily, Weekly transfer histograms.
+                    </td>
+                </tr>
+            </table>
+        </blockquote>
+    </td>
+
+
+    <td align=left bgcolor="#6699cc" valign=top>
+        <h1><em>Configuration/Setup</em></h1>
+        <blockquote>
+            <table border=0 cellpadding=10>
+                <tr>
+                    <td>
+                        <a href="/poolInfo"><h3><font color=white>Pool&nbsp;Selection&nbsp;Setup</font></h3></a>
+                    </td>
+                    <td>
+                        Setup of pool selection scheme. Allows queries.
+                    </td>
+                </tr>
+            </table>
+        </blockquote>
+    </td>
+
+</tr>
+<tr>
+   <td bgcolor="#990033" colspan=2>
+      <h1><em>News</em></h1>
+      <blockquote>
+          <h3><font color=white>Scheduled downtimes</font></h3>
+          <blockquote>
+            <font color=yellow>
+            Nothing planned yet.
+            </font>
+         </blockquote>
+      </blockquote>
+
+   </td>
+</tr>
+<tr>
+   <td bgcolor="#ffffff" colspan=2>
+      <h1><em>dCache documentation</em></h1>
+      <blockquote>
+          <h3><font color=blue><a href="http://www.dcache.org/manuals/Book">dCache, the Book</a></font></h3>
+      </blockquote>
+
+   </td>
+</tr>
+</table>
+</center>
+<br><br><br>
+<hr>
+<address><a href=http://www.dcache.org>&copy; dCache.ORG</a>www.dCache.org</address>
+</body>
+</html>

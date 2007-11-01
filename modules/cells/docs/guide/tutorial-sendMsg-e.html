@@ -1,0 +1,152 @@
+<html>
+<head><title>Tutorial : Xchanging Messages</title></head>
+<body bgcolor=white>
+<pre>
+import dmg.cells.nucleus.* ;
+import dmg.util.* ;
+import java.io.PrintWriter ;
+import java.util.Date ;
+
+//
+//create XchangeMessage <cellName> [<destinationCell> [<pingIntervall>]]
+//
+public class      XchangeMessage 
+       extends    CellAdapter 
+       implements Runnable {
+
+   private Date     _creationDate = new Date() ;
+   private Thread   _sendThread   = null ;
+   private int      _interval     = 1000 ;
+   private CellPath _destination  = null ;
+   private boolean  _continue     = true ;
+   private Args     _args         = null ;
+   
+   public XchangeMessage( String name , String args )  {
+      //
+      // The third argument = false, prevents the
+      // cellservices from being started.
+      //
+      super( name , args , false ) ;
+      
+      _args = getArgs() ;
+      //
+      // switch off the automatic interpretation of
+      // arriving Strings.
+      //
+      useInterpreter( false ) ;
+      
+      try{
+      
+         if( _args.argc() > 0 ){
+         
+            //
+            // first argument : destination cell
+            // sec   argument : ping interval
+            //
+            _destination = new CellPath( _args.argv(0) ) ;
+            if( _args.argc() > 1 )
+               _interval = Integer.parseInt( _args.argv(1) ) * 1000  ;
+               
+            _sendThread  = new Thread( this ) ;
+            _sendThread.start() ;
+         }
+         
+         
+      }catch( IllegalArgumentException iae ){
+         //
+         // this stop, start thing is necessary to come around
+         // a bug in the cell start part.
+         //
+         start() ;
+         kill() ;
+         throw iae ;
+      }
+      
+      setPrintoutLevel( CellNucleus.PRINT_CELL |
+                        CellNucleus.PRINT_ERROR_CELL ) ;
+      
+      //
+      // now we may start the cell services.
+      //
+      start() ;
+      say( "Constructor finished" ) ;
+   }
+   public String toString(){
+       if( _sendThread == null ){
+          return  "ServerOnly"  ;
+       }else{
+          return  "PingClient["+_interval+" msec]"  ;
+       }
+   }
+   public void getInfo( PrintWriter pw ){
+       super.getInfo( pw ) ;
+          pw.println( " Created   : "+_creationDate  )  ;
+       if( _sendThread == null ){
+          pw.println( " Mode      : ServerOnly" ) ;
+       }else{
+          pw.println( " Mode      : PingClient ["+_interval+" msec}" ) ;
+       }
+   }
+   public void cleanUp(){
+      //
+      // delay the removal of the cell to 
+      // simulate complicated clean up procedures.
+      //
+      say("Clean up called ... " ) ;
+      synchronized( this ){ 
+         _continue = false ;
+         notifyAll() ; 
+      }
+      say( "Done" ) ;
+   }
+   public void messageArrived( CellMessage msg ){
+       //
+       // if a String arrives, we send back
+       // a Date object. if a date object arrives
+       // we do nothing.
+       //
+       Object obj = msg.getMessageObject() ;
+       say( "Message ["+msg.getUOID()+"] arrived from "+
+            msg.getSourcePath()+" : "+obj ) ;
+       if( obj instanceof String ){
+          msg.setMessageObject( new Date() ) ;
+       }else{
+          return ;
+       }
+       try{
+          msg.revertDirection() ;
+          sendMessage( msg ) ;
+       }catch( Exception e ){
+          esay("Problem replying message : "+e ) ;
+       }
+   }
+   //
+   // runnable interface
+   //
+   public void run(){
+      if( Thread.currentThread() == _sendThread ){
+      
+         synchronized( this ){
+            while( _continue ){
+               try{
+                   wait( _interval ) ;
+               }catch( InterruptedException ie ){
+                   break ;
+               }
+               try{
+                  CellMessage msg = new CellMessage( _destination , "Hello" ) ;
+                  sendMessage( msg ) ;
+                  say( "Message sent : "+msg.getUOID() ) ;
+               }catch(Exception e ){
+                  esay( "Problem sending msg : "+e ) ;
+               }
+            }
+         }
+      }
+      kill() ;
+   }
+
+}
+</pre>
+</body>
+</html>

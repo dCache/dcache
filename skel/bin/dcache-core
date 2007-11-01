@@ -1,0 +1,332 @@
+#!/bin/sh
+# $Id: dcache-core,v 1.12 2007-06-19 10:04:10 tigran Exp $
+#
+# chkconfig: - 92 8
+# description: dcache startup script
+#
+ourHomeDir=/opt/d-cache
+
+if [ -r /etc/rc.d/init.d/functions ] ; then
+    . /etc/rc.d/init.d/functions
+fi
+#  -----------------------------------------------------------------
+#      Checking node_config (and door_config)
+#  -----------------------------------------------------------------
+
+printConfig() {
+    key=$1
+    cat ${ourHomeDir}/etc/node_config \
+        ${ourHomeDir}/etc/door_config 2>/dev/null |
+    perl -e "
+      while (<STDIN>) { 
+         s/\#.*$// ;                        # Remove comments
+         s/\s*$// ;                         # Remove trailing space
+         if ( s/^\s*${key}\s*=*\s*//i ) {   # Remove key and equals
+            print;                          # Print if key found
+            last;                           # Only use first appearance
+         }
+      }
+    "
+}
+
+
+#
+# valid valued for NODE_TYPE:
+#     admin  : head node
+#     custom : custom service definition
+#     door   : door only
+#     pool   : pool only
+#
+nodeType=`printConfig NODE_TYPE`
+case ${nodeType} in
+	
+	admin|door|custom|pool)
+		# OK
+		;;
+	dummy)
+		# not specified
+		echo "[ERROR] ${ourHomeDir}/etc/node_config not configured. Exiting."
+		exit 1		
+		;;
+	*)
+		# bad falue
+		echo "[ERROR] ${ourHomeDir}/etc/node_config missing or not useful. Exiting."
+		exit 2
+		;;
+
+esac
+
+# To make shure to use the right dCache dir
+PNFS_ROOT=`printConfig PNFS_ROOT`
+
+
+# pnfs or chimera?
+NAMESPACE=`printConfig NAMESPACE`
+
+#  -----------------------------------------------------------------
+#      Checking dCacheSetup
+#  -----------------------------------------------------------------
+
+if [ -r ${ourHomeDir}/config/dCacheSetup ] ; then
+    . ${ourHomeDir}/config/dCacheSetup
+else
+    echo "[ERROR] ${ourHomeDir}/config/dCacheSetup does not exist. Exiting."
+    exit 1
+fi
+
+#  ----  Sanitycheck for ${serviceLocatorHost}
+
+if [ -z "${serviceLocatorHost}" -o "${serviceLocatorHost}" = "SERVER" ] ; then
+    echo "[ERROR] The variable 'serviceLocatorHost' in '${ourHomeDir}/config/dCacheSetup' has to be set properly. Exiting."
+    exit 1
+fi
+
+#  ----  Sanitycheck for ${java}
+
+if test -z "${java}" || ! test -x ${java} || ! ${java} -version 2>&1 | grep -E 'version "1\.[456]' >/dev/null ; then
+    echo "[ERROR] The variable 'java' in '${ourHomeDir}/config/dCacheSetup' has to be set to a java VM version 1.4 or 1.5. Exiting."
+    exit 1
+fi
+
+#  ----  Setting ${logArea}
+
+logParam=""
+if [ -z "${logArea}" ] ; then
+    logParam="-logArea=${ourHomeDir}/log"
+fi
+
+#  ----  Setting ${SERVER_ID}
+
+fqHostname=`hostname`
+
+shortHostname=`hostname | awk -F. '{print $1}'`
+
+SERVER_ID=`printConfig SERVER_ID`
+if [ -z "${SERVER_ID}" ] ; then
+    SERVER_ID=`hostname -d 2>/dev/null`
+    if [ $? -ne 0 -o -z "${SERVER_ID}" ] ; then
+        SERVER_ID="`cat /etc/resolv.conf | sed -e 's/#.*$//' | grep 'search' | awk '{ print($2) }'`"
+        if [ -z "${SERVER_ID}" ]; then
+            SERVER_ID="`cat /etc/resolv.conf | sed -e 's/#.*$//' | grep 'domain' | awk '{ print($2) }'`"
+        fi
+    fi
+fi
+
+case "$1" in
+    start)
+    	if [ "x${NAMESPACE}" != "xchimera" ] ; then
+	# regular pnfs  
+	
+		if [ ${nodeType} = admin ] ; then
+		    cp=`df ${PNFS_ROOT}/fs 2>/dev/null |grep "${PNFS_ROOT}" | awk '{print $2}'`
+		    if [ -z $cp ]; then
+			echo "[ERROR] ${PNFS_ROOT}/fs mount point exists, but is not mounted."
+                	echo "        Make sure pnfs is running on this admin node. Exiting."
+			exit 1
+		    fi
+		elif [ "`printConfig GRIDFTP`" = yes -o "`printConfig GRIDFTP`" = y ] ; then
+
+		    cp=`df ${PNFS_ROOT}/${SERVER_ID} 2>/dev/null |grep "${PNFS_ROOT}" | awk '{print $2}'`
+		    if [ -z $cp ]; then
+			ADMIN_NODE=`printConfig ADMIN_NODE`
+			if [ -z "$ADMIN_NODE" -o "$ADMIN_NODE" = myAdminNode ] ; then
+			    echo "[ERROR] pnfs not mounted on ${PNFS_ROOT}/${SERVER_ID}/ and ADMIN_NODE"
+                	    echo "        in etc/node_config or etc/door_config not set properly. Exiting."
+			    exit 1
+			fi
+			echo "${PNFS_ROOT}/${SERVER_ID}/ not mounted - going to mount it now ... "
+			mount -o intr,rw,noac,hard,nfsvers=2 $ADMIN_NODE:/pnfsdoors ${PNFS_ROOT}/${SERVER_ID}
+			cp=`df ${PNFS_ROOT}/${SERVER_ID} 2>/dev/null |grep "${PNFS_ROOT}" | awk '{print $2}'`
+			if [ -z $cp ]; then
+			    echo "[ERROR] Still not mounted. Apparently no pnfs server running on admin"
+                	    echo "        node $ADMIN_NODE. Exiting."
+			    exit 1
+			fi
+		    fi
+		fi
+	
+	fi # if chimera
+	echo "Starting dcache services: "
+	
+		case ${nodeType} in 
+			admin)
+			    ${ourHomeDir}/jobs/lm ${logParam} start
+			    ${ourHomeDir}/jobs/dCache ${logParam} start
+	    	    	    if [ "x${NAMESPACE}" = "xchimera" ] ; then
+				${ourHomeDir}/jobs/chimera ${logParam} start
+			    else
+				${ourHomeDir}/jobs/pnfs ${logParam} start
+			    fi		    
+			    ${ourHomeDir}/jobs/dir ${logParam} start
+			    ${ourHomeDir}/jobs/adminDoor ${logParam} start
+			    ${ourHomeDir}/jobs/httpd ${logParam} start
+			    ${ourHomeDir}/jobs/utility ${logParam} start
+				${ourHomeDir}/jobs/gPlazma -domain=gPlazma-${shortHostname}Domain ${logParam} start
+
+			    if [ "`printConfig InfoProvider`" = yes ] ; then
+				    ${ourHomeDir}/jobs/infoProvider ${logParam} start
+	    		fi
+				if [ "`printConfig statistics`" = yes ] ; then
+				    ${ourHomeDir}/jobs/statistics ${logParam} start
+	    		fi
+			    ;;
+			 custom)
+				if [ "`printConfig lmDomain`" = yes ] ; then
+					${ourHomeDir}/jobs/lm ${logParam} start
+				fi
+				if [ "`printConfig poolManager`" = yes ] ; then
+					${ourHomeDir}/jobs/dCache ${logParam} start
+				fi
+				if [ "`printConfig pnfsManager`" = yes ] ; then
+					if [ "x${NAMESPACE}" = "xchimera" ] ; then
+						${ourHomeDir}/jobs/chimera ${logParam} start
+					else
+						${ourHomeDir}/jobs/pnfs ${logParam} start
+					fi
+				fi
+				if [ "`printConfig dirDomain`" = yes ] ; then
+					${ourHomeDir}/jobs/dir ${logParam} start
+				fi
+				if [ "`printConfig adminDoor`" = yes ] ; then
+					${ourHomeDir}/jobs/adminDoor ${logParam} start
+				fi
+				if [ "`printConfig httpDomain`" = yes ] ; then
+					${ourHomeDir}/jobs/httpd ${logParam} start
+				fi
+		   		if [ "`printConfig utilityDomain`" = yes ] ; then
+					${ourHomeDir}/jobs/utility ${logParam} start
+				fi
+			    if [ "`printConfig InfoProvider`" = yes ] ; then
+				    ${ourHomeDir}/jobs/infoProvider ${logParam} start
+	    		fi
+				if [ "`printConfig statistics`" = yes ] ; then
+				    ${ourHomeDir}/jobs/statistics ${logParam} start
+	    		fi
+				if [ "`printConfig gPlazmaService`" = yes ] ; then
+					${ourHomeDir}/jobs/gPlazma -domain=gPlazma-${shortHostname}Domain ${logParam} start
+				fi
+			 	;;
+		esac
+
+
+		if [ "`printConfig ReplicaManager`" = yes ] ; then
+		    ${ourHomeDir}/jobs/replica ${logParam} start
+		fi
+		if [ "`printConfig DCAP`" = yes ] ; then
+		    for i in ${ourHomeDir}/config/door*Setup;
+                    do
+                      door=`echo $i | sed -e "s#.*door\(.*\)Setup#\1#"`;
+                      ${ourHomeDir}/jobs/door$door -domain=dcap$door-${shortHostname}Domain ${logParam} start ;
+                    done
+		fi
+		if [ "`printConfig XROOTD`" = yes ] ; then
+		    ${ourHomeDir}/jobs/xrootdDoor -domain=xrootd-${shortHostname}Domain ${logParam} start
+		fi	
+		if [ "`printConfig GRIDFTP`" = yes ] ; then
+		    ${ourHomeDir}/jobs/gridftpdoor -domain=gridftp-${shortHostname}Domain ${logParam} start
+		fi
+		if [ "`printConfig GSIDCAP`" = yes ] ; then
+		    ${ourHomeDir}/jobs/gsidcapdoor -domain=gsidcap-${shortHostname}Domain ${logParam} start
+		fi
+		if [ "`printConfig SRM`" = yes ] ; then
+		    ${ourHomeDir}/bin/dcache-srm start
+		fi
+		;;
+    
+    stop)
+            
+		echo "Shutting down dcache services: "
+		if [ "`printConfig GRIDFTP`" = yes ] ; then
+		    ${ourHomeDir}/jobs/gridftpdoor -domain=gridftp-${shortHostname}Domain ${logParam} stop
+		fi
+		if [ "`printConfig GSIDCAP`" = yes ] ; then
+		    ${ourHomeDir}/jobs/gsidcapdoor -domain=gsidcap-${shortHostname}Domain ${logParam} stop
+		fi
+		if [ "`printConfig SRM`" = yes ] ; then
+		    ${ourHomeDir}/bin/dcache-srm stop
+		fi
+		if [ "`printConfig XROOTD`" = yes ] ; then
+		    ${ourHomeDir}/jobs/xrootdDoor -domain=xrootd-${shortHostname}Domain ${logParam} stop
+		fi		
+		if [ "`printConfig ReplicaManager`" = yes ] ; then
+		    ${ourHomeDir}/jobs/replica stop
+		fi
+		if [ "`printConfig DCAP`" = yes ] ; then
+		    for i in ${ourHomeDir}/config/door*Setup;
+                    do
+                      door=`echo $i | sed -e "s#.*door\(.*\)Setup#\1#"`;
+                      ${ourHomeDir}/jobs/door$door -domain=dcap$door-${shortHostname}Domain ${logParam} stop ;
+                    done
+		fi
+
+		case ${nodeType} in 
+		
+			admin)
+				if [ "`printConfig statistics`" = yes ] ; then
+				    ${ourHomeDir}/jobs/statistics ${logParam} stop
+	    		fi
+				if [ "`printConfig InfoProvider`" = yes ] ; then
+				    ${ourHomeDir}/jobs/infoProvider ${logParam} stop
+	    		fi
+				${ourHomeDir}/jobs/gPlazma -domain=gPlazma-${shortHostname}Domain ${logParam} stop	    		
+				${ourHomeDir}/jobs/utility stop
+				${ourHomeDir}/jobs/httpd stop
+				if [ "x${NAMESPACE}" = "xchimera" ] ; then
+					${ourHomeDir}/jobs/chimera ${logParam} stop
+				else
+					${ourHomeDir}/jobs/pnfs ${logParam} stop
+				fi
+				${ourHomeDir}/jobs/adminDoor stop
+				${ourHomeDir}/jobs/dir stop
+				${ourHomeDir}/jobs/dCache stop
+				${ourHomeDir}/jobs/lm stop
+				;;
+		   custom)
+				if [ "`printConfig gPlazmaService`" = yes ] ; then
+					${ourHomeDir}/jobs/gPlazma -domain=gPlazma-${shortHostname}Domain ${logParam} stop
+				fi		   
+				if [ "`printConfig statistics`" = yes ] ; then
+				    ${ourHomeDir}/jobs/statistics ${logParam} stop
+	    		fi
+				if [ "`printConfig InfoProvider`" = yes ] ; then
+				    ${ourHomeDir}/jobs/infoProvider ${logParam} stop
+	    		fi
+		   		if [ "`printConfig utilityDomain`" = yes ] ; then
+					${ourHomeDir}/jobs/utility stop
+				fi
+				if [ "`printConfig httpDomain`" = yes ] ; then
+					${ourHomeDir}/jobs/httpd stop
+				fi
+				if [ "`printConfig pnfsManager`" = yes ] ; then
+					if [ "x${NAMESPACE}" = "xchimera" ] ; then
+						${ourHomeDir}/jobs/chimera ${logParam} stop
+					else
+						${ourHomeDir}/jobs/pnfs ${logParam} stop
+					fi
+				fi
+				if [ "`printConfig adminDoor`" = yes ] ; then
+					${ourHomeDir}/jobs/adminDoor stop
+				fi
+				if [ "`printConfig dirDomain`" = yes ] ; then
+					${ourHomeDir}/jobs/dir stop
+				fi
+				if [ "`printConfig poolManager`" = yes ] ; then
+					${ourHomeDir}/jobs/dCache stop
+				fi
+				if [ "`printConfig lmDomain`" = yes ] ; then
+					${ourHomeDir}/jobs/lm stop
+				fi
+		   		;;
+		esac
+	;;
+    
+    restart|reload)
+	$0 stop
+	$0 start
+	;;
+    *)
+	echo "Usage: $0 {start|stop|restart}"
+	exit 1
+esac
+
+exit 0

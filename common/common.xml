@@ -1,0 +1,557 @@
+<!-- $Id: common.xml,v 1.33 2007-10-24 10:05:13 tigran Exp $ -->
+
+<project>
+
+  <!--
+          Properties  -  the following properties may be set externally
+  -->
+
+  <!-- The buildDir and distDir properties should be overwritten by a calling build.xml -->
+  <property name="buildDir" location="build" />    <!-- this is for temporary build -->
+  <property name="distDir" location="dist" />      <!-- this dir will not be deleted -->
+  <property name="classesDir" location="${distDir}/classes" />  <!-- this dir will not be deleted. Should contain the produced JARs -->
+  <property name="binDir" location="${distDir}/d-cache" />
+
+  <!-- The temporary dir for storing external libs and the place to look for (non-temp) externals
+       These are used for determining ${libDir} below -->
+  <property name="dCacheBox-module" location="modules" />
+  <property name="externalLibDir" location="${dCacheBox-module}/external" />
+  <property name="libDir" location="${externalLibDir}" />
+
+  <!--
+          Useful information from Environment
+  -->
+
+  <property environment="sysenv" />
+  <tstamp>
+    <format property="sortableTimestamp" timezone="UTC" pattern="yyyyMMddHHmmss" />
+  </tstamp>
+
+	<!-- JAVAC related constants -->
+	<!-- modify values in property file ant not here -->
+	<property file="${buildTop}/common/javac.properties" />
+
+
+	  <!--
+	          initialize some defaults
+	  -->
+
+	<tstamp>
+		<format property="jar.timestamp" pattern="MM/dd/yyyy hh:mm:ss"/>
+		<format property="rpm.timestamp" pattern="yyyy.MM.dd"/>
+	</tstamp>
+  <!--
+          Directory creation
+  -->
+
+  <target name="prepare">
+    <mkdir dir="${buildDir}" />
+    <mkdir dir="${classesDir}" />
+  </target>
+
+  <!--
+          Clean Targets
+  -->
+
+  <target name="clean" description="Remove temporary build directory">
+    <delete dir="${buildDir}" />
+  </target>
+
+  <!--
+          Cells
+  -->
+
+  <target name="cells" depends="prepare" description="Compile cells package and create cells.jar,cells-protocols.jar,cells-log4j.jar">
+
+    <ant dir="modules-builds" antfile="cells-build.xml" target="cells.jar" inheritAll="false">
+      <property name="libDir" location="${libDir}" />
+      <property name="buildDir" value="${buildDir}/cells/" />
+      <property name="classesDir" value="${classesDir}" />
+	  <property name="sourceDir" location="${dCacheBox-module}/cells" />
+	  <property name="buildTop" location="${buildTop}" />
+	  <property name="release.name" value="${release.name}" />
+    </ant>
+
+    <ant dir="modules-builds" antfile="cells-build.xml" target="cells-protocols.jar" inheritAll="false">
+      <property name="libDir" location="${libDir}" />
+      <property name="buildDir" value="${buildDir}/cells/" />
+      <property name="classesDir" value="${classesDir}" />
+  	  <property name="sourceDir" location="${dCacheBox-module}/cells" />
+  	  <property name="buildTop" location="${buildTop}" />
+	  <property name="release.name" value="${release.name}" />
+    </ant>
+
+    <ant dir="modules-builds" antfile="cells-build.xml" target="cells-log4j.jar" inheritAll="false">
+      <property name="libDir" location="${libDir}" />
+      <property name="buildDir" value="${buildDir}/cells/" />
+      <property name="classesDir" value="${classesDir}" />
+	  <property name="sourceDir" location="${dCacheBox-module}/cells" />
+  	  <property name="buildTop" location="${buildTop}" />
+	  <property name="release.name" value="${release.name}" />
+    </ant>
+
+  </target>
+
+  <target name="cells.bin" depends="prepare" description="Compile cells package and create cells.jar in 'binDir'">
+
+    <ant dir="modules-builds" antfile="cells-build.xml" target="cells-bin" inheritAll="false">
+      <property name="libDir" location="${libDir}" />
+      <property name="buildDir" value="${buildDir}/cells/" />
+      <property name="classesDir" value="${classesDir}" />
+	  <property name="sourceDir" location="${dCacheBox-module}/cells" />
+	  <property name="buildTop" location="${buildTop}" />
+   	  <property name="binDir" location="${binDir}" />
+	  <property name="release.name" value="${release.name}" />
+    </ant>
+
+  </target>
+
+  <target name="cells-protocols.bin" depends="prepare" description="Compile cells package and create cells.jar and cells-protocols.jar in 'binDir'">
+
+    <ant dir="modules-builds" antfile="cells-build.xml" target="cells-protocols-bin" inheritAll="false">
+      <property name="libDir" location="${libDir}" />
+      <property name="buildDir" value="${buildDir}/cells/" />
+      <property name="classesDir" value="${classesDir}" />
+	  <property name="sourceDir" location="${dCacheBox-module}/cells" />
+	  <property name="buildTop" location="${buildTop}" />
+   	  <property name="binDir" location="${binDir}" />
+	  <property name="release.name" value="${release.name}" />
+    </ant>
+
+  </target>
+
+
+  <target name="cells-log4j.bin" depends="prepare" description="Compile cells package and create cells.jar and cells-log4j.jar">
+
+    <ant dir="modules-builds" antfile="cells-build.xml" target="cells-log4j-bin" inheritAll="false">
+      <property name="libDir" location="${libDir}" />
+      <property name="buildDir" value="${buildDir}/cells/" />
+      <property name="classesDir" value="${classesDir}" />
+	  <property name="sourceDir" location="${dCacheBox-module}/cells" />
+	  <property name="buildTop" location="${buildTop}" />
+   	  <property name="binDir" location="${binDir}" />
+	  <property name="release.name" value="${release.name}" />
+    </ant>
+
+  </target>
+
+
+  <!--
+          Core
+  -->
+
+  <target name="dcache-core" depends="prepare,cells" description="Compile dcache package and create dcache.jar">
+
+    <ant dir="modules-builds" antfile="dcache-core-build.xml" target="dcache.jar" inheritAll="false">
+      <property name="libDir" location="${libDir}" />
+      <property name="buildDir" value="${buildDir}/dcache/" />
+      <property name="classesDir" value="${classesDir}" />
+      <property name="sourceDir" location="${dCacheBox-module}/dCache" />
+      <property name="buildTop" location="${buildTop}" />
+	  <property name="release.name" value="${release.name}" />
+    </ant>
+
+  </target>
+
+  <target name="dcache-srm" depends="prepare,dcache-core,srm" description="Compile dcache package and create dcache-srm.jar">
+    <ant dir="modules-builds" antfile="dcache-core-build.xml" target="dcache-srm.jar" inheritAll="false">
+      <property name="libDir" location="${libDir}" />
+      <property name="buildDir" value="${buildDir}/dcache/" />
+      <property name="classesDir" value="${classesDir}" />
+	  <property name="sourceDir" location="${dCacheBox-module}/dCache" />
+  	  <property name="buildTop" location="${buildTop}" />
+	  <property name="release.name" value="${release.name}" />
+    </ant>
+  </target>
+
+  <target name="dcache.bin" depends="cells.bin" description="Compile dcache package and create dcache-srm.jar in 'binDir'">
+    <ant dir="modules-builds" antfile="dcache-core-build.xml" target="dcache-bin" inheritAll="false">
+      <property name="libDir" location="${libDir}" />
+      <property name="buildDir" value="${buildDir}/dcache/" />
+      <property name="classesDir" value="${classesDir}" />
+	  <property name="sourceDir" location="${dCacheBox-module}/dCache" />
+  	  <property name="buildTop" location="${buildTop}" />
+   	  <property name="binDir" location="${binDir}" />
+  	  <property name="release.name" value="${release.name}" />
+    </ant>
+  </target>
+
+
+  <target name="dcache-srm.bin" depends="dcache.bin,cells-protocols.bin,srm.bin,javatunnel.bin" description="Compile dcache package and create dcache-srm.jar 'binDir'">
+    <ant dir="modules-builds" antfile="dcache-core-build.xml" target="dcache-srm-bin" inheritAll="false">
+      <property name="libDir" location="${libDir}" />
+      <property name="buildDir" value="${buildDir}/dcache/" />
+      <property name="classesDir" value="${classesDir}" />
+	  <property name="sourceDir" location="${dCacheBox-module}/dCache" />
+  	  <property name="buildTop" location="${buildTop}" />
+   	  <property name="binDir" location="${binDir}" />
+	  <property name="release.name" value="${release.name}" />
+    </ant>
+  </target>
+
+
+  <!--
+          SRM
+  -->
+
+  <target name="srm" depends="prepare,cells" description="Compile srm package and create srm.jar and srm-tomcat.jar">
+
+    <ant dir="modules-builds" antfile="srm-build.xml" target="srm.jar" inheritAll="false">
+      <property name="libDir" location="${libDir}" />
+      <property name="buildDir" value="${buildDir}/srm/" />
+      <property name="classesDir" value="${classesDir}" />
+	  <property name="sourceDir" location="${dCacheBox-module}/srm" />
+  	  <property name="buildTop" location="${buildTop}" />
+	  <property name="release.name" value="${release.name}" />
+    </ant>
+
+    <ant dir="modules-builds" antfile="srm-build.xml" target="srm-tomcat.jar" inheritAll="false">
+      <property name="libDir" location="${libDir}" />
+      <property name="buildDir" value="${buildDir}/srm/" />
+      <property name="classesDir" value="${classesDir}" />
+	  <property name="sourceDir" location="${dCacheBox-module}/srm" />
+  	  <property name="buildTop" location="${buildTop}" />
+	  <property name="release.name" value="${release.name}" />
+    </ant>
+
+  </target>
+
+
+  <target name="srm.bin" depends="prepare,cells" description="Compile srm package and create srm.jar and srm-tomcat.jar in 'binDir'">
+
+    <ant dir="modules-builds" antfile="srm-build.xml" target="srm-bin" inheritAll="false">
+      <property name="libDir" location="${libDir}" />
+      <property name="buildDir" value="${buildDir}/srm/" />
+      <property name="classesDir" value="${classesDir}" />
+	  <property name="sourceDir" location="${dCacheBox-module}/srm" />
+  	  <property name="buildTop" location="${buildTop}" />
+   	  <property name="binDir" location="${binDir}" />
+	  <property name="release.name" value="${release.name}" />
+    </ant>
+
+  </target>
+
+  <!--
+          infoProvider
+  -->
+
+  <target name="infoProvider" depends="prepare,cells,dcache-srm" description="Compile infoProvider package and create infoProvider.jar">
+
+    <ant  dir="modules-builds" antfile="infoProvider-build.xml" target="infoProvider.jar" inheritAll="false">
+      <property name="libDir" location="${libDir}" />
+      <property name="buildDir" value="${buildDir}/infoProvider/" />
+      <property name="classesDir" value="${classesDir}" />
+  	  <property name="sourceDir" location="${dCacheBox-module}/infoProvider/src" />
+  	  <property name="buildTop" location="${buildTop}" />
+	  <property name="release.name" value="${release.name}" />
+    </ant>
+
+  </target>
+
+
+  <target name="infoProvider.bin" depends="dcache-srm.bin" description="Compile infoProvider package and create infoProvider.jar in 'binDir'">
+
+    <ant  dir="modules-builds" antfile="infoProvider-build.xml" target="infoProvider-bin" inheritAll="false">
+      <property name="libDir" location="${libDir}" />
+      <property name="buildDir" value="${buildDir}/infoProvider/" />
+      <property name="classesDir" value="${classesDir}" />
+  	  <property name="sourceDir" location="${dCacheBox-module}/infoProvider/src" />
+  	  <property name="buildTop" location="${buildTop}" />
+   	  <property name="binDir" location="${binDir}" />
+	  <property name="release.name" value="${release.name}" />
+    </ant>
+
+  </target>
+
+	<!--
+	          xrootd-token authorization plugin
+	  -->
+
+	  <target name="xrootd-tokenauthz" depends="prepare,cells,dcache-core" description="Compile xrootd tokenauthorization package and create xrootd-tokenauthz.jar">
+
+	    <ant  dir="modules-builds" antfile="dcache-core-build.xml" target="xrootd-tokenauthz.jar" inheritAll="false">
+	      <property name="libDir" location="${libDir}" />
+	      <property name="buildDir" value="${buildDir}/xrootd-tokenauthz/" />
+	      <property name="classesDir" value="${classesDir}" />
+	  	  <property name="sourceDir" location="${dCacheBox-module}/dCache/" />
+	  	  <property name="buildTop" location="${buildTop}" />
+		  <property name="release.name" value="${release.name}" />
+	    </ant>
+
+	  </target>
+
+
+	  <target name="xrootd-tokenauthz.bin" depends="dcache.bin" description="Compile xrootd tokenauthorization package and create xrootd-tokenauthz.jar in 'binDir'">
+
+	    <ant  dir="modules-builds" antfile="dcache-core-build.xml" target="xrootd-tokenauthz-bin" inheritAll="false">
+	      <property name="libDir" location="${libDir}" />
+	      <property name="buildDir" value="${buildDir}/xrootd-tokenauthz/" />
+	      <property name="classesDir" value="${classesDir}" />
+	  	  <property name="sourceDir" location="${dCacheBox-module}/dCache/" />
+	  	  <property name="buildTop" location="${buildTop}" />
+	   	  <property name="binDir" location="${binDir}" />
+	  	  <property name="release.name" value="${release.name}" />
+	    </ant>
+
+	  </target>
+
+  <!--
+          dcap
+  -->
+
+  <target name="dcap" depends="prepare" description="Compile dcap package.">
+
+    <ant dir="modules-builds" antfile="dcap-build.xml" target="dcap.compile" inheritAll="false">
+      <property name="libDir" location="${libDir}" />
+      <property name="buildDir" location="${buildDir}/dcap" />
+      <property name="distDir" location="${distDir}/dcap" />
+  	  <property name="sourceDir" location="${dCacheBox-module}/dcap" />
+  	  <property name="buildTop" location="${buildTop}" />
+	  <property name="release.name" value="${release.name}" />
+    </ant>
+
+  </target>
+
+  <target name="dcap.bin" depends="prepare" description="Compile dcap package.">
+
+    <ant dir="modules-builds" antfile="dcap-build.xml" target="dcap.compile" inheritAll="false">
+      <property name="libDir" location="${libDir}" />
+      <property name="buildDir" location="${buildDir}/dcap" />
+      <property name="distDir" location="${binDir}/dcap" /> <!-- where to install -->
+  	  <property name="sourceDir" location="${dCacheBox-module}/dcap" />
+  	  <property name="buildTop" location="${buildTop}" />
+	  <property name="release.name" value="${release.name}" />
+    </ant>
+
+  </target>
+
+
+  <!--
+          javatunnel
+  -->
+
+  <target name="javatunnel" depends="prepare,cells" description="Compile dcap package.">
+
+    <ant dir="modules-builds" antfile="dcap-build.xml" target="javatunnel.jar" inheritAll="false">
+      <property name="libDir" location="${libDir}" />
+      <property name="buildDir" location="${buildDir}/dcap-javatunnel" />
+      <property name="classesDir" location="${classesDir}" />
+  	  <property name="sourceDir" location="${dCacheBox-module}/dcap" />
+  	  <property name="buildTop" location="${buildTop}" />
+	  <property name="release.name" value="${release.name}" />
+    </ant>
+
+  </target>
+
+
+  <target name="javatunnel.bin" depends="cells.bin" description="Compile dcap package.">
+
+    <ant dir="modules-builds" antfile="dcap-build.xml" target="javatunnel-bin" inheritAll="false">
+      <property name="libDir" location="${libDir}" />
+      <property name="buildDir" location="${buildDir}/dcap-javatunnel" />
+      <property name="classesDir" location="${classesDir}" />
+  	  <property name="sourceDir" location="${dCacheBox-module}/dcap" />
+  	  <property name="buildTop" location="${buildTop}" />
+   	  <property name="binDir" location="${binDir}" />
+	  <property name="release.name" value="${release.name}" />
+    </ant>
+
+  </target>
+
+
+  <!--
+          srmclient
+  -->
+
+  <target name="srmclient" depends="prepare,srm" description="Compile srmclient package">
+
+    <ant dir="modules-builds" antfile="srmclient-build.xml" target="srmclient.jar" inheritAll="false">
+      <property name="libDir" location="${libDir}" />
+      <property name="buildDir" value="${buildDir}/srmclient/" />
+      <property name="classesDir" value="${classesDir}" />
+   	  <property name="sourceDir" location="${dCacheBox-module}/srmclient" />
+  	  <property name="buildTop" location="${buildTop}" />
+	  <property name="release.name" value="${release.name}" />
+    </ant>
+
+  </target>
+
+
+  <target name="srmclient.bin" depends="prepare,srm" description="Compile srmclient package">
+
+    <ant dir="modules-builds" antfile="srmclient-build.xml" target="srmclient-bin" inheritAll="false">
+      <property name="libDir" location="${libDir}" />
+      <property name="buildDir" value="${buildDir}/srmclient/" />
+      <property name="classesDir" value="${classesDir}" />
+   	  <property name="sourceDir" location="${dCacheBox-module}/srmclient" />
+  	  <property name="buildTop" location="${buildTop}" />
+   	  <property name="binDir" location="${binDir}" />
+	  <property name="release.name" value="${release.name}" />
+    </ant>
+
+  </target>
+
+
+  <!--
+          dCacheBook
+  -->
+
+  <property name="dCacheBook.topDir" value="${dCacheBox-module}/dCacheBook" />
+  <available file="${dCacheBook.topDir}/build.xml" property="dCacheBook.checkedout" />
+
+  <target name="dCacheBook" if="dCacheBook.checkedout" depends="prepare" description="Compile dCacheBook">
+
+    <property name="bookDir" location="${distDir}/doc/Book" />
+
+    <ant dir="${dCacheBook.topDir}" target="book" inheritAll="false">
+      <property name="libDir" location="${libDir}" />
+      <property name="buildDir" value="${buildDir}/dCacheBook/" />
+      <property name="bookDir" value="${bookDir}" />
+    </ant>
+
+  </target>
+
+  <!--
+          Macors for checking class dependencies
+  -->
+
+  <path id="cc.dummy" />
+
+  <macrodef name="checkclass">
+    <attribute name="classname"/>
+    <attribute name="classpathref" default="cc.dummy" />
+    <attribute name="classpath" default="" />
+    <sequential>
+      <condition property="cc.cpv.@{classname}" value="@{classpath}" >
+	<not>
+	  <equals arg1="" arg2="@{classpath}" />
+	</not>
+      </condition>
+      <property name="cc.cpv.@{classname}" refid="@{classpathref}" />
+      <fail unless="cc.cpv.@{classname}" >Either the classpathref or the classpath attribute has to be set.</fail>
+      <condition property="checkclassMissing" value="">
+	<not>
+	  <available classname="@{classname}" classpath="${cc.cpv.@{classname}}" />
+	</not>
+      </condition>
+      <condition property="ccls.@{classname}" value="@{classname}">
+	<not>
+	  <available classname="@{classname}" classpath="${cc.cpv.@{classname}}" />
+	</not>
+      </condition>
+    </sequential>
+  </macrodef>
+
+  <macrodef name="checkclassfail">
+    <attribute name="message" default=""/>
+    <text name="textcontent" optional="true"/>
+    <sequential>
+      <propertyset id="checkclass.ps">
+	<propertyref prefix="ccls."/>
+      </propertyset>
+      <property name="checkclassList" refid="checkclass.ps" />
+      <fail if="checkclassMissing" >
+	@{message}
+	@{textcontent}
+	List of missing classes:
+	${checkclassList}
+      </fail>
+    </sequential>
+  </macrodef>
+
+  <!--
+          By default show help :)
+  -->
+
+  <target name="help">
+    <echo message="There is no default target." />
+    <echo message="" />
+    <echo message="Please execute 'ant -projecthelp' to get a list of available targets." />
+  </target>
+
+  <!--
+          Untar axis, tomcat, cog, glue
+  -->
+
+
+  <property name="axis.libDir" value="${libDir}/axis" />
+  <property name="axis.tarName" value="${axis.libDir}/axis-bin-1_3.tar.gz" />                           <!-- A pattern uniquely identifying one tar file -->
+  <property name="axis.untaredTo" value="${axis.libDir}/axis-1_3" />                  <!-- This is the dir the tar will create -->
+
+  <uptodate property="lib.axis.uptodate" targetfile="${axis.untaredTo}" >
+    <srcfiles dir="${axis.libDir}" includes="${axis.tarName}" />
+  </uptodate>
+
+  <target name="lib.axis.untar" unless="lib.axis.uptodate" >
+
+    <echo>Unpacking to ${axis.untaredTo}</echo>
+  	<untar src="${axis.tarName}" dest="${axis.libDir}" compression="gzip" />
+
+  </target>
+
+  <property name="tomcat.libDir" value="${libDir}/tomcat" />
+  <property name="tomcat.tarName" value="${tomcat.libDir}/apache-tomcat-5.5.20.tar.gz" />              <!-- A pattern uniquely identifying one tar file -->
+  <property name="tomcat.untaredTo" value="${tomcat.libDir}/apache-tomcat-5.5.20" />  <!-- This is the dir the tar will create -->
+
+  <uptodate property="lib.tomcat.uptodate" targetfile="${tomcat.untaredTo}" >
+    <srcfiles dir="${tomcat.libDir}" includes="${tomcat.tarName}" />
+  </uptodate>
+
+  <target name="lib.tomcat.untar" unless="lib.tomcat.uptodate" >
+
+    <echo>Unpacking to ${tomcat.untaredTo}</echo>
+  	<untar src="${tomcat.tarName}" dest="${tomcat.libDir}" compression="gzip" />
+
+  </target>
+
+  <property name="cog.libDir" value="${libDir}/cog" />
+
+	  <property name="gplazma-libs.libDir" value="${libDir}/gplazma-libs" />
+	  <property name="gplazma-libs.tarName" value="${gplazma-libs.libDir}/gplazma-libs.tgz" />                               <!-- A pattern uniquely identifying one tar file -->
+	  <property name="gplazma-libs.untaredTo" value="${gplazma-libs.libDir}/gplazma-libs" />                   <!-- This is the dir the tar will create -->
+
+
+  <property name="glue.libDir" value="${libDir}/glue" />
+  <property name="glue.tarName" value="${glue.libDir}/glue-srmlib.tgz" />                               <!-- A pattern uniquely identifying one tar file -->
+  <property name="glue.untaredTo" value="${glue.libDir}/glue-srmlib" />                   <!-- This is the dir the tar will create -->
+
+  <uptodate property="lib.glue.uptodate" targetfile="${glue.untaredTo}" >
+    <srcfiles dir="${glue.libDir}" includes="${glue.tarName}" />
+  </uptodate>
+
+  <target name="lib.glue.untar" unless="lib.glue.uptodate" >
+
+    <echo>Unpacking to ${glue.untaredTo}</echo>
+  	<untar src="${glue.tarName}" dest="${glue.libDir}" compression="gzip" />
+
+  </target>
+
+	<target name="dcache-classpath">
+
+		<path id="dcache.external.jars">
+			<fileset dir="${binDir}/classes" includes="**/*.jar" >
+			<exclude name="cells.jar"/>
+			<exclude name="dcache.jar"/>
+		</fileset>
+		</path>
+
+		<pathconvert property="dcache.classpath" targetos="unix" refid="dcache.external.jars">
+			<map from="${binDir}/classes" to="${ourHome}/classes"/>
+		</pathconvert>
+		<echo>externalLibsClassPath=${dcache.classpath}</echo>
+		<echo file="${binDir}/classes/extern.classpath" append="no">externalLibsClassPath=${dcache.classpath}</echo>
+
+	</target>
+
+	<target name="run_junit">
+	    <ant dir="modules-builds" antfile="junit-build.xml" target="run_junit.core" inheritAll="false">
+	      <property name="libDir" location="${libDir}" />
+	      <property name="buildDir" value="${buildDir}" />
+	      <property name="classesDir" value="${classesDir}" />
+	      <property name="sourceDir" location="${dCacheBox-module}/dCacheJUnit" />
+	      <property name="buildTop" location="${buildTop}" />
+	      <property name="binDir" location="${binDir}" />
+	    </ant>
+	</target>
+
+</project>

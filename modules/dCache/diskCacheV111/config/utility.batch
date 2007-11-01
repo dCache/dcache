@@ -1,0 +1,83 @@
+set printout default 2
+set printout CellGlue none
+onerror shutdown
+#
+check -strong setupFile
+#
+copy file:${setupFile} context:setupContext
+#
+#  import the variables into our $context.
+#  don't overwrite already existing variables.
+#
+import context -c setupContext
+#
+#   Make sure we got what we need.
+#
+check -strong serviceLocatorPort serviceLocatorHost 
+# check -strong dCapPort sshPort ftpPort srmPort
+
+#
+create dmg.cells.services.RoutingManager  RoutingMgr
+#
+#   The LocationManagerc Part
+#
+create dmg.cells.services.LocationManager lm \
+       "${serviceLocatorHost} ${serviceLocatorPort}"
+#
+#
+#
+create diskCacheV111.admin.PAMAuthentificator gsi-pam \
+             " -users=class:diskCacheV111.admin.UserMetaDataProviderFnal \
+               -kpwd-file=${kpwdFile}"
+#
+#
+# ----------------------------------------------------------------------
+#           Default Setup 
+# ----------------------------------------------------------------------
+#
+onerror continue
+
+   set context -c srmDbHost localhost
+
+   set context -c pinManagerDatabaseHost    ${srmDbHost}
+   set context -c spaceManagerDatabaseHost  ${srmDbHost}
+
+   set context -c srmDbName          dcache
+   set context -c srmDbUser          srmdcache
+   set context -c srmDbPassword      srmdcache
+   set context -c srmPasswordFile    ""
+
+   set context -c kpwdFile          ${ourHomeDir}/etc/dcache.kpwd
+
+onerror shutdown
+#
+# ----------------------------------------------------------------------
+#            Space Manager Cell
+# ----------------------------------------------------------------------
+#
+#
+create diskCacheV111.services.SpaceManager SpaceManager \
+       "default \
+        -export \
+        -jdbcDriver=org.postgresql.Driver \
+        -jdbcUrl=jdbc:postgresql://${spaceManagerDatabaseHost}/${srmDbName} \
+        -dbUser=${srmDbUser} \
+        -dbPass=${srmDbPassword} \
+       "
+
+#
+# ----------------------------------------------------------------------
+#           Pin Manager Cell
+# ----------------------------------------------------------------------
+#
+#
+create diskCacheV111.services.PinManager PinManager \
+       "default \
+        -export  \
+        -jdbcDriver=org.postgresql.Driver \
+        -jdbcUrl=jdbc:postgresql://${pinManagerDatabaseHost}/${srmDbName} \
+        -dbUser=${srmDbUser} \
+        -dbPass=${srmDbPassword} \
+       "
+#
+#

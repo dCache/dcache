@@ -1,0 +1,36 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html>
+  <head>
+    <title>Nio Tunnel Users Guide</title>
+  </head>
+  <body>
+  <h1>Nio Tunnel Users Guide</h1>
+  <h3>Class</h3>
+  <blockquote>
+  dmg.cells.services.login.LoginManager</br>
+  dmg.cells.services.LocationManager</br>
+  dmg.cells.network.LocationMgrTunnel</br>
+  </blockquote>
+  <hr>
+  <h3>Using  NIO</h3>
+  <blockquote>
+     Nio can only be enabled for LocationMgrTunnel(s) and only if no 
+     alternative SocketFactory is used. Nio Tunnel can talk to 
+     Non Nio tunnels.
+  </blockquote>
+  <h3>Enabling  NIO</h3>
+  <blockquote>
+     Enabling NIO for all LoginManagers and/or LocationManager(s) within a domain.
+     <pre>
+     set context niochannel true
+     </pre>
+     Enabling NIO for a single LoginManager or LocationManager
+     <pre>
+        -niochannel=true
+     </pre>
+  </blockquote>
+  <hr>
+  <address>Author : Patrick Fuhrmann, Version : $Id: NioTunnels.html,v 1.1 2005-11-06 07:51:24 patrick Exp $</address>
+  </body>
+</html>

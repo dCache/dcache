@@ -1,0 +1,44 @@
+#!/bin/sh
+# $Id: dcache-srm,v 1.5 2007-08-14 21:13:00 tigran Exp $
+#
+# chkconfig: - 91 9
+# description: srm tomcat startup script
+#
+
+ourHomeDir=/opt/d-cache
+
+cmd1=$1
+
+if [ -r ${ourHomeDir}/etc/srm_setup.env ] ; then
+  . ${ourHomeDir}/etc/srm_setup.env
+fi
+
+export JAVA_HOME
+export JAVA_OPTS
+export CATALINA_HOME=${TOMCAT_BASE_PATH}/apache-tomcat-5.5.20
+
+
+case $cmd1 in
+  start)
+        ${TOMCAT_BASE_PATH}/apache-tomcat-5.5.20/bin/startup.sh
+        RETVAL=$?
+        echo
+        [ $RETVAL -eq 0 ] && touch /var/lock/subsys/srm-tomcat
+        ;;
+  stop)
+         ${TOMCAT_BASE_PATH}/apache-tomcat-5.5.20/bin/shutdown.sh
+          RETVAL=$?
+          echo
+          [ $RETVAL -eq 0 ] && rm -f /var/lock/subsys/srm-tomcat
+          ;;
+  restart|reload)
+        $0 stop
+        $0 start
+        RETVAL=$?
+        ;;
+  *)
+        echo "Usage: $0 {start|stop|restart}"
+        exit 1
+esac
+exit 0
+

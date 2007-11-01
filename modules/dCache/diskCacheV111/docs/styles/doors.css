@@ -1,0 +1,77 @@
+body 
+{ 
+  background: url("/images/bg.jpg");
+}
+
+img 
+{ 
+  border: 0;
+}
+
+#bird_small
+{ 
+  color: red;
+}
+
+#bird_large
+{ 
+  text-align: center;
+}
+
+a:link
+{ 
+  color: red;
+}
+
+a:visited
+{ 
+  color: red;
+}
+
+#main 
+{
+  margin-left: auto; 
+  margin-right: auto;
+  width: 95%;
+}
+
+#footer
+{ 
+  margin-top: 200px;
+}
+
+#table
+{ 
+  border-spacing: 0;
+  width: 100%;
+}
+
+#table td, #table th
+{ 
+  padding: 4px;
+  border: 1px solid grey;
+}
+
+#table th
+{ 
+  text-align: center;
+  background: #115259;
+  color: white;
+}
+
+#table td
+{ 
+  text-align: center;
+  font-size: small;
+}
+
+#table tr.odd
+{ 
+  background: #efefef;
+}
+
+#table tr.even
+{ 
+  background: #bebebe;
+}
+

@@ -1,0 +1,16 @@
+#!/bin/sh
+#
+DOC=../docs/api
+dcb=diskCacheV111
+#
+if [ ! -d ${DOC} ] ; then
+   echo "Can't find api doc directory ${DOC}" 1>&2
+   exit 4
+fi
+javadoc -d ${DOC}  \
+    ${dcb}.vehicles \
+    ${dcb}.cells \
+    ${dcb}.movers \
+    ${dcb}.util \
+    ${dcb}.clients.vsp
+exit $? 

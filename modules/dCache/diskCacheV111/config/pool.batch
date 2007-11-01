@@ -1,0 +1,75 @@
+set printout default 2
+set printout CellGlue none
+
+onerror shutdown 
+
+#
+check -strong setupFile
+#
+copy file:${setupFile} context:setupContext
+#
+#  import the variables into our $context.
+#  don't overwrite already existing variables.
+#
+import context -c setupContext 
+#
+#   Make sure we got what we need.
+#
+check -strong pool serviceLocatorHost serviceLocatorPort
+
+copy file:${pool} context:poolList
+
+create dmg.cells.services.RoutingManager  RoutingMgr
+
+create dmg.cells.services.LocationManager lm \
+     "${serviceLocatorHost} ${serviceLocatorPort}"
+#
+say -level=2 "Sleeping 60 seconds"
+sleep 60     
+#
+onerror continue
+
+  set context -c poolIoQueue ""
+  set context -c checkRepository        true
+  set context -c waitForRepositoryReady false
+  set context -c gsiftpAllowPassivePool true
+  set context -c metaDataRepository     org.dcache.pool.repository.meta.file.FileMetaDataRepository
+  set context -c metaDataRepositoryImport ""
+  set context -c gsiftpReadAhead        16777216
+
+onerror shutdown
+
+#
+# NIO ftp mover
+#
+
+define context MoverMap endDefine
+   movermap define DCap-3  diskCacheV111.movers.DCapProtocol_3_nio
+   movermap define GFtp-1  diskCacheV111.movers.GFtpProtocol_2_nio
+   movermap define GFtp-2  diskCacheV111.movers.GFtpProtocol_2_nio
+endDefine
+
+define context startPools endDefine
+  create diskCacheV111.pools.MultiProtocolPoolV3 ${0} \
+  "!MoverMap \
+  ${1} \
+  -recover-control=yes \
+  -io-queues=${poolIoQueue} \
+  -checkRepository=${checkRepository} \
+  -waitForRepositoryReady=${waitForRepositoryReady} \
+  -version=4 \
+  -sticky=allowed \
+  -sendHitInfoMessages=no \
+  -sweeper=diskCacheV111.pools.SpaceSweeper1 \
+  -allowPassivePool=${gsiftpAllowPassivePool} \
+  -metaDataRepository=${metaDataRepository} \
+  -metaDataRepositoryImport=${metaDataRepositoryImport} \
+  -${2} -${3} -${4} -${5} -${6} -${7} -${8} \
+"
+endDefine
+#
+# oh weia
+#
+exec -run -loop=poolList context startPools
+
+
