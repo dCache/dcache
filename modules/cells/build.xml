@@ -1,0 +1,301 @@
+<!-- $Id: build.xml,v 1.9 2006-04-11 10:39:23 tigran Exp $ -->
+
+<project name="Cells" default="help" basedir=".">
+
+
+  <!-- import the common part -->
+
+  <import file="common/common.xml"/>
+
+  <!--
+          Properties  -  the following properties, paths, and selectors
+                         define the locations and files for Cells
+  -->
+
+  <!-- Output Files 
+       For each of these jar files there are targets below -->
+
+  <property name="cells.jar" location="${classesDir}/cells.jar" />
+  <property name="cells-protocols.jar" location="${classesDir}/cells-protocols.jar" />
+  <property name="cells-log4j.jar" location="${classesDir}/cells-log4j.jar" />
+	
+  <!-- this should be in 'common.xml' but that didnt work -->
+  <target name="cleanall" depends="clean,libs.clean" description="Remove everything produced by me." >
+    <delete file="${cells.jar}" />
+    <delete file="${cells-protocols.jar}" />
+  	<delete file="${cells-log4j.jar}" />
+  </target>
+
+  <!-- Java sources
+       These have been derived from packageSets/core.pl and packageSets/protocols.pl -->
+
+  <property name="sourceDir" location="." />
+
+  <!-- Packages for cells.jar -->
+
+  <selector id="cells.selector">
+    <or>
+      <filename name="dmg/util/*" />
+      <filename name="dmg/util/cdb/*" />
+      <filename name="dmg/util/edb/*" />
+      <filename name="dmg/cells/network/*" />
+      <filename name="dmg/cells/nucleus/*" />
+      <filename name="dmg/cells/nucleus/protocols/env/*" />
+      <filename name="dmg/cells/nucleus/protocols/context/*" />
+      <filename name="dmg/cells/nucleus/protocols/cell/*" />
+      <filename name="dmg/cells/services/*" />
+      <filename name="dmg/cells/services/login/*" />
+      <filename name="dmg/cells/services/login/user/*" />
+      <filename name="dmg/cells/services/gui/*" />
+      <filename name="dmg/cells/services/multicaster/*" />
+      <filename name="dmg/cells/applets/*" />
+      <filename name="dmg/cells/applets/spy/*" />
+      <filename name="dmg/cells/applets/login/*" />
+      <filename name="dmg/cells/applets/alias/*" />
+      <filename name="dmg/security/cipher/*" />
+      <filename name="dmg/security/cipher/rsa/*" />
+      <filename name="dmg/security/cipher/idea/*" />
+      <filename name="dmg/security/cipher/pgp/*" />
+      <filename name="dmg/security/cipher/des/*" />
+      <filename name="dmg/security/cipher/blowfish/*" />
+      <filename name="dmg/security/digest/*" />
+      <filename name="dmg/protocols/telnet/*" />
+      <filename name="dmg/protocols/snmp/*" />
+      <filename name="dmg/protocols/ssh/*" />
+      <filename name="dmg/protocols/kerberos/*" />
+      <filename name="dmg/protocols/ber/*" />
+    </or>
+  </selector>
+
+  <!-- Maybe this one should be used for cells.jar   (from Tigrans build.xml)    -->
+
+  <selector id="cells.selector.new">
+      <filename negate="true" name="dmg/apps/**" />
+  </selector>
+
+  <!-- Packages for cells-protocols.jar -->
+
+  <selector id="cells-protocols.selector">
+    <or>
+      <filename name="dmg/cells/nucleus/protocols/env/*" />
+      <filename name="dmg/cells/nucleus/protocols/context/*" />
+      <filename name="dmg/cells/nucleus/protocols/cell/*" />
+    </or>
+  </selector>
+	
+  <!-- Packages for cells-log4j.jar -->
+
+  <selector id="cells-log4j.selector">
+    <or>
+        <filename name="org/dcache/cells/*" />
+    </or>
+  </selector>
+
+  <!-- Classpath for cells.jar -->
+
+  <selector id="cells.classpath.selector">
+    <filename name="log4j/log4j*.jar"/>
+  </selector>
+
+  <path id="cells.classpath">
+    <fileset dir="${classesDir}" >
+      <selector refid="cells.classpath.selector" />
+    </fileset>
+    <fileset dir="${libDir}" >
+      <selector refid="cells.classpath.selector" />
+    </fileset>
+  </path>
+
+  <!-- no Classpath for cells-protocols.jar -->
+
+
+  <!--       =======
+             TARGETS
+             =======          -->
+
+
+  <!--
+          Copy external libraries to ${internalLibDir} with CVS
+  -->
+
+  <target name="libs.cvs" description="Fetch external libs from CVS">
+
+    <mkdir dir="${internalLibDir}" />
+
+    <!-- One cvs checkout for each dependency -->
+    <cvs command="checkout" cvsroot="${cvs.cvsroot}" cvsrsh="ssh" dest="${internalLibDir}"
+      package="external/log4j" />
+
+    <move file="${internalLibDir}/external/log4j" todir="${internalLibDir}" />
+    <delete dir="${internalLibDir}/external" />
+
+  </target>
+
+  <target name="libs.clean" description="Remove the local copy of external libs" >
+    
+    <delete dir="${internalLibDir}" />
+    
+  </target>
+
+
+  <!-- 
+             Targets for cells.jar
+  -->
+
+  <!-- Depend -->
+  <!-- actually, only wee need log4j only -->
+  <target name="cells.depend" description="Check dependencies for cells.compile" >
+
+    <!-- Debug/Info only -->
+    <property name="cells.classpath.value" refid="cells.classpath"/>
+    <echo>Classpath of cells: ${cells.classpath.value} </echo>
+    
+    <!-- This is a list of classes which are needed from external libs -->
+    <checkclass classname="org.apache.log4j.Logger" classpathref="cells.classpath" />
+
+    <checkclassfail>.
+        The following classes are missing in the classpath.
+        They might be fetchted from CVS with 'ant libs.cvs'.
+    </checkclassfail>
+   
+  </target>
+
+  <!-- Compile -->
+
+  <target name="cells.compile" depends="prepare" description="Compile Java code for cells.jar" >
+
+    <javac destdir="${buildDir}" 
+           classpathref="cells.classpath" 
+           source="${javac.source}" 
+           target="${javac.target}" 
+           debug="${javac.debug}" 
+           verbose="${javac.verbose}">
+      <src path="${sourceDir}" />
+      <and>
+		<selector refid="cells.selector" />
+		<filename name="**/*.java" />
+      </and>
+    </javac>
+
+  </target>
+
+  <target name="cells.jar" depends="cells.compile" description="Create cells.jar" >
+
+    <jar jarfile="${cells.jar}">
+      <fileset dir="${buildDir}" >
+	<and>
+	  <selector refid="cells.selector" />
+	  <filename name="**/*.class" />
+	</and>
+      </fileset>
+    </jar>
+
+  </target>
+
+  <!-- 
+          Target for cells-protocols.jar
+  -->
+
+  <target name="cells-protocols.compile" depends="prepare" description="Compile Java code for cells-protocols.jar" >
+
+    <javac destdir="${buildDir}" 
+           source="${javac.source}" 
+           target="${javac.target}" 
+           debug="${javac.debug}" 
+           verbose="${javac.verbose}">
+      <src path="${sourceDir}" />
+      <and>
+		<selector refid="cells-protocols.selector" />
+		<filename name="**/*.java" />
+      </and>
+    </javac>
+
+  </target>
+
+  <target name="cells-protocols.jar" depends="cells-protocols.compile" description="Create cells-protocols.jar" >
+
+    <jar jarfile="${cells-protocols.jar}">
+      <fileset dir="${buildDir}" >
+	<and>
+	  <selector refid="cells-protocols.selector" />
+	  <filename name="**/*.class" />
+	</and>
+      </fileset>
+    </jar>
+
+  </target>
+
+	 <!-- 
+	          Target for cells-log4j.jar
+	  -->
+
+	 <target name="cells-log4j.compile" depends="prepare,cells.depend" description="Compile Java code for cells-log4j.jar" >
+
+	    <javac destdir="${buildDir}" 
+	           source="${javac.source}" 
+	           target="${javac.target}" 
+	           debug="${javac.debug}" 
+	           verbose="${javac.verbose}">
+	      <src path="${sourceDir}" />
+	      <and>
+			<selector refid="cells-log4j.selector" />
+			<filename name="**/*.java" />
+	      </and>
+	    </javac>
+
+	  </target>	
+	
+  <target name="cells-log4j.jar" depends="cells-log4j.compile" description="Create cells-log4j.jar" >
+
+    <jar jarfile="${cells-log4j.jar}">
+      <fileset dir="${buildDir}" >
+	<and>
+	  <selector refid="cells-log4j.selector" />
+	  <filename name="**/*.class" />
+	</and>
+      </fileset>
+    </jar>
+
+  </target>
+	
+	
+	
+  <!--
+  <property name="destDir" location="${libDir}" />
+
+  <target name="copylibs" description="Copy the external libs to ${destDir}">
+
+    <condition property="destDir.available">
+      <and>
+	<isset property="destDir"/>
+	<available file="${destDir}" type="dir"/>
+      </and>
+    </condition>
+    <fail unless="destDir.available" message="No destination directory specified with property destDir."/>
+
+    <copy todir="${destDir}" >
+      <fileset dir="${libDir}" >
+	<and>
+	  <selector refid="lib.classpath.selector" />
+	  <present present="srconly" targetdir="${destDir}"/>
+	</and>
+      </fileset>
+    </copy>
+
+  </target>
+
+  <target name="deletelibs" description="Remove the external libs which might have been copied by this module from ${destDir}">
+
+    <delete>
+      <fileset dir="${destDir}" >
+	<and>
+	  <selector refid="lib.classpath.selector" />
+	  <present present="both" targetdir="${libDir}"/>
+	</and>
+      </fileset>
+    </delete>
+
+  </target>
+  -->
+
+</project>

@@ -1,0 +1,219 @@
+<html>
+<head><title>Tutorial : MyFirstCell</title></head>
+<body bgcolor=white>
+<center><h1>MyFirstCell</h1></center>
+<h1>Creating a cell class</h1>
+<h4>The Constructor</h4>
+<blockquote>
+   The easiest way to create a cell class is to
+   <em>extend</em> an arbitrary class by 
+   <a href=../api/dmg/cells/nucleus/CellAdapter.html>
+   dmg.cells.nucleus.CellAdapter </a>. 
+   The constructor of <em>CellAdapter</em> needs at least the
+   name of the cell which you want to create.
+   <pre>
+      import dmg.cells.nucleus.* ;
+
+      public class FooCell <strong>extends CellAdapter</strong> {
+          
+          public FooCell( String name ){
+
+             <strong>super( name )</strong>
+
+             ...
+             
+             say( "Cell "+getCellName()+" created." ) ;
+
+          }
+      }
+   </pre>
+   The CellAdapter tries to create the cell with the specified name.
+   If the name is already in use by another cell, 
+   the constructor throws an <em>java.lang.IllegalArgumentException</em> with 
+   the message "Name Mismatch".
+   If the name of the cell is not significant, an '*' can be used as 
+   last character in the cells name. The CellAdapter will find a unique
+   name then. The <strong>getCellName()</strong> method will return the chosen name.
+   The <strong>say</strong> method typically will send its argument to
+   <em>System.out.println</em> but may configured differently.
+   So 
+   <pre>
+       CellAdapter cell1 = new FooCell( "foo*" ) 
+       CellAdapter cell2 = new FooCell( "foo*" ) 
+   </pre>
+   may print 
+   <pre>
+       Cell foo-0022 created.
+       Cell foo-0023 created.
+   </pre>
+</blockquote>
+<h4>Activating a cell</h4>
+<blockquote>
+   Cell Objects can only be created ( new FooCell ) within a 
+   <em>Domain Environment</em>. A virtual machine creates a <em>Domain Environment</em>
+   as soon as a <em>dmg.cells.nucleus.SystemCell</em> object has been
+   created.
+   <pre>
+       SystemCell system = new SystemCell( "&lt;domainName&gt;" ) ;
+   </pre>
+   &lt;domainName&gt; is the name of this <em>Domain Environment</em>. As long as
+   no Domains are connect to each other, the name is not
+   significant. The name of the <em>SystemCell</em> will always be <em>System</em>.
+   Only on <em>SystemCell</em> can be created within a <em>Domain</em>.
+   <pre>
+       SystemCell system = new SystemCell( "MyFirstDomain" ) ;
+       new FooCell( "myFirstCell" ) ;
+       new FooCell( "foo*" ) ;
+       new FooCell( "foo*" ) ;
+   </pre>
+   The above codelet will create a <em>Domain Environment</em> with the name
+   <em>MyFirstDomain</em> and four cells called
+   <em>System, myFirstCell, foo-001, foo-002</em>.
+</blockquote>
+<h4>Running a Domain</h4>
+<blockquote>
+   The <strong>dmg.cells.services</strong> contains the code of 
+   a standard <strong>Domain</strong> with is configurable by
+   command line options.
+   <a href=../api/dmg/cells/services/Domain.html>dmg.cells.services.Domain</a>
+   allows you to create and remove <em>Cells</em> dynamically and to
+   inspect the Cell Environment by login into it with by telnet.
+   <br><strong>NOTE : </strong>To enable the dynamic creation of cells
+   the constructor of the cell class has to have <strong>two</strong> String arguments.
+   <pre>
+       public FooCell( String name , String args ){
+           super( name ) ;
+       }
+   </pre>
+   <ul>
+   <li>Create a file FooCell.java with the example cell above.
+   <li>make sure your current working directory and the 
+       cells.jar file is in your <em>CLASSPATH</em>.
+   <li>compile it 'javac FooCell.java'
+   <li>start the standard domain which listens to telnet port &lt;nnn&gt;.
+   <pre>
+        java dmg.cells.services.Domain TestDomain -telnet &lt;nnn&gt;
+   </pre>
+   <li>telnet into the domain 
+   <pre>
+        telnet localhost &lt;nnn&gt;
+   </pre>
+   </ul>
+   You may choose any name as your username. The password has to be <strong>elch</strong>.
+   You will be prompted by 
+   <pre>
+   <strong>tn-&lt;yourUserName&gt;-100 &gt;</strong>
+   </pre>
+   The shell your are logged into, provides a small set of 
+   commands to manipulate and inspect the <em>Domain Environment</em>.
+   A simple help is available throu the <em>help</em> command.
+   <br>
+   For a list of all cells use the <strong>ps -a</strong> command.
+   <pre>
+    <strong>tn-patrick-100 &gt;</strong> ps -a
+      Cell List
+    ------------------
+    tlm            Active    0   TelnetLoginManager  P=22123;C=dmg.cells.services.StreamLoginCell
+    System         Active    0   SystemCell          TestDomain:R=0;A=0;F=0;R=0;X=0
+    tn-patrick-100 Active    0   StreamLoginCell     patrick@localhost/127.0.0.1
+    <strong>tn-patrick-100 &gt;</strong> 
+   </pre>
+   The output list the name of the cell, the current status, the number of messages
+   queued for this cell, the class name and a short discription of the cell
+   itself. The description is the result of the <em>toString</em> method of
+   the perticular cell object.
+   <br>
+   To get more information about a cell you may use
+   <pre>
+   <strong>tn-patrick-100 &gt;</strong> ps &lt;cellName&gt;
+   </pre>
+   This command executes the <em>getInfo()</em> method of a cell.
+   The <em>toString()</em> and <em>getInfo()</em> methods need to
+   be overwritten by the cell implementation to get
+   object specific information.
+   <br>
+   To activate an instance of your FooCell run :
+   <pre>
+   <strong>tn-patrick-100 &gt;</strong> create FooCell fooCellName
+   created : fooCellName
+   </pre>
+   Check the creation of the new FooCell instance with 'ps -a'.
+   <p>
+   To remove the cell from the cell list, use the
+   <pre>
+   <strong>tn-patrick-100 &gt;</strong> kill &lt;cellName&gt;
+   </pre>
+   command.<p>
+   <strong>Killing the <em>SystemCell</em> will start the domain shutdown
+   sequence.</strong> First all cells except the <em>System</em> cell
+   are killed and finally the <em>System.exit(0)</em> is called.
+   <p>
+   The <em>exit command</em> leaves the shell and jumps into
+   a kind of micro shell, the <strong>.. shell</strong>.
+   Another <em>exit command</em>  quits the
+   telnet connection. The <em>micro shell</em> can connect the
+   telnet session to an arbitrary cell.
+   <pre>
+   <strong>.. &gt;</strong> set dest &lt;cellName&gt;
+   <strong>&lt;cellName&gt; &gt;</strong> 
+   </pre>
+   After issuing this command, all lines, typed in, are send
+   to &lt;cellName&gt; and the respond is displayed by the
+   telnet session.
+   <em>exit</em> will return to the <em>.. shell</em> and
+   <pre>
+   <strong>.. &gt;</strong> set dest &lt;cellName&gt;
+   <strong>&lt;cellName&gt; &gt;</strong> 
+   </pre>
+   <pre>
+   <strong>.. &gt;</strong> set dest local
+   </pre>
+   returns to the standard <em>cell shell</em>.
+   
+</blockquote>
+<h4>Killing cells</h4>
+<blockquote>
+   There are a set of possibilities to kill a cell.
+   <ul>
+   <li>The cell uses the <em>kill()</em> method to kill itself.
+   <li>A cell uses the <em>kill( String cellName )</em> to kill anothercell.
+   <li>A cell is killed by the 'telnet shell'
+   </ul>
+   As soon as one of the kill commands is executed :
+   <ul>
+   <li>the perticular cell is scheduled for killing
+   <li>the kill command returns asynchronously
+   <li>the name of the cell is taken out of the
+       cell list. ( no new messages can be send to this cell)
+   <li>the cell goes into 'removal' status ( ps -a )
+   
+   <li>the <em>cleanUp()</em> method of the
+       cell, which is going to be killed, is called.
+   <li>as long as this method doesn't return, the current 
+       status doesn't change. The method is called within
+       a private thread. So no other services have to wait
+       for the method to return.
+   <li>as soon as the method returns, the cell will be totally 
+       removed.
+   </ul>
+   Its up to the creator of the cell class to overwrite the
+   <em>cleanUp</em> method to perform any necessary clean up activities.
+</blockquote>
+<h4>Exiting the domain</h4>
+<blockquote>
+When logged into the 
+</blockquote>
+<h4>Full First Cell Example</h4>
+The first <a href=tutorial-firstCell-e.html>example</a> summarizes
+everything discussed in this chapter.
+The java file has to be called 'FooCell.java'. You can run it exactly as
+described above with the standard Domain Environment.
+After starting the cell it will live for 20 seconds and then it will
+call <em>kill</em> itself. The <em>cleanUp</em> call will 
+sleep for 2 seconds before it returns, to simulate a complicated 
+cleanup sequence.
+<blockquote>
+</blockquote>
+
+</body>
+</html> 

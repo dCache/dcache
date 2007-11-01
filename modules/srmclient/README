@@ -1,0 +1,193 @@
+              Storage  Resource Manager (SRM)
+
+  Setting up Grid Security for SRM Client
+  ---------------------------------------
+  
+  If you are going to use gsi srm for access of srm server you,
+  please read the README.SECURITY
+
+
+  What is SRM?
+  -----------
+
+  To read about SRM go to http://srm.fnal.gov
+
+  What are the tools available in this package?
+  _____________________________________________
+
+  SRM V1.1 clients: srmcp, srm-get-metadata, srm-get-request-status, 
+  srm-advisory-delete, srmping, srmstage
+
+  SRM V2.2 clients: srmcp, srm-reserve-space, srm-release-space, 
+  srmrm, srmrmdir, srmls, srmmkdir, srmmv, srmping, srm-bring-online
+  
+  To find out more about each of this tool run the executable with --help option. The rest of the document describes srmcp tool.
+
+  What is srmcp
+  -------------
+
+  srmcp is the implementation of srm client as specified by srm spec v1.1 and srm spec v2.2
+
+  What can I use srmcp for.
+  _______________________
+ 
+  You can use srmcp for optimizing the retrieval and/or storage of files
+  to/from Mass Storage Systems (MSS) which implement SRM. For example SRM can 
+  be used to get/put files from/to Fermilab Enstore via dCache.
+
+  How does SRM client srmcp transfer files?
+  ____________________________
+ 
+  1. SRM client is given a list of sources and a destination in form 
+  of local file urls or remote Site URLs (SURLs). SURLs have a form
+  srm://host:port/path. 
+  2. SRM client srmcp commands MSS to prepare files for transfer and 
+  negotiates the transfer protocol  and Transfer URLs (TURLs) .
+  3. After that srm client uses the protocol specific client to transfer
+  actual data from/to server, using TURL. The currently supported transfer 
+  protocols are : gsiftp and http.
+  4. Then srmcp notifies MSS that 
+  transfer is completed so that MSS can free its resources.
+ 
+  In case of dCache/Enstore srmcp will request the staging of the file 
+  from enstore in one of the dCache pools and retrieve the TURL for that 
+  file (gsiftp url for example). 
+  In case of dCache the file path in SURL is usually the same as in 
+  gsiftp url.
+
+  Srmcp usage.
+  -----------
+Configuration file:
+  srmcp can use configuration file. The usage of configuration file is not activated by default. To automatically create a configuration file, define an environment variable $SRM_CONFIG and run srmcp once. Once it is created you can, edit it to add default values for many srmcp options. Future srmcp invocationss will use this file, provided the $SRM_CONFIG environmentvariable is still there. Then you need to specify command line options only if you wish to override options specified in configuration file.
+
+Usage: srmcp [command line options] source(s) destination
+ or  : srmcp [command line options] -copyjobfile  <file>
+ either source(s) or destination or both should be (an) srm url
+ default options will be read from configuration file 
+ but can be overridden by the command line options
+ the command line options are one or more of the following:
+		 General Options :
+-version enables printing version number
+-debug=<true or false> true enables debug output, default is false 
+-srmcphome=<path to srmcp product dir>
+-gsissl=<true or false> true uses gsi https, default is false
+-mapfile=<mapfile> to specify glue mapfile
+-wsdl_url=<full url to web service wsdl> this options overrides
+	 -webservice_path and -webservice_protocol options
+-webservice_path=<webservice_path> to specify web service path component
+	 of web service URL (for example "srm/managerv1.wsdl")
+-webservice_protocol=<webservice_protocol> to specify the
+	 webservice protocol ( for example "http","https" or "httpg")
+-use_proxy=<true or false> true if srmcp should use grid proxy
+	 false if it should use certificate and key directly,
+	 defult value is true
+-x509_user_proxy=<path to user grid proxy>
+-x509_user_cert=<path to user grid certificate>
+-x509_user_key=<path to user private key>
+-x509_user_trusted_certificates=<path to the directory with cerificates
+	 of trusted Certificate Authorities (CAs)>
+-globus_tcp_port_range=<min value>:<max value>,
+	 a range of ports open for tcp connections specified as
+	 a pair of positive integers separated by ":",
+	 not set by default 
+-gss_expected_name=<gss expected name in the srm server DN> default value is host
+-srm_protocol_version=<srm protocol version>
+	 or just specify -1  or -2 
+-conf=<path to the configuration file> default value is config.xml
+-save_conf=<path to the file in which the new configuration will be saved>
+	 no transfer will be performed if this option is specified
+-retry_timeout=<number of miliseconds to sleep after a failure
+	 before the client tries to retry>
+-retry_num=<number of retries before client gives up>
+-connect_to_wsdl=<true or false, false by default> 
+	 srm client now connects directly to the service without reading
+	 the wsdl first but for the compatibility with the old implementation,
+	 especially if srm urls available point to the location of the wsdl,
+	 we make the old way of connecting to the wsdl location first available
+-delegate=<true or false, true by default> 
+	 enables or disables the delegation of the user credenital to the server
+-full_delegation=<true or false, true by default> 
+	 if delegation is enabled, it specifies the type of delegation
+	 if this option is set to true the delegation is full, otherwise limited
+-h or -help for this help 
+		 copy options :
+-urlopy=<urlcopy path> to specify the path to  universal url_copy script
+	 see $SRM_PATH/bin/url-copy.sh for example
+-buffer_size=<integer> to set the buffer size to a value 
+	 different then default(2048)
+-tcp_buffer_size=<integer> to set the tcp buffer size to a value 
+	 if option is not specified or set to 0,
+	 then the default tcp buffer size is used
+-streams_num=<integer> to set the number of streams used by gridftp 
+	 if number of stream is set to 1, then stream mode is used, otherwise"+	 extended block mode is used
+-server_mode=<active or passive> to set (gridftp) server mode for data transfer, passive by default
+	 this option will have affect only if transfer is performed in a stream mode (see -streams_num)
+-storagetype=<permanent|volatile|durable> to specify kind of storage to use,"permanent" by default
+-protocols=protocol1[,protocol2[...]] 
+	 the comma separated list of supported TURL protocols
+-space_token=<Space Reservation Token> identifying space to put file in
+-retention_policy=<REPLICA|CUSTODIAL|OUTPUT>
+-access_latency=<ONLINE|NEARLINE>
+-pushmode=<true or false>  true to use the push mode in case
+	 of srm Mass Storage Systems (MSS) to MSS copy, 
+	 false to use the pull mode, the default mode is pull mode (false)
+-srmstage=<true or false, false by default> 
+	 if set to true - the source files are staged only onto disk cache
+	 and not transferred to client right away> 
+	 if set to false - the source files are transferred to the client
+-use_urlcopy_script=<true or false> use java native copiers of use urcopy script
+-srm_protocol_version=<1 or 2> 1 for srm 1.1 or 2 for srm 2.2, no other protocols are supported
+	 or just specify -1  or -2 
+-request_lifetime=<num of seconds> request lifetime in seconds
+-copyjobfile=<file> where <file> is the path to the text file containing 
+	 the list of sources and destination
+	 each line has a format : <sorce-url> <destination-url>
+-report=<report_file> where <report_file> is the path to the report file
+	 if specified, it will contain the resutls of the execution srmcp 
+	 the each line in the file will have the following format:
+	<src url> <dst url> <return code> [<error>]
+the following return codes are supported:
+	 0 - success
+	 1 - general error
+	 2 - file exists, can not overwrite
+	 3 - user permission error
+Example of srm put:
+	 srmcp file:////bin/sh srm://myhost.mydomain.edu:8443//dir1/dir2/sh-copy
+Example of srm get:
+	 srmcp srm://myhost.mydomain.edu:8443//dir1/dir2/sh-copy file:///localdir/sh
+Example of srm copy (srm to srm):
+	 srmcp srm://myhost.mydomain.edu:8443//dir1/dir2/sh-copy srm://anotherhost.org:8443/newdir/sh-copy
+Example of srm copy (gsiftp to srm):
+	 srmcp gsiftp://ftphost.org//path/file srm://myhost.mydomain.edu:8443//dir1/dir2/file
+
+
+  Srmcp usage example.
+  --------------------
+
+   The following command will retrieve two files /mypath/myfile1.ext and 
+   /mypath/myfile1.ext from enstore via dcache and store them in the 
+   local directory /home/timur/targetdir:
+
+   srmcp  \ 
+   srm://cdfendca3.fnal.gov:25129//mypath/myfile1.ext \
+   srm://cdfendca3.fnal.gov:25129//mypath/myfile1.ext \
+   file://localhost//home/timur/targetdir
+  
+
+   The following will copy the same files from one  
+   storage to another
+   srmcp  \ 
+   srm://cdfendca3.fnal.gov:25129//mypath/myfile1.ext \
+   srm://cdfendca3.fnal.gov:25129//mypath/myfile1.ext \
+   srm:/stkendca.fnal.gov:24128/targetdir
+
+
+
+   The following will get the file using dccp client
+   (it should be already installed on you machine)
+   srmcp  \ 
+   -protocols=dcap   \
+   srm:/stkendca.fnal.gov:24128/targetdir/myfile1.ext 
+   file:////tmp/myfile1.ext
+
+   

@@ -1,0 +1,82 @@
+define context psuSetup endDefine
+
+  psu create unit -store   zeus:group
+  psu create unit -store   h1:group
+  psu create unit -store   hermes:group
+  
+  psu create unit -net     0.0.0.0/0.0.0.0
+  psu create unit -net     131.169.0.0/255.255.0.0
+  psu create unit -net     141.34.1.253/255.255.0.0
+  
+  psu create ugroup zeus-units 
+     psu addto ugroup zeus-units zeus:group
+     
+  psu create ugroup hermes-units
+     psu addto ugroup hermes-units hermes:group
+     
+  psu create ugroup h1-units
+     psu addto ugroup h1-units h1:group
+  
+  psu create ugroup desy-net
+     psu addto ugroup desy-net    -net 131.169.0.0/255.255.0.0
+  psu create ugroup world-net
+     psu addto ugroup world-net   -net 0.0.0.0/0.0.0.0
+  psu create ugroup zeuthen-net
+     psu addto ugroup zeuthen-net -net 141.34.0.0/255.255.0.0
+  
+    
+  
+  psu create link world-link world-net
+    psu set link world-link -readpref=10
+  
+  psu create link desy-link desy-net
+    psu set link desy-link -readpref=15
+  
+  psu create link zeuthen-link zeuthen-net
+    psu set link zeuthen-link -readpref=15
+    
+  psu create link desy-h1-link    desy-net h1-units
+    psu set link desy-h1-link    -readpref=20
+  psu create link desy-zeus-link  desy-net zeus-units
+    psu set link desy-zeus-link  -readpref=20
+    
+  psu create link zeuthen-h1-link zeuthen-net h1-units
+    psu set link zeuthen-h1-link -readpref=20
+    
+  psu create link hermes-link hermes-units 
+     psu set link hermes-link -readpref=20
+     
+  psu create pgroup world-pools
+  psu create pgroup desy-pools
+  psu create pgroup zeuthen-pools
+  psu create pgroup desy-h1-pools
+  psu create pgroup desy-zeus-pools
+  psu create pgroup zeuthen-h1-pools
+  psu create pgroup hermes-pools
+  
+  psu create pool world-pool
+  psu create pool desy-pool
+  psu create pool zeuthen-pool
+  psu create pool desy-h1-pool
+  psu create pool desy-zeus-pool
+  psu create pool zeuthen-h1-pool
+  psu create pool hermes-pool
+  
+  psu addto pgroup world-pools world-pool
+  psu addto pgroup desy-pools desy-pool
+  psu addto pgroup zeuthen-pools zeuthen-pool
+  psu addto pgroup desy-h1-pools desy-h1-pool
+  psu addto pgroup desy-zeus-pools desy-zeus-pool
+  psu addto pgroup zeuthen-h1-pools zeuthen-h1-pool
+  psu addto pgroup hermes-pools hermes-pool
+
+  psu add link world-link world-pools  
+  psu add link desy-link desy-pools  
+  psu add link zeuthen-link zeuthen-pools  
+  psu add link desy-h1-link desy-h1-pools  
+  psu add link desy-zeus-link desy-zeus-pools  
+  psu add link zeuthen-h1-link zeuthen-h1-pools  
+  psu add link hermes-link hermes-pools  
+
+endDefine
+create diskCacheV111.poolManager.PoolSelectionCell psu

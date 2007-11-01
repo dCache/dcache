@@ -1,0 +1,10 @@
+#
+#
+define context shellProfile
+set helpmode none
+.
+#
+set context hallo too
+show context
+sfs
+echo hallo

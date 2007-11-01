@@ -1,0 +1,12 @@
+#!/bin/sh
+host=oho.desy.de
+port=22222
+export CLASSPATH
+CLASSPATH=/export/home/patrick/cvs-classes
+JAVA=/usr/jdk1.1.7/usr/java/bin/java
+#
+if [ $# -ne 0 ] ; then
+    $JAVA dmg.apps.osm.OsmSpy -host=${host} -port=${port}  $* >/dev/null 2>/dev/null& 
+else
+    $JAVA dmg.apps.osm.OsmSpy -host=${host} -port=${port}  powder grau >/dev/null 2>/dev/null& 
+fi

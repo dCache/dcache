@@ -1,0 +1,135 @@
+#!/bin/sh
+# $Id: dcache-pool,v 1.1.2.2 2007-02-23 10:58:00 tigran Exp $
+#
+# chkconfig: - 93 7
+# description: dcache pool startup script
+#
+ourHome=/opt/d-cache
+
+if [ -r  /etc/rc.d/init.d/functions ]
+then
+. /etc/rc.d/init.d/functions
+fi
+#  -----------------------------------------------------------------
+#      Checking node_config (and door_config)
+#  -----------------------------------------------------------------
+
+printConfig() {
+    key=$1
+    cat ${ourHome}/etc/node_config \
+        ${ourHome}/etc/door_config 2>/dev/null |
+    perl -e "
+      while (<STDIN>) { 
+         s/\#.*$// ;                        # Remove comments
+         s/\s*$// ;                         # Remove trailing space
+         if ( s/^\s*${key}\s*=*\s*//i ) {   # Remove key and equals
+            print;                          # Print if key found
+            last;                           # Only use first appearance
+         }
+      }
+    "
+}
+
+if ! printConfig NODE_TYPE | grep '' 2>/dev/null >/dev/null || printConfig NODE_TYPE | grep -i 'dummy' 2>/dev/null >/dev/null ; then
+    echo "[ERROR] ${ourHome}/etc/node_config missing or not useful. Exiting."
+    exit 1
+fi
+
+# To make shure to use the right dCache dir
+ourHome=`printConfig DCACHE_BASE_DIR`
+
+PNFS_ROOT=`printConfig PNFS_ROOT`
+
+#  -----------------------------------------------------------------
+#      Checking dCacheSetup
+#  -----------------------------------------------------------------
+
+if [ -r ${ourHome}/config/dCacheSetup ] ; then
+    . ${ourHome}/config/dCacheSetup
+else
+    echo "[ERROR] ${ourHome}/config/dCacheSetup does not exist. Exiting."
+    exit 1
+fi
+
+#  ----  Sanitycheck for ${serviceLocatorHost}
+
+if [ -z "${serviceLocatorHost}" -o "${serviceLocatorHost}" = "SERVER" ] ; then
+    echo "[ERROR] The variable 'serviceLocatorHost' in '${ourHome}/config/dCacheSetup' has to be set properly. Exiting."
+    exit 1
+fi
+
+#  ----  Sanitycheck for ${java}
+
+if test -z "${java}" || ! test -x ${java} || ! ${java} -version 2>&1 | grep -E 'version "1\.[456]' >/dev/null ; then
+    echo "[ERROR] The variable 'java' in '${ourHome}/config/dCacheSetup' has to be set to a java VM version 1.4. Exiting."
+    exit 1
+fi
+
+#  ----  Setting ${logArea}
+
+logParam=""
+if [ -z "${logArea}" ] ; then
+    logParam="-logArea=${ourHome}/log"
+fi
+
+#
+# two ways to defines pool domains to be strared:
+#   1)
+#       <hostname>.domains + poollist files
+#       each line in <hostname>.domains is a name of
+#       pool domain. Coresponding .poollist file should exist
+#       each domain stared in it's own JVM
+#   2)
+#       <hostname>.poollist used if it's not a case #1
+#       all pools in one domain share the same JVM
+#
+hostname=`hostname | awk -F. '{print $1}'`
+poolListFiles=""
+if [ -f ${ourHome}/config/${hostname}.domains ]
+then
+
+	while read domainName
+	do
+		if [ ! -f ${ourHome}/config/${domainName}.poollist ]
+		then
+	                echo "Requested Pool List File not found (skipped) : ${domainName}.poollist" >&2
+		else
+			poolListFiles="${poolListFiles} ${domainName}"
+		fi
+		
+	done < ${ourHome}/config/${hostname}.domains
+
+else
+
+	if [ -f ${ourHome}/config/${hostname}.poollist ]
+	then
+		poolListFiles="${hostname}"
+	fi
+
+fi
+
+action=$1
+case "${action}" in
+   start|stop)
+      if [ -z "${poolListFiles}" ]; then
+         echo " No pool to  ${action} - exiting"
+         exit 1
+      fi
+	  
+
+      for poolDomain in ${poolListFiles}
+      do	  
+           echo -n "${action} dcache pool: "
+           ${ourHome}/jobs/pool -pool=${poolDomain} ${logParam} ${action}
+      done
+    ;;
+  restart|reload)
+   	$0 stop
+   	$0 start
+	;;
+  *)
+	echo "Usage: $0 {start|stop|restart}"
+	exit 1
+esac
+
+exit 0

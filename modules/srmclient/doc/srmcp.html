@@ -1,0 +1,146 @@
+Content-type: text/html
+
+<HTML><HEAD><TITLE>Manpage of SRMCP</TITLE>
+</HEAD><BODY>
+<H1>SRMCP</H1>
+Section: User Commands (1)<BR>Updated: May 2005<BR><A HREF="#index">Index</A>
+<A HREF="http://localhost/cgi-bin/man/man2html">Return to Main Contents</A><HR>
+
+<A NAME="lbAB">&nbsp;</A>
+<H2>NAME</H2>
+
+srmcp - manual page for srmcp v1_6
+<A NAME="lbAC">&nbsp;</A>
+<H2>SYNOPSIS</H2>
+
+<B>srmcp</B>
+
+[<I>OPTION</I>]... <I>SOURCE DEST</I>
+<BR>
+
+<B>srmcp</B>
+
+[<I>OPTION</I>]... <I>SOURCE</I>... <I>DIRECTORY</I>
+<BR>
+
+<B>srmcp</B>
+
+[<I>OPTION</I>]... <I>-copyjobfile &lt;file&gt;</I>...
+<A NAME="lbAD">&nbsp;</A>
+<H2>DESCRIPTION</H2>
+
+Copy SOURCE to DEST, or Multiple SOURCE(s) to DIRECTORY.
+<P>
+Either source(s) or destination or both should be (an) srm url
+default options will be read from configuration file 
+but can be overridden by the command line options
+the command line options are one or more of the following:
+<DL COMPACT>
+<DT><B>--version</B>, <B>-version</B> <DD>
+enables printing version number
+<DT><B>--debug</B>, <B>-debug</B><DD>
+enables debug output, default is false 
+<DT><B>-srmcphome</B>=&lt;path to srmcp product dir&gt;<DD>
+<DT><B>-gsissl</B>=&lt;true or false&gt; <DD>
+true uses gsi https, default is false
+<DT><B>-mapfile</B>=&lt;mapfile&gt; <DD>
+to specify glue mapfile
+<DT><B>-wsdl_url</B>=&lt;full url to web service wsdl&gt; <DD>
+this options overrides <B>-webservice_path</B> and <B>-webservice_protocol</B> options
+<DT><B>-webservice_path</B>=&lt;webservice_path&gt; <DD>
+to specify web service path component of web service URL (for example &quot;srm/managerv1.wsdl&quot;)
+<DT><B>-webservice_protocol</B>=&lt;webservice_protocol&gt; <DD>
+to specify the webservice protocol ( for example &quot;http&quot;,&quot;https&quot; or &quot;httpg&quot;)
+<DT><B>-use_proxy</B>=&lt;true or false&gt; <DD>
+true if srmcp should use grid proxy false if it should use certificate and key directly, defult value is true
+<DT><DD>
+<B>-x509_user_proxy</B>=&lt;path to user grid proxy&gt;
+<DT><B>-x509_user_cert</B>=&lt;path to user grid certificate&gt;<DD>
+<DT><B>-x509_user_key</B>=&lt;path to user private key&gt;<DD>
+<DT><B>-x509_user_trusted_certificates</B>=&lt;path to the directory with cerificates of trusted Certificate Authorities (CAs)&gt;<DD>
+<DT><B>-conf</B>=&lt;path to the configuration file&gt; default value is config.xml<DD>
+<DT><B>-save_conf</B>=&lt;path to the file in which the new configuration will be saved&gt;<DD>
+no transfer will be performed if this option is specified
+<DT><DT><B>-retry_timeout</B>=&lt;number of miliseconds to sleep after a failure before the client tries to retry&gt;<DD>
+<DD>
+<DT><B>-retry_num</B>=&lt;number of retries before client gives up&gt;<DD>
+<DT><B>-connect_to_wsdl</B>=&lt;true or false, false by default&gt; <DD>
+srm client now connects directly to the service without reading the wsdl first but for the compatibility with the old implementation, especially if srm urls available point to the location of the wsdl, we make the old way of connecting to the wsdl location first available
+<DT><B>-delegate</B>=&lt;true or false, true by default&gt; <DD>
+enables or disables the delegation of the user credenital to the server
+<DT><B>-full_delegation</B>=&lt;true or false, true by default&gt; <DD>
+if delegation is enabled, it specifies the type of delegation if this option is set to true the delegation is full, otherwise limited
+<DT><B>-h</B> or <B>-help</B> for this help <DD>
+<DT><B>-urlcopy</B>=&lt;urlcopy path&gt; <DD>
+to specify the path to  universal url_copy script see $SRM_PATH/bin/url-copy.sh for example
+<DT><B>-buffer_size</B>=&lt;integer&gt; to set the buffer size to a value <DD>
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;different&nbsp;then&nbsp;default(2048)
+<DT><B>-tcp_buffer_size</B>=&lt;integer&gt; <DD>
+to set the tcp buffer size to a value if option is not specified or set to 0, then the default tcp buffer size is used
+<DT><B>-streams_num</B>=&lt;integer&gt; to set the number of streams used by gridftp <DD>
+<DT><B>-protocols</B>=protocol1[,protocol2[...]] <DD>
+the comma separated list of supported TURL protocols
+<DT><B>-pushmode</B>=&lt;true or false&gt;  <DD>
+true to use the push mode in case of srm Mass Storage Systems (MSS) to MSS copy, false to use the pull mode, the default mode is pull mode (false)
+<DT><B>-use_urlcopy_script</B>=&lt;true or false&gt; <DD>
+use java native copiers of use urcopy script
+<DT><B>-copyjobfile</B>=&lt;file&gt; <DD>
+where &lt;file&gt; is the path to the text file containing  the list of sources and destination each line has a format : &lt;sorce-url&gt; &lt;destination-url&gt;
+<DT><B>-report</B>=&lt;report_file&gt; <DD>
+where &lt;report_file&gt; is the path to the report file if specified, it will contain the resutls of the execution srmcp the each line in the file will have the following format:
+<P>
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;src&nbsp;url&gt;&nbsp;&lt;dst&nbsp;url&gt;&nbsp;&lt;return&nbsp;code&gt;&nbsp;[&lt;error&gt;]
+<P>
+</DL>
+<P>
+
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;the&nbsp;following&nbsp;return&nbsp;codes&nbsp;are&nbsp;supported:
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0&nbsp;-&nbsp;success
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;1&nbsp;-&nbsp;general&nbsp;error
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2&nbsp;-&nbsp;file&nbsp;exists,&nbsp;can&nbsp;not&nbsp;overwrite
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3&nbsp;-&nbsp;user&nbsp;permission&nbsp;error
+<P>
+Example of srm put:
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;srmcp&nbsp;<A HREF="file:////bin/sh">file:////bin/sh</A>&nbsp;<A HREF="srm://myhost.mydomain.edu:8443//dir1/dir2/sh-copy">srm://myhost.mydomain.edu:8443//dir1/dir2/sh-copy</A>
+<P>
+Example of srm get:
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;srmcp&nbsp;<A HREF="srm://myhost.mydomain.edu:8443//dir1/dir2/sh-copy">srm://myhost.mydomain.edu:8443//dir1/dir2/sh-copy</A>&nbsp;<A HREF="file:///localdir/sh">file:///localdir/sh</A>
+Example of srm copy (srm to srm):
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;srmcp&nbsp;<A HREF="srm://myhost.mydomain.edu:8443//dir1/dir2/sh-copy">srm://myhost.mydomain.edu:8443//dir1/dir2/sh-copy</A>&nbsp;<A HREF="srm://anotherhost.org:8443/newdir/sh-copy">srm://anotherhost.org:8443/newdir/sh-copy</A>
+<P>
+Example of srm copy (gsiftp to srm):
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;srmcp&nbsp;<A HREF="gsiftp://ftphost.org//path/file">gsiftp://ftphost.org//path/file</A>&nbsp;<A HREF="srm://myhost.mydomain.edu:8443//dir1/dir2/file">srm://myhost.mydomain.edu:8443//dir1/dir2/file</A>
+<A NAME="lbAE">&nbsp;</A>
+<H2>AUTHOR</H2>
+
+Written by Timur Perelmutov 
+<A NAME="lbAF">&nbsp;</A>
+<H2>REPORTING BUGS</H2>
+
+Report bugs to &lt;<A HREF="mailto:timur@fnal.gov">timur@fnal.gov</A>&gt;
+<A NAME="lbAG">&nbsp;</A>
+<H2>COPYRIGHT</H2>
+
+Storage Resource Manager (SRM) CP Client version 1.16
+Copyright (c) 2002-2005 Fermi National Accelerator Laborarory
+<P>
+<P>
+<P>
+
+<HR>
+<A NAME="index">&nbsp;</A><H2>Index</H2>
+<DL>
+<DT><A HREF="#lbAB">NAME</A><DD>
+<DT><A HREF="#lbAC">SYNOPSIS</A><DD>
+<DT><A HREF="#lbAD">DESCRIPTION</A><DD>
+<DT><A HREF="#lbAE">AUTHOR</A><DD>
+<DT><A HREF="#lbAF">REPORTING BUGS</A><DD>
+<DT><A HREF="#lbAG">COPYRIGHT</A><DD>
+</DL>
+<HR>
+This document was created by
+<A HREF="http://localhost/cgi-bin/man/man2html">man2html</A>,
+using the manual pages.<BR>
+Time: 23:53:58 GMT, May 27, 2005
+</BODY>
+</HTML>

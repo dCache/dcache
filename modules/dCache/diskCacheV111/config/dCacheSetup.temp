@@ -1,0 +1,86 @@
+#
+#   Chose the Java VM and possible options
+#
+java=/usr/java/bin/java
+java_options=""
+#
+#  JSE 1.3.1 needs
+#
+#java_options="-server"
+#
+#  The automatic classpath is :
+#
+#    ${classpath}          only if specified
+#    ../..                 the dCache dev. path
+#    ../classes/cells.jar  autoinstall path for cells
+#    ../classes/dcache.jar autoinstall path for dCache
+#
+classpath=
+#  This is srm and posgresql classpath
+#classpath=/usr/local/j2sdk1.4.0/jre/lib/jsse.jar:${thisDir}/../classes/glue/GLUE-STD.jar:${thisDir}/../classes/glue/dom.jar:${thisDir}/../classes/glue/servlet.jar:${thisDir}/../classes/glue/jnet.jar:${thisDir}/../classes/glue/jsse.jar:${thisDir}/../classes/glue/jsert.jar:${thisDir}/../classes/pgjdbc2.jar:${thisDir}/../classes/globus/puretls.jar:${thisDir}/../classes/globus/cryptix.jar:${thisDir}/../classes/globus/log4j-1.2.8.jar:${thisDir}/../classes/globus/cog-jglobus.jar:${thisDir}/../classes/globus/cryptix-asn1.jar:${thisDir}/../classes/globus/cryptix32.jar:${thisDir}/../classes/globus/jce-jdk13-119.jar:${thisDir}/../classes/globus/junit.jar
+#
+librarypath=${ourHomeDir}/lib
+#
+#   do not change the following three entries.
+#   they are used from within the java vm.
+#
+images=${ourHomeDir}/docs/images
+config=${ourHomeDir}/config
+keyBase=${ourHomeDir}/config
+billingDb=/tmp
+#
+serviceLocatorHost=pnfs.desy.de
+serviceLocatorPort=11111
+#
+# the service port numbers
+# (telnet is only started if the
+#  telnetPort line is uncommented, debug only)
+#
+portBase=24
+adminPort=${portBase}223
+#httpdPort=${portBase}88
+httpdPort=443
+#httpDoorPort=444
+#telnetPort=${portBase}123
+sshPort=${portBase}124
+dCapPort=${portBase}125
+ftpPort=${portBase}126
+kerberosFtpPort=${portBase}127
+#spyPort=${portBase}222
+#srmPort=${portBase}333
+#
+# to be backward compatible
+#
+vspPort=${dCapPort}
+#
+# the pnfsServer actually autodetects the possible
+# pnfs filesystems. The ${defaultPnfsServer} is 
+# choosen from the list and used as primary pnfs
+# filesystem. (currently the others are ignored). 
+# the ${pnfs} variable can be used to override this
+# mechanism.
+#
+pnfs=
+defaultPnfsServer=pnfs.desy.de
+#
+# the cleaner (which can only run on the pnfs server
+# machine itself autodetects the 'trash' directory.
+# ${trash} overwrites the autodetect.
+# (Do not uncomment the following line, but
+#  simply set it to 'blank' if not needed.
+#
+trash=
+#
+#  the current ftp need pnfs to be mounted 
+#  for some file exist checks and for the
+#  directory listing. Therefore it needs to
+#  know where pnfs is mounted. In future
+#  the Ftp and dCap: deamons will ask the
+#  pnfsService cell for help and the directory
+#  listing is done by a DirListPool.
+#
+ftpBase=/pnfs/local/fs
+#
+# future use
+#
+scheme=development

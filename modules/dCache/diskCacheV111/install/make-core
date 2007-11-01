@@ -1,0 +1,80 @@
+#!/bin/sh
+export CVSROOT=ernst@cvs-dcache.desy.de:/home/cvs/cvs-root
+export CVS_RSH=ssh
+export PATH=/usr/java/j2sdk1.4.2_04/bin:/usr/java/j2sdk1.4.2_04/bin/javac:$PATH
+cd /tmp
+rm -rf Sandbox
+rm -rf dcap
+rm -rf srm
+rm -rf cells
+rm -rf dCache-build
+rm -rf install
+rm -rf dcache
+cvs co dCache-build
+cvs checkout cells
+cd cells/jobs
+./makeCells.sh -compile
+cd /tmp
+cvs co Sandbox
+cd Sandbox/Java/diskCacheV111/jobs/
+cp /tmp/cells/cells.jar /tmp/Sandbox/Java/diskCacheV111/classes/
+./preparePackage.sh
+cd /tmp/Sandbox/Java/diskCacheV111
+mkdir /tmp/dcache
+cp dcache.tar /tmp/dcache
+cd /tmp/dcache
+tar xvf dcache.tar
+cp -f classes/cells.jar /tmp/dCache-build/dcache-core/d-cache/classes/cells.jar
+cp -f classes/dcache.jar /tmp/dCache-build/dcache-core/d-cache/classes/dcache.jar
+cp -f classes/dcache-srm.jar /tmp/dCache-build/dcache-opt/d-cache/classes/dcache-srm.jar
+echo "Building the javatunnel, checking out dcap"
+cd /tmp
+cvs co dcap
+cd dcap/security_plugins
+javac -classpath /usr/src/redhat/SOURCES/tem/d-cache-client/srm/lib/globus/cog-jglobus.jar:/opt/classes/cells.jar:. `find javatunnel -name "*.java" -print`
+jar cf javatunnel.jar javatunnel/*.class
+cp javatunnel.jar /tmp/dCache-build/dcache-core/d-cache/classes/javatunnel.jar
+echo "Creating the dCache Core master tarfile"
+cd /tmp/dCache-build/dcache-core/d-cache/config
+mkdir users
+mkdir users/acls
+mkdir users/meta
+mkdir users/relations
+ln -s dCacheSetup adminDoorSetup
+ln -s dCacheSetup allinoneV3Setup
+ln -s dCacheSetup allinoneV4Setup
+ln -s dCacheSetup dirSetup
+ln -s dCacheSetup doorSetup
+ln -s dCacheSetup httpdSetup
+ln -s dCacheSetup lmSetup
+ln -s dCacheSetup pnfsSetup
+ln -s dCacheSetup poolSetup
+ln -s dCacheSetup securityDoorSetup
+cd /tmp/dCache-build/dcache-core/d-cache/jobs
+ln -s wrapper2.sh adminDoor
+ln -s wrapper2.sh dCache
+ln -s wrapper2.sh dir
+ln -s wrapper2.sh door
+ln -s wrapper2.sh httpd
+ln -s wrapper2.sh lm
+ln -s wrapper2.sh pnfs
+ln -s wrapper2.sh pool
+ln -s wrapper2.sh securityDoor
+ln -s generic.lib.sh adminDoor.lib.sh
+ln -s generic.lib.sh dCache.lib.sh
+ln -s generic.lib.sh dir.lib.sh
+ln -s generic.lib.sh door.lib.sh
+ln -s generic.lib.sh httpd.lib.sh
+ln -s generic.lib.sh lm.lib.sh
+ln -s generic.lib.sh pnfs.lib.sh
+ln -s generic.lib.sh pool.lib.sh
+ln -s generic.lib.sh securityDoor.lib.sh
+cd /tmp/dCache-build/dcache-core
+rm -f d-cache-core.tar
+mkdir d-cache/billing
+mkdir d-cache/log
+tar cvf d-cache-core.tar d-cache
+cp d-cache-core.tar /usr/src/redhat/SOURCES
+echo "Building dCache Core RPM"
+cd /usr/src/redhat/SPECS
+rpm -bb dcache-core-1.5.2.spec

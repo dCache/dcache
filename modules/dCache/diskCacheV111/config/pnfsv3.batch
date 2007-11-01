@@ -1,0 +1,56 @@
+#
+#  $Id: pnfsv3.batch,v 1.2 2005-08-10 13:17:17 tigran Exp $
+#
+set printout default 3
+set printout CellGlue none
+onerror shutdown
+#
+check -strong setupFile
+#
+copy file:${setupFile} context:setupContext
+#
+#  import the variables into our $context.
+#  don't overwrite already existing variables.
+#
+import context -c setupContext
+#
+#   Make sure we got what we need.
+#
+check -strong serviceLocatorPort serviceLocatorHost
+
+#
+create dmg.cells.services.RoutingManager  RoutingMgr
+#
+#   The LocationManager Part
+#
+create dmg.cells.services.LocationManager lm \
+       "${serviceLocatorHost} ${serviceLocatorPort}"
+#
+create diskCacheV111.namespace.PnfsManagerV3 PnfsManager \
+        "diskCacheV111.util.OsmInfoExtractor -threads=4 \
+         -default=${defaultPnfsServer} -pnfs=${pnfs} 
+         -namespace-provider=diskCacheV111.namespace.provider.BasicNameSpaceProviderFactory \
+         -cachelocation-provider=diskCacheV111.namespace.provider.SQLCacheLocationProviderFactory \
+         -cachelocation-provider-dbURL=jdbc:mysql://localhost/Himera \
+         -cachelocation-provider-jdbcDrv=org.gjt.mm.mysql.Driver \
+         -cachelocation-provider-dbUser=dcache \
+         -cachelocation-provider-dbPass=goodpassword"
+#
+
+
+#create diskCacheV111.namespace.PnfsManagerV3 PnfsManager \
+#        "org.dcache.himera.namespace.HimeraOsmStorageInfoExtractor -threads=4 -default=${defaultPnfsServer} -pnfs=${pnfs} \
+#        -himeraConfig=/home/tigran/work/cvs-work/eProject/Himera/config.xml \
+#        -provider=org.dcache.himera.namespace.HimeraNameSpaceProvider"
+
+#
+onerror continue
+# create diskCacheV111.cells.LazyCleaner cleaner " -trash=${trash}"
+#
+#   The 'remove' handler (informs the dCache about pfns removes)
+#
+create diskCacheV111.cells.CleanerV2 cleaner \
+        "default \
+	 -refresh=120 \
+         -recover=240 \
+	 -db=/opt/pnfsdb/pnfs/trash/2"

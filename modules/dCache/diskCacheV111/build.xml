@@ -1,0 +1,371 @@
+<!-- $Id: build.xml,v 1.7 2006-05-30 09:42:38 tigran Exp $ -->
+
+<project name="Core" default="help" basedir=".">
+
+
+	<!-- import the common part -->
+
+	<import file="common/common.xml" />
+
+	<!--
+          Properties  -  the following properties, paths, and selectors
+                         define the locations and files for dCache
+  -->
+
+	<!-- Output Files 
+       For each of these jar files there are targets below -->
+
+	<property name="dcache.jar" location="${classesDir}/dcache.jar" />
+	<property name="dcache-srm.jar" location="${classesDir}/dcache-srm.jar" />
+	<property name="gplazma.jar" location="${classesDir}/gplazma.jar" />
+
+	<!-- this should be in 'common.xml' but that didnt work -->
+	<target name="cleanall" depends="clean,libs.clean" description="Remove everything produced by me.">
+		<delete file="${dcache.jar}" />
+		<delete file="${dcache-srm.jar}" />
+		<delete file="${gplazma.jar}" />
+	</target>
+
+	<!-- Java sources
+       These have been derived from packageSets/core.pl and packageSets/protocols.pl -->
+
+	<property name="sourceDir" location=".." />
+
+	<property name="dcache.packagePrefix" value="diskCacheV111" />
+
+	<!-- Classpath for dcache.jar -->
+
+	<selector id="dcache.classpath.selector">
+		<filename name="**/cells.jar" />
+	</selector>
+
+	<path id="dcache.classpath">
+		<fileset dir="${classesDir}">
+			<selector refid="dcache.classpath.selector" />
+		</fileset>
+		<fileset dir="${libDir}">
+			<selector refid="dcache.classpath.selector" />
+		</fileset>
+	</path>
+
+	<!-- Classpath for dcache-srm.jar - This is the same as for srm.jar in the srm CVS module -->
+
+	<selector id="dcache-srm.classpath.selector">
+		<or>
+			<filename name="**/cells.jar" />
+			<filename name="**/dcache.jar" />
+			<filename name="**/srm.jar" />
+			<filename name="**/gplazma.jar" />
+			<filename name="jdom/jdom.jar" />
+			<filename name="concurrent/concurrent.jar" />
+			<filename name="cog/**/*.jar" />
+			<filename name="axis/**/*.jar" />
+			<filename name="glue/**/GLUE-STD.jar" />
+			<filename name="glue/**/dom.jar" />
+			<filename name="glue/**/jnet.jar" />
+			<filename name="glue/**/jsse.jar" />
+			<filename name="glue/**/jcert.jar" />
+			<filename name="glue/**/servlet.jar" />
+			<filename name="tomcat/jakarta-tomcat-4.1.31/bin/*.jar" />
+			<filename name="tomcat/jakarta-tomcat-4.1.31/common/lib/*.jar" />
+			<filename name="tomcat/jakarta-tomcat-4.1.31/server/lib/*.jar" />
+			<filename name="jpox/jdo2-api-2.0.jar" />
+			<filename name="jpox/jpox-SNAPSHOT.jar" />
+		</or>
+	</selector>
+
+
+	<path id="dcache-srm.classpath">
+		<fileset dir="${classesDir}">
+			<selector refid="dcache-srm.classpath.selector" />
+		</fileset>
+		<fileset dir="${libDir}">
+			<selector refid="dcache-srm.classpath.selector" />
+		</fileset>
+	</path>
+
+
+	<!-- Classpath for gplzma.jar - This is the same as for srm.jar in the srm CVS module -->
+
+	<selector id="gplazma.classpath.selector">
+		<or>
+			<filename name="**/dcache.jar" />
+			<filename name="cog/**/*.jar" />
+			<filename name="axis/**/*.jar" />
+			<filename name="gplazma-libs/**/*.jar" />
+		</or>
+	</selector>
+
+
+	<path id="gplazma.classpath">
+		<fileset dir="${classesDir}">
+			<selector refid="gplazma.classpath.selector" />
+		</fileset>
+		<fileset dir="${libDir}">
+			<selector refid="gplazma.classpath.selector" />
+		</fileset>
+	</path>
+
+
+	<!--       =======
+             TARGETS
+             =======          -->
+
+
+	<!--
+          Copy external libraries to ${internalLibDir} with CVS
+  -->
+
+	<target name="dcache.lib.cvs" description="Fetch external libs for dcache.jar from CVS">
+
+		<mkdir name="${internalLibDir}" />
+
+		<!-- One cvs checkout for each dependency -->
+		<cvs command="checkout" cvsroot="${cvs.cvsroot}" cvsrsh="ssh" dest="${internalLibDir}" package="external/cells" />
+
+		<move file="${internalLibDir}/external/cells" todir="${internalLibDir}" />
+		<delete dir="${internalLibDir}/external" />
+
+	</target>
+
+	<target name="dcache-srm.lib.cvs" description="Fetch external libs for dcache-srm.jar from CVS">
+
+		<!-- One cvs checkout for each dependency -->
+		<cvs command="checkout" cvsroot="${cvs.cvsroot}" cvsrsh="ssh" dest="${internalLibDir}" package="external/cells" />
+
+		<cvs command="checkout" cvsroot="${cvs.cvsroot}" cvsrsh="ssh" dest="${internalLibDir}" package="external/jdom" />
+
+		<cvs command="checkout" cvsroot="${cvs.cvsroot}" cvsrsh="ssh" dest="${internalLibDir}" package="external/concurrent" />
+
+		<cvs command="checkout" cvsroot="${cvs.cvsroot}" cvsrsh="ssh" dest="${internalLibDir}" package="external/axis" />
+
+		<cvs command="checkout" cvsroot="${cvs.cvsroot}" cvsrsh="ssh" dest="${internalLibDir}" package="external/tomcat" />
+
+		<cvs command="checkout" cvsroot="${cvs.cvsroot}" cvsrsh="ssh" dest="${internalLibDir}" package="external/cog" />
+
+		<cvs command="checkout" cvsroot="${cvs.cvsroot}" cvsrsh="ssh" dest="${internalLibDir}" package="external/glue" />
+
+		<move file="${internalLibDir}/external/cells" todir="${internalLibDir}" />
+		<move file="${internalLibDir}/external/jdom" todir="${internalLibDir}" />
+		<move file="${internalLibDir}/external/concurrent" todir="${internalLibDir}" />
+		<move file="${internalLibDir}/external/axis" todir="${internalLibDir}" />
+		<move file="${internalLibDir}/external/tomcat" todir="${internalLibDir}" />
+		<move file="${internalLibDir}/external/cog" todir="${internalLibDir}" />
+		<move file="${internalLibDir}/external/glue" todir="${internalLibDir}" />
+		<delete dir="${internalLibDir}/external" />
+
+	</target>
+
+	<!-- 
+             Targets for dcache.jar
+  -->
+
+	<!-- Depend -->
+
+	<target name="dcache.depend">
+
+		<!-- Debug/Info only -->
+		<property name="dcache.classpath.value" refid="dcache.classpath" />
+		<echo>Classpath of dcache: ${dcache.classpath.value} </echo>
+
+		<!-- This is a list of classes which are needed from external libs -->
+		<checkclass classname="dmg.util.CommandInterpreter" classpath="${dcache.classpath.value}" />
+
+		<checkclassfail>.
+        The following classes are missing in the classpath.
+        They might be fetchted from CVS with 'ant dcache.lib.cvs'.
+    </checkclassfail>
+
+	</target>
+
+	<!-- Compile -->
+
+	<target name="dcache.compile" depends="prepare,dcache.depend" description="Compile Java code for dcache.jar">
+
+		<mkdir dir="${buildDir}/core" />
+
+		<javac destdir="${buildDir}/core" classpathref="dcache.classpath" source="${javac.source}" target="${javac.target}" debug="${javac.debug}" verbose="${javac.verbose}">
+
+			<src path="${sourceDir}" />
+			<include name="${dcache.packagePrefix}/**" />
+			<exclude name="${dcache.packagePrefix}/srm/**" />
+			<exclude name="${dcache.packagePrefix}/vehicles/srm/**" />
+			<exclude name="${dcache.packagePrefix}/scripts/**" />
+			<exclude name="${dcache.packagePrefix}/tomcat/**" />
+			<exclude name="${dcache.packagePrefix}/services/authorization/**" />
+			<exclude name="${dcache.packagePrefix}/movers/RemoteGsiftpTransferProtocol_1.java" />
+			<exclude name="${dcache.packagePrefix}/doors/GsiFtpDoorV1.java" />
+			<exclude name="${dcache.packagePrefix}/doors/GssFtpDoorV1.java" />
+			<exclude name="${dcache.packagePrefix}/doors/KerberosFtpDoorV1.java" />
+			<exclude name="${dcache.packagePrefix}/services/GsiftpTransferManager.java" />
+			<exclude name="${dcache.packagePrefix}/services/TransferManager.java" />
+			<exclude name="${dcache.packagePrefix}/services/TransferManagerHandler.java" />
+			<exclude name="${dcache.packagePrefix}/services/TransferManagerHandlerBackup.java" />
+			<exclude name="${dcache.packagePrefix}/services/TransferManagerHandlerState.java" />
+		</javac>
+
+	</target>
+
+	<target name="dcache.jar" depends="dcache.compile" description="Create dcache.jar">
+
+		<jar jarfile="${dcache.jar}">
+			<fileset dir="${buildDir}/core" includes="diskCacheV111/**/*.class" />
+
+			<manifest>
+				<section name="Shared">
+					<attribute name="Title" value="dCache Core" />
+					<attribute name="Vendor" value="dCache.ORG" />
+					<attribute name="Date" value="${jar.timestamp}" />
+				</section>
+				<section name="Copyright">
+					<attribute name="Copy" value="(C) dCache.ORG  2000 - 2006" />
+				</section>
+			</manifest>
+		</jar>
+
+	</target>
+
+
+	<!-- gPlazma -->
+	<target name="gplazma.compile" depends="lib.cog.untar,lib.axis.untar,lib.gplazma-libs.untar,dcache.jar">
+
+		<mkdir dir="${buildDir}/gplazma" />
+
+		<javac destdir="${buildDir}/gplazma" classpathref="gplazma.classpath" source="${javac.source}" target="${javac.target}" debug="${javac.debug}" verbose="${javac.verbose}">
+
+			<src path="${sourceDir}" />
+			<include name="${dcache.packagePrefix}/services/authorization/**" />
+			<exclude name="${dcache.packagePrefix}/services/authorization/gplazmalite/**" />
+
+		</javac>
+	</target>
+
+	<target name="gplazma.jar" depends="gplazma.compile" description="Create gplazma.jar">
+
+		<jar jarfile="${gplazma.jar}">
+			<fileset dir="${buildDir}/gplazma" />
+
+			<manifest>
+				<section name="Shared">
+					<attribute name="Title" value="dCache SRM" />
+					<attribute name="Vendor" value="dCache.ORG" />
+					<attribute name="Date" value="${jar.timestamp}" />
+				</section>
+				<section name="Copyright">
+					<attribute name="Copy" value="(C) dCache.ORG  2000 - 2006" />
+				</section>
+			</manifest>
+		</jar>
+
+	</target>
+
+
+	<!-- 
+             Targets for dcache-srm.jar
+  -->
+
+	<!-- Depend -->
+
+	<target name="dcache-srm.depend" depends="prepare,lib.tomcat.untar,lib.axis.untar,lib.cog.untar,lib.glue.untar">
+
+
+	</target>
+
+	<!-- Compile -->
+
+	<target name="dcache-srm.compile" depends="prepare,gplazma.jar,dcache-srm.depend" description="Compile Java code for dcache-srm.jar">
+
+		<mkdir dir="${buildDir}/dcache-srm" />
+
+		<javac destdir="${buildDir}/dcache-srm" classpathref="dcache-srm.classpath" source="${javac.source}" target="${javac.target}" debug="${javac.debug}" verbose="${javac.verbose}">
+			<src path="${sourceDir}" />
+
+			<include name="${dcache.packagePrefix}/doors/GsiFtpDoorV1.java" />
+			<include name="${dcache.packagePrefix}/movers/RemoteGsiftpTransferProtocol_1.java" />
+			<include name="${dcache.packagePrefix}/services/TransferManager.java" />
+			<include name="${dcache.packagePrefix}/services/TransferManagerHandler.java" />
+			<include name="${dcache.packagePrefix}/services/TransferManagerHandlerBackup.java" />			
+			<include name="${dcache.packagePrefix}/services/GsiftpTransferManager.java" />
+			<include name="${dcache.packagePrefix}/doors/GssFtpDoorV1.java" />
+			<include name="${dcache.packagePrefix}/doors/KerberosFtpDoorV1.java" />
+			<include name="${dcache.packagePrefix}/srm/**" />
+			<exclude name="${dcache.packagePrefix}/srm/v2_1/**" />
+			<exclude name="${dcache.packagePrefix}/srm/security/**" />
+
+		</javac>
+
+	</target>
+
+	<target name="dcache-srm.jar" depends="dcache-srm.compile" description="Create dcache-srm.jar">
+
+
+		<jar jarfile="${dcache-srm.jar}">
+			<fileset dir="${buildDir}/dcache-srm" />
+
+			<manifest>
+				<section name="Shared">
+					<attribute name="Title" value="dCache SRM" />
+					<attribute name="Vendor" value="dCache.ORG" />
+					<attribute name="Date" value="${jar.timestamp}" />
+				</section>
+				<section name="Copyright">
+					<attribute name="Copy" value="(C) dCache.ORG  2000 - 2006" />
+				</section>
+			</manifest>
+		</jar>
+
+	</target>
+
+	<!--
+            Configuration Files and Scripts
+  -->
+
+	<property name="configDir" location="config" />
+	<property name="jobsDir" location="jobs" />
+
+	<target name="copy.config" description="Copy the configuration files and create directories">
+
+		<condition property="destDir.available">
+			<and>
+				<isset property="destDir" />
+				<available file="${destDir}" type="dir" />
+			</and>
+		</condition>
+		<fail unless="destDir.available" message="No destination directory specified with property destDir." />
+
+		<mkdir dir="${destDir}/config" />
+
+		<copy todir="${destDir}/config">
+			<fileset dir="${configDir}">
+				<or>
+					<filename name="*.batch" />
+					<filename name="JHRM.map" />
+					<filename name="PoolManager.conf" />
+					<filename name="lm.conf" />
+					<filename name="setup.temp" />
+				</or>
+			</fileset>
+		</copy>
+
+		<copy todir="${destDir}/jobs">
+			<fileset dir="${jobsDir}">
+				<or>
+					<filename name="wrapper2.sh" />
+					<filename name="generic.lib.sh" />
+					<filename name="needFulThings.sh" />
+					<filename name="initPackage.sh" />
+
+					<filename name="infoDynamicSE-plugin-dcache" />
+					<filename name="infoDynamicSE-provider-dcache" />
+
+					<filename name="encp.sh" />
+					<filename name="hsmcp.sh" />
+					<filename name="hsmcpV4.sh" />
+					<filename name="remote-osmcp.sh" />
+				</or>
+			</fileset>
+		</copy>
+
+	</target>
+
+</project>

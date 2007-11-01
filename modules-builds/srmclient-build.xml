@@ -1,0 +1,240 @@
+<?xml version="1.0"?>
+<project name="srmclient" default="help">
+
+
+  <!-- package name. have to be the same as in the cvs -->
+  <property name="package" value="srmclient" />
+
+	<!-- import the common part -->
+
+	<import file="${buildTop}/common/common.xml"/>
+
+	
+	<property name="srm_client.jar" value="${classesDir}/srm_client.jar"/>
+
+
+	<target name="cleanall" depends="clean" description="Remove everything produced by me.">
+		<delete file="${srm-client.jar}" />
+	</target>
+
+
+	<selector id="srmclient.selector">
+		<and>
+			<filename name="**/ArgParser.java" />
+			<filename name="**/Configuration.java" />
+			<filename name="**/Copier.java" />
+			<filename name="**/CopyJob.java" />
+			<filename name="**/SRMClient.java" />
+			<filename name="**/SRMGetClientV1.java" />
+			<filename name="**/SRMGetClientV2.java" />
+			<filename name="**/SRMPutClientV1.java" />
+			<filename name="**/SRMPutClientV2.java" />
+			<filename name="**/SRMLsClientV2.java" />
+			<filename name="**/ShellCommandExecuter.java" />
+			<filename name="**/SRMDispatcher.java" />
+			<filename name="**/KFTPArgsConverter.java" />
+			<filename name="**/DccpArgsConverter.java" />
+			<filename name="**/CopyJobFileReader.java" />
+			<filename name="**/SRMGetFileMetaDataClientV1.java" />
+			<filename name="**/SRMAdvisoryDeleteClientV1.java" />
+			<filename name="**/SRMGetRequestStatusClientV1.java" />
+			<filename name="**/Report.java" />
+			<filename name="**/SRMRmClientV2.java" />
+			<filename name="**/SRMMkDirClientV2.java" />
+			<filename name="**/SRMRmdirClientV2.java" />
+			<filename name="**/SRMMvClientV2.java" />
+			<filename name="**/Version.java" />
+			<filename name="**/SRMV1CopyJob.java" />
+			<filename name="**/SRMV2CopyJob.java" />
+			<filename name="**/SRMCopyClientV2.java" />
+			<filename name="**/SRMCopyClientV1.java" />
+			<filename name="**/SRMStageClientV1.java" />
+		</and>
+	</selector>
+
+	<selector id="srmclient.classpath.selector">
+		<or>
+			<filename name="**/cells.jar" />
+			<filename name="**/srm.jar" />
+			<filename name="jdom/jdom.jar" />
+			<filename name="concurrent/concurrent.jar" />
+			<filename name="cog/**/*.jar" />
+			<filename name="axis/**/*.jar" />
+			<filename name="glue/**/GLUE-STD.jar" />
+			<filename name="glue/**/dom.jar" />
+			<filename name="glue/**/jnet.jar" />
+			<filename name="glue/**/jsse.jar" />
+			<filename name="glue/**/jcert.jar" />
+			<filename name="glue/**/servlet.jar" />
+			<filename name="tomcat/jakarta-tomcat-4.1.31/bin/*.jar" />
+			<filename name="tomcat/jakarta-tomcat-4.1.31/common/lib/*.jar" />
+			<filename name="tomcat/jakarta-tomcat-4.1.31/server/lib/*.jar" />
+		</or>
+	</selector>
+
+	<path id="srmclient.classpath">
+		<fileset dir="${classesDir}">
+			<selector refid="srmclient.classpath.selector" />
+		</fileset>
+		<fileset dir="${libDir}">
+			<selector refid="srmclient.classpath.selector" />
+		</fileset>
+	</path>
+	
+	<target name="srmclient.compile" depends="checkpackage">
+
+		<mkdir dir="${buildDir}/srm-client" />
+		
+		<javac destdir="${buildDir}/srm-client" classpathref="srmclient.classpath" source="${javac.source}" target="${javac.target}" debug="${javac.debug}" verbose="${javac.verbose}">
+			<src path="${sourceDir}" />
+			<include name="gov/fnal/srm/util/ArgParser.java" />
+			<include name="gov/fnal/srm/util/Configuration.java" />
+			<include name="gov/fnal/srm/util/Copier.java" />
+			<include name="gov/fnal/srm/util/CopyJob.java" />
+			<include name="gov/fnal/srm/util/SRMClient.java" />
+			<include name="gov/fnal/srm/util/SRMGetClientV1.java" />
+			<include name="gov/fnal/srm/util/SRMGetClientV2.java" />
+			<include name="gov/fnal/srm/util/SRMPutClientV1.java" />
+			<include name="gov/fnal/srm/util/SRMPutClientV2.java" />
+			<include name="gov/fnal/srm/util/SRMLsClientV2.java" />
+			<include name="gov/fnal/srm/util/ShellCommandExecuter.java" />
+			<include name="gov/fnal/srm/util/SRMDispatcher.java" />
+			<include name="gov/fnal/srm/util/KFTPArgsConverter.java" />
+			<include name="gov/fnal/srm/util/DccpArgsConverter.java" />
+			<include name="gov/fnal/srm/util/CopyJobFileReader.java" />
+			<include name="gov/fnal/srm/util/SRMGetFileMetaDataClientV1.java" />
+			<include name="gov/fnal/srm/util/SRMAdvisoryDeleteClientV1.java" />
+			<include name="gov/fnal/srm/util/SRMGetRequestStatusClientV1.java" />
+			<include name="gov/fnal/srm/util/Report.java" />
+			<include name="gov/fnal/srm/util/SRMRmClientV2.java" />
+			<include name="gov/fnal/srm/util/SRMMkDirClientV2.java" />
+			<include name="gov/fnal/srm/util/SRMRmdirClientV2.java" />
+			<include name="gov/fnal/srm/util/SRMMvClientV2.java" />
+			<include name="gov/fnal/srm/util/Version.java" />
+			<include name="gov/fnal/srm/util/SRMV1CopyJob.java" />
+			<include name="gov/fnal/srm/util/SRMV2CopyJob.java" />
+			<include name="gov/fnal/srm/util/SRMCopyClientV2.java" />
+			<include name="gov/fnal/srm/util/SRMCopyClientV1.java" />
+			<include name="gov/fnal/srm/util/SRMStageClientV1.java" />
+
+		</javac>
+
+	</target>
+
+
+	<target name="srmclient.jar" depends="srmclient.compile">
+
+		<jar jarfile="${srm_client.jar}">
+			
+			<fileset dir="${buildDir}/srm-client" includes="**/*.class" />
+			<manifest>
+				<section name="Shared">
+					<attribute name="Title" value="dCache Core" />
+					<attribute name="Vendor" value="dCache.ORG" />
+					<attribute name="Date" value="${jar.timestamp}" />
+				</section>
+				<section name="Copyright">
+					<attribute name="Copy" value="(C) dCache.ORG  2000 - 2006" />
+				</section>
+			</manifest>			
+		</jar>				
+
+	</target>
+	
+	
+	<target name="srmclient-bin" depends="srmclient.jar">
+	
+	
+	<!-- directory layout :
+	
+	<SRM client home>-|
+					  |-bin
+					  |-lib
+					  |-sbin
+					  |-conf
+	-->
+	
+	
+		<mkdir dir="${binDir}/srm" />
+		<mkdir dir="${binDir}/srm/lib" />
+		<mkdir dir="${binDir}/srm/sbin" />
+		<mkdir dir="${binDir}/srm/bin" />
+		<mkdir dir="${binDir}/srm/conf" />
+	
+		<!-- jar files -->
+	
+		<copy file="${classesDir}/srm_client.jar" todir="${binDir}/srm/lib/" />
+		<copy file="${classesDir}/srm.jar" todir="${binDir}/srm/lib/" />
+
+		<copy file="${sourceDir}/bin/adler32" todir="${binDir}/srm/bin/" />
+		<copy file="${sourceDir}/bin/command-line-client" todir="${binDir}/srm/bin/" />	
+		<copy file="${sourceDir}/bin/gridftpcopy" todir="${binDir}/srm/bin/" />
+		<copy file="${sourceDir}/bin/gridftplist" todir="${binDir}/srm/bin/" />
+		<copy file="${sourceDir}/bin/srm-get-request-status" todir="${binDir}/srm/bin/" />
+		<copy file="${sourceDir}/bin/srmcp" todir="${binDir}/srm/bin/" />
+		<copy file="${sourceDir}/bin/srmls" todir="${binDir}/srm/bin/" />
+		<copy file="${sourceDir}/bin/srmrm" todir="${binDir}/srm/bin/" />
+		<copy file="${sourceDir}/bin/srmmkdir" todir="${binDir}/srm/bin/" />
+		<copy file="${sourceDir}/bin/srmmv" todir="${binDir}/srm/bin/" />
+		<copy file="${sourceDir}/bin/srmrmdir" todir="${binDir}/srm/bin/" />
+		<copy file="${sourceDir}/bin/srm_v1" todir="${binDir}/srm/bin/" />
+		<copy file="${sourceDir}/bin/srmstage" todir="${binDir}/srm/bin/" />
+		<copy file="${sourceDir}/bin/srm-advisory-delete" todir="${binDir}/srm/bin/" />
+		<copy file="${sourceDir}/bin/srm-storage-element-info" todir="${binDir}/srm/bin/" />
+		<copy file="${sourceDir}/bin/srm-get-metadata" todir="${binDir}/srm/bin/" />
+		
+		
+		<copy file="${sourceDir}/sbin/srm" todir="${binDir}/srm/sbin/" />
+		<copy file="${sourceDir}/sbin/timeout.sh" todir="${binDir}/srm/sbin/" />
+		<copy file="${sourceDir}/sbin/url-copy.sh" todir="${binDir}/srm/sbin/" />
+			
+		<copy file="${sourceDir}/conf/SRMServerV1.map" todir="${binDir}/srm/conf" />
+		<copy file="${sourceDir}/conf/JHRM.map" todir="${binDir}/srm/conf" />
+		
+	
+		<!-- external jars -->
+		<!-- axis -->
+		<mkdir dir="${binDir}/srm/lib/axis" />
+		<property name="axisVersion" value="axis-1_3" />
+		<copy todir="${binDir}/srm/lib/axis">
+			<fileset dir="${libDir}/axis/${axisVersion}/lib/">
+				<include name="*.jar" />
+			</fileset>
+		</copy>
+
+		<!-- cog -->
+		<!-- know as globus :) -->
+		<mkdir dir="${binDir}/srm/lib/globus" />
+		<property name="cogVersion" value="cog-srmlib" />
+		<copy todir="${binDir}/srm/lib/globus">
+			<fileset dir="${libDir}/cog/${cogVersion}">
+				<include name="*.jar" />
+			</fileset>
+		</copy>
+
+		<!-- concurent -->
+		<copy file="${libDir}/concurrent/concurrent.jar" todir="${binDir}/srm/lib" />
+
+
+		<!-- glue -->
+		<mkdir dir="${binDir}/srm/lib/glue" />
+		<property name="glueVersion" value="glue-srmlib" />
+		<copy todir="${binDir}/srm/lib/glue">
+			<fileset dir="${libDir}/glue/${glueVersion}">
+				<include name="*.jar" />
+			</fileset>
+		</copy>
+
+
+		<!-- jdom -->
+		<mkdir dir="${binDir}/srm/lib/jdom" />
+		<copy file="${libDir}/jdom/jdom.jar" todir="${binDir}/srm/lib/dom" />		
+		<!-- bc -->
+		<copy file="${libDir}/gplazma-libs/bcprov-jdk14-122.jar" todir="${binDir}/srm/lib/security" />
+	
+	</target>	
+	
+
+</project>
+
+

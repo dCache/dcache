@@ -1,0 +1,88 @@
+set printout default 2 
+set printout CellGlue none
+onerror shutdown
+#
+check -strong setupFile
+#
+copy file:${setupFile} context:setupContext
+#
+#  import the variables into our $context.
+#  don't overwrite already existing variables.
+#
+import context -c setupContext
+#
+#   Make sure we got what we need.
+#
+check -strong serviceLocatorPort serviceLocatorHost 
+#
+#
+create dmg.cells.services.RoutingManager  RoutingMgr
+#
+#   The LocationManager Part
+#
+create dmg.cells.services.LocationManager lm \
+       "${serviceLocatorHost} ${serviceLocatorPort}"
+#
+#      GridFTP Door
+#
+#    Default for all our variables
+#
+onerror continue
+set context -c gsiFtpPortNumber        2811
+set context -c spaceReservation        false
+set context -c spaceReservationStrict  false
+set context -c performanceMarkerPeriod 180
+set context -c kpwdFile          ${ourHomeDir}/etc/dcache.kpwd
+set context -c gplazmaPolicy     ${ourHomeDir}/etc/dcachesrm-gplazma.policy
+set context -c useGPlazmaAuthorizationModule  false
+set context -c useGPlazmaAuthorizationCell    true
+set context -c gsiftpPoolManagerTimeout  5400
+set context -c gsiftpPoolTimeout          600
+set context -c gsiftpPnfsTimeout          300
+set context -c gsiftpMaxRetries            80
+set context -c gsiftpMaxStreamsPerClient   10
+set context -c gsiftpDeleteOnConnectionClosed true
+set context -c gsiftpMaxLogin                 100
+set context -c clientDataPortRange            20000:25000
+set context -c gsiftpAdapterInternalInterface ""
+set context -c gsiftpIoQueue                  ""
+set context -c FtpTLogDir ""
+
+onerror shutdown
+#
+create dmg.cells.services.login.LoginManager GFTP-${thisHostname} \
+            "${gsiFtpPortNumber} \
+             -export \
+             diskCacheV111.doors.GsiFtpDoorV1 \
+             -prot=raw \
+             -clientDataPortRange=${clientDataPortRange} \
+             -poolProxy=PoolManager  \
+             -root=${ftpBase} \
+             -maxLogin=${gsiftpMaxLogin} \
+             -brokerUpdateTime=5 \
+             -protocolFamily=gsiftp \
+             -protocolVersion=1.0.0 \
+             -loginBroker=LoginBroker \
+             -space-reservation=${spaceReservation} \
+             -space-reservation-strict=${spaceReservationStrict} \
+             -perfMarkerPeriod=${performanceMarkerPeriod} \
+             -poolManagerTimeout=${gsiftpPoolManagerTimeout} \
+             -poolTimeout=${gsiftpPoolTimeout} \
+             -pnfsTimeout=${gsiftpPnfsTimeout} \
+             -maxRetries=${gsiftpMaxRetries} \
+             -maxStreamsPerClient=${gsiftpMaxStreamsPerClient} \
+             -deleteOnConnectionClosed=${gsiftpDeleteOnConnectionClosed} \
+             -use-gplazma-authorization-module=${useGPlazmaAuthorizationModule} \
+             -use-gplazma-authorization-cell=${useGPlazmaAuthorizationCell} \
+             -gplazma-authorization-module-policy=${gplazmaPolicy} \
+             -io-queue=${gsiftpIoQueue} \
+             -kpwd-file=${kpwdFile} \
+             -ftp-adapter-internal-interface=${gsiftpAdapterInternalInterface} \
+             -meta-data-provider=diskCacheV111.services.PnfsFileMetaDataSource \
+             -tlog=${FtpTLogDir} \
+"
+#             -tlog=/tmp/dcache-ftp-tlog \
+#             -encp-put=${scripts}/encp-put.sh \
+#             -gsi-helper-cmd=${homeRoot}/dcache-deploy/gsint/gsint.sh \
+#             -retryWait=60 \
+

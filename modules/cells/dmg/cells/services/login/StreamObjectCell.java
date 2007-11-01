@@ -1,0 +1,394 @@
+package dmg.cells.services.login ;
+
+import   dmg.cells.nucleus.* ;
+import   dmg.cells.network.* ;
+import   dmg.util.* ;
+import   dmg.protocols.ssh.* ;
+import   dmg.cells.applets.login.* ;
+import java.lang.reflect.*; 
+import java.util.* ;
+import java.io.* ;
+import java.net.* ;
+
+
+/**
+  *  
+  *
+  * @author Patrick Fuhrmann
+  * @version 0.1, 15 Feb 1998
+  */
+public class      StreamObjectCell
+       extends    CellAdapter
+       implements Runnable  {
+
+  private StreamEngine   _engine ;
+  private ControlBufferedReader _in    = null ;
+  private PrintWriter    _out   = null ;
+  private Object              _outLock = new Object() ;
+  private ObjectOutputStream  _objOut = null ;
+  private ObjectInputStream   _objIn  = null ;
+  private InetAddress    _host ;
+  private String         _user ;
+  private Reader         _reader           = null ;
+  private Thread         _workerThread     = null ;
+  private Constructor    _commandConst     = null ;
+  private int            _commandConstMode = -1 ;
+  private Class          _commandClass     = null ;
+  private Object         _commandObject    = null ;
+  private CellNucleus    _nucleus          = null ; 
+  //
+  // args.argv[0] must contain a class with the following signature.
+  //    <init>( Nucleus nucleus , Args args )     or
+  //    <init>( Nucleus nucleus ) or
+  //    <init>( Args args ) or
+  //    <init>() 
+  //
+  private static final Class [] [] _constSignature = {
+    { java.lang.String.class , dmg.cells.nucleus.CellNucleus.class , dmg.util.Args.class } ,
+    { dmg.cells.nucleus.CellNucleus.class , dmg.util.Args.class } ,
+    { dmg.cells.nucleus.CellNucleus.class } ,
+    { dmg.util.Args.class } ,
+    {}
+  } ;
+  private static final Class [] [] _comSignature = { 
+          { java.lang.Object.class },
+          { java.lang.String.class } ,
+          { java.lang.String.class , java.lang.Object.class  },
+          { java.lang.String.class , java.lang.String.class  }
+  } ;
+  private Method    []   _commandMethod = new Method[_comSignature.length] ;
+  private Method         _promptMethod  = null ;  
+  private Method         _helloMethod   = null ;  
+  public StreamObjectCell( String name , StreamEngine engine , Args args )
+         throws Exception       {
+         
+     super( name , args , false ) ;
+     
+     _engine = engine ;
+     _nucleus = getNucleus() ;
+     setCommandExceptionEnabled( true ) ; 
+     try{
+         if( args.argc() < 1 )
+           throw new 
+           IllegalArgumentException( "Usage : ... <commandClassName>" ) ;
+           
+         say( "StreamObjectCell "+getCellName()+"; arg0="+args.argv(0) ) ;
+         prepareClass( args.argv(0) ) ;
+
+         _reader = _engine.getReader() ;
+         _in     = new ControlBufferedReader( _reader ) ;
+         _in.onControlC("interrupted");
+         _user   = engine.getUserName().getName() ;
+         _host   = engine.getInetAddress() ;
+        
+     }catch( Exception e ){
+        start() ;
+        kill() ;
+        throw e ;
+     
+     }
+     _engine  = engine ;
+     
+     useInterpreter(false) ;
+     
+     start() ;
+     
+     _workerThread = _nucleus.newThread( this , "Worker") ;         
+     
+     _workerThread.start() ;
+  }
+  private void prepareClass( String className ) 
+          throws ClassNotFoundException , NoSuchMethodException  {
+          
+     NoSuchMethodException nsme = null ;
+     _commandClass = Class.forName( className ) ;
+     say( "Using class : "+_commandClass ) ;
+     for( int i = 0 ; i < _constSignature.length ; i++ ){
+        nsme = null ;
+        Class [] x = _constSignature[i] ;
+        say( "Looking for constructor : "+i ) ;
+        for( int ix = 0 ; ix < x.length ; ix++ ){
+            say( "   arg["+ix+"] "+x[ix] ) ;
+        }
+        try{
+            _commandConst = _commandClass.getConstructor( _constSignature[i] ) ;
+        }catch( NoSuchMethodException e ){
+            esay( "Constructor not found : "+_constSignature[i] ) ;
+            nsme = e ;
+            continue ;
+        }
+        _commandConstMode = i ;
+        break ;
+     }
+     if( nsme != null )throw nsme ;
+     say( "Using constructor : "+_commandConst ) ;
+     
+     int validMethods = 0 ;
+     for( int i= 0 ; i < _comSignature.length ; i++ ){
+        try{
+           _commandMethod[i] = _commandClass.getMethod( 
+                               "executeCommand" , 
+                               _comSignature[i] ) ;
+           validMethods ++ ;
+        }catch(Exception e){ 
+           _commandMethod[i]= null ;
+           continue ;
+        }
+        say( "Using method ["+i+"] "+_commandMethod[i] ) ;
+     }  
+     if( validMethods == 0 )
+       throw new 
+       IllegalArgumentException( "no valid executeCommand found" ) ;
+     
+     try{
+        _promptMethod = _commandClass.getMethod(
+                           "getPrompt" ,
+                           new Class[0]    ) ;
+     }catch(Exception ee){
+        _promptMethod = null ;
+     }
+     if( _promptMethod != null )
+        say( "Using promptMethod : "+_promptMethod ) ;    
+     try{
+        _helloMethod = _commandClass.getMethod(
+                           "getHello" ,
+                           new Class[0]    ) ;
+     }catch(Exception ee){
+        _helloMethod = null ;
+     }
+     if( _helloMethod != null )
+        say( "Using helloMethod : "+_helloMethod ) ;    
+     return ;
+  }
+  private String getPrompt(){
+     if( _promptMethod == null )return "" ;
+     try{
+        String s = (String)_promptMethod.invoke( 
+                               _commandObject , 
+                               new Object[0] ) ;
+
+        return s == null ? "" : s ;
+     }catch(Exception ee ){
+        return "" ;
+     }
+  }
+  private String getHello(){
+     if( _helloMethod == null )return null ;
+     try{
+        String s = (String)_helloMethod.invoke( 
+                               _commandObject , 
+                               new Object[0] ) ;
+
+        return s == null ? "" : s ;
+     }catch(Exception ee ){
+        return "" ;
+     }
+  }
+  private void runConstructor() throws Exception {
+     Args      extArgs = (Args)getArgs().clone() ;
+     Object [] args    = null ;
+     extArgs.shift() ;
+     switch( _commandConstMode ){
+        case 0 :
+           args = new Object[3] ;
+           args[0] = _user ;
+           args[1] = getNucleus() ;
+           args[2] = extArgs ;
+           break ;
+        case 1 :
+           args = new Object[2] ;
+           args[0] = getNucleus() ;
+           args[1] = extArgs ;
+           break ;
+        case 2 :
+           args = new Object[1] ;
+           args[0] = getNucleus() ;
+           break ;
+        case 3 :
+           args = new Object[1] ;
+           args[0] = extArgs ;
+           break ;
+        case 4 :
+           args = new Object[0] ;
+           break ;
+     
+     }
+     _commandObject = _commandConst.newInstance( args ) ;
+  }
+  public void run(){
+  
+   
+     try{
+        runConstructor() ;
+        
+        String hello = getHello() ;
+        if( hello != null ){
+           _out = new PrintWriter( _engine.getWriter() ) ;
+           _out.println(hello) ;
+           _out.print(getPrompt()) ;
+           _out.flush() ;
+        }
+        String x = _in.readLine() ;
+        say( "Initial read line : >"+x+"<" ) ;
+        if( x.equals( "$BINARY$" ) ){
+           say( "Opening Object Streams" ) ;
+           _out.println(x) ;
+           _out.flush() ;
+           _objOut = new ObjectOutputStream( _engine.getOutputStream() ) ;
+           _objIn  = new ObjectInputStream( _engine.getInputStream() ) ;
+        
+           runBinaryMode() ;
+        }else{
+        
+           if( _out == null )_out = new PrintWriter( _engine.getWriter() ) ;
+           runAsciiMode( x ) ;
+        
+        }
+        
+     }catch( Exception ee ){
+        say( "Worker loop interrupted : "+ee ) ;
+     }
+     say( "StreamObjectCell (worker) done." ) ;
+     kill() ;
+  }
+  private class BinaryExec implements Runnable {
+      private DomainObjectFrame _frame ;
+      private Thread _parent ;
+      BinaryExec( DomainObjectFrame frame , Thread parent ){
+          _frame  = frame ;
+          _parent = parent ;
+          _nucleus.newThread(this).start();
+      }
+      public void run(){
+        Object    result = null ;
+        boolean   done   = false ;
+        say( "Frame id "+_frame.getId()+" arrived" ) ;
+        try{
+           if( _frame.getDestination() == null ){
+              Object [] array  = new Object[1] ;
+              array[0] = _frame.getPayload() ;
+              if( _commandMethod[0] != null ){
+                  say( "Choosing executeCommand(Object)" ) ;
+                  result = _commandMethod[0].invoke( _commandObject , array ) ;
+
+              }else if( _commandMethod[1] != null ){
+                  say( "Choosing executeCommand(String)" ) ;
+                  array[0] = array[0].toString() ;
+                  result = _commandMethod[1].invoke( _commandObject , array ) ;
+
+              }else
+                  throw new 
+                  Exception( "PANIC : not found : executeCommand(String or Object)" ) ;
+           }else{
+              Object [] array  = new Object[2] ;
+              array[0] = _frame.getDestination() ;
+              array[1] = _frame.getPayload() ;
+              if( _commandMethod[2] != null ){
+                  say( "Choosing executeCommand(String destination, Object)" ) ;
+                  result = _commandMethod[2].invoke( _commandObject , array ) ;
+
+              }else if( _commandMethod[3] != null ){
+                  say( "Choosing executeCommand(String destination, String)" ) ;
+                  array[1] = array[1].toString() ;
+                  result = _commandMethod[3].invoke( _commandObject , array ) ;
+              }else
+                  throw new 
+                  Exception( "PANIC : not found : "+
+                             "executeCommand(String/String or Object/String)" ) ;
+           }
+        }catch( InvocationTargetException ite ){
+           result = ite.getTargetException() ;
+           done   = result instanceof CommandExitException  ;
+        }catch( Exception ae ){
+           result = ae ;
+        }
+        _frame.setPayload( result ) ;
+        try{
+          synchronized( _outLock ){
+            _objOut.writeObject( _frame ) ;
+            _objOut.flush() ;
+            _objOut.reset() ;  // prevents memory leaks...
+          }
+        }catch( Exception ioe ){
+            esay( "Problem sending result : "+ioe ) ;
+        }
+        if( done )_parent.interrupt() ;
+      }
+  }
+  private void runBinaryMode() throws Exception {
+  
+     Object obj = null ;
+     while( ( obj = _objIn.readObject() ) != null ){
+        if( obj instanceof DomainObjectFrame ){
+            new BinaryExec( (DomainObjectFrame)obj , Thread.currentThread() ) ;
+        }else
+             esay( "Won't accept non DomainObjectFrame : "+obj.getClass() ) ;
+     }
+     
+  }
+  private void runAsciiMode( String str ) throws Exception {
+      String x = null ;
+      Method    com = _commandMethod[1] != null ? _commandMethod[1] :
+                                                  _commandMethod[0] ;
+      Object [] obj = new Object[1] ;
+      Object result = null ;
+      boolean done = false ;
+      while( true ){
+         if( str != null ){ 
+            x = str ; 
+            str = null ;
+         }else{
+            x = _in.readLine() ;
+         }
+         if( x == null )
+            throw new 
+            CommandExitException("EOF") ;
+            
+         obj[0] = x ;
+         try{
+            result = com.invoke( _commandObject , obj ) ;
+         }catch( InvocationTargetException ite ){
+            result = ite.getTargetException()  ;         
+            done   = result instanceof CommandExitException ;
+         }catch(Exception e ){
+            result = e ;
+         }
+         if( result != null ){
+            String resultString = result.toString();
+            if( ! resultString.equals("") ){
+               _out.print( result.toString() ) ;
+               if( resultString.charAt(resultString.length()-1)!='\n' )
+                     _out.println("");
+//               if( result instanceof Throwable )_out.println("");  
+            }
+         }   
+         _out.print( getPrompt() ) ;
+         _out.flush() ;
+         if( done )throw (CommandExitException)result ;
+
+      }
+  }
+  public void say( String str ){
+     super.say( str ) ;
+     pin( str ) ;
+  }
+  public void cleanUp(){
+     _workerThread.interrupt() ;
+     try{
+       
+        _in.close() ;
+        try {
+           if (!_engine.getSocket().isClosed()) {
+               say("Close socket");
+               _engine.getSocket().close();
+           }
+        } catch (Exception ee) { ; }
+        //
+        // to finish the ssh protocol
+        //
+//        _in.read() ;
+     } catch(Exception e ){
+        esay( "cleanup says : "+e ) ;
+     };    
+  }
+}

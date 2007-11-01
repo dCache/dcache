@@ -1,0 +1,296 @@
+<!-- $Id: build.xml,v 1.13 2006-04-12 09:22:57 tigran Exp $ -->
+<!--    build file for ANT -->
+
+
+<project name="dCache" default="help" basedir=".">
+
+	<target name="init">
+		<property name="core_jar" value="dcache.jar" />
+		<property name="srm_jar" value="dcache-srm.jar" />
+		<property name="sourceDir" value=".." />
+		<property name="binDir" value="../classes" />
+		<property name="outputDir" value="../build" />
+		<property name="classDir" value="../classes" />
+		<property name="cells.jar" value="${classDir}/cells.jar" />
+		<property name="srm.jar" value="${classDir}/srm.jar" />
+		<property name="axis.jar" value="${classDir}/axis/axis.jar" />
+		<property name="jglobus.jar" value="${classDir}/globus/cog-jglobus.jar" />
+		<property name="jaxrpc.jar" value="${classDir}/axis/jaxrpc.jar" />
+		<property name="saaj.jar" value="${classDir}/axis/saaj.jar" />
+		<property name="cog-axis.jar" value="${classDir}/globus/cog-axis.jar" />
+		<property name="servlet.jar" value="${classDir}/tomcat/servlet.jar" />
+		<property name="catalina.jar" value="${classDir}/tomcat/catalina.jar" />
+		<property name="glue.jar" value="${classDir}/glue/GLUE-STD.jar" />
+		<property name="dom.jar" value="${classDir}/glue/dom.jar" />
+		<property name="cells.release" value="HEAD"/>
+		<tstamp>
+			<format property="timestamp" pattern="MM/dd/yyyy hh:mm:ss"/>
+		</tstamp>
+		
+		<property name="javac.debug" value="on"/>
+		<property name="javac.source.level" value="1.4"/>
+		<property name="javac.target.jvm" value="1.4"/>
+	</target>
+
+
+	<!-- clean temporary directory -->
+	<target name="clean" depends="init">
+		<delete dir="${outputDir}" />
+	</target>
+
+	<!-- clean result :) -->
+	<target name="cleanall" depends="init,clean">
+		<delete file="${binDir}/${core_jar}" />
+		<delete file="${binDir}/${srm_jar}" />
+	</target>
+
+	<target name="prepare" depends="init">
+		<mkdir dir="${outputDir}/core" />
+		<mkdir dir="${outputDir}/srm" />
+	</target>
+
+
+	<!-- build dCache core -->
+	<target name="dcache" unless="dcache.jars.present" depends="core_jars,prepare">
+
+		<fail unless="core.jars.present" message="${cells.jar} not available" />
+
+		<javac destdir="${outputDir}/core" classpath="${cells.jar}" debug="${javac.debug}" 
+										source="${javac.source.level}" target="${javac.target.jvm}">
+			<src path="${sourceDir}" />
+			<exclude name="srm/**" />
+			<exclude name="vehicles/srm/**" />
+			<exclude name="scripts/**" />
+			<exclude name="tomcat/**" />
+			<exclude name="services/authorization/**" />
+			<exclude name="movers/RemoteGsiftpTransferProtocol_1.java" />
+			<exclude name="doors/GsiFtpDoorV1.java" />
+			<exclude name="doors/GssFtpDoorV1.java" />
+			<exclude name="doors/KerberosFtpDoorV1.java" />
+			<exclude name="services/GsiftpTransferManager.java" />
+			<exclude name="services/TransferManager.java" />
+		</javac>
+		<jar jarfile="${binDir}/${core_jar}">
+			<fileset dir="${outputDir}/core" includes="diskCacheV111/**/*.class" />
+            <manifest>
+            <section name="Shared">
+                <attribute name="Title" value="dCache Core"/>
+                <attribute name="Vendor" value="dCache.ORG"/>
+                <attribute name="Date" value="${timestamp}"/>
+            </section>
+            <section name="Copyright">
+                <attribute name="Copy" value="(C) dCache.ORG  2000 - 2006"/>
+            </section>
+        </manifest>			
+		</jar>
+
+	</target>
+
+
+	<!-- build SRM -->
+	<target name="srm" depends="srm_jars,dcache_jars,dcache">
+
+		<javac sourcepath="" srcdir="${sourceDir}" destdir="${outputDir}/srm" classpath="${cells.jar}:${srm.jar}:
+			${jglobus.jar}:
+			${axis.jar}:
+			${jaxrpc.jar}:
+			${saaj.jar}:
+			${cog-axis.jar}:
+			${glue.jar}:
+			${dom.jar}:
+			${servlet.jar}:
+			${catalina.jar}:
+			${binDir}/${core_jar}
+			">
+
+			<include name="doors/GsiFtpDoorV1.java" />
+			<include name="movers/RemoteGsiftpTransferProtocol_1.java" />
+			<include name="services/TransferManager.java" />
+			<include name="services/GsiftpTransferManager.java" />
+			<include name="doors/GssFtpDoorV1.java" />
+			<include name="doors/KerberosFtpDoorV1.java" />
+			<include name="srm/**" />
+			<exclude name="srm/v2_1/**" />
+			<exclude name="srm/security/**" />
+		</javac>
+
+		<jar jarfile="${binDir}/${srm_jar}">
+			<fileset dir="${outputDir}/srm" includes="diskCacheV111/**/*.class" />
+		</jar>
+
+	</target>
+
+
+	<!--
+		check for jars
+	-->
+
+	<!-- cells -->
+	<target name="core_jars" depends="init">
+		<condition property="core.jars.present">
+			<and>
+				<available file="${cells.jar}" type="file" />
+			</and>
+		</condition>
+		<fail unless="core.jars.present" message="${cells.jar} not available" />
+	</target>
+
+
+	<target name="dcache_jars" depends="init">
+		<condition property="dcache.jars.present">
+			<and>
+				<available file="${binDir}/${core_jar}" type="file" />
+			</and>
+		</condition>
+	</target>
+
+	<!-- generic SRM -->
+	<target name="srm_jars" depends="core_jars,srm_ext_jars,init">
+		<condition property="srm.jars.present">
+			<and>
+				<available file="${srm.jar}" type="file" />
+			</and>
+		</condition>
+		<fail unless="srm.jars.present" message="${srm.jar} not available" />
+	</target>
+
+
+	<!-- used by SRM -->
+	<target name="srm_ext_jars" depends="init">
+		<condition property="axis.present">
+			<available file="${axis.jar}" type="file" />
+		</condition>
+		<fail unless="axis.present" message="${axis.jar} not available" />
+
+		<condition property="jglobus.present">
+			<available file="${jglobus.jar}" type="file" />
+		</condition>
+		<fail unless="jglobus.present" message="${jglobus.jar} not available" />
+
+		<condition property="jaxrpc.present">
+			<available file="${jaxrpc.jar}" type="file" />
+		</condition>
+		<fail unless="jaxrpc.present" message="${jaxrpc.jar} not available" />
+
+		<condition property="saaj.present">
+			<available file="${saaj.jar}" type="file" />
+		</condition>
+		<fail unless="saaj.present" message="${saaj.jar} not available" />
+
+		<condition property="cog-axis.present">
+			<available file="${cog-axis.jar}" type="file" />
+		</condition>
+		<fail unless="cog-axis.present" message="${cog-axis.jar} not available" />
+
+		<condition property="glue.present">
+			<available file="${glue.jar}" type="file" />
+		</condition>
+		<fail unless="glue.present" message="${glue.jar} not available" />
+
+		<condition property="dom.present">
+			<available file="${dom.jar}" type="file" />
+		</condition>
+		<fail unless="dom.present" message="${dom.jar} not available" />
+
+		<condition property="servlet.present">
+			<available file="${servlet.jar}" type="file" />
+		</condition>
+		<fail unless="servlet.present" message="${servlet.jar} not available" />
+
+		<condition property="catalina.present">
+			<available file="${catalina.jar}" type="file" />
+		</condition>
+		<fail unless="catalina.present" message="${catalina.jar} not available" />
+
+	</target>
+
+
+	<!--
+		By default show help :)
+	-->
+
+	<target name="help">
+		<echo message="dCache Build script" />
+		<echo message="" />
+		<echo message="build targets:" />
+		<echo message="    dcache   : dCache core" />
+		<echo message="    srm      : dCache core + SRM" />
+		<echo message="    cells_cvs: build cells from CVS (use -Dcells.release=[cvs-tag] to define release )" />
+		<echo message="    srm_cvs  : build generic SRM from CVS repository" />
+		<echo message="    clean    : removes temporary class files" />
+		<echo message="    cleanall : clean + remove result jar files" />
+	</target>
+			
+	
+	<!-- build from CVS repository -->
+	<!-- cells -->
+	<target name="compile_cells_with_build_xml" if="cells.build.file.present" >
+		<ant inheritAll="false" antfile="jobs/build.xml" dir="${outputDir}/cvs-tmp/cells/" target="cells">
+			<property name="basedir" value="${outputDir}/cvs-tmp/cells"/>
+		</ant>		
+		<copy file="${outputDir}/cvs-tmp/cells/cells.jar" tofile="${cells.jar}" />
+	</target>
+	
+	<target name="compile_cells_without_build_xml" unless="cells.build.file.present" >
+		<javac destdir="${outputDir}/cells" srcdir="${outputDir}/cvs-tmp/cells" />
+		<jar destfile="${cells.jar}" basedir="${outputDir}/cells"/>
+	</target>
+	
+	<target name="cells_cvs" depends="init">
+		<mkdir dir="${outputDir}/cvs-tmp" />
+		<mkdir dir="${outputDir}/cells" />
+		
+		<cvs dest="${outputDir}/cvs-tmp" package="cells" tag="${cells.release}" />
+		
+		<!-- use build.xml to build cellsif it's available -->
+		<available file="${outputDir}/cvs-tmp/cells/jobs/build.xml" property="cells.build.file.present"/>
+				
+		<antcall target="compile_cells_without_build_xml"/>
+		<antcall target="compile_cells_with_build_xml"/>
+		
+		<delete dir="${outputDir}/cvs-tmp" />
+		<delete dir="${outputDir}/cells" />
+	</target>
+	
+	<!-- srm -->
+	<target name="srm_cvs" depends="init">
+		<mkdir dir="${outputDir}/cvs-tmp" />
+		<mkdir dir="${outputDir}/srm" />
+		
+		<cvs dest="${outputDir}/cvs-tmp" package="srm" />
+		
+		  <copy todir="${classDir}">
+		    <fileset dir="${outputDir}/cvs-tmp/srm/lib/." excludes="**/cells.jar" />
+		  </copy>
+				
+		<javac destdir="${outputDir}/srm" srcdir="${outputDir}/cvs-tmp/srm/src" classpath="${cells.jar}:
+			${jglobus.jar}:
+			${axis.jar}:
+			${jaxrpc.jar}:
+			${saaj.jar}:
+			${cog-axis.jar}:
+			${glue.jar}:
+			${dom.jar}:
+			${servlet.jar}:
+			${catalina.jar}:
+			${classDir}/glue/jnet.jar:
+			${classDir}/glue/jsse.jar:
+			${classDir}/glue/jcert.jar:
+			${classDir}/globus/puretls.jar:
+			${classDir}/globus/cryptix.jar:
+			${classDir}/globus/log4j-1.2.8.jar:
+			${classDir}/globus/cryptix-asn1.jar:			
+			${classDir}/globus/cryptix32.jar:			
+			${classDir}/concurrent.jar
+			"
+		/>
+		
+		<jar destfile="${srm.jar}" basedir="${outputDir}/srm"/>
+		
+		<delete dir="${outputDir}/cvs-tmp" />
+		<delete dir="${outputDir}/srm" />
+		
+	</target>
+
+	
+</project>

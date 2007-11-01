@@ -1,0 +1,37 @@
+#
+# $Id: dir.batch,v 1.2.22.3 2006-11-30 18:22:20 tigran Exp $
+#
+
+set printout default 2
+set printout CellGlue none
+
+onerror shutdown 
+
+#
+check -strong setupFile
+#
+copy file:${setupFile} context:setupContext
+#
+#  import the variables into our $context.
+#  don't overwrite already existing variables.
+#
+import context -c setupContext 
+#
+#   Make sure we got what we need.
+#
+check -strong serviceLocatorHost serviceLocatorPort
+
+create dmg.cells.services.RoutingManager  RoutingMgr
+
+create dmg.cells.services.LocationManager lm \
+     "${serviceLocatorHost} ${serviceLocatorPort}"
+
+
+onerror continue
+ set context -c directoryPoolPnfsBase  "/pnfs/fs"
+onerror shutdown
+
+create diskCacheV111.pools.DirectoryLookUpPool dirLookupPool \
+           "${directoryPoolPnfsBase}  \
+            -export  \
+           "
