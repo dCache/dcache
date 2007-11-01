@@ -1,4 +1,4 @@
-// $Id: SRMDispatcher.java,v 1.32 2007-10-25 01:37:22 litvinse Exp $
+// $Id: SRMDispatcher.java,v 1.32 2007/10/25 01:37:22 litvinse Exp $
 // $Author: litvinse $ 
 /*
 COPYRIGHT STATUS:
@@ -314,6 +314,12 @@ public class SRMDispatcher {
 		    System.exit(1);
 		}
 	    } 
+	    else if (conf.isGetRequestTokens()) {
+		if (conf.getGetRequestStatusSurl() == null ) {
+		    System.err.println("surl, to be used for location of srm, is not specified");
+		    System.exit(1);
+		}
+	    } 
 	    else if (conf.isGetStorageElementInfo()) {
 		if(conf.getStorageElementInfoServerWSDL() == null) {
 		    System.err.println("server wsdl url is not specified");
@@ -583,6 +589,11 @@ public class SRMDispatcher {
 	    String surl_string = configuration.getGetRequestStatusSurl();
 	    GlobusURL surl     = new GlobusURL(surl_string);
 	    srmclient          = new SRMGetRequestSummaryClientV2(configuration, surl);
+	} 
+	else if(configuration.isGetRequestTokens()) {
+	    String surl_string = configuration.getGetRequestStatusSurl();
+	    GlobusURL surl     = new GlobusURL(surl_string);
+	    srmclient          = new SRMGetRequestTokensClientV2(configuration, surl);
 	} 
 	else if (configuration.isMove()) {
 	    String from;
@@ -961,7 +972,10 @@ public class SRMDispatcher {
     }
 }
 
-// $Log: not supported by cvs2svn $
+// $Log: SRMDispatcher.java,v $
+// Revision 1.32  2007/10/25 01:37:22  litvinse
+// implemented srmGetRequestSummary client
+//
 // Revision 1.31  2007/04/17 22:45:57  timur
 // allow file to file and file to gridftp and gridftp to file copy with srmcp
 //
