@@ -72,7 +72,7 @@ serviceLocatorPort=11111
 #   Adjust to the correct location.
 #
 # shold point to <JDK>/bin/java
-java="/usr/java/j2sdk1.4.2_08/bin/java"
+java="/usr/bin/java"
 
 #
 #  ---- Options for the Java VM 
