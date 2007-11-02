@@ -1,5 +1,8 @@
-// $Id: SRMPutClientV2.java,v 1.25 2007-09-20 16:59:13 litvinse Exp $
-// $Log: not supported by cvs2svn $
+// $Id: SRMPutClientV2.java,v 1.25 2007/09/20 16:59:13 litvinse Exp $
+// $Log: SRMPutClientV2.java,v $
+// Revision 1.25  2007/09/20 16:59:13  litvinse
+// handle SRM_NOT_SUPPORTED
+//
 // Revision 1.24  2007/03/15 17:43:33  timur
 // make overwrite_mode option available
 //
@@ -280,9 +283,6 @@ public class SRMPutClientV2 extends SRMClient implements Runnable {
                 srmPrepareToPutRequest.setDesiredFileStorageType(TFileStorageType.PERMANENT);
             }
             srmPrepareToPutRequest.setDesiredTotalRequestTime(new Integer((int)configuration.getRequestLifetime()));
-            srmPrepareToPutRequest.setTargetFileRetentionPolicyInfo(
-                    new TRetentionPolicyInfo(TRetentionPolicy.CUSTODIAL,
-                    TAccessLatency.NEARLINE));
             
             srmPrepareToPutRequest.setArrayOfFileRequests(
                     new ArrayOfTPutFileRequest(fileRequests));
@@ -291,15 +291,23 @@ public class SRMPutClientV2 extends SRMClient implements Runnable {
                     null,new ArrayOfString(protocols)));
             TTransferParameters transferParams = new
                     TTransferParameters();
-            if(configuration.getRetentionPolicy() != null &&
-                    configuration.getAccessLatency() != null){
-                TRetentionPolicy retentionPolicy = TRetentionPolicy.fromString(configuration.getRetentionPolicy());
-                TAccessLatency accessLatency = TAccessLatency.fromString(configuration.getAccessLatency());
+            TRetentionPolicy retentionPolicy = null;
+            TAccessLatency accessLatency = null;
+            if(configuration.getRetentionPolicy() != null ){
+                  retentionPolicy = TRetentionPolicy.fromString(configuration.getRetentionPolicy());
+                
+            }
+            
+            if(  configuration.getAccessLatency() != null){
+                accessLatency = TAccessLatency.fromString(configuration.getAccessLatency());
+                
+            }
+            if(retentionPolicy != null) {
                 TRetentionPolicyInfo retentionPolicyInfo =
                         new TRetentionPolicyInfo(retentionPolicy,accessLatency);
                 srmPrepareToPutRequest.setTargetFileRetentionPolicyInfo(retentionPolicyInfo);
-                
             }
+            
             if(configuration.getOverwriteMode() != null) {
                 srmPrepareToPutRequest.setOverwriteOption(TOverwriteMode.fromString(configuration.getOverwriteMode()));
             }

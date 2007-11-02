@@ -1,6 +1,6 @@
 //______________________________________________________________________________
 //
-// $Id: SRMCopyClientV2.java,v 1.26 2007-03-15 17:43:33 timur Exp $
+// $Id: SRMCopyClientV2.java,v 1.26 2007/03/15 17:43:33 timur Exp $
 // $Author: timur $
 //
 // Pull mode: copy from remote location to SRM. (e.g. from
@@ -193,15 +193,23 @@ public class SRMCopyClientV2 extends SRMClient implements Runnable {
                 req.setTargetFileStorageType(TFileStorageType.PERMANENT);
             }
             req.setDesiredTotalRequestTime(new Integer((int)configuration.getRequestLifetime()));
-            if(configuration.getRetentionPolicy() != null &&
-                    configuration.getAccessLatency() != null){
-                TRetentionPolicy retentionPolicy = TRetentionPolicy.fromString(configuration.getRetentionPolicy());
-                TAccessLatency accessLatency = TAccessLatency.fromString(configuration.getAccessLatency());
+            TRetentionPolicy retentionPolicy = null;
+            TAccessLatency accessLatency = null;
+            if(configuration.getRetentionPolicy() != null ){
+                 retentionPolicy = TRetentionPolicy.fromString(configuration.getRetentionPolicy());
+                
+            }
+            
+            if(  configuration.getAccessLatency() != null){
+                accessLatency = TAccessLatency.fromString(configuration.getAccessLatency());
+                
+            }
+            if(retentionPolicy != null) {
                 TRetentionPolicyInfo retentionPolicyInfo =
                         new TRetentionPolicyInfo(retentionPolicy,accessLatency);
                 req.setTargetFileRetentionPolicyInfo(retentionPolicyInfo);
-                
             }
+            
             if(configuration.getOverwriteMode() != null) {
                 req.setOverwriteOption(TOverwriteMode.fromString(configuration.getOverwriteMode()));
             }
