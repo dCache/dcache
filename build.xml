@@ -337,6 +337,30 @@
         </findbugs>
     </target>
 
+    <target name="findbugs-testbuild" depends="cells-log4j.bin,srm.bin,dcache-srm.bin,infoProvider.bin,xrootd-tokenauthz.bin,javatunnel.bin" description="bug hunting">
+        <taskdef name="findbugs" classname="edu.umd.cs.findbugs.anttask.FindBugsTask" classpath="${libDir}/findbugs/lib/findbugs-ant.jar"/>
+        <findbugs home="${findbugs.home}"
+                    output="xml"
+                    outputFile="${distDir}/findbugs.xml"
+                    jvmargs="-Xmx512M"
+                    timeout="3600000"
+                    omitVisitors="FindDeadLocalStores,UnreadFields,Naming,FindUncalledPrivateMethods" >
+
+            <auxClasspath path="" />
+            <class location="${classesDir}/cells.jar" />
+            <class location="${classesDir}/cells-log4j.jar" />
+            <class location="${classesDir}/dcache.jar" />
+            <class location="${classesDir}/dcache-srm.jar" />
+            <class location="${classesDir}/srm.jar" />
+            <class location="${classesDir}/srm-tomcat.jar" />
+            <class location="${classesDir}/gplazma.jar" />
+            <class location="${classesDir}/javatunnel.jar" />
+            <class location="${classesDir}/infoDynamicSE.jar" />
+            <class location="${classesDir}/xrootd-tokenauthz.jar" />
+            <class location="${classesDir}/chimera-provider.jar" />
+        </findbugs>
+    </target>
+
     <target name="findbugs.cells" depends="cells.bin,cells-log4j.bin" description="bug hunting">
         <taskdef name="findbugs" classname="edu.umd.cs.findbugs.anttask.FindBugsTask" classpath="${libDir}/findbugs/lib/findbugs-ant.jar"/>
         <findbugs home="${findbugs.home}"
