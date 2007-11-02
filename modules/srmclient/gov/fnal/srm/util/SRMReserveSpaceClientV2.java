@@ -1,6 +1,6 @@
 //______________________________________________________________________________
 //
-// $Id: SRMReserveSpaceClientV2.java,v 1.6 2007-08-22 23:08:59 timur Exp $
+// $Id: SRMReserveSpaceClientV2.java,v 1.6 2007/08/22 23:08:59 timur Exp $
 // $Author: timur $
 //
 //
@@ -138,8 +138,15 @@ public class SRMReserveSpaceClientV2 extends SRMClient implements Runnable {
             throw gsse;
         }
         try {
-            TRetentionPolicy rp      = TRetentionPolicy.fromString(configuration.getRetentionPolicy());
-            TAccessLatency   al      = TAccessLatency.fromString(configuration.getAccessLatency());
+            
+            TRetentionPolicy rp   =  null;
+            if(configuration.getRetentionPolicy() != null ) {
+                rp = TRetentionPolicy.fromString(configuration.getRetentionPolicy());
+            }
+            TAccessLatency   al = null;
+            if(configuration.getAccessLatency() != null ) {
+                al = TAccessLatency.fromString(configuration.getAccessLatency());
+            }
             TRetentionPolicyInfo rpi = new TRetentionPolicyInfo(rp,al);
             request.setRetentionPolicyInfo(rpi);
             request.setDesiredSizeOfTotalSpace(new org.apache.axis.types.UnsignedLong(configuration.getDesiredReserveSpaceSize()));

@@ -152,9 +152,9 @@ public class Configuration {
     
     private boolean reserveSpace;
     private String[] arrayOfClientNetworks;
-    private String retentionPolicy="CUSTODIAL";
+    private String retentionPolicy=null;
     private String spaceTokenDescription;
-    private String accessLatency="ONLINE";
+    private String accessLatency=null;
     private String accessPattern="TRANSFER_MODE";
     private String connectionType="WAN";
     private long desiredReserveSpaceSize=0;
