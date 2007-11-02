@@ -496,6 +496,21 @@ public class PnfsManagerV3 extends CellAdapter {
     	PnfsId pnfsId = new PnfsId( args.argv(0));
     	String cacheLocation = args.argv(1);
 
+        /* At this point, the file is no longer new and should really
+         * have level 2 set. Otherwise we would not be able to detect
+         * when the file is deleted. Unfortunately, the only way to
+         * ensure that level 2 exists (without changing the
+         * interface), is to remove a non-existing attribute.
+         *
+         * If the cache location provider happens to be the same as
+         * the name space provider, then is unnecessary, as setting
+         * the cache location will set level 2.
+         */
+        if (_nameSpaceProvider != _cacheLocationProvider) {
+            _nameSpaceProvider.removeFileAttribute(pnfsId, 
+                                                   "_this_entry_doesn't_exist_");
+        }
+
     	_cacheLocationProvider.addCacheLocation(pnfsId, cacheLocation);
 
     	return "";
@@ -664,7 +679,23 @@ public class PnfsManagerV3 extends CellAdapter {
     private void addCacheLocation(PnfsAddCacheLocationMessage pnfsMessage){
         say("addCacheLocation : "+pnfsMessage.getPoolName()+" for "+pnfsMessage.getPnfsId());
         try {
-            _cacheLocationProvider.addCacheLocation(pnfsMessage.getPnfsId(), pnfsMessage.getPoolName());
+            /* At this point, the file is no longer new and should
+             * really have level 2 set. Otherwise we would not be able
+             * to detect when the file is deleted. Unfortunately, the
+             * only way to ensure that level 2 exists (without
+             * changing the interface), is to remove a non-existing
+             * attribute.
+             *
+             * If the cache location provider happens to be the same
+             * as the name space provider, then is unnecessary, as
+             * setting the cache location will set level 2.
+             */
+            if (_nameSpaceProvider != _cacheLocationProvider) {
+                _nameSpaceProvider.removeFileAttribute(pnfsMessage.getPnfsId(),
+                                                       "_this_entry_doesn't_exist_");
+            }
+            _cacheLocationProvider.addCacheLocation(pnfsMessage.getPnfsId(), 
+                                                    pnfsMessage.getPoolName());
         } catch (FileNotFoundCacheException fnf ) {
         	pnfsMessage.setFailed(CacheException.FILE_NOT_FOUND, fnf.getMessage() );
         } catch (Exception e){
