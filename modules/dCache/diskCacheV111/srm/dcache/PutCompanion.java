@@ -178,6 +178,8 @@ import java.util.List;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Set;
+import java.util.Date;
 /**
  *
  * @author  timur
@@ -203,6 +205,7 @@ public class PutCompanion implements CellMessageAnswerable {
     private static final int WAITING_FOR_CREATE_DIRECTORY_RESPONCE_MESSAGE=5;
     private static final int RECEIVED_CREATE_DIRECTORY_RESPONCE_MESSAGE=6;
     private static final int FINAL_STATE=8;
+    private static final int PASSIVELY_WAITING_FOR_DIRECTORY_INFO_MESSAGE=9;
     private volatile int state=INITIAL_STATE;
     
     private dmg.cells.nucleus.CellAdapter cell;
@@ -216,6 +219,8 @@ public class PutCompanion implements CellMessageAnswerable {
     private boolean overwrite;
     private String fileId;
     private FileMetaData fileFMD;
+    private long creationTime = System.currentTimeMillis();
+    private long lastOperationTime = creationTime;
     
     private void say(String words_of_wisdom) {
         if(cell!=null) {
@@ -516,6 +521,7 @@ public class PutCompanion implements CellMessageAnswerable {
             esay(ee);
             callbacks.Exception(ee);
         }
+        lastOperationTime = System.currentTimeMillis();
     }
     
     private String getCurrentDirPath() {
@@ -546,7 +552,9 @@ public class PutCompanion implements CellMessageAnswerable {
             // we do not need to continue,
             // someone else is checking, creating this directory
             // we will be notified, when the direcory is created
-            return;
+            state = PASSIVELY_WAITING_FOR_DIRECTORY_INFO_MESSAGE;
+            lastOperationTime = System.currentTimeMillis();
+           return;
         }
         PnfsGetFileMetaDataMessage metadataMsg;
         if(current_dir_depth == (pathItems.size() -1)) {
@@ -571,8 +579,10 @@ public class PutCompanion implements CellMessageAnswerable {
         }
         catch(Exception ee ) {
             esay(ee);
+            unregisterAndFailCreator(ee.toString());
             callbacks.GetStorageInfoFailed(ee.toString());
         }
+        lastOperationTime= System.currentTimeMillis();
     }
     
     public void exceptionArrived( CellMessage request , Exception exception ) {
@@ -585,10 +595,78 @@ public class PutCompanion implements CellMessageAnswerable {
         unregisterAndFailCreator("answerTimedOut for request "+request);
         callbacks.Timeout();
     }
+    
     public String toString() {
+        StringBuffer sb = new StringBuffer();
+        toString(sb,false);
+        return sb.toString();
+    }
+    
+    public void toString(StringBuffer sb, boolean longFormat) {
         
-        return "PutCompanion: "+
-        " path=\""+path+"\" state="+getStateString()+ " : ";
+        sb.append("PutCompanion: ");
+        sb.append(" p=\"").append(path);
+        sb.append("\" s=\"").append(getStateString());
+        sb.append("\" d=\"").append(current_dir_depth);
+        sb.append("\" created:").append(new Date(creationTime).toString());
+        sb.append("\" lastOperation:").append(new Date(lastOperationTime).toString());
+        
+       if (state == WAITING_FOR_DIRECTORY_INFO_MESSAGE ||
+            state == WAITING_FOR_CREATE_DIRECTORY_RESPONCE_MESSAGE) {
+            try {
+               for( int i = current_dir_depth;
+                         i<pathItems.size();
+                       ++i) {
+                    String pnfsPath = getCurrentDirPath(i); 
+                    sb.append("\n it is creating/getting info for path=").append(pnfsPath);
+                    Set waitingSet = this.waitingForCreators.getValues(pnfsPath);
+                    if(waitingSet != null) {
+                        if(longFormat) {
+                            for(Iterator j = waitingSet.iterator(); j.hasNext();) {
+                                PutCompanion waitingCompanion = (PutCompanion) j.next();
+                                sb.append("\n waiting companion:");
+                                waitingCompanion.toString(sb,true);
+
+                            }
+                        }
+                        else {
+                            sb.append(" num of waiting companions:").append(waitingSet.size());
+                        }
+                    }
+                    else {
+                       sb.append(" num of waiting companions: 0");   
+                    }
+                }
+            } catch(Exception e) {
+                sb.append("listing error: ").append(e);
+            }
+       }
+    }
+    
+   private String getStateString() {
+        switch (state) {
+            case INITIAL_STATE: 
+                return "INITIAL_STATE";
+            case WAITING_FOR_FILE_INFO_MESSAGE:
+                return "WAITING_FOR_FILE_INFO_MESSAGE";
+            case RESEIVED_FILE_INFO_MESSAGE:
+                return "RESEIVED_FILE_INFO_MESSAGE";
+            case WAITING_FOR_DIRECTORY_INFO_MESSAGE:
+                return "WAITING_FOR_DIRECTORY_INFO_MESSAGE";
+            case RECEIVED_DIRECTORY_INFO_MESSAGE:
+                return "RECEIVED_DIRECTORY_INFO_MESSAGE";
+            case WAITING_FOR_CREATE_DIRECTORY_RESPONCE_MESSAGE:
+                return "WAITING_FOR_CREATE_DIRECTORY_RESPONCE_MESSAGE";
+            case RECEIVED_CREATE_DIRECTORY_RESPONCE_MESSAGE:
+                return "RECEIVED_CREATE_DIRECTORY_RESPONCE_MESSAGE";
+            case FINAL_STATE:
+                return "FINAL_STATE";
+            case PASSIVELY_WAITING_FOR_DIRECTORY_INFO_MESSAGE:
+                return "PASSIVELY_WAITING_FOR_DIRECTORY_INFO_MESSAGE";
+            default:
+                return "unknown_STATE";
+
+        }
     }
     
     public static void PrepareToPutFile(DCacheUser user,
@@ -653,16 +731,45 @@ public class PutCompanion implements CellMessageAnswerable {
     private static HashMap directoryCreators = new HashMap();
     private OneToManyMap waitingForCreators = new OneToManyMap();
     
-    private static boolean registerCreatorOrWaitForCreation(String pnfsPath,
+    public static void listDirectoriesWaitingForCreation(StringBuffer sb, boolean longformat) {
+        synchronized( directoryCreators) {
+            Set directories = directoryCreators.keySet();
+            for(Iterator iter=directories.iterator(); iter.hasNext();) {
+                String directory = (String) iter.next();
+                sb.append("directorty: ").append(directory).append('\n');
+                PutCompanion creatorCompanion =   (PutCompanion)directoryCreators.get(directory);
+                sb.append("\n creating/getting info companion:");
+                creatorCompanion.toString(sb,longformat);
+             }
+        }                
+    }
+    
+    public static void failCreatorsForPath(String pnfsPath, StringBuffer sb) {
+        PutCompanion creatorCompanion  =   
+            (PutCompanion)directoryCreators.get(pnfsPath);
+        if(creatorCompanion == null) {
+            sb.append("no creators for path ").append(pnfsPath).append("found");
+            return;
+        }
+        creatorCompanion.unregisterAndFailCreator("canceled by the admin command");
+        sb.append("Done");
+        return;
+    }
+    
+     private static boolean registerCreatorOrWaitForCreation(String pnfsPath,
     PutCompanion thisCreator) {
+        long creater_operTime=0; 
+        long currentTime=0;
+        PutCompanion creatorCompanion = null;
         synchronized( directoryCreators) {
             if(directoryCreators.containsKey(pnfsPath)) {
-                PutCompanion creatorCompanion =   (PutCompanion)directoryCreators.get(pnfsPath);
+                creatorCompanion =   (PutCompanion)directoryCreators.get(pnfsPath);
                 creatorCompanion.waitingForCreators.put(pnfsPath, thisCreator);
                 thisCreator.say("registerCreatorOrWaitForCreation("+pnfsPath+","+thisCreator+")"+
                 " directoryCreators already contains the creator for the path, store and return false"
                 );
-                return false;
+                creater_operTime = creatorCompanion.lastOperationTime;
+                currentTime = System.currentTimeMillis();
             }
             else {
                 thisCreator.say("registerCreatorOrWaitForCreation("+pnfsPath+","+thisCreator+")"+
@@ -672,6 +779,12 @@ public class PutCompanion implements CellMessageAnswerable {
                 return true;
             }
         }
+        
+        if(creatorCompanion != null &&
+            currentTime - creater_operTime > creatorCompanion.PNFS_TIMEOUT ) {
+            creatorCompanion.unregisterAndFailCreator("pnfs manager timeout");
+        }
+        return false;
     }
     
     
@@ -712,13 +825,19 @@ public class PutCompanion implements CellMessageAnswerable {
     }
     
     private void unregisterAndFailCreator(String error) {
-        //directory creation failed, notify all waiting on this companion
-        for( int i = this.current_dir_depth; i<(this.pathItems.size());
-        ++i) {
-            String pnfsPath = this.getCurrentDirPath(i);
-            unregisterAndFailCreator(pnfsPath, this, error);
+        if(pathItems != null) {
+            //directory creation failed, notify all waiting on this companion
+            for( int i = this.current_dir_depth; i<(this.pathItems.size());
+            ++i) {
+                String pnfsPath = this.getCurrentDirPath(i);
+                unregisterAndFailCreator(pnfsPath, this, error);
+            }
+        } else {
+            callbacks.Error(error);
         }
     }
+    
+    
     private static void unregisterAndFailCreator(String pnfsPath,PutCompanion thisCreator,
     String error) {
         HashSet  removed = new HashSet();
@@ -750,39 +869,7 @@ public class PutCompanion implements CellMessageAnswerable {
         pnfsPath+","+thisCreator+") returning");
         
     }
-    public String getStateString() {
-        switch (state) {
-            case  INITIAL_STATE:{ 
-                return "INITIAL_STATE";
-            } 
-            case  WAITING_FOR_FILE_INFO_MESSAGE:{ 
-                return "WAITING_FOR_FILE_INFO_MESSAGE";
-            } 
-            case  RESEIVED_FILE_INFO_MESSAGE:{
-                return "RESEIVED_FILE_INFO_MESSAGE";
-            } 
-            case  WAITING_FOR_DIRECTORY_INFO_MESSAGE: { 
-                return "WAITING_FOR_DIRECTORY_INFO_MESSAGE"; 
-            } 
-            case  RECEIVED_DIRECTORY_INFO_MESSAGE: { 
-                return "RECEIVED_DIRECTORY_INFO_MESSAGE"; 
-            } 
-            case  WAITING_FOR_CREATE_DIRECTORY_RESPONCE_MESSAGE:    { 
-                return "WAITING_FOR_CREATE_DIRECTORY_RESPONCE_MESSAGE ("+
-                        getCurrentDirPath()+")"; 
-            } 
-            case  RECEIVED_CREATE_DIRECTORY_RESPONCE_MESSAGE:{ 
-                return "RECEIVED_CREATE_DIRECTORY_RESPONCE_MESSAGE ("+
-                        getCurrentDirPath()+")"; 
-            } 
-            case  FINAL_STATE :{ 
-                return "FINAL_STATE"; 
-            }
-            default: {
-                return "unknown";
-            }
-        }
-    }
+
 }
 
 

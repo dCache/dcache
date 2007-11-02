@@ -1670,6 +1670,34 @@ public class Storage
         return "get-req-max-ready-requests="+value;
     }
     
+      public String fh_dir_creators_ls= " Syntax: dir creators ls [-l]  "+
+         "#will list all put companion waiting for the dir creation ";
+      public String hh_dir_creators_ls= " [-l] ";
+      public String ac_dir_creators_ls_$_0(Args args) {
+        try {
+            boolean longformat = args.getOpt("l") != null;         
+            StringBuffer sb = new StringBuffer();   
+            PutCompanion.listDirectoriesWaitingForCreation(sb,longformat);
+            return sb.toString();
+         } catch(Throwable t) {
+            t.printStackTrace();
+            return t.toString();
+         }
+      }
+      public String fh_cancel_dir_creation= " Syntax:cancel dir creation <path>  "+
+         "#will fail companion waiting for the dir creation on <path> ";
+      public String hh_cancel_dir_creation= " <path>";
+      public String ac_cancel_dir_creation_$_1(Args args) {
+        try {
+            String pnfsPath = args.argv(0);
+            StringBuffer sb = new StringBuffer();   
+            PutCompanion.failCreatorsForPath(pnfsPath,sb);
+            return sb.toString();
+         } catch(Throwable t) {
+            t.printStackTrace();
+            return t.toString();
+         }
+      }
         /*
         public String fh_rc_running_ls= " Syntax: rc running ls [-get] [-put] [-copy] [-l]"+
         " #will list running requests";
