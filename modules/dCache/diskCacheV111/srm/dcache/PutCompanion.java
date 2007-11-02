@@ -287,6 +287,10 @@ public class PutCompanion implements CellMessageAnswerable {
                     state = RESEIVED_FILE_INFO_MESSAGE;
                     fileInfoArrived(storage_info_msg);
                     return;
+                } else if(state == WAITING_FOR_DIRECTORY_INFO_MESSAGE) {
+                    state = RECEIVED_DIRECTORY_INFO_MESSAGE;
+                    directoryInfoArrived(storage_info_msg);
+                    return;
                 }
                 esay(this.toString()+" got unexpected PnfsGetStorageInfoMessage "+
                 " : "+storage_info_msg+" ; Ignoring");
@@ -378,9 +382,14 @@ public class PutCompanion implements CellMessageAnswerable {
             }
         }
         unregisterCreator(metadata_msg);
-        //StorageInfo storageInfo = storage_info_msg.getStorageInfo() ;
-        //say("storageInfo = "+storageInfo );
-        //long size = storageInfo.getFileSize ();
+        
+        StorageInfo storageInfo = null;
+        if(metadata_msg instanceof PnfsGetStorageInfoMessage) {
+            PnfsGetStorageInfoMessage storage_info_msg  = 
+                (PnfsGetStorageInfoMessage) metadata_msg;
+            storageInfo = storage_info_msg.getStorageInfo() ;
+            say("storageInfo = "+storageInfo );
+        }
         
         diskCacheV111.util.FileMetaData dirFmd =
         metadata_msg.getMetaData();
@@ -405,7 +414,13 @@ public class PutCompanion implements CellMessageAnswerable {
         say("file is a directory");
         PnfsId dirPnfsId = metadata_msg.getPnfsId();
         String dirFileId = dirPnfsId.toString();
-        FileMetaData srm_dirFmd = Storage.getFileMetaData(user,path,dirPnfsId,null,dirFmd,null);
+        say(" calling Storage.getFileMetaData()");
+        FileMetaData srm_dirFmd = Storage.getFileMetaData(user,path,dirPnfsId,storageInfo,dirFmd,null);
+        say(" got  srm_dirFmd.retentionPolicyInfo ="+srm_dirFmd.retentionPolicyInfo);
+        if(srm_dirFmd.retentionPolicyInfo != null) {
+            say(" got  srm_dirFmd.retentionPolicyInfo.AccessLatency ="+srm_dirFmd.retentionPolicyInfo.getAccessLatency());
+            say(" got  srm_dirFmd.retentionPolicyInfo.RetentionPolicy ="+srm_dirFmd.retentionPolicyInfo.getRetentionPolicy());
+        }   
         if((pathItems.size() -1 ) >current_dir_depth) {
             
             if(Storage._canWrite(user,null,null,dirFileId,srm_dirFmd,overwrite)) {
@@ -533,10 +548,18 @@ public class PutCompanion implements CellMessageAnswerable {
             // we will be notified, when the direcory is created
             return;
         }
-        PnfsGetFileMetaDataMessage metadataMsg =
-        new PnfsGetFileMetaDataMessage() ;
+        PnfsGetFileMetaDataMessage metadataMsg;
+        if(current_dir_depth == (pathItems.size() -1)) {
+            metadataMsg =
+            new PnfsGetStorageInfoMessage() ;
+            
+        } else {
+
+            metadataMsg =
+            new PnfsGetFileMetaDataMessage() ;
+        }
         metadataMsg.setPnfsPath( directory ) ;
-        
+
         try {
             state = WAITING_FOR_DIRECTORY_INFO_MESSAGE;
             cell.sendMessage( new CellMessage(
@@ -556,7 +579,7 @@ public class PutCompanion implements CellMessageAnswerable {
         esay("exceptionArrived "+exception+" for request "+request);
         unregisterAndFailCreator("exceptionArrived "+exception+" for request "+request);
         callbacks.Exception(exception);
-    }
+}
     public void answerTimedOut( CellMessage request ) {
         esay("answerTimedOut for request "+request);
         unregisterAndFailCreator("answerTimedOut for request "+request);
