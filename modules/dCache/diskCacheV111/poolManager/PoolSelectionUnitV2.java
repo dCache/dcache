@@ -1111,14 +1111,21 @@ public class PoolSelectionUnitV2 implements PoolSelectionUnit {
                                     + storeUnitName.substring(ind + 1);
                             if ((unit = _units.get(template)) == null) {
 
-                                if ((unit = _units.get("*@*")) == null)
+                                if ((unit = _units.get("*@*")) == null) {
+                                    if(_logPoolSelection.isDebugEnabled()) {
+                                        _logPoolSelection.debug("no matching storage unit found for: " + storeUnitName);
+                                    }
                                     throw new IllegalArgumentException(
                                             "Unit not found : " + storeUnitName);
+                                }
                             }
                         } else {
                             throw new IllegalArgumentException(
                                     "IllegalUnitFormat : " + storeUnitName);
                         }
+                    }
+                    if(_logPoolSelection.isDebugEnabled()) {
+                        _logPoolSelection.debug("matching storage unit found for: " + storeUnitName);
                     }
                     list.add(unit);
                 }
@@ -1215,7 +1222,6 @@ public class PoolSelectionUnitV2 implements PoolSelectionUnit {
 
             LinkMap matchingLinks = new LinkMap();
             for (Unit unit : list) {
-                // System.out.println("match: inner unit loop, unit="+unit);
                 matchingLinks = match(matchingLinks, unit, linkGroup, type);
             }
 
@@ -1455,13 +1461,18 @@ public class PoolSelectionUnitV2 implements PoolSelectionUnit {
                             // only consider link if it isn't in any link group
                             // ( "default link group" )
                             //
+                            if( _logPoolSelection.isDebugEnabled() ) {
+                                _logPoolSelection.debug("link " + link.getName() + " matching to unit " + unit);
+                            }
                             map.put(link.getName(), link);
-                            // System.out.println("matched: "+link);
                         }
                     } else if (linkGroup.contains(link)) {
                         //
                         // only take link if it is in the specified link group
                         //
+                        if( _logPoolSelection.isDebugEnabled() ) {
+                            _logPoolSelection.debug("link " + link.getName() + " matching to unit " + unit);
+                        }
                         map.put(link.getName(), link);
                     }
                 }
