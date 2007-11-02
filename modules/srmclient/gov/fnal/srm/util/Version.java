@@ -121,7 +121,7 @@ public class Version {
     private static final String revision = "$Revision: 1.14 $";
     private static final String tagName ="$Name: not supported by cvs2svn $";
     private static final String date ="$Date: 2006/03/10 11:12:55 CST 2006";
-    private static final String version= "1.25";
+    private static final String version= "2.0";
     /** Creates a new instance of Version */
     public Version() {
     }
