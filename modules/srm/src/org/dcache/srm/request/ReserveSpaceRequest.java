@@ -1,5 +1,8 @@
-// $Id: ReserveSpaceRequest.java,v 1.13 2007-10-19 20:57:04 tdh Exp $
-// $Log: not supported by cvs2svn $
+// $Id: ReserveSpaceRequest.java,v 1.13 2007/10/19 20:57:04 tdh Exp $
+// $Log: ReserveSpaceRequest.java,v $
+// Revision 1.13  2007/10/19 20:57:04  tdh
+// Merge of caching of gPlazma authorization in srm.
+//
 // Revision 1.12  2007/10/08 18:29:11  timur
 // Fix to the Flavia issue:  Space reservation with retentionpolicy=REPLICA and unspecified accesslatency resolves in reservation of CUSTODIAL-NEARLINE type of space when the access latency optional parameter is not specified. It happens both at Edinburgh and NDGF.The problem was that if either retention policy or access latency were not specified, we used default values for both.
 //
@@ -216,8 +219,8 @@ public class ReserveSpaceRequest extends Request {
     
     
     private long sizeInBytes ;
-    private TRetentionPolicy retentionPolicy = TRetentionPolicy.CUSTODIAL;
-    private TAccessLatency accessLatency = TAccessLatency.NEARLINE;
+    private TRetentionPolicy retentionPolicy =null;
+    private TAccessLatency accessLatency = null;
     private String spaceToken;
     private long spaceReservationLifetime;
     
@@ -327,8 +330,9 @@ public class ReserveSpaceRequest extends Request {
                 configuration);
         this.sizeInBytes = sizeInBytes;
         this.spaceToken = spaceToken;
-        this.retentionPolicy = TRetentionPolicy.fromString(retentionPolicy);
-        this.accessLatency = TAccessLatency.fromString(accessLatency);
+        
+        this.retentionPolicy = retentionPolicy == null?null: TRetentionPolicy.fromString(retentionPolicy);
+        this.accessLatency = accessLatency == null ?null :TAccessLatency.fromString(accessLatency);
         this.spaceReservationLifetime = spaceReservationLifetime;
         
         say("restored");
@@ -403,8 +407,8 @@ public class ReserveSpaceRequest extends Request {
                     getUser(),
                     sizeInBytes,
                     spaceReservationLifetime,
-                    retentionPolicy.getValue(),
-                    accessLatency.getValue(),
+                    retentionPolicy == null ? null:retentionPolicy.getValue(),
+                    accessLatency == null ? null:accessLatency.getValue(),
                     getDescription(),
                     callbacks
                     );
