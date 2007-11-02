@@ -1917,12 +1917,8 @@ public class Configuration {
         if(retentionPolicy != null) {
             sb.append("\n\tretention policy="+retentionPolicy);
         }
-        if(accessLatency != null) {
-            sb.append("\n\taccess latency="+accessLatency);
-        }
-        if(overwriteMode != null) {
-            sb.append("\n\toverwrite mode="+overwriteMode);
-        }
+        sb.append("\n\taccess latency="+accessLatency);
+        sb.append("\n\toverwrite mode="+overwriteMode);
         for (Iterator i = extraParameters.keySet().iterator(); i.hasNext();) {
            Object key = i.next();
           sb.append("\n\t"+key+"="+extraParameters.get(key));
