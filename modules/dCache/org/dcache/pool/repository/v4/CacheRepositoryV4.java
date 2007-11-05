@@ -340,12 +340,12 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
     public synchronized void runInventory(Logable log, PnfsHandler pnfs, int flags)
         throws CacheException 
     {
-        _log.debug("Generating inventory");
+        _log.info("Generating inventory");
 
         List<PnfsId> ids = _dataRepository.list();
         long usedDataSpace = 0L;
 
-        _log.debug("Done generating list of data files");
+        _log.info("Found " + ids.size() + " data files");
 
         RepositoryEntryHealer healer = 
             new RepositoryEntryHealer(pnfs, _dataRepository, 
@@ -354,6 +354,8 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
         _operationLock.writeLock().lock();
         try {
             _runningInventory = true;
+
+            _log.info("Checking repository consistency");
             
             /* Collect all entries.
              */
@@ -381,7 +383,7 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
                 }
             }
 
-            _log.debug("Done checking meta data consistency");
+            _log.info("Registering files with event listeners");
 
             /* Report SCAN events in LRU order.
              */
@@ -393,7 +395,6 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
                              new CacheRepositoryEvent(this, entry));
             }
 
-            _log.debug("Done registering all files");
             
             /* What is the point of this check?
              */
@@ -421,7 +422,7 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
             _operationLock.writeLock().unlock();
         }
 
-        _log.debug("Done generating inventory");
+        _log.info("Done generating inventory");
     }
 
     public boolean isRepositoryOk() 
