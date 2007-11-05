@@ -51,6 +51,8 @@ This package contains the clinet components.
 %attr(0755,root,root) /opt/d-cache/srm/bin/gridftpcopy
 %attr(0755,root,root) /opt/d-cache/srm/bin/gridftplist
 %attr(0755,root,root) /opt/d-cache/srm/bin/srm-get-request-status
+%attr(0755,root,root) /opt/d-cache/srm/bin/srm-get-request-summary
+%attr(0755,root,root) /opt/d-cache/srm/bin/srm-get-request-tokens
 %attr(0755,root,root) /opt/d-cache/srm/bin/srmcp
 %attr(0755,root,root) /opt/d-cache/srm/bin/srmls
 %attr(0755,root,root) /opt/d-cache/srm/bin/srmrm
