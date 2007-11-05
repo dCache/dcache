@@ -39,7 +39,6 @@ import diskCacheV111.vehicles.PoolCheckable;
 import diskCacheV111.vehicles.PoolCostCheckable;
 import diskCacheV111.vehicles.PoolLinkGroupInfo;
 import diskCacheV111.vehicles.PoolManagerGetPoolListMessage;
-import diskCacheV111.vehicles.PoolManagerPoolDownMessage;
 import diskCacheV111.vehicles.PoolManagerPoolModeMessage;
 import diskCacheV111.vehicles.PoolManagerPoolUpMessage;
 import diskCacheV111.vehicles.PoolMgrGetPoolByLink;
@@ -63,7 +62,6 @@ public class PoolManagerV5 extends CellAdapter {
     private int  _readThreads      = 0 ;
 
     private int _counterPoolUp         = 0 ;
-    private int _counterPoolDown       = 0 ;
     private int _counterSelectWritePool= 0 ;
     private int _counterSelectReadPool = 0 ;
     
@@ -415,7 +413,6 @@ public class PoolManagerV5 extends CellAdapter {
                               " cpu="+_performanceCostFactor ) ;
         pw.println("Message counts") ;
         pw.println("           PoolUp : "+_counterPoolUp ) ;
-        pw.println("         PoolDown : "+_counterPoolDown ) ;
         pw.println("   SelectReadPool : "+_counterSelectReadPool ) ;
         pw.println("  SelectWritePool : "+_counterSelectWritePool ) ;
         if( _watchdog == null ){
@@ -486,42 +483,54 @@ public class PoolManagerV5 extends CellAdapter {
     public void esay( Throwable t ){ super.esay( t ) ; }
     
     private synchronized 
-       void poolUp( PoolManagerPoolUpMessage poolMessage , CellPath poolPath ){
-            
-        poolPath.revert() ;
-        String poolName = poolMessage.getPoolName() ;
-        PoolSelectionUnit.SelectionPool pool = _selectionUnit.getPool(poolName,true) ;
-        if( pool == null ){
-           esay( "poolUP : pool not found : "+poolName ) ;
-           return ;
+       void poolUp(PoolManagerPoolUpMessage poolMessage, CellPath poolPath)
+    {
+        poolPath.revert();
+        String poolName = poolMessage.getPoolName();
+        PoolSelectionUnit.SelectionPool pool = 
+            _selectionUnit.getPool(poolName, true);
+        if (pool == null) {
+           esay("poolUP : pool not found : " + poolName);
+           return;
         }
-        pool.setActive( true ) ;
+
+        PoolV2Mode newMode = poolMessage.getPoolMode();
+        PoolV2Mode oldMode = pool.getPoolMode();
+        boolean changed = 
+            (newMode.getMode() != oldMode.getMode())
+            || pool.setSerialId(poolMessage.getSerialId());
+
+        /* For compatibility with previous versions of dCache, a pool
+         * marked DISABLED, but without any other DISABLED_ flags set
+         * is considered fully disabled.
+         */
+        boolean disabled = 
+            newMode.getMode() == PoolV2Mode.DISABLED 
+            || newMode.isDisabled(PoolV2Mode.DISABLED_DEAD)
+            || newMode.isDisabled(PoolV2Mode.DISABLED_STRICT);
+
+        pool.setPoolMode(newMode);
         pool.setHsmInstances(poolMessage.getHsmInstances());
-        if( pool.setSerialId( poolMessage.getSerialId() ) ){
-        
-           _requestContainer.poolStatusChanged(poolName);
-           
-           sendPoolStatusRelay( poolName , PoolStatusChangedMessage.RESTART ) ;
-           
-        }		
+        pool.setActive(!disabled);
+
+        /* Notify others in case the pool status has changed. Due to
+         * limitations of the PoolStatusChangedMessage, we will often
+         * send a RESTART notification, when in fact only the pool
+         * mode has changed.
+         */
+        if (changed) {
+            _requestContainer.poolStatusChanged(poolName);
+            if (disabled) {
+                sendPoolStatusRelay(poolName, PoolStatusChangedMessage.DOWN, 
+                                    poolMessage.getPoolMode(),
+                                    poolMessage.getCode(),
+                                    poolMessage.getMessage());
+            } else {
+                sendPoolStatusRelay(poolName, PoolStatusChangedMessage.RESTART);
+            }
+        }
     }
 
-    private synchronized 
-       void poolDown(PoolManagerPoolDownMessage poolMessage){
-        String poolName = poolMessage.getPoolName() ;
-        PoolSelectionUnit.SelectionPool pool = _selectionUnit.getPool(poolName) ;
-        if( pool == null ){
-           esay( "poolDown : pool not found : "+poolName ) ;
-        }else{
-           pool.setActive( false ) ;
-           pool.setSerialId(0L);
-           _requestContainer.poolStatusChanged(poolName);
-        }
-        sendPoolStatusRelay( poolName , PoolStatusChangedMessage.DOWN , 
-                             poolMessage.getPoolMode(),
-                             poolMessage.getDetailCode() ,
-                             poolMessage.getDetailMessage() ) ;
-    }
     private void sendPoolStatusRelay( String poolName , int status ){
        sendPoolStatusRelay( poolName , status , null , 0 , null ) ;
     }
@@ -563,11 +572,6 @@ public class PoolManagerV5 extends CellAdapter {
                _counterPoolUp ++ ;
                poolUp(  (PoolManagerPoolUpMessage)message ,
                         cellMessage.getSourcePath() ) ;
-
-           }else if( message instanceof PoolManagerPoolDownMessage ){
-
-               _counterPoolDown ++ ;
-               poolDown( (PoolManagerPoolDownMessage)message ) ;
 
 	   }else if (message instanceof PoolMgrSelectPoolMsg){
 

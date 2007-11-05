@@ -5,6 +5,7 @@ package diskCacheV111.vehicles;
 import java.util.*; 
 import java.io.Serializable; 
 import diskCacheV111.pools.PoolCostInfo ;
+import diskCacheV111.pools.PoolV2Mode;
 
 public class PoolManagerPoolUpMessage extends PoolManagerMessage {
    
@@ -13,18 +14,30 @@ public class PoolManagerPoolUpMessage extends PoolManagerMessage {
     private PoolCostInfo _poolCostInfo         = null ;
     private Map       _tagMap                  = null ;
     private Set<String> _hsmInstances          = null;
+    private String    _message                 = "";
+    private int       _code                    = 0;
+    private PoolV2Mode _mode;
 
     private static final long serialVersionUID = -8421133630068493665L;
     
-    public PoolManagerPoolUpMessage(String poolName, long serialId ){
+    public PoolManagerPoolUpMessage(String poolName, long serialId, 
+                                    PoolV2Mode mode)
+    {
+        assert mode != null;
+
         _poolName = poolName;
-	_serialId = serialId ;
+	_serialId = serialId;
+        _mode = mode;
 	setReplyRequired(false);
     }
-    public PoolManagerPoolUpMessage( String poolName , long serialId , PoolCostInfo costInfo ){
-        this( poolName , serialId ) ;
-        _poolCostInfo = costInfo ;
+
+    public PoolManagerPoolUpMessage(String poolName, long serialId, 
+                                    PoolV2Mode mode, PoolCostInfo costInfo)
+    {
+        this(poolName, serialId, mode);
+        _poolCostInfo = costInfo;
     }    
+
     public PoolCostInfo getPoolCostInfo(){ return _poolCostInfo ; }
     public String getPoolName(){
         return _poolName;
@@ -32,6 +45,51 @@ public class PoolManagerPoolUpMessage extends PoolManagerMessage {
     public long getSerialId(){ return _serialId ; }
     public void setTagMap( Map map ){ _tagMap = map ; }
     public Map  getTagMap(){ return _tagMap ; }
+
+    /**
+     * Sets the human readable status message of the pool.
+     */ 
+    public void setMessage(String msg)
+    {
+        assert msg != null;
+
+        _message = msg;
+    }
+
+    /**
+     * Returns the human readable status message of the pool. May be
+     * null.
+     */ 
+    public String getMessage()
+    {
+        return _message;
+    }
+
+    /**
+     * Sets the machine interpretable status code of the pool.
+     */ 
+    public void setCode(int code)
+    {
+        _code = code;
+    }
+
+    /**
+     * Returns the machine interpretable status code of the
+     * pool. Returns 0 if the status code has not been set.
+     */ 
+    public int getCode()
+    {
+        return _code;
+    }
+
+    /** 
+     * Returns the mode of the pool. The mode indicates which
+     * operations are currently supported by the pool. 
+     */
+    public PoolV2Mode getPoolMode()
+    {
+        return _mode; 
+    }
 
     /** Returns the names of attached HSM instances. */
     public Set<String> getHsmInstances() 

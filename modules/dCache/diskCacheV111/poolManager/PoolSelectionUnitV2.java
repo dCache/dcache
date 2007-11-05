@@ -27,6 +27,7 @@ import dmg.util.Args;
 import dmg.util.CommandSyntaxException;
 
 import diskCacheV111.vehicles.StorageInfo;
+import diskCacheV111.pools.PoolV2Mode;
 
 public class PoolSelectionUnitV2 implements PoolSelectionUnit {
 
@@ -384,18 +385,29 @@ public class PoolSelectionUnitV2 implements PoolSelectionUnit {
         private long _serialId = 0L;
         private boolean _rdOnly = false;
         private Set<String> _hsmInstances = new HashSet<String>(0);
+        private PoolV2Mode  _mode = 
+            new PoolV2Mode(PoolV2Mode.ENABLED);
 
         private Pool(String name) {
             super(name);
         }
 
-        public void setActive(boolean active) {
-            _active = (!_ping) ? 0L : active ? System.currentTimeMillis()
-                    : 100000000L;
+        public void setActive(boolean active)
+        {
+            _active =  active ? System.currentTimeMillis() : 0;
         }
 
         public long getActive() {
             return _ping ? (System.currentTimeMillis() - _active) : 0L;
+        }
+
+        /**
+         * Returns true if pool heartbeat was received within the last
+         * 5 minutes.
+         */
+        public boolean isActive() 
+        {
+            return getActive() < 5*60*1000;
         }
 
         public void setReadOnly(boolean rdOnly) {
@@ -404,6 +416,55 @@ public class PoolSelectionUnitV2 implements PoolSelectionUnit {
 
         public boolean isReadOnly() {
             return _rdOnly;
+        }
+
+        /**
+         * Returns true if reading from the pool is allowed.
+         */
+        public boolean canRead() 
+        {
+            return isEnabled() && 
+                _mode.getMode() != PoolV2Mode.DISABLED &&
+                !_mode.isDisabled(PoolV2Mode.DISABLED_FETCH) &&
+                !_mode.isDisabled(PoolV2Mode.DISABLED_DEAD);
+        }
+
+        /**
+         * Returns true if writing to the pool is allowed. Since we
+         * cannot distinguish between a client write and a
+         * pool-to-pool write, both operations must be enabled on the
+         * pool.
+         */
+        public boolean canWrite() 
+        {
+            return isEnabled() && !isReadOnly() &&
+                _mode.getMode() != PoolV2Mode.DISABLED &&
+                !_mode.isDisabled(PoolV2Mode.DISABLED_STORE) &&
+                !_mode.isDisabled(PoolV2Mode.DISABLED_DEAD) && 
+                !_mode.isDisabled(PoolV2Mode.DISABLED_P2P_SERVER);
+        }
+
+        /**
+         * Returns true if the pool is allowed to read from tape.
+         */
+        public boolean canReadFromTape() 
+        {
+            return isEnabled() && !isReadOnly() &&
+                _mode.getMode() != PoolV2Mode.DISABLED &&
+                !_mode.isDisabled(PoolV2Mode.DISABLED_STAGE) &&
+                !_mode.isDisabled(PoolV2Mode.DISABLED_DEAD);
+        }
+
+        /**
+         * Returns true if the pool can deliver files for P2P
+         * operations.
+         */
+        public boolean canReadForP2P() 
+        {
+            return isEnabled() &&
+                _mode.getMode() != PoolV2Mode.DISABLED &&
+                !_mode.isDisabled(PoolV2Mode.DISABLED_P2P_CLIENT) &&
+                !_mode.isDisabled(PoolV2Mode.DISABLED_DEAD);
         }
 
         public void setEnabled(boolean enabled) {
@@ -423,11 +484,15 @@ public class PoolSelectionUnitV2 implements PoolSelectionUnit {
         }
 
         public String toString() {
-            return _name + "  (enabled=" + _enabled + ";active="
-                    + (getActive() / 1000) + ";rdOnly=" + isReadOnly()
-                    + ";links=" + _linkList.size() + ";pgroups="
-                    + _pGroupList.size() + ";hsm=" + _hsmInstances.toString()
-                    + ")";
+            return _name
+                + "  (enabled=" + _enabled 
+                + ";active=" +(_active > 0 ? (getActive() / 1000) : "no")
+                + ";rdOnly=" + isReadOnly()
+                + ";links=" + _linkList.size() 
+                + ";pgroups=" + _pGroupList.size() 
+                + ";hsm=" + _hsmInstances.toString()
+                + ";mode=" + _mode
+                + ")";
         }
 
         public boolean setSerialId(long serialId) {
@@ -435,6 +500,16 @@ public class PoolSelectionUnitV2 implements PoolSelectionUnit {
                 return false;
             _serialId = serialId;
             return true;
+        }
+
+        public void setPoolMode(PoolV2Mode mode) 
+        {
+            _mode = mode;
+        }
+
+        public PoolV2Mode getPoolMode() 
+        {
+            return _mode;
         }
 
         public Set<String> getHsmInstances() {
@@ -615,7 +690,7 @@ public class PoolSelectionUnitV2 implements PoolSelectionUnit {
         _psuReadLock.lock();
         try {
             for (Pool pool : _pools.values()) {
-                if (pool.isEnabled() && (pool.getActive() < (5 * 60 * 1000)))
+                if (pool.isEnabled() && pool.isActive())
                     list.add(pool.getName());
             }
         } finally {
@@ -1306,24 +1381,22 @@ public class PoolSelectionUnitV2 implements PoolSelectionUnit {
                     for (PoolCore poolCore : link._poolList.values()) {
                         if (poolCore instanceof Pool) {
                             Pool pool = (Pool) poolCore;
-                            if ((pool.isEnabled())
-                                    && ((type.equals("read")) || !pool
-                                            .isReadOnly())
-                                    && (_allPoolsActive || (pool.getActive() < 5 * 60 * 1000))
-                                    && (!type.equals("cache") || poolCanStageFile(
-                                            pool, storageInfo))) {
+                            if (((type.equals("read") && pool.canRead())
+                                 || (type.equals("cache") && pool.canReadFromTape()
+                                     && poolCanStageFile(pool, storageInfo)) 
+                                 || (type.equals("write") && pool.canWrite()) 
+                                 || (type.equals("p2p") && pool.canReadForP2P()))
+                                && (_allPoolsActive || pool.isActive())) {
                                 resultList.add(pool.getName());
                             }
                         } else {
-                            for (Pool pool : ((PGroup) poolCore)._poolList
-                                    .values()) {
-                                if ((pool.isEnabled())
-                                        && ((type.equals("read")) || !pool
-                                                .isReadOnly())
-                                        && (_allPoolsActive || (pool
-                                                .getActive() < 5 * 60 * 1000))
-                                        && (!type.equals("cache") || poolCanStageFile(
-                                                pool, storageInfo))) {
+                            for (Pool pool : ((PGroup)poolCore)._poolList.values()) {
+                                if (((type.equals("read") && pool.canRead())
+                                     || (type.equals("cache") && pool.canReadFromTape()
+                                         && poolCanStageFile(pool, storageInfo))
+                                     || (type.equals("write") && pool.canWrite()) 
+                                     || (type.equals("p2p") && pool.canReadForP2P()))
+                                    && (_allPoolsActive || pool.isActive())) {
                                     resultList.add(pool.getName());
                                 }
                             }

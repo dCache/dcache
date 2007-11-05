@@ -52,6 +52,8 @@ public class       MultiProtocolPool2
     private long       _serialId        = System.currentTimeMillis() ;
     private int        _recoveryFlags   = 0 ;
     private PoolV2Mode _poolMode        = new PoolV2Mode() ;
+    private String     _poolStatusMessage = "OK";
+    private int        _poolStatusCode  = 0;
     private boolean    _reportOnRemovals   = false ;
     private boolean    _flushZeroSizeFiles = false ;
     private boolean    _suppressHsmLoad    = false ;
@@ -360,8 +362,8 @@ public class       MultiProtocolPool2
             //
             _pingThread   = new PoolManagerPingThread() ;
 
-            disablePool(PoolV2Mode.DISABLED_STRICT,1,"Initiallizing");
-
+            disablePool(PoolV2Mode.DISABLED_STRICT, 1, "Initializing");
+            
             say("Checking base directory ( reading setup) "+_baseDir);
             while( true ){
                 try{
@@ -370,7 +372,7 @@ public class       MultiProtocolPool2
                 }catch(Exception ee ){
                    esay("Repository seems not to be ready : "+ee.getMessage());
                    if( ! _waitForRepositoryOk )throw ee ;
-                   disablePool(PoolV2Mode.DISABLED_STRICT,1,"Initiallizing : Repository seems not to be ready : "+ee.getMessage());
+                   disablePool(PoolV2Mode.DISABLED_STRICT,1,"Initializing : Repository seems not to be ready : "+ee.getMessage());
                 }
                 try{
                    Thread.sleep(30000) ;
@@ -385,7 +387,6 @@ public class       MultiProtocolPool2
             _storageQueue = new StorageClassContainer(poolName) ;
             _repository   = new CacheRepository2( _base ) ;
             _repository.setLogable( this ) ;
-
 
             _pnfs = new PnfsHandler( this ,
                     new CellPath( _pnfsManagerName ) ,
@@ -862,22 +863,16 @@ public class       MultiProtocolPool2
 
         return ;
     }
-    public CellInfo getCellInfo(){
 
-        PoolManagerPoolDownMessage down = _pingThread.getPoolDownMessage() ;
-
-        PoolCellInfo info = new PoolCellInfo(  super.getCellInfo() ) ;
-
-        info.setPoolCostInfo( getPoolCostInfo() ) ;
-        info.setTagMap( _tags ) ;
-
-        if( down != null )
-            info.setErrorStatus( down.getDetailCode() , down.getDetailMessage() ) ;
-        else
-            info.setErrorStatus(0,"OK") ;
-
-        return info ;
+    public CellInfo getCellInfo()
+    {        
+        PoolCellInfo info = new PoolCellInfo(super.getCellInfo());        
+        info.setPoolCostInfo(getPoolCostInfo());
+        info.setTagMap(_tags);
+        info.setErrorStatus(_poolStatusCode, _poolStatusMessage);
+        return info;
     }
+
     public void log(String str  ){ say( str ) ; }
     public void elog(String str ){ esay( str ) ; }
     public void plog(String str ){ esay( "PANIC : "+str ) ; }
@@ -896,10 +891,8 @@ public class       MultiProtocolPool2
                 );
         pw.println("Pool Mode         : "+_poolMode ) ;
         if( _poolMode.isDisabled() ){
-            PoolManagerPoolDownMessage down = _pingThread.getPoolDownMessage() ;
-            if( down != null )
-                pw.println("Detail            : ["+down.getDetailCode()+"] "+
-                        down.getDetailMessage() ) ;
+            pw.println("Detail            : ["+_poolStatusCode+"] "
+                       + _poolStatusMessage);
         }
         pw.println("Clean prec. files : "+(_cleanPreciousFiles?"on":"off"));
         pw.println("Hsm Load Suppr.   : "+(_suppressHsmLoad?"on":"off"));
@@ -2354,7 +2347,9 @@ public class       MultiProtocolPool2
 
         }else if (poolMessage instanceof PoolCheckable){
 
-            if( _poolMode.isDisabled(PoolV2Mode.DISABLED) ){
+            if( _poolMode.getMode() == PoolV2Mode.DISABLED ||
+                _poolMode.isDisabled(PoolV2Mode.DISABLED_FETCH) ||
+                _poolMode.isDisabled(PoolV2Mode.DISABLED_DEAD)){
 
                 esay("PoolCheckable Request rejected due to "+_poolMode);
                 sentNotEnabledException( (Message)poolMessage , cellMessage ) ;
@@ -2513,15 +2508,33 @@ public class       MultiProtocolPool2
 
         return "Costs : cpu = "+_simCpuCost+" , space = "+_simSpaceCost ;
     }
-    private void disablePool( int mode , int errorCode , String errorString ){
+
+    /**
+     * Partially or fully disables normal operation of this pool.
+     */
+    private synchronized void disablePool(int mode, int errorCode, String errorString)
+    {
+        _poolStatusCode = errorCode;
+        _poolStatusMessage =
+            (errorString == null ? "Requested By Operator" : errorString);
         _poolMode.setMode(mode) ;
-        _pingThread.sendPoolDownMessage(errorCode,errorString==null?"Requested By Operator":errorString);
-        esay("New Pool Mode : "+_poolMode);
+
+        _pingThread.sendPoolManagerMessage(true);
+        esay("New Pool Mode : " + _poolMode);
     }
-    private void enablePool(){
+
+    /**
+     * Fully enables this pool. The status code is set to 0 and the
+     * status message is cleared.
+     */
+    private synchronized void enablePool()
+    {
         _poolMode.setMode(PoolV2Mode.ENABLED);
-        _pingThread.sendPoolUpMessage();
-        esay("New Pool Mode : "+_poolMode);
+        _poolStatusCode = 0;
+        _poolStatusMessage = "OK";
+
+        _pingThread.sendPoolManagerMessage(true);
+        esay("New Pool Mode : " + _poolMode);
     }
     /////////////////////////////////////////////////////////////////
     //
@@ -2531,15 +2544,11 @@ public class       MultiProtocolPool2
 
         private Thread      _worker    = null ;
         private int         _heartbeat = 30 ;
-        private PoolManagerPoolDownMessage _poolDownMessage = null ;
 
         private PoolManagerPingThread(){
             _worker = _nucleus.newThread( this , "ping" ) ;
         }
         private void start(){ _worker.start() ; }
-        public PoolManagerPoolDownMessage getPoolDownMessage(){
-            return _poolDownMessage ;
-        }
         public void run(){
             say( "Ping Thread started" ) ;
             while( ! Thread.currentThread().interrupted() ){
@@ -2548,9 +2557,8 @@ public class       MultiProtocolPool2
 
 		   esay("Pool disabled due to problems in repository") ;
 		   disablePool( PoolV2Mode.DISABLED | PoolV2Mode.DISABLED_STRICT , 99 , "Repository got lost" ) ;
-
 		}
-                if( _poolMode.isEnabled() )sendPoolManagerMessage(true);
+                sendPoolManagerMessage(true);
                 try{
                     Thread.currentThread().sleep(_heartbeat*1000);
                 }catch(InterruptedException e){
@@ -2558,50 +2566,35 @@ public class       MultiProtocolPool2
                     break ;
                 }
             }
-            //
-            esay( "Ping Thread sending Pool Down message" ) ;
-            sendPoolDownMessage(666,"PingThread terminated") ;
-            esay( "Ping Thread finished" ) ;
+
+            esay("Ping Thread sending Pool Down message");
+            disablePool(PoolV2Mode.DISABLED_DEAD, 666, 
+                        "PingThread terminated");
+            esay("Ping Thread finished");
         }
         public void setHeartbeat( int seconds ){ _heartbeat = seconds ; }
         public int getHeartbeat(){ return _heartbeat ; }
-        public synchronized void sendPoolUpMessage(){
-            sendPoolManagerMessage(true) ;
-            _poolDownMessage = null ;
+        public synchronized void sendPoolManagerMessage(boolean forceSend)
+        {
+            if (forceSend || _storageQueue.poolStatusChanged())
+                send(getPoolManagerMessage());
         }
-        public synchronized void sendPoolDownMessage(){
-            _poolDownMessage = new PoolManagerPoolDownMessage( _poolName ) ;
-            _poolDownMessage.setPoolMode( new PoolV2Mode( _poolMode.getMode() ) );
-            send( new CellMessage(
-                    new CellPath( _poolManagerName ) ,
-                    _poolDownMessage
-                    )
-                    );
-        }
-        public synchronized void sendPoolDownMessage( int rc ,  String detail ){
-            _poolDownMessage = new PoolManagerPoolDownMessage( _poolName , rc ,  detail ) ;
-            _poolDownMessage.setPoolMode( new PoolV2Mode( _poolMode.getMode() ) );
-            send( new CellMessage(
-                    new CellPath( _poolManagerName ) ,
-                    _poolDownMessage
-                    )
-                    );
-        }
-        private synchronized void sendPoolManagerMessage(boolean forceSend ){
-            if( forceSend || _storageQueue.poolStatusChanged() )
-                send( getPoolManagerMessage() ) ;
-        }
-        private CellMessage getPoolManagerMessage(){
 
-            PoolManagerPoolUpMessage poolManagerMessage = null ;
+        private CellMessage getPoolManagerMessage()
+        {       
+            boolean disabled = 
+                _poolMode.isDisabled(PoolV2Mode.DISABLED_STRICT) ||
+                _poolMode.isDisabled(PoolV2Mode.DISABLED_DEAD);
+            PoolCostInfo info = disabled ? null : getPoolCostInfo();
 
-            PoolCostInfo info = getPoolCostInfo() ;
-
-            poolManagerMessage = new PoolManagerPoolUpMessage(
-                    _poolName, _serialId , info );
+            PoolManagerPoolUpMessage poolManagerMessage =
+                new PoolManagerPoolUpMessage(_poolName, _serialId, 
+                                             _poolMode, info);
 
             poolManagerMessage.setTagMap( _tags ) ;
             poolManagerMessage.setHsmInstances(new TreeSet(_hsmSet.getHsmInstances()));
+            poolManagerMessage.setMessage(_poolStatusMessage);
+            poolManagerMessage.setCode(_poolStatusCode);
 
             return new CellMessage( new CellPath(_poolManagerName),
                     poolManagerMessage

@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
+import diskCacheV111.pools.PoolV2Mode;
 import diskCacheV111.vehicles.StorageInfo;
 
 public interface PoolSelectionUnit  {
@@ -16,21 +17,101 @@ public interface PoolSelectionUnit  {
       public String  getTag() ;
    }
       
-   public interface SelectionPool {
-      public String  getName() ;
-      public long    getActive() ;
-      public void    setActive( boolean active ) ;
-      public boolean isReadOnly() ;
-      public void    setReadOnly( boolean rdOnly ) ;
-      public boolean isEnabled() ;
-      public boolean setSerialId( long serialId ) ;
+    /**
+     * Encapsulates information about a pool. The information is
+     * updated periodically. Due to the distributed nature of dCache,
+     * the information may be outdated.
+     */
+    public interface SelectionPool 
+    {
+        public String  getName();
 
-      /** Returns the names of attached HSM instances. */
-      public Set<String> getHsmInstances();
+        /**
+         * Returns the time in milliseconds since the last heartbeat
+         * from the pool.
+         */
+        public long    getActive();
+       
+        /**
+         * Sets whether the pool is active or not. This is also used to
+         * deliver a hearbeat, i.e. calling this method with an
+         * argument of 'true' will reset the heartbeat counter.
+         */       
+        public void    setActive(boolean active);
 
-      /** Sets the set of names of attached HSM instances. */
-      public void setHsmInstances(Set<String> hsmInstances);
-   }
+        /**
+         * Returns true if the pool has been marked as read-only in the
+         * pool manager. Notice that this is not the same as whether
+         * the pool can actually write, as there are other places that
+         * a pool can be marked read-only.
+         */
+        public boolean isReadOnly();
+        /**
+         * Sets the read-only flag.
+         */
+        public void    setReadOnly(boolean rdOnly);
+
+        /**
+         * Returns true if the pool is enabled. This is the case if no
+         * operations of the pool have been disabled.
+         */
+        public boolean isEnabled() ;
+
+        /**
+         * Sets the ID of the pool. Used to detect when a pool was
+         * restarted. Returns true if and only if the serial ID was changed.
+         */
+        public boolean setSerialId(long serialId);
+
+        /**
+         * Returns true if the pool is marked as active. This is
+         * normally the case if a heartbeat has been received within
+         * the last five minutes. Notice that this is unrelated to
+         * isEnabled(), e.g., a disabled pool can be active.
+         */
+        public boolean isActive();
+
+        /**
+         * Sets the pool mode. The pool mode defines which operations
+         * are enabled at the pool.
+         */
+        public void setPoolMode(PoolV2Mode mode);
+       
+        /** 
+         * Returns the pool mode.
+         *
+         * @see setPoolMode
+         */
+        public PoolV2Mode getPoolMode();
+
+        /**
+         * Returns whether the pool can perform read operations. 
+         */
+        public boolean canRead();
+
+        /**
+         * Returns whether the pool can perform write operations.
+         */
+        public boolean canWrite();
+
+        /**
+         * Returns whether the pool can perform stage files from tape
+         * operations.
+         */
+        public boolean canReadFromTape();
+
+        /**
+         * Returns whether the pool can perform serve files for P2P
+         * operations. 
+         */
+        public boolean canReadForP2P();
+
+        /** Returns the names of attached HSM instances. */
+        public Set<String> getHsmInstances();
+
+        /** Sets the set of names of attached HSM instances. */
+        public void setHsmInstances(Set<String> hsmInstances);
+    }    
    
    public interface SelectionLinkGroup {
 	   public String  getName() ;

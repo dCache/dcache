@@ -556,9 +556,7 @@ public class PoolMonitorV5 {
                 //
                 PoolSelectionUnit.SelectionPool pool = _selectionUnit
                         .getPool(poolName);
-
-                if ((pool == null) || (!pool.isEnabled())
-                        || (pool.getActive() > (5 * 60 * 1000)))
+                if ((pool == null) || !pool.canRead() || !pool.isActive())
                     continue;
 
                 _cell.say("queryPoolsForPnfsId : PoolCheckFileRequest to : "
@@ -590,7 +588,7 @@ public class PoolMonitorV5 {
 
                 Object message = answer.getMessageObject();
 
-                if (!(message instanceof PoolFileCheckable)) {
+                if (!(message instanceof PoolCheckFileMessage)) {
                     _cell
                             .esay("queryPoolsForPnfsId : Unexpected message from ("
                                     + answer.getSourcePath()
@@ -599,7 +597,8 @@ public class PoolMonitorV5 {
                     continue;
                 }
 
-                PoolFileCheckable poolMessage = (PoolFileCheckable) message;
+                PoolCheckFileMessage poolMessage = 
+                    (PoolCheckFileMessage) message;
                 _cell.say("queryPoolsForPnfsId : reply : " + poolMessage);
 
                 boolean have = poolMessage.getHave();
@@ -614,7 +613,7 @@ public class PoolMonitorV5 {
 
                     list.add(check);
                     _cell.say("queryPoolsForPnfsId : returning : " + check);
-                } else {
+                } else if (poolMessage.getReturnCode() == 0) {
                     _cell
                             .esay("queryPoolsForPnfsId : clearingCacheLocation for pnfsId "
                                     + pnfsId + " at pool " + poolName);

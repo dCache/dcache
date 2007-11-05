@@ -52,6 +52,8 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
 	private boolean _flushZeroSizeFiles = false;
 	private boolean _suppressHsmLoad = false;
 	private boolean _cleanPreciousFiles = false;
+    private String     _poolStatusMessage = "OK";
+    private int        _poolStatusCode  = 0;
 
 	private final PnfsHandler _pnfs;
 	private final CacheRepository _repository;
@@ -368,15 +370,14 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
 			//
 			_pingThread = new PoolManagerPingThread();
 
-			_poolMode.setMode(PoolV2Mode.DISABLED_STRICT);
-			_pingThread.sendPoolDownMessage(1,"Initiallizing");
+            disablePool(PoolV2Mode.DISABLED_STRICT, 1, "Initializing");
 
 			say("Checking base directory ( reading setup) " + _baseDir);
 			_base = new File(_baseDir);
 			_setup = new File(_base, "setup");
 			
 			while (!_setup.canRead()) {
-				_pingThread.sendPoolDownMessage(1,"Initiallizing: Repository seems not to be ready - setup file does not exist or not readble");
+                   disablePool(PoolV2Mode.DISABLED_STRICT,1,"Initializing : Repository seems not to be ready - setup file does not exist or not readble");
 				try {
 					Thread.sleep(30000);
 				} catch (InterruptedException ie) {
@@ -956,21 +957,14 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
 		return;
 	}
 
-	public CellInfo getCellInfo() {
 
-		PoolManagerPoolDownMessage down = _pingThread.getPoolDownMessage();
-
-		PoolCellInfo info = new PoolCellInfo(super.getCellInfo());
-
-		info.setPoolCostInfo(getPoolCostInfo());
-		info.setTagMap(_tags);
-
-		if (down != null)
-			info.setErrorStatus(down.getDetailCode(), down.getDetailMessage());
-		else
-			info.setErrorStatus(0, "OK");
-
-		return info;
+    public CellInfo getCellInfo()
+    {        
+        PoolCellInfo info = new PoolCellInfo(super.getCellInfo());        
+        info.setPoolCostInfo(getPoolCostInfo());
+        info.setTagMap(_tags);
+        info.setErrorStatus(_poolStatusCode, _poolStatusMessage);
+        return info;
 	}
 
 	public void log(String str) {
@@ -1007,10 +1001,8 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
 								: ""));
 		pw.println("Pool Mode         : " + _poolMode);
 		if (_poolMode.isDisabled()) {
-			PoolManagerPoolDownMessage down = _pingThread.getPoolDownMessage();
-			if (down != null)
-				pw.println("Detail            : [" + down.getDetailCode()
-						+ "] " + down.getDetailMessage());
+            pw.println("Detail            : [" + _poolStatusCode + "] "
+                       + _poolStatusMessage);
 		}
 		pw.println("Clean prec. files : "
 				+ (_cleanPreciousFiles ? "on" : "off"));
@@ -2549,7 +2541,9 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
 
 		} else if (poolMessage instanceof PoolCheckable) {
 
-			if (_poolMode.isDisabled(PoolV2Mode.DISABLED)) {
+            if( _poolMode.getMode() == PoolV2Mode.DISABLED ||
+                _poolMode.isDisabled(PoolV2Mode.DISABLED_FETCH) ||
+                _poolMode.isDisabled(PoolV2Mode.DISABLED_DEAD)){
 
 				esay("PoolCheckable Request rejected due to " + _poolMode);
 				sentNotEnabledException(poolMessage, cellMessage);
@@ -2711,128 +2705,126 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
 		return "Costs : cpu = " + _simCpuCost + " , space = " + _simSpaceCost;
 	}
 
-	private void disablePool(int mode, int errorCode, String errorString) {
-		_poolMode.setMode(mode);
-		_pingThread.sendPoolDownMessage(errorCode,
-				errorString == null ? "Requested By Operator" : errorString);
-		esay("New Pool Mode : " + _poolMode);
-	}
 
-	private void enablePool() {
-		_poolMode.setMode(PoolV2Mode.ENABLED);
-		_pingThread.sendPoolUpMessage();
-		esay("New Pool Mode : " + _poolMode);
-	}
+    /**
+     * Partially or fully disables normal operation of this pool.
+     */
+    private synchronized void disablePool(int mode, int errorCode, String errorString)
+    {
+        _poolStatusCode = errorCode;
+        _poolStatusMessage =
+            (errorString == null ? "Requested By Operator" : errorString);
+        _poolMode.setMode(mode);
 
-	// ///////////////////////////////////////////////////////////////
-	//
-	// The pool manager ping
-	//
-	private class PoolManagerPingThread implements Runnable {
+        _pingThread.sendPoolManagerMessage(true);
+        esay("New Pool Mode : " + _poolMode);
+    }
 
-		private Thread _worker = null;
-		private int _heartbeat = 30;
-		private PoolManagerPoolDownMessage _poolDownMessage = null;
+    /**
+     * Fully enables this pool. The status code is set to 0 and the
+     * status message is cleared.
+     */
+    private synchronized void enablePool()
+    {
+        _poolMode.setMode(PoolV2Mode.ENABLED);
+        _poolStatusCode = 0;
+        _poolStatusMessage = "OK";
 
-		private PoolManagerPingThread() {
-			_worker = _nucleus.newThread(this, "ping");
+        _pingThread.sendPoolManagerMessage(true);
+        esay("New Pool Mode : " + _poolMode);
+    }
+
+    private class PoolManagerPingThread implements Runnable  
+    {    
+        private Thread      _worker    = null;
+        private int         _heartbeat = 30;
+        
+        private PoolManagerPingThread()
+        {
+            _worker = _nucleus.newThread(this, "ping");
+        }
+
+        private void start()
+        {
+            _worker.start();
+        }
+
+        public void run()
+        {
+            say("Ping Thread started");
+            while (!Thread.currentThread().interrupted()) {
+
+		if (_poolMode.isEnabled() && _checkRepository 
+                    && !_repository.isRepositoryOk()) {
+		
+		   esay("Pool disabled due to problems in repository") ;
+		   disablePool(PoolV2Mode.DISABLED | PoolV2Mode.DISABLED_STRICT,
+                               99, "Repository got lost");		   
 		}
+                sendPoolManagerMessage(true);
 
-		private void start() {
-			_worker.start();
-		}
+                try {
+                    Thread.currentThread().sleep(_heartbeat*1000);
+                } catch(InterruptedException e) {
+                    esay("Ping Thread was interrupted");
+                    break;
+                }
+            }
 
-		public PoolManagerPoolDownMessage getPoolDownMessage() {
-			return _poolDownMessage;
-		}
+            esay("Ping Thread sending Pool Down message");
+            disablePool(PoolV2Mode.DISABLED_DEAD, 666, 
+                        "PingThread terminated");
+            esay("Ping Thread finished");
+        }
 
-		public void run() {
-			say("Ping Thread started");
-			while (!Thread.interrupted()) {
-				//
-				if (_poolMode.isEnabled() && _checkRepository
-						&& !_repository.isRepositoryOk()) {
+        public void setHeartbeat(int seconds)
+        {
+            _heartbeat = seconds;
+        }
 
-					esay("Pool disabled due to problems in repository");
-					disablePool(PoolV2Mode.DISABLED
-							| PoolV2Mode.DISABLED_STRICT, 99,
-							"Repository got lost");
+        public int getHeartbeat()
+        {
+            return _heartbeat;
+        }
 
-				}
-				if (_poolMode.isEnabled())
-					sendPoolManagerMessage(true);
-				try {
-					Thread.sleep(_heartbeat * 1000);
-				} catch (InterruptedException e) {
-					esay("Ping Thread was interrupted");
-					break;
-				}
-			}
-			//
-			esay("Ping Thread sending Pool Down message");
-			sendPoolDownMessage(666, "PingThread terminated");
-			esay("Ping Thread finished");
-		}
+        public synchronized void sendPoolManagerMessage(boolean forceSend)
+        {
+            if (forceSend || _storageQueue.poolStatusChanged())
+                send(getPoolManagerMessage());
+        }
 
-		public void setHeartbeat(int seconds) {
-			_heartbeat = seconds;
-		}
+        private CellMessage getPoolManagerMessage()
+        {       
+            boolean disabled = 
+                _poolMode.getMode() == PoolV2Mode.DISABLED ||
+                _poolMode.isDisabled(PoolV2Mode.DISABLED_STRICT) ||
+                _poolMode.isDisabled(PoolV2Mode.DISABLED_DEAD);
+            PoolCostInfo info = disabled ? null : getPoolCostInfo();
 
-		public int getHeartbeat() {
-			return _heartbeat;
-		}
+            PoolManagerPoolUpMessage poolManagerMessage =
+                new PoolManagerPoolUpMessage(_poolName, _serialId, 
+                                             _poolMode, info);
 
-		public synchronized void sendPoolUpMessage() {
-			sendPoolManagerMessage(true);
-			_poolDownMessage = null;
-		}
+            poolManagerMessage.setTagMap( _tags ) ;
+            poolManagerMessage.setHsmInstances(new TreeSet(_hsmSet.getHsmInstances()));
+            poolManagerMessage.setMessage(_poolStatusMessage);
+            poolManagerMessage.setCode(_poolStatusCode);
 
-		public synchronized void sendPoolDownMessage() {
-			_poolDownMessage = new PoolManagerPoolDownMessage(_poolName);
-			_poolDownMessage.setPoolMode(new PoolV2Mode(_poolMode.getMode()));
-			send(new CellMessage(new CellPath(_poolManagerName),
-					_poolDownMessage));
-		}
+            return new CellMessage( new CellPath(_poolManagerName),
+                    poolManagerMessage
+                    ) ;
+        }
 
-		public synchronized void sendPoolDownMessage(int rc, String detail) {
-			_poolDownMessage = new PoolManagerPoolDownMessage(_poolName, rc,
-					detail);
-			_poolDownMessage.setPoolMode(new PoolV2Mode(_poolMode.getMode()));
-			send(new CellMessage(new CellPath(_poolManagerName),
-					_poolDownMessage));
-		}
-
-		private synchronized void sendPoolManagerMessage(boolean forceSend) {
-			if (forceSend || _storageQueue.poolStatusChanged())
-				send(getPoolManagerMessage());
-		}
-
-		private CellMessage getPoolManagerMessage() {
-
-			PoolManagerPoolUpMessage poolManagerMessage = null;
-
-			PoolCostInfo info = getPoolCostInfo();
-
-			poolManagerMessage = new PoolManagerPoolUpMessage(_poolName,
-					_serialId, info);
-
-			poolManagerMessage.setTagMap(_tags);
-			poolManagerMessage.setHsmInstances(new TreeSet<String>(_hsmSet.getHsmInstances()));
-
-			return new CellMessage(new CellPath(_poolManagerName),
-					poolManagerMessage);
-		}
-
-		private void send(CellMessage msg) {
-			try {
-				sendMessage(msg);
-			} catch (Exception exc) {
-				esay("Exception sending ping message " + exc);
-				esay(exc);
-			}
-		}
-
-	}
+        private void send(CellMessage msg)
+        {
+            try {
+                sendMessage(msg);
+            } catch (Exception exc){
+                esay("Exception sending ping message " + exc);
+                esay(exc);
+            }
+        }        
+    }
 
 	private PoolCostInfo getPoolCostInfo() {
 

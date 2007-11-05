@@ -82,24 +82,24 @@ public class CostModuleV1 implements CostModule {
          
          PoolManagerPoolUpMessage msg = (PoolManagerPoolUpMessage)message ;
          String poolName = msg.getPoolName() ;
-         if( msg.getPoolCostInfo() != null ){
-             Entry e = _hash.get(poolName);
-             if( e == null ){
-                _hash.put( 
-                           poolName , 
-                           new Entry( msg.getPoolCostInfo() ) 
-                         ) ;
-             }else{
-                e.setPoolCostInfo( msg.getPoolCostInfo() ) ;
+         PoolV2Mode poolMode = msg.getPoolMode();
+         if (poolMode.getMode() != PoolV2Mode.DISABLED && 
+             !poolMode.isDisabled(PoolV2Mode.DISABLED_STRICT) &&
+             !poolMode.isDisabled(PoolV2Mode.DISABLED_DEAD)) {
+             if( msg.getPoolCostInfo() != null ){
+                 Entry e = (Entry)_hash.get(poolName);
+                 if( e == null ){
+                     _hash.put( 
+                               poolName , 
+                               new Entry( msg.getPoolCostInfo() ) 
+                               ) ;
+                 }else{
+                     e.setPoolCostInfo( msg.getPoolCostInfo() ) ;
+                 }
              }
+         } else {
+             _hash.remove( poolName ) ;
          }
-      }else if( message instanceof PoolManagerPoolDownMessage ){
-
-         if( ! _update )return ;
-         
-         PoolManagerPoolDownMessage msg = (PoolManagerPoolDownMessage)message ;
-         _hash.remove( msg.getPoolName() ) ;
-             
       }else if( message instanceof PoolIoFileMessage ){
       
          PoolIoFileMessage msg = (PoolIoFileMessage)message ;
