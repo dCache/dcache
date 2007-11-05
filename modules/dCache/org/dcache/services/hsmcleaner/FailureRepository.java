@@ -143,6 +143,7 @@ public class FailureRepository
      * @throws IOException           If an I/O error occurs.
      */
     public void flush(Sink<URI> sink)
+        throws FileNotFoundException, IOException
     {
         boolean success = false;
         Set<URI> locations;
@@ -157,8 +158,8 @@ public class FailureRepository
             _locations = new HashSet<URI>();
         }
 
+        File tmpFile = createTempFile();
         try {
-            File tmpFile = createTempFile();
             FileOutputStream os = new FileOutputStream(tmpFile);
             try {
                 PrintStream out = new PrintStream(new BufferedOutputStream(os));
@@ -202,10 +203,11 @@ public class FailureRepository
                 }
             }
         } catch (FileNotFoundException e) {
-            // esay("Could not create file " + tmpname + ": " + e.getMessage());
+            throw new FileNotFoundException("Failed to create file " 
+                                            + tmpFile + ": " + e.getMessage());
         } catch (IOException e) {
-            // esay("IO Error during write to failure repository: " +
-            //      e.getMessage());
+            throw new IOException("Failed to flush failure repository: " 
+                                  + e.getMessage(), e);
         }
     }
 
@@ -351,6 +353,12 @@ public class FailureRepository
                     _out = null;
                 }
             }
+        } catch (FileNotFoundException e) {
+            throw new FileNotFoundException("Failed to create file " 
+                                            + tmpFile + ": " + e.getMessage());
+        } catch (IOException e) {
+            throw new IOException("Failed to flush failure repository: " 
+                                  + e.getMessage(), e);
         } finally {
             if (!success) {
                 tmpFile.delete();
