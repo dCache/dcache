@@ -1,0 +1,16 @@
+package org.dcache.services.hsmcleaner;
+
+import java.lang.annotation.*;
+
+/**
+ * Annotation used for cell options.
+ */
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.FIELD)
+public @interface Option 
+{
+    String  name();
+    String  description();
+    String  unit()         default "";
+    boolean required()     default false;
+}
