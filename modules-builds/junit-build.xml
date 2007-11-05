@@ -71,6 +71,11 @@
 	            <formatter type="brief" usefile="false" />
 	            <test name="org.dcache.tests.cells.CellPathTest" />
 	        </junit>
+	        <junit>
+	            <classpath refid="junit.classpath" />
+	            <formatter type="brief" usefile="false" />
+	            <test name="org.dcache.tests.hsm.FailureRepositoryTest" />
+	        </junit>
 
 
 	    </target>
