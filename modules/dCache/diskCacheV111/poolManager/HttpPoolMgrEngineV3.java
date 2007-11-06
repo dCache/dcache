@@ -1183,14 +1183,14 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
         String prot   = map.get("protocol");
         String linkGroup = map.get("linkGroup");
 
-        linkGroup  = (linkGroup  == null) || (linkGroup.length() == 0) ? "*" : linkGroup;
+        linkGroup  = (linkGroup  == null) || (linkGroup.length() == 0) ? "none" : linkGroup;
         store  = (store  == null) || (store.length() == 0) ? "*" : store;
         dcache = (dcache == null) || (dcache.length() == 0) ? "*" : dcache;
         net    = (net    == null) || (net.length() == 0) ? "*" : net;
         prot   = (prot   == null) || (prot.length() == 0) ? "*" : prot;
         pw.println("<center>");
         if (type == null) {
-            showQueryForm(pw, "*", "read", "*", "*", "*", "DCap/3");
+            showQueryForm(pw, "none", "read", "*", "*", "*", "DCap/3");
         } else {
             showQueryForm(pw, linkGroup, type, store, dcache, net, prot);
             pw.println("<p><hr><p>");
@@ -1198,7 +1198,7 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
             CellMessage reply = _nucleus.sendAndWait(new CellMessage(
                     new CellPath("PoolManager"), "psux match " + type + " "
                             + store + " " + dcache + " " + net + " " + prot
-                            + (linkGroup.equals("*") ? "" : " -linkGroup="+linkGroup)
+                            + (linkGroup.equals("none") ? "" : " -linkGroup="+linkGroup)
                             ),
                     20000);
 
