@@ -75,7 +75,6 @@ public class AbstractCell extends CellAdapter
 
     public void debug(String str)
     {
-        pin(str);
         _logger.debug(str);
     }
 

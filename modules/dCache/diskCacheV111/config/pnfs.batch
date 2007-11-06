@@ -101,3 +101,12 @@ create diskCacheV111.cells.CleanerV2 cleaner \
          -archive=${cleanerArchive} \
 	"
 #
+# HSM cleaner. Disabled by default. Uncomment the create command
+# to enable it.
+#
+onerror continue
+set context -c hsmCleanerTrash /opt/pnfsdb/pnfs/trash/1
+set context -c hsmCleanerRepository /opt/pnfsdb/pnfs/trash/1/current
+onerror shutdown
+
+# create org.dcache.services.hsmcleaner.HSMCleaner hsmcleaner

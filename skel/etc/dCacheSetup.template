@@ -457,6 +457,66 @@ cacheInfo=companion
 #
 #
 #
+#  ---- Location of trash directory for files on tape
+#   The HSM cleaner periodically scans this directory to 
+#   detect deleted files. 
+#
+# hsmCleanerTrash=/opt/pnfsdb/pnfs/1
+#
+#  ---- Location of repository directory of the HSM cleaner
+#   The HSM cleaner uses this directory to store information 
+#   about files in could not clean right away. The cleaner
+#   will reattempt to clean the files later.
+#
+# hsmCleanerRepository=/opt/pnfsdb/pnfs/1/repository
+#
+#  ---- Interval between scans of the trash directory
+#   Specifies the time in seconds between two scans of the 
+#   trash directory.
+#
+# hsmCleanerScan=90
+#
+#  ---- Interval between retries
+#   Specifies the time in seconds between two attempts to 
+#   clean files stored in the cleaner repository. 
+#
+# hsmCleanerRecover=3600
+#
+#  ---- Interval between flushing failures to the repository
+#   When the cleaner failes to clean a file, information about this
+#   file is added to the repository. This setting specifies the time
+#   in seconds between flushes to the repository. Until the
+#   information is kept in memory and in the trash directory.
+# 
+#   Each flush will create a new file. A lower value will cause the
+#   repository to be split into more files. A higher value will cause
+#   a higher memory usage and a larger number of files in the trash
+#   directory.
+#
+# hsmCleanerFlush=60
+#
+#  ---- Max. length of in memory queue of files to clean
+#   When the trash directory is scanned, information about deleted
+#   files is queued in memory. This setting specifies the maximum
+#   length of this queue. When the queue length is reached, scanning
+#   is suspended until files have been cleaned or flushed to the 
+#   repository.
+#
+# hsmCleanerCleanerQueue=10000
+#
+#  ---- Timeout for pool communication
+#   Files are cleaned from an HSM by sending a message to a pool to 
+#   do so. This specifies the timeout in seconds after which the 
+#   operation is considered failed.
+# 
+# hsmCleanerTimeout=120
+#
+#  ---- Maximum concurrent requests to a single HSM
+#   Files are cleaned in batches. This specified the largest number
+#   of files to include in a batch per HSM.
+# 
+# hsmCleanerRequest=100
+#
 #  -----------------------------------------------------------------------
 #         Directory Pools 
 #  -----------------------------------------------------------------------
