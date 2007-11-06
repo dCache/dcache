@@ -111,7 +111,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
      * Exception indicating an error during processing of an FTP
      * command.
      */
-    protected class FTPCommandException extends Exception 
+    protected class FTPCommandException extends Exception
     {
         /** FTP reply code. */
 	protected int    _code;
@@ -119,29 +119,29 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
         /** Human readable part of FTP reply. */
         protected String _reply;
 
-        /** 
+        /**
          * Constructs a command exception with the given ftp rely code
          * and message. The message will be used for both the public
          * FTP reply string and for the exception message.
          */
-	public FTPCommandException(int code, String reply) 
+	public FTPCommandException(int code, String reply)
         {
 	    this(code, reply, reply);
 	}
-	
+
         /**
          * Constructs a command exception with the given ftp reply
          * code, public and internal message.
          */
-	public FTPCommandException(int code, String reply, String msg) 
+	public FTPCommandException(int code, String reply, String msg)
         {
 	    super(msg);
 	    _code = code;
             _reply = reply;
 	}
-	
+
 	/** Returns FTP reply code. */
-	public int getCode() 
+	public int getCode()
 	{
 	    return _code;
 	}
@@ -151,7 +151,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
         {
             return _reply;
         }
-    }    
+    }
 
     /**
      * Exception indicating and error condition during a sendAndWait
@@ -159,24 +159,24 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
      *
      * TODO: This should be refined to better conway the actual error.
      */
-    protected class SendAndWaitException extends Exception 
+    protected class SendAndWaitException extends Exception
     {
-	public SendAndWaitException(String msg) 
+	public SendAndWaitException(String msg)
         {
 	    super(msg);
-	}	
+	}
 
-	public SendAndWaitException(String msg, Throwable cause) 
+	public SendAndWaitException(String msg, Throwable cause)
         {
 	    super(msg, cause);
-	}	
-    }    
-    
+	}
+    }
+
     /**
      * Enumeration type for representing the connection mode.
      *
      * For PASSIVE transfers the client establises the data
-     * connection. 
+     * connection.
      *
      * For ACTIVE transfers dCache establishes the data connection.
      *
@@ -190,7 +190,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
     }
 
 
-    /** 
+    /**
      * Used for generating session IDs unique to this domain.
      */
     private static long   __counter = 10000 ;
@@ -201,7 +201,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
      * command.
      */
     private static final String[] FEATURES = {
-        "EOF", "PARALLEL", "SIZE", "SBUF", 
+        "EOF", "PARALLEL", "SIZE", "SBUF",
         "ERET", "ESTO", "GETPUT",
         "CKSM", "SCKS", "MODEX"
     };
@@ -239,43 +239,43 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
     protected final FsPermissionHandler _permissionHandler;
 
     /**
-     * Well known name of the pool manager. 
-     */    
+     * Well known name of the pool manager.
+     */
     protected final String              _poolManager;
 
     /**
-     * Well known name of the PNFS manager. 
-     */    
+     * Well known name of the PNFS manager.
+     */
     protected final String              _pnfsManager;
 
     /**
      * Full path to encp utility. May be null.
-     */        
+     */
     protected final String              _encpPutCmd;
 
     /**
      * Whether to use the encp utility for various meta data
      * operations.
-     */            
+     */
     protected final boolean             _useEncpScripts;
 
     /**
      * Lowest allowable port to use for the data channel when using an
      * adapter.
-     */        
+     */
     protected final int                 _lowDataListenPort;
 
     /**
      * Highest allowable port to use for the data channel when using
-     * an adapter. 
-     */        
+     * an adapter.
+     */
     protected final int                 _highDataListenPort;
     protected final String              _poolProxy;
 
     /**
      * Name or IP address of the interface on which we listen for
      * connections from the pool in case an adapter is used.
-     */            
+     */
     protected final String              _local_host;
 
     protected final boolean             _readOnly;
@@ -297,14 +297,14 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
      */
     protected final boolean _removeFileOnIncompleteTransfer;
 
-    /** 
+    /**
      * True if passive pools are allowed, i.e. the client connects
      * directly to the pool, bypassing the proxy at the door. Set to
      * false if any of the pools are not at least at version 1.8.
      */
     protected final boolean _allowPassivePool;
 
-    /** 
+    /**
      * True if active adapter is allowed, i.e. the client connects to
      * the new proxy adapter at the door, when the pools are on the
      * private network, for example.  Has to be set via arguments.
@@ -351,11 +351,11 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
      */
     protected final int _transferTimeout;
 
-    private final AsciiCommandPoller  _commandPoller = 
+    private final AsciiCommandPoller  _commandPoller =
         new AsciiCommandPoller();
-    private final CountDownLatch      _shutdownGate = 
+    private final CountDownLatch      _shutdownGate =
         new CountDownLatch(1);
-    private final Hashtable           _statusDict = 
+    private final Hashtable           _statusDict =
         new Hashtable();
     private final Map<String,Method>  _methodDict =
         new Hashtable();
@@ -417,7 +417,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
 
     protected PerfMarkerConf _perfMarkerConf = new PerfMarkerConf();
 
-    protected class PerfMarkerConf 
+    protected class PerfMarkerConf
     {
         protected boolean use;
         protected long    period;
@@ -432,7 +432,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
 
     protected volatile boolean _transferInProgress = false;
     private String  _ioQueueName;
-    
+
     /**
      * Queue used to pass the address on which a pool listens when in
      * passive mode between threads. Under normal circumstances, this
@@ -441,26 +441,26 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
     private BlockingQueue<GFtpTransferStartedMessage> _transferStartedMessages
         = new LinkedBlockingQueue<GFtpTransferStartedMessage>();
 
-        
-    /** 
+
+    /**
      * wlcg demands support for overwrite in srm and gridftp
      * off by default
      */
-    protected boolean _overwrite; 
+    protected boolean _overwrite;
 
 
     /**
      * Encapsulation of all parameters of a transfer.
      */
-    protected class Transfer 
-    {	
-	/** 
+    protected class Transfer
+    {
+	/**
 	 * The session ID of this transfer. The session id is unique
 	 * for each transfer within the same AbstractFtpDoorV1.
 	 */
 	final long sessionId;
 
-	/** 
+	/**
 	 * Time in milliseconds for when the transfer started.
 	 */
 	final long startedAt;
@@ -475,7 +475,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
 
 	/** Description of the current state of the transfer. */
 	String state;
-	
+
 	/** */
 	Integer moverId;
 
@@ -490,12 +490,12 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
 
 	/** The TCP port of the client side of the data connection. */
 	int client_port;
-	
-	/** 
+
+	/**
 	 * True when pnfs entry has been created for path, but the
 	 * transfer has not yet successfully completed.
 	 */
-	boolean pnfsEntryIncomplete = false; 
+	boolean pnfsEntryIncomplete = false;
 
 	/**
 	 * Socket adapter used for the transfer.
@@ -508,13 +508,13 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
 	 */
 	SpaceManagerGetInfoAndLockReservationByPathMessage spaceReservationInfo;
 
-	Transfer(String aPath) 
+	Transfer(String aPath)
 	{
 	    sessionId = nextSessionId();
 	    startedAt = System.currentTimeMillis();
 	    path      = aPath;
 
-	    info = 
+	    info =
 		new DoorRequestInfoMessage(getNucleus().getCellName()+"@"+
 					   getNucleus().getCellDomainName());
 	    info.setTransactionTime(startedAt);
@@ -527,7 +527,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
 	}
 
 	/** Sends status information to the biling cell. */
-	void sendDoorRequestInfo(int code, String msg) 
+	void sendDoorRequestInfo(int code, String msg)
 	{
 	    try {
 		info.setResult(code, msg);
@@ -563,10 +563,10 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
     public static CellVersion getStaticCellVersion()
     {
         return new CellVersion(diskCacheV111.util.Version.getVersion(),
-                               "$Revision: 1.137 $" ); 
+                               "$Revision: 1.137 $" );
     }
 
-    public void SetTLog(FTPTransactionLog tlog) 
+    public void SetTLog(FTPTransactionLog tlog)
     {
         say("Setting _tLog");
         //XXX See IVM for how this is supposed to work
@@ -589,7 +589,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
     // ftp flavor specific initialization is done in initFtpDoor
     // initFtpDoor is called from the constractor
     //
-    public AbstractFtpDoorV1(String name, StreamEngine engine, Args args) 
+    public AbstractFtpDoorV1(String name, StreamEngine engine, Args args)
         throws IllegalArgumentException,
                IllegalStateException,
                IllegalAccessException,
@@ -615,64 +615,64 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
             _out      = new PrintWriter(engine.getWriter());
             _client_data_host = engine.getInetAddress().getHostName();
             _commandPoller.setControlChannel(_in);
-            
+
             say("client hostname in the constructor: " + _client_data_host);
-            
-            _use_gplazmaAuthzCell = 
+
+            _use_gplazmaAuthzCell =
                 parseOption("use-gplazma-authorization-cell", false);
-            _delegate_to_gplazma = 
+            _delegate_to_gplazma =
                 parseOption("delegate-to-gplazma", false);
-            _use_gplazmaAuthzModule = 
+            _use_gplazmaAuthzModule =
                 parseOption("use-gplazma-authorization-module", false);
-            _poolManager = 
+            _poolManager =
                 parseOption("poolManager", "PoolManager");
-            _pnfsManager = 
+            _pnfsManager =
                 parseOption("pnfsManager", "PnfsManager");
-            _encpPutCmd  = 
+            _encpPutCmd  =
                 parseOption("encp-put", null);
-            _readOnly = 
+            _readOnly =
                 parseOption("read-only", false);
-            _transferTimeout = 
+            _transferTimeout =
                 parseOption("transfer-timeout", 0);
-            _space_reservation_enabled = 
+            _space_reservation_enabled =
                 parseOption("space-reservation", false);
-            _space_reservation_strict = 
-                _space_reservation_enabled 
+            _space_reservation_strict =
+                _space_reservation_enabled
                 && parseOption("space-reservation-strict", false);
-            _tLogRoot = 
+            _tLogRoot =
                 parseOption("tlog", null);
-            _local_host = 
+            _local_host =
                 parseOption("ftp-adapter-internal-interface",
                             engine.getLocalAddress().getHostName());
-            _allowPassivePool = 
+            _allowPassivePool =
                 parseOption("allowPassivePool", false);
-            _allowRelay = 
+            _allowRelay =
                 parseOption("allow-relay", false);
-            _removeFileOnIncompleteTransfer = 
+            _removeFileOnIncompleteTransfer =
                 parseOption("deleteOnConnectionClosed", false);
-            _maxRetries = 
+            _maxRetries =
                 parseOption("maxRetries", 3);
-            _poolManagerTimeout = 
+            _poolManagerTimeout =
                 parseOption("poolManagerTimeout", 1500);
             _pnfsTimeout =
                 parseOption("pnfsTimeout", 1 * 60);
             _retryWait =
                 parseOption("retryWait", 30);
-            _poolTimeout = 
+            _poolTimeout =
                 parseOption("poolTimeout", 5 * 60);
-            _maxStreamsPerClient = 
+            _maxStreamsPerClient =
                 parseOption("maxStreamsPerClient", -1);
-            _poolProxy = 
+            _poolProxy =
                 parseOption("poolProxy", null);
-            _ioQueueName = 
+            _ioQueueName =
                 parseOption("io-queue", null);
-            _maxBlockSize = 
+            _maxBlockSize =
                 parseOption("maxBlockSize", 131072); // 128 kb
-            _overwrite = 
-                parseOption("overwrite", false);            
+            _overwrite =
+                parseOption("overwrite", false);
 
             if (_use_gplazmaAuthzModule) {
-                _gplazmaPolicyFilePath = 
+                _gplazmaPolicyFilePath =
                     parseOption("gplazma-authorization-module-policy", null);
                 if (_gplazmaPolicyFilePath == null){
                     String s = "FTPDoor : -gplazma-authorization-module-policy file not specified";
@@ -690,7 +690,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
             } else {
                 _useEncpScripts = false;
             }
-            
+
             if (!(_use_gplazmaAuthzModule || _use_gplazmaAuthzCell)) {
                 /* Use kpwd file if gPlazma is not enabled.
                  */
@@ -701,7 +701,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
                     String s = "FTPDoor : -kpwd-file not specified";
                     esay(s);
                     throw new IllegalArgumentException(s);
-                }                
+                }
             }
 
             int low = 0;
@@ -728,7 +728,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
              * permission handler:
              * use user defined or PnfsManager based
              */
-            String metaDataProvider = 
+            String metaDataProvider =
                 parseOption("meta-data-provider",
                           "diskCacheV111.services.PnfsManagerFileMetaDataSource");
             say("Loading " + metaDataProvider);
@@ -736,14 +736,14 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
             Class fileMetaDataSourceClass = Class.forName(metaDataProvider);
             Constructor fileMetaDataSourceCon = fileMetaDataSourceClass.getConstructor( argClass ) ;
             Object[] initargs = { this };
-            _fileMetaDataSource = 
+            _fileMetaDataSource =
                 (FileMetaDataSource)fileMetaDataSourceCon.newInstance(initargs);
-            _permissionHandler = 
+            _permissionHandler =
                 new FsPermissionHandler(this, _fileMetaDataSource);
-            
+
             _pnfs = new PnfsHandler(this, new CellPath(_pnfsManager));
             _pnfs.setPnfsTimeout(_pnfsTimeout*1000L);
-            
+
             adminCommandListener = new AdminCommandListener();
             addCommandListener(adminCommandListener);
 
@@ -758,7 +758,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
     }
 
     protected AdminCommandListener adminCommandListener;
-    public class AdminCommandListener 
+    public class AdminCommandListener
     {
         public String hh_get_door_info = "[-binary]";
         public Object ac_get_door_info(Args args)
@@ -775,8 +775,8 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
                                     _transfer.pnfsId,
                                     _transfer.pool,
                                     _transfer.state,
-                                    _transfer.startedAt, 
-                                    _transfer.client_host) 
+                                    _transfer.startedAt,
+                                    _transfer.client_host)
                 };
                 info.setIoDoorEntries(entries);
             } else {
@@ -792,10 +792,10 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
     }
 
     /**
-     * Returns the integer value of a named cell argument. 
+     * Returns the integer value of a named cell argument.
      *
      * @param name the name of the cell argument to return
-     * @param def the value to return when <code>name</code> is 
+     * @param def the value to return when <code>name</code> is
      *            not defined or cannot be parsed
      */
     private int parseOption(String name, int def)
@@ -814,12 +814,12 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
 
         return value;
     }
-    
+
     /**
-     * Returns the boolean value of a named cell argument. 
+     * Returns the boolean value of a named cell argument.
      *
      * @param name the name of the cell argument to return
-     * @param def the value to return when <code>name</code> is 
+     * @param def the value to return when <code>name</code> is
      *            not defined or cannot be parsed
      */
     private boolean parseOption(String name, boolean def)
@@ -837,14 +837,14 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
 
         say(name + "=" + value);
 
-        return value;        
+        return value;
     }
 
     /**
-     * Returns the value of a named cell argument. 
+     * Returns the value of a named cell argument.
      *
      * @param name the name of the cell argument to return
-     * @param def the value to return when <code>name</code> is 
+     * @param def the value to return when <code>name</code> is
      *            not defined or cannot be parsed
      */
     private String parseOption(String name, String def)
@@ -864,7 +864,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
         return value;
     }
 
-    private int spawn(String cmd, int errexit) 
+    private int spawn(String cmd, int errexit)
     {
         try {
             Process p = Runtime.getRuntime().exec(cmd);
@@ -880,8 +880,8 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
     }
 
 
-    public void ftpcommand(String cmdline) 
-        throws CommandExitException 
+    public void ftpcommand(String cmdline)
+        throws CommandExitException
     {
         int l = 4;
         // Every FTP command is 3 or 4 characters
@@ -913,7 +913,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
         // other commands to be processed
         synchronized(this) {
             if (_transferInProgress &&
-                !(cmd.equals("abor") || cmd.equals("mic") 
+                !(cmd.equals("abor") || cmd.equals("mic")
                   || cmd.equals("conf") || cmd.equals("enc"))) {
                 reply("503  Transfer in progress", false);
                 return;
@@ -975,7 +975,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
             try {
                 reply("220 " + ftpDoorName + " door ready");
 
-                Thread commandPollerThread = 
+                Thread commandPollerThread =
                     new Thread(_commandPoller, "commandPollerThread");
                 commandPollerThread.start();
 
@@ -989,7 +989,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
             } finally {
                 try {
                     /* In case of failure, the performance marker engine
-                     * may still be running. 
+                     * may still be running.
                      */
                     if (_perfMarkerEngine != null) {
                         try {
@@ -1009,15 +1009,15 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
                     if (_transfer != null) {
                         transfer_error(451, "Aborting transfer due to session termination");
                     }
-                    
+
                     closeAdapter();
 
                     /* I don't know why this is necessary... any ideas?
                      */
-                    reply("");                    
-                    
+                    reply("");
+
                     say("End of stream encountered");
-                    
+
                 } finally {
                     /* cleanUp() waits for us to open the gate.
                      */
@@ -1032,11 +1032,11 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
         }
     }
 
-    protected synchronized void closeAdapter() 
+    protected synchronized void closeAdapter()
     {
 	if (_adapter != null) {
             say("Closing adapter");
-	    _adapter.close(); 
+	    _adapter.close();
 	    _adapter = null;
 	}
     }
@@ -1063,7 +1063,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
          * explicitly.
          */
         _commandPoller.close();
-        
+
         /* The FTP command processing thread will open the gate after
          * shutdown.
          */
@@ -1083,7 +1083,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
              * command poller thread to shut down.
              */
             _engine.getSocket().close();
-        } catch (IOException e) { 
+        } catch (IOException e) {
             esay(e);
         }
     }
@@ -1108,7 +1108,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
         }
     }
 
-    public int execute(String command) 
+    public int execute(String command)
         throws CommandExitException
     {
         if (command.equals("")) {
@@ -1177,7 +1177,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
              */
             synchronized (this) {
 		say("DoorTransferFinishedMessage arrived");
-                
+
                 /* It may happen the transfer has been cancelled and
                  * cleaned up after already. This is not a failure.
                  */
@@ -1196,8 +1196,8 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
                     adapterClosed = true;
                 }
             }
- 
-            /* Wait for adapter to shut down. 
+
+            /* Wait for adapter to shut down.
              *
              * We do this unsynchronized to avoid blocking while
              * holding the monitor. Concurrent access to the adapter
@@ -1224,7 +1224,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
                     say("Join error: " + e);
                     adapterError = "adapter did not shut down";
                 }
- 
+
                 /* With GridFTP v2 GET and PUT commands, we may
                  * have a temporary socket adapter specific to
                  * this transfer. If so, close it.
@@ -1235,7 +1235,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
                     adapterClosed = true;
                 }
             }
- 
+
             synchronized (this) {
                 /* It may happen the transfer has been cancelled and
                  * cleaned up after already. This is not a failure.
@@ -1244,7 +1244,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
                     return;
                 }
                 _transferInProgress = false;
- 
+
                 if (reply.getReturnCode() == 0 && adapterError == null) {
                     if (_perfMarkerEngine != null) {
                         try {
@@ -1272,7 +1272,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
                         say("set utilized to "+utilized);
                         SpaceManagerUtilizedSpaceMessage utilizedSpace =
                             new SpaceManagerUtilizedSpaceMessage(_transfer.spaceReservationInfo.getSpaceToken(),utilized);
-                        
+
                         try {
                             sendMessage(new CellMessage(new CellPath("SpaceManager"),
                                                         utilizedSpace));
@@ -1290,8 +1290,8 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
                         _tLog.success();
                         SetTLog(null);
                     }
-                    
-                    
+
+
                     // RDK: Note that data/command channels both dropped (esp. ACTIVE mode) at same time
                     //      can lead to a race. The transfer will be declared successful, this flag cleared,
                     //      and THEN the command channel drop is reacted to. This is difficult to reproduce.
@@ -1313,7 +1313,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
                         }
                     }
 
-                    StringBuffer error = 
+                    StringBuffer error =
                         new StringBuffer("Transfer aborted (");
 
                     if (reply.getReturnCode() != 0) {
@@ -1328,9 +1328,9 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
                         }
                     } else {
                         error.append(adapterError);
-                    } 
+                    }
                     error.append(")");
-                    
+
                     transfer_error(426, error.toString());
                 }
             }
@@ -1349,7 +1349,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
         }
     }
 
-    private void tsay(String str) 
+    private void tsay(String str)
     {
         Date d = new Date();
         say("" + d + ": " + str);
@@ -1359,7 +1359,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
     // GSS authentication
     //
 
-    protected void reply(String answer, boolean resetReply) 
+    protected void reply(String answer, boolean resetReply)
     {
         if (answer.startsWith("335 ADAT=")) {
             say("REPLY(reset=" + resetReply + " GReplyType=" + _gReplyType + "): <335 ADAT=...>");
@@ -1378,24 +1378,24 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
             _gReplyType = "clear";
     }
 
-    protected void reply(String answer) 
+    protected void reply(String answer)
     {
         reply(answer, true);
     }
 
     protected abstract void secure_reply(String answer, String code);
 
-    public void ac_feat(String arg) 
+    public void ac_feat(String arg)
     {
         StringBuilder builder = new StringBuilder();
         builder.append("211-OK\r\n");
-        for (String feature : FEATURES) 
+        for (String feature : FEATURES)
             builder.append(" ").append(feature).append("\r\n");
         builder.append("211 End");
         reply(builder.toString());
     }
 
-    public void opts_retr(String opt) 
+    public void opts_retr(String opt)
     {
         String[] st = opt.split("=");
         String real_opt = st[0];
@@ -1414,7 +1414,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
         reply("200 Parallel streams set (" + opt + ")");
     }
 
-    public void opts_stor(String opt, String val) 
+    public void opts_stor(String opt, String val)
     {
         if (!opt.equalsIgnoreCase("EOF")) {
             reply("501 Unrecognized option: " + opt + " (" + val + ")");
@@ -1439,7 +1439,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
             reply("501 CKSM option command requires algorithm type");
             return;
         }
-         
+
         try {
             if (!algo.equalsIgnoreCase("NONE")) {
                 _optCheckSumFactory = ChecksumFactory.getFactory(algo);
@@ -1452,7 +1452,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
         }
     }
 
-    public void ac_opts(String arg) 
+    public void ac_opts(String arg)
     {
         String[] st = arg.split("\\s+");
         if (st.length == 2 && st[0].equalsIgnoreCase("RETR")) {
@@ -1460,13 +1460,13 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
         } else if (st.length == 3 && st[0].equalsIgnoreCase("STOR")) {
             opts_stor(st[1], st[2]);
         } else if (st.length == 2 && st[0].equalsIgnoreCase("CKSM")) {
-            opts_cksm(st[1]); 
+            opts_cksm(st[1]);
         } else {
             reply("501 Unrecognized option: " + st[0] + " (" + arg + ")");
         }
     }
 
-    public void ac_dele(String arg) 
+    public void ac_dele(String arg)
     {
         if (_readOnly) {
             println("500 Command disabled");
@@ -1551,19 +1551,19 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
     public abstract void ac_adat(String arg);
 
     public void ac_mic(String arg)
-        throws dmg.util.CommandExitException 
+        throws dmg.util.CommandExitException
     {
         secure_command(arg, "mic");
     }
 
     public void ac_enc(String arg)
-        throws dmg.util.CommandExitException 
+        throws dmg.util.CommandExitException
     {
         secure_command(arg, "enc");
     }
 
     public void ac_conf(String arg)
-        throws dmg.util.CommandExitException 
+        throws dmg.util.CommandExitException
     {
         secure_command(arg, "conf");
     }
@@ -1573,7 +1573,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
 
 
 
-    public void ac_ccc(String arg) 
+    public void ac_ccc(String arg)
     {
         // We should never received this, only through MIC, ENC or CONF,
         // in which case it will be intercepted by secure_command()
@@ -1588,12 +1588,12 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
 
 
 
-    public void ac_pbsz(String arg) 
+    public void ac_pbsz(String arg)
     {
         reply("200 OK");
     }
 
-    public void ac_prot(String arg) 
+    public void ac_prot(String arg)
     {
         if (!arg.equals("C"))
             reply("534 Will accept only Clear protection level");
@@ -1607,7 +1607,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
     //                                                                       //
 
 
-    private String absolutePath(String relCwdPath) 
+    private String absolutePath(String relCwdPath)
     {
         if (_pathRoot == null)
             return null;
@@ -1629,7 +1629,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
         return absolutePathStr;
     }
 
-    public void ac_rmd(String arg) 
+    public void ac_rmd(String arg)
     {
         if (arg.equals("")) {
             reply(err("RMD",arg));
@@ -1681,7 +1681,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
         }
 
         // canDeleteDir() will test that isDirectory() and canWrite()
-	try { 
+	try {
             if (_permissionHandler.canDeleteDir(_pwdRecord.UID, _pwdRecord.GID, pathInPnfs)) {
                 File theDirToDelete = new File(pathInPnfs);
                 if (theDirToDelete.list().length == 0) { // Only delete empty directories
@@ -1720,7 +1720,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
         reply("200 OK");
     }
 
- 
+
     public void ac_mkd(String arg)
     {
         if (_pwdRecord == null) {
@@ -1824,32 +1824,32 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
         reply("200 OK");
     }
 
-    public void ac_help(String arg) 
+    public void ac_help(String arg)
     {
         reply("214 No help available");
     }
 
-    public void ac_syst(String arg) 
+    public void ac_syst(String arg)
     {
         reply("215 UNIX Type: L8 Version: FTPDoor");
     }
 
-    public void ac_type(String arg) 
+    public void ac_type(String arg)
     {
         reply("200 Type set to I");
     }
 
-    public void ac_noop(String arg) 
+    public void ac_noop(String arg)
     {
         reply(ok("NOOP"));
     }
 
-    public void ac_allo(String arg) 
+    public void ac_allo(String arg)
     {
         reply(ok("ALLO"));  // No-op for now. Sent by uberftp client.
     }
 
-    public void ac_pwd(String arg) 
+    public void ac_pwd(String arg)
     {
         if (!arg.equals("")) {
             reply(err("PWD",arg));
@@ -1876,12 +1876,12 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
         reply("250 CWD command succcessful. New CWD is <" + _curDirV + ">");
     }
 
-    public void ac_cdup(String arg) 
+    public void ac_cdup(String arg)
     {
         ac_cwd("..");
     }
 
-    public void ac_port(String arg) 
+    public void ac_port(String arg)
     {
         String[] st = arg.split(",");
         if (st.length != 6) {
@@ -1906,7 +1906,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
         reply(ok("PORT"));
     }
 
-    public void ac_pasv(String arg) 
+    public void ac_pasv(String arg)
     {
         try {
 	    closeAdapter();
@@ -1935,7 +1935,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
         }
     }
 
-    public void ac_mode(String arg) 
+    public void ac_mode(String arg)
     {
         if (arg.equalsIgnoreCase("S")) {
             _xferMode = "S";
@@ -1951,7 +1951,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
         }
     }
 
-    public void ac_site(String arg) 
+    public void ac_site(String arg)
     {
         if (arg.equals("")) {
             reply("500 must supply the site specific command");
@@ -2005,7 +2005,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
             reply("501 Invalid offset format:"+ex);
             return;
         }
-   
+
         try {
             lengthL = Long.parseLong(length);
         } catch (NumberFormatException ex){
@@ -2020,7 +2020,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
         }
     }
 
-    public void doCksm(String algo, String path, long offsetL, long lengthL) 
+    public void doCksm(String algo, String path, long offsetL, long lengthL)
         throws FTPCommandException
     {
         if (lengthL != -1)
@@ -2045,7 +2045,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
                 }
 
             } catch (CacheException ce) {
-                throw new FTPCommandException(550, "Error retrieving " + path 
+                throw new FTPCommandException(550, "Error retrieving " + path
                                               + ": " + ce.getMessage());
             }
         } catch (java.security.NoSuchAlgorithmException ex) {
@@ -2064,7 +2064,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
     }
 
 
-    public void doCheckSum(String type, String value) 
+    public void doCheckSum(String type, String value)
     {
         try {
             _checkSumFactory = ChecksumFactory.getFactory(type);
@@ -2077,7 +2077,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
         }
     }
 
-    public void doChmod(String permstring, String path) 
+    public void doChmod(String permstring, String path)
     {
         if (_pwdRecord == null) {
             reply("530 Not logged in.");
@@ -2127,7 +2127,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
 
         // Get meta-data for this file/directory
         PnfsGetFileMetaDataMessage fileMetaDataMsg;
-        try { 
+        try {
             fileMetaDataMsg = _pnfs.getFileMetaDataByPath(pathInPnfs);
         } catch (CacheException ce) {
             setNextPwdRecord();
@@ -2176,7 +2176,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
         reply("200 OK");
     }
 
-    public void ac_sbuf(String arg) 
+    public void ac_sbuf(String arg)
     {
         if (arg.equals("")) {
             reply("500 must supply a buffer size");
@@ -2200,7 +2200,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
         reply("200 bufsize set to " + arg);
     }
 
-    public void ac_eret(String arg) 
+    public void ac_eret(String arg)
     {
         String[] st = arg.split("\\s+");
         if (st.length < 2) {
@@ -2228,7 +2228,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
         }
     }
 
-    public void ac_esto(String arg) 
+    public void ac_esto(String arg)
     {
         String[] st = arg.split("\\s+");
         if (st.length < 2) {
@@ -2263,7 +2263,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
     // other modes identified by string "MODE" can be implemented by adding
     // void method ac_esto_"MODE"(String arg)
     //
-    public void ac_esto_a(String arg) 
+    public void ac_esto_a(String arg)
     {
         String[] st = arg.split("\\s+");
         if (st.length != 3) {
@@ -2301,7 +2301,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
     // other modes identified by string "MODE" can be implemented by adding
     // void method ac_eret_"MODE"(String arg)
     //
-    public void ac_eret_p(String arg) 
+    public void ac_eret_p(String arg)
     {
         String[] st = arg.split("\\s+");
         if (st.length != 4) {
@@ -2332,12 +2332,12 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
             reply(err);
             return;
         }
-        say(" Performing eret in \"p\" mode with offset = " + offset 
+        say(" Performing eret in \"p\" mode with offset = " + offset
             + " size " + size);
         ac_retr(filename);
     }
 
-    public void ac_retr(String arg) 
+    public void ac_retr(String arg)
     {
         String        clientHost = _client_data_host;
         int           clientPort = _client_data_port;
@@ -2347,7 +2347,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
                 reply("504 RESTART not implemented");
                 return;
             }
-            retrieve(arg, prm_offset, prm_size, mode, 
+            retrieve(arg, prm_offset, prm_size, mode,
                      _xferMode, _parallelStart, _parallelMin, _parallelMax,
                      new InetSocketAddress(clientHost, clientPort),
                      _bufSize, false);
@@ -2357,7 +2357,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
         }
     }
 
-    /** 
+    /**
      * Sends a message to a cell and waits for the reply. The reply is
      * expected to contain a message object of the same type as the
      * message object that was sent, and the return code of that
@@ -2370,10 +2370,10 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
      * @return         the message object from the reply
      * @throws TimeoutException If no reply was received in time
      * @throws SendAndWaitException If the message could not be sent,
-     *       the object in the reply was of the wrong type, or the 
+     *       the object in the reply was of the wrong type, or the
      *       return code was non-zero.
      */
-    private <T extends Message> T sendAndWait(CellPath path, T msg, int timeout) 
+    private <T extends Message> T sendAndWait(CellPath path, T msg, int timeout)
         throws TimeoutException, SendAndWaitException, InterruptedException
     {
         CellMessage replyMessage;
@@ -2398,8 +2398,8 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
 
         T reply = (T)replyObject;
         if (reply.getReturnCode() != 0) {
-            throw new SendAndWaitException("Non-null return code from " 
-                                           + replyMessage.getSourceAddress() 
+            throw new SendAndWaitException("Non-null return code from "
+                                           + replyMessage.getSourceAddress()
                                            + " with error " + reply.getErrorObject());
         }
 
@@ -2407,13 +2407,13 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
     }
 
     /**
-     * Transfers a file from a pool to the client. 
+     * Transfers a file from a pool to the client.
      *
      * @param file          the LFN of the file to transfer
      * @param offset        the position at which to begin the transfer
-     * @param size          the number of bytes to transfer (whole 
+     * @param size          the number of bytes to transfer (whole
      *                      file when -1).
-     * @param mode          indicates the direction of connection 
+     * @param mode          indicates the direction of connection
      *                      establishment
      * @param xferMode      the transfer mode to use
      * @param parallelStart number of simultaneous streams to use
@@ -2422,15 +2422,15 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
      * @param client        address of the client (for active servers)
      * @param bufSize       TCP buffers size to use (send and receive),
      *                      or auto scaling when -1.
-     * @param reply127      GridFTP v2 127 reply is generated when true 
+     * @param reply127      GridFTP v2 127 reply is generated when true
      *                      and client is active.
      */
-    private 
+    private
         void retrieve(String file, long offset, long size,
-                      Mode mode, String xferMode, 
+                      Mode mode, String xferMode,
                       int parallelStart, int parallelMin, int parallelMax,
                       InetSocketAddress client, int bufSize,
-                      boolean reply127) 
+                      boolean reply127)
     {
         /* Close incomplete log.
          */
@@ -2460,7 +2460,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
                 throw new FTPCommandException(503,"Expecting STOR ESTO PUT commands");
             }
 
-            /* Set ownership and other information for transfer. 
+            /* Set ownership and other information for transfer.
              */
             _transfer.info.setOwner(_dnUser == null? _user : _dnUser);
             _transfer.info.setGid(_pwdRecord.GID);
@@ -2479,7 +2479,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
             if (_useEncpScripts) {
                 File f = new File(_transfer.path);
                 if (!f.exists()) {
-                    throw new FTPCommandException(500, 
+                    throw new FTPCommandException(500,
                                                   "File " + relativeToRootPath + " not found",
                                                   "File " + _transfer.path + " not found");
                 }
@@ -2493,7 +2493,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
                     _pwdRecord.GID + " " +
                     _transfer.path;
                 if (spawn(cmd, 1000) != 0) {
-                    throw new FTPCommandException(553, 
+                    throw new FTPCommandException(553,
                                                   "Permission denied",
                                                   "Permission denied for path : " + _transfer.path);
                 }
@@ -2520,7 +2520,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
             say(" _user=" + _user);
             say(" vpath=" + relativeToRootPath);
             say(" addr=" + _engine.getInetAddress().toString());
-	    
+
             //XXX When we upgrade to the GSSAPI version of GSI
             //we need to revisit this code and put something more useful
             //in the userprincipal spotpoolManager
@@ -2536,7 +2536,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
             /* Retrieve storage information for file.
              */
             _transfer.state = "waiting for storage info";
-            PnfsGetStorageInfoMessage  storageInfoMsg = 
+            PnfsGetStorageInfoMessage  storageInfoMsg =
                 _pnfs.getStorageInfoByPath(_transfer.path);
             _transfer.state = "received storage info";
 
@@ -2563,12 +2563,12 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
             }
 
             if (offset + size > fileSize) {
-                throw new FTPCommandException(500, 
+                throw new FTPCommandException(500,
                                               "invalid prm_offset=" + offset
-                                              + " and prm_size " + size 
+                                              + " and prm_size " + size
                                               + " for file of size " + fileSize);
             }
-            
+
             /* Transfer the file. As there is a delay between the
              * point when a pool goes offline and when the pool
              * manager updates its state, we will retry failed
@@ -2578,8 +2578,8 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
             _commandPoller.enableInterrupt();
             try {
                 for (;;) {
-                    try {                    
-                        transfer(mode, xferMode, 
+                    try {
+                        transfer(mode, xferMode,
                                  parallelStart, parallelMin, parallelMax,
                                  client, bufSize, offset, size,
                                  storageInfo, reply127, false);
@@ -2677,7 +2677,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
 
     public abstract void startTlog(String path,String action);
 
-    public void ac_stor(String arg) 
+    public void ac_stor(String arg)
     {
         if (_client_data_host == null) {
             reply("504 Host somehow not set");
@@ -2687,7 +2687,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
             reply("504 RESTART not implemented for STORE");
             return;
         }
-        
+
         store(arg, _mode, _xferMode,
               _parallelStart, _parallelMin, _parallelMax,
               new InetSocketAddress(_client_data_host, _client_data_port),
@@ -2699,7 +2699,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
      * Transfers a file from the client to a pool.
      *
      * @param file          the LFN of the file to transfer
-     * @param mode          indicates the direction of connection 
+     * @param mode          indicates the direction of connection
      *                      establishment
      * @param xferMode      the transfer mode to use
      * @param parallelStart number of simultaneous streams to use
@@ -2708,7 +2708,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
      * @param client        address of the client (for active servers)
      * @param bufSize       TCP buffers size to use (send and receive),
      *                      or auto scaling when -1.
-     * @param reply127      GridFTP v2 127 reply is generated when true 
+     * @param reply127      GridFTP v2 127 reply is generated when true
      *                      and client is active.
      */
     private void store(String file, Mode mode, String xferMode,
@@ -2724,7 +2724,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
             if (file.equals("")) {
                 throw new FTPCommandException(501, "STOR command not understood");
             }
-            
+
             if (_pwdRecord == null) {
                 throw new FTPCommandException(530, "Not logged in.");
             }
@@ -2740,7 +2740,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
                     return;
                 }
             }
-            
+
             if (_pwdRecord.isAnonymous()) {
                 setNextPwdRecord();
                 if (_pwdRecord == null) {
@@ -2753,14 +2753,14 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
                 }
             }
 
-            /* Set ownership and other information for transfer. 
+            /* Set ownership and other information for transfer.
              */
             _transfer.info.setOwner(_dnUser == null? _user : _dnUser);
             _transfer.info.setGid(_pwdRecord.GID);
             _transfer.info.setUid(_pwdRecord.UID);
             _transfer.client_host = client.getHostName();
             _transfer.client_port = client.getPort();
-          
+
             if (xferMode.equals("E") && mode == Mode.ACTIVE) {
                 throw new FTPCommandException(504, "Cannot store in active E mode");
             }
@@ -2811,9 +2811,9 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
             if (_useEncpScripts) {
                 _transfer.state = "checking permissions via encp script";
                 // Save it into enstore
-                String cmd = _encpPutCmd + " chkc " 
-                    + _pwdRecord.UID + " " 
-                    + _pwdRecord.GID + " " 
+                String cmd = _encpPutCmd + " chkc "
+                    + _pwdRecord.UID + " "
+                    + _pwdRecord.GID + " "
                     + _transfer.path;
                 Process p = Runtime.getRuntime().exec(cmd);
                 try {
@@ -2874,7 +2874,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
                     esay("overwrite is enabled, file  _transfer.path exists, "+
                          "and will be overwritten");
                     _pnfs.deletePnfsEntry( _transfer.path);
-                    pnfsEntry   
+                    pnfsEntry
                         = _pnfs.createPnfsEntry(_transfer.path,
                                                 _pwdRecord.UID,
                                                 _pwdRecord.GID,
@@ -2886,13 +2886,13 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
                                                   + fnfe.getMessage());
                 }
             } catch (CacheException ce) {
-                //Unfortunately if file exists the regular file exeption is 
+                //Unfortunately if file exists the regular file exeption is
                 // still being thown
                 if(_overwrite) {
                     esay("overwrite is enabled, file  _transfer.path exists, "+
                          "and will be overwritten");
                     _pnfs.deletePnfsEntry( _transfer.path);
-                    pnfsEntry   
+                    pnfsEntry
                         = _pnfs.createPnfsEntry(_transfer.path,
                                                 _pwdRecord.UID,
                                                 _pwdRecord.GID,
@@ -2903,7 +2903,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
                                                   + ": Cannot create file: "
                                                   + ce.getMessage());
                 }
-            }            
+            }
 
             /* The PNFS entry has been created, but the file transfer
              * has not yet successfully completed. Setting
@@ -2919,11 +2919,11 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
             storageInfo = pnfsEntry.getStorageInfo();
             if (storageInfo == null) {
                 throw new FTPCommandException
-                    (533, 
+                    (533,
                      "Couldn't get StorageInfo for : " + _transfer.pnfsId);
             }
             say("Got storageInfo : " + storageInfo);
-            
+
             /* Send checksum to PNFS manager.
              */
             if (_checkSum != null) {
@@ -2937,17 +2937,17 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
                                                   + e.getMessage());
                 }
             }
-            
+
             _commandPoller.enableInterrupt();
             try {
-                transfer(mode, xferMode, parallelStart, 
+                transfer(mode, xferMode, parallelStart,
                          parallelMin, parallelMax,
-                         client, bufSize, 0, 0, storageInfo, 
+                         client, bufSize, 0, 0, storageInfo,
                          reply127, true);
             } finally {
                 _commandPoller.disableInterrupt();
             }
-  
+
             if (_perfMarkerConf.use && xferMode.equals("E")) {
                 /** @todo: done ### ac_stor - breadcrumb - performance markers */
                 _perfMarkerEngine = new PerfMarkerEngine();
@@ -3021,7 +3021,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
      * TODO: We can simplify the parameter list by including more of
      * this information into the _transfer object.
      *
-     * @param mode          indicates the direction of connection 
+     * @param mode          indicates the direction of connection
      *                      establishment
      * @param xferMode      the transfer mode to use
      * @param parallelStart number of simultaneous streams to use
@@ -3030,24 +3030,24 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
      * @param client        address of the client.
      * @param bufSize       TCP buffers size to use (send and receive),
      * @param offset        the position at which to begin the transfer
-     * @param size          the number of bytes to transfer (whole 
+     * @param size          the number of bytes to transfer (whole
      *                      file when -1).
      * @param storageInfo   Storage information about the file to transfer
-     * @param reply127      GridFTP v2 127 reply is generated when true. 
+     * @param reply127      GridFTP v2 127 reply is generated when true.
      *                      Requires mode to be PASSIVE.
      * @param isWrite       True writing to pool, false when reading.
      */
-    private synchronized void transfer(Mode              mode, 
+    private synchronized void transfer(Mode              mode,
                                        String            xferMode,
                                        int               parallelStart,
-                                       int               parallelMin, 
+                                       int               parallelMin,
                                        int               parallelMax,
-                                       InetSocketAddress client, 
+                                       InetSocketAddress client,
                                        int               bufSize,
                                        long              offset,
                                        long              size,
                                        StorageInfo       storageInfo,
-                                       boolean           reply127, 
+                                       boolean           reply127,
                                        boolean           isWrite)
         throws InterruptedException,
                TimeoutException,
@@ -3079,7 +3079,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
         case PASSIVE:
             if (reply127) {
                 say("Creating adapter for passive mode");
-                _transfer.adapter = 
+                _transfer.adapter =
                     new SocketAdapter(this, _lowDataListenPort, _highDataListenPort);
             } else {
                 _transfer.adapter = _adapter;
@@ -3089,7 +3089,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
         case ACTIVE:
             if (_allowRelay) {
                 say("Creating adapter for active mode");
-                _transfer.adapter = 
+                _transfer.adapter =
                     new ActiveAdapter(this, _lowDataListenPort , _highDataListenPort);
                 ((ActiveAdapter)_transfer.adapter).setDestination(client.getAddress().getHostAddress(), client.getPort());
             }
@@ -3106,7 +3106,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
                 _transfer.adapter.setDirPoolToClient();
             }
         }
-        
+
         /* Find a pool suitable for the transfer. If space reservation
          * is used, then we already got a pool. Space reservation will
          * only be used when writing.
@@ -3114,7 +3114,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
         if (_transfer.spaceReservationInfo != null) {
             assert isWrite;
 
-            String value = 
+            String value =
                 String.valueOf(_transfer.spaceReservationInfo.getAvailableLockedSize());
             _transfer.pool = _transfer.spaceReservationInfo.getPool();
             storageInfo.setKey("use-preallocated-space", value);
@@ -3128,17 +3128,18 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
         } else {
             _transfer.state = "waiting for pool selection by PoolManager";
 
+
             GFtpProtocolInfo protocolInfo =
                 new GFtpProtocolInfo("GFtp",
                                      version,
                                      0,
                                      client.getAddress().getHostAddress(),
                                      client.getPort(),
-                                     parallelStart, 
+                                     parallelStart,
                                      parallelMin,
                                      parallelMax,
-                                     bufSize, 0, 0);
-            
+                                     bufSize, 0, 0, new VOInfo(_pwdRecord.getGroup(), _pwdRecord.getRole()));
+
             PoolMgrSelectPoolMsg request;
             if (isWrite) {
                 request = new PoolMgrSelectWritePoolMsg(_transfer.pnfsId,
@@ -3164,29 +3165,29 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
          */
         GFtpProtocolInfo protocolInfo;
         if (_transfer.adapter != null) {
-            protocolInfo = 
-                new GFtpProtocolInfo("GFtp", 
+            protocolInfo =
+                new GFtpProtocolInfo("GFtp",
                  		     version, 0,
-                                     _local_host, 
+                                     _local_host,
                                      _transfer.adapter.getPoolListenerPort(),
-                                     parallelStart, 
+                                     parallelStart,
                                      parallelMin,
                                      parallelMax,
-                                     bufSize, 
-                                     offset, 
-                                     size);
+                                     bufSize,
+                                     offset,
+                                     size, new VOInfo(_pwdRecord.getGroup(), _pwdRecord.getRole()));
         } else {
             protocolInfo =
-                new GFtpProtocolInfo("GFtp", 
+                new GFtpProtocolInfo("GFtp",
                                      version, 0,
                                      client.getAddress().getHostAddress(),
                                      client.getPort(),
                                      parallelStart,
-                                     parallelMin, 
-                                     parallelMax, 
-                                     bufSize, 
+                                     parallelMin,
+                                     parallelMax,
+                                     bufSize,
                                      offset,
-                                     size);
+                                     size, new VOInfo(_pwdRecord.getGroup(), _pwdRecord.getRole()));
         }
 
         protocolInfo.setDoorCellName(getCellName());
@@ -3206,18 +3207,18 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
         askForFile(_transfer, storageInfo, protocolInfo, isWrite);
 
         /* When version 2 is used, then block until we got a 'transfer
-         * started' message. 
+         * started' message.
          */
         GFtpTransferStartedMessage message = null;
         if (version == 2) {
             do {
                 message = _transferStartedMessages.take();
             } while (!message.getPnfsId().equals(_transfer.pnfsId.getId()));
- 
+
             if (message.getPassive() && !reply127) {
                 throw new RuntimeException("Internal error: Pool unexpectedly volunteered to be passive");
             }
- 
+
             /* If passive X mode was requested, but the pool rejected
              * it, then we have to fail for now. REVISIT: We should
              * use the other adapter in this case.
@@ -3226,7 +3227,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
                 throw new FTPCommandException(504, "Cannot use passive X mode");
             }
         }
-          
+
         /* Determine the 127 response address to send back to the
          * client. When the pool is passive, this is the address of
          * the pool (and in this case we no longer need the
@@ -3234,9 +3235,9 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
          */
         if (message != null && message.getPassive()) {
             assert reply127;
- 
+
             reply127PORT(message.getPoolAddress());
-             
+
             say("Closing adapter");
             _transfer.adapter.close();
             _transfer.adapter = null;
@@ -3244,30 +3245,30 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
             reply127PORT(new InetSocketAddress(_engine.getLocalAddress(),
                                                _transfer.adapter.getClientListenerPort()));
         }
- 
+
         /* If adapter is used, then start it now.
          */
         if (_transfer.adapter != null) {
             _transfer.adapter.start();
         }
 
-        reply("150 Opening BINARY data connection for " + _transfer.path, false);                
+        reply("150 Opening BINARY data connection for " + _transfer.path, false);
         _transferInProgress = true;
     }
 
-    private void transfer_error(int replyCode, String msg) 
+    private void transfer_error(int replyCode, String msg)
     {
         transfer_error(replyCode, msg, null);
     }
 
-    private synchronized void transfer_error(int replyCode, String replyMsg, 
-                                             Exception exception) 
+    private synchronized void transfer_error(int replyCode, String replyMsg,
+                                             Exception exception)
     {
         if (_transfer != null) {
             if (_transfer.adapter != null && _transfer.adapter != _adapter) {
-                _transfer.adapter.close();             
-            }                    
-            
+                _transfer.adapter.close();
+            }
+
             if (_transfer.spaceReservationInfo != null) {
                 SpaceManagerUnlockSpaceMessage unlockSpace =
                     new SpaceManagerUnlockSpaceMessage
@@ -3282,9 +3283,9 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
                     String errmsg = "Can't send message to SpaceManager "+e;
                     esay(errmsg);
                     esay(e) ;
-                }                
+                }
             }
-            
+
             if (_transfer.pnfsEntryIncomplete) {
                 if (_removeFileOnIncompleteTransfer) {
                     say("Removing incomplete file: " + _transfer.path);
@@ -3293,7 +3294,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
                     say("Incomplete file: " + _transfer.path);
                 }
             }
-            
+
             /* Report errors.
              */
             String msg = String.valueOf(replyCode) + " " + replyMsg;
@@ -3437,7 +3438,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
         reply("213 " + time_val);
     }
 
-    private class FilenameMatcher implements FilenameFilter 
+    private class FilenameMatcher implements FilenameFilter
     {
         private Pattern _toMatch;
 
@@ -3463,7 +3464,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
         }
     }
 
-    public void ac_list(String arg) 
+    public void ac_list(String arg)
     {
         Args args = new Args(arg);
         boolean long_format = true;
@@ -3477,7 +3478,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
         list(args,long_format);
     }
 
-    public void list(Args args,boolean listLong) 
+    public void list(Args args,boolean listLong)
     {
         say("list args = \"" + args + "\"; Long format ? " + listLong);
         FilenameMatcher filenameMatcher = null;
@@ -3520,7 +3521,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
                       "\" in "+parent+" which not a directory");
                 return;
             }
-            
+
             filenameMatcher = new FilenameMatcher(pattern);
 
         } else {
@@ -3531,7 +3532,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
                 reply("451 "+relativeToRootPath+" not found.");
                 return;
             }
-            f = new PnfsFile(absolutepath);        
+            f = new PnfsFile(absolutepath);
         }
 
         if (!f.exists()) {
@@ -3543,7 +3544,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
             reply("451 non pnfs file. Access deny.");
             return;
         }
-        
+
         boolean isDirectory = f.isDirectory();
         File files[];
         if (isDirectory) {
@@ -3622,7 +3623,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
             reply("226 ASCII transfer complete");
         } catch (IOException e) {
             try {
-                _dataSocket.close(); 
+                _dataSocket.close();
             } catch (IOException  ex) {}
             _dataSocket = null;
             reply("426 Transfer aborted, closing connection");
@@ -3641,7 +3642,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
     //      The delayed QUIT has not been directly implemented yet, instead...
     // Equivalent: let the data channel and pnfs entry clean-up code take care of clean-up.
     // ---------------------------------------------
-    public void ac_quit(String arg) throws CommandExitException 
+    public void ac_quit(String arg) throws CommandExitException
     {
         reply("221 Goodbye");
         throw new CommandExitException("", 0);
@@ -3650,7 +3651,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
     // --------------------------------------------
     // BYE: synonym for QUIT
     // ---------------------------------------------
-    public void ac_bye( String arg ) throws CommandExitException 
+    public void ac_bye( String arg ) throws CommandExitException
     {
         reply("221 Goodbye");
         throw new CommandExitException("", 0);
@@ -3670,8 +3671,8 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
                     killMessage.setReplyRequired(false);
                     try {
                         sendMessage(new CellMessage(new CellPath(_transfer.pool), killMessage));
-                    } catch(Exception e) { 
-                        esay(e); 
+                    } catch(Exception e) {
+                        esay(e);
                     }
                 }
                 reply("426 Transfer aborted");
@@ -3680,7 +3681,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
             // In any case, close data socket and send response 226 to client
             if (_dataSocket != null) {
                 try {
-                    _dataSocket.close(); 
+                    _dataSocket.close();
                 } catch (IOException e) {}
                 _dataSocket=null;
                 reply("226 Closing data connection, abort successful");
@@ -3712,7 +3713,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
      * taken from the <tt>transfer<\tt> parameter. On success, the
      * moverId field of <tt>transfer<\tt> will be filled in. On
      * failure, Exception is thrown.
-     * 
+     *
      * @param transfer     The transfer to perform.
      * @param storageInfo  Storage information of the file to transfer
      * @param protocolInfo Protocol information for the transfer
@@ -3721,10 +3722,10 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
     private void askForFile(Transfer     transfer,
                             StorageInfo  storageInfo,
                             ProtocolInfo protocolInfo,
-                            boolean      isWrite) 
+                            boolean      isWrite)
         throws SendAndWaitException, TimeoutException, InterruptedException
     {
-        say("Trying pool " + transfer.pool + " for " + 
+        say("Trying pool " + transfer.pool + " for " +
             (isWrite ? "write" : "read"));
         transfer.state = "sending " + (isWrite ? "write" : "read")
             + " request to pool";
@@ -3741,7 +3742,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
                                                      protocolInfo,
                                                      storageInfo);
         }
-        
+
         if (_ioQueueName != null) {
             poolMessage.setIoQueueName(_ioQueueName);
         }
@@ -3764,14 +3765,14 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
             sendAndWait(toPool, poolMessage, _poolTimeout * 1000);
         transfer.moverId = poolReply.getMoverId();
 
-        say("Mover " + transfer.moverId + " at pool " + transfer.pool 
-            + " will " + (isWrite ? "receive" : "send") + 
+        say("Mover " + transfer.moverId + " at pool " + transfer.pool
+            + " will " + (isWrite ? "receive" : "send") +
             " file " + transfer.pnfsId);
-        _transfer.state = "mover " + transfer.moverId 
+        _transfer.state = "mover " + transfer.moverId
             + (isWrite ? ": receiving" : ": sending");
     }
 
-    public void setNextPwdRecord() 
+    public void setNextPwdRecord()
     {
         if (_pwdRecord != null) {
             _originalPwdRecord = _pwdRecord;
@@ -3779,12 +3780,12 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
         }
     }
 
-    public void resetPwdRecord() 
+    public void resetPwdRecord()
     {
         _pwdRecord = _originalPwdRecord;
     }
 
-    private class PerfMarkerEngine 
+    private class PerfMarkerEngine
         implements Runnable, CellMessageAnswerable
     {
         private GFtpPerfMarkersBlock _perfMarkersBlock
@@ -3794,11 +3795,11 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
         private boolean _stopped    = false;
         private long    _timeout    = _poolTimeout * 1000;
 
-        public PerfMarkerEngine() 
+        public PerfMarkerEngine()
         {
         }
 
-        public synchronized void start() 
+        public synchronized void start()
         {
             if (_myThread == null) {
                 _myThread = getNucleus().newThread(this, "gftp-PerfMarkerEngine");
@@ -3806,11 +3807,11 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
             }
         }
 
-        /** 
+        /**
          * Stops the engine and blocks until it has shut down.
          */
-        public synchronized void stop() 
-            throws InterruptedException 
+        public synchronized void stop()
+            throws InterruptedException
         {
             _stop = true;
             notifyAll();
@@ -3827,19 +3828,19 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
          * @param info Information about the completed transfer used
          * to generate the final performance marker.
          */
-        public synchronized void stop(GFtpProtocolInfo info) 
+        public synchronized void stop(GFtpProtocolInfo info)
             throws InterruptedException
         {
             stop();
             setProgressInfo(info.getBytesTransferred(),
                             info.getTransferTime());
-            sendMarker();            
+            sendMarker();
         }
 
         /**
          * Send markers to client.
          */
-        protected synchronized void sendMarker() 
+        protected synchronized void sendMarker()
         {
             reply(_perfMarkersBlock.markers(0).getReply(), false);
         }
@@ -3849,14 +3850,14 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
             _perfMarkersBlock.markers(0).setBytesWithTime(bytes, timeStamp);
         }
 
-        public synchronized void run() 
+        public synchronized void run()
         {
             try {
                 if (! _transferInProgress || _transfer == null) {
                     /** @todo - shall we report anything ? */
                     return;
                 }
-                
+
                 if (_transfer.pool == null) {
                     esay("PerfMarkerEngine: 'pool' is not defined, stop");
                     return;
@@ -3865,16 +3866,16 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
                     esay("PerfMarkerEngine: 'moverId' is not defined, stop");
                     return;
                 }
-                
+
                 /* For the first time, send markers with zero counts
                  * - requirement of the standard
                  */
                 sendMarker();
-                
+
                 if (!_stop) {
                     wait(_perfMarkerConf.period);
                     while (!_stop) {
-                        CellMessage msg = 
+                        CellMessage msg =
                             new CellMessage(new CellPath(_transfer.pool),
                                             "mover ls -binary " + _transfer.moverId);
                         sendMessage(msg, this, _timeout);
@@ -3929,7 +3930,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
                 if (msg instanceof IoJobInfo) {
                     IoJobInfo ioJobInfo = (IoJobInfo)msg;
                     String status = ioJobInfo.getStatus();
-                    
+
                     if (status == null) {
                         // Transfer has probably not started yet; don't do
                         // anything.
@@ -3974,7 +3975,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
      * Support class for reading commands from the control channel. To
      * support notification of channel closure, this class is to be
      * run in its own thread. Once that thread has been started, this
-     * thread should have exclusive rights to the input stream. 
+     * thread should have exclusive rights to the input stream.
      *
      * The thread terminates when the input stream is closed. At that
      * point the command poller is closed, which optionally may cause
@@ -3984,7 +3985,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
      * will however not cause the input stream to be closed, nor the
      * command poller thread to terminate.
      */
-    private class AsciiCommandPoller implements Runnable 
+    private class AsciiCommandPoller implements Runnable
     {
         /**
          * Queue to communicate commands between the poller thread and
@@ -3994,10 +3995,10 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
          * element type to be a String, since this would prohibit the
          * use of an eos element to indicate the end of the stream.
          */
-        private final LinkedBlockingQueue _commands 
+        private final LinkedBlockingQueue _commands
             = new LinkedBlockingQueue();
 
-        /** 
+        /**
          * Input stream of the control channel.
          */
         private BufferedReader _in;
@@ -4013,7 +4014,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
          */
         private boolean _closed = false;
 
-        AsciiCommandPoller() 
+        AsciiCommandPoller()
         {
         }
 
@@ -4025,7 +4026,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
             _in = in;
         }
 
-        public void run() 
+        public void run()
         {
             try {
                 String command = _in.readLine();
@@ -4058,11 +4059,11 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
         {
             if (_closed == false) {
                 _closed = true;
-                
+
                 if (_thread != null) {
                     _thread.interrupt();
                 }
-                
+
                 /* The worker thread may be blocked in
                  * nextCommand(). Inserting an dummy element will
                  * conveniently cause it to wake up.
@@ -4136,17 +4137,17 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
      * stripped from the beginning and the end. White space arround
      * the equal sign between the keyword and the value is allowed.
      */
-    private static final Pattern _parameterPattern = 
+    private static final Pattern _parameterPattern =
 	Pattern.compile("\\s*(\\w+)\\s*(?:=\\s*([^;]+)\\s*)?;\\s*");
 
-    /** 
+    /**
      * Patterns for checking the format of values to parameters of GET
      * and PUT commands.
      */
     private static final Map<String,Pattern> _valuePatterns =
 	new HashMap<String,Pattern>();
 
-    static 
+    static
     {
 	_valuePatterns.put("mode",  Pattern.compile("[Ee]|[Ss]|[Xx]"));
 	_valuePatterns.put("pasv",  null);
@@ -4171,14 +4172,14 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
      * @throws FTPCommandException If the parameter string cannot be
      *                             parsed.
      */
-    protected Map<String,String> parseGetPutParameters(String s) 
+    protected Map<String,String> parseGetPutParameters(String s)
 	throws FTPCommandException
     {
 	Map<String,String> parameters = new HashMap<String,String>();
 
 	/* For each parameter.
 	 */
-	Matcher matcher = _parameterPattern.matcher(s);	
+	Matcher matcher = _parameterPattern.matcher(s);
 	while (matcher.lookingAt()) {
 	    String keyword = matcher.group(1);
 	    String value   = matcher.group(2);
@@ -4188,15 +4189,15 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
 		Pattern valuePattern = _valuePatterns.get(keyword);
 		if (valuePattern == null && value != null
 		    || valuePattern != null && !valuePattern.matcher(value != null ? value : "").matches()) {
-		    String msg = "Illegal or unexpected value for " 
-			+ keyword + "=" + value;		
+		    String msg = "Illegal or unexpected value for "
+			+ keyword + "=" + value;
 		    throw new FTPCommandException(501, msg);
 		}
 		parameters.put(keyword, value);
 	    }
 	    matcher.region(matcher.end(), matcher.regionEnd());
 	}
-	
+
 	/* Detect trailing garbage.
 	 */
 	if (matcher.regionStart() != matcher.regionEnd()) {
@@ -4221,11 +4222,11 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
      *
      * @param address the address and port on which we listen
      */
-    protected void reply127PORT(InetSocketAddress address) 
+    protected void reply127PORT(InetSocketAddress address)
     {
         int port = address.getPort();
 	byte host[] = address.getAddress().getAddress();
-	reply(String.format("127 PORT (%d,%d,%d,%d,%d,%d)", 
+	reply(String.format("127 PORT (%d,%d,%d,%d,%d,%d)",
                             (host[0] & 0377),
                             (host[1] & 0377),
                             (host[2] & 0377),
@@ -4235,11 +4236,11 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
     }
 
     /**
-     * Implements GridFTP v2 GET operation. 
+     * Implements GridFTP v2 GET operation.
      *
      * @param arg the argument string of the GET command.
      */
-    public void ac_get(String arg) 
+    public void ac_get(String arg)
     {
 	try {
             String        xferMode   = _xferMode;
@@ -4261,7 +4262,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
 	    if (!parameters.containsKey("path")) {
 		throw new FTPCommandException(501, "Missing path");
 	    }
-            
+
 	    if (parameters.containsKey("mode")) {
 		xferMode = parameters.get("mode").toUpperCase();
 	    }
@@ -4274,8 +4275,8 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
 	    if (parameters.containsKey("port")) {
 		String[] tok = parameters.get("port").split(",");
 		String ip = tok[0]+"."+tok[1]+"."+tok[2]+"."+tok[3];
-		clientHost = ip;		
-		clientPort = 
+		clientHost = ip;
+		clientPort =
 		    Integer.valueOf(tok[4]) * 256 + Integer.valueOf(tok[5]);
 		mode = Mode.ACTIVE;
 	    }
@@ -4295,11 +4296,11 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
     }
 
     /**
-     * Implements GridFTP v2 PUT operation.  
+     * Implements GridFTP v2 PUT operation.
      *
      * @param arg the argument string of the PUT command.
      */
-    public void ac_put(String arg) 
+    public void ac_put(String arg)
     {
 	String        xferMode   = _xferMode;
 	String        clientHost = _client_data_host;
@@ -4310,7 +4311,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
 	    Map<String,String> parameters = parseGetPutParameters(arg);
 
 	    if (parameters.containsKey("pasv") && parameters.containsKey("port")) {
-		throw new FTPCommandException(501, 
+		throw new FTPCommandException(501,
 					      "Cannot use both 'pasv' and 'port'");
 	    }
 
@@ -4330,15 +4331,15 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
 	    if (parameters.containsKey("port")) {
 		String[] tok = parameters.get("port").split(",");
 		String ip = tok[0]+"."+tok[1]+"."+tok[2]+"."+tok[3];
-		clientHost = ip;		
-		clientPort = 
+		clientHost = ip;
+		clientPort =
 		    Integer.valueOf(tok[4]) * 256 + Integer.valueOf(tok[5]);
 		mode = Mode.ACTIVE;
 	    }
 
 	    /* Now do the transfer...
 	     */
-	    store(parameters.get("path"), mode, xferMode, 
+	    store(parameters.get("path"), mode, xferMode,
                   _parallelStart, _parallelMin, _parallelMax,
                   new InetSocketAddress(clientHost, clientPort),
                   _bufSize, reply127);

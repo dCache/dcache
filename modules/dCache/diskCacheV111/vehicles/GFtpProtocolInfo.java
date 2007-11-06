@@ -1,5 +1,5 @@
 /*
-COPYRIGHT STATUS: 
+COPYRIGHT STATUS:
   Dec 1st 2001, Fermi National Accelerator Laboratory (FNAL) documents and
   software are sponsored by the U.S. Department of Energy under Contract No.
   DE-AC02-76CH03000. Therefore, the U.S. Government retains a  world-wide
@@ -66,7 +66,9 @@ COPYRIGHT STATUS:
 
 package diskCacheV111.vehicles ;
 
-public class GFtpProtocolInfo implements IpProtocolInfo {
+import diskCacheV111.util.VOInfo;
+
+public class GFtpProtocolInfo implements IpProtocolInfo, GridProtocolInfo {
     private String _name  = "Unkown" ;
     private int    _minor = 0 ;
     private int    _major = 0 ;
@@ -83,14 +85,14 @@ public class GFtpProtocolInfo implements IpProtocolInfo {
     private long _size = 0;
     private String _checksumType = "Unknown";
 
-    /** 
+    /**
      * The cell name of the FTP door handling the control channel.
      *
      * Added for GFtp/2. We rely on default initialisation to null.
      */
     private String _doorCellName;
 
-    /** 
+    /**
      * The cell domain name of the FTP door handling the control
      * channel.
      *
@@ -98,25 +100,26 @@ public class GFtpProtocolInfo implements IpProtocolInfo {
      */
     private String _doorCellDomainName;
 
-    /** 
-     * The control channel address of the FTP client. 
+    /**
+     * The control channel address of the FTP client.
      *
      * Added for GFtp/2. We rely on default initialisation to null.
      */
     private String _clientAddress;
 
-    /** 
-     * Whether the pool is requested to be passive. 
+    /**
+     * Whether the pool is requested to be passive.
      *
      * Added for GFtp/2. We rely on default initialisation to false.
      */
     private boolean _passive;
+    private final VOInfo _voInfo;
 
     private static final long serialVersionUID = 5591743387114320262L;
-    
+
     public GFtpProtocolInfo( String protocol, int major , int minor ,
                              String host , int port, int start, int min,
-                             int max, int bufferSize ,long offset, long size){
+                             int max, int bufferSize ,long offset, long size, VOInfo voInfo){
         _name  = protocol ;
         _minor = minor ;
         _major = major ;
@@ -128,6 +131,7 @@ public class GFtpProtocolInfo implements IpProtocolInfo {
 	_bufferSize = bufferSize;
         _offset = offset;
         _size = size;
+        _voInfo = voInfo;
     }
     //
     //  the ProtocolInfo interface
@@ -158,11 +162,11 @@ public class GFtpProtocolInfo implements IpProtocolInfo {
     public void   setTransferTime( long transferTime ){
         _transferTime = transferTime ;
     }
-    
+
     public void setBufferSize( int bufferSize ) {
 	_bufferSize = bufferSize;
     }
-    
+
     public int getBufferSize() { return _bufferSize; }
     public long getTransferTime(){ return _transferTime ; }
     public long getBytesTransferred(){ return _bytesTransferred ; }
@@ -173,13 +177,13 @@ public class GFtpProtocolInfo implements IpProtocolInfo {
     {	_mode = mode;	}
     public String getMode()
     {	return _mode;	}
-    
+
     //offset of read
     public long getOffset()
     {
         return _offset;
-    } 
-    
+    }
+
     //size of read
     public long getSize()
     {
@@ -189,7 +193,7 @@ public class GFtpProtocolInfo implements IpProtocolInfo {
         return true;
     }
 
-    /** 
+    /**
      * Returns the cell name of the FTP door. May be null.
      */
     public String getDoorCellName()
@@ -198,12 +202,12 @@ public class GFtpProtocolInfo implements IpProtocolInfo {
     }
 
     /** Sets the cell name of the FTP door. */
-    public void setDoorCellName(String name) 
+    public void setDoorCellName(String name)
     {
         _doorCellName = name;
     }
 
-    /** 
+    /**
      * Returns the cell domain name of the FTP door. May be null.
      */
     public String getDoorCellDomainName()
@@ -212,12 +216,12 @@ public class GFtpProtocolInfo implements IpProtocolInfo {
     }
 
     /** Sets the cell domain name of the FTP door. */
-    public void setDoorCellDomainName(String name) 
+    public void setDoorCellDomainName(String name)
     {
         _doorCellDomainName = name;
     }
 
-    /** 
+    /**
      * Returns the IP address of the client end of the control
      * channel.  May be null.
      */
@@ -225,8 +229,8 @@ public class GFtpProtocolInfo implements IpProtocolInfo {
     {
         return _clientAddress;
     }
-     
-    /** 
+
+    /**
      * Sets the IP address of the client end of the control channel.
      */
     public void setClientAddress(String address)
@@ -237,18 +241,18 @@ public class GFtpProtocolInfo implements IpProtocolInfo {
     /**
      * Returns whether the pool is requested to be passive.
      */
-    public boolean getPassive() 
+    public boolean getPassive()
     {
         return _passive;
     }
 
-    /** 
+    /**
      * Sets whether the pool is requested to be passive.
      */
     public void setPassive(boolean passive)
     {
         _passive = passive;
-    }   
+    }
 
     public void setChecksumType(String f){
         _checksumType = f;
@@ -256,5 +260,12 @@ public class GFtpProtocolInfo implements IpProtocolInfo {
 
     public String getChecksumType(){
         return _checksumType;
+    }
+
+
+    public VOInfo getVOInfo() {
+
+        return _voInfo;
+
     }
 }
