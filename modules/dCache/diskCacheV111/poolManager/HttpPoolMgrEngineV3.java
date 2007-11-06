@@ -10,7 +10,7 @@ import diskCacheV111.vehicles.hsmControl.*;
 import diskCacheV111.util.* ;
 import java.text.*;
 
-public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable 
+public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
 {
     private CellNucleus _nucleus         = null;
     private AgingHash   _pnfsPathMap     = new AgingHash(500);
@@ -27,11 +27,11 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
     private String      _hsmController   = "HsmManager";
     private String[]    _siDetails       = null;
     private String      _cssFile         = "/poolInfo/css/default.css";
-   
-    public HttpPoolMgrEngineV3(CellNucleus nucleus, String[] argsString) 
+
+    public HttpPoolMgrEngineV3(CellNucleus nucleus, String[] argsString)
     {
         _nucleus = nucleus;
-       
+
         for (int i = 0; i < argsString.length; i++) {
             _nucleus.say("HttpPoolMgrEngineV3 : argument : "+i+" : "+argsString[i]);
             if (argsString[i].equals("addStorageInfo")) {
@@ -49,25 +49,25 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
         }
         nucleus.newThread(this, "restore-collector").start();
         _nucleus.say("Using CSS file : "+_cssFile);
-       
+
     }
 
-    private void decodeCss(String cssDetails) 
-    {  
+    private void decodeCss(String cssDetails)
+    {
         cssDetails = cssDetails.trim();
-      
+
         if ((cssDetails.length() > 0) && !cssDetails.equals("default"))
             _cssFile = cssDetails;
-      
+
     }
 
-    private void decodeDetails(String details) 
+    private void decodeDetails(String details)
     {
         if (details.startsWith("details=") && (details.length() >= 9))
-            _siDetails = details.substring(8).split(",");        
+            _siDetails = details.substring(8).split(",");
     }
 
-    public void run() 
+    public void run()
     {
         _nucleus.say("Restore Collector Thread started");
         while (!Thread.interrupted()) {
@@ -86,7 +86,7 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
         }
     }
 
-    public void getInfo(PrintWriter pw) 
+    public void getInfo(PrintWriter pw)
     {
         pw.println(" PoolManagerEngine : [$Id: HttpPoolMgrEngineV3.java,v 1.26 2007-08-16 20:20:56 behrmann Exp $]");
         pw.println("   Request Counter : "+_requestCounter);
@@ -97,11 +97,11 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
     }
 
     public String hh_set_update = "[<updateTime/sec>]";
-    public String ac_set_update_$_0_1(Args args) 
+    public String ac_set_update_$_0_1(Args args)
     {
         if (args.argc() == 0) {
             synchronized (_updateLock) {
-                _updateLock.notifyAll();   
+                _updateLock.notifyAll();
             }
         } else {
             long x = Long.parseLong(args.argv(0));
@@ -109,14 +109,14 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
                 throw new
                     IllegalArgumentException("<updateTime> must be > 30");
             synchronized (_updateLock) {
-                _collectorUpdate = x * 1000;          
-                _updateLock.notifyAll();   
+                _collectorUpdate = x * 1000;
+                _updateLock.notifyAll();
             }
         }
         return "";
     }
 
-    private void runRestoreCollector() throws Exception 
+    private void runRestoreCollector() throws Exception
     {
         CellMessage reply = _nucleus.sendAndWait(
                                                  new CellMessage(
@@ -124,12 +124,12 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
                                                                  "xrc ls"
                                                                  ),
                                                  20000);
-                                       
+
         if (reply == null) {
             _nucleus.esay("runRestoreCollector : no reply from PoolManager");
             return;
         }
-      
+
         Object o = reply.getMessageObject();
         if (!(o instanceof RestoreHandlerInfo[])) {
             _nucleus.esay("runRestoreCollector : illegal reply from PoolManager : "+o.getClass());
@@ -152,7 +152,7 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
                     if (path == null) {
                         a[1] = pnfsId;
                     } else {
-                        _pnfsPathMap.put(pnfsId, a[1] = path);                 
+                        _pnfsPathMap.put(pnfsId, a[1] = path);
                     }
                     //
                     // collect the storage infos
@@ -161,7 +161,7 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
                         StorageInfo storageInfo = (StorageInfo)_storageInfoMap.get(pnfsId);
                         if (storageInfo == null)storageInfo = getStorageInfoByPnfsId(pnfsId);
                         if (storageInfo != null) {
-                            if (_addHsmInfo) {                         
+                            if (_addHsmInfo) {
                                 StorageInfo si = getHsmInfoByStorageInfo(pnfsId,storageInfo);
                                 if (si != null)storageInfo = si;
                             }
@@ -174,25 +174,25 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
                                 storageInfo.setKey("hsm",storageInfo.getHsm());
                             }
                             _storageInfoMap.put(pnfsId, a[2] = storageInfo);
-                        } 
-                  
+                        }
+
                     }
-               
+
                     agedList.add(a);
                 } catch (Exception e) {
                     _nucleus.esay(e);
-                }                     
+                }
             }
         }
         synchronized (_lazyRestoreList) { _lazyRestoreList = agedList; }
     }
 
-    private StorageInfo getHsmInfoByStorageInfo(String pnfsId, StorageInfo storageInfo) 
-    {       
+    private StorageInfo getHsmInfoByStorageInfo(String pnfsId, StorageInfo storageInfo)
+    {
         try {
-            HsmControlGetBfDetailsMsg hsmMsg = 
+            HsmControlGetBfDetailsMsg hsmMsg =
                 new HsmControlGetBfDetailsMsg(new PnfsId(pnfsId),storageInfo,"default");
-           
+
             CellMessage msg = new CellMessage(new CellPath(_hsmController), hsmMsg);
             msg = _nucleus.sendAndWait(msg, 20000);
             if (msg == null)return null;
@@ -203,14 +203,14 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
             }
             hsmMsg = (HsmControlGetBfDetailsMsg)msg.getMessageObject();
             return hsmMsg.getStorageInfo();
-           
+
         } catch (Exception e) {
             _nucleus.esay(e);
             return null;
         }
     }
 
-    private String getPathByPnfsId(String pnfsId) 
+    private String getPathByPnfsId(String pnfsId)
     {
         try {
             PnfsMapPathMessage pnfsMsg = new PnfsMapPathMessage(new PnfsId(pnfsId));
@@ -219,15 +219,15 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
             if (msg == null)return null;
             pnfsMsg = (PnfsMapPathMessage)msg.getMessageObject();
             return pnfsMsg.getGlobalPath();
-        
+
         } catch (Exception e) {
             _nucleus.esay(e);
             return null;
         }
-      
+
     }
 
-    private StorageInfo getStorageInfoByPnfsId(String pnfsId) 
+    private StorageInfo getStorageInfoByPnfsId(String pnfsId)
     {
         try {
             PnfsGetStorageInfoMessage pnfsMsg = new PnfsGetStorageInfoMessage(new PnfsId(pnfsId));
@@ -236,15 +236,15 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
             if (msg == null)return null;
             pnfsMsg = (PnfsGetStorageInfoMessage)msg.getMessageObject();
             return pnfsMsg.getStorageInfo();
-        
+
         } catch (Exception e) {
             _nucleus.esay(e);
             return null;
         }
-      
+
     }
 
-    private void printMenu(PrintWriter pw, String sort, String grep) 
+    private void printMenu(PrintWriter pw, String sort, String grep)
     {
         String action         = "detail";
         String tableDataColor = "#eeeeee";
@@ -256,7 +256,7 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
               "Status"      , "i.status",
               "Tape"        , "hsm.osm.volumeName",
               "StorageClass", "sclass",
-              "Path"        , "path"  
+              "Path"        , "path"
             };
         pw.println("<form name=\"input\" action=\""+action+"\" method=\"get\">");
         pw.println("<center><table border=0 cellspacing=2 width=\"95%\" bgcolor=\""+tableColor+"\">");
@@ -277,20 +277,20 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
                          ((sort!=null)&&sel[i+1].equals(sort))) ?  checked : "")+"/>");
             pw.println("         <label for=\""+sel[i]+"\">"+sel[i]+"</label>");
             pw.println("      </td>");
-          
+
         }
         pw.println("      <td align=center bgcolor=\""+tableDataColor+"\">");
         pw.println("         Search <input type=\"text\" value=\""+
-                   (grep == null ? "" : grep) 
+                   (grep == null ? "" : grep)
                    +"\" name=\"grep\">");
         pw.println("      </td>");
         pw.println("   </tr>");
         pw.println("</table></center>");
-      
+
     }
 
-    private void printCssFile(PrintWriter pw, String filename) 
-        throws HttpException 
+    private void printCssFile(PrintWriter pw, String filename)
+        throws HttpException
     {
         if (filename.equals("test.html")) {
             //
@@ -312,13 +312,13 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
             pw.println("</table>");
             pw.println("</body>");
             pw.println("</html>");
-       
+
         } else if (filename.equals("default.css")) {
             printInternalCssFile(pw);
         }
     }
 
-    private void printInternalCssFile(PrintWriter pw) 
+    private void printInternalCssFile(PrintWriter pw)
     {
         pw.println("body { background-color:orange; }");
         pw.println("table.s-table { width:90%; border:1px; border-style:solid; border-spacing:0px; border-collapse:collapse; }");
@@ -363,23 +363,23 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
         pw.println("span.m-title { font-size:18; color=red; }");
         pw.println("a.big-link:visited  { text-decoration:none; color:blue; }");
         pw.println("a.big-link:link  { text-decoration:none; color:blue; }");
-        pw.println("span.big-link { font-size:24; text-align:center }"); 
+        pw.println("span.big-link { font-size:24; text-align:center }");
     }
 
-    public void queryUrl(HttpRequest request)  throws HttpException 
-    {  
+    public void queryUrl(HttpRequest request)  throws HttpException
+    {
         OutputStream out    = request.getOutputStream();
         PrintWriter pw      = request.getPrintWriter();
         String[]   urlItems = request.getRequestTokens();
         /*
           {
           HashMap map = request.getRequestAttributes();
-       
+
           System.out.println("XXX ->> "+map);
           for (int i = 0, n = urlItems.length; i < n; i++)
           System.out.println("XXX -> "+i+" -> "+urlItems[i]);
           System.out.println("Class : "+request.getClass().getName());
-       
+
           Map m = createMap(urlItems[urlItems.length-1]);
           System.out.println("MAP -> "+m);
           }
@@ -388,7 +388,7 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
         _requestCounter ++;
         try {
             if (urlItems.length < 1)return;
-                    
+
             if ((urlItems.length > 1) && (urlItems[1].equals("css"))) {
                 //
                 // the internal css stuff (if nothing else is specifed)
@@ -401,18 +401,18 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
                 //
                 if (urlItems.length > 2) {
                     //
-                    // the paramter set 
+                    // the paramter set
                     //
                     if (urlItems[2].equals("set")) {
                         printParameter(pw, urlItems.length > 3 ? urlItems[3] : "*");
                     }
-                 
+
                 }
             } else if ((urlItems.length > 1) && (urlItems[1].equals("restoreHandler"))) {
-              
-             
+
+
                 if (urlItems.length > 2) {
-                 
+
                     if (urlItems[2].equals("lazy")) {
                         //
                         //  LAZY retore queue
@@ -436,16 +436,16 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
                         printMenu(pw, sort, grep);
                         printRestoreInfo(out, sort, grep);
                     } else {
-                        printRestoreInfo(out,  null, null);        
+                        printRestoreInfo(out,  null, null);
                     }
                 } else {
                     printRestoreInfo(out,  null, null);
                 }
-             
+
             } else {
                 printConfigurationPages(pw, urlItems);
             }
-          
+
         } catch (HttpException httpe) {
             _errorCounter ++;
             throw httpe;
@@ -464,25 +464,25 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
         }
     }
 
-    private void printConfigurationHeader(PrintWriter pw) 
+    private void printConfigurationHeader(PrintWriter pw)
     {
 	pw.println("<html>");
 	pw.println("<head>");
         pw.println("<title>PoolManager (Pool SelectionUnit) Configuration</title>");
         pw.println("<link rel=\"stylesheet\" type=\"text/css\" href=\""+_cssFile+"\">");
         pw.println("</head>");
-        
+
 	pw.println("<body class=\"m-body\">");
-   
+
     }
 
-    private void printConfigurationPages(PrintWriter pw, String[] urlItems) 
-        throws Exception 
-    {           
+    private void printConfigurationPages(PrintWriter pw, String[] urlItems)
+        throws Exception
+    {
         printConfigurationHeader(pw);
-        
+
         printPoolManagerHeader(pw, null);
-        
+
         if (urlItems.length < 2) {
             showDirectory(pw);
         } else if (urlItems[1].equals("pools")) {
@@ -511,15 +511,15 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
         } else if (urlItems[1].equals("match")) {
             showDirectory(pw, 6);
             showMatch(pw, urlItems[2]);
-        } else 
+        } else
             throw new
                 HttpException(404, "Unknown key : "+urlItems[1]);
-   
+
     }
 
-    private void printParameter(PrintWriter pw, String key) 
+    private void printParameter(PrintWriter pw, String key)
     {
-        try {      
+        try {
             printConfigurationHeader(pw);
             printPoolManagerHeader(pw, "Partition Manager");
             showDirectory(pw, 0);
@@ -548,26 +548,26 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
             e.printStackTrace();
             showProblem(pw, e.getMessage());
         }
-         
+
         pw.println("<hr><address>Created "+(new Date())+" $Id: HttpPoolMgrEngineV3.java,v 1.26 2007-08-16 20:20:56 behrmann Exp $");
         pw.println("</body></html>");
-   
+
     }
 
-    private void printParameterInMatrix(PrintWriter pw, Map parameterMap) 
+    private void printParameterInMatrix(PrintWriter pw, Map parameterMap)
     {
         PoolManagerParameter defaultParas = (PoolManagerParameter)parameterMap.get("default");
         if (defaultParas == null)return;
-       
+
         Map   [] restMap = new Map[parameterMap.size()-1];
-        String[] header  = new String[parameterMap.size()-1]; 
+        String[] header  = new String[parameterMap.size()-1];
         int row = 0;
 
         for (Map.Entry entry : (Set<Map.Entry>)parameterMap.entrySet()) {
             String  mapName = entry.getKey().toString();
-          
+
             if (mapName.equals("default"))continue;
-          
+
             header[row]  = mapName;
             restMap[row] = new PoolManagerParameter(defaultParas).
                 setValid(false).
@@ -575,26 +575,26 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
                 toMap();
             row ++;
         }
-       
+
         pw.println("<center><table class=\"s-table\"");
-       
+
         pw.print("<tr class=\"s-table\">");
         pw.print("<th class=\"s-table\">Key</th><th class=\"s-table\">Default</th>");
         for (int m = 0; m < restMap.length; m++)
             pw.println("<th class=\"s-table\">"+header[m]+"</th>");
         pw.println("</tr>");
-       
+
         Map defaultMap = new TreeMap(defaultParas.toMap());
         row = 0;
         String[] setColor = { "s-table-disabled", "s-table-regular"  };
         String[] rowClass = { "s-table-a", "s-table-b" };
-        
+
         for (Map.Entry entry : (Set<Map.Entry>)defaultMap.entrySet()) {
             String key      = (String)entry.getKey();
             Object[] e     = (Object[])entry.getValue();
             boolean isSet   = (Boolean)e[0];
             String value    = e[1].toString();
-           
+
             //
             // the keys
             //
@@ -602,9 +602,9 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
             pw.print("<th class=\"s-table\">"); pw.print(key); pw.print("</th>");
             //
             // default values
-            //          
-            pw.print("<td class=\"s-table-regular\">"); 
-            pw.print("<span class=\"s-table-regular\">"); 
+            //
+            pw.print("<td class=\"s-table-regular\">");
+            pw.print("<span class=\"s-table-regular\">");
             pw.print(value); pw.println("</span></td>");
             //
             // the other partitions
@@ -620,23 +620,23 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
             pw.println("</tr>");
             row++;
         }
-        pw.println("</table></center>");       
+        pw.println("</table></center>");
     }
 
-    private void printParameterInMatrixII(PrintWriter pw, Map parameterMap) 
+    private void printParameterInMatrixII(PrintWriter pw, Map parameterMap)
     {
         PoolManagerParameter defaultParas = (PoolManagerParameter)parameterMap.get("default");
         if (defaultParas == null)return;
-       
+
         Map   [] restMap = new Map[parameterMap.size()-1];
-        String[] header  = new String[parameterMap.size()-1]; 
+        String[] header  = new String[parameterMap.size()-1];
         int row = 0;
 
         for (Map.Entry entry : (Set<Map.Entry>)parameterMap.entrySet()) {
             String  mapName = entry.getKey().toString();
-          
+
             if (mapName.equals("default"))continue;
-          
+
             header[row]  = mapName;
             restMap[row] = new PoolManagerParameter(defaultParas).
                 setValid(false).
@@ -644,15 +644,15 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
                 toMap();
             row ++;
         }
-       
+
         pw.println("<center><table width=\"90%\" cellspacing=0 cellpadding=4 border=1");
-       
+
         pw.print("<tr bgcolor=\"#115259\">");
         pw.print("<th><font color=white>Key</font></th><th><font color=white>Default</font></th>");
         for (int m = 0; m < restMap.length; m++)
             pw.println("<th><font color=white>"+header[m]+"</font></th>");
         pw.println("</tr>");
-       
+
         Map defaultMap = new TreeMap(defaultParas.toMap());
         row = 0;
         String[] setColor = { "gray"   , "black"  };
@@ -663,7 +663,7 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
             Object[] e     = (Object[])entry.getValue();
             boolean isSet   = (Boolean)e[0];
             String value    = e[1].toString();
-           
+
             //
             // the keys
             //
@@ -671,8 +671,8 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
             pw.print("<th>"); pw.print(key); pw.print("</th>");
             //
             // default values
-            //          
-            pw.print("<td align=center>"); 
+            //
+            pw.print("<td align=center>");
             pw.print("<font color="+setColor[1]+">");
             pw.println(value); pw.println("</font></td>");
             //
@@ -682,7 +682,7 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
                 e     = (Object[])restMap[m].get(key);
                 isSet = (Boolean)e[0];
                 value = e[1].toString();
-                pw.print("<td align=center>"); 
+                pw.print("<td align=center>");
                 pw.print("<font color="+setColor[isSet?1:0]+">");
                 pw.println(value); pw.println("</font></td>");
             }
@@ -691,26 +691,26 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
             row++;
         }
         pw.println("</table></center>");
-       
+
     }
 
-    private void printParameterInSections(PrintWriter pw, Map parameterMap) 
+    private void printParameterInSections(PrintWriter pw, Map parameterMap)
     {
         for (Map.Entry entry : (Set<Map.Entry>)parameterMap.entrySet()) {
             String name = (String)entry.getKey();
             PoolManagerParameter p = (PoolManagerParameter)entry.getValue();
             pw.println("<h2>"+name+"</h2>");
             printParameterEntry(pw, p);
-        }   
+        }
     }
 
-    private void printParameterEntry(PrintWriter pw, PoolManagerParameter p) 
+    private void printParameterEntry(PrintWriter pw, PoolManagerParameter p)
     {
         Map map = p.toMap();
-      
+
         int column = 0;
         int maxColumn = 2;
-      
+
         pw.println("<center><table width=\"90%\" cellspacing=4 cellpadding=4 bgcolor=yellow>");
 
         pw.print("<tr>");
@@ -723,14 +723,14 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
             Object[]  array = (Object[])entry.getValue();
             boolean    isSet = (Boolean)array[0];
             Object     value = array[1].toString();
-         
-            if (column == 0)pw.print("<tr>");            
-         
+
+            if (column == 0)pw.print("<tr>");
+
             String col = isSet ? "black" : "gray";
             pw.print("<th bgcolor=white>"); pw.print(name); pw.print("</th>");
             pw.print("<td  bgcolor=white align=center ><font color="); pw.print(col) ; pw.print(">");
             pw.print(value); pw.println("</font></td>");
-         
+
             if (column == maxColumn)pw.print("</tr>");
 
             column = (column + 1) % (maxColumn+1);
@@ -740,7 +740,7 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
 
     }
 
-    private void printParameterOnlySet(PrintWriter pw, PoolManagerParameter p) 
+    private void printParameterOnlySet(PrintWriter pw, PoolManagerParameter p)
     {
         pw.println("<center><table width=\"90%\" cellspacing=4 cellpadding=4>");
 
@@ -813,19 +813,19 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
             pw.println("</td></tr>");
         }
 
-      
+
         pw.println("</table></center>");
-   
+
     }
 
-    private void printLazyRestoreInfo(OutputStream out, String sorting, String grep) 
-    {   
+    private void printLazyRestoreInfo(OutputStream out, String sorting, String grep)
+    {
         HTMLWriter html = new HTMLWriter(out, _nucleus.getDomainContext());
 
         html.addHeader("/styles/restoreHandler.css",
                        "dCache Dataset Restore Monitor (Lazy)");
 
-        html.beginTable("sortable", 
+        html.beginTable("sortable",
                         "pnfs",      "PnfsId",
                         "subnet",    "Subnet",
                         "candidate", "PoolCandidate",
@@ -833,12 +833,12 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
                         "clients",   "Clients",
                         "retries",   "Retries",
                         "status",    "Status");
-      
+
         List<Object[]> agedList;
-        synchronized (_lazyRestoreList) { 
-            agedList = _lazyRestoreList; 
+        synchronized (_lazyRestoreList) {
+            agedList = _lazyRestoreList;
         }
-      
+
         List<Object[]> copy = new ArrayList<Object[]>(agedList);
         try {
             Collections.sort(copy, new OurComparator(sorting));
@@ -849,9 +849,9 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
         for (Object[] a: copy) {
             try {
                 if ((grep == null) || grepOk(grep, a))
-                    showRestoreInfo(html, 
-                                    (RestoreHandlerInfo)a[0], 
-                                    (String)a[1], 
+                    showRestoreInfo(html,
+                                    (RestoreHandlerInfo)a[0],
+                                    (String)a[1],
                                     (StorageInfo)a[2]);
             } catch (Exception e) {
                 e.printStackTrace();
@@ -861,21 +861,21 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
         html.addFooter(getClass().getName() + " [$Revision: 1.26 $]");
     }
 
-    private void printRestoreInfo(OutputStream out, String sorting, String grep) 
-    {   
+    private void printRestoreInfo(OutputStream out, String sorting, String grep)
+    {
         HTMLWriter html = new HTMLWriter(out, _nucleus.getDomainContext());
 
         html.addHeader("/styles/restoreHandler.css",
                        "dCache Dataset Restore Monitor");
 
         try {
-            CellMessage reply = 
+            CellMessage reply =
                 _nucleus.sendAndWait(new CellMessage(new CellPath("PoolManager"),
                                                      "xrc ls"),
                                      20000);
-            if (reply == null) { 
-                showTimeout(html); 
-                return; 
+            if (reply == null) {
+                showTimeout(html);
+                return;
             }
             Object o = reply.getMessageObject();
 
@@ -890,7 +890,7 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
                 RestoreHandlerInfo[] list = (RestoreHandlerInfo[])o;
                 Arrays.sort(list, new OurComparator(sorting));
 
-                html.beginTable("sortable", 
+                html.beginTable("sortable",
                                 "pnfs",      "PnfsId",
                                 "subnet",    "Subnet",
                                 "candidate", "PoolCandidate",
@@ -912,11 +912,11 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
         } catch (Exception e) {
             showProblem(html, e.getMessage());
         }
-         
+
         html.addFooter(getClass().getName() + " [$Revision: 1.26 $]");
     }
 
-    private boolean grepOk(String grep, Object o) 
+    private boolean grepOk(String grep, Object o)
     {
         String line = null;
         RestoreHandlerInfo info = null;
@@ -932,30 +932,30 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
         Object er = info.getErrorMessage();
         if (er != null)sb.append(er.toString());
         if (sb.indexOf(grep) > -1)return true;
-       
+
         if (!(o instanceof Object[]))return false;
         Object[] a = (Object[])o;
         if ((a[1] != null) && (a[1].toString().indexOf(grep) > -1))return true;
-   
+
         StorageInfo si = (StorageInfo)a[2];
         if (si == null)return false;
-       
+
         return si.toString().indexOf(grep) > -1;
 
     }
 
-    private class OurComparator implements Comparator 
+    private class OurComparator implements Comparator
     {
         private String _type = null;
         private OurComparator() {}
 
-        private OurComparator(String type) 
+        private OurComparator(String type)
         {
             _type = type;
             //           System.out.println("Comparator !!!!iniitialized with "+type);
         }
 
-        public int compare(Object o1, Object o2) 
+        public int compare(Object o1, Object o2)
         {
             if (o1 instanceof RestoreHandlerInfo)
                 return compareInfo((RestoreHandlerInfo)o1, (RestoreHandlerInfo)o2);
@@ -964,15 +964,15 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
             return 0;
         }
 
-        private int compareInfo(RestoreHandlerInfo i1, RestoreHandlerInfo i2) 
+        private int compareInfo(RestoreHandlerInfo i1, RestoreHandlerInfo i2)
         {
             if (_type == null) {
                 return i1.getName().compareTo(i2.getName());
             } else if (_type.equals("i.name")) {
-                return i1.getName().compareTo(i2.getName());               
+                return i1.getName().compareTo(i2.getName());
             } else if (_type.equals("i.error")) {
                 return (""+i1.getErrorCode()+i1.getName()).
-                    compareTo(""+i2.getErrorCode()+i2.getName());               
+                    compareTo(""+i2.getErrorCode()+i2.getName());
             } else if (_type.equals("i.status")) {
                 return i1.getStatus().compareTo(i2.getStatus());
             } else if (_type.equals("i.pool")) {
@@ -989,44 +989,44 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
             }
         }
 
-        private int compareArray(Object[] o1, Object[] o2) 
+        private int compareArray(Object[] o1, Object[] o2)
         {
             if ((_type == null) || (_type.startsWith("i.")) || ((o1 == null) || (o2 == null)))
                 return compareInfo((RestoreHandlerInfo)o1[0], (RestoreHandlerInfo)o2[0]) ;
-           
+
             if (_type.equals("path"))
                 return (o1[1].toString().compareTo(o2[1].toString()));
-           
-           
+
+
             return compareStorageInfo((StorageInfo)o1[2], (StorageInfo)o2[2]);
         }
 
-        private int compareStorageInfo(StorageInfo s1, StorageInfo s2) 
+        private int compareStorageInfo(StorageInfo s1, StorageInfo s2)
         {
             if (_type.equals("sclass"))
                 s1.getStorageClass().compareTo(s2.getStorageClass());
-           
+
             String k1 = s1.getKey(_type);
             String k2 = s2.getKey(_type);
             if ((k1 == null) || (k2 == null))return k1 == null ? -1 : k2 == null ? 1 : 0;
-          
+
             return  k1.compareTo(k2);
         }
-       
+
     }
 
     private static final String[] __errorBackground   = { "red", "orange" };
     private static final String[] __regularBackground = { "#bebebe", "#efefef" };
 
-    private void showRestoreInfo(HTMLWriter html, RestoreHandlerInfo info) 
+    private void showRestoreInfo(HTMLWriter html, RestoreHandlerInfo info)
     {
         showRestoreInfo(html, info, null, null);
     }
 
     private void showRestoreInfo(HTMLWriter html,
-                                 RestoreHandlerInfo info, 
-                                 String path, 
-                                 StorageInfo storageInfo) 
+                                 RestoreHandlerInfo info,
+                                 String path,
+                                 StorageInfo storageInfo)
     {
         String  name   = info.getName();
         int     pos    = name.indexOf('@');
@@ -1035,12 +1035,12 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
         int     rc     = info.getErrorCode();
         String  msg    = info.getErrorMessage();
         String  started= _formatter.format(new Date(info.getStartTime()));
-     
+
         boolean   error      = (rc != 0) || ((msg != null) && (!msg.equals("")));
-     
+
         String[] background = error ? __errorBackground : __regularBackground;
         String    foreground = error ? "white" : "black";
-     
+
         String  pool = info.getPool();
         pool = (pool == null) || (pool.equals("") || pool.equals("<unknown>")) ? "N.N." : pool;
         String status = info.getStatus();
@@ -1081,7 +1081,7 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
                         builder.append(key + "=" + value + ";");
                 }
                 html.td(7, "storageinfo", builder);
-            } else {   
+            } else {
                 html.td(7, "storageinfo", storageInfo.toString());
             }
         }
@@ -1097,7 +1097,7 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
         html.endRow();
     }
 
-    private void printPoolManagerHeader(PrintWriter pw, String title) 
+    private void printPoolManagerHeader(PrintWriter pw, String title)
     {
         pw.println("<table class=\"m-table\" border=0 cellpadding=10 cellspacing=0 width=\"90%\">");
         pw.println("<tr><td align=center valign=center width=\"1%\">");
@@ -1109,26 +1109,26 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
         else
             pw.println("<h1>Pool Manager Database V3</h1>");
         pw.println("</td></tr></table>");
-   
+
     }
 
-    private void showDirectory(PrintWriter pw) 
+    private void showDirectory(PrintWriter pw)
     {
         showDirectory(pw, -1);
     }
 
-    private void showDirectory(PrintWriter pw, int position) 
-    {   
+    private void showDirectory(PrintWriter pw, int position)
+    {
         pw.println("<br><center><table class=\"m-table\">");
         pw.println("<tr class=\"m-table\">");
-      
+
         printDirEntry(pw, "Partitions" , position == 0, "/poolInfo/parameterHandler/set/matrix/*");
         printDirEntry(pw, "Pools"      , position == 1, "/poolInfo/pools/*");
         printDirEntry(pw, "Pool Groups", position == 2, "/poolInfo/pgroups/*");
         printDirEntry(pw, "Selection"  , position == 3, "/poolInfo/units/*");
-      
+
         pw.println("</tr><tr>");
-      
+
         printDirEntry(pw, "Selection Groups", position == 4, "/poolInfo/ugroups/*");
         printDirEntry(pw, "Links"           , position == 5, "/poolInfo/links/*");
         printDirEntry(pw, "Link List"       , position == 7, "/poolInfo/linklist/*");
@@ -1139,7 +1139,7 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
 
     }
 
-    private void printDirEntry(PrintWriter pw, String text, boolean inUse, String link) 
+    private void printDirEntry(PrintWriter pw, String text, boolean inUse, String link)
     {
         String alternateClass=inUse?"class=\"m-table-active\"":"class=\"m-table\"";
         pw.print("<td width=\"25%\" class=\"m-table\"><span ");
@@ -1153,12 +1153,12 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
         pw.println("</a></span></td>");
     }
 
-    private void showList(PrintWriter pw, Object[] array, int rows) 
+    private void showList(PrintWriter pw, Object[] array, int rows)
     {
         showList(pw, array, rows, null);
     }
 
-    private Map<String,String> createMap(String message) 
+    private Map<String,String> createMap(String message)
     {
         Map<String,String> map = new HashMap<String,String>();
         int     pos = message.indexOf('?');
@@ -1170,10 +1170,10 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
             if (a.length == 2)
                 map.put(a[0], a[1]);
         }
-        return map;      
+        return map;
     }
 
-    private void showMatch(PrintWriter pw, String message) throws Exception 
+    private void showMatch(PrintWriter pw, String message) throws Exception
     {
         Map<String,String> map = createMap(message);
         String type   = map.get("type");
@@ -1181,27 +1181,29 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
         String dcache = map.get("dcache");
         String net    = map.get("net");
         String prot   = map.get("protocol");
+        String linkGroup = map.get("linkGroup");
+
+        linkGroup  = (linkGroup  == null) || (linkGroup.length() == 0) ? "*" : linkGroup;
         store  = (store  == null) || (store.length() == 0) ? "*" : store;
         dcache = (dcache == null) || (dcache.length() == 0) ? "*" : dcache;
         net    = (net    == null) || (net.length() == 0) ? "*" : net;
         prot   = (prot   == null) || (prot.length() == 0) ? "*" : prot;
         pw.println("<center>");
         if (type == null) {
-            showQueryForm(pw, "read", "*", "*", "*", "DCap/3");
+            showQueryForm(pw, "*", "read", "*", "*", "*", "DCap/3");
         } else {
-            showQueryForm(pw, type, store, dcache, net, prot);
+            showQueryForm(pw, linkGroup, type, store, dcache, net, prot);
             pw.println("<p><hr><p>");
-         
-            CellMessage reply = 
-                _nucleus.sendAndWait(
-                                     new CellMessage(
-                                                     new CellPath("PoolManager"),
-                                                     "psux match "+type+" "+store+" "+dcache+" "+net+" "+prot
-                                                     ),
-                                     20000);
-                                  
+
+            CellMessage reply = _nucleus.sendAndWait(new CellMessage(
+                    new CellPath("PoolManager"), "psux match " + type + " "
+                            + store + " " + dcache + " " + net + " " + prot
+                            + (linkGroup.equals("*") ? "" : " -linkGroup="+linkGroup)
+                            ),
+                    20000);
+
             if (reply == null) { showTimeout(pw); return; }
-         
+
             Object o = reply.getMessageObject();
             if (o instanceof Exception) {
                 showProblem(pw, ((Exception)o).getMessage());
@@ -1214,7 +1216,7 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
                 return;
             }
             PoolPreferenceLevel[] result = (PoolPreferenceLevel[])o;
-         
+
             for (int i = 0; i < result.length; i++) {
                 pw.print("<p><h2>Selected Pools with attraction "+i);
                 String tag = result[i].getTag();
@@ -1226,7 +1228,7 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
         pw.println("</center>");
     }
 
-    private String makeLink(String link) 
+    private String makeLink(String link)
     {
         StringBuffer sb = new StringBuffer();
         for (int i= 0, n = link.length(); i < n; i ++) {
@@ -1242,7 +1244,7 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
         return sb.toString();
     }
 
-    private void showList(PrintWriter pw, Object[] array, int rows, String link) 
+    private void showList(PrintWriter pw, Object[] array, int rows, String link)
     {
         pw.println("<table class=\"l-table\"");
         Arrays.sort(array);
@@ -1259,17 +1261,17 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
             pw.println("</td>");
             if ((i % rows) == (rows - 1))pw.println("</tr>");
         }
-        int rest = rows - (array.length % rows); 
+        int rest = rows - (array.length % rows);
         if (rest < rows) {
             for (int i = 0; i < rest; i++) {
                 pw.print("<td  class=\"l-table\"><span class=\"l-table\">-</span></td>");
-            } 
+            }
             pw.println("</tr>");
-        }                           
+        }
         pw.println("</table>");
     }
 
-    private void showListII(PrintWriter pw, Object[] array, int rows, String link) 
+    private void showListII(PrintWriter pw, Object[] array, int rows, String link)
     {
         String bgColor = "#a0a0c8";  // 10b0ee
         pw.println("<table border=0 width=\"90%\" cellspacing=1 cellpadding=4>");
@@ -1290,7 +1292,7 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
             pw.println("</td>");
             if ((i % rows) == (rows - 1))pw.println("</tr>");
         }
-        int rest = rows - (array.length % rows); 
+        int rest = rows - (array.length % rows);
         if (rest < rows) {
             for (int i = 0; i < rest; i++) {
                 pw.print("<td bgcolor=\""+bgColor+"\" align=center ");
@@ -1298,18 +1300,19 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
                 pw.print(width);
                 pw.print("%\"");
                 pw.println(">-</td>");
-            } 
+            }
             pw.println("</tr>");
-        }                           
+        }
         pw.println("</table>");
     }
 
     private void showQueryForm(PrintWriter pw,
+                               String linkGroup,
                                String type,
                                String store,
                                String dcache,
                                String net,
-                               String protocol) 
+                               String protocol)
     {
         pw.println("<table class=\"f-table-a\">");
         pw.println("<tr class=\"f-table-a\">");
@@ -1319,13 +1322,16 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
         pw.println("<form method=get action=\"/poolInfo/match/match\">");
         pw.println("<table class=\"f-table-b\">");
         pw.println("<tr class=\"f-table-b\">");
+        pw.println("<th class=\"f-table-b\">LinkGroup</th>");
         pw.println("<th class=\"f-table-b\">I/O Direction</th>");
         pw.println("<th class=\"f-table-b\">Store</th>");
         pw.println("<th class=\"f-table-b\">dCache</th>");
         pw.println("<th class=\"f-table-b\">Net</th>");
         pw.println("<th class=\"f-table-b\">Protocol</th>");
         pw.println("</tr><tr>");
-     
+
+        pw.println("<td class=\"f-table-b\"><input name=linkGroup value=\""+linkGroup+"\"></td>");
+
         pw.println("<td class=\"f-table-b\">");
         pw.println("<select name=type>");
         pw.println("<option value=read  "+(type.equals("read")?"selected":"")+">Read");
@@ -1341,8 +1347,8 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
         pw.println("</tr></table>");
         pw.println("</td></tr><td  class=\"f-table-a\"");
         pw.println("<input type=submit value=\"Send Query\">");
-        pw.println("</form>");    
-        pw.println("</td></tr>");    
+        pw.println("</form>");
+        pw.println("</td></tr>");
         pw.println("</table>");
     }
 
@@ -1351,7 +1357,7 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
                                  String store,
                                  String dcache,
                                  String net,
-                                 String protocol) 
+                                 String protocol)
     {
         pw.println("<table border=0 cellpadding=10><tr><td align=center bgcolor=red>");
         pw.println("<h3>Simulated I/O Request</h3>");
@@ -1370,54 +1376,54 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
         pw.println("<option value=cache "+(type.equals("cache")?"selected":"")+">Cache");
         pw.println("<option value=write "+(type.equals("write")?"selected":"")+">Write</select>");
         pw.println("<input type=submit value=\"Send Query\">");
-        pw.println("</form>");    
+        pw.println("</form>");
         pw.println("</table>");
     }
 
-    private void queryAll(PrintWriter pw, String request, String type) 
-        throws Exception 
+    private void queryAll(PrintWriter pw, String request, String type)
+        throws Exception
     {
         CellMessage reply = _nucleus.sendAndWait(
                                                  new CellMessage(
                                                                  new CellPath("PoolManager"),
-                                                                 request 
+                                                                 request
                                                                  ),
                                                  20000);
         if (reply == null) { showTimeout(pw); return; }
-        
+
         Object[] o = (Object[])reply.getMessageObject();
         pw.println("<center><h1>"+type+"</h1>");
         showList(pw, o, 8);
         pw.println("</center>");
     }
 
-    private void queryAllPools(PrintWriter pw) throws Exception 
+    private void queryAllPools(PrintWriter pw) throws Exception
     {
         queryAll(pw, "psux ls pool", "Registered Pools");
     }
 
-    private void queryAllPGroups(PrintWriter pw) throws Exception 
+    private void queryAllPGroups(PrintWriter pw) throws Exception
     {
         queryAll(pw, "psux ls pgroup", "Registered Pool Groups");
     }
 
-    private void queryAllUnits(PrintWriter pw) throws Exception 
+    private void queryAllUnits(PrintWriter pw) throws Exception
     {
         queryAll(pw, "psux ls unit", "Registered Units");
     }
 
-    private void queryAllUGroups(PrintWriter pw) throws Exception 
+    private void queryAllUGroups(PrintWriter pw) throws Exception
     {
         queryAll(pw, "psux ls ugroup", "Registered Unit Groups");
     }
 
-    private void queryAllLinks(PrintWriter pw) throws Exception 
+    private void queryAllLinks(PrintWriter pw) throws Exception
     {
         queryAll(pw, "psux ls link", "Registered Links");
     }
 
-    private void queryPool(PrintWriter pw, String poolName) throws Exception 
-    {   
+    private void queryPool(PrintWriter pw, String poolName) throws Exception
+    {
         if ((poolName.equals("")) || (poolName.equals("*"))) {
             queryAllPools(pw);
             return;
@@ -1425,11 +1431,11 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
         CellMessage reply = _nucleus.sendAndWait(
                                                  new CellMessage(
                                                                  new CellPath("PoolManager"),
-                                                                 "psux ls pool "+poolName  
+                                                                 "psux ls pool "+poolName
                                                                  ),
                                                  20000);
         if (reply == null) { showTimeout(pw); return; }
-        
+
         pw.println("<center>");
         pw.println("<h1>Report for Pool <font color=red>"+poolName+"</font></h1>");
         Object answer = reply.getMessageObject();
@@ -1463,7 +1469,7 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
         pw.println("</center>");
     }
 
-    private void queryUnit(PrintWriter pw, String unitName) throws Exception 
+    private void queryUnit(PrintWriter pw, String unitName) throws Exception
     {
         if ((unitName.equals("")) || (unitName.equals("*"))) {
             queryAllUnits(pw);
@@ -1472,11 +1478,11 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
         CellMessage reply = _nucleus.sendAndWait(
                                                  new CellMessage(
                                                                  new CellPath("PoolManager"),
-                                                                 "psux ls unit "+unitName  
+                                                                 "psux ls unit "+unitName
                                                                  ),
                                                  20000);
         if (reply == null) { showTimeout(pw); return; }
-        
+
         pw.println("<center>");
         pw.println("<h1>Report for Unit <font color=red>"+unitName+"</font></h1>");
         Object answer = reply.getMessageObject();
@@ -1504,7 +1510,7 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
         pw.println("</center>");
     }
 
-    private class LinkProperties implements Comparable 
+    private class LinkProperties implements Comparable
     {
         private String name;
         private int    readPref;
@@ -1515,11 +1521,11 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
         private Object[] poolList;
         private Object[] pGroupList;
         private String tag;
-        private LinkProperties(Object[] prop) 
+        private LinkProperties(Object[] prop)
         {
             extractLinkProperties(this, prop);
-        }  
-        private LinkProperties extractLinkProperties(LinkProperties p, Object[] prop) 
+        }
+        private LinkProperties extractLinkProperties(LinkProperties p, Object[] prop)
         {
 
             p.name      = prop[0].toString();
@@ -1535,7 +1541,7 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
             return p;
         }
 
-        public int compareTo(Object o) 
+        public int compareTo(Object o)
         {
             LinkProperties link = (LinkProperties)o;
             if (link.tag.equals(tag))return name.compareTo(link.name);
@@ -1545,12 +1551,12 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
         public String toString() { return "["+tag+"/"+name+"]"; }
     }
 
-    private void queryLinkList(PrintWriter pw) throws Exception 
+    private void queryLinkList(PrintWriter pw) throws Exception
     {
         CellMessage reply = _nucleus.sendAndWait(
                                                  new CellMessage(
                                                                  new CellPath("PoolManager"),
-                                                                 "psux ls link -x"  
+                                                                 "psux ls link -x"
                                                                  ),
                                                  50000);
         if (reply == null) { showTimeout(pw); return; }
@@ -1567,9 +1573,9 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
         for (Object[] o : (List<Object[]>)answer) {
             list.add(new LinkProperties(o));
         }
-      
+
         Collections.sort(list);
-      
+
         pw.println("<center><table class=\"s-table\">");
         pw.println("<tr  class=\"s-table\">");
         pw.print("<th rowspan=2 class=\"s-table\">Name</th>");
@@ -1592,19 +1598,19 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
             pw.println("</tr>");
             row++;
         }
-       
+
         pw.println("</table></center>");
     }
-    
-    private void printLinkPropertyRow(PrintWriter pw, LinkProperties lp) 
+
+    private void printLinkPropertyRow(PrintWriter pw, LinkProperties lp)
     {
         String tableData = "<td class=\"s-table\"><span class=\"s-table\">";
         String dataEnd   = "</span></td>";
-        pw.print(tableData); 
+        pw.print(tableData);
         pw.print("<a class=\"s-table\" href=\"/poolInfo/links/");
         pw.print(lp.name);
         pw.print("\">");
-        pw.print(lp.name); 
+        pw.print(lp.name);
         pw.println("</a>"+dataEnd);
         pw.print(tableData); pw.print(lp.tag); pw.println(dataEnd);
         pw.print(tableData); pw.print(lp.readPref); pw.println(dataEnd);
@@ -1631,7 +1637,7 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
             }
         }
         String out = sb.length() == 0 ? "-" : sb.toString();
-      
+
         pw.print(tableData); pw.print(out); pw.println(dataEnd);
         sb = new StringBuffer();
         if (lp.poolList != null) {
@@ -1644,8 +1650,8 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
         pw.print(tableData); pw.print(out); pw.println(dataEnd);
     }
 
-    private void queryLink(PrintWriter pw, String linkName) throws Exception 
-    {   
+    private void queryLink(PrintWriter pw, String linkName) throws Exception
+    {
         if ((linkName.equals("")) || (linkName.equals("*"))) {
             queryAllLinks(pw);
             return;
@@ -1653,11 +1659,11 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
         CellMessage reply = _nucleus.sendAndWait(
                                                  new CellMessage(
                                                                  new CellPath("PoolManager"),
-                                                                 "psux ls link "+linkName  
+                                                                 "psux ls link "+linkName
                                                                  ),
                                                  20000);
         if (reply == null) { showTimeout(pw); return; }
-        
+
         Object answer = reply.getMessageObject();
         if (answer instanceof Exception) {
             showProblem(pw, ((Exception)answer).getMessage());
@@ -1668,11 +1674,11 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
         }
 
         LinkProperties lp = new LinkProperties((Object[])answer);
-      
+
         pw.println("<center>");
         pw.println("<h1>Report for Link <font color=red>"+linkName+"</font></h1>");
         pw.println("<h3>Link Properties</h3>");
-      
+
         pw.println("<table class=\"s-table\" id=\"linkproperties\">");
         pw.println("<tr class=\"s-table\">");
         pw.println("<th class=\"s-table\" colspan=4>Preferences</td>");
@@ -1684,21 +1690,21 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
         pw.println("<th class=\"s-table\">Pool to Pool</th>");
         pw.println("</tr>");
         pw.print("<tr  class=\"s-table-b\">");
-        pw.print("<td class=\"s-table\"><span class=\"s-table\">"); 
+        pw.print("<td class=\"s-table\"><span class=\"s-table\">");
         pw.print(lp.readPref); pw.println("</span></td>");
-        pw.print("<td class=\"s-table\"><span class=\"s-table\">"); 
+        pw.print("<td class=\"s-table\"><span class=\"s-table\">");
         pw.print(lp.writePref); pw.println("</span></td>");
-        pw.print("<td class=\"s-table\"><span class=\"s-table\">"); 
+        pw.print("<td class=\"s-table\"><span class=\"s-table\">");
         pw.print(lp.cachePref); pw.println("</span></td>");
         pw.print("<td class=\"s-table\"><span class=\"s-table\">");
         pw.print(lp.p2pPref); pw.println("</span></td>");
-        pw.print("<td class=\"s-table\"><span class=\"s-table\">"); 
+        pw.print("<td class=\"s-table\"><span class=\"s-table\">");
         pw.print(lp.tag); pw.println("</span></td>");
         pw.print("<tr>");
-      
+
         pw.println("</table>");
-      
-      
+
+
         if (lp.poolList.length > 0) {
             pw.println("<h3>We point the following Pools</h3>");
             showList(pw, lp.poolList, 8, "/poolInfo/pools/");
@@ -1711,8 +1717,8 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
     }
 
     private void queryUnitGroup(PrintWriter pw, String groupName)
-        throws Exception 
-    {   
+        throws Exception
+    {
         if ((groupName.equals("")) || (groupName.equals("*"))) {
             queryAllUGroups(pw);
             return;
@@ -1720,11 +1726,11 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
         CellMessage reply = _nucleus.sendAndWait(
                                                  new CellMessage(
                                                                  new CellPath("PoolManager"),
-                                                                 "psux ls ugroup "+groupName  
+                                                                 "psux ls ugroup "+groupName
                                                                  ),
                                                  20000);
         if (reply == null) { showTimeout(pw); return; }
-        
+
         pw.println("<center>");
         pw.println("<h1>Report for Unit Group <font color=red>"+groupName+"</font></h1>");
         Object answer = reply.getMessageObject();
@@ -1742,20 +1748,20 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
         pw.println("<table border=0 cellspacing=4 cellpadding=4>");
         pw.print("<tr><th align=right>Unit Group : </th><td align=left>");
         pw.print(groupName);
-        pw.println("</td></tr>");      
+        pw.println("</td></tr>");
         pw.print("</table>");
-      
+
         pw.println("<h3>We have the following Members</h3>");
         showList(pw, unitList, 8, "/poolInfo/units/");
-   
+
         pw.println("<h3>We are pointing to the following links</h3>");
         showList(pw, linkList, 8, "/poolInfo/links/");
         pw.println("</center>");
     }
 
     private void queryPoolGroup(PrintWriter pw, String groupName)
-        throws Exception 
-    {   
+        throws Exception
+    {
         if ((groupName.equals("")) || (groupName.equals("*"))) {
             queryAllPGroups(pw);
             return;
@@ -1763,11 +1769,11 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
         CellMessage reply = _nucleus.sendAndWait(
                                                  new CellMessage(
                                                                  new CellPath("PoolManager"),
-                                                                 "psux ls pgroup "+groupName  
+                                                                 "psux ls pgroup "+groupName
                                                                  ),
                                                  20000);
         if (reply == null) { showTimeout(pw); return; }
-        
+
         pw.println("<center>");
         pw.println("<h1>Report for Pool Group <font color=red>"+groupName+"</font></h1>");
         Object answer = reply.getMessageObject();
@@ -1785,23 +1791,23 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
         pw.println("<table border=0 cellspacing=4 cellpadding=4>");
         pw.print("<tr><th align=right>Pool Group : </th><td align=left>");
         pw.print(groupName);
-        pw.println("</td></tr>");      
+        pw.println("</td></tr>");
         pw.print("</table>");
-      
+
         pw.println("<h3>We have the following Members</h3>");
         showList(pw, poolList, 8, "/poolInfo/pools/");
-   
+
         pw.println("<h3>We are pointing to the following links</h3>");
         showList(pw, linkList, 8, "/poolInfo/links/");
         pw.println("</center>");
     }
 
-    private void showTimeout(PrintWriter pw) 
+    private void showTimeout(PrintWriter pw)
     {
         pw.println("<font color=red><h1>Sorry, the request timed out</h1></font>");
     }
 
-    private void showProblem(PrintWriter pw, String message) 
+    private void showProblem(PrintWriter pw, String message)
     {
         pw.print("<font color=red><h1>");
         pw.print(message);
