@@ -24,8 +24,15 @@ public class ExternalTask implements Callable<Integer>
     public Integer call()
     {
         try {
+            _log.log("Executing '" + _command + "'");
+
             RunSystem run = new RunSystem(_command, 1, _timeout, _log);
             run.go();
+
+            String error = run.getErrorString().trim();
+            if (error.length() > 0)
+                _log.elog(error);
+
             return run.getExitValue();
         } catch (InterruptedException e) {
             _log.elog("Thread was waiting for external process '" + _command 
