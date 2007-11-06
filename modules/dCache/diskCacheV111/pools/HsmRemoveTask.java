@@ -109,6 +109,7 @@ class HsmRemoveTask implements Runnable
                 if (i.next().get() == 0) {
                     succeeded.add(uri);
                 } else {
+                    _log.elog("Failed to delete " + uri + " from HSM");
                     failed.add(uri);
                 }
             }
