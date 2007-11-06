@@ -129,7 +129,7 @@ public final class SpaceState implements java.io.Serializable {
     private final String name;
     private final int stateId;
     
-    public static final SpaceState RESERVED        = new SpaceState("RESRVED",    0);
+    public static final SpaceState RESERVED        = new SpaceState("RESERVED",    0);
     public static final SpaceState RELEASED     = new SpaceState("RELEASED", 1);
     public static final SpaceState EXPIRED     = new SpaceState("EXPIRED", 2);
     
