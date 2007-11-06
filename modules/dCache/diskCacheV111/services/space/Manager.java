@@ -251,6 +251,8 @@ import diskCacheV111.util.VOInfo;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.vehicles.PoolFileFlushedMessage;
 import diskCacheV111.vehicles.PoolRemoveFilesMessage;
+import diskCacheV111.vehicles.ProtocolInfo;
+import diskCacheV111.vehicles.GridProtocolInfo;
 /**
  *   <pre> Space Manager dCache service provides ability
  *    \to reserve space in the pool linkGroups
@@ -3361,7 +3363,7 @@ say( "size in bytes = " + sizeInBytes);
             
             if(vos != null) {
                 for(int j =0; j<vos.length ; ++j ) {
-                    say("updateLinkGroups: VoInfo["+j+"]="+vos[j]);
+                    say("updateLinkGroups: VOInfo["+j+"]="+vos[j]);
                 }
             }
             
@@ -3418,13 +3420,17 @@ say( "size in bytes = " + sizeInBytes);
         reserve.setSpaceToken(reservationId);
     }
     
-    public File reserveAndUseSpace(String pnfsPath,PnfsId pnfsId,long size,AccessLatency latency,RetentionPolicy policy)
+    public File reserveAndUseSpace(String pnfsPath,PnfsId pnfsId,long size,AccessLatency latency,RetentionPolicy policy,VOInfo voinfo)
     throws SQLException,java.io.IOException,SpaceException{
         
         long sizeInBytes = size;
         long lifetime = 1000*60*60;
         String voGroup = null;
         String voRole = null;
+        if(voinfo != null){
+            voGroup = voinfo.getVoGroup();
+            voRole = voinfo.getVoRole();
+        }
         String description = null;
         long reservationId = reserveSpace(voGroup,voRole,sizeInBytes,latency , policy, lifetime,description);
         long fileId = useSpace(reservationId,voGroup,voRole,sizeInBytes,lifetime,pnfsPath,pnfsId);
@@ -4082,12 +4088,32 @@ say( "size in bytes = " + sizeInBytes);
         }
         if( file == null) {
             if(reserveSpaceForNonSRMTransfers) {
+                ProtocolInfo protocolInfo = selectPool.getProtocolInfo();
+                VOInfo voinfo = null;
+                if(protocolInfo instanceof GridProtocolInfo) {
+                    voinfo = 
+                        ((GridProtocolInfo)protocolInfo).getVOInfo();
+                    say("protocol info is GridProtocolInfo");
+                    say(" voinfo="+voinfo);
+                }
                 say("selectPool: file is not found, no prior reservations for this file, calling reserveAndUseSpace()");
+                StorageInfo storageInfo = selectPool.getStorageInfo();
+                AccessLatency al = defaultLatency;
+                RetentionPolicy rp = defaultPolicy;
+                if(storageInfo != null) {
+                    if(storageInfo.isSetAccessLatency()){
+                        al  = storageInfo.getAccessLatency();
+                    }
+                    if(storageInfo.isSetRetentionPolicy()){
+                        rp  = storageInfo.getRetentionPolicy();
+                    }
+                }
                 file = reserveAndUseSpace(pnfsPath,
                         selectPool.getPnfsId(),
                         selectPool.getFileSize(),
-                        defaultLatency, 
-                        defaultPolicy);
+                        al, 
+                        rp,
+                        voinfo);
             } else {
                 say("selectPool: file is not found, no prior reservations for this file");
                 if(!willBeForwarded) {
