@@ -2141,14 +2141,14 @@ public class PoolSelectionUnitV2 implements PoolSelectionUnit {
         return result;
     }
 
-    public String hh_psux_match = "read|cache|write <storeUnit> <dCacheUnit> <netUnit> <protocolUnit>";
+    public String hh_psux_match = "[-linkGroup=<linkGroup>] read|cache|write <storeUnit> <dCacheUnit> <netUnit> <protocolUnit>";
 
     public Object ac_psux_match_$_5(Args args) throws Exception {
 
         PoolPreferenceLevel[] list = match(args.argv(0), args.argv(1).equals(
                 "*") ? null : args.argv(1), args.argv(2).equals("*") ? null
                 : args.argv(2), args.argv(3).equals("*") ? null : args.argv(3),
-                args.argv(4).equals("*") ? null : args.argv(4), null, null);
+                args.argv(4).equals("*") ? null : args.argv(4), null, args.getOpt("linkGroup"));
         return list;
     }
 
