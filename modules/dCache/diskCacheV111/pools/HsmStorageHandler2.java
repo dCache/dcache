@@ -876,8 +876,9 @@ public class HsmStorageHandler2  {
             	  
             	  String outputData = run.getOutputString();
             	  if( outputData != null && outputData.length() != 0 ) {
-
-                      BufferedReader in = new BufferedReader(new StringReader( outputData ));
+                      
+                      BufferedReader in = 
+                          new BufferedReader(new StringReader(outputData));
                       String line;
                       boolean done = false;
                       while ( !done ) {
@@ -899,19 +900,19 @@ public class HsmStorageHandler2  {
             			  if(_logRepository.isDebugEnabled() ) {
             				  _logRepository.debug(_entry.getPnfsId().toString() + " : added HSM location : " + location.toString());
             			  }
-            			  _entry.getStorageInfo().addLocation(location);
+            			  _storageInfo.addLocation(location);
             			  // indicate, that this information have to be stored
-            			  _entry.getStorageInfo().isSetAddLocation(true);
+            			  _storageInfo.isSetAddLocation(true);
             			  
             		  }catch(URISyntaxException use) {
             			  _logRepository.info(_entry.getPnfsId().toString() + " :  flush script produces BAD URI : " + line);
             			  throw new CacheException(2, use.getMessage() );
             		  }
                      }
-            	  }            	  
+            	  }
             	  
             	  try {
-            		  _pnfs.fileFlushed(_entry.getPnfsId(), _entry.getStorageInfo());
+            		  _pnfs.fileFlushed(_entry.getPnfsId(), _storageInfo);
             	  }catch(CacheException ce) {
             		  /*
             		   * the message to pnfs failed. We have to store information
@@ -928,7 +929,7 @@ public class HsmStorageHandler2  {
             	  
             	  _entry.setCached() ;
             	              	  
-            	  notifyFlushMessageTarget(_entry);
+            	  notifyFlushMessageTarget(_entry, _storageInfo);
             	  
               }
            }catch(CacheException iii ){
@@ -962,7 +963,7 @@ public class HsmStorageHandler2  {
            }
        }
 	
-        private void notifyFlushMessageTarget(CacheRepositoryEntry entry ) {
+        private void notifyFlushMessageTarget(CacheRepositoryEntry entry, StorageInfo info) {
 
         	String flushMessageTarget = _cell.getArgs().getOpt("flushMessageTarget");
         	if(flushMessageTarget == null || flushMessageTarget.length() == 0 ) {
@@ -971,7 +972,7 @@ public class HsmStorageHandler2  {
         	
         	try {
 	        	
-	        	PoolFileFlushedMessage poolFileFlushedMessage = new PoolFileFlushedMessage( _cell.getCellName(), entry.getPnfsId(), entry.getStorageInfo());
+	        	PoolFileFlushedMessage poolFileFlushedMessage = new PoolFileFlushedMessage( _cell.getCellName(), entry.getPnfsId(), info);
 	        	/*
 	        	 * no replays from secondary message targets
 	        	 */
@@ -983,8 +984,6 @@ public class HsmStorageHandler2  {
         		_cell.sendMessage(msg);
         	}catch (NotSerializableException nse) {
         		// never happens
-        	}catch( CacheException ce) {
-        		_logRepository.info("failed to send message to flushMessageTarget (" + flushMessageTarget + ") : " + ce.getMessage());
         	}catch( NoRouteToCellException nrt) {
         		_logRepository.info("failed to send message to flushMessageTarget (" + flushMessageTarget + ") : " + nrt.getMessage());
         	}
