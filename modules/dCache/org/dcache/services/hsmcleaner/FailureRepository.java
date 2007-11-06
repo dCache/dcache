@@ -206,16 +206,8 @@ public class FailureRepository
             throw new FileNotFoundException("Failed to create file "
                                             + tmpFile + ": " + e.getMessage());
         } catch (IOException e) {
-            /*
-             * java 6
-             */
-            // throw new IOException("Failed to flush failure repository: " + e.getMessage(), e);
-
-
-            /*
-             * use java 5 for now
-             */
-            throw new IOException("Failed to flush failure repository: " + e.getMessage());
+            throw new IOException("Failed to flush failure repository: "
+                                  + e.getMessage());
         }
     }
 
@@ -365,14 +357,8 @@ public class FailureRepository
             throw new FileNotFoundException("Failed to create file "
                                             + tmpFile + ": " + e.getMessage());
         } catch (IOException e) {
-            /*
-             * java 6
-             */
-            // throw new IOException("Failed to flush failure repository: " + e.getMessage(), e);
-            /*
-             * use java 5 for now
-             */
-            throw new IOException("Failed to flush failure repository: " + e.getMessage());
+            throw new IOException("Failed to flush failure repository: " 
+                                  + e.getMessage());
         } finally {
             if (!success) {
                 tmpFile.delete();
