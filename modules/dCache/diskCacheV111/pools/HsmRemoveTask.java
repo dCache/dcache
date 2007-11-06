@@ -14,6 +14,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.Collection;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.Map;
 import java.net.URI;
 
 /**
@@ -77,7 +78,18 @@ class HsmRemoveTask implements Runnable
                 IllegalArgumentException("command not specified for HSM instance " + instance);
         }
 
-        return command + " remove " + uri;
+        StringBuilder sb = new StringBuilder();
+        sb.append(command).append(" remove");
+        sb.append(" -uri=").append(uri);
+        for (Map.Entry<String,String> attr : hsm.attributes()) {
+            String key = attr.getKey();
+            String val = attr.getValue();
+            sb.append(" -").append(key);
+            if (val != null && val.length() > 0)
+                sb.append("=").append(val) ;
+        }
+
+        return sb.toString();
     }
 
     public void run()
