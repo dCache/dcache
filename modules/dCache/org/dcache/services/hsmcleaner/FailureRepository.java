@@ -22,7 +22,7 @@ import java.net.URISyntaxException;
  * Encapsulation of the on-disk index of locations that could not be
  * deleted.
  *
- * This class provides a log-structured store for URIs. 
+ * This class provides a log-structured store for URIs.
  *
  * URIs are stored in clear text files. Once generated, a file is
  * never modified. New URIs are cached in memory and then explicitly
@@ -103,7 +103,7 @@ public class FailureRepository
     }
 
     /**
-     * Adds a location to the repository. 
+     * Adds a location to the repository.
      *
      * URIs will be stored in memory until explicitly flushed using
      * <code>flush</code>.
@@ -119,14 +119,14 @@ public class FailureRepository
             _out.println(location);
             if (_recovering.isEmpty()) {
                 notifyAll();
-            }        
+            }
         } else {
             _locations.add(location);
         }
     }
 
     /**
-     * Flushes new locations to stable storage. 
+     * Flushes new locations to stable storage.
      *
      * Locations added with the <code>add</code> method are initially
      * buffered in memory and not flushed until <code>flush</code> is
@@ -176,7 +176,7 @@ public class FailureRepository
                     // esay("Could not write to file: " + tmpFile);
                     return;
                 }
-                
+
                 /* Here we assume the rename is atomic.
                  */
                 if (!tmpFile.renameTo(nextFile())) {
@@ -184,7 +184,7 @@ public class FailureRepository
                     return;
                 }
                 success = true;
-                
+
                 /* Confirm that locations have been written.
                  */
                 for (URI location : locations) {
@@ -203,11 +203,19 @@ public class FailureRepository
                 }
             }
         } catch (FileNotFoundException e) {
-            throw new FileNotFoundException("Failed to create file " 
+            throw new FileNotFoundException("Failed to create file "
                                             + tmpFile + ": " + e.getMessage());
         } catch (IOException e) {
-            throw new IOException("Failed to flush failure repository: " 
-                                  + e.getMessage(), e);
+            /*
+             * java 6
+             */
+            // throw new IOException("Failed to flush failure repository: " + e.getMessage(), e);
+
+
+            /*
+             * use java 5 for now
+             */
+            throw new IOException("Failed to flush failure repository: " + e.getMessage());
         }
     }
 
@@ -244,7 +252,7 @@ public class FailureRepository
     }
 
     /**
-     * Recovers locations in the repository. 
+     * Recovers locations in the repository.
      *
      * All locations will be pushed to the given sink. The
      * <code>recover</code> method will not return until either
@@ -304,7 +312,7 @@ public class FailureRepository
                             // cleaner and notify the administrator. That
                             // would require a mechanism for notifying the
                             // administrator...
-                            // elog("Corrupted failure file. Cannot parse '" + 
+                            // elog("Corrupted failure file. Cannot parse '" +
                             //     s + "': " + e.getMessage());
                         }
                         if (Thread.interrupted()) {
@@ -338,8 +346,8 @@ public class FailureRepository
                 success = true;
 
                 /* At this point we are certain that the new file was
-                 * written to disk and we delete the old files. 
-                 * 
+                 * written to disk and we delete the old files.
+                 *
                  * If we happen to crash in between the rename above and
                  * the delete below, then entries would be duplicated.
                  * Since deletion is idempotent, we ignore this issue.
@@ -354,11 +362,17 @@ public class FailureRepository
                 }
             }
         } catch (FileNotFoundException e) {
-            throw new FileNotFoundException("Failed to create file " 
+            throw new FileNotFoundException("Failed to create file "
                                             + tmpFile + ": " + e.getMessage());
         } catch (IOException e) {
-            throw new IOException("Failed to flush failure repository: " 
-                                  + e.getMessage(), e);
+            /*
+             * java 6
+             */
+            // throw new IOException("Failed to flush failure repository: " + e.getMessage(), e);
+            /*
+             * use java 5 for now
+             */
+            throw new IOException("Failed to flush failure repository: " + e.getMessage());
         } finally {
             if (!success) {
                 tmpFile.delete();
