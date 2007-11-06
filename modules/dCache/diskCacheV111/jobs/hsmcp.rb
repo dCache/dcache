@@ -33,15 +33,12 @@ if args.length < 1
 end
 command=args[0]
 case command
-when "get"
-when "put"
-when "next"
+when "get","put","next"
   if args.length != 3
     usage
   end
   pnfsid=args[1]
   file=args[2]
-
 end
 
 # 
