@@ -1,5 +1,6 @@
 package org.dcache.services.hsmcleaner;
 
+import org.apache.log4j.Logger;
 import java.util.Map;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -49,6 +50,13 @@ class Receiver
  */
 public class AbstractCell extends CellAdapter
 {
+    /**
+     * Logger for the package of the instantiated class. Notice that
+     * this is not a static field, as the logger instance to use
+     * depends on the particular instance of this class.
+     */
+    protected Logger _logger;
+
     /** Message handler for fast dispatch. */
     final private Map<Class,Collection<Receiver>> _receivers =
         new HashMap<Class,Collection<Receiver>>();
@@ -57,9 +65,36 @@ public class AbstractCell extends CellAdapter
     {
         super(cellName, args, startNow);
 
+        _logger = 
+            Logger.getLogger(getClass().getPackage().getName());
+
         parseOptions();
 
         addMessageListener(this);
+    }
+
+    public void debug(String str)
+    {
+        pin(str);
+        _logger.debug(str);
+    }
+
+    public void info(String str)
+    {
+        pin(str);
+        _logger.info(str);
+    }
+
+    public void warn(String str)
+    {
+        pin(str);
+        _logger.warn(str);
+    }
+
+    public void error(String str)
+    {
+        pin(str);
+        _logger.error(str);
     }
 
     /**
@@ -229,56 +264,58 @@ public class AbstractCell extends CellAdapter
      * @throws IllegalArgumentException if <code>required</code> is true 
      *                                  and the option is not defined.
      */
-    protected String getOption(String name, boolean required)
+    protected String getOption(Option option)
     {
         String s;
 
-        s = getArgs().getOpt(name);
-        if (s != null && (s.length() > 0 || !required))
+        s = getArgs().getOpt(option.name());
+        if (s != null && (s.length() > 0 || !option.required()))
             return s;
 
-        s = (String)getDomainContext().get(name);
-        if (s != null && (s.length() > 0 || !required))
+        s = (String)getDomainContext().get(option.name());
+        if (s != null && (s.length() > 0 || !option.required()))
             return s;
 
-        if (required)
-            throw new IllegalArgumentException(name
+        if (option.required())
+            throw new IllegalArgumentException(option.name()
                                                + " is a required argument");
 
-        return null;
+        return option.defaultValue();
     }
 
     /**
      * Parses options for this cell. 
      *
-     * This process is based on annotation of fields using
-     * <code>Option</code>.
+     * Option parsing is based on <code>Option</code> annotation of
+     * fields. This fields must not be class private.
      *
-     * Log messages for all fields are generated using
-     * <code>say</code>.
+     * Values are logger at the INFO level.
      */
     protected void parseOptions()
     {
         try {
-            for (Field field : getClass().getFields()) {
+            for (Field field : getClass().getDeclaredFields()) {
                 Option option = field.getAnnotation(Option.class);
                 if (option != null) {
-                    String s = getOption(option.name(), option.required());
+                    String s = getOption(option);
+                    Object value;
                     if (s != null && s.length() > 0) {
                         try {
-                            field.set(this, toType(s, field.getType()));
+                            value = toType(s, field.getType());
+                            field.set(this, value);
                         } catch (ClassCastException e) {
                             throw new IllegalArgumentException("Cannot convert '" + s + "' to " + field.getType(), e);
                         }
+                    } else {
+                        value = field.get(this);
                     }
                     
-                    Object value = field.get(this);
                     String description = option.description();
                     String unit = option.unit();
                     if (unit != null && unit.length() > 0) {
-                        say(description + " set to " + value + " " + unit);
+                        info(description + " set to " + value + " " + unit);
                     } else {
-                        say(description + " set to " + value);
+                        info(description + " set to " + value);
                     }
                 }
             }
@@ -334,7 +371,7 @@ public class AbstractCell extends CellAdapter
         Object o = message.getMessageObject();
         if (o instanceof Message) {
             synchronized (_receivers) {
-                Collection<Receiver> receivers = _receivers.get(o);
+                Collection<Receiver> receivers = _receivers.get(o.getClass());
                 if (receivers != null) {
                     for (Receiver receiver : receivers) {
                         try {
@@ -342,7 +379,9 @@ public class AbstractCell extends CellAdapter
                         } catch (IllegalAccessException e) {
                             throw new RuntimeException("Cannot process message due to access error", e);
                         } catch (InvocationTargetException e) {
-                            esay("Failed to process message: " + e.getMessage());
+                            error("Failed to process " + o.getClass()
+                                  + ": " + e.getCause());
+                            e.getCause().printStackTrace();
                         }
                     }
                 }

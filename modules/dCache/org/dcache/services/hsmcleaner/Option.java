@@ -11,6 +11,7 @@ public @interface Option
 {
     String  name();
     String  description();
+    String  defaultValue() default "";
     String  unit()         default "";
     boolean required()     default false;
 }
