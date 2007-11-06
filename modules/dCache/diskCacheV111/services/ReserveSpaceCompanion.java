@@ -57,28 +57,28 @@ COPYRIGHT STATUS:
   and software for U.S. Government purposes.  All documents and software
   available from this server are protected under the U.S. and Foreign
   Copyright Laws, and FNAL reserves all rights.
- 
- 
+
+
  Distribution of the software available from this server is free of
  charge subject to the user following the terms of the Fermitools
  Software Legal Information.
- 
+
  Redistribution and/or modification of the software shall be accompanied
  by the Fermitools Software Legal Information  (including the copyright
  notice).
- 
+
  The user is asked to feed back problems, benefits, and/or suggestions
  about the software to the Fermilab Software Providers.
- 
- 
+
+
  Neither the name of Fermilab, the  URA, nor the names of the contributors
  may be used to endorse or promote products derived from this software
  without specific prior written permission.
- 
- 
- 
+
+
+
   DISCLAIMER OF LIABILITY (BSD):
- 
+
   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
   "AS IS" AND ANY EXPRESS OR IMPLIED  WARRANTIES, INCLUDING, BUT NOT
   LIMITED TO, THE IMPLIED  WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -91,10 +91,10 @@ COPYRIGHT STATUS:
   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT  OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE  POSSIBILITY OF SUCH DAMAGE.
- 
- 
+
+
   Liabilities of the Government:
- 
+
   This software is provided by URA, independent from its Prime Contract
   with the U.S. Department of Energy. URA is acting independently from
   the Government and in its own private capacity and is not acting on
@@ -104,10 +104,10 @@ COPYRIGHT STATUS:
   be liable for nor assume any responsibility or obligation for any claim,
   cost, or damages arising out of or resulting from the use of the software
   available from this server.
- 
- 
+
+
   Export Control:
- 
+
   All documents and software available from this server are subject to U.S.
   export control laws.  Anyone downloading information from this server is
   obligated to secure any necessary Government licenses before exporting
@@ -163,7 +163,7 @@ public class ReserveSpaceCompanion implements CellMessageAnswerable {
     private  static final int WAITING_PNFS_CREATE_ENTRY_RESPONCE_STATE=4;
     private  static final int WAITING_PNFS_DELETE_ENTRY_RESPONCE_STATE=5;
     private  static final int WAITING_PNFS_GET_PARENT_STORAGE_INFO_RESPONCE_STATE=6;
-  
+
     private volatile int state = NOT_WAITING_STATE;
     private dmg.cells.nucleus.CellAdapter cell;
     private ReserveSpaceCallbacks callbacks;
@@ -186,7 +186,7 @@ public class ReserveSpaceCompanion implements CellMessageAnswerable {
             cell.say(" ReserveSpaceCompanion : "+words_of_wisdom);
         }
     }
-    
+
     private void esay(String words_of_despare) {
         if(cell!=null) {
             cell.esay(" ReserveSpaceCompanion : "+words_of_despare);
@@ -198,7 +198,7 @@ public class ReserveSpaceCompanion implements CellMessageAnswerable {
             cell.esay(t);
         }
     }
-    
+
     public static final String getStateString(int state) {
         switch(state) {
             case NOT_WAITING_STATE:
@@ -219,10 +219,10 @@ public class ReserveSpaceCompanion implements CellMessageAnswerable {
                 return "UNKNOWN";
         }
     }
-    
-    
+
+
     /** Creates a new instance of StageAndPinCompanion */
-    
+
     private ReserveSpaceCompanion(
     String path,
     ReserveSpaceCallbacks callbacks,
@@ -236,8 +236,8 @@ public class ReserveSpaceCompanion implements CellMessageAnswerable {
         this.spaceUserHost = spaceUserHost;
         say(" constructor path = "+path);
     }
-    
-    
+
+
     private ReserveSpaceCompanion(
     String path,
     StorageInfo storageInfo,
@@ -255,7 +255,7 @@ public class ReserveSpaceCompanion implements CellMessageAnswerable {
         this.spaceUserHost = spaceUserHost;
         say(" constructor path = "+path);
     }
-    
+
     private ReserveSpaceCompanion(
     String path,
     int uid,
@@ -273,7 +273,7 @@ public class ReserveSpaceCompanion implements CellMessageAnswerable {
         this.spaceUserHost = spaceUserHost;
         say(" constructor path = "+path);
     }
-    
+
     public void answerArrived( CellMessage req , CellMessage answer ) {
         int current_state = state;
         say("answerArrived, state="+getStateString(current_state));
@@ -312,7 +312,7 @@ public class ReserveSpaceCompanion implements CellMessageAnswerable {
                 (PoolMgrSelectWritePoolMsg)message;
                 poolManagerSelectPoolMsgArrived(msg);
                 return;
-                
+
             }
             else if(message instanceof PoolReserveSpaceMessage  &&
                 current_state == WAITING_POOL_RESPONCE_STATE) {
@@ -339,7 +339,7 @@ public class ReserveSpaceCompanion implements CellMessageAnswerable {
             //" : "+o) ;
         }
     }
-    
+
     public void exceptionArrived( CellMessage request , Exception exception ) {
         esay("exceptionArrived "+exception+" for request "+request);
         callbacks.Exception(exception);
@@ -349,11 +349,11 @@ public class ReserveSpaceCompanion implements CellMessageAnswerable {
         callbacks.Timeout();
     }
     public String toString() {
-        
+
         return this.getClass().getName()+
         (pnfsId == null?path:pnfsId.toString());
     }
-    
+
     public void createEntryArrived(PnfsCreateEntryMessage create_entry_msg) {
        say("PnfsGetStorageInfoMessage for root "+
         "directory arrived");
@@ -373,8 +373,8 @@ public class ReserveSpaceCompanion implements CellMessageAnswerable {
         created = true;
         selectPool();
     }
-    
-    
+
+
     public void storageInfoArrived(PnfsGetStorageInfoMessage storage_info_msg){
         say("PnfsGetStorageInfoMessage arrived");
         if(storage_info_msg.getReturnCode() != 0) {
@@ -419,7 +419,7 @@ public class ReserveSpaceCompanion implements CellMessageAnswerable {
         say("storageInfo = "+storageInfo );
         selectPool();
     }
-    
+
     public void poolManagerSelectPoolMsgArrived (PoolMgrSelectWritePoolMsg msg)
     {
         say("PoolMgrSelectWritePoolMsg arrived");
@@ -451,7 +451,7 @@ public class ReserveSpaceCompanion implements CellMessageAnswerable {
             "can not contact pool: "+ee.toString());
         }
     }
-    
+
     public void poolSpaceReservedArrived ( PoolReserveSpaceMessage msg ) {
         say("PoolReserveSpaceMessage arrived");
         if(msg.getReturnCode() != 0) {
@@ -490,7 +490,7 @@ public class ReserveSpaceCompanion implements CellMessageAnswerable {
             return;
         }
     }
-    
+
     public static void reserveSpace(
     String path,
     ReserveSpaceCallbacks callbacks,
@@ -503,7 +503,7 @@ public class ReserveSpaceCompanion implements CellMessageAnswerable {
         if(pnfsPath == null) {
             throw new IllegalArgumentException(" FileRequest does not specify root path!!!");
         }
-        
+
         PnfsGetStorageInfoMessage storageInfoMsg =
         new PnfsGetStorageInfoMessage() ;
         storageInfoMsg.setPnfsPath( pnfsPath ) ;
@@ -514,7 +514,7 @@ public class ReserveSpaceCompanion implements CellMessageAnswerable {
         spaceSize,
         space_user_host,
         cell);
-        
+
         companion.state = WAITING_PNFS_GET_STORAGE_INFO_RESPONCE_STATE;
         try {
             cell.sendMessage( new CellMessage(
@@ -529,7 +529,7 @@ public class ReserveSpaceCompanion implements CellMessageAnswerable {
             ee.toString());
         }
     }
-    
+
     public void selectPool() {
                 // all we need is a pool
         GFtpProtocolInfo protocolInfo =
@@ -544,7 +544,7 @@ public class ReserveSpaceCompanion implements CellMessageAnswerable {
         0, //max
         0,//bufferSize
         0,//offset
-        spaceSize) ;//size
+        spaceSize, null) ;//size
         PoolMgrSelectPoolMsg selectPoolMsg =
         new PoolMgrSelectWritePoolMsg(
         pnfsId,
@@ -564,9 +564,9 @@ public class ReserveSpaceCompanion implements CellMessageAnswerable {
             reserveSpaceFailed(
             "can not contact pool manger: "+ee.toString());
         }
-        
+
     }
-    
+
     public static void reserveSpace(
     String path,
     StorageInfo storageInfo,
@@ -581,12 +581,12 @@ public class ReserveSpaceCompanion implements CellMessageAnswerable {
         if(pnfsPath == null) {
             throw new IllegalArgumentException(" FileRequest does not specify root path!!!");
         }
-        
+
         ReserveSpaceCompanion companion =
         new ReserveSpaceCompanion(
         path,
         storageInfo,
-        pnfsId, 
+        pnfsId,
         callbacks,
         spaceSize,
         space_user_host,
@@ -612,23 +612,23 @@ public class ReserveSpaceCompanion implements CellMessageAnswerable {
         new ReserveSpaceCompanion(
         path,
         uid,
-        gid, 
+        gid,
         callbacks,
         spaceSize,
         space_user_host,
         cell);
         companion.state= WAITING_PNFS_GET_STORAGE_INFO_RESPONCE_STATE;
         companion.askStorageInfo(pnfsPath);
-        
+
     }
-    
+
     private void askStorageInfo(String pnfsPath) {
         PnfsGetStorageInfoMessage storageInfoMsg =
         new PnfsGetStorageInfoMessage() ;
         storageInfoMsg.setPnfsPath( pnfsPath ) ;
-        
+
         try {
-            
+
             cell.sendMessage( new CellMessage(
             new CellPath("PnfsManager") ,
             storageInfoMsg ) ,
@@ -639,9 +639,9 @@ public class ReserveSpaceCompanion implements CellMessageAnswerable {
         catch(Exception ee ) {
             callbacks.ReserveSpaceFailed("can not contact pnfs manger: "+ee.toString());
         }
-        
+
     }
-    
+
     private void createPnfsEntry() {
         PnfsCreateEntryMessage createPnfsEntry =
             new PnfsCreateEntryMessage( path , uid , gid , 0644 );
@@ -657,9 +657,9 @@ public class ReserveSpaceCompanion implements CellMessageAnswerable {
         catch(Exception ee ) {
             reserveSpaceFailed("can not contact pnfs manger: "+ee.toString());
         }
- 
+
     }
-    
+
     private void deletePnfsEntry(boolean replyRequired) throws Exception {
         say("deletePnfsEntry");
         if(created) {
@@ -679,7 +679,7 @@ public class ReserveSpaceCompanion implements CellMessageAnswerable {
                 cell.sendMessage(cellMessage );
             }
         }
- 
+
     }
 
     private void reserveSpaceFailed(String error) {
