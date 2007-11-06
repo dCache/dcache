@@ -1,14 +1,18 @@
 #!/usr/bin/env ruby
 
 require 'fileutils'
+require 'uri'
 
 def usage 
-  STDERR.puts "Usage : put|get <pnfsId> <filePath> [-si=<storageInfo>] [-key[=value] ...]" 
+  STDERR.puts "Usage : put <pnfsId> <filePath> -si=<storageInfo> [-key[=value] ...]" 
+  STDERR.puts "        get <pnfsId> <filePath> -uri=<uri> [-key[=value] ...]" 
+  STDERR.puts "        remove -uri=<uri> [-key[=value] ...]" 
   exit 4
 end
 
-# echo "$* `date`" >>/tmp/hsm.log
-
+#
+# Parse options
+#
 options = Hash.new
 args = Array.new
 
@@ -21,14 +25,28 @@ ARGV.each do |arg|
   end
 end
 
-if args.length != 3
+# 
+# Parse arguments
+#
+if args.length < 1
    usage
 end
-
 command=args[0]
-pnfsid=args[1]
-file=args[2]
+case command
+when "get"
+when "put"
+when "next"
+  if args.length != 3
+    usage
+  end
+  pnfsid=args[1]
+  file=args[2]
 
+end
+
+# 
+# Check options
+#
 if options.has_key? "errorNumber"
   error = options["errorNumber"]
   case error
@@ -61,10 +79,13 @@ if !FileTest.directory? base
   exit 5
 end
 
-hsmFile="#{base}/#{pnfsid}"
-
+# 
+# Interpret command
+#
 case command 
 when "get"
+  hsmFile="#{base}/#{pnfsid}"
+
   if ! FileTest.file? hsmFile
     STDERR.puts "pnfsid not found: #{pnfsid}"
     exit 4
@@ -78,12 +99,9 @@ when "get"
 
   FileUtils.cp(hsmFile, file)
 
-#   if [ $? -ne 0 ] ; then
-#      echo "Failed : cp $BASE/$pnfsid $filename" 1>&2
-#      exit 5
-#   fi
-
 when "put"
+  hsmFile="#{base}/#{pnfsid}"
+
   if FileTest.file? hsmFile
     STDERR.puts "pnfsid already exists : #{pnfsid}"
     exit 4
@@ -117,15 +135,47 @@ when "put"
 
   FileUtils.cp(file, hsmFile)
 
-  # if [ $? -ne 0 ] ; then
-  #    echo "Failed : cp $filename $BASE/$pnfsid" 1>&2
-  #    exit 5
-  # fi
-
   sleep waitTime
   
   puts "hsm://#{instance}?store=#{store}&group=#{group}&bfid=#{pnfsid}"
 
+when "remove"
+  if !options.has_key? "uri"
+    STDERR.puts "Need -uri for remove"
+    exit 2
+  end
+
+  uri = URI.parse(options["uri"])
+  query = Hash.new
+  uri.query.split("&").each do |s|
+    if s =~ /(\w+)=(.*)/ 
+      query[$1]=$2
+    end
+  end
+
+  if !query.has_key? "bfid"
+    STDERR.puts "bfid missing from URI: " + uri
+    exit 6
+  end
+
+  sleep waitTime
+
+  pnfsid = query["bfid"]
+  hsmFile="#{base}/#{pnfsid}"
+
+  # Notice that this is not an error condition
+  if !FileTest.file? hsmFile
+    STDERR.puts hsmFile + " not found"
+    exit 0
+  end
+
+  begin
+    FileUtils.rm(hsmFile)
+  rescue 
+    STDERR.puts "Failed to delete " + hsmFile
+    exot 4
+  end
+  
 when "next"
   
 
