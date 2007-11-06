@@ -15,7 +15,7 @@ import diskCacheV111.util.VOInfo;
  * @author timur
  */
 public interface GridProtocolInfo extends ProtocolInfo {
-    
-    public void getVOInfo();
-    
+
+    public VOInfo getVOInfo();
+
 }
