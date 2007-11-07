@@ -507,7 +507,7 @@ public class PnfsManagerV3 extends CellAdapter {
          * the cache location will set level 2.
          */
         if (_nameSpaceProvider != _cacheLocationProvider) {
-            _nameSpaceProvider.removeFileAttribute(pnfsId, 
+            _nameSpaceProvider.removeFileAttribute(pnfsId,
                                                    "_this_entry_doesn't_exist_");
         }
 
@@ -676,7 +676,7 @@ public class PnfsManagerV3 extends CellAdapter {
 
     }
 
-    private void addCacheLocation(PnfsAddCacheLocationMessage pnfsMessage){
+    public void addCacheLocation(PnfsAddCacheLocationMessage pnfsMessage){
         say("addCacheLocation : "+pnfsMessage.getPoolName()+" for "+pnfsMessage.getPnfsId());
         try {
             /* At this point, the file is no longer new and should
@@ -694,7 +694,7 @@ public class PnfsManagerV3 extends CellAdapter {
                 _nameSpaceProvider.removeFileAttribute(pnfsMessage.getPnfsId(),
                                                        "_this_entry_doesn't_exist_");
             }
-            _cacheLocationProvider.addCacheLocation(pnfsMessage.getPnfsId(), 
+            _cacheLocationProvider.addCacheLocation(pnfsMessage.getPnfsId(),
                                                     pnfsMessage.getPoolName());
         } catch (FileNotFoundCacheException fnf ) {
         	pnfsMessage.setFailed(CacheException.FILE_NOT_FOUND, fnf.getMessage() );
@@ -710,7 +710,7 @@ public class PnfsManagerV3 extends CellAdapter {
 
     }
 
-    private void clearCacheLocation(PnfsClearCacheLocationMessage pnfsMessage){
+    public void clearCacheLocation(PnfsClearCacheLocationMessage pnfsMessage){
         PnfsId pnfsId = pnfsMessage.getPnfsId();
         say("clearCacheLocation : "+pnfsMessage.getPoolName()+" for "+pnfsId);
         try {
@@ -730,7 +730,7 @@ public class PnfsManagerV3 extends CellAdapter {
 
     }
 
-    private void getCacheLocations(PnfsGetCacheLocationsMessage pnfsMessage){
+    public void getCacheLocations(PnfsGetCacheLocationsMessage pnfsMessage){
         PnfsId pnfsId = pnfsMessage.getPnfsId();
         try {
             if( pnfsId == null ){
@@ -768,7 +768,7 @@ public class PnfsManagerV3 extends CellAdapter {
 
     }
 
-    private void createDirectory(PnfsCreateDirectoryMessage pnfsMessage){
+    public void createDirectory(PnfsCreateDirectoryMessage pnfsMessage){
         PnfsId pnfsId = null;
         say("create directory "+pnfsMessage.getPath());
         try {
@@ -809,7 +809,7 @@ public class PnfsManagerV3 extends CellAdapter {
 
     }
 
-    private void createEntry(PnfsCreateEntryMessage pnfsMessage){
+    public void createEntry(PnfsCreateEntryMessage pnfsMessage){
 
         PnfsId pnfsId = null;
         say("create entry "+pnfsMessage.getPath());
@@ -852,7 +852,7 @@ public class PnfsManagerV3 extends CellAdapter {
 
     }
 
-    private void setStorageInfo( PnfsSetStorageInfoMessage pnfsMessage ){
+    public void setStorageInfo( PnfsSetStorageInfoMessage pnfsMessage ){
         PnfsId pnfsId   = pnfsMessage.getPnfsId() ;
         try{
             if( pnfsId == null ){
@@ -894,7 +894,7 @@ public class PnfsManagerV3 extends CellAdapter {
 
     }
 
-    private void getStorageInfo( PnfsGetStorageInfoMessage pnfsMessage ){
+    public void getStorageInfo( PnfsGetStorageInfoMessage pnfsMessage ){
         PnfsId pnfsId   = pnfsMessage.getPnfsId() ;
         try{
             if( pnfsId == null ){
@@ -943,7 +943,7 @@ public class PnfsManagerV3 extends CellAdapter {
         }
 
     }
-    private void getFileMetaData( PnfsGetFileMetaDataMessage pnfsMessage ){
+    public void getFileMetaData( PnfsGetFileMetaDataMessage pnfsMessage ){
         PnfsId pnfsId   = pnfsMessage.getPnfsId() ;
         boolean resolve = pnfsMessage.resolve() ;
         try{
@@ -984,7 +984,7 @@ public class PnfsManagerV3 extends CellAdapter {
 
     }
 
-    private void setFileMetaData( PnfsSetFileMetaDataMessage pnfsMessage ) {
+    public void setFileMetaData( PnfsSetFileMetaDataMessage pnfsMessage ) {
         PnfsId pnfsId   = pnfsMessage.getPnfsId() ;
         FileMetaData meta = pnfsMessage.getMetaData() ;
         say( "setFileMetaData="+meta+" for "+pnfsId ) ;
@@ -999,7 +999,7 @@ public class PnfsManagerV3 extends CellAdapter {
 
     }
 
-    private void deleteEntry(PnfsDeleteEntryMessage pnfsMessage){
+    public void deleteEntry(PnfsDeleteEntryMessage pnfsMessage){
         String path = pnfsMessage.getPath();
         if( path != null ) {
             say("delete PNFS entry for "+ path );
@@ -1033,7 +1033,7 @@ public class PnfsManagerV3 extends CellAdapter {
 
     }
 
-    private void setLength(PnfsSetLengthMessage pnfsMessage){
+    public void setLength(PnfsSetLengthMessage pnfsMessage){
 
         PnfsId pnfsId = pnfsMessage.getPnfsId();
         long   length = pnfsMessage.getLength();
@@ -1067,7 +1067,7 @@ public class PnfsManagerV3 extends CellAdapter {
     }
 
 
-    private void rename(PnfsRenameMessage pnfsMessage) {
+    public void rename(PnfsRenameMessage pnfsMessage) {
 
         PnfsId pnfsId = pnfsMessage.getPnfsId();
         String newName = pnfsMessage.newName();
@@ -1111,7 +1111,7 @@ public class PnfsManagerV3 extends CellAdapter {
         return _nameSpaceProvider.pnfsidToPath(pnfsId);
     }
 
-    private void mapPath( PnfsMapPathMessage pnfsMessage ){
+    public void mapPath( PnfsMapPathMessage pnfsMessage ){
         PnfsId pnfsId     = pnfsMessage.getPnfsId() ;
         String globalPath = pnfsMessage.getGlobalPath() ;
 
@@ -1144,13 +1144,13 @@ public class PnfsManagerV3 extends CellAdapter {
         }
     }
 
-    private void getCacheStatistics(PnfsGetCacheStatisticsMessage pnfsMessage){
+    public void getCacheStatistics(PnfsGetCacheStatisticsMessage pnfsMessage){
         PnfsId pnfsId = pnfsMessage.getPnfsId();
         say("get cache statistics for "+pnfsId);
         pnfsMessage.setFailed( 5 , "Not supported" ) ;
     }
 
-    private void updateCacheStatistics(PnfsUpdateCacheStatisticsMessage pnfsMessage){
+    public void updateCacheStatistics(PnfsUpdateCacheStatisticsMessage pnfsMessage){
         PnfsId pnfsId = pnfsMessage.getPnfsId();
         say("update cache statistics for "+pnfsId);
         pnfsMessage.setFailed( 5 , "Not supported" ) ;
@@ -1332,7 +1332,7 @@ public class PnfsManagerV3 extends CellAdapter {
         }
     }
 
-	private void processFlushMessage(PoolFileFlushedMessage pnfsMessage) {
+    public void processFlushMessage(PoolFileFlushedMessage pnfsMessage) {
 
 		try {
 
