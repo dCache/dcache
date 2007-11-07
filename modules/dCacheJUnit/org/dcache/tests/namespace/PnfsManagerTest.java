@@ -10,6 +10,8 @@ import java.sql.Statement;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -18,6 +20,7 @@ import static org.junit.Assert.*;
 
 import dmg.cells.nucleus.SystemCell;
 
+import org.dcache.chimera.FileNotFoundHimeraFsException;
 import org.dcache.chimera.FsInode;
 import org.dcache.chimera.JdbcFs;
 import org.dcache.chimera.XMLconfig;
@@ -165,6 +168,7 @@ public class PnfsManagerTest {
         assertTrue("failed to clear cache location", pnfsClearcacheLocationMessage.getReturnCode() == 0 );
 
         PnfsGetFileMetaDataMessage pnfsGetFileMetaDataMessage = new PnfsGetFileMetaDataMessage(pnfsCreateEntryMessage.getPnfsId());
+
        _pnfsManager.getFileMetaData(pnfsGetFileMetaDataMessage);
        assertTrue("file still exist after removeing last location entry", pnfsGetFileMetaDataMessage.getReturnCode() == CacheException.FILE_NOT_FOUND );
     }
