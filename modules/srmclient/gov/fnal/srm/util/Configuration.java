@@ -1983,7 +1983,7 @@ public class Configuration {
         if (reserveSpace) {
             sb.append("\n\taction is reserveSpace");
             sb.append("\n\tdesired size="+desiredReserveSpaceSize);
-            sb.append("\n\tguananteed size="+guaranteedReserveSpaceSize);
+            sb.append("\n\tguaranteed size="+guaranteedReserveSpaceSize);
             sb.append("\n\tlifetime="+reserveSpaceLifetime);
             if ( lsURLs != null ) {
                 for(int i = 0; i< lsURLs.length; i++) {
