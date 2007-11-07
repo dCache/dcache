@@ -770,198 +770,256 @@ public class HsmStorageHandler2  {
 
        }
     }
-    private class StoreThread extends Info implements Batchable {
 
-    	private final PnfsId                _pnfsId      ;
-    	private StorageInfo           _storageInfo = null ;
-        private final CacheRepositoryEntry  _entry    ;
-        private final StorageInfoMessage    _infoMsg     ;
-        private long                  _timestamp   = 0 ;
+    private class StoreThread extends Info implements Batchable 
+    {
+    	private final PnfsId _pnfsId;
+        private final CacheRepositoryEntry _entry;
+        private final StorageInfoMessage _infoMsg;
+    	private StorageInfo _storageInfo;
+        private long _timestamp = 0;
         private int id;
 
-	public StoreThread( CacheRepositoryEntry entry ){
-	    super( entry.getPnfsId() ) ;
-            _entry       = entry ;
-	        _pnfsId      = entry.getPnfsId() ;
-            _infoMsg     = new StorageInfoMessage(
-                          _cell.getCellName()+"@"+_cell.getCellDomainName() ,
-                          _pnfsId ,
-                          false ) ;
+	public StoreThread(CacheRepositoryEntry entry)
+        {
+	    super(entry.getPnfsId());
+            String myName = 
+                _cell.getCellName() + "@" + _cell.getCellDomainName();
+            _entry = entry;
+            _pnfsId = entry.getPnfsId();
+            _infoMsg = new StorageInfoMessage(myName, _pnfsId, false);
 	}
-       public String toString(){ return _pnfsId.toString() ; }
-       public double getTransferRate(){ return 10.0 ; }
-       public String getClient(){ return "[Unknown]" ; }
-       public long   getClientId(){ return 0 ; }
 
-       public void queued(){
-          _timestamp = System.currentTimeMillis() ;
+       public String toString()
+        { 
+            return _pnfsId.toString(); 
+        }
+
+       public double getTransferRate()
+        {
+            return 10.0; 
+        }
+
+       public String getClient()
+        {
+            return "[Unknown]"; 
+        }
+
+        public long getClientId()
+        {
+            return 0;
+        }
+
+        public void queued()
+        {
+            _timestamp = System.currentTimeMillis();
+        }
+
+        public void unqueued()
+        {
+            _infoMsg.setTimeQueued(System.currentTimeMillis() - _timestamp);
+            _infoMsg.setResult(44, "Unqueued ... ");
+            try {
+                _cell.sendMessage(new CellMessage(new CellPath("billing"), _infoMsg));
+            } catch (Exception e) {
+                esay("Could send 'billing info' : " + e);
+            }
+          _storePnfsidList.remove(_pnfsId);
        }
-       public void unqueued(){
-          _infoMsg.setTimeQueued( System.currentTimeMillis() - _timestamp ) ;
-          _infoMsg.setResult( 44 , "Unqueued ... " ) ;
-          try{
-             _cell.sendMessage(new CellMessage( new CellPath("billing"), _infoMsg ));
-          }catch(Exception ie){
-             esay("Could send 'billing info' : "+ie);
-          }
-          _storePnfsidList.remove( _pnfsId ) ;
-       }
-	public void run() {
-           int       returnCode   = 1 ;
-           RunSystem run       = null ;
-           String    errmsg    = "ok" ;
-           Throwable excep     = null ;
 
-           say( _pnfsId.toString()+" : StoreThread Started "+Thread.currentThread() ) ;
+	public void run() 
+        {
+            int returnCode = 1;
+            RunSystem run = null;
+            String errmsg = "ok";
+            Throwable excep = null;
 
-           try{
-              _storageInfo = getStorageInfo( _entry ) ;
-              _infoMsg.setStorageInfo( _storageInfo ) ;
-              _infoMsg.setFileSize( _storageInfo.getFileSize() ) ;
-              long now = System.currentTimeMillis() ;
-              _infoMsg.setTimeQueued( now - _timestamp ) ;
-              _timestamp = now ;
+            say(_pnfsId.toString() + " : StoreThread Started "
+                + Thread.currentThread());
 
-              String storeCommand = getStoreCommand(_pnfsId,_storageInfo);
+            try {
+                _storageInfo = getStorageInfo(_entry);
+                _infoMsg.setStorageInfo(_storageInfo);
+                _infoMsg.setFileSize(_storageInfo.getFileSize());
+                long now = System.currentTimeMillis();
+                _infoMsg.setTimeQueued(now - _timestamp);
+                _timestamp = now;
 
-              run = new RunSystem( storeCommand , _maxLines , _maxStoreRun , _log ) ;
-              run.go() ;
-              returnCode = run.getExitValue() ;
-              if( returnCode != 0 ){
-                  errmsg = run.getErrorString() ;
-                  excep  = new CacheException( returnCode , errmsg ) ;
-                  esay("RunSystem. -> "+returnCode+" : "+run.getErrorString());
-              } else {
-                  say("RunSystem. -> "+returnCode+" : "+run.getErrorString());
-              }
+                String storeCommand = getStoreCommand(_pnfsId, _storageInfo);
 
-           }catch( CacheException cie ){
-               esay( errmsg = "StoreThread : ("+_pnfsId+") CacheException : "+cie ) ;
-               returnCode = 1 ;
-               excep = cie ;
-           }catch( InterruptedException ie ){
-               esay( errmsg = "StoreThread : ("+_pnfsId+") Process interrupted (timed out)" ) ;
-               returnCode = 1 ;
-               excep = ie ;
-           }catch( IOException  ioe ){
-               esay( errmsg = "StoreThread : ("+_pnfsId+") Process got an IOException : "+ioe ) ;
-               returnCode = 2 ;
-               excep = ioe ;
-           }catch( IllegalThreadStateException  itse ){
-               esay( errmsg = "StoreThread : ("+_pnfsId+") Can't stop process : "+itse ) ;
-               returnCode = 3 ;
-               excep = itse ;
-           }catch( IllegalArgumentException iae ){
-               esay( errmsg = "StoreThread : can't determine 'hsmInfo' for "+
-                     _storageInfo+" {"+iae+"}" ) ;
-               returnCode = 4 ;
-               excep = iae ;
-           }catch( Throwable t ){
-               esay( errmsg = "StoreThread : unexpected throwable "+
-                     _storageInfo+" {"+t+"}" ) ;
-               returnCode = 666 ;
-               excep = t ;
-           }finally{
-               try{
-                  _entry.lock(false);
-                  _entry.setSendingToStore(false) ;
-               }catch(CacheException ieee){
-                  esay( "Panic : can't set entry status to 'done' "+ieee);
-               }
-           }
+                run = new RunSystem(storeCommand, _maxLines, _maxStoreRun, _log);
+                run.go();
+                returnCode = run.getExitValue();
+                if (returnCode != 0) {
+                    errmsg = run.getErrorString();
+                    excep  = new CacheException(returnCode, errmsg);
+                    esay("RunSystem. -> " + returnCode + " : " 
+                         + run.getErrorString());
+                } else {
+                    say("RunSystem. -> " + returnCode + " : " 
+                        + run.getErrorString());
+                }
 
-           try{
-              if( returnCode == 0 ){            	              	  
+            } catch (CacheException e) {
+                esay(errmsg = "StoreThread : (" + _pnfsId
+                     + ") CacheException : " + e);
+                returnCode = 1;
+                excep = e;
+            } catch (InterruptedException e) {
+                esay(errmsg = "StoreThread : (" + _pnfsId 
+                     + ") Process interrupted (timed out)");
+                returnCode = 1;
+                excep = e;
+            } catch (IOException e) {
+                esay(errmsg = "StoreThread : (" + _pnfsId 
+                     + ") Process got an IOException : " + e);
+                returnCode = 2;
+                excep = e;
+            } catch (IllegalThreadStateException e) {
+                esay(errmsg = "StoreThread : (" + _pnfsId
+                     + ") Can't stop process : " + e);
+                returnCode = 3;
+                excep = e;
+            } catch (IllegalArgumentException e) {
+                esay(errmsg = "StoreThread : can't determine 'hsmInfo' for " 
+                     + _storageInfo+" {" + e + "}");
+                returnCode = 4;
+                excep = e;
+            } catch (Throwable t) {
+                esay(errmsg = "StoreThread : unexpected throwable " +
+                     _storageInfo + " {" + t + "}");
+                returnCode = 666;
+                excep = t;
+            } finally {
+                try {
+                    _entry.lock(false);
+                    _entry.setSendingToStore(false);
+                } catch (CacheException e) {
+                    esay( "Panic : can't set entry status to 'done' " + e);
+                }
+            }
+
+            try {
+                if (returnCode == 0) {            	              	  
+                    String outputData = run.getOutputString();
+                    if (outputData != null && outputData.length() != 0) {
+                        BufferedReader in = 
+                            new BufferedReader(new StringReader(outputData));
+                        String line = null;
+                        try {
+                            while ((line = in.readLine()) != null) {
+                                URI location = new URI(line);
+                                _storageInfo.addLocation(location);
+                                _storageInfo.isSetAddLocation(true);
+                                _logRepository.debug(_pnfsId.toString() 
+                                                     + ": added HSM location " 
+                                                     + location);
+                            }                              
+                        } catch (URISyntaxException use) {
+                            esay(_entry.getPnfsId().toString() +
+                                 " :  flush script produces BAD URI : " + line);
+                            throw new CacheException(2, use.getMessage());
+                        } catch (IOException ie) {
+                            // never happens on strings
+                            throw new RuntimeException("Bug detected");
+                        }
+                    }        	  
             	  
-            	  
-            	  String outputData = run.getOutputString();
-            	  if( outputData != null && outputData.length() != 0 ) {
-                      
-                      BufferedReader in = 
-                          new BufferedReader(new StringReader(outputData));
-                      String line;
-                      boolean done = false;
-                      while ( !done ) {
-			  try {
-                              line = in.readLine();
-                              if( line == null ) {
-                                   done = true;
-                                   continue;
-                              }
-                          }catch(IOException ie) {
-                             // never happens on strings
-                             done = true;
-                             continue;
-                          }
-            		  URI location = null;
-            		  try {
-            			  
-            			  location  = new URI(line);
-            			  if(_logRepository.isDebugEnabled() ) {
-            				  _logRepository.debug(_entry.getPnfsId().toString() + " : added HSM location : " + location.toString());
-            			  }
-            			  _storageInfo.addLocation(location);
-            			  // indicate, that this information have to be stored
-            			  _storageInfo.isSetAddLocation(true);
-            			  
-            		  }catch(URISyntaxException use) {
-            			  _logRepository.info(_entry.getPnfsId().toString() + " :  flush script produces BAD URI : " + line);
-            			  throw new CacheException(2, use.getMessage() );
-            		  }
-                     }
-            	  }
-            	  
-            	  try {
-            		  _pnfs.fileFlushed(_entry.getPnfsId(), _storageInfo);
-            	  }catch(CacheException ce) {
-            		  /*
-            		   * the message to pnfs failed. We have to store information
-            		   * into emergency file
-            		   */
-            		  
-            		  /*
-            		   * we pin the file in the pool to prevent data loses
-            		   */
-           			  _entry.setSticky(true, "flush thread", -1);
 
-            	  }
-            	              	  
-            	  
-            	  _entry.setCached() ;
-            	              	  
-            	  notifyFlushMessageTarget(_entry, _storageInfo);
-            	  
-              }
-           }catch(CacheException iii ){
-              esay(iii.toString()) ;
-              excep = iii ;
-           }
-           if( excep != null ){
-              if( excep instanceof CacheException ){
-                 _infoMsg.setResult( ((CacheException)excep).getRc() ,
-                                     ((CacheException)excep).getMessage() ) ;
-              }else{
-                 _infoMsg.setResult( 44 , excep.toString() ) ;
-              }
-           }
+                    for (;;) {
+                        try {
+                            _pnfs.fileFlushed(_entry.getPnfsId(), 
+                                              _entry.getStorageInfo());
+                            break;
+                        } catch(CacheException ce) {
+                            /* The message to the PnfsManager
+                             * failed. There are several possible
+                             * reasons for this; we may have lost the
+                             * connection to the PnfsManager; the
+                             * PnfsManager may have lost its connection
+                             * to PNFS or otherwise be in trouble; the
+                             * file may have been deleted while we
+                             * flushed it; bugs; etc.
+                             *
+                             * Except in the case of the file being
+                             * deleted, we keep retrying until we
+                             * succeed. This will effectively block this
+                             * thread from flushing any other files,
+                             * which seems sensible when we have trouble
+                             * talking to the PnfsManager. If the pool
+                             * crashes or gets restarted while waiting
+                             * here, we will end up flushing the file
+                             * again. We assume that the HSM script is
+                             * able to eliminate the duplicate; or at
+                             * least tolerate the duplicate (given that
+                             * this situation should be rare, we can
+                             * live with a little bit of wasted tape).
+                             */
 
+                            /* 37 is the error code used by
+                             * OsmInfoExtractor when trying to set the
+                             * storage info on a file that does not
+                             * exist. REVISIT: Hard coding error codes
+                             * sucks!
+                             *
+                             * Even worse, the OsmInfoExtractor also
+                             * uses this as an error code in case the
+                             * PNFS file system is not mounted. In this
+                             * case we clearly want to retry rather than
+                             * break out (FIXME).
+                             */
+                            if (ce.getRc() == 37) {
+                                /* In case of the file being deleted, we
+                                 * are presented with the problem that
+                                 * the file is now on tape, however the
+                                 * location has not been registered
+                                 * centrally. Hence the copy on the tape
+                                 * will not be removed by the HSM
+                                 * cleaner. The sensible thing seems to
+                                 * be to remove the file from tape
+                                 * here. For now we ignore this issue
+                                 * (REVISIT).
+                                 */
+                                break;
+                            }
+                        }
+                        Thread.sleep(120000); // 2 minutes
+                    }            	              	  
 
-           executeCallbacks( getCallbackList( _storePnfsidList ,  _pnfsId )  , _pnfsId , excep ) ;
-           /*
-                             excep == null ? null :
-                             new InvocationTargetException( excep , "TargetException : "+excep.toString() ) ) ;
-           */
-           synchronized( HsmStorageHandler2.this ){
-              _storePnfsidList.remove( _pnfsId ) ;
-           }
-           say( _pnfsId.toString()+" : StoreThread Done "+Thread.currentThread() ) ;
-           _infoMsg.setTransferTime( System.currentTimeMillis() - _timestamp ) ;
-           try{
-              _cell.sendMessage(new CellMessage( new CellPath("billing"), _infoMsg ));
-           }catch(Exception ie){
-              esay("Could send 'billing info' : "+ie);
-           }
-       }
+                    _entry.setCached();
+
+                    notifyFlushMessageTarget(_entry, _storageInfo);
+                }
+            } catch (InterruptedException e) {
+                esay(e.toString());
+                excep = e;
+            } catch (CacheException e) {
+                esay(e.toString());
+                excep = e;
+            }
+            if (excep != null) {
+                if (excep instanceof CacheException) {
+                    _infoMsg.setResult(((CacheException)excep).getRc(),
+                                       ((CacheException)excep).getMessage());
+                } else {
+                    _infoMsg.setResult(44, excep.toString());
+                }
+            }
+
+            executeCallbacks(getCallbackList(_storePnfsidList, _pnfsId),
+                             _pnfsId, excep);
+            synchronized (HsmStorageHandler2.this) {
+                _storePnfsidList.remove(_pnfsId);
+            }
+            say(_pnfsId.toString() + " : StoreThread Done " + 
+                Thread.currentThread());
+            _infoMsg.setTransferTime(System.currentTimeMillis() - _timestamp);
+            try {
+                _cell.sendMessage(new CellMessage(new CellPath("billing"), _infoMsg ));
+            } catch (Exception e) {
+                esay("Could send 'billing info' : " + e);
+            }
+        }
 	
         private void notifyFlushMessageTarget(CacheRepositoryEntry entry, StorageInfo info) {
 
