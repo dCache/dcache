@@ -173,6 +173,33 @@ public class PnfsManagerTest {
        assertTrue("file still exist after removeing last location entry", pnfsGetFileMetaDataMessage.getReturnCode() == CacheException.FILE_NOT_FOUND );
     }
 
+    @Test
+    public void testCreateDupFile() {
+        PnfsCreateEntryMessage pnfsCreateEntryMessage = new PnfsCreateEntryMessage("/pnfs/testRoot/testCreateDup");
+        _pnfsManager.createEntry(pnfsCreateEntryMessage);
+
+        assertTrue("failed to create an entry", pnfsCreateEntryMessage.getReturnCode() == 0 );
+
+        _pnfsManager.createEntry(pnfsCreateEntryMessage);
+
+        assertTrue("create duplicate should return an error", pnfsCreateEntryMessage.getReturnCode() == CacheException.FILE_EXISTS );
+    }
+
+    @Test
+    public void testCreateDupDir() {
+
+        PnfsCreateDirectoryMessage pnfsCreateDirectoryMessage = new PnfsCreateDirectoryMessage("/pnfs/testRoot/testCreateDupDir", 3750, 1000, 0750);
+
+        _pnfsManager.createDirectory(pnfsCreateDirectoryMessage);
+
+        assertTrue("failed to create a directory", pnfsCreateDirectoryMessage.getReturnCode() == 0 );
+
+        _pnfsManager.createDirectory(pnfsCreateDirectoryMessage);
+
+        assertTrue("create duplicate should return an error", pnfsCreateDirectoryMessage.getReturnCode() == CacheException.FILE_EXISTS );
+    }
+
+
     @AfterClass
     public static void tearDown() throws Exception {
 
