@@ -7,6 +7,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.AfterClass;
@@ -23,8 +24,15 @@ import org.dcache.chimera.XMLconfig;
 import org.dcache.chimera.posix.Stat;
 
 import diskCacheV111.namespace.PnfsManagerV3;
+import diskCacheV111.util.CacheException;
+import diskCacheV111.vehicles.PnfsAddCacheLocationMessage;
+import diskCacheV111.vehicles.PnfsClearCacheLocationMessage;
 import diskCacheV111.vehicles.PnfsCreateDirectoryMessage;
 import diskCacheV111.vehicles.PnfsCreateEntryMessage;
+import diskCacheV111.vehicles.PnfsDeleteEntryMessage;
+import diskCacheV111.vehicles.PnfsGetCacheLocationsMessage;
+import diskCacheV111.vehicles.PnfsGetFileMetaDataMessage;
+import diskCacheV111.vehicles.PnfsRenameMessage;
 
 public class PnfsManagerTest {
 
@@ -119,6 +127,47 @@ public class PnfsManagerTest {
         assertEquals("new mode do not equal to specified one", (stat.getMode() & 0777) , 0750 );
     }
 
+    /**
+     * add cache location
+     * get cache location
+     * remove cache location with flag to remove if last
+     */
+    @Test
+    public void testRemoveIfLast() {
+
+        PnfsCreateEntryMessage pnfsCreateEntryMessage = new PnfsCreateEntryMessage("/pnfs/testRoot/testRemoveIfLast");
+
+        _pnfsManager.createEntry(pnfsCreateEntryMessage);
+
+        assertTrue("failed to create an entry", pnfsCreateEntryMessage.getReturnCode() == 0 );
+
+
+        PnfsAddCacheLocationMessage pnfsAddCacheLocationMessage = new PnfsAddCacheLocationMessage(pnfsCreateEntryMessage.getPnfsId(), "aPool");
+
+        _pnfsManager.addCacheLocation(pnfsAddCacheLocationMessage);
+        assertTrue("failed to add cache location", pnfsAddCacheLocationMessage.getReturnCode() == 0 );
+
+        PnfsGetCacheLocationsMessage pnfsGetCacheLocationsMessage = new PnfsGetCacheLocationsMessage(pnfsCreateEntryMessage.getPnfsId());
+
+        _pnfsManager.getCacheLocations(pnfsGetCacheLocationsMessage);
+        assertTrue("failed to get cache location", pnfsGetCacheLocationsMessage.getReturnCode() == 0 );
+
+        List<String> locations =  pnfsGetCacheLocationsMessage.getCacheLocations();
+
+        assertFalse("location is empty", locations.isEmpty() );
+        assertFalse("location contains more than one entry", locations.size() > 1 );
+        assertEquals("location do not match", "aPool", locations.get(0));
+
+
+        PnfsClearCacheLocationMessage pnfsClearcacheLocationMessage = new PnfsClearCacheLocationMessage(pnfsCreateEntryMessage.getPnfsId(), "aPool", true);
+        _pnfsManager.clearCacheLocation(pnfsClearcacheLocationMessage);
+
+        assertTrue("failed to clear cache location", pnfsClearcacheLocationMessage.getReturnCode() == 0 );
+
+        PnfsGetFileMetaDataMessage pnfsGetFileMetaDataMessage = new PnfsGetFileMetaDataMessage(pnfsCreateEntryMessage.getPnfsId());
+       _pnfsManager.getFileMetaData(pnfsGetFileMetaDataMessage);
+       assertTrue("file still exist after removeing last location entry", pnfsGetFileMetaDataMessage.getReturnCode() == CacheException.FILE_NOT_FOUND );
+    }
 
     @AfterClass
     public static void tearDown() throws Exception {
