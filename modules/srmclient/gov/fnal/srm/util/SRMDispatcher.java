@@ -342,7 +342,7 @@ public class SRMDispatcher {
 		    System.exit(1);
 		}
                 if(conf.getDesiredReserveSpaceSize() < conf.getGuaranteedReserveSpaceSize()) {
-                    logger.log("desired space size is less then guaranteed, adjusting ...");
+                    logger.log("desired space size is less than guaranteed, adjusting ...");
                     conf.setDesiredReserveSpaceSize(conf.getGuaranteedReserveSpaceSize());
                 }
 	    }
@@ -602,14 +602,14 @@ public class SRMDispatcher {
 	    if(configuration.getCopyjobfile() != null) {
 		CopyJobFileReader reader = new CopyJobFileReader(configuration.getCopyjobfile());
 		if (reader.getSources().length>1||reader.getDestinations().length>1) { 
-		    throw new IllegalArgumentException("only signle source and single destination suported");
+		    throw new IllegalArgumentException("only signle source and single destination supported");
 		}
 		from = reader.getSources()[0];
 		to   = reader.getDestinations()[0];
 	    } 
 	    else {
 		if (configuration.getFrom().length>1) { 
-		    throw new IllegalArgumentException("only signle source and single destination suported");
+		    throw new IllegalArgumentException("only signle source and single destination supported");
 		}
 		
 		from           = configuration.getFrom()[0];
@@ -840,7 +840,7 @@ public class SRMDispatcher {
 		throw new IllegalArgumentException(error);
             }
             if(areSources && ((thisTypeI & EXISTS_FILE_URL) == 0)) {
-		String error = "source file does not exists"+urls[i].getURL();
+		String error = "source file does not exist"+urls[i].getURL();
 		esay(error);
 		throw new IllegalArgumentException(error);
             }
