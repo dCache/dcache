@@ -338,7 +338,7 @@ public class SRMDispatcher {
 	    }
 	    else if (conf.isReserveSpace()) {
 		if(conf.getGuaranteedReserveSpaceSize()==0) { 
-		    logger.elog("guaranteed size of space reservation must be greater then 0");
+		    logger.elog("guaranteed size of space reservation must be greater than 0");
 		    System.exit(1);
 		}
                 if(conf.getDesiredReserveSpaceSize() < conf.getGuaranteedReserveSpaceSize()) {
