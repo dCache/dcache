@@ -7,18 +7,22 @@
 
         <import file="${buildTop}/common/common.xml"/>
 
-	
+
 	   <!-- JUnit test suite -->
 
 	    <path id="junit.classpath">
 	        <pathelement location="${classesDir}/cells.jar"/>
 	        <pathelement location="${classesDir}/dcache.jar"/>
+	        <pathelement location="${classesDir}/chimera-provider.jar"/>
+	        <pathelement location="${libDir}/Chimera/chimera.jar"/>
+	        <pathelement location="${libDir}/Chimera/hsqldb.jar"/>
+	        <pathelement location="${libDir}/dbcp/c3p0-0.9.1.2.jar"/>
 	        <pathelement location="${libDir}/junit/junit-4.3.1.jar"/>
 	        <pathelement location="${libDir}/log4j/log4j-1.2.8.jar"/>
 	        <pathelement location="${buildDir}/junit"/>
                 <pathelement location="${buildTop}/modules/dCache/diskCacheV111/config" />
 	    </path>
-	
+
 	    <target name="run_junit.core">
 
 	        <mkdir dir="${buildDir}/junit" />
@@ -74,10 +78,15 @@
 	        <junit>
 	            <classpath refid="junit.classpath" />
 	            <formatter type="brief" usefile="false" />
-	            <test name="org.dcache.tests.hsm.FailureRepositoryTest" />
+	            <test name="org.dcache.tests.hsm.HSMCleanerTest" />
 	        </junit>
 
+            <junit>
+                <classpath refid="junit.classpath" />
+                <formatter type="brief" usefile="false" />
+                <test name="org.dcache.tests.namespace.PnfsManagerTest" />
+            </junit>
 
 	    </target>
-	
+
 </project>
