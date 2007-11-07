@@ -611,7 +611,11 @@ public class GridftpClient {
         if ( cksmValue == null )
            cksmValue = source.getCksmValue(cksmType);
 
-        client.sendCksmValue(cksmType,cksmValue);
+        try {
+            client.sendCksmValue(cksmType,cksmValue);
+        } catch ( Exception ex ){
+             esay("Was not able to send checksum value:"+ex.toString());
+        }
         // send gridftp message
     }
 
