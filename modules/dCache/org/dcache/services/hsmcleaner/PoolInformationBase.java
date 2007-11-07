@@ -39,7 +39,7 @@ class PoolInformationBase
     /**
      * 
      */
-    public PoolInformation getPool(String pool)
+    synchronized public PoolInformation getPool(String pool)
     {
         return _pools.get(pool);
     }
@@ -47,7 +47,7 @@ class PoolInformationBase
     /**
      * 
      */
-    public Collection<PoolInformation> getPools()
+    synchronized public Collection<PoolInformation> getPools()
     {
         return _pools.values();
     }
@@ -57,7 +57,7 @@ class PoolInformationBase
      *
      * @param hsm An HSM instance name.
      */
-    public PoolInformation getPoolWithHSM(String hsm)
+    synchronized public PoolInformation getPoolWithHSM(String hsm)
     {
         Collection<PoolInformation> pools = _hsmToPool.get(hsm);
         if (pools != null) {
@@ -77,7 +77,7 @@ class PoolInformationBase
      *
      * @param name A pool name.
      */
-    public void remove(String name)
+    synchronized public void remove(String name)
     {
         PoolInformation pool = _pools.get(name);
         if (pool != null) {
@@ -93,7 +93,7 @@ class PoolInformationBase
      * subscribe to these messages, so the client must implement a
      * mechanism with which these messages arrive here.
      */ 
-    public void messageArrived(PoolManagerPoolUpMessage message)
+    synchronized public void messageArrived(PoolManagerPoolUpMessage message)
     {
         String name = message.getPoolName();
 
