@@ -12,6 +12,7 @@ import java.util.ArrayList;
 
 import org.apache.log4j.Logger;
 
+import org.dcache.chimera.FileExistsChimeraFsException;
 import org.dcache.chimera.FsInode;
 import org.dcache.chimera.HimeraFsException;
 import org.dcache.chimera.FileNotFoundHimeraFsException;
@@ -27,6 +28,7 @@ import diskCacheV111.namespace.NameSpaceProvider;
 import diskCacheV111.namespace.StorageInfoProvider;
 import diskCacheV111.namespace.provider.AttributeChecksumBridge;
 
+import diskCacheV111.util.FileExistsCacheException;
 import diskCacheV111.util.FileMetaData;
 import diskCacheV111.util.FileNotInCacheException;
 import diskCacheV111.util.PnfsId;
@@ -154,13 +156,15 @@ public class ChimeraNameSpaceProvider implements NameSpaceProvider, StorageInfoP
         return fileMetaData;
     }
 
-    public PnfsId createEntry(String arg0,  FileMetaData metaData, boolean isDir ) throws Exception {
+    public PnfsId createEntry(String path,  FileMetaData metaData, boolean isDir ) throws Exception {
+
 
         FsInode inode = null;
 
+        try {
         Stat metadataStat = fileMetadata2Stat(metaData, isDir );
 
-        File newEntryFile = new File(arg0);
+        File newEntryFile = new File(path);
 
         FsInode parent = _fs.path2inode(newEntryFile.getParent());
 
@@ -168,6 +172,10 @@ public class ChimeraNameSpaceProvider implements NameSpaceProvider, StorageInfoP
             inode = _fs.mkdir(parent, newEntryFile.getName(), metadataStat.getUid(), metadataStat.getGid(), metadataStat.getMode() );
         }else{
             inode = _fs.createFile(parent, newEntryFile.getName(), metadataStat.getUid(), metadataStat.getGid(), metadataStat.getMode() );
+        }
+
+        }catch( FileExistsChimeraFsException fee) {
+            throw new FileExistsCacheException(path);
         }
 
         return new PnfsId(inode.toString());
