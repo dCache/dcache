@@ -2,7 +2,6 @@ package org.dcache.services.hsmcleaner;
 
 import java.util.Set;
 import java.util.HashSet;
-import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.HashMap;
@@ -15,158 +14,10 @@ import java.net.URI;
 
 import diskCacheV111.pools.PoolV2Mode;
 import diskCacheV111.vehicles.PoolRemoveFilesFromHSMMessage;
-import diskCacheV111.vehicles.PoolManagerPoolUpMessage;
 
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.CellNucleus;
-
-/**
- * Encapsulates information about an HSM attached pool.
- */
-class Pool
-{
-    /** The name of the pool. */
-    private final String _name;
-
-    /** The instance names of attached HSM systems. */
-    private final Collection<String> _hsmInstances;
-
-    /** Creation time. */
-    private final long _created;
-
-    public Pool(String name, Collection<String> hsmInstances)
-    {
-        _name = name;
-        _hsmInstances = hsmInstances;
-        _created = System.currentTimeMillis();
-    }
-
-    /** Returns the pool name. */
-    public String getName() 
-    {
-        return _name;
-    }
-
-    /** Returns the names of HSM instances attached to the pool. */
-    public Collection<String> getHSMInstances() 
-    {
-        return _hsmInstances;
-    }
-
-    /**
-     * Returns true if the age of this record is below 5 minutes.
-     */
-    public boolean isValid()
-    {
-        return System.currentTimeMillis() - _created < 60000;
-    }
-}
-
-/**
- * Maintains an index of available pools and HSM instances attached to
- * them. 
- *
- * This relies on the cleaner receiving PoolUp messages from the pool.
- */
-class Pools
-{
-    /**
-     * Map of all pools currently up.
-     */
-    private Map<String, Pool> _pools = 
-        new HashMap<String, Pool>();
-
-    /**
-     * Map from HSM instance name to the set of pools attached to that
-     * HSM.
-     */
-    private Map<String, Collection<Pool>> _hsmToPool = 
-        new HashMap<String, Collection<Pool>>();
-
-    /** 
-     * Returns a pool attached to a given HSM instance.
-     *
-     * @param hsm An HSM instance name.
-     */
-    public Pool getPool(String hsm)
-    {
-        Collection<Pool> pools = _hsmToPool.get(hsm);
-        if (pools == null) {
-            return null;
-        }
-
-        Iterator<Pool> i = pools.iterator();
-        while (i.hasNext()) {
-            Pool pool = i.next();
-            if (!pool.isValid()) {
-                _pools.remove(pool.getName());
-                i.remove();
-            }
-        }
-
-        if (pools.isEmpty()) {
-            return null;
-        }
-
-        return pools.iterator().next();
-    }
-
-    /**
-     * Removes information about a pool. The pool will be readded next
-     * time a pool up message is received.
-     *
-     * @param name A pool name.
-     */
-    public void remove(String name)
-    {
-        Pool pool = _pools.get(name);
-        if (pool != null) {
-            for (String hsm : pool.getHSMInstances()) {
-                _hsmToPool.remove(hsm);
-            }
-            _pools.remove(name);
-        }
-    }
-
-    /**
-     * Adds information about a pool.
-     *
-     * @param name A pool name.
-     * @param instances Names of HSM instances attached to the pool.
-     */
-    public void add(String name, Collection<String> instances)
-    {
-        Pool pool = new Pool(name, instances);
-        _pools.put(name, pool);
-        for (String hsm : instances) {
-            Collection<Pool> pools = _hsmToPool.get(hsm);
-            if (pools == null) {
-                pools = new ArrayList<Pool>();
-                _hsmToPool.put(hsm, pools);
-            }
-            pools.add(pool);
-        }
-    }
-
-    /**
-     * Message handler for PoolUp messages.
-     */ 
-    public void messageArrived(PoolManagerPoolUpMessage message)
-    {
-        String name = message.getPoolName();
-        PoolV2Mode mode = message.getPoolMode();
-        boolean disabled = 
-            mode.getMode() == PoolV2Mode.DISABLED 
-            || mode.isDisabled(PoolV2Mode.DISABLED_DEAD)
-            || mode.isDisabled(PoolV2Mode.DISABLED_STRICT);
-
-        remove(name);
-        if (!disabled) {
-            add(name, message.getHsmInstances());
-        }            
-    }
-}
 
 /**
  * This class encapsulates the interaction with pools.
@@ -174,9 +25,6 @@ class Pools
  * At the abstract level it provides a method for submitting file
  * deletions. Notifcation of success or failure is provided
  * asynchronously via two sinks. 
- *
- * An Pools instance is used to keep track of available pools for
- * accessing the HSMs.
  *
  * To reduce the load on pools, files are deleted in batches. For each
  * HSM, at most one request is send at a time. The class defines an
@@ -270,7 +118,7 @@ class RequestTracker
     /**
      * Pools currently available.
      */
-    private Pools _pools = new Pools();
+    private PoolInformationBase _pools = new PoolInformationBase();
 
     public RequestTracker(AbstractCell cell)
     {
@@ -282,6 +130,7 @@ class RequestTracker
             new BroadcastRegistrationTask(cell, POOLUP_MESSAGE, me);
         _timer.schedule(_broadcastRegistration, 0, 300000); // 5 minutes
         _cell.addMessageListener(this);
+        _cell.addMessageListener(_pools);
     }
 
     /**
@@ -385,8 +234,8 @@ class RequestTracker
          * outdated and that the pool is no longer
          * available. Therefore we may have to try several pools.
          */
-        Pool pool;
-        while ((pool = _pools.getPool(hsm)) != null) {
+        PoolInformation pool;
+        while ((pool = _pools.getPoolWithHSM(hsm)) != null) {
             String name = pool.getName();
             try {
                 PoolRemoveFilesFromHSMMessage message = 
@@ -481,10 +330,5 @@ class RequestTracker
         }
 
         flush(hsm);
-    }
-
-    public void messageArrived(PoolManagerPoolUpMessage message)
-    {
-        _pools.messageArrived(message);
     }
 }
