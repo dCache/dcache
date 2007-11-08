@@ -1,6 +1,5 @@
 package org.dcache.chimera.namespace;
 
-
 import java.io.File;
 import java.io.NotSerializableException;
 import java.io.PrintWriter;
@@ -37,6 +36,9 @@ import diskCacheV111.vehicles.PoolRemoveFilesMessage;
 import diskCacheV111.vehicles.PoolStatusChangedMessage;
 
 /**
+ * @author Irina Kozlova
+ * @version 22 Oct 2007
+ *
  * ChimeraCleaner: takes file names from the table public.t_locationinfo_trash,
  * removes them from the corresponding pools and then from the table as well.
  */
