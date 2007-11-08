@@ -61,9 +61,9 @@ public abstract class Mode extends AbstractMultiplexerListener
     /** Number of connections that have been closed. */
     protected int               _closed = 0;
 
-    /** True if we use a pre JDK 6 version of Java. */
-    protected static final boolean jdk5 = 
-        (System.getProperty("java.version").compareTo("1.6") < 0);
+    /** True if we use a pre JDK 7 version of Java. */
+    protected static final boolean jdk5or6 = 
+        (System.getProperty("java.version").compareTo("1.7") < 0);
 
     /** Constructs a new mode for outgoing connections. */
     public Mode(Role role, FileChannel file, ConnectionMonitor monitor)
@@ -155,13 +155,13 @@ public abstract class Mode extends AbstractMultiplexerListener
      * Wrapper for _file.transferTo(). This is here for symmetry with
      * transferFrom().
      *
-     * JDK 5 contains a bug (bug #6470086) in transferTo() when used
+     * JDK 5 and 6 contain a bug (bug #6470086) in transferTo() when used
      * with large files. We use a workaround when needed.
      */
     protected long transferTo(long position, long count, SocketChannel socket) 
 	throws IOException
     {
-        if (jdk5 && (position + count > 2147483647L)) {
+        if (jdk5or6 && (position + count > 2147483647L)) {
             long tr = 0;			// Total bytes read
             long pos = position;
             _buffer.clear();
