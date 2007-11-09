@@ -1,5 +1,10 @@
 package org.dcache.tests.namespace;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -8,19 +13,14 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
-
-import static org.junit.Assert.*;
 
 import dmg.cells.nucleus.SystemCell;
 
-import org.dcache.chimera.FileNotFoundHimeraFsException;
 import org.dcache.chimera.FsInode;
 import org.dcache.chimera.JdbcFs;
 import org.dcache.chimera.XMLconfig;
@@ -33,11 +33,9 @@ import diskCacheV111.vehicles.PnfsAddCacheLocationMessage;
 import diskCacheV111.vehicles.PnfsClearCacheLocationMessage;
 import diskCacheV111.vehicles.PnfsCreateDirectoryMessage;
 import diskCacheV111.vehicles.PnfsCreateEntryMessage;
-import diskCacheV111.vehicles.PnfsDeleteEntryMessage;
 import diskCacheV111.vehicles.PnfsGetCacheLocationsMessage;
 import diskCacheV111.vehicles.PnfsGetFileMetaDataMessage;
 import diskCacheV111.vehicles.PnfsGetStorageInfoMessage;
-import diskCacheV111.vehicles.PnfsRenameMessage;
 
 public class PnfsManagerTest {
 
@@ -61,7 +59,7 @@ public class PnfsManagerTest {
 
         _conn = DriverManager.getConnection("jdbc:hsqldb:mem:chimeramem", "sa", "");
 
-        File sqlFile = new File("/home/tigran/work/cvs-work/eProject/Chimera/sql/create-hsqldb.sql");
+        File sqlFile = new File("modules/external/Chimera/sql/create-hsqldb.sql");
         StringBuilder sql = new StringBuilder();
 
         BufferedReader dataStr = new BufferedReader(new FileReader(sqlFile));
@@ -83,12 +81,12 @@ public class PnfsManagerTest {
                 "-namespace-provider=org.dcache.chimera.namespace.ChimeraNameSpaceProviderFactory " +
                 "-storageinfo-provider=org.dcache.chimera.namespace.ChimeraNameSpaceProviderFactory " +
                 "-cachelocation-provider=org.dcache.chimera.namespace.ChimeraNameSpaceProviderFactory " +
-                "-chimeraConfig=/home/tigran/work/cvs-work/eProject/Chimera/test-config.xml";
+                "-chimeraConfig=modules/external/Chimera/test-config.xml";
 
         _pnfsManager =  new PnfsManagerV3("testPnfsManager", args);
 
 
-        _fs = new JdbcFs(new XMLconfig(new File("/home/tigran/work/cvs-work/eProject/Chimera/test-config.xml")));
+        _fs = new JdbcFs(new XMLconfig(new File("modules/external/Chimera/test-config.xml")));
         _fs.mkdir("/pnfs");
         FsInode baseInode = _fs.mkdir("/pnfs/testRoot");
         byte[] sGroupTagData = "chimera".getBytes();
@@ -210,6 +208,16 @@ public class PnfsManagerTest {
 
         assertTrue("get storageInfo of non existing file should return FILE_NOT_FOUND", pnfsGetStorageInfoMessage.getReturnCode() == CacheException.FILE_NOT_FOUND );
 
+    }
+
+    @Test
+    @Ignore
+    public void testAddCacheLocationNonExist() {
+
+        PnfsAddCacheLocationMessage pnfsAddCacheLocationMessage = new PnfsAddCacheLocationMessage(new PnfsId("000000000000000000000000000000000001"), "aPool");
+
+        _pnfsManager.addCacheLocation(pnfsAddCacheLocationMessage);
+        assertTrue("add cache clocation of non existing file should return FILE_NOT_FOUND", pnfsAddCacheLocationMessage.getReturnCode() == CacheException.FILE_NOT_FOUND );
     }
 
     @AfterClass
