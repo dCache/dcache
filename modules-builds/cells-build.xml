@@ -152,6 +152,9 @@
     <fileset dir="${libDir}" >
       <selector refid="cells-log4j.classpath.selector" />
     </fileset>
+  	<fileset dir="${libDir}">
+  		<filename name="jline/jline*.jar"/>
+  	</fileset>
   </path>
 
   <!-- no Classpath for cells-protocols.jar -->
@@ -276,6 +279,11 @@
 
 		<mkdir dir="${binDir}/classes" />
 		<copy file="${classesDir}/cells.jar" todir="${binDir}/classes" />
+		<copy todir="${binDir}/classes/jline">
+			<fileset dir="${libDir}/jline/">
+				<include name="*.jar" />
+			</fileset>
+		</copy>
 	</target>
 
 

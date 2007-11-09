@@ -3,7 +3,7 @@ package dmg.cells.services.login ;
 import java.io.* ;
 
 
-public class ControlBufferedReader extends Reader {
+public class ControlBufferedReader extends Reader implements InputHandler {
     private Reader  _reader     = null ;
     private Object  _lock       = new Object() ;
     private boolean _eof        = false ;
@@ -19,10 +19,8 @@ public class ControlBufferedReader extends Reader {
     public ControlBufferedReader(Reader in) {
        _reader = in ;
     }
-    /**
-     * Close the stream.
-     *
-     * @exception  IOException  If an I/O error occurs
+    /* (non-Javadoc)
+     * @see dmg.cells.services.login.InputHandler#close()
      */
     public void close() throws IOException {
 	synchronized (_lock) {
@@ -39,6 +37,9 @@ public class ControlBufferedReader extends Reader {
     public void onControlC( String onCC ){
        _onControlC = onCC ;
     }
+    /* (non-Javadoc)
+     * @see dmg.cells.services.login.InputHandler#readLine()
+     */
     public String readLine() throws IOException {
        int n = 0 ;
        synchronized( _lock ){

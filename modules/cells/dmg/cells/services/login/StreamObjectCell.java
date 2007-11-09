@@ -1,14 +1,26 @@
 package dmg.cells.services.login ;
 
-import   dmg.cells.nucleus.* ;
-import   dmg.cells.network.* ;
-import   dmg.util.* ;
-import   dmg.protocols.ssh.* ;
-import   dmg.cells.applets.login.* ;
-import java.lang.reflect.*; 
-import java.util.* ;
-import java.io.* ;
-import java.net.* ;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.PrintWriter;
+import java.io.Writer;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.net.InetAddress;
+
+import jline.ConsoleReader;
+import jline.History;
+import dmg.cells.applets.login.DomainObjectFrame;
+import dmg.cells.nucleus.CellAdapter;
+import dmg.cells.nucleus.CellNucleus;
+import dmg.util.Args;
+import dmg.util.CommandExitException;
+import dmg.util.StreamEngine;
 
 
 /**
@@ -22,20 +34,22 @@ public class      StreamObjectCell
        implements Runnable  {
 
   private StreamEngine   _engine ;
-  private ControlBufferedReader _in    = null ;
+  private InputHandler _in    = null ;
   private PrintWriter    _out   = null ;
   private Object              _outLock = new Object() ;
   private ObjectOutputStream  _objOut = null ;
   private ObjectInputStream   _objIn  = null ;
   private InetAddress    _host ;
   private String         _user ;
-  private Reader         _reader           = null ;
   private Thread         _workerThread     = null ;
   private Constructor    _commandConst     = null ;
   private int            _commandConstMode = -1 ;
   private Class          _commandClass     = null ;
   private Object         _commandObject    = null ;
-  private CellNucleus    _nucleus          = null ; 
+  private CellNucleus    _nucleus          = null ;
+  private static final String HISTORY_FILE = "/var/log/.adminshell_history";
+  private static final int HISTORY_SIZE = 50;
+  private static final String CONTROL_C_ANSWER = "Got interrupt. Please issue \'logoff\' from within the admin cell to end this session.\n";
   //
   // args.argv[0] must contain a class with the following signature.
   //    <init>( Nucleus nucleus , Args args )     or
@@ -75,9 +89,8 @@ public class      StreamObjectCell
          say( "StreamObjectCell "+getCellName()+"; arg0="+args.argv(0) ) ;
          prepareClass( args.argv(0) ) ;
 
-         _reader = _engine.getReader() ;
-         _in     = new ControlBufferedReader( _reader ) ;
-         _in.onControlC("interrupted");
+         _in = createReader(args.getOpt("inputHandler"));
+         
          _user   = engine.getUserName().getName() ;
          _host   = engine.getInetAddress() ;
         
@@ -97,7 +110,50 @@ public class      StreamObjectCell
      
      _workerThread.start() ;
   }
-  private void prepareClass( String className ) 
+  private InputHandler createReader(String option) throws IOException {
+           
+      // use classic reader if specified
+      if ("classic".equals(option)) {
+          ControlBufferedReader classic = new ControlBufferedReader(_engine.getReader()) ;
+          classic.onControlC(CONTROL_C_ANSWER);
+          return classic;
+      }
+      
+      // create Jline reader with file-based history 
+      ConsoleReader consoleReader = new ConsoleReader( _engine.getInputStream(), _engine.getWriter());
+      History history = new History();
+      history.setMaxSize(HISTORY_SIZE);
+      try { 
+          history.load(new FileInputStream(HISTORY_FILE));
+      } catch (IOException e) {
+          // ok, no history file found
+      }
+      consoleReader.setHistory(history);
+      consoleReader.setUseHistory(true);
+      
+      // intercept Control+c
+      consoleReader.addTriggeredAction( (char)3 , new ActionListener(){
+          
+          public void actionPerformed(ActionEvent e) {
+             try {
+                 Writer writer = (_out == null) ? new PrintWriter( _engine.getWriter() ) : _out;
+                 
+                 writer.write(CONTROL_C_ANSWER);
+                 writer.write( getPrompt() );
+                 writer.flush();
+                 
+             } catch (IOException e1) {
+                 say("Cannot react on Control+c : " + e1);
+             }                               
+         }
+          
+      });
+      
+    JlineReader jlineReader = new JlineReader(consoleReader, false);
+    jlineReader.setHistoryFile(HISTORY_FILE);
+    return jlineReader;
+  }
+private void prepareClass( String className ) 
           throws ClassNotFoundException , NoSuchMethodException  {
           
      NoSuchMethodException nsme = null ;
@@ -374,9 +430,12 @@ public class      StreamObjectCell
   }
   public void cleanUp(){
      _workerThread.interrupt() ;
+     
      try{
        
-        _in.close() ;
+        _in.close();
+        
+        _engine.getInputStream().close();
         try {
            if (!_engine.getSocket().isClosed()) {
                say("Close socket");
@@ -389,6 +448,6 @@ public class      StreamObjectCell
 //        _in.read() ;
      } catch(Exception e ){
         esay( "cleanup says : "+e ) ;
-     };    
+     }
   }
 }
