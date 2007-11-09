@@ -14,6 +14,7 @@ import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.util.Permissions;
 import org.dcache.srm.SRMException;
 import org.dcache.srm.SRMInternalErrorException;
+import org.dcache.srm.SRMTooManyResultsException;
 
 
 
@@ -241,9 +242,29 @@ public class SrmLs {
 					   null);
 	    }
 	    catch (SRMException srme) 
-	    { 
-		metaDataPathDetail =  new TMetaDataPathDetail(path,new TReturnStatus(TStatusCode.SRM_INVALID_PATH,
-										     srme.getMessage()),
+	    { 	
+
+		TReturnStatus status=null;
+		    
+		
+		if (srme instanceof SRMInternalErrorException) { 
+		    status = new TReturnStatus(TStatusCode.SRM_FAILURE, srme.getMessage());
+		    srmLsResponse.getReturnStatus().setStatusCode(TStatusCode.SRM_INTERNAL_ERROR);
+		    srmLsResponse.getReturnStatus().setExplanation(srme.getMessage());
+		}
+		else if ( srme instanceof SRMTooManyResultsException) { 
+		    status = new TReturnStatus(TStatusCode.SRM_FAILURE, srme.getMessage());
+		    srmLsResponse.getReturnStatus().setStatusCode(TStatusCode.SRM_TOO_MANY_RESULTS);
+		    srmLsResponse.getReturnStatus().setExplanation(srme.getMessage());
+		}
+		else { 
+		    status = new TReturnStatus(TStatusCode.SRM_INVALID_PATH, srme.getMessage());
+		    srmLsResponse.getReturnStatus().setStatusCode(TStatusCode.SRM_FAILURE);
+		    srmLsResponse.getReturnStatus().setExplanation("path does not exist for one or more files speicfied, check individual statuses");
+		}
+
+		metaDataPathDetail =  new TMetaDataPathDetail(path,
+							      status,
 							      null,
 							      null,
 							      null,
@@ -260,14 +281,7 @@ public class SrmLs {
 							      null,
 							      null,
 							      null);
-		if (srme instanceof SRMInternalErrorException) { 
-		    srmLsResponse.getReturnStatus().setStatusCode(TStatusCode.SRM_INTERNAL_ERROR);
-		    srmLsResponse.getReturnStatus().setExplanation(srme.getMessage());
-		}
-		else { 
-		    srmLsResponse.getReturnStatus().setStatusCode(TStatusCode.SRM_FAILURE);
-		    srmLsResponse.getReturnStatus().setExplanation("path does not exist for one or more files speicfied, check individual statuses");
-		}
+
 	    }
 	    finally
 	    {
@@ -289,7 +303,7 @@ public class SrmLs {
             FileMetaData parent_fmd)
 	throws SRMException,org.apache.axis.types.URI.MalformedURIException {
         if(!increaseResultsNumAndContinue()) {
-            throw new SRMException("max results number of "+max_results_num+" exceeded");
+            throw new SRMTooManyResultsException("max results number of "+max_results_num+" exceeded. Try to narrow down with offset and count \n");
         }
         FileMetaData fmd = storage.getFileMetaData(user, path,parent_fmd);
         if(!canRead(user,fmd)) {
@@ -459,7 +473,7 @@ public class SrmLs {
             )
             throws SRMException,org.apache.axis.types.URI.MalformedURIException {
         if(!increaseResultsNumAndContinue()) {
-            throw new SRMException("max results number of "+max_results_num+" exceeded");
+            throw new SRMTooManyResultsException("max results number of "+max_results_num+" exceeded. Try to be narrow down with offset and count");
         }
         
         TMetaDataPathDetail metaDataPathDetail =
