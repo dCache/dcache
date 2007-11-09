@@ -28,7 +28,7 @@ public class StorageInfoTest {
         StorageInfo storageInfo = readStorageInfo(new File("modules/dCacheJUnit/org/dcache/tests/storageinfo/storageInfo-1.7"));
 
         List<URI> locations = storageInfo.locations();
-        assertTrue("pre 1.8 storageInfo should reurn empty locations list", locations.isEmpty());
+        assertTrue("pre 1.8 storageInfo should return empty locations list", locations.isEmpty());
 
     }
 
