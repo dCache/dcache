@@ -3071,6 +3071,12 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
          */
         int version = (usePassivePool || xferMode.equals("X") ? 2 : 1);
 
+        /*
+         *
+         */
+        VOInfo voInfo = 
+            new VOInfo(_pwdRecord.getGroup(), _pwdRecord.getRole());
+
         /* Set up an adapter, if needed. Since a pool may reject to be
          * passive, we need to set up an adapter even when we can use
          * passive pools.
@@ -3128,7 +3134,6 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
         } else {
             _transfer.state = "waiting for pool selection by PoolManager";
 
-
             GFtpProtocolInfo protocolInfo =
                 new GFtpProtocolInfo("GFtp",
                                      version,
@@ -3138,7 +3143,8 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
                                      parallelStart,
                                      parallelMin,
                                      parallelMax,
-                                     bufSize, 0, 0, new VOInfo(_pwdRecord.getGroup(), _pwdRecord.getRole()));
+                                     bufSize, 0, 0, 
+                                     voInfo);
 
             PoolMgrSelectPoolMsg request;
             if (isWrite) {
@@ -3175,7 +3181,8 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
                                      parallelMax,
                                      bufSize,
                                      offset,
-                                     size, new VOInfo(_pwdRecord.getGroup(), _pwdRecord.getRole()));
+                                     size, 
+                                     voInfo);
         } else {
             protocolInfo =
                 new GFtpProtocolInfo("GFtp",
@@ -3187,7 +3194,8 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
                                      parallelMax,
                                      bufSize,
                                      offset,
-                                     size, new VOInfo(_pwdRecord.getGroup(), _pwdRecord.getRole()));
+                                     size, 
+                                     voInfo);
         }
 
         protocolInfo.setDoorCellName(getCellName());
