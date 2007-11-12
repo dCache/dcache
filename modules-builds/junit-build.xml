@@ -35,7 +35,10 @@
 	            <classpath refid="junit.classpath" />
 	            <formatter type="brief" usefile="false" />
 	            <batchtest todir="${tests.report.home}" haltonfailure="no" >
-	                <fileset dir="${buildDir}/junit" includes="**/*.class" />
+	                <fileset dir="${buildDir}/junit" >
+	                    <include name="**/*.class" />
+	                    <exclude name="**/*$*.class" />
+	                </fileset>
 	            </batchtest>
             </junit>
 
@@ -57,7 +60,10 @@
             <classpath refid="junit.classpath" />
             <formatter type="xml" usefile="true" />
             <batchtest todir="${tests.report.home}" haltonfailure="no" >
-                <fileset dir="${buildDir}/junit" includes="**/*.class" />
+                <fileset dir="${buildDir}/junit" >
+                    <include name="**/*.class" />
+                    <exclude name="**/*$*.class" />
+                </fileset>
             </batchtest>
         </junit>
 
