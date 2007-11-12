@@ -554,4 +554,16 @@
 	    </ant>
 	</target>
 
+    <target name="run_junit_build">
+        <ant dir="modules-builds" antfile="junit-build.xml" target="run_junit.core.hudson" inheritAll="false">
+          <property name="libDir" location="${libDir}" />
+          <property name="buildDir" value="${buildDir}" />
+          <property name="classesDir" value="${classesDir}" />
+          <property name="sourceDir" location="${dCacheBox-module}/dCacheJUnit" />
+          <property name="buildTop" location="${buildTop}" />
+          <property name="binDir" location="${binDir}" />
+        </ant>
+    </target>
+
+
 </project>
