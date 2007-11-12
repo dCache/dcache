@@ -34,59 +34,34 @@
 	        <junit>
 	            <classpath refid="junit.classpath" />
 	            <formatter type="brief" usefile="false" />
-	            <test name="org.dcache.tests.poolmanager.PoolSelectionUnit" />
-	        </junit>
-
-	        <junit>
-	            <classpath refid="junit.classpath" />
-	            <formatter type="brief" usefile="false" />
-	            <test name="org.dcache.tests.repository.PoolRepository" />
-	        </junit>
-
-	        <junit>
-	            <classpath refid="junit.classpath" />
-	            <formatter type="brief" usefile="false" />
-	            <test name="org.dcache.tests.util.ChecksumTestCase" />
-	        </junit>
-
-
-	        <junit>
-	            <classpath refid="junit.classpath" />
-	            <formatter type="brief" usefile="false" />
-	            <test name="org.dcache.tests.hsm.MultiHSM" />
-	        </junit>
-	        <junit>
-	            <classpath refid="junit.classpath" />
-	            <formatter type="brief" usefile="false" />
-	            <test name="org.dcache.tests.ftp.RangesTest" />
-	        </junit>
-	        <junit>
-	            <classpath refid="junit.classpath" />
-	            <formatter type="brief" usefile="false" />
-	            <test name="org.dcache.tests.util.DcapURLTest" />
-	        </junit>
-	        <junit>
-	            <classpath refid="junit.classpath" />
-	            <formatter type="brief" usefile="false" />
-	            <test name="org.dcache.tests.util.FsPathTest" />
-	        </junit>
-	        <junit>
-	            <classpath refid="junit.classpath" />
-	            <formatter type="brief" usefile="false" />
-	            <test name="org.dcache.tests.cells.CellPathTest" />
-	        </junit>
-	        <junit>
-	            <classpath refid="junit.classpath" />
-	            <formatter type="brief" usefile="false" />
-	            <test name="org.dcache.tests.hsm.HSMCleanerTest" />
-	        </junit>
-
-            <junit>
-                <classpath refid="junit.classpath" />
-                <formatter type="brief" usefile="false" />
-                <test name="org.dcache.tests.namespace.PnfsManagerTest" />
+	            <batchtest todir="${tests.report.home}" haltonfailure="no" >
+	                <fileset dir="${buildDir}/junit" includes="**/*.class" />
+	            </batchtest>
             </junit>
 
+
 	    </target>
+
+    <target name="run_junit.core.hudson">
+
+        <property name="tests.report.home" location="${buildDir}/junit-reports"/>
+
+        <mkdir dir="${buildDir}/junit" />
+        <mkdir dir="${tests.report.home}" />
+        <javac classpathref="junit.classpath" destdir="${buildDir}/junit" source="${javac.source}" target="${javac.target}" debug="${javac.debug}" verbose="${javac.verbose}"  encoding="${javac.encoding}">
+            <src path="${sourceDir}" />
+        </javac>
+
+
+        <junit printsummary="yes">
+            <classpath refid="junit.classpath" />
+            <formatter type="xml" usefile="true" />
+            <batchtest todir="${tests.report.home}" haltonfailure="no" >
+                <fileset dir="${buildDir}/junit" includes="**/*.class" />
+            </batchtest>
+        </junit>
+
+
+    </target>
 
 </project>
