@@ -106,6 +106,25 @@ public class FileMetaDataRepository
         siFile.delete();
     }
 	
+    public boolean isOk()
+    {
+       try {
+           File tmp = new File(_metadir, ".repository_is_ok");
+	   tmp.delete();
+	   tmp.deleteOnExit();
+
+	   if (!tmp.createNewFile())
+               return false;
+
+	   if (!tmp.exists())
+               return false;
+
+	   return true;
+	} catch (IOException e) {
+	   return false;
+	}
+    }
+
     /**
      * Forwards an event to the CacheRepository. Used by the entries
      * for event notification.

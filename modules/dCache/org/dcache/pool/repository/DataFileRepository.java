@@ -33,4 +33,10 @@ public interface DataFileRepository
      * Java 6.
      */
     public long getTotalSpace();
+
+    /**
+     * Returns whether the repository appears healthy. How this is
+     * determined is up to the implementation.
+     */
+    public boolean isOk();
 }

@@ -2,6 +2,7 @@ package org.dcache.pool.repository.meta.db;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 
 import com.sleepycat.je.DatabaseException;
 import com.sleepycat.collections.StoredMap;
@@ -126,6 +127,25 @@ public class BerkeleyDBMetaDataRepository
     {
         _views.getStorageInfoMap().remove(id.toString());
         _views.getStateMap().remove(id.toString());
+    }
+
+    public boolean isOk()
+    {
+       try {
+           File tmp = new File(_dir, ".repository_is_ok");
+	   tmp.delete();
+	   tmp.deleteOnExit();
+
+	   if (!tmp.createNewFile())
+               return false;
+
+	   if (!tmp.exists())
+               return false;
+
+	   return true;
+	} catch (IOException e) {
+	   return false;
+	}
     }
 
     /**

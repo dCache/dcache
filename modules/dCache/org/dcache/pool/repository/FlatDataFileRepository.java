@@ -2,6 +2,7 @@ package org.dcache.pool.repository;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -61,5 +62,24 @@ public class FlatDataFileRepository implements DataFileRepository
     public long getTotalSpace() 
     {
         return 0;// return _dataDir.getTotalSpace();
+    }
+
+    public boolean isOk()
+    {
+       try {
+           File tmp = new File(_dataDir, ".repository_is_ok");
+	   tmp.delete();
+	   tmp.deleteOnExit();
+
+	   if (!tmp.createNewFile())
+               return false;
+
+	   if (!tmp.exists())
+               return false;
+
+	   return true;
+	} catch (IOException e) {
+	   return false;
+	}
     }
 }

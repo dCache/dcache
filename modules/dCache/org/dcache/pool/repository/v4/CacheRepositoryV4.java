@@ -121,12 +121,18 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
      */
     private boolean _runningInventory = false;
 
-
+    /**
+     * The base directory of the pool. This directory contains the
+     * setup file.
+     */
+    private File _basedir;
 
     private MetaDataRepository 
         createMetaDataRepository(String name, DataFileRepository data,
                                  File directory) 
     {
+        _basedir = directory;
+
         try {
             Class [] argClass = { 
                 org.dcache.pool.repository.DataFileRepository.class,
@@ -395,8 +401,49 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
                              new CacheRepositoryEvent(this, entry));
             }
 
+            /* Resolve overbooking.
+             */
+            long total = getTotalSpace();
+            if (usedDataSpace > total) {
+                String error = 
+                    "Inventory overbooked " + usedDataSpace +" > " + total;
+                if ((flags & ALLOW_SPACE_RECOVERY) == 0)
+                    throw new CacheException(206, error);
+
+                log.elog(error);
+
+                long diff = usedDataSpace - total;
+                if (diff  > 0.1 * total)
+                    throw new
+                        CacheException("Inventory space exceeded by more than 10%, cannot recover");
+                for (CacheRepositoryEntry entry : entries) {
+                    if (entry.isPrecious() || entry.isSticky())
+                        continue;
+
+                    /* It would be really nice if we could use the
+                     * normal removeEntry method here. Unfortunately
+                     * we have not yet allocated space in the space
+                     * monitor. Since removeEntry will try to free
+                     * such space, we cannot use it.
+                     */
+                    processEvent(EventType.REMOVE,
+                                 new CacheRepositoryEvent(this, entry));
+
+                    PnfsId id = entry.getPnfsId();
+                    File dataFile = _dataRepository.get(id);
+                    usedDataSpace -= entry.getSize();
+                    _allEntries.remove(id);
+                    _metaRepository.remove(id);
+                    dataFile.delete();
+
+                    _log.warn("Pool overbooked: " + id + " removed");
+
+                    if (usedDataSpace <= total)
+                        break;
+                }
+            }
             
-            /* What is the point of this check?
+            /* Update space monitor.
              */
             try {
                 allocateSpace(usedDataSpace, 1000);
@@ -407,12 +454,10 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
                                    "Not enough space in repository to store inventory ???");
             }
 
-            if (_log.isDebugEnabled()) {
-                _log.debug("Space used : " + usedDataSpace);
-                _log.debug("runInventory : #=" + _allEntries.size() +
-                           ";space=" + getFreeSpace() +
-                           "/" + getTotalSpace());
-            }
+            _log.debug("Space used : " + usedDataSpace);
+            _log.debug("runInventory : #=" + _allEntries.size() +
+                       ";space=" + getFreeSpace() +
+                       "/" + getTotalSpace());
 
             _stickyInspectorThread.start();
         } catch (IOException e) {
@@ -427,8 +472,28 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
 
     public boolean isRepositoryOk() 
     {
-        // TODO: fake for now
-        return true;
+       try {
+           if (!_metaRepository.isOk() || !_dataRepository.isOk())
+               return false;
+
+           File setup = new File(_basedir, "setup");
+           if (!setup.exists())
+               return false;
+
+           File tmp = new File(_basedir, "RepositoryOk");
+	   tmp.delete();
+	   tmp.deleteOnExit();
+
+	   if (!tmp.createNewFile())
+               return false;
+
+	   if (!tmp.exists())
+               return false;
+
+	   return true;
+	} catch (IOException e) {
+	   return false;
+	}
     }
 
     /**

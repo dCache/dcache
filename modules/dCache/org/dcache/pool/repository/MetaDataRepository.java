@@ -69,4 +69,10 @@ public interface MetaDataRepository
      * @param id PNFS id of the entry to return.
      */
     void remove(PnfsId id);
+
+    /**
+     * Returns whether the repository appears healthy. How this is
+     * determined is up to the implementation.
+     */
+    public boolean isOk();
 }
