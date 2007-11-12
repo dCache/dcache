@@ -1,7 +1,7 @@
 package org.dcache.tests.storageinfo;
 
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import java.io.BufferedInputStream;
 import java.io.EOFException;
@@ -13,24 +13,77 @@ import java.io.ObjectInputStream;
 import java.io.StreamCorruptedException;
 import java.net.URI;
 import java.util.List;
+import java.util.Map;
 
+import org.junit.Before;
 import org.junit.Test;
 
 import com.sun.corba.se.impl.io.OptionalDataException;
 
+import diskCacheV111.util.AccessLatency;
+import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.vehicles.StorageInfo;
 
 public class StorageInfoTest {
 
+    private StorageInfo _storageInfo;
+
+    @Before
+    public void setUp() throws Exception {
+        _storageInfo = readStorageInfo(new File("modules/dCacheJUnit/org/dcache/tests/storageinfo/storageInfo-1.7"));
+    }
+
     @Test
     public void testStorageInfoLocations17() throws Exception {
 
-        StorageInfo storageInfo = readStorageInfo(new File("modules/dCacheJUnit/org/dcache/tests/storageinfo/storageInfo-1.7"));
-
-        List<URI> locations = storageInfo.locations();
-        assertTrue("pre 1.8 storageInfo should return empty locations list", locations.isEmpty());
-
+        List<URI> locations = _storageInfo.locations();
+        assertNotNull("pre 1.8 storageInfo should return non null locations list", locations);
     }
+
+
+    @Test
+    public void testStorageinfoAccessLatency() throws Exception {
+        AccessLatency accessLatency = _storageInfo.getAccessLatency();
+        assertNotNull("pre 1.8 storageInfo should return non null access latency", accessLatency);
+    }
+
+    @Test
+    public void testStorageInfoRetentionPolicy() throws Exception {
+        RetentionPolicy retentionPolicy = _storageInfo.getRetentionPolicy();
+        assertNotNull("pre 1.8 storageInfo should return non null retention policy", retentionPolicy);
+    }
+
+    @Test
+    public void testStorageInfoRetentionPolicySet() throws Exception {
+        boolean isSet =  _storageInfo.isSetRetentionPolicy();
+        // do nothing , just check for null pointer exception
+    }
+
+
+    @Test
+    public void testStorageInfoAccessLatencySet() throws Exception {
+        boolean isSet =  _storageInfo.isSetAccessLatency();
+        // do nothing , just check for null pointer exception
+    }
+
+    @Test
+    public void testStorageInfoLocationSet() throws Exception {
+        boolean isSet =  _storageInfo.isSetAddLocation();
+        // do nothing , just check for null pointer exception
+    }
+
+    @Test
+    public void testStorageInfoMap() throws Exception {
+        Map<String, String> keyMap = _storageInfo.getMap();
+        assertNotNull("pre 1.8 storageInfo should return non null keyMap", keyMap);
+    }
+
+    @Test
+    public void testStorageGetHsm() throws Exception {
+        String hsm = _storageInfo.getHsm();
+        assertNotNull("pre 1.8 storageInfo should return non null hsm name", hsm);
+    }
+
 
     private static StorageInfo readStorageInfo(File objIn) throws IOException {
 
