@@ -4,17 +4,18 @@ import org.junit.*;
 import java.util.*;
 import java.io.*;
 import java.net.*;
+import static org.junit.Assert.*;
 
 import org.dcache.services.hsmcleaner.*;
 
-public class HSMCleanerTest extends junit.framework.TestCase 
+public class HSMCleanerTest
 {
     private File _base;
     private int _counter;
     private Random _random = new Random(System.currentTimeMillis());
 
     @Before
-    public void setUp() throws Exception 
+    public void setUp() throws Exception
     {
         _base = new File("/tmp/hsmcleaner");
         if (_base.exists())
@@ -33,7 +34,7 @@ public class HSMCleanerTest extends junit.framework.TestCase
         if (f.isDirectory()) {
             for (File file : f.listFiles())
                 delete(file);
-        } 
+        }
 
         f.delete();
     }
@@ -47,11 +48,11 @@ public class HSMCleanerTest extends junit.framework.TestCase
     /**
      * Generate new Chimera ID.
      */
-    private String generateNewID() 
+    private String generateNewID()
     {
         return UUID.randomUUID().toString().toUpperCase().replace('-','0');
     }
-    
+
     /**
      * Adds files to the trash directory.
      */
@@ -90,18 +91,18 @@ public class HSMCleanerTest extends junit.framework.TestCase
         count = addFilesToTrash(dir, 1000);
         final List<URI> locations1 = new ArrayList<URI>();
         trash.scan(new Sink<URI>() {
-                public void push(URI location) 
+                public void push(URI location)
                 {
                     locations1.add(location);
                 }
             });
-        assertEquals("The trash must find all locations", 
+        assertEquals("The trash must find all locations",
                      count, locations1.size());
 
         /* Scanning a second time should not find anything.
          */
         trash.scan(new Sink<URI>() {
-                public void push(URI location) 
+                public void push(URI location)
                 {
                     fail("Files should not be discovered several times.");
                 }
@@ -113,7 +114,7 @@ public class HSMCleanerTest extends junit.framework.TestCase
         count = addFilesToTrash(dir, 1000);
         final List<URI> locations2 = new ArrayList<URI>();
         trash.scan(new Sink<URI>() {
-                public void push(URI location) 
+                public void push(URI location)
                 {
                     locations2.add(location);
                 }
@@ -123,16 +124,16 @@ public class HSMCleanerTest extends junit.framework.TestCase
 
         /* Delete locations.
          */
-        for (URI location : locations1) 
+        for (URI location : locations1)
             trash.remove(location);
-        for (URI location : locations2) 
+        for (URI location : locations2)
             trash.remove(location);
-         
+
         /* Now check that the trash is actually empty.
          */
         trash = new OSMTrash(dir);
         trash.scan(new Sink<URI>() {
-                public void push(URI location) 
+                public void push(URI location)
                 {
                     fail("Files should have been deleted by now.");
                 }
@@ -140,7 +141,7 @@ public class HSMCleanerTest extends junit.framework.TestCase
     }
 
     @Test
-    public void testFailureRepository() throws Exception 
+    public void testFailureRepository() throws Exception
     {
         File dir = new File(_base, "repository");
         dir.mkdir();
@@ -157,11 +158,11 @@ public class HSMCleanerTest extends junit.framework.TestCase
                 URI location = generateNewURI();
                 locations.add(location);
                 repository.add(location);
-            }            
-            
+            }
+
             repository.flush(new Sink<URI>() {
                     public void push(URI uri) {
-                        assertTrue("Repository must preserve URI", 
+                        assertTrue("Repository must preserve URI",
                                    locations.contains(uri));
                         flushed.add(uri);
                     }
