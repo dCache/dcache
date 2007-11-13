@@ -45,7 +45,11 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
 
 	private final HashMap _moverAttributes = new HashMap();
 	private final Map<String, Class<?>> _moverHash = new HashMap<String, Class<?>>();
-	private long _serialId = System.currentTimeMillis();
+	/**
+	 * pool start time identifier.
+	 * used by PoolManager to recognize pool restarts
+	 */
+	private final long _serialId = System.currentTimeMillis();
 	private int _recoveryFlags = 0;
 	private final PoolV2Mode _poolMode = new PoolV2Mode();
 	private boolean _reportOnRemovals = false;
@@ -375,7 +379,7 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
 			say("Checking base directory ( reading setup) " + _baseDir);
 			_base = new File(_baseDir);
 			_setup = new File(_base, "setup");
-			
+
 			while (!_setup.canRead()) {
                    disablePool(PoolV2Mode.DISABLED_STRICT,1,"Initializing : Repository seems not to be ready - setup file does not exist or not readble");
 				try {
@@ -425,7 +429,7 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
 					_storageHandler);
 
 			_checksumModule = new ChecksumModuleV1(this, _repository, _pnfs);
-			
+
 			_p2pClient = new P2PClient(this, _repository, _checksumModule);
 
 			_timeoutManager.addScheduler("p2p", _p2pQueue);
@@ -959,8 +963,8 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
 
 
     public CellInfo getCellInfo()
-    {        
-        PoolCellInfo info = new PoolCellInfo(super.getCellInfo());        
+    {
+        PoolCellInfo info = new PoolCellInfo(super.getCellInfo());
         info.setPoolCostInfo(getPoolCostInfo());
         info.setTagMap(_tags);
         info.setErrorStatus(_poolStatusCode, _poolStatusMessage);
@@ -1521,7 +1525,7 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
 					if ((tmp = _storageInfo.getKey(MAX_SPACE)) != null) {
 						try {
 							maxAllocatedSpace = Long.parseLong(tmp);
-						} catch (NumberFormatException ee) {/* ignore 'bad' values*/ }						
+						} catch (NumberFormatException ee) {/* ignore 'bad' values*/ }
 					}
 
 					if ((preallocatedSpace > 0L) || (maxAllocatedSpace > 0L))
@@ -1571,7 +1575,7 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
 					// ( first remove the lock, otherwise the
 					// state for the precious events is wrong.
 					//
-					
+
                     /*
                      * Due to support of <AccessLatency> and <RetentionPolicy>
                      * the file state in the pool has changed has changed it's
@@ -1579,38 +1583,38 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
                      *     precious: have to goto tape
                      *     cached: free to be removed by sweeper
                      *     cached+sticky: does not go to tape, isn't removed by sweeper
-                     *     
+                     *
                      * new states depending on AL and RP:
                      *     Custodial+ONLINE   (T1D1) : precious+sticky  => cached+sticky
                      *     Custodial+NEARLINE (T1D0) : precious         => cached
                      *     Output+ONLINE      (T0D1) : cached+sticky    => cached+sticky
-                     *  
-                     */                    
-                    
+                     *
+                     */
+
                     _entry.lock(false) ;
                     _entry.setStorageInfo( _storageInfo ) ;
-                                        
+
                     // flush to tape only if the file defined as a 'tape file'( RP = Custodial) and the HSM is defined
                     String hsm = _storageInfo.getHsm();
                     RetentionPolicy retentionPolicy = _storageInfo.getRetentionPolicy();
-                    if( retentionPolicy != null && retentionPolicy.equals(RetentionPolicy.CUSTODIAL) ) {                    	
+                    if( retentionPolicy != null && retentionPolicy.equals(RetentionPolicy.CUSTODIAL) ) {
 	                    if(hsm != null && !hsm.toLowerCase().equals("none") ) {
-	                    	_entry.setPrecious() ;	
+	                    	_entry.setPrecious() ;
 	                    }else{
 	                    	_entry.setCached() ;
 	                    }
                     }else{
                     	_entry.setCached() ;
                     }
-                    
-                    
+
+
                     AccessLatency accessLatency = _storageInfo.getAccessLatency();
                     if( accessLatency != null && accessLatency.equals( AccessLatency.ONLINE) ) {
-                    	
+
                     	// TODO: probably, we have to notify PinManager
                     	// HopingManager have to copy file into a 'read' pool if
-                    	// needed, set copy 'sticky' and remove sticky flag in the 'write' pool                    	
-                    	
+                    	// needed, set copy 'sticky' and remove sticky flag in the 'write' pool
+
                     	_entry.setSticky(true);
                     }else{
                     	_entry.setSticky(false);
@@ -2516,7 +2520,7 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
 
                     if ((_poolMode.isDisabled(PoolV2Mode.DISABLED_STAGE)) ||
                         (_lfsMode != LFS_NONE)) {
-                
+
                         esay("PoolRemoveFilesFromHsmMessage request rejected due to "
                              + _poolMode);
                         sentNotEnabledException(poolMessage, cellMessage);
@@ -2734,11 +2738,11 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
         esay("New Pool Mode : " + _poolMode);
     }
 
-    private class PoolManagerPingThread implements Runnable  
-    {    
-        private Thread      _worker    = null;
+    private class PoolManagerPingThread implements Runnable
+    {
+        private final Thread      _worker;
         private int         _heartbeat = 30;
-        
+
         private PoolManagerPingThread()
         {
             _worker = _nucleus.newThread(this, "ping");
@@ -2752,19 +2756,19 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
         public void run()
         {
             say("Ping Thread started");
-            while (!Thread.currentThread().interrupted()) {
+            while (!Thread.interrupted()) {
 
-		if (_poolMode.isEnabled() && _checkRepository 
+		if (_poolMode.isEnabled() && _checkRepository
                     && !_repository.isRepositoryOk()) {
-		
+
 		   esay("Pool disabled due to problems in repository") ;
 		   disablePool(PoolV2Mode.DISABLED | PoolV2Mode.DISABLED_STRICT,
-                               99, "Repository got lost");		   
+                               99, "Repository got lost");
 		}
                 sendPoolManagerMessage(true);
 
                 try {
-                    Thread.currentThread().sleep(_heartbeat*1000);
+                    Thread.sleep(_heartbeat*1000);
                 } catch(InterruptedException e) {
                     esay("Ping Thread was interrupted");
                     break;
@@ -2772,7 +2776,7 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
             }
 
             esay("Ping Thread sending Pool Down message");
-            disablePool(PoolV2Mode.DISABLED_DEAD, 666, 
+            disablePool(PoolV2Mode.DISABLED_DEAD, 666,
                         "PingThread terminated");
             esay("Ping Thread finished");
         }
@@ -2794,19 +2798,19 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
         }
 
         private CellMessage getPoolManagerMessage()
-        {       
-            boolean disabled = 
+        {
+            boolean disabled =
                 _poolMode.getMode() == PoolV2Mode.DISABLED ||
                 _poolMode.isDisabled(PoolV2Mode.DISABLED_STRICT) ||
                 _poolMode.isDisabled(PoolV2Mode.DISABLED_DEAD);
             PoolCostInfo info = disabled ? null : getPoolCostInfo();
 
             PoolManagerPoolUpMessage poolManagerMessage =
-                new PoolManagerPoolUpMessage(_poolName, _serialId, 
+                new PoolManagerPoolUpMessage(_poolName, _serialId,
                                              _poolMode, info);
 
             poolManagerMessage.setTagMap( _tags ) ;
-            poolManagerMessage.setHsmInstances(new TreeSet(_hsmSet.getHsmInstances()));
+            poolManagerMessage.setHsmInstances(new TreeSet<String>(_hsmSet.getHsmInstances()));
             poolManagerMessage.setMessage(_poolStatusMessage);
             poolManagerMessage.setCode(_poolStatusCode);
 
@@ -2823,7 +2827,7 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
                 esay("Exception sending ping message " + exc);
                 esay(exc);
             }
-        }        
+        }
     }
 
 	private PoolCostInfo getPoolCostInfo() {
@@ -3161,7 +3165,7 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
 		StringBuilder sb = new StringBuilder();
 
 		for (Map.Entry<String, Class<?>> entry: _moverHash.entrySet()) {
-			
+
 			sb.append(entry.getKey()).append(" -> ").append(
 					 entry.getValue().getName()).append("\n");
 		}
