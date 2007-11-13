@@ -6,6 +6,12 @@ package diskCacheV111.pools;
 
 public class PoolV2Mode implements java.io.Serializable {
 
+    /**
+     *
+     */
+    private static final long serialVersionUID = -9035550368999975090L;
+
+
     public static final int ENABLED             = 0x00 ;
     public static final int DISABLED            = 0x01 ;
     public static final int DISABLED_FETCH      = 0x02 ;
