@@ -160,7 +160,6 @@ public class RepositoryEntryHealer
                     _pnfsHandler.getStorageInfo(id.toString());
                 storageInfo.setFileSize(length);
 
-                entry = _metaRepository.create(id);                
                 entry.setCached();
                 entry.setSticky(true, "system", -1);
                 entry.setBad(true);
