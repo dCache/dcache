@@ -12,7 +12,7 @@ import diskCacheV111.util.RetentionPolicy;
 public class GenericStorageInfo implements StorageInfo,
 		java.io.Serializable {
 
-	
+
 	static final long serialVersionUID = 2089636591513548893L;
 
 	/*
@@ -21,8 +21,8 @@ public class GenericStorageInfo implements StorageInfo,
 	 */
 	private AccessLatency _accessLatency = AccessLatency.NEARLINE;
 	private RetentionPolicy _retentionPolicy = RetentionPolicy.CUSTODIAL;
-	private final Map<String, String> _keyHash = new HashMap<String, String>();
-	private final List<URI> _locations = new ArrayList<URI>();
+	private Map<String, String> _keyHash = new HashMap<String, String>();
+	private List<URI> _locations = new ArrayList<URI>();
 	private boolean _setHsm = false;
 	private boolean _setStorageClass = false;
 	private boolean _setBitFileId = false;
@@ -37,7 +37,7 @@ public class GenericStorageInfo implements StorageInfo,
 	private String _cacheClass = null;
 	private long _fileSize = 0;
 	private String _storageClass = null;
-	
+
 	@Deprecated
 	private String _bitfileId = null;
 
@@ -124,7 +124,7 @@ public class GenericStorageInfo implements StorageInfo,
 	public void isSetBitFileId(boolean isSet) {
 		_setBitFileId = isSet;
 	}
-	
+
 	public void setCacheClass(String newCacheClass) {
 		_cacheClass = newCacheClass;
 	}
@@ -151,13 +151,13 @@ public class GenericStorageInfo implements StorageInfo,
 
 	public void isSetStorageClass(boolean isSet) {
 		_setStorageClass = isSet;
-	}	
+	}
 
     /**
-     * 
+     *
      * @return true if locations list is not empty or ( legacy case )
      * if value was explicit set by setIsStored(true)
-     */  
+     */
 	public boolean isStored() {
 		/*
 		 * FIXME: _locations!= null is needed to read old SI files
@@ -190,7 +190,7 @@ public class GenericStorageInfo implements StorageInfo,
 	public void setIsNew(boolean isNew) {
 		_isNew = isNew;
 	}
-	
+
 	public void setKey(String key, String value) {
 		if (value == null) {
 			_keyHash.remove(key);
@@ -214,7 +214,7 @@ public class GenericStorageInfo implements StorageInfo,
 	public void setIsStored( boolean isStored) {
 		_isStored = isStored;
 	}
-	
+
 	@Override
 	public String toString() {
 		String sc = getStorageClass();
@@ -248,6 +248,30 @@ public class GenericStorageInfo implements StorageInfo,
 			}
 		}
 		return sb.toString();
+	}
+
+
+	/**
+	 * pre 1.8 read problems
+	 * @return
+	 * @Since 1.8
+	 */
+	Object readResolve() {
+
+	    if(_accessLatency == null ) {
+	        _accessLatency =  AccessLatency.NEARLINE;
+	    }
+
+	    if(_retentionPolicy == null ) {
+	        _retentionPolicy = RetentionPolicy.CUSTODIAL;
+	    }
+
+	    if(_locations == null ) {
+	        _locations = new ArrayList<URI>();
+	    }
+
+	    return this;
+
 	}
 
 }
