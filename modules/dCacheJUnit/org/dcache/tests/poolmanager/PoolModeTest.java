@@ -21,8 +21,8 @@ public class PoolModeTest {
 
         poolMode.setMode(PoolV2Mode.ENABLED);
 
-        assertTrue("Enabled pool should be return true on isEnabled", poolMode.isDisabled());
-        assertFalse("Enabled pool should be return false on isDisabled", poolMode.isEnabled());
+        assertTrue("Enabled pool should be return true on isEnabled", poolMode.isEnabled());
+        assertFalse("Enabled pool should be return false on isDisabled", poolMode.isDisabled());
 
     }
 

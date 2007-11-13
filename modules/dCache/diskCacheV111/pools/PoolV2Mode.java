@@ -14,31 +14,31 @@ public class PoolV2Mode implements java.io.Serializable {
     public static final int DISABLED_P2P_CLIENT = 0x10 ;
     public static final int DISABLED_P2P_SERVER = 0x20 ;
     public static final int DISABLED_DEAD       = 0x40 ;
-    public static final int DISABLED_STRICT     = 
+    public static final int DISABLED_STRICT     =
                                      DISABLED |
                                      DISABLED_FETCH |
                                      DISABLED_STORE |
                                      DISABLED_STAGE |
                                      DISABLED_P2P_CLIENT |
                                      DISABLED_P2P_SERVER ;
-    public static final int DISABLED_RDONLY     = 
+    public static final int DISABLED_RDONLY     =
                                      DISABLED |
                                      DISABLED_STORE |
                                      DISABLED_STAGE |
                                      DISABLED_P2P_CLIENT ;
-                                     
-    private static final String [] __modeString = {    
+
+    private static final String [] __modeString = {
        "fetch" , "store" , "stage" , "p2p-client" , "p2p-server"  , "dead"
     } ;
     private int _mode = ENABLED ;
-    
+
     public String toString()
     {
-       if (_mode == ENABLED) 
+       if (_mode == ENABLED)
            return "enabled";
-       
-       StringBuilder sb = new StringBuilder();       
-       sb.append("disabled("); 
+
+       StringBuilder sb = new StringBuilder();
+       sb.append("disabled(");
        boolean first = true;
        for (int i = 0, mode = _mode; i < __modeString.length; i++) {
            mode >>= 1;
@@ -56,8 +56,8 @@ public class PoolV2Mode implements java.io.Serializable {
     }
 
     public PoolV2Mode(){}
-    
-    public PoolV2Mode( int mode ){ 
+
+    public PoolV2Mode( int mode ){
        _mode = mode ; }
     public synchronized void setMode( int mode ){
        _mode = mode == 0 ? 0 : ( mode | DISABLED ) ;
@@ -68,16 +68,30 @@ public class PoolV2Mode implements java.io.Serializable {
     }
     public synchronized boolean isDisabled(){ return _mode != 0 ; }
     public synchronized boolean isEnabled(){ return _mode == 0 ; }
-    
+
+    @Override
+    public boolean equals(Object obj) {
+        if( this == obj ) return true;
+
+        if( !(obj instanceof PoolV2Mode) ) return false;
+
+        return ((PoolV2Mode)obj)._mode == this._mode;
+    }
+
+    @Override
+    public int hashCode() {
+        return _mode;
+    }
+
     public static void main( String [] args )throws Exception {
         PoolV2Mode mode = new PoolV2Mode(DISABLED_STRICT) ;
-        System.out.println(mode.toString()); 
+        System.out.println(mode.toString());
         mode = new PoolV2Mode(DISABLED_RDONLY) ;
-        System.out.println(mode.toString()); 
+        System.out.println(mode.toString());
         mode = new PoolV2Mode() ;
-        System.out.println(mode.toString()); 
+        System.out.println(mode.toString());
         mode = new PoolV2Mode(DISABLED) ;
-        System.out.println(mode.toString()); 
-        System.out.println(mode.toString()); 
+        System.out.println(mode.toString());
+        System.out.println(mode.toString());
     }
 }
