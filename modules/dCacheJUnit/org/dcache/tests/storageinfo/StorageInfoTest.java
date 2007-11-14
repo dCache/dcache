@@ -55,22 +55,30 @@ public class StorageInfoTest {
 
     @Test
     public void testStorageInfoRetentionPolicySet() throws Exception {
-        boolean isSet =  _storageInfo.isSetRetentionPolicy();
+        _storageInfo.isSetRetentionPolicy();
         // do nothing , just check for null pointer exception
     }
 
 
     @Test
     public void testStorageInfoAccessLatencySet() throws Exception {
-        boolean isSet =  _storageInfo.isSetAccessLatency();
+        _storageInfo.isSetAccessLatency();
         // do nothing , just check for null pointer exception
     }
 
     @Test
     public void testStorageInfoLocationSet() throws Exception {
-        boolean isSet =  _storageInfo.isSetAddLocation();
+       _storageInfo.isSetAddLocation();
         // do nothing , just check for null pointer exception
     }
+
+
+    @Test
+    public void testStorageInfoToString() throws Exception {
+        _storageInfo.toString();
+        // do nothing , just check for null pointer exception
+    }
+
 
     @Test
     public void testStorageInfoMap() throws Exception {
@@ -83,6 +91,17 @@ public class StorageInfoTest {
         String hsm = _storageInfo.getHsm();
         assertNotNull("pre 1.8 storageInfo should return non null hsm name", hsm);
     }
+
+    @Test
+    public void testStorageIsStoredAndBfid() throws Exception {
+        String bfid = _storageInfo.getBitfileId();
+
+        assertNotNull("String representation of bit file id should be not a null", bfid);
+        if( !bfid.equals("<Unknown>")) {
+            assertTrue("with known bitfileid storage info should declared itself as stored", _storageInfo.isStored());
+        }
+    }
+
 
 
     private static StorageInfo readStorageInfo(File objIn) throws IOException {
