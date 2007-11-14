@@ -26,6 +26,9 @@ public class FQAN implements java.io.Serializable {
     private final String fqan;
     /** Creates a new instance of FQAN */
     public FQAN(String fqan) {
+        if(fqan ==null ){
+            throw new IllegalArgumentException("fqan is null");
+        }
         this.fqan = fqan;
     }
     

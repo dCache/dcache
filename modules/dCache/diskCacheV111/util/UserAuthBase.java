@@ -22,7 +22,9 @@ public abstract class UserAuthBase extends Object implements java.io.Serializabl
         String root, String fsroot) {
         Username = user;
         this.DN = DN;
-        this.fqan =  new FQAN(fqan);
+        if(fqan != null) {
+            this.fqan =  new FQAN(fqan);
+        }
         ReadOnly = readOnly;
         this.priority = priority;
         UID = uid;
@@ -35,7 +37,9 @@ public abstract class UserAuthBase extends Object implements java.io.Serializabl
     public UserAuthBase(String user, String fqan, boolean readOnly, int priority, int uid, int gid, String home,
         String root, String fsroot) {
         Username = user;
-        this.fqan =  new FQAN(fqan);
+        if(fqan != null) {
+            this.fqan =  new FQAN(fqan);
+        }
         ReadOnly = readOnly;
         this.priority = priority;
         UID = uid;
@@ -48,7 +52,9 @@ public abstract class UserAuthBase extends Object implements java.io.Serializabl
     public UserAuthBase(String user, String fqan, boolean readOnly, int uid, int gid, String home,
         String root, String fsroot) {
         Username = user;
-        this.fqan =  new FQAN(fqan);
+        if(fqan != null) {
+            this.fqan =  new FQAN(fqan);
+        }
         ReadOnly = readOnly;
         UID = uid;
         GID = gid;
@@ -96,14 +102,17 @@ public abstract class UserAuthBase extends Object implements java.io.Serializabl
     
     
     public String getGroup() {
+        if(fqan == null) return null;
         return  fqan.getGroup();
     }
     
     public String getRole() {
+        if(fqan == null) return null;
         return fqan.getRole();
     }
     
     public String getCapability() {
+        if(fqan == null) return null;
         return fqan.getCapability();
     }
     

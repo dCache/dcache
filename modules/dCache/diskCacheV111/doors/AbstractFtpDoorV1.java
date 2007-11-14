@@ -3074,8 +3074,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
         /*
          *
          */
-        VOInfo voInfo = 
-            new VOInfo(_pwdRecord.getGroup(), _pwdRecord.getRole());
+        
 
         /* Set up an adapter, if needed. Since a pool may reject to be
          * passive, we need to set up an adapter even when we can use
@@ -3133,7 +3132,14 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
             }
         } else {
             _transfer.state = "waiting for pool selection by PoolManager";
-
+            VOInfo voInfo = null;
+            if(_pwdRecord != null ) {
+                String group = _pwdRecord.getGroup();
+                String role = _pwdRecord.getRole();
+                if(group != null && role != null) {
+                    voInfo =new VOInfo(group, role);
+                }
+            }
             GFtpProtocolInfo protocolInfo =
                 new GFtpProtocolInfo("GFtp",
                                      version,
@@ -3169,6 +3175,14 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
          * the protocol info (this behaviour is consistent with dCache
          * 1.7).
          */
+        VOInfo voInfo = null;
+        if(_pwdRecord != null ) {
+            String group = _pwdRecord.getGroup();
+            String role = _pwdRecord.getRole();
+            if(group != null && role != null) {
+                voInfo =new VOInfo(group, role);
+            }
+        }
         GFtpProtocolInfo protocolInfo;
         if (_transfer.adapter != null) {
             protocolInfo =
