@@ -374,24 +374,18 @@ public class PoolManagerV5 extends CellAdapter {
 
     }
 
-    private void runWatchdogSequence(long deathDetectedTimer) {
-        String[] definedPools = _selectionUnit.getDefinedPools(false);
-
-        for (int i = 0, n = definedPools.length; i < n; i++) {
-
-            String poolName = definedPools[i];
-
-            PoolSelectionUnit.SelectionPool pool = _selectionUnit.getPool(poolName);
-            if (pool == null)
-                continue;
-
-            if ((pool.getActive() > deathDetectedTimer) && pool.setSerialId(0L)) {
-
-                _requestContainer.poolStatusChanged(poolName, PoolStatusChangedMessage.DOWN);
-                sendPoolStatusRelay(poolName, PoolStatusChangedMessage.DOWN, null, 666, "DEAD");
-
+    private void runWatchdogSequence(long deathDetectedTimer) 
+    {
+        for (String name : _selectionUnit.getDefinedPools(false)) {
+            PoolSelectionUnit.SelectionPool pool = _selectionUnit.getPool(name);
+            if (pool != null) {
+                if (pool.getActive() > deathDetectedTimer 
+                    && pool.setSerialId(0L)) {
+                    _requestContainer.poolStatusChanged(name, PoolStatusChangedMessage.DOWN);
+                    sendPoolStatusRelay(name, PoolStatusChangedMessage.DOWN,
+                                        null, 666, "DEAD");
+                }
             }
-
         }
     }
 
@@ -500,17 +494,9 @@ public class PoolManagerV5 extends CellAdapter {
         String poolName = poolMessage.getPoolName();
         PoolSelectionUnit.SelectionPool pool =
             _selectionUnit.getPool(poolName, true);
-        if (pool == null) {
-           esay("poolUP : pool not found : " + poolName);
-           return;
-        }
 
         PoolV2Mode newMode = poolMessage.getPoolMode();
         PoolV2Mode oldMode = pool.getPoolMode();
-
-        boolean changed =
-            (newMode.getMode() != oldMode.getMode())
-            || pool.setSerialId(poolMessage.getSerialId());
 
         /* For compatibility with previous versions of dCache, a pool
          * marked DISABLED, but without any other DISABLED_ flags set
@@ -520,6 +506,24 @@ public class PoolManagerV5 extends CellAdapter {
             newMode.getMode() == PoolV2Mode.DISABLED
             || newMode.isDisabled(PoolV2Mode.DISABLED_DEAD)
             || newMode.isDisabled(PoolV2Mode.DISABLED_STRICT);
+
+        /* By convention, the serial number is set to zero when a pool
+         * is disabled. This is used by the watchdog to identify, that
+         * we have already announced that the pool is down.
+         */
+        long serial = disabled ? 0 : poolMessage.getSerialId();
+
+        /* Any change in the kind of operations a pool might be able
+         * to perform has to be propagated to a number of other
+         * components.
+         *
+         * Notice that calling setSerialId has a side-effect, which is
+         * why we call it first.
+         */
+        boolean changed = 
+            pool.setSerialId(serial)
+            || (newMode.getMode() != oldMode.getMode())
+            || !pool.getHsmInstances().equals(poolMessage.getHsmInstances());
 
         pool.setPoolMode(newMode);
         pool.setHsmInstances(poolMessage.getHsmInstances());
@@ -531,15 +535,16 @@ public class PoolManagerV5 extends CellAdapter {
          * mode has changed.
          */
         if (changed) {
-
             if (disabled) {
-                _requestContainer.poolStatusChanged(poolName, PoolStatusChangedMessage.DOWN);
+                _requestContainer.poolStatusChanged(poolName, 
+                                                    PoolStatusChangedMessage.DOWN);
                 sendPoolStatusRelay(poolName, PoolStatusChangedMessage.DOWN,
                                     poolMessage.getPoolMode(),
                                     poolMessage.getCode(),
                                     poolMessage.getMessage());
             } else {
-                _requestContainer.poolStatusChanged(poolName, PoolStatusChangedMessage.UP);
+                _requestContainer.poolStatusChanged(poolName, 
+                                                    PoolStatusChangedMessage.UP);
                 sendPoolStatusRelay(poolName, PoolStatusChangedMessage.RESTART);
             }
         }
