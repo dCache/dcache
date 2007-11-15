@@ -2,7 +2,9 @@ package dmg.cells.services.login ;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -24,7 +26,7 @@ import dmg.util.StreamEngine;
 
 
 /**
-  *  
+  *
   *
   * @author Patrick Fuhrmann
   * @version 0.1, 15 Feb 1998
@@ -55,7 +57,7 @@ public class      StreamObjectCell
   //    <init>( Nucleus nucleus , Args args )     or
   //    <init>( Nucleus nucleus ) or
   //    <init>( Args args ) or
-  //    <init>() 
+  //    <init>()
   //
   private static final Class [] [] _constSignature = {
     { java.lang.String.class , dmg.cells.nucleus.CellNucleus.class , dmg.util.Args.class } ,
@@ -64,98 +66,110 @@ public class      StreamObjectCell
     { dmg.util.Args.class } ,
     {}
   } ;
-  private static final Class [] [] _comSignature = { 
+  private static final Class [] [] _comSignature = {
           { java.lang.Object.class },
           { java.lang.String.class } ,
           { java.lang.String.class , java.lang.Object.class  },
           { java.lang.String.class , java.lang.String.class  }
   } ;
   private Method    []   _commandMethod = new Method[_comSignature.length] ;
-  private Method         _promptMethod  = null ;  
-  private Method         _helloMethod   = null ;  
+  private Method         _promptMethod  = null ;
+  private Method         _helloMethod   = null ;
   public StreamObjectCell( String name , StreamEngine engine , Args args )
          throws Exception       {
-         
+
      super( name , args , false ) ;
-     
+
      _engine = engine ;
      _nucleus = getNucleus() ;
-     setCommandExceptionEnabled( true ) ; 
+     setCommandExceptionEnabled( true ) ;
      try{
          if( args.argc() < 1 )
-           throw new 
+           throw new
            IllegalArgumentException( "Usage : ... <commandClassName>" ) ;
-           
+
          say( "StreamObjectCell "+getCellName()+"; arg0="+args.argv(0) ) ;
          prepareClass( args.argv(0) ) ;
 
          _in = createReader(args.getOpt("inputHandler"));
-         
+
          _user   = engine.getUserName().getName() ;
          _host   = engine.getInetAddress() ;
-        
+
      }catch( Exception e ){
         start() ;
         kill() ;
         throw e ;
-     
+
      }
      _engine  = engine ;
-     
+
      useInterpreter(false) ;
-     
+
      start() ;
-     
-     _workerThread = _nucleus.newThread( this , "Worker") ;         
-     
+
+     _workerThread = _nucleus.newThread( this , "Worker") ;
+
      _workerThread.start() ;
   }
   private InputHandler createReader(String option) throws IOException {
-           
+
       // use classic reader if specified
       if ("classic".equals(option)) {
           ControlBufferedReader classic = new ControlBufferedReader(_engine.getReader()) ;
           classic.onControlC(CONTROL_C_ANSWER);
           return classic;
       }
-      
-      // create Jline reader with file-based history 
+
+      // create Jline reader with file-based history
       ConsoleReader consoleReader = new ConsoleReader( _engine.getInputStream(), _engine.getWriter());
       History history = new History();
       history.setMaxSize(HISTORY_SIZE);
-      try { 
+      try {
           history.load(new FileInputStream(HISTORY_FILE));
-      } catch (IOException e) {
+      } catch (FileNotFoundException e) {
           // ok, no history file found
       }
       consoleReader.setHistory(history);
       consoleReader.setUseHistory(true);
-      
+
       // intercept Control+c
       consoleReader.addTriggeredAction( (char)3 , new ActionListener(){
-          
+
           public void actionPerformed(ActionEvent e) {
              try {
                  Writer writer = (_out == null) ? new PrintWriter( _engine.getWriter() ) : _out;
-                 
+
                  writer.write(CONTROL_C_ANSWER);
                  writer.write( getPrompt() );
                  writer.flush();
-                 
+
              } catch (IOException e1) {
                  say("Cannot react on Control+c : " + e1);
-             }                               
+             }
          }
-          
+
       });
-      
+
     JlineReader jlineReader = new JlineReader(consoleReader, false);
-    jlineReader.setHistoryFile(HISTORY_FILE);
+
+
+    /*
+     * use history file if it exist and we can write into it
+     *  or
+     * do not exist, but we are allowed to create it
+     */
+    File historyFile = new File(HISTORY_FILE);
+    if( (historyFile.exists() && historyFile.canWrite()) ||
+            ( !historyFile.exists() && historyFile.getParentFile().canWrite() )) {
+        jlineReader.setHistoryFile(HISTORY_FILE);
+    }
+
     return jlineReader;
   }
-private void prepareClass( String className ) 
+private void prepareClass( String className )
           throws ClassNotFoundException , NoSuchMethodException  {
-          
+
      NoSuchMethodException nsme = null ;
      _commandClass = Class.forName( className ) ;
      say( "Using class : "+_commandClass ) ;
@@ -178,24 +192,24 @@ private void prepareClass( String className )
      }
      if( nsme != null )throw nsme ;
      say( "Using constructor : "+_commandConst ) ;
-     
+
      int validMethods = 0 ;
      for( int i= 0 ; i < _comSignature.length ; i++ ){
         try{
-           _commandMethod[i] = _commandClass.getMethod( 
-                               "executeCommand" , 
+           _commandMethod[i] = _commandClass.getMethod(
+                               "executeCommand" ,
                                _comSignature[i] ) ;
            validMethods ++ ;
-        }catch(Exception e){ 
+        }catch(Exception e){
            _commandMethod[i]= null ;
            continue ;
         }
         say( "Using method ["+i+"] "+_commandMethod[i] ) ;
-     }  
+     }
      if( validMethods == 0 )
-       throw new 
+       throw new
        IllegalArgumentException( "no valid executeCommand found" ) ;
-     
+
      try{
         _promptMethod = _commandClass.getMethod(
                            "getPrompt" ,
@@ -204,7 +218,7 @@ private void prepareClass( String className )
         _promptMethod = null ;
      }
      if( _promptMethod != null )
-        say( "Using promptMethod : "+_promptMethod ) ;    
+        say( "Using promptMethod : "+_promptMethod ) ;
      try{
         _helloMethod = _commandClass.getMethod(
                            "getHello" ,
@@ -213,14 +227,14 @@ private void prepareClass( String className )
         _helloMethod = null ;
      }
      if( _helloMethod != null )
-        say( "Using helloMethod : "+_helloMethod ) ;    
+        say( "Using helloMethod : "+_helloMethod ) ;
      return ;
   }
   private String getPrompt(){
      if( _promptMethod == null )return "" ;
      try{
-        String s = (String)_promptMethod.invoke( 
-                               _commandObject , 
+        String s = (String)_promptMethod.invoke(
+                               _commandObject ,
                                new Object[0] ) ;
 
         return s == null ? "" : s ;
@@ -231,8 +245,8 @@ private void prepareClass( String className )
   private String getHello(){
      if( _helloMethod == null )return null ;
      try{
-        String s = (String)_helloMethod.invoke( 
-                               _commandObject , 
+        String s = (String)_helloMethod.invoke(
+                               _commandObject ,
                                new Object[0] ) ;
 
         return s == null ? "" : s ;
@@ -267,16 +281,16 @@ private void prepareClass( String className )
         case 4 :
            args = new Object[0] ;
            break ;
-     
+
      }
      _commandObject = _commandConst.newInstance( args ) ;
   }
   public void run(){
-  
-   
+
+
      try{
         runConstructor() ;
-        
+
         String hello = getHello() ;
         if( hello != null ){
            _out = new PrintWriter( _engine.getWriter() ) ;
@@ -292,15 +306,15 @@ private void prepareClass( String className )
            _out.flush() ;
            _objOut = new ObjectOutputStream( _engine.getOutputStream() ) ;
            _objIn  = new ObjectInputStream( _engine.getInputStream() ) ;
-        
+
            runBinaryMode() ;
         }else{
-        
+
            if( _out == null )_out = new PrintWriter( _engine.getWriter() ) ;
            runAsciiMode( x ) ;
-        
+
         }
-        
+
      }catch( Exception ee ){
         say( "Worker loop interrupted : "+ee ) ;
      }
@@ -333,7 +347,7 @@ private void prepareClass( String className )
                   result = _commandMethod[1].invoke( _commandObject , array ) ;
 
               }else
-                  throw new 
+                  throw new
                   Exception( "PANIC : not found : executeCommand(String or Object)" ) ;
            }else{
               Object [] array  = new Object[2] ;
@@ -348,7 +362,7 @@ private void prepareClass( String className )
                   array[1] = array[1].toString() ;
                   result = _commandMethod[3].invoke( _commandObject , array ) ;
               }else
-                  throw new 
+                  throw new
                   Exception( "PANIC : not found : "+
                              "executeCommand(String/String or Object/String)" ) ;
            }
@@ -372,7 +386,7 @@ private void prepareClass( String className )
       }
   }
   private void runBinaryMode() throws Exception {
-  
+
      Object obj = null ;
      while( ( obj = _objIn.readObject() ) != null ){
         if( obj instanceof DomainObjectFrame ){
@@ -380,7 +394,7 @@ private void prepareClass( String className )
         }else
              esay( "Won't accept non DomainObjectFrame : "+obj.getClass() ) ;
      }
-     
+
   }
   private void runAsciiMode( String str ) throws Exception {
       String x = null ;
@@ -390,21 +404,21 @@ private void prepareClass( String className )
       Object result = null ;
       boolean done = false ;
       while( true ){
-         if( str != null ){ 
-            x = str ; 
+         if( str != null ){
+            x = str ;
             str = null ;
          }else{
             x = _in.readLine() ;
          }
          if( x == null )
-            throw new 
+            throw new
             CommandExitException("EOF") ;
-            
+
          obj[0] = x ;
          try{
             result = com.invoke( _commandObject , obj ) ;
          }catch( InvocationTargetException ite ){
-            result = ite.getTargetException()  ;         
+            result = ite.getTargetException()  ;
             done   = result instanceof CommandExitException ;
          }catch(Exception e ){
             result = e ;
@@ -415,9 +429,9 @@ private void prepareClass( String className )
                _out.print( result.toString() ) ;
                if( resultString.charAt(resultString.length()-1)!='\n' )
                      _out.println("");
-//               if( result instanceof Throwable )_out.println("");  
+//               if( result instanceof Throwable )_out.println("");
             }
-         }   
+         }
          _out.print( getPrompt() ) ;
          _out.flush() ;
          if( done )throw (CommandExitException)result ;
@@ -430,11 +444,11 @@ private void prepareClass( String className )
   }
   public void cleanUp(){
      _workerThread.interrupt() ;
-     
+
      try{
-       
+
         _in.close();
-        
+
         _engine.getInputStream().close();
         try {
            if (!_engine.getSocket().isClosed()) {
