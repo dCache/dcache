@@ -312,9 +312,9 @@
 
   </target>
 
-  <target name="dcap.bin" depends="prepare" description="Compile dcap package.">
+  <target name="dcap32.bin" depends="prepare" description="Compile dcap package.">
 
-    <ant dir="modules-builds" antfile="dcap-build.xml" target="dcap.compile" inheritAll="false">
+    <ant dir="modules-builds" antfile="dcap-build.xml" target="dcap32.compile" inheritAll="false">
       <property name="libDir" location="${libDir}" />
       <property name="buildDir" location="${buildDir}/dcap" />
       <property name="distDir" location="${binDir}/dcap" /> <!-- where to install -->
@@ -325,6 +325,18 @@
 
   </target>
 
+    <target name="dcap64.bin" depends="prepare" description="Compile dcap package.">
+
+      <ant dir="modules-builds" antfile="dcap-build.xml" target="dcap64.compile" inheritAll="false">
+        <property name="libDir" location="${libDir}" />
+        <property name="buildDir" location="${buildDir}/dcap" />
+        <property name="distDir" location="${binDir}/dcap" /> <!-- where to install -->
+        <property name="sourceDir" location="${dCacheBox-module}/dcap" />
+        <property name="buildTop" location="${buildTop}" />
+        <property name="release.name" value="${release.name}" />
+      </ant>
+
+    </target>
 
   <!--
           javatunnel

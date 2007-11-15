@@ -70,47 +70,51 @@
 
   <!-- globus C libs for gsi tunnel -->
 
-  <property name="globus.libDir" value="${libDir}/globus" />
-  <property name="globus.tarName" value="${globus.libDir}/globus-24-dcache-devil1.tgz" />               <!-- A pattern uniquely identifying one tar file -->
-  <property name="globus.untaredTo" value="${globus.libDir}/globus-24" />              <!-- This is the dir the tar will create -->
+    <property name="globus.libDir" value="${libDir}/globus" />
 
-  <uptodate property="lib.globus.uptodate" targetfile="${globus.untaredTo}" >
-    <srcfiles dir="${globus.libDir}" includes="${globus.tarName}" />
-  </uptodate>
+    <!-- TODO: This property has to depend on OS and CPU -->
+    <property name="globus.tar32Name" value="${globus.libDir}/globus-4.0.3-Linux-2.6-i686.tgz" />       <!-- A pattern uniquely identifying one tar file -->
+    <property name="globus.tar64Name" value="${globus.libDir}/globus-4.0.3-Linux-2.6-x86_64.tgz" />       <!-- A pattern uniquely identifying one tar file -->
+    <property name="globus.untaredTo" value="${globus.libDir}/globus-4.0.3" />                        <!-- This is the dir the tar will create         -->
 
-  <target name="lib.globus.untar" unless="lib.globus.uptodate" >
+    <uptodate property="lib.globus32.uptodate" targetfile="${globus.untaredTo}" >
+      <srcfiles dir="${globus.libDir}" includes="${globus.tar32Name}" />
+    </uptodate>
 
-    <echo>Unpacking to ${globus.untaredTo}</echo>
-  	<untar src="${globus.tarName}" dest="${globus.libDir}" compression="gzip" />
+    <uptodate property="lib.globus64.uptodate" targetfile="${globus.untaredTo}" >
+      <srcfiles dir="${globus.libDir}" includes="${globus.tar64Name}" />
+    </uptodate>
 
-    <!--
-    <echo>Unpacking to ${globus.libDir}/globus-all-sdk</echo>
+    <target name="lib.globus32.untar" unless="lib.globus32.uptodate" >
 
-    <mkdir dir="${globus.libDir}/globus-all-sdk" />
-    <apply dir="${globus.libDir}/globus-all-sdk" executable="tar" verbose="true" >
-      <arg value="xzf" />
-      <fileset dir="${globus.libDir}" >
-	<filename name="**/globus-all-sdk*.tar.gz"/>
-      </fileset>
-    </apply>
+        <echo>Unpacking to ${globus.untaredTo}</echo>
+        <untar src="${globus.tar32Name}" dest="${globus.libDir}" compression="gzip" />
 
-    <echo>Unpacking to ${globus.libDir}/globus-gsi</echo>
+    </target>
 
-    <mkdir dir="${globus.libDir}/globus-gsi" />
-    <apply dir="${globus.libDir}/globus-gsi" executable="tar" verbose="true" parallel="false">
-      <arg value="xzf" />
-      <fileset dir="${globus.libDir}/globus-all-sdk" >
-	<or>
-	  <filename name="*config*gcc32dbg-dev.tar.gz" />
-	  <filename name="*gsi*gcc32dbg-dev.tar.gz" />
-	  <filename name="*openssl*gcc32dbg-dev.tar.gz" />
-	  <filename name="*common*gcc32dbg-dev.tar.gz" />
-	</or>
-      </fileset>
-    </apply>
-    -->
+    <target name="lib.globus64.untar" unless="lib.globus64.uptodate" >
 
-  </target>
+        <echo>Unpacking to ${globus.untaredTo}</echo>
+        <untar src="${globus.tar64Name}" dest="${globus.libDir}" compression="gzip" />
+
+    </target>
+
+    <!-- heimdal C libs for gss tunnel -->
+
+    <property name="heimdal.libDir" value="${libDir}/heimdal" />
+    <property name="heimdal.tarName" value="${heimdal.libDir}/heimdal-20060830-devel.tgz" />   <!-- A pattern uniquely identifying one tar file -->
+    <property name="heimdal.untaredTo" value="${heimdal.libDir}/heimdal" />                    <!-- This is the dir the tar will create -->
+
+    <uptodate property="lib.heimdal.uptodate" targetfile="${heimdal.untaredTo}" >
+      <srcfiles dir="${heimdal.libDir}" includes="${heimdal.tarName}" />
+    </uptodate>
+
+    <target name="lib.heimdal.untar" unless="lib.heimdal.uptodate" >
+
+      <echo>Unpacking to ${heimdal.untaredTo}</echo>
+      <untar src="${heimdal.tarName}" dest="${heimdal.libDir}" compression="gzip" />
+
+    </target>
 
 
   <!--
@@ -186,7 +190,7 @@
 
   <!-- Compile -->
 
-  <target name="dcap.compile" depends="lib.globus.untar" description="Compile dCap client libraries" >
+  <target name="dcap32.compile" depends="lib.globus32.untar,lib.heimdal.untar" description="Compile dCap client libraries" >
 
 	<mkdir dir="${buildDir}" />
 
@@ -206,15 +210,49 @@ make -f Makefile.gsi clean</echo>
     </exec>
 
     <echo>cd security_plugins/gssapi
-make -f Makefile.gsi GSI=${globus.libDir}/globus-24</echo>
+make -f Makefile.gsi GSI=${globus.untaredTo}</echo>
     <exec executable="make" dir="${sourceDir}/security_plugins/gssapi" failonerror="true" output="${buildDir}/dcap.log" append="true" >
       <arg value="-f" />
       <arg value="Makefile.gsi" />
-      <arg value="GSI=${globus.libDir}/globus-24" />
+      <arg value="GSI=${globus.untaredTo}" />
+
     </exec>
 
     <copy file="${sourceDir}/security_plugins/gssapi/libgsiTunnel.so" todir="${distDir}/lib" />
 
   </target>
+
+
+    <target name="dcap64.compile" depends="lib.globus64.untar" description="Compile dCap client libraries" >
+
+      <mkdir dir="${buildDir}" />
+
+      <!-- make install == make cleanall; make all; cp output to BIN_PATH -->
+      <echo>make install BIN_PATH=${distDir}</echo>
+      <exec executable="make" dir="${sourceDir}" failonerror="true" output="${buildDir}/dcap.log" append="true" >
+        <arg value="install" />
+        <arg value="BIN_PATH=${distDir}" />
+      </exec>
+
+      <echo>cd security_plugins/gssapi
+  make -f Makefile.gsi clean</echo>
+      <exec executable="make" dir="${sourceDir}/security_plugins/gssapi" failonerror="true" output="${buildDir}/dcap.log" append="true">
+        <arg value="-f" />
+        <arg value="Makefile.gsi" />
+        <arg value="clean" />
+      </exec>
+
+      <echo>cd security_plugins/gssapi
+  make -f Makefile.gsi GSI=${globus.libDir}/globus-24</echo>
+      <exec executable="make" dir="${sourceDir}/security_plugins/gssapi" failonerror="true" output="${buildDir}/dcap.log" append="true" >
+        <arg value="-f" />
+        <arg value="Makefile.gsi" />
+        <arg value="GSI=${globus.untaredTo}" />
+      </exec>
+
+      <copy file="${sourceDir}/security_plugins/gssapi/libgsiTunnel.so" todir="${distDir}/lib" />
+
+    </target>
+
 
 </project>

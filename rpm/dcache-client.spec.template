@@ -6,7 +6,7 @@ Vendor: dCache.ORG
 Name: dcache-client
 Version: @Version@
 Release: @Release@
-BuildArch: noarch
+BuildArch: @Arch@
 Prefix: /opt/d-cache
 #BuildRoot: %{_topdir}/BUILDROOT/%{name}-%{version}
 #Source0: dcache-client.tar

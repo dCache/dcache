@@ -193,7 +193,7 @@
 
 
 
-    <target name="dcapclient.rpminstall" depends="dcap.bin,srmclient.bin">
+    <target name="dcapclient32.rpminstall" depends="dcap32.bin,srmclient.bin">
 
         <!-- DCAP -->
         <mkdir dir="${client.rpmDcacheDir}/dcap" />
@@ -202,6 +202,17 @@
         </copy>
 
     </target>
+
+    <target name="dcapclient64.rpminstall" depends="dcap64.bin,srmclient.bin">
+
+        <!-- DCAP -->
+        <mkdir dir="${client.rpmDcacheDir}/dcap" />
+        <copy todir="${client.rpmDcacheDir}/dcap">
+            <fileset dir="${binDir}/dcap" />
+        </copy>
+
+    </target>
+
 
     <target name="srmclient.rpminstall" depends="srmclient.bin">
 
@@ -215,7 +226,7 @@
 
     <!-- Dcap + SRM -->
 
-    <target name="client.rpm" depends="dcapclient.rpminstall,srmclient.rpminstall" description="Build the dcache-client-xxx.rpm">
+    <target name="client32.rpm" depends="dcapclient32.rpminstall,srmclient.rpminstall" description="Build the dcache-client-xxx.rpm">
 
 
         <!-- Create config files for RPM from Templates -->
@@ -239,6 +250,8 @@
 
                 <filter token="Version" value="${client.version}" />
                 <filter token="Release" value="${build.minor.number}" />
+                <filter token="Arch" value="i586" />
+
             </filterset>
         </copy>
 
@@ -259,6 +272,54 @@
 
 
     </target>
+
+
+    <target name="client64.rpm" depends="dcapclient64.rpminstall,srmclient.rpminstall" description="Build the dcache-client-xxx.rpm">
+
+
+        <!-- Create config files for RPM from Templates -->
+
+        <copy todir="${client.rpmTopDir}" overwrite="true">
+            <fileset dir="${rpmTemplateDir}">
+                <or>
+                    <filename name="rpm*.template" />
+                    <filename name="dcache-client.spec.template" />
+                </or>
+            </fileset>
+            <mapper type="glob" from="*.template" to="*" />
+            <filterset>
+                <filter token="rpmMacrosFile" value="${client.rpmMacrosFile}" />
+                <!-- This is only used in the rpmrc file -->
+
+                <filter token="rpmRpmDir" value="${rpmRpmDir}" />
+                <!-- These are used in the rpmmacros file -->
+                <filter token="rpmSrpmDir" value="${rpmSrpmDir}" />
+                <filter token="rpmTopDir" value="${client.rpmTopDir}" />
+
+                <filter token="Version" value="${client.version}" />
+                <filter token="Release" value="${build.minor.number}" />
+                <filter token="Arch" value="x86_64" />
+            </filterset>
+        </copy>
+
+        <!-- Call RPM. The rpm task is not sufficient since it doesnt have the rcfile option -->
+
+        <exec dir="${client.rpmTopDir}" executable="rpmbuild" failonerror="true">
+            <!-- output="${buildDir}/rpm.log" -->
+            <arg value="--buildroot" />
+            <arg file="${client.rpmBuildrootDir}" />
+            <arg value="--rcfile" />
+            <arg file="/usr/lib/rpm/rpmrc:${client.rpmRcFile}" />
+            <!-- some documentation claims that /usr/lib/rpm/rpmrc
+                                                        will always be parsed. But it currently isnt if not set here -->
+            <arg value="-bb" />
+            <arg file="${client.rpmSpecFile}" />
+        </exec>
+
+
+
+    </target>
+
 
     <!-- SRM only -->
 
@@ -304,10 +365,6 @@
         </exec>
 
     </target>
-
-
-    <!-- meta target -->
-    <target name="all" depends="server.rpm,client.rpm" description="build server and client RPMs" />
 
     <!--
           Find Bugs
