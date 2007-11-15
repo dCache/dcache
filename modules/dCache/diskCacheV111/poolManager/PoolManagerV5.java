@@ -1,4 +1,4 @@
-// $Id: PoolManagerV5.java,v 1.48 2007-10-10 08:05:34 tigran Exp $ 
+// $Id: PoolManagerV5.java,v 1.48 2007-10-10 08:05:34 tigran Exp $
 
 package diskCacheV111.poolManager ;
 
@@ -15,9 +15,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
-import java.util.Set;
 import java.util.StringTokenizer;
-import  java.net.URI;
 
 import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellInfo;
@@ -53,35 +51,35 @@ import diskCacheV111.vehicles.QuotaMgrCheckQuotaMessage;
 import diskCacheV111.vehicles.StorageInfo;
 
 public class PoolManagerV5 extends CellAdapter {
-    
+
     private final String      _cellName;
     private final Args        _args    ;
     private final CellNucleus _nucleus ;
-    
+
     private int  _writeThreads     = 0 ;
     private int  _readThreads      = 0 ;
 
     private int _counterPoolUp         = 0 ;
     private int _counterSelectWritePool= 0 ;
     private int _counterSelectReadPool = 0 ;
-    
+
     private String  _pnfsManagerName   = "PnfsManager";
     private String  _selectionUnitName = "diskCacheV111.poolManager.PoolSelectionUnitV2" ;
     private String  _setupFileName     = null ;
     private Map _readHandlerList   = new HashMap() ;
     private final Object  _readHandlerLock   = new Object() ;
-    
+
     private PnfsHandler       _pnfsHandler   = null ;
     private PoolSelectionUnit _selectionUnit = null ;
     private PoolMonitorV5     _poolMonitor   = null ;
-    
+
     private long _interval         = 15 * 1000;
     private long _pnfsTimeout      = 15 * 1000;
     private long _readPoolTimeout  = 15 * 1000;
     private long _poolFetchTimeout = 5 * 24 * 3600 * 1000;
     private long _writePoolTimeout = 15 * 1000;
     private long _poolTimeout      = 15 * 1000;
-    
+
     private CostModule   _costModule   = null ;
     private PoolOperator _poolOperator = null ;
     private CellPath     _poolStatusRelayPath = null ;
@@ -89,43 +87,43 @@ public class PoolManagerV5 extends CellAdapter {
     private double _performanceCostFactor = 1.0 ;
 
     private final Object _setupLock             = new Object() ;
-    
+
     private RequestContainerV5 _requestContainer = null ;
     private WatchdogThread     _watchdog         = null ;
     private PartitionManager   _partitionManager = null ;
-    
+
     private boolean _sendCostInfo  = false ;                   //VP
     private boolean _quotasEnabled = false ;
     private String  _quotaManager  = "QuotaManager" ;
 
     public PoolManagerV5( String cellName , String args ) throws Exception {
 	super( cellName , PoolManagerV5.class.getName(), args , false );
-        
+
 	_cellName = cellName;
-	_args     = getArgs();	
+	_args     = getArgs();
 	_nucleus  = getNucleus();
 
         useInterpreter( true );
-	
+
         try{
-	
+
            if( _args.argc() == 0 )
               throw new
               IllegalArgumentException( "Usage : ... <setupFile>" ) ;
-              
+
            _setupFileName = _args.argv(0) ;
            say("Using setupfile : "+_setupFileName);
 
            String tmp         = _args.getOpt( "selectionUnit" ) ;
-           _selectionUnitName = tmp == null ? _selectionUnitName : tmp ;           
+           _selectionUnitName = tmp == null ? _selectionUnitName : tmp ;
            _selectionUnit     = (PoolSelectionUnit)Class.forName( _selectionUnitName ).newInstance() ;
-              
+
            addCommandListener( _selectionUnit ) ;
-               
+
            say("Starting Cost module");
            _costModule = _poolOperator = new PoolOperator(this) ;
            say("Cost module sucessfully started");
-             
+
            say("Cost module : "+_costModule);
            addCommandListener( _costModule );
 
@@ -135,25 +133,25 @@ public class PoolManagerV5 extends CellAdapter {
 
            String poolStatus = _args.getOpt("poolStatusRelay") ;
            if( poolStatus != null )_poolStatusRelayPath = new CellPath(poolStatus) ;
-            
+
            _pnfsHandler      = new PnfsHandler( this , new CellPath(_pnfsManagerName) ) ;
 
            _poolMonitor      = new PoolMonitorV5( this , _selectionUnit , _pnfsHandler , _costModule , _partitionManager ) ;
-           
+
            _requestContainer = new RequestContainerV5( this , _selectionUnit , _poolMonitor , _partitionManager ) ;
            addCommandListener( _requestContainer ) ;
-           
+
            //
            // Quota settings
            //
            _quotasEnabled = false ;
            _quotaManager  = "QuotaManager" ;
-           if( ( tmp = _args.getOpt("quotaManager") ) != null ){           
+           if( ( tmp = _args.getOpt("quotaManager") ) != null ){
                if( tmp.length() == 0 ){
                    _quotasEnabled = true ;
                }else{
                    if( tmp.equals("none" ) ){
-                      _quotasEnabled = false ;                
+                      _quotasEnabled = false ;
                    }else{
                       _quotasEnabled = true ;
                       _quotaManager  = tmp ;
@@ -161,7 +159,7 @@ public class PoolManagerV5 extends CellAdapter {
                }
            }
            if( _quotasEnabled ){
-              say("Quotas enabled ; QuotaManager = <"+_quotaManager+">");  
+              say("Quotas enabled ; QuotaManager = <"+_quotaManager+">");
            }else{
               say("Quotas disabled");
            }
@@ -172,12 +170,12 @@ public class PoolManagerV5 extends CellAdapter {
            if( sendCostString != null ) _sendCostInfo = sendCostString.equals("yes") ;  //VP
            say( "send CostInfoMessages : "+(_sendCostInfo?"yes":"no") ) ;               //VP
            _requestContainer.setSendCostInfo(_sendCostInfo) ;                           //VP
-           
+
 
            synchronized( _setupLock ){
               runSetupFile() ;
            }
-            
+
 	}catch(Exception ee ){
            ee.printStackTrace();
            start() ;
@@ -185,18 +183,18 @@ public class PoolManagerV5 extends CellAdapter {
            esay(ee);
            throw ee ;
         }
-	
+
         getNucleus().export();
-        
+
 	new MessageTimeoutThread();
-        
+
         String watchdogParam = _args.getOpt("watchdog") ;
         if( watchdogParam != null ){
             _watchdog = watchdogParam.length() > 0 ? new WatchdogThread( watchdogParam ) :  new WatchdogThread() ;
             say("Watchdog : "+_watchdog);
         }
 	start();
-    } 
+    }
     private void runSetupFile() throws Exception {
       runSetupFile(null);
     }
@@ -205,11 +203,11 @@ public class PoolManagerV5 extends CellAdapter {
        if( ! setupFile.exists() )
           throw new
           IllegalArgumentException( "Setup File not found : "+_setupFileName ) ;
-          
-       BufferedReader reader = 
+
+       BufferedReader reader =
           new BufferedReader( new FileReader( setupFile ) ) ;
        try{
-          
+
 
           String line = null ;
           while( ( line = reader.readLine() ) != null ){
@@ -231,17 +229,17 @@ public class PoolManagerV5 extends CellAdapter {
        }finally{
           try{ reader.close() ; }catch(Exception ee){}
        }
-       
+
     }
     public CellVersion getCellVersion(){ return new CellVersion(diskCacheV111.util.Version.getVersion(),"$Revision: 1.48 $" ); }
     private void dumpSetup() throws Exception {
-      
+
        File setupFile = new File( _setupFileName ).getCanonicalFile() ;
        File tmpFile   = new File( setupFile.getParent() , "."+setupFile.getName() ) ;
-         
+
        PrintWriter writer =
           new PrintWriter( new FileWriter( tmpFile ) ) ;
-          
+
        try{
           writer.print( "#\n# Setup of " ) ;
           writer.print(_nucleus.getCellName() ) ;
@@ -253,15 +251,15 @@ public class PoolManagerV5 extends CellAdapter {
           writer.print("set timeout pool ");
           writer.println(""+(_poolMonitor.getPoolTimeout()/1000L));
           writer.println( "#" ) ;
-          
+
           StringBuffer sb = new StringBuffer(16*1024) ;
-          
+
           _selectionUnit.dumpSetup(sb) ;
           _requestContainer.dumpSetup(sb);
           _partitionManager.dumpSetup(sb);
-          
+
           writer.println(sb.toString());
-          
+
        }catch(Exception ee){
           tmpFile.delete() ;
           throw ee ;
@@ -269,140 +267,153 @@ public class PoolManagerV5 extends CellAdapter {
           try{ writer.close() ; }catch(Exception eee ){}
        }
        if( ! tmpFile.renameTo( setupFile ) ){
-       
+
           tmpFile.delete() ;
-          
+
           throw new
           IllegalArgumentException( "Rename failed : "+_setupFileName ) ;
-           
+
        }
        return ;
     }
     private class WatchdogThread implements Runnable {
-        private long _deathDetected = 10L * 60L * 1000L ;
-        private long _sleepTimer    = 1L  * 60L * 1000L ; 
-        private long _watchdogSequenceCounter = 0L ;
-        
-	public WatchdogThread(  ){
-            _nucleus.newThread( this , "watchdog" ).start() ;
-            say("WatchdogThread initialized with : "+this);
+        private long _deathDetected = 10L * 60L * 1000L; // 10 minutes
+        private long _sleepTimer = 1L * 60L * 1000L; // 1 minute
+        private long _watchdogSequenceCounter = 0L;
+
+        public WatchdogThread() {
+            _nucleus.newThread(this, "watchdog").start();
+            say("WatchdogThread initialized with : " + this);
         }
-	public WatchdogThread( String parameter ){
+
+        public WatchdogThread(String parameter) {
             //
-            //    [<deathDetection>]:[<sleeper>]
+            // [<deathDetection>]:[<sleeper>]
             //
-            long deathDetected = 0 ;
-            long sleeping      = 0 ;
-            try{
-                StringTokenizer st = new StringTokenizer( parameter , ":");
-                String tmp = null  ;
-                if( st.hasMoreTokens() ){
-                    tmp = st.nextToken() ;
-                    if(tmp.length() > 0 )deathDetected = Long.parseLong( tmp );
+            long deathDetected = 0;
+            long sleeping = 0;
+            try {
+                StringTokenizer st = new StringTokenizer(parameter, ":");
+                String tmp = null;
+                if (st.hasMoreTokens()) {
+                    tmp = st.nextToken();
+                    if (tmp.length() > 0)
+                        deathDetected = Long.parseLong(tmp);
                 }
-                if( st.hasMoreTokens() ){
-                    tmp = st.nextToken() ;
-                    if(tmp.length() > 0 )sleeping = Long.parseLong( tmp );
+                if (st.hasMoreTokens()) {
+                    tmp = st.nextToken();
+                    if (tmp.length() > 0)
+                        sleeping = Long.parseLong(tmp);
                 }
 
-                if( ( deathDetected < 10 ) || ( sleeping < 10 ) )
-                     throw new
-                     IllegalArgumentException("Timers to small : "+parameter);
-                
-                if( deathDetected > 0L )_deathDetected = deathDetected * 1000L ;
-                if( sleeping > 0L )_sleepTimer = sleeping * 1000L ;
-                
-            }catch(Exception ee ){
-                esay("WatchdogThread : illegal arguments ["+parameter+"] (using defaults) "+ee.getMessage());
+                if ((deathDetected < 10) || (sleeping < 10))
+                    throw new IllegalArgumentException("Timers to small : " + parameter);
+
+                if (deathDetected > 0L)
+                    _deathDetected = deathDetected * 1000L;
+                if (sleeping > 0L)
+                    _sleepTimer = sleeping * 1000L;
+
+            } catch (Exception ee) {
+                esay("WatchdogThread : illegal arguments [" + parameter + "] (using defaults) " + ee.getMessage());
             }
-            _nucleus.newThread( this , "watchdog" ).start() ;
-            say("WatchdogThread initialized with : "+this);
+            _nucleus.newThread(this, "watchdog").start();
+            say("WatchdogThread initialized with : " + this);
         }
-	public void run() {
-            say( "watchdog thread activated" ) ;
-	    while (true){
-		try {
-                   Thread.sleep(_sleepTimer);
-		} catch (InterruptedException e){
-                    say( "watchdog thread interrupted" ) ;
-                    break ;
-		}
-	        runWatchdogSequence(_deathDetected);
+
+        public void run() {
+            say("watchdog thread activated");
+            while (true) {
+                try {
+                    Thread.sleep(_sleepTimer);
+                } catch (InterruptedException e) {
+                    say("watchdog thread interrupted");
+                    break;
+                }
+                runWatchdogSequence(_deathDetected);
                 _watchdogSequenceCounter++;
-	    }
-            say( "watchdog finished" ) ;
-	}
-        public String toString(){
-            return "DeathDetection="+(_deathDetected/1000L)+
-                    ";Sleep="+(_sleepTimer/1000L)+
-                    ";Counter="+_watchdogSequenceCounter+";";
+            }
+            say("watchdog finished");
+        }
+
+        public String toString() {
+            return "DeathDetection=" + (_deathDetected / 1000L) + ";Sleep="
+                    + (_sleepTimer / 1000L) + ";Counter="
+                    + _watchdogSequenceCounter + ";";
         }
     }
-    private void handlePoolMode( PoolManagerPoolModeMessage msg , CellMessage message ){
-    
-        PoolSelectionUnit.SelectionPool pool = _selectionUnit.getPool( msg.getPoolName() );
-        if( pool == null ){
-           msg.setFailed( 563 , "Pool not found : "+msg.getPoolName() ) ;
-        }else if( msg.getPoolMode() == PoolManagerPoolModeMessage.UNDEFINED ){
-          //
-          // get pool mode
-          //
-          msg.setPoolMode( PoolManagerPoolModeMessage.READ |
-                           ( pool.isReadOnly() ? 0 : PoolManagerPoolModeMessage.WRITE ) ) ;
-        }else{
-          // 
-          // set pool mode
-          //
-          pool.setReadOnly( ( msg.getPoolMode() & PoolManagerPoolModeMessage.WRITE ) == 0 ) ;
-       }
-   
-        if( ! msg.getReplyRequired() )return ;
-        try{
-            say("Sending reply "+message);
+
+    private void handlePoolMode(PoolManagerPoolModeMessage msg,
+            CellMessage message) {
+
+        PoolSelectionUnit.SelectionPool pool = _selectionUnit.getPool(msg
+                .getPoolName());
+        if (pool == null) {
+            msg.setFailed(563, "Pool not found : " + msg.getPoolName());
+        } else if (msg.getPoolMode() == PoolManagerPoolModeMessage.UNDEFINED) {
+            //
+            // get pool mode
+            //
+            msg.setPoolMode(PoolManagerPoolModeMessage.READ | (pool.isReadOnly() ? 0 : PoolManagerPoolModeMessage.WRITE));
+        } else {
+            //
+            // set pool mode
+            //
+            pool.setReadOnly((msg.getPoolMode() & PoolManagerPoolModeMessage.WRITE) == 0);
+        }
+
+        if (!msg.getReplyRequired())
+            return;
+        try {
+            say("Sending reply " + message);
             message.revertDirection();
             sendMessage(message);
-        }catch (Exception e){
-            esay("Can't reply message : "+e);
+        } catch (Exception e) {
+            esay("Can't reply message : " + e);
         }
 
     }
-    private void runWatchdogSequence( long deathDetectedTimer ) {
-        String [] definedPools = _selectionUnit.getDefinedPools(false);
 
-        for( int i = 0 , n = definedPools.length ; i < n ; i++ ){
+    private void runWatchdogSequence(long deathDetectedTimer) {
+        String[] definedPools = _selectionUnit.getDefinedPools(false);
 
-            String poolName = definedPools[i] ;
+        for (int i = 0, n = definedPools.length; i < n; i++) {
 
-            PoolSelectionUnit.SelectionPool pool = _selectionUnit.getPool( poolName );
-            if( pool == null )continue ;
+            String poolName = definedPools[i];
 
-            if( ( pool.getActive() > deathDetectedTimer ) && pool.setSerialId( 0L )  ){
-                      
-                 _requestContainer.poolStatusChanged(poolName);
-                 sendPoolStatusRelay( poolName , PoolStatusChangedMessage.DOWN , null , 666 , "DEAD" ) ;
+            PoolSelectionUnit.SelectionPool pool = _selectionUnit.getPool(poolName);
+            if (pool == null)
+                continue;
+
+            if ((pool.getActive() > deathDetectedTimer) && pool.setSerialId(0L)) {
+
+                _requestContainer.poolStatusChanged(poolName, PoolStatusChangedMessage.DOWN);
+                sendPoolStatusRelay(poolName, PoolStatusChangedMessage.DOWN, null, 666, "DEAD");
 
             }
 
         }
     }
+
     private class MessageTimeoutThread implements Runnable {
-	public MessageTimeoutThread(){
-            _nucleus.newThread( this , "messageTimeout" ).start() ;
+        public MessageTimeoutThread() {
+            _nucleus.newThread(this, "messageTimeout").start();
         }
-	public void run() {
-	    while (true){
-		_nucleus.updateWaitQueue();
-		try {
-		    Thread.sleep(_interval);
-		} catch (InterruptedException e){
-                    say( "Message timeout thread interrupted" ) ;
-                    break ;
-		}
-	    }
-            say( "Message timeoutthread finished" ) ;
-	}
+
+        public void run() {
+            while (true) {
+                _nucleus.updateWaitQueue();
+                try {
+                    Thread.sleep(_interval);
+                } catch (InterruptedException e) {
+                    say("Message timeout thread interrupted");
+                    break;
+                }
+            }
+            say("Message timeoutthread finished");
+        }
     }
-    
+
     public void getInfo( PrintWriter pw ){
 	pw.println("PoolManager V [$Id: PoolManagerV5.java,v 1.48 2007-10-10 08:05:34 tigran Exp $]");
         pw.println(" SelectionUnit : "+_selectionUnit.getVersion() ) ;
@@ -469,9 +480,9 @@ public class PoolManagerV5 extends CellAdapter {
        String sizeString = args.getOpt("size") ;
        long size = sizeString == null ? 50000000L : Long.parseLong( sizeString ) ;
        String linkName = args.argv(0) ;
-       
+
        List list = _poolMonitor.queryPoolsByLinkName( linkName , size ) ;
-       
+
        StringBuffer sb = new StringBuffer() ;
        for( Iterator i = list.iterator() ; i.hasNext() ; ){
           sb.append( i.next().toString() ).append("\n");
@@ -481,13 +492,13 @@ public class PoolManagerV5 extends CellAdapter {
     public void say( String str ){ pin( str ) ; super.say( str ) ; }
     public void esay( String str ){ pin( str ) ; super.esay( str ) ; }
     public void esay( Throwable t ){ super.esay( t ) ; }
-    
-    private synchronized 
+
+    private synchronized
        void poolUp(PoolManagerPoolUpMessage poolMessage, CellPath poolPath)
     {
         poolPath.revert();
         String poolName = poolMessage.getPoolName();
-        PoolSelectionUnit.SelectionPool pool = 
+        PoolSelectionUnit.SelectionPool pool =
             _selectionUnit.getPool(poolName, true);
         if (pool == null) {
            esay("poolUP : pool not found : " + poolName);
@@ -496,7 +507,8 @@ public class PoolManagerV5 extends CellAdapter {
 
         PoolV2Mode newMode = poolMessage.getPoolMode();
         PoolV2Mode oldMode = pool.getPoolMode();
-        boolean changed = 
+
+        boolean changed =
             (newMode.getMode() != oldMode.getMode())
             || pool.setSerialId(poolMessage.getSerialId());
 
@@ -504,8 +516,8 @@ public class PoolManagerV5 extends CellAdapter {
          * marked DISABLED, but without any other DISABLED_ flags set
          * is considered fully disabled.
          */
-        boolean disabled = 
-            newMode.getMode() == PoolV2Mode.DISABLED 
+        boolean disabled =
+            newMode.getMode() == PoolV2Mode.DISABLED
             || newMode.isDisabled(PoolV2Mode.DISABLED_DEAD)
             || newMode.isDisabled(PoolV2Mode.DISABLED_STRICT);
 
@@ -519,13 +531,15 @@ public class PoolManagerV5 extends CellAdapter {
          * mode has changed.
          */
         if (changed) {
-            _requestContainer.poolStatusChanged(poolName);
+
             if (disabled) {
-                sendPoolStatusRelay(poolName, PoolStatusChangedMessage.DOWN, 
+                _requestContainer.poolStatusChanged(poolName, PoolStatusChangedMessage.DOWN);
+                sendPoolStatusRelay(poolName, PoolStatusChangedMessage.DOWN,
                                     poolMessage.getPoolMode(),
                                     poolMessage.getCode(),
                                     poolMessage.getMessage());
             } else {
+                _requestContainer.poolStatusChanged(poolName, PoolStatusChangedMessage.UP);
                 sendPoolStatusRelay(poolName, PoolStatusChangedMessage.RESTART);
             }
         }
@@ -534,37 +548,37 @@ public class PoolManagerV5 extends CellAdapter {
     private void sendPoolStatusRelay( String poolName , int status ){
        sendPoolStatusRelay( poolName , status , null , 0 , null ) ;
     }
-    private void sendPoolStatusRelay( String poolName , int status , 
+    private void sendPoolStatusRelay( String poolName , int status ,
                                       PoolV2Mode poolMode ,
                                       int statusCode , String statusMessage ){
-    
+
        if( _poolStatusRelayPath == null )return ;
-       
+
        try{
-       
+
           PoolStatusChangedMessage msg = new PoolStatusChangedMessage( poolName , status ) ;
           msg.setPoolMode( poolMode ) ;
           msg.setDetail( statusCode , statusMessage ) ;
           say("sendPoolStatusRelay : "+msg);
           sendMessage(
-               new CellMessage( _poolStatusRelayPath , msg ) 
+               new CellMessage( _poolStatusRelayPath , msg )
                      ) ;
-                         
+
        }catch(Exception ee ){
           esay("Failed to send poolStatus changed message : "+ee ) ;
        }
     }
     public void messageToForward(  CellMessage cellMessage ){
-         
+
         _costModule.messageArrived(cellMessage);
-        
+
         super.messageToForward(cellMessage);
     }
     public void messageArrived( CellMessage cellMessage ){
-	
+
         Object message  = cellMessage.getMessageObject();
         synchronized( _setupLock ){
-        
+
            _costModule.messageArrived( cellMessage ) ;
 
            if( message instanceof PoolManagerPoolUpMessage ){
@@ -611,52 +625,52 @@ public class PoolManagerV5 extends CellAdapter {
            }else{
                _requestContainer.messageArrived( cellMessage ) ;
 	   }
-           
+
         }
     }
-    
+
     private void getLinkGroups(PoolMgrGetPoolLinkGroups poolMessage,CellMessage cellMessage ){
     	String [] linkGroups = _selectionUnit.getLinkGroups();
     	//PoolLinkGroupInfo[] linkGroupInfo = new PoolLinkGroupInfo[linkGroups.length];
     	List<PoolLinkGroupInfo> linkGroupInfoList = new ArrayList<PoolLinkGroupInfo>();
-    	
+
     	/*
     	 * get list of all defined link groups
     	 * for each link group get list of links
     	 * for each link in the group find all active pools and
     	 * calculate available space ( total - removable )
     	 */
-    	
-    	
+
+
     	for( int i_goup = 0; i_goup < linkGroups.length; i_goup++ ) {
     		try {
     			String[] links = _selectionUnit.getLinksByGroupName(linkGroups[i_goup]);
     			long linkAvailableSpace = 0;
                         for(int i_link = 0; i_link < links.length; i_link++ ) {
-    				
+
     				PoolSelectionUnit.SelectionLink selectionLink = _selectionUnit.getLinkByName(links[i_link]);
     				Iterator<PoolSelectionUnit.SelectionPool> poolsIterator = selectionLink.pools();
     				while( poolsIterator.hasNext() ) {
     					PoolSelectionUnit.SelectionPool pool = poolsIterator.next();
-    					if ( pool.isEnabled() ) { 
+    					if ( pool.isEnabled() ) {
 	    					String poolName = pool.getName();
 	    					PoolCostInfo poolCostInfo = _costModule.getPoolCostInfo(poolName);
-	    					if(poolCostInfo != null) { 
+	    					if(poolCostInfo != null) {
 	    						linkAvailableSpace += poolCostInfo.getSpaceInfo().getTotalSpace() - poolCostInfo.getSpaceInfo().getRemovableSpace();
 	    					}
     					}
     				}
-                                
+
     			}
-                        
-                PoolSelectionUnit.SelectionLinkGroup linkGroup = _selectionUnit.getLinkGroupByName(linkGroups[i_goup]);                
+
+                PoolSelectionUnit.SelectionLinkGroup linkGroup = _selectionUnit.getLinkGroupByName(linkGroups[i_goup]);
     			PoolLinkGroupInfo linkGroupInfo = new PoolLinkGroupInfo(linkGroup, linkAvailableSpace);
     		    linkGroupInfoList.add(linkGroupInfo);
     		}catch(Exception e) {
     			esay(e);
     		}
     	}
-    	
+
     	PoolLinkGroupInfo[] poolLinkGroupInfos = linkGroupInfoList.toArray(new PoolLinkGroupInfo[linkGroupInfoList.size()]);
     	poolMessage.setPoolLinkGroupInfos(poolLinkGroupInfos);
         poolMessage.setReply();
@@ -666,9 +680,9 @@ public class PoolManagerV5 extends CellAdapter {
            sendMessage( cellMessage ) ;
         }catch(Exception ee ){
            esay( "Problem replying to getLinkGroups Request : "+ee ) ;
-        }    	
+        }
     }
-    
+
     private void getPoolList( PoolManagerGetPoolListMessage poolMessage ,
                               CellMessage cellMessage ){
 
@@ -690,19 +704,19 @@ public class PoolManagerV5 extends CellAdapter {
        try{
           String linkName = poolMessage.getLinkName() ;
           long   filesize = poolMessage.getFilesize() ;
-          
+
           List pools = _poolMonitor.queryPoolsByLinkName( linkName , filesize ) ;
-          
+
           if( ( pools == null ) ||  pools.isEmpty() )
              throw new
              NoSuchElementException("No appropriate pools found for link : "+linkName ) ;
-             
+
           poolMessage.setPoolName( ((PoolCostCheckable)(pools.get(0))).getPoolName() ) ;
-          
+
        }catch(Exception ee ){
           poolMessage.setFailed( 57 , ee.getMessage() ) ;
        }
-       
+
        poolMessage.setReply();
 
        cellMessage.revertDirection() ;
@@ -722,14 +736,14 @@ public class PoolManagerV5 extends CellAdapter {
           try{
              poolQueryMessage.setPoolList(
                PoolPreferenceLevel.fromPoolPreferenceLevelToList(
-                 _selectionUnit.match( 
+                 _selectionUnit.match(
                         accessType ,
                         poolQueryMessage.getStoreUnitName() ,
                         poolQueryMessage.getDCacheUnitName() ,
                         poolQueryMessage.getNetUnitName() ,
                         poolQueryMessage.getProtocolUnitName() ,
                         poolQueryMessage.getStorageInfo(),
-                        null             ) 
+                        null             )
                 )
               ) ;
           }catch(Exception ee){
@@ -745,9 +759,9 @@ public class PoolManagerV5 extends CellAdapter {
     }
     private class XProtocolInfo implements IpProtocolInfo {
        private String [] _host = new String[1] ;
-       
+
        private static final long serialVersionUID = -5817364111427851052L;
-       
+
        private XProtocolInfo( String hostName ){
           _host[0] = hostName ;
        }
@@ -760,9 +774,9 @@ public class PoolManagerV5 extends CellAdapter {
        public boolean isFileCheckRequired() { return true; }
     }
     private class XStorageInfo extends GenericStorageInfo {
-       
+
        private static final long serialVersionUID = -6624549402952279903L;
-       
+
        private XStorageInfo( String hsm , String storageClass ){
     	   super(hsm,storageClass);
        }
@@ -770,7 +784,7 @@ public class PoolManagerV5 extends CellAdapter {
        public long   getFileSize(){ return 100 ; }
        public void   setFileSize( long fileSize ){}
        public boolean isStored(){ return true ; }
-       
+
     }
     public String hh_get_av_pools = "<pnfsId> <hsm> <storageClass> <host>" ;
     public String ac_get_av_pools_$_4( Args args ) throws Exception {
@@ -779,13 +793,13 @@ public class PoolManagerV5 extends CellAdapter {
           XStorageInfo storageInfo = new XStorageInfo( args.argv(1) , args.argv(2) ) ;
           XProtocolInfo protocolInfo = new XProtocolInfo( args.argv(3) ) ;
 
-          PoolMonitorV5.PnfsFileLocation  _pnfsFileLocation = 
-                    _poolMonitor.getPnfsFileLocation( pnfsId , 
-                                                      storageInfo , 
+          PoolMonitorV5.PnfsFileLocation  _pnfsFileLocation =
+                    _poolMonitor.getPnfsFileLocation( pnfsId ,
+                                                      storageInfo ,
                                                       protocolInfo, null ) ;
 
           List available = _pnfsFileLocation.getFileAvailableMatrix() ;
-       
+
           Iterator i = ((List)available.get(0)).iterator() ;
           StringBuffer sb = new StringBuffer() ;
           sb.append("Available and allowed\n");
@@ -800,9 +814,9 @@ public class PoolManagerV5 extends CellAdapter {
              }
           }
           return sb.toString() ;
-       
+
        }catch( Exception ee ){
-          
+
           ee.printStackTrace() ;
           throw ee ;
        }
@@ -819,7 +833,7 @@ public class PoolManagerV5 extends CellAdapter {
        try{
           XStorageInfo storageInfo = new XStorageInfo( args.argv(0) , args.argv(1) ) ;
           XProtocolInfo protocolInfo = new XProtocolInfo( args.argv(2) ) ;
-          
+
           List list = mode.equals("stage") ?
                       _poolMonitor.getStagePoolList( storageInfo , protocolInfo , size ) :
                       _poolMonitor.getStorePoolList( storageInfo , protocolInfo , size ) ;
@@ -830,9 +844,9 @@ public class PoolManagerV5 extends CellAdapter {
              sb.append( i.next().toString() ).append("\n");
           }
           return sb.toString() ;
-       
+
        }catch( Exception ee ){
-          
+
           ee.printStackTrace() ;
           throw ee ;
        }
@@ -856,11 +870,11 @@ public class PoolManagerV5 extends CellAdapter {
        }
     }
     private boolean quotasExceeded( StorageInfo info ){
-    
+
        String storageClass = info.getStorageClass()+"@"+info.getHsm() ;
-       
+
        QuotaMgrCheckQuotaMessage quotas = new QuotaMgrCheckQuotaMessage( storageClass ) ;
-       CellMessage msg = new CellMessage( new CellPath(_quotaManager) , quotas ) ;  
+       CellMessage msg = new CellMessage( new CellPath(_quotaManager) , quotas ) ;
        try{
            msg = sendAndWait( msg , 20000L ) ;
            if( msg == null ){
@@ -872,16 +886,16 @@ public class PoolManagerV5 extends CellAdapter {
               esay("quotasExceeded of "+storageClass+" : unexpected object arrived : "+obj.getClass().getName());
               return false ;
            }
-           
+
            return ((QuotaMgrCheckQuotaMessage)obj).isHardQuotaExceeded() ;
-           
+
        }catch(Exception ee ){
-           
+
            esay( "quotasExceeded of "+storageClass+" : Exception : "+ee);
            esay(ee);
            return false ;
        }
-    
+
     }
     ///////////////////////////////////////////////////////////////
     //
@@ -891,26 +905,26 @@ public class PoolManagerV5 extends CellAdapter {
        new WriteRequestHandler( cellMessage ) ;
     }
     public class WriteRequestHandler implements Runnable {
-    
+
        private CellMessage               _cellMessage = null ;
        private PoolMgrSelectWritePoolMsg _request     = null ;
        private PnfsId                    _pnfsId      = null ;
-       
+
        public WriteRequestHandler( CellMessage cellMessage ){
-       
+
            _cellMessage = cellMessage ;
            _request     =  (PoolMgrSelectWritePoolMsg)_cellMessage.getMessageObject() ;
            _pnfsId      = _request.getPnfsId();
            _nucleus.newThread( this , "writeHandler" ).start() ;
        }
        public void run(){
-                
+
            StorageInfo  storageInfo  = _request.getStorageInfo() ;
            ProtocolInfo protocolInfo = _request.getProtocolInfo() ;
-           
+
            say( _pnfsId.toString()+" write handler started" );
            long started = System.currentTimeMillis();
-           
+
            if( storageInfo == null ){
               requestFailed( 21 , "Storage info not available for write request : "+_pnfsId ) ;
               return ;
@@ -926,31 +940,31 @@ public class PoolManagerV5 extends CellAdapter {
            long expectedLength = 0L ;
            if( expectedLengthString != null ){
               try{
-                 expectedLength = Long.parseLong(expectedLengthString) ; 
+                 expectedLength = Long.parseLong(expectedLengthString) ;
               }catch(Exception ee ){}
            }
            try{
-           
+
               List storeList = _poolMonitor.
                                getPnfsFileLocation( _pnfsId , storageInfo , protocolInfo, _request.getLinkGroup() ).
                                getStorePoolList( expectedLength ) ;
-              /* 
-              List storeList = 
+              /*
+              List storeList =
                   _poolMonitor.getStorePoolList(  storageInfo ,
                                                   protocolInfo ,
                                                   expectedLength );
               */
               String poolName = ((PoolCheckable)storeList.get(0)).getPoolName() ;
-              
+
               if (_sendCostInfo)
                     _requestContainer.sendCostMsg(
                              _pnfsId, (PoolCostCheckable)storeList.get(0), true
                                                  );        //VP
-                                                 
+
               say(_pnfsId+" write handler selected "+poolName+" after "+
                   ( System.currentTimeMillis() - started ) );
               requestSucceeded( poolName ) ;
-              
+
            }catch(CacheException ce ){
               requestFailed( ce.getRc() , ce.getMessage() ) ;
            }catch(Exception ee ){
@@ -965,7 +979,7 @@ public class PoolManagerV5 extends CellAdapter {
 	   } catch (Exception e){
 	       esay("Exception requestFailed : "+e);
                esay(e);
-	   }	    
+	   }
        }
        protected void requestSucceeded(String poolName){
 	   _request.setPoolName(poolName);
@@ -980,42 +994,42 @@ public class PoolManagerV5 extends CellAdapter {
 	   }
        }
     }
-    
+
     public String ac_free_$_0(Args args) {
-    	
+
     	String [] linkGroups = _selectionUnit.getLinkGroups();
     	//PoolLinkGroupInfo[] linkGroupInfo = new PoolLinkGroupInfo[linkGroups.length];
     	Map<String, Long> linkGroupSize = new HashMap<String, Long>(linkGroups.length);
-    	
+
     	/*
     	 * get list of all defined link groups
     	 * for each link group get list of links
     	 * for each link in the group find all active pools and
     	 * calculate available space ( total - removable )
     	 */
-    	
-    	
+
+
     	for( int i_goup = 0; i_goup < linkGroups.length; i_goup++ ) {
     		try {
-    			
+
     			String[] links = _selectionUnit.getLinksByGroupName(linkGroups[i_goup]);
-    			long linkAvailableSpace = 0;    			
+    			long linkAvailableSpace = 0;
     			for(int i_link = 0; i_link < links.length; i_link++ ) {
-    				    				
+
     				PoolSelectionUnit.SelectionLink selectionLink = _selectionUnit.getLinkByName(links[i_link]);
     				Iterator<PoolSelectionUnit.SelectionPool> poolsIterator = selectionLink.pools();
     				while( poolsIterator.hasNext() ) {
     					PoolSelectionUnit.SelectionPool pool = poolsIterator.next();
-    					if ( pool.isEnabled() ) { 
+    					if ( pool.isEnabled() ) {
 	    					String poolName = pool.getName();
 	    					PoolCostInfo poolCostInfo = _costModule.getPoolCostInfo(poolName);
-	    					if(poolCostInfo != null) { 
+	    					if(poolCostInfo != null) {
 	    						linkAvailableSpace += poolCostInfo.getSpaceInfo().getTotalSpace() - poolCostInfo.getSpaceInfo().getRemovableSpace();
 	    					}
     					}
     				}
     			}
-    			
+
     			linkGroupSize.put(linkGroups[i_goup], Long.valueOf(linkAvailableSpace));
     		}catch(Exception e) {
     		       esay("Exception in free : "+e);
@@ -1023,16 +1037,16 @@ public class PoolManagerV5 extends CellAdapter {
     		       return "Exception in free : "+e;
     		}
     	}
-    	
+
     	StringBuilder sb = new StringBuilder();
-    	    	
+
     	for(Map.Entry<String, Long> linkGourp: linkGroupSize.entrySet() ) {
     		sb.append(linkGourp.getKey()).append(" : ")
     			.append(linkGourp.getValue() ).append("\n");
-    	}    	
-    	
+    	}
+
     	return sb.toString();
-    	
+
     }
-    
-} 
+
+}
