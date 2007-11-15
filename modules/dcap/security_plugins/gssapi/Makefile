@@ -1,5 +1,5 @@
 #
-#  $Id: Makefile,v 1.3 2003-02-03 10:32:13 cvs Exp $
+#  $Id: Makefile,v 1.3.38.1 2006-09-19 19:37:07 podstvkv Exp $
 #
 
 .PHONY: libgssTunnel.so client server
@@ -25,7 +25,7 @@ K5  = /products/mit5
 SSL =
 
 CFLAGS  += -I$(K5)/include/ -I$(K5)/include/gssapi -DMIT_KRB5
-LIBS = -L$(K5)/lib -lgssapi_krb5 $(SYS_LIBS)
+LIBS = -static -L$(K5)/lib -lgssapi_krb5 -Bdynamic $(SYS_LIBS)
 
 else
 
@@ -35,9 +35,9 @@ K5  = /products/heimdal
 SSL = /products/ssl
 
 CFLAGS  += -I$(K5)/include/ -I$(K5)/include/gssapi
-LIBS = -L$(K5)/lib -lgssapi \
-	-lkrb5 -lroken -L$(SSL)/lib \
-	-lcrypto -lasn1 $(SYS_LIBS)
+LIBS = -static -L$(K5)/lib -lgssapi \
+	-lkrb5 -lhcrypto -lasn1 -lcom_err -lroken -L$(SSL)/lib \
+	-Bdynamic $(SYS_LIBS)
 
 endif
 

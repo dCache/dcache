@@ -1,5 +1,5 @@
 #
-#  $Id: Makefile.gsi-ia64,v 1.3 2006-11-27 22:52:39 podstvkv Exp $
+#  $Id: Makefile.gsi-ia64,v 1.2.10.1 2006-11-27 22:58:15 podstvkv Exp $
 #
 
 .PHONY: libgssTunnel.so client server

@@ -1,5 +1,5 @@
 #
-#  $Id: Makefile.gsi,v 1.4 2006-03-10 16:34:42 deriese Exp $
+#  $Id: Makefile.gsi,v 1.4.2.3 2006-10-16 14:06:03 tigran Exp $
 #
 
 .PHONY: libgssTunnel.so client server
@@ -43,7 +43,8 @@ LIBS = -static -L$(GSI)/lib  \
 	-lssl_gcc32dbg \
 	-lcrypto_gcc32dbg \
 	-lglobus_common_gcc32dbg \
-        -dynamic \
+	-lltdl_gcc32dbg \
+        -Bdynamic \
 	-ldl \
 	-L$(SSL)/lib \
 	$(SYS_LIBS)

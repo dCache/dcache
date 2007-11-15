@@ -1,5 +1,5 @@
 /*
- * $Id: gssIoTunnel.c,v 1.9 2006-05-03 12:44:22 tigran Exp $
+ * $Id: gssIoTunnel.c,v 1.9.2.1 2006-09-19 19:37:07 podstvkv Exp $
  */
 
 /*
@@ -365,15 +365,15 @@ gssAuth(int sock, const char *hostname, const char *service)
 		}
 		if (maj_stat & GSS_S_CONTINUE_NEEDED) {
 			if( input_token->value == NULL ) {
-				input_token->value = malloc(16384);
+				input_token->value = malloc(MAXBUF);
 			}
 
             if( input_token->value == NULL ) {
                 return -1;
             }
 
-			input_token->length = eRead(sock, input_token->value, 16384);
-			if( (input_token->length < 0 ) || (input_token->length > 16384) ) {
+			input_token->length = eRead(sock, input_token->value, MAXBUF);
+			if( (input_token->length < 0 ) || (input_token->length > MAXBUF) ) {
 				/* incorrect length */
 				free(input_token->value);
 				input_token->value = NULL;
@@ -397,16 +397,18 @@ gss_check(int sock)
 	char           *name;
 
 	gss_buffer_desc input_token, output_token;
-	gss_cred_id_t   delegated_cred_handle = NULL;
+	gss_cred_id_t   delegated_cred_handle = GSS_C_NO_CREDENTIAL;
 	OM_uint32       maj_stat, min_stat;
 	gss_name_t      client_name;
 	gss_buffer_desc export_name;
 	gss_channel_bindings_t input_chan_bindings;
 
 #ifndef MIT_KRB5
+# if 0 /*VP This does not work neither with GT4 nor Heimdal */
 	delegated_cred_handle = malloc(sizeof(*delegated_cred_handle));
 	memset((char *) delegated_cred_handle, 0,
 	       sizeof(*delegated_cred_handle));
+# endif
 #endif	/* ! MIT_KRB5 */
 
 
@@ -440,8 +442,8 @@ gss_check(int sock)
 	
 	do {
 
-		input_token.value = malloc(16384);
-		input_token.length = eRead(sock, input_token.value, 16384);
+		input_token.value = malloc(MAXBUF);
+		input_token.length = eRead(sock, input_token.value, MAXBUF);
 
 		maj_stat = gss_accept_sec_context(&min_stat,
 						  &context_hdl,
