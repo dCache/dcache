@@ -17,10 +17,14 @@ import java.io.*;
 import java.net.*;
 import java.lang.reflect.*;
 
+import org.apache.log4j.Logger;
+
 import org.dcache.pool.repository.v3.CacheRepositoryV3;
 import org.dcache.pool.repository.v4.CacheRepositoryV4;
 
 public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
+
+    private final static Logger _logPoolMonitor = Logger.getLogger("logger.org.dcache.poolmonitor." + MultiProtocolPoolV3.class.getName());
 
 	private static final String MAX_SPACE = "use-max-space";
 	private static final String PREALLOCATED_SPACE = "use-preallocated-space";
@@ -2809,6 +2813,9 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
                 new PoolManagerPoolUpMessage(_poolName, _serialId,
                                              _poolMode, info);
 
+            if( _logPoolMonitor.isDebugEnabled() ) {
+                _logPoolMonitor.debug(_poolName + " - sending poolUpMessage (mode/seialId): " + _poolMode + " / " + _serialId);
+            }
             poolManagerMessage.setTagMap( _tags ) ;
             poolManagerMessage.setHsmInstances(new TreeSet<String>(_hsmSet.getHsmInstances()));
             poolManagerMessage.setMessage(_poolStatusMessage);

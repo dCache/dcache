@@ -17,6 +17,8 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.StringTokenizer;
 
+import org.apache.log4j.Logger;
+
 import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.CellMessage;
@@ -95,6 +97,10 @@ public class PoolManagerV5 extends CellAdapter {
     private boolean _sendCostInfo  = false ;                   //VP
     private boolean _quotasEnabled = false ;
     private String  _quotaManager  = "QuotaManager" ;
+
+
+    private final static Logger _logPoolMonitor = Logger.getLogger("logger.org.dcache.poolmonitor." + PoolManagerV5.class.getName());
+
 
     public PoolManagerV5( String cellName , String args ) throws Exception {
 	super( cellName , PoolManagerV5.class.getName(), args , false );
@@ -374,13 +380,17 @@ public class PoolManagerV5 extends CellAdapter {
 
     }
 
-    private void runWatchdogSequence(long deathDetectedTimer) 
+    private void runWatchdogSequence(long deathDetectedTimer)
     {
         for (String name : _selectionUnit.getDefinedPools(false)) {
             PoolSelectionUnit.SelectionPool pool = _selectionUnit.getPool(name);
             if (pool != null) {
-                if (pool.getActive() > deathDetectedTimer 
+                if (pool.getActive() > deathDetectedTimer
                     && pool.setSerialId(0L)) {
+
+                    if( _logPoolMonitor.isDebugEnabled() ) {
+                        _logPoolMonitor.debug("Pool " + name + " declared as DOWN (no ping in " + deathDetectedTimer/1000 +" seconds).");
+                    }
                     _requestContainer.poolStatusChanged(name, PoolStatusChangedMessage.DOWN);
                     sendPoolStatusRelay(name, PoolStatusChangedMessage.DOWN,
                                         null, 666, "DEAD");
@@ -498,6 +508,10 @@ public class PoolManagerV5 extends CellAdapter {
         PoolV2Mode newMode = poolMessage.getPoolMode();
         PoolV2Mode oldMode = pool.getPoolMode();
 
+        if( _logPoolMonitor.isDebugEnabled() ) {
+            _logPoolMonitor.debug("PoolUp message from " + poolName + " (mode/serialId): " + newMode + " / " + poolMessage.getSerialId());
+        }
+
         /* For compatibility with previous versions of dCache, a pool
          * marked DISABLED, but without any other DISABLED_ flags set
          * is considered fully disabled.
@@ -520,7 +534,7 @@ public class PoolManagerV5 extends CellAdapter {
          * Notice that calling setSerialId has a side-effect, which is
          * why we call it first.
          */
-        boolean changed = 
+        boolean changed =
             pool.setSerialId(serial)
             || (newMode.getMode() != oldMode.getMode())
             || !pool.getHsmInstances().equals(poolMessage.getHsmInstances());
@@ -535,15 +549,20 @@ public class PoolManagerV5 extends CellAdapter {
          * mode has changed.
          */
         if (changed) {
+
+            if( _logPoolMonitor.isInfoEnabled() ) {
+                _logPoolMonitor.info("PoolUp " + poolName + " mode changed(old/new) " + oldMode + " / " + newMode );
+            }
+
             if (disabled) {
-                _requestContainer.poolStatusChanged(poolName, 
+                _requestContainer.poolStatusChanged(poolName,
                                                     PoolStatusChangedMessage.DOWN);
                 sendPoolStatusRelay(poolName, PoolStatusChangedMessage.DOWN,
                                     poolMessage.getPoolMode(),
                                     poolMessage.getCode(),
                                     poolMessage.getMessage());
             } else {
-                _requestContainer.poolStatusChanged(poolName, 
+                _requestContainer.poolStatusChanged(poolName,
                                                     PoolStatusChangedMessage.UP);
                 sendPoolStatusRelay(poolName, PoolStatusChangedMessage.RESTART);
             }
