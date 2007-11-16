@@ -8,6 +8,42 @@
 #
 ourHome=/opt/d-cache
 
+
+
+domainname_os() {
+    case `uname` in
+        Linux)
+            echo `hostname -d` > /dev/null 2>&1
+            ;;
+        SunOS)
+            echo `/usr/lib/mail//sh/check-hostname |cut -d" " -f7 | awk -F. '{ for( i=2; i <= NF; i++){ printf("%s",$i); if( i  <NF) printf("."); } } '`
+            ;;
+    esac
+}
+
+
+fqdn_os() {
+    case `uname` in
+        Linux)
+            echo `hostname --fqdn` > /dev/null 2>&1
+            ;;
+        SunOS)
+            echo `/usr/lib/mail/sh/check-hostname |cut -d" " -f7`
+            ;;
+    esac
+}
+
+shortname_os() {
+    case `uname` in
+        Linux)
+            echo `hostname -s` > /dev/null 2>&1
+            ;;
+        SunOS)
+            echo `uname -n`
+            ;;
+    esac
+}
+
 printConfig() {
     key=$1
     cat ${ourHome}/etc/node_config \
@@ -40,8 +76,14 @@ os_absolutePathOf() {
             ;;
         *)
             path=`absfpath $1`
-            while [ -L ${path} ]
+            while true
             do
+                /bin/test -L "${path}"
+                if [ $? -ne 0 ]
+                then
+                   break;
+                fi
+
                 newpath=`ls -ld  ${path} | awk '{ print $11 }'`
                 echo ${newpath} | egrep "^/"  > /dev/null 2>&1
                 if [ $? -eq 0 ]
@@ -62,10 +104,10 @@ os_absolutePathOf() {
 
 
 if [ ! -r ${ourHome}/etc/node_config ]; then
-	echo "[ERROR] ${ourHome}/etc/node_config missing."
+    echo "[ERROR] ${ourHome}/etc/node_config missing."
     echo "[HINT]  Copy ${ourHome}/etc/node_config.template to ${ourHome}/etc/node_config and customize it "
     echo "        before running the install script. Exiting."
-	exit 4
+    exit 4
 fi
 
 # What are we going to install - an admin, pool or custom node?
@@ -123,12 +165,12 @@ fi
 
 startPnfsManager="`printConfig pnfsManager`"
 
-fqHostname=`hostname`
-shortHostname=`hostname | awk -F. '{print $1}'`
+fqHostname=`fqdn_os`
+shortHostname=`shortname_os`
 
 SERVER_ID=`printConfig SERVER_ID`
 if [ -z "${SERVER_ID}" ] ; then
-    SERVER_ID=`hostname -d 2>/dev/null`
+    SERVER_ID=`domainname_os`
     if [ $? -ne 0 -o -z "${SERVER_ID}" ] ; then
         SERVER_ID="`cat /etc/resolv.conf | sed -e 's/#.*$//' | grep 'search' | awk '{ print($2) }'`"
         if [ -z "${SERVER_ID}" ]; then
@@ -157,7 +199,7 @@ ourHomeDir=${DCACHE_BASE_DIR}
 #     jdk >= 1.5 , ( javac needed by tomcat/SRM )
 #
 
-if [ -z ${java} ]; then
+if [ -z "${java}" ]; then
 	echo "[ERROR] java variable in ${DCACHE_BASE_DIR}/config/dCacheSetup not defined"
 	exit 6
 fi
@@ -166,6 +208,10 @@ fi
 # resove java path eg. /usr/bin/java = /usr/j2se_1.4.2/bin/java
 #
 java=`os_absolutePathOf ${java}`
+if [ -z "${java}" ]; then
+	echo "[ERROR] java variable in ${DCACHE_BASE_DIR}/config/dCacheSetup do not point to existing binary"
+	exit 7
+fi
 
 ${java} -version 2>&1 | grep version | egrep "1\.[56]\." >/dev/null 2>&1
 if [ $? -ne 0 ]; then
@@ -177,13 +223,13 @@ fi
 # check for javac
 JAVA_HOME=${java%/bin/*}
 if [ ! -x ${JAVA_HOME}/bin/javac ]; then
-        # on some system (e.g. Debian), $JAVA_HOME/bin/java points
-        # to $JAVA_HOME/jre/bin/java. Try to go up another level.
-        JAVA_HOME=${java%/jre/bin/*}
-	if [ ! -x ${JAVA_HOME}/bin/javac ]; then
-	        echo "[ERROR] java installation looks like JRE, while JDK is needed."	
-	        exit 7
-        fi
+    # on some system (e.g. Debian), $JAVA_HOME/bin/java points
+    # to $JAVA_HOME/jre/bin/java. Try to go up another level.
+    JAVA_HOME=${java%/jre/bin/*}
+    if [ ! -x ${JAVA_HOME}/bin/javac ]; then
+	    echo "[ERROR] java installation looks like JRE, while JDK is needed."	
+	    exit 7
+    fi
 fi
 
 #
