@@ -2946,7 +2946,8 @@ say( "size in bytes = " + sizeInBytes);
         sqlStatement.setString(1,pnfsPath);
         ResultSet set = sqlStatement.executeQuery();
         if(!set.next()) {
-            throw new SQLException("file with pnfsPath="+pnfsPath+" is not found");
+            say("getFileForUpdate: file with pnfsPath="+pnfsPath+" is not found, returning null");
+            return null;
         }
         File file = extractFileFromResultSet( set );
         sqlStatement.close();
@@ -2965,7 +2966,8 @@ say( "size in bytes = " + sizeInBytes);
         sqlStatement.setString(1,pnfsId.toString());
         ResultSet set = sqlStatement.executeQuery();
         if(!set.next()) {
-            throw new SQLException("file with pnfsId="+pnfsId+" is not found");
+            say("getFileForUpdate: file with pnfsId="+pnfsId+" is not found, returning null");
+            return null;
         }
         File file = extractFileFromResultSet( set );
         sqlStatement.close();
@@ -3133,7 +3135,15 @@ say( "size in bytes = " + sizeInBytes);
         }
     }
     
-    public void messageToForward( CellMessage cellMessage ){
+    public void messageToForward(final CellMessage cellMessage ){
+         diskCacheV111.util.ThreadManager.execute(new Runnable() {
+            public void run() {
+                processMessageToForward(cellMessage);
+            }
+        });    
+    }
+    
+    public void processMessageToForward(CellMessage cellMessage ) {
         Object object = cellMessage.getMessageObject();
         //
         say("messageToForward,  arrived: type="+object.getClass().getName()+" value="+object +" from "+cellMessage.getSourcePath()+
@@ -3834,21 +3844,29 @@ say( "size in bytes = " + sizeInBytes);
         try {
             _con = connection_pool.getConnection();
             File f = getFileForUpdate(_con,pnfsPath);
-            if(f.getState() == FileState.RESERVED ||
-                    f.getState() == FileState.TRANSFERING) {
-                deleteFileInSpaceSpace(_con,f.getId());
-                
-                say("COMMIT TRANSACTION");
-                _con.commit();
-                connection_pool.returnConnection(_con);
-                _con = null;
-            } else {
-                // we did not find anything, try to insert a new linkGroup record
+            if(f == null) {
+                // no file is found
+                esay("cancelUseSpace("+cancelUse+"), no file is found");
                 _con.commit();
                 connection_pool.returnConnection(_con);
                 _con = null;
             }
-            
+            else {
+                if(f.getState() == FileState.RESERVED ||
+                        f.getState() == FileState.TRANSFERING) {
+                    deleteFileInSpaceSpace(_con,f.getId());
+
+                    say("COMMIT TRANSACTION");
+                    _con.commit();
+                    connection_pool.returnConnection(_con);
+                    _con = null;
+                } else {
+                    // we did not find anything, try to insert a new linkGroup record
+                    _con.commit();
+                    connection_pool.returnConnection(_con);
+                    _con = null;
+                }
+            }
         } catch(SQLException sqle) {
             esay("cancelUseSpace failed with ");
             esay(sqle);
