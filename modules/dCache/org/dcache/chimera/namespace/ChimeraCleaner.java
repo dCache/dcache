@@ -25,12 +25,10 @@ import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.CellVersion;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.Args;
-import dmg.util.CommandException;
 
 import org.dcache.chimera.DbConnectionInfo;
 import org.dcache.chimera.XMLconfig;
 
-import diskCacheV111.pools.PoolV2Mode;
 import diskCacheV111.util.Pgpass;
 import diskCacheV111.vehicles.PoolRemoveFilesMessage;
 import diskCacheV111.vehicles.PoolStatusChangedMessage;
@@ -41,6 +39,7 @@ import diskCacheV111.vehicles.PoolStatusChangedMessage;
  *
  * ChimeraCleaner: takes file names from the table public.t_locationinfo_trash,
  * removes them from the corresponding pools and then from the table as well.
+ * @since 1.8
  */
 
 public class ChimeraCleaner extends CellAdapter implements Runnable {
@@ -67,9 +66,7 @@ public class ChimeraCleaner extends CellAdapter implements Runnable {
     /**
      * logger
      */
-    private static final Logger _logNamespace = Logger
-            .getLogger("logger.org.dcache.namespace."
-                    + ChimeraCleaner.class.getName());
+    private static final Logger _logNamespace = Logger.getLogger("logger.org.dcache.namespace."+ ChimeraCleaner.class.getName());
 
     public ChimeraCleaner(String cellName, String args) throws Exception {
 
@@ -791,7 +788,7 @@ public class ChimeraCleaner extends CellAdapter implements Runnable {
     public String ac_set_processedAtOnce_$_1( Args args ) throws Exception {
 
        if( args.argc() > 0 ){
-          int processAtOnce = new Integer(args.argv(0));
+          int processAtOnce = Integer.valueOf(args.argv(0));
           if( processAtOnce == 0 )
              throw new
              IllegalArgumentException("Number of files must be greater than 0 ");
