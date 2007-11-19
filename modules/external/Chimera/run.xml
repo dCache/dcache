@@ -1,69 +1,48 @@
 <?xml version="1.0"?>
 <!-- $Id: build.xml,v 1.36 2006/11/29 14:58:34 tigran Exp $      -->
 
-<project name="Chimera Early Access" default="help">
+<project name="Chimera Early Access" default="help" basedir=".">
 
-	<target name="init">
-		<property name="libDir" value="classes" />
-		<property name="chimera.jar" value="${libDir}/chimera.jar" />
-		<property name="dcache.jar" value="${libDir}/dcache.jar" />
-		<property name="cells.jar" value="${libDir}/cells.jar" />
-		<property name="log4j.jar" value="${libDir}/log4j.jar" />
-		<property name="dcp" value="${libDir}/c3p0-0.9.1.2.jar" />
-		<property name="nfs4prot.jar" value="${libDir}/nfs4prot.jar" />
-		<property name="nfs3prot.jar" value="${libDir}/nfs3prot.jar" />
-		<property name="copyright" value="(C) dCache.ORG  2004 - 2006" />
-		<property name="chimera-provider.jar" value="${libDir}/chimera-provider.jar" />
-		<property name="chimera-pool.jar" value="${libDir}/chimera-pool.jar" />
-		<tstamp>
-			<format property="timestamp" pattern="MM/dd/yyyy hh:mm:ss"/>
-		</tstamp>
-	</target>
+
+    <property name="dCacheHome" value="/opt/d-cache" />
+    <property name="lib" value="/opt/d-cache/classes/chimera" />
+    <property name="config" value="/opt/d-cache/config" />
 
 	<!--
 		Runtime environment
 	-->
 	<path id="chimera.runtime.classpath">
-		<pathelement location="classes/log4j.jar"/>
-		<pathelement location="classes/c3p0-0.9.1.2.jar"/>
-		<pathelement location="classes/ojdbc14.jar"/>
-		<pathelement location="classes/pgsql.jar"/>
-		<pathelement location="classes/mysql.jar"/>
-		<pathelement location="." />
-		<pathelement location="build" />
-		<pathelement location="classes/nfs4prot.jar" />
-		<pathelement location="classes/nfs3prot.jar" />
-		<pathelement location="classes/chimera.jar" />
-		<pathelement location="classes/oncrpc.jar" />
-		<pathelement location="classes/portmap.jar" />
-		<pathelement location="classes/db2jcc.jar" />
-		<pathelement location="classes/db2jcc_license_cu.jar" />
+		<pathelement location="classes/log4j/log4j-1.2.8.jar"/>
+		<pathelement location="classes/dbcp/c3p0-0.9.1.2.jar"/>
+		<pathelement location="classes/jdbc-drivers/postgresql-8.1-405.jdbc3.jar"/>
+		<pathelement location="classes/chimera/nfs4prot.jar" />
+		<pathelement location="classes/chimera/nfs3prot.jar" />
+		<pathelement location="classes/chimera/chimera.jar" />
+		<pathelement location="classes/chimera/oncrpc.jar" />
+		<pathelement location="classes/chimera/portmap.jar" />
 	</path>
 
-
-	<property name="inodeIoMode" value="false"/>
 	<!--
-		NFSv3 frontend for Himera
+		NFSv3 frontend for Chimera
 	-->
-	<target name="run_nfs3" depends="init" description="run NFSv3 frontend">
+	<target name="run_nfs3" description="run NFSv3 frontend">
 		<java classname="org.dcache.chimera.nfsv3.Main2" fork="true">
-			<jvmarg value="-Dlog4j.configuration=file:log4j.properties" />
-			<jvmarg value="-Dchimera.inodeIoMode=${inodeIoMode}" />
+			<jvmarg value="-Dlog4j.configuration=file:config/log4j.properties" />
 			<jvmarg value="-Xmx512M" />
 			<classpath refid="chimera.runtime.classpath" />
-			<arg value="config.xml" />
+			<arg value="config/chimera-config.xml" />
 		</java>
 	</target>
 
 	<!--
-		NFSv4 frontend for Himera
+		NFSv4 frontend for Chimera
 	-->
 
-	<target name="run_nfs4" depends="init" description="run NFSv4 frontend">
+	<target name="run_nfs4" description="run NFSv4 frontend">
 		<java classname="org.dcache.chimera.nfsv4.HimeraNFS4Server" fork="true">
-			<jvmarg value="-Dlog4j.configuration=file:log4j.properties" />
+			<jvmarg value="-Dlog4j.configuration=file:config/log4j.properties" />
 			<classpath refid="chimera.runtime.classpath" />
-			<arg value="config_nfs4.xml" />
+			<arg value="config/chimera-config.xml" />
 		</java>
 	</target>
 
@@ -71,11 +50,11 @@
 		Himera BuiltIn shell
 	-->
 
-	<target name="run_shell" depends="init">
+	<target name="run_shell">
 		<java classname="org.dcache.chimera.FsShell" fork="true">
-			<jvmarg value="-Dlog4j.configuration=file:log4j.properties" />
+			<jvmarg value="-Dlog4j.configuration=file:config/log4j.properties" />
 			<classpath refid="chimera.runtime.classpath" />
-			<arg value="config.xml" />
+			<arg value="config/chimera-config.xml" />
 		</java>
 	</target>
 
@@ -84,11 +63,11 @@
 		File Browser frontend for Himera
 	-->
 
-    <target name="run_browser" depends="init">
+    <target name="run_browser">
         <java classname="org.dcache.chimera.examples.filebrowser.TreeTableExample0" fork="true">
-            <jvmarg value="-Dlog4j.configuration=file:log4j.properties" />
+            <jvmarg value="-Dlog4j.configuration=file:config/log4j.properties" />
 			<classpath refid="chimera.runtime.classpath" />
-            <arg value="config.xml" />
+            <arg value="config/chimera-config.xml" />
         </java>
     </target>
 
