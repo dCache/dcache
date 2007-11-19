@@ -1579,7 +1579,7 @@ public class      CellShell
           CommandException( 2 , "Stack position violation ("+v.size()+")" ) ;
        }
 
-       String result = v.firstElement().toString() ;
+       String result = v.firstElement() ;
        if( result.equals("0") )return "" ;
 
        int rc = 0 ;
