@@ -2,6 +2,8 @@ package diskCacheV111.services;
 
 //THIS IS A COPY OF diskCacheV111/services/FsPermissionHandler.java
 
+import java.util.Arrays;
+
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileMetaData;
 import diskCacheV111.util.FsPath;
@@ -32,8 +34,10 @@ public class ACLPermissionHandler implements PermissionHandlerInterface {
     }
 
     public boolean canWrite(int userUid, int[] userGid, String pnfsPath) throws CacheException {
-        _logPermisions.debug("canWrite(" + userUid + "," + userGid + ","
+        if(_logPermisions.isDebugEnabled() ) {
+            _logPermisions.debug("canWrite(" + userUid + "," + Arrays.toString( userGid )+ ","
                 + pnfsPath + ")");
+        }
 
         try {
             return fileCanWrite(userUid, userGid, _metaDataSource
@@ -62,8 +66,11 @@ public class ACLPermissionHandler implements PermissionHandlerInterface {
     }
 
     public boolean canCreateDir(int userUid, int[] userGid, String pnfsPath) throws CacheException {
-        _logPermisions.debug("canCreateDir(" + userUid + "," + userGid + ","
+
+        if(_logPermisions.isDebugEnabled() ) {
+            _logPermisions.debug("canCreateDir(" + userUid + "," + Arrays.toString( userGid ) + ","
                 + pnfsPath + ")");
+        }
         FsPath parent_path = new FsPath(pnfsPath);
         // go one level up
         parent_path.add("..");
@@ -84,8 +91,11 @@ public class ACLPermissionHandler implements PermissionHandlerInterface {
     }
 
     public boolean canDeleteDir(int userUid, int[] userGid, String pnfsPath) throws CacheException {
-        _logPermisions.debug("canDeleteDir(" + userUid + "," + userGid + ","
+
+        if(_logPermisions.isDebugEnabled() ) {
+            _logPermisions.debug("canDeleteDir(" + userUid + "," + Arrays.toString( userGid ) + ","
                 + pnfsPath + ")");
+        }
 
         FileMetaData meta = _metaDataSource.getMetaData(pnfsPath);
         if (!meta.isDirectory()) {
@@ -97,15 +107,22 @@ public class ACLPermissionHandler implements PermissionHandlerInterface {
     }
 
     public boolean canDelete(int userUid, int[] userGid, String pnfsPath) throws CacheException {
-        _logPermisions.debug("canDelete(" + userUid + "," + userGid + ","
+
+        if(_logPermisions.isDebugEnabled() ) {
+            _logPermisions.debug("canDelete(" + userUid + "," + Arrays.toString( userGid ) + ","
                 + pnfsPath + ")");
+        }
         FsPath parent_path = new FsPath(pnfsPath);
         // go one level up
         parent_path.add("..");
 
         String parent = parent_path.toString();
+
         FileMetaData meta = _metaDataSource.getMetaData(parent);
-        _logPermisions.debug("canWrite() parent meta = " + meta);
+
+        if(_logPermisions.isDebugEnabled() ) {
+            _logPermisions.debug("canWrite() parent meta = " + meta);
+        }
         if (!meta.isDirectory()) {
             _logPermisions.error(parent
                     + " exists and is not a directory, can not read "
@@ -117,10 +134,12 @@ public class ACLPermissionHandler implements PermissionHandlerInterface {
         boolean parentExecuteAllowed = fileCanExecute(userUid, userGid, meta);
         boolean parentReadAllowed = fileCanRead(userUid, userGid, meta);
 
-        _logPermisions.debug("canDelete() parent read allowed :"
-                + parentReadAllowed + " parent write allowed :"
-                + parentReadAllowed + " parent exec allowed :"
-                + parentExecuteAllowed);
+        if(_logPermisions.isDebugEnabled() ) {
+            _logPermisions.debug("canDelete() parent read allowed :"
+                    + parentReadAllowed + " parent write allowed :"
+                    + parentReadAllowed + " parent exec allowed :"
+                    + parentExecuteAllowed);
+        }
 
         if (!parentReadAllowed || !parentExecuteAllowed || !parentWriteAllowed) {
             _logPermisions.error(" parent write is not allowed ");
@@ -128,26 +147,32 @@ public class ACLPermissionHandler implements PermissionHandlerInterface {
         }
 
         meta = _metaDataSource.getMetaData(pnfsPath);
-        _logPermisions.debug("canDelete() file meta = " + meta);
+        if(_logPermisions.isDebugEnabled() ) {
+            _logPermisions.debug("canDelete() file meta = " + meta);
+        }
 
         boolean deleteAllowed = fileCanWrite(userUid, userGid, meta);
 
         if (deleteAllowed) {
             _logPermisions.error("WARNING: canDelete() delete of file "
-                    + pnfsPath + " by user uid=" + userUid + " gid=" + userGid
+                    + pnfsPath + " by user uid=" + userUid + " gid=" + Arrays.toString( userGid )
                     + " is allowed!");
         } else {
-            _logPermisions.debug("canDelete() delete of file " + pnfsPath
-                    + " by user uid=" + userUid + " gid=" + userGid
-                    + " is not allowed");
+            if(_logPermisions.isDebugEnabled() ) {
+                _logPermisions.debug("canDelete() delete of file " + pnfsPath
+                        + " by user uid=" + userUid + " gid=" + Arrays.toString( userGid )
+                        + " is not allowed");
+            }
         }
         return deleteAllowed;
     }
 
     public boolean canRead(int userUid, int[] userGid, String pnfsPath) throws CacheException {
 
-        _logPermisions.debug("canRead(" + userUid + "," + userGid + ","
-                + pnfsPath + ")");
+        if(_logPermisions.isDebugEnabled() ) {
+            _logPermisions.debug("canRead(" + userUid + "," + Arrays.toString( userGid ) + ","
+                    + pnfsPath + ")");
+        }
 
         if (!fileCanRead(userUid, userGid, _metaDataSource
                 .getMetaData(pnfsPath))) {
@@ -165,7 +190,9 @@ public class ACLPermissionHandler implements PermissionHandlerInterface {
     private boolean dirCanRead(int userUid, int[] userGid, String path) throws CacheException {
 
         FileMetaData meta = _metaDataSource.getMetaData(path);
-        _logPermisions.debug("dirCanRead() meta = " + meta);
+        if(_logPermisions.isDebugEnabled() ) {
+            _logPermisions.debug("dirCanRead() meta = " + meta);
+        }
         if (!meta.isDirectory()) {
             _logPermisions.error(path
                     + " exists and is not a directory, can not read ");
@@ -176,10 +203,10 @@ public class ACLPermissionHandler implements PermissionHandlerInterface {
 
         boolean executeAllowed = fileCanExecute(userUid, userGid, meta);
 
-
-        _logPermisions.debug("dirCanRead() read allowed :" + readAllowed
+        if(_logPermisions.isDebugEnabled() ) {
+            _logPermisions.debug("dirCanRead() read allowed :" + readAllowed
                 + "  exec allowed :" + executeAllowed);
-
+        }
         if (!(readAllowed && executeAllowed)) {
             _logPermisions.error(" read is not allowed ");
             return false;
@@ -189,14 +216,19 @@ public class ACLPermissionHandler implements PermissionHandlerInterface {
     }
 
     public boolean worldCanRead(String pnfsPath) throws CacheException {
-        _logPermisions.debug("worldCanRead(" + pnfsPath + ")");
+
+        if(_logPermisions.isDebugEnabled() ) {
+            _logPermisions.debug("worldCanRead(" + pnfsPath + ")");
+        }
         FsPath parent_path = new FsPath(pnfsPath);
         // go one level up
         parent_path.add("..");
 
         String parent = parent_path.toString();
         FileMetaData meta = _metaDataSource.getMetaData(parent);
-        _logPermisions.debug("worldCanRead() parent meta = " + meta);
+        if(_logPermisions.isDebugEnabled() ) {
+            _logPermisions.debug("worldCanRead() parent meta = " + meta);
+        }
         if (!meta.isDirectory()) {
             _logPermisions.error(parent
                     + " exists and is not a directory, can not read "
@@ -207,9 +239,12 @@ public class ACLPermissionHandler implements PermissionHandlerInterface {
         FileMetaData.Permissions world = meta.getWorldPermissions();
         boolean parentReadAllowed = world.canRead();
         boolean parentExecuteAllowed = world.canExecute();
-        _logPermisions.debug("worldCanRead() parent read allowed :"
-                + parentReadAllowed + " parent exec allowed :"
-                + parentExecuteAllowed);
+
+        if(_logPermisions.isDebugEnabled() ) {
+            _logPermisions.debug("worldCanRead() parent read allowed :"
+                    + parentReadAllowed + " parent exec allowed :"
+                    + parentExecuteAllowed);
+        }
 
         if (!parentReadAllowed || !parentExecuteAllowed) {
             _logPermisions.error(" parent read is not allowed ");
@@ -217,12 +252,15 @@ public class ACLPermissionHandler implements PermissionHandlerInterface {
         }
 
         meta = _metaDataSource.getMetaData(pnfsPath);
-        _logPermisions.debug("worldCanRead() file meta = " + meta);
+        if(_logPermisions.isDebugEnabled() ) {
+            _logPermisions.debug("worldCanRead() file meta = " + meta);
+        }
         world = meta.getWorldPermissions();
         boolean readAllowed = world.canRead();
 
-        _logPermisions
-                .debug("worldCanRead() file read allowed :" + readAllowed);
+        if(_logPermisions.isDebugEnabled() ) {
+            _logPermisions.debug("worldCanRead() file read allowed :" + readAllowed);
+        }
         return readAllowed;
     }
 
