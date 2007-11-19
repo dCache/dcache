@@ -631,9 +631,20 @@
 		<mkdir dir="${binDir}/classes/chimera" />
 		<copy file="${libDir}/Chimera/chimera.jar" todir="${binDir}/classes/chimera" />
 		<copy file="${libDir}/Chimera/chimera-config.xml" todir="${binDir}/config" />
+	    <copy file="${libDir}/Chimera/run.xml" tofile="${binDir}/jobs/chimera-nfs-run.xml" />
 		<copy file="${classesDir}/chimera-provider.jar" todir="${binDir}/classes/chimera" />
+	    <copy file="${libDir}/Chimera/oncrpc.jar" todir="${binDir}/classes/chimera" />
+	    <copy file="${libDir}/Chimera/portmap.jar" todir="${binDir}/classes/chimera" />
+	    <copy file="${libDir}/Chimera/nfs4prot.jar" todir="${binDir}/classes/chimera" />
+	    <copy file="${libDir}/Chimera/nfs3prot.jar" todir="${binDir}/classes/chimera" />
 		<copy file="${libDir}/dbcp/c3p0.properties" todir="${binDir}/config" />
 		<copy file="${libDir}/dbcp/c3p0-0.9.1.2.jar" todir="${binDir}/classes/dbcp" />
+
+
+       <!-- log4j -->
+       <mkdir dir="${binDir}/classes/log4j" />
+       <property name="log4jVersion" value="1.2.8" />
+       <copy file="${libDir}/log4j/log4j-${log4jVersion}.jar" todir="${binDir}/classes/log4j" />
 
 		<!-- log4j properties file -->
 		<copy file="${sourceDir}/${dcache.packagePrefix}/config/log4j.properties" todir="${binDir}/config" />
@@ -641,6 +652,11 @@
 		<!-- BerkeleyDB -->
 		<mkdir dir="${binDir}/classes/berkeleyDB/" />
 		<copy file="${libDir}/berkeleyDB/je-3.2.44.jar" todir="${binDir}/classes/berkeleyDB/" />
+
+	    <!-- JDBC -->
+	    <mkdir dir="${binDir}/classes/jdbc-drivers" />
+	    <copy file="${libDir}/postgres-jdbc/postgresql-8.1-405.jdbc3.jar"  todir="${binDir}/classes/jdbc-drivers" />
+
 	</target>
 
 
@@ -668,9 +684,6 @@
 		<copy file="${sourceDir}/${dcache.packagePrefix}/jobs/infoDynamicSE-plugin-dcache" todir="${binDir}/jobs" />
 		<copy file="${sourceDir}/${dcache.packagePrefix}/jobs/infoDynamicSE-provider-dcache" todir="${binDir}/jobs" />
 
-
-
-
 		<!-- most of this stuff have nothing to do with dCache, but I can't find beter place -->
 
 		<!-- external jars -->
@@ -691,15 +704,6 @@
 				<include name="*.jar" />
 			</fileset>
 		</copy>
-
-		<!-- log4j -->
-		<mkdir dir="${binDir}/classes/log4j" />
-		<property name="log4jVersion" value="1.2.8" />
-		<copy file="${libDir}/log4j/log4j-${log4jVersion}.jar" todir="${binDir}/classes/log4j" />
-
-		<!-- JDBC -->
-		<mkdir dir="${binDir}/classes/jdbc-drivers" />
-		 <copy file="${libDir}/postgres-jdbc/postgresql-8.1-405.jdbc3.jar"  todir="${binDir}/classes/jdbc-drivers" />
 
 		<!-- concurrent -->
 		<mkdir dir="${binDir}/classes/concurrent" />
