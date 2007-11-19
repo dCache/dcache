@@ -448,7 +448,10 @@ public class BillingDB {
     }
 
 
-
+    /**
+     *
+     * @param mode force to commit if true
+     */
     private synchronized void doCommitIfNeeded(boolean mode) {
 
         _insertsCount++;
