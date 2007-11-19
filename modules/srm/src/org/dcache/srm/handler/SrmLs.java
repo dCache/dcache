@@ -260,7 +260,7 @@ public class SrmLs {
 		else { 
 		    status = new TReturnStatus(TStatusCode.SRM_INVALID_PATH, srme.getMessage());
 		    srmLsResponse.getReturnStatus().setStatusCode(TStatusCode.SRM_FAILURE);
-		    srmLsResponse.getReturnStatus().setExplanation("path does not exist for one or more files speicfied, check individual statuses");
+		    srmLsResponse.getReturnStatus().setExplanation("path does not exist for one or more files specified, check individual statuses");
 		}
 
 		metaDataPathDetail =  new TMetaDataPathDetail(path,
