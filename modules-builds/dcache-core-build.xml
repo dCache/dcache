@@ -614,7 +614,7 @@
 			<fileset dir="${sourceDir}/${dcache.packagePrefix}/docs/scripts" />
 		</copy>
 		<copy file="${sourceDir}/${dcache.packagePrefix}/docs/skins/home-skin-basic.html" todir="${binDir}/docs/skins" />
-
+	    <copy file="${sourceDir}/${dcache.packagePrefix}/docs/statisticsHelp.html" todir="${binDir}/docs" />
 		<!-- startup scripts  for official distribution -->
 		<!-- common -->
 		<copy file="${sourceDir}/${dcache.packagePrefix}/jobs/generic.lib.sh" todir="${binDir}/jobs" />
