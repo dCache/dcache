@@ -405,9 +405,7 @@ public class ChimeraCleaner extends CellAdapter implements Runnable {
 
             String thisPool = poolList[i];
 
-
-                _logNamespace.info("runDelete(): Now processing pool : "+ thisPool);
-
+            _logNamespace.info("runDelete(): Now processing pool : "+ thisPool);
 
             CleanPoolComplete(dbConnection, thisPool);
 
@@ -733,7 +731,7 @@ public class ChimeraCleaner extends CellAdapter implements Runnable {
                     removeFiles(dbConnection, poolName, okFileRemoved);
 
                     if (_logNamespace.isInfoEnabled()) {
-                    	_logNamespace.info("ac_remove_file: File "+okFileRemoved);
+                    	_logNamespace.info("ac_remove_file: File "+ Arrays.toString(okFileRemoved) );
                     	_logNamespace.info("ac_remove_file: was successfully removed from the pool "+poolName);
                     }
 
