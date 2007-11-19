@@ -10,15 +10,15 @@ import diskCacheV111.vehicles.* ;
 import java.sql.*;
 
 public class BillingDB {
-    
-    
-    
+
+
+
     private final String _billingTableName = "billinginfo";
     private final String _storageTableName = "storageinfo";
     private final String _doorTableName    = "doorinfo";
     private final String _hitTableName     = "hitinfo";
     private final String _costTableName    = "costinfo";
-    
+
     private final String _createBillingTable = "CREATE TABLE " + _billingTableName + "(" +
             "dateStamp TIMESTAMP,"     +
             "cellName VARCHAR,"        +
@@ -30,13 +30,13 @@ public class BillingDB {
             "storageClass VARCHAR,"    +
             "isNew BOOLEAN,"           +
             "client VARCHAR,"          +
-            "connectionTime numeric,"  +            
+            "connectionTime numeric,"  +
             "errorCode numeric,"       +
             "errorMessage VARCHAR,"    +
             "protocol VARCHAR,"        +
             "initiator VARCHAR"       +
             ")";
-    
+
     private final String _createStorageTable = "CREATE TABLE " + _storageTableName + "(" +
             "dateStamp TIMESTAMP,"     +
             "cellName VARCHAR,"        +
@@ -50,7 +50,7 @@ public class BillingDB {
             "errorCode numeric,"       +
             "errorMessage VARCHAR"     +
             ")";
-    
+
     private final String _createDoorTable = "CREATE TABLE " + _doorTableName + "(" +
             "dateStamp TIMESTAMP,"     +
             "cellName VARCHAR,"        +
@@ -60,14 +60,14 @@ public class BillingDB {
             "mappedGID numeric,"       +
             "client VARCHAR,"          +
             "transaction VARCHAR,"     +
-            "pnfsID VARCHAR,"          +            
+            "pnfsID VARCHAR,"          +
             "connectionTime numeric,"  +
             "queuedTime numeric,"      +
             "errorCode numeric,"       +
             "errorMessage VARCHAR,"     +
             "path VARCHAR"            +
             ")";
-    
+
     private final String _createHitTable = "CREATE TABLE " + _hitTableName + "(" +
             "dateStamp TIMESTAMP,"      +
             "cellName VARCHAR,"         +
@@ -78,7 +78,7 @@ public class BillingDB {
             "errorCode numeric,"        +
             "errorMessage VARCHAR"      +
             ")";
-    
+
     private final String _createCostTable = "CREATE TABLE " + _costTableName + "(" +
             "dateStamp TIMESTAMP,"      +
             "cellName VARCHAR,"         +
@@ -89,7 +89,7 @@ public class BillingDB {
             "errorCode numeric,"        +
             "errorMessage VARCHAR"      +
             ")";
-    
+
     private final String[][] _tableList = {
         {_billingTableName , _createBillingTable},
         {_storageTableName,  _createStorageTable},
@@ -97,8 +97,8 @@ public class BillingDB {
         {_hitTableName,  _createHitTable},
         {_costTableName, _createCostTable}
     };
-    
-    
+
+
     private Connection _con = null;
     private int _insertsCount = 0;
     private int _maxInsertsBeforeCommit = 1;
@@ -108,25 +108,25 @@ public class BillingDB {
     private PreparedStatement psMI = null;  // moverinfo (billinginfo)
     private PreparedStatement psHI = null;  // hitinfo
     private PreparedStatement psCI = null;  // costinfo
-    
+
     private String _jdbcUrl;
     private String _user;
     private String _pass;
 
     public BillingDB(String jdbcUrl, String jdbcClass, String user, String pass, int commitNumber, int commitInterval)
     throws SQLException {
-        
+
         _maxTimeBeforeCommit = commitInterval;
-        
+
         if( commitNumber > 1 ) {
             _maxInsertsBeforeCommit = commitNumber;
         }
-        
+
         dbInit( jdbcUrl, jdbcClass, user, pass, null);
     }
-    
+
     public BillingDB(Args args) throws SQLException {
-        
+
         _jdbcUrl = args.getOpt("jdbcUrl");
         String jdbcClass = args.getOpt("jdbcDriver");
         _user = args.getOpt("dbUser");
@@ -134,26 +134,26 @@ public class BillingDB {
         String pwdfile = args.getOpt("pgPass");
         String commitInterval = args.getOpt("dbCommitTime");
         String commitNumber = args.getOpt("dbCommitNumber");
-        
+
         if(commitNumber != null ) {
             _maxInsertsBeforeCommit = Integer.parseInt(commitNumber);
         }
-        
+
         if(commitInterval != null ) {
             _maxTimeBeforeCommit = Integer.parseInt(commitInterval);
         }
-        
+
         dbInit( _jdbcUrl, jdbcClass, _user, _pass, pwdfile);
     }
-    
+
     private void dbInit(String jdbcUrl, String jdbcClass, String user, String pass, String pwdfile)
     throws SQLException {
-        
+
         if( (jdbcUrl == null )  ||
             (jdbcClass == null) ||
             (user == null )     ||
             (pass == null && pwdfile == null) ) {
-            
+
             throw new
                     IllegalArgumentException("Not enough arguments to Init SQL database");
         }
@@ -161,54 +161,54 @@ public class BillingDB {
             Pgpass pgpass = new Pgpass(pwdfile);      //VP
             pass = pgpass.getPgpass(jdbcUrl, user);   //VP
         }
-        
+
         try {
-            
+
             // Add driver to JDBC
             Class.forName(jdbcClass);
-            
+
             _con = DriverManager.getConnection(jdbcUrl, user, pass);
 
             DatabaseMetaData md = _con.getMetaData();
-            
+
             for(int i = 0; i < _tableList.length; i++) {
                 boolean tableExist = false;
-                
+
                 ResultSet tableRs = md.getTables(null, null, _tableList[i][0] , null );
-                
+
                 if(tableRs.next()) {
                     // table exist
                     tableExist = true;
                 }
-                
+
                 if( !tableExist ) {
                     // Table do not exist
                     Statement s = _con.createStatement();
                     int result = s.executeUpdate(_tableList[i][1]);
                 }
-                
+
             }
 //VP: Prepare statements for connection before using them
             prepareStatements();
 //VP
             // to be fast
             _con.setAutoCommit(false);
-            
-            
+
+
         } catch (SQLException sqe) {
             sqe.printStackTrace();
             throw sqe;
         } catch (Exception ex) {
             throw new SQLException(ex.toString());
         }
-        
-        
-        
+
+
+
         if( _maxTimeBeforeCommit > 0 ) {
             new TimeCommiter().start();
         }
     }
-    
+
     private void prepareStatements()
     throws SQLException {
 //                                                                     1  2  3  4  5  6  7  8  9 10 11 12 13 14 15
@@ -224,7 +224,7 @@ public class BillingDB {
         psHI = _con.prepareStatement(this.insertCMD(    _hitTableName)+"?, ?, ?, ?, ?, ?, ?, ?)");
         psCI = _con.prepareStatement(this.insertCMD(   _costTableName)+"?, ?, ?, ?, ?, ?, ?, ?)");
     }
-    
+
     private void dbReconnect()
     throws SQLException {
         System.err.println("Statement execution failed. Trying to renew the connection...");
@@ -234,7 +234,7 @@ public class BillingDB {
             } catch(SQLException sqle1) { System.err.println("Could not roll back connection"); }
 
             _con = DriverManager.getConnection(_jdbcUrl, _user, _pass);
-            
+
 //VP: We've got a new connection, prepare statements once again
             prepareStatements();
 //VP
@@ -257,40 +257,40 @@ public class BillingDB {
     private String insertCMD( String tableName) {
         return "INSERT INTO " + tableName + " VALUES (";
     }
-    
+
     public void log( InfoMessage message) throws SQLException {
-        
+
         if ( message instanceof MoverInfoMessage ) {
             this.logMoverInfoMessage( ( MoverInfoMessage) message );
             return;
         }
-        
+
         if ( message instanceof StorageInfoMessage ) {
             this.logStorageInfoMessage( ( StorageInfoMessage) message );
             return;
         }
-        
+
         if ( message instanceof DoorRequestInfoMessage ) {
             this.logDoorInfoMessage( ( DoorRequestInfoMessage) message );
             return;
         }
-        
+
         if ( message instanceof PoolHitInfoMessage ) {
             this.logPoolHitInfoMessage( ( PoolHitInfoMessage) message );
             return;
         }
-        
+
         if ( message instanceof PoolCostInfoMessage ) {
             this.logPoolCostInfoMessage( ( PoolCostInfoMessage) message );
             return;
         }
-        
-        
+
+
     }
-    
-    
+
+
     private void logStorageInfoMessage( StorageInfoMessage info) throws SQLException {
-    	
+
         try {
             psSI.setTimestamp( 1, new Timestamp(info.getTimestamp()));
             psSI.setString( 2, info.getCellName() );
@@ -303,7 +303,7 @@ public class BillingDB {
             psSI.setLong  ( 9, info.getTimeQueued() );
             psSI.setInt   (10, info.getResultCode() );
             psSI.setString(11, info.getMessage() );
-            _con.close();
+
             int result = psSI.executeUpdate( );
             doCommitIfNeeded(false);
         } catch ( SQLException sqe) {
@@ -317,7 +317,7 @@ public class BillingDB {
             }
         }
     }
-    
+
     private void logDoorInfoMessage( DoorRequestInfoMessage info) throws SQLException {
 
         try {
@@ -335,7 +335,7 @@ public class BillingDB {
             psDI.setInt   ( 12, info.getResultCode() );
             psDI.setString( 13, info.getMessage() );
             psDI.setString( 14, info.getPath() );
-            
+
             int result = psDI.executeUpdate( );
             doCommitIfNeeded(false);
         } catch ( SQLException sqe) {
@@ -349,14 +349,14 @@ public class BillingDB {
             }
         }
     }
-    
-    
+
+
     private void logMoverInfoMessage( MoverInfoMessage info) throws SQLException  {
-        
+
         try {
             String[] clients = { "<unknown>",null};
             String protocol = "<unknown>";
-            
+
             if (info.getProtocolInfo() instanceof IpProtocolInfo) {
                 clients = ( (IpProtocolInfo)info.getProtocolInfo() ).getHosts();
                 protocol = ( (IpProtocolInfo)info.getProtocolInfo() ).getVersionString();
@@ -376,7 +376,7 @@ public class BillingDB {
             psMI.setString(13, info.getMessage() );
             psMI.setString(14, protocol);
             psMI.setString(15, info.getInitiator() );
-            
+
             int result = psMI.executeUpdate( );
             doCommitIfNeeded(false);
         } catch ( SQLException sqe) {
@@ -389,10 +389,10 @@ public class BillingDB {
                 throw se ;
             }
         }
-        
+
     }
-    
-    
+
+
     private void logPoolHitInfoMessage( PoolHitInfoMessage info) throws SQLException {
 
         try {
@@ -404,7 +404,7 @@ public class BillingDB {
             psHI.setBoolean(6, info.getFileCached() );
             psHI.setInt   ( 7, info.getResultCode() );
             psHI.setString( 8, info.getMessage() );
-            
+
             int result = psHI.executeUpdate( );
             doCommitIfNeeded(false);
         } catch ( SQLException sqe) {
@@ -418,8 +418,8 @@ public class BillingDB {
             }
         }
     }
-    
-    
+
+
     private void logPoolCostInfoMessage( PoolCostInfoMessage info) throws SQLException {
 
         try {
@@ -431,8 +431,8 @@ public class BillingDB {
             psCI.setDouble( 6, info.getCost() );
             psCI.setInt   ( 7, info.getResultCode() );
             psCI.setString( 8, info.getMessage() );
-            
-            
+
+
             int result = psCI.executeUpdate( );
             doCommitIfNeeded(false);
         } catch ( SQLException sqe) {
@@ -446,11 +446,11 @@ public class BillingDB {
             }
         }
     }
-    
-    
-    
+
+
+
     private synchronized void doCommitIfNeeded(boolean mode) {
-        
+
         _insertsCount++;
         if( (_insertsCount >= _maxInsertsBeforeCommit) ||
                 ( mode && _insertsCount > 0) ) {
@@ -464,33 +464,33 @@ public class BillingDB {
             _insertsCount = 0;
         }
     }
-    
+
     private void shrinkDB( long upTo ) {
-                
+
     	PreparedStatement ps = null;
         for( int i = 0; i < _tableList.length; i++) {
-            
-            String sqlQuery = "DELETE FROM "+ _tableList[i] + " WHERE dateStamp < ?";            
+
+            String sqlQuery = "DELETE FROM "+ _tableList[i] + " WHERE dateStamp < ?";
             try {
-                
-                ps = _con.prepareStatement(sqlQuery);                
+
+                ps = _con.prepareStatement(sqlQuery);
                 ps.setTimestamp( 1, new Timestamp( upTo) );
-                
+
                 int result = ps.executeUpdate( );
                 doCommitIfNeeded(false);
                 ps.close();
             } catch ( SQLException ignored) { }
-        }       
+        }
     }
-        
+
     class TimeCommiter extends Thread {
-        
+
         Connection sqlCon;
         int timeout;
-        
+
         TimeCommiter() {
         }
-        
+
         public void run() {
             while (true) {
                 try {
@@ -499,7 +499,7 @@ public class BillingDB {
                     Thread.sleep(_maxTimeBeforeCommit);
                     // do only if something to do
                     doCommitIfNeeded(true);
-                } catch ( Exception ingnored ) {}   
+                } catch ( Exception ingnored ) {}
             }
         }
     }
