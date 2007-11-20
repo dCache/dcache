@@ -2189,6 +2189,11 @@ public class RequestContainerV5 implements Runnable {
                     if( cost != null )break ;
                  }
 
+                 //
+                 // clear the pool candicate if this second shot didn't find a good pool. So we can try the first one
+                 // again. If we don't, systems with a single pool for this request will never recover. (lionel bug 2132)
+                 //
+
                  if ( cost == null ) _poolCandidate = null  ;
 
            }
