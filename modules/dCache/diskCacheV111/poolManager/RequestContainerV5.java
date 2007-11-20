@@ -938,6 +938,7 @@ public class RequestContainerV5 implements Runnable {
         private static final int RT_COST_EXCEEDED    = 7 ;
         private static final int RT_NOT_PERMITTED    = 8 ;
         private static final int RT_S_COST_EXCEEDED  = 9 ;
+        private static final int RT_DELAY  = 10 ;
 
         private static final int ST_INIT        = 0 ;
         private static final int ST_DONE        = 1 ;
@@ -1442,6 +1443,9 @@ public class RequestContainerV5 implements Runnable {
 
                        nextStep( _parameter._p2pForTransfer ? ST_INIT : ST_DONE , CONTINUE ) ;
 
+                    }else if( rc == RT_DELAY ){
+                        _state = "Suspended By HSM request";
+                        nextStep( ST_SUSPENDED , WAIT ) ;
                     }else if( rc == RT_CONTINUE ){
 
                     }else{
@@ -1588,19 +1592,28 @@ public class RequestContainerV5 implements Runnable {
               if( messageArrived instanceof PoolFetchFileMessage ){
                  PoolFetchFileMessage reply = (PoolFetchFileMessage)messageArrived ;
 
-                 if( ( _currentRc = reply.getReturnCode() ) == 0 ){
+                 int rc;
+                 _currentRc = reply.getReturnCode();
 
-                    _poolCandidate = reply.getPoolName() ;
-                    return RT_OK ;
-
-                 }else{
-
-                    _currentRm = reply.getErrorObject() == null ?
+                 switch(_currentRc) {
+                     case 0:
+                         _poolCandidate = reply.getPoolName() ;
+                         rc = RT_OK;
+                         break;
+                     case CacheException.HSM_DELAY_ERROR:
+                         _currentRm = "Suspend by HSM request : " + reply.getErrorObject() == null ?
+                                 "No info" : reply.getErrorObject().toString() ;
+                         rc = RT_DELAY;
+                         break;
+                     default:
+                         _currentRm = reply.getErrorObject() == null ?
                                  ( "Error="+_currentRc ) : reply.getErrorObject().toString() ;
 
-                    return RT_ERROR ;
-
+                         rc =  RT_ERROR ;
                  }
+
+                 return rc;
+
               }else if( messageArrived instanceof PoolCheckFileMessage ){
                  PoolCheckFileMessage check = (PoolCheckFileMessage)messageArrived ;
                  say("PoolCheckFileMessage arrived with "+check );

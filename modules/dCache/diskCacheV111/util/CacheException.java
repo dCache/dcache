@@ -26,18 +26,19 @@ public class CacheException extends Exception {
     public final static int NOT_DIR = 10010;
     public final static int UNEXPECTED_SYSTEM_EXCEPTION = 10011;
     public final static int ATTRIBUTE_FORMAT_ERROR = 10012;
-    
+    public final static int HSM_DELAY_ERROR = 10013;
+
     private static final int DEFAULT_ERROR_CODE = 666; // I don't like this number....
-    
-    
+
+
     private static final long serialVersionUID = 3219663683702355240L;
-    
+
     private static String setMessage( String message ){
-    	
+
       StringBuilder sb = new StringBuilder() ;
-      
+
       for( int i = 0 ; i < message.length() ; i++ ){
-        
+
          char c = message.charAt(i) ;
          if( c == '\n' ){
             if( i != ( message.length() -1 ) )sb.append(';') ;
@@ -46,12 +47,12 @@ public class CacheException extends Exception {
          }
       }
       return sb.toString() ;
-    
+
     }
-    
+
     /**
      * Create a new CacheException with default error code and given error message
-     * @param msg error message 
+     * @param msg error message
      */
     public CacheException( String msg ){
     	this(DEFAULT_ERROR_CODE, msg);
@@ -66,12 +67,12 @@ public class CacheException extends Exception {
         _message = setMessage(msg) ;
         _rc = rc ;
     }
-    
-    public String getMessage(){ return _message ; } 
+
+    public String getMessage(){ return _message ; }
     public int getRc(){ return _rc ; }
-    public String toString(){ 
+    public String toString(){
         return "CacheException(rc="+_rc+
                ";msg="+getMessage()+")" ;
     }
 }
- 
+

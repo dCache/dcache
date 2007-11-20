@@ -503,6 +503,13 @@ public class HsmStorageHandler2  {
                returnCode = run.getExitValue() ;
                if( returnCode != 0 ){
                   errmsg = run.getErrorString() ;
+                  /*
+                   * while shell do not return error code bigger than 255,
+                   * do a trick here
+                   */
+                  if(returnCode == 71  ) {
+                      returnCode = CacheException.HSM_DELAY_ERROR;
+                  }
                   excep  = new CacheException( returnCode , errmsg ) ;
                   esay("RunSystem. -> "+returnCode+" : "+run.getErrorString());
                } else {
