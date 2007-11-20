@@ -2189,6 +2189,8 @@ public class RequestContainerV5 implements Runnable {
                     if( cost != null )break ;
                  }
 
+                 if ( cost == null ) _poolCandidate = null  ;
+
            }
            _parameter = parameter ;
 
