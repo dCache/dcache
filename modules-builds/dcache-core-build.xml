@@ -629,9 +629,9 @@
 
 		<!-- Chimera -->
 		<mkdir dir="${binDir}/classes/chimera" />
+	    <mkdir dir="${binDir}/libexec/chimera" />
 		<copy file="${libDir}/Chimera/chimera.jar" todir="${binDir}/classes/chimera" />
 		<copy file="${libDir}/Chimera/chimera-config.xml" todir="${binDir}/config" />
-	    <copy file="${libDir}/Chimera/run.xml" tofile="${binDir}/jobs/chimera-nfs-run.xml" />
 		<copy file="${classesDir}/chimera-provider.jar" todir="${binDir}/classes/chimera" />
 	    <copy file="${libDir}/Chimera/oncrpc.jar" todir="${binDir}/classes/chimera" />
 	    <copy file="${libDir}/Chimera/portmap.jar" todir="${binDir}/classes/chimera" />
@@ -639,7 +639,10 @@
 	    <copy file="${libDir}/Chimera/nfs3prot.jar" todir="${binDir}/classes/chimera" />
 		<copy file="${libDir}/dbcp/c3p0.properties" todir="${binDir}/config" />
 		<copy file="${libDir}/dbcp/c3p0-0.9.1.2.jar" todir="${binDir}/classes/dbcp" />
-
+	       <copy file="${libDir}/Chimera/run.xml" tofile="${binDir}/libexec/chimera/chimera-nfs-run.xml" />
+	    <copy todir="${binDir}/libexec/chimera/sql">
+	        <fileset dir="${libDir}/Chimera/sql" />
+	    </copy>
 
        <!-- log4j -->
        <mkdir dir="${binDir}/classes/log4j" />
