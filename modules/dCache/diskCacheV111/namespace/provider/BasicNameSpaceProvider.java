@@ -46,7 +46,7 @@ public class BasicNameSpaceProvider implements NameSpaceProvider, StorageInfoPro
     private final Args        _args ;
     private final StorageInfoExtractable _extractor;
     private final AttributeChecksumBridge _attChecksumImpl;
-    
+
     private static final Logger _logNameSpace =  Logger.getLogger("logger.org.dcache.namespace." + BasicNameSpaceProvider.class.getName());
 
     /** Creates a new instance of BasicNameSpaceProvider */
@@ -185,7 +185,7 @@ public class BasicNameSpaceProvider implements NameSpaceProvider, StorageInfoPro
         PnfsFile pf        = null ;
         String   localPath = null ;
         PnfsId pnfsId = null;
-        
+
         try{
             localPath = _pathManager.globalToLocal(globalPath) ;
             pf = new PnfsFile( localPath ) ;
@@ -214,13 +214,13 @@ public class BasicNameSpaceProvider implements NameSpaceProvider, StorageInfoPro
             FileExistsCacheException("File exists") ;
         }
 
-        if( ! pf.isPnfs() ){            
+        if( ! pf.isPnfs() ){
             _logNameSpace.warn("requested path ["+globalPath+"], is not an pnfs path");
             pf.delete();
             throw new IllegalArgumentException( "Not a pnfs file system");
         }
-        
-        
+
+
         pnfsId = pf.getPnfsId();
         try {
         	this.setFileMetaData(pnfsId, metaData);
@@ -291,15 +291,15 @@ public class BasicNameSpaceProvider implements NameSpaceProvider, StorageInfoPro
         fileMetaData = getFileMetaData( _pathManager.getMountPointByPnfsId(pnfsId) , pnfsId ) ;
 
         /*
-         *  we do not catch any exception here, while we can not react on it 
+         *  we do not catch any exception here, while we can not react on it
          *  ( FileNotFoundException )
          *  The caller will do it
          */
-        
+
         return fileMetaData;
     }
 
-    public void setFileMetaData(PnfsId pnfsId, FileMetaData metaData) {
+    public void setFileMetaData(PnfsId pnfsId, FileMetaData metaData) throws Exception {
 
 
     	if( metaData.isUserPermissionsSet() ) {
@@ -347,19 +347,13 @@ public class BasicNameSpaceProvider implements NameSpaceProvider, StorageInfoPro
 
 	        File mountPoint = _pathManager.getMountPointByPnfsId(pnfsId);
 	        for( int level = 0 ; level < 2 ; level ++ ){
-	            try {
-	                this.setFileMetaData( mountPoint , pnfsId, level, metaData.getUid(), metaData.getGid(), mode, metaData.isDirectory() );
-	            }catch( Exception e) {
-	                esay(e.getMessage());
-	            }
+	            this.setFileMetaData( mountPoint , pnfsId, level, metaData.getUid(), metaData.getGid(), mode, metaData.isDirectory() );
 	        }
 
     	}
 
         if( ! metaData.isDirectory() && metaData.isSizeSet() ){
-            try {
-               setFileSize(pnfsId, metaData.getFileSize());
-            }catch(Exception e){}
+           setFileSize(pnfsId, metaData.getFileSize());
         }
 
     }
@@ -601,11 +595,11 @@ public class BasicNameSpaceProvider implements NameSpaceProvider, StorageInfoPro
 
 
         }
-        private PnfsFile.VirtualMountPoint getVmpByDomain( String domain ){         
-        	
+        private PnfsFile.VirtualMountPoint getVmpByDomain( String domain ){
+
             String resolvedDomain = ( (domain == null ) ||  domain.length() == 0 ) ? _defaultServerId : domain ;
             PnfsFile.VirtualMountPoint vmp = _servers.get( resolvedDomain ) ;
-            
+
             if( vmp == null ) {
                 throw new
                 NoSuchElementException("No server found for : "+domain ) ;
@@ -771,7 +765,7 @@ public class BasicNameSpaceProvider implements NameSpaceProvider, StorageInfoPro
         String hexTime = Long.toHexString( System.currentTimeMillis() / 1000L ) ;
         int l = hexTime.length() ;
         if( l > 8 )hexTime = hexTime.substring(l-8) ;
-        StringBuffer sb = new StringBuffer(128);
+        StringBuilder sb = new StringBuilder(128);
         sb.append(".(pset)(").append(pnfsId.getId()).append(")(attr)(").
         append(level).append(")(").
         append(Integer.toOctalString(0100000|mode)).append(":").
@@ -782,12 +776,9 @@ public class BasicNameSpaceProvider implements NameSpaceProvider, StorageInfoPro
         append(hexTime).append(")") ;
 
         File metaFile = new File( mp , sb.toString() ) ;
-        try{
-            say("touch "+metaFile);
-            metaFile.createNewFile() ;
-        }catch(Exception ee ){
-            esay("Ignored Problem with "+metaFile+" : "+ee ) ;
-        }
+
+        metaFile.createNewFile() ;
+
     }
 
 
@@ -805,12 +796,12 @@ public class BasicNameSpaceProvider implements NameSpaceProvider, StorageInfoPro
 
 
     public String toString() {
-        
+
         StringBuffer sb = new StringBuffer();
 
 
         sb.append("$Id: BasicNameSpaceProvider.java,v 1.24 2007-09-24 07:01:38 tigran Exp $").append("\n");
-        for( PnfsFile.VirtualMountPoint vmp: _virtualMountPoints ){             
+        for( PnfsFile.VirtualMountPoint vmp: _virtualMountPoints ){
 
             sb.append( " Server         : "+vmp.getServerId()+"("+vmp.getServerName()+")" ).append("\n") ;
             sb.append( " RealMountPoint : "+vmp.getRealMountId()+" "+vmp.getRealMountPoint() ).append("\n") ;

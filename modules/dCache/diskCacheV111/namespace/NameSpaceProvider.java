@@ -10,7 +10,20 @@ import diskCacheV111.util.PnfsId;
 
 public interface NameSpaceProvider extends DcacheNameSpaceProvider {
 
-    void setFileMetaData(PnfsId pnfsId, FileMetaData metaData);
+    /**
+     * set file metadata - size, permissions, Owner and group
+     * @param pnfsId
+     * @param metaData
+     * @throws Exception
+     */
+    void setFileMetaData(PnfsId pnfsId, FileMetaData metaData) throws Exception ;
+
+    /**
+     * get file metadata - size, permissions, Owner and group
+     * @param pnfsId
+     * @return
+     * @throws Exception
+     */
     FileMetaData getFileMetaData(PnfsId pnfsId) throws Exception ;
 
 
@@ -36,11 +49,11 @@ public interface NameSpaceProvider extends DcacheNameSpaceProvider {
 
     /**
     * Adds new or replaces existing checksum value for the specific file and checksum type.
-    * The type of the checksum is arbitrary integer that client of this interface must chose 
+    * The type of the checksum is arbitrary integer that client of this interface must chose
     * and use consistently afterwards
-    * @param type the type (or algorithm) of the checksum 
+    * @param type the type (or algorithm) of the checksum
     * @param value HEX presentation of the digest (checksum)
-    * @param pnfsId file 
+    * @param pnfsId file
     */
     void addChecksum(PnfsId pnfsId, int type, String value) throws Exception;
 
