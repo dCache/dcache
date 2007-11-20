@@ -184,6 +184,7 @@
     <property name="client.rpmRcFile" location="${client.rpmTopDir}/rpmrc" />
     <property name="client.rpmMacrosFile" location="${client.rpmTopDir}/rpmmacros" />
     <property name="client.rpmSpecFile" location="${client.rpmTopDir}/dcache-client.spec" />
+    <property name="dcap.rpmSpecFile" location="${client.rpmTopDir}/dcache-dcap.spec" />
     <property name="srmclient.rpmSpecFile" location="${client.rpmTopDir}/dcache-srmclient.spec" />
 
     <property name="rpmPrefix" value="opt/d-cache" />
@@ -193,7 +194,7 @@
 
 
 
-    <target name="dcapclient32.rpminstall" depends="dcap32.bin,srmclient.bin">
+    <target name="dcapclient32.rpminstall" depends="dcap32.bin">
 
         <!-- DCAP -->
         <mkdir dir="${client.rpmDcacheDir}/dcap" />
@@ -203,7 +204,7 @@
 
     </target>
 
-    <target name="dcapclient64.rpminstall" depends="dcap64.bin,srmclient.bin">
+    <target name="dcapclient64.rpminstall" depends="dcap64.bin">
 
         <!-- DCAP -->
         <mkdir dir="${client.rpmDcacheDir}/dcap" />
@@ -320,6 +321,98 @@
 
     </target>
 
+
+    <!-- dcap ONLY -->
+    <target name="dcap32.rpm" depends="dcapclient32.rpminstall" description="Build the dcache-dcap-xxx.rpm">
+
+
+        <!-- Create config files for RPM from Templates -->
+
+        <copy todir="${client.rpmTopDir}" overwrite="true">
+            <fileset dir="${rpmTemplateDir}">
+                <or>
+                    <filename name="rpm*.template" />
+                    <filename name="dcache-dcap.spec.template" />
+                </or>
+            </fileset>
+            <mapper type="glob" from="*.template" to="*" />
+            <filterset>
+                <filter token="rpmMacrosFile" value="${client.rpmMacrosFile}" />
+                <!-- This is only used in the rpmrc file -->
+
+                <filter token="rpmRpmDir" value="${rpmRpmDir}" />
+                <!-- These are used in the rpmmacros file -->
+                <filter token="rpmSrpmDir" value="${rpmSrpmDir}" />
+                <filter token="rpmTopDir" value="${client.rpmTopDir}" />
+
+                <filter token="Version" value="${client.version}" />
+                <filter token="Release" value="${build.minor.number}" />
+                <filter token="Arch" value="i586" />
+
+            </filterset>
+        </copy>
+
+        <!-- Call RPM. The rpm task is not sufficient since it doesnt have the rcfile option -->
+
+        <exec dir="${client.rpmTopDir}" executable="rpmbuild" failonerror="true">
+            <!-- output="${buildDir}/rpm.log" -->
+            <arg value="--buildroot" />
+            <arg file="${client.rpmBuildrootDir}" />
+            <arg value="--rcfile" />
+            <arg file="/usr/lib/rpm/rpmrc:${client.rpmRcFile}" />
+            <!-- some documentation claims that /usr/lib/rpm/rpmrc
+                                                        will always be parsed. But it currently isnt if not set here -->
+            <arg value="-bb" />
+            <arg file="${dcap.rpmSpecFile}" />
+        </exec>
+
+    </target>
+
+    <target name="dcap64.rpm" depends="dcapclient64.rpminstall" description="Build the dcache-client-xxx.rpm">
+
+
+        <!-- Create config files for RPM from Templates -->
+
+        <copy todir="${client.rpmTopDir}" overwrite="true">
+            <fileset dir="${rpmTemplateDir}">
+                <or>
+                    <filename name="rpm*.template" />
+                    <filename name="dcache-client.spec.template" />
+                </or>
+            </fileset>
+            <mapper type="glob" from="*.template" to="*" />
+            <filterset>
+                <filter token="rpmMacrosFile" value="${client.rpmMacrosFile}" />
+                <!-- This is only used in the rpmrc file -->
+
+                <filter token="rpmRpmDir" value="${rpmRpmDir}" />
+                <!-- These are used in the rpmmacros file -->
+                <filter token="rpmSrpmDir" value="${rpmSrpmDir}" />
+                <filter token="rpmTopDir" value="${client.rpmTopDir}" />
+
+                <filter token="Version" value="${client.version}" />
+                <filter token="Release" value="${build.minor.number}" />
+                <filter token="Arch" value="x86_64" />
+            </filterset>
+        </copy>
+
+        <!-- Call RPM. The rpm task is not sufficient since it doesnt have the rcfile option -->
+
+        <exec dir="${client.rpmTopDir}" executable="rpmbuild" failonerror="true">
+            <!-- output="${buildDir}/rpm.log" -->
+            <arg value="--buildroot" />
+            <arg file="${client.rpmBuildrootDir}" />
+            <arg value="--rcfile" />
+            <arg file="/usr/lib/rpm/rpmrc:${client.rpmRcFile}" />
+            <!-- some documentation claims that /usr/lib/rpm/rpmrc
+                                                        will always be parsed. But it currently isnt if not set here -->
+            <arg value="-bb" />
+            <arg file="${dcap.rpmSpecFile}" />
+        </exec>
+
+
+
+    </target>
 
     <!-- SRM only -->
 
