@@ -15,6 +15,7 @@ Obsoletes: dcache
 Obsoletes: d-cache-client
 Provides: d-cache-client <= 1.6.7
 Provides: d-cache-srmclient
+Provides: d-cache-dcap
 AutoReqProv: no
 
 License: Free
