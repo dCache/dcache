@@ -1,4 +1,4 @@
-// $Id: TurlGetterPutterV1.java,v 1.5 2006-02-23 21:46:38 neha Exp $
+// $Id$
 // $Log: not supported by cvs2svn $
 // Revision 1.4  2006/02/03 01:43:38  timur
 // make  srm v2 copy work with remote srm v1 and vise versa

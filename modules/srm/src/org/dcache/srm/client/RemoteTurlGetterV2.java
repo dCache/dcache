@@ -1,4 +1,4 @@
-// $Id: RemoteTurlGetterV2.java,v 1.14 2006-11-11 01:16:32 timur Exp $
+// $Id$
 // $Log: not supported by cvs2svn $
 // Revision 1.13  2006/06/21 20:29:52  timur
 // Upgraded code to the latest srmv2.2 wsdl (final)

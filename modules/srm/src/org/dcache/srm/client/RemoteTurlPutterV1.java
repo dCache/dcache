@@ -1,4 +1,4 @@
-// $Id: RemoteTurlPutterV1.java,v 1.2 2006-01-19 01:48:21 timur Exp $
+// $Id$
 // $Log: not supported by cvs2svn $
 // Revision 1.1  2006/01/10 19:03:37  timur
 // adding srm v2 built in client

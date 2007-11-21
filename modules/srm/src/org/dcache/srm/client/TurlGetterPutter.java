@@ -1,4 +1,4 @@
-// $Id: TurlGetterPutter.java,v 1.11 2006-02-03 01:43:38 timur Exp $
+// $Id$
 // $Log: not supported by cvs2svn $
 // Revision 1.10  2006/01/19 01:48:21  timur
 // more v2 copy work

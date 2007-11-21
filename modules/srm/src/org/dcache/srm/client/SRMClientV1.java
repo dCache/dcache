@@ -1,4 +1,4 @@
-// $Id: SRMClientV1.java,v 1.16 2006-10-19 20:59:09 timur Exp $
+// $Id$
 // $Log: not supported by cvs2svn $
 // Revision 1.15  2006/09/11 22:28:49  timur
 // / is a default path in url

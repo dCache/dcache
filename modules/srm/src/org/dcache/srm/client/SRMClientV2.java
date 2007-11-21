@@ -130,6 +130,7 @@ public class SRMClientV2 implements org.dcache.srm.v2_2.ISRM {
             //service_url += SERVICE_POSTFIX;
 	    service_url += "/"+webservice_path;
         }
+	say("WEBSERVICE_PATH "+webservice_path);
         org.globus.axis.util.Util.registerTransport();
         org.apache.axis.configuration.SimpleProvider provider = 
             new org.apache.axis.configuration.SimpleProvider();

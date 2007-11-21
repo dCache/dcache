@@ -1,4 +1,4 @@
-// $Id: InformationProviderClientV1.java,v 1.4 2006-03-14 17:44:17 timur Exp $
+// $Id$
 // $Log: not supported by cvs2svn $
 // Revision 1.3  2005/03/23 20:47:03  timur
 // making changes in how client delegates
