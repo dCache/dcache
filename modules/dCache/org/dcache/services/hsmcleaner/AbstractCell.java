@@ -292,10 +292,12 @@ public class AbstractCell extends CellAdapter
      */
     protected void parseOptions()
     {
-        try {
-            for (Field field : getClass().getDeclaredFields()) {
-                Option option = field.getAnnotation(Option.class);
+        for (Field field : getClass().getDeclaredFields()) {
+            Option option = field.getAnnotation(Option.class);
+            try {
                 if (option != null) {
+                    field.setAccessible(true);
+
                     String s = getOption(option);
                     Object value;
                     if (s != null && s.length() > 0) {
@@ -309,19 +311,23 @@ public class AbstractCell extends CellAdapter
                         value = field.get(this);
                     }
                     
-                    String description = option.description();
-                    String unit = option.unit();
-                    if (unit != null && unit.length() > 0) {
-                        info(description + " set to " + value + " " + unit);
-                    } else {
-                        info(description + " set to " + value);
+                    if (option.log()) {
+                        String description = option.description();
+                        String unit = option.unit();
+                        if (description.length() == 0)
+                            description = option.name();
+                        if (unit.length() > 0) {
+                            info(description + " set to " + value + " " + unit);
+                        } else {
+                            info(description + " set to " + value);
+                        }
                     }
                 }
+            } catch (SecurityException e) {
+                throw new RuntimeException("Bug detected while processing option " + option.name(), e);
+            } catch (IllegalAccessException e) {
+                throw new RuntimeException("Bug detected while processing option " + option.name(), e);
             }
-        } catch (SecurityException e) {
-            throw new RuntimeException("Bug detected", e);
-        } catch (IllegalAccessException e) {
-            throw new RuntimeException("Bug detected", e);
         }
     }
 

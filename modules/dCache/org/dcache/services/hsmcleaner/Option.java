@@ -10,8 +10,9 @@ import java.lang.annotation.*;
 public @interface Option 
 {
     String  name();
-    String  description();
+    String  description()  default "";
     String  defaultValue() default "";
     String  unit()         default "";
     boolean required()     default false;
+    boolean log()          default true;
 }
