@@ -28,6 +28,9 @@ import java.net.UnknownHostException;
 
 public class SrmStartUpPing {
 
+    //
+    // logger is used by SRMClientV2. elog is implemented to print nothing on purpose
+    //
     private static class SrmLogger implements Logger {
 	private boolean debug;
 	public SrmLogger(boolean debug) {
@@ -51,18 +54,16 @@ public class SrmStartUpPing {
 	String x509cert = System.getenv("X509_CERT");
 	if (x509cert==null) { 
 	    x509cert="/etc/grid-security/hostcert.pem";
-	    logger.elog("environment variable X509_CERT is not defined, using default \""+x509cert+"\"");
+	    System.err.println("environment variable X509_CERT is not defined, using default \""+x509cert+"\"");
 	}
-
 	String x509key = System.getenv("X509_KEY");
 	if (x509key==null) { 
 	    x509key="/etc/grid-security/hostkey.pem";
-	    logger.elog("environment variable X509_KEY is not defined, using default \""+x509key+"\"");
+	    System.err.println("environment variable X509_KEY is not defined, using default \""+x509key+"\"");
 	}
-	
 	String sport=System.getenv("SRM_V2_PORT");
 	if (sport==null) { 
-	    logger.elog("environment variable SRM_V2_PORT is not defined, using default \""+port+"\"");
+	    System.err.println("environment variable SRM_V2_PORT is not defined, using default \""+port+"\"");
 	}
 	else { 
 	    try { 
@@ -73,7 +74,6 @@ public class SrmStartUpPing {
 		System.exit(1);
 	    }
 	}
-	
  	try {
  	    user_cred =  org.dcache.srm.security.SslGsiSocketFactory.createUserCredential(
 		null,
