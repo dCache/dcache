@@ -1,12 +1,12 @@
 //______________________________________________________________________________
 //
-// $Id: SrmCheckPermission.java,v 1.5 2006/12/21 17:39:41 litvinse Exp $
+// $Id$
 // $Author: litvinse $
 //
 // created 10/07 by Dmitry Litvintsev (litvinse@fnal.gov)
 // 
 // A simple utility class that pings SRM server so we can see SRM cell
-// as "on-line" right away
+// as "on-line" right away. It is supposed to be run from the same host the srm is run at
 //______________________________________________________________________________
 
 package org.dcache.srm.client;
@@ -16,40 +16,6 @@ import org.dcache.srm.client.SRMClientV2;
 import org.dcache.srm.security.SslGsiSocketFactory;
 import org.dcache.srm.Logger;
 import org.dcache.srm.v2_2.*;
-import java.io.IOException;
-
-import org.globus.gsi.GlobusCredential;
-import org.globus.gsi.GlobusCredentialException;
-import org.globus.gsi.TrustedCertificates;
-
-import org.globus.gsi.gssapi.GlobusGSSManagerImpl;
-import org.globus.gsi.gssapi.GlobusGSSCredentialImpl;
-
-import org.globus.gsi.gssapi.net.GssSocket;
-import org.globus.gsi.gssapi.net.GssSocketFactory;
-import org.globus.gsi.gssapi.net.impl.GSIGssSocket;
-import org.globus.gsi.gssapi.auth.AuthorizationException;
-import org.globus.gsi.gssapi.auth.Authorization;
-import org.globus.gsi.GlobusCredentialException;
-
-import org.gridforum.jgss.ExtendedGSSContext;
-import org.gridforum.jgss.ExtendedGSSManager;
-import org.gridforum.jgss.ExtendedGSSCredential;
-
-import org.globus.gsi.GSIConstants;
-import org.globus.gsi.gssapi.GSSConstants;
-
-
-import org.ietf.jgss.GSSException;
-import org.ietf.jgss.GSSContext;
-import org.ietf.jgss.GSSCredential;
-import org.ietf.jgss.GSSManager;
-import org.ietf.jgss.GSSName;
-
-
-import org.dcache.srm.security.SslGsiSocketFactory;
-import org.dcache.srm.SRMUser;
-
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -83,15 +49,42 @@ public class SrmStartUpPing {
     public static void main(String agv[]) { 
  	org.ietf.jgss.GSSCredential user_cred = null;
  	org.dcache.srm.Logger logger = new SrmLogger(false);
+	int port=8443;
+	String x509cert = System.getenv("X509_CERT");
+	if (x509cert==null) { 
+	    x509cert="/etc/grid-security/hostcert.pem";
+	    logger.elog("environment variable X509_CERT is not defined, using default \""+x509cert+"\"");
+	}
+
+	String x509key = System.getenv("X509_KEY");
+	if (x509key==null) { 
+	    x509key="/etc/grid-security/hostkey.pem";
+	    logger.elog("environment variable X509_KEY is not defined, using default \""+x509key+"\"");
+	}
+	
+	String sport=System.getenv("SRM_V2_PORT");
+	if (sport==null) { 
+	    logger.elog("environment variable SRM_V2_PORT is not defined, using default \""+port+"\"");
+	}
+	else { 
+	    try { 
+		port = Integer.parseInt(sport);
+	    }
+	    catch (NumberFormatException npe){ 
+		logger.elog(npe);
+		System.exit(1);
+	    }
+	}
+	
  	try {
  	    user_cred =  org.dcache.srm.security.SslGsiSocketFactory.createUserCredential(
 		null,
-		"/etc/grid-security/hostcert.pem",
-		"/etc/grid-security/hostkey.pem");
- 	    SRMClientV2 client = new SRMClientV2(new GlobusURL("srm://fapl110.fnal.gov:8443/srm/managerv2?SFN="),
+		x509cert,x509key);
+// 	    SRMClientV2 client = new SRMClientV2(new GlobusURL("srm://fapl110.fnal.gov:8443/srm/managerv2?SFN="),
+ 	    SRMClientV2 client = new SRMClientV2(new GlobusURL("srm://localhost:"+port+"/srm/managerv2?SFN="),
  						 user_cred,
  						 10000,
- 						 1,
+ 						 0,
  						 logger,
  						 false,
  						 false,
@@ -101,8 +94,8 @@ public class SrmStartUpPing {
  	    SrmPingRequest request = new SrmPingRequest();
  	    SrmPingResponse response = client.srmPing(request);
  	    if(response == null) {
-                 throw new IOException(" null response");
-             }
+		throw new IOException(" null response");
+	    }
  	    StringBuffer sb = new StringBuffer();
  	    sb.append("VersionInfo : "+response.getVersionInfo()+"\n");
  	    if (response.getOtherInfo()!=null) { 
@@ -117,7 +110,8 @@ public class SrmStartUpPing {
  	    System.out.println(sb.toString());
  	}
  	catch (Exception e) { 
- 	    e.printStackTrace();
+ 	    //e.printStackTrace();
+	    logger.elog(e.getMessage());
  	}
     }
 }
