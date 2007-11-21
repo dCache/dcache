@@ -14,6 +14,9 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import org.dcache.services.AbstractCell;
+import org.dcache.services.Option;
+
 import dmg.util.Args;
 
 /**
@@ -22,13 +25,13 @@ import dmg.util.Args;
  *
  * The cell is designed on the following observations:
  *
- * a) Crashes (JVM, host, etc) of the HSM cleaner may happen, but 
+ * a) Crashes (JVM, host, etc) of the HSM cleaner may happen, but
  *    are infrequent.
  *
  * b) Bulk deletion of files do occur and we must protect the cleaner
  *    and pool cells against them.
  *
- * c) HSMs may be down for a while, and the number of unprocessed 
+ * c) HSMs may be down for a while, and the number of unprocessed
  *    deleted files may grow large.
  *
  * d) Since PNFS IDs are unique, deletion is idempotent.
@@ -45,7 +48,7 @@ import dmg.util.Args;
  * memory.
  */
 public class HSMCleaner extends AbstractCell
-{ 
+{
     private final FailureRepository _failures;
     private final Trash _trash;
     private final RequestTracker _requests;
@@ -74,15 +77,15 @@ public class HSMCleaner extends AbstractCell
      * over to the request tracker.
      */
     private final Semaphore _limit;
-    
+
     @Option(
-        name = "hsmCleanerScan", 
+        name = "hsmCleanerScan",
         description = "Scan interval",
         defaultValue = "90",
         unit = "seconds"
     )
     protected int _scanInterval;
-    
+
     @Option(
         name = "hsmCleanerRecover",
         description = "Recover interval",
@@ -135,8 +138,8 @@ public class HSMCleaner extends AbstractCell
         unit = "files"
     )
     protected int _maxRequests;
-    
-    public HSMCleaner(String cellName, String args) throws Exception 
+
+    public HSMCleaner(String cellName, String args) throws Exception
     {
 	super(cellName, args, false);
 
@@ -147,12 +150,12 @@ public class HSMCleaner extends AbstractCell
                 IllegalArgumentException("Not a directory: "
                                          + _trashLocation);
         }
-        
+
         _failureLocation.mkdirs();
         if (!_failureLocation.isDirectory())
-            throw new IOException("Cannot create: " + _failureLocation);        
+            throw new IOException("Cannot create: " + _failureLocation);
 
-        _trash = new OSMTrash(_trashLocation); 
+        _trash = new OSMTrash(_trashLocation);
         _requests = new RequestTracker(this);
         _failures = new FailureRepository(_failureLocation);
         _limit = new Semaphore(_maxQueueLength);
@@ -169,12 +172,12 @@ public class HSMCleaner extends AbstractCell
                     onFailure(uri);
                 }
             });
-        
-        _executor.scheduleWithFixedDelay(_scanTask, _scanInterval, 
+
+        _executor.scheduleWithFixedDelay(_scanTask, _scanInterval,
                                          _scanInterval, TimeUnit.SECONDS);
-        _executor.scheduleWithFixedDelay(_recoverTask, _recoverInterval, 
+        _executor.scheduleWithFixedDelay(_recoverTask, _recoverInterval,
                                          _recoverInterval, TimeUnit.SECONDS);
-        _executor.scheduleWithFixedDelay(_flushTask, _flushInterval, 
+        _executor.scheduleWithFixedDelay(_flushTask, _flushInterval,
                                          _flushInterval, TimeUnit.SECONDS);
 
 	start();
@@ -188,7 +191,7 @@ public class HSMCleaner extends AbstractCell
     /**
      * Perform a scan of the trash directory.
      */
-    protected void scan() 
+    protected void scan()
     {
         try {
             info("Scanning " + _trashLocation);
@@ -243,7 +246,7 @@ public class HSMCleaner extends AbstractCell
     /**
      * Called when a new file was discovered in the trash directory.
      */
-    protected void onScan(URI uri) 
+    protected void onScan(URI uri)
     {
         try {
             debug("Detected " + uri);
@@ -257,7 +260,7 @@ public class HSMCleaner extends AbstractCell
     /**
      * Called when a file was sucessfully deleted from the HSM.
      */
-    protected void onSuccess(URI uri) 
+    protected void onSuccess(URI uri)
     {
         debug("Deleted " + uri);
         _limit.release();
@@ -299,7 +302,7 @@ public class HSMCleaner extends AbstractCell
     }
 
     public String ac_scan(Args args)
-    {        
+    {
         _executor.submit(_scanTask);
         return "";
     }

@@ -1,4 +1,4 @@
-package org.dcache.services.hsmcleaner;
+package org.dcache.services;
 
 import org.apache.log4j.Logger;
 import java.util.Map;
@@ -26,20 +26,20 @@ class Receiver
     final protected Object _object;
     final protected Method _method;
 
-    public Receiver(Object object, Method method) 
+    public Receiver(Object object, Method method)
     {
         _object = object;
         _method = method;
     }
 
-    public void deliver(Message message) 
+    public void deliver(Message message)
         throws IllegalAccessException,
                InvocationTargetException
     {
         _method.invoke(_object, message);
     }
 }
-       
+
 /**
  * Abstract cell implementation providing features needed by many
  * dCache cells:
@@ -65,7 +65,7 @@ public class AbstractCell extends CellAdapter
     {
         super(cellName, args, startNow);
 
-        _logger = 
+        _logger =
             Logger.getLogger(getClass().getPackage().getName());
 
         parseOptions();
@@ -120,20 +120,20 @@ public class AbstractCell extends CellAdapter
      * <li>java.math.BigDecimal
      * <li>java.math.BigInteger
      * </ul>
-     * 
+     *
      * @param object Instance to convert.
      * @param type Destination type (e.g. Boolean.class).
-     * @return Converted instance/datatype/collection or null if 
+     * @return Converted instance/datatype/collection or null if
      *         input object is null.
      * @throws ClassCastException if <i>object</i> can't be converted to
      *                            <i>type</i>.
      * @author MartinHilpert at SUN's Java Forum
      */
     @SuppressWarnings("unchecked")
-    static public <T> T toType(final Object object, final Class<T> type) 
+    static public <T> T toType(final Object object, final Class<T> type)
     {
         T result = null;
-        
+
         if (object == null) {
             //initalize primitive types:
             if (type == Boolean.TYPE) {
@@ -155,7 +155,7 @@ public class AbstractCell extends CellAdapter
             }
         } else {
             final String so = object.toString();
-            
+
             //custom type conversions:
             if (type == BigInteger.class) {
                 result = type.cast(new BigInteger(so));
@@ -168,7 +168,7 @@ public class AbstractCell extends CellAdapter
                 } else {
                     r = Boolean.valueOf(so);
                 }
-                
+
                 if (type == Boolean.TYPE) {
                     result = ((Class<T>) Boolean.class).cast(r); //avoid ClassCastException through autoboxing
                 } else {
@@ -223,9 +223,9 @@ public class AbstractCell extends CellAdapter
                 } else {
                     result = type.cast(i);
                 }
-            } else { 
+            } else {
                 try {
-                    Constructor<T> constructor = 
+                    Constructor<T> constructor =
                         type.getConstructor(String.class);
                     result = constructor.newInstance(object);
                 } catch (NoSuchMethodException e) {
@@ -236,31 +236,31 @@ public class AbstractCell extends CellAdapter
                     result = type.cast(object);
                 } catch (InstantiationException e) {
                     //hard cast:
-                    result = type.cast(object);                    
+                    result = type.cast(object);
                 } catch (IllegalAccessException e) {
                     //hard cast:
-                    result = type.cast(object);                    
+                    result = type.cast(object);
                 } catch (InvocationTargetException e) {
                     //hard cast:
-                    result = type.cast(object);                    
+                    result = type.cast(object);
                 }
             }
         }
-        
+
         return result;
     }
 
     /**
      * Returns the value of an option. If the option is found as a
      * cell argument, the value is taken from there. Otherwise it is
-     * taken from the domain context, if found. 
+     * taken from the domain context, if found.
      *
      * @param name the name of the option
-     * @param required if true, an exception is thrown if the option 
+     * @param required if true, an exception is thrown if the option
      *                 is not defined
-     * @return the value of the option, or null if the option is 
+     * @return the value of the option, or null if the option is
      *         not defined
-     * @throws IllegalArgumentException if <code>required</code> is true 
+     * @throws IllegalArgumentException if <code>required</code> is true
      *                                  and the option is not defined.
      */
     protected String getOption(Option option)
@@ -283,7 +283,7 @@ public class AbstractCell extends CellAdapter
     }
 
     /**
-     * Parses options for this cell. 
+     * Parses options for this cell.
      *
      * Option parsing is based on <code>Option</code> annotation of
      * fields. This fields must not be class private.
@@ -310,7 +310,7 @@ public class AbstractCell extends CellAdapter
                     } else {
                         value = field.get(this);
                     }
-                    
+
                     if (option.log()) {
                         String description = option.description();
                         String unit = option.unit();
@@ -347,7 +347,7 @@ public class AbstractCell extends CellAdapter
      * derivatives, the derivative must make sure that
      * <code>messageArrived</code> is still called.
      */
-    protected void addMessageListener(Object o)
+    public void addMessageListener(Object o)
     {
         synchronized (_receivers) {
             Class c = o.getClass();
@@ -363,7 +363,7 @@ public class AbstractCell extends CellAdapter
                                 receivers = new ArrayList<Receiver>();
                                 _receivers.put(parameter, receivers);
                             }
-                            receivers.add(new Receiver(o, m)); 
+                            receivers.add(new Receiver(o, m));
                         }
                     }
                 }
@@ -371,7 +371,7 @@ public class AbstractCell extends CellAdapter
         }
     }
 
-    public void messageArrived(CellMessage message) 
+    public void messageArrived(CellMessage message)
     {
         Object o = message.getMessageObject();
         if (o instanceof Message) {

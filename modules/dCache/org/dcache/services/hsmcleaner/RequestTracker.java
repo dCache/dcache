@@ -19,12 +19,14 @@ import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.CellNucleus;
 
+import org.dcache.services.AbstractCell;
+
 /**
  * This class encapsulates the interaction with pools.
  *
  * At the abstract level it provides a method for submitting file
  * deletions. Notifcation of success or failure is provided
- * asynchronously via two sinks. 
+ * asynchronously via two sinks.
  *
  * To reduce the load on pools, files are deleted in batches. For each
  * HSM, at most one request is send at a time. The class defines an
@@ -50,7 +52,7 @@ class RequestTracker
         {
             timeout(_hsm, _pool);
         }
-        
+
         public String getPool()
         {
             return _pool;
@@ -78,9 +80,9 @@ class RequestTracker
      */
     private Map<String,Timeout> _poolRequests =
         new HashMap<String,Timeout>();
-    
+
     /**
-     * A simple queue of locations to delete, grouped by HSM. 
+     * A simple queue of locations to delete, grouped by HSM.
      *
      * The main purpose is to allow bulk removal of files, thus not
      * spamming the pools with a large number of small delete
@@ -211,7 +213,7 @@ class RequestTracker
     synchronized private void flush(String hsm)
     {
         Collection<URI> locations = _locationsToDelete.get(hsm);
-        if (locations == null || locations.isEmpty()) 
+        if (locations == null || locations.isEmpty())
             return;
 
         if (_poolRequests.containsKey(hsm))
@@ -221,7 +223,7 @@ class RequestTracker
          * of files per request.
          */
         if (locations.size() > _maxFilesPerRequest) {
-            Collection<URI> subset = 
+            Collection<URI> subset =
                 new ArrayList<URI>(_maxFilesPerRequest);
             Iterator<URI> iterator = locations.iterator();
             for (int i = 0; i < _maxFilesPerRequest; i++) {
@@ -238,9 +240,9 @@ class RequestTracker
         while ((pool = _pools.getPoolWithHSM(hsm)) != null) {
             String name = pool.getName();
             try {
-                PoolRemoveFilesFromHSMMessage message = 
+                PoolRemoveFilesFromHSMMessage message =
                     new PoolRemoveFilesFromHSMMessage(name, hsm, locations);
-                
+
                 _cell.sendMessage(new CellMessage(new CellPath(name), message));
 
                 Timeout timeout = new Timeout(hsm, name);
@@ -282,7 +284,7 @@ class RequestTracker
      */
     synchronized private void timeout(String hsm, String pool)
     {
-        _cell.error("Timeout deleting files HSM " + hsm 
+        _cell.error("Timeout deleting files HSM " + hsm
                     + " attached to " + pool);
         _poolRequests.remove(hsm);
         _pools.remove(pool);
@@ -309,7 +311,7 @@ class RequestTracker
         }
 
         if (!failures.isEmpty())
-            _cell.warn("Failed to delete " + failures.size() 
+            _cell.warn("Failed to delete " + failures.size()
                        + " files from HSM " + hsm + ". Will try again later.");
 
         for (URI location : success) {
@@ -322,8 +324,8 @@ class RequestTracker
             assert location.getAuthority().equals(hsm);
             if (locations.remove(location))
                 _failureSink.push(location);
-        }        
-        
+        }
+
         Timeout timeout = _poolRequests.remove(hsm);
         if (timeout != null) {
             timeout.cancel();

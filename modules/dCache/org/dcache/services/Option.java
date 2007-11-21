@@ -1,4 +1,4 @@
-package org.dcache.services.hsmcleaner;
+package org.dcache.services;
 
 import java.lang.annotation.*;
 
@@ -7,7 +7,7 @@ import java.lang.annotation.*;
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.FIELD)
-public @interface Option 
+public @interface Option
 {
     String  name();
     String  description()  default "";
