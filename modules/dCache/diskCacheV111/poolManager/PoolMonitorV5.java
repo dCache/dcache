@@ -1,4 +1,4 @@
-// $Id: PoolMonitorV5.java,v 1.32 2007-08-01 20:00:45 tigran Exp $ 
+// $Id: PoolMonitorV5.java,v 1.32 2007-08-01 20:00:45 tigran Exp $
 
 package diskCacheV111.poolManager ;
 
@@ -37,19 +37,19 @@ public class PoolMonitorV5 {
    private double            _maxWriteCost          = 1000000.0;
    private boolean           _verbose               = true ;
    private final PartitionManager  _partitionManager ;
-   
-   public PoolMonitorV5( CellAdapter cell , 
+
+   public PoolMonitorV5( CellAdapter cell ,
                          PoolSelectionUnit selectionUnit ,
                          PnfsHandler  pnfsHandler ,
                          CostModule   costModule ,
                          PartitionManager partitionManager ){
-                         
+
       _cell             = cell ;
       _selectionUnit    = selectionUnit ;
       _pnfsHandler      = pnfsHandler ;
       _costModule       = costModule ;
-      _partitionManager = partitionManager ;      
-      
+      _partitionManager = partitionManager ;
+
    }
    public void messageToCostModule( CellMessage cellMessage ){
       _costModule.messageArrived(cellMessage);
@@ -70,52 +70,52 @@ public class PoolMonitorV5 {
     // output[2] -> allowed but not available (sorted, cpu + space)
     // output[3] -> pools from pnfs
     // output[4] -> List of List (all allowed pools)
-   public PnfsFileLocation getPnfsFileLocation( 
-                               PnfsId pnfsId , 
-                               StorageInfo storageInfo , 
+   public PnfsFileLocation getPnfsFileLocation(
+                               PnfsId pnfsId ,
+                               StorageInfo storageInfo ,
                                ProtocolInfo protocolInfo, String linkGroup){
-                               
+
       return new PnfsFileLocation( pnfsId, storageInfo ,protocolInfo , linkGroup) ;
-      
-   } 
+
+   }
    public class PnfsFileLocation {
-   
+
       private List _allowedButNotAvailable    = null ;
       private List _listOfListFromDb          = null ;
       private List _listOfPartitions          = null ;
-      private List _allowedAndAvailableMatrix = null ;  
+      private List _allowedAndAvailableMatrix = null ;
       private List<PoolCheckable> _acknowledgedPnfsPools     = null ;
       private int  _allowedPoolCount          = 0 ;
-      private int  _availablePoolCount        = 0 ;     
+      private int  _availablePoolCount        = 0 ;
       private boolean  _calculationDone       = false ;
-      
+
       private final PnfsId       _pnfsId       ;
       private final StorageInfo  _storageInfo  ;
       private final ProtocolInfo _protocolInfo ;
       private final String _linkGroup          ;
-      
+
       //private PoolManagerParameter _recentParameter = _partitionManager.getParameterCopyOf()  ;
-      
-      private PnfsFileLocation( PnfsId pnfsId , 
-                                StorageInfo storageInfo , 
+
+      private PnfsFileLocation( PnfsId pnfsId ,
+                                StorageInfo storageInfo ,
                                 ProtocolInfo protocolInfo ,
                                 String linkGroup){
-      
+
          _pnfsId       = pnfsId ;
          _storageInfo  = storageInfo ;
          _protocolInfo = protocolInfo ;
          _linkGroup    = linkGroup;
       }
       public List getListOfParameter(){ return _listOfPartitions ; }
-      public void clear(){ 
+      public void clear(){
           _allowedAndAvailableMatrix = null ;
           _calculationDone           = false ;
       }
       public PoolManagerParameter getCurrentParameterSet(){ return (PoolManagerParameter)_listOfPartitions.get(0) ;}
       public List getAllowedButNotAvailable(){ return _allowedButNotAvailable ; }
-      public List getAcknowledgedPnfsPools() throws Exception { 
+      public List getAcknowledgedPnfsPools() throws Exception {
           if( _acknowledgedPnfsPools == null )calculateFileAvailableMatrix() ;
-          return _acknowledgedPnfsPools ; 
+          return _acknowledgedPnfsPools ;
       }
       public int  getAllowedPoolCount(){ return _allowedPoolCount ; }
       public int  getAvailablePoolCount(){ return _availablePoolCount ; }
@@ -123,7 +123,7 @@ public class PoolMonitorV5 {
              throws Exception {
 
          if( _allowedAndAvailableMatrix == null )calculateFileAvailableMatrix();
-         
+
          return _allowedAndAvailableMatrix;
       }
       //
@@ -156,7 +156,7 @@ public class PoolMonitorV5 {
       //  -------------------------
       //
       //  output[1] = SortCpuCost( CheckFileInPool( expected ) )
-      // 
+      //
       //   +----------------------------------------------------+
       //   |                   output[0] > 0                    |
       //   |                                                    |
@@ -167,7 +167,7 @@ public class PoolMonitorV5 {
       //   |for i in  0,1,2,3,.      | for i in  0,1,2,3,.      |
       //   |  tmp = allowed[i]-veto  |   if(allowed[i]==0)cont  |
       //   |  if( tmp == 0 )continue |                          |
-      //   |  out[2] =               |   out[2] =               |       
+      //   |  out[2] =               |   out[2] =               |
       //   |   SortCost(getCost(tmp))|     SortCost(getCost(    |
       //   |                         |        allowed[i]))      |
       //   |   break                 |   break                  |
@@ -178,7 +178,7 @@ public class PoolMonitorV5 {
       //
        /*
         *   Input : storage info , pnfsid
-        *   Output :  
+        *   Output :
         *             _acknowledgedPnfsPools
         *             _listOfListFromDb
         *             _allowedAndAvailableMatrix
@@ -186,7 +186,7 @@ public class PoolMonitorV5 {
         */
        private void calculateFileAvailableMatrix()
              throws Exception {
-             
+
          if( _storageInfo == null )
             throw new
             CacheException(189,"Storage Info not available");
@@ -211,16 +211,16 @@ public class PoolMonitorV5 {
          _acknowledgedPnfsPools = queryPoolsForPnfsId( expectedFromPnfs.iterator() , _pnfsId , 0, _protocolInfo.isFileCheckRequired() ) ;
          say( "calculateFileAvailableMatrix _acknowledgedPnfsPools : "+_acknowledgedPnfsPools ) ;
          Map<String, PoolCheckable> availableHash = new HashMap<String, PoolCheckable>() ;
-         for( PoolCheckable cost: _acknowledgedPnfsPools ){            
+         for( PoolCheckable cost: _acknowledgedPnfsPools ){
             availableHash.put( cost.getPoolName() , cost ) ;
          }
          //
          //  get the prioritized list of allowed pools for this
          //  request. (We are only allowed to use the level-1
          //  pools.
-         //       
-         PoolPreferenceLevel [] level = 
-             _selectionUnit.match( "read" , 
+         //
+         PoolPreferenceLevel [] level =
+             _selectionUnit.match( "read" ,
                                    storageClass+"@"+hsm ,
                                    cacheClass ,
                                    hostName ,
@@ -234,53 +234,52 @@ public class PoolMonitorV5 {
          _allowedPoolCount          = 0 ;
          _availablePoolCount        = 0 ;
 
-         for( int prio = 0 ; prio < level.length ; prio++ ){ 
- 
+         for( int prio = 0 ; prio < level.length ; prio++ ){
+
             List<String> poolList = level[prio].getPoolList() ;
             //
             // makes list of list out of array of lists (need it later)
             //
             _listOfListFromDb.add( poolList ) ;
             //
-            // 
+            //
             PoolManagerParameter parameter = _partitionManager.getParameterCopyOf(level[prio].getTag()) ;
             _listOfPartitions.add(  parameter ) ;
             //
-            // get the allowed pools for this level and 
+            // get the allowed pools for this level and
             // and add them to the result list only if
             // they are really available.
             //
             say( "calculateFileAvailableMatrix : db matrix[*,"+prio+"] "+poolList);
-            
-            List     result   = new ArrayList(poolList.size() ) ;                 
-            String   poolName = null ;
+
+            List     result   = new ArrayList(poolList.size() ) ;
             Object   cost     = null ;
-            
-            for( Iterator ep = poolList.iterator() ; ep.hasNext() ; ){
-               poolName = (String)ep.next() ;
+
+            for( String poolName : poolList ){
+
                if( ( cost = availableHash.get( poolName ) ) != null ){
                    result.add( cost ) ;
                    _availablePoolCount ++ ;
                }
                _allowedPoolCount ++ ;
             }
-           
+
             if( result.size() > 0 )sortByCost( result , false , parameter ) ;
 
             say( "calculateFileAvailableMatrix : av matrix[*,"+prio+"] "+result);
-            
+
             _allowedAndAvailableMatrix.add( result ) ;
-                        
+
          }
          //
          // just in case, let us define a default parameter set
          //
          if( _listOfPartitions.size() == 0 )_listOfPartitions.add( _partitionManager.getParameterCopyOf() ) ;
          //
-         _calculationDone = true ;                      
+         _calculationDone = true ;
          return  ;
       }
-      
+
       public List getCostSortedAvailable() throws Exception {
          //
          // here we don't now exactly which parameter set to use.
@@ -288,22 +287,22 @@ public class PoolMonitorV5 {
          if( ! _calculationDone )calculateFileAvailableMatrix();
          List list = new ArrayList( getAcknowledgedPnfsPools() ) ;
          sortByCost( list , false ) ;
-         return list ; 
-               
+         return list ;
+
       }
       public List getStagePoolMatrix(  StorageInfo  storageInfo ,
                                        ProtocolInfo protocolInfo ,
                                        long         filesize  )
               throws Exception {
-              
-       
-             return getFetchPoolMatrix( 
-                           "cache" , 
-                           storageInfo , 
+
+
+             return getFetchPoolMatrix(
+                           "cache" ,
+                           storageInfo ,
                            protocolInfo ,
-                           filesize  ) ;       
+                           filesize  ) ;
       }
-              
+
       public List getFetchPoolMatrix(  String       mode ,        /* cache, p2p */
                                        StorageInfo  storageInfo ,
                                        ProtocolInfo protocolInfo ,
@@ -313,67 +312,67 @@ public class PoolMonitorV5 {
          String hsm          = storageInfo.getHsm() ;
          String storageClass = storageInfo.getStorageClass() ;
          String cacheClass   = storageInfo.getCacheClass() ;
-         String hostName     = 
+         String hostName     =
                     protocolInfo instanceof IpProtocolInfo ?
                     ((IpProtocolInfo)protocolInfo).getHosts()[0] :
                     null ;
-                    
 
-         PoolPreferenceLevel [] level = 
-             _selectionUnit.match( mode , 
+
+         PoolPreferenceLevel [] level =
+             _selectionUnit.match( mode ,
                                    storageClass+"@"+hsm ,
                                    cacheClass ,
                                    hostName ,
                                    protocolInfo.getProtocol()+"/"+protocolInfo.getMajorVersion() ,
-                                   storageInfo, 
-                                   _linkGroup) ;    
+                                   storageInfo,
+                                   _linkGroup) ;
          //
          //
          if( level.length == 0 )return new ArrayList() ;
 
          //
-         // Copy the matrix into a linear HashMap(keys). 
+         // Copy the matrix into a linear HashMap(keys).
          // Exclude pools which contain the file.
          //
          List    acknowledged = getAcknowledgedPnfsPools() ;
          HashMap poolMap      = new HashMap() ;
          HashSet poolAvailableSet = new HashSet() ;
-         for( Iterator l = acknowledged.iterator() ; l.hasNext() ; )poolAvailableSet.add( ((PoolCheckable)l.next()).getPoolName()) ; 
+         for( Iterator l = acknowledged.iterator() ; l.hasNext() ; )poolAvailableSet.add( ((PoolCheckable)l.next()).getPoolName()) ;
          for( int prio = 0 ; prio < level.length ; prio++ ){
-                     
+
             List poolList = level[prio].getPoolList() ;
-           
+
             for( Iterator it = poolList.iterator() ; it.hasNext() ; ){
-               
+
                String poolName = it.next().toString() ;
                //
                // skip if pool already contains the file.
                //
                if( poolAvailableSet.contains( poolName ) )continue ;
-               
+
                poolMap.put( poolName , null ) ;
 
             }
-            
-         }  
+
+         }
          //
          // Add the costs to the pool list.
          //
-         for( 
+         for(
                Iterator it = queryPoolsForCost( poolMap.keySet().iterator() , filesize ).iterator() ;
                it.hasNext() ;
              ){
 
              PoolCheckable cost = (PoolCheckable)it.next() ;
              poolMap.put( cost.getPoolName() , cost ) ;
-             
+
          }
          //
          // Build a new matrix containing the Costs.
          //
          _listOfPartitions    = new ArrayList() ;
-         List costMatrix = new ArrayList() ;  
-         for( int prio = 0 ; prio < level.length ; prio++ ){ 
+         List costMatrix = new ArrayList() ;
+         for( int prio = 0 ; prio < level.length ; prio++ ){
              //
              // skip empty level
              //
@@ -382,15 +381,15 @@ public class PoolMonitorV5 {
 
              List poolList = level[prio].getPoolList() ;
              if( poolList.size() == 0 )continue ;
-                          
+
              List row = new ArrayList() ;
              for( Iterator ii = poolList.iterator() ; ii.hasNext() ; ){
-             
+
                 PoolCheckable cost = (PoolCheckable)poolMap.get(ii.next().toString());
                 if( cost != null )row.add(cost);
-                
+
              }
-             // 
+             //
              // skip if non of the pools is available
              //
              if( row.size() == 0 )continue ;
@@ -401,11 +400,11 @@ public class PoolMonitorV5 {
              //
              // and add it to the matrix
              //
-             costMatrix.add( row ) ;              
+             costMatrix.add( row ) ;
 
-         }  
+         }
 
-         return costMatrix ;              
+         return costMatrix ;
       }
       private void say(String message ){
          if( _verbose )_cell.say("PFL ["+_pnfsId+"] : "+message) ;
@@ -421,13 +420,13 @@ public class PoolMonitorV5 {
          String hsm          = storageInfo.getHsm() ;
          String storageClass = storageInfo.getStorageClass() ;
          String cacheClass   = storageInfo.getCacheClass() ;
-         String  hostName    = 
+         String  hostName    =
                     protocolInfo instanceof IpProtocolInfo ?
                     ((IpProtocolInfo)protocolInfo).getHosts()[0] :
                     null ;
          int  maxDepth      = 9999 ;
-         PoolPreferenceLevel [] level = 
-             _selectionUnit.match( "write" , 
+         PoolPreferenceLevel [] level =
+             _selectionUnit.match( "write" ,
                                    storageClass+"@"+hsm ,
                                    cacheClass ,
                                    hostName ,
@@ -443,33 +442,33 @@ public class PoolMonitorV5 {
                              "No write pools configured for <"+
                              storageClass+"@"+hsm+">" ) ;
 
-         List costs = new ArrayList() ;  
+         List costs = null ;
 
          PoolManagerParameter parameter = null ;
 
-         for( int prio = 0 ; prio < Math.min( maxDepth , level.length ) ; prio++ ){ 
+         for( int prio = 0 ; prio < Math.min( maxDepth , level.length ) ; prio++ ){
 
             costs     = queryPoolsForCost( level[prio].getPoolList().iterator() , filesize ) ;
 
             parameter = _partitionManager.getParameterCopyOf(level[prio].getTag()) ;
 
             if( costs.size() != 0 )break ;
-         }  
+         }
 
-         if( costs.size() == 0 )
+         if( costs == null || costs.size() == 0 )
             throw new
             CacheException( 20 ,
                             "No write pool available for <"+
                             storageClass+"@"+hsm+">" ) ;
 
-         sortByCost( costs , true , parameter ) ;                 
+         sortByCost( costs , true , parameter ) ;
 
          PoolCostCheckable check = (PoolCostCheckable)costs.get(0) ;
-         
-         double lowestCost = calculateCost( check , true , parameter ) ;  
 
-         if( lowestCost  > _maxWriteCost )           
-             throw new 
+         double lowestCost = calculateCost( check , true , parameter ) ;
+
+         if( lowestCost  > _maxWriteCost )
+             throw new
              CacheException( 21 , "Best pool <"+check.getPoolName()+
                                   "> too high : "+lowestCost ) ;
 
@@ -483,7 +482,7 @@ public class PoolMonitorV5 {
       }
    }
    public void ssortByCost( List list , boolean cpuAndSize , PoolManagerParameter parameter ){
-      if( ( parameter._performanceCostFactor == 0.0 ) && 
+      if( ( parameter._performanceCostFactor == 0.0 ) &&
           ( parameter._spaceCostFactor == 0.0       )     ){
 
          Collections.shuffle( list ) ;
@@ -495,7 +494,7 @@ public class PoolMonitorV5 {
        return new CostComparator( both , parameter );
    }
    public class CostComparator implements Comparator {
-   
+
        private boolean              _useBoth = true ;
        private PoolManagerParameter _para    = null ;
        private CostComparator( boolean useBoth , PoolManagerParameter para ){
@@ -514,7 +513,7 @@ public class PoolMonitorV5 {
     }
     public double calculateCost( PoolCostCheckable checkable , boolean useBoth , PoolManagerParameter para ){
        if( useBoth ){
-          return Math.abs(checkable.getSpaceCost())       * para._spaceCostFactor + 
+          return Math.abs(checkable.getSpaceCost())       * para._spaceCostFactor +
                  Math.abs(checkable.getPerformanceCost()) * para._performanceCostFactor ;
        }else{
           return Math.abs(checkable.getPerformanceCost()) * para._performanceCostFactor ;
@@ -537,8 +536,8 @@ public class PoolMonitorV5 {
     //  have arrived, the global timeout has expired or the thread
     //  was interrupted.
     //
-    
-    private List queryPoolsForPnfsId(Iterator pools, PnfsId pnfsId,
+
+    private List queryPoolsForPnfsId(Iterator<String> pools, PnfsId pnfsId,
             long filesize, boolean checkFileExistence) throws Exception {
 
         ArrayList list = new ArrayList();
@@ -550,7 +549,7 @@ public class PoolMonitorV5 {
 
             while (pools.hasNext()) {
 
-                String poolName = (String) pools.next();
+                String poolName = pools.next();
                 //
                 // deselection inactive and disabled pools
                 //
@@ -571,7 +570,7 @@ public class PoolMonitorV5 {
                 try {
                     control.send(cellMessage);
                 } catch (Exception exc) {
-                    // 
+                    //
                     // here we don't care about exceptions
                     //
                     _cell.esay("Exception sending PoolCheckFileRequest to "
@@ -597,7 +596,7 @@ public class PoolMonitorV5 {
                     continue;
                 }
 
-                PoolCheckFileMessage poolMessage = 
+                PoolCheckFileMessage poolMessage =
                     (PoolCheckFileMessage) message;
                 _cell.say("queryPoolsForPnfsId : reply : " + poolMessage);
 
@@ -624,16 +623,16 @@ public class PoolMonitorV5 {
         } else {
 
             while ( pools.hasNext() ) {
-                
-                String poolName = (String) pools.next();
+
+                String poolName = pools.next();
                 PoolCheckAdapter check = new PoolCheckAdapter(_costModule
                         .getPoolCost(poolName, filesize));
                 check.setHave(true);
                 check.setPnfsId(pnfsId);
 
-                list.add(check);            
+                list.add(check);
             }
-            
+
         }
 
         _cell.say("queryPoolsForPnfsId : number of valid replies : "
@@ -642,31 +641,32 @@ public class PoolMonitorV5 {
 
     }
     public List queryPoolsByLinkName( String linkName , long filesize )throws Exception {
-    
-       List list = new ArrayList() ;
-       
-       PoolSelectionUnit.SelectionLink link = _selectionUnit.getLinkByName( linkName ) ;        
+
+       List<String> pools = new ArrayList<String>() ;
+
+       PoolSelectionUnit.SelectionLink link = _selectionUnit.getLinkByName( linkName ) ;
        PoolManagerParameter       parameter = _partitionManager.getParameterCopyOf( link.getTag()  ) ;
 
-       for( Iterator i = link.pools() ; i.hasNext() ; ){
-          list.add( ((PoolSelectionUnit.SelectionPool)i.next()).getName() ) ;
+       for( Iterator<PoolSelectionUnit.SelectionPool> i = link.pools() ; i.hasNext() ; ){
+          pools.add( i.next().getName() ) ;
        }
-       list = queryPoolsForCost( list.iterator() , filesize ) ;
-      
-       ssortByCost( list , true , parameter ) ;                 
-       
+
+       List list = queryPoolsForCost( pools.iterator() , filesize ) ;
+
+       ssortByCost( list , true , parameter ) ;
+
        return list ;
     }
     private boolean _dontAskForCost = true ;
-    private List queryPoolsForCost( Iterator pools , long filesize ) throws Exception {
-    
-        ArrayList     list    = new ArrayList() ;
-        SpreadAndWait control = 
+    private List queryPoolsForCost( Iterator<String> pools , long filesize ) throws Exception {
+
+        List     list    = new ArrayList() ;
+        SpreadAndWait control =
               new SpreadAndWait( _cell.getNucleus() , _poolTimeout ) ;
 
 	while( pools.hasNext() ){
 
-	    String poolName = (String)pools.next();
+	    String poolName = pools.next();
             PoolCostCheckable costCheck = _costModule.getPoolCost( poolName , filesize ) ;
             if( costCheck != null ){
                list.add( costCheck ) ;
@@ -676,30 +676,30 @@ public class PoolMonitorV5 {
                // send query
                //
                if( _dontAskForCost )continue ;
-	       CellMessage  cellMessage = 
-                      new CellMessage(  new CellPath(poolName), 
-                                        new PoolCheckCostMessage(poolName,filesize) 
+	       CellMessage  cellMessage =
+                      new CellMessage(  new CellPath(poolName),
+                                        new PoolCheckCostMessage(poolName,filesize)
                                      );
 
                _cell.say( "queryPoolsForCost : "+poolName+" query sent");
 	       try{
                   control.send( cellMessage ) ;
 	       }catch(Exception exc){
-                  // 
+                  //
                   // here we don't care about exceptions
                   //
 	          _cell.esay ("queryPoolsForCost : Exception sending PoolCheckFileRequest to "+poolName+" : "+exc);
 	       }
             }
-    
+
         }
-        
+
         if( _dontAskForCost )return list ;
 
         //
         // scan the replies
         //
-        CellMessage answer = null ; 
+        CellMessage answer = null ;
 
         while( ( answer = control.next() ) != null ){
 
@@ -709,10 +709,9 @@ public class PoolMonitorV5 {
 	      _cell.esay("queryPoolsForCost : Unexpected message from ("+
                    answer.getSourcePath()+") "+message.getClass());
               continue ;
-	   } 
+	   }
 	   PoolCostCheckable poolMessage = (PoolCostCheckable)message;
            _cell.say( "queryPoolsForCost : reply : "+poolMessage ) ;
-	   String  poolName = poolMessage.getPoolName();
            list.add( poolMessage ) ;
         }
         _cell.say( "queryPoolsForCost : number of valid replies : "+list.size() );
