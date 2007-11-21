@@ -296,38 +296,34 @@ public class CellNucleus implements Runnable, ThreadFactory {
       }
       return hash ;
    }
-   public int updateWaitQueue() {
 
-      Map<UOID,CellLock >   hash = new HashMap<UOID,CellLock >() ;
-      long        now  = System.currentTimeMillis();
-      int size = 0;
+    public int updateWaitQueue() 
+    {
+        Collection<CellLock> expired = new ArrayList<CellLock>();
+        long now  = System.currentTimeMillis();
+        int size;
 
-      synchronized( _waitHash ){
+        synchronized (_waitHash) {
+            Iterator<CellLock> i = _waitHash.values().iterator();
+            while (i.hasNext()) {
+                CellLock lock =  i.next();
+                if (lock != null && !lock.isSync() && lock.getTimeout() < now) {
+                    expired.add(lock);
+                    i.remove();
+                }
+            }
+            size = _waitHash.size();
+        }
 
-          if( _waitHash.isEmpty() )return 0 ;
+        //
+        // _waitHash can't be used here. Otherwise
+        // we will end up in a deadlock ( NO LOCKS WHILE CALLING CALLBACKS)
+        //
+        for (CellLock lock: expired) {
+            lock.getCallback().answerTimedOut(lock.getMessage());
+        }
 
-    	  for( Map.Entry<UOID, CellLock> entry: _waitHash.entrySet() ){
-	         UOID   key  = entry.getKey();
-	         CellLock lock =  entry.getValue();
-	         if( ( lock == null             ) ||
-	             ( lock.isSync()            ) ||
-	             ( lock.getTimeout() >= now )     ) continue ;
-	         hash.put( key , lock ) ;
-	         _waitHash.remove( key ) ;
-    	  }
-    	  size = _waitHash.size();
-      }
-
-      //
-      // _waitHash can't be used here. Otherwise
-      // we will end up in a deadlock ( NO LOCKS WHILE CALLING CALLBACKS)
-      //
-      for( CellLock lock: hash.values() ){
-         lock.getCallback().answerTimedOut( lock.getMessage() ) ;
-      }
-
-      return size;
-
+        return size;
    }
 
    public void sendMessage( CellMessage msg ,
