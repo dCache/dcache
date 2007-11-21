@@ -1,7 +1,7 @@
 //______________________________________________________________________________
 //
 // $Id$
-// $Author: litvinse $
+// $Author$
 //
 // created 10/07 by Dmitry Litvintsev (litvinse@fnal.gov)
 // 
