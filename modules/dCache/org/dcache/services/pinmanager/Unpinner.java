@@ -68,7 +68,7 @@ class Unpinner extends SMCTask
     {
         for (String poolName: locations) {
             PoolSetStickyMessage setStickyRequest =
-                new PoolSetStickyMessage(poolName, _pnfsId, false);
+                new PoolSetStickyMessage(poolName, _pnfsId, false,getCellName(),-1);
             try {
                 sendMessage(new CellPath(poolName), setStickyRequest);
             } catch (NoRouteToCellException e) {

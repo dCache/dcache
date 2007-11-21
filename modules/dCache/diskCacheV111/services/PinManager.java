@@ -1723,7 +1723,7 @@ public class PinManager extends CellAdapter implements Runnable  {
         
         public void setStickyFlag() {
             PoolSetStickyMessage setStickyRequest =
-            new PoolSetStickyMessage(readPoolName, pnfsId, true);
+            new PoolSetStickyMessage(readPoolName, pnfsId, true,getNucleus().getCellName(),-1);
             
             say("sending PoolSetStickyMessage");
             try {
@@ -1998,7 +1998,7 @@ public class PinManager extends CellAdapter implements Runnable  {
         
         public void unsetStickyFlag(String poolName) {
             PoolSetStickyMessage setStickyRequest =
-            new PoolSetStickyMessage(poolName, pnfsId, false);
+            new PoolSetStickyMessage(poolName, pnfsId, false,getNucleus().getCellName(),-1);
             
             say("sending PoolSetStickyMessage");
             try {

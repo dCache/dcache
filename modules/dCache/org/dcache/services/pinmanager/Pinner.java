@@ -92,7 +92,7 @@ class Pinner extends SMCTask
     void markSticky() 
     {
         PoolSetStickyMessage setStickyRequest =
-            new PoolSetStickyMessage(_readPoolName, _pnfsId, true);            
+            new PoolSetStickyMessage(_readPoolName, _pnfsId, true,getCellName(),-1);            
         sendMessage(new CellPath(_readPoolName), setStickyRequest,
                     1 * 24 * 60 * 60 * 1000);
     }

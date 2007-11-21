@@ -85,5 +85,9 @@ class SMCTask implements CellMessageAnswerable
             throw new RuntimeException("Bug detected", e);
         } 
     }
+    
+    public String getCellName() {
+        return _cell.getNucleus().getCellName();
+    }
 }
 
