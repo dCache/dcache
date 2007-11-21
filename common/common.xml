@@ -18,6 +18,12 @@
   <property name="externalLibDir" location="${dCacheBox-module}/external" />
   <property name="libDir" location="${externalLibDir}" />
 
+  <!-- Define task for invoking SMC - the state machine compiler -->
+  <taskdef name="smc" 
+           classname="net.sf.smc.ant.SmcJarWrapper" 
+           classpath="${libDir}/smc/smc-ant.jar"/> 
+  <property name="smc.jar" location="${libDir}/smc/Smc.jar"/>
+
   <!--
           Useful information from Environment
   -->
