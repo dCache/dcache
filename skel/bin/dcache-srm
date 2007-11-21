@@ -17,6 +17,10 @@ export JAVA_HOME
 export JAVA_OPTS
 export CATALINA_HOME=${TOMCAT_BASE_PATH}/apache-tomcat-5.5.20
 
+export X509_CERT
+export X509_KEY
+export SRM_V2_PORT
+
 
 case $cmd1 in
   start)
@@ -24,6 +28,11 @@ case $cmd1 in
         RETVAL=$?
         echo
         [ $RETVAL -eq 0 ] && touch /var/lock/subsys/srm-tomcat
+	echo "Pinging srm server to wake it up, will take few seconds ..."
+	export CLASSPATH
+	for jar in `find /opt/d-cache/classes/ -name '*jar'`; do  CLASSPATH=${CLASSPATH}:${jar}; done
+	$JAVA_HOME/bin/java org.dcache.srm.client.SrmStartUpPing
+	echo "Done"
         ;;
   stop)
          ${TOMCAT_BASE_PATH}/apache-tomcat-5.5.20/bin/shutdown.sh
