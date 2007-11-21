@@ -34,10 +34,8 @@ public class SrmStartUpPing {
 	    this.debug = debug;
 	}
 	public void elog(String s) {
-	    System.err.println(s);
 	}
 	public void elog(Throwable t) {
-	    t.printStackTrace(System.err);
 	}
 	public void log(String s) {
 	    if (debug) {
@@ -71,7 +69,7 @@ public class SrmStartUpPing {
 		port = Integer.parseInt(sport);
 	    }
 	    catch (NumberFormatException npe){ 
-		logger.elog(npe);
+		npe.printStackTrace();
 		System.exit(1);
 	    }
 	}
@@ -81,7 +79,7 @@ public class SrmStartUpPing {
 		null,
 		x509cert,x509key);
 // 	    SRMClientV2 client = new SRMClientV2(new GlobusURL("srm://fapl110.fnal.gov:8443/srm/managerv2?SFN="),
- 	    SRMClientV2 client = new SRMClientV2(new GlobusURL("srm://localhost:"+port+"/srm/managerv2?SFN="),
+	    SRMClientV2 client = new SRMClientV2(new GlobusURL("srm://localhost:"+port+"/srm/managerv2?SFN="),
  						 user_cred,
  						 10000,
  						 0,
@@ -111,8 +109,12 @@ public class SrmStartUpPing {
  	}
  	catch (Exception e) { 
  	    //e.printStackTrace();
-	    logger.elog(e.getMessage());
+	    // logger.elog(e.getMessage());
  	}
+	finally {
+	    System.exit(0);
+	}
+	System.exit(0);
     }
 }
 	    
