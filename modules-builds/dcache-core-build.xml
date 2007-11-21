@@ -106,6 +106,7 @@
 			<filename name="log4j/log4j-1.2.8.jar" />
 			<filename name="dbcp/c3p0-0.9.1.2.jar" />
 			<filename name="berkeleyDB/je-3.2.44.jar" />
+			<filename name="smc/statemap.jar" />
 		</or>
 	</selector>
 
@@ -264,9 +265,57 @@
                   destdir="${buildDir}/core"/>
         </target>
 
+        <!-- The SMC invocation part. Without the ant-contrib tasks, we
+             need to add each .sm file one by one below. -->
+        <target name="dcache.smc" 
+                description="Compile state machines using SMC">
+          <property name="fsmDir" location="${buildTop}/fsm"/>
+          <mkdir dir="${fsmDir}"/>
+
+          <smc target="java" 
+               smfile="${sourceDir}/org/dcache/services/pinmanager/Pin.sm"
+               destdir="${sourceDir}/org/dcache/services/pinmanager/"
+               smcjar="${smc.jar}"/>
+          <smc target="table" 
+               smfile="${sourceDir}/org/dcache/services/pinmanager/Pin.sm"
+               destdir="${fsmDir}"
+               smcjar="${smc.jar}"/>
+          <smc target="graph" 
+               smfile="${sourceDir}/org/dcache/services/pinmanager/Pin.sm"
+               destdir="${fsmDir}"
+               smcjar="${smc.jar}"/>
+          <smc target="java" 
+               smfile="${sourceDir}/org/dcache/services/pinmanager/Pinner.sm"
+               destdir="${sourceDir}/org/dcache/services/pinmanager/"
+               smcjar="${smc.jar}"/>
+          <smc target="table" 
+               smfile="${sourceDir}/org/dcache/services/pinmanager/Pinner.sm"
+               destdir="${fsmDir}"
+               smcjar="${smc.jar}"/>
+          <smc target="graph" 
+               smfile="${sourceDir}/org/dcache/services/pinmanager/Pinner.sm"
+               destdir="${fsmDir}"
+               smcjar="${smc.jar}"/>
+          <smc target="java" 
+               smfile="${sourceDir}/org/dcache/services/pinmanager/Unpinner.sm"
+               destdir="${sourceDir}/org/dcache/services/pinmanager/"
+               smcjar="${smc.jar}"/>
+          <smc target="table" 
+               smfile="${sourceDir}/org/dcache/services/pinmanager/Unpinner.sm"
+               destdir="${fsmDir}"
+               smcjar="${smc.jar}"/>
+          <smc target="graph" 
+               smfile="${sourceDir}/org/dcache/services/pinmanager/Unpinner.sm"
+               destdir="${fsmDir}"
+               smcjar="${smc.jar}"/>
+        </target>         
+
 	<!-- Compile -->
 
-	<target name="dcache.compile" depends="prepare,dcache.depend" unless="dcache.jar.upToDate" description="Compile Java code for dcache.jar">
+	<target name="dcache.compile" 
+                depends="prepare,dcache.smc,dcache.depend" 
+                unless="dcache.jar.upToDate" 
+                description="Compile Java code for dcache.jar">
 
 		<mkdir dir="${buildDir}/core" />
 
@@ -656,6 +705,10 @@
 		<!-- BerkeleyDB -->
 		<mkdir dir="${binDir}/classes/berkeleyDB/" />
 		<copy file="${libDir}/berkeleyDB/je-3.2.44.jar" todir="${binDir}/classes/berkeleyDB/" />
+
+		<!-- SMC -->
+		<mkdir dir="${binDir}/classes/smc/" />
+		<copy file="${libDir}/smc/statemap.jar" todir="${binDir}/classes/smc/" />
 
 	    <!-- JDBC -->
 	    <mkdir dir="${binDir}/classes/jdbc-drivers" />
