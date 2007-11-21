@@ -639,7 +639,8 @@
 	    <copy file="${libDir}/Chimera/nfs3prot.jar" todir="${binDir}/classes/chimera" />
 		<copy file="${libDir}/dbcp/c3p0.properties" todir="${binDir}/config" />
 		<copy file="${libDir}/dbcp/c3p0-0.9.1.2.jar" todir="${binDir}/classes/dbcp" />
-	       <copy file="${libDir}/Chimera/run.xml" tofile="${binDir}/libexec/chimera/chimera-nfs-run.xml" />
+	    <copy file="${libDir}/Chimera/run.xml" tofile="${binDir}/libexec/chimera/chimera-nfs-run.xml" />
+	    <copy file="${libDir}/Chimera/chimera-nfs-run.sh" tofile="${binDir}/libexec/chimera/chimera-nfs-run.sh" />
 	    <copy todir="${binDir}/libexec/chimera/sql">
 	        <fileset dir="${libDir}/Chimera/sql" />
 	    </copy>
