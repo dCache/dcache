@@ -96,6 +96,18 @@ public class AbstractCell extends CellAdapter
         _logger.error(str);
     }
 
+    /** @deprecated */
+    public void say(String s)
+    {
+        info(s);
+    }
+
+    /** @deprecated */
+    public void esay(String s)
+    {
+        error(s);
+    }
+
     /**
      * Convert an instance to a specific type (kind of intelligent
      * casting).  Note: you can set primitive types as input
