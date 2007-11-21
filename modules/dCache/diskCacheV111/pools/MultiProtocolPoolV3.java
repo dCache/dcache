@@ -386,6 +386,8 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
 
 			while (!_setup.canRead()) {
                    disablePool(PoolV2Mode.DISABLED_STRICT,1,"Initializing : Repository seems not to be ready - setup file does not exist or not readble");
+                   esay("Can't read setup file: exists? " +
+                           Boolean.toString(_setup.exists()) + " can read? " + Boolean.toString(_setup.canRead()) );
 				try {
 					Thread.sleep(30000);
 				} catch (InterruptedException ie) {
