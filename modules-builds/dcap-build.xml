@@ -243,10 +243,10 @@ make -f Makefile.gsi GSI=${globus.untaredTo}</echo>
       </exec>
 
       <echo>cd security_plugins/gssapi
-  make -f Makefile.gsi GSI=${globus.libDir}/globus-24</echo>
+  make -f Makefile.gsi-ia64 GSI=${globus.untaredTo}</echo>
       <exec executable="make" dir="${sourceDir}/security_plugins/gssapi" failonerror="true" output="${buildDir}/dcap.log" append="true" >
         <arg value="-f" />
-        <arg value="Makefile.gsi" />
+        <arg value="Makefile.gsi-ia64" />
         <arg value="GSI=${globus.untaredTo}" />
       </exec>
 
