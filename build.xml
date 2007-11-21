@@ -377,7 +377,7 @@
             <fileset dir="${rpmTemplateDir}">
                 <or>
                     <filename name="rpm*.template" />
-                    <filename name="dcache-client.spec.template" />
+                    <filename name="dcache-dcap.spec.template" />
                 </or>
             </fileset>
             <mapper type="glob" from="*.template" to="*" />
