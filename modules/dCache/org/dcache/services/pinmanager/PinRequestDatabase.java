@@ -55,8 +55,7 @@ class PinRequestDatabase
     private static final String CreateNextPinRequestIdTable =
 	"CREATE TABLE " + TABLE_NEXTPINREQUESTID + "(NEXTLONG BIGINT)";
     private static final String insertNextPinRequestId =
-        "INSERT INTO " + TABLE_NEXTPINREQUESTID + " VALUES ("
-        + Long.MIN_VALUE + ")";
+        "INSERT INTO " + TABLE_NEXTPINREQUESTID + " VALUES (0)";
 
     private static final String InsertIntoPinRequestTable =
         "INSERT INTO " + TABLE_PINREQUEST
@@ -125,25 +124,42 @@ class PinRequestDatabase
         _user = user;
         _pass = password;
 
+        // Load JDBC driver
+        try {
+            Class.forName(_jdbcClass);
+        } catch (ClassNotFoundException e) {
+            throw new IllegalArgumentException("Could not find JDBC driver", e);
+        }
+
         _pool = JdbcConnectionPool.getPool(_jdbcUrl, _jdbcClass, _user, _pass);
 
         prepareTables();
         readRequests();
     }
 
-    protected void say(String s)
+    protected void debug(String s)
     {
-        _manager.say(s);
+        _manager.debug(s);
     }
 
-    protected void esay(String s)
+    protected void info(String s)
     {
-        _manager.esay(s);
+        _manager.info(s);
     }
 
-    protected void esay(Throwable s)
+    protected void warn(String s)
     {
-        _manager.esay(s);
+        _manager.warn(s);
+    }
+
+    protected void error(String s)
+    {
+        _manager.error(s);
+    }
+
+    protected void fatal(String s)
+    {
+        _manager.error(s);
     }
 
     private void createTable(Connection con, String name,
@@ -156,13 +172,13 @@ class PinRequestDatabase
             try {
                 for (String statement : statements) {
                     Statement s = con.createStatement();
-                    say(statement);
+                    debug(statement);
                     int result = s.executeUpdate(statement);
                     s.close();
                 }
-            } catch (SQLException sqle) {
-                esay("SQL Exception (relation could already exist)");
-                esay(sqle);
+            } catch (SQLException e) {
+                warn("SQL Exception (relation could already exist): "
+                     + e.getMessage());
             }
         }
     }
@@ -183,7 +199,7 @@ class PinRequestDatabase
                     "SELECT PinRequestId, PnfsId, Expiration FROM "
                     + TABLE_OLDPINREQUEST;
                 Statement stmt = con.createStatement();
-                say(SelectEverythingFromOldPinRewquestTable);
+                debug(SelectEverythingFromOldPinRewquestTable);
 
                 PreparedStatement stmt1 =
                     con.prepareStatement(InsertIntoPinRequestTable);
@@ -199,14 +215,14 @@ class PinRequestDatabase
                 stmt1.close();
                 stmt.close();
                 stmt = con.createStatement();
-                say("DROP TABLE "+TABLE_OLDPINREQUEST);
-                stmt.executeUpdate("DROP TABLE "+TABLE_OLDPINREQUEST);
+                debug("DROP TABLE " + TABLE_OLDPINREQUEST);
+                stmt.executeUpdate("DROP TABLE " + TABLE_OLDPINREQUEST);
                 stmt.close();
 
             }
-        } catch (SQLException sqlee) {
-            esay(" failed to read values from old pinrequest table ");
-            esay(sqlee);
+        } catch (SQLException e) {
+            warn("Failed to read values from old pinrequest table: "
+                 + e.getMessage());
         }
 
         try {
@@ -214,13 +230,13 @@ class PinRequestDatabase
             ResultSet tableRs = md.getTables(null, null, TABLE_OLDPINS, null);
             if (tableRs.next()) {
                 Statement stmt = con.createStatement();
-                say("DROP TABLE " + TABLE_OLDPINS);
+                debug("DROP TABLE " + TABLE_OLDPINS);
                 stmt.executeUpdate("DROP TABLE " + TABLE_OLDPINS);
                 stmt.close();
             }
-        } catch (SQLException sqlee) {
-            esay(" failed to read values from old pinrequest table ");
-            esay(sqlee);
+        } catch (SQLException e) {
+            warn("Failed to read values from old pinrequest table: "
+                 + e.getMessage());
         }
     }
 
@@ -229,22 +245,19 @@ class PinRequestDatabase
         Connection con = _pool.getConnection();
         con.setAutoCommit(true);
         try {
-            // Add driver to JDBC
-            Class.forName(_jdbcClass);
-
             createTable(con, TABLE_PINREQUEST, CreatePinRequestTable);
             createTable(con, TABLE_NEXTPINREQUESTID,
                         CreateNextPinRequestIdTable, insertNextPinRequestId);
             migrateTables(con);
 
             Statement s = con.createStatement();
-            say(SelectNextPinRequestId);
+            debug(SelectNextPinRequestId);
             ResultSet rs = s.executeQuery(SelectNextPinRequestId);
             if (rs.next()) {
                 nextRequestId = rs.getLong(1);
                 nextRequestId++;
             } else {
-                esay("can't read nextRequestId!!!");
+                error("Cannot read nextRequestId, using system time instead.");
                 nextRequestId = System.currentTimeMillis();
             }
             s.close();
@@ -253,12 +266,9 @@ class PinRequestDatabase
             con.setAutoCommit(false);
             _pool.returnConnection(con);
             con = null;
-        } catch (SQLException sqe) {
-            esay(sqe);
-            throw sqe;
-        } catch (Exception ex) {
-            esay(ex);
-            throw new SQLException(ex.toString());
+        } catch (SQLException e) {
+            error("Failed to prepare tables: " + e.toString());
+            throw e;
         } finally {
             if (con != null)
                 _pool.returnFailedConnection(con);
@@ -277,17 +287,25 @@ class PinRequestDatabase
         try {
             con = _pool.getConnection();
             Statement stmt = con.createStatement();
-            say("initializeDatabasePinRequests, trying " + SelectEverything);
+            debug(SelectEverything);
             ResultSet rs = stmt.executeQuery(SelectEverything);
             while (rs.next()) {
                 long pinId = rs.getLong(1);
                 PnfsId pnfsId = new PnfsId(rs.getString(2));
                 long expiration = rs.getLong(3);
                 long clientId = rs.getLong(4);
-                if (expiration <= currentTimestamp + 60*1000) {
-                    expiration = currentTimestamp + 60*1000 ;
+
+                /* To avoid expiring lots of pins before all requests
+                 * have been read, we put all expiration dates at
+                 * least 1 minute into the future.
+                 *
+                 * If reading the requests should take longer, this is
+                 * not fatal, as the Pin class is able to handle such
+                 * a situation.
+                 */
+                if (expiration <= currentTimestamp + 60 * 1000) {
+                    expiration = currentTimestamp + 60 * 1000;
                 }
-                long lifetime = expiration - currentTimestamp;
 
                 PinRequest request =
                     new PinRequest(pinId, expiration, clientId);
@@ -297,9 +315,9 @@ class PinRequestDatabase
             stmt.close();
             _pool.returnConnection(con);
             con = null;
-        } catch(SQLException sqle) {
-            esay("initializeDatabasePinRequests failed "+sqle);
-            throw sqle;
+        } catch(SQLException e) {
+            error("Recovery of old requests failed: " + e.toString());
+            throw e;
         } finally {
             if (con != null) {
                 _pool.returnFailedConnection(con);
@@ -316,22 +334,22 @@ class PinRequestDatabase
                 _con = _pool.getConnection();
                 PreparedStatement s =
                     _con.prepareStatement(SelectNextPinRequestIdForUpdate);
-                say(SelectNextPinRequestIdForUpdate);
+                debug(SelectNextPinRequestIdForUpdate);
                 ResultSet set = s.executeQuery();
                 if (!set.next()) {
                     s.close();
-                    throw new SQLException("table " + TABLE_NEXTPINREQUESTID + " is empty!!!");
+                    throw new SQLException("Table " + TABLE_NEXTPINREQUESTID + " is empty.");
                 }
                 nextLongBase = set.getLong("NEXTLONG");
                 s.close();
-                say("nextLongBase is =" + nextLongBase);
+                debug("nextLongBase=" + nextLongBase);
                 s = _con.prepareStatement(IncreasePinRequestId);
-                say("executing statement: "+IncreasePinRequestId);
+                debug(IncreasePinRequestId);
                 int i = s.executeUpdate();
                 s.close();
                 _con.commit();
             } catch (SQLException e) {
-                e.printStackTrace();
+                error("Failed to obtain ID sequence: " + e.toString());
                 try {
                     _con.rollback();
                 } catch (SQLException e1) {
@@ -350,7 +368,7 @@ class PinRequestDatabase
         }
 
         long nextLong = nextLongBase + (nextLongIncrement++);
-        say(" return nextLong=" + nextLong);
+        debug("nextLong=" + nextLong);
         return nextLong;
     }
 

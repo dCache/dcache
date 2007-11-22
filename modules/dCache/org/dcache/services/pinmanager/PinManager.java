@@ -16,7 +16,7 @@ import org.dcache.services.AbstractCell;
 import org.dcache.services.Option;
 
 /**
- * This cell performs pinning and unpining service on behalf of other
+ * This cell performs pinning and unpinning service on behalf of other
  * services.
  *
  * Pining/unpinning of the same resources by multiple requestors is
@@ -105,7 +105,7 @@ public class PinManager extends AbstractCell implements Runnable
             getNucleus().newThread(this, "UpdateWaitQueueThread").start();
             start();
         } catch (SQLException e) {
-            esay("Error starting PinManager: " + e.getMessage());
+            fatal("Error starting PinManager: " + e.getMessage());
             start();
             kill();
             throw e;

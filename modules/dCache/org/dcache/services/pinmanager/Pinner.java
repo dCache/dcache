@@ -5,12 +5,12 @@ import diskCacheV111.vehicles.*;
 
 import dmg.cells.nucleus.CellPath;
 
-/** 
+/**
  * Background task used to perform the actual pinning operation. To do
  * this, it will talk to the PNFS manager, pool manager and pools.
  *
  * It is spawned by a Pin instance, and will do a callback to that pin
- * when done. 
+ * when done.
  */
 class Pinner extends SMCTask
 {
@@ -18,12 +18,12 @@ class Pinner extends SMCTask
     private final PnfsId _pnfsId;
     private final PinnerContext _fsm;
     private final CellPath _pnfsManager;
-    private final CellPath _poolManager;    
+    private final CellPath _poolManager;
     private StorageInfo _storageInfo;
     private String _readPoolName;
 
-    public Pinner(PinManager manager, 
-                  PnfsId pnfsId, StorageInfo storageInfo, Pin pin) 
+    public Pinner(PinManager manager,
+                  PnfsId pnfsId, StorageInfo storageInfo, Pin pin)
     {
         super(manager);
 
@@ -60,24 +60,24 @@ class Pinner extends SMCTask
         _readPoolName = name;
     }
 
-    void retrieveStorageInfo() 
+    void retrieveStorageInfo()
     {
-        sendMessage(_pnfsManager, 
+        sendMessage(_pnfsManager,
                     new PnfsGetStorageInfoMessage(_pnfsId),
                     60 * 60 * 1000);
     }
-        
-    void updatePnfsFlag() 
+
+    void updatePnfsFlag()
     {
         PnfsFlagMessage pfm = new PnfsFlagMessage(_pnfsId, "s", "put");
         pfm.setValue("*");
         pfm.setReplyRequired(true);
         sendMessage(_pnfsManager, pfm, 60 * 60 * 1000);
     }
-        
-    void findReadPool() 
+
+    void findReadPool()
     {
-        DCapProtocolInfo pinfo = 
+        DCapProtocolInfo pinfo =
             new DCapProtocolInfo("DCap", 3, 0, "localhost", 0);
 
         PoolMgrSelectReadPoolMsg request =
@@ -85,14 +85,15 @@ class Pinner extends SMCTask
                                          _storageInfo,
                                          pinfo,
                                          0);
-            
+
         sendMessage(_poolManager, request, 1*24*60*60*1000);
     }
-        
-    void markSticky() 
+
+    void markSticky()
     {
         PoolSetStickyMessage setStickyRequest =
-            new PoolSetStickyMessage(_readPoolName, _pnfsId, true,getCellName(),-1);            
+            new PoolSetStickyMessage(_readPoolName, _pnfsId, true,
+                                     getCellName(), -1);
         sendMessage(new CellPath(_readPoolName), setStickyRequest,
                     1 * 24 * 60 * 60 * 1000);
     }
@@ -104,7 +105,6 @@ class Pinner extends SMCTask
 
     void fail(Object reason)
     {
-        _cell.esay("Pinning failed: " + reason);
-        _pin.pinFailed();        
+        _pin.pinFailed(reason);
     }
 }

@@ -23,14 +23,14 @@ import diskCacheV111.util.PnfsId;
  *
  * Most of this class is synchronized, since the state machine can
  * only handle a single event at a time.
- */    
+ */
 public class Pin extends SMCDriver
 {
     /** PNFS ID of the pinned file. */
     private final PnfsId _pnfsId;
 
     /** All requests to pin the file. */
-    private final Collection<PinRequest> _requests = 
+    private final Collection<PinRequest> _requests =
         new ArrayList<PinRequest>();
 
     /** The pin manager which this pin belongs to. */
@@ -51,7 +51,7 @@ public class Pin extends SMCDriver
      */
     private static Timer _timer = new Timer(true);
 
-    public Pin(PinManager manager, PnfsId pnfsId) 
+    public Pin(PinManager manager, PnfsId pnfsId)
     {
         _manager = manager;
         _pnfsId = pnfsId;
@@ -67,35 +67,36 @@ public class Pin extends SMCDriver
         return _fsm;
     }
 
-    /** 
-     * Informational logging.
-     */
-    protected void say(String s)
+    protected void debug(String s)
     {
-        _manager.say(s);
+        _manager.debug(s);
     }
 
-    /** 
-     * Error logging.
-     */
-    protected void esay(String s)
+    protected void info(String s)
     {
-        _manager.esay(s);
+        _manager.info(s);
     }
 
-    /** 
-     * Error logging.
-     */
-    protected void esay(Throwable e)
+    protected void warn(String s)
     {
-        _manager.esay(e);
+        _manager.warn(s);
+    }
+
+    protected void error(String s)
+    {
+        _manager.error(s);
+    }
+
+    protected void fatal(String s)
+    {
+        _manager.fatal(s);
     }
 
     /**
      * Handles messages from cell layers. Such messages are translated
      * into events and fed into the state machine.
      */
-    synchronized public void messageArrived(CellMessage envelope, 
+    synchronized public void messageArrived(CellMessage envelope,
                                             PinManagerMessage msg)
     {
         transition("messageArrived", envelope, msg);
@@ -112,7 +113,7 @@ public class Pin extends SMCDriver
         _storageInfo = info;
     }
 
-    synchronized public String toString() 
+    synchronized public String toString()
     {
         StringBuilder sb = new StringBuilder();
         sb.append("pin of : ").append(_pnfsId).append('\n');
@@ -128,8 +129,8 @@ public class Pin extends SMCDriver
         }
         return sb.toString();
     }
-        
-    synchronized public PnfsId getPnfsId() 
+
+    synchronized public PnfsId getPnfsId()
     {
         return _pnfsId;
     }
@@ -143,7 +144,7 @@ public class Pin extends SMCDriver
     }
 
     /**
-     * Pin the file. 
+     * Pin the file.
      *
      * This is for pinning via the admin interface. These requests are
      * not confirmed.
@@ -169,7 +170,7 @@ public class Pin extends SMCDriver
         _fsm.adminUnpin(request);
         return true;
     }
-    
+
     /**
      * Triggers expiration of a request.
      */
@@ -183,6 +184,7 @@ public class Pin extends SMCDriver
      */
     synchronized void pinSucceeded()
     {
+        info("Successfully pinned " + _pnfsId);
         _handler = null;
         _fsm.pinSucceeded();
     }
@@ -190,8 +192,9 @@ public class Pin extends SMCDriver
     /**
      * Callback from pinner.
      */
-    synchronized void pinFailed()
+    synchronized void pinFailed(Object reason)
     {
+        error("Failed to pin " + _pnfsId + ": " + reason);
         _handler = null;
         _fsm.pinFailed();
     }
@@ -201,6 +204,7 @@ public class Pin extends SMCDriver
      */
     synchronized void unpinSucceeded()
     {
+        info("Successfully unpinned " + _pnfsId);
         _handler = null;
         _fsm.unpinSucceeded();
     }
@@ -208,8 +212,9 @@ public class Pin extends SMCDriver
     /**
      * Callback from unpinner.
      */
-    synchronized void unpinFailed()
+    synchronized void unpinFailed(Object reason)
     {
+        error("Failed to unpin " + _pnfsId + ": " + reason);
         _handler = null;
         _fsm.unpinFailed();
     }
@@ -222,18 +227,19 @@ public class Pin extends SMCDriver
      */
     PinRequest createRequest(long lifetime, long clientId)
     {
-        say("pin pnfsId=" + _pnfsId + " lifetime=" + lifetime);
+        debug("pin pnfsId=" + _pnfsId + " lifetime=" + lifetime);
 
         long max = _manager.getMaxPinDuration();
         if (lifetime > max) {
             lifetime = max;
-            say("Pin lifetime exceeded maxPinDuration, new lifetime is set to "+lifetime);
+            warn("Pin lifetime exceeded maxPinDuration, new lifetime set to "
+                 + lifetime);
         }
 
         long expiration = System.currentTimeMillis() + lifetime;
         return _manager.getDatabase().createRequest(_pnfsId, expiration, clientId);
     }
- 
+
     /**
      * Returns a new pin request matching the given pin message.  The
      * request is not yet added to the pin.
@@ -250,7 +256,7 @@ public class Pin extends SMCDriver
     }
 
     /**
-     * Adds a pin request to the pin. 
+     * Adds a pin request to the pin.
      *
      * If the request contains storage information and storage
      * information is not yet known for the pin, then this information
@@ -258,7 +264,7 @@ public class Pin extends SMCDriver
      *
      * A new expiration timer is started.
      *
-     * @return The request. 
+     * @return The request.
      * @see remove
      */
     synchronized PinRequest add(final PinRequest request)
@@ -311,7 +317,7 @@ public class Pin extends SMCDriver
      * Return the request with the given pin ID, or null if such a
      * request does not exist.
      */
-    synchronized PinRequest getRequest(long id) 
+    synchronized PinRequest getRequest(long id)
     {
         for (PinRequest request : _requests) {
             if (request.getPinRequestId() == id) {
@@ -325,7 +331,7 @@ public class Pin extends SMCDriver
      * Return the request with the given pin ID, or null if such a
      * request does not exist.
      */
-    PinRequest getRequest(String id) 
+    PinRequest getRequest(String id)
     {
         try {
             return getRequest(Long.parseLong(id));
@@ -356,14 +362,14 @@ public class Pin extends SMCDriver
         return getRequest(msg.getPinId());
     }
 
-    /** 
+    /**
      * Sends a failure response for the given message.
      *
      * A reply is only send if required by the message.
      */
-    void returnFailure(CellMessage envelope, int rc, Object reason) 
+    void returnFailure(CellMessage envelope, int rc, Object reason)
     {
-        esay("Returning failure: " + reason);
+        error("Returning failure: " + reason);
 
         if (reason != null && !(reason instanceof java.io.Serializable)) {
             reason = reason.toString();
@@ -376,7 +382,7 @@ public class Pin extends SMCDriver
                 envelope.revertDirection();
                 _manager.sendMessage(envelope);
             } catch (NoRouteToCellException e) {
-                esay("Cannot send failure response: " + e.getMessage());
+                error("Cannot send failure response: " + e.getMessage());
             } catch (NotSerializableException e) {
                 throw new RuntimeException("Bug detected", e);
             }
@@ -388,7 +394,7 @@ public class Pin extends SMCDriver
      *
      * A reply is only send if required by the message.
      */
-    void returnSuccess(CellMessage envelope) 
+    void returnSuccess(CellMessage envelope)
     {
         Message m = (Message)envelope.getMessageObject();
         if (m.getReplyRequired()) {
@@ -397,7 +403,7 @@ public class Pin extends SMCDriver
                 envelope.revertDirection();
                 _manager.sendMessage(envelope);
             } catch (NoRouteToCellException e) {
-                esay("Can not send response: " + e.getMessage());
+                error("Can not send response: " + e.getMessage());
             } catch (NotSerializableException e) {
                 throw new RuntimeException("Bug detected", e);
             }
@@ -442,7 +448,7 @@ public class Pin extends SMCDriver
      * @see confirm
      */
     synchronized void confirmAll()
-    { 
+    {
         for (PinRequest request : _requests) {
             confirm(request);
         }
@@ -457,7 +463,7 @@ public class Pin extends SMCDriver
     {
         /* Since remove alters the _requests collection, we need to
          * make a copy of it to avoid ConcurrentModificationException.
-         */ 
+         */
         for (PinRequest request : new ArrayList<PinRequest>(_requests)) {
             fail(request);
             remove(request);
@@ -486,13 +492,13 @@ public class Pin extends SMCDriver
      * new lifetime is shorter than the remaining time, then nothing
      * is changed.
      */
-    void extendLifetime(PinRequest request, long newLifetime) 
+    void extendLifetime(PinRequest request, long newLifetime)
     {
         long max = _manager.getMaxPinDuration();
         if (newLifetime > max) {
             newLifetime = max;
-            say("Pin duration exceeded maxPinDuration, lifetime set to "
-                + newLifetime);
+            warn("Pin duration exceeded maxPinDuration, lifetime set to "
+                 + newLifetime);
         }
 
         if (request.getRemainingLifetime() < newLifetime) {
@@ -508,7 +514,7 @@ public class Pin extends SMCDriver
     }
 
     /**
-     * Starts an asynchronous pin operation. 
+     * Starts an asynchronous pin operation.
      */
     synchronized void startPinner()
     {
@@ -516,7 +522,7 @@ public class Pin extends SMCDriver
     }
 
     /**
-     * Starts an asynchronous unpin operation. 
+     * Starts an asynchronous unpin operation.
      */
     synchronized void startUnpinner()
     {

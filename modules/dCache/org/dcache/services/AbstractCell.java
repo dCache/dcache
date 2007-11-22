@@ -96,6 +96,12 @@ public class AbstractCell extends CellAdapter
         _logger.error(str);
     }
 
+    public void fatal(String str)
+    {
+        pin(str);
+        _logger.fatal(str);
+    }
+
     /** @deprecated */
     public void say(String s)
     {
