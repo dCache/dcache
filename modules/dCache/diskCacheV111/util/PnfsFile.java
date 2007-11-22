@@ -545,16 +545,24 @@ public class PnfsFile extends File  {
 
       List<String> list  = new ArrayList<String>() ;
 
-      try{
-          for( String line = null ; ( line = snbr.readLine() ) != null ; ){
-             if( line.charAt(0) == '#' )continue ;
-             line = line.trim() ;
-             if( line.length() == 0 )continue ;
-             list.add(line);
-          }
-      }finally{
-         try{ snbr.close() ; }catch(Exception eeee ) {}
-      }
+      try {
+            for (String line = null; (line = snbr.readLine()) != null;) {
+                line = line.trim();
+                /*
+                 * skip empty lines and comments
+                 */
+                if (line.length() == 0) continue;
+                if (line.charAt(0) == '#') continue;
+
+                list.add(line);
+            }
+        } finally {
+            try {
+                snbr.close();
+            } catch (IOException eeee) {
+                // take is easy
+            }
+        }
       return list ;
    }
    protected static String getServerAttribute( File mountpoint , String key )throws IOException {
