@@ -1,4 +1,6 @@
-// $Id: PoolV2Mode.java,v 1.3 2007-10-16 20:58:06 behrmann Exp $
+/*
+ * $Id:$
+ */
 
 
 package diskCacheV111.pools;
@@ -6,11 +8,7 @@ package diskCacheV111.pools;
 
 public class PoolV2Mode implements java.io.Serializable {
 
-    /**
-     *
-     */
-    private static final long serialVersionUID = -9035550368999975090L;
-
+    private static final long serialVersionUID = -3620447515380724292L;
 
     public static final int ENABLED             = 0x00 ;
     public static final int DISABLED            = 0x01 ;
