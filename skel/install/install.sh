@@ -291,7 +291,7 @@ then
 	       echo ""
 	   fi
 
-	   if [ -L ${pnfsMountPoint} ] ; then
+	   if [ -L "${pnfsMountPoint}" ] ; then
 	       echo "[INFO]  Trying to remove symbolic link ${pnfsMountPoint} :"
 	       rm -f ${pnfsMountPoint}
 	       if [ $? -eq 0 ] ; then
@@ -303,8 +303,8 @@ then
 	       fi
 	   fi
 
-	   if [ ! -d ${pnfsMountPoint} ]; then
-	       if [ -e ${pnfsMountPoint} ] ; then
+	   if [ ! -d "${pnfsMountPoint}" ]; then
+	       if [ -e "${pnfsMountPoint}" ] ; then
         	   echo "[ERROR] The file ${pnfsMountPoint} is in the way. Please move it out of the way"
         	   echo "        and call me again. Exiting."
         	   exit 1
@@ -317,7 +317,7 @@ then
 	fi
 
 	echo ""
-	if [ ! -L ${PNFS_ROOT}/ftpBase -a ! -e ${PNFS_ROOT}/ftpBase ] ; then
+	if [ ! -L "${PNFS_ROOT}/ftpBase" -a ! -e "${PNFS_ROOT}/ftpBase" ] ; then
 	   echo "[INFO]  Creating link ${PNFS_ROOT}/ftpBase --> ${pnfsMountPoint} which is used by the GridFTP door."
 	   ln -s ${pnfsMountPoint} ${PNFS_ROOT}/ftpBase
 	else
@@ -354,9 +354,9 @@ then
 	    #    Checking and creating mountpoint and link
 	    #
 	    pnfsMountPoint=${PNFS_ROOT}/fs
-	    if [ ! -d ${pnfsMountPoint} ]; then
-			if [ -e ${pnfsMountPoint} ] ; then
-	        	    echo "[ERROR] The file ${pnfsMountPoint} is in the way. Please move it out of the way"
+	    if [ ! -d "${pnfsMountPoint}" ]; then
+			if [ -e "${pnfsMountPoint}" ] ; then
+	            echo "[ERROR] The file ${pnfsMountPoint} is in the way. Please move it out of the way"
 			    echo "        and call me again. Exiting."
 			    exit 1
 			else
@@ -367,8 +367,8 @@ then
 	    echo "[INFO]  Will be mounted to ${pnfsServer}:/fs by dcache-core start-up script."
 
 	    cd ${PNFS_ROOT}
-	    if [ ! -L ${SERVER_ID} ]; then
-			if [ -e ${SERVER_ID} ] ; then
+	    if [ ! -L "${SERVER_ID}" ]; then
+			if [ -e "${SERVER_ID}" ] ; then
 			    echo "[ERROR] The file/directory ${PNFS_ROOT}/${SERVER_ID} is in the way. Please move it out"
 			    echo "        of the way and call me again. Exiting."
 			else
@@ -378,7 +378,7 @@ then
 	    fi
 
 	    cd ${PNFS_ROOT}
-	    if [ ! -L ${SERVER_ID} -a ! -e ${SERVER_ID} ] ; then
+	    if [ ! -L "${SERVER_ID}" -a ! -e "${SERVER_ID}" ] ; then
         	echo "[INFO]  Creating link ${PNFS_ROOT}/${SERVER_ID} --> ${PNFS_ROOT}/fs/usr."
         	ln -s fs/usr ${SERVER_ID}
 	    else
@@ -556,9 +556,9 @@ if [ "${nodeType}" = "admin" ] ; then
     echo ""
 fi
 
-if [ ! -r ${DCACHE_BASE_DIR}/config/${shortHostname}.poollist ]; then
-    rm -f ${DCACHE_BASE_DIR}/config/${shortHostname}.poollist
-    touch ${DCACHE_BASE_DIR}/config/${shortHostname}.poollist
+if [ ! -r "${DCACHE_BASE_DIR}/config/${shortHostname}.poollist" ]; then
+    rm -f "${DCACHE_BASE_DIR}/config/${shortHostname}.poollist"
+    touch "${DCACHE_BASE_DIR}/config/${shortHostname}.poollist"
 fi
 
 #    Pool configuration
@@ -567,7 +567,7 @@ check_pool() {
     rt=`echo ${rrt} | awk '{print $1}'`
     size=`echo ${rrt} | awk '{print $2}'`
     
-    if [ -d ${rt}/pool ]; then
+    if [ -d "${rt}/pool" ]; then
 		WRITING_POOL=no
     else
 		WRITING_POOL=yes
@@ -604,7 +604,7 @@ check_pool() {
 		printf " Pool size exceeds partition size "
     else
 		pnl=`grep "${pn}" ${DCACHE_BASE_DIR}/config/${shortHostname}.poollist | awk '{print $1}'`
-		if [ -z ${pnl} ]; then	   
+		if [ -z "${pnl}" ]; then	   
 			echo "${pn}  ${rt}/pool  sticky=allowed recover-space recover-control recover-anyway lfs=precious tag.hostname=${shortHostname}" \
 			>> ${DCACHE_BASE_DIR}/config/${shortHostname}.poollist
 		fi
