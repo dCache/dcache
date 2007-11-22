@@ -1624,7 +1624,9 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
                     	_entry.setSticky(true);
                     }else{
                     	_entry.setSticky(false);
-                    }       					if (overwrite) {
+                    }
+
+                    if (overwrite) {
 						_entry.setCached();
 						say("Overwriting requested");
 					}
