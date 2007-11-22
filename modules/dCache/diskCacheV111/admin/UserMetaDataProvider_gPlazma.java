@@ -18,32 +18,32 @@ import diskCacheV111.util.UserAuthBase;
 /**
  * Author : Patrick Fuhrmann, Vladimir Podstavkov
  * Based on the UserMetaDataProviderExample
- * 
+ *
  */
 public class UserMetaDataProvider_gPlazma implements UserMetaDataProvider {
 
-    private CellAdapter _cell    = null ;
-    private Args        _args    = null ;
-    private String      _ourName = null ;
-        
+    private final CellAdapter _cell ;
+    private final Args        _args    ;
+    private final String      _ourName ;
+
     private int     _requestCount      = 0 ;
     private Map<String, Integer> _userStatistics    = new HashMap<String, Integer>();
     protected boolean _use_gplazmaAuthzCell=false;
     protected boolean _use_gplazmaAuthzModule=false;
     private AuthorizationService _authServ = null;
-    
-    
+
+
     /**
      * We are assumed to provide the following constructor signature.
      */
     public UserMetaDataProvider_gPlazma(CellAdapter cell) {
-    
+
         _cell    =  cell ;
         _args    = _cell.getArgs() ;
         _ourName = this.getClass().getName() ;
 
-        
-        
+
+
         if( _args.getOpt("use-gplazma-authorization-module") != null) {
             _use_gplazmaAuthzModule=
             _args.getOpt("use-gplazma-authorization-module").equalsIgnoreCase("true");
@@ -55,18 +55,18 @@ public class UserMetaDataProvider_gPlazma implements UserMetaDataProvider {
         }
 
         if( _use_gplazmaAuthzModule && _use_gplazmaAuthzCell  ) {
-        	throw new 
+        	throw new
         		IllegalArgumentException(_ourName+" : use-gplazma-authorization-cell and  use-gplazma-authorization-module defined at the same time.");
         }
-        
+
         if( !(_use_gplazmaAuthzModule || _use_gplazmaAuthzCell)  ) {
-        	throw new 
+        	throw new
         		IllegalArgumentException(_ourName+" : use-gplazma-authorization-cell or use-gplazma-authorization-module have to be defined.");
         }
-                
-        
+
+
         try {
-        	        	        	
+
         	if( _use_gplazmaAuthzCell ) {
         		_authServ = new AuthorizationService(_cell);
         	}else{
@@ -75,24 +75,24 @@ public class UserMetaDataProvider_gPlazma implements UserMetaDataProvider {
                     throw new IllegalArgumentException(_ourName+" : -gplazma-authorization-module-policy not specified");
                 }
         		_authServ = new AuthorizationService(gplazmaPolicyFilePath);
-        	}                                    
-            
+        	}
+
         }catch(AuthorizationServiceException ae) {
             _cell.esay(ae);
             _cell.esay(ae.getMessage());
         }
-        
+
     }
 
     /**
      * just for the fun of it
      */
     public String hh_ls = "" ;
-    
+
     public String ac_ls( Args args ) {
         StringBuilder sb = new StringBuilder() ;
- 
-        for ( Map.Entry<String, Integer> entry: _userStatistics.entrySet() ) {          
+
+        for ( Map.Entry<String, Integer> entry: _userStatistics.entrySet() ) {
             sb.append(entry.getKey()).
                 append("  ->  ").
                 append(entry.getValue().toString()).
@@ -113,41 +113,41 @@ public class UserMetaDataProvider_gPlazma implements UserMetaDataProvider {
      */
     public synchronized Map getUserMetaData( String userName, String userRole, List attributes )
         throws Exception {
-         
+
         //
         // 'attributes' is a list of keys somebody (door)
-        // needs from us. We are assumed to prepare 
-        // a map containing the 'key' and the 
+        // needs from us. We are assumed to prepare
+        // a map containing the 'key' and the
         // corresponding values.
         // we should at least be prepared to know the
         // 'uid','gid' of the user.
         // If we are not sure about the user, we should
         // throw an exception rather returning an empty
         // map.
-        //  
+        //
         updateStatistics( userName ) ;
         //
         // get the information for the user
         //
-        HashMap result = getUserMD(userName, userRole) ;
+        Map<String, String> result = getUserMD(userName, userRole) ;
         //
-        // check for minimum requirments
+        // check for minimum requirements
         //
         if ( ( result.get("uid") == null ) ||
              ( result.get("gid") == null ) ||
              ( result.get("home") == null )  ) {
             throw new IllegalArgumentException(_ourName+" : insufficient info for user : "+userName+"->"+userRole);
         }
-           
+
         return result;
-         
+
     }
 
 
-    private HashMap getUserMD(String userPrincipal, String userRole) throws Exception {    
-  
+    private Map<String, String> getUserMD(String userPrincipal, String userRole) throws Exception {
+
         UserAuthBase pwdRecord = null;
-        HashMap answer = new HashMap() ;
+        Map<String, String> answer = new HashMap<String, String>() ;
         int uid, gid;
         String home;
 
@@ -157,7 +157,7 @@ public class UserMetaDataProvider_gPlazma implements UserMetaDataProvider {
         		userRole = "";
         	}
 
-        	
+
         	if(_use_gplazmaAuthzCell ) {
         		// cell
         		pwdRecord = _authServ.authenticate(userPrincipal, userRole, new CellPath("gPlazma"), _cell).getUserAuthBase();
@@ -165,29 +165,29 @@ public class UserMetaDataProvider_gPlazma implements UserMetaDataProvider {
         		// module
         		pwdRecord = _authServ.authorize(userPrincipal, userRole, null, null, null);
         	}
-            
+
             if( pwdRecord == null ) {
                 throw new AuthorizationServiceException("User not found");
             }
-            
+
             uid  = pwdRecord.UID;
             gid  = pwdRecord.GID;
             home = pwdRecord.Home;
-            
+
             answer.put("uid", String.valueOf(uid));
             answer.put("gid", String.valueOf(gid));
             answer.put("home", home);
-        
+
             _cell.say("User "+userRole+" logged in");
-            
+
         }catch(AuthorizationServiceException ae) {
             _cell.esay("Authorization " + userPrincipal + ":"+ userRole+ " failed: " + ae.getMessage() );
         }
-        
-        
+
+
         return answer;
     }
-    
+
 
     /**
      * and of course the interface definition
