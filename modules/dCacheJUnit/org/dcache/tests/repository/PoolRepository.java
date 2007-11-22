@@ -7,6 +7,7 @@ import org.dcache.pool.repository.v3.CacheRepositoryV3;
 
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.Ignore;
@@ -20,22 +21,28 @@ public class PoolRepository extends junit.framework.TestCase {
 
 
 	private CacheRepositoryV3 _repository;
-
+	private File _base;
 	@Before
 	public void setUp() throws Exception {
 
 	    Logger.getLogger("logger.org.dcache.repository").setLevel(Level.ERROR);
 
-		File base = new File("/tmp/repository");
+		_base = new File("/tmp/repository");
 
-		base.mkdirs();
-		new File(base, "control").mkdir();
-		new File(base, "data").mkdir();
+		_base.mkdirs();
+		new File(_base, "control").mkdir();
+		new File(_base, "data").mkdir();
 
-		_repository = new CacheRepositoryV3(base);
+		_repository = new CacheRepositoryV3(_base);
 	}
 
 
+	@After
+	public void tearDown() throws Exception {
+
+	    // TODO: remove /tmp/repository
+
+	}
 
 	/*
 	 *  in all tests we are using Chimera id's
