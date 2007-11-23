@@ -320,7 +320,7 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
 
 			say("PoolManagerName : " + _poolManagerName);
 
-                        String tmp = _args.getOpt("poolupDestination");
+                        tmp = _args.getOpt("poolupDestination");
                         if (tmp != null)
                             _poolupDestination = tmp;
                         else
