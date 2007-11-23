@@ -19,7 +19,6 @@ import java.lang.reflect.*;
 
 import org.apache.log4j.Logger;
 
-import org.dcache.pool.repository.v3.CacheRepositoryV3;
 import org.dcache.pool.repository.v4.CacheRepositoryV4;
 
 public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
