@@ -14,7 +14,7 @@ public class PoolManagerPoolUpMessage extends PoolManagerMessage {
     private final PoolCostInfo _poolCostInfo ;
     private final PoolV2Mode _mode;
 
-    private Map       _tagMap                  = null ;
+    private Map<String, String>       _tagMap                  = null ;
     private Set<String> _hsmInstances          = null;
     private String    _message                 = "";
     private int       _code                    = 0;
@@ -45,8 +45,8 @@ public class PoolManagerPoolUpMessage extends PoolManagerMessage {
         return _poolName;
     }
     public long getSerialId(){ return _serialId ; }
-    public void setTagMap( Map map ){ _tagMap = map ; }
-    public Map  getTagMap(){ return _tagMap ; }
+    public void setTagMap( Map<String, String> map ){ _tagMap = map ; }
+    public Map<String, String>  getTagMap(){ return _tagMap ; }
 
     /**
      * Sets the human readable status message of the pool.
