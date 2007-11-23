@@ -35,12 +35,12 @@ public class PnfsHandler {
 
    private final CellPath    _pnfs ;
    private final CellAdapter _cell ;
-   private final String      _poolName ;   
+   private final String      _poolName ;
    private long __pnfsTimeout = 30 * 60 * 1000L ;
-   
+
    private static final Logger _logNameSpace =  Logger.getLogger("logger.org.dcache.namespace." + PnfsHandler.class.getName());
 
-   
+
    public PnfsHandler( CellAdapter parent ,
                        CellPath    pnfsManagerPath ,
                        String      poolName  ){
@@ -181,15 +181,21 @@ public class PnfsHandler {
 
        pnfsReply = (PnfsMessage) pnfsReplyObject;
        if (pnfsReply.getReturnCode() != 0) {
-    	   if( _logNameSpace.isDebugEnabled() ) {
-    		   _logNameSpace.debug("Request to PnfsManger " + msg.getClass() + " returned : " + pnfsReply.getReturnCode());
+    	   if (_logNameSpace.isDebugEnabled()) {
+    		   _logNameSpace.debug("Request to PnfsManger "
+                                       + msg.getClass() + " returned : "
+                                       + pnfsReply.getReturnCode());
     	   }
-    	   throw new CacheException(pnfsReply.getReturnCode(), 
+
+           if (pnfsReply.getErrorObject() instanceof CacheException)
+               throw (CacheException)pnfsReply.getErrorObject();
+
+    	   throw new CacheException(pnfsReply.getReturnCode(),
                                     String.valueOf(pnfsReply.getErrorObject()));
        }
 
-       return pnfsReply ;
-   } 
+       return pnfsReply;
+   }
    public Message messageRequest( CellPath path , Message msg )
            throws CacheException {
 
@@ -456,14 +462,14 @@ public class PnfsHandler {
        flagMessage.setValue(value);
        send(flagMessage);
    }
-   
+
    public void fileFlushed(PnfsId pnfsId, StorageInfo storageInfo ) throws CacheException {
-	   
+
 	   PoolFileFlushedMessage fileFlushedMessage = new PoolFileFlushedMessage(_poolName, pnfsId, storageInfo);
-	   
+
 	   // throws exception if something goes wrong
 	   pnfsRequest(fileFlushedMessage);
-	   
+
    }
 
 
