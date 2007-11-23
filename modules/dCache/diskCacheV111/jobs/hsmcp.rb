@@ -100,8 +100,7 @@ when "put"
   hsmFile="#{base}/#{pnfsid}"
 
   if FileTest.file? hsmFile
-    STDERR.puts "pnfsid already exists : #{pnfsid}"
-    exit 4
+    STDERR.puts "pnfsid already exists, flushing anyway: #{pnfsid}"
   end
 
   if !options.has_key? "hsmInstance"
