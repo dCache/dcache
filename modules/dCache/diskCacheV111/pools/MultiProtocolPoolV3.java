@@ -71,6 +71,7 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
 	private String _setupManager = null;
 	private String _pnfsManagerName = "PnfsManager";
 	private String _poolManagerName = "PoolManager";
+	private String _poolupDestination = "PoolManager";
 	private String _hsmPoolManagerName = "HsmPoolManager";
 	private String _sweeperClass = "diskCacheV111.pools.SpaceSweeper0";
 	private static final String _dummySweeperClass = "diskCacheV111.pools.DummySpaceSweeper";
@@ -129,6 +130,7 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
 	// [-lfs=precious]
 	// [-p2p=<p2pFileMode>] : default : cached
 	// [-poolManager=<name>] : default : PoolManager
+	// [-poolupDestination=<name>] : default : PoolManager
 	// [-billing=<name>] : default : billing
 	// [-setupManager=<name>] : default : none
 	// [-dupRequest=none|ignore|refresh]: default : ignore
@@ -317,6 +319,13 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
 					: _poolManagerName) : tmp;
 
 			say("PoolManagerName : " + _poolManagerName);
+
+                        String tmp = _args.getOpt("poolupDestination");
+                        if (tmp != null)
+                            _poolupDestination = tmp;
+                        else
+                            _poolupDestination = _poolManagerName;
+                        say("Pool up destination: " + _poolupDestination);
 
 			tmp = _args.getOpt("billing");
 			if (tmp != null) {
@@ -2825,9 +2834,8 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
             poolManagerMessage.setMessage(_poolStatusMessage);
             poolManagerMessage.setCode(_poolStatusCode);
 
-            return new CellMessage( new CellPath(_poolManagerName),
-                    poolManagerMessage
-                    ) ;
+            return new CellMessage(new CellPath(_poolupDestination),
+                                   poolManagerMessage);
         }
 
         private void send(CellMessage msg)
