@@ -56,7 +56,7 @@ if options.has_key? "errorNumber"
   else
     STDERR.puts "ErrorNumber-#{error}"
   end
-  exit error
+  exit error.to_i
 end
 
 if !options.has_key? "hsmBase"
