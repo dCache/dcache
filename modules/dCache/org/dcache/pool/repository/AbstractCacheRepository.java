@@ -13,6 +13,7 @@ import diskCacheV111.repository.SpaceMonitor;
 import diskCacheV111.repository.SpaceRequestable;
 import diskCacheV111.repository.CacheRepository;
 import diskCacheV111.repository.FairQueueAllocation;
+import diskCacheV111.repository.CacheRepositoryEntry;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.event.CacheNeedSpaceEvent;
 import diskCacheV111.util.event.CacheRepositoryEvent;
@@ -28,16 +29,16 @@ import diskCacheV111.util.event.CacheRepositoryListener;
  *
  * It does not implement repository entry handling.
  */
-public abstract class AbstractCacheRepository 
+public abstract class AbstractCacheRepository
     implements CacheRepository, EventProcessor
 {
-    private static Logger _log = 
+    private static Logger _log =
         Logger.getLogger("logger.org.dcache.repository");
 
     /**
      * Registered event listeners.
      */
-    private final List <CacheRepositoryListener> _repositoryListners = 
+    private final List <CacheRepositoryListener> _repositoryListners =
         new ArrayList<CacheRepositoryListener>();
 
     /**
@@ -55,7 +56,7 @@ public abstract class AbstractCacheRepository
      */
     private final Object _spaceReservationLock = new Object();
 
-    /** 
+    /**
      * Current amount of reserved space. Protected against concurrent
      * access by the monitor of the space monitor.
      */
@@ -65,7 +66,7 @@ public abstract class AbstractCacheRepository
      * Utility class to bridge between space monitor and repository
      * event system.
      */
-    private class NeedSpace implements SpaceRequestable 
+    private class NeedSpace implements SpaceRequestable
     {
         public void spaceNeeded(long space) {
             processEvent(EventType.SPACE, new CacheNeedSpaceEvent(this, space));
@@ -81,7 +82,7 @@ public abstract class AbstractCacheRepository
     /**
      * Add repository listener.
      */
-    public void addCacheRepositoryListener(CacheRepositoryListener listener) 
+    public void addCacheRepositoryListener(CacheRepositoryListener listener)
     {
         if (_log.isDebugEnabled()) {
             _log.debug("adding listener: " + listener);
@@ -99,7 +100,7 @@ public abstract class AbstractCacheRepository
         if (_log.isDebugEnabled()) {
             _log.debug("removing listener: " + listener);
         }
-        
+
         synchronized(_repositoryListners) {
             _repositoryListners.remove(listener);
         }
@@ -108,25 +109,25 @@ public abstract class AbstractCacheRepository
     /**
      * @deprecated
      */
-    public void setLogable(Logable logable) 
+    public void setLogable(Logable logable)
     {
 
     }
 
-    public void addSpaceRequestListener(SpaceRequestable listener) 
+    public void addSpaceRequestListener(SpaceRequestable listener)
     {
         throw new IllegalArgumentException("Not supported");
     }
-    
+
     /**
      * Triggers listener notification.
      */
-    public void processEvent(EventType type, CacheRepositoryEvent event) 
+    public void processEvent(EventType type, CacheRepositoryEvent event)
     {
         if (_log.isDebugEnabled()) {
             _log.debug("Broadcasting event: " + event + " type " + type);
         }
-        
+
         synchronized (_repositoryListners) {
             switch (type) {
             case CACHED:
@@ -136,19 +137,17 @@ public abstract class AbstractCacheRepository
                     }
                 } catch (CacheException ignored) {
                 }
-
                 for (CacheRepositoryListener listener : _repositoryListners) {
                     listener.cached(event);
                 }
                 break;
-                
+
             case PRECIOUS:
                 try {
                     _preciousSpace.addAndGet(event.getRepositoryEntry().getSize());
                 } catch (CacheException e) {
                     _log.error("failed to get entry size : " + e.getMessage() );
                 }
-
                 for (CacheRepositoryListener listener : _repositoryListners) {
                     listener.precious(event);
                 }
@@ -173,6 +172,15 @@ public abstract class AbstractCacheRepository
                 break;
 
             case DESTROY:
+                try {
+                    CacheRepositoryEntry entry = event.getRepositoryEntry();
+                    long size = entry.getSize();
+                    freeSpace(size);
+                    if (entry.isPrecious()) {
+                        _preciousSpace.addAndGet(-size);
+                    }
+                } catch (CacheException ignored) {
+                }
                 for (CacheRepositoryListener listener : _repositoryListners) {
                     listener.destroyed(event);
                 }
@@ -210,7 +218,7 @@ public abstract class AbstractCacheRepository
      * Remove some entries if space is needed. Blocks as long as space
      * is not available.
      */
-    public void allocateSpace(long space) throws InterruptedException 
+    public void allocateSpace(long space) throws InterruptedException
     {
         _spaceMonitor.allocateSpace(space);
     }
@@ -221,7 +229,7 @@ public abstract class AbstractCacheRepository
      * is not available, but at most <i>millis</i>.
      */
     public void allocateSpace(long space, long millis)
-        throws InterruptedException, MissingResourceException 
+        throws InterruptedException, MissingResourceException
     {
         if (millis == SpaceMonitor.NONBLOCKING) {
             synchronized (_spaceMonitor) {
@@ -244,22 +252,22 @@ public abstract class AbstractCacheRepository
     /**
      * Move <i>space</i> bytes from used into free space.
      */
-    public void freeSpace(long space) 
+    public void freeSpace(long space)
     {
         _spaceMonitor.freeSpace(space);
     }
 
-    public long getFreeSpace() 
+    public long getFreeSpace()
     {
         return _spaceMonitor.getFreeSpace();
     }
 
-    public long getTotalSpace() 
+    public long getTotalSpace()
     {
         return _spaceMonitor.getTotalSpace();
     }
 
-    public void setTotalSpace(long space) 
+    public void setTotalSpace(long space)
     {
         _spaceMonitor.setTotalSpace(space);
     }
@@ -267,16 +275,16 @@ public abstract class AbstractCacheRepository
     protected abstract void storeReservedSpace() throws CacheException;
 
     public void reserveSpace(long space, boolean blocking)
-        throws CacheException, InterruptedException 
+        throws CacheException, InterruptedException
     {
         if (space < 0L) {
             throw new
                 IllegalArgumentException("Space to reserve must be > 0");
         }
 
-        allocateSpace(space, 
+        allocateSpace(space,
                       blocking
-                      ? SpaceMonitor.BLOCKING 
+                      ? SpaceMonitor.BLOCKING
                       : SpaceMonitor.NONBLOCKING);
 
         synchronized (_spaceReservationLock) {
@@ -290,13 +298,13 @@ public abstract class AbstractCacheRepository
         }
     }
 
-    public void freeReservedSpace(long space) throws CacheException 
+    public void freeReservedSpace(long space) throws CacheException
     {
         modifyReservedSpace(space, true);
     }
 
     public void modifyReservedSpace(long space, boolean freeSpace)
-        throws CacheException 
+        throws CacheException
     {
         if (space < 0L) {
             throw new IllegalArgumentException("Space to free must be > 0");
@@ -305,11 +313,11 @@ public abstract class AbstractCacheRepository
         if ((_reservedSpace - space) < 0L) {
             throw new IllegalArgumentException("Inconsistent space request (result<0)");
         }
-        
+
         if (freeSpace) {
             freeSpace(space);
         }
-        
+
         synchronized (_spaceReservationLock) {
             _reservedSpace -= space;
             try {
@@ -321,17 +329,17 @@ public abstract class AbstractCacheRepository
         }
     }
 
-    public void applyReservedSpace(long space) throws CacheException 
+    public void applyReservedSpace(long space) throws CacheException
     {
         modifyReservedSpace(space, false);
     }
-    
-    public long getPreciousSpace() 
+
+    public long getPreciousSpace()
     {
         return _preciousSpace.get();
     }
 
-    public long getReservedSpace() 
+    public long getReservedSpace()
     {
         synchronized (_spaceReservationLock) {
             return _reservedSpace;

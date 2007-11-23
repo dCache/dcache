@@ -57,7 +57,7 @@ import diskCacheV111.repository.CacheRepositoryEntry;
  */
 public class CacheRepositoryV4 extends AbstractCacheRepository
 {
-    private static Logger _log = 
+    private static Logger _log =
         Logger.getLogger("logger.org.dcache.repository.v4");
 
     /**
@@ -79,13 +79,13 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
      * Reader-writer lock used for most access to the cache
      * repository.
      */
-    private final ReadWriteLock _operationLock = 
+    private final ReadWriteLock _operationLock =
         new ReentrantReadWriteLock();
 
     /**
      * Map of all entries.
      */
-    private final Map<PnfsId, CacheRepositoryEntry> _allEntries = 
+    private final Map<PnfsId, CacheRepositoryEntry> _allEntries =
         new HashMap<PnfsId, CacheRepositoryEntry>();
 
     /**
@@ -105,10 +105,10 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
     private final MetaDataRepository _importRepository;
 
     /**
-     * Clears sticky flag if it is expired. 
+     * Clears sticky flag if it is expired.
      */
     private final StickyInspector _stickyInspector;
-    
+
     /**
      * Thread driving the sticky inspector. Started as soon as
      * the inventory is finished.
@@ -127,14 +127,14 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
      */
     private File _basedir;
 
-    private MetaDataRepository 
+    private MetaDataRepository
         createMetaDataRepository(String name, DataFileRepository data,
-                                 File directory) 
+                                 File directory)
     {
         _basedir = directory;
 
         try {
-            Class [] argClass = { 
+            Class [] argClass = {
                 org.dcache.pool.repository.DataFileRepository.class,
                 org.dcache.pool.repository.EventProcessor.class,
                 java.io.File.class
@@ -148,9 +148,9 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
         } catch (NoSuchMethodException e) {
             throw new IllegalArgumentException("Class " + name + " does not implement expected constructor");
         } catch (InstantiationException e) {
-            throw new IllegalArgumentException("Class " + name + " could not be instantiated", e);            
+            throw new IllegalArgumentException("Class " + name + " could not be instantiated", e);
         } catch (InvocationTargetException e) {
-            throw new IllegalArgumentException("Class " + name + " could not be instantiated", e);            
+            throw new IllegalArgumentException("Class " + name + " could not be instantiated", e);
         } catch (ClassCastException e) {
             throw new IllegalArgumentException("Class " + name + " does not implement MetaDataRepository");
         } catch (IllegalAccessException e) {
@@ -163,7 +163,7 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
      *
      * @param directory the pool base directory.
      */
-    public CacheRepositoryV4(File directory, Args args) 
+    public CacheRepositoryV4(File directory, Args args)
         throws FileNotFoundException, DatabaseException
     {
         String importClass = args.getOpt("metaDataRepositoryImport");
@@ -172,27 +172,27 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
             metaClass = DEFAULT_META_DATA_REPOSITORY;
         }
 
-        _dataRepository = 
+        _dataRepository =
             new FlatDataFileRepository(directory);
         _metaRepository =
             createMetaDataRepository(metaClass, _dataRepository, directory);
         if (importClass != null && importClass.length() != 0) {
-            _importRepository = createMetaDataRepository(importClass, 
-                                                         _dataRepository, 
+            _importRepository = createMetaDataRepository(importClass,
+                                                         _dataRepository,
                                                          directory);
         } else {
             _importRepository = null;
         }
-        
-        _spaceReservation = 
+
+        _spaceReservation =
             new File(directory, SPACE_RESERVATION);
-        _stickyInspector = 
+        _stickyInspector =
             new StickyInspector(this);
-        _stickyInspectorThread = 
+        _stickyInspectorThread =
             new Thread(_stickyInspector, "StickyInspectorThread");
     }
 
-    public boolean contains(PnfsId pnfsId) 
+    public boolean contains(PnfsId pnfsId)
     {
         _operationLock.readLock().lock();
         try {
@@ -203,7 +203,7 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
     }
 
     public synchronized CacheRepositoryEntry createEntry(PnfsId pnfsId)
-        throws CacheException 
+        throws CacheException
     {
         if (_log.isInfoEnabled()) {
             _log.info("create new entry for: " + pnfsId.toString());
@@ -217,13 +217,13 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
                 throw new
                     CacheException(203, "Entry already exists (fs) : " + pnfsId);
             }
-            
+
             if (_allEntries.containsKey(pnfsId)) {
                 _log.error("create for existing entry: " + pnfsId.toString());
                 throw new
                     FileInCacheException("Entry already exists (mem) : " + pnfsId.toString());
             }
-            
+
             CacheRepositoryEntry entry = _metaRepository.create(pnfsId);
             _allEntries.put(pnfsId, entry);
             return entry;
@@ -234,10 +234,10 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
 
     /**
      * @return CacheRepositoryEntry on pnfsid, exclude in removed state
-     * @throw FileNotInCacheException in case file is not in 
+     * @throw FileNotInCacheException in case file is not in
      *        repository or in removed state
      */
-    public CacheRepositoryEntry getEntry(PnfsId pnfsId) 
+    public CacheRepositoryEntry getEntry(PnfsId pnfsId)
         throws CacheException
     {
         CacheRepositoryEntry entry = getGenericEntry(pnfsId);
@@ -258,18 +258,18 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
     {
         _operationLock.readLock().lock();
         try {
-            CacheRepositoryEntry entry = _allEntries.get(pnfsId);            
+            CacheRepositoryEntry entry = _allEntries.get(pnfsId);
             if (entry == null) {
                 throw new FileNotInCacheException("Entry not in repository : "
                                                   + pnfsId);
-            }            
+            }
             return entry;
         } finally {
             _operationLock.readLock().unlock();
         }
     }
 
-    public List<PnfsId> getValidPnfsidList() 
+    public List<PnfsId> getValidPnfsidList()
     {
         _operationLock.readLock().lock();
         try {
@@ -291,11 +291,11 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
     /**
      * return all known iterator pnfsid
      */
-    public Iterator<PnfsId> pnfsids() throws CacheException 
+    public Iterator<PnfsId> pnfsids() throws CacheException
     {
         _operationLock.readLock().lock();
         try {
-            List<PnfsId> allEntries = 
+            List<PnfsId> allEntries =
                 new ArrayList<PnfsId>(_allEntries.keySet());
             return allEntries.iterator();
         } finally {
@@ -312,7 +312,7 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
      * when they have been marked as removed and their link count
      * drops to zero.
      */
-    public synchronized boolean removeEntry(CacheRepositoryEntry entry) 
+    public synchronized boolean removeEntry(CacheRepositoryEntry entry)
         throws CacheException
     {
         if (_log.isInfoEnabled()) {
@@ -338,13 +338,13 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
         return true;
     }
 
-    public void runInventory(Logable log) throws CacheException 
+    public void runInventory(Logable log) throws CacheException
     {
         runInventory(null, null, 0);
     }
 
     public synchronized void runInventory(Logable log, PnfsHandler pnfs, int flags)
-        throws CacheException 
+        throws CacheException
     {
         _log.info("Generating inventory");
 
@@ -353,8 +353,8 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
 
         _log.info("Found " + ids.size() + " data files");
 
-        RepositoryEntryHealer healer = 
-            new RepositoryEntryHealer(pnfs, _dataRepository, 
+        RepositoryEntryHealer healer =
+            new RepositoryEntryHealer(pnfs, _dataRepository,
                                       _metaRepository, _importRepository);
 
         _operationLock.writeLock().lock();
@@ -362,7 +362,7 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
             _runningInventory = true;
 
             _log.info("Checking repository consistency");
-            
+
             /* Collect all entries.
              */
             for (PnfsId id: ids) {
@@ -393,7 +393,7 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
 
             /* Report SCAN events in LRU order.
              */
-            List<CacheRepositoryEntry> entries = 
+            List<CacheRepositoryEntry> entries =
                 new ArrayList<CacheRepositoryEntry>(_allEntries.values());
             Collections.sort(entries, new CacheEntryLRUOrder());
             for (CacheRepositoryEntry entry : entries) {
@@ -405,7 +405,7 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
              */
             long total = getTotalSpace();
             if (usedDataSpace > total) {
-                String error = 
+                String error =
                     "Inventory overbooked " + usedDataSpace +" > " + total;
                 if ((flags & ALLOW_SPACE_RECOVERY) == 0)
                     throw new CacheException(206, error);
@@ -442,7 +442,7 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
                         break;
                 }
             }
-            
+
             /* Update space monitor.
              */
             try {
@@ -470,7 +470,7 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
         _log.info("Done generating inventory");
     }
 
-    public boolean isRepositoryOk() 
+    public boolean isRepositoryOk()
     {
        try {
            if (!_metaRepository.isOk() || !_dataRepository.isOk())
@@ -498,45 +498,33 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
 
     /**
      * Removes an entry from the in-memory cache and erases the data
-     * file. Since <i>destroyEntry</i> is called as a result of the
-     * entry being removed from the meta data repository, the method
-     * does not remove the entry from the meta data repository.
+     * file. Since <code>destroyEntry</code> is called as a result of
+     * the entry being removed from the meta data repository, the
+     * method does not remove the entry from the meta data repository.
      */
-    private void destroyEntry(CacheRepositoryEntry entry) 
+    private void destroyEntry(CacheRepositoryEntry entry)
     {
         _operationLock.writeLock().lock();
         try {
             PnfsId id = entry.getPnfsId();
-            _allEntries.remove(id);                    
-            File dataFile = _dataRepository.get(id);
-            if (dataFile.exists()) {
-                long size = dataFile.length();
-                freeSpace(size);
-                if (entry.isPrecious()) {
-                    _preciousSpace.addAndGet(-size);
-                }
-                dataFile.delete();
-            }
-        } catch (CacheException e) {
-            /* isPrecious() is defined to throw CacheException,
-             * but 'our' entries are not supposed to do that.
-             */
-            throw new RuntimeException("Bug. This should not happen.", e);
+            _allEntries.remove(id);
+            _dataRepository.get(id).delete();
         } finally {
             _operationLock.writeLock().unlock();
         }
     }
 
-    public void processEvent(EventType type, CacheRepositoryEvent event) 
+    public void processEvent(EventType type, CacheRepositoryEvent event)
     {
         switch (type) {
         case SCAN:
+        case REMOVE:
             super.processEvent(type, event);
             break;
 
         case DESTROY:
-            destroyEntry(event.getRepositoryEntry());
             super.processEvent(type, event);
+            destroyEntry(event.getRepositoryEntry());
             break;
 
         default:
@@ -551,10 +539,10 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
         }
     }
 
-    protected void storeReservedSpace() throws CacheException 
+    protected void storeReservedSpace() throws CacheException
     {
         try {
-            PrintWriter pw = 
+            PrintWriter pw =
                 new PrintWriter(new FileOutputStream(_spaceReservation));
             try {
                 pw.println(getReservedSpace());

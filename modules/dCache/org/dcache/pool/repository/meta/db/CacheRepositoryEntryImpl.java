@@ -25,7 +25,7 @@ import diskCacheV111.vehicles.StorageInfo;
  */
 public class CacheRepositoryEntryImpl implements CacheRepositoryEntry
 {
-    private static Logger _log = 
+    private static Logger _log =
         Logger.getLogger("logger.org.dcache.repository.v4");
 
     private final CacheRepositoryEntryState _state;
@@ -75,25 +75,25 @@ public class CacheRepositoryEntryImpl implements CacheRepositoryEntry
         _lastAccess = getDataFile().lastModified();
     }
 
-    public CacheRepositoryStatistics getCacheRepositoryStatistics() 
-        throws CacheException 
+    public CacheRepositoryStatistics getCacheRepositoryStatistics()
+        throws CacheException
     {
         // TODO Auto-generated method stub
         return null;
     }
 
-    public synchronized void decrementLinkCount() throws CacheException 
+    public synchronized void decrementLinkCount() throws CacheException
     {
         assert _linkCount > 0;
         _linkCount--;
         if (_linkCount == 0 && isRemoved()) {
-            _repository.remove(_pnfsId);
             generateEvent(EventType.DESTROY);
+            _repository.remove(_pnfsId);
         }
     }
 
 
-    public synchronized void incrementLinkCount() 
+    public synchronized void incrementLinkCount()
     {
         assert !isRemoved();
         _linkCount++;
@@ -104,7 +104,7 @@ public class CacheRepositoryEntryImpl implements CacheRepositoryEntry
         _creationTime = time;
     }
 
-    public synchronized long getCreationTime() 
+    public synchronized long getCreationTime()
     {
         return _creationTime;
     }
@@ -114,12 +114,12 @@ public class CacheRepositoryEntryImpl implements CacheRepositoryEntry
         return _lastAccess;
     }
 
-    public synchronized int getLinkCount() 
+    public synchronized int getLinkCount()
     {
         return _linkCount;
     }
 
-    public synchronized long getSize() 
+    public synchronized long getSize()
     {
         if (_state.isReady()) {
             StorageInfo info = getStorageInfo();
@@ -131,7 +131,7 @@ public class CacheRepositoryEntryImpl implements CacheRepositoryEntry
         return getDataFile().length();
     }
 
-    public synchronized StorageInfo getStorageInfo() 
+    public synchronized StorageInfo getStorageInfo()
     {
         String id = _pnfsId.toString();
         return (StorageInfo)_repository.getStorageInfoMap().get(id);
@@ -147,12 +147,12 @@ public class CacheRepositoryEntryImpl implements CacheRepositoryEntry
         _lastAccess = time;
     }
 
-    public synchronized void lock(boolean locked) 
+    public synchronized void lock(boolean locked)
     {
         _isLocked = locked;
     }
 
-    public synchronized void lock(long millisSeconds) 
+    public synchronized void lock(long millisSeconds)
     {
         long now = System.currentTimeMillis();
 
@@ -161,32 +161,32 @@ public class CacheRepositoryEntryImpl implements CacheRepositoryEntry
         }
     }
 
-    public synchronized boolean isLocked() 
+    public synchronized boolean isLocked()
     {
         return _isLocked || _lockUntil > System.currentTimeMillis();
     }
 
-    public PnfsId getPnfsId() 
+    public PnfsId getPnfsId()
     {
         return _pnfsId;
     }
 
-    public String getState() 
+    public String getState()
     {
         return _state.toString();
     }
 
-    public boolean isBad() 
+    public boolean isBad()
     {
         return _state.isError();
     }
 
-    public boolean isCached() 
+    public boolean isCached()
     {
         return _state.isCached();
     }
 
-    public boolean isRemoved() 
+    public boolean isRemoved()
     {
         return _state.isRemoved();
     }
@@ -196,12 +196,12 @@ public class CacheRepositoryEntryImpl implements CacheRepositoryEntry
         return _linkCount == 0 && isRemoved();
     }
 
-    public boolean isPrecious() 
+    public boolean isPrecious()
     {
         return _state.isPrecious();
     }
 
-    public boolean isReceivingFromClient() 
+    public boolean isReceivingFromClient()
     {
         return _state.isReceivingFromClient();
     }
@@ -211,12 +211,12 @@ public class CacheRepositoryEntryImpl implements CacheRepositoryEntry
         return _state.isReceivingFromStore();
     }
 
-    public boolean isSendingToStore() 
+    public boolean isSendingToStore()
     {
         return _state.isSendingToStore();
     }
 
-    public boolean isSticky() 
+    public boolean isSticky()
     {
         return _state.isSticky();
     }
@@ -226,17 +226,17 @@ public class CacheRepositoryEntryImpl implements CacheRepositoryEntry
         return _repository.getDataFile(_pnfsId);
     }
 
-    /** 
+    /**
      * Generates an event and sends it to the repository for processing.
      */
     private void generateEvent(EventType type)
     {
-        CacheRepositoryEvent event = 
+        CacheRepositoryEvent event =
             new CacheRepositoryEvent(_repository, clone());
         _repository.processEvent(type, event);
     }
 
-    public void setBad(boolean bad) 
+    public void setBad(boolean bad)
     {
         try {
             if (bad) {
@@ -250,7 +250,7 @@ public class CacheRepositoryEntryImpl implements CacheRepositoryEntry
         }
     }
 
-    public void setCached() throws CacheException 
+    public void setCached() throws CacheException
     {
         try {
             if (_state.isReceivingFromClient() || _state.isReceivingFromStore()) {
@@ -266,7 +266,7 @@ public class CacheRepositoryEntryImpl implements CacheRepositoryEntry
         }
     }
 
-    public void setPrecious(boolean force) throws CacheException 
+    public void setPrecious(boolean force) throws CacheException
     {
         try {
             if (_state.isReceivingFromClient()) {
@@ -282,12 +282,12 @@ public class CacheRepositoryEntryImpl implements CacheRepositoryEntry
         }
     }
 
-    public void setPrecious() throws CacheException 
+    public void setPrecious() throws CacheException
     {
         setPrecious(false);
     }
 
-    public void setReceivingFromClient() throws CacheException 
+    public void setReceivingFromClient() throws CacheException
     {
         try {
             _state.setFromClient();
@@ -298,7 +298,7 @@ public class CacheRepositoryEntryImpl implements CacheRepositoryEntry
         }
     }
 
-    public void setReceivingFromStore() throws CacheException 
+    public void setReceivingFromStore() throws CacheException
     {
         try {
             _state.setFromStore();
@@ -309,7 +309,7 @@ public class CacheRepositoryEntryImpl implements CacheRepositoryEntry
         }
     }
 
-    public void setSendingToStore(boolean sending) throws CacheException 
+    public void setSendingToStore(boolean sending) throws CacheException
     {
         try {
             if (sending) {
@@ -323,7 +323,7 @@ public class CacheRepositoryEntryImpl implements CacheRepositoryEntry
         }
     }
 
-    public void setSticky(boolean sticky) throws CacheException 
+    public void setSticky(boolean sticky) throws CacheException
     {
         try {
             if (sticky) {
@@ -332,7 +332,7 @@ public class CacheRepositoryEntryImpl implements CacheRepositoryEntry
                 _state.cleanSticky("system", -1);
             }
             storeStateIfDirty();
-            
+
             generateEvent(EventType.STICKY);
         } catch (IllegalStateException e) {
             throw new CacheException(e.getMessage());
@@ -356,7 +356,7 @@ public class CacheRepositoryEntryImpl implements CacheRepositoryEntry
         }
     }
 
-    public synchronized void setStorageInfo(StorageInfo info) 
+    public synchronized void setStorageInfo(StorageInfo info)
     {
         String id = _pnfsId.toString();
         if (info != null) {
@@ -366,24 +366,24 @@ public class CacheRepositoryEntryImpl implements CacheRepositoryEntry
         }
     }
 
-    public synchronized void setRemoved() throws CacheException 
+    public synchronized void setRemoved() throws CacheException
     {
         try {
             _state.setRemoved();
             storeStateIfDirty();
-            
+
             generateEvent(EventType.REMOVE);
 
             if (_linkCount == 0) {
-                _repository.remove(_pnfsId);
                 generateEvent(EventType.DESTROY);
+                _repository.remove(_pnfsId);
             }
         } catch (IllegalStateException e) {
             throw new CacheException(e.getMessage());
         }
     }
 
-    public void touch() throws CacheException 
+    public void touch() throws CacheException
     {
         File file = getDataFile();
 
@@ -400,13 +400,13 @@ public class CacheRepositoryEntryImpl implements CacheRepositoryEntry
         setLastAccess(now);
     }
 
-    public List<StickyRecord> stickyRecords() 
+    public List<StickyRecord> stickyRecords()
     {
         return _state.stickyRecords();
     }
 
     // TODO; return a copy
-    public CacheRepositoryEntry clone() 
+    public CacheRepositoryEntry clone()
     {
         return this;
     }
@@ -436,7 +436,7 @@ public class CacheRepositoryEntryImpl implements CacheRepositoryEntry
     {
         try {
             String id = pnfsId.toString();
-            CacheRepositoryEntryState state = 
+            CacheRepositoryEntryState state =
                 (CacheRepositoryEntryState)repository.getStateMap().get(id);
 
             if (state != null) {
