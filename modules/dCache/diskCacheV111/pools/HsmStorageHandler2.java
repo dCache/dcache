@@ -946,57 +946,45 @@ public class HsmStorageHandler2  {
                             _pnfs.fileFlushed(_entry.getPnfsId(),
                                               _entry.getStorageInfo());
                             break;
-                        } catch(CacheException ce) {
+                        } catch(CacheException e) {
+                            if (e.getRc() == CacheException.FILE_NOT_FOUND) {
+                                /* In case the file was deleted, we are
+                                 * presented with the problem that the
+                                 * file is now on tape, however the
+                                 * location has not been registered
+                                 * centrally. Hence the copy on the tape
+                                 * will not be removed by the HSM
+                                 * cleaner. The sensible thing seems to be
+                                 * to remove the file from tape here. For
+                                 * now we ignore this issue (REVISIT).
+                                 */
+                                break;
+                            }
+
                             /* The message to the PnfsManager
                              * failed. There are several possible
                              * reasons for this; we may have lost the
                              * connection to the PnfsManager; the
-                             * PnfsManager may have lost its connection
-                             * to PNFS or otherwise be in trouble; the
-                             * file may have been deleted while we
-                             * flushed it; bugs; etc.
+                             * PnfsManager may have lost its
+                             * connection to PNFS or otherwise be in
+                             * trouble; bugs; etc.
                              *
-                             * Except in the case of the file being
-                             * deleted, we keep retrying until we
-                             * succeed. This will effectively block this
-                             * thread from flushing any other files,
-                             * which seems sensible when we have trouble
-                             * talking to the PnfsManager. If the pool
-                             * crashes or gets restarted while waiting
-                             * here, we will end up flushing the file
+                             * We keep retrying until we succeed. This
+                             * will effectively block this thread from
+                             * flushing any other files, which seems
+                             * sensible when we have trouble talking
+                             * to the PnfsManager. If the pool crashes
+                             * or gets restarted while waiting here,
+                             * we will end up flushing the file
                              * again. We assume that the HSM script is
                              * able to eliminate the duplicate; or at
-                             * least tolerate the duplicate (given that
-                             * this situation should be rare, we can
-                             * live with a little bit of wasted tape).
+                             * least tolerate the duplicate (given
+                             * that this situation should be rare, we
+                             * can live with a little bit of wasted
+                             * tape).
                              */
-
-                            /* 37 is the error code used by
-                             * OsmInfoExtractor when trying to set the
-                             * storage info on a file that does not
-                             * exist. REVISIT: Hard coding error codes
-                             * sucks!
-                             *
-                             * Even worse, the OsmInfoExtractor also
-                             * uses this as an error code in case the
-                             * PNFS file system is not mounted. In this
-                             * case we clearly want to retry rather than
-                             * break out (FIXME).
-                             */
-                            if (ce.getRc() == 37) {
-                                /* In case of the file being deleted, we
-                                 * are presented with the problem that
-                                 * the file is now on tape, however the
-                                 * location has not been registered
-                                 * centrally. Hence the copy on the tape
-                                 * will not be removed by the HSM
-                                 * cleaner. The sensible thing seems to
-                                 * be to remove the file from tape
-                                 * here. For now we ignore this issue
-                                 * (REVISIT).
-                                 */
-                                break;
-                            }
+                            esay("Error notifying PNFS about a flushed file: "
+                                 + e.getMessage() + "(" + e.getRc() + ")");
                         }
                         Thread.sleep(120000); // 2 minutes
                     }
