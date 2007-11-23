@@ -455,6 +455,21 @@ cacheInfo=companion
 # cleanerProcessFilesPerRun=500
 # cleanerArchive=none
 #
+
+#  ---- Whether to enable the HSM cleaner
+#   Values:  'disabled', 'enabled'
+#   Default: 'disabled' 
+#
+#   The HSM cleaner scans the PNFS trash directory for deleted 
+#   files stored on an HSM and sends a request to an attached
+#   pool to delete that file from the HSM.
+#
+#   The HSM cleaner by default runs in the PNFS domain. To 
+#   enable the cleaner, this setting needs to be set to enabled 
+#   at the PNFS domain *and* at all pools that are supposed 
+#   to delete files from an HSM.
+#
+# hsmCleaner=disabled
 #
 #
 #  ---- Location of trash directory for files on tape

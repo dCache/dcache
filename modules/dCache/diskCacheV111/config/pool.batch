@@ -39,6 +39,21 @@ onerror continue
 
 onerror shutdown
 
+
+#
+# Set poolupDestination to broadcast if hsmCleaner is enabled
+#
+onerror continue
+
+set env poolupDestination PoolManager
+define context hsmcleaner.exe endDefine
+  set env poolupDestination broadcast
+endDefine
+eval ${hsmCleaner} enabled ==
+exec context hsmcleaner.exe -run -ifok=rc
+
+onerror shutdown
+
 #
 # NIO ftp mover
 #
@@ -58,6 +73,7 @@ define context startPools endDefine
   -checkRepository=${checkRepository} \
   -waitForRepositoryReady=${waitForRepositoryReady} \
   -version=4 \
+  -poolupDestination=${poolupDestination} \
   -sticky=allowed \
   -sendHitInfoMessages=no \
   -sweeper=diskCacheV111.pools.SpaceSweeper1 \
