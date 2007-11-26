@@ -579,6 +579,7 @@ public class SrmLs {
             for (int i = 0; i < ta.length; i++) {
                 TMetaDataPathDetail metaDataPathDetail = ta[i];
                 if(metaDataPathDetail != null){
+		    //sb.append(metaDataPathDetail.getStatus().getStatusCode()+" "+metaDataPathDetail.getStatus().getExplanation());
                     if (metaDataPathDetail.getStatus().getStatusCode() ==
 			TStatusCode.fromString(TStatusCode._SRM_INVALID_PATH)) {
                         
