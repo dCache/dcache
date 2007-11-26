@@ -171,37 +171,97 @@
 		<copy file="${classesDir}/srm.jar" todir="${binDir}/srm/lib/" />
 
 		<copy file="${sourceDir}/bin/adler32" todir="${binDir}/srm/bin/" />
+                <chmod file="${binDir}/srm/bin/adler32"  perm="+x"/>
+
 		<copy file="${sourceDir}/bin/command-line-client" todir="${binDir}/srm/bin/" />
+                <chmod file="${binDir}/srm/bin/command-line-client"  perm="+x"/>
+
 		<copy file="${sourceDir}/bin/gridftpcopy" todir="${binDir}/srm/bin/" />
+                <chmod file="${binDir}/srm/bin/gridftpcopy"  perm="+x"/>
+
 		<copy file="${sourceDir}/bin/gridftplist" todir="${binDir}/srm/bin/" />
+                <chmod file="${binDir}/srm/bin/gridftplist"  perm="+x"/>
+
 		<copy file="${sourceDir}/bin/srm-get-request-status" todir="${binDir}/srm/bin/" />
+                <chmod file="${binDir}/srm/bin/srm-get-request-status"  perm="+x"/>
+
 		<copy file="${sourceDir}/bin/srm-get-request-summary" todir="${binDir}/srm/bin/" />
+                <chmod file="${binDir}/srm/bin/srm-get-request-summary"  perm="+x"/>
+
 		<copy file="${sourceDir}/bin/srm-get-request-tokens" todir="${binDir}/srm/bin/" />
+                <chmod file="${binDir}/srm/bin/srm-get-request-tokens"  perm="+x"/>
+
 		<copy file="${sourceDir}/bin/srmcp" todir="${binDir}/srm/bin/" />
+                <chmod file="${binDir}/srm/bin/srmcp"  perm="+x"/>
+
 		<copy file="${sourceDir}/bin/srmls" todir="${binDir}/srm/bin/" />
+                <chmod file="${binDir}/srm/bin/srmls"  perm="+x"/>
+
 		<copy file="${sourceDir}/bin/srmrm" todir="${binDir}/srm/bin/" />
+                <chmod file="${binDir}/srm/bin/srmrm"  perm="+x"/>
+
 		<copy file="${sourceDir}/bin/srmmkdir" todir="${binDir}/srm/bin/" />
+                <chmod file="${binDir}/srm/bin/srmmkdir"  perm="+x"/>
+
 		<copy file="${sourceDir}/bin/srmmv" todir="${binDir}/srm/bin/" />
+                <chmod file="${binDir}/srm/bin/srmmv"  perm="+x"/>
+
 		<copy file="${sourceDir}/bin/srmrmdir" todir="${binDir}/srm/bin/" />
+                <chmod file="${binDir}/srm/bin/srmrmdir"  perm="+x"/>
+
 		<copy file="${sourceDir}/bin/srm_v1" todir="${binDir}/srm/bin/" />
+                <chmod file="${binDir}/srm/bin/srm_v1"  perm="+x"/>
+
 		<copy file="${sourceDir}/bin/srmstage" todir="${binDir}/srm/bin/" />
+                <chmod file="${binDir}/srm/bin/srmstage"  perm="+x"/>
+
 		<copy file="${sourceDir}/bin/srm-advisory-delete" todir="${binDir}/srm/bin/" />
+                <chmod file="${binDir}/srm/bin/srm-advisory-delete"  perm="+x"/>
+
 		<copy file="${sourceDir}/bin/srm-storage-element-info" todir="${binDir}/srm/bin/" />
+                <chmod file="${binDir}/srm/bin/srm-storage-element-info"  perm="+x"/>
+
 		<copy file="${sourceDir}/bin/srm-get-metadata" todir="${binDir}/srm/bin/" />
+                <chmod file="${binDir}/srm/bin/srm-get-metadata"  perm="+x"/>
+
 		<copy file="${sourceDir}/bin/srm-bring-online" todir="${binDir}/srm/bin/" />
+                <chmod file="${binDir}/srm/bin/srm-bring-online"  perm="+x"/>
+
 		<copy file="${sourceDir}/bin/srm-check-permissions" todir="${binDir}/srm/bin/" />
+                <chmod file="${binDir}/srm/bin/srm-check-permissions"  perm="+x"/>
+
 		<copy file="${sourceDir}/bin/srm-extend-file-lifetime" todir="${binDir}/srm/bin/" />
+                <chmod file="${binDir}/srm/bin/srm-extend-file-lifetime"  perm="+x"/>
+
 		<copy file="${sourceDir}/bin/srm-get-permissions" todir="${binDir}/srm/bin/" />
+                <chmod file="${binDir}/srm/bin/srm-get-permissions"  perm="+x"/>
+
 		<copy file="${sourceDir}/bin/srm-get-space-metadata" todir="${binDir}/srm/bin/" />
+                <chmod file="${binDir}/srm/bin/srm-get-space-metadata"  perm="+x"/>
+
 		<copy file="${sourceDir}/bin/srm-get-space-tokens" todir="${binDir}/srm/bin/" />
+                <chmod file="${binDir}/srm/bin/srm-get-space-tokens"  perm="+x"/>
+
 		<copy file="${sourceDir}/bin/srm-release-space" todir="${binDir}/srm/bin/" />
+                <chmod file="${binDir}/srm/bin/srm-release-space"  perm="+x"/>
+
 		<copy file="${sourceDir}/bin/srm-reserve-space" todir="${binDir}/srm/bin/" />
+                <chmod file="${binDir}/srm/bin/srm-reserve-space"  perm="+x"/>
+
 		<copy file="${sourceDir}/bin/srm-set-permissions" todir="${binDir}/srm/bin/" />
+                <chmod file="${binDir}/srm/bin/srm-set-permissions"  perm="+x"/>
+
 		<copy file="${sourceDir}/bin/srmping" todir="${binDir}/srm/bin/" />
+                <chmod file="${binDir}/srm/bin/srmping"  perm="+x"/>
 
 		<copy file="${sourceDir}/sbin/srm" todir="${binDir}/srm/sbin/" />
+                <chmod file="${binDir}/srm/sbin/srm"  perm="+x"/>
+
 		<copy file="${sourceDir}/sbin/timeout.sh" todir="${binDir}/srm/sbin/" />
+                <chmod file="${binDir}/srm/sbin/timeout.sh"  perm="+x"/>
+
 		<copy file="${sourceDir}/sbin/url-copy.sh" todir="${binDir}/srm/sbin/" />
+                <chmod file="${binDir}/srm/sbin/url-copy"  perm="+x"/>
 
 		<copy file="${sourceDir}/conf/SRMServerV1.map" todir="${binDir}/srm/conf" />
 		<copy file="${sourceDir}/conf/JHRM.map" todir="${binDir}/srm/conf" />
