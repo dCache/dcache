@@ -1,7 +1,7 @@
 //______________________________________________________________________________
 //
-// $Id: DefaultJobAppraiser.java,v 1.1 2006-10-24 07:44:43 litvinse Exp $
-// $Author: litvinse $
+// $Id$
+// $Author$
 //
 // created 10/06 by Dmitry Litvintsev (litvinse@fnal.gov)
 //

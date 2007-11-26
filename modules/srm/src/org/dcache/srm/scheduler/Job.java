@@ -1,4 +1,4 @@
-// $Id: Job.java,v 1.24 2007-10-26 09:18:19 behrmann Exp $
+// $Id$
 // $Log: not supported by cvs2svn $
 // Revision 1.23  2007/10/25 22:49:05  timur
 // separate retry timers and lifetime timers

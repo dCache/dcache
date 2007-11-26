@@ -1,4 +1,4 @@
-// $Id: HashtableJobStorage.java,v 1.3 2007-03-08 23:36:56 timur Exp $
+// $Id$
 // $Log: not supported by cvs2svn $
 // Revision 1.2.12.1  2007/03/08 23:09:14  timur
 // reduce database usage for cases when monitoring is not enabled

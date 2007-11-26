@@ -1,4 +1,4 @@
-// $Id: State.java,v 1.5 2006-04-26 17:17:56 timur Exp $
+// $Id$
 // $Log: not supported by cvs2svn $
 // Revision 1.4  2006/04/21 22:58:28  timur
 // we do not need a thread running when we start a remote transfer, but we want to control the number of the transfers, I hope the code accomplishes this now, though an addition of the new job state

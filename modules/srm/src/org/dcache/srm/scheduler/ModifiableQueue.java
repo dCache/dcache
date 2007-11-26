@@ -1,4 +1,4 @@
-// $Id: ModifiableQueue.java,v 1.5 2007-08-03 20:20:40 timur Exp $
+// $Id$
 // $Log: not supported by cvs2svn $
 // Revision 1.4  2006/04/21 22:58:27  timur
 // we do not need a thread running when we start a remote transfer, but we want to control the number of the transfers, I hope the code accomplishes this now, though an addition of the new job state
