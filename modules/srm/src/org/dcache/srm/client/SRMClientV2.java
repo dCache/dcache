@@ -3,8 +3,6 @@
 // $Id$
 // $Author$
 //
-// created 10/07 by Dmitry Litvintsev (litvinse@fnal.gov)
-// 
 // Implementation of SRM V2 client interface
 //
 //______________________________________________________________________________
