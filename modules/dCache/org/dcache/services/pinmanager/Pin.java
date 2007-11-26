@@ -118,7 +118,8 @@ public class Pin extends SMCDriver
         StringBuilder sb = new StringBuilder();
         sb.append("pin of : ").append(_pnfsId).append('\n');
         sb.append(" state : ").append(_fsm.getState()).append('\n');
-        sb.append(" handler : ").append(_handler).append('\n');
+        if (_handler != null)
+            sb.append(" handler : ").append(_handler).append('\n');
         sb.append(" requests :\n");
         if (isEmpty()) {
             sb.append("    none\n");
