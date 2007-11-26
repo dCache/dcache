@@ -1,4 +1,4 @@
-// $Id: SslGsiSocketFactory.java,v 1.5 2007-08-03 15:47:59 timur Exp $
+// $Id$
 // $Log: not supported by cvs2svn $
 // Revision 1.4  2006/06/06 21:18:18  tdh
 // Made delegateCredential return GSIGssSocket so that cell delegated to can return an object.
