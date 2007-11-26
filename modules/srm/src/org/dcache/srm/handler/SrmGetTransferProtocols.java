@@ -1,7 +1,7 @@
 //______________________________________________________________________________
 //
-// $Id: SrmGetTransferProtocols.java,v 1.1 2006-12-21 17:37:29 timur Exp $
-// $Author: timur $
+// $Id$
+// $Author$
 //
 // created 10/05 by Dmitry Litvintsev (litvinse@fnal.gov)
 //

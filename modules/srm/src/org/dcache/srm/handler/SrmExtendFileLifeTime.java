@@ -1,7 +1,7 @@
 //______________________________________________________________________________
 //
-// $Id: SrmExtendFileLifeTime.java,v 1.4 2007-04-13 15:17:27 timur Exp $
-// $Author: timur $
+// $Id$
+// $Author$
 //
 // created 10/05 by Dmitry Litvintsev (litvinse@fnal.gov)
 //

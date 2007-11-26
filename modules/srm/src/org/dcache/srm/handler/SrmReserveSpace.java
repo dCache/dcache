@@ -1,7 +1,7 @@
 //______________________________________________________________________________
 //
-// $Id: SrmReserveSpace.java,v 1.12 2007-08-22 20:27:34 timur Exp $
-// $Author: timur $
+// $Id$
+// $Author$
 //
 // created 10/05 by Dmitry Litvintsev (litvinse@fnal.gov)
 //

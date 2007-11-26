@@ -1,7 +1,7 @@
 //______________________________________________________________________________
 //
-// $Id: SrmPing.java,v 1.5 2007-10-23 19:41:28 litvinse Exp $
-// $Author: litvinse $
+// $Id$
+// $Author$
 //
 // created 10/05 by Dmitry Litvintsev (litvinse@fnal.gov)
 //

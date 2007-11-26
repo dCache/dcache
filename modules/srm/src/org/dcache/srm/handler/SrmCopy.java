@@ -1,7 +1,7 @@
 //______________________________________________________________________________
 //
-// $Id: SrmCopy.java,v 1.20 2007-03-10 00:13:19 timur Exp $
-// $Author: timur $
+// $Id$
+// $Author$
 //
 // created 10/05 by Dmitry Litvintsev (litvinse@fnal.gov)
 //

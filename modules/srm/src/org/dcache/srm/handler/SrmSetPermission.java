@@ -1,7 +1,7 @@
 //______________________________________________________________________________
 //
-// $Id: SrmSetPermission.java,v 1.5 2006-12-21 17:39:46 litvinse Exp $
-// $Author: litvinse $
+// $Id$
+// $Author$
 //
 // created 06/21 by Neha Sharma (neha@fnal.gov)
 //

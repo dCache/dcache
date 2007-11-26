@@ -1,7 +1,7 @@
 //______________________________________________________________________________
 //
-// $Id: SrmMv.java,v 1.12 2007-04-13 17:01:35 litvinse Exp $
-// $Author: litvinse $
+// $Id$
+// $Author$
 //
 // created 10/05 by Dmitry Litvintsev (litvinse@fnal.gov)
 //

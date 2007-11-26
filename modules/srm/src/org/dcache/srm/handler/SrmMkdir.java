@@ -1,7 +1,7 @@
 //______________________________________________________________________________
 //
-// $Id: SrmMkdir.java,v 1.11 2007-08-22 23:05:21 timur Exp $
-// $Author: timur $
+// $Id$
+// $Author$
 //
 // created 11/05 by Dmitry Litvintsev (litvinse@fnal.gov)
 //

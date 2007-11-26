@@ -1,7 +1,7 @@
 //______________________________________________________________________________
 //
-// $Id: SrmGetSpaceTokens.java,v 1.3 2007-10-05 22:07:22 timur Exp $
-// $Author: timur $
+// $Id$
+// $Author$
 //
 // created 10/05 by Dmitry Litvintsev (litvinse@fnal.gov)
 //

@@ -1,7 +1,7 @@
 //______________________________________________________________________________
 //
-// $Id: SrmGetRequestTokens.java,v 1.3 2007-05-15 01:48:04 timur Exp $
-// $Author: timur $
+// $Id$
+// $Author$
 //
 // created 10/05 by Dmitry Litvintsev (litvinse@fnal.gov)
 //

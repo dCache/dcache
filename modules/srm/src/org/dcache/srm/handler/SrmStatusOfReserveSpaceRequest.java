@@ -1,7 +1,7 @@
 //______________________________________________________________________________
 //
-// $Id: SrmStatusOfReserveSpaceRequest.java,v 1.3 2006-12-21 17:39:46 litvinse Exp $
-// $Author: litvinse $
+// $Id$
+// $Author$
 //
 // created 10/05 by Dmitry Litvintsev (litvinse@fnal.gov)
 //

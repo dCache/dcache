@@ -1,7 +1,7 @@
 //______________________________________________________________________________
 //
-// $Id: SrmStatusOfCopyRequest.java,v 1.10 2007-07-04 15:00:27 tigran Exp $
-// $Author: tigran $
+// $Id$
+// $Author$
 //
 // created 12/05 by Dmitry Litvintsev (litvinse@fnal.gov)
 //
