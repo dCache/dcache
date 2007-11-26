@@ -1,3 +1,14 @@
+//______________________________________________________________________________
+//
+// $Id$
+// $Author$
+//
+// created 10/07 by Dmitry Litvintsev (litvinse@fnal.gov)
+// 
+// Implementation of SRM V2 client interface
+//
+//______________________________________________________________________________
+
 /*
  * SRMClientV2.java
  *
@@ -18,34 +29,7 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import org.dcache.srm.v2_2.SrmBringOnlineRequest;
-import org.dcache.srm.v2_2.SrmBringOnlineResponse;
-import org.dcache.srm.v2_2.SrmChangeSpaceForFilesRequest;
-import org.dcache.srm.v2_2.SrmChangeSpaceForFilesResponse;
-import org.dcache.srm.v2_2.SrmExtendFileLifeTimeInSpaceRequest;
-import org.dcache.srm.v2_2.SrmExtendFileLifeTimeInSpaceResponse;
-import org.dcache.srm.v2_2.SrmGetPermissionRequest;
-import org.dcache.srm.v2_2.SrmGetPermissionResponse;
-import org.dcache.srm.v2_2.SrmGetRequestTokensRequest;
-import org.dcache.srm.v2_2.SrmGetRequestTokensResponse;
-import org.dcache.srm.v2_2.SrmGetSpaceTokensRequest;
-import org.dcache.srm.v2_2.SrmGetSpaceTokensResponse;
-import org.dcache.srm.v2_2.SrmGetTransferProtocolsRequest;
-import org.dcache.srm.v2_2.SrmGetTransferProtocolsResponse;
-import org.dcache.srm.v2_2.SrmPingRequest;
-import org.dcache.srm.v2_2.SrmPingResponse;
-import org.dcache.srm.v2_2.SrmPurgeFromSpaceRequest;
-import org.dcache.srm.v2_2.SrmPurgeFromSpaceResponse;
-import org.dcache.srm.v2_2.SrmStatusOfBringOnlineRequestRequest;
-import org.dcache.srm.v2_2.SrmStatusOfBringOnlineRequestResponse;
-import org.dcache.srm.v2_2.SrmStatusOfChangeSpaceForFilesRequestRequest;
-import org.dcache.srm.v2_2.SrmStatusOfChangeSpaceForFilesRequestResponse;
-import org.dcache.srm.v2_2.SrmStatusOfLsRequestRequest;
-import org.dcache.srm.v2_2.SrmStatusOfLsRequestResponse;
-import org.dcache.srm.v2_2.SrmStatusOfReserveSpaceRequestRequest;
-import org.dcache.srm.v2_2.SrmStatusOfReserveSpaceRequestResponse;
-import org.dcache.srm.v2_2.SrmStatusOfUpdateSpaceRequestRequest;
-import org.dcache.srm.v2_2.SrmStatusOfUpdateSpaceRequestResponse;
+import org.dcache.srm.v2_2.*;
 import org.globus.util.GlobusURL;
 import org.ietf.jgss.GSSCredential;
 import org.dcache.srm.SRMAuthorization;
@@ -91,7 +75,16 @@ public class SRMClientV2 implements org.dcache.srm.v2_2.ISRM {
     }
    
     /** Creates a new instance of SRMClientV2 */
-    public SRMClientV2(GlobusURL srmurl,GSSCredential user_cred,long retrytimeout,int numberofretries,Logger logger,boolean do_delegation,boolean full_delegation,String gss_expected_name,String webservice_path) throws IOException,InterruptedException,  javax.xml.rpc.ServiceException  {
+    public SRMClientV2(GlobusURL srmurl,
+		       GSSCredential user_cred,
+		       long retrytimeout,
+		       int numberofretries,
+		       Logger logger,
+		       boolean do_delegation,
+		       boolean full_delegation,
+		       String gss_expected_name,
+		       String webservice_path) 
+	throws IOException,InterruptedException,  javax.xml.rpc.ServiceException  {
 	say("constructor: srmurl = "+srmurl+" user_cred= "+ user_cred+" retrytimeout="+retrytimeout+" msec numberofretries="+numberofretries);
         this.retrytimeout = retrytimeout;
         this.retries = numberofretries;
@@ -106,9 +99,6 @@ public class SRMClientV2 implements org.dcache.srm.v2_2.ISRM {
         catch(org.ietf.jgss.GSSException gsse) {
             throw new IOException(gsse.toString());
         }
-        
-        
-        //say("constructor: obtained socket factory");
         host = srmurl.getHost();
         host = InetAddress.getByName(host).getCanonicalHostName();
         int port = srmurl.getPort();
@@ -118,7 +108,6 @@ public class SRMClientV2 implements org.dcache.srm.v2_2.ISRM {
         }
         service_url = ((port == 80)?"http://":"httpg://")+host + ":" +port ;
         int indx=path.indexOf(SFN_STRING);
-        
         if(indx >0) {
             String service_postfix = path.substring(0,indx);
             if(!service_postfix.startsWith("/")){
@@ -127,19 +116,14 @@ public class SRMClientV2 implements org.dcache.srm.v2_2.ISRM {
             service_url += service_postfix;
         }
         else {
-            //service_url += SERVICE_POSTFIX;
 	    service_url += "/"+webservice_path;
         }
-	say("WEBSERVICE_PATH "+webservice_path);
         org.globus.axis.util.Util.registerTransport();
         org.apache.axis.configuration.SimpleProvider provider = 
             new org.apache.axis.configuration.SimpleProvider();
-
         org.apache.axis.SimpleTargetedChain c = null;
-
         c = new org.apache.axis.SimpleTargetedChain(new org.globus.axis.transport.GSIHTTPSender());
         provider.deployTransport("httpg", c);
-
         c = new org.apache.axis.SimpleTargetedChain(new  org.apache.axis.transport.http.HTTPSender());
         provider.deployTransport("http", c);
         org.dcache.srm.v2_2.SRMServiceLocator sl = new org.dcache.srm.v2_2.SRMServiceLocator(provider);
@@ -158,11 +142,13 @@ public class SRMClientV2 implements org.dcache.srm.v2_2.ISRM {
                     if(full_delegation) {
                         // sets gsi mode
                         axis_isrm_as_stub._setProperty(org.globus.axis.transport.GSIHTTPTransport.GSI_MODE,org.globus.axis.transport.GSIHTTPTransport.GSI_MODE_FULL_DELEG);
-                    } else {
+                    } 
+		    else {
                         axis_isrm_as_stub._setProperty(org.globus.axis.transport.GSIHTTPTransport.GSI_MODE,org.globus.axis.transport.GSIHTTPTransport.GSI_MODE_LIMITED_DELEG);
                     }                    
                     
-                } else {
+                } 
+		else {
                     // sets gsi mode
                     axis_isrm_as_stub._setProperty(org.globus.axis.transport.GSIHTTPTransport.GSI_MODE,org.globus.axis.transport.GSIHTTPTransport.GSI_MODE_NO_DELEG);
                 }
@@ -172,1380 +158,27 @@ public class SRMClientV2 implements org.dcache.srm.v2_2.ISRM {
         }
     }
     
-    public org.dcache.srm.v2_2.SrmAbortFilesResponse srmAbortFiles(
-                org.dcache.srm.v2_2.SrmAbortFilesRequest srmAbortFilesRequest) 
-                throws RemoteException {
-            say(" srmAbortFiles, contacting service " + service_url);
-            int i = 0;
-            while(true) {
 
-                try {
-                    if(user_cred.getRemainingLifetime() < 60) {
-                        throw new RuntimeException(
-                           "credential remaining lifetime is less " +
-                           "than one minute ");
-                    }
-                }
-                catch(org.ietf.jgss.GSSException gsse) {
-                    throw new RemoteException("security exception",gsse);
-                }
-
-                try {
-                       return  axis_isrm.srmAbortFiles(srmAbortFilesRequest);
-                }
-                catch(RemoteException e) {
-                    esay("put: try # "+i+" failed with error");
-                    esay(e.getMessage());
-                    if(i <retries) {
-                        i++;
-                        esay("put: try again");
-                    }
-                    else {
-                        throw e;
-                    }
-                }
-                catch(RuntimeException e) {
-                    esay("put: try # "+i+" failed with error");
-                    esay(e.getMessage());
-                    if(i <retries) {
-                        i++;
-                        esay("put: try again");
-                    }
-                    else {
-                        throw new RemoteException("RuntimeException in client",e);
-                    }
-                }
-                try {
-                    say("sleeping for "+(retrytimeout*i)+ " milliseconds before retrying");
-                    Thread.sleep(retrytimeout*i);
-                }
-                catch(InterruptedException ie) {
-                }
-
-            }
-    }
-    
-    public org.dcache.srm.v2_2.SrmAbortRequestResponse srmAbortRequest(
-    org.dcache.srm.v2_2.SrmAbortRequestRequest srmAbortRequestRequest) 
-    throws RemoteException {
-        say(" srmAbortRequest, contacting service " + service_url);
-        int i = 0;
-        while(true) {
-
-            try {
-                if(user_cred.getRemainingLifetime() < 60) {
-                    throw new RuntimeException(
-                       "credential remaining lifetime is less " +
-                       "than one minute ");
-                }
-            }
-            catch(org.ietf.jgss.GSSException gsse) {
-                throw new RemoteException("security exception",gsse);
-            }
-
-            try {
-                   return  axis_isrm.srmAbortRequest(srmAbortRequestRequest);
-            }
-            catch(RemoteException e) {
-                esay("put: try # "+i+" failed with error");
-                esay(e.getMessage());
-                if(i <retries) {
-                    i++;
-                    esay("put: try again");
-                }
-                else {
-                    throw e;
-                }
-            }
-            catch(RuntimeException e) {
-                esay("put: try # "+i+" failed with error");
-                esay(e.getMessage());
-                if(i <retries) {
-                    i++;
-                    esay("put: try again");
-                }
-                else {
-                    throw new RemoteException("RuntimeException in client",e);
-                }
-            }
-            try {
-                say("sleeping for "+(retrytimeout*i)+ " milliseconds before retrying");
-                Thread.sleep(retrytimeout*i);
-            }
-            catch(InterruptedException ie) {
-            }
-
-        }
-    }
-    
-   
-    public org.dcache.srm.v2_2.SrmCheckPermissionResponse srmCheckPermission(
-    org.dcache.srm.v2_2.SrmCheckPermissionRequest srmCheckPermissionRequest) 
-    throws RemoteException {
-        int i = 0;
-        while(true) {
-
-            try {
-                if(user_cred.getRemainingLifetime() < 60) {
-                    throw new RuntimeException(
-                       "credential remaining lifetime is less " +
-                       "than one minute ");
-                }
-            }
-            catch(org.ietf.jgss.GSSException gsse) {
-                throw new RemoteException("security exception",gsse);
-            }
-
-            try {
-                   return  axis_isrm.srmCheckPermission(srmCheckPermissionRequest);
-            }
-            catch(RemoteException e) {
-                esay("put: try # "+i+" failed with error");
-                esay(e.getMessage());
-                if(i <retries) {
-                    i++;
-                    esay("put: try again");
-                }
-                else {
-                    throw e;
-                }
-            }
-            catch(RuntimeException e) {
-                esay("put: try # "+i+" failed with error");
-                esay(e.getMessage());
-                if(i <retries) {
-                    i++;
-                    esay("put: try again");
-                }
-                else {
-                    throw new RemoteException("RuntimeException in client",e);
-                }
-            }
-            try {
-                say("sleeping for "+(retrytimeout*i)+ " milliseconds before retrying");
-                Thread.sleep(retrytimeout*i);
-            }
-            catch(InterruptedException ie) {
-            }
-
-        }
-    }
-    
-    public org.dcache.srm.v2_2.SrmCopyResponse srmCopy(
-    org.dcache.srm.v2_2.SrmCopyRequest srmCopyRequest) 
-    throws RemoteException {
-        say(" srmCopy, contacting service " + service_url);
-        int i = 0;
-        while(true) {
-
-            try {
-                if(user_cred.getRemainingLifetime() < 60) {
-                    throw new RuntimeException(
-                       "credential remaining lifetime is less " +
-                       "than one minute ");
-                }
-            }
-            catch(org.ietf.jgss.GSSException gsse) {
-                throw new RemoteException("security exception",gsse);
-            }
-
-            try {
-                   return  axis_isrm.srmCopy(srmCopyRequest);
-            }
-            catch(RemoteException e) {
-                esay("srmCopy: try # "+i+" failed with error");
-                esay(e.getMessage());
-                /*
-                if(i <retries) {
-                    i++;
-                    esay("srmCopy: try again");
-                }
-                else 
-                 */
-                // do not retry on the request establishing functions
-                 {
-                    throw e;
-                }
-            }
-            catch(RuntimeException e) {
-                esay("srmCopy: try # "+i+" failed with error");
-                esay(e.getMessage());
-                /*
-                if(i <retries) {
-                    i++;
-                    esay("srmCopy: try again");
-                }
-                else 
-                 */
-                // do not retry on the request establishing functions
-                 {
-                    throw new RemoteException("RuntimeException in client",e);
-                }
-            }
-            /*
-            try {
-                say("sleeping for "+(retrytimeout*i)+ " milliseconds before retrying");
-                Thread.sleep(retrytimeout*i);
-            }
-            catch(InterruptedException ie) {
-            }
-             */
-
-        }
-    }
-    
-    public org.dcache.srm.v2_2.SrmExtendFileLifeTimeResponse srmExtendFileLifeTime(
-    org.dcache.srm.v2_2.SrmExtendFileLifeTimeRequest srmExtendFileLifeTimeRequest) 
-    throws RemoteException {
-        say(" srmExtendFileLifeTime, contacting service " + service_url);
-        int i = 0;
-        while(true) {
-
-            try {
-                if(user_cred.getRemainingLifetime() < 60) {
-                    throw new RuntimeException(
-                       "credential remaining lifetime is less " +
-                       "than one minute ");
-                }
-            }
-            catch(org.ietf.jgss.GSSException gsse) {
-                throw new RemoteException("security exception",gsse);
-            }
-
-            try {
-                   return  axis_isrm.srmExtendFileLifeTime(srmExtendFileLifeTimeRequest);
-            }
-            catch(RemoteException e) {
-                esay("put: try # "+i+" failed with error");
-                esay(e.getMessage());
-                if(i <retries) {
-                    i++;
-                    esay("put: try again");
-                }
-                else {
-                    throw e;
-                }
-            }
-            catch(RuntimeException e) {
-                esay("put: try # "+i+" failed with error");
-                esay(e.getMessage());
-                if(i <retries) {
-                    i++;
-                    esay("put: try again");
-                }
-                else {
-                    throw new RemoteException("RuntimeException in client",e);
-                }
-            }
-            try {
-                say("sleeping for "+(retrytimeout*i)+ " milliseconds before retrying");
-                Thread.sleep(retrytimeout*i);
-            }
-            catch(InterruptedException ie) {
-            }
-
-        }
-    }
-    
-    
-    public org.dcache.srm.v2_2.SrmGetRequestSummaryResponse srmGetRequestSummary(
-    org.dcache.srm.v2_2.SrmGetRequestSummaryRequest srmGetRequestSummaryRequest) 
-    throws RemoteException {
-        int i = 0;
-        while(true) {
-
-            try {
-                if(user_cred.getRemainingLifetime() < 60) {
-                    throw new RuntimeException(
-                       "credential remaining lifetime is less " +
-                       "than one minute ");
-                }
-            }
-            catch(org.ietf.jgss.GSSException gsse) {
-                throw new RemoteException("security exception",gsse);
-            }
-
-            try {
-                   return  axis_isrm.srmGetRequestSummary(srmGetRequestSummaryRequest);
-            }
-            catch(RemoteException e) {
-                esay("put: try # "+i+" failed with error");
-                esay(e.getMessage());
-                if(i <retries) {
-                    i++;
-                    esay("put: try again");
-                }
-                else {
-                    throw e;
-                }
-            }
-            catch(RuntimeException e) {
-                esay("put: try # "+i+" failed with error");
-                esay(e.getMessage());
-                if(i <retries) {
-                    i++;
-                    esay("put: try again");
-                }
-                else {
-                    throw new RemoteException("RuntimeException in client",e);
-                }
-            }
-            try {
-                say("sleeping for "+(retrytimeout*i)+ " milliseconds before retrying");
-                Thread.sleep(retrytimeout*i);
-            }
-            catch(InterruptedException ie) {
-            }
-
-        }
-   }
-    
-    public org.dcache.srm.v2_2.SrmGetSpaceMetaDataResponse srmGetSpaceMetaData(
-    org.dcache.srm.v2_2.SrmGetSpaceMetaDataRequest srmGetSpaceMetaDataRequest) 
-    throws RemoteException {
-        say(" srmGetSpaceMetaData, contacting service " + service_url);
-        int i = 0;
-        while(true) {
-
-            try {
-                if(user_cred.getRemainingLifetime() < 60) {
-                    throw new RuntimeException(
-                       "credential remaining lifetime is less " +
-                       "than one minute ");
-                }
-            }
-            catch(org.ietf.jgss.GSSException gsse) {
-                throw new RemoteException("security exception",gsse);
-            }
-
-            try {
-                   return  axis_isrm.srmGetSpaceMetaData(srmGetSpaceMetaDataRequest);
-            }
-            catch(RemoteException e) {
-                esay("put: try # "+i+" failed with error");
-                esay(e.getMessage());
-                if(i <retries) {
-                    i++;
-                    esay("put: try again");
-                }
-                else {
-                    throw e;
-                }
-            }
-            catch(RuntimeException e) {
-                esay("put: try # "+i+" failed with error");
-                esay(e.getMessage());
-                if(i <retries) {
-                    i++;
-                    esay("put: try again");
-                }
-                else {
-                    throw new RemoteException("RuntimeException in client",e);
-                }
-            }
-            try {
-                say("sleeping for "+(retrytimeout*i)+ " milliseconds before retrying");
-                Thread.sleep(retrytimeout*i);
-            }
-            catch(InterruptedException ie) {
-            }
-
-        }
-    }
-    
-    public org.dcache.srm.v2_2.SrmLsResponse srmLs(
-    org.dcache.srm.v2_2.SrmLsRequest srmLsRequest) 
-    throws RemoteException {
-        say(" srmLs, contacting service " + service_url);
-        int i = 0;
-        while(true) {
-
-            try {
-                if(user_cred.getRemainingLifetime() < 60) {
-                    throw new RuntimeException(
-                       "credential remaining lifetime is less " +
-                       "than one minute ");
-                }
-            }
-            catch(org.ietf.jgss.GSSException gsse) {
-                throw new RemoteException("security exception",gsse);
-            }
-
-            try {
-                   return  axis_isrm.srmLs(srmLsRequest);
-            }
-            catch(RemoteException e) {
-                esay("put: try # "+i+" failed with error");
-                esay(e.getMessage());
-                if(i <retries) {
-                    i++;
-                    esay("put: try again");
-                }
-                else {
-                    throw e;
-                }
-            }
-            catch(RuntimeException e) {
-                esay("put: try # "+i+" failed with error");
-                esay(e.getMessage());
-                if(i <retries) {
-                    i++;
-                    esay("put: try again");
-                }
-                else {
-                    throw new RemoteException("RuntimeException in client",e);
-                }
-            }
-            try {
-                say("sleeping for "+(retrytimeout*i)+ " milliseconds before retrying");
-                Thread.sleep(retrytimeout*i);
-            }
-            catch(InterruptedException ie) {
-            }
-
-        }
-    }
-    
-    public org.dcache.srm.v2_2.SrmMkdirResponse srmMkdir(
-    org.dcache.srm.v2_2.SrmMkdirRequest srmMkdirRequest) 
-    throws RemoteException {
-        say(" srmMkdir, contacting service " + service_url);
-        int i = 0;
-        while(true) {
-
-            try {
-                if(user_cred.getRemainingLifetime() < 60) {
-                    throw new RuntimeException(
-                       "credential remaining lifetime is less " +
-                       "than one minute ");
-                }
-            }
-            catch(org.ietf.jgss.GSSException gsse) {
-                throw new RemoteException("security exception",gsse);
-            }
-
-            try {
-                   return  axis_isrm.srmMkdir(srmMkdirRequest);
-            }
-            catch(RemoteException e) {
-                esay("put: try # "+i+" failed with error");
-                esay(e.getMessage());
-                if(i <retries) {
-                    i++;
-                    esay("put: try again");
-                }
-                else {
-                    throw e;
-                }
-            }
-            catch(RuntimeException e) {
-                esay("put: try # "+i+" failed with error");
-                esay(e.getMessage());
-                if(i <retries) {
-                    i++;
-                    esay("put: try again");
-                }
-                else {
-                    throw new RemoteException("RuntimeException in client",e);
-                }
-            }
-            try {
-                say("sleeping for "+(retrytimeout*i)+ " milliseconds before retrying");
-                Thread.sleep(retrytimeout*i);
-            }
-            catch(InterruptedException ie) {
-            }
-
-        }
-    }
-    
-    public org.dcache.srm.v2_2.SrmMvResponse srmMv(
-    org.dcache.srm.v2_2.SrmMvRequest srmMvRequest) 
-    throws RemoteException {
-        say(" srmMv, contacting service " + service_url);
-        int i = 0;
-        while(true) {
-
-            try {
-                if(user_cred.getRemainingLifetime() < 60) {
-                    throw new RuntimeException(
-                       "credential remaining lifetime is less " +
-                       "than one minute ");
-                }
-            }
-            catch(org.ietf.jgss.GSSException gsse) {
-                throw new RemoteException("security exception",gsse);
-            }
-
-            try {
-                   return  axis_isrm.srmMv(srmMvRequest);
-            }
-            catch(RemoteException e) {
-                esay("mv: try # "+i+" failed with error");
-                esay(e.getMessage());
-                if(i <retries) {
-                    i++;
-                    esay("mv: try again");
-                }
-                else {
-                    throw e;
-                }
-            }
-            catch(RuntimeException e) {
-                esay("mv: try # "+i+" failed with error");
-                esay(e.getMessage());
-                if(i <retries) {
-                    i++;
-                    esay("mv: try again");
-                }
-                else {
-                    throw new RemoteException("RuntimeException in client",e);
-                }
-            }
-            try {
-                say("sleeping for "+(retrytimeout*i)+ " milliseconds before retrying");
-                Thread.sleep(retrytimeout*i);
-            }
-            catch(InterruptedException ie) {
-            }
-
-        }
-    }
-    
-    public org.dcache.srm.v2_2.SrmPrepareToGetResponse srmPrepareToGet(
-    org.dcache.srm.v2_2.SrmPrepareToGetRequest srmPrepareToGetRequest) 
-    throws RemoteException {
-        say(" srmPrepareToGet, contacting service " + service_url);
-        int i = 0;
-        while(true) {
-
-            try {
-                if(user_cred.getRemainingLifetime() < 60) {
-                    throw new RuntimeException(
-                       "credential remaining lifetime is less " +
-                       "than one minute ");
-                }
-            }
-            catch(org.ietf.jgss.GSSException gsse) {
-                throw new RemoteException("security exception",gsse);
-            }
-
-            try {
-                   return  axis_isrm.srmPrepareToGet(srmPrepareToGetRequest);
-            }
-            catch(RemoteException e) {
-                esay("srmPrepareToGet: try # "+i+" failed with error");
-                esay(e);
-                /*
-                if(i <retries) {
-                    i++;
-                    esay("srmPrepareToGet: try again");
-                }
-                else 
-                 */
-                // do not retry on the request establishing functions
-                 {
-                    throw e;
-                }
-            }
-            catch(RuntimeException e) {
-                esay("srmPrepareToGet: try # "+i+" failed with error");
-                esay(e);
-                /*
-                if(i <retries) {
-                    i++;
-                    esay("srmPrepareToGet: try again");
-                }
-                else 
-                 */
-                // do not retry on the request establishing functions
-                 {
-                    throw new RemoteException("RuntimeException in client",e);
-                }
-            }
-            /*
-            try {
-                say("sleeping for "+(retrytimeout*i)+ " milliseconds before retrying");
-                Thread.sleep(retrytimeout*i);
-            }
-            catch(InterruptedException ie) {
-            }
-             */
-
-        }
-    }
-    
-    public org.dcache.srm.v2_2.SrmPrepareToPutResponse srmPrepareToPut(
-    org.dcache.srm.v2_2.SrmPrepareToPutRequest srmPrepareToPutRequest) 
-    throws RemoteException {
-        say(" srmPrepareToPut, contacting service " + service_url);
-        int i = 0;
-        while(true) {
-
-            try {
-                if(user_cred.getRemainingLifetime() < 60) {
-                    throw new RuntimeException(
-                       "credential remaining lifetime is less " +
-                       "than one minute ");
-                }
-            }
-            catch(org.ietf.jgss.GSSException gsse) {
-                throw new RemoteException("security exception",gsse);
-            }
-
-            try {
-                   return  axis_isrm.srmPrepareToPut(srmPrepareToPutRequest);
-            }
-            catch(RemoteException e) {
-                esay("srmPrepareToPut: try # "+i+" failed with error");
-                esay(e);
-                /*
-                if(i <retries) {
-                    i++;
-                    esay("srmPrepareToPut: try again");
-                }
-                else 
-                 */
-                // do not retry on the request establishing functions
-                 {
-                    throw e;
-                }
-            }
-            catch(RuntimeException e) {
-                esay("srmPrepareToPut: try # "+i+" failed with error");
-                esay(e);
-                /*
-                if(i <retries) {
-                    i++;
-                    esay("srmPrepareToPut: try again");
-                }
-                else 
-                 */
-                // do not retry on the request establishing functions
-                 {
-                    throw new RemoteException("RuntimeException in client",e);
-                }
-            }
-            /*
-            try {
-                say("sleeping for "+(retrytimeout*i)+ " milliseconds before retrying");
-                Thread.sleep(retrytimeout*i);
-            }
-            catch(InterruptedException ie) {
-            }
-             */
-
-        }
-    }
-    
-    public org.dcache.srm.v2_2.SrmPutDoneResponse srmPutDone(
-    org.dcache.srm.v2_2.SrmPutDoneRequest srmPutDoneRequest) 
-    throws RemoteException {
-        int i = 0;
-        while(true) {
-
-            try {
-                if(user_cred.getRemainingLifetime() < 60) {
-                    throw new RuntimeException(
-                       "credential remaining lifetime is less " +
-                       "than one minute ");
-                }
-            }
-            catch(org.ietf.jgss.GSSException gsse) {
-                throw new RemoteException("security exception",gsse);
-            }
-
-            try {
-                   return  axis_isrm.srmPutDone(srmPutDoneRequest);
-            }
-            catch(RemoteException e) {
-                esay("put: try # "+i+" failed with error");
-                esay(e.getMessage());
-                if(i <retries) {
-                    i++;
-                    esay("put: try again");
-                }
-                else {
-                    throw e;
-                }
-            }
-            catch(RuntimeException e) {
-                esay("put: try # "+i+" failed with error");
-                esay(e.getMessage());
-                if(i <retries) {
-                    i++;
-                    esay("put: try again");
-                }
-                else {
-                    throw new RemoteException("RuntimeException in client",e);
-                }
-            }
-            try {
-                say("sleeping for "+(retrytimeout*i)+ " milliseconds before retrying");
-                Thread.sleep(retrytimeout*i);
-            }
-            catch(InterruptedException ie) {
-            }
-
-        }
-    }
-    
-    public org.dcache.srm.v2_2.SrmReleaseFilesResponse srmReleaseFiles(
-    org.dcache.srm.v2_2.SrmReleaseFilesRequest srmReleaseFilesRequest) 
-    throws RemoteException {
-        say(" srmReleaseFiles, contacting service " + service_url);
-        int i = 0;
-        while(true) {
-
-            try {
-                if(user_cred.getRemainingLifetime() < 60) {
-                    throw new RuntimeException(
-                       "credential remaining lifetime is less " +
-                       "than one minute ");
-                }
-            }
-            catch(org.ietf.jgss.GSSException gsse) {
-                throw new RemoteException("security exception",gsse);
-            }
-
-            try {
-                   return  axis_isrm.srmReleaseFiles(srmReleaseFilesRequest);
-            }
-            catch(RemoteException e) {
-                esay("put: try # "+i+" failed with error");
-                esay(e.getMessage());
-                if(i <retries) {
-                    i++;
-                    esay("put: try again");
-                }
-                else {
-                    throw e;
-                }
-            }
-            catch(RuntimeException e) {
-                esay("put: try # "+i+" failed with error");
-                esay(e.getMessage());
-                if(i <retries) {
-                    i++;
-                    esay("put: try again");
-                }
-                else {
-                    throw new RemoteException("RuntimeException in client",e);
-                }
-            }
-            try {
-                say("sleeping for "+(retrytimeout*i)+ " milliseconds before retrying");
-                Thread.sleep(retrytimeout*i);
-            }
-            catch(InterruptedException ie) {
-            }
-
-        }
-    }
-    
-    public org.dcache.srm.v2_2.SrmReleaseSpaceResponse srmReleaseSpace(
-    org.dcache.srm.v2_2.SrmReleaseSpaceRequest srmReleaseSpaceRequest) 
-    throws RemoteException {
-        say(" srmReleaseSpace, contacting service " + service_url);
-        int i = 0;
-        while(true) {
-
-            try {
-                if(user_cred.getRemainingLifetime() < 60) {
-                    throw new RuntimeException(
-                       "credential remaining lifetime is less " +
-                       "than one minute ");
-                }
-            }
-            catch(org.ietf.jgss.GSSException gsse) {
-                throw new RemoteException("security exception",gsse);
-            }
-
-            try {
-                   return  axis_isrm.srmReleaseSpace(srmReleaseSpaceRequest);
-            }
-            catch(RemoteException e) {
-                esay("put: try # "+i+" failed with error");
-                esay(e.getMessage());
-			e.printStackTrace();
-                if(i <retries) {
-                    i++;
-                    esay("put: try again");
-                }
-                else {
-                    throw e;
-                }
-            }
-            catch(RuntimeException e) {
-                esay("put: try # "+i+" failed with error");
-                esay(e.getMessage());
-			e.printStackTrace();
-                if(i <retries) {
-                    i++;
-                    esay("put: try again");
-                }
-                else {
-                    throw new RemoteException("RuntimeException in client",e);
-                }
-            }
-            try {
-                say("sleeping for "+(retrytimeout*i)+ " milliseconds before retrying");
-                Thread.sleep(retrytimeout*i);
-            }
-            catch(InterruptedException ie) {
-            }
-
-        }
-    }
-    
-    public org.dcache.srm.v2_2.SrmReserveSpaceResponse srmReserveSpace(
-    org.dcache.srm.v2_2.SrmReserveSpaceRequest srmReserveSpaceRequest) 
-    throws RemoteException {
-        say(" srmReserveSpace, contacting service " + service_url);
-        int i = 0;
-        while(true) {
-
-            try {
-                if(user_cred.getRemainingLifetime() < 60) {
-                    throw new RuntimeException(
-                       "credential remaining lifetime is less " +
-                       "than one minute ");
-                }
-            }
-            catch(org.ietf.jgss.GSSException gsse) {
-                throw new RemoteException("security exception",gsse);
-            }
-
-            try {
-                   return  axis_isrm.srmReserveSpace(srmReserveSpaceRequest);
-            }
-            catch(RemoteException e) {
-                esay("put: try # "+i+" failed with error");
-                esay(e.getMessage());
-                if(i <retries) {
-                    i++;
-                    esay("put: try again");
-                }
-                else {
-                    throw e;
-                }
-            }
-            catch(RuntimeException e) {
-                esay("put: try # "+i+" failed with error");
-                esay(e.getMessage());
-                if(i <retries) {
-                    i++;
-                    esay("put: try again");
-                }
-                else {
-                    throw new RemoteException("RuntimeException in client",e);
-                }
-            }
-            try {
-                say("sleeping for "+(retrytimeout*i)+ " milliseconds before retrying");
-                Thread.sleep(retrytimeout*i);
-            }
-            catch(InterruptedException ie) {
-            }
-
-        }
-    }
-    
-    public org.dcache.srm.v2_2.SrmResumeRequestResponse srmResumeRequest(
-    org.dcache.srm.v2_2.SrmResumeRequestRequest srmResumeRequestRequest) 
-    throws RemoteException {
-        say(" srmResumeRequest, contacting service " + service_url);
-        int i = 0;
-        while(true) {
-
-            try {
-                if(user_cred.getRemainingLifetime() < 60) {
-                    throw new RuntimeException(
-                       "credential remaining lifetime is less " +
-                       "than one minute ");
-                }
-            }
-            catch(org.ietf.jgss.GSSException gsse) {
-                throw new RemoteException("security exception",gsse);
-            }
-
-            try {
-                   return  axis_isrm.srmResumeRequest(srmResumeRequestRequest);
-            }
-            catch(RemoteException e) {
-                esay("put: try # "+i+" failed with error");
-                esay(e.getMessage());
-                if(i <retries) {
-                    i++;
-                    esay("put: try again");
-                }
-                else {
-                    throw e;
-                }
-            }
-            catch(RuntimeException e) {
-                esay("put: try # "+i+" failed with error");
-                esay(e.getMessage());
-                if(i <retries) {
-                    i++;
-                    esay("put: try again");
-                }
-                else {
-                    throw new RemoteException("RuntimeException in client",e);
-                }
-            }
-            try {
-                say("sleeping for "+(retrytimeout*i)+ " milliseconds before retrying");
-                Thread.sleep(retrytimeout*i);
-            }
-            catch(InterruptedException ie) {
-            }
-
-        }
-    }
-    
-	public org.dcache.srm.v2_2.SrmRmResponse srmRm(
-		org.dcache.srm.v2_2.SrmRmRequest srmRmRequest) 
-		throws RemoteException {
-		say(" srmRm, contacting service " + service_url);
-		int i = 0;
-		while(true) {
-			try {
-				if (user_cred.getRemainingLifetime() < 60) {
-					throw new RuntimeException(
-						"credential remaining lifetime is less " +
-						"than one minute ");
-				}
-			}
-			catch(org.ietf.jgss.GSSException gsse) {
-				throw new RemoteException("security exception",gsse);
-			}
-			try {
-				return  axis_isrm.srmRm(srmRmRequest);
-			}
-			catch(RemoteException e) {
-				esay("put: try # "+i+" failed with error");
-				esay(e.getMessage());
-				if (i <retries) {
-					i++;
-					esay("put: try again");
-				}
-				else {
-					throw e;
-				}
-			}
-			catch(RuntimeException e) {
-				esay("put: try # "+i+" failed with error");
-				esay(e.getMessage());
-				if (i <retries) {
-					i++;
-					esay("rm: try again");
-				}
-				else {
-					throw new RemoteException("RuntimeException in client",e);
-				}
-			}
-			try {
-				say("sleeping for "+(retrytimeout*i)+ " milliseconds before retrying");
-				Thread.sleep(retrytimeout*i);
-			}
-			catch(InterruptedException ie) {
-			}
-		}
-	}
-    
-
-    
-	public org.dcache.srm.v2_2.SrmRmdirResponse srmRmdir(
-		org.dcache.srm.v2_2.SrmRmdirRequest srmRmdirRequest) 
-		throws RemoteException {
-		say(" srmRmdir, contacting service " + service_url);
-		int i = 0;
-		while(true) {
-			try {
-				if(user_cred.getRemainingLifetime() < 60) {
-					throw new RuntimeException(
-						"credential remaining lifetime is less " +
-						"than one minute ");
-				}
-			}
-			catch(org.ietf.jgss.GSSException gsse) {
-				throw new RemoteException("security exception",gsse);
-			}
-			
-			try {
-				return  axis_isrm.srmRmdir(srmRmdirRequest);
-			}
-			catch(RemoteException e) {
-				esay("put: try # "+i+" failed with error");
-				esay(e.getMessage());
-				if(i <retries) {
-					i++;
-					esay("rmdir: try again");
-				}
-				else {
-					throw e;
-				}
-			}
-			catch(RuntimeException e) {
-				esay("put: try # "+i+" failed with error");
-				esay(e.getMessage());
-				if(i <retries) {
-					i++;
-					esay("put: try again");
-				}
-				else {
-					throw new RemoteException("RuntimeException in client",e);
-				}
-			}
-			try {
-				say("sleeping for "+(retrytimeout*i)+ " milliseconds before retrying");
-				Thread.sleep(retrytimeout*i);
-			}
-			catch(InterruptedException ie) {
-			}
-			
-		}
-	}
-    
-    public org.dcache.srm.v2_2.SrmSetPermissionResponse srmSetPermission(
-    org.dcache.srm.v2_2.SrmSetPermissionRequest srmSetPermissionRequest) 
-    throws RemoteException {
-        say(" srmSetPermission, contacting service " + service_url);
-        int i = 0;
-        while(true) {
-
-            try {
-                if(user_cred.getRemainingLifetime() < 60) {
-                    throw new RuntimeException(
-                       "credential remaining lifetime is less " +
-                       "than one minute ");
-                }
-            }
-            catch(org.ietf.jgss.GSSException gsse) {
-                throw new RemoteException("security exception",gsse);
-            }
-
-            try {
-                   return  axis_isrm.srmSetPermission(srmSetPermissionRequest);
-            }
-            catch(RemoteException e) {
-                esay("put: try # "+i+" failed with error");
-                esay(e.getMessage());
-                if(i <retries) {
-                    i++;
-                    esay("put: try again");
-                }
-                else {
-                    throw e;
-                }
-            }
-            catch(RuntimeException e) {
-                esay("put: try # "+i+" failed with error");
-                esay(e.getMessage());
-                if(i <retries) {
-                    i++;
-                    esay("put: try again");
-                }
-                else {
-                    throw new RemoteException("RuntimeException in client",e);
-                }
-            }
-            try {
-                say("sleeping for "+(retrytimeout*i)+ " milliseconds before retrying");
-                Thread.sleep(retrytimeout*i);
-            }
-            catch(InterruptedException ie) {
-            }
-
-        }
-    }
-    
-    public org.dcache.srm.v2_2.SrmStatusOfCopyRequestResponse srmStatusOfCopyRequest(
-    org.dcache.srm.v2_2.SrmStatusOfCopyRequestRequest srmStatusOfCopyRequestRequest) 
-    throws RemoteException {
-        int i = 0;
-        while(true) {
-
-            try {
-                if(user_cred.getRemainingLifetime() < 60) {
-                    throw new RuntimeException(
-                       "credential remaining lifetime is less " +
-                       "than one minute ");
-                }
-            }
-            catch(org.ietf.jgss.GSSException gsse) {
-                throw new RemoteException("security exception",gsse);
-            }
-
-            try {
-                   return  axis_isrm.srmStatusOfCopyRequest(srmStatusOfCopyRequestRequest);
-            }
-            catch(RemoteException e) {
-                esay("put: try # "+i+" failed with error");
-                esay(e.getMessage());
-                if(i <retries) {
-                    i++;
-                    esay("put: try again");
-                }
-                else {
-                    throw e;
-                }
-            }
-            catch(RuntimeException e) {
-                esay("put: try # "+i+" failed with error");
-                esay(e.getMessage());
-                if(i <retries) {
-                    i++;
-                    esay("put: try again");
-                }
-                else {
-                    throw new RemoteException("RuntimeException in client",e);
-                }
-            }
-            try {
-                say("sleeping for "+(retrytimeout*i)+ " milliseconds before retrying");
-                Thread.sleep(retrytimeout*i);
-            }
-            catch(InterruptedException ie) {
-            }
-
-        }
-    }
-    
-    public org.dcache.srm.v2_2.SrmStatusOfGetRequestResponse srmStatusOfGetRequest(
-    org.dcache.srm.v2_2.SrmStatusOfGetRequestRequest srmStatusOfGetRequestRequest) 
-    throws RemoteException {
-        say(" srmStatusOfGetRequest, contacting service " + service_url);
-        int i = 0;
-        while(true) {
-
-            try {
-                if(user_cred.getRemainingLifetime() < 60) {
-                    throw new RuntimeException(
-                       "credential remaining lifetime is less " +
-                       "than one minute ");
-                }
-            }
-            catch(org.ietf.jgss.GSSException gsse) {
-                throw new RemoteException("security exception",gsse);
-            }
-
-            try {
-                   return  axis_isrm.srmStatusOfGetRequest(srmStatusOfGetRequestRequest);
-            }
-            catch(RemoteException e) {
-                esay("put: try # "+i+" failed with error");
-                esay(e.getMessage());
-                if(i <retries) {
-                    i++;
-                    esay("put: try again");
-                }
-                else {
-                    throw e;
-                }
-            }
-            catch(RuntimeException e) {
-                esay("put: try # "+i+" failed with error");
-                esay(e.getMessage());
-                if(i <retries) {
-                    i++;
-                    esay("put: try again");
-                }
-                else {
-                    throw new RemoteException("RuntimeException in client",e);
-                }
-            }
-            try {
-                say("sleeping for "+(retrytimeout*i)+ " milliseconds before retrying");
-                Thread.sleep(retrytimeout*i);
-            }
-            catch(InterruptedException ie) {
-            }
-
-        }
-    }
-    
-    public org.dcache.srm.v2_2.SrmStatusOfPutRequestResponse srmStatusOfPutRequest(
-    org.dcache.srm.v2_2.SrmStatusOfPutRequestRequest srmStatusOfPutRequestRequest) 
-    throws RemoteException {
-        // say(" srmStatusOfPutRequest, contacting service " + service_url);
-        int i = 0;
-        while(true) {
-
-            try {
-                if(user_cred.getRemainingLifetime() < 60) {
-                    throw new RuntimeException(
-                       "credential remaining lifetime is less " +
-                       "than one minute ");
-                }
-            }
-            catch(org.ietf.jgss.GSSException gsse) {
-                throw new RemoteException("security exception",gsse);
-            }
-
-            try {
-                   return  axis_isrm.srmStatusOfPutRequest(srmStatusOfPutRequestRequest);
-            }
-            catch(RemoteException e) {
-                esay("put: try # "+i+" failed with error");
-                esay(e.getMessage());
-                if(i <retries) {
-                    i++;
-                    esay("put: try again");
-                }
-                else {
-                    throw e;
-                }
-            }
-            catch(RuntimeException e) {
-                esay("put: try # "+i+" failed with error");
-                esay(e.getMessage());
-                if(i <retries) {
-                    i++;
-                    esay("put: try again");
-                }
-                else {
-                    throw new RemoteException("RuntimeException in client",e);
-                }
-            }
-            try {
-                say("sleeping for "+(retrytimeout*i)+ " milliseconds before retrying");
-                Thread.sleep(retrytimeout*i);
-            }
-            catch(InterruptedException ie) {
-            }
-
-        }
-    }
-    
-    public org.dcache.srm.v2_2.SrmSuspendRequestResponse srmSuspendRequest(
-    org.dcache.srm.v2_2.SrmSuspendRequestRequest srmSuspendRequestRequest) 
-    throws RemoteException {
-        say(" srmSuspendRequest, contacting service " + service_url);
-        int i = 0;
-        while(true) {
-
-            try {
-                if(user_cred.getRemainingLifetime() < 60) {
-                    throw new RuntimeException(
-                       "credential remaining lifetime is less " +
-                       "than one minute ");
-                }
-            }
-            catch(org.ietf.jgss.GSSException gsse) {
-                throw new RemoteException("security exception",gsse);
-            }
-
-            try {
-                   return  axis_isrm.srmSuspendRequest(srmSuspendRequestRequest);
-            }
-            catch(RemoteException e) {
-                esay("put: try # "+i+" failed with error");
-                esay(e.getMessage());
-                if(i <retries) {
-                    i++;
-                    esay("put: try again");
-                }
-                else {
-                    throw e;
-                }
-            }
-            catch(RuntimeException e) {
-                esay("put: try # "+i+" failed with error");
-                esay(e.getMessage());
-                if(i <retries) {
-                    i++;
-                    esay("put: try again");
-                }
-                else {
-                    throw new RemoteException("RuntimeException in client",e);
-                }
-            }
-            try {
-                say("sleeping for "+(retrytimeout*i)+ " milliseconds before retrying");
-                Thread.sleep(retrytimeout*i);
-            }
-            catch(InterruptedException ie) {
-            }
-
-        }
-    }
-    
-    public org.dcache.srm.v2_2.SrmUpdateSpaceResponse srmUpdateSpace(
-    org.dcache.srm.v2_2.SrmUpdateSpaceRequest srmUpdateSpaceRequest) 
-    throws RemoteException {
-        say(" srmUpdateSpace, contacting service " + service_url);
-        int i = 0;
-        while(true) {
-
-            try {
-                if(user_cred.getRemainingLifetime() < 60) {
-                    throw new RuntimeException(
-                       "credential remaining lifetime is less " +
-                       "than one minute ");
-                }
-            }
-            catch(org.ietf.jgss.GSSException gsse) {
-                throw new RemoteException("security exception",gsse);
-            }
-
-            try {
-                   return  axis_isrm.srmUpdateSpace(srmUpdateSpaceRequest);
-            }
-            catch(RemoteException e) {
-                esay("put: try # "+i+" failed with error");
-                esay(e.getMessage());
-                if(i <retries) {
-                    i++;
-                    esay("put: try again");
-                }
-                else {
-                    throw e;
-                }
-            }
-            catch(RuntimeException e) {
-                esay("put: try # "+i+" failed with error");
-                esay(e.getMessage());
-                if(i <retries) {
-                    i++;
-                    esay("put: try again");
-                }
-                else {
-                    throw new RemoteException("RuntimeException in client",e);
-                }
-            }
-            try {
-                say("sleeping for "+(retrytimeout*i)+ " milliseconds before retrying");
-                Thread.sleep(retrytimeout*i);
-            }
-            catch(InterruptedException ie) {
-            }
-
-        }
-    }
     
     public Object handleClientCall(String name, Object argument, boolean retry) 
         throws RemoteException {
         say(name+" , contacting service " + service_url);
         int i = 0;
         while(true) {
-
             try {
                 if(user_cred.getRemainingLifetime() < 60) {
                     throw new RuntimeException(
-                       "credential remaining lifetime is less " +
-                       "than one minute ");
+			"credential remaining lifetime is less " +
+			"than one minute ");
                 }
             }
             catch(org.ietf.jgss.GSSException gsse) {
                 throw new RemoteException("security exception",gsse);
             }
-
             try {
-                 Class clazz = argument.getClass();
-                 java.lang.reflect.Method call = axis_isrm.getClass().getMethod(name,new Class[]{clazz});
-                 return call.invoke(axis_isrm,new Object[]{argument});
+		Class clazz = argument.getClass();
+		java.lang.reflect.Method call = axis_isrm.getClass().getMethod(name,new Class[]{clazz});
+		return call.invoke(axis_isrm,new Object[]{argument});
             }
             catch(NoSuchMethodException nsme){
                 throw new RemoteException("incorrect usage of the handleClientCall", nsme);
@@ -1557,7 +190,7 @@ public class SRMClientV2 implements org.dcache.srm.v2_2.ISRM {
                 Throwable e= ite.getCause();
                 esay(name +": try # "+i+" failed with error");
                 esay(e);
-                if(retry){
+                if(retry) {
                     if(i <retries) {
                         i++;
                         esay(name +": try again");
@@ -1571,15 +204,14 @@ public class SRMClientV2 implements org.dcache.srm.v2_2.ISRM {
                         }
                     }
                 }
-                else
-                // do not retry on the request establishing functions
-                 {
-                        if(e != null && e instanceof RemoteException) {
-                            throw (RemoteException)e;
-                        }
-                        else {
-                            throw new RemoteException("Exception in client",e);
-                        }
+                else { 
+		    // do not retry on the request establishing functions
+		    if(e != null && e instanceof RemoteException) {
+			throw (RemoteException)e;
+		    }
+		    else {
+			throw new RemoteException("Exception in client",e);
+		    }
                 }
             }
             catch(RuntimeException e) {
@@ -1590,14 +222,12 @@ public class SRMClientV2 implements org.dcache.srm.v2_2.ISRM {
                         i++;
                         esay("srmPrepareToGet: try again");
                     }
-                    else 
-                     {
+                    else {
                         throw new RemoteException("RuntimeException in client",e);
                     }
                 }
-                else 
-                // do not retry on the request establishing functions
-                 {
+                else {
+		    // do not retry on the request establishing functions
                     throw new RemoteException("RuntimeException in client",e);
                 }
             }
@@ -1612,104 +242,230 @@ public class SRMClientV2 implements org.dcache.srm.v2_2.ISRM {
             else {
                 throw new RemoteException("Should not be here");
             }
-
+	    
         }        
     }
-
+    
     public SrmStatusOfBringOnlineRequestResponse srmStatusOfBringOnlineRequest(
-            SrmStatusOfBringOnlineRequestRequest srmStatusOfBringOnlineRequestRequest) 
-            throws RemoteException {
+	SrmStatusOfBringOnlineRequestRequest srmStatusOfBringOnlineRequestRequest) 
+	throws RemoteException {
         return (SrmStatusOfBringOnlineRequestResponse)
-            handleClientCall("srmStatusOfBringOnlineRequest",
-                srmStatusOfBringOnlineRequestRequest,true);
+            handleClientCall("srmStatusOfBringOnlineRequest",srmStatusOfBringOnlineRequestRequest,true);
     }
-
+    
     public SrmBringOnlineResponse srmBringOnline(SrmBringOnlineRequest srmBringOnlineRequest) throws RemoteException {
         return (SrmBringOnlineResponse)
-            handleClientCall("srmBringOnline",
-                srmBringOnlineRequest,true);
+            handleClientCall("srmBringOnline",srmBringOnlineRequest,true);
     }
-
+    
     public SrmExtendFileLifeTimeInSpaceResponse srmExtendFileLifeTimeInSpace(
-            SrmExtendFileLifeTimeInSpaceRequest srmExtendFileLifeTimeInSpaceRequest) throws RemoteException {
+	SrmExtendFileLifeTimeInSpaceRequest srmExtendFileLifeTimeInSpaceRequest) throws RemoteException {
         return (SrmExtendFileLifeTimeInSpaceResponse)
             handleClientCall("srmExtendFileLifeTimeInSpace",
                 srmExtendFileLifeTimeInSpaceRequest,true);
     }
-
+    
     public SrmStatusOfUpdateSpaceRequestResponse srmStatusOfUpdateSpaceRequest(
-               SrmStatusOfUpdateSpaceRequestRequest srmStatusOfUpdateSpaceRequestRequest) throws RemoteException {
+	SrmStatusOfUpdateSpaceRequestRequest srmStatusOfUpdateSpaceRequestRequest) throws RemoteException {
         return (SrmStatusOfUpdateSpaceRequestResponse)
             handleClientCall("srmStatusOfUpdateSpaceRequest",
-                srmStatusOfUpdateSpaceRequestRequest,true);
+			     srmStatusOfUpdateSpaceRequestRequest,true);
     }
-
+    
     public SrmPurgeFromSpaceResponse srmPurgeFromSpace(SrmPurgeFromSpaceRequest srmPurgeFromSpaceRequest) throws RemoteException {
         return (SrmPurgeFromSpaceResponse)
             handleClientCall("srmPurgeFromSpace",
-                srmPurgeFromSpaceRequest,true);
+			     srmPurgeFromSpaceRequest,true);
     }
-
+    
     public SrmPingResponse srmPing(SrmPingRequest srmPingRequest) throws RemoteException {
         return (SrmPingResponse)
             handleClientCall("srmPing",
-                srmPingRequest,true);
+			     srmPingRequest,true);
     }
-
+    
     public SrmGetPermissionResponse srmGetPermission(
-            SrmGetPermissionRequest srmGetPermissionRequest) throws RemoteException {
+	SrmGetPermissionRequest srmGetPermissionRequest) throws RemoteException {
         return (SrmGetPermissionResponse)
             handleClientCall("srmGetPermission",
-                srmGetPermissionRequest,true);
+			     srmGetPermissionRequest,true);
     }
-
+    
     public SrmStatusOfReserveSpaceRequestResponse srmStatusOfReserveSpaceRequest(
-            SrmStatusOfReserveSpaceRequestRequest srmStatusOfReserveSpaceRequestRequest) throws RemoteException {
+	SrmStatusOfReserveSpaceRequestRequest srmStatusOfReserveSpaceRequestRequest) throws RemoteException {
         return (SrmStatusOfReserveSpaceRequestResponse)
             handleClientCall("srmStatusOfReserveSpaceRequest",
-                srmStatusOfReserveSpaceRequestRequest,true);
+			     srmStatusOfReserveSpaceRequestRequest,true);
     }
-
+    
     public SrmChangeSpaceForFilesResponse srmChangeSpaceForFiles(
-            SrmChangeSpaceForFilesRequest srmChangeSpaceForFilesRequest) throws RemoteException {
+	SrmChangeSpaceForFilesRequest srmChangeSpaceForFilesRequest) throws RemoteException {
         return (SrmChangeSpaceForFilesResponse)
             handleClientCall("srmChangeSpaceForFiles",
-                srmChangeSpaceForFilesRequest,true);
+			     srmChangeSpaceForFilesRequest,true);
     }
-
+    
     public SrmGetTransferProtocolsResponse srmGetTransferProtocols(
-            SrmGetTransferProtocolsRequest srmGetTransferProtocolsRequest) throws RemoteException {
+	SrmGetTransferProtocolsRequest srmGetTransferProtocolsRequest) throws RemoteException {
         return (SrmGetTransferProtocolsResponse)
             handleClientCall("srmGetTransferProtocols",
-                srmGetTransferProtocolsRequest,true);
+			     srmGetTransferProtocolsRequest,true);
     }
-
+    
     public SrmGetRequestTokensResponse srmGetRequestTokens(
-            SrmGetRequestTokensRequest srmGetRequestTokensRequest) throws RemoteException {
+	SrmGetRequestTokensRequest srmGetRequestTokensRequest) throws RemoteException {
         return (SrmGetRequestTokensResponse)
             handleClientCall("srmGetRequestTokens",
-                srmGetRequestTokensRequest,true);
+			     srmGetRequestTokensRequest,true);
     }
-
+    
     public SrmGetSpaceTokensResponse srmGetSpaceTokens(
-            SrmGetSpaceTokensRequest srmGetSpaceTokensRequest) throws RemoteException {
+	SrmGetSpaceTokensRequest srmGetSpaceTokensRequest) throws RemoteException {
         return (SrmGetSpaceTokensResponse)
             handleClientCall("srmGetSpaceTokens",
-                srmGetSpaceTokensRequest,true);
+			     srmGetSpaceTokensRequest,true);
     }
-
+    
     public SrmStatusOfChangeSpaceForFilesRequestResponse srmStatusOfChangeSpaceForFilesRequest(
-            SrmStatusOfChangeSpaceForFilesRequestRequest srmStatusOfChangeSpaceForFilesRequestRequest) throws RemoteException {
+	SrmStatusOfChangeSpaceForFilesRequestRequest srmStatusOfChangeSpaceForFilesRequestRequest) throws RemoteException {
         return (SrmStatusOfChangeSpaceForFilesRequestResponse)
             handleClientCall("srmStatusOfChangeSpaceForFilesRequest",
-                srmStatusOfChangeSpaceForFilesRequestRequest,true);
+			     srmStatusOfChangeSpaceForFilesRequestRequest,true);
     }
-
+    
     public SrmStatusOfLsRequestResponse srmStatusOfLsRequest(
-            SrmStatusOfLsRequestRequest srmStatusOfLsRequestRequest) throws RemoteException {
+	SrmStatusOfLsRequestRequest srmStatusOfLsRequestRequest) throws RemoteException {
         return (SrmStatusOfLsRequestResponse)
             handleClientCall("srmStatusOfLsRequest",
-                srmStatusOfLsRequestRequest,true);
+			     srmStatusOfLsRequestRequest,true);
     }
+    
+    public SrmRmResponse srmRm(SrmRmRequest request) 
+	throws RemoteException {
+        return (SrmRmResponse)handleClientCall("srmRm",request,true);
+    }
+    
+    public SrmAbortFilesResponse srmAbortFiles(SrmAbortFilesRequest request) 
+	throws RemoteException {
+        return (SrmAbortFilesResponse)handleClientCall("srmAbortFiles",request,true);
+    }
+    
+    public SrmAbortRequestResponse srmAbortRequest(SrmAbortRequestRequest request) 
+	throws RemoteException {
+        return (SrmAbortRequestResponse)handleClientCall("srmAbortRequest",request,true);
+    }
+    
+    public SrmCheckPermissionResponse srmCheckPermission(SrmCheckPermissionRequest request) 
+	throws RemoteException {
+        return (SrmCheckPermissionResponse)handleClientCall("srmCheckPermission",request,true);
+    }
+    
+    public SrmCopyResponse srmCopy(SrmCopyRequest request) 
+	throws RemoteException {
+        return (SrmCopyResponse)handleClientCall("srmCopy",request,true);
+    }
+    
+    public SrmExtendFileLifeTimeResponse srmExtendFileLifeTime(SrmExtendFileLifeTimeRequest request) 
+	throws RemoteException {
+        return (SrmExtendFileLifeTimeResponse)handleClientCall("srmExtendFileLifeTime",request,true);
+    }
+    
+    public SrmGetRequestSummaryResponse srmGetRequestSummary(SrmGetRequestSummaryRequest request) 
+	throws RemoteException {
+        return (SrmGetRequestSummaryResponse)handleClientCall("srmGetRequestSummary",request,true);
+    }
+    
+    public SrmGetSpaceMetaDataResponse srmGetSpaceMetaData(SrmGetSpaceMetaDataRequest request) 
+	throws RemoteException {
+        return (SrmGetSpaceMetaDataResponse)handleClientCall("srmGetSpaceMetaData",request,true);
+    }
+    
+    public SrmLsResponse srmLs(SrmLsRequest request) 
+	throws RemoteException {
+        return (SrmLsResponse)handleClientCall("srmLs",request,true);
+    }
+    
+    public SrmMkdirResponse srmMkdir(SrmMkdirRequest request) 
+	throws RemoteException {
+        return (SrmMkdirResponse)handleClientCall("srmMkdir",request,true);
+    }
+    
+    
+    public SrmMvResponse srmMv(SrmMvRequest request) 
+	throws RemoteException {
+        return (SrmMvResponse)handleClientCall("srmMv",request,true);
+    }
+    
+    public SrmPrepareToGetResponse srmPrepareToGet(SrmPrepareToGetRequest request) 
+	throws RemoteException {
+        return (SrmPrepareToGetResponse)handleClientCall("srmPrepareToGet",request,true);
+    }
+
+    public SrmPrepareToPutResponse srmPrepareToPut(SrmPrepareToPutRequest request) 
+	throws RemoteException {
+        return (SrmPrepareToPutResponse)handleClientCall("srmPrepareToPut",request,false);
+    }
+
+    public SrmPutDoneResponse srmPutDone(SrmPutDoneRequest request) 
+	throws RemoteException {
+        return (SrmPutDoneResponse)handleClientCall("srmPutDone",request,true);
+    }
+
+    public SrmReleaseFilesResponse srmReleaseFiles(SrmReleaseFilesRequest request) 
+	throws RemoteException {
+        return (SrmReleaseFilesResponse)handleClientCall("srmReleaseFiles",request,true);
+    }
+
+    public SrmReleaseSpaceResponse srmReleaseSpace(SrmReleaseSpaceRequest request) 
+	throws RemoteException {
+        return (SrmReleaseSpaceResponse)handleClientCall("srmReleaseSpace",request,true);
+    }
+
+    public SrmReserveSpaceResponse srmReserveSpace(SrmReserveSpaceRequest request) 
+	throws RemoteException {
+        return (SrmReserveSpaceResponse)handleClientCall("srmReserveSpace",request,true);
+    }
+
+    public SrmResumeRequestResponse srmResumeRequest(SrmResumeRequestRequest request) 
+	throws RemoteException {
+        return (SrmResumeRequestResponse)handleClientCall("srmResumeRequest",request,true);
+    }
+
+    public SrmRmdirResponse srmRmdir(SrmRmdirRequest request) 
+	throws RemoteException {
+        return (SrmRmdirResponse)handleClientCall("srmRmdir",request,true);
+    }
+
+    public SrmSetPermissionResponse srmSetPermission(SrmSetPermissionRequest request) 
+	throws RemoteException {
+        return (SrmSetPermissionResponse)handleClientCall("srmSetPermission",request,true);
+    }
+
+    public SrmStatusOfCopyRequestResponse srmStatusOfCopyRequest(SrmStatusOfCopyRequestRequest request) 
+	throws RemoteException {
+        return (SrmStatusOfCopyRequestResponse)handleClientCall("srmStatusOfCopyRequest",request,true);
+    }
+    
+
+    public SrmStatusOfGetRequestResponse srmStatusOfGetRequest(SrmStatusOfGetRequestRequest request) 
+	throws RemoteException {
+        return (SrmStatusOfGetRequestResponse)handleClientCall("srmStatusOfGetRequest",request,true);
+    }
+
+    public SrmStatusOfPutRequestResponse srmStatusOfPutRequest(SrmStatusOfPutRequestRequest request) 
+	throws RemoteException {
+        return (SrmStatusOfPutRequestResponse)handleClientCall("srmStatusOfPutRequest",request,true);
+    }
+
+    public SrmSuspendRequestResponse srmSuspendRequest(SrmSuspendRequestRequest request) 
+	throws RemoteException {
+        return (SrmSuspendRequestResponse)handleClientCall("srmSuspendRequest",request,true);
+    }
+
+    public SrmUpdateSpaceResponse srmUpdateSpace(SrmUpdateSpaceRequest request) 
+	throws RemoteException {
+        return (SrmUpdateSpaceResponse)handleClientCall("srmUpdateSpace",request,true);
+    }
+    
     
 }
