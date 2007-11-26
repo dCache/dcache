@@ -1,9 +1,0 @@
-this is a directory where the GLUE and relative jar files
-should be copied:
- collections.jar
-GLUE-STD.jar
-dom.jar
-jcert.jar
-jsse.jar
-jnet.jar
-servlet.jar

@@ -1,4 +1,0 @@
-set printout default 3
-
-create dmg.apps.osm.OsmAgentCell powder "  -update=10"
-create dmg.apps.osm.OsmAgentCell grau   "  -update=10"
