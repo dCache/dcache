@@ -1,0 +1,52 @@
+#! /bin/sh
+
+#:DEBUG=true
+#SECURITY_DEBUG=true 
+#DEBUG=false
+if [ "$SRM_PATH" = "" ]
+then
+   command=`which $0`
+   commanddir=`dirname $command`
+   SRM_PATH=`dirname $commanddir`
+   if [ -x $SRM_PATH/sbin/srm ]
+   then
+      export SRM_PATH
+   else
+      echo "cannot determine path to srm product, please define and export SRM_PATH enviroment variable" 1>&1
+      exit 1
+   fi
+else
+  echo "WARNING: SRM_PATH is defined, which might cause a wrong version of srm client to be executed" 2>&1
+  echo "WARNING: SRM_PATH=$SRM_PATH" 2>&1
+fi
+
+if [ ! -f $SRM_PATH/lib/srm_client.jar ]
+then
+  echo cannot find $SRM_PATH/lib/srm_client.jar
+  exit 1
+fi
+
+
+SRM_CP=$SRM_PATH/lib/srm_client.jar
+SRM_CP=$SRM_CP:$SRM_PATH/lib/srm.jar
+
+# globus cog
+for jar in $SRM_PATH/lib/globus/*jar ; do
+SRM_CP=$SRM_CP:$jar
+done
+
+OPTIONS="-Djava.protocol.handler.pkgs=org.globus.net.protocol"
+
+if [ "$SECURITY_DEBUG" = "true" ]
+then
+  OPTIONS=" ${OPTIONS} -Dlog4j.configuration=${SRM_PATH}/bin/log4j.properties.all"
+fi
+
+#OPTIONS=" ${OPTIONS} -Dorg.globus.tcp.port.range=50000,50050"
+
+cmd="java -cp $SRM_CP $OPTIONS org.dcache.srm.util.GridftpClient  $*"
+if [ "$DEBUG" = "true" ]
+then
+	echo $cmd
+fi
+$cmd

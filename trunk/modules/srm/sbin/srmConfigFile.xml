@@ -1,0 +1,12 @@
+<parameters>
+<parameter>srmDomain</parameter>
+<parameter>-param</parameter>
+-
+	<parameter>
+setupFile=/home/enstore/dcache-deploy/config/srmSetup
+</parameter>
+<parameter>ourHomeDir=/home/enstore/dcache-deploy/</parameter>
+<parameter>ourName=srm</parameter>
+<parameter>-batch</parameter>
+<parameter>/home/enstore/dcache-deploy/config/srm.batch</parameter>
+</parameters>

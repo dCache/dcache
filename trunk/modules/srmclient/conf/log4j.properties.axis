@@ -1,0 +1,17 @@
+# Logging detail level,
+# Must be one of ("trace", "debug", "info", "warn", "error", or "fatal").
+log4j.rootLogger=OFF, A1
+log4j.logger.org.globus=OFF, A1
+log4j.logger.org.apache.axis.transport=DEBUG, A1
+log4j.logger.org.globus.gsi.GlobusCredential=OFF, A1
+log4j.appender.A1=org.apache.log4j.ConsoleAppender
+log4j.appender.A1.layout=org.apache.log4j.PatternLayout
+log4j.appender.A1.layout.ConversionPattern=%d [%t] %-5p %c - %m%n
+
+
+#org.apache.commons.logging.simplelog.defaultlog=info
+#log4j.logger.org.apache.axis=DEBUG 
+#log4j.logger.org.apache.axis.encoding=INFO
+#log4j.logger.org.apache.axis.utils=INFO
+#log4j.logger.org.apache.axis.message=INFO
+

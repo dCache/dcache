@@ -1,0 +1,4372 @@
+// $Id: AbstractFtpDoorV1.java,v 1.137 2007-10-29 13:29:24 behrmann Exp $
+
+/*
+COPYRIGHT STATUS:
+  Dec 1st 2001, Fermi National Accelerator Laboratory (FNAL) documents and
+  software are sponsored by the U.S. Department of Energy under Contract No.
+  DE-AC02-76CH03000. Therefore, the U.S. Government retains a  world-wide
+  non-exclusive, royalty-free license to publish or reproduce these documents
+  and software for U.S. Government purposes.  All documents and software
+  available from this server are protected under the U.S. and Foreign
+  Copyright Laws, and FNAL reserves all rights.
+
+
+ Distribution of the software available from this server is free of
+ charge subject to the user following the terms of the Fermitools
+ Software Legal Information.
+
+ Redistribution and/or modification of the software shall be accompanied
+ by the Fermitools Software Legal Information  (including the copyright
+ notice).
+
+ The user is asked to feed back problems, benefits, and/or suggestions
+ about the software to the Fermilab Software Providers.
+
+
+ Neither the name of Fermilab, the  URA, nor the names of the contributors
+ may be used to endorse or promote products derived from this software
+ without specific prior written permission.
+
+
+
+  DISCLAIMER OF LIABILITY (BSD):
+
+  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+  "AS IS" AND ANY EXPRESS OR IMPLIED  WARRANTIES, INCLUDING, BUT NOT
+  LIMITED TO, THE IMPLIED  WARRANTIES OF MERCHANTABILITY AND FITNESS
+  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL FERMILAB,
+  OR THE URA, OR THE U.S. DEPARTMENT of ENERGY, OR CONTRIBUTORS BE LIABLE
+  FOR  ANY  DIRECT, INDIRECT,  INCIDENTAL, SPECIAL, EXEMPLARY, OR
+  CONSEQUENTIAL DAMAGES  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT
+  OF SUBSTITUTE  GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
+  BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY  OF
+  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT  OF THE USE OF THIS
+  SOFTWARE, EVEN IF ADVISED OF THE  POSSIBILITY OF SUCH DAMAGE.
+
+
+  Liabilities of the Government:
+
+  This software is provided by URA, independent from its Prime Contract
+  with the U.S. Department of Energy. URA is acting independently from
+  the Government and in its own private capacity and is not acting on
+  behalf of the U.S. Government, nor as its contractor nor its agent.
+  Correspondingly, it is understood and agreed that the U.S. Government
+  has no connection to this software and in no manner whatsoever shall
+  be liable for nor assume any responsibility or obligation for any claim,
+  cost, or damages arising out of or resulting from the use of the software
+  available from this server.
+
+
+  Export Control:
+
+  All documents and software available from this server are subject to U.S.
+  export control laws.  Anyone downloading information from this server is
+  obligated to secure any necessary Government licenses before exporting
+  documents or software obtained from this server.
+ */
+
+package diskCacheV111.doors;
+
+import diskCacheV111.vehicles.*;
+import diskCacheV111.util.*;
+import diskCacheV111.cells.*;
+import diskCacheV111.services.*;
+
+
+import dmg.cells.nucleus.*;
+import dmg.cells.network.*;
+import dmg.util.*;
+
+import java.util.*;
+import java.io.*;
+import java.net.*;
+import java.lang.reflect.*;
+import java.security.NoSuchAlgorithmException;
+
+import org.ietf.jgss.*;
+import java.lang.Thread;
+import java.util.regex.*;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.CountDownLatch;
+import diskCacheV111.vehicles.spaceManager.SpaceManagerGetInfoAndLockReservationByPathMessage;
+import diskCacheV111.vehicles.spaceManager.SpaceManagerUtilizedSpaceMessage;
+import diskCacheV111.vehicles.spaceManager.SpaceManagerUnlockSpaceMessage;
+import diskCacheV111.vehicles.DoorRequestInfoMessage;
+import diskCacheV111.vehicles.IoDoorInfo;
+import diskCacheV111.vehicles.IoDoorEntry;
+import diskCacheV111.movers.GFtpPerfMarker;
+import diskCacheV111.movers.GFtpPerfMarkersBlock;
+
+/**
+ * @author Charles G Waldman, Patrick, rich wellner, igor mandrichenko
+ * @version 0.0, 15 Sep 1999
+ */
+public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
+{
+
+    /**
+     * Exception indicating an error during processing of an FTP
+     * command.
+     */
+    protected class FTPCommandException extends Exception
+    {
+        /** FTP reply code. */
+	protected int    _code;
+
+        /** Human readable part of FTP reply. */
+        protected String _reply;
+
+        /**
+         * Constructs a command exception with the given ftp rely code
+         * and message. The message will be used for both the public
+         * FTP reply string and for the exception message.
+         */
+	public FTPCommandException(int code, String reply)
+        {
+	    this(code, reply, reply);
+	}
+
+        /**
+         * Constructs a command exception with the given ftp reply
+         * code, public and internal message.
+         */
+	public FTPCommandException(int code, String reply, String msg)
+        {
+	    super(msg);
+	    _code = code;
+            _reply = reply;
+	}
+
+	/** Returns FTP reply code. */
+	public int getCode()
+	{
+	    return _code;
+	}
+
+        /** Returns the public FTP reply string. */
+        public String getReply()
+        {
+            return _reply;
+        }
+    }
+
+    /**
+     * Exception indicating and error condition during a sendAndWait
+     * operation.
+     *
+     * TODO: This should be refined to better conway the actual error.
+     */
+    protected class SendAndWaitException extends Exception
+    {
+	public SendAndWaitException(String msg)
+        {
+	    super(msg);
+	}
+
+	public SendAndWaitException(String msg, Throwable cause)
+        {
+	    super(msg, cause);
+	}
+    }
+
+    /**
+     * Enumeration type for representing the connection mode.
+     *
+     * For PASSIVE transfers the client establises the data
+     * connection.
+     *
+     * For ACTIVE transfers dCache establishes the data connection.
+     *
+     * Depending on the values of _allowPassivePool and _allowRelay,
+     * the data connection with the client will be established either
+     * to an adapter (proxy) at the FTP door, or to the pool directly.
+     */
+    protected enum Mode
+    {
+ 	PASSIVE, ACTIVE;
+    }
+
+
+    /**
+     * Used for generating session IDs unique to this domain.
+     */
+    private static long   __counter = 10000 ;
+
+
+    /**
+     * Feature strings returned when the client sends the FEAT
+     * command.
+     */
+    private static final String[] FEATURES = {
+        "EOF", "PARALLEL", "SIZE", "SBUF",
+        "ERET", "ESTO", "GETPUT",
+        "CKSM", "SCKS", "MODEX"
+    };
+
+    /**
+     * FTP door instances are created by the LoginManager. This is the
+     * stream engine passed to us from the LoginManager upon
+     * instantiation.
+     */
+    protected final StreamEngine        _engine;
+
+    /**
+     * Reader for control channel.
+     */
+    protected final BufferedReader      _in;
+
+    /**
+     * Writer for control channel.
+     */
+    protected final PrintWriter         _out;
+
+    /**
+     * Stub object for talking to the PNFS manager.
+     */
+    protected final PnfsHandler         _pnfs;
+
+    /**
+     *
+     */
+    protected final FileMetaDataSource  _fileMetaDataSource;
+
+    /**
+     *
+     */
+    protected final FsPermissionHandler _permissionHandler;
+
+    /**
+     * Well known name of the pool manager.
+     */
+    protected final String              _poolManager;
+
+    /**
+     * Well known name of the PNFS manager.
+     */
+    protected final String              _pnfsManager;
+
+    /**
+     * Full path to encp utility. May be null.
+     */
+    protected final String              _encpPutCmd;
+
+    /**
+     * Whether to use the encp utility for various meta data
+     * operations.
+     */
+    protected final boolean             _useEncpScripts;
+
+    /**
+     * Lowest allowable port to use for the data channel when using an
+     * adapter.
+     */
+    protected final int                 _lowDataListenPort;
+
+    /**
+     * Highest allowable port to use for the data channel when using
+     * an adapter.
+     */
+    protected final int                 _highDataListenPort;
+    protected final String              _poolProxy;
+
+    /**
+     * Name or IP address of the interface on which we listen for
+     * connections from the pool in case an adapter is used.
+     */
+    protected final String              _local_host;
+
+    protected final boolean             _readOnly;
+    protected final int                 _maxRetries;
+    protected final int                 _poolManagerTimeout;
+    protected final int                 _pnfsTimeout;
+    protected final int                 _poolTimeout;
+    protected final int                 _retryWait;
+    protected final int                 _spaceManagerTimeout = 5 * 60;
+
+    /**
+     * Size of the largest block used in the socket adapter in mode
+     * E. Blocks larger than this are divided into smaller blocks.
+     */
+    protected final int _maxBlockSize;
+
+    /**
+     * Remove files on incomplete transfers.
+     */
+    protected final boolean _removeFileOnIncompleteTransfer;
+
+    /**
+     * True if passive pools are allowed, i.e. the client connects
+     * directly to the pool, bypassing the proxy at the door. Set to
+     * false if any of the pools are not at least at version 1.8.
+     */
+    protected final boolean _allowPassivePool;
+
+    /**
+     * True if active adapter is allowed, i.e. the client connects to
+     * the new proxy adapter at the door, when the pools are on the
+     * private network, for example.  Has to be set via arguments.
+     */
+    protected final boolean _allowRelay;
+
+    /**
+     * If space_reservation_enabled is true, then the door will
+     * consult srmv2 module to check if the transfer is performed into
+     * the space that has been prealocated by the user.
+     */
+    protected final boolean _space_reservation_enabled;
+
+    /**
+     * This variable is only consulted if space_reservation_enabled is
+     * true. If space_reservation_strict is true then the transfer
+     * that was not precceded by the space allocation will fail.
+     */
+    protected final boolean _space_reservation_strict;
+
+
+    /**
+     * If use_gplazmaAuthzModule is true, then the door will consult
+     * authorization module and use its policy configuration, else
+     * door keeps using kpwd as in past.
+     */
+    protected final boolean _use_gplazmaAuthzCell;
+    protected final boolean _delegate_to_gplazma;
+
+    /**
+     * If use_gplazmaAuthzCell is true, the door will first contact
+     * the GPLAZMA cell for authentification.
+     */
+    protected final boolean _use_gplazmaAuthzModule;
+    protected final String _gplazmaPolicyFilePath;
+
+    /**
+     * transferTimeout (in secs)
+     *
+     * Is used for wating for the end of transfer after the pool
+     * already notified us that the file transfer is finished this is
+     * needed because we are using adapters etc...  if 0 wait without
+     * a timeout.
+     */
+    protected final int _transferTimeout;
+
+    private final AsciiCommandPoller  _commandPoller =
+        new AsciiCommandPoller();
+    private final CountDownLatch      _shutdownGate =
+        new CountDownLatch(1);
+    private final Hashtable           _statusDict =
+        new Hashtable();
+    private final Map<String,Method>  _methodDict =
+        new Hashtable();
+
+    protected String         _dnUser;
+    protected Thread         _workerThread;
+    protected int            _commandCounter = 0;
+    protected String         _lastCommand    = "<init>";
+
+    //XXX this should get set when we authenicate the user
+    protected String         _user       = "nobody";
+
+    protected String         _client_data_host;
+    protected int            _client_data_port = 20;
+    protected Socket         _dataSocket;
+
+    // added for the support or ERET with partial retrieve mode
+    protected long prm_offset = -1;
+    protected long prm_size = -1;
+
+
+    protected long   _skipBytes  = 0;
+
+    protected boolean _needUser = true;
+    protected boolean _needPass = true;
+
+    protected boolean _confirmEOFs = false;
+
+    protected String _tLogRoot;
+    protected UserAuthBase _pwdRecord;
+    protected UserAuthBase _originalPwdRecord;
+    protected String _pathRoot;
+    protected String _curDirV;
+    protected String _xferMode = "S";
+
+    //generalized kpwd file path used by all flavors
+    protected String _kpwdFilePath;
+
+    // can be "mic", "conf", "enc", "clear"
+    protected String _gReplyType = "clear";
+
+    protected Mode _mode = Mode.ACTIVE;
+    protected ProxyAdapter _adapter;
+    protected FTPTransactionLog _tLog;
+
+    //These are the number of parallel streams to have
+    //when doing mode e transfers
+    protected int _parallelStart = 5;
+    protected int _parallelMin = 5;
+    protected int _parallelMax = 5;
+    protected int _bufSize = 0;
+    protected int _maxStreamsPerClient = -1;	// -1 = unlimited
+    protected String ftpDoorName = "FTP";
+    protected Checksum _checkSum;
+    protected ChecksumFactory _checkSumFactory;
+    protected ChecksumFactory _optCheckSumFactory;
+
+    /** @todo breadcrumb - Perf Markers  */
+
+    protected PerfMarkerConf _perfMarkerConf = new PerfMarkerConf();
+
+    protected class PerfMarkerConf
+    {
+        protected boolean use;
+        protected long    period;
+
+        PerfMarkerConf()
+        {
+            use    = false;
+            period = 3 * 60 * 1000L; // default - 3 minutes
+        }
+    }
+    private PerfMarkerEngine     _perfMarkerEngine;
+
+    protected volatile boolean _transferInProgress = false;
+    private String  _ioQueueName;
+
+    /**
+     * Queue used to pass the address on which a pool listens when in
+     * passive mode between threads. Under normal circumstances, this
+     * queue will at most contain a single message.
+     */
+    private BlockingQueue<GFtpTransferStartedMessage> _transferStartedMessages
+        = new LinkedBlockingQueue<GFtpTransferStartedMessage>();
+
+
+    /**
+     * wlcg demands support for overwrite in srm and gridftp
+     * off by default
+     */
+    protected boolean _overwrite;
+
+
+    /**
+     * Encapsulation of all parameters of a transfer.
+     */
+    protected class Transfer
+    {
+	/**
+	 * The session ID of this transfer. The session id is unique
+	 * for each transfer within the same AbstractFtpDoorV1.
+	 */
+	final long sessionId;
+
+	/**
+	 * Time in milliseconds for when the transfer started.
+	 */
+	final long startedAt;
+
+	/** The name of the file being transfered. */
+	final String  path;
+
+	/**
+	 * Information for the billing cell.
+	 */
+	final DoorRequestInfoMessage info;
+
+	/** Description of the current state of the transfer. */
+	String state;
+
+	/** */
+	Integer moverId;
+
+	/** The name of the pool used for the transfer. */
+	String pool;
+
+	/** The PNFS id of the file being transferred. */
+	PnfsId pnfsId;
+
+	/** The host name of the client side of the data connection. */
+	String client_host;
+
+	/** The TCP port of the client side of the data connection. */
+	int client_port;
+
+	/**
+	 * True when pnfs entry has been created for path, but the
+	 * transfer has not yet successfully completed.
+	 */
+	boolean pnfsEntryIncomplete = false;
+
+	/**
+	 * Socket adapter used for the transfer.
+	 */
+	ProxyAdapter adapter;
+
+	/**
+	 * Informantion about the corresponding space reservation for
+	 * current store operation
+	 */
+	SpaceManagerGetInfoAndLockReservationByPathMessage spaceReservationInfo;
+
+	Transfer(String aPath)
+	{
+	    sessionId = nextSessionId();
+	    startedAt = System.currentTimeMillis();
+	    path      = aPath;
+
+	    info =
+		new DoorRequestInfoMessage(getNucleus().getCellName()+"@"+
+					   getNucleus().getCellDomainName());
+	    info.setTransactionTime(startedAt);
+	    info.setClient(_engine.getInetAddress().getHostName());
+	    // some requests do not have a pnfsId yet, fill it with dummy
+	    info.setPnfsId( new PnfsId("000000000000000000000000") );
+	    if (path != null) {
+		info.setPath(path);
+	    }
+	}
+
+	/** Sends status information to the biling cell. */
+	void sendDoorRequestInfo(int code, String msg)
+	{
+	    try {
+		info.setResult(code, msg);
+		sendMessage(new CellMessage(new CellPath("billing") , info));
+	    } catch (NoRouteToCellException e) {
+		esay("Couldn't send billing info : " + e);
+	    } catch (NotSerializableException e) {
+                throw new RuntimeException("Bug: Unserializable vehicle detected", e);
+            }
+	}
+    }
+
+    protected Transfer _transfer = null;
+
+
+    //
+    // Use initializer to load up hashes.
+    //
+    {
+        for (Method method : getClass().getMethods()) {
+            String name = method.getName();
+            if (name.regionMatches(false, 0, "ac_", 0, 3)){
+                _methodDict.put(name.substring(3), method);
+            }
+        }
+    }
+
+    private synchronized static long nextSessionId()
+    {
+        return __counter++ ;
+    }
+
+    public static CellVersion getStaticCellVersion()
+    {
+        return new CellVersion(diskCacheV111.util.Version.getVersion(),
+                               "$Revision: 1.137 $" );
+    }
+
+    public void SetTLog(FTPTransactionLog tlog)
+    {
+        say("Setting _tLog");
+        //XXX See IVM for how this is supposed to work
+        //passive retrieves are reseting tlog before it can be used in some cases
+        if( tlog == null) {
+            say("Not setting _tLog to null because it seems to screw things up");
+        } else {
+            _tLog = tlog;
+        }
+        //         try {
+        //             throw new Exception();
+        //         }
+        //         catch(Exception ex) {
+        //             ex.printStackTrace();
+        //         }
+
+    }
+
+    //
+    // ftp flavor specific initialization is done in initFtpDoor
+    // initFtpDoor is called from the constractor
+    //
+    public AbstractFtpDoorV1(String name, StreamEngine engine, Args args)
+        throws IllegalArgumentException,
+               IllegalStateException,
+               IllegalAccessException,
+               ClassNotFoundException,
+               NoSuchMethodException,
+               InstantiationException,
+               InvocationTargetException
+    {
+        super(name, args, false);
+
+        boolean success = false;
+        try {
+            _engine   = engine;
+            Reader reader = engine.getReader();
+            if (reader == null) {
+                esay(" !!!! engine.getReader() returned null !!!!");
+                start();
+                kill();
+                throw new
+                    IllegalStateException(" !!!! engine.getReader() returned null !!!!");
+            }
+            _in       = new BufferedReader(reader);
+            _out      = new PrintWriter(engine.getWriter());
+            _client_data_host = engine.getInetAddress().getHostName();
+            _commandPoller.setControlChannel(_in);
+
+            say("client hostname in the constructor: " + _client_data_host);
+
+            _use_gplazmaAuthzCell =
+                parseOption("use-gplazma-authorization-cell", false);
+            _delegate_to_gplazma =
+                parseOption("delegate-to-gplazma", false);
+            _use_gplazmaAuthzModule =
+                parseOption("use-gplazma-authorization-module", false);
+            _poolManager =
+                parseOption("poolManager", "PoolManager");
+            _pnfsManager =
+                parseOption("pnfsManager", "PnfsManager");
+            _encpPutCmd  =
+                parseOption("encp-put", null);
+            _readOnly =
+                parseOption("read-only", false);
+            _transferTimeout =
+                parseOption("transfer-timeout", 0);
+            _space_reservation_enabled =
+                parseOption("space-reservation", false);
+            _space_reservation_strict =
+                _space_reservation_enabled
+                && parseOption("space-reservation-strict", false);
+            _tLogRoot =
+                parseOption("tlog", null);
+            _local_host =
+                parseOption("ftp-adapter-internal-interface",
+                            engine.getLocalAddress().getHostName());
+            _allowPassivePool =
+                parseOption("allowPassivePool", false);
+            _allowRelay =
+                parseOption("allow-relay", false);
+            _removeFileOnIncompleteTransfer =
+                parseOption("deleteOnConnectionClosed", false);
+            _maxRetries =
+                parseOption("maxRetries", 3);
+            _poolManagerTimeout =
+                parseOption("poolManagerTimeout", 1500);
+            _pnfsTimeout =
+                parseOption("pnfsTimeout", 1 * 60);
+            _retryWait =
+                parseOption("retryWait", 30);
+            _poolTimeout =
+                parseOption("poolTimeout", 5 * 60);
+            _maxStreamsPerClient =
+                parseOption("maxStreamsPerClient", -1);
+            _poolProxy =
+                parseOption("poolProxy", null);
+            _ioQueueName =
+                parseOption("io-queue", null);
+            _maxBlockSize =
+                parseOption("maxBlockSize", 131072); // 128 kb
+            _overwrite =
+                parseOption("overwrite", false);
+
+            if (_use_gplazmaAuthzModule) {
+                _gplazmaPolicyFilePath =
+                    parseOption("gplazma-authorization-module-policy", null);
+                if (_gplazmaPolicyFilePath == null){
+                    String s = "FTPDoor : -gplazma-authorization-module-policy file not specified";
+                    esay(s);
+                    throw new IllegalArgumentException(s);
+                }
+            } else {
+                _gplazmaPolicyFilePath = null;
+            }
+
+            if (_encpPutCmd != null) {
+                String s = "FTPDoor : -encp-put is specified. This is DEPRECATED, due to intermittent failures.";
+                esay(s);
+                _useEncpScripts = true;
+            } else {
+                _useEncpScripts = false;
+            }
+
+            if (!(_use_gplazmaAuthzModule || _use_gplazmaAuthzCell)) {
+                /* Use kpwd file if gPlazma is not enabled.
+                 */
+                _kpwdFilePath = args.getOpt("kpwd-file");
+                if ((_kpwdFilePath == null) ||
+                    (_kpwdFilePath.length() == 0) ||
+                    (!new File(_kpwdFilePath).exists())) {
+                    String s = "FTPDoor : -kpwd-file not specified";
+                    esay(s);
+                    throw new IllegalArgumentException(s);
+                }
+            }
+
+            int low = 0;
+            int high = 0;
+            String portRange = getArgs().getOpt("clientDataPortRange");
+            if (portRange != null) {
+                try {
+                    int ind = portRange.indexOf(":");
+                    if ((ind <= 0) || (ind == (portRange.length() - 1)))
+                        throw new IllegalArgumentException("Not a port range");
+
+                    low  = Integer.parseInt(portRange.substring(0, ind));
+                    high = Integer.parseInt(portRange.substring(ind + 1));
+                    say("Selected client data port range [" +
+                        low + ":" + high + "]");
+                } catch (NumberFormatException ee) {
+                    esay("Invalid port range string (command ignored) : " + portRange);
+                }
+            }
+            _lowDataListenPort = low;
+            _highDataListenPort = high;
+
+            /*
+             * permission handler:
+             * use user defined or PnfsManager based
+             */
+            String metaDataProvider =
+                parseOption("meta-data-provider",
+                          "diskCacheV111.services.PnfsManagerFileMetaDataSource");
+            say("Loading " + metaDataProvider);
+            Class [] argClass = { dmg.cells.nucleus.CellAdapter.class };
+            Class fileMetaDataSourceClass = Class.forName(metaDataProvider);
+            Constructor fileMetaDataSourceCon = fileMetaDataSourceClass.getConstructor( argClass ) ;
+            Object[] initargs = { this };
+            _fileMetaDataSource =
+                (FileMetaDataSource)fileMetaDataSourceCon.newInstance(initargs);
+            _permissionHandler =
+                new FsPermissionHandler(this, _fileMetaDataSource);
+
+            _pnfs = new PnfsHandler(this, new CellPath(_pnfsManager));
+            _pnfs.setPnfsTimeout(_pnfsTimeout*1000L);
+
+            adminCommandListener = new AdminCommandListener();
+            addCommandListener(adminCommandListener);
+
+            success = true;
+        } finally {
+            if (!success) {
+                _shutdownGate.countDown();
+                start();
+                kill();
+            }
+        }
+    }
+
+    protected AdminCommandListener adminCommandListener;
+    public class AdminCommandListener
+    {
+        public String hh_get_door_info = "[-binary]";
+        public Object ac_get_door_info(Args args)
+        {
+            IoDoorInfo info = new IoDoorInfo(getCellName(),
+                                             getCellDomainName());
+            info.setProtocol("GFtp","1");
+            info.setOwner(_pwdRecord == null ? "0" : Integer.toString(_pwdRecord.UID));
+            //info.setProcess( _pid == null ? "0" : _pid ) ;
+            info.setProcess("0");
+            if (_transfer != null) {
+                IoDoorEntry[] entries = {
+                    new IoDoorEntry(_transfer.sessionId,
+                                    _transfer.pnfsId,
+                                    _transfer.pool,
+                                    _transfer.state,
+                                    _transfer.startedAt,
+                                    _transfer.client_host)
+                };
+                info.setIoDoorEntries(entries);
+            } else {
+                IoDoorEntry[] entries = {};
+                info.setIoDoorEntries(entries);
+            }
+
+            if (args.getOpt("binary") != null)
+                return info;
+            else
+                return info.toString();
+        }
+    }
+
+    /**
+     * Returns the integer value of a named cell argument.
+     *
+     * @param name the name of the cell argument to return
+     * @param def the value to return when <code>name</code> is
+     *            not defined or cannot be parsed
+     */
+    private int parseOption(String name, int def)
+    {
+        int value = def;
+        String tmp = getArgs().getOpt(name);
+        if (tmp != null && tmp.length() > 0) {
+            try {
+                value = Integer.parseInt(tmp);
+            } catch (NumberFormatException e) {
+                esay("Unable to set " + name + " to " + tmp);
+            }
+        }
+
+        say(name + "=" + value);
+
+        return value;
+    }
+
+    /**
+     * Returns the boolean value of a named cell argument.
+     *
+     * @param name the name of the cell argument to return
+     * @param def the value to return when <code>name</code> is
+     *            not defined or cannot be parsed
+     */
+    private boolean parseOption(String name, boolean def)
+    {
+        boolean value;
+        String tmp = getArgs().getOpt(name);
+        if (tmp != null && tmp.length() > 0) {
+            value = tmp.equalsIgnoreCase("true") ||
+                tmp.equalsIgnoreCase("on") ||
+                tmp.equalsIgnoreCase("yes") ||
+                tmp.equalsIgnoreCase("enabled");
+        } else {
+            value = def;
+        }
+
+        say(name + "=" + value);
+
+        return value;
+    }
+
+    /**
+     * Returns the value of a named cell argument.
+     *
+     * @param name the name of the cell argument to return
+     * @param def the value to return when <code>name</code> is
+     *            not defined or cannot be parsed
+     */
+    private String parseOption(String name, String def)
+    {
+        String value;
+        String tmp = getArgs().getOpt(name);
+        if (tmp != null && tmp.length() > 0) {
+            value = tmp;
+        } else {
+            value = def;
+        }
+
+        if (value != null) {
+            say(name + "=" + value);
+        }
+
+        return value;
+    }
+
+    private int spawn(String cmd, int errexit)
+    {
+        try {
+            Process p = Runtime.getRuntime().exec(cmd);
+            p.waitFor();
+            int returnCode = p.exitValue();
+            p.destroy();
+            return returnCode;
+        } catch (IOException e) {
+            return errexit;
+        } catch (InterruptedException e) {
+            return errexit;
+        }
+    }
+
+
+    public void ftpcommand(String cmdline)
+        throws CommandExitException
+    {
+        int l = 4;
+        // Every FTP command is 3 or 4 characters
+        if (cmdline.length() < 3) {
+            reply(err(cmdline, ""));
+            return;
+        }
+        if (cmdline.length() == 3 || cmdline.charAt(3) == ' ') {
+            l = 3;
+        }
+
+        String cmd = cmdline.substring(0,l);
+        String arg = cmdline.length() > l + 1 ? cmdline.substring(l + 1) : "";
+        Object args[] = {arg};
+
+        cmd = cmd.toLowerCase();
+
+        // most of the ic is handled in the ac_ functions but a few
+        // commands need special handling
+        if (cmd.equals("mic" ) || cmd.equals("conf") || cmd.equals("enc") ||
+	    cmd.equals("adat") || cmd.equals("pass")) {
+            tsay("FTP CMD: <" + cmd + " ... >");
+        } else {
+            _lastCommand = cmdline;
+            tsay("FTP CMD: <" + cmdline + ">");
+        }
+
+        // If a transfer is in progress, only permit ABORT and a few
+        // other commands to be processed
+        synchronized(this) {
+            if (_transferInProgress &&
+                !(cmd.equals("abor") || cmd.equals("mic")
+                  || cmd.equals("conf") || cmd.equals("enc"))) {
+                reply("503  Transfer in progress", false);
+                return;
+            }
+        }
+
+        if (!_methodDict.containsKey(cmd)) {
+            _skipBytes = 0;
+            reply(err(cmd,arg));
+            return;
+        }
+
+        resetPwdRecord();
+
+        Method m = _methodDict.get(cmd);
+        try {
+            // most of this info is printed above
+            // comment this logging, uncommnet for debugging
+            // say("Going to invoke:" + m.getName() +"("+arg+")");
+            m.invoke(this, args);
+            if (!cmd.equals("rest"))
+                _skipBytes = 0;
+        } catch (InvocationTargetException ite) {
+            //
+            // is thrown if the underlying method
+            // actively throws an exception.
+            //
+            Throwable te = ite.getTargetException();
+            if (te instanceof CommandExitException) {
+                throw (dmg.util.CommandExitException)te;
+            }
+            te.printStackTrace();
+            reply("500 " + ite.toString() + ": <" + cmd + ">");
+            say("Cause: " + te.getCause());
+            _skipBytes = 0;
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException("Bug detected", e);
+        }
+    }
+
+    /**
+     * Main loop for FTP command processing.
+     *
+     * Commands are received from the command poller and
+     * executed. Upon termination, most of the shutdown logic is in
+     * this method, including:
+     *
+     * - Emergency shutdown of performance marker engine
+     * - Shut down of socket adapter
+     * - Abort and cleanup after failed transfers
+     * - Cell shutdown initiation
+     *
+     * Notice that socket and thus input and output streams are not
+     * closed here. See cleanUp() for details on this.
+     */
+    public void run()
+    {
+        if (Thread.currentThread() == _workerThread) {
+            try {
+                reply("220 " + ftpDoorName + " door ready");
+
+                Thread commandPollerThread =
+                    new Thread(_commandPoller, "commandPollerThread");
+                commandPollerThread.start();
+
+                do {
+                    _lastCommand = _commandPoller.nextCommand();
+                } while (_lastCommand != null && execute(_lastCommand) == 0);
+            } catch (InterruptedException e) {
+                esay("Door interrupted: " + e);
+            } catch (CommandExitException e) {
+                esay("Command execution failed: " + e);
+            } finally {
+                try {
+                    /* In case of failure, the performance marker engine
+                     * may still be running.
+                     */
+                    if (_perfMarkerEngine != null) {
+                        try {
+                            _perfMarkerEngine.stop();
+                        } catch (InterruptedException e) {
+                            /* Nothing is supposed to interrupt this
+                             * thread at this point, so better log the
+                             * error.
+                             */
+                            esay(e);
+                        }
+                    }
+
+                    /* In case of failure, we may have a transfer
+                     * hanging around.
+                     */
+                    if (_transfer != null) {
+                        transfer_error(451, "Aborting transfer due to session termination");
+                    }
+
+                    closeAdapter();
+
+                    /* I don't know why this is necessary... any ideas?
+                     */
+                    reply("");
+
+                    say("End of stream encountered");
+
+                } finally {
+                    /* cleanUp() waits for us to open the gate.
+                     */
+                    _shutdownGate.countDown();
+
+                    /* Killing the cell will cause cleanUp() to be
+                     * called (although from a different thread).
+                     */
+                    kill();
+                }
+            }
+        }
+    }
+
+    protected synchronized void closeAdapter()
+    {
+	if (_adapter != null) {
+            say("Closing adapter");
+	    _adapter.close();
+	    _adapter = null;
+	}
+    }
+
+    /**
+     * Called by the cell infrastructure when the cell has been killed.
+     *
+     * If the FTP session is still running, a shutdown of it will be
+     * initiated. The method blocks until the FTP session has shut
+     * down.
+     *
+     * The socket will be closed by this method. It is quite important
+     * that this does not happen earlier, as several threads use the
+     * output stream. This is the only place where we can be 100%
+     * certain, that all the other threads are done with their job.
+     */
+    public void cleanUp()
+    {
+        /* Stopping the command poller will cause the FTP command
+         * procesing thread to shut down. In case the shutdown was
+         * initiated by the FTP client, this will already have
+         * happened at this point. However if the cell is shut down
+         * explicitly, then we have to stop the command poller
+         * explicitly.
+         */
+        _commandPoller.close();
+
+        /* The FTP command processing thread will open the gate after
+         * shutdown.
+         */
+        try {
+            _shutdownGate.await();
+        } catch (InterruptedException e) {
+            /* This should really not happen as nobody is supposed to
+             * interrupt the cell thread, but if it does happen then
+             * we better log it.
+             */
+            esay(e);
+        }
+
+        try {
+            /* Closing the socket will also close the input and output
+             * streams of the socket. This in turn will cause the
+             * command poller thread to shut down.
+             */
+            _engine.getSocket().close();
+        } catch (IOException e) {
+            esay(e);
+        }
+    }
+
+    public void println(String str)
+    {
+        synchronized (_out) {
+            _out.println(str + "\r");
+            _out.flush();
+        }
+        // this prints everything including encoded replies and
+        // is not needed for normal logging
+        // can be uncommented for debugging
+        //say( "TO CLIENT : "+str ) ;
+    }
+
+    public void print(String str)
+    {
+        synchronized (_out) {
+            _out.print(str);
+            _out.flush();
+        }
+    }
+
+    public int execute(String command)
+        throws CommandExitException
+    {
+        if (command.equals("")) {
+            reply(err("",""));
+            return 0;
+        }
+        try {
+            _commandCounter++;
+            ftpcommand(command);
+            return 0;
+        } catch (CommandExitException cee) {
+            return 1;
+        }
+    }
+
+    public String toString()
+    {
+        return _user + "@" + _client_data_host;
+    }
+
+    public void getInfo(PrintWriter pw)
+    {
+        pw.println( "            FTPDoor");
+        pw.println( "         User  : " + _dnUser == null? _user : _dnUser);
+        pw.println( "    User Host  : " + _client_data_host);
+        pw.println( "   Local Host  : " + _local_host);
+        pw.println( " Last Command  : " + _lastCommand);
+        pw.println( " Command Count : " + _commandCounter);
+        pw.println( "     I/O Queue : " + _ioQueueName);
+
+        if (_useEncpScripts) {
+            pw.println( "    Encp Script: " + _encpPutCmd);
+        } else {
+            pw.println("    Encp Script is not used");
+        }
+        pw.println(adminCommandListener.ac_get_door_info(new Args("")));
+    }
+
+    //
+    // this object is used for synchronization between 1: and 2:
+    // 1: code that communicates
+    // between pool in case of stor/retr
+    // 2:code that hanles e messages received back from pool about transfer
+    // status
+    //
+    //handle post-transfer success/failure messages going back to the client
+    public void  messageArrived(CellMessage msg)
+    {
+        boolean timed_out = false;
+        Object object = msg.getMessageObject();
+        say("Message messageArrived [" + object.getClass() + "]="
+            + object.toString());
+        say("Message messageArrived source = " + msg.getSourceAddress());
+        if (object instanceof DoorTransferFinishedMessage) {
+            String adapterError = null;
+            boolean adapterClosed = false;
+            ProxyAdapter adapter;
+
+            DoorTransferFinishedMessage reply =
+                (DoorTransferFinishedMessage)object;
+
+            /* The synchronization is required to ensure that the call
+             * to transfer() has returned before we clean up after the
+             * transfer. It is also needed to ensure that this block
+             * completes before we start shutting down the cell.
+             */
+            synchronized (this) {
+		say("DoorTransferFinishedMessage arrived");
+
+                /* It may happen the transfer has been cancelled and
+                 * cleaned up after already. This is not a failure.
+                 */
+                if (!_transferInProgress) {
+                    return;
+                }
+
+                /* Kill the adapter in case of errors or if it is an
+                 * ActiveAdapter (they have to be killed to shut down).
+                 */
+                adapter = _transfer.adapter;
+                if (adapter != null && (adapter instanceof ActiveAdapter
+                                        || reply.getReturnCode() != 0)) {
+                    say("Closing adapter");
+                    adapter.close();
+                    adapterClosed = true;
+                }
+            }
+
+            /* Wait for adapter to shut down.
+             *
+             * We do this unsynchronized to avoid blocking while
+             * holding the monitor. Concurrent access to the adapter
+             * itself is safe and the following will be a noop if
+             * another thread happens to close the adapter.
+             */
+            if (adapter != null) {
+                say("Waiting for adaptor to finish ...");
+                try {
+                    adapter.join(300000); // 5 minutes
+                    if (adapter.isAlive()) {
+                        esay("Killing adapter");
+                        adapterClosed = true;
+                        adapterError = "adapter did not shut down";
+                        adapter.close();
+                        adapter.join(10000); // 10 seconds
+                        if (adapter.isAlive()) {
+                            esay("Failed to kill adapter");
+                        }
+                    } else if (adapter.hasError()) {
+                        adapterError =_transfer.adapter.getError();
+                    }
+                } catch (InterruptedException e) {
+                    say("Join error: " + e);
+                    adapterError = "adapter did not shut down";
+                }
+
+                /* With GridFTP v2 GET and PUT commands, we may
+                 * have a temporary socket adapter specific to
+                 * this transfer. If so, close it.
+                 */
+                if (adapter != _adapter && !adapterClosed) {
+                    say("Closing adapter");
+                    adapter.close();
+                    adapterClosed = true;
+                }
+            }
+
+            synchronized (this) {
+                /* It may happen the transfer has been cancelled and
+                 * cleaned up after already. This is not a failure.
+                 */
+                if (!_transferInProgress) {
+                    return;
+                }
+                _transferInProgress = false;
+
+                if (reply.getReturnCode() == 0 && adapterError == null) {
+                    if (_perfMarkerEngine != null) {
+                        try {
+                            _perfMarkerEngine.stop((GFtpProtocolInfo)reply.getProtocolInfo());
+                        } catch (ClassCastException e) {
+                            /* The pool send the wrong protocol info
+                             * instance. Clearly a bug. Log it.
+                             */
+                            esay(e);
+                        } catch (InterruptedException e) {
+                            /* Nothing is supposed to interrupt this
+                             * thread at this point, so better log the
+                             * error.
+                             */
+                            esay(e);
+                        }
+                    }
+
+                    if(_transfer.spaceReservationInfo != null) {
+                        long utilized = reply.getStorageInfo().getFileSize();
+                        say("reply.getStorageInfo().getFileSize()="+utilized);
+                        if(utilized > _transfer.spaceReservationInfo.getAvailableLockedSize()) {
+                            utilized = _transfer.spaceReservationInfo.getAvailableLockedSize();
+                        }
+                        say("set utilized to "+utilized);
+                        SpaceManagerUtilizedSpaceMessage utilizedSpace =
+                            new SpaceManagerUtilizedSpaceMessage(_transfer.spaceReservationInfo.getSpaceToken(),utilized);
+
+                        try {
+                            sendMessage(new CellMessage(new CellPath("SpaceManager"),
+                                                        utilizedSpace));
+                        } catch (NoRouteToCellException e) {
+                            String errmsg = "Can't send message to SRMV2 "+e;
+                            esay(errmsg);
+                            esay(e) ;
+                        } catch (NotSerializableException e) {
+                            throw new RuntimeException("Bug: Unserializable vehicle detected", e);
+                        }
+                    }
+                    StorageInfo storageInfo = reply.getStorageInfo();
+                    if (_tLog != null) {
+                        _tLog.middle(storageInfo.getFileSize());
+                        _tLog.success();
+                        SetTLog(null);
+                    }
+
+
+                    // RDK: Note that data/command channels both dropped (esp. ACTIVE mode) at same time
+                    //      can lead to a race. The transfer will be declared successful, this flag cleared,
+                    //      and THEN the command channel drop is reacted to. This is difficult to reproduce.
+                    //      Treat elsewhere to prevent a successful return code from being returned.
+                    //	Clear the _pnfsEntryIncomplete flag since transfer successful
+                    _transfer.sendDoorRequestInfo(0, "");
+                    _transfer = null;
+                    reply("226 Transfer complete.");
+                } else {
+                    if (_perfMarkerEngine != null) {
+                        try {
+                            _perfMarkerEngine.stop();
+                        } catch (InterruptedException e) {
+                            /* Nothing is supposed to interrupt this
+                             * thread at this point, so better log the
+                             * error.
+                             */
+                            esay(e);
+                        }
+                    }
+
+                    StringBuffer error =
+                        new StringBuffer("Transfer aborted (");
+
+                    if (reply.getReturnCode() != 0) {
+                        if (reply.getErrorObject() != null) {
+                            error.append(reply.getErrorObject());
+                        } else {
+                            error.append("mover failure");
+                        }
+                        if (adapterError != null) {
+                            error.append("/");
+                            error.append(adapterError);
+                        }
+                    } else {
+                        error.append(adapterError);
+                    }
+                    error.append(")");
+
+                    transfer_error(426, error.toString());
+                }
+            }
+        } // .end DoorTransferFinishedMessage
+        else if (object instanceof GFtpTransferStartedMessage) {
+            try {
+                _transferStartedMessages.put((GFtpTransferStartedMessage)object);
+            } catch (InterruptedException e) {
+                /* The queue is not bounded, thus this should never happen.
+                 */
+                esay("Unexpected exception: " + e);
+            }
+        } else {
+            say("Unexpected message class "+object.getClass());
+            say("source = "+msg.getSourceAddress());
+        }
+    }
+
+    private void tsay(String str)
+    {
+        Date d = new Date();
+        say("" + d + ": " + str);
+    }
+
+    //
+    // GSS authentication
+    //
+
+    protected void reply(String answer, boolean resetReply)
+    {
+        if (answer.startsWith("335 ADAT=")) {
+            say("REPLY(reset=" + resetReply + " GReplyType=" + _gReplyType + "): <335 ADAT=...>");
+        } else {
+            say("REPLY(reset=" + resetReply + " GReplyType=" + _gReplyType + "): <" + answer + ">");
+        }
+        if (_gReplyType.equals("clear"))
+            println(answer);
+        else if (_gReplyType.equals("mic"))
+            secure_reply(answer, "631");
+        else if (_gReplyType.equals("enc"))
+            secure_reply(answer, "633");
+        else if (_gReplyType.equals("conf"))
+            secure_reply(answer, "632");
+        if (resetReply)
+            _gReplyType = "clear";
+    }
+
+    protected void reply(String answer)
+    {
+        reply(answer, true);
+    }
+
+    protected abstract void secure_reply(String answer, String code);
+
+    public void ac_feat(String arg)
+    {
+        StringBuilder builder = new StringBuilder();
+        builder.append("211-OK\r\n");
+        for (String feature : FEATURES)
+            builder.append(" ").append(feature).append("\r\n");
+        builder.append("211 End");
+        reply(builder.toString());
+    }
+
+    public void opts_retr(String opt)
+    {
+        String[] st = opt.split("=");
+        String real_opt = st[0];
+        String real_value= st[1];
+        if (!real_opt.equalsIgnoreCase("Parallelism")) {
+            reply("501 Unrecognized option: " + real_opt + " (" + real_value + ")");
+            return;
+        }
+
+        say("real_value: " + real_value);
+        st = real_value.split(",|;");
+        _parallelStart = Integer.parseInt(st[0]);
+        _parallelMin = Integer.parseInt(st[1]);
+        _parallelMax = Integer.parseInt(st[2]);
+
+        reply("200 Parallel streams set (" + opt + ")");
+    }
+
+    public void opts_stor(String opt, String val)
+    {
+        if (!opt.equalsIgnoreCase("EOF")) {
+            reply("501 Unrecognized option: " + opt + " (" + val + ")");
+            return;
+        }
+        if (!val.equals("1")) {
+            _confirmEOFs = true;
+            reply("200 EOF confirmation is ON");
+            return;
+        }
+        if (!val.equals("0")) {
+            _confirmEOFs = false;
+            reply("200 EOF confirmation is OFF");
+            return;
+        }
+        reply("501 Unrecognized option value: " + val);
+    }
+
+    private void opts_cksm(String algo)
+    {
+        if (algo ==  null) {
+            reply("501 CKSM option command requires algorithm type");
+            return;
+        }
+
+        try {
+            if (!algo.equalsIgnoreCase("NONE")) {
+                _optCheckSumFactory = ChecksumFactory.getFactory(algo);
+            } else {
+                _optCheckSumFactory = null;
+            }
+            reply("200 OK");
+        } catch (NoSuchAlgorithmException e) {
+            reply("504 Unsupported checksum type: " + algo);
+        }
+    }
+
+    public void ac_opts(String arg)
+    {
+        String[] st = arg.split("\\s+");
+        if (st.length == 2 && st[0].equalsIgnoreCase("RETR")) {
+            opts_retr(st[1]);
+        } else if (st.length == 3 && st[0].equalsIgnoreCase("STOR")) {
+            opts_stor(st[1], st[2]);
+        } else if (st.length == 2 && st[0].equalsIgnoreCase("CKSM")) {
+            opts_cksm(st[1]);
+        } else {
+            reply("501 Unrecognized option: " + st[0] + " (" + arg + ")");
+        }
+    }
+
+    public void ac_dele(String arg)
+    {
+        if (_readOnly) {
+            println("500 Command disabled");
+            return;
+        }
+
+        if (_pwdRecord.isWeak() || _pwdRecord.isReadOnly()) {
+            setNextPwdRecord();
+            if (_pwdRecord == null) {
+                println("500 Command disabled");
+                return;
+            } else {
+                ac_dele(arg);
+                return;
+            }
+        }
+
+        say("dele called");
+        say(arg);
+        String pathInPnfs = absolutePath(arg);
+
+	// We do not allow DELE of a directory.
+	// Some FTP clients let this slip through, like uberftp client.
+	// Some FTP clients detect this and send as an "RMD" request instead.
+        File theFileToDelete = new File(pathInPnfs);
+        if (theFileToDelete.isDirectory()) {
+            reply("553 Cannot delete a directory");
+            return;
+        }
+
+        if (_useEncpScripts) {
+            String parentOfFile = theFileToDelete.getParent();
+            //Check if the file is writable (aka deletable)
+            String cmd = _encpPutCmd + " chkw " +
+                _pwdRecord.UID + " " +
+                _pwdRecord.GID + " " +
+                parentOfFile;
+            if (spawn(cmd, 1000) != 0 ) {
+                reply("553 Permission denied");
+                return;
+            }
+
+            cmd = _encpPutCmd + " rm " +
+                _pwdRecord.UID + " " +
+                _pwdRecord.GID + " " +
+                pathInPnfs;
+            if( spawn(cmd, 1000) != 0 ) {
+                reply("553 Permission denied (actually permissions looked ok, but the delete failed anyway)");
+                return;
+            }
+        } else {
+            try {
+                if (_permissionHandler.canDelete(_pwdRecord.UID, _pwdRecord.GID, pathInPnfs)) {
+                    _pnfs.deletePnfsEntry(pathInPnfs);
+                } else {
+                    setNextPwdRecord();
+                    if (_pwdRecord==null) {
+                        reply("553 Permission denied");
+                        return;
+                    } else {
+                        ac_dele(arg);
+                        return;
+                    }
+                }
+            } catch (CacheException e) {
+                esay(e);
+                setNextPwdRecord();
+                if (_pwdRecord == null) {
+                    reply("553 Permission denied, reason: " + e);
+                } else {
+                    ac_dele(arg);
+                }
+                return;
+            }
+        }
+        reply("200 file deleted");
+    }
+
+    public abstract void ac_auth(String arg);
+
+
+    public abstract void ac_adat(String arg);
+
+    public void ac_mic(String arg)
+        throws dmg.util.CommandExitException
+    {
+        secure_command(arg, "mic");
+    }
+
+    public void ac_enc(String arg)
+        throws dmg.util.CommandExitException
+    {
+        secure_command(arg, "enc");
+    }
+
+    public void ac_conf(String arg)
+        throws dmg.util.CommandExitException
+    {
+        secure_command(arg, "conf");
+    }
+
+    public abstract void secure_command(String arg, String sectype)
+        throws dmg.util.CommandExitException;
+
+
+
+    public void ac_ccc(String arg)
+    {
+        // We should never received this, only through MIC, ENC or CONF,
+        // in which case it will be intercepted by secure_command()
+        reply("533 CCC must be protected");
+    }
+
+    public abstract void ac_user(String arg);
+
+
+    public abstract void ac_pass(String arg);
+
+
+
+
+    public void ac_pbsz(String arg)
+    {
+        reply("200 OK");
+    }
+
+    public void ac_prot(String arg)
+    {
+        if (!arg.equals("C"))
+            reply("534 Will accept only Clear protection level");
+        else
+            reply("200 OK");
+    }
+
+    ///////////////////////////////////////////////////////////////////////////
+    //                                                                       //
+    // the interpreter stuff                                                 //
+    //                                                                       //
+
+
+    private String absolutePath(String relCwdPath)
+    {
+        if (_pathRoot == null)
+            return null;
+
+        _curDirV = (_curDirV == null ? "/" : _curDirV);
+        FsPath relativeToRootPath = new FsPath(_curDirV);
+        relativeToRootPath.add(relCwdPath);
+
+
+        FsPath absolutePath = new FsPath(_pathRoot);
+        String rootPath = absolutePath.toString();
+        absolutePath.add("./"+relativeToRootPath.toString());
+        String absolutePathStr = absolutePath.toString();
+        say("absolute path is \""+absolutePathStr+"\" root is "+_pathRoot);
+        if (!absolutePathStr.startsWith(rootPath)) {
+            say("Didn't start with root");
+            return null;
+        }
+        return absolutePathStr;
+    }
+
+    public void ac_rmd(String arg)
+    {
+        if (arg.equals("")) {
+            reply(err("RMD",arg));
+            return;
+        }
+
+        if (_pwdRecord == null) {
+            reply("530 Not logged in.");
+            return;
+        }
+
+        if (_readOnly) {
+            println("500 Command disabled");
+            return;
+        }
+
+        if (_pwdRecord.isWeak() || _pwdRecord.isReadOnly()) {
+            setNextPwdRecord();
+            if (_pwdRecord == null) {
+                println("500 Command disabled");
+                return;
+            } else {
+                ac_rmd(arg);
+                return;
+            }
+        }
+
+        if (_pwdRecord.isAnonymous()) {
+            setNextPwdRecord();
+            if (_pwdRecord == null) {
+                println("554 Anonymous write access not permitted");
+                return;
+            } else {
+                ac_rmd(arg);
+                return;
+            }
+        }
+
+        String pathInPnfs = absolutePath(arg);
+        if (pathInPnfs == null) {
+            setNextPwdRecord();
+            if (_pwdRecord == null) {
+                reply("553 Cannot determine full directory pathname in PNFS: " + arg);
+                return;
+            } else {
+                ac_rmd(arg);
+                return;
+            }
+        }
+
+        // canDeleteDir() will test that isDirectory() and canWrite()
+	try {
+            if (_permissionHandler.canDeleteDir(_pwdRecord.UID, _pwdRecord.GID, pathInPnfs)) {
+                File theDirToDelete = new File(pathInPnfs);
+                if (theDirToDelete.list().length == 0) { // Only delete empty directories
+                    _pnfs.deletePnfsEntry(pathInPnfs);
+                } else {
+                    setNextPwdRecord();
+                    if (_pwdRecord == null) {
+                        reply("553 Directory not empty. Cannot delete.");
+                        return;
+                    } else {
+                        ac_rmd(arg);
+                        return;
+                    }
+                }
+            } else {
+                setNextPwdRecord();
+                if (_pwdRecord == null) {
+                    reply("553 Permission denied");
+                    return;
+                } else {
+                    ac_rmd(arg);
+                    return;
+                }
+            }
+        } catch (CacheException ce) {
+            setNextPwdRecord();
+            if (_pwdRecord == null) {
+                reply("553 Permission denied, reason: " + ce);
+                return;
+            } else {
+                ac_rmd(arg);
+                return;
+            }
+        }
+
+        reply("200 OK");
+    }
+
+
+    public void ac_mkd(String arg)
+    {
+        if (_pwdRecord == null) {
+            reply("530 Not logged in.");
+            return;
+        }
+
+        if (arg.equals("")) {
+            reply(err("MKD",arg));
+            return;
+        }
+
+        if (_readOnly) {
+            println("500 Command disabled");
+            return;
+        }
+
+        if (_pwdRecord.isWeak() || _pwdRecord.isReadOnly()) {
+            setNextPwdRecord();
+            if (_pwdRecord == null) {
+                println("500 Command disabled");
+                return;
+            } else {
+                ac_mkd(arg);
+                return;
+            }
+        }
+
+        if (_pwdRecord.isAnonymous()) {
+            setNextPwdRecord();
+            if (_pwdRecord == null) {
+                println("554 Anonymous write access not permitted");
+                return;
+            } else {
+                ac_mkd(arg);
+                return;
+            }
+        }
+
+        String pathInPnfs = absolutePath(arg);
+        if (pathInPnfs == null) {
+            setNextPwdRecord();
+            if (_pwdRecord == null) {
+                reply("553 Cannot create directory in PNFS: " + arg);
+                return;
+            } else {
+                ac_mkd(arg);
+                return;
+            }
+        }
+
+        if (_useEncpScripts) {
+            File x = new File(pathInPnfs);
+            if (x.exists()) {
+                reply("550 " + arg + ": already exists");
+                return;
+            }
+
+            String cmd = _encpPutCmd + " chkc " +
+                _pwdRecord.UID + " " +
+                _pwdRecord.GID + " " +
+                pathInPnfs;
+            if (spawn(cmd, 1000) != 0) {
+                reply("553 Permission denied");
+                return;
+            }
+
+            cmd = _encpPutCmd + " mkd " +
+                _pwdRecord.UID + " " +
+                _pwdRecord.GID + " " +
+                pathInPnfs;
+            if (spawn(cmd, 1000) != 0) {
+                reply("552 Error creating directory " + arg);
+                return;
+            }
+        } else {
+            try {
+                if (_permissionHandler.canWrite(_pwdRecord.UID,_pwdRecord.GID,pathInPnfs)) {
+                    _pnfs.createPnfsDirectory(pathInPnfs,_pwdRecord.UID,_pwdRecord.GID, 0755);
+                } else {
+                    setNextPwdRecord();
+                    if (_pwdRecord == null) {
+                        reply("553 Permission denied");
+                        return;
+                    } else {
+                        ac_mkd(arg);
+                        return;
+                    }
+                }
+            } catch(CacheException ce) {
+                setNextPwdRecord();
+                if (_pwdRecord == null) {
+                    reply("553 Permission denied, reason: "+ce);
+                    return;
+                } else {
+                    ac_mkd(arg);
+                    return;
+                }
+            }
+        }
+        reply("200 OK");
+    }
+
+    public void ac_help(String arg)
+    {
+        reply("214 No help available");
+    }
+
+    public void ac_syst(String arg)
+    {
+        reply("215 UNIX Type: L8 Version: FTPDoor");
+    }
+
+    public void ac_type(String arg)
+    {
+        reply("200 Type set to I");
+    }
+
+    public void ac_noop(String arg)
+    {
+        reply(ok("NOOP"));
+    }
+
+    public void ac_allo(String arg)
+    {
+        reply(ok("ALLO"));  // No-op for now. Sent by uberftp client.
+    }
+
+    public void ac_pwd(String arg)
+    {
+        if (!arg.equals("")) {
+            reply(err("PWD",arg));
+            return;
+        }
+        reply("257 \"" + _curDirV + "\" is current directory");
+    }
+
+    public void ac_cwd(String arg)
+    {
+        String newcwd = absolutePath(arg);
+        if (newcwd == null)
+            newcwd = _pathRoot;
+
+        File test = new File(newcwd);
+
+        if (!test.isDirectory()){
+            reply("550 " + test.toString() + ": Not a directory");
+            return;
+        }
+        _curDirV = newcwd.substring(_pathRoot.length());
+        if (_curDirV.length() == 0)
+            _curDirV = "/";
+        reply("250 CWD command succcessful. New CWD is <" + _curDirV + ">");
+    }
+
+    public void ac_cdup(String arg)
+    {
+        ac_cwd("..");
+    }
+
+    public void ac_port(String arg)
+    {
+        String[] st = arg.split(",");
+        if (st.length != 6) {
+            reply(err("PORT",arg));
+            return;
+        }
+
+        int tok[] = new int[6];
+        for (int i = 0; i < 6; ++i) {
+            tok[i] = Integer.parseInt(st[i]);
+        }
+        String ip = tok[0] + "." + tok[1] + "." + tok[2] + "." + tok[3];
+        _client_data_host = ip;
+
+        // XXX if transfer in progress, abort
+        _client_data_port = tok[4] * 256 + tok[5];
+
+	// Switch to active mode
+	closeAdapter();
+	_mode = Mode.ACTIVE;
+
+        reply(ok("PORT"));
+    }
+
+    public void ac_pasv(String arg)
+    {
+        try {
+	    closeAdapter();
+            say("Creating adapter for passive mode");
+            _adapter = new SocketAdapter(this, _lowDataListenPort , _highDataListenPort);
+            _adapter.setMaxBlockSize(_maxBlockSize);
+            int port = _adapter.getClientListenerPort();
+            byte[] hostb = _engine.getLocalAddress().getAddress();
+            int[] host = new int[4];
+            for (int i = 0; i < 4; i++)
+                host[i] = hostb[i] & 0377;
+            _mode = Mode.PASSIVE;
+            reply("227 OK (" +
+                  host[0] + "," +
+                  host[1] + "," +
+                  host[2] + "," +
+                  host[3] + "," +
+                  port/256 + "," +
+                  port % 256 + ")");
+            //_host = host[0]+"."+host[1]+"."+host[2]+"."+host[3];
+            //_port = 0;		// will be set by retr/stor
+        } catch (IOException e) {
+            reply("500 Cannot enter passive mode: " + e);
+            _mode = Mode.ACTIVE;
+	    closeAdapter();
+        }
+    }
+
+    public void ac_mode(String arg)
+    {
+        if (arg.equalsIgnoreCase("S")) {
+            _xferMode = "S";
+            reply("200 Will use Stream mode");
+        } else if (arg.equalsIgnoreCase("E")) {
+            _xferMode = "E";
+            reply("200 Will use Extended Block mode");
+        } else if (arg.equalsIgnoreCase("X")) {
+            _xferMode = "X";
+            reply("200 Will use GridFTP 2 eXtended block mode");
+        } else {
+            reply("200 Unsupported transfer mode");
+        }
+    }
+
+    public void ac_site(String arg)
+    {
+        if (arg.equals("")) {
+            reply("500 must supply the site specific command");
+            return;
+        }
+
+        String args[] = arg.split(" ");
+
+        if (args[0].equalsIgnoreCase("BUFSIZE")) {
+            if (args.length != 2) {
+                reply("500 command must be in the form 'SITE BUFSIZE <number>'");
+                return;
+            }
+            ac_sbuf(args[1]);
+        } else if ( args[0].equalsIgnoreCase("CHKSUM")) {
+            if (args.length != 2) {
+                reply("500 command must be in the form 'SITE CHKSUM <value>'");
+                return;
+            }
+            doCheckSum("adler32",args[1]);
+        } else if (args[0].equalsIgnoreCase("CHMOD")) {
+            if (args.length != 3) {
+                reply("500 command must be in the form 'SITE CHMOD <octal perms> <file/dir>'");
+                return;
+            }
+            doChmod(args[1], args[2]);
+        } else {
+            reply("500 Unknown SITE command");
+            return;
+        }
+    }
+
+    public void ac_cksm(String arg)
+    {
+        String[] st = arg.split("\\s+");
+        if (st.length != 4) {
+            reply("500 Unsupported CKSM command operands");
+            return;
+        }
+        String algo = st[0];
+        String offset = st[1];
+        String length = st[2];
+        String path = st[3];
+
+        long offsetL = 0;
+        long lengthL = -1;
+
+        try {
+            offsetL = Long.parseLong(offset);
+        } catch (NumberFormatException ex){
+            reply("501 Invalid offset format:"+ex);
+            return;
+        }
+
+        try {
+            lengthL = Long.parseLong(length);
+        } catch (NumberFormatException ex){
+            reply("501 Invalid length format:"+ex);
+            return;
+        }
+
+        try {
+            doCksm(algo,path,offsetL,lengthL);
+        } catch (FTPCommandException e) {
+            reply(String.valueOf(e.getCode()) + " " + e.getReply());
+        }
+    }
+
+    public void doCksm(String algo, String path, long offsetL, long lengthL)
+        throws FTPCommandException
+    {
+        if (lengthL != -1)
+            throw new FTPCommandException(504, "Unsupported checksum over partial file length");
+
+        if (offsetL != 0)
+            throw new FTPCommandException(504, "Unsupported checksum over partial file offset");
+
+        try {
+            ChecksumFactory cf = ChecksumFactory.getFactory(algo);
+
+
+            try {
+                PnfsGetStorageInfoMessage storageInfoMsg = _pnfs.getStorageInfoByPath( absolutePath(path) );
+
+                Checksum checksum = cf.createFromPersistentState((CellAdapter)this,storageInfoMsg.getPnfsId());
+
+                if (checksum == null) {
+                    throw new FTPCommandException(504, "Checksum is not available, dynamic checksum calculation is not supported");
+                } else {
+                    reply("213 "+Checksum.toHexString(checksum.getDigest()));
+                }
+
+            } catch (CacheException ce) {
+                throw new FTPCommandException(550, "Error retrieving " + path
+                                              + ": " + ce.getMessage());
+            }
+        } catch (java.security.NoSuchAlgorithmException ex) {
+            throw new FTPCommandException(504, "Unsupported checksum type:" + ex);
+        }
+    }
+
+    public void ac_scks(String arg)
+    {
+        String[] st = arg.split("\\s+");
+        if (st.length != 2) {
+            reply("505 Unsupported SCKS command operands");
+            return;
+        }
+        doCheckSum(st[0], st[1]);
+    }
+
+
+    public void doCheckSum(String type, String value)
+    {
+        try {
+            _checkSumFactory = ChecksumFactory.getFactory(type);
+            _checkSum = _checkSumFactory.create(value);
+            reply("213 OK");
+        } catch (NoSuchAlgorithmException e) {
+            _checkSumFactory = null;
+            _checkSum = null;
+            reply("504 Unsupported checksum type:" + type);
+        }
+    }
+
+    public void doChmod(String permstring, String path)
+    {
+        if (_pwdRecord == null) {
+            reply("530 Not logged in.");
+            return;
+        }
+
+        if (_readOnly) {
+            println("500 Command disabled");
+            return;
+        }
+
+        if (_pwdRecord.isWeak() || _pwdRecord.isReadOnly()) {
+            setNextPwdRecord();
+            if (_pwdRecord == null) {
+                println("500 Command disabled");
+                return;
+            } else {
+                doChmod(permstring, path);
+                return;
+            }
+        }
+
+        if (path.equals("")){
+            reply(err("SITE CHMOD",path));
+            return;
+        }
+
+        String pathInPnfs = absolutePath(path);
+        if (pathInPnfs == null) {
+            setNextPwdRecord();
+            if (_pwdRecord == null) {
+                reply("553 Cannot determine full directory pathname in PNFS: " + path);
+                return;
+            } else {
+                doChmod(permstring, path);
+                return;
+            }
+        }
+
+        int newperms;
+        try {
+            newperms = Integer.parseInt(permstring, 8); // Assume octal regardless of string
+        } catch (NumberFormatException ex) {
+            reply("501 permissions argument must be an octal integer");
+            return;
+        }
+
+        // Get meta-data for this file/directory
+        PnfsGetFileMetaDataMessage fileMetaDataMsg;
+        try {
+            fileMetaDataMsg = _pnfs.getFileMetaDataByPath(pathInPnfs);
+        } catch (CacheException ce) {
+            setNextPwdRecord();
+            if (_pwdRecord == null) {
+                reply("553 Permission denied, reason: " + ce);
+            } else {
+                doChmod(permstring, path);
+            }
+            return;
+        }
+
+	// Extract fields of interest
+        PnfsId       myPnfsId   = fileMetaDataMsg.getPnfsId();
+        FileMetaData metaData   = fileMetaDataMsg.getMetaData();
+        boolean      isADir     = metaData.isDirectory();
+        boolean      isASymLink = metaData.isSymbolicLink();
+        int          myUid      = metaData.getUid();
+        int          myGid      = metaData.getGid();
+
+        // Only file/directory owner can change permissions on that file/directory
+        if (myUid != _pwdRecord.UID) {
+            setNextPwdRecord();
+            if (_pwdRecord == null) {
+                reply("553 Permission denied. Only owner can change permissions.");
+            } else {
+                doChmod(permstring, path);
+            }
+            return;
+        }
+
+        // Chmod on symbolic links not yet supported (should change perms on file/dir pointed to)
+        if (isASymLink) {
+            setNextPwdRecord();
+            if (_pwdRecord == null) {
+                reply("502 chmod of symbolic links is not yet supported.");
+            } else {
+                doChmod(permstring, path);
+            }
+            return;
+        }
+
+        FileMetaData newMetaData = new FileMetaData(isADir,myUid,myGid,newperms);
+
+        _pnfs.pnfsSetFileMetaData(myPnfsId,newMetaData);
+
+        reply("200 OK");
+    }
+
+    public void ac_sbuf(String arg)
+    {
+        if (arg.equals("")) {
+            reply("500 must supply a buffer size");
+            return;
+        }
+
+        int bufsize;
+        try {
+            bufsize = Integer.parseInt(arg);
+        } catch(NumberFormatException ex) {
+            reply("500 bufsize argument must be integer");
+            return;
+        }
+
+        if (bufsize < 1) {
+            reply("500 bufsize must be positive.  Probably large, but at least positive");
+            return;
+        }
+
+        _bufSize = bufsize;
+        reply("200 bufsize set to " + arg);
+    }
+
+    public void ac_eret(String arg)
+    {
+        String[] st = arg.split("\\s+");
+        if (st.length < 2) {
+            reply(err("ERET", arg));
+            return;
+        }
+        String extended_retrieve_mode = st[0];
+        String cmd = "eret_" + extended_retrieve_mode.toLowerCase();
+        Object args[] = { arg };
+        if (_methodDict.containsKey(cmd)) {
+            Method m = _methodDict.get(cmd);
+            try {
+                say("Going to invoke:" + m.getName() +"("+arg+")");
+                m.invoke(this, args);
+            } catch (IllegalAccessException e) {
+                reply("500 " + e.toString());
+                _skipBytes = 0;
+            } catch (InvocationTargetException e) {
+                reply("500 " + e.toString());
+                _skipBytes = 0;
+            }
+        } else {
+            reply("504 ERET is not implemented for retrieve mode: "
+                  + extended_retrieve_mode);
+        }
+    }
+
+    public void ac_esto(String arg)
+    {
+        String[] st = arg.split("\\s+");
+        if (st.length < 2) {
+            reply(err("ESTO",arg));
+            return;
+        }
+
+        String extended_store_mode = st[0];
+        String cmd = "esto_" + extended_store_mode.toLowerCase();
+        Object args[] = { arg };
+        if (_methodDict.containsKey(cmd)) {
+            Method m = _methodDict.get(cmd);
+            try {
+                say("Going to invoke:" + m.getName() +"("+arg+")");
+                m.invoke(this, args);
+            } catch (IllegalAccessException e) {
+                reply("500 " + e.toString());
+                _skipBytes = 0;
+            } catch (InvocationTargetException e) {
+                reply("500 " + e.toString());
+                _skipBytes = 0;
+            }
+        } else {
+            reply("504 ESTO is not implemented for store mode: "
+                  + extended_store_mode);
+        }
+    }
+
+    //
+    // this is the implementation for the ESTO with mode "a"
+    // "a" is ajusted store mode
+    // other modes identified by string "MODE" can be implemented by adding
+    // void method ac_esto_"MODE"(String arg)
+    //
+    public void ac_esto_a(String arg)
+    {
+        String[] st = arg.split("\\s+");
+        if (st.length != 3) {
+            reply(err("ESTO", arg));
+            return;
+        }
+        String extended_store_mode = st[0];
+        if (!extended_store_mode.equalsIgnoreCase("a")) {
+            reply("504 ESTO is not implemented for store mode: "
+                  + extended_store_mode);
+            return;
+        }
+        String offset = st[1];
+        String filename = st[2];
+        long asm_offset;
+        try {
+            asm_offset = Long.parseLong(offset);
+        } catch (NumberFormatException e) {
+            String err = "501 ESTO Adjusted Store Mode: invalid offset " + offset;
+            esay(err);
+            reply(err);
+            return;
+        }
+        if (asm_offset != 0) {
+            reply("504 ESTO Adjusted Store Mode does not work with nonzero offset: "+offset);
+            return;
+        }
+        say(" Performing esto in \"a\" mode with offset = " + offset);
+        ac_stor(filename);
+    }
+
+    //
+    // this is the implementation for the ERET with mode "p"
+    // "p" is partiall retrieve mode
+    // other modes identified by string "MODE" can be implemented by adding
+    // void method ac_eret_"MODE"(String arg)
+    //
+    public void ac_eret_p(String arg)
+    {
+        String[] st = arg.split("\\s+");
+        if (st.length != 4) {
+            reply(err("ERET",arg));
+            return;
+        }
+        String extended_retrieve_mode = st[0];
+        if (!extended_retrieve_mode.equalsIgnoreCase("p")) {
+            reply("504 ERET is not implemented for retrieve mode: "+extended_retrieve_mode);
+            return;
+        }
+        String offset = st[1];
+        String size = st[2];
+        String filename = st[3];
+        try {
+            prm_offset = Long.parseLong(offset);
+        } catch (NumberFormatException e) {
+            String err = "501 ERET Partial Retrieve Mode: invalid offset " + offset;
+            esay(err);
+            reply(err);
+            return;
+        }
+        try {
+            prm_size = Long.parseLong(size);
+        } catch (NumberFormatException e) {
+            String err = "501 ERET Partial Retrieve Mode: invalid size " + offset;
+            esay(err);
+            reply(err);
+            return;
+        }
+        say(" Performing eret in \"p\" mode with offset = " + offset
+            + " size " + size);
+        ac_retr(filename);
+    }
+
+    public void ac_retr(String arg)
+    {
+        String        clientHost = _client_data_host;
+        int           clientPort = _client_data_port;
+        Mode          mode       = _mode;
+        try {
+            if (_skipBytes > 0){
+                reply("504 RESTART not implemented");
+                return;
+            }
+            retrieve(arg, prm_offset, prm_size, mode,
+                     _xferMode, _parallelStart, _parallelMin, _parallelMax,
+                     new InetSocketAddress(clientHost, clientPort),
+                     _bufSize, false);
+        } finally {
+            prm_offset=-1;
+            prm_size=-1;
+        }
+    }
+
+    /**
+     * Sends a message to a cell and waits for the reply. The reply is
+     * expected to contain a message object of the same type as the
+     * message object that was sent, and the return code of that
+     * message is expected to be zero. If either is not the case,
+     * Exception is thrown.
+     *
+     * @param  path    the path to the cell to which to send the message
+     * @param  msg     the message object to send
+     * @param  timeout timeout in milliseconds
+     * @return         the message object from the reply
+     * @throws TimeoutException If no reply was received in time
+     * @throws SendAndWaitException If the message could not be sent,
+     *       the object in the reply was of the wrong type, or the
+     *       return code was non-zero.
+     */
+    private <T extends Message> T sendAndWait(CellPath path, T msg, int timeout)
+        throws TimeoutException, SendAndWaitException, InterruptedException
+    {
+        CellMessage replyMessage;
+        try {
+            replyMessage = sendAndWait(new CellMessage(path, msg), timeout);
+        } catch (NoRouteToCellException e) {
+            throw new SendAndWaitException("Cannot send message to " + path, e);
+        } catch (NotSerializableException e) {
+            throw new RuntimeException("Internal error (cannot serialise message)" + path, e);
+        }
+
+        if (replyMessage == null) {
+            throw new TimeoutException("Timeout sending message to " + path);
+        }
+
+        Object replyObject = replyMessage.getMessageObject();
+        if (!(msg.getClass().isInstance(replyObject))) {
+            throw new SendAndWaitException("Unexpected message class "
+                                           + replyObject.getClass() + " from "
+                                           + replyMessage.getSourceAddress());
+        }
+
+        T reply = (T)replyObject;
+        if (reply.getReturnCode() != 0) {
+            throw new SendAndWaitException("Non-null return code from "
+                                           + replyMessage.getSourceAddress()
+                                           + " with error " + reply.getErrorObject());
+        }
+
+        return reply;
+    }
+
+    /**
+     * Transfers a file from a pool to the client.
+     *
+     * @param file          the LFN of the file to transfer
+     * @param offset        the position at which to begin the transfer
+     * @param size          the number of bytes to transfer (whole
+     *                      file when -1).
+     * @param mode          indicates the direction of connection
+     *                      establishment
+     * @param xferMode      the transfer mode to use
+     * @param parallelStart number of simultaneous streams to use
+     * @param parallelMin   number of simultaneous streams to use
+     * @param parallelMax   number of simultaneous streams to use
+     * @param client        address of the client (for active servers)
+     * @param bufSize       TCP buffers size to use (send and receive),
+     *                      or auto scaling when -1.
+     * @param reply127      GridFTP v2 127 reply is generated when true
+     *                      and client is active.
+     */
+    private
+        void retrieve(String file, long offset, long size,
+                      Mode mode, String xferMode,
+                      int parallelStart, int parallelMin, int parallelMax,
+                      InetSocketAddress client, int bufSize,
+                      boolean reply127)
+    {
+        /* Close incomplete log.
+         */
+        if (_tLog != null) {
+            _tLog.error("incomplete transaction");
+            SetTLog(null);
+        }
+
+	_transfer = new Transfer(absolutePath(file));
+        try {
+            /* Check preconditions.
+             */
+            if (file.equals("")) {
+		throw new FTPCommandException(501, "Missing path");
+            }
+            if (xferMode.equals("E") && mode == Mode.PASSIVE) {
+                throw new FTPCommandException(500, "Cannot do passive retrieve in E mode");
+            }
+            if (xferMode.equals("X") && mode == Mode.PASSIVE && !_allowPassivePool) {
+                throw new FTPCommandException(504, "Cannot use passive X mode");
+            }
+            if (_pwdRecord == null) {
+                throw new FTPCommandException(530, "Not logged in.");
+            }
+
+            if ( _checkSumFactory != null || _checkSum != null ){
+                throw new FTPCommandException(503,"Expecting STOR ESTO PUT commands");
+            }
+
+            /* Set ownership and other information for transfer.
+             */
+            _transfer.info.setOwner(_dnUser == null? _user : _dnUser);
+            _transfer.info.setGid(_pwdRecord.GID);
+            _transfer.info.setUid(_pwdRecord.UID);
+            _transfer.client_host = client.getHostName();
+            _transfer.client_port = client.getPort();
+
+            /* ?
+             */
+            _curDirV = (_curDirV == null ? "/" : _curDirV);
+            FsPath relativeToRootPath = new FsPath(_curDirV);
+            relativeToRootPath.add(file);
+
+            /* Check file permissions.
+             */
+            if (_useEncpScripts) {
+                File f = new File(_transfer.path);
+                if (!f.exists()) {
+                    throw new FTPCommandException(500,
+                                                  "File " + relativeToRootPath + " not found",
+                                                  "File " + _transfer.path + " not found");
+                }
+                if (f.isDirectory()) {
+                    throw new FTPCommandException(500,
+                                                  "File " + relativeToRootPath + " is a directory, we don't allow that",
+                                                  "File " + _transfer.path + " is a directory");
+                }
+                String cmd = _encpPutCmd + " chkr " +
+                    _pwdRecord.UID + " " +
+                    _pwdRecord.GID + " " +
+                    _transfer.path;
+                if (spawn(cmd, 1000) != 0) {
+                    throw new FTPCommandException(553,
+                                                  "Permission denied",
+                                                  "Permission denied for path : " + _transfer.path);
+                }
+            } else {
+                FileMetaData meta =
+                    _fileMetaDataSource.getMetaData(_transfer.path);
+                if (meta.isDirectory()) {
+                    throw new FTPCommandException(550, "Not a file");
+                }
+
+                if (!_permissionHandler.canRead(_pwdRecord.UID,_pwdRecord.GID, _transfer.path)) {
+                    setNextPwdRecord();
+                    if (_pwdRecord != null) {
+                        retrieve(file, offset, size,
+                                 mode, xferMode,
+                                 parallelStart, parallelMin, parallelMax,
+                                 client, bufSize, reply127);
+                        return;
+                    }
+                    throw new FTPCommandException(550, "Permission denied");
+                }
+            }
+
+            say(" _user=" + _user);
+            say(" vpath=" + relativeToRootPath);
+            say(" addr=" + _engine.getInetAddress().toString());
+
+            //XXX When we upgrade to the GSSAPI version of GSI
+            //we need to revisit this code and put something more useful
+            //in the userprincipal spotpoolManager
+            if (_tLogRoot != null) {
+                SetTLog(new FTPTransactionLog(_tLogRoot, this));
+                say("door will log ftp transactions to " + _tLogRoot);
+            } else{
+                say("tlog is not specified, door will not log ftp transactions");
+            }
+            startTlog(_transfer.path, "read");
+            say("_tLog begin done");
+
+            /* Retrieve storage information for file.
+             */
+            _transfer.state = "waiting for storage info";
+            PnfsGetStorageInfoMessage  storageInfoMsg =
+                _pnfs.getStorageInfoByPath(_transfer.path);
+            _transfer.state = "received storage info";
+
+            StorageInfo storageInfo = storageInfoMsg.getStorageInfo();
+            _transfer.info.setPnfsId(storageInfoMsg.getPnfsId());
+            _transfer.pnfsId = storageInfoMsg.getPnfsId();
+
+            /* Sanity check offset and size parameters. We cannot do
+             * this earlier, because we need the size of the file
+             * first.
+             */
+            long fileSize = storageInfo.getFileSize();
+            if (offset == -1) {
+                offset = 0;
+            }
+            if (size == -1) {
+                size = fileSize;
+            }
+            if (offset < 0) {
+                throw new FTPCommandException(500, "prm offset is "+offset);
+            }
+            if (size < 0) {
+                throw new FTPCommandException(500, "500 prm_size is " + size);
+            }
+
+            if (offset + size > fileSize) {
+                throw new FTPCommandException(500,
+                                              "invalid prm_offset=" + offset
+                                              + " and prm_size " + size
+                                              + " for file of size " + fileSize);
+            }
+
+            /* Transfer the file. As there is a delay between the
+             * point when a pool goes offline and when the pool
+             * manager updates its state, we will retry failed
+             * transfer a few times.
+             */
+            int retry = 0;
+            _commandPoller.enableInterrupt();
+            try {
+                for (;;) {
+                    try {
+                        transfer(mode, xferMode,
+                                 parallelStart, parallelMin, parallelMax,
+                                 client, bufSize, offset, size,
+                                 storageInfo, reply127, false);
+                        break;
+                    } catch (TimeoutException e){
+                        esay(e.getMessage());
+                        say(e.getMessage());
+                    } catch (SendAndWaitException e){
+                        esay(e.getMessage());
+                        say(e.getMessage());
+                    }
+                    retry++;
+                    if (retry >= _maxRetries) {
+                        throw new FTPCommandException(425, "Cannot open port: No pools available", "No pools available");
+                    }
+                    Thread.sleep(_retryWait*1000);
+                    say("retrying " + retry);
+                }  //end of retry loop
+            } finally {
+                _commandPoller.disableInterrupt();
+            }
+
+            // no perf markers on retry (REVISIT: why not?)
+            //if ( _perfMarkerConf.use && _xferMode.equals("E") ) {
+            //     /** @todo: done ### ac_retr - breadcrumb - performance markers */
+            //    _perfMarkerEngine = new PerfMarkerEngine( protocolInfo.getMax() ) ;
+            //    _perfMarkerEngine.startEngine();
+            //}
+        } catch (CacheException e) {
+            switch (e.getRc()) {
+            case CacheException.FILE_NOT_FOUND:
+            case CacheException.DIR_NOT_EXISTS:
+                transfer_error(550, "File not found");
+                break;
+            case CacheException.TIMEOUT:
+                transfer_error(451, "Internal timeout", e);
+                break;
+            default:
+                transfer_error(451, "Operation failed: " + e.getMessage(), e);
+                break;
+            }
+        } catch (FTPCommandException e) {
+            transfer_error(e.getCode(), e.getReply());
+        } catch (InterruptedException e) {
+            transfer_error(451, "Operation cancelled");
+        } catch (IOException e) {
+            transfer_error(451, "Operation failed: " + e.getMessage());
+        }
+    }
+
+    private void deleteEntry(String path)
+    {
+        try {
+            _pnfs.deletePnfsEntry(path);
+        } catch (CacheException ingnored) {}
+        /*
+          CellPath pnfsCellPath;
+          CellMessage pnfsCellMessage;
+          PnfsDeleteEntryMessage pnfsMessage;
+
+          pnfsCellPath = new CellPath(pnfsManager);
+          pnfsMessage = new PnfsDeleteEntryMessage(path);
+          pnfsCellMessage = new CellMessage(pnfsCellPath, pnfsMessage);
+
+          say("deleting PNFS entry "+path);
+
+          try {
+          sendMessage(pnfsCellMessage);
+          } catch (Exception e){
+          say ("Cannot send message " +e);
+          }
+        */
+    }
+
+    private void setLength(PnfsId pnfsId, long length)
+    {
+        CellPath pnfsCellPath;
+        CellMessage pnfsCellMessage;
+        PnfsSetLengthMessage pnfsMessage;
+
+        pnfsCellPath = new CellPath(_pnfsManager);
+        pnfsMessage = new PnfsSetLengthMessage(pnfsId,length);
+        pnfsCellMessage = new CellMessage(pnfsCellPath, pnfsMessage);
+
+        say("setting length of " + pnfsId + " to " + length);
+
+        try {
+            sendMessage(pnfsCellMessage);
+        } catch (NoRouteToCellException e) {
+            say("Cannot send message " + e);
+        } catch (NotSerializableException e) {
+            throw new RuntimeException("Bug: Unserializable vehicle detected", e);
+        }
+    }
+
+    public abstract void startTlog(String path,String action);
+
+    public void ac_stor(String arg)
+    {
+        if (_client_data_host == null) {
+            reply("504 Host somehow not set");
+            return;
+        }
+        if (_skipBytes > 0) {
+            reply("504 RESTART not implemented for STORE");
+            return;
+        }
+
+        store(arg, _mode, _xferMode,
+              _parallelStart, _parallelMin, _parallelMax,
+              new InetSocketAddress(_client_data_host, _client_data_port),
+              _bufSize,
+              false);
+    }
+
+    /**
+     * Transfers a file from the client to a pool.
+     *
+     * @param file          the LFN of the file to transfer
+     * @param mode          indicates the direction of connection
+     *                      establishment
+     * @param xferMode      the transfer mode to use
+     * @param parallelStart number of simultaneous streams to use
+     * @param parallelMin   number of simultaneous streams to use
+     * @param parallelMax   number of simultaneous streams to use
+     * @param client        address of the client (for active servers)
+     * @param bufSize       TCP buffers size to use (send and receive),
+     *                      or auto scaling when -1.
+     * @param reply127      GridFTP v2 127 reply is generated when true
+     *                      and client is active.
+     */
+    private void store(String file, Mode mode, String xferMode,
+                       int parallelStart, int parallelMin, int parallelMax,
+                       InetSocketAddress client, int bufSize,
+                       boolean reply127)
+    {
+        _transfer = new Transfer(absolutePath(file));
+        try {
+            if (_readOnly) {
+                throw new FTPCommandException(502, "Command disabled");
+            }
+            if (file.equals("")) {
+                throw new FTPCommandException(501, "STOR command not understood");
+            }
+
+            if (_pwdRecord == null) {
+                throw new FTPCommandException(530, "Not logged in.");
+            }
+
+            if (_pwdRecord.isWeak() || _pwdRecord.isReadOnly()) {
+                setNextPwdRecord();
+                if (_pwdRecord == null) {
+                    throw new FTPCommandException(500, "Command disabled");
+                } else {
+                    store(file, mode, xferMode,
+                          parallelStart, parallelMin, parallelMax,
+                          client, bufSize, reply127);
+                    return;
+                }
+            }
+
+            if (_pwdRecord.isAnonymous()) {
+                setNextPwdRecord();
+                if (_pwdRecord == null) {
+                    throw new FTPCommandException(554, "Anonymous write access not permitted");
+                } else {
+                    store(file, mode, xferMode,
+                          parallelStart, parallelMin, parallelMax,
+                          client, bufSize, reply127);
+                    return;
+                }
+            }
+
+            /* Set ownership and other information for transfer.
+             */
+            _transfer.info.setOwner(_dnUser == null? _user : _dnUser);
+            _transfer.info.setGid(_pwdRecord.GID);
+            _transfer.info.setUid(_pwdRecord.UID);
+            _transfer.client_host = client.getHostName();
+            _transfer.client_port = client.getPort();
+
+            if (xferMode.equals("E") && mode == Mode.ACTIVE) {
+                throw new FTPCommandException(504, "Cannot store in active E mode");
+            }
+            if (xferMode.equals("X") && mode == Mode.PASSIVE && !_allowPassivePool) {
+                throw new FTPCommandException(504, "Cannot use passive X mode");
+            }
+
+            say("We're going to try to receive using " + xferMode);
+
+            if (_tLogRoot != null) {
+                SetTLog(new FTPTransactionLog(_tLogRoot, this));
+                say("door will log ftp transactions to " + _tLogRoot);
+            } else {
+                say("tlog is not specified, door will not log ftp transactions");
+            }
+
+            // for monitoring
+            _transfer.state = "waiting for storage info";
+
+            say(" _user=" + _user);
+            say(" _path=" + _transfer.path);
+            say(" addr=" + _engine.getInetAddress().toString());
+            //XXX When we upgrade to the GSSAPI version of GSI
+            //we need to revisit this code and put something more useful
+            //in the userprincipal spot
+            startTlog(_transfer.path, "write");
+            say("_tLog begin done");
+            if (_space_reservation_enabled) {
+                say("space reservation is enabled");
+                say("Requesting space reservation info from SpaceManager");
+                _transfer.state = "waiting for space reservation info";
+                _transfer.spaceReservationInfo =
+                    sendAndWait(new CellPath("SpaceManager"),
+                                new SpaceManagerGetInfoAndLockReservationByPathMessage(_transfer.path),
+                                _spaceManagerTimeout * 1000);
+                say("Received space reservation info from SpaceManager:"
+                    + _transfer.spaceReservationInfo);
+
+                if (_space_reservation_strict && _transfer.spaceReservationInfo == null) {
+                    throw new FTPCommandException(550, "Space retrieval failure or Space not reserved for this path: " + _transfer.path);
+                }
+            }  else {  // space reservation is not enabled
+                say("space reservation is not enabled");
+            }
+
+            /* Check if the user has permission to create the file.
+             */
+            if (_useEncpScripts) {
+                _transfer.state = "checking permissions via encp script";
+                // Save it into enstore
+                String cmd = _encpPutCmd + " chkc "
+                    + _pwdRecord.UID + " "
+                    + _pwdRecord.GID + " "
+                    + _transfer.path;
+                Process p = Runtime.getRuntime().exec(cmd);
+                try {
+                    p.waitFor();
+                    if (p.exitValue() != 0) {
+                        throw new FTPCommandException
+                            (550,
+                             "Permission denied",
+                             "Permission denied for path: " + _transfer.path);
+                    }
+                } finally {
+                    p.destroy();
+                }
+            } else {
+                _transfer.state = "checking permissions via permission handler";
+                say("checking permissions via permission handler for path:"
+                    + _transfer.path);
+                if (!_permissionHandler.canWrite(_pwdRecord.UID,_pwdRecord.GID, _transfer.path)) {
+                    setNextPwdRecord();
+                    if(_pwdRecord==null) {
+                        throw new FTPCommandException
+                            (550,
+                             "Permission denied",
+                             "Permission denied for path: " + _transfer.path);
+                    } else {
+                        store(file, mode, xferMode,
+                              parallelStart, parallelMin, parallelMax,
+                              client, bufSize, reply127);
+                        return;
+                    }
+                }
+            }
+
+            /* Create PNFS entry.
+             */
+            _transfer.state = "creating pnfs entry";
+            StorageInfo storageInfo;
+            PnfsGetStorageInfoMessage pnfsEntry;
+
+            /* FIXME: There is a race condition here. In case we break
+             * out, maybe due to a thread interrupt, or due to some
+             * other failure, while we wait for the reply from the
+             * PnfsManager, then we do not know whether the entry was
+             * actually created at that point - and if the entry
+             * exists, we cannot know whether we created it or whether
+             * it already existed. This means we cannot reliably clean
+             * up after ourself and thus we risk leaving empty files
+             * behind, even though the transfer failed.
+             */
+            try {
+                pnfsEntry
+                    = _pnfs.createPnfsEntry(_transfer.path,
+                                            _pwdRecord.UID,
+                                            _pwdRecord.GID,
+                                            0644);
+            } catch (FileExistsCacheException fnfe) {
+                if(_overwrite) {
+                    esay("overwrite is enabled, file  _transfer.path exists, "+
+                         "and will be overwritten");
+                    _pnfs.deletePnfsEntry( _transfer.path);
+                    pnfsEntry
+                        = _pnfs.createPnfsEntry(_transfer.path,
+                                                _pwdRecord.UID,
+                                                _pwdRecord.GID,
+                                                0644);
+                } else {
+                    throw new FTPCommandException(553,
+                                                  _transfer.path
+                                                  + ": Cannot create file: "
+                                                  + fnfe.getMessage());
+                }
+            } catch (CacheException ce) {
+                //Unfortunately if file exists the regular file exeption is
+                // still being thown
+                if(_overwrite) {
+                    esay("overwrite is enabled, file  _transfer.path exists, "+
+                         "and will be overwritten");
+                    _pnfs.deletePnfsEntry( _transfer.path);
+                    pnfsEntry
+                        = _pnfs.createPnfsEntry(_transfer.path,
+                                                _pwdRecord.UID,
+                                                _pwdRecord.GID,
+                                                0644);
+                } else {
+                    throw new FTPCommandException(553,
+                                                  _transfer.path
+                                                  + ": Cannot create file: "
+                                                  + ce.getMessage());
+                }
+            }
+
+            /* The PNFS entry has been created, but the file transfer
+             * has not yet successfully completed. Setting
+             * pnfsEntryIncomplete to true ensures that the entry will
+             * be deleted if anything goes wrong.
+             */
+            _transfer.pnfsEntryIncomplete = true;
+            _transfer.pnfsId = pnfsEntry.getPnfsId();
+            _transfer.info.setPnfsId(_transfer.pnfsId);
+            say("Pnfs entry created : " + _transfer.pnfsId);
+
+            say("Get the related StorageInfo");
+            storageInfo = pnfsEntry.getStorageInfo();
+            if (storageInfo == null) {
+                throw new FTPCommandException
+                    (533,
+                     "Couldn't get StorageInfo for : " + _transfer.pnfsId);
+            }
+            say("Got storageInfo : " + storageInfo);
+
+            /* Send checksum to PNFS manager.
+             */
+            if (_checkSum != null) {
+                _transfer.state = "setting checksum in pnfs";
+
+                try{
+                    ChecksumPersistence.getPersistenceMgr().store(this, _transfer.pnfsId, _checkSum, true);
+                } catch (Exception e) {
+                    throw new FTPCommandException(451,
+                                                  "Failed to send crc to PnfsManager : "
+                                                  + e.getMessage());
+                }
+            }
+
+            _commandPoller.enableInterrupt();
+            try {
+                transfer(mode, xferMode, parallelStart,
+                         parallelMin, parallelMax,
+                         client, bufSize, 0, 0, storageInfo,
+                         reply127, true);
+            } finally {
+                _commandPoller.disableInterrupt();
+            }
+
+            if (_perfMarkerConf.use && xferMode.equals("E")) {
+                /** @todo: done ### ac_stor - breadcrumb - performance markers */
+                _perfMarkerEngine = new PerfMarkerEngine();
+                _perfMarkerEngine.start();
+            }
+        } catch (NotSerializableException e) {
+            transfer_error(451, "Operation failed due to internal error", e);
+        } catch (FTPCommandException e) {
+            transfer_error(e.getCode(), e.getReply());
+        } catch (InterruptedException e) {
+            transfer_error(451, "Operation cancelled");
+        } catch (IOException e) {
+            transfer_error(451, "Operation failed: " + e.getMessage());
+        } catch (CacheException e) {
+            switch (e.getRc()) {
+            case CacheException.FILE_NOT_FOUND:
+                transfer_error(550, "File not found");
+                break;
+            case CacheException.DIR_NOT_EXISTS:
+                transfer_error(550, "Directory not found");
+                break;
+            case CacheException.FILE_EXISTS:
+                transfer_error(553, "File exists");
+                break;
+            case CacheException.TIMEOUT:
+                transfer_error(451, "Internal timeout", e);
+                break;
+            default:
+                transfer_error(451, "Operation failed: " + e.getMessage(), e);
+                break;
+            }
+        } catch (TimeoutException e) {
+            transfer_error(451, "Internal timeout", e);
+        } catch (SendAndWaitException e) {
+            transfer_error(451, "Operation failed: " + e.getMessage(), e);
+        } finally {
+            _checkSumFactory = null;
+            _checkSum = null;
+        }
+    }
+
+    /**
+     * Selects a pool and initiates a transfer between the client and
+     * the pool.
+     *
+     * Unless space reservation is used, a pool is selected by
+     * contacting the PoolMananger.
+     *
+     * Once the pool is known, the pool is asked to initiate a
+     * transfer. If we can make the pool passive or if mode X is used,
+     * then GFtp/2 is used to talk to the pool. Otherwise GFtp/1 is
+     * used. If GFtp/2 is used, this method will block and await a
+     * GFtpTransferStartedMessage from the pool.
+     *
+     * If a adapter (proxy) has to be used, the _transfer.adapter
+     * field will become non-null. The pool may decline to be passive
+     * and force the door to use an adapter.
+     *
+     * If successful, _transferInProgress will be set to
+     * true. Otherwise, an appropriate exception is thrown. In either
+     * case, this method will have side-effects on the _transfer
+     * object.
+     *
+     * The method is synchronized to ensure that it completes before
+     * any DoorTransferFinishedMessage is received from the pool (see
+     * @link messageArrived).
+     *
+     * If replu127 is true, an FTP 127 response will be
+     * generated. This is only valid if mode is set to PASSIVE.
+     *
+     * TODO: We can simplify the parameter list by including more of
+     * this information into the _transfer object.
+     *
+     * @param mode          indicates the direction of connection
+     *                      establishment
+     * @param xferMode      the transfer mode to use
+     * @param parallelStart number of simultaneous streams to use
+     * @param parallelMin   number of simultaneous streams to use
+     * @param parallelMax   number of simultaneous streams to use
+     * @param client        address of the client.
+     * @param bufSize       TCP buffers size to use (send and receive),
+     * @param offset        the position at which to begin the transfer
+     * @param size          the number of bytes to transfer (whole
+     *                      file when -1).
+     * @param storageInfo   Storage information about the file to transfer
+     * @param reply127      GridFTP v2 127 reply is generated when true.
+     *                      Requires mode to be PASSIVE.
+     * @param isWrite       True writing to pool, false when reading.
+     */
+    private synchronized void transfer(Mode              mode,
+                                       String            xferMode,
+                                       int               parallelStart,
+                                       int               parallelMin,
+                                       int               parallelMax,
+                                       InetSocketAddress client,
+                                       int               bufSize,
+                                       long              offset,
+                                       long              size,
+                                       StorageInfo       storageInfo,
+                                       boolean           reply127,
+                                       boolean           isWrite)
+        throws InterruptedException,
+               TimeoutException,
+               SendAndWaitException,
+               IOException,
+               FTPCommandException
+    {
+        /* reply127 implies passive mode.
+         */
+        assert !reply127 || mode == Mode.PASSIVE;
+
+        /* We can only let the pool be passive if this has been
+         * enabled and if we can provide the address to the client
+         * using a 127 response.
+         */
+        boolean usePassivePool = _allowPassivePool && reply127;
+
+        /* Which protocol to use for communicating with the
+         * mover. Notice that this is unrelated to the GridFTP
+         * version.
+         */
+        int version = (usePassivePool || xferMode.equals("X") ? 2 : 1);
+
+        /*
+         *
+         */
+        
+
+        /* Set up an adapter, if needed. Since a pool may reject to be
+         * passive, we need to set up an adapter even when we can use
+         * passive pools.
+         */
+        switch (mode) {
+        case PASSIVE:
+            if (reply127) {
+                say("Creating adapter for passive mode");
+                _transfer.adapter =
+                    new SocketAdapter(this, _lowDataListenPort, _highDataListenPort);
+            } else {
+                _transfer.adapter = _adapter;
+            }
+            break;
+
+        case ACTIVE:
+            if (_allowRelay) {
+                say("Creating adapter for active mode");
+                _transfer.adapter =
+                    new ActiveAdapter(this, _lowDataListenPort , _highDataListenPort);
+                ((ActiveAdapter)_transfer.adapter).setDestination(client.getAddress().getHostAddress(), client.getPort());
+            }
+            break;
+        }
+
+        if (_transfer.adapter != null) {
+            _transfer.adapter.setMaxBlockSize(_maxBlockSize);
+            _transfer.adapter.setModeE(xferMode.equals("E"));
+            _transfer.adapter.setMaxStreams(_maxStreamsPerClient);
+            if (isWrite) {
+                _transfer.adapter.setDirClientToPool();
+            } else {
+                _transfer.adapter.setDirPoolToClient();
+            }
+        }
+
+        /* Find a pool suitable for the transfer. If space reservation
+         * is used, then we already got a pool. Space reservation will
+         * only be used when writing.
+         */
+        if (_transfer.spaceReservationInfo != null) {
+            assert isWrite;
+
+            String value =
+                String.valueOf(_transfer.spaceReservationInfo.getAvailableLockedSize());
+            _transfer.pool = _transfer.spaceReservationInfo.getPool();
+            storageInfo.setKey("use-preallocated-space", value);
+            esay("setting storage info key use-preallocated-space to "
+                 + value);
+            if (_space_reservation_strict) {
+                esay("setting storage info key use-max-space to "
+                     + value);
+                storageInfo.setKey("use-max-space", value);
+            }
+        } else {
+            _transfer.state = "waiting for pool selection by PoolManager";
+            VOInfo voInfo = null;
+            if(_pwdRecord != null ) {
+                String group = _pwdRecord.getGroup();
+                String role = _pwdRecord.getRole();
+                if(group != null && role != null) {
+                    voInfo =new VOInfo(group, role);
+                }
+            }
+            GFtpProtocolInfo protocolInfo =
+                new GFtpProtocolInfo("GFtp",
+                                     version,
+                                     0,
+                                     client.getAddress().getHostAddress(),
+                                     client.getPort(),
+                                     parallelStart,
+                                     parallelMin,
+                                     parallelMax,
+                                     bufSize, 0, 0, 
+                                     voInfo);
+
+            PoolMgrSelectPoolMsg request;
+            if (isWrite) {
+                request = new PoolMgrSelectWritePoolMsg(_transfer.pnfsId,
+                                                        storageInfo,
+                                                        protocolInfo,
+                                                        0L);
+            } else {
+                request = new PoolMgrSelectReadPoolMsg(_transfer.pnfsId,
+                                                       storageInfo,
+                                                       protocolInfo,
+                                                       0L);
+            }
+            request.setPnfsPath(_transfer.path);
+            request = sendAndWait(new CellPath(_poolManager), request,
+                                  _poolManagerTimeout * 1000);
+            _transfer.pool = request.getPoolName();
+        }
+
+        /* Construct protocol info. For backward compatibility, when
+         * an adapter could be used we put the adapter address into
+         * the protocol info (this behaviour is consistent with dCache
+         * 1.7).
+         */
+        VOInfo voInfo = null;
+        if(_pwdRecord != null ) {
+            String group = _pwdRecord.getGroup();
+            String role = _pwdRecord.getRole();
+            if(group != null && role != null) {
+                voInfo =new VOInfo(group, role);
+            }
+        }
+        GFtpProtocolInfo protocolInfo;
+        if (_transfer.adapter != null) {
+            protocolInfo =
+                new GFtpProtocolInfo("GFtp",
+                 		     version, 0,
+                                     _local_host,
+                                     _transfer.adapter.getPoolListenerPort(),
+                                     parallelStart,
+                                     parallelMin,
+                                     parallelMax,
+                                     bufSize,
+                                     offset,
+                                     size, 
+                                     voInfo);
+        } else {
+            protocolInfo =
+                new GFtpProtocolInfo("GFtp",
+                                     version, 0,
+                                     client.getAddress().getHostAddress(),
+                                     client.getPort(),
+                                     parallelStart,
+                                     parallelMin,
+                                     parallelMax,
+                                     bufSize,
+                                     offset,
+                                     size, 
+                                     voInfo);
+        }
+
+        protocolInfo.setDoorCellName(getCellName());
+        protocolInfo.setDoorCellDomainName(getCellDomainName());
+        protocolInfo.setClientAddress(client.getAddress().getHostAddress());
+        protocolInfo.setPassive(usePassivePool);
+        protocolInfo.setMode(xferMode);
+
+        if ( _optCheckSumFactory != null )
+            protocolInfo.setChecksumType(_optCheckSumFactory.getType());
+
+        if ( _checkSumFactory != null )
+            protocolInfo.setChecksumType(_checkSumFactory.getType());
+
+        /* Ask the pool to transfer the file.
+         */
+        askForFile(_transfer, storageInfo, protocolInfo, isWrite);
+
+        /* When version 2 is used, then block until we got a 'transfer
+         * started' message.
+         */
+        GFtpTransferStartedMessage message = null;
+        if (version == 2) {
+            do {
+                message = _transferStartedMessages.take();
+            } while (!message.getPnfsId().equals(_transfer.pnfsId.getId()));
+
+            if (message.getPassive() && !reply127) {
+                throw new RuntimeException("Internal error: Pool unexpectedly volunteered to be passive");
+            }
+
+            /* If passive X mode was requested, but the pool rejected
+             * it, then we have to fail for now. REVISIT: We should
+             * use the other adapter in this case.
+             */
+            if (mode == Mode.PASSIVE && !message.getPassive() && xferMode.equals("X")) {
+                throw new FTPCommandException(504, "Cannot use passive X mode");
+            }
+        }
+
+        /* Determine the 127 response address to send back to the
+         * client. When the pool is passive, this is the address of
+         * the pool (and in this case we no longer need the
+         * adapter). Otherwise this is the address of the adapter.
+         */
+        if (message != null && message.getPassive()) {
+            assert reply127;
+
+            reply127PORT(message.getPoolAddress());
+
+            say("Closing adapter");
+            _transfer.adapter.close();
+            _transfer.adapter = null;
+        } else if (reply127) {
+            reply127PORT(new InetSocketAddress(_engine.getLocalAddress(),
+                                               _transfer.adapter.getClientListenerPort()));
+        }
+
+        /* If adapter is used, then start it now.
+         */
+        if (_transfer.adapter != null) {
+            _transfer.adapter.start();
+        }
+
+        reply("150 Opening BINARY data connection for " + _transfer.path, false);
+        _transferInProgress = true;
+    }
+
+    private void transfer_error(int replyCode, String msg)
+    {
+        transfer_error(replyCode, msg, null);
+    }
+
+    private synchronized void transfer_error(int replyCode, String replyMsg,
+                                             Exception exception)
+    {
+        if (_transfer != null) {
+            if (_transfer.adapter != null && _transfer.adapter != _adapter) {
+                _transfer.adapter.close();
+            }
+
+            if (_transfer.spaceReservationInfo != null) {
+                SpaceManagerUnlockSpaceMessage unlockSpace =
+                    new SpaceManagerUnlockSpaceMessage
+                    (_transfer.spaceReservationInfo.getSpaceToken(),
+                     _transfer.spaceReservationInfo.getAvailableLockedSize());
+                try {
+                    sendMessage(new CellMessage(new CellPath("SpaceManager"),
+                                                unlockSpace ));
+                } catch (NotSerializableException e) {
+                    throw new RuntimeException("Bug detected", e);
+                } catch (NoRouteToCellException e) {
+                    String errmsg = "Can't send message to SpaceManager "+e;
+                    esay(errmsg);
+                    esay(e) ;
+                }
+            }
+
+            if (_transfer.pnfsEntryIncomplete) {
+                if (_removeFileOnIncompleteTransfer) {
+                    say("Removing incomplete file: " + _transfer.path);
+                    deleteEntry(_transfer.path);
+                } else {
+                    say("Incomplete file: " + _transfer.path);
+                }
+            }
+
+            /* Report errors.
+             */
+            String msg = String.valueOf(replyCode) + " " + replyMsg;
+            _transfer.sendDoorRequestInfo(replyCode, replyMsg);
+            reply(msg);
+            if (_tLog != null) {
+                _tLog.error(msg);
+            }
+            if (exception == null) {
+                esay(msg);
+            } else {
+                esay(exception);
+            }
+            _transfer = null;
+            _transferInProgress = false;
+        }
+    }
+
+    public void ac_size(String arg)
+    {
+        if (arg.equals("")) {
+            reply(err("SIZE",""));
+            return;
+        }
+
+        if (_pwdRecord == null) {
+            reply("530 Not logged in.");
+            return;
+        }
+
+        String path = absolutePath(arg);
+        long filelength = 0;
+        if (_useEncpScripts) {
+            File f = new File(path);
+            if (!f.exists()) {
+                reply("500 File not found");
+                return;
+            }
+
+            String cmd = _encpPutCmd + " chkr " +
+                _pwdRecord.UID + " " +
+                _pwdRecord.GID + " " +
+                path;
+            if (spawn(cmd, 1000) != 0) {
+                reply("553 Permission denied");
+                return;
+            }
+            filelength = f.length();
+
+        } else {
+            try {
+                PnfsGetStorageInfoMessage info = _pnfs.getStorageInfoByPath(path);
+                if (_permissionHandler.canRead(_pwdRecord.UID, _pwdRecord.GID, path)) {
+                    filelength = info.getMetaData().getFileSize();
+                } else {
+                    setNextPwdRecord();
+                    if (_pwdRecord == null) {
+                        reply("553 Permission denied");
+                    } else {
+                        ac_size(arg);
+                    }
+                    return;
+                }
+            } catch (CacheException ce) {
+                reply("553 Permission denied, reason: " + ce);
+                return;
+            }
+        }
+        reply("213 " + filelength);
+    }
+
+    public void ac_mdtm(String arg)
+    {
+        if (arg.equals("")) {
+            reply(err("MDTM",""));
+            return;
+        }
+
+        if (_pwdRecord == null) {
+            reply("530 Not logged in.");
+            return;
+        }
+
+        String path = absolutePath(arg);
+        long modification_time = 0;
+
+        if (_useEncpScripts) {
+            File f = new File(path);
+            if (!f.exists()) {
+                reply("500 File not found");
+                return;
+            }
+
+            String cmd = _encpPutCmd + " chkr " +
+                _pwdRecord.UID + " " +
+                _pwdRecord.GID + " " +
+                path;
+            if (spawn(cmd, 1000) != 0) {
+                reply("553 Permission denied");
+                return;
+            }
+            modification_time = f.lastModified();
+        } else {
+            try {
+                PnfsGetStorageInfoMessage info = _pnfs.getStorageInfoByPath(path);
+                if (_permissionHandler.canRead(_pwdRecord.UID, _pwdRecord.GID, path)) {
+                    modification_time = info.getMetaData().getLastModifiedTime();
+                } else {
+                    setNextPwdRecord();
+                    if (_pwdRecord == null) {
+                        reply("553 Permission denied");
+                    } else {
+                        ac_mdtm(arg);
+                    }
+                    return;
+                }
+            } catch (CacheException ce) {
+                reply("553 Permission denied, reason: " + ce);
+                return;
+            }
+        }
+        /*
+         *from the mdtm spec at http://www.ietf.org/internet-drafts/draft-ietf-ftpext-mlst-16.txt
+         The syntax of a time value is:
+
+         time-val       = 14DIGIT [ "." 1*DIGIT ]
+
+         The leading, mandatory, fourteen digits are to be interpreted as, in
+         order from the leftmost, four digits giving the year, with a range of
+         1000--9999, two digits giving the month of the year, with a range of
+         01--12, two digits giving the day of the month, with a range of
+         01--31, two digits giving the hour of the day, with a range of
+         00--23, two digits giving minutes past the hour, with a range of
+         00--59, and finally, two digits giving seconds past the minute, with
+         a range of 00--60 (with 60 being used only at a leap second).  Years
+         in the tenth century, and earlier, cannot be expressed.  This is not
+         considered a serious defect of the protocol.
+        */
+        java.text.DateFormat df = new java.text.SimpleDateFormat("yyyyddhhmmss");
+        String time_val = df.format(new java.util.Date(modification_time));
+        reply("213 " + time_val);
+    }
+
+    private class FilenameMatcher implements FilenameFilter
+    {
+        private Pattern _toMatch;
+
+        /**
+         * the pattern is of the type, used in unix shell to match files
+         * where ? corresponds to any symbol and
+         *       * corresponds to 0 or more symbols
+         *
+         * to convert it to regular expression pattern,
+         * we substitute ? with . and * with .*
+         */
+        FilenameMatcher(String pattern) {
+            pattern = pattern.replaceAll("\\?", ".");
+            pattern = pattern.replaceAll("\\*",".*");
+            _toMatch = Pattern.compile(pattern);
+        }
+
+        public boolean accept(File dir,
+                              String name) {
+            Matcher m = _toMatch.matcher(name);
+
+            return m.matches();
+        }
+    }
+
+    public void ac_list(String arg)
+    {
+        Args args = new Args(arg);
+        boolean long_format = true;
+        if (!args.options().isEmpty()) {
+            long_format = false;
+        }
+        if (args.getOpt("l") != null) {
+            long_format = true;
+        }
+
+        list(args,long_format);
+    }
+
+    public void list(Args args,boolean listLong)
+    {
+        say("list args = \"" + args + "\"; Long format ? " + listLong);
+        FilenameMatcher filenameMatcher = null;
+        String arg;
+        if (args.argc() == 0) {
+            arg = ".";
+        } else {
+            arg = args.argv(0);
+        }
+
+        boolean isPattern = arg.indexOf('*') != -1 || arg.indexOf('?') != -1 ||
+            (arg.indexOf('[') != -1 && arg.indexOf(']') != -1);
+        PnfsFile f = null;
+
+        if (isPattern) {
+            // Convert relative paths to full paths relative to base path
+            if (!arg.startsWith("/")) {
+                arg = _curDirV + "/" + arg;
+            }
+            FsPath parent_path = new FsPath(arg);
+            List<String> l = parent_path.getPathItemsList();
+            String pattern = l.get(l.size() - 1);
+            parent_path.add("..");
+            String parent = parent_path.toString();
+            if (parent.indexOf('*') != -1 || parent.indexOf('?') != -1 ||
+               (parent.indexOf('[') != -1 && parent.indexOf(']') != -1)) {
+                reply(" 451 Parent Path Pattern Matching is not supported");
+                return;
+            }
+            String absolute_parent_path = absolutePath(parent_path.toString());
+            if (absolute_parent_path == null) {
+                FsPath relativeToRootPath = new FsPath(_curDirV);
+                relativeToRootPath.add(parent_path.toString());
+                reply("451 "+relativeToRootPath+" not found.");
+                return;
+            }
+            f = new PnfsFile(absolute_parent_path);
+            if (!f.isDirectory()) {
+                reply("451 Cannot list file according to pattern \""+pattern+
+                      "\" in "+parent+" which not a directory");
+                return;
+            }
+
+            filenameMatcher = new FilenameMatcher(pattern);
+
+        } else {
+            String absolutepath = absolutePath(arg);
+            if (absolutepath == null) {
+                FsPath relativeToRootPath = new FsPath(_curDirV);
+                relativeToRootPath.add(arg);
+                reply("451 "+relativeToRootPath+" not found.");
+                return;
+            }
+            f = new PnfsFile(absolutepath);
+        }
+
+        if (!f.exists()) {
+            reply("451 " + arg + "  not found");
+            return;
+        }
+
+        if (!f.isPnfs()) {
+            reply("451 non pnfs file. Access deny.");
+            return;
+        }
+
+        boolean isDirectory = f.isDirectory();
+        File files[];
+        if (isDirectory) {
+            if (filenameMatcher != null) {
+                files = f.listFiles(filenameMatcher);
+            } else {
+                files = f.listFiles();
+            }
+        } else {
+            files = new File[1];
+            files[0]= f;
+        }
+
+        StringBuffer result = new StringBuffer();
+        for (int i = 0; i < files.length; ++i){
+            File nextf = files[i];
+            int line_length=0;
+            if (listLong){
+                try {
+                    result.append(nextf.isDirectory()?'d':'-');
+                    line_length++;
+                    result.append( _permissionHandler.canRead(_pwdRecord.UID, _pwdRecord.GID, nextf.getAbsolutePath() )?'r':'-');
+                    line_length++;
+                    result.append( _permissionHandler.canWrite(_pwdRecord.UID, _pwdRecord.GID, nextf.getAbsolutePath() )?'w':'-');
+                    line_length++;
+                    result.append("               ");
+                    line_length+= 15;
+                    long length =  nextf.length();
+                    String length_str = Long.toString(length);
+                    result.append(length_str);
+                    line_length +=length_str.length();
+                } catch (CacheException e){
+                    result.append('?');
+                }
+
+                while (line_length<30){
+                    line_length++;
+                    result.append(' ');
+                }
+            }
+            result.append(nextf.getName());
+            result.append('\r').append('\n');
+        }
+
+        OutputStream ostream = null;
+        reply("150 Opening ASCII data connection for file list", false);
+        try {
+            /* Mode being PASSIVE means the client did a PASV.
+             * Otherwise we establish the data connection to the
+             * client.
+             */
+            if (_mode == Mode.PASSIVE) {
+                _dataSocket = _adapter.acceptOnClientListener();
+            } else {
+                _dataSocket = new Socket(_client_data_host, _client_data_port);
+            }
+        } catch (IOException e) {
+            reply("425 Cannot open port");
+            return;
+        }
+        try {
+            ostream = _dataSocket.getOutputStream();
+            ostream.write(result.toString().getBytes());
+            _dataSocket.close();
+            if (_mode == Mode.PASSIVE) {
+                say("Waiting for adaptor...");
+                while( _adapter.isAlive() ) {
+                    try {
+                        _adapter.join(300000);	// 5 minutes
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                    }
+                }
+            }
+            _dataSocket=null;
+            reply("226 ASCII transfer complete");
+        } catch (IOException e) {
+            try {
+                _dataSocket.close();
+            } catch (IOException  ex) {}
+            _dataSocket = null;
+            reply("426 Transfer aborted, closing connection");
+        }
+    }
+
+    public void ac_nlst(String arg)
+    {
+        Args args = new Args(arg);
+        list(args, false);
+    }
+
+    // ---------------------------------------------
+    // QUIT: close command channel.
+    //	If transfer is in progress, wait for it to finish, so set pending_quit state.
+    //      The delayed QUIT has not been directly implemented yet, instead...
+    // Equivalent: let the data channel and pnfs entry clean-up code take care of clean-up.
+    // ---------------------------------------------
+    public void ac_quit(String arg) throws CommandExitException
+    {
+        reply("221 Goodbye");
+        throw new CommandExitException("", 0);
+    }
+
+    // --------------------------------------------
+    // BYE: synonym for QUIT
+    // ---------------------------------------------
+    public void ac_bye( String arg ) throws CommandExitException
+    {
+        reply("221 Goodbye");
+        throw new CommandExitException("", 0);
+    }
+
+    // --------------------------------------------
+    // ABOR: close data channels, but leave command channel open
+    // ---------------------------------------------
+    public void ac_abor(String arg)
+    {
+        synchronized(this) {
+            // Data transfer in progress: Send mover kill to pool, and send response 426 to client
+            if (_transferInProgress){
+                if (_transfer.pool != null && _transfer.moverId != null) {
+                    esay("sending mover kill to pool "+_transfer.pool+" for moverId="+_transfer.moverId );
+                    PoolMoverKillMessage killMessage = new PoolMoverKillMessage(_transfer.pool,_transfer.moverId);
+                    killMessage.setReplyRequired(false);
+                    try {
+                        sendMessage(new CellMessage(new CellPath(_transfer.pool), killMessage));
+                    } catch(Exception e) {
+                        esay(e);
+                    }
+                }
+                reply("426 Transfer aborted");
+            }
+
+            // In any case, close data socket and send response 226 to client
+            if (_dataSocket != null) {
+                try {
+                    _dataSocket.close();
+                } catch (IOException e) {}
+                _dataSocket=null;
+                reply("226 Closing data connection, abort successful");
+            } else {
+                reply("226 Abort successful");
+            }
+        } // sychronized
+    }
+
+    // --------------------------------------------
+    public String err(String cmd, String arg)
+    {
+        String msg = "500 '" + cmd;
+        if (arg.length() > 0)
+            msg = msg + " " + arg;
+        msg = msg + "': command not understood";
+        return msg;
+    }
+
+    public String ok(String cmd)
+    {
+        return "200 "+cmd+" command successful";
+    }
+
+    /**
+     * Asks a pool to perform a transfer.
+     *
+     * Information about which pool to ask and the file to ask for is
+     * taken from the <tt>transfer<\tt> parameter. On success, the
+     * moverId field of <tt>transfer<\tt> will be filled in. On
+     * failure, Exception is thrown.
+     *
+     * @param transfer     The transfer to perform.
+     * @param storageInfo  Storage information of the file to transfer
+     * @param protocolInfo Protocol information for the transfer
+     * @param isWrite      True when transfer is to pool, otherwise false
+     */
+    private void askForFile(Transfer     transfer,
+                            StorageInfo  storageInfo,
+                            ProtocolInfo protocolInfo,
+                            boolean      isWrite)
+        throws SendAndWaitException, TimeoutException, InterruptedException
+    {
+        say("Trying pool " + transfer.pool + " for " +
+            (isWrite ? "write" : "read"));
+        transfer.state = "sending " + (isWrite ? "write" : "read")
+            + " request to pool";
+
+        PoolIoFileMessage poolMessage;
+        if (isWrite) {
+            poolMessage = new PoolAcceptFileMessage(transfer.pool,
+                                                    transfer.pnfsId.toString(),
+                                                    protocolInfo,
+                                                    storageInfo);
+        } else {
+            poolMessage = new PoolDeliverFileMessage(transfer.pool,
+                                                     transfer.pnfsId.toString(),
+                                                     protocolInfo,
+                                                     storageInfo);
+        }
+
+        if (_ioQueueName != null) {
+            poolMessage.setIoQueueName(_ioQueueName);
+        }
+
+        poolMessage.setId(transfer.sessionId);
+        // let pool know which request triggered transfer
+        if (transfer.info != null) {
+            poolMessage.setInitiator(transfer.info.getTransaction());
+        }
+
+        CellPath toPool = null;
+        if (_poolProxy == null) {
+            toPool = new CellPath(transfer.pool);
+        } else {
+            toPool = new CellPath(_poolProxy);
+            toPool.add(transfer.pool);
+        }
+
+        PoolIoFileMessage poolReply =
+            sendAndWait(toPool, poolMessage, _poolTimeout * 1000);
+        transfer.moverId = poolReply.getMoverId();
+
+        say("Mover " + transfer.moverId + " at pool " + transfer.pool
+            + " will " + (isWrite ? "receive" : "send") +
+            " file " + transfer.pnfsId);
+        _transfer.state = "mover " + transfer.moverId
+            + (isWrite ? ": receiving" : ": sending");
+    }
+
+    public void setNextPwdRecord()
+    {
+        if (_pwdRecord != null) {
+            _originalPwdRecord = _pwdRecord;
+            _pwdRecord = null;
+        }
+    }
+
+    public void resetPwdRecord()
+    {
+        _pwdRecord = _originalPwdRecord;
+    }
+
+    private class PerfMarkerEngine
+        implements Runnable, CellMessageAnswerable
+    {
+        private GFtpPerfMarkersBlock _perfMarkersBlock
+            = new GFtpPerfMarkersBlock(1);
+        private Thread  _myThread;
+        private boolean _stop       = false;
+        private boolean _stopped    = false;
+        private long    _timeout    = _poolTimeout * 1000;
+
+        public PerfMarkerEngine()
+        {
+        }
+
+        public synchronized void start()
+        {
+            if (_myThread == null) {
+                _myThread = getNucleus().newThread(this, "gftp-PerfMarkerEngine");
+                _myThread.start();
+            }
+        }
+
+        /**
+         * Stops the engine and blocks until it has shut down.
+         */
+        public synchronized void stop()
+            throws InterruptedException
+        {
+            _stop = true;
+            notifyAll();
+
+            say("Waiting for performance marker engine to finish ...");
+            while (!_stopped) {
+                wait();
+            }
+        }
+
+        /**
+         * Like stop() but sends a final performance marker.
+         *
+         * @param info Information about the completed transfer used
+         * to generate the final performance marker.
+         */
+        public synchronized void stop(GFtpProtocolInfo info)
+            throws InterruptedException
+        {
+            stop();
+            setProgressInfo(info.getBytesTransferred(),
+                            info.getTransferTime());
+            sendMarker();
+        }
+
+        /**
+         * Send markers to client.
+         */
+        protected synchronized void sendMarker()
+        {
+            reply(_perfMarkersBlock.markers(0).getReply(), false);
+        }
+
+        protected synchronized void setProgressInfo(long bytes, long timeStamp)
+        {
+            _perfMarkersBlock.markers(0).setBytesWithTime(bytes, timeStamp);
+        }
+
+        public synchronized void run()
+        {
+            try {
+                if (! _transferInProgress || _transfer == null) {
+                    /** @todo - shall we report anything ? */
+                    return;
+                }
+
+                if (_transfer.pool == null) {
+                    esay("PerfMarkerEngine: 'pool' is not defined, stop");
+                    return;
+                }
+                if (_transfer.moverId == null) {
+                    esay("PerfMarkerEngine: 'moverId' is not defined, stop");
+                    return;
+                }
+
+                /* For the first time, send markers with zero counts
+                 * - requirement of the standard
+                 */
+                sendMarker();
+
+                if (!_stop) {
+                    wait(_perfMarkerConf.period);
+                    while (!_stop) {
+                        CellMessage msg =
+                            new CellMessage(new CellPath(_transfer.pool),
+                                            "mover ls -binary " + _transfer.moverId);
+                        sendMessage(msg, this, _timeout);
+                        wait(_perfMarkerConf.period);
+                    }
+                }
+            } catch (NotSerializableException e) {
+                /* This would be a bug in dCache. Propagate as a
+                 * runtime exception.
+                 */
+                throw new RuntimeException("Bug detected", e);
+            } catch (InterruptedException e) {
+                // We do not expect this thread to be interrupted. If
+                // it does anyway, we better log it such that we can
+                // debug it.
+                esay(e);
+            } finally {
+                _stopped = true;
+                notifyAll();
+            }
+        }
+
+        public synchronized void exceptionArrived(CellMessage request, Exception exception)
+        {
+            if (!_stopped) {
+                if (exception instanceof NoRouteToCellException) {
+                    /* Seems we lost connectivity to the pool. This is
+                     * not fatal, but we send a new marker to the
+                     * client to convince it that we are still alive.
+                     */
+                    sendMarker();
+                } else {
+                    esay("PerfMarkerEngine: reply is exception " +
+                         exception.getMessage());
+                    _stop = true;
+                    notifyAll();
+                }
+            }
+        }
+
+        public synchronized void answerTimedOut(CellMessage request)
+        {
+            if (!_stopped) {
+                sendMarker();
+            }
+        }
+
+        public synchronized void answerArrived(CellMessage req, CellMessage answer)
+        {
+            if (!_stopped) {
+                Object msg = answer.getMessageObject();
+                if (msg instanceof IoJobInfo) {
+                    IoJobInfo ioJobInfo = (IoJobInfo)msg;
+                    String status = ioJobInfo.getStatus();
+
+                    if (status == null) {
+                        // Transfer has probably not started yet; don't do
+                        // anything.
+                    } else if (status.equals("A")) {
+                        // "Active" job
+                        setProgressInfo(ioJobInfo.getBytesTransferred(),
+                                        ioJobInfo.getLastTransferred());
+                        sendMarker();
+                    } else if (status.equals("K") || status.equals("R")) {
+                        // "Killed" or "Removed" job
+                        _stop = true;
+                        notifyAll();
+                    } else if (status.equals("W")) {
+                        // "Waiting" job
+                    } else {
+                        esay("Performance marker engine received unexcepted status value from mover: " + status);
+                        _stop = true;
+                        notifyAll();
+                    }
+                } else if (msg instanceof Exception) {
+                    esay("PerfMarkerEngine: reply is exception " +
+                         ((Exception)msg).getMessage());
+                    _stop = true;
+                    notifyAll();
+                } else if (msg instanceof String) {
+                    esay("PerfMarkerEngine: reply is error message '" +
+                         msg.toString() + "'");
+                    _stop = true;
+                    notifyAll();
+                } else {
+                    esay("PerfMarkerEngine: reply is unexpected class : " +
+                         msg.getClass().getName());
+                    _stop = true;
+                    notifyAll();
+                }
+            }
+        }
+    } // PerfMarkersEngine
+
+
+    /**
+     * Support class for reading commands from the control channel. To
+     * support notification of channel closure, this class is to be
+     * run in its own thread. Once that thread has been started, this
+     * thread should have exclusive rights to the input stream.
+     *
+     * The thread terminates when the input stream is closed. At that
+     * point the command poller is closed, which optionally may cause
+     * a notification of another thread.
+     *
+     * It is possible to close the command poller explicitly. This
+     * will however not cause the input stream to be closed, nor the
+     * command poller thread to terminate.
+     */
+    private class AsciiCommandPoller implements Runnable
+    {
+        /**
+         * Queue to communicate commands between the poller thread and
+         * the FTP worker thread.
+         *
+         * Allthough commands are strings, we do not specify the
+         * element type to be a String, since this would prohibit the
+         * use of an eos element to indicate the end of the stream.
+         */
+        private final LinkedBlockingQueue _commands
+            = new LinkedBlockingQueue();
+
+        /**
+         * Input stream of the control channel.
+         */
+        private BufferedReader _in;
+
+        /**
+         * Parent thread to interrupt when the command poller is
+         * closed. May be null if interrupts are disabled.
+         */
+        private Thread _thread;
+
+        /**
+         * Whether the command poller was closed.
+         */
+        private boolean _closed = false;
+
+        AsciiCommandPoller()
+        {
+        }
+
+        /**
+         * Sets the channel from which to read commands.
+         */
+        void setControlChannel(BufferedReader in)
+        {
+            _in = in;
+        }
+
+        public void run()
+        {
+            try {
+                String command = _in.readLine();
+                while (command != null && _commands.offer(command)) {
+                    command = _in.readLine();
+                }
+            } catch (SocketException e) {
+                /* When the FTP session is terminated by a QUIT
+                 * command, the worker thread closes the output
+                 * stream. This automatically closes the input stream
+                 * and in turn we get this exception here. Although
+                 * not elegant, the exception is not critical and we
+                 * ignore it.
+                 */
+            } catch (IOException e) {
+                esay(e.getMessage());
+            } finally {
+                close();
+            }
+        }
+
+        /**
+         * Closes the command poller. After a call to this method,
+         * nextCommand() will return null. If interrupts are currently
+         * enabled, the parent thread is interrupted.
+         *
+         * Does nothing if the command poller is already closed.
+         */
+        synchronized void close()
+        {
+            if (_closed == false) {
+                _closed = true;
+
+                if (_thread != null) {
+                    _thread.interrupt();
+                }
+
+                /* The worker thread may be blocked in
+                 * nextCommand(). Inserting an dummy element will
+                 * conveniently cause it to wake up.
+                 */
+                _commands.offer("");
+            }
+        }
+
+        /**
+         * Enables interrupt upon command poller close. Until the next
+         * call of disableInterrupt(), a close of the command poller
+         * will cause the calling thread to be interrupted.
+         *
+         * @throws InterruptedException if command poller is already
+         * closed
+         */
+        synchronized void enableInterrupt()
+            throws InterruptedException
+        {
+            if (_closed) {
+                throw new InterruptedException();
+            }
+            _thread = Thread.currentThread();
+        }
+
+        /**
+         * Disables interrupt upon command poller close.
+         */
+        synchronized void disableInterrupt()
+        {
+            _thread = null;
+        }
+
+        /**
+         * Returns true if and only if the command poller was closed.
+         */
+        synchronized boolean isClosed()
+        {
+            return _closed;
+        }
+
+        /**
+         * Returns the next command (i.e. line) from the control
+         * channel. Returns null when the command poller has been
+         * closed.
+         */
+        String nextCommand() throws InterruptedException
+        {
+            if (isClosed()) {
+                return null;
+            }
+            Object o = _commands.take();
+            if (isClosed()) {
+                return null;
+            }
+            return o.toString();
+        }
+    }
+
+    //////////////////////////////////////////////////////////////////////
+    //                                                                  //
+    // GRIDFTP V2 IMPLEMENTATION                                        //
+    // =========================                                        //
+
+    /**
+     * Regular expression for parsing parameters of GET and PUT
+     * commands. The GridFTP 2 specification is unclear on the format
+     * of the keyword, the value and whether white space is
+     * allowed. Here we assume keywords are limitted to word
+     * characters. Values do not contain semicolons and white space is
+     * stripped from the beginning and the end. White space arround
+     * the equal sign between the keyword and the value is allowed.
+     */
+    private static final Pattern _parameterPattern =
+	Pattern.compile("\\s*(\\w+)\\s*(?:=\\s*([^;]+)\\s*)?;\\s*");
+
+    /**
+     * Patterns for checking the format of values to parameters of GET
+     * and PUT commands.
+     */
+    private static final Map<String,Pattern> _valuePatterns =
+	new HashMap<String,Pattern>();
+
+    static
+    {
+	_valuePatterns.put("mode",  Pattern.compile("[Ee]|[Ss]|[Xx]"));
+	_valuePatterns.put("pasv",  null);
+	_valuePatterns.put("cksum", Pattern.compile("NONE"));
+	_valuePatterns.put("path",  Pattern.compile(".+"));
+        _valuePatterns.put("port",  Pattern.compile("(\\d+)(,(\\d+)){5}"));
+
+        //      tid is ignored until we implement mode X
+        //	_valuePatterns.put("tid",   Pattern.compile("\\d+"));
+    }
+
+    /**
+     * Parses parameters of GET and PUT commands. The result is
+     * returned as a map from parameter keywords to values. The
+     * GridFTP 2 specification does not specify if parameter keywords
+     * are case sensitive or not. We assume that they are. The GridFTP
+     * 2 specification is unclear whether unknown parameters should be
+     * ignored. We silently ignore unknown parameters.
+     *
+     * @param s the parameter string of a GET or PUT command
+     * @return  a map from parameter names to parameter values
+     * @throws FTPCommandException If the parameter string cannot be
+     *                             parsed.
+     */
+    protected Map<String,String> parseGetPutParameters(String s)
+	throws FTPCommandException
+    {
+	Map<String,String> parameters = new HashMap<String,String>();
+
+	/* For each parameter.
+	 */
+	Matcher matcher = _parameterPattern.matcher(s);
+	while (matcher.lookingAt()) {
+	    String keyword = matcher.group(1);
+	    String value   = matcher.group(2);
+	    if (_valuePatterns.containsKey(keyword)) {
+		/* Check format of value.
+		 */
+		Pattern valuePattern = _valuePatterns.get(keyword);
+		if (valuePattern == null && value != null
+		    || valuePattern != null && !valuePattern.matcher(value != null ? value : "").matches()) {
+		    String msg = "Illegal or unexpected value for "
+			+ keyword + "=" + value;
+		    throw new FTPCommandException(501, msg);
+		}
+		parameters.put(keyword, value);
+	    }
+	    matcher.region(matcher.end(), matcher.regionEnd());
+	}
+
+	/* Detect trailing garbage.
+	 */
+	if (matcher.regionStart() != matcher.regionEnd()) {
+	    String msg = "Cannot parse '" + s.substring(matcher.regionStart()) + "'";
+	    throw new FTPCommandException(501, msg);
+	}
+	return parameters;
+    }
+
+
+    /**
+     * Generate '127 PORT (a,b,c,d,e,f)' command as specified in the
+     * GridFTP v2 spec.
+     *
+     * The GridFTP v2 spec does not specify the reply code to
+     * use. However, since the PASV command uses 227, it seems
+     * reasonable to use 127 here.
+     *
+     * GFD.47 specifies the format to be 'PORT=a,b,c,d,e,f', however
+     * after consultation with the authors of GFD.47, it was decided
+     * to use the typical '(a,b,c,d,e,f)' format instead.
+     *
+     * @param address the address and port on which we listen
+     */
+    protected void reply127PORT(InetSocketAddress address)
+    {
+        int port = address.getPort();
+	byte host[] = address.getAddress().getAddress();
+	reply(String.format("127 PORT (%d,%d,%d,%d,%d,%d)",
+                            (host[0] & 0377),
+                            (host[1] & 0377),
+                            (host[2] & 0377),
+                            (host[3] & 0377),
+                            (port / 256),
+                            (port % 256)), false);
+    }
+
+    /**
+     * Implements GridFTP v2 GET operation.
+     *
+     * @param arg the argument string of the GET command.
+     */
+    public void ac_get(String arg)
+    {
+	try {
+            String        xferMode   = _xferMode;
+            String        clientHost = _client_data_host;
+            int           clientPort = _client_data_port;
+            Mode          mode       = _mode;
+            boolean       reply127   = false;
+
+            if (_skipBytes > 0){
+                throw new FTPCommandException(501, "RESTART not implemented");
+            }
+
+	    Map<String,String> parameters = parseGetPutParameters(arg);
+
+	    if (parameters.containsKey("pasv") && parameters.containsKey("port")) {
+		throw new FTPCommandException(501, "Cannot use both 'pasv' and 'port'");
+	    }
+
+	    if (!parameters.containsKey("path")) {
+		throw new FTPCommandException(501, "Missing path");
+	    }
+
+	    if (parameters.containsKey("mode")) {
+		xferMode = parameters.get("mode").toUpperCase();
+	    }
+
+	    if (parameters.containsKey("pasv")) {
+		mode = Mode.PASSIVE;
+                reply127 = true;
+	    }
+
+	    if (parameters.containsKey("port")) {
+		String[] tok = parameters.get("port").split(",");
+		String ip = tok[0]+"."+tok[1]+"."+tok[2]+"."+tok[3];
+		clientHost = ip;
+		clientPort =
+		    Integer.valueOf(tok[4]) * 256 + Integer.valueOf(tok[5]);
+		mode = Mode.ACTIVE;
+	    }
+
+	    /* Now do the transfer...
+	     */
+	    retrieve(parameters.get("path"), prm_offset, prm_size, mode,
+                     xferMode, _parallelStart, _parallelMin, _parallelMax,
+                     new InetSocketAddress(clientHost, clientPort),
+                     _bufSize, reply127);
+	} catch (FTPCommandException e) {
+	    reply(String.valueOf(e.getCode()) + " " + e.getReply());
+        } finally {
+            prm_offset=-1;
+            prm_size=-1;
+        }
+    }
+
+    /**
+     * Implements GridFTP v2 PUT operation.
+     *
+     * @param arg the argument string of the PUT command.
+     */
+    public void ac_put(String arg)
+    {
+	String        xferMode   = _xferMode;
+	String        clientHost = _client_data_host;
+	int           clientPort = _client_data_port;
+	Mode          mode       = _mode;
+        boolean       reply127   = false;
+	try {
+	    Map<String,String> parameters = parseGetPutParameters(arg);
+
+	    if (parameters.containsKey("pasv") && parameters.containsKey("port")) {
+		throw new FTPCommandException(501,
+					      "Cannot use both 'pasv' and 'port'");
+	    }
+
+	    if (!parameters.containsKey("path")) {
+		throw new FTPCommandException(501, "Missing path");
+	    }
+
+	    if (parameters.containsKey("mode")) {
+		xferMode = parameters.get("mode").toUpperCase();
+	    }
+
+	    if (parameters.containsKey("pasv")) {
+		mode = Mode.PASSIVE;
+                reply127 = true;
+	    }
+
+	    if (parameters.containsKey("port")) {
+		String[] tok = parameters.get("port").split(",");
+		String ip = tok[0]+"."+tok[1]+"."+tok[2]+"."+tok[3];
+		clientHost = ip;
+		clientPort =
+		    Integer.valueOf(tok[4]) * 256 + Integer.valueOf(tok[5]);
+		mode = Mode.ACTIVE;
+	    }
+
+	    /* Now do the transfer...
+	     */
+	    store(parameters.get("path"), mode, xferMode,
+                  _parallelStart, _parallelMin, _parallelMax,
+                  new InetSocketAddress(clientHost, clientPort),
+                  _bufSize, reply127);
+	} catch (FTPCommandException e) {
+	    reply(String.valueOf(e.getCode()) + " " + e.getReply());
+	}
+    }
+}

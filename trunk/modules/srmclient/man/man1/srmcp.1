@@ -1,0 +1,130 @@
+.TH SRMCP "1" "May 2005" "SRM Fermi Client ....  1_6" "User Commands"
+.SH NAME
+srmcp \- manual page for srmcp v1_6
+.SH SYNOPSIS
+.B srmcp
+[\fIOPTION\fR]... \fISOURCE DEST\fR
+.br
+.B srmcp
+[\fIOPTION\fR]... \fISOURCE\fR... \fIDIRECTORY\fR
+.br
+.B srmcp
+[\fIOPTION\fR]... \fI-copyjobfile <file>\fR...
+.SH DESCRIPTION
+Copy SOURCE to DEST, or Multiple SOURCE(s) to DIRECTORY.
+
+Either source(s) or destination or both should be (an) srm url
+default options will be read from configuration file 
+but can be overridden by the command line options
+the command line options are one or more of the following:
+.TP
+\fB\-\-version\fR, \fB\-version\fR 
+enables printing version number
+.TP
+\fB\-\-debug\fR, \fB\-debug\fR
+enables debug output, default is false 
+.TP
+\fB\-srmcphome\fR=<path to srmcp product dir>
+.TP
+\fB\-gsissl\fR=<true or false> 
+true uses gsi https, default is false
+.TP
+\fB\-mapfile\fR=<mapfile> 
+to specify glue mapfile
+.TP
+\fB\-wsdl_url\fR=<full url to web service wsdl> 
+this options overrides \fB\-webservice_path\fR and \fB\-webservice_protocol\fR options
+.TP
+\fB\-webservice_path\fR=<webservice_path> 
+to specify web service path component of web service URL (for example "srm/managerv1.wsdl")
+.TP
+\fB\-webservice_protocol\fR=<webservice_protocol> 
+to specify the webservice protocol ( for example "http","https" or "httpg")
+.TP
+\fB\-use_proxy\fR=<true or false> 
+true if srmcp should use grid proxy false if it should use certificate and key directly, defult value is true
+.TP
+
+\fB\-x509_user_proxy\fR=<path to user grid proxy>
+.TP
+\fB\-x509_user_cert\fR=<path to user grid certificate>
+.TP
+\fB\-x509_user_key\fR=<path to user private key>
+.TP
+\fB\-x509_user_trusted_certificates\fR=<path to the directory with cerificates of trusted Certificate Authorities (CAs)>
+.TP
+\fB\-conf\fR=<path to the configuration file> default value is config.xml
+.TP
+\fB\-save_conf\fR=<path to the file in which the new configuration will be saved>
+no transfer will be performed if this option is specified
+.TP
+.TP
+\fB\-retry_timeout\fR=<number of miliseconds to sleep after a failure before the client tries to retry>
+.TP
+\fB\-retry_num\fR=<number of retries before client gives up>
+.TP
+\fB\-connect_to_wsdl\fR=<true or false, false by default> 
+srm client now connects directly to the service without reading the wsdl first but for the compatibility with the old implementation, especially if srm urls available point to the location of the wsdl, we make the old way of connecting to the wsdl location first available
+.TP
+\fB\-delegate\fR=<true or false, true by default> 
+enables or disables the delegation of the user credenital to the server
+.TP
+\fB\-full_delegation\fR=<true or false, true by default> 
+if delegation is enabled, it specifies the type of delegation if this option is set to true the delegation is full, otherwise limited
+.TP
+\fB\-h\fR or \fB\-help\fR for this help 
+.TP
+\fB\-urlcopy\fR=<urlcopy path> 
+to specify the path to  universal url_copy script see $SRM_PATH/bin/url-copy.sh for example
+.TP
+\fB\-buffer_size\fR=<integer> to set the buffer size to a value 
+      different then default(2048)
+.TP
+\fB\-tcp_buffer_size\fR=<integer> 
+to set the tcp buffer size to a value if option is not specified or set to 0, then the default tcp buffer size is used
+.TP
+\fB\-streams_num\fR=<integer> to set the number of streams used by gridftp 
+.TP
+\fB\-protocols\fR=protocol1[,protocol2[...]] 
+the comma separated list of supported TURL protocols
+.TP
+\fB\-pushmode\fR=<true or false>  
+true to use the push mode in case of srm Mass Storage Systems (MSS) to MSS copy, false to use the pull mode, the default mode is pull mode (false)
+.TP
+\fB\-use_urlcopy_script\fR=<true or false> 
+use java native copiers of use urcopy script
+.TP
+\fB\-copyjobfile\fR=<file> 
+where <file> is the path to the text file containing  the list of sources and destination each line has a format : <sorce-url> <destination-url>
+.TP
+\fB\-report\fR=<report_file> 
+where <report_file> is the path to the report file if specified, it will contain the resutls of the execution srmcp the each line in the file will have the following format:
+
+       <src url> <dst url> <return code> [<error>]
+
+.PP
+      the following return codes are supported:
+      0 - success
+      1 - general error
+      2 - file exists, can not overwrite
+      3 - user permission error
+
+Example of srm put:
+      srmcp file:////bin/sh srm://myhost.mydomain.edu:8443//dir1/dir2/sh-copy
+
+Example of srm get:
+      srmcp srm://myhost.mydomain.edu:8443//dir1/dir2/sh-copy file:///localdir/sh
+Example of srm copy (srm to srm):
+      srmcp srm://myhost.mydomain.edu:8443//dir1/dir2/sh-copy srm://anotherhost.org:8443/newdir/sh-copy
+
+Example of srm copy (gsiftp to srm):
+      srmcp gsiftp://ftphost.org//path/file srm://myhost.mydomain.edu:8443//dir1/dir2/file
+.SH AUTHOR
+Written by Timur Perelmutov 
+.SH "REPORTING BUGS"
+Report bugs to <timur@fnal.gov>
+.SH COPYRIGHT
+Storage Resource Manager (SRM) CP Client version 1.16
+Copyright (c) 2002-2005 Fermi National Accelerator Laborarory
+
+

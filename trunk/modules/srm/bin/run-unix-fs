@@ -1,0 +1,116 @@
+#! /bin/sh
+if [ "$SRM_HOME" = "" ]
+then 
+  echo SRM_HOME is undefined, assuming pwd
+  SRM_HOME=`pwd`
+fi
+
+NAME=disksrm
+GRIDFTP_HOST=fnisd1.fnal.gov
+GRIDFTP_PORT=2811
+CHOWN=$SRM_HOME/bin/chown.sh
+STAT=$SRM_HOME/bin/stat.sh
+LOG=/tmp/$NAME.log
+#DEBUG=true
+#SECURITY_DEBUG=true 
+#DEBUG=false
+#java -cp $SRM_HOME/lib/dcache.jar:$SRM_HOME/lib/pgjdbc2.jar: org.dcache.srm.unixfs/Main /tmp/config1.xml disksrm
+if [ ! -f $SRM_HOME/lib/cells.jar ]
+then
+  echo cannot find cells.jar
+  exit 1
+fi
+
+if [ ! -f $SRM_HOME/lib/srm.jar ]
+then
+  echo cannot find ../$SRM_HOME/lib/srm.jar
+  exit 1
+fi
+
+if [ ! -f $SRM_HOME/lib/glue/GLUE-STD.jar ]
+then
+  echo cannot find ../$SRM_HOME/lib/glue/GLUE-STD.jar
+  exit 1
+fi
+
+SRM_CP=$SRM_HOME/lib/srm.jar
+SRM_CP=$SRM_CP:$SRM_HOME/lib/cells.jar
+SRM_CP=$SRM_CP:$SRM_HOME/lib/pgjdbc2.jar
+SRM_CP=$SRM_CP:$SRM_HOME/lib/concurrent.jar
+
+# glue
+SRM_CP=$SRM_CP:$SRM_HOME/lib/glue/GLUE-STD.jar
+SRM_CP=$SRM_CP:$SRM_HOME/lib/glue/dom.jar
+SRM_CP=$SRM_CP:$SRM_HOME/lib/glue/servlet.jar
+SRM_CP=$SRM_CP:$SRM_HOME/lib/glue/jnet.jar
+SRM_CP=$SRM_CP:$SRM_HOME/lib/glue/jsse.jar
+SRM_CP=$SRM_CP:$SRM_HOME/lib/glue/jcert.jar
+
+
+# old globus cog jars
+#SRM_CP=$SRM_CP:$SRM_PATH/lib/globus/cog.jar:$SRM_PATH/lib/globus/iaik_javax_crypto.jar
+#SRM_CP=$SRM_CP:$SRM_PATH/lib/globus/iaik_jce_full.jar:$SRM_PATH/lib/globus/iaik_ssl.jar
+#SRM_CP=$SRM_CP:$SRM_PATH/lib/globus/log4j-core.jar
+
+# globus cog
+for i in $SRM_HOME/lib/globus/*.jar
+do
+	SRM_CP=$SRM_CP:$i
+done
+#axis
+for i in $SRM_HOME/lib/axis/*.jar
+do
+	SRM_CP=$SRM_CP:$i
+done
+
+
+OPTIONS="-Djava.protocol.handler.pkgs=org.globus.net.protocol"
+if [ "$DEBUG" = "true" ]
+then
+  OPTIONS=" ${OPTIONS} -Delectric.logging=SOAP,HTTP"
+fi
+
+if [ "$SECURITY_DEBUG" = "true" ]
+then
+  OPTIONS=" ${OPTIONS} -Dlog4j.configuration=${SRM_PATH}/bin/log4j.properties.all"
+fi
+
+#OPTIONS=" ${OPTIONS} -Dorg.globus.tcp.port.range=50000,50050"
+if [ ! -d $SRM_HOME/.srmconfig ]
+then
+	mkdir $SRM_HOME/.srmconfig
+fi
+SRM_CONFIG=$SRM_HOME/.srmconfig/config.xml
+#cd $SRM_PATH/bin
+
+if [ ! -f $SRM_CONFIG ]
+then
+	echo configuration file not found, configuring srmcp >&2
+	
+	cmd="java -cp $SRM_CP $OPTIONS \
+          org.dcache.srm.unixfs.Main $SRM_CONFIG $NAME $GRIDFTP_HOST $GRIDFTP_PORT $STAT $CHOWN"
+
+	if [ "$DEBUG" = "true" ]
+	then
+		echo $cmd
+	fi
+	$cmd
+	if tty -s
+	then
+		echo would you like to view/edit configuration file?[y/n] >&2
+		read -t 60 ANSWER
+		if [ "$ANSWER" = "y" ]
+		then
+			${VISUAL:-${EDITOR:-vi}} $SRM_CONFIG
+		fi
+	fi
+fi
+	
+cmd="java -cp $SRM_CP $OPTIONS org.dcache.srm.unixfs.Main $SRM_CONFIG $NAME $GRIDFTP_HOST $GRIDFTP_PORT $STAT $CHOWN $LOG"
+#cmd="java -cp $SRM_CP $OPTIONS org.dcache.srm.unixfs.Main $SRM_CONFIG $NAME $GRIDFTP_HOST $GRIDFTP_PORT $STAT $CHOWN"
+	echo $cmd
+if [ "$DEBUG" = "true" ]
+then
+	echo $cmd
+fi
+$cmd

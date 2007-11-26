@@ -1,0 +1,37 @@
+# storage-authzdb
+# ----------------------------------------------------------------------------------------------------
+# Repository of Storage Element (SRM-dCache-PNFS) records for all authorized users
+# Required format of a record:
+# WS authorize WS username read-only|read-write WS UID WS GID WS homepath WS rootpath WS [fs-rootpath WS]
+# Example:
+# authorize timur    read-write    500 500       / /pnfs/fnal.gov /pnfs/fnal.gov
+# authorize rana     read-write    500 19000     / /pnfs/fnal.gov/data /pnfs/fnal.gov/data
+# ----------------------------------------------------------------------------------------------------
+
+version 2.1
+# Version scheme for initial version compatibility with dcache.kpwd directly used by SRM-dCache-PNFS
+
+# ----------------------------------------------------------------------------------------------------
+# authorize USER     PRIVILEGE     UID GID       HOME ROOT [FSROOT]
+# ----------------------------------------------------------------------------------------------------
+
+authorize rana       read-write    500 500       / /pnfs/ucsd.edu /pnfs/ucsd.edu
+authorize mlorch     read-write    500 500       / /pnfs/ucsd.edu /pnfs/ucsd.edu
+authorize timur      read-write    500 19000     / /pnfs/ucsd.edu /pnfs/ucsd.edu
+authorize ranacms    read-write    500 19000     / /pnfs/ucsd.edu/data/cmsprod /pnfs/ucsd.edu/data/cmsprod
+authorize sekhri     read-write    500 500       / /pnfs/ucsd.edu/data /pnfs/ucsd.edu/data
+authorize weigand    read-write    500 500       / /pnfs/ucsd.edu/data /pnfs/ucsd.edu/data
+authorize cmsprod    read-write    19020 19000   / /pnfs/ucsd.edu/data/cmsprod /pnfs/ucsd.edu/data/cmsprod
+authorize uscms01    read-write    19040 19000   / /pnfs/ucsd.edu/data/uscms01 /pnfs/ucsd.edu/data/uscms01
+authorize uscms02    read-write    19041 19000   / /pnfs/ucsd.edu/data/uscms02 /pnfs/ucsd.edu/data/uscms02
+authorize phedex     read-write    19042 19000   / /pnfs/ucsd.edu/data/phedex /pnfs/ucsd.edu/data/phedex
+authorize uscms03    read-write    19043 19000   / /pnfs/ucsd.edu/data/uscms03 /pnfs/ucsd.edu/data/uscms03
+authorize uscms04    read-write    19044 19000   / /pnfs/ucsd.edu/data/uscms04 /pnfs/ucsd.edu/data/uscms04
+authorize usatlas1   read-write    19070 19060   / /pnfs/ucsd.edu/data/usatlas1 /pnfs/ucsd.edu/data/usatlas1
+
+authorize btev       read-write    19120 19120   / /pnfs/ucsd.edu/data2/btev /pnfs/ucsd.edu/data2/btev
+authorize gridex     read-write    19130 19130   / /pnfs/ucsd.edu/data2/gridex /pnfs/ucsd.edu/data2/gridex
+authorize ivdgl      read-write    19090 19090   / /pnfs/ucsd.edu/data2/ivdgl /pnfs/ucsd.edu/data2/ivdgl
+authorize ligo       read-write    19110 19110   / /pnfs/ucsd.edu/data2/ligo /pnfs/ucsd.edu/data2/ligo
+authorize lsc01      read-write    19132 19132   / /pnfs/ucsd.edu/data2/lsc01 /pnfs/ucsd.edu/data2/lsc01
+authorize sdss       read-write    19100 19100   / /pnfs/ucsd.edu/data2/sdss /pnfs/ucsd.edu/data2/sdss

@@ -1,0 +1,76 @@
+<html>
+<head><title>Stk Library Server Application Protocol</title></head>
+
+
+<body bgcolor=white>
+<h1>Application Level Protocol</h1>
+<h3>The <i>mount</i> command</h3>
+<table border=1>
+<tr><th>Direction</th><th>Action ID</th><th>Command</th><th>Arguments</th><tr>
+<tr bgcolor=#ffff00>
+<td>Request</td><td>200</td><td>mount</td><td>&lt;drive&gt; &lt;tape&gt;</td>
+</tr>
+<tr bgcolor=#00eeff>
+<td>Response</td><td>201</td><td>mount-ok</td><td align=center>-</td>
+</tr>
+<tr bgcolor=orange>
+<td>Response</td><td>211</td><td>mount-failed</td><td>["&lt;reason&gt;"]</td>
+</tr>
+<tr bgcolor=orange>
+<td>Response</td><td>212</td><td>mount-failed</td><td>"Drive broken"</td>
+</tr>
+<tr bgcolor=orange>
+<td>Response</td><td>213</td><td>mount-failed</td><td>"Tape not found"</td>
+</tr>
+</table>
+<h3>The <i>dismount</i> command</h3>
+<table border=1>
+<tr><th>Direction</th><th>Action ID</th><th>Command</th><th>Arguments</th><tr>
+<tr bgcolor=#ffff00>
+<td>Request</td><td>300</td><td>dismount</td><td>&lt;drive&gt; [&lt;tape&gt;]</td>
+</tr>
+<tr bgcolor=#00eeff>
+<td>Response</td><td>301</td><td>dismount-ok</td><td align=center>-</td>
+</tr>
+<tr bgcolor=orange>
+<td>Response</td><td>311</td><td>dismount-failed</td><td>["&lt;reason&gt;"]</td>
+</tr>
+<tr bgcolor=orange>
+<td>Response</td><td>312</td><td>dismount-failed</td><td>"Drive broken"</td>
+</tr>
+</table>
+<h3>The <i>say</i> command</h3>
+<table border=1>
+<tr><th>Direction</th><th>Action ID</th><th>Command</th><th>Arguments</th><tr>
+<tr bgcolor=#ffff00>
+<td>Request</td><td>400</td><td>say</td><td>info|warning|panic "&lt;Text&gt;"</td>
+</tr>
+<tr bgcolor=#00eeff>
+<td>Response</td><td>401</td><td>say-ok</td><td align=center>-</td>
+</tr>
+</table>
+<p>
+<h1></h1>
+<a name=exc></a>
+<h3>Exceptional/Common Replies</h3>
+<table border=1>
+<tr><th>Direction</th><th>Action ID</th><th>Command</th><th>Arguments</th><tr>
+<tr bgcolor=orange>
+<td>Response</td><td>111</td><td>try-again</td><td>["&lt;reason&gt;"]</td>
+</tr>
+<tr bgcolor=orange>
+<td>Response</td><td>112</td><td>internal-system-error</td><td>["&lt;reason&gt;"]</td>
+</tr>
+<tr bgcolor=orange>
+<td>Response</td><td>113</td><td>timeout</td><td>["&lt;timeoutClass&gt;"]</td>
+</tr>
+<tr bgcolor=orange>
+<td>Response</td><td>124</td><td>command-not-found</td><td>["&lt;Which command&gt;"]</td>
+</tr>
+<tr bgcolor=orange>
+<td>Response</td><td>125</td><td>illegal-arguments</td><td>["&lt;details&gt;"]</td>
+</tr>
+</table>
+
+</body>
+</html>

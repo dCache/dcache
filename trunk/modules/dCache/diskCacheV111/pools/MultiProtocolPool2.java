@@ -1,0 +1,3353 @@
+// $Id: MultiProtocolPool2.java,v 1.143 2007-10-16 19:28:45 behrmann Exp $
+
+
+package diskCacheV111.pools;
+
+import  diskCacheV111.vehicles.*;
+import  diskCacheV111.util.*;
+import  diskCacheV111.movers.* ;
+import  diskCacheV111.repository.* ;
+import  diskCacheV111.util.event.* ;
+
+import  dmg.cells.nucleus.*;
+import  dmg.util.*;
+import  dmg.cells.services.* ;
+
+import  java.util.*;
+import  java.io.*;
+import  java.net.*;
+import  java.lang.reflect.* ;
+
+public class       MultiProtocolPool2
+        extends    CellAdapter
+        implements Logable         {
+
+
+    private static final String MAX_SPACE          = "use-max-space" ;
+    private static final String PREALLOCATED_SPACE = "use-preallocated-space" ;
+
+    private final static int LFS_NONE     = 0 ;
+    private final static int LFS_PRECIOUS = 1 ;
+    private final static int LFS_VOLATILE = 2 ;
+
+    private final static int DUP_REQ_NONE    = 0 ;
+    private final static int DUP_REQ_IGNORE  = 1 ;
+    private final static int DUP_REQ_REFRESH = 2 ;
+
+    private final static int P2P_INTEGRATED = 0 ;
+    private final static int P2P_SEPARATED  = 1 ;
+
+    private final static int P2P_CACHED     = 1 ;
+    private final static int P2P_PRECIOUS   = 2 ;
+
+    private String      _poolName = null;
+    private Args        _args     = null;
+    private CellNucleus _nucleus  = null;
+
+    private HashMap    _ioMovers        = new HashMap() ;
+    private HashMap    _moverAttributes = new HashMap() ;
+    private HashMap    _moverHash       = new HashMap() ;
+    private int        _maxMovers       = 30000 ;
+    private int        _nextMoverId     = 1000 ;
+    private long       _serialId        = System.currentTimeMillis() ;
+    private int        _recoveryFlags   = 0 ;
+    private PoolV2Mode _poolMode        = new PoolV2Mode() ;
+    private String     _poolStatusMessage = "OK";
+    private int        _poolStatusCode  = 0;
+    private boolean    _reportOnRemovals   = false ;
+    private boolean    _flushZeroSizeFiles = false ;
+    private boolean    _suppressHsmLoad    = false ;
+    private boolean    _cleanPreciousFiles = false ;
+
+
+    private PnfsHandler            _pnfs         = null ;
+    private CacheRepository        _repository   = null ;
+    private StorageClassContainer  _storageQueue = null ;
+    private SpaceSweeper           _sweeper      = null ;
+
+    private String _setupManager       = null ;
+    private String _pnfsManagerName    = "PnfsManager";
+    private String _poolManagerName    = "PoolManager";
+    private String _hsmPoolManagerName = "HsmPoolManager";
+    private String _sweeperClass       = "diskCacheV111.pools.SpaceSweeper0" ;
+    private String _dummySweeperClass  = "diskCacheV111.pools.DummySpaceSweeper" ;
+
+    private int      _version       = 4 ;
+    private CellPath _billingCell   = new CellPath("billing") ;
+    private final Map<String, String>      _tags          = new HashMap<String, String>() ;
+    private String _baseDir = null ;
+    private File   _base    = null ;
+    private File   _setup   = null ;
+
+    private PoolManagerPingThread _pingThread      = null ;
+    private HsmFlushController    _flushingThread  = null ;
+    private JobScheduler          _ioQueue         = null ;
+    private JobScheduler          _p2pQueue        = null ;
+    private JobTimeoutManager     _timeoutManager  = null ;
+    private HsmSet                _hsmSet          = new HsmSet() ;
+    private HsmStorageHandler2    _storageHandler  = null ;
+    private Logable               _logClass        = this ;
+    private boolean               _crashEnabled    = false ;
+    private String                _crashType       = "exception" ;
+    private boolean               _isPermanent     = false;
+    private boolean               _allowSticky     = false ;
+    private boolean               _allowModify     = false ;
+    private boolean               _isHsmPool       = false ;
+    private boolean               _blockOnNoSpace  = true ;
+    private boolean               _checkRepository = true ;
+    private boolean               _waitForRepositoryOk = false ;
+    private long                  _gap             = 4L*1024L*1024L*1024L ;
+    private int                   _lfsMode         = LFS_NONE ;
+    private int                   _p2pFileMode     = P2P_CACHED ;
+    private int                   _dupRequest      = DUP_REQ_IGNORE ;
+    private int                   _p2pMode         = P2P_SEPARATED ;
+    private P2PClient             _p2pClient       = null ;
+
+    private int _cleaningInterval = 60 ;
+
+    private double _simCpuCost   = -1. ;
+    private double _simSpaceCost = -1. ;
+
+    private static long __counter = 100 ;
+    private static synchronized long nextUID(){ return __counter++ ; }
+
+    private Object  _hybridInventoryLock   = new Object() ;
+    private boolean _hybridInventoryActive = false ;
+    private int     _hybridTotal   = 0 ;
+    private int     _hybridCurrent = 0 ;
+
+    private final Map            _moverEnvMap        = new HashMap() ;
+    private ChecksumModuleV1   _checksumModule     = null ;
+    private ReplicationHandler _replicationHandler = null ;
+    //
+    // arguments :
+    //      MPP2  <poolBasePath>                      no default
+    //               [-permanent]                     : default : dynamic
+    //               [-version=<version>]             : default : 4
+    //               [-sticky=allowed|denied]         ; default : denied
+    //               [-recover-space[=no]]            : default : no
+    //               [-recover-control[=no]]          : default : no
+    //               [-lfs=precious]
+    //               [-p2p=<p2pFileMode>]             : default : cached
+    //               [-poolManager=<name>]            : default : PoolManager
+    //               [-billing=<name>]                : default : billing
+    //               [-setupManager=<name>]           : default : none
+    //               [-dupRequest=none|ignore|refresh]: default : ignore
+    //               [-flushZeroSizeFiles=yes|no]     : default : no
+    //               [-blockOnNoSpace=yes|no|auto]    : default : auto
+    //               [-allowCleaningPreciousFiles]    : default : false
+    //               [-checkRepository]               : default : true
+    //               [-waitForRepositoryOk]           : default : false
+    //               [-replicateOnArrival[=[Manager],[host],[mode]]]    : default : PoolManager,thisHost,keep
+    //
+    public MultiProtocolPool2( String poolName , String args ) throws Exception {
+        super( poolName , args , false );
+
+
+        _poolName = poolName;
+        _args     = getArgs();
+        _nucleus  = getNucleus() ;
+
+        //
+        // the export is convenient but not really necessary, because
+        // we send our path along with the 'alive' message.
+        //
+        getNucleus().export();
+
+        int argc = _args.argc();
+        say("Pool "+poolName +" starting");
+
+        try {
+
+            if (argc < 1)
+                throw new
+                        IllegalArgumentException("no base dir specified");
+
+            _baseDir      = _args.argv(0);
+
+            String versionString = _args.getOpt("version") ;
+            if( versionString != null ){
+                try{
+                    _version = Integer.parseInt( versionString ) ;
+                }catch(Exception e){}
+            }
+
+            _isPermanent = _args.getOpt("permanent") != null ;
+
+            String stickyString = _args.getOpt("sticky" ) ;
+            if( stickyString != null )_allowSticky = stickyString.equals("allowed") ;
+            say( "Sticky files : "+(_allowSticky?"allowed":"denied") ) ;
+
+            String modifyString = _args.getOpt("modify" ) ;
+            if( modifyString != null )_allowModify = modifyString.equals("allowed") ;
+            say( "Modify files : "+(_allowModify?"allowed":"denied") ) ;
+
+            String sweeperClass = _args.getOpt("sweeper") ;
+            if( sweeperClass != null )_sweeperClass = sweeperClass ;
+            if(_isPermanent)_sweeperClass = _dummySweeperClass ;
+            say("Using sweeper : "+_sweeperClass);
+
+            String recover = _args.getOpt("recover-control") ;
+            if( ( recover != null ) && ( ! recover.equals("no") ) ){
+                _recoveryFlags |= CacheRepository.ALLOW_CONTROL_RECOVERY ;
+                say( "Enabled : recover-control" ) ;
+            }
+            recover = _args.getOpt("recover-space") ;
+            if( ( recover != null ) && ( ! recover.equals("no") ) ){
+                _recoveryFlags |= CacheRepository.ALLOW_SPACE_RECOVERY ;
+                say( "Enabled : recover-space" ) ;
+            }
+
+            recover = _args.getOpt("checkRepository") ;
+	    if( recover != null ){
+	        if( recover.equals("yes") || recover.equals("true") ){
+		   _checkRepository = true ;
+		}else if( recover.equals("no") || recover.equals("false") ){
+		   _checkRepository = false ;
+		}
+	    }
+            say( "CheckRepository : "+_checkRepository ) ;
+
+            recover = _args.getOpt("waitForRepositoryReady") ;
+	    if( recover != null ){
+	        if( recover.equals("yes") || recover.equals("true") ){
+		   _waitForRepositoryOk = true ;
+		}else if( recover.equals("no") || recover.equals("false") ){
+		   _waitForRepositoryOk = false ;
+		}
+	    }
+            say( "waitForRepositoryReady : "+_waitForRepositoryOk ) ;
+
+            recover = _args.getOpt("recover-anyway") ;
+            if( ( recover != null ) && ( ! recover.equals("no") ) ){
+                _recoveryFlags |= CacheRepository.ALLOW_RECOVER_ANYWAY ;
+                say( "Enabled : recover-anyway" ) ;
+            }
+
+            recover = _args.getOpt("replicateOnArrival") ;
+            if(  recover == null ){
+                _replicationHandler = new ReplicationHandler() ;
+            }else{
+                _replicationHandler = new ReplicationHandler(recover.equals("")?"on":recover) ;
+            }
+            say( "ReplicationHandler : "+_replicationHandler ) ;
+
+             /**
+               * If cleaner sends its remove list, do we allow to remove
+               * precious files for HSM connected pools ?
+               */
+             recover = _args.getOpt("allowCleaningPreciousFiles") ;
+
+             _cleanPreciousFiles =
+                ( recover != null ) &&
+                ( recover.equals("yes") || recover.equals("true") ) ;
+
+             say( "allowCleaningPreciousFiles : "+ _cleanPreciousFiles) ;
+
+
+            String lfsModeString = _args.getOpt("lfs") ;
+            lfsModeString = lfsModeString == null ? _args.getOpt("largeFileStore") : lfsModeString ;
+            if( lfsModeString != null ){
+                if( lfsModeString.equals("precious") ||
+                    lfsModeString.equals("hsm")      ||
+                    lfsModeString.equals("")            ){
+
+                    _lfsMode = LFS_PRECIOUS ;
+                    _isHsmPool = lfsModeString.equals("hsm");
+
+                }else if( lfsModeString.equals("volatile") ||
+                        lfsModeString.equals("transient")   ){
+
+                    _lfsMode = LFS_VOLATILE ;
+                }else{
+                    throw new
+                            IllegalArgumentException("lfs[=volatile|precious|transient]");
+                }
+            }else{
+                _lfsMode = LFS_NONE ;
+            }
+            say("LargeFileStore Mode : "+
+                    (_lfsMode==LFS_NONE?"None":_lfsMode==LFS_VOLATILE?"Volatile":"Precious") );
+            say("isHsmPool = "+_isHsmPool);
+
+            lfsModeString = _args.getOpt("p2p") ;
+            lfsModeString = lfsModeString == null ? _args.getOpt("p2pFileMode") : lfsModeString ;
+            if( lfsModeString != null ){
+                if( lfsModeString.equals("precious") ){
+
+                    _p2pFileMode = P2P_PRECIOUS ;
+
+                }else if( lfsModeString.equals("cached")  ){
+
+                    _p2pFileMode = P2P_CACHED ;
+
+                }else{
+                    throw new
+                            IllegalArgumentException("p2p=precious|cached");
+                }
+            }else{
+                _p2pFileMode = P2P_CACHED ;
+            }
+            say("Pool2Pool File Mode : "+ (_p2pFileMode==P2P_CACHED?"cached":"precious") );
+
+            String dupString = _args.getOpt("dupRequest") ;
+            if( ( dupString == null ) || dupString.equals("none") ){
+                _dupRequest = DUP_REQ_NONE ;
+            }else if( dupString.equals("ignore") ){
+                _dupRequest = DUP_REQ_IGNORE ;
+            }else if( dupString.equals("refresh") ){
+                _dupRequest = DUP_REQ_REFRESH ;
+            }else{
+                esay("Illegal 'dupRequest' value : "+dupString+" (using 'none')");
+            }
+            say("DuplicateRequest Mode : "+
+                    (_dupRequest==DUP_REQ_NONE?"None":_dupRequest==DUP_REQ_IGNORE?"Ignore":"Refresh") );
+
+
+            String tmp = _args.getOpt("poolManager") ;
+            _poolManagerName = tmp == null ? ( _isHsmPool ? _hsmPoolManagerName : _poolManagerName ) : tmp ;
+
+            say("PoolManagerName : "+_poolManagerName);
+
+            tmp = _args.getOpt("billing") ;
+            if( tmp != null )_billingCell = new CellPath( tmp ) ;
+
+            say("Billing Cell : "+_billingCell ) ;
+
+            tmp = _args.getOpt("flushZeroSizeFiles") ;
+            if( tmp != null ){
+                if( tmp.equals("yes") || tmp.equals("true")  ){
+                    _flushZeroSizeFiles = true ;
+                }else if( tmp.equals("no") || tmp.equals("false") ){
+                    _flushZeroSizeFiles = false ;
+                }
+            }
+            say( "flushZeroSizeFiles = "+_flushZeroSizeFiles ) ;
+
+            _setupManager = _args.getOpt("setupManager" ) ;
+            say( "SetupManager set to "+(_setupManager==null? "none" : _setupManager ) ) ;
+
+            //
+            // block 'reserve space' only if we have a chance to
+            // make space available. So not for LFS_PRECIOUS.
+            //
+            _blockOnNoSpace = _lfsMode != LFS_PRECIOUS ;
+            //
+            // and allow overwriting
+            //
+            tmp = _args.getOpt("blockOnNoSpace") ;
+            if( ( tmp != null ) && ! tmp.equals("auto") )_blockOnNoSpace = tmp.equals("yes") ;
+            say("BlockOnNoSpace : "+_blockOnNoSpace);
+            //
+            // get additional tags
+            //
+            {
+                for( Enumeration options = _args.options().keys() ;
+                options.hasMoreElements() ; ){
+
+                    String key = (String)options.nextElement() ;
+                    say("Tag scanning : "+key ) ;
+                    if( ( key.length() > 4 ) && key.startsWith("tag.") ){
+                        _tags.put( key.substring(4) , _args.getOpt(key) ) ;
+                    }
+                }
+                for( Map.Entry<String, String> e: _tags.entrySet() ){
+                    say(" Extra Tag Option : "+e.getKey()+" -> "+e.getValue() ) ;
+                }
+            }
+            //
+            // repository and ping thread must exist BEFORE the
+            // setup file is scanned. PingThread will be start
+            // after all the setup is done.
+            //
+            _pingThread   = new PoolManagerPingThread() ;
+
+            disablePool(PoolV2Mode.DISABLED_STRICT, 1, "Initializing");
+            
+            say("Checking base directory ( reading setup) "+_baseDir);
+            while( true ){
+                try{
+                   checkBaseDir();
+                   break ;
+                }catch(Exception ee ){
+                   esay("Repository seems not to be ready : "+ee.getMessage());
+                   if( ! _waitForRepositoryOk )throw ee ;
+                   disablePool(PoolV2Mode.DISABLED_STRICT,1,"Initializing : Repository seems not to be ready : "+ee.getMessage());
+                }
+                try{
+                   Thread.sleep(30000) ;
+                }catch(InterruptedException  ie ){
+                   esay("Waiting for repository was interrupted");
+                   throw new
+                   Exception("Waiting for repository was interrupted");
+                }
+            }
+            say("Base dir ok");
+
+            _storageQueue = new StorageClassContainer(poolName) ;
+            _repository   = new CacheRepository2( _base ) ;
+            _repository.setLogable( this ) ;
+
+            _pnfs = new PnfsHandler( this ,
+                    new CellPath( _pnfsManagerName ) ,
+                    _poolName  ) ;
+
+            _storageHandler = new HsmStorageHandler2( this , _repository , _hsmSet , _pnfs ) ;
+
+            _storageHandler.setStickyAllowed( _allowSticky ) ;
+
+            _sweeper =  getSweeperHandler() ;
+
+            //
+            // transfer queue management
+            //
+            _timeoutManager = new JobTimeoutManager( this ) ;
+            //
+            // _ioQueue  = new SimpleJobScheduler( getNucleus().getThreadGroup() , "IO" ) ;
+            // _ioQueue.setSchedulerId( "regular" , 2 ) ;
+            //_timeoutManager.addScheduler( "io" , _ioQueue ) ;
+            //
+            // _ioQueueManager = new IoQueueManager( getNucleus().getThreadGroup() ,
+            //                                      _args.getOpt("io-queues" )    ) ;
+            // _ioQueue = _ioQueueManager.getDefaultScheduler() ;
+
+            _ioQueue = new IoQueueManager( getNucleus().getThreadGroup() ,
+                                           _args.getOpt("io-queues" )    ) ;
+
+            _p2pQueue = new SimpleJobScheduler( getNucleus().getThreadGroup() , "P2P" ) ;
+
+            _flushingThread = new HsmFlushController( this , _storageQueue , _storageHandler ) ;
+            
+            _checksumModule = new ChecksumModuleV1( this , _repository , _pnfs ) ;
+
+            _p2pClient = new P2PClient( this , _repository, _checksumModule ) ;
+            
+            _timeoutManager.addScheduler( "p2p" , _p2pQueue ) ;
+            _timeoutManager.start() ;
+            addCommandListener( _timeoutManager ) ;
+
+            //
+            // add the command listeners before we execute the setupFile.
+            //
+
+            addCommandListener( _sweeper ) ;
+            addCommandListener( _hsmSet ) ;
+            addCommandListener( new RepositoryInterpreter( this, _repository ) ) ;
+            addCommandListener( _storageQueue ) ;
+            addCommandListener( new HsmStorageInterpreter( this , _storageHandler ) ) ;
+            addCommandListener( _flushingThread ) ;
+            addCommandListener( _p2pClient ) ;
+            addCommandListener( _checksumModule ) ;
+            
+            execFile( _setup ) ;
+            
+        } catch (Exception e){
+            say("Exception occurred on startup: "+e);
+            start();
+            kill();
+            throw e;
+        }
+
+
+        _pingThread.start() ;
+
+        _repository.addCacheRepositoryListener(new RepositoryLoader()) ;
+
+        start() ;
+
+        Object weAreDone = new Object() ;
+        synchronized( weAreDone ){
+            _nucleus.newThread( new InventoryScanner( weAreDone ) , "inventory" ).start() ;
+            try{
+                weAreDone.wait();
+            }catch(InterruptedException ee ){
+                kill() ;
+                throw ee ;
+            }
+            _logClass.elog( "Starting Flushing Thread" ) ;
+            _flushingThread.start()  ;
+        }
+        esay( "Constructor done (still waiting for 'inventory')");
+    }
+    public CellVersion getCellVersion(){ return new CellVersion(diskCacheV111.util.Version.getVersion(),"$Revision: 1.143 $" ); }
+    private class IoQueueManager implements JobScheduler {
+        private List<JobScheduler> _list         = new ArrayList<JobScheduler>() ;
+        private Map<String,JobScheduler>   _hash = new HashMap<String,JobScheduler>() ;
+
+        private boolean   _isConfigured = false ;
+        private IoQueueManager( ThreadGroup group , String ioQueueList ){
+            _isConfigured = ( ioQueueList != null ) && ( ioQueueList.length() > 0 ) ;
+            ioQueueList = ( ioQueueList == null ) || ( ioQueueList.length() == 0 ) ? "regular" : ioQueueList ;
+            StringTokenizer st = new StringTokenizer( ioQueueList , "," ) ;
+            while( st.hasMoreTokens() ){
+                String queueName = st.nextToken() ;
+                if( _hash.get(queueName) != null ){
+                    esay("Duplicated queue name (ignored) : "+queueName);
+                    continue ;
+                }
+                int id = _list.size() ;
+                JobScheduler job = new SimpleJobScheduler( group , "IO-"+id ) ;
+                _list.add(job);
+                _hash.put( queueName , job ) ;
+                job.setSchedulerId( queueName , id ) ;
+                _timeoutManager.addScheduler( queueName , job ) ;
+            }
+            if( ! _isConfigured )say("IoQueueManager : not configured");
+            else say("IoQueueManager : "+_hash.toString());
+        }
+        private boolean isConfigured(){ return _isConfigured ; }
+        private JobScheduler getDefaultScheduler(){ return _list.get(0) ; }
+        private Iterator<JobScheduler> scheduler(){
+           return new ArrayList<JobScheduler>( _list ).iterator() ;
+        }
+        private JobScheduler getSchedulerByName( String queueName ){
+           return (JobScheduler)_hash.get( queueName ) ;
+        }
+        private JobScheduler getSchedulerById( int id ){
+           int pos = id % 10 ;
+           if( pos >= _list.size() )
+              throw new
+              IllegalArgumentException("Invalid id (doesn't below to any known scheduler)" );
+           return (JobScheduler)_list.get(pos);
+        }
+        public JobInfo getJobInfo( int id ){
+          return  getSchedulerById( id ).getJobInfo( id ) ;
+        }
+        public int add( String queueName , Runnable runnable , int priority )
+                throws InvocationTargetException {
+
+           JobScheduler js = queueName == null ? null : (JobScheduler)_hash.get( queueName ) ;
+
+           return js == null ?  add( runnable , priority )  : js.add( runnable , priority ) ;
+
+        }
+        public int  add( Runnable runnable )  throws InvocationTargetException{
+           return getDefaultScheduler().add( runnable ) ;
+        }
+        public int  add( Runnable runnable , int priority ) throws InvocationTargetException {
+           return getDefaultScheduler().add( runnable , priority ) ;
+        }
+        public void kill( int jobId )  throws NoSuchElementException {
+           getSchedulerById( jobId ).kill( jobId ) ;
+        }
+        public void remove( int jobId )  throws NoSuchElementException {
+           getSchedulerById( jobId ).remove( jobId ) ;
+        }
+        public StringBuffer printJobQueue( StringBuffer sbin ){
+            StringBuffer sb = sbin == null ? new StringBuffer() : sbin ;
+             for( Iterator it = scheduler() ; it.hasNext() ;  ){
+               ((JobScheduler)it.next()).printJobQueue( sb ) ;
+            }
+            return sb ;
+        }
+        public int  getMaxActiveJobs(){
+            int sum = 0 ;
+            for( Iterator it = scheduler() ; it.hasNext() ;  ){
+               sum += ((JobScheduler)it.next()).getMaxActiveJobs() ;
+            }
+            return sum ;
+        }
+        public int  getActiveJobs(){
+            int sum = 0 ;
+            for( Iterator it = scheduler() ; it.hasNext() ;  ){
+               sum += ((JobScheduler)it.next()).getActiveJobs() ;
+            }
+            return sum ;
+        }
+        public int  getQueueSize(){
+            int sum = 0 ;
+            for( Iterator it = scheduler() ; it.hasNext() ;  ){
+               sum += ((JobScheduler)it.next()).getQueueSize() ;
+            }
+            return sum ;
+        }
+        public void setMaxActiveJobs( int maxJobs ){}
+        public List getJobInfos(){
+           ArrayList list = new ArrayList() ;
+           for( Iterator it = scheduler() ; it.hasNext() ;  ){
+               list.addAll( ((JobScheduler)it.next()).getJobInfos() ) ;
+           }
+           return list ;
+        }
+        public void setSchedulerId( String name , int id ){ return ; }
+        public String getSchedulerName(){ return "Manager" ; }
+        public int    getSchedulerId(){return -1 ; }
+        public void dumpSetup( PrintWriter pw ){
+           for( Iterator it = scheduler() ; it.hasNext() ;  ){
+               JobScheduler js = (JobScheduler)it.next() ;
+               pw.println("mover set max active -queue="+js.getSchedulerName()+" "+js.getMaxActiveJobs());
+           }
+        }
+    }
+    private class InventoryScanner implements Runnable {
+        private Object _notifyMe =  null ;
+        private InventoryScanner( Object notifyMe ){ _notifyMe = notifyMe ; }
+        public void run(){
+
+            _logClass.log( "Running Repository (Cell is locked)" ) ;
+            _logClass.log( "Repository seems to be ok" ) ;
+            try{
+
+                _repository.runInventory( _logClass,_pnfs,_recoveryFlags) ;
+                enablePool() ;
+                _logClass.elog( "Pool enabled "+_poolName ) ;
+
+            }catch(CacheException cee ){
+
+                _logClass.elog( "Repository reported a problem : "+cee.getMessage());
+                _logClass.elog( "Pool not enabled "+_poolName ) ;
+                disablePool(PoolV2Mode.DISABLED_STRICT,2,"Init Failed");
+
+            }catch(Throwable t ){
+
+                _logClass.elog( "Repository reported Throwable : "+t ) ;
+                t.printStackTrace();
+
+            }
+            _logClass.elog( "Repository finished" ) ;
+            if( _notifyMe != null ){
+                synchronized( _notifyMe ){
+                    _notifyMe.notifyAll() ;
+                }
+            }
+
+        }
+    }
+    public void cleanUp(){
+        disablePool( PoolV2Mode.DISABLED_DEAD , 666  , "Shutdown" ) ;
+    }
+    //public void setMaxActiveIOs( int ios ){ _ioQueue.setMaxActiveJobs( ios) ; }
+    //
+    //   The sweeper class loader
+    //
+    //
+    private SpaceSweeper getSweeperHandler() throws Exception {
+
+        Class [] argClass = { dmg.cells.nucleus.CellAdapter.class ,
+                diskCacheV111.util.PnfsHandler.class ,
+                diskCacheV111.repository.CacheRepository.class ,
+                diskCacheV111.pools.HsmStorageHandler2.class
+        } ;
+        Class       sweeperClass = Class.forName( _sweeperClass ) ;
+        Constructor sweeperCon   = sweeperClass.getConstructor( argClass ) ;
+        Object []   args         = {  this , _pnfs, _repository, _storageHandler } ;
+
+
+        return (SpaceSweeper)sweeperCon.newInstance( args ) ;
+
+    }
+    private void setDummyStorageInfo( CacheRepositoryEntry entry ){
+        try{
+
+            StorageInfo storageInfo = entry.getStorageInfo() ;
+            storageInfo.setBitfileId( "*" ) ;
+
+            _pnfs.setStorageInfoByPnfsId( entry.getPnfsId() ,
+                    storageInfo ,
+                    0 // write (don't overwrite)
+                    );
+        }catch(Exception e ){
+            //
+            // for now we just ignore this exception (its dummy only)
+            //
+            esay("Problem in setDummyStorageInfo of : "+entry+ " : "+e );
+        }
+    }
+    //
+    // interface between the repository and the StorageQueueContainer
+    // (we do the pnfs stuff here as well)
+    //
+    private class RepositoryLoader implements CacheRepositoryListener {
+        public void actionPerformed( CacheEvent event ){}
+        public void sticky( CacheRepositoryEvent event ){
+            say("RepositoryLoader : sticky : "+event ) ;
+            CacheRepositoryEntry entry = event.getRepositoryEntry() ;
+        }
+        public void precious( CacheRepositoryEvent event ){
+            say("RepositoryLoader : precious : "+event ) ;
+            CacheRepositoryEntry entry = event.getRepositoryEntry() ;
+            long size = 0L ;
+            try{ size = entry.getSize() ; } catch(Exception ee ){
+                esay("RepositoryLoader : can't get filesize : "+ee);
+                //
+                // if we can't get the size, so to be on the save side.
+                //
+                size = 1 ;
+            }
+
+            try{
+                if( ( size == 0 ) && ! _flushZeroSizeFiles ){
+
+                    say( "RepositoryLoader : 0 size file set cached (no HSM flush)" ) ;
+                    if( ( _lfsMode == LFS_NONE     )  ||
+                            ( _lfsMode == LFS_VOLATILE )     ){
+
+                        entry.setCached();
+                        setDummyStorageInfo( entry ) ;
+                    }
+                }else{
+
+                    if( _lfsMode == LFS_NONE )_storageQueue.addCacheEntry( entry ) ;
+                    if( _lfsMode == LFS_VOLATILE )entry.setCached();
+
+                }
+            }catch(CacheException ce ){
+                esay("RepositoryLoader : Cache Exception in addCacheEntry ["+
+                        entry.getPnfsId()+"] : "+ce.getMessage());
+            }
+        }
+        public void cached( CacheRepositoryEvent event ){
+            say("RepositoryLoader : cached : "+event ) ;
+            //
+            // the remove will fail if the file
+            // is coming FROM the store.
+            //
+            CacheRepositoryEntry entry = event.getRepositoryEntry() ;
+            try{
+                CacheRepositoryEntry e = _storageQueue.removeCacheEntry( entry.getPnfsId() ) ;
+                say( "RepositoryLoader : removing "+
+                        entry.getPnfsId()+(e==null?" failed":" ok") ) ;
+            }catch(CacheException ce ){
+                esay( "RepositoryLoader : remove "+entry.getPnfsId()+" failed : "+ce ) ;
+            }
+        }
+        public void available( CacheRepositoryEvent event ){
+            say("RepositoryLoader : available : "+event ) ;
+            CacheRepositoryEntry entry  = event.getRepositoryEntry() ;
+            String               pnfsId = entry.getPnfsId().toString() ;
+            //
+            //
+            _pnfs.addCacheLocation(pnfsId);
+            //
+            entry.lock(false);
+        }
+        public void created( CacheRepositoryEvent event ){
+            say("RepositoryLoader : created : "+event ) ;
+        }
+        public void touched( CacheRepositoryEvent event ){
+            say("RepositoryLoader : touched : "+event ) ;
+        }
+        public void removed( CacheRepositoryEvent event ){
+            say("RepositoryLoader : removed : "+event ) ;
+            CacheRepositoryEntry entry = event.getRepositoryEntry() ;
+            try{
+                _storageQueue.removeCacheEntry( entry.getPnfsId() ) ;
+            }catch(CacheException ce){
+                esay( "RepositoryLoader : PANIC : "+entry.getPnfsId()+
+                        " removing from storage queue failed : "+ce );
+            }
+            //
+            // although we may be inconsistent now, we clear the database
+            // (volatile systems remove the entry from pnfs if this was the last copy)
+            //
+            _pnfs.clearCacheLocation( entry.getPnfsId() , _lfsMode == LFS_VOLATILE );
+            //
+            //
+            if( _reportOnRemovals ){
+                try{
+                    sendMessage( new CellMessage(
+                            _billingCell ,
+                            new RemoveFileInfoMessage(
+                            getCellName()+"@"+getCellDomainName(),
+                            entry.getPnfsId() )
+                            )
+                            );
+                }catch(Exception ee){
+                    esay("Couldn't report removal of : "+entry.getPnfsId()+" : "+ee);
+                }
+            }
+        }
+        public void destroyed( CacheRepositoryEvent event ){
+            say("RepositoryLoader : destroyed : "+event ) ;
+        }
+        public void needSpace( CacheNeedSpaceEvent event ){
+            say("RepositoryLoader : needSpace : "+event ) ;
+        }
+        public void scanned( CacheRepositoryEvent event ){
+            CacheRepositoryEntry entry = event.getRepositoryEntry() ;
+
+            try{
+                if( entry.isPrecious()       &&
+                        ( ! entry.isBad()      ) &&
+                        ( _lfsMode == LFS_NONE )     ){
+
+                    _storageQueue.addCacheEntry( entry ) ;
+                    say( "RepositoryLoader : Scanning "+entry.getPnfsId()+" ok" ) ;
+
+                }
+            }catch( CacheException ce ){
+                esay("RepositoryLoader : Scanning "+entry.getPnfsId()+" failed "+ce.getMessage());
+            }
+        }
+    }
+    private void checkBaseDir() throws Exception {
+        _base    = new File( _baseDir );
+        _setup   = new File( _base , "setup");
+
+        if( ! _setup.canRead() )
+            throw new
+                    IllegalArgumentException(
+                    "Setup file not found or not readable : "+_setup ) ;
+
+    }
+    private void execFile( File setup ) throws Exception {
+        BufferedReader br = new BufferedReader(
+                new FileReader( setup ) ) ;
+        String line = null ;
+        try{
+            while( ( line = br.readLine() )!= null ){
+                if( line.length() == 0 )continue ;
+                if( line.charAt(0) == '#' )continue ;
+                say( "Execute setup : "+line ) ;
+                try{
+                    command( new Args(line) ) ;
+                }catch( Exception ce ){
+                    esay( "Excecute setup failure : "+ce ) ;
+                    esay( "Excecute setup : won't continue" ) ;
+                    throw ce ;
+                }
+            }
+        }finally{
+            try{ br.close() ; }catch(Exception dummy){}
+        }
+        return ;
+    }
+    private void dumpSetup( PrintWriter pw ){
+        pw.println( "#\n# Created by "+getCellName()+
+                "("+this.getClass().getName()+") at "+
+                (new Date()).toString()+"\n#");
+        pw.println( "set max diskspace "+_repository.getTotalSpace() ) ;
+        pw.println( "set heartbeat "+ _pingThread.getHeartbeat() ) ;
+        pw.println( "set sticky "+(_allowSticky?"allowed":"denied") ) ;
+        pw.println( "set report remove "+(_reportOnRemovals?"on":"off"));
+        pw.println( "set breakeven "+_breakEven);
+        if(_suppressHsmLoad)pw.println("pool suppress hsmload on");
+        pw.println( "set gap "+_gap );
+        pw.println( "set duplicate request "+
+                (_dupRequest==DUP_REQ_NONE?"none":
+                    _dupRequest==DUP_REQ_IGNORE?"ignore":"refresh"));
+        pw.println( "set p2p "+(_p2pMode==P2P_INTEGRATED?"integrated":"separated"));
+        _flushingThread.printSetup( pw ) ;
+        if( _storageQueue   != null )_storageQueue.printSetup( pw ) ;
+        if( _storageHandler != null )_storageHandler.printSetup( pw ) ;
+        if( _hsmSet         != null )_hsmSet.printSetup( pw ) ;
+        if( _sweeper        != null )_sweeper.printSetup( pw ) ;
+        if( _ioQueue        != null )((IoQueueManager)_ioQueue).dumpSetup( pw ) ;
+        if( _p2pQueue       != null ){
+            pw.println( "p2p set max active "+_p2pQueue.getMaxActiveJobs() ) ;
+        }
+        if( _p2pClient != null )_p2pClient.printSetup( pw ) ;
+        if( _timeoutManager != null )_timeoutManager.printSetup( pw ) ;
+        _checksumModule.dumpSetup( pw ) ;
+    }
+    private void dumpSetup() throws Exception {
+        String name   = _setup.getName() ;
+        String parent = _setup.getParent() ;
+        File tempFile = parent == null ?
+            new File( "."+name ) :
+            new File( parent , "."+name ) ;
+
+        PrintWriter pw = new PrintWriter(
+                new FileWriter( tempFile ) ) ;
+
+        try{
+
+            dumpSetup( pw ) ;
+
+        }finally{
+            try{ pw.close() ; }catch(Exception de ){}
+        }
+        if( ! tempFile.renameTo( _setup ) )
+            throw new
+                    IOException( "Rename failed ("+tempFile+" -> "+_setup+")" ) ;
+
+        return ;
+    }
+
+    public CellInfo getCellInfo()
+    {        
+        PoolCellInfo info = new PoolCellInfo(super.getCellInfo());        
+        info.setPoolCostInfo(getPoolCostInfo());
+        info.setTagMap(_tags);
+        info.setErrorStatus(_poolStatusCode, _poolStatusMessage);
+        return info;
+    }
+
+    public void log(String str  ){ say( str ) ; }
+    public void elog(String str ){ esay( str ) ; }
+    public void plog(String str ){ esay( "PANIC : "+str ) ; }
+    public void getInfo( PrintWriter pw ){
+        pw.println("Base directory    : "+_baseDir);
+        pw.println("Revision          : [$Id: MultiProtocolPool2.java,v 1.143 2007-10-16 19:28:45 behrmann Exp $]" ) ;
+        pw.println("Version           : "+getCellVersion()+" (Sub="+_version+")" ) ;
+        pw.println("StickyFiles       : "+(_allowSticky?"allowed":"denied"));
+        pw.println("ModifyFiles       : "+(_allowModify?"allowed":"denied"));
+        pw.println("Gap               : "+_gap ) ;
+        pw.println("Report remove     : "+(_reportOnRemovals?"on":"off") ) ;
+        pw.println("Recovery          : "+
+                ((_recoveryFlags&CacheRepository.ALLOW_CONTROL_RECOVERY)>0?"CONTROL ":"")+
+                ((_recoveryFlags&CacheRepository.ALLOW_SPACE_RECOVERY)>0?"SPACE ":"")+
+                ((_recoveryFlags&CacheRepository.ALLOW_RECOVER_ANYWAY)>0?"ANYWAY ":"")
+                );
+        pw.println("Pool Mode         : "+_poolMode ) ;
+        if( _poolMode.isDisabled() ){
+            pw.println("Detail            : ["+_poolStatusCode+"] "
+                       + _poolStatusMessage);
+        }
+        pw.println("Clean prec. files : "+(_cleanPreciousFiles?"on":"off"));
+        pw.println("Hsm Load Suppr.   : "+(_suppressHsmLoad?"on":"off"));
+        pw.println("Ping Heartbeat    : "+_pingThread.getHeartbeat()+" seconds" ) ;
+        pw.println("Storage Mode      : "+(_isPermanent?"Static":"Dynamic"));
+        pw.println("ReplicationMgr    : "+_replicationHandler);
+        pw.println("Check Repository  : "+_checkRepository);
+        pw.println("LargeFileStore    : "+
+                (_lfsMode==LFS_NONE?"None":_lfsMode==LFS_VOLATILE?"Volatile":"Precious") );
+        pw.println("DuplicateRequests : "+
+                (_dupRequest==DUP_REQ_NONE?"None":_dupRequest==DUP_REQ_IGNORE?"Ignored":"Refreshed") );
+        pw.println("P2P Mode          : "+
+                (_p2pMode==P2P_INTEGRATED?"Integrated":"Separated") );
+        pw.println("P2P File Mode     : "+
+                (_p2pFileMode==P2P_PRECIOUS?"Precious":"Cached") );
+
+        if( _hybridInventoryActive ){
+            pw.println("Inventory         : "+_hybridCurrent ) ;
+        }
+        pw.println("Diskspace usage   : " ) ;
+        if( _repository!=null ){
+            long total    = _repository.getTotalSpace() ;
+            long used     = total - _repository.getFreeSpace() ;
+            long precious = _repository.getPreciousSpace() ;
+
+            pw.println( "    Total    : "+UnitInteger.toUnitString(total) ) ;
+            pw.println( "    Used     : "+used+
+                    "    ["+(( (float)used ) / ( (float) total ) )+"]"   ) ;
+            pw.println( "    Free     : "+(total-used) ) ;
+            pw.println( "    Precious : "+precious+
+                    "    ["+(( (float)precious ) / ( (float) total ) )+"]"   ) ;
+            pw.println( "    Removable: "+_sweeper.getRemovableSpace()+
+                    "    ["+(( (float)_sweeper.getRemovableSpace() ) / ( (float) total ) )+"]"   ) ;
+            pw.println( "    Reserved : "+_repository.getReservedSpace() ) ;
+        }else{
+            pw.println("No Yet known" ) ;
+        }
+
+        if( _flushingThread != null )_flushingThread.getInfo( pw ) ;
+
+        pw.println("Storage Queue     : " ) ;
+        if( _storageQueue != null ){
+            pw.println( "   Classes  : "+_storageQueue.getStorageClassCount() ) ;
+            pw.println( "   Requests : "+_storageQueue.getRequestCount() ) ;
+        }else{
+            pw.println( "   Not Yet known" ) ;
+        }
+        if( _ioQueue != null ){
+           IoQueueManager manager = (IoQueueManager) _ioQueue ;
+           pw.println( "Mover Queue Manager : "+(manager.isConfigured()?"Active":"Not Configured"));
+           for( Iterator it = manager.scheduler() ; it.hasNext() ; ){
+               JobScheduler js = (JobScheduler)it.next() ;
+               pw.println( "Mover Queue ("+js.getSchedulerName()+") "+js.getActiveJobs()+
+                       "("+js.getMaxActiveJobs()+
+                       ")/"+js.getQueueSize() ) ;
+           }
+        }
+        if( _p2pQueue != null )
+            pw.println( "P2P   Queue "+_p2pQueue.getActiveJobs()+
+                    "("+_p2pQueue.getMaxActiveJobs()+
+                    ")/"+_p2pQueue.getQueueSize() ) ;
+        if( _storageHandler != null )
+            _storageHandler.getInfo( pw ) ;
+
+        _p2pClient.getInfo( pw ) ;
+        _timeoutManager.getInfo(pw);
+        _checksumModule.getInfo(pw);
+    }
+
+    public void say( String str ){
+        pin( str );
+        super.say( str );
+    }
+    public void esay( String str ){
+        pin( str ) ;
+        super.esay( str ) ;
+    }
+    ////////////////////////////////////////////////////////////////
+    //
+    //     The io File  Part
+    //
+    //
+    private void ioFile(
+            PoolIoFileMessage poolMessage,
+            CellMessage       cellMessage        ){
+
+        cellMessage.revertDirection() ;
+
+
+        RepositoryIoHandler io = null;
+        try {
+            io = new RepositoryIoHandler(  poolMessage , cellMessage )  ;
+        }catch(CacheException ce) {
+            poolMessage.setFailed(ce.getRc(), ce.getMessage() );
+            esay(ce.getMessage());
+            try {
+                sendMessage(cellMessage);
+            }catch(Exception e) {
+                esay(e);
+            }
+            return;
+        }
+        Iterator i = _moverAttributes.keySet().iterator() ;
+        while( i.hasNext() ){
+            try{
+                Object key = i.next() ;
+                Object value = _moverAttributes.get( key ) ;
+                say( "Setting mover "+key.toString()+" -> "+value ) ;
+                io.setAttribute( key.toString() , value ) ;
+            }catch(IllegalArgumentException iae ){
+                esay( "setAttribute : "+iae.getMessage() ) ;
+            }
+        }
+        String queueName = null ;
+        try{
+           //
+           // we could get a 'no such method exception'
+           //
+           queueName = poolMessage.getIoQueueName() ;
+        }catch(Exception ee ){
+           say("Possibly old fashioned message : "+ee );
+        }
+        IoQueueManager queueManager = (IoQueueManager)_ioQueue ;
+        try{
+            if( io.isWrite() ){
+
+                queueManager.add( queueName , io , SimpleJobScheduler.HIGH ) ;
+
+            }else if( poolMessage.isPool2Pool() ){
+
+                ( _p2pMode == P2P_INTEGRATED ? _ioQueue : _p2pQueue ).add( io , SimpleJobScheduler.HIGH ) ;
+
+            }else{
+                String newClient = io.getClient() ;
+                long   newId     = io.getClientId() ;
+
+                if( _dupRequest != DUP_REQ_NONE ){
+
+                    JobInfo    job   = null ;
+                    List       list  = _ioQueue.getJobInfos() ;
+                    boolean    found = false ;
+
+                    for( int l = 0 ; l < list.size() ; l++ ){
+
+                        job = (JobInfo)list.get(l);
+                        if( newClient.equals(job.getClientName()) &&
+                                ( newId == job.getClientId() )          ){
+
+                            found = true ;
+                            break ;
+
+                        }
+                    }
+                    if( ! found ){
+                        say("Dup Request : regular <"+newClient+":"+newId+">") ;
+                        queueManager.add( queueName , io , SimpleJobScheduler.REGULAR ) ;
+                    }else if( _dupRequest == DUP_REQ_IGNORE ){
+                        say("Dup Request : ignoring <"+newClient+":"+newId+">") ;
+                    }else if( _dupRequest == DUP_REQ_REFRESH ){
+                        long jobId = job.getJobId() ;
+                        say("Dup Request : refresing <"+newClient+":"+newId+"> old = "+jobId ) ;
+                        queueManager.kill( (int)jobId ) ;
+                        queueManager.add( queueName , io , SimpleJobScheduler.REGULAR ) ;
+                    }else{
+                        say("Dup Request : PANIC (code corrupted) <"+newClient+":"+newId+">") ;
+                    }
+
+                }else{
+
+                    say("Dup Request : none <"+newClient+":"+newId+">") ;
+                    queueManager.add( queueName , io , SimpleJobScheduler.REGULAR ) ;
+
+                }
+            }
+        }catch(InvocationTargetException ite ){
+            esay( ""+io+" not added due to : "+ite.getTargetException() ) ;
+            esay(ite);
+        }
+        return;
+    }
+    private class RepositoryIoHandler implements IoBatchable {
+
+        private PoolIoFileMessage      _command = null ;
+        private CellMessage            _message = null ;
+        private String                 _clientPath = null ;
+        private Thread                 _worker  = null ;
+        private PnfsId                 _pnfsId  = null ;
+        private Object                 _handler = null ;
+        private ProtocolInfo           _protocolInfo = null ;
+        private StorageInfo            _storageInfo  = null ;
+        private CellPath               _destination  = null ;
+        private boolean                _rdOnly  = true ;
+        private boolean                _create  = false ;
+        private CacheRepositoryEntry   _entry   = null ;
+        private boolean                _preparationDone = false ;
+        private DoorTransferFinishedMessage  _finished  = null ;
+        private MoverInfoMessage             _info      = null ;
+        private boolean                      _started   = false ;
+        public  RepositoryIoHandler(
+                PoolIoFileMessage poolMessage,
+                CellMessage originalCellMessage    ) throws CacheException {
+
+            _message      = originalCellMessage ;
+            _command      = poolMessage ;
+            _destination  = _message.getDestinationPath() ;
+            _pnfsId       = _command.getPnfsId();
+            _protocolInfo = _command.getProtocolInfo() ;
+            _storageInfo  = _command.getStorageInfo() ;
+            _info         = new MoverInfoMessage(
+                    getCellName()+"@"+getCellDomainName() ,
+                    _pnfsId ) ;
+            _info.setInitiator( _command.getInitiator() );
+            CellPath tmp = (CellPath)_destination.clone() ;
+            tmp.revert() ;
+            _clientPath = tmp.getCellName()+"@"+tmp.getCellDomainName() ;
+            //
+            // prepare the final reply
+            //
+            _finished = new DoorTransferFinishedMessage(
+                    _command.getId() ,
+                    _pnfsId ,
+                    _protocolInfo ,
+                    _storageInfo ,
+                    poolMessage.getPoolName() ) ;
+
+            String queueName = null ;
+            try{
+               //
+               // we could get a 'no such method exception'
+               //
+               _finished.setIoQueueName( poolMessage.getIoQueueName() ) ;
+            }catch(Exception ee ){
+               say("Possibly old fashioned message : "+ee );
+            }
+            //
+            // we need to change the next two lines as soon
+            // as we allow 'transient files'.
+            //
+            _rdOnly  = poolMessage instanceof PoolDeliverFileMessage ;
+            _create  = ! _rdOnly ;
+
+            _info.setFileCreated( _create ) ;
+            _info.setStorageInfo( _storageInfo ) ;
+
+
+            // check for file existance
+            if(  _rdOnly && !_repository.contains(_pnfsId) ) {
+                // remove 'BAD' cachelocation in pnfs
+                _pnfs.clearCacheLocation(_pnfsId);
+                throw new
+                FileNotInCacheException( "Entry not in repository : "+_pnfsId ) ;
+            }
+
+        }
+        private boolean isWrite(){ return _create ; }
+        public String toString(){
+
+            MoverProtocol handler = (MoverProtocol)_handler;
+
+            StringBuffer sb = new StringBuffer() ;
+            sb.append(_pnfsId.toString()) ;
+            if( handler == null ){
+                sb.append(" h={NoHandlerYet}") ;
+            }else{
+                sb.append(" h={").append(handler.toString()).
+                        append("} bytes=").
+                        append(handler.getBytesTransferred()).
+                        append(" time/sec=").
+                        append( getTransferTime()/1000L ).
+                        append(" LM=") ;
+
+                long lastTransferTime = getLastTransferred() ;
+                if( lastTransferTime == 0L )
+                    sb.append(0) ;
+                else
+                    sb.append((System.currentTimeMillis() - lastTransferTime)/1000L) ;
+            }
+            return sb.toString() ;
+        }
+        private void setAttribute( String name , Object attribute ){
+            Object obj = _handler ;
+            if( obj ==  null )
+                throw new
+                        IllegalArgumentException("Handler not yet installed" ) ;
+            if( ! ( obj instanceof MoverProtocol ) )
+                throw new
+                        IllegalArgumentException("Handler not a MoverProtocol" ) ;
+
+            MoverProtocol handler = (MoverProtocol)obj ;
+            handler.setAttribute( name , attribute ) ;
+        }
+        private Object getAttribute( String name ){
+            Object obj = _handler ;
+            if( obj ==  null )
+                throw new
+                        IllegalArgumentException("Handler not yet installed" ) ;
+            if( ! ( obj instanceof MoverProtocol ) )
+                throw new
+                        IllegalArgumentException("Handler not a MoverProtocol" ) ;
+
+            MoverProtocol handler = (MoverProtocol)obj ;
+            return handler.getAttribute( name ) ;
+        }
+
+        private synchronized boolean prepare(){
+            if( _preparationDone )return false ;
+            _preparationDone = true ;
+            boolean failed   = false ;
+            say( "JOB prepare "+_pnfsId ) ;
+            //
+            // do all the preliminary stuff
+            //   - load Protocol Handler
+            //   - check File is ok
+            //   - increment the link count (to prevent the file from been removed)
+            //
+            PnfsId pnfsId = _pnfsId ;
+            try{
+                _handler = getProtocolHandler( _protocolInfo ) ;
+                if( _handler == null )
+                    throw new
+                    CacheException(27,"PANIC : Couldn't get handler for "+_protocolInfo);
+
+                if( _create && _rdOnly )
+                    throw new
+                            IllegalArgumentException("Can't read and create");
+
+                synchronized( _repository ){
+                    if( _create ){
+                        _entry = _repository.createEntry( pnfsId ) ;
+                        _entry.lock(true);
+                        _entry.setReceivingFromClient() ;
+                    }else{
+                        _entry = _repository.getEntry( pnfsId ) ;
+                        say("Entry for "+pnfsId+" found and is "+_entry);
+                        if( ( ! _entry.isCached() ) && ( ! _entry.isPrecious() ) )
+                            throw new
+                            CacheException(301,"File is still transient : "+pnfsId);
+                        _entry.incrementLinkCount() ;
+                    }
+                }
+                _command.setSucceeded();
+
+            }catch( FileNotInCacheException fce) {
+                esay(_pnfsId + " not in repository");
+                // probably bad entry in cacheInfo, clean it
+                _pnfs.clearCacheLocation(_pnfsId);
+                failed = true ;
+                _command.setFailed( fce.getRc(), fce.getMessage() );
+            }catch(CacheException ce){
+                esay("Io Thread Cache Exception : "+ce);
+                esay(ce);
+                if( ce.getRc() == CacheRepository.ERROR_IO_DISK )
+                    disablePool( PoolV2Mode.DISABLED_STRICT , ce.getRc() , ce.getMessage() ) ;
+                failed = true ;
+                _command.setFailed( ce.getRc(), ce.getMessage() );
+            }catch(Exception exc){
+                esay("Thread Exception : "+exc);
+                esay(exc);
+                failed = true ;
+                _command.setFailed(11, exc.toString() );
+            }
+            //
+            // send first acknowledge.
+            //
+            try{
+                sendMessage( _message ) ;
+            }catch( Exception eee ){
+                esay( "Can't send message back to door : "+eee ) ;
+                esay(eee);
+                failed = true ;
+            }
+            if( failed ){
+                try{
+                    if( _create ){
+                        _entry.lock(false) ;
+                        _repository.removeEntry( _entry ) ;
+                    }
+                }catch(CacheException ce ){
+                    esay("PANIC : couldn't remove entry : "+_entry ) ;
+                }
+                esay( "IoFile thread finished (request failure)" ) ;
+            }
+            return failed ;
+        }
+        //
+        //   the IoBatchable Interface
+        //
+        public PnfsId getPnfsId(){ return _pnfsId ; }
+        public long getLastTransferred(){
+            synchronized( this ){ if( ! _started )return 0L ; }
+            if( _handler == null )
+                return 0 ;
+            else if( _handler instanceof MoverProtocol )
+                return ((MoverProtocol)_handler).getLastTransferred() ;
+            else
+                return 0 ;
+        }
+        public long getTransferTime(){
+            synchronized( this ){ if( ! _started )return 0L ; }
+            if( _handler == null )
+                return 0 ;
+            else if( _handler instanceof MoverProtocol )
+                return ((MoverProtocol)_handler).getTransferTime() ;
+            else
+                return 0 ;
+        }
+        public long getBytesTransferred(){
+            if( _handler == null )return 0 ;
+            else if( _handler instanceof MoverProtocol )
+                return ((MoverProtocol)_handler).getBytesTransferred() ;
+            else
+                return 0 ;
+        }
+        public double getTransferRate(){
+            if( _handler == null )return (double)10.000 ;
+            if( ! ( _handler instanceof MoverProtocol ) )return (double)10.0 ;
+            MoverProtocol handler = (MoverProtocol)_handler;
+            long bt = handler.getBytesTransferred() ;
+            long tm = handler.getTransferTime() ;
+            return tm == 0L ? (double)10.00 : ( (double)bt / (double)tm ) ;
+        }
+        //
+        //   the Batchable Interface
+        //
+        public String getClient(){ return _clientPath ; }
+        public long   getClientId(){ return _command.getId() ; }
+        public void queued(){
+            say( "JOB queued "+_pnfsId ) ;
+            if( prepare() )
+                throw new
+                        IllegalArgumentException("prepare failed") ;
+        }
+        public void unqueued(){
+            say( "JOB unqueued "+_pnfsId ) ;
+            //
+            // TBD: have to send 'failed' as last message
+            //
+            return ;
+        }
+        //
+        //   the Runnable Interface
+        //
+        public void run(){
+
+            say( "JOB run "+_pnfsId ) ;
+            if( prepare() )return ;
+
+            synchronized( this ){ _started = true ; }
+            SysTimer sysTimer      = new SysTimer() ;
+            long     transferTimer = System.currentTimeMillis() ;
+
+            RandomAccessFile raf           = null ;
+            MoverProtocol    moverProtocol = null ;
+            SpaceMonitor monitor = _repository ;
+            File     cacheFile = null;
+            ChecksumMover csmover = null;
+            ChecksumFactory clientChecksumFactory = null;
+            
+            if( ! _crashEnabled ) {
+                _storageInfo.setKey("crash",null) ;
+            }else{
+                _storageInfo.setKey("crashType" , _crashType ) ;
+            }
+
+            try{
+                cacheFile = _entry.getDataFile() ;
+
+                say( "Trying to open "+cacheFile);
+                raf = new RandomAccessFile(cacheFile,(_rdOnly&&!_allowModify)?"r":"rw");
+
+                if( _create ){
+
+                    sysTimer.getDifference() ;
+
+                    String  tmp = null ;
+                    long    preallocatedSpace = 0L ;
+                    long    maxAllocatedSpace = 0L ;
+                    if( ( tmp = _storageInfo.getKey(PREALLOCATED_SPACE) ) != null ){
+                        try{ preallocatedSpace = Long.parseLong(tmp) ; } catch(Exception ee ){};
+                    }
+                    if( ( tmp = _storageInfo.getKey(MAX_SPACE) ) != null ){
+                        try{ maxAllocatedSpace = Long.parseLong(tmp) ; } catch(Exception ee ){};
+                    }
+
+                    if( ( preallocatedSpace > 0L ) || ( maxAllocatedSpace > 0L ) )
+                        monitor =
+                                new PreallocationSpaceMonitor(
+                                _repository ,
+                                preallocatedSpace ,
+                                maxAllocatedSpace ) ;
+
+                    MoverProtocol handler = (MoverProtocol)_handler ;
+                    csmover = handler instanceof ChecksumMover ? (ChecksumMover)handler : null ;
+                    
+                    if( csmover != null ){
+                        say("Checksum mover is set");
+                        clientChecksumFactory = csmover.getChecksumFactory(_protocolInfo);
+                        Checksum checksum = null;
+                        if ( clientChecksumFactory != null ){
+                             say("Got checksum factory of "+clientChecksumFactory.getType());
+                             checksum = clientChecksumFactory.create();
+                        } else                   
+                             checksum = _checksumModule.getDefaultChecksumFactory().create();
+                      
+                        if ( _checksumModule.checkOnTransfer() ){
+                           csmover.setDigest(checksum);
+                        }
+                    }
+
+
+                    handler.runIO(
+                            raf ,
+                            _protocolInfo ,
+                            _storageInfo ,
+                            _pnfsId  ,
+                            monitor ,
+                            MoverProtocol.WRITE | MoverProtocol.READ ) ;
+
+
+                    long fileSize = cacheFile.length() ;
+                    _storageInfo.setFileSize( fileSize ) ;
+                    _info.setFileSize( fileSize ) ;
+
+                    if( csmover != null ){
+                        _checksumModule.setMoverChecksums(
+                                _entry ,
+                                clientChecksumFactory,
+				csmover.getClientChecksum(),
+                                _checksumModule.checkOnTransfer() ?
+				csmover.getTransferChecksum() : null
+                                );
+                    }else{
+                        _checksumModule.setMoverChecksums( _entry , null ,null,null );
+                    }
+
+                    boolean overwrite = _storageInfo.getKey("overwrite") != null ;
+
+                    say( _pnfsId.toString()+
+                            ";length="+fileSize+
+                            ";timer="+sysTimer.getDifference().toString() ) ;
+
+                    //
+                    // store the storage info and set the file precious.
+                    // ( first remove the lock, otherwise the
+                    //   state for the precious events is wrong.
+                    //
+                    
+                    /*
+                     * Due to support of <AccessLatency> and <RetentionPolicy>
+                     * the file state in the pool has changed has changed it's
+                     * meaning:
+                     *     precious: have to goto tape
+                     *     cached: free to be removed by sweeper
+                     *     cached+sticky: does not goes to tape, not removed by sweeper
+                     *     
+                     * new states depending on AL and RP:
+                     *     Custodial+ONLINE   (T1D1) : precious+stily  => cached+stiky
+                     *     Custodial+NEARLINE (T1D0) : precious        => cached
+                     *     Output+ONLINE      (T0D1) : cached+stiky    => cached+stiky
+                     *  
+                     */                    
+                    
+                    _entry.lock(false) ;
+                    _entry.setStorageInfo( _storageInfo ) ;
+                                        
+                    // flush to tape only if the file defined as a 'tape file'( RP = Custodial) and the HSM is defined
+                    String hsm = _storageInfo.getHsm();
+                    RetentionPolicy retentionPolicy = _storageInfo.getRetentionPolicy();
+                    if( retentionPolicy != null && retentionPolicy.equals(RetentionPolicy.CUSTODIAL) ) {                    	
+	                    if(hsm != null && !hsm.toLowerCase().equals("none") ) {
+	                    	_entry.setPrecious() ;	
+	                    }else{
+	                    	_entry.setCached() ;
+	                    }
+                    }else{
+                    	_entry.setCached() ;
+                    }
+                    
+                    
+                    AccessLatency accessLatency = _storageInfo.getAccessLatency();
+                    if( accessLatency != null && accessLatency.equals( AccessLatency.ONLINE) ) {
+                    	
+                    	// TODO: probably, we have to notify PinManager
+                    	// HopingManager have to copy file into a 'read' pool if
+                    	// needed, set copy 'sticky' and remove sticky flag in the 'write' pool                    	
+                    	
+                    	_entry.setSticky(true);
+                    }else{
+                    	_entry.setSticky(false);
+                    }                    
+
+
+                    if( overwrite ){
+                        _entry.setCached() ;
+                        say("Overwriting requested");
+                    }
+
+                    //
+                    // setFileSize will throw an exception if the file is no
+                    // longer in pnfs. As a result, the client will let the
+                    // close fail and we will remove the entries from the
+                    // the repository.
+                    //
+                    if( ( ! overwrite ) && ( ! _isHsmPool ) ){
+                        _pnfs.setFileSize(_pnfsId,fileSize);
+                        if( _lfsMode == MultiProtocolPool2.LFS_NONE ) {
+                            _pnfs.putPnfsFlag( _pnfsId, "h", "yes");
+                        }else{
+                            _pnfs.putPnfsFlag( _pnfsId, "h", "no");
+                        }
+                    }
+                    //
+                    _replicationHandler.initiateReplication( _entry , "write" ) ;
+                    //
+                    // cache location changed by event handler
+                    //
+                    //
+                }else{
+                    sysTimer.getDifference() ;
+                    long fileSize = cacheFile.length() ;
+                    _info.setFileSize( fileSize ) ;
+
+                    MoverProtocol handler = (MoverProtocol)_handler ;
+                    handler.runIO(
+                            raf ,
+                            _protocolInfo ,
+                            _storageInfo ,
+                            _pnfsId  ,
+                            _repository ,
+                            MoverProtocol.READ |
+                            ( _entry.isPrecious() &&
+                            _allowModify ?
+                                MoverProtocol.WRITE : 0  ) ) ;
+                    if( handler.wasChanged() && ( ! _isHsmPool ) ){
+                        fileSize = cacheFile.length() ;
+                        try{
+                            _pnfs.setFileSize(_pnfsId,fileSize);
+                        }catch(Exception eee ){
+                            esay(_pnfsId.toString()+" failed to change filesize");
+                        }
+                    }
+                    //
+                    // better we close it here (otherwise small files may just disappear)
+                    //
+                    try{ raf.close() ; raf = null ;}catch(Exception ee){}
+                    say( _pnfsId.toString()+
+                            ";length="+fileSize+
+                            ";timer="+sysTimer.getDifference().toString() ) ;
+
+                }
+                _finished.setSucceeded() ;
+
+            }catch(Exception eofe) {
+
+                esay("Exception in runIO for : "+_pnfsId+" "+eofe);
+
+                if( ! ( eofe instanceof EOFException ) )esay(eofe);
+
+                if( eofe instanceof CacheException ){
+                    int errorCode = ((CacheException)eofe).getRc() ;
+                    if( errorCode == CacheRepository.ERROR_IO_DISK ) {
+                        disablePool( PoolV2Mode.DISABLED_STRICT , errorCode , eofe.getMessage() ) ;
+                        fsay(eofe.getMessage());
+                    }
+                }
+
+                try{
+                    // remove newly created zero size files if there was a problem to write it (no close arrived)
+                    if( _create ) {
+
+                        if ( (raf != null) && (raf.length() == 0) ) {
+                            esay("removing empty file: " + _pnfsId);
+                            _entry.lock(false);
+                            _repository.removeEntry( _entry ) ;
+                            if( ! _isHsmPool )_pnfs.deletePnfsEntry(_pnfsId);
+                        }else{
+
+                            //FIXME: this part is not as elegant as it's sould be  - dublicated code
+
+                            // set file size
+                            long fileSize = cacheFile.length() ;
+                            esay("Storing incomplete file : " + _pnfsId + " with "+fileSize);
+
+                            _storageInfo.setFileSize( fileSize ) ;
+                            _info.setFileSize( fileSize ) ;
+                            _entry.lock(false) ;
+                            _entry.setStorageInfo( _storageInfo ) ;
+                            _entry.setPrecious() ;
+                            if( ! _isHsmPool ){
+                               _pnfs.setFileSize(_pnfsId,fileSize);
+                               if( _lfsMode == MultiProtocolPool2.LFS_NONE ) {
+                                   _pnfs.putPnfsFlag( _pnfsId, "h", "yes");
+                               }else{
+                                   _pnfs.putPnfsFlag( _pnfsId, "h", "no");
+                               }
+                            }
+                            // set checksum
+                            if( csmover != null ){
+                                _checksumModule.setMoverChecksums(
+                                        _entry ,
+                                        clientChecksumFactory,
+                                        csmover.getClientChecksum() ,
+                                        _checksumModule.checkOnTransfer() ?
+                                            csmover.getTransferChecksum() : null
+                                        );
+                            }else{
+                                _checksumModule.setMoverChecksums( _entry , null ,null,null );
+                            }
+
+                        }
+                    }
+
+                }catch(Throwable e) {
+                    esay("Stacked Exception (Original) for : "+_entry+" : "+eofe ) ;
+                    esay("Stacked Throwable (Resulting) for : "+_entry+" : "+e ) ;
+                    esay(e);
+                }finally{
+                    String errorMessage = "Unexpected Exception : "+eofe ;
+                    int errorCode = 33 ;
+
+                    if( eofe instanceof CacheException ){
+                        errorCode = ((CacheException)eofe).getRc() ;
+                        errorMessage = eofe.getMessage() ;
+                    }
+                    _finished.setReply( errorCode , errorMessage ) ;
+                    _info.setResult( errorCode , errorMessage ) ;
+                }
+
+
+            }catch( Throwable e ){
+                esay("Throwable in runIO() "+_entry+" "+e ) ;
+                esay(e);
+
+                _finished.setReply( 34 , e ) ;
+                _info.setResult( 34 , e.toString() ) ;
+
+            }finally{
+                if( ! _create )try{ _entry.decrementLinkCount() ;}catch(Exception eeee){}
+
+                try{ if( raf != null )raf.close() ; raf = null ; }catch(Exception ee ){
+                   esay("Couldn't close Random access file");
+                   esay(ee);
+                }
+                try{
+
+                    if( monitor instanceof PreallocationSpaceMonitor ){
+                        PreallocationSpaceMonitor m = (PreallocationSpaceMonitor)monitor;
+                        long usedSpace = m.getUsedSpace() ;
+                        say("Applying preallocated space : "+usedSpace);
+                        if( usedSpace > 0L )_repository.applyReservedSpace( usedSpace ) ;
+                    }
+
+                }catch(Exception ee ){
+                    esay( "Problem  handling reserved space management : " + ee ) ;
+                    esay(ee);
+                }
+
+                transferTimer = System.currentTimeMillis() - transferTimer ;
+                long bytesTransferred =
+                        _handler instanceof MoverProtocol ?
+                            ((MoverProtocol)_handler).getBytesTransferred():0L;
+                _info.setTransferAttributes( bytesTransferred ,
+                        transferTimer ,
+                        _protocolInfo ) ;
+
+            }
+            try{
+                _message.setMessageObject( _finished ) ;
+                sendMessage( _message ) ;
+            }catch( Exception eee ){
+                esay( "PANIC : Can't send message back to door : "+eee ) ;
+                esay(eee);
+            }
+            try{
+                sendMessage( new CellMessage( _billingCell , _info ) ) ;
+            }catch( Exception eee ){
+                esay( "PANIC : Can't report to 'billing cell' : "+eee ) ;
+                esay(eee);
+            }
+            say( "IO thread finished : "+Thread.currentThread().toString() ) ;
+        }
+
+        public void ided(int id) {
+            //say("RepositoryIoHandler.ided("+id+")");
+
+            _command.setMoverId(id);
+        }
+
+    }
+    ////////////////////////////////////////////////////////////////
+    //
+    //   replication on data arrived
+    //
+    private class ReplicationHandler {
+
+        private boolean _enabled = false ;
+        private String _replicationManager  = "PoolManager" ;
+        private String _destinationHostName = null ;
+        private String _destinationMode     = "keep" ;
+        private boolean _replicateOnRestore = false ;
+
+        //
+        //   replicationManager,Hostname,modeOfDestFile
+        //
+        private ReplicationHandler(){ init(null) ; }
+        private ReplicationHandler( String vars ){ init(vars) ; }
+        public void init( String vars ){
+
+           if( _destinationHostName == null ){
+               try{
+                 _destinationHostName = InetAddress.getLocalHost().getHostAddress() ;
+               }catch(Exception ee ){
+                 _destinationHostName = "localhost" ;
+               }
+           }
+           if(  ( vars == null ) || vars.equals("off") ){
+              _enabled = false ;
+              return ;
+           }else if( vars.equals("on") ){
+              _enabled = true ;
+              return ;
+           }
+           _enabled = true ;
+
+           String [] args = vars.split(",");
+           _replicationManager  =  ( args.length > 0 ) && ( ! args[0].equals("") ) ?
+                                  args[0] : _replicationManager ;
+           _destinationHostName =  ( args.length > 1 ) && ( ! args[1].equals("") ) ?
+                                  args[1] : _destinationHostName ;
+           _destinationMode     =  ( args.length > 2 ) && ( ! args[2].equals("") ) ?
+                                  args[2] : _destinationMode ;
+
+           if( _destinationHostName.equals("*") ){
+             try{
+               _destinationHostName = InetAddress.getLocalHost().getHostAddress() ;
+             }catch(Exception ee ){
+               _destinationHostName = "localhost" ;
+             }
+           }
+
+           return ;
+        }
+        public String getParameterString(){
+          StringBuffer sb = new StringBuffer() ;
+          if( _enabled ){
+             sb.append(_replicationManager).
+                append(_destinationHostName).
+                append(_destinationMode);
+          }else{
+             sb.append("off");
+          }
+          return sb.toString();
+        }
+        public String toString(){
+          StringBuffer sb = new StringBuffer() ;
+
+          if( _enabled ){
+             sb.append("{Mgr=").append(_replicationManager).
+                append(",Host=").append(_destinationHostName).
+                append(",DestMode=").append(_destinationMode).
+                append("}");
+          }else{
+             sb.append("Disabled");
+          }
+          return sb.toString();
+        }
+        private void initiateReplication( CacheRepositoryEntry entry , String source ){
+           if( ( ! _enabled ) || ( source.equals("restore") && ! _replicateOnRestore ) )return ;
+           try{
+              _initiateReplication( entry , source ) ;
+           }catch(Exception ee ){
+              esay("Problem in sending replication request : "+ee ) ;
+              esay(ee);
+           }
+        }
+        private void _initiateReplication( CacheRepositoryEntry entry , String source )
+                throws Exception {
+
+            PnfsId      pnfsId      = entry.getPnfsId() ;
+            StorageInfo storageInfo = entry.getStorageInfo() ;
+
+            storageInfo.setKey( "replication.source" , source ) ;
+
+            PoolMgrReplicateFileMsg req =
+               new PoolMgrReplicateFileMsg(
+                    pnfsId,
+                    storageInfo,
+                    new DCapProtocolInfo(
+                             "DCap", 3, 0,
+                             _destinationHostName ,
+                             2222
+                    ),
+                    storageInfo.getFileSize()
+               );
+            req.setReplyRequired(false);
+            sendMessage( new CellMessage(new CellPath(_replicationManager), req) );
+
+        }
+    }
+    /////////////////////////////////////////////////////////////
+    //
+    //   The mover class loader
+    //
+    //
+    private Hashtable _handlerClasses = new Hashtable() ;
+
+    private Object getProtocolHandler( ProtocolInfo info ){
+
+        Class [] argsClass = { dmg.cells.nucleus.CellAdapter.class } ;
+        String moverClassName = info.getProtocol()+"-"+
+                info.getMajorVersion() ;
+        Class  mover = (Class)_moverHash.get(moverClassName) ;
+
+        try{
+
+            if( mover == null ){
+                moverClassName = "diskCacheV111.movers."+
+                        info.getProtocol()+"Protocol_"+
+                        info.getMajorVersion() ;
+
+
+                mover = (Class)_handlerClasses.get( moverClassName ) ;
+
+                if( mover == null ){
+                    mover = Class.forName( moverClassName ) ;
+                    _handlerClasses.put( moverClassName , mover ) ;
+                }
+
+            }
+            Constructor moverCon = mover.getConstructor( argsClass ) ;
+            Object [] args = { this } ;
+            return moverCon.newInstance( args ) ;
+
+        }catch(Exception e ){
+            esay( "Couldn't get Handler Class"+moverClassName ) ;
+            esay(e) ;
+            return null ;
+        }
+
+
+    }
+
+    private boolean deleteCacheFile(String pnfsId) throws CacheException {
+        _pnfs.clearCacheLocation(pnfsId);
+        _repository.removeEntry(_repository.getEntry(new PnfsId(pnfsId)));
+        return true ;
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+    //
+    //     interface to the   HsmRestoreHandler
+    //
+    private class ReplyToPoolFetch implements CacheFileAvailable {
+        private CellMessage _cellMessage = null ;
+        private ReplyToPoolFetch( CellMessage cellMessage ){
+            _cellMessage = cellMessage ;
+        }
+        public void cacheFileAvailable( String pnfsId , Throwable ee ){
+
+            Message msg = (Message)_cellMessage.getMessageObject() ;
+
+            if( ee != null ){
+
+                if( ee instanceof CacheException ){
+
+                    CacheException ce = (CacheException)ee ;
+                    int errorCode = ce.getRc() ;
+                    msg.setFailed( errorCode , ce.getMessage() ) ;
+
+                    switch( errorCode ){
+                        case 41 :
+                        case 42 :
+                        case 43 :
+                            disablePool( PoolV2Mode.DISABLED_STRICT , errorCode , ce.getMessage() ) ;
+                    }
+                }else{
+                    msg.setFailed( 1000 , ee ) ;
+                }
+
+            }else{
+
+               try{
+
+                  PnfsId id = new PnfsId(pnfsId) ;
+
+                  CacheRepositoryEntry entry = _repository.getEntry(id) ;
+
+                  msg.setSucceeded() ;
+
+                  doChecksum(  id , entry ) ;
+
+                  try{
+
+                      _replicationHandler.initiateReplication( entry , "restore" ) ;
+
+                  }catch(Exception eee ){
+                     esay("Problems in replicating : "+entry+" ("+eee+")" ) ;
+                  }
+
+               }catch( Exception ee2 ){
+
+                   msg.setFailed( 1010 , "Checksum calculation failed "+ee2 );
+                   esay("Checksum calculation failed : "+ee2 ) ;
+                   esay(ee);
+               }
+            }
+
+            _cellMessage.revertDirection() ;
+            esay( "cacheFileAvailable : Returning from restore : "+_cellMessage.getMessageObject());
+            try{
+                sendMessage( _cellMessage ) ;
+            }catch(Exception iee ){
+                esay("Sorry coudn't send ack to poolManager : "+iee ) ;
+            }
+
+        }
+        private void doChecksum( PnfsId pnfsId , CacheRepositoryEntry entry ){
+
+            Message msg = (Message)_cellMessage.getMessageObject() ;
+
+            if( _checksumModule.getCrcFromHsm() )getChecksumFromHsm( pnfsId , entry ) ;
+
+            if( ! _checksumModule.checkOnRestore() )return ;
+
+            say("Calculating checksum of "+pnfsId ) ;
+
+            try{
+                StorageInfo      info = entry.getStorageInfo() ;
+                String checksumString = info.getKey("flag-c");
+
+                if( checksumString == null )
+                    throw new
+                    Exception("Checksum not in StorageInfo");
+
+                long start = System.currentTimeMillis() ;
+
+                Checksum infoChecksum = new Checksum( checksumString ) ;
+                Checksum fileChecksum =
+                        _checksumModule.calculateFileChecksum(
+                             entry ,
+                             _checksumModule.getDefaultChecksum()
+                        );
+
+                say("Checksum for "+pnfsId+
+                        " info="+infoChecksum+
+                        ";file="+fileChecksum+
+                        " in "+( System.currentTimeMillis()-start));
+
+                if( ! infoChecksum.equals( fileChecksum ) ){
+
+                    esay("Checksum of "+pnfsId+" differs info="+infoChecksum+";file="+fileChecksum);
+                    try{
+                        _repository.removeEntry( entry ) ;
+                    }catch(Exception ee2 ){
+                        esay("Couldn't remove file : "+pnfsId+" : "+ee2);
+                    }
+                    msg.setFailed( 1009 , "Checksum error : info="+
+                            infoChecksum+";file="+fileChecksum);
+                }
+            }catch(Exception ee3 ){
+                esay("Couldn't compare checksum of "+pnfsId+" : "+ee3 ) ;
+                ee3.printStackTrace();
+            }
+
+        }
+        private void getChecksumFromHsm( PnfsId pnfsId , CacheRepositoryEntry entry ){
+           String line = null ;
+           try{
+               File f = entry.getDataFile() ;
+               f = new File( f.getCanonicalPath()+".crcval");
+               Checksum checksum = null ;
+               if( f.exists() ){
+                   BufferedReader br = new BufferedReader( new FileReader(f) ) ;
+                   try{
+                       line     = "1:"+br.readLine() ;
+                       checksum = new Checksum( line ) ;
+                   }finally{
+                       try{ br.close() ; }catch(Exception ioio){}
+                       f.delete() ;
+                   }
+                   say(pnfsId+" : sending adler32 to pnfs : "+line );
+                   _checksumModule.storeChecksumInPnfs( pnfsId , checksum , false ) ;
+               }
+           }catch(Exception waste ){
+               esay("Couldn't send checksum ("+line+") to pnfs : "+waste);
+           }
+
+        }
+    }
+    private boolean fetchFile(PoolFetchFileMessage poolMessage,
+            CellMessage cellMessage){
+
+        PnfsId      pnfsId       = poolMessage.getPnfsId();
+        StorageInfo storageInfo  = poolMessage.getStorageInfo() ;
+        say("Pool "+_poolName+
+                " asked to fetch file "+pnfsId+
+                " (hsm="+storageInfo.getHsm()+")" ) ;
+
+        try{
+
+            if( ( storageInfo.getFileSize() == 0 ) && ! _flushZeroSizeFiles ){
+
+                CacheRepositoryEntry entry = _repository.createEntry( pnfsId ) ;
+                entry.setStorageInfo( storageInfo ) ;
+                entry.setReceivingFromStore();
+                entry.setCached() ;
+                return true ;
+
+            }
+            ReplyToPoolFetch reply = new ReplyToPoolFetch( cellMessage ) ;
+            if( _storageHandler.fetch( pnfsId , storageInfo , reply ) ){
+                poolMessage.setSucceeded() ;
+                return true ;
+            }else{
+                return false ;
+            }
+
+        }catch(FileInCacheException ce){
+            esay(ce);
+            poolMessage.setFailed( 0 , null ) ;
+            return true ;
+        }catch(CacheException ce){
+            esay(ce);
+            poolMessage.setFailed( ce.getRc() , ce ) ;
+            if( ce.getRc() == CacheRepository.ERROR_IO_DISK )
+                disablePool( PoolV2Mode.DISABLED_STRICT ,  ce.getRc() , ce.getMessage() ) ;
+            return true ;
+        }catch(Exception ui){
+            esay(ui);
+            poolMessage.setFailed( 100 , ui ) ;
+            return true ;
+        }
+
+    }
+
+    private void checkFile(PoolFileCheckable poolMessage){
+        PnfsId pnfsId = poolMessage.getPnfsId() ;
+        try{
+            CacheRepositoryEntry entry = _repository.getEntry(pnfsId);
+            poolMessage.setWaiting(false) ;
+            if( entry.isReceivingFromClient() || entry.isReceivingFromStore() ){
+                poolMessage.setHave(false);
+                poolMessage.setWaiting(true) ;
+            }else{
+
+                // old behavior, probably we do not need it any more
+                // TODO: remove it ASAP
+                /*
+                if( entry.getDataFile().length() == 0 )
+                    throw new
+                            FileNotInCacheException("Filesize(fs) == 0") ;
+                */
+                poolMessage.setHave(true);
+            }
+        }catch(FileNotInCacheException fe){
+            poolMessage.setHave(false);
+        }catch(Exception e){
+            esay("Could get information about <"+pnfsId+"> : "+e.getMessage());
+            poolMessage.setHave(false);
+        }
+    }
+    private void setSticky( PoolSetStickyMessage stickyMessage ){
+        if( stickyMessage.isSticky() && ( ! _allowSticky ) ){
+            stickyMessage.setFailed( 101 , "making sticky denied by pool : "+_poolName ) ;
+            return ;
+        }
+        PnfsId pnfsId = stickyMessage.getPnfsId() ;
+
+        try{
+
+            CacheRepositoryEntry entry = _repository.getEntry(pnfsId) ;
+            entry.setSticky( stickyMessage.isSticky() ) ;
+
+        }catch( CacheException ce ){
+            stickyMessage.setFailed( ce.getRc() , ce ) ;
+            return ;
+        }catch( Exception ee ){
+            stickyMessage.setFailed( 100 , ee ) ;
+            return ;
+        }
+        return ;
+    }
+    private void modifyPersistency( PoolModifyPersistencyMessage persistencyMessage ){
+
+        PnfsId pnfsId = persistencyMessage.getPnfsId() ;
+
+        try{
+
+            CacheRepositoryEntry entry = _repository.getEntry(pnfsId) ;
+            if( entry.isPrecious() ){
+
+                if( persistencyMessage.isCached() )entry.setCached() ;
+
+            }else if( entry.isCached() ){
+
+                if( persistencyMessage.isPrecious() )entry.setPrecious(true) ;
+
+            }else{
+
+                persistencyMessage.setFailed( 101 , "File still transient : "+entry ) ;
+                return ;
+
+            }
+
+        }catch( CacheException ce ){
+            persistencyMessage.setFailed( ce.getRc() , ce ) ;
+            return ;
+        }catch( Exception ee ){
+            persistencyMessage.setFailed( 100 , ee ) ;
+            return ;
+        }
+        return ;
+    }
+    private void modifyPoolMode( PoolModifyModeMessage modeMessage ){
+        PoolV2Mode mode = modeMessage.getPoolMode() ;
+        if( mode == null )return ;
+
+        if( mode.isEnabled() ){
+            enablePool() ;
+        }else{
+            disablePool( mode.getMode() ,
+                    modeMessage.getStatusCode() ,
+                    modeMessage.getStatusMessage() ) ;
+        }
+
+        return ;
+    }
+
+    private void checkFreeSpace(PoolCheckFreeSpaceMessage poolMessage){
+        //        long freeSpace = _repository.getFreeSpace() ;
+        long freeSpace = 1024L*1024L*1024L*100L ;
+        say("XChecking free space [ result = "+freeSpace+" ] ");
+        poolMessage.setFreeSpace( freeSpace );
+        poolMessage.setSucceeded();
+    }
+    private void updateCacheStatistics(PoolUpdateCacheStatisticsMessage poolMessage){
+        ///
+    }
+    private class CompanionFileAvailableCallback implements CacheFileAvailable {
+
+       private final CellMessage          _cellMessage ;
+       private final Pool2PoolTransferMsg _poolMessage ;
+       private final PnfsId               _pnfsId      ;
+
+       private CompanionFileAvailableCallback( CellMessage cellMessage ,
+                                               Pool2PoolTransferMsg poolMessage ,
+                                               PnfsId pnfsId ){
+
+           this._cellMessage = cellMessage ;
+           this._poolMessage = poolMessage ;
+           this._pnfsId      = pnfsId ;
+       }
+
+       public void cacheFileAvailable( String pnfsIdString , Throwable e ){
+
+           if( e != null ){
+               if( e instanceof CacheException ){
+                   _poolMessage.setReply( ((CacheException)e).getRc() , e ) ;
+               }else{
+                   _poolMessage.setReply( 102 , e ) ;
+               }
+           }else{
+              try{
+                  //
+                  // the default mode of a p2p copy is 'cached'.
+                  // So we only have to change the mode if the customer
+                  // needs something different.
+                  //
+                  // ( API overwrites the configuration setting )
+                  //
+                  CacheRepositoryEntry entry = _repository.getEntry( _pnfsId ) ;
+                  try{
+                      int fileMode = _poolMessage.getDestinationFileStatus() ;
+                      if( fileMode != Pool2PoolTransferMsg.UNDETERMINED ){
+                          if( fileMode == Pool2PoolTransferMsg.PRECIOUS )
+                              entry.setPrecious(true) ;
+                      }else{
+                          if( ( _lfsMode     == LFS_PRECIOUS ) &&
+                              ( _p2pFileMode == P2P_PRECIOUS )     ){
+
+                              entry.setPrecious(true) ;
+
+                          }
+                      }
+                  }catch(Exception eee ){
+                      esay("Couldn't set precious : "+entry+" : "+eee ) ;
+                      throw eee ;
+                  }
+              }catch(Exception ee){
+                  //
+                  // we regard this transfer as OK, even if setting the file mode
+                  // failed.
+                  //
+                  esay("Problems setting file mode : "+ee ) ;
+              }
+           }
+           if( _poolMessage.getReplyRequired() ){
+
+                say("Sending p2p reply "+_poolMessage);
+                try{
+                   say("CellMessage before revert : "+_cellMessage ) ;
+                   _cellMessage.revertDirection();
+                   say("CellMessage after revert : "+_cellMessage ) ;
+                   sendMessage(_cellMessage);
+                }catch( Exception ee ){
+                   ee.printStackTrace();
+                   esay("Can't reply p2p message : "+ee);
+                }
+           }
+
+       }
+
+    }
+    private void runPool2PoolClient(
+            final CellMessage cellMessage ,
+            final Pool2PoolTransferMsg poolMessage ){
+
+        String      poolName     = poolMessage.getPoolName() ;
+        PnfsId      pnfsId       = poolMessage.getPnfsId() ;
+        StorageInfo storageInfo  = poolMessage.getStorageInfo() ;
+        try{
+
+            CacheFileAvailable callback
+                  = new CompanionFileAvailableCallback( cellMessage , poolMessage , pnfsId ) ;
+
+            _p2pClient.newCompanion(
+                       pnfsId ,
+                       poolName ,
+                       storageInfo ,
+                       callback
+            );
+
+        }catch(Exception ee ){
+            esay("Exception from _p2pClient.newCompanion of : "+pnfsId+" : "+ee) ;
+            if( ee instanceof FileInCacheException ){
+                poolMessage.setReply( 0 , null ) ;
+            }else{
+                poolMessage.setReply( 102 , ee ) ;
+            }
+            try{
+                say("Sending p2p reply "+poolMessage);
+                cellMessage.revertDirection();
+                sendMessage(cellMessage);
+            }catch (Exception eee){
+                esay("Can't reply p2p message : "+eee);
+            }
+        }
+
+    }
+    public void messageArrived( CellMessage cellMessage ){
+        Object messageObject  = cellMessage.getMessageObject();
+
+        if (! (messageObject instanceof Message) ){
+            say("Unexpected message class 1 "+messageObject.getClass());
+            return;
+        }
+
+        Message poolMessage = (Message)messageObject ;
+
+        boolean replyRequired = ((Message)poolMessage).getReplyRequired() ;
+        if ( poolMessage instanceof PoolMoverKillMessage ) {
+            PoolMoverKillMessage kill = (PoolMoverKillMessage)poolMessage;
+            say("PoolMoverKillMessage for mover id "+kill.getMoverId());
+            try {
+                mover_kill(kill.getMoverId());
+            }catch (Exception e) {
+                esay(e);
+                kill.setReply(1,e);
+            }
+
+        } else if ( poolMessage instanceof PoolFlushControlMessage ){
+
+              _flushingThread.messageArrived( (PoolFlushControlMessage)poolMessage,  cellMessage );
+              return ;
+
+        } else if ( poolMessage instanceof DoorTransferFinishedMessage ){
+
+            _p2pClient.messageArrived( (Message)poolMessage,  cellMessage );
+
+            return ;
+
+        }else if( poolMessage instanceof PoolIoFileMessage){
+
+            PoolIoFileMessage msg = (PoolIoFileMessage)poolMessage ;
+
+            if( msg.isPool2Pool() && msg.isReply() ){
+
+                say("Pool2PoolIoFileMsg delivered to p2p Client");
+                _p2pClient.messageArrived( (Message)poolMessage , cellMessage ) ;
+
+            }else{
+
+                say("PoolIoFileMessage delivered to ioFile (method)");
+                if( ( ( poolMessage instanceof PoolAcceptFileMessage   ) &&
+                        _poolMode.isDisabled(PoolV2Mode.DISABLED_STORE )      ) ||
+                        ( ( poolMessage instanceof PoolDeliverFileMessage  ) &&
+                        _poolMode.isDisabled(PoolV2Mode.DISABLED_FETCH )      ) ){
+
+                    esay("PoolIoFileMessage Request rejected due to "+_poolMode);
+                    sentNotEnabledException( (Message)poolMessage , cellMessage ) ;
+                    return ;
+
+                }
+
+                msg.setReply() ;
+                ioFile( (PoolIoFileMessage)poolMessage,  cellMessage );
+
+            }
+
+            return ;
+
+        }else if( poolMessage instanceof Pool2PoolTransferMsg ){
+
+            if( _poolMode.isDisabled(PoolV2Mode.DISABLED_P2P_CLIENT) ){
+
+                esay("Pool2PoolTransferMsg Request rejected due to "+_poolMode);
+                sentNotEnabledException( (Message) poolMessage , cellMessage ) ;
+                return ;
+
+            }
+
+            runPool2PoolClient( cellMessage , (Pool2PoolTransferMsg) poolMessage ) ;
+
+            poolMessage.setReply();
+
+            return ;
+
+        }else if( poolMessage instanceof PoolFetchFileMessage ){
+
+            if( ( _poolMode.isDisabled(PoolV2Mode.DISABLED_STAGE) ) ||
+                    ( _lfsMode != LFS_NONE                                 )    ){
+
+                esay("PoolFetchFileMessage  Request rejected due to "+_poolMode);
+                sentNotEnabledException( (Message)poolMessage , cellMessage ) ;
+                return ;
+
+            }
+
+            replyRequired = fetchFile((PoolFetchFileMessage)poolMessage,cellMessage);
+
+        }else if (poolMessage instanceof PoolCheckFreeSpaceMessage){
+
+            if( _poolMode.isDisabled(PoolV2Mode.DISABLED) ){
+
+                esay("PoolCheckFreeSpaceMessage Request rejected due to "+_poolMode);
+                sentNotEnabledException( (Message)poolMessage , cellMessage ) ;
+                return ;
+
+            }
+
+            checkFreeSpace((PoolCheckFreeSpaceMessage)poolMessage);
+
+        }else if (poolMessage instanceof PoolCheckable){
+
+            if( _poolMode.getMode() == PoolV2Mode.DISABLED ||
+                _poolMode.isDisabled(PoolV2Mode.DISABLED_FETCH) ||
+                _poolMode.isDisabled(PoolV2Mode.DISABLED_DEAD)){
+
+                esay("PoolCheckable Request rejected due to "+_poolMode);
+                sentNotEnabledException( (Message)poolMessage , cellMessage ) ;
+                return ;
+
+            }
+
+            if( poolMessage instanceof PoolFileCheckable ){
+                checkFile((PoolFileCheckable)poolMessage);
+                poolMessage.setSucceeded() ;
+            }
+
+        }else if (poolMessage instanceof PoolUpdateCacheStatisticsMessage){
+
+            updateCacheStatistics((PoolUpdateCacheStatisticsMessage)poolMessage);
+
+        }else if (poolMessage instanceof PoolRemoveFilesMessage){
+
+            if( _poolMode.isDisabled(PoolV2Mode.DISABLED) ){
+
+                esay("PoolRemoveFilesMessage Request rejected due to "+_poolMode);
+                sentNotEnabledException( (Message)poolMessage , cellMessage ) ;
+                return ;
+
+            }
+            removeFiles((PoolRemoveFilesMessage)poolMessage);
+
+        }else if( poolMessage instanceof PoolModifyPersistencyMessage ){
+
+            modifyPersistency( (PoolModifyPersistencyMessage) poolMessage ) ;
+
+        }else if( poolMessage instanceof PoolModifyModeMessage ){
+
+            modifyPoolMode( (PoolModifyModeMessage) poolMessage ) ;
+
+        }else if( poolMessage instanceof PoolSetStickyMessage ){
+
+            setSticky( (PoolSetStickyMessage) poolMessage ) ;
+
+
+        }else if( poolMessage instanceof PoolQueryRepositoryMsg ){
+
+            getRepositoryListing( (PoolQueryRepositoryMsg) poolMessage ) ;
+            replyRequired = true ;
+
+        }else if( poolMessage instanceof PoolSpaceReservationMessage ){
+
+            replyRequired = false ;
+            runSpaceReservation( (PoolSpaceReservationMessage) poolMessage , cellMessage ) ;
+
+        }else {
+            say("Unexpected message class 2"+poolMessage.getClass());
+            say(" isReply = "+((Message)poolMessage).isReply()); //REMOVE
+            say(" source = "+cellMessage.getSourceAddress());
+            return;
+        }
+        if( ! replyRequired )return ;
+        try{
+            say("Sending reply "+poolMessage);
+            cellMessage.revertDirection();
+            sendMessage(cellMessage);
+        }catch (Exception e){
+            esay("Can't reply message : "+e);
+        }
+    }
+    private void runSpaceReservation(
+            final PoolSpaceReservationMessage spaceReservationMessage ,
+            final CellMessage cellMessage ) {
+
+        if( _blockOnNoSpace && ( spaceReservationMessage instanceof PoolReserveSpaceMessage ) ){
+            getNucleus().newThread(
+                    new Runnable(){
+                public void run(){
+                    say("Reservation job started");
+                    spaceReservation( spaceReservationMessage , cellMessage ) ;
+                    say("Reservation job finished");
+                }
+            } , "reservationThread"
+                    ).start() ;
+        }else{
+
+            spaceReservation( spaceReservationMessage , cellMessage ) ;
+
+        }
+
+    }
+
+    private void spaceReservation(
+            PoolSpaceReservationMessage spaceReservationMessage ,
+            CellMessage cellMessage ) {
+
+        try{
+
+            if( spaceReservationMessage instanceof PoolReserveSpaceMessage ){
+
+                PoolReserveSpaceMessage reserve = (PoolReserveSpaceMessage)spaceReservationMessage;
+
+                _repository.reserveSpace( reserve.getSpaceReservationSize() , _blockOnNoSpace ) ;
+
+            }else if( spaceReservationMessage instanceof PoolFreeSpaceReservationMessage ){
+
+                _repository.freeReservedSpace(
+                        ((PoolFreeSpaceReservationMessage)spaceReservationMessage).
+                        getFreeSpaceReservationSize() ) ;
+
+            }else if( spaceReservationMessage instanceof PoolQuerySpaceReservationMessage ){
+            }
+
+            spaceReservationMessage.setReservedSpace( _repository.getReservedSpace() ) ;
+
+        }catch(CacheException ce ){
+            spaceReservationMessage.setFailed( ce.getRc() , ce.getMessage() );
+        }catch(MissingResourceException mre ){
+            spaceReservationMessage.setFailed( 104 , mre );
+        }catch(Exception ee ){
+            spaceReservationMessage.setFailed( 101 , ee.toString() );
+        }
+        try{
+            say("Sending reply "+spaceReservationMessage);
+            cellMessage.revertDirection();
+            sendMessage(cellMessage);
+        }catch (Exception e){
+            esay("Can't reply message : "+e);
+        }
+
+    }
+
+    private void getRepositoryListing( PoolQueryRepositoryMsg queryMessage ) {
+
+        try{
+            ArrayList list = new ArrayList() ;
+            Iterator pnfsids = _repository.pnfsids() ;
+            while( pnfsids.hasNext() )list.add(pnfsids.next()) ;
+
+            queryMessage.setReply( new RepositoryCookie() , _repository.getValidPnfsidList() ) ;
+        }catch(CacheException ce ){
+            queryMessage.setFailed( 304 , ce ) ;
+        }
+    }
+    private void sentNotEnabledException( Message poolMessage , CellMessage cellMessage ){
+        try{
+            say("Sending reply "+poolMessage);
+            poolMessage.setFailed(104,"Pool is disabled");
+            cellMessage.revertDirection();
+            sendMessage(cellMessage);
+        }catch (Exception e){
+            esay("Can't reply message : "+e);
+        }
+    }
+    public String hh_simulate_cost = "[-cpu=<cpuCost>] [-space=<space>]" ;
+    public String ac_simulate_cost( Args args )throws Exception {
+        String tmp = args.getOpt("cpu" ) ;
+        if( tmp != null )_simCpuCost = Double.parseDouble( tmp ) ;
+        tmp = args.getOpt("space") ;
+        if( tmp != null )_simSpaceCost = Double.parseDouble( tmp ) ;
+
+        return "Costs : cpu = "+_simCpuCost+" , space = "+_simSpaceCost ;
+    }
+
+    /**
+     * Partially or fully disables normal operation of this pool.
+     */
+    private synchronized void disablePool(int mode, int errorCode, String errorString)
+    {
+        _poolStatusCode = errorCode;
+        _poolStatusMessage =
+            (errorString == null ? "Requested By Operator" : errorString);
+        _poolMode.setMode(mode) ;
+
+        _pingThread.sendPoolManagerMessage(true);
+        esay("New Pool Mode : " + _poolMode);
+    }
+
+    /**
+     * Fully enables this pool. The status code is set to 0 and the
+     * status message is cleared.
+     */
+    private synchronized void enablePool()
+    {
+        _poolMode.setMode(PoolV2Mode.ENABLED);
+        _poolStatusCode = 0;
+        _poolStatusMessage = "OK";
+
+        _pingThread.sendPoolManagerMessage(true);
+        esay("New Pool Mode : " + _poolMode);
+    }
+    /////////////////////////////////////////////////////////////////
+    //
+    //      The pool manager ping
+    //
+    private class PoolManagerPingThread implements Runnable  {
+
+        private Thread      _worker    = null ;
+        private int         _heartbeat = 30 ;
+
+        private PoolManagerPingThread(){
+            _worker = _nucleus.newThread( this , "ping" ) ;
+        }
+        private void start(){ _worker.start() ; }
+        public void run(){
+            say( "Ping Thread started" ) ;
+            while( ! Thread.currentThread().interrupted() ){
+                //
+		if( _poolMode.isEnabled() && _checkRepository && ! _repository.isRepositoryOk() ){
+
+		   esay("Pool disabled due to problems in repository") ;
+		   disablePool( PoolV2Mode.DISABLED | PoolV2Mode.DISABLED_STRICT , 99 , "Repository got lost" ) ;
+		}
+                sendPoolManagerMessage(true);
+                try{
+                    Thread.currentThread().sleep(_heartbeat*1000);
+                }catch(InterruptedException e){
+                    esay( "Ping Thread was interrupted" ) ;
+                    break ;
+                }
+            }
+
+            esay("Ping Thread sending Pool Down message");
+            disablePool(PoolV2Mode.DISABLED_DEAD, 666, 
+                        "PingThread terminated");
+            esay("Ping Thread finished");
+        }
+        public void setHeartbeat( int seconds ){ _heartbeat = seconds ; }
+        public int getHeartbeat(){ return _heartbeat ; }
+        public synchronized void sendPoolManagerMessage(boolean forceSend)
+        {
+            if (forceSend || _storageQueue.poolStatusChanged())
+                send(getPoolManagerMessage());
+        }
+
+        private CellMessage getPoolManagerMessage()
+        {       
+            boolean disabled = 
+                _poolMode.isDisabled(PoolV2Mode.DISABLED_STRICT) ||
+                _poolMode.isDisabled(PoolV2Mode.DISABLED_DEAD);
+            PoolCostInfo info = disabled ? null : getPoolCostInfo();
+
+            PoolManagerPoolUpMessage poolManagerMessage =
+                new PoolManagerPoolUpMessage(_poolName, _serialId, 
+                                             _poolMode, info);
+
+            poolManagerMessage.setTagMap( _tags ) ;
+            poolManagerMessage.setHsmInstances(new TreeSet(_hsmSet.getHsmInstances()));
+            poolManagerMessage.setMessage(_poolStatusMessage);
+            poolManagerMessage.setCode(_poolStatusCode);
+
+            return new CellMessage( new CellPath(_poolManagerName),
+                    poolManagerMessage
+                    ) ;
+        }
+        private void send( CellMessage msg ){
+            try {
+                sendMessage( msg );
+            } catch (Exception exc){
+                esay("Exception sending ping message "+exc);
+                esay(exc) ;
+            }
+        }
+
+    }
+
+    private PoolCostInfo getPoolCostInfo(){
+
+        PoolCostInfo info = new PoolCostInfo(_poolName) ;
+
+        info.setSpaceUsage( _repository.getTotalSpace() ,
+                _repository.getFreeSpace() ,
+                _repository.getPreciousSpace() ,
+                _sweeper.getRemovableSpace() ,
+                _sweeper.getLRUSeconds() ) ;
+
+        info.getSpaceInfo().setParameter( _breakEven , _gap ) ;
+
+        info.setQueueSizes(
+                _ioQueue.getActiveJobs(),
+                _ioQueue.getMaxActiveJobs(),
+                _ioQueue.getQueueSize(),
+                _storageHandler.getFetchScheduler().getActiveJobs(),
+                _suppressHsmLoad ? 0 : _storageHandler.getFetchScheduler().getMaxActiveJobs(),
+                _storageHandler.getFetchScheduler().getQueueSize(),
+                _storageHandler.getStoreScheduler().getActiveJobs(),
+                _suppressHsmLoad ? 0 : _storageHandler.getStoreScheduler().getMaxActiveJobs(),
+                _storageHandler.getStoreScheduler().getQueueSize()
+
+                );
+
+        IoQueueManager manager = (IoQueueManager)_ioQueue ;
+        if( manager.isConfigured() ){
+            for( Iterator it = manager.scheduler() ; it.hasNext() ; ){
+                JobScheduler js = (JobScheduler)it.next() ;
+                info.addExtendedMoverQueueSizes( js.getSchedulerName() ,
+                                                 js.getActiveJobs() ,
+                                                 js.getMaxActiveJobs() ,
+                                                 js.getQueueSize() ) ;
+            }
+        }
+        info.setP2pClientQueueSizes(
+                _p2pClient.getActiveJobs(),
+                _p2pClient.getMaxActiveJobs(),
+                _p2pClient.getQueueSize()
+                );
+
+        if( _p2pMode == P2P_SEPARATED ){
+
+            info.setP2pServerQueueSizes(
+                    _p2pQueue.getActiveJobs(),
+                    _p2pQueue.getMaxActiveJobs(),
+                    _p2pQueue.getQueueSize()
+                    );
+
+        }
+
+
+        return info ;
+    }
+    ////////////////////////////////////////////////////////////
+    //
+    //	Check cost
+    //
+    public String hh_set_breakeven = "<breakEven> # free and recovable space" ;
+    public String ac_set_breakeven_$_0_1( Args args ){
+        if( args.argc() > 0 )_breakEven = Double.parseDouble(args.argv(0)) ;
+        return "BreakEven = "+_breakEven ;
+    }
+    public String hh_get_cost = " [filesize] # get space and performance cost" ;
+    public String ac_get_cost_$_0_1( Args args ){
+        return "DEPRICATED # cost now solely calculated in PoolManager";
+        /*
+        long filesize = 0 ;
+        if( args.argc() > 0 )filesize = Long.parseLong(args.argv(0));
+
+        PoolCheckCostMessage m = new PoolCheckCostMessage(
+                    _nucleus.getCellName() , filesize ) ;
+
+        checkCost( m ) ;
+        return m.toString() ;
+         */
+    }
+
+    private double _breakEven   = 250.0 ;
+
+     /*
+     private CostCalculationEngine _costCalculationEngine = new CostCalculationEngine("V5") ;
+
+     private void checkCost( PoolCostCheckable poolMessage ) {
+
+        CostCalculatable  cost = _costCalculationEngine.getCostCalculatable( getPoolCostInfo() ) ;
+
+        cost.recalculate( poolMessage.getFilesize() ) ;
+
+
+        if( _simSpaceCost > (double)(-1.0) ){
+
+            poolMessage.setSpaceCost( _simSpaceCost ) ;
+
+        }else if( ! _isPermanent ){
+
+            poolMessage.setSpaceCost( cost.getSpaceCost() ) ;
+
+        }else{
+
+            poolMessage.setSpaceCost( (double)200000000.0 );
+
+        }
+
+        if( _simCpuCost > (double) (-1.0))
+
+            poolMessage.setPerformanceCost( _simCpuCost ) ;
+
+
+        else
+
+            poolMessage.setPerformanceCost( cost.getSpaceCost() );
+
+        poolMessage.setSucceeded();
+        say("checking cost for PoolCheckCostMessage["+poolMessage+"]");
+     }
+
+
+      */
+
+    private synchronized void removeFiles( PoolRemoveFilesMessage poolMessage ) {
+
+        String [] fileList = poolMessage.getFiles();
+        int counter = 0 ;
+        for(int i = 0; i< fileList.length; i++) {
+
+            synchronized( _repository ){
+                try{
+                    String   pnfsIdString = fileList[i] ;
+                    if( ( pnfsIdString == null ) || ( pnfsIdString.length() == 0 ) ){
+                        esay("removeFiles : invalid syntax in remove filespec >"+pnfsIdString+"<");
+                        continue ;
+                    }
+                    PnfsId pnfsId = new PnfsId( fileList[i] ) ;
+                    CacheRepositoryEntry entry = _repository.getEntry(pnfsId) ;
+                    if( ( ! _cleanPreciousFiles ) && ( _lfsMode == LFS_NONE ) && ( entry.isPrecious() ) ){
+                        counter++ ;
+                        say("removeFiles : File " + fileList[i] + " kept. (precious)" );
+                    }else if( ! _repository.removeEntry( _repository.getEntry( pnfsId ) ) ){
+                        //
+                        // the entry couldn't be removed because the
+                        // file is still in an unstable phase.
+                        //
+                        counter++ ;
+                        say("removeFiles : File " + fileList[i] + " kept. (locked)" );
+                    }else{
+                        say("removeFiles : File " + fileList[i] + " deleted." );
+                        fileList[i] = null ;
+                    }
+                }catch( FileNotInCacheException fce ){
+                    esay( "removeFiles : File "+ fileList[i] + " delete CE : "+fce.getMessage() ) ;
+                    fileList[i] = null ; // let them remove it
+                }catch( CacheException ce ){
+                    counter++ ;
+                    say("removeFiles : File " + fileList[i] + " kept. CE : "+ce.getMessage() );
+                }
+            }
+        }
+        if( counter > 0 ){
+            String [] replyList  = new String[counter] ;
+            for( int i = 0 , j = 0 ; i < fileList.length ; i++ )
+                if( fileList[i] != null )replyList[j++] = fileList[i] ;
+            poolMessage.setFailed( 1 , replyList ) ;
+        }else{
+            poolMessage.setSucceeded() ;
+        }
+
+    }
+    ///////////////////////////////////////////////////
+    //
+    //   the hybrid inventory part
+    //
+    private class HybridInventory implements Runnable {
+        private boolean _activate = true ;
+        public HybridInventory( boolean activate ){
+            _activate = activate ;
+            _nucleus.newThread( this , "HybridInventory" ).start() ;
+        }
+        public void run(){
+            _hybridCurrent = 0 ;
+            try{
+                Iterator pnfsids = _repository.pnfsids() ;
+                while( pnfsids.hasNext() && ! Thread.currentThread().interrupted() ){
+                    PnfsId pnfsid = (PnfsId)pnfsids.next();
+                    _hybridCurrent++ ;
+                    if( _activate )
+                        _pnfs.addCacheLocation(pnfsid.toString());
+                    else
+                        _pnfs.clearCacheLocation(pnfsid.toString());
+
+                }
+            }catch(Exception ce ){
+                esay(ce) ;
+            }
+            synchronized( _hybridInventoryLock ){
+                _hybridInventoryActive = false ;
+            }
+        }
+    }
+    public String hh_pnfs_register = " # add entry of all files into pnfs" ;
+    public String hh_pnfs_unregister = " # remove entry of all files from pnfs" ;
+    public String ac_pnfs_register( Args args )throws Exception {
+        synchronized( _hybridInventoryLock ){
+            if( _hybridInventoryActive )
+                throw new
+                        IllegalArgumentException("Hybrid inventory still active");
+            _hybridInventoryActive  = true ;
+            new HybridInventory( true ) ;
+        }
+        return "" ;
+    }
+    public String ac_pnfs_unregister( Args args )throws Exception {
+        synchronized( _hybridInventoryLock ){
+            if( _hybridInventoryActive )
+                throw new
+                        IllegalArgumentException("Hybrid inventory still active");
+            _hybridInventoryActive  = true ;
+            new HybridInventory( false ) ;
+        }
+        return "" ;
+    }
+    public String hh_run_hybrid_inventory = " [-destroy]" ;
+    public String ac_run_hybrid_inventory( Args args )throws Exception {
+        synchronized( _hybridInventoryLock ){
+            if( _hybridInventoryActive )
+                throw new
+                        IllegalArgumentException("Hybrid inventory still active");
+            _hybridInventoryActive  = true ;
+            new HybridInventory( args.getOpt("destroy") == null ) ;
+        }
+        return "" ;
+    }
+    ////////////////////////////////////////////////////////////////////////////////////
+    //
+    //     the interpreter set/get functions
+    //
+    public String hh_pf = "<pnfsId>" ;
+    public String ac_pf_$_1( Args args )throws Exception {
+        PnfsId             pnfsId = new PnfsId( args.argv(0) ) ;
+        PnfsMapPathMessage info   = new PnfsMapPathMessage( pnfsId ) ;
+        CellPath           path   = new CellPath("PnfsManager") ;
+        say( "Sending : "+info ) ;
+        CellMessage m = sendAndWait( new CellMessage( path , info ) , 10000 ) ;
+        say( "Reply arrived : "+m ) ;
+        if( m == null )
+            throw new
+                    Exception("No reply from PnfsManager" ) ;
+
+        info = ((PnfsMapPathMessage)m.getMessageObject()) ;
+        if( info.getReturnCode() != 0 ){
+            Object o = info.getErrorObject() ;
+            if( o instanceof Exception )
+                throw (Exception)o ;
+            else
+                throw new Exception(o.toString()) ;
+        }
+        return info.getGlobalPath() ;
+    }
+    public String hh_set_replication = "off|on|<mgr>,<host>,<destMode>" ;
+    public String ac_set_replication_$_1( Args args ){
+       String mode = args.argv(0) ;
+       _replicationHandler.init(mode);
+       return _replicationHandler.toString();
+    }
+    public String hh_pool_inventory = "DEBUG ONLY" ;
+    public String ac_pool_inventory( Args args )throws Exception {
+        final StringBuffer sb = new StringBuffer() ;
+        Logable l = new Logable(){
+            public void log( String msg ){_logClass.log(msg);} ;
+            public void elog( String msg ){ sb.append(msg).append("\n") ;_logClass.elog(msg);}
+            public void plog( String msg ){ sb.append(msg).append("\n") ;_logClass.plog(msg);}
+        };
+        _repository.runInventory( l,_pnfs,_recoveryFlags);
+        return sb.toString();
+
+    }
+    public String hh_pool_suppress_hsmload = "on|off" ;
+    public String ac_pool_suppress_hsmload_$_1( Args args ){
+       String mode = args.argv(0) ;
+       if( mode.equals("on") ){
+           _suppressHsmLoad = true ;
+       }else if( mode.equals( "off")  ){
+           _suppressHsmLoad = false ;
+       }else
+          throw new
+          IllegalArgumentException("Illegal syntax : pool suppress hsmload on|off");
+
+       return "hsm load suppression swithed : "+( _suppressHsmLoad ? "on" : "off" ) ;
+    }
+    public String hh_movermap_define   = "<protocol>-<major> <moverClassName>" ;
+    public String hh_movermap_undefine = "<protocol>-<major>" ;
+    public String hh_movermap_ls       = "" ;
+    public String ac_movermap_define_$_2( Args args ) throws Exception {
+        _moverHash.put( args.argv(0) , Class.forName( args.argv(1) ) ) ;
+        return "" ;
+    }
+    public String ac_movermap_undefine_$_1( Args args ) throws Exception {
+        _moverHash.remove( args.argv(0) ) ;
+        return "" ;
+    }
+    public String ac_movermap_ls( Args args ){
+        StringBuffer sb = new StringBuffer();
+        Iterator n = _moverHash.entrySet().iterator() ;
+        while( n.hasNext() ){
+            Map.Entry entry = (Map.Entry)n.next() ;
+            sb.append(entry.getKey()).append(" -> ").
+                    append(((Class)entry.getValue()).getName()).
+                    append("\n");
+        }
+        return sb.toString();
+    }
+    public String hh_pool_lfs = "none|precious|volatile # FOR DEBUG ONLY" ;
+    public String ac_pool_lfs_$_1( Args args ) throws CommandSyntaxException {
+        String mode = args.argv(0) ;
+        if( mode.equals("none") ){
+            _lfsMode = LFS_NONE ;
+        }else if( mode.equals("precious") ){
+            _lfsMode = LFS_PRECIOUS ;
+        }else if( mode.equals("volatile") ){
+            _lfsMode = LFS_VOLATILE ;
+        }else{
+            throw new
+                    CommandSyntaxException("Not Found : ","Usage : pool lfs none|precious|volatile");
+        }
+        return "" ;
+    }
+    public String hh_set_duplicate_request = "none|ignore|refresh";
+    public String ac_set_duplicate_request_$_1( Args args ) throws CommandSyntaxException {
+        String mode = args.argv(0) ;
+        if( mode.equals("none") ){
+            _dupRequest = DUP_REQ_NONE ;
+        }else if( mode.equals("ignore") ){
+            _dupRequest = DUP_REQ_IGNORE ;
+        }else if( mode.equals("refresh") ){
+            _dupRequest = DUP_REQ_REFRESH ;
+        }else{
+            throw new
+                    CommandSyntaxException("Not Found : ","Usage : pool duplicate request none|ignore|refresh");
+        }
+        return "" ;
+    }
+    public String hh_set_p2p = "integrated|separated";
+    public String ac_set_p2p_$_1( Args args ) throws CommandSyntaxException {
+        String mode = args.argv(0) ;
+        if( mode.equals("integrated") ){
+            _p2pMode = P2P_INTEGRATED ;
+        }else if( mode.equals("separated") ){
+            _p2pMode = P2P_SEPARATED ;
+        }else{
+            throw new
+                    CommandSyntaxException("Not Found : ","Usage : set p2p ntegrated|separated");
+        }
+        return "" ;
+    }
+    public String hh_pool_disablemode = "strict|fuzzy # DEPRICATED, use pool disable [options]" ;
+    public String ac_pool_disablemode_$_1( Args args ){
+        return "# DEPRICATED, use pool disable [options]" ;
+    }
+    public String fh_pool_disable =
+            "   pool disable [options] [ <errorCode> [<errorMessage>]]\n"+
+            "      OPTIONS :\n"+
+            "        -fetch    #  disallows fetch (transfer to client)\n"+
+            "        -stage    #  disallows staging (from HSM)\n"+
+            "        -store    #  disallows store (transfer from client)\n"+
+            "        -p2p-client\n"+
+            "        -rdonly   #  := store,stage,p2p-client\n"+
+            "        -strict   #  := disallows everything\n" ;
+    public String hh_pool_disable = "[options] [<errorCode> [<errorMessage>]] # suspend sending 'up messages'"  ;
+    public String ac_pool_disable_$_0_2( Args args ){
+
+        int    rc = args.argc() > 0 ? Integer.parseInt(args.argv(0)) : 1 ;
+        String rm = args.argc() > 1 ? args.argv(1) : "Operator intervention" ;
+
+        int modeBits = PoolV2Mode.DISABLED ;
+        if( args.getOpt("strict")     != null )modeBits |= PoolV2Mode.DISABLED_STRICT ;
+        if( args.getOpt("stage")      != null )modeBits |= PoolV2Mode.DISABLED_STAGE ;
+        if( args.getOpt("fetch")      != null )modeBits |= PoolV2Mode.DISABLED_FETCH ;
+        if( args.getOpt("store")      != null )modeBits |= PoolV2Mode.DISABLED_STORE ;
+        if( args.getOpt("p2p-client") != null )modeBits |= PoolV2Mode.DISABLED_P2P_CLIENT ;
+        if( args.getOpt("p2p-server") != null )modeBits |= PoolV2Mode.DISABLED_P2P_SERVER ;
+        if( args.getOpt("rdonly")     != null )modeBits |= PoolV2Mode.DISABLED_RDONLY ;
+
+        disablePool( modeBits , rc , rm ) ;
+
+        return "Pool "+_poolName+" "+_poolMode ;
+    }
+    public String hh_pool_enable = " # resume sending up messages'"  ;
+    public String ac_pool_enable( Args args ){
+        enablePool() ;
+        return "Pool "+_poolName+" enabled" ;
+    }
+    public String hh_set_max_movers = "!!! Please use 'mover|st|rh set max active <jobs>'" ;
+    public String ac_set_max_movers_$_1( Args args ) throws IllegalArgumentException{
+        int num = Integer.parseInt( args.argv(0) ) ;
+        if( ( num < 0 ) || ( num > 10000 ) )
+            throw new
+                    IllegalArgumentException( "Not in range (0...10000)" ) ;
+        return "Please use 'mover|st|rh set max active <jobs>'" ;
+
+    }
+    public String hh_set_gap = "<always removable gap>/bytes" ;
+    public String ac_set_gap_$_1(Args args ){
+        _gap = Long.parseLong(args.argv(0));
+        return "Gap set to "+_gap ;
+    }
+    public String hh_set_report_remove = "on|off" ;
+    public String ac_set_report_remove_$_1( Args args ) throws CommandSyntaxException{
+        String onoff = args.argv(0) ;
+        if( onoff.equals("on") )_reportOnRemovals = true ;
+        else if( onoff.equals("off") )_reportOnRemovals = false ;
+        else
+            throw new
+                    CommandSyntaxException("Invalid value : "+onoff );
+        return "";
+    }
+    public String hh_crash = "disabled|shutdown|exception" ;
+    public String ac_crash_$_0_1( Args args ) throws IllegalArgumentException{
+        if( args.argc() < 1 ){
+            return "Crash is " + (_crashEnabled ? _crashType : "disabled" ) ;
+
+        }else if( args.argv(0).equals("shutdown") ){
+            _crashEnabled = true ;
+            _crashType    = "shutdown" ;
+        }else if( args.argv(0).equals("exception") ){
+            _crashEnabled = true ;
+            _crashType    = "exception" ;
+        }else if( args.argv(0).equals("disabled") ){
+            _crashEnabled = false ;
+        }else
+            throw new
+                    IllegalArgumentException( "crash disabled|shutdown|exception" ) ;
+
+        return "Crash is " + (_crashEnabled ? _crashType : "disabled" )  ;
+
+    }
+    public String hh_set_sticky = "allowed|denied" ;
+    public String ac_set_sticky_$_0_1( Args args ){
+        if( args.argc() > 0 ){
+            String mode = args.argv(0) ;
+            if( mode.equals("allowed") ){
+                _allowSticky = true ;
+            }else if( mode.equals("denied") ){
+                _allowSticky = false ;
+            }else
+                throw new
+                        IllegalArgumentException( "set sticky allowed|denied" ) ;
+        }
+        _storageHandler.setStickyAllowed( _allowSticky ) ;
+        return "Sticky Bit "+(_allowSticky?"allowed":"denied") ;
+    }
+    public String hh_set_max_diskspace = "<space>[<unit>] # unit = k|m|g" ;
+    public String ac_set_max_diskspace_$_1(Args args){
+
+        long maxDisk = UnitInteger.parseUnitLong(args.argv(0)) ;
+        _repository.setTotalSpace( maxDisk ) ;
+        say( "set maximum diskspace ="+ UnitInteger.toUnitString(maxDisk) );
+        return "" ;
+    }
+    public String hh_set_cleaning_interval = "<interval/sec>" ;
+    public String ac_set_cleaning_interval_$_1(Args args){
+        _cleaningInterval =
+                Integer.parseInt(args.argv(0)) ;
+        say( "_cleaningInterval="+_cleaningInterval  ) ;
+        return "" ;
+    }
+    public String hh_set_flushing_interval = "DEPRECATED (use flush set interval <time/sec>)" ;
+    public String ac_set_flushing_interval_$_1(Args args){
+        return "DEPRECATED (use flush set interval <time/sec>)" ;
+    }
+    public String hh_flush_class = "<hsm> <storageClass> [-count=<count>]" ;
+    public String ac_flush_class_$_2( Args args ){
+        String tmp = args.getOpt("count") ;
+        int count = ( tmp == null ) || ( tmp.equals("") ) ? 0 : Integer.parseInt(tmp);
+        long id = _flushingThread.flushStorageClass( args.argv(0) , args.argv(1) , count ) ;
+        return "Flush Initiated (id="+id+")" ;
+    }
+    public String hh_flush_pnfsid = "<pnfsid> # flushs a single pnfsid" ;
+    public String ac_flush_pnfsid_$_1( Args args ) throws Exception {
+        CacheRepositoryEntry entry = _repository.getEntry( new PnfsId(args.argv(0)) ) ;
+        _storageHandler.store( entry , null  ) ;
+        return "Flush Initiated" ;
+    }
+    /*
+    public String hh_mover_set_attr = "default|*|<moverId> <attrKey> <attrValue>" ;
+    public String ac_mover_set_attr_$_3( Args args )throws Exception {
+       String moverId = args.argv(0) ;
+       String key     = args.argv(1) ;
+       String value   = args.argv(2) ;
+
+       if( moverId.equals("default") ){
+          _moverAttributes.put( key , value ) ;
+          return "" ;
+       }else if( moverId.equals("*") ){
+          StringBuffer sb = new StringBuffer() ;
+          synchronized( _ioMovers ){
+             Iterator i = _ioMovers.values().iterator() ;
+             while( i.hasNext() ){
+                RepositoryIoHandler h = (RepositoryIoHandler)i.next() ;
+                try{
+                    h.setAttribute( key , value ) ;
+                    sb.append( ""+h.getId()+" OK\n" ) ;
+                }catch(Exception ee ){
+                    sb.append( ""+h.getId()+" ERROR : "+ee.getMessage()+"\n" ) ;
+                }
+             }
+          }
+          return sb.toString() ;
+       }else{
+          Integer id = new Integer(moverId) ;
+          synchronized( _ioMovers ){
+            RepositoryIoHandler h = (RepositoryIoHandler)_ioMovers.get(id) ;
+            h.setAttribute( key , value ) ;
+          }
+          return "" ;
+       }
+    }
+     */
+    public String hh_mover_set_max_active = "<maxActiveIoMovers> -queue=<queueName>" ;
+    public String hh_mover_queue_ls  = "" ;
+    public String hh_mover_ls     = "[-binary [jobId] ]" ;
+    public String hh_mover_remove = "<jobId>" ;
+    public String hh_mover_kill   = "<jobId>" ;
+    public String hh_p2p_set_max_active = "<maxActiveIoMovers>" ;
+    public String hh_p2p_ls     = "[-binary [jobId] ]" ;
+    public String hh_p2p_remove = "<jobId>" ;
+    public String hh_p2p_kill   = "<jobId>" ;
+
+    public String ac_mover_set_max_active_$_1( Args args )throws Exception {
+        String queueName = args.getOpt("queue") ;
+
+        IoQueueManager ioManager = (IoQueueManager)_ioQueue ;
+
+        if( queueName == null )return mover_set_max_active( ioManager.getDefaultScheduler() , args ) ;
+
+        JobScheduler js = ioManager.getSchedulerByName(queueName) ;
+
+        if( js == null )return "Not found : "+queueName ;
+
+        return mover_set_max_active( js , args ) ;
+
+    }
+    public String ac_p2p_set_max_active_$_1( Args args )throws Exception {
+        return mover_set_max_active( _p2pQueue , args ) ;
+    }
+    private String mover_set_max_active( JobScheduler js , Args args )throws Exception {
+        int active = Integer.parseInt( args.argv(0) ) ;
+        if( active < 0 )
+            throw new
+                    IllegalArgumentException("<maxActiveMovers> must be >= 0") ;
+        js.setMaxActiveJobs( active ) ;
+
+        return "Max Active Io Movers set to "+active ;
+    }
+    public Object ac_mover_queue_ls_$_0_1( Args args )throws Exception {
+       StringBuffer sb = new StringBuffer() ;
+       IoQueueManager manager = (IoQueueManager)_ioQueue ;
+
+       if( args.getOpt("l") != null ){
+          for( Iterator it = manager.scheduler() ; it.hasNext() ; ){
+              JobScheduler js = (JobScheduler)it.next() ;
+              sb.append( js.getSchedulerName() ).append(" ").
+                 append( js.getActiveJobs() ).append(" ").
+                 append( js.getMaxActiveJobs() ).append( " " ).
+                 append( js.getQueueSize() ).append("\n");
+          }
+       }else{
+          for( Iterator it = manager.scheduler() ; it.hasNext() ; ){
+              sb.append( ((JobScheduler)it.next()).getSchedulerName() ).append("\n");
+          }
+       }
+       return sb.toString() ;
+    }
+    public Object ac_mover_ls_$_0_1( Args args )throws Exception {
+        String queueName = args.getOpt("queue");
+        if( queueName == null )return mover_ls( _ioQueue , args ) ;
+
+        if( queueName.length() == 0 ){
+           IoQueueManager manager = (IoQueueManager)_ioQueue ;
+           StringBuffer sb = new StringBuffer() ;
+           for( Iterator it = manager.scheduler() ; it.hasNext() ; ){
+              JobScheduler js = (JobScheduler)it.next() ;
+              sb.append("[").append(js.getSchedulerName()).append("]\n");
+              sb.append(mover_ls(  js , args ).toString());
+           }
+           return sb.toString() ;
+        }
+        IoQueueManager manager = (IoQueueManager)_ioQueue ;
+
+        JobScheduler js = manager.getSchedulerByName(queueName);
+
+        if( js == null )throw new NoSuchElementException(queueName);
+
+        return mover_ls( js , args ) ;
+
+    }
+    public Object ac_p2p_ls_$_0_1( Args args )throws Exception {
+        return mover_ls( _p2pQueue , args ) ;
+    }
+    /*
+    private Object mover_ls( IoQueueManager queueManager , int id , boolean binary ){
+       Iterator queues = queueManager.scheduler() ;
+
+       if( binary ){
+          if( id > 0 ){
+              ArrayList list = new ArrayList() ;
+              while( queues.hasNext() ){
+                  list.addAll( ((JobScheduler)queues.next()).getJobInfos() ) ;
+              }
+              return list.toArray( new IoJobInfo[0] ) ;
+          }else{
+              return queueManager.getJobInfo(id) ;
+          }
+       }else{
+          StringBuffer sb = new StringBuffer() ;
+          while( queues.hasNext() ){
+             JobScheduler js = (JobScheduler)queues.next() ;
+             js.printJobQueue(sb);
+          }
+          return sb.toString() ;
+       }
+    }*/
+    private Object mover_ls( JobScheduler js , Args args )throws Exception {
+        boolean binary = args.getOpt("binary") != null ;
+        try{
+            if( binary ){
+                if( args.argc() > 0 ){
+                    return js.getJobInfo( Integer.parseInt(args.argv(0)));
+                }else{
+                    List  list = js.getJobInfos() ;
+                    return list.toArray(new IoJobInfo[0]);
+                }
+            }else{
+                return js.printJobQueue(null).toString() ;
+            }
+        }catch(Exception ee){
+            esay(ee);
+            throw ee ;
+        }
+    }
+    public String ac_mover_remove_$_1( Args args )throws Exception {
+        return mover_remove( _ioQueue , args ) ;
+    }
+    public String ac_p2p_remove_$_1( Args args )throws Exception {
+        return mover_remove( _p2pQueue , args ) ;
+    }
+    private String mover_remove( JobScheduler js , Args args )throws Exception {
+        int id = Integer.parseInt( args.argv(0) ) ;
+        js.remove( id ) ;
+        return "Removed" ;
+    }
+    public String ac_mover_kill_$_1( Args args )throws Exception {
+        return mover_kill( _ioQueue , args ) ;
+    }
+
+    public String ac_p2p_kill_$_1( Args args )throws Exception {
+        return mover_kill( _p2pQueue , args ) ;
+    }
+
+    private void mover_kill( int id) throws Exception{
+        mover_kill( _ioQueue , id ) ;
+    }
+
+    private String mover_kill( JobScheduler js , Args args )throws Exception {
+        int id = Integer.parseInt( args.argv(0) ) ;
+        mover_kill(js,id);
+        return "Kill initialized" ;
+    }
+
+    private void mover_kill( JobScheduler js , int id )throws Exception {
+
+        js.kill( id ) ;
+    }
+    //////////////////////////////////////////////////////
+    //
+    //   queue stuff
+    //
+    public String hh_set_heartbeat = "<heartbeatInterval/sec>" ;
+    public String ac_set_heartbeat_$_0_1( Args args )throws Exception{
+        if( args.argc() > 0 ){
+            _pingThread.setHeartbeat( Integer.parseInt( args.argv(0) ) ) ;
+        }
+        return "Heartbeat at "+(_pingThread.getHeartbeat()) ;
+    }
+    public String fh_update =
+            "  update [-force] [-perm] !!! DEPRECATED  \n"+
+            "     sends relevant data to the PoolManager if this information has been\n"+
+            "     changed recently.\n\n"+
+            "    -force : forces the cell to send the information regardless whether it\n"+
+            "             changed or not.\n"+
+            "    -perm  : writes the current parameter setup back to the setupFile\n" ;
+    public String hh_update = "[-force] [-perm] !!! DEPRECATED" ;
+    public String ac_update( Args args )throws Exception {
+        boolean forced = args.getOpt("force") != null ;
+        _pingThread.sendPoolManagerMessage(forced);
+        if( args.getOpt("perm") != null )dumpSetup();
+        return "" ;
+    }
+    public String hh_save = "[-sc=<setupController>|none] # saves setup to disk or SC" ;
+    public String ac_save( Args args )throws Exception {
+        String setupManager = args.getOpt("sc") ;
+
+        if( _setupManager  == null ) {
+
+            if( ( setupManager != null ) && setupManager.equals("") )
+                throw new
+                        IllegalArgumentException("setupManager needs to be specified");
+
+        }else{
+
+            if( ( setupManager == null  ) ||
+                    setupManager.equals("")    ){
+
+                setupManager = _setupManager ;
+            }
+        }
+        if( ( setupManager != null ) && ! setupManager.equals("none") ){
+            try{
+                StringWriter sw = new StringWriter() ;
+                PrintWriter  pw = new PrintWriter( sw ) ;
+                dumpSetup( pw ) ;
+                SetupInfoMessage info =
+                        new SetupInfoMessage( "put" ,
+                        this.getCellName() ,
+                        "pool" ,
+                        sw.toString() ) ;
+
+                sendMessage( new CellMessage( new CellPath( setupManager ) ,
+                        info
+                        ) ) ;
+            }catch(Exception ee ){
+                esay("Problem sending setup to >"+setupManager+"< : "+ee ) ;
+                throw ee ;
+            }
+        }
+        dumpSetup();
+        return "" ;
+    }
+    //
+    //
+}  // end of MultiProtocolPool
