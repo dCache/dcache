@@ -534,6 +534,7 @@ import diskCacheV111.vehicles.PnfsFlagMessage;
 import diskCacheV111.vehicles.PoolManagerGetPoolListMessage;
 import diskCacheV111.vehicles.PinManagerExtendLifetimeMessage;
 import diskCacheV111.services.space.message.ExtendLifetime;
+import diskCacheV111.services.space.message.GetFileSpaceTokensMessage;
 import diskCacheV111.pools.PoolCellInfo;
 import diskCacheV111.pools.PoolCostInfo;
 import org.globus.util.GlobusURL;
@@ -2831,8 +2832,7 @@ public class Storage
 
     public FileMetaData getFileMetaData(SRMUser user, String path, 
                                         FileMetaData parentFMD) 
-        throws SRMException 
-    {        
+        throws SRMException {        
         say("getFileMetaData(" + path + ")");
         String absolute_path = srm_root + "/" + path;
         diskCacheV111.util.FileMetaData parent_util_fmd = null;
@@ -2864,7 +2864,6 @@ public class Storage
 	    catch (CacheException e) {
                 filemetadata_msg = _pnfs.getFileMetaDataByPath(absolute_path);
             }
-            
             if (storage_info_msg != null) {
                 storage_info = storage_info_msg.getStorageInfo();
                 util_fmd = storage_info_msg.getMetaData();
@@ -2879,55 +2878,62 @@ public class Storage
                 throw new SRMException("could not get storage info or file metadata by path ");
                 
             }
-
             if (duser == null) {
                 if (!permissionHandler.worldCanRead(absolute_path, parent_util_fmd, util_fmd)) {
                     esay("getFileMetaData have no read permission (or file does not exists) ");
                     throw new SRMException("getFileMetaData have no read permission (or file does not exists) ");
                 }
             } 
-
-// 	    else if (!permissionHandler.canRead(duser.getUid(), duser.getGid(),  absolute_path, parent_util_fmd, util_fmd)) {
-//                 esay("getFileMetaDatahave no read permission (or file does not exists) ");
-//                 throw new SRMException("getFileMetaDatahave no read permission (or file does not exists) ");
-//             }
-
-        } catch (CacheException e) {
+        } 
+	catch (CacheException e) {
             esay("could not get storage info by path : ");
             esay(e);
             throw new SRMException("could not get storage info by path : "+e);
         }
-
+	
         PnfsFlagMessage flag =
             new PnfsFlagMessage(pnfsId, "c", "get");
         try {
             flag.setReplyRequired(true);
-            
             CellMessage answer = 
-                sendAndWait(new CellMessage(new CellPath("PnfsManager"),
-                                            flag), __pnfsTimeout * 1000);
+                sendAndWait(new CellMessage(new CellPath("PnfsManager"),flag), 
+			    __pnfsTimeout * 1000);
             Object o = null;
             if (answer == null ||
-                (o = answer.getMessageObject()) == null ||
-                !(o instanceof PnfsFlagMessage)) {
+                (o = answer.getMessageObject()) == null|| !(o instanceof PnfsFlagMessage)) {
                 esay("sent PnfsFlagMessage to pnfs, received "+o+" back");
                 flag = null;
-            } else {
+            } 
+	    else {
                 flag = (PnfsFlagMessage)o;
             }
-        } catch (Exception e) {
+        } 
+	catch (Exception e) {
             esay("Failed to get crc from PnfsManager : " + e);
             flag = null;
         }
-
         FileMetaData fmd =
             getFileMetaData(user, absolute_path, pnfsId, 
                             storage_info, util_fmd, flag);
-
         if (storage_info != null) {
             fmd.isCached = isCached(storage_info, pnfsId);
         }
-
+	
+	try { 
+	    GetFileSpaceTokensMessage getSpaceTokensMessage = new GetFileSpaceTokensMessage(pnfsId);
+	    CellMessage answer =  sendAndWait(new CellMessage(new CellPath("SrmSpaceManager"),getSpaceTokensMessage),
+					      60*60*1000);
+            if(answer==null) {
+                esay("Failed to retrieve space reservation tokens for file "+absolute_path+"("+pnfsId+")");
+            }
+	    getSpaceTokensMessage = (GetFileSpaceTokensMessage)answer.getMessageObject();
+	    fmd.spaceTokens = new long[getSpaceTokensMessage.getSpaceTokens().length];
+	    System.arraycopy(getSpaceTokensMessage.getSpaceTokens(),0,
+			     fmd.spaceTokens,0,getSpaceTokensMessage.getSpaceTokens().length);
+	}
+	catch (Exception ee) { 
+	    esay(ee);
+	}
         return fmd;
     }
     
