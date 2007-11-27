@@ -26,8 +26,6 @@ import java.text.DateFormat;
  * @author  timur
  */
 public class SrmLs {
-    
-    
     private final static String SFN_STRING="?SFN=";
     private int maxNumOfLevels ;
     AbstractStorageElement storage;
@@ -37,6 +35,7 @@ public class SrmLs {
     private int results_num;
     private int max_results_num;
     int numOfLevels =1;
+
     /** Creates a new instance of SrmLs */
     public SrmLs(RequestUser user,
 		 RequestCredential credential,
@@ -46,6 +45,7 @@ public class SrmLs {
 		 String client_host) {
         this(user,request,storage,1000);
     }
+
     public SrmLs(RequestUser user,
 		 SrmLsRequest request, 
 		 AbstractStorageElement storage,
@@ -309,7 +309,6 @@ public class SrmLs {
         if(!canRead(user,fmd)) {
             return null;
         }
-        
         TMetaDataPathDetail metaDataPathDetail =
                 new TMetaDataPathDetail();
         metaDataPathDetail.setLifetimeAssigned(new Integer(-1));
@@ -320,24 +319,14 @@ public class SrmLs {
         int userPerm = (fmd.permMode >> 6) & 7;
         userPermission.setMode(maskToTPermissionMode(userPerm));
         metaDataPathDetail.setOwnerPermission(userPermission);
-        
-        // group...
-         
-         TGroupPermission groupPermission = new TGroupPermission();
-         
-         groupPermission.setGroupID(fmd.group);
-         int groupPerm = (fmd.permMode >> 3) & 7;
-         groupPermission.setMode(maskToTPermissionMode(groupPerm));
-         metaDataPathDetail.setGroupPermission(groupPermission);
-          
-          
-         // other
-          
-         metaDataPathDetail.setOtherPermission(maskToTPermissionMode(fmd.permMode & 7));
-          
-        
+	TGroupPermission groupPermission = new TGroupPermission();
+	groupPermission.setGroupID(fmd.group);
+	int groupPerm = (fmd.permMode >> 3) & 7;
+	groupPermission.setMode(maskToTPermissionMode(groupPerm));
+	metaDataPathDetail.setGroupPermission(groupPermission);
+	metaDataPathDetail.setOtherPermission(maskToTPermissionMode(fmd.permMode & 7));
         org.apache.axis.types.URI turi =
-                new org.apache.axis.types.URI();
+	    new org.apache.axis.types.URI();
         turi.setScheme("srm");
         metaDataPathDetail.setPath(path);
         // creation time
@@ -349,14 +338,11 @@ public class SrmLs {
         td = new java.util.GregorianCalendar();
         td.setTimeInMillis(fmd.lastModificationTime);
         metaDataPathDetail.setLastModificationTime(td);
-
         if(fmd.checksumType != null && fmd.checksumValue != null ) {
             metaDataPathDetail.setCheckSumType(fmd.checksumType);
             metaDataPathDetail.setCheckSumValue(fmd.checksumValue);
         }
-        
         metaDataPathDetail.setFileStorageType(TFileStorageType.PERMANENT);
-	
 	if (!fmd.isPermanent) { 
 	    if (fmd.isPinned) { 
 		metaDataPathDetail.setFileStorageType(TFileStorageType.DURABLE);
@@ -365,39 +351,46 @@ public class SrmLs {
 		metaDataPathDetail.setFileStorageType(TFileStorageType.VOLATILE);
 	    }
 	}
-	
         if(fmd.isDirectory) {
-            say("file type is Directory");
             metaDataPathDetail.setType(TFileType.DIRECTORY);
-        } else if(fmd.isLink) {
-            say("file type is Link");
+        } 
+	else if(fmd.isLink) {
             metaDataPathDetail.setType(TFileType.LINK);
-        } else if(fmd.isRegular) {
-            say("file type is Regular");
+        } 
+	else if(fmd.isRegular) {
             metaDataPathDetail.setType(TFileType.FILE);
-        } else {
+        } 
+	else {
             say("file type is Unknown");
         }
-
 	TFileLocality fileLocality = TFileLocality.NONE;
-	
 	if (fmd.isCached) { 
-	    fileLocality = TFileLocality.ONLINE;
+	    fileLocality = TFileLocality.ONLINE_AND_NEARLINE;
 	}
 	else { 
 	    fileLocality = TFileLocality.NEARLINE;
 	}
 	metaDataPathDetail.setFileLocality(fileLocality);
-
 	if (fmd.retentionPolicyInfo!=null) { 
 	    metaDataPathDetail.setRetentionPolicyInfo(new TRetentionPolicyInfo(fmd.retentionPolicyInfo.getRetentionPolicy(),
 									       fmd.retentionPolicyInfo.getAccessLatency()));
 	}
-
         metaDataPathDetail.setSize(new org.apache.axis.types.UnsignedLong(fmd.size));
+	if (fmd.spaceTokens!=null) { 
+	    if (fmd.spaceTokens.length > 0) { 
+		ArrayOfString arrayOfSpaceTokens = new ArrayOfString(new String[fmd.spaceTokens.length]);
+		for (int st=0;st<fmd.spaceTokens.length;st++) {
+		    StringBuffer spaceToken = new StringBuffer();
+		    spaceToken.append(fmd.spaceTokens[st]);
+		    arrayOfSpaceTokens.setStringArray(st,spaceToken.toString());
+		}
+		metaDataPathDetail.setArrayOfSpaceTokens(arrayOfSpaceTokens);
+	    }
+	}
         TReturnStatus returnStatus = new TReturnStatus();
         returnStatus.setStatusCode(TStatusCode.SRM_SUCCESS);
         metaDataPathDetail.setStatus(returnStatus);
+	
         say("depth = "+depth+" and numOfLevels = "+numOfLevels);
         if (metaDataPathDetail.getType() == TFileType.DIRECTORY &&
                 depth < numOfLevels ) {
@@ -598,7 +591,22 @@ public class SrmLs {
 			}
                         sb.append('\n');
                         if(longFormat) {
-                            TFileStorageType stortype= metaDataPathDetail.getFileStorageType();
+			    sb.append(" space token(s) :");
+			    if (metaDataPathDetail.getArrayOfSpaceTokens()!=null) { 
+				for (int j=0;j<metaDataPathDetail.getArrayOfSpaceTokens().getStringArray().length;j++) {
+				    if (j==metaDataPathDetail.getArrayOfSpaceTokens().getStringArray().length-1) {
+					sb.append(metaDataPathDetail.getArrayOfSpaceTokens().getStringArray()[j]);
+				    }
+				    else { 
+					sb.append(metaDataPathDetail.getArrayOfSpaceTokens().getStringArray()[j]+",");
+				    }
+				}
+			    }
+			    else {
+				sb.append("none found");
+			    }
+			    sb.append('\n');
+                            TFileStorageType stortype= metaDataPathDetail.getFileStorageType();			    
                             if(stortype != null) {
                                 sb.append(depthPrefix);
                                 sb.append(" storage type:").append(stortype.getValue());
