@@ -684,17 +684,15 @@ public class Storage
             System.out.println(new java.util.Date() +
                     ":  in Storage.getSRMInstance(), about to " +
                     "return existing srmInstance");
-            //         say(
-            //            ":  in Storage.getSRMInstance(), about to " +
-            //            "return existing srmInstance");
             return srmInstance;
-        } else {
+        } 
+	else {
             // TODO:  Here is the kludge to keep from calling Domain.main
             //        twice, and therefore trying to create 2 instances
             //        of SRM.  We need a better solution than this...
             
             if (!kludgeDomainMainWasRun) {
-                
+		
                 System.out.println(new java.util.Date() +
                         ":  in Storage.getSRMInstance(),  " +
                         "srmInstance is null, " +
@@ -2063,41 +2061,19 @@ public class Storage
         say("Exception Arrived: "+ee);
         super.exceptionArrived(ee);
     }
+
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    //
-    // I took this code almost withou the change from DCapDoorInterpreterV3
-    //
     private boolean isCached(StorageInfo storage_info, PnfsId _pnfsId) {
         PoolMgrQueryPoolsMsg query =
                 new PoolMgrQueryPoolsMsg( "read" ,
-					  storage_info.getStorageClass()+"@"+
-					  storage_info.getHsm() ,
-					  storage_info.getCacheClass() ,
-					  config.getSrmhost() ,
-					  null ) ;
-/*
-        PoolMgrQueryPoolsMsg query =
-                new PoolMgrQueryPoolsMsg( "read" ,
-					  storage_info.getStorageClass()+"@"+
-					  storage_info.getHsm() ,
-					  storage_info.getCacheClass() ,
-					  "DCap/3",
-					  config.getSrmhost() ,
-					  null ) ;
-*/
-        
+					  storage_info.getStorageClass()+"@"+storage_info.getHsm() ,
+					  storage_info.getCacheClass(),
+					  "*/*",
+					  config.getSrmhost(),
+					  null);
+	
         CellMessage checkMessage = new CellMessage( _poolMgrPath , query ) ;
-        say("isCached: Waiting for PoolMgrQueryPoolsMsg reply"+
-                " from PoolManager");
+        say("isCached: Waiting for PoolMgrQueryPoolsMsg reply from PoolManager");
         try {
             checkMessage = sendAndWait(  checkMessage , __poolManagerTimeout*1000 ) ;
             if(checkMessage == null) {
@@ -2105,7 +2081,8 @@ public class Storage
                 return false;
             }
             query = (PoolMgrQueryPoolsMsg) checkMessage.getMessageObject() ;
-        } catch(Exception ee ) {
+        } 
+	catch(Exception ee ) {
             esay("isCached(): error receiving message back from PoolManager : "+ee);
             return false;
         }
@@ -2113,19 +2090,13 @@ public class Storage
         if( query.getReturnCode() != 0 ) {
             say( "storageInfo Available") ;
         }
-        //
-        // find assumed locations
-        //
         try {
             List assumedLocations = _pnfs.getCacheLocations(_pnfsId) ;
-            say("isCached: AssumedLocations : "+assumedLocations);
             List<String> [] lists = query.getPools() ;
             HashMap hash = new HashMap() ;
             
             for( int i = 0 ; i < lists.length ; i++ ) {
-                say("PoolManager("+i+") -> "+lists[i] ) ;
                 Iterator nn = lists[i].iterator() ;
-                
                 while( nn.hasNext() ) {
                     hash.put( nn.next() , "" ) ;
                 }
@@ -2138,8 +2109,10 @@ public class Storage
                     return true;
                 }
             }
-        } catch(Exception e) {
+        } 
+	catch(Exception e) {
             say("isCached exception : "+ e);
+	    e.printStackTrace();
         }
         return false;
     }
@@ -2887,7 +2860,8 @@ public class Storage
             }
             try {
                 storage_info_msg = _pnfs.getStorageInfoByPath(absolute_path);
-            } catch (CacheException e) {
+            } 
+	    catch (CacheException e) {
                 filemetadata_msg = _pnfs.getFileMetaDataByPath(absolute_path);
             }
             
@@ -2895,10 +2869,12 @@ public class Storage
                 storage_info = storage_info_msg.getStorageInfo();
                 util_fmd = storage_info_msg.getMetaData();
                 pnfsId = storage_info_msg.getPnfsId();
-            } else if(filemetadata_msg != null) {
+            } 
+	    else if(filemetadata_msg != null) {
                 util_fmd = filemetadata_msg.getMetaData();
                 pnfsId = filemetadata_msg.getPnfsId();
-            } else {
+            } 
+	    else {
                 esay("could not get storage info or file metadata by path ");
                 throw new SRMException("could not get storage info or file metadata by path ");
                 
@@ -3081,188 +3057,7 @@ public class Storage
         }
     }
     
-    
-       /* public void getFromRemoteTURL(SRMUser user, String remoteTURL, String filePath, String remoteUser, GSSCredential remoteCredetial) throws SRMException {
-            String actualFilePath = srm_root+"/"+filePath;
-            say(" getFromRemoteTURL from "+remoteTURL+" to " +actualFilePath);
-            performRemoteTransfer(user,remoteTURL,actualFilePath,true,
-            remoteUser,
-            remoteCredetial);
-        }
-        
-        public void putToRemoteTURL(SRMUser user, String filePath, String remoteTURL, String remoteUser, GSSCredential remoteCredetial) throws SRMException {
-            String actualFilePath = srm_root+"/"+filePath;
-            say(" putToRemoteTURL from "+actualFilePath+" to " +remoteTURL);
-            performRemoteTransfer(user,remoteTURL,actualFilePath,false,
-            remoteUser,
-            remoteCredetial);
-        
-        }*/
-    
-        /*
-        private void performRemoteTransfer(
-        SRMUser user,
-        String remoteTURL,
-        String actualFilePath,
-        boolean store,
-        String remoteUser,
-        GSSCredential remoteCredential
-        )
-        throws SRMException {
-            long id = getNextMessageID();
-            say("performRemoteTransfer performing "+(store?"store":"restore"));
-            say("performRemoteTransfer  set req id "+id);
-            if(remoteTURL.startsWith("http://")) {
-                //call this for the sake of checking that user is reading
-                // from the "root" of the user
-                String path = getTurlPath(actualFilePath,"http",user);
-                DCacheUser duser = (DCacheUser)user;
-                RemoteHttpTransferManagerMessage httpTransferRequest =
-                new RemoteHttpTransferManagerMessage(
-                duser.getUid(),
-                duser.getGid(),
-                config.getBuffer_size(),
-                remoteTURL,
-                actualFilePath,
-                store,
-                id);
-                CellMessage answer;
-                try {
-                    answer = sendAndWait(new CellMessage(
-                    new CellPath("RemoteHttpTransferManager"),
-                    httpTransferRequest),1000*60*60*24);
-                }
-                catch(Exception e) {
-                    String emsg ="failed to send/receive the"+
-                    " RemoteHttpTransferManagerMessage back";
-                    esay(emsg);
-                    throw new SRMException(emsg);
-                }
-                if(answer == null) {
-                    String emsg ="timeout expired while waiting "+
-                    "RemoteHttpTransferManagerMessage back";
-                    esay(emsg);
-                    throw new SRMException(emsg);
-                }
-                Object object = answer.getMessageObject();
-                if(object == null ||
-                !(object instanceof RemoteHttpTransferManagerMessage)) {
-                    String emsg ="failed to recive the "+
-                    "RemoteHttpTransferManagerMessage back";
-                    esay(emsg);
-                    throw new SRMException(emsg);
-                }
-                RemoteHttpTransferManagerMessage httpTransferResponce =
-                (RemoteHttpTransferManagerMessage) object;
-                int rc = httpTransferResponce.getReturnCode();
-                if( rc != 0) {
-                    String emsg =" remote http transfer failed with code ="+ rc +
-                    " details: "+httpTransferResponce.getDescription();
-                    esay(emsg);
-                    throw new SRMException(emsg);
-                }
-                return;
-            }
-         
-            if(remoteTURL.startsWith("gsiftp://")) {
-                DCacheUser duser = (DCacheUser)user;
-         
-                //call this for the sake of checking that user is reading
-                // from the "root" of the user
-                String path = getTurlPath(actualFilePath,"gsiftp",user);
-                if(path == null) {
-                    throw new SRMException("user is not authorized to access path: "+
-                    actualFilePath);
-                }
-                try {
-                    if(store) {
-                        PnfsGetStorageInfoMessage storageInfo = _pnfs.getStorageInfoByPath(actualFilePath);
-                        long size = storageInfo.getStorageInfo().getFileSize();
-                        boolean isRegularFile = storageInfo.getMetaData().isRegularFile();
-                        boolean isDir = storageInfo.getMetaData().isDirectory();
-                        if(size == 0 && isRegularFile && !isDir) {
-                            //remnant from previos unsuccessfull attempt
-                            _pnfs.deletePnfsEntry(actualFilePath);
-                        }
-                        else {
-                            throw new SRMException("file "+actualFilePath+" exists");
-                        }
-                    }
-                }
-                catch(CacheException ce) {
-                    //file does not exist
-                    //which is good
-                    //ignore
-                }
-         
-         
-                synchronized(idToUserMap) {
-                    idToUserMap.put(new Long(id),remoteUser);
-                    idToCredentialMap.put(new Long(id),remoteCredential);
-                }
-         
-                RemoteGsiftpTransferManagerMessage gsiftpTransferRequest =
-                new RemoteGsiftpTransferManagerMessage(
-                duser.getName(),
-                duser.getUid(),
-                duser.getGid(),
-                remoteTURL,
-                actualFilePath,
-                store,
-                id,
-                config.getBuffer_size(),
-                config.getTcp_buffer_size()
-                );
-                gsiftpTransferRequest.setStreams_num(config.getParallel_streams());
-                CellMessage answer;
-                try {
-                    answer = sendAndWait(new CellMessage(
-                    new CellPath(remoteGridftpTransferManagerName),
-                    gsiftpTransferRequest),1000*60*60*24);
-                }
-                catch(Exception e) {
-                    String emsg ="failed to send/receive the"+
-                    " RemoteGsiftpTransferManagerMessage back";
-                    esay(emsg);
-                    throw new SRMException(emsg);
-                }
-                finally {
-                    synchronized(idToUserMap) {
-                        idToUserMap.remove(new Long(id));
-                        idToCredentialMap.remove(new Long(id));
-                    }
-                }
-                if(answer == null) {
-                    String emsg ="timout while waiting for a "+
-                    "RemoteGsiftpTransferManagerMessage back";
-                    esay(emsg);
-                    throw new SRMException(emsg);
-                }
-                Object object = answer.getMessageObject();
-                say("sendAndWait got the object back:"+object);
-                if(object == null ||
-                !(object instanceof RemoteGsiftpTransferManagerMessage)) {
-                    String emsg ="failed to receive the "+
-                    "RemoteGsiftpTransferManagerMessage back";
-                    esay(emsg);
-                    throw new SRMException(emsg);
-                }
-                RemoteGsiftpTransferManagerMessage gsiftpTransferResponce =
-                (RemoteGsiftpTransferManagerMessage) object;
-                int rc = gsiftpTransferResponce.getReturnCode();
-                if( rc != 0) {
-                    String emsg =" remote gsiftp transfer failed with code ="+ rc +
-                    " details: "+gsiftpTransferResponce.getDescription();
-                    esay(emsg);
-                    throw new SRMException(emsg);
-                }
-                return;
-            }
-            throw new SRMException("not implemented");
-        }*/
-    
     protected static long   nextMessageID = 20000 ;
-    
     
     private static synchronized long getNextMessageID() {
         if(nextMessageID == Long.MAX_VALUE) {
