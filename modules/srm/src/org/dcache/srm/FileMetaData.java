@@ -17,6 +17,7 @@ public class FileMetaData extends diskCacheV111.srm.FileMetaData{
     public long creationTime=0;
     public long lastModificationTime=0;
     public long lastAccessTime=0;
+    public long spaceTokens[]=null;
     /** Creates a new instance of FileMetaData */
     public FileMetaData() {
         super();
@@ -29,6 +30,8 @@ public class FileMetaData extends diskCacheV111.srm.FileMetaData{
             this.isRegular = fmd1.isRegular;
             this.isDirectory = fmd1.isDirectory;
             this.isLink = fmd1.isLink;
+	    this.spaceTokens = new long[fmd1.spaceTokens.length];
+	    System.arraycopy(fmd1.spaceTokens,0,this.spaceTokens,0,fmd1.spaceTokens.length);
         }
     }
 }
