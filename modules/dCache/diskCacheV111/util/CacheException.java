@@ -13,21 +13,71 @@ public class CacheException extends Exception {
     private final int _rc;
     private final String _message;
 
+    /**
+     * Usually followed by component shutdown.
+     */
     public final static int PANIC             = 10000 ;
+
+    /**
+     * file not know/register in pnfs. Non existing path or pnfsid
+     */
     public final static int FILE_NOT_FOUND    = 10001 ;
+
+    /**
+     * file is precious -  not flush to HSM yet
+     */
     public final static int FILE_PRECIOUS     = 10002 ;
     public final static int FILESIZE_UNKNOWN  = 10003 ;
+
+    /**
+     * file size in pnfs/stoageInfo do not match to data file size
+     *   or
+     * restored from tape/receved by p2p file do not match expected size
+     */
     public final static int FILESIZE_MISMATCH = 10004 ;
     public final static int FILE_NOT_STORED   = 10005 ;
+
+    /**
+     * indicated a timeout in cell communication
+     */
     public final static int TIMEOUT           = 10006 ;
+
+    /**
+     * returned by pool in case of a request for IO on a file, which is not in the pool repository
+     */
     public final static int FILE_NOT_IN_REPOSITORY = 10007;
+
+    /**
+     * returned by PnfsManager on create of existing file or directory
+     */
     public final static int FILE_EXISTS = 10008;
+
+    /**
+     * returned in case of directory specific request ( like list ) on non existing path or pnfsid
+     */
     public final static int DIR_NOT_EXISTS = 10009;
+
+    /**
+     * returned in case of directory specific request ( like list ) on existing not a directory
+     * path or pnfsid,
+     */
     public final static int NOT_DIR = 10010;
+
+    /**
+     * all kind of unexpected exceptions
+     */
     public final static int UNEXPECTED_SYSTEM_EXCEPTION = 10011;
     public final static int ATTRIBUTE_FORMAT_ERROR = 10012;
+
+    /**
+     * indicates, that HSM request to suspend current restore request
+     */
     public final static int HSM_DELAY_ERROR = 10013;
 
+    /**
+     * default error code.
+     * <b>It's recommended to use more specific error codes</b>
+     */
     private static final int DEFAULT_ERROR_CODE = 666; // I don't like this number....
 
 
