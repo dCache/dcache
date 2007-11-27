@@ -19,7 +19,7 @@ printConfig() {
     cat ${ourHome}/etc/node_config \
         ${ourHome}/etc/door_config 2>/dev/null |
     perl -e "
-      while (<STDIN>) { 
+      while (<STDIN>) {
          s/\#.*$// ;                        # Remove comments
          s/\s*$// ;                         # Remove trailing space
          if ( s/^\s*${key}\s*=*\s*//i ) {   # Remove key and equals
@@ -60,7 +60,7 @@ fi
 
 #  ----  Sanitycheck for ${java}
 
-if test -z "${java}" || ! test -x ${java} || ! ${java} -version 2>&1 | grep -E 'version "1\.[456]' >/dev/null ; then
+if test -z "${java}" || ! test -x ${java} || ! ${java} -version 2>&1 | egrep 'version "1\.[456]' >/dev/null ; then
     echo "[ERROR] The variable 'java' in '${ourHome}/config/dCacheSetup' has to be set to a java VM version 1.4. Exiting."
     exit 1
 fi
@@ -96,7 +96,7 @@ then
 		else
 			poolListFiles="${poolListFiles} ${domainName}"
 		fi
-		
+
 	done < ${ourHome}/config/${hostname}.domains
 
 else
@@ -115,10 +115,10 @@ case "${action}" in
          echo " No pool to  ${action} - exiting"
          exit 1
       fi
-	  
+
 
       for poolDomain in ${poolListFiles}
-      do	  
+      do
            echo -n "${action} dcache pool: "
            ${ourHome}/jobs/pool -pool=${poolDomain} ${logParam} ${action}
       done
