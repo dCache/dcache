@@ -190,7 +190,7 @@ public class BasicNameSpaceProvider implements NameSpaceProvider, StorageInfoPro
             localPath = _pathManager.globalToLocal(globalPath) ;
             pf = new PnfsFile( localPath ) ;
         }catch(Exception ie ){
-        	_logNameSpace.error("failed to map global path to local: " + globalPath);
+        	_logNameSpace.error("failed to map global path to local: " + globalPath, ie);
             throw new IllegalArgumentException( "g2l match failed : "+ie.getMessage());
         }
 
@@ -205,7 +205,7 @@ public class BasicNameSpaceProvider implements NameSpaceProvider, StorageInfoPro
             }
 
         }catch(Exception e){
-        	_logNameSpace.error("failed to create a new entry: " + globalPath);
+        	_logNameSpace.error("failed to create a new entry: " + globalPath, e);
             throw new IllegalArgumentException( "failed : " + e.getMessage());
         }
 
@@ -225,8 +225,9 @@ public class BasicNameSpaceProvider implements NameSpaceProvider, StorageInfoPro
         try {
         	this.setFileMetaData(pnfsId, metaData);
         }catch(Exception e) {
-        	_logNameSpace.error("failed to set permissions for: " + globalPath);
+        	_logNameSpace.error("failed to set permissions for: " + globalPath, e);
         	pf.delete();
+        	throw new IllegalArgumentException( "failed to set permissions for: " + globalPath + " : " + e.getMessage());
         }
 
         if(_logNameSpace.isDebugEnabled() ) {
@@ -301,59 +302,59 @@ public class BasicNameSpaceProvider implements NameSpaceProvider, StorageInfoPro
 
     public void setFileMetaData(PnfsId pnfsId, FileMetaData metaData) throws Exception {
 
+        if (metaData.isUserPermissionsSet()) {
 
-    	if( metaData.isUserPermissionsSet() ) {
+            int mode = 0;
 
-	        int mode = 0;
+            // FIXME: to be done more elegant
 
-	        //FIXME: to be done more elegant
+            // user
+            if (metaData.getUserPermissions().canRead()) {
+                mode |= 0400;
+            }
 
-	        // user
-	        if( metaData.getUserPermissions().canRead() ) {
-	            mode |= 0400;
-	        }
+            if (metaData.getUserPermissions().canWrite()) {
+                mode |= 0200;
+            }
+            if (metaData.getUserPermissions().canExecute()) {
+                mode |= 0100;
+            }
 
-	        if( metaData.getUserPermissions().canWrite() ) {
-	            mode |= 0200;
-	        }
-	        if( metaData.getUserPermissions().canExecute() ) {
-	            mode |= 0100;
-	        }
+            // group
+            if (metaData.getGroupPermissions().canRead()) {
+                mode |= 0040;
+            }
 
+            if (metaData.getGroupPermissions().canWrite()) {
+                mode |= 0020;
+            }
+            if (metaData.getGroupPermissions().canExecute()) {
+                mode |= 0010;
+            }
 
-	        // group
-	        if( metaData.getGroupPermissions().canRead() ) {
-	            mode |= 0040;
-	        }
+            // world
+            if (metaData.getWorldPermissions().canRead()) {
+                mode |= 0004;
+            }
 
-	        if( metaData.getGroupPermissions().canWrite() ) {
-	            mode |= 0020;
-	        }
-	        if( metaData.getGroupPermissions().canExecute() ) {
-	            mode |= 0010;
-	        }
+            if (metaData.getWorldPermissions().canWrite()) {
+                mode |= 0002;
+            }
+            if (metaData.getWorldPermissions().canExecute()) {
+                mode |= 0001;
+            }
 
-	        // world
-	        if( metaData.getWorldPermissions().canRead() ) {
-	            mode |= 0004;
-	        }
+            File mountPoint = _pathManager.getMountPointByPnfsId(pnfsId);
+            for (int level = 0; level < 2; level++) {
+                this.setFileMetaData(mountPoint, pnfsId, level, metaData
+                        .getUid(), metaData.getGid(), mode, metaData
+                        .isDirectory());
+            }
 
-	        if( metaData.getWorldPermissions().canWrite() ) {
-	            mode |= 0002;
-	        }
-	        if( metaData.getWorldPermissions().canExecute() ) {
-	            mode |= 0001;
-	        }
+        }
 
-	        File mountPoint = _pathManager.getMountPointByPnfsId(pnfsId);
-	        for( int level = 0 ; level < 2 ; level ++ ){
-	            this.setFileMetaData( mountPoint , pnfsId, level, metaData.getUid(), metaData.getGid(), mode, metaData.isDirectory() );
-	        }
-
-    	}
-
-        if( ! metaData.isDirectory() && metaData.isSizeSet() ){
-           setFileSize(pnfsId, metaData.getFileSize());
+        if (!metaData.isDirectory() && metaData.isSizeSet()) {
+            setFileSize(pnfsId, metaData.getFileSize());
         }
 
     }
@@ -430,9 +431,7 @@ public class BasicNameSpaceProvider implements NameSpaceProvider, StorageInfoPro
 
         say( "getStorageInfo : "+pnfsId ) ;
         File mountpoint = _pathManager.getMountPointByPnfsId(pnfsId) ;
-        StorageInfo info = _extractor.getStorageInfo(
-        mountpoint.getAbsolutePath() ,
-        pnfsId ) ;
+        StorageInfo info = _extractor.getStorageInfo( mountpoint.getAbsolutePath() , pnfsId ) ;
 
         say( "Storage info "+info ) ;
 
@@ -777,7 +776,43 @@ public class BasicNameSpaceProvider implements NameSpaceProvider, StorageInfoPro
 
         File metaFile = new File( mp , sb.toString() ) ;
 
-        metaFile.createNewFile() ;
+        /*
+         * due to bug in pnfsd, which copies directory inode into virtual '.(pset)' file inode and
+         * keeps IS_DIR mask and due to fact, that SUN JVM checks mode after open/create ( fstat() ) and
+         * throws 'Is a Directory' IOException, wrap create operation with try-catch block.
+         *
+         * JVM code:
+         *
+         *   int open64_w(const char *path, int oflag, int mode)
+         *   {
+         *       int result = open64(path, oflag, mode);
+         *       if (result != -1) {
+         *           // If the open succeeded, the file might still be a directory
+         *           int st_mode;
+         *           if (sysFfileMode(result, &st_mode) != -1) {
+         *               if ((st_mode & S_IFMT) == S_IFDIR) {
+         *                   errno = EISDIR;
+         *                   close(result);
+         *                   return -1;
+         *               }
+         *           } else {
+         *               close(result);
+         *               return -1;
+         *           }
+         *       }
+         *       return result;
+         *   }
+         *
+         */
+
+        try {
+            metaFile.createNewFile() ;
+        }catch(IOException ioe) {
+            /*
+             *  TODO: check for new permissions and re-throw exception
+             *        if it not set.
+             */
+        }
 
     }
 
