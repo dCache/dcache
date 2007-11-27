@@ -1,4 +1,4 @@
-// $Id: PutCompanion.java,v 1.19 2007-09-13 19:48:02 timur Exp $
+// $Id$
 // $Log: not supported by cvs2svn $
 // Revision 1.18  2007/03/28 02:58:23  timur
 // Support overwrite, less logging

@@ -1,4 +1,4 @@
-// $Id: DCacheUser.java,v 1.5 2006-08-02 22:09:54 timur Exp $
+// $Id$
 // $Log: not supported by cvs2svn $
 // Revision 1.4  2005/01/25 05:17:31  timur
 // moving general srm stuff into srm repository

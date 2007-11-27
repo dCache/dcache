@@ -1,4 +1,4 @@
-// $Id: UnpinCompanion.java,v 1.8 2006-09-25 20:30:59 timur Exp $
+// $Id$
 // $Log: not supported by cvs2svn $
 // Revision 1.7  2006/07/04 22:23:37  timur
 // Use Credential Id to reffer to the remote credential in delegation step, reformated some classes

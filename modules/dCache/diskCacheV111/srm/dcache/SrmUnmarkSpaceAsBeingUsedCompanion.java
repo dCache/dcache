@@ -1,4 +1,4 @@
-// $Id: SrmUnmarkSpaceAsBeingUsedCompanion.java,v 1.2 2006-09-25 20:30:58 timur Exp $
+// $Id$
 // $Log: not supported by cvs2svn $
 // Revision 1.1  2006/08/25 00:16:56  timur
 // first complete version of space reservation working with srmPrepareToPut and gridftp door

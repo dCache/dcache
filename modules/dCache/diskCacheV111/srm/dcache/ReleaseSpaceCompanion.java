@@ -1,4 +1,4 @@
-// $Id: ReleaseSpaceCompanion.java,v 1.9 2007-08-03 20:20:02 timur Exp $
+// $Id$
 // $Log: not supported by cvs2svn $
 // Revision 1.8  2006/09/25 20:30:58  timur
 // modify srm companions and srm cell to use ThreadManager

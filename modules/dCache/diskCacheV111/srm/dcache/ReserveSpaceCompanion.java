@@ -1,4 +1,4 @@
-// $Id: ReserveSpaceCompanion.java,v 1.8 2006-09-25 20:30:58 timur Exp $
+// $Id$
 // $Log: not supported by cvs2svn $
 // Revision 1.7  2005/09/27 21:46:52  timur
 // do not leave pnfs entry behind after space reservation is created

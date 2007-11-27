@@ -1,4 +1,4 @@
-// $Id: PinCompanion.java,v 1.7 2006-10-10 21:04:36 timur Exp $
+// $Id$
 // $Log: not supported by cvs2svn $
 // Revision 1.6  2006/09/25 20:30:58  timur
 // modify srm companions and srm cell to use ThreadManager

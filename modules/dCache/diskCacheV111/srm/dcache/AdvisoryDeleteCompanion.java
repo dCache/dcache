@@ -1,4 +1,4 @@
-// $Id: AdvisoryDeleteCompanion.java,v 1.10 2007-09-26 04:24:25 timur Exp $
+// $Id$
 // $Log: not supported by cvs2svn $
 // Revision 1.9  2007/05/24 13:51:09  tigran
 // merge of 1.7.1 and the head

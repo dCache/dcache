@@ -1,4 +1,4 @@
-// $Id: SrmReleaseSpaceCompanion.java,v 1.2 2006-09-25 20:30:58 timur Exp $
+// $Id$
 // $Log: not supported by cvs2svn $
 // Revision 1.1  2006/08/22 23:21:55  timur
 // srmReleaseSpace is implemented

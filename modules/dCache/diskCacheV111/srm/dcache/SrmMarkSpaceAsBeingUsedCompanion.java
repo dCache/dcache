@@ -1,4 +1,4 @@
-// $Id: SrmMarkSpaceAsBeingUsedCompanion.java,v 1.7 2007-10-08 19:41:06 timur Exp $
+// $Id$
 // $Log: not supported by cvs2svn $
 // Revision 1.6  2007/06/18 21:37:48  timur
 // better reporting of the expired space reservations, better singletons

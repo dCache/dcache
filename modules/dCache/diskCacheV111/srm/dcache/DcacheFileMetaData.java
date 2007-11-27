@@ -1,4 +1,4 @@
-// $Id: DcacheFileMetaData.java,v 1.5 2005-10-07 22:59:46 timur Exp $
+// $Id$
 // $Log: not supported by cvs2svn $
 // Revision 1.4  2005/03/11 21:17:27  timur
 // making srm compatible with cern tools again

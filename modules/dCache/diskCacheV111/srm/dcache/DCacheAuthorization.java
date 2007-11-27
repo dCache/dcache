@@ -1,4 +1,4 @@
-// $Id: DCacheAuthorization.java,v 1.14 2007-10-19 20:57:04 tdh Exp $
+// $Id$
 // $Log: not supported by cvs2svn $
 // Revision 1.13  2007/03/27 19:20:28  tdh
 // Merge of support for multiple attributes from 1.7.1.

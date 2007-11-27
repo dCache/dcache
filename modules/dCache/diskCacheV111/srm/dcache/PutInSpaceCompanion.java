@@ -1,4 +1,4 @@
-// $Id: PutInSpaceCompanion.java,v 1.9 2007-03-10 00:13:21 timur Exp $
+// $Id$
 // $Log: not supported by cvs2svn $
 // Revision 1.8  2006/09/25 20:30:58  timur
 // modify srm companions and srm cell to use ThreadManager

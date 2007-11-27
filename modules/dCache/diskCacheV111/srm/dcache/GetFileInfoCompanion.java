@@ -1,4 +1,4 @@
-// $Id: GetFileInfoCompanion.java,v 1.9 2007-02-23 17:05:23 timur Exp $
+// $Id$
 // $Log: not supported by cvs2svn $
 // Revision 1.8  2006/09/25 20:30:58  timur
 // modify srm companions and srm cell to use ThreadManager
