@@ -267,54 +267,54 @@
 
         <!-- The SMC invocation part. Without the ant-contrib tasks, we
              need to add each .sm file one by one below. -->
-        <target name="dcache.smc" 
+        <target name="dcache.smc"
                 description="Compile state machines using SMC">
           <property name="fsmDir" location="${buildTop}/fsm"/>
           <mkdir dir="${fsmDir}"/>
 
-          <smc target="java" 
+          <smc target="java"
                smfile="${sourceDir}/org/dcache/services/pinmanager/Pin.sm"
                destdir="${sourceDir}/org/dcache/services/pinmanager/"
                smcjar="${smc.jar}"/>
-          <smc target="table" 
+          <smc target="table"
                smfile="${sourceDir}/org/dcache/services/pinmanager/Pin.sm"
                destdir="${fsmDir}"
                smcjar="${smc.jar}"/>
-          <smc target="graph" 
+          <smc target="graph"
                smfile="${sourceDir}/org/dcache/services/pinmanager/Pin.sm"
                destdir="${fsmDir}"
                smcjar="${smc.jar}"/>
-          <smc target="java" 
+          <smc target="java"
                smfile="${sourceDir}/org/dcache/services/pinmanager/Pinner.sm"
                destdir="${sourceDir}/org/dcache/services/pinmanager/"
                smcjar="${smc.jar}"/>
-          <smc target="table" 
+          <smc target="table"
                smfile="${sourceDir}/org/dcache/services/pinmanager/Pinner.sm"
                destdir="${fsmDir}"
                smcjar="${smc.jar}"/>
-          <smc target="graph" 
+          <smc target="graph"
                smfile="${sourceDir}/org/dcache/services/pinmanager/Pinner.sm"
                destdir="${fsmDir}"
                smcjar="${smc.jar}"/>
-          <smc target="java" 
+          <smc target="java"
                smfile="${sourceDir}/org/dcache/services/pinmanager/Unpinner.sm"
                destdir="${sourceDir}/org/dcache/services/pinmanager/"
                smcjar="${smc.jar}"/>
-          <smc target="table" 
+          <smc target="table"
                smfile="${sourceDir}/org/dcache/services/pinmanager/Unpinner.sm"
                destdir="${fsmDir}"
                smcjar="${smc.jar}"/>
-          <smc target="graph" 
+          <smc target="graph"
                smfile="${sourceDir}/org/dcache/services/pinmanager/Unpinner.sm"
                destdir="${fsmDir}"
                smcjar="${smc.jar}"/>
-        </target>         
+        </target>
 
 	<!-- Compile -->
 
-	<target name="dcache.compile" 
-                depends="prepare,dcache.smc,dcache.depend" 
-                unless="dcache.jar.upToDate" 
+	<target name="dcache.compile"
+                depends="prepare,dcache.smc,dcache.depend"
+                unless="dcache.jar.upToDate"
                 description="Compile Java code for dcache.jar">
 
 		<mkdir dir="${buildDir}/core" />
@@ -676,6 +676,8 @@
 		<copy file="${sourceDir}/${dcache.packagePrefix}/jobs/hsmcp.sh" todir="${binDir}/jobs" />
 		<copy file="${sourceDir}/${dcache.packagePrefix}/jobs/hsmcpV4.sh" todir="${binDir}/jobs" />
 
+	    <chmod dir="${binDir}/jobs"  includes="**/*" perm="ugo+rx" />
+
 		<!-- Chimera -->
 		<mkdir dir="${binDir}/classes/chimera" />
 	    <mkdir dir="${binDir}/libexec/chimera" />
@@ -690,6 +692,7 @@
 		<copy file="${libDir}/dbcp/c3p0-0.9.1.2.jar" todir="${binDir}/classes/dbcp" />
 	    <copy file="${libDir}/Chimera/run.xml" tofile="${binDir}/libexec/chimera/chimera-nfs-run.xml" />
 	    <copy file="${libDir}/Chimera/chimera-nfs-run.sh" tofile="${binDir}/libexec/chimera/chimera-nfs-run.sh" />
+	    <chmod file="${binDir}/libexec/chimera/chimera-nfs-run.sh"  perm="ugo+rx" />
 	    <copy todir="${binDir}/libexec/chimera/sql">
 	        <fileset dir="${libDir}/Chimera/sql" />
 	    </copy>

@@ -22,13 +22,15 @@
     <!-- build minor version taken from stored in SCM file, but updated on relese builds only -->
     <loadproperties srcFile="${build.id.store}" />
 
+    <tstamp>
+       <format property="file-timestamp" pattern="yyyyMMddhhmmss" />
+    </tstamp>
+
 	<!-- defalut minor vesion is next officail RC -->
     <property name="build.minor.number" value="${build.number}rc" />
 
 
-    <tstamp>
-       <format property="file-timestamp" pattern="yyyyMMddhhmmss" />
-    </tstamp>
+
 
     <loadproperties srcFile="release.properties" />
     <property name="release.version.id" value="${release.id}-${build.minor.number}-${file-timestamp}"/>
@@ -78,6 +80,7 @@
         <copy todir="${server.rpmDcacheDir}">
             <fileset dir="${server.skelDir}" />
         </copy>
+        <chmod dir="${server.rpmDcacheDir}/bin" includes="**/*" perm="ugo+rx" />
 
         <!-- classes, jobs, config, docs -->
         <copy todir="${server.rpmDcacheDir}/classes">
@@ -111,6 +114,10 @@
         <copy todir="${server.rpmDcacheDir}/libexec">
             <fileset dir="${binDir}/libexec" />
         </copy>
+
+        <chmod dir="${server.rpmDcacheDir}/bin"     includes="**/*" perm="ugo+rx" />
+        <chmod dir="${server.rpmDcacheDir}/install" includes="**/*" perm="ugo+rx" />
+        <chmod dir="${server.rpmDcacheDir}/jobs"    includes="**/*" perm="ugo+rx" />
 
     </target>
 
