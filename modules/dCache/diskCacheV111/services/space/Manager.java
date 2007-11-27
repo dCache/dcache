@@ -200,6 +200,7 @@ import diskCacheV111.services.space.message.CancelUse;
 import diskCacheV111.services.space.message.GetSpaceMetaData;
 import diskCacheV111.services.space.message.GetSpaceTokens;
 import diskCacheV111.services.space.message.ExtendLifetime;
+import diskCacheV111.services.space.message.GetFileSpaceTokensMessage;
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.RetentionPolicy;
 import  dmg.cells.nucleus.SystemCell;
@@ -594,9 +595,48 @@ public class Manager
         sb.append("Reservations:\n");
         listSpaceReservations(isLongFormat,id,sb);
         sb.append("\n\nLinkGroups:\n");
-        listLinkGroups(isLongFormat,id,sb);
+        listLinkGroups(isLongFormat,false,id,sb);
         return sb.toString();
     }
+
+     public String hh_ls_link_groups = " [-l] [-a]  <id> # list link groups";
+     public String ac_ls_link_groups_$_0_1(Args args) throws Exception {
+        boolean isLongFormat = args.getOpt("l") != null;
+        boolean all = args.getOpt("a") != null;
+        String id = null;
+        if (args.argc() == 1) {
+            id = args.argv(0);
+        }
+        StringBuffer sb = new StringBuffer();
+        sb.append("\n\nLinkGroups:\n");
+        listLinkGroups(isLongFormat,all,id,sb);
+        return sb.toString();
+    }
+     
+    public String hh_ls_file_space_tokens = " <pnfsId>|<pnfsPath> # list space tokens " +
+        "that contain a file";
+     public String ac_ls_file_space_tokens_$_1(Args args) throws Exception {
+        String  pnfsPath = args.argv(0);
+        PnfsId pnfsId = null;
+        try {
+            pnfsId = new PnfsId(pnfsPath);
+            pnfsPath = null;
+        }
+        catch(Exception e) {
+            pnfsId = null;
+        }
+        StringBuffer sb = new StringBuffer();
+        long[] tokens= getFileSpaceTokens(pnfsId, pnfsPath);
+        if(tokens != null && tokens.length >0) {
+            for(long token:tokens) {
+                sb.append('\n').append(token);
+            }
+        } else {
+            sb.append("\nno space tokens found for file:").append( args.argv(0));
+        }
+        return sb.toString();
+    }
+    
     public String hh_reserve = "  [-vog=voGroup] [-vor=voRole] " +
          "[-acclat=AccessLatency] [-retpol=RetentionPolicy] [-desc=Description] " +
         " [-lgid=LinkGroupId]" +
@@ -2241,8 +2281,11 @@ public class Manager
     }
     
     private static final String selectLinkGroups =
+                    "SELECT id FROM "+ LinkGroupTableName+
+        " WHERE "+LinkGroupTableName+".lastUpdateTime >= ?";
+    private static final String selectAllLinkGroups =
                     "SELECT id FROM "+ LinkGroupTableName;
-    private void listLinkGroups(boolean isLongFormat, String id, StringBuffer sb) throws Exception{
+    private void listLinkGroups(boolean isLongFormat, boolean all, String id, StringBuffer sb) throws Exception{
         Connection _con = null;
         try {
             _con = connection_pool.getConnection();
@@ -2259,10 +2302,19 @@ public class Manager
                 linkGroup.toStringBuffer(sb);
                 return;
             }
-            
-            say("executing statement: "+selectLinkGroups);
-            PreparedStatement sqlStatement =
-                    _con.prepareStatement(selectLinkGroups);
+            PreparedStatement sqlStatement;
+            if(all) {
+                
+                say("executing statement: "+selectAllLinkGroups);
+                sqlStatement =
+                        _con.prepareStatement(selectAllLinkGroups);
+            } else {
+                say("executing statement: "+selectLinkGroups);
+                sqlStatement =
+                        _con.prepareStatement(selectLinkGroups);
+                sqlStatement.setLong(1,latestLinkGroupUpdateTime);
+                
+            }
             ResultSet set = sqlStatement.executeQuery();
             int count = 0;
             long totalReservable = 0;
@@ -2323,7 +2375,55 @@ public class Manager
         }
         return tokens;
     }
+    /*
+     *            "CREATE TABLE "+ SpaceFileTableName+" ( "+
+            " id "+longType+" NOT NULL PRIMARY KEY "+
+            ", voGroup "+stringType+" "+
+            ", voRole "+stringType+" "+
+            ", spaceReservationId "+longType+" "+
+            ", sizeInBytes "+longType+" "+
+            ", creationTime "+longType+" "+
+            ", lifetime "+longType+" "+
+            ", pnfsPath "+stringType+" "+
+            ", pnfsId "+stringType+" "+
+            ", state "+intType+" "+
+            ", CONSTRAINT fk_"+SpaceFileTableName+
+            "_L FOREIGN KEY (spaceReservationId) REFERENCES "+
+            SpaceTableName +" (id) "+
+            " ON DELETE RESTRICT"+
+            ")";
+*/
     
+    public long[] getFileSpaceTokens(Connection _con,
+            PnfsId pnfsId,
+            String pnfsPath)  throws SQLException{
+        String selectSpaceIds =
+                "SELECT spaceReservationId FROM "+ SpaceFileTableName +
+                " WHERE  state = "+FileState.STORED.getStateId();
+        if(pnfsId != null) {
+            selectSpaceIds +=" AND pnfsId = '"+pnfsId+'\''; 
+        }
+        
+         if(pnfsPath != null) {
+            selectSpaceIds +=" AND pnfsPath = '"+pnfsPath+'\''; 
+        }
+        say("executing statement: "+selectSpaceIds);
+        Statement sqlStatement =
+                _con.createStatement();
+        ResultSet set = sqlStatement.executeQuery(
+                selectSpaceIds);
+        Set<Long> tokenSet = new HashSet<Long>();
+        while(set.next()) {
+            tokenSet.add(set.getLong(1));
+        }
+        Long[] tokensLong =  tokenSet.toArray(new Long[0]);
+        long[] tokens = new long[tokensLong.length];
+        for(int i = 0; i< tokens.length;++i) {
+            tokens[i] = tokensLong[i].longValue();
+        }
+        return tokens;
+    }
+
     public long[] getSpaceTokens(String voGroup,
             String voRole,
             String description)  throws SQLException{
@@ -2331,6 +2431,27 @@ public class Manager
         try {
             _con = connection_pool.getConnection();
             return getSpaceTokens(_con,voGroup,voRole,description);
+        } catch(SQLException sqle) {
+            esay("update failed with ");
+            esay(sqle);
+            say("ROLLBACK TRANSACTION");
+            _con.rollback();
+            connection_pool.returnFailedConnection(_con);
+            _con = null;
+            throw sqle;
+        } finally {
+            if(_con != null) {
+                connection_pool.returnConnection(_con);
+            }
+        }
+    }
+    
+    public long[] getFileSpaceTokens(PnfsId pnfsId,
+            String pnfsPath)  throws SQLException{
+        Connection _con = null;
+        try {
+            _con = connection_pool.getConnection();
+            return getFileSpaceTokens(_con,pnfsId,pnfsPath);
         } catch(SQLException sqle) {
             esay("update failed with ");
             esay(sqle);
@@ -3110,6 +3231,10 @@ say( "size in bytes = " + sizeInBytes);
             }else if(spaceMessage instanceof PoolRemoveFilesMessage) {
                 PoolRemoveFilesMessage fileRemoved = (PoolRemoveFilesMessage) spaceMessage;
                 fileRemoved(fileRemoved);
+            }else if(spaceMessage instanceof GetFileSpaceTokensMessage) {
+                GetFileSpaceTokensMessage getFileTokens = (GetFileSpaceTokensMessage) spaceMessage;
+                getFileSpaceTokens(getFileTokens);
+                
             } else {
                 esay("unknown Space Manager message type :"+spaceMessage.getClass().getName()+" value: "+spaceMessage);
                 super.messageArrived(cellMessage);
@@ -4205,6 +4330,21 @@ say( "size in bytes = " + sizeInBytes);
         }
         long [] tokens = getSpaceTokens(voGroup, voRole, description);
         gst.setSpaceToken(tokens);
+    }
+    
+    public void getFileSpaceTokens(GetFileSpaceTokensMessage getFileTokens) throws Exception{
+        if(!spaceManagerEnabled) {
+            throw new SpaceException("SpaceManager is disabled in configuration");
+        }
+        PnfsId pnfsId = getFileTokens.getPnfsId();
+        String pnfsPath = getFileTokens.getPnfsPath();
+        if(pnfsId == null && pnfsPath == null) {
+            throw new IllegalArgumentException("null voGroup");
+            
+        }
+        long [] tokens = getFileSpaceTokens(pnfsId,pnfsPath);
+        getFileTokens.setSpaceToken(tokens);
+        
     }
     
     public void extendLifetime(ExtendLifetime extendLifetime) throws Exception{
