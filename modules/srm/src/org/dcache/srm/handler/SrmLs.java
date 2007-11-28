@@ -143,7 +143,7 @@ public class SrmLs {
         // to indicate "no limit".
         
         if (request.getAllLevelRecursive() != null &&
-                request.getAllLevelRecursive().booleanValue()) {
+	    request.getAllLevelRecursive().booleanValue()) {
             numOfLevels= maxNumOfLevels;
         }
 	else {
@@ -504,10 +504,8 @@ public class SrmLs {
         
         metaDataPathDetail.setFileStorageType(TFileStorageType.PERMANENT);
         if(file.isDirectory()) {
-            say("file type is Directory");
             metaDataPathDetail.setType(TFileType.DIRECTORY);
         } else if(file.isFile()) {
-            say("file type is Regular");
             metaDataPathDetail.setType(TFileType.FILE);
         } else {
             say("file type is Unknown");
