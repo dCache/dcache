@@ -140,8 +140,32 @@ public class FileMetaData implements Serializable {
 
     }
 
+    /**
+     * set file system object type
+     * @param isRegular
+     * @param isDirectory
+     * @param isLink
+     * @throws IllegalArgumentException if more than one of the field is true
+     */
     public void setFileType(boolean isRegular, boolean isDirectory,
-            boolean isLink) {
+            boolean isLink) throws IllegalArgumentException {
+
+        if( (isRegular && isDirectory ) )
+            throw new IllegalArgumentException("can't be file and directory at the same time");
+
+        if( (isRegular && isLink ) )
+            throw new IllegalArgumentException("can't be file and link at the same time");
+
+        if( (isLink && isDirectory ) )
+            throw new IllegalArgumentException("can't be link and directory at the same time");
+
+        if( (isRegular && isDirectory ) )
+            throw new IllegalArgumentException("can't be file and directory at the same time");
+
+        if( !(isRegular || isDirectory || isLink) )
+            throw new IllegalArgumentException("have to be a file or a directory  or a link");
+
+
         _isRegular = isRegular;
         _isDirectory = isDirectory;
         _isLink = isLink;
@@ -320,17 +344,26 @@ public class FileMetaData implements Serializable {
         FileMetaData other = (FileMetaData)obj;
 
         return
+            // owner and group
                other._gid == this._gid
             && other._uid == this._uid
 
+            // type
             && other._isDirectory == this._isDirectory
             && other._isLink == this._isLink
             && other._isRegular == this._isRegular
 
+            // size
             && other._size == this._size
+            // permissions
             && other._user.equals(this._user)
             && other._group.equals(this._group)
             && other._world.equals(this._world)
+
+            // times
+            && other._created == this._created
+            && other._lastAccessed == this._lastAccessed
+            && other._lastModified == this._lastModified
 
             ;
 
