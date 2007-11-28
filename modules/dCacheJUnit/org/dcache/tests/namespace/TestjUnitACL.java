@@ -1,15 +1,20 @@
 package org.dcache.tests.namespace;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
 import java.sql.Connection;
 import java.sql.DriverManager;
-import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.sql.DataSource;
-
-import static org.junit.Assert.*;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 import org.dcache.chimera.acl.ACE;
 import org.dcache.chimera.acl.ACL;
@@ -29,105 +34,107 @@ import org.dcache.chimera.acl.enums.Who;
 import org.dcache.chimera.acl.handler.AclHandler;
 import org.dcache.chimera.acl.mapper.AclMapper;
 import org.dcache.chimera.acl.matcher.AclNFSv4Matcher;
-import org.dcache.chimera.acl.util.SQLHandler;
-import org.junit.Test;
 
 public class TestjUnitACL {
 
-	private AclHandler aclHandler	= null;
-	private DataSource ds_pooled	= null;
+    private static AclHandler aclHandler;
+    private static Connection _conn;
 
-	public static final String	DEFAULT_DRIVER			= "org.postgresql.Driver";
-	public static final String	DEFAULT_URL			    = "jdbc:postgresql://localhost:5432/chimera?prepareThreshold=3";
-	public static final String	DEFAULT_USER				= "postgres";
-	public static final String	DEFAULT_PSWD				= "";
+    @BeforeClass
+    public static void setUp() throws Exception {
+        /*
+         * init Chimera DB
+         */
 
-	private String	driver		= DEFAULT_DRIVER;
-    private String	url			= DEFAULT_URL;
-    private String	user		= DEFAULT_USER;
-    private String	pswd		= DEFAULT_PSWD;
+        Class.forName("org.hsqldb.jdbcDriver");
 
-    void deleteFromTable()  throws  RuntimeException, SQLException, ClassNotFoundException{
+        _conn = DriverManager.getConnection("jdbc:hsqldb:mem:chimeraaclmem", "sa", "");
 
-    	Class.forName(driver);
-        Connection conn = DriverManager.getConnection(url, user, pswd);
-    	PreparedStatement pstmt = null;
+        File sqlFile = new File("modules/external/Chimera/sql/create-hsqldb.sql");
+        StringBuilder sql = new StringBuilder();
 
-    	try {
-			pstmt = conn.prepareStatement("delete from t_acl");
-			int rs = pstmt.executeUpdate();
-    	}
-    	catch (SQLException e) {
-			throw new RuntimeException(SQLHandler.getMessage(e));
-    		}
+        BufferedReader dataStr = new BufferedReader(new FileReader(sqlFile));
+        String inLine = null;
+
+        while ((inLine = dataStr.readLine()) != null) {
+            sql.append(inLine);
+        }
+
+        Statement st = _conn.createStatement();
+
+        st.executeUpdate(sql.toString());
+
+        tryToClose(st);
+
+
+        aclHandler = new AclHandler("modules/dCacheJUnit/org/dcache/tests/namespace/acl.properties");
     }
 
+    @Test
+    public void testAcl() throws Exception {
+        //deleteFromTable(); /Comment: this was for PostgreSQL db
 
-	@Test
-	public void testAcl() throws Exception {
-		deleteFromTable();
-//		 initializing ACL Handler and SQL Data Source
-    	initAclHandler();
+        //initializing ACL Handler and SQL Data Source
 
-    	String rsID =genRsID();
-    	    	RsType rsType = RsType.FILE;
+        String rsID =genRsID();
+                RsType rsType = RsType.FILE;
 
-    	    	int masks1 = (AccessMask.READ_DATA.getValue());
-			    	masks1 += (AccessMask.WRITE_DATA.getValue());
-			    	masks1 += (AccessMask.EXECUTE.getValue());
-			    	System.out.println("masks1="+masks1);
-			    	System.out.println("AccessMask (expected rwx ?) -> "+AccessMask.asString(masks1));
+                int masks1 = (AccessMask.READ_DATA.getValue());
+                    masks1 += (AccessMask.WRITE_DATA.getValue());
+                    masks1 += (AccessMask.EXECUTE.getValue());
+                    System.out.println("masks1="+masks1);
+                    System.out.println("AccessMask (expected rwx ?) -> "+AccessMask.asString(masks1));
 
-    			List<ACE> aces = new ArrayList<ACE>();
-			  //EXAMPLE: 0.ACE allow READ_DATA
-    		  //	     1.ACE allow READ_DATA, WRITE_DATA, EXECUTE
-    		 //          2.ACE deny READ_DATA
-    	     //
-    		 // EXPECTED: action READ is allowed (as first READ_DATA - in ACE:0 - is allowed)
-    		 //	          action WRITE is allowed (as WRITE_DATA is allowed)
-    		//            action REMOVE is undefined
-    		//**************  RESULT:     OK  ******************************
+                List<ACE> aces = new ArrayList<ACE>();
+              //EXAMPLE: 0.ACE allow READ_DATA
+              //         1.ACE allow READ_DATA, WRITE_DATA, EXECUTE
+             //          2.ACE deny READ_DATA
+             //
+             // EXPECTED: action READ is allowed (as first READ_DATA - in ACE:0 - is allowed)
+             //           action WRITE is allowed (as WRITE_DATA is allowed)
+            //            action REMOVE is undefined
+            //**************  RESULT:     OK  ******************************
 
-				   aces.add(new ACE( AceType.ACCESS_ALLOWED_ACE_TYPE,
-						0,
-						AccessMask.READ_DATA.getValue(),
-						Who.USER,
-						7,
-						ACE.DEFAULT_ADDRESS_MSK,
-						0 ) );
+                   aces.add(new ACE( AceType.ACCESS_ALLOWED_ACE_TYPE,
+                        0,
+                        AccessMask.READ_DATA.getValue(),
+                        Who.USER,
+                        7,
+                        ACE.DEFAULT_ADDRESS_MSK,
+                        0 ) );
 
-				  aces.add(new ACE( AceType.ACCESS_ALLOWED_ACE_TYPE,
-						AceFlags.INHERIT_ONLY_ACE.getValue(),
-						masks1,
-						Who.USER,
-						7,
-						ACE.DEFAULT_ADDRESS_MSK,
-						1 ) );
+                  aces.add(new ACE( AceType.ACCESS_ALLOWED_ACE_TYPE,
+                        AceFlags.INHERIT_ONLY_ACE.getValue(),
+                        masks1,
+                        Who.USER,
+                        7,
+                        ACE.DEFAULT_ADDRESS_MSK,
+                        1 ) );
 
-			    	aces.add(new ACE( AceType.ACCESS_DENIED_ACE_TYPE,
-							0,
-							AccessMask.READ_DATA.getValue(),
-							Who.USER,
-							7,
-							ACE.DEFAULT_ADDRESS_MSK,
-							2 ) );
+                    aces.add(new ACE( AceType.ACCESS_DENIED_ACE_TYPE,
+                            0,
+                            AccessMask.READ_DATA.getValue(),
+                            Who.USER,
+                            7,
+                            ACE.DEFAULT_ADDRESS_MSK,
+                            2 ) );
 
-			    	aces.add(new ACE( AceType.ACCESS_DENIED_ACE_TYPE,
-							0,
-							AccessMask.APPEND_DATA.getValue(),
-							Who.USER,
-							7,
-							ACE.DEFAULT_ADDRESS_MSK,
-							3 ) );
+                    aces.add(new ACE( AceType.ACCESS_DENIED_ACE_TYPE,
+                            0,
+                            AccessMask.APPEND_DATA.getValue(),
+                            Who.USER,
+                            7,
+                            ACE.DEFAULT_ADDRESS_MSK,
+                            3 ) );
 
-				System.out.println("rsID="+rsID);
-				System.out.println("rsType="+rsType.toString());
+                System.out.println("rsID="+rsID);
+                System.out.println("rsType="+rsType.toString());
 
-			 System.out.println("aces :"+aces);
+             System.out.println("aces :"+aces);
 
-			ACL newACL = new ACL(rsID, rsType, aces);
-			System.out.println("New " + newACL);
-     		aclHandler.setACL(newACL);
+            ACL newACL = new ACL(rsID, rsType, aces);
+            System.out.println("New " + newACL);
+            aclHandler.setACL(newACL);
 
             assertFalse("List of ACEs is not empty", aclHandler.getACL(rsID).isEmpty());
 
@@ -163,8 +170,8 @@ public class TestjUnitACL {
             System.out.println("check3 = " + check3);
             Boolean check3now;
             if (check3==null) {
-            	//if undefined assume "deny":
-            	check3now=Boolean.FALSE;
+                //if undefined assume "deny":
+                check3now=Boolean.FALSE;
             } else {check3now=check3;}
             assertFalse("user who_id=7, action REMOVE is undefined", check3now);
 
@@ -178,72 +185,71 @@ public class TestjUnitACL {
 
         }
 
-	/////////////////////////////////////////////
+    /////////////////////////////////////////////
 
-	@Test
-	public void testAclOpen() throws Exception {
+    @Test
+    public void testAclOpen() throws Exception {
 
-		  //EXAMPLE:
-		//  action: OPEN  (open a regular file)
-	     // ACE flags: ADD_FILE, APPEND_DATA, EXECUTE, READ_DATA, WRITE_DATA
-		//
-		 // EXPECTED:
+          //EXAMPLE:
+        //  action: OPEN  (open a regular file)
+         // ACE flags: ADD_FILE, APPEND_DATA, EXECUTE, READ_DATA, WRITE_DATA
+        //
+         // EXPECTED:
 
-//		 initializing ACL Handler and SQL Data Source
-    	initAclHandler();
+//       initializing ACL Handler and SQL Data Source
 
-    	   String rsID =genRsID();
-    	    	RsType rsType = RsType.FILE;
+           String rsID =genRsID();
+                RsType rsType = RsType.FILE;
 
-    	    	int mask5 = (AccessMask.ADD_FILE.getValue());
-			    	mask5 += (AccessMask.APPEND_DATA.getValue());
-			    	mask5 += (AccessMask.EXECUTE.getValue());
-			    	mask5 += (AccessMask.READ_DATA.getValue());
-			    	mask5 += (AccessMask.WRITE_DATA.getValue());
-			    	System.out.println("mask5="+mask5);
-			    	System.out.println("AccessMask  "+AccessMask.asString(mask5));
-			    	System.out.println("ADD_FILE.getAbbreviation()  "+AccessMask.ADD_FILE.getAbbreviation());
-			    	System.out.println("APPEND_DATA.getAbbreviation()  "+AccessMask.APPEND_DATA.getAbbreviation());
-			    	System.out.println("EXECUTE.getAbbreviation()  "+AccessMask.EXECUTE.getAbbreviation());
-			    	System.out.println("READ_DATA.getAbbreviation()  "+AccessMask.READ_DATA.getAbbreviation());
-			    	System.out.println("WRITE_DATA.getAbbreviation()  "+AccessMask.WRITE_DATA.getAbbreviation());
-			    	List<ACE> aces = new ArrayList<ACE>();
-
-
-				   aces.add(new ACE( AceType.ACCESS_ALLOWED_ACE_TYPE,
-						//AceFlags.INHERIT_ONLY_ACE.getValue(),
-						0,
-						mask5,
-						Who.USER,
-						1000,
-						ACE.DEFAULT_ADDRESS_MSK,
-						0 ) );
-
-				  aces.add(new ACE( AceType.ACCESS_ALLOWED_ACE_TYPE,
-						0,
-						AccessMask.DELETE_CHILD.getValue(),
-						Who.USER,
-						1000,
-						ACE.DEFAULT_ADDRESS_MSK,
-						1 ) );
-
-			    	aces.add(new ACE( AceType.ACCESS_DENIED_ACE_TYPE,
-							AceFlags.INHERIT_ONLY_ACE.getValue(),
-							AccessMask.READ_DATA.getValue(),
-							Who.USER,
-							1000,
-							ACE.DEFAULT_ADDRESS_MSK,
-							2 ) );
+                int mask5 = (AccessMask.ADD_FILE.getValue());
+                    mask5 += (AccessMask.APPEND_DATA.getValue());
+                    mask5 += (AccessMask.EXECUTE.getValue());
+                    mask5 += (AccessMask.READ_DATA.getValue());
+                    mask5 += (AccessMask.WRITE_DATA.getValue());
+                    System.out.println("mask5="+mask5);
+                    System.out.println("AccessMask  "+AccessMask.asString(mask5));
+                    System.out.println("ADD_FILE.getAbbreviation()  "+AccessMask.ADD_FILE.getAbbreviation());
+                    System.out.println("APPEND_DATA.getAbbreviation()  "+AccessMask.APPEND_DATA.getAbbreviation());
+                    System.out.println("EXECUTE.getAbbreviation()  "+AccessMask.EXECUTE.getAbbreviation());
+                    System.out.println("READ_DATA.getAbbreviation()  "+AccessMask.READ_DATA.getAbbreviation());
+                    System.out.println("WRITE_DATA.getAbbreviation()  "+AccessMask.WRITE_DATA.getAbbreviation());
+                    List<ACE> aces = new ArrayList<ACE>();
 
 
-				System.out.println("rsID="+rsID);
-				System.out.println("rsType="+rsType.toString());
+                   aces.add(new ACE( AceType.ACCESS_ALLOWED_ACE_TYPE,
+                        //AceFlags.INHERIT_ONLY_ACE.getValue(),
+                        0,
+                        mask5,
+                        Who.USER,
+                        1000,
+                        ACE.DEFAULT_ADDRESS_MSK,
+                        0 ) );
 
-			 System.out.println("aces :"+aces);
+                  aces.add(new ACE( AceType.ACCESS_ALLOWED_ACE_TYPE,
+                        0,
+                        AccessMask.DELETE_CHILD.getValue(),
+                        Who.USER,
+                        1000,
+                        ACE.DEFAULT_ADDRESS_MSK,
+                        1 ) );
 
-			ACL newACL = new ACL(rsID, rsType, aces);
-			System.out.println("New " + newACL);
-     		aclHandler.setACL(newACL);
+                    aces.add(new ACE( AceType.ACCESS_DENIED_ACE_TYPE,
+                            AceFlags.INHERIT_ONLY_ACE.getValue(),
+                            AccessMask.READ_DATA.getValue(),
+                            Who.USER,
+                            1000,
+                            ACE.DEFAULT_ADDRESS_MSK,
+                            2 ) );
+
+
+                System.out.println("rsID="+rsID);
+                System.out.println("rsType="+rsType.toString());
+
+             System.out.println("aces :"+aces);
+
+            ACL newACL = new ACL(rsID, rsType, aces);
+            System.out.println("New " + newACL);
+            aclHandler.setACL(newACL);
 
             assertFalse("List of ACEs is not empty", aclHandler.getACL(rsID).isEmpty());
 
@@ -323,13 +329,17 @@ public class TestjUnitACL {
 
         }
 
-	void initAclHandler() throws Exception {
-    	aclHandler = new AclHandler();
-    	ds_pooled = aclHandler.getDataSource();
-    }
+    protected String genRsID() throws Exception {
+            String rsID = GenIDforjUnitTest.newID(0);
+            return rsID;
+        }
 
-	protected String genRsID() throws Exception {
-	        String rsID = GenIDforjUnitTest.newID(0);
-	    	return rsID;
-	    }
+    static void tryToClose(Statement o) {
+        try {
+            if (o != null)
+                o.close();
+        } catch (SQLException e) {
+            // _logNamespace.error("tryToClose PreparedStatement", e);
+        }
+    }
 }
