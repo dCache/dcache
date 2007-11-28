@@ -62,7 +62,7 @@ public class BasicNameSpaceProvider implements NameSpaceProvider, StorageInfoPro
         //
         // get the extractor
         //
-        Class exClass = Class.forName( _args.argv(0)) ;
+        Class<?> exClass = Class.forName( _args.argv(0)) ;
         _extractor = (StorageInfoExtractable)exClass.newInstance() ;
 
         _mountPoint = _args.getOpt("pnfs")  ;
@@ -304,51 +304,9 @@ public class BasicNameSpaceProvider implements NameSpaceProvider, StorageInfoPro
 
         if (metaData.isUserPermissionsSet()) {
 
-            int mode = 0;
-
-            // FIXME: to be done more elegant
-
-            // user
-            if (metaData.getUserPermissions().canRead()) {
-                mode |= 0400;
-            }
-
-            if (metaData.getUserPermissions().canWrite()) {
-                mode |= 0200;
-            }
-            if (metaData.getUserPermissions().canExecute()) {
-                mode |= 0100;
-            }
-
-            // group
-            if (metaData.getGroupPermissions().canRead()) {
-                mode |= 0040;
-            }
-
-            if (metaData.getGroupPermissions().canWrite()) {
-                mode |= 0020;
-            }
-            if (metaData.getGroupPermissions().canExecute()) {
-                mode |= 0010;
-            }
-
-            // world
-            if (metaData.getWorldPermissions().canRead()) {
-                mode |= 0004;
-            }
-
-            if (metaData.getWorldPermissions().canWrite()) {
-                mode |= 0002;
-            }
-            if (metaData.getWorldPermissions().canExecute()) {
-                mode |= 0001;
-            }
-
             File mountPoint = _pathManager.getMountPointByPnfsId(pnfsId);
             for (int level = 0; level < 2; level++) {
-                this.setFileMetaData(mountPoint, pnfsId, level, metaData
-                        .getUid(), metaData.getGid(), mode, metaData
-                        .isDirectory());
+                this.setFileMetaData(mountPoint, pnfsId, level, metaData);
             }
 
         }
@@ -429,41 +387,49 @@ public class BasicNameSpaceProvider implements NameSpaceProvider, StorageInfoPro
 
     public StorageInfo getStorageInfo(PnfsId pnfsId) throws Exception {
 
-        say( "getStorageInfo : "+pnfsId ) ;
-        File mountpoint = _pathManager.getMountPointByPnfsId(pnfsId) ;
-        StorageInfo info = _extractor.getStorageInfo( mountpoint.getAbsolutePath() , pnfsId ) ;
+        say("getStorageInfo : " + pnfsId);
+        File mountpoint = _pathManager.getMountPointByPnfsId(pnfsId);
+        StorageInfo info = _extractor.getStorageInfo(mountpoint.getAbsolutePath(), pnfsId);
 
-        say( "Storage info "+info ) ;
+        say("Storage info " + info);
 
-        try{
-            PnfsFile  pf     = _pathManager.getFileByPnfsId( pnfsId );
-            CacheInfo cinfo  = new CacheInfo( pf ) ;
-            CacheInfo.CacheFlags flags = cinfo.getFlags() ;
+        PnfsFile pf = _pathManager.getFileByPnfsId(pnfsId);
+        if (pf.isFile()) {
 
-            for( Map.Entry<String, String> entry: flags.entrySet()) {
-                info.setKey( "flag-"+entry.getKey() , entry.getValue() ) ;
+            try {
+
+                CacheInfo cinfo = new CacheInfo(pf);
+                CacheInfo.CacheFlags flags = cinfo.getFlags();
+
+                for (Map.Entry<String, String> entry : flags.entrySet()) {
+                    info.setKey("flag-" + entry.getKey(), entry.getValue());
+                }
+
+            } catch (Exception eee) {
+                esay("Error adding bits (stickybit) to storageinfo : " + eee);
             }
-        }catch(Exception eee ){
-            esay( "Error adding bits (stickybit) to storageinfo : "+eee ) ;
-        }
-        //
-        // simulate large files
-        //
-        if( info.getFileSize() == 1L ) {
 
-	        long largeFilesize       = -1L ;
-	        try{
-	        	String sizeString = info.getKey("flag-l");
-	        	if(sizeString != null ) {
-		            largeFilesize = Long.parseLong(sizeString);
-			        if(  largeFilesize > 0L  ) {
-			            info.setFileSize(largeFilesize) ;
-			        }
-	        	}
-	        }catch(NumberFormatException nfe){/* ignore bad values */}
-        }
+            //
+            // simulate large files
+            //
+            if (info.getFileSize() == 1L) {
 
-        return info ;
+                long largeFilesize = -1L;
+                try {
+                    String sizeString = info.getKey("flag-l");
+                    if (sizeString != null) {
+                        largeFilesize = Long.parseLong(sizeString);
+                        if (largeFilesize > 0L) {
+                            info.setFileSize(largeFilesize);
+                        }
+                    }
+                } catch (NumberFormatException nfe) {
+                    /* ignore bad values */
+                }
+            }
+
+        }
+        return info;
 
     }
 
@@ -648,7 +614,7 @@ public class BasicNameSpaceProvider implements NameSpaceProvider, StorageInfoPro
     }
 
     void esay( String s ){
-        _nucleus.say(s);
+        _nucleus.esay(s);
     }
 
     void esay( Exception e ){
@@ -677,19 +643,25 @@ public class BasicNameSpaceProvider implements NameSpaceProvider, StorageInfoPro
         try{
 
             PnfsFile  pf     = _pathManager.getFileByPnfsId( pnfsId );
-            CacheInfo cinfo  = new CacheInfo( pf ) ;
-            CacheInfo.CacheFlags flags = cinfo.getFlags() ;
+
+            /*
+             * there is no simulated file size for directories
+             */
+            if( pf.isFile() ) {
+                CacheInfo cinfo  = new CacheInfo( pf ) ;
+                CacheInfo.CacheFlags flags = cinfo.getFlags() ;
 
 
 
-            String simulatedFileSizeString = flags.get("l");
+                String simulatedFileSizeString = flags.get("l");
 
-            if( simulatedFileSizeString != null ) {
-	            try{
-	            	simulatedFileSize =  Long.parseLong(simulatedFileSizeString);
-	            }catch(NumberFormatException ignored){/* bad values ignored */}
+                if( simulatedFileSizeString != null ) {
+    	            try{
+    	            	simulatedFileSize =  Long.parseLong(simulatedFileSizeString);
+    	            }catch(NumberFormatException ignored){/* bad values ignored */}
+                }
             }
-        // TODO: hadle file not found
+        // TODO: handle file not found
         }catch(Exception eee ){
             esay( "Error obtaining 'l' flag for getSimulatedFilesize : "+eee ) ;
             simulatedFileSize =  -1 ;
@@ -756,9 +728,7 @@ public class BasicNameSpaceProvider implements NameSpaceProvider, StorageInfoPro
         }
     }
 
-    private void setFileMetaData( File mp , PnfsId pnfsId ,
-    int level ,
-    int uid , int gid , int mode,boolean isDir)
+    private void setFileMetaData( File mp , PnfsId pnfsId , int level,  FileMetaData newMetaData)
     throws Exception {
 
         String hexTime = Long.toHexString( System.currentTimeMillis() / 1000L ) ;
@@ -767,9 +737,9 @@ public class BasicNameSpaceProvider implements NameSpaceProvider, StorageInfoPro
         StringBuilder sb = new StringBuilder(128);
         sb.append(".(pset)(").append(pnfsId.getId()).append(")(attr)(").
         append(level).append(")(").
-        append(Integer.toOctalString(0100000|mode)).append(":").
-        append(uid).append(":").
-        append(gid).append(":").
+        append(Integer.toOctalString(0100000|toUnixMode(newMetaData))).append(":").
+        append(newMetaData.getUid()).append(":").
+        append(newMetaData.getGid()).append(":").
         append(hexTime).append(":").
         append(hexTime).append(":").
         append(hexTime).append(")") ;
@@ -809,13 +779,69 @@ public class BasicNameSpaceProvider implements NameSpaceProvider, StorageInfoPro
             metaFile.createNewFile() ;
         }catch(IOException ioe) {
             /*
-             *  TODO: check for new permissions and re-throw exception
+             *  check for new permissions and re-throw exception
              *        if it not set.
              */
+
+            FileMetaData actualMetaData = getFileMetaData(mp, pnfsId);
+            if( ! (
+                    actualMetaData.getGroupPermissions().equals( newMetaData.getGroupPermissions() )
+                    && actualMetaData.getUserPermissions().equals( newMetaData.getUserPermissions() )
+                    && actualMetaData.getWorldPermissions().equals(newMetaData.getWorldPermissions() )
+                                                                          ) ) {
+                throw ioe;
+           }
         }
 
     }
 
+    /*
+     * TODO: shell we move this method into FileMetaData class?
+     */
+    private static int toUnixMode(FileMetaData metaData) {
+
+        int mode = 0;
+
+        // TODO: to be done more elegant
+
+        // user
+        if (metaData.getUserPermissions().canRead()) {
+            mode |= 0400;
+        }
+
+        if (metaData.getUserPermissions().canWrite()) {
+            mode |= 0200;
+        }
+        if (metaData.getUserPermissions().canExecute()) {
+            mode |= 0100;
+        }
+
+        // group
+        if (metaData.getGroupPermissions().canRead()) {
+            mode |= 0040;
+        }
+
+        if (metaData.getGroupPermissions().canWrite()) {
+            mode |= 0020;
+        }
+        if (metaData.getGroupPermissions().canExecute()) {
+            mode |= 0010;
+        }
+
+        // world
+        if (metaData.getWorldPermissions().canRead()) {
+            mode |= 0004;
+        }
+
+        if (metaData.getWorldPermissions().canWrite()) {
+            mode |= 0002;
+        }
+        if (metaData.getWorldPermissions().canExecute()) {
+            mode |= 0001;
+        }
+
+        return mode;
+    }
 
     private void setFileSize( PnfsId pnfsId , long length )throws Exception {
         PnfsFile pf = _pathManager.getFileByPnfsId( pnfsId );
