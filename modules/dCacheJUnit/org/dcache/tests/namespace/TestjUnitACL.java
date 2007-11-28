@@ -257,7 +257,8 @@ public class TestjUnitACL {
             Action actionLINK=Action.LINK;
             Boolean checkLINK = AclNFSv4Matcher.isAllowed(permissionNew, actionLINK);
             //System.out.println("checkLINK = " + checkLINK);
-            assertTrue("For user who_id=1000 action LINK is allowed as bit ADD_FILE is set to allow", checkLINK);
+            boolean isAllowedOrNot = ( checkLINK != null && checkLINK == Boolean.TRUE); 
+            assertTrue("For user who_id=1000 action LINK is allowed as bit ADD_FILE is set to allow", isAllowedOrNot);
 
             // NOT ok
             Action actionWRITE=Action.WRITE;
@@ -304,7 +305,7 @@ public class TestjUnitACL {
             Action actionLOOKUP=Action.LOOKUP;
             Boolean checkLOOKUP = AclNFSv4Matcher.isAllowed(permissionNew, actionOPEN);
             System.out.println("checkLOOKUP = " + checkLOOKUP);
-            assertTrue("user who_id=1000 is allowed to LOOKUP filename as bit EXECUTE is allowed ", checkLOOKUP);
+            assertTrue("user who_id=1000 is allowed to LOOKUP filename as bit EXECUTE is allowed ", isAllowedOrNot);
             
         }
 
@@ -349,6 +350,15 @@ public class TestjUnitACL {
 		             //System.out.println("checkLINK1 = " + checkLINK1);
 		             assertTrue("For user who_id=1001 action LINK is allowed: bit ADD_FILE is allowed", checkLINK1);
 		             
+		             
+		           //ALSO check READ in case EXECUTE and READ_DATA undefined. Expected: deny. 
+		           //boolean isAllowedOrNot is used to answer DENY if answer from ACLMatcher is UNDEFINED,
+		           //i.e. if checkREAD5==null
+		             Action actionREAD=Action.READ;
+		             Boolean checkREAD5 = AclNFSv4Matcher.isAllowed(permissionNew, actionREAD);
+		             boolean isAllowedOrNot = ( checkREAD5 != null && checkREAD5 == Boolean.TRUE); 
+		             System.out.println("checkREAD5 = " + checkREAD5);
+		             assertFalse("For who_id=1001 action READ is denied: bit EXECUTE and READ_DATA are undefined", isAllowedOrNot);
 				}
 	
 /////////////////////////////////////////////
@@ -399,11 +409,10 @@ public class TestjUnitACL {
 		             
 		           //Also check LOOUPP "Lookup parent directory". Bit to check: EXECUTE
 		             Action actionLOOKUPP=Action.LOOKUPP;
-		             //USE: isAllowed(Permission perm, Action action)
 		             Boolean checkLOOKUPP = AclNFSv4Matcher.isAllowed(permissionNew, actionLOOKUPP);
 		             //System.out.println("checkLOOKUPP = " + checkLOOKUPP);
-		             assertTrue("user who_id=7 is allowed to LOOKUP filename as bit EXECUTE is allowed ", checkLOOKUPP);
-     
+		             assertTrue("user who_id=7 is allowed to LOOKUP filename as bit EXECUTE is allowed ", checkLOOKUPP);          
+		             
 				}
 	
 /////////////////////////////////////////////
@@ -583,12 +592,10 @@ public class TestjUnitACL {
 		             Action actionREAD=Action.READ;
 		             Boolean checkREAD3 = AclNFSv4Matcher.isAllowed(permissionNew, actionREAD);
 		             //System.out.println("checkREAD3 = " + checkREAD3);
-		             assertFalse("For who_id=1001 action READ is denied: bit EXECUTE denied, READ_DATA allowed", checkREAD3);
+		             assertTrue("For who_id=1001 action READ is allowed: bit EXECUTE denied, READ_DATA allowed", checkREAD3);
 	          
 	}
-	
-    
-    
+
     protected String genRsID() throws Exception {
             String rsID = GenIDforjUnitTest.newID(0);
             return rsID;
