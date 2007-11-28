@@ -2823,14 +2823,14 @@ public class Storage
 	}
 	
 
-    public FileMetaData getFileMetaData(SRMUser user, String path) 
-        throws SRMException 
-    {
+    public FileMetaData getFileMetaData(SRMUser user, 
+					String path)
+        throws SRMException  {
         return getFileMetaData(user, path, null);
     }
     
-
-    public FileMetaData getFileMetaData(SRMUser user, String path, 
+    public FileMetaData getFileMetaData(SRMUser user, 
+					String path, 
                                         FileMetaData parentFMD) 
         throws SRMException {        
         say("getFileMetaData(" + path + ")");
@@ -2959,6 +2959,7 @@ public class Storage
         String checksum_type = null;
         String checksum_value = null;
         int permissions = 0;
+	boolean isStored=false;
         DcacheFileMetaData fmd = new DcacheFileMetaData(pnfsId);
 
         if (flag != null) {
@@ -2972,7 +2973,6 @@ public class Storage
         if (util_fmd != null) {        
             owner=Integer.toString(util_fmd.getUid());
             group=Integer.toString(util_fmd.getGid());
-        
             diskCacheV111.util.FileMetaData.Permissions perms =
                 util_fmd.getUserPermissions();
             permissions = (perms.canRead()    ? 4 : 0) |
@@ -2988,19 +2988,15 @@ public class Storage
             permissions |=    (perms.canRead()    ? 4 : 0) |
                 (perms.canWrite()   ? 2 : 0) |
                 (perms.canExecute() ? 1 : 0) ;        
-            
             isRegular = util_fmd.isRegularFile();
             isDirectory = util_fmd.isDirectory();
             isLink = util_fmd.isSymbolicLink();
             creationTime=util_fmd.getCreationTime();
             lastModificationTime=util_fmd.getLastModifiedTime();
             lastAccessTime=util_fmd.getLastAccessedTime();
-
             size = util_fmd.getFileSize();            
-
             fmd.setFmd(util_fmd);
         }
-
         if (storage_info != null) {
             size = storage_info.getFileSize();
 	    TRetentionPolicy retention = null;
@@ -3022,8 +3018,8 @@ public class Storage
 	    fmd.retentionPolicyInfo = 
                 new TRetentionPolicyInfo(retention, latency);
             fmd.setStorageInfo(storage_info);
+	    isStored=storage_info.isStored();
         }
-
         fmd.isPinned = isPinned;
         fmd.isPermanent = isPermanent;
         fmd.permMode = permissions;
@@ -3039,7 +3035,7 @@ public class Storage
         fmd.creationTime = creationTime;
         fmd.lastAccessTime= lastAccessTime;
         fmd.lastModificationTime = lastModificationTime;
-
+	fmd.isStored=isStored;
         return fmd;
     }
     
