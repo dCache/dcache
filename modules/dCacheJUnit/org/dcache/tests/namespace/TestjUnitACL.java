@@ -189,7 +189,7 @@ public class TestjUnitACL {
                 RsType rsType = RsType.FILE;
 
                 int mask5 = (AccessMask.ADD_FILE.getValue());
-                    mask5 = (AccessMask.APPEND_DATA.getValue());
+                    mask5 += (AccessMask.APPEND_DATA.getValue());
                     mask5 += (AccessMask.EXECUTE.getValue());
                     mask5 += (AccessMask.READ_DATA.getValue());
                     mask5 += (AccessMask.WRITE_DATA.getValue());
@@ -248,7 +248,7 @@ public class TestjUnitACL {
             // NOT ok
             Action actionLINK=Action.LINK;
             Boolean checkLINK = AclNFSv4Matcher.isAllowed(permissionNew, actionLINK);
-            //System.out.println("checkLINK = " + checkLINK);
+            System.out.println("checkLINK = " + checkLINK);
             boolean isAllowedOrNot = ( checkLINK != null && checkLINK == Boolean.TRUE); 
             assertTrue("For user who_id=1000 action LINK is allowed as bit ADD_FILE is set to allow", isAllowedOrNot);
 
