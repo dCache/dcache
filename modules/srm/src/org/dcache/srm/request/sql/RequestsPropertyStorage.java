@@ -145,7 +145,7 @@ public class RequestsPropertyStorage implements org.dcache.srm.scheduler.JobIdGe
     private static int NEXT_INT_STEP=1000;
     private int nextIntIncrement=NEXT_INT_STEP;
     private long nextLongBase;
-    private static long NEXT_LONG_STEP=1000;
+    private static long NEXT_LONG_STEP=10000;
     private long nextLongIncrement=NEXT_LONG_STEP;
     
     /** Creates a new instance of ResuestsPropertyStorage */
@@ -288,7 +288,7 @@ public class RequestsPropertyStorage implements org.dcache.srm.scheduler.JobIdGe
                 _con = pool.getConnection();
                 String select_for_update = "SELECT * from "+nextRequestIdTableName+" FOR UPDATE ";
                 Statement s = _con.createStatement();
-                say("dbInit trying "+select_for_update);
+                say("nextInt trying "+select_for_update);
                 ResultSet set = s.executeQuery(select_for_update);
                 if(!set.next()) {
                     s.close();
@@ -351,7 +351,7 @@ public class RequestsPropertyStorage implements org.dcache.srm.scheduler.JobIdGe
             try {
                 _con = pool.getConnection();
                 Statement s = _con.createStatement();
-                say("dbInit trying "+select_for_update);
+                say("nextLong trying "+select_for_update);
                 ResultSet set = s.executeQuery(select_for_update);
                 if(!set.next()) {
                     s.close();

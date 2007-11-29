@@ -1161,49 +1161,96 @@ public class Manager
             }
         }
     }
-    private static final String selectNextIdForUpdate = "SELECT * from "+
-           SpaceManagerNextIdTableName+" FOR UPDATE ";
+    private static final String selectNextIdForUpdate = 
+        "SELECT * from "+SpaceManagerNextIdTableName+" FOR UPDATE ";
+    
+   
+    private static final long NEXT_LONG_STEP=10000;
     
     private static final String increaseNextId = "UPDATE "+SpaceManagerNextIdTableName+
-                        " SET NextToken=NextToken+1";
-   
+                        " SET NextToken=NextToken+"+NEXT_LONG_STEP;
+    private long nextLongBase;
+    private long _nextLongBase = 0;
+    private long nextLongIncrement=NEXT_LONG_STEP; //trigure going into database 
+                                                   // on startup
+
+    
     public synchronized  long getNextToken() throws SQLException  {
-        Connection _con = null;
-        try {
-            
-            _con = connection_pool.getConnection();
-            long nextLong;
+        if(nextLongIncrement >= NEXT_LONG_STEP) {
+            nextLongIncrement =0;
+            incrementNextLongBase();
+        }
+        
+        long nextLong = nextLongBase +(nextLongIncrement++);;
+        say(" return nextLong="+nextLong);
+        return nextLong;
+    }
+
+    public synchronized  long getNextToken(Connection _con) throws SQLException  {
+        if(nextLongIncrement >= NEXT_LONG_STEP) {
+            nextLongIncrement =0;
             try {
-                PreparedStatement s = _con.prepareStatement(selectNextIdForUpdate);
-                say("dbInit trying "+selectNextIdForUpdate);
-                ResultSet set = s.executeQuery();
-                if(!set.next()) {
-                    s.close();
-                    throw new SQLException("table "+
-                            SpaceManagerNextIdTableName+" is empty!!!");
-                }
-                nextLong = set.getLong(1);
-                s.close();
-                s = _con.prepareStatement(increaseNextId);
-                int i = s.executeUpdate();
-                s.close();
-                _con.commit();
+                incrementNextLongBase(_con);
             } catch(SQLException e) {
                 e.printStackTrace();
-                _con.rollback();
-                throw e;
+                try{
+                    _con.rollback();
+                }catch(Exception e1) { } //ignore
+                //use the _nextLongBase if database failed;
+                nextLongBase = _nextLongBase;
             }
-            connection_pool.returnConnection(_con);
-            _con = null;
-            return nextLong;
-        } finally {
-            if(_con != null) {
-                connection_pool.returnConnection(_con);
-            }
-            
+            _nextLongBase = nextLongBase+ NEXT_LONG_STEP;
         }
+        
+        long nextLong = nextLongBase +(nextLongIncrement++);;
+        say(" return nextLong="+nextLong);
+        return nextLong;
     }
     
+    private void incrementNextLongBase(Connection _con) throws SQLException{
+        PreparedStatement s = _con.prepareStatement(selectNextIdForUpdate);
+        say("getNextToken trying "+selectNextIdForUpdate);
+        ResultSet set = s.executeQuery();
+        if(!set.next()) {
+            s.close();
+            throw new SQLException("table "+SpaceManagerNextIdTableName+" is empty!!!");
+        }
+        nextLongBase = set.getLong(1);
+        s.close();
+        say("nextLongBase is ="+nextLongBase);
+        s = _con.prepareStatement(increaseNextId);              
+        say("executing statement: "+increaseNextId);
+        int i = s.executeUpdate();
+        s.close();
+        _con.commit();       
+    }
+    
+    private void incrementNextLongBase()
+    {
+            
+            Connection _con = null;
+            try {
+                _con = connection_pool.getConnection();
+                incrementNextLongBase(_con);
+            } catch(SQLException e) {
+                e.printStackTrace();
+                try{
+                    _con.rollback();
+                }catch(Exception e1) { } //ignore
+                connection_pool.returnFailedConnection(_con);
+                _con = null;
+                //use the _nextLongBase if database failed;
+                nextLongBase = _nextLongBase;
+                
+            } finally {
+                if(_con != null) {
+                    connection_pool.returnConnection(_con);
+                    
+                }
+            }
+            _nextLongBase = nextLongBase+ NEXT_LONG_STEP;
+         
+    }
     private static final String selectLinkGroupInfoForUpdate =
                     "SELECT * FROM "+ LinkGroupTableName +
                     " WHERE  name = ? FOR UPDATE";
@@ -1270,7 +1317,8 @@ public class Manager
                 sqlStatement.close();
                 try {
                     
-                    id = getNextToken();
+                    id = getNextToken();  //getNextToken(_con) will commit the 
+                                      // transaction which is not allowed here
                     sqlStatement = _con.prepareStatement(insertLinkGroupInfo);
                     sqlStatement.setLong(1,id);
                     sqlStatement.setString(2,linkGroup);
@@ -2136,13 +2184,13 @@ public class Manager
             long lifetime,
             String description,
             int state) throws SQLException {
-        long id = getNextToken();
-        boolean found = false;
+       boolean found = false;
         Connection _con = null;
         try {
             
             _con = connection_pool.getConnection();
-            long creationTime=System.currentTimeMillis();
+             long id = getNextToken(_con);
+             long creationTime=System.currentTimeMillis();
             String inserSpaceReservation =
                     "INSERT INTO "+ SpaceTableName +
                     " VALUES  ("+
@@ -2169,6 +2217,7 @@ public class Manager
             _con.commit();
             connection_pool.returnConnection(_con);
             _con = null;
+            return id;
         } catch(SQLException sqle) {
             esay("insert failed with ");
             esay(sqle);
@@ -2182,7 +2231,7 @@ public class Manager
                 connection_pool.returnConnection(_con);
             }
         }
-        return id;
+        
     }
     
     public void insertSpaceReservation(Connection _con,
@@ -2846,11 +2895,11 @@ say( "size in bytes = " + sizeInBytes);
             PnfsId pnfsId,
             int state) throws SQLException {
         pnfsPath =new FsPath(pnfsPath).toString();
-        long id = getNextToken();
         Connection _con = null;
         try {
             
             _con = connection_pool.getConnection();
+            long id = getNextToken(_con);
             long creationTime=System.currentTimeMillis();
             String inserFileInSpace =
                     "INSERT INTO "+ SpaceFileTableName +
@@ -2877,6 +2926,7 @@ say( "size in bytes = " + sizeInBytes);
             _con.commit();
             connection_pool.returnConnection(_con);
             _con = null;
+            return id;
         } catch(SQLException sqle) {
             esay("insert failed with ");
             esay(sqle);
@@ -2890,7 +2940,6 @@ say( "size in bytes = " + sizeInBytes);
                 connection_pool.returnConnection(_con);
             }
         }
-        return id;
     }
     
     public void insertFileInSpace( Connection _con,
@@ -4025,7 +4074,6 @@ say( "size in bytes = " + sizeInBytes);
         
         boolean needHsmBackup = policy.equals(RetentionPolicy.CUSTODIAL);
         say("policy is "+policy+", needHsmBackup is "+needHsmBackup);
-        long reservationId = getNextToken();
         for(int i =0;i<10;++i) {
             Long[] linkGroups = findLinkGroupIds(sizeInBytes,voGroup,voRole,
                 latency,
@@ -4041,6 +4089,7 @@ say( "size in bytes = " + sizeInBytes);
             
             try {
                 _con = connection_pool.getConnection();
+                long reservationId = getNextToken(_con);
                 // if there is not enough space in this linkGroup
                 // which can happen if someone have inserted
                 selectLinkGroupForUpdate(_con,linkGroupId,sizeInBytes);
@@ -4107,11 +4156,11 @@ say( "size in bytes = " + sizeInBytes);
                 " is not found");
         }
         
-        long reservationId = getNextToken();
         Connection _con =null;
 
         try {
             _con = connection_pool.getConnection();
+            long reservationId = getNextToken(_con);
             // if there is not enough space in this linkGroup
             // which can happen if someone have inserted
             selectLinkGroupForUpdate(_con,linkGroupId,sizeInBytes);
@@ -4157,9 +4206,9 @@ say( "size in bytes = " + sizeInBytes);
             throws SQLException,SpaceException{
         Connection _con =null;
         pnfsPath =new FsPath(pnfsPath).toString();
-        long fileId = getNextToken();
         try {
             _con = connection_pool.getConnection();
+            long fileId = getNextToken(_con);
             // if there is not enough space in this linkGroup
             // which can happen if someone have inserted
             lockSpaceIfSpaceIsAvailable(_con,reservationId,sizeInBytes);
