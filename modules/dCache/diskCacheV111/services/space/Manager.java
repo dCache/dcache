@@ -2447,14 +2447,21 @@ public class Manager
             PnfsId pnfsId,
             String pnfsPath)  throws SQLException{
         String selectSpaceIds =
-                "SELECT spaceReservationId FROM "+ SpaceFileTableName +
-                " WHERE  state = "+FileState.STORED.getStateId();
-        if(pnfsId != null) {
-            selectSpaceIds +=" AND pnfsId = '"+pnfsId+'\''; 
+	    "SELECT spaceReservationId FROM "+ SpaceFileTableName + " WHERE ";
+//	    " WHERE  state = "+FileState.STORED.getStateId();
+
+	boolean needAnd=false; 
+	if(pnfsId != null) {
+            selectSpaceIds +=" pnfsId = '"+pnfsId+'\''; 
+	    needAnd=true;
         }
         
          if(pnfsPath != null) {
-            selectSpaceIds +=" AND pnfsPath = '"+pnfsPath+'\''; 
+	     if (needAnd == true ) { 
+		 selectSpaceIds +=" AND ";
+	     }
+	     selectSpaceIds +=" pnfsPath = '"+pnfsPath+'\''; 
+
         }
         say("executing statement: "+selectSpaceIds);
         Statement sqlStatement =
