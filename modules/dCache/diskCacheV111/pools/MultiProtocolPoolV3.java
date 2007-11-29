@@ -46,7 +46,7 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
 	private final Args _args;
 	private final CellNucleus _nucleus;
 
-	private final HashMap _moverAttributes = new HashMap();
+	private final Map<?,?> _moverAttributes = new HashMap();
 	private final Map<String, Class<?>> _moverHash = new HashMap<String, Class<?>>();
 	/**
 	 * pool start time identifier.
@@ -496,7 +496,7 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
 
 	public CellVersion getCellVersion() {
 		return new CellVersion(diskCacheV111.util.Version.getVersion(),
-				"$Revision: 1.16 $");
+				"$Revision$");
 	}
 
 	private class IoQueueManager implements JobScheduler {
@@ -644,8 +644,8 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
 		}
 
 		public void dumpSetup(PrintWriter pw) {
-			for (Iterator it = scheduler(); it.hasNext();) {
-				JobScheduler js = (JobScheduler) it.next();
+			for (Iterator<JobScheduler> it = scheduler(); it.hasNext();) {
+				JobScheduler js = it.next();
 				pw.println("mover set max active -queue="
 						+ js.getSchedulerName() + " " + js.getMaxActiveJobs());
 			}
@@ -704,12 +704,12 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
 	//
 	private SpaceSweeper getSweeperHandler() throws Exception {
 
-		Class[] argClass = { dmg.cells.nucleus.CellAdapter.class,
+		Class<?>[] argClass = { dmg.cells.nucleus.CellAdapter.class,
 				diskCacheV111.util.PnfsHandler.class,
 				diskCacheV111.repository.CacheRepository.class,
 				diskCacheV111.pools.HsmStorageHandler2.class };
-		Class sweeperClass = Class.forName(_sweeperClass);
-		Constructor sweeperCon = sweeperClass.getConstructor(argClass);
+		Class<?> sweeperClass = Class.forName(_sweeperClass);
+		Constructor<?> sweeperCon = sweeperClass.getConstructor(argClass);
 		Object[] args = { this, _pnfs, _repository, _storageHandler };
 
 		return (SpaceSweeper) sweeperCon.newInstance(args);
@@ -873,21 +873,12 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
 		}
 	}
 
-	private void checkBaseDir() throws Exception {
-		_base = new File(_baseDir);
-		_setup = new File(_base, "setup");
-
-		if (!_setup.canRead())
-			throw new IllegalArgumentException(
-					"Setup file not found or not readable : " + _setup);
-
-	}
-
 	private void execFile(File setup) throws Exception {
 		BufferedReader br = new BufferedReader(new FileReader(setup));
 		String line = null;
 		try {
 			while ((line = br.readLine()) != null) {
+			    line = line.trim();
 				if (line.length() == 0)
 					continue;
 				if (line.charAt(0) == '#')
@@ -904,7 +895,8 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
 		} finally {
 			try {
 				br.close();
-			} catch (Exception dummy) {
+			} catch (IOException dummy) {
+			    // ignored
 			}
 		}
 		return;
@@ -1000,7 +992,7 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
 	public void getInfo(PrintWriter pw) {
 		pw.println("Base directory    : " + _baseDir);
 		pw
-				.println("Revision          : [$Id: MultiProtocolPoolV3.java,v 1.16 2007-10-26 11:17:06 behrmann Exp $]");
+				.println("Revision          : [$Revision:$]");
 		pw.println("Version           : " + getCellVersion() + " (Sub="
 				+ _version + ")");
 		pw.println("StickyFiles       : "
@@ -1083,8 +1075,8 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
 			IoQueueManager manager = (IoQueueManager) _ioQueue;
 			pw.println("Mover Queue Manager : "
 					+ (manager.isConfigured() ? "Active" : "Not Configured"));
-			for (Iterator it = manager.scheduler(); it.hasNext();) {
-				JobScheduler js = (JobScheduler) it.next();
+			for (Iterator<JobScheduler> it = manager.scheduler(); it.hasNext();) {
+				JobScheduler js = it.next();
 				pw.println("Mover Queue (" + js.getSchedulerName() + ") "
 						+ js.getActiveJobs() + "(" + js.getMaxActiveJobs()
 						+ ")/" + js.getQueueSize());
@@ -1134,11 +1126,11 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
 			}
 			return;
 		}
-		Iterator i = _moverAttributes.keySet().iterator();
-		while (i.hasNext()) {
+
+		for ( Map.Entry<?,?> attribute : _moverAttributes.entrySet() ) {
 			try {
-				Object key = i.next();
-				Object value = _moverAttributes.get(key);
+				Object key = attribute.getKey();
+				Object value = attribute.getValue();
 				say("Setting mover " + key.toString() + " -> " + value);
 				io.setAttribute(key.toString(), value);
 			} catch (IllegalArgumentException iae) {
@@ -1974,7 +1966,7 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
 	// The mover class loader
 	//
 	//
-	private Hashtable<String, Class> _handlerClasses = new Hashtable<String, Class>();
+	private Map<String, Class<?>> _handlerClasses = new Hashtable<String, Class<?>>();
 
 	private MoverProtocol getProtocolHandler(ProtocolInfo info) {
 
@@ -2218,13 +2210,6 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
 				poolMessage.setHave(false);
 				poolMessage.setWaiting(true);
 			} else {
-
-				// old behavior, probably we do not need it any more
-				// TODO: remove it ASAP
-				/*
-				 * if( entry.getDataFile().length() == 0 ) throw new
-				 * FileNotInCacheException("Filesize(fs) == 0") ;
-				 */
 				poolMessage.setHave(true);
 			}
 		} catch (FileNotInCacheException fe) {
