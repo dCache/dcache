@@ -232,7 +232,7 @@ public class RequestContainerV5 implements Runnable {
 
        PoolManagerParameter def = _partitionManager.getParameterCopyOf() ;
 
-       pw.println("Restore Controller [$Revision:$]\n") ;
+       pw.println("Restore Controller [$Revision$]\n") ;
        pw.println( "      Retry Timeout : "+(_retryTimer/1000)+" seconds" ) ;
        pw.println( "  Thread Controller : "+_threadPool ) ;
        pw.println( "    Maximum Retries : "+_maxRetries ) ;
@@ -1998,7 +1998,8 @@ public class RequestContainerV5 implements Runnable {
 			try {
 				//
 				//
-				List<PoolCheckable> sources = _pnfsFileLocation.getCostSortedAvailable();
+				List<PoolCostCheckable> sources =
+                                    _pnfsFileLocation.getCostSortedAvailable();
 				//
 				// Here we get the parameter set of the 'read'
 				//
@@ -2060,7 +2061,7 @@ public class RequestContainerV5 implements Runnable {
 				//
 				parameter = _pnfsFileLocation.getCurrentParameterSet();
 
-				List<PoolCheckable> destinations = null;
+				List<PoolCostCheckable> destinations = null;
 
 				for (Iterator it = matrix.iterator(); it.hasNext();) {
 					destinations = (List) it.next();
@@ -2069,7 +2070,7 @@ public class RequestContainerV5 implements Runnable {
 				}
 
 //				subtract all source pools from the list of destination pools (those pools already have a copy)
-				for (PoolCheckable dest : destinations) {
+				for (PoolCostCheckable dest : destinations) {
 					for (PoolCheckable src : sources) {
 						if (dest.getPoolName().equals( src.getPoolName()) ) {
 							say("removing pool "+dest.getPoolName()+" from dest pool list");
@@ -2090,8 +2091,9 @@ public class RequestContainerV5 implements Runnable {
 
 				if ((!overwriteCost) && (maxCost > 0.0)) {
 
-					List<PoolCheckable> selected = new ArrayList<PoolCheckable>();
-					for (PoolCheckable dest : destinations) {
+					List<PoolCostCheckable> selected =
+                                            new ArrayList<PoolCostCheckable>();
+					for (PoolCostCheckable dest : destinations) {
 						PoolCostCheckable cost = (PoolCostCheckable) dest;
 						if (cost.getPerformanceCost() < maxCost)
 							selected.add(cost);
