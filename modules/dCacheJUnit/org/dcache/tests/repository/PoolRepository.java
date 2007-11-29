@@ -3,14 +3,13 @@ package org.dcache.tests.repository;
 import java.io.File;
 import java.util.UUID;
 
-import org.dcache.pool.repository.v3.CacheRepositoryV3;
-
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.Ignore;
+
+import org.dcache.pool.repository.v3.CacheRepositoryV3;
 
 import diskCacheV111.repository.CacheRepositoryEntry;
 import diskCacheV111.util.CacheException;
@@ -134,7 +133,7 @@ public class PoolRepository extends junit.framework.TestCase {
 			assertEquals("Cached not set",true, entry.isCached());
 
 		}catch(CacheException e) {
-			fail("Vavlid transition from-clent => cached");
+			fail("Valid transition from-clent => cached");
 		}
 
 		try {
@@ -186,7 +185,7 @@ public class PoolRepository extends junit.framework.TestCase {
 		try {
 			// we are in cached state
 			entry.setReceivingFromClient();
-			fail("Transition cached => from-clent should throw exception");
+			fail("Transition cached => from-client should throw exception");
 
 		}catch(CacheException e) {
 			// OK
@@ -195,7 +194,7 @@ public class PoolRepository extends junit.framework.TestCase {
 		try {
 			// we are in caches state
 			entry.setReceivingFromStore();
-			fail("Transition cached => from-store shoud throw exception");
+			fail("Transition cached => from-store should throw exception");
 
 		}catch(CacheException e) {
 			// OK
@@ -204,7 +203,7 @@ public class PoolRepository extends junit.framework.TestCase {
 		try {
 			// we are in cached state
 			entry.setSendingToStore(true);
-			assertEquals("Cached files cant be in TO STORE state",true, entry.isSendingToStore());
+			assertEquals("Cached files can't be in TO STORE state",true, entry.isSendingToStore());
 
 		}catch(CacheException e) {
 			// OK
@@ -229,7 +228,7 @@ public class PoolRepository extends junit.framework.TestCase {
 
 		try {
 			entry.setPrecious();
-			fail("IllegalStateException shold be thrown on atempt to set bad file precious");
+			fail("IllegalStateException should be thrown on attempt to set bad file precious");
 		} catch ( CacheException ise ) {
 			// OK
 		}
@@ -239,8 +238,17 @@ public class PoolRepository extends junit.framework.TestCase {
 	}
 
 	@Test
-	public void testBackwardCompatibility() throws Exception {
-		// to be done
+	public void testReadTransient() throws Exception {
+
+        String id = generateNewID();
+        PnfsId pnfsId = new PnfsId(id);
+        _repository.createEntry(pnfsId);
+
+
+        CacheRepositoryEntry entry = _repository.getEntry(pnfsId);
+
+        entry.setReceivingFromStore();
+
 	}
 
 
