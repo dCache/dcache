@@ -30,6 +30,7 @@ case $cmd1 in
         [ $RETVAL -eq 0 ] && touch /var/lock/subsys/srm-tomcat
 	echo "Pinging srm server to wake it up, will take few seconds ..."
 	export CLASSPATH
+	sleep 2 
 	for jar in `find /opt/d-cache/classes/ -name '*jar'`; do  CLASSPATH=${CLASSPATH}:${jar}; done
 	$JAVA_HOME/bin/java org.dcache.srm.client.SrmStartUpPing
 	echo "Done"
