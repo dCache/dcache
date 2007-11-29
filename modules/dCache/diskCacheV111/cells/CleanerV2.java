@@ -72,7 +72,7 @@ public class CleanerV2 extends CellAdapter implements Runnable {
           _out1 = out1 ;
           _out2 = out2 ;
        }
-       public void close() throws IOException {
+       public void close() {
           try{ if( _out2 != null )_out2.close() ; }catch(IOException ee){}
           try{ if( _out1 != null )_out1.close() ; }catch(IOException ee){}
        }
@@ -426,10 +426,15 @@ public class CleanerV2 extends CellAdapter implements Runnable {
        }
        if( list.size() == 0 )return ;
 
-       String [] fileList = (String [] )list.toArray( new String[list.size()] ) ;
+       String [] fileList = list.toArray( new String[list.size()] ) ;
 
        PoolRemoveFilesMessage msg = new PoolRemoveFilesMessage(broadcast) ;
        msg.setFiles( fileList ) ;
+
+       /*
+        * no rely required
+        */
+       msg.setReplyRequired(false);
 
        try{
            sendMessage( new CellMessage( new CellPath(broadcast) , msg )  ) ;
