@@ -1,6 +1,8 @@
 package org.dcache.tests.namespace;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.BufferedReader;
@@ -28,6 +30,7 @@ import org.dcache.chimera.acl.enums.AceFlags;
 import org.dcache.chimera.acl.enums.AceType;
 import org.dcache.chimera.acl.enums.Action;
 import org.dcache.chimera.acl.enums.AuthType;
+import org.dcache.chimera.acl.enums.FileAttribute;
 import org.dcache.chimera.acl.enums.InetAddressType;
 import org.dcache.chimera.acl.enums.RsType;
 import org.dcache.chimera.acl.enums.Who;
@@ -128,12 +131,16 @@ public class TestjUnitACL {
 
             aclHandler.setACL(newACL);
 
+            //Check getACL()
             assertFalse("List of ACEs is not empty", aclHandler.getACL(rsID).isEmpty());
 
-            //Just for Info. Get resource ID (that was random generated) of the created ACL:
-            String rsIdnew = newACL.getRsId();
-          
+            //Get resource ID (that was random generated) of the created ACL, check equality:
+            assertEquals(newACL.getRsId(),rsID);
+            
+            //Check equality of 'set'ed and 'get'ed  ACL.
+            assertTrue("Test set/get", aclHandler.getACL(rsID).toString().equals(newACL.toString()));
 
+   
             //Create test user subjectNew. who_id=7 as above.
             Subject subjectNew = new Subject(7,100);
 
@@ -146,42 +153,26 @@ public class TestjUnitACL {
             //Action READ.
             Action actionREAD=Action.READ;
             Boolean check1 = AclNFSv4Matcher.isAllowed(permissionNew, actionREAD);
- 
             assertTrue("user with who_id=7 is allowed to READ file", check1);
 
             //Action WRITE.
             Action actionWRITE=Action.WRITE;
-            Boolean check2 = AclNFSv4Matcher.isAllowed(permissionNew, actionWRITE);
-            
-            assertTrue("user with who_id=7 is allowed to WRITE file", check2);
+            Boolean check2 = AclNFSv4Matcher.isAllowed(permissionNew, actionWRITE); 
+            assertTrue("user with who_id=7 is allowed to WRITE file as WRITE_DATA is allowed", check2);
 
-            //Action REMOVE.
+            //Action REMOVE. Undefined, expected NULL.
             Action actionREMOVE=Action.REMOVE;
             //USE THIS METHOD: isAllowed(Permission perm, Action action, Boolean isDir)
-            Boolean check3 = AclNFSv4Matcher.isAllowed(permissionNew, actionREMOVE, Boolean.FALSE);
-            
-            Boolean check3now;
-            if (check3==null) {
-                //if undefined assume "deny":
-                check3now=Boolean.FALSE;
-            } else {check3now=check3;}
-            assertFalse("user who_id=7, action REMOVE is undefined", check3now);
+            Boolean check3 = AclNFSv4Matcher.isAllowed(permissionNew, actionREMOVE, Boolean.FALSE); 
+            assertNull("user who_id=7, action REMOVE is undefined", check3);
+       
 
-            //CHECK getACL(String rsID)
-            ACL aclCheckGet = aclHandler.getACL(rsID);
-            
-            //System.out.println("***Test get(ACL : ) ");
-            //System.out.println("***TEST getList(): "+aclCheckGet.getList());
-            //System.out.println("***TEST getRsType(): "+aclCheckGet.getRsType());
-            //System.out.println("***TEST getSize(): "+aclCheckGet.getSize());
-            //System.out.println("***TEST permisionNew.asString(): "+permissionNew.asString());
-
-          //ALSO CHECK LOOUP "Lookup filename". Bit to check: EXECUTE
+            //ALSO CHECK LOOUP "Lookup filename". Bit to check: EXECUTE
             Action actionLOOKUP=Action.LOOKUP;
             Boolean checkLOOKUP = AclNFSv4Matcher.isAllowed(permissionNew, actionLOOKUP);
             //System.out.println("checkLOOKUP = " + checkLOOKUP);
             assertTrue("user who_id=7 is allowed to LOOKUP filename as bit EXECUTE is allowed ", checkLOOKUP);
-            
+                 
         }
 
     /////////////////////////////////////////////
@@ -198,7 +189,7 @@ public class TestjUnitACL {
                 RsType rsType = RsType.FILE;
 
                 int mask5 = (AccessMask.ADD_FILE.getValue());
-                    mask5 += (AccessMask.APPEND_DATA.getValue());
+                    mask5 = (AccessMask.APPEND_DATA.getValue());
                     mask5 += (AccessMask.EXECUTE.getValue());
                     mask5 += (AccessMask.READ_DATA.getValue());
                     mask5 += (AccessMask.WRITE_DATA.getValue());
@@ -222,7 +213,7 @@ public class TestjUnitACL {
                         1 ) );
 
                     aces.add(new ACE( AceType.ACCESS_DENIED_ACE_TYPE,
-                            AceFlags.INHERIT_ONLY_ACE.getValue(),
+                            0,
                             AccessMask.READ_DATA.getValue(),
                             Who.USER,
                             1000,
@@ -231,18 +222,19 @@ public class TestjUnitACL {
 
             ACL newACL = new ACL(rsID, rsType, aces);
             aclHandler.setACL(newACL);
-
+           
+    		//Check getACL()
             assertFalse("List of ACEs is not empty", aclHandler.getACL(rsID).isEmpty());
 
-          
-            //Just for Info. Get resource ID (that was random generated) of the created ACL:
-            String rsIdnew = newACL.getRsId();
-
+            //Get resource ID (that was random generated) of the created ACL, check equality:
+            assertEquals(newACL.getRsId(),rsID);
+            
+            assertTrue("Test set/get", aclHandler.getACL(rsID).toString().equals(newACL.toString()));
 
             //Create test user subjectNew. who_id=1000 as above.
             Subject subjectNew = new Subject(1000,100);
 
-           Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG, InetAddressType.IPv4, "127.0.0.1");
+            Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG, InetAddressType.IPv4, "127.0.0.1");
 
             Owner ownerNew = new Owner(0, 0);
 
@@ -264,7 +256,7 @@ public class TestjUnitACL {
             Action actionWRITE=Action.WRITE;
             Boolean checkWRITE = AclNFSv4Matcher.isAllowed(permissionNew, actionWRITE);
             //System.out.println("checkWRITE = " + checkWRITE);
-            assertTrue("For user who_id=1000 action WRITE is allowed as bit WRITE_DATA are allowed. APPEND_DATA is not checked for now.", checkWRITE);
+            assertTrue("For user who_id=1000 action WRITE is allowed as bit WRITE_DATA is allowed. APPEND_DATA is not checked for now.", checkWRITE);
 
             // OK
             Action actionREAD=Action.READ;
@@ -276,7 +268,8 @@ public class TestjUnitACL {
             Action actionREADLINK=Action.READLINK;
             Boolean checkREADLINK = AclNFSv4Matcher.isAllowed(permissionNew, actionREADLINK);
             //System.out.println("checkREADLINK = " + checkREADLINK);
-            assertTrue("For user who_id=1000 action READLINK is allowed as bit EXECUTE is allowed", checkREADLINK);
+            boolean isAllowedOrNot2 = ( checkREADLINK != null && checkREADLINK == Boolean.TRUE); 
+            assertTrue("For user who_id=1000 action READLINK is allowed as bit EXECUTE is allowed", isAllowedOrNot2);
 
             ////////////////////////////////////////////////////////////////////////
             //  NOT ok.  Action OPEN. Should be allowed as defined in mask5.
@@ -303,9 +296,9 @@ public class TestjUnitACL {
 
           //ALSO CHECK LOOUP "Lookup filename". Bit to check: EXECUTE
             Action actionLOOKUP=Action.LOOKUP;
-            Boolean checkLOOKUP = AclNFSv4Matcher.isAllowed(permissionNew, actionOPEN);
+            Boolean checkLOOKUP = AclNFSv4Matcher.isAllowed(permissionNew, actionLOOKUP);
             System.out.println("checkLOOKUP = " + checkLOOKUP);
-            assertTrue("user who_id=1000 is allowed to LOOKUP filename as bit EXECUTE is allowed ", isAllowedOrNot);
+            assertTrue("user who_id=1000 is allowed to LOOKUP filename as bit EXECUTE is allowed ", checkLOOKUP);
             
         }
 
@@ -411,7 +404,14 @@ public class TestjUnitACL {
 		             Action actionLOOKUPP=Action.LOOKUPP;
 		             Boolean checkLOOKUPP = AclNFSv4Matcher.isAllowed(permissionNew, actionLOOKUPP);
 		             //System.out.println("checkLOOKUPP = " + checkLOOKUPP);
-		             assertTrue("user who_id=7 is allowed to LOOKUP filename as bit EXECUTE is allowed ", checkLOOKUPP);          
+		             assertTrue("user who_id=1001 is allowed to LOOKUP filename as bit EXECUTE is allowed ", checkLOOKUPP);          
+		             
+		           //ALSO CHECK READLINK "Read symbolic link". Bit to check: EXECUTE
+		             Action actionREADLINK=Action.READLINK;
+		             Boolean checkREADLINK = AclNFSv4Matcher.isAllowed(permissionNew, actionREADLINK);
+		             //System.out.println("checkREADLINK = " + checkREADLINK);
+		             boolean isAllowedOrNot = ( checkREADLINK != null && checkREADLINK == Boolean.TRUE); 
+		             assertTrue("user who_id=1001 is allowed to READLINK : bit EXECUTE is allowed ", isAllowedOrNot);
 		             
 				}
 	
@@ -596,6 +596,637 @@ public class TestjUnitACL {
 	          
 	}
 
+/////////////////////////////////////////////
+	
+	@Test
+	public void testREADDIRallow() throws Exception {
+
+    	        String rsID =genRsID(); 
+    	    	RsType rsType = RsType.DIR;
+    
+    	    	List<ACE> aces = new ArrayList<ACE>();
+
+				   aces.add(new ACE( AceType.ACCESS_ALLOWED_ACE_TYPE,
+						0,
+						AccessMask.LIST_DIRECTORY.getValue(),
+						Who.USER,
+						111,
+						ACE.DEFAULT_ADDRESS_MSK,
+						0 ) );
+	
+				   
+				   ACL newACL = new ACL(rsID, rsType, aces);
+		     		aclHandler.setACL(newACL);
+		     		
+		     		Subject subjectNew = new Subject(111,100);
+		            
+		            Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG, InetAddressType.IPv4, "127.0.0.1");
+		       
+		             Owner ownerNew = new Owner(0, 0);
+		             
+		             Permission permissionNew=AclMapper.getPermission(subjectNew, originNew, ownerNew, newACL);
+		             
+		             //Check READDIR. Bits: LIST_DIRECTORY 
+		             Action actionREADDIR=Action.READDIR;
+		             Boolean checkREADDIR = AclNFSv4Matcher.isAllowed(permissionNew, actionREADDIR);
+		             //System.out.println("checkREADDIR = " + checkREADDIR);
+		             assertTrue("For who_id=111 action READDIR is allowed: bit LIST_DIRECTORY allowed", checkREADDIR);
+	          
+	}
+
+	
+/////////////////////////////////////////////
+	
+	@Test
+	public void testREMOVEDirectoryAllow() throws Exception {
+
+    	        String rsID =genRsID(); 
+    	    	RsType rsType = RsType.DIR;
+    
+    	    	List<ACE> aces = new ArrayList<ACE>();
+
+				   aces.add(new ACE( AceType.ACCESS_ALLOWED_ACE_TYPE,
+							0,
+							AccessMask.DELETE_CHILD.getValue(),
+							Who.USER,
+							111,
+							ACE.DEFAULT_ADDRESS_MSK,
+							0 ) );
+				   
+				   ACL newACL = new ACL(rsID, rsType, aces);
+		     		aclHandler.setACL(newACL);
+		     		
+		     		Subject subjectNew = new Subject(111,100);
+		            
+		            Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG, InetAddressType.IPv4, "127.0.0.1");
+		       
+		             Owner ownerNew = new Owner(0, 0);
+		             
+		             Permission permissionNew=AclMapper.getPermission(subjectNew, originNew, ownerNew, newACL);
+		             
+		             //Check REMOVE. Bits: DELETE_CHILD
+		             Action actionREMOVE=Action.REMOVE;
+		             Boolean checkREMOVE = AclNFSv4Matcher.isAllowed(permissionNew, actionREMOVE, Boolean.TRUE);
+		             assertTrue("For who_id=111 action REMOVE is allowed: bit DELETE_CHILD allowed", checkREMOVE);
+	          
+	}
+	
+/////////////////////////////////////////////
+	
+	@Test
+	public void testREMOVEDirectoryDeny() throws Exception {
+
+    	        String rsID =genRsID(); 
+    	    	RsType rsType = RsType.DIR;
+    
+    	    	List<ACE> aces = new ArrayList<ACE>();
+
+				   aces.add(new ACE( AceType.ACCESS_ALLOWED_ACE_TYPE,
+						0,
+						AccessMask.DELETE.getValue(),
+						Who.USER,
+						111,
+						ACE.DEFAULT_ADDRESS_MSK,
+						0 ) );
+				  
+				   aces.add(new ACE( AceType.ACCESS_DENIED_ACE_TYPE,
+							0,
+							AccessMask.DELETE_CHILD.getValue(),
+							Who.USER,
+							111,
+							ACE.DEFAULT_ADDRESS_MSK,
+							1 ) );
+				   
+				   ACL newACL = new ACL(rsID, rsType, aces);
+		     		aclHandler.setACL(newACL);
+		     		
+		     		Subject subjectNew = new Subject(111,100);
+		            
+		            Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG, InetAddressType.IPv4, "127.0.0.1");
+		       
+		             Owner ownerNew = new Owner(0, 0);
+		             
+		             Permission permissionNew=AclMapper.getPermission(subjectNew, originNew, ownerNew, newACL);
+		             
+		             //Check REMOVE. Bits: DELETE_CHILD
+		             Action actionREMOVE=Action.REMOVE;
+		             Boolean checkREMOVE = AclNFSv4Matcher.isAllowed(permissionNew, actionREMOVE, Boolean.TRUE);
+		             assertFalse("For who_id=111 action REMOVE is denied: bit DELETE_CHILD denied", checkREMOVE);
+	          
+	}
+	
+/////////////////////////////////////////////
+	
+	@Test
+	public void testREMOVEFileAllow() throws Exception {
+
+    	        String rsID =genRsID(); 
+    	    	RsType rsType = RsType.FILE;
+    
+    	    	List<ACE> aces = new ArrayList<ACE>();
+
+				  
+				   aces.add(new ACE( AceType.ACCESS_ALLOWED_ACE_TYPE,
+							0,
+							AccessMask.DELETE.getValue(),
+							Who.USER,
+							111,
+							ACE.DEFAULT_ADDRESS_MSK,
+							0 ) );
+				   
+				   aces.add(new ACE( AceType.ACCESS_DENIED_ACE_TYPE,
+							0,
+							AccessMask.DELETE_CHILD.getValue(),
+							Who.USER,
+							111,
+							ACE.DEFAULT_ADDRESS_MSK,
+							1 ) );
+				   
+				   ACL newACL = new ACL(rsID, rsType, aces);
+		     		aclHandler.setACL(newACL);
+		     		
+		     		Subject subjectNew = new Subject(111,100);
+		            
+		            Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG, InetAddressType.IPv4, "127.0.0.1");
+		       
+		             Owner ownerNew = new Owner(0, 0);
+		             
+		             Permission permissionNew=AclMapper.getPermission(subjectNew, originNew, ownerNew, newACL);
+		             
+		             //Check REMOVE (for file). Bits: DELETE
+		             Action actionREMOVE=Action.REMOVE;
+		             Boolean checkREMOVE = AclNFSv4Matcher.isAllowed(permissionNew, actionREMOVE, Boolean.FALSE);
+		             assertTrue("For who_id=111 action REMOVE file is allowed: bit DELETE allowed", checkREMOVE);
+	          
+	}
+
+/////////////////////////////////////////////
+	
+	@Test
+	public void testREMOVEFileDeny() throws Exception {
+
+    	        String rsID =genRsID(); 
+    	    	RsType rsType = RsType.FILE;
+    
+    	    	List<ACE> aces = new ArrayList<ACE>();
+
+				   aces.add(new ACE( AceType.ACCESS_DENIED_ACE_TYPE,
+						0,
+						AccessMask.DELETE.getValue(),
+						Who.USER,
+						111,
+						ACE.DEFAULT_ADDRESS_MSK,
+						0 ) );
+				  
+				   aces.add(new ACE( AceType.ACCESS_ALLOWED_ACE_TYPE,
+							0,
+							AccessMask.DELETE_CHILD.getValue(),
+							Who.USER,
+							111,
+							ACE.DEFAULT_ADDRESS_MSK,
+							1 ) );
+				   
+				   ACL newACL = new ACL(rsID, rsType, aces);
+		     		aclHandler.setACL(newACL);
+		     		
+		     		Subject subjectNew = new Subject(111,100);
+		            
+		            Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG, InetAddressType.IPv4, "127.0.0.1");
+		       
+		             Owner ownerNew = new Owner(0, 0);
+		             
+		             Permission permissionNew=AclMapper.getPermission(subjectNew, originNew, ownerNew, newACL);
+		             
+		             //Check REMOVE (for file). Bits: DELETE
+		             Action actionREMOVE=Action.REMOVE;
+		             Boolean checkREMOVE = AclNFSv4Matcher.isAllowed(permissionNew, actionREMOVE, Boolean.FALSE);
+		             assertFalse("For who_id=111 action REMOVE file is denied: bit DELETE denied", checkREMOVE);
+	          
+	}
+	
+/////////////////////////////////////////////
+	
+	@Test
+	public void testRENAMEDirAllow() throws Exception {
+
+    	        String rsID =genRsID(); 
+    	    	RsType rsType = RsType.DIR;
+    
+    	    	List<ACE> aces = new ArrayList<ACE>();
+
+				   aces.add(new ACE( AceType.ACCESS_ALLOWED_ACE_TYPE,
+						0,
+						AccessMask.DELETE_CHILD.getValue()+AccessMask.ADD_FILE.getValue(),
+						Who.USER,
+						111,
+						ACE.DEFAULT_ADDRESS_MSK,
+						0 ) );
+				  
+				   
+				   
+				   ACL newACL = new ACL(rsID, rsType, aces);
+		     		aclHandler.setACL(newACL);
+		     		
+		     		Subject subjectNew = new Subject(111,100);
+		            
+		            Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG, InetAddressType.IPv4, "127.0.0.1");
+		       
+		             Owner ownerNew = new Owner(0, 0);
+		             
+		             Permission permissionNew=AclMapper.getPermission(subjectNew, originNew, ownerNew, newACL);
+		             
+		             //Check RENAME (directory). Bits: DELETE_CHILD, ADD_FILE
+		             Action actionRENAMEdir=Action.RENAME;
+		             Boolean checkRENAMEdir = AclNFSv4Matcher.isAllowed(permissionNew, actionRENAMEdir, Boolean.TRUE);
+		             assertTrue("For who_id=111 action RENAME directory is allowed: DELETE_CHILD, ADD_FILE allowed", checkRENAMEdir);
+	          
+	}
+	
+/////////////////////////////////////////////
+	
+	@Test
+	public void testRENAMEDir2() throws Exception {
+
+    	        String rsID =genRsID(); 
+    	    	RsType rsType = RsType.DIR;
+    
+    	    	List<ACE> aces = new ArrayList<ACE>();
+
+				   aces.add(new ACE( AceType.ACCESS_ALLOWED_ACE_TYPE,
+						0,
+						AccessMask.DELETE_CHILD.getValue(),
+						Who.USER,
+						111,
+						ACE.DEFAULT_ADDRESS_MSK,
+						0 ) );
+				   
+				 
+				   aces.add(new ACE( AceType.ACCESS_DENIED_ACE_TYPE,
+						0,
+						  AccessMask.ADD_FILE.getValue(),
+						Who.USER,
+						111,
+						ACE.DEFAULT_ADDRESS_MSK,
+						1 ) );
+				   
+				   ACL newACL = new ACL(rsID, rsType, aces);
+		     		aclHandler.setACL(newACL);
+		     		
+		     		Subject subjectNew = new Subject(111,100);
+		            
+		            Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG, InetAddressType.IPv4, "127.0.0.1");
+		       
+		             Owner ownerNew = new Owner(0, 0);
+		             
+		             Permission permissionNew=AclMapper.getPermission(subjectNew, originNew, ownerNew, newACL);
+		             
+		             //Check RENAME (directory). Bits: DELETE_CHILD, ADD_FILE
+		             Action actionRENAMEdir=Action.RENAME;
+		             Boolean checkRENAMEdir = AclNFSv4Matcher.isAllowed(permissionNew, actionRENAMEdir, Boolean.TRUE);
+		             assertFalse("For who_id=111 action RENAME directory is allowed: DELETE_CHILD allowed, ADD_FILE denied", checkRENAMEdir);
+	          
+	}
+	
+/////////////////////////////////////////////
+	
+	@Test
+	public void testRENAMEDir3() throws Exception {
+
+    	        String rsID =genRsID(); 
+    	    	RsType rsType = RsType.DIR;
+    
+    	    	List<ACE> aces = new ArrayList<ACE>();
+
+				   aces.add(new ACE( AceType.ACCESS_ALLOWED_ACE_TYPE,
+						0,
+						AccessMask.DELETE_CHILD.getValue(),
+						Who.USER,
+						111,
+						ACE.DEFAULT_ADDRESS_MSK,
+						0 ) );
+				   
+				 
+				   aces.add(new ACE( AceType.ACCESS_DENIED_ACE_TYPE,
+						0,
+						AccessMask.ADD_SUBDIRECTORY.getValue(),
+						Who.USER,
+						111,
+						ACE.DEFAULT_ADDRESS_MSK,
+						1 ) );
+				   
+				   ACL newACL = new ACL(rsID, rsType, aces);
+		     		aclHandler.setACL(newACL);
+		     		
+		     		Subject subjectNew = new Subject(111,100);
+		            
+		            Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG, InetAddressType.IPv4, "127.0.0.1");
+		       
+		             Owner ownerNew = new Owner(0, 0);
+		             
+		             Permission permissionNew=AclMapper.getPermission(subjectNew, originNew, ownerNew, newACL);
+		             
+		             //Check RENAME (directory). Bits: DELETE_CHILD, ADD_FILE
+		             Action actionRENAMEdir=Action.RENAME;
+		             Boolean checkRENAMEdir = AclNFSv4Matcher.isAllowed(permissionNew, actionRENAMEdir, Boolean.TRUE);
+		             System.out.println("checkRENAMEdir = " + checkRENAMEdir);
+		             assertFalse("For who_id=111 action RENAME directory is denied: DELETE_CHILD allowed, ADD_SUBDIRECTORY denied", checkRENAMEdir);
+	          
+	}
+	
+	
+/////////////////////////////////////////////
+	
+	@Test
+	public void testRENAMEfileDeny() throws Exception {
+
+    	        String rsID =genRsID(); 
+    	    	RsType rsType = RsType.FILE;
+    
+    	    	List<ACE> aces = new ArrayList<ACE>();
+
+				   aces.add(new ACE( AceType.ACCESS_ALLOWED_ACE_TYPE,
+						0,
+						AccessMask.DELETE_CHILD.getValue(),
+						Who.USER,
+						111,
+						ACE.DEFAULT_ADDRESS_MSK,
+						0 ) );
+				   
+				 
+				   aces.add(new ACE( AceType.ACCESS_DENIED_ACE_TYPE,
+						0,
+						AccessMask.ADD_FILE.getValue(),
+						Who.USER,
+						111,
+						ACE.DEFAULT_ADDRESS_MSK,
+						1 ) );
+				   
+				   ACL newACL = new ACL(rsID, rsType, aces);
+		     		aclHandler.setACL(newACL);
+		     		
+		     		Subject subjectNew = new Subject(111,100);
+		            
+		            Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG, InetAddressType.IPv4, "127.0.0.1");
+		       
+		             Owner ownerNew = new Owner(0, 0);
+		             
+		             Permission permissionNew=AclMapper.getPermission(subjectNew, originNew, ownerNew, newACL);
+		             
+		             //Check RENAME (file). Bits: DELETE_CHILD, ADD_FILE
+		             Action actionRENAMEfile=Action.RENAME;
+		             Boolean checkRENAMEfile = AclNFSv4Matcher.isAllowed(permissionNew, actionRENAMEfile, Boolean.FALSE);
+		             System.out.println("checkRENAMEfile1 = " + checkRENAMEfile);
+		             assertFalse("For who_id=111 action RENAME file is denied: DELETE_CHILD allowed, ADD_FILE denied", checkRENAMEfile);
+	          
+	}
+	
+/////////////////////////////////////////////
+	
+	@Test
+	public void testRENAMEfileDeny2() throws Exception {
+
+    	        String rsID =genRsID(); 
+    	    	RsType rsType = RsType.FILE;
+    
+    	    	List<ACE> aces = new ArrayList<ACE>();
+
+				   aces.add(new ACE( AceType.ACCESS_DENIED_ACE_TYPE,
+						0,
+						AccessMask.DELETE_CHILD.getValue(),
+						Who.USER,
+						111,
+						ACE.DEFAULT_ADDRESS_MSK,
+						0 ) );
+				   
+				 
+				   aces.add(new ACE( AceType.ACCESS_ALLOWED_ACE_TYPE,
+						0,
+						AccessMask.ADD_FILE.getValue(),
+						Who.USER,
+						111,
+						ACE.DEFAULT_ADDRESS_MSK,
+						1 ) );
+				   
+				   ACL newACL = new ACL(rsID, rsType, aces);
+		     		aclHandler.setACL(newACL);
+		     		
+		     		Subject subjectNew = new Subject(111,100);
+		            
+		            Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_WEAK, InetAddressType.IPv4, "127.0.0.1");
+		       
+		             Owner ownerNew = new Owner(0, 0);
+		             
+		             Permission permissionNew=AclMapper.getPermission(subjectNew, originNew, ownerNew, newACL);
+		             
+		             //Check RENAME (file). Bits: DELETE_CHILD, ADD_FILE
+		             Action actionRENAMEfile=Action.RENAME;
+		             Boolean checkRENAMEfile = AclNFSv4Matcher.isAllowed(permissionNew, actionRENAMEfile, Boolean.FALSE);
+		             System.out.println("checkRENAMEfile2 = " + checkRENAMEfile);
+		             assertFalse("For who_id=111 action RENAME file is denied: DELETE_CHILD denied, ADD_FILE allowed", checkRENAMEfile);
+	          
+	}
+	
+/////////////////////////////////////////////
+	
+	@Test
+	public void testRENAMEfileDeny3() throws Exception {
+
+    	        String rsID =genRsID(); 
+    	    	RsType rsType = RsType.FILE;
+    
+    	    	List<ACE> aces = new ArrayList<ACE>();
+
+				   aces.add(new ACE( AceType.ACCESS_DENIED_ACE_TYPE,
+						0,
+						AccessMask.DELETE_CHILD.getValue(),
+						Who.USER,
+						111,
+						ACE.DEFAULT_ADDRESS_MSK,
+						0 ) );
+				   
+				 
+				   aces.add(new ACE( AceType.ACCESS_DENIED_ACE_TYPE,
+						0,
+						AccessMask.ADD_FILE.getValue(),
+						Who.USER,
+						111,
+						ACE.DEFAULT_ADDRESS_MSK,
+						1 ) );
+				   
+				   ACL newACL = new ACL(rsID, rsType, aces);
+		     		aclHandler.setACL(newACL);
+		     		
+		     		Subject subjectNew = new Subject(111,100);
+		            
+		            Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_WEAK, InetAddressType.IPv4, "127.0.0.1");
+		       
+		             Owner ownerNew = new Owner(0, 0);
+		             
+		             Permission permissionNew=AclMapper.getPermission(subjectNew, originNew, ownerNew, newACL);
+		             
+		             //Check RENAME (file). Bits: DELETE_CHILD, ADD_FILE
+		             Action actionRENAMEfile=Action.RENAME;
+		             Boolean checkRENAMEfile = AclNFSv4Matcher.isAllowed(permissionNew, actionRENAMEfile, Boolean.FALSE);
+		             System.out.println("checkRENAMEfile2 = " + checkRENAMEfile);
+		             assertFalse("For who_id=111 action RENAME file is denied: DELETE_CHILD , ADD_FILE denied", checkRENAMEfile);
+	          
+	}
+	
+/////////////////////////////////////////////
+	
+	@Test
+	public void testWRITEfofileDeny() throws Exception {
+
+    	        String rsID =genRsID(); 
+    	    	RsType rsType = RsType.FILE;
+    
+    	    	List<ACE> aces = new ArrayList<ACE>();
+
+				   aces.add(new ACE( AceType.ACCESS_DENIED_ACE_TYPE,
+						0,
+						AccessMask.WRITE_DATA.getValue(),
+						Who.USER,
+						111,
+						ACE.DEFAULT_ADDRESS_MSK,
+						0 ) );
+				   
+				 
+				   aces.add(new ACE( AceType.ACCESS_ALLOWED_ACE_TYPE,
+						0,
+						AccessMask.APPEND_DATA.getValue(),
+						Who.USER,
+						111,
+						ACE.DEFAULT_ADDRESS_MSK,
+						1 ) );
+				   
+				   ACL newACL = new ACL(rsID, rsType, aces);
+		     		aclHandler.setACL(newACL);
+		     		
+		     		Subject subjectNew = new Subject(111,100);
+		            
+		            Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_WEAK, InetAddressType.IPv4, "127.0.0.1");
+		       
+		             Owner ownerNew = new Owner(0, 0);
+		             
+		             Permission permissionNew=AclMapper.getPermission(subjectNew, originNew, ownerNew, newACL);
+		             
+		             //Check WRITE. Bits: APPEND_DATA (not checked), WRITE_DATA
+		             Action actionWRITEfile=Action.WRITE;
+		             Boolean checkWRITEfile = AclNFSv4Matcher.isAllowed(permissionNew, actionWRITEfile);
+		             System.out.println("checkWRITEfile = " + checkWRITEfile);
+		             assertFalse("For who_id=111 action RENAME file is denied: DELETE_CHILD , ADD_FILE denied", checkWRITEfile);
+	          
+	}
+	
+	  /////////////////////////////////////////////
+
+    @Test
+    public void testWRITEfileAllowed() throws Exception {
+
+           String rsID =genRsID();
+                RsType rsType = RsType.FILE;
+                
+                List<ACE> aces = new ArrayList<ACE>();
+     
+               //will not work for FILE:     
+               //AccessMask.ADD_FILE.getValue()+AccessMask.EXECUTE.getValue()+AccessMask.READ_DATA.getValue()+AccessMask.WRITE_DATA.getValue()+AccessMask.APPEND_DATA.getValue(),
+                    
+               aces.add(new ACE( AceType.ACCESS_ALLOWED_ACE_TYPE,
+                        0,
+                        AccessMask.EXECUTE.getValue()+AccessMask.READ_DATA.getValue()+AccessMask.WRITE_DATA.getValue()+AccessMask.APPEND_DATA.getValue(),
+                        Who.USER,
+                        111,
+                        ACE.DEFAULT_ADDRESS_MSK,
+                        0 ) );
+    
+        		   ACL newACL = new ACL(rsID, rsType, aces);
+		     		aclHandler.setACL(newACL);
+		     		
+		     		Subject subjectNew = new Subject(111,100);
+		            
+		            Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG, InetAddressType.IPv4, "127.0.0.1");
+		       
+		             Owner ownerNew = new Owner(0, 0);
+		             
+		             Permission permissionNew=AclMapper.getPermission(subjectNew, originNew, ownerNew, newACL);
+		             
+		             //Check WRITE. Bits: APPEND_DATA (not checked), WRITE_DATA
+		             Action actionWRITEfile2=Action.WRITE;
+		             Boolean checkWRITEfile2 = AclNFSv4Matcher.isAllowed(permissionNew, actionWRITEfile2);
+		             //System.out.println("checkWRITEfile2 = " + checkWRITEfile2);
+		             assertTrue("For who_id=111 action WRITE file is allowed: WRITE_DATA allowed", checkWRITEfile2);
+ 
+    }
+	
+    
+	  /////////////////////////////////////////////
+
+    @Test
+    public void testSETATTRfileAllowed() throws Exception {
+
+           String rsID =genRsID();
+                RsType rsType = RsType.FILE;
+                
+                List<ACE> aces = new ArrayList<ACE>();
+                    
+                int //masks = (AccessMask.APPEND_DATA.getValue());
+                masks = (AccessMask.WRITE_ATTRIBUTES.getValue());
+                masks += (AccessMask.WRITE_ACL.getValue());
+                masks += (AccessMask.WRITE_OWNER.getValue());
+                
+               aces.add(new ACE( AceType.ACCESS_ALLOWED_ACE_TYPE,
+                        0,
+                        masks,
+                        Who.USER,
+                        111,
+                        ACE.DEFAULT_ADDRESS_MSK,
+                        0 ) );
+    
+               aces.add(new ACE( AceType.ACCESS_DENIED_ACE_TYPE,
+                       0,
+                       AccessMask.APPEND_DATA.getValue(),
+                       Who.USER,
+                       111,
+                       ACE.DEFAULT_ADDRESS_MSK,
+                       1 ) );
+               
+               aces.add(new ACE( AceType.ACCESS_DENIED_ACE_TYPE,
+                       0,
+                       AccessMask.WRITE_DATA.getValue(),
+                       Who.USER,
+                       111,
+                       ACE.DEFAULT_ADDRESS_MSK,
+                       2 ) );
+               
+        		   ACL newACL = new ACL(rsID, rsType, aces);
+		     		aclHandler.setACL(newACL);
+		     		
+		     		Subject subjectNew = new Subject(111,100);
+		            
+		            Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG, InetAddressType.IPv4, "127.0.0.1");
+		       
+		             Owner ownerNew = new Owner(0, 0);
+		             
+		             Permission permissionNew=AclMapper.getPermission(subjectNew, originNew, ownerNew, newACL);
+		             
+		             //Check SETATTR (Attribute ACL). Access flag: WRITE_ACL
+		             Action actionSETATTRfile=Action.SETATTR;
+		             //USE: Boolean isAllowed(Permission perm, Action action, FileAttribute attribute) 
+		             Boolean checkSETATTRfile = AclNFSv4Matcher.isAllowed(permissionNew, actionSETATTRfile, FileAttribute.FATTR4_ACL);
+		             //System.out.println("checkSETATTRfile = " + checkSETATTRfile);
+		             assertTrue("For who_id=111 action SETATTR (Attribute FATTR4_ACL) is allowed: WRITE_ACL allowed", checkSETATTRfile);
+		             
+		             //Check SETATTR (Attribute OWNER_GROUP). Access flag: WRITE_OWNER
+		             Boolean checkSETATTRfile2 = AclNFSv4Matcher.isAllowed(permissionNew, actionSETATTRfile, FileAttribute.FATTR4_OWNER_GROUP);
+		             //System.out.println("checkSETATTRfile2 = " + checkSETATTRfile2);
+		             assertTrue("For who_id=111 action SETATTR (Attribute  FATTR4_OWNER_GROUP) is allowed: WRITE_OWNER allowed", checkSETATTRfile2);
+ 
+		             //Check SETATTR (Attribute SIZE). Access flag: WRITE_DATA
+		             Boolean checkSETATTRfile3 = AclNFSv4Matcher.isAllowed(permissionNew, actionSETATTRfile, FileAttribute.FATTR4_SIZE);
+		             //System.out.println("checkSETATTRfile3 = " + checkSETATTRfile3);
+		             assertFalse("For who_id=111 action SETATTR (Attribute  FATTR4_SIZE) is denied: WRITE_DATA denied", checkSETATTRfile3);
+    }
+    
     protected String genRsID() throws Exception {
             String rsID = GenIDforjUnitTest.newID(0);
             return rsID;
