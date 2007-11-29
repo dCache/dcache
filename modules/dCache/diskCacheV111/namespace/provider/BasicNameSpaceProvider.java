@@ -69,7 +69,7 @@ public class BasicNameSpaceProvider implements NameSpaceProvider, StorageInfoPro
 
 
         if( ( _mountPoint != null ) && ( ! _mountPoint.equals("") ) ){
-            say( "PnfsFilesystem enforced : "+_mountPoint) ;
+            _logNameSpace.debug( "PnfsFilesystem enforced : "+_mountPoint) ;
             PnfsFile pf = new PnfsFile(_mountPoint);
             if( ! (pf.isDirectory() && pf.isPnfs() ) )
                 throw new
@@ -81,7 +81,7 @@ public class BasicNameSpaceProvider implements NameSpaceProvider, StorageInfoPro
             //
             // autodetection of pnfs filesystems
             //
-            say( "Starting PNFS autodetect" ) ;
+            _logNameSpace.debug( "Starting PNFS autodetect" ) ;
             _virtualMountPoints = PnfsFile.getVirtualMountPoints();
         }
         if( _virtualMountPoints.isEmpty() )
@@ -89,12 +89,17 @@ public class BasicNameSpaceProvider implements NameSpaceProvider, StorageInfoPro
             Exception("No mountpoints left ... ");
 
         for( PnfsFile.VirtualMountPoint vmp: _virtualMountPoints ){
-            say( " Server         : "+vmp.getServerId()+"("+vmp.getServerName()+")" ) ;
-            say( " RealMountPoint : "+vmp.getRealMountId()+" "+vmp.getRealMountPoint() ) ;
-            say( "       VirtualMountId : "+vmp.getVirtualMountId() ) ;
-            say( "      VirtualPnfsPath : "+vmp.getVirtualPnfsPath() ) ;
-            say( "     VirtualLocalPath : "+vmp.getVirtualLocalPath() ) ;
-            say( "    VirtualGlobalPath : "+vmp.getVirtualGlobalPath() ) ;
+
+            if(_logNameSpace.isDebugEnabled()) {
+
+                _logNameSpace.debug( " Server         : "+vmp.getServerId()+"("+vmp.getServerName()+")" ) ;
+                _logNameSpace.debug( " RealMountPoint : "+vmp.getRealMountId()+" "+vmp.getRealMountPoint() ) ;
+                _logNameSpace.debug( "       VirtualMountId : "+vmp.getVirtualMountId() ) ;
+                _logNameSpace.debug( "      VirtualPnfsPath : "+vmp.getVirtualPnfsPath() ) ;
+                _logNameSpace.debug( "     VirtualLocalPath : "+vmp.getVirtualLocalPath() ) ;
+                _logNameSpace.debug( "    VirtualGlobalPath : "+vmp.getVirtualGlobalPath() ) ;
+
+            }
         }
 
         _pathManager = new PathManager( _virtualMountPoints ) ;
@@ -110,30 +115,36 @@ public class BasicNameSpaceProvider implements NameSpaceProvider, StorageInfoPro
         ( ! defaultServerName.equals("*") ) )
             _pathManager.setDefaultServerName( defaultServerName ) ;
 
-        say("Using default pnfs server : "+_pathManager.getDefaultServerName());
+        _logNameSpace.debug("Using default pnfs server : "+_pathManager.getDefaultServerName());
     }
 
     public void addCacheLocation(PnfsId pnfsId, String cacheLocation) {
 
-        say("add cache location "+ cacheLocation +" for "+pnfsId);
+        if (_logNameSpace.isDebugEnabled()) {
+            _logNameSpace.debug("add cache location " + cacheLocation + " for "
+                    + pnfsId);
+        }
         try {
             PnfsFile  pf = _pathManager.getFileByPnfsId( pnfsId );
             CacheInfo ci = new CacheInfo(pf);
             ci.addCacheLocation( cacheLocation);
             ci.writeCacheInfo(pf);
         } catch (Exception e){
-            esay("Exception in addCacheLocation "+e);
+            _logNameSpace.error("Exception in addCacheLocation "+e);
             //no reply to this message
         }
     }
 
     public void clearCacheLocation(PnfsId pnfsId, String cacheLocation, boolean removeIfLast) throws Exception {
 
-        say("clearCacheLocation : "+cacheLocation+" for "+pnfsId);
+        if (_logNameSpace.isDebugEnabled()) {
+            _logNameSpace.debug("clearCacheLocation : " + cacheLocation
+                    + " for " + pnfsId);
+        }
         try {
             PnfsFile  pf = _pathManager.getFileByPnfsId( pnfsId );
             if( pf == null ){
-                esay( "Can't get PnfsFile of : "+pnfsId ) ;
+                _logNameSpace.error( "Can't get PnfsFile of : "+pnfsId ) ;
                 return ;
             }
             CacheInfo ci = new CacheInfo(pf);
@@ -163,13 +174,16 @@ public class BasicNameSpaceProvider implements NameSpaceProvider, StorageInfoPro
                 if( ( removeIfLast  ) ||
                 ( ( deletable != null ) && deletable.startsWith("t") ) ){
 
-                    say("clearCacheLocation : deleting "+pnfsId+" from filesystem");
+                    if (_logNameSpace.isDebugEnabled()) {
+                        _logNameSpace.debug("clearCacheLocation : deleting "
+                                + pnfsId + " from filesystem");
+                    }
                     this.deleteEntry( pnfsId ) ;
 
                 }
             }
         } catch (Exception e){
-            esay("Exception in clearCacheLocation for : "+pnfsId+" -> "+e);
+            _logNameSpace.error("Exception in clearCacheLocation for : "+pnfsId+" -> "+e);
             //no reply to this message
         }
     }
@@ -240,29 +254,29 @@ public class BasicNameSpaceProvider implements NameSpaceProvider, StorageInfoPro
 
         boolean rc = false;
         String  pnfsIdPath = this.pnfsidToPath(pnfsId) ;
-        say("delete PNFS entry for " + pnfsId + " path " + pnfsIdPath);
+        _logNameSpace.debug("delete PNFS entry for " + pnfsId + " path " + pnfsIdPath);
 
         PnfsFile pf =  new PnfsFile( this.pnfsidToPath(pnfsId) );
 
         if (! pf.exists()){
-            say(pnfsId+": no such file");
+            _logNameSpace.debug(pnfsId+": no such file");
             throw new FileNotFoundCacheException( "No such file or directory");
         }
 
         try {
             rc = pf.delete();
         } catch (Exception e) {
-            esay("delete failed "+e);
+            _logNameSpace.error("delete failed "+e);
             throw new IllegalArgumentException( "Failed to remove entry " + pnfsId + " : " + e);
         }
 
 
         if( ! rc ) {
             if( pf.isDirectory() && ( pf.list().length != 0 ) ) {
-                esay(pnfsId + ": is not empty");
+                _logNameSpace.error(pnfsId + ": is not empty");
                 throw new IllegalArgumentException( "Directory  " + pnfsId + " not empty");
             } else{
-                esay(pnfsId+ ": unknown reason");
+                _logNameSpace.error(pnfsId+ ": unknown reason");
                 throw new IllegalArgumentException( "Failed to remove entry " + pnfsId + " : Unknown reason.");
             }
         }
@@ -276,10 +290,11 @@ public class BasicNameSpaceProvider implements NameSpaceProvider, StorageInfoPro
         if( pf == null || ! pf.exists() ) {
         	throw new FileNotFoundCacheException("no such file or directory" + pnfsId.toString() );
         }
-        say("pnfs file = "+pf);
-        CacheInfo ci = new CacheInfo(pf);
-        say("cache info = "+ci);
 
+        CacheInfo ci = new CacheInfo(pf);
+        if (_logNameSpace.isDebugEnabled()) {
+            _logNameSpace.debug("pnfs file = " + pf + " cache info = " + ci);
+        }
         return new ArrayList<String>(ci.getCacheLocations());
 
     }
@@ -341,8 +356,8 @@ public class BasicNameSpaceProvider implements NameSpaceProvider, StorageInfoPro
           return vmp.getVirtualGlobalPath()+pnfsPath.substring(pvm.length());
 
      }catch ( Exception e) {
-        esay("!! Problem determining path of "+pnfsId);
-        esay(e);
+        _logNameSpace.error("!! Problem determining path of "+pnfsId);
+        _logNameSpace.error(e);
      }
         return pnfsFile.getPath();
 
@@ -374,7 +389,7 @@ public class BasicNameSpaceProvider implements NameSpaceProvider, StorageInfoPro
     public void setStorageInfo(PnfsId pnfsId, StorageInfo storageInfo, int mode) throws Exception {
 
 
-        say( "setStorageInfo : "+pnfsId ) ;
+        _logNameSpace.debug( "setStorageInfo : "+pnfsId ) ;
         File mountpoint = _pathManager.getMountPointByPnfsId(pnfsId) ;
         _extractor.setStorageInfo(
         mountpoint.getAbsolutePath() ,
@@ -387,11 +402,11 @@ public class BasicNameSpaceProvider implements NameSpaceProvider, StorageInfoPro
 
     public StorageInfo getStorageInfo(PnfsId pnfsId) throws Exception {
 
-        say("getStorageInfo : " + pnfsId);
+        _logNameSpace.debug("getStorageInfo : " + pnfsId);
         File mountpoint = _pathManager.getMountPointByPnfsId(pnfsId);
         StorageInfo info = _extractor.getStorageInfo(mountpoint.getAbsolutePath(), pnfsId);
 
-        say("Storage info " + info);
+        _logNameSpace.debug("Storage info " + info);
 
         PnfsFile pf = _pathManager.getFileByPnfsId(pnfsId);
         if (pf.isFile()) {
@@ -406,7 +421,7 @@ public class BasicNameSpaceProvider implements NameSpaceProvider, StorageInfoPro
                 }
 
             } catch (Exception eee) {
-                esay("Error adding bits (stickybit) to storageinfo : " + eee);
+                _logNameSpace.error("Error adding bits (stickybit) to storageinfo : " + eee);
             }
 
             //
@@ -450,7 +465,7 @@ public class BasicNameSpaceProvider implements NameSpaceProvider, StorageInfoPro
                 keys[i++] = entry.getKey() ;
             }
         }catch(Exception e){
-            esay(e.getMessage());
+            _logNameSpace.error(e.getMessage());
         }
 
         return keys;
@@ -462,13 +477,17 @@ public class BasicNameSpaceProvider implements NameSpaceProvider, StorageInfoPro
         Object attr = null;
         try {
             PnfsFile  pf     = _pathManager.getFileByPnfsId( pnfsId );
-            CacheInfo info   = new CacheInfo( pf ) ;
-            CacheInfo.CacheFlags flags = info.getFlags() ;
+            if(pf.isFile()) {
+                CacheInfo info   = new CacheInfo( pf ) ;
+                CacheInfo.CacheFlags flags = info.getFlags() ;
 
-            attr =  flags.get(attribute);
+                attr =  flags.get(attribute);
+            }else{
 
+                _logNameSpace.debug("getFileAttribute on non file object");
+            }
         }catch( Exception e){
-            esay(e.getMessage());
+            _logNameSpace.error(e.getMessage());
         }
 
         return attr;
@@ -478,14 +497,18 @@ public class BasicNameSpaceProvider implements NameSpaceProvider, StorageInfoPro
 
         try {
             PnfsFile  pf     = _pathManager.getFileByPnfsId( pnfsId );
-            CacheInfo info   = new CacheInfo( pf ) ;
-            CacheInfo.CacheFlags flags = info.getFlags() ;
+            if(pf.isFile() ) {
+                CacheInfo info   = new CacheInfo( pf ) ;
+                CacheInfo.CacheFlags flags = info.getFlags() ;
 
-            flags.put( attribute ,  data.toString()) ;
+                flags.put( attribute ,  data.toString()) ;
 
-            info.writeCacheInfo( pf ) ;
+                info.writeCacheInfo( pf ) ;
+            }else{
+                _logNameSpace.warn("setFileAttribute on non file object");
+            }
         }catch( Exception e){
-            esay(e.getMessage());
+            _logNameSpace.error(e.getMessage());
         }
 
     }
@@ -499,7 +522,7 @@ public class BasicNameSpaceProvider implements NameSpaceProvider, StorageInfoPro
             flags.remove( attribute ) ;
             info.writeCacheInfo( pf ) ;
         }catch( Exception e){
-            esay(e.getMessage());
+            _logNameSpace.error(e.getMessage());
         }
 
     }
@@ -604,23 +627,6 @@ public class BasicNameSpaceProvider implements NameSpaceProvider, StorageInfoPro
 
     }
 
-
-
-    ///// CELL hack
-
-
-    void say( String s ){
-        _nucleus.say(s);
-    }
-
-    void esay( String s ){
-        _nucleus.esay(s);
-    }
-
-    void esay( Exception e ){
-        _nucleus.esay(e);
-    }
-
     ////////////////////    Internal Part     /////////////////////////////
 
 
@@ -663,7 +669,7 @@ public class BasicNameSpaceProvider implements NameSpaceProvider, StorageInfoPro
             }
         // TODO: handle file not found
         }catch(Exception eee ){
-            esay( "Error obtaining 'l' flag for getSimulatedFilesize : "+eee ) ;
+            _logNameSpace.error( "Error obtaining 'l' flag for getSimulatedFilesize : "+eee ) ;
             simulatedFileSize =  -1 ;
         }
 
@@ -715,7 +721,10 @@ public class BasicNameSpaceProvider implements NameSpaceProvider, StorageInfoPro
 
                 meta.setTimes( aTime *1000, mTime *1000, cTime *1000) ;
 
-                say( "getFileMetaData of "+pnfsId+" -> "+meta ) ;
+                if (_logNameSpace.isDebugEnabled()) {
+                    _logNameSpace.debug("getFileMetaData of " + pnfsId + " -> "
+                            + meta);
+                }
                 return meta ;
             }catch(Exception eee ){
                 throw new
@@ -789,6 +798,9 @@ public class BasicNameSpaceProvider implements NameSpaceProvider, StorageInfoPro
                     && actualMetaData.getUserPermissions().equals( newMetaData.getUserPermissions() )
                     && actualMetaData.getWorldPermissions().equals(newMetaData.getWorldPermissions() )
                                                                           ) ) {
+                    _logNameSpace.error("failed to apply new attributes to " + pnfsId);
+                    _logNameSpace.error("    expected: " + newMetaData);
+                    _logNameSpace.error("    actual  : " + actualMetaData);
                 throw ioe;
            }
         }
@@ -849,7 +861,7 @@ public class BasicNameSpaceProvider implements NameSpaceProvider, StorageInfoPro
         for( int i = 0 ; i < 10 ; i++ ){
             long size =  pf.length() ;
             if( size == length )break ;
-            say( "setLength : not yet ... " ) ;
+            _logNameSpace.debug( "setLength : not yet ... " ) ;
             Thread.sleep(1000);
         }
     }
