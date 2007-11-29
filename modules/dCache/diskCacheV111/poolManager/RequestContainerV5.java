@@ -3,6 +3,7 @@
 package diskCacheV111.poolManager ;
 
 import java.io.PrintWriter;
+import java.io.NotSerializableException;
 import java.lang.reflect.Constructor;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -14,12 +15,14 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.SortedMap;
 import java.util.regex.Pattern;
 
 import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.UOID;
+import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.Args;
 
 import diskCacheV111.util.CacheException;
@@ -463,27 +466,25 @@ public class RequestContainerV5 implements Runnable {
        boolean forceAll = args.getOpt("force-all") != null ;
        boolean updateSi = args.getOpt("update-si") != null ;
        if( args.argv(0).equals("*") ){
-          ArrayList all = null ;
+          List<PoolRequestHandler> all;
           //
           // Remember : we are not allowed to call 'retry' as long
           // as we  are holding the _handlerHash lock.
           //
           synchronized( _handlerHash ){
-             all = new ArrayList( _handlerHash.values() ) ;
+             all = new ArrayList<PoolRequestHandler>( _handlerHash.values() ) ;
           }
-          Iterator it = all.iterator() ;
-          while( it.hasNext() ){
+          for (PoolRequestHandler rph : all) {
              try{
-                PoolRequestHandler rph = (PoolRequestHandler)it.next() ;
                 if( forceAll || ( rph._currentRc != 0 ) )rph.retry(updateSi) ;
              }catch(Exception ee){
                 sb.append(ee.getMessage()).append("\n");
              }
           }
        }else{
-          PoolRequestHandler rph = null ;
+          PoolRequestHandler rph;
           synchronized( _handlerHash ){
-             rph = (PoolRequestHandler)_handlerHash.get(args.argv(0));
+             rph = _handlerHash.get(args.argv(0));
              if( rph == null )
                 throw new
                 IllegalArgumentException("Not found : "+args.argv(0) ) ;
@@ -940,7 +941,8 @@ public class RequestContainerV5 implements Runnable {
            _currentRm = errorMessage ;
         }
 	private boolean sendFetchRequest( String poolName , StorageInfo storageInfo )
-                throws Exception {
+            throws NoRouteToCellException, NotSerializableException
+        {
 
 	    CellMessage cellMessage = new CellMessage(
                                 new CellPath( poolName ),
@@ -960,7 +962,8 @@ public class RequestContainerV5 implements Runnable {
             return true ;
 	}
 	private void sendPool2PoolRequest( String sourcePool , String destPool )
-                throws Exception {
+            throws NoRouteToCellException, NotSerializableException
+        {
 
             Pool2PoolTransferMsg pool2pool =
                   new Pool2PoolTransferMsg(sourcePool,destPool,_pnfsId,_storageInfo) ;
@@ -1234,7 +1237,7 @@ public class RequestContainerV5 implements Runnable {
         //
         //         Because : - Code Exception
         //
-        private void stateEngine( Object inputObject ) throws Exception {
+        private void stateEngine( Object inputObject ) {
            int rc = -1;
            switch( _mode ){
 
@@ -1811,7 +1814,8 @@ public class RequestContainerV5 implements Runnable {
            String err = null ;
            try{
 
-              List avMatrix  = _pnfsFileLocation.getFileAvailableMatrix() ;
+              List<List<PoolCostCheckable>> avMatrix =
+                  _pnfsFileLocation.getFileAvailableMatrix();
               int matrixSize = avMatrix.size() ;
               //
               // the DB matrix has no rows, which
@@ -1831,8 +1835,9 @@ public class RequestContainerV5 implements Runnable {
               // we define the top row as the default parameter set for
               // cases where none of the pools hold the file.
               //
-              List paraList   = _pnfsFileLocation.getListOfParameter() ;
-              _parameter = (PoolManagerParameter)paraList.get(0);
+              List<PoolManagerParameter> paraList =
+                  _pnfsFileLocation.getListOfParameter() ;
+              _parameter = paraList.get(0);
               //
               // The file is not in the dCache at all.
               //
@@ -1856,20 +1861,22 @@ public class RequestContainerV5 implements Runnable {
               // only have to check the leftmost entry
               // in the list (get(0)). Rows could be empty.
               //
-              _bestPool       = null ;
-              List bestAv     = null ;
-              int  validCount = 0 ;
-              List tmpList    = new ArrayList() ;
-              int  level      = 0 ;
-              boolean allowFallbackOnPerformance = false ;
-              for( Iterator i = avMatrix.iterator() ; i.hasNext() ; level++ ){
+              _bestPool       = null;
+              List<PoolCostCheckable> bestAv = null;
+              int  validCount = 0;
+              List<PoolCostCheckable> tmpList =
+                  new ArrayList<PoolCostCheckable>();
+              int  level      = 0;
+              boolean allowFallbackOnPerformance = false;
 
-                 List av = (List)i.next() ;
+              for( Iterator<List<PoolCostCheckable>> i = avMatrix.iterator() ; i.hasNext() ; level++ ){
+
+                 List<PoolCostCheckable> av = i.next() ;
 
                  if( av.size() == 0 )continue ;
 
                  validCount++;
-                 PoolCostCheckable cost =(PoolCostCheckable)av.get(0);
+                 PoolCostCheckable cost = av.get(0);
                  tmpList.add(cost);
 
                  if( ( _bestPool == null ) ||
@@ -1879,7 +1886,7 @@ public class RequestContainerV5 implements Runnable {
                     bestAv    = av ;
 
                  }
-                 _parameter = (PoolManagerParameter)paraList.get(level);
+                 _parameter = paraList.get(level);
                  allowFallbackOnPerformance = _parameter._fallbackCostCut > 0.0 ;
 
                  if( ( ( ! allowFallbackOnPerformance ) &&
@@ -1906,8 +1913,7 @@ public class RequestContainerV5 implements Runnable {
                     // to correct here.
                     //
                     say("askIfAvailable : allowFallback , recalculation best cost");
-                    _bestPool = (PoolCostCheckable)
-                                Collections.min(
+                    _bestPool = Collections.min(
                                    tmpList ,
                                     _poolMonitor.getCostComparator(false,_parameter)
                                 ) ;
@@ -1929,7 +1935,8 @@ public class RequestContainerV5 implements Runnable {
               //  load is decreasing.
               //
               PoolCostCheckable cost = null ;
-              TreeMap           list = new TreeMap() ;
+              SortedMap<Integer,PoolCostCheckable> list =
+                  new TreeMap<Integer,PoolCostCheckable>();
 
               if( _parameter._minCostCut > 0.0 ){
 
@@ -1946,17 +1953,14 @@ public class RequestContainerV5 implements Runnable {
                        //
                        String poolName = cost.getPoolName() ;
                        say("askIfAvailable : "+poolName+" below "+_parameter._minCostCut+" : "+costValue);
-                       list.put(
-                          Integer.valueOf((_pnfsId.toString()+poolName).hashCode()) ,
-                           cost ) ;
+                       list.put((_pnfsId.toString()+poolName).hashCode(), cost);
                     }
                  }
 
               }
 
-              cost = list.size() > 0 ?
-                     (PoolCostCheckable)list.get(list.firstKey()) :
-                     (PoolCostCheckable)bestAv.get(0) ;
+              cost =
+                  (list.size() > 0 ? list.get(list.firstKey()) : bestAv.get(0));
 
               say( "askIfAvailable : candidate : "+cost ) ;
 
@@ -2045,7 +2049,8 @@ public class RequestContainerV5 implements Runnable {
 						.get(0)).getPerformanceCost())
 						: parameter._costCut;
 
-				List matrix = _pnfsFileLocation.getFetchPoolMatrix("p2p",
+				List<List<PoolCostCheckable>> matrix =
+                                    _pnfsFileLocation.getFetchPoolMatrix("p2p",
 						_storageInfo, _protocolInfo, _storageInfo
 								.getFileSize());
 
@@ -2063,8 +2068,8 @@ public class RequestContainerV5 implements Runnable {
 
 				List<PoolCostCheckable> destinations = null;
 
-				for (Iterator it = matrix.iterator(); it.hasNext();) {
-					destinations = (List) it.next();
+				for (Iterator<List<PoolCostCheckable>> it = matrix.iterator(); it.hasNext();) {
+					destinations = it.next();
 					if (destinations.size() > 0)
 						break;
 				}
@@ -2225,13 +2230,15 @@ public class RequestContainerV5 implements Runnable {
 
 		}
 
-        private PoolCostCheckable askForFileStoreLocation( String mode  ) throws Exception {
+        private PoolCostCheckable askForFileStoreLocation( String mode  )
+            throws CacheException, InterruptedException
+        {
 
             //
             // matrix contains cost for original db matrix minus
             // the pools already containing the file.
             //
-            List matrix =
+            List<List<PoolCostCheckable>> matrix =
                     _pnfsFileLocation.getFetchPoolMatrix (
                                 mode ,
                                 _storageInfo ,
@@ -2249,11 +2256,10 @@ public class RequestContainerV5 implements Runnable {
             PoolCostCheckable cost = null ;
             if( _poolCandidateInfo == null ){
                 int n = 0 ;
-                for( Iterator i = matrix.iterator() ; i.hasNext() ; n++ ){
+                for( Iterator<List<PoolCostCheckable>> i = matrix.iterator() ; i.hasNext() ; n++ ){
 
-                    parameter = (PoolManagerParameter)_pnfsFileLocation.getListOfParameter().get(n) ;
-                    List list = (List)i.next() ;
-                    cost = (PoolCostCheckable)list.get(0);
+                    parameter = _pnfsFileLocation.getListOfParameter().get(n) ;
+                    cost = i.next().get(0);
                     if( ( parameter._fallbackCostCut  == 0.0 ) ||
                         ( cost.getPerformanceCost() < parameter._fallbackCostCut ) )break ;
 
@@ -2275,11 +2281,11 @@ public class RequestContainerV5 implements Runnable {
 
                 PoolCostCheckable rememberBest = null ;
 
-                 for( Iterator i = matrix.iterator() ; i.hasNext() ; ){
+                 for( Iterator<List<PoolCostCheckable>> i = matrix.iterator() ; i.hasNext() ; ){
 
-                    for( Iterator n = ((List)i.next()).iterator() ; n.hasNext() ; ){
+                    for( Iterator<PoolCostCheckable> n = i.next().iterator() ; n.hasNext() ; ){
 
-                       PoolCostCheckable c  = (PoolCostCheckable)n.next() ;
+                       PoolCostCheckable c  = n.next() ;
                        //
                        // skip this one if we tried this last time
                        //
