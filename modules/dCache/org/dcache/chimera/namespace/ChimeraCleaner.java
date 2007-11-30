@@ -29,7 +29,6 @@ import dmg.util.Args;
 import org.dcache.chimera.DbConnectionInfo;
 import org.dcache.chimera.XMLconfig;
 
-import diskCacheV111.util.Pgpass;
 import diskCacheV111.vehicles.PoolRemoveFilesMessage;
 import diskCacheV111.vehicles.PoolStatusChangedMessage;
 
@@ -50,6 +49,7 @@ public class ChimeraCleaner extends CellAdapter implements Runnable {
     private long _refreshInterval = 300000; // see actual value in "refresh"
     private long _replyTimeout = 10000; // 10 seconds
 
+    private final String _broadcastCellName;
     private Thread _cleanerThread = null;
 
     private final Object _sleepLock = new Object();
@@ -59,9 +59,12 @@ public class ChimeraCleaner extends CellAdapter implements Runnable {
     // how many files will be processed at once, default 100 :
     private int _processAtOnce = 100;
 
-    private Connection dbConnection;
+    private Connection _dbConnection;
 
-    private final Map<String, Long> _htBlackPools = new ConcurrentHashMap<String, Long>();
+    /**
+     * list of pools which is excluded for cleanup
+     */
+    private final Map<String, Long> _poolsBlackList = new ConcurrentHashMap<String, Long>();
 
     /**
      * logger
@@ -85,7 +88,7 @@ public class ChimeraCleaner extends CellAdapter implements Runnable {
         /*
          * TODO: make use of c3po db connection pool
          */
-        this.dbInit(dbinfo.getDBurl(), dbinfo.getDBdrv(), dbinfo.getDBuser(), dbinfo.getDBpass(), null);
+        _dbConnection = dbInit(dbinfo.getDBurl(), dbinfo.getDBdrv(), dbinfo.getDBuser(), dbinfo.getDBpass() );
 
         try {
 
@@ -106,17 +109,28 @@ public class ChimeraCleaner extends CellAdapter implements Runnable {
             }
 
             String tmp = _args.getOpt("processFilesAtOnce");
-            if (tmp != null)
+            if (tmp != null) {
                 try {
                     _processAtOnce = Integer.parseInt(tmp);
                 } catch (NumberFormatException ee) {
                     // bad numbers ignored
                 }
+            }
 
-                if (_logNamespace.isDebugEnabled()){
-			            _logNamespace.debug("Refresh Interval set to (in milliseconds): "+ _refreshInterval);
-			            _logNamespace.debug("Number of files processed at once : " + _processAtOnce);
-                }
+            String reportTo = _args.getOpt("reportRemove" );
+            if( reportTo != null && reportTo.length() > 0 && !reportTo.equals("none") ) {
+                _broadcastCellName=reportTo;
+                _logNamespace.debug("Remove report sent to " + _broadcastCellName);
+            }else{
+                _broadcastCellName=null;
+                _logNamespace.debug("Remove report disabled");
+            }
+
+
+               if (_logNamespace.isDebugEnabled()) {
+                    _logNamespace.debug("Refresh Interval set to (in milliseconds): " + _refreshInterval);
+                    _logNamespace.debug("Number of files processed at once : "+ _processAtOnce);
+               }
 
             (_cleanerThread = _nucleus.newThread(this, "Cleaner")).start();
 
@@ -129,17 +143,13 @@ public class ChimeraCleaner extends CellAdapter implements Runnable {
         start();
     }
 
-    void dbInit(String jdbcUrl, String jdbcClass, String user, String pass,
-            String pwdfile) throws SQLException {
+    private static Connection dbInit(String jdbcUrl, String jdbcClass, String user, String pass ) throws SQLException {
+
+        Connection dbConnection = null;
 
         if ((jdbcUrl == null) || (jdbcClass == null) || (user == null)
-                || (pass == null && pwdfile == null)) {
+                || (pass == null) ) {
             throw new IllegalArgumentException("Not enough arguments to Init SQL database");
-        }
-
-        if ((pwdfile != null) && (pwdfile.length() != 0)) {
-            Pgpass pgpass = new Pgpass(pwdfile); // VP
-            pass = pgpass.getPgpass(jdbcUrl, user); // VP
         }
 
         try {
@@ -161,6 +171,8 @@ public class ChimeraCleaner extends CellAdapter implements Runnable {
             _logNamespace.error("Failed to connect to database: ", ex);
             throw new SQLException(ex.toString());
         }
+
+        return dbConnection;
     }
 
     public void cleanUp() {
@@ -186,7 +198,7 @@ public class ChimeraCleaner extends CellAdapter implements Runnable {
                 List<String> poolListDB = new ArrayList<String>();
 
                 // get list of pool names from the trash_table
-                poolListDB = getPoolList(dbConnection);
+                poolListDB = getPoolList(_dbConnection);
 
                 if (_logNamespace.isDebugEnabled()){
                 	_logNamespace.debug("List of Pools from the trash-table : "+ poolListDB);
@@ -197,12 +209,12 @@ public class ChimeraCleaner extends CellAdapter implements Runnable {
 
                 // if there are some pools in the blackPoolList (i.e., pools that are down/do not exist),
                 //extract them from the poolListDB
-                if (_htBlackPools.size() > 0) {
+                if (_poolsBlackList.size() > 0) {
 
-                    _logNamespace.debug("htBlackPools.size()="+ _htBlackPools.size());
+                    _logNamespace.debug("htBlackPools.size()="+ _poolsBlackList.size());
 
 
-                    for (Map.Entry<String, Long> blackListEntry : _htBlackPools.entrySet()) {
+                    for (Map.Entry<String, Long> blackListEntry : _poolsBlackList.entrySet()) {
                         String poolName = blackListEntry.getKey();
                         long valueTime = blackListEntry.getValue();
 
@@ -211,14 +223,14 @@ public class ChimeraCleaner extends CellAdapter implements Runnable {
                                 && (_recoverTimer > 0)
                                 && ((System.currentTimeMillis() - valueTime) > _recoverTimer)) {
 
-                            _htBlackPools.remove(poolName);
+                            _poolsBlackList.remove(poolName);
                             if (_logNamespace.isDebugEnabled()) {
                             		_logNamespace.debug("Remove the following pool from the black pool list : "+ poolName);
                             	}
                             }
                     }
 
-                    Set<String> keyBlackPools = _htBlackPools.keySet();
+                    Set<String> keyBlackPools = _poolsBlackList.keySet();
 
                     List<String> blackPoolListNew = new ArrayList<String>(keyBlackPools);
 
@@ -407,7 +419,7 @@ public class ChimeraCleaner extends CellAdapter implements Runnable {
 
             _logNamespace.info("runDelete(): Now processing pool : "+ thisPool);
 
-            CleanPoolComplete(dbConnection, thisPool);
+            cleanPoolComplete(_dbConnection, thisPool);
 
         }
     }
@@ -444,7 +456,7 @@ public class ChimeraCleaner extends CellAdapter implements Runnable {
         } catch (NoRouteToCellException nrt) {
             // put poolName into BlackPoolList
 
-            _htBlackPools.put(poolName, new Long(System.currentTimeMillis()));
+            _poolsBlackList.put(poolName, new Long(System.currentTimeMillis()));
 
             if (_logNamespace.isDebugEnabled())
             {
@@ -545,15 +557,15 @@ public class ChimeraCleaner extends CellAdapter implements Runnable {
                         poolStatusChangedMessage.getDetailCode() == PoolStatusChangedMessage.UP ) {
 
                 if(_logNamespace.isDebugEnabled()) {
-                _logNamespace.debug("original htBlackPools.toString()="+ _htBlackPools.toString());
+                _logNamespace.debug("original htBlackPools.toString()="+ _poolsBlackList.toString());
                 }
 
-                _htBlackPools.remove(poolStatusChangedMessage.getPoolName());
+                _poolsBlackList.remove(poolStatusChangedMessage.getPoolName());
 
 
                 if(_logNamespace.isDebugEnabled()) {
                 _logNamespace.debug(" after deleting pool=" + poolStatusChangedMessage.getPoolName());
-                _logNamespace.debug(" new htBlackPools.toString()="+ _htBlackPools.toString());
+                _logNamespace.debug(" new htBlackPools.toString()="+ _poolsBlackList.toString());
                 }
             }
             return;
@@ -563,7 +575,7 @@ public class ChimeraCleaner extends CellAdapter implements Runnable {
     }
 
     /**
-     * CleanPoolComplete
+     * cleanPoolComplete
      * delete all files from the pool 'poolName' found in the trash-table for this pool
      *
      * @param dbConnection
@@ -572,7 +584,7 @@ public class ChimeraCleaner extends CellAdapter implements Runnable {
      * @throws java.io.NotSerializableException
      * @throws java.lang.InterruptedException
      */
-    void CleanPoolComplete(Connection dbConnection, String poolName) throws SQLException, NotSerializableException, InterruptedException {
+    void cleanPoolComplete(Connection dbConnection, String poolName) throws SQLException, NotSerializableException, InterruptedException {
 
         List<String> filePartList = new ArrayList<String>();
 
@@ -633,7 +645,7 @@ public class ChimeraCleaner extends CellAdapter implements Runnable {
 
 
                     // if poolName is in the black list, stop processing
-                    if (_htBlackPools.containsKey(poolName)) {
+                    if (_poolsBlackList.containsKey(poolName)) {
                         if(_logNamespace.isDebugEnabled()) {
                             _logNamespace.debug(poolName+" - this pool is in the black list now. Stop processing. ");
                         }
@@ -653,11 +665,41 @@ public class ChimeraCleaner extends CellAdapter implements Runnable {
 
     }
 
+    /**
+     * send list of removed files to bradcaster
+     *
+     * @param fileList list of files to be removed
+     */
+    private void informBroadcaster(String[] fileList){
+
+        if( fileList == null || fileList.length == 0 ) return;
+
+        String broadcast = _broadcastCellName  ;
+        if( broadcast == null )return ;
+
+        PoolRemoveFilesMessage msg = new PoolRemoveFilesMessage(broadcast) ;
+        msg.setFiles( fileList ) ;
+
+        /*
+         * no rely required
+         */
+        msg.setReplyRequired(false);
+
+        try{
+            sendMessage( new CellMessage( new CellPath(broadcast) , msg )  ) ;
+        }catch(NoRouteToCellException ee ){
+            _logNamespace.error("Problems sending 'remove files' message to "+broadcast+" : "+ee.getMessage());
+        } catch (NotSerializableException e) {
+            // never happens
+            _logNamespace.error("Problems sending 'remove files' message to "+broadcast+" : "+e.getMessage());
+        }
+     }
+
     ////////////////////////////////////////////////////////////////////////////
     public static String hh_rundelete = " # run Cleaner ";
     public String ac_rundelete(Args args) throws Exception {
 
-        List<String> tmpPoolList = getPoolList(dbConnection);
+        List<String> tmpPoolList = getPoolList(_dbConnection);
         runDelete(tmpPoolList.toArray(new String[tmpPoolList.size()]));
 
         return "";
@@ -684,7 +726,7 @@ public class ChimeraCleaner extends CellAdapter implements Runnable {
 
         StringBuilder sb = new StringBuilder();
 
-        for( String pool : _htBlackPools.keySet() ) {
+        for( String pool : _poolsBlackList.keySet() ) {
             sb.append(pool).append("\n");
         }
 
@@ -695,14 +737,11 @@ public class ChimeraCleaner extends CellAdapter implements Runnable {
     public String ac_remove_from_blacklist_$_1(Args args) throws Exception {
 
         String poolName = args.argv(0);
-        if(_htBlackPools.remove(poolName) !=null)
-        {
+        if(_poolsBlackList.remove(poolName) !=null) {
         	return "Pool "+poolName+" is removed from the black list ";
         }
-        else {
-        	return "Pool "+poolName+" was not found in the black list ";
-        }
 
+        return "Pool "+poolName+" was not found in the black list ";
     }
 
     public static String hh_remove_file = "<pnfsID> # remove this file ";
@@ -717,7 +756,7 @@ public class ChimeraCleaner extends CellAdapter implements Runnable {
         PreparedStatement stGetPoolsForFile = null;
         try {
 
-            stGetPoolsForFile = dbConnection.prepareStatement(sqlGetPoolsForFile);
+            stGetPoolsForFile = _dbConnection.prepareStatement(sqlGetPoolsForFile);
             stGetPoolsForFile.setString(1, filePnfsID);
             rs = stGetPoolsForFile.executeQuery();
 
@@ -728,7 +767,7 @@ public class ChimeraCleaner extends CellAdapter implements Runnable {
 
                 if ((okFileRemoved != null) && (okFileRemoved.length > 0)) {
 
-                    removeFiles(dbConnection, poolName, okFileRemoved);
+                    removeFiles(_dbConnection, poolName, okFileRemoved);
 
                     if (_logNamespace.isInfoEnabled()) {
                     	_logNamespace.info("ac_remove_file: File "+ Arrays.toString(okFileRemoved) );
@@ -736,16 +775,16 @@ public class ChimeraCleaner extends CellAdapter implements Runnable {
                     }
 
                     return "Submitted file was successfully removed from the pool "+poolName;
-
                 }
 
-                else {
-                	_logNamespace.debug(" submitted in ac_remove_file file could NOT be removed from pool "+poolName);
-		                	if (_htBlackPools.containsKey(poolName)) {
-		                		return "Submitted file could NOT be removed: it is on the pool which is in the black list now. Pool= "+poolName;
-		                	} else return "Submitted file could NOT be removed from pool "+poolName;
-                	}
-                }
+                _logNamespace.debug(" submitted in ac_remove_file file could NOT be removed from pool "+poolName);
+		        if (_poolsBlackList.containsKey(poolName)) {
+		        	return "Submitted file could NOT be removed: it is on the pool which is in the black list now. Pool= "+poolName;
+		        }
+
+		        return "Submitted file could NOT be removed from pool "+poolName;
+         	}
+
 
         } finally {
             tryToClose(rs);
@@ -759,7 +798,7 @@ public class ChimeraCleaner extends CellAdapter implements Runnable {
     public String ac_clean_pool_$_1(Args args) throws Exception {
 
         String poolName = args.argv(0);
-        CleanPoolComplete(dbConnection, poolName);
+        cleanPoolComplete(_dbConnection, poolName);
         return "";
     }
 
