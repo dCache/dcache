@@ -3873,6 +3873,9 @@ say( "size in bytes = " + sizeInBytes);
     }
     
     private void  fileFlushed(PoolFileFlushedMessage fileFlushed) throws Exception {
+	//
+	// check if file is ONLINE or NEARLINE (NB)
+	//
         PnfsId pnfsId = fileFlushed.getPnfsId();
         StorageInfo storageInfo = fileFlushed.getStorageInfo();
         say("fileFlushed("+pnfsId+")");
@@ -3880,6 +3883,14 @@ say( "size in bytes = " + sizeInBytes);
             //do nothing
             return;
         }
+
+	AccessLatency ac = storageInfo.getAccessLatency();
+	if ( ac != null && ac.equals(AccessLatency.ONLINE)) {
+	    say("File Access latency is ONLINE doing fileFlushed does nothinig");
+	    return;
+
+	}
+
         long size = storageInfo.getFileSize();
         
         Connection _con = null;
