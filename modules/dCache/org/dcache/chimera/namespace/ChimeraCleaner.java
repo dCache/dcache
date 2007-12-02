@@ -284,11 +284,11 @@ public class ChimeraCleaner extends CellAdapter implements Runnable {
      *
      * @param o
      */
-    void tryToClose(ResultSet o) {
+    static void tryToClose(ResultSet o) {
         try {
             if (o != null)
                 o.close();
-        } catch (Exception e) {
+        } catch (SQLException e) {
             _logNamespace.error("tryToClose ResultSet", e);
         }
     }
@@ -298,7 +298,7 @@ public class ChimeraCleaner extends CellAdapter implements Runnable {
      *
      * @param o
      */
-    void tryToClose(PreparedStatement o) {
+    static void tryToClose(PreparedStatement o) {
         try {
             if (o != null)
                 o.close();
@@ -627,7 +627,7 @@ public class ChimeraCleaner extends CellAdapter implements Runnable {
                             _logNamespace.debug(" files that WERE DELETED from this pool : ");
                             for (int x = 0; x < okRemoved.length; x++) {
                     			_logNamespace.debug("okRemoved[i=" + x + "]="+ okRemoved[x]);
-                        		}
+                            }
 
                         }
                         removeFiles(dbConnection, poolName, okRemoved);
@@ -807,10 +807,10 @@ public class ChimeraCleaner extends CellAdapter implements Runnable {
 
        if( args.argc() > 0 ){
           long newRefresh = Long.parseLong(args.argv(0)) * 1000L;
-          if( newRefresh < 5000L )
+          if( newRefresh < 5000L ) {
              throw new
              IllegalArgumentException("Time must be greater than 5 seconds");
-
+          }
           _refreshInterval = newRefresh ;
        }
        if( args.getOpt("wakeup") != null ){
@@ -826,10 +826,10 @@ public class ChimeraCleaner extends CellAdapter implements Runnable {
 
        if( args.argc() > 0 ){
           int processAtOnce = Integer.valueOf(args.argv(0));
-          if( processAtOnce == 0 )
+          if( processAtOnce == 0 ) {
              throw new
              IllegalArgumentException("Number of files must be greater than 0 ");
-
+          }
           _processAtOnce = processAtOnce ;
        }
 
