@@ -14,9 +14,9 @@ import dmg.cells.services.login.*;
 import diskCacheV111.vehicles.*;
 import diskCacheV111.util.*;
 
-public class TransferObserverV1 
-    extends CellAdapter 
-    implements Runnable      
+public class TransferObserverV1
+    extends CellAdapter
+    implements Runnable
 {
     private final CellNucleus   _nucleus;
     private final Args          _args;
@@ -32,7 +32,7 @@ public class TransferObserverV1
         = new HashMap<String, TableEntry>();
 
 
-    private static String[] __className = 
+    private static String[] __className =
     {
         "cell",               //   0
         "domain",             //   1
@@ -50,10 +50,10 @@ public class TransferObserverV1
         "time",               //  13
         "transferred",        //  14
         "speed",              //  15
-        "started"             //  16             
+        "started"             //  16
     };
 
-    private static String[] __listHeader = 
+    private static String[] __listHeader =
     {
         "Cell",               //   0
         "Domain",             //   1
@@ -71,10 +71,10 @@ public class TransferObserverV1
         "Time",               //  13
         "Trans.&nbsp;(KB)",   //  14
         "Speed&nbsp;(KB/s)",  //  15
-        "Started"             //  16             
+        "Started"             //  16
     };
-    
-    private class FieldMap 
+
+    private class FieldMap
     {
         private final Class[] _conArgsClass = { dmg.util.Args.class };
         private Class       _mapClass     = null;
@@ -82,7 +82,7 @@ public class TransferObserverV1
         private Object      _master       = null;
         private Method      _mapOwner     = null;
 
-        private FieldMap(String className , Args args) 
+        private FieldMap(String className , Args args)
         {
             if (className == null) {
                 esay("FieldMap : 'fieldMap' not defined");
@@ -94,7 +94,7 @@ public class TransferObserverV1
             try {
                 _mapClass     = Class.forName(className) ;
                 _constructor  = _mapClass.getConstructor(_conArgsClass) ;
-                _master       = _constructor.newInstance(conArgs); 
+                _master       = _constructor.newInstance(conArgs);
                 _mapOwner     = _mapClass.getMethod("mapOwner", classArgs ) ;
                 //
                 // only if this is ok, we can load the commandlistener ...
@@ -122,10 +122,10 @@ public class TransferObserverV1
         }
     }
 
-    private class DoorHandler 
+    private class DoorHandler
     {
         private Map<String, Entry> _doors = new HashMap<String, Entry>();
-        
+
         private synchronized Entry defineDoor(String doorName)
         {
             Entry entry = _doors.get(doorName);
@@ -134,12 +134,12 @@ public class TransferObserverV1
             return entry;
         }
 
-        private Set<String> doors() 
+        private Set<String> doors()
         {
             return _doors.keySet();
         }
 
-        private Collection<Entry> entries() 
+        private Collection<Entry> entries()
         {
             return _doors.values();
         }
@@ -147,7 +147,7 @@ public class TransferObserverV1
         private synchronized Entry undefineDoor(String doorName)
         {
             Entry entry = _doors.get(doorName);
-            if (entry != null) 
+            if (entry != null)
                 entry.setFixed(false);
             return entry;
         }
@@ -164,7 +164,7 @@ public class TransferObserverV1
         {
             String doorName = info.getCellName()+"@"+info.getCellDomainName();
             Entry entry = _doors.get(doorName);
-            if (entry == null) 
+            if (entry == null)
                 _doors.put(doorName, entry = new Entry(doorName));
             entry.setChildInfo(info);
             return entry;
@@ -176,35 +176,35 @@ public class TransferObserverV1
             while (i.hasNext()) {
                 Map.Entry<String,Entry> e = i.next();
                 Entry entry = e.getValue();
-                if (entry.isFixed()) 
+                if (entry.isFixed())
                     entry.setChildInfo(null);
-                else 
+                else
                     i.remove();
             }
         }
 
-        private class Entry 
+        private class Entry
         {
             private boolean _isFixed = false;
             private String  _doorName = null;
             private LoginManagerChildrenInfo _info = null;
-           
+
             private Entry(String doorName)
             {
-                this(doorName, false); 
+                this(doorName, false);
             }
-           
+
             private Entry(String doorName, boolean isFixed)
             {
                 _isFixed  = isFixed;
                 _doorName = doorName;
             }
-           
+
             private LoginManagerChildrenInfo getChildInfo()
             {
                 return _info;
             }
-           
+
             private void setChildInfo(LoginManagerChildrenInfo info)
             {
                 _info = info;
@@ -219,21 +219,21 @@ public class TransferObserverV1
             {
                 _isFixed = fixed;
             }
-        }    
-    }   
-    
-    public TransferObserverV1(String name, String  args) throws Exception 
+        }
+    }
+
+    public TransferObserverV1(String name, String  args) throws Exception
     {
         super(name, TransferObserverV1.class.getName(), args, false);
-        
+
         _nucleus = getNucleus();
         _args    = getArgs();
         _doors   = new DoorHandler();
-        
+
         try {
             if (_args.argc() < 0)
                 throw new IllegalArgumentException("Usage : ... ");
-            
+
             //
             // check for 'doors' option. If present,
             // load them into the doors (fixed)
@@ -256,7 +256,7 @@ public class TransferObserverV1
             }
 
             //
-            // if login broker is defined, the 
+            // if login broker is defined, the
             // worker will add the 'fixed' door list to the
             // list provided by the loginBroker.
             //
@@ -271,12 +271,12 @@ public class TransferObserverV1
             kill();
             throw e;
         }
-        useInterpreter(true); 
+        useInterpreter(true);
         start();
         export();
     }
 
-    private class TableEntry 
+    private class TableEntry
     {
         private String  _tableName = null;
         private int []  _fields    = null;
@@ -300,12 +300,12 @@ public class TransferObserverV1
 
         private int [] getFields()
         {
-            return _fields; 
+            return _fields;
         }
 
         private String getName()
-        { 
-            return _tableName; 
+        {
+            return _tableName;
         }
 
         public String toString()
@@ -318,16 +318,16 @@ public class TransferObserverV1
                 }
                 sb.append(_fields[_fields.length - 1]);
             }
-            if (_title != null) 
+            if (_title != null)
                 sb.append("  \"").append(_title).append("\"");
             return sb.toString();
         }
 
         private boolean ifNotYetStarted()
         {
-            return _ifNotYetStarted; 
+            return _ifNotYetStarted;
         }
-        
+
         private boolean ifMoverMissing()
         {
             return _ifMoverMissing;
@@ -351,13 +351,13 @@ public class TransferObserverV1
     }
 
     public String hh_table_define = "<tableName> <n>[,<m>[,...]] [<tableHeader>]" ;
-    public synchronized String ac_table_define_$_2_3(Args args) 
-        throws NumberFormatException 
+    public synchronized String ac_table_define_$_2_3(Args args)
+        throws NumberFormatException
     {
         String     tableName = args.argv(0);
         String        header = args.argc() > 2 ? args.argv(2) : null;
         String[]        list = args.argv(1).split(",");
- 
+
         int[] array = new int[list.length];
         for (int i = 0; i < list.length; i++) {
             array[i] = Integer.valueOf(list[i]);
@@ -378,7 +378,7 @@ public class TransferObserverV1
     }
 
     public String hh_table_ls = "[<tableName>]";
-    public synchronized String ac_table_ls_$_0_1(Args args) throws Exception 
+    public synchronized String ac_table_ls_$_0_1(Args args) throws Exception
     {
         StringBuilder sb = new StringBuilder();
         if (args.argc() == 0) {
@@ -396,13 +396,13 @@ public class TransferObserverV1
     }
 
     public String hh_set_update = "<updateTime/sec>";
-    public String ac_set_update_$_1(Args args) 
+    public String ac_set_update_$_1(Args args)
     {
         long update = Long.parseLong(args.argv(0)) * 1000L;
         if (update < 10000L)
             throw new
                 IllegalArgumentException("Update time must exceed 10 seconds");
-           
+
         synchronized (this) {
             _update = update;
             notifyAll();
@@ -418,7 +418,7 @@ public class TransferObserverV1
         pw.println(" Last Time Used : "+_timeUsed+" msec's");
     }
 
-    public void run() 
+    public void run()
     {
         try {
             for (;;) {
@@ -435,29 +435,28 @@ public class TransferObserverV1
                 synchronized (this) {
                     wait(_update);
                 }
-            }    
-        } catch (InterruptedException e) {           
+            }
+        } catch (InterruptedException e) {
             esay("Data collector interrupted");
         }
     }
     //
     // lowest priority transfer observer.
     //
-     private class IoEntry implements Comparable 
+     private class IoEntry implements Comparable<IoEntry>
      {
-         private IoDoorInfo _ioDoorInfo   = null;
-         private IoDoorEntry _ioDoorEntry = null;
+         private final IoDoorInfo _ioDoorInfo ;
+         private final IoDoorEntry _ioDoorEntry ;
          private IoJobInfo   _ioJobInfo   = null;
- 
+
          private IoEntry(IoDoorInfo info, IoDoorEntry entry)
          {
              _ioDoorInfo = info ;
              _ioDoorEntry = entry ;
          }
- 
-         public int compareTo(Object obj)
+
+         public int compareTo(IoEntry other)
          {
-             IoEntry other = (IoEntry)obj ;
              int tmp = _ioDoorInfo.getDomainName().compareTo(other._ioDoorInfo.getDomainName()) ;
              if (tmp != 0)
                  return tmp;
@@ -465,17 +464,25 @@ public class TransferObserverV1
              if (tmp != 0)
                  return tmp;
              return Long.valueOf(_ioDoorEntry.getSerialId()).
-                 compareTo(Long.valueOf(other._ioDoorEntry.getSerialId())); 
+                 compareTo(Long.valueOf(other._ioDoorEntry.getSerialId()));
          }
-         
+
          public boolean equals(Object obj)
          {
+             if( obj == this ) return true;
+             if( !(obj instanceof IoEntry ) ) return false;
+
              IoEntry other = (IoEntry)obj;
              return _ioDoorInfo.getDomainName().equals(other._ioDoorInfo.getDomainName()) &&
                  _ioDoorInfo.getCellName().equals(other._ioDoorInfo.getCellName()) &&
-                 
+
                  (_ioDoorEntry.getSerialId() == other._ioDoorEntry.getSerialId());
         }
+
+         public int hashCode() {
+             // required to by some Collections
+             return 17;
+         }
     }
 
     public String hh_go = "[-parallel]";
@@ -485,23 +492,23 @@ public class TransferObserverV1
             _nucleus.newThread(new Runnable(){
                     public void run()
                     {
-                        collectDataSequentially(); 
+                        collectDataSequentially();
                     }
                 }, "worker").start();
             return "Started";
         } else {
             synchronized (this) {
-                notifyAll();                
+                notifyAll();
             }
             return "Process Notified";
         }
     }
 
     private Object request(String path, Object message)
-        throws Exception 
+        throws Exception
     {
         CellMessage request = new CellMessage(new CellPath(path), message);
-        
+
         request = sendAndWait(request, _timeout);
         if (request == null)
             throw new Exception(path + " reply timed out");
@@ -522,11 +529,11 @@ public class TransferObserverV1
                 try {
                     LoginBrokerInfo [] infos =
                         (LoginBrokerInfo [])request(loginBroker, "ls -binary");
-                 
+
                     StringBuilder sb = new StringBuilder();
                     sb.append("LoginBroker (" + loginBroker + ") : ");
                     for (LoginBrokerInfo info : infos) {
-                        String doorName = 
+                        String doorName =
                             info.getCellName()+"@"+ info.getDomainName();
                         _doors.addDoor(doorName);
                         sb.append(doorName).append(",");
@@ -540,23 +547,23 @@ public class TransferObserverV1
             updateDoorPage(infoList.toArray(new LoginBrokerInfo[infoList.size()])) ;
         }
     }
-    
+
     private void collectDataSequentially()
     {
         _doors.clear();
-       
+
         getBrokerInfo();
-       
+
         pin("Asking doors for 'doorClientList' (one by one)");
         for (String doorName : _doors.doors()) {
             pin("Requesting client list from : " + doorName);
             try {
                 LoginManagerChildrenInfo info = (LoginManagerChildrenInfo)
                     request(doorName, "get children -binary");
-                  
+
                 pin(doorName + " reported about " + info.getChildrenCount() +
-                    " children");   
-                             
+                    " children");
+
                 _doors.setDoorInfo(info);
             } catch (Exception e) {
                 _doors.undefineDoor(doorName);
@@ -570,23 +577,21 @@ public class TransferObserverV1
         Set<String>          poolHash = new HashSet<String>();
         for (DoorHandler.Entry entry : _doors.entries()) {
             LoginManagerChildrenInfo info = entry.getChildInfo();
-            Iterator children  = info.getChildren().iterator();
-          
-            while (children.hasNext()) {
-                String childDoor = children.next().toString()+"@"+
-                    info.getCellDomainName() ;
+
+            for ( String child: info.getChildren()) {
+                String childDoor = child+"@"+info.getCellDomainName() ;
 
                 pin("Requesting client info from : " + childDoor);
                 try {
                     IoDoorInfo ioDoorInfo = (IoDoorInfo)
                         request(childDoor,"get door info -binary");
 
-                    pin(childDoor + " reply ok");   
+                    pin(childDoor + " reply ok");
 
                     List ioDoorEntries = ioDoorInfo.getIoDoorEntries();
                     if (ioDoorEntries.size() == 0)
                         continue;
-                 
+
                     Iterator ios = ioDoorEntries.iterator() ;
                     while (ios.hasNext()) {
                         IoDoorEntry ioDoorEntry = (IoDoorEntry)ios.next() ;
@@ -601,7 +606,7 @@ public class TransferObserverV1
 
                 } catch (Exception e) {
                     pin("Exception : " + e);
-                }                 
+                }
             }
         }
         pin("Asking pools for io info");
@@ -611,7 +616,7 @@ public class TransferObserverV1
                 IoJobInfo [] infos = (IoJobInfo [] )
                     request(poolName, "mover ls -binary");
 
-                pin(poolName + " reply ok");   
+                pin(poolName + " reply ok");
 
                 //
                 // where is our client
@@ -619,7 +624,7 @@ public class TransferObserverV1
                 for (IoJobInfo info : infos) {
                     String client = info.getClientName()+"#"+
                         info.getClientId() ;
-                    IoEntry ioEntry = (IoEntry)ioList.get(client);
+                    IoEntry ioEntry = ioList.get(client);
                     if (ioEntry == null) {
                         pin("No entry found for : " + client);
                     } else {
@@ -630,16 +635,16 @@ public class TransferObserverV1
                 pin("Exception : " + e);
             }
         }
-        List<IoEntry> resultList = null; 
+        List<IoEntry> resultList = null;
         synchronized (this) {
             _ioList = new ArrayList<IoEntry>(new TreeSet<IoEntry>(ioList.values()));
             _nucleus.getDomainContext().put("transfers.list", _ioList);
 
             resultList = _ioList;
         }
-        _nucleus.getDomainContext().put("transfers.html", 
+        _nucleus.getDomainContext().put("transfers.html",
                                         createHtmlTable(resultList));
-        _nucleus.getDomainContext().put("transfers.txt", 
+        _nucleus.getDomainContext().put("transfers.txt",
                                         createAsciiTable(resultList));
 
         createDynamicTables(resultList);
@@ -654,15 +659,15 @@ public class TransferObserverV1
         HTMLBuilder page = new HTMLBuilder(_nucleus.getDomainContext());
 
         page.addHeader("/styles/doors.css", "Doors");
-        page.beginTable("sortable", 
-                        "cell",     "Cell", 
-                        "domain",   "Domain", 
-                        "protocol", "Protocol", 
-                        "version",  "Version", 
-                        "host",     "Host", 
+        page.beginTable("sortable",
+                        "cell",     "Cell",
+                        "domain",   "Domain",
+                        "protocol", "Protocol",
+                        "version",  "Version",
+                        "host",     "Host",
                         "port",     "Port",
                         "load",     "Load");
-       
+
         for (LoginBrokerInfo info : infos) {
             page.beginRow(null, "odd");
             page.td("cell",     info.getCellName());
@@ -720,17 +725,17 @@ public class TransferObserverV1
 
     public String hh_ls_iolist = "";
     public synchronized String ac_ls_iolist(Args args)
-    {       
+    {
         if (_ioList == null)
-            return "";  
+            return "";
         return createAsciiTable(_ioList);
     }
 
     private String createAsciiTable(List<IoEntry> ioList)
-    {    
+    {
         long          now = System.currentTimeMillis();
         StringBuilder sb  = new StringBuilder();
-       
+
         for (IoEntry io : ioList) {
             sb.append(io._ioDoorInfo.getCellName()).append(" ").
                 append(io._ioDoorInfo.getDomainName()).append(" ");
@@ -744,14 +749,14 @@ public class TransferObserverV1
                 append(io._ioDoorEntry.getReplyHost()).append(" ").
                 append(io._ioDoorEntry.getStatus()).append(" ").
                 append((now -io._ioDoorEntry.getWaitingSince())).append(" ");
-             
+
             if (io._ioJobInfo == null) {
                 sb.append("No-Mover-Found");
             } else {
                 sb.append(io._ioJobInfo.getStatus()).append(" ");
                 if (io._ioJobInfo.getStartTime() > 0L) {
                     long transferTime     = io._ioJobInfo.getTransferTime();
-                    long bytesTransferred = io._ioJobInfo.getBytesTransferred(); 
+                    long bytesTransferred = io._ioJobInfo.getBytesTransferred();
                     sb.append(transferTime).append(" ").
                         append(bytesTransferred).append(" ").
                         append( transferTime > 0 ? ( (double)bytesTransferred/(double)transferTime ) : 0 ).
@@ -768,7 +773,7 @@ public class TransferObserverV1
     {
         long         now = System.currentTimeMillis();
         List<String> out = new ArrayList<String>(20);
-       
+
         PnfsId pnfsid = io._ioDoorEntry.getPnfsId();
         String status = io._ioDoorEntry.getStatus();
         out.add(io._ioDoorInfo.getCellName());
@@ -792,7 +797,7 @@ public class TransferObserverV1
                 long bytesTransferred = io._ioJobInfo.getBytesTransferred();
                 out.add(getTimeString(transferTime));
                 out.add(Long.toString(bytesTransferred / 1024));
-                out.add(transferTime > 0 ? 
+                out.add(transferTime > 0 ?
                         String.valueOf((1000 * bytesTransferred) / (1024 * transferTime)) :
                         "-");
                 out.add(getTimeString(now - io._ioJobInfo.getStartTime()));
@@ -800,28 +805,28 @@ public class TransferObserverV1
         }
         return out;
     }
- 
+
     private String getTimeString(long msec)
     {
         int sec  =  (int) ( msec / 1000L );
         int min  =  sec / 60; sec  = sec  % 60;
         int hour =  min / 60; min  = min  % 60;
         int day  = hour / 24; hour = hour % 24;
-        
+
         String sS = Integer.toString(sec);
         String mS = Integer.toString(min);
         String hS = Integer.toString(hour);
-        
+
         StringBuilder sb = new StringBuilder();
         if (day > 0)
             sb.append(day).append(" d ");
         sb.append(hS.length() < 2 ? ("0" + hS) : hS).append(":");
         sb.append(mS.length() < 2 ? ("0" + mS) : mS).append(":");
         sb.append(sS.length() < 2 ? ("0" + sS) : sS);
-        
+
         return sb.toString();
     }
- 
+
     private void createHtmlTableRow(HTMLBuilder page, IoEntry io)
     {
         long now = System.currentTimeMillis();
@@ -832,15 +837,15 @@ public class TransferObserverV1
         page.td("sequence", io._ioDoorEntry.getSerialId());
         page.td("protocol", io._ioDoorInfo.getProtocolFamily() +
                      "-" + io._ioDoorInfo.getProtocolVersion());
- 
+
         String tmp = io._ioDoorInfo.getOwner() ;
         tmp = tmp.indexOf("known") > -1 ? "?" : _fieldMap.mapOwner(tmp) ;
         page.td("owner", tmp);
- 
+
         tmp = io._ioDoorInfo.getProcess() ;
         tmp = tmp.indexOf("known") > -1 ? "?" : tmp ;
         page.td("process", tmp);
- 
+
         String poolName = io._ioDoorEntry.getPool() ;
         if (poolName == null || poolName.equals("<unknown>"))
             poolName =  "N.N.";
@@ -850,7 +855,7 @@ public class TransferObserverV1
         String status = io._ioDoorEntry.getStatus();
         page.td("status", status != null ? status.replace(" ", "&nbsp;") : "");
         page.td("wait", getTimeString(now - io._ioDoorEntry.getWaitingSince()));
- 
+
         if (io._ioJobInfo == null) {
             if (poolName.equals("N.N.")) {
                 page.td(3, "staging", "Staging");
@@ -861,11 +866,11 @@ public class TransferObserverV1
             page.td("state", io._ioJobInfo.getStatus());
             if (io._ioJobInfo.getStartTime() > 0L) {
                 long transferTime     = io._ioJobInfo.getTransferTime() ;
-                long bytesTransferred = io._ioJobInfo.getBytesTransferred() ; 
+                long bytesTransferred = io._ioJobInfo.getBytesTransferred() ;
                 //  appendCells(sbtransferTime/1000L);
                 page.td("transferred", bytesTransferred / 1024);
-                page.td("speed", transferTime > 0 ? 
-                             (1000 * bytesTransferred) / (1024 * transferTime) : 
+                page.td("speed", transferTime > 0 ?
+                             (1000 * bytesTransferred) / (1024 * transferTime) :
                              "-");
                 //  appendCells(sb, (now-io._ioJobInfo.getStartTime())/1000L);
             } else {
@@ -877,18 +882,18 @@ public class TransferObserverV1
     }
 
     public String createHtmlTable(List<IoEntry> ioList)
-    {    
+    {
         HTMLBuilder page = new HTMLBuilder(_nucleus.getDomainContext());
 
         page.addHeader("/styles/transfers.css", "Active Transfers");
-        page.beginTable("sortable", 
-                        "door", "Door", 
+        page.beginTable("sortable",
+                        "door", "Door",
                         "domain", "Domain",
                         "sequence", "Seq",
                         "protocol", "Prot",
                         "owner", "Owner",
-                        "process", "Proc", 
-                        "pnfs", "PnfsId", 
+                        "process", "Proc",
+                        "pnfs", "PnfsId",
                         "pool", "Pool",
                         "host", "Host",
                         "status", "Status",
@@ -902,21 +907,21 @@ public class TransferObserverV1
         page.endTable();
         page.addFooter(getClass().getName() + " [$Revision: 1.18 $]");
         return page.toString();
-    }    
+    }
 
     public String createErrorHtmlTable(List<IoEntry> ioList)
-    {    
+    {
         HTMLBuilder page = new HTMLBuilder(_nucleus.getDomainContext());
 
         page.addHeader("/styles/transfers.css", "Active Transfers");
-        page.beginTable("sortable", 
-                        "door", "Door", 
+        page.beginTable("sortable",
+                        "door", "Door",
                         "domain", "Domain",
                         "sequence", "Seq",
                         "protocol", "Prot",
                         "owner", "Owner",
-                        "process", "Proc", 
-                        "pnfs", "PnfsId", 
+                        "process", "Proc",
+                        "pnfs", "PnfsId",
                         "pool", "Pool",
                         "host", "Host",
                         "status", "Status",
@@ -924,7 +929,7 @@ public class TransferObserverV1
                         "state", "S",
                         "transferred", "Trans.&nbsp;(KB)",
                         "speed", "Speed&nbsp;(KB/s)");
-       
+
         for (IoEntry io : ioList) {
             if (io._ioJobInfo == null) {
                 createHtmlTableRow(page, io);
