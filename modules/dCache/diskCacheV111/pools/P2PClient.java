@@ -57,13 +57,13 @@ public class P2PClient {
       private int           _recommendedPort = 0 ;
       private Thread        _worker          = null ;
       private String        _error           = null ;
-      private void setPort( int listenPort ){
+      private synchronized void setPort( int listenPort ){
         if( _serverSocket != null )
            throw new
            IllegalArgumentException("Port already listening") ;
         _recommendedPort = listenPort ;
       }
-      private int getPort(){ return _listenPort ; }
+      private synchronized int getPort(){ return _listenPort ; }
       private synchronized void start(){
          if( _serverSocket != null )return ;
          try{
@@ -81,7 +81,7 @@ public class P2PClient {
       public void run(){
         try{
            while( true ){
-              new IOHandler( _serverSocket.accept() ) ;             
+              new IOHandler( _serverSocket.accept() ) ;
            }
         }catch(Exception ioe ){
             _cell.esay("Problem in accepting connection : "+ioe ) ;
@@ -92,7 +92,7 @@ public class P2PClient {
         return "Listen port (recommended="+
                   _recommendedPort+") "+
                   ( _error != null ? ( "Error : "+_error ) :
-                    _listenPort < 0 ? "Inactive" : 
+                    _listenPort < 0 ? "Inactive" :
                     ""+_listenPort ) ;
       }
    }
@@ -123,12 +123,12 @@ public class P2PClient {
          _status = status ;
       }
       private void runIO() throws Exception {
-    		  
+
     	 DataInputStream in   = new DataInputStream(_socket.getInputStream()) ;
-         
+
          setStatus("<init>") ;
          _sessionId = in.readInt() ;
-         
+
          //
          // find the session id
          //
@@ -136,14 +136,14 @@ public class P2PClient {
          if( _companion == null )
             throw new
             IOException( "Unexpected Session Id : "+_sessionId ) ;
-         _companion.setIOHandler(this); 
+         _companion.setIOHandler(this);
          _dataFile = new RandomAccessFile(_companion.getDataFile(),"rw") ;
-         
+
          int challengeSize = in.readInt() ;
          in.skipBytes(challengeSize) ;
-         
+
          DataOutputStream out = new DataOutputStream(_socket.getOutputStream()) ;
-         
+
          setStatus("<gettingFilesize>") ;
          out.writeInt(4) ; // bytes following
          out.writeInt(9) ;  // locate command
@@ -154,17 +154,17 @@ public class P2PClient {
          if( following < 28 )
            throw new
            IOException( "Protocol Violation : ack too small : "+following);
-         
+
          int type = in.readInt() ;
          if( type != 6 )   // REQUEST_ACK
            throw new
            IOException( "Protocol Violation : NOT REQUEST_ACK : "+type ) ;
-         
+
          int mode = in.readInt() ;
          if( mode != 9 ) // SEEK
            throw new
            IOException( "Protocol Violation : NOT SEEK : "+mode ) ;
-         
+
          int returnCode = in.readInt() ;
          if( returnCode != 0 ){
            String error = in.readUTF() ;
@@ -176,10 +176,10 @@ public class P2PClient {
          setStatus("<WaitingForSpace-"+filesize+">");
          _repository.allocateSpace(filesize) ;
          _spaceAllocated = filesize ;
-         //  
+         //
          in.readLong() ;   // file position
-         
-         
+
+
          setStatus("<StartingIO>") ;
          //
          // request the full file
@@ -194,17 +194,17 @@ public class P2PClient {
          if( following < 12 )
            throw new
            IOException( "Protocol Violation : ack too small : "+following);
-         
+
          type = in.readInt() ;
          if( type != 6 )   // REQUEST_ACK
            throw new
            IOException( "Protocol Violation : NOT REQUEST_ACK : "+type ) ;
-         
+
          mode = in.readInt() ;
          if( mode != 2 ) // READ
            throw new
            IOException( "Protocol Violation : NOT SEEK : "+mode ) ;
-         
+
          returnCode = in.readInt() ;
          if( returnCode != 0 ){
            String error = in.readUTF() ;
@@ -228,16 +228,16 @@ public class P2PClient {
          if( type != 8 )   // DATA
            throw new
            IOException( "Protocol Violation : NOT DATA : "+type ) ;
-         
+
          byte [] data = new byte[256*1024] ;
          MessageDigest digest = new Adler32();
          int nextPacket = 0 ;
          long total     = 0L ;
          while( true ){
             if( ( nextPacket = in.readInt() ) < 0 )break ;
-            
+
             int restPacket = nextPacket ;
-            
+
             while( restPacket > 0 ){
                int block = Math.min( restPacket , data.length ) ;
                //
@@ -258,7 +258,7 @@ public class P2PClient {
                _status = "<RunningIo="+total+">";
                _dataFile.write( data , 0 , block ) ;
                restPacket -= block ;
-               
+
                digest.update(data, 0, block);
             }
          }
@@ -270,17 +270,17 @@ public class P2PClient {
          if( following < 12 )
            throw new
            IOException( "Protocol Violation : ack too small : "+following);
-         
+
          type = in.readInt() ;
          if( type != 7 )   // REQUEST_FIN
            throw new
            IOException( "Protocol Violation : NOT REQUEST_ACK : "+type ) ;
-         
+
          mode = in.readInt() ;
          if( mode != 2 ) // READ
            throw new
            IOException( "Protocol Violation : NOT SEEK : "+mode ) ;
-         
+
          returnCode = in.readInt() ;
          if( returnCode != 0 ){
            String error = in.readUTF() ;
@@ -290,7 +290,7 @@ public class P2PClient {
          }
          setStatus("<WaitingForCloseAck>") ;
          //
-         out.writeInt(4) ;  // bytes following 
+         out.writeInt(4) ;  // bytes following
          out.writeInt(4) ;  // close request
          //
          // waiting for reply
@@ -299,17 +299,17 @@ public class P2PClient {
          if( following < 12 )
            throw new
            IOException( "Protocol Violation : ack too small : "+following);
-         
+
          type = in.readInt() ;
          if( type != 6 )   // REQUEST_FIN
            throw new
            IOException( "Protocol Violation : NOT REQUEST_ACK : "+type ) ;
-         
+
          mode = in.readInt() ;
          if( mode != 4 ) // READ
            throw new
            IOException( "Protocol Violation : NOT SEEK : "+mode ) ;
-         
+
          returnCode = in.readInt() ;
          if( returnCode != 0 ){
            String error = in.readUTF() ;
@@ -317,27 +317,27 @@ public class P2PClient {
            IOException( "Close ack Failed : ("+
                         returnCode+") "+error ) ;
          }
-         
-         _companion.setTransferChecksum (new Checksum( digest ) );
-         
-         _cell.esay("Adler32 checksum computed for p2p transfer (SessionID="+_sessionId+" pnfsid="+_companion.getEntry().getPnfsId()+" sourcePool="+_companion.getSourcePool()+" checksum="+_companion.getTransferChecksum().toHexString()+")");
-         
 
-         
+         _companion.setTransferChecksum (new Checksum( digest ) );
+
+         _cell.esay("Adler32 checksum computed for p2p transfer (SessionID="+_sessionId+" pnfsid="+_companion.getEntry().getPnfsId()+" sourcePool="+_companion.getSourcePool()+" checksum="+_companion.getTransferChecksum().toHexString()+")");
+
+
+
          setStatus("<Done>");
       }
-      
-      
+
+
       public void run(){
          try{
 
             runIO() ;
-            
+
             _checksumModule.setMoverChecksums(
             		_companion.getEntry(), null,
             		null,
             		_checksumModule.checkOnTransfer() ? _companion.getTransferChecksum() : null );
-            
+
 
             if( _fail )
                 throw new IOException("Transfer failed (simulate)");
@@ -349,15 +349,15 @@ public class P2PClient {
 //          clean up before exiting
 //          not having a _companion at this point means an unsolicited connect happened (e.g. a portscan)
             if ( _companion != null ) {
-            
+
             	if( _spaceAllocated != 0L)
             		try {
             			_repository.freeSpace(_spaceAllocated - _companion.getEntry().getSize());
             		} catch (CacheException ignored) {
             			// exception is never thrown, we can ignore this safely
             	}
-            	
-            	
+
+
             	try{
             		_repository.removeEntry( _companion.getEntry() ) ;
             	}catch(Exception ee ){
@@ -383,31 +383,31 @@ public class P2PClient {
          // try to get the storage info (no problem if it fails)
          //
          try{
-            PnfsGetStorageInfoMessage storageInfoMsg = 
+            PnfsGetStorageInfoMessage storageInfoMsg =
                   new PnfsGetStorageInfoMessage( _companion.getEntry().getPnfsId() ) ;
 
-            CellMessage answer = _cell.sendAndWait( 
+            CellMessage answer = _cell.sendAndWait(
                             new CellMessage(
                                  new CellPath("PnfsManager") ,
                                  storageInfoMsg ),
                                  _pnfsTimeout ) ;
 
             Message message = (Message)answer.getMessageObject() ;
-            
+
             if( message.getReturnCode() != 0 )
-               throw new 
+               throw new
                CacheException(message.getReturnCode(),message.getErrorObject().toString());
-               
+
             StorageInfo info = ((PnfsGetStorageInfoMessage)message).getStorageInfo() ;
             entry.setStorageInfo(info) ;
-            
+
             String value = info.getKey("flag-s") ;
             if( ( value != null ) && ( ! value.equals("") ) ){
                say( "setting sticky bit of "+entry ) ;
                entry.setSticky(true) ;
             }
 
-                         
+
          }catch(Exception eee ){
             esay("Failed to set storageinfo : "+ eee ) ;
          }
@@ -423,16 +423,16 @@ public class P2PClient {
       private IOHandler  _ioHandler = null ;
       private String     _status    = "<idle>";
       private CacheRepositoryEntry _entry = null ;
-      
+
       private PoolDeliverFileMessage      _initOkMsg     = null ;
       private DoorTransferFinishedMessage _transferOkMsg = null ;
-      
+
       private CacheFileAvailable  _callback = null ;
 	  private Checksum transferCS = null;
       private String _srcPoolName;
-      
-      private Companion( CacheRepositoryEntry entry, String srcPoolName ){ 
-         _id    = getNextId() ; 
+
+      private Companion( CacheRepositoryEntry entry, String srcPoolName ){
+         _id    = getNextId() ;
          _entry = entry ;
          _sessions.put( _id, this ) ;
          _srcPoolName = srcPoolName;
@@ -440,28 +440,28 @@ public class P2PClient {
       private void setTransferChecksum(Checksum checksum) {
 		this.transferCS  = checksum;
       }
-      
+
       private Checksum getTransferChecksum() {
     	  return transferCS;
       }
-      
+
 	private void setCallback( CacheFileAvailable callback ){
          _callback = callback ;
       }
       private CacheFileAvailable getCallback(){ return _callback ; }
       private int getSessionId(){ return _id ; }
       private CacheRepositoryEntry getEntry(){ return _entry ; }
-      private File getDataFile() throws CacheException { 
+      private File getDataFile() throws CacheException {
          return _entry.getDataFile() ;
       }
-      private void setIOHandler( IOHandler ioHandler ){ 
+      private void setIOHandler( IOHandler ioHandler ){
         _ioHandler = ioHandler ;
       }
       public String toString(){
         return ""+_id+" "+
                _entry.getPnfsId()+" "+_status+" "+
 	       (_ioHandler==null?"<noHandlerYet>":_ioHandler.toString()) ;
-      }  
+      }
       private synchronized void pool2PoolIoFileMsgArrived( PoolDeliverFileMessage message ){
          _initOkMsg = message ;
           say("" + _id + " : PoolDeliverFileMessage : " + message);
@@ -510,7 +510,7 @@ public class P2PClient {
    public Companion newCompanion( PnfsId pnfsId , String poolName ,
                                   StorageInfo storageInfo ,
                                   CacheFileAvailable callback       )throws Exception{
-   
+
       //
       // make sure the entry doens't yet exist.
       // and create it.
@@ -540,13 +540,13 @@ public class P2PClient {
                 InetAddress.getLocalHost().getHostAddress() ,
                 _acceptor.getPort() ) ;
       pinfo.setSessionId( companion.getSessionId() ) ;
-                
+
       StorageInfo sinfo = storageInfo != null ? storageInfo : new DummyStorageInfo() ;
 
-      PoolDeliverFileMessage request = 
+      PoolDeliverFileMessage request =
            new PoolDeliverFileMessage( poolName , pnfsId , pinfo , sinfo ) ;
       request.setPool2Pool() ;
-           
+
       try{
          _cell.sendMessage( new CellMessage( new CellPath(poolName) , request) ) ;
       }catch( Exception ee ){
@@ -561,7 +561,7 @@ public class P2PClient {
          }
          throw ee ;
       }
-     
+
       return companion ;
    }
    public void messageArrived( Message message , CellMessage cellMessage ){
@@ -569,9 +569,9 @@ public class P2PClient {
            message.getClass().getName()+
            " : "+message ) ;
       if( message instanceof PoolDeliverFileMessage ){
-      
+
          PoolDeliverFileMessage msg   = (PoolDeliverFileMessage)message ;
-         DCapProtocolInfo   pinfo     = (DCapProtocolInfo)msg.getProtocolInfo() ;	 
+         DCapProtocolInfo   pinfo     = (DCapProtocolInfo)msg.getProtocolInfo() ;
          int                sessionId = pinfo.getSessionId() ;
          Companion          companion = (Companion)_sessions.get(sessionId);
          if( companion == null ){
@@ -579,9 +579,9 @@ public class P2PClient {
             return ;
          }
 	 companion.pool2PoolIoFileMsgArrived( msg ) ;
-	 
+
       }else if( message instanceof DoorTransferFinishedMessage ){
-      
+
          DoorTransferFinishedMessage msg       = (DoorTransferFinishedMessage)message ;
          DCapProtocolInfo            pinfo     = (DCapProtocolInfo)msg.getProtocolInfo() ;
          int                         sessionId = pinfo.getSessionId() ;
@@ -590,9 +590,9 @@ public class P2PClient {
             _cell.esay( "companion not found for id "+sessionId);
             return ;
          }
-	 
+
 	 companion.poolTransferFinishedArrived( msg ) ;
-	 
+
       }else{
          _cell.esay( "Unexpected message arrived ("+message.getClass().getName()+
                " : "+message ) ;
@@ -639,7 +639,7 @@ public class P2PClient {
       if( o == null )
          throw new
 	 IllegalArgumentException("Id not found : "+args.argv(0));
-      return "" ; 
+      return "" ;
    }
    public String hh_pp_keep = "on|off" ;
    public String ac_pp_keep_$_1( Args args )throws Exception {
@@ -656,7 +656,7 @@ public class P2PClient {
    }
    public String hh_pp_ls = " # get the list of companions" ;
    public String ac_pp_ls( Args args )throws Exception {
-   
+
       StringBuffer sb = new StringBuffer() ;
 
       for( Companion c: _sessions.values() ){
