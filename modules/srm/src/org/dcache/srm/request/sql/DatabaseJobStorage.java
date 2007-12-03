@@ -712,7 +712,7 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
                             }
                         }
                         connection.commit();
-                        return;
+                        
                     }
                     catch(SQLException sqle) {
                         esay("storageof job="+jobId+" failed with ");
@@ -726,13 +726,13 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
                 {
                     esay("update result is 0, but the record exists, ignore, but the job state might not be saved correctly");
                 }
-                if(historyInserts != null) {
-                    for(int i =0; i< historyInserts.length; ++i) {
-                        innersay("executing statement: "+historyInserts[i]);
-                        Statement statement = connection.createStatement();
-                        statement.executeUpdate(historyInserts[i]);
-                        statement.close();
-                    }
+            }
+            if(historyInserts != null) {
+                for(int i =0; i< historyInserts.length; ++i) {
+                    innersay("executing statement: "+historyInserts[i]);
+                    Statement statement = connection.createStatement();
+                    statement.executeUpdate(historyInserts[i]);
+                    statement.close();
                 }
             }
         } catch (InterruptedException ie) {

@@ -1315,6 +1315,7 @@ public class Configuration {
         sb.append("\n\tvacuum_period_sec=").append(this.vacuum_period_sec);
         sb.append("\n\tlambda_station_map_file=").append(this.lambda_station_map_file);
         sb.append("\n\tlambda_station_script=").append(this.lambda_station_script);
+        sb.append("\n\tjdbcMonitoringEnabled=").append(this.jdbcMonitoringEnabled);
         
         
         
