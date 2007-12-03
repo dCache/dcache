@@ -601,6 +601,12 @@ cacheInfo=companion
 # srmDbPassword=srmdcache
 # srmDbLogEnabled=false
 #
+# This variable enables logging of the history
+# of the srm request transitions in the database
+# so that it can be examined though the srmWatch
+# monitoring tool
+# srmJdbsMonitoringLogEnabled=false
+#
 #  -- Set this to /root/.pgpass in case
 #     you need to have better security.
 # 
