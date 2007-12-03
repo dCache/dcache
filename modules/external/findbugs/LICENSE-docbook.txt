@@ -4,7 +4,7 @@
      Organization for the Advancement of Structured Information
      Standards (OASIS).
 
-     $Id: LICENSE-docbook.txt,v 1.2 2007-06-23 22:48:45 tigran Exp $
+     $Id: LICENSE-docbook.txt,v 1.1 2005/11/28 21:36:47 daveho Exp $
 
      Permission to use, copy, modify and distribute the DocBook XML DTD
      and its accompanying documentation for any purpose and without fee

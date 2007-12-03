@@ -5,7 +5,7 @@
                 exclude-result-prefixes="#default">
 
 <!-- build.xml will substitute the real path to chunk.xsl here. -->
-<xsl:import href="/fs/pugh/pugh/docbook-xsl-1.71.1/html/chunk.xsl"/>
+<xsl:import href="/Users/langmead/software/docbook-xsl-1.71.1/html/chunk.xsl"/>
 
 <xsl:template name="user.header.content">
 

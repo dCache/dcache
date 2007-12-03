@@ -1,6 +1,6 @@
 <html><head>
       <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
-   <title>Chapter&nbsp;8.&nbsp;Filter Files</title><meta name="generator" content="DocBook XSL Stylesheets V1.71.1"><link rel="start" href="index.html" title="FindBugs&#8482; Manual"><link rel="up" href="index.html" title="FindBugs&#8482; Manual"><link rel="prev" href="eclipse.html" title="Chapter&nbsp;7.&nbsp;Using the FindBugs&#8482; Eclipse plugin"><link rel="next" href="analysisprops.html" title="Chapter&nbsp;9.&nbsp;Analysis Properties"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">Chapter&nbsp;8.&nbsp;Filter Files</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="eclipse.html">Prev</a>&nbsp;</td><th width="60%" align="center">&nbsp;</th><td width="20%" align="right">&nbsp;<a accesskey="n" href="analysisprops.html">Next</a></td></tr></table><hr></div><div class="chapter" lang="en"><div class="titlepage"><div><div><h2 class="title"><a name="filter"></a>Chapter&nbsp;8.&nbsp;Filter Files</h2></div></div></div><div class="toc"><p><b>Table of Contents</b></p><dl><dt><span class="sect1"><a href="filter.html#d0e1566">1. Introduction to Filter Files</a></span></dt><dt><span class="sect1"><a href="filter.html#d0e1616">2. Types of Match clauses</a></span></dt><dt><span class="sect1"><a href="filter.html#d0e1809">3. Java element name matching</a></span></dt><dt><span class="sect1"><a href="filter.html#d0e1834">4. Caveats</a></span></dt><dt><span class="sect1"><a href="filter.html#d0e1864">5. Examples</a></span></dt><dt><span class="sect1"><a href="filter.html#d0e1917">6. Complete Example</a></span></dt></dl></div><p>
+   <title>Chapter&nbsp;8.&nbsp;Filter Files</title><meta name="generator" content="DocBook XSL Stylesheets V1.71.1"><link rel="start" href="index.html" title="FindBugs&#8482; Manual"><link rel="up" href="index.html" title="FindBugs&#8482; Manual"><link rel="prev" href="eclipse.html" title="Chapter&nbsp;7.&nbsp;Using the FindBugs&#8482; Eclipse plugin"><link rel="next" href="analysisprops.html" title="Chapter&nbsp;9.&nbsp;Analysis Properties"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">Chapter&nbsp;8.&nbsp;Filter Files</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="eclipse.html">Prev</a>&nbsp;</td><th width="60%" align="center">&nbsp;</th><td width="20%" align="right">&nbsp;<a accesskey="n" href="analysisprops.html">Next</a></td></tr></table><hr></div><div class="chapter" lang="en"><div class="titlepage"><div><div><h2 class="title"><a name="filter"></a>Chapter&nbsp;8.&nbsp;Filter Files</h2></div></div></div><div class="toc"><p><b>Table of Contents</b></p><dl><dt><span class="sect1"><a href="filter.html#d0e1556">1. Introduction to Filter Files</a></span></dt><dt><span class="sect1"><a href="filter.html#d0e1606">2. Types of Match clauses</a></span></dt><dt><span class="sect1"><a href="filter.html#d0e1799">3. Java element name matching</a></span></dt><dt><span class="sect1"><a href="filter.html#d0e1824">4. Caveats</a></span></dt><dt><span class="sect1"><a href="filter.html#d0e1854">5. Examples</a></span></dt><dt><span class="sect1"><a href="filter.html#d0e1907">6. Complete Example</a></span></dt></dl></div><p>
 Filter files may be used to include or exclude bug reports for particular classes
 and methods.  This chapter explains how to use filter files.
 
@@ -8,7 +8,7 @@ and methods.  This chapter explains how to use filter files.
   Filters are currently only supported by the Command Line interface.
   Eventually, filter support will be added to the GUI.
 </p></td></tr></table></div><p>
-</p><div class="sect1" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="d0e1566"></a>1.&nbsp;Introduction to Filter Files</h2></div></div></div><p>
+</p><div class="sect1" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="d0e1556"></a>1.&nbsp;Introduction to Filter Files</h2></div></div></div><p>
 Conceptually, a filter matches bug instances against a set of criteria.
 By defining a filter, you can select bug instances for special treatment;
 for example, to exclude or include them in a report.
@@ -31,7 +31,7 @@ report:
 </p><p>
 <code class="literal">Match</code> elements contain children, which are conjuncts of the predicate.
 In other words, each of the children must be true for the predicate to be true.
-</p></div><div class="sect1" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="d0e1616"></a>2.&nbsp;Types of Match clauses</h2></div></div></div><div class="variablelist"><dl><dt><span class="term"><code class="literal">&lt;Bug&gt;</code></span></dt><dd><p>
+</p></div><div class="sect1" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="d0e1606"></a>2.&nbsp;Types of Match clauses</h2></div></div></div><div class="variablelist"><dl><dt><span class="term"><code class="literal">&lt;Bug&gt;</code></span></dt><dd><p>
 			This element specifies a particular bug pattern or patterns to match.
 			The <code class="literal">pattern</code> attribute is a comma-separated list of
 			bug pattern types.  You can find the bug pattern types for particular
@@ -98,7 +98,7 @@ In other words, each of the children must be true for the predicate to be true.
    </p></dd><dt><span class="term"><code class="literal">&lt;Or&gt;</code></span></dt><dd><p>
    This element combines <code class="literal">Match</code> clauses as disjuncts.  I.e., you can put two
    <code class="literal">Method</code> elements in an <code class="literal">Or</code> clause in order match either method.
-   </p></dd></dl></div></div><div class="sect1" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="d0e1809"></a>3.&nbsp;Java element name matching</h2></div></div></div><p>
+   </p></dd></dl></div></div><div class="sect1" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="d0e1799"></a>3.&nbsp;Java element name matching</h2></div></div></div><p>
 If the <code class="literal">name</code> attribute or <code class="literal">Class</code>, <code class="literal">Method</code> or
 <code class="literal">Field</code> starts with the ~ character the rest of attribute content is interpreted as 
 a Java regular expression that is matched against the names of the Java element in question. 
@@ -108,7 +108,7 @@ at pattern beginning and/or end to perform substring matching.
 </p><p>
 See <a href="http://java.sun.com/j2se/1.4.2/docs/api/java/util/regex/Pattern.html" target="_top"><code class="literal">java.util.regex.Pattern</code></a> 
 documentation for pattern syntax.
-</p></div><div class="sect1" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="d0e1834"></a>4.&nbsp;Caveats</h2></div></div></div><p>
+</p></div><div class="sect1" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="d0e1824"></a>4.&nbsp;Caveats</h2></div></div></div><p>
 <code class="literal">Match</code> clauses can only match information that is actually contained in the
 bug instances.  Every bug instance has a class, so in general, excluding
 bugs by class will work.
@@ -142,7 +142,7 @@ class.)
 Many kinds of bugs report what method they occur in.  For those bug instances,
 you can put <code class="literal">Method</code> clauses in the <code class="literal">Match</code> element and they should work
 as expected.
-</p></div><div class="sect1" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="d0e1864"></a>5.&nbsp;Examples</h2></div></div></div><p>
+</p></div><div class="sect1" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="d0e1854"></a>5.&nbsp;Examples</h2></div></div></div><p>
   1. Match all bug reports for a class.
 
 </p><pre class="programlisting">
@@ -281,7 +281,7 @@ as expected.
 
 </pre><p>	
 
-</p></div><div class="sect1" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="d0e1917"></a>6.&nbsp;Complete Example</h2></div></div></div><pre class="programlisting">
+</p></div><div class="sect1" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="d0e1907"></a>6.&nbsp;Complete Example</h2></div></div></div><pre class="programlisting">
 
 &lt;FindBugsFilter&gt;
      &lt;Match&gt;

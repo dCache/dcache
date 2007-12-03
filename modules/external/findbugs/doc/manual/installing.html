@@ -5,25 +5,25 @@ This chapter explains how to install and run <span class="application">FindBugs<
 </p><div class="sect1" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="d0e104"></a>1.&nbsp;Extracting the Distribution</h2></div></div></div><p>
 The easiest way to install <span class="application">FindBugs</span> is to download a binary distribution.
 Binary distributions are available in
-<a href="http://prdownloads.sourceforge.net/findbugs/findbugs-1.2.1.tar.gz?download" target="_top">gzipped tar format</a> and
-<a href="http://prdownloads.sourceforge.net/findbugs/findbugs-1.2.1.zip?download" target="_top">zip format</a>.
+<a href="http://prdownloads.sourceforge.net/findbugs/findbugs-1.3.0.tar.gz?download" target="_top">gzipped tar format</a> and
+<a href="http://prdownloads.sourceforge.net/findbugs/findbugs-1.3.0.zip?download" target="_top">zip format</a>.
 Once you have downloaded a binary distribution, extract it into a directory of your choice.
 </p><p>
 Extracting a gzipped tar format distribution:
 </p><pre class="screen">
-<code class="prompt">$ </code><span><strong class="command">gunzip -c findbugs-1.2.1.tar.gz | tar xvf -</strong></span>
+<code class="prompt">$ </code><span><strong class="command">gunzip -c findbugs-1.3.0.tar.gz | tar xvf -</strong></span>
 </pre><p>
 </p><p>
 Extracting a zip format distribution:
 </p><pre class="screen">
-<code class="prompt">C:\Software&gt;</code><span><strong class="command">unzip findbugs-1.2.1.zip</strong></span>
+<code class="prompt">C:\Software&gt;</code><span><strong class="command">unzip findbugs-1.3.0.zip</strong></span>
 </pre><p>
 </p><p>
 Usually, extracting a binary distribution will create a directory ending in
-<code class="filename">findbugs-1.2.1</code>. For example, if you extracted
+<code class="filename">findbugs-1.3.0</code>. For example, if you extracted
 the binary distribution from the <code class="filename">C:\Software</code>
 directory, then the <span class="application">FindBugs</span> software will be extracted into the directory
-<code class="filename">C:\Software\findbugs-1.2.1</code>.
+<code class="filename">C:\Software\findbugs-1.3.0</code>.
 This directory is the <span class="application">FindBugs</span> home directory.  We'll refer to it as
 <em class="replaceable"><code>$FINDBUGS_HOME</code></em> throughout this manual.
 </p></div><div class="sect1" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="d0e158"></a>2.&nbsp;Configuration</h2></div></div></div><p>
@@ -101,7 +101,6 @@ These options are only accepted by the Graphical User Interface.
        </p></dd></dl></div><p>
 </p></div><div class="sect2" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="d0e360"></a>3.3.&nbsp;Text UI Options</h3></div></div></div><p>
 These options are only accepted by the Text User Interface.
-
 </p><div class="variablelist"><dl><dt><span class="term"><span><strong class="command">-sortByClass</strong></span></span></dt><dd><p>
        Sort reported bug instances by class name.
        </p></dd><dt><span class="term"><span><strong class="command">-include</strong></span> <em class="replaceable"><code>filterFile.xml</code></em></span></dt><dd><p>
@@ -162,8 +161,10 @@ These options are only accepted by the Text User Interface.
     Produce the bug reports in Emacs format.
     </p></dd><dt><span class="term"><span><strong class="command">-xdocs</strong></span></span></dt><dd><p>
     Produce the bug reports in xdoc XML format for use with Apache Maven.
-    </p></dd><dt><span class="term"><span><strong class="command">-outputFile</strong></span> <em class="replaceable"><code>filename</code></em></span></dt><dd><p>
+    </p></dd><dt><span class="term"><span><strong class="command">-output</strong></span> <em class="replaceable"><code>filename</code></em></span></dt><dd><p>
        Produce the output in the specified file.
+       </p></dd><dt><span class="term"><span><strong class="command">-outputFile</strong></span> <em class="replaceable"><code>filename</code></em></span></dt><dd><p>
+       This argument is deprecated.  Use <span><strong class="command">-output</strong></span> instead.
        </p></dd><dt><span class="term"><span><strong class="command">-nested</strong></span><em class="replaceable"><code>[:true|false]</code></em></span></dt><dd><p>
     This option enables or disables scanning of nested jar and zip files found in
     the list of files and directories to be analyzed.
@@ -174,5 +175,4 @@ These options are only accepted by the Text User Interface.
     Set the auxiliary classpath for analysis.  This classpath should include all
     jar files and directories containing classes that are part of the program
     being analyzed but you do not want to have analyzed for bugs.
-    </p></dd></dl></div><p>
-</p></div></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="introduction.html">Prev</a>&nbsp;</td><td width="20%" align="center">&nbsp;</td><td width="40%" align="right">&nbsp;<a accesskey="n" href="building.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">Chapter&nbsp;1.&nbsp;Introduction&nbsp;</td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right" valign="top">&nbsp;Chapter&nbsp;3.&nbsp;Building <span class="application">FindBugs</span>&#8482; from Source</td></tr></table></div></body></html>
+    </p></dd></dl></div></div></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="introduction.html">Prev</a>&nbsp;</td><td width="20%" align="center">&nbsp;</td><td width="40%" align="right">&nbsp;<a accesskey="n" href="building.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">Chapter&nbsp;1.&nbsp;Introduction&nbsp;</td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right" valign="top">&nbsp;Chapter&nbsp;3.&nbsp;Building <span class="application">FindBugs</span>&#8482; from Source</td></tr></table></div></body></html>

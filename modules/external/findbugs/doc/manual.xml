@@ -46,9 +46,9 @@ The name FindBugs and the FindBugs logo is trademarked by the University of Mary
 </para>
 </legalnotice>
 
-<edition>1.2.1</edition>
+<edition>1.3.0</edition>
 
-<pubdate>10:24:29 EDT, 31 May, 2007</pubdate>
+<pubdate>09:39:09 EST, 08 November, 2007</pubdate>
 
 </bookinfo>
 
@@ -64,7 +64,7 @@ The name FindBugs and the FindBugs logo is trademarked by the University of Mary
 <para> &FindBugs;&trade; is a program to find bugs in Java programs.  It looks for instances
 of "bug patterns" --- code instances that are likely to be errors.</para>
 
-<para> This document describes version 1.2.1 of &FindBugs;. This is an
+<para> This document describes version 1.3.0 of &FindBugs;. This is an
 early release of the tool, so you may find problems with it. We
 are very interested in getting your feedback on &FindBugs;. Please visit
 the <ulink url="http://findbugs.sourceforge.net">&FindBugs; web page</ulink> for
@@ -103,31 +103,31 @@ This chapter explains how to install and run &FindBugs;.
 <para>
 The easiest way to install &FindBugs; is to download a binary distribution.
 Binary distributions are available in
-<ulink url="http://prdownloads.sourceforge.net/findbugs/findbugs-1.2.1.tar.gz?download">gzipped tar format</ulink> and
-<ulink url="http://prdownloads.sourceforge.net/findbugs/findbugs-1.2.1.zip?download">zip format</ulink>.
+<ulink url="http://prdownloads.sourceforge.net/findbugs/findbugs-1.3.0.tar.gz?download">gzipped tar format</ulink> and
+<ulink url="http://prdownloads.sourceforge.net/findbugs/findbugs-1.3.0.zip?download">zip format</ulink>.
 Once you have downloaded a binary distribution, extract it into a directory of your choice.
 </para>
 
 <para>
 Extracting a gzipped tar format distribution:
 <screen>
-<prompt>$ </prompt><command>gunzip -c findbugs-1.2.1.tar.gz | tar xvf -</command>
+<prompt>$ </prompt><command>gunzip -c findbugs-1.3.0.tar.gz | tar xvf -</command>
 </screen>
 </para>
 
 <para>
 Extracting a zip format distribution:
 <screen>
-<prompt>C:\Software></prompt><command>unzip findbugs-1.2.1.zip</command>
+<prompt>C:\Software></prompt><command>unzip findbugs-1.3.0.zip</command>
 </screen>
 </para>
 
 <para>
 Usually, extracting a binary distribution will create a directory ending in
-<filename class="directory">findbugs-1.2.1</filename>. For example, if you extracted
+<filename class="directory">findbugs-1.3.0</filename>. For example, if you extracted
 the binary distribution from the <filename class="directory">C:\Software</filename>
 directory, then the &FindBugs; software will be extracted into the directory
-<filename class="directory">C:\Software\findbugs-1.2.1</filename>.
+<filename class="directory">C:\Software\findbugs-1.3.0</filename>.
 This directory is the &FindBugs; home directory.  We'll refer to it as
 &FBHome; throughout this manual.
 </para>
@@ -319,6 +319,7 @@ These options are only accepted by the Graphical User Interface.
 
 <para>
 These options are only accepted by the Text User Interface.
+</para>
 
 <variablelist>
   <varlistentry>
@@ -468,10 +469,19 @@ These options are only accepted by the Text User Interface.
   </varlistentry>
 
   <varlistentry>
-    <term><command>-outputFile</command> <replaceable>filename</replaceable></term>
+    <term><command>-output</command> <replaceable>filename</replaceable></term>
     <listitem>
        <para>
        Produce the output in the specified file.
+       </para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry>
+    <term><command>-outputFile</command> <replaceable>filename</replaceable></term>
+    <listitem>
+       <para>
+       This argument is deprecated.  Use <command>-output</command> instead.
        </para>
     </listitem>
   </varlistentry>
@@ -511,10 +521,8 @@ These options are only accepted by the Text User Interface.
 -->
 
 </variablelist>
-</para>
 
 </sect2>
-
 </sect1>
 
 </chapter>
@@ -542,7 +550,7 @@ To compile &FindBugs; from source, you will need the following:
 <itemizedlist>
   <listitem>
     <para>
-      The <ulink url="http://prdownloads.sourceforge.net/findbugs/findbugs-1.2.1-source.zip?download"
+      The <ulink url="http://prdownloads.sourceforge.net/findbugs/findbugs-1.3.0-source.zip?download"
       >&FindBugs; source distribution</ulink>
     </para>
   </listitem>
@@ -553,7 +561,7 @@ To compile &FindBugs; from source, you will need the following:
   </listitem>
   <listitem>
     <para>
-      <ulink url="http://ant.apache.org/">Apache &Ant;</ulink>, version 1.5 or later
+      <ulink url="http://ant.apache.org/">Apache &Ant;</ulink>, version 1.6.3 or later
     </para>
   </listitem>
 </itemizedlist>
@@ -605,7 +613,7 @@ After you download the source distribution, you'll need to extract it into
 a working directory.  A typical command to do this is:
 
 <screen>
-<prompt>$ </prompt><command>unzip findbugs-1.2.1-source.zip</command>
+<prompt>$ </prompt><command>unzip findbugs-1.3.0-source.zip</command>
 </screen>
 
 </para>
@@ -634,12 +642,12 @@ local.software.home     =/export/home/daveho/linux
 # Set this to the directory containing the DocBook Modular XSL Stylesheets
 #  from http://docbook.sourceforge.net/projects/xsl/
 
-xsl.stylesheet.home     =${local.software.home}/docbook/docbook-xsl-1.61.0
+xsl.stylesheet.home     =${local.software.home}/docbook/docbook-xsl-1.71.1
 
 # Set this to the directory where Saxon (http://saxon.sourceforge.net/)
 # is installed. 
 
-saxon.home              =${local.software.home}/java/saxon-6.5.2
+saxon.home              =${local.software.home}/java/saxon-6.5.5
 ]]>
 </programlisting>
 </para>
@@ -781,7 +789,7 @@ menu item.  You will see a dialog which looks like this:
 </para>
 
 <para>
-Use the "Browse" button next to the "Add archive or directory" text field to select a Java archive
+Use the "Add" button next to the "Class archives and directories to analyze" text field to select a Java archive
 file (zip, jar, ear, or war file) or directory containing java classes to analyze for bugs.  You may add multiple
 archives/directories.
 </para>
@@ -799,7 +807,7 @@ to the source directory list for the project.
 
 <para>
 Another optional step is to add additional Jar files or directories as
-classpath entries.  You should do this if the archives and directories you are analyzing
+"Auxiliary classpath locations" entries.  You should do this if the archives and directories you are analyzing
 have references to other classes which are not included in the analyzed
 archives/directories and are not in the standard runtime classpath.  Some of the bug
 pattern detectors in &FindBugs; make use of class hierarchy information,
@@ -813,7 +821,7 @@ available which &FindBugs; performs its analysis.
 <title>Running the Analysis</title>
 <para>
 Once you have added all of the archives, directories, and source directories,
-click the "Find Bugs!" button to analyze the classes contained in the
+click the "Finish" button to analyze the classes contained in the
 Jar files.  Note that for a very large program on an older computer,
 this may take quite a while (tens of minutes).  A recent computer with
 ample memory will typically be able to analyze a large program in only a
@@ -834,58 +842,44 @@ When the analysis completes, you will see a screen like the following:
 </para>
 
 <para>
-The top pane of the window shows the bug tree; this is a hierarchical
+The upper left-hand pane of the window shows the bug tree; this is a hierarchical
 representation of all of the potential bugs detected in the analyzed
-Jar files.  The tabs allow you to browse by class, package, or bug type.
+Jar files.
 </para>
 
 <para>
 When you select a particular bug instance in the top pane, you will
 see a description of the bug in the "Details" tab of the bottom pane.
-In addition, the "Source code" tab of the bottom pane will, for some
-kinds of bugs, show the program source code where the potential bug occurs.
-In the above example, the bug is an access to an uninitialized field in
-a constructor.  The source code window highlights the line containing
-the problematic access.
+In addition, the source code pane on the upper-right will show the
+program source code where the potential bug occurs, if source is available.
+In the above example, the bug is a stream object that is not closed.  The
+source code window highlights the line where the stream object is created.
 </para>
 
 <para>
-You may add a textual annotations to bug instances.  To do so, choose the
-"Annotations" tab in the bottom pane.  Simply type in any information which
-you would like to record.  When you load and save bug results files,
-the annotations are preserved.
-</para>
-
-<para>
-You may use the <menuchoice><guimenu>File</guimenu><guimenuitem>Save project</guimenuitem></menuchoice>
-menu option to save the current lists
-of Jar files and source directories.  A saved project may be loaded with
-the <menuchoice><guimenu>File</guimenu><guimenuitem>Open project</guimenuitem></menuchoice> menu option.
-Note that when you save a project, the analysis results are
-not saved.
+You may add a textual annotations to bug instances.  To do so, type them
+into the text box just below the hierarchical view.  You can type any
+information which you would like to record.  When you load and save bug
+results files, the annotations are preserved.
 </para>
 
 </sect1>
 
 <sect1>
-<title>Loading and saving results</title>
+<title>Saving and Opening</title>
 
 <para>
-You may use the <menuchoice><guimenu>File</guimenu><guimenuitem>Load bugs</guimenuitem></menuchoice>
-and <menuchoice><guimenu>File</guimenu><guimenuitem>Save bugs</guimenuitem></menuchoice> to load
-and save the bug results produced by running &FindBugs; on your project.  The results are
-saved in XML format.  Any annotations you have added to bug reports are saved in the
-resulting XML file.
+You may use the <menuchoice><guimenu>File</guimenu><guimenuitem>Save as...</guimenuitem></menuchoice>
+menu option to save your work.  To save your work, including the jar
+file lists you specified and all bug results, choose
+"FindBugs analysis results (.xml)" from the drop-down list in the
+"Save as..." dialog.  There are also options for saving just the jar
+file lists ("FindBugs project file (.fbp)") or just the results
+("FindBugs analysis file (.fba)"), but these are rarely needed.  A
+saved file may be loaded with the
+<menuchoice><guimenu>File</guimenu><guimenuitem>Open...</guimenuitem></menuchoice>
+menu option.
 </para>
-
-<note>
-<title>Planned Features</title>
-<para>
-Support for loading and saving bugs is still under development.
-You may find bugs in this feature, and the file format and/or implementation
-may change in future releases.
-</para>
-</note>
 
 </sect1>
 
@@ -914,6 +908,7 @@ to get only the output you're interested in.
 See <xref linkend="commandLineOptions" /> in <xref linkend="installing" /> for a description of how to invoke the
 Command Line Interface.
 </para>
+
 
 </chapter>
 
@@ -1411,10 +1406,10 @@ and JRE/JDK 1.4.0 or later.
    
 <para>You can also manually
 download the plugin from the following link:
-<ulink url="http://prdownloads.sourceforge.net/findbugs/edu.umd.cs.findbugs.plugin.eclipse_1.2.1.20070531.zip?download"
->http://prdownloads.sourceforge.net/findbugs/edu.umd.cs.findbugs.plugin.eclipse_1.2.1.20070531.zip?download</ulink>.
+<ulink url="http://prdownloads.sourceforge.net/findbugs/edu.umd.cs.findbugs.plugin.eclipse_1.3.0.20071108.zip?download"
+>http://prdownloads.sourceforge.net/findbugs/edu.umd.cs.findbugs.plugin.eclipse_1.3.0.20071108.zip?download</ulink>.
 Extract it in Eclipse's "plugins" subdirectory.
-(So &lt;eclipse_install_dir&gt;/plugins/edu.umd.cs.findbugs.plugin.eclipse_1.2.1.20070531/findbugs.png
+(So &lt;eclipse_install_dir&gt;/plugins/edu.umd.cs.findbugs.plugin.eclipse_1.3.0.20071108/findbugs.png
 should be the path to the &FindBugs; logo.)
 
 </para>
@@ -2410,6 +2405,79 @@ API documentation</ulink> at <ulink url="http://jcip.net/">Java Concurrency in P
 
 <!--
    **************************************************************************
+   Using rejarForAnalysis
+   **************************************************************************
+-->
+
+<chapter>
+<title>Using rejarForAnalysis</title>
+
+<para>
+If your project consists of many jarfiles or the jarfiles are scattered
+over many directories, you may wish to use the <command>rejarForAnalysis
+</command> script to make
+FindBugs invocation easier.  The script collects many jarfiles and combines them
+into a single, large jarfile that can then be easily passed to FindBugs for
+analysis.  This can be particularly useful in combination with the 'find' command
+on unix systems; e.g. <command>find . -name '*.jar' | xargs rejarForAnalysis
+</command>.
+</para>
+
+<para>
+The <command>rejarForAnalysis</command> script
+can also be used to split a very large project up into a set of jarfiles with
+the project classfiles evenly divided between them.  This is useful when running
+FindBugs on the entire project is not practical due to time or memory consumption.
+Instead of running FindBugs on the entire project, you may use <command>
+rejarForAnalysis</command> build one large, all-inclusive jarfile
+containing all classes, invoke <command>rejarForAnalysis</command>
+again to split the project into multiple jarfiles, then run FindBugs
+on each divided jarfiles in turn, specifying the the all-inclusive jarfile in
+the <command>-auxclasspath</command>.
+</para>
+
+<para>
+These are the options accepted by the <command>rejarForAnalysis</command> script:
+</para>
+
+<variablelist>
+  <varlistentry>
+    <term><command>-maxAge</command> <replaceable>days</replaceable></term>
+    <listitem>
+       <para>
+       Maximum age in days (ignore jar files older than this).
+       </para>
+    </listitem>
+  </varlistentry>
+  <varlistentry>
+    <term><command>-inputFileList</command> <replaceable>filename</replaceable></term>
+    <listitem>
+       <para>
+       Text file containing names of jar files.
+       </para>
+    </listitem>
+  </varlistentry>
+  <varlistentry>
+    <term><command>-maxClasses</command> <replaceable>num</replaceable></term>
+    <listitem>
+       <para>
+       Maximum number of classes per analysis*.jar file.
+       </para>
+    </listitem>
+  </varlistentry>
+  <varlistentry>
+    <term><command>-prefix</command> <replaceable>class name prefix</replaceable></term>
+    <listitem>
+       <para>
+       Prefix of class names that should be analyzed (e.g., edu.umd.cs.).
+       </para>
+    </listitem>
+  </varlistentry>
+</variablelist>
+</chapter>
+
+<!--
+   **************************************************************************
    Data mining
    **************************************************************************
 -->
@@ -2451,15 +2519,35 @@ You can take a sequence (or pair) of single version bug databases and create
 from them a multiversion bug database, or combine a multiversion bug database
 with a sequence of later single-version bug databases.</para>
 
+<para>
+Some of these commands can be invoked as ant tasks.  See below for specifics
+on how to invoke them and what attributes and arguments they take.  All of
+the examples assume that the <literal>findbugs.lib</literal>
+<literal>refid</literal> is set correctly.  Here is one way to set it:
+</para>
+
+<programlisting>
+<![CDATA[
+   <!-- findbugs task definition -->
+   <property name="findbugs.home" value="/your/path/to/findbugs" />
+   <path id="findbugs.lib">
+      <fileset dir="${findbugs.home}/lib">
+         <include name="findbugs-ant.jar"/>
+      </fileset>
+   </path>
+]]>
+</programlisting>
+
 	<sect1 id="commands">
 		<title>Commands</title>
 		
 		<para>
-The current tools for FindBugs data mining are designed to be invoked
-from the command line.</para>
+All tools for FindBugs data mining are can be invoked from the command line,
+and some of the more useful tools can also be invoked from an
+ant build file.</para>
 
 <para>
-Briefly, the commands are:</para>
+Briefly, the command-line tools are:</para>
 
 		<variablelist>
 			<varlistentry>
@@ -2551,73 +2639,55 @@ files should be single version bug databases (if they contain history, the histo
 files will be ignored).</para>
 <para>By default, output is written to the standard output.
 </para>
-		  <para>The options are:</para>
-		  
-		  <variablelist>
-		    <varlistentry>
-		      <term><option>-output</option> <replaceable>filename</replaceable></term>
-		      <listitem>
-		        <para>
-		          specify that the output should be saved in the file <replaceable>filename</replaceable>
-		        </para>
-		        <para>
-		          The output file is not written until all input files are read,
-		          so you may overwrite one of the input files if you wish.
-		        </para>
-		      </listitem>
-		    </varlistentry>
-		    <varlistentry>
-		      <term><option>-overrideRevisionNames</option></term>
-		      <listitem>
-		        <para>
-		          override revision names for each version with names computed from the filenames
-		        </para>
-		      </listitem>
-		    </varlistentry>
-		    <varlistentry>
-		      <term><option>-noPackageMoves</option></term>
-		      <listitem>
-		        <para>
-		          if a class seems to have moved from one package to another, treat
-		          warnings in that class as two seperate warnings
-		        </para>
-		      </listitem>
-		    </varlistentry>
-		    <varlistentry>
-		      <term><option>-preciseMatch</option></term>
-		      <listitem>
-		        <para>
-		          require bug patterns to match precisely
-		        </para>
-		      </listitem>
-		    </varlistentry>
-		    <varlistentry>
-		      <term><option>-precisePriorityMatch</option></term>
-		      <listitem>
-		        <para>
-		          only consider two warnings to be the same if their priorities match exactly
-		        </para>
-		      </listitem>
-		    </varlistentry>
-		    <varlistentry>
-		      <term><option>-quiet</option></term>
-		      <listitem>
-		        <para>
-		          don't generate any outout to standard out unless there is an error
-		        </para>
-		      </listitem>
-		    </varlistentry>
-		    <!--
-		      <varlistentry>
-		      <term><option></option></term>
-		      <listitem>
-		      <para>
-		      
-		      </para>
-		      </listitem>
-		      </varlistentry>
-		    -->
-		  </variablelist>
+
+<para>This functionality may also can be accessed from ant.
+First create a taskdef for <command>computeBugHistory</command> in your
+build file:
+</para>
+
+<programlisting>
+<![CDATA[
+<taskdef name="computeBugHistory" classname="edu.umd.cs.findbugs.anttask.ComputeBugHistoryTask">
+    <classpath refid="findbugs.lib" />
+</taskdef>
+]]>
+</programlisting>
+
+<para>Attributes for this ant task are listed in the following table.
+To specify input files, nest them inside with a
+<literal>&lt;datafile&gt;</literal> element.  For example:
+</para>
+
+<programlisting>
+<![CDATA[
+<computeBugHistory home="${findbugs.home}" ...>
+    <datafile name="analyze1.xml"/>
+    <datafile name="analyze2.xml"/>
+</computeBugHistory>
+]]>
+</programlisting>
+
+		<table id="computeBugHistoryTable">
+			<title>Options for computeBugHistory command</title>
+			<tgroup cols="3" align="left">
+  				<thead>
+    				<row>
+      					<entry>Command-line option</entry>
+      					<entry>Ant attribute</entry>
+      					<entry>Meaning</entry>
+    				</row>
+  					</thead>
+  				<tbody>
+<row><entry>-output &lt;file&gt;</entry>           <entry>output="&lt;file&gt;"</entry>           <entry>save output in the named file (may also be an input file)</entry></row>
+<row><entry>-overrideRevisionNames[:truth]</entry> <entry>overrideRevisionNames="[true|false]"</entry><entry>override revision names for each version with names computed from the filenames</entry></row>
+<row><entry>-noPackageMoves[:truth]</entry>        <entry>noPackageMoves="[true|false]"</entry><entry>if a class has moved to another package, treat warnings in that class as seperate</entry></row>
+<row><entry>-preciseMatch[:truth]</entry>          <entry>preciseMatch="[true|false]"</entry><entry>require bug patterns to match precisely</entry></row>
+<row><entry>-precisePriorityMatch[:truth]</entry>  <entry>precisePriorityMatch="[true|false]"</entry><entry>consider two warnings as the same only if priorities match exactly</entry></row>
+<row><entry>-quiet[:truth]</entry>                 <entry>quiet="[true|false]"</entry><entry>don't generate any output to standard out unless there is an error</entry></row>
+<row><entry>-withMessages[:truth]</entry>          <entry>withMessages="[true|false]"</entry><entry>include human-readable messages describing the warnings in XML output</entry></row>
+				</tbody>
+			</tgroup>
+		</table>
 
 		</sect2>	
 		<sect2 id="filterBugs">
@@ -2632,98 +2702,138 @@ and writes to standard output. If one file name is provided,
 it reads from the file and writes to standard output.
 If two file names are provided, it reads from the first and writes the output
 to the second file name.</para>
-		
+
+<para>This functionality may also can be accessed from ant.
+First create a taskdef for <command>filterBugs</command> in your
+build file:
+</para>
+
+<programlisting>
+<![CDATA[
+<taskdef name="filterBugs" classname="edu.umd.cs.findbugs.anttask.FilterBugsTask">
+    <classpath refid="findbugs.lib" />
+</taskdef>
+]]>
+</programlisting>
+
+<para>Attributes for this ant task are listed in the following table.
+To specify an input file either use the input attribute or nest it inside
+the ant call with a <literal>&lt;datafile&gt;</literal> element.  For example:
+</para>
+
+<programlisting>
+<![CDATA[
+<filterBugs home="${findbugs.home}" ...>
+    <datafile name="analyze.xml"/>
+</filterBugs>
+]]>
+</programlisting>
+
 		<table id="filterOptionsTable">
 			<title>Options for filterBugs command</title>
-			<tgroup cols="2" align="left">
+			<tgroup cols="3" align="left">
   				<thead>
     				<row>
-      					<entry>Option</entry>
+      					<entry>Command-line option</entry>
+      					<entry>Ant attribute</entry>
       					<entry>Meaning</entry>
     				</row>
   					</thead>
   				<tbody>
-<row><entry>-not</entry>                        <entry>reverse (all) switches for the filter</entry></row>
-<row><entry>-withSource[:truth]</entry>         <entry>only warnings for switch source is available</entry></row>
-<row><entry>-exclude &lt;filter file&gt;</entry><entry>exclude bugs matching given filter</entry></row>
-<row><entry>-include &lt;filter file&gt;</entry><entry>include only bugs matching given filter</entry></row>
-<row><entry>-annotation &lt;text&gt;</entry>    <entry>allow only warnings containing this text in a manual annotation</entry></row>
-<row><entry>-classified[:truth]</entry>         <entry>allow only classified warnings</entry></row>
-<row><entry>-serious[:truth]</entry>            <entry>allow only warnings manually classified as serious</entry></row>
-<row><entry>-after &lt;when&gt;</entry>         <entry>allow only warnings that first occurred after this version</entry></row>
-<row><entry>-before &lt;when&gt;</entry>        <entry>allow only warnings that first occurred before this version</entry></row>
-<row><entry>-first &lt;when&gt;</entry>         <entry>allow only warnings that first occurred in this version</entry></row>
-<row><entry>-last &lt;when&gt;</entry>          <entry>allow only warnings that last occurred in this version</entry></row>
-<row><entry>-fixed &lt;when&gt;</entry>         <entry>allow only warnings that last occurred in the previous version (clobbers <option>-last</option>)</entry></row>
-<row><entry>-present &lt;when&gt;</entry>       <entry>allow only warnings present in this version</entry></row>
-<row><entry>-absent &lt;when&gt;</entry>        <entry>allow only warnings absent in this version</entry></row>
-<row><entry>-active[:truth]</entry>             <entry>allow only warnings alive in the last sequence number</entry></row>
-<row><entry>-introducedByChange[:truth]</entry> <entry>allow only warnings introduced by a change of an existing class</entry></row>
-<row><entry>-removedByChange[:truth]</entry>    <entry>allow only warnings removed by a change of a persisting class</entry></row>
-<row><entry>-newCode[:truth]</entry>            <entry>allow only warnings introduced by the addition of a new class</entry></row>
-<row><entry>-removedCode[:truth]</entry>        <entry>allow only warnings removed by removal of a class</entry></row>
-<row><entry>-priority &lt;level&gt;</entry>     <entry>allow only warnings with this priority or higher</entry></row>
-<row><entry>-class &lt;pattern&gt;</entry>      <entry>allow only bugs whose primary class name matches this pattern</entry></row>
-<row><entry>-bugPattern &lt;pattern&gt;</entry> <entry>allow only bugs whose type matches this pattern</entry></row>
-<row><entry>-category &lt;category&gt;</entry>  <entry>allow only warnings with a category that starts with this string</entry></row>
-<row><entry>-designation &lt;designation&gt;</entry> <entry>allow only warnings with this designation (e.g., -designation SHOULD_FIX)</entry></row>
-<row><entry>-withMessages[:truth] </entry>      <entry>the generated XML should contain textual messages</entry></row>
+<row><entry></entry>                            <entry>input="&lt;file&gt;"</entry>             <entry>use file as input</entry></row>
+<row><entry></entry>                            <entry>output="&lt;file&gt;"</entry>            <entry>output results to file</entry></row>
+<row><entry>-not</entry>                        <entry>not="[true|false]"</entry>               <entry>reverse (all) switches for the filter</entry></row>
+<row><entry>-withSource[:truth]</entry>         <entry>withSource="[true|false]"</entry>        <entry>only warnings for switch source is available</entry></row>
+<row><entry>-exclude &lt;filter file&gt;</entry><entry>exclude="&lt;filter file&gt;"</entry>    <entry>exclude bugs matching given filter</entry></row>
+<row><entry>-include &lt;filter file&gt;</entry><entry>include="&lt;filter file&gt;"</entry>    <entry>include only bugs matching given filter</entry></row>
+<row><entry>-annotation &lt;text&gt;</entry>    <entry>annotation="&lt;text&gt;"</entry>        <entry>allow only warnings containing this text in a manual annotation</entry></row>
+<row><entry>-after &lt;when&gt;</entry>         <entry>after="&lt;when&gt;"</entry>             <entry>allow only warnings that first occurred after this version</entry></row>
+<row><entry>-before &lt;when&gt;</entry>        <entry>before="&lt;when&gt;"</entry>            <entry>allow only warnings that first occurred before this version</entry></row>
+<row><entry>-first &lt;when&gt;</entry>         <entry>first="&lt;when&gt;"</entry>             <entry>allow only warnings that first occurred in this version</entry></row>
+<row><entry>-last &lt;when&gt;</entry>          <entry>last="&lt;when&gt;"</entry>              <entry>allow only warnings that last occurred in this version</entry></row>
+<row><entry>-fixed &lt;when&gt;</entry>         <entry>fixed="&lt;when&gt;"</entry>             <entry>allow only warnings that last occurred in the previous version (clobbers <option>-last</option>)</entry></row>
+<row><entry>-present &lt;when&gt;</entry>       <entry>present="&lt;when&gt;"</entry>           <entry>allow only warnings present in this version</entry></row>
+<row><entry>-absent &lt;when&gt;</entry>        <entry>absent="&lt;when&gt;"</entry>            <entry>allow only warnings absent in this version</entry></row>
+<row><entry>-active[:truth]</entry>             <entry>active="[true|false]"</entry>            <entry>allow only warnings alive in the last sequence number</entry></row>
+<row><entry>-introducedByChange[:truth]</entry> <entry>introducedByChange="[true|false]"</entry><entry>allow only warnings introduced by a change of an existing class</entry></row>
+<row><entry>-removedByChange[:truth]</entry>    <entry>removedByChange="[true|false]"</entry>   <entry>allow only warnings removed by a change of a persisting class</entry></row>
+<row><entry>-newCode[:truth]</entry>            <entry>newCode="[true|false]"</entry>           <entry>allow only warnings introduced by the addition of a new class</entry></row>
+<row><entry>-removedCode[:truth]</entry>        <entry>removedCode="[true|false]"</entry>       <entry>allow only warnings removed by removal of a class</entry></row>
+<row><entry>-priority &lt;level&gt;</entry>     <entry>priority="&lt;level&gt;"</entry>         <entry>allow only warnings with this priority or higher</entry></row>
+<row><entry>-class &lt;pattern&gt;</entry>      <entry>class="&lt;class&gt;"</entry>            <entry>allow only bugs whose primary class name matches this pattern</entry></row>
+<row><entry>-bugPattern &lt;pattern&gt;</entry> <entry>bugPattern="&lt;pattern&gt;"</entry>     <entry>allow only bugs whose type matches this pattern</entry></row>
+<row><entry>-category &lt;category&gt;</entry>  <entry>category="&lt;category&gt;"</entry>      <entry>allow only warnings with a category that starts with this string</entry></row>
+<row><entry>-designation &lt;designation&gt;</entry> <entry>designation="&lt;designation&gt;"</entry> <entry>allow only warnings with this designation (e.g., -designation SHOULD_FIX)</entry></row>
+<row><entry>-withMessages[:truth] </entry>      <entry>withMessages="[true|false]"</entry>      <entry>the generated XML should contain textual messages</entry></row>
 				</tbody>
 			</tgroup>
 		</table>
-		
+		  		
 		</sect2>
 		
 		<sect2 id="mineBugHistory">
 			<title>mineBugHistory</title>
 <para>This command generates a table containing counts of the numbers of warnings
 in each version of a multiversion bug database.</para>
-<para>The options are:</para>
 
-			<variablelist>
-				<varlistentry>
-					<term><option>-formatDates</option></term>
-					<listitem>
-						<para>
-							render dates in textual form
-						</para>
-					</listitem>
-				</varlistentry>
-				<varlistentry>
-					<term><option>-noTabs</option></term>
-					<listitem>
-						<para>
-							delimit columns with groups of spaces instead of tabs.
-							This can be easier to read from a shell with a fixed-width font.
-						</para>
-						<para>
-							Because numeric columns are right-justified, spaces may precede the
-							first column value. This option also causes <option>-formatDates</option>
-							to render dates in terser format without embedded whitespace.
-						</para>
-					</listitem>
-				</varlistentry>
-				<varlistentry>
-					<term><option>-summary</option></term>
-					<listitem>
-						<para>
-							Output will be only a terse summary of changes over the last ten entries.
-							(The output format is subject to change.)
-						</para>
-					</listitem>
-				</varlistentry>
-				<!--
-				<varlistentry>
-					<term><option></option></term>
-					<listitem>
-						<para>
-							
-						</para>
-					</listitem>
-				</varlistentry>
-				-->
-			</variablelist>
-<para>The table is a tab-separated (barring <option>-noTabs</option>) table with the following columns:</para>
+
+<para>This functionality may also can be accessed from ant.
+First create a taskdef for <command>mineBugHistory</command> in your
+build file:
+</para>
+
+<programlisting>
+<![CDATA[
+<taskdef name="mineBugHistory" classname="edu.umd.cs.findbugs.anttask.MineBugHistoryTask">
+    <classpath refid="findbugs.lib" />
+</taskdef>
+]]>
+</programlisting>
+
+<para>Attributes for this ant task are listed in the following table.
+To specify an input file either use the <literal>input</literal>
+attribute or nest it inside the ant call with a
+<literal>&lt;datafile&gt;</literal> element.  For example:
+</para>
+
+<programlisting>
+<![CDATA[
+<mineBugHistory home="${findbugs.home}" ...>
+    <datafile name="analyze.xml"/>
+</mineBugHistory>
+]]>
+</programlisting>
+
+		<table id="mineBugHistoryOptionsTable">
+			<title>Options for mineBugHistory command</title>
+			<tgroup cols="3" align="left">
+  				<thead>
+    				<row>
+      					<entry>Command-line option</entry>
+      					<entry>Ant attribute</entry>
+      					<entry>Meaning</entry>
+    				</row>
+  				</thead>
+  				<tbody>
+<row><entry></entry>               <entry>input="&lt;file&gt;"</entry>             <entry>use file as input</entry></row>
+<row><entry></entry>               <entry>output="&lt;file&gt;"</entry>            <entry>write output to file</entry></row>
+<row><entry>-formatDates</entry>   <entry>formatDates="[true|false]"</entry>       <entry>render dates in textual form</entry></row>
+<row><entry>-noTabs</entry>        <entry>noTabs="[true|false]"</entry>            <entry>delimit columns with groups of spaces instead of tabs (see below)</entry></row>
+<row><entry>-summary</entry>       <entry>summary="[true|false]"</entry>           <entry>output terse summary of changes over the last ten entries</entry></row>
+				</tbody>
+			</tgroup>
+		</table>
+
+		<para>
+		The <option>-noTabs</option> output can be easier to read from a shell
+		with a fixed-width font.
+		Because numeric columns are right-justified, spaces may precede the
+		first column value. This option also causes <option>-formatDates</option>
+		to render dates in terser format without embedded whitespace.
+		</para>
+
+		<para>The table is a tab-separated (barring <option>-noTabs</option>)
+		table with the following columns:</para>
 
 		<table id="mineBugHistoryColumns">
 			<title>Columns in mineBugHistory output</title>
@@ -2788,32 +2898,47 @@ row for the entire project, and one row for each package or class that contains 
 				This command converts a warning collection in XML format to a text
 				format with one line per warning, or to HTML.
 			</para>
-			<para>The options are:</para>
-			<variablelist>
-				<varlistentry>
-					<term><option>-longBugCodes</option></term>
-					<listitem>
-						<para>
-							use the full bug pattern code instead of the two-letter abbreviation
-						</para>
-					</listitem>
-				</varlistentry>
-				<varlistentry>
-					<term><option>-html</option><replaceable>[:stylesheet]</replaceable></term>
-					<listitem>
-						<para>
-							Generate html output with the specified stylesheet,
-							or default.xsl if no stylesheet is specified.
-						</para>
-						<para>
-							You may specify plain.xsl, default.xsl, fancy.xsl, fancy-hist.xsl,
-							or your own XSL stylesheet.
-							Despite the name of this option, you may specify
-							a stylesheet that emits something other than html.
-						</para>
-					</listitem>
-				</varlistentry>
-			</variablelist>
+
+<para>This functionality may also can be accessed from ant.
+First create a taskdef for <command>convertXmlToText</command> in your
+build file:
+</para>
+
+<programlisting>
+<![CDATA[
+<taskdef name="convertXmlToText" classname="edu.umd.cs.findbugs.anttask.ConvertXmlToTextTask">
+    <classpath refid="findbugs.lib" />
+</taskdef>
+]]>
+</programlisting>
+
+<para>Attributes for this ant task are listed in the following table.</para>
+			
+			<table id="convertXmlToTextTable">
+			<title>Options for convertXmlToText command</title>
+			<tgroup cols="3" align="left">
+  				<thead>
+    				<row>
+      					<entry>Command-line option</entry>
+      					<entry>Ant attribute</entry>
+      					<entry>Meaning</entry>
+    				</row>
+  					</thead>
+  				<tbody>
+<row><entry></entry>                   <entry>input="&lt;filename&gt;"</entry>         <entry>use file as input</entry></row>
+<row><entry></entry>                   <entry>output="&lt;filename&gt;"</entry>        <entry>output results to file</entry></row>
+<row><entry>-longBugCodes</entry>      <entry>longBugCodes="[true|false]"</entry>      <entry>use the full bug pattern code instead of two-letter abbreviation</entry></row>
+<row><entry>-html[:stylesheet]</entry> <entry>format="html:&lt;stylesheet&gt;"</entry> <entry>generate output with specified stylesheet (see below), or default.xsl if unspecified</entry></row>
+				</tbody>
+			</tgroup>
+		    </table>
+			
+			<para>
+			You may specify plain.xsl, default.xsl, fancy.xsl, fancy-hist.xsl,
+			or your own XSL stylesheet for the -html/format option.
+			Despite the name of this option, you may specify
+			a stylesheet that emits something other than html.
+			</para>
 		</sect2>
 		
 		<sect2 id="setBugDatabaseInfo">
@@ -2823,20 +2948,54 @@ row for the entire project, and one row for each package or class that contains 
 				This command sets meta-information in a specified warning collection.
 				It takes the following options:
 			</para>
+
+<para>This functionality may also can be accessed from ant.
+First create a taskdef for <command>setBugDatabaseInfo</command> in your
+build file:
+</para>
+
+<programlisting>
+<![CDATA[
+<taskdef name="setBugDatabaseInfo" classname="edu.umd.cs.findbugs.anttask.SetBugDatabaseInfoTask">
+    <classpath refid="findbugs.lib" />
+</taskdef>
+]]>
+</programlisting>
+
+<para>Attributes for this ant task are listed in the following table.
+To specify an input file either use the <literal>input</literal>
+attribute or nest it inside the ant call with a
+<literal>&lt;datafile&gt;</literal> element.  For example:
+</para>
+
+<programlisting>
+<![CDATA[
+<setBugDatabaseInfo home="${findbugs.home}" ...>
+    <datafile name="analyze.xml"/>
+</setBugDatabaseInfo>
+]]>
+</programlisting>
+
 		<table id="setBugDatabaseInfoOptions">
 			<title>setBugDatabaseInfo Options</title>
-			<tgroup cols="2" align="left">
+			<tgroup cols="3" align="left">
   				<thead>
     				<row>
-      					<entry>Option</entry>
+      					<entry>Command-line option</entry>
+      					<entry>Ant attribute</entry>
       					<entry>Meaning</entry>
     				</row>
   				</thead>
   				<tbody>
-					  <row><entry>-name <replaceable>name</replaceable></entry><entry>set name for (last) revision</entry></row>
-					  <row><entry>-timestamp <replaceable>when</replaceable></entry><entry>set timestamp for (last) revision</entry></row>
-					  <row><entry>-source <replaceable>directory</replaceable></entry><entry>add specified directory to the source search path</entry></row>
-					  <row><entry>-findSource <replaceable>directory</replaceable></entry><entry>find and add all relevant source directions contained within specified directory</entry></row>
+					  <row><entry></entry>                              <entry>input="&lt;file&gt;"</entry>           <entry>use file as input</entry></row>
+					  <row><entry></entry>                              <entry>output="&lt;file&gt;"</entry>          <entry>write output to file</entry></row>
+					  <row><entry>-name &lt;name&gt;</entry>            <entry>name="&lt;name&gt;"</entry>            <entry>set name for (last) revision</entry></row>
+					  <row><entry>-timestamp &lt;when&gt;</entry>       <entry>timestamp="&lt;when&gt;"</entry>       <entry>set timestamp for (last) revision</entry></row>
+					  <row><entry>-source &lt;directory&gt;</entry>     <entry>source="&lt;directory&gt;"</entry>     <entry>add specified directory to the source search path</entry></row>
+					  <row><entry>-findSource &lt;directory&gt;</entry> <entry>findSource="&lt;directory&gt;"</entry> <entry>find and add all relevant source directions contained within specified directory</entry></row>
+					  <row><entry>-suppress &lt;filter file&gt;</entry> <entry>suppress="&lt;filter file&gt;"</entry> <entry>suppress warnings matched by this file (replaces previous suppressions)</entry></row>
+					  <row><entry>-withMessages</entry>                 <entry>withMessages="[true|false]"</entry>    <entry>add textual messages to XML</entry></row>
+					  <row><entry>-resetSource</entry>                  <entry>resetSource="[true|false]"</entry>     <entry>remove all source search paths</entry></row>
 			 	</tbody>
 				</tgroup>
 			</table>
@@ -3050,45 +3209,47 @@ computeBugHistory -output db.xml db.xml jdk1.6.0-b61/jre/lib/rt.xml
          <sect1 id="antexemple">
             <title>Ant exemple</title>
 <para>
-Here is a complete ant script exemple for both running findbugs and generating an HTML report of bugs history using fancy-hist.xsl.
+Here is a complete ant script example for both running findbugs and running a chain of data-mining tools afterward:
 </para>
 <screen>
-&lt;?xml version="1.0" encoding="UTF-8"?&gt;
-&lt;project basedir="." default="findbugs" name="findbugs"&gt;
+<![CDATA[
+<project name="analyze_asm_util" default="findbugs">
+   <!-- findbugs task definition -->
+   <property name="findbugs.home" value="/Users/ben/Documents/workspace/findbugs/findbugs" />
+   <property name="jvmargs" value="-server -Xss1m -Xmx800m -Duser.language=en -Duser.region=EN -Dfindbugs.home=${findbugs.home}" />
 
-   &lt;property name="findbugs.home" value="d:/dev/findbugs" /&gt;
-   &lt;property name="jvmargs" value="-server -Xss1m -Xmx800m -Duser.language=en -Duser.region=EN -Dfindbugs.home=${findbugs.home}" /&gt;
+	<path id="findbugs.lib">
+      <fileset dir="${findbugs.home}/lib">
+         <include name="findbugs-ant.jar"/>
+      </fileset>
+   </path>
+   
+   <taskdef name="findbugs" classname="edu.umd.cs.findbugs.anttask.FindBugsTask">
+      <classpath refid="findbugs.lib" />
+   </taskdef>
 
+   <taskdef name="computeBugHistory" classname="edu.umd.cs.findbugs.anttask.ComputeBugHistoryTask">
+      <classpath refid="findbugs.lib" />
+   </taskdef>
 
-   &lt;!-- findbugs task definition --&gt;
-   &lt;path id="findbugs.lib"&gt;
-      &lt;fileset dir="${findbugs.home}/lib"&gt;
-         &lt;include name="findbugs-ant.jar"/&gt;
-      &lt;/fileset&gt;
-   &lt;/path&gt;
-   &lt;taskdef name="findbugs" classname="edu.umd.cs.findbugs.anttask.FindBugsTask"&gt;
-      &lt;classpath refid="findbugs.lib" /&gt;
-   &lt;/taskdef&gt;
+   <taskdef name="setBugDatabaseInfo" classname="edu.umd.cs.findbugs.anttask.SetBugDatabaseInfoTask">
+      <classpath refid="findbugs.lib" />
+   </taskdef>
 
-   &lt;!-- run findbugs against --&gt;
-   &lt;target name="findbugs"&gt;
+   <taskdef name="mineBugHistory" classname="edu.umd.cs.findbugs.anttask.MineBugHistoryTask">
+      <classpath refid="findbugs.lib" />
+   </taskdef>
 
-      &lt;!-- use current date &amp; time as release name --&gt;
-      &lt;tstamp&gt;
-         &lt;format property="release" pattern="yyyy-MM-dd_HH.mm.ss"/&gt;
-      &lt;/tstamp&gt;
+   <!-- findbugs task definition -->
+   <target name="findbugs">
+      <antcall target="analyze" />
+      <antcall target="mine" />
+   </target>
 
-      &lt;mkdir dir="temp" /&gt;
-
-      &lt;antcall target="analyze" /&gt;
-      &lt;antcall target="mine" /&gt;
-   &lt;/target&gt;
-
-
-   &lt;!-- analyze task --&gt;
-   &lt;target name="analyze"&gt;
-      &lt;!-- run findbugs against itself --&gt;
-      &lt;findbugs home="${findbugs.home}"
+   <!-- analyze task -->
+   <target name="analyze">
+      <!-- run findbugs against asm-util -->
+      <findbugs home="${findbugs.home}"
                 output="xml:withMessages"
                 timeout="90000000"
                 reportLevel="experimental"
@@ -3097,102 +3258,70 @@ Here is a complete ant script exemple for both running findbugs and generating a
                 adjustExperimental="true"
                 jvmargs="${jvmargs}"
                 failOnError="true"
-                outputFile="temp/findbugs-${release}.xml"
+                outputFile="out.xml"
                 projectName="Findbugs"
-                debug="false"
-                &gt;
-         &lt;class location="${findbugs.home}/lib/findbugs-ant.jar" /&gt;
-         &lt;class location="${findbugs.home}/lib/findbugs.jar" /&gt;
-         &lt;class location="${findbugs.home}/lib/findbugsGUI.jar" /&gt;
-         &lt;class location="${findbugs.home}/plugin/coreplugin.jar" /&gt;
-         &lt;auxClasspath&gt;
-            &lt;fileset file="${findbugs.home}/lib/AppleJavaExtensions.jar"/&gt;
-            &lt;fileset file="${findbugs.home}/lib/bcel.jar"/&gt;
-            &lt;fileset file="${findbugs.home}/lib/dom4j-full.jar"/&gt;
-            &lt;fileset file="${findbugs.home}/lib/junit.jar"/&gt;
-            &lt;fileset file="${ant.home}/lib/ant.jar"/&gt;
-         &lt;/auxClasspath&gt;
-      &lt;/findbugs&gt;
+                debug="false">
+         <class location="asm-util-3.0.jar" />
+      </findbugs>
+   </target>
 
-      &lt;!-- generate a non historized report --&gt;
-      &lt;xslt destdir="."
-         in="temp/findbugs-${release}.xml"
-         out="findbugs-${release}.html"
-         style="./fancy.xsl"
-         /&gt;
-   &lt;/target&gt;
+   <target name="mine">
 
-   &lt;target name="mine"&gt;
+      <!-- Set info to the latest analysis -->
+      <setBugDatabaseInfo home="${findbugs.home}"
+      	                  withMessages="true"
+      	                  name="asm-util-3.0.jar"
+      	                  input="out.xml"
+      	                  output="out-rel.xml"/>
 
-      &lt;!-- Set release info to the latest analysis --&gt;
-      &lt;java classname="edu.umd.cs.findbugs.workflow.SetBugDatabaseInfo" fork="true"&gt;
-         &lt;jvmarg line="${jvmargs}"/&gt;
-         &lt;arg line="-withMessages -name ${release} temp/findbugs-${release}.xml temp/findbugs-${release}-rel.xml"/&gt;
-         &lt;classpath&gt;
-            &lt;pathelement path="${findbugs.home}/lib/findbugs.jar"/&gt;
-         &lt;/classpath&gt;
-      &lt;/java&gt;
+      <!-- Checking if history file already exists (findbugs-hist.xml) -->
+      <condition property="mining.historyfile.available">
+         <available file="out-hist.xml"/>
+      </condition>
+      <condition property="mining.historyfile.notavailable">
+         <not>
+            <available file="out-hist.xml"/>
+         </not>
+      </condition>
 
-      &lt;!-- Checking if history file already exists (findbugs-hist.xml) --&gt;
-      &lt;condition property="mining.historyfile.available"&gt;
-         &lt;available file="findbugs-hist.xml"/&gt;
-      &lt;/condition&gt;
-      &lt;condition property="mining.historyfile.notavailable"&gt;
-         &lt;not&gt;
-            &lt;available file="findbugs-hist.xml"/&gt;
-         &lt;/not&gt;
-      &lt;/condition&gt;
+      <!-- this target is executed if the history file do not exist (first run) -->
+      <antcall target="history-init">
+        <param name="data.file" value="out-rel.xml" />
+        <param name="hist.file" value="out-hist.xml" />
+      </antcall>
+      <!-- else this one is executed -->
+      <antcall target="history">
+        <param name="data.file"         value="out-rel.xml" />
+        <param name="hist.file"         value="out-hist.xml" />
+        <param name="hist.summary.file" value="out-hist.txt" />
+      </antcall>
+   </target>
 
-      &lt;!-- this target is executed if the history file do not exist (first run) --&gt;
-      &lt;antcall target="history-init"&gt;
-        &lt;param name="data.file"           value="temp/findbugs-${release}-rel.xml" /&gt;
-        &lt;param name="hist.file"           value="findbugs-hist.xml" /&gt;
-      &lt;/antcall&gt;
-      &lt;!-- else this one is executed --&gt;
-      &lt;antcall target="history"&gt;
-        &lt;param name="data.file"           value="temp/findbugs-${release}-rel.xml" /&gt;
-        &lt;param name="hist.file"           value="findbugs-hist.xml" /&gt;
-        &lt;param name="hist.summary.file"   value="findbugs-hist.txt" /&gt;
-      &lt;/antcall&gt;
-   &lt;/target&gt;
+   <!-- Initializing history file -->
+   <target name="history-init" if="mining.historyfile.notavailable">
+      <copy file="${data.file}" tofile="${hist.file}" />
+   </target>
 
-   &lt;!-- Initializing history file --&gt;
-   &lt;target name="history-init" if="mining.historyfile.notavailable"&gt;
-      &lt;copy file="${data.file}" tofile="${hist.file}" /&gt;
-   &lt;/target&gt;
+   <!-- Computing bug history -->
+   <target name="history" if="mining.historyfile.available">
+      <!-- Merging ${data.file} into ${hist.file} -->
+      <computeBugHistory home="${findbugs.home}"
+      	                 withMessages="true"
+      	                 output="${hist.file}">
+      	  <dataFile name="${hist.file}"/>
+      	  <dataFile name="${data.file}"/>
+      </computeBugHistory>
 
-   &lt;!-- Computing bug history --&gt;
-   &lt;target name="history" if="mining.historyfile.available"&gt;
-      &lt;!-- Merging ${data.file} into ${hist.file} --&gt;
-      &lt;java classname="edu.umd.cs.findbugs.workflow.Update" fork="true"&gt;
-         &lt;jvmarg line="${jvmargs}"/&gt;
-         &lt;arg line="-withMessages -output ${hist.file} ${hist.file} ${data.file}"/&gt;
-         &lt;classpath&gt;
-            &lt;pathelement path="${findbugs.home}/lib/findbugs.jar"/&gt;
-         &lt;/classpath&gt;
-      &lt;/java&gt;
+      <!-- Compute history into ${hist.summary.file} -->
+      <mineBugHistory home="${findbugs.home}"
+      	              formatDates="true"
+                      noTabs="true"
+      	              input="${hist.file}"
+      	              output="${hist.summary.file}"/>
+   </target>
 
-      &lt;!-- Compute history into ${hist.summary.file} --&gt;
-      &lt;java classname="edu.umd.cs.findbugs.workflow.MineBugHistory" fork="true"&gt;
-         &lt;jvmarg line="${jvmargs}"/&gt;
-         &lt;arg line="-formatDates -noTabs ${hist.file} ${hist.summary.file}"/&gt;
-         &lt;classpath&gt;
-            &lt;pathelement path="${findbugs.home}/lib/findbugs.jar"/&gt;
-         &lt;/classpath&gt;
-      &lt;/java&gt;
-
-      &lt;!-- Generate HTML report --&gt;
-      &lt;xslt destdir="."
-         in="${hist.file}"
-         out="${hist.file}.html"
-         &gt;
-         &lt;style&gt;
-            &lt;zipentry zipfile='d:/dev/findbugs/lib/findbugs.jar' name='fancy-hist.xsl' /&gt;
-         &lt;/style&gt;
-      &lt;/xslt&gt;
-   &lt;/target&gt;
-
-&lt;/project&gt;
+</project>
+]]>
 </screen>
          </sect1>
 </chapter>

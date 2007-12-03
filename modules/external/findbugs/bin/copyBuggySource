@@ -19,7 +19,7 @@ done
 # Assume findbugs home directory is the parent
 # of the directory containing the script (which should
 # normally be "$findbugs_home/bin").
-dir=`dirname $program`
+dir=`dirname "$program"`
 findbugs_home="$dir/.."
 
 # Handle FHS-compliant installations (e.g., Fink)
@@ -28,7 +28,7 @@ if [ -d "$findbugs_home/share/findbugs" ]; then
 fi
 
 # Make absolute
-findbugs_home=`cd $findbugs_home && /bin/pwd`
+findbugs_home=`cd "$findbugs_home" && /bin/pwd`
 
 fb_pathsep=':'
 
@@ -49,13 +49,17 @@ fi
 # Choose default java binary
 fb_javacmd=java
 if [ ! -z "$JAVA_HOME" ] && [ -x "$JAVA_HOME/bin/java" ]; then
-	fb_javacmd="$JAVA_HOME/bin/java"
+	if [ `expr "$fb_osname" : CYGWIN` -ne 0 ]; then
+		fb_javacmd=`cygpath --mixed "$JAVA_HOME"`/bin/java
+	else
+		fb_javacmd="$JAVA_HOME/bin/java"
+	fi
 fi
 
 fb_mainclass=edu.umd.cs.findbugs.workflow.CopyBuggySource
 
 fb_javacmd=${fb_javacmd:-"java"}
-fb_maxheap=${fb_maxheap:-"-Xmx384m"}
+fb_maxheap=${fb_maxheap:-"-Xmx584m"}
 fb_appjar=${fb_appjar:-"$findbugs_home/lib/findbugs.jar"}
 set -f
 #echo command: \
