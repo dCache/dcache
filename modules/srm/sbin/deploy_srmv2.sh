@@ -450,8 +450,29 @@ cat >${tmp2} <<EOF
 EOF
 
 echo "               port=\"${SRM_V2_PORT}\""  >> ${tmp2}
+
+if [ "${TOMCAT_MAX_THREADS}" = "" ] ; then
+maxThreads=500
+else 
+maxThreads=${TOMCAT_MAX_THREADS}
+fi
+ 
+if [ "${TOMCAT_MIN_SPARE_THREADS}" = "" ] ; then
+minSpareThreads=25 
+else
+minSpareThreads=${TOMCAT_MIN_SPARE_THREADS}
+fi
+ 
+if [ "${TOMCAT_MAX_SPARE_THREADS}" = "" ] ; then
+maxSpareThreads=200
+else
+maxSpareThreads=${TOMCAT_MAX_SPARE_THREADS}
+fi
+ 
+echo  "               maxThreads=\"${maxThreads}\" minSpareThreads=\"${minSpareThreads}\" maxSpareThreads=\"${maxSpareThreads}\" ">> ${tmp2}
+echo  "               maxProcessors=\"${maxThreads}\" minProcessors=\"${minSpareThreads}\" maxSpareProcessors=\"${maxSpareThreads}\" ">> ${tmp2}
+
 cat >>${tmp2} <<EOF
-               maxThreads="150" minSpareThreads="25" maxSpareThreads="75"
                enableLookups="true" disableUploadTimeout="true"
                acceptCount="10" debug="1" scheme="https" autoFlush="true"
                protocolHandlerClassName="org.apache.coyote.http11.Http11Protocol"
