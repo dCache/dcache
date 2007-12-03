@@ -16,6 +16,7 @@ public class FileMetaDataTest {
         FileMetaData m2 =  new FileMetaData(3750, 1000, 0755);
 
         assertTrue("Two file meta data objects with same uid, gid, and mode have to be equal", m1.equals( m2 ));
+        assertTrue("Two equal meta data have to has equal hashCode", m1.hashCode() == m2.hashCode());
 
         m2.setGid(1);
         assertFalse("Two file meta data objects with differ  gid can't be equal", m1.equals( m2 ));
