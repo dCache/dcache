@@ -781,7 +781,7 @@ public class PoolManagerV5 extends CellAdapter {
           esay( "Problem replying to queryPool Request : "+ee ) ;
        }
     }
-    private class XProtocolInfo implements IpProtocolInfo {
+    private static class XProtocolInfo implements IpProtocolInfo {
        private String [] _host = new String[1] ;
 
        private static final long serialVersionUID = -5817364111427851052L;
@@ -797,7 +797,7 @@ public class PoolManagerV5 extends CellAdapter {
        public int       getPort(){ return 0 ; }
        public boolean isFileCheckRequired() { return true; }
     }
-    private class XStorageInfo extends GenericStorageInfo {
+    private static class XStorageInfo extends GenericStorageInfo {
 
        private static final long serialVersionUID = -6624549402952279903L;
 
