@@ -511,16 +511,16 @@ cacheInfo=companion
 #decoupled from the execution of the srm requests
 # the srmJdbcExecutionThreadNum controls the number of the threads 
 #that will be dedicated to execution of these updates 
-# and the srmMaxNumberOfJdbsTasksInQueue controls the maximum 
+# and the srmMaxNumberOfJdbcTasksInQueue controls the maximum 
 # length of the queue
 # srmJdbcExecutionThreadNum=5
-# srmMaxNumberOfJdbsTasksInQueue=1000
+# srmMaxNumberOfJdbcTasksInQueue=1000
 #
-# srmJdbsMonitoringLogEnabled is set to true srm will store sufficient
+# srmJdbcMonitoringLogEnabled is set to true srm will store sufficient
 # information about srm requests and their execution history in database
 # for monitoring interface to work 
 # if it is set to false, only the absiolutely necessary information will be stored
-# srmJdbsMonitoringLogEnabled=false
+# srmJdbcMonitoringLogEnabled=false
 #
 # turning this on turns off the latest changes that made service 
 # to honor the srm client's prococol list order for

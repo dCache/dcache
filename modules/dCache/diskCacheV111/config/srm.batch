@@ -140,20 +140,20 @@ set context -c srmNumberOfDaysInDatabaseHistory 10
 # how frequently to remove old requests from the database
 set context -c srmOldRequestRemovalPeriodSeconds 60
 
-# srmJdbsMonitoringLogEnabled is set to true srm will store sufficient
+# srmJdbcMonitoringLogEnabled is set to true srm will store sufficient
 # information about srm requests and their execution history in database
 # for monitoring interface to work 
 # if it is set to false, only the absiolutely necessary information will be stored
-set context -c srmJdbsMonitoringLogEnabled false
+set context -c srmJdbcMonitoringLogEnabled false
 
 #jdbc updates are now queued and their execution is 
 #decoupled from the execution of the srm requests
 # the srmJdbcExecutionThreadNum controls the number of the threads 
 #that will be dedicated to execution of these updates 
-# and the srmMaxNumberOfJdbsTasksInQueue controls the maximum 
+# and the srmMaxNumberOfJdbcTasksInQueue controls the maximum 
 # length of the queue
 set context -c srmJdbcExecutionThreadNum 5
-set context -c srmMaxNumberOfJdbsTasksInQueue 1000
+set context -c srmMaxNumberOfJdbcTasksInQueue 1000
 #
 # turning this on turns off the latest changes that made service 
 # to honor the srm client's prococol list order for
@@ -238,11 +238,11 @@ create diskCacheV111.srm.dcache.Storage  SRM-${thisHostname} \
         -dbUser=${srmDbUser} \
         -dbPass=${srmDbPassword} \
         -pgPass=${srmPasswordFile}   \
-        -jdbc-monitoring-log=${srmJdbsMonitoringLogEnabled} \
+        -jdbc-monitoring-log=${srmJdbcMonitoringLogEnabled} \
         -num-days-history=${srmNumberOfDaysInDatabaseHistory} \
         -old-request-remove-period-secs=${srmOldRequestRemovalPeriodSeconds} \
         -jdbc-execution-thread-num=${srmJdbcExecutionThreadNum} \
-        -max-queued-jdbc-tasks-num=${srmMaxNumberOfJdbsTasksInQueue} \
+        -max-queued-jdbc-tasks-num=${srmMaxNumberOfJdbcTasksInQueue} \
         -use-gplazma-authorization-module=${useGPlazmaAuthorizationModule} \
         -use-gplazma-authorization-cell=${useGPlazmaAuthorizationCell} \
         -gplazma-authorization-module-policy=${gplazmaPolicy} \
