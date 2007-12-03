@@ -76,9 +76,9 @@ public class TransferObserverV1
 
     private class FieldMap
     {
-        private final Class[] _conArgsClass = { dmg.util.Args.class };
-        private Class       _mapClass     = null;
-        private Constructor _constructor  = null;
+        private final Class<?>[] _conArgsClass = { dmg.util.Args.class };
+        private Class<?>       _mapClass     = null;
+        private Constructor<?> _constructor  = null;
         private Object      _master       = null;
         private Method      _mapOwner     = null;
 
@@ -90,7 +90,7 @@ public class TransferObserverV1
             }
 
             Object[] conArgs   = { args } ;
-            Class [] classArgs = { java.lang.String.class } ;
+            Class<?> [] classArgs = { java.lang.String.class } ;
             try {
                 _mapClass     = Class.forName(className) ;
                 _constructor  = _mapClass.getConstructor(_conArgsClass) ;
@@ -122,9 +122,9 @@ public class TransferObserverV1
         }
     }
 
-    private class DoorHandler
+    private static class DoorHandler
     {
-        private Map<String, Entry> _doors = new HashMap<String, Entry>();
+        private final Map<String, Entry> _doors = new HashMap<String, Entry>();
 
         private synchronized Entry defineDoor(String doorName)
         {
@@ -183,7 +183,7 @@ public class TransferObserverV1
             }
         }
 
-        private class Entry
+        private static class Entry
         {
             private boolean _isFixed = false;
             private String  _doorName = null;
@@ -276,7 +276,7 @@ public class TransferObserverV1
         export();
     }
 
-    private class TableEntry
+    private static class TableEntry
     {
         private String  _tableName = null;
         private int []  _fields    = null;
@@ -443,7 +443,7 @@ public class TransferObserverV1
     //
     // lowest priority transfer observer.
     //
-     private class IoEntry implements Comparable<IoEntry>
+     private static class IoEntry implements Comparable<IoEntry>
      {
          private final IoDoorInfo _ioDoorInfo ;
          private final IoDoorEntry _ioDoorEntry ;
