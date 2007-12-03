@@ -66,7 +66,7 @@ public class CleanerV2 extends CellAdapter implements Runnable {
 
     private final static SimpleDateFormat _formatter = new SimpleDateFormat ("yyyy.MM.dd");
 
-    private class DuplicatedOutputStream extends OutputStream {
+    private static class DuplicatedOutputStream extends OutputStream {
        private OutputStream _out1 , _out2 ;
        private DuplicatedOutputStream( OutputStream out1 , OutputStream out2 ){
           _out1 = out1 ;
@@ -127,7 +127,9 @@ public class CleanerV2 extends CellAdapter implements Runnable {
             if( refreshString != null ){
                try{
                    _refreshInterval = Long.parseLong( refreshString )*1000L ;
-               }catch(Exception ee ){}
+               }catch(NumberFormatException ee ){
+                   // bad values ignored
+               }
             }
             say("Refresh Interval set to "+_refreshInterval+" milli seconds");
 
@@ -135,7 +137,9 @@ public class CleanerV2 extends CellAdapter implements Runnable {
             if( refreshString != null ){
                try{
                    _recoverTimer = Long.parseLong( refreshString )*60000L ;
-               }catch(Exception ee ){}
+               }catch(NumberFormatException ee ){
+                   // bad values ignored
+               }
             }
             say("Recover Interval set to "+(_recoverTimer/60000L)+" minutes");
 
@@ -143,7 +147,9 @@ public class CleanerV2 extends CellAdapter implements Runnable {
             if( refreshString != null ){
                try{
                    _replyTimeout = Long.parseLong( refreshString )*1000L ;
-               }catch(Exception ee ){}
+               }catch(NumberFormatException ee ){
+                   // bad values ignored
+               }
             }
             say("Pool Timeout set to "+(_replyTimeout/1000L)+" seconds");
 
