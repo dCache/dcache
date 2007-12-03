@@ -122,8 +122,19 @@ fi
 nodeType=`printConfig NODE_TYPE`
 case ${nodeType} in
 	
-	admin|door|custom|pool)
+	admin|door|pool)
 		# OK
+		;;
+	custom)
+		#Custom can be admin door or pool for this scripts perspective
+		adminDoor=`printConfig adminDoor`
+		httpDomain=`printConfig httpDomain`
+		lmDomain=`printConfig lmDomain`
+		poolManager=`printConfig poolManager`
+		utilityDomain=`printConfig utilityDomain`
+		if [ "${adminDoor}" == "yes" -a "${httpDomain}" == "yes" -a "${lmDomain}" == "yes" -a "${poolManager}" == "yes" -a "${utilityDomain}" == "yes" ] ; then
+			nodeType="admin"
+		fi		
 		;;
 	dummy)
 		# not specified
