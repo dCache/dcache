@@ -13,7 +13,7 @@ ourHome=/opt/d-cache
 domainname_os() {
     case `uname` in
         Linux)
-            echo `hostname -d` > /dev/null 2>&1
+            echo `hostname -d`
             ;;
         SunOS)
             echo `/usr/lib/mail//sh/check-hostname |cut -d" " -f7 | awk -F. '{ for( i=2; i <= NF; i++){ printf("%s",$i); if( i  <NF) printf("."); } } '`
@@ -25,7 +25,7 @@ domainname_os() {
 fqdn_os() {
     case `uname` in
         Linux)
-            echo `hostname --fqdn` > /dev/null 2>&1
+            echo `hostname --fqdn`
             ;;
         SunOS)
             echo `/usr/lib/mail/sh/check-hostname |cut -d" " -f7`
@@ -36,7 +36,7 @@ fqdn_os() {
 shortname_os() {
     case `uname` in
         Linux)
-            echo `hostname -s` > /dev/null 2>&1
+            echo `hostname -s`
             ;;
         SunOS)
             echo `uname -n`
