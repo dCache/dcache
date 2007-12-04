@@ -992,7 +992,7 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
 	public void getInfo(PrintWriter pw) {
 		pw.println("Base directory    : " + _baseDir);
 		pw
-				.println("Revision          : [$Revision:$]");
+				.println("Revision          : [$Revision$]");
 		pw.println("Version           : " + getCellVersion() + " (Sub="
 				+ _version + ")");
 		pw.println("StickyFiles       : "
@@ -1501,7 +1501,7 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
 			SpaceMonitor monitor = _repository;
 			File cacheFile = null;
 			ChecksumMover csmover = null;
-                        ChecksumFactory clientChecksumFactory = null;
+			ChecksumFactory clientChecksumFactory = null;
 
 			if (!_crashEnabled) {
 				_storageInfo.setKey("crash", null);
@@ -1538,9 +1538,9 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
 						monitor = new PreallocationSpaceMonitor(_repository,
 								preallocatedSpace, maxAllocatedSpace);
 
-					csmover = _handler instanceof ChecksumMover ? (ChecksumMover) _handler
-							: null;
-                                        if( csmover != null ){
+                                        if( _handler instanceof ChecksumMover ){
+
+                                          csmover = (ChecksumMover)_handler;
                                           say("Checksum mover is set");
                                           clientChecksumFactory = csmover.getChecksumFactory(_protocolInfo);
                                           Checksum checksum = null;
