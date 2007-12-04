@@ -165,10 +165,10 @@ public class FJobScheduler implements JobScheduler, Runnable  {
 
        synchronized( _lock ){
 //           sb.append(" The jobs list \n" ) ;
-           Iterator i = _jobs.values().iterator() ;
+
 //           Iterator i = getJobInfos().iterator();
-           while( i.hasNext() ){
-              sb.append( i.next().toString() ).append("\n");
+           for( Job job: _jobs.values() ){
+              sb.append( job.toString() ).append("\n");
            }
 /*
            for( int j = LOW ; j <= HIGH ; j++ ){
@@ -213,16 +213,16 @@ public class FJobScheduler implements JobScheduler, Runnable  {
              throw new
              NoSuchElementException( "Job is "+job.getStatusString()+" : Job-"+jobId ) ;
 
-          LinkedList l = _queues[job._priority] ;
+          LinkedList<Job> l = _queues[job._priority] ;
           l.remove( job ) ;
-          _jobs.remove( new Integer(job._id)) ;
+          _jobs.remove( Integer.valueOf(job._id)) ;
           if( job._runnable instanceof Batchable )
              ((Batchable)job._runnable).unqueued() ;
        }
     }
     public Job getJob( int jobId ) throws NoSuchElementException {
        synchronized(_lock){
-          Job job = (Job)_jobs.get( new Integer(jobId) )  ;
+          Job job = _jobs.get( Integer.valueOf(jobId) )  ;
           if( job == null )
              throw new
              NoSuchElementException( "Job-"+jobId ) ;
