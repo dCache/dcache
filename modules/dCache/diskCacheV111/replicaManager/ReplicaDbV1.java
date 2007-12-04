@@ -1,91 +1,91 @@
-// $Id: ReplicaDbV1.java,v 1.35.10.7 2007-10-12 23:35:36 aik Exp $
+// $Id$
 
-package diskCacheV111.replicaManager ;
+package diskCacheV111.replicaManager;
 
-import  diskCacheV111.util.* ;
-import  dmg.cells.nucleus.*;
+import diskCacheV111.util.*;
+import dmg.cells.nucleus.*;
 
-import  java.util.* ;
-import  java.io.* ;
-import  java.sql.*;
-import  java.text.*;
+import java.util.*;
+//import java.io.IOException;
+import java.sql.*;
+
+//import javax.naming.*;
+import javax.sql.DataSource;
+
+import org.apache.commons.pool.ObjectPool;
+import org.apache.commons.pool.impl.GenericObjectPool;
+import org.apache.commons.pool.impl.StackKeyedObjectPoolFactory;
+import org.apache.commons.dbcp.ConnectionFactory;
+import org.apache.commons.dbcp.PoolingDataSource;
+import org.apache.commons.dbcp.PoolableConnectionFactory;
+import org.apache.commons.dbcp.DriverManagerConnectionFactory;
+
+//import uk.org.primrose.GeneralException;
+//import uk.org.primrose.vendor.standalone.*;
+//import uk.org.primrose.pool.core.PoolLoader;
+
 
 /**
  * This class works with replicas database
  */
 public class ReplicaDbV1 implements ReplicaDb1 {
-    private final static String _cvsId = "$Id: ReplicaDbV1.java,v 1.35.10.7 2007-10-12 23:35:36 aik Exp $";
-    private Connection _conn = null;
-    private Statement _stmt = null;
-    private CellAdapter _cell = null;
+    private final static String _cvsId     = "$Id$";
+
+    private Connection          _conn      = null;
+    private Statement           _stmt      = null;
+    private CellAdapter         _cell      = null;
+    private static DataSource   DATASOURCE = null;
 
     /**
-     * Class constructor opens connection to the database and create a statement for queries
+     * Class constructor opens connection to the database and creates a
+     * statement for queries
+     * @throws SQLException 
      */
-    public ReplicaDbV1(CellAdapter cell, String url, String jdbcClass,
-                       String user, String password, String pwdfile )
-        throws Exception {
-//      throws IllegalArgumentException {
+    public ReplicaDbV1(CellAdapter cell, boolean keep) throws SQLException {
 
         _cell = cell;
 
-        if ((url == null )  ||  (jdbcClass == null) ||
-            (user == null)  ||  (password == null && pwdfile == null) ) {
-          throw new
-              IllegalArgumentException("Not enough arguments to Init SQL database");
-        }
-
-        if (pwdfile != null && pwdfile.length() > 0) {
-            Pgpass pgpass = new Pgpass(pwdfile);
-            password = pgpass.getPgpass(url, user);
-        }
-
-        try {
-            Class.forName(jdbcClass);
-
-            // Connect to database
-            say("Connecting to Database URL = " + url);
-            _conn = DriverManager.getConnection(url, user, password);
-            _stmt = _conn.createStatement();
-        }
-        catch (Exception ex) {
-            ex.printStackTrace();
-            esay("Can not connect to the DB");
-            throw ( ex );
-//             System.exit(1);
+        if (keep) {
+            try {
+                _conn = DATASOURCE.getConnection();
+                _stmt = _conn.createStatement();
+            } catch (SQLException e) {
+                e.printStackTrace();
+                esay("Can not create DB connection");
+                throw(e);
+            }
         }
     }
 
     /**
-     * Class constructor opens connection to the database and create a statement for queries
+     * Class constructor
+     * @throws SQLException 
      */
-    public ReplicaDbV1(CellAdapter cell, String url, String jdbcClass,
-                       String user, String password) throws Exception
-    {
-        this(cell, url, jdbcClass, user, password, (String)null);
+    public ReplicaDbV1(CellAdapter cell) throws SQLException {
+        this(cell, false);
     }
 
     /*
      * Report SQL exception ex for the sql statement sql in method m.
      */
-    private void reportSQLException( String m, SQLException ex, String sql ) {
-        int    iErr   = ex.getErrorCode();
+    private void reportSQLException(String m, SQLException ex, String sql) {
+        int iErr = ex.getErrorCode();
         String sState = ex.getSQLState();
 
-        esay("SQL exception in method "+m+": '"+ex+ "', errCode="+iErr+" SQLState="+sState+
-             " SQLStatement=["+sql+"]");
+        esay("SQL exception in method " + m + ": '" + ex + "', errCode=" + iErr + " SQLState=" + sState + " SQLStatement=[" + sql
+                + "]");
     }
 
-    private void ignoredSQLException( String m, SQLException ex, String sql ) {
-        int    iErr   = ex.getErrorCode();
+    private void ignoredSQLException(String m, SQLException ex, String sql) {
+        int iErr = ex.getErrorCode();
         String sState = ex.getSQLState();
+        String exMsg = ex.getMessage().substring(5);
 
-        say("Ignore SQL exception in method "+m+": '"+ex+ "', errCode="+iErr+" SQLState="+sState+
-             " SQLStatement=["+sql+"]");
+        say("Ignore SQL exception in method " + m + ": '" + exMsg + "', errCode=" + iErr + " SQLState=" + sState
+                + " SQLStatement=[" + sql + "]");
     }
 
-
-    private void reportSQLException( SQLException ex ) {
+    private void reportSQLException(SQLException ex) {
         esay("Database access error");
         ex.printStackTrace();
     }
@@ -93,93 +93,199 @@ public class ReplicaDbV1 implements ReplicaDb1 {
     /**
      * Add record (poolname, pnfsid) to the table 'replicas'
      */
-    public synchronized void addPool( PnfsId pnfsId , String poolName ) {
-        String sql = "insert into replicas values ('"+poolName+"','"+pnfsId.toString()+"',now())";
+    public synchronized void addPool(PnfsId pnfsId, String poolName) {
+        final String sql = "insert into replicas values ('" + poolName + "','" + pnfsId.toString() + "',now())";
+        Connection conn = null;
+        Statement  stmt = null;
         try {
-            _stmt.executeUpdate( sql );
+            conn = (_conn == null) ? DATASOURCE.getConnection() : _conn;
+            stmt = (_conn == null) ? conn.createStatement() : _stmt;
+            stmt.executeUpdate(sql);
+        } catch (Exception ex) {
+            String exMsg = ex.getMessage();
+            // say("DEBUG: exMsg=["+exMsg+"]");
+            // exMsg=[ERROR: Cannot insert a duplicate key into unique index
+            // replica]
+
+            // This error string is system dependent or even version dependent:
+            if (exMsg.startsWith("ERROR:  Cannot insert a duplicate key into unique index replica")
+                    || exMsg.startsWith("ERROR: duplicate key violates unique constraint")) {
+                String s = exMsg.substring(5);
+                say("WARNING" + s + "; caused by duplicate message, ignore for now. pnfsid=" + pnfsId.toString() + " pool="
+                        + poolName);
+                ignoredSQLException("addPool()", (SQLException) ex, sql);
+
+            } else {
+                ex.printStackTrace();
+                esay("Database access error");
+            }
+        } finally {
+            if (_conn == null) {
+                try { stmt.close(); stmt = null; } catch (SQLException e) { }
+                try { conn.close(); } catch (SQLException e) { }
+            }
+           
         }
-        catch (Exception ex) {
-          String exMsg   = ex.getMessage();
-          //say("DEBUG: exMsg=["+exMsg+"]");
-          //exMsg=[ERROR:  Cannot insert a duplicate key into unique index replica]
+    }
 
-          // This error string is system dependent or even version dependent:
-          if (   exMsg.startsWith("ERROR:  Cannot insert a duplicate key into unique index replica")
-                 || exMsg.startsWith("ERROR: duplicate key violates unique constraint")
-                 ) {
-            String s = exMsg.substring(5);
-            say("WARNING"+ s +"; caused by duplicate message, ignore for now. pnfsid="
-                   +pnfsId.toString() +" pool=" + poolName  );
-            ignoredSQLException( "addPool()", (SQLException)ex, sql );
+    /**
+     * Add records (poolname, pnfsid) to the table 'replicas'
+     */
+    public synchronized void addPnfsToPool(List fileList, String poolName) {
+        Connection conn = null;
+        Statement  stmt = null;
+        PreparedStatement pstmt = null;
+        String sql = "insert into replicas values ('" + poolName + "',?,now())";
+        try {
+            conn = (_conn == null) ? DATASOURCE.getConnection() : _conn;
+            stmt = (_conn == null) ? conn.createStatement() : _stmt;
+            pstmt = conn.prepareStatement(sql);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            esay("addPnfsToPool: prepareStatement error");
+        }
+        try {
+//          stmt.executeUpdate("BEGIN");
+            conn.setAutoCommit(false);
+            //
+            for (Iterator n = fileList.iterator(); n.hasNext();) { // Now put
+                                                                    // all
+                                                                    // pnfsids
+                                                                    // into
+                                                                    // replicas
+                                                                    // table
+                String pnfsId = ((PnfsId)n.next()).toString();
+                try {
+                    pstmt.setString(1, pnfsId);
+                    pstmt.executeUpdate();
+                } catch (Exception ex) {
+                    String exMsg = ex.getMessage();
+                    // This error string is system dependent or even version
+                    // dependent:
+                    if (exMsg.startsWith("ERROR:  Cannot insert a duplicate key into unique index replica")
+                     || exMsg.startsWith("ERROR: duplicate key violates unique constraint")) {
+                        String s = exMsg.substring(5);
+                        say("WARNING" + s + "; caused by duplicate message, ignore for now. pnfsid=" + pnfsId + " pool=" + poolName);
+                        ignoredSQLException("addPool()", (SQLException) ex, sql);
 
-          } else {
-            ex.printStackTrace();
+                    } else {
+                        ex.printStackTrace();
+                        esay("Database access error");
+                    }
+                }
+            }
+            //
+            stmt.executeUpdate("INSERT INTO history_a SELECT * FROM ONLY replicas WHERE pool='" + poolName + "'");  // Save
+                                                                                                                    // into
+                                                                                                                    // history
+                                                                                                                    // table
+//          stmt.executeUpdate("COMMIT");
+            conn.commit();
+        } catch (SQLException e) {
+            try { conn.rollback(); } catch (SQLException e1) { }
             esay("Database access error");
-          }
+            e.printStackTrace();
+        } finally {
+            if (_conn == null) {
+                try { stmt.close(); stmt = null; } catch (SQLException e) { }
+                try { conn.close(); } catch (SQLException e) { }
+            }
         }
     }
 
     /**
      * Remove record (poolname, pnfsid) from the table 'replicas'
      */
-    public void removePool( PnfsId pnfsId , String poolName ) {
-        String sql = "delete from replicas where pool = '"+poolName+"' and pnfsId = '"+pnfsId.toString()+"'";
+    public void removePool(PnfsId pnfsId, String poolName) {
+        Connection conn = null;
+        Statement  stmt = null;
+        String sql = "DELETE FROM ONLY replicas WHERE pool = '" + poolName + "' and pnfsId = '" + pnfsId.toString() + "'";
         try {
-            _stmt.executeUpdate( sql );
+            conn = (_conn == null) ? DATASOURCE.getConnection() : _conn;
+            stmt = (_conn == null) ? conn.createStatement() : _stmt;
+            stmt.executeUpdate(sql);
+        } catch (SQLException ex) {
+            esay("WARNING: Database access error, can not delete pnfsId='" + pnfsId.toString() + "' " + "at pool = '" + poolName
+                    + "' from replicas DB table");
+            reportSQLException("removePool()", ex, sql);
+        } finally {
+            if (_conn == null) {
+                try { stmt.close(); stmt = null; } catch (SQLException e) { }
+                try { conn.close(); } catch (SQLException e) { }
+            }
         }
-        catch ( SQLException ex ) {
-          esay("WARNING: Database access error, can not delete pnfsId='"+pnfsId.toString()+"' "
-               +"at pool = '"+poolName+"' from replicas DB table");
-          reportSQLException( "removePool()", ex, sql );
-        }
+
     }
 
     /**
-     * Get the number of pools for given pnfsid
-     * depreciated - will not work with newer postgres release
+     * Get the number of pools for given pnfsid depreciated - will not work with
+     * newer postgres release
      */
-    public int countPools( PnfsId pnfsId ) {
-        String sql = "SELECT pool FROM ONLY replicas WHERE pnfsId = '"+ pnfsId.toString() + "'";
+    public int countPools(PnfsId pnfsId) {
+        Connection conn = null;
+        Statement  stmt = null;
+        ResultSet  rset = null;
+        String sql = "SELECT pool FROM ONLY replicas WHERE pnfsId = '" + pnfsId.toString() + "'";
         try {
-            ResultSet rset = _stmt.executeQuery(sql);
-            // getFetchSize() is depreciated and will not work with newer postgres release
+            conn = (_conn == null) ? DATASOURCE.getConnection() : _conn;
+            stmt = (_conn == null) ? conn.createStatement() : _stmt;
+            rset = stmt.executeQuery(sql);
+            // getFetchSize() is depreciated and will not work with newer
+            // postgres release
             return rset.getFetchSize();
-        }
-        catch (SQLException ex) {
-            // ex.printStackTrace();
+        } catch (SQLException ex) {
+            ex.printStackTrace();
             esay("Database access error");
-            reportSQLException( "countPools()", ex, sql );
+            reportSQLException("countPools()", ex, sql);
             return -1;
+        } finally {
+            if (_conn == null) {
+                try { rset.close(); rset = null; } catch (SQLException e) { }
+                try { stmt.close(); stmt = null; } catch (SQLException e) { }
+                try { conn.close(); } catch (SQLException e) { }
+            }
         }
     }
 
     /**
      * Remove all the records with given pnfsid from the table
      */
-    public void clearPools( PnfsId pnfsId ) {
-        String sql = "delete from replicas where pnfsId = '"+pnfsId.toString()+"'";
+    public void clearPools(PnfsId pnfsId) {
+        Connection conn = null;
+        Statement  stmt = null;
+        String sql = "DELETE FROM replicas WHERE pnfsId = '" + pnfsId.toString() + "'";
         try {
-            _stmt.executeUpdate( sql );
-        }
-        catch (Exception ex) {
+            conn = (_conn == null) ? DATASOURCE.getConnection() : _conn;
+            stmt = (_conn == null) ? conn.createStatement() : _stmt;
+            stmt.executeUpdate(sql);
+        } catch (Exception ex) {
             ex.printStackTrace();
             esay("Database access error");
+        } finally {
+            if (_conn == null) {
+                try { stmt.close(); stmt = null; } catch (SQLException e) { }
+                try { conn.close(); } catch (SQLException e) { }
+            }
         }
     }
 
     /**
      * Abstract class for DB access
      */
-    private abstract class DbIterator implements Iterator {
+    protected abstract class DbIterator implements Iterator {
 
-        protected ResultSet _rset = null;
-        protected Statement _stmt = null;
+        protected Connection conn = null;
+        protected Statement  stmt = null;
+        protected ResultSet  rset = null;
+
+        public DbIterator() throws SQLException {
+            conn = (_conn == null) ? DATASOURCE.getConnection() : _conn;
+        }
 
         public boolean hasNext() {
             try {
-                return _rset.next();
-            }
-            catch (Exception ex) {
+                return rset.next();
+            } catch (Exception ex) {
                 ex.printStackTrace();
                 esay("Can't step to the next element of the result set");
             }
@@ -188,9 +294,8 @@ public class ReplicaDbV1 implements ReplicaDb1 {
 
         public Object next() {
             try {
-                return _rset.getObject(1);
-            }
-            catch (Exception ex) {
+                return rset.getObject(1);
+            } catch (Exception ex) {
                 ex.printStackTrace();
                 esay("Can't get the next element of the result set");
             }
@@ -200,6 +305,12 @@ public class ReplicaDbV1 implements ReplicaDb1 {
         public void remove() {
             throw new UnsupportedOperationException("No remove");
         }
+        
+        public void close() {
+            try { rset.close(); rset = null; } catch (SQLException e) { }
+            try { stmt.close(); stmt = null; } catch (SQLException e) { }
+            try { conn.close(); } catch (SQLException e) { }
+        }
     }
 
     /**
@@ -207,55 +318,79 @@ public class ReplicaDbV1 implements ReplicaDb1 {
      */
     private class PnfsIdIterator extends DbIterator {
 
-        public PnfsIdIterator( ) {
-            String sql = "SELECT DISTINCT pnfsId FROM ONLY replicas";
-            try {
-                _stmt = _conn.createStatement();
-                _rset = _stmt.executeQuery( sql );
-            }
-            catch (Exception ex) {
-                ex.printStackTrace();
-                esay("Database access error");
-            }
+        private PnfsIdIterator() throws SQLException {
+            final String sql = "SELECT DISTINCT pnfsId FROM ONLY replicas";
+            stmt = conn.createStatement();
+            rset = stmt.executeQuery(sql);
         }
 
-        public PnfsIdIterator( String poolName ) {
-            String sql = "SELECT pnfsId FROM ONLY replicas WHERE  pool = '"+poolName+"'";
-            try {
-                _stmt = _conn.createStatement();
-                _rset = _stmt.executeQuery( sql );
-            }
-            catch (Exception ex) {
-                ex.printStackTrace();
-                esay("Database access error");
-            }
+        private PnfsIdIterator(String poolName) throws SQLException {
+            String sql = "SELECT pnfsId FROM ONLY replicas WHERE  pool = '" + poolName + "'";
+            stmt = conn.createStatement();
+            rset = stmt.executeQuery(sql);
         }
 
-        public PnfsIdIterator( long timestamp ) {
-            String sql = "SELECT pnfsId FROM action WHERE timestamp < '"+timestamp+"'";
-            try {
-                _stmt = _conn.createStatement();
-                _rset = _stmt.executeQuery( sql );
-            }
-            catch (Exception ex) {
-                ex.printStackTrace();
-                esay("Database access error");
-            }
+        private PnfsIdIterator(long timestamp) throws SQLException {
+            String sql = "SELECT pnfsId FROM action WHERE timestamp < '" + timestamp + "'";
+            stmt = conn.createStatement();
+            rset = stmt.executeQuery(sql);
         }
+    }
+
+    /*
+     * Returns all PNFSIDs from the DB
+     * 
+     * @deprecated
+     */
+    public Iterator pnfsIds() {
+        try {
+            return new PnfsIdIterator();
+        } catch (SQLException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        return new HashSet().iterator(); // Empty set
     }
 
     /**
      * Returns all PNFSIDs from the DB
      */
-    public Iterator pnfsIds() {
-        return new PnfsIdIterator();
+    public Iterator getPnfsIds() {
+        try {
+            return new PnfsIdIterator();
+        } catch (SQLException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        return new HashSet().iterator(); // Empty set
+    }
+
+    /*
+     * Returns all PNFSIDs for the given pool from the DB.
+     * 
+     * @deprecated
+     */
+    public Iterator pnfsIds(String poolName) {
+        try {
+            return new PnfsIdIterator(poolName);
+        } catch (SQLException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        return new HashSet().iterator(); // Empty set
     }
 
     /**
      * Returns all PNFSIDs for the given pool from the DB
      */
-    public Iterator pnfsIds(String poolName) {
-        return new PnfsIdIterator(poolName);
+    public Iterator getPnfsIds(String poolName) {
+        try {
+            return new PnfsIdIterator(poolName);
+        } catch (SQLException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        return new HashSet().iterator(); // Empty set
     }
 
     /**
@@ -265,136 +400,164 @@ public class ReplicaDbV1 implements ReplicaDb1 {
 
         /**
          * Returns all pools from the DB
+         * 
+         * @throws SQLException
          */
-        public PoolsIterator( ) {
-            String sql = "SELECT * FROM pools";
-            try {
-                _stmt = _conn.createStatement();
-                _rset = _stmt.executeQuery( sql );
-            }
-            catch (Exception ex) {
-                ex.printStackTrace();
-                esay("Database access error");
-            }
+        private PoolsIterator() throws SQLException {
+            final String sql = "SELECT * FROM pools";
+            stmt = conn.createStatement();
+            rset = stmt.executeQuery(sql);
         }
 
         /**
          * Returns all pools for given pnfsid from the DB
+         * 
+         * @throws SQLException
          */
-        public PoolsIterator( PnfsId pnfsId ) {
-            String sql = "SELECT pool FROM ONLY replicas WHERE pnfsId = '"+pnfsId.toString()+"'";
-            try {
-                _stmt = _conn.createStatement();
-                _rset = _stmt.executeQuery( sql );
-            }
-            catch (Exception ex) {
-                ex.printStackTrace();
-                esay("Database access error");
-            }
+        private PoolsIterator(PnfsId pnfsId) throws SQLException {
+            String sql = "SELECT pool FROM ONLY replicas WHERE pnfsId = '" + pnfsId.toString() + "'";
+            stmt = conn.createStatement();
+            rset = stmt.executeQuery(sql);
         }
     }
 
     /**
      * Returns all pools from DB
      */
-    public Iterator getPools( ) {
-        return new PoolsIterator( );
+    public Iterator getPools() {
+        try {
+            return new PoolsIterator();
+        } catch (SQLException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        return new HashSet().iterator(); // Empty set
     }
 
     /**
      * Returns all pools for a given pnfsid
      */
-    public Iterator getPools( PnfsId pnfsId ) {
-        return new PoolsIterator(pnfsId);
+    public Iterator getPools(PnfsId pnfsId) {
+        try {
+            return new PoolsIterator(pnfsId);
+        } catch (SQLException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        return new HashSet().iterator(); // Empty set
     }
 
     private class PoolsWritableIterator extends DbIterator {
         /**
          * Returns Writable pools from the DB
+         * 
+         * @throws SQLException
          */
-        public PoolsWritableIterator( ) {
-            String query = "select * from pools WHERE status='online'";
-
-            try {
-                _stmt = _conn.createStatement();
-                _rset = _stmt.executeQuery( query );
-            }
-            catch (Exception ex) {
-                ex.printStackTrace();
-                esay("Database access error");
-            }
+        private PoolsWritableIterator() throws SQLException {
+            final String query = "select * from pools WHERE status='online'";
+            stmt = conn.createStatement();
+            rset = stmt.executeQuery(query);
         }
     }
 
     /**
      * Returns all writable pools from DB
      */
-    public Iterator getPoolsWritable( ) {
-        return new PoolsWritableIterator( );
+    public Iterator getPoolsWritable() {
+        try {
+            return new PoolsWritableIterator();
+        } catch (SQLException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        return new HashSet().iterator(); // Empty set
     }
 
     private class PoolsReadableIterator extends DbIterator {
         /**
          * Returns Readable pools from the DB
+         * 
+         * @throws SQLException
          */
-        public PoolsReadableIterator( ) {
-            String query = "select * from pools WHERE "
-                           +"(  status='"+ONLINE+"' "
-                           +"OR status='"+DRAINOFF+"' "
-                           +"OR status='"+OFFLINE_PREPARE+"')";
-
-            try {
-                _stmt = _conn.createStatement();
-                _rset = _stmt.executeQuery( query );
-            }
-            catch (Exception ex) {
-                ex.printStackTrace();
-                esay("Database access error");
-            }
+        private PoolsReadableIterator() throws SQLException {
+            String query = "select * from pools WHERE " + "(  status='" + ONLINE + "' " + "OR status='" + DRAINOFF + "' "
+                    + "OR status='" + OFFLINE_PREPARE + "')";
+            stmt = conn.createStatement();
+            rset = stmt.executeQuery(query);
         }
     }
 
     /**
      * Returns all Readable pools from DB
      */
-    public Iterator getPoolsReadable( ) {
-        return new PoolsReadableIterator( );
+    public Iterator getPoolsReadable() {
+        try {
+            return new PoolsReadableIterator();
+        } catch (SQLException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        return new HashSet().iterator(); // Empty set
     }
 
     /**
      * Clears the tables
      */
     public void clearAll() {
+        Connection conn = null;
+        Statement  stmt = null;
         try {
-//             _conn.setAutoCommit(false);
-            _stmt.executeUpdate("BEGIN");
-            _stmt.executeUpdate("DELETE FROM replicas");
-            _stmt.executeUpdate("DELETE FROM pools");
-            _stmt.executeUpdate("COMMIT");
-//             _conn.commit();
-//             _conn.setAutoCommit(true);
-        }
-        catch (Exception ex) {
-            ex.printStackTrace();
+            conn = (_conn == null) ? DATASOURCE.getConnection() : _conn;
+            stmt = (_conn == null) ? conn.createStatement() : _stmt;
+//          stmt.executeUpdate("BEGIN");
+            conn.setAutoCommit(false);
+            stmt.executeUpdate("DELETE FROM replicas");
+            stmt.executeUpdate("DELETE FROM pools");
+//          stmt.executeUpdate("COMMIT");
+            conn.commit();
+        } catch (Exception ex) {
+            try { conn.rollback(); } catch (SQLException e1) { }
+//          ex.printStackTrace();
             esay("Can't clear the tables");
+        } finally {
+            if (_conn == null) {
+                try { stmt.close(); stmt = null; } catch (SQLException e) { }
+                try { conn.close(); } catch (SQLException e) { }
+            }
         }
     }
 
     /**
      * Clears pools and replicas tables for the pool 'pool' in argument
-     *
-     * @throws Exception if can not remove pool from DB
+     * 
+     * @throws SQLException
+     *                 if can not remove pool from DB
      */
-    public void clearPool( String poolName ) {
+    public void clearPool(String poolName) {
+        Connection conn = null;
+        Statement  stmt = null;
         try {
-            _stmt.executeUpdate("BEGIN");
-            _stmt.executeUpdate("DELETE FROM replicas WHERE pool='"+poolName+"'");
-            _stmt.executeUpdate("DELETE FROM pools    WHERE pool='"+poolName+"'");
-            _stmt.executeUpdate("COMMIT");
-        }
-        catch (Exception ex) {
-            ex.printStackTrace();
-            esay("Can't remove pool '"+poolName+"' from the DB");
+            conn = (_conn == null) ? DATASOURCE.getConnection() : _conn;
+            stmt = (_conn == null) ? conn.createStatement() : _stmt;
+//          stmt.executeUpdate("BEGIN");
+            conn.setAutoCommit(false);
+            stmt.executeUpdate("INSERT INTO history_b SELECT * FROM ONLY replicas WHERE pool='" + poolName + "'");  // Save
+                                                                                                                    // into
+                                                                                                                    // history
+                                                                                                                    // table
+            stmt.executeUpdate("DELETE FROM ONLY replicas WHERE pool='" + poolName + "'");
+            stmt.executeUpdate("DELETE FROM pools    WHERE pool='" + poolName + "'");
+//          stmt.executeUpdate("COMMIT");
+            conn.commit();
+        } catch (SQLException ex) {
+            try { conn.rollback(); } catch (SQLException e1) { }
+//          ex.printStackTrace();
+            esay("Can't remove pool '" + poolName + "' from the DB");
+        } finally {
+            if (_conn == null) {
+                try { stmt.close(); stmt = null; } catch (SQLException e) { }
+                try { conn.close(); } catch (SQLException e) { }
+            }
         }
     }
 
@@ -403,30 +566,23 @@ public class ReplicaDbV1 implements ReplicaDb1 {
      */
     private class getRedundantIterator extends DbIterator {
 
-        public getRedundantIterator(int maxcnt) {
+        private getRedundantIterator(int maxcnt) throws SQLException {
             // Workaround postgres 8.x feature :
-            // Do selection from 'replicas' and 'action', then drop pnfsid present in 'action'
-            //                was : FROM ONLY replicas, pools ...
+            // Do selection from 'replicas' and 'action', then drop pnfsid
+            // present in 'action'
+            // was : FROM ONLY replicas, pools ...
 
-            String sql = "SELECT * FROM (SELECT pnfsid, sum(CASE WHEN pools.status='"+ONLINE+"' THEN 1 ELSE 0 END) "+
-                         "FROM      replicas, pools WHERE replicas.pool=pools.pool GROUP BY pnfsid) AS tmp "+
-                         "WHERE sum > "+maxcnt+" AND pnfsid NOT IN (SELECT pnfsid FROM action) ORDER BY sum DESC"
-                         ;
-            try {
-                _stmt = _conn.createStatement();
-                _rset = _stmt.executeQuery( sql );
-            }
-            catch (Exception ex) {
-                ex.printStackTrace();
-                esay("Database access error");
-            }
+            String sql = "SELECT * FROM (SELECT pnfsid, sum(CASE WHEN pools.status='" + ONLINE + "' THEN 1 ELSE 0 END) "
+                    + "FROM      replicas, pools WHERE replicas.pool=pools.pool GROUP BY pnfsid) AS tmp " + "WHERE sum > " + maxcnt
+                    + " AND pnfsid NOT IN (SELECT pnfsid FROM action) ORDER BY sum DESC";
+            stmt = conn.createStatement();
+            rset = stmt.executeQuery(sql);
         }
 
         public Object next() {
             try {
-                return new Object[] {_rset.getObject(1), _rset.getObject(2)};
-            }
-            catch (Exception ex) {
+                return new Object[] { rset.getObject(1), rset.getObject(2) };
+            } catch (Exception ex) {
                 ex.printStackTrace();
                 esay("Can't get the next element of the result set");
             }
@@ -438,7 +594,13 @@ public class ReplicaDbV1 implements ReplicaDb1 {
      * Returns all pnfsids with counters > 4
      */
     public Iterator getRedundant(int maxcnt) {
-        return new getRedundantIterator(maxcnt);
+        try {
+            return new getRedundantIterator(maxcnt);
+        } catch (SQLException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        return new HashSet().iterator(); // Empty set
     }
 
     /**
@@ -446,34 +608,23 @@ public class ReplicaDbV1 implements ReplicaDb1 {
      */
     private class getDeficientIterator extends DbIterator {
 
-        public getDeficientIterator(int mincnt) {
-
+        private getDeficientIterator(int mincnt) throws SQLException {
             // Workaround postgres 8.x feature :
-            // Do selection from 'replicas' and 'action', then drop pnfsid present in 'action'
-            //                was : FROM ONLY replicas, pools ...
-            String sql = "SELECT * FROM (SELECT pnfsid,"+
-                         "sum(CASE WHEN pools.status='"+ONLINE
-                         +        "' OR pools.status='"+OFFLINE
-                         +        "' OR pools.status='"+OFFLINE_PREPARE
-                         +      "' THEN 1 ELSE 0 END) "+
-                         "FROM      replicas, pools WHERE replicas.pool=pools.pool GROUP BY pnfsid) AS tmp "+
-                         "WHERE sum > 0 and sum < "+mincnt+" AND pnfsid NOT IN (SELECT pnfsid FROM action) ORDER BY sum ASC"
-                         ;
-            try {
-                _stmt = _conn.createStatement();
-                _rset = _stmt.executeQuery( sql );
-            }
-            catch (Exception ex) {
-                ex.printStackTrace();
-                esay("Database access error");
-            }
+            // Do selection from 'replicas' and 'action', then drop pnfsid
+            // present in 'action'
+            // was : FROM ONLY replicas, pools ...
+            String sql = "SELECT * FROM (SELECT pnfsid," + "sum(CASE WHEN pools.status='" + ONLINE + "' OR pools.status='"
+                    + OFFLINE + "' OR pools.status='" + OFFLINE_PREPARE + "' THEN 1 ELSE 0 END) "
+                    + "FROM      replicas, pools WHERE replicas.pool=pools.pool GROUP BY pnfsid) AS tmp "
+                    + "WHERE sum > 0 and sum < " + mincnt + " AND pnfsid NOT IN (SELECT pnfsid FROM action) ORDER BY sum ASC";
+            stmt = conn.createStatement();
+            rset = stmt.executeQuery(sql);
         }
 
         public Object next() {
             try {
-                return new Object[] {_rset.getObject(1), _rset.getObject(2)};
-            }
-            catch (Exception ex) {
+                return new Object[] { rset.getObject(1), rset.getObject(2) };
+            } catch (Exception ex) {
                 ex.printStackTrace();
                 esay("Can't get the next element of the result set");
             }
@@ -485,7 +636,13 @@ public class ReplicaDbV1 implements ReplicaDb1 {
      * Returns all pnfsids with counters = 1
      */
     public Iterator getDeficient(int mincnt) {
-        return new getDeficientIterator(mincnt);
+        try {
+            return new getDeficientIterator(mincnt);
+        } catch (SQLException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        return new HashSet().iterator(); // Empty set
     }
 
     /**
@@ -493,98 +650,122 @@ public class ReplicaDbV1 implements ReplicaDb1 {
      */
     private class getMissingIterator extends DbIterator {
 
-        public getMissingIterator( ) {
-            String sql = "SELECT pnfsid FROM (SELECT pnfsid, "+
-                         "sum(CASE "+
-                         "WHEN pools.status='"+ONLINE
-                         +"' OR pools.status='"+OFFLINE
-                         +"' OR pools.status='"+OFFLINE_PREPARE
-                         +"' THEN 1 "+
-                         "WHEN pools.status='reduce' THEN -1 ELSE 0 "+
-                         "END) FROM replicas, pools WHERE replicas.pool=pools.pool GROUP BY pnfsid) AS tmp WHERE sum=0"
-                         ;
-            try {
-                _stmt = _conn.createStatement();
-                _rset = _stmt.executeQuery( sql );
-            }
-            catch (Exception ex) {
-                ex.printStackTrace();
-                esay("Database access error");
-            }
+        private getMissingIterator() throws SQLException {
+            String sql = "SELECT pnfsid FROM (SELECT pnfsid, " + "sum(CASE " + "WHEN pools.status='" + ONLINE
+                    + "' OR pools.status='" + OFFLINE + "' OR pools.status='" + OFFLINE_PREPARE + "' THEN 1 "
+                    + "WHEN pools.status='reduce' THEN -1 ELSE 0 "
+                    + "END) FROM replicas, pools WHERE replicas.pool=pools.pool GROUP BY pnfsid) AS tmp WHERE sum=0";
+            stmt = conn.createStatement();
+            rset = stmt.executeQuery(sql);
         }
     }
 
     /**
      * Returns all pnfsids with counters = 0
      */
-    public Iterator getMissing( ) {
-        return new getMissingIterator( );
+    public Iterator getMissing() {
+        try {
+            return new getMissingIterator();
+        } catch (SQLException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        return new HashSet().iterator(); // Empty set
     }
 
-// Removed
-//     public void addPoolStatus(String poolName, String poolStatus) {
-//         try {
-//             _stmt.executeUpdate("insert into pools values ('"+poolName+"','"+poolStatus+"')");
-//         }
-//         catch (Exception ex) {
-//             ex.printStackTrace();
-//             System.out.println("Can't add pool '"+poolName+"'");
-//         }
-//     }
+//    Removed
+//    public void addPoolStatus(String poolName, String poolStatus) {
+//        try {
+//            _stmt.executeUpdate("insert into pools values
+//                                ('"+poolName+"','"+poolStatus+"')");
+//        }
+//        catch (Exception ex) {
+//            ex.printStackTrace();
+//            System.out.println("Can't add pool '"+poolName+"'");
+//        }
+//    }
 
     public void removePoolStatus(String poolName) {
-        String sql = "delete from pools where pool='"+poolName+"'";
+        Connection conn = null;
+        Statement  stmt = null;
+        String sql = "delete from pools where pool='" + poolName + "'";
         try {
-            _stmt.executeUpdate( sql );
-        }
-        catch (Exception ex) {
+            conn = (_conn == null) ? DATASOURCE.getConnection() : _conn;
+            stmt = (_conn == null) ? conn.createStatement() : _stmt;
+            stmt.executeUpdate(sql);
+        } catch (Exception ex) {
             ex.printStackTrace();
-            esay("Can't remove pool '"+poolName+"' from the DB");
+            esay("Can't remove pool '" + poolName + "' from the DB");
+        } finally {
+            if (_conn == null) {
+                try { stmt.close(); stmt = null; } catch (SQLException e) { }
+                try { conn.close(); } catch (SQLException e) { }
+            }
         }
     }
 
     /**
      * Set the value of pool status.
-     * @param poolName  Pool name.
-     * @param poolStatus  Value to assign to pool status.
+     * 
+     * @param poolName
+     *                Pool name.
+     * @param poolStatus
+     *                Value to assign to pool status.
      */
     public void setPoolStatus(String poolName, String poolStatus) {
-        String sql_i = "insert into pools values ('"+poolName+"','"+poolStatus+"',now())";
-        String sql_u = "update pools set status='"+poolStatus+"', datestamp=now() where pool='"+poolName+"'";
+        Connection conn = null;
+        Statement  stmt = null;
+        String sql_i = "insert into pools values ('" + poolName + "','" + poolStatus + "',now())";
+        String sql_u = "update pools set status='" + poolStatus + "', datestamp=now() where pool='" + poolName + "'";
 
         try {
-            _stmt.executeUpdate( sql_i );
-        }
-        catch (Exception ex) {
+            conn = (_conn == null) ? DATASOURCE.getConnection() : _conn;
+            stmt = (_conn == null) ? conn.createStatement() : _stmt;
+            stmt.executeUpdate(sql_i);
+        } catch (SQLException ex) {
             // say("setPoolStatus() INFO: Can't add pool '"+poolName+"'"
-            //    +" to 'pools' table in DB, will try to update");
+            // +" to 'pools' table in DB, will try to update");
             try {
-                _stmt.executeUpdate( sql_u );
-            }
-            catch (Exception ex2) {
+                stmt.executeUpdate(sql_u);
+            } catch (SQLException ex2) {
                 ex2.printStackTrace();
-                esay("setPoolStatus() ERROR: Can't add/update pool '"+poolName+"'"
-                     +" status in 'pools' table in DB");
+                esay("setPoolStatus() ERROR: Can't add/update pool '" + poolName + "'" + " status in 'pools' table in DB");
+            }
+        } finally {
+            if (_conn == null) {
+                try { stmt.close(); stmt = null; } catch (SQLException e) { }
+                try { conn.close(); } catch (SQLException e) { }
             }
         }
     }
 
     /**
      * Get the value of pool status.
+     * 
      * @return value of pool status.
      */
     public String getPoolStatus(String poolName) {
-        String sql = "SELECT status FROM pools WHERE pool='"+ poolName + "'";
+        Connection conn = null;
+        Statement  stmt = null;
+        ResultSet  rset = null;
+        String sql = "SELECT status FROM pools WHERE pool='" + poolName + "'";
         try {
-            ResultSet rset = _stmt.executeQuery(sql);
+            conn = (_conn == null) ? DATASOURCE.getConnection() : _conn;
+            stmt = (_conn == null) ? conn.createStatement() : _stmt;
+            rset = stmt.executeQuery(sql);
             rset.next();
             return rset.getString(1);
-        }
-        catch (SQLException ex) {
-            reportSQLException( "getPoolStatus()", ex, sql );
+        } catch (SQLException ex) {
+            reportSQLException("getPoolStatus()", ex, sql);
 
-            esay("DB: Can't get status for pool '"+poolName+"' from pools table, return 'UNKNOWN'");
+            esay("DB: Can't get status for pool '" + poolName + "' from pools table, return 'UNKNOWN'");
             return "UNKNOWN";
+        } finally {
+            if (_conn == null) {
+                try { rset.close(); rset = null; } catch (SQLException e) { }
+                try { stmt.close(); stmt = null; } catch (SQLException e) { }
+                try { conn.close(); } catch (SQLException e) { }
+            }
         }
     }
 
@@ -592,22 +773,31 @@ public class ReplicaDbV1 implements ReplicaDb1 {
      * Add transaction into DB
      */
     public void addTransaction(PnfsId pnfsId, long timestamp, int count) {
+        Connection conn = null;
+        Statement  stmt = null;
         String poolName = null;
-        if      (count > 0)
+        if (count > 0)
             poolName = "replicate";
         else if (count < 0)
             poolName = "reduce";
         else
             poolName = "exclude";
-
-        String sql = "INSERT INTO action VALUES ('"+poolName+"','"+pnfsId.toString()+"',now(),"+timestamp+")";
+//      poolName = (count==0) ? "exclude" : ((count > 0) ? "replicate" : "reduce");
+            
+        final String sql = "INSERT INTO action VALUES ('" + poolName + "','" + pnfsId.toString() + "',now()," + timestamp + ")";
 
         try {
-            _stmt.executeUpdate( sql );
-        }
-        catch (Exception ex) {
+            conn = (_conn == null) ? DATASOURCE.getConnection() : _conn;
+            stmt = (_conn == null) ? conn.createStatement() : _stmt;
+            stmt.executeUpdate(sql);
+        } catch (Exception ex) {
             ex.printStackTrace();
             esay("Can't add transaction to the DB");
+        } finally {
+            if (_conn == null) {
+                try { stmt.close(); stmt = null; } catch (SQLException e) { }
+                try { conn.close(); } catch (SQLException e) { }
+            }
         }
     }
 
@@ -615,30 +805,72 @@ public class ReplicaDbV1 implements ReplicaDb1 {
      * Remove transaction from DB
      */
     public void removeTransaction(PnfsId pnfsId) {
-        String sql = "DELETE FROM action WHERE pnfsId = '"+pnfsId.toString()+"'";
+        Connection conn = null;
+        Statement  stmt = null;
+        final String sql = "DELETE FROM action WHERE pnfsId = '" + pnfsId.toString() + "'";
         try {
-            _stmt.executeUpdate( sql );
-        }
-        catch (Exception ex) {
+            conn = (_conn == null) ? DATASOURCE.getConnection() : _conn;
+            stmt = (_conn == null) ? conn.createStatement() : _stmt;
+            stmt.executeUpdate(sql);
+        } catch (Exception ex) {
             ex.printStackTrace();
             esay("Can't remove transaction from the DB");
+        } finally {
+            if (_conn == null) {
+                try { stmt.close(); stmt = null; } catch (SQLException e) { }
+                try { conn.close(); } catch (SQLException e) { }
+            }
         }
     }
+    
+    /**
+     * Release excluded files from action table with timestamp older than "timesatamp"
+     */
+    public int releaseExcluded(long timestamp) {
+        Connection conn = null;
+        Statement  stmt = null;
+        String sql = "DELETE FROM action WHERE pool='exclude' AND timestamp < '" + timestamp + "'";
+        int count = 0;
+        try {
+            conn = (_conn == null) ? DATASOURCE.getConnection() : _conn;
+            stmt = (_conn == null) ? conn.createStatement() : _stmt;
+            count = stmt.executeUpdate(sql);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            esay("Can't delete old 'exclude' records files from the action table");
+        } finally {
+            if (_conn == null) {
+                try { stmt.close(); stmt = null; } catch (SQLException e) { }
+                try { conn.close(); } catch (SQLException e) { }
+            }
+        }
+
+        return count;
+    }
+
 
     /**
      * Clear transactions from DB
      */
     public void clearTransactions() {
-        String sql1 = "DELETE FROM action WHERE pool='replicate'";
-        String sql2 = "DELETE FROM action WHERE pool='reduce'";
+        Connection conn = null;
+        Statement  stmt = null;
+        final String sql1 = "DELETE FROM action WHERE pool='replicate'";
+        final String sql2 = "DELETE FROM action WHERE pool='reduce'";
 
         try {
-            _stmt.executeUpdate( sql1 );
-            _stmt.executeUpdate( sql2 );
-        }
-        catch (Exception ex) {
+            conn = (_conn == null) ? DATASOURCE.getConnection() : _conn;
+            stmt = (_conn == null) ? conn.createStatement() : _stmt;
+            stmt.executeUpdate(sql1);
+            stmt.executeUpdate(sql2);
+        } catch (Exception ex) {
             ex.printStackTrace();
             esay("Can't clear transactions from the DB");
+        } finally {
+            if (_conn == null) {
+                try { stmt.close(); stmt = null; } catch (SQLException e) { }
+                try { conn.close(); } catch (SQLException e) { }
+            }
         }
     }
 
@@ -646,34 +878,73 @@ public class ReplicaDbV1 implements ReplicaDb1 {
      * Return the timestamp for a given PNFSID
      */
     public long getTimestamp(PnfsId pnfsId) {
-        String sql ="SELECT timestamp FROM action WHERE pnfsId = '"+ pnfsId.toString() + "'";
+        Connection conn = null;
+        Statement  stmt = null;
+        ResultSet  rset = null;
+        String sql = "SELECT timestamp FROM action WHERE pnfsId = '" + pnfsId.toString() + "'";
         try {
-            ResultSet rset = _stmt.executeQuery( sql );
+            conn = (_conn == null) ? DATASOURCE.getConnection() : _conn;
+            stmt = (_conn == null) ? conn.createStatement() : _stmt;
+            rset = stmt.executeQuery(sql);
             rset.next();
             return rset.getLong(1);
-        }
-        catch (Exception ex) {
+        } catch (Exception ex) {
             ex.printStackTrace();
             esay("Can't get data from the DB");
             return -1;
+        } finally {
+            if (_conn == null) {
+                try { rset.close(); } catch (SQLException e) { }
+                try { stmt.close(); stmt = null; } catch (SQLException e) { }
+                try { conn.close(); } catch (SQLException e) { }
+            }
         }
+    }
+
+    /*
+     * Return the list of PNFSIDs which are older than 'timestamp'
+     * 
+     * @deprecated
+     */
+    public Iterator pnfsIds(long timestamp) {
+        try {
+            return new PnfsIdIterator(timestamp);
+        } catch (SQLException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        return new HashSet().iterator(); // Empty set
     }
 
     /**
      * Return the list of PNFSIDs which are older than 'timestamp'
      */
-    public Iterator pnfsIds(long timestamp) {
-        return new PnfsIdIterator(timestamp);
+    public Iterator getPnfsIds(long timestamp) {
+        try {
+            return new PnfsIdIterator(timestamp);
+        } catch (SQLException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        return new HashSet().iterator(); // Empty set
     }
 
-    public void removePool( String poolName ) {
-        String sql = "DELETE FROM replicas WHERE pool = '"+poolName+"'";
+    public void removePool(String poolName) {
+        Connection conn = null;
+        Statement  stmt = null;
+        String sql = "DELETE FROM ONLY replicas WHERE pool = '" + poolName + "'";
         try {
-            _stmt.executeUpdate( sql );
-        }
-        catch (Exception ex) {
+            conn = (_conn == null) ? DATASOURCE.getConnection() : _conn;
+            stmt = (_conn == null) ? conn.createStatement() : _stmt;
+            stmt.executeUpdate(sql);
+        } catch (Exception ex) {
             ex.printStackTrace();
             esay("Can't remove pool from the DB");
+        } finally {
+            if (_conn == null) {
+                try { stmt.close(); stmt = null; } catch (SQLException e) { }
+                try { conn.close(); } catch (SQLException e) { }
+            }
         }
     }
 
@@ -682,42 +953,39 @@ public class ReplicaDbV1 implements ReplicaDb1 {
      */
     private class getDrainingIterator extends DbIterator {
 
-        public getDrainingIterator( ) {
-            String sql = "SELECT rd.pnfsid "+
-                         "FROM ONLY replicas rd, pools pd "+
-                         "WHERE rd.pool = pd.pool AND pd.status = '"+DRAINOFF+"' "+
-                         "GROUP BY rd.pnfsid "+
-                         "EXCEPT "+
-                         "SELECT r.pnfsid "+
-                         "FROM ("+
-                         "       SELECT rr.pnfsid FROM ONLY replicas rr, pools pp "+
-                         "       WHERE rr.pool = pp.pool  AND pp.status = '"+DRAINOFF+"' "+
-                         "       GROUP BY rr.pnfsid"+
-                         "     ) r, "+
-                         "     ONLY replicas r1, "+
-                         "     pools p1 "+
-                         "WHERE r.pnfsid  = r1.pnfsid"+
-                         " AND  p1.pool   = r1.pool"+
-                         " AND  ( p1.status = '"+ONLINE+"' "+
-                         "     OR r.pnfsid IN (SELECT pnfsid FROM action) ) "+
-                         "GROUP BY r.pnfsid"
-                         ;
-            try {
-                _stmt = _conn.createStatement();
-                _rset = _stmt.executeQuery( sql );
-            }
-            catch (Exception ex) {
-                ex.printStackTrace();
-                esay("Database access error");
-            }
+        private getDrainingIterator() throws SQLException {
+            String sql = "SELECT rd.pnfsid " + 
+            "FROM ONLY replicas rd, pools pd " + 
+            "WHERE rd.pool = pd.pool AND pd.status = '" + DRAINOFF + "' " + 
+            "GROUP BY rd.pnfsid " + 
+            "EXCEPT " + 
+            "SELECT r.pnfsid " + 
+            "FROM (" +
+            "       SELECT rr.pnfsid FROM ONLY replicas rr, pools pp " +
+            "       WHERE rr.pool = pp.pool  AND pp.status = '" + DRAINOFF + "' " +
+            "       GROUP BY rr.pnfsid" +
+            "     ) r, " + 
+            "     ONLY replicas r1, " + "     pools p1 " + "WHERE r.pnfsid  = r1.pnfsid" +
+            " AND  p1.pool   = r1.pool" + 
+            " AND  ( p1.status = '" + ONLINE + "' " +
+            "     OR r.pnfsid IN (SELECT pnfsid FROM action) ) " + 
+            "GROUP BY r.pnfsid";
+            stmt = conn.createStatement();
+            rset = stmt.executeQuery(sql);
         }
     }
 
     /**
      * Get the list of PNFSIDs which are in the drainoff pools only
      */
-    public Iterator getInDrainoffOnly( ) {
-        return new getDrainingIterator( );
+    public Iterator getInDrainoffOnly() {
+        try {
+            return new getDrainingIterator();
+        } catch (SQLException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        return new HashSet().iterator(); // Empty set
     }
 
     /**
@@ -725,76 +993,79 @@ public class ReplicaDbV1 implements ReplicaDb1 {
      */
     private class getOfflineIterator extends DbIterator {
 
-        public getOfflineIterator( ) {
-            String sql = "SELECT ro.pnfsid "+
-                         "FROM ONLY replicas ro, pools po "+
-                         "WHERE ro.pool = po.pool AND po.status = '"+OFFLINE_PREPARE+"' "+
-                         "GROUP BY ro.pnfsid "+
-                         "EXCEPT "+
-                         "SELECT r.pnfsid "+
-                         "FROM ("+
-                         "       SELECT rr.pnfsid FROM ONLY replicas rr, pools pp "+
-                         "       WHERE rr.pool = pp.pool  AND pp.status = '"+OFFLINE_PREPARE+"' "+
-                         "       GROUP BY rr.pnfsid"+
-                         "     ) r, "+
-                         "     ONLY replicas r1, "+
-                         "     pools p1 "+
-                         "WHERE r.pnfsid = r1.pnfsid"+
-                         " AND  p1.pool  = r1.pool"+
-                         " AND  ( p1.status = '"+ONLINE+"' "+
-                         "     OR r.pnfsid IN (SELECT pnfsid FROM action) ) "+
-                         "GROUP BY r.pnfsid"
-                         ;
-            try {
-                _stmt = _conn.createStatement();
-                _rset = _stmt.executeQuery( sql );
-            }
-            catch (Exception ex) {
-                ex.printStackTrace();
-                esay("Database access error");
-            }
+        private getOfflineIterator() throws SQLException {
+            String sql = "SELECT ro.pnfsid " + "FROM ONLY replicas ro, pools po " + "WHERE ro.pool = po.pool AND po.status = '"
+                    + OFFLINE_PREPARE + "' " + "GROUP BY ro.pnfsid " + "EXCEPT " + "SELECT r.pnfsid " + "FROM ("
+                    + "       SELECT rr.pnfsid FROM ONLY replicas rr, pools pp "
+                    + "       WHERE rr.pool = pp.pool  AND pp.status = '" + OFFLINE_PREPARE + "' " + "       GROUP BY rr.pnfsid"
+                    + "     ) r, " + "     ONLY replicas r1, " + "     pools p1 " + "WHERE r.pnfsid = r1.pnfsid"
+                    + " AND  p1.pool  = r1.pool" + " AND  ( p1.status = '" + ONLINE + "' "
+                    + "     OR r.pnfsid IN (SELECT pnfsid FROM action) ) " + "GROUP BY r.pnfsid";
+            stmt = conn.createStatement();
+            rset = stmt.executeQuery(sql);
         }
     }
 
     /**
      * Get the list of PNFSIDs which are in the offline pools only
      */
-    public Iterator getInOfflineOnly( ) {
-        return new getOfflineIterator( );
+    public Iterator getInOfflineOnly() {
+        try {
+            return new getOfflineIterator();
+        } catch (SQLException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        return new HashSet().iterator(); // Empty set
     }
 
     /**
-     *
+     * 
      */
     public void setHeartBeat(String name, String desc) {
-        String sql_i = "insert into heartbeat values ('"+name+"','"+desc+"',now())";
-        String sql_u = "update heartbeat set description='"+desc+"', datestamp=now() where process='"+name+"'";
+        Connection conn = null;
+        Statement  stmt = null;
+        final String sql_i = "insert into heartbeat values ('" + name + "','" + desc + "',now())";
+        final String sql_u = "update heartbeat set description='" + desc + "', datestamp=now() where process='" + name + "'";
 
         try {
-            _stmt.executeUpdate( sql_i );
-        }
-        catch (Exception ex) {
+            conn = (_conn == null) ? DATASOURCE.getConnection() : _conn;
+            stmt = (_conn == null) ? conn.createStatement() : _stmt;
+            stmt.executeUpdate(sql_i);
+        } catch (Exception ex) {
             try {
-                _stmt.executeUpdate( sql_u );
-            }
-            catch (Exception ex2) {
+                stmt.executeUpdate(sql_u);
+            } catch (Exception ex2) {
                 ex2.printStackTrace();
-                esay("setHeartBeat() ERROR: Can't add/update process '"+name+"' status in 'heartbeat' table in DB");
+                esay("setHeartBeat() ERROR: Can't add/update process '" + name + "' status in 'heartbeat' table in DB");
+            }
+        } finally {
+            if (_conn == null) {
+                try { stmt.close(); stmt = null; } catch (SQLException e) { }
+                try { conn.close(); } catch (SQLException e) { }
             }
         }
     }
 
     /**
-     *
+     * 
      */
     public void removeHeartBeat(String name) {
-        String sql = "delete from heartbeat where process = '"+name+"'";
+        Connection conn = null;
+        Statement  stmt = null;
+        final String sql = "delete from heartbeat where process = '" + name + "'";
         try {
-            _stmt.executeUpdate( sql );
-        }
-        catch (Exception ex) {
+            conn = (_conn == null) ? DATASOURCE.getConnection() : _conn;
+            stmt = (_conn == null) ? conn.createStatement() : _stmt;
+            stmt.executeUpdate(sql);
+        } catch (Exception ex) {
             ex.printStackTrace();
             esay("Database access error");
+        } finally {
+            if (_conn == null) {
+                try { stmt.close(); stmt = null; } catch (SQLException e) { }
+                try { conn.close(); } catch (SQLException e) { }
+            }
         }
     }
 
@@ -818,106 +1089,212 @@ public class ReplicaDbV1 implements ReplicaDb1 {
     }
 
     public static void printClassName(Object obj) {
-        System.out.println("The class of " + obj +" is " + obj.getClass().getName());
+        System.out.println("The class of " + obj + " is " + obj.getClass().getName());
     }
 
-    public static void main( String [] args )throws Exception
-    {
-        System.out.println("Test ReplicaDbV1, cvsId="+ _cvsId );
+    
+//    /*
+//     * Setup method for Primrose Connection Pool
+//     * @param poolname
+//     */
+//    public final static void setup(String config) {
+//    // Load the pools
+//        try {
+//            List loadedPoolNames = PrimroseLoader.load(config, true);
+//            String poolName = (String)loadedPoolNames.get(0);
+//            try {
+//                Context ctx = new InitialContext();
+//                DATASOURCE = (DataSource)ctx.lookup("java:comp/env/" +poolName);
+//            } catch (Exception e) {
+//                e.printStackTrace();
+//            }
+//
+//        } catch (IOException e) {
+//            // TODO Auto-generated catch block
+//            e.printStackTrace();
+//        } catch (GeneralException e) {
+//            // TODO Auto-generated catch block
+//            e.printStackTrace();
+//        }
+//    }
+    
+//    private final static void d(String op) {
+//        System.out.println(op+": getNumActive: "+((GenericObjectPool) connectionPool).getNumActive()+" getNumIdle: "+((GenericObjectPool) connectionPool).getNumIdle());
+//    }
+    
+    /**
+     * Setup method to create connection to the database and the datasource
+     * 
+     * @param connectURI
+     * @param jdbcClass
+     * @param user
+     * @param password
+     */
+    public final static void setup(String connectURI, String jdbcClass, String user, String password) {
+        try {
+            Class.forName(jdbcClass);
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+            return;
+        }
 
-        ReplicaDbV1 db = new ReplicaDbV1(
-            null,
-            "jdbc:postgresql://localhost:5432/replicas",
-            "org.postgresql.Driver", "enstore", "NoPassword", "/root/.pgpass") ;
+//       final ObjectPool connectionPool = new GenericObjectPool(null);
+//       GenericObjectPool(PoolableObjectFactory factory,
+//                         int maxActive,
+//                         byte whenExhaustedAction,
+//                         long maxWait,
+//                         int maxIdle,
+//                         int minIdle,
+//                         boolean testOnBorrow,
+//                         boolean testOnReturn,
+//                         long timeBetweenEvictionRunsMillis,
+//                         int numTestsPerEvictionRun,
+//                         long minEvictableIdleTimeMillis,
+//                         boolean testWhileIdle,
+//                         long softMinEvictableIdleTimeMillis)
+        final ObjectPool connectionPool = new GenericObjectPool(null,
+                         10,
+                         GenericObjectPool.WHEN_EXHAUSTED_GROW,
+                         0, // Ignored because GenericObjectPool.WHEN_EXHAUSTED_GROW
+                         8,
+                         4,
+                         true,
+                         false,
+                         600000,
+                         2,
+                         300000,
+                         true,
+                         300000);
+
+
+        
+        final ConnectionFactory connectionFactory = new DriverManagerConnectionFactory(connectURI, user, password);
+
+        // PoolableConnectionFactory(     ConnectionFactory connFactory,
+        //                                ObjectPool pool,
+        //                                KeyedObjectPoolFactory stmtPoolFactory,
+        //                                String validationQuery,
+        //                                boolean defaultReadOnly,
+        //                                boolean defaultAutoCommit)
+        final PoolableConnectionFactory poolableConnectionFactory = 
+            new PoolableConnectionFactory(connectionFactory, 
+                                          connectionPool,
+                                          new StackKeyedObjectPoolFactory(), // null,
+                                          "select current_date", 
+                                          false, 
+                                          true);
+        final PoolingDataSource dataSource = new PoolingDataSource(connectionPool);
+//        ((GenericObjectPool) connectionPool).setTestOnBorrow(true);
+//        ((GenericObjectPool) connectionPool).setMaxActive(50);
+//        ((GenericObjectPool) connectionPool).setWhenExhaustedAction(GenericObjectPool.WHEN_EXHAUSTED_GROW);
+
+	System.out.println("getMaxActive()="+((GenericObjectPool) connectionPool).getMaxActive());
+        System.out.println("getMaxIdle()="+((GenericObjectPool) connectionPool).getMaxIdle());
+        System.out.println("getMaxWait()="+((GenericObjectPool) connectionPool).getMaxWait());
+        System.out.println("getMinEvictableIdleTimeMillis()="+((GenericObjectPool) connectionPool).getMinEvictableIdleTimeMillis());
+        System.out.println("getMinIdle()="+((GenericObjectPool) connectionPool).getMinIdle());
+        System.out.println("getWhenExhaustedAction()="+((GenericObjectPool) connectionPool).getWhenExhaustedAction());
+
+        DATASOURCE = dataSource;
+    }
+
+   
+    public static void main(String[] args) throws SQLException 
+    {
+        System.out.println("Test ReplicaDbV1, cvsId=" + _cvsId);
+
+        setup("jdbc:postgresql://localhost:5432/replicas", "org.postgresql.Driver", "enstore", "NoPassword");
+        ReplicaDbV1 db = new ReplicaDbV1(null);
 
         System.out.println("List pnfsId's in all pools");
-        for ( Iterator i = db.pnfsIds() ; i.hasNext() ; ) {
-            System.out.println( i.next().toString());
+        for (Iterator i = db.pnfsIds(); i.hasNext();) {
+            System.out.println(i.next().toString());
         }
 
-        for ( Iterator p = db.getPools( ) ; p.hasNext() ; ) {
+        for (Iterator p = db.getPools(); p.hasNext();) {
             String pool = p.next().toString();
-            System.out.println("Pool : "+pool);
-            for (Iterator j = db.pnfsIds(pool) ; j.hasNext() ; ) {
-                System.out.println( j.next().toString());
+            System.out.println("Pool : " + pool);
+            for (Iterator j = db.pnfsIds(pool); j.hasNext();) {
+                System.out.println(j.next().toString());
             }
         }
-//         for ( Iterator j = db.pnfsIds("pool1") ; j.hasNext() ; ) {
-//             System.out.println( j.next().toString());
-//         }
-//         for ( Iterator j = db.pnfsIds("pool2") ; j.hasNext() ; ) {
-//             System.out.println( j.next().toString());
-//         }
-//         for ( Iterator j = db.pnfsIds("pool3") ; j.hasNext() ; ) {
-//             System.out.println( j.next().toString());
-//         }
-//         for ( Iterator j = db.pnfsIds("pool4") ; j.hasNext() ; ) {
-//             System.out.println( j.next().toString());
-//         }
+//        for ( Iterator j = db.pnfsIds("pool1") ; j.hasNext() ; ) {
+//            System.out.println( j.next().toString());
+//        }
+//        for ( Iterator j = db.pnfsIds("pool2") ; j.hasNext() ; ) {
+//            System.out.println( j.next().toString());
+//        }
+//        for ( Iterator j = db.pnfsIds("pool3") ; j.hasNext() ; ) {
+//            System.out.println( j.next().toString());
+//        }
+//        for ( Iterator j = db.pnfsIds("pool4") ; j.hasNext() ; ) {
+//            System.out.println( j.next().toString());
+//        }
 
-        PnfsId pnfsId = new PnfsId("1234") ;
+        PnfsId pnfsId = new PnfsId("1234");
 
         System.out.println("WARNING: db.countPools(...) is depreciated and will not work with newer postgres release ");
 
-        db.addPool( pnfsId , "pool1" ) ;
-        db.addPool( pnfsId , "pool2" ) ;
-        db.addPool( pnfsId , "pool3" ) ;
+        db.addPool(pnfsId, "pool1");
+        db.addPool(pnfsId, "pool2");
+        db.addPool(pnfsId, "pool3");
         System.out.println("pools: " + db.countPools(pnfsId));
 
-        db.removePool( pnfsId , "pool1" ) ;
+        db.removePool(pnfsId, "pool1");
         System.out.println("pools: " + db.countPools(pnfsId));
 
-        db.addPool( pnfsId , "pool1" ) ;
+        db.addPool(pnfsId, "pool1");
         System.out.println("pools: " + db.countPools(pnfsId));
 
         db.clearPools(pnfsId);
         System.out.println("pools: " + db.countPools(pnfsId));
 
-// This has to generate an error: Cannot insert a duplicate key into unique index replicas_index
-//          for (int i = 0; i < 5; i++) {
-//              db.addPool( new PnfsId("2000"+i) , "pool1" ) ;
-//          }
+        // This has to generate an error: Cannot insert a duplicate key into
+        // unique index replicas_index
+//        for (int i = 0; i < 5; i++) {
+//            db.addPool( new PnfsId("2000"+i) , "pool1" ) ;
+//        }
 
-//          for (int i = 0; i < 5; i++) {
-//              db.addPool( new PnfsId("2000"+i) , "pool3" ) ;
-//          }
+//        for (int i = 0; i < 5; i++) {
+//            db.addPool( new PnfsId("2000"+i) , "pool3" ) ;
+//        }
 
-        db.addPool( pnfsId , "pool2" ) ;
-//         db.addPool( pnfsId , "pool2" ) ;  // This has to generate an error: Cannot insert a duplicate key into unique index replicas_index
+        db.addPool(pnfsId, "pool2");
+        // db.addPool( pnfsId , "pool2" ) ; // This has to generate an error:
+        // Cannot insert a duplicate key into unique index replicas_index
         System.out.println("pools: " + db.countPools(pnfsId));
-        for ( Iterator i = db.getPools( pnfsId ) ; i.hasNext() ; ) {
-            System.out.println(" pnfsid : "+pnfsId+ ", pool : "+i.next());
+        for (Iterator i = db.getPools(pnfsId); i.hasNext();) {
+            System.out.println(" pnfsid : " + pnfsId + ", pool : " + i.next());
         }
 
-        db.removePool( pnfsId , "pool2" ) ;
+        db.removePool(pnfsId, "pool2");
         System.out.println("pools: " + db.countPools(pnfsId));
-        for ( Iterator i = db.getPools( pnfsId ) ; i.hasNext() ; ) {
-            System.out.println(" pnfsid : "+pnfsId+ ", pool : "+i.next());
+        for (Iterator i = db.getPools(pnfsId); i.hasNext();) {
+            System.out.println(" pnfsid : " + pnfsId + ", pool : " + i.next());
         }
 
-        for ( Iterator i = db.getMissing( ) ; i.hasNext() ; ) {
-            System.out.println(" Missing pnfsid : "+i.next());
+        for (Iterator i = db.getMissing(); i.hasNext();) {
+            System.out.println(" Missing pnfsid : " + i.next());
         }
 
-
-        for ( Iterator i = db.getDeficient(2) ; i.hasNext() ; ) {
-            Object[] r = (Object[])(i.next());
-//             System.out.println(" Length : "+r.length);
-            System.out.println(" Deficient pnfsid : "+r[0]+": "+r[1]);
-//             printClassName(i.next());
-//             printClassName(new int[] {1,2,3});
+        for (Iterator i = db.getDeficient(2); i.hasNext();) {
+            Object[] r = (Object[]) (i.next());
+            // System.out.println(" Length : "+r.length);
+            System.out.println(" Deficient pnfsid : " + r[0] + ": " + r[1]);
+            // printClassName(i.next());
+            // printClassName(new int[] {1,2,3});
         }
 
-        for ( Iterator i = db.getRedundant(3) ; i.hasNext() ; ) {
-            Object[] r = (Object[])(i.next());
-            System.out.println(" Redundant pnfsid : "+r[0]+": "+r[1]);
+        for (Iterator i = db.getRedundant(3); i.hasNext();) {
+            Object[] r = (Object[]) (i.next());
+            System.out.println(" Redundant pnfsid : " + r[0] + ": " + r[1]);
         }
 
-        System.out.println("pool1: Status : '"+db.getPoolStatus("pool1")+"'");
-        System.out.println("pool11111111111: Status : '"+db.getPoolStatus("pool11111111111")+"'");
+        System.out.println("pool1: Status : '" + db.getPoolStatus("pool1") + "'");
+        System.out.println("pool11111111111: Status : '" + db.getPoolStatus("pool11111111111") + "'");
 
-        db.setPoolStatus("pool9","offline");
-        System.out.println("pool9: Status : '"+db.getPoolStatus("pool9")+"'");
+        db.setPoolStatus("pool9", "offline");
+        System.out.println("pool9: Status : '" + db.getPoolStatus("pool9") + "'");
 
         db.clearPool("pool9");
 

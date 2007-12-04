@@ -41,7 +41,7 @@ public class ReplicaManagerExample extends DCacheCoreController {
             newInstance( objClass ) ;
    }
    public void getInfo( PrintWriter pw ){
-      pw.println("          Cell : $Id: ReplicaManagerExample.java,v 1.4.24.1 2007-10-12 23:35:35 aik Exp $");
+      pw.println("          Cell : $Id$");
       synchronized( _dbLock ){
          pw.println(" initDb Active : "+_initDbActive ) ;
       }

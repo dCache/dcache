@@ -1,4 +1,4 @@
-//   $Id: DCacheCoreControllerV2.java,v 1.16.2.9 2007-10-18 22:29:51 aik Exp $
+//   $Id$
 
 package diskCacheV111.replicaManager ;
 
@@ -62,7 +62,7 @@ import  java.util.*;
   */
 
 abstract public class DCacheCoreControllerV2 extends CellAdapter {
-   private final static String _cvsId = "$Id: DCacheCoreControllerV2.java,v 1.16.2.9 2007-10-18 22:29:51 aik Exp $";
+   private final static String _cvsId = "$Id$";
 
    private String      _cellName = null ;
    private Args        _args     = null ;
@@ -287,7 +287,6 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
       return sb.toString() ;
    }
 
-
    private long __taskId = 10000L ;
    private synchronized long __nextTaskId(){ return __taskId++ ; }
 
@@ -387,6 +386,35 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
       public long getCreationTime() { return _creationTime; }
 
    }
+
+   /**
+    *  Tear down task by pool name (for Reducer) or
+    *  source or destination pool name (replicator)
+    */
+   protected void  taskTearDownByPoolName( String poolName ){
+      HashSet allTasks;
+      boolean taskFound = false;
+
+      synchronized (_taskHash) {
+        allTasks = new HashSet(_taskHash.values());
+      }
+
+      for (Iterator i = allTasks.iterator(); i.hasNext(); ) {
+        TaskObserver task = (TaskObserver) i.next();
+        if (task != null && !task.isDone()) {
+          if ( (task.getType().equals("Reduction") &&
+                ( (ReductionObserver) task).getPool().equals(poolName))
+              || (task.getType().equals("Replication") &&
+                  ( ( ( (MoverTask) task).getSrcPool().equals(poolName))
+                   || ( (MoverTask) task).getDstPool().equals(poolName)))
+              ) {
+            taskFound = true;
+            task.setErrorCode( -3, "Task tear down");
+          }
+        }
+      }
+   }
+
    //
    //  remove a copy of this file
    //
@@ -650,12 +678,12 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
             sourceHosts.add(host);
         }
 
-        String destination = bestPool(allPoolList, fileSize, sourceHosts );
+        String destination = bestDestPool(allPoolList, fileSize, sourceHosts );
 
         return replicatePnfsId(pnfsId, source, destination);
     }
 
-    private String bestPool(List pools, long fileSize, Set srcHosts ) throws Exception {
+    private String bestDestPool(List pools, long fileSize, Set srcHosts ) throws Exception {
 
         double bestCost = 1.0;
         String bestPool = null;
@@ -846,8 +874,8 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
             String host = (String)_hostMap.get(poolName);
             sourceHosts.add( host );
         }
-//        String destination = bestPool(destPools, fileSize);
-        String destination = bestPool(destPools, fileSize, sourceHosts );
+
+        String destination = bestDestPool(destPools, fileSize, sourceHosts );
 
         return replicatePnfsId( storageInfo, pnfsId, source, destination);
       }

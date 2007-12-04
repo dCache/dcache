@@ -178,7 +178,7 @@ public class CopyManager extends CellAdapter {
    public void getInfo( PrintWriter pw ){
        pw.println("     Name : "+getCellName() ) ;
        pw.println("    Class : "+this.getClass().getName() ) ;
-       pw.println("  Version : $Id: CopyManager.java,v 1.4 2005-10-03 21:45:00 patrick Exp $");
+       pw.println("  Version : $Id$");
        pw.println("     Mode : "+(_isActive?"ACTIVE":"IDLE")+" "+(_parameter._stopped?"STOPPED":"") ) ;
        pw.println("   Status : "+_status) ;
        

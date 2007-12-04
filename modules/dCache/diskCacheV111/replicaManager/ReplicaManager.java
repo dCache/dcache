@@ -1,7 +1,7 @@
 /**
  * <p>Title: ReplicaManager </p>
  * <p>Description: </p>
- * @version $Id: ReplicaManager.java,v 1.24.24.1 2007-10-12 23:35:36 aik Exp $
+ * @version $Id$
  */
 
 
@@ -18,7 +18,7 @@ import  java.io.* ;
 import  java.util.*;
 
 public class ReplicaManager extends DCacheCoreController {
-  private final String _cvsId = "$Id: ReplicaManager.java,v 1.24.24.1 2007-10-12 23:35:36 aik Exp $";
+  private final String _cvsId = "$Id$";
   private boolean _debug = false;
 
   private ReplicaDbV1 _db   = null;
@@ -230,8 +230,8 @@ public class ReplicaManager extends DCacheCoreController {
   }
 
   private void installReplicaDb(Args args) throws Exception {
-    _db = new ReplicaDbV1( this, "jdbc:postgresql://localhost:5432/replicas",
-                           "org.postgresql.Driver", "enstore", "NoPassword" ) ;
+//    _db = new ReplicaDbV1( this, "jdbc:postgresql://localhost:5432/replicas",
+//                           "org.postgresql.Driver", "enstore", "NoPassword" ) ;
   }
 
   //
