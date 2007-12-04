@@ -60,7 +60,7 @@ class Unpinner extends SMCTask
     {
         PnfsGetCacheLocationsMessage request =
             new PnfsGetCacheLocationsMessage(_pnfsId);
-        sendMessage(_pnfsManager, request, 1*24*60*60*1000);
+        sendMessage(_pnfsManager, request, 60*60*1000);
     }
 
     void unsetStickyFlags(List<String> locations)

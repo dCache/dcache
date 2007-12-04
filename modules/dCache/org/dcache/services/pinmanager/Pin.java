@@ -268,32 +268,37 @@ public class Pin extends SMCDriver
      * @return The request.
      * @see remove
      */
-    synchronized PinRequest add(final PinRequest request)
+    synchronized PinRequest add(PinRequest request)
     {
         if (_storageInfo == null && request.getRequest() != null ) {
             _storageInfo = request.getRequest().getStorageInfo();
         }
-
         _requests.add(request);
+        startTimer(request);
+        return request;
+    }
 
+    /**
+     * Starts a new timer task for a pin request. When the request
+     * times out, a <code>timeout</code> even is generated.
+     */
+    synchronized private void startTimer(final PinRequest request)
+    {
         TimerTask task = new TimerTask() {
                 public void run() {
                     /* Since the lifetime can be extended, the
                      * remaining lifetime may be non-zero at this
                      * point. If it is, we reschedule the task.
                      */
-                    long lifetime = request.getRemainingLifetime();
-                    if (lifetime > 0) {
-                        _timer.schedule(this, lifetime);
+                    if (request.getRemainingLifetime() > 0) {
+                        startTimer(request);
                     } else {
-                        _fsm.timeout(request);
+                        timeout(request);
                     }
                 }
             };
         request.setTimer(task);
         _timer.schedule(task, request.getRemainingLifetime());
-
-        return request;
     }
 
     /**
