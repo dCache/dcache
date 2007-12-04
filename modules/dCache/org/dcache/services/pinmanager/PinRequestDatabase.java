@@ -383,7 +383,7 @@ class PinRequestDatabase
         long pinId = nextLong();
         PinRequest request = new PinRequest(pinId, expiration, clientId);
         submitUpdateStatement(InsertIntoPinRequestTable,
-                              nextLong(), pnfsId.toString(),
+                              pinId, pnfsId.toString(),
                               expiration, clientId);
         return request;
     }
