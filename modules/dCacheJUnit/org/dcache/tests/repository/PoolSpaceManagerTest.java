@@ -20,7 +20,6 @@ public class PoolSpaceManagerTest {
 
 
     @Test
-    @Ignore
     public void testOverbook() {
 
 
