@@ -96,6 +96,7 @@
 	    <or>
 		<filename name="**/cells.jar" />
                 <filename name="concurrent/backport-util-concurrent-2.2.jar" />
+                <filename name="dbcp/*.jar" />
 	    </or>
 	</selector>
 
