@@ -816,8 +816,8 @@ public class PutFileRequest extends FileRequest {
                         callbacks);
                 return;
             }
-            if(configuration.isReserve_space_implicitely() &&
-                    spaceReservationId != null &&
+
+            if( spaceReservationId != null &&
                     !spaceMarkedAsBeingUsed) {
                 
                 synchronized(this) {
