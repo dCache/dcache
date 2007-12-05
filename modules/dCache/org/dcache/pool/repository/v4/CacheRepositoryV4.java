@@ -353,6 +353,12 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
 
         _log.info("Found " + ids.size() + " data files");
 
+        /* On some file systems (e.g. GPFS) stat'ing files in
+         * lexicographic order seems to trigger the pre-fetch
+         * mechanism of the file system.
+         */
+        Collections.sort(ids);
+
         RepositoryEntryHealer healer =
             new RepositoryEntryHealer(pnfs, _dataRepository,
                                       _metaRepository, _importRepository);
