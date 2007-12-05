@@ -321,9 +321,13 @@ public class P2PClient {
          
          _companion.setTransferChecksum (new Checksum( digest ) );
          
-         _cell.esay("Adler32 checksum computed for p2p transfer (SessionID="+_sessionId+" pnfsid="+_companion.getEntry().getPnfsId()+" sourcePool="+_companion.getSourcePool()+" checksum="+_companion.getTransferChecksum().toHexString()+")");
-         
-                           
+         StringBuffer sb = new StringBuffer("Adler32 checksum computed for p2p transfer (");
+         sb.append("SessionID=");sb.append(_sessionId);
+         sb.append(" pnfsid=");sb.append(_companion.getEntry().getPnfsId());
+         sb.append(" sourcePool=");sb.append(_companion.getSourcePool());
+         sb.append(" checksum="+_companion.getTransferChecksum().toHexString());
+         sb.append(")");
+         _cell.esay(sb.toString());
          
          setStatus("<Done>");
       }
