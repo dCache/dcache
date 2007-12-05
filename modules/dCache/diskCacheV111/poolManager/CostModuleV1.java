@@ -83,10 +83,8 @@ public class CostModuleV1 implements CostModule {
          if( msg.getPoolCostInfo() != null ){
              Entry e = (Entry)_hash.get(poolName);
              if( e == null ){
-                _hash.put( 
-                           poolName , 
-                           new Entry( msg.getPoolCostInfo() ) 
-                         ) ;
+                 e = new Entry( msg.getPoolCostInfo() ); 
+                _hash.put( poolName , e) ;
              }else{
                 e.setPoolCostInfo( msg.getPoolCostInfo() ) ;
              }
