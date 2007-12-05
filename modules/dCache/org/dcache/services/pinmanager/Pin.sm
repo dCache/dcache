@@ -39,7 +39,7 @@ Unknown
                 {
                         add(ctxt.createRequest(lifetime, 0));
                 }
-        adminUnpin(request: PinRequest)
+        adminUnpin(pinId: long)
                 Dead
                 {
                 }
@@ -97,12 +97,14 @@ Pinned
                         remove(ctxt.getRequest(message));
                         returnSuccess(envelope);
                 }
-        adminUnpin(request: PinRequest)
+        adminUnpin(pinId: long)
+                        [ ctxt.isLast(ctxt.getRequest(pinId)) ]
                 Unpinning
                 {
-                        remove(request);
+                        remove(ctxt.getRequest(pinId));
                 }
-        timeout(request: PinRequest) [ ctxt.isLast(request) ]
+        timeout(request: PinRequest) 
+                        [ ctxt.isLast(request) ]
                 Unpinning
                 {
                         remove(request);
@@ -181,10 +183,15 @@ Default
                 {
                         returnFailure(envelope, 1, "Pin not found");
                 }
+        adminUnpin(pinId: long)
+                        [ ctxt.getRequest(pinId) != null]
+                nil
+                {
+                        remove(ctxt.getRequest(pinId));
+                }
         adminUnpin(request: PinRequest)
                 nil
                 {
-                        remove(request);
                 }
         messageArrived(envelope: CellMessage, message: PinManagerExtendLifetimeMessage) 
                         [ ctxt.getRequest(message) != null ]

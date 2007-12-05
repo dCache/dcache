@@ -163,13 +163,9 @@ public class Pin extends SMCDriver
      *
      * Returns true if the request is found, false otherwise.
      */
-    synchronized public boolean adminUnpin(long pinId)
+    synchronized public void adminUnpin(long pinId)
     {
-        PinRequest request = getRequest(pinId);
-        if (request == null)
-            return false;
-        _fsm.adminUnpin(request);
-        return true;
+        _fsm.adminUnpin(pinId);
     }
 
     /**

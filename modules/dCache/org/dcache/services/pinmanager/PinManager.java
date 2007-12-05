@@ -216,7 +216,7 @@ public class PinManager extends AbstractCell implements Runnable
         Pin pin = getPin(id);
         pin.adminPin(lifetime);
 
-        return "Pinning started.";
+        return "Pin request added";
     }
 
     public String hh_unpin_file =
@@ -225,15 +225,11 @@ public class PinManager extends AbstractCell implements Runnable
     {
         long pinId = Long.parseLong(args.argv(0));
         PnfsId id = new PnfsId(args.argv(1));
+        Pin pin = getPin(id);
+        boolean found = (pin.getRequest(pinId) != null);
+        pin.adminUnpin(pinId);
 
-        Pin pin = getPin(id); // REVISIT: Do not create
-        if (pin == null)
-            return "Pin not found";
-
-        if (!pin.adminUnpin(pinId))
-            return "Pin not found";
-
-        return "Unpinning started.";
+        return found ? "Pin request removed" : "Pin not found";
     }
 
     public String hh_set_max_pin_duration =
