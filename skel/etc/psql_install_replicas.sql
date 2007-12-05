@@ -2,41 +2,37 @@
 -- PostgreSQL database dump
 --
 
+SET client_encoding = 'SQL_ASCII';
+SET check_function_bodies = false;
+SET client_min_messages = warning;
+
+
 \connect - srmdcache
 
 --
--- TOC entry 2 (OID 25168)
--- Name: proc; Type: SCHEMA; Schema: -; Owner: srmdcache
+-- Name: proc; Type: SCHEMA; Schema: -; Owner: dcache
 --
 
 CREATE SCHEMA proc;
 
 
+ALTER SCHEMA proc OWNER TO dcache;
+
+--
+-- Name: SCHEMA public; Type: COMMENT; Schema: -; Owner: postgres
+--
+
+COMMENT ON SCHEMA public IS 'Standard public schema';
+
+
 SET search_path = public, pg_catalog;
 
---
--- TOC entry 3 (OID 25169)
--- Name: replicas; Type: TABLE; Schema: public; Owner: srmdcache
---
+SET default_tablespace = '';
 
-CREATE TABLE replicas (
-    pool text NOT NULL,
-    pnfsid text NOT NULL,
-    datestamp timestamp without time zone
-);
-
+SET default_with_oids = false;
 
 --
--- TOC entry 4 (OID 25169)
--- Name: replicas; Type: ACL; Schema: public; Owner: srmdcache
---
-
-REVOKE ALL ON TABLE replicas FROM PUBLIC;
-
-
---
--- TOC entry 5 (OID 25174)
--- Name: pools; Type: TABLE; Schema: public; Owner: srmdcache
+-- Name: pools; Type: TABLE; Schema: public; Owner: dcache; Tablespace: 
 --
 
 CREATE TABLE pools (
@@ -46,30 +42,37 @@ CREATE TABLE pools (
 );
 
 
+ALTER TABLE public.pools OWNER TO dcache;
+
 --
--- TOC entry 6 (OID 25174)
--- Name: pools; Type: ACL; Schema: public; Owner: srmdcache
+-- Name: replicas; Type: TABLE; Schema: public; Owner: dcache; Tablespace: 
 --
 
-REVOKE ALL ON TABLE pools FROM PUBLIC;
+CREATE TABLE replicas (
+    pool text NOT NULL,
+    pnfsid text NOT NULL,
+    datestamp timestamp without time zone
+);
 
+
+ALTER TABLE public.replicas OWNER TO dcache;
 
 SET search_path = proc, pg_catalog;
 
 --
--- TOC entry 7 (OID 25181)
--- Name: replicas; Type: VIEW; Schema: proc; Owner: srmdcache
+-- Name: replicas; Type: VIEW; Schema: proc; Owner: dcache
 --
 
 CREATE VIEW replicas AS
     SELECT replicas.pool, replicas.pnfsid FROM public.replicas, public.pools WHERE ((replicas.pool = pools.pool) AND (pools.status = 'online'::text));
 
 
+ALTER TABLE proc.replicas OWNER TO dcache;
+
 SET search_path = public, pg_catalog;
 
 --
--- TOC entry 8 (OID 46118)
--- Name: action; Type: TABLE; Schema: public; Owner: srmdcache
+-- Name: action; Type: TABLE; Schema: public; Owner: dcache; Tablespace: 
 --
 
 CREATE TABLE "action" (
@@ -78,9 +81,10 @@ CREATE TABLE "action" (
 INHERITS (replicas);
 
 
+ALTER TABLE public."action" OWNER TO dcache;
+
 --
--- TOC entry 9 (OID 62893)
--- Name: heartbeat; Type: TABLE; Schema: public; Owner: srmdcache
+-- Name: heartbeat; Type: TABLE; Schema: public; Owner: dcache; Tablespace: 
 --
 
 CREATE TABLE heartbeat (
@@ -90,9 +94,56 @@ CREATE TABLE heartbeat (
 );
 
 
+ALTER TABLE public.heartbeat OWNER TO dcache;
+
 --
--- TOC entry 11 (OID 25182)
--- Name: poolname; Type: CONSTRAINT; Schema: public; Owner: srmdcache
+-- Name: history; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
+--
+
+CREATE TABLE history (
+    pool text NOT NULL,
+    pnfsid text NOT NULL,
+    datestamp timestamp without time zone,
+    "timestamp" timestamp without time zone DEFAULT now()
+);
+
+
+ALTER TABLE public.history OWNER TO postgres;
+
+--
+-- Name: history_a; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
+--
+
+CREATE TABLE history_a (
+    "old" boolean DEFAULT false
+)
+INHERITS (history);
+
+
+ALTER TABLE public.history_a OWNER TO postgres;
+
+--
+-- Name: history_b; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
+--
+
+CREATE TABLE history_b (
+    "old" boolean DEFAULT true
+)
+INHERITS (history);
+
+
+ALTER TABLE public.history_b OWNER TO postgres;
+
+--
+-- Name: hbprocess; Type: CONSTRAINT; Schema: public; Owner: dcache; Tablespace: 
+--
+
+ALTER TABLE ONLY heartbeat
+    ADD CONSTRAINT hbprocess PRIMARY KEY (process);
+
+
+--
+-- Name: poolname; Type: CONSTRAINT; Schema: public; Owner: dcache; Tablespace: 
 --
 
 ALTER TABLE ONLY pools
@@ -100,8 +151,7 @@ ALTER TABLE ONLY pools
 
 
 --
--- TOC entry 10 (OID 25184)
--- Name: replica; Type: CONSTRAINT; Schema: public; Owner: srmdcache
+-- Name: replica; Type: CONSTRAINT; Schema: public; Owner: dcache; Tablespace: 
 --
 
 ALTER TABLE ONLY replicas
@@ -109,12 +159,69 @@ ALTER TABLE ONLY replicas
 
 
 --
--- TOC entry 12 (OID 63435)
--- Name: hbprocess; Type: CONSTRAINT; Schema: public; Owner: srmdcache
+-- Name: history_a_idx; Type: INDEX; Schema: public; Owner: postgres; Tablespace: 
 --
 
-ALTER TABLE ONLY heartbeat
-    ADD CONSTRAINT hbprocess PRIMARY KEY (process);
+CREATE INDEX history_a_idx ON history_a USING btree (pnfsid);
 
-CREATE INDEX pools_pool_indx ON public.replicas(pool);
-CREATE INDEX replicas_pnfsid_indx ON public.replicas(pnfsid); 
+
+--
+-- Name: history_b_idx; Type: INDEX; Schema: public; Owner: postgres; Tablespace: 
+--
+
+CREATE INDEX history_b_idx ON history_b USING btree (pnfsid);
+
+
+--
+-- Name: history_idx; Type: INDEX; Schema: public; Owner: postgres; Tablespace: 
+--
+
+CREATE INDEX history_idx ON history USING btree (pnfsid);
+
+
+--
+-- Name: pools_pool_indx; Type: INDEX; Schema: public; Owner: dcache; Tablespace: 
+--
+
+CREATE INDEX pools_pool_indx ON replicas USING btree (pool);
+
+
+--
+-- Name: replicas_pnfsid_indx; Type: INDEX; Schema: public; Owner: dcache; Tablespace: 
+--
+
+CREATE INDEX replicas_pnfsid_indx ON replicas USING btree (pnfsid);
+
+
+--
+-- Name: public; Type: ACL; Schema: -; Owner: postgres
+--
+
+REVOKE ALL ON SCHEMA public FROM PUBLIC;
+REVOKE ALL ON SCHEMA public FROM postgres;
+GRANT ALL ON SCHEMA public TO postgres;
+GRANT ALL ON SCHEMA public TO PUBLIC;
+
+
+--
+-- Name: pools; Type: ACL; Schema: public; Owner: dcache
+--
+
+REVOKE ALL ON TABLE pools FROM PUBLIC;
+REVOKE ALL ON TABLE pools FROM dcache;
+GRANT ALL ON TABLE pools TO dcache;
+
+
+--
+-- Name: replicas; Type: ACL; Schema: public; Owner: dcache
+--
+
+REVOKE ALL ON TABLE replicas FROM PUBLIC;
+REVOKE ALL ON TABLE replicas FROM dcache;
+GRANT ALL ON TABLE replicas TO dcache;
+
+
+--
+-- PostgreSQL database dump complete
+--
+
