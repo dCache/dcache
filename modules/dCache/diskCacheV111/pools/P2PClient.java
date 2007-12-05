@@ -320,7 +320,14 @@ public class P2PClient {
 
          _companion.setTransferChecksum (new Checksum( digest ) );
 
-         _cell.esay("Adler32 checksum computed for p2p transfer (SessionID="+_sessionId+" pnfsid="+_companion.getEntry().getPnfsId()+" sourcePool="+_companion.getSourcePool()+" checksum="+_companion.getTransferChecksum().toHexString()+")");
+         StringBuilder sb = new StringBuilder("Adler32 checksum computed for p2p transfer (");
+         sb.append("SessionID=");sb.append(_sessionId);
+         sb.append(" pnfsid=");sb.append(_companion.getEntry().getPnfsId());
+         sb.append(" sourcePool=");sb.append(_companion.getSourcePool());
+         sb.append(" checksum="+_companion.getTransferChecksum().toHexString());
+         sb.append(")");
+         _cell.esay(sb.toString());
+         
 
 
 
@@ -573,7 +580,7 @@ public class P2PClient {
          PoolDeliverFileMessage msg   = (PoolDeliverFileMessage)message ;
          DCapProtocolInfo   pinfo     = (DCapProtocolInfo)msg.getProtocolInfo() ;
          int                sessionId = pinfo.getSessionId() ;
-         Companion          companion = (Companion)_sessions.get(sessionId);
+         Companion          companion = _sessions.get(sessionId);
          if( companion == null ){
             _cell.esay( "companion not found for id "+sessionId);
             return ;
@@ -585,7 +592,7 @@ public class P2PClient {
          DoorTransferFinishedMessage msg       = (DoorTransferFinishedMessage)message ;
          DCapProtocolInfo            pinfo     = (DCapProtocolInfo)msg.getProtocolInfo() ;
          int                         sessionId = pinfo.getSessionId() ;
-         Companion                   companion = (Companion)_sessions.get(sessionId);
+         Companion                   companion = _sessions.get(sessionId);
          if( companion == null ){
             _cell.esay( "companion not found for id "+sessionId);
             return ;
