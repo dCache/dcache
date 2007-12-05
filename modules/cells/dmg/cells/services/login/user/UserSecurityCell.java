@@ -4,53 +4,53 @@ package dmg.cells.services.login.user  ;
 import java.lang.reflect.* ;
 import java.io.* ;
 import java.util.*;
-import dmg.cells.nucleus.*; 
+import dmg.cells.nucleus.*;
 import dmg.util.*;
 
 /**
  **
-  *  
+  *
   *
   * @author Patrick Fuhrmann
   * @version 0.1, 15 Feb 1998
-  * 
+  *
  */
-public class       UserSecurityCell 
+public class       UserSecurityCell
        extends     CellAdapter            {
 
-  private String       _cellName ;
-  private CellNucleus  _nucleus ;
-  private Args         _args ;
+  private final String       _cellName ;
+  private final CellNucleus  _nucleus ;
+  private final Args         _args ;
 
   private AclDb            _aclDb  = null ;
   private UserRelationable _userDb = null ;
   private UserMetaDb       _userMetaDb = null ;
 
   public UserSecurityCell( String name , String argString ) throws Exception {
-  
+
       super( name , argString , false ) ;
 
       _cellName  = name ;
       _args      = getArgs() ;
-      
-    
+      _nucleus = getNucleus();
+
       try{
-      
+
          if( _args.argc() < 1 )
-           throw new 
+           throw new
            IllegalArgumentException( "Usage : ... <dbPath>" ) ;
-           
+
          File dbBase   = new File( _args.argv(0) ) ;
-           _aclDb      = new AclDb( 
+           _aclDb      = new AclDb(
                               new File( dbBase , "acls" ) ) ;
-           _userDb     = new InMemoryUserRelation( 
-                              new FileUserRelation( 
-                                  new File( dbBase , "relations" ) 
-                                                   ) 
+           _userDb     = new InMemoryUserRelation(
+                              new FileUserRelation(
+                                  new File( dbBase , "relations" )
+                                                   )
                           ) ;
-           _userMetaDb = new UserMetaDb( 
+           _userMetaDb = new UserMetaDb(
                               new File( dbBase , "meta" ) ) ;
-         
+
       }catch( Exception e ){
          esay( "Exception while <init> : "+e ) ;
          esay(e) ;
@@ -58,32 +58,33 @@ public class       UserSecurityCell
          kill() ;
          throw e ;
       }
-      
+
       start() ;
-  
+
   }
   public void messageArrived( CellMessage msg ){
-  
+
       Object obj     = msg.getMessageObject() ;
       Object answer  = "PANIX" ;
-      
+
       try{
          say( "Message type : "+obj.getClass() ) ;
          if( ( obj instanceof Object []              )  &&
              (  ((Object[])obj).length >= 3          )  &&
              (  ((Object[])obj)[0].equals("request") ) ){
-             
+
             Object [] request    = (Object[])obj ;
-            String user          = request[1] == null ? 
+            String user          = request[1] == null ?
                                    "unknown" : (String)request[1] ;
             String command       = (String)request[2] ;
 
-            say( ">"+command+"< request from "+user ) ;
+            say( ">"+command+"< request from "+user )
+            //FIXME: refactoring required
             try{
               if( command.equals( "check-password" ) )
                   answer  =  acl_check_password( request ) ;
               else
-                  new Exception( "Command not found : "+command ) ;
+                throw  new Exception( "Command not found : "+command ) ;
             }catch( Exception xe ){
                throw new Exception( "Problem : "+xe ) ;
             }
@@ -91,7 +92,7 @@ public class       UserSecurityCell
             String command = obj.toString() ;
             String user    = ((Authorizable)obj).getAuthorizedPrincipal() ;
             answer = execAuthorizedString( user , command ) ;
-                        
+
          }else{
              String r = "Illegal message object received from : "+
                          msg.getSourcePath() ;
@@ -101,10 +102,10 @@ public class       UserSecurityCell
       }catch(Exception iex ){
          answer = iex ;
       }
-      
+
       if( answer instanceof Object [] )
         ((Object[])answer)[0] = "response" ;
-        
+
       msg.revertDirection() ;
       msg.setMessageObject( answer ) ;
       try{
@@ -116,18 +117,18 @@ public class       UserSecurityCell
   }
   private Object execAuthorizedString( String user , String command )
           throws Exception {
-   
+
        if( ( user == null ) || ( user.length() == 0 ) )
           throw new
           Exception( "Not authenticated" ) ;
-       try{   
-          return command( new Args( command + " -auth="+user ) ) ; 
+       try{
+          return command( new Args( command + " -auth="+user ) ) ;
        }catch( CommandPanicException cte ){
           throw (Exception)cte.getTargetException() ;
        }catch( CommandThrowableException cte ){
           throw (Exception)cte.getTargetException() ;
-       }      
-  } 
+       }
+  }
   ///////////////////////////////////////////////////////////////////////////
   //
   //  r[0] : request
@@ -147,34 +148,34 @@ public class       UserSecurityCell
   //  r[4] : <password>[plainText]
   //  r[5] : Boolean(true/false)
   //
-  private Object 
+  private Object
           acl_check_password( Object [] request )
           throws Exception {
-     
+
       if( request.length < 5 )
-         throw new 
-         IllegalArgumentException( 
+         throw new
+         IllegalArgumentException(
          "Not enough arguments for 'check-password'" ) ;
-      
+
       Object [] response = new Object[6] ;
       for( int i = 0 ;i < 5; i++ )response[i] =  request[i] ;
       response[1]     = request[3] ;
       String userName = (String)request[3] ;
-      
-      
+
+
       response[5] = Boolean.valueOf(true) ;
       return response ;
   }
-  private void checkPermission( String user , String acl ) 
+  private void checkPermission( String user , String acl )
           throws AclPermissionException {
      if( user == null )
-       throw new 
-       AclPermissionException( "Not authenticated" ) ;       
-        
+       throw new
+       AclPermissionException( "Not authenticated" ) ;
+
      if( ! user.equals("admin") ){
         if( ! _aclDb.check(acl,user,_userDb) )
-           throw new 
-           AclPermissionException( "Acl >"+acl+"< negative for "+user ) ;       
+           throw new
+           AclPermissionException( "Acl >"+acl+"< negative for "+user ) ;
      }
   }
   /////////////////////////////////////////////////////////////
@@ -183,18 +184,18 @@ public class       UserSecurityCell
   //
   public String hh_show_all = "<user> exception|null|object|string" ;
   public Object ac_show_all_$_1( Args args )throws Exception {
-      
+
       String user = args.getOpt("auth") ;
       if( user == null )throw new Exception("Not authenticated" ) ;
       String command = args.argv(0) ;
       say( "show all : mode="+command+";user=user") ;
       if( command.equals("exception") )
-         throw new 
+         throw new
          Exception( "hallo otto" ) ;
       if( command.equals("null") )return null ;
       if( command.equals("object") )return args ;
       return "Done" ;
-  
+
   }
    public String hh_check_permission = "<user> <acl>" ;
    public Object ac_check_permission_$_2( Args args )
@@ -205,7 +206,7 @@ public class       UserSecurityCell
            return Boolean.valueOf(true) ;
         }catch( AclPermissionException e ){
            return Boolean.valueOf(false) ;
-        }       
+        }
 
    }
    public String hh_create_user = "<userName>" ;
