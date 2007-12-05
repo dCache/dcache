@@ -7,14 +7,14 @@ import  java.io.* ;
 import  java.net.* ;
 
 /**
-  *  
+  *
   *
   * @author Patrick Fuhrmann
   * @version 0.1, 15 Feb 1998
   */
-public class      RetryTunnel2 
+public class      RetryTunnel2
        extends    CellAdapter
-       implements Cell, 
+       implements Cell,
                   Runnable,
                   CellTunnel   {
 
@@ -24,8 +24,8 @@ public class      RetryTunnel2
    private CellNucleus  _nucleus          = null ;
    private Thread       _connectionThread = null ;
    private Thread       _ioThread         = null ;
-   private Object       _routeLock        = new Object() ;
-   private Object       _tunnelOkLock     = new Object() ;
+   private final Object _routeLock        = new Object() ;
+   private final Object _tunnelOkLock     = new Object() ;
    private boolean      _tunnelOk         = false ;
    private String          _mode              = "None" ;
    private String          _status            = "<init>" ;
@@ -42,67 +42,67 @@ public class      RetryTunnel2
    private int  _messagesToTunnel    = 0 ;
    private int  _messagesToSystem    = 0 ;
    private int  _connectionRetries   = 0 ;
-   
+
    public RetryTunnel2( String cellName , StreamEngine engine , Args args )
           throws Exception {
-        
+
      super( cellName , "System" , args , true ) ;
-     
+
       _engine   = engine ;
-      _mode     = "Accepted" ;      
+      _mode     = "Accepted" ;
       _nucleus  = getNucleus() ;
 
       _ioThread = _nucleus.newThread( this , "IoThread" ) ;
       _ioThread.start() ;
-      
+
       say( "Constructor : acceptor started" ) ;
-      
+
       _status = "<connected>" ;
    }
    public RetryTunnel2( String cellName , String argString )
           throws Exception {
-          
+
       super( cellName , "System" , argString , false ) ;
       say( "CellName : "+cellName+ " ; args : "+argString ) ;
-      
+
       _args    = getArgs() ;
       _nucleus = getNucleus() ;
-      
+
       if( _args.argc() < 2 ){
           start() ;
           kill() ;
-          
-          throw new 
-          IllegalArgumentException( 
+
+          throw new
+          IllegalArgumentException(
             "Usage : ... <host> <port>" ) ;
       }
-      
-      _RetryTunnel2( cellName , 
+
+      _RetryTunnel2( cellName ,
                      _args.argv(0) ,
-                     new Integer( _args.argv(1) ).intValue() ) ;
-                     
+                     Integer.valueOf( _args.argv(1) ) ) ;
+
       start() ;
    }
    public RetryTunnel2( String cellName , String host , int port )
           throws Exception {
-          
+
       super( cellName , "System" ,  host+" "+port , true ) ;
       _args = getArgs() ;
       _RetryTunnel2( cellName , host , port ) ;
    }
    private void _RetryTunnel2( String cellName , String host , int port )
           throws Exception {
-          
-      
+
+
       _mode    = "Connection" ;
-      
+
       _host    = host ;
       _port    = port ;
-      
+
       _connectionThread = _nucleus.newThread(this,"Connection") ;
       _connectionThread.start() ;
-      
-      
+
+
    }
    private void runConnection(){
       long    start = 0 ;
@@ -121,7 +121,7 @@ public class      RetryTunnel2
                 _tunnelOk = true ;
             }
             runIo() ;
-            
+
          }catch(InterruptedIOException iioe ){
             esay(iioe) ;
             break ;
@@ -147,16 +147,16 @@ public class      RetryTunnel2
                break ;
             }
          }
-         
+
       }
    }
    private void runIoThread(){
       try{
          say("runIoThread : creating streams" ) ;
          _status = "<protocol>" ;
-         _makeStreams( _engine.getInputStream() , 
+         _makeStreams( _engine.getInputStream() ,
                        _engine.getOutputStream()   ) ;
-         say("runIoThread : enabling tunnel" ) ; 
+         say("runIoThread : enabling tunnel" ) ;
          synchronized( _tunnelOkLock ){
               _tunnelOk = true ;
          }
@@ -164,7 +164,7 @@ public class      RetryTunnel2
          runIo() ;
          _status = "<io-fin>" ;
          esay( "runIoThread : unknown state 2 " ) ;
-         
+
       }catch(Exception ioe ){
          esay( "runIoThread : "+ioe ) ;
          _status = "<io-shut>" ;
@@ -174,18 +174,18 @@ public class      RetryTunnel2
               _tunnelOk = false ;
          }
          esay( "Closing streams" ) ;
-         try{_output.close();}catch(Exception ii){}
-         try{_input.close();}catch(Exception ii){}
+         try{_output.close();}catch(IOException ii){}
+         try{_input.close();}catch(IOException ii){}
          esay( "Killing myself" ) ;
-         kill() ; 
+         kill() ;
       }finally{
          say( "runIoThread : finished" ) ;
       }
-   
+
    }
    private void runIo() throws Exception {
       Object obj ;
-      
+
       _status = "<io>" ;
       try{
          while( ( ! Thread.interrupted() ) &&
@@ -195,9 +195,9 @@ public class      RetryTunnel2
 
             say( "receiverThread : Message from tunnel : "+msg ) ;
 
-            try{  
+            try{
                sendMessage( msg ) ;
-               _messagesToSystem ++ ;              
+               _messagesToSystem ++ ;
             }catch( NoRouteToCellException nrtce ){
                esay( nrtce ) ;
             }
@@ -206,10 +206,10 @@ public class      RetryTunnel2
          _status = "<io-shutdown>" ;
       }
       return ;
-   
+
    }
    public void   messageArrived( MessageEvent me ){
-     
+
      if( me instanceof RoutedMessageEvent ){
         synchronized( _tunnelOkLock ){
            CellMessage msg = me.getMessage() ;
@@ -223,8 +223,8 @@ public class      RetryTunnel2
                    esay("messageArrived : "+ioe ) ;
                    esay(ioe) ;
                    _tunnelOk = false ;
-                   try{_output.close();}catch(Exception ii){}
-                   try{_input.close();}catch(Exception ii){}
+                   try{_output.close();}catch(IOException ii){}
+                   try{_input.close();}catch(IOException ii){}
                }
            }else{
                esay( "Tunnel down : dumping : "+msg ) ;
@@ -236,58 +236,58 @@ public class      RetryTunnel2
      }else{
         esay( "messageArrived : dumping junk message "+me ) ;
      }
-     
+
    }
    public void run(){
       if( Thread.currentThread() == _connectionThread ){
          runConnection() ;
       }else if( Thread.currentThread() == _ioThread ){
          runIoThread() ;
-      }  
+      }
    }
    public CellTunnelInfo getCellTunnelInfo(){
       return new CellTunnelInfo( _nucleus.getCellName() ,
                                  _nucleus.getCellDomainInfo() ,
                                  _remoteDomainInfo ) ;
-   
+
    }
-   private void _makeStreams( InputStream in , OutputStream out ) 
+   private void _makeStreams( InputStream in , OutputStream out )
            throws Exception {
-           
+
       _output  = new ObjectOutputStream( out ) ;
-      
+
       if( _output == null )
-          throw new 
+          throw new
           IOException( "OutputStream == null" ) ;
-      
+
       _input   = new ObjectInputStream( in ) ;
       if( _input == null ){
-          try{ _output.close() ; }catch(Exception ie){}
-          throw new 
+          try{ _output.close() ; }catch(IOException ie){}
+          throw new
           IOException( "InputStream == null" ) ;
       }
       Object obj = null ;
       try{
          _output.writeObject( _nucleus.getCellDomainInfo() ) ;
          if( ( obj  = _input.readObject() ) == null )
-            throw new 
+            throw new
             IOException( "EOS encountered while reading DomainInfo" ) ;
-            
+
       }catch(IOException ieww ){
-         try{ _output.close() ; _output = null ;}catch(Exception ie){}
-         try{ _input.close() ; _input = null ;}catch(Exception ie){}
+         try{ _output.close() ; _output = null ;}catch(IOException ie){}
+         try{ _input.close() ; _input = null ;}catch(IOException ie){}
          throw ieww ;
-      }  
+      }
       _remoteDomainInfo = (CellDomainInfo) obj ;
       synchronized( _routeLock ){
          removeRoute() ;
-         _route = new CellRoute( 
-                      _remoteDomainInfo.getCellDomainName() , 
+         _route = new CellRoute(
+                      _remoteDomainInfo.getCellDomainName() ,
                       _nucleus.getCellName() ,
                       CellRoute.DOMAIN ) ;
-         say( "addingRoute : "+_route) ;     
+         say( "addingRoute : "+_route) ;
          _nucleus.routeAdd( _route ) ;
-      } 
+      }
    }
    public String toString(){
       if( _tunnelOk ){
@@ -308,10 +308,10 @@ public class      RetryTunnel2
      pw.println( "-> Domain     : "+_messagesToSystem ) ;
      if( _remoteDomainInfo == null )
         pw.println( "Peer          : N.N." ) ;
-     else 
+     else
         pw.println( "Peer          : "+
                    _remoteDomainInfo.getCellDomainName() ) ;
-     
+
      return ;
    }
    private void removeRoute(){
@@ -327,16 +327,16 @@ public class      RetryTunnel2
      removeRoute() ;
      say("Setting tunnel down" ) ;
      synchronized( _tunnelOkLock ){ _tunnelOk = false ; }
-     try{_input.close();}catch(Exception ee){}
-     try{_output.close();}catch(Exception ee){}
+     try{_input.close();}catch(IOException ee){}
+     try{_output.close();}catch(IOException ee){}
      say( "Streams  closed" ) ;
      _finalGate.check() ;
      say( "Gate Opened. Bye Bye" ) ;
-     
-     
+
+
    }
    public void   exceptionArrived( ExceptionEvent ce ){
      _nucleus.say( "exceptionArrived : "+ce ) ;
    }
- 
+
 }
