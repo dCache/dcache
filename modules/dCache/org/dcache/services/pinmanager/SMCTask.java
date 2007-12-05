@@ -13,13 +13,13 @@ import dmg.cells.nucleus.CellMessageAnswerable;
 import dmg.cells.nucleus.NoRouteToCellException;
 
 import statemap.FSMContext;
-    
-class SMCTask implements CellMessageAnswerable 
+
+class SMCTask implements CellMessageAnswerable
 {
     private FSMContext _fsm;
     protected CellAdapter _cell;
 
-    public SMCTask(CellAdapter cell) 
+    public SMCTask(CellAdapter cell)
     {
         _cell = cell;
     }
@@ -35,10 +35,12 @@ class SMCTask implements CellMessageAnswerable
             Class[] parameterTypes = new Class[arguments.length];
             for (int i = 0; i < arguments.length; i++)
                 parameterTypes[i] = arguments[i].getClass();
-            Method m = _fsm.getClass().getMethod(name, parameterTypes);
+            Method m =
+                ReflectionUtils.resolve(_fsm.getClass(), name, parameterTypes);
             m.invoke(_fsm, arguments);
         } catch (NoSuchMethodException e) {
             // FSM is not interested in the message. No problem.
+            _cell.esay(e);
         } catch (IllegalAccessException e) {
             // We are not allowed to call this method. Better escalate it.
             throw new RuntimeException("Bug detected", e);
@@ -51,18 +53,20 @@ class SMCTask implements CellMessageAnswerable
         }
     }
 
-    public void answerArrived(CellMessage question, CellMessage answer) 
+    public void answerArrived(CellMessage question, CellMessage answer)
     {
         transition("answerArrived", answer.getMessageObject());
     }
 
-    public void answerTimedOut(CellMessage request) 
+    public void answerTimedOut(CellMessage request)
     {
+        _cell.esay("Message timed out: " + request);
         transition("timeout");
     }
-        
-    public void exceptionArrived(CellMessage request, Exception exception) 
+
+    public void exceptionArrived(CellMessage request, Exception exception)
     {
+        _cell.esay("Error: " + exception);
         transition("exceptionArrived", exception);
     }
 
@@ -73,7 +77,7 @@ class SMCTask implements CellMessageAnswerable
                               true, true, this, timeout);
         } catch (NotSerializableException e) {
             throw new RuntimeException("Bug detected", e);
-        } 
+        }
     }
 
     public void sendMessage(CellPath path, Message message)
@@ -83,9 +87,9 @@ class SMCTask implements CellMessageAnswerable
             _cell.sendMessage(new CellMessage(path, message));
         } catch (NotSerializableException e) {
             throw new RuntimeException("Bug detected", e);
-        } 
+        }
     }
-    
+
     public String getCellName() {
         return _cell.getNucleus().getCellName();
     }
