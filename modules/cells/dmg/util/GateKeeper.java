@@ -3,14 +3,14 @@ package dmg.util ;
 import java.util.* ;
 
 public class GateKeeper {
-    private Vector      _stack        = new Vector() ;
+    private Vector<ThreadWatch>      _stack        = new Vector<ThreadWatch>() ;
     private ThreadWatch _activeThread = null ;
     private int         _defaultPrio  = LOW ;
     public  final static  int  MASTER  =  0 ;
     public  final static  int  HIGH    =  2 ;
     public  final static  int  MEDIUM  =  4 ;
     public  final static  int  LOW     =  6 ;
-    
+
     private class ThreadWatch {
         private Thread _thread ;
         private int    _priority ;
@@ -21,48 +21,48 @@ public class GateKeeper {
            _usage    = 1 ;
         }
         public int getPriority(){ return _priority ; }
-        
+
         public Thread getThread(){ return _thread ; }
-    
+
         public void increment(){ _usage ++ ; }
         public int  decrement(){ _usage -- ; return _usage ; }
     }
-    
+
     public GateKeeper(){ }
-    public GateKeeper( int defaultPriority ){ 
+    public GateKeeper( int defaultPriority ){
         _defaultPrio = defaultPriority ;
     }
-    public synchronized void open( int priority )  
+    public synchronized void open( int priority )
            throws InterruptedException  {
         try{ this.open( priority , 0 ) ; }catch( ExpiredException ee ){}
     }
-    public synchronized void open( int priority , long waitMillis ) 
+    public synchronized void open( int priority , long waitMillis )
            throws InterruptedException,
                   ExpiredException      {
-           
-        
+
+
         if( ( _activeThread != null ) &&
             ( _activeThread.getThread() == Thread.currentThread() ) ){
-            
+
             _activeThread.increment() ;
-            return ;   
+            return ;
         }
-        ThreadWatch newTw = 
+        ThreadWatch newTw =
              new ThreadWatch( Thread.currentThread(), priority ) ;
-        
+
         //
         // if no threads are waiting, things are pretty easy.
         //
         if( _activeThread == null ){
            _activeThread = newTw ;
-           return ;        
+           return ;
         }
         register( newTw , priority ) ;
         //
         // and now wait
         //
         try{
-           if( waitMillis > 0 ){         
+           if( waitMillis > 0 ){
               long stopIt = waitMillis + System.currentTimeMillis() ;
               long rest ;
               while( true ){
@@ -87,25 +87,24 @@ public class GateKeeper {
            unregister() ;
            throw ie ;
         }
-        _activeThread = (ThreadWatch)_stack.elementAt(0) ;
+        _activeThread = _stack.elementAt(0) ;
         _stack.removeElementAt(0) ;
         return ;
     }
     private void register( ThreadWatch newTw , int priority ){
         //
         // find the place where to insert the current thread.
-        //    
+        //
         int c = _stack.size() ;
         int i ;
         ThreadWatch tw  = null ;
         for( i = 0 ; i < c ; i++ ){
-            tw = (ThreadWatch)_stack.elementAt(i) ;
-            if( ((ThreadWatch)_stack.elementAt(i)).getPriority() 
-                 > priority ){
-                 
+            tw = _stack.elementAt(i) ;
+            if( _stack.elementAt(i).getPriority() > priority ){
+
                _stack.insertElementAt( newTw , i ) ;
                break ;
-               
+
             }
         }
         if( i == c )_stack.addElement( newTw ) ;
@@ -116,7 +115,7 @@ public class GateKeeper {
        Thread      ich = Thread.currentThread() ;
        ThreadWatch tw  = null ;
        for( int i = 0  ; i < c ; i ++ ){
-          tw = (ThreadWatch)_stack.elementAt(i) ;
+          tw = _stack.elementAt(i) ;
           if( tw.getThread() ==  ich ){
               _stack.removeElementAt(i) ;
               return ;
@@ -128,9 +127,9 @@ public class GateKeeper {
        if( ( _activeThread == null ) ||
            ( Thread.currentThread() != _activeThread.getThread() ) )
           throw new IllegalArgumentException("Not owner") ;
-          
+
        if( _activeThread.decrement() > 0 )return ;
-       
+
        _activeThread = null ;
        notifyAll() ;
     }
