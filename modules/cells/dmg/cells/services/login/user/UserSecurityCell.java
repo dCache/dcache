@@ -78,7 +78,7 @@ public class       UserSecurityCell
                                    "unknown" : (String)request[1] ;
             String command       = (String)request[2] ;
 
-            say( ">"+command+"< request from "+user )
+            say( ">"+command+"< request from "+user );
             //FIXME: refactoring required
             try{
               if( command.equals( "check-password" ) )
