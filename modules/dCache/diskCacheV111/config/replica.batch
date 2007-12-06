@@ -25,7 +25,7 @@ create dmg.cells.services.LocationManager lm \
 #
 # Replica Manager Cell
 #
-# Default values for ${replicaManagerDatabaseHost}: 
+# Default values for ${replicaManagerDatabaseHost}:
 #   If not set, set it to 'localhost'
 #
 onerror continue
@@ -34,7 +34,7 @@ onerror continue
    set context -c replicaDbUser              srmdcache
    set context -c replicaDbPassword          srmdcache
    set context -c replicaPasswordFile        ""
-   set context -c resilientGroupName           *
+   set context -c resilientGroupName           ResilientPools
    set context -c replicaPoolWatchDogPeriod    600
    set context -c replicaWaitDBUpdateTimeout   600
    set context -c replicaDelayDBStartTimeout   1200
