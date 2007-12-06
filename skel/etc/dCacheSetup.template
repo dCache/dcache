@@ -7,7 +7,7 @@
 #  -----------------------------------------------------------------------
 #   This is the central configuration file for a dCache instance. In most
 #   cases it should be possible to keep it identical across the nodes of
-#   one dCache instance. 
+#   one dCache instance.
 #
 #   This template contains all options that can possibly be used. Most
 #   may be left at the default value. If the option is commented out below
@@ -41,7 +41,7 @@ serviceLocatorPort=11111
 #  ---- Will the Replica Manager be started?
 #   Values:  no, yes
 #   Default: no
-#   
+#
 #   This has to be set to 'yes' on every node, if there is a replica
 #   manager in this dCache instance. Where the replica manager is started
 #   is controlled in 'etc/node_config'. If it is not started and this is
@@ -55,10 +55,10 @@ serviceLocatorPort=11111
 #   Values:  '*', a pool-group name existing in the pool manager
 #   Default: '*'
 #
-#   If set to '*', all pools will be managed by the replica manager. 
+#   If set to '*', all pools will be managed by the replica manager.
 #   If a pool-group is specified, only the pools in that pool-group, as
 #   specified in the pool manager (see config/PoolManager.conf) will be
-#   managed by it. Note that the values 'default' and '*' do not have 
+#   managed by it. Note that the values 'default' and '*' do not have
 #   the same meaning: Not all pools are necessarily in the 'default'
 #   pool-group.
 #
@@ -75,9 +75,9 @@ serviceLocatorPort=11111
 java="/usr/bin/java"
 
 #
-#  ---- Options for the Java VM 
+#  ---- Options for the Java VM
 #   Do not change unless yoy know what you are doing.
-#   If the globus.tcp.port.range is changed, the 
+#   If the globus.tcp.port.range is changed, the
 #   variable 'clientDataPortRange' below has to be changed accordingly.
 #
 java_options="-server -Xmx512m -XX:MaxDirectMemorySize=512m \
@@ -97,13 +97,13 @@ java_options="-server -Xmx512m -XX:MaxDirectMemorySize=512m \
 #              -Djava.security.auth.login.config=/opt/d-cache/config/jgss.conf \
 #              -Xms400m \
 
-#  ---- Classpath 
+#  ---- Classpath
 #   Do not change unless yoy know what you are doing.
 #
 classesDir=${ourHomeDir}/classes
 classpath=
 
-#  ---- Librarypath 
+#  ---- Librarypath
 #   Do not change unless yoy know what you are doing.
 #   Currently not used. Might contain .so librarys for JNI
 #
@@ -130,7 +130,7 @@ kpwdFile=${ourHomeDir}/etc/dcache.kpwd
 
 
 #  -----------------------------------------------------------------------
-#         pool tuning 
+#         pool tuning
 #  -----------------------------------------------------------------------
 #   Do not change unless yoy know what you are doing.
 #
@@ -143,12 +143,12 @@ kpwdFile=${ourHomeDir}/etc/dcache.kpwd
 #            org.dcache.pool.repository.meta.db.BerkeleyDBMetaDataRepository
 #    Default: org.dcache.pool.repository.meta.file.FileMetaDataRepository
 #
-#   Selects which meta data repository implementation to use. This is 
+#   Selects which meta data repository implementation to use. This is
 #   essentially a choice between storing meta data in a large number
-#   of small files in the control/ directory, or to use the embedded 
-#   Berkeley database stored in the meta/ directory (both directories 
+#   of small files in the control/ directory, or to use the embedded
+#   Berkeley database stored in the meta/ directory (both directories
 #   placed in the pool directory).
-# 
+#
 # metaDataRepository=org.dcache.pool.repository.meta.file.FileMetaDataRepository
 #
 #  ---- Which meta data repository to import from.
@@ -157,7 +157,7 @@ kpwdFile=${ourHomeDir}/etc/dcache.kpwd
 #            ""
 #    Default: ""
 #
-#   Selects which meta data repository to import data from if the 
+#   Selects which meta data repository to import data from if the
 #   information is missing from the main repository. This is useful
 #   for converting from one repository implementation to another,
 #   without having to fetch all the information from the central PNFS
@@ -166,7 +166,7 @@ kpwdFile=${ourHomeDir}/etc/dcache.kpwd
 # metaDataRepositoryImport=""
 #
 #  -----------------------------------------------------------------------
-#         gPlazma tuning 
+#         gPlazma tuning
 #  -----------------------------------------------------------------------
 #   Do not change unless yoy know what you are doing.
 #
@@ -181,7 +181,7 @@ gplazmaPolicy=${ourHomeDir}/etc/dcachesrm-gplazma.policy
 #
 #
 #  -----------------------------------------------------------------------
-#         dcap tuning 
+#         dcap tuning
 #  -----------------------------------------------------------------------
 #
 # gsidcapIoQueue=
@@ -192,7 +192,7 @@ gplazmaPolicy=${ourHomeDir}/etc/dcachesrm-gplazma.policy
 # dcapMaxLogin=1500
 #
 #  -----------------------------------------------------------------------
-#         gsiftp tuning 
+#         gsiftp tuning
 #  -----------------------------------------------------------------------
 #
 #  ---- Seconds between GridFTP performance markers
@@ -221,21 +221,21 @@ gplazmaPolicy=${ourHomeDir}/etc/dcachesrm-gplazma.policy
 #    Default: 'false' for FTP doors, 'true' for pools
 #
 #    If set to true, pools are allowed accept incomming connections for
-#    for FTP transfers. This only affects passive transfers. Only passive 
+#    for FTP transfers. This only affects passive transfers. Only passive
 #    transfers using GFD.47 GETPUT (aka GridFTP 2) can be redirected to
-#    the pool. Other passive transfers will be channelled through a 
-#    proxy component at the FTP door. If set to false, all passive 
+#    the pool. Other passive transfers will be channelled through a
+#    proxy component at the FTP door. If set to false, all passive
 #    transfers to through a proxy.
 #
-#    This setting is interpreted by both FTP doors and pools, with 
+#    This setting is interpreted by both FTP doors and pools, with
 #    different defaults. If set to true at the door, then the setting
-#    at the individual pool will be used. 
+#    at the individual pool will be used.
 #
 # gsiftpAllowPassivePool=false
 #
 #
 #  -----------------------------------------------------------------------
-#         common to gsiftp and srm 
+#         common to gsiftp and srm
 #  -----------------------------------------------------------------------
 #
 # srmSpaceManagerEnabled=no
@@ -246,7 +246,7 @@ gplazmaPolicy=${ourHomeDir}/etc/dcachesrm-gplazma.policy
 #
 #  ---- Image and style directories for the dCache-internal web server
 #   Do not change unless yoy know what you are doing.
-#   
+#
 images=${ourHomeDir}/docs/images
 styles=${ourHomeDir}/docs/styles
 
@@ -282,7 +282,7 @@ sshPort=${portBase}124
 #telnetPort=${portBase}123
 #
 #  -----------------------------------------------------------------------
-#        Maintenance Module Setup 
+#        Maintenance Module Setup
 #  -----------------------------------------------------------------------
 #
 # maintenanceLibPath=${ourHomeDir}/var/lib/dCache/maintenance
@@ -305,45 +305,45 @@ sshPort=${portBase}124
 
 #   The best idea is to have the database server running on the same
 #   host as the dCache component which accesses it. Therefore, the
-#   default value for the following variables is 'localhost'. 
+#   default value for the following variables is 'localhost'.
 #   Uncomment and change these variables only if you have a reason to
-#   deviate from this scheme. 
+#   deviate from this scheme.
 
-#   (One possibility would be, to put the 'billing' DB on another host than 
+#   (One possibility would be, to put the 'billing' DB on another host than
 #   the pnfs server DB and companion, but keep the httpDomain on the admin
 #   host.)
 
 #  ---- pnfs Companion Database Host
 #   Do not change unless yoy know what you are doing.
 #   - Database name: companion
-#   
+#
 #companionDatabaseHost=localhost
 
 #  ---- SRM Database Host
 #   Do not change unless yoy know what you are doing.
 #   - Database name: dcache
 #   - If srmDbHost is set and this is not set, srmDbHost is used.
-#   
+#
 #srmDatabaseHost=localhost
 
 #  ---- Space Manager Database Host
 #   Do not change unless yoy know what you are doing.
 #   - Database name: dcache
 #   - If srmDbHost is set and this is not set, srmDbHost is used.
-#   
+#
 #spaceManagerDatabaseHost=localhost
 
 #  ---- Pin Manager Database Host
 #   Do not change unless yoy know what you are doing.
 #   - Database name: dcache
 #   - If srmDbHost is set and this is not set, srmDbHost is used.
-#   
+#
 #pinManagerDatabaseHost=localhost
 
 #  ---- Replica Manager Database Host
 #   Do not change unless yoy know what you are doing.
 #   - Database name: replicas
-#   
+#
 # ----------------------------------------------------------------
 #   replica manager tuning
 # ----------------------------------------------------------------
@@ -353,7 +353,7 @@ sshPort=${portBase}124
 # replicaDbUser=srmdcache
 # replicaDbPassword=srmdcache
 # replicaPasswordFile=""
-# resilientGroupName=*
+# resilientGroupName=ResilientPools
 # replicaPoolWatchDogPeriod=600
 # replicaWaitDBUpdateTimeout=600
 # replicaDelayDBStartTimeout=1200
@@ -416,7 +416,7 @@ pnfs=/pnfs/fs
 #
 # namespaceProvider=diskCacheV111.namespace.provider.BasicNameSpaceProviderFactory
 #
-#   --- change this if you configured you postgres instance 
+#   --- change this if you configured you postgres instance
 #       other then described in the Book.
 #
 # pnfsDbUser=srmdcache
@@ -441,7 +441,7 @@ cacheInfo=companion
 #  ---- Location of the trash directory
 #   The cleaner (which can only run on the pnfs server machine itself)
 #   autodetects the 'trash' directory.  Non-empty 'trash' overwrites the
-#   autodetect. 
+#   autodetect.
 #
 #trash=
 
@@ -458,42 +458,42 @@ cacheInfo=companion
 
 #  ---- Whether to enable the HSM cleaner
 #   Values:  'disabled', 'enabled'
-#   Default: 'disabled' 
+#   Default: 'disabled'
 #
-#   The HSM cleaner scans the PNFS trash directory for deleted 
+#   The HSM cleaner scans the PNFS trash directory for deleted
 #   files stored on an HSM and sends a request to an attached
 #   pool to delete that file from the HSM.
 #
-#   The HSM cleaner by default runs in the PNFS domain. To 
-#   enable the cleaner, this setting needs to be set to enabled 
-#   at the PNFS domain *and* at all pools that are supposed 
+#   The HSM cleaner by default runs in the PNFS domain. To
+#   enable the cleaner, this setting needs to be set to enabled
+#   at the PNFS domain *and* at all pools that are supposed
 #   to delete files from an HSM.
 #
 # hsmCleaner=disabled
 #
 #
 #  ---- Location of trash directory for files on tape
-#   The HSM cleaner periodically scans this directory to 
-#   detect deleted files. 
+#   The HSM cleaner periodically scans this directory to
+#   detect deleted files.
 #
 # hsmCleanerTrash=/opt/pnfsdb/pnfs/1
 #
 #  ---- Location of repository directory of the HSM cleaner
-#   The HSM cleaner uses this directory to store information 
+#   The HSM cleaner uses this directory to store information
 #   about files in could not clean right away. The cleaner
 #   will reattempt to clean the files later.
 #
 # hsmCleanerRepository=/opt/pnfsdb/pnfs/1/repository
 #
 #  ---- Interval between scans of the trash directory
-#   Specifies the time in seconds between two scans of the 
+#   Specifies the time in seconds between two scans of the
 #   trash directory.
 #
 # hsmCleanerScan=90
 #
 #  ---- Interval between retries
-#   Specifies the time in seconds between two attempts to 
-#   clean files stored in the cleaner repository. 
+#   Specifies the time in seconds between two attempts to
+#   clean files stored in the cleaner repository.
 #
 # hsmCleanerRecover=3600
 #
@@ -502,7 +502,7 @@ cacheInfo=companion
 #   file is added to the repository. This setting specifies the time
 #   in seconds between flushes to the repository. Until the
 #   information is kept in memory and in the trash directory.
-# 
+#
 #   Each flush will create a new file. A lower value will cause the
 #   repository to be split into more files. A higher value will cause
 #   a higher memory usage and a larger number of files in the trash
@@ -514,29 +514,29 @@ cacheInfo=companion
 #   When the trash directory is scanned, information about deleted
 #   files is queued in memory. This setting specifies the maximum
 #   length of this queue. When the queue length is reached, scanning
-#   is suspended until files have been cleaned or flushed to the 
+#   is suspended until files have been cleaned or flushed to the
 #   repository.
 #
 # hsmCleanerCleanerQueue=10000
 #
 #  ---- Timeout for pool communication
-#   Files are cleaned from an HSM by sending a message to a pool to 
-#   do so. This specifies the timeout in seconds after which the 
+#   Files are cleaned from an HSM by sending a message to a pool to
+#   do so. This specifies the timeout in seconds after which the
 #   operation is considered failed.
-# 
+#
 # hsmCleanerTimeout=120
 #
 #  ---- Maximum concurrent requests to a single HSM
 #   Files are cleaned in batches. This specified the largest number
 #   of files to include in a batch per HSM.
-# 
+#
 # hsmCleanerRequest=100
 #
 #  -----------------------------------------------------------------------
-#         Directory Pools 
+#         Directory Pools
 #  -----------------------------------------------------------------------
 #
-#directoryPoolPnfsBase=/pnfs/fs 
+#directoryPoolPnfsBase=/pnfs/fs
 #
 
 #  -----------------------------------------------------------------------
@@ -609,19 +609,19 @@ cacheInfo=companion
 #
 #  -- Set this to /root/.pgpass in case
 #     you need to have better security.
-# 
+#
 # srmPasswordFile=
 #
-#  -- Set this to true if you want overwrite to be enabled for 
-#     srm v1.1 interface as well as for srm v2.2 interface when 
-#     client does not specify desired overwrite mode. 
-#     This option will be considered only if overwriteEnabled is 
+#  -- Set this to true if you want overwrite to be enabled for
+#     srm v1.1 interface as well as for srm v2.2 interface when
+#     client does not specify desired overwrite mode.
+#     This option will be considered only if overwriteEnabled is
 #     set to yes (or true)
 #
 # srmOverwriteByDefault=false
 
 # ----srmCustomGetHostByAddr enables using the BNL developed
-#  procedure for host by ip resolution if standard 
+#  procedure for host by ip resolution if standard
 # InetAddress method failed
 # srmCustomGetHostByAddr=false
 
@@ -646,12 +646,12 @@ AdvisoryDelete=true
 #     we will assign this access latency by default
 # SpaceManagerDefaultAccessLatency=NEARLINE
 #
-# ----if the transfer request come from the door, and there was not prior 
-#     space reservation made for this file, should we try to reserve 
+# ----if the transfer request come from the door, and there was not prior
+#     space reservation made for this file, should we try to reserve
 #     space before satisfying the request
 # SpaceManagerReserveSpaceForNonSRMTransfers=false
 
-# LinkGroupAuthorizationFile contains the list of FQANs that are allowed to 
+# LinkGroupAuthorizationFile contains the list of FQANs that are allowed to
 # make space reservations in a given link group
 #SpaceManagerLinkGroupAuthorizationFileName=""
 
@@ -680,7 +680,7 @@ logArea=/var/log
 #   The directory the billing logs are written to
 billingDb=${ourHomeDir}/billing
 
-#   If billing information should be written to a 
+#   If billing information should be written to a
 #   PostgreSQL database set to 'yes'.
 #   A database called 'billing' has to be created there.
 #billingToDb=no
@@ -703,22 +703,22 @@ billingDb=${ourHomeDir}/billing
 #  -----------------------------------------------------------------------
 #       Info Provider
 #  -----------------------------------------------------------------------
-#    
+#
 #   The following variables are used by the dynamic info provider, which
 #   is used for integration of dCache as a storage element in the LCG
 #   information system. All variables are used by the client side of the
 #   dynamic info provider which is called regularly by the LCG GIP (generic
-#   info provider). It consists of the two scripts 
+#   info provider). It consists of the two scripts
 #     jobs/infoDynamicSE-plugin-dcache
 #     jobs/infoDynamicSE-provider-dcache
-#   
+#
 
 #  ---- Seconds between information retrievals
 #   Default: 180
 #infoCollectorInterval=180
 
 #  ---- The static file used by the GIP
-#   This is also used by the plugin to determine the info it should 
+#   This is also used by the plugin to determine the info it should
 #   output.
 #   Default: /opt/lcg/var/gip/ldif/lcg-info-static-se.ldif
 #infoProviderStaticFile=/opt/lcg/var/gip/ldif/lcg-info-static-se.ldif
