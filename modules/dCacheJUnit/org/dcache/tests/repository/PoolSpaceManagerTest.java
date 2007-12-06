@@ -42,7 +42,7 @@ public class PoolSpaceManagerTest {
 
 
     @Test
-    public void testFreeMoreThanReserwed() throws Exception {
+    public void testFreeMoreThanReserved() throws Exception {
 
         long space = _random.nextLong();
 
