@@ -515,6 +515,11 @@
             <class location="${classesDir}/infoDynamicSE.jar" />
             <class location="${classesDir}/xrootd-tokenauthz.jar" />
             <class location="${classesDir}/chimera-provider.jar" />
+            <sourcePath path="modules/cells" />
+            <sourcePath path="modules/dCache" />
+            <sourcePath path="modules/srm/src" />
+            <sourcePath path="modules/srmclient" />
+             
         </findbugs>
     </target>
 
@@ -544,6 +549,7 @@
 
             <auxClasspath path="" />
             <class location="${classesDir}/dcache.jar" />
+            <sourcePath path="modules/dCache" />
         </findbugs>
     </target>
 
