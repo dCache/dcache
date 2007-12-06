@@ -40,6 +40,19 @@ public class PoolSpaceManagerTest {
 
     }
 
+
+    @Test
+    public void testFreeMoreThanReserwed() throws Exception {
+
+        long space = _random.nextLong();
+
+        _poolSpaceMonitor = new FairQueueAllocation(space);
+
+        _poolSpaceMonitor.freeSpace(4);
+
+        assertFalse("free space greater than total space", _poolSpaceMonitor.getFreeSpace() > _poolSpaceMonitor.getTotalSpace());
+    }
+
     @Test
     @Ignore
     public void testFreeSpaceCount() throws InterruptedException {
