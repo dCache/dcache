@@ -170,7 +170,7 @@ public class PnfsManagerTest {
         PnfsGetFileMetaDataMessage pnfsGetFileMetaDataMessage = new PnfsGetFileMetaDataMessage(pnfsCreateEntryMessage.getPnfsId());
 
        _pnfsManager.getFileMetaData(pnfsGetFileMetaDataMessage);
-       assertTrue("file still exist after removeing last location entry", pnfsGetFileMetaDataMessage.getReturnCode() == CacheException.FILE_NOT_FOUND );
+       assertTrue("file still exist after removing last location entry", pnfsGetFileMetaDataMessage.getReturnCode() == CacheException.FILE_NOT_FOUND );
     }
 
     @Test
