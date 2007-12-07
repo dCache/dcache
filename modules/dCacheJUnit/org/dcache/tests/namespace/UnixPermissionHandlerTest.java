@@ -18,7 +18,7 @@ import diskCacheV111.util.PnfsId;
 public class UnixPermissionHandlerTest {
 
 
-    private final DummyMetadataSource _metaDataSource = new DummyMetadataSource();
+    private final FileMetaDataProviderHelper _metaDataSource = new FileMetaDataProviderHelper();
     private final FsPermissionHandler _permissionHandler = new FsPermissionHandler(null, _metaDataSource);
 
 
@@ -53,53 +53,6 @@ public class UnixPermissionHandlerTest {
             return _gids;
         }
 
-
-    }
-    /**
-     *
-     * Fake metadata source
-     *
-     */
-    private static class DummyMetadataSource implements FileMetaDataSource {
-
-
-        private final Map<PnfsId, FileMetaData> _metadataById = new HashMap<PnfsId, FileMetaData>();
-        private final Map<String, FileMetaData> _metadataByPath = new HashMap<String, FileMetaData>();
-
-        public FileMetaData getMetaData(String path) throws CacheException {
-
-            FileMetaData metaData = _metadataByPath.get(path);
-
-            if( metaData == null ) {
-                throw new FileNotFoundCacheException(path + " not found");
-            }
-            return metaData;
-        }
-
-        public FileMetaData getMetaData(PnfsId pnfsId) throws CacheException {
-
-            FileMetaData metaData = _metadataById.get(pnfsId);
-
-            if( metaData == null ) {
-                throw new FileNotFoundCacheException(pnfsId + " not found");
-            }
-            return metaData;
-        }
-
-
-        public void setMetaData(PnfsId pnfsId,FileMetaData metaData ) {
-            _metadataById.put(pnfsId, metaData);
-        }
-
-
-        public void setMetaData(String path,FileMetaData metaData ) {
-            _metadataByPath.put(path, metaData);
-        }
-
-        public void cleanAll() {
-            _metadataById.clear();
-            _metadataByPath.clear();
-        }
 
     }
 
