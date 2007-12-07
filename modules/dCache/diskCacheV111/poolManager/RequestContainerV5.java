@@ -120,14 +120,14 @@ public class RequestContainerV5 implements Runnable {
     private ThreadPool createThreadPool( String poolClass ){
 
        ThreadPool threadPool = null ;
-       Class    [] classArgs = { dmg.cells.nucleus.CellAdapter.class } ;
+       Class<?>    [] classArgs = { dmg.cells.nucleus.CellAdapter.class } ;
        Object   [] objArgs   = { _cell } ;
 
        if( ( poolClass != null ) && ( ! poolClass.equals("") ) ){
           try{
               say("ThreadPool : Trying to initialize : "+poolClass);
-              Class cl = Class.forName(poolClass) ;
-              Constructor con = cl.getConstructor(classArgs) ;
+              Class<?> cl = Class.forName(poolClass) ;
+              Constructor<?> con = cl.getConstructor(classArgs) ;
               threadPool = (ThreadPool)con.newInstance(objArgs);
               say("ThreadPool : Initializing "+poolClass+" succeeded");
           }catch(Exception ee ){
@@ -1864,8 +1864,7 @@ public class RequestContainerV5 implements Runnable {
               _bestPool       = null;
               List<PoolCostCheckable> bestAv = null;
               int  validCount = 0;
-              List<PoolCostCheckable> tmpList =
-                  new ArrayList<PoolCostCheckable>();
+              List<PoolCostCheckable> tmpList = new ArrayList<PoolCostCheckable>();
               int  level      = 0;
               boolean allowFallbackOnPerformance = false;
 
@@ -1942,7 +1941,7 @@ public class RequestContainerV5 implements Runnable {
 
                  for( int i = 0 , n = bestAv.size() ; i < n ; i++ ){
 
-                    cost = (PoolCostCheckable)bestAv.get(i) ;
+                    cost = bestAv.get(i) ;
 
                     double costValue = cost.getPerformanceCost() ;
 
@@ -2045,8 +2044,7 @@ public class RequestContainerV5 implements Runnable {
 				// make sure we are either below costCut or
 				// 'slope' below the source pool.
 				//
-				double maxCost = parameter._slope > 0.01 ? (parameter._slope * ((PoolCostCheckable) sources
-						.get(0)).getPerformanceCost())
+				double maxCost = parameter._slope > 0.01 ? (parameter._slope * sources.get(0).getPerformanceCost())
 						: parameter._costCut;
 
 				List<List<PoolCostCheckable>> matrix =
@@ -2099,7 +2097,7 @@ public class RequestContainerV5 implements Runnable {
 					List<PoolCostCheckable> selected =
                                             new ArrayList<PoolCostCheckable>();
 					for (PoolCostCheckable dest : destinations) {
-						PoolCostCheckable cost = (PoolCostCheckable) dest;
+						PoolCostCheckable cost = dest;
 						if (cost.getPerformanceCost() < maxCost)
 							selected.add(cost);
 					}
@@ -2133,13 +2131,13 @@ public class RequestContainerV5 implements Runnable {
                 PoolCheckable bestEffortSourcePool      = null;
                 PoolCheckable bestEffortDestinationPool = null;
 
-				Map map = null;
+				Map<String, String> map = null;
 
 				for (int s = 0, sMax = sources.size(); s < sMax; s++) {
 
 					PoolCheckable sourceCost = sources.get(s);
 
-					String sourceHost = (String) ((map = sourceCost.getTagMap()) == null ? null : map.get("hostname"));
+					String sourceHost = ((map = sourceCost.getTagMap()) == null ? null : map.get("hostname"));
 
 					for (int d = 0, dMax = destinations.size(); d < dMax; d++) {
 
@@ -2161,8 +2159,7 @@ public class RequestContainerV5 implements Runnable {
 								+ sourceCost.getPoolName() + " "
 								+ destinationCost.getPoolName());
 
-						String destinationHost =
-							(String) ((map = destinationCost.getTagMap()) == null ? null : map.get("hostname"));
+						String destinationHost = ((map = destinationCost.getTagMap()) == null ? null : map.get("hostname"));
 
 						if (sourceHost != null && !sourceHost.equals(destinationHost)) {
 							// we take the first src/dest-pool pair not residing on the same host
@@ -2276,7 +2273,7 @@ public class RequestContainerV5 implements Runnable {
                 //    (tmpMap is used to avoid calling getTagMap twice. The variable is used within the
                 //     the for(for( loop for the same reason. The scope is limited to just two lines.)
                 //
-                Map tmpMap = _poolCandidateInfo == null ? null : _poolCandidateInfo.getTagMap() ;
+                Map<String, String> tmpMap = _poolCandidateInfo == null ? null : _poolCandidateInfo.getTagMap() ;
                 String currentCandidateHostName = tmpMap == null ? null : (String)tmpMap.get("hostname") ;
 
                 PoolCostCheckable rememberBest = null ;
