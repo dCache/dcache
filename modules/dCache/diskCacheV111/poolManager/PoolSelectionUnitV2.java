@@ -176,9 +176,9 @@ public class PoolSelectionUnitV2 implements PoolSelectionUnit {
         }
     }
 
-    protected class PoolCore {
+    protected static class PoolCore {
 
-        protected String _name = null;
+        protected final String _name;
         protected final Map<String, Link> _linkList = new HashMap<String, Link>();
 
         protected PoolCore(String name) {
@@ -190,7 +190,7 @@ public class PoolSelectionUnitV2 implements PoolSelectionUnit {
         }
     }
 
-    private class PGroup extends PoolCore {
+    private static class PGroup extends PoolCore {
 
         private final Map<String, Pool> _poolList = new HashMap<String, Pool>();
 
@@ -525,7 +525,7 @@ public class PoolSelectionUnitV2 implements PoolSelectionUnit {
         }
     }
 
-    private class Link implements SelectionLink {
+    private static class Link implements SelectionLink {
 
         private final String _name;
         private final Map<String, PoolCore> _poolList = new HashMap<String, PoolCore>();
@@ -591,7 +591,7 @@ public class PoolSelectionUnitV2 implements PoolSelectionUnit {
         }
     }
 
-    private class UGroup {
+    private static class UGroup {
         private final String _name;
         private final Map<String, Link> _linkList = new HashMap<String, Link>();
         private final Map<String, Unit> _unitList = new HashMap<String, Unit>(); // !!!
@@ -617,7 +617,7 @@ public class PoolSelectionUnitV2 implements PoolSelectionUnit {
         }
     }
 
-    private class Unit {
+    private static class Unit {
 
         private String _name = null;
         private int _type = 0;
@@ -1027,7 +1027,7 @@ public class PoolSelectionUnitV2 implements PoolSelectionUnit {
         return resultMap;
     }
 
-    private class LinkMap {
+    private static class LinkMap {
         private class LinkMapEntry {
             private Link _link;
             private int _counter = 0;
@@ -1075,7 +1075,7 @@ public class PoolSelectionUnitV2 implements PoolSelectionUnit {
         return linkMap;
     }
 
-    private class LinkComparator implements Comparator<Link> {
+    private static class LinkComparator implements Comparator<Link> {
         private int _type = 0;
 
         private LinkComparator(String type) {
