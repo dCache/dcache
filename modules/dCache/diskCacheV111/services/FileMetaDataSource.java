@@ -5,12 +5,16 @@ package diskCacheV111.services;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileMetaData;
+import diskCacheV111.util.FileMetaDataX;
 import diskCacheV111.util.PnfsId;
 
 public interface FileMetaDataSource {
 	
 	public FileMetaData getMetaData(String path) throws CacheException ;
-	public FileMetaData getMetaData(PnfsId pnfsId) throws CacheException ;	
+	public FileMetaData getMetaData(PnfsId pnfsId) throws CacheException ;
+	
+	public FileMetaDataX getXMetaData(String path) throws CacheException ;
+	public FileMetaDataX getXMetaData(PnfsId pnfsId) throws CacheException ;
 }
 /*
  * $Log: not supported by cvs2svn $
