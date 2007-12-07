@@ -47,12 +47,20 @@ public class PnfsManagerFileMetaDataSource implements FileMetaDataSource {
 	}
 
     public FileMetaDataX getXMetaData(String path) throws CacheException {
-        // TODO Auto-generated method stub
-        return null;
+
+        PnfsGetFileMetaDataMessage info = _handler.getFileMetaDataByPath(path);
+        if( info.getReturnCode() != 0) {
+            throw new CacheException( info.getReturnCode(), "unable to get metadata of " + path);
+        }
+
+        return new FileMetaDataX(info.getPnfsId(), info.getMetaData() );
+
     }
 
     public FileMetaDataX getXMetaData(PnfsId pnfsId) throws CacheException {
-        return null;
+
+        return new FileMetaDataX(pnfsId, getMetaData(pnfsId) );
+
     }
 
 }
