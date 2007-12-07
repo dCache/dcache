@@ -53,7 +53,7 @@ public class TestjUnitACL {
 
         _conn = DriverManager.getConnection("jdbc:hsqldb:mem:chimeraaclmem", "sa", "");
 
-        File sqlFile = new File("modules/external/Chimera/sql/create-hsqldb.sql");
+        File sqlFile = new File("modules/external/Chimera/sql/create-hsqldb-testdata.sql");
         StringBuilder sql = new StringBuilder();
 
         BufferedReader dataStr = new BufferedReader(new FileReader(sqlFile));
@@ -1227,9 +1227,16 @@ public class TestjUnitACL {
 		             Boolean checkSETATTRfile2 = AclNFSv4Matcher.isAllowed(permissionNew, actionSETATTRfile, FileAttribute.FATTR4_OWNER_GROUP);
 		             assertTrue("For who_id=111 action SETATTR (Attribute  FATTR4_OWNER_GROUP) is allowed: WRITE_OWNER allowed", checkSETATTRfile2);
  
+		             
+		           //Check SETATTR (Attributes OWNER_GROUP and OWNER). Access flag: WRITE_OWNER
+		             int fileAttrTest = (FileAttribute.FATTR4_OWNER_GROUP.getValue());
+		                 fileAttrTest|=(FileAttribute.FATTR4_OWNER.getValue());
+		             Boolean checkSETATTRfile3 = AclNFSv4Matcher.isAllowed(permissionNew, actionSETATTRfile, FileAttribute.valueOf(fileAttrTest) );
+		             assertTrue("For who_id=111 action SETATTR (Attributes  FATTR4_OWNER_GROUP and FATTR4_OWNER) is allowed: WRITE_OWNER allowed", checkSETATTRfile3);
+		             
 		             //Check SETATTR (Attribute SIZE). Access flag: WRITE_DATA
-		             Boolean checkSETATTRfile3 = AclNFSv4Matcher.isAllowed(permissionNew, actionSETATTRfile, FileAttribute.FATTR4_SIZE);
-		             assertFalse("For who_id=111 action SETATTR (Attribute  FATTR4_SIZE) is denied: WRITE_DATA denied", checkSETATTRfile3);
+		             Boolean checkSETATTRfile4 = AclNFSv4Matcher.isAllowed(permissionNew, actionSETATTRfile, FileAttribute.FATTR4_SIZE);
+		             assertFalse("For who_id=111 action SETATTR (Attribute  FATTR4_SIZE) is denied: WRITE_DATA denied", checkSETATTRfile4);
     }
     
     protected String genRsID() throws Exception {
