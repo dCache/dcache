@@ -7,6 +7,7 @@ import java.io.File;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileMetaData;
+import diskCacheV111.util.FileMetaDataX;
 import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.PnfsFile;
 import diskCacheV111.util.PnfsId;
@@ -18,15 +19,15 @@ public class PnfsFileMetaDataSource implements FileMetaDataSource {
 
 	private final CellAdapter _cell ;
 	private final File _mp;
-	
+
 	public PnfsFileMetaDataSource(CellAdapter cell) throws Exception {
 		_cell = cell;
 		Args args = _cell.getArgs();
 		String fsRoot = args.getOpt("root");
 		if( fsRoot == null ) {
-			throw new IllegalArgumentException("-root not defined");			
+			throw new IllegalArgumentException("-root not defined");
 		}
-		
+
 		_mp = new File(fsRoot);
 		if(!_mp.exists() ){
 			throw new IllegalArgumentException("fsRoot does not exist");
@@ -34,36 +35,46 @@ public class PnfsFileMetaDataSource implements FileMetaDataSource {
 
 		if(!_mp.isDirectory() ){
 			throw new IllegalArgumentException("fsRoot not a directory");
-		}		
+		}
 	}
-	
+
 	public FileMetaData getMetaData(String path) throws CacheException {
 	      PnfsFile   pnfsFile =  new PnfsFile( path ) ;
 	      if( !pnfsFile.exists() ) {
 	    	  throw new FileNotFoundCacheException(path + " not found");
 	      }
-	      
+
 	      PnfsId     pnfsId       = pnfsFile.getPnfsId() ;
-	      
+
 	      if( pnfsId == null ) {
 	          throw new CacheException
 	          ( "can't get pnfsId (not a pnfsfile)" ) ;
 	      }
-	      	      
+
 	      return this.getMetaData(pnfsId);
 	}
 
 	public FileMetaData getMetaData(PnfsId pnfsId) throws CacheException {
-	      
+
 		  FileMetaData meta;
 	      try {
 	          meta = PnfsFile.getFileMetaData( _mp, pnfsId );
 	      }catch (Exception e){
 	          throw new CacheException("Path do not exist");
 	      }
-	      
+
 	      return meta;
 	}
+
+    public FileMetaDataX getXMetaData(String path) throws CacheException {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    public FileMetaDataX getXMetaData(PnfsId pnfsId) throws CacheException {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
 }
 /*
