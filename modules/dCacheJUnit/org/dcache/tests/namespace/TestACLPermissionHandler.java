@@ -211,7 +211,7 @@ public class TestACLPermissionHandler {
     public void testCreateFile() throws Exception {
 
         boolean isAllowed = false;
-        //file to create. Actually, fileId does not exist :
+        //file to create. Actually, fileId does not exist . Only for test:
         String fileId =  "00009C3FCDDB7FC74D38A3DFE77EA77A8EB3"; 
         
         //Directory where file has to be created. Permission to perform action 'CREATE' 
@@ -265,7 +265,133 @@ public class TestACLPermissionHandler {
 
     }
     
+    @Test
+    public void testDeleteFile() throws Exception {
+
+        boolean isAllowed = false;
+        //File to delete
+        String fileId =  "00007AFC6292C068435DA9B7661A716F2709";
+        
+        //Parent directory
+        String parentDirId =  "00007AFC62920000735DA000070000700007";
+        
+        //Set ACL for the File
+        List<ACE> acesForFile = new ArrayList<ACE>();
+        
+        acesForFile.add(new ACE( AceType.ACCESS_ALLOWED_ACE_TYPE,
+                0,
+                AccessMask.DELETE.getValue(),
+                Who.USER,
+                111,
+                ACE.DEFAULT_ADDRESS_MSK,
+                0 ) );
+        
+        
+        ACL aclForFile = new ACL(fileId, RsType.FILE, acesForFile);
+
+        aclHandler.setACL(aclForFile);
+
+      //Set ACL for the parent directory
+        List<ACE> acesForDir = new ArrayList<ACE>();
+        
+        acesForDir.add(new ACE( AceType.ACCESS_ALLOWED_ACE_TYPE,
+                1,
+                AccessMask.DELETE_CHILD.getValue(),
+                Who.USER,
+                111,
+                ACE.DEFAULT_ADDRESS_MSK,
+                0 ) );
+        
+        
+        ACL aclForDir = new ACL(parentDirId, RsType.DIR, acesForDir);
+
+        aclHandler.setACL(aclForDir);
+        
+        //Define metadata for the File
+        FileMetaDataX fileMetaData = new FileMetaDataX(new PnfsId(fileId),
+        		new FileMetaData(false, 111, 1000, 0600) );
+
+       //Define metadata for the parent Directory
+        FileMetaDataX dirMetaData = new FileMetaDataX(new PnfsId(parentDirId),
+        		new FileMetaData(true, 111, 1000, 0600) );
+        
+        //Define Origin for the user. (Subject user_id=111)
+        Origin origin = new Origin(authTypeCONST, inetAddressTypeCONST, hostCONST);
+        Subject subject = new Subject(111, 1000);
+
+        //Set metadata for the File and for the parent Directory
+        _metaDataSource.setXMetaData("/pnfs/desy.de/data/dir1/privateFile", fileMetaData);
+        _metaDataSource.setXMetaData("/pnfs/desy.de/data/dir1", dirMetaData);
+
+        isAllowed =  _permissionHandler.canDeleteFile(subject, "/pnfs/desy.de/data/dir1/privateFile", origin);
+
+        assertTrue("It is allowed to delete this file", isAllowed);
+
+    }
     
+    @Test
+    public void testDeleteDirectory() throws Exception {
+
+        boolean isAllowed = false;
+        //Directory to delete
+        String dirId =  "0000FF2A3233948A4692A5F5EB22F60C4F05";
+
+        //Parent directory
+        String parentDirId =  "0000FF2A323390000FF2A325EB0000FF2A32";
+     
+        //Set ACL for the directory 
+        List<ACE> acesForDir = new ArrayList<ACE>();
+
+        acesForDir.add(new ACE( AceType.ACCESS_ALLOWED_ACE_TYPE,
+                1,
+                AccessMask.DELETE_CHILD.getValue(),
+                Who.USER,
+                111,
+                ACE.DEFAULT_ADDRESS_MSK,
+                0 ) );
+        
+        ACL aclForDir = new ACL(dirId, RsType.DIR, acesForDir);
+
+        aclHandler.setACL(aclForDir);
+
+       //Set ACL for the parent directory
+        List<ACE> acesForParentDir = new ArrayList<ACE>();
+        
+        acesForParentDir.add(new ACE( AceType.ACCESS_ALLOWED_ACE_TYPE,
+                1,
+                AccessMask.DELETE_CHILD.getValue(),
+                Who.USER,
+                111,
+                ACE.DEFAULT_ADDRESS_MSK,
+                0 ) );
+        
+        
+        ACL aclForParentDir = new ACL(parentDirId, RsType.DIR, acesForParentDir);
+
+        aclHandler.setACL(aclForParentDir);
+        
+        //Define metadata for the directory
+        FileMetaDataX dirMetaData = new FileMetaDataX(new PnfsId(dirId),
+        		new FileMetaData(true, 111, 1000, 0600) );
+        
+        //Define metadata for the parent Directory
+        FileMetaDataX parentDirMetaData = new FileMetaDataX(new PnfsId(parentDirId),
+        		new FileMetaData(true, 111, 1000, 0600) );
+        
+       //Define Origin for the user. 
+        Origin origin = new Origin(authTypeCONST, inetAddressTypeCONST, hostCONST);
+        Subject subject = new Subject(111, 1000);
+       
+        //Set metadata for the directory and for the parent directory
+        _metaDataSource.setXMetaData("/pnfs/desy.de/data/dir1", dirMetaData);
+        _metaDataSource.setXMetaData("/pnfs/desy.de/data", parentDirMetaData);
+
+        //permission to delete this directory 
+        isAllowed =  _permissionHandler.canDeleteDir(subject, "/pnfs/desy.de/data/dir1", origin);
+
+        assertTrue("It is allowed to delete a directory", isAllowed);
+
+    }
     
     static void tryToClose(Statement o) {
         try {

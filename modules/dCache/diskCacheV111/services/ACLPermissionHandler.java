@@ -294,8 +294,13 @@ public class ACLPermissionHandler implements PermissionHandlerInterface {
 
 	/**
 	 * checks whether the user (defined as 'subject') with 'userOrigin' can
-	 * delete a directory with pnfs-path 'pnfsPath' (sample pnfsPath
-	 * "/pnfs/desy.de/data/dir1")
+	 * delete Directory with pnfs-path 'pnfsPath' (sample pnfsPath  "/pnfs/desy.de/data/dir1").
+	 * For this: ask for permission to perform action REMOVE for this directory
+	 *          (that is, bit DELETE for /pnfs/desy.de/data/dir1 will be checked) 
+	 *           and
+	 *           ask for permission to perform action REMOVE for parent directory /pnfs/desy.de/data
+	 *           (that is, bit DELETE_CHILD for /pnfs/desy.de/data will be checked)
+	 *           If both are allowed, then the original action REMOVE directory is allowed. 
 	 */
 	public boolean canDeleteDir(Subject subject, String pnfsPath,
 			Origin userOrigin) throws CacheException {
@@ -307,16 +312,29 @@ public class ACLPermissionHandler implements PermissionHandlerInterface {
 							+ pnfsPath + ")");
 		}
 
-		FileMetaDataX fileMetaData = _metaDataSource.getXMetaData(pnfsPath);
+		FileMetaDataX dirMetaData = _metaDataSource.getXMetaData(pnfsPath);
 
-		if (!fileMetaData.getFileMetaData().isDirectory()) {
+		if (!dirMetaData.getFileMetaData().isDirectory()) {
 			_logPermisions.error(pnfsPath + " is not a directory");
 			throw new CacheException("path is not a directory");
 		}
 
-		PnfsId pnfsID = fileMetaData.getPnfsId();
+		// get pnfsPath of parent directory
+		int last_slash_pos = pnfsPath.lastIndexOf('/');
+		String pnfsPathParent = pnfsPath.substring(0, last_slash_pos);
+		
+		FileMetaDataX parentDirMetaData = _metaDataSource.getXMetaData(pnfsPathParent);
+		
+		if (!parentDirMetaData.getFileMetaData().isDirectory()) {
+			_logPermisions.error(pnfsPathParent + " (parent) is not a directory");
+			throw new CacheException("parent path is not a directory");
+		}
+		
+        /////////////////////////////////////////////////////////////////
+		//Ask for permission to perform action REMOVE for the given directory 
+		PnfsId dirPnfsID = dirMetaData.getPnfsId();
 
-		ACL acl = _aclHandler.getACL(pnfsID.toString());
+		ACL acl = _aclHandler.getACL(dirPnfsID.toString());
 
 		AuthType authenticationType = userOrigin.getAuthType();
 		InetAddressType inetAddressType = userOrigin.getAddressType();
@@ -324,8 +342,8 @@ public class ACLPermissionHandler implements PermissionHandlerInterface {
 		_origin = new Origin(authenticationType, inetAddressType, inetAddress);
 
 		// Get Owner of this resource :
-		int uidOwner = fileMetaData.getFileMetaData().getUid();
-		int gidOwner = fileMetaData.getFileMetaData().getGid();
+		int uidOwner = dirMetaData.getFileMetaData().getUid();
+		int gidOwner = dirMetaData.getFileMetaData().getGid();
 
 		Owner owner = new Owner(uidOwner, gidOwner);
 
@@ -343,8 +361,41 @@ public class ACLPermissionHandler implements PermissionHandlerInterface {
 		Action actionREMOVEdir = Action.REMOVE;
 		Boolean permissionToRemoveDir = AclNFSv4Matcher.isAllowed(permission,
 				actionREMOVEdir, Boolean.TRUE);
-		return permissionToRemoveDir != null
+		
+		Boolean decision1 = permissionToRemoveDir != null
 				&& permissionToRemoveDir == Boolean.TRUE;
+		
+        ///////////////////////////////////////////////////////////////////
+		//Ask for permission to perform action REMOVE for parent directory
+		
+		PnfsId pnfsIDparent = parentDirMetaData.getPnfsId();
+
+		ACL acl2 = _aclHandler.getACL(pnfsIDparent.toString());
+
+		// Get Owner of this directory :
+		int uidOwner2 = parentDirMetaData.getFileMetaData().getUid();
+		int gidOwner2 = parentDirMetaData.getFileMetaData().getGid();
+
+		Owner owner2 = new Owner(uidOwner2, gidOwner2);
+
+		if (_logPermisions.isDebugEnabled()) {
+
+			_logPermisions.debug("Owner : " + owner2.toString());
+			_logPermisions.debug("ACL : " + acl2.toString());
+		}
+
+		Permission permission2 = AclMapper.getPermission(subject, _origin,
+				owner2, acl2);
+		
+		Action actionREMOVEchild = Action.REMOVE;
+		Boolean permissionToRemoveChild = AclNFSv4Matcher.isAllowed(permission2,
+				actionREMOVEchild, Boolean.TRUE);
+		
+		Boolean decision2 = permissionToRemoveChild != null
+		&& permissionToRemoveChild == Boolean.TRUE;
+
+        //Decision 		
+		return decision1 && decision2;
 
 	}
 
@@ -407,7 +458,13 @@ public class ACLPermissionHandler implements PermissionHandlerInterface {
 	/**
 	 * checks whether the user (defined as 'subject') with 'userOrigin' can
 	 * delete file with pnfs-path 'pnfsPath' (sample pnfsPath
-	 * "/pnfs/desy.de/data/dir1/filename")
+	 * "/pnfs/desy.de/data/dir1/filename").
+	 * For this: ask for permission to perform action REMOVE for file filename 
+	 *          (that is, bit DELETE for /pnfs/desy.de/data/dir1/filename will be checked) 
+	 *           and
+	 *           ask for permission to perform action REMOVE for parent directory /pnfs/desy.de/data/dir1
+	 *           (that is, bit DELETE_CHILD for /pnfs/desy.de/data/dir1 will be checked)
+	 *           If both are allowed, then the original action REMOVE is allowed. 
 	 */
 	public boolean canDeleteFile(Subject subject, String pnfsPath,
 			Origin userOrigin) throws CacheException {
@@ -426,6 +483,20 @@ public class ACLPermissionHandler implements PermissionHandlerInterface {
 			throw new CacheException("path is not a file");
 		}
 
+		// get pnfsPath of parent directory
+		int last_slash_pos = pnfsPath.lastIndexOf('/');
+		String pnfsPathParent = pnfsPath.substring(0, last_slash_pos);
+		
+		FileMetaDataX fileMetaDataParent = _metaDataSource.getXMetaData(pnfsPathParent);
+		
+		if (!fileMetaDataParent.getFileMetaData().isDirectory()) {
+			_logPermisions.error(pnfsPathParent + " is not a directory");
+			throw new CacheException("path is not a directory");
+		}
+		
+        ///////////////////////////////////////////////////////////////////
+		//Ask for permission to perform action REMOVE for this file 
+		
 		PnfsId pnfsID = fileMetaData.getPnfsId();
 
 		ACL acl = _aclHandler.getACL(pnfsID.toString());
@@ -435,7 +506,7 @@ public class ACLPermissionHandler implements PermissionHandlerInterface {
 		InetAddress inetAddress = userOrigin.getAddress();
 		_origin = new Origin(authenticationType, inetAddressType, inetAddress);
 
-		// Get Owner of this resource :
+		// Get Owner of this file:
 		int uidOwner = fileMetaData.getFileMetaData().getUid();
 		int gidOwner = fileMetaData.getFileMetaData().getGid();
 
@@ -449,15 +520,46 @@ public class ACLPermissionHandler implements PermissionHandlerInterface {
 			_logPermisions.debug("ACL : " + acl.toString());
 		}
 
-		Permission permission = AclMapper.getPermission(subject, _origin,
+		Permission permission1 = AclMapper.getPermission(subject, _origin,
 				owner, acl);
-
+		
 		Action actionREMOVEfile = Action.REMOVE;
-		Boolean permissionToRemoveFile = AclNFSv4Matcher.isAllowed(permission,
+		Boolean permissionToRemoveFile = AclNFSv4Matcher.isAllowed(permission1,
 				actionREMOVEfile, Boolean.FALSE);
-		return permissionToRemoveFile != null
-				&& permissionToRemoveFile == Boolean.TRUE;
+		Boolean decision1 = permissionToRemoveFile != null
+		&& permissionToRemoveFile == Boolean.TRUE;
+		
+		///////////////////////////////////////////////////////////////////
+		//Ask for permission to perform action REMOVE for parent directory
+		
+		PnfsId pnfsIDparent = fileMetaDataParent.getPnfsId();
 
+		ACL acl2 = _aclHandler.getACL(pnfsIDparent.toString());
+
+		// Get Owner of this directory :
+		int uidOwner2 = fileMetaDataParent.getFileMetaData().getUid();
+		int gidOwner2 = fileMetaDataParent.getFileMetaData().getGid();
+
+		Owner owner2 = new Owner(uidOwner2, gidOwner2);
+
+		if (_logPermisions.isDebugEnabled()) {
+
+			_logPermisions.debug("Owner : " + owner2.toString());
+			_logPermisions.debug("ACL : " + acl2.toString());
+		}
+
+		Permission permission2 = AclMapper.getPermission(subject, _origin,
+				owner2, acl2);
+		
+		Action actionREMOVEchild = Action.REMOVE;
+		Boolean permissionToRemoveChild = AclNFSv4Matcher.isAllowed(permission2,
+				actionREMOVEchild, Boolean.TRUE);
+		
+		Boolean decision2 = permissionToRemoveChild != null
+		&& permissionToRemoveChild == Boolean.TRUE;
+
+        //Decision 		
+		return decision1 && decision2;
 	}
 
 	/**
