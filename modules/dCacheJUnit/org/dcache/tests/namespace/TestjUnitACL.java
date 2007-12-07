@@ -15,6 +15,7 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -71,6 +72,14 @@ public class TestjUnitACL {
 
 
         aclHandler = new AclHandler("modules/dCacheJUnit/org/dcache/tests/namespace/acl.properties");
+    }
+
+
+    @AfterClass
+    public static void tearDown() throws Exception {
+
+        _conn.createStatement().execute("SHUTDOWN;");
+        _conn.close();
     }
 
     @Test

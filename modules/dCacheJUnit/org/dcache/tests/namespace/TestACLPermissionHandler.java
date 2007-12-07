@@ -10,9 +10,12 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+
+import org.junit.AfterClass;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 import org.dcache.chimera.acl.ACE;
 import org.dcache.chimera.acl.ACL;
@@ -26,16 +29,9 @@ import org.dcache.chimera.acl.enums.RsType;
 import org.dcache.chimera.acl.enums.Who;
 import org.dcache.chimera.acl.handler.AclHandler;
 
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import diskCacheV111.services.ACLPermissionHandler;
-import diskCacheV111.services.FileMetaDataSource;
-import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileMetaData;
 import diskCacheV111.util.FileMetaDataX;
-import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.PnfsId;
 
 public class TestACLPermissionHandler {
@@ -115,6 +111,13 @@ public class TestACLPermissionHandler {
 
         tryToClose(st);
 
+    }
+
+    @AfterClass
+    public static void tearDown() throws Exception {
+
+        _conn.createStatement().execute("SHUTDOWN;");
+        _conn.close();
     }
 
 
