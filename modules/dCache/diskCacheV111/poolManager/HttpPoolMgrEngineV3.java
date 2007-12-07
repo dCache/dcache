@@ -584,14 +584,14 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
             pw.println("<th class=\"s-table\">"+header[m]+"</th>");
         pw.println("</tr>");
 
-        Map defaultMap = new TreeMap(defaultParas.toMap());
+        Map<String, Object[]> defaultMap = new TreeMap<String, Object[]>(defaultParas.toMap());
         row = 0;
         String[] setColor = { "s-table-disabled", "s-table-regular"  };
         String[] rowClass = { "s-table-a", "s-table-b" };
 
-        for (Map.Entry entry : (Set<Map.Entry>)defaultMap.entrySet()) {
-            String key      = (String)entry.getKey();
-            Object[] e     = (Object[])entry.getValue();
+        for (Map.Entry<String, Object[]> entry : defaultMap.entrySet()) {
+            String key      =  entry.getKey();
+            Object[] e      = entry.getValue();
             boolean isSet   = (Boolean)e[0];
             String value    = e[1].toString();
 
@@ -653,14 +653,14 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
             pw.println("<th><font color=white>"+header[m]+"</font></th>");
         pw.println("</tr>");
 
-        Map defaultMap = new TreeMap(defaultParas.toMap());
+        Map<String, Object[]> defaultMap = new TreeMap<String, Object[]>(defaultParas.toMap());
         row = 0;
         String[] setColor = { "gray"   , "black"  };
         String[] rowColor = { "#bebebe", "#efefef" };
 
-        for (Map.Entry entry : (Set<Map.Entry>)defaultMap.entrySet()) {
-            String key      = (String)entry.getKey();
-            Object[] e     = (Object[])entry.getValue();
+        for (Map.Entry<String, Object[]> entry : defaultMap.entrySet()) {
+            String key      = entry.getKey();
+            Object[] e     =  entry.getValue();
             boolean isSet   = (Boolean)e[0];
             String value    = e[1].toString();
 
@@ -706,7 +706,7 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
 
     private void printParameterEntry(PrintWriter pw, PoolManagerParameter p)
     {
-        Map map = p.toMap();
+        Map<String, Object[]> map = p.toMap();
 
         int column = 0;
         int maxColumn = 2;
@@ -718,9 +718,9 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
             pw.print("<th align=center>Key</th><th align=center>Value</th>");
         pw.println("</tr>");
 
-        for (Map.Entry entry : (Set<Map.Entry>)map.entrySet()) {
-            String     name  = entry.getKey().toString();
-            Object[]  array = (Object[])entry.getValue();
+        for (Map.Entry<String, Object[]> entry : map.entrySet()) {
+            String     name  = entry.getKey();
+            Object[]  array = entry.getValue();
             boolean    isSet = (Boolean)array[0];
             Object     value = array[1].toString();
 
@@ -1510,7 +1510,7 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
         pw.println("</center>");
     }
 
-    private class LinkProperties implements Comparable
+    private class LinkProperties implements Comparable<LinkProperties>
     {
         private String name;
         private int    readPref;
@@ -1541,9 +1541,8 @@ public class HttpPoolMgrEngineV3 implements HttpResponseEngine, Runnable
             return p;
         }
 
-        public int compareTo(Object o)
+        public int compareTo(LinkProperties link )
         {
-            LinkProperties link = (LinkProperties)o;
             if (link.tag.equals(tag))return name.compareTo(link.name);
             if (tag.equals("NONE"))return -1;
             return tag.compareTo(link.tag);
