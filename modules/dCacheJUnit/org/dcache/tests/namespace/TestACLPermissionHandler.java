@@ -51,39 +51,6 @@ public class TestACLPermissionHandler {
     private final AclHandler aclHandler = new AclHandler(aclProperties);
 
 
-    private static class UserRecord {
-        private final int _uid;
-        private final int _gid;
-        private final int[] _gids;
-
-
-        UserRecord(int uid, int gid, int[] gids) {
-            _uid = uid;
-            _gid = gid;
-            _gids = gids;
-        }
-
-
-        public int getUid() {
-            return _uid;
-        }
-
-
-        public int getGid() {
-            return _gid;
-        }
-
-
-        public int[] getGids() {
-            return _gids;
-        }
-
-
-    }
-
-
-
-
     @BeforeClass
     public static void setUp() throws Exception {
 
@@ -143,29 +110,163 @@ public class TestACLPermissionHandler {
                 0 ) );
 
 
-        org.dcache.chimera.acl.ACL acl = new ACL(fileId, RsType.FILE, aces);
+        ACL acl = new ACL(fileId, RsType.FILE, aces);
 
         aclHandler.setACL(acl);
 
-        //FileMetaData parentMetaData =  new FileMetaData(true, 111, 0, 0755);
         FileMetaDataX fileMetaData = new FileMetaDataX(new PnfsId(fileId),
         		new FileMetaData(false, 111, 1000, 0600) );
 
         Origin origin = new Origin(authTypeCONST, inetAddressTypeCONST, hostCONST);
         Subject subject = new Subject(111, 1000);
 
-        //_metaDataSource.setMetaData("/pnfs/desy.de/data", parentMetaData);
         _metaDataSource.setXMetaData("/pnfs/desy.de/data/privateFile", fileMetaData);
 
-        //canReadFile(int userUid, int[] userGids, String pnfsPath, Origin userOrigin)
         isAllowed =  _permissionHandler.canReadFile(subject, "/pnfs/desy.de/data/privateFile", origin);
 
         assertTrue("It is allowed to read file", isAllowed);
 
     }
 
+    @Test
+    public void testWriteFile() throws Exception {
 
+        boolean isAllowed = false;
+        String fileId =  "00006E4FCE51400C4FA38F2E10AAB52E6306";
 
+        List<ACE> aces = new ArrayList<ACE>();
+
+        aces.add(new ACE( AceType.ACCESS_ALLOWED_ACE_TYPE,
+                0,
+                AccessMask.WRITE_DATA.getValue(),
+                Who.USER,
+                111,
+                ACE.DEFAULT_ADDRESS_MSK,
+                0 ) );
+
+        ACL acl = new ACL(fileId, RsType.FILE, aces);
+
+        aclHandler.setACL(acl);
+
+        FileMetaDataX fileMetaData = new FileMetaDataX(new PnfsId(fileId),
+        		new FileMetaData(false, 111, 1000, 0600) );
+
+        Origin origin = new Origin(authTypeCONST, inetAddressTypeCONST, hostCONST);
+        Subject subject = new Subject(111, 1000);
+
+        _metaDataSource.setXMetaData("/pnfs/desy.de/data/privateFile", fileMetaData);
+
+        isAllowed =  _permissionHandler.canWriteFile(subject, "/pnfs/desy.de/data/privateFile", origin);
+
+        assertTrue("It is allowed to write to a file", isAllowed);
+
+    }
+    
+    @Test
+    public void testCreateDir() throws Exception {
+
+        boolean isAllowed = false;
+        String dirId =  "000088AAB6D5022F4A69BC2D4576828EF12B";
+        String parentDirId =  "000088AAB6D512B12B12B12B12B12B12B12B";
+        
+        List<ACE> aces = new ArrayList<ACE>();
+
+        aces.add(new ACE( AceType.ACCESS_ALLOWED_ACE_TYPE,
+				1,
+				AccessMask.ADD_SUBDIRECTORY.getValue(),
+				Who.USER,
+				111,
+				ACE.DEFAULT_ADDRESS_MSK,
+				0 ) );
+     
+        
+        //In reality, acl exists only for parentDirId:
+        ACL acl = new ACL(parentDirId, RsType.DIR, aces);
+
+        aclHandler.setACL(acl);
+
+        //here 'true' means this is a 'Directory'. 
+        //In reality, PnfId is not defined at all here, as we just ask to create an object.
+        //That is, dirId is only for the test here.
+        FileMetaDataX fileMetaData = new FileMetaDataX(new PnfsId(dirId),
+        		new FileMetaData(true, 111, 1000, 0600) );
+
+        //define parent directory with pnfsId, which is the pnfsId that will be checked by ACL
+        FileMetaDataX parentMetaData = new FileMetaDataX(new PnfsId(parentDirId),
+        		new FileMetaData(true, 111, 1000, 0600) );
+        
+        Origin origin = new Origin(authTypeCONST, inetAddressTypeCONST, hostCONST);
+        Subject subject = new Subject(111, 1000);
+
+        _metaDataSource.setXMetaData("/pnfs/desy.de/data", parentMetaData);
+        _metaDataSource.setXMetaData("/pnfs/desy.de/data/privateDir", fileMetaData);
+
+        isAllowed =  _permissionHandler.canCreateDir(subject, "/pnfs/desy.de/data/privateDir", origin);
+
+        assertTrue("It is allowed to create a directory", isAllowed);
+
+    }
+    
+    @Test
+    public void testCreateFile() throws Exception {
+
+        boolean isAllowed = false;
+        //file to create. Actually, fileId does not exist :
+        String fileId =  "00009C3FCDDB7FC74D38A3DFE77EA77A8EB3"; 
+        
+        //Directory where file has to be created. Permission to perform action 'CREATE' 
+        //will be checked for this directory  parentDirId :
+        String parentDirId =  "00009C3FCDDC3FCDDC3FCDDC3FCDDC3FCDD7";
+        
+        List<ACE> aces = new ArrayList<ACE>();
+
+        aces.add(new ACE( AceType.ACCESS_ALLOWED_ACE_TYPE,
+				1,
+				AccessMask.ADD_FILE.getValue(),
+				Who.USER,
+				111,
+				ACE.DEFAULT_ADDRESS_MSK,
+				0 ) );
+        //just add some more ACEs, deny to add a directory:  
+        aces.add(new ACE( AceType.ACCESS_DENIED_ACE_TYPE,
+                1,
+                AccessMask.ADD_SUBDIRECTORY.getValue(),
+                Who.USER,
+                111,
+                ACE.DEFAULT_ADDRESS_MSK,
+                1 ) );
+        
+        //In reality, acl exists only for parentDirId:
+        ACL acl = new ACL(parentDirId, RsType.DIR, aces);
+
+        aclHandler.setACL(acl);
+
+        //here 'false' means this is a 'File'. 
+        //In reality, PnfId is not defined at all here, as we just ask to create an object.
+        //That is, fileId is only for the test here.
+        FileMetaDataX fileMetaData = new FileMetaDataX(new PnfsId(fileId),
+        		new FileMetaData(false, 111, 1000, 0600) );
+
+        //here 'true' means this is a 'Directory'. 
+        //Define parent directory with pnfsId parentDirId. 
+        //ACL of this Id will be checked to allow/deny a permission
+        FileMetaDataX parentMetaData = new FileMetaDataX(new PnfsId(parentDirId),
+        		new FileMetaData(true, 111, 1000, 0600) );
+        
+        Origin origin = new Origin(authTypeCONST, inetAddressTypeCONST, hostCONST);
+        Subject subject = new Subject(111, 1000);
+
+        _metaDataSource.setXMetaData("/pnfs/desy.de/data", parentMetaData);
+        _metaDataSource.setXMetaData("/pnfs/desy.de/data/newPrivateFile", fileMetaData);
+
+        isAllowed =  _permissionHandler.canCreateFile(subject, "/pnfs/desy.de/data/newPrivateFile", origin);
+
+        assertTrue("It is allowed to create a directory", isAllowed);
+
+    }
+    
+    
+    
     static void tryToClose(Statement o) {
         try {
             if (o != null)
