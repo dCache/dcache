@@ -7,10 +7,14 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Set;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+
+import dmg.cells.nucleus.CellAdapter;
+import dmg.cells.nucleus.CellMessage;
+import dmg.cells.nucleus.CellPath;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsHandler;
@@ -21,12 +25,8 @@ import diskCacheV111.vehicles.PoolCheckCostMessage;
 import diskCacheV111.vehicles.PoolCheckFileMessage;
 import diskCacheV111.vehicles.PoolCheckable;
 import diskCacheV111.vehicles.PoolCostCheckable;
-import diskCacheV111.vehicles.PoolFileCheckable;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.StorageInfo;
-import dmg.cells.nucleus.CellAdapter;
-import dmg.cells.nucleus.CellMessage;
-import dmg.cells.nucleus.CellPath;
 
 public class PoolMonitorV5 {
 
@@ -355,7 +355,7 @@ public class PoolMonitorV5 {
                                    _linkGroup) ;
          //
          //
-         if( level.length == 0 )return new ArrayList() ;
+         if( level.length == 0 )return new ArrayList<List<PoolCostCheckable>>() ;
 
          //
          // Copy the matrix into a linear HashMap(keys).
