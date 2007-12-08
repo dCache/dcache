@@ -1307,12 +1307,17 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
              "PnfsGetCacheLocation" ) ;
 
        msg = (PnfsGetCacheLocationsMessage) answer.getMessageObject() ;
-       if( msg.getReturnCode() != 0 )
+       if( msg.getReturnCode() != 0 ) {
+         dsay("getCacheLocationList(...) PnfsGetCacheLocationsMessage answer error: err="
+              +msg.getReturnCode()
+              + ", message='" + msg + "'" );
+
           throw new
           MissingResourceException(
              msg.getErrorObject().toString() ,
              "PnfsManager",
              "PnfsGetCacheLocationsMessage" ) ;
+       }
 
        if( ! checked )
          return new ArrayList( msg.getCacheLocations() );
