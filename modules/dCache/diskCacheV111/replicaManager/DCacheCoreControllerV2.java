@@ -1244,12 +1244,16 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
              "PnfsGetStorageInfoMessage" ) ;
 
        msg = (PnfsGetStorageInfoMessage) answer.getMessageObject() ;
-       if( msg.getReturnCode() != 0 )
+       if( msg.getReturnCode() != 0 ) {
+         dsay("getStorageInfo() PnfsGetStorageInfoMessage answer error: err="
+              +msg.getReturnCode()
+              + ", message='" + msg + "'" );
           throw new
           MissingResourceException(
              msg.getErrorObject().toString() ,
              "PnfsManager",
              "PnfsGetStorageInfoMessage" ) ;
+       }
 
        return msg.getStorageInfo() ;
    }
