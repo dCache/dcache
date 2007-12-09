@@ -804,12 +804,12 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
 
 		public void available(CacheRepositoryEvent event) {
                     say("RepositoryLoader : available : " + event);
+                    _pnfs.addCacheLocation(event.getRepositoryEntry().getPnfsId());
                     event.getRepositoryEntry().lock(false);
 		}
 
 		public void created(CacheRepositoryEvent event) {
                     say("RepositoryLoader : created : " + event);
-                    _pnfs.addCacheLocation(event.getRepositoryEntry().getPnfsId());
 		}
 
 		public void touched(CacheRepositoryEvent event) {
