@@ -159,7 +159,7 @@ public class ACLPermissionHandler implements PermissionHandlerInterface {
 		Boolean permissionToWriteFile = AclNFSv4Matcher.isAllowed(permission,
 				actionWRITE);
 		return permissionToWriteFile != null
-				&& permissionToWriteFile == Boolean.TRUE;
+				&& permissionToWriteFile.equals( Boolean.TRUE );
 	}
 
 	/**
