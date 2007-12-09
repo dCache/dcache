@@ -274,6 +274,40 @@ public class PoolRepository {
 	}
 
 
+	@Test
+	public void testCallBackCreated() throws Exception {
+
+	    RepositoryCallbacksHelper listener = new RepositoryCallbacksHelper();
+
+	    _repository.addCacheRepositoryListener(listener);
+
+        String id = generateNewID();
+        PnfsId pnfsId = new PnfsId(id);
+        _repository.createEntry(pnfsId);
+
+        assertEquals("Created callback not called", 1, listener.getCreatedCalled());
+
+	}
+
+    @Test
+    public void testCallBackAvailable() throws Exception {
+
+        RepositoryCallbacksHelper listener = new RepositoryCallbacksHelper();
+
+        _repository.addCacheRepositoryListener(listener);
+
+        String id = generateNewID();
+        PnfsId pnfsId = new PnfsId(id);
+        _repository.createEntry(pnfsId);
+
+        CacheRepositoryEntry entry = _repository.getEntry(pnfsId);
+
+        entry.setCached();
+
+        assertEquals("Cached callback not called", 1, listener.getCachedCalled());
+
+    }
+
 
 	@Test(timeout = 500)
 	public void testSpaceAllocation() {
