@@ -275,7 +275,7 @@ public class PoolRepository {
 
 
 	@Test
-	public void testCallBackCreated() throws Exception {
+	public void testCallBackAvailable() throws Exception {
 
 	    RepositoryCallbacksHelper listener = new RepositoryCallbacksHelper();
 
@@ -285,7 +285,13 @@ public class PoolRepository {
         PnfsId pnfsId = new PnfsId(id);
         _repository.createEntry(pnfsId);
 
-        assertEquals("Created callback not called", 1, listener.getCreatedCalled());
+        CacheRepositoryEntry entry = _repository.getEntry(pnfsId);
+
+        entry.setReceivingFromClient();
+        entry.setCached();
+
+
+        assertEquals("Available callback not called", 1, listener.getAvailableCalled());
 
 	}
 
