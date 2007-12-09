@@ -331,6 +331,8 @@ public class PoolRepository {
         _repository.removeEntry(entry);
 
         assertEquals("Removed callback not called", 1, listener.getRemovedCalled());
+        assertEquals("Destroyed callback not called", 1, listener.getDestroyedCalled());
+
     }
 
     @Test

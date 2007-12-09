@@ -13,7 +13,7 @@ public class RepositoryCallbacksHelper implements CacheRepositoryListener {
     private final AtomicInteger _cachedCalled        = new AtomicInteger(0);
     private final AtomicInteger _removedCalled       = new AtomicInteger(0);
     private final AtomicInteger _createdCalled       = new AtomicInteger(0);
-    private final AtomicInteger _destroyedleCalled   = new AtomicInteger(0);
+    private final AtomicInteger _destroyedCalled   = new AtomicInteger(0);
     private final AtomicInteger _scanedCalled        = new AtomicInteger(0);
     private final AtomicInteger _touchedCalled       = new AtomicInteger(0);
     private final AtomicInteger _preciousCalled      = new AtomicInteger(0);
@@ -34,7 +34,7 @@ public class RepositoryCallbacksHelper implements CacheRepositoryListener {
     }
 
     public void destroyed(CacheRepositoryEvent event) {
-        _destroyedleCalled.getAndIncrement();
+        _destroyedCalled.getAndIncrement();
     }
 
     public void needSpace(CacheNeedSpaceEvent event) {
@@ -81,8 +81,8 @@ public class RepositoryCallbacksHelper implements CacheRepositoryListener {
         return _createdCalled.get();
     }
 
-    public int getDestroyedleCalled() {
-        return _destroyedleCalled.get();
+    public int getDestroyedCalled() {
+        return _destroyedCalled.get();
     }
 
     public int getScanedCalled() {
