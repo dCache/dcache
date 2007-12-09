@@ -25,6 +25,7 @@ import org.dcache.chimera.FsInode;
 import org.dcache.chimera.JdbcFs;
 import org.dcache.chimera.XMLconfig;
 import org.dcache.chimera.posix.Stat;
+import org.dcache.tests.cells.CellAdapterHelper;
 
 import diskCacheV111.namespace.PnfsManagerV3;
 import diskCacheV111.util.CacheException;
@@ -42,7 +43,7 @@ public class PnfsManagerTest {
     /*
      * make Cells happy
      */
-    private final static SystemCell _systemCell = new SystemCell("JUnitTestDomain");
+    private static final CellAdapterHelper SYSTEM_CELL_HOLDER = new CellAdapterHelper("PnfsManagerTest", "");
 
     private static PnfsManagerV3 _pnfsManager;
     private static Connection _conn;
@@ -223,7 +224,7 @@ public class PnfsManagerTest {
     @AfterClass
     public static void tearDown() throws Exception {
 
-        _systemCell.getNucleus().kill(_pnfsManager.getCellName());
+        CellAdapterHelper.getSystem().getNucleus().kill(_pnfsManager.getCellName());
 
         _conn.createStatement().execute("SHUTDOWN;");
         _conn.close();
