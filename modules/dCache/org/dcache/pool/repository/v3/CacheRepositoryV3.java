@@ -43,12 +43,12 @@ public class CacheRepositoryV3 extends AbstractCacheRepository {
 	private final Map<PnfsId, CacheRepositoryEntry > _allEntries = new HashMap<PnfsId, CacheRepositoryEntry>();
 
 
-	
+
 	/**
 	 * space reservation
 	 */
 	private final File   _spaceReservation ;
-	
+
 	/**
 	 * file layout with in pool
 	 */
@@ -67,7 +67,7 @@ public class CacheRepositoryV3 extends AbstractCacheRepository {
 		_repositoryTree = new FlatDirectoryTree(baseDir);
 		_spaceReservation = _repositoryTree.getControlFile("SPACE_RESERVATION");
 
-		
+
 		_stickyInspector = new StickyInspector(this);
 		_stickyInspectorThread = new Thread(_stickyInspector, "StickyInspectorThread");
 	}
@@ -359,23 +359,6 @@ public class CacheRepositoryV3 extends AbstractCacheRepository {
 			_repositoryOperationLock.writeLock().unlock();
 		}
 
-	}
-
-
-	/*
-	 * Test code
-	 */
-
-	public static void main(String[] args) {
-		try {
-			CacheRepository repository = new CacheRepositoryV3( new File("/home/tigran/dCacheAllInOne/pool/0"));
-
-			repository.runInventory(null, null, 0);
-
-		}catch(CacheException ce) {
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
 	}
 
 	public boolean isRepositoryOk() {
