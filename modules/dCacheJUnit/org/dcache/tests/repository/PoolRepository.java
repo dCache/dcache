@@ -8,6 +8,7 @@ import org.apache.log4j.Logger;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import static org.junit.Assert.*;
 
 import org.dcache.pool.repository.v3.CacheRepositoryV3;
 
@@ -16,7 +17,7 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileNotInCacheException;
 import diskCacheV111.util.PnfsId;
 
-public class PoolRepository extends junit.framework.TestCase {
+public class PoolRepository {
 
 
 	private CacheRepositoryV3 _repository;
