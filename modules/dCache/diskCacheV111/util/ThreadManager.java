@@ -222,7 +222,7 @@ import java.util.concurrent.*;
   private int setParam(String name, int target) {
    String option = _opt.getOpt(name) ;
    if( ( option != null ) && ( option.length() > 0 ) ) {
-     try{ target = Integer.parseInt(option); } catch(Exception e) {}
+     try{ target = Integer.parseInt(option); } catch(NumberFormatException e) {}
    }
    say("Using " + name + " : " + target);
    return target;
@@ -232,7 +232,7 @@ import java.util.concurrent.*;
   private long setParam(String name, long target) {
    String option = _opt.getOpt(name) ;
    if( ( option != null ) && ( option.length() > 0 ) ) {
-     try{ target = Integer.parseInt(option); } catch(Exception e) {}
+     try{ target = Integer.parseInt(option); } catch(NumberFormatException e) {}
    }
    say("Using " + name + " : " + target);
    return target;
