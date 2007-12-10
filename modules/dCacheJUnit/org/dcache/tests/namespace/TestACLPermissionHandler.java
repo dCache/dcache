@@ -339,12 +339,12 @@ public class TestACLPermissionHandler {
         //Parent directory
         String parentDirId =  "0000FF2A323390000FF2A325EB0000FF2A32";
      
-        //Set ACL for the directory 
+        //Set ACL for the directory (directory to be deleted)
         List<ACE> acesForDir = new ArrayList<ACE>();
 
         acesForDir.add(new ACE( AceType.ACCESS_ALLOWED_ACE_TYPE,
                 1,
-                AccessMask.DELETE_CHILD.getValue(),
+                AccessMask.DELETE.getValue(),
                 Who.USER,
                 111,
                 ACE.DEFAULT_ADDRESS_MSK,
