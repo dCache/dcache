@@ -211,7 +211,7 @@ import java.util.concurrent.*;
 
   /** Set a parameter according to option specified in .batch config file **/
   private String setParam(String name, String target) {
-   if(target==null) target = new String();
+   if(target==null) target = "";
    String option = _opt.getOpt(name) ;
    if((option != null) && (option.length()>0)) target = option;
    say("Using " + name + " : " + target);
