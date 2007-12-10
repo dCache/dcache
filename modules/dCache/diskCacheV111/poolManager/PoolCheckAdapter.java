@@ -2,9 +2,11 @@
 
 package diskCacheV111.poolManager ;
 
-import  diskCacheV111.vehicles.* ;
-import  diskCacheV111.util.* ;
-import  java.util.* ;
+import java.util.Map;
+
+import diskCacheV111.util.PnfsId;
+import diskCacheV111.vehicles.PoolCostCheckable;
+import diskCacheV111.vehicles.PoolFileCheckable;
 
 public class PoolCheckAdapter 
        implements PoolCostCheckable, 
