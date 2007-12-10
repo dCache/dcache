@@ -5,22 +5,22 @@ package org.dcache.chimera.namespace;
 
 import java.io.BufferedReader;
 import java.io.CharArrayReader;
+import java.io.CharArrayWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.io.CharArrayWriter;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.StringTokenizer;
 
-import diskCacheV111.vehicles.CacheStatistics;
+import org.dcache.chimera.FileNotFoundHimeraFsException;
+import org.dcache.chimera.FsInode;
+import org.dcache.chimera.posix.Stat;
 
-import org.dcache.chimera.*;
-import org.dcache.chimera.posix.*;
+import diskCacheV111.vehicles.CacheStatistics;
 
 public class ChimeraCacheInfo implements Serializable {
 
@@ -78,12 +78,10 @@ public class ChimeraCacheInfo implements Serializable {
 		}
 
 		private String toPnfsString() {
-			Iterator i = _hash.entrySet().iterator();
 			StringBuilder sb = new StringBuilder();
 			int l = 0;
 			sb.append(":");
-			while (i.hasNext()) {
-				Map.Entry entry = (Map.Entry) i.next();
+			for (Map.Entry<String, String> entry: _hash.entrySet()) {
 				sb.append(entry.getKey()).append("=").append(entry.getValue())
 						.append(";");
 				if ((sb.length() - l) > 70) {
