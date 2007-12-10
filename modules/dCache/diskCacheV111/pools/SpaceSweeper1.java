@@ -14,7 +14,7 @@ import java.text.SimpleDateFormat ;
 import java.io.PrintWriter ;
 
 public class SpaceSweeper1 implements SpaceSweeper , Runnable  {
-	
+
     private final CacheRepository _repository ;
     private final CellAdapter     _cell       ;
     private final PnfsHandler     _pnfs       ;
@@ -102,17 +102,17 @@ public class SpaceSweeper1 implements SpaceSweeper , Runnable  {
           }
        }else{
           say("STICKY : received unsticky event : "+entry) ;
-          if( ! isPrecious ){
-             try{
-                entry.touch() ;
-             }catch(Exception ee){
-                esay(entry.getPnfsId().toString()+" : can't touch"+ee ) ;
-             }
-             synchronized( this ){
-                _list.add( entry ) ;
-                _removableSpace += size ;
-             }
-             say("STICKY : added to remove list "+entry);
+          synchronized( this ){
+              if( ! isPrecious && !_list.contains(entry)){
+                  try{
+                      entry.touch() ;
+                  }catch(Exception ee){
+                      esay(entry.getPnfsId().toString()+" : can't touch"+ee ) ;
+                  }
+                  _list.add( entry ) ;
+                  _removableSpace += size ;
+              }
+              say("STICKY : added to remove list "+entry);
           }
        }
     }
