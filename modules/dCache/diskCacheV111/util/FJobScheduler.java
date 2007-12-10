@@ -141,7 +141,7 @@ public class FJobScheduler implements JobScheduler, Runnable  {
 
       }
     }
-    public List getJobInfos(){
+    public List<JobInfo> getJobInfos(){
        synchronized( _lock ){
 
            List<JobInfo> list = new ArrayList<JobInfo>();
@@ -153,7 +153,7 @@ public class FJobScheduler implements JobScheduler, Runnable  {
     }
     public JobInfo getJobInfo( int jobId ){
        synchronized( _lock ){
-          SJob job = (SJob)_jobs.get( new Integer(jobId) ) ;
+          SJob job = (SJob)_jobs.get( Integer.valueOf(jobId) ) ;
           if( job == null )
              throw new
              NoSuchElementException( "Job not found : Job-"+jobId ) ;
@@ -184,7 +184,7 @@ public class FJobScheduler implements JobScheduler, Runnable  {
     }
     public void kill( int jobId ) throws NoSuchElementException {
        synchronized( _lock ){
-          SJob job = (SJob)_jobs.get( new Integer(jobId) ) ;
+          SJob job = (SJob)_jobs.get( Integer.valueOf(jobId) ) ;
           if( job == null )
              throw new
              NoSuchElementException( "Job not found : Job-"+jobId ) ;
@@ -205,7 +205,7 @@ public class FJobScheduler implements JobScheduler, Runnable  {
     }
     public void remove( int jobId ) throws NoSuchElementException {
        synchronized( _lock ){
-          SJob job = (SJob)_jobs.get( new Integer(jobId) ) ;
+          SJob job = (SJob)_jobs.get( Integer.valueOf(jobId) ) ;
           if( job == null )
              throw new
              NoSuchElementException( "Job not found : Job-"+jobId ) ;
