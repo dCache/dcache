@@ -10,12 +10,14 @@ import org.junit.Before;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
+import org.dcache.pool.repository.EventType;
 import org.dcache.pool.repository.v3.CacheRepositoryV3;
 
 import diskCacheV111.repository.CacheRepositoryEntry;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileNotInCacheException;
 import diskCacheV111.util.PnfsId;
+import diskCacheV111.util.event.CacheRepositoryEvent;
 
 public class PoolRepository {
 
@@ -106,10 +108,8 @@ public class PoolRepository {
 
 		String id = generateNewID();
 		PnfsId pnfsId = new PnfsId(id);
-		_repository.createEntry(pnfsId);
 
-
-		CacheRepositoryEntry entry = _repository.getEntry(pnfsId);
+		CacheRepositoryEntry entry = _repository.createEntry(pnfsId);
 
 		try {
 			entry.setSticky(true);
@@ -219,10 +219,8 @@ public class PoolRepository {
 
 		String id = generateNewID();
 		PnfsId pnfsId = new PnfsId(id);
-		_repository.createEntry(pnfsId);
 
-
-		CacheRepositoryEntry entry = _repository.getEntry(pnfsId);
+		CacheRepositoryEntry entry = _repository.createEntry(pnfsId);
 
 		entry.setCached();
 		entry.setBad(true);
@@ -243,10 +241,8 @@ public class PoolRepository {
 
         String id = generateNewID();
         PnfsId pnfsId = new PnfsId(id);
-        _repository.createEntry(pnfsId);
 
-
-        CacheRepositoryEntry entry = _repository.getEntry(pnfsId);
+        CacheRepositoryEntry entry = _repository.createEntry(pnfsId);
 
         entry.setReceivingFromStore();
 
@@ -283,9 +279,8 @@ public class PoolRepository {
 
         String id = generateNewID();
         PnfsId pnfsId = new PnfsId(id);
-        _repository.createEntry(pnfsId);
 
-        CacheRepositoryEntry entry = _repository.getEntry(pnfsId);
+        CacheRepositoryEntry entry = _repository.createEntry(pnfsId);
 
         entry.setReceivingFromClient();
         entry.setCached();
@@ -304,9 +299,8 @@ public class PoolRepository {
 
         String id = generateNewID();
         PnfsId pnfsId = new PnfsId(id);
-        _repository.createEntry(pnfsId);
 
-        CacheRepositoryEntry entry = _repository.getEntry(pnfsId);
+        CacheRepositoryEntry entry = _repository.createEntry(pnfsId);
 
         entry.setCached();
 
@@ -323,9 +317,8 @@ public class PoolRepository {
 
         String id = generateNewID();
         PnfsId pnfsId = new PnfsId(id);
-        _repository.createEntry(pnfsId);
 
-        CacheRepositoryEntry entry = _repository.getEntry(pnfsId);
+        CacheRepositoryEntry entry = _repository.createEntry(pnfsId);
 
         entry.setCached();
         _repository.removeEntry(entry);
@@ -344,9 +337,8 @@ public class PoolRepository {
 
         String id = generateNewID();
         PnfsId pnfsId = new PnfsId(id);
-        _repository.createEntry(pnfsId);
 
-        CacheRepositoryEntry entry = _repository.getEntry(pnfsId);
+        CacheRepositoryEntry entry = _repository.createEntry(pnfsId);
 
         entry.setPrecious();
 
@@ -362,9 +354,8 @@ public class PoolRepository {
 
         String id = generateNewID();
         PnfsId pnfsId = new PnfsId(id);
-        _repository.createEntry(pnfsId);
 
-        CacheRepositoryEntry entry = _repository.getEntry(pnfsId);
+        CacheRepositoryEntry entry = _repository.createEntry(pnfsId);
 
         entry.setPrecious();
 
@@ -380,6 +371,26 @@ public class PoolRepository {
 
     }
 
+
+    @Test
+    public void testNeedSpaceCasting() throws Exception {
+
+        RepositoryCallbacksHelper listener = new RepositoryCallbacksHelper();
+
+        _repository.addCacheRepositoryListener(listener);
+
+        String id = generateNewID();
+        PnfsId pnfsId = new PnfsId(id);
+
+        CacheRepositoryEntry entry = _repository.createEntry(pnfsId);
+
+        entry.setPrecious();
+
+        CacheRepositoryEvent repositoryEvent = new CacheRepositoryEvent(this, entry );
+        _repository.processEvent(EventType.SPACE, repositoryEvent);
+
+        // class cast exception here
+    }
 
 	@Test(timeout = 500)
 	public void testSpaceAllocation() {

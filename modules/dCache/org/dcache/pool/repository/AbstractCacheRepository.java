@@ -205,9 +205,11 @@ public abstract class AbstractCacheRepository
                 break;
 
             case SPACE:
-                for (CacheRepositoryListener listener : _repositoryListners) {
-                    listener.needSpace((CacheNeedSpaceEvent)event);
-                }
+                if( event instanceof  CacheNeedSpaceEvent ) {
+                    for (CacheRepositoryListener listener : _repositoryListners) {
+                        listener.needSpace((CacheNeedSpaceEvent)event);
+                    }
+                } // else .... do we need to panic here?
                 break;
             }
 	}
