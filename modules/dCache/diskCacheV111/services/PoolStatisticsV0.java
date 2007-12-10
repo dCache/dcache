@@ -190,7 +190,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
    public void getInfo( PrintWriter pw ){
        pw.println("   Cell Name : "+getCellName());
        pw.println("  Cell Class : "+this.getClass().getName() );
-       pw.println("     Version : $Id: PoolStatisticsV0.java,v 1.12 2006-12-15 15:45:40 tigran Exp $");
+       pw.println("     Version : $Revision:$");
        pw.println("   Stat Base : "+_dbBase);
        pw.println("   Html Base : "+_htmlBase);
        pw.println("      Images : "+_images);
@@ -616,12 +616,12 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
 
       return sorted.toArray( new File[sorted.size()] ) ;
    }
-   private class MonthFileFilter implements FileFilter {
+   private static class MonthFileFilter implements FileFilter {
        public boolean accept( File file ){
            return file.isDirectory() && ( file.getName().length() == 2 ) ;
        }
    }
-   private class YearFileFilter implements FileFilter {
+   private static class YearFileFilter implements FileFilter {
        public boolean accept( File file ){
            return file.isDirectory() && ( file.getName().length() == 4 ) ;
        }
@@ -714,7 +714,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
    private interface HtmlDrawable {
        public void draw( PrintWriter pw ) ;
    }
-   private class PatternIterator implements Iteratable {
+   private static class PatternIterator implements Iteratable {
        private Pattern _pattern = null ;
        private StringBuffer _sb = null ;
        private long [] _sum     = new long[16] ;
@@ -1002,7 +1002,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
        Iterator entries  = poolMap.entrySet().iterator() ;
        Map poolMap2  = null ;
        Map classMap2 = new HashMap() ;
-       DayDirectoryHeader header = new DayDirectoryHeader( date ) ;
+       DayDirectoryHeader header = new DayDirectoryHeader( date , _dayOfCalendar) ;
 
        BaseStatisticsHtml allPoolsHtml = new BaseStatisticsHtml() ;
        allPoolsHtml.setSorted(true);
@@ -1533,10 +1533,12 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
        DataStore store = new DataStore( new File("xxinput") ) ;
        store.store( new File("xxoutput") ) ;
    }
-   private class DayDirectoryHeader implements HtmlDrawable {
-       private Date _date = null ;
-       private DayDirectoryHeader( Date date ){
+   private static class DayDirectoryHeader implements HtmlDrawable {
+       private final Date _date ;
+       private final SimpleDateFormat _dayOfCalendar;
+       private DayDirectoryHeader( Date date ,SimpleDateFormat  dayOfCalendar){
           _date = date ;
+          _dayOfCalendar = dayOfCalendar;
        }
        public void draw( PrintWriter pw ){
           pw.print("<hr><pre>    ");
@@ -1567,7 +1569,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
           pw.println("</pre><hr>");
        }
    }
-   private class YearDirectoryHeader implements HtmlDrawable {
+   private static class YearDirectoryHeader implements HtmlDrawable {
        private Date _date = null ;
        private YearDirectoryHeader( Date date ){
           _date = date ;
@@ -1580,7 +1582,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
           pw.println("</pre><hr>");
        }
    }
-   private class TopDirectoryHeader implements HtmlDrawable {
+   private static class TopDirectoryHeader implements HtmlDrawable {
        private TopDirectoryHeader(){
        }
        public void draw( PrintWriter pw ){
