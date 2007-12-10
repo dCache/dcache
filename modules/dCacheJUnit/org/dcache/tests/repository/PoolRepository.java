@@ -1,5 +1,12 @@
 package org.dcache.tests.repository;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import java.io.File;
 import java.util.UUID;
 
@@ -11,10 +18,7 @@ import org.junit.Test;
 
 import dmg.util.Args;
 
-import static org.junit.Assert.*;
-
 import org.dcache.pool.repository.EventType;
-import org.dcache.pool.repository.v3.CacheRepositoryV3;
 import org.dcache.pool.repository.v4.CacheRepositoryV4;
 
 import diskCacheV111.repository.CacheRepositoryEntry;
