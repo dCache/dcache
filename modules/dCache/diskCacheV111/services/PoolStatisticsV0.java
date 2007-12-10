@@ -199,7 +199,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
    public void messageArrived( CellMessage message ){
 
       CellPath path        = message.getSourcePath() ;
-      String   destination = (String)path.getCellName() ;
+      String   destination = path.getCellName() ;
       Object   reply       = message.getMessageObject() ;
 
 
@@ -609,8 +609,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
                   new Comparator<File>(){
                      public int compare(File f1 , File f2 ){
                         return direction *
-                             f1.getName().toString().compareTo(
-                             f2.getName().toString()  )  ;
+                             f1.getName().compareTo( f2.getName() )  ;
                      }
                   }   ) ;
       for( int i = 0 , n = list.length ; i < n ; i++ )sorted.add(list[i]);
