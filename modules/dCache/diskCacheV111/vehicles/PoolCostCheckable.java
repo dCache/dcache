@@ -1,8 +1,6 @@
 // $Id: PoolCostCheckable.java,v 1.2 2002-03-11 09:21:27 cvs Exp $
 
 package diskCacheV111.vehicles;
-import  diskCacheV111.util.* ;
-import java.util.*; 
 
 
 public interface PoolCostCheckable extends PoolCheckable {
