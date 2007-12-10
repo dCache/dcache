@@ -6,12 +6,12 @@ import java.util.* ;
 public class PoolCostInfo implements java.io.Serializable {
 
     static final long serialVersionUID = 5181562551679185500L;
-    
-    private PoolQueueInfo _store = null  , _restore = null  , 
+
+    private PoolQueueInfo _store = null  , _restore = null  ,
                           _mover = null  , _p2p     = null ,
                           _p2pClient = null ;
-    private Map           _extendedMoverHash = null ; 
-    private String        _defaultQueueName  = null ;                  
+    private Map<String, NamedPoolQueueInfo>           _extendedMoverHash = null ;
+    private String        _defaultQueueName  = null ;
     private PoolSpaceInfo _space  = null ;
     private final String        _poolName ;
     public PoolCostInfo( String poolName ){ _poolName = poolName ; }
@@ -21,7 +21,7 @@ public class PoolCostInfo implements java.io.Serializable {
         private NamedPoolQueueInfo( String name , int active , int maxActive , int queued ){
            super( active , maxActive , queued ) ;
            _name = name ;
-         
+
         }
         public String getName(){ return _name ; }
         public String toString(){
@@ -29,7 +29,11 @@ public class PoolCostInfo implements java.io.Serializable {
         }
     }
     public class PoolQueueInfo implements java.io.Serializable {
-        private int _active = 0 , _maxActive = 0 , _queued = 0 ;
+
+        private int _active    = 0;
+        private int _maxActive =0 ;
+        private int _queued    = 0 ;
+
         private PoolQueueInfo( int active , int maxActive , int queued ){
            _active    = active ;
            _maxActive = maxActive ;
@@ -40,12 +44,12 @@ public class PoolCostInfo implements java.io.Serializable {
         public int getActive(){ return _active ; }
         public int getMaxActive(){ return _maxActive ; }
         public int getQueued(){ return _queued ; }
-        public void modifyQueue( int diff ){ 
-  
-           int total = _active + _queued + diff ; 
+        public void modifyQueue( int diff ){
+
+           int total = _active + _queued + diff ;
 
            _active = Math.min( total , _maxActive ) ;
-           
+
            _queued = Math.max( 0 , total - _maxActive ) ;
         }
     }
@@ -55,20 +59,20 @@ public class PoolCostInfo implements java.io.Serializable {
     public PoolQueueInfo getP2pQueue(){ return _p2p ; }
     public PoolQueueInfo getP2pClientQueue(){ return _p2pClient ; }
     public PoolSpaceInfo getSpaceInfo(){ return _space ; }
-    
+
     public class PoolSpaceInfo implements java.io.Serializable {
         private long _total = 0 , _free = 0 , _precious = 0 , _removable = 0 , _lru = 0 ;
         private long _gap   = 0 ;
         private double _breakEven = 0;
         private PoolSpaceInfo( long total , long free , long precious , long removable ){
-           _total     = total ; 
+           _total     = total ;
            _free      = free ;
            _precious  = precious ;
            _removable = removable ;
-           
+
         }
         private PoolSpaceInfo( long total , long free , long precious , long removable , long lru ){
-           _total     = total ; 
+           _total     = total ;
            _free      = free ;
            _precious  = precious ;
            _removable = removable ;
@@ -111,16 +115,16 @@ public class PoolCostInfo implements java.io.Serializable {
        _mover   = new PoolQueueInfo( moverActive , moverMaxActive , moverQueued ) ;
        _restore = new PoolQueueInfo( restoreActive , restoreMaxActive , restoreQueued ) ;
        _store   = new PoolQueueInfo( storeActive , storeMaxActive , storeQueued ) ;
-      
+
     }
     public void addExtendedMoverQueueSizes( String name , int moverActive   , int moverMaxActive   , int moverQueued ){
        if( _extendedMoverHash == null ){
            _defaultQueueName  = name ;
-           _extendedMoverHash = new HashMap() ;
+           _extendedMoverHash = new HashMap<String, NamedPoolQueueInfo>() ;
        }
        _extendedMoverHash.put( name, new NamedPoolQueueInfo( name, moverActive, moverMaxActive, moverQueued ));
     }
-    public Map getExtendedMoverHash(){ return _extendedMoverHash ; }
+    public Map<String, NamedPoolQueueInfo> getExtendedMoverHash(){ return _extendedMoverHash ; }
     public String getDefaultQueueName(){ return _defaultQueueName ; }
     public void setP2pServerQueueSizes( int p2pActive     , int p2pMaxActive     , int p2pQueued  ){
        _p2p = new PoolQueueInfo( p2pActive   , p2pMaxActive   , p2pQueued ) ;
@@ -130,7 +134,7 @@ public class PoolCostInfo implements java.io.Serializable {
     }
     public String toString() {
        StringBuffer sb = new StringBuffer() ;
-       
+
        sb.append(_poolName).append("={R={").append(_restore.toString()).
           append("};S={").append(_store.toString()).
           append("};M={").append(_mover.toString()) ;
@@ -139,13 +143,13 @@ public class PoolCostInfo implements java.io.Serializable {
        sb.append("};SP={").append(_space.toString()).append("};");
        if( _extendedMoverHash != null ){
            sb.append("XM={");
-           for( Iterator it = _extendedMoverHash.values().iterator() ; it.hasNext() ; ){
-               sb.append( it.next().toString() ).append(";");
+           for( NamedPoolQueueInfo namedPoolQueueInfo : _extendedMoverHash.values() ){
+               sb.append( namedPoolQueueInfo.toString() ).append(";");
            }
            sb.append("};");
        }
        sb.append("}");
-          
+
        return sb.toString();
     }
 

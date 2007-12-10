@@ -8,6 +8,7 @@ import  dmg.cells.nucleus.* ;
 import  dmg.util.* ;
 import  diskCacheV111.vehicles.* ;
 import  diskCacheV111.pools.* ;
+import diskCacheV111.pools.PoolCostInfo.NamedPoolQueueInfo;
 
 public class CostModuleV1 implements CostModule {
 
@@ -116,7 +117,7 @@ public class CostModuleV1 implements CostModule {
 
          String requestedQueueName = msg.getIoQueueName() ;
 
-         Map map = e.getPoolCostInfo().getExtendedMoverHash() ;
+         Map<String, NamedPoolQueueInfo> map = e.getPoolCostInfo().getExtendedMoverHash() ;
 
          PoolCostInfo.PoolQueueInfo queue = null ;
 
@@ -128,7 +129,7 @@ public class CostModuleV1 implements CostModule {
                                  e.getPoolCostInfo().getDefaultQueueName() :
                                  requestedQueueName ;
 
-            queue = (PoolCostInfo.PoolQueueInfo)map.get(requestedQueueName) ;
+            queue = map.get(requestedQueueName) ;
 
 
          }
@@ -149,7 +150,7 @@ public class CostModuleV1 implements CostModule {
 
          String requestedQueueName = msg.getIoQueueName() ;
 
-         Map map = e.getPoolCostInfo().getExtendedMoverHash() ;
+         Map<String, NamedPoolQueueInfo> map = e.getPoolCostInfo().getExtendedMoverHash() ;
          PoolCostInfo.PoolQueueInfo queue = null ;
 
          if( map == null ){
@@ -160,7 +161,7 @@ public class CostModuleV1 implements CostModule {
                                  e.getPoolCostInfo().getDefaultQueueName() :
                                  requestedQueueName ;
 
-            queue = (PoolCostInfo.PoolQueueInfo)map.get(requestedQueueName) ;
+            queue = map.get(requestedQueueName) ;
 
          }
          int diff = -1 ;
@@ -193,7 +194,7 @@ public class CostModuleV1 implements CostModule {
 
          String requestedQueueName = msg.getIoQueueName() ;
 
-         Map map = e.getPoolCostInfo().getExtendedMoverHash() ;
+         Map<String, NamedPoolQueueInfo> map = e.getPoolCostInfo().getExtendedMoverHash() ;
          PoolCostInfo.PoolQueueInfo queue = null ;
 
          if( map == null ){
@@ -204,7 +205,7 @@ public class CostModuleV1 implements CostModule {
                                  e.getPoolCostInfo().getDefaultQueueName() :
                                  requestedQueueName ;
 
-            queue = (PoolCostInfo.PoolQueueInfo)map.get(requestedQueueName) ;
+            queue = map.get(requestedQueueName) ;
 
          }
 
@@ -242,7 +243,7 @@ public class CostModuleV1 implements CostModule {
    public void getInfo( StringBuffer sb ){
       sb.append( "Submodule : CostModule (cm) : ").
          append(this.getClass().getName()).
-         append("\n Version : $Revision:$\n") ;
+         append("\n Version : $Revision$\n") ;
         sb.append(" Debug   : ").append(_debug?"on":"off").append("\n");
         sb.append(" Update  : ").append(_update?"on":"off").append("\n");
         sb.append(" Active  : ").append(_isActive?"yes":"no").append("\n");
@@ -256,7 +257,7 @@ public class CostModuleV1 implements CostModule {
    public void dumpSetup( StringBuffer sb ){
       sb.append( "#\n# Submodule CostModule (cm) : ").
          append(this.getClass().getName()).
-         append("\n# $Revision:$ \n#\n") ;
+         append("\n# $Revision$ \n#\n") ;
       sb.append("cm set debug "+(_debug?"on":"off")+"\n");
       sb.append("cm set update "+(_update?"on":"off")+"\n");
       sb.append("cm set magic "+(_magic?"on":"off")+"\n");
