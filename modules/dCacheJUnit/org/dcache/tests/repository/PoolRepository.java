@@ -8,10 +8,14 @@ import org.apache.log4j.Logger;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+
+import dmg.util.Args;
+
 import static org.junit.Assert.*;
 
 import org.dcache.pool.repository.EventType;
 import org.dcache.pool.repository.v3.CacheRepositoryV3;
+import org.dcache.pool.repository.v4.CacheRepositoryV4;
 
 import diskCacheV111.repository.CacheRepositoryEntry;
 import diskCacheV111.util.CacheException;
@@ -22,7 +26,7 @@ import diskCacheV111.util.event.CacheRepositoryEvent;
 public class PoolRepository {
 
 
-	private CacheRepositoryV3 _repository;
+	private CacheRepositoryV4 _repository;
 	private File _base;
 	@Before
 	public void setUp() throws Exception {
@@ -35,7 +39,7 @@ public class PoolRepository {
 		new File(_base, "control").mkdir();
 		new File(_base, "data").mkdir();
 
-		_repository = new CacheRepositoryV3(_base);
+		_repository = new CacheRepositoryV4(_base, new Args(""));
 	}
 
 
