@@ -122,6 +122,16 @@
 	</selector>
 
 
+        <selector id="replica.classpath.selector">
+                <or>
+                        <filename name="**/cells.jar" />
+                        <filename name="**/dcache.jar" />
+                        <filename name="dbcp/commons-pool.jar" />
+                        <filename name="dbcp/commons-dbcp.jar" />
+                        <filename name="log4j/log4j-1.2.8.jar" />
+                </or>
+        </selector>
+
 
 	<path id="dcache.classpath">
 		<fileset dir="${classesDir}">
@@ -141,7 +151,16 @@
 		</fileset>
 	</path>
 
-	<!-- Classpath for dcache-srm.jar - This is the same as for srm.jar in the srm CVS module -->
+        <path id="replica.classpath">
+                <fileset dir="${classesDir}">
+                        <selector refid="replica.classpath.selector" />
+                </fileset>
+                <fileset dir="${libDir}">
+                        <selector refid="replica.classpath.selector" />
+                </fileset>
+        </path>
+
+ 	<!-- Classpath for dcache-srm.jar - This is the same as for srm.jar in the srm CVS module -->
 
 	<selector id="dcache-srm.classpath.selector">
 		<or>
@@ -388,7 +407,7 @@
 
              <mkdir dir="${buildDir}/replicaManager" />
 
-             <javac destdir="${buildDir}/replicaManager" classpathref="chimera.classpath" source="${javac.source}" target="${javac.target}" debug="${javac.debug}" verbose="${javac.verbose}"  encoding="${javac.encoding}">
+             <javac destdir="${buildDir}/replicaManager" classpathref="replica.classpath" source="${javac.source}" target="${javac.target}" debug="${javac.debug}" verbose="${javac.verbose}"  encoding="${javac.encoding}">
 
                   <src path="${sourceDir}" />
                   <include name="${dcache.packagePrefix}/replicaManager/**" />
