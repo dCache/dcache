@@ -81,6 +81,7 @@ import diskCacheV111.vehicles.transferManager.RemoteGsiftpTransferProtocolInfo;
 import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
+import dmg.cells.nucleus.NoRouteToCellException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.net.InetAddress;
@@ -93,6 +94,7 @@ import org.dcache.srm.util.GridftpClient.IDiskDataSourceSink;
 import org.dcache.srm.util.GridftpClient;
 import org.dcache.srm.security.SslGsiSocketFactory;
 import org.globus.ftp.Buffer;
+import org.globus.ftp.exception.ClientException;
 import org.globus.gsi.gssapi.auth.Authorization;
 import org.globus.gsi.gssapi.auth.AuthorizationException;
 import org.globus.gsi.gssapi.net.GssSocket;
@@ -161,7 +163,9 @@ public class RemoteGsiftpTransferProtocol_1
                       PnfsId pnfsId,
                       SpaceMonitor spaceMonitor,
                       int access)
-        throws Exception
+        throws CacheException, IOException,
+               NoRouteToCellException, GSSException,
+               ClientException, Exception
     {
         _pnfsId = pnfsId;
         say("runIO()\n\tprotocol="+
@@ -187,9 +191,9 @@ public class RemoteGsiftpTransferProtocol_1
             ss = new ServerSocket(0,1);
             //timeout after 5 minutes if credentials not delegated
             ss.setSoTimeout(5*60*1000);
-        } catch (IOException ioe) {
-            esay("exception while trying to create a server socket : "+ioe);
-            throw ioe;
+        } catch (IOException e) {
+            esay("exception while trying to create a server socket : " + e);
+            throw e;
         }
 
         RemoteGsiftpDelegateUserCredentialsMessage cred_request =
@@ -207,63 +211,53 @@ public class RemoteGsiftpTransferProtocol_1
         say("connected");
         try {
             ss.close();
-        } catch (IOException ioe) {
+        } catch (IOException e) {
             esay("failed to close server socket");
-            esay(ioe);
+            esay(e);
             // we still can continue, this is non-fatal
         }
         GSSCredential deleg_cred;
-        try {
-            GSSContext context = getServerContext();
-            GSIGssSocket gsiSocket = new GSIGssSocket(deleg_socket, context);
-            gsiSocket.setUseClientMode(false);
-            gsiSocket.setAuthorization(new Authorization() {
-                                           public void authorize(GSSContext context, String host) {
-                                               //we might add some authorization here later
-                                               //but in general we trust that the connection
-                                               //came from a head node and user was authorized
-                                               //already
-                                           }
-                                       }
+        GSSContext context = getServerContext();
+        GSIGssSocket gsiSocket = new GSIGssSocket(deleg_socket, context);
+        gsiSocket.setUseClientMode(false);
+        gsiSocket.setAuthorization(new Authorization() {
+                public void authorize(GSSContext context, String host) {
+                    //we might add some authorization here later
+                    //but in general we trust that the connection
+                    //came from a head node and user was authorized
+                    //already
+                }
+            });
+        gsiSocket.setWrapMode(GssSocket.SSL_MODE);
+        gsiSocket.startHandshake();
 
-                                      );
-            gsiSocket.setWrapMode(GssSocket.SSL_MODE);
-            gsiSocket.startHandshake();
-
-            deleg_cred = context.getDelegCred();
-            gsiSocket.close();
-            /*
-             *  the following code saves delegated credentials in a file
-             *  this can be used for debugging the gsi problems
-             *
-             try
-             {
-             byte [] data = ((ExtendedGSSCredential)(deleg_cred)).export(
-             ExtendedGSSCredential.IMPEXP_OPAQUE);
-             String proxy_file = "/tmp/fnisd1.pool.proxy.pem";
-             FileOutputStream out = new FileOutputStream(proxy_file);
-             out.write(data);
-             out.close();
-             }catch (Exception e)
-             {
-             esay(e);
-             }
-            */
-        } catch (Throwable t) {
-            esay(t);
-            // we do not propogate this exception since some exceptions
-            // we catch are not serializable!!!
-            throw new Exception(t.toString());
-        }
-
+        deleg_cred = context.getDelegCred();
+        gsiSocket.close();
+        /*
+         *  the following code saves delegated credentials in a file
+         *  this can be used for debugging the gsi problems
+         *
+         try
+         {
+         byte [] data = ((ExtendedGSSCredential)(deleg_cred)).export(
+         ExtendedGSSCredential.IMPEXP_OPAQUE);
+         String proxy_file = "/tmp/fnisd1.pool.proxy.pem";
+         FileOutputStream out = new FileOutputStream(proxy_file);
+         out.write(data);
+         out.close();
+         }catch (Exception e)
+         {
+         esay(e);
+         }
+        */
 
         if (deleg_cred != null) {
             say("successfully received user credentials: "+deleg_cred.getName().toString());
         } else {
-            throw new Exception("delegation request failed");
+            throw new CacheException("delegation request failed");
         }
 
-        Logger logger =   new Logger() {
+        Logger logger = new Logger() {
                 public synchronized void log(String s) {
                     say(s);
                 }
@@ -339,17 +333,22 @@ public class RemoteGsiftpTransferProtocol_1
     private GridftpClient client;
 
 
-    public void gridFTPRead(RemoteGsiftpTransferProtocolInfo remoteGsiftpProtocolInfo, StorageInfo storage, final SpaceMonitor spaceMonitor, GSSCredential deleg_cred) throws Exception {
+    public void gridFTPRead(RemoteGsiftpTransferProtocolInfo protocolInfo,
+                            StorageInfo storage,
+                            final SpaceMonitor spaceMonitor,
+                            GSSCredential deleg_cred)
+        throws CacheException
+    {
         try {
-            GlobusURL src_url =  new GlobusURL(remoteGsiftpProtocolInfo.getGsiftpUrl());
-            boolean emode = remoteGsiftpProtocolInfo.isEmode();
+            GlobusURL src_url = new GlobusURL(protocolInfo.getGsiftpUrl());
+            boolean emode = protocolInfo.isEmode();
             long size = client.getSize(src_url.getPath());
             say(" received a file size info: "+size+" allocating space on the pool");
             spaceMonitor.allocateSpace(size);
             say(" allocated space " + size);
 
             DiskDataSourceSink sink =
-                new DiskDataSourceSink(remoteGsiftpProtocolInfo.getBufferSize(),
+                new DiskDataSourceSink(protocolInfo.getBufferSize(),
                                        false);
             boolean freedAll = false;
             try {
@@ -371,7 +370,7 @@ public class RemoteGsiftpTransferProtocol_1
                     //
                     // overallocated
                     //
-                    if (realSize < size){
+                    if (realSize < size) {
                         long toBeReturned = size - realSize;
                         say("Returning space : "+toBeReturned);
                         spaceMonitor.freeSpace(toBeReturned);
@@ -392,17 +391,22 @@ public class RemoteGsiftpTransferProtocol_1
         }
     }
 
-    public void gridFTPWrite(RemoteGsiftpTransferProtocolInfo remoteGsiftpProtocolInfo, StorageInfo storage, final SpaceMonitor spaceMonitor, GSSCredential deleg_cred) throws Exception {
+    public void gridFTPWrite(RemoteGsiftpTransferProtocolInfo protocolInfo,
+                             StorageInfo storage,
+                             final SpaceMonitor spaceMonitor,
+                             GSSCredential deleg_cred)
+        throws CacheException
+    {
         say("gridFTPWrite started");
 
         try {
 
-            GlobusURL dst_url =  new GlobusURL(remoteGsiftpProtocolInfo.getGsiftpUrl());
-            boolean emode = remoteGsiftpProtocolInfo.isEmode();
+            GlobusURL dst_url =  new GlobusURL(protocolInfo.getGsiftpUrl());
+            boolean emode = protocolInfo.isEmode();
 
             try {
                 DiskDataSourceSink source =
-                    new DiskDataSourceSink(remoteGsiftpProtocolInfo.getBufferSize(),
+                    new DiskDataSourceSink(protocolInfo.getBufferSize(),
                                            true);
                 client.gridFTPWrite(source,
                                     dst_url.getPath(), emode,  true);
@@ -441,7 +445,7 @@ public class RemoteGsiftpTransferProtocol_1
             }
 
             return _transferChecksum;
-        } catch (Exception e){
+        } catch (Exception e) {
             esay(e);
             return null;
         }
@@ -479,7 +483,7 @@ public class RemoteGsiftpTransferProtocol_1
 
         }
 
-        if (array == null){
+        if (array == null) {
             return;
         }
         _previousUpdateEndOffset += length;
@@ -581,7 +585,7 @@ public class RemoteGsiftpTransferProtocol_1
         }
 
 
-        public long getAdler32() throws IOException{
+        public long getAdler32() throws IOException {
             try {
                 PnfsHandler pnfsHandler = new PnfsHandler(_cell,new CellPath("PnfsManager"));
                 String adler32String = pnfsHandler.getPnfsFlag(_pnfsId, "c");
@@ -591,7 +595,7 @@ public class RemoteGsiftpTransferProtocol_1
                     return Long.parseLong(adler32String,16);
                 }
 
-            } catch (Exception e){
+            } catch (CacheException e) {
                 esay("could not get adler32 from pnfs:");
                 esay(e);
                 esay("ignoring this error");
@@ -603,7 +607,7 @@ public class RemoteGsiftpTransferProtocol_1
             return adler32;
         }
 
-        public long length() throws IOException{
+        public long length() throws IOException {
             return _raDiskFile.length();
         }
 
