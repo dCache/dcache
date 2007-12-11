@@ -49,19 +49,19 @@ public class CacheRepositoryEntryImpl implements CacheRepositoryEntry {
 	 * control file
 	 */
 	private final File _controlFile;
-	
+
 	/**
 	 * serialized storage info file
 	 */
 	private final File _siFile;
-	
+
 	/**
 	 * data file
 	 */
 	private final File _dataFile;
-	
-	
-	
+
+
+
 	public CacheRepositoryEntryImpl(EventProcessor processor, PnfsId pnfsId, File controlFile, File dataFile, File siFile ) throws IOException, RepositoryException {
 
 		_eventProcessor = processor;
@@ -91,15 +91,15 @@ public class CacheRepositoryEntryImpl implements CacheRepositoryEntry {
 	}
 
 	public void decrementLinkCount() throws CacheException {
-		
+
 		assert _linkCount.get() > 0;
-		
+
 		_linkCount.decrementAndGet();
-		
+
 		if (_linkCount.get() == 0 && isRemoved()) {
 			_controlFile.delete();
 			_siFile.delete();
-			
+
 			CacheRepositoryEvent createEvent = new CacheRepositoryEvent(_eventProcessor, clone() );
 			_eventProcessor.processEvent(EventType.DESTROY, createEvent);
 		}
@@ -235,10 +235,10 @@ public class CacheRepositoryEntryImpl implements CacheRepositoryEntry {
 				_eventProcessor.processEvent(EventType.AVAILABLE, availableEvent);
 			}
 
+			_state.setCached();
+
 			CacheRepositoryEvent cachedEvent = new CacheRepositoryEvent(_eventProcessor, clone() );
 			_eventProcessor.processEvent(EventType.CACHED, cachedEvent);
-
-			_state.setCached();
 
 
 		} catch (IllegalStateException e) {
@@ -389,14 +389,14 @@ public class CacheRepositoryEntryImpl implements CacheRepositoryEntry {
 	public void setRemoved() throws CacheException {
 		try {
 			_state.setRemoved();
-			
+
 			CacheRepositoryEvent createEvent = new CacheRepositoryEvent(_eventProcessor, clone() );
 			_eventProcessor.processEvent(EventType.REMOVE, createEvent);
-			
+
 			if (_linkCount.get() == 0) {
 				_controlFile.delete();
 				_siFile.delete();
-				
+
 				createEvent = new CacheRepositoryEvent(_eventProcessor, clone() );
 				_eventProcessor.processEvent(EventType.DESTROY, createEvent);
 			}

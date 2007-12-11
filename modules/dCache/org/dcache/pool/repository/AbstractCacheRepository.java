@@ -1,6 +1,8 @@
 package org.dcache.pool.repository;
 
 import java.util.List;
+import java.util.Set;
+import java.util.HashSet;
 import java.util.ArrayList;
 import java.util.MissingResourceException;
 import java.util.concurrent.atomic.AtomicLong;
@@ -14,6 +16,7 @@ import diskCacheV111.repository.SpaceRequestable;
 import diskCacheV111.repository.CacheRepository;
 import diskCacheV111.repository.FairQueueAllocation;
 import diskCacheV111.repository.CacheRepositoryEntry;
+import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.event.CacheNeedSpaceEvent;
 import diskCacheV111.util.event.CacheRepositoryEvent;
@@ -47,9 +50,15 @@ public abstract class AbstractCacheRepository
     private final SpaceMonitor _spaceMonitor;
 
     /**
-     * Amount of precious space in the repository.
+     * Amount of precious space in the repository. This is the sum of
+     * the size of all entries in <code>_precious</code>.
      */
-    protected final AtomicLong _preciousSpace = new AtomicLong(0L);
+    protected long _preciousSpace = 0;
+
+    /**
+     * Set of precious entries.
+     */
+    protected final Set<PnfsId> _precious = new HashSet<PnfsId>();
 
     /**
      * Space reservation.
@@ -120,6 +129,42 @@ public abstract class AbstractCacheRepository
     }
 
     /**
+     * Adds an entry to the list of precious files. If the entry is
+     * already in the list, then nothin happens.
+     */
+    private void addPrecious(CacheRepositoryEntry entry)
+    {
+        try {
+            long size = entry.getSize();
+            synchronized (_precious) {
+                if (_precious.add(entry.getPnfsId())) {
+                    _preciousSpace += size;
+                }
+            }
+        } catch (CacheException e) {
+            _log.error("failed to get entry size : " + e.getMessage());
+        }
+    }
+
+    /**
+     * Removes an entry from the list of precious files. If the entry
+     * is not in the list, then nothing happens.
+     */
+    private void removePrecious(CacheRepositoryEntry entry)
+    {
+        try {
+            long size = entry.getSize();
+            synchronized (this) {
+                if (_precious.remove(entry)) {
+                    _preciousSpace -= size;
+                }
+            }
+        } catch (CacheException e) {
+            _log.error("failed to get entry size : " + e.getMessage());
+        }
+    }
+
+    /**
      * Triggers listener notification.
      */
     public void processEvent(EventType type, CacheRepositoryEvent event)
@@ -131,23 +176,14 @@ public abstract class AbstractCacheRepository
         synchronized (_repositoryListners) {
             switch (type) {
             case CACHED:
-                try {
-                    if (event.getRepositoryEntry().isPrecious()) {
-                        _preciousSpace.addAndGet(-event.getRepositoryEntry().getSize());
-                    }
-                } catch (CacheException ignored) {
-                }
+                removePrecious(event.getRepositoryEntry());
                 for (CacheRepositoryListener listener : _repositoryListners) {
                     listener.cached(event);
                 }
                 break;
 
             case PRECIOUS:
-                try {
-                    _preciousSpace.addAndGet(event.getRepositoryEntry().getSize());
-                } catch (CacheException e) {
-                    _log.error("failed to get entry size : " + e.getMessage() );
-                }
+                addPrecious(event.getRepositoryEntry());
                 for (CacheRepositoryListener listener : _repositoryListners) {
                     listener.precious(event);
                 }
@@ -174,11 +210,8 @@ public abstract class AbstractCacheRepository
             case DESTROY:
                 try {
                     CacheRepositoryEntry entry = event.getRepositoryEntry();
-                    long size = entry.getSize();
-                    freeSpace(size);
-                    if (entry.isPrecious()) {
-                        _preciousSpace.addAndGet(-size);
-                    }
+                    freeSpace(entry.getSize());
+                    removePrecious(entry);
                 } catch (CacheException ignored) {
                 }
                 for (CacheRepositoryListener listener : _repositoryListners) {
@@ -205,11 +238,11 @@ public abstract class AbstractCacheRepository
                 break;
 
             case SPACE:
-                if( event instanceof  CacheNeedSpaceEvent ) {
-                    for (CacheRepositoryListener listener : _repositoryListners) {
-                        listener.needSpace((CacheNeedSpaceEvent)event);
-                    }
-                } // else .... do we need to panic here?
+                if (!(event instanceof CacheNeedSpaceEvent))
+                    throw new IllegalArgumentException("SPACE events must be CacheNeedSpaceEvent");
+                for (CacheRepositoryListener listener : _repositoryListners) {
+                    listener.needSpace((CacheNeedSpaceEvent)event);
+                }
                 break;
             }
 	}
@@ -236,8 +269,7 @@ public abstract class AbstractCacheRepository
         if (millis == SpaceMonitor.NONBLOCKING) {
             synchronized (_spaceMonitor) {
                 if ((_spaceMonitor.getTotalSpace() -
-                     _preciousSpace.get() -
-                     _reservedSpace ) < ( 3 * space ) )
+                     getPreciousSpace() - _reservedSpace ) < ( 3 * space ) )
                     throw new
 	                MissingResourceException("Not enough Space Left",
                                                  this.getClass().getName(),
@@ -338,7 +370,9 @@ public abstract class AbstractCacheRepository
 
     public long getPreciousSpace()
     {
-        return _preciousSpace.get();
+        synchronized (_precious) {
+            return _preciousSpace;
+        }
     }
 
     public long getReservedSpace()

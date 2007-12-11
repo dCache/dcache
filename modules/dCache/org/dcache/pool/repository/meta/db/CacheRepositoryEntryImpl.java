@@ -257,9 +257,10 @@ public class CacheRepositoryEntryImpl implements CacheRepositoryEntry
                 generateEvent(EventType.AVAILABLE);
             }
 
+            _state.setCached();
+
             generateEvent(EventType.CACHED);
 
-            _state.setCached();
             storeStateIfDirty();
         } catch (IllegalStateException e) {
             throw new CacheException(e.getMessage());
