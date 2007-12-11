@@ -9,6 +9,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Hashtable;
+import java.util.Map;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.VspArgs;
@@ -29,17 +30,17 @@ import dmg.util.StreamEngine;
   * @author Patrick Fuhrmann
   * @version 1.0, Aug 04 2001
   *
-  *   Simple Template for a Door. It runs the DiskCacheV111 
-  *   Protocol V3 version. 
+  *   Simple Template for a Door. It runs the DiskCacheV111
+  *   Protocol V3 version.
   *
   *
-  *  
+  *
   */
-public class      DCapDoor 
+public class      DCapDoor
        extends    CellAdapter
        implements Runnable, KeepAliveListener           {
-    
-    
+
+
     private StreamEngine   _engine;
     private BufferedReader _in;
     private PrintWriter    _out;
@@ -60,7 +61,7 @@ public class      DCapDoor
     //         ---------------------
     //
     //       -) unique ID
-    //       -) create the command method hashtable 
+    //       -) create the command method hashtable
     //
     // ..........................................................
     ///
@@ -77,24 +78,24 @@ public class      DCapDoor
     //
     // create a hashtable for the client commands
     //
-    private static Hashtable     __commandHash       = null ;
-    private static Constructor   __interConstructor  = null ;
+    private static Map<String, Method>     __commandHash       = null ;
+    private static Constructor<?>   __interConstructor  = null ;
     private static Method        __messageArrived    = null ;
     private static Method        __getInfo           = null ;
-    private final static String  __defaultInterpreterClass = 
-             "diskCacheV111.doors.DCapDoorInterpreterV3" ; 
-    private synchronized static void 
+    private final static String  __defaultInterpreterClass =
+             "diskCacheV111.doors.DCapDoorInterpreterV3" ;
+    private synchronized static void
             loadInterpreter( String className )throws Exception {
-    
+
         //
         // are we already done ?
         //
         if( __commandHash != null )return ;
-        Class interClass = Class.forName( className ) ;
+        Class<?> interClass = Class.forName( className ) ;
         //
         // get the constructor
         //
-        Class [] argClass  = { dmg.cells.nucleus.CellAdapter.class ,
+        Class<?> [] argClass  = { dmg.cells.nucleus.CellAdapter.class ,
                                java.io.PrintWriter.class ,
                                dmg.security.CellUser.class } ;
         __interConstructor = interClass.getConstructor( argClass ) ;
@@ -102,37 +103,37 @@ public class      DCapDoor
         //  some useful functions
         //
         try{
-           Class [] ac = { dmg.cells.nucleus.CellMessage.class } ;
+           Class<?> [] ac = { dmg.cells.nucleus.CellMessage.class } ;
            __messageArrived = interClass.getMethod( "messageArrived" , ac ) ;
         }catch(NoSuchMethodException nsme ){}
         try{
-           Class [] ac = { java.io.PrintWriter.class } ;
+           Class<?> [] ac = { java.io.PrintWriter.class } ;
            __getInfo = interClass.getMethod( "getInfo" , ac ) ;
         }catch(NoSuchMethodException nsme ){}
         //
         // create the command hash
         //
-        __commandHash = new Hashtable() ;
-        
+        __commandHash = new Hashtable<String, Method>() ;
+
         Method [] all = interClass.getMethods() ;
         for( int i = 0 ; i < all.length ; i++ ){
            String name = all[i].getName() ;
-           
+
            if( name.length() < 5 )continue ;
-           
+
            if( ! name.startsWith( "com_" ) )continue ;
-              
-           Class returnType = all[i].getReturnType() ;
+
+           Class<?> returnType = all[i].getReturnType() ;
            if( ! returnType.equals(java.lang.String.class) )
              continue ;
-             
-           Class [] param = all[i].getParameterTypes() ;
+
+           Class<?> [] param = all[i].getParameterTypes() ;
            boolean paramsFit =
                 ( param.length == 3   ) &&
                 param[0].equals(int.class) &&
                 param[1].equals(int.class) &&
                 param[2].equals(diskCacheV111.util.VspArgs.class)     ;
-                
+
            if( ! paramsFit )continue ;
            __commandHash.put( name.substring(4) , all[i] ) ;
         }
@@ -147,36 +148,36 @@ public class      DCapDoor
         // the cell stuff
         //
         super( name , DCapDoor.class.getName(), args , false );
-        _nucleus = getNucleus() ; 
-        
+        _nucleus = getNucleus() ;
+
         try{
            //
            // all we need, to talk to the client.
-           //                      
-	   _engine   = engine;	
+           //
+	   _engine   = engine;
 	   _reader   = engine.getReader();
 	   _in       = new BufferedReader( _reader );
-	   _out      = new PrintWriter( engine.getWriter() );	   
+	   _out      = new PrintWriter( engine.getWriter() );
 	   _username = engine.getUserName();
 	   _host     = engine.getInetAddress().toString();
-           
-           // 
+
+           //
            // prepare the interpreter ( default or defined )
            //
            String className = args.getOpt("interpreter" ) ;
-           className = className == null ? 
+           className = className == null ?
                        __defaultInterpreterClass : className ;
-               
+
            loadInterpreter( className ) ;
 
            _authenticator = args.getOpt("authenticator") ;
            _authenticator = _authenticator == null ?
                             "pam" : _authenticator ;
-           
+
            Object [] theArgs = new Object[3] ;
            theArgs[0] = this ;
            theArgs[1] = _out ;
-           
+
            String user = _username.getName();
            if( args.getOpt("keepPrincipal") == null ){
               int p = user.indexOf('@');
@@ -191,14 +192,14 @@ public class      DCapDoor
               password   = user.length() > (p+1) ?
                            user.substring(p+1) :
                            "*" ;
-              
-              if( ! checkUser( _username.getName() , password ) ){                 
+
+              if( ! checkUser( _username.getName() , password ) ){
             	  _username.setName(user) ;
               }
               password = "" ;
            }
            theArgs[2] = _username;
-           
+
            _interpreter = __interConstructor.newInstance( theArgs ) ;
            addCommandListener(_interpreter);
         }catch(Exception ee ){
@@ -208,21 +209,21 @@ public class      DCapDoor
         }
         //
         // we have to use CellAdapapter.newThread instead of
-        // new Thread because we want to have the worker 
+        // new Thread because we want to have the worker
         // thread to be a member of the cell ThreadGroup.
         //
-	_workerThread = _nucleus.newThread( this , "worker" );         	
+	_workerThread = _nucleus.newThread( this , "worker" );
 	_workerThread.start();
-        
+
 //        _anyThread = _nucleus.newThread( this , "anyThread" ) ;
 //        _anyThread.start() ;
         start() ;
     }
-    public static CellVersion getStaticCellVersion(){ 
-        return new CellVersion(diskCacheV111.util.Version.getVersion(),"$Revision: 1.17 $" ); 
+    public static CellVersion getStaticCellVersion(){
+        return new CellVersion(diskCacheV111.util.Version.getVersion(),"$Revision: 1.17 $" );
     }
-    public  CellVersion getCellVersion(){ 
-        return getStaticCellVersion() ; 
+    public  CellVersion getCellVersion(){
+        return getStaticCellVersion() ;
     }
     public void keepAlive(){
        if( _interpreter instanceof KeepAliveListener )
@@ -273,7 +274,7 @@ public class      DCapDoor
     //  ii)  The client sends a 'byebye' and closes the
     //       connection.
     // iii)  We are killed, which means, that all threads
-    //       ( including the client communicationThread ) 
+    //       ( including the client communicationThread )
     //       will be interrupted.
     //
     public void run(){
@@ -288,7 +289,7 @@ public class      DCapDoor
                    if( lock == null )break ;
                    Thread.sleep(5000) ;
                }
-            
+
             }catch(InterruptedException iee){
                say("Interrupted the 'dcap' lock" ) ;
                say( "ComThread : Client communication Thread finished" );
@@ -310,7 +311,7 @@ public class      DCapDoor
                         // The other protocols don't care.
 			//
                         println( "0 0 server byebye" ) ;
-			try{ _out.close(); }catch(Exception ee){} 
+			try{ _out.close(); }catch(Exception ee){}
                         shutdown = true ;
                         say( "ComThread : protocol ended" ) ;
 		    }
@@ -322,13 +323,13 @@ public class      DCapDoor
                        if( Thread.currentThread().isInterrupted() ){
                           say( "ComThread : was interrupted" ) ;
                        }
-                       try{ _out.close(); }catch(Exception ee){} 
+                       try{ _out.close(); }catch(Exception ee){}
                        shutdown = true ;
                        esay( "ComThread : got "+e ) ;
                        esay(e);
                     }
 		}
-		
+
 	    }
 	    say( "ComThread : Client communication Thread finished" );
             _stateChanged( __connectionLostEvent ) ;
@@ -336,7 +337,7 @@ public class      DCapDoor
             try{
                  say( "AnyThread : started" ) ;
                  Thread.sleep( 60 * 60 * 1000 )  ;
-                 say( "AnyThread : woke up" ) ; 
+                 say( "AnyThread : woke up" ) ;
             }catch(InterruptedException ie ){
                 say( "AnyThread : was interrupted" ) ;
             }
@@ -355,7 +356,7 @@ public class      DCapDoor
     private boolean _abortCacheFinished = false ;
     private int _state = __NormalOperation  ;
     private void abortCacheProtocol(){
-    
+
        say( "abortCacheProtocol : starting" ) ;
        try{
             Thread.sleep(10000) ;
@@ -363,12 +364,12 @@ public class      DCapDoor
           say( "abortCacheProtocol : interrupted " ) ;
        }
        say( "abortCacheProtocol : finished" ) ;
-       
+
     }
     private synchronized void _stateChanged( int event ){
        say( "_stateChanged : state = "+_state+" ; event = "+event ) ;
        switch( _state ){
-       
+
           case __NormalOperation :
              switch( event ){
                 case __connectionLostEvent :
@@ -378,7 +379,7 @@ public class      DCapDoor
                    _state = __AbortCacheProtOnBye ;
                    _nucleus.newThread(
                       new Runnable(){
-                         // 
+                         //
                          //Warning : this code is no longer synchronized
                          //
                          public void run(){
@@ -395,7 +396,7 @@ public class      DCapDoor
                    _state = __AbortCacheProtOnKill ;
                    _nucleus.newThread(
                       new Runnable(){
-                         // 
+                         //
                          //Warning : this code is no longer synchronized
                          //
                          public void run(){
@@ -405,22 +406,22 @@ public class      DCapDoor
                             _stateChanged( __abortCacheFinishedEvent ) ;
                          }
                       } , "finishCacheProtocol" ).start() ;
-                   
-                break ; 
+
+                break ;
              }
           break ;
-          case __AbortCacheProtOnBye : 
+          case __AbortCacheProtOnBye :
              switch( event ){
                 case __abortCacheFinishedEvent :
                    _state = __WeAreFinished ;
                    kill() ;
-                break ;             
+                break ;
              }
           break ;
-          case __AbortCacheProtOnKill : 
+          case __AbortCacheProtOnKill :
              //
              // this state can only become WeAreFinished if
-             // two events have been accured. 
+             // two events have been accured.
              //  __abortCacheFinished and __connectionLost
              //
              switch( event ){
@@ -428,37 +429,37 @@ public class      DCapDoor
                    _abortCacheFinished = true ;
                    if( _connectionLost )
                       _state = __WeAreFinished ;
-                break ;             
+                break ;
                 case __connectionLostEvent :
                    _connectionLost = true ;
                    if( _abortCacheFinished )
                      _state = __WeAreFinished ;
-                break ;             
+                break ;
              }
           break ;
-          case __WeAreFinished : 
+          case __WeAreFinished :
              switch( event ){
                 case __weWereKilledEvent :
                    say( "Done" ) ;
-                break ;             
+                break ;
              }
           break ;
        }
        say( "_stateChanged :  new state = "+_state ) ;
        notifyAll() ;
     }
-    private synchronized void waitForFinish( long timeout ) 
+    private synchronized void waitForFinish( long timeout )
             throws InterruptedException {
        long end = System.currentTimeMillis() + timeout ;
        while( _state != __WeAreFinished ){
            long rest = end - System.currentTimeMillis() ;
            say( "waitForFinish : waiting for "+rest+" seconds" ) ;
            if( rest <=0  )break ;
-           wait( rest ) ;      
+           wait( rest ) ;
        }
     }
     public void   cleanUp(){
-	
+
 	say( "CleanUp : starting" );
         _stateChanged( __weWereKilledEvent ) ;
         try{
@@ -477,10 +478,10 @@ public class      DCapDoor
 		_engine.getSocket().close();
 	    }
 	} catch (Exception ee) { ; }
-	
+
     }
 
-    private synchronized void println( String str ){ 
+    private synchronized void println( String str ){
         say( "toclient(println) : "+str ) ;
 	_out.println( str );
 	_out.flush();
@@ -493,29 +494,29 @@ public class      DCapDoor
     }
     private int execute( String line ) throws Exception {
 	if( line.equals("") )return 0 ;
-        
+
         say( "Client command : "+line ) ;
-        
+
         VspArgs args = null ;
         //
-        // command syntax preparation 
+        // command syntax preparation
         //
         try{
-           args = new VspArgs( line ) ;        
+           args = new VspArgs( line ) ;
         }catch( IllegalArgumentException iae ){
            //
            // we don't accept a syntax error at this point.
            // simply to dangerous.
            //
            esay( "Protocol syntax violation : "+line ) ;
-           throw iae ;           
+           throw iae ;
         }
         int sessionId  = args.getSessionId() ;
         int commandId  = args.getSubSessionId() ;
         String name    = args.getName() ;
         String command = args.getCommand() ;
         say( "Execute : lookup "+command ) ;
-        Method m = (Method)__commandHash.get( command ) ;
+        Method m = __commandHash.get( command ) ;
         if( m == null ){
             protocolViolation(sessionId,commandId,name,669,
                               "Invalid command '"+line+"'" ) ;
@@ -535,7 +536,7 @@ public class      DCapDoor
               say( "Our answer : "+answer ) ;
               println( answer ) ;
            }
-           
+
         }catch(InvocationTargetException ite){
            Throwable t = ite.getTargetException() ;
            if( t instanceof CommandExitException ){
@@ -586,10 +587,10 @@ public class      DCapDoor
     //
     // the stuff which makes us a cell
     //
-    public String toString(){ 
-        return _username+"@"+_host+( _dcapLock ? " (LOCKED)" : "" ) ; 
+    public String toString(){
+        return _username+"@"+_host+( _dcapLock ? " (LOCKED)" : "" ) ;
     }
-    
+
     public void getInfo( PrintWriter pw ){
 	pw.println( "            DCapDoor" +( _dcapLock ? " (LOCKED)" : "" ));
 	pw.println( "         User  : "+_username );
@@ -616,9 +617,9 @@ public class      DCapDoor
            try{
               __messageArrived.invoke( _interpreter , args ) ;
            }catch( InvocationTargetException ite ){
-           
+
            }catch( Exception e ){
-           
+
            }
        }
     }
