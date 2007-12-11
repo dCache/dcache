@@ -168,26 +168,36 @@ public class PnfsFile extends File  {
          return new File( dirString , ".(use)("+level+")("+getName()+")" ) ;
       }
    }
-   public PnfsId getPnfsId(){
-      if( _pnfsId != null )return _pnfsId ;
-      String dirString = new File( _absolute ).getParent() ;
-      if( dirString == null )return null ;
-      File f = new File( dirString , ".(id)("+getName()+")" ) ;
-      if( ! f.exists() )return null ;
-      BufferedReader r  = null ;
-      try{
-         r = new BufferedReader( new FileReader( f ),32 ) ;
-         String idString = r.readLine() ;
-         if( idString == null )return null ;
-         return new PnfsId( idString ) ;
-      }catch( Exception e ){
-         e.printStackTrace() ;
-         return null ;
-      }finally{
-         try{ r.close() ; }catch(Exception ii ){}
-      }
+   public PnfsId getPnfsId() {
+        if (_pnfsId != null)
+            return _pnfsId;
+        String dirString = new File(_absolute).getParent();
+        if (dirString == null)
+            return null;
+        File f = new File(dirString, ".(id)(" + getName() + ")");
+        if (!f.exists())
+            return null;
+        BufferedReader r = null;
+        try {
+            r = new BufferedReader(new FileReader(f), 32);
+            String idString = r.readLine();
+            if (idString == null)
+                return null;
+            return new PnfsId(idString);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        } finally {
+            if (r != null) {
+                try {
+                    r.close();
+                } catch (IOException ii) {
+                    // ignored
+                }
+            }
+        }
 
-   }
+    }
    public String [] getTags(){
       if( _pnfsId == null ){
          return _getRealTags() ;
@@ -225,8 +235,8 @@ public class PnfsFile extends File  {
              pair[1] = id ;
              v.add(pair) ;
          }
-      }catch(Exception e){
-
+      }catch(IOException e){
+          // FIXME: we return as much as we can get
       }finally{
     	  if(br != null) try{  br.close() ; }catch(IOException ee ){/* to late to react */}
       }
@@ -636,7 +646,7 @@ public class PnfsFile extends File  {
            }
         }
       }finally{
-         try{ snbr.close() ; }catch(Exception eeee ) {}
+         try{ snbr.close() ; }catch(IOException eeee ) {}
       }
       return hash ;
    }
@@ -713,15 +723,15 @@ public class PnfsFile extends File  {
                }
             }
          }finally{
-            try{ br.close() ; }catch(Exception ee){}
+            try{ br.close() ; }catch(IOException ee){}
          }
       }catch(Exception ee ){
          return new File[0] ;
       }
       File [] results = new File[hash.size()] ;
-      Enumeration e = hash.elements() ;
+      Enumeration<Object []> e = hash.elements() ;
       for( int i = 0 ; e.hasMoreElements() ; i++ ){
-         Object [] x = (Object [])e.nextElement() ;
+         Object [] x = e.nextElement() ;
          results[i] = new File(x[0].toString());
       }
       return results ;
