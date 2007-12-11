@@ -157,7 +157,7 @@ public class BillingDB {
             throw new
                     IllegalArgumentException("Not enough arguments to Init SQL database");
         }
-        if (pwdfile != null) {
+        if (pwdfile != null && pwdfile.trim().length() > 0) {
             Pgpass pgpass = new Pgpass(pwdfile);      //VP
             pass = pgpass.getPgpass(jdbcUrl, user);   //VP
         }
