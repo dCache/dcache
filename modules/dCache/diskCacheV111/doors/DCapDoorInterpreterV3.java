@@ -184,7 +184,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
         _cell.say("Check : "+(_checkStrict?"Strict":"Fuzzy"));
         _cell.say("Constructor Done" ) ;
     }
-    private class Version implements Comparable {
+    private class Version implements Comparable<Version> {
         private int _major = 0 ;
         private int _minor = 0 ;
         private Version( String versionString ){
@@ -192,8 +192,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
             _major = Integer.parseInt(st.nextToken());
             _minor = Integer.parseInt(st.nextToken());
         }
-        public int compareTo( Object theOther ){
-            Version other = (Version)theOther ;
+        public int compareTo( Version other ){
             return _major < other._major ? -1 :
                 _major > other._major ?  1 :
                     _minor < other._minor ? -1 :
@@ -1475,8 +1474,9 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
             StringBuilder sb = new StringBuilder() ;
             sb.append(_sessionId).append(" ").
             append(_commandId).append(" ").
-            append(_vargs.getName()).append(_followLinks?" stat ":" stat ");
-
+            //FIXME: do we support links?
+            // append(_vargs.getName()).append(_followLinks?" stat ":" stat ");
+            append(_vargs.getName()).append(" stat ");
 
             sb.append("-st_size=").append(meta.getFileSize()).append(" ");
             sb.append("-st_uid=").append(meta.getUid()).append(" ");
@@ -2602,6 +2602,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
 
         }
 
+        // FIXME: sleep with lock
         public synchronized void
         doorTransferArrived( DoorTransferFinishedMessage reply ){
 
