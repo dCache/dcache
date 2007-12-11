@@ -664,7 +664,9 @@ public class Storage
     private Thread storageInfoUpdateThread;
     private static SRM srmInstance = null;
     private static final Object syncObj = new Object();
+    private boolean ignoreClientProtocolOrder; //falseByDefault
     private boolean customGetHostByAddr; //falseByDefault
+      
     
     private LoginBrokerHandler _loginBrokerHandler = null ;
     
@@ -1209,7 +1211,9 @@ public class Storage
         config.setOverwrite_by_default(isOptionSetToTrueOrYes("overwrite_by_default",config.isOverwrite_by_default())); //false by default
         
         customGetHostByAddr = isOptionSetToTrueOrYes("overwrite_by_default",customGetHostByAddr);
-        
+
+        ignoreClientProtocolOrder = isOptionSetToTrueOrYes("ignore-client-protocol-order",ignoreClientProtocolOrder);
+
         this.useInterpreter(true);
         this.getNucleus().export();
         
@@ -2158,17 +2162,18 @@ public class Storage
         
          /*
           * this is incorrect, need to select on basis of client's preferences
-          for(int i = 0; i<SRM_PREFERED_PROTOCOLS.length; ++i) {
-            if(available_protocols.contains(SRM_PREFERED_PROTOCOLS[i])) {
-               return SRM_PREFERED_PROTOCOLS[i];
-            }
-         }
-         // not one of the prefered protocols;
-         String available_protocols_strings[] =
-            (String[]) available_protocols.toArray(new String[0]);
-         return available_protocols_strings[0];
+          * But we need to continue doing this while old srmcp clients 
+          * are out there in the wild
           */
-        for(int i = 0; i<protocols.length; ++i) {
+         if(ignoreClientProtocolOrder) {
+              for(int i = 0; i<SRM_PREFERED_PROTOCOLS.length; ++i) {
+                if(available_protocols.contains(SRM_PREFERED_PROTOCOLS[i])) {
+                   return SRM_PREFERED_PROTOCOLS[i];
+                }
+             }
+         }
+        
+         for(int i = 0; i<protocols.length; ++i) {
             if(available_protocols.contains(protocols[i])) {
                 return protocols[i];
             }
@@ -2191,16 +2196,17 @@ public class Storage
         
          /*
           *this is incorrect, need to select on basis of client's preferences
-         for(int i = 0; i<SRM_PREFERED_PROTOCOLS.length; ++i) {
-            if(available_protocols.contains(SRM_PREFERED_PROTOCOLS[i])) {
-               return SRM_PREFERED_PROTOCOLS[i];
-            }
-         }
-         // not one of the prefered protocols;
-         String available_protocols_strings[] =
-            (String[]) available_protocols.toArray(new String[0]);
-          return available_protocols_strings[0];
+          * But we need to continue doing this while old srmcp clients 
+          * are out there in the wild
           */
+         if(ignoreClientProtocolOrder) {
+             for(int i = 0; i<SRM_PREFERED_PROTOCOLS.length; ++i) {
+                if(available_protocols.contains(SRM_PREFERED_PROTOCOLS[i])) {
+                   return SRM_PREFERED_PROTOCOLS[i];
+                }
+             }
+         }
+         
         
         for(int i = 0; i<protocols.length; ++i) {
             if(available_protocols.contains(protocols[i])) {

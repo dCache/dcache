@@ -214,6 +214,13 @@ set context -c srmCustomGetHostByAddr false
 set context -c SpaceManagerLinkGroupAuthorizationFileName ""
 
 #
+# turning this on turns off the latest changes that made service 
+# to honor the srm client's prococol list order for
+# get/put commands
+# this is needed temprorarily to support old srmcp clients
+set context -c srmIgnoreClientProtocolOrder false
+
+#
 #
 onerror shutdown
 #
@@ -380,4 +387,5 @@ create diskCacheV111.srm.dcache.Storage  SRM-${thisHostname} \
         -overwrite=${overwriteEnabled} \
         -overwrite_by_default=${srmOverwriteByDefault} \
         -custom-get-host-by-addr=${srmCustomGetHostByAddr} \
+        -ignore-client-protocol-order=${srmIgnoreClientProtocolOrder}\
        "

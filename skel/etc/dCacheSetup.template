@@ -609,6 +609,13 @@ cacheInfo=companion
 # monitoring tool
 # srmJdbcMonitoringLogEnabled=false
 #
+# turning this on turns off the latest changes that made service 
+# to honor the srm client's prococol list order for
+# get/put commands
+# this is needed temprorarily to support old srmcp clients
+# srmIgnoreClientProtocolOrder=false
+
+#
 #  -- Set this to /root/.pgpass in case
 #     you need to have better security.
 #
