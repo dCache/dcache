@@ -91,6 +91,7 @@ import java.security.NoSuchAlgorithmException;
 import org.dcache.srm.Logger;
 import org.dcache.srm.util.GridftpClient.IDiskDataSourceSink;
 import org.dcache.srm.util.GridftpClient;
+import org.dcache.srm.security.SslGsiSocketFactory;
 import org.globus.ftp.Buffer;
 import org.globus.gsi.gssapi.auth.Authorization;
 import org.globus.gsi.gssapi.auth.AuthorizationException;
@@ -106,30 +107,24 @@ public class RemoteGsiftpTransferProtocol_1
 {
     public static final int READ   =  1;
     public static final int WRITE  =  2;
-    public static final long SERVER_LIFE_SPAN= 60 * 5 * 1000; /* 5 minutes */
+    public static final long SERVER_LIFE_SPAN = 60 * 5 * 1000; /* 5 minutes */
 
-    private final CellAdapter cell;
-    private RemoteGsiftpTransferProtocolInfo remoteGsiftpProtocolInfo;
-    private long starttime;
-    private long timeout_time;
-    private PnfsId pnfsId;
-
-    // checksum related variables
-    // copied from DCapProtocol_3_nio
+    private final CellAdapter _cell;
+    private long _starttime;
+    private long _timeout_time;
+    private PnfsId _pnfsId;
 
     private MessageDigest _transferMessageDigest = null;
     private Checksum _transferChecksum      = null;
 
-    // if we receive extendedn mode blocks,
-    // we still try to calculate the checksum
-    // but if this fails
-    // we can calculate the checksum
-    // on the end file
-    private long previousUpdateEndOffset = 0;
-    private boolean recalculateOnFile=false;
+    // if we receive extendedn mode blocks, we still try to calculate
+    // the checksum but if this fails we can calculate the checksum on
+    // the end file
+    private long _previousUpdateEndOffset = 0;
+    private boolean _recalculateOnFile = false;
 
     // the random access file we are wrinting to or reading from
-    private RandomAccessFile raDiskFile;
+    private RandomAccessFile _raDiskFile;
 
 
     //
@@ -137,41 +132,49 @@ public class RemoteGsiftpTransferProtocol_1
     //
 
     public RemoteGsiftpTransferProtocol_1(CellAdapter cell) {
-        this.cell = cell;
+        _cell = cell;
     }
 
-    private void say(String str){
-        if (pnfsId != null) {
+    private void say(String str) {
+        if (_pnfsId != null) {
             str ="(RemoteGsiftpTransferProtocol_1 for "+
-                pnfsId.toIdString()+") "+str;
+                _pnfsId.toIdString()+") "+str;
         }
-        cell.say(str);
+        _cell.say(str);
     }
 
-    private void esay(String str){
-        if (pnfsId != null) {
+    private void esay(String str) {
+        if (_pnfsId != null) {
             str ="(RemoteGsiftpTransferProtocol_1 for "+
-                pnfsId.toIdString()+") "+str;
+                _pnfsId.toIdString()+") "+str;
         }
-        cell.esay(str);
+        _cell.esay(str);
     }
 
     private void esay(Throwable t) {
-        cell.esay(t);
+        _cell.esay(t);
     }
 
-    public void runIO(RandomAccessFile diskFile, ProtocolInfo protocol, StorageInfo storage, PnfsId pnfsId, SpaceMonitor spaceMonitor, int access) throws Exception {
-        this.pnfsId = pnfsId;
+    public void runIO(RandomAccessFile diskFile,
+                      ProtocolInfo protocol,
+                      StorageInfo storage,
+                      PnfsId pnfsId,
+                      SpaceMonitor spaceMonitor,
+                      int access)
+        throws Exception
+    {
+        _pnfsId = pnfsId;
         say("runIO()\n\tprotocol="+
             protocol+",\n\tStorageInfo="+storage+",\n\tPnfsId="+pnfsId+
             ",\n\taccess ="+(((access & MoverProtocol.WRITE) != 0)?"WRITE":"READ"));
         if (! (protocol instanceof RemoteGsiftpTransferProtocolInfo)) {
-            throw new  CacheException("protocol info is not RemoteGsiftpransferProtocolInfo");
+            throw new CacheException("protocol info is not RemoteGsiftpransferProtocolInfo");
         }
-        this.raDiskFile = diskFile;
-        starttime = System.currentTimeMillis();
+        _raDiskFile = diskFile;
+        _starttime = System.currentTimeMillis();
 
-        remoteGsiftpProtocolInfo = (RemoteGsiftpTransferProtocolInfo) protocol;
+        RemoteGsiftpTransferProtocolInfo remoteGsiftpProtocolInfo
+            = (RemoteGsiftpTransferProtocolInfo) protocol;
 
         //remoteURL = remoteGsiftpProtocolInfo.getGsiftpUrl();
 
@@ -197,7 +200,7 @@ public class RemoteGsiftpTransferProtocol_1
                                                            remoteGsiftpProtocolInfo.getRequestCredentialId());
 
         say(" runIO() created message");
-        cell.sendMessage(new CellMessage(cellpath,cred_request));
+        _cell.sendMessage(new CellMessage(cellpath,cred_request));
         say("waiting for delegation connection");
         //timeout after 5 minutes if credentials not delegated
         Socket deleg_socket = ss.accept();
@@ -279,17 +282,13 @@ public class RemoteGsiftpTransferProtocol_1
         client.setTcpBufferSize(remoteGsiftpProtocolInfo.getTcpBufferSize());
 
         if ((access & MoverProtocol.WRITE) != 0) {
-            gridFTPRead(
-                        remoteGsiftpProtocolInfo,
+            gridFTPRead(remoteGsiftpProtocolInfo,
                         storage,
-                        pnfsId,
                         spaceMonitor,
                         deleg_cred);
         } else {
-            gridFTPWrite(
-                         remoteGsiftpProtocolInfo,
+            gridFTPWrite(remoteGsiftpProtocolInfo,
                          storage,
-                         pnfsId,
                          spaceMonitor,
                          deleg_cred);
         }
@@ -305,10 +304,10 @@ public class RemoteGsiftpTransferProtocol_1
     }
 
     private synchronized void setTimeoutTime(long t) {
-        timeout_time = t;
+        _timeout_time = t;
     }
     private synchronized long  getTimeoutTime() {
-        return timeout_time;
+        return _timeout_time;
     }
     public void setAttribute(String name, Object attribute) {
     }
@@ -324,7 +323,7 @@ public class RemoteGsiftpTransferProtocol_1
     }
 
     public long getTransferTime() {
-        return System.currentTimeMillis() -starttime;
+        return System.currentTimeMillis() -_starttime;
     }
 
     public boolean wasChanged() {
@@ -332,16 +331,15 @@ public class RemoteGsiftpTransferProtocol_1
     }
 
     private GSSContext getServerContext() throws GSSException {
-        return org.dcache.srm.security.SslGsiSocketFactory.getServiceContext(
-                                                                             "/etc/grid-security/hostcert.pem",
-                                                                             "/etc/grid-security/hostkey.pem",
-                                                                             "/etc/grid-security/certificates");
+        return SslGsiSocketFactory.getServiceContext("/etc/grid-security/hostcert.pem",
+                                                     "/etc/grid-security/hostkey.pem",
+                                                     "/etc/grid-security/certificates");
     }
 
     private GridftpClient client;
 
 
-    public void gridFTPRead(RemoteGsiftpTransferProtocolInfo remoteGsiftpProtocolInfo, StorageInfo storage, PnfsId pnfsId, final SpaceMonitor spaceMonitor, GSSCredential deleg_cred) throws Exception {
+    public void gridFTPRead(RemoteGsiftpTransferProtocolInfo remoteGsiftpProtocolInfo, StorageInfo storage, final SpaceMonitor spaceMonitor, GSSCredential deleg_cred) throws Exception {
         try {
             GlobusURL src_url =  new GlobusURL(remoteGsiftpProtocolInfo.getGsiftpUrl());
             boolean emode = remoteGsiftpProtocolInfo.isEmode();
@@ -394,7 +392,7 @@ public class RemoteGsiftpTransferProtocol_1
         }
     }
 
-    public void gridFTPWrite(RemoteGsiftpTransferProtocolInfo remoteGsiftpProtocolInfo, StorageInfo storage, PnfsId pnfsId, final SpaceMonitor spaceMonitor, GSSCredential deleg_cred) throws Exception {
+    public void gridFTPWrite(RemoteGsiftpTransferProtocolInfo remoteGsiftpProtocolInfo, StorageInfo storage, final SpaceMonitor spaceMonitor, GSSCredential deleg_cred) throws Exception {
         say("gridFTPWrite started");
 
         try {
@@ -430,11 +428,11 @@ public class RemoteGsiftpTransferProtocol_1
                 return null;
             }
 
-            if (recalculateOnFile && _transferMessageDigest != null) {
+            if (_recalculateOnFile && _transferMessageDigest != null) {
                 byte[] bytes = new byte[128*1024];
-                raDiskFile.seek(0);
+                _raDiskFile.seek(0);
                 while (true) {
-                    int read = raDiskFile.read(bytes);
+                    int read = _raDiskFile.read(bytes);
                     if (read <= 0) {
                         break;
                     }
@@ -463,19 +461,19 @@ public class RemoteGsiftpTransferProtocol_1
                                            int length,
                                            long offsetOfArrayInFile)
         throws IOException {
-        raDiskFile.seek(offsetOfArrayInFile);
-        raDiskFile.write(array, offset, length);
+        _raDiskFile.seek(offsetOfArrayInFile);
+        _raDiskFile.write(array, offset, length);
 
-        if (_transferMessageDigest == null || recalculateOnFile) {
+        if (_transferMessageDigest == null || _recalculateOnFile) {
 
             return;
         }
 
-        if (_transferMessageDigest != null && previousUpdateEndOffset !=offsetOfArrayInFile) {
-            say("previousUpdateEndOffset="+previousUpdateEndOffset+
+        if (_transferMessageDigest != null && _previousUpdateEndOffset !=offsetOfArrayInFile) {
+            say("_previousUpdateEndOffset="+_previousUpdateEndOffset+
                 " offsetOfArrayInFile="+offsetOfArrayInFile+
                 " : resetting the digest for future checksum calculation of the file");
-            recalculateOnFile = true;
+            _recalculateOnFile = true;
             _transferMessageDigest.reset();
             return;
 
@@ -484,7 +482,7 @@ public class RemoteGsiftpTransferProtocol_1
         if (array == null){
             return;
         }
-        previousUpdateEndOffset += length;
+        _previousUpdateEndOffset += length;
         if (_transferMessageDigest != null) {
             _transferMessageDigest.update(array,offset,length);
         }
@@ -493,25 +491,25 @@ public class RemoteGsiftpTransferProtocol_1
 
 
     private class DiskDataSourceSink implements IDiskDataSourceSink {
-        private final int buf_size;
-        private volatile long last_transfer_time = System.currentTimeMillis();
-        private long transfered = 0;
-        private boolean source;
+        private final int _buf_size;
+        private volatile long _last_transfer_time = System.currentTimeMillis();
+        private long _transfered = 0;
+        private boolean _source;
 
         public DiskDataSourceSink(int buf_size,boolean source) {
-            this.buf_size = buf_size;
-            this.source = source;
+            _buf_size = buf_size;
+            _source = source;
         }
 
         public synchronized void write(Buffer buffer) throws IOException {
-            if (source) {
+            if (_source) {
                 String error = "DiskDataSourceSink is source and write is called";
                 esay(error);
                 throw new IllegalStateException(error);
             }
             //say("DiskDataSourceSink.write()");
 
-            last_transfer_time    = System.currentTimeMillis();
+            _last_transfer_time    = System.currentTimeMillis();
             int read = buffer.getLength();
             long offset = buffer.getOffset();
             if (offset >= 0) {
@@ -523,16 +521,16 @@ public class RemoteGsiftpTransferProtocol_1
                 // for example reading from a stream
                 receiveEBlock(buffer.getBuffer(),
                               0, read,
-                              transfered);
+                              _transfered);
 
             }
-            transfered +=read;
+            _transfered +=read;
         }
 
         public void close()
             throws IOException {
             say("DiskDataSink.close() called");
-            last_transfer_time    = System.currentTimeMillis();
+            _last_transfer_time    = System.currentTimeMillis();
         }
 
         /** Getter for property last_transfer_time.
@@ -540,7 +538,7 @@ public class RemoteGsiftpTransferProtocol_1
          *
          */
         public long getLast_transfer_time() {
-            return last_transfer_time;
+            return _last_transfer_time;
         }
 
         /** Getter for property transfered.
@@ -548,27 +546,27 @@ public class RemoteGsiftpTransferProtocol_1
          *
          */
         public synchronized long getTransfered() {
-            return transfered;
+            return _transfered;
         }
 
         public synchronized Buffer read() throws IOException {
-            if (!source) {
+            if (!_source) {
                 String error = "DiskDataSourceSink is sink and read is called";
                 esay(error);
                 throw new IllegalStateException(error);
             }
             //say("DiskDataSourceSink.read()");
 
-            last_transfer_time    = System.currentTimeMillis();
-            byte[] bytes = new byte[buf_size];
+            _last_transfer_time    = System.currentTimeMillis();
+            byte[] bytes = new byte[_buf_size];
 
-            int read = raDiskFile.read(bytes);
+            int read = _raDiskFile.read(bytes);
             //say("DiskDataSourceSink.read() read "+read+" bytes");
             if (read == -1) {
                 return null;
             }
-            Buffer buffer = new Buffer(bytes,read,transfered);
-            transfered  += read;
+            Buffer buffer = new Buffer(bytes,read,_transfered);
+            _transfered  += read;
             return buffer;
         }
 
@@ -585,11 +583,11 @@ public class RemoteGsiftpTransferProtocol_1
 
         public long getAdler32() throws IOException{
             try {
-                PnfsHandler pnfsHandler = new PnfsHandler(cell,new CellPath("PnfsManager"));
-                String adler32String = pnfsHandler.getPnfsFlag(pnfsId, "c");
+                PnfsHandler pnfsHandler = new PnfsHandler(_cell,new CellPath("PnfsManager"));
+                String adler32String = pnfsHandler.getPnfsFlag(_pnfsId, "c");
                 if (adler32String.startsWith("1:")) {
                     adler32String = adler32String.substring(2);
-                    say("adler32 read from pnfs for file "+pnfsId+" is "+adler32String);
+                    say("adler32 read from pnfs for file "+_pnfsId+" is "+adler32String);
                     return Long.parseLong(adler32String,16);
                 }
 
@@ -599,14 +597,14 @@ public class RemoteGsiftpTransferProtocol_1
                 esay("ignoring this error");
 
             }
-            long adler32 = GridftpClient.getAdler32(raDiskFile);
-            say("adler 32 for file "+raDiskFile+" is "+adler32);
-            raDiskFile.seek(0);
+            long adler32 = GridftpClient.getAdler32(_raDiskFile);
+            say("adler 32 for file "+_raDiskFile+" is "+adler32);
+            _raDiskFile.seek(0);
             return adler32;
         }
 
         public long length() throws IOException{
-            return raDiskFile.length();
+            return _raDiskFile.length();
         }
 
     }
