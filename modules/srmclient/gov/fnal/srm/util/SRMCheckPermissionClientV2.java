@@ -1,7 +1,7 @@
 //______________________________________________________________________________
 //
-// $Id: SRMCheckPermissionClientV2.java,v 1.1 2006-11-16 00:22:37 litvinse Exp $
-// $Author: litvinse $
+// $Id$
+// $Author$
 //
 // created 10/06 by Dmitry Litvintsev (litvinse@fnal.gov)
 //
@@ -165,7 +165,7 @@ public class SRMCheckPermissionClientV2 extends SRMClient {
 					}
 				}
 				TPermissionMode mode =  permissionarray[i].getPermission();
-				txt.append("owner:"+mode.toString()+"\n");
+				txt.append("permission mode:"+mode.toString()+"\n");
 			}
 			System.out.println(txt.toString());
 			if (rs.getStatusCode() != TStatusCode.SRM_SUCCESS) {  
