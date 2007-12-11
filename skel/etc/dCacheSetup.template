@@ -36,9 +36,12 @@ serviceLocatorPort=11111
 #          Components
 #  -----------------------------------------------------------------------
 
-#
+#  To activate Replica Manager you need make changes in all 3 places:
+#   1) etc/node_config on ALL ADMIN NODES in this dcache instance.
+#   2) replicaSetup file on node where replica manager is runnig
+#   3) define Resilient pool group(s) in PoolManager.conf
 
-#  ---- Will the Replica Manager be started?
+#  ---- Will Replica Manager be started?
 #   Values:  no, yes
 #   Default: no
 #
@@ -49,20 +52,19 @@ serviceLocatorPort=11111
 #   this is set to 'no' and a replica manager is started somewhere, it will
 #   not work properly.
 #
+#
 #replicaManager=no
 
 #  ---- Which pool-group will be the group of resilient pools?
-#   Values:  '*', a pool-group name existing in the pool manager
-#   Default: '*'
+#   Values:  <pool-Group-Name>, a pool-group name existing in the PoolManager.conf
+#   Default: ResilientPools
 #
-#   If set to '*', all pools will be managed by the replica manager.
-#   If a pool-group is specified, only the pools in that pool-group, as
-#   specified in the pool manager (see config/PoolManager.conf) will be
-#   managed by it. Note that the values 'default' and '*' do not have
-#   the same meaning: Not all pools are necessarily in the 'default'
-#   pool-group.
-#
-#resilientGroupName=*
+#   Only pools defined in pool group ResilientPools in config/PoolManager.conf
+#   will be managed by ReplicaManager. You shall edit config/PoolManager.conf
+#   to make replica manager work. To use another pool group defined
+#   in PoolManager.conf for replication, please specify group name by changing setting :
+#       #resilientGroupName=ResilientPools
+#   Please scroll down "replica manager tuning" make this and other changes.
 
 #  -----------------------------------------------------------------------
 #          Java Configuration
