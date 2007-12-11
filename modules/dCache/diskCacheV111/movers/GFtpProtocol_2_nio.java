@@ -41,7 +41,7 @@ public class GFtpProtocol_2_nio
     implements ConnectionMonitor, MoverProtocol, ChecksumMover, ErrorListener
 {
     /** The minimum number of bytes to increment the space allocation. */
-    public final static long SPACE_INC = 50 * 1024 * 1024;    
+    public final static long SPACE_INC = 50 * 1024 * 1024; // 50 MB
 
     /** Key used to extract the read ahead from the domain context. */
     public final static String READ_AHEAD_KEY = "gsiftpReadAhead";
@@ -50,21 +50,21 @@ public class GFtpProtocol_2_nio
     protected CellAdapter  _cell;
 
     /** A channel to the file we read from or write to. */
-    protected FileChannel  _fileChannel;    
-    
+    protected FileChannel  _fileChannel;
+
     /**
      * A BlockLog keeping tracks of which parts of a file we have
      * received.
      */
     protected BlockLog     _log;
-    
+
     /**
      * If a checksum is requested, this points to the checksum object
      * used for computing the checksum.
      */
     protected Checksum     _checksum;
 
-    /** 
+    /**
      * The role of this transfer in the transaction. Either Sender or
      * Receiver.
      */
@@ -77,9 +77,9 @@ public class GFtpProtocol_2_nio
 
     /**
      * The number of bytes reserved in the space allocator.
-     */ 
+     */
     protected long         _reservedSpace;
-    
+
     /**
      * The number of bytes of the reservation actually used. This is
      * less than or equal to _reservedSpace and bigger than or equal
@@ -100,14 +100,14 @@ public class GFtpProtocol_2_nio
      */
     protected long         _lastTransferred;
 
-    /** 
+    /**
      * The space monitor is used to preallocate space when receiving
      * data.
      */
     protected SpaceMonitor _spaceMonitor;
 
     /**
-     * All communication is asynchronous. 
+     * All communication is asynchronous.
      */
     protected Multiplexer  _multiplexer;
 
@@ -116,13 +116,13 @@ public class GFtpProtocol_2_nio
      */
     protected String       _status;
 
-    /** 
-     * Lowest port to use for passive transfers. 
+    /**
+     * Lowest port to use for passive transfers.
      */
     protected int          _lowPort;
 
-    /** 
-     * Highest port to use for passive transfers. 
+    /**
+     * Highest port to use for passive transfers.
      */
     protected int          _highPort;
 
@@ -133,7 +133,7 @@ public class GFtpProtocol_2_nio
      */
     protected boolean      _allowPassivePool = false;
 
-    /** 
+    /**
      * If true, each block received or sent is logged.
      */
     protected boolean      _verboseLogging = false;
@@ -147,9 +147,9 @@ public class GFtpProtocol_2_nio
      * PNFS ID of file to be transferred.
      */
     protected String id = "";
-    
+
     /** True if we use a pre JDK 6 version of Java. */
-    protected static final boolean jdk5 = 
+    protected static final boolean jdk5 =
         (System.getProperty("java.version").compareTo("1.6") < 0);
 
     /**
@@ -157,7 +157,7 @@ public class GFtpProtocol_2_nio
      */
     private static Random  _random = new Random();
 
-    public GFtpProtocol_2_nio(CellAdapter cell) 
+    public GFtpProtocol_2_nio(CellAdapter cell)
     {
 	_cell = cell;
 
@@ -167,17 +167,17 @@ public class GFtpProtocol_2_nio
             if (ind <= 0 || ind == (range.length() - 1)) {
                 esay("Ignoring invalid port range: " + range);
             }
-            
+
             int low  = Integer.parseInt(range.substring(0, ind));
             int high = Integer.parseInt(range.substring(ind + 1));
-            
+
             _lowPort  = low;
             _highPort = high;
         }
 
-        if (_cell != null) {            
+        if (_cell != null) {
             if (_cell.getArgs().getOpt("allowPassivePool") != null) {
-                _allowPassivePool = 
+                _allowPassivePool =
                     Boolean.valueOf(_cell.getArgs().getOpt("allowPassivePool"));
             }
         }
@@ -186,7 +186,7 @@ public class GFtpProtocol_2_nio
     /**
      * Factory method for creating the Mode object.
      */
-    protected Mode getMode(String mode, Role role, RandomAccessFile file)
+    protected Mode createMode(String mode, Role role, RandomAccessFile file)
 	throws IOException
     {
         switch (Character.toUpperCase(mode.charAt(0))) {
@@ -205,11 +205,11 @@ public class GFtpProtocol_2_nio
      * Factory for creating a digest thread. May return null if no
      * checksum type is defined.
      */
-    protected DigestThread createDigestThread() 
+    protected DigestThread createDigestThread()
     {
         if (_checksum != null) {
             if (jdk5) {
-                return new DirectDigestThread(_fileChannel, _log, 
+                return new DirectDigestThread(_fileChannel, _log,
                                               _checksum.getMessageDigest());
             } else {
                 return new MappedDigestThread(_fileChannel, _log,
@@ -218,7 +218,7 @@ public class GFtpProtocol_2_nio
         }
         return null;
     }
-    
+
     /** Utility method for logging. */
     public void say(String str) {
 	if (_cell == null) {
@@ -249,14 +249,14 @@ public class GFtpProtocol_2_nio
     public String toString() {
 	return "SU=" + _spaceUsed + ";SA=" + _reservedSpace + ";S=" + _status;
     }
-    
+
     /**
      * Receive a file.
      */
-    public void transfer(RandomAccessFile file, Role role, 
+    public void transfer(RandomAccessFile file, Role role,
                          Mode mode, SpaceMonitor spaceMonitor)
-	throws Exception 
-    {	
+	throws Exception
+    {
 	/* Initialise transfer parameters.
 	 */
 	_role             = role;
@@ -275,21 +275,14 @@ public class GFtpProtocol_2_nio
         sysTimer.getDifference();
 
 	/* Startup the transfer. The transfer is performed on a single
-	 * thread, no matter the number of streams. 
+	 * thread, no matter the number of streams.
 	 *
 	 * Checksum computation is performed on a different
-	 * thread. The thread maps the last part of a file that has
-	 * already been transferred into memory. Unless streams become
-	 * very out of sync, it is quite likely that data is still in
-	 * the operating system managed disk cache and can thus be
-	 * accessed without much overhead.
-	 *
-	 * Currently there is only limitted synchronisation between
-	 * the two threads: The checksum computation is not allowed to
-	 * overtake the transfer thread. We may consider disallowing
-	 * the checksum computation to fall too far behind, since
-	 * falling behind increases the risk of data being evicted
-	 * from the cache before the checksum was computed.
+	 * thread. The checksum computation thread is not allowed to
+	 * overtake the transfer thread, but we also ensure that the
+	 * checksum thread does not fall too far behind. This is to
+	 * increase the chance that data has not yet been evicted from
+	 * the cache.
 	 */
 	_multiplexer = new Multiplexer(this);
 	try {
@@ -304,13 +297,13 @@ public class GFtpProtocol_2_nio
                     } catch (NumberFormatException e) {
                         esay("Failed parsing read ahead: " + e.getMessage());
                     }
-                } 
+                }
 
                 say("Initiated checksum computation thread");
 		digestThread.start();
-	    }	    
-	    
-	    _multiplexer.add(mode);            
+	    }
+
+	    _multiplexer.add(mode);
 
 	    say("Entering event loop");
 	    _multiplexer.loop();
@@ -323,12 +316,21 @@ public class GFtpProtocol_2_nio
 	} finally {
             _inProgress = false;
 
-	    /* Release any over allocation. 
+	    /* Release any over allocation.
 	     */
-	    long overAllocation = _reservedSpace - _spaceUsed;
-	    if (_spaceMonitor != null && overAllocation > 0) {
-		_spaceMonitor.freeSpace(overAllocation);
-	    }
+            if (_spaceMonitor != null) {
+                long overAllocation = _reservedSpace - file.length();
+                if (overAllocation > 0) {
+                    _spaceMonitor.freeSpace(overAllocation);
+                } else if (overAllocation < 0) {
+                    /* This can only happen as a consequence of a bug
+                     * in the Mode implementation. We do our best to
+                     * recover from it by allocating some extra space.
+                     */
+                    esay("File is larger than expected (this is a bug - please report it");
+                    _spaceMonitor.allocateSpace(-overAllocation);
+                }
+            }
 
 	    /* It is important that this is done before joining the
 	     * digest thread, since otherwise the digest thread would
@@ -345,14 +347,14 @@ public class GFtpProtocol_2_nio
 	     * returning. Otherwise getTransferChecksum() could
 	     * possibly return an incomplete checksum.
              *
-             * REVISIT: If the mover gets killed here, then we break
-             * out with an InterruptedException. This is as such not a
+             * REVISIT: If the mover gets killed here, we break out
+             * with an InterruptedException. This is as such not a
              * major problem, since everything after this point is not
              * essential for clean up. It is however unfortunate that
              * the job gets killed because we wait for checksum
              * computation (in particular because the checksum
-             * computation may the cause of the timeout if it is very
-             * slow).
+             * computation may be the cause of the timeout if it is
+             * very slow).
 	     */
 	    if (digestThread != null) {
 		digestThread.join();
@@ -402,7 +404,7 @@ public class GFtpProtocol_2_nio
      * address is reachable.
      *
      * Java does not provide this functionality and therefore we need
-     * this is a workaround.
+     * this workaround.
      */
     private InetAddress getLocalHost(InetAddress intendedDestination)
         throws SocketException
@@ -421,16 +423,16 @@ public class GFtpProtocol_2_nio
 		      ProtocolInfo protocol,
 		      StorageInfo  storage,
 		      PnfsId       pnfsId,
-		      SpaceMonitor spaceMonitor, 
+		      SpaceMonitor spaceMonitor,
 		      int          access)
-	throws Exception 
+	throws Exception
     {
         if (!(protocol instanceof GFtpProtocolInfo)) {
             throw new CacheException(44, "Protocol info not of type GFtpProtocolInfo");
         }
         GFtpProtocolInfo ftp    = (GFtpProtocolInfo)protocol;
 
-	Role role = (access & MoverProtocol.WRITE) != 0 
+	Role role = (access & MoverProtocol.WRITE) != 0
 	    ? Role.Receiver : Role.Sender;
         int    version     = ftp.getMajorVersion();
 	String host        = ftp.getHost();
@@ -463,7 +465,7 @@ public class GFtpProtocol_2_nio
 	_transferStarted  = System.currentTimeMillis();
 	_lastTransferred  = _transferStarted;
 
-	Mode mode = getMode(ftp.getMode(), role, file);
+	Mode mode = createMode(ftp.getMode(), role, file);
 	mode.setBufferSize(bufferSize);
 
         /* For GFtp/2, the FTP door expects a
@@ -482,13 +484,13 @@ public class GFtpProtocol_2_nio
                 if (bufferSize > 0) {
                     channel.socket().setReceiveBufferSize(bufferSize);
                 }
-                
+
                 if (_lowPort > 0) {
                     /* We randomise the first socket we attempt to use to
                      * reduce the risk of conflicts and to make the port less
                      * predictable.
                      */
-                    int start = 
+                    int start =
                         _random.nextInt(_highPort - _lowPort + 1) + _lowPort;
                     int i = start;
                     for (;;) {
@@ -511,7 +513,7 @@ public class GFtpProtocol_2_nio
                  * seems like a safe assumption that the data channel
                  * will be established from the same network.
                  */
-                InetAddress local = 
+                InetAddress local =
                     getLocalHost(InetAddress.getByName(ftp.getClientAddress()));
                 message =
                     new GFtpTransferStartedMessage(pnfsId.getId(),
@@ -525,7 +527,7 @@ public class GFtpProtocol_2_nio
                  */
                 message = new GFtpTransferStartedMessage(pnfsId.getId());
             }
-            CellPath path = new CellPath(ftp.getDoorCellName(), 
+            CellPath path = new CellPath(ftp.getDoorCellName(),
                                          ftp.getDoorCellDomainName());
             _cell.sendMessage(new CellMessage(path, message));
         }
@@ -540,7 +542,7 @@ public class GFtpProtocol_2_nio
         }
 
  	/* - Parallel transfers in stream mode are not defined.
-	 * 
+	 *
  	 * - Receiption in E mode must be passive (incomming). If the
          *   connection is outgoing, it means we use a proxy at the door.
          *   This proxy is limitted to one connection from the mover.
@@ -574,7 +576,7 @@ public class GFtpProtocol_2_nio
 		String err = "prm_offset is " + size;
 		esay(err);
 		throw new IllegalArgumentException(err);
-	    }	    
+	    }
 	    if (offset + size > fileSize) {
 		String err = "invalid prm_offset=" + offset + " and prm_size "
                     + size + " for file of size " + fileSize;
@@ -599,7 +601,7 @@ public class GFtpProtocol_2_nio
      * Enables or disables verbose logging. When enabled, every data
      * block received or sent is logged. The default value is false.
      */
-    public void setVerboseLogging(boolean value) 
+    public void setVerboseLogging(boolean value)
     {
         _verboseLogging = value;
     }
@@ -611,8 +613,8 @@ public class GFtpProtocol_2_nio
     {
         return _verboseLogging;
     }
-    
-    /** 
+
+    /**
      * Part of the MoverProtocol interface. This class does not
      * recognise any attributes.
      */
@@ -629,7 +631,7 @@ public class GFtpProtocol_2_nio
     {
 	return null;
     }
-    
+
     /** Part of the MoverProtocol interface. */
     public long getBytesTransferred()
     {
@@ -666,7 +668,7 @@ public class GFtpProtocol_2_nio
         if (protocol instanceof GFtpProtocolInfo) {
             GFtpProtocolInfo ftpp = (GFtpProtocolInfo)protocol;
             String type = ftpp.getChecksumType();
-            if (type == null || type.equals("Unknown")) 
+            if (type == null || type.equals("Unknown"))
                 return null;
 
             try {
@@ -679,13 +681,10 @@ public class GFtpProtocol_2_nio
     }
 
 
-    /**
-     * Part of the ChecksumMover interface. Whatever it is supposed to
-     * do, we do not do it: This implementation always returns null.
-     */
+    /** Part of the ChecksumMover interface. */
     public Checksum getClientChecksum()
     {
-        return null;	
+        return null;
     }
 
     /** Part of the ChecksumMover interface. */
@@ -697,13 +696,18 @@ public class GFtpProtocol_2_nio
     /** Part of the ConnectionMonitor interface. */
     public void receivedBlock(long position, long size) throws Exception
     {
-        assert _role == Role.Receiver;
+        if (_role != Role.Receiver)
+            throw new IllegalStateException("Only receivers can receive");
+        if (position < 0 || size < 0)
+            throw new IllegalArgumentException("Position and size must be non-negative");
+        if (position + size > _spaceUsed)
+            throw new IllegalArgumentException("Must call preallocate before receiving data");
 
         if (_verboseLogging) {
             say("received " + position + " " + size);
         }
 
-	_log.addBlock(position, size);	
+	_log.addBlock(position, size);
 	_bytesTransferred += size;
 	_lastTransferred = System.currentTimeMillis();
     }
@@ -711,13 +715,16 @@ public class GFtpProtocol_2_nio
     /** Part of the ConnectionMonitor interface. */
     public void sentBlock(long position, long size) throws Exception
     {
-        assert _role == Role.Sender;
+        if (_role != Role.Sender)
+            throw new IllegalStateException("Only senders can send");
+        if (position < 0 || size < 0)
+            throw new IllegalArgumentException("Position and size must be non-negative");
 
         if (_verboseLogging) {
             say("send " + position + " " + size);
         }
 
-        _log.addBlock(position, size);	
+        _log.addBlock(position, size);
 	_bytesTransferred += size;
 	_lastTransferred = System.currentTimeMillis();
     }
@@ -732,14 +739,17 @@ public class GFtpProtocol_2_nio
      */
     public void preallocate(long position) throws InterruptedException
     {
-        assert _role == Role.Receiver;
+        if (_role != Role.Receiver)
+            throw new IllegalStateException("Only receivers can allocate space");
+        if (position < 0)
+            throw new IllegalArgumentException("Position must be positive");
 
 	if (position > _reservedSpace) {
 	    long additional = Math.max(position - _reservedSpace, SPACE_INC);
 	    if (_spaceMonitor != null) {
 		_status = "WaitingForSpace(" + additional + ")";
 		_spaceMonitor.allocateSpace(additional);
-		_status = "None";		
+		_status = "None";
 	    }
 	    _reservedSpace += additional;
 	}
@@ -759,7 +769,7 @@ public class GFtpProtocol_2_nio
     /**
      * Prints help information for the test utility to stdout.
      */
-    public static void help() 
+    public static void help()
     {
 	System.out.println("Usage: mover -l [OPTION]... ROLE FILE");
 	System.out.println("       mover [OPTION]... ROLE FILE HOSTNAME");
@@ -775,8 +785,8 @@ public class GFtpProtocol_2_nio
 	System.exit(1);
     }
 
-    /** 
-     * Test program for this class. 
+    /**
+     * Test program for this class.
      */
     public static void main(String a[]) {
 	try {
@@ -786,7 +796,7 @@ public class GFtpProtocol_2_nio
 	    int parallelism = Integer.valueOf(getOption(args, "streams", "1"));
 	    long offset     = Long.valueOf(getOption(args, "offset", "0"));
 	    long size       = Long.valueOf(getOption(args, "size", "0"));
-	    String digest   = getOption(args, "digest", ""); 
+	    String digest   = getOption(args, "digest", "");
 	    boolean verbose = Boolean.valueOf(getOption(args, "verbose", "false"));
 
 	    Role role = Role.Receiver;
@@ -800,12 +810,12 @@ public class GFtpProtocol_2_nio
 
 	    GFtpProtocol_2_nio mover = new GFtpProtocol_2_nio(null);
 
-	    RandomAccessFile file = 
-		new RandomAccessFile(args.argv(0), 
+	    RandomAccessFile file =
+		new RandomAccessFile(args.argv(0),
 				     role == Role.Sender ? "r" : "rw");
 
-            Mode mode = 
-                mover.getMode(getOption(args, "mode", "S"), role, file);
+            Mode mode =
+                mover.createMode(getOption(args, "mode", "S"), role, file);
 
 	    if (args.isOneCharOption('l')) {
 		if (args.argc() != 1) {
