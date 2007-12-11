@@ -1,4 +1,4 @@
-//   $Id: DCacheCoreControllerV2.java 7642 2007-12-05 17:53:07Z podstvkv $
+//   $Id$
 
 package diskCacheV111.replicaManager ;
 
@@ -62,7 +62,7 @@ import  java.util.*;
   */
 
 abstract public class DCacheCoreControllerV2 extends CellAdapter {
-   private final static String _cvsId = "$Id: DCacheCoreControllerV2.java 7642 2007-12-05 17:53:07Z podstvkv $";
+   private final static String _cvsId = "$Id$";
 
    private String      _cellName = null ;
    private Args        _args     = null ;

@@ -1,4 +1,4 @@
-// $Id: EasyCopyCellModule.java,v 1.3 2006-09-14 13:24:14 patrick Exp $
+// $Id$
 //
 package diskCacheV111.replicaManager ;
 

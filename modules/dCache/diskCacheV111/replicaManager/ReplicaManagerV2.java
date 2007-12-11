@@ -1,7 +1,7 @@
 /**
  * <p>Title: ReplicaManager </p>
  * <p>Description: </p>
- * @version $Id: ReplicaManagerV2.java 7642 2007-12-05 17:53:07Z podstvkv $
+ * @version $Id$
  */
 
 package diskCacheV111.replicaManager ;
@@ -19,7 +19,7 @@ import java.sql.SQLException;
 import  java.util.*;
 
 public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
-  private final static String _cvsId = "$Id: ReplicaManagerV2.java 7642 2007-12-05 17:53:07Z podstvkv $";
+  private final static String _cvsId = "$Id$";
 
   private boolean _debug = false;
   public boolean getDebugRM ( )          { return _debug; }

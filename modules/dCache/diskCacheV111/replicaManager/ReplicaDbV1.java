@@ -1,4 +1,4 @@
-// $Id: ReplicaDbV1.java 7642 2007-12-05 17:53:07Z podstvkv $
+// $Id$
 
 package diskCacheV111.replicaManager;
 
@@ -29,7 +29,7 @@ import org.apache.commons.dbcp.DriverManagerConnectionFactory;
  * This class works with replicas database
  */
 public class ReplicaDbV1 implements ReplicaDb1 {
-    private final static String _cvsId     = "$Id: ReplicaDbV1.java 7642 2007-12-05 17:53:07Z podstvkv $";
+    private final static String _cvsId     = "$Id$";
 
     private Connection          _conn      = null;
     private Statement           _stmt      = null;
