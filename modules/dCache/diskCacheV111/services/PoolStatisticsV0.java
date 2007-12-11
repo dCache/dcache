@@ -190,7 +190,7 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
    public void getInfo( PrintWriter pw ){
        pw.println("   Cell Name : "+getCellName());
        pw.println("  Cell Class : "+this.getClass().getName() );
-       pw.println("     Version : $Revision:$");
+       pw.println("     Version : $Revision$");
        pw.println("   Stat Base : "+_dbBase);
        pw.println("   Html Base : "+_htmlBase);
        pw.println("      Images : "+_images);
