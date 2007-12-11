@@ -51,7 +51,7 @@ public class CopyManager extends CellAdapter {
            _filesFinished = 0 ;
            _bytesFinished = 0L ;
            _filesFailed   = 0 ;
-           _bytesFailed   = 0L ;  
+           _bytesFailed   = 0L ;
            _maxActive     = 4 ;
            _currentlyActive = 0 ;
            _stopped         = false ;
@@ -64,7 +64,7 @@ public class CopyManager extends CellAdapter {
                   ";Active(c,m)="+_currentlyActive+","+_maxActive;
        }
    }
-   
+
    public CopyManager( String cellName , String args ) throws Exception {
 
       super( cellName , args ) ;
@@ -96,7 +96,7 @@ public class CopyManager extends CellAdapter {
                throw new
                IllegalStateException("Process already stopped");
            _parameter._stopped = true ;
-           
+
            if( inter )_worker.interrupt() ;
        }
        return "Stop initiated "+(inter?"(interrupted)":"") ;
@@ -107,14 +107,14 @@ public class CopyManager extends CellAdapter {
            if( ! _isActive )
                throw new
                IllegalStateException("No copy process active") ;
-           
+
            _parameter._stopped = true ;
-           
+
            _processLock.notifyAll() ;
        }
        return "Interrupt initiated" ;
    }
-   public String fh_ls = 
+   public String fh_ls =
      "  ls [options] [pnfsId]\n"+
      "       OPTIONS\n"+
      "          -e :  lists transfers with error state (overwrites all other options)\n"+
@@ -123,37 +123,37 @@ public class CopyManager extends CellAdapter {
      "          -a :  lists all transfers (wait,active,done)\n";
    public String hh_ls = "[-d] [-w] [-a] [pnfsId]" ;
    public String ac_ls_$_0_1( Args args ){
-       
+
        boolean w = args.getOpt("w") != null ;
        boolean d = args.getOpt("d") != null ;
        boolean a = args.getOpt("a") != null ;
        boolean e = args.getOpt("e") != null ;
-       
+
        PoolRepository rep = null ;
        StringBuffer   sb  = new StringBuffer() ;
-       
+
        synchronized( _processLock ){
            rep = _poolRepository ;
        }
        if( rep == null )
            throw new
            IllegalArgumentException("No pool repository yet ["+_status+"]");
-   
+
        if( args.argc() > 0 ){
            String pnfsId = args.argv(0) ;
-           PoolFileEntry entry = (PoolFileEntry)rep.getRepositoryMap().get(pnfsId ) ;
+           PoolFileEntry entry = rep.getRepositoryMap().get(pnfsId ) ;
            if( entry == null )
                throw new
                IllegalArgumentException("Transfer not found for "+pnfsId);
-           
+
            sb.append( entry.toString() ).append("\n");
            return sb.toString() ;
        }
-       for( Iterator i = rep.getRepositoryMap().values().iterator();i.hasNext();){
-           
-           PoolFileEntry entry = (PoolFileEntry)i.next() ;
+       for( Iterator <PoolFileEntry> i = rep.getRepositoryMap().values().iterator();i.hasNext();){
+
+           PoolFileEntry entry = i.next() ;
            String entryString  = entry.toString()+"\n";
-           
+
            if( a ){
               sb.append(entryString);
            }else if( e ){
@@ -181,7 +181,7 @@ public class CopyManager extends CellAdapter {
        pw.println("  Version : $Id: CopyManager.java,v 1.4 2005-10-03 21:45:00 patrick Exp $");
        pw.println("     Mode : "+(_isActive?"ACTIVE":"IDLE")+" "+(_parameter._stopped?"STOPPED":"") ) ;
        pw.println("   Status : "+_status) ;
-       
+
        if( _parameter._started == 0L )return ;
        pw.print(" Transfer : "+_source+" -> ") ;
        for( int i = 0 ; i < _destination.length;i++)pw.print(_destination[i]+" ");
@@ -198,12 +198,12 @@ public class CopyManager extends CellAdapter {
        }
        if( ( p == null ) || ( rep == null ) || ( rep.getTotalSize() == 0L ) )return ;
        if( p._started == 0L )return ;
-       
+
        float percent       = ((float)p._bytesFinished)/(float)rep.getTotalSize() ;
        float percentFailed = ((float)p._bytesFailed)/(float)rep.getTotalSize() ;
-       
+
        pw.println(" Progress" )  ;
-       
+
        int maxSize = 40 ;
        int done   = (int)(percent       * (float)maxSize ) ;
        int failed = (int)(percentFailed * (float)maxSize ) ;
@@ -216,7 +216,7 @@ public class CopyManager extends CellAdapter {
        for( ; i < maxSize ; i++ )pw.print(" ");
        pw.println("| "+( (int)( percent * 100.0 ) )+" %" );
        pw.println(" +----------------------------------------+");
-       
+
        long now  = p._finished != 0L ? p._finished : System.currentTimeMillis() ;
        long diff = now - p._started ;
        if( diff == 0L )return ;
@@ -229,32 +229,32 @@ public class CopyManager extends CellAdapter {
            else break ;
        }
        pw.println( " Average Speed : "+value+" "+units[i]+"/second");
-       
-       
+
+
    }
    public String hh_copy = "<fromPool> <toPool> [toPool2 [...]] [-max=<maxParallel>] [-precious]" ;
    public String ac_copy_$_2_999( Args args ) throws Exception {
        synchronized( _processLock ){
-           
+
            if( _isActive )
-               throw new 
+               throw new
                IllegalStateException("Copy process is active");
-           
+
            int    dests = args.argc() - 1 ;
            String from  = args.argv(0);
-           String [] to = new String[dests] ; 
+           String [] to = new String[dests] ;
            for( int i = 0 ; i < dests ; i++ )to[i] = args.argv(i+1);
-           
+
            resetParameter( from , to , args.getOpt("precious") != null ) ;
-           
+
            String max = args.getOpt("max") ;
            if( max != null )_parameter._maxActive = Integer.parseInt(max) ;
-           
+
            _worker = getNucleus().newThread( _copy = new CopyWorker() , "Worker" ) ;
            _worker.start() ;
-           
+
            _isActive = true ;
-           
+
        }
        return "" ;
    }
@@ -284,15 +284,15 @@ public class CopyManager extends CellAdapter {
                synchronized( _processLock ){
                    _poolRepository = rep ;
                }
-               
+
                setStatus("Processing "+rep.getFileCount()+" files");
-               
+
                processFiles(  _poolRepository.getRepositoryMap() ) ;
-               
+
                setStatus("Done with "+rep.getFileCount()+" files");
 
            }catch(Exception ee ){
-               setStatus("Run  stopped : "+ee);               
+               setStatus("Run  stopped : "+ee);
            }finally{
                synchronized( _processLock ){
                    _isActive = false ;
@@ -300,26 +300,26 @@ public class CopyManager extends CellAdapter {
                }
            }
        }
-        private void processFiles( Map map ) throws InterruptedException {
+        private void processFiles( Map<String, PoolFileEntry> map ) throws InterruptedException {
 
             Thread us        = Thread.currentThread() ;
             int    poolIndex = 0 ;
-            
-            for( Iterator i = map.values().iterator() ; i.hasNext() ; 
+
+            for( Iterator<PoolFileEntry> i = map.values().iterator() ; i.hasNext() ;
                  poolIndex = ( poolIndex + 1 ) % _destination.length     ){
-                
-               PoolFileEntry entry = (PoolFileEntry)i.next() ;
+
+               PoolFileEntry entry = i.next() ;
                if( _precious && ! entry.isPrecious() )continue ;
-               
+
                //
                // next pool
                //
                entry._destination = _destination[poolIndex] ;
-               
+
                say("Next entry to process : "+entry);
-               
+
                synchronized( _processLock ){
-                   
+
                    /////////////////////////////////////////////////////////////
                    //
                    // wait for next file to finish or interrupt
@@ -327,43 +327,43 @@ public class CopyManager extends CellAdapter {
                    while( ( ! us.isInterrupted() ) &&
                           ( !  _parameter._stopped )           &&
                           ( _parameter._currentlyActive >= _parameter._maxActive ) )
-                   //   
+                   //
                               _processLock.wait() ;
                    //
                    ////////////////////////////////////////////////////////////
                    if(  _parameter._stopped )break ;
-                   
+
 //                   if( us.isInterrupted() )
 //                        throw new
 //                        InterruptedException("Interrupted in 'startTransfer' loop" ) ;
-                   
+
                    say("Starting query for : "+entry) ;
                    sendQuery( entry )  ;
                    say("Starting transfer Done for : "+entry) ;
 
                }
            }
-           
+
            say( _parameter._stopped?"processing stopped":"All files submitted" ) ;
-           
+
            synchronized( _processLock ){
-               
+
                say("Waiting for residual transfers to be finished : "+_parameter._currentlyActive );
-               
+
                while( ( ! us.isInterrupted() ) &&
                       ( _parameter._currentlyActive > 0 ) )
 
                           _processLock.wait() ;
-              
+
                if( us.isInterrupted() )
                     throw new
                     InterruptedException("Interrupted in 'adjust status' loop" ) ;
-               
-               
+
+
            }
            say("Finished");
         }
-       
+
    }
    private PoolCellInfo getPoolInfo( String poolName ) throws Exception {
        CellMessage msg = new CellMessage( new CellPath(poolName) , "rep ls -l" ) ;
@@ -371,13 +371,13 @@ public class CopyManager extends CellAdapter {
        if( msg == null )
            throw new
            Exception( "Request to "+poolName+" timed out " ) ;
-      
+
        Object obj = msg.getMessageObject() ;
        if( ( obj == null ) || ! ( obj instanceof PoolCellInfo ) )
            throw new
            IllegalArgumentException("Answer empty or invalid" ) ;
-       
-   
+
+
        return (PoolCellInfo) obj ;
    }
    private void getSourcePoolInfos()throws Exception {
@@ -396,11 +396,11 @@ public class CopyManager extends CellAdapter {
            if( carrier == null )
                 throw new
                 Exception("Request to "+poolName+" timed out");
-           
+
            msg = (PoolCheckFileMessage)carrier.getMessageObject() ;
-           
+
            return msg.getHave() ;
-           
+
        }catch(Exception e ){
            esay("Problem checking file : "+pnfsId+" on pool "+poolName+" : "+e );
            if( e instanceof InterruptedException )throw (InterruptedException)e;
@@ -408,15 +408,15 @@ public class CopyManager extends CellAdapter {
        }
    }
    private void sendQuery( PoolFileEntry entry ){
-       
+
        synchronized( _processLock ){
-           
+
            entry.timestamp = System.currentTimeMillis() ;
-           
+
            PoolCheckFileMessage query = new PoolCheckFileMessage( _source , entry.getPnfsId() ) ;
 
            CellMessage msg = new CellMessage( new CellPath(_source) , query ) ;
-           
+
            _parameter._currentlyActive ++ ;
            try{
                say("sendQuery : sending query for " + entry ) ;
@@ -425,17 +425,17 @@ public class CopyManager extends CellAdapter {
                setEntryFinished( entry , 1 , ee ) ;
                return ;
            }
-           
+
            entry.state = PoolFileEntry.QUERY_1 ;
        }
-       
+
    }
    private void sendState( PoolFileEntry entry ){
-       
+
        synchronized( _processLock ){
-           
+
            entry.timestamp = System.currentTimeMillis() ;
-           
+
            PoolModifyPersistencyMessage pool =
                 new PoolModifyPersistencyMessage( entry._destination , entry.getPnfsId() , true ) ;
 
@@ -448,20 +448,20 @@ public class CopyManager extends CellAdapter {
            }catch(Exception ee ){
                setEntryFinished( entry , 5 , ee ) ;
            }
- 
+
        }
-       
+
    }
    private void startTransfer( PoolFileEntry entry ){
        synchronized( _processLock ){
-           
+
            entry.timestamp = System.currentTimeMillis() ;
-           
-           Pool2PoolTransferMsg pool2pool = 
+
+           Pool2PoolTransferMsg pool2pool =
              new Pool2PoolTransferMsg( _source , entry._destination , entry.getPnfsId() , null ) ;
 
            CellMessage msg = new CellMessage( new CellPath(entry._destination) , pool2pool ) ;
-           
+
            try{
                say("startTransfer : sending 'start transfer' for "+entry ) ;
                sendMessage( msg ) ;
@@ -469,30 +469,30 @@ public class CopyManager extends CellAdapter {
                setEntryFinished( entry , 1 , ee ) ;
                return ;
            }
-           
+
            entry.state = PoolFileEntry.TRANSFER ;
        }
    }
    private void pool2poolAnswerArrived( Pool2PoolTransferMsg msg ){
-       
+
        PnfsId pnfsId   = msg.getPnfsId() ;
        String poolName = msg.getDestinationPoolName() ;
-       
+
        synchronized( _processLock ){
-           
-           PoolFileEntry entry = (PoolFileEntry)_poolRepository.getRepositoryMap().get( pnfsId.toString() ) ;
-           
+
+           PoolFileEntry entry = _poolRepository.getRepositoryMap().get( pnfsId.toString() ) ;
+
            if( entry == null ){
                esay("p2pAnswerArrived : entry not found in rep : "+pnfsId);
                return ;
            }
            say("pool2poolAnswerArrived: "+entry+" -> "+msg.getReturnCode() ) ;
            if( msg.getReturnCode() == 0 ){
-               
+
                entry.transferOk = true ;
-               
+
                if( entry.isPrecious() ){
-                   
+
                    say("pool2poolAnswerArrived for "+pnfsId+" Sending precious to "+poolName);
                    PoolModifyPersistencyMessage pool =
                         new PoolModifyPersistencyMessage( poolName , pnfsId , true ) ;
@@ -518,7 +518,7 @@ public class CopyManager extends CellAdapter {
    private void poolModifyPersistencyAnswerArrived( PoolModifyPersistencyMessage msg ){
        PnfsId pnfsId = msg.getPnfsId() ;
        synchronized( _processLock ){
-           PoolFileEntry entry = (PoolFileEntry)_poolRepository.getRepositoryMap().get( pnfsId.toString() ) ;
+           PoolFileEntry entry = _poolRepository.getRepositoryMap().get( pnfsId.toString() ) ;
            say("poolModifyPersistencyAnswerArrived: "+entry+" -> "+msg.getReturnCode() ) ;
            if( msg.getReturnCode() == 0 ){
                entry.stateOk = true ;
@@ -527,15 +527,15 @@ public class CopyManager extends CellAdapter {
                setEntryFinished( entry , 5 , msg.getErrorObject() ) ;
            }
        }
-       
+
    }
    private void poolCheckFileAnswerArrived( PoolCheckFileMessage msg ){
        PnfsId pnfsId = msg.getPnfsId() ;
        synchronized( _processLock ){
-           PoolFileEntry entry = (PoolFileEntry)_poolRepository.getRepositoryMap().get( pnfsId.toString() ) ;
+           PoolFileEntry entry = _poolRepository.getRepositoryMap().get( pnfsId.toString() ) ;
            say("poolCheckFileAnswerArrived: "+entry+" -> "+msg ) ;
            if( msg.getReturnCode() == 0 ){
-               
+
                if( entry.state == PoolFileEntry.QUERY_1 ){
                    if( msg.getHave() ){
                        say("poolCheckFile answer for initial query ok for "+entry ) ;
@@ -554,7 +554,7 @@ public class CopyManager extends CellAdapter {
                    }else{
                        say("poolCheckFile answer for final query 'file not found' for "+entry);
                        setEntryFinished(entry);
-                   }                   
+                   }
                }else{
                    setEntryFinished( entry , 10 , "checkFileAnswer arrived in illegal state "+entry.state ) ;
                }
@@ -562,7 +562,7 @@ public class CopyManager extends CellAdapter {
                setEntryFinished( entry , 5 , msg.getErrorObject() ) ;
            }
        }
-       
+
    }
    private void setEntryFinished( PoolFileEntry entry ){
        setEntryFinished( entry , 0 , null ) ;
@@ -598,13 +598,13 @@ public void messageArrived( CellMessage message ){
        if( msg == null )
            throw new
            Exception( "Request to "+poolName+" timed out " ) ;
-      
+
        Object obj = msg.getMessageObject() ;
        if( ( obj == null ) || ! ( obj instanceof String ) )
            throw new
            Exception("Answer empty or invalid" ) ;
-       
-       HashMap map = new HashMap() ;
+
+       Map<String, PoolFileEntry> map = new HashMap<String, PoolFileEntry>() ;
        StringTokenizer st = new StringTokenizer( (String)obj , "\n" ) ;
        long total = 0L ;
        int  counter = 0;
@@ -618,32 +618,33 @@ public void messageArrived( CellMessage message ){
            }catch(Exception ee){
                esay("Invalid format "+entryString);
            }
-           
+
        }
-       return new PoolRepository( map , counter , total )  ;     
+       return new PoolRepository( map , counter , total )  ;
    }
    private class PoolRepository {
-       private long _totalSize = 0L ;
-       private int  _fileCount = 0 ;
-       private Map  _map = null ;
-       private PoolRepository( Map map , int counter , long total ){
+       private final long _totalSize;
+       private final int  _fileCount;
+       private final Map<String, PoolFileEntry>  _map;
+       private PoolRepository( Map<String, PoolFileEntry> map , int counter , long total ){
            _map = map ;
            _fileCount = counter ;
-           _totalSize = total ; 
+           _totalSize = total ;
        }
        public long getTotalSize(){ return _totalSize ; }
        public int  getFileCount(){ return _fileCount ; }
-       public Map  getRepositoryMap(){ return _map ; }
+       public Map<String, PoolFileEntry>  getRepositoryMap(){ return _map ; }
    }
+
    private class PoolFileEntry {
-       
+
        private final static int IDLE     = 0 ;
        private final static int TRANSFER = 1 ;
        private final static int STATE    = 2 ;
        private final static int DONE     = 3 ;
        private final static int QUERY_1  = 4 ;
        private final static int QUERY_2  = 5 ;
-       
+
        private long    _size        = 0L ;
        private boolean _isPrecious  = false ;
        private PnfsId  _pnfsId      = null ;
@@ -654,11 +655,11 @@ public void messageArrived( CellMessage message ){
        //
        private boolean transferOk   = false ;
        private boolean stateOk      = false ;
-       private Object  returnObject = null ; 
+       private Object  returnObject = null ;
        private int     returnCode   =  0 ;
        private int     state        = IDLE ;
        private long    timestamp    = 0L ;
-       
+
        private PoolFileEntry( String fileEntryString ){
            StringTokenizer st = new StringTokenizer(fileEntryString) ;
            _pnfsId     = new PnfsId( st.nextToken() ) ;
