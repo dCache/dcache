@@ -1,18 +1,18 @@
 package diskCacheV111.services;
 
-import java.net.InetAddress;
 import java.util.Arrays;
 
 import org.apache.log4j.Logger;
+
+import dmg.cells.nucleus.CellAdapter;
+
 import org.dcache.chimera.acl.ACL;
 import org.dcache.chimera.acl.Origin;
 import org.dcache.chimera.acl.Owner;
 import org.dcache.chimera.acl.Permission;
 import org.dcache.chimera.acl.Subject;
 import org.dcache.chimera.acl.enums.Action;
-import org.dcache.chimera.acl.enums.AuthType;
 import org.dcache.chimera.acl.enums.FileAttribute;
-import org.dcache.chimera.acl.enums.InetAddressType;
 import org.dcache.chimera.acl.handler.AclHandler;
 import org.dcache.chimera.acl.mapper.AclMapper;
 import org.dcache.chimera.acl.matcher.AclNFSv4Matcher;
@@ -22,7 +22,6 @@ import diskCacheV111.util.FileMetaData;
 import diskCacheV111.util.FileMetaDataX;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
-import dmg.cells.nucleus.CellAdapter;
 
 public class ACLPermissionHandler implements PermissionHandlerInterface {
 
@@ -30,8 +29,6 @@ public class ACLPermissionHandler implements PermissionHandlerInterface {
 	/**
 	 * if there is no ACL defined for a resource, then we will ask some one else
 	 */
-	private static Origin _origin;
-
 	private final FileMetaDataSource _metaDataSource;
 	private final AclHandler _aclHandler;
 
@@ -75,11 +72,6 @@ public class ACLPermissionHandler implements PermissionHandlerInterface {
 
 		ACL acl = _aclHandler.getACL(pnfsID.toString());
 
-		AuthType authenticationType = userOrigin.getAuthType();
-		InetAddressType inetAddressType = userOrigin.getAddressType();
-		InetAddress inetAddress = userOrigin.getAddress();
-		_origin = new Origin(authenticationType, inetAddressType, inetAddress);
-
 		// Get Owner of this resource :
 		int uidOwner = fileMetaData.getFileMetaData().getUid();
 		int gidOwner = fileMetaData.getFileMetaData().getGid();
@@ -89,12 +81,12 @@ public class ACLPermissionHandler implements PermissionHandlerInterface {
 		if (_logPermisions.isDebugEnabled()) {
 
 			_logPermisions.debug("Subject : " + subject.toString());
-			_logPermisions.debug("Origin : " + _origin.toString());
+			_logPermisions.debug("Origin : " + userOrigin.toString());
 			_logPermisions.debug("Owner : " + owner.toString());
 			_logPermisions.debug("ACL : " + acl.toString());
 		}
 
-		Permission permission = AclMapper.getPermission(subject, _origin,
+		Permission permission = AclMapper.getPermission(subject, userOrigin,
 				owner, acl);
 
 		Action actionREAD = Action.READ;
@@ -133,11 +125,6 @@ public class ACLPermissionHandler implements PermissionHandlerInterface {
 
 		ACL acl = _aclHandler.getACL(pnfsID.toString());
 
-		AuthType authenticationType = userOrigin.getAuthType();
-		InetAddressType inetAddressType = userOrigin.getAddressType();
-		InetAddress inetAddress = userOrigin.getAddress();
-		_origin = new Origin(authenticationType, inetAddressType, inetAddress);
-
 		// Get Owner of this resource :
 		int uidOwner = fileMetaData.getFileMetaData().getUid();
 		int gidOwner = fileMetaData.getFileMetaData().getGid();
@@ -147,12 +134,12 @@ public class ACLPermissionHandler implements PermissionHandlerInterface {
 		if (_logPermisions.isDebugEnabled()) {
 
 			_logPermisions.debug("Subject : " + subject.toString());
-			_logPermisions.debug("Origin : " + _origin.toString());
+			_logPermisions.debug("Origin : " + userOrigin.toString());
 			_logPermisions.debug("Owner : " + owner.toString());
 			_logPermisions.debug("ACL : " + acl.toString());
 		}
 
-		Permission permission = AclMapper.getPermission(subject, _origin,
+		Permission permission = AclMapper.getPermission(subject, userOrigin,
 				owner, acl);
 
 		Action actionWRITE = Action.WRITE;
@@ -198,11 +185,6 @@ public class ACLPermissionHandler implements PermissionHandlerInterface {
 
 		ACL acl = _aclHandler.getACL(pnfsID.toString());
 
-		AuthType authenticationType = userOrigin.getAuthType();
-		InetAddressType inetAddressType = userOrigin.getAddressType();
-		InetAddress inetAddress = userOrigin.getAddress();
-		_origin = new Origin(authenticationType, inetAddressType, inetAddress);
-
 		// Get Owner of this resource :
 		int uidOwner = fileMetaData.getFileMetaData().getUid();
 		int gidOwner = fileMetaData.getFileMetaData().getGid();
@@ -212,12 +194,12 @@ public class ACLPermissionHandler implements PermissionHandlerInterface {
 		if (_logPermisions.isDebugEnabled()) {
 
 			_logPermisions.debug("Subject : " + subject.toString());
-			_logPermisions.debug("Origin : " + _origin.toString());
+			_logPermisions.debug("Origin : " + userOrigin.toString());
 			_logPermisions.debug("Owner : " + owner.toString());
 			_logPermisions.debug("ACL : " + acl.toString());
 		}
 
-		Permission permission = AclMapper.getPermission(subject, _origin,
+		Permission permission = AclMapper.getPermission(subject, userOrigin,
 				owner, acl);
 
 		Action actionCREATE = Action.CREATE;
@@ -261,11 +243,6 @@ public class ACLPermissionHandler implements PermissionHandlerInterface {
 
 		ACL acl = _aclHandler.getACL(pnfsID.toString());
 
-		AuthType authenticationType = userOrigin.getAuthType();
-		InetAddressType inetAddressType = userOrigin.getAddressType();
-		InetAddress inetAddress = userOrigin.getAddress();
-		_origin = new Origin(authenticationType, inetAddressType, inetAddress);
-
 		// Get Owner of this resource :
 		int uidOwner = fileMetaData.getFileMetaData().getUid();
 		int gidOwner = fileMetaData.getFileMetaData().getGid();
@@ -275,12 +252,12 @@ public class ACLPermissionHandler implements PermissionHandlerInterface {
 		if (_logPermisions.isDebugEnabled()) {
 
 			_logPermisions.debug("Subject : " + subject.toString());
-			_logPermisions.debug("Origin : " + _origin.toString());
+			_logPermisions.debug("Origin : " + userOrigin.toString());
 			_logPermisions.debug("Owner : " + owner.toString());
 			_logPermisions.debug("ACL : " + acl.toString());
 		}
 
-		Permission permission = AclMapper.getPermission(subject, _origin,
+		Permission permission = AclMapper.getPermission(subject, userOrigin,
 				owner, acl);
 
 		Action actionCREATE = Action.CREATE;
@@ -336,11 +313,6 @@ public class ACLPermissionHandler implements PermissionHandlerInterface {
 
 		ACL acl = _aclHandler.getACL(dirPnfsID.toString());
 
-		AuthType authenticationType = userOrigin.getAuthType();
-		InetAddressType inetAddressType = userOrigin.getAddressType();
-		InetAddress inetAddress = userOrigin.getAddress();
-		_origin = new Origin(authenticationType, inetAddressType, inetAddress);
-
 		// Get Owner of this resource :
 		int uidOwner = dirMetaData.getFileMetaData().getUid();
 		int gidOwner = dirMetaData.getFileMetaData().getGid();
@@ -350,12 +322,12 @@ public class ACLPermissionHandler implements PermissionHandlerInterface {
 		if (_logPermisions.isDebugEnabled()) {
 
 			_logPermisions.debug("Subject : " + subject.toString());
-			_logPermisions.debug("Origin : " + _origin.toString());
+			_logPermisions.debug("Origin : " + userOrigin.toString());
 			_logPermisions.debug("Owner : " + owner.toString());
 			_logPermisions.debug("ACL : " + acl.toString());
 		}
 
-		Permission permission = AclMapper.getPermission(subject, _origin,
+		Permission permission = AclMapper.getPermission(subject, userOrigin,
 				owner, acl);
 
 		Action actionREMOVEdir = Action.REMOVE;
@@ -384,7 +356,7 @@ public class ACLPermissionHandler implements PermissionHandlerInterface {
 			_logPermisions.debug("ACL : " + acl2.toString());
 		}
 
-		Permission permission2 = AclMapper.getPermission(subject, _origin,
+		Permission permission2 = AclMapper.getPermission(subject, userOrigin,
 				owner2, acl2);
 
 		Action actionREMOVEchild = Action.REMOVE;
@@ -425,11 +397,6 @@ public class ACLPermissionHandler implements PermissionHandlerInterface {
 
 		ACL acl = _aclHandler.getACL(pnfsID.toString());
 
-		AuthType authenticationType = userOrigin.getAuthType();
-		InetAddressType inetAddressType = userOrigin.getAddressType();
-		InetAddress inetAddress = userOrigin.getAddress();
-		_origin = new Origin(authenticationType, inetAddressType, inetAddress);
-
 		// Get Owner of this resource :
 		int uidOwner = fileMetaData.getFileMetaData().getUid();
 		int gidOwner = fileMetaData.getFileMetaData().getGid();
@@ -439,12 +406,12 @@ public class ACLPermissionHandler implements PermissionHandlerInterface {
 		if (_logPermisions.isDebugEnabled()) {
 
 			_logPermisions.debug("Subject : " + subject.toString());
-			_logPermisions.debug("Origin : " + _origin.toString());
+			_logPermisions.debug("Origin : " + userOrigin.toString());
 			_logPermisions.debug("Owner : " + owner.toString());
 			_logPermisions.debug("ACL : " + acl.toString());
 		}
 
-		Permission permission = AclMapper.getPermission(subject, _origin,
+		Permission permission = AclMapper.getPermission(subject, userOrigin,
 				owner, acl);
 
 		Action actionREADDIR = Action.READDIR;
@@ -501,11 +468,6 @@ public class ACLPermissionHandler implements PermissionHandlerInterface {
 
 		ACL acl = _aclHandler.getACL(pnfsID.toString());
 
-		AuthType authenticationType = userOrigin.getAuthType();
-		InetAddressType inetAddressType = userOrigin.getAddressType();
-		InetAddress inetAddress = userOrigin.getAddress();
-		_origin = new Origin(authenticationType, inetAddressType, inetAddress);
-
 		// Get Owner of this file:
 		int uidOwner = fileMetaData.getFileMetaData().getUid();
 		int gidOwner = fileMetaData.getFileMetaData().getGid();
@@ -515,12 +477,12 @@ public class ACLPermissionHandler implements PermissionHandlerInterface {
 		if (_logPermisions.isDebugEnabled()) {
 
 			_logPermisions.debug("Subject : " + subject.toString());
-			_logPermisions.debug("Origin : " + _origin.toString());
+			_logPermisions.debug("Origin : " + userOrigin.toString());
 			_logPermisions.debug("Owner : " + owner.toString());
 			_logPermisions.debug("ACL : " + acl.toString());
 		}
 
-		Permission permission1 = AclMapper.getPermission(subject, _origin,
+		Permission permission1 = AclMapper.getPermission(subject, userOrigin,
 				owner, acl);
 
 		Action actionREMOVEfile = Action.REMOVE;
@@ -548,7 +510,7 @@ public class ACLPermissionHandler implements PermissionHandlerInterface {
 			_logPermisions.debug("ACL : " + acl2.toString());
 		}
 
-		Permission permission2 = AclMapper.getPermission(subject, _origin,
+		Permission permission2 = AclMapper.getPermission(subject, userOrigin,
 				owner2, acl2);
 
 		Action actionREMOVEchild = Action.REMOVE;
@@ -589,11 +551,6 @@ public class ACLPermissionHandler implements PermissionHandlerInterface {
 
 		ACL acl = _aclHandler.getACL(pnfsID.toString());
 
-		AuthType authenticationType = userOrigin.getAuthType();
-		InetAddressType inetAddressType = userOrigin.getAddressType();
-		InetAddress inetAddress = userOrigin.getAddress();
-		_origin = new Origin(authenticationType, inetAddressType, inetAddress);
-
 		// Get Owner of this resource :
 		int uidOwner = fileMetaData.getFileMetaData().getUid();
 		int gidOwner = fileMetaData.getFileMetaData().getGid();
@@ -603,12 +560,12 @@ public class ACLPermissionHandler implements PermissionHandlerInterface {
 		if (_logPermisions.isDebugEnabled()) {
 
 			_logPermisions.debug("Subject : " + subject.toString());
-			_logPermisions.debug("Origin : " + _origin.toString());
+			_logPermisions.debug("Origin : " + userOrigin.toString());
 			_logPermisions.debug("Owner : " + owner.toString());
 			_logPermisions.debug("ACL : " + acl.toString());
 		}
 
-		Permission permission = AclMapper.getPermission(subject, _origin,
+		Permission permission = AclMapper.getPermission(subject, userOrigin,
 				owner, acl);
 
 		Action actionSETATTR = Action.SETATTR;
