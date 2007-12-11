@@ -1,4 +1,4 @@
-//   $Id: DCacheCoreControllerV2.java,v 1.21 2007-10-04 01:15:55 aik Exp $
+//   $Id: DCacheCoreControllerV2.java 7642 2007-12-05 17:53:07Z podstvkv $
 
 package diskCacheV111.replicaManager ;
 
@@ -62,7 +62,7 @@ import  java.util.*;
   */
 
 abstract public class DCacheCoreControllerV2 extends CellAdapter {
-   private final static String _cvsId = "$Id: DCacheCoreControllerV2.java,v 1.21 2007-10-04 01:15:55 aik Exp $";
+   private final static String _cvsId = "$Id: DCacheCoreControllerV2.java 7642 2007-12-05 17:53:07Z podstvkv $";
 
    private String      _cellName = null ;
    private Args        _args     = null ;
@@ -287,7 +287,6 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
       return sb.toString() ;
    }
 
-
    private long __taskId = 10000L ;
    private synchronized long __nextTaskId(){ return __taskId++ ; }
 
@@ -387,6 +386,35 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
       public long getCreationTime() { return _creationTime; }
 
    }
+
+   /**
+    *  Tear down task by pool name (for Reducer) or
+    *  source or destination pool name (replicator)
+    */
+   protected void  taskTearDownByPoolName( String poolName ){
+      HashSet allTasks;
+      boolean taskFound = false;
+
+      synchronized (_taskHash) {
+        allTasks = new HashSet(_taskHash.values());
+      }
+
+      for (Iterator i = allTasks.iterator(); i.hasNext(); ) {
+        TaskObserver task = (TaskObserver) i.next();
+        if (task != null && !task.isDone()) {
+          if ( (task.getType().equals("Reduction") &&
+                ( (ReductionObserver) task).getPool().equals(poolName))
+              || (task.getType().equals("Replication") &&
+                  ( ( ( (MoverTask) task).getSrcPool().equals(poolName))
+                   || ( (MoverTask) task).getDstPool().equals(poolName)))
+              ) {
+            taskFound = true;
+            task.setErrorCode( -3, "Task tear down");
+          }
+        }
+      }
+   }
+
    //
    //  remove a copy of this file
    //
@@ -468,7 +496,22 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
       public String getDstPool()   { return _dstPool; } ;
 
       public void messageArrived( CellMessage msg ){
-         Message reply = (Message)msg.getMessageObject() ;
+          Message reply = null;
+
+          // @todo : process destination pool error
+          if( msg.getMessageObject() instanceof dmg.cells.nucleus.NoRouteToCellException ) {
+              setErrorCode(-3,"MoverTask: dmg.cells.nucleus.NoRouteToCellException");
+              dsay("MoverTask got error NoRouteToCellException");
+              return;
+          }
+
+          try {
+              reply = (Message) msg.getMessageObject();
+          } catch (Exception ex) {
+              setErrorCode(-1,"MoverTask: exception converting reply message="+ ex.getMessage());
+              return;
+          }
+
          if( reply.getReturnCode() == 0 )
             setOk() ;
          else{
@@ -635,17 +678,12 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
             sourceHosts.add(host);
         }
 
-//        String destination = bestPool(allPoolList, fileSize);
-        String destination = bestPool(allPoolList, fileSize, sourceHosts );
+        String destination = bestDestPool(allPoolList, fileSize, sourceHosts );
 
         return replicatePnfsId(pnfsId, source, destination);
     }
 
-    private String bestPool(List pools, long fileSize ) throws Exception {
-        return bestPool( pools, fileSize, null );
-    }
-
-    private String bestPool(List pools, long fileSize, Set srcHosts ) throws Exception {
+    private String bestDestPool(List pools, long fileSize, Set srcHosts ) throws Exception {
 
         double bestCost = 1.0;
         String bestPool = null;
@@ -836,8 +874,8 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
             String host = (String)_hostMap.get(poolName);
             sourceHosts.add( host );
         }
-//        String destination = bestPool(destPools, fileSize);
-        String destination = bestPool(destPools, fileSize, sourceHosts );
+
+        String destination = bestDestPool(destPools, fileSize, sourceHosts );
 
         return replicatePnfsId( storageInfo, pnfsId, source, destination);
       }
@@ -1074,28 +1112,15 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
        dsay( "DCacheCoreController: Got PnfsClearCacheLocationMessage" ) ;
        ourCacheLocationModified( (PnfsModifyCacheLocationMessage) obj, false ) ;
        return ;
-
      }
-/*
-     if (obj instanceof PnfsModifyCacheLocationMessage) {
 
-       say("DCacheCoreController: Got PnfsModifyCacheLocationMessage");
-       ourCacheLocationModified(
-           (PnfsModifyCacheLocationMessage) obj,
-           obj instanceof PnfsAddCacheLocationMessage
-           );
-
-       return;
-     }
-*/
-     //else
      if( obj instanceof PoolStatusChangedMessage ){
        dsay( "DCacheCoreController: Got PoolStatusChangedMessage, " + msg ) ;
        poolStatusChanged( (PoolStatusChangedMessage) obj );
        return ;
      }else if ( obj instanceof PoolRemoveFilesMessage ) {
        dsay( "DCacheCoreController: Got PoolRemoveFilesMessage, " + msg ) ;
-       PoolRemoveFiles( (PoolRemoveFilesMessage) obj );
+       poolRemoveFiles( (PoolRemoveFilesMessage) obj );
        return ;
      } else{
        say( "DCacheCoreController: Got CellMessage, remove task from messageHash" + msg );
@@ -1119,7 +1144,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
    }
 
    // Placeholder - This method can be overriden
-   protected void PoolRemoveFiles( PoolRemoveFilesMessage msg )
+   protected void poolRemoveFiles( PoolRemoveFilesMessage msg )
    {
      dsay( "DCacheCoreController: default PoolRemoveFilesMessage(...) called" ) ;
      String poolName     = msg.getPoolName();
@@ -1254,7 +1279,6 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
              "PnfsManager",
              "PnfsGetStorageInfoMessage" ) ;
        }
-
        return msg.getStorageInfo() ;
    }
 
@@ -1311,12 +1335,23 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
          dsay("getCacheLocationList(...) PnfsGetCacheLocationsMessage answer error: err="
               +msg.getReturnCode()
               + ", message='" + msg + "'" );
+         if( msg.getReturnCode() == CacheException.FILE_NOT_FOUND ) {
+           /** @todo
+            *  throw error code
+            */
 
-          throw new
-          MissingResourceException(
-             msg.getErrorObject().toString() ,
-             "PnfsManager",
-             "PnfsGetCacheLocationsMessage" ) ;
+           throw new
+               MissingResourceException(
+                   "Pnfs File not found :" + msg.getErrorObject().toString() ,
+                   "PnfsManager",
+                   "PnfsGetCacheLocationsMessage" ) ;
+         } else {
+           throw new
+               MissingResourceException(
+                   msg.getErrorObject().toString() ,
+                   "PnfsManager",
+                   "PnfsGetCacheLocationsMessage" ) ;
+         }
        }
 
        if( ! checked )
