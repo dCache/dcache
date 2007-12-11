@@ -143,24 +143,40 @@ public class SrmSetPermission {
 			}
 			if (arrayOfGroupPermissions!=null && 
 			    arrayOfGroupPermissions.getGroupPermissionArray()!=null) {
-				if (arrayOfGroupPermissions.getGroupPermissionArray()[0]==null) {
+				if (arrayOfGroupPermissions.getGroupPermissionArray()[0]!=null) {
 					groupPermission=arrayOfGroupPermissions.getGroupPermissionArray()[0];
 				}
 			}
 			int iowner=(permissions>>6)&0x7;
 			int igroup=(permissions>>3)&0x7;
 			int iother=permissions&0x7;
+			int requestOwner=iowner;
+			int requestGroup=igroup;
+			int requestOther=iother;
+
 			if ( ownerPermission != null ) { 
-				iowner = PermissionMaskToTPermissionMode.permissionModetoMask(ownerPermission);
+			    requestOwner = PermissionMaskToTPermissionMode.permissionModetoMask(ownerPermission);
 			}
 			if ( otherPermission != null ) { 
-				iother = PermissionMaskToTPermissionMode.permissionModetoMask(otherPermission);	
+			    requestOther  = PermissionMaskToTPermissionMode.permissionModetoMask(otherPermission);	
 			}
 			if ( groupPermission != null ) {
-				igroup=PermissionMaskToTPermissionMode.permissionModetoMask(groupPermission.getMode());
+			    requestGroup =PermissionMaskToTPermissionMode.permissionModetoMask(groupPermission.getMode());
 			}
+
+			if (permissionType==TPermissionType.CHANGE) { 
+			    iowner=requestOwner;
+			    igroup=requestGroup;
+			    iother=requestOther;
+			}
+			else if (permissionType==TPermissionType.ADD) { 
+			    iowner|=requestOwner;
+			    igroup|=requestGroup;
+			    iother|=requestOther;
+			}
+
 			if ((permissionType==TPermissionType.ADD||permissionType==TPermissionType.CHANGE)) {  
-				if (ownerPermission==null && otherPermission==null) {
+				if (ownerPermission==null && otherPermission==null && groupPermission==null ) {
 					ownerPermission = TPermissionMode.R;
 					otherPermission = TPermissionMode.R;	
 					iowner =PermissionMaskToTPermissionMode.permissionModetoMask(ownerPermission);
@@ -174,15 +190,16 @@ public class SrmSetPermission {
 					}
 				}
 			}
+
 			if (permissionType==TPermissionType.REMOVE) { 
-				iowner=0;
-				igroup=0;
-				iother=0;
+			    //iowner=0;
+			    igroup=0;
+			    iother=0;
 			}
 			int newPermissions = ((iowner<<6)|(igroup<<3))|iother;
 			fmd.permMode=newPermissions;
 			try { 
-				storage.setFileMetaData(user,fmd);
+			    storage.setFileMetaData(user,fmd);
 			}
 			catch (SRMException e) {
 				esay(e);
