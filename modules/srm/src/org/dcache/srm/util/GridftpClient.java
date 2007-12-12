@@ -2,7 +2,6 @@
 
 package org.dcache.srm.util;
 
-import java.io.* ;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.HttpURLConnection;
@@ -11,6 +10,10 @@ import java.net.Socket;
 import java.net.InetAddress;
 import java.util.Hashtable;
 import java.util.StringTokenizer;
+import java.security.NoSuchAlgorithmException;
+import java.security.MessageDigest;
+import java.util.zip.Adler32;
+import java.util.Date;
 
 import org.ietf.jgss.GSSException;
 import org.ietf.jgss.GSSContext;
@@ -46,13 +49,19 @@ import org.globus.ftp.DataSource;
 import org.globus.ftp.DataSink;
 import org.globus.ftp.Buffer;
 import org.globus.ftp.FileRandomIO;
-import org.globus.ftp.extended.GridFTPControlChannel;
 import org.globus.ftp.HostPort;
-
+import org.globus.ftp.extended.GridFTPControlChannel;
+import org.globus.ftp.exception.ServerException;
+import org.globus.ftp.exception.FTPReplyParseException;
+import org.globus.ftp.exception.ClientException;
+import org.globus.ftp.exception.UnexpectedReplyCodeException;
+import org.globus.ftp.vanilla.Reply;
+import org.globus.ftp.vanilla.Command;
 import org.globus.util.GlobusURL;
 
 import org.globus.gsi.gssapi.GlobusGSSCredentialImpl;
 import org.globus.gsi.gssapi.SSLUtil;
+import org.globus.gsi.GlobusCredentialException;
 import org.globus.gsi.TrustedCertificates;
 import org.globus.gsi.GSIConstants;
 import org.globus.gsi.gssapi.GlobusGSSManagerImpl;
@@ -62,6 +71,7 @@ import org.globus.gsi.GlobusCredential;
 import org.ietf.jgss.GSSManager;
 import org.ietf.jgss.GSSCredential;
 import org.ietf.jgss.GSSName;
+import org.ietf.jgss.GSSException;
 
 import org.gridforum.jgss.ExtendedGSSContext;
 import org.gridforum.jgss.ExtendedGSSManager;
@@ -69,8 +79,12 @@ import org.gridforum.jgss.ExtendedGSSCredential;
 import org.globus.gsi.gssapi.net.impl.GSIGssSocket;
 import org.globus.gsi.gssapi.net.GssSocket;
 
+import java.io.RandomAccessFile;
 import java.io.OutputStream;
 import java.io.InputStream;
+import java.io.IOException;
+import java.io.FileNotFoundException;
+import java.io.ByteArrayOutputStream;
 import java.net.Socket;
 import java.net.ServerSocket;
 
@@ -114,7 +128,9 @@ public class GridftpClient {
                          int tcpBufferSize,
                          GSSCredential cred,
                          Logger logger)
-        throws Exception {
+        throws IOException, ServerException, ClientException,
+               GlobusCredentialException, GSSException
+    {
         this(host,port,tcpBufferSize,0,cred,logger);
     }
 
@@ -122,8 +138,10 @@ public class GridftpClient {
                          int tcpBufferSize,
                          int bufferSize,
                          GSSCredential cred,
-                         Logger logger) throws Exception {
-
+                         Logger logger)
+        throws IOException, ServerException, ClientException,
+               GlobusCredentialException, GSSException
+    {
         this.logger = logger;
         if(bufferSize >0) {
             this.bufferSize = bufferSize;
@@ -146,8 +164,6 @@ public class GridftpClient {
         say("gridFTPClient tcp buffer size is set to "+tcpBufferSize);
         client.authenticate(cred); /* use redentials */
         client.setType(GridFTPSession.TYPE_IMAGE);
-
-
     }
 
     private int streamsNum=10;
@@ -181,10 +197,12 @@ public class GridftpClient {
         return transfered;
     }
 
-    public static long getAdler32(java.io.RandomAccessFile diskFile) throws java.io.IOException {
-        java.util.zip.Adler32 java_addler = null;
+    public static long getAdler32(RandomAccessFile diskFile)
+        throws IOException
+    {
+        Adler32 java_addler = null;
 
-        java_addler = new java.util.zip.Adler32();
+        java_addler = new Adler32();
         diskFile.seek(0);
         byte [] buffer = new byte[1024] ;
         long sum=0L;
@@ -198,12 +216,14 @@ public class GridftpClient {
         return java_addler.getValue();
     }
 
-    public static String getCksmValue(java.io.RandomAccessFile diskFile,String type) throws java.io.IOException,java.security.NoSuchAlgorithmException {
+    public static String getCksmValue(RandomAccessFile diskFile,String type)
+        throws IOException,NoSuchAlgorithmException
+    {
 
         if ( type.equals("adler32") )
             return long32bitToHexString(getAdler32(diskFile));
 
-        java.security.MessageDigest md = java.security.MessageDigest.getInstance(type);
+        MessageDigest md = MessageDigest.getInstance(type);
         diskFile.seek(0);
         byte [] buffer = new byte[1024] ;
         long sum=0L;
@@ -218,7 +238,9 @@ public class GridftpClient {
     }
 
 
-    public String list(String directory,boolean serverPassive) throws Exception {
+    public String list(String directory,boolean serverPassive)
+        throws IOException, ClientException, ServerException
+    {
         setCommonOptions(false,serverPassive);
         client.changeDir(directory);
         if(serverPassive) {
@@ -245,13 +267,16 @@ public class GridftpClient {
         client.list(" "," ",sink);
         return received.toString();
     }
-    public long getSize(String ftppath) throws Exception
+
+    public long getSize(String ftppath)
+        throws IOException, ServerException
     {
         return client.getSize(ftppath);
     }
 
     private void setCommonOptions(boolean emode,
-                                  boolean passive_server_mode ) throws Exception
+                                  boolean passive_server_mode)
+        throws IOException, ClientException, ServerException
     {
         if (client.isFeatureSupported("DCAU")) {
             client.setDataChannelAuthentication(DataChannelAuthentication.NONE);
@@ -288,20 +313,20 @@ public class GridftpClient {
 
     }
 
-
     /**
      * THIS IS A TEMPORARY CODE TO MAKE NCSA GSIFTP SERVER
      * TO STAGE FILES INSTEAD OF FAILING TRANSFERS
      * THIS REALLY IS @##@%$^
      */
-    private void sendNCSAWaitCommand() throws Exception
+    private void sendNCSAWaitCommand()
+        throws IOException, ServerException, FTPReplyParseException,
+               UnexpectedReplyCodeException
     {
         say(" sending wait command to ncsa host " + host);
         GridFTPControlChannel channel = client.getControlChannel();
-        org.globus.ftp.vanilla.Reply reply =
-            channel.execute(new org.globus.ftp.vanilla.Command("SITE","WAIT"));
+        Reply reply = channel.execute(new Command("SITE","WAIT"));
         say("Reply is "+reply);
-        if(org.globus.ftp.vanilla.Reply.isPositiveCompletion( reply)) {
+        if(Reply.isPositiveCompletion( reply)) {
             say("sending wait command successful");
         } else {
             esay("WARNING: sending wait command failed");
@@ -326,38 +351,37 @@ public class GridftpClient {
         return cksmType;
     }
 
-    public void gridFTPRead(    String sourcepath,
-                                String destinationfilepath,
-                                boolean emode,
-                                boolean passive_server_mode) throws Exception {
-        java.io.RandomAccessFile diskFile =null;
-        try
-            {
-                diskFile =
-                    new java.io.RandomAccessFile(destinationfilepath,"rw");
-                gridFTPRead(sourcepath,diskFile, emode,passive_server_mode);
-            }
-        finally
-            {
-                try
-                    {
-                        if(diskFile != null)
-                            {
-                                diskFile.close();
-                            }
-                    }
-                catch(IOException ioe) {
-                    esay(" closing of file "+destinationfilepath+" failed");
-                    esay(ioe);
+    public void gridFTPRead(String sourcepath,
+                            String destinationfilepath,
+                            boolean emode,
+                            boolean passive_server_mode)
+        throws FileNotFoundException, IOException,
+               ClientException, ServerException,
+               FTPReplyParseException,UnexpectedReplyCodeException,
+               InterruptedException, NoSuchAlgorithmException
+    {
+        RandomAccessFile diskFile = null;
+        try {
+            diskFile = new RandomAccessFile(destinationfilepath,"rw");
+            gridFTPRead(sourcepath,diskFile, emode,passive_server_mode);
+        } finally {
+            try {
+                if(diskFile != null) {
+                    diskFile.close();
                 }
+            } catch(IOException e) {
+                esay(" closing of file "+destinationfilepath+" failed");
+                esay(e);
             }
-
-
+        }
     }
 
     public void gridFTPRead(String sourcepath,
-                            java.io.RandomAccessFile destinationDiskFile,
-                            boolean emode,boolean passive_server_mode) throws Exception
+                            RandomAccessFile destinationDiskFile,
+                            boolean emode,boolean passive_server_mode)
+        throws IOException, ClientException, ServerException,
+               FTPReplyParseException, UnexpectedReplyCodeException,
+               InterruptedException, NoSuchAlgorithmException
     {
 
         DiskDataSourceSink sink = new DiskDataSourceSink(
@@ -367,7 +391,10 @@ public class GridftpClient {
 
     public void gridFTPRead(String sourcepath,
                             IDiskDataSourceSink sink,
-                            boolean emode) throws Exception
+                            boolean emode)
+        throws IOException, ClientException, ServerException,
+               FTPReplyParseException, UnexpectedReplyCodeException,
+               InterruptedException, NoSuchAlgorithmException
     {
         gridFTPRead(sourcepath,sink,emode,true);
     }
@@ -375,7 +402,10 @@ public class GridftpClient {
     public void gridFTPRead(String sourcepath,
                             IDiskDataSourceSink sink,
                             boolean emode,
-                            boolean passive_server_mode) throws Exception
+                            boolean passive_server_mode)
+        throws IOException, ClientException, ServerException,
+               FTPReplyParseException, UnexpectedReplyCodeException,
+               InterruptedException, NoSuchAlgorithmException
     {
         say("gridFTPRead started");
         // size of the file
@@ -393,11 +423,11 @@ public class GridftpClient {
 
         if(size - sink.getTransfered() >0) {
             esay("we wrote less then file size!!!");
-            throw new java.io.IOException("we wrote less then file size!!!");
+            throw new IOException("we wrote less then file size!!!");
         }
         else if(size - sink.getTransfered() <0) {
             esay("we wrote more then file size!!!");
-            throw new java.io.IOException("we wrote more then file size!!!");
+            throw new IOException("we wrote more then file size!!!");
         }
 
         say("gridFTPWrite() wrote "+sink.getTransfered()+"bytes");
@@ -411,46 +441,47 @@ public class GridftpClient {
         current_source_sink = null;
     }
 
-    public void gridFTPWrite(
-                             String sourcefilepath,
+    public void gridFTPWrite(String sourcefilepath,
                              String destinationpath,
                              boolean emode,
-                             boolean use_chksum) throws Exception {
-        gridFTPWrite( sourcefilepath,destinationpath,emode,use_chksum,true);
+                             boolean use_chksum)
+        throws InterruptedException, ClientException, ServerException,
+               IOException, NoSuchAlgorithmException
+    {
+        gridFTPWrite(sourcefilepath,destinationpath,emode,use_chksum,true);
     }
 
-    public void gridFTPWrite(
-                             String sourcefilepath,
+    public void gridFTPWrite(String sourcefilepath,
                              String destinationpath,
                              boolean emode,
                              boolean use_chksum,
-                             boolean passive_server_mode ) throws Exception {
-        java.io.RandomAccessFile diskFile = null;
+                             boolean passive_server_mode )
+        throws InterruptedException, ClientException, ServerException,
+               IOException, NoSuchAlgorithmException
+    {
+        RandomAccessFile diskFile = null;
         try {
-            diskFile = new java.io.RandomAccessFile(sourcefilepath,"r");
+            diskFile = new RandomAccessFile(sourcefilepath,"r");
             gridFTPWrite(diskFile, destinationpath, emode, use_chksum,passive_server_mode);
-        }
-        finally
-            {
-                try
-                    {
-                        if(diskFile != null)
-                            {
-                                diskFile.close();
-                            }
-                    }
-                catch(IOException ioe) {
-                    esay(" closing of file "+sourcefilepath+" failed");
-                    esay(ioe);
+        } finally {
+            try {
+                if (diskFile != null) {
+                    diskFile.close();
                 }
+            } catch(IOException ioe) {
+                esay(" closing of file "+sourcefilepath+" failed");
+                esay(ioe);
             }
-
+        }
     }
-    public void gridFTPWrite(
-                             java.io.RandomAccessFile sourceDiskFile,
+
+    public void gridFTPWrite(RandomAccessFile sourceDiskFile,
                              String destinationpath,
                              boolean emode,
-                             boolean use_chksum) throws Exception {
+                             boolean use_chksum)
+        throws InterruptedException, ClientException, ServerException,
+               IOException, NoSuchAlgorithmException
+    {
         gridFTPWrite(
                      sourceDiskFile,
                      destinationpath,
@@ -459,16 +490,16 @@ public class GridftpClient {
                      true);
     }
 
-    public void gridFTPWrite(
-                             java.io.RandomAccessFile sourceDiskFile,
+    public void gridFTPWrite(RandomAccessFile sourceDiskFile,
                              String destinationpath,
                              boolean emode,
                              boolean use_chksum,
-                             boolean passive_server_mode ) throws Exception {
-
+                             boolean passive_server_mode)
+        throws InterruptedException, ClientException, ServerException,
+               IOException, NoSuchAlgorithmException
+    {
         say("gridFTPWrite started, source file is "+sourceDiskFile+
             " destination path is "+destinationpath);
-
 
         sourceDiskFile.seek(0);
         DiskDataSourceSink source = new DiskDataSourceSink(
@@ -477,26 +508,29 @@ public class GridftpClient {
 
     }
 
-    public void gridFTPWrite(
-                             IDiskDataSourceSink source,
+    public void gridFTPWrite(IDiskDataSourceSink source,
                              String destinationpath,
                              boolean emode,
-                             boolean use_chksum) throws Exception {
-        gridFTPWrite(
-                     source,
+                             boolean use_chksum)
+        throws InterruptedException, ClientException, ServerException,
+               IOException, NoSuchAlgorithmException
+    {
+        gridFTPWrite(source,
                      destinationpath,
                      emode,
                      use_chksum,
                      true);
 
     }
-    public void gridFTPWrite(
-                             IDiskDataSourceSink source,
+
+    public void gridFTPWrite(IDiskDataSourceSink source,
                              String destinationpath,
                              boolean emode,
                              boolean use_chksum,
-                             boolean passive_server_mode) throws Exception {
-
+                             boolean passive_server_mode)
+        throws InterruptedException, ClientException, ServerException,
+               IOException, NoSuchAlgorithmException
+    {
         say("gridFTPWrite started, destination path is "+destinationpath);
 
         setCommonOptions(emode,passive_server_mode);
@@ -522,11 +556,11 @@ public class GridftpClient {
 
         if(diskFileLength > source.getTransfered() ) {
             esay("we read less then file size!!!");
-            throw new java.io.IOException("we read less then file size!!!");
+            throw new IOException("we read less then file size!!!");
         }
         else if(diskFileLength < source.getTransfered() ) {
             esay("we read more then file size!!!");
-            throw new java.io.IOException("we read more then file size!!!");
+            throw new IOException("we read more then file size!!!");
         }
 
         say("gridFTPWrite() wrote "+source.getTransfered()+"bytes");
@@ -535,7 +569,8 @@ public class GridftpClient {
         current_source_sink = null;
     }
 
-    private void sendCksmValue(IDiskDataSourceSink source) throws Exception
+    private void sendCksmValue(IDiskDataSourceSink source)
+        throws IOException,NoSuchAlgorithmException
     {
         if ( cksmType == null )
             cksmType = "adler32";
@@ -551,7 +586,8 @@ public class GridftpClient {
         // send gridftp message
     }
 
-    private void verifyCksmValue(IDiskDataSourceSink source,String remotePath) throws Exception
+    private void verifyCksmValue(IDiskDataSourceSink source,String remotePath)
+        throws IOException,ServerException,NoSuchAlgorithmException
     {
         if ( cksmType == null )
             throw new IllegalArgumentException("verifyCksmValue: expected cksm type");
@@ -562,13 +598,15 @@ public class GridftpClient {
         String serverCksmValue = client.getCksmValue(cksmType,remotePath);
 
         if ( !cksmValue.equals(serverCksmValue) )
-            throw new java.io.IOException("Server side checksum:"+serverCksmValue+" does not match client side checksum:"+cksmValue);
+            throw new IOException("Server side checksum:"+serverCksmValue+" does not match client side checksum:"+cksmValue);
         // send gridftp message
     }
 
 
     private boolean closed =false;
-    public  void close() throws IOException, org.globus.ftp.exception.ServerException {
+    public void close()
+        throws IOException, ServerException
+    {
         synchronized(this)
             {
                 if(closed) {
@@ -620,7 +658,9 @@ public class GridftpClient {
      * @param tcpBufferSize New value of property tcpBufferSize.
      *
      */
-    public void setTcpBufferSize(int tcpBufferSize) throws org.globus.ftp.exception.ClientException{
+    public void setTcpBufferSize(int tcpBufferSize)
+        throws ClientException
+    {
         if(tcpBufferSize > 0)
             {
                 this.tcpBufferSize = tcpBufferSize;
@@ -696,11 +736,11 @@ public class GridftpClient {
             {
                 public synchronized void log(String s)
                 {
-                    System.out.println(new java.util.Date().toString()+": "+ s);
+                    System.out.println(new Date().toString()+": "+ s);
                 }
                 public synchronized void elog(String s)
                 {
-                    System.err.println(new java.util.Date().toString()+": "+ s);
+                    System.err.println(new Date().toString()+": "+ s);
                 }
                 public synchronized void elog(Throwable t)
                 {
@@ -787,7 +827,8 @@ public class GridftpClient {
          * @param NextByteTimeout timeout before next bytes arrive/leave
          */
         public void waitCompletion(int FirstByteTimeout,int  NextByteTimeout)
-            throws Exception
+            throws InterruptedException, ClientException, ServerException,
+                   IOException
         {
             long timeout = FirstByteTimeout*1000;
 
@@ -822,11 +863,19 @@ public class GridftpClient {
             }
 
             if(getThrowable() !=null) {
+                Exception e = getThrowable();
                 esay(" transfer exception");
-                esay(getThrowable());
-                throw getThrowable();
+                esay(e);
+                if (e instanceof ClientException) {
+                    throw (ClientException)e;
+                } else if (e instanceof ServerException) {
+                    throw (ServerException)e;
+                } else if (e instanceof IOException) {
+                    throw (IOException)e;
+                } else {
+                    throw new RuntimeException("Unexpected exception", e);
+                }
             }
-
         }
 
         private void waitCompleteion() throws InterruptedException {
@@ -871,16 +920,16 @@ public class GridftpClient {
                         client.put(path,source_sink,null);
                     }
                 }
-                done();
-            }
-            catch(Exception e) {
+            } catch (IOException e) {
                 esay(e);
                 throwable = e;
-                done();
-            }
-            catch(Throwable t) {
-                esay(t);
-                throwable = new IllegalStateException(t.toString());
+            } catch (ServerException e) {
+                esay(e);
+                throwable = e;
+            } catch (ClientException e) {
+                esay(e);
+                throwable = e;
+            } finally {
                 done();
             }
         }
@@ -906,20 +955,21 @@ public class GridftpClient {
          * around random access disk file
          */
         public long getAdler32() throws IOException;
-        public String getCksmValue(String type) throws IOException,java.security.NoSuchAlgorithmException;
+        public String getCksmValue(String type)
+            throws IOException,NoSuchAlgorithmException;
         public long getLast_transfer_time();
         public long getTransfered();
         public long length() throws IOException;
     }
 
     private  class DiskDataSourceSink implements IDiskDataSourceSink {
-        private final java.io.RandomAccessFile diskFile;
+        private final RandomAccessFile diskFile;
         private final int buf_size;
         private volatile long last_transfer_time = System.currentTimeMillis();
         private long transfered = 0;
         private boolean source;
 
-        public DiskDataSourceSink(java.io.RandomAccessFile diskFile, int buf_size,boolean source) {
+        public DiskDataSourceSink(RandomAccessFile diskFile, int buf_size,boolean source) {
             this.diskFile = diskFile;
             this.buf_size = buf_size;
             this.source = source;
@@ -994,7 +1044,9 @@ public class GridftpClient {
             return adler32;
         }
 
-        public String getCksmValue(String type) throws IOException,java.security.NoSuchAlgorithmException {
+        public String getCksmValue(String type)
+            throws IOException,NoSuchAlgorithmException
+        {
             String v = GridftpClient.getCksmValue(diskFile,type);
             say(type+" for file "+diskFile+" is "+v);
             diskFile.seek(0);
@@ -1007,8 +1059,10 @@ public class GridftpClient {
 
     }
 
-    private static class FnalGridFTPClient extends org.globus.ftp.GridFTPClient {
-        public FnalGridFTPClient(String host, int port)  throws IOException,org.globus.ftp.exception.ServerException {
+    private static class FnalGridFTPClient extends GridFTPClient {
+        public FnalGridFTPClient(String host, int port)
+            throws IOException,ServerException
+        {
             super(host,port);
         }
 
@@ -1016,31 +1070,31 @@ public class GridftpClient {
             return (GridFTPControlChannel)controlChannel;
         }
 
-        private void sendAddler32Checksum(String adler32String) throws Exception
+        private void sendAddler32Checksum(String adler32String)
+            throws IOException, ServerException
         {
-            org.globus.ftp.vanilla.Reply reply =
-                quote("SITE CHKSUM "+ adler32String);
-            if(org.globus.ftp.vanilla.Reply.isPositiveCompletion( reply)) {
+            Reply reply = quote("SITE CHKSUM "+ adler32String);
+            if(Reply.isPositiveCompletion( reply)) {
             } else {
-                throw new java.io.IOException(reply.getMessage());
+                throw new IOException(reply.getMessage());
             }
 
         }
 
-        public void sendCksmValue(String type,String value) throws Exception {
-
-
+        public void sendCksmValue(String type,String value)
+            throws IOException, ServerException
+        {
             try {
-                org.globus.ftp.vanilla.Reply reply = quote("SCKS "+type+" "+value);
+                Reply reply = quote("SCKS "+type+" "+value);
 
-                if ( !org.globus.ftp.vanilla.Reply.isPositiveCompletion(reply) ){
+                if ( !Reply.isPositiveCompletion(reply) ){
                     if ( type.toLowerCase().equals("adler32") ){
                         sendAddler32Checksum(value);
                         return;
                     }
-                    throw new java.io.IOException(reply.getMessage());
+                    throw new IOException(reply.getMessage());
                 }
-            } catch ( org.globus.ftp.exception.ServerException ex ){
+            } catch ( ServerException ex ){
                 if ( type.toLowerCase().equals("adler32") ){
                     sendAddler32Checksum(value);
                     return;
@@ -1049,10 +1103,12 @@ public class GridftpClient {
             }
         }
 
-        public String getCksmValue(String type,String path) throws Exception {
-            org.globus.ftp.vanilla.Reply reply = quote("CKSM "+type+" 0 -1 "+path);
-            if ( !org.globus.ftp.vanilla.Reply.isPositiveCompletion(reply) )
-                throw new java.io.IOException(reply.getMessage());
+        public String getCksmValue(String type,String path)
+            throws IOException, ServerException
+        {
+            Reply reply = quote("CKSM "+type+" 0 -1 "+path);
+            if ( !Reply.isPositiveCompletion(reply) )
+                throw new IOException(reply.getMessage());
             return reply.getMessage();
         }
     }
