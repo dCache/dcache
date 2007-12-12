@@ -9,7 +9,7 @@ import diskCacheV111.util.UserAuthBase;
 public class KpwdTest {
 
     private KPWDAuthorizationPlugin _authServ = null;
-    private static String MY_DN = "/O=GermanGrid/OU=DESY/CN=Tigran Mkrtchyan";
+    private static final String MY_DN = "/O=GermanGrid/OU=DESY/CN=Tigran Mkrtchyan";
 
     @Test
     public void testKpwd() throws Exception {
