@@ -107,10 +107,6 @@ import org.ietf.jgss.GSSException;
 public class RemoteGsiftpTransferProtocol_1
     implements MoverProtocol,ChecksumMover,DataBlocksRecipient
 {
-    public static final int READ   =  1;
-    public static final int WRITE  =  2;
-    public static final long SERVER_LIFE_SPAN = 60 * 5 * 1000; /* 5 minutes */
-
     private final CellAdapter _cell;
     private long _starttime;
     private long _timeout_time;
@@ -348,45 +344,36 @@ public class RemoteGsiftpTransferProtocol_1
             GlobusURL src_url = new GlobusURL(protocolInfo.getGsiftpUrl());
             boolean emode = protocolInfo.isEmode();
             long size = _client.getSize(src_url.getPath());
-            say(" received a file size info: "+size+" allocating space on the pool");
+            say(" received a file size info: " + size +
+                " allocating space on the pool");
             spaceMonitor.allocateSpace(size);
             say(" allocated space " + size);
-
             DiskDataSourceSink sink =
                 new DiskDataSourceSink(protocolInfo.getBufferSize(),
                                        false);
-            boolean freedAll = false;
             try {
                 _client.gridFTPRead(src_url.getPath(),sink, emode);
-            } catch (Exception e) {
-                esay("gridFTPRead: error : ");
-                esay(e);
-                spaceMonitor.freeSpace(size);
-                freedAll = true;
-                throw e;
             } finally {
-                //
-                // we need to return the space if something went wrong.  -p.
-                //
-                long realSize = sink.length();
-                _client.close();
-
-                if (!freedAll) {
-                    //
-                    // overallocated
-                    //
-                    if (realSize < size) {
-                        long toBeReturned = size - realSize;
-                        say("Returning space : " + toBeReturned);
-                        spaceMonitor.freeSpace(toBeReturned);
-                    } else if (realSize > size) {
-                        long toBeAllocated = realSize - size;
-                        say("Allocating more space : " + toBeAllocated);
-                        spaceMonitor.allocateSpace(toBeAllocated);
+                try {
+                    _client.close();
+                } finally {
+                    /* Adjust space reservation to fit the final size of
+                     * the file.
+                     */
+                    long overAllocation = size - sink.length();
+                    if (overAllocation > 0) {
+                        say("Returning space : " + overAllocation);
+                        spaceMonitor.freeSpace(overAllocation);
+                    } else if (overAllocation < 0) {
+                        say("Allocating more space : " + -overAllocation);
+                        spaceMonitor.allocateSpace(-overAllocation);
                     }
                 }
             }
+        } catch (CacheException e) {
+            throw e;
         } catch (Exception e) {
+            esay(e);
             throw new CacheException(e.toString());
         }
     }
@@ -411,9 +398,9 @@ public class RemoteGsiftpTransferProtocol_1
             } finally {
                 _client.close();
             }
-
+        } catch (CacheException e) {
+            throw e;
         } catch (Exception e) {
-            esay("gridFtpWrite exception");
             esay(e);
             throw new CacheException(e.toString());
         }
