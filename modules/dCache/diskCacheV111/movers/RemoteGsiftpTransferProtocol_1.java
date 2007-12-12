@@ -370,8 +370,6 @@ public class RemoteGsiftpTransferProtocol_1
                     }
                 }
             }
-        } catch (CacheException e) {
-            throw e;
         } catch (Exception e) {
             esay(e);
             throw new CacheException(e.toString());
@@ -398,8 +396,6 @@ public class RemoteGsiftpTransferProtocol_1
             } finally {
                 _client.close();
             }
-        } catch (CacheException e) {
-            throw e;
         } catch (Exception e) {
             esay(e);
             throw new CacheException(e.toString());
