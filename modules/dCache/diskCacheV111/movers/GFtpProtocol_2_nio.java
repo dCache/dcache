@@ -318,7 +318,7 @@ public class GFtpProtocol_2_nio
 
 	    /* Release any over allocation.
 	     */
-            if (_spaceMonitor != null) {
+            if (_spaceMonitor != null && _role == Role.Receiver) {
                 long overAllocation = _reservedSpace - file.length();
                 if (overAllocation > 0) {
                     _spaceMonitor.freeSpace(overAllocation);
