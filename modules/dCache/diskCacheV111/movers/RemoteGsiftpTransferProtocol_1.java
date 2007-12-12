@@ -95,10 +95,12 @@ import org.dcache.srm.util.GridftpClient;
 import org.dcache.srm.security.SslGsiSocketFactory;
 import org.globus.ftp.Buffer;
 import org.globus.ftp.exception.ClientException;
+import org.globus.ftp.exception.ServerException;
 import org.globus.gsi.gssapi.auth.Authorization;
 import org.globus.gsi.gssapi.auth.AuthorizationException;
 import org.globus.gsi.gssapi.net.GssSocket;
 import org.globus.gsi.gssapi.net.impl.GSIGssSocket;
+import org.globus.gsi.GlobusCredentialException;
 import org.globus.util.GlobusURL;
 import org.ietf.jgss.GSSContext;
 import org.ietf.jgss.GSSCredential;
@@ -172,8 +174,9 @@ public class RemoteGsiftpTransferProtocol_1
                       SpaceMonitor spaceMonitor,
                       int access)
         throws CacheException, IOException,
-               NoRouteToCellException, GSSException,
-               ClientException, Exception
+               NoRouteToCellException,
+               ServerException, ClientException,
+               GlobusCredentialException, GSSException
     {
         _pnfsId = pnfsId;
         say("runIO()\n\tprotocol="
