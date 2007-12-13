@@ -306,12 +306,7 @@ public class ACLPermissionHandler implements PermissionHandlerInterface {
 	public boolean canDeleteDir(Subject subject, String pnfsPath,
 			Origin userOrigin) throws CacheException {
 
-		if (_logPermisions.isDebugEnabled()) {
-			_logPermisions
-					.debug("canDeleteDir(" + subject.getUid() + ","
-							+ Arrays.toString(subject.getGids()) + ","
-							+ pnfsPath + ")");
-		}
+        boolean isAllowed = false; 		
 
 		FileMetaDataX dirMetaData = _metaDataSource.getXMetaData(pnfsPath);
 
@@ -354,9 +349,15 @@ public class ACLPermissionHandler implements PermissionHandlerInterface {
 		Permission permission = AclMapper.getPermission(subject, userOrigin,
 				owner, acl);
 
+		// Explanation. We use the following method (from ACLNFSv4Matcher) here:
+		// Boolean isAllowed(Permission perm, Action action, Boolean isDir)
+		// isDir in this case will be always Boolean.FALSE, as we are talking 
+		//about the object to be deleted (in our case it is actually a directory), 
+		// and for this object bit DELETE has to be checked. According to the implementation
+		// of isAlowed(..), bit DELETE is checked only in case isDir is set to FALSE. 
 		Action actionREMOVEdir = Action.REMOVE;
 		Boolean permissionToRemoveDir = AclNFSv4Matcher.isAllowed(permission,
-				actionREMOVEdir, Boolean.TRUE);
+				actionREMOVEdir, Boolean.FALSE);
 
 		Boolean decision1 = permissionToRemoveDir != null
 				&& permissionToRemoveDir.equals( Boolean.TRUE );
@@ -389,9 +390,18 @@ public class ACLPermissionHandler implements PermissionHandlerInterface {
 
 		Boolean decision2 = permissionToRemoveChild != null
 		&& permissionToRemoveChild.equals( Boolean.TRUE );
-
-        //Decision
-		return decision1 && decision2;
+		
+		//Decision
+		isAllowed = decision1 && decision2;
+        
+		if (_logPermisions.isDebugEnabled()) {
+			_logPermisions
+					.debug("canDeleteDir(" + subject.getUid() + ","
+							+ Arrays.toString(subject.getGids()) + ","
+							+ pnfsPath + "):"+isAllowed);
+		}
+		
+		return isAllowed;
 
 	}
 
@@ -460,12 +470,7 @@ public class ACLPermissionHandler implements PermissionHandlerInterface {
 	public boolean canDeleteFile(Subject subject, String pnfsPath,
 			Origin userOrigin) throws CacheException {
 
-		if (_logPermisions.isDebugEnabled()) {
-			_logPermisions
-					.debug("canDeleteFile(" + subject.getUid() + ","
-							+ Arrays.toString(subject.getGids()) + ","
-							+ pnfsPath + ")");
-		}
+		boolean isAllowed = false;
 
 		FileMetaDataX fileMetaData = _metaDataSource.getXMetaData(pnfsPath);
 
@@ -543,9 +548,18 @@ public class ACLPermissionHandler implements PermissionHandlerInterface {
 
 		Boolean decision2 = permissionToRemoveChild != null
 		&& permissionToRemoveChild.equals( Boolean.TRUE );
-
+		
         //Decision
-		return decision1 && decision2;
+		isAllowed = decision1 && decision2;
+		
+		if (_logPermisions.isDebugEnabled()) {
+			_logPermisions
+					.debug("canDeleteFile(" + subject.getUid() + ","
+							+ Arrays.toString(subject.getGids()) + ","
+							+ pnfsPath + "):" + isAllowed);
+		}
+		
+		return isAllowed;
 	}
 
 	/**
