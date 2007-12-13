@@ -7,7 +7,7 @@ import java.io.Serializable;
 /**
  * Immutable representation of a pnfsId
  */
-public class PnfsId implements Serializable, Comparable {
+public class PnfsId implements Serializable, Comparable<PnfsId> {
 
 	private final static int OLD_ID_SIZE = 12; // original pnfs
 	private final static int NEW_ID_SIZE = 18; // chimera
@@ -65,8 +65,10 @@ public class PnfsId implements Serializable, Comparable {
 		return toString().hashCode();
 	}
 
-	public int compareTo(Object pnfsIdObject) {
-		PnfsId pnfsId = (PnfsId) pnfsIdObject;
+	public int compareTo(PnfsId pnfsId) {
+
+	    if( pnfsId == this ) return 0;
+
 		int i = 0;
 		for (i = 0; (i < _a.length) && (_a[i] == pnfsId._a[i]); i++)
 			;
