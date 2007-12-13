@@ -73,6 +73,12 @@ public class CacheException extends Exception {
      * indicates, that HSM request to suspend current restore request
      */
     public final static int HSM_DELAY_ERROR = 10013;
+    
+    /**
+     * returned in case of file specific request ( like read ) on existing not a file
+     * path or pnfsid,
+     */
+    public final static int NOT_FILE = 10014;
 
     /**
      * default error code.

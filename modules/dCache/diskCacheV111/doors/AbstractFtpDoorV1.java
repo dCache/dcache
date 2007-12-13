@@ -84,6 +84,11 @@ import java.net.*;
 import java.lang.reflect.*;
 import java.security.NoSuchAlgorithmException;
 
+import org.dcache.chimera.acl.Origin;
+import org.dcache.chimera.acl.Subject;
+import org.dcache.chimera.acl.enums.AuthType;
+import org.dcache.chimera.acl.enums.FileAttribute;
+import org.dcache.chimera.acl.enums.InetAddressType;
 import org.ietf.jgss.*;
 import java.lang.Thread;
 import java.util.regex.*;
@@ -229,16 +234,16 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
     protected final PnfsHandler         _pnfs;
 
     /**
-     *
+     *   Permission Handler
      */
-    protected final FileMetaDataSource  _fileMetaDataSource;
+    protected final PermissionHandlerInterface _permissionHandler;
 
-    /**
-     *
-     */
-    protected final FsPermissionHandler _permissionHandler;
+     /**
+      *   User's Origin
+      */
+     protected final Origin	_origin;
 
-    /**
+	 /**
      * Well known name of the pool manager.
      */
     protected final String              _poolManager;
@@ -391,6 +396,12 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
     protected String _curDirV;
     protected String _xferMode = "S";
 
+    /**
+     *   NEW
+     */
+    //protected Subject _subject;
+
+
     //generalized kpwd file path used by all flavors
     protected String _kpwdFilePath;
 
@@ -503,7 +514,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
 	ProxyAdapter adapter;
 
 	/**
-	 * Informantion about the corresponding space reservation for
+	 * Information about the corresponding space reservation for
 	 * current store operation
 	 */
 	SpaceManagerGetInfoAndLockReservationByPathMessage spaceReservationInfo;
@@ -589,6 +600,18 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
     // ftp flavor specific initialization is done in initFtpDoor
     // initFtpDoor is called from the constractor
     //
+    /**
+     * @param name
+     * @param engine
+     * @param args
+     * @throws IllegalArgumentException
+     * @throws IllegalStateException
+     * @throws IllegalAccessException
+     * @throws ClassNotFoundException
+     * @throws NoSuchMethodException
+     * @throws InstantiationException
+     * @throws InvocationTargetException
+     */
     public AbstractFtpDoorV1(String name, StreamEngine engine, Args args)
         throws IllegalArgumentException,
                IllegalStateException,
@@ -728,6 +751,23 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
              * permission handler:
              * use user defined or PnfsManager based
              */
+            //----------Unix-------------
+         
+            String permissionHandler =
+                parseOption("permission-handler",
+                          "diskCacheV111.services.UnixPermissionHandler");
+
+            say("Loading permissionHandler: " + permissionHandler);
+            Class<?> [] argClass = { dmg.cells.nucleus.CellAdapter.class };
+            Class<?> permissionHandlerClass = Class.forName(permissionHandler);
+            Constructor<?> permissionHandlerCon = permissionHandlerClass.getConstructor( argClass ) ;
+            Object[] initargs = { this };
+           
+            _permissionHandler =
+            	(PermissionHandlerInterface)permissionHandlerCon.newInstance(initargs);
+           
+           
+            /*
             String metaDataProvider =
                 parseOption("meta-data-provider",
                           "diskCacheV111.services.PnfsManagerFileMetaDataSource");
@@ -738,9 +778,13 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
             Object[] initargs = { this };
             _fileMetaDataSource =
                 (FileMetaDataSource)fileMetaDataSourceCon.newInstance(initargs);
-            _permissionHandler =
-                new FsPermissionHandler(this, _fileMetaDataSource);
+            */
+            
+             //////////////////NEW --> ////////////////////////
 
+   		    _origin =
+   		    	new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG, InetAddressType.IPv4, _engine.getInetAddress());
+            ///////////////////<--NEW////////////////////////
             _pnfs = new PnfsHandler(this, new CellPath(_pnfsManager));
             _pnfs.setPnfsTimeout(_pnfsTimeout*1000L);
 
@@ -1519,11 +1563,12 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
             }
         } else {
             try {
-                if (_permissionHandler.canDelete(_pwdRecord.UID, _pwdRecord.GID, pathInPnfs)) {
+            	Subject subject = new Subject(_pwdRecord.UID, _pwdRecord.GID);
+                if (_permissionHandler.canDeleteFile(subject, pathInPnfs,  _origin)) {
                     _pnfs.deletePnfsEntry(pathInPnfs);
                 } else {
                     setNextPwdRecord();
-                    if (_pwdRecord==null) {
+                    if (_pwdRecord == null) {
                         reply("553 Permission denied");
                         return;
                     } else {
@@ -1682,7 +1727,8 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
 
         // canDeleteDir() will test that isDirectory() and canWrite()
 	try {
-            if (_permissionHandler.canDeleteDir(_pwdRecord.UID, _pwdRecord.GID, pathInPnfs)) {
+			Subject subject = new Subject(_pwdRecord.UID, _pwdRecord.GID);
+            if (_permissionHandler.canDeleteDir(subject, pathInPnfs,  _origin)) {
                 File theDirToDelete = new File(pathInPnfs);
                 if (theDirToDelete.list().length == 0) { // Only delete empty directories
                     _pnfs.deletePnfsEntry(pathInPnfs);
@@ -1798,7 +1844,8 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
             }
         } else {
             try {
-                if (_permissionHandler.canWrite(_pwdRecord.UID,_pwdRecord.GID,pathInPnfs)) {
+            	Subject subject = new Subject(_pwdRecord.UID, _pwdRecord.GID);
+                if (_permissionHandler.canCreateDir(subject, pathInPnfs, _origin)) {
                     _pnfs.createPnfsDirectory(pathInPnfs,_pwdRecord.UID,_pwdRecord.GID, 0755);
                 } else {
                     setNextPwdRecord();
@@ -2423,14 +2470,14 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
      * @param bufSize       TCP buffers size to use (send and receive),
      *                      or auto scaling when -1.
      * @param reply127      GridFTP v2 127 reply is generated when true
-     *                      and client is active.
+     *                      and client is active. 
      */
     private
         void retrieve(String file, long offset, long size,
                       Mode mode, String xferMode,
                       int parallelStart, int parallelMin, int parallelMax,
                       InetSocketAddress client, int bufSize,
-                      boolean reply127)
+                      boolean reply127) 
     {
         /* Close incomplete log.
          */
@@ -2498,13 +2545,10 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
                                                   "Permission denied for path : " + _transfer.path);
                 }
             } else {
-                FileMetaData meta =
-                    _fileMetaDataSource.getMetaData(_transfer.path);
-                if (meta.isDirectory()) {
-                    throw new FTPCommandException(550, "Not a file");
-                }
 
-                if (!_permissionHandler.canRead(_pwdRecord.UID,_pwdRecord.GID, _transfer.path)) {
+                Subject subject = new Subject(_pwdRecord.UID, _pwdRecord.GID);
+                try {
+                if (!_permissionHandler.canReadFile(subject, _transfer.path, _origin)) {
                     setNextPwdRecord();
                     if (_pwdRecord != null) {
                         retrieve(file, offset, size,
@@ -2514,6 +2558,9 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
                         return;
                     }
                     throw new FTPCommandException(550, "Permission denied");
+                }
+                }catch(NotFileCacheException ce ) {
+                	throw new FTPCommandException(550, "Not a file");
                 }
             }
 
@@ -2831,7 +2878,8 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
                 _transfer.state = "checking permissions via permission handler";
                 say("checking permissions via permission handler for path:"
                     + _transfer.path);
-                if (!_permissionHandler.canWrite(_pwdRecord.UID,_pwdRecord.GID, _transfer.path)) {
+                Subject subject = new Subject(_pwdRecord.UID, _pwdRecord.GID);
+                if (!_permissionHandler.canCreateFile(subject, _transfer.path, _origin)) {
                     setNextPwdRecord();
                     if(_pwdRecord==null) {
                         throw new FTPCommandException
@@ -3074,7 +3122,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
         /*
          *
          */
-        
+
 
         /* Set up an adapter, if needed. Since a pool may reject to be
          * passive, we need to set up an adapter even when we can use
@@ -3149,7 +3197,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
                                      parallelStart,
                                      parallelMin,
                                      parallelMax,
-                                     bufSize, 0, 0, 
+                                     bufSize, 0, 0,
                                      voInfo);
 
             PoolMgrSelectPoolMsg request;
@@ -3195,7 +3243,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
                                      parallelMax,
                                      bufSize,
                                      offset,
-                                     size, 
+                                     size,
                                      voInfo);
         } else {
             protocolInfo =
@@ -3208,7 +3256,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
                                      parallelMax,
                                      bufSize,
                                      offset,
-                                     size, 
+                                     size,
                                      voInfo);
         }
 
@@ -3369,7 +3417,8 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
         } else {
             try {
                 PnfsGetStorageInfoMessage info = _pnfs.getStorageInfoByPath(path);
-                if (_permissionHandler.canRead(_pwdRecord.UID, _pwdRecord.GID, path)) {
+                Subject subject = new Subject(_pwdRecord.UID, _pwdRecord.GID);
+                if (_permissionHandler.canGetAttributes(subject, path, _origin, FileAttribute.FATTR4_ACL)) {
                     filelength = info.getMetaData().getFileSize();
                 } else {
                     setNextPwdRecord();
@@ -3388,7 +3437,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
         reply("213 " + filelength);
     }
 
-    public void ac_mdtm(String arg)
+    public void ac_mdtm(String arg) throws Exception
     {
         if (arg.equals("")) {
             reply(err("MDTM",""));
@@ -3422,7 +3471,8 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
         } else {
             try {
                 PnfsGetStorageInfoMessage info = _pnfs.getStorageInfoByPath(path);
-                if (_permissionHandler.canRead(_pwdRecord.UID, _pwdRecord.GID, path)) {
+                Subject subject = new Subject(_pwdRecord.UID, _pwdRecord.GID);
+                if (_permissionHandler.canReadFile(subject, path, _origin)) {
                     modification_time = info.getMetaData().getLastModifiedTime();
                 } else {
                     setNextPwdRecord();
@@ -3586,12 +3636,14 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
             int line_length=0;
             if (listLong){
                 try {
+                	Subject subject = new Subject(_pwdRecord.UID, _pwdRecord.GID);
                     result.append(nextf.isDirectory()?'d':'-');
+                    line_length++;  
+                    result.append( _permissionHandler.canReadFile(subject, nextf.getAbsolutePath(), _origin) ?'r':'-');
                     line_length++;
-                    result.append( _permissionHandler.canRead(_pwdRecord.UID, _pwdRecord.GID, nextf.getAbsolutePath() )?'r':'-');
+                    result.append( _permissionHandler.canWriteFile(subject, nextf.getAbsolutePath(), _origin) ?'w':'-');
                     line_length++;
-                    result.append( _permissionHandler.canWrite(_pwdRecord.UID, _pwdRecord.GID, nextf.getAbsolutePath() )?'w':'-');
-                    line_length++;
+                    
                     result.append("               ");
                     line_length+= 15;
                     long length =  nextf.length();

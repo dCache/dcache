@@ -1,24 +1,19 @@
 package org.dcache.tests.namespace;
 
-import java.util.HashMap;
-import java.util.Map;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
-import static org.junit.Assert.*;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import diskCacheV111.services.FileMetaDataSource;
 import diskCacheV111.services.FsPermissionHandler;
-import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileMetaData;
-import diskCacheV111.util.FileNotFoundCacheException;
-import diskCacheV111.util.PnfsId;
 
 public class UnixPermissionHandlerTest {
 
 
-    private final FileMetaDataProviderHelper _metaDataSource = new FileMetaDataProviderHelper();
+    private final FileMetaDataProviderHelper _metaDataSource = new FileMetaDataProviderHelper(null);
     private final FsPermissionHandler _permissionHandler = new FsPermissionHandler(null, _metaDataSource);
 
 

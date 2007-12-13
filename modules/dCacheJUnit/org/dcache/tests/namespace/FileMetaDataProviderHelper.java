@@ -9,6 +9,7 @@ import diskCacheV111.util.FileMetaData;
 import diskCacheV111.util.FileMetaDataX;
 import diskCacheV111.util.FileNotFoundCacheException;
 import diskCacheV111.util.PnfsId;
+import dmg.cells.nucleus.CellAdapter;
 
 /**
 *
@@ -18,12 +19,16 @@ import diskCacheV111.util.PnfsId;
 public class FileMetaDataProviderHelper implements FileMetaDataSource {
 
 
-        private final Map<PnfsId, FileMetaData> _metadataById = new HashMap<PnfsId, FileMetaData>();
-        private final Map<String, FileMetaData> _metadataByPath = new HashMap<String, FileMetaData>();
+        private static final Map<PnfsId, FileMetaData> _metadataById = new HashMap<PnfsId, FileMetaData>();
+        private static final Map<String, FileMetaData> _metadataByPath = new HashMap<String, FileMetaData>();
 
-        private final Map<PnfsId, FileMetaDataX> _metadataXById = new HashMap<PnfsId, FileMetaDataX>();
-        private final Map<String, FileMetaDataX> _metadataXByPath = new HashMap<String, FileMetaDataX>();
+        private static final Map<PnfsId, FileMetaDataX> _metadataXById = new HashMap<PnfsId, FileMetaDataX>();
+        private static final Map<String, FileMetaDataX> _metadataXByPath = new HashMap<String, FileMetaDataX>();
 
+        public FileMetaDataProviderHelper(CellAdapter cell) {
+        	// forced by use in dcache .batch files
+        }
+        
         public FileMetaData getMetaData(String path) throws CacheException {
 
             FileMetaData metaData = _metadataByPath.get(path);

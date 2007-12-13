@@ -2,10 +2,10 @@ package diskCacheV111.services;
 
 import java.util.Arrays;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+
 import org.apache.log4j.Logger;
-
-import dmg.cells.nucleus.CellAdapter;
-
 import org.dcache.chimera.acl.ACL;
 import org.dcache.chimera.acl.Origin;
 import org.dcache.chimera.acl.Owner;
@@ -20,8 +20,8 @@ import org.dcache.chimera.acl.matcher.AclNFSv4Matcher;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileMetaData;
 import diskCacheV111.util.FileMetaDataX;
-import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
+import dmg.cells.nucleus.CellAdapter;
 
 public class ACLPermissionHandler implements PermissionHandlerInterface {
 
@@ -29,21 +29,45 @@ public class ACLPermissionHandler implements PermissionHandlerInterface {
 	/**
 	 * if there is no ACL defined for a resource, then we will ask some one else
 	 */
-	private final FileMetaDataSource _metaDataSource;
-	private final AclHandler _aclHandler;
+	private FileMetaDataSource _metaDataSource;
+	private AclHandler _aclHandler;
 
-	private static PnfsHandler _pnfs; // Stub object for talking to the PNFS
-										// manager.
 
 	private final static Logger _logPermisions = Logger
 			.getLogger("logger.org.dcache.authorization."
 					+ ACLPermissionHandler.class.getName());
 
-	public ACLPermissionHandler(CellAdapter cell,
-			FileMetaDataSource metaDataSource, String aclProperties) {
+	public ACLPermissionHandler(CellAdapter cell) throws 
+            IllegalArgumentException, 
+            InstantiationException, 
+            IllegalAccessException, 
+            InvocationTargetException, ClassNotFoundException, NoSuchMethodException {
+		
 		_cell = cell;
-		_metaDataSource = metaDataSource;
+	
+		String aclProperties = 
+			parseOption("acl-permission-handler-config", null);
+			
+		if(aclProperties == null) {
+			throw new IllegalArgumentException("acl-permission-handler-config option not defined");
+		}
+
 		_aclHandler = new AclHandler(aclProperties);
+		
+        String metaDataProvider =
+            parseOption("meta-data-provider",
+                      "diskCacheV111.services.PnfsManagerFileMetaDataSource");
+        _logPermisions.debug("Loading metaDataProvider :" + metaDataProvider);
+        Class<?> [] argClass = { dmg.cells.nucleus.CellAdapter.class };
+        Class<?> fileMetaDataSourceClass;
+	
+		fileMetaDataSourceClass = Class.forName(metaDataProvider);
+		Constructor<?> fileMetaDataSourceCon = fileMetaDataSourceClass.getConstructor( argClass ) ;
+				
+		Object[] initargs = { _cell };
+		_metaDataSource = (FileMetaDataSource)fileMetaDataSourceCon.newInstance(initargs);
+				
+				
 	}
 
 	/**
@@ -51,7 +75,7 @@ public class ACLPermissionHandler implements PermissionHandlerInterface {
 	 * file with pnfs-path 'pnfsPath'
 	 */
 	public boolean canReadFile(Subject subject, String pnfsPath,
-			Origin userOrigin) throws CacheException, Exception {
+			Origin userOrigin) throws CacheException {
 
 		if (_logPermisions.isDebugEnabled()) {
 			_logPermisions
@@ -576,5 +600,81 @@ public class ACLPermissionHandler implements PermissionHandlerInterface {
 				&& permissionToSetAttributes.equals(  Boolean.TRUE );
 
 	}
+	
+	/**
+	 * checks whether the user can get
+	 * attributes to the object defined with pnfs-path 'pnfsPath' (sample
+	 * pnfsPath "/pnfs/desy.de/data/dir1" or "/pnfs/desy.de/data/file1")
+	 */
+	public boolean canGetAttributes(Subject subject, String pnfsPath,
+			Origin userOrigin, FileAttribute attributes) throws CacheException {
+		
+		if (_logPermisions.isDebugEnabled()) {
+			_logPermisions.debug("canGetAttributes(" + subject.getUid() + ","
+					+ Arrays.toString(subject.getGids()) + "," + pnfsPath
+					+ " attribute: " + attributes.toString() + " ) ");
+		}
 
+		FileMetaDataX fileMetaData = _metaDataSource.getXMetaData(pnfsPath);
+		FileMetaData infoMeta = fileMetaData.getFileMetaData();
+
+		if (!infoMeta.isRegularFile() && !infoMeta.isDirectory()) {
+			_logPermisions.error(pnfsPath
+					+ " is not a regular file and not a directory");
+			throw new CacheException("path is not a file and not a directory");
+		}
+
+		PnfsId pnfsID = fileMetaData.getPnfsId();
+
+		ACL acl = _aclHandler.getACL(pnfsID.toString());
+
+		// Get Owner of this resource :
+		int uidOwner = fileMetaData.getFileMetaData().getUid();
+		int gidOwner = fileMetaData.getFileMetaData().getGid();
+
+		Owner owner = new Owner(uidOwner, gidOwner);
+
+		if (_logPermisions.isDebugEnabled()) {
+
+			_logPermisions.debug("Subject : " + subject.toString());
+			_logPermisions.debug("Origin : " + userOrigin.toString());
+			_logPermisions.debug("Owner : " + owner.toString());
+			_logPermisions.debug("ACL : " + acl.toString());
+		}
+
+		Permission permission = AclMapper.getPermission(subject, userOrigin,
+				owner, acl);
+
+		Action actionGETATTR = Action.GETATTR;
+		// USE: Boolean isAllowed(Permission perm, Action action, FileAttribute attribute)
+		Boolean permissionToGetAttributes = AclNFSv4Matcher.isAllowed(
+				permission, actionGETATTR, attributes);
+		return permissionToGetAttributes != null
+				&& permissionToGetAttributes.equals(  Boolean.TRUE );
+
+	}
+	 /**
+     * Returns the value of a named cell argument.
+     *
+     * @param name the name of the cell argument to return
+     * @param def the value to return when <code>name</code> is
+     *            not defined or cannot be parsed
+     */
+    private String parseOption(String name, String def)
+    {
+        String value;
+        String tmp = _cell.getArgs().getOpt(name);
+        if (tmp != null && tmp.length() > 0) {
+            value = tmp;
+        } else {
+            value = def;
+        }
+
+        if (value != null) {
+        	_logPermisions.debug(name + "=" + value);
+        }
+
+        return value;
+    }
+    
 }

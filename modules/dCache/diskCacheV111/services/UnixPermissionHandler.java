@@ -2,21 +2,24 @@
 
 package diskCacheV111.services;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+
 import org.apache.log4j.Logger;
-
-import diskCacheV111.util.CacheException;
-import diskCacheV111.util.FileMetaData;
-import diskCacheV111.util.FsPath;
-import dmg.cells.nucleus.CellAdapter;
-
 import org.dcache.chimera.acl.Origin;
 import org.dcache.chimera.acl.Subject;
 import org.dcache.chimera.acl.enums.FileAttribute;
 
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.FileMetaData;
+import diskCacheV111.util.FsPath;
+import diskCacheV111.util.NotFileCacheException;
+import dmg.cells.nucleus.CellAdapter;
+
 public class UnixPermissionHandler implements PermissionHandlerInterface {
 
     private CellAdapter _cell;
-    private final FileMetaDataSource _metaDataSource;
+    private FileMetaDataSource _fileMetaDataSource;
 
     private final static Logger _logPermisions = Logger
             .getLogger("logger.org.dcache.authorization."
@@ -27,26 +30,45 @@ public class UnixPermissionHandler implements PermissionHandlerInterface {
      *
      * @see diskCacheV111.services.PermissionHandlerInterface#say(java.lang.String)
      */
-    public UnixPermissionHandler(CellAdapter cell,
-            FileMetaDataSource metaDataSource) {
+    public UnixPermissionHandler(CellAdapter cell) throws 
+            IllegalArgumentException, 
+            InstantiationException, 
+            IllegalAccessException, 
+            InvocationTargetException 
+            {
+    	
         _cell = cell;
-        _metaDataSource = metaDataSource;
+
+        
+    	try {
+        String metaDataProvider =
+            parseOption("meta-data-provider",
+                      "diskCacheV111.services.PnfsManagerFileMetaDataSource");
+        _logPermisions.debug("Loading metaDataProvider :" + metaDataProvider);
+        Class<?> [] argClass = { dmg.cells.nucleus.CellAdapter.class };
+        Class<?> fileMetaDataSourceClass;
+	
+			fileMetaDataSourceClass = Class.forName(metaDataProvider);
+			Constructor<?> fileMetaDataSourceCon = fileMetaDataSourceClass.getConstructor( argClass ) ;
+			
+			Object[] initargs = { _cell };
+			_fileMetaDataSource = (FileMetaDataSource)fileMetaDataSourceCon.newInstance(initargs);
+			
+			
+		} catch (Exception e) {
+			e.printStackTrace();
+		} 
+        
     }
 
-    /*
-     * (non-Javadoc)
-     *
-     * @see diskCacheV111.services.PermissionHandlerInterface#canWrite(int, int,
-     *      java.lang.String)
-     */
+ 
 
-    public boolean canWriteFile(Subject subject, String pnfsPath,
+	public boolean canWriteFile(Subject subject, String pnfsPath,
             Origin userOrigin) throws CacheException {
-        _logPermisions.debug("canWrite(" + subject.getUid() + ","
-                + subject.getGid() + "," + pnfsPath + ")");
-
+        
+        boolean isAllowed = false;
         try {
-            return fileCanWrite(subject, _metaDataSource.getMetaData(pnfsPath));
+            return fileCanWrite(subject, _fileMetaDataSource.getMetaData(pnfsPath));
         } catch (CacheException ce) {
             // file do not exist, check directory
         }
@@ -56,7 +78,7 @@ public class UnixPermissionHandler implements PermissionHandlerInterface {
         parent_path.add("..");
 
         String parent = parent_path.toString();
-        FileMetaData meta = _metaDataSource.getMetaData(parent);
+        FileMetaData meta = _fileMetaDataSource.getMetaData(parent);
         if (!meta.isDirectory()) {
             _logPermisions.error(parent
                     + " exists and is not a directory, can not create "
@@ -67,7 +89,12 @@ public class UnixPermissionHandler implements PermissionHandlerInterface {
         boolean parentWriteAllowed = fileCanWrite(subject, meta);
         boolean parentExecuteAllowed = fileCanExecute(subject, meta);
 
-        return parentWriteAllowed && parentExecuteAllowed;
+        isAllowed = parentWriteAllowed && parentExecuteAllowed;
+        
+        _logPermisions.debug("canWriteFile(" + subject.getUid() + ","
+                + subject.getGid() + "," + pnfsPath + "): " +isAllowed);
+        
+        return isAllowed;
     }
 
     /*
@@ -78,14 +105,15 @@ public class UnixPermissionHandler implements PermissionHandlerInterface {
      */
     public boolean canCreateDir(Subject subject, String pnfsPath,
             Origin userOrigin) throws CacheException {
-        _logPermisions.debug("canCreateDir(" + subject.getUid() + ","
-                + subject.getGid() + "," + pnfsPath + ")");
+    	
+    	boolean isAllowed = false;
+    	
         FsPath parent_path = new FsPath(pnfsPath);
         // go one level up
         parent_path.add("..");
 
         String parent = parent_path.toString();
-        FileMetaData meta = _metaDataSource.getMetaData(parent);
+        FileMetaData meta = _fileMetaDataSource.getMetaData(parent);
         if (!meta.isDirectory()) {
             _logPermisions.error(parent
                     + " exists and is not a directory, can not create "
@@ -95,8 +123,12 @@ public class UnixPermissionHandler implements PermissionHandlerInterface {
 
         boolean parentWriteAllowed = fileCanWrite(subject, meta);
         boolean parentExecuteAllowed = fileCanExecute(subject, meta);
-
-        return parentWriteAllowed && parentExecuteAllowed;
+        isAllowed = parentWriteAllowed && parentExecuteAllowed;
+        
+        _logPermisions.debug("canCreateDir(" + subject.getUid() + ","
+                + subject.getGid() + "," + pnfsPath + "): " + isAllowed);
+        
+        return isAllowed;
     }
 
     /*
@@ -107,16 +139,21 @@ public class UnixPermissionHandler implements PermissionHandlerInterface {
      */
     public boolean canDeleteDir(Subject subject, String pnfsPath,
             Origin userOrigin) throws CacheException {
-        _logPermisions.debug("canDeleteDir(" + subject.getUid() + ","
-                + subject.getGid() + "," + pnfsPath + ")");
+    	
+    	boolean isAllowed = false;
 
-        FileMetaData meta = _metaDataSource.getMetaData(pnfsPath);
+        FileMetaData meta = _fileMetaDataSource.getMetaData(pnfsPath);
         if (!meta.isDirectory()) {
-            _logPermisions.error(pnfsPath + " is not a directory");
+            _logPermisions.error("in canDeleteDir() pnfsPath: "+pnfsPath + " is not a directory");
             throw new CacheException("path is not a directory");
         }
 
-        return fileCanWrite(subject, meta);
+        isAllowed = fileCanWrite(subject, meta);
+        
+        _logPermisions.debug("canDeleteDir(" + subject.getUid() + ","
+                + subject.getGid() + "," + pnfsPath + "): " +isAllowed);
+        
+        return isAllowed;
     }
 
     /*
@@ -127,15 +164,14 @@ public class UnixPermissionHandler implements PermissionHandlerInterface {
      */
     public boolean canDeleteFile(Subject subject, String pnfsPath,
             Origin userOrigin) throws CacheException {
-        _logPermisions.debug("canDelete(" + subject.getUid() + ","
-                + subject.getGid() + "," + pnfsPath + ")");
+        
         FsPath parent_path = new FsPath(pnfsPath);
         // go one level up
         parent_path.add("..");
 
         String parent = parent_path.toString();
-        FileMetaData meta = _metaDataSource.getMetaData(parent);
-        _logPermisions.debug("canWrite() parent meta = " + meta);
+        FileMetaData meta = _fileMetaDataSource.getMetaData(parent);
+        _logPermisions.debug("canDeleteFile() parent meta = " + meta);
         if (!meta.isDirectory()) {
             _logPermisions.error(parent
                     + " exists and is not a directory, can not read "
@@ -147,9 +183,9 @@ public class UnixPermissionHandler implements PermissionHandlerInterface {
         boolean parentExecuteAllowed = fileCanExecute(subject, meta);
         boolean parentReadAllowed = fileCanRead(subject, meta);
 
-        _logPermisions.debug("canDelete() parent read allowed :"
+        _logPermisions.debug("canDeleteFile() parent read allowed :"
                 + parentReadAllowed + " parent write allowed :"
-                + parentReadAllowed + " parent exec allowed :"
+                + parentWriteAllowed + " parent exec allowed :"
                 + parentExecuteAllowed);
 
         if (!parentReadAllowed || !parentExecuteAllowed || !parentWriteAllowed) {
@@ -157,20 +193,24 @@ public class UnixPermissionHandler implements PermissionHandlerInterface {
             return false;
         }
 
-        meta = _metaDataSource.getMetaData(pnfsPath);
-        _logPermisions.debug("canDelete() file meta = " + meta);
+        meta = _fileMetaDataSource.getMetaData(pnfsPath);
+        _logPermisions.debug("canDeleteFile() file meta = " + meta);
 
         boolean deleteAllowed = fileCanWrite(subject, meta);
 
         if (deleteAllowed) {
-            _logPermisions.error("WARNING: canDelete() delete of file "
+            _logPermisions.error("WARNING: canDeleteFile() delete of file "
                     + pnfsPath + " by user uid=" + subject.getUid() + " gid="
                     + subject.getGid() + " is allowed!");
         } else {
-            _logPermisions.debug("canDelete() delete of file " + pnfsPath
+            _logPermisions.debug("canDeleteFile() delete of file " + pnfsPath
                     + " by user uid=" + subject.getUid() + " gid="
                     + subject.getGid() + " is not allowed");
         }
+        
+        _logPermisions.debug("canDeleteFile(" + subject.getUid() + ","
+                + subject.getGid() + "," + pnfsPath + "): " + deleteAllowed);
+        
         return deleteAllowed;
     }
 
@@ -182,11 +222,15 @@ public class UnixPermissionHandler implements PermissionHandlerInterface {
      */
     public boolean canReadFile(Subject subject, String pnfsPath,
             Origin userOrigin) throws CacheException {
-
-        _logPermisions.debug("canRead(" + subject.getUid() + ","
-                + subject.getGid() + "," + pnfsPath + ")");
-
-        if (!fileCanRead(subject, _metaDataSource.getMetaData(pnfsPath))) {
+    	
+    	boolean isAllowed = false;
+        
+    	FileMetaData meta = _fileMetaDataSource.getMetaData(pnfsPath);
+    	
+    	if( !meta.isRegularFile() ) {
+    		throw new NotFileCacheException(pnfsPath + " exists and not a regular file.");
+    	}
+        if (!fileCanRead(subject, meta)) {
             return false;
         }
 
@@ -195,12 +239,18 @@ public class UnixPermissionHandler implements PermissionHandlerInterface {
         parent_path.add("..");
         String parent = parent_path.toString();
 
-        return dirCanRead(subject, parent);
+        isAllowed = dirCanRead(subject, parent);
+        
+        _logPermisions.debug("canReadFile(" + subject.getUid() + ","
+                + subject.getGid() + "," + pnfsPath + "): " + isAllowed);
+        
+        return isAllowed;
     }
 
     private boolean dirCanRead(Subject subject, String path) throws CacheException {
-
-        FileMetaData meta = _metaDataSource.getMetaData(path);
+    	
+    	boolean isAllowed = false;
+        FileMetaData meta = _fileMetaDataSource.getMetaData(path);
         _logPermisions.debug("dirCanRead() meta = " + meta);
         if (!meta.isDirectory()) {
             _logPermisions.error(path
@@ -209,28 +259,28 @@ public class UnixPermissionHandler implements PermissionHandlerInterface {
         }
 
         boolean readAllowed = fileCanRead(subject, meta);
-        ;
+        
         boolean executeAllowed = fileCanExecute(subject, meta);
-        ;
-
-        _logPermisions.debug("dirCanRead() read allowed :" + readAllowed
-                + "  exec allowed :" + executeAllowed);
-
+        
         if (!(readAllowed && executeAllowed)) {
             _logPermisions.error(" read is not allowed ");
             return false;
         }
+        
+        isAllowed = readAllowed && executeAllowed;
+        
+        _logPermisions.debug("dirCanRead() read allowed :" + readAllowed
+                + "  exec allowed :" + executeAllowed + ", dirCanRead: " + isAllowed);
 
-        return readAllowed && executeAllowed;
+        return isAllowed;
     }
 
     public boolean canCreateFile(Subject subject, String pnfsPath, Origin origin) throws CacheException {
-
-        _logPermisions.debug("canCreateFile(" + subject.getUid() + ","
-                + subject.getGid() + "," + pnfsPath + ")");
+    	
+    	boolean isAllowed = false;
 
         try {
-            return fileCanWrite(subject, _metaDataSource.getMetaData(pnfsPath));
+            return fileCanWrite(subject, _fileMetaDataSource.getMetaData(pnfsPath));
         } catch (CacheException ce) {
             // file do not exist, check directory
         }
@@ -240,7 +290,7 @@ public class UnixPermissionHandler implements PermissionHandlerInterface {
         parent_path.add("..");
 
         String parent = parent_path.toString();
-        FileMetaData meta = _metaDataSource.getMetaData(parent);
+        FileMetaData meta = _fileMetaDataSource.getMetaData(parent);
         if (!meta.isDirectory()) {
             _logPermisions.error(parent
                     + " exists and is not a directory, can not create "
@@ -250,14 +300,22 @@ public class UnixPermissionHandler implements PermissionHandlerInterface {
 
         boolean parentWriteAllowed = fileCanWrite(subject, meta);
         boolean parentExecuteAllowed = fileCanExecute(subject, meta);
-
-        return parentWriteAllowed && parentExecuteAllowed;
+        
+        isAllowed = parentWriteAllowed && parentExecuteAllowed;
+        
+        _logPermisions.debug("canCreateFile(" + subject.getUid() + ","
+                + subject.getGid() + "," + pnfsPath + ") :" + isAllowed);
+        
+        return isAllowed;
     }
 
     public boolean canListDir(Subject subject, String pnfsPath, Origin origin) throws CacheException {
-
-        FileMetaData meta = _metaDataSource.getMetaData(pnfsPath);
+    	
+    	boolean isAllowed = false;
+        
+    	FileMetaData meta = _fileMetaDataSource.getMetaData(pnfsPath);
         _logPermisions.debug("pnfsPath() meta = " + meta);
+        
         if (!meta.isDirectory()) {
             _logPermisions.error(pnfsPath
                     + " exists and is not a directory, can not read ");
@@ -265,27 +323,52 @@ public class UnixPermissionHandler implements PermissionHandlerInterface {
         }
 
         boolean readAllowed = fileCanRead(subject, meta);
-        ;
+        
         boolean executeAllowed = fileCanExecute(subject, meta);
-        ;
-
-        _logPermisions.debug("canListDir() read allowed :" + readAllowed
-                + "  exec allowed :" + executeAllowed);
-
+       
         if (!(readAllowed && executeAllowed)) {
             _logPermisions.error(" readdir is not allowed ");
             return false;
         }
-
-        return readAllowed && executeAllowed;
+        
+        isAllowed=readAllowed && executeAllowed;
+        
+        _logPermisions.debug("canListDir() read allowed :" + readAllowed
+                + "  exec allowed :" + executeAllowed + ". List directory: "+ isAllowed );
+        
+        return isAllowed;
     }
 
     public boolean canSetAttributes(Subject subject, String pnfsPath,
-            Origin userOrigin, FileAttribute attribute) throws CacheException {
-        // TODO Auto-generated method stub
-        return false;
+            Origin userOrigin, FileAttribute attribute) throws CacheException {    	
+    	
+    	boolean isAllowed = false;
+    	
+    	
+    	 FileMetaData meta = _fileMetaDataSource.getMetaData(pnfsPath);
+    	     	
+    	 if( attribute == FileAttribute.FATTR4_OWNER || attribute == FileAttribute.FATTR4_OWNER_GROUP) {
+    		 isAllowed = (meta.getUid() == subject.getUid() || subject.getUid() == 0);
+    	 }else{
+    		 isAllowed = canWriteFile(subject, pnfsPath, userOrigin);
+    	 }
+    	
+    	 _logPermisions.debug("canSetAttributes(" + subject.getUid() + ","
+                 + subject.getGid() + "," + pnfsPath + ") : " + isAllowed);
+    	 
+        return isAllowed;
     }
 
+    public boolean canGetAttributes(Subject subject, String pnfsPath,
+            Origin userOrigin, FileAttribute attribute) throws CacheException {
+    	
+    	
+    	
+    	_logPermisions.debug("canGetAttributes(" + subject.getUid() + ","
+                + subject.getGid() + "," + pnfsPath + ") :  true");
+    	
+        return true;
+    }
     // ////////////////////////////////////////////////////////////////////////////////
     // /
     // / Low level checks
@@ -350,6 +433,30 @@ public class UnixPermissionHandler implements PermissionHandlerInterface {
         }
 
         return readAllowed;
+    }
+
+    /**
+     * Returns the value of a named cell argument.
+     *
+     * @param name the name of the cell argument to return
+     * @param def the value to return when <code>name</code> is
+     *            not defined or cannot be parsed
+     */
+    private String parseOption(String name, String def)
+    {
+        String value;
+        String tmp = _cell.getArgs().getOpt(name);
+        if (tmp != null && tmp.length() > 0) {
+            value = tmp;
+        } else {
+            value = def;
+        }
+
+        if (value != null) {
+        	_logPermisions.debug(name + "=" + value);
+        }
+
+        return value;
     }
 
 }

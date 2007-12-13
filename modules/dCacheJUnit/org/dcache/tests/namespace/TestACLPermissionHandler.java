@@ -1,5 +1,6 @@
 package org.dcache.tests.namespace;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.io.BufferedReader;
@@ -20,14 +21,21 @@ import org.junit.Test;
 import org.dcache.chimera.acl.ACE;
 import org.dcache.chimera.acl.ACL;
 import org.dcache.chimera.acl.Origin;
+import org.dcache.chimera.acl.Owner;
+import org.dcache.chimera.acl.Permission;
 import org.dcache.chimera.acl.Subject;
 import org.dcache.chimera.acl.enums.AccessMask;
 import org.dcache.chimera.acl.enums.AceType;
+import org.dcache.chimera.acl.enums.Action;
 import org.dcache.chimera.acl.enums.AuthType;
+import org.dcache.chimera.acl.enums.FileAttribute;
 import org.dcache.chimera.acl.enums.InetAddressType;
 import org.dcache.chimera.acl.enums.RsType;
 import org.dcache.chimera.acl.enums.Who;
 import org.dcache.chimera.acl.handler.AclHandler;
+import org.dcache.chimera.acl.mapper.AclMapper;
+import org.dcache.chimera.acl.matcher.AclNFSv4Matcher;
+import org.dcache.tests.cells.CellAdapterHelper;
 
 import diskCacheV111.services.ACLPermissionHandler;
 import diskCacheV111.util.FileMetaData;
@@ -43,16 +51,21 @@ public class TestACLPermissionHandler {
 
     private static Connection _conn;
 
-	private final FileMetaDataProviderHelper _metaDataSource = new FileMetaDataProviderHelper();
-	private final static String aclProperties = "modules/dCacheJUnit/org/dcache/tests/namespace/acl.properties";
 
-    private final ACLPermissionHandler _permissionHandler = new ACLPermissionHandler(null, _metaDataSource, aclProperties);
+    private final static String aclProperties = "modules/dCacheJUnit/org/dcache/tests/namespace/acl.properties";
+	private final static String cellArgs = 
+		" -acl-permission-handler-config=" + aclProperties +
+		" -meta-data-provider=org.dcache.tests.namespace.FileMetaDataProviderHelper";
+
+	private final static CellAdapterHelper _dummyCell = new CellAdapterHelper("aclTtestCell", cellArgs) ;
+	private final FileMetaDataProviderHelper _metaDataSource = new FileMetaDataProviderHelper(_dummyCell);
+    private ACLPermissionHandler _permissionHandler;
 
     private final AclHandler aclHandler = new AclHandler(aclProperties);
 
 
     @BeforeClass
-    public static void setUp() throws Exception {
+    public static void setUpClass() throws Exception {
 
     	/*
          * init Chimera DB
@@ -89,7 +102,9 @@ public class TestACLPermissionHandler {
 
 
     @Before
-    public void reset() {
+    public void setUp() throws Exception 
+    {
+    	_permissionHandler = new ACLPermissionHandler(_dummyCell);
         _metaDataSource.cleanAll();
     }
 
@@ -392,6 +407,91 @@ public class TestACLPermissionHandler {
         assertTrue("It is allowed to delete a directory", isAllowed);
 
     }
+    
+/////////////////////////////////////////////
+
+    @Test
+    public void testSetAttributesFile() throws Exception {
+
+    	boolean isAllowed = false;
+        
+    	//File to set attributes
+        String fileId =  "0000FF948A460C4F052A3233948A460C4F05";
+
+                List<ACE> aces = new ArrayList<ACE>();
+
+                int 
+                masks = (AccessMask.WRITE_ATTRIBUTES.getValue());
+                masks |= (AccessMask.WRITE_ACL.getValue());
+                masks |= (AccessMask.WRITE_OWNER.getValue());
+
+               aces.add(new ACE( AceType.ACCESS_ALLOWED_ACE_TYPE,
+                        0,
+                        masks,
+                        Who.USER,
+                        111,
+                        ACE.DEFAULT_ADDRESS_MSK,
+                        0 ) );
+               
+               aces.add(new ACE( AceType.ACCESS_DENIED_ACE_TYPE,
+                       0,
+                       AccessMask.WRITE_DATA.getValue(),
+                       Who.USER,
+                       111,
+                       ACE.DEFAULT_ADDRESS_MSK,
+                       1 ) );
+
+               ACL newACL = new ACL(fileId, RsType.FILE, aces);
+
+               aclHandler.setACL(newACL);
+        	
+             //Define metadata for the file
+               FileMetaDataX fileMetaData = new FileMetaDataX(new PnfsId(fileId),
+               		new FileMetaData(true, 111, 1000, 0600) );
+               
+		     		Subject subject = new Subject(111,1000);
+
+		     		//Define Origin for the user. 
+		            Origin origin = new Origin(authTypeCONST, inetAddressTypeCONST, hostCONST);
+
+		          //Set metadata for the file
+		           _metaDataSource.setXMetaData("/pnfs/desy.de/data/filename", fileMetaData);
+		         
+		           //permission to set attributes for the file.
+		           //Check SETATTR (Attribute ACL). Access flag: WRITE_ACL
+		           isAllowed =  _permissionHandler.canSetAttributes(subject, "/pnfs/desy.de/data/filename", origin, FileAttribute.FATTR4_ACL);
+
+		           assertTrue("It is allowed to set attributes  FATTR4_ACL ", isAllowed);
+		           
+		           // next check
+		           //Check SETATTR (Attribute OWNER_GROUP). Access flag: WRITE_OWNER
+		           isAllowed =  _permissionHandler.canSetAttributes(subject, "/pnfs/desy.de/data/filename", origin, FileAttribute.FATTR4_OWNER_GROUP);
+
+		           assertTrue("It is allowed to set attributes  OWNER_GROUP ", isAllowed);
+	
+		           //next check
+		           //Check SETATTR (Attributes OWNER_GROUP and OWNER). Access flag: WRITE_OWNER
+		             
+		           int fileAttrTest = (FileAttribute.FATTR4_OWNER_GROUP.getValue());
+		                 fileAttrTest|=(FileAttribute.FATTR4_OWNER.getValue());
+		            
+		           isAllowed =  _permissionHandler.canSetAttributes(subject, "/pnfs/desy.de/data/filename", origin, FileAttribute.valueOf(fileAttrTest));
+
+				   assertTrue("It is allowed to set attributes  OWNER_GROUP and OWNER ", isAllowed);  
+		                 
+		                 
+		           //Check SETATTR (Attribute SIZE). Access flag: WRITE_DATA (is denied)
+				   isAllowed =  _permissionHandler.canSetAttributes(subject, "/pnfs/desy.de/data/filename", origin, FileAttribute.FATTR4_SIZE);
+
+		           assertFalse("It is allowed to set attributes  FATTR4_SIZE ", isAllowed);
+		             
+    }
+
+
+    
+    
+    
+    
     
     static void tryToClose(Statement o) {
         try {
