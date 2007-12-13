@@ -85,7 +85,7 @@
 
 /*
  * VOAuthorizationPlugin.java
- * 
+ *
  * Created on January 29, 2005
  */
 
@@ -153,7 +153,7 @@ public class VOAuthorizationPlugin extends AuthorizationServicePlugin {
 		log.debug("VOAuthorizationPlugin: now loaded: saml-vo-mapping Plugin");
 		this.mappingServiceURL = mappingServiceURL;
 	}
-	
+
 	public VOAuthorizationPlugin()
 	throws AuthorizationServiceException {
 		log.debug("VOAuthorizationPlugin: now loaded: saml-vo-mapping Plugin");
@@ -267,7 +267,7 @@ public class VOAuthorizationPlugin extends AuthorizationServicePlugin {
 	throws AuthorizationServiceException {
 
 		this.context = context;
-		this.desiredUserName = desiredUserName;	
+		this.desiredUserName = desiredUserName;
 
 		debug("Extracting Subject DN and Role from GSSContext");
 
@@ -375,7 +375,7 @@ public class VOAuthorizationPlugin extends AuthorizationServicePlugin {
 		//int priority = Integer.parseInt(localId.getPriority());
 
     debug("Plugin now forming user authorization records...");
-    HashSet principals = new HashSet();
+    HashSet<String> principals = new HashSet<String>();
 
     VORecord = new UserAuthRecord(user, subjectDN, role, readonlyflag, priority, uid.intValue(), gid.intValue(), home, root, fsroot, principals);
     if (VORecord.isValid()) {

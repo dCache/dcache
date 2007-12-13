@@ -49,7 +49,7 @@
 
 /*
  * GridMapFileAuthzPlugin.java
- * 
+ *
  * Created on March 30, 2005
  */
 
@@ -244,7 +244,7 @@ public class GridMapFileAuthzPlugin extends AuthorizationServicePlugin {
 		//int priority = Integer.parseInt(localId.getPriority());
 
     debug("Plugin now forming user authorization records...");
-    HashSet principals = new HashSet();
+    HashSet<String> principals = new HashSet<String>();
 
     authRecordtoReturn = new UserAuthRecord(user, subjectDN, null, readonlyflag, priority, uid, gid, home, root, fsroot, principals);
     if (authRecordtoReturn.isValid()) {
