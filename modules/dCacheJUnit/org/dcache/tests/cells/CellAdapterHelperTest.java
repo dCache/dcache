@@ -27,7 +27,7 @@ public class CellAdapterHelperTest {
 
         String opt1= cellArgs.getOpt("opt1");
 
-        assertEquals("Invalid option recieved", "opt1-value",opt1 );
+        assertEquals("Invalid option received", "opt1-value",opt1 );
 
     }
 
