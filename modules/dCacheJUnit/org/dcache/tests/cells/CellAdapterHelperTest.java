@@ -14,7 +14,11 @@ public class CellAdapterHelperTest {
     @Test
     public void testArgs() {
 
-        String args = "arg1 -opt1=opt1-value -opt2=opt2-value -flag1";
+        String args = "arg1" +
+        		" -opt1=opt1-value" +
+        		" -opt2=opt2-value" +
+        		" -flag1";
+
         _sutCell = new CellAdapterHelper("testArgsCell", args );
 
         Args cellArgs = _sutCell.getArgs();
