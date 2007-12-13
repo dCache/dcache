@@ -53,12 +53,13 @@ public class TestACLPermissionHandler {
 
 
     private final static String aclProperties = "modules/dCacheJUnit/org/dcache/tests/namespace/acl.properties";
-	private final static String cellArgs = 
+	private final static String cellArgs =
 		" -acl-permission-handler-config=" + aclProperties +
 		" -meta-data-provider=org.dcache.tests.namespace.FileMetaDataProviderHelper";
 
 	private final static CellAdapterHelper _dummyCell = new CellAdapterHelper("aclTtestCell", cellArgs) ;
 	private final FileMetaDataProviderHelper _metaDataSource = new FileMetaDataProviderHelper(_dummyCell);
+
     private ACLPermissionHandler _permissionHandler;
 
     private final AclHandler aclHandler = new AclHandler(aclProperties);
@@ -102,7 +103,7 @@ public class TestACLPermissionHandler {
 
 
     @Before
-    public void setUp() throws Exception 
+    public void setUp() throws Exception
     {
     	_permissionHandler = new ACLPermissionHandler(_dummyCell);
         _metaDataSource.cleanAll();
@@ -176,14 +177,14 @@ public class TestACLPermissionHandler {
         assertTrue("It is allowed to write to a file", isAllowed);
 
     }
-    
+
     @Test
     public void testCreateDir() throws Exception {
 
         boolean isAllowed = false;
         String dirId =  "000088AAB6D5022F4A69BC2D4576828EF12B";
         String parentDirId =  "000088AAB6D512B12B12B12B12B12B12B12B";
-        
+
         List<ACE> aces = new ArrayList<ACE>();
 
         aces.add(new ACE( AceType.ACCESS_ALLOWED_ACE_TYPE,
@@ -193,14 +194,14 @@ public class TestACLPermissionHandler {
 				111,
 				ACE.DEFAULT_ADDRESS_MSK,
 				0 ) );
-     
-        
+
+
         //In reality, acl exists only for parentDirId:
         ACL acl = new ACL(parentDirId, RsType.DIR, aces);
 
         aclHandler.setACL(acl);
 
-        //here 'true' means this is a 'Directory'. 
+        //here 'true' means this is a 'Directory'.
         //In reality, PnfId is not defined at all here, as we just ask to create an object.
         //That is, dirId is only for the test here.
         FileMetaDataX fileMetaData = new FileMetaDataX(new PnfsId(dirId),
@@ -209,7 +210,7 @@ public class TestACLPermissionHandler {
         //define parent directory with pnfsId, which is the pnfsId that will be checked by ACL
         FileMetaDataX parentMetaData = new FileMetaDataX(new PnfsId(parentDirId),
         		new FileMetaData(true, 111, 1000, 0600) );
-        
+
         Origin origin = new Origin(authTypeCONST, inetAddressTypeCONST, hostCONST);
         Subject subject = new Subject(111, 1000);
 
@@ -221,18 +222,18 @@ public class TestACLPermissionHandler {
         assertTrue("It is allowed to create a directory", isAllowed);
 
     }
-    
+
     @Test
     public void testCreateFile() throws Exception {
 
         boolean isAllowed = false;
         //file to create. Actually, fileId does not exist . Only for test:
-        String fileId =  "00009C3FCDDB7FC74D38A3DFE77EA77A8EB3"; 
-        
-        //Directory where file has to be created. Permission to perform action 'CREATE' 
+        String fileId =  "00009C3FCDDB7FC74D38A3DFE77EA77A8EB3";
+
+        //Directory where file has to be created. Permission to perform action 'CREATE'
         //will be checked for this directory  parentDirId :
         String parentDirId =  "00009C3FCDDC3FCDDC3FCDDC3FCDDC3FCDD7";
-        
+
         List<ACE> aces = new ArrayList<ACE>();
 
         aces.add(new ACE( AceType.ACCESS_ALLOWED_ACE_TYPE,
@@ -242,7 +243,7 @@ public class TestACLPermissionHandler {
 				111,
 				ACE.DEFAULT_ADDRESS_MSK,
 				0 ) );
-        //just add some more ACEs, deny to add a directory:  
+        //just add some more ACEs, deny to add a directory:
         aces.add(new ACE( AceType.ACCESS_DENIED_ACE_TYPE,
                 1,
                 AccessMask.ADD_SUBDIRECTORY.getValue(),
@@ -250,24 +251,24 @@ public class TestACLPermissionHandler {
                 111,
                 ACE.DEFAULT_ADDRESS_MSK,
                 1 ) );
-        
+
         //In reality, acl exists only for parentDirId:
         ACL acl = new ACL(parentDirId, RsType.DIR, aces);
 
         aclHandler.setACL(acl);
 
-        //here 'false' means this is a 'File'. 
+        //here 'false' means this is a 'File'.
         //In reality, PnfId is not defined at all here, as we just ask to create an object.
         //That is, fileId is only for the test here.
         FileMetaDataX fileMetaData = new FileMetaDataX(new PnfsId(fileId),
         		new FileMetaData(false, 111, 1000, 0600) );
 
-        //here 'true' means this is a 'Directory'. 
-        //Define parent directory with pnfsId parentDirId. 
+        //here 'true' means this is a 'Directory'.
+        //Define parent directory with pnfsId parentDirId.
         //ACL of this Id will be checked to allow/deny a permission
         FileMetaDataX parentMetaData = new FileMetaDataX(new PnfsId(parentDirId),
         		new FileMetaData(true, 111, 1000, 0600) );
-        
+
         Origin origin = new Origin(authTypeCONST, inetAddressTypeCONST, hostCONST);
         Subject subject = new Subject(111, 1000);
 
@@ -279,20 +280,20 @@ public class TestACLPermissionHandler {
         assertTrue("It is allowed to create a directory", isAllowed);
 
     }
-    
+
     @Test
     public void testDeleteFile() throws Exception {
 
         boolean isAllowed = false;
         //File to delete
         String fileId =  "00007AFC6292C068435DA9B7661A716F2709";
-        
+
         //Parent directory
         String parentDirId =  "00007AFC62920000735DA000070000700007";
-        
+
         //Set ACL for the File
         List<ACE> acesForFile = new ArrayList<ACE>();
-        
+
         acesForFile.add(new ACE( AceType.ACCESS_ALLOWED_ACE_TYPE,
                 0,
                 AccessMask.DELETE.getValue(),
@@ -300,15 +301,15 @@ public class TestACLPermissionHandler {
                 111,
                 ACE.DEFAULT_ADDRESS_MSK,
                 0 ) );
-        
-        
+
+
         ACL aclForFile = new ACL(fileId, RsType.FILE, acesForFile);
 
         aclHandler.setACL(aclForFile);
 
       //Set ACL for the parent directory
         List<ACE> acesForDir = new ArrayList<ACE>();
-        
+
         acesForDir.add(new ACE( AceType.ACCESS_ALLOWED_ACE_TYPE,
                 1,
                 AccessMask.DELETE_CHILD.getValue(),
@@ -316,12 +317,12 @@ public class TestACLPermissionHandler {
                 111,
                 ACE.DEFAULT_ADDRESS_MSK,
                 0 ) );
-        
-        
+
+
         ACL aclForDir = new ACL(parentDirId, RsType.DIR, acesForDir);
 
         aclHandler.setACL(aclForDir);
-        
+
         //Define metadata for the File
         FileMetaDataX fileMetaData = new FileMetaDataX(new PnfsId(fileId),
         		new FileMetaData(false, 111, 1000, 0600) );
@@ -329,7 +330,7 @@ public class TestACLPermissionHandler {
        //Define metadata for the parent Directory
         FileMetaDataX dirMetaData = new FileMetaDataX(new PnfsId(parentDirId),
         		new FileMetaData(true, 111, 1000, 0600) );
-        
+
         //Define Origin for the user. (Subject user_id=111)
         Origin origin = new Origin(authTypeCONST, inetAddressTypeCONST, hostCONST);
         Subject subject = new Subject(111, 1000);
@@ -343,7 +344,7 @@ public class TestACLPermissionHandler {
         assertTrue("It is allowed to delete this file", isAllowed);
 
     }
-    
+
     @Test
     public void testDeleteDirectory() throws Exception {
 
@@ -353,7 +354,7 @@ public class TestACLPermissionHandler {
 
         //Parent directory
         String parentDirId =  "0000FF2A323390000FF2A325EB0000FF2A32";
-     
+
         //Set ACL for the directory (directory to be deleted)
         List<ACE> acesForDir = new ArrayList<ACE>();
 
@@ -364,14 +365,14 @@ public class TestACLPermissionHandler {
                 111,
                 ACE.DEFAULT_ADDRESS_MSK,
                 0 ) );
-        
+
         ACL aclForDir = new ACL(dirId, RsType.DIR, acesForDir);
 
         aclHandler.setACL(aclForDir);
 
        //Set ACL for the parent directory
         List<ACE> acesForParentDir = new ArrayList<ACE>();
-        
+
         acesForParentDir.add(new ACE( AceType.ACCESS_ALLOWED_ACE_TYPE,
                 1,
                 AccessMask.DELETE_CHILD.getValue(),
@@ -379,48 +380,48 @@ public class TestACLPermissionHandler {
                 111,
                 ACE.DEFAULT_ADDRESS_MSK,
                 0 ) );
-        
-        
+
+
         ACL aclForParentDir = new ACL(parentDirId, RsType.DIR, acesForParentDir);
 
         aclHandler.setACL(aclForParentDir);
-        
+
         //Define metadata for the directory
         FileMetaDataX dirMetaData = new FileMetaDataX(new PnfsId(dirId),
         		new FileMetaData(true, 111, 1000, 0600) );
-        
+
         //Define metadata for the parent Directory
         FileMetaDataX parentDirMetaData = new FileMetaDataX(new PnfsId(parentDirId),
         		new FileMetaData(true, 111, 1000, 0600) );
-        
-       //Define Origin for the user. 
+
+       //Define Origin for the user.
         Origin origin = new Origin(authTypeCONST, inetAddressTypeCONST, hostCONST);
         Subject subject = new Subject(111, 1000);
-       
+
         //Set metadata for the directory and for the parent directory
         _metaDataSource.setXMetaData("/pnfs/desy.de/data/dir1", dirMetaData);
         _metaDataSource.setXMetaData("/pnfs/desy.de/data", parentDirMetaData);
 
-        //permission to delete this directory 
+        //permission to delete this directory
         isAllowed =  _permissionHandler.canDeleteDir(subject, "/pnfs/desy.de/data/dir1", origin);
 
         assertTrue("It is allowed to delete a directory", isAllowed);
 
     }
-    
+
 /////////////////////////////////////////////
 
     @Test
     public void testSetAttributesFile() throws Exception {
 
     	boolean isAllowed = false;
-        
+
     	//File to set attributes
         String fileId =  "0000FF948A460C4F052A3233948A460C4F05";
 
                 List<ACE> aces = new ArrayList<ACE>();
 
-                int 
+                int
                 masks = (AccessMask.WRITE_ATTRIBUTES.getValue());
                 masks |= (AccessMask.WRITE_ACL.getValue());
                 masks |= (AccessMask.WRITE_OWNER.getValue());
@@ -432,7 +433,7 @@ public class TestACLPermissionHandler {
                         111,
                         ACE.DEFAULT_ADDRESS_MSK,
                         0 ) );
-               
+
                aces.add(new ACE( AceType.ACCESS_DENIED_ACE_TYPE,
                        0,
                        AccessMask.WRITE_DATA.getValue(),
@@ -444,55 +445,55 @@ public class TestACLPermissionHandler {
                ACL newACL = new ACL(fileId, RsType.FILE, aces);
 
                aclHandler.setACL(newACL);
-        	
+
              //Define metadata for the file
                FileMetaDataX fileMetaData = new FileMetaDataX(new PnfsId(fileId),
                		new FileMetaData(true, 111, 1000, 0600) );
-               
+
 		     		Subject subject = new Subject(111,1000);
 
-		     		//Define Origin for the user. 
+		     		//Define Origin for the user.
 		            Origin origin = new Origin(authTypeCONST, inetAddressTypeCONST, hostCONST);
 
 		          //Set metadata for the file
 		           _metaDataSource.setXMetaData("/pnfs/desy.de/data/filename", fileMetaData);
-		         
+
 		           //permission to set attributes for the file.
 		           //Check SETATTR (Attribute ACL). Access flag: WRITE_ACL
 		           isAllowed =  _permissionHandler.canSetAttributes(subject, "/pnfs/desy.de/data/filename", origin, FileAttribute.FATTR4_ACL);
 
 		           assertTrue("It is allowed to set attributes  FATTR4_ACL ", isAllowed);
-		           
+
 		           // next check
 		           //Check SETATTR (Attribute OWNER_GROUP). Access flag: WRITE_OWNER
 		           isAllowed =  _permissionHandler.canSetAttributes(subject, "/pnfs/desy.de/data/filename", origin, FileAttribute.FATTR4_OWNER_GROUP);
 
 		           assertTrue("It is allowed to set attributes  OWNER_GROUP ", isAllowed);
-	
+
 		           //next check
 		           //Check SETATTR (Attributes OWNER_GROUP and OWNER). Access flag: WRITE_OWNER
-		             
+
 		           int fileAttrTest = (FileAttribute.FATTR4_OWNER_GROUP.getValue());
 		                 fileAttrTest|=(FileAttribute.FATTR4_OWNER.getValue());
-		            
+
 		           isAllowed =  _permissionHandler.canSetAttributes(subject, "/pnfs/desy.de/data/filename", origin, FileAttribute.valueOf(fileAttrTest));
 
-				   assertTrue("It is allowed to set attributes  OWNER_GROUP and OWNER ", isAllowed);  
-		                 
-		                 
+				   assertTrue("It is allowed to set attributes  OWNER_GROUP and OWNER ", isAllowed);
+
+
 		           //Check SETATTR (Attribute SIZE). Access flag: WRITE_DATA (is denied)
 				   isAllowed =  _permissionHandler.canSetAttributes(subject, "/pnfs/desy.de/data/filename", origin, FileAttribute.FATTR4_SIZE);
 
 		           assertFalse("It is allowed to set attributes  FATTR4_SIZE ", isAllowed);
-		             
+
     }
 
 
-    
-    
-    
-    
-    
+
+
+
+
+
     static void tryToClose(Statement o) {
         try {
             if (o != null)
