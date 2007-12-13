@@ -167,7 +167,7 @@ public class KAuthFile {
                 else {
                     while( (line = reader.readLine()) != null ) {
                         line=line.trim();
-                        if(line.equals("")) {
+                        if(line.length() == 0) {
                             break;
                         }
                     }
@@ -252,7 +252,7 @@ public class KAuthFile {
 
         while( (line =reader.readLine()) != null ) {
             line = line.trim();
-            if(line.equals("")) {
+            if(line.length() == 0) {
                 break;
             }
             if( line.startsWith("#") ) {
