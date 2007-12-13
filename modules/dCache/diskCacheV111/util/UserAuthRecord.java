@@ -1,11 +1,12 @@
 package diskCacheV111.util;
 
-import java.util.*;
-import java.io.*;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.TreeSet;
 
 public class UserAuthRecord extends UserAuthBase
 {
-    public TreeSet principals;
+    public TreeSet<String> principals;
     public int[] GIDs;
     public int currentGIDindex=0;
 
@@ -19,11 +20,11 @@ public class UserAuthRecord extends UserAuthBase
                           String home,
                           String root,
                           String fsroot,
-                          HashSet principals)
+                          HashSet<String> principals)
     {
         super(user, DN, fqan, readOnly, priority, uid, (GIDs!=null && GIDs.length>0) ? GIDs[0] : -1, home, root, fsroot);
         this.GIDs = GIDs;
-        this.principals = new TreeSet(principals);
+        this.principals = new TreeSet<String>(principals);
     }
 
   public UserAuthRecord(String user,
@@ -36,7 +37,7 @@ public class UserAuthRecord extends UserAuthBase
                           String home,
                           String root,
                           String fsroot,
-                          HashSet principals)
+                          HashSet<String> principals)
     {
         this(user, DN, fqan, readOnly, priority, uid, new int[]{gid}, home, root, fsroot, principals);
     }
@@ -49,11 +50,11 @@ public class UserAuthRecord extends UserAuthBase
                           String home,
                           String root,
                           String fsroot,
-                          HashSet principals)
+                          HashSet<String> principals)
     {
         super(user, readOnly, uid, (GIDs!=null && GIDs.length>0) ? GIDs[0] : -1, home, root, fsroot);
         this.GIDs = GIDs;
-        this.principals = new TreeSet(principals);
+        this.principals = new TreeSet<String>(principals);
     }
 
   public UserAuthRecord(String user,
@@ -63,11 +64,11 @@ public class UserAuthRecord extends UserAuthBase
                           String home,
                           String root,
                           String fsroot,
-                          HashSet principals)
+                          HashSet<String> principals)
     {
         super(user, readOnly, uid, gid, home, root, fsroot);
         this.GIDs = new int[]{gid};
-        this.principals = new TreeSet(principals);
+        this.principals = new TreeSet<String>(principals);
     }
 
     public UserAuthRecord()
@@ -86,23 +87,15 @@ public class UserAuthRecord extends UserAuthBase
 	        sb.append(" read-write");
 	      }
         sb.append( ' ').append( UID).append( ' ');
-        for(int i=0; i<GIDs.length ; ++i) {
-            sb.append(GIDs[i]);
-            if(i<GIDs.length-1) {
-                sb.append(',');
-            }
-        }
-
-        sb.append( GIDs ).append(' ');
+        sb.append( Arrays.toString( GIDs ) ).append(' ');
         sb.append( Home ).append(' ');
         sb.append( Root ).append(' ');
         sb.append( FsRoot ).append('\n');
         if(principals != null)
         {
-            Iterator iter = principals.iterator();
-            while(iter.hasNext())
+            for(String principal : principals)
             {
-                sb.append("  ").append(iter.next()).append('\n');
+                sb.append("  ").append(principal).append('\n');
             }
         }
         return sb.toString();
@@ -127,14 +120,13 @@ public class UserAuthRecord extends UserAuthBase
         sb.append("           Home = ").append(Home).append('\n');
         sb.append("           Root = ").append(Root).append('\n');
         sb.append("         FsRoot = ").append(FsRoot).append('\n');
-        
+
         if(principals != null)
         {
             sb.append("         Secure Ids accepted by this user :\n");
-            Iterator iter = principals.iterator();
-           while(iter.hasNext())
+            for(String principal : principals)
             {
-                sb.append("    SecureId  = \"").append(iter.next()).append("\"\n");
+                sb.append("    SecureId  = \"").append(principal).append("\"\n");
             }
         }
         return sb.toString();
@@ -156,29 +148,25 @@ public class UserAuthRecord extends UserAuthBase
     {
         return Username != null;
     }
-    
+
     public void addSecureIdentity(String id)
     {
         principals.add(id);
     }
-    
-    public void addSecureIdentities(HashSet ids)
+
+    public void addSecureIdentities(HashSet<String> ids)
     {
-        // this will check that all elements in ids are Strings
-        ids.toArray(new String[0]);
         principals.addAll(ids);
     }
 
-    public void removeSecureIdentities(HashSet ids)
+    public void removeSecureIdentities(HashSet<String> ids)
     {
-        // this will check that all elements in ids are Strings
-        ids.toArray(new String[0]);
         principals.removeAll(ids);
     }
 
   public boolean equals(Object obj) {
-	  
-	if( obj == null || !(obj instanceof UserAuthBase) ) return false; 
+
+	if( obj == null || !(obj instanceof UserAuthBase) ) return false;
     UserAuthBase r = (UserAuthBase) obj;
     return Username.equals(r.Username) &&	ReadOnly==r.ReadOnly && UID==r.UID && GID==r.GID && Home.equals(r.Home) &&	Root.equals(r.Root) &&	FsRoot.equals(r.FsRoot);
   }
