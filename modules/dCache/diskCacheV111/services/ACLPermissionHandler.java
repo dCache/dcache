@@ -76,13 +76,15 @@ public class ACLPermissionHandler implements PermissionHandlerInterface {
 	 */
 	public boolean canReadFile(Subject subject, String pnfsPath,
 			Origin userOrigin) throws CacheException {
-
+		
 		if (_logPermisions.isDebugEnabled()) {
 			_logPermisions
-					.debug("canRead(" + subject.getUid() + ","
+					.debug("canReadFile(" + subject.getUid() + ","
 							+ Arrays.toString(subject.getGids()) + ","
 							+ pnfsPath + ")");
 		}
+		
+		boolean isAllowed = false;
 
 		FileMetaDataX fileMetaData = _metaDataSource.getXMetaData(pnfsPath);
 
@@ -116,7 +118,17 @@ public class ACLPermissionHandler implements PermissionHandlerInterface {
 		Action actionREAD = Action.READ;
 		Boolean permissionToRead = AclNFSv4Matcher.isAllowed(permission,
 				actionREAD);
-		return permissionToRead != null && permissionToRead.equals( Boolean.TRUE );
+		
+		isAllowed = permissionToRead != null && permissionToRead.equals( Boolean.TRUE );
+			
+		if (_logPermisions.isDebugEnabled()) {
+			_logPermisions
+					.debug("canReadFile(" + subject.getUid() + ","
+							+ Arrays.toString(subject.getGids()) + ","
+							+ pnfsPath + "): " + isAllowed);
+		}
+		
+		return isAllowed;
 
 	}
 
@@ -129,13 +141,15 @@ public class ACLPermissionHandler implements PermissionHandlerInterface {
 		// IN CASE pnfsPath refers to a FILE a/b/c/filename,
 		// means "ask permission to write file filename".
 		// find ACL of this file a/b/c/filename, action WRITE
-
+		
 		if (_logPermisions.isDebugEnabled()) {
 			_logPermisions
 					.debug("canWriteFile(" + subject.getUid() + ","
 							+ Arrays.toString(subject.getGids()) + ","
 							+ pnfsPath + ")");
 		}
+		
+		boolean isAllowed = false;
 
 		FileMetaDataX fileMetaData = _metaDataSource.getXMetaData(pnfsPath);
 
@@ -169,8 +183,18 @@ public class ACLPermissionHandler implements PermissionHandlerInterface {
 		Action actionWRITE = Action.WRITE;
 		Boolean permissionToWriteFile = AclNFSv4Matcher.isAllowed(permission,
 				actionWRITE);
-		return permissionToWriteFile != null
+		
+		isAllowed = permissionToWriteFile != null
 				&& permissionToWriteFile.equals( Boolean.TRUE );
+		
+		if (_logPermisions.isDebugEnabled()) {
+			_logPermisions
+					.debug("canWriteFile(" + subject.getUid() + ","
+							+ Arrays.toString(subject.getGids()) + ","
+							+ pnfsPath + "): " + isAllowed);
+		}
+		
+		return isAllowed;
 	}
 
 	/**
@@ -183,13 +207,15 @@ public class ACLPermissionHandler implements PermissionHandlerInterface {
 		// IN CASE pnfsPath refers to a DIRECTORY a/b/c,
 		// means "ask permission to create file in this directory a/b/c".
 		// find ACL of this directory a/b/c, check action CREATE (file)
-
+		
 		if (_logPermisions.isDebugEnabled()) {
 			_logPermisions
 					.debug("canCreateFile(" + subject.getUid() + ","
 							+ Arrays.toString(subject.getGids()) + ","
 							+ pnfsPath + ")");
 		}
+		
+		boolean isAllowed = false;
 
 		// get pnfsPath of parent directory
 		int last_slash_pos = pnfsPath.lastIndexOf('/');
@@ -229,9 +255,19 @@ public class ACLPermissionHandler implements PermissionHandlerInterface {
 		Action actionCREATE = Action.CREATE;
 		Boolean permissionToCreateFile = AclNFSv4Matcher.isAllowed(permission,
 				actionCREATE, Boolean.FALSE);
+		
 		// in case 'null' is returned, action CREATE is denied:
-		return permissionToCreateFile != null
-				&& permissionToCreateFile.equals( Boolean.TRUE );
+		isAllowed = permissionToCreateFile != null
+					&& permissionToCreateFile.equals( Boolean.TRUE );
+		
+		if (_logPermisions.isDebugEnabled()) {
+			_logPermisions
+					.debug("canCreateFile(" + subject.getUid() + ","
+							+ Arrays.toString(subject.getGids()) + ","
+							+ pnfsPath + "):" + isAllowed);
+		}
+		
+		return isAllowed; 
 	}
 
 	/**
@@ -241,13 +277,15 @@ public class ACLPermissionHandler implements PermissionHandlerInterface {
 	 */
 	public boolean canCreateDir(Subject subject, String pnfsPath,
 			Origin userOrigin) throws CacheException {
-
+		
 		if (_logPermisions.isDebugEnabled()) {
 			_logPermisions
 					.debug("canCreateDir(" + subject.getUid() + ","
 							+ Arrays.toString(subject.getGids()) + ","
 							+ pnfsPath + ")");
 		}
+		
+		boolean isAllowed = false;
 
 		// get pnfsPath of parent directory
 		int last_slash_pos = pnfsPath.lastIndexOf('/');
@@ -288,8 +326,18 @@ public class ACLPermissionHandler implements PermissionHandlerInterface {
 		Boolean permissionToCreateDir = AclNFSv4Matcher.isAllowed(permission,
 				actionCREATE, Boolean.TRUE);
 		// in case of 'undefined', that is null: action CREATE will be denied:
-		return permissionToCreateDir != null
-				&& permissionToCreateDir.equals( Boolean.TRUE );
+		
+		isAllowed = permissionToCreateDir != null
+					&& permissionToCreateDir.equals( Boolean.TRUE );
+		
+		if (_logPermisions.isDebugEnabled()) {
+			_logPermisions
+					.debug("canCreateDir(" + subject.getUid() + ","
+							+ Arrays.toString(subject.getGids()) + ","
+							+ pnfsPath + "): " + isAllowed);
+		}
+		
+		return isAllowed;
 
 	}
 
@@ -305,8 +353,15 @@ public class ACLPermissionHandler implements PermissionHandlerInterface {
 	 */
 	public boolean canDeleteDir(Subject subject, String pnfsPath,
 			Origin userOrigin) throws CacheException {
-
-        boolean isAllowed = false; 		
+		
+		if (_logPermisions.isDebugEnabled()) {
+			_logPermisions
+					.debug("canDeleteDir(" + subject.getUid() + ","
+							+ Arrays.toString(subject.getGids()) + ","
+							+ pnfsPath + ")");
+		}
+        
+				boolean isAllowed = false; 		
 
 		FileMetaDataX dirMetaData = _metaDataSource.getXMetaData(pnfsPath);
 
@@ -359,7 +414,7 @@ public class ACLPermissionHandler implements PermissionHandlerInterface {
 		Boolean permissionToRemoveDir = AclNFSv4Matcher.isAllowed(permission,
 				actionREMOVEdir, Boolean.FALSE);
 
-		Boolean decision1 = permissionToRemoveDir != null
+		boolean decision1 = permissionToRemoveDir != null
 				&& permissionToRemoveDir.equals( Boolean.TRUE );
 
         ///////////////////////////////////////////////////////////////////
@@ -388,7 +443,7 @@ public class ACLPermissionHandler implements PermissionHandlerInterface {
 		Boolean permissionToRemoveChild = AclNFSv4Matcher.isAllowed(permission2,
 				actionREMOVEchild, Boolean.TRUE);
 
-		Boolean decision2 = permissionToRemoveChild != null
+		boolean decision2 = permissionToRemoveChild != null
 		&& permissionToRemoveChild.equals( Boolean.TRUE );
 		
 		//Decision
@@ -398,7 +453,7 @@ public class ACLPermissionHandler implements PermissionHandlerInterface {
 			_logPermisions
 					.debug("canDeleteDir(" + subject.getUid() + ","
 							+ Arrays.toString(subject.getGids()) + ","
-							+ pnfsPath + "):"+isAllowed);
+							+ pnfsPath + "): "+isAllowed);
 		}
 		
 		return isAllowed;
@@ -420,6 +475,8 @@ public class ACLPermissionHandler implements PermissionHandlerInterface {
 							+ pnfsPath + ")");
 		}
 
+		boolean isAllowed = false;
+		
 		FileMetaDataX fileMetaData = _metaDataSource.getXMetaData(pnfsPath);
 
 		if (!fileMetaData.getFileMetaData().isDirectory()) {
@@ -451,8 +508,18 @@ public class ACLPermissionHandler implements PermissionHandlerInterface {
 		Action actionREADDIR = Action.READDIR;
 		Boolean permissionToListDir = AclNFSv4Matcher.isAllowed(permission,
 				actionREADDIR);
-		return permissionToListDir != null
-				&& permissionToListDir.equals( Boolean.TRUE );
+		
+		isAllowed = permissionToListDir != null
+					&& permissionToListDir.equals( Boolean.TRUE );
+		
+		if (_logPermisions.isDebugEnabled()) {
+			_logPermisions
+					.debug("canListDir(" + subject.getUid() + ","
+							+ Arrays.toString(subject.getGids()) + ","
+							+ pnfsPath + "): " + isAllowed);
+		}
+		
+		return isAllowed;
 
 	}
 
@@ -469,7 +536,14 @@ public class ACLPermissionHandler implements PermissionHandlerInterface {
 	 */
 	public boolean canDeleteFile(Subject subject, String pnfsPath,
 			Origin userOrigin) throws CacheException {
-
+		
+		if (_logPermisions.isDebugEnabled()) {
+			_logPermisions
+					.debug("canDeleteFile(" + subject.getUid() + ","
+							+ Arrays.toString(subject.getGids()) + ","
+							+ pnfsPath + ")");
+		}
+		
 		boolean isAllowed = false;
 
 		FileMetaDataX fileMetaData = _metaDataSource.getXMetaData(pnfsPath);
@@ -517,8 +591,9 @@ public class ACLPermissionHandler implements PermissionHandlerInterface {
 		Action actionREMOVEfile = Action.REMOVE;
 		Boolean permissionToRemoveFile = AclNFSv4Matcher.isAllowed(permission1,
 				actionREMOVEfile, Boolean.FALSE);
-		Boolean decision1 = permissionToRemoveFile != null
-		&& permissionToRemoveFile.equals( Boolean.TRUE );
+		
+		boolean decision1 = permissionToRemoveFile != null
+							&& permissionToRemoveFile.equals( Boolean.TRUE );
 
 		///////////////////////////////////////////////////////////////////
 		//Ask for permission to perform action REMOVE for parent directory
@@ -546,8 +621,8 @@ public class ACLPermissionHandler implements PermissionHandlerInterface {
 		Boolean permissionToRemoveChild = AclNFSv4Matcher.isAllowed(permission2,
 				actionREMOVEchild, Boolean.TRUE);
 
-		Boolean decision2 = permissionToRemoveChild != null
-		&& permissionToRemoveChild.equals( Boolean.TRUE );
+	    boolean decision2 = permissionToRemoveChild != null
+							&& permissionToRemoveChild.equals( Boolean.TRUE );
 		
         //Decision
 		isAllowed = decision1 && decision2;
@@ -556,7 +631,7 @@ public class ACLPermissionHandler implements PermissionHandlerInterface {
 			_logPermisions
 					.debug("canDeleteFile(" + subject.getUid() + ","
 							+ Arrays.toString(subject.getGids()) + ","
-							+ pnfsPath + "):" + isAllowed);
+							+ pnfsPath + "): " + isAllowed);
 		}
 		
 		return isAllowed;
@@ -576,6 +651,8 @@ public class ACLPermissionHandler implements PermissionHandlerInterface {
 					+ " attribute: " + attributes.toString() + " ) ");
 		}
 
+		boolean isAllowed = false;
+		
 		FileMetaDataX fileMetaData = _metaDataSource.getXMetaData(pnfsPath);
 		FileMetaData infoMeta = fileMetaData.getFileMetaData();
 
@@ -610,8 +687,17 @@ public class ACLPermissionHandler implements PermissionHandlerInterface {
 		// USE: Boolean isAllowed(Permission perm, Action action, FileAttribute attribute)
 		Boolean permissionToSetAttributes = AclNFSv4Matcher.isAllowed(
 				permission, actionSETATTR, attributes);
-		return permissionToSetAttributes != null
-				&& permissionToSetAttributes.equals(  Boolean.TRUE );
+		
+		isAllowed = permissionToSetAttributes != null
+					&& permissionToSetAttributes.equals(  Boolean.TRUE );
+		
+		if (_logPermisions.isDebugEnabled()) {
+			_logPermisions.debug("canSetAttributes(" + subject.getUid() + ","
+					+ Arrays.toString(subject.getGids()) + "," + pnfsPath
+					+ " attribute: " + attributes.toString() + " ): " + isAllowed);
+		}
+		
+		return isAllowed; 
 
 	}
 	
@@ -629,6 +715,8 @@ public class ACLPermissionHandler implements PermissionHandlerInterface {
 					+ " attribute: " + attributes.toString() + " ) ");
 		}
 
+		boolean isAllowed = false;
+		
 		FileMetaDataX fileMetaData = _metaDataSource.getXMetaData(pnfsPath);
 		FileMetaData infoMeta = fileMetaData.getFileMetaData();
 
@@ -663,8 +751,17 @@ public class ACLPermissionHandler implements PermissionHandlerInterface {
 		// USE: Boolean isAllowed(Permission perm, Action action, FileAttribute attribute)
 		Boolean permissionToGetAttributes = AclNFSv4Matcher.isAllowed(
 				permission, actionGETATTR, attributes);
-		return permissionToGetAttributes != null
-				&& permissionToGetAttributes.equals(  Boolean.TRUE );
+		
+		isAllowed = permissionToGetAttributes != null
+					&& permissionToGetAttributes.equals(  Boolean.TRUE );
+		
+		if (_logPermisions.isDebugEnabled()) {
+			_logPermisions.debug("canGetAttributes(" + subject.getUid() + ","
+					+ Arrays.toString(subject.getGids()) + "," + pnfsPath
+					+ " attribute: " + attributes.toString() + " ): " + isAllowed);
+		}
+		
+		return isAllowed; 
 
 	}
 	 /**
