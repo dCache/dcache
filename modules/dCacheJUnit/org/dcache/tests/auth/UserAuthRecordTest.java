@@ -19,7 +19,7 @@ public class UserAuthRecordTest {
         String fqan = null;
         String user = "tigran";
         String DN = "/";
-        HashSet principals = new HashSet();
+        HashSet<String> principals = new HashSet<String>();
         String home = "/";
         String fsroot = "/";
         String root = "/";
@@ -43,7 +43,7 @@ public class UserAuthRecordTest {
         String fqan = null;
         String user = "tigran";
         String DN = "/";
-        HashSet principals = new HashSet();
+        HashSet<String> principals = new HashSet<String>();
         String home = "/";
         String fsroot = "/";
         String root = "/";
