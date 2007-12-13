@@ -359,7 +359,7 @@ public class PnfsFile extends File  {
        try{
           return br.readLine().trim() ;
        }finally{
-          try{ br.close() ;}catch(Exception e){}
+          try{ br.close() ;}catch(IOException e){}
        }
    }
    public static String _getNameOf( File mountpoint , String  pnfsId )
@@ -371,7 +371,7 @@ public class PnfsFile extends File  {
        try{
           return br.readLine().trim() ;
        }finally{
-          try{ br.close() ;}catch(Exception e){}
+          try{ br.close() ;}catch(IOException e){}
        }
    }
    public PnfsId getParentId(){
@@ -830,6 +830,7 @@ public class PnfsFile extends File  {
          }catch(IOException ioe ){
             throw ioe ;
          }catch(Exception gioe ){
+             // FIXME : what about run time exceptions , e.g. OutOfMemoryExceptions
             continue ;
          }
       }
