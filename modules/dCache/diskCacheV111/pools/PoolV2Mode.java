@@ -1,5 +1,5 @@
 /*
- * $Id:$
+ * $Id$
  */
 
 
@@ -36,66 +36,73 @@ public class PoolV2Mode implements java.io.Serializable {
     } ;
     private int _mode = ENABLED ;
 
-    public String toString()
-    {
-       if (_mode == ENABLED)
-           return "enabled";
+    public String toString() {
+        if (_mode == ENABLED)
+            return "enabled";
 
-       StringBuilder sb = new StringBuilder();
-       sb.append("disabled(");
-       boolean first = true;
-       for (int i = 0, mode = _mode; i < __modeString.length; i++) {
-           mode >>= 1;
-           if (( mode & 1 ) != 0) {
-               if (first) {
-                   first = false;
-               } else {
-                   sb.append(',');
-               }
-               sb.append(__modeString[i]);
-           }
-       }
-       sb.append(")");
-       return sb.toString();
+        StringBuilder sb = new StringBuilder();
+        sb.append("disabled(");
+        boolean first = true;
+        for (int i = 0, mode = _mode; i < __modeString.length; i++) {
+            mode >>= 1;
+            if ((mode & 1) != 0) {
+                if (first) {
+                    first = false;
+                } else {
+                    sb.append(',');
+                }
+                sb.append(__modeString[i]);
+            }
+        }
+        sb.append(")");
+        return sb.toString();
     }
 
-    public PoolV2Mode(){}
+    public PoolV2Mode() {
+        this(ENABLED);
+    }
 
-    public PoolV2Mode( int mode ){
-       _mode = mode ; }
-    public synchronized void setMode( int mode ){
-       _mode = mode == 0 ? 0 : ( mode | DISABLED ) ;
+    public PoolV2Mode(int mode) {
+        _mode = mode;
     }
-    public synchronized int getMode(){ return _mode ; }
-    public synchronized boolean isDisabled( int mask ){
-       return ( _mode & mask ) == mask ;
+
+    public synchronized void setMode(int mode) {
+        if( mode == ENABLED ) {
+            _mode = ENABLED;
+        }else{
+            _mode = mode | DISABLED;
+        }
     }
-    public synchronized boolean isDisabled(){ return _mode != 0 ; }
-    public synchronized boolean isEnabled(){ return _mode == 0 ; }
+
+    public synchronized int getMode() {
+        return _mode;
+    }
+
+    public synchronized boolean isDisabled(int mask) {
+        return (_mode & mask) == mask;
+    }
+
+    public synchronized boolean isDisabled() {
+        return _mode != ENABLED;
+    }
+
+    public synchronized boolean isEnabled() {
+        return _mode == ENABLED;
+    }
 
     @Override
     public boolean equals(Object obj) {
-        if( this == obj ) return true;
+        if (this == obj)
+            return true;
 
-        if( !(obj instanceof PoolV2Mode) ) return false;
+        if (!(obj instanceof PoolV2Mode))
+            return false;
 
-        return ((PoolV2Mode)obj)._mode == this._mode;
+        return ((PoolV2Mode) obj)._mode == this._mode;
     }
 
     @Override
     public int hashCode() {
         return _mode;
-    }
-
-    public static void main( String [] args )throws Exception {
-        PoolV2Mode mode = new PoolV2Mode(DISABLED_STRICT) ;
-        System.out.println(mode.toString());
-        mode = new PoolV2Mode(DISABLED_RDONLY) ;
-        System.out.println(mode.toString());
-        mode = new PoolV2Mode() ;
-        System.out.println(mode.toString());
-        mode = new PoolV2Mode(DISABLED) ;
-        System.out.println(mode.toString());
-        System.out.println(mode.toString());
     }
 }
