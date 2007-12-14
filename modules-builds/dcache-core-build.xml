@@ -703,6 +703,7 @@
 		<mkdir dir="${binDir}/classes/chimera" />
 	    <mkdir dir="${binDir}/libexec/chimera" />
 		<copy file="${libDir}/Chimera/chimera.jar" todir="${binDir}/classes/chimera" />
+	    <copy file="${libDir}/Chimera/chimera-acl.jar" todir="${binDir}/classes/chimera" />
 		<copy file="${libDir}/Chimera/chimera-config.xml" todir="${binDir}/config" />
 		<copy file="${classesDir}/chimera-provider.jar" todir="${binDir}/classes/chimera" />
 	    <copy file="${libDir}/Chimera/oncrpc.jar" todir="${binDir}/classes/chimera" />
