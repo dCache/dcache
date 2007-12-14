@@ -16,26 +16,26 @@ import java.io.* ;
 import java.net.* ;
 
 /**
-  *  
+  *
   *
   * @author Patrick Fuhrmann
   * @version 0.1, 1 May 2001
   */
-public class      UserAdminShell 
+public class      UserAdminShell
 //       extends    dmg.cells.services.login.user.MinimalAdminShell {
        extends    CommandInterpreter {
-       
+
     private CellNucleus _nucleus  = null ;
     private String      _user     = null ;
     private String      _authUser = null ;
     private CellPath    _path     = new CellPath("acm");
     private long        _timeout  = 10000 ;
     private boolean     _fullException = false ;
-    private String      _instance      = "" ;
+    private final String      _instance ;
     private Position    _currentPosition = new Position() ;
     private boolean     _debug    = false ;
 
-    private class Position {    
+    private class Position {
         private CellPath    remote     = null ;
         private String      remoteName = null ;
         private boolean     hyperMode  = false ;
@@ -52,18 +52,18 @@ public class      UserAdminShell
         private Position( String removeCell ){
             hyperMode  = false ;
             remoteName = removeCell ;
-            remote     = remoteName == null ? null : new CellPath(remoteName) ; 
+            remote     = remoteName == null ? null : new CellPath(remoteName) ;
         }
         private void clearHyperMode(){
            hyperMode  = false ;
            remoteName = null ;
-           remote     = null ; 
+           remote     = null ;
            hyperPath  = new ArrayList() ;
            moduleName = null ;
         }
         private void gotoLocal(){
            remoteName = null ;
-           remote     = null ; 
+           remote     = null ;
            hyperPath  = new ArrayList() ;
            moduleName = null ;
         }
@@ -100,8 +100,8 @@ public class      UserAdminShell
            }
 
 
-           remote = remoteName == null ? null : new CellPath(remoteName) ; 
-            
+           remote = remoteName == null ? null : new CellPath(remoteName) ;
+
         }
        private void mergePath( Path path ){
            hyperMode = true ;
@@ -126,22 +126,22 @@ public class      UserAdminShell
                     }
                 }
             }
-           
+
             finish() ;
-            
+
             return;
         }
     }
-    
+
     private class Path {
-        
+
         private String  _pathString     = null ;
         private boolean _isAbsolutePath = false ;
         private boolean _isPath         = false ;
         private boolean _isDomain       = false ;
-        
+
         private String  [] _path = null ;
-        
+
         private Path( String pathString ) throws Exception {
             _pathString = pathString ;
             if( _pathString.indexOf('@') > -1 ){
@@ -172,7 +172,7 @@ public class      UserAdminShell
             return _isPath ;
         }
         private String getItem(int i ){
-           return ( ( i < 0 ) || ( i >= _path.length ) ) ? "" : _path[i] ; 
+           return ( ( i < 0 ) || ( i >= _path.length ) ) ? "" : _path[i] ;
         }
         private String [] getPath(){ return _path ; }
         public String toString(){ return _pathString ;}
@@ -191,22 +191,26 @@ public class      UserAdminShell
        _nucleus  = nucleus ;
        _user     = user ;
        _authUser = user ;
-       
-       if( ( _instance = args.getOpt("dCacheInstance") ) != null ){
-           if(  _instance.equals("") ){
+
+       String prompt = args.getOpt("dCacheInstance");
+       if( prompt == null || !prompt.equals("hide") ){
+           if( prompt == null || prompt.length() == 0 ){
                try{
-                   _instance = InetAddress.getLocalHost().getHostName() ;
-               }catch(Exception ee){ }
-           }else if( _instance.equals("hide") ){
-               _instance = null ;
+                   prompt = InetAddress.getLocalHost().getHostName() ;
+               }catch(UnknownHostException ee){
+                   prompt = null;
+               }
            }
+           _instance = prompt;
+       }else{
+           _instance = null;
        }
     }
     protected String getUser(){ return _user ; }
     protected void say( String str ){ _nucleus.say( str ) ; }
     protected void esay( String str ){ _nucleus.esay( str ) ; }
     protected void esay( Exception e ){ _nucleus.esay(e) ; }
-    public void checkPermission( String aclName ) 
+    public void checkPermission( String aclName )
            throws AclException {
 
          Object [] request = new Object[5] ;
@@ -214,8 +218,8 @@ public class      UserAdminShell
          request[1] = "<nobody>" ;
          request[2] = "check-permission" ;
          request[3] = getUser() ;
-         request[4] = aclName ; 
-         CellMessage reply = null ; 
+         request[4] = aclName ;
+         CellMessage reply = null ;
          try{
             reply = _nucleus.sendAndWait(
                          new CellMessage( _path , request ) ,
@@ -224,7 +228,7 @@ public class      UserAdminShell
                throw new
                AclException( "Request timed out ("+_path+")" ) ;
          }catch(Exception ee ){
-            throw new 
+            throw new
             AclException( "Problem : "+ee.getMessage() ) ;
          }
          Object r = reply.getMessageObject() ;
@@ -239,15 +243,15 @@ public class      UserAdminShell
             throw new
             AclException( getUser() , aclName ) ;
 
-         return ;    
+         return ;
     }
     public String getHello(){
       return "\n    dCache Admin (VII) (user="+getUser()+")\n\n" ;
     }
-    public String getPrompt(){ 
+    public String getPrompt(){
         if( _currentPosition.hyperMode ){
             StringBuffer sb = new StringBuffer() ;
-            
+
             sb.append("(").append(getUser()).append(") ");
             if( _debug ){
                 String remote = _currentPosition.remoteName == null ? "local" : _currentPosition.remoteName;
@@ -260,7 +264,7 @@ public class      UserAdminShell
             return sb.toString();
         }else{
             return  ( _instance == null ? "" : ( "[" + _instance + "] " ) ) +
-                    ( _currentPosition.remote == null ? "(local) " : ( "(" + _currentPosition.remoteName +") " ) ) + 
+                    ( _currentPosition.remote == null ? "(local) " : ( "(" + _currentPosition.remoteName +") " ) ) +
                     getUser()+" > " ;
         }
     }
@@ -272,7 +276,7 @@ public class      UserAdminShell
         String user = args.argv(0) ;
         if( user.equals(_authUser) ){
            _user = _authUser ;
-           return "User changed BACK to "+_user ; 
+           return "User changed BACK to "+_user ;
         }else if( user.equals(_user) ){
            return "User not changed, still "+_user ;
         }
@@ -295,7 +299,7 @@ public class      UserAdminShell
                 CommandSyntaxException("set exception message|detail") ;
        }
        return "Exception = " +( _fullException ? "detail" : "message" ) ;
-    } 
+    }
     public String hh_set_timeout = "<timeout/sec> # command timeout in seconds";
     public String ac_set_timeout_$_0_1( Args args ){
         if( args.argc() > 0 ){
@@ -303,15 +307,15 @@ public class      UserAdminShell
            if( timeout < 1000L )
                throw new
                IllegalArgumentException("<timeout> >= 1" ) ;
-           _timeout = timeout; 
-        } 
-        return "Timeout = "+(_timeout/1000L) ; 
+           _timeout = timeout;
+        }
+        return "Timeout = "+(_timeout/1000L) ;
 
     }
     public String hh_load_shell = "system|<shellClass>" ;
     public String ac_load_shell_$_1( Args args )throws Exception {
         String shellName = args.argv(0) ;
-        
+
         try{
            checkPermission( "shell.*.execute" ) ;
         }catch( AclException acle ){
@@ -323,7 +327,7 @@ public class      UserAdminShell
            addCommandListener( Class.forName(shellName).newInstance() ) ;
         }
         return "" ;
-    
+
     }
     public String hh_getpoolbylink = "<linkName> [-size=<filesize>] [-service=<serviceCellName]" ;
     public String ac_getpoolbylink_$_1( Args args ) throws Exception {
@@ -340,7 +344,7 @@ public class      UserAdminShell
        if( result == null )
            throw new
            Exception("QuotaRequest timed out");
-      
+
        if( result instanceof PoolMgrGetPoolByLink ){
           PoolMgrGetPoolByLink link = (PoolMgrGetPoolByLink)result ;
           int rc = link.getReturnCode() ;
@@ -355,14 +359,14 @@ public class      UserAdminShell
     }
     public String hh_quota_query  = "<storageClassName>|* [-l] [-service=<serviceCellName>]" ;
     public Object ac_quota_query_$_1( Args args ) throws Exception {
-    
+
        String storageClassName  = args.argv(0) ;
        String service           = args.getOpt("service");
        service = service == null ? "QuotaManager" : service ;
        boolean extended         = args.getOpt("l") != null ;
 
        Message msg = null ;
- 
+
        if( storageClassName.equals("*" ) ){
            msg = new PoolMgrGetPoolLinks() ;
        }else{
@@ -384,7 +388,7 @@ public class      UserAdminShell
             if( links == null )return "Object doesn't contain a Links list" ;
 
             for(int i=0 , n = links.length ; i<n ; ++i ){
-               PoolLinkInfo l = links[i] ; 
+               PoolLinkInfo l = links[i] ;
                sb.append(" Link ").append(l.getName()).append(" : ").append(l.getAvailableSpaceInBytes()).append("\n");
                String [] storageGroups = l.getStorageGroups() ;
                if( storageGroups == null )continue ;
@@ -402,86 +406,86 @@ public class      UserAdminShell
     }
     public String hh_space  = "reserve|free <poolName> <bytes>" ;
     public Object ac_space_$_3( Args args ) throws Exception {
-    
+
        String mode     = args.argv(0) ;
        String poolName = args.argv(1) ;
        long   bytes    = Long.parseLong(args.argv(2));
-       
+
         try{
            checkPermission( "pool.*.execute" ) ;
         }catch( AclException acle ){
            checkPermission( "pool."+poolName+".execute" ) ;
         }
-        
+
         PoolSpaceReservationMessage msg = null ;
         if( mode.equals("reserve") ){
             msg = new PoolReserveSpaceMessage( poolName , bytes ) ;
         }else if( mode.equals("free") ){
             msg = new PoolFreeSpaceReservationMessage( poolName , bytes ) ;
         }else
-           throw new 
+           throw new
            IllegalArgumentException("Usage : space reserve|free <poolName> <bytes>");
-         
+
         Object result = sendObject( poolName , msg ) ;
-        
+
        return result.toString() ;
     }
     public String hh_set_sticky = "<pnfsId>|<globalPath> [-target=<target>] [-silent]" ;
     public Object ac_set_sticky_$_1( Args args ) throws Exception {
-       return setSticky( 
-             args.argv(0) , 
-             args.getOpt("target") , 
+       return setSticky(
+             args.argv(0) ,
+             args.getOpt("target") ,
              true ,
              args.getOpt("silent") == null ? new StringBuffer() : null ) ;
     }
     public String hh_set_unsticky = "<pnfsId>|<globalPath> [-target=<target>] [-silent]" ;
     public Object ac_set_unsticky_$_1( Args args ) throws Exception  {
-       return setSticky( 
-             args.argv(0) , 
-             args.getOpt("target") , 
+       return setSticky(
+             args.argv(0) ,
+             args.getOpt("target") ,
              false ,
              args.getOpt("silent") == null ? new StringBuffer() : null ) ;
     }
     public String hh_uncache = "<pnfsId>|<globalPath> [-target=<target>] [-silent]" ;
     public Object ac_uncache_$_1( Args args ) throws Exception {
       try{
-       return uncache( 
-             args.argv(0) , 
-             args.getOpt("target") , 
+       return uncache(
+             args.argv(0) ,
+             args.getOpt("target") ,
              args.getOpt("silent") == null ? new StringBuffer() : null ) ;
       }catch(Exception ee ){
          ee.printStackTrace();
          throw ee ;
       }
     }
-    private String setSticky( 
-               String destination , 
-               String target , 
+    private String setSticky(
+               String destination ,
+               String target ,
                boolean mode ,
                StringBuffer sb )
             throws Exception {
-            
+
        if( ( target == null ) || ( target.equals("") ) )target = "*";
-       
+
        boolean verbose = sb != null ;
-       
+
        PnfsFlagReply reply = setPnfsFlag( destination , "s" , target ) ;
-       
+
        PnfsId pnfsId = reply.getPnfsId() ;
-          
-       PnfsGetCacheLocationsMessage pnfsMessage = 
+
+       PnfsGetCacheLocationsMessage pnfsMessage =
                     new PnfsGetCacheLocationsMessage(pnfsId) ;
-    
+
        pnfsMessage = (PnfsGetCacheLocationsMessage)sendObject("PnfsManager",pnfsMessage) ;
        if( pnfsMessage.getReturnCode() != 0 )
          throw new
          FileNotFoundException( destination ) ;
-       
-       List list = pnfsMessage.getCacheLocations() ;
+
+       List<String> list = pnfsMessage.getCacheLocations() ;
        if( verbose ){
           sb.append("Location(s) : ") ;
-          for( Iterator i = list.iterator() ; i.hasNext() ; ){
-             sb.append(i.next().toString()).append(",") ;
+          for( String location : list ){
+             sb.append(location).append(",") ;
           }
           sb.append("\n");
        }
@@ -489,16 +493,15 @@ public class      UserAdminShell
           if( verbose )sb.append("Selection : <all>\n");
        }else if( list.contains(target) ){
           if( verbose )sb.append("Selection : ").append(target).append("\n") ;
-          list = new ArrayList();
+          list = new ArrayList<String>();
           list.add(target);
        }else{
           if( verbose )sb.append("Selection : <nothing>\n") ;
           return sb == null ? "" : sb.toString() ;
        }
        PoolSetStickyMessage sticky = null ;
-       Iterator i = list.iterator() ;
-       while( i.hasNext() ){ 
-           String poolName = i.next().toString() ;
+
+       for( String poolName: list ){
            if( verbose )sb.append(poolName).append(" : ") ;
            try{
               sticky = new PoolSetStickyMessage( poolName , pnfsId , mode ) ;
@@ -514,54 +517,54 @@ public class      UserAdminShell
            }
            if(verbose)sb.append("\n") ;
        }
-       
+
        return sb == null ? "" : sb.toString() ;
     }
     private String uncache(  String destination ,  String target , StringBuffer sb )
             throws Exception {
-            
+
        if( ( target == null ) || ( target.equals("") ) )target = "*";
-       
+
        boolean verbose = sb != null ;
 
        PnfsId pnfsId = null ;
        if( destination.startsWith( "/pnfs" ) ){
-       
+
           PnfsMapPathMessage map = new PnfsMapPathMessage( destination ) ;
-          
+
           map = (PnfsMapPathMessage)sendObject("PnfsManager" , map ) ;
-       
+
           if( map.getReturnCode() != 0 ){
              Object o = map.getErrorObject() ;
              if( o instanceof Exception )throw (Exception)o ;
              else throw new Exception( o.toString() ) ;
           }
-             
+
           if( ( pnfsId = map.getPnfsId() ) == null )
             throw new
             FileNotFoundException( destination ) ;
-          
+
        }else{
           pnfsId = new PnfsId( destination ) ;
        }
-       
+
        int dbId = pnfsId.getDatabaseId() ;
-       
+
        try{
           checkPermission( "pool.*.uncache" ) ;
        }catch( AclException ee ){
           checkPermission( "pool."+dbId+".uncache" ) ;
        }
-                        
-       PnfsGetCacheLocationsMessage pnfsMessage = 
+
+       PnfsGetCacheLocationsMessage pnfsMessage =
                     new PnfsGetCacheLocationsMessage(pnfsId) ;
-    
+
        pnfsMessage = (PnfsGetCacheLocationsMessage)sendObject("PnfsManager",pnfsMessage) ;
-       
+
        if( pnfsMessage.getReturnCode() != 0 )
          throw new
          FileNotFoundException( destination ) ;
-         
+
        List list = pnfsMessage.getCacheLocations() ;
        if( verbose ){
           sb.append("Location(s) : ") ;
@@ -582,7 +585,7 @@ public class      UserAdminShell
        }
        PoolRemoveFilesMessage remove = null ;
        Iterator i = list.iterator() ;
-       while( i.hasNext() ){ 
+       while( i.hasNext() ){
            String poolName = i.next().toString() ;
            if( verbose )sb.append(poolName).append(" : ") ;
            try{
@@ -595,7 +598,7 @@ public class      UserAdminShell
                  if( rc != 0 ){
                      Object obj = remove.getErrorObject() ;
                      if( ( obj != null ) && ( obj instanceof Object [] ) ){
-                        Object o = ((Object [])obj)[0] ; 
+                        Object o = ((Object [])obj)[0] ;
                         if( o != null )
                         sb.append("[").append(rc).append("] Failed ").
                                  append(o.toString()) ;
@@ -604,7 +607,7 @@ public class      UserAdminShell
                                  append(obj.toString()) ;
                      }
 
-                 }else 
+                 }else
                      sb.append("ok");
 
               }
@@ -613,7 +616,7 @@ public class      UserAdminShell
            }
            if(verbose)sb.append("\n") ;
        }
-       
+
        return sb == null ? "" : sb.toString() ;
     }
     private class PnfsFlagReply {
@@ -628,99 +631,99 @@ public class      UserAdminShell
     }
     public String hh_flags_set = "<pnfsId>|<globalPath> <key> <value>";
     public Object ac_flags_set_$_3( Args args ) throws Exception {
-    
+
        String destination   = args.argv(0) ;
        String key    = args.argv(1) ;
        String value  = args.argv(2) ;
-       
-       PnfsFlagMessage result = 
+
+       PnfsFlagMessage result =
            setPnfsFlag( destination , key , value ).getPnfsFlagMessage() ;
-       
+
        return result.getReturnCode() == 0 ? "" : result.getErrorObject().toString() ;
-       
+
     }
     private PnfsFlagReply setPnfsFlag( String destination , String key , String value )
             throws Exception {
-            
+
        PnfsId pnfsId = null ;
        if( destination.startsWith( "/pnfs" ) ){
-       
+
           PnfsMapPathMessage map = new PnfsMapPathMessage( destination ) ;
-          
+
           map = (PnfsMapPathMessage)sendObject("PnfsManager" , map ) ;
-       
+
           if( map.getReturnCode() != 0 ){
              Object o = map.getErrorObject() ;
              if( o instanceof Exception )throw (Exception)o ;
              else throw new Exception( o.toString() ) ;
           }
-             
+
           pnfsId = map.getPnfsId() ;
           if( ( pnfsId = map.getPnfsId() ) == null )
             throw new
             FileNotFoundException( destination ) ;
-          
-          
+
+
        }else{
           pnfsId = new PnfsId( destination ) ;
        }
-       
+
        int dbId = pnfsId.getDatabaseId() ;
-       
+
        try{
           checkPermission( "pnfs.*.update" ) ;
        }catch( AclException ee ){
           checkPermission( "pnfs."+key+"."+dbId+".update" ) ;
        }
-       
-       
+
+
        PnfsFlagMessage pfm = new PnfsFlagMessage( pnfsId , key , "put" ) ;
        pfm.setValue( value ) ;
-       
+
        PnfsFlagMessage result = (PnfsFlagMessage)sendObject( "PnfsManager" , pfm ) ;
        if( result.getReturnCode() != 0 ){
           Object o = result.getErrorObject() ;
           if( o instanceof Exception )throw (Exception)o ;
           else throw new Exception( o.toString() ) ;
        }
-       
+
        return new PnfsFlagReply( pnfsId , result ) ;
     }
     public String hh_flags_remove = "<pnfsId> <key>";
     public Object ac_flags_remove_$_2( Args args ) throws Exception {
        PnfsId pnfsId = null ;
        if( args.argv(0).startsWith( "/pnfs" ) ){
-       
+
           PnfsMapPathMessage map = new PnfsMapPathMessage( args.argv(0) ) ;
-          
+
           map = (PnfsMapPathMessage)sendObject("PnfsManager" , map ) ;
-       
+
           if( map.getReturnCode() != 0 ){
              Object o = map.getErrorObject() ;
              if( o instanceof Exception )throw (Exception)o ;
              else throw new Exception( o.toString() ) ;
           }
-             
+
           pnfsId = map.getPnfsId() ;
-          
-          
+
+
        }else{
           pnfsId = new PnfsId( args.argv(0) ) ;
        }
-       
+
        int dbId = pnfsId.getDatabaseId() ;
-       
+
        String key    = args.argv(1) ;
-       
+
        try{
           checkPermission( "pnfs.*.update" ) ;
        }catch( AclException ee ){
           checkPermission( "pnfs."+key+"."+dbId+".update" ) ;
        }
-       
-       
+
+
        PnfsFlagMessage pfm = new PnfsFlagMessage( pnfsId , key , "remove" ) ;
-       
+
        PnfsFlagMessage result = (PnfsFlagMessage)sendObject( "PnfsManager" , pfm ) ;
        if( result.getReturnCode() != 0 ){
           Object o = result.getErrorObject() ;
@@ -731,68 +734,68 @@ public class      UserAdminShell
     }
     public String hh_p2p = "<pnfsId> [<sourcePool> <destinationPool>] [-ip=<address]" ;
     public String ac_p2p_$_1_3( Args args )throws Exception {
-    
+
        if( args.argc() >= 3 ){
            String source = args.argv(1) ;
            String dest   = args.argv(2) ;
            PnfsId pnfsId = new PnfsId( args.argv(0) ) ;
 
-           Pool2PoolTransferMsg p2p = 
+           Pool2PoolTransferMsg p2p =
                 new Pool2PoolTransferMsg( source , dest , pnfsId , null ) ;
 
 
            _nucleus.sendMessage(
-                       new CellMessage( new CellPath(dest) , p2p ) 
+                       new CellMessage( new CellPath(dest) , p2p )
                                ) ;
 
            return "P2p of "+pnfsId+" initiated from "+source+" to "+dest ;
        }else{
            PnfsId pnfsId = new PnfsId(args.argv(0) ) ;
            String ip     = args.getOpt("ip");
-           
-           
+
+
            PnfsGetStorageInfoMessage stinfo =
                new PnfsGetStorageInfoMessage( pnfsId  ) ;
-           
+
            CellMessage  msg = new CellMessage( new CellPath("PnfsManager") , stinfo ) ;
            msg = _nucleus.sendAndWait( msg , 30000L )  ;
            if( msg == null )
                throw new
                Exception("Get storageinfo timed out");
-           
+
            if( stinfo.getReturnCode() != 0 )
                throw new
                IllegalArgumentException("getStorageInfo returned "+stinfo.getReturnCode());
-       
+
            stinfo = (PnfsGetStorageInfoMessage)msg.getMessageObject() ;
            StorageInfo storageInfo = stinfo.getStorageInfo() ;
-           
-           DCapProtocolInfo pinfo = 
+
+           DCapProtocolInfo pinfo =
             new DCapProtocolInfo("DCap",0,0,"localhost",0);
-           
-           
-          PoolMgrReplicateFileMsg select = 
+
+
+          PoolMgrReplicateFileMsg select =
               new PoolMgrReplicateFileMsg(pnfsId,storageInfo,pinfo,0L);
-          
+
           msg = new CellMessage( new CellPath("PoolManager"),select ) ;
-          
+
           String timeoutString = args.getOpt("timeout");
           long timeout = timeoutString != null ?
                          Long.parseLong(timeoutString)*1000L :
                          60000L ;
-                         
+
           msg = _nucleus.sendAndWait( msg , timeout ) ;
-          
+
           select = (PoolMgrReplicateFileMsg)msg.getMessageObject() ;
           if( select == null )
               throw new
               Exception("p2p request timed out");
-          
+
           if( select.getReturnCode() != 0 )
               throw new
               Exception("Problem return from 'p2p' : ("+select.getReturnCode()+
               ") "+select.getErrorObject());
-       
+
           return "p2p -> "+select.getPoolName() ;
        }
     }
@@ -806,21 +809,21 @@ public class      UserAdminShell
         "        -p2p-client\n"+
         "        -rdonly   #  := store,stage,p2p-client\n"+
         "        -strict   #  := disallows everything\n" ;
-    public String hh_modify_poolmode = 
+    public String hh_modify_poolmode =
         "enable|disable <poolname>[,<poolname>...] [<code> [<message>]] [-strict|-stage|-rdonly|-fetch|-store]" ;
     public String ac_modify_poolmode_$_2_4( Args args ) throws Exception {
-        
+
        checkPermission( "*.*.*" ) ;
-       
+
        String enable   = args.argv(0) ;
        String poolList = args.argv(1) ;
        String message  = args.argc() > 3 ? args.argv(3) : null ;
        int    code     = args.argc() > 2 ? Integer.parseInt(args.argv(2)) : 0 ;
-       
+
        PoolV2Mode mode = new PoolV2Mode() ;
-       
+
        if( enable.equals("disable") ){
-       
+
           int modeBits = PoolV2Mode.DISABLED ;
           if( args.getOpt("strict")     != null )modeBits |= PoolV2Mode.DISABLED_STRICT ;
           if( args.getOpt("stage")      != null )modeBits |= PoolV2Mode.DISABLED_STAGE ;
@@ -831,13 +834,13 @@ public class      UserAdminShell
           if( args.getOpt("rdonly")     != null )modeBits |= PoolV2Mode.DISABLED_RDONLY ;
 
           mode.setMode(modeBits) ;
-          
+
        }else if( enable.equals("enable") ){
-       
+
        }else
           throw new
           CommandSyntaxException("Invalid keyword : "+enable) ;
-          
+
        StringTokenizer       st     = new StringTokenizer(poolList,",");
        PoolModifyModeMessage modify = null ;
        StringBuffer          sb     = new StringBuffer() ;
@@ -848,13 +851,13 @@ public class      UserAdminShell
           modify.setStatusInfo(code,message);
           sb.append("  ").append(poolName).append(" -> ") ;
           try{
-             
+
              modify = (PoolModifyModeMessage)sendObject( poolName , modify ) ;
           }catch(Exception ee ){
              sb.append(ee.getMessage()).append("\n");
              continue ;
           }
-          if( modify.getReturnCode() != 0 ){ 
+          if( modify.getReturnCode() != 0 ){
              sb.append(modify.getErrorObject().toString()).append("\n") ;
              continue ;
           }
@@ -866,13 +869,13 @@ public class      UserAdminShell
     public String ac_set_deletable_$_1( Args args ) throws Exception {
 
        checkPermission( "*.*.*" ) ;
-    
+
        PnfsId       pnfsId = new PnfsId(args.argv(0));
        StringBuffer sb     = new StringBuffer() ;
 
        PnfsFlagMessage pfm = new PnfsFlagMessage( pnfsId , "d" , "put" ) ;
        pfm.setValue("true");
-       
+
        try{
           pfm = (PnfsFlagMessage)sendObject( "PnfsManager" , pfm ) ;
        }catch(Exception ee ){
@@ -881,13 +884,13 @@ public class      UserAdminShell
           sb.append("Operation aborted\n");
           return sb.toString();
        }
-       if( pfm.getReturnCode() != 0 ){       
-          sb.append("set 'd' flag reported  : "+pfm.getErrorObject());  
+       if( pfm.getReturnCode() != 0 ){
+          sb.append("set 'd' flag reported  : "+pfm.getErrorObject());
           return sb.toString() ;
        }
 
        sb.append("Setting 'd' succeeded\n");
-       
+
        PnfsGetCacheLocationsMessage locations = new PnfsGetCacheLocationsMessage(pnfsId) ;
        try{
           locations = (PnfsGetCacheLocationsMessage)sendObject( "PnfsManager" , locations ) ;
@@ -897,18 +900,18 @@ public class      UserAdminShell
           sb.append("Operation aborted\n");
           return sb.toString() ;
        }
-       if( locations.getReturnCode() != 0 ){  
-          sb.append("Problem in getting cache location(s) : "+locations.getErrorObject());  
+       if( locations.getReturnCode() != 0 ){
+          sb.append("Problem in getting cache location(s) : "+locations.getErrorObject());
           return sb.toString() ;
        }
        List assumedLocations = locations.getCacheLocations() ;
        sb.append("Assumed cache locations : ").append(assumedLocations.toString()).append("\n");
-    
+
        for( Iterator i = assumedLocations.iterator() ; i.hasNext() ;  ){
           String poolName = i.next().toString();
-          PoolModifyPersistencyMessage p = 
+          PoolModifyPersistencyMessage p =
               new PoolModifyPersistencyMessage( poolName , pnfsId , false ) ;
-              
+
           try{
              p = (PoolModifyPersistencyMessage)sendObject( poolName , p ) ;
           }catch(Exception ee ){
@@ -920,59 +923,59 @@ public class      UserAdminShell
                 append("  Operation continues\n");
              continue ;
           }
-          if( locations.getReturnCode() != 0 ){  
+          if( locations.getReturnCode() != 0 ){
              sb.append("Set 'cached' reply from ").
                 append(poolName).
                 append(" : ").
                 append(p.getErrorObject()).
-                append("\n");  
+                append("\n");
           }else{
              sb.append("Set 'cached' OK for ").
                 append(poolName).
-                append("\n");  
+                append("\n");
           }
        }
        return sb.toString() ;
-       
+
     }
     public String hh_flags_ls = "<pnfsId> <key>";
     public Object ac_flags_ls_$_2( Args args ) throws Exception {
        PnfsId pnfsId = null ;
        if( args.argv(0).startsWith( "/pnfs" ) ){
-       
+
           PnfsMapPathMessage map = new PnfsMapPathMessage( args.argv(0) ) ;
-          
+
           map = (PnfsMapPathMessage)sendObject("PnfsManager" , map ) ;
-       
+
           if( map.getReturnCode() != 0 ){
              Object o = map.getErrorObject() ;
              if( o instanceof Exception )throw (Exception)o ;
              else throw new Exception( o.toString() ) ;
           }
-             
+
           pnfsId = map.getPnfsId() ;
-          
-          
+
+
        }else{
           pnfsId = new PnfsId( args.argv(0) ) ;
        }
        String key    = args.argv(1) ;
-       
+
        PnfsFlagMessage pfm = new PnfsFlagMessage( pnfsId , key , "get" ) ;
-       
+
        PnfsFlagMessage result = (PnfsFlagMessage)sendObject( "PnfsManager" , pfm ) ;
-       
-       return result.getReturnCode() == 0 ? 
-              ( key+" -> "+result.getValue()) : 
+
+       return result.getReturnCode() == 0 ?
+              ( key+" -> "+result.getValue()) :
               result.getErrorObject().toString() ;
     }
     public String hh_pnfs_map = "<globalPath>" ;
     public String ac_pnfs_map_$_1( Args args )throws Exception {
-    
+
        if( ! args.argv(0).startsWith( "/pnfs" ) )
-          throw new 
+          throw new
           IllegalArgumentException("not a global dCache path (/pnfs...)") ;
-        
+
        PnfsMapPathMessage map = new PnfsMapPathMessage( args.argv(0) ) ;
 
        map = (PnfsMapPathMessage)sendObject("PnfsManager" , map ) ;
@@ -982,11 +985,11 @@ public class      UserAdminShell
           if( o instanceof Exception )throw (Exception)o ;
           else throw new Exception( o.toString() ) ;
        }
-             
+
        return map.getPnfsId().toString() ;
-      
+
     }
-    
+
     //
     //   input                        remoteName
     // ----------------------------------------------------------------
@@ -997,7 +1000,7 @@ public class      UserAdminShell
     //   /*/<cells>                     <cell>
     //   /<domain>|*/<cells>/<module>  see above
     //
-    public String fh_cd = 
+    public String fh_cd =
           "  SYNTAX I :\n" +
           "     cd <cellPath>\n" +
           "          <cellPath> : <cellName>[@<domainName>]\n" +
@@ -1019,27 +1022,27 @@ public class      UserAdminShell
           "\n" ;
     public String hh_cd = "<cellPath> | <cellDirectoryPath> # see 'help cd'";
     public String ac_cd_$_1( Args args )throws Exception {
-        
+
        String remoteCell = args.argv(0) ;
        Path   path       = new Path(remoteCell);
-       
+
        Position newPosition = null ;
-       
+
        if( path.isDomain() ){
             //
            // switch back do domain mode (hyper mode or not)
            //
            newPosition = new Position( remoteCell ) ;
-            
+
        }else if( _currentPosition.hyperMode ){
            //
            // we are and stay in hyper mode
            //
            newPosition = new Position( _currentPosition ) ;
            newPosition.mergePath( path ) ;
-           
+
        }else if( path.isPath() ){
-                         
+
            if( path.isAbsolutePath() ){
 
                newPosition = new Position( _currentPosition ) ;
@@ -1053,22 +1056,22 @@ public class      UserAdminShell
               throw new
               IllegalArgumentException("Need absolute path to switch to directory mode");
            }
-               
+
         }else{
            //
            //
-           // 
+           //
            newPosition = new Position( remoteCell ) ;
-          
+
        }
-       
+
        if( newPosition.remoteName != null )checkCdPermission( newPosition.remoteName ) ;
-       
+
        synchronized( this ){
            _currentPosition = newPosition ;
        }
-       
-       
+
+
        return "" ;
     }
     private void checkCdPermission( String remoteName ) throws AclException {
@@ -1084,7 +1087,7 @@ public class      UserAdminShell
              if( prefix == null )throw acle2 ;
              checkPermission( "cell."+prefix+"-pools.execute" ) ;
           }
-       }        
+       }
     }
     protected Object executeLocalCommand( Args args ) throws Exception {
        say( "Local command "+args ) ;
@@ -1098,14 +1101,14 @@ public class      UserAdminShell
     }
     public Object executeCommand( String str )throws Exception {
        say( "String command (super) "+str ) ;
-       
+
        if( str.trim().equals("") )return "" ;
-       
-       if( str.equals("..") ){ 
+
+       if( str.equals("..") ){
           _currentPosition.clearHyperMode() ;
           _currentPosition.gotoLocal() ;
-          return "" ; 
-       } 
+          return "" ;
+       }
 
        Args args = new Args( str ) ;
 
@@ -1137,15 +1140,15 @@ public class      UserAdminShell
            if( or == null )return ""  ;
            String r = or.toString() ;
            if(  r.length() < 1)return "" ;
-           if( r.substring(r.length()-1).equals("\n" ) )            
+           if( r.substring(r.length()-1).equals("\n" ) )
               return r   ;
-           else 
+           else
               return r + "\n"  ;
        }catch(Exception ee ){
            if( _debug )esay(ee) ;
            throw ee ;
        }
-        
+
     }
     private Object sendObject( String cellPath , Object object )
        throws Exception
@@ -1171,16 +1174,16 @@ public class      UserAdminShell
 
     }
     protected Object sendCommand( String destination , String command )
-       throws Exception 
+       throws Exception
    {
-    
+
         CellPath cellPath = new CellPath(destination);
-        CellMessage res = 
-              _nucleus.sendAndWait( 
-                   new CellMessage( cellPath , 
-                                    new AuthorizedString( _user , 
+        CellMessage res =
+              _nucleus.sendAndWait(
+                   new CellMessage( cellPath ,
+                                    new AuthorizedString( _user ,
                                                           command)
-                                  ) , 
+                                  ) ,
               _timeout ) ;
           if( res == null )throw new Exception("Request timed out" ) ;
           Object obj =  res.getMessageObject() ;
@@ -1190,13 +1193,13 @@ public class      UserAdminShell
               return ca.toString();
           }
           return obj ;
-    
+
     }
     public Object executeCommand( String destination , Object str )
            throws Exception {
 
        say( "Object command ("+destination+") "+str) ;
-       
+
        return sendCommand( destination  , str.toString() ) ;
     }
 
