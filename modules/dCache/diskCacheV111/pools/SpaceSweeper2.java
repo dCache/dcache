@@ -114,13 +114,21 @@ public class SpaceSweeper2 implements SpaceSweeper, Runnable
         return false;
     }
 
-    public synchronized long getLRUSeconds()
+    private synchronized PnfsId getLRUId()
+    {
+        if (_list.size() == 0)
+            return null;
+        return _list.iterator().next();
+    }
+
+    public long getLRUSeconds()
     {
         try {
-            if (_list.size() == 0)
-                return 0L;
-            CacheRepositoryEntry e =
-                _repository.getEntry(_list.iterator().next());
+            PnfsId id = getLRUId();
+            if (id == null)
+                return 0;
+
+            CacheRepositoryEntry e = _repository.getEntry(id);
             return (System.currentTimeMillis() - e.getLastAccessTime()) / 1000L;
         } catch (CacheException e) {
             return 0L;
