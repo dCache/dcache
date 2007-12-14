@@ -104,7 +104,7 @@ public class UserMetaDataProvider_gPlazma implements UserMetaDataProvider {
     private void updateStatistics( String userName ) {
         Integer count = _userStatistics.get(userName);
         int c = count == null ? 0 : count.intValue() ;
-        _userStatistics.put( userName , new Integer( c+1 ) ) ;
+        _userStatistics.put( userName , Integer.valueOf( c+1 ) ) ;
         _requestCount++ ;
     }
 
