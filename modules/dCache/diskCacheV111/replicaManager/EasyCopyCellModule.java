@@ -25,10 +25,9 @@ import  java.util.regex.* ;
 
 public class EasyCopyCellModule implements  CommandTaskCell.CellCommandTaskable, java.io.Serializable {
 
-   private CellAdapter  _cell     = null ;
+   private final CellAdapter  _cell;
    private File         _base     = null ;
    private int          _state    = ST_IDLE ;
-   private String       _poolName = null ;
    private Pattern      _pattern  = null ;
    private Object       _lock     = this ;
    private boolean      _halted   = false ;
@@ -65,12 +64,12 @@ public class EasyCopyCellModule implements  CommandTaskCell.CellCommandTaskable,
    private static final int ST_CHECKING_POOLS         = 6 ;
    private static final int ST_PROCESSING_COPYTO      = 7 ;
 
-   private String [] _stateStrings = {
+   private static final String[] _stateStrings = {
       "idle" , "waiting_for_rep" , "error" , "processing" , "busy" ,
       "waiting_for_pgroup" , "checking_pools" , "processing_copyto"
    };
 
-   private CommandTaskCell.CellCommandTaskCore _core = null ;
+   private final CommandTaskCell.CellCommandTaskCore _core;
 
    public EasyCopyCellModule( CommandTaskCell.CellCommandTaskCore core ) throws Exception {
 
@@ -209,8 +208,7 @@ public class EasyCopyCellModule implements  CommandTaskCell.CellCommandTaskable,
    }
    public String hh_ls_active = "" ;
    public String ac_ls_active_$_0( Args args ) throws Exception {
-     List<RepositoryEntry> list = null ;
-     StringBuffer sb = new StringBuffer() ;
+     List<RepositoryEntry> list;
      synchronized( _lock ){
 
            if( _inProgressMap == null )return "" ;
@@ -218,9 +216,11 @@ public class EasyCopyCellModule implements  CommandTaskCell.CellCommandTaskable,
 //            throw new
 //            IllegalStateException("Nothing in progress");
 
-         list = new ArrayList<RepositoryEntry>( _inProgressMap.values() ) ;
+         list = new ArrayList<RepositoryEntry>(_inProgressMap.values());
      }
-     for( RepositoryEntry entry : list ){
+
+     StringBuffer sb = new StringBuffer();
+     for (RepositoryEntry entry : list) {
          sb.append(entry._pnfsId).append(" [").
             append(entry._state).append("] ").append(entry._message==null? "":entry._message).
             append("\n");
@@ -229,8 +229,10 @@ public class EasyCopyCellModule implements  CommandTaskCell.CellCommandTaskable,
    }
    private class RepositoryStatistics {
 
-      private Map<String, long[]> storageClassMap = new HashMap<String, long[]>() ;
-      private Map<String, long[]> errorMap        = new HashMap<String, long[]>() ;
+      private final Map<String,long[]> storageClassMap =
+          new HashMap<String,long[]>();
+      private final Map<String,long[]> errorMap =
+          new HashMap<String,long[]>();
       private long badCount      = 0L ;
       private long badSize       = 0L ;
       private long preciousCount = 0L ;
@@ -245,23 +247,6 @@ public class EasyCopyCellModule implements  CommandTaskCell.CellCommandTaskable,
       private long lockedSize    = 0L ;
       private long errorCount    = 0L ;
 
-      private void reset(){
-          storageClassMap.clear();
-          errorMap.clear();
-          badCount      = 0L ;
-          badSize       = 0L ;
-          preciousCount = 0L ;
-          preciousSize  = 0L ;
-          pinnedCount   = 0L ;
-          pinnedSize    = 0L ;
-          totalCount    = 0L ;
-          totalSize     = 0L ;
-          cachedCount   = 0L ;
-          cachedSize    = 0L ;
-          lockedCount   = 0L ;
-          lockedSize    = 0L ;
-          errorCount    = 0L ;
-      }
       private void scan( RepositoryEntry entry ){
          scan( entry , false ) ;
       }
@@ -318,10 +303,10 @@ public class EasyCopyCellModule implements  CommandTaskCell.CellCommandTaskable,
             append(Formats.field(""+lockedCount,dataWidth,Formats.RIGHT)).
             append(Formats.field(""+lockedSize,dataWidth,Formats.RIGHT)).
             append("\n") ;
-         for( Iterator i = storageClassMap.entrySet().iterator() ; i.hasNext() ; ){
-            Map.Entry   e = (Map.Entry)i.next() ;
-            String   name = (String)e.getKey() ;
-            long [] value = (long [])e.getValue() ;
+
+         for (Map.Entry<String,long[]> e : storageClassMap.entrySet()) {
+            String   name = e.getKey() ;
+            long [] value = e.getValue() ;
             sb.append(Formats.field(name,classWith,Formats.CENTER)).
                append(Formats.field(""+value[0],dataWidth,Formats.RIGHT)).
                append(Formats.field(""+value[1],dataWidth,Formats.RIGHT)).
@@ -335,7 +320,7 @@ public class EasyCopyCellModule implements  CommandTaskCell.CellCommandTaskable,
          if( errorMap.size() > 0 ){
             sb.append("\nNumber of different error types : ").append(errorMap.size()).append("\n\n");
             sb.append(Formats.field("Error-Type",14,Formats.RIGHT)).append("   Error Message").append("\n");
-            for( Map.Entry<String, long[]> e : errorMap.entrySet() ){
+            for (Map.Entry<String,long[]> e : errorMap.entrySet()) {
                String   name = e.getKey() ;
                long [] value = e.getValue() ;
                sb.append(Formats.field(""+value[0],12,Formats.RIGHT)).append("   ").append(name).append("\n");
@@ -429,15 +414,15 @@ public class EasyCopyCellModule implements  CommandTaskCell.CellCommandTaskable,
    private class PoolInfoHandler {
       private class PoolInfo implements Comparable<PoolInfo> {
 
-          private String _poolName       = null ;
+          private final String _poolName;
           private long   _freeSpace      = 0L ;
           private long   _removableSpace = 0L ;
 
           private PoolInfo( String name ){
-             this._poolName = name ;
+              _poolName = name ;
           }
           public String getName(){ return this._poolName ; }
-          public int compareTo( PoolInfo info ){
+          public int compareTo(PoolInfo info){
              long all = _freeSpace+_removableSpace ;
              long xall = info._freeSpace + info._removableSpace ;
              return all < xall ? -1 : all > xall ? 1 : _poolName.compareTo(info._poolName) ;
@@ -447,7 +432,7 @@ public class EasyCopyCellModule implements  CommandTaskCell.CellCommandTaskable,
           }
           public long getAvailableSpace(){ return _freeSpace+_removableSpace ; }
       }
-      private Map<String, PoolInfo> _pools = new HashMap<String, PoolInfo>() ;
+      private Map<String,PoolInfo> _pools = new HashMap<String,PoolInfo>();
       private void update( PoolCellInfo cellInfo ){
 
           PoolCostInfo               cost  = cellInfo.getPoolCostInfo() ;
@@ -466,14 +451,13 @@ public class EasyCopyCellModule implements  CommandTaskCell.CellCommandTaskable,
       }
       private int size(){ return _pools.size() ; }
       private PoolInfo getBestPool(){
-        TreeSet<PoolInfo> set = new TreeSet<PoolInfo>( _pools.values() ) ;
-        return set.size() <= 0 ? null : (PoolInfo)set.last() ;
+          return (_pools.size() == 0 ? null : Collections.max(_pools.values()));
       }
       public String toString(){
          StringBuffer sb = new StringBuffer() ;
-         TreeSet<PoolInfo> set = new TreeSet<PoolInfo>( _pools.values() ) ;
-         for( PoolInfo poolInfo : set ){
-            sb.append(poolInfo.toString()).append("\n");
+         TreeSet<PoolInfo> set = new TreeSet<PoolInfo>(_pools.values());
+         for (PoolInfo info : set) {
+            sb.append(info.toString()).append("\n");
          }
          sb.append("First : ").append(set.first().toString()).append("\n");
          sb.append("Last  : ").append(set.last().toString()).append("\n");
@@ -525,8 +509,8 @@ public class EasyCopyCellModule implements  CommandTaskCell.CellCommandTaskable,
               }
               _cell.say("PoolGroup list : "+_poolGroupList);
               int waitingFor = 0 ;
-              for( Iterator i = _poolGroupList.iterator() ; i.hasNext() ; ){
-                 String poolName = (String)i.next() ;
+              for (Object o : _poolGroupList) {
+                 String poolName = (String)o;
                  try{
                     _core.sendMessage( new CellMessage( new CellPath(poolName) , "xgetcellinfo") ) ;
                     waitingFor ++ ;
@@ -544,16 +528,12 @@ public class EasyCopyCellModule implements  CommandTaskCell.CellCommandTaskable,
 
               _poolInfoHandler = new PoolInfoHandler() ;
 
-              for( Iterator i = _poolGroupList.iterator() ; i.hasNext() ; ){
-
-                 Object o = i.next() ;
-
-                 if( ! ( o instanceof PoolCellInfo ) )continue ;
-
-                 PoolCellInfo cellInfo = (PoolCellInfo)o ;
-                 if( cellInfo.getCellName().equals(_sourcePoolName) )continue ;
-                 _poolInfoHandler.update(  cellInfo ) ;
-
+              for (Object o : _poolGroupList) {
+                  if (o instanceof PoolCellInfo) {
+                      PoolCellInfo cellInfo = (PoolCellInfo)o ;
+                      if(!cellInfo.getCellName().equals(_sourcePoolName) )
+                          _poolInfoHandler.update(  cellInfo ) ;
+                  }
               }
 
               _state   = ST_PROCESSING_COPYTO ;
@@ -697,7 +677,7 @@ public class EasyCopyCellModule implements  CommandTaskCell.CellCommandTaskable,
 
          _errorOutput = new ObjectOutputStream( new FileOutputStream( errorFileName )  ) ;
 
-         _inProgressMap      = new HashMap<PnfsId, RepositoryEntry>() ;
+         _inProgressMap = new HashMap<PnfsId,RepositoryEntry>();
 
          while( ! Thread.interrupted() ){
 
@@ -814,7 +794,7 @@ public class EasyCopyCellModule implements  CommandTaskCell.CellCommandTaskable,
 
              _errorOutput = new ObjectOutputStream( new FileOutputStream( errorFileName )  ) ;
 
-             _inProgressMap      = new HashMap<PnfsId, RepositoryEntry>() ;
+             _inProgressMap     = new HashMap<PnfsId,RepositoryEntry>();
              _state             = ST_PROCESSING ;
              _message           = "Processing ... ";
              _processErrorCount = 0 ;
