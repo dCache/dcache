@@ -151,7 +151,7 @@ public abstract class AbstractCacheRepository
     {
         try {
             long size = entry.getSize();
-            synchronized (this) {
+            synchronized (_precious) {
                 if (_precious.remove(entry.getPnfsId())) {
                     _preciousSpace -= size;
                 }
