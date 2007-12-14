@@ -18,6 +18,8 @@ import diskCacheV111.vehicles.PoolRemoveFilesFromHSMMessage;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.CellNucleus;
+import dmg.cells.nucleus.NoRouteToCellException;
+import java.io.NotSerializableException;
 
 import org.dcache.services.AbstractCell;
 
@@ -249,7 +251,9 @@ class RequestTracker
                 _timer.schedule(timeout, _timeout);
                 _poolRequests.put(hsm, timeout);
                 break;
-            } catch (Exception e) {
+            } catch (NotSerializableException e) {
+                throw new RuntimeException("Internal error (cannot serialise message)", e);
+            } catch (NoRouteToCellException e) {
                 _cell.error("Failed to send message to " + name
                             + ": e.getMessage()");
                 _pools.remove(pool.getName());
