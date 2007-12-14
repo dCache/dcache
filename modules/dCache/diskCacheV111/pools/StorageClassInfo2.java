@@ -36,7 +36,7 @@ public class StorageClassInfo2 implements CacheFileAvailable
             if( !(obj instanceof Request) ) return false;
 
             Request other = (Request)obj;
-            return  other.time == this.time && other.size == this.size && other.id.equals(id)
+            return  other.time == this.time && other.size == this.size && other.id.equals(id);
         }
 
         @Override
