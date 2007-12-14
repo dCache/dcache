@@ -377,10 +377,6 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
 
                 usedDataSpace += entry.getSize();
 
-                if (entry.isPrecious()) {
-                    _preciousSpace += entry.getSize();
-                }
-
                 if (_log.isDebugEnabled()) {
                     _log.debug(id +" " + entry.getState());
                 }

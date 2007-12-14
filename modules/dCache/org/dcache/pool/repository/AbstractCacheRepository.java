@@ -54,12 +54,12 @@ public abstract class AbstractCacheRepository
      * Amount of precious space in the repository. This is the sum of
      * the size of all entries in <code>_precious</code>.
      */
-    protected long _preciousSpace = 0;
+    private long _preciousSpace = 0;
 
     /**
      * Set of precious entries.
      */
-    protected final Set<PnfsId> _precious = new HashSet<PnfsId>();
+    private final Set<PnfsId> _precious = new HashSet<PnfsId>();
 
     /**
      * Space reservation.
@@ -68,7 +68,7 @@ public abstract class AbstractCacheRepository
 
     /**
      * Current amount of reserved space. Protected against concurrent
-     * access by the monitor of the space monitor.
+     * access by _spaceReservationLock.
      */
     private long _reservedSpace = 0L;
 
@@ -152,7 +152,7 @@ public abstract class AbstractCacheRepository
         try {
             long size = entry.getSize();
             synchronized (this) {
-                if (_precious.remove(entry)) {
+                if (_precious.remove(entry.getPnfsId())) {
                     _preciousSpace -= size;
                 }
             }
@@ -216,6 +216,14 @@ public abstract class AbstractCacheRepository
             break;
 
         case SCAN:
+            try {
+                CacheRepositoryEntry entry = event.getRepositoryEntry();
+                if (entry.isPrecious()) {
+                    addPrecious(entry);
+                }
+            } catch (CacheException ignored) {
+            }
+
             for (CacheRepositoryListener listener : _repositoryListners) {
                 listener.scanned(event);
             }
