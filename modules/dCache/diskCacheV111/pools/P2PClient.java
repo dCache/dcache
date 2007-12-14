@@ -327,7 +327,7 @@ public class P2PClient {
          sb.append(" checksum="+_companion.getTransferChecksum().toHexString());
          sb.append(")");
          _cell.esay(sb.toString());
-         
+
 
 
 
@@ -377,13 +377,13 @@ public class P2PClient {
             }
             return ;
          }finally{
-            try{ _socket.close() ; }catch(Exception ee){}
-            try{ if(_dataFile!=null)_dataFile.close() ; }catch(Exception ee){}
+            try{ _socket.close() ; }catch(IOException ee){}
+            try{ if(_dataFile!=null)_dataFile.close() ; }catch(IOException ee){}
          }
          CacheRepositoryEntry entry = _companion.getEntry() ;
          try{
             entry.setCached() ;
-         }catch(Exception ee ){
+         }catch(CacheException ee ){
             esay(ee);
          }
          //
