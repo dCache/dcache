@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.HashSet;
 import java.util.Set;
 import java.io.Serializable;
+import java.io.ObjectInputStream;
+import java.io.IOException;
 
 import org.apache.log4j.Logger;
 
@@ -18,10 +20,10 @@ import diskCacheV111.util.CacheException;
  * a file.
  */
 public class CacheRepositoryEntryState implements Serializable
-{ 
+{
     static final long serialVersionUID = -715461991190516015L;
 
-    private static Logger _log = 
+    private static Logger _log =
         Logger.getLogger("logger.org.dcache.repository");
 
     private final Set<StickyRecord> _sticky = new HashSet<StickyRecord>(0);
@@ -34,16 +36,16 @@ public class CacheRepositoryEntryState implements Serializable
     private boolean _error       = false;
     private boolean _removed     = false;
 
-    /** 
+    /**
      * When true, the state needs to be written to permanent storage.
      */
     private transient boolean _dirty = false;
 
-    public CacheRepositoryEntryState() 
+    public CacheRepositoryEntryState()
     {
     }
 
-    public CacheRepositoryEntryState(CacheRepositoryEntry entry) 
+    public CacheRepositoryEntryState(CacheRepositoryEntry entry)
         throws CacheException
     {
         _precious   = entry.isPrecious();
@@ -87,7 +89,7 @@ public class CacheRepositoryEntryState implements Serializable
      * file is busy if there is a transfer in progress
      * @return
      */
-    public synchronized boolean isBusy() 
+    public synchronized boolean isBusy()
     {
         return _toStore || _toClient || _fromClient || _fromStore;
     }
@@ -96,7 +98,7 @@ public class CacheRepositoryEntryState implements Serializable
      *
      * @return true if file not precious, not sticky and not used now
      */
-    public synchronized boolean canRemove() 
+    public synchronized boolean canRemove()
     {
         return !(_precious || isBusy() || isSticky() || _error);
     }
@@ -105,17 +107,17 @@ public class CacheRepositoryEntryState implements Serializable
     /*
      * State getters
      */
-    public synchronized boolean isError() 
+    public synchronized boolean isError()
     {
         return _error;
     }
 
-    public synchronized boolean isCached() 
+    public synchronized boolean isCached()
     {
         return _cached;
     }
 
-    public synchronized boolean isPrecious() 
+    public synchronized boolean isPrecious()
     {
         return _precious;
     }
@@ -124,27 +126,27 @@ public class CacheRepositoryEntryState implements Serializable
      *
      * @return true if file ready for clients (CACHED or PRECIOUS)
      */
-    public synchronized boolean isReady() 
+    public synchronized boolean isReady()
     {
         return _precious | _cached;
     }
 
-    public synchronized boolean isReceivingFromClient() 
+    public synchronized boolean isReceivingFromClient()
     {
         return _fromClient;
     }
 
-    public synchronized boolean isReceivingFromStore() 
+    public synchronized boolean isReceivingFromStore()
     {
         return _fromStore;
     }
 
-    public synchronized boolean isSendingToStore() 
+    public synchronized boolean isSendingToStore()
     {
         return _toStore;
     }
 
-    public synchronized boolean isSticky() 
+    public synchronized boolean isSticky()
     {
         long now = System.currentTimeMillis();
         for (StickyRecord record : _sticky) {
@@ -155,12 +157,12 @@ public class CacheRepositoryEntryState implements Serializable
         return false;
     }
 
-    public synchronized boolean isRemoved() 
+    public synchronized boolean isRemoved()
     {
         return _removed;
     }
 
-    public synchronized List<StickyRecord> stickyRecords() 
+    public synchronized List<StickyRecord> stickyRecords()
     {
         return new ArrayList<StickyRecord>(_sticky);
     }
@@ -170,23 +172,23 @@ public class CacheRepositoryEntryState implements Serializable
      *  State transitions
      *
      */
-    public synchronized void setSticky(String owner, long expire) 
+    public synchronized void setSticky(String owner, long expire)
         throws IllegalStateException
     {
         if (_error) {
             throw new IllegalStateException("No state transition for files in error state");
         }
-        
+
         // too late
         if (_removed) {
             throw new IllegalStateException("Entry in removed state");
         }
-        
+
         // sticky allowed on 'received' files only
         if (!(_precious || _cached)) {
             throw new IllegalStateException("File still transient");
         }
-        
+
         // if sticky flag modified, make changes persistent
         if (expire == -1 || expire > System.currentTimeMillis()) {
             _sticky.add(new StickyRecord(owner, expire));
@@ -194,43 +196,43 @@ public class CacheRepositoryEntryState implements Serializable
         }
     }
 
-    public synchronized void cleanSticky(String owner, long expire) 
+    public synchronized void cleanSticky(String owner, long expire)
         throws IllegalStateException
     {
         // too late
         if (_removed) {
             throw new IllegalStateException("Entry in removed state");
         }
-        
+
         // if sticky flag modified, make changes persistent
         if (_sticky.remove(new StickyRecord(owner, expire))) {
             markDirty();
         }
     }
 
-    public synchronized void cleanBad() 
+    public synchronized void cleanBad()
     {
         // too late
         if (_removed) {
             throw new IllegalStateException("Entry in removed state");
         }
-        
-        _error = false;			
+
+        _error = false;
     }
 
-    public synchronized void setPrecious(boolean force) 
+    public synchronized void setPrecious(boolean force)
         throws IllegalStateException
     {
         if (!force && _error) {
             throw new IllegalStateException("No state transition for files in error state");
         }
-        
+
         // too late
         if (_removed) {
             throw new IllegalStateException("Entry in removed state");
         }
-        
-        // precious file can't be in receiving state        
+
+        // precious file can't be in receiving state
         _fromClient = false;
         _fromStore = false;
         _precious = true;
@@ -244,18 +246,18 @@ public class CacheRepositoryEntryState implements Serializable
         if (_error) {
             throw new IllegalStateException("No state transition for files in error state");
         }
-        
+
         // too late
         if (_removed) {
             throw new IllegalStateException("Entry in removed state");
         }
-        
+
         // cached file can't be in receiving state
         _fromClient = false;
         _fromStore = false;
         _cached = true;
         _precious = false;
-        
+
         markDirty();
     }
 
@@ -264,17 +266,17 @@ public class CacheRepositoryEntryState implements Serializable
         if (_error) {
             throw new IllegalStateException("No state transition for files in error state");
         }
-        
+
         // too late
         if (_removed) {
             throw new IllegalStateException("Entry in removed state");
         }
-        
+
         // only 'clean' file allowed to be received
         if (_precious || _cached || _fromStore) {
             throw new IllegalStateException("File still transient");
         }
-        
+
         _fromClient = true;
         markDirty();
     }
@@ -284,17 +286,17 @@ public class CacheRepositoryEntryState implements Serializable
         if (_error) {
             throw new IllegalStateException("No state transition for files in error state");
         }
-        
+
         // too late
         if (_removed) {
             throw new IllegalStateException("Entry in removed state");
         }
-        
+
         // only 'clean' file allowed to be received
         if (_precious || _cached || _fromClient) {
             throw new IllegalStateException("File still transient");
         }
-        
+
         _fromStore = true;
         markDirty();
     }
@@ -304,17 +306,17 @@ public class CacheRepositoryEntryState implements Serializable
         if (_error) {
             throw new IllegalStateException("No state transition for files in error state");
         }
-        
+
         // too late
         if (_removed) {
             throw new IllegalStateException("Entry in removed state");
         }
-        
+
         // only received files can be delivered to a client
         if (!(_precious || _cached)) {
             throw new IllegalStateException("File still transient");
         }
-        
+
         _toClient = true;
     }
 
@@ -323,17 +325,17 @@ public class CacheRepositoryEntryState implements Serializable
         if (_error) {
             throw new IllegalStateException("No state transition for files in error state");
         }
-        
+
         // too late
         if (_removed) {
             throw new IllegalStateException("Entry in removed state");
         }
-        
+
         // only received precious files can be flushed to store
         if (!_precious) {
             throw new IllegalStateException("File still transient");
         }
-        
+
         _toStore = true;
     }
 
@@ -343,7 +345,7 @@ public class CacheRepositoryEntryState implements Serializable
         if (_removed) {
             throw new IllegalStateException("Entry in removed state");
         }
-        
+
         _toStore = false;
     }
 
@@ -352,7 +354,7 @@ public class CacheRepositoryEntryState implements Serializable
         if (_removed) {
             throw new IllegalStateException("Entry in removed state");
         }
-        
+
         _error = true;
     }
 
@@ -361,7 +363,7 @@ public class CacheRepositoryEntryState implements Serializable
         _removed = true;
     }
 
-    public synchronized String toString() 
+    public synchronized String toString()
     {
         StringBuilder sb = new StringBuilder();
         sb.append(_cached && !_precious ? "C" : "-" );
@@ -375,5 +377,12 @@ public class CacheRepositoryEntryState implements Serializable
         sb.append(isSticky()            ? "X" : "-" );
         sb.append(_error                ? "E" : "-" );
         return sb.toString();
+    }
+
+    private void readObject(ObjectInputStream in)
+        throws IOException, ClassNotFoundException
+    {
+        in.defaultReadObject();
+        _dirty = false;
     }
 }

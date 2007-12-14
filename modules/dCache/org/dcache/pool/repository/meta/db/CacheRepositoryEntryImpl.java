@@ -227,12 +227,16 @@ public class CacheRepositoryEntryImpl implements CacheRepositoryEntry
     }
 
     /**
-     * Generates an event and sends it to the repository for processing.
+     * Generates an event and sends it to the repository for
+     * processing.
+     *
+     * FIXME: We should actually generate a copy of the entry provided
+     * in the event.
      */
     private void generateEvent(EventType type)
     {
         CacheRepositoryEvent event =
-            new CacheRepositoryEvent(_repository, clone());
+            new CacheRepositoryEvent(_repository, this);
         _repository.processEvent(type, event);
     }
 
@@ -404,12 +408,6 @@ public class CacheRepositoryEntryImpl implements CacheRepositoryEntry
     public List<StickyRecord> stickyRecords()
     {
         return _state.stickyRecords();
-    }
-
-    // TODO; return a copy
-    public CacheRepositoryEntry clone()
-    {
-        return this;
     }
 
     public synchronized String toString()

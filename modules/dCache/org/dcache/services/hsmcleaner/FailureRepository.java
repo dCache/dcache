@@ -56,13 +56,13 @@ public class FailureRepository
      * Filename filter for identifying temporary files using during
      * flushing and recovery.
      */
-    protected static FilenameFilter temporaryFiles =
+    protected final static FilenameFilter temporaryFiles =
         new PatternFilenameFilter("flushing-.+\\.tmp");
 
     /**
      * Filename filter for identifying files containing failed URIs.
      */
-    protected static FilenameFilter failureFiles =
+    protected final static FilenameFilter failureFiles =
         new PatternFilenameFilter("failed-\\d+(-\\d+)?");
 
     public FailureRepository(File directory)
@@ -357,7 +357,7 @@ public class FailureRepository
             throw new FileNotFoundException("Failed to create file "
                                             + tmpFile + ": " + e.getMessage());
         } catch (IOException e) {
-            throw new IOException("Failed to flush failure repository: " 
+            throw new IOException("Failed to flush failure repository: "
                                   + e.getMessage());
         } finally {
             if (!success) {

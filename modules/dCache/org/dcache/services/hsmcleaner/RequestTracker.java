@@ -138,7 +138,7 @@ class RequestTracker
     /**
      * Set maximum number of files to include in a single request.
      */
-    public void setMaxFilesPerRequest(int value)
+    synchronized public void setMaxFilesPerRequest(int value)
     {
         _maxFilesPerRequest = value;
     }
@@ -146,7 +146,7 @@ class RequestTracker
     /**
      * Returns maximum number of files to include in a single request.
      */
-    public int getMaxFilesPerRequest()
+    synchronized public int getMaxFilesPerRequest()
     {
         return _maxFilesPerRequest;
     }
@@ -154,7 +154,7 @@ class RequestTracker
     /**
      * Set timeout in milliseconds for delete requests send to pools.
      */
-    public void setTimeout(long timeout)
+    synchronized public void setTimeout(long timeout)
     {
         _timeout = timeout;
     }
@@ -163,7 +163,7 @@ class RequestTracker
      * Returns timeout in milliseconds for delete requests send to
      * pools.
      */
-    public long getTimeout()
+    synchronized public long getTimeout()
     {
         return _timeout;
     }
