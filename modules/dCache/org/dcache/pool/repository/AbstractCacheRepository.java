@@ -5,6 +5,7 @@ import java.util.Set;
 import java.util.HashSet;
 import java.util.ArrayList;
 import java.util.MissingResourceException;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.log4j.Logger;
@@ -42,7 +43,7 @@ public abstract class AbstractCacheRepository
      * Registered event listeners.
      */
     private final List <CacheRepositoryListener> _repositoryListners =
-        new ArrayList<CacheRepositoryListener>();
+        new CopyOnWriteArrayList<CacheRepositoryListener>();
 
     /**
      * Space monitor for bookkeeping.
@@ -96,9 +97,7 @@ public abstract class AbstractCacheRepository
         if (_log.isDebugEnabled()) {
             _log.debug("adding listener: " + listener);
         }
-        synchronized(_repositoryListners) {
-            _repositoryListners.add(listener);
-        }
+        _repositoryListners.add(listener);
     }
 
     /**
@@ -110,9 +109,7 @@ public abstract class AbstractCacheRepository
             _log.debug("removing listener: " + listener);
         }
 
-        synchronized(_repositoryListners) {
-            _repositoryListners.remove(listener);
-        }
+        _repositoryListners.remove(listener);
     }
 
     /**
@@ -173,78 +170,76 @@ public abstract class AbstractCacheRepository
             _log.debug("Broadcasting event: " + event + " type " + type);
         }
 
-        synchronized (_repositoryListners) {
-            switch (type) {
-            case CACHED:
-                removePrecious(event.getRepositoryEntry());
-                for (CacheRepositoryListener listener : _repositoryListners) {
-                    listener.cached(event);
-                }
-                break;
-
-            case PRECIOUS:
-                addPrecious(event.getRepositoryEntry());
-                for (CacheRepositoryListener listener : _repositoryListners) {
-                    listener.precious(event);
-                }
-                break;
-
-            case CREATE:
-                for (CacheRepositoryListener listener : _repositoryListners) {
-                    listener.created(event);
-                }
-                break;
-
-            case REMOVE:
-                for (CacheRepositoryListener listener : _repositoryListners) {
-                    listener.removed(event);
-                }
-                break;
-
-            case TOUCH:
-                for (CacheRepositoryListener listener : _repositoryListners) {
-                    listener.touched(event);
-                }
-                break;
-
-            case DESTROY:
-                try {
-                    CacheRepositoryEntry entry = event.getRepositoryEntry();
-                    freeSpace(entry.getSize());
-                    removePrecious(entry);
-                } catch (CacheException ignored) {
-                }
-                for (CacheRepositoryListener listener : _repositoryListners) {
-                    listener.destroyed(event);
-                }
-                break;
-
-            case SCAN:
-                for (CacheRepositoryListener listener : _repositoryListners) {
-                    listener.scanned(event);
-                }
-                break;
-
-            case AVAILABLE:
-                for (CacheRepositoryListener listener : _repositoryListners) {
-                    listener.available(event);
-                }
-                break;
-
-            case STICKY:
-                for (CacheRepositoryListener listener : _repositoryListners) {
-                    listener.sticky(event);
-                }
-                break;
-
-            case SPACE:
-                if (!(event instanceof CacheNeedSpaceEvent))
-                    throw new IllegalArgumentException("SPACE events must be CacheNeedSpaceEvent");
-                for (CacheRepositoryListener listener : _repositoryListners) {
-                    listener.needSpace((CacheNeedSpaceEvent)event);
-                }
-                break;
+        switch (type) {
+        case CACHED:
+            removePrecious(event.getRepositoryEntry());
+            for (CacheRepositoryListener listener : _repositoryListners) {
+                listener.cached(event);
             }
+            break;
+
+        case PRECIOUS:
+            addPrecious(event.getRepositoryEntry());
+            for (CacheRepositoryListener listener : _repositoryListners) {
+                listener.precious(event);
+            }
+            break;
+
+        case CREATE:
+            for (CacheRepositoryListener listener : _repositoryListners) {
+                listener.created(event);
+            }
+            break;
+
+        case REMOVE:
+            for (CacheRepositoryListener listener : _repositoryListners) {
+                listener.removed(event);
+            }
+            break;
+
+        case TOUCH:
+            for (CacheRepositoryListener listener : _repositoryListners) {
+                listener.touched(event);
+            }
+            break;
+
+        case DESTROY:
+            try {
+                CacheRepositoryEntry entry = event.getRepositoryEntry();
+                freeSpace(entry.getSize());
+                removePrecious(entry);
+            } catch (CacheException ignored) {
+            }
+            for (CacheRepositoryListener listener : _repositoryListners) {
+                listener.destroyed(event);
+            }
+            break;
+
+        case SCAN:
+            for (CacheRepositoryListener listener : _repositoryListners) {
+                listener.scanned(event);
+            }
+            break;
+
+        case AVAILABLE:
+            for (CacheRepositoryListener listener : _repositoryListners) {
+                listener.available(event);
+            }
+            break;
+
+        case STICKY:
+            for (CacheRepositoryListener listener : _repositoryListners) {
+                listener.sticky(event);
+            }
+            break;
+
+        case SPACE:
+            if (!(event instanceof CacheNeedSpaceEvent))
+                throw new IllegalArgumentException("SPACE events must be CacheNeedSpaceEvent");
+            for (CacheRepositoryListener listener : _repositoryListners) {
+                listener.needSpace((CacheNeedSpaceEvent)event);
+            }
+            break;
 	}
     }
 
