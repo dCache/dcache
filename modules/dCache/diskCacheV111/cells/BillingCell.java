@@ -61,7 +61,7 @@ public class BillingCell extends CellAdapter {
           if( printModeString != null ){
              try{
                  _printMode = Integer.parseInt( printModeString ) ;
-             }catch(Exception eee ){
+             }catch(NumberFormatException eee ){
                  esay("PrintMode : Illegal printMode values : "+printModeString);
              }
           }
@@ -71,7 +71,7 @@ public class BillingCell extends CellAdapter {
           if( timeoutString != null ){
              try{
                  _communicationTimeout = Long.parseLong( timeoutString ) * 1000L ;
-             }catch(Exception eee ){
+             }catch(NumberFormatException eee ){
                  esay("PrintMode : Illegal communication timeout value : "+timeoutString);
              }
           }
@@ -169,10 +169,9 @@ public class BillingCell extends CellAdapter {
        pw.print(" / ") ;
        pw.println( Formats.field(""+_failed,6,Formats.LEFT) ) ;
        synchronized( _map ){
-          Iterator i = _map.entrySet().iterator() ;
-          while( i.hasNext() ){
-             Map.Entry entry = (Map.Entry)i.next() ;
-             int [] values = (int [])entry.getValue() ;
+
+          for( Map.Entry<String, int[]> entry : _map.entrySet() ){
+             int [] values = entry.getValue() ;
              pw.print( Formats.field(entry.getKey().toString(),20,Formats.RIGHT) );
              pw.print(" : ") ;
              pw.print( Formats.field(""+values[0],6,Formats.RIGHT) ) ;
@@ -190,7 +189,7 @@ public class BillingCell extends CellAdapter {
                   cellName : cellName.substring(0,pos);
        String transactionType = info.getMessageType() ;
        synchronized( _poolStatistics ){
-          long [] counters = (long [])_poolStatistics.get(cellName) ;
+          long [] counters = _poolStatistics.get(cellName) ;
           if( counters == null )
 	     _poolStatistics.put( cellName , counters = new long[4] ) ;
 
@@ -213,7 +212,7 @@ public class BillingCell extends CellAdapter {
 
                 String key = sinfo.getStorageClass()+"@"+sinfo.getHsm() ;
 
-                counters = (long [])map.get(key) ;
+                counters = map.get(key) ;
 
                 if( counters == null )map.put( key , counters = new long[8] ) ;
 
@@ -249,7 +248,7 @@ public class BillingCell extends CellAdapter {
 
           String      key    = info.getMessageType()+":"+info.getCellType() ;
           synchronized( _map ){
-             int    []   values = (int [])_map.get( key ) ;
+             int    []   values = _map.get( key ) ;
 
              if( values == null )_map.put( key , values = new int[2] ) ;
 
@@ -299,16 +298,16 @@ public class BillingCell extends CellAdapter {
        File outputFile = new File( _currentDb , "billing-"+ fileNameExtention );
        File errorFile  = new File( _currentDb , "billing-error-"+ fileNameExtention ) ;
 
+       PrintWriter pw = null;
        try{
-          PrintWriter pw = new PrintWriter( new FileWriter( outputFile , true ));
-          try{
-             pw.println(output);
-          }finally{
-             pw.close() ;
-          }
-       }catch(Exception ee){
+          pw = new PrintWriter( new FileWriter( outputFile , true ));
+          pw.println(output);
+       }catch(IOException ee){
           esay("Can't write billing ["+outputFile+"] : "+ee.toString() ) ;
+       } finally{
+           if( pw != null ) pw.close() ;
        }
+
        //
        // exclude check
        //
@@ -317,14 +316,12 @@ public class BillingCell extends CellAdapter {
            ! info.getMessageType().equals("check") ){
 
           try{
-             PrintWriter pw = new PrintWriter( new FileWriter( errorFile , true ));
-             try{
-                pw.println(output);
-             }finally{
-                pw.close() ;
-             }
-          }catch(Exception ee){
+             pw = new PrintWriter( new FileWriter( errorFile , true ));
+             pw.println(output);
+          }catch(IOException ee){
              esay("Can't write billing-error : "+ee.toString() ) ;
+          }finally{
+              if( pw != null ) pw.close() ;
           }
        }
     }
