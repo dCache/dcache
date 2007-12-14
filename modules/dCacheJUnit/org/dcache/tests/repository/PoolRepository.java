@@ -26,6 +26,8 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileNotInCacheException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.event.CacheRepositoryEvent;
+import diskCacheV111.vehicles.GenericStorageInfo;
+import diskCacheV111.vehicles.StorageInfo;
 
 public class PoolRepository {
 
@@ -395,9 +397,36 @@ public class PoolRepository {
         entry.setPrecious();
 
         CacheRepositoryEvent repositoryEvent = new CacheRepositoryEvent(this, entry );
-        _repository.processEvent(EventType.SPACE, repositoryEvent);
+        try {
+            _repository.processEvent(EventType.SPACE, repositoryEvent);
+            fail("NeedSpace even should react on wrong event type");
+        } catch (IllegalArgumentException iae) {
+            // OK
+        }
+    }
 
-        // class cast exception here
+    @Test
+    public void testFileSize() throws Exception {
+
+
+        String id = generateNewID();
+        PnfsId pnfsId = new PnfsId(id);
+
+        CacheRepositoryEntry entry = _repository.createEntry(pnfsId);
+
+
+        StorageInfo storageInfo = new GenericStorageInfo();
+        storageInfo.setFileSize(17);
+
+        entry.setStorageInfo(storageInfo);
+
+        assertEquals("file in non ready state should return size of real data file",
+                                entry.getDataFile().length(), entry.getSize() );
+
+        entry.setCached();
+        assertEquals("file in non ready state can return size defined in storage info",
+                storageInfo.getFileSize(), entry.getSize() );
+
     }
 
 	@Test(timeout = 500)
