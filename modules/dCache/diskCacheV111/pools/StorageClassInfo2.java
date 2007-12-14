@@ -8,7 +8,7 @@ import  diskCacheV111.repository.* ;
 
 import  java.util.*;
 
-public class StorageClassInfo2 implements CacheFileAvailable 
+public class StorageClassInfo2 implements CacheFileAvailable
 {
     class Request implements Comparable<Request>
     {
@@ -22,13 +22,29 @@ public class StorageClassInfo2 implements CacheFileAvailable
             this.size = size;
         }
 
-        public int compareTo(Request r) 
+        public int compareTo(Request r)
         {
-            return time < r.time 
+            return time < r.time
                 ? -1
                 : (time > r.time ? 1 : id.compareTo(r.id));
 
         }
+
+        @Override
+        public boolean equals(Object obj) {
+            if( obj == this ) return true;
+            if( !(obj instanceof Request) ) return false;
+
+            Request other = (Request)obj;
+            return  other.time == this.time && other.size == this.size && other.id.equals(id)
+        }
+
+        @Override
+        public int hashCode() {
+            return 17;
+        }
+
+
     }
 
     private Map<PnfsId, Request> _pnfsIds = new HashMap<PnfsId, Request>();
@@ -67,7 +83,7 @@ public class StorageClassInfo2 implements CacheFileAvailable
 
     public StorageClassFlushInfo getFlushInfo()
     {
-        StorageClassFlushInfo info = 
+        StorageClassFlushInfo info =
             new StorageClassFlushInfo( _hsmName , _name ) ;
 
         synchronized( this ){
@@ -106,7 +122,7 @@ public class StorageClassInfo2 implements CacheFileAvailable
                         Request request = _pnfsIds.get(id);
                         if (request != null && _requests.remove(request)) {
                             _failedRequests.add(request);
-                            _totalSize -= request.size; 
+                            _totalSize -= request.size;
                         }
                     }
                     _errorCounter -- ;
@@ -124,7 +140,7 @@ public class StorageClassInfo2 implements CacheFileAvailable
         }
     }
 
-    private class InformFlushCallback implements Runnable 
+    private class InformFlushCallback implements Runnable
     {
         private int  _flushErrorCounter = _errorCounter ;
         private long _flushId           = _recentFlushId ;
@@ -173,7 +189,7 @@ public class StorageClassInfo2 implements CacheFileAvailable
             synchronized (this) {
                 int n = 0;
                 for (Request request : _requests) {
-                    if (n++ < maxCount) 
+                    if (n++ < maxCount)
                         break;
 
                     try {
@@ -187,13 +203,13 @@ public class StorageClassInfo2 implements CacheFileAvailable
                         if (storageHandler.store(e, this)) {
                             continue;
                         }
-                      
+
                         _activeCounter ++ ;
-                      
+
                         //System.out.println("DEBUGFLUSH2 : adding : "+e ) ;
                     } catch (Throwable ce) {
                         _errorCounter ++ ;
-                        System.err.println("Problem submitting : " 
+                        System.err.println("Problem submitting : "
                                            + request.id + " : " + ce);
                     }
 
@@ -212,35 +228,35 @@ public class StorageClassInfo2 implements CacheFileAvailable
 
     public  long getLastSubmitted()
     {
-        return _lastSubmittedAt ; 
+        return _lastSubmittedAt ;
     }
 
     public  int getActiveCount()
     {
         synchronized( _activeCounterLock ) {
-            return _activeCounter; 
+            return _activeCounter;
         }
     }
 
     public  int getErrorCount()
     {
-        return _errorCounter; 
+        return _errorCounter;
     }
 
-    public StorageClassInfo2(CacheRepository repository, 
+    public StorageClassInfo2(CacheRepository repository,
                              String hsmName, String storageClass)
     {
         _repository = repository;
         _name = storageClass;
         _hsmName = hsmName.toLowerCase();
     }
-   
+
     @Override
-    public int hashCode() 
+    public int hashCode()
     {
         return _name.hashCode() | _hsmName.hashCode();
     }
-   
+
     @Override
     public boolean equals( Object obj )
     {
@@ -251,7 +267,7 @@ public class StorageClassInfo2 implements CacheFileAvailable
     }
 
     public synchronized void addRequest(CacheRepositoryEntry entry)
-        throws CacheException 
+        throws CacheException
     {
         PnfsId id = entry.getPnfsId();
         if (_pnfsIds.containsKey(id)) {
@@ -263,8 +279,8 @@ public class StorageClassInfo2 implements CacheFileAvailable
         _requests.add(r);
         _totalSize += r.size;
     }
-    
-    public synchronized void activate(PnfsId pnfsId) throws CacheException 
+
+    public synchronized void activate(PnfsId pnfsId) throws CacheException
     {
         Request request = _pnfsIds.get(pnfsId);
         if (!_failedRequests.remove(request)) {
@@ -274,8 +290,8 @@ public class StorageClassInfo2 implements CacheFileAvailable
         _requests.add(request);
         _totalSize += request.size;
     }
-    
-    public synchronized void activateAll() throws CacheException 
+
+    public synchronized void activateAll() throws CacheException
     {
         for (Request request : _failedRequests) {
             _requests.add(request);
@@ -284,7 +300,7 @@ public class StorageClassInfo2 implements CacheFileAvailable
         _failedRequests.clear();
     }
 
-    public synchronized void deactivate(PnfsId pnfsId) throws CacheException 
+    public synchronized void deactivate(PnfsId pnfsId) throws CacheException
     {
         Request request = _pnfsIds.get(pnfsId);
         if (!_requests.remove(request)) {
@@ -297,13 +313,13 @@ public class StorageClassInfo2 implements CacheFileAvailable
     }
 
     public synchronized CacheRepositoryEntry removeRequest(PnfsId pnfsId)
-        throws CacheException 
+        throws CacheException
     {
         Request request = _pnfsIds.remove(pnfsId);
         if (request == null) {
             return null;
         }
-         
+
         if (_requests.remove(request)) {
             _totalSize -= request.size;
         } else {
@@ -314,17 +330,17 @@ public class StorageClassInfo2 implements CacheFileAvailable
 
     public String getHsm()
     {
-        return _hsmName; 
+        return _hsmName;
     }
-    
+
     public String getName()
     {
         return _name;
     }
 
-    public synchronized Iterator<CacheRepositoryEntry> getRequests() 
+    public synchronized Iterator<CacheRepositoryEntry> getRequests()
     {
-        List<CacheRepositoryEntry> result = 
+        List<CacheRepositoryEntry> result =
             new ArrayList<CacheRepositoryEntry>();
         for (Request request : _requests) {
             try {
@@ -335,10 +351,10 @@ public class StorageClassInfo2 implements CacheFileAvailable
         }
         return result.iterator();
     }
-    
+
     public synchronized Iterator<CacheRepositoryEntry> getFailedRequests()
     {
-        List<CacheRepositoryEntry> result = 
+        List<CacheRepositoryEntry> result =
             new ArrayList<CacheRepositoryEntry>();
         for (Request request : _failedRequests) {
             try {
@@ -385,7 +401,7 @@ public class StorageClassInfo2 implements CacheFileAvailable
 
     public synchronized void setSuspended(boolean suspended)
     {
-        _suspended = suspended; 
+        _suspended = suspended;
     }
 
     public synchronized boolean isSuspended()
@@ -405,7 +421,7 @@ public class StorageClassInfo2 implements CacheFileAvailable
 
     public synchronized void setDefined(boolean d)
     {
-        _defined = d; 
+        _defined = d;
     }
 
     public synchronized boolean isDefined()
@@ -415,12 +431,12 @@ public class StorageClassInfo2 implements CacheFileAvailable
 
     public synchronized int  size()
     {
-        return _requests.size() + _failedRequests.size() ; 
+        return _requests.size() + _failedRequests.size() ;
     }
 
     public synchronized long getTotalSize()
     {
-        return _totalSize; 
+        return _totalSize;
     }
 
     public synchronized void setExpiration(int expiration)
@@ -435,12 +451,12 @@ public class StorageClassInfo2 implements CacheFileAvailable
 
     public synchronized void setMaxSize(long maxTotalSize)
     {
-        _maxTotalSize = maxTotalSize; 
+        _maxTotalSize = maxTotalSize;
     }
 
     public synchronized long getMaxSize()
     {
-        return _maxTotalSize; 
+        return _maxTotalSize;
     }
 
     public synchronized int  getPending()
@@ -450,17 +466,17 @@ public class StorageClassInfo2 implements CacheFileAvailable
 
     public synchronized int  getExpiration()
     {
-        return (int)(_expiration / 1000); 
+        return (int)(_expiration / 1000);
     }
 
     public synchronized int  getRequestCount()
     {
-        return _requests.size() ; 
+        return _requests.size() ;
     }
 
     public synchronized int  getFailedRequestCount()
     {
-        return _failedRequests.size() ; 
+        return _failedRequests.size() ;
     }
 
     protected synchronized long getOldestCreationTime()
@@ -469,6 +485,6 @@ public class StorageClassInfo2 implements CacheFileAvailable
             return 0L;
         } else {
             return _requests.first().time;
-        }        
+        }
     }
 }
