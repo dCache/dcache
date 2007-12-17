@@ -6,15 +6,12 @@ import static org.junit.Assert.*;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.junit.Before;
 import org.junit.Test;
 
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 
-import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
-import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.PnfsGetCacheLocationsMessage;
 
 

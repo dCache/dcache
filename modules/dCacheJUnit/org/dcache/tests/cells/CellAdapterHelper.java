@@ -24,4 +24,25 @@ public class CellAdapterHelper extends CellAdapter {
     }
 
 
+    @Override
+    public void esay(String str) {
+
+        System.out.println(str);
+    }
+
+
+    @Override
+    public void esay(Throwable t) {
+        t.printStackTrace();
+    }
+
+
+    @Override
+    public void say(String str) {
+        System.out.println(str);
+    }
+
+
+
+
 }

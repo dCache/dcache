@@ -6,7 +6,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellMessage;
+import dmg.cells.nucleus.CellMessageAnswerable;
+import dmg.cells.nucleus.CellNucleus;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
 
@@ -39,7 +42,6 @@ public class GenericMocCellHelper extends CellAdapterHelper {
             List<Message> messages = messagesByType.get(messageType);
 
             if( messages == null || messages.isEmpty() ) {
-                System.out.println("No messages of type  " + messageType + " for "+ destinationPath);
                 return null;
             }
 
@@ -77,6 +79,47 @@ public class GenericMocCellHelper extends CellAdapterHelper {
 
     }
 
+
+    /*
+     * Fake nucleus
+     */
+
+
+    public CellNucleus getNucleus() {
+        System.out.println("get nucleus");
+        return new NucleusHelper(this, "nucleus");
+
+    }
+
+    public static class NucleusHelper extends CellNucleus {
+        public final CellAdapter _cell;
+        public NucleusHelper(CellAdapter cell, String name) {
+            super(cell, name);
+            _cell = cell;
+        }
+
+        @Override
+        public void sendMessage(CellMessage msg, boolean local, boolean remote,
+                CellMessageAnswerable callback, long timeout) throws NotSerializableException {
+
+            CellMessage reply;
+            try {
+                reply = _cell.sendAndWait(msg, timeout);
+                if( reply != null ) {
+                    callback.answerArrived(msg, reply);
+                }
+            } catch (NoRouteToCellException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            } catch (InterruptedException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+
+        }
+
+
+    }
 
 
 }
