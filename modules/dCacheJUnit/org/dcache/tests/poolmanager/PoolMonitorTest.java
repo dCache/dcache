@@ -38,7 +38,7 @@ import diskCacheV111.vehicles.StorageInfo;
 public class PoolMonitorTest {
 
 
-    private static GenericMocCellHelper _cell = new GenericMocCellHelper("PnfsHandlerTestCell", "");
+    private static GenericMocCellHelper _cell = new GenericMocCellHelper("PoolMonitorTestCell", "");
 
     private PoolMonitorV5 _poolMonitor;
     private CostModule _costModule ;
