@@ -367,7 +367,7 @@ public class Configuration {
             "\t or just specify -1  or -2 \n"+
             "-priority=<int> specify job priority \n"+
             "-request_lifetime=<num of seconds> request lifetime in seconds\n"+
-            "-cksm_type=<type> calculate and verify server and client checksum values using this type (adler32|MD4|MD5| .... ).\n\tIf checksum value has been omitted, missing value will be computed over the local file.\n\tFor gridftp transfers to/from servers that support checksumming features\n"+
+            "-cksm_type=<type|negotiate> calculate and verify server and client checksum values using this type (adler32|MD4|MD5| .... ).\n\tIf checksum value has been omitted, missing value will be computed over the local file.\n\t If negotiate is set - client will attempt to negotiate cksm type for the file checksum value avilable at the server.\n\tFor gridftp transfers to/from servers that support checksumming features\n"+
             "-cksm_value=<checksum HEX value> override dynamic calucation of the local checksum with this value.\n\tIf cksm_type option has not been set, adler32 will be assumed.\n\tFor gridftp transfers to/from servers that support checksumming features\n"+
             "-copyjobfile=<file> where <file> is the path to the text file containing \n"+
             "\t the list of sources and destination\n"+
@@ -3291,5 +3291,4 @@ public class Configuration {
         this.cksm_value = cksm_value;
     }
 
-    
 }
