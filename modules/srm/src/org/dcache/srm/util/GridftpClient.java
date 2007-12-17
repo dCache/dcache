@@ -124,6 +124,8 @@ public class GridftpClient {
     private String cksmType;
     private String cksmValue;
 
+    private static String[] cksmTypeList = { "adler32","MD5","MD4" };
+
     public GridftpClient(String host, int port,
                          int tcpBufferSize,
                          GSSCredential cred,
@@ -432,8 +434,12 @@ public class GridftpClient {
 
         say("gridFTPWrite() wrote "+sink.getTransfered()+"bytes");
 
-        if ( this.cksmType != null )
+        try {
+          if ( this.cksmType != null )
             verifyCksmValue(current_source_sink,sourcepath);
+        } catch ( ChecksumNotSupported ex){
+          esay("Checksum is not supported:"+ex.toString());
+        }
 
         //make these remeber last values
         getTransfered();
@@ -572,34 +578,58 @@ public class GridftpClient {
     private void sendCksmValue(IDiskDataSourceSink source)
         throws IOException,NoSuchAlgorithmException
     {
-        if ( cksmType == null )
-            cksmType = "adler32";
+        String myType = cksmType;
+        if ( cksmType == null  || cksmType.equals("negotiate") )
+            myType = cksmTypeList[0];
 
         if ( cksmValue == null )
-            cksmValue = source.getCksmValue(cksmType);
+           cksmValue = source.getCksmValue(myType);
 
+        // send gridftp message
         try {
-            client.sendCksmValue(cksmType,cksmValue);
+            client.sendCksmValue(myType,cksmValue);
         } catch ( Exception ex ){
             esay("Was not able to send checksum value:"+ex.toString());
         }
-        // send gridftp message
     }
 
+   public Checksum negotiateCksm(String path) throws IOException, ServerException,ChecksumNotSupported {
+
+       for ( int i = 0; i < cksmTypeList.length; ++i){
+              try {
+                 String serverCksmValue = client.getCksmValue(cksmTypeList[i],path);
+                 say("Negotiated type:"+cksmTypeList[i]+", value:"+serverCksmValue);
+                 return new Checksum(cksmTypeList[i],serverCksmValue);
+              } catch ( ChecksumNotSupported ex ){
+                 int majorCode = ex.getCode()/10;
+                 esay("code:"+Integer.toString(ex.getCode()));
+                 if ( majorCode == 50 )
+                    esay("Checksum is not supported:"+ex.toString()+" continuing search");
+                 else
+                    break;
+              }
+        }
+        throw new ChecksumNotSupported("Checksum is not supported : couldn't negotiate type value",0);
+   }
+
     private void verifyCksmValue(IDiskDataSourceSink source,String remotePath)
-        throws IOException,ServerException,NoSuchAlgorithmException
+        throws IOException,ServerException,NoSuchAlgorithmException,ChecksumNotSupported
     {
+        Checksum serverChecksum;
         if ( cksmType == null )
             throw new IllegalArgumentException("verifyCksmValue: expected cksm type");
 
+        if ( cksmType.equals("negotiate") )
+           serverChecksum = negotiateCksm(remotePath);
+        else 
+           serverChecksum = new Checksum(cksmType,client.getCksmValue(cksmType,remotePath));
+
         if ( cksmValue == null )
-            cksmValue = source.getCksmValue(cksmType);
+            cksmValue = source.getCksmValue(serverChecksum.type);
 
-        String serverCksmValue = client.getCksmValue(cksmType,remotePath);
-
-        if ( !cksmValue.equals(serverCksmValue) )
-            throw new IOException("Server side checksum:"+serverCksmValue+" does not match client side checksum:"+cksmValue);
-        // send gridftp message
+        if ( !cksmValue.equals(serverChecksum.value) )
+             throw new IOException("Server side checksum:"+serverChecksum.value+" does not match client side checksum:"+cksmValue);
+       // send gridftp message
     }
 
 
@@ -685,6 +715,14 @@ public class GridftpClient {
         this.bufferSize = bufferSize;
     }
 
+    /** Setter to support checksum type negotiation
+     * @param types List of checksum type names which will be tried by the checksum negotiation algo
+     *
+     */
+    public static void setSupportedChecksumTypes(String[] types){
+         cksmTypeList = types;
+    }
+    
     public static final void main( String[] args ) throws Exception {
         if(args.length <5 || args.length > 11) {
             System.err.println(
@@ -949,6 +987,18 @@ public class GridftpClient {
 
     }
 
+    public static class Checksum {
+         public Checksum(String type,String value){ this.type = type; this.value = value; }
+         public String type;
+         public String value;
+    }
+
+    public static class ChecksumNotSupported extends Exception {
+          public ChecksumNotSupported(String msg,int code){ super(msg); this.code = code; }
+          public int getCode(){ return code; }
+          private int code;
+    }
+
     public interface IDiskDataSourceSink extends  DataSink ,DataSource {
         /**
          * file postions should be reset to 0 if IDiskDataSourceSink is a wrapper
@@ -1103,14 +1153,30 @@ public class GridftpClient {
             }
         }
 
-        public String getCksmValue(String type,String path)
-            throws IOException, ServerException
-        {
-            Reply reply = quote("CKSM "+type+" 0 -1 "+path);
-            if ( !Reply.isPositiveCompletion(reply) )
-                throw new IOException(reply.getMessage());
-            return reply.getMessage();
+        public String getCksmValue(String type,String path) throws IOException, ServerException,ChecksumNotSupported {
+            try {
+               org.globus.ftp.vanilla.Reply reply = quote("CKSM "+type+" 0 -1 "+path);
+               if ( !org.globus.ftp.vanilla.Reply.isPositiveCompletion(reply) ){
+                  throw new ChecksumNotSupported("Checksum type "+type+" can not be retrieved:"+reply.getMessage(),reply.getCode());
+               }
+               return reply.getMessage();
+            } catch ( org.globus.ftp.exception.ServerException ex){
+              throw new ChecksumNotSupported("Checksum type "+type+" can not be retrieved:"+ex.toString(),parseCode(ex.toString()));
+            }
         }
+
+        private int parseCode(String msg){
+         try {
+            String delim = "Unexpected reply:";
+            int pos = msg.indexOf(delim);
+            if ( pos != -1 ){
+               pos += delim.length() + 1;
+               String codeS = msg.substring(pos,pos+3);
+               return Integer.parseInt(codeS);
+            }
+         } catch ( Exception ex){ }
+         return 1;
+       }
     }
 
     public static String long32bitToHexString(long value){
