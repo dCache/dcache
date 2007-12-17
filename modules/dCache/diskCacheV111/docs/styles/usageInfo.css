@@ -31,7 +31,7 @@ div.layout_precious
 div.layout_rest
 {
   float: left;
-  background: blue;
+  background: #ff00ff;
   height: 10px;
 }
 
