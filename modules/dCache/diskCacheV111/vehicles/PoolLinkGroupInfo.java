@@ -17,43 +17,45 @@ import diskCacheV111.util.VOInfo;
 public class PoolLinkGroupInfo implements Serializable {
 
 	private final String _groupName;
+	private final long _totalSpaceInBytes;
 	private final long _availableSpaceInBytes;
 	private final boolean _custodialAllowed;
 	private final boolean _replicaAllowed;
 	private final boolean _outputAllowed;
 	private final boolean _nearlineAllowed;
 	private final boolean _onlineAllowed;
-	private final Map<String,Set<String> > _attributes = new HashMap<String,Set<String> >(); 
+	private final Map<String,Set<String> > _attributes = new HashMap<String,Set<String> >();
         //
-        // I have put some default values for testing purposes 
+        // I have put some default values for testing purposes
         // (*,*) will match every vo.
-        // 
+        //
         private VOInfo[] _allowedVOs = new VOInfo[]{new VOInfo("*","*")};
         //
         // this for retention policy replica and output
         // custodial must have something non-None :)
         //
         private String _hsmType="None";
-	
-	public PoolLinkGroupInfo(SelectionLinkGroup linkGroup, long availableSpace) {
+
+	public PoolLinkGroupInfo(SelectionLinkGroup linkGroup, long totalSpace, long availableSpace) {
 		_groupName = linkGroup.getName();
 		_availableSpaceInBytes = availableSpace;
+		_totalSpaceInBytes = totalSpace;
 		_custodialAllowed = linkGroup.isCustodialAllowed();
 		_replicaAllowed = linkGroup.isReplicaAllowed();
 		_outputAllowed = linkGroup.isOutputAllowed();
 		_nearlineAllowed = linkGroup.isNearlineAllowed();
 		_onlineAllowed = linkGroup.isOnlineAllowed();
-		
+
 		Map<String, Set<String>> attributes = linkGroup.attributes();
 		if(attributes != null ) {
 			_attributes.putAll(attributes);
-			
-			
+
+
 			/*
 			 * TODO: this path is GRID/SRM related and has nothing to do with linkGroup
 			 */
-			
-			
+
+
 			Set<String> suportedVO = attributes.get("VO");
                         if(suportedVO != null) {
                             List <VOInfo> voInfoList = new ArrayList<VOInfo>();
@@ -64,14 +66,14 @@ public class PoolLinkGroupInfo implements Serializable {
                                                     voInfoList.add( new VOInfo(vo, voRole) );
                                             }
                                     }
-                                    
+
                                     if(attributes.containsKey(vo+"/Role") ) {
                                             Set<String> voRoles = attributes.get(vo+"/Role");
                                             for( String voRole: voRoles ) {
                                                     voInfoList.add( new VOInfo(vo, voRole) );
                                             }
                                     }
-                                    
+
                                     if(voInfoList.isEmpty())
                                     {
                                             voInfoList.add( new VOInfo(vo, "*") );
@@ -80,39 +82,56 @@ public class PoolLinkGroupInfo implements Serializable {
 
                             _allowedVOs = voInfoList.toArray( new VOInfo[voInfoList.size()]);
                         }
-			
+
 			/*
-			 * the attribute HSM has to be created with -r option, 
-			 * which guarantees to have only one value. In to future, we can add the suport for 
+			 * the attribute HSM has to be created with -r option,
+			 * which guarantees to have only one value. In to future, we can add the suport for
 			 * many HSMs
-			 * 
+			 *
 			 */
 			Set<String> hsmTypeAttribyte =  attributes.get("HSM");
 			if( hsmTypeAttribyte != null ) {
 				Iterator<String> hsmType  = hsmTypeAttribyte.iterator();
 				if(hsmType.hasNext() ) {
-					_hsmType = hsmType.next();	
+					_hsmType = hsmType.next();
 				}
-			}			
-			
+			}
+
 		}
-	}        
-	
+	}
+
+	/**
+	 *
+	 * @return the linkGroup name
+	 */
 	public String getName() {
 		return _groupName;
 	}
-	
+
+	/**
+	 *
+	 * @return total space of all pools in the linkGroup in bytes
+	 */
+	public long getTotalSpace() {
+	    return _totalSpaceInBytes;
+	}
+
+	/**
+	 *
+	 * @return available space of all pools in the linkGroup in bytes
+	 */
 	public long getAvailableSpaceInBytes() {
         return _availableSpaceInBytes;
     }
-		
+
+	@Deprecated
 	public Set<String> getAttribute(String attribute) {
 		return _attributes.get(attribute);
 	}
 
-	
+
     /**
-     * 
+     *
      * @return true if LinkGroup allows custodial files
      */
     public boolean isCustodialAllowed() {
@@ -120,7 +139,7 @@ public class PoolLinkGroupInfo implements Serializable {
     }
 
     /**
-     * 
+     *
      * @return true if LinkGroup allows output files
      */
     public boolean isOutputAllowed() {
@@ -128,7 +147,7 @@ public class PoolLinkGroupInfo implements Serializable {
     }
 
     /**
-     * 
+     *
      * @return true if LinkGroup allows replica files
      */
     public boolean isReplicaAllowed() {
@@ -136,7 +155,7 @@ public class PoolLinkGroupInfo implements Serializable {
     }
 
     /**
-     * 
+     *
      * @return true if LinkGour allows online files
      */
     public boolean isOnlineAllowed() {
@@ -144,30 +163,33 @@ public class PoolLinkGroupInfo implements Serializable {
     }
 
     /**
-     * 
+     *
      * @return true if LinkGour allows nearline files
      */
     public boolean isNearlineAllowed() {
         return _nearlineAllowed;
     }
-        	
-	
+
+
 	/*
 	 * FIXME: this path is GRID/SRM related and has nothing to do with linkGroup
 	 */
-	
+
+    @Deprecated
     public VOInfo[] getAllowedVOs() {
         return _allowedVOs;
     }
 
+    @Deprecated
     public String getHsmType() {
         return _hsmType;
     }
 
+    @Deprecated
     public void setHsmType(String hsmType) {
         this._hsmType = hsmType;
     }
-	
+
 }
 /*
  * $Log: not supported by cvs2svn $

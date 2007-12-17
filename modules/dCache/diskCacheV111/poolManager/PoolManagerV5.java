@@ -670,9 +670,10 @@ public class PoolManagerV5 extends CellAdapter {
     		try {
     			String[] links = _selectionUnit.getLinksByGroupName(linkGroups[i_goup]);
     			long linkAvailableSpace = 0;
-                        for(int i_link = 0; i_link < links.length; i_link++ ) {
+    			long linkTotalSpace = 0;
+                    for(int i_link = 0; i_link < links.length; i_link++ ) {
 
-    				PoolSelectionUnit.SelectionLink selectionLink = _selectionUnit.getLinkByName(links[i_link]);
+                    PoolSelectionUnit.SelectionLink selectionLink = _selectionUnit.getLinkByName(links[i_link]);
     				Iterator<PoolSelectionUnit.SelectionPool> poolsIterator = selectionLink.pools();
     				while( poolsIterator.hasNext() ) {
     					PoolSelectionUnit.SelectionPool pool = poolsIterator.next();
@@ -681,6 +682,7 @@ public class PoolManagerV5 extends CellAdapter {
 	    					PoolCostInfo poolCostInfo = _costModule.getPoolCostInfo(poolName);
 	    					if(poolCostInfo != null) {
 	    						linkAvailableSpace += poolCostInfo.getSpaceInfo().getTotalSpace() - poolCostInfo.getSpaceInfo().getRemovableSpace();
+	    						linkTotalSpace += poolCostInfo.getSpaceInfo().getTotalSpace();
 	    					}
     					}
     				}
@@ -688,7 +690,7 @@ public class PoolManagerV5 extends CellAdapter {
     			}
 
                 PoolSelectionUnit.SelectionLinkGroup linkGroup = _selectionUnit.getLinkGroupByName(linkGroups[i_goup]);
-    			PoolLinkGroupInfo linkGroupInfo = new PoolLinkGroupInfo(linkGroup, linkAvailableSpace);
+    			PoolLinkGroupInfo linkGroupInfo = new PoolLinkGroupInfo(linkGroup, linkTotalSpace, linkAvailableSpace);
     		    linkGroupInfoList.add(linkGroupInfo);
     		}catch(Exception e) {
     			esay(e);
@@ -1038,6 +1040,7 @@ public class PoolManagerV5 extends CellAdapter {
 
     			String[] links = _selectionUnit.getLinksByGroupName(linkGroups[i_goup]);
     			long linkAvailableSpace = 0;
+    			long linkTotalSpace = 0;
     			for(int i_link = 0; i_link < links.length; i_link++ ) {
 
     				PoolSelectionUnit.SelectionLink selectionLink = _selectionUnit.getLinkByName(links[i_link]);
@@ -1049,6 +1052,7 @@ public class PoolManagerV5 extends CellAdapter {
 	    					PoolCostInfo poolCostInfo = _costModule.getPoolCostInfo(poolName);
 	    					if(poolCostInfo != null) {
 	    						linkAvailableSpace += poolCostInfo.getSpaceInfo().getTotalSpace() - poolCostInfo.getSpaceInfo().getRemovableSpace();
+	    						linkTotalSpace += poolCostInfo.getSpaceInfo().getTotalSpace();
 	    					}
     					}
     				}
