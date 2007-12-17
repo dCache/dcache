@@ -1,6 +1,6 @@
 package org.dcache.tests.poolmanager;
 
-import junit.framework.JUnit4TestAdapter;
+import static org.junit.Assert.*;
 
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -10,12 +10,15 @@ import org.junit.Test;
 
 import diskCacheV111.poolManager.PoolPreferenceLevel;
 import diskCacheV111.poolManager.PoolSelectionUnitV2;
+import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPool;
+
 import dmg.util.Args;
 import dmg.util.CommandException;
+import dmg.util.CommandExitException;
 import dmg.util.CommandInterpreter;
 
 
-public class PoolSelectionUnit extends junit.framework.TestCase {
+public class PoolSelectionUnit {
 
 	private final PoolSelectionUnitV2 _psu = new PoolSelectionUnitV2();
 	private final CommandInterpreter _ci = new CommandInterpreter(_psu);
@@ -447,8 +450,16 @@ public class PoolSelectionUnit extends junit.framework.TestCase {
 		assertEquals("Only h1 read pool with attracion 0 (h1-read)", "h1-read", preference[0].getPoolList().get(0));
 	}
 
-	public static junit.framework.Test suite(){
-		 return new JUnit4TestAdapter(PoolSelectionUnit.class);
+
+	@Test
+	public void testActive() throws CommandException {
+
+	    _ci.command( new Args("psu set active -on h1-read"  )  );
+	    SelectionPool pool = _psu.getPool("h1-read");
+
+	    assertNotNull("Null pool recieved", pool);
+	    assertTrue("Pool is not active", pool.isActive());
+	    assertTrue("Pool is not readable", pool.canRead());
 	}
 }
 
