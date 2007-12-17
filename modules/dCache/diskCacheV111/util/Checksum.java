@@ -27,6 +27,7 @@ public class Checksum {
 
    public static final int ADLER32 = 1 ;
    public static final int MD5     = 2 ;
+
    private MessageDigest _messageDigest = null ;
    
    /**
@@ -35,26 +36,9 @@ public class Checksum {
     * Currently supported algorithms are All
     * @param messageDigest the digest we are wrapping
     */
-   public Checksum( MessageDigest messageDigest  ) {
+   public Checksum( MessageDigest messageDigest  )  throws NoSuchAlgorithmException {
       _messageDigest = messageDigest ;
-      _type = mapStringTypeToId(messageDigest.getAlgorithm());
-   }
-
-   static int mapStringTypeToId(String type){
-
-      int intType = 0;
-
-      if ( type.equals("ADLER32") ){
-            intType = Checksum.ADLER32;
-      } else if ( type.equals("MD5") ) {
-            intType  = Checksum.MD5;
-      } else  {
-            int h = type.hashCode();
-            if ( h == Checksum.MD5 || h == Checksum.ADLER32 )
-               h += 2;
-            intType = h;
-      }
-      return intType;
+      _type = ChecksumFactory.mapStringTypeToId(messageDigest.getAlgorithm());
    }
 
    public MessageDigest getMessageDigest(){ return _messageDigest ; }
@@ -94,14 +78,6 @@ public class Checksum {
       _type  = Integer.parseInt(digestString.substring(0,del));
 
       _value = stringToBytes(digestString.substring(del+1)) ;
-  /*
-      for( ; ( offset < digest.length ) && ( digest[offset] == 0 ) ;offset++ );
-
-      System.arraycopy( digest , offset ,
-                        _value = new byte[digest.length-offset] , 0 ,
-                        digest.length ) ;
-
-  */
    }
    public int getType(){ return _type ; }
    public boolean equals( Object o ){

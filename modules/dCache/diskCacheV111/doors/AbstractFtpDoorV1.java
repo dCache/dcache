@@ -208,8 +208,21 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
     private static final String[] FEATURES = {
         "EOF", "PARALLEL", "SIZE", "SBUF",
         "ERET", "ESTO", "GETPUT",
-        "CKSM", "SCKS", "MODEX"
+        "CKSUM "+buildChecksumList(),  "MODEX"
     };
+ 
+    private static final String buildChecksumList(){
+       String result="";
+       int mod = 0;
+ 
+       String checksumTypes[] = ChecksumFactory.getTypes();
+       for ( int i =0 ; i < checksumTypes.length; ++i){
+         result += checksumTypes[i]+",";
+         mod = 1;
+       }
+
+      return result.substring(0,result.length()-mod);
+    }
 
     /**
      * FTP door instances are created by the LoginManager. This is the

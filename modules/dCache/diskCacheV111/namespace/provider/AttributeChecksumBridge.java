@@ -50,6 +50,8 @@ class MyFakeNameSpaceProvider implements NameSpaceProvider {
     public void addChecksum(PnfsId pnfsId, int type, String value) throws Exception {}
     public String getChecksum(PnfsId pnfsId, int type) throws Exception { return null; }
     public void removeChecksum(PnfsId pnfsId, int type) throws Exception {}
+   public int[] listChecksumTypes(PnfsId pnfsId) throws Exception { return null;}
+
 }
 
 class ChecksumCollection {
@@ -72,8 +74,28 @@ class ChecksumCollection {
          put(Integer.parseInt(currentValue.substring(0,checksumValuePos)),currentValue.substring(checksumValuePos+1));
       }
    }
+
+   public void add(ChecksumCollection coll){
+      _map.putAll(coll._map);
+   }
+
    public String get(int checksumType){ return _map.get(new Integer(checksumType)); }
    public void put(int checksumType,String value){ _map.put(new Integer(checksumType),value); }
+
+   public int[] types() {
+      if ( _map.isEmpty() )
+         return null;
+
+      int [] result =  new int[_map.size()];
+
+      int index = 0; 
+      for(Iterator<Map.Entry<Integer,String>> i = _map.entrySet().iterator();
+         i.hasNext(); ){
+         result[index] = i.next().getKey().intValue();
+         ++index;
+      }
+      return result;
+   }
 
    public String serialize(){
      StringBuffer result = new StringBuffer();
@@ -131,6 +153,14 @@ public class AttributeChecksumBridge {
       print("Clearing checksum value");
       mgr.removeChecksum(null,Checksum.MD5);
       print("MD5 should be now null "+mgr.getChecksum(null,Checksum.MD5));
+
+     AttributeChecksumBridge mgr1 = new AttributeChecksumBridge(new MyFakeNameSpaceProvider());
+
+     mgr1.setChecksum(null,"MD5 value",Checksum.MD5);
+     mgr1.setChecksum(null,"MD4 value",3);
+     int tps[] = mgr1.types(null);
+     for ( int i = 0; i < tps.length; ++i)
+        print(Integer.toString(tps[i]));
    }
 
    public AttributeChecksumBridge(NameSpaceProvider nameSpaceProvider)
@@ -184,6 +214,18 @@ public class AttributeChecksumBridge {
 
    public void removeChecksum(PnfsId pnfsId, int type) throws Exception {
      setChecksum(pnfsId,null,type);
+   }
+
+   public int[] types(PnfsId pnfsId) throws Exception {
+     String flagValue = (String)_nameSpaceProvider.getFileAttribute(pnfsId, "c");
+     ChecksumCollection collectionA = new ChecksumCollection(flagValue);
+
+     flagValue = (String)_nameSpaceProvider.getFileAttribute(pnfsId, "c1");
+     ChecksumCollection collectionB = new ChecksumCollection(flagValue);
+
+     collectionA.add(collectionB);
+
+     return collectionA.types();
    }
 
 };

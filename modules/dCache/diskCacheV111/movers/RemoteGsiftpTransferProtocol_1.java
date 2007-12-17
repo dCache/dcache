@@ -121,6 +121,8 @@ public class RemoteGsiftpTransferProtocol_1
 
     private RandomAccessFile _raDiskFile;
     private GridftpClient _client;
+    private org.dcache.srm.util.GridftpClient.Checksum _ftpCksm;
+    private diskCacheV111.util.ChecksumFactory _cksmFactory;
 
     private final Logger _logger = new Logger() {
             public synchronized void log(String s)
@@ -167,30 +169,11 @@ public class RemoteGsiftpTransferProtocol_1
         _cell.esay(t);
     }
 
-    public void runIO(RandomAccessFile diskFile,
-                      ProtocolInfo protocol,
-                      StorageInfo storage,
-                      PnfsId pnfsId,
-                      SpaceMonitor spaceMonitor,
-                      int access)
-        throws CacheException, IOException,
-               NoRouteToCellException,
-               ServerException, ClientException,
-               GlobusCredentialException, GSSException
-    {
-        _pnfsId = pnfsId;
-        say("runIO()\n\tprotocol="
-            + protocol + ",\n\tStorageInfo=" + storage + ",\n\tPnfsId="
-            + pnfsId + ",\n\taccess ="
-            + (((access & MoverProtocol.WRITE) != 0) ? "WRITE" : "READ"));
-        if (!(protocol instanceof RemoteGsiftpTransferProtocolInfo)) {
-            throw new CacheException("protocol info is not RemoteGsiftpransferProtocolInfo");
-        }
-        _raDiskFile = diskFile;
-        _starttime = System.currentTimeMillis();
+    private void createFtpClient(RemoteGsiftpTransferProtocolInfo remoteGsiftpProtocolInfo ) throws CacheException,ServerException, ClientException,
+               GlobusCredentialException, GSSException, IOException,NoRouteToCellException {
 
-        RemoteGsiftpTransferProtocolInfo remoteGsiftpProtocolInfo
-            = (RemoteGsiftpTransferProtocolInfo) protocol;
+        if ( _client != null )
+             return ;
 
         CellPath cellpath =
             new CellPath(remoteGsiftpProtocolInfo.getGsiftpTranferManagerName(),
@@ -276,17 +259,45 @@ public class RemoteGsiftpTransferProtocol_1
                                     _logger);
         _client.setStreamsNum(remoteGsiftpProtocolInfo.getStreams_num());
         _client.setTcpBufferSize(remoteGsiftpProtocolInfo.getTcpBufferSize());
+    }
+
+    public void runIO(RandomAccessFile diskFile,
+                      ProtocolInfo protocol,
+                      StorageInfo storage,
+                      PnfsId pnfsId,
+                      SpaceMonitor spaceMonitor,
+                      int access)
+        throws CacheException, IOException,
+               NoRouteToCellException,
+               ServerException, ClientException,
+               GlobusCredentialException, GSSException
+    {
+        _pnfsId = pnfsId;
+        say("runIO()\n\tprotocol="
+            + protocol + ",\n\tStorageInfo=" + storage + ",\n\tPnfsId="
+            + pnfsId + ",\n\taccess ="
+            + (((access & MoverProtocol.WRITE) != 0) ? "WRITE" : "READ"));
+        if (!(protocol instanceof RemoteGsiftpTransferProtocolInfo)) {
+            throw new CacheException("protocol info is not RemoteGsiftpransferProtocolInfo");
+        }
+        _raDiskFile = diskFile;
+        _starttime = System.currentTimeMillis();
+
+        RemoteGsiftpTransferProtocolInfo remoteGsiftpProtocolInfo
+            = (RemoteGsiftpTransferProtocolInfo) protocol;
+
+        createFtpClient(remoteGsiftpProtocolInfo);
 
         if ((access & MoverProtocol.WRITE) != 0) {
             gridFTPRead(remoteGsiftpProtocolInfo,
                         storage,
-                        spaceMonitor,
-                        deleg_cred);
+                        spaceMonitor
+                        );
         } else {
             gridFTPWrite(remoteGsiftpProtocolInfo,
                          storage,
-                         spaceMonitor,
-                         deleg_cred);
+                         spaceMonitor
+                         );
         }
         say(" runIO() done");
     }
@@ -339,8 +350,8 @@ public class RemoteGsiftpTransferProtocol_1
 
     public void gridFTPRead(RemoteGsiftpTransferProtocolInfo protocolInfo,
                             StorageInfo storage,
-                            final SpaceMonitor spaceMonitor,
-                            GSSCredential deleg_cred)
+                            final SpaceMonitor spaceMonitor
+                            )
         throws CacheException
     {
         try {
@@ -381,13 +392,21 @@ public class RemoteGsiftpTransferProtocol_1
 
     public void gridFTPWrite(RemoteGsiftpTransferProtocolInfo protocolInfo,
                              StorageInfo storage,
-                             final SpaceMonitor spaceMonitor,
-                             GSSCredential deleg_cred)
+                             final SpaceMonitor spaceMonitor
+                             )
         throws CacheException
     {
         say("gridFTPWrite started");
 
         try {
+            String checksumTypes [] = ChecksumFactory.getTypes(_cell,_pnfsId);
+            if ( checksumTypes != null ){
+                   say("Will use "+checksumTypes[0]+" for transfer verification of "+_pnfsId);
+                   _client.setChecksum(checksumTypes[0],null);
+            } else {
+                   say("PnfsId "+_pnfsId+" does not have checksums");
+            }
+
             GlobusURL dst_url =  new GlobusURL(protocolInfo.getGsiftpUrl());
             boolean emode = protocolInfo.isEmode();
 
@@ -408,7 +427,10 @@ public class RemoteGsiftpTransferProtocol_1
     // the following methods were adapted from DCapProtocol_3_nio mover
     public Checksum getClientChecksum()
     {
-        return null;
+       if ( _cksmFactory != null  && _ftpCksm != null ){
+          return _cksmFactory.create(_ftpCksm.value);
+       }
+       return null;
     }
 
     public Checksum getTransferChecksum()
@@ -436,6 +458,22 @@ public class RemoteGsiftpTransferProtocol_1
 
     public ChecksumFactory getChecksumFactory(ProtocolInfo protocol)
     {
+        if ( _cksmFactory != null )
+           return _cksmFactory;
+
+        if (protocol instanceof RemoteGsiftpTransferProtocolInfo) {
+
+            RemoteGsiftpTransferProtocolInfo remoteGsiftpProtocolInfo =  (RemoteGsiftpTransferProtocolInfo) protocol;
+            try {
+                createFtpClient(remoteGsiftpProtocolInfo);
+                GlobusURL src_url =  new GlobusURL(remoteGsiftpProtocolInfo.getGsiftpUrl());
+                _ftpCksm = _client.negotiateCksm(src_url.getPath());
+                _cksmFactory = ChecksumFactory.getFactory(_ftpCksm.type);
+                return _cksmFactory;
+            } catch (Exception e) {
+                esay("Checksum Algorithm is not supported: " + e.toString());
+            }
+        }
         return null;
     }
 
@@ -554,37 +592,35 @@ public class RemoteGsiftpTransferProtocol_1
         public String getCksmValue(String type)
             throws IOException,NoSuchAlgorithmException
         {
-            if (!type.equalsIgnoreCase("adler32"))
-                throw new NoSuchAlgorithmException("RemoteGsiftpTransferProtocol: getChecksumValue supports only adler32");
-            long value = getAdler32();
-            value |= 0x100000000L;
-            value &= 0x1ffffffffL;
-            String svalue = Long.toHexString(value);
-            return svalue.substring(1);
+            try {
+                diskCacheV111.util.Checksum pnfsChecksum = diskCacheV111.util.ChecksumFactory.getFactory(type).createFromPersistentState(_cell, _pnfsId);
+                if ( pnfsChecksum != null ){
+                  String hexValue = pnfsChecksum.toHexString();
+                  say(type+" read from pnfs for file "+_pnfsId+" is "+hexValue);
+                  return hexValue;
+                }
+            }
+            catch(Exception e){
+                esay("could not get "+type+" from pnfs:");
+                esay(e);
+                esay("ignoring this error");
+
+            }
+
+            String hexValue = org.dcache.srm.util.GridftpClient.getCksmValue(_raDiskFile,type);
+            say(type + " for file "+_raDiskFile+" is "+hexValue);
+            _raDiskFile.seek(0);
+            return hexValue;
         }
 
         public long getAdler32() throws IOException
         {
             try {
-                PnfsHandler pnfs =
-                    new PnfsHandler(_cell, new CellPath("PnfsManager"));
-                String adler32String = pnfs.getPnfsFlag(_pnfsId, "c");
-                if (adler32String.startsWith("1:")) {
-                    adler32String = adler32String.substring(2);
-                    say("adler32 read from pnfs for file " + _pnfsId
-                        + " is " + adler32String);
-                    return Long.parseLong(adler32String,16);
-                }
-            } catch (CacheException e) {
-                esay("could not get adler32 from pnfs:");
-                esay(e);
-                esay("ignoring this error");
-
+               String hexValue = getCksmValue("adler32");
+               return Long.parseLong(hexValue,16);
+            } catch ( java.security.NoSuchAlgorithmException ex){ 
+              throw new IOException("adler 32 is not supported:"+ ex.toString()); 
             }
-            long adler32 = GridftpClient.getAdler32(_raDiskFile);
-            say("adler 32 for file " + _raDiskFile + " is " + adler32);
-            _raDiskFile.seek(0);
-            return adler32;
         }
 
         public long length() throws IOException

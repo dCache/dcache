@@ -72,4 +72,7 @@ public interface NameSpaceProvider extends DcacheNameSpaceProvider {
     */
     void removeChecksum(PnfsId pnfsId, int type) throws Exception;
 
+
+    int[] listChecksumTypes(PnfsId pnfsId) throws Exception;
+
 }

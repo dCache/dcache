@@ -31,6 +31,8 @@ import  java.security.NoSuchAlgorithmException ;
 
 public abstract class ChecksumFactory {
     
+    protected static String[] _types = { "ADLER32","MD5","MD4" };
+
     protected String _stringType;
 
     public String getType(){ return _stringType; }
@@ -46,6 +48,42 @@ public abstract class ChecksumFactory {
 	return new GenericIdChecksumFactory(type.toUpperCase());
     }
 
+    public static final String [] getTypes() {
+       return _types;
+    }
+
+    public static final String [] getTypes( CellAdapter cell,PnfsId pnfsId ){
+       try {
+           int []intTypes = ChecksumPersistence.getPersistenceMgr().listChecksumTypes(cell,pnfsId);
+
+           if ( intTypes == null )
+              return null;
+
+           Vector<String> stringTypes = new Vector<String>(1);
+           for ( int i = 0; i < intTypes.length; ++i){
+              if ( intTypes[i] > 0 && intTypes[i] <= _types.length )
+                stringTypes.add(_types[intTypes[i]-1]);
+           }
+           if ( stringTypes.size() > 0 ){
+              return stringTypes.toArray(new String[1]);
+           }
+          
+       } catch ( Exception ex){ cell.esay(ex); }
+
+       return null;
+    }
+
+    static int mapStringTypeToId(String type) throws NoSuchAlgorithmException{
+
+      int intType = 1;
+
+      for ( int i = 0; i < _types.length; ++i, ++intType)
+        if ( _types[i].equals(type) )
+           return intType;
+
+      throw new NoSuchAlgorithmException("type "+type+" is not supported");
+   }
+
     public static void main( String [] args ) throws Exception {
        System.out.println("Getting MD4 first time");
        ChecksumFactory.getFactory("MD4");
@@ -59,7 +97,7 @@ class GenericIdChecksumFactory extends ChecksumFactory
     private int _type;
 
     public GenericIdChecksumFactory(String type) throws NoSuchAlgorithmException {
-        _type = Checksum.mapStringTypeToId(type);
+        _type = mapStringTypeToId(type);
         _stringType = type;
 
 	if ( _type != Checksum.MD5 && _type != Checksum.ADLER32 ) {  // we know we support these two

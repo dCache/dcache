@@ -552,6 +552,10 @@ public class BasicNameSpaceProvider implements NameSpaceProvider, StorageInfoPro
         _attChecksumImpl.removeChecksum(pnfsId,type);
     }
 
+    public int[] listChecksumTypes(PnfsId pnfsId ) throws Exception
+    {
+        return _attChecksumImpl.types(pnfsId);
+    }
 
 
     ////////////////////////////////////////////////////

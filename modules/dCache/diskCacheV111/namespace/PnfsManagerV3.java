@@ -75,6 +75,7 @@ public class PnfsManagerV3 extends CellAdapter {
     private final StatItem _xflag                  = new StatItem("flag");
     private final StatItem _xgetChecksum           = new StatItem("getChecksum");
     private final StatItem _xsetChecksum           = new StatItem("setChecksum");
+    private final StatItem _xlistChecksumTypes     = new StatItem("listChecksumTypes");
 
     private final StatItem [] _requestSet = {
             _xaddCacheLocation ,
@@ -586,6 +587,25 @@ public class PnfsManagerV3 extends CellAdapter {
         try{
             String checksumValue = _nameSpaceProvider.getChecksum(pnfsId,type);
             msg.setValue(checksumValue);
+        }catch( CacheException e ){
+            esay(e) ;
+            msg.setFailed( e.getRc() , e.getMessage() ) ;
+        }catch ( Exception e){
+            esay(e) ;
+            msg.setFailed( CacheException.UNEXPECTED_SYSTEM_EXCEPTION , e.getMessage() ) ;
+        }
+        if( msg.getReturnCode() != 0 ) {
+            _xgetChecksum.failed();
+        }
+    }
+
+    private void listChecksumTypes(PnfsGetChecksumAllMessage msg){
+
+        PnfsId pnfsId    = msg.getPnfsId();
+
+        try{
+            int []types = _nameSpaceProvider.listChecksumTypes(pnfsId);
+            msg.setValue(types);
         }catch( CacheException e ){
             esay(e) ;
             msg.setFailed( e.getRc() , e.getMessage() ) ;
@@ -1310,6 +1330,10 @@ public class PnfsManagerV3 extends CellAdapter {
         else if( pnfsMessage instanceof PoolFileFlushedMessage ) {
         	_xfileFlushed.request();
         	processFlushMessage((PoolFileFlushedMessage) pnfsMessage );
+        } 
+        else if ( pnfsMessage instanceof PnfsGetChecksumAllMessage ){
+            _xlistChecksumTypes.request();
+            listChecksumTypes((PnfsGetChecksumAllMessage)pnfsMessage);
         }
 
         else {

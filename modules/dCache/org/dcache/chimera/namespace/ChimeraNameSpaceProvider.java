@@ -388,6 +388,12 @@ public class ChimeraNameSpaceProvider implements NameSpaceProvider, StorageInfoP
     	_fs.removeInodeChecksum(new FsInode(_fs, pnfsId.toString()), type);
     }
 
+    
+    public int[] listChecksumTypes(PnfsId pnfsId ) throws Exception
+    {
+        return null;
+    }
+
     public String toString() {
        StringBuilder sb = new StringBuilder();
 

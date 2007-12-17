@@ -25,6 +25,7 @@ import  dmg.cells.nucleus.CellPath;
 import  dmg.cells.nucleus.CellMessage;
 import  dmg.cells.nucleus.NoRouteToCellException;
 import  diskCacheV111.vehicles.PnfsGetChecksumMessage;
+import  diskCacheV111.vehicles.PnfsGetChecksumAllMessage;
 import  diskCacheV111.vehicles.PnfsSetChecksumMessage;
 
 import  java.security.MessageDigest ;
@@ -33,8 +34,10 @@ import  java.security.NoSuchAlgorithmException ;
 import java.io.RandomAccessFile;
 
 public abstract class ChecksumPersistence {
-  public abstract void store(CellAdapter cell,PnfsId pnfsId,Checksum value,boolean overwrite) throws Exception;
+  public abstract void store(CellAdapter cell,PnfsId pnfsId, diskCacheV111.util.Checksum value,boolean overwrite) throws Exception;
   public abstract String retrieve(CellAdapter cell, PnfsId pnfsId,int type) throws Exception ;
+  public abstract int[] listChecksumTypes(CellAdapter cell, PnfsId pnfsId) throws Exception;
+
   public static ChecksumPersistence getPersistenceMgr(){
     return new ChecksumPersistencePnfsImpl();
   }
@@ -49,7 +52,7 @@ class ChecksumPersistenceImpl extends ChecksumPersistence {
      return basePath+"/"+pnfsId.toString()+"_"+Integer.toString(type);
   }
 
-  public void store(CellAdapter cell, PnfsId pnfsId, Checksum value,boolean overwrite) throws Exception {
+  public void store(CellAdapter cell, PnfsId pnfsId, diskCacheV111.util.Checksum value,boolean overwrite) throws Exception {
 
     RandomAccessFile raf = new RandomAccessFile(getdbFileName(pnfsId,value.getType()),"rw");
     raf.write(value.toHexString().getBytes());
@@ -78,11 +81,12 @@ class ChecksumPersistenceImpl extends ChecksumPersistence {
 
      return new String(digest);
   }
+  public int[] listChecksumTypes(CellAdapter cell, PnfsId pnfsId) throws Exception { return null; }
 }
 
 class ChecksumPersistencePnfsImpl extends ChecksumPersistence {
 
-  public void store(CellAdapter cell, PnfsId pnfsId, Checksum value,boolean overwrite) throws Exception {
+  public void store(CellAdapter cell, PnfsId pnfsId, diskCacheV111.util.Checksum value,boolean overwrite) throws Exception {
          PnfsSetChecksumMessage flag =
             new PnfsSetChecksumMessage(pnfsId, value.getType(), value.toHexString() ) ;
          flag.setReplyRequired(false) ;
@@ -114,5 +118,26 @@ class ChecksumPersistencePnfsImpl extends ChecksumPersistence {
             } 
 
             throw new Exception("Got message of unrecognized type. Expected PnfsGetChecksumMessage");
+  }
+
+  public int[] listChecksumTypes(CellAdapter cell, PnfsId pnfsId) throws Exception
+  {
+           PnfsGetChecksumAllMessage flag =
+                new PnfsGetChecksumAllMessage(pnfsId) ;
+            flag.setReplyRequired(true) ;
+            CellMessage msg = new CellMessage( new CellPath("PnfsManager") , flag ) ;
+            if( ( msg = cell.sendAndWait( msg , 60000L ) ) == null )return null ;
+
+            Object obj = msg.getMessageObject() ;
+            if( obj instanceof PnfsGetChecksumAllMessage){
+                PnfsGetChecksumAllMessage flags = (PnfsGetChecksumAllMessage)obj ;
+                if( flags.getValue() == null ){
+                    cell.esay("getChecksumFromPnfs : No checksum available for "+pnfsId);
+                    return null ;
+                }
+                return flags.getValue() ; // assume this is the right type
+            }
+
+            throw new Exception("Got message of unrecognized type. Expected PnfsGetChecksumAllMessage");
   }
 }
