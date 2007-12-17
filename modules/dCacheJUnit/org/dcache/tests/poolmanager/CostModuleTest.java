@@ -49,7 +49,7 @@ public class CostModuleTest {
 
         _costModule.messageArrived(cellMessage);
 
-        assertNull("should return null on non a pool without costInfo", _costModule.getPoolCostInfo("aPool"));
+        assertNull("should return null on a pool without costInfo", _costModule.getPoolCostInfo("aPool"));
 
     }
 
