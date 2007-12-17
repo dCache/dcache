@@ -6,6 +6,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -204,37 +205,37 @@ public class PoolManagerV5 extends CellAdapter {
     private void runSetupFile() throws Exception {
       runSetupFile(null);
     }
-    private void runSetupFile( StringBuffer sb ) throws Exception {
-       File setupFile = new File( _setupFileName ) ;
-       if( ! setupFile.exists() )
-          throw new
-          IllegalArgumentException( "Setup File not found : "+_setupFileName ) ;
+    private void runSetupFile(StringBuffer sb) throws Exception {
+        File setupFile = new File(_setupFileName);
+        if (!setupFile.exists())
+            throw new IllegalArgumentException("Setup File not found : "
+                    + _setupFileName);
 
-       BufferedReader reader =
-          new BufferedReader( new FileReader( setupFile ) ) ;
-       try{
+        BufferedReader reader = new BufferedReader(new FileReader(setupFile));
+        try {
 
-
-          String line = null ;
-          while( ( line = reader.readLine() ) != null ){
-             if( line.length() == 0 )continue ;
-             if( line.charAt(0) == '#' )continue ;
-             try{
-                say( "Executing : "+line ) ;
-                String answer = command( line ) ;
-                if( answer.length() > 0 )say( "Answer    : "+answer ) ;
-             }catch( Exception ee ){
-                esay("Exception : "+ee.toString() ) ;
-                if( sb != null )
-                   sb.append(line).
-                   append(" -> ").
-                   append(ee.toString()).
-                   append("\n");
-             }
-          }
-       }finally{
-          try{ reader.close() ; }catch(Exception ee){}
-       }
+            String line = null;
+            while ((line = reader.readLine()) != null) {
+                line = line.trim();
+                if (line.length() == 0)
+                    continue;
+                if (line.charAt(0) == '#')
+                    continue;
+                try {
+                    say("Executing : " + line);
+                    String answer = command(line);
+                    if (answer.length() > 0)
+                        say("Answer    : " + answer);
+                } catch (Exception ee) {
+                    esay("Exception : " + ee.toString());
+                    if (sb != null)
+                        sb.append(line).append(" -> ").append(ee.toString())
+                                .append("\n");
+                }
+            }
+        } finally {
+            reader.close();
+        }
 
     }
     public CellVersion getCellVersion(){ return new CellVersion(diskCacheV111.util.Version.getVersion(),"$Revision: 1.48 $" ); }
