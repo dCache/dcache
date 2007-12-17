@@ -48,11 +48,7 @@ public class PoolMonitorHelper {
         for(String pool : pools ) {
             ci.command( new Args("psu create pool " + pool  )  );
             ci.command( new Args("psu addto pgroup default " + pool  )  );
-            SelectionPool selectionPool = unit.getPool(pool);
-            if(selectionPool != null) {
-                selectionPool.setActive(true);
-            }
-
+            ci.command( new Args("psu set active -on " + pool  )  );
         }
 
         ci.command("psu set allpoolsactive on");
