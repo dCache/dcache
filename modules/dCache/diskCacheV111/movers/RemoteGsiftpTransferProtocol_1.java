@@ -124,6 +124,11 @@ public class RemoteGsiftpTransferProtocol_1
     private org.dcache.srm.util.GridftpClient.Checksum _ftpCksm;
     private diskCacheV111.util.ChecksumFactory _cksmFactory;
 
+    { 
+        // set checksum type set for further cksm negotiations
+        org.dcache.srm.util.GridftpClient.setSupportedChecksumTypes(ChecksumFactory.getTypes());
+    }
+
     private final Logger _logger = new Logger() {
             public synchronized void log(String s)
             {
