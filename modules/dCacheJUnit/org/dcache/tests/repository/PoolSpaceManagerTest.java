@@ -40,8 +40,7 @@ public class PoolSpaceManagerTest {
 
     }
 
-
-    @Test
+    @Test(expected=IllegalArgumentException.class)
     public void testFreeMoreThanReserved() throws Exception {
 
         long space = _random.nextLong();
@@ -50,7 +49,8 @@ public class PoolSpaceManagerTest {
 
         _poolSpaceMonitor.freeSpace(4);
 
-        assertFalse("free space greater than total space", _poolSpaceMonitor.getFreeSpace() > _poolSpaceMonitor.getTotalSpace());
+        assertFalse("free space greater than total space",
+                    _poolSpaceMonitor.getFreeSpace() > _poolSpaceMonitor.getTotalSpace());
     }
 
     @Test

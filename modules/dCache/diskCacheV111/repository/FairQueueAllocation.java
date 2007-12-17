@@ -13,12 +13,16 @@ public class FairQueueAllocation implements SpaceMonitor {
    private final List<SpaceRequestable> _listener = new ArrayList<SpaceRequestable>() ;
 
    public FairQueueAllocation( long space ){
+       if (space < 0)
+           throw new IllegalArgumentException("Space must not be negative");
       _totalSpace = space ;
    }
    public synchronized void allocateSpace( long space , long millis )
           throws InterruptedException ,
                  MissingResourceException  {
 
+       if (space < 0)
+           throw new IllegalArgumentException("Cannot allocate negative space");
 
       if( ( _list.size() > 0 ) ||
           (( _totalSpace - _usedSpace ) < space ) ){
@@ -51,6 +55,8 @@ public class FairQueueAllocation implements SpaceMonitor {
    public synchronized void allocateSpace( long space )
           throws InterruptedException {
 
+       if (space < 0)
+           throw new IllegalArgumentException("Cannot allocate negative space");
 
       if( ( _list.size() > 0 ) ||
           (( _totalSpace - _usedSpace ) < space ) ){
@@ -81,14 +87,25 @@ public class FairQueueAllocation implements SpaceMonitor {
       //
       if( _list.size() > 0 )notifyAll() ;
    }
-   public synchronized void freeSpace( long space ){
-       _usedSpace -= space ;
-       notifyAll() ;
-   }
-   public synchronized void setTotalSpace( long space ){
-      _totalSpace = space ;
-      notifyAll() ;
-   }
+
+    public synchronized void freeSpace(long space)
+    {
+        if (space < 0)
+            throw new IllegalArgumentException("Cannot free negative space");
+        if (space > _usedSpace)
+            throw new IllegalArgumentException("Cannot free space that was not allocated");
+        _usedSpace -= space;
+        notifyAll();
+    }
+
+    public synchronized void setTotalSpace(long space)
+    {
+        if (space < _usedSpace)
+            throw new IllegalArgumentException("Cannot set total space to less than used space");
+        _totalSpace = space;
+        notifyAll();
+    }
+
    public synchronized long getFreeSpace(){
      return _totalSpace - _usedSpace ;
    }
