@@ -2,7 +2,6 @@ package org.dcache.tests.poolmanager;
 
 import static org.junit.Assert.*;
 
-import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -26,7 +25,6 @@ import diskCacheV111.pools.PoolV2Mode;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.DCapProtocolInfo;
-import diskCacheV111.vehicles.GenericStorageInfo;
 import diskCacheV111.vehicles.OSMStorageInfo;
 import diskCacheV111.vehicles.PnfsGetCacheLocationsMessage;
 import diskCacheV111.vehicles.PoolCheckFileMessage;
@@ -75,9 +73,14 @@ public class PoolMonitorTest {
         pools.add("pool1");
         pools.add("pool2");
 
+        /*
+         * pre-configure pool selection unit
+         */
         PoolMonitorHelper.prepareSelectionUnit(_selectionUnit, pools);
 
-
+        /*
+         * prepare reply for getCacheLocation request
+         */
         PnfsGetCacheLocationsMessage message = PoolMonitorHelper.prepareGetCacheLocation(pnfsId, pools);
 
         GenericMocCellHelper.prepareMessage(new CellPath("PnfsManager"), message);
@@ -85,6 +88,9 @@ public class PoolMonitorTest {
 
         long serialId = System.currentTimeMillis();
 
+        /*
+         * make pools know to 'PoolManager'
+         */
         PoolV2Mode poolMode = new PoolV2Mode(PoolV2Mode.ENABLED);
 
         PoolCostInfo poolCost1 = new PoolCostInfo("pool1");
@@ -104,17 +110,31 @@ public class PoolMonitorTest {
         _costModule.messageArrived(cellMessage1);
         _costModule.messageArrived(cellMessage2);
 
+        /*
+         * one pool have the file
+         */
         PoolCheckFileMessage pool1CeckMessage = new PoolCheckFileMessage("pool1",pnfsId );
         pool1CeckMessage.setHave(true);
 
+        /*
+         * the other, receiving it
+         */
         PoolCheckFileMessage pool2CeckMessage = new PoolCheckFileMessage("pool2",pnfsId );
         pool2CeckMessage.setHave(false);
         pool2CeckMessage.setWaiting(true);
 
+
+        /*
+         * prepare pools reply
+         */
         GenericMocCellHelper.prepareMessage(new CellPath("pool1"), pool1CeckMessage);
         GenericMocCellHelper.prepareMessage(new CellPath("pool2"), pool2CeckMessage);
 
 
+
+        /*
+         * exercise
+         */
         PnfsFileLocation availableLocations = _poolMonitor.getPnfsFileLocation(pnfsId, _storageInfo, _protocolInfo, null);
 
         List<PoolCostCheckable> acknowledgedPools =  availableLocations.getAcknowledgedPnfsPools();
