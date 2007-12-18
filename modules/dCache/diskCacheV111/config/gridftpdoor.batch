@@ -1,4 +1,4 @@
-set printout default 2 
+set printout default 2
 set printout CellGlue none
 onerror shutdown
 #
@@ -13,7 +13,7 @@ import context -c setupContext
 #
 #   Make sure we got what we need.
 #
-check -strong serviceLocatorPort serviceLocatorHost 
+check -strong serviceLocatorPort serviceLocatorHost
 #
 #
 create dmg.cells.services.RoutingManager  RoutingMgr
@@ -56,7 +56,7 @@ set context -c FtpTLogDir ""
 #
 #   If srmSpaceManagerEnabled is on we need to use SrmSpaceManager
 #   as both poolManager and poolProxy
-#  
+#
 onerror continue
 set context -c srmSpaceManagerEnabled no
 define env srmSpaceManagerOn.exe endExe
@@ -101,8 +101,8 @@ create dmg.cells.services.login.LoginManager GFTP-${thisHostname} \
              -gplazma-authorization-module-policy=${gplazmaPolicy} \
              -io-queue=${gsiftpIoQueue} \
              -kpwd-file=${kpwdFile} \
-             -permission-handler=diskCacheV111.services.ACLPermissionHandler \
-             -acl-permission-handler-config=acl.properties \
+#             -permission-handler=diskCacheV111.services.ACLPermissionHandler \
+#             -acl-permission-handler-config=acl.properties \
              -ftp-adapter-internal-interface=${gsiftpAdapterInternalInterface} \
              -meta-data-provider=${PermissionHandlerDataSource} \
              -overwrite=${overwriteEnabled} \
