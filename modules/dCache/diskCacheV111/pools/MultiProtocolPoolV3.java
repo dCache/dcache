@@ -20,6 +20,7 @@ import java.lang.reflect.*;
 import org.apache.log4j.Logger;
 
 import org.dcache.pool.repository.v4.CacheRepositoryV4;
+import com.sleepycat.je.DatabaseException;
 
 public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
 
@@ -140,7 +141,9 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
     // [-replicateOnArrival[=[Manager],[host],[mode]]] : default :
     // PoolManager,thisHost,keep
     //
-    public MultiProtocolPoolV3(String poolName, String args) throws Exception {
+    public MultiProtocolPoolV3(String poolName, String args)
+        throws Exception
+    {
         super(poolName, args, false);
 
         _poolName = poolName;
@@ -394,8 +397,7 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
                     Thread.sleep(30000);
                 } catch (InterruptedException ie) {
                     esay("Waiting for repository was interrupted");
-                    throw new Exception(
-                                        "Waiting for repository was interrupted");
+                    throw new InterruptedException("Waiting for repository was interrupted");
                 }
             }
             say("Base dir ok");
@@ -689,8 +691,13 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
     // The sweeper class loader
     //
     //
-    private SpaceSweeper getSweeperHandler() throws Exception {
-
+    private SpaceSweeper getSweeperHandler()
+        throws InstantiationException,
+               ClassNotFoundException,
+               IllegalAccessException,
+               InvocationTargetException,
+               NoSuchMethodException
+    {
         Class<?>[] argClass = { dmg.cells.nucleus.CellAdapter.class,
 				diskCacheV111.util.PnfsHandler.class,
 				diskCacheV111.repository.CacheRepository.class,
@@ -700,7 +707,6 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
         Object[] args = { this, _pnfs, _repository, _storageHandler };
 
         return (SpaceSweeper) sweeperCon.newInstance(args);
-
     }
 
     private void setDummyStorageInfo(CacheRepositoryEntry entry) {
@@ -710,10 +716,9 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
             storageInfo.setBitfileId("*");
 
             _pnfs.setStorageInfoByPnfsId(entry.getPnfsId(), storageInfo, 0 // write
-                                         // (don't
-                                         // overwrite)
+                                         // (don't overwrite)
                                          );
-        } catch (Exception e) {
+        } catch (CacheException e) {
             //
             // for now we just ignore this exception (its dummy only)
             //
@@ -740,7 +745,7 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
             long size = 0L;
             try {
                 size = entry.getSize();
-            } catch (Exception ee) {
+            } catch (CacheException ee) {
                 esay("RepositoryLoader : can't get filesize : " + ee);
                 //
                 // if we can't get the size, so to be on the save side.
@@ -826,9 +831,11 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
                     sendMessage(new CellMessage(_billingCell,
                                                 new RemoveFileInfoMessage(getCellName() + "@"
                                                                           + getCellDomainName(), entry.getPnfsId())));
-                } catch (Exception ee) {
-                    esay("Couldn't report removal of : " + entry.getPnfsId()
-                         + " : " + ee);
+                } catch (NotSerializableException e) {
+                    throw new RuntimeException("Bug detected: Unserializable vehicle");
+                } catch (NoRouteToCellException e) {
+                    esay("Could not report removal of : " + entry.getPnfsId()
+                         + " : " + e.getMessage());
                 }
             }
         }
@@ -860,9 +867,11 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
         }
     }
 
-    private void execFile(File setup) throws Exception {
+    private void execFile(File setup)
+        throws IOException, CommandException
+    {
         BufferedReader br = new BufferedReader(new FileReader(setup));
-        String line = null;
+        String line;
         try {
             while ((line = br.readLine()) != null) {
                 line = line.trim();
@@ -873,7 +882,7 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
                 say("Execute setup : " + line);
                 try {
                     command(new Args(line));
-                } catch (Exception ce) {
+                } catch (CommandException ce) {
                     esay("Excecute setup failure : " + ce);
                     esay("Excecute setup : won't continue");
                     throw ce;
@@ -886,7 +895,6 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
                 // ignored
             }
         }
-        return;
     }
 
     private void dumpSetup(PrintWriter pw) {
@@ -929,29 +937,25 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
         _checksumModule.dumpSetup(pw);
     }
 
-    private void dumpSetup() throws Exception {
+    private void dumpSetup()
+        throws IOException
+    {
         String name = _setup.getName();
         String parent = _setup.getParent();
-        File tempFile = parent == null ? new File("." + name) : new File(
-                                                                         parent, "." + name);
+        File tempFile =
+            parent == null
+            ? new File("." + name)
+            : new File(parent, "." + name);
 
         PrintWriter pw = new PrintWriter(new FileWriter(tempFile));
-
         try {
-
             dumpSetup(pw);
-
         } finally {
-            try {
-                pw.close();
-            } catch (Exception de) {
-            }
+            pw.close();
         }
         if (!tempFile.renameTo(_setup))
             throw new IOException("Rename failed (" + tempFile + " -> "
                                   + _setup + ")");
-
-        return;
     }
 
 
@@ -1106,7 +1110,9 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
             esay(ce.getMessage());
             try {
                 sendMessage(cellMessage);
-            } catch (Exception e) {
+            } catch (NotSerializableException e) {
+                throw new RuntimeException("Bug detected: Unserializable vehicle");
+            } catch (NoRouteToCellException e) {
                 esay(e);
             }
             return;
@@ -1122,15 +1128,7 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
                 esay("setAttribute : " + iae.getMessage());
             }
         }
-        String queueName = null;
-        try {
-            //
-            // we could get a 'no such method exception'
-            //
-            queueName = poolMessage.getIoQueueName();
-        } catch (Exception ee) {
-            say("Possibly old fashioned message : " + ee);
-        }
+        String queueName = poolMessage.getIoQueueName();
         IoQueueManager queueManager = (IoQueueManager) _ioQueue;
         try {
             if (io.isWrite()) {
@@ -1216,8 +1214,9 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
         private boolean _started = false;
 
         public RepositoryIoHandler(PoolIoFileMessage poolMessage,
-                                   CellMessage originalCellMessage) throws CacheException {
-
+                                   CellMessage originalCellMessage)
+            throws CacheException
+        {
             _message = originalCellMessage;
             _command = poolMessage;
             _destination = _message.getDestinationPath();
@@ -1236,14 +1235,8 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
             _finished = new DoorTransferFinishedMessage(_command.getId(),
                                                         _pnfsId, _protocolInfo, _storageInfo, poolMessage
 							.getPoolName());
-            try {
-                //
-                // we could get a 'no such method exception'
-                //
-                _finished.setIoQueueName(poolMessage.getIoQueueName());
-            } catch (Exception ee) {
-                say("Possibly old fashioned message : " + ee);
-            }
+            _finished.setIoQueueName(poolMessage.getIoQueueName());
+
             //
             // we need to change the next two lines as soon
             // as we allow 'transient files'.
@@ -1372,9 +1365,11 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
             //
             try {
                 sendMessage(_message);
-            } catch (Exception eee) {
-                esay("Can't send message back to door : " + eee);
-                esay(eee);
+            } catch (NotSerializableException e) {
+                throw new RuntimeException("Bug detected: Unserializable vehicle");
+            } catch (NoRouteToCellException e) {
+                esay("Can't send message back to door : " + e.getMessage());
+                esay(e);
                 failed = true;
             }
             if (failed) {
@@ -1807,6 +1802,7 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
                     _entry.decrementLinkCount();
                 } catch (CacheException ce_ignored) {
                     // Exception never thrown
+                    throw new RuntimeException("Bug: decrementLinkCount threw unexpected exception");
                 }
 
                 try {
@@ -1819,7 +1815,7 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
                             _repository.applyReservedSpace(usedSpace);
                     }
 
-                } catch (Exception ee) {
+                } catch (CacheException ee) {
                     esay("Problem  handling reserved space management : " + ee);
                     esay(ee);
                 }
@@ -1883,7 +1879,7 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
                 try {
                     _destinationHostName = InetAddress.getLocalHost()
                         .getHostAddress();
-                } catch (Exception ee) {
+                } catch (UnknownHostException ee) {
                     _destinationHostName = "localhost";
                 }
             }
@@ -1908,7 +1904,7 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
                 try {
                     _destinationHostName = InetAddress.getLocalHost()
                         .getHostAddress();
-                } catch (Exception ee) {
+                } catch (UnknownHostException ee) {
                     _destinationHostName = "localhost";
                 }
             }
@@ -1947,26 +1943,34 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
                 return;
             try {
                 _initiateReplication(entry, source);
-            } catch (Exception ee) {
-                esay("Problem in sending replication request : " + ee);
-                esay(ee);
+            } catch (CacheException e) {
+                esay("Problem in sending replication request : " + e);
+            } catch (NoRouteToCellException e) {
+                esay("Problem in sending replication request : " + e.getMessage());
             }
         }
 
         private void _initiateReplication(CacheRepositoryEntry entry,
-                                          String source) throws Exception {
-
+                                          String source)
+            throws CacheException, NoRouteToCellException
+        {
             PnfsId pnfsId = entry.getPnfsId();
             StorageInfo storageInfo = entry.getStorageInfo();
 
             storageInfo.setKey("replication.source", source);
 
-            PoolMgrReplicateFileMsg req = new PoolMgrReplicateFileMsg(pnfsId,
-                                                                      storageInfo, new DCapProtocolInfo("DCap", 3, 0,
-                                                                                                        _destinationHostName, 2222), storageInfo
-                                                                      .getFileSize());
+            PoolMgrReplicateFileMsg req =
+                new PoolMgrReplicateFileMsg(pnfsId,
+                                            storageInfo,
+                                            new DCapProtocolInfo("DCap", 3, 0,
+                                                                 _destinationHostName, 2222),
+                                            storageInfo.getFileSize());
             req.setReplyRequired(false);
-            sendMessage(new CellMessage(new CellPath(_replicationManager), req));
+            try {
+                sendMessage(new CellMessage(new CellPath(_replicationManager), req));
+            } catch (NotSerializableException e) {
+                throw new RuntimeException("Bug detected: Unserializable vehicle");
+            }
 
         }
     }
@@ -2058,17 +2062,11 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
 
                     doChecksum(id, entry);
 
-                    try {
+                    _replicationHandler.initiateReplication(entry,
+                                                            "restore");
 
-                        _replicationHandler.initiateReplication(entry,
-								"restore");
 
-                    } catch (Exception eee) {
-                        esay("Problems in replicating : " + entry + " (" + eee
-                             + ")");
-                    }
-
-                } catch (Exception ee2) {
+                } catch (CacheException ee2) {
 
                     msg.setFailed(1010, "Checksum calculation failed " + ee2);
                     esay("Checksum calculation failed : " + ee2);
@@ -2081,13 +2079,17 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
                  + _cellMessage.getMessageObject());
             try {
                 sendMessage(_cellMessage);
-            } catch (Exception iee) {
-                esay("Sorry coudn't send ack to poolManager : " + iee);
+            } catch (NotSerializableException e) {
+                throw new RuntimeException("Bug detected: Unserializable vehicle");
+            } catch (NoRouteToCellException e) {
+                esay("Couldn't send ack to poolManager : " + e.getMessage());
             }
 
         }
 
-        private void doChecksum(PnfsId pnfsId, CacheRepositoryEntry entry) {
+        private void doChecksum(PnfsId pnfsId, CacheRepositoryEntry entry)
+            throws CacheException
+        {
 
             Message msg = (Message) _cellMessage.getMessageObject();
 
@@ -2104,7 +2106,7 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
                 String checksumString = info.getKey("flag-c");
 
                 if (checksumString == null)
-                    throw new Exception("Checksum not in StorageInfo");
+                    throw new CacheException("Checksum not in StorageInfo");
 
                 long start = System.currentTimeMillis();
 
@@ -2122,7 +2124,7 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
                          + infoChecksum + ";file=" + fileChecksum);
                     try {
                         _repository.removeEntry(entry);
-                    } catch (Exception ee2) {
+                    } catch (CacheException ee2) {
                         esay("Couldn't remove file : " + pnfsId + " : " + ee2);
                     }
                     msg.setFailed(1009, "Checksum error : info=" + infoChecksum
@@ -2368,15 +2370,14 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
 
                             }
                         }
-                    } catch (Exception eee) {
-                        esay("Couldn't set precious : " + entry + " : " + eee);
-                        throw eee;
+                    } catch (CacheException ee) {
+                        esay("Couldn't set precious : " + entry + " : " + ee);
+                        throw ee;
                     }
-                } catch (Exception ee) {
+                } catch (CacheException ee) {
                     //
-                    // we regard this transfer as OK, even if setting the file
-                    // mode
-                    // failed.
+                    // we regard this transfer as OK, even if setting
+                    // the file mode failed.
                     //
                     esay("Problems setting file mode : " + ee);
                 }
@@ -2389,9 +2390,10 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
                     _cellMessage.revertDirection();
                     say("CellMessage after revert : " + _cellMessage);
                     sendMessage(_cellMessage);
-                } catch (Exception ee) {
-                    ee.printStackTrace();
-                    esay("Can't reply p2p message : " + ee);
+                } catch (NotSerializableException ee) {
+                    throw new RuntimeException("Bug detected: Unserializable vehicle");
+                } catch (NoRouteToCellException ee) {
+                    esay("Cannot reply p2p message : " + ee.getMessage());
                 }
             }
 
@@ -2447,15 +2449,14 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
             say("PoolMoverKillMessage for mover id " + kill.getMoverId());
             try {
                 mover_kill(kill.getMoverId());
-            } catch (Exception e) {
+            } catch (NoSuchElementException e) {
                 esay(e);
                 kill.setReply(1, e);
             }
 
         } else if (poolMessage instanceof PoolFlushControlMessage) {
 
-            _flushingThread.messageArrived(
-                                           (PoolFlushControlMessage) poolMessage, cellMessage);
+            _flushingThread.messageArrived((PoolFlushControlMessage)poolMessage, cellMessage);
             return;
 
         } else if (poolMessage instanceof DoorTransferFinishedMessage) {
@@ -2607,7 +2608,7 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
         } else if (poolMessage instanceof PoolSpaceReservationMessage) {
 
             replyRequired = false;
-            runSpaceReservation((PoolSpaceReservationMessage) poolMessage,
+            runSpaceReservation((PoolSpaceReservationMessage)poolMessage,
                                 cellMessage);
 
         } else {
@@ -2622,13 +2623,14 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
             say("Sending reply " + poolMessage);
             cellMessage.revertDirection();
             sendMessage(cellMessage);
-        } catch (Exception e) {
-            esay("Can't reply message : " + e);
+        } catch (NotSerializableException e) {
+            throw new RuntimeException("Bug detected: Unserializable vehicle");
+        } catch (NoRouteToCellException e) {
+            esay("Cannot reply message : " + e.getMessage());
         }
     }
 
-    private void runSpaceReservation(
-                                     final PoolSpaceReservationMessage spaceReservationMessage,
+    private void runSpaceReservation(final PoolSpaceReservationMessage spaceReservationMessage,
                                      final CellMessage cellMessage) {
 
         if (_blockOnNoSpace
@@ -2684,8 +2686,10 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
             say("Sending reply " + spaceReservationMessage);
             cellMessage.revertDirection();
             sendMessage(cellMessage);
-        } catch (Exception e) {
-            esay("Can't reply message : " + e);
+        } catch (NotSerializableException e) {
+            throw new RuntimeException("Bug detected: Unserializable vehicle");
+        } catch (NoRouteToCellException e) {
+            esay("Cannot reply message : " + e.getMessage());
         }
 
     }
@@ -2702,14 +2706,18 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
             poolMessage.setFailed(104, "Pool is disabled");
             cellMessage.revertDirection();
             sendMessage(cellMessage);
-        } catch (Exception e) {
-            esay("Can't reply message : " + e);
+        } catch (NotSerializableException e) {
+            throw new RuntimeException("Bug detected: Unserializable vehicle");
+        } catch (NoRouteToCellException e) {
+            esay("Cannot reply message : " + e.getMessage());
         }
     }
 
     public String hh_simulate_cost = "[-cpu=<cpuCost>] [-space=<space>]";
 
-    public String ac_simulate_cost(Args args) throws Exception {
+    public String ac_simulate_cost(Args args)
+        throws NumberFormatException
+    {
         String tmp = args.getOpt("cpu");
         if (tmp != null)
             _simCpuCost = Double.parseDouble(tmp);
@@ -2836,9 +2844,10 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
         {
             try {
                 sendMessage(msg);
-            } catch (Exception exc){
-                esay("Exception sending ping message " + exc);
-                esay(exc);
+            } catch (NotSerializableException e) {
+                throw new RuntimeException("Bug detected: Unserializable vehicle");
+            } catch (NoRouteToCellException e){
+                esay("Failed to send ping message: " + e.getMessage());
             }
         }
     }
@@ -3038,7 +3047,7 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
                         _pnfs.clearCacheLocation(pnfsid.toString());
 
                 }
-            } catch (Exception ce) {
+            } catch (CacheException ce) {
                 esay(ce);
             }
             synchronized (_hybridInventoryLock) {
@@ -3050,7 +3059,7 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
     public String hh_pnfs_register = " # add entry of all files into pnfs";
     public String hh_pnfs_unregister = " # remove entry of all files from pnfs";
 
-    public String ac_pnfs_register(Args args) throws Exception {
+    public String ac_pnfs_register(Args args) {
         synchronized (_hybridInventoryLock) {
             if (_hybridInventoryActive)
                 throw new IllegalArgumentException(
@@ -3061,7 +3070,7 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
         return "";
     }
 
-    public String ac_pnfs_unregister(Args args) throws Exception {
+    public String ac_pnfs_unregister(Args args) {
         synchronized (_hybridInventoryLock) {
             if (_hybridInventoryActive)
                 throw new IllegalArgumentException(
@@ -3074,7 +3083,7 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
 
     public String hh_run_hybrid_inventory = " [-destroy]";
 
-    public String ac_run_hybrid_inventory(Args args) throws Exception {
+    public String ac_run_hybrid_inventory(Args args) {
         synchronized (_hybridInventoryLock) {
             if (_hybridInventoryActive)
                 throw new IllegalArgumentException(
@@ -3122,7 +3131,9 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
 
     public String hh_pool_inventory = "DEBUG ONLY";
 
-    public String ac_pool_inventory(Args args) throws Exception {
+    public String ac_pool_inventory(Args args)
+        throws CacheException
+    {
         final StringBuffer sb = new StringBuffer();
         Logable l = new Logable() {
                 public void log(String msg) {
@@ -3153,8 +3164,7 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
         } else if (mode.equals("off")) {
             _suppressHsmLoad = false;
         } else
-            throw new IllegalArgumentException(
-                                               "Illegal syntax : pool suppress hsmload on|off");
+            throw new IllegalArgumentException("Illegal syntax : pool suppress hsmload on|off");
 
         return "hsm load suppression swithed : "
             + (_suppressHsmLoad ? "on" : "off");
@@ -3169,7 +3179,7 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
         return "";
     }
 
-    public String ac_movermap_undefine_$_1(Args args) throws Exception {
+    public String ac_movermap_undefine_$_1(Args args) {
         _moverHash.remove(args.argv(0));
         return "";
     }
@@ -3336,8 +3346,7 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
         } else if (args.argv(0).equals("disabled")) {
             _crashEnabled = false;
         } else
-            throw new IllegalArgumentException(
-                                               "crash disabled|shutdown|exception");
+            throw new IllegalArgumentException("crash disabled|shutdown|exception");
 
         return "Crash is " + (_crashEnabled ? _crashType : "disabled");
 
@@ -3396,7 +3405,9 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
 
     public String hh_flush_pnfsid = "<pnfsid> # flushs a single pnfsid";
 
-    public String ac_flush_pnfsid_$_1(Args args) throws Exception {
+    public String ac_flush_pnfsid_$_1(Args args)
+        throws CacheException
+    {
         CacheRepositoryEntry entry = _repository.getEntry(new PnfsId(args
                                                                      .argv(0)));
         _storageHandler.store(entry, null);
@@ -3431,7 +3442,9 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
     public String hh_p2p_remove = "<jobId>";
     public String hh_p2p_kill = "<jobId>";
 
-    public String ac_mover_set_max_active_$_1(Args args) throws Exception {
+    public String ac_mover_set_max_active_$_1(Args args)
+        throws NumberFormatException, IllegalArgumentException
+    {
         String queueName = args.getOpt("queue");
 
         IoQueueManager ioManager = (IoQueueManager) _ioQueue;
@@ -3448,12 +3461,15 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
 
     }
 
-    public String ac_p2p_set_max_active_$_1(Args args) throws Exception {
+    public String ac_p2p_set_max_active_$_1(Args args)
+        throws NumberFormatException, IllegalArgumentException
+    {
         return mover_set_max_active(_p2pQueue, args);
     }
 
     private String mover_set_max_active(JobScheduler js, Args args)
-        throws Exception {
+        throws NumberFormatException, IllegalArgumentException
+    {
         int active = Integer.parseInt(args.argv(0));
         if (active < 0)
             throw new IllegalArgumentException("<maxActiveMovers> must be >= 0");
@@ -3462,7 +3478,8 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
         return "Max Active Io Movers set to " + active;
     }
 
-    public Object ac_mover_queue_ls_$_0_1(Args args) throws Exception {
+    public Object ac_mover_queue_ls_$_0_1(Args args)
+    {
         StringBuffer sb = new StringBuffer();
         IoQueueManager manager = (IoQueueManager) _ioQueue;
 
@@ -3483,7 +3500,9 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
         return sb.toString();
     }
 
-    public Object ac_mover_ls_$_0_1(Args args) throws Exception {
+    public Object ac_mover_ls_$_0_1(Args args)
+        throws NoSuchElementException
+    {
         String queueName = args.getOpt("queue");
         if (queueName == null)
             return mover_ls(_ioQueue, args);
@@ -3509,7 +3528,8 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
 
     }
 
-    public Object ac_p2p_ls_$_0_1(Args args) throws Exception {
+    public Object ac_p2p_ls_$_0_1(Args args)
+    {
         return mover_ls(_p2pQueue, args);
     }
 
@@ -3525,7 +3545,9 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
      * JobScheduler js = (JobScheduler)queues.next() ; js.printJobQueue(sb); }
      * return sb.toString() ; } }
      */
-    private Object mover_ls(JobScheduler js, Args args) throws Exception {
+    private Object mover_ls(JobScheduler js, Args args)
+        throws NumberFormatException
+    {
         boolean binary = args.getOpt("binary") != null;
         try {
             if (binary) {
@@ -3538,45 +3560,61 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
             } else {
                 return js.printJobQueue(null).toString();
             }
-        } catch (Exception ee) {
+        } catch (NumberFormatException ee) {
             esay(ee);
             throw ee;
         }
     }
 
-    public String ac_mover_remove_$_1(Args args) throws Exception {
+    public String ac_mover_remove_$_1(Args args)
+        throws NoSuchElementException, NumberFormatException
+    {
         return mover_remove(_ioQueue, args);
     }
 
-    public String ac_p2p_remove_$_1(Args args) throws Exception {
+    public String ac_p2p_remove_$_1(Args args)
+        throws NoSuchElementException, NumberFormatException
+    {
         return mover_remove(_p2pQueue, args);
     }
 
-    private String mover_remove(JobScheduler js, Args args) throws Exception {
+    private String mover_remove(JobScheduler js, Args args)
+        throws NoSuchElementException, NumberFormatException
+    {
         int id = Integer.parseInt(args.argv(0));
         js.remove(id);
         return "Removed";
     }
 
-    public String ac_mover_kill_$_1(Args args) throws Exception {
+    public String ac_mover_kill_$_1(Args args)
+        throws NoSuchElementException, NumberFormatException
+    {
         return mover_kill(_ioQueue, args);
     }
 
-    public String ac_p2p_kill_$_1(Args args) throws Exception {
+    public String ac_p2p_kill_$_1(Args args)
+        throws NoSuchElementException, NumberFormatException
+    {
         return mover_kill(_p2pQueue, args);
     }
 
-    private void mover_kill(int id) throws Exception {
+    private void mover_kill(int id)
+        throws NoSuchElementException
+    {
         mover_kill(_ioQueue, id);
     }
 
-    private String mover_kill(JobScheduler js, Args args) throws Exception {
+    private String mover_kill(JobScheduler js, Args args)
+        throws NoSuchElementException, NumberFormatException
+    {
         int id = Integer.parseInt(args.argv(0));
         mover_kill(js, id);
         return "Kill initialized";
     }
 
-    private void mover_kill(JobScheduler js, int id) throws Exception {
+    private void mover_kill(JobScheduler js, int id)
+        throws NoSuchElementException
+    {
 
         js.kill(id);
     }
@@ -3587,7 +3625,9 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
     //
     public String hh_set_heartbeat = "<heartbeatInterval/sec>";
 
-    public String ac_set_heartbeat_$_0_1(Args args) throws Exception {
+    public String ac_set_heartbeat_$_0_1(Args args)
+        throws NumberFormatException
+    {
         if (args.argc() > 0) {
             _pingThread.setHeartbeat(Integer.parseInt(args.argv(0)));
         }
@@ -3602,7 +3642,9 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
         + "    -perm  : writes the current parameter setup back to the setupFile\n";
     public String hh_update = "[-force] [-perm] !!! DEPRECATED";
 
-    public String ac_update(Args args) throws Exception {
+    public String ac_update(Args args)
+        throws IOException
+    {
         boolean forced = args.getOpt("force") != null;
         _pingThread.sendPoolManagerMessage(forced);
         if (args.getOpt("perm") != null) {
@@ -3613,14 +3655,15 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
 
     public String hh_save = "[-sc=<setupController>|none] # saves setup to disk or SC";
 
-    public String ac_save(Args args) throws Exception {
+    public String ac_save(Args args)
+        throws IOException, IllegalArgumentException, NoRouteToCellException
+    {
         String setupManager = args.getOpt("sc");
 
         if (_setupManager == null) {
 
             if ((setupManager != null) && setupManager.equals(""))
-                throw new IllegalArgumentException(
-                                                   "setupManager needs to be specified");
+                throw new IllegalArgumentException("setupManager needs to be specified");
 
         } else {
 
@@ -3638,9 +3681,11 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
                                                              .getCellName(), "pool", sw.toString());
 
                 sendMessage(new CellMessage(new CellPath(setupManager), info));
-            } catch (Exception ee) {
-                esay("Problem sending setup to >" + setupManager + "< : " + ee);
-                throw ee;
+            } catch (NotSerializableException e) {
+                throw new RuntimeException("Bug detected: Unserializable vehicle");
+            } catch (NoRouteToCellException e) {
+                esay("Problem sending setup to >" + setupManager + "< : " + e.getMessage());
+                throw e;
             }
         }
         dumpSetup();
