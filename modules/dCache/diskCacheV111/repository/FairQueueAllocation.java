@@ -226,7 +226,8 @@ public class FairQueueAllocation implements SpaceMonitor
                             System.out.println("Waiting " + t.getName());
                             try {
                                 m.allocateSpace(500);
-                            } catch(Exception e) {
+                            } catch (Exception e) {
+                                System.err.println(e);
                             }
                             System.out.println("Got it " + t.getName());
                         }
@@ -238,8 +239,11 @@ public class FairQueueAllocation implements SpaceMonitor
                     while(true){
                         m.freeSpace(1500);
                         System.out.println("freed");
-                        try{ Thread.sleep(500);}
-                        catch(Exception e){}
+                        try{
+                            Thread.sleep(500);
+                        } catch(Exception e) {
+                            System.err.println(e);
+                        }
                     }
                 }
             }).start();
