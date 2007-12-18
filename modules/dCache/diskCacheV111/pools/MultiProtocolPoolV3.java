@@ -669,18 +669,11 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
 				enablePool();
 				_logClass.elog("Pool enabled " + _poolName);
 
-			} catch (CacheException cee) {
-
+			} catch (Throwable e) {
 				_logClass.elog("Repository reported a problem : "
-						+ cee.getMessage());
+						+ e.getMessage());
 				_logClass.elog("Pool not enabled " + _poolName);
-				disablePool(PoolV2Mode.DISABLED_STRICT, 2, "Init Failed");
-
-			} catch (Throwable t) {
-
-				_logClass.elog("Repository reported Throwable : " + t);
-				t.printStackTrace();
-
+				disablePool(PoolV2Mode.DISABLED_DEAD, 666, "Init failed: " + e.getMessage());
 			}
 			_logClass.elog("Repository finished");
 			if (_notifyMe != null) {
@@ -3243,35 +3236,40 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
 
 	public String ac_pool_disable_$_0_2(Args args) {
 
-		int rc = args.argc() > 0 ? Integer.parseInt(args.argv(0)) : 1;
-		String rm = args.argc() > 1 ? args.argv(1) : "Operator intervention";
+            if (_poolMode.isDisabled(PoolV2Mode.DISABLED_DEAD))
+                return "The pool is dead and a restart is required to enable it";
 
-		int modeBits = PoolV2Mode.DISABLED;
-		if (args.getOpt("strict") != null)
-			modeBits |= PoolV2Mode.DISABLED_STRICT;
-		if (args.getOpt("stage") != null)
-			modeBits |= PoolV2Mode.DISABLED_STAGE;
-		if (args.getOpt("fetch") != null)
-			modeBits |= PoolV2Mode.DISABLED_FETCH;
-		if (args.getOpt("store") != null)
-			modeBits |= PoolV2Mode.DISABLED_STORE;
-		if (args.getOpt("p2p-client") != null)
-			modeBits |= PoolV2Mode.DISABLED_P2P_CLIENT;
-		if (args.getOpt("p2p-server") != null)
-			modeBits |= PoolV2Mode.DISABLED_P2P_SERVER;
-		if (args.getOpt("rdonly") != null)
-			modeBits |= PoolV2Mode.DISABLED_RDONLY;
+            int rc = args.argc() > 0 ? Integer.parseInt(args.argv(0)) : 1;
+            String rm = args.argc() > 1 ? args.argv(1) : "Operator intervention";
 
-		disablePool(modeBits, rc, rm);
+            int modeBits = PoolV2Mode.DISABLED;
+            if (args.getOpt("strict") != null)
+                modeBits |= PoolV2Mode.DISABLED_STRICT;
+            if (args.getOpt("stage") != null)
+                modeBits |= PoolV2Mode.DISABLED_STAGE;
+            if (args.getOpt("fetch") != null)
+                modeBits |= PoolV2Mode.DISABLED_FETCH;
+            if (args.getOpt("store") != null)
+                modeBits |= PoolV2Mode.DISABLED_STORE;
+            if (args.getOpt("p2p-client") != null)
+                modeBits |= PoolV2Mode.DISABLED_P2P_CLIENT;
+            if (args.getOpt("p2p-server") != null)
+                modeBits |= PoolV2Mode.DISABLED_P2P_SERVER;
+            if (args.getOpt("rdonly") != null)
+                modeBits |= PoolV2Mode.DISABLED_RDONLY;
 
-		return "Pool " + _poolName + " " + _poolMode;
+            disablePool(modeBits, rc, rm);
+
+            return "Pool " + _poolName + " " + _poolMode;
 	}
 
 	public String hh_pool_enable = " # resume sending up messages'";
 
 	public String ac_pool_enable(Args args) {
-		enablePool();
-		return "Pool " + _poolName + " enabled";
+            if (_poolMode.isDisabled(PoolV2Mode.DISABLED_DEAD))
+                return "The pool is dead and a restart is required to enable it";
+            enablePool();
+            return "Pool " + _poolName + " enabled";
 	}
 
 	public String hh_set_max_movers = "!!! Please use 'mover|st|rh set max active <jobs>'";
