@@ -139,7 +139,8 @@ public class PoolMonitorTest {
 
         List<PoolCostCheckable> acknowledgedPools =  availableLocations.getAcknowledgedPnfsPools();
 
-        assertFalse("No pools available", acknowledgedPools.isEmpty());
+        assertFalse("No pools found (test setup error)", acknowledgedPools.isEmpty());
+        assertTrue("No pools acknowledged (test setup error)", availableLocations.getAvailablePoolCount() > 0 );
 
         for( PoolCostCheckable pool : acknowledgedPools) {
             assertFalse("Pool with the file in the 'waiting' state should not be used in selection", pool.getPoolName().equals("pool2") );
