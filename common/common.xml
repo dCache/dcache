@@ -554,7 +554,7 @@
 		</path>
 
 		<pathconvert property="dcache.classpath" targetos="unix" refid="dcache.external.jars">
-			<map from="${binDir}/classes" to="${ourHome}/classes"/>
+			<map from="${binDir}/classes" to="${ourHomeDir}/classes"/>
 		</pathconvert>
 		<echo>externalLibsClassPath=${dcache.classpath}</echo>
 		<echo file="${binDir}/classes/extern.classpath" append="no">externalLibsClassPath=${dcache.classpath}</echo>

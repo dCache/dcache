@@ -4,9 +4,9 @@
 #
 #       dCache Installation script
 #
-# This script reads all neccessary information from ${ourHome}/etc/node_config
+# This script reads all neccessary information from ${ourHomeDir}/etc/node_config
 #
-ourHome=/opt/d-cache
+ourHomeDir=/opt/d-cache
 
 
 
@@ -46,8 +46,8 @@ shortname_os() {
 
 printConfig() {
     key=$1
-    cat ${ourHome}/etc/node_config \
-        ${ourHome}/etc/door_config 2>/dev/null |
+    cat ${ourHomeDir}/etc/node_config \
+        ${ourHomeDir}/etc/door_config 2>/dev/null |
     perl -e "
       while (<STDIN>) { 
          s/\#.*$// ;                        # Remove comments
@@ -103,9 +103,9 @@ os_absolutePathOf() {
 
 
 
-if [ ! -r ${ourHome}/etc/node_config ]; then
-    echo "[ERROR] ${ourHome}/etc/node_config missing."
-    echo "[HINT]  Copy ${ourHome}/etc/node_config.template to ${ourHome}/etc/node_config and customize it "
+if [ ! -r ${ourHomeDir}/etc/node_config ]; then
+    echo "[ERROR] ${ourHomeDir}/etc/node_config missing."
+    echo "[HINT]  Copy ${ourHomeDir}/etc/node_config.template to ${ourHomeDir}/etc/node_config and customize it "
     echo "        before running the install script. Exiting."
     exit 4
 fi
@@ -138,12 +138,12 @@ case ${nodeType} in
 		;;
 	dummy)
 		# not specified
-		echo "[ERROR] ${ourHome}/etc/node_config not configured. Exiting."
+		echo "[ERROR] ${ourHomeDir}/etc/node_config not configured. Exiting."
 		exit 1		
 		;;
 	*)
 		# bad falue
-		echo "[ERROR] ${ourHome}/etc/node_config not useful. Exiting."		
+		echo "[ERROR] ${ourHomeDir}/etc/node_config not useful. Exiting."		
 	    echo "[HINT]  Copy node_config.template to node_config and customize it "
 	    echo "        before running the install script. Exiting."		
 		exit 2
@@ -152,8 +152,8 @@ case ${nodeType} in
 esac
 
 
-DCACHE_BASE_DIR=`printConfig DCACHE_BASE_DIR`
-ADMIN_SETUP_TEMPLATE=${DCACHE_BASE_DIR}/etc/dCacheSetup
+DCACHE_HOME=`printConfig DCACHE_HOME`
+ADMIN_SETUP_TEMPLATE=${DCACHE_HOME}/etc/dCacheSetup
 
 # pnfs or chimera?
 NAMESPACE=`printConfig NAMESPACE`
@@ -193,16 +193,16 @@ if [ -z "${SERVER_ID}" ] ; then
 fi
 
 
-if [ ! -f ${DCACHE_BASE_DIR}/config/dCacheSetup ] ; then
+if [ ! -f ${DCACHE_HOME}/config/dCacheSetup ] ; then
     echo ""
     echo "[ERROR] There is no dCacheSetup file."
-    echo "[HINT]  Copy ${ourHome}/etc/dCacheSetup.template to ${DCACHE_BASE_DIR}/config/dCacheSetup and customize it "
+    echo "[HINT]  Copy ${ourHomeDir}/etc/dCacheSetup.template to ${DCACHE_HOME}/config/dCacheSetup and customize it "
 	echo "        before running the install script. Exiting."    
     exit 1
 fi
 
-ourHomeDir=${DCACHE_BASE_DIR}
-. ${DCACHE_BASE_DIR}/config/dCacheSetup
+ourHomeDir=${DCACHE_HOME}
+. ${DCACHE_HOME}/config/dCacheSetup
 
 
 #
@@ -211,7 +211,7 @@ ourHomeDir=${DCACHE_BASE_DIR}
 #
 
 if [ -z "${java}" ]; then
-	echo "[ERROR] java variable in ${DCACHE_BASE_DIR}/config/dCacheSetup not defined"
+	echo "[ERROR] java variable in ${DCACHE_HOME}/config/dCacheSetup not defined"
 	exit 6
 fi
 
@@ -220,13 +220,13 @@ fi
 #
 java=`os_absolutePathOf ${java}`
 if [ -z "${java}" ]; then
-	echo "[ERROR] java variable in ${DCACHE_BASE_DIR}/config/dCacheSetup do not point to existing binary"
+	echo "[ERROR] java variable in ${DCACHE_HOME}/config/dCacheSetup do not point to existing binary"
 	exit 7
 fi
 
 ${java} -version 2>&1 | grep version | egrep "1\.[56]\." >/dev/null 2>&1
 if [ $? -ne 0 ]; then
-	echo "[ERROR] java variable in ${DCACHE_BASE_DIR}/config/dCacheSetup do not point to java version 1.5.x or 1.6.x"
+	echo "[ERROR] java variable in ${DCACHE_HOME}/config/dCacheSetup do not point to java version 1.5.x or 1.6.x"
 	exit 6
 fi
 
@@ -246,17 +246,17 @@ fi
 #
 # init package ( create wrappers in jobs directory )
 #
-${DCACHE_BASE_DIR}/jobs/initPackage.sh ${DCACHE_BASE_DIR}
+${DCACHE_HOME}/jobs/initPackage.sh ${DCACHE_HOME}
 if [ $? != 0 ]; then
 	echo "Failed to initalize dCache installation, exiting."
 	exit 2
 fi
 
 
-if [ -e ${DCACHE_BASE_DIR}/bin/dcache-opt ] ; then
+if [ -e ${DCACHE_HOME}/bin/dcache-opt ] ; then
     echo ""
-    echo "[INFO]  Moving ${DCACHE_BASE_DIR}/bin/dcache-opt out of the way, because it is obsolete."
-    mv ${DCACHE_BASE_DIR}/bin/dcache-opt ${DCACHE_BASE_DIR}/bin/dcache-opt-obsolete
+    echo "[INFO]  Moving ${DCACHE_HOME}/bin/dcache-opt out of the way, because it is obsolete."
+    mv ${DCACHE_HOME}/bin/dcache-opt ${DCACHE_HOME}/bin/dcache-opt-obsolete
 fi
 
 
@@ -266,13 +266,13 @@ fi
 
 # put correct JAVA_HOME into srm_setup.env
 ( 
-  grep -v JAVA_HOME ${DCACHE_BASE_DIR}/etc/srm_setup.env
+  grep -v JAVA_HOME ${DCACHE_HOME}/etc/srm_setup.env
   echo "JAVA_HOME=${JAVA_HOME}"
-) > ${DCACHE_BASE_DIR}/etc/srm_setup.env.$$
-mv ${DCACHE_BASE_DIR}/etc/srm_setup.env.$$ ${DCACHE_BASE_DIR}/etc/srm_setup.env
+) > ${DCACHE_HOME}/etc/srm_setup.env.$$
+mv ${DCACHE_HOME}/etc/srm_setup.env.$$ ${DCACHE_HOME}/etc/srm_setup.env
 
 if [ "`printConfig SRM`" = yes ] ; then
-  ${DCACHE_BASE_DIR}/install/deploy_srmv2.sh ${DCACHE_BASE_DIR}/etc/srm_setup.env
+  ${DCACHE_HOME}/install/deploy_srmv2.sh ${DCACHE_HOME}/etc/srm_setup.env
 fi
 
 
@@ -342,9 +342,9 @@ then
 	   fi
 	fi
 
-	if ! grep "^ftpBase=${PNFS_ROOT}/ftpBase" ${DCACHE_BASE_DIR}/config/dCacheSetup 2>/dev/null >/dev/null ; then
+	if ! grep "^ftpBase=${PNFS_ROOT}/ftpBase" ${DCACHE_HOME}/config/dCacheSetup 2>/dev/null >/dev/null ; then
 	   echo ""
-	   echo "[WARN]  The file ${DCACHE_BASE_DIR}/config/dCacheSetup does not contain:"
+	   echo "[WARN]  The file ${DCACHE_HOME}/config/dCacheSetup does not contain:"
 	   echo "           ftpBase=${PNFS_ROOT}/ftpBase"
 	   echo "        Make shure it is set correctly before you start dCache."
 	fi
@@ -558,7 +558,7 @@ if [ "${nodeType}" = "admin" ] ; then
     #
     echo ""
     echo "[INFO]  Generating ssh keys:"
-    cd ${DCACHE_BASE_DIR}/config
+    cd ${DCACHE_HOME}/config
     if [ -f ./server_key ]; then
 		rm ./server_key; rm ./host_key
     fi
@@ -567,9 +567,9 @@ if [ "${nodeType}" = "admin" ] ; then
     echo ""
 fi
 
-if [ ! -r "${DCACHE_BASE_DIR}/config/${shortHostname}.poollist" ]; then
-    rm -f "${DCACHE_BASE_DIR}/config/${shortHostname}.poollist"
-    touch "${DCACHE_BASE_DIR}/config/${shortHostname}.poollist"
+if [ ! -r "${DCACHE_HOME}/config/${shortHostname}.poollist" ]; then
+    rm -f "${DCACHE_HOME}/config/${shortHostname}.poollist"
+    touch "${DCACHE_HOME}/config/${shortHostname}.poollist"
 fi
 
 #    Pool configuration
@@ -602,7 +602,7 @@ check_pool() {
 		mkdir -p ${rt}/pool
 		mkdir -p ${rt}/pool/data
 		mkdir -p ${rt}/pool/control
-		cp ${DCACHE_BASE_DIR}/config/setup.temp  ${rt}/pool/setup.orig
+		cp ${DCACHE_HOME}/config/setup.temp  ${rt}/pool/setup.orig
 		cd ${rt}/pool
 		sed -e "s:set max diskspace 100:set max diskspace ${size}:g" setup.orig > setup.temp
 		sed -e "s:mover set max active 10:mover set max active ${NUMBER_OF_MOVERS}:g" setup.temp > setup        
@@ -614,18 +614,18 @@ check_pool() {
     if [ ${val} -lt 0 ]; then
 		printf " Pool size exceeds partition size "
     else
-		pnl=`grep "${pn}" ${DCACHE_BASE_DIR}/config/${shortHostname}.poollist | awk '{print $1}'`
+		pnl=`grep "${pn}" ${DCACHE_HOME}/config/${shortHostname}.poollist | awk '{print $1}'`
 		if [ -z "${pnl}" ]; then	   
 			echo "${pn}  ${rt}/pool  sticky=allowed recover-space recover-control recover-anyway lfs=precious tag.hostname=${shortHostname}" \
-			>> ${DCACHE_BASE_DIR}/config/${shortHostname}.poollist
+			>> ${DCACHE_HOME}/config/${shortHostname}.poollist
 		fi
     fi
 }
 
 echo ""
 
-if [ ! -r ${DCACHE_BASE_DIR}/etc/pool_path ]; then
-    echo "[WARN]  ${DCACHE_BASE_DIR}/etc/pool_path does not exist. No pools will be configured."
+if [ ! -r ${DCACHE_HOME}/etc/pool_path ]; then
+    echo "[WARN]  ${DCACHE_HOME}/etc/pool_path does not exist. No pools will be configured."
 else
 # For all the static areas under rt make a pool
     let x=0
@@ -633,7 +633,7 @@ else
 		let x=${x}+1 
 	    pn=${shortHostname}"_"${x}
 		check_pool
-    done  < ${DCACHE_BASE_DIR}/etc/pool_path
+    done  < ${DCACHE_HOME}/etc/pool_path
 fi
 
 exit 0

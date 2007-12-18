@@ -36,7 +36,7 @@ if ! printConfig NODE_TYPE | grep '' 2>/dev/null >/dev/null || printConfig NODE_
 fi
 
 # To make shure to use the right dCache dir
-ourHome=`printConfig DCACHE_BASE_DIR`
+ourHome=`printConfig DCACHE_HOME`
 
 PNFS_ROOT=`printConfig PNFS_ROOT`
 

@@ -32,7 +32,7 @@ If you have already modified dCacheSetup to run gPLAZMA, you do not need to add 
 5. Add lines in dcache-core to start the domain:
 
         if [ "`printConfig infoProvider`" = yes ] ; then
-            $ourHome/jobs/infoProvider -domain=infoProviderDomain ${logParam} start
+            $ourHomeDir/jobs/infoProvider -domain=infoProviderDomain ${logParam} start
         fi
 
 

@@ -4,8 +4,8 @@
 #
 ADMIN_CONFIG=/opt/d-cache/etc/admin_config
 #ADMIN_SETUP_TEMPLATE=`cat $ADMIN_CONFIG | grep ADMIN_SETUP_TEMPLATE |awk '{print $3}'`
-DCACHE_BASE_DIR=`cat $ADMIN_CONFIG | grep DCACHE_BASE_DIR |awk '{print $3}'`
-ADMIN_SETUP_TEMPLATE=$DCACHE_BASE_DIR/etc/dCacheSetup.template
+DCACHE_HOME=`cat $ADMIN_CONFIG | grep DCACHE_HOME |awk '{print $3}'`
+ADMIN_SETUP_TEMPLATE=$DCACHE_HOME/etc/dCacheSetup.template
 PNFS_ROOT=`cat $ADMIN_CONFIG | grep PNFS_ROOT |awk '{print $3}'`
 PNFS_INSTALL_DIR=`cat $ADMIN_CONFIG | grep PNFS_INSTALL_DIR |awk '{print $3}'`
 RETVAL=0
@@ -43,16 +43,16 @@ if [ -d $PNFS_ROOT/fs ]; then
       echo""
       echo "Installing dCacheSetup.template in dCache installation directory"
       echo "Preserving eventual existing dCacheSetup in dCacheSetup.old" 
-      if [ -f $DCACHE_BASE_DIR/config/dCacheSetup ]; then
-         cp $DCACHE_BASE_DIR/config/dCacheSetup $DCACHE_BASE_DIR/config/dCacheSetup.old
+      if [ -f $DCACHE_HOME/config/dCacheSetup ]; then
+         cp $DCACHE_HOME/config/dCacheSetup $DCACHE_HOME/config/dCacheSetup.old
       fi
-      cp $ADMIN_SETUP_TEMPLATE $DCACHE_BASE_DIR/config/dCacheSetup 
+      cp $ADMIN_SETUP_TEMPLATE $DCACHE_HOME/config/dCacheSetup 
 #      echo "Installing dcache.kpwd (SRM/GridFTP authentication file)"
 #      echo " Preserving eventual existing dcache.kpwd in dcache.kpwd.old"
-#      if [ -f $DCACHE_BASE_DIR/etc/dcache.kpwd ]; then
-#         cp $DCACHE_BASE_DIR/etc/dcache.kpwd $DCACHE_BASE_DIR/etc/dcache.kpwd.old
+#      if [ -f $DCACHE_HOME/etc/dcache.kpwd ]; then
+#         cp $DCACHE_HOME/etc/dcache.kpwd $DCACHE_HOME/etc/dcache.kpwd.old
 #      fi
-#      cp $DCACHE_BASE_DIR/etc/dcache.kpwd.template $DCACHE_BASE_DIR/etc/dcache.kpwd
+#      cp $DCACHE_HOME/etc/dcache.kpwd.template $DCACHE_HOME/etc/dcache.kpwd
 #      cd $PNFS_INSTALL_DIR/tools
 #     umount $PNFS_ROOT/fs
 #     ./pnfs.server stop
@@ -99,7 +99,7 @@ echo `hostname`:22125 > ./dcache.conf
 touch ".(fset)(dcache.conf)(io)(on)"
 #
 # Install ssh keys for secure communication
-cd $DCACHE_BASE_DIR/config
+cd $DCACHE_HOME/config
 if [ -f ./server_key ]; then
            rm ./server_key; rm ./host_key
    fi
@@ -151,7 +151,7 @@ echo `hostname`:22125 > ./dcache.conf
 touch ".(fset)(dcache.conf)(io)(on)"
 #
 # Install ssh keys for secure communication
-cd $DCACHE_BASE_DIR/config
+cd $DCACHE_HOME/config
 if [ -f ./server_key ]; then
            rm ./server_key; rm ./host_key
    fi
@@ -168,16 +168,16 @@ echo STRING > ".(tag)(sGroup)"
 #./pnfs.server stop
       echo "Installing dCacheSetup.template in dCache installation directory"
       echo "Preserving eventual existing dCacheSetup in dCacheSetup.old" 
-      if [ -f $DCACHE_BASE_DIR/config/dCacheSetup ]; then
-         cp $DCACHE_BASE_DIR/config/dCacheSetup $DCACHE_BASE_DIR/config/dCacheSetup.old
+      if [ -f $DCACHE_HOME/config/dCacheSetup ]; then
+         cp $DCACHE_HOME/config/dCacheSetup $DCACHE_HOME/config/dCacheSetup.old
       fi
-      cp $ADMIN_SETUP_TEMPLATE $DCACHE_BASE_DIR/config/dCacheSetup
+      cp $ADMIN_SETUP_TEMPLATE $DCACHE_HOME/config/dCacheSetup
 #      echo "Installing dcache.kpwd (SRM/GridFTP authentication file)"
 #      echo " Preserving eventual existing dcache.kpwd in dcache.kpwd.old"
-#      if [ -f $DCACHE_BASE_DIR/etc/dcache.kpwd ]; then
-#         cp $DCACHE_BASE_DIR/etc/dcache.kpwd $DCACHE_BASE_DIR/etc/dcache.kpwd.old
+#      if [ -f $DCACHE_HOME/etc/dcache.kpwd ]; then
+#         cp $DCACHE_HOME/etc/dcache.kpwd $DCACHE_HOME/etc/dcache.kpwd.old
 #      fi
-#      cp $DCACHE_BASE_DIR/etc/dcache.kpwd.template $DCACHE_BASE_DIR/etc/dcache.kpwd
+#      cp $DCACHE_HOME/etc/dcache.kpwd.template $DCACHE_HOME/etc/dcache.kpwd
 exit 0
 
 

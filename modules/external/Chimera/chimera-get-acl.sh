@@ -2,7 +2,7 @@
 
 
 ourHomeDir=/opt/d-cache
-ourHome=/opt/d-cache
+ourHomeDir=/opt/d-cache
 
 . ${ourHomeDir}/classes/extern.classpath
 . ${ourHomeDir}/config/dCacheSetup

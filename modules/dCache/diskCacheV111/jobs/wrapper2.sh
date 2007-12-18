@@ -111,7 +111,7 @@ irixFix=$0
    bins=${thisDir}/../bin
    jobs=$thisDir
    info=${thisDir}/../info
-   ourHome=${thisDir}/..
+   ourHomeDir=${thisDir}/..
    config=${thisDir}/../config
    #
    #  run some needful things
@@ -130,9 +130,9 @@ irixFix=$0
    #
    # load external claspath
    #
-   if [ -r ${ourHome}/classes/extern.classpath ]
+   if [ -r ${ourHomeDir}/classes/extern.classpath ]
    then
-      .  ${ourHome}/classes/extern.classpath
+      .  ${ourHomeDir}/classes/extern.classpath
    fi
    #
    #   try to find a setupfile

@@ -2,7 +2,7 @@
 # $Id: node_config.template,v 1.6 2007-06-19 10:04:10 tigran Exp $
 #
 NODE_TYPE=dummy                 #admin, pool, door or custom
-DCACHE_BASE_DIR=/opt/d-cache
+DCACHE_HOME=/opt/d-cache
 POOL_PATH=/opt/d-cache/etc
 NUMBER_OF_MOVERS=100
 

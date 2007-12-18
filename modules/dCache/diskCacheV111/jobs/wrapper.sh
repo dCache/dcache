@@ -27,7 +27,7 @@ initDone=true
           J_HOME=`/usr/bin/dirname "$PRG"`
       done
       thisDir=$J_HOME
-      ourHome=$J_HOME/..
+      ourHomeDir=$J_HOME/..
       weAre=$progname
       return 0
    }
@@ -47,7 +47,7 @@ initDone=true
       done
       #
       thisDir=`dirname $PRG`
-      ourHome=${thisDir}/..
+      ourHomeDir=${thisDir}/..
       weAre=`basename $0`
       return 0
    }
@@ -64,7 +64,7 @@ initDone=true
       done
       #
       thisDir=$PRG
-      ourHome=$PRG/..
+      ourHomeDir=$PRG/..
       weAre=$progname
       return 0
 
@@ -87,9 +87,9 @@ initDone=true
    fi
    #
    expr ${thisDir} : "/.*"  >/dev/null || thisDir=`pwd`/${thisDir}
-   bins=$ourHome/bin
+   bins=$ourHomeDir/bin
    jobs=$thisDir
-   info=$ourHome/info
+   info=$ourHomeDir/info
    #
    #  run some needful things
    #
