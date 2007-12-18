@@ -181,6 +181,7 @@ public class FairQueueAllocation implements SpaceMonitor
      */
     public synchronized void setTotalSpace(long space)
     {
+        assert _usedSpace >= 0;
         if (space < _usedSpace)
             throw new IllegalArgumentException("Cannot set total space to less than used space");
         _totalSpace = space;
