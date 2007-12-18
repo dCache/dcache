@@ -701,7 +701,6 @@
 
 		<!-- Chimera -->
 		<mkdir dir="${binDir}/classes/chimera" />
-	    <mkdir dir="${binDir}/libexec/chimera" />
 		<copy file="${libDir}/Chimera/chimera.jar" todir="${binDir}/classes/chimera" />
 	    <copy file="${libDir}/Chimera/chimera-acl.jar" todir="${binDir}/classes/chimera" />
 		<copy file="${libDir}/Chimera/chimera-config.xml" todir="${binDir}/config" />
@@ -717,6 +716,8 @@
 		<copy file="${libDir}/Chimera/chimera-get-acl.sh" tofile="${binDir}/libexec/chimera/chimera-get-acl.sh" />
 		<copy file="${libDir}/Chimera/chimera-set-acl.sh" tofile="${binDir}/libexec/chimera/chimera-set-acl.sh" />
 	    <chmod file="${binDir}/libexec/chimera/chimera-nfs-run.sh"  perm="ugo+rx" />
+	    <chmod file="${binDir}/libexec/chimera/chimera-set-acl.sh"  perm="ugo+rx" />
+	    <chmod file="${binDir}/libexec/chimera/chimera-get-acl.sh"  perm="ugo+rx" />
 	    <copy todir="${binDir}/libexec/chimera/sql">
 	        <fileset dir="${libDir}/Chimera/sql" />
 	    </copy>
