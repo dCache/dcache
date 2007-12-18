@@ -18,9 +18,11 @@ import diskCacheV111.vehicles.Message;
 public class GenericMocCellHelper extends CellAdapterHelper {
 
     private static final Map<CellPath, Map<String, List<Message>>> _messageQueue = new HashMap<CellPath, Map<String, List<Message>>>();
+    private final CellNucleus _nucleus;
 
     public GenericMocCellHelper(String name, String args) {
         super(name, args);
+        _nucleus = new NucleusHelper(this, "nucleus");
     }
 
     @Override
@@ -86,8 +88,7 @@ public class GenericMocCellHelper extends CellAdapterHelper {
 
 
     public CellNucleus getNucleus() {
-        System.out.println("get nucleus");
-        return new NucleusHelper(this, "nucleus");
+        return _nucleus;
 
     }
 
