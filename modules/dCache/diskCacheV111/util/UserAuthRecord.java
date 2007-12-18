@@ -75,17 +75,47 @@ public class UserAuthRecord extends UserAuthBase
     {
         super(null, null, true, -1, -1, "", "", "");
     }
+    
+    public void appendToStringBuffer(StringBuffer sb)
+    {
+        sb.append(Username);
+        if(ReadOnly) {
+            sb.append(" read-only");
+        } else {
+            sb.append(" read-write");
+        }
+        sb.append( ' ').append( UID).append( ' ');
+        for(int i=0; i<GIDs.length ; ++i) {
+         sb.append(GIDs[i]);
+            if(i<GIDs.length-1) {
+                sb.append(',');
+            }
+        }
+        sb.append(' ');
+        sb.append( Home ).append(' ');
+        sb.append( Root ).append(' ');
+        sb.append( FsRoot ).append('\n');
+        if(principals != null)
+        {
+            for(String principal : principals)
+            {
+                sb.append("  ").append(principal).append('\n');
+            }
+        }
+        return;
+    }
+
 
     public String toString()
     {
         StringBuffer sb = new StringBuffer(Username);
         sb.append(' ').append( DN);
         sb.append(' ').append( getFqan());
-	      if(ReadOnly) {
-	        sb.append(" read-only");
-	      } else {
-	        sb.append(" read-write");
-	      }
+          if(ReadOnly) {
+            sb.append(" read-only");
+          } else {
+            sb.append(" read-write");
+          }
         sb.append( ' ').append( UID).append( ' ');
         sb.append( Arrays.toString( GIDs ) ).append(' ');
         sb.append( Home ).append(' ');

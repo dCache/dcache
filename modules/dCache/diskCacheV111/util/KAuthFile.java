@@ -327,7 +327,8 @@ public class KAuthFile {
                 sb.append("# the following user record should probably be converted to mapping\n");
             }
             UserAuthRecord record =  auth_records.get(user);
-            sb.append(AUTH_RECORD_MARKER).append(record);
+            sb.append(AUTH_RECORD_MARKER);
+            record.appendToStringBuffer(sb);
             sb.append('\n');
 
         }
