@@ -714,6 +714,8 @@
 		<copy file="${libDir}/dbcp/c3p0-0.9.1.2.jar" todir="${binDir}/classes/dbcp" />
 	    <copy file="${libDir}/Chimera/run.xml" tofile="${binDir}/libexec/chimera/chimera-nfs-run.xml" />
 	    <copy file="${libDir}/Chimera/chimera-nfs-run.sh" tofile="${binDir}/libexec/chimera/chimera-nfs-run.sh" />
+		<copy file="${libDir}/Chimera/chimera-get-acl.sh" tofile="${binDir}/libexec/chimera/chimera-get-acl.sh" />
+		<copy file="${libDir}/Chimera/chimera-set-acl.sh" tofile="${binDir}/libexec/chimera/chimera-set-acl.sh" />
 	    <chmod file="${binDir}/libexec/chimera/chimera-nfs-run.sh"  perm="ugo+rx" />
 	    <copy todir="${binDir}/libexec/chimera/sql">
 	        <fileset dir="${libDir}/Chimera/sql" />
