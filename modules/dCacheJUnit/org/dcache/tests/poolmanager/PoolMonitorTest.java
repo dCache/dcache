@@ -140,9 +140,20 @@ public class PoolMonitorTest {
         List<PoolCostCheckable> acknowledgedPools =  availableLocations.getAcknowledgedPnfsPools();
 
         assertFalse("No pools available", acknowledgedPools.isEmpty());
-        assertFalse("Pool with the file in the 'waiting' state should not be used in selection", acknowledgedPools.contains("pool2") );
-        assertFalse("Pool with the files is not picked by selection", acknowledgedPools.contains("pool1") );
-    }
 
+        for( PoolCostCheckable pool : acknowledgedPools) {
+            assertFalse("Pool with the file in the 'waiting' state should not be used in selection", pool.getPoolName().equals("pool2") );
+        }
+
+        boolean found = false;
+        for( PoolCostCheckable pool : acknowledgedPools) {
+            if( pool.getPoolName().equals("pool1") ) {
+                found = true;
+                break;
+            }
+        }
+
+        assertFalse("Pool with the file not be used by selection", found );
+    }
 
 }
