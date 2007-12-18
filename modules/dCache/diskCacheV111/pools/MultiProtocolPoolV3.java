@@ -94,7 +94,6 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
     private String _crashType = "exception";
     private boolean _isPermanent = false;
     private boolean _allowSticky = false;
-    private boolean _allowModify = false;
     private boolean _isHsmPool = false;
     private boolean _blockOnNoSpace = true;
     private boolean _checkRepository = true;
@@ -178,11 +177,6 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
             if (stickyString != null)
                 _allowSticky = stickyString.equals("allowed");
             say("Sticky files : " + (_allowSticky ? "allowed" : "denied"));
-
-            String modifyString = _args.getOpt("modify");
-            if (modifyString != null)
-                _allowModify = modifyString.equals("allowed");
-            say("Modify files : " + (_allowModify ? "allowed" : "denied"));
 
             String sweeperClass = _args.getOpt("sweeper");
             if (sweeperClass != null)
@@ -990,8 +984,6 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
                    + _version + ")");
         pw.println("StickyFiles       : "
                    + (_allowSticky ? "allowed" : "denied"));
-        pw.println("ModifyFiles       : "
-                   + (_allowModify ? "allowed" : "denied"));
         pw.println("Gap               : " + _gap);
         pw.println("Report remove     : " + (_reportOnRemovals ? "on" : "off"));
         pw
@@ -1506,8 +1498,7 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
                 cacheFile = _entry.getDataFile();
 
                 say("Trying to open " + cacheFile);
-                raf = new RandomAccessFile(cacheFile,
-                                           (_rdOnly && !_allowModify) ? "r" : "rw");
+                raf = new RandomAccessFile(cacheFile, _rdOnly ? "r" : "rw");
 
                 if (_create) {
 
@@ -1649,17 +1640,12 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
                     long fileSize = cacheFile.length();
                     _info.setFileSize(fileSize);
 
-                    _handler
-                        .runIO(
-                               raf,
-                               _protocolInfo,
-                               _storageInfo,
-                               _pnfsId,
-                               _repository,
-                               MoverProtocol.READ
-                               | (_entry.isPrecious()
-                                  && _allowModify ? MoverProtocol.WRITE
-                                  : 0));
+                    _handler.runIO(raf,
+                                   _protocolInfo,
+                                   _storageInfo,
+                                   _pnfsId,
+                                   _repository,
+                                   MoverProtocol.READ);
                     if (_handler.wasChanged() && (!_isHsmPool)) {
                         fileSize = cacheFile.length();
                         try {
