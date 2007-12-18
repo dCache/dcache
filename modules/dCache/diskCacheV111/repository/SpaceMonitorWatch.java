@@ -16,10 +16,9 @@ public class SpaceMonitorWatch extends SpaceMonitorDecorator
     private int  _countFreed      = 0;
     private boolean _finished     = false;
 
-    public SpaceMonitorWatch(SpaceMonitor monitor, long initialSize)
+    public SpaceMonitorWatch(SpaceMonitor monitor)
     {
         super(monitor);
-        _totalAllocated = initialSize;
     }
 
     public synchronized void allocateSpace(long space)
