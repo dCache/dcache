@@ -1481,7 +1481,6 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
             SysTimer sysTimer = new SysTimer();
             long transferTimer = System.currentTimeMillis();
 
-            RandomAccessFile raf = null;
             MoverProtocol moverProtocol = null;
             SpaceMonitor monitor = _repository;
             File cacheFile = null;
@@ -1498,8 +1497,6 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
                 cacheFile = _entry.getDataFile();
 
                 say("Trying to open " + cacheFile);
-                raf = new RandomAccessFile(cacheFile, _rdOnly ? "r" : "rw");
-
                 if (_create) {
 
                     sysTimer.getDifference();
@@ -1539,8 +1536,37 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
                         }
                     }
 
-                    _handler.runIO(raf, _protocolInfo, _storageInfo, _pnfsId,
-                                   monitor, MoverProtocol.WRITE | MoverProtocol.READ);
+                    SpaceMonitorWatch watcher =
+                        new SpaceMonitorWatch(monitor);
+                    try {
+                        RandomAccessFile raf =
+                            new RandomAccessFile(cacheFile, "rw");
+                        try {
+                            _handler.runIO(raf,
+                                           _protocolInfo,
+                                           _storageInfo,
+                                           _pnfsId,
+                                           watcher,
+                                           MoverProtocol.WRITE | MoverProtocol.READ);
+                        } finally {
+                            /* This may throw an IOException, although it
+                             * is not clear when this would happen. If it
+                             * does, we are probably better off
+                             * propagating the exception, which is why we
+                             * do not catch it here.
+                             */
+                            raf.close();
+                        }
+                    } finally {
+                        long diff = watcher.correctSpace(cacheFile.length());
+                        if (diff != 0) {
+                            esay("BUG (please report this): Broken space allocation for "
+                                 + _pnfsId + " with mover "
+                                 + _handler.getClass().getName() +
+                                 " and difference " + diff
+                                 + " (" + watcher + ")");
+                        }
+                    }
 
                     long fileSize = cacheFile.length();
                     _storageInfo.setFileSize(fileSize);
@@ -1640,29 +1666,28 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
                     long fileSize = cacheFile.length();
                     _info.setFileSize(fileSize);
 
-                    _handler.runIO(raf,
-                                   _protocolInfo,
-                                   _storageInfo,
-                                   _pnfsId,
-                                   new ReadOnlySpaceMonitor(_repository),
-                                   MoverProtocol.READ);
+                    RandomAccessFile raf =
+                        new RandomAccessFile(cacheFile, "r");
+                    try {
+                        _handler.runIO(raf,
+                                       _protocolInfo,
+                                       _storageInfo,
+                                       _pnfsId,
+                                       new ReadOnlySpaceMonitor(_repository),
+                                       MoverProtocol.READ);
+                    } finally {
+                        /* This may throw an IOException, although it
+                         * is not clear when this would happen. If it
+                         * does, we are probably better off
+                         * propagating the exception.
+                         */
+                        raf.close();
+                    }
 
                     if (_handler.wasChanged()) {
                         throw new RuntimeException("Bug: Mover changed read-only file");
                     }
 
-
-                    //
-                    // better we close it here (otherwise small files may just
-                    // disappear)
-                    //
-                    try {
-                        raf.close();
-                        // TODO: some logic depends on this 'nulling'
-                        raf = null;
-                    } catch (IOException ee) {
-                        // IO error ?
-                    }
                     say(_pnfsId.toString() + ";length=" + fileSize + ";timer="
                         + sysTimer.getDifference().toString());
 
@@ -1686,11 +1711,12 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
                 }
 
                 try {
-                    // remove newly created zero size files if there was a
-                    // problem to write it (no close arrived)
                     if (_create) {
 
-                        if ((raf != null) && (raf.length() == 0)) {
+                        long fileSize = cacheFile.length();
+                        if (fileSize == 0) {
+                            // remove newly created zero size files if
+                            // there was a problem to write it
                             esay("removing empty file: " + _pnfsId);
                             _entry.lock(false);
                             _repository.removeEntry(_entry);
@@ -1702,7 +1728,6 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
                             // be - duplicated code
 
                             // set file size
-                            long fileSize = cacheFile.length();
                             esay("Storing incomplete file : " + _pnfsId
                                  + " with " + fileSize);
 
@@ -1767,14 +1792,6 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
                     // Exception never thrown
                 }
 
-                try {
-                    if (raf != null) {
-                        raf.close();
-                    }
-                } catch (IOException ee) {
-                    esay("Couldn't close Random access file");
-                    esay(ee);
-                }
                 try {
 
                     if (monitor instanceof PreallocationSpaceMonitor) {
