@@ -223,12 +223,12 @@ public class StorageClassInfo implements CacheFileAvailable {
       _name    = storageClass ;
       _hsmName = hsmName.toLowerCase() ;
    }
-   
+
    @Override
    public int hashCode() {
 	   return _name.hashCode() | _hsmName.hashCode();
    }
-   
+
    @Override
    public boolean equals( Object obj ){
 
@@ -333,7 +333,7 @@ public class StorageClassInfo implements CacheFileAvailable {
    public synchronized int  size(){ return _requests.size() + _failedRequests.size() ; }
    public synchronized long getTotalSize(){ return _totalSize ; }
    public synchronized void setExpiration( int expiration){
-      _expiration = expiration * 1000  ;
+      _expiration = expiration * 1000L  ;
    }
    public synchronized void setPending( int pending ){
       _pending = pending ;
