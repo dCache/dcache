@@ -1536,6 +1536,10 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
                         }
                     }
 
+                    /* To protect against bugs in the mover, we
+                     * decorate the space monitor and correct any
+                     * discrepancies after the transfer.
+                     */
                     SpaceMonitorWatch watcher =
                         new SpaceMonitorWatch(monitor);
                     try {
@@ -1547,7 +1551,28 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
                                            _storageInfo,
                                            _pnfsId,
                                            watcher,
-                                           MoverProtocol.WRITE | MoverProtocol.READ);
+                                           MoverProtocol.WRITE
+                                           | MoverProtocol.READ);
+
+                            /* Some movers perform checksum
+                             * computation after the
+                             * transfer. Therefore we cannot close the
+                             * file until we have retrieved the
+                             * checksum.
+                             */
+                            if (csmover != null) {
+                                _checksumModule.setMoverChecksums(_entry,
+                                                                  clientChecksumFactory,
+                                                                  csmover.getClientChecksum(),
+                                                                  _checksumModule.checkOnTransfer()
+                                                                  ? csmover.getTransferChecksum()
+                                                                  : null);
+                            } else {
+                                _checksumModule.setMoverChecksums(_entry,
+                                                                  null,
+                                                                  null,
+                                                                  null);
+                            }
                         } finally {
                             /* This may throw an IOException, although it
                              * is not clear when this would happen. If it
@@ -1572,19 +1597,11 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
                     _storageInfo.setFileSize(fileSize);
                     _info.setFileSize(fileSize);
 
-                    if (csmover != null) {
-                        _checksumModule.setMoverChecksums(_entry,  clientChecksumFactory, csmover
-                                                          .getClientChecksum(), _checksumModule
-                                                          .checkOnTransfer() ? csmover
-                                                          .getTransferChecksum() : null);
-                    } else {
-                        _checksumModule.setMoverChecksums(_entry, null, null, null);
-                    }
+                    say(_pnfsId.toString()
+                        + ";length=" + fileSize
+                        + ";timer=" + sysTimer.getDifference().toString());
 
                     boolean overwrite = _storageInfo.getKey("overwrite") != null;
-
-                    say(_pnfsId.toString() + ";length=" + fileSize + ";timer="
-                        + sysTimer.getDifference().toString());
 
                     //
                     // store the storage info and set the file precious.
