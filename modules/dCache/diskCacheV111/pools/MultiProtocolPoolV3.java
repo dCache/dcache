@@ -1580,7 +1580,7 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
                     } finally {
                         long diff = watcher.correctSpace(cacheFile.length());
                         if (diff != 0) {
-                            esay("BUG (please report this): Broken space allocation for "
+                            esay("Bug (please report this): Broken space allocation for "
                                  + _pnfsId + " with mover "
                                  + _handler.getClass().getName() +
                                  " and difference " + diff
