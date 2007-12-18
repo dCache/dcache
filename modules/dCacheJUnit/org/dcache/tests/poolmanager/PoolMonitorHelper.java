@@ -48,13 +48,17 @@ public class PoolMonitorHelper {
         for(String pool : pools ) {
             ci.command( new Args("psu create pool " + pool  )  );
             ci.command( new Args("psu addto pgroup default " + pool  )  );
-            ci.command( new Args("psu set active -on " + pool  )  );
+            ci.command( new Args("psu set active " + pool + " -on"  )  );
+            ci.command( new Args("psu set pool " + pool + " ping"  )  );
         }
 
         ci.command("psu set allpoolsactive on");
 
         ci.command( new Args("psu create link default all extern" )  );
         ci.command( new Args("psu set link default -writepref=1  -readpref=1 -cachepref=1" )  );
+
+        ci.command( new Args("psu add link default default" )  );
+
     }
 
 }
