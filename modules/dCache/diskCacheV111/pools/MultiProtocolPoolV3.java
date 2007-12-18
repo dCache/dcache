@@ -1644,17 +1644,14 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
                                    _protocolInfo,
                                    _storageInfo,
                                    _pnfsId,
-                                   _repository,
+                                   new ReadOnlySpaceMonitor(_repository),
                                    MoverProtocol.READ);
-                    if (_handler.wasChanged() && (!_isHsmPool)) {
-                        fileSize = cacheFile.length();
-                        try {
-                            _pnfs.setFileSize(_pnfsId, fileSize);
-                        } catch (Exception eee) {
-                            esay(_pnfsId.toString()
-                                 + " failed to change filesize");
-                        }
+
+                    if (_handler.wasChanged()) {
+                        throw new RuntimeException("Bug: Mover changed read-only file");
                     }
+
+
                     //
                     // better we close it here (otherwise small files may just
                     // disappear)
