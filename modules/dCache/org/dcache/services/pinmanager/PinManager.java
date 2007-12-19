@@ -176,15 +176,10 @@ public class PinManager extends AbstractCell implements Runnable
     /**
      * Forwards pin manager messages to the appropriate pin.
      */
-    public void messageArrived(CellMessage envelope)
+    public void messageArrived(CellMessage envelope, PinManagerMessage message)
     {
-        super.messageArrived(envelope);
-        Object o = envelope.getMessageObject();
-        if (o instanceof PinManagerMessage) {
-            PinManagerMessage message = (PinManagerMessage)o;
-            Pin pin = getPin(message.getPnfsId());
-            pin.messageArrived(envelope, message);
-        }
+        Pin pin = getPin(message.getPnfsId());
+        pin.messageArrived(envelope, message);
     }
 
     /**
