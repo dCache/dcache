@@ -1,10 +1,10 @@
 package org.dcache.services;
 
 import org.apache.log4j.Logger;
-import java.util.Map;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Collection;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.ArrayList;
 import java.math.BigInteger;
 
 import java.lang.reflect.Method;
@@ -17,11 +17,13 @@ import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.CellMessage;
 import diskCacheV111.vehicles.Message;
 
+import org.dcache.util.ReflectionUtils;
+
 /**
  * Helper class for message dispatching. Used internally in
  * AbstractCell.
  */
-class Receiver
+abstract class Receiver
 {
     final protected Object _object;
     final protected Method _method;
@@ -32,13 +34,44 @@ class Receiver
         _method = method;
     }
 
-    public void deliver(Message message)
-        throws IllegalAccessException,
-               InvocationTargetException
+    abstract public void deliver(CellMessage envelope, Message message)
+        throws IllegalAccessException, InvocationTargetException;
+
+    public String toString()
+    {
+        return String.format("Object: %1$s; Method: %2$s", _object, _method);
+    }
+}
+
+class ShortReceiver extends Receiver
+{
+    public ShortReceiver(Object object, Method method)
+    {
+        super(object, method);
+    }
+
+    public void deliver(CellMessage envelope, Message message)
+        throws IllegalAccessException, InvocationTargetException
     {
         _method.invoke(_object, message);
     }
 }
+
+
+class LongReceiver extends Receiver
+{
+    public LongReceiver(Object object, Method method)
+    {
+        super(object, method);
+    }
+
+    public void deliver(CellMessage envelope, Message message)
+        throws IllegalAccessException, InvocationTargetException
+    {
+        _method.invoke(_object, envelope, message);
+    }
+}
+
 
 /**
  * Abstract cell implementation providing features needed by many
@@ -57,9 +90,17 @@ public class AbstractCell extends CellAdapter
      */
     protected Logger _logger;
 
-    /** Message handler for fast dispatch. */
+    /** Cached message handlers for fast dispatch. */
     final private Map<Class,Collection<Receiver>> _receivers =
         new HashMap<Class,Collection<Receiver>>();
+
+    /**
+     * Registered message listeners.
+     *
+     * @see addMessageListener
+     */
+    final private Collection<Object> _messageListeners =
+        new ArrayList<Object>();
 
     public AbstractCell(String cellName, String args, boolean startNow)
     {
@@ -350,12 +391,28 @@ public class AbstractCell extends CellAdapter
     }
 
     /**
-     * Adds a receiver for dCache messages.
+     * Returns true if <code>c</code> has a method
+     * <code>messageArrived</code> suitable for message delivery.
+     */
+    private boolean hasMessageArrived(Class c)
+    {
+        for (Method m : c.getMethods()) {
+            if (m.getName().equals("messageArrived")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Adds a listener for dCache messages.
      *
      * The object is scanned for methods named
-     * <code>messageArrived</code>, accepting exactly one
-     * argument. This argument must be a derivative of
-     * diskCacheV111.vehicles.Message.
+     * <code>messageArrived(diskCacheV111.vehicles.Message)</code> or
+     * <code>messageArrived(CellMessage,
+     * diskCacheV111.vehicles.Message)</code>, where <code>CellMessage</code>
+     * is the envelope or context containing the message of type
+     * <code>Message</code>).
      *
      * After registration, all cell messages with a message object
      * matching the type of the argument will be send to object.
@@ -367,46 +424,91 @@ public class AbstractCell extends CellAdapter
      */
     public void addMessageListener(Object o)
     {
-        synchronized (_receivers) {
-            Class c = o.getClass();
-            for (Method m : c.getMethods()) {
-                if (m.getName().equals("messageArrived")) {
-                    Class[] parameters = m.getParameterTypes();
-                    if (parameters.length == 1) {
-                        Class parameter = parameters[0];
-                        if (Message.class.isAssignableFrom(parameter)) {
-                            Collection<Receiver> receivers =
-                                _receivers.get(parameter);
-                            if (receivers == null) {
-                                receivers = new ArrayList<Receiver>();
-                                _receivers.put(parameter, receivers);
-                            }
-                            receivers.add(new Receiver(o, m));
-                        }
-                    }
+        Class c = o.getClass();
+        if (hasMessageArrived(c)) {
+            synchronized (_receivers) {
+                if (_messageListeners.add(o)) {
+                    _receivers.clear();
                 }
             }
         }
     }
 
-    public void messageArrived(CellMessage message)
+    /**
+     * Removes a listener previously added with addMessageListener.
+     */
+    public void removeMessageListener(Object o)
     {
-        Object o = message.getMessageObject();
-        if (o instanceof Message) {
+        synchronized (_receivers) {
+            if (_messageListeners.remove(o)) {
+                _receivers.clear();
+            }
+        }
+
+    }
+
+    /**
+     * Finds the objects and methods, in other words the receivers, of
+     * messages of a given type.
+     *
+     * FIXME: This is still not quite the right thing: if you have
+     * messageArrived(CellMessage, X) and messageArrived(Y) and Y is
+     * more specific than X, then you would expect the latter to be
+     * called for message Y. This is not yet the case.
+     */
+    private Collection<Receiver> findReceivers(Class c)
+    {
+        synchronized (_receivers) {
+            Collection<Receiver> receivers = new ArrayList<Receiver>();
+            for (Object listener : _messageListeners) {
+                Method m = ReflectionUtils.resolve(listener.getClass(),
+                                                   "messageArrived",
+                                                   CellMessage.class, c);
+                if (m != null) {
+                    receivers.add(new LongReceiver(listener, m));
+                    continue;
+                }
+
+                m = ReflectionUtils.resolve(listener.getClass(),
+                                            "messageArrived",
+                                            c);
+                if (m != null) {
+                    receivers.add(new ShortReceiver(listener, m));
+                }
+            }
+            return receivers;
+        }
+    }
+
+    /**
+     * Delivers messages to registered message listeners.
+     */
+    public void messageArrived(CellMessage envelope)
+    {
+        super.messageArrived(envelope);
+
+        Object message = envelope.getMessageObject();
+        if (message instanceof Message) {
+            Class c = message.getClass();
+            Collection<Receiver> receivers;
+
             synchronized (_receivers) {
-                Collection<Receiver> receivers = _receivers.get(o.getClass());
-                if (receivers != null) {
-                    for (Receiver receiver : receivers) {
-                        try {
-                            receiver.deliver((Message)o);
-                        } catch (IllegalAccessException e) {
-                            throw new RuntimeException("Cannot process message due to access error", e);
-                        } catch (InvocationTargetException e) {
-                            error("Failed to process " + o.getClass()
-                                  + ": " + e.getCause());
-                            e.getCause().printStackTrace();
-                        }
-                    }
+                receivers = _receivers.get(c);
+                if (receivers == null) {
+                    receivers = findReceivers(c);
+                    _receivers.put(c, receivers);
+                }
+            }
+
+            for (Receiver receiver : receivers) {
+                try {
+                    receiver.deliver(envelope, (Message)message);
+                } catch (IllegalAccessException e) {
+                    throw new RuntimeException("Cannot process message due to access error", e);
+                } catch (InvocationTargetException e) {
+                    error("Failed to process " + message.getClass()
+                          + ": " + e.getCause());
+                    e.getCause().printStackTrace();
                 }
             }
         }
