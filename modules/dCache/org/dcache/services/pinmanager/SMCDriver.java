@@ -12,6 +12,8 @@ import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageAnswerable;
 import dmg.cells.nucleus.NoRouteToCellException;
 
+import org.dcache.util.ReflectionUtils;
+
 import statemap.FSMContext;
 
 abstract class SMCDriver implements CellMessageAnswerable
@@ -31,9 +33,8 @@ abstract class SMCDriver implements CellMessageAnswerable
                 parameterTypes[i] = arguments[i].getClass();
             Method m =
                 ReflectionUtils.resolve(context.getClass(), name, parameterTypes);
-            m.invoke(context, arguments);
-        } catch (NoSuchMethodException e) {
-            // FSM is not interested in the message. No problem.
+            if (m != null)
+                m.invoke(context, arguments);
         } catch (IllegalAccessException e) {
             // We are not allowed to call this method. Better escalate it.
             throw new RuntimeException("Bug detected", e);

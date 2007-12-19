@@ -12,6 +12,8 @@ import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageAnswerable;
 import dmg.cells.nucleus.NoRouteToCellException;
 
+import org.dcache.util.ReflectionUtils;
+
 import statemap.FSMContext;
 
 class SMCTask implements CellMessageAnswerable
@@ -37,10 +39,8 @@ class SMCTask implements CellMessageAnswerable
                 parameterTypes[i] = arguments[i].getClass();
             Method m =
                 ReflectionUtils.resolve(_fsm.getClass(), name, parameterTypes);
-            m.invoke(_fsm, arguments);
-        } catch (NoSuchMethodException e) {
-            // FSM is not interested in the message. No problem.
-            _cell.esay(e);
+            if (m != null)
+                m.invoke(_fsm, arguments);
         } catch (IllegalAccessException e) {
             // We are not allowed to call this method. Better escalate it.
             throw new RuntimeException("Bug detected", e);

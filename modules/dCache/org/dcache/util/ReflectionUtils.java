@@ -1,4 +1,4 @@
-package org.dcache.services.pinmanager;
+package org.dcache.util;
 
 import java.lang.reflect.Method;
 
@@ -31,9 +31,10 @@ public class ReflectionUtils
      *
      * To improve performance, a cache of resolved methods is
      * maintained.
+     *
+     * @returns a matching method or null if no method is found
      */
-    public static Method resolve(Class c, String name, Class[] parameters)
-        throws NoSuchMethodException
+    public static Method resolve(Class c, String name, Class ... parameters)
     {
         try {
             Object[] signature = { c, name, parameters };
@@ -59,18 +60,16 @@ public class ReflectionUtils
                 if (s != null) {
                     Class old = parameters[i];
                     parameters[i] = s;
-                    try {
-                        return resolve(c, name, parameters);
-                    } catch (NoSuchMethodException f) {
-                        // Continue resolution
-                    }
+                    Method m = resolve(c, name, parameters);
+                    if (m != null)
+                        return m;
                     parameters[i] = old;
                 }
             }
 
-            /* We cannot find a matching metdho, give up.
+            /* We cannot find a matching method, give up.
              */
-            throw e;
+            return null;
         }
     }
 }
