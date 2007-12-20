@@ -46,7 +46,7 @@ public class P2PClient {
     private boolean _removeOnExit = true;
     private int _maxActive = 0;
     private long _pnfsTimeout = 5L * 60L * 1000L;
-    private boolean _fail = false;
+    private boolean _simulateIOFailure = false;
     private final ChecksumModuleV1 _checksumModule;
 
     private int getNextId() {
@@ -142,7 +142,6 @@ public class P2PClient {
         private int _sessionId = 0;
         private String _status = "<Idle>";
         private Companion _companion = null;
-        private RandomAccessFile _dataFile = null;
         private long _spaceAllocated = 0L;
 
         private IOHandler(Socket socket) {
@@ -169,179 +168,191 @@ public class P2PClient {
             if (_companion == null)
                 throw new IOException("Unexpected Session Id : " + _sessionId);
             _companion.setIOHandler(this);
-            _dataFile = new RandomAccessFile(_companion.getDataFile(), "rw");
 
-            int challengeSize = in.readInt();
-            in.skipBytes(challengeSize);
+            RandomAccessFile dataFile = null;
 
-            DataOutputStream out = new DataOutputStream(_socket
-                    .getOutputStream());
+            try {
 
-            setStatus("<gettingFilesize>");
-            out.writeInt(4); // bytes following
-            out.writeInt(DCapConstants.IOCMD_LOCATE);
-            //
-            // waiting for reply
-            //
-            int following = in.readInt();
-            if (following < 28)
-                throw new IOException("Protocol Violation : ack too small : "
-                        + following);
+                dataFile = new RandomAccessFile(_companion.getDataFile(), "rw");
 
-            int type = in.readInt();
-            if (type != DCapConstants.IOCMD_ACK)
-                throw new IOException("Protocol Violation : NOT REQUEST_ACK : "
-                        + type);
+                int challengeSize = in.readInt();
+                in.skipBytes(challengeSize);
 
-            int mode = in.readInt();
-            if (mode != DCapConstants.IOCMD_LOCATE) // SEEK
-                throw new IOException("Protocol Violation : NOT SEEK : " + mode);
+                DataOutputStream out = new DataOutputStream(_socket
+                        .getOutputStream());
 
-            int returnCode = in.readInt();
-            if (returnCode != 0) {
-                String error = in.readUTF();
-                throw new IOException("Seek Request Failed : (" + returnCode
-                        + ") " + error);
-            }
-            long filesize = in.readLong();
-            setStatus("<WaitingForSpace-" + filesize + ">");
-            _repository.allocateSpace(filesize);
-            _spaceAllocated = filesize;
-            //
-            in.readLong(); // file position
+                setStatus("<gettingFilesize>");
+                out.writeInt(4); // bytes following
+                out.writeInt(DCapConstants.IOCMD_LOCATE);
+                //
+                // waiting for reply
+                //
+                int following = in.readInt();
+                if (following < 28)
+                    throw new IOException("Protocol Violation : ack too small : "
+                            + following);
 
-            setStatus("<StartingIO>");
-            //
-            // request the full file
-            //
-            out.writeInt(12); // bytes following
-            out.writeInt(DCapConstants.IOCMD_READ);
-            out.writeLong(filesize);
-            //
-            // waiting for reply
-            //
-            following = in.readInt();
-            if (following < 12)
-                throw new IOException("Protocol Violation : ack too small : "
-                        + following);
+                int type = in.readInt();
+                if (type != DCapConstants.IOCMD_ACK)
+                    throw new IOException("Protocol Violation : NOT REQUEST_ACK : "
+                            + type);
 
-            type = in.readInt();
-            if (type != DCapConstants.IOCMD_ACK)
-                throw new IOException("Protocol Violation : NOT REQUEST_ACK : "
-                        + type);
+                int mode = in.readInt();
+                if (mode != DCapConstants.IOCMD_LOCATE) // SEEK
+                    throw new IOException("Protocol Violation : NOT SEEK : " + mode);
 
-            mode = in.readInt();
-            if (mode != DCapConstants.IOCMD_READ)
-                throw new IOException("Protocol Violation : NOT READ : " + mode);
+                int returnCode = in.readInt();
+                if (returnCode != 0) {
+                    String error = in.readUTF();
+                    throw new IOException("Seek Request Failed : (" + returnCode
+                            + ") " + error);
+                }
+                long filesize = in.readLong();
+                setStatus("<WaitingForSpace-" + filesize + ">");
+                _repository.allocateSpace(filesize);
+                _spaceAllocated = filesize;
+                //
+                in.readLong(); // file position
 
-            returnCode = in.readInt();
-            if (returnCode != 0) {
-                String error = in.readUTF();
-                throw new IOException("Read Request Failed : (" + returnCode
-                        + ") " + error);
-            }
-            setStatus("<RunningIO>");
-            //
-            // expecting data chain
-            //
-            //
-            // waiting for reply
-            //
-            following = in.readInt();
-            if (following < 4)
-                throw new IOException("Protocol Violation : ack too small : "
-                        + following);
+                setStatus("<StartingIO>");
+                //
+                // request the full file
+                //
+                out.writeInt(12); // bytes following
+                out.writeInt(DCapConstants.IOCMD_READ);
+                out.writeLong(filesize);
+                //
+                // waiting for reply
+                //
+                following = in.readInt();
+                if (following < 12)
+                    throw new IOException("Protocol Violation : ack too small : "
+                            + following);
 
-            type = in.readInt();
-            if (type != DCapConstants.IOCMD_DATA)
-                throw new IOException("Protocol Violation : NOT DATA : " + type);
+                type = in.readInt();
+                if (type != DCapConstants.IOCMD_ACK)
+                    throw new IOException("Protocol Violation : NOT REQUEST_ACK : "
+                            + type);
 
-            byte[] data = new byte[256 * 1024];
-            MessageDigest digest = new Adler32();
-            int nextPacket = 0;
-            long total = 0L;
-            while (true) {
-                if ((nextPacket = in.readInt()) < 0)
-                    break;
+                mode = in.readInt();
+                if (mode != DCapConstants.IOCMD_READ)
+                    throw new IOException("Protocol Violation : NOT READ : " + mode);
 
-                int restPacket = nextPacket;
+                returnCode = in.readInt();
+                if (returnCode != 0) {
+                    String error = in.readUTF();
+                    throw new IOException("Read Request Failed : (" + returnCode
+                            + ") " + error);
+                }
+                setStatus("<RunningIO>");
+                //
+                // expecting data chain
+                //
+                //
+                // waiting for reply
+                //
+                following = in.readInt();
+                if (following < 4)
+                    throw new IOException("Protocol Violation : ack too small : "
+                            + following);
 
-                while (restPacket > 0) {
-                    int block = Math.min(restPacket, data.length);
-                    //
-                    // we collect a full block before we write it out
-                    // (a block always fits into our buffer)
-                    //
-                    int position = 0;
-                    for (int rest = block; rest > 0;) {
-                        int rc = in.read(data, position, rest);
-                        if (rc < 0)
-                            throw new IOException("Premature EOF");
+                type = in.readInt();
+                if (type != DCapConstants.IOCMD_DATA)
+                    throw new IOException("Protocol Violation : NOT DATA : " + type);
 
-                        rest -= rc;
-                        position += rc;
+                byte[] data = new byte[256 * 1024];
+                MessageDigest digest = new Adler32();
+                int nextPacket = 0;
+                long total = 0L;
+                while (true) {
+                    if ((nextPacket = in.readInt()) < 0)
+                        break;
+
+                    int restPacket = nextPacket;
+
+                    while (restPacket > 0) {
+                        int block = Math.min(restPacket, data.length);
+                        //
+                        // we collect a full block before we write it out
+                        // (a block always fits into our buffer)
+                        //
+                        int position = 0;
+                        for (int rest = block; rest > 0;) {
+                            int rc = in.read(data, position, rest);
+                            if (rc < 0)
+                                throw new IOException("Premature EOF");
+
+                            rest -= rc;
+                            position += rc;
+                        }
+                        total += block;
+                        _status = "<RunningIo=" + total + ">";
+                        dataFile.write(data, 0, block);
+                        restPacket -= block;
+
+                        digest.update(data, 0, block);
                     }
-                    total += block;
-                    _status = "<RunningIo=" + total + ">";
-                    _dataFile.write(data, 0, block);
-                    restPacket -= block;
+                }
+                setStatus("<WaitingForReadAck>");
+                //
+                // waiting for reply
+                //
+                following = in.readInt();
+                if (following < 12)
+                    throw new IOException("Protocol Violation : ack too small : "
+                            + following);
 
-                    digest.update(data, 0, block);
+                type = in.readInt();
+                if (type != DCapConstants.IOCMD_FIN)
+                    throw new IOException("Protocol Violation : NOT REQUEST_FIN : "
+                            + type);
+
+                mode = in.readInt();
+                if (mode != DCapConstants.IOCMD_READ)
+                    throw new IOException("Protocol Violation : NOT READ : " + mode);
+
+                returnCode = in.readInt();
+                if (returnCode != 0) {
+                    String error = in.readUTF();
+                    throw new IOException("Read Fin Failed : (" + returnCode + ") "
+                            + error);
+                }
+                setStatus("<WaitingForCloseAck>");
+                //
+                out.writeInt(4); // bytes following
+                out.writeInt(DCapConstants.IOCMD_CLOSE);
+                //
+                // waiting for reply
+                //
+                following = in.readInt();
+                if (following < 12)
+                    throw new IOException("Protocol Violation : ack too small : "
+                            + following);
+
+                type = in.readInt();
+                if (type != DCapConstants.IOCMD_ACK)
+                    throw new IOException("Protocol Violation : NOT REQUEST_ACK : "
+                            + type);
+
+                mode = in.readInt();
+                if (mode != DCapConstants.IOCMD_CLOSE)
+                    throw new IOException("Protocol Violation : NOT CLOSE : " + mode);
+
+                returnCode = in.readInt();
+                if (returnCode != 0) {
+                    String error = in.readUTF();
+                    throw new IOException("Close ack Failed : (" + returnCode
+                            + ") " + error);
+                }
+
+                _companion.setTransferChecksum(new Checksum(digest));
+
+
+            }finally {
+                if( dataFile != null) {
+                    dataFile.close();
                 }
             }
-            setStatus("<WaitingForReadAck>");
-            //
-            // waiting for reply
-            //
-            following = in.readInt();
-            if (following < 12)
-                throw new IOException("Protocol Violation : ack too small : "
-                        + following);
-
-            type = in.readInt();
-            if (type != DCapConstants.IOCMD_FIN)
-                throw new IOException("Protocol Violation : NOT REQUEST_FIN : "
-                        + type);
-
-            mode = in.readInt();
-            if (mode != DCapConstants.IOCMD_READ)
-                throw new IOException("Protocol Violation : NOT READ : " + mode);
-
-            returnCode = in.readInt();
-            if (returnCode != 0) {
-                String error = in.readUTF();
-                throw new IOException("Read Fin Failed : (" + returnCode + ") "
-                        + error);
-            }
-            setStatus("<WaitingForCloseAck>");
-            //
-            out.writeInt(4); // bytes following
-            out.writeInt(DCapConstants.IOCMD_CLOSE);
-            //
-            // waiting for reply
-            //
-            following = in.readInt();
-            if (following < 12)
-                throw new IOException("Protocol Violation : ack too small : "
-                        + following);
-
-            type = in.readInt();
-            if (type != DCapConstants.IOCMD_ACK)
-                throw new IOException("Protocol Violation : NOT REQUEST_ACK : "
-                        + type);
-
-            mode = in.readInt();
-            if (mode != DCapConstants.IOCMD_CLOSE)
-                throw new IOException("Protocol Violation : NOT CLOSE : " + mode);
-
-            returnCode = in.readInt();
-            if (returnCode != 0) {
-                String error = in.readUTF();
-                throw new IOException("Close ack Failed : (" + returnCode
-                        + ") " + error);
-            }
-
-            _companion.setTransferChecksum(new Checksum(digest));
 
             StringBuilder sb = new StringBuilder(
                     "Adler32 checksum computed for p2p transfer (");
@@ -368,7 +379,7 @@ public class P2PClient {
                         null, _checksumModule.checkOnTransfer() ? _companion
                                 .getTransferChecksum() : null);
 
-                if (_fail)
+                if (_simulateIOFailure)
                     throw new IOException("Transfer failed (simulate)");
 
             } catch (Exception ioe) {
@@ -405,11 +416,7 @@ public class P2PClient {
                 try {
                     _socket.close();
                 } catch (IOException ee) {
-                }
-                try {
-                    if (_dataFile != null)
-                        _dataFile.close();
-                } catch (IOException ee) {
+                    // take it easy
                 }
             }
             CacheRepositoryEntry entry = _companion.getEntry();
@@ -465,9 +472,6 @@ public class P2PClient {
         private IOHandler _ioHandler = null;
         private String _status = "<idle>";
         private final CacheRepositoryEntry _entry;
-
-        private PoolDeliverFileMessage _initOkMsg = null;
-        private DoorTransferFinishedMessage _transferOkMsg = null;
 
         private CacheFileAvailable _callback = null;
         private Checksum transferCS = null;
@@ -526,7 +530,7 @@ public class P2PClient {
 
         private synchronized void pool2PoolIoFileMsgArrived(
                 PoolDeliverFileMessage message) {
-            _initOkMsg = message;
+
             say("" + _id + " : PoolDeliverFileMessage : " + message);
             if (message.getReturnCode() != 0) {
                 _status = "" + message.getErrorObject();
@@ -540,7 +544,7 @@ public class P2PClient {
 
         private synchronized void poolTransferFinishedArrived(
                 DoorTransferFinishedMessage message) {
-            _transferOkMsg = message;
+
             say("" + _id + " : poolTransferFinishedArrived : " + message);
             if (message.getReturnCode() != 0) {
                 _status = "" + message.getErrorObject();
@@ -754,9 +758,9 @@ public class P2PClient {
 
     public String ac_pp_fail_$_1(Args args) throws Exception {
         if (args.argv(0).equals("on")) {
-            _fail = true;
+            _simulateIOFailure = true;
         } else if (args.argv(0).equals("off")) {
-            _fail = false;
+            _simulateIOFailure = false;
         } else {
             throw new CommandSyntaxException("pp fail on|off # DEBUG ONLY");
         }
