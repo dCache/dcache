@@ -8,10 +8,13 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.RandomAccessFile;
+import java.io.NotSerializableException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.UnknownHostException;
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -34,6 +37,7 @@ import diskCacheV111.vehicles.StorageInfo;
 import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
+import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.Args;
 import dmg.util.CommandSyntaxException;
 
@@ -81,7 +85,7 @@ public class P2PClient {
                 _listenPort = _serverSocket.getLocalPort();
             } catch (IOException ioe) {
                 _error = ioe.getMessage();
-                _cell.esay("Problem in opening Server Socket : " + ioe);
+                esay("Problem in opening Server Socket : " + ioe);
                 return;
             }
             _error = null;
@@ -94,9 +98,11 @@ public class P2PClient {
                 while (true) {
                     new IOHandler(_serverSocket.accept());
                 }
+            } catch (IOException ioe) {
+                esay("Problem in accepting connection : " + ioe);
             } catch (Exception ioe) {
-                _cell.esay("Problem in accepting connection : " + ioe);
-                _cell.esay(ioe);
+                esay("Bug detected : " + ioe);
+                esay(ioe);
             }
         }
 
@@ -150,11 +156,14 @@ public class P2PClient {
         }
 
         private void setStatus(String status) {
-            _cell.say("ID-" + _sessionId + " " + status);
+            say("ID-" + _sessionId + " " + status);
             _status = status;
         }
 
-        private void runIO() throws Exception {
+        private void runIO()
+            throws IOException, CacheException, InterruptedException,
+                   UnknownHostException, NoSuchAlgorithmException
+        {
 
             DataInputStream in = new DataInputStream(_socket.getInputStream());
 
@@ -169,12 +178,9 @@ public class P2PClient {
                 throw new IOException("Unexpected Session Id : " + _sessionId);
             _companion.setIOHandler(this);
 
-            RandomAccessFile dataFile = null;
-
+            RandomAccessFile dataFile =
+                new RandomAccessFile(_companion.getDataFile(), "rw");
             try {
-
-                dataFile = new RandomAccessFile(_companion.getDataFile(), "rw");
-
                 int challengeSize = in.readInt();
                 in.skipBytes(challengeSize);
 
@@ -346,12 +352,8 @@ public class P2PClient {
                 }
 
                 _companion.setTransferChecksum(new Checksum(digest));
-
-
-            }finally {
-                if( dataFile != null) {
-                    dataFile.close();
-                }
+            } finally {
+                dataFile.close();
             }
 
             StringBuilder sb = new StringBuilder(
@@ -365,7 +367,7 @@ public class P2PClient {
             sb.append(" checksum="
                     + _companion.getTransferChecksum().toHexString());
             sb.append(")");
-            _cell.esay(sb.toString());
+            esay(sb.toString());
 
             setStatus("<Done>");
         }
@@ -384,7 +386,7 @@ public class P2PClient {
 
             } catch (Exception ioe) {
                 setStatus("Error : " + ioe.getMessage());
-                _cell.esay(ioe);
+                esay(ioe);
 
                 // clean up before exiting
                 // not having a _companion at this point means an unsolicited
@@ -422,8 +424,8 @@ public class P2PClient {
             CacheRepositoryEntry entry = _companion.getEntry();
             try {
                 entry.setCached();
-            } catch (CacheException ee) {
-                esay(ee);
+            } catch (CacheException e) {
+                esay(e);
             }
             //
             // try to get the storage info (no problem if it fails)
@@ -451,9 +453,14 @@ public class P2PClient {
                     say("setting sticky bit of " + entry);
                     entry.setSticky(true);
                 }
-
-            } catch (Exception eee) {
-                esay("Failed to set storageinfo : " + eee);
+            } catch (NotSerializableException e) {
+                esay("Bug detected: Unserializable vehicle: " + e.getMessage());
+                esay(e);
+            } catch (CacheException e) {
+                esay("Failed to set storageinfo : " + e.getMessage());
+            } catch (Exception e) {
+                esay("Bug detected: " + e.getMessage());
+                esay(e);
             }
             CacheFileAvailable callback = _companion.getCallback();
             if (callback != null) {
@@ -565,7 +572,7 @@ public class P2PClient {
         private void removeFileEntry() {
             try {
                 _repository.removeEntry(_entry);
-            } catch (Exception ee) {
+            } catch (CacheException ee) {
                 esay("Can't remove entry on Error : " + ee);
                 esay(ee);
             }
@@ -584,7 +591,9 @@ public class P2PClient {
     }
 
     public Companion newCompanion(PnfsId pnfsId, String poolName,
-            StorageInfo storageInfo, CacheFileAvailable callback) throws Exception {
+            StorageInfo storageInfo, CacheFileAvailable callback)
+        throws CacheException, UnknownHostException
+    {
 
         //
         // make sure the entry doens't yet exist.
@@ -593,9 +602,9 @@ public class P2PClient {
         CacheRepositoryEntry entry = _repository.createEntry(pnfsId);
         try {
             entry.setReceivingFromStore();
-        } catch (CacheException ee) {
+        } catch (CacheException e) {
             _repository.removeEntry(entry);
-            throw ee;
+            throw e;
         }
         //
         // create our companion
@@ -620,28 +629,33 @@ public class P2PClient {
                 pnfsId, pinfo, sinfo);
         request.setPool2Pool();
 
+        boolean success = false;
         try {
             _cell.sendMessage(new CellMessage(new CellPath(poolName), request));
-        } catch (Exception ee) {
-            _cell.esay("Problem in sending request to " + poolName + " : "
-                    + ee.getMessage());
-            _cell.esay(ee);
-            _sessions.remove(companion.getSessionId());
-            try {
-                _repository.removeEntry(entry);
-            } catch (Exception eee) {
-                esay("Couldn't remove entry after failure : " + eee);
-                esay(eee);
+            success = true;
+        } catch (NotSerializableException e) {
+            throw new RuntimeException("Bug detected: Unserializable vehicle", e);
+        } catch (NoRouteToCellException e) {
+            esay("Problem in sending request to " + poolName + " : "
+                 + e.getMessage());
+        } finally {
+            if (!success) {
+                _sessions.remove(companion.getSessionId());
+                try {
+                    _repository.removeEntry(entry);
+                } catch (CacheException eee) {
+                    esay("Couldn't remove entry after failure : " + eee);
+                    esay(eee);
+                }
             }
-            throw ee;
         }
 
         return companion;
     }
 
     public void messageArrived(Message message, CellMessage cellMessage) {
-        _cell.say("Message arrived (" + message.getClass().getName() + " : "
-                + message);
+        say("Message arrived (" + message.getClass().getName() + " : "
+            + message);
         if (message instanceof PoolDeliverFileMessage) {
 
             PoolDeliverFileMessage msg = (PoolDeliverFileMessage) message;
@@ -649,7 +663,7 @@ public class P2PClient {
             int sessionId = pinfo.getSessionId();
             Companion companion = _sessions.get(sessionId);
             if (companion == null) {
-                _cell.esay("companion not found for id " + sessionId);
+                esay("companion not found for id " + sessionId);
                 return;
             }
             companion.pool2PoolIoFileMsgArrived(msg);
@@ -661,15 +675,15 @@ public class P2PClient {
             int sessionId = pinfo.getSessionId();
             Companion companion = _sessions.get(sessionId);
             if (companion == null) {
-                _cell.esay("companion not found for id " + sessionId);
+                esay("companion not found for id " + sessionId);
                 return;
             }
 
             companion.poolTransferFinishedArrived(msg);
 
         } else {
-            _cell.esay("Unexpected message arrived ("
-                    + message.getClass().getName() + " : " + message);
+            esay("Unexpected message arrived ("
+                 + message.getClass().getName() + " : " + message);
         }
     }
 
@@ -712,7 +726,9 @@ public class P2PClient {
 
     public String hh_pp_get_file = "<pnfsId> <pool>";
 
-    public String ac_pp_get_file_$_2(Args args) throws Exception {
+    public String ac_pp_get_file_$_2(Args args)
+        throws CacheException, UnknownHostException
+    {
         PnfsId pnfsId = new PnfsId(args.argv(0));
         String pool = args.argv(1);
         newCompanion(pnfsId, pool, null, null);
@@ -721,7 +737,9 @@ public class P2PClient {
 
     public String hh_pp_remove = "<id>";
 
-    public String ac_pp_remove_$_1(Args args) throws Exception {
+    public String ac_pp_remove_$_1(Args args)
+        throws NumberFormatException
+    {
         Object o = _sessions.remove(Integer.valueOf(args.argv(0)));
         if (o == null)
             throw new IllegalArgumentException("Id not found : " + args.argv(0));
@@ -730,7 +748,8 @@ public class P2PClient {
 
     public String hh_pp_keep = "on|off";
 
-    public String ac_pp_keep_$_1(Args args) throws Exception {
+    public String ac_pp_keep_$_1(Args args)
+    {
         String mode = args.argv(0);
         if (mode.equals("on")) {
             _removeOnExit = true;
@@ -744,8 +763,8 @@ public class P2PClient {
 
     public String hh_pp_ls = " # get the list of companions";
 
-    public String ac_pp_ls(Args args) throws Exception {
-
+    public String ac_pp_ls(Args args)
+    {
         StringBuffer sb = new StringBuffer();
 
         for (Companion c : _sessions.values()) {
@@ -756,7 +775,9 @@ public class P2PClient {
 
     public String hh_pp_fail = " on|off  # DEBUG ";
 
-    public String ac_pp_fail_$_1(Args args) throws Exception {
+    public String ac_pp_fail_$_1(Args args)
+        throws CommandSyntaxException
+    {
         if (args.argv(0).equals("on")) {
             _simulateIOFailure = true;
         } else if (args.argv(0).equals("off")) {
