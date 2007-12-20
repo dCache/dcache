@@ -16,6 +16,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import diskCacheV111.movers.DCapConstants;
 import diskCacheV111.repository.CacheRepository;
 import diskCacheV111.repository.CacheRepositoryEntry;
 import diskCacheV111.util.Adler32;
@@ -178,7 +179,7 @@ public class P2PClient {
 
             setStatus("<gettingFilesize>");
             out.writeInt(4); // bytes following
-            out.writeInt(9); // locate command
+            out.writeInt(DCapConstants.IOCMD_LOCATE);
             //
             // waiting for reply
             //
@@ -188,12 +189,12 @@ public class P2PClient {
                         + following);
 
             int type = in.readInt();
-            if (type != 6) // REQUEST_ACK
+            if (type != DCapConstants.IOCMD_ACK)
                 throw new IOException("Protocol Violation : NOT REQUEST_ACK : "
                         + type);
 
             int mode = in.readInt();
-            if (mode != 9) // SEEK
+            if (mode != DCapConstants.IOCMD_LOCATE) // SEEK
                 throw new IOException("Protocol Violation : NOT SEEK : " + mode);
 
             int returnCode = in.readInt();
@@ -214,7 +215,7 @@ public class P2PClient {
             // request the full file
             //
             out.writeInt(12); // bytes following
-            out.writeInt(2); // read command
+            out.writeInt(DCapConstants.IOCMD_READ);
             out.writeLong(filesize);
             //
             // waiting for reply
@@ -225,13 +226,13 @@ public class P2PClient {
                         + following);
 
             type = in.readInt();
-            if (type != 6) // REQUEST_ACK
+            if (type != DCapConstants.IOCMD_ACK)
                 throw new IOException("Protocol Violation : NOT REQUEST_ACK : "
                         + type);
 
             mode = in.readInt();
-            if (mode != 2) // READ
-                throw new IOException("Protocol Violation : NOT SEEK : " + mode);
+            if (mode != DCapConstants.IOCMD_READ)
+                throw new IOException("Protocol Violation : NOT READ : " + mode);
 
             returnCode = in.readInt();
             if (returnCode != 0) {
@@ -252,7 +253,7 @@ public class P2PClient {
                         + following);
 
             type = in.readInt();
-            if (type != 8) // DATA
+            if (type != DCapConstants.IOCMD_DATA)
                 throw new IOException("Protocol Violation : NOT DATA : " + type);
 
             byte[] data = new byte[256 * 1024];
@@ -298,13 +299,13 @@ public class P2PClient {
                         + following);
 
             type = in.readInt();
-            if (type != 7) // REQUEST_FIN
-                throw new IOException("Protocol Violation : NOT REQUEST_ACK : "
+            if (type != DCapConstants.IOCMD_FIN)
+                throw new IOException("Protocol Violation : NOT REQUEST_FIN : "
                         + type);
 
             mode = in.readInt();
-            if (mode != 2) // READ
-                throw new IOException("Protocol Violation : NOT SEEK : " + mode);
+            if (mode != DCapConstants.IOCMD_READ)
+                throw new IOException("Protocol Violation : NOT READ : " + mode);
 
             returnCode = in.readInt();
             if (returnCode != 0) {
@@ -315,7 +316,7 @@ public class P2PClient {
             setStatus("<WaitingForCloseAck>");
             //
             out.writeInt(4); // bytes following
-            out.writeInt(4); // close request
+            out.writeInt(DCapConstants.IOCMD_CLOSE);
             //
             // waiting for reply
             //
@@ -325,13 +326,13 @@ public class P2PClient {
                         + following);
 
             type = in.readInt();
-            if (type != 6) // REQUEST_FIN
+            if (type != DCapConstants.IOCMD_ACK)
                 throw new IOException("Protocol Violation : NOT REQUEST_ACK : "
                         + type);
 
             mode = in.readInt();
-            if (mode != 4) // READ
-                throw new IOException("Protocol Violation : NOT SEEK : " + mode);
+            if (mode != DCapConstants.IOCMD_CLOSE)
+                throw new IOException("Protocol Violation : NOT CLOSE : " + mode);
 
             returnCode = in.readInt();
             if (returnCode != 0) {
