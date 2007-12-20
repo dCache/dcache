@@ -709,6 +709,8 @@
 	    <copy file="${libDir}/Chimera/portmap.jar" todir="${binDir}/classes/chimera" />
 	    <copy file="${libDir}/Chimera/nfs4prot.jar" todir="${binDir}/classes/chimera" />
 	    <copy file="${libDir}/Chimera/nfs3prot.jar" todir="${binDir}/classes/chimera" />
+		<copy file="${libDir}/Chimera/commons-cli-1.0.jar" todir="${binDir}/classes/chimera" />
+		<copy file="${libDir}/Chimera/commons-logging.jar" todir="${binDir}/classes/chimera" />
 		<copy file="${libDir}/dbcp/c3p0.properties" todir="${binDir}/config" />
 		<copy file="${libDir}/dbcp/c3p0-0.9.1.2.jar" todir="${binDir}/classes/dbcp" />
 	    <copy file="${libDir}/Chimera/run.xml" tofile="${binDir}/libexec/chimera/chimera-nfs-run.xml" />
