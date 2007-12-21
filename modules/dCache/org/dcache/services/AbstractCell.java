@@ -12,6 +12,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 
+import dmg.util.Args;
 import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.CellMessage;
@@ -103,6 +104,11 @@ public class AbstractCell extends CellAdapter
         new ArrayList<Object>();
 
     public AbstractCell(String cellName, String args, boolean startNow)
+    {
+        this(cellName, new Args(args), startNow);
+    }
+
+    public AbstractCell(String cellName, Args args, boolean startNow)
     {
         super(cellName, args, startNow);
 
@@ -351,41 +357,43 @@ public class AbstractCell extends CellAdapter
      */
     protected void parseOptions()
     {
-        for (Field field : getClass().getDeclaredFields()) {
-            Option option = field.getAnnotation(Option.class);
-            try {
-                if (option != null) {
-                    field.setAccessible(true);
+        for (Class c = getClass(); c != null; c = c.getSuperclass()) {
+            for (Field field : c.getDeclaredFields()) {
+                Option option = field.getAnnotation(Option.class);
+                try {
+                    if (option != null) {
+                        field.setAccessible(true);
 
-                    String s = getOption(option);
-                    Object value;
-                    if (s != null && s.length() > 0) {
-                        try {
-                            value = toType(s, field.getType());
-                            field.set(this, value);
-                        } catch (ClassCastException e) {
-                            throw new IllegalArgumentException("Cannot convert '" + s + "' to " + field.getType(), e);
-                        }
-                    } else {
-                        value = field.get(this);
-                    }
-
-                    if (option.log()) {
-                        String description = option.description();
-                        String unit = option.unit();
-                        if (description.length() == 0)
-                            description = option.name();
-                        if (unit.length() > 0) {
-                            info(description + " set to " + value + " " + unit);
+                        String s = getOption(option);
+                        Object value;
+                        if (s != null && s.length() > 0) {
+                            try {
+                                value = toType(s, field.getType());
+                                field.set(this, value);
+                            } catch (ClassCastException e) {
+                                throw new IllegalArgumentException("Cannot convert '" + s + "' to " + field.getType(), e);
+                            }
                         } else {
-                            info(description + " set to " + value);
+                            value = field.get(this);
+                        }
+
+                        if (option.log()) {
+                            String description = option.description();
+                            String unit = option.unit();
+                            if (description.length() == 0)
+                                description = option.name();
+                            if (unit.length() > 0) {
+                                info(description + " set to " + value + " " + unit);
+                            } else {
+                                info(description + " set to " + value);
+                            }
                         }
                     }
+                } catch (SecurityException e) {
+                    throw new RuntimeException("Bug detected while processing option " + option.name(), e);
+                } catch (IllegalAccessException e) {
+                    throw new RuntimeException("Bug detected while processing option " + option.name(), e);
                 }
-            } catch (SecurityException e) {
-                throw new RuntimeException("Bug detected while processing option " + option.name(), e);
-            } catch (IllegalAccessException e) {
-                throw new RuntimeException("Bug detected while processing option " + option.name(), e);
             }
         }
     }
@@ -407,7 +415,7 @@ public class AbstractCell extends CellAdapter
     /**
      * Adds a listener for dCache messages.
      *
-     * The object is scanned for methods named
+     * The object is scanned for public methods named
      * <code>messageArrived(diskCacheV111.vehicles.Message)</code> or
      * <code>messageArrived(CellMessage,
      * diskCacheV111.vehicles.Message)</code>, where <code>CellMessage</code>
