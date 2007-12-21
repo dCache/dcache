@@ -30,29 +30,29 @@ public class __AuthorizationHandler {
 
 
 	private static Map keystore = null;
-	
+
 //	the RSA keyfactory
 	static private KeyFactory keyFactory;
-	
+
 	private XrootdDoor door;
 
-	
+
 
 	public __AuthorizationHandler(XrootdDoor door) {
 		this.door = door;
 	}
 
 	public  GridFile checkAuthz(String tokenString, String vo, String lfn_Path) throws GeneralSecurityException, CorruptedEnvelopeException {
-		
+
 		if (tokenString == null) {
 			throw new IllegalArgumentException("the token string must not be null");
 		}
 		if (lfn_Path == null) {
 			throw new IllegalArgumentException("the lfn string must not be null");
 		}
-		
+
 		KeyPair keypair = null;
-		
+
 		if (vo != null) {
 			if (keystore.containsKey(vo)) {
 				keypair = (KeyPair) keystore.get(vo);
@@ -68,25 +68,25 @@ public class __AuthorizationHandler {
 				throw new GeneralSecurityException("no default keypair found in keystore");
 			}
 		}
-		
-		
-		
+
+
+
 		EncryptedAuthzToken token = new EncryptedAuthzToken(
-				tokenString, 
+				tokenString,
 				(RSAPrivateKey) keypair.getPrivate(),
 				(RSAPublicKey) keypair.getPublic());
-		
+
 		token.decrypt();
 		Envelope env = token.getEnvelope();
-		
+
 		Iterator files = env.getFiles();
 		GridFile file  = null;
-					
+
 //		loop through all specified files and find the one with the matching lfn
 //		if no match is found, the token is possibly hijacked
 		while (files.hasNext()) {
 			file = (GridFile) files.next();
-					
+
 			if (lfn_Path.equals(file.getLfn())) {
 				break;
 			} else {
@@ -97,89 +97,89 @@ public class __AuthorizationHandler {
 		if (file == null) {
 			throw new GeneralSecurityException("authorization token doesn't contain any file permissions for lfn "+lfn_Path);
 		}
-		
+
 //		check for certain protocol
 //		if (!file.getTurlProtocol().equals("root")) {
 //			throw new GeneralSecurityException("wrong protocol in turl. must be 'root'");
 //		}
-						
-		
+
+
 //		check for hostname:port in the TURL. Must match the current xrootd service endpoint.
-//		If this check fails, the token is possibly hijacked 
-		if ( !( file.getTurlHost().getHostName().equals(door.getDoorHost()) && file.getTurlPort() == door.getDoorPort())) {
+//		If this check fails, the token is possibly hijacked
+		if ( !( file.getTurlHost().equals(door.getDoorHost()) && file.getTurlPort() == door.getDoorPort())) {
 			throw new GeneralSecurityException("Hostname and/or Port mismatch in authorization token (lfn="+file.getLfn()+" TURL="+file.getTurl()+")");
 		}
-		
-		return file; 
+
+		return file;
 	}
 
 
 	public static void loadKeyStore(String fileName) throws ParseException,  IOException {
-		
+
 		if (keystore != null) {
 			return;
 		}
-		
+
 		File keystoreFile = new File(fileName);
-		
+
 		LineNumberReader in = new LineNumberReader(new FileReader(keystoreFile));
-			
+
 //		reset keystore
 		keystore = new Hashtable();
-			
+
 		try {
 //			initialise RSA key factory
 			keyFactory = KeyFactory.getInstance("RSA");
 		} catch (NoSuchAlgorithmException e1) {}
-			
+
 		String line = null;
 		while ((line = in.readLine()) != null) {
-			
+
 			StringTokenizer tokenizer = new StringTokenizer(line, " \t");
-				
+
 			String voToken = null;
 			String privKeyToken = null;
 			String pubKeyToken = null;
 
 			try {
-				
-//				ignore comment lines and any lines not starting with the keyword 'KEY'				
+
+//				ignore comment lines and any lines not starting with the keyword 'KEY'
 				String firstToken = tokenizer.nextToken();
 				if (firstToken.startsWith("#") || !firstToken.equals("KEY")) {
 					continue;
 				}
-							
+
 				voToken = tokenizer.nextToken();
 				privKeyToken = tokenizer.nextToken();
 				pubKeyToken = tokenizer.nextToken();
-					
+
 			} catch (NoSuchElementException e) {
 				throw new ParseException("line no "+(in.getLineNumber())+" : invalid format");
 			}
-			
-			if (	!(	voToken.startsWith("VO:") && 
-						privKeyToken.startsWith("PRIVKEY:") && 
+
+			if (	!(	voToken.startsWith("VO:") &&
+						privKeyToken.startsWith("PRIVKEY:") &&
 						pubKeyToken.startsWith("PUBKEY:"))) {
-						
+
 				throw new ParseException("line no "+(in.getLineNumber())+" : invalid format");
 			}
-				
-				
+
+
 			keystore.put(
 				voToken.substring(voToken.indexOf(':') + 1),
 				loadKeyPair(privKeyToken.substring(privKeyToken.indexOf(':') + 1),
 							pubKeyToken.substring(pubKeyToken.indexOf(':') + 1)));
-				
+
 		}
 
-		
+
 	}
 
 	private static KeyPair loadKeyPair(String privKeyFileName, String pubKeyFileName) throws IOException {
-		
+
 		File privKeyFile = new File(privKeyFileName);
 		File pubKeyFile = new File(pubKeyFileName);
-		
+
 		byte[] privKeyArray = readKeyfile(privKeyFile);
 //		logger.debug("read private keyfile "+privKeyFile+" ("+privKeyArray.length+" bytes)");
 //		store private key (DER-encoded) in PKCS8-representation object
@@ -191,7 +191,7 @@ public class __AuthorizationHandler {
 		} catch (InvalidKeySpecException e) {
 			throw new IOException("error loading private key "+privKeyFileName+": "+e.getMessage());
 		}
-		
+
 		byte[] pubKeyArray = readKeyfile(pubKeyFile);
 //		logger.debug("Read public keyfile "+pubKeyFile+" ("+pubKeyArray.length+" bytes)");
 //		store the public key (DER-encodedn ot PEM) into a X.509 certificate object
@@ -202,11 +202,11 @@ public class __AuthorizationHandler {
 		} catch (InvalidKeySpecException e) {
 			throw new IOException("error loading public key "+pubKeyFileName+": "+e.getMessage());
 		}
-		
-		return new KeyPair(pubKey, privKey);		
+
+		return new KeyPair(pubKey, privKey);
 	}
-	
-	
+
+
 	/**
 	 * Helper method thats reads a file.
 	 * @param file the File which is going to be read
@@ -214,22 +214,22 @@ public class __AuthorizationHandler {
 	 * @throws IOException if reading the file fails
 	 */
 	private static byte[] readKeyfile(File file) throws IOException {
-	
+
 		InputStream in = new FileInputStream(file);
-			
+
 		byte[] result = new byte[(int) file.length()];
 		int bytesRead = 0;
-			
+
 		while ((bytesRead += in.read(result,bytesRead,(int) file.length()-bytesRead)) < file.length());
-			
+
 		if (bytesRead != file.length()) {
 			throw new IOException("Keyfile "+file.getName()+" corrupt.");
 		}
-		
+
 		in.close();
-			
+
 		return result;
-			
+
 	}
 
 }
