@@ -16,7 +16,7 @@ public class ReflectionUtils
         new HashMap<String,Method>();
 
     /**
-     * Finds a maximally specific method called <i>name</i> in
+     * Finds a maximally specific public method called <i>name</i> in
      * <i>c</i> accepting parameters of type <i>parameters</i>.
      *
      * In contrast to <code>Class.getMethod</code>,
