@@ -24,7 +24,7 @@ public class InfoExporter implements Runnable {
 	private final SchemaFiller _filler;
 
 	/** The Server Thread **/
-	private final Thread   _sendThread   = null ;
+	private final Thread   _sendThread ;
 
 	/** Flag for strict-loop enabling **/
 	private boolean  _continue     = true ;
