@@ -4,7 +4,6 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -12,6 +11,7 @@ import java.net.Socket;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Hashtable;
+import java.util.Map;
 import java.util.StringTokenizer;
 
 public class HttpConnectionHandler
@@ -19,7 +19,7 @@ public class HttpConnectionHandler
   public static final String HTTP09 = "HTTP/0.9";
   public static final String HTTP10 = "HTTP/1.0";
   public static final String HTTP11 = "HTTP/1.1";
-  private Hashtable httpheaders;
+  private Map<String, String> httpheaders;
   private Socket connection;
   private BufferedReader in;
   private OutputStream outstream;
@@ -32,7 +32,7 @@ public class HttpConnectionHandler
   private String error_string = null;
   private boolean connectionclosed = false;
   private boolean processed_header = false;
-  
+
   public HttpConnectionHandler(Socket httpconnection) throws IOException
   {
     this( new BufferedReader(
@@ -43,7 +43,7 @@ public class HttpConnectionHandler
     connection = httpconnection;
     say("HttpConnectionHandler created with Socket = "+httpconnection);
   }
-  
+
   public HttpConnectionHandler(BufferedReader in,
                                OutputStream outstream,
                                BufferedWriter out) throws IOException
@@ -70,7 +70,7 @@ public class HttpConnectionHandler
   {
     System.out.println(" <- HttpConnectionHandler-> " + wisewords);
   }
-  
+
   public void esay(String wisewords)
   {
     System.err.println(" <- HttpConnectionHandler error-> " + wisewords);
@@ -84,19 +84,18 @@ public class HttpConnectionHandler
     }
     int size = httpheaders.keySet ().size ();
     String[] headers = new String[size];
-    httpheaders.keySet ().toArray(headers);
-    return headers;
+    return httpheaders.keySet().toArray(headers);
   }
-  
+
   public String getHeaderValue(String header)
   {
     if(isclosed())
     {
       return null;
     }
-    return (String) httpheaders.get(header);
+    return httpheaders.get(header);
   }
-  
+
   public synchronized String getHttpMethod()
   {
     if(isclosed())
@@ -105,7 +104,7 @@ public class HttpConnectionHandler
     }
     return method;
   }
-  
+
   public synchronized String getUrlString()
   {
     if(isclosed())
@@ -114,7 +113,7 @@ public class HttpConnectionHandler
     }
     return request_url_string;
   }
-  
+
   public synchronized URL getUrl()
   {
     if(isclosed())
@@ -122,8 +121,8 @@ public class HttpConnectionHandler
       return null;
     }
     return request_url;
-  }  
-  
+  }
+
   public String getHttpVersion()
   {
     return http_version;
@@ -149,7 +148,7 @@ public class HttpConnectionHandler
     out.flush();
     closeconnection();
   }
-  
+
   public synchronized void closeconnection() throws IOException
   {
     if(isclosed() )
@@ -168,13 +167,13 @@ public class HttpConnectionHandler
     connection = null;
     connectionclosed = true;
   }
-  
+
 
   public synchronized boolean isclosed()
   {
     return connectionclosed;
   }
-  
+
   public synchronized void returnRedirectHeader(String redirectURI) throws IOException
   {
     if(isclosed())
@@ -194,15 +193,14 @@ public class HttpConnectionHandler
     closeconnection();
   }
 
-  
+
   private synchronized boolean parseRequest()
   {
     if(isclosed())
     {
       return false;
     }
-    
-    int len;
+
     String line;
 
     try
@@ -210,8 +208,7 @@ public class HttpConnectionHandler
       // Read the first line of the request.
       line = in.readLine();
       say("parsing line "+line);
-      len = line.length();
-      if ( len == -1 || len == 0 )
+      if ( line == null || line.length() == 0 )
       {
         error = HttpURLConnection.HTTP_BAD_REQUEST;
         error_string = "Empty request";
@@ -262,14 +259,13 @@ public class HttpConnectionHandler
         }
       }
 
-      this.httpheaders = new Hashtable();
+      this.httpheaders = new Hashtable<String, String>();
 
       while ( true )
       {
         line = in.readLine();
          say("parsing line: "+line);
-        len = line.length();
-        if ( len == -1 || len == 0 )
+        if ( line == null || line.length() == 0 )
         {
           break;
         }
@@ -285,7 +281,7 @@ public class HttpConnectionHandler
       // Check Host: header in HTTP/1.1 requests.
       if ( http_version.equals( "HTTP/1.1") )
       {
-        String host = (String)httpheaders.get( "host" );
+        String host = httpheaders.get( "host" );
         if ( host == null )
         {
           error = java.net.HttpURLConnection.HTTP_BAD_REQUEST;
@@ -300,9 +296,9 @@ public class HttpConnectionHandler
       {
           request_url_string = "file:///".concat(request_url_string);
       }
-      
-      this.request_url = new URL(request_url_string); 
-      
+
+      this.request_url = new URL(request_url_string);
+
       return true;
     }
     catch(Exception e)
@@ -316,14 +312,14 @@ public class HttpConnectionHandler
     {
       synchronized(this)
       {
-        processed_header = true;
+        processed_header  = true;
         notify();
       }
     }
-      
+
   }
 
-  
+
   private synchronized void returnErrorHeader() throws IOException
   {
     if(connectionclosed)
@@ -346,7 +342,7 @@ public class HttpConnectionHandler
   }
 
 
-  
+
   private synchronized void returnFileHeader(RandomAccessFile diskFile) throws IOException
   {
     if(isclosed())
@@ -364,7 +360,7 @@ public class HttpConnectionHandler
     out.write(sb.toString());
     out.flush();
   }
-    
+
   volatile long read = 0;
   private long last_transfer_time    = System.currentTimeMillis() ;
   public synchronized void sendFile(RandomAccessFile diskFile) throws IOException
@@ -387,7 +383,7 @@ public class HttpConnectionHandler
     outstream.flush();
     closeconnection();
   }
-  
+
   public long transfered()
   {
       return read;
@@ -428,7 +424,7 @@ public class HttpConnectionHandler
 
   private static boolean isHexDigit( char c )
   {
-    return (c >= '0' && c <= '9') || 
+    return (c >= '0' && c <= '9') ||
            (c >= 'a' && c <= 'f') ||
            (c >= 'A' && c <= 'F');
   }
