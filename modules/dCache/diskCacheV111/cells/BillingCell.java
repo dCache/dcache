@@ -172,7 +172,7 @@ public class BillingCell extends CellAdapter {
 
           for( Map.Entry<String, int[]> entry : _map.entrySet() ){
              int [] values = entry.getValue() ;
-             pw.print( Formats.field(entry.getKey().toString(),20,Formats.RIGHT) );
+             pw.print( Formats.field(entry.getKey(),20,Formats.RIGHT) );
              pw.print(" : ") ;
              pw.print( Formats.field(""+values[0],6,Formats.RIGHT) ) ;
              pw.print(" / ") ;
