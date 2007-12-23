@@ -396,7 +396,7 @@ public class TestjUnitACL {
 		Action actionREADLINK = Action.READLINK;
 		Boolean checkREADLINK = AclNFSv4Matcher.isAllowed(permissionNew,
 				actionREADLINK);
-		boolean isAllowedOrNot = (checkREADLINK != null && checkREADLINK == Boolean.TRUE);
+		boolean isAllowedOrNot = (checkREADLINK != null && checkREADLINK.equals( Boolean.TRUE) );
 		assertTrue(
 				"user who_id=1001 is allowed to READLINK : bit EXECUTE is allowed ",
 				isAllowedOrNot);
