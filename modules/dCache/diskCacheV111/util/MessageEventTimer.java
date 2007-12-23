@@ -17,52 +17,56 @@ public class MessageEventTimer {
    private MessageEntry _currentTimeout = null ;
    private CellNucleus  _nucleus        = null ;
    private Thread       _loopThread     = null ;
-   
+
    private class MessageEntry extends EventEntry {
-   
+
       private MessageEntry( MessageTimerEvent eventClass ,
                             CellMessage       cellMessage ,
                             int               eventType ){
-                            
+
          super( eventClass , cellMessage , eventType ) ;
       }
       public void   setUOID( UOID uoid ){ setPrivateKey( uoid ) ; }
       public UOID   getUOID(){ return (UOID) getPrivateKey() ; }
       public CellMessage  getCellMessage(){
-          return (CellMessage)getEventObject() ; 
+          return (CellMessage)getEventObject() ;
       }
-   
+
    }
-   private class EventEntry {
-   
-      protected MessageTimerEvent _eventClass ;
-      protected Object            _eventObject ;
-      protected int               _eventType ;
+   private static class EventEntry {
+
+      protected final MessageTimerEvent _eventClass ;
+      protected final Object            _eventObject ;
+      protected final int               _eventType ;
+
       protected Object            _privateKey = null ;
       protected Long              _timerKey   = null ;
-      
+
       private EventEntry( MessageTimerEvent eventClass ,
                           Object            eventObject ,
                           int               eventType ){
-                          
+
           _eventClass  = eventClass ;
           _eventObject = eventObject ;
-          _eventType   = eventType ; 
-                            
+          _eventType   = eventType ;
+
       }
       public MessageTimerEvent getEventClass(){  return _eventClass ; }
       public Object            getEventObject(){ return _eventObject ; }
       public int               getEventType(){   return _eventType ; }
-      
+
       public void   setTimerKey( Long timerKey ){ _timerKey = timerKey ; }
       public Long   getTimerKey(){ return _timerKey ; }
-      
+
       public void setPrivateKey( Object key ){ _privateKey = key ; }
       public Object getPrivateKey(){ return _privateKey ; }
       //
       // we are only equals if we are the same.
       //
       public boolean equals( Object in ){ return in == this ; }
+      public int hashCode() {
+          return _eventType;
+      }
    }
    /**
      *  Initiates the MessageEventTimer. The CellNucleus
@@ -84,7 +88,7 @@ public class MessageEventTimer {
       }
    }
    public void send( CellMessage message , long timeout , MessageTimerEvent event ){
-   
+
       synchronized( _lock ){
          try{
 
@@ -93,23 +97,23 @@ public class MessageEventTimer {
 
          }catch(Exception ee ){
              System.err.println( "Exception in sending : "+ee ) ;
-             scheduleEvent( event , 
+             scheduleEvent( event ,
                             new CellMessage(null,ee) ,
                             MESSAGE_ARRIVED  ) ;
          }
       }
    }
-   public void addTimer( Object privateKey , 
+   public void addTimer( Object privateKey ,
                          Object eventObject ,
                          MessageTimerEvent eventClass ,
                          long timeout ){
-                         
+
        EventEntry entry = new EventEntry(eventClass,eventObject,TIMER) ;
        if( privateKey != null )
-          add( privateKey  , 
-               new Long(timeout+System.currentTimeMillis()) , entry ) ;
-       else           
-          add( new Long(timeout+System.currentTimeMillis()) , entry ) ;
+          add( privateKey  ,
+               Long.valueOf(timeout+System.currentTimeMillis()) , entry ) ;
+       else
+          add( Long.valueOf(timeout+System.currentTimeMillis()) , entry ) ;
    }
    public void reschedule( long timeOffset ) throws IllegalMonitorStateException{
      //
@@ -120,26 +124,26 @@ public class MessageEventTimer {
      if( Thread.currentThread() != _loopThread )
            throw new
            IllegalMonitorStateException( "Not called in callback (loopThread)" ) ;
-     
+
      synchronized( _lock ){
         if( _currentTimeout == null )
            throw new
            IllegalMonitorStateException( "Nothing to reschedule" ) ;
 
-        _currentTimeout.setTimerKey( new Long(timeOffset) ) ;
+        _currentTimeout.setTimerKey( Long.valueOf(timeOffset) ) ;
         System.out.println("Rescheduling : "+_currentTimeout.getUOID() ) ;
-        add( _currentTimeout.getUOID() , 
-             new Long(timeOffset+System.currentTimeMillis()) , 
+        add( _currentTimeout.getUOID() ,
+             new Long(timeOffset+System.currentTimeMillis()) ,
              _currentTimeout ) ;
      }
    }
    public void interrupt(){ _loopThread.interrupt() ; }
    public void loop() throws InterruptedException {
-      while( ! Thread.currentThread().interrupted()  ){
+      while( ! Thread.interrupted()  ){
          EventEntry      entry  = null ;
 	 CellMessage  [] array  = null ;
 	 _loopThread = Thread.currentThread() ;
-         
+
          synchronized( _lock ){
             if( _scheduledEvents.size()  == 0 ){
                 _lock.wait() ;
@@ -148,7 +152,7 @@ public class MessageEventTimer {
                 long timer       = timerValue.longValue() ;
                 long now         = System.currentTimeMillis() ;
                 Object x         = _scheduledEvents.get(timerValue) ;
-                
+
                 if( ( timer == 0L ) || ( ( timer - now ) <= 0L ) ){
                    //
                    // simple 'direct event' of event time expired
@@ -167,11 +171,11 @@ public class MessageEventTimer {
                          tmp.add( message ) ;
                          Iterator it = a.iterator() ;
 		         while( it.hasNext() ){
-			    EventEntry  scan = (EventEntry)it.next() ; 
+			    EventEntry  scan = (EventEntry)it.next() ;
                             if( scan instanceof MessageEntry ){
                                MessageEntry mscan = (MessageEntry)scan ;
 			       CellMessage  cm    = mscan.getCellMessage() ;
-			       if( cm.getLastUOID().equals( 
+			       if( cm.getLastUOID().equals(
                                       message.getLastUOID() ) ){
 			          tmp.add( cm ) ;
 			          it.remove() ;
@@ -181,8 +185,8 @@ public class MessageEventTimer {
 		         array = new CellMessage[tmp.size()] ;
                          tmp.toArray( array ) ;
                       }
-                      if( a.size() == 0 )_scheduledEvents.remove(timerValue) ; 
-                                          
+                      if( a.size() == 0 )_scheduledEvents.remove(timerValue) ;
+
                    }else{
                       _scheduledEvents.remove(timerValue) ;
                       entry = (EventEntry) x ;
@@ -202,7 +206,7 @@ public class MessageEventTimer {
 //            System.out.println("Loop found : "+entry ) ;
             if( entry == null )continue ;
             _currentTimeout = null ;
-            
+
             if( entry instanceof MessageEntry ){
                handleMessageEntries( (MessageEntry)entry , array ) ;
             }else{
@@ -211,8 +215,8 @@ public class MessageEventTimer {
 		                        entry._eventObject ,
 			                entry._eventType ) ;
             }
-	       
-	 
+
+
          } // end of synchronized
       }
    }
@@ -230,15 +234,15 @@ public class MessageEventTimer {
             // we found the timeout and can take
             // the event receiver class from it.
             //
-	    _currentTimeout._eventClass.event( 
-                       this , 
-                       array , 
+	    _currentTimeout._eventClass.event(
+                       this ,
+                       array ,
                        entry._eventType ) ;
 
          }else if( entry._eventClass != null ){
             //
             // uups , no timeout entry found.
-            // so this should be one of the faked 
+            // so this should be one of the faked
             // exception from the send call. If so, it
             // contains an event class (which a real
             // receiving event doesn't).
@@ -265,7 +269,7 @@ public class MessageEventTimer {
 			          entry._eventType ) ;
       }
    }
-   
+
    public String toString(){ return ""+_hash.size()+"/"+_scheduledEvents.size() ; }
    public boolean removeTimer( Object privateKey ){
       return remove(privateKey) != null ;
@@ -285,7 +289,7 @@ public class MessageEventTimer {
         }
         return entry ;
      }
-     
+
    }
    private void add( Object privateKey , Long key , EventEntry entry ){
       synchronized( _lock ){
@@ -295,7 +299,7 @@ public class MessageEventTimer {
       }
    }
    private void add( Long key , EventEntry entry ){
-   
+
        synchronized( _lock ){
           entry.setTimerKey( key ) ;
           Object x = _scheduledEvents.get( key ) ;
@@ -313,23 +317,23 @@ public class MessageEventTimer {
           _lock.notifyAll() ;
        }
    }
-   private void scheduleEvent( 
+   private void scheduleEvent(
           MessageTimerEvent eventClass ,
           CellMessage       cellMessage ,
           int               eventType ,
           long              timeout ){
-          
+
        MessageEntry entry = new MessageEntry(eventClass,cellMessage,eventType) ;
-       add( cellMessage.getUOID() , 
-            new Long(timeout+System.currentTimeMillis()) , entry ) ;
+       add( cellMessage.getUOID() ,
+            Long.valueOf(timeout+System.currentTimeMillis()) , entry ) ;
    }
    private void scheduleEvent(
           MessageTimerEvent eventClass ,
           CellMessage       cellMessage ,
           int               eventType  ){
-          
+
        MessageEntry entry = new MessageEntry(eventClass,cellMessage,eventType) ;
-       add( new Long(0L) , entry ) ;
+       add( Long.valueOf(0L) , entry ) ;
        System.out.println("Event added ... type = "+
                           eventType+" UOID="+cellMessage.getUOID()+"/"+
                                              cellMessage.getLastUOID() ) ;
