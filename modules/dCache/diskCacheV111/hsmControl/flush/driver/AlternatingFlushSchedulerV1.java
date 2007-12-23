@@ -14,31 +14,31 @@ import  java.io.*;
  *
  */
  public class AlternatingFlushSchedulerV1 implements HsmFlushSchedulable {
- 
-     private HsmFlushControlCore _core            = null; 
+
+     private HsmFlushControlCore _core            = null;
      private CommandInterpreter  _interpreter     = null ;
      private AltParameter        _parameter       = new AltParameter() ;
      private Map                 _hostMap         = new HashMap() ;
      private boolean             _suspendFlushing = false ;
      /**
        * Our Pool class. Contains things we need to remember.
-       * Is stored with setDriverHandle to avoid our own 
+       * Is stored with setDriverHandle to avoid our own
        * bookkeeping.
        */
-    
+
      private static final int STATE_IDLE                    = 0 ;
      private static final int STATE_WAITING_FOR_MODE_CHANGE = 1 ;
      private static final int STATE_WAITING_FOR_IO_DONE     = 2 ;
      private static final int STATE_WAITING_FOR_FLUSH_READY = 4 ;
      /**
-       *  
+       *
        *-----------------------------------------------------------------------------------
-       * 
+       *
        *            OUR INTERNAL POOL REPRESENTATION
        *
        */
      private class Pool implements HsmFlushControlCore.DriverHandle {
-     
+
         private String  _name          = null ;
         private int     _flushCounter  = 0 ;
         private long    _totalSpace    = 0 ;
@@ -49,24 +49,24 @@ import  java.io.*;
         private String  _hostTag           = null ;
         private boolean _previousWasRdOnly = false ;
         private long    _oldestTimestamp   = 0L ;
-        
+
         private HsmFlushControlCore.Pool _pool = null ;
-        
-        private Pool( String name , HsmFlushControlCore.Pool pool ){  
+
+        private Pool( String name , HsmFlushControlCore.Pool pool ){
 
             _name = name ;
-                       
+
             update( pool ) ;
 
         //    _pool.queryMode() ;
-            
+
             if( _pool.isActive() )linkUs() ;
         }
         private PoolSet getParentPoolSet(){
            return _hostPoolMap ;
         }
         private void refreshLocalVariables(){
-            
+
             PoolCellInfo cellInfo = _pool.getCellInfo() ;
             if( cellInfo == null )return ;
             PoolCostInfo costInfo = cellInfo.getPoolCostInfo() ;
@@ -74,12 +74,12 @@ import  java.io.*;
 
             _totalSpace        = spaceInfo.getTotalSpace() ;
             _preciousSpace     = spaceInfo.getPreciousSpace() ;
-            _preciousFileCount = countTotalPending() ;  
-            _oldestTimestamp   = getOldestFileTimestamp() ; 
-        
+            _preciousFileCount = countTotalPending() ;
+            _oldestTimestamp   = getOldestFileTimestamp() ;
+
         }
         private void update(HsmFlushControlCore.Pool pool){
-            
+
             _pool = pool ;
             if( ! _pool.isActive() )return ;
             //
@@ -89,14 +89,14 @@ import  java.io.*;
 
         }
         private void linkUs(){
-        
+
             PoolCellInfo cellInfo = _pool.getCellInfo() ;
 
             Map    tagMap  = cellInfo.getTagMap() ;
             _hostTag = (String)tagMap.get("hostname");
-            
+
             _hostTag = _hostTag == null ? ( "x-"+_name ) : _hostTag ;
-            
+
             _hostPoolMap = (PoolSet)_hostMap.get(_hostTag) ;
             if( _hostPoolMap == null )_hostPoolMap = new PoolSet( _hostTag ) ;
             _hostMap.put( _hostTag , _hostPoolMap ) ;
@@ -119,21 +119,21 @@ import  java.io.*;
         }
         private int countTotalPending(){
             return countTotalPendingPool( _pool ) ;
-        
+
         }
         private long getOldestFileTimestamp(){
             return getOldestFileTimestampPool( _pool ) ;
-        
+
         }
-        public String toString(){  
+        public String toString(){
            if( isReady() ){
               return _name + " precious file count : "+_preciousFileCount+" core : "+ _pool ;
            }else{
-              return _name+" Not Ready" ; 
+              return _name+" Not Ready" ;
            }
         }
         ///////////////////////////////////////////////////////////////////////
-        //  
+        //
         //     state engine for a pool.
         //
         private void timer() {
@@ -141,22 +141,22 @@ import  java.io.*;
         public void poolIoModeUpdated( boolean newIsReadOnly ){
         }
         public void flushingDone( HsmFlushControlCore.FlushInfo flushInfo  ){
-        
+
            _flushCounter -- ;
-                      
+
         }
         public void poolFlushInfoUpdated( HsmFlushControlCore.Pool pool ){
-        
+
            if( ! _pool.isActive() )return ;
            //
            refreshLocalVariables() ;
-           
+
         }
      }
      /**
-       *  
+       *
        *-----------------------------------------------------------------------------------
-       * 
+       *
        *            OUR INTERNAL HOST REPRESENTATION
        *
        */
@@ -164,14 +164,14 @@ import  java.io.*;
      private static final int PS_WAITING_FOR_STATE_CHANGE  =  1 ;
      private static final int PS_WAITING_FOR_FLUSH_DONE    =  2 ;
      private class PoolSet {
-     
+
          private Map     _poolMap          = new HashMap() ;
          private String  _name             = null ;
          private int     _progressState    = PS_IDLE  ;
          private long    _progressStarted  = 0L ;
          private boolean _expectedReadOnly = false ;
-         
-         private PoolSet( String name ){ 
+
+         private PoolSet( String name ){
            _name = name ;
          }
          public void put( String name , Pool pool ){
@@ -183,9 +183,9 @@ import  java.io.*;
          public Set keySet(){ return _poolMap.keySet() ; }
          public Collection values(){ return _poolMap.values() ; }
          public Set entrySet(){ return _poolMap.entrySet() ; }
-         
+
          public void poolIoModeUpdated( Pool ip , boolean newIsReadOnly ){
-         
+
             if(_parameter._p_poolset)say("PROGRESS-H("+_name+"/"+ip._name+") new pool i/o mode "+newIsReadOnly);
             //
             // new pool mode arrived, in wrong state
@@ -200,7 +200,7 @@ import  java.io.*;
             //
             if( ip._expectedReadOnly != newIsReadOnly ){
               esay("PROGRESS-H("+_name+"/"+ip._name+") Warning : got I/O mode rdonly="+newIsReadOnly+" expected rdOnly="+_expectedReadOnly);
-              return ;            
+              return ;
             }
             //
             // Do have all pools if this poolSet the correct mode ?
@@ -219,7 +219,7 @@ import  java.io.*;
             //
             if( modeOk < total )return ;
             //
-            // 
+            //
             if( _expectedReadOnly ){
                //
                // all pools are readyOnly; flush them all.
@@ -238,7 +238,7 @@ import  java.io.*;
                }else{
                   if(_parameter._p_poolset)say("PROGRESS-H("+_name+"/"+ip._name+") new pool i/o mode done; nothing to flush; switching back to read/write");
                   switchToNewPoolMode(false);
-               }     
+               }
             }else{
                if(_parameter._p_poolset)say("PROGRESS-H("+_name+"/"+ip._name+") new pool i/o mode done; Switching back to IDLE");
 
@@ -261,7 +261,7 @@ import  java.io.*;
             }
             if(_parameter._p_poolset)say("PROGRESS-H("+_name+"/"+ip._name+") flushing done : total="+total+";flushDone="+flushDone);
             if( flushDone < total )return ;
-            switchToNewPoolMode(false);            
+            switchToNewPoolMode(false);
          }
          private void flushAll(){
             if(_parameter._p_poolset)say("PROGRESS-H("+_name+") flush all; switching to readOnly");
@@ -269,19 +269,19 @@ import  java.io.*;
          }
          private void newState( int state ){
             _progressState    = state ;
-            _progressStarted  = System.currentTimeMillis() ;         
+            _progressStarted  = System.currentTimeMillis() ;
          }
          private void switchToNewPoolMode( boolean readOnly ){
             newState( PS_WAITING_FOR_STATE_CHANGE ) ;
             _expectedReadOnly = readOnly ;
             for( Iterator nn = _poolMap.values().iterator() ; nn.hasNext() ; ){
-            
+
                Pool ip = (Pool)nn.next() ;
-               
+
                if( readOnly ){
                   //
                   // store current mode; if this was already rdOnly we shouldn't
-                  // reset it after we are done. 
+                  // reset it after we are done.
                   //
                   //
                   ip.setReadOnly(readOnly);
@@ -291,26 +291,26 @@ import  java.io.*;
                   ip.setReadOnly( ip._previousWasRdOnly );
                }
             }
-         
+
          }
      }
   /*
-   *  
+   *
    *-----------------------------------------------------------------------------------
    */
-     
+
      private Pool getInternalPool( HsmFlushControlCore.Pool pool ){
-         
+
          Pool ip = (Pool)pool.getDriverHandle() ;
          if( ip == null ){
             esay("getInternalPool : Yet unconfigured pool arrived "+pool.getName()+"; configuring");
             pool.setDriverHandle( ip = new Pool( pool.getName() , pool ) ) ;
          }
          return ip ;
-     
+
      }
 
-     
+
      public AlternatingFlushSchedulerV1( CellAdapter cell , HsmFlushControlCore core ){
          core.say("AlternateFlush started");
          _core        = core ;
@@ -322,7 +322,7 @@ import  java.io.*;
      //
      public void init(){
          if(_parameter._p_events)say("EVENT : Initiating ...");
-         
+
          Args args = _core.getDriverArgs() ;
          //
          // printout what we got from our master
@@ -341,14 +341,14 @@ import  java.io.*;
          //  and send the 'queryPoolIoMode'.
          //
          for( Iterator i = _core.getConfiguredPools().iterator() ; i.hasNext() ; ){
-         
+
              HsmFlushControlCore.Pool pool = (HsmFlushControlCore.Pool)i.next();
              Pool ip = getInternalPool( pool ) ;
              say("init : "+pool.getName() +" "+ip) ;
          }
          String tmp = args.getOpt("driver-config-file") ;
          if( tmp != null )_parameter = new AltParameter( new File(tmp) ) ;
-         
+
      }
      //--------------------------------------------------------------------------------------
      //
@@ -363,27 +363,27 @@ import  java.io.*;
      //    pool I/O mode got updated.
      //
      public void poolIoModeUpdated( String poolName ,  HsmFlushControlCore.Pool pool ){
-     
+
          if(_parameter._p_events)say("EVENT : poolIoModeUpdated : "+pool);
-         
+
          if( ! pool.isActive() ){
             esay("poolIoModeUpdated : Pool "+poolName+" not yet active (ignoring)");
             return ;
          }
-                     
+
          Pool ip = getInternalPool( pool ) ;
-         
+
          ip.poolIoModeUpdated( pool.isReadOnly() ) ;
 
          PoolSet poolSet = ip.getParentPoolSet() ;
-         
+
          poolSet.poolIoModeUpdated( ip ,  pool.isReadOnly() ) ;
-         
+
      }
      public void flushingDone( String poolName , String storageClassName , HsmFlushControlCore.FlushInfo flushInfo  ){
 
          if(_parameter._p_events)say("EVENT : flushingDone : pool ="+poolName+";class="+storageClassName /* + "flushInfo="+flushInfo */ );
-         
+
          HsmFlushControlCore.Pool pool = _core.getPoolByName( poolName ) ;
          if( pool == null ){
             esay("flushingDone : for a non configured pool : "+poolName);
@@ -393,19 +393,19 @@ import  java.io.*;
             esay("flushingDone : Pool "+poolName+" not yet active (ignoring)");
             return ;
          }
-         
+
          Pool ip = getInternalPool( pool ) ;
-         
+
          ip.flushingDone( flushInfo ) ;
-        
-         if( ip._flushCounter == 0 ){ 
+
+         if( ip._flushCounter == 0 ){
             PoolSet poolSet = ip.getParentPoolSet() ;
 
             poolSet.flushingDone( ip , storageClassName , flushInfo ) ;
          }
-     }   
+     }
      public void poolFlushInfoUpdated( String poolName , HsmFlushControlCore.Pool pool ){
-         
+
          if(_parameter._p_events)say("EVENT : poolFlushInfoUpdated : "+pool.getName());
          //
          if( ! pool.isActive() ){
@@ -414,8 +414,8 @@ import  java.io.*;
          }
          Pool ip = getInternalPool( pool ) ;
          ip.poolFlushInfoUpdated(pool);
-         
-         
+
+
      }
      public void reset(){
          if(_parameter._p_events)say("EVENT : reset");
@@ -446,7 +446,7 @@ import  java.io.*;
      /**
        *  Executes the external command with CommandInterpreter (using our ac_xx) commands.
        */
-     public void command( Args args  ){     
+     public void command( Args args  ){
          if(_parameter._p_events)say("EVENT : command : "+args);
          try{
              Object reply = _interpreter.command( args ) ;
@@ -462,9 +462,9 @@ import  java.io.*;
          if(_parameter._p_events)say("EVENT : Preparing unload (ignoring)");
      }
      public void configuredPoolAdded( String poolName ){
-     
+
          if(_parameter._p_events)say("EVENT : Configured pool added : "+poolName);
-         
+
          HsmFlushControlCore.Pool pool = _core.getPoolByName( poolName ) ;
          if( pool == null ){
             esay("Pool not found in _core database : "+poolName);
@@ -475,7 +475,7 @@ import  java.io.*;
             return ;
          }
          Pool ip = getInternalPool( pool ) ;
-         
+
      }
      public void poolSetupUpdated(){
          if(_parameter._p_events)say("EVENT : Pool Setup updated (ignoring)");
@@ -488,13 +488,13 @@ import  java.io.*;
      // RULE ENGINE
      //
      private void processPoolsetRules(){
-     
+
          if(_parameter._p_rules)say("RULES : Processing PoolSet Rules...");
          int totalAvailable = 0 ;
          int totalReadOnly  = 0 ;
          int totalFlushing  = 0 ;
          int inProgress     = 0 ;
-         
+
          //
          // get some statistics on the known pools.
          // (available,flushing, rdOnly). Add them to the
@@ -502,20 +502,20 @@ import  java.io.*;
          //
          ArrayList candidates = new ArrayList() ;
          HashSet rdOnlyHash   = new HashSet() ;
-         
+
          for( Iterator i = _core.getConfiguredPools().iterator() ; i.hasNext() ; ){
              HsmFlushControlCore.Pool pool = (HsmFlushControlCore.Pool)i.next();
              Pool ip = (Pool)pool.getDriverHandle() ;
              if( ( ip == null ) || ( ! ip.isReady() ) )continue ;
-             
+
              totalAvailable ++ ;
-             
+
              if( ip.isFlushing() )totalFlushing++ ;
-             
+
              if( pool.isReadOnly() ){ totalReadOnly++ ; rdOnlyHash.add(pool.getName()) ; }
-                          
+
              if( ip.getParentPoolSet().inProgress() ){ inProgress ++ ; continue ; }
-             
+
              if( isCandidate( ip ) )candidates.add( ip ) ;
 
          }
@@ -525,7 +525,7 @@ import  java.io.*;
              ";flushing="+totalFlushing+
              ";progress="+inProgress+
              ";candidates="+candidates.size() ) ;
-             
+
          if( candidates.size() == 0 ){
             if(_parameter._p_rules)say("RULES : no candidates found");
             return ;
@@ -551,24 +551,24 @@ import  java.io.*;
          //
          PoolSet best = null ;
          for( Iterator pools = candidates.iterator() ; pools.hasNext() ; ){
-         
+
              Pool    pp = (Pool)pools.next() ;
              PoolSet ps = pp.getParentPoolSet() ;
-             
+
              if(_parameter._p_rules)say("RULES : checking "+pp._name+"/"+ps._name+" "+getPoolMetric(pp));
-             
+
              HashSet potentialRdOnlyPools = new HashSet( rdOnlyHash ) ;
              for( Iterator ppp = ps.keySet().iterator() ;  ppp.hasNext() ; ){
                  potentialRdOnlyPools.add( ppp.next().toString() ) ;
              }
              if(_parameter._p_rules)say("RULES : potential rdOnlyPools : "+potentialRdOnlyPools);
              int total = potentialRdOnlyPools.size() ;
-             
+
              if( total  > (int)( (double)totalAvailable * _parameter._percentageToFlush ) ){
                 if(_parameter._p_rules)say("RULES : "+ps._name+" would be too many pools ReadOnly ("+total+" out of "+totalAvailable+")") ;
                 continue ;
              }
-             
+
              best = ps ;
              break ;
          }
@@ -584,16 +584,19 @@ import  java.io.*;
      }
      private static final long MEGA_BYTES = 1024L * 1024L ;
      private PoolComparator _poolComparator = new PoolComparator() ;
-     public class PoolComparator implements Comparator {
-        public int compare( Object a , Object b ){
-           double da = getPoolMetric( (Pool)a ) ;
-           double db = getPoolMetric( (Pool)b ) ;
+     public class PoolComparator implements Comparator<Pool> {
+        public int compare( Pool a , Pool b ){
+           double da = getPoolMetric( a ) ;
+           double db = getPoolMetric( b ) ;
            return db == da ? 0 : da > db ? -1 : 1 ;
         }
+      public int hashCode() {
+          return 1;
+      }
         public boolean equals( Object comp ){ return true ; }
      }
      private double getPoolMetric( Pool ip ){
-       return 
+       return
           (
          (double)ip._preciousSpace     / (double) ( _parameter._maxPreciousStored * MEGA_BYTES ) +
          (double)ip._preciousFileCount / (double) ( _parameter._maxFilesStored                 ) +
@@ -605,9 +608,9 @@ import  java.io.*;
         return
              ( ip._preciousSpace > ( _parameter._maxPreciousStored * MEGA_BYTES ) ) ||
              ( ip._preciousFileCount > _parameter._maxFilesStored               )   ||
-             ( ip._oldestTimestamp + ( _parameter._maxTimeStored   * 60000L ) < System.currentTimeMillis() )  
+             ( ip._oldestTimestamp + ( _parameter._maxTimeStored   * 60000L ) < System.currentTimeMillis() )
         ;
-             
+
      }
      //-------------------------------------------------------------------------------------------
      //
@@ -640,7 +643,7 @@ import  java.io.*;
              say(" >>"+hostName+"<<");
              for( Iterator pools = hostMap.entrySet().iterator() ; pools.hasNext() ; ){
                 Map.Entry e = (Map.Entry)pools.next() ;
-                String name = (String)e.getKey() ;  
+                String name = (String)e.getKey() ;
                 say("     "+name+ ( extended ? e.getValue().toString() : "" ) );
              }
           }
@@ -650,7 +653,7 @@ import  java.io.*;
              say(""+pool);
 
          }
-       
+
        }
        return "";
      }
@@ -661,12 +664,12 @@ import  java.io.*;
         if( poolSet == null )
           throw new
           IllegalArgumentException( "PoolSet not found : "+poolSetName);
-          
+
         if( poolSet.inProgress() )
           throw new
           IllegalArgumentException( "PoolSet in progress : "+poolSetName);
-        
-        
+
+
         poolSet.flushAll();
         return "" ;
      }
@@ -681,14 +684,14 @@ import  java.io.*;
        * @param ip Internal pool representation.
        */
      private int flushPool( HsmFlushControlCore.Pool pool ){
-         int flushing = 0 ;         
+         int flushing = 0 ;
          for( Iterator i = pool.getFlushInfos().iterator() ; i.hasNext() ; ){
-         
+
              HsmFlushControlCore.FlushInfo info = (HsmFlushControlCore.FlushInfo)i.next() ;
              StorageClassFlushInfo         flush = info.getStorageClassFlushInfo();
-             
+
              long size   = flush.getTotalPendingFileSize() ;
-             
+
              say("flushPool : class = "+info.getName()+" size = "+size+" flushing = "+info.isFlushing() ) ;
              //
              // is precious size > 0 and are we not yet flushing ?
@@ -702,7 +705,7 @@ import  java.io.*;
              }catch(Exception ee ){
                 esay("flushPool : Problem flushing "+pool.getName()+" "+info.getName()+" "+ee);
              }
-                    
+
          }
          return flushing ;
      }
@@ -714,10 +717,10 @@ import  java.io.*;
      private int countTotalActivePool( HsmFlushControlCore.Pool pool ){
          int total = 0 ;
          for( Iterator i = pool.getFlushInfos().iterator() ; i.hasNext() ; ){
-         
+
              HsmFlushControlCore.FlushInfo info = (HsmFlushControlCore.FlushInfo)i.next() ;
              StorageClassFlushInfo         flush = info.getStorageClassFlushInfo();
-             
+
              total += flush.getActiveCount();
          }
          return total ;
@@ -730,10 +733,10 @@ import  java.io.*;
      private int countTotalPendingPool( HsmFlushControlCore.Pool pool ){
          int total = 0 ;
          for( Iterator i = pool.getFlushInfos().iterator() ; i.hasNext() ; ){
-         
+
              HsmFlushControlCore.FlushInfo info = (HsmFlushControlCore.FlushInfo)i.next() ;
              StorageClassFlushInfo         flush = info.getStorageClassFlushInfo();
-             
+
              total += flush.getRequestCount();
          }
          return total ;
@@ -746,10 +749,10 @@ import  java.io.*;
      private long getOldestFileTimestampPool( HsmFlushControlCore.Pool pool ){
          long oldest = System.currentTimeMillis() ;
          for( Iterator i = pool.getFlushInfos().iterator() ; i.hasNext() ; ){
-         
+
              HsmFlushControlCore.FlushInfo info = (HsmFlushControlCore.FlushInfo)i.next() ;
              StorageClassFlushInfo         flush = info.getStorageClassFlushInfo();
-             
+
              oldest = Math.min( oldest , flush.getOldestFileTimestamp() ) ;
          }
          return oldest ;
@@ -760,12 +763,12 @@ import  java.io.*;
        * @return Number of storage class in progress of been flushed on this pool.
        */
      private int countStorageClassesFlushing( HsmFlushControlCore.Pool pool ){
-     
+
          int flushing = 0 ;
          for( Iterator i = pool.getFlushInfos().iterator() ; i.hasNext() ; ){
-         
-             if( ((HsmFlushControlCore.FlushInfo)i.next()).isFlushing() )flushing++ ;         
-                    
+
+             if( ((HsmFlushControlCore.FlushInfo)i.next()).isFlushing() )flushing++ ;
+
          }
          return flushing ;
      }
@@ -789,7 +792,7 @@ import  java.io.*;
      private static String PARAMETER_FLUSH_PERCENTAGE = "max.rdonly.fraction" ;
      private static String PARAMETER_FLUSH_ATONCE     = "flush.atonce" ;
      private static String PARAMETER_RULE_TYPE        = "rules.type" ;
-     
+
      private static String PARAMETER_PRINT_EVENTS           = "print.events" ;
      private static String PARAMETER_PRINT_RULES            = "print.rules" ;
      private static String PARAMETER_PRINT_POOL_PROGRESS    = "print.pool.progress" ;
@@ -797,7 +800,7 @@ import  java.io.*;
      //
      //
      private class AltParameter extends Parameter {
-     
+
         private long   _maxFilesStored    = 500L ;
         private long   _maxPreciousStored = ( 500L * 1024L ) ;
         private long   _maxTimeStored     = ( 2L * 60L ) ;
@@ -811,11 +814,11 @@ import  java.io.*;
 //        private boolean _p_pool           = false ;
 //        private String _mode              = "auto" ;
 //        private String _ruleType          = "poolset" ;
-        
+
         public AltParameter( ){ }
-        
+
         public AltParameter( File configFile ){ super( configFile ) ; }
-        
+
         public void propertiesUpdated( Map properties ){
 
            Set keys = new HashSet( properties.keySet() ) ;
@@ -827,15 +830,15 @@ import  java.io.*;
               String key = (String)i.next() ;
               try{
                  if( key.equals( PARAMETER_MAX_FILE ) ){
-                    _maxFilesStored = handleLong( properties , PARAMETER_MAX_FILE , 0 , 999999999 ) ;                   
+                    _maxFilesStored = handleLong( properties , PARAMETER_MAX_FILE , 0 , 999999999 ) ;
                  }else if( key.equals( PARAMETER_MAX_MEGABYTES ) ){
-                    _maxPreciousStored = handleLong( properties , PARAMETER_MAX_MEGABYTES , 0 , 999999999 ) ;                   
+                    _maxPreciousStored = handleLong( properties , PARAMETER_MAX_MEGABYTES , 0 , 999999999 ) ;
                  }else if( key.equals( PARAMETER_MAX_MINUTES ) ){
-                    _maxTimeStored = handleLong( properties , PARAMETER_MAX_MINUTES , 0 , 999999999 ) ;                   
+                    _maxTimeStored = handleLong( properties , PARAMETER_MAX_MINUTES , 0 , 999999999 ) ;
                  }else if( key.equals( PARAMETER_TIMER ) ){
-                    _timer = handleLong( properties , PARAMETER_TIMER , 0 , 999999999 ) ;                   
+                    _timer = handleLong( properties , PARAMETER_TIMER , 0 , 999999999 ) ;
                  }else if( key.equals( PARAMETER_FLUSH_ATONCE ) ){
-                    _flushAtOnce = handleInt( properties , PARAMETER_FLUSH_ATONCE , 0 , 999999999 ) ;                   
+                    _flushAtOnce = handleInt( properties , PARAMETER_FLUSH_ATONCE , 0 , 999999999 ) ;
                  }else if( key.equals( PARAMETER_PRINT_EVENTS ) ){
                      _p_events  = handleBoolean( properties , PARAMETER_PRINT_EVENTS  ) ;
                  }else if( key.equals( PARAMETER_PRINT_RULES ) ){
@@ -855,7 +858,7 @@ import  java.io.*;
                     // remove the key to inform the requestor that we don't
                     // support this property.
                     //
-                    properties.remove( key ) ;     
+                    properties.remove( key ) ;
                  }
               }catch(Exception ee ){
                  esay("Exception while seting "+key+" "+ee);
@@ -876,15 +879,15 @@ import  java.io.*;
 //           properties.put( PARAMETER_MODE             , _mode ) ;
 //           properties.put( PARAMETER_RULE_TYPE        , _ruleType ) ;
 //           properties.put( PARAMETER_PRINT_POOL_PROGRESS    , ""+ _p_pool) ;
-           
+
        }
-     
+
      }
      private class Parameter {
-     
+
         private long   _configLastModified = 0L ;
         private File   _configFile         = null ;
-        
+
         private Parameter(){}
         private Parameter( File configFile ){
            _configFile = configFile ;
@@ -893,14 +896,14 @@ import  java.io.*;
            if( _configFile == null )return ;
            try{
                Map map = updateConfigIfNewer( _configFile ) ;
-               if( map == null )return ; 
-               propertiesUpdated( map ) ;                       
+               if( map == null )return ;
+               propertiesUpdated( map ) ;
            }catch(Exception ee ){
               return ;
            }
         }
         private Map updateConfigIfNewer( File configFile ) throws IOException {
-        
+
            if( ! configFile.exists() )return null ;
            long lastModified = configFile.lastModified() ;
            if( lastModified <= _configLastModified )return null ;
@@ -941,7 +944,7 @@ import  java.io.*;
            }
            throw new
            IllegalArgumentException("Value for "+key+" is not legal" );
-           
+
         }
         protected int handleInt( Map properties , String key , int minValue , int maxValue ){
            Object obj = properties.get( key ) ;
@@ -979,7 +982,7 @@ import  java.io.*;
              return false ;
            }else{
              throw new
-             IllegalArgumentException("Value for "+key+" must be boolean (true/false)" );           
+             IllegalArgumentException("Value for "+key+" must be boolean (true/false)" );
            }
         }
     }
