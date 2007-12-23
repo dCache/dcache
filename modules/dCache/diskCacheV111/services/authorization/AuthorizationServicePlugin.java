@@ -1,6 +1,6 @@
 /*
- * AuthorizationServicePlugin.java 
- * 
+ * AuthorizationServicePlugin.java
+ *
  * Created on January 29, 2005
  */
 
@@ -114,10 +114,10 @@ public abstract class AuthorizationServicePlugin {
 
     try {
       strvals = dynrecord.getStringValues();
-      Iterator<String> keys = strvals.keySet().iterator();
-      while (keys.hasNext()) {
-        String key = keys.next();
-        method = strvals.get(key);
+
+      for( Map.Entry<String, String> strval : strvals.entrySet()) {
+        String key = strval.getKey();
+        method = strval.getValue();
         String result, input = getRegExInput(method, dynrecord);
         if(input==null)
           result = getDynamicString(dynamic_mapper, method, subjectDN, role);
