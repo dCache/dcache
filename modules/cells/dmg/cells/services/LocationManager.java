@@ -107,15 +107,16 @@ public class LocationManager extends CellAdapter {
         *      -setupmode=rdonly|rw|auto   # write back the setup [def=rw]
         *      -perm=<filename>       # store registry information
         */
-      private final int SETUP_NONE   = -2 ;
-      private final int SETUP_ERROR  = -1 ;
-      private final int SETUP_AUTO   = 0 ;
-      private final int SETUP_WRITE  = 1 ;
-      private final int SETUP_RDONLY = 2 ;
+      private final static int SETUP_NONE   = -2 ;
+      private final static int SETUP_ERROR  = -1 ;
+      private final static int SETUP_AUTO   = 0 ;
+      private final static int SETUP_WRITE  = 1 ;
+      private final static int SETUP_RDONLY = 2 ;
       private int _setupMode = SETUP_NONE ;
       private String _setupFileName = null ;
       private File   _setupFile     = null ;
       private File   _permFile      = null ;
+
       private Server( int port , Args args ) throws Exception {
          _port = port ;
          addCommandListener(this);
@@ -167,7 +168,7 @@ public class LocationManager extends CellAdapter {
          say("Loading persistent map file");
          try{
              hm = (HashMap)in.readObject() ;
-             
+
              say("Persistent map : "+hm);
 
              for(Map.Entry<String, String> node_and_address: hm.entrySet()) {
@@ -180,7 +181,7 @@ public class LocationManager extends CellAdapter {
             	 info.setAddress( node ) ;
             	 say( "Updated : <"+node+"> -> "+address ) ;
              }
-             
+
          }catch(Exception ee){
              esay("Problem reading persistent map "+ee.getMessage() );
              _permFile.delete() ;
@@ -708,7 +709,7 @@ public class LocationManager extends CellAdapter {
                 Thread.currentThread().interrupt();
             } catch (SocketException e) {
                 if (!Thread.currentThread().isInterrupted()) {
-                    esay("Receiver socket problem : " + e.getMessage()); 
+                    esay("Receiver socket problem : " + e.getMessage());
                 }
             } catch (IOException e) {
                 esay("Receiver IO problem : " + e.getMessage());
@@ -1064,7 +1065,7 @@ public class LocationManager extends CellAdapter {
         * Shutdown the client. Notice that the method will not wait
         * for the worker thread to shut down.
         */
-       public void shutdown() 
+       public void shutdown()
        {
            _lmHandler.shutdown();
        }
