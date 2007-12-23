@@ -75,7 +75,7 @@ public class UserAuthRecord extends UserAuthBase
     {
         super(null, null, true, -1, -1, "", "", "");
     }
-    
+
     public void appendToStringBuffer(StringBuffer sb)
     {
         sb.append(Username);
@@ -194,8 +194,13 @@ public class UserAuthRecord extends UserAuthBase
         principals.removeAll(ids);
     }
 
+    public int hashCode() {
+        return UID;
+    }
+
   public boolean equals(Object obj) {
 
+    if( obj == this ) return true;
 	if( obj == null || !(obj instanceof UserAuthBase) ) return false;
     UserAuthBase r = (UserAuthBase) obj;
     return Username.equals(r.Username) &&	ReadOnly==r.ReadOnly && UID==r.UID && GID==r.GID && Home.equals(r.Home) &&	Root.equals(r.Root) &&	FsRoot.equals(r.FsRoot);
