@@ -13,13 +13,13 @@ public class BillingDB {
 
 
 
-    private final String _billingTableName = "billinginfo";
-    private final String _storageTableName = "storageinfo";
-    private final String _doorTableName    = "doorinfo";
-    private final String _hitTableName     = "hitinfo";
-    private final String _costTableName    = "costinfo";
+    private final static String _billingTableName = "billinginfo";
+    private final static String _storageTableName = "storageinfo";
+    private final static String _doorTableName    = "doorinfo";
+    private final static String _hitTableName     = "hitinfo";
+    private final static String _costTableName    = "costinfo";
 
-    private final String _createBillingTable = "CREATE TABLE " + _billingTableName + "(" +
+    private final static String _createBillingTable = "CREATE TABLE " + _billingTableName + "(" +
             "dateStamp TIMESTAMP,"     +
             "cellName VARCHAR,"        +
             "action VARCHAR,"          +
@@ -37,7 +37,7 @@ public class BillingDB {
             "initiator VARCHAR"       +
             ")";
 
-    private final String _createStorageTable = "CREATE TABLE " + _storageTableName + "(" +
+    private final static String _createStorageTable = "CREATE TABLE " + _storageTableName + "(" +
             "dateStamp TIMESTAMP,"     +
             "cellName VARCHAR,"        +
             "action VARCHAR,"          +
@@ -51,7 +51,7 @@ public class BillingDB {
             "errorMessage VARCHAR"     +
             ")";
 
-    private final String _createDoorTable = "CREATE TABLE " + _doorTableName + "(" +
+    private final static String _createDoorTable = "CREATE TABLE " + _doorTableName + "(" +
             "dateStamp TIMESTAMP,"     +
             "cellName VARCHAR,"        +
             "action VARCHAR,"          +
@@ -68,7 +68,7 @@ public class BillingDB {
             "path VARCHAR"            +
             ")";
 
-    private final String _createHitTable = "CREATE TABLE " + _hitTableName + "(" +
+    private final static String _createHitTable = "CREATE TABLE " + _hitTableName + "(" +
             "dateStamp TIMESTAMP,"      +
             "cellName VARCHAR,"         +
             "action VARCHAR,"           +
@@ -79,7 +79,7 @@ public class BillingDB {
             "errorMessage VARCHAR"      +
             ")";
 
-    private final String _createCostTable = "CREATE TABLE " + _costTableName + "(" +
+    private final static String _createCostTable = "CREATE TABLE " + _costTableName + "(" +
             "dateStamp TIMESTAMP,"      +
             "cellName VARCHAR,"         +
             "action VARCHAR,"           +
@@ -90,7 +90,7 @@ public class BillingDB {
             "errorMessage VARCHAR"      +
             ")";
 
-    private final String[][] _tableList = {
+    private final static String[][] _tableList = {
         {_billingTableName , _createBillingTable},
         {_storageTableName,  _createStorageTable},
         {_doorTableName, _createDoorTable},
