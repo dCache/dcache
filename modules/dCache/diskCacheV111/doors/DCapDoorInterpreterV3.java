@@ -58,6 +58,11 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
     private Date    _lastCommandTS   = null ;
     private boolean _authorizationRequired = false ;
     private boolean _authorizationStrong   = false ;
+
+    /**
+     * a flag which is true if strong authentication succeeded
+     */
+    private boolean _isAuthorized = false;
     private boolean _strictSize            = false ;
     private String  _poolProxy        = null ;
     private Version _minClientVersion = null ;
@@ -72,6 +77,11 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
     private boolean _ioQueueAllowOverwrite = false ;
     private boolean _readOnly = false;
 
+    /**
+     * DN+Role based information
+     */
+    private VOInfo _voInfo = null;
+
     // flag defined in batch file to allow/disallow AccessLatency and RetentionPolicy re-definition
 
     private boolean _isAccessLatencyOverwriteAllowed = false;
@@ -83,6 +93,15 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
         _cell = cell ;
         _args = _cell.getArgs() ;
         _user = user;
+
+        if( _user.getName() != null && _user.getRole() != null ) {
+            _voInfo = new VOInfo(_user.getName(), _user.getRole() );
+            if( _userMetaProvider != null ){
+                _isAuthorized = getUserMetadata( _user.getName(), _user.getRole() , _userMetaProvider ) ;
+            }
+
+        }
+
         _poolManagerName = _args.getOpt("PoolMgr" ) ;
         _poolManagerName = _poolManagerName == null ?
         "PoolManager" : _poolManagerName ;
@@ -184,9 +203,9 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
         _cell.say("Check : "+(_checkStrict?"Strict":"Fuzzy"));
         _cell.say("Constructor Done" ) ;
     }
-    private class Version implements Comparable<Version> {
-        private int _major = 0 ;
-        private int _minor = 0 ;
+    private static class Version implements Comparable<Version> {
+        private final int _major;
+        private final int _minor;
         private Version( String versionString ){
             StringTokenizer st = new StringTokenizer(versionString,".");
             _major = Integer.parseInt(st.nextToken());
@@ -203,6 +222,20 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
             _major = major ;
             _minor = minor ;
         }
+        @Override
+        public boolean equals(Object obj ) {
+           if( obj == this ) return true;
+           if( !(obj instanceof Version) ) return false;
+
+            return ((Version)obj)._major == this._major && ((Version)obj)._minor == this._minor;
+        }
+        @Override
+        public int hashCode() {
+            return _minor ^ _major;
+        }
+
+
+
     }
     private void installVersionRestrictions( String versionString ){
         //
