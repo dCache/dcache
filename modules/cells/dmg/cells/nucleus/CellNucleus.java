@@ -36,7 +36,7 @@ public class CellNucleus implements Runnable, ThreadFactory {
    private final  Date      _creationTime   = new Date() ;
    private        int       _state          = INITIAL ;
    private        int       _printoutLevel  = 0 ;
-   
+
    private final static Logger _logMessages = Logger.getLogger("logger.org.dcache.cells.messages");
 
    //  have to be synchronized map
@@ -288,7 +288,7 @@ public class CellNucleus implements Runnable, ThreadFactory {
       return new CellMessage( answer ) ;
 
    }
-   public Map getWaitQueue(){
+   public Map<UOID,CellLock > getWaitQueue(){
 
       Map<UOID,CellLock > hash = new HashMap<UOID,CellLock >() ;
       synchronized( _waitHash ){
@@ -297,7 +297,7 @@ public class CellNucleus implements Runnable, ThreadFactory {
       return hash ;
    }
 
-    public int updateWaitQueue() 
+    public int updateWaitQueue()
     {
         Collection<CellLock> expired = new ArrayList<CellLock>();
         long now  = System.currentTimeMillis();
@@ -377,7 +377,7 @@ public class CellNucleus implements Runnable, ThreadFactory {
       __cellGlue.kill( this , cellName ) ;
    }
 
-    
+
     /**
      * Blocks until the given cell is dead.
      *
@@ -389,7 +389,7 @@ public class CellNucleus implements Runnable, ThreadFactory {
      * @return True if the cell died, false in case of a timeout.
      */
     public boolean join(String cellName, long timeout)
-        throws InterruptedException 
+        throws InterruptedException
     {
         return __cellGlue.join(cellName, timeout);
     }
@@ -440,7 +440,7 @@ public class CellNucleus implements Runnable, ThreadFactory {
                 msg = new CellMessage( msgEvent.getMessage() ) ;
                 if( _logMessages.isDebugEnabled() ) {
                 	String messageObject = msg.getMessageObject() == null? "NULL" : msg.getMessageObject().getClass().getName();
-             	   _logMessages.debug("nucleusMessageArrived src=" + msg.getSourceAddress() + 
+             	   _logMessages.debug("nucleusMessageArrived src=" + msg.getSourceAddress() +
              			   " dest=" + msg.getDestinationAddress() + " [" + messageObject + "] UOID=" + msg.getUOID().toString() );
                 }
                 //
@@ -516,7 +516,7 @@ public class CellNucleus implements Runnable, ThreadFactory {
       System.arraycopy( list , 0 , ret , 0 , rc ) ;
       return ret ;
    }
-   
+
    int  getUnique(){ return __cellGlue.getUnique() ; }
 
    int  getEventQueueSize(){ return _eventQueue.size() ; }
@@ -649,13 +649,13 @@ public class CellNucleus implements Runnable, ThreadFactory {
    // helper to get version string from arbitrary object
    //
    public static CellVersion getCellVersionByObject( Object obj ) throws Exception {
-       Class c =  obj.getClass()  ;
+       Class<?> c =  obj.getClass()  ;
 
-       Method m = c.getMethod( "getCellVersion" , (Class [])null ) ;
+       Method m = c.getMethod( "getCellVersion" , (Class<?> [])null ) ;
 
        return (CellVersion)m.invoke( obj , (Object [])null ) ;
    }
-   public static CellVersion getCellVersionByClass( Class c ) throws Exception {
+   public static CellVersion getCellVersionByClass( Class<?> c ) throws Exception {
 
        Method m = c.getMethod( "getCellVersion" , (Class [])null ) ;
 
@@ -688,7 +688,7 @@ public class CellNucleus implements Runnable, ThreadFactory {
                                              args ,
                                              systemOnly       ) ;
    }
-   public Class loadClass( String className ) throws ClassNotFoundException {
+   public Class<?> loadClass( String className ) throws ClassNotFoundException {
        return __cellGlue.loadClass( className ) ;
    }
    /*

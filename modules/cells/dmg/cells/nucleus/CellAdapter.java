@@ -730,17 +730,17 @@ public class   CellAdapter
       _nucleus.setPrintoutLevel( printout ) ;
       return "" ;
    }
-   
-   public String hh_set_logging = " <logger> <ALL | DEBUG | ERROR | FATAL | INFO | OFF | WARN>"; 
+
+   public String hh_set_logging = " <logger> <ALL | DEBUG | ERROR | FATAL | INFO | OFF | WARN>";
    public String ac_set_logging_$_2(Args args){
-	   	   
+
 	   Logger logger = Logger.getLogger(args.argv(0));
-	   
+
 	   logger.setLevel(  Level.toLevel(args.argv(1)) );
-	   
+
 	   return "current level : " + logger.getLevel().toString() ;
    }
-   
+
    public String ac_say_$_1( Args args ){
       say( args.argv(0) ) ;
       return "" ;
@@ -755,15 +755,13 @@ public class   CellAdapter
       if( lng ){
         StringBuffer sb = new StringBuffer() ;
         sb.append(getInfo()).append("\n");
-        Map map = _nucleus.getWaitQueue() ;
-        Iterator it = map.entrySet().iterator() ;
-        for( int i = 0 ; it.hasNext() ; i++ ){
-           if( i  == 0 )sb.append("\nWe are waiting for the following messages\n");
-           Map.Entry entry = (Map.Entry)it.next() ;
+        Map<UOID,CellLock > map = _nucleus.getWaitQueue() ;
+        if( ! map.isEmpty() )sb.append("\nWe are waiting for the following messages\n");
+        for( Map.Entry<UOID,CellLock > entry : map.entrySet()){
            Object    key   = entry.getKey() ;
-           CellLock  lock  = (CellLock)entry.getValue() ;
+           CellLock  lock  = entry.getValue() ;
            sb.append( key.toString() ).append( " r=" ) ;
-           long res = lock.getTimeout() - new Date().getTime() ;
+           long res = lock.getTimeout() - System.currentTimeMillis() ;
            sb.append(res/1000).append(" sec;") ;
            CellMessage msg = lock.getMessage() ;
            if( msg == null ){
