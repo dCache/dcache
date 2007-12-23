@@ -566,7 +566,7 @@ public class GPLAZMA extends CellAdapter implements Runnable {
       }
       catch(IOException ioe) {
         esay("exception while trying to create a server socket for delegation: " + ioe);
-        if(ss!=null) {try {ss.close();} catch(Exception e1) {}}
+        if(ss!=null) {try {ss.close();} catch(IOException e1) {}}
         return;
       }
 
@@ -580,7 +580,7 @@ public class GPLAZMA extends CellAdapter implements Runnable {
                 remoteGsi.getRequestCredentialId());
       } catch(UnknownHostException uhe) {
         esay("could not find localhost name : " + uhe);
-        if(ss!=null) {try {ss.close();} catch(Exception e1) {}}
+        if(ss!=null) {try {ss.close();} catch(IOException e1) {}}
         return;
       }
 
@@ -603,7 +603,7 @@ public class GPLAZMA extends CellAdapter implements Runnable {
         debug("authRequestID " + authRequestID + " connected");
       } catch ( IOException ioe ){
         esay("authRequestID " + authRequestID + " failed to receive delegated server socket");
-        if(ss!=null) {try {ss.close();} catch(Exception e1) {}}
+        if(ss!=null) {try {ss.close();} catch(IOException e1) {}}
         return;
       }
 
@@ -633,7 +633,7 @@ public class GPLAZMA extends CellAdapter implements Runnable {
         // we do not propogate this exception since some exceptions
         // we catch are not serializable!!!
         //throw new Exception(t.toString());
-        if(gsiSocket!=null) {try {gsiSocket.close();} catch(Exception e1) {}}
+        if(gsiSocket!=null) {try {gsiSocket.close();} catch(IOException e1) {}}
         return;
       }
 
@@ -1248,7 +1248,7 @@ public class GPLAZMA extends CellAdapter implements Runnable {
 
   /** Set a parameter according to option specified in .batch config file **/
   private String setParam(String name, String target) {
-    if(target==null) target = new String();
+    if(target==null) target = "";
     String option = _opt.getOpt(name) ;
     if((option != null) && (option.length()>0)) target = option;
     say("Using " + name + " : " + target);
@@ -1259,7 +1259,7 @@ public class GPLAZMA extends CellAdapter implements Runnable {
   private int setParam(String name, int target) {
     String option = _opt.getOpt(name) ;
     if( ( option != null ) && ( option.length() > 0 ) ) {
-      try{ target = Integer.parseInt(option); } catch(Exception e) {}
+      try{ target = Integer.parseInt(option); } catch(NumberFormatException e) {}
     }
     say("Using " + name + " : " + target);
     return target;
@@ -1269,7 +1269,7 @@ public class GPLAZMA extends CellAdapter implements Runnable {
   private long setParam(String name, long target) {
     String option = _opt.getOpt(name) ;
     if( ( option != null ) && ( option.length() > 0 ) ) {
-      try{ target = Integer.parseInt(option); } catch(Exception e) {}
+      try{ target = Integer.parseInt(option); } catch(NumberFormatException e) {}
     }
     say("Using " + name + " : " + target);
     return target;
