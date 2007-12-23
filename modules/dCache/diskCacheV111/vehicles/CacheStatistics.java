@@ -4,7 +4,7 @@ package diskCacheV111.vehicles;
 
 import java.util.*;
 
-public class CacheStatistics implements java.io.Serializable, Comparable {
+public class CacheStatistics implements java.io.Serializable, Comparable<CacheStatistics> {
     private int   _version       = 1;
     private int   _totalAccesses = 0;
     private long  _accessTime    = 0;
@@ -147,11 +147,10 @@ public class CacheStatistics implements java.io.Serializable, Comparable {
 	}
     }
 
-    public int compareTo(Object obj){
+    public int compareTo(CacheStatistics other ){
         //
         //XXX this needs to use the half-life algorithm
         //
-	CacheStatistics other = (CacheStatistics)obj;
 	if (_totalAccesses == other.getTotalAccesses()){
             return _accessTime>other.getAccessTime()?-1:_accessTime==other.getAccessTime()?0:1;
 //	    return (new Long(_accessTime)).compareTo(new Long(other.getAccessTime()));
