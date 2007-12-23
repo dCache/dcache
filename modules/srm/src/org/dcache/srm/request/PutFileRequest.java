@@ -172,28 +172,28 @@ COPYRIGHT STATUS:
   and software for U.S. Government purposes.  All documents and software
   available from this server are protected under the U.S. and Foreign
   Copyright Laws, and FNAL reserves all rights.
- 
- 
+
+
  Distribution of the software available from this server is free of
  charge subject to the user following the terms of the Fermitools
  Software Legal Information.
- 
+
  Redistribution and/or modification of the software shall be accompanied
  by the Fermitools Software Legal Information  (including the copyright
  notice).
- 
+
  The user is asked to feed back problems, benefits, and/or suggestions
  about the software to the Fermilab Software Providers.
- 
- 
+
+
  Neither the name of Fermilab, the  URA, nor the names of the contributors
  may be used to endorse or promote products derived from this software
  without specific prior written permission.
- 
- 
- 
+
+
+
   DISCLAIMER OF LIABILITY (BSD):
- 
+
   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
   "AS IS" AND ANY EXPRESS OR IMPLIED  WARRANTIES, INCLUDING, BUT NOT
   LIMITED TO, THE IMPLIED  WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -206,10 +206,10 @@ COPYRIGHT STATUS:
   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT  OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE  POSSIBILITY OF SUCH DAMAGE.
- 
- 
+
+
   Liabilities of the Government:
- 
+
   This software is provided by URA, independent from its Prime Contract
   with the U.S. Department of Energy. URA is acting independently from
   the Government and in its own private capacity and is not acting on
@@ -219,10 +219,10 @@ COPYRIGHT STATUS:
   be liable for nor assume any responsibility or obligation for any claim,
   cost, or damages arising out of or resulting from the use of the software
   available from this server.
- 
- 
+
+
   Export Control:
- 
+
   All documents and software available from this server are subject to U.S.
   export control laws.  Anyone downloading information from this server is
   obligated to secure any necessary Government licenses before exporting
@@ -286,7 +286,7 @@ import org.dcache.srm.v2_2.TRetentionPolicy;
  * @version
  */
 public class PutFileRequest extends FileRequest {
-    
+
     // this is surl path
     private GlobusURL surl;
     private GlobusURL turl;
@@ -303,7 +303,7 @@ public class PutFileRequest extends FileRequest {
     private TRetentionPolicy retentionPolicy;//null default value
     private boolean spaceMarkedAsBeingUsed=false;
     private static final long serialVersionUID = 542933938646172116L;
-    
+
     /** Creates new FileRequest */
     public PutFileRequest(Long requestId,
             Long requestCredentalId,
@@ -331,7 +331,7 @@ public class PutFileRequest extends FileRequest {
         try {
             surl = new GlobusURL(url);
             say("    surl = "+surl);
-            
+
         } catch(MalformedURLException murle) {
             throw new IllegalArgumentException(murle.toString());
         }
@@ -345,9 +345,9 @@ public class PutFileRequest extends FileRequest {
             this.retentionPolicy = retentionPolicy;
         }
     }
-    
-    
-    
+
+
+
     public PutFileRequest(
             Long id,
             Long nextJobId,
@@ -365,7 +365,7 @@ public class PutFileRequest extends FileRequest {
             JobHistory[] jobHistoryArray,
             Long requestId,
             Long requestCredentalId,
-            String statusCodeString,            
+            String statusCodeString,
             Configuration configuration,
             String SURL,
             String TURL,
@@ -393,10 +393,10 @@ public class PutFileRequest extends FileRequest {
                 jobHistoryArray,
                 requestId,
                 requestCredentalId,
-                statusCodeString,            
+                statusCodeString,
                 configuration
                 );
-        
+
         try {
             this.surl = new GlobusURL(SURL);
             if(TURL != null && (!TURL.equalsIgnoreCase("null"))) {
@@ -405,11 +405,11 @@ public class PutFileRequest extends FileRequest {
         } catch(MalformedURLException murle) {
             throw new IllegalArgumentException(murle.toString());
         }
-        
+
         if(fileId != null && (!fileId.equalsIgnoreCase("null"))) {
             this.fileId = fileId;
         }
-        
+
         if(parentFileId != null && (!parentFileId.equalsIgnoreCase("null"))) {
             this.parentFileId = parentFileId;
         }
@@ -419,79 +419,79 @@ public class PutFileRequest extends FileRequest {
         this.accessLatency = accessLatency;
         this.retentionPolicy = retentionPolicy;
     }
-    
+
     public void say(String s) {
         if(storage != null) {
             storage.log("PutFileRequest #"+/*getFileId()+*/": "+s);
         }
-        
+
     }
-    
+
     public void esay(String s) {
         if(storage != null) {
             storage.elog("PutFileRequest #"+/*getFileId()+*/": "+s);
         }
     }
-    
+
     public void esay(Throwable t) {
         if(storage != null) {
             storage.elog(t);
         }
     }
-    
-    
+
+
     public String getFileId() {
         return fileId;
     }
-    
+
     public void setSize(long size) {
         this.size = size;
     }
-    
+
     public long getSize() {
         return size;
     }
-    
-    
+
+
     private void setTurl(String turl_string) throws java.net.MalformedURLException {
         this.turl = new GlobusURL(turl_string);
     }
-    
-    
-    
+
+
+
     public GlobusURL getSurl() {
         return surl;
     }
-    
+
     public String getPath() {
         String path = surl.getPath();
         int indx=path.indexOf(SFN_STRING);
         if( indx != -1) {
-            
+
             path=path.substring(indx+SFN_STRING.length());
         }
-        
+
         if(!path.startsWith("/")) {
             path = "/"+path;
         }
         return path;
     }
-    
-    
+
+
     public String getSurlString() {
         return surl.getURL().toString();
     }
-    
-    
-    
+
+
+
     public String getTurlString() {
         State state = getState();
         if(turl == null && (state == State.READY ||
 			    state == State.TRANSFERRING)) {
             try {
                 turl = getTURL();
-                
-            } 
+
+            }
 	    catch(SRMAuthorizationException srme) {
                 String error =srme.getMessage();
                 esay(error);
@@ -501,13 +501,13 @@ public class PutFileRequest extends FileRequest {
                         try {
                             setStatusCode(TStatusCode.SRM_AUTHORIZATION_FAILURE);
                             setState(State.FAILED,error);
-                        } 
+                        }
 			catch(Exception e) {
                             esay("can not fail state:"+e);
                         }
                     }
                 }
-            } 
+            }
 	    catch(Exception srme) {
                 String error =
 		    "can not obtain turl for file:"+srme;
@@ -522,35 +522,35 @@ public class PutFileRequest extends FileRequest {
                         }
                     }
                 }
-                
+
             }
         }
-        
+
         if(turl!= null) {
             return turl.getURL().toString();
         }
         return null;
     }
-    
-    
+
+
     public boolean canWrite() {
         if(fileId == null && parentFileId == null) {
             return false;
         }
         SRMUser user = (SRMUser) getUser();
-        boolean canwrite =storage.canWrite(user,fileId,fmd,parentFileId,parentFmd, 
+        boolean canwrite =storage.canWrite(user,fileId,fmd,parentFileId,parentFmd,
                 ((PutRequest)getRequest()).isOverwrite());
         say("PutFileRequest  storage.canWrite() returned "+canwrite);
         return  canwrite;
     }
-    
-    
+
+
     public RequestFileStatus getRequestFileStatus() {
         RequestFileStatus rfs = new RequestFileStatus();
         rfs.fileId = getId().intValue();
-        
+
         rfs.SURL = getSurlString();
-        rfs.size = new Long(getSize()).longValue();
+        rfs.size = getSize();
         State state = getState();
         rfs.TURL = getTurlString();
         if(state == State.DONE) {
@@ -565,16 +565,16 @@ public class PutFileRequest extends FileRequest {
         } else {
             rfs.state = "Pending";
         }
-        
+
         say(" returning requestFileStatus for "+this.toString());
         return rfs;
     }
-    
+
     public TPutRequestFileStatus getTPutRequestFileStatus() throws java.sql.SQLException{
         TPutRequestFileStatus fileStatus = new TPutRequestFileStatus();
         fileStatus.setFileSize(new org.apache.axis.types.UnsignedLong(getSize()));
-        
-        
+
+
         URI surl;
         try {
             surl= new URI(getSurlString());
@@ -584,7 +584,7 @@ public class PutFileRequest extends FileRequest {
         }
         fileStatus.setSURL(surl);
         //fileStatus.set
-        
+
         String turlstring = getTurlString();
         if(turlstring != null) {
             URI transferURL;
@@ -595,7 +595,7 @@ public class PutFileRequest extends FileRequest {
                 throw new java.sql.SQLException("wrong turl format");
             }
             fileStatus.setTransferURL(transferURL);
-            
+
         }
         fileStatus.setEstimatedWaitTime(new Integer(getRequest().getRetryDeltaTime()));
         fileStatus.setRemainingPinLifetime(new Integer((int)getRemainingLifetime()/1000));
@@ -606,14 +606,14 @@ public class PutFileRequest extends FileRequest {
             // so we do the translation here
             returnStatus.setStatusCode(TStatusCode.SRM_FAILURE);
         }
-            
+
         returnStatus.setExplanation(getErrorMessage());
-        
+
         fileStatus.setStatus(returnStatus);
-        
+
         return fileStatus;
     }
-    
+
     public TSURLReturnStatus  getTSURLReturnStatus() throws java.sql.SQLException{
         URI surl;
         try {
@@ -634,7 +634,7 @@ public class PutFileRequest extends FileRequest {
         surlReturnStatus.setStatus(returnStatus);
         return surlReturnStatus;
     }
-    
+
     private GlobusURL getTURL() throws SRMException, java.sql.SQLException {
         String firstDcapTurl = null;
         PutRequest request = (PutRequest) Job.getJob(requestId);
@@ -654,9 +654,9 @@ public class PutFileRequest extends FileRequest {
                 throw new SRMException(murle.toString());
             }
         }
-        
+
         try {
-            
+
             String turl =storage.getPutTurl(request.getUser(),getPath(), firstDcapTurl);
             return new GlobusURL(turl);
         } catch(MalformedURLException murle) {
@@ -664,8 +664,8 @@ public class PutFileRequest extends FileRequest {
             throw new SRMException(murle.toString());
         }
     }
-    
-    
+
+
     public String toString() {
         StringBuffer sb = new StringBuffer();
         sb.append(" PutFileRequest # ").append(getId());
@@ -677,30 +677,30 @@ public class PutFileRequest extends FileRequest {
         } catch(Exception e) {
             sb.append("\n           TURL   =<error ").append(e).append('>');
         }
-        
+
         return sb.toString();
     }
-     
+
     public void done() {
     }
-    
+
     public void error() {
     }
-    
+
     public void run() throws org.dcache.srm.scheduler.NonFatalJobFailure,
             org.dcache.srm.scheduler.FatalJobFailure {
         String  path = getPath();
-        
+
         try {
             if(fileId == null &&
                     parentFileId == null) {
-                
-                
+
+
                 if(!Tools.sameHost(configuration.getSrmhost(),
                         getSurl().getHost())) {
                     String error ="surl is not local : "+getSurl().getURL();
                     synchronized(this) {
-                        
+
                         State state = getState();
                         if(!State.isFinalState(state)) {
                             setState(State.FAILED,error);
@@ -725,11 +725,11 @@ public class PutFileRequest extends FileRequest {
                         }
                     }
                     }
-                
+
                 if(!found_supp_prot) {
                     throw new org.dcache.srm.scheduler.FatalJobFailure("transfer protocols not supported");
                 }
-                
+
                 //storage.getPutTurl(getUser(),path,request.protocols);
                 PutCallbacks callbacks = new PutCallbacks(this.getId());
               /*  synchronized(callbacks_set)
@@ -738,7 +738,7 @@ public class PutFileRequest extends FileRequest {
                 }
                **/
                 synchronized(this) {
-                    
+
                     State state = getState();
                     if(!State.isFinalState(state)) {
                         setState(State.ASYNCWAIT, "calling Storage.prepareToPut()");
@@ -748,7 +748,7 @@ public class PutFileRequest extends FileRequest {
                         ((PutRequest)getRequest()).isOverwrite());
                 return;
             }
-            
+
             say("fileId = "+fileId+" parentFileId="+parentFileId);
             if(!canWrite()) {
                 synchronized(this) {
@@ -764,20 +764,20 @@ public class PutFileRequest extends FileRequest {
                     }
                 }
                 return;
-                
+
             }
-            
+
             if( size>0 && configuration.isReserve_space_implicitely() &&
                     spaceReservationId == null
                     ) {
                 synchronized(this) {
-                    
+
                     State state = getState();
                     if(!State.isFinalState(state)) {
                         setState(State.ASYNCWAIT,"reserving space");
                     }
                 }
-                
+
                 long remaining_lifetime = lifetime - ( System.currentTimeMillis() -creationTime);
                 SrmReserveSpaceCallbacks callbacks = new PutReserveSpaceCallbacks(getId());
                 /*
@@ -790,22 +790,22 @@ public class PutFileRequest extends FileRequest {
                     SrmReserveSpaceCallbacks callbacks);
                  */
                 //
-                //the following code allows the inheritance of the 
+                //the following code allows the inheritance of the
                 // retention policy from the directory metatada
                 //
                 if(retentionPolicy == null && parentFmd != null && parentFmd.retentionPolicyInfo != null ) {
                     retentionPolicy = parentFmd.retentionPolicyInfo.getRetentionPolicy();
                 }
-                
-                
+
+
                 //
-                //the following code allows the inheritance of the 
+                //the following code allows the inheritance of the
                 // access latency from the directory metatada
                 //
                 if(accessLatency == null && parentFmd != null && parentFmd.retentionPolicyInfo != null ) {
                     accessLatency = parentFmd.retentionPolicyInfo.getAccessLatency();
                 }
-                
+
                 storage.srmReserveSpace(
                         getUser(),
                         size,
@@ -819,9 +819,9 @@ public class PutFileRequest extends FileRequest {
 
             if( spaceReservationId != null &&
                     !spaceMarkedAsBeingUsed) {
-                
+
                 synchronized(this) {
-                    
+
                     State state = getState();
                     if(!State.isFinalState(state)) {
                         setState(State.ASYNCWAIT,"marking space as being used");
@@ -845,7 +845,7 @@ public class PutFileRequest extends FileRequest {
             String error ="can not prepare to put : "+e;
             try {
                 synchronized(this) {
-                    
+
                     State state = getState();
                     if(!State.isFinalState(state)) {
                         setState(State.FAILED,error);
@@ -855,10 +855,10 @@ public class PutFileRequest extends FileRequest {
                 esay("can not faile state:"+ist);
             }
         }
-        
+
     }
-    
-    
+
+
     protected void stateChanged(org.dcache.srm.scheduler.State oldState) {
         State state = getState();
         say("State changed from "+oldState+" to "+getState());
@@ -875,7 +875,7 @@ public class PutFileRequest extends FileRequest {
                 storage.srmUnmarkSpaceAsBeingUsed(getUser(),
                         spaceReservationId,getPath(),
                         callbacks);
-                
+
             }
             if(spaceReservationId != null && weReservedSpace) {
                 say("storage.releaseSpace("+spaceReservationId+"\"");
@@ -885,11 +885,11 @@ public class PutFileRequest extends FileRequest {
                         spaceReservationId,
                         (Long)null, //release all of space we reserved
                         callbacks);
-                
+
             }
         }
     }
-    
+
     /**
      * Getter for property parentFileId.
      * @return Value of property parentFileId.
@@ -897,7 +897,7 @@ public class PutFileRequest extends FileRequest {
     public java.lang.String getParentFileId() {
         return parentFileId;
     }
-    
+
     /**
      * Getter for property spaceReservationId.
      * @return Value of property spaceReservationId.
@@ -905,7 +905,7 @@ public class PutFileRequest extends FileRequest {
     public java.lang.String getSpaceReservationId() {
         return spaceReservationId;
     }
-    
+
     /**
      * Setter for property spaceReservationId.
      * @param spaceReservationId New value of property spaceReservationId.
@@ -913,7 +913,7 @@ public class PutFileRequest extends FileRequest {
     public void setSpaceReservationId(java.lang.String spaceReservationId) {
         this.spaceReservationId = spaceReservationId;
     }
-    
+
     /**
      * Getter for property clientHost.
      * @return Value of property clientHost.
@@ -921,7 +921,7 @@ public class PutFileRequest extends FileRequest {
     public java.lang.String getClientHost() {
         return clientHost;
     }
-    
+
     /**
      * Setter for property clientHost.
      * @param clientHost New value of property clientHost.
@@ -929,12 +929,12 @@ public class PutFileRequest extends FileRequest {
     public void setClientHost(java.lang.String clientHost) {
         this.clientHost = clientHost;
     }
-  
+
     public TReturnStatus getReturnStatus() {
         TReturnStatus returnStatus = new TReturnStatus();
-        
+
         State state = getState();
-        
+
  	returnStatus.setExplanation(state.toString());
         if(getStatusCode() != null) {
             returnStatus.setStatusCode(getStatusCode());
@@ -960,14 +960,14 @@ public class PutFileRequest extends FileRequest {
         }
         return returnStatus;
     }
-    
+
     private static class PutCallbacks implements PrepareToPutCallbacks {
         Long fileRequestJobId;
-        
+
         public PutCallbacks(Long fileRequestJobId) {
             this.fileRequestJobId = fileRequestJobId;
         }
-        
+
         public PutFileRequest getPutFileRequest() {
             Job job = Job.getJob(fileRequestJobId);
             if(job != null) {
@@ -975,13 +975,13 @@ public class PutFileRequest extends FileRequest {
             }
             return null;
         }
-        
+
         public void DuplicationError(String reason) {
             try {
                 PutFileRequest fr = getPutFileRequest();
                 try {
                     synchronized(fr) {
-                        
+
                         State state = fr.getState();
                         if(state != State.DONE && state != State.CANCELED && state != State.FAILED) {
                             fr.setStatusCode(TStatusCode.SRM_DUPLICATION_ERROR);
@@ -991,19 +991,19 @@ public class PutFileRequest extends FileRequest {
                 } catch(IllegalStateTransition ist) {
                     fr.esay("can not fail state:"+ist);
                 }
-                
+
                 fr.esay("PutCallbacks error: "+ reason);
             } catch(Exception e) {
                 e.printStackTrace();
             }
         }
-        
+
         public void Error( String error) {
             try {
                 PutFileRequest fr = getPutFileRequest();
                 try {
                     synchronized(fr) {
-                        
+
                         State state = fr.getState();
                         if(state != State.DONE && state != State.CANCELED && state != State.FAILED) {
                             fr.setState(State.FAILED,error);
@@ -1012,20 +1012,20 @@ public class PutFileRequest extends FileRequest {
                 } catch(IllegalStateTransition ist) {
                     fr.esay("can not fail state:"+ist);
                 }
-                
+
                 fr.esay("PutCallbacks error: "+ error);
             } catch(Exception e) {
                 e.printStackTrace();
             }
         }
-        
+
         public void Exception( Exception e) {
             try {
                 PutFileRequest fr = getPutFileRequest();
                 String error = e.toString();
                 try {
                     synchronized(fr) {
-                        
+
                         State state = fr.getState();
                         if(!State.isFinalState(state)) {
                             fr.setState(State.FAILED,error);
@@ -1040,13 +1040,13 @@ public class PutFileRequest extends FileRequest {
                 e1.printStackTrace();
             }
         }
-        
+
         public void GetStorageInfoFailed(String reason) {
             try {
                 PutFileRequest fr = getPutFileRequest();
                 try {
                     synchronized(fr) {
-                        
+
                         State state = fr.getState();
                         if(!State.isFinalState(state)) {
                             fr.setState(State.FAILED,reason);
@@ -1055,14 +1055,14 @@ public class PutFileRequest extends FileRequest {
                 } catch(IllegalStateTransition ist) {
                     fr.esay("can not fail state:"+ist);
                 }
-                
+
                 fr.esay("PutCallbacks error: "+ reason);
             } catch(Exception e) {
                 e.printStackTrace();
             }
         }
-        
-        
+
+
         public void StorageInfoArrived(String fileId,FileMetaData fmd,String parentFileId, FileMetaData parentFmd) {
             try {
                 PutFileRequest fr = getPutFileRequest();
@@ -1077,7 +1077,7 @@ public class PutFileRequest extends FileRequest {
                     fr.fmd = fmd;
                     fr.parentFileId = parentFileId;
                     fr.parentFmd = parentFmd;
-                    
+
                     Scheduler scheduler = Scheduler.getScheduler(fr.getSchedulerId());
                     try {
                         scheduler.schedule(fr);
@@ -1089,13 +1089,13 @@ public class PutFileRequest extends FileRequest {
                 e.printStackTrace();
             }
         }
-        
+
         public void Timeout() {
             try {
                 PutFileRequest fr = getPutFileRequest();
                 try {
                     synchronized(fr) {
-                        
+
                         State state = fr.getState();
                         if(state != State.DONE && state != State.CANCELED && state != State.FAILED) {
                             fr.setState(State.FAILED,"PutCallbacks Timeout");
@@ -1104,7 +1104,7 @@ public class PutFileRequest extends FileRequest {
                 } catch(IllegalStateTransition ist) {
                     fr.esay("can not fail state:"+ist);
                 }
-                
+
                 fr.esay("PutCallbacks Timeout");
             } catch(Exception e) {
                 e.printStackTrace();
@@ -1116,7 +1116,7 @@ public class PutFileRequest extends FileRequest {
                 PutFileRequest fr = getPutFileRequest();
                 try {
                     synchronized(fr) {
-                        
+
                         State state = fr.getState();
                         if(state != State.DONE && state != State.CANCELED && state != State.FAILED) {
                             fr.setStatusCode(TStatusCode.SRM_INVALID_PATH);
@@ -1126,7 +1126,7 @@ public class PutFileRequest extends FileRequest {
                 } catch(IllegalStateTransition ist) {
                     fr.esay("can not fail state:"+ist);
                 }
-                
+
                 fr.esay("PutCallbacks error: "+ reason);
             } catch(Exception e) {
                 e.printStackTrace();
@@ -1138,7 +1138,7 @@ public class PutFileRequest extends FileRequest {
                 PutFileRequest fr = getPutFileRequest();
                 try {
                     synchronized(fr) {
-                        
+
                         State state = fr.getState();
                         if(state != State.DONE && state != State.CANCELED && state != State.FAILED) {
                             fr.setStatusCode(TStatusCode.SRM_AUTHORIZATION_FAILURE);
@@ -1148,17 +1148,17 @@ public class PutFileRequest extends FileRequest {
                 } catch(IllegalStateTransition ist) {
                     fr.esay("can not fail state:"+ist);
                 }
-                
+
                 fr.esay("PutCallbacks error: "+ reason);
             } catch(Exception e) {
                 e.printStackTrace();
             }
         }
     }
-    
+
     public static class PutReserveSpaceCallbacks implements SrmReserveSpaceCallbacks {
         Long fileRequestJobId;
-        
+
         public PutFileRequest getPutFileRequest() throws java.sql.SQLException{
             Job job = Job.getJob(fileRequestJobId);
             if(job != null) {
@@ -1166,19 +1166,19 @@ public class PutFileRequest extends FileRequest {
             }
             return null;
         }
-        
-        
+
+
         public PutReserveSpaceCallbacks(Long fileRequestJobId) {
             this.fileRequestJobId = fileRequestJobId;
         }
-        
+
         public void ReserveSpaceFailed( Exception e) {
             try {
                 PutFileRequest fr = getPutFileRequest();
                 String error = e.toString();
                 try {
                     synchronized(fr) {
-                        
+
                         State state = fr.getState();
                         if(!State.isFinalState(state)) {
                             fr.setState(State.FAILED,error);
@@ -1193,13 +1193,13 @@ public class PutFileRequest extends FileRequest {
                 e1.printStackTrace();
             }
         }
-        
+
         public void ReserveSpaceFailed(String reason) {
             try {
                 PutFileRequest fr = getPutFileRequest();
                 try {
                     synchronized(fr) {
-                        
+
                         State state = fr.getState();
                         if(!State.isFinalState(state)) {
                             fr.setState(State.FAILED,reason);
@@ -1208,19 +1208,19 @@ public class PutFileRequest extends FileRequest {
                 } catch(IllegalStateTransition ist) {
                     fr.esay("can not fail state:"+ist);
                 }
-                
+
                 fr.esay("PutReserveSpaceCallbacks error: "+ reason);
             } catch(Exception e) {
                 e.printStackTrace();
             }
         }
-        
+
         public void NoFreeSpace(String reason) {
             try {
                 PutFileRequest fr = getPutFileRequest();
                 try {
                     synchronized(fr) {
-                        
+
                         State state = fr.getState();
                         if(!State.isFinalState(state)) {
                             fr.setStatusCode(TStatusCode.SRM_NO_FREE_SPACE);
@@ -1230,13 +1230,13 @@ public class PutFileRequest extends FileRequest {
                 } catch(IllegalStateTransition ist) {
                     fr.esay("can not fail state:"+ist);
                 }
-                
+
                 fr.esay("PutReserveSpaceCallbacks error: "+ reason);
             } catch(Exception e) {
                 e.printStackTrace();
             }
         }
-        
+
         public void SpaceReserved(String spaceReservationToken, long reservedSpaceSize) {
             try {
                 PutFileRequest fr = getPutFileRequest();
@@ -1261,10 +1261,10 @@ public class PutFileRequest extends FileRequest {
             }
         }
     }
-    
+
     public static class PutReleaseSpaceCallbacks implements SrmReleaseSpaceCallbacks {
         Long fileRequestJobId;
-        
+
         public PutFileRequest getPutFileRequest() throws java.sql.SQLException{
             Job job = Job.getJob(fileRequestJobId);
             if(job != null) {
@@ -1272,12 +1272,12 @@ public class PutFileRequest extends FileRequest {
             }
             return null;
         }
-        
-        
+
+
         public PutReleaseSpaceCallbacks(Long fileRequestJobId) {
             this.fileRequestJobId = fileRequestJobId;
         }
-        
+
         public void ReleaseSpaceFailed( Exception e) {
             try {
                 PutFileRequest fr = getPutFileRequest();
@@ -1288,17 +1288,17 @@ public class PutFileRequest extends FileRequest {
                 e1.printStackTrace();
             }
         }
-        
+
         public void ReleaseSpaceFailed(String reason) {
             try {
                 PutFileRequest fr = getPutFileRequest();
-                
+
                 fr.esay("PutReleaseSpaceCallbacks error: "+ reason);
             } catch(Exception e) {
                 e.printStackTrace();
             }
         }
-        
+
         public void SpaceReleased(String spaceReservationToken, long reservedSpaceSize) {
             try {
                 PutFileRequest fr = getPutFileRequest();
@@ -1308,10 +1308,10 @@ public class PutFileRequest extends FileRequest {
             }
         }
     }
-    
+
     public static class PutUseSpaceCallbacks implements SrmUseSpaceCallbacks {
         Long fileRequestJobId;
-        
+
         public PutFileRequest getPutFileRequest() throws java.sql.SQLException{
             Job job = Job.getJob(fileRequestJobId);
             if(job != null) {
@@ -1319,19 +1319,19 @@ public class PutFileRequest extends FileRequest {
             }
             return null;
         }
-        
-        
+
+
         public PutUseSpaceCallbacks(Long fileRequestJobId) {
             this.fileRequestJobId = fileRequestJobId;
         }
-        
+
         public void SrmUseSpaceFailed( Exception e) {
             try {
                 PutFileRequest fr = getPutFileRequest();
                 String error = e.toString();
                 try {
                     synchronized(fr) {
-                        
+
                         State state = fr.getState();
                         if(!State.isFinalState(state)) {
                             fr.setState(State.FAILED,error);
@@ -1346,13 +1346,13 @@ public class PutFileRequest extends FileRequest {
                 e1.printStackTrace();
             }
         }
-        
+
         public void SrmUseSpaceFailed(String reason) {
             try {
                 PutFileRequest fr = getPutFileRequest();
                 try {
                     synchronized(fr) {
-                        
+
                         State state = fr.getState();
                         if(!State.isFinalState(state)) {
                             fr.setState(State.FAILED,reason);
@@ -1361,7 +1361,7 @@ public class PutFileRequest extends FileRequest {
                 } catch(IllegalStateTransition ist) {
                     fr.esay("can not fail state:"+ist);
                 }
-                
+
                 fr.esay("PutUseSpaceCallbacks error: "+ reason);
             } catch(Exception e) {
                 e.printStackTrace();
@@ -1375,7 +1375,7 @@ public class PutFileRequest extends FileRequest {
                 PutFileRequest fr = getPutFileRequest();
                 try {
                     synchronized(fr) {
-                        
+
                         State state = fr.getState();
                         if(!State.isFinalState(state)) {
                             fr.setStatusCode(TStatusCode.SRM_NO_FREE_SPACE);
@@ -1385,12 +1385,12 @@ public class PutFileRequest extends FileRequest {
                 } catch(IllegalStateTransition ist) {
                     fr.esay("can not fail state:"+ist);
                 }
-                
+
                 fr.esay("PutUseSpaceCallbacks error: "+ reason);
             } catch(Exception e) {
                 e.printStackTrace();
             }
-            
+
         }
 
         /**
@@ -1401,7 +1401,7 @@ public class PutFileRequest extends FileRequest {
                 PutFileRequest fr = getPutFileRequest();
                 try {
                     synchronized(fr) {
-                        
+
                         State state = fr.getState();
                         if(!State.isFinalState(state)) {
                             fr.setStatusCode(TStatusCode.SRM_NO_FREE_SPACE);
@@ -1411,14 +1411,14 @@ public class PutFileRequest extends FileRequest {
                 } catch(IllegalStateTransition ist) {
                     fr.esay("can not fail state:"+ist);
                 }
-                
+
                 fr.esay("PutUseSpaceCallbacks error: "+ reason);
             } catch(Exception e) {
                 e.printStackTrace();
             }
-            
+
         }
-          
+
         /**
          * call this if space reservation exists, but has been released
          */
@@ -1427,7 +1427,7 @@ public class PutFileRequest extends FileRequest {
                 PutFileRequest fr = getPutFileRequest();
                 try {
                     synchronized(fr) {
-                        
+
                         State state = fr.getState();
                         if(!State.isFinalState(state)) {
                             fr.setStatusCode(TStatusCode.SRM_SPACE_LIFETIME_EXPIRED);
@@ -1437,14 +1437,14 @@ public class PutFileRequest extends FileRequest {
                 } catch(IllegalStateTransition ist) {
                     fr.esay("can not fail state:"+ist);
                 }
-                
+
                 fr.esay("PutUseSpaceCallbacks error: "+ reason);
             } catch(Exception e) {
                 e.printStackTrace();
             }
-            
+
         }
-        
+
         public void SpaceUsed() {
             try {
                 PutFileRequest fr = getPutFileRequest();
@@ -1468,10 +1468,10 @@ public class PutFileRequest extends FileRequest {
             }
         }
     }
-    
+
     public static class PutCancelUseOfSpaceCallbacks implements SrmCancelUseOfSpaceCallbacks {
         Long fileRequestJobId;
-        
+
         public PutFileRequest getPutFileRequest() throws java.sql.SQLException{
             Job job = Job.getJob(fileRequestJobId);
             if(job != null) {
@@ -1479,12 +1479,12 @@ public class PutFileRequest extends FileRequest {
             }
             return null;
         }
-        
-        
+
+
         public PutCancelUseOfSpaceCallbacks(Long fileRequestJobId) {
             this.fileRequestJobId = fileRequestJobId;
         }
-        
+
         public void CancelUseOfSpaceFailed( Exception e) {
             try {
                 PutFileRequest fr = getPutFileRequest();
@@ -1495,17 +1495,17 @@ public class PutFileRequest extends FileRequest {
                 e1.printStackTrace();
             }
         }
-        
+
         public void CancelUseOfSpaceFailed(String reason) {
             try {
                 PutFileRequest fr = getPutFileRequest();
-                
+
                 fr.esay("PutCancelUseOfSpaceCallbacks error: "+ reason);
             } catch(Exception e) {
                 e.printStackTrace();
             }
         }
-        
+
         public void UseOfSpaceSpaceCanceled() {
             try {
                 PutFileRequest fr = getPutFileRequest();
@@ -1515,15 +1515,15 @@ public class PutFileRequest extends FileRequest {
             }
         }
     }
-    
+
     private  static class TheReleaseSpaceCallbacks implements org.dcache.srm.ReleaseSpaceCallbacks {
-        
+
         Long fileRequestJobId;
-        
+
         public TheReleaseSpaceCallbacks(Long fileRequestJobId) {
             this.fileRequestJobId = fileRequestJobId;
         }
-        
+
         public PutFileRequest getPutFileRequest() throws java.sql.SQLException {
             Job job = Job.getJob(fileRequestJobId);
             if(job != null) {
@@ -1531,7 +1531,7 @@ public class PutFileRequest extends FileRequest {
             }
             return null;
         }
-        
+
         public void Error( String error) {
             try {
                 PutFileRequest fr = getPutFileRequest();
@@ -1553,7 +1553,7 @@ public class PutFileRequest extends FileRequest {
                 e.printStackTrace();
             }
         }
-        
+
         public void Exception( Exception e) {
             try {
                 PutFileRequest fr = getPutFileRequest();
@@ -1576,10 +1576,10 @@ public class PutFileRequest extends FileRequest {
                 e1.printStackTrace();
             }
         }
-        
-        
-        
-        
+
+
+
+
         public void Timeout() {
             try {
                 PutFileRequest fr = getPutFileRequest();
@@ -1596,13 +1596,13 @@ public class PutFileRequest extends FileRequest {
                     //fr.esay("can not fail state:"+ist);
                 }
                  */
-                
+
                 fr.esay("TheReleaseSpaceCallbacks Timeout");
             } catch(Exception e) {
                 e.printStackTrace();
             }
         }
-        
+
         public void SpaceReleased() {
             try {
                 PutFileRequest fr = getPutFileRequest();
@@ -1612,7 +1612,7 @@ public class PutFileRequest extends FileRequest {
                 e.printStackTrace();
             }
         }
-        
+
         public void ReleaseSpaceFailed(String reason){
             try {
                 PutFileRequest fr = getPutFileRequest();
@@ -1629,27 +1629,27 @@ public class PutFileRequest extends FileRequest {
                     //fr.esay("can not fail state:"+ist);
                 }
                  */
-                
+
                 fr.esay("TheReleaseSpaceCallbacks error: "+ reason+" ignoring, could have been all used up");
             } catch(Exception e) {
                 e.printStackTrace();
             }
         }
-        
+
     }
-    
+
     public boolean isWeReservedSpace() {
         return weReservedSpace;
     }
-    
+
     public void setWeReservedSpace(boolean weReservedSpace) {
         this.weReservedSpace = weReservedSpace;
     }
-    
+
     public boolean isSpaceMarkedAsBeingUsed() {
         return spaceMarkedAsBeingUsed;
     }
-    
+
     public void setSpaceMarkedAsBeingUsed(boolean spaceMarkedAsBeingUsed) {
         this.spaceMarkedAsBeingUsed = spaceMarkedAsBeingUsed;
     }
@@ -1671,8 +1671,8 @@ public class PutFileRequest extends FileRequest {
     }
 
     /**
-     * 
-     * 
+     *
+     *
      * @param newLifetime  new lifetime in millis
      *  -1 stands for infinite lifetime
      * @return int lifetime left in millis
@@ -1691,23 +1691,23 @@ public class PutFileRequest extends FileRequest {
             return remainingLifetime;
         }
         String spaceToken =spaceReservationId;
-               
+
         if(!configuration.isReserve_space_implicitely() ||
            spaceToken == null ||
            !weReservedSpace) {
-            return extendLifetimeMillis(newLifetime);      
-        } 
+            return extendLifetimeMillis(newLifetime);
+        }
         newLifetime = extendLifetimeMillis(newLifetime);
-        
+
         if( remainingLifetime >= newLifetime) {
             return remainingLifetime;
         }
         SRMUser user =(SRMUser) getUser();
         return storage.srmExtendReservationLifetime(user,spaceToken,newLifetime);
-        
-        
+
+
     }
-    
+
 }
 
 
