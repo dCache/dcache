@@ -1,21 +1,21 @@
 package dmg.util ;
 import  java.util.Vector ;
- 
+
 /**
-  *  
+  *
   *
   * @author Patrick Fuhrmann
   * @version 0.1, 15 Feb 1998
   */
  public class Fifo extends Vector {
- 
-   
+
+
    public synchronized void push( Object o ){
       addElement( o ) ;
       notifyAll() ;
-   } 
+   }
    public synchronized Object pop() {
-      while( true ){ 
+      while( true ){
          if( ! isEmpty() ){
             Object tmp = firstElement() ;
             removeElementAt(0) ;
@@ -25,10 +25,10 @@ import  java.util.Vector ;
             catch( InterruptedException e ){ return null ;}
          }
       }
-   } 
+   }
    public synchronized Object pop( long timeout ) {
       long start = System.currentTimeMillis() ;
-      while( true ){ 
+      while( true ){
          if( ! isEmpty() ){
             Object tmp = firstElement() ;
             removeElementAt(0) ;
@@ -40,16 +40,12 @@ import  java.util.Vector ;
             catch( InterruptedException e ){
                return null ;
             }
-            
-            
+
+
          }
       }
-   } 
+   }
    public Object spy(){
       return firstElement() ;
-   }
-   protected void finalize() throws Throwable {
-     super.finalize() ;
-//     System.out.println( " FIFO finalizer called " ) ;
    }
  }
