@@ -11,29 +11,29 @@ public class CellCron implements java.lang.Runnable {
 
    public static final int NEXT = -1 ;
 
-   private TreeSet _list = new TreeSet() ;
+   private TreeSet<TimerTask> _list = new TreeSet<TimerTask>() ;
 
    public CellCron(){ this(true);}
    public CellCron(boolean autostart){
-   
+
        if( autostart )new Thread(this).start() ;
-       
+
    }
-   public  class TimerTask implements Comparable  {
-   
+   public  class TimerTask implements Comparable<TimerTask>  {
+
       private Long     _time     = null ;
       private Calendar _calendar = null ;
       private String   _name     = null ;
       private TaskRunnable _runner = null ;
-      
+
       private TimerTask( int hour , int minute , TaskRunnable runner , String name ){
-      
+
           _runner   = runner ;
 	  _name     = name ;
           _calendar = new GregorianCalendar() ;
-	  
+
 	  long start = _calendar.getTime().getTime() ;
-	  
+
           if( hour != NEXT )_calendar.set(Calendar.HOUR_OF_DAY,hour);
           _calendar.set(Calendar.MINUTE,minute);
           _calendar.set(Calendar.SECOND,0);
@@ -54,10 +54,15 @@ public class CellCron implements java.lang.Runnable {
       private void nextTick(){
          _time = Long.valueOf( _time.longValue()+1 );
       }
-      public int compareTo( Object other ){
-         return _time.compareTo( ((TimerTask)other)._time);
+      public int compareTo( TimerTask other ){
+         return _time.compareTo( other._time);
+      }
+
+      public int hashCode() {
+          return 17;
       }
       public boolean equals( Object other ){
+          if (other == this) return true;
          return (other instanceof TimerTask) && _time.equals(((TimerTask)other)._time);
       }
       public void repeatTomorrow(){
@@ -65,12 +70,12 @@ public class CellCron implements java.lang.Runnable {
 	 add(this);
       }
       public void repeatNextHour(){
-	 _calendar.set(Calendar.MINUTE,_calendar.get(Calendar.MINUTE)+60);      
+	 _calendar.set(Calendar.MINUTE,_calendar.get(Calendar.MINUTE)+60);
 	 _time = Long.valueOf( _calendar.getTime().getTime() ) ;
 	 add(this);
       }
       private void tomorrow(){
-	 _calendar.set(Calendar.DAY_OF_YEAR,_calendar.get(Calendar.DAY_OF_YEAR)+1);      
+	 _calendar.set(Calendar.DAY_OF_YEAR,_calendar.get(Calendar.DAY_OF_YEAR)+1);
 	 _time = Long.valueOf( _calendar.getTime().getTime() ) ;
 
       }
@@ -90,18 +95,18 @@ public class CellCron implements java.lang.Runnable {
    public TimerTask add( int hour , int minutes , TaskRunnable runner , String name ){
        TimerTask task = new TimerTask( hour , minutes , runner , name ) ;
        add( task ) ;
-       return task ; 
+       return task ;
    }
    public void add( TimerTask task ){
        synchronized( _list ){
            while( _list.contains(task) )task.nextTick();
 	   _list.add(task) ;
-	   _list.notifyAll(); 
+	   _list.notifyAll();
        }
    }
    public Iterator iterator(){
-      return new ArrayList( _list ).iterator() ;
-     
+      return new ArrayList<TimerTask>( _list ).iterator() ;
+
    }
    public void run(){
       try{
@@ -110,53 +115,53 @@ public class CellCron implements java.lang.Runnable {
       }
    }
    private void runLoop() throws InterruptedException {
-   
+
       while( ! Thread.interrupted() ){
-      
+
          synchronized( _list ){
-	 
-	    
+
+
 	    if( _list.size() == 0 ){
 //                 System.out.println("wakeup : nothing" ) ;
-	        _list.wait((long)(5*60*1000));
+	        _list.wait((5*60*1000));
 		continue ;
 	    }
-	    
-            TimerTask task = (TimerTask)_list.first() ;
+
+            TimerTask task = _list.first() ;
 //          System.out.println("wakeup : "+task.toString()  ) ;
 	    long diff =  task.getTime() - System.currentTimeMillis() ;
-           	  
+
 	    if( diff < 15000L ){
 	       _list.remove(task);
-	       try{	       
+	       try{
                    task._runner.run(task) ;
 	       }catch(Exception ee ){
 	           ee.printStackTrace();
 	       }
-	    }else if( diff > (long)(5*60*1000) ){
-	       _list.wait(diff-60000L); 
+	    }else if( diff > (5*60*1000) ){
+	       _list.wait(diff-60000L);
 	    }else{
-	       _list.wait(diff); 
+	       _list.wait(diff);
 	    }
 
 	 }
       }
-   
-   
+
+
    }
 
 
    public static void main( String [] x ) throws Exception {
-   
+
         if( x.length < 2 ){
 	  System.out.println("Usage : <hour> <minute> [<hour> <minute> [..]] ");
 	  System.exit(4);
 	}
       CellCron timer = new CellCron() ;
-       
+
 
       for( int i = 0 ; i < x.length ; i+=2 ){
-      
+
          timer.add( Integer.parseInt(x[i]) , Integer.parseInt(x[i+1]) ,
                     new TaskRunnable(){
                        public void run( TimerTask task ){
@@ -164,9 +169,9 @@ public class CellCron implements java.lang.Runnable {
                            task.repeatNextHour();
                        }
                     } ,
-		    "Task-"+x[i]+"-"+x[i+1] 
+		    "Task-"+x[i]+"-"+x[i+1]
                    ) ;
-		  
+
       }
        while(true){
 	   Iterator i = timer.iterator() ;
@@ -175,8 +180,8 @@ public class CellCron implements java.lang.Runnable {
                System.out.println("    "+i.next().toString());
 	   }
 
-           Thread.sleep(10000L);	   
-	   
+           Thread.sleep(10000L);
+
        }
 
 /*	Calendar calendar = new GregorianCalendar();
@@ -207,7 +212,7 @@ public class CellCron implements java.lang.Runnable {
 	System.out.println("DST_OFFSET: "
                 	   + (calendar.get(Calendar.DST_OFFSET)/(60*60*1000)));
 
-   
+
         while( true ){
 	    System.out.println(" " + calendar.getTime());
 	    calendar.set(Calendar.DAY_OF_YEAR,calendar.get(Calendar.DAY_OF_YEAR)+1);
@@ -216,11 +221,11 @@ public class CellCron implements java.lang.Runnable {
 	  System.out.println("Usage : <pattern> [<example>]");
 	  System.exit(4);
 	}
-   
+
         DateFormat df = new SimpleDateFormat(x[0]) ;
-	
+
 	System.out.println("Current data : "+df.format(new Date()));
-	
+
 	if( x.length > 1 ){
 	   Date d = df.parse( x[1] ) ;
 	   System.out.println(d.toString());
