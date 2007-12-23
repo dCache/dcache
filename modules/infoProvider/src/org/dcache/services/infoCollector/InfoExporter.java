@@ -1,6 +1,7 @@
 package org.dcache.services.infoCollector;
 
 import java.net.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.io.*;
 import dmg.util.Args ;
 
@@ -27,7 +28,7 @@ public class InfoExporter implements Runnable {
 	private final Thread   _sendThread ;
 
 	/** Flag for strict-loop enabling **/
-	private boolean  _continue     = true ;
+	private AtomicBoolean  _continue     = new AtomicBoolean( true );
 
 	/** TCP port that the server listen **/
 	public  int _port = 22111;
@@ -81,7 +82,7 @@ public class InfoExporter implements Runnable {
 	 */
 	public void cleanUp(){
 		try{
-		      _continue = false;
+		      _continue.set(false);
 		      _server.close();
 		      _cell.say("InfoExporter: Finalized.");
 		   }catch(IOException ie){
@@ -107,41 +108,40 @@ public class InfoExporter implements Runnable {
 	 * filled with the information actually in the <code>Infobase</code>
 	 * and delivered on the stream.
 	 */
-	public void run(){
+	public void run() {
 
-	     if( Thread.currentThread() == _sendThread ){
-		synchronized( this ){
-		   while( _continue ){
+        if (Thread.currentThread() == _sendThread) {
+            synchronized (this) {
+                while (_continue.get()) {
 
-		      try{
-			  Socket socket = _server.accept();
+                    try {
+                        Socket socket = _server.accept();
 
-			  try{
+                        try {
 
-			      ObjectOutputStream out =
-				      new ObjectOutputStream(
-	        				      socket.getOutputStream());
+                            ObjectOutputStream out = new ObjectOutputStream(
+                                    socket.getOutputStream());
 
-			      _filler.fillSchema();
-			      out.writeObject(_filler.schema);
-                              out.flush() ;
+                            _filler.fillSchema();
+                            out.writeObject(_filler.schema);
+                            out.flush();
 
-			  }catch(IOException ioe){
-			      _cell.say("InfoExporter: Problems using socket!");
-			      _cell.esay(ioe);
-			  }finally{
-                              socket.close();
-			  }
+                        } catch (IOException ioe) {
+                            _cell.say("InfoExporter: Problems using socket!");
+                            _cell.esay(ioe);
+                        } finally {
+                            socket.close();
+                        }
 
-		      }catch(IOException ioe){
-		          _cell.say("InfoExporter: Problems creating socket!");
-        		  _cell.esay(ioe);
-		      }
+                    } catch (IOException ioe) {
+                        _cell.say("InfoExporter: Problems creating socket!");
+                        _cell.esay(ioe);
+                    }
 
-		   }
-	       }
-	    }
-	}
+                }
+            }
+        }
+    }
 
 
 
