@@ -360,7 +360,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
 
     parseDBArgs();
 
-    say("Setup database with: URL="+_jdbcUrl+" driver="+_driver+" user="+_user+" passwd="+_pass);
+//  say("Setup database with: URL="+_jdbcUrl+" driver="+_driver+" user="+_user+" passwd="+_pass);
     ReplicaDbV1.setup(_jdbcUrl, _driver, _user, _pass);
 //  ReplicaDbV1.setup("/opt/d-cache/etc/primrose.conf");
     
