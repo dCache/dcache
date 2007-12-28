@@ -70,12 +70,10 @@ package diskCacheV111.doors;
 
 import diskCacheV111.vehicles.*;
 import diskCacheV111.util.*;
-import diskCacheV111.cells.*;
 import diskCacheV111.services.*;
 
 
 import dmg.cells.nucleus.*;
-import dmg.cells.network.*;
 import dmg.util.*;
 
 import java.util.*;
@@ -89,7 +87,6 @@ import org.dcache.chimera.acl.Subject;
 import org.dcache.chimera.acl.enums.AuthType;
 import org.dcache.chimera.acl.enums.FileAttribute;
 import org.dcache.chimera.acl.enums.InetAddressType;
-import org.ietf.jgss.*;
 import java.lang.Thread;
 import java.util.regex.*;
 import java.util.concurrent.TimeoutException;
@@ -102,7 +99,6 @@ import diskCacheV111.vehicles.spaceManager.SpaceManagerUnlockSpaceMessage;
 import diskCacheV111.vehicles.DoorRequestInfoMessage;
 import diskCacheV111.vehicles.IoDoorInfo;
 import diskCacheV111.vehicles.IoDoorEntry;
-import diskCacheV111.movers.GFtpPerfMarker;
 import diskCacheV111.movers.GFtpPerfMarkersBlock;
 
 /**
@@ -116,7 +112,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
      * Exception indicating an error during processing of an FTP
      * command.
      */
-    protected class FTPCommandException extends Exception
+    protected static class FTPCommandException extends Exception
     {
         /** FTP reply code. */
 	protected int    _code;
@@ -210,11 +206,11 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
         "ERET", "ESTO", "GETPUT",
         "CKSUM "+buildChecksumList(),  "MODEX"
     };
- 
+
     private static final String buildChecksumList(){
        String result="";
        int mod = 0;
- 
+
        String checksumTypes[] = ChecksumFactory.getTypes();
        for ( int i =0 ; i < checksumTypes.length; ++i){
          result += checksumTypes[i]+",";
@@ -441,7 +437,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
 
     protected PerfMarkerConf _perfMarkerConf = new PerfMarkerConf();
 
-    protected class PerfMarkerConf
+    protected static class PerfMarkerConf
     {
         protected boolean use;
         protected long    period;
@@ -765,7 +761,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
              * use user defined or PnfsManager based
              */
             //----------Unix-------------
-         
+
             String permissionHandler =
                 parseOption("permission-handler",
                           "diskCacheV111.services.UnixPermissionHandler");
@@ -775,11 +771,11 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
             Class<?> permissionHandlerClass = Class.forName(permissionHandler);
             Constructor<?> permissionHandlerCon = permissionHandlerClass.getConstructor( argClass ) ;
             Object[] initargs = { this };
-           
+
             _permissionHandler =
             	(PermissionHandlerInterface)permissionHandlerCon.newInstance(initargs);
-           
-           
+
+
             /*
             String metaDataProvider =
                 parseOption("meta-data-provider",
@@ -792,7 +788,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
             _fileMetaDataSource =
                 (FileMetaDataSource)fileMetaDataSourceCon.newInstance(initargs);
             */
-            
+
              //////////////////NEW --> ////////////////////////
 
    		    _origin =
@@ -2483,14 +2479,14 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
      * @param bufSize       TCP buffers size to use (send and receive),
      *                      or auto scaling when -1.
      * @param reply127      GridFTP v2 127 reply is generated when true
-     *                      and client is active. 
+     *                      and client is active.
      */
     private
         void retrieve(String file, long offset, long size,
                       Mode mode, String xferMode,
                       int parallelStart, int parallelMin, int parallelMax,
                       InetSocketAddress client, int bufSize,
-                      boolean reply127) 
+                      boolean reply127)
     {
         /* Close incomplete log.
          */
@@ -3651,12 +3647,12 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
                 try {
                 	Subject subject = new Subject(_pwdRecord.UID, _pwdRecord.GID);
                     result.append(nextf.isDirectory()?'d':'-');
-                    line_length++;  
+                    line_length++;
                     result.append( _permissionHandler.canReadFile(subject, nextf.getAbsolutePath(), _origin) ?'r':'-');
                     line_length++;
                     result.append( _permissionHandler.canWriteFile(subject, nextf.getAbsolutePath(), _origin) ?'w':'-');
                     line_length++;
-                    
+
                     result.append("               ");
                     line_length+= 15;
                     long length =  nextf.length();
