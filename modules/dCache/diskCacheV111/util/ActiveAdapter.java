@@ -97,27 +97,30 @@ import dmg.cells.nucleus.CellAdapter;
 
 public class ActiveAdapter implements Runnable, ProxyAdapter {
 
-    private ServerSocketChannel _ssc;                // The ServerSocketChannel we will listen on...
-    private String _tgtHost = null;                  // The remote host to connect
-    private int _tgtPort = 0;                        // The remote port to connect
-    private String _laddr = null;                    // Local IP address
-    private int _lport;                              // Local port number
-    private int _maxBlockSize = 32768;               // Size of the buffers for transfers
-    private int _maxStreams = 128;                   // The maximum number of concurrent streams allowed
+    private ServerSocketChannel _ssc; // The ServerSocketChannel we will
+                                        // listen on...
+    private String _tgtHost = null; // The remote host to connect
+    private int _tgtPort = 0; // The remote port to connect
+    private String _laddr = null; // Local IP address
+    private int _lport; // Local port number
+    private int _maxBlockSize = 32768; // Size of the buffers for transfers
+    private int _maxStreams = 128; // The maximum number of concurrent streams
+                                    // allowed
     private Selector _selector = null;
     private LinkedList<SocketChannel> _pending = new LinkedList<SocketChannel>();
     private String _error;
-    private CellAdapter _door;                       // The cell used for error logging 
-    private Random _random = new Random();           // Random number generator used when binding sockets
-    private Thread _t = null;                        // A thread driving the adapter
-    private boolean _closeRequested = false;         // Request to close received
+    private CellAdapter _door; // The cell used for error logging
+    private Random _random = new Random(); // Random number generator used when
+                                            // binding sockets
+    private Thread _t = null; // A thread driving the adapter
+    private boolean _closeRequested = false; // Request to close received
 
     public ActiveAdapter(CellAdapter door) throws IOException {
         this(door, (ServerSocketChannel) null, (String) null, 0);
     }
 
     /**
-     * 
+     *
      * @param door
      * @param lowPort
      * @param highPort
@@ -132,8 +135,9 @@ public class ActiveAdapter implements Runnable, ProxyAdapter {
 
         say("Port range=" + lowPort + "-" + highPort);
         if (lowPort > 0) {
-            /* We randomise the first socket to try to reduce the risk
-             * of conflicts and to make the port less predictable.
+            /*
+             * We randomise the first socket to try to reduce the risk of
+             * conflicts and to make the port less predictable.
              */
             int start = _random.nextInt(highPort - lowPort + 1) + lowPort;
             int i = start;
@@ -141,7 +145,8 @@ public class ActiveAdapter implements Runnable, ProxyAdapter {
                 try {
                     say("Trying Port " + i);
                     _ssc = ServerSocketChannel.open();
-                    _ssc.configureBlocking(false);              // Set it to non-blocking, so we can use select
+                    _ssc.configureBlocking(false); // Set it to non-blocking,
+                                                    // so we can use select
                     _ssc.socket().bind(new InetSocketAddress(i));
                     break;
                 } catch (BindException ee) {
@@ -154,11 +159,14 @@ public class ActiveAdapter implements Runnable, ProxyAdapter {
             } while (i != start);
         } else {
             _ssc = ServerSocketChannel.open();
-            _ssc.configureBlocking(false);                      // Set it to non-blocking, so we can use select
+            _ssc.configureBlocking(false); // Set it to non-blocking, so we can
+                                            // use select
             _ssc.socket().bind(null);
         }
-        _laddr = InetAddress.getLocalHost().getHostAddress();   // Find the address as a string
-        _lport = _ssc.socket().getLocalPort();                  // Find the port
+        _laddr = InetAddress.getLocalHost().getHostAddress(); // Find the
+                                                                // address as a
+                                                                // string
+        _lport = _ssc.socket().getLocalPort(); // Find the port
         _t = new Thread(this);
         // Create a new Selector for selecting
         _selector = Selector.open();
@@ -180,14 +188,21 @@ public class ActiveAdapter implements Runnable, ProxyAdapter {
         //
         _door = door;
         if (ssc == null) {
-            _ssc = ServerSocketChannel.open();                  // Instead of creating a ServerSocket, create a new ServerSocketChannel
-            _ssc.configureBlocking(false);                      // Set it to non-blocking, so we can use select
-            _ssc.socket().bind(null);                           // Get the Socket connected to this channel, and bind to some system chosen port 
+            _ssc = ServerSocketChannel.open(); // Instead of creating a
+                                                // ServerSocket, create a new
+                                                // ServerSocketChannel
+            _ssc.configureBlocking(false); // Set it to non-blocking, so we can
+                                            // use select
+            _ssc.socket().bind(null); // Get the Socket connected to this
+                                        // channel, and bind to some system
+                                        // chosen port
         } else {
             _ssc = ssc;
         }
-        _laddr = InetAddress.getLocalHost().getHostAddress();   // Find the address as a string
-        _lport = _ssc.socket().getLocalPort();                  // Find the port
+        _laddr = InetAddress.getLocalHost().getHostAddress(); // Find the
+                                                                // address as a
+                                                                // string
+        _lport = _ssc.socket().getLocalPort(); // Find the port
         _tgtHost = host;
         _tgtPort = port;
         _t = new Thread(this);
@@ -195,21 +210,25 @@ public class ActiveAdapter implements Runnable, ProxyAdapter {
         _selector = Selector.open();
     }
 
-// <!--
+    // <!--
 
-    /* (non-Javadoc)
+    /*
+     * (non-Javadoc)
+     *
      * @see diskCacheV111.util.ProxyAdapter#acceptOnClientListener()
      */
     public Socket acceptOnClientListener() throws IOException {
         return _ssc.accept().socket();
     }
 
-    /* (non-Javadoc)
+    /*
+     * (non-Javadoc)
+     *
      * @see diskCacheV111.util.ProxyAdapter#close()
      */
     public void close() {
         say("Close request received...");
-//      say("# of keys = "+_selector.keys().size());
+        // say("# of keys = "+_selector.keys().size());
         _closeRequested = true;
         _selector.wakeup();
         return;
@@ -217,7 +236,7 @@ public class ActiveAdapter implements Runnable, ProxyAdapter {
 
     private void _close() {
         say("Closing listener socket");
-//      say("Still have "+_selector.keys().size()+" keys");
+        // say("Still have "+_selector.keys().size()+" keys");
         try {
             if (_ssc != null) {
                 _ssc.close();
@@ -225,13 +244,13 @@ public class ActiveAdapter implements Runnable, ProxyAdapter {
             }
         } catch (IOException e) {
             esay("_clientListenerSock.close() failed with IOException, ignoring");
-//          esay(e);
+            // esay(e);
         }
     }
 
     /**
      * Check if transfer is still in progress
-     * 
+     *
      * @return
      */
     private boolean transferInProgress() {
@@ -241,21 +260,27 @@ public class ActiveAdapter implements Runnable, ProxyAdapter {
         return true;
     }
 
-    /* (non-Javadoc)
+    /*
+     * (non-Javadoc)
+     *
      * @see diskCacheV111.util.ProxyAdapter#getClientListenerPort()
      */
     public int getClientListenerPort() {
         return _lport;
     }
 
-    /* (non-Javadoc)
+    /*
+     * (non-Javadoc)
+     *
      * @see diskCacheV111.util.ProxyAdapter#getError()
      */
     public String getError() {
         return _error;
     }
 
-    /* (non-Javadoc)
+    /*
+     * (non-Javadoc)
+     *
      * @see diskCacheV111.util.ProxyAdapter#getPoolListenerPort()
      */
     public int getPoolListenerPort() {
@@ -264,14 +289,18 @@ public class ActiveAdapter implements Runnable, ProxyAdapter {
         return _lport;
     }
 
-    /* (non-Javadoc)
+    /*
+     * (non-Javadoc)
+     *
      * @see diskCacheV111.util.ProxyAdapter#setMaxBlockSize(int)
      */
     public void setMaxBlockSize(int size) {
         _maxBlockSize = size;
     }
 
-    /* (non-Javadoc)
+    /*
+     * (non-Javadoc)
+     *
      * @see diskCacheV111.util.ProxyAdapter#setMaxStreams(int)
      */
     public void setMaxStreams(int n) {
@@ -305,7 +334,9 @@ public class ActiveAdapter implements Runnable, ProxyAdapter {
         }
     }
 
-    /* (non-Javadoc)
+    /*
+     * (non-Javadoc)
+     *
      * @see diskCacheV111.util.ProxyAdapter#hasError()
      */
     public boolean hasError() {
@@ -327,35 +358,43 @@ public class ActiveAdapter implements Runnable, ProxyAdapter {
 
     }
 
-    /* (non-Javadoc)
+    /*
+     * (non-Javadoc)
+     *
      * @see diskCacheV111.util.ProxyAdapter#isAlive()
      */
     public boolean isAlive() {
         return _t.isAlive();
     }
 
-    /* (non-Javadoc)
+    /*
+     * (non-Javadoc)
+     *
      * @see diskCacheV111.util.ProxyAdapter#join()
      */
     public void join() throws InterruptedException {
         _t.join();
     }
 
-    /* (non-Javadoc)
+    /*
+     * (non-Javadoc)
+     *
      * @see diskCacheV111.util.ProxyAdapter#join(long)
      */
     public void join(long millis) throws InterruptedException {
-	_t.join(millis);
+        _t.join(millis);
     }
 
-    /* (non-Javadoc)
+    /*
+     * (non-Javadoc)
+     *
      * @see diskCacheV111.util.ProxyAdapter#start()
      */
     public void start() {
         _t.start();
     }
 
-// -->
+    // -->
 
     /*
      *
@@ -369,8 +408,8 @@ public class ActiveAdapter implements Runnable, ProxyAdapter {
      */
     private class Tunnel {
         //
-        private SocketChannel _scs = null;
-        private SocketChannel _sct = null;
+        private final SocketChannel _scs;
+        private final SocketChannel _sct;
         // A pre-allocated buffer for data
         private final ByteBuffer _sbuffer = ByteBuffer.allocate(_maxBlockSize);
         private final ByteBuffer _tbuffer = ByteBuffer.allocate(_maxBlockSize);
@@ -387,18 +426,20 @@ public class ActiveAdapter implements Runnable, ProxyAdapter {
          *
          */
         public void register(Selector selector) throws ClosedChannelException {
-            //        
+            //
             if (_sct.isConnectionPending()) {
-                // Register the target channel with selector, listening for OP_CONNECT events
+                // Register the target channel with selector, listening for
+                // OP_CONNECT events
                 _sct.register(selector, SelectionKey.OP_CONNECT, this);
             } else if (_sct.isConnected()) {
                 // Register the source channel with the selector, for reading
                 _scs.register(selector, SelectionKey.OP_READ, this);
-//              System.err.printf("Register %s%n", _scs);
-                // Register the target channel with selector, listening for OP_READ events
+                // System.err.printf("Register %s%n", _scs);
+                // Register the target channel with selector, listening for
+                // OP_READ events
                 _sct.register(selector, SelectionKey.OP_READ, this);
             }
-//          System.err.printf("Register %s%n", _sct);
+            // System.err.printf("Register %s%n", _sct);
         }
 
         /*
@@ -436,7 +477,7 @@ public class ActiveAdapter implements Runnable, ProxyAdapter {
             else if (sc == _sct)
                 return _tbuffer;
             else
-                return (ByteBuffer) null;
+                return null;
         }
 
         /*
@@ -448,14 +489,14 @@ public class ActiveAdapter implements Runnable, ProxyAdapter {
             else if (sc == _sct)
                 return _scs;
             else
-                return (SocketChannel) null;
+                return null;
         }
 
         /*
          *
          */
         private boolean processInput(SocketChannel scs) throws IOException {
-            // 
+            //
             SocketChannel sct = getMate(scs);
             boolean ok = true;
             ByteBuffer b = this.getBuffer(scs);
@@ -469,11 +510,11 @@ public class ActiveAdapter implements Runnable, ProxyAdapter {
             } else if (r > 0) {
                 b.flip();
 
-//              System.out.println("Read "+r+" from "+scs);
+                // System.out.println("Read "+r+" from "+scs);
                 ok = send(sct);
 
             } else {
-//              System.err.printf("Read 0 %s%n", scs);
+                // System.err.printf("Read 0 %s%n", scs);
                 SelectionKey key = scs.keyFor(_selector);
                 key.interestOps(key.interestOps() | SelectionKey.OP_READ);
             }
@@ -485,12 +526,12 @@ public class ActiveAdapter implements Runnable, ProxyAdapter {
          *
          */
         private boolean send(SocketChannel sct) throws IOException {
-            // 
+            //
             SocketChannel scs = getMate(sct);
             ByteBuffer b = this.getBuffer(scs);
 
             int r = sct.write(b);
-//          System.err.printf("Wrote %d to %s%n", r, sct);
+            // System.err.printf("Wrote %d to %s%n", r, sct);
             if (r < 0) {
                 esay("Can't write to " + sct);
                 return false;
@@ -499,12 +540,12 @@ public class ActiveAdapter implements Runnable, ProxyAdapter {
                 // Register the output channel for OP_WRITE
                 SelectionKey key = sct.keyFor(_selector);
                 key.interestOps(key.interestOps() | SelectionKey.OP_WRITE);
-//              System.err.printf("has remaining: set OP_WRITE%n");
+                // System.err.printf("has remaining: set OP_WRITE%n");
             } else {
                 // Register the input channel for OP_READ
                 SelectionKey key = scs.keyFor(_selector);
                 key.interestOps(key.interestOps() | SelectionKey.OP_READ);
-//              System.err.printf("no remaining: set OP_READ%n");
+                // System.err.printf("no remaining: set OP_READ%n");
             }
             return true;
         }
@@ -513,7 +554,7 @@ public class ActiveAdapter implements Runnable, ProxyAdapter {
          *
          */
         private boolean processOutput(SocketChannel sct) throws IOException {
-            // 
+            //
             return send(sct);
         }
 
@@ -530,24 +571,28 @@ public class ActiveAdapter implements Runnable, ProxyAdapter {
         //
         try {
             // Create a new Selector for selecting
-//          _selector = Selector.open();
+            // _selector = Selector.open();
 
-            // Register the ServerSocketChannel, so we can listen for incoming connections
+            // Register the ServerSocketChannel, so we can listen for incoming
+            // connections
             _ssc.register(_selector, SelectionKey.OP_ACCEPT);
             say("Listening on port " + _ssc.socket().getLocalPort());
 
             // Now process the events in the infinite loop
             while (transferInProgress()) {
-                // Watch for either an incoming connection, or incoming data on an existing connection
+                // Watch for either an incoming connection, or incoming data on
+                // an existing connection
                 int num = _selector.select(5000);
-//              System.err.printf("select returned %d%n", num);
-//              if (num == 0) continue;                         // Just in case...
-                // Get the keys corresponding to the activity that has been detected, and process them one by one
-                Iterator<SelectionKey> selectedKeys = _selector.selectedKeys().iterator();
+                // System.err.printf("select returned %d%n", num);
+                // if (num == 0) continue; // Just in case...
+                // Get the keys corresponding to the activity that has been
+                // detected, and process them one by one
+                Iterator<SelectionKey> selectedKeys = _selector.selectedKeys()
+                        .iterator();
 
                 while (selectedKeys.hasNext()) {
                     // Get a key representing one of bits of I/O activity
-                    SelectionKey key = (SelectionKey) selectedKeys.next();
+                    SelectionKey key = selectedKeys.next();
 
                     selectedKeys.remove();
 
@@ -577,7 +622,7 @@ public class ActiveAdapter implements Runnable, ProxyAdapter {
     private void accept(SelectionKey key) throws IOException {
         ServerSocketChannel ssc = (ServerSocketChannel) key.channel();
         SocketChannel sc = ssc.accept();
-//      System.out.println("Got connection from "+sc);
+        // System.out.println("Got connection from "+sc);
         addPending(sc);
     }
 
@@ -604,16 +649,16 @@ public class ActiveAdapter implements Runnable, ProxyAdapter {
      *
      */
     public void processSelectionKey(SelectionKey key) throws IOException {
-//      System.err.printf("key.readyOps()=%x%n", key.readyOps());
+        // System.err.printf("key.readyOps()=%x%n", key.readyOps());
         if (key.isValid() && key.isAcceptable()) {
-//          System.out.println("ACCEPT");
+            // System.out.println("ACCEPT");
 
             // It's an incoming connection, accept it
             this.accept(key);
 
         }
         if (key.isValid() && key.isConnectable()) {
-//          System.out.println("CONNECT");
+            // System.out.println("CONNECT");
 
             // Get channel with connection request
             this.finishConnection(key);
@@ -621,11 +666,11 @@ public class ActiveAdapter implements Runnable, ProxyAdapter {
         }
         if (key.isValid() && key.isReadable()) {
             // Obtain the interest of the key
-//          int readyOps = key.readyOps();
-//          System.out.println("READ:"+readyOps);
+            // int readyOps = key.readyOps();
+            // System.out.println("READ:"+readyOps);
             // Disable the interest for the operation that is ready.
             // This prevents the same event from being raised multiple times.
-//          key.interestOps(key.interestOps() & ~readyOps);
+            // key.interestOps(key.interestOps() & ~readyOps);
             key.interestOps(key.interestOps() & ~SelectionKey.OP_READ);
 
             // It's incoming data on a connection, process it
@@ -634,11 +679,11 @@ public class ActiveAdapter implements Runnable, ProxyAdapter {
         }
         if (key.isValid() && key.isWritable()) {
             // Obtain the interest of the key
-//          int readyOps = key.readyOps();
-//          System.out.println("WRITE:"+readyOps);
+            // int readyOps = key.readyOps();
+            // System.out.println("WRITE:"+readyOps);
             // Disable the interest for the operation that is ready.
             // This prevents the same event from being raised multiple times.
-//          key.interestOps(key.interestOps() & ~readyOps);
+            // key.interestOps(key.interestOps() & ~readyOps);
             key.interestOps(key.interestOps() & ~SelectionKey.OP_WRITE);
 
             // It's incoming data on a connection, process it
@@ -657,9 +702,10 @@ public class ActiveAdapter implements Runnable, ProxyAdapter {
             //
             boolean ok = tnl.processInput((SocketChannel) key.channel());
             //
-            // If the connection is dead, then remove it from the selector and close it
+            // If the connection is dead, then remove it from the selector and
+            // close it
             if (!ok) {
-//              System.err.printf("Connection %s is dead%n", tnl);
+                // System.err.printf("Connection %s is dead%n", tnl);
                 tnl.cancel(_selector);
             }
         } catch (IOException ie) {
@@ -680,9 +726,10 @@ public class ActiveAdapter implements Runnable, ProxyAdapter {
             //
             boolean ok = tnl.processOutput((SocketChannel) key.channel());
             //
-            // If the connection is dead, then remove it from the selector and close it
+            // If the connection is dead, then remove it from the selector and
+            // close it
             if (!ok) {
-//              System.err.printf("Connection %s is dead%n", tnl);
+                // System.err.printf("Connection %s is dead%n", tnl);
                 tnl.cancel(_selector);
             }
         } catch (IOException ie) {
@@ -698,7 +745,7 @@ public class ActiveAdapter implements Runnable, ProxyAdapter {
     void addPending(SocketChannel s) {
         //
         synchronized (_pending) {
-//          System.err.printf("addPending: add: %s%n", s);
+            // System.err.printf("addPending: add: %s%n", s);
             _pending.add(s);
             _pending.notify();
         }
@@ -720,12 +767,13 @@ public class ActiveAdapter implements Runnable, ProxyAdapter {
         if (_tgtHost == null || _tgtPort == 0)
             return;
         synchronized (_pending) {
-//          System.err.printf("ProcessPending: pending.size=%d%n", _pending.size());
+            // System.err.printf("ProcessPending: pending.size=%d%n",
+            // _pending.size());
             while (_pending.size() > 0) {
-                SocketChannel scs = (SocketChannel) _pending.removeFirst();
+                SocketChannel scs = _pending.removeFirst();
                 // Make it non-blocking, so we can use a selector on it.
                 scs.configureBlocking(false);
-//              System.err.printf("ProcessPending: got %s%n", scs);
+                // System.err.printf("ProcessPending: got %s%n", scs);
                 try {
                     // Prepare the socket channel for the target
                     SocketChannel sct = createSocketChannel(_tgtHost, _tgtPort);
@@ -740,11 +788,10 @@ public class ActiveAdapter implements Runnable, ProxyAdapter {
     }
 
     /*
-     * Creates a non-blocking socket channel for the specified host name and port
-     * and calls the connect() on the new channel before it is returned.
+     * Creates a non-blocking socket channel for the specified host name and
+     * port and calls the connect() on the new channel before it is returned.
      */
-    static public SocketChannel createSocketChannel(String host, int port)
-            throws IOException {
+    static public SocketChannel createSocketChannel(String host, int port) throws IOException {
         // Create a non-blocking socket channel
         SocketChannel sc = SocketChannel.open();
         sc.configureBlocking(false);
@@ -759,19 +806,22 @@ public class ActiveAdapter implements Runnable, ProxyAdapter {
      */
     static public void main(String args[]) throws Exception {
 
-        String rsvrHost = args[0];                      // Data receiver host to connect
-        int rsvrPort = Integer.parseInt(args[1]);       // Data receiver port to connect
+        String rsvrHost = args[0]; // Data receiver host to connect
+        int rsvrPort = Integer.parseInt(args[1]); // Data receiver port to
+                                                    // connect
 
         // Create the adapter
         ActiveAdapter aa = new ActiveAdapter((CellAdapter) null);
 
-        System.out.printf("ActiveAdaper is listening on %s:%d%n", aa.getLocalHost(), aa.getClientListenerPort());
+        System.out.printf("ActiveAdaper is listening on %s:%d%n", aa
+                .getLocalHost(), aa.getClientListenerPort());
 
         // Start the adapter
         aa.start();
 
         // The receiver address can be set even after the adapter started
-        // For example when the adapter is used to store the data the pool is not known in advance
+        // For example when the adapter is used to store the data the pool is
+        // not known in advance
         //
         System.out.printf("Set destination: %s, %d%n", rsvrHost, rsvrPort);
         aa.setDestination(rsvrHost, rsvrPort);
