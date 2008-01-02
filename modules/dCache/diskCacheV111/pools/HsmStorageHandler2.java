@@ -791,7 +791,6 @@ public class HsmStorageHandler2  {
     	private final PnfsId _pnfsId;
         private final CacheRepositoryEntry _entry;
         private final StorageInfoMessage _infoMsg;
-    	private StorageInfo _storageInfo;
         private long _timestamp = 0;
         private int id;
 
@@ -848,19 +847,20 @@ public class HsmStorageHandler2  {
             RunSystem run = null;
             String errmsg = "ok";
             Throwable excep = null;
+            StorageInfo storageInfo = null;
 
             say(_pnfsId.toString() + " : StoreThread Started "
                 + Thread.currentThread());
 
             try {
-                _storageInfo = getStorageInfo(_entry);
-                _infoMsg.setStorageInfo(_storageInfo);
-                _infoMsg.setFileSize(_storageInfo.getFileSize());
+                storageInfo = getStorageInfo(_entry);
+                _infoMsg.setStorageInfo(storageInfo);
+                _infoMsg.setFileSize(storageInfo.getFileSize());
                 long now = System.currentTimeMillis();
                 _infoMsg.setTimeQueued(now - _timestamp);
                 _timestamp = now;
 
-                String storeCommand = getStoreCommand(_pnfsId, _storageInfo);
+                String storeCommand = getStoreCommand(_pnfsId, storageInfo);
 
                 run = new RunSystem(storeCommand, _maxLines, _maxStoreRun, _log);
                 run.go();
@@ -897,12 +897,12 @@ public class HsmStorageHandler2  {
                 excep = e;
             } catch (IllegalArgumentException e) {
                 esay(errmsg = "StoreThread : can't determine 'hsmInfo' for "
-                     + _storageInfo+" {" + e + "}");
+                     + storageInfo+" {" + e + "}");
                 returnCode = 4;
                 excep = e;
             } catch (Throwable t) {
                 esay(errmsg = "StoreThread : unexpected throwable " +
-                     _storageInfo + " {" + t + "}");
+                     storageInfo + " {" + t + "}");
                 returnCode = 666;
                 excep = t;
             } finally {
@@ -924,8 +924,8 @@ public class HsmStorageHandler2  {
                         try {
                             while ((line = in.readLine()) != null) {
                                 URI location = new URI(line);
-                                _storageInfo.addLocation(location);
-                                _storageInfo.isSetAddLocation(true);
+                                storageInfo.addLocation(location);
+                                storageInfo.isSetAddLocation(true);
                                 _logRepository.debug(_pnfsId.toString()
                                                      + ": added HSM location "
                                                      + location);
@@ -940,11 +940,14 @@ public class HsmStorageHandler2  {
                         }
                     }
 
-
                     for (;;) {
                         try {
-                            _pnfs.fileFlushed(_entry.getPnfsId(),
-                                              _entry.getStorageInfo());
+                            /* It is very important that we use
+                             * storageInfo rather than
+                             * _entry.getStorageInfo(), as we added
+                             * new URIs to the former.
+                             */
+                            _pnfs.fileFlushed(_pnfsId, storageInfo);
                             break;
                         } catch(CacheException e) {
                             if (e.getRc() == CacheException.FILE_NOT_FOUND) {
@@ -991,7 +994,7 @@ public class HsmStorageHandler2  {
 
                     _entry.setCached();
 
-                    notifyFlushMessageTarget(_entry, _storageInfo);
+                    notifyFlushMessageTarget(storageInfo);
                 }
             } catch (InterruptedException e) {
                 esay(e.toString());
@@ -999,7 +1002,7 @@ public class HsmStorageHandler2  {
             } catch (CacheException e) {
                 esay(e.toString());
                 excep = e;
-            }finally{
+            } finally {
                 /*
                  * this part have to run in any case.
                  * callback execution is important to keep jobs counter in sync with
@@ -1030,33 +1033,33 @@ public class HsmStorageHandler2  {
             }
         }
 
-        private void notifyFlushMessageTarget(CacheRepositoryEntry entry, StorageInfo info) {
+        private void notifyFlushMessageTarget(StorageInfo info)
+        {
+            String flushMessageTarget = _cell.getArgs().getOpt("flushMessageTarget");
+            if (flushMessageTarget == null || flushMessageTarget.length() == 0) {
+                flushMessageTarget = "broadcast";
+            }
 
-        	String flushMessageTarget = _cell.getArgs().getOpt("flushMessageTarget");
-        	if(flushMessageTarget == null || flushMessageTarget.length() == 0 ) {
-        		flushMessageTarget = "broadcast";
-        	}
-
-        	try {
-
-	        	PoolFileFlushedMessage poolFileFlushedMessage = new PoolFileFlushedMessage( _cell.getCellName(), entry.getPnfsId(), info);
-	        	/*
-	        	 * no replays from secondary message targets
-	        	 */
-	        	poolFileFlushedMessage.setReplyRequired(false);
-	        	CellMessage msg = new CellMessage( new CellPath(flushMessageTarget), poolFileFlushedMessage );
-
-
-
-        		_cell.sendMessage(msg);
-        	}catch (NotSerializableException nse) {
-        		// never happens
-        	}catch( NoRouteToCellException nrt) {
-        		_logRepository.info("failed to send message to flushMessageTarget (" + flushMessageTarget + ") : " + nrt.getMessage());
-        	}
-
+            try {
+                PoolFileFlushedMessage poolFileFlushedMessage =
+                    new PoolFileFlushedMessage(_cell.getCellName(),
+                                               _pnfsId, info);
+                /*
+                 * no replays from secondary message targets
+                 */
+                poolFileFlushedMessage.setReplyRequired(false);
+                CellMessage msg =
+                    new CellMessage(new CellPath(flushMessageTarget),
+                                    poolFileFlushedMessage);
+                _cell.sendMessage(msg);
+            } catch (NotSerializableException e) {
+                // never happens
+            } catch (NoRouteToCellException e) {
+                _logRepository.info("failed to send message to flushMessageTarget (" + flushMessageTarget + ") : " + e.getMessage());
+            }
         }
-		public void ided(int id) {
+
+        public void ided(int id) {
             this.id = id;
         }
     }
