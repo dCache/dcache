@@ -56,6 +56,14 @@ public class RepositoryHealerTestChimeraHelper implements DataFileRepository {
         _rootInode = _fs.path2inode("/");
     }
 
+    public void shutdown() {
+        try {
+            _conn.createStatement().execute("SHUTDOWN;");
+            _conn.close();
+        }catch (SQLException e) {
+            // ignore
+        }
+    }
 
     FsInode add(PnfsId pnfsid) throws HimeraFsException {
 
