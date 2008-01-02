@@ -46,9 +46,9 @@ The name FindBugs and the FindBugs logo is trademarked by the University of Mary
 </para>
 </legalnotice>
 
-<edition>1.3.0</edition>
+<edition>1.3.1</edition>
 
-<pubdate>09:39:09 EST, 08 November, 2007</pubdate>
+<pubdate>15:52:02 EST, 23 December, 2007</pubdate>
 
 </bookinfo>
 
@@ -64,7 +64,7 @@ The name FindBugs and the FindBugs logo is trademarked by the University of Mary
 <para> &FindBugs;&trade; is a program to find bugs in Java programs.  It looks for instances
 of "bug patterns" --- code instances that are likely to be errors.</para>
 
-<para> This document describes version 1.3.0 of &FindBugs;. This is an
+<para> This document describes version 1.3.1 of &FindBugs;. This is an
 early release of the tool, so you may find problems with it. We
 are very interested in getting your feedback on &FindBugs;. Please visit
 the <ulink url="http://findbugs.sourceforge.net">&FindBugs; web page</ulink> for
@@ -74,7 +74,7 @@ as information about the &FindBugs; mailing lists.</para>
 <sect1>
 <title>Requirements</title>
 <para> To use &FindBugs;, you need a runtime environment compatible with
-<ulink url="http://java.sun.com/j2se">Java 2 Standard Edition</ulink>, version 1.4.0 or later.
+<ulink url="http://java.sun.com/j2se">Java 2 Standard Edition</ulink>, version 1.5 or later.
 &FindBugs; is platform independent, and is known to run on GNU/Linux, Windows, and
 MacOS X platforms.</para>
 
@@ -103,31 +103,31 @@ This chapter explains how to install and run &FindBugs;.
 <para>
 The easiest way to install &FindBugs; is to download a binary distribution.
 Binary distributions are available in
-<ulink url="http://prdownloads.sourceforge.net/findbugs/findbugs-1.3.0.tar.gz?download">gzipped tar format</ulink> and
-<ulink url="http://prdownloads.sourceforge.net/findbugs/findbugs-1.3.0.zip?download">zip format</ulink>.
+<ulink url="http://prdownloads.sourceforge.net/findbugs/findbugs-1.3.1.tar.gz?download">gzipped tar format</ulink> and
+<ulink url="http://prdownloads.sourceforge.net/findbugs/findbugs-1.3.1.zip?download">zip format</ulink>.
 Once you have downloaded a binary distribution, extract it into a directory of your choice.
 </para>
 
 <para>
 Extracting a gzipped tar format distribution:
 <screen>
-<prompt>$ </prompt><command>gunzip -c findbugs-1.3.0.tar.gz | tar xvf -</command>
+<prompt>$ </prompt><command>gunzip -c findbugs-1.3.1.tar.gz | tar xvf -</command>
 </screen>
 </para>
 
 <para>
 Extracting a zip format distribution:
 <screen>
-<prompt>C:\Software></prompt><command>unzip findbugs-1.3.0.zip</command>
+<prompt>C:\Software></prompt><command>unzip findbugs-1.3.1.zip</command>
 </screen>
 </para>
 
 <para>
 Usually, extracting a binary distribution will create a directory ending in
-<filename class="directory">findbugs-1.3.0</filename>. For example, if you extracted
+<filename class="directory">findbugs-1.3.1</filename>. For example, if you extracted
 the binary distribution from the <filename class="directory">C:\Software</filename>
 directory, then the &FindBugs; software will be extracted into the directory
-<filename class="directory">C:\Software\findbugs-1.3.0</filename>.
+<filename class="directory">C:\Software\findbugs-1.3.1</filename>.
 This directory is the &FindBugs; home directory.  We'll refer to it as
 &FBHome; throughout this manual.
 </para>
@@ -550,7 +550,7 @@ To compile &FindBugs; from source, you will need the following:
 <itemizedlist>
   <listitem>
     <para>
-      The <ulink url="http://prdownloads.sourceforge.net/findbugs/findbugs-1.3.0-source.zip?download"
+      The <ulink url="http://prdownloads.sourceforge.net/findbugs/findbugs-1.3.1-source.zip?download"
       >&FindBugs; source distribution</ulink>
     </para>
   </listitem>
@@ -613,7 +613,7 @@ After you download the source distribution, you'll need to extract it into
 a working directory.  A typical command to do this is:
 
 <screen>
-<prompt>$ </prompt><command>unzip findbugs-1.3.0-source.zip</command>
+<prompt>$ </prompt><command>unzip findbugs-1.3.1-source.zip</command>
 </screen>
 
 </para>
@@ -1363,7 +1363,7 @@ to the plugin.
 
 <para>
 To use the &FindBugs; Plugin for Eclipse, you need Eclipse 3.0.1 or later,
-and JRE/JDK 1.4.0 or later.
+and JRE/JDK 1.5 or later.
 </para>
 
 </sect1>
@@ -1406,10 +1406,10 @@ and JRE/JDK 1.4.0 or later.
    
 <para>You can also manually
 download the plugin from the following link:
-<ulink url="http://prdownloads.sourceforge.net/findbugs/edu.umd.cs.findbugs.plugin.eclipse_1.3.0.20071108.zip?download"
->http://prdownloads.sourceforge.net/findbugs/edu.umd.cs.findbugs.plugin.eclipse_1.3.0.20071108.zip?download</ulink>.
+<ulink url="http://prdownloads.sourceforge.net/findbugs/edu.umd.cs.findbugs.plugin.eclipse_1.3.1.20071223.zip?download"
+>http://prdownloads.sourceforge.net/findbugs/edu.umd.cs.findbugs.plugin.eclipse_1.3.1.20071223.zip?download</ulink>.
 Extract it in Eclipse's "plugins" subdirectory.
-(So &lt;eclipse_install_dir&gt;/plugins/edu.umd.cs.findbugs.plugin.eclipse_1.3.0.20071108/findbugs.png
+(So &lt;eclipse_install_dir&gt;/plugins/edu.umd.cs.findbugs.plugin.eclipse_1.3.1.20071223/findbugs.png
 should be the path to the &FindBugs; logo.)
 
 </para>
@@ -1699,7 +1699,7 @@ at pattern beginning and/or end to perform substring matching.
 </para>
 
 <para>
-See <ulink url="http://java.sun.com/j2se/1.4.2/docs/api/java/util/regex/Pattern.html"><literal>java.util.regex.Pattern</literal></ulink> 
+See <ulink url="http://java.sun.com/j2se/1.5.0/docs/api/java/util/regex/Pattern.html"><literal>java.util.regex.Pattern</literal></ulink> 
 documentation for pattern syntax.
 </para>
 </sect1>

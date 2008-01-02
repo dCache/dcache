@@ -64,11 +64,7 @@
 						href="http://www.fortifysoftware.com/products/sca40.jsp#findbugs"><img
 							src="Fortify.png" alt="Fortify logo" border="0" align="right" />
 					</a>
-					<td valign="center"><a
-						href="http://www.surelogic.com/"><img
-							src="surelogic.png" alt="SureLogic logo" border="0" align="right" />
-					</a>
-					</td></tr></table>
+					</tr></table>
 					</p>
 
 					<h1>
@@ -85,31 +81,49 @@
 						<a href="buggy-sm.png">FindBugs logo</a> are trademarked by
 						<a href="http://www.umd.edu">The University of Maryland</a>.
 						FindBugs is <a href="#sponsored">sponsored</a> by <a
-							href="http://www.fortifysoftware.com/products/sca40.jsp#findbugs">Fortify Software</a>
-							and <a
-							href="http://www.surelogic.com/">SureLogic</a>.
-							As of May 8th, 2007, FindBugs has been downloaded more than 368,911 times. 
+							href="http://www.fortifysoftware.com/products/sca40.jsp#findbugs">Fortify Software</a>.
+							As of December, 2007, FindBugs has been downloaded more than half a million times. 
 							</p>
 					
 				
 								<p>
-						FindBugs requires JRE (or JDK) 1.4.0 or later to run.&nbsp;
+						FindBugs requires JRE (or JDK) 1.5.0 or later to run.&nbsp;
 						However, it can analyze programs compiled for any version of Java.
-						The current version of FindBugs is 1.3.0, released on
-						09:39:09 EST, 08 November, 2007.
+						The current version of FindBugs is 1.3.1, released on
+						15:52:02 EST, 23 December, 2007.
 						<a href="reportingBugs.html">We are very interested in getting feedback on how to improve
 						FindBugs</a>.
 					</p>
 					<p>
-				<a href="#moreSoftware">More</a> |
-<a href="#sample">Output</a> |
-<a href="#try">Try</a> |
-<a href="#changes">Changes</a> |
-<a href="#talks">Talks</a> |
-<a href="#papers">Papers </a> |
-<a href="#sponsors">Sponsors</a> |
-<a href="#support">Support</a> 
-					
+						<div style="margin:15px; padding:10px; background-color:#D7E5F6; border:1px solid #1560BD; color:#1560BD; font-family:sans-serif">
+						<div style="padding:3px; background-color:#1C39BB;">
+						<a href="http://www.cs.umd.edu/projects/PL/surveys/findbugs" target="_blank"
+						style="font-size:larger; color:white; font-weight:bold; text-decoration:none; font-variant:small-caps;letter-spacing:0.1em">
+						&nbsp;Take Our Survey!</a>
+						</div>
+
+						<p>We would like to better understand <b>how FindBugs is used</b>, and particularly how it is
+						integrated into software development processes at different organizations. We have created a
+						<a href="http://www.cs.umd.edu/projects/PL/surveys/findbugs" target="_blank">10-20 minute survey</a>
+						to capture some of these trends. Participants can also choose to enter a drawing to win
+						<a href="http://www.cafepress.com/findbugs">FindBugs Swag</a> from
+						<a href="http://www.cs.umd.edu/~pugh">Bill Pugh</a>.</p>
+
+						<p>To take the survey, visit
+						<a href="http://www.cs.umd.edu/projects/PL/surveys/findbugs" target="_blank">http://www.cs.umd.edu/projects/PL/surveys/findbugs</a></p>
+						<div>For more information, visit the <a href="http://www.cs.umd.edu/projects/PL/saus">Project Website</a>.</div>
+						</div>
+					</p>
+					<p>
+						<a href="#moreSoftware">More</a> |
+						<a href="#sample">Output</a> |
+						<a href="#try">Try</a> |
+						<a href="#changes">Changes</a> |
+						<a href="#talks">Talks</a> |
+						<a href="#papers">Papers </a> |
+						<a href="#sponsors">Sponsors</a> |
+						<a href="#support">Support</a> 
+					</p>
 					<h1><a name="moreSoftware">Additional open source projects</a></h1>
 					<p>The following software is being made available by the University of Maryland and the FindBugs project.
 					The software is still preliminary, and needs volunteers to help mature it.
@@ -207,104 +221,59 @@
 					<h1>
 						<a name="changes">Change history</a>
 					</h1>
-					<p> The current version of FindBugs is s 1.3.0. Changes since version 1.2.1:</p>
+					<p> The current version of FindBugs is s 1.3.1. Changes since version 1.3.0:</p>
 					<ul>
-					<li>New Detectors</li>
-					<ul>
-					  <li>edu.umd.cs.findbugs.detect.NoteDirectlyRelevantTypeQualifiers</li>
-					  <li>edu.umd.cs.findbugs.detect.ReflectiveClasses</li>
-					  <li>edu.umd.cs.findbugs.detect.SynchronizationOnSharedBuiltinConstant</li>
+					<li>New Reports</li>
 					  <ul>
-					    <li>DL_SYNCHRONIZATION_ON_SHARED_CONSTANT
+					    <li>VA_FORMAT_STRING_ARG_MISMATCH:
+					        A format-string method with a variable number of arguments is called,
+                            but the number of arguments passed does not match with the number of
+                            % placeholders in the format string.  This is probably not what the
+                            author intended.
+                        <li>IO_APPENDING_TO_OBJECT_OUTPUT_STREAM:
+                            This code opens a file in append mode and that wraps the result in an object output stream. 
+                            This won't allow you to append to an existing object output stream stored in a file. If you want to be
+                            able to append to an object output stream, you need to keep the object output stream open.
+                            The only situation in which opening a file in append mode and the writing an object output stream
+                            could work is if on reading the file you plan to open it in random access mode and seek to the byte offset
+                            where the append started.
+                        <li>NP_BOOLEAN_RETURN_NULL:
+                            A method that returns either Boolean.TRUE, Boolean.FALSE or null is an accident waiting to happen.
+                            This method can be invoked as though it returned a value of type boolean, and
+                            the compiler will insert automatic unboxing of the Boolean value. If a null value is returned,
+                            this will result in a NullPointerException.
 					  </ul>
-					  <li>edu.umd.cs.findbugs.detect.OverridingEqualsNotSymmetrical</li>
-					  <ul>
-					    <li>EQ_OVERRIDING_EQUALS_NOT_SYMMETRIC 
-					  </ul>
-					  <li>edu.umd.cs.findbugs.detect.CheckTypeQualifiers</li>
-					  <ul>
-					    <li>TQ_ALWAYS_VALUE_USED_WHERE_NEVER_REQUIRED</li>
-					    <li>TQ_NEVER_VALUE_USED_WHERE_ALWAYS_REQUIRED</li>
-					    <li>TQ_MAYBE_SOURCE_VALUE_REACHES_ALWAYS_SINK</li>
-					    <li>TQ_MAYBE_SOURCE_VALUE_REACHES_NEVER_SINK</li>
-					  </ul>
-					</ul>
-					<li>New Reports (existing detectors)</li>
-					<ul>
-					  <li>edu.umd.cs.findbugs.detect.FindHEmismatch</li>
-					  <ul>
-					    <li>EQ_DOESNT_OVERRIDE_EQUALS </li>
-					  </ul>
-					  <li>edu.umd.cs.findbugs.detect.Naming
-					  <ul>
-					    <li>NM_WRONG_PACKAGE</li>
-					    <li>NM_WRONG_PACKAGE_INTENTIONAL</li>
-					    <li>NM_SAME_SIMPLE_NAME_AS_SUPERCLASS</li>
-					    <li>NM_SAME_SIMPLE_NAME_AS_INTERFACE</li>
-					  </ul>
-					  <li>edu.umd.cs.findbugs.detect.FindRefComparison</li>
-					  <ul>
-					    <li>EC_UNRELATED_TYPES_USING_POINTER_EQUALITY</li>
-					  </ul>
-					  <li>edu.umd.cs.findbugs.detect.IncompatMask</li>
-					  <ul>
-					    <li>BIT_SIGNED_CHECK</li>
-					    <li>BIT_SIGNED_CHECK_HIGH_BIT</li>
-					  </ul>
-					  <li>edu.umd.cs.findbugs.detect.LazyInit</li>
-					  <ul>
-					    <li>LI_LAZY_INIT_UPDATE_STATIC</li>
-					  </ul>
-					  <li>edu.umd.cs.findbugs.detect.FindDeadLocalStores</li>
-					  <ul>
-					    <li>DLS_DEAD_STORE_OF_CLASS_LITERAL</li>
-					  </ul>
-					  <li>edu.umd.cs.findbugs.detect.MethodReturnCheck</li>
-					  <ul>
-					    <li>RV_RETURN_VALUE_IGNORED_BAD_PRACTICE</li>
-					    <li>RV_EXCEPTION_NOT_THROWN</li>
-					  </ul>
-					</ul>
 					<li>Changes to Existing Reports</li>
 					<ul>
-					  <li>NS_NON_SHORT_CIRCUIT: BAD_PRACTICE -> STYLE</li>
-					  <li>NS_DANGEROUS_NON_SHORT_CIRCUIT: CORRECTNESS -> STYLE</li>
-					  <li>RC_REF_COMPARISON: CORRECTNESS -> BAD_PRACTICE</li>
+					  <li>RV_DONT_JUST_NULL_CHECK_READLINE: CORRECTNESS -> STYLE</li>
+					  <li>DMI_INVOKING_TOSTRING_ON_ARRAY: Long description mentions array name whenever possible</li>
 					</ul>
-					<li>GUI Changes</li>
+					<li>Fixes:</li>
 					<ul>
-					  <li>Added importing and exporting of bug filters</li>
-					  <li>Better handling of failed analysis runs</li>
-					  <li>Added "-look" parameter for selecting look-and-feel</li>
-					  <li>Fixed incorrect package filtering</li>
-					  <li>Fixed issue where "synchronized" was not syntax-highlighted</li>
+					<li>Updated manual to mention that Java 1.5 is now a requirement for running FindBugs
+					<li>Applied patch 1840206 fixing issue "Ant task does not work when presetdef is used" - thanks to phejl 
+					<li>Applied patch 1778690 fixing issue "Ant task: tolerate but complain about invalid auxClasspath" - thanks to David Schmidt
+					<li>Applied patch 1852125 adding a Chinese-language GUI bundle props file - thanks to fifi
+					<li>Applied patch 1845903 adding ability to load XML results with the Eclipse plugin - thanks to Alex Mont
+					<li>Fixed issue 1844671 - "FP for "reversed" null check in catch for stream close"
+					<li>Fixed issue 1836050 - "-onlyAnalyze broken"
+					<li>Fixed issue 1853011 - "Typo: Field names should start with aN lower case letter"
+					<li>Fixed issue 1844181 - "JNLP file does not contain all necessary JARs"
+					<li>Fixed issue 1840245 - "xxxException class does not derive from Exception"
+					<li>Fixed issue 1840277 - "[M D EC] Typo in bug documentation"
+					<li>Fixed issue 1782447 - "OutOfMemoryError if i activate Findbugs on my project"
+					<li>Fixed issue 1830576 - "[regression] keySet/entrySet false positive"
 					</ul>
-					<li>Ant-task Changes</li>
+					<li>Other:</li>
 					<ul>
-					  <li>Refactored common ant-task code to AbstractFindBugsTask</li>
-					  <li>Added tasks for computeBugHistory, convertXmlToText, filterBugs, mineBugHistory, setBugDatabaseInfo</li>
-					</ul>
-					<li>Manual</li>
-					<ul>
-					  <li>Updates to GUI section, including new screenshots</li>
-					  <li>Added description of rejarForAnalysis</li>
-					  <li>Revamp of data-mining section</li>
-					</ul>
-					<li>Other Major</li>
-					<ul>
-					  <li>Internal restructuring for lower memory overhead</li>
-					</ul>
-					<li>Other Minor</li>
-					<ul>
-					  <li>Fixed typo: was STCAL_STATIC_SIMPLE_DATA_FORMAT_INSTANCE now STCAL_STATIC_SIMPLE_DATE_FORMAT_INSTANCE</li>
-					  <li>-outputFile parameter became -output</li>
-					  <li>More sensitivity and specificity inLazyInit detector</li>
-					  <li>More sensitivity and specificity in Naming detector</li>
-					  <li>More sensitivity and specificity in UnreadFields detector</li>
-					  <li>More sensitivity in FindNullDeref detector</li>
-					  <li>More sensitivity in FindBadCast2 detector</li>
-					  <li>More specificity in FindReturnRef detector</li>
-					  <li>Many other tweaks and bugfixes</li>
+					<li>New bug code: "IO" (for IO_APPENDING_TO_OBJECT_OUTPUT_STREAM)</li>
+					<li>Added "-onlyMostRecent" option for computeBugHistory script/ant task
+					<li>More explicit language in RV_RETURN_VALUE_IGNORED_BAD_PRACTICE messages
+					<li>Modified ResourceValueAnalysis to correctly identify null == X or null != X as a null check (for issue 1844671)
+					<li>Modified DMI_HARDCODED_ABSOLUTE_FILENAME logic in DumbMethodInvocations to ignore files from /etc or /dev and increase priority of files from /home
+					<li>Better bug details for infinite loop warnings
+					<li>Modified unread-fields detector to reduce false positives from reflective fields
+					<li>build.xml "classes" target now builds all sources in one step
 					</ul>
 					</ul>
 					
@@ -372,8 +341,7 @@
 						Financial support for the open source FindBugs project is provided by our sponsors, 
 						<a
 							href="http://www.fortifysoftware.com/products/sca40.jsp#findbugs">Fortify
-							Software</a>, amd <a
-							href="http://www.surelogic.com/">SureLogic</a>,
+							Software</a>
 		<p>
 						<a
 							href="http://www.fortifysoftware.com/products/sca40.jsp#findbugs">Fortify Software</a>  sells security tools,
@@ -385,12 +353,6 @@
 						quality problems (<a href="pressRelease.pdf">press release</a>).
 					</p>
 					
-					<p>
-						<a
-							href="http://www.surelogic.com/">SureLogic</a> provides a suite of static and dynamic tools designed
-							to find concurrency errors, such as data races and design errors. Starting Fall 2007, SureLogic will provide
-							training, consulting and support for FindBugs on a commercial basis, and will be contributing to the FindBugs open source effort. 
-							</p>
 					<p>
 						Fortify Software now provides
 						<a href="http://opensource.fortifysoftware.com/">Java Open
@@ -413,6 +375,13 @@
                         Java and .NET applications. Take a look at YourKit's leading software products:
                         <a href="http://www.yourkit.com/java/profiler/index.jsp">YourKit Java Profiler</a> and
                         <a href="http://www.yourkit.com/.net/profiler/index.jsp">YourKit .NET Profiler</a>. 
+					</p>
+					<p>
+					    The FindBugs project also uses
+					    <a href="http://www.atlassian.com/software/fisheye/">FishEye</a> and 
+					    <a href="http://www.atlassian.com/software/clover/">Clover</a>,
+					    which are generously provided by
+					    <a href="http://www.cenqua.com/">Cenqua/Atlassian</a>.
 					</p>
 					<p>
 						Additional financial support for the FindBugs project has been provided by 
