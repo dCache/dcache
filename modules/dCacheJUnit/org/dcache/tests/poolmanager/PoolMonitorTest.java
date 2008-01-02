@@ -148,7 +148,6 @@ public class PoolMonitorTest {
 
         boolean found = false;
         for( PoolCostCheckable pool : acknowledgedPools) {
-            System.out.println(pool.getPoolName());
             if( pool.getPoolName().equals("pool1") ) {
                 found = true;
                 break;
