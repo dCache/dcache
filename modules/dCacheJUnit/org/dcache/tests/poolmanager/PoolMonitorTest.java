@@ -148,13 +148,14 @@ public class PoolMonitorTest {
 
         boolean found = false;
         for( PoolCostCheckable pool : acknowledgedPools) {
+            System.out.println(pool.getPoolName());
             if( pool.getPoolName().equals("pool1") ) {
                 found = true;
                 break;
             }
         }
 
-        assertFalse("Pool with the file not be used by selection", found );
+        assertTrue("Pool with the file not used by selection", found );
     }
 
 }
