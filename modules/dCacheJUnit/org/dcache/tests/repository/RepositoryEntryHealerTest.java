@@ -1,5 +1,7 @@
 package org.dcache.tests.repository;
 
+import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -8,6 +10,7 @@ import dmg.cells.nucleus.CellPath;
 import org.dcache.chimera.FsInode;
 import org.dcache.pool.repository.MetaDataRepository;
 import org.dcache.pool.repository.RepositoryEntryHealer;
+import org.dcache.tests.cells.CellAdapterHelper;
 import org.dcache.tests.cells.GenericMockCellHelper;
 
 import diskCacheV111.repository.CacheRepositoryEntry;
@@ -39,6 +42,10 @@ public class RepositoryEntryHealerTest {
 
     }
 
+    @After
+    public void tearDown() throws Exception {
+        _repositoryHealerTestChimeraHelper.shutdown();
+    }
 
     @Test
     public void testBadSize() throws Exception {
@@ -54,6 +61,7 @@ public class RepositoryEntryHealerTest {
 
 
        StorageInfo info = new OSMStorageInfo("h1", "rawd");
+       e.setStorageInfo(info);
 
        PnfsGetStorageInfoMessage getStorageInfoMessage = new PnfsGetStorageInfoMessage(pnfsId);
        getStorageInfoMessage.setStorageInfo(info);
@@ -67,5 +75,39 @@ public class RepositoryEntryHealerTest {
        CacheRepositoryEntry repositoryEntry = _repositoryEntryHealer.entryOf(pnfsId);
 
     }
+
+
+    @Test
+    public void testSizeOk() throws Exception {
+
+
+        PnfsId pnfsId = new PnfsId("000000000000000000000000000000000001");
+        FsInode inode = _repositoryHealerTestChimeraHelper.add(pnfsId);
+        inode.setSize(17);
+
+
+        CacheRepositoryEntry e =  _metaDataRepository.create(pnfsId);
+        e.setCached();
+
+
+       StorageInfo info = new OSMStorageInfo("h1", "rawd");
+       info.setFileSize(17);
+
+       e.setStorageInfo(info);
+
+       PnfsGetStorageInfoMessage getStorageInfoMessage = new PnfsGetStorageInfoMessage(pnfsId);
+       getStorageInfoMessage.setStorageInfo(info);
+
+
+       GenericMockCellHelper.prepareMessage(new CellPath("PnfsManager"), getStorageInfoMessage);
+
+       /*
+        * CacheException(TIMEOUT) will indicate that we tried to modify file size in Pnfs
+        */
+       CacheRepositoryEntry repositoryEntry = _repositoryEntryHealer.entryOf(pnfsId);
+
+    }
+
+
 
 }
