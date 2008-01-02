@@ -500,7 +500,7 @@
                     output="xml"
                     outputFile="${distDir}/findbugs.xml"
                     jvmargs="-Xmx512M"
-                    timeout="3600000"
+                    timeout="36000000"
                     omitVisitors="FindDeadLocalStores,UnreadFields,Naming,FindUncalledPrivateMethods" >
 
             <auxClasspath path="" />
@@ -519,7 +519,7 @@
             <sourcePath path="modules/dCache" />
             <sourcePath path="modules/srm/src" />
             <sourcePath path="modules/srmclient" />
-             
+
         </findbugs>
     </target>
 
