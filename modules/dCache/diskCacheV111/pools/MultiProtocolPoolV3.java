@@ -669,7 +669,8 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
                 _logClass.elog("Repository reported a problem : "
                                + e.getMessage());
                 _logClass.elog("Pool not enabled " + _poolName);
-                disablePool(PoolV2Mode.DISABLED_DEAD, 666, "Init failed: " + e.getMessage());
+                disablePool(PoolV2Mode.DISABLED_DEAD | PoolV2Mode.DISABLED_STRICT,
+                            666, "Init failed: " + e.getMessage());
             }
             _logClass.elog("Repository finished");
             if (_notifyMe != null) {
@@ -682,7 +683,8 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
     }
 
     public void cleanUp() {
-        disablePool(PoolV2Mode.DISABLED_DEAD, 666, "Shutdown");
+        disablePool(PoolV2Mode.DISABLED_DEAD | PoolV2Mode.DISABLED_STRICT,
+                    666, "Shutdown");
     }
 
     // public void setMaxActiveIOs( int ios ){ _ioQueue.setMaxActiveJobs( ios) ;
@@ -2477,10 +2479,10 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
             } else {
 
                 say("PoolIoFileMessage delivered to ioFile (method)");
-                if (((poolMessage instanceof PoolAcceptFileMessage) && _poolMode
-                     .isDisabled(PoolV2Mode.DISABLED_STORE))
-                    || ((poolMessage instanceof PoolDeliverFileMessage) && _poolMode
-                        .isDisabled(PoolV2Mode.DISABLED_FETCH))) {
+                if (((poolMessage instanceof PoolAcceptFileMessage)
+                     && _poolMode.isDisabled(PoolV2Mode.DISABLED_STORE))
+                    || ((poolMessage instanceof PoolDeliverFileMessage)
+                        && _poolMode.isDisabled(PoolV2Mode.DISABLED_FETCH))) {
 
                     esay("PoolIoFileMessage Request rejected due to "
                          + _poolMode);
@@ -2515,7 +2517,7 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
 
         } else if (poolMessage instanceof PoolFetchFileMessage) {
 
-            if ((_poolMode.isDisabled(PoolV2Mode.DISABLED_STAGE))
+            if (_poolMode.isDisabled(PoolV2Mode.DISABLED_STAGE )
                 || (_lfsMode != LFS_NONE)) {
 
                 esay("PoolFetchFileMessage  Request rejected due to "
@@ -2530,7 +2532,7 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
 
         } else if (poolMessage instanceof PoolRemoveFilesFromHSMMessage) {
 
-            if ((_poolMode.isDisabled(PoolV2Mode.DISABLED_STAGE)) ||
+            if (_poolMode.isDisabled(PoolV2Mode.DISABLED_STAGE) ||
                 (_lfsMode != LFS_NONE)) {
 
                 esay("PoolRemoveFilesFromHsmMessage request rejected due to "
@@ -2557,9 +2559,8 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
 
         } else if (poolMessage instanceof PoolCheckable) {
 
-            if( _poolMode.getMode() == PoolV2Mode.DISABLED ||
-                _poolMode.isDisabled(PoolV2Mode.DISABLED_FETCH) ||
-                _poolMode.isDisabled(PoolV2Mode.DISABLED_DEAD)){
+            if( _poolMode.isDisabled(PoolV2Mode.DISABLED) ||
+                _poolMode.isDisabled(PoolV2Mode.DISABLED_FETCH)){
 
                 esay("PoolCheckable Request rejected due to " + _poolMode);
                 sentNotEnabledException(poolMessage, cellMessage);
@@ -2757,10 +2758,60 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
         esay("New Pool Mode : " + _poolMode);
     }
 
+    /**
+     * Performance basic sanity checks on space accounting. Problems
+     * are logged.
+     *
+     * @return true when all checks pass, false otherwise.
+     */
+    private boolean checkSpaceAccounting()
+    {
+        long removable = _sweeper.getRemovableSpace();
+        long total = _repository.getTotalSpace();
+        long free = _repository.getFreeSpace();
+        long precious = _repository.getPreciousSpace();
+        long used = total - free;
+
+        if (removable < 0) {
+            esay("Removable space is negative.");
+            return false;
+        }
+
+        if (total < 0) {
+            esay("Repository size is negative.");
+            return false;
+        }
+
+        if (free < 0) {
+            esay("Free space is negative.");
+            return false;
+        }
+
+        if (precious < 0) {
+            esay("Precious space is negative.");
+            return false;
+        }
+
+        if (used < 0) {
+            esay("Used space is negative.");
+            return false;
+        }
+
+        /* The following check cannot be made consistently, since we
+         * do not retrieve these values atomically. Therefore we log
+         * the error, but do not return false.
+         */
+        if (precious + removable > used) {
+            esay("Used space is less than the sum of precious and removable space (this may be a temporary problem - if it persists then please report it to support@dcache.org).");
+        }
+
+        return true;
+    }
+
     private class PoolManagerPingThread implements Runnable
     {
-        private final Thread      _worker;
-        private int         _heartbeat = 30;
+        private final Thread _worker;
+        private int _heartbeat = 30;
 
         private PoolManagerPingThread()
         {
@@ -2777,12 +2828,20 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
             say("Ping Thread started");
             while (!Thread.interrupted()) {
 
-		if (_poolMode.isEnabled() && _checkRepository
-                    && !_repository.isRepositoryOk()) {
+                if (!_poolMode.isDisabled(PoolV2Mode.DISABLED_STRICT)
+                    && _checkRepository) {
 
-                    esay("Pool disabled due to problems in repository") ;
-                    disablePool(PoolV2Mode.DISABLED | PoolV2Mode.DISABLED_STRICT,
-                                99, "Repository got lost");
+                    if (!_repository.isRepositoryOk()) {
+                        esay("Pool disabled due to problems in repository") ;
+                        disablePool(PoolV2Mode.DISABLED_STRICT, 99,
+                                    "Pool disabled due to problems in repository");
+                    }
+
+                    if (!checkSpaceAccounting()) {
+                        esay("Marking pool read-only due to accounting errors. This is a bug. Please report it to support@dcache.org.");
+                        disablePool(PoolV2Mode.DISABLED_RDONLY, 99,
+                                    "Pool is read-only due to accounting errors");
+                    }
 		}
                 sendPoolManagerMessage(true);
 
@@ -2795,8 +2854,8 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
             }
 
             esay("Ping Thread sending Pool Down message");
-            disablePool(PoolV2Mode.DISABLED_DEAD, 666,
-                        "PingThread terminated");
+            disablePool(PoolV2Mode.DISABLED_DEAD | PoolV2Mode.DISABLED_STRICT,
+                        666, "PingThread terminated");
             esay("Ping Thread finished");
         }
 
@@ -2820,8 +2879,7 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
         {
             boolean disabled =
                 _poolMode.getMode() == PoolV2Mode.DISABLED ||
-                _poolMode.isDisabled(PoolV2Mode.DISABLED_STRICT) ||
-                _poolMode.isDisabled(PoolV2Mode.DISABLED_DEAD);
+                _poolMode.isDisabled(PoolV2Mode.DISABLED_STRICT);
             PoolCostInfo info = disabled ? null : getPoolCostInfo();
 
             PoolManagerPoolUpMessage poolManagerMessage =
