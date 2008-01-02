@@ -26,7 +26,7 @@ import diskCacheV111.vehicles.StorageInfo;
 public class CacheRepositoryEntryImpl implements CacheRepositoryEntry
 {
     private static Logger _log =
-        Logger.getLogger("logger.org.dcache.repository.v4");
+        Logger.getLogger("logger.org.dcache.repository");
 
     private final CacheRepositoryEntryState _state;
     private final PnfsId _pnfsId;

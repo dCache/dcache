@@ -58,7 +58,7 @@ import diskCacheV111.repository.CacheRepositoryEntry;
 public class CacheRepositoryV4 extends AbstractCacheRepository
 {
     private static Logger _log =
-        Logger.getLogger("logger.org.dcache.repository.v4");
+        Logger.getLogger("logger.org.dcache.repository");
 
     /**
      * Name of file in which space reservation information is stored.
@@ -206,22 +206,22 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
         throws CacheException
     {
         if (_log.isInfoEnabled()) {
-            _log.info("create new entry for: " + pnfsId.toString());
+            _log.info("Creating new entry for " + pnfsId);
         }
 
         _operationLock.writeLock().lock();
         try {
             File dataFile = _dataRepository.get(pnfsId);
             if (dataFile.exists()) {
-                _log.fatal("Entry exists: " + pnfsId);
+                _log.fatal("Entry already exists on disk: " + pnfsId);
                 throw new
-                    CacheException(203, "Entry already exists (fs) : " + pnfsId);
+                    CacheException(203, "Entry already exists (fs): " + pnfsId);
             }
 
             if (_allEntries.containsKey(pnfsId)) {
-                _log.error("create for existing entry: " + pnfsId.toString());
+                _log.error("Entry already exists in memory: " + pnfsId);
                 throw new
-                    FileInCacheException("Entry already exists (mem) : " + pnfsId.toString());
+                    FileInCacheException("Entry already exists (mem): " + pnfsId);
             }
 
             CacheRepositoryEntry entry = _metaRepository.create(pnfsId);
@@ -383,9 +383,6 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
 
                 _allEntries.put(id, entry);
 
-                /*
-                 * track sticky flag
-                 */
                 for (StickyRecord record : entry.stickyRecords()) {
                     _stickyInspector.add(entry.getPnfsId(), record);
                 }
@@ -393,17 +390,8 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
 
             _log.info("Registering files with event listeners");
 
-            /* Report SCAN events in LRU order.
-             */
-            List<CacheRepositoryEntry> entries =
-                new ArrayList<CacheRepositoryEntry>(_allEntries.values());
-            Collections.sort(entries, new CacheEntryLRUOrder());
-            for (CacheRepositoryEntry entry : entries) {
-                processEvent(EventType.SCAN,
-                             new CacheRepositoryEvent(this, entry));
-            }
 
-            /* Resolve overbooking.
+            /* Detect overbooking.
              */
             long total = getTotalSpace();
             if (usedDataSpace > total) {
@@ -418,52 +406,37 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
                 if (diff  > 0.1 * total)
                     throw new
                         CacheException("Inventory space exceeded by more than 10%, cannot recover");
-                for (CacheRepositoryEntry entry : entries) {
-                    if (entry.isPrecious() || entry.isSticky())
-                        continue;
+            }
 
-                    /* It would be really nice if we could use the
-                     * normal removeEntry method here. Unfortunately
-                     * we have not yet allocated space in the space
-                     * monitor. Since removeEntry will try to free
-                     * such space, we cannot use it.
-                     */
-                    processEvent(EventType.REMOVE,
-                                 new CacheRepositoryEvent(this, entry));
 
-                    PnfsId id = entry.getPnfsId();
-                    File dataFile = _dataRepository.get(id);
+            /* Report SCAN events and resolve overbooking in LRU order.
+             */
+            List<CacheRepositoryEntry> entries =
+                new ArrayList<CacheRepositoryEntry>(_allEntries.values());
+            Collections.sort(entries, new CacheEntryLRUOrder());
+            for (CacheRepositoryEntry entry : entries) {
+                processEvent(EventType.SCAN,
+                             new CacheRepositoryEvent(this, entry));
+                if (!entry.isPrecious() && !entry.isSticky()
+                    && usedDataSpace > total) {
+                    _log.warn("Pool overbooked: " + entry.getPnfsId()
+                              + " removed");
                     usedDataSpace -= entry.getSize();
-                    _allEntries.remove(id);
-                    _metaRepository.remove(id);
-                    dataFile.delete();
-
-                    _log.warn("Pool overbooked: " + id + " removed");
-
-                    if (usedDataSpace <= total)
-                        break;
+                    removeEntry(entry);
                 }
             }
 
-            /* Update space monitor.
-             */
-            try {
-                allocateSpace(usedDataSpace, 1000);
-            } catch (InterruptedException e) {
-                _log.fatal("Not enough space in repository to store inventory");
-                throw new
-                    CacheException(CacheException.PANIC,
-                                   "Not enough space in repository to store inventory ???");
+            if (usedDataSpace != getTotalSpace() - getFreeSpace()) {
+                throw new RuntimeException(String.format("Bug detected: Allocated space is not what we expected (%d vs %d)", usedDataSpace, getTotalSpace() - getFreeSpace()));
             }
 
-            _log.debug("Space used : " + usedDataSpace);
-            _log.debug("runInventory : #=" + _allEntries.size() +
-                       ";space=" + getFreeSpace() +
-                       "/" + getTotalSpace());
+            _log.info(String.format("Inventory contains %d files; total size is %d; used space is %d; free space is %d.",
+                                    _allEntries.size(), getTotalSpace(),
+                                    usedDataSpace, getFreeSpace()));
 
             _stickyInspectorThread.start();
         } catch (IOException e) {
-            throw new CacheException(ERROR_IO_DISK , "Low Level Exc : " + e);
+            throw new CacheException(ERROR_IO_DISK , "Failed to load repository: " + e);
         } finally {
             _runningInventory = false;
             _operationLock.writeLock().unlock();
@@ -494,6 +467,7 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
 
 	   return true;
 	} catch (IOException e) {
+           _log.error("Repository failure: " + e);
 	   return false;
 	}
     }
@@ -553,7 +527,7 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
             }
         } catch (IOException e) {
             throw new
-                CacheException(103, "Io Exception, writing " + _spaceReservation) ;
+                CacheException(103, "IO Exception, writing " + _spaceReservation) ;
         }
     }
 

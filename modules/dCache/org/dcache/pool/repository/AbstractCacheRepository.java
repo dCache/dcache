@@ -218,9 +218,14 @@ public abstract class AbstractCacheRepository
         case SCAN:
             try {
                 CacheRepositoryEntry entry = event.getRepositoryEntry();
+                allocateSpace(entry.getSize(), SpaceMonitor.NONBLOCKING);
                 if (entry.isPrecious()) {
                     addPrecious(entry);
                 }
+            } catch (InterruptedException e) {
+                throw new RuntimeException("Bug detected", e);
+            } catch (MissingResourceException e) {
+                throw new RuntimeException("File registration failed: Pool is out of space.", e);
             } catch (CacheException ignored) {
             }
 
