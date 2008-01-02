@@ -4,6 +4,7 @@ import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.Test;
+import static org.junit.Assert.*;
 
 import dmg.cells.nucleus.CellPath;
 
@@ -48,7 +49,7 @@ public class RepositoryEntryHealerTest {
     }
 
     @Test
-    public void testBadSize() throws Exception {
+    public void testBadSizeCached() throws Exception {
 
 
         PnfsId pnfsId = new PnfsId("000000000000000000000000000000000001");
@@ -76,7 +77,92 @@ public class RepositoryEntryHealerTest {
 
     }
 
+    @Test
+    public void testBadSizeFromClient() throws Exception {
 
+
+        PnfsId pnfsId = new PnfsId("000000000000000000000000000000000001");
+        FsInode inode = _repositoryHealerTestChimeraHelper.add(pnfsId);
+        inode.setSize(17);
+
+
+        CacheRepositoryEntry e =  _metaDataRepository.create(pnfsId);
+        e.setReceivingFromClient();
+
+
+       StorageInfo info = new OSMStorageInfo("h1", "rawd");
+       e.setStorageInfo(info);
+
+       PnfsGetStorageInfoMessage getStorageInfoMessage = new PnfsGetStorageInfoMessage(pnfsId);
+       getStorageInfoMessage.setStorageInfo(info);
+
+
+       GenericMockCellHelper.prepareMessage(new CellPath("PnfsManager"), getStorageInfoMessage);
+
+       /*
+        * CacheException(TIMEOUT) will indicate that we tried to modify file size in Pnfs
+        */
+       CacheRepositoryEntry repositoryEntry = _repositoryEntryHealer.entryOf(pnfsId);
+
+       assertFalse("Entry not recovered", e.isReceivingFromClient() );
+
+    }
+
+    @Test
+    public void testBadSizeFromStore() throws Exception {
+
+
+        PnfsId pnfsId = new PnfsId("000000000000000000000000000000000001");
+        FsInode inode = _repositoryHealerTestChimeraHelper.add(pnfsId);
+        inode.setSize(17);
+
+
+        CacheRepositoryEntry e =  _metaDataRepository.create(pnfsId);
+        e.setReceivingFromStore();
+
+       StorageInfo info = new OSMStorageInfo("h1", "rawd");
+       e.setStorageInfo(info);
+
+       PnfsGetStorageInfoMessage getStorageInfoMessage = new PnfsGetStorageInfoMessage(pnfsId);
+       getStorageInfoMessage.setStorageInfo(info);
+
+
+       GenericMockCellHelper.prepareMessage(new CellPath("PnfsManager"), getStorageInfoMessage);
+
+       /*
+        * CacheException(TIMEOUT) will indicate that we tried to modify file size in Pnfs
+        */
+       CacheRepositoryEntry repositoryEntry = _repositoryEntryHealer.entryOf(pnfsId);
+
+    }
+
+    @Test
+    public void testBadSizeNoState() throws Exception {
+
+
+        PnfsId pnfsId = new PnfsId("000000000000000000000000000000000001");
+        FsInode inode = _repositoryHealerTestChimeraHelper.add(pnfsId);
+        inode.setSize(17);
+
+
+        CacheRepositoryEntry e =  _metaDataRepository.create(pnfsId);
+
+
+       StorageInfo info = new OSMStorageInfo("h1", "rawd");
+       e.setStorageInfo(info);
+
+       PnfsGetStorageInfoMessage getStorageInfoMessage = new PnfsGetStorageInfoMessage(pnfsId);
+       getStorageInfoMessage.setStorageInfo(info);
+
+
+       GenericMockCellHelper.prepareMessage(new CellPath("PnfsManager"), getStorageInfoMessage);
+
+       /*
+        * CacheException(TIMEOUT) will indicate that we tried to modify file size in Pnfs
+        */
+       CacheRepositoryEntry repositoryEntry = _repositoryEntryHealer.entryOf(pnfsId);
+
+    }
     @Test
     public void testSizeOk() throws Exception {
 
