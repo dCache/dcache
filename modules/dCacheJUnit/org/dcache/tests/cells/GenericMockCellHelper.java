@@ -15,12 +15,12 @@ import dmg.cells.nucleus.NoRouteToCellException;
 
 import diskCacheV111.vehicles.Message;
 
-public class GenericMocCellHelper extends CellAdapterHelper {
+public class GenericMockCellHelper extends CellAdapterHelper {
 
     private static final Map<CellPath, Map<String, List<Message>>> _messageQueue = new HashMap<CellPath, Map<String, List<Message>>>();
     private final CellNucleus _nucleus;
 
-    public GenericMocCellHelper(String name, String args) {
+    public GenericMockCellHelper(String name, String args) {
         super(name, args);
         _nucleus = new NucleusHelper(this, "nucleus");
     }

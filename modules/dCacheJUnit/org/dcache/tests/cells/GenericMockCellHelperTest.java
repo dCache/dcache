@@ -15,10 +15,10 @@ import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.PnfsGetCacheLocationsMessage;
 
 
-public class GenericMocCellHelperTest {
+public class GenericMockCellHelperTest {
 
 
-    private static GenericMocCellHelper _cell = new GenericMocCellHelper("PnfsHandlerTestCell", "");
+    private static GenericMockCellHelper _cell = new GenericMockCellHelper("PnfsHandlerTestCell", "");
     private final static String PNFS_MANAGER = "PnfsManager";
 
 
@@ -33,7 +33,7 @@ public class GenericMocCellHelperTest {
         locations.add("pool1");
         message.setCacheLocations(locations);
 
-        GenericMocCellHelper.prepareMessage(pnfsManagerPath, message);
+        GenericMockCellHelper.prepareMessage(pnfsManagerPath, message);
 
 
         // exercise

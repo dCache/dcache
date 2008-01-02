@@ -11,7 +11,7 @@ import org.junit.Test;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 
-import org.dcache.tests.cells.GenericMocCellHelper;
+import org.dcache.tests.cells.GenericMockCellHelper;
 
 import diskCacheV111.poolManager.CostModule;
 import diskCacheV111.poolManager.CostModuleV1;
@@ -36,7 +36,7 @@ import diskCacheV111.vehicles.StorageInfo;
 public class PoolMonitorTest {
 
 
-    private static GenericMocCellHelper _cell = new GenericMocCellHelper("PoolMonitorTestCell", "");
+    private static GenericMockCellHelper _cell = new GenericMockCellHelper("PoolMonitorTestCell", "");
 
     private PoolMonitorV5 _poolMonitor;
     private CostModule _costModule ;
@@ -83,7 +83,7 @@ public class PoolMonitorTest {
          */
         PnfsGetCacheLocationsMessage message = PoolMonitorHelper.prepareGetCacheLocation(pnfsId, pools);
 
-        GenericMocCellHelper.prepareMessage(new CellPath("PnfsManager"), message);
+        GenericMockCellHelper.prepareMessage(new CellPath("PnfsManager"), message);
 
 
         long serialId = System.currentTimeMillis();
@@ -127,8 +127,8 @@ public class PoolMonitorTest {
         /*
          * prepare pools reply
          */
-        GenericMocCellHelper.prepareMessage(new CellPath("pool1"), pool1CeckMessage);
-        GenericMocCellHelper.prepareMessage(new CellPath("pool2"), pool2CeckMessage);
+        GenericMockCellHelper.prepareMessage(new CellPath("pool1"), pool1CeckMessage);
+        GenericMockCellHelper.prepareMessage(new CellPath("pool2"), pool2CeckMessage);
 
 
 
