@@ -46,7 +46,7 @@ import dmg.util.CommandSyntaxException;
 
 public class P2PClient {
 	
-	private final static Logger _logSpaceAllocation = Logger.getLogger("logger.org.dcache.poolspacemonitor." + P2PClient.class.getName());
+	private final static Logger _logSpaceAllocation = Logger.getLogger("logger.dev.org.dcache.poolspacemonitor." + P2PClient.class.getName());
 	
     private final CacheRepository _repository;
     private final CellAdapter _cell;

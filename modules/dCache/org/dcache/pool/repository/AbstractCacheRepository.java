@@ -39,7 +39,7 @@ public abstract class AbstractCacheRepository
 {
     private static Logger _log =
         Logger.getLogger("logger.org.dcache.repository");
-    private final static Logger _logSpaceAllocation = Logger.getLogger("logger.org.dcache.poolspacemonitor." + AbstractCacheRepository.class.getName());
+    private final static Logger _logSpaceAllocation = Logger.getLogger("logger.dev.org.dcache.poolspacemonitor." + AbstractCacheRepository.class.getName());
 
     /**
      * Registered event listeners.

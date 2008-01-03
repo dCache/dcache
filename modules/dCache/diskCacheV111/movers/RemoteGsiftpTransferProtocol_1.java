@@ -109,7 +109,7 @@ import org.ietf.jgss.GSSException;
 public class RemoteGsiftpTransferProtocol_1
     implements MoverProtocol,ChecksumMover,DataBlocksRecipient
 {
-	private final static org.apache.log4j.Logger _logSpaceAllocation = org.apache.log4j.Logger.getLogger("logger.org.dcache.poolspacemonitor." + DCapProtocol_3_nio.class.getName());
+	private final static org.apache.log4j.Logger _logSpaceAllocation = org.apache.log4j.Logger.getLogger("logger.dev.org.dcache.poolspacemonitor." + DCapProtocol_3_nio.class.getName());
 	
     private final CellAdapter _cell;
     private long _starttime;

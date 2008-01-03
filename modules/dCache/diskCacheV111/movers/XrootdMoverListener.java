@@ -28,7 +28,7 @@ import org.dcache.xrootd.util.FileStatus;
 public class XrootdMoverListener implements StreamListener {
 
 	
-	private final static Logger _logSpaceAllocation = Logger.getLogger("logger.org.dcache.poolspacemonitor." + XrootdMoverListener.class.getName());
+	private final static Logger _logSpaceAllocation = Logger.getLogger("logger.dev.org.dcache.poolspacemonitor." + XrootdMoverListener.class.getName());
 	private XrootdProtocol_2 mover;
 	private static final int BLOCK_SIZE = (50*1024*1024) ;
 	private long currentFileSize = 0;

@@ -29,7 +29,7 @@ import org.apache.log4j.Logger;
 public class RemoteHttpDataTransferProtocol_1 implements MoverProtocol 
 {
 	
-	private final static Logger _logSpaceAllocation = Logger.getLogger("logger.org.dcache.poolspacemonitor." + RemoteHttpDataTransferProtocol_1.class.getName());
+	private final static Logger _logSpaceAllocation = Logger.getLogger("logger.dev.org.dcache.poolspacemonitor." + RemoteHttpDataTransferProtocol_1.class.getName());
 	
    public static final int READ   =  1 ;
    public static final int WRITE  =  2 ;

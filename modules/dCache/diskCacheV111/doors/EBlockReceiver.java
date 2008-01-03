@@ -99,7 +99,7 @@ public class	EBlockReceiver
     extends Thread {
 
 	
-	private final static Logger _logSpaceAllocation = Logger.getLogger("logger.org.dcache.poolspacemonitor." + EBlockReceiver.class.getName());
+	private final static Logger _logSpaceAllocation = Logger.getLogger("logger.dev.org.dcache.poolspacemonitor." + EBlockReceiver.class.getName());
 	
     private class	EBlockDataChannel
         extends Thread {

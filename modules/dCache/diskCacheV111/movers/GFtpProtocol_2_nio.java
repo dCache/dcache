@@ -43,7 +43,7 @@ public class GFtpProtocol_2_nio
     implements ConnectionMonitor, MoverProtocol, ChecksumMover, ErrorListener
 {
 	
-	private final static Logger _logSpaceAllocation = Logger.getLogger("logger.org.dcache.poolspacemonitor." + GFtpProtocol_2_nio.class.getName());
+	private final static Logger _logSpaceAllocation = Logger.getLogger("logger.dev.org.dcache.poolspacemonitor." + GFtpProtocol_2_nio.class.getName());
 	
     /** The minimum number of bytes to increment the space allocation. */
     public final static long SPACE_INC = 50 * 1024 * 1024; // 50 MB

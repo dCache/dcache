@@ -15,7 +15,7 @@ public class FtpProtocol_1
        implements MoverProtocol           {
 
 	
-	private final static Logger _logSpaceAllocation = Logger.getLogger("logger.org.dcache.poolspacemonitor." + FtpProtocol_1.class.getName());
+	private final static Logger _logSpaceAllocation = Logger.getLogger("logger.dev.org.dcache.poolspacemonitor." + FtpProtocol_1.class.getName());
 	
    //  
    // <init>( CellAdapter cell ) ;

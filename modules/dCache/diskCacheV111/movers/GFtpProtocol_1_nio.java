@@ -91,7 +91,7 @@ public class GFtpProtocol_1_nio implements MoverProtocol, ChecksumMover,
         NioDataBlocksRecipient {
 
 	
-	private final static Logger _logSpaceAllocation = Logger.getLogger("logger.org.dcache.poolspacemonitor." + GFtpProtocol_1_nio.class.getName());
+	private final static Logger _logSpaceAllocation = Logger.getLogger("logger.dev.org.dcache.poolspacemonitor." + GFtpProtocol_1_nio.class.getName());
     //
     // <init>( CellAdapter cell ) ;
     //

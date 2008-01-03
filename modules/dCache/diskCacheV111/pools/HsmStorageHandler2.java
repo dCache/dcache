@@ -53,7 +53,7 @@ public class HsmStorageHandler2  {
 
 
 	private static Logger _logRepository = Logger.getLogger("logger.org.dcache.repository");
-	private final static Logger _logSpaceAllocation = Logger.getLogger("logger.org.dcache.poolspacemonitor." + HsmStorageHandler2.class.getName());
+	private final static Logger _logSpaceAllocation = Logger.getLogger("logger.dev.org.dcache.poolspacemonitor." + HsmStorageHandler2.class.getName());
 
     private final CacheRepository _repository  ;
     private Logable         _log         = null ;

@@ -80,7 +80,7 @@ import org.apache.log4j.Logger;
 
 public class EBlockReceiverNio extends Thread {
 
-	private final static Logger _logSpaceAllocation = Logger.getLogger("logger.org.dcache.poolspacemonitor." + EBlockReceiverNio.class.getName());
+	private final static Logger _logSpaceAllocation = Logger.getLogger("logger.dev.org.dcache.poolspacemonitor." + EBlockReceiverNio.class.getName());
 	
     private class EBlockDataChannelNio extends Thread {
         private NioDataBlocksRecipient recipient;
