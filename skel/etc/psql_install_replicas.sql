@@ -73,7 +73,9 @@ SET search_path = public, pg_catalog;
 --
 
 CREATE TABLE "action" (
-    "timestamp" bigint
+    "timestamp" bigint,
+    errcode text,
+    errmsg text
 )
 INHERITS (replicas);
 
