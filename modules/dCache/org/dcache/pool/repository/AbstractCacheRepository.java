@@ -12,6 +12,7 @@ import org.apache.log4j.Logger;
 
 import dmg.util.Logable;
 
+import diskCacheV111.movers.DCapProtocol_3_nio;
 import diskCacheV111.repository.SpaceMonitor;
 import diskCacheV111.repository.SpaceRequestable;
 import diskCacheV111.repository.CacheRepository;
@@ -38,6 +39,7 @@ public abstract class AbstractCacheRepository
 {
     private static Logger _log =
         Logger.getLogger("logger.org.dcache.repository");
+    private final static Logger _logSpaceAllocation = Logger.getLogger("logger.org.dcache.poolspacemonitor." + AbstractCacheRepository.class.getName());
 
     /**
      * Registered event listeners.
@@ -206,6 +208,7 @@ public abstract class AbstractCacheRepository
         case DESTROY:
             try {
                 CacheRepositoryEntry entry = event.getRepositoryEntry();
+                _logSpaceAllocation.debug("FREE: " + entry.getPnfsId() + " : " + entry.getSize() );
                 freeSpace(entry.getSize());
                 removePrecious(entry);
             } catch (CacheException ignored) {
@@ -263,6 +266,7 @@ public abstract class AbstractCacheRepository
      */
     public void allocateSpace(long space) throws InterruptedException
     {
+    	_logSpaceAllocation.debug("ALLOC: <UNKNOWN> : " + space );
         _spaceMonitor.allocateSpace(space);
     }
 
@@ -274,6 +278,7 @@ public abstract class AbstractCacheRepository
     public void allocateSpace(long space, long millis)
         throws InterruptedException, MissingResourceException
     {
+    	_logSpaceAllocation.debug("ALLOC: <UNKNOWN> : " + space );
         if (millis == SpaceMonitor.NONBLOCKING) {
             synchronized (_spaceMonitor) {
                 if ((_spaceMonitor.getTotalSpace() -

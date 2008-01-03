@@ -19,7 +19,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.apache.log4j.Logger;
+
 import diskCacheV111.movers.DCapConstants;
+import diskCacheV111.movers.DCapProtocol_3_nio;
 import diskCacheV111.repository.CacheRepository;
 import diskCacheV111.repository.CacheRepositoryEntry;
 import diskCacheV111.util.Adler32;
@@ -42,6 +45,9 @@ import dmg.util.Args;
 import dmg.util.CommandSyntaxException;
 
 public class P2PClient {
+	
+	private final static Logger _logSpaceAllocation = Logger.getLogger("logger.org.dcache.poolspacemonitor." + P2PClient.class.getName());
+	
     private final CacheRepository _repository;
     private final CellAdapter _cell;
     private final Acceptor _acceptor = new Acceptor();
@@ -215,6 +221,7 @@ public class P2PClient {
                 }
                 long filesize = in.readLong();
                 setStatus("<WaitingForSpace-" + filesize + ">");
+                _logSpaceAllocation.debug("ALLOC: " + _companion.getEntry().getPnfsId() + " : " + filesize );
                 _repository.allocateSpace(filesize);
                 _spaceAllocated = filesize;
                 //
@@ -395,6 +402,7 @@ public class P2PClient {
 
                     if (_spaceAllocated != 0L)
                         try {
+                        	_logSpaceAllocation.debug("FREE: " + _companion.getEntry().getPnfsId() + " : " + _companion.getEntry().getSize());
                             _repository.freeSpace(_spaceAllocated
                                     - _companion.getEntry().getSize());
                         } catch (CacheException ignored) {

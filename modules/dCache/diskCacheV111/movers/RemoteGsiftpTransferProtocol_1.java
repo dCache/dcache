@@ -109,6 +109,8 @@ import org.ietf.jgss.GSSException;
 public class RemoteGsiftpTransferProtocol_1
     implements MoverProtocol,ChecksumMover,DataBlocksRecipient
 {
+	private final static org.apache.log4j.Logger _logSpaceAllocation = org.apache.log4j.Logger.getLogger("logger.org.dcache.poolspacemonitor." + DCapProtocol_3_nio.class.getName());
+	
     private final CellAdapter _cell;
     private long _starttime;
     private long _timeout_time;
@@ -365,6 +367,7 @@ public class RemoteGsiftpTransferProtocol_1
             long size = _client.getSize(src_url.getPath());
             say(" received a file size info: " + size +
                 " allocating space on the pool");
+            _logSpaceAllocation.debug("ALLOC: " + _pnfsId + " : " + size );
             spaceMonitor.allocateSpace(size);
             say(" allocated space " + size);
             DiskDataSourceSink sink =
@@ -382,6 +385,7 @@ public class RemoteGsiftpTransferProtocol_1
                     long overAllocation = size - sink.length();
                     if (overAllocation > 0) {
                         say("Returning space : " + overAllocation);
+                        _logSpaceAllocation.debug("FREE: " + _pnfsId + " : " + overAllocation );
                         spaceMonitor.freeSpace(overAllocation);
                     } else if (overAllocation < 0) {
                         say("Allocating more space : " + -overAllocation);

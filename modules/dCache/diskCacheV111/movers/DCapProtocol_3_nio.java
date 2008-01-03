@@ -42,6 +42,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
 
 
 	private static Logger _logSocketIO = Logger.getLogger("logger.dev.org.dcache.io.socket");
+	private final static Logger _logSpaceAllocation = Logger.getLogger("logger.org.dcache.poolspacemonitor." + DCapProtocol_3_nio.class.getName());
    private static final int INC_SPACE  =  (50*1024*1024) ;
    //
    // <init>( CellAdapter cell ) ;
@@ -118,6 +119,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
           while( newEof > _spaceAllocated){
              _status = "WaitingForSpace("+_allocationSpace+")" ;
              debug( "Allocating new space : "+_allocationSpace ) ;
+             _logSpaceAllocation.debug("ALLOC: " + _pnfsId + " : " + _allocationSpace );
              _spaceMonitor.allocateSpace( _allocationSpace ) ;
              _spaceAllocated += _allocationSpace ;
              debug( "Allocated new space : "+_allocationSpace ) ;
@@ -138,7 +140,10 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
 
          long freeIt = _spaceAllocated - _spaceUsed ;
          debug("Returning "+freeIt+" bytes");
-         if( freeIt > 0 )_spaceMonitor.freeSpace( freeIt) ;
+         if( freeIt > 0 ) {
+        	 _logSpaceAllocation.debug("FREE: " + _pnfsId + " : " + freeIt );
+        	 _spaceMonitor.freeSpace( freeIt) ;
+         }
          if( freeIt < 0 )esay("Panic : didn't allocate enough Space") ;
 
          if( realFileSize != _spaceUsed   ){
@@ -163,6 +168,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
                 _spaceMonitor.freeSpace( freeIt ) ;
              }else if( freeIt < 0 ){
                 esay("Adjusting : Allocating "+( - freeIt) +" bytes" ) ;
+                _logSpaceAllocation.debug("FREE: " + _pnfsId + " : " + (- freeIt) );
                 _spaceMonitor.allocateSpace( - freeIt ) ;
              }
              throw new

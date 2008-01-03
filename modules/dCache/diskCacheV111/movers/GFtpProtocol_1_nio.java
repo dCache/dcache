@@ -82,11 +82,16 @@ import java.nio.channels.ServerSocketChannel;
 import java.security.MessageDigest;
 import diskCacheV111.util.Checksum;
 import  java.security.NoSuchAlgorithmException ;
+
+import org.apache.log4j.Logger;
+
 import diskCacheV111.util.ChecksumFactory;
 
 public class GFtpProtocol_1_nio implements MoverProtocol, ChecksumMover,
         NioDataBlocksRecipient {
 
+	
+	private final static Logger _logSpaceAllocation = Logger.getLogger("logger.org.dcache.poolspacemonitor." + GFtpProtocol_1_nio.class.getName());
     //
     // <init>( CellAdapter cell ) ;
     //
@@ -564,6 +569,7 @@ public class GFtpProtocol_1_nio implements MoverProtocol, ChecksumMover,
 
                 while ((_spaceUsed + nbytes) > _spaceAllocated) {
                     _status = "WaitingForSpace(" + _allocationSpace + ")";
+                    _logSpaceAllocation.debug("ALLOC: " + pnfsId + " : " + _allocationSpace );
                     spaceMonitor.allocateSpace(_allocationSpace);
                     _spaceAllocated += _allocationSpace;
                     _status = "";
@@ -599,6 +605,7 @@ public class GFtpProtocol_1_nio implements MoverProtocol, ChecksumMover,
 
         long freeIt = _spaceAllocated - _spaceUsed;
         if (freeIt > 0) {
+        	_logSpaceAllocation.debug("FREE: " + pnfsId + " : " + freeIt );
             spaceMonitor.freeSpace(freeIt);
         }
 

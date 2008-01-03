@@ -90,11 +90,17 @@ import diskCacheV111.repository.SpaceMonitor;
 import java.util.*;
 import java.io.*;
 import java.net.*;
+
+import org.apache.log4j.Logger;
+
 import diskCacheV111.movers.DataBlocksRecipient;
 
 public class	EBlockReceiver
     extends Thread {
 
+	
+	private final static Logger _logSpaceAllocation = Logger.getLogger("logger.org.dcache.poolspacemonitor." + EBlockReceiver.class.getName());
+	
     private class	EBlockDataChannel
         extends Thread {
         private DataBlocksRecipient	recipient;
@@ -155,6 +161,7 @@ public class	EBlockReceiver
 			    }
 
 			    while( ( _spaceUsed + n ) > _spaceAllocated ){
+			    	_logSpaceAllocation.debug("ALLOC: <UNKNOWN> : " + _allocationSpace);
 				_spaceMonitor.allocateSpace( _allocationSpace ) ;
 				_spaceAllocated += _allocationSpace ;
 			    }
@@ -195,7 +202,10 @@ public class	EBlockReceiver
                     oome.printStackTrace();
                 }
            long freeIt = _spaceAllocated - _spaceUsed ;
-           if( freeIt > 0 ) _spaceMonitor.freeSpace( freeIt) ;
+           if( freeIt > 0 ) {
+        	   _logSpaceAllocation.debug("FREE: <UNKNOWN> : " + freeIt );
+        	   _spaceMonitor.freeSpace( freeIt) ;
+           }
 
         }
     }

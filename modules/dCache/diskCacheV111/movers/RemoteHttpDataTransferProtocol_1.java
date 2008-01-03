@@ -24,8 +24,13 @@ import java.net.InetAddress;
 import java.util.Hashtable;
 import java.util.StringTokenizer;
 
+import org.apache.log4j.Logger;
+
 public class RemoteHttpDataTransferProtocol_1 implements MoverProtocol 
 {
+	
+	private final static Logger _logSpaceAllocation = Logger.getLogger("logger.org.dcache.poolspacemonitor." + RemoteHttpDataTransferProtocol_1.class.getName());
+	
    public static final int READ   =  1 ;
    public static final int WRITE  =  2 ;
    public static final long SERVER_LIFE_SPAN= 60 * 5 * 1000; /* 5 minutes */ 
@@ -107,6 +112,7 @@ public class RemoteHttpDataTransferProtocol_1 implements MoverProtocol
          InputStream httpinput = httpconnection.getInputStream();
          byte[] buffer = new byte[remoteHttpProtocolInfo.getBufferSize()];
          int read = 0;
+         _logSpaceAllocation.debug("ALLOC: " + pnfsId + " : " + INC_SPACE );
          spaceMonitor.allocateSpace(INC_SPACE);
          allocated_space+=INC_SPACE;
          
@@ -115,6 +121,7 @@ public class RemoteHttpDataTransferProtocol_1 implements MoverProtocol
               last_transfer_time    = System.currentTimeMillis() ;
              if(transfered+read > allocated_space)
              {
+            	 _logSpaceAllocation.debug("ALLOC: " + pnfsId + " : " + INC_SPACE );
                   spaceMonitor.allocateSpace(INC_SPACE);
                   allocated_space+=INC_SPACE;
                  
@@ -126,6 +133,7 @@ public class RemoteHttpDataTransferProtocol_1 implements MoverProtocol
          
          if(allocated_space - transfered >0)
          {
+        	 _logSpaceAllocation.debug("FREE: " + pnfsId + " : " + (allocated_space - transfered) );
              spaceMonitor.freeSpace(allocated_space - transfered);
          }
          say("runIO() wrote "+transfered+"bytes");

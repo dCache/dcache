@@ -4,6 +4,7 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
+import org.apache.log4j.Logger;
 import org.dcache.xrootd.core.connection.PhysicalXrootdConnection;
 import org.dcache.xrootd.core.stream.LogicalStream;
 import org.dcache.xrootd.core.stream.StreamListener;
@@ -26,6 +27,8 @@ import org.dcache.xrootd.util.FileStatus;
 
 public class XrootdMoverListener implements StreamListener {
 
+	
+	private final static Logger _logSpaceAllocation = Logger.getLogger("logger.org.dcache.poolspacemonitor." + XrootdMoverListener.class.getName());
 	private XrootdProtocol_2 mover;
 	private static final int BLOCK_SIZE = (50*1024*1024) ;
 	private long currentFileSize = 0;
@@ -338,6 +341,7 @@ public class XrootdMoverListener implements StreamListener {
 								+ (expectedBlocks - usedBlocks) + " blocks");
 
 				try {
+					_logSpaceAllocation.debug("ALLOC: " + mover.getPnfsId() + " : " + (expectedBlocks - usedBlocks) * BLOCK_SIZE );
 					mover.getSpaceMonitor().allocateSpace(
 							(expectedBlocks - usedBlocks) * BLOCK_SIZE);
 				} catch (InterruptedException e) {
@@ -440,6 +444,7 @@ public class XrootdMoverListener implements StreamListener {
 				// free nonused space
 				int spaceToFree = BLOCK_SIZE
 						- (int) (currentFileSize % BLOCK_SIZE);
+				_logSpaceAllocation.debug("FREE: " + mover.getPnfsId() + " : " + spaceToFree );
 				mover.getSpaceMonitor().freeSpace(spaceToFree);
 				mover.getCell().say("freeing " + spaceToFree + " bytes");
 

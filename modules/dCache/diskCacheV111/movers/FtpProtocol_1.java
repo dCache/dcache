@@ -6,11 +6,17 @@ import  diskCacheV111.util.* ;
 import  dmg.cells.nucleus.* ;
 import  java.io.* ;
 import  java.net.* ;
+
+import org.apache.log4j.Logger;
+
 import  diskCacheV111.repository.SpaceMonitor ;
 
 public class FtpProtocol_1 
        implements MoverProtocol           {
 
+	
+	private final static Logger _logSpaceAllocation = Logger.getLogger("logger.org.dcache.poolspacemonitor." + FtpProtocol_1.class.getName());
+	
    //  
    // <init>( CellAdapter cell ) ;
    //
@@ -94,6 +100,7 @@ public class FtpProtocol_1
 	      if( nbytes <= 0 ) break;
               while( ( _spaceUsed + nbytes ) > _spaceAllocated ){
                  _status = "WaitingForSpace("+_allocationSpace+")" ;
+                 _logSpaceAllocation.debug("ALLOC: " + pnfsId + " : " + _allocationSpace );
                  spaceMonitor.allocateSpace( _allocationSpace ) ;
                  _spaceAllocated += _allocationSpace ;
                  _status = "" ;
@@ -119,7 +126,10 @@ public class FtpProtocol_1
            }
            say( "SysTimer : "+sysTimer.getDifference().toString() ) ;
            long freeIt = _spaceAllocated - _spaceUsed ;
-           if( freeIt > 0 )spaceMonitor.freeSpace( freeIt) ;
+           if( freeIt > 0 ){
+        	   _logSpaceAllocation.debug("FREE: " + pnfsId + " : " + freeIt );
+        	   spaceMonitor.freeSpace( freeIt) ;
+           }
         }
           
           

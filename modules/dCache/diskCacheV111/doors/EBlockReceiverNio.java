@@ -76,8 +76,12 @@ import diskCacheV111.movers.NioDataBlocksRecipient;
 import java.nio.channels.*;
 import java.nio.ByteBuffer;
 
+import org.apache.log4j.Logger;
+
 public class EBlockReceiverNio extends Thread {
 
+	private final static Logger _logSpaceAllocation = Logger.getLogger("logger.org.dcache.poolspacemonitor." + EBlockReceiverNio.class.getName());
+	
     private class EBlockDataChannelNio extends Thread {
         private NioDataBlocksRecipient recipient;
 
@@ -138,6 +142,7 @@ public class EBlockReceiverNio extends Thread {
                         }
 
                         while ((_spaceUsed + n) > _spaceAllocated) {
+                        	_logSpaceAllocation.debug("ALLOC: <UNKNOWN> : " + _allocationSpace);
                             _spaceMonitor.allocateSpace(_allocationSpace);
                             _spaceAllocated += _allocationSpace;
                         }
@@ -178,6 +183,7 @@ public class EBlockReceiverNio extends Thread {
             }
             long freeIt = _spaceAllocated - _spaceUsed;
             if (freeIt > 0) {
+            	_logSpaceAllocation.debug("FREE: <UNKNOWN> : " + _allocationSpace );
                 _spaceMonitor.freeSpace(freeIt);
             }
 

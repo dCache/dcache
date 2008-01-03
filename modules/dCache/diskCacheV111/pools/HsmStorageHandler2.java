@@ -30,6 +30,7 @@ import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.Logable;
 
+import diskCacheV111.movers.DCapProtocol_3_nio;
 import diskCacheV111.repository.CacheRepository;
 import diskCacheV111.repository.CacheRepositoryEntry;
 import diskCacheV111.util.Batchable;
@@ -52,6 +53,7 @@ public class HsmStorageHandler2  {
 
 
 	private static Logger _logRepository = Logger.getLogger("logger.org.dcache.repository");
+	private final static Logger _logSpaceAllocation = Logger.getLogger("logger.org.dcache.poolspacemonitor." + HsmStorageHandler2.class.getName());
 
     private final CacheRepository _repository  ;
     private Logable         _log         = null ;
@@ -494,6 +496,7 @@ public class HsmStorageHandler2  {
                String fetchCommand = getFetchCommand( _pnfsId , _storageInfo );
 
                say("Waiting for space ("+fileSize+" Bytes)" ) ;
+               _logSpaceAllocation.debug("ALLOC: " + _pnfsId + " : " + fileSize );
                _repository.allocateSpace(fileSize) ;
                say("Got Space ("+fileSize+" Bytes)" ) ;
 
@@ -612,6 +615,7 @@ public class HsmStorageHandler2  {
                         // bytes = size of the file on disk.
                         //
                        _repository.removeEntry( _entry ) ;
+                       _logSpaceAllocation.debug("FREE: " + _pnfsId + " : " + (fileSize-size) );
                        _repository.freeSpace( Math.max(0L,fileSize-size) ) ;
                      }catch(Exception eee){
                        esay("PANIC : can't destroyEntry failed after 'failed Restore'") ;

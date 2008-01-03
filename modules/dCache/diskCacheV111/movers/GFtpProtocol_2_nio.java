@@ -32,6 +32,8 @@ import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.SysTimer;
 import diskCacheV111.repository.SpaceMonitor;
+
+import org.apache.log4j.Logger;
 import org.dcache.ftp.*;
 
 /**
@@ -40,6 +42,9 @@ import org.dcache.ftp.*;
 public class GFtpProtocol_2_nio
     implements ConnectionMonitor, MoverProtocol, ChecksumMover, ErrorListener
 {
+	
+	private final static Logger _logSpaceAllocation = Logger.getLogger("logger.org.dcache.poolspacemonitor." + GFtpProtocol_2_nio.class.getName());
+	
     /** The minimum number of bytes to increment the space allocation. */
     public final static long SPACE_INC = 50 * 1024 * 1024; // 50 MB
 
@@ -321,6 +326,7 @@ public class GFtpProtocol_2_nio
             if (_spaceMonitor != null && _role == Role.Receiver) {
                 long overAllocation = _reservedSpace - file.length();
                 if (overAllocation > 0) {
+                	_logSpaceAllocation.debug("FREE: " + id + " : " + overAllocation );
                     _spaceMonitor.freeSpace(overAllocation);
                 } else if (overAllocation < 0) {
                     /* This can only happen as a consequence of a bug
@@ -328,6 +334,7 @@ public class GFtpProtocol_2_nio
                      * recover from it by allocating some extra space.
                      */
                     esay("File is larger than expected (this is a bug - please report it");
+                    _logSpaceAllocation.debug("ALLOC: " + id + " : " + (-overAllocation) );
                     _spaceMonitor.allocateSpace(-overAllocation);
                 }
             }
@@ -748,6 +755,7 @@ public class GFtpProtocol_2_nio
 	    long additional = Math.max(position - _reservedSpace, SPACE_INC);
 	    if (_spaceMonitor != null) {
 		_status = "WaitingForSpace(" + additional + ")";
+		_logSpaceAllocation.debug("ALLOC: " + id + " : " + additional );
 		_spaceMonitor.allocateSpace(additional);
 		_status = "None";
 	    }
