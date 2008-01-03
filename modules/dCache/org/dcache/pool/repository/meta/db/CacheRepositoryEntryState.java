@@ -184,11 +184,6 @@ public class CacheRepositoryEntryState implements Serializable
             throw new IllegalStateException("Entry in removed state");
         }
 
-        // sticky allowed on 'received' files only
-        if (!(_precious || _cached)) {
-            throw new IllegalStateException("File still transient");
-        }
-
         // if sticky flag modified, make changes persistent
         if (expire == -1 || expire > System.currentTimeMillis()) {
             _sticky.add(new StickyRecord(owner, expire));

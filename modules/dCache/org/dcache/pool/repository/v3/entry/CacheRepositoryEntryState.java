@@ -128,12 +128,6 @@ public class CacheRepositoryEntryState {
 				throw new IllegalStateException("Entry in removed state");
 			}
 
-
-			// sticky allowed on 'received' files only
-			if( !(_precious.isSet() || _cached.isSet() ) ) {
-				throw new IllegalStateException("File still transient");
-			}
-
 			// if sticky flag modified, make changes persistent
 			if( _sticky.addRecord(owner, expire) ) {
 				makeStatePercistent();
@@ -174,7 +168,7 @@ public class CacheRepositoryEntryState {
 			}
 
 			_error.set(false);
-			
+
 		}finally{
 			_stateLock.writeLock().unlock();
 		}
@@ -545,7 +539,7 @@ public class CacheRepositoryEntryState {
 		try {
 
 			in = new BufferedReader( new FileReader(_controlFile) );
-			
+
 			boolean done = false;
 			while(!done) {
 
@@ -624,22 +618,22 @@ public class CacheRepositoryEntryState {
 			/*
 			 * backward compatibility
 			 */
-			
+
 			if( state.equals("receiving.store") ) {
 				_fromStore.set(true);
 				continue;
 			}
-			
+
 			if( state.equals("receiving.cient") ) {
 				_fromClient.set(true);
 				continue;
-			}			
-			
+			}
+
 			// in case of some one fixed the spelling
 			if( state.equals("receiving.client") ) {
 				_fromClient.set(true);
 				continue;
-			}			
+			}
 
 			// FORMAT: sticky:owner:exipire
 
