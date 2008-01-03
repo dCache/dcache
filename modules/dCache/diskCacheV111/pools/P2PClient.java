@@ -45,9 +45,9 @@ import dmg.util.Args;
 import dmg.util.CommandSyntaxException;
 
 public class P2PClient {
-	
+
 	private final static Logger _logSpaceAllocation = Logger.getLogger("logger.dev.org.dcache.poolspacemonitor." + P2PClient.class.getName());
-	
+
     private final CacheRepository _repository;
     private final CellAdapter _cell;
     private final Acceptor _acceptor = new Acceptor();
@@ -359,6 +359,10 @@ public class P2PClient {
                 }
 
                 _companion.setTransferChecksum(new Checksum(digest));
+
+                if (total != filesize) {
+                    throw new IOException("Amount of received data does not match expected file size");
+                }
             } finally {
                 dataFile.close();
             }
@@ -379,9 +383,34 @@ public class P2PClient {
             setStatus("<Done>");
         }
 
+        private void adjustSpaceAllocation()
+        {
+            if (_companion != null) {
+                try {
+                    long size = _companion.getDataFile().length();
+                    long overAllocation = _spaceAllocated - size;
+                    PnfsId pnfsId = _companion.getEntry().getPnfsId();
+
+                    if (overAllocation > 0) {
+                        _logSpaceAllocation.debug("FREE: " + pnfsId + " : " + overAllocation);
+                        _repository.freeSpace(overAllocation);
+                    } else if (overAllocation < 0) {
+                        esay("Bug detected, not enough space allocated for P2P");
+                        _logSpaceAllocation.debug("ALLOCATE: " + pnfsId + " : " + -overAllocation);
+                        _repository.allocateSpace(-overAllocation);
+                    }
+                    _spaceAllocated = size;
+                } catch (CacheException e) {
+                    throw new RuntimeException("Bug detected, unexpected exception", e);
+                } catch (InterruptedException e) {
+                    esay("Could not adjust space allocation. Expect it to be wrong!");
+                    Thread.currentThread().interrupt();
+                }
+            }
+        }
+
         public void run() {
             try {
-
                 runIO();
 
                 _checksumModule.setMoverChecksums(_companion.getEntry(), null,
@@ -390,74 +419,69 @@ public class P2PClient {
 
                 if (_simulateIOFailure)
                     throw new IOException("Transfer failed (simulate)");
-
-            } catch (Exception ioe) {
-                setStatus("Error : " + ioe.getMessage());
-                esay(ioe);
-
-                // clean up before exiting
-                // not having a _companion at this point means an unsolicited
-                // connect happened (e.g. a portscan)
-                if (_companion != null) {
-
-                    if (_spaceAllocated != 0L)
-                        try {
-                        	_logSpaceAllocation.debug("FREE: " + _companion.getEntry().getPnfsId() + " : " + _companion.getEntry().getSize());
-                            _repository.freeSpace(_spaceAllocated
-                                    - _companion.getEntry().getSize());
-                        } catch (CacheException ignored) {
-                            // exception is never thrown, we can ignore this
-                            // safely
-                        }
-
-                    try {
-                        _repository.removeEntry(_companion.getEntry());
-                    } catch (Exception ee) {
-                        esay(ee);
-                    }
-                    CacheFileAvailable callback = _companion.getCallback();
-                    if (callback != null) {
-                        callback.cacheFileAvailable(_companion.getEntry()
-                                .getPnfsId().toString(), ioe);
-                    }
+            } catch (Exception e) {
+                /* Not having a companion at this point means an
+                 * unsolicited connect happened (e.g. a portscan).
+                 */
+                if (_companion == null) {
+                    esay("Unsolicited connection from " +
+                         _socket.getRemoteSocketAddress());
+                    return;
                 }
+
+                setStatus("Error : " + e.getMessage());
+                esay(e);
+                _companion.transferFailed(e);
                 return;
             } finally {
                 try {
                     _socket.close();
-                } catch (IOException ee) {
+                } catch (IOException e) {
                     // take it easy
                 }
+                adjustSpaceAllocation();
             }
+
             CacheRepositoryEntry entry = _companion.getEntry();
+
+            /* Try to get the storage info (no problem if it
+             * fails).
+             */
             try {
-                entry.setCached();
-            } catch (CacheException e) {
-                esay(e);
-            }
-            //
-            // try to get the storage info (no problem if it fails)
-            //
-            try {
-                PnfsGetStorageInfoMessage storageInfoMsg = new PnfsGetStorageInfoMessage(
+                PnfsGetStorageInfoMessage storageInfoMsg =
+                    new PnfsGetStorageInfoMessage(
                         _companion.getEntry().getPnfsId());
 
                 CellMessage answer = _cell.sendAndWait(new CellMessage(
                         new CellPath("PnfsManager"), storageInfoMsg),
                         _pnfsTimeout);
 
-                Message message = (Message) answer.getMessageObject();
-
+                Message message = (Message)answer.getMessageObject();
                 if (message.getReturnCode() != 0)
                     throw new CacheException(message.getReturnCode(), message
                             .getErrorObject().toString());
 
-                StorageInfo info = ((PnfsGetStorageInfoMessage) message)
-                        .getStorageInfo();
+                StorageInfo info =
+                    ((PnfsGetStorageInfoMessage)message).getStorageInfo();
+
+                /* If the file size doesn't match, we fail the
+                 * transfer.
+                 */
+                if (info.getFileSize() != entry.getDataFile().length()) {
+                    esay("Incomplete file received (file size does not match storage information)");
+                    _companion.transferFailed("Incomplete file received");
+                    return;
+                }
+
                 entry.setStorageInfo(info);
 
+                /* We mark the file sticky before making it available
+                 * (marking it cached) to avoid a race condition in
+                 * which the sweeper could delete the file between the
+                 * two events.
+                 */
                 String value = info.getKey("flag-s");
-                if ((value != null) && (!value.equals(""))) {
+                if (value != null && !value.equals("")) {
                     say("setting sticky bit of " + entry);
                     entry.setSticky(true);
                 }
@@ -470,11 +494,18 @@ public class P2PClient {
                 esay("Bug detected: " + e.getMessage());
                 esay(e);
             }
-            CacheFileAvailable callback = _companion.getCallback();
-            if (callback != null) {
-                callback.cacheFileAvailable(_companion.getEntry().getPnfsId()
-                        .toString(), null);
+
+            try {
+                /* Make the file available. This action will unlock the
+                 * file (the pool does this).
+                 */
+                entry.setCached();
+            } catch (CacheException e) {
+                esay("Bug detected: " + e.getMessage());
+                esay(e);
             }
+
+            _companion.clientSucceeded();
         }
 
         public String toString() {
@@ -482,56 +513,88 @@ public class P2PClient {
         }
     }
 
-    public class Companion {
+    public class Companion
+    {
         private final int _id ;
-        private IOHandler _ioHandler = null;
-        private String _status = "<idle>";
         private final CacheRepositoryEntry _entry;
-
-        private CacheFileAvailable _callback = null;
-        private Checksum transferCS = null;
         private final String _srcPoolName;
+        private final CacheFileAvailable _callback;
 
-        private Companion(CacheRepositoryEntry entry, String srcPoolName) {
+        private String _status = "<idle>";
+        private IOHandler _ioHandler;
+        private Checksum _transferCS;
+        private boolean _failed = false;
+        private boolean _serverSucceeded = false;
+        private boolean _clientSucceeded = false;
+
+        private Companion(PnfsId pnfsId, String srcPoolName,
+                          CacheFileAvailable callback)
+            throws CacheException
+        {
             _id = getNextId();
-            _entry = entry;
-            _sessions.put(_id, this);
             _srcPoolName = srcPoolName;
-        }
-
-        private void setTransferChecksum(Checksum checksum) {
-            this.transferCS = checksum;
-        }
-
-        private Checksum getTransferChecksum() {
-            return transferCS;
-        }
-
-        private void setCallback(CacheFileAvailable callback) {
             _callback = callback;
+
+            synchronized (_repository) {
+                _entry = _repository.createEntry(pnfsId);
+                try {
+                    _entry.lock(true);
+                    _entry.setReceivingFromStore();
+                } catch (CacheException e) {
+                    removeEntry();
+                    throw e;
+                }
+            }
+
+            _sessions.put(_id, this);
         }
 
-        private CacheFileAvailable getCallback() {
-            return _callback;
+        /**
+         * Deletes the repository entry associates with the companion.
+         */
+        private synchronized void removeEntry()
+        {
+            try {
+                _entry.lock(false);
+                _repository.removeEntry(_entry);
+            } catch (CacheException e) {
+                esay("Cannot remove entry on error: " + e.getMessage());
+                esay(e);
+            }
         }
 
-        private int getSessionId() {
+        private synchronized void setTransferChecksum(Checksum checksum)
+        {
+            _transferCS = checksum;
+        }
+
+        private synchronized Checksum getTransferChecksum()
+        {
+            return _transferCS;
+        }
+
+        private synchronized int getSessionId()
+        {
             return _id;
         }
 
-        private CacheRepositoryEntry getEntry() {
+        private synchronized CacheRepositoryEntry getEntry()
+        {
             return _entry;
         }
 
-        private File getDataFile() throws CacheException {
+        private synchronized File getDataFile() throws CacheException
+        {
             return _entry.getDataFile();
         }
 
-        private void setIOHandler(IOHandler ioHandler) {
+        private synchronized void setIOHandler(IOHandler ioHandler)
+        {
             _ioHandler = ioHandler;
         }
 
-        public String toString() {
+        public synchronized String toString()
+        {
             return ""
                     + _id
                     + " "
@@ -544,55 +607,125 @@ public class P2PClient {
         }
 
         private synchronized void pool2PoolIoFileMsgArrived(
-                PoolDeliverFileMessage message) {
-
+                PoolDeliverFileMessage message)
+        {
             say("" + _id + " : PoolDeliverFileMessage : " + message);
             if (message.getReturnCode() != 0) {
-                _status = "" + message.getErrorObject();
-                esay("" + _id + " -> " + _status);
-                remove();
-                removeFileEntry();
+                transferFailed(message.getErrorObject());
                 return;
             }
             _status = "Pool2Pool message ok";
         }
 
         private synchronized void poolTransferFinishedArrived(
-                DoorTransferFinishedMessage message) {
-
+                DoorTransferFinishedMessage message)
+        {
             say("" + _id + " : poolTransferFinishedArrived : " + message);
             if (message.getReturnCode() != 0) {
-                _status = "" + message.getErrorObject();
-                esay("" + _id + " -> " + _status);
-                remove();
-                removeFileEntry();
+                transferFailed(message.getErrorObject());
                 return;
             }
-            _status = "Transfer Done";
-            remove();
+            serverSucceeded();
         }
 
-        private void remove() {
+        private synchronized void remove()
+        {
             if (_removeOnExit)
                 _sessions.remove(_id);
         }
 
-        private void removeFileEntry() {
-            try {
-                _repository.removeEntry(_entry);
-            } catch (CacheException ee) {
-                esay("Can't remove entry on Error : " + ee);
-                esay(ee);
+        public synchronized String getSourcePool()
+        {
+            return _srcPoolName;
+        }
+
+        /**
+         * Calls the callback with the given failure cause. The cause
+         * may be <code>null</code>, in which case the callback
+         * indicates a successful transfer.
+         */
+        private void callCallback(Object cause)
+        {
+            if (_callback != null) {
+                String pnfsId = _entry.getPnfsId().toString();
+                Throwable t;
+
+                if (cause == null) {
+                    t = null;
+                } else if (cause instanceof Throwable) {
+                    t = (Throwable)cause;
+                } else {
+                    t = new CacheException(cause.toString());
+                }
+                _callback.cacheFileAvailable(pnfsId, t);
             }
         }
 
-        public String getSourcePool() {
-            return _srcPoolName;
+        /**
+         * Causes the callback to be called with the given failure
+         * cause, the repository entry to be deleted, and the
+         * companion to be closed.
+         */
+        public synchronized void transferFailed(Object cause)
+        {
+            if (!_failed) {
+                if (_clientSucceeded && _serverSucceeded)
+                    throw new IllegalStateException("Cannot fail a finished transfer");
+                _failed = true;
+                _status = cause.toString();
+                esay(String.format("%d -> %s", _id, cause));
+
+                remove();
+                removeEntry();
+                callCallback(cause);
+            }
+        }
+
+        /**
+         * If both sender and receiver have reported success, then the
+         * callback is triggered and the companion is closed.
+         *
+         * Notice that we do not unlock the repository entry. The
+         * unlock is done by the pool code as soon as the file is
+         * marked as cached.
+         */
+        private void succeedIfDone()
+        {
+            if (_clientSucceeded && _serverSucceeded && !_failed) {
+                _status = "Transfer done";
+                remove();
+                callCallback(null);
+            }
+        }
+
+        /**
+         * Reports that the receiver believes that the transfer
+         * succeeded.
+         */
+        public synchronized void clientSucceeded()
+        {
+            if (_clientSucceeded)
+                throw new IllegalStateException("Duplicate call not allowed");
+            _clientSucceeded = true;
+            succeedIfDone();
+        }
+
+        /**
+         * Reports that the sender believes that the transfer
+         * succeeded.
+         */
+        public synchronized void serverSucceeded()
+        {
+            if (_serverSucceeded)
+                throw new IllegalStateException("Duplicate call not allowed");
+            _serverSucceeded = true;
+            succeedIfDone();
         }
     }
 
     public P2PClient(CellAdapter cell, CacheRepository repository,
-            ChecksumModuleV1 csModule) {
+            ChecksumModuleV1 csModule)
+    {
         _repository = repository;
         _cell = cell;
         _checksumModule = csModule;
@@ -602,43 +735,33 @@ public class P2PClient {
             StorageInfo storageInfo, CacheFileAvailable callback)
         throws CacheException, UnknownHostException
     {
-
-        //
-        // make sure the entry doens't yet exist.
-        // and create it.
-        //
-        CacheRepositoryEntry entry = _repository.createEntry(pnfsId);
-        try {
-            entry.setReceivingFromStore();
-        } catch (CacheException e) {
-            _repository.removeEntry(entry);
-            throw e;
-        }
-        //
-        // create our companion
-        //
-        Companion companion = new Companion(entry, poolName);
-        companion.setCallback(callback);
         //
         // start the listener (if not yet done)
         //
         _acceptor.start();
+
         //
-        // construct the actual request to the remote pool.
+        // create our companion
         //
-        DCapProtocolInfo pinfo = new DCapProtocolInfo("DCap", 3, 0, InetAddress
-                .getLocalHost().getHostAddress(), _acceptor.getPort());
-        pinfo.setSessionId(companion.getSessionId());
-
-        StorageInfo sinfo = storageInfo != null ? storageInfo
-                : new DummyStorageInfo();
-
-        PoolDeliverFileMessage request = new PoolDeliverFileMessage(poolName,
-                pnfsId, pinfo, sinfo);
-        request.setPool2Pool();
-
         boolean success = false;
+        Companion companion = new Companion(pnfsId, poolName, callback);
         try {
+            //
+            // construct the actual request to the remote pool.
+            //
+            DCapProtocolInfo pinfo =
+                new DCapProtocolInfo("DCap", 3, 0,
+                                     InetAddress.getLocalHost().getHostAddress(),
+                                     _acceptor.getPort());
+            pinfo.setSessionId(companion.getSessionId());
+
+            StorageInfo sinfo =
+                storageInfo != null ? storageInfo : new DummyStorageInfo();
+
+            PoolDeliverFileMessage request =
+                new PoolDeliverFileMessage(poolName, pnfsId, pinfo, sinfo);
+            request.setPool2Pool();
+
             _cell.sendMessage(new CellMessage(new CellPath(poolName), request));
             success = true;
         } catch (NotSerializableException e) {
@@ -648,13 +771,8 @@ public class P2PClient {
                  + e.getMessage());
         } finally {
             if (!success) {
-                _sessions.remove(companion.getSessionId());
-                try {
-                    _repository.removeEntry(entry);
-                } catch (CacheException eee) {
-                    esay("Couldn't remove entry after failure : " + eee);
-                    esay(eee);
-                }
+                companion.remove();
+                companion.removeEntry();
             }
         }
 
@@ -696,16 +814,14 @@ public class P2PClient {
     }
 
     public void getInfo(PrintWriter pw) {
-        pw
-                .println(" Pool to Pool (P2P) [$Id: P2PClient.java,v 1.21 2007-10-31 17:27:11 radicke Exp $]");
+        pw.println(" Pool to Pool (P2P) [$Id: P2PClient.java,v 1.21 2007-10-31 17:27:11 radicke Exp $]");
         pw.println("  Listener   : " + _acceptor);
         pw.println("  Max Active : " + _maxActive);
         pw.println("Pnfs Timeout : " + (_pnfsTimeout / 1000L) + " seconds ");
     }
 
     public void printSetup(PrintWriter pw) {
-        pw
-                .println("#\n#  Pool to Pool (P2P) [$Id: P2PClient.java,v 1.21 2007-10-31 17:27:11 radicke Exp $]\n#");
+        pw.println("#\n#  Pool to Pool (P2P) [$Id: P2PClient.java,v 1.21 2007-10-31 17:27:11 radicke Exp $]\n#");
         pw.println("pp set port " + _acceptor._recommendedPort);
         pw.println("pp set max active " + _maxActive);
         pw.println("pp set pnfs timeout " + (_pnfsTimeout / 1000L));
