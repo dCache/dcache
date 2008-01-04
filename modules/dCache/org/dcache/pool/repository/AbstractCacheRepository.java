@@ -3,16 +3,13 @@ package org.dcache.pool.repository;
 import java.util.List;
 import java.util.Set;
 import java.util.HashSet;
-import java.util.ArrayList;
 import java.util.MissingResourceException;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.log4j.Logger;
 
 import dmg.util.Logable;
 
-import diskCacheV111.movers.DCapProtocol_3_nio;
 import diskCacheV111.repository.SpaceMonitor;
 import diskCacheV111.repository.SpaceRequestable;
 import diskCacheV111.repository.CacheRepository;
@@ -208,6 +205,10 @@ public abstract class AbstractCacheRepository
         case DESTROY:
             try {
                 CacheRepositoryEntry entry = event.getRepositoryEntry();
+                if( entry.getSize() != entry.getDataFile().length() ) {
+                	_logSpaceAllocation.fatal(entry.getPnfsId() + " file size missmatch: entry.getSize()/entry.getDataFile().length()" +
+                			entry.getSize() +"/" + entry.getDataFile().length());
+                }
                 _logSpaceAllocation.debug("FREE: " + entry.getPnfsId() + " : " + entry.getSize() );
                 freeSpace(entry.getSize());
                 removePrecious(entry);
