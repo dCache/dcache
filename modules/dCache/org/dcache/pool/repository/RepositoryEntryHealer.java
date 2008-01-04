@@ -20,27 +20,44 @@ import diskCacheV111.vehicles.StorageInfo;
  * CacheRepositoryEntry objects from PNFS in case they are missing or
  * broken in a MetaDataRepository.
  */
-public class RepositoryEntryHealer 
+public class RepositoryEntryHealer
 {
-    private static Logger _log = 
+    private final static Logger _log =
         Logger.getLogger("logger.org.dcache.repository");
+
+    private final static String REPLICA_BAD_SIZE_MSG =
+        "Replica %1$s has an incorrect size. It is %2$d and should " +
+        "have been %3$d. Marking replica as bad.";
+    private final static String PNFS_BAD_SIZE_MSG =
+        "File size missing in PNFS for %1$s. Setting it to %2$d.";
+    private final static String BAD_SIZE_MSG =
+        "File size mismatch for %1$s. %2$d according to cached " +
+        "meta data, but %3$d in replica.";
+    private final static String PARTIAL_FROM_CLIENT_MSG =
+        "%1$s is incomplete. Recovering meta data from PNFS and " +
+        "marking replica as bad.";
+    private final static String PARTIAL_FROM_TAPE_MSG =
+        "%1$s is not fully staged. Deleting replica.";
+    private final static String MISSING_SI_MSG =
+        "Storage info for %1$s was lost.";
 
     private final PnfsHandler _pnfsHandler;
     private final MetaDataRepository _metaRepository;
     private final DataFileRepository _dataRepository;
     private final MetaDataRepository _oldRepository;
 
-    public RepositoryEntryHealer(PnfsHandler pnfsHandler, 
+
+    public RepositoryEntryHealer(PnfsHandler pnfsHandler,
                                  DataFileRepository dataRepository,
-                                 MetaDataRepository metaRepository) 
+                                 MetaDataRepository metaRepository)
     {
         this(pnfsHandler,dataRepository, metaRepository, null );
     }
 
-    public RepositoryEntryHealer(PnfsHandler pnfsHandler, 
+    public RepositoryEntryHealer(PnfsHandler pnfsHandler,
                                  DataFileRepository dataRepository,
                                  MetaDataRepository metaRepository,
-                                 MetaDataRepository oldRepository) 
+                                 MetaDataRepository oldRepository)
     {
         _pnfsHandler = pnfsHandler;
         _dataRepository = dataRepository;
@@ -48,34 +65,77 @@ public class RepositoryEntryHealer
         _oldRepository = oldRepository;
     }
 
-    protected CacheRepositoryEntry reconstruct(File file, PnfsId id) 
+    protected CacheRepositoryEntry reconstruct(File file, PnfsId id)
         throws CacheException
     {
         /* Get new storage info from pnfs
          */
         try {
-            StorageInfo storageInfo = 
+            StorageInfo storageInfo =
                 _pnfsHandler.getStorageInfo(id.toString());
 
-            /* Update file size if it's wrong and update pnfs as well
+            boolean precious =
+                storageInfo.getRetentionPolicy().equals(RetentionPolicy.CUSTODIAL) && !storageInfo.isStored();
+            boolean sticky =
+                storageInfo.getAccessLatency().equals(AccessLatency.ONLINE);
+            boolean bad = false;
+
+            CacheRepositoryEntry entry = _metaRepository.create(id);
+
+            /* If the file size does not match the one in PNFS, we
+             * have no way to know which is correct.
+             *
+             * We make the assumption that if the file is precious and
+             * has zero size in PNFS, then the replica's file size is
+             * the correct one. In this case we update the file size
+             * in PNFS.
+             *
+             * Otherwise the replica is corrupted and we mark it as
+             * bad.
+             *
+             * REVISIT: As of this writing, we are revising the
+             * semantics of size information stored at the pool, so
+             * the following code should be updated again.
              */
             long length = file.length();
             if (storageInfo.getFileSize() != length) {
+                if (precious && storageInfo.getFileSize() == 0) {
+                    _log.warn(String.format(PNFS_BAD_SIZE_MSG, id, length));
+                    _pnfsHandler.setFileSize(id, length);
+                } else {
+                    _log.error(String.format(REPLICA_BAD_SIZE_MSG, id, length,
+                                             storageInfo.getFileSize()));
+                    bad = true;
+                }
                 storageInfo.setFileSize(length);
-                _pnfsHandler.setFileSize(id, length);
             }
 
-            CacheRepositoryEntry entry = _metaRepository.create(id);
+            /* The order in which we update the entry is significant:
+             *
+             * - The storage information defines the file size and
+             *   must be set before the file is marked cached.
+             *
+             * - The sticky flag must be set before marking the file
+             *   cached to avoid that the file is prematurely garbage
+             *   collected.
+             *
+             * - Bad must be set last, as state transitions on bad
+             *   entries are not allowed.
+             */
             entry.setStorageInfo(storageInfo);
 
-            if (storageInfo.getRetentionPolicy().equals(RetentionPolicy.CUSTODIAL) && !storageInfo.isStored()) {
+            if (sticky) {
+                entry.setSticky(true, "system", -1);
+            }
+
+            if (precious) {
                 entry.setPrecious(true);
             } else {
                 entry.setCached();
             }
-			
-            if (storageInfo.getAccessLatency().equals(AccessLatency.ONLINE)) {
-                entry.setSticky(true, "system", -1);
+
+            if (bad) {
+                entry.setBad(true);
             }
 
             _log.warn("Meta data recovered: " + entry.toString());
@@ -86,27 +146,27 @@ public class RepositoryEntryHealer
                 throw e;
             }
 
-            _log.info(id + ": file was deleted. Removing replica...");
+            _log.info(id + " was deleted. Removing replica...");
             _metaRepository.remove(id);
             file.delete();
-		
+
             /*
              * TODO: this part should take care that we do not
              * remove files is pnfs manager in trouble
-             * 
+             *
              CacheRepositoryEntryState entryState = new CacheRepositoryEntryState(controlFile);
              if( entryState.canRemove() ) {
              _log.warn("removing missing removable entry : " + entryName );
              _repositoryTree.destroy(entryName);
-                 
-             // everybody is happy						 
-                 
+
+             // everybody is happy
+
              return null;
              }else{
              _log.warn("mark as bad non removable missing entry : " + entryName );
              entryState.setSticky("system",-1);
              entryState.setError();
-                 
+
              return repositoryEntry;
              }
             */
@@ -121,7 +181,7 @@ public class RepositoryEntryHealer
      * reconstructed with information from PNFS.
      */
     public CacheRepositoryEntry entryOf(PnfsId id)
-        throws IOException, IllegalArgumentException, CacheException 
+        throws IOException, IllegalArgumentException, CacheException
     {
         File file = _dataRepository.get(id);
         if (!file.isFile()) {
@@ -148,6 +208,7 @@ public class RepositoryEntryHealer
             _log.warn("Missing meta data for " + id);
             entry = reconstruct(file, id);
         } else if (entry.isReceivingFromClient()) {
+            _log.info(String.format(PARTIAL_FROM_CLIENT_MSG, id));
             /*
              * well, following steps have to be done:
              *
@@ -160,43 +221,39 @@ public class RepositoryEntryHealer
                     _pnfsHandler.getStorageInfo(id.toString());
                 storageInfo.setFileSize(length);
 
-                entry.setCached();
-                entry.setSticky(true, "system", -1);
-                entry.setBad(true);
                 entry.setStorageInfo(storageInfo);
+                entry.setSticky(true, "system", -1);
+                entry.setCached();
+                entry.setBad(true);
 
                 _pnfsHandler.addCacheLocation(id);
             } catch (CacheException e) {
                 if (e.getRc() != CacheException.FILE_NOT_FOUND) {
                     throw e;
                 }
-                 
+
                 /* The file is already gone
                  */
-                _log.info(id + ": partial file was deleted. Removing replica...");
+                _log.info(id + " was deleted. Removing replica.");
                 _metaRepository.remove(id);
                 file.delete();
             }
         } else if (entry.isReceivingFromStore()) {
             // it's safe to remove partialyFromStore file, we have a
             // copy on HSM anyway
-            _log.info(id + ": removing partially staged file.");
+            _log.info(String.format(PARTIAL_FROM_TAPE_MSG, id));
             _metaRepository.remove(id);
             file.delete();
             return null;
         } else if (entry.getStorageInfo() == null) {
-            _log.warn(id + "Storage info for " + id + " was lost");
+            _log.warn(String.format(MISSING_SI_MSG, id));
             _metaRepository.remove(id);
             entry = reconstruct(file, id);
         } else if (entry.getSize() != length) {
-            _log.warn("File size mismatch for " + id + "(" 
-                      + entry.getSize() 
-                      + " bytes according to meta data, but "
-                      + length 
-                      + " bytes in actual file)");
+            _log.warn(String.format(BAD_SIZE_MSG, id, entry.getSize(), length));
             _metaRepository.remove(id);
             entry = reconstruct(file, id);
-        }        
+        }
 
         return entry;
     }
