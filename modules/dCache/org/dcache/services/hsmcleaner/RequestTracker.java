@@ -34,7 +34,7 @@ import org.dcache.services.AbstractCell;
  * HSM, at most one request is send at a time. The class defines an
  * upper limit on the size of a request.
  */
-class RequestTracker
+public class RequestTracker
 {
     /**
      * Utility class to keep track of timeouts.

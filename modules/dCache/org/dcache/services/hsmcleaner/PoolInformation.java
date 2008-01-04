@@ -10,7 +10,7 @@ import diskCacheV111.pools.PoolCostInfo;
 /**
  * Encapsulates information about an HSM attached pool.
  */
-class PoolInformation
+public class PoolInformation
 {
     /** Creation time. */
     private final long _created;
@@ -25,7 +25,7 @@ class PoolInformation
     }
 
     /** Returns the pool name. */
-    public String getName() 
+    public String getName()
     {
         return _poolup.getPoolName();
     }
@@ -39,23 +39,23 @@ class PoolInformation
     /**
      * Returns the human readable status message of the pool. May be
      * null.
-     */ 
+     */
     public String getMessage()
     {
         return _poolup.getMessage();
     }
- 
+
     /**
      * Returns the machine interpretable status code of the
      * pool. Returns 0 if the status code has not been set.
-     */ 
+     */
     public int getCode()
     {
         return _poolup.getCode();
     }
 
     /** Returns the names of HSM instances attached to the pool. */
-    public Collection<String> getHsmInstances() 
+    public Collection<String> getHsmInstances()
     {
         return _poolup.getHsmInstances();
     }
@@ -71,7 +71,7 @@ class PoolInformation
     public Map getTagMap()
     {
         return _poolup.getTagMap();
-    }    
+    }
 
     public PoolCostInfo getPoolCostInfo()
     {
@@ -89,7 +89,7 @@ class PoolInformation
     public boolean isDisabled()
     {
         PoolV2Mode mode = getMode();
-        return mode.getMode() == PoolV2Mode.DISABLED 
+        return mode.getMode() == PoolV2Mode.DISABLED
             || mode.isDisabled(PoolV2Mode.DISABLED_DEAD)
             || mode.isDisabled(PoolV2Mode.DISABLED_STRICT);
     }
