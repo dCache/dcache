@@ -122,10 +122,15 @@ public class PoolRepository {
 		CacheRepositoryEntry entry = _repository.createEntry(pnfsId);
 
 		try {
-			entry.setSticky(true);
-			fail("Sticky not allowed for undefined state");
+                    /* Setting sticky early should be allowed, as
+                     * there is otherwise no way to set cached +
+                     * sticky without either going via precious or
+                     * risking the file to be garbage collected.
+                     */
+                    entry.setSticky(true);
+                    assertTrue("Sticky not set", entry.isSticky());
 		}catch(CacheException e) {
-			// OK illegal state
+                    fail("Setting sticky should not throw an exception");
 		}
 
 		try {
