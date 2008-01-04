@@ -8,6 +8,8 @@ import static org.junit.Assert.*;
 
 import dmg.cells.nucleus.CellPath;
 
+import java.net.URI;
+
 import org.dcache.chimera.FsInode;
 import org.dcache.pool.repository.MetaDataRepository;
 import org.dcache.pool.repository.RepositoryEntryHealer;
@@ -62,6 +64,7 @@ public class RepositoryEntryHealerTest {
 
 
        StorageInfo info = new OSMStorageInfo("h1", "rawd");
+       info.addLocation(new URI("osm://mystore/?store=mystore&group=mygroup&bdid=1"));
        e.setStorageInfo(info);
 
        PnfsGetStorageInfoMessage getStorageInfoMessage = new PnfsGetStorageInfoMessage(pnfsId);
