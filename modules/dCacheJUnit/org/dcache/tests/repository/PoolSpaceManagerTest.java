@@ -18,12 +18,20 @@ public class PoolSpaceManagerTest {
     private SpaceMonitor _poolSpaceMonitor = null;
     private final Random _random = new Random();
 
+    private long random()
+    {
+        long l = _random.nextLong();
+        while (l <= 0)
+            l = _random.nextLong();
+        return l;
+    }
+
 
     @Test
     public void testOverbook() {
 
 
-        long space = _random.nextLong();
+        long space = random();
 
         _poolSpaceMonitor = new FairQueueAllocation(space);
 
@@ -43,7 +51,7 @@ public class PoolSpaceManagerTest {
     @Test(expected=IllegalArgumentException.class)
     public void testFreeMoreThanReserved() throws Exception {
 
-        long space = _random.nextLong();
+        long space = random();
 
         _poolSpaceMonitor = new FairQueueAllocation(space);
 
