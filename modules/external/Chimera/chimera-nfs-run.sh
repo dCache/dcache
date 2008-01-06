@@ -1,8 +1,10 @@
 #!/bin/sh
 
 
-ourHomeDir=/opt/d-cache
-ourHomeDir=/opt/d-cache
+if [  -z ${ourHomeDir} ]
+then
+    ourHomeDir=/opt/d-cache
+fi
 
 . ${ourHomeDir}/classes/extern.classpath
 . ${ourHomeDir}/config/dCacheSetup
