@@ -58,7 +58,7 @@ public interface PoolSpaceAllocatable<T> {
      * @throws IllegalArgumentException
      *             if <i>expectedSize</i> < 0
      */
-    public void reallocate(T entry, long expectedSize)
+    public void reallocate(T entry, long newSize)
             throws NullPointerException, MissingResourceException,
             IllegalArgumentException;
 
