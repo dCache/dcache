@@ -477,7 +477,7 @@ public class DiskSpaceAllocatorTest {
              * we will get IllegalArgumentException as long
              * as there is no space available for entry2.
              */
-            spaceAllocator.getUsedSpace(entry2)
+            spaceAllocator.getUsedSpace(entry2);
             fail("order is not respected");
         }catch(IllegalArgumentException iae) {
             // OK
