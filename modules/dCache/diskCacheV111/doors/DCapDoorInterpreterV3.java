@@ -217,6 +217,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
                     _minor < other._minor ? -1 :
                         _minor > other._minor ?  1 : 0;
         }
+        @Override
         public String toString(){ return ""+_major+"."+_minor ; }
         private Version( int major , int minor ){
             _major = major ;
@@ -1123,7 +1124,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
         }
         public void keepAlive(){
             _cell.say("Keep alived called for : "+this);
-        };
+        }
         protected void sendReply( String tag , int rc , String msg ){
 
             String problem = null ;
@@ -1169,6 +1170,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
             _status = status ;
             _statusSince = System.currentTimeMillis() ;
         }
+        @Override
         public String toString(){
             return "["+_sessionId+"]["+_uid+"]["+_pid+"] "+
             _status+"("+
@@ -1243,6 +1245,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
             else              askForStorageInfo() ;
 
         }
+        @Override
         public void keepAlive(){
             synchronized( _timerLock ){
                 if( ( _timeout > 0L ) && ( _timeout < System.currentTimeMillis() ) ){
@@ -1427,6 +1430,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
         public boolean storageInfoNotAvailable() throws CacheException { return false ; }
         public boolean fileMetaDataNotAvailable() throws CacheException { return false ; }
 
+        @Override
         public String toString(){
             return "["+_pnfsId+"]"+" {timer="+
             (_timer==0L?"off":""+(_timer-System.currentTimeMillis()))+"} "+
@@ -1449,6 +1453,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
             try{ _time = Long.parseLong( args.getOpt("stagetime" ) ) ; }catch(NumberFormatException e){/* 'bad' strings silently ignored */}
             _destination = args.getOpt( "location" ) ;
         }
+        @Override
         public void storageInfoAvailable(){
             //
             // we are not called if the pnfs request failed.
@@ -1480,6 +1485,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
             removeUs() ;
             return ;
         }
+        @Override
         public String toString(){ return "st "+super.toString() ; }
     }
     ////////////////////////////////////////////////////////////////////
@@ -1487,8 +1493,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
     //      the file stat handler
     //
     protected  class StatHandler  extends PnfsSessionHandler  {
-        private long    _time        = 0L ;
-        private boolean _followLinks = true ;
+
         private StatHandler( int sessionId ,
         int commandId ,
         VspArgs args ,
@@ -1496,8 +1501,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
         throws Exception {
 
             super( sessionId , commandId , args , true , followLinks ) ;
-            _followLinks = followLinks ;
         }
+        @Override
         public void fileMetaDataAvailable(){
             //
             // we are not called if the pnfs request failed.
@@ -1543,6 +1548,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
                     removeUs() ;
                     return ;
         }
+        @Override
         public String toString(){ return "st "+super.toString() ; }
     }
 
@@ -1551,8 +1557,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
     //      the file unlink handler
     //
     protected  class UnlinkHandler  extends PnfsSessionHandler  {
-        private long    _time        = 0L ;
-        private boolean _followLinks = true ;
         private UnlinkHandler( int sessionId ,
         int commandId ,
         VspArgs args ,
@@ -1560,8 +1564,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
         throws Exception {
 
             super( sessionId , commandId , args , true , followLinks ) ;
-            _followLinks = followLinks ;
         }
+        @Override
         public void fileMetaDataAvailable(){
             //
             // we are not called if the pnfs request failed.
@@ -1630,12 +1634,12 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
 
             return ;
         }
+        @Override
         public String toString(){ return "uk "+super.toString() ; }
     }
 
     protected  class ChmodHandler  extends PnfsSessionHandler  {
-        private long    _time        = 0L ;
-        private boolean _followLinks = true ;
+
         private int _permission = 0;
         private ChmodHandler( int sessionId ,
         int commandId ,
@@ -1644,9 +1648,10 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
         throws Exception {
 
             super( sessionId , commandId , args , true , followLinks ) ;
-            _followLinks = followLinks ;
+
             _permission = Integer.parseInt( args.getOpt("mode") );
         }
+        @Override
         public void fileMetaDataAvailable(){
             //
             // we are not called if the pnfs request failed.
@@ -1679,6 +1684,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
 
             return ;
         }
+        @Override
         public String toString(){ return "uk "+super.toString() ; }
     }
 
@@ -1700,6 +1706,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
             }
         }
 
+        @Override
         public void fileMetaDataAvailable(){
             //
             // we are not called if the pnfs request failed.
@@ -1735,6 +1742,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
 
             return ;
         }
+        @Override
         public String toString(){ return "uk "+super.toString() ; }
     }
 
@@ -1750,6 +1758,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
             _group = Integer.parseInt(args.getOpt("group"));
         }
 
+        @Override
         public void fileMetaDataAvailable(){
             //
             // we are not called if the pnfs request failed.
@@ -1781,6 +1790,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
 
             return ;
         }
+        @Override
         public String toString(){ return "uk "+super.toString() ; }
     }
 
@@ -1800,6 +1810,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
 
         }
 
+        @Override
         public void fileMetaDataAvailable(){
             //
             // we are not called if the pnfs request failed.
@@ -1845,6 +1856,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
 
             return ;
         }
+        @Override
         public String toString(){ return "rn "+super.toString() ; }
     }
 
@@ -1854,8 +1866,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
     //      the file rmdir handler
     //
     protected  class RmDirHandler  extends PnfsSessionHandler  {
-        private long    _time        = 0L ;
-        private boolean _followLinks = true ;
+
         private RmDirHandler( int sessionId ,
         int commandId ,
         VspArgs args ,
@@ -1863,8 +1874,9 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
         throws Exception {
 
             super( sessionId , commandId , args , true , followLinks ) ;
-            _followLinks = followLinks ;
+
         }
+        @Override
         public void fileMetaDataAvailable(){
             //
             // we are not called if the pnfs request failed.
@@ -1896,12 +1908,12 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
 
             return ;
         }
+        @Override
         public String toString(){ return "uk "+super.toString() ; }
     }
 
     protected  class MkDirHandler  extends PnfsSessionHandler  {
-        private long    _time        = 0L ;
-        private boolean _followLinks = true ;
+
         int _perm = 0755;
 
         private MkDirHandler( int sessionId ,
@@ -1911,7 +1923,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
         throws Exception {
 
             super( sessionId , commandId , args , true , followLinks ) ;
-            _followLinks = followLinks ;
 
             String pMode = args.getOpt("mode");
             if( pMode != null) {
@@ -1925,6 +1936,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
         }
 
 
+        @Override
         public boolean fileMetaDataNotAvailable() {
 
             boolean rc = false;
@@ -1956,6 +1968,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
         }
 
 
+        @Override
         public void fileMetaDataAvailable() {
 
             StringBuffer sb = new StringBuffer( );
@@ -1971,6 +1984,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
 
         }
 
+        @Override
         public String toString(){ return "mk "+super.toString() ; }
     }
 
@@ -2000,6 +2014,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
             }
             _assumedLocations = locations;
         }
+        @Override
         public void storageInfoAvailable(){
             //
             //    i) check pnfs for possible file locations.
@@ -2125,6 +2140,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
             removeUs() ;
             return ;
         }
+        @Override
         public String toString(){ return "ck "+super.toString() ; }
     }
     ////////////////////////////////////////////////////////////////////
@@ -2201,11 +2217,13 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
             _statusSince ,
             _hosts[0] );
         }
+        @Override
         public void again( boolean strong ) throws Exception {
             if( strong )_poolRequestDone = false ;
             super.again(strong);
         }
 
+        @Override
         public boolean storageInfoNotAvailable() throws CacheException {
             //
             // hsm only support files in the cache.
@@ -2267,6 +2285,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
 
             return true ;
         }
+
+        @Override
         public void storageInfoAvailable(){
 
             _cell.say(_pnfsId.toString()+" storageInfoAvailable after "+
@@ -2554,8 +2574,11 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
         private void handleSpacePreallocation( String pool , StorageInfo storageInfo ){
             String tmp = storageInfo.getKey("alloc-size");
             long   allocSize = 0L ;
-            if( tmp != null )try{ allocSize = Long.parseLong(tmp) ; }
-            catch(NumberFormatException ee ){/* bad alloc-size ignored*/};
+            if (tmp != null) try {
+                allocSize = Long.parseLong(tmp);
+            } catch (NumberFormatException ee) {
+                /* bad alloc-size ignored*/
+            }
 
             if( allocSize <= 0L ){
                 _cell.say("Preallocating not defined" ) ;
@@ -2669,6 +2692,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
             removeUs() ;
             setStatus( "<done>" ) ;
         }
+        @Override
         public String toString(){ return "io ["+_pool+"] "+super.toString() ; }
     }
 
@@ -2705,6 +2729,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
 
 
 
+        @Override
         public void fileMetaDataAvailable(){
             //
             // we are not called if the pnfs request failed.
@@ -2776,7 +2801,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
         }
 
 
-        public String toString(){ return "od ["+_pool+"] "+super.toString() ; }
+        @Override
+        public String toString() { return "od ["+_pool+"] "+super.toString() ; }
     }
 
 
