@@ -326,55 +326,5 @@ public class FJobScheduler implements JobScheduler, Runnable  {
           }
        }
     }
-    public static class ExampleJob implements Runnable {
-        private String _name = null ;
-        public ExampleJob(String name ){
-           _name = name ;
-        }
-        public void run(){
-           System.out.println("Starting "+_name ) ;
-           try{
-             Thread.sleep(2000) ;
-           }catch(Exception ee ){
-
-           }
-           System.out.println("Stopping "+_name ) ;
-        }
-        @Override
-        public String toString(){ return _name ; }
-    }
-    public static void main( String [] args ) throws Exception {
-       final SimpleJobScheduler s = new SimpleJobScheduler(null) ;
-       ExampleJob [] j = new ExampleJob[10];
-       int i = 0 ;
-       int lastId = 0 ;
-       for( ; i < j.length/2 ; i++ ){
-          j[i] = new ExampleJob("S-"+i) ;
-          lastId = s.add( j[i] ) ;
-       }
-
-       for( ; i < j.length ; i++ ){
-          j[i] = new ExampleJob("S-"+i) ;
-          s.add( j[i] , SimpleJobScheduler.HIGH) ;
-       }
-       System.out.println("Removing "+lastId);
-       s.remove( lastId ) ;
-
-       new Thread(
-          new Runnable(){
-            public void run(){
-               while(true){
-                  try{
-                     StringBuffer sb = s.printJobQueue(null) ;
-                     System.out.println(sb.toString());
-                     Thread.sleep(1000);
-                  }catch(Exception eee ){
-
-                  }
-               }
-            }
-          }
-       ).start() ;
-    }
 
 }
