@@ -3094,6 +3094,11 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
 
         public void run() {
             _hybridCurrent = 0;
+
+            long startTime, stopTime;
+            say("HybridInventory started. _activate="+_activate);
+            startTime = System.currentTimeMillis();
+
             try {
                 Iterator pnfsids = _repository.pnfsids();
                 while (pnfsids.hasNext() && !Thread.interrupted()) {
@@ -3108,9 +3113,15 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
             } catch (CacheException ce) {
                 esay(ce);
             }
+            stopTime = System.currentTimeMillis();
             synchronized (_hybridInventoryLock) {
                 _hybridInventoryActive = false;
             }
+
+            say("HybridInventory finished. Number of pnfsids " +
+                ((_activate) ? "" : "un" )
+                +"registered="
+                +_hybridCurrent +" in " + (stopTime-startTime) +" msec");
         }
     }
 
