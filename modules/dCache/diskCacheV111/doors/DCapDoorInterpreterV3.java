@@ -96,6 +96,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
 
         if( _user.getName() != null && _user.getRole() != null ) {
             _voInfo = new VOInfo(_user.getName(), _user.getRole() );
+
             if( _userMetaProvider != null ){
                 _isAuthorized = getUserMetadata( _user.getName(), _user.getRole() , _userMetaProvider ) ;
             }
@@ -2180,6 +2181,9 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
             //
             _protocolInfo = new DCapProtocolInfo( "DCap",3,0, _hosts , port  ) ;
             _protocolInfo.setSessionId( _sessionId ) ;
+            if( _isAuthorized ) {
+                _protocolInfo.setVOInfo(_voInfo);
+            }
 
             _isHsmRequest = ( args.getOpt("hsm") != null  );
             if( _isHsmRequest ){
