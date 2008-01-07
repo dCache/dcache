@@ -1,15 +1,16 @@
 package org.dcache.tests.util;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import org.junit.Before;
 import org.junit.Test;
 
+import diskCacheV111.util.FJobScheduler;
 import diskCacheV111.util.JobScheduler;
-import diskCacheV111.util.SimpleJobScheduler;
 
 public class JobSchedulerTest {
 
@@ -26,16 +27,26 @@ public class JobSchedulerTest {
 
         public void run() {
             try {
-                _doneCounter.countDown();
                 Thread.sleep(_waitTime);
+                if(_doneCounter != null ) {
+                    _doneCounter.countDown();
+                }
             } catch (InterruptedException ie) {
                 // ignore
             }
         }
 
+        @Override
         public String toString() {
             return _name;
         }
+    }
+
+    private JobScheduler _jobScheduler;
+
+    @Before
+    public void setUp() {
+        _jobScheduler = new FJobScheduler(null);
     }
 
     @Test
@@ -45,15 +56,14 @@ public class JobSchedulerTest {
         long waitTime = 1000;
         CountDownLatch doneCounter = new CountDownLatch(jobsCount);
 
-        JobScheduler jobScheduler = new SimpleJobScheduler(null);
-        jobScheduler.setMaxActiveJobs(1);
+        _jobScheduler.setMaxActiveJobs(10);
 
         for (int i = 0; i < jobsCount; i++) {
-            jobScheduler.add(new ExampleJob("S-" + i, doneCounter, waitTime));
+            _jobScheduler.add(new ExampleJob("S-" + i, doneCounter, waitTime));
         }
 
         assertTrue("not all jobs are done", doneCounter.await(2 * waitTime * jobsCount, TimeUnit.MILLISECONDS));
-        assertTrue("job queue is not empty", jobScheduler.getQueueSize() == 0);
+        assertTrue("job queue is not empty", _jobScheduler.getQueueSize() == 0);
 
     }
 
