@@ -3,9 +3,10 @@
  */
 package diskCacheV111.vehicles;
 
+import diskCacheV111.util.VOInfo;
 import dmg.cells.nucleus.CellPath;
 
-public class DCapProtocolInfo implements IpProtocolInfo {
+public class DCapProtocolInfo implements IpProtocolInfo, GridProtocolInfo {
 
     private final String _name;
     private final int _minor;
@@ -19,6 +20,7 @@ public class DCapProtocolInfo implements IpProtocolInfo {
     private boolean _fileCheck = true;
     private boolean _isPassive = false;
     private CellPath _door = null;
+    private VOInfo _voInfo = null;
 
     private static final long serialVersionUID = 7432555710192378884L;
 
@@ -93,6 +95,7 @@ public class DCapProtocolInfo implements IpProtocolInfo {
     }
 
     //
+    @Override
     public String toString() {
         StringBuffer sb = new StringBuffer();
         sb.append(getVersionString());
@@ -137,5 +140,13 @@ public class DCapProtocolInfo implements IpProtocolInfo {
 
     public void door(CellPath door) {
         _door = door;
+    }
+
+    public void setVOInfo( VOInfo voInfo) {
+        _voInfo = voInfo;
+    }
+
+    public VOInfo getVOInfo() {
+        return _voInfo;
     }
 }
