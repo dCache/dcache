@@ -26,7 +26,7 @@ public class FJobScheduler implements JobScheduler, Runnable  {
     private final Map<Integer, Job>       _jobs   = new HashMap<Integer, Job>() ;
     private final String        _prefix ;
     private int           _batch    = -1 ;
-    private double        _transferRateEquivalent = (double)10.00 ;
+    private double        _transferRateEquivalent = 10.00 ;
     private String        _name     = "regular" ;
     private int           _id       = -1 ;
 
@@ -42,7 +42,7 @@ public class FJobScheduler implements JobScheduler, Runnable  {
        private final Runnable _runnable ;
        private final int      _id      ;
        private final int      _priority ;
-       private double   _transferRate = (double)0.00 ;
+       private double   _transferRate = 0.00 ;
 
        private SJob( Runnable runnable , int id , int priority ){
           _submitTime = System.currentTimeMillis() ;
@@ -87,13 +87,16 @@ public class FJobScheduler implements JobScheduler, Runnable  {
              }
           }
        }
-       public String toString(){
+       @Override
+    public String toString(){
          return ""+_id+" "+getStatusString()+
                 " "+(_priority==LOW?"L":_priority==REGULAR?"R":"H")+
                 " "+_runnable.toString() ;
        }
-       public int hashCode(){ return _id ; }
-       public boolean equals( Object o ){
+       @Override
+    public int hashCode(){ return _id ; }
+       @Override
+    public boolean equals( Object o ){
           return o instanceof SJob && ((SJob)o)._id == _id ;
        }
     }
@@ -274,7 +277,9 @@ public class FJobScheduler implements JobScheduler, Runnable  {
 
           while( ! Thread.interrupted() ){
              try{
-                _lock.wait() ;
+                 while( getQueueSize() == 0 ) {
+                     _lock.wait() ;
+                 }
              }catch( InterruptedException ie ){
                 break ;
              }
@@ -335,6 +340,7 @@ public class FJobScheduler implements JobScheduler, Runnable  {
            }
            System.out.println("Stopping "+_name ) ;
         }
+        @Override
         public String toString(){ return _name ; }
     }
     public static void main( String [] args ) throws Exception {

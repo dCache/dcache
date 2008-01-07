@@ -71,7 +71,8 @@ public class SimpleJobScheduler implements JobScheduler, Runnable  {
              }
           }
        }
-       public String toString(){
+       @Override
+    public String toString(){
          StringBuffer sb = new StringBuffer() ;
          sb.append(_id).append(" ").append(getStatusString()).append(" ") ;
          sb.append(_priority==LOW?"L":_priority==REGULAR?"R":"H").append(" ");
@@ -84,8 +85,10 @@ public class SimpleJobScheduler implements JobScheduler, Runnable  {
          sb.append(_runnable.toString());
          return sb.toString() ;
        }
-       public int hashCode(){ return _id ; }
-       public boolean equals( Object o ){
+       @Override
+    public int hashCode(){ return _id ; }
+       @Override
+    public boolean equals( Object o ){
 
           return (o instanceof SJob) && ( ((SJob)o)._id == _id );
        }
@@ -226,7 +229,7 @@ public class SimpleJobScheduler implements JobScheduler, Runnable  {
 
     public Job getJob( int jobId ) throws NoSuchElementException {
        synchronized(_lock){
-          Job job = (Job)_jobs.get( Integer.valueOf(jobId) )  ;
+          Job job = _jobs.get( Integer.valueOf(jobId) )  ;
           if( job == null )
              throw new
              NoSuchElementException( "Job-"+jobId ) ;
@@ -278,7 +281,9 @@ public class SimpleJobScheduler implements JobScheduler, Runnable  {
 
           while( ! Thread.interrupted() ){
              try{
-                _lock.wait() ;
+                 while( getQueueSize() == 0 ) {
+                     _lock.wait() ;
+                 }
              }catch( InterruptedException ie ){
                 break ;
              }
@@ -339,6 +344,7 @@ public class SimpleJobScheduler implements JobScheduler, Runnable  {
            }
            System.out.println("Stopping "+_name ) ;
         }
+        @Override
         public String toString(){ return _name ; }
     }
     public static void main( String [] args ) throws Exception {
