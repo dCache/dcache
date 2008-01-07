@@ -151,8 +151,21 @@ case ${nodeType} in
 
 esac
 
+# To make shure to use the right dCache dir
+DCACHE_HOME_Tmp=`printConfig DCACHE_HOME`
+if [ "x${DCACHE_HOME_Tmp}" = "x" ] ; then
+  DCACHE_HOME_Tmp=`printConfig DCACHE_BASE_DIR`
+  echo "WARNING: the variable DCACHE_HOME is not set."
+  if [ "x${DCACHE_HOME_Tmp}" != "x" ] ; then
+     echo "WARNING: Using deprecated value of DCACHE_BASE_DIR as DCACHE_HOME"
+     DCACHE_HOME=${DCACHE_HOME_Tmp}
+  else
+     echo "ERROR: Failed getting the value of DCACHE_HOME"
+  fi
+else
+  DCACHE_HOME=${ourHomeTmp}
+fi
 
-DCACHE_HOME=`printConfig DCACHE_HOME`
 ADMIN_SETUP_TEMPLATE=${DCACHE_HOME}/etc/dCacheSetup
 
 # pnfs or chimera?

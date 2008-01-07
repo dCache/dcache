@@ -4,7 +4,24 @@
 #
 ADMIN_CONFIG=/opt/d-cache/etc/admin_config
 #ADMIN_SETUP_TEMPLATE=`cat $ADMIN_CONFIG | grep ADMIN_SETUP_TEMPLATE |awk '{print $3}'`
+
+
+
 DCACHE_HOME=`cat $ADMIN_CONFIG | grep DCACHE_HOME |awk '{print $3}'`
+
+if [ "x${DCACHE_HOME}" = "x" ] ; then
+  echo "WARNING: the variable DCACHE_HOME is not set."
+  DCACHE_HOME=`cat $ADMIN_CONFIG | grep DCACHE_BASE_DIR |awk '{print $3}'`
+  if [ "x${ourHome}" != "x" ] ; then
+     echo "WARNING: Using deprecated value of DCACHE_BASE_DIR as DCACHE_HOME"
+  else
+     echo "ERROR: Failed getting the value of DCACHE_HOME"
+  fi
+fi
+
+
+
+
 ADMIN_SETUP_TEMPLATE=$DCACHE_HOME/etc/dCacheSetup.template
 PNFS_ROOT=`cat $ADMIN_CONFIG | grep PNFS_ROOT |awk '{print $3}'`
 PNFS_INSTALL_DIR=`cat $ADMIN_CONFIG | grep PNFS_INSTALL_DIR |awk '{print $3}'`

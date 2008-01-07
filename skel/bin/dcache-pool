@@ -36,7 +36,19 @@ if ! printConfig NODE_TYPE | grep '' 2>/dev/null >/dev/null || printConfig NODE_
 fi
 
 # To make shure to use the right dCache dir
-ourHome=`printConfig DCACHE_HOME`
+ourHomeTmp=`printConfig DCACHE_HOME`
+if [ "x${ourHomeTmp}" = "x" ] ; then
+  ourHomeTmp=`printConfig DCACHE_BASE_DIR`
+  echo "WARNING: the variable DCACHE_HOME is not set."
+  if [ "x${ourHomeTmp}" != "x" ] ; then
+     echo "WARNING: Using deprecated value of DCACHE_BASE_DIR as DCACHE_HOME"
+     ourHome=${ourHomeTmp}
+  else
+     echo "ERROR: Failed getting the value of DCACHE_HOME"
+  fi
+else
+  ourHome=${ourHomeTmp}
+fi
 
 PNFS_ROOT=`printConfig PNFS_ROOT`
 
