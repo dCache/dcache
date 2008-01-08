@@ -16,56 +16,55 @@ import diskCacheV111.repository.SpaceRequestable;
 public class FairDiskSpaceAllocator<T> implements PoolSpaceAllocatable<T> {
 
     /**
-     * all managed allocations
+     * Maps entries to the amount of bytes allocated for that entry.
      */
     private final Map<T, Long> _allocations = new HashMap<T, Long>();
 
 
     /**
-     * exclusive access lock.
-     * We need this type of lock here to be able to have per-thread conditions.
-     * This will make possible to notify only one specific thread.
-     *
+     * Exclusive access lock.  We need this lock to be able to have
+     * per-thread conditions.  This will make possible to notify only
+     * one specific thread.
      */
     private final Lock _exclusiveLock = new ReentrantLock();
 
     /**
-     * Mapping between <i>Condition</i> and corresponding sizes.
-     * Each Condition is associated with one allocations and by signaling only
-     * this condition we will wake up only one threat particular thread.
-     * LinesHashMap used to guarantee map order.
+     * Mapping between <i>Condition</i> and corresponding sizes.  Each
+     * Condition is associated with one allocations and by signaling
+     * only this condition we will wake up only one threat particular
+     * thread.  LinkedHashMap used to guarantee map order.
      */
-    private final Map<Condition,Long> _waitingThreads = new LinkedHashMap<Condition, Long>();
-
+    private final Map<Condition,Long> _waitingThreads =
+        new LinkedHashMap<Condition, Long>();
 
     /**
-     * list of registered space listeners on this space monitor.
+     * List of registered space listeners on this space monitor.
      */
-    private final List<SpaceRequestable> _listener = new ArrayList<SpaceRequestable>();
-
+    private final List<SpaceRequestable> _listener =
+        new ArrayList<SpaceRequestable>();
 
     /**
-     * total managed space
+     * Total size of managed space in bytes.
      */
     private long _totalSpace = 0;
 
     /**
-     * number of non allocated bytes
+     * Amount of non allocated space in bytes.
      */
     private long _freeSpace = 0;
 
     /**
-     * create a new FairDiskSpaceAllocator with toalSapce == 0
+     * Creates a new FairDiskSpaceAllocator with a total size of 0.
      */
     public FairDiskSpaceAllocator() {
         this(0);
     }
 
     /**
-     * creates a new FairDiskSpaceAllocator with given size
+     * Creates a new FairDiskSpaceAllocator with the given size.
      *
      * @param totalSpace
-     *            space managed by allocator
+     *            size of space managed by allocator
      * @throws IllegalArgumentException
      *             if <i>totalSpace<i> is negative
      */
@@ -84,17 +83,16 @@ public class FairDiskSpaceAllocator<T> implements PoolSpaceAllocatable<T> {
             throws IllegalArgumentException, NullPointerException,
             InterruptedException {
 
+        if (entry == null) {
+            throw new NullPointerException("passed null as reference entry");
+        }
+
+        if (size < 0) {
+            throw new IllegalArgumentException("negative size value");
+        }
+
         _exclusiveLock.lock();
         try{
-
-            if (entry == null) {
-                throw new NullPointerException("passed null as reference entry");
-            }
-
-            if (size < 0) {
-                throw new IllegalArgumentException("negative size value");
-            }
-
 
             Condition needSpace = _exclusiveLock.newCondition();
             _waitingThreads.put(needSpace, size);
@@ -137,7 +135,7 @@ public class FairDiskSpaceAllocator<T> implements PoolSpaceAllocatable<T> {
             _freeSpace -= size;
 
             /*
-             * some space are still left
+             * some space is still left
              */
             signalFreeSpaceAvailable(_freeSpace);
 
@@ -162,7 +160,7 @@ public class FairDiskSpaceAllocator<T> implements PoolSpaceAllocatable<T> {
                 _allocations.remove(entry);
                 signalFreeSpaceAvailable(_freeSpace);
             } else {
-                throw new IllegalArgumentException("can't free non existing entry");
+                throw new IllegalArgumentException("cannot free non existing entry");
             }
         }finally{
             _exclusiveLock.unlock();
@@ -175,14 +173,14 @@ public class FairDiskSpaceAllocator<T> implements PoolSpaceAllocatable<T> {
 
         long currentAllocation;
         if (entry == null) {
-            throw new NullPointerException("passed null as reference antry");
+            throw new NullPointerException("passed null as reference entry");
         }
 
         _exclusiveLock.lock();
         try {
             final Long allocation = _allocations.get(entry);
             if (allocation != null) {
-                currentAllocation =  allocation;
+                currentAllocation = allocation;
             } else {
                 throw new IllegalArgumentException(
                         "non existing entry");
@@ -196,43 +194,30 @@ public class FairDiskSpaceAllocator<T> implements PoolSpaceAllocatable<T> {
     }
 
     public long getFreeSpace() {
-        long freeSpace;
-
         _exclusiveLock.lock();
         try {
-            freeSpace = _freeSpace;
+            return _freeSpace;
         }finally{
             _exclusiveLock.unlock();
         }
-
-        return freeSpace;
     }
 
     public long getTotalSpace() {
-        long totalSpace;
-
         _exclusiveLock.lock();
         try{
-            totalSpace = _totalSpace;
+            return _totalSpace;
         }finally{
             _exclusiveLock.unlock();
         }
-
-        return totalSpace;
     }
 
     public long getUsedSpace() {
-
-        long usedSpace;
-
         _exclusiveLock.lock();
         try{
-            usedSpace =  _totalSpace - _freeSpace;
+            return _totalSpace - _freeSpace;
         }finally{
             _exclusiveLock.unlock();
         }
-
-        return usedSpace;
     }
 
     public void reallocate(T entry, long size)

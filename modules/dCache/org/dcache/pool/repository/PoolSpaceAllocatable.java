@@ -10,15 +10,15 @@ import diskCacheV111.repository.SpaceRequestable;
 public interface PoolSpaceAllocatable<T> {
 
     /**
-     * allocate <i>size</i> bytes and add to current allocation associated with
-     * <i>entry</i>. The call will block until timeout is not expired or
-     * forever, if timeout value equal -1.
+     * Allocate <i>size</i> bytes and add to current allocation
+     * associated with <i>entry</i>. The call will block the requested
+     * amount of space is available or until timeout has expired.
      *
      * @param entry
      * @param size
      *            in bytes
      * @param timeout
-     *            in milliseconds
+     *            timeout in milliseconds or -1 for no timeout
      * @throws IllegalArgumentException
      *             if <i>size</i> < 0
      * @throws NullPointerException
@@ -32,7 +32,7 @@ public interface PoolSpaceAllocatable<T> {
             MissingResourceException, InterruptedException;
 
     /**
-     * free space associated with <i>entry</i>
+     * Free any space associated with <i>entry</i>.
      *
      * @param entry
      * @throws NullPointerException
@@ -44,43 +44,48 @@ public interface PoolSpaceAllocatable<T> {
             IllegalArgumentException;
 
     /**
-     * synchronize <i>entry</i> allocated size with <i>expectedSize</i>. If
-     * entry does't exist has the same behavior as <i>allocate(entry,
-     * expectedSize, 0)</i>
+     * Adjusts the allocation for <i>entry/<i> to <i>expectedSize</i>.
+     * If entry does not exist, this method has the same behavior as
+     * <i>allocate(entry, expectedSize, 0)</i>.
      *
      * @param entry
      * @param expectedSize
      * @throws NullPointerException
      *             if <i>entry</i> in null
      * @throws MissingResourceException
-     *             if <i>expectedSize</i> is bigger than current allocation and
-     *             there is no free space available
+     *             if <i>expectedSize</i> is bigger than current
+     *             allocation and there is no free space available
      * @throws IllegalArgumentException
-     *             if <i>expectedSize</i> < 0
+     *             if <i>expectedSize</i> is negative
      */
     public void reallocate(T entry, long newSize)
             throws NullPointerException, MissingResourceException,
             IllegalArgumentException;
 
     /**
-     * set total managed space size
+     * Set total size of managed space.
      *
      * @param space
      * @throws MissingResourceException
      *             if new <i>space</i> smaller than current used space
      * @throws IllegalArgumentException
-     *             if <i>expectedSize</i> < 0
+     *             if <i>expectedSize</i> is negative
      */
-    public void setTotalSpace(long space) throws MissingResourceException, IllegalArgumentException;
+    public void setTotalSpace(long space)
+        throws MissingResourceException, IllegalArgumentException;
 
 
     /**
-     * Add space listener, which frees some entries, when space needed
+     * Adds a space listener. A space listener is resposible for
+     * freeing space when space is needed.
+     *
      * @param spaceListener
      */
     public void addSpaceRequestListener(SpaceRequestable spaceListener);
 
     /**
+     * Removes space listener previous added with
+     * <i>addSpaceRequestListener</i>.
      *
      * @param spaceListener
      */
@@ -96,23 +101,25 @@ public interface PoolSpaceAllocatable<T> {
      * @throws IllegalArgumentException
      *             if no such entry exist
      */
-    public long getUsedSpace(T entry) throws NullPointerException, IllegalArgumentException;
+    public long getUsedSpace(T entry)
+        throws NullPointerException, IllegalArgumentException;
 
     /**
+     * Returns the equivalent of <i>getTotalSpace() - getFreeSpace()</i>.
      *
-     * @return <i>total</i> space - <i>allocated</i> space
+     * @return amount of free space in bytes
      */
     public long getFreeSpace();
 
     /**
      *
-     * @return <i>total</i> space
+     * @return <i>total</i> size of managed space in bytes
      */
     public long getTotalSpace();
 
     /**
      *
-     * @return currently total allocated space
+     * @return currently allocated space in bytes
      */
     public long getUsedSpace();
 
