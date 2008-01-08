@@ -61,11 +61,10 @@ public class DiskSpaceAllocationTestHelper {
 
     }
 
+    public static Thread allocateInThread( final PoolSpaceAllocatable<Long> spaceAllocator, final Long entry, final long millis, final long size) {
 
-    public static void allocateInThread( final PoolSpaceAllocatable<Long> spaceAllocator, final Long entry, final long millis, final long size) {
 
-
-        new Thread("DiskSpaceAllocationTestHelper") {
+        Thread t = new Thread("DiskSpaceAllocationTestHelper") {
             @Override
             public void run() {
                 try {
@@ -74,7 +73,8 @@ public class DiskSpaceAllocationTestHelper {
                     // ignore
                 }
             }
-        }.start();
-
+            };
+        t.start();
+        return t;
     }
 }

@@ -485,4 +485,30 @@ public class DiskSpaceAllocatorTest {
 
     }
 
+    @Test
+    public void testAccumulatedFree() throws Exception {
+
+        final PoolSpaceAllocatable<Long> spaceAllocator =
+            new FairDiskSpaceAllocator<Long>(1000);
+
+        final Long entry1 = new Long(1);
+        final Long entry2 = new Long(2);
+        final Long entry3 = new Long(3);
+        final Long entry4 = new Long(4);
+
+        spaceAllocator.allocate(entry1, 880, 0);
+        spaceAllocator.allocate(entry2, 60, 0);
+        spaceAllocator.allocate(entry3, 60, 0);
+
+        Thread t = DiskSpaceAllocationTestHelper.allocateInThread(spaceAllocator, entry4, -1, 100);
+
+        Thread.currentThread().sleep(100);
+
+        spaceAllocator.free(entry2);
+        spaceAllocator.free(entry3);
+
+        t.join(100);
+        assertFalse("Allocation did not succeed", t.isAlive());
+    }
+
 }
