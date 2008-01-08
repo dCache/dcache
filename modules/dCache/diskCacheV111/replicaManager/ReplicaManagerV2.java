@@ -197,13 +197,13 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
   //
   private class DBUpdateMonitor  {
     boolean _bool;
-    
+
     DBUpdateMonitor() { _bool = false; }
-    
+
     synchronized public void reset() { _bool = false; }
-    
+
     synchronized public boolean booleanValue() { return _bool; }
-    
+
     synchronized public void wakeup() {
       _bool = true;
       try {
@@ -363,7 +363,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
 //  say("Setup database with: URL="+_jdbcUrl+" driver="+_driver+" user="+_user+" passwd=********");
     ReplicaDbV1.setup(_jdbcUrl, _driver, _user, _pass);
 //  ReplicaDbV1.setup("/opt/d-cache/etc/primrose.conf");
-    
+
     try {
       _dbrmv2 = installReplicaDb();
     }
@@ -493,7 +493,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
 //      _db.addPool( (PnfsId) n.next(), poolName);
 //  }
     _dbrmv2.addPnfsToPool(fileList, poolName);
-    
+
     // get host name from pool
     if (_XXcheckPoolHost) {
         try {
@@ -560,7 +560,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
 //          _db.setPoolStatus(pool,ReplicaDb1.DOWN);
           }
         }
-        ((DbIterator)p).close(); 
+        ((DbIterator)p).close();
       }
       else {
         say("Cleanup DB");
@@ -847,7 +847,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
        for (it = _db.getPoolsWritable(); it.hasNext(); ) {
          _poolsWritable.add(it.next());
        }
-       ((DbIterator)it).close(); 
+       ((DbIterator)it).close();
        // dsay("runAdjustment - _poolsWritable.size()=" +_poolsWritable.size());
      }
 
@@ -856,7 +856,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
        for (it = _db.getPoolsReadable(); it.hasNext(); ) {
          _poolsReadable.add(it.next());
        }
-       ((DbIterator)it).close(); 
+       ((DbIterator)it).close();
        // dsay("runAdjustment - _poolsReadable.size()=" +_poolsReadable.size());
      }
 
@@ -892,9 +892,9 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
 
          }
      } finally {
-         ((DbIterator)it).close(); 
+         ((DbIterator)it).close();
      }
-     
+
      /* ####
       * Scan for and replicate files which can get locked in set of OFFLINE_PREPARE pools
       * Copy out single replica, it shall be enough to have access to the file
@@ -928,9 +928,9 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
              }
          }
      } finally {
-         ((DbIterator)it).close(); 
+         ((DbIterator)it).close();
      }
-     
+
      /* ####
       * Scan for and replicate Deficient files
       * -- all other files with fewer replicas
@@ -990,9 +990,9 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
              }
          }
      } finally {
-         ((DbIterator)it).close(); 
+         ((DbIterator)it).close();
      }
-     
+
      /* ####
       * Scan for and reduce Redundant files - with Extra replicas
       * recovers space in pools.
@@ -1054,9 +1054,9 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
              }
          }
      } finally {
-         ((DbIterator)it).close(); 
+         ((DbIterator)it).close();
      }
-     
+
      // dsay("runAdjustment - got to the end of iteration");
      return ( true );
    }
@@ -1115,7 +1115,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
        }
 
        private void replicate(PnfsId pnfsId) throws InterruptedException {
-           TaskObserver observer = null;
+           MoverTask observer = null;
            long start, stop, currentTime;
            long timerToWait, timeToStop;
 
@@ -1184,6 +1184,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
                return;
            }
 
+           String poolName = observer.getDstPool();
            say(pnfsId.toString() + " Replicating");
 
            synchronized (_dbLock) {
@@ -1211,40 +1212,42 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
            }
            stop = System.currentTimeMillis();
 
-           synchronized (_dbLock) {
-               _db.removeTransaction(pnfsId);
-           }
-
            int oErr = observer.getErrorCode();
            long timeStamp = System.currentTimeMillis();
            if (oErr == 0) {
                _replicated++;
                say(pnfsId.toString() + " replication done after " + (stop - start) +
-                   " ms, "
-                   + "result " + observer);
+                   " ms, result " + observer);
 
+               synchronized (_dbLock) {
+                 _db.addPool(pnfsId, poolName);
+                 _db.removeTransaction(pnfsId);
+               }
+               dsay("replicate("+pnfsId
+                    +") : cleanup action record and add pnfsid to the pool="
+                    +poolName +"- DB updated");
            } else {
                say(pnfsId.toString() + " replication ERROR=" + oErr
                    + ", timer=" + (stop - start) +
-                   " ms, "
-                   + "error " + observer.getErrorMessage());
+                   " ms, error " + observer.getErrorMessage());
 
                // was error '203' by "rc" code, but reply code is different
                if (oErr == 102 || oErr == -1) {
-                   String eMsg;
-                   if (oErr == 102)
-                       eMsg = "entry already exists";
-                   else if (oErr == -1)
-                       eMsg = "operation timed out";
-                   else
-                       eMsg = "...";
+                 String eMsg;
+                 if (oErr == 102)
+                   eMsg = "entry already exists";
+                 else if (oErr == -1)
+                   eMsg = "operation timed out";
+                 else
+                   eMsg = "...";
 
-                   synchronized (_dbLock) {
-                       _db.addTransaction(pnfsId, timeStamp, 0);
-                   }
-                   say("pnfsId=" + pnfsId +
-                       " marked as BAD and excluded from replication. "
-                       + "(err=" + oErr + ", " + eMsg + ")");
+                 synchronized (_dbLock) {
+                   _db.removeTransaction(pnfsId);
+                   _db.addTransaction(pnfsId, timeStamp, 0);
+                 }
+                 say("pnfsId=" + pnfsId +
+                     " is excluded from replication. (err="
+                     + oErr + ", " + eMsg + ")");
                }
            }
        }
@@ -1304,6 +1307,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
          return;
        }
 
+       String poolName = observer.getPool();
        say(pnfsId.toString() + " Reducing");
 
        synchronized (_dbLock) {
@@ -1331,33 +1335,38 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
        }
        stop = System.currentTimeMillis();
 
-       synchronized (_dbLock) {
-         _db.removeTransaction(pnfsId);
-       }
-
        int oErr = observer.getErrorCode();
+       String eMsg = observer.getErrorMessage();
+
        long timeStamp = System.currentTimeMillis();
        if (oErr == 0) {
          _removed++;
          say(pnfsId.toString() + " reduction done after " + (stop - start) +
-             " ms, "
-             + "result " + observer);
+             " ms, result " + observer);
+         synchronized (_dbLock) {
+           _db.removePool(pnfsId, poolName);
+           _db.removeTransaction(pnfsId);
+         }
+         dsay("reduce("+pnfsId
+              +") : cleanup action record and remove pnfsid from the pool="
+              +poolName +"- DB updated");
        } else {
    //       say(pnfsId.toString() + " reduction ERROR, timer=" + (stop - start) + " ms, "
    //           + "error " + observer.getErrorMessage() );
-         say(pnfsId.toString() + " reduction ERROR"
-             + ", result=[" + observer + "]");
+         say(pnfsId.toString() + " reduction ERROR, result=[" + observer + "]");
 
-         if (oErr == -1) {
-           String eMsg = "operation timed out";
+// it is set already
+//         if (oErr == -1) {
+//           eMsg = "operation timed out";
+//         }
 
-           synchronized (_dbLock) {
-             _db.addTransaction(pnfsId, timeStamp, 0);
-           }
-           say("pnfsId=" + pnfsId +
-               " marked as BAD and excluded from replication. "
-               + "(err=" + oErr + ", " + eMsg + ")");
+         // ALWAYS exclude pnfsid if replication failed
+         synchronized (_dbLock) {
+           _db.removeTransaction(pnfsId);
+           _db.addTransaction(pnfsId, timeStamp, 0);
          }
+         say("pnfsId=" + pnfsId + " excluded from replication. "
+             + "(err=" + oErr + ", " + eMsg + ")");
        }
      }
    }
@@ -1747,14 +1756,14 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
 
         missingList.add(  ( (String) rec) );  // pnfsId as string
       }
-      ((DbIterator)missing).close(); 
+      ((DbIterator)missing).close();
 
       while (inPool.hasNext()) {
         Object rec = (Object) (inPool.next());
 
         inPoolList.add(  ( (String) rec) ); // pnfsId as String
       }
-      ((DbIterator)inPool).close(); 
+      ((DbIterator)inPool).close();
 
       inPoolSet = new HashSet(inPoolList);
 
@@ -1932,7 +1941,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
       }
       ((DbIterator) it).close();
 
-      
+
       if (set.isEmpty())
         throw new
             IllegalArgumentException("No source found for p2p");
@@ -2135,10 +2144,10 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
 //  private ReplicaDbV1 _db;
 
     public InitDbRunnable( long delay ) {
-        _delayStart = delay; 
+        _delayStart = delay;
 //      _db = installReplicaDb();
     }
-    
+
     public InitDbRunnable() {
         this(0L);
     }
@@ -2233,7 +2242,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
     public WatchPools() throws Exception {
         _db = installReplicaDb();
     }
-    
+
     public void setPeriod( long p ) {
       _period = p;
     }

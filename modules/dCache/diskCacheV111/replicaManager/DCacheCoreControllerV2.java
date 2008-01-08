@@ -785,7 +785,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
        * Returns an Exception if there is no pool left, not holding a copy of
        * this file.
        */
-      protected TaskObserver replicatePnfsId( PnfsId pnfsId, Set readablePools, Set writablePools )
+      protected MoverTask replicatePnfsId( PnfsId pnfsId, Set readablePools, Set writablePools )
           throws Exception {
 
         if (readablePools.size() == 0)
@@ -884,7 +884,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
       /**
         *  Creates a new cache copy of the specified pnfsId.
         */
-      private TaskObserver replicatePnfsId( PnfsId pnfsId, String source, String destination )
+      private MoverTask replicatePnfsId( PnfsId pnfsId, String source, String destination )
          throws Exception {
 
       StorageInfo storageInfo = getStorageInfo( pnfsId ) ;
@@ -917,7 +917,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
     *    to facilitate implementation of external loop over destination pools.
     *
     */
-   private TaskObserver replicatePnfsId(StorageInfo storageInfo,
+   private MoverTask replicatePnfsId(StorageInfo storageInfo,
                                         PnfsId pnfsId, String source,
                                         String destination) throws Exception {
 
