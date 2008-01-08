@@ -186,6 +186,10 @@ public class P2PClient {
 
             RandomAccessFile dataFile =
                 new RandomAccessFile(_companion.getDataFile(), "rw");
+            
+            boolean checksummingOn = _checksumModule.checkOnTransfer();
+            MessageDigest digest = checksummingOn ? new Adler32() : null;
+            
             try {
                 int challengeSize = in.readInt();
                 in.skipBytes(challengeSize);
@@ -274,7 +278,7 @@ public class P2PClient {
                     throw new IOException("Protocol Violation : NOT DATA : " + type);
 
                 byte[] data = new byte[256 * 1024];
-                MessageDigest digest = new Adler32();
+                
                 int nextPacket = 0;
                 long total = 0L;
                 while (true) {
@@ -303,7 +307,9 @@ public class P2PClient {
                         dataFile.write(data, 0, block);
                         restPacket -= block;
 
-                        digest.update(data, 0, block);
+                        if (checksummingOn) {
+                            digest.update(data, 0, block);
+                        }
                     }
                 }
                 setStatus("<WaitingForReadAck>");
@@ -358,8 +364,6 @@ public class P2PClient {
                             + ") " + error);
                 }
 
-                _companion.setTransferChecksum(new Checksum(digest));
-
                 if (total != filesize) {
                     throw new IOException("Amount of received data does not match expected file size");
                 }
@@ -367,22 +371,29 @@ public class P2PClient {
                 dataFile.close();
             }
 
-            StringBuilder sb = new StringBuilder(
-                    "Adler32 checksum computed for p2p transfer (");
-            sb.append("SessionID=");
-            sb.append(_sessionId);
-            sb.append(" pnfsid=");
-            sb.append(_companion.getEntry().getPnfsId());
-            sb.append(" sourcePool=");
-            sb.append(_companion.getSourcePool());
-            sb.append(" checksum="
-                    + _companion.getTransferChecksum().toHexString());
-            sb.append(")");
-            esay(sb.toString());
-
-            setStatus("<Done>");
+            if (checksummingOn) {
+            
+                _companion.setTransferChecksum(new Checksum(digest));
+                                
+                StringBuilder sb = new StringBuilder(
+                        "Adler32 checksum computed for p2p transfer (");
+                sb.append("SessionID=");
+                sb.append(_sessionId);
+                sb.append(" pnfsid=");
+                sb.append(_companion.getEntry().getPnfsId());
+                sb.append(" sourcePool=");
+                sb.append(_companion.getSourcePool());
+                sb.append(" checksum="
+                        + _companion.getTransferChecksum().toHexString());
+                sb.append(")");
+                esay(sb.toString());
+            }
+            
+            
+                setStatus("<Done>");
+            
         }
-
+        
         private void adjustSpaceAllocation()
         {
             if (_companion != null) {
@@ -408,7 +419,7 @@ public class P2PClient {
                 }
             }
         }
-
+       
         public void run() {
             try {
                 runIO();
