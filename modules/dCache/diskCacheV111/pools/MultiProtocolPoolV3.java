@@ -490,6 +490,7 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
         esay("Constructor done (still waiting for 'inventory')");
     }
 
+    @Override
     public CellVersion getCellVersion() {
         return new CellVersion(diskCacheV111.util.Version.getVersion(),
                                "$Revision$");
@@ -682,6 +683,7 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
         }
     }
 
+    @Override
     public void cleanUp() {
         disablePool(PoolV2Mode.DISABLED_DEAD | PoolV2Mode.DISABLED_STRICT,
                     666, "Shutdown");
@@ -961,6 +963,7 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
     }
 
 
+    @Override
     public CellInfo getCellInfo()
     {
         PoolCellInfo info = new PoolCellInfo(super.getCellInfo());
@@ -982,6 +985,7 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
         esay("PANIC : " + str);
     }
 
+    @Override
     public void getInfo(PrintWriter pw) {
         pw.println("Base directory    : " + _baseDir);
         pw
@@ -1085,11 +1089,13 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
         _checksumModule.getInfo(pw);
     }
 
+    @Override
     public void say(String str) {
         pin(str);
         super.say(str);
     }
 
+    @Override
     public void esay(String str) {
         pin(str);
         super.esay(str);
@@ -1263,6 +1269,7 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
             return _create;
         }
 
+        @Override
         public String toString() {
 
             StringBuffer sb = new StringBuffer();
@@ -1925,6 +1932,7 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
             return sb.toString();
         }
 
+        @Override
         public String toString() {
             StringBuffer sb = new StringBuffer();
 
@@ -2435,6 +2443,7 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
 
     }
 
+    @Override
     public void messageArrived(CellMessage cellMessage) {
         Object messageObject = cellMessage.getMessageObject();
 
@@ -3379,10 +3388,10 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
 
     }
 
-    public String hh_set_gap = "<always removable gap>/bytes";
+    public String hh_set_gap = "<always removable gap>/size[<unit>] # unit = k|m|g";
 
     public String ac_set_gap_$_1(Args args) {
-        _gap = Long.parseLong(args.argv(0));
+        _gap = UnitInteger.parseUnitLong(args.argv(0));
         return "Gap set to " + _gap;
     }
 
