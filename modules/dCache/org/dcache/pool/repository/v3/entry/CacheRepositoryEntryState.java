@@ -138,7 +138,7 @@ public class CacheRepositoryEntryState {
 	}
 
 
-	public void cleanSticky(String owner, long expire) throws IllegalStateException, IOException {
+	public void cleanSticky(String owner) throws IllegalStateException, IOException {
 
 		_stateLock.writeLock().lock();
 		try {
@@ -149,7 +149,7 @@ public class CacheRepositoryEntryState {
 			}
 
 			// if sticky flag modified, make changes persistent
-			if( _sticky.removeRecord(owner, expire)) {
+			if( _sticky.removeRecord(owner)) {
 				makeStatePercistent();
 			}
 		}finally{

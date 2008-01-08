@@ -320,7 +320,7 @@ public class CacheRepositoryEntryImpl implements CacheRepositoryEntry {
 			if( sticky ) {
 				_state.setSticky("system", -1);
 			}else{
-				_state.cleanSticky("system", -1);
+				_state.cleanSticky("system");
 			}
 
 			CacheRepositoryEvent sickyEvent = new CacheRepositoryEvent(_eventProcessor, clone() );
@@ -338,7 +338,7 @@ public class CacheRepositoryEntryImpl implements CacheRepositoryEntry {
 			if( sticky ) {
 				_state.setSticky(owner, lifetime);
 			}else{
-				_state.cleanSticky(owner, lifetime);
+				_state.cleanSticky(owner);
 			}
 
 			CacheRepositoryEvent sickyEvent = new CacheRepositoryEvent(_eventProcessor, clone() );

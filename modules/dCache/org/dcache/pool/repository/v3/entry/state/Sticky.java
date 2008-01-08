@@ -1,9 +1,9 @@
 package org.dcache.pool.repository.v3.entry.state;
 
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
 
 import org.dcache.pool.repository.StickyRecord;
 
@@ -16,7 +16,7 @@ import org.dcache.pool.repository.StickyRecord;
 
 public class Sticky {
 
-	private final Set<StickyRecord> _records = new HashSet<StickyRecord>();
+	private final Map<String,StickyRecord> _records = new HashMap<String,StickyRecord>();
 
 
 	public boolean isSticky() {
@@ -26,7 +26,7 @@ public class Sticky {
 		if( !_records.isEmpty() ) {
 			long now = System.currentTimeMillis();
 
-			for( StickyRecord stickyRecord: _records ) {
+			for( StickyRecord stickyRecord: _records.values() ) {
 				if( stickyRecord.isValidAt(now) ) {
 					// even if only one is valid it's STICKY
 					isSticky = true;
@@ -44,15 +44,15 @@ public class Sticky {
 	public boolean addRecord(String owner, long expire) {
 		boolean isAdded = false;
 		if( expire == -1 || expire > System.currentTimeMillis() ) {
-			_records.add( new StickyRecord(owner, expire) );
+			_records.put(owner, new StickyRecord(owner, expire) );
 			isAdded = true;
 		}
 
 		return isAdded;
 	}
 
-	public boolean removeRecord(String owner, long expire) {
-		return _records.remove( new StickyRecord(owner, expire) );
+	public boolean removeRecord(String owner) {
+		return _records.remove(owner) != null ;
 	}
 
 	public String stringValue() {
@@ -61,7 +61,7 @@ public class Sticky {
 
 		long now = System.currentTimeMillis();
 
-		for( StickyRecord record: _records ) {
+		for( StickyRecord record: _records.values() ) {
 			if( record.isValidAt(now) ) {
 				sb.append("sticky:").append(record.owner()).append(":").append(record.expire()).append("\n");
 			}
@@ -71,6 +71,6 @@ public class Sticky {
 	}
 
 	public List<StickyRecord> records() {
-		return new ArrayList<StickyRecord>(_records);
+		return new ArrayList<StickyRecord>(_records.values());
 	}
 }
