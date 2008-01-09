@@ -1,0 +1,68 @@
+%{
+
+%}
+
+
+%class Extender
+%package org.dcache.services.pinmanager1
+%access package
+%import diskCacheV111.vehicles.Message
+%import diskCacheV111.vehicles.PnfsFlagMessage
+%import diskCacheV111.vehicles.PnfsGetCacheLocationsMessage
+%import diskCacheV111.vehicles.PoolSetStickyMessage
+
+%start ExtenderFSM::ExtendingStickyFlags
+%map ExtenderFSM
+%%
+ExtendingStickyFlags
+Entry
+{
+        extendStickyFlagLifetime();
+}
+{
+
+           timeout 
+                nil
+                {
+                        extendStickyFlagLifetime();
+                }
+
+        answerArrived(message: PoolSetStickyMessage)
+                [ message.getReturnCode() == 0 ]
+                Done
+                {
+                        succeed();
+                        
+                }
+
+}
+
+Done
+{
+
+}
+
+Default
+{
+        answerArrived(message: Message)
+                [ message.getReturnCode() != 0 ]
+                Done
+                {
+                        fail(message.getErrorObject());    
+                }
+        answerArrived(message: Message)
+                Done
+                {
+                        fail("Unexpected answer received in state " 
+                             + context.getState().getName()
+                             + ": " + context.getTransition());
+                }
+        exceptionArrived(exception: Exception)
+                Done
+                {
+                        fail(exception);
+                }
+}
+
+
+%%

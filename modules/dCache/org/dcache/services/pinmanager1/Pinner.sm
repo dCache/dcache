@@ -1,0 +1,109 @@
+%{
+// Pinner task for the pin manager
+%}
+
+
+%class Pinner
+%package org.dcache.services.pinmanager1
+%access package
+%import diskCacheV111.vehicles.*
+
+%start PinnerFSM::Init
+%map PinnerFSM
+%%
+Init
+{
+        go
+                [ ctxt.getStorageInfo() == null]
+                GettingStorageInfo
+                {
+                }
+        go
+                FindingReadPool
+                {
+                }
+}
+
+GettingStorageInfo
+Entry
+{
+        retrieveStorageInfo();
+}
+{
+        timeout
+                nil
+                {
+                        retrieveStorageInfo();
+                }
+        answerArrived(message: PnfsGetStorageInfoMessage)
+                [ message.getReturnCode() == 0 ]
+                FindingReadPool    
+                {
+                        setStorageInfo(message.getStorageInfo());
+                }  
+}
+
+
+FindingReadPool
+Entry
+{
+        findReadPool();
+}
+{
+        timeout
+                nil
+                {
+                        findReadPool();
+                }
+        answerArrived(message: PoolMgrSelectReadPoolMsg)
+                MarkingSticky
+                {
+                        setReadPool(message.getPoolName());
+                }
+}
+
+MarkingSticky
+Entry
+{
+        markSticky();
+}
+{
+        timeout
+                FindingReadPool
+                {
+                }
+        answerArrived(message: PoolSetStickyMessage)
+                Done
+                {
+                        succeed();
+                }
+}
+
+Done
+{
+}
+
+Default
+{
+        answerArrived(message: Message)
+                [ message.getReturnCode() != 0 ]
+                Done
+                {
+                        fail(message.getErrorObject());    
+                }
+        answerArrived(message: Message)
+                Done
+                {
+                        fail("Unexpected answer received in state " 
+                             + context.getState().getName()
+                             + ": " + context.getTransition());
+                }
+        exceptionArrived(exception: Exception)
+                Done
+                {
+                        fail(exception);
+                }
+}
+
+
+%%

@@ -294,6 +294,18 @@
           <mkdir dir="${fsmDir}"/>
 
           <smc target="java"
+               smfile="${sourceDir}/org/dcache/services/pinmanager1/Extender.sm"
+               destdir="${sourceDir}/org/dcache/services/pinmanager1/"
+               smcjar="${smc.jar}"/>
+          <smc target="java"
+               smfile="${sourceDir}/org/dcache/services/pinmanager1/Unpinner.sm"
+               destdir="${sourceDir}/org/dcache/services/pinmanager1/"
+               smcjar="${smc.jar}"/>
+          <smc target="java"
+               smfile="${sourceDir}/org/dcache/services/pinmanager1/Pinner.sm"
+               destdir="${sourceDir}/org/dcache/services/pinmanager1/"
+               smcjar="${smc.jar}"/>
+          <smc target="java"
                smfile="${sourceDir}/org/dcache/services/pinmanager/Pin.sm"
                destdir="${sourceDir}/org/dcache/services/pinmanager/"
                smcjar="${smc.jar}"/>
@@ -301,10 +313,10 @@
                smfile="${sourceDir}/org/dcache/services/pinmanager/Pin.sm"
                destdir="${fsmDir}"
                smcjar="${smc.jar}"/>
-          <smc target="graph"
+           <smc target="graph"
                smfile="${sourceDir}/org/dcache/services/pinmanager/Pin.sm"
                destdir="${fsmDir}"
-               smcjar="${smc.jar}"/>
+               smcjar="${smc.jar}"/> 
           <smc target="java"
                smfile="${sourceDir}/org/dcache/services/pinmanager/Pinner.sm"
                destdir="${sourceDir}/org/dcache/services/pinmanager/"
