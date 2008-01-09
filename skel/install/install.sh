@@ -163,7 +163,7 @@ if [ "x${DCACHE_HOME_Tmp}" = "x" ] ; then
      echo "ERROR: Failed getting the value of DCACHE_HOME"
   fi
 else
-  DCACHE_HOME=${ourHomeTmp}
+  DCACHE_HOME=${DCACHE_HOME_Tmp}
 fi
 
 ADMIN_SETUP_TEMPLATE=${DCACHE_HOME}/etc/dCacheSetup
