@@ -2768,8 +2768,8 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
     }
 
     /**
-     * Performance basic sanity checks on space accounting. Problems
-     * are logged.
+     * Performs basic sanity checks on space accounting. Problems are
+     * logged.
      *
      * @return true when all checks pass, false otherwise.
      */
