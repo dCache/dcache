@@ -617,6 +617,13 @@ public class PinManager extends AbstractCell implements Runnable  {
                     storageInfo = pinRequestMessage.getStorageInfo();
                 }
                 db.updatePin(pin.getId(),null,null,PinManagerPinState.PINNING);
+                db.commitDBOperations();
+                // we need to commit the new state before we start
+                // processing 
+                //otherwise we might not see the request in database
+                // if processing succeeds before the commit is executed
+                // (a race condition )
+                
                 new Pinner(this, pnfsId, storageInfo, pin,
                     pinRequest.getExpirationTime());
             } else {
@@ -701,6 +708,12 @@ public class PinManager extends AbstractCell implements Runnable  {
                 // set the state to unpinning no matter what we were
                 // since this is what we are doing now)
                 db.updatePin(pin.getId(),null,pool,PinManagerPinState.UNPINNING);
+                db.commitDBOperations();
+                // we need to commit the new state before we start
+                // processing 
+                //otherwise we might not see the request in database
+                // if processing succeeds before the commit is executed
+                // (a race condition )
                 new Unpinner(this,pin.getPnfsId(),pin);
             }
             db.commitDBOperations();
@@ -1057,6 +1070,13 @@ public class PinManager extends AbstractCell implements Runnable  {
                     db.updatePin(pin.getId(),null,null,
                             PinManagerPinState.UNPINNING);
                    info("starting unpinnerfor request with id = "+pinRequestId);
+                   db.commitDBOperations();
+                    // we need to commit the new state before we start
+                    // processing 
+                    //otherwise we might not see the request in database
+                    // if processing succeeds before the commit is executed
+                    // (a race condition )
+
                     new Unpinner(this,pin.getPnfsId(),pin);
             } else if (pin.getState().equals(PinManagerPinState.INITIAL) ||
                  pin.getState().equals(PinManagerPinState.PINNING)) {

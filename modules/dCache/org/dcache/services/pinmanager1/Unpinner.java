@@ -111,9 +111,8 @@ class Unpinner extends SMCTask
     {
         for (String poolName: locations) {
             String stickyBitName = getCellName()+
-                ( isOldStylePin ? 
-                    "" :
-                    Long.toString(_pin.getId()));
+                    Long.toString(_pin.getId());
+            String oldStickyBitName = getCellName();
             info("unsetStickyFlags in "+poolName+" for "+
                 _pnfsId+" stikyBitNameName:"+stickyBitName);
 
@@ -125,6 +124,12 @@ class Unpinner extends SMCTask
                 sendMessage(new CellPath(poolName), setStickyRequest,60*60*1000);
             } else {
                 try {
+                    // unpin using new format 
+                    sendMessage(new CellPath(poolName), setStickyRequest);
+                    setStickyRequest = 
+                        new PoolSetStickyMessage(poolName,
+                            _pnfsId, false,oldStickyBitName,-1);
+                    // unpin using old format 
                     sendMessage(new CellPath(poolName), setStickyRequest);
                 } catch (NoRouteToCellException e) {
                     error("PoolSetStickyMessage (false) failed : " + e.getMessage());
