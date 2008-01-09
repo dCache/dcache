@@ -8,6 +8,7 @@ import dmg.util.*;
 import java.util.* ;
 import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellMessage;
+import org.dcache.pool.repository.StickyRecord;
 
 public class RepositoryInterpreter {
     private CellAdapter _cell;
@@ -36,23 +37,46 @@ public class RepositoryInterpreter {
        }
        sb.append( status+(entry.isLocked()?"(locked)":"") ) ;
     }
-    public String hh_rep_set_sticky = "<pnfsid> on|off" ;
+    public String hh_rep_set_sticky = "[-o=<owner>] [-l=<lifetime in ms>] <pnfsid> on|off" ;
     public String ac_rep_set_sticky_$_2( Args args ) throws CacheException {
        PnfsId pnfsId  = new PnfsId( args.argv(0) ) ;
        String state   = args.argv(1) ;
+       String owner = "system";
+       if( args.getOpt("o") != null) {
+           owner=args.getOpt("o");
+       }
+       
+       long lifetime = -1;
+       if(args.getOpt("l") != null) {
+           lifetime= System.currentTimeMillis()+Long.parseLong(args.getOpt("l"));
+       }
        
        CacheRepositoryEntry entry = _repository.getEntry( pnfsId ) ;
        if( state.equals("on" ) ){
-          entry.setSticky(true);
+           entry.setSticky(true,owner,lifetime);
+                
        }else if( state.equals("off") ){
-          entry.setSticky(false) ;
+          entry.setSticky(false,owner,lifetime);
        }else
           throw new
           IllegalArgumentException( "invalid sticky state : "+state ) ;
           
        return "" ;
     }
-    public String hh_rep_set_bad = "<pnfsid> on|off" ;
+    
+    public String hh_rep_sticky_ls = "<pnfsid>" ;
+    public String ac_rep_sticky_ls_$_1( Args args ) throws CacheException {
+       PnfsId pnfsId  = new PnfsId( args.argv(0) ) ;
+       CacheRepositoryEntry entry = _repository.getEntry( pnfsId ) ;
+        List<StickyRecord> records = entry.stickyRecords();
+        StringBuffer sb = new StringBuffer();
+        for(StickyRecord record: records) {
+            sb.append(record).append('\n');
+        }
+       return sb.toString() ;
+    }
+    
+   public String hh_rep_set_bad = "<pnfsid> on|off" ;
     public String ac_rep_set_bad_$_2( Args args ) throws CacheException {
        PnfsId pnfsId  = new PnfsId( args.argv(0) ) ;
        String state   = args.argv(1) ;
