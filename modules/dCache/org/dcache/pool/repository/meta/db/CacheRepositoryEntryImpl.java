@@ -334,7 +334,7 @@ public class CacheRepositoryEntryImpl implements CacheRepositoryEntry
             if (sticky) {
                 _state.setSticky("system", -1);
             } else {
-                _state.cleanSticky("system", -1);
+                _state.cleanSticky("system");
             }
             storeStateIfDirty();
 
@@ -350,7 +350,7 @@ public class CacheRepositoryEntryImpl implements CacheRepositoryEntry
             if (sticky) {
                 _state.setSticky(owner, lifetime);
             }else{
-                _state.cleanSticky(owner, lifetime);
+                _state.cleanSticky(owner);
             }
             storeStateIfDirty();
 

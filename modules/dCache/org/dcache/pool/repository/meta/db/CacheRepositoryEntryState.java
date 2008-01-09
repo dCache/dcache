@@ -186,12 +186,13 @@ public class CacheRepositoryEntryState implements Serializable
 
         // if sticky flag modified, make changes persistent
         if (expire == -1 || expire > System.currentTimeMillis()) {
+            cleanSticky(owner);
             _sticky.add(new StickyRecord(owner, expire));
             markDirty();
         }
     }
 
-    public synchronized void cleanSticky(String owner, long expire)
+    public synchronized void cleanSticky(String owner)
         throws IllegalStateException
     {
         // too late
@@ -199,9 +200,12 @@ public class CacheRepositoryEntryState implements Serializable
             throw new IllegalStateException("Entry in removed state");
         }
 
-        // if sticky flag modified, make changes persistent
-        if (_sticky.remove(new StickyRecord(owner, expire))) {
-            markDirty();
+        Iterator<StickyRecord> i = _sticky.iterator();
+        while (i.hasNext()) {
+            if (i.next().owner().equals(owner)) {
+                i.remove();
+                markDirty();
+            }
         }
     }
 
