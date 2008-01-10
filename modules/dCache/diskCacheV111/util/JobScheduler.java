@@ -13,24 +13,24 @@ public interface JobScheduler {
        public Runnable getTarget() ;
        public int      getJobId() ;
     }
-    
-    public int  add( Runnable runnable )  
+
+    public int  add( Runnable runnable )
            throws InvocationTargetException ;
-    public int  add( Runnable runnable , int priority ) 
+    public int  add( Runnable runnable , int priority )
            throws InvocationTargetException ;
-    public void kill( int jobId ) 
+    public void kill( int jobId )
            throws NoSuchElementException ;
-    public void remove( int jobId ) 
-           throws NoSuchElementException ; 
-    public StringBuffer printJobQueue( StringBuffer sb ) ; 
+    public void remove( int jobId )
+           throws NoSuchElementException ;
+    public StringBuffer printJobQueue( StringBuffer sb ) ;
     public int  getMaxActiveJobs() ;
     public int  getActiveJobs() ;
     public int  getQueueSize() ;
     public void setMaxActiveJobs( int maxJobs ) ;
-    public List getJobInfos() ;
+    public List<JobInfo> getJobInfos() ;
     public JobInfo getJobInfo( int id ) ;
     public void setSchedulerId( String name , int id ) ;
     public String getSchedulerName() ;
     public int    getSchedulerId() ;
-    
+
 }
