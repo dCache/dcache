@@ -1,7 +1,0 @@
-PureTLS (custom): 0.9b4
-JUnit version: 3.8.1
-
-Tested with:
- - JNDI: 1.2.1
- - LDAP provider: 1.2.3
- - JAAS 1.0_01
