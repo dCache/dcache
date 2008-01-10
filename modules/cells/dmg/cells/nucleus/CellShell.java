@@ -141,7 +141,7 @@ public class      CellShell
          if( o == null )return "" ;
          return o ;
       }catch( CommandExitException cee ){
-         throw (CommandExitException) cee ;
+         throw cee ;
       }catch( CommandException ce ){
          _errorCode = ce.getErrorCode() ;
          _errorMsg  = ce.getErrorMessage() ;
@@ -237,7 +237,8 @@ public class      CellShell
       }
    }
 
-   public String command( String c ) throws CommandExitException {
+   @Override
+public String command( String c ) throws CommandExitException {
       StringTokenizer st = new StringTokenizer( c , "\n" ) ;
       StringBuffer    sb = new StringBuffer();
       for( ; st.hasMoreTokens() ; ){
@@ -411,7 +412,7 @@ public class      CellShell
       //
       CellMessage request  =
           new CellMessage( destination ,
-                           (Object)(command == null ?
+                           (command == null ?
                                     (Object) new PingMessage() : (Object)command ) ) ;
 
       Object o = null ;
@@ -1079,7 +1080,7 @@ public class      CellShell
                try{
                   val = st.nextToken() ;
                }catch(Exception ee ){
-                  if( checkSyntax && ( check.equals("strong") ) ){
+                  if( checkSyntax && ( check != null && check.equals("strong") ) ){
                      throw new
                      CommandException( 1 , "Nothing assigned to : "+key ) ;
                   }else{
