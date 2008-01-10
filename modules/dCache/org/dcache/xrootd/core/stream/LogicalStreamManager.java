@@ -8,16 +8,16 @@ import org.dcache.xrootd.protocol.messages.AbstractRequestMessage;
 
 public class LogicalStreamManager {
 	
-	HashMap streams = new HashMap();
-	private int maxLogicalStreams = 100;
-	private PhysicalXrootdConnection physicalConnection;
+	protected HashMap streams = new HashMap();
+	protected int maxLogicalStreams = 100;
+	protected PhysicalXrootdConnection physicalConnection;
 	
 	public LogicalStreamManager(PhysicalXrootdConnection physicalConnection) {
 		this.physicalConnection = physicalConnection;
 	}
 	
-	public LogicalStream getStream(int streamID) throws TooMuchLogicalStreamsException {
-		Integer key = new Integer(streamID);
+	public LogicalStream getStream(AbstractRequestMessage request) throws TooMuchLogicalStreamsException {
+		Integer key = new Integer(request.getStreamID());
 		
 		if (streams.containsKey(key))
 			return (LogicalStream) streams.get(key);
@@ -25,10 +25,10 @@ public class LogicalStreamManager {
 		if (streams.keySet().size() == maxLogicalStreams)
 			throw new TooMuchLogicalStreamsException("number of multiple sessions is limited to "+maxLogicalStreams);
 			
-		LogicalStream newStream = new LogicalStream(physicalConnection, streamID);
+		LogicalStream newStream = new LogicalStream(physicalConnection, request.getStreamID());
 		streams.put(key, newStream);
 				
-		StreamListener streamListener = physicalConnection.handleNewStream(streamID);
+		StreamListener streamListener = physicalConnection.handleNewStream(request.getStreamID());
 		newStream.setListener(streamListener);
 		
 		return newStream;
@@ -83,7 +83,7 @@ public class LogicalStreamManager {
 	 * @throws TooMuchLogicalStreamsException in case a new logical stream (e.g. a new file open) is requested, but the limit of concurrent streams is reached
 	 */
 	public void dispatchMessage(AbstractRequestMessage request) throws TooMuchLogicalStreamsException {
-		getStream(request.getStreamID()).putRequest(request);
+		getStream(request).putRequest(request);
 	}
 
 	public void setMaxStreams(int number) {

@@ -10,7 +10,9 @@ import org.dcache.xrootd.core.stream.LogicalStream;
 import org.dcache.xrootd.core.stream.StreamListener;
 import org.dcache.xrootd.core.stream.TooMuchLogicalStreamsException;
 import org.dcache.xrootd.protocol.XrootdProtocol;
+import org.dcache.xrootd.protocol.messages.AbstractRequestMessage;
 import org.dcache.xrootd.protocol.messages.CloseRequest;
+import org.dcache.xrootd.protocol.messages.DummyRequest;
 import org.dcache.xrootd.protocol.messages.ErrorResponse;
 import org.dcache.xrootd.protocol.messages.OKResponse;
 import org.dcache.xrootd.protocol.messages.OpenRequest;
@@ -52,7 +54,7 @@ public class XrootdMoverListener implements StreamListener {
 		this.physicalXrootdConnection = controller.getXrootdConnection();
 		
 		try {
-			this.logicalStream = this.physicalXrootdConnection.getStreamManager().getStream(streamID);
+			this.logicalStream = this.physicalXrootdConnection.getStreamManager().getStream(new DummyRequest());
 		} catch (TooMuchLogicalStreamsException e) {}
 		
 		this.streamId = streamID;

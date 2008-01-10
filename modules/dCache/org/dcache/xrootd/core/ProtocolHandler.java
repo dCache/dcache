@@ -57,7 +57,7 @@ public class ProtocolHandler {
 			}
 			
 			return;
-		} 
+		}
 		
 //		request is authentitication attempt?
 		if (requestMsg instanceof AuthentiticationRequest) {
@@ -84,39 +84,9 @@ public class ProtocolHandler {
 			physicalConnection.getStreamManager().dispatchMessage(requestMsg);
 			
 		} catch (TooMuchLogicalStreamsException e) {
-			System.err.println("discarding request: too much logical streams");
-			physicalConnection.getResponseEngine().sendResponseMessage(new ErrorResponse(requestMsg.getStreamID(), XrootdProtocol.kXR_noserver, "cannot process request: too much logical streams in use"));
+			System.err.println("discarding request: "+e.getMessage());
+			physicalConnection.getResponseEngine().sendResponseMessage(new ErrorResponse(requestMsg.getStreamID(), XrootdProtocol.kXR_noserver, e.getMessage()));
 		}		
-		
-		
-		
-		
-		
-		
-			
-//			find the session (logical stream) adressed by the message's stream id
-//			AsyncSession session = null;
-//			try {
-//				
-//				session = (AsyncSession) sm.getSession(sID);
-//				
-//			} catch (TooMuchSessionsException e) {
-//				System.err.println(e.getMessage());
-//				
-//				putResponse(new ErrorResponse(sID, XrootdProtocol.kXR_noserver, "maximum number of logical streams reached."));
-//				return;
-//			}
-//			
-//			System.out.println(Thread.currentThread().getName()+": dispatching request "+request.getClass().getName()+" (SID="+request.getStreamID()+")");
-//			
-////			dispatch message to corresponding session
-//			session.putRequest(request);
-		
-//		} else 	{
-						
-			
-			
-//		}
 	}
 	
 	protected byte[] marshal(AbstractResponseMessage res) {

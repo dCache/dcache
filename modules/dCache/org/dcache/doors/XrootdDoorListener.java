@@ -66,10 +66,6 @@ public class XrootdDoorListener implements StreamListener {
 		this.door = controller.getDoor();
 		this.physicalXrootdConnection = controller.getXrootdConnection();
 		
-		try {
-			this.physicalXrootdConnection.getStreamManager().getStream(streamID);
-		} catch (TooMuchLogicalStreamsException e) {}
-		
 		this.streamId = streamID;
 	}
 

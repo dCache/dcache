@@ -52,7 +52,7 @@ public class LogicalStream extends Thread {
 
 	private void startProcessing() {
 		isInterrupted = false;
-		setName("LogicalStream(SID="+streamID+") ");
+		setName("LogicalStream(localPort="+physicalConnection.getNetworkConnection().getSocket().getLocalPort()+" SID="+streamID+") ");
 		start();
 		
 	}
@@ -70,17 +70,14 @@ public class LogicalStream extends Thread {
 		
 		System.out.println(this.getName() + " got new request from dispatcher "+msg.getClass().getName());
 				
-		if (msg.getStreamID() != streamID) {
-			System.err.println(this.getName() + " ignoring message with wrong StreamID ("+msg.getStreamID()+")");
-		} else {
-			try {
+		try {
 				requests.push(msg);
-			} catch (InterruptedException e) {
+		} catch (InterruptedException e) {
 				System.out.println(getName() + " got InterruptedException.");
 				isInterrupted = true;
 				return;
-			}
 		}
+		
 		
 	}
 	

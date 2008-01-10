@@ -7,8 +7,10 @@ import org.dcache.xrootd.core.ProtocolHandler;
 import org.dcache.xrootd.core.request.RequestEngine;
 import org.dcache.xrootd.core.response.AbstractResponseEngine;
 import org.dcache.xrootd.core.stream.LogicalStreamManager;
+import org.dcache.xrootd.core.stream.LogicalStreamManager2;
 import org.dcache.xrootd.core.stream.StreamListener;
 import org.dcache.xrootd.network.NetworkConnection;
+import org.dcache.xrootd.protocol.XrootdProtocol;
 import org.dcache.xrootd.protocol.messages.AuthentiticationRequest;
 import org.dcache.xrootd.protocol.messages.LoginRequest;
 
@@ -34,12 +36,29 @@ public class PhysicalXrootdConnection {
 		this.request = new RequestEngine(this);
 //		this.response = new NewResponseEngine(this);
 		this.status = new ConnectionStatus();
-		this.streamManager = new LogicalStreamManager(this);
-		this.serverType = serverType;
 		
-//		getStatus().setConnected(true);
-//		this.response.startEngine();
-//		this.request.startEngine();						
+		switch (serverType) {
+        
+		/* 
+		 * Use the conventional stream-based model for the xrootd door.
+		 */ 
+		case XrootdProtocol.LOAD_BALANCER:
+            this.streamManager = new LogicalStreamManager(this);
+            break;
+        /*
+         * Use the LogicalStreamManager2 on the mover as a workaround 
+         * to simulate async xrootd message processing on the serverside.
+         * This is just a quick hack to make current clients work and 
+         * will be replaced soon by a completely async model. 
+         */
+		case XrootdProtocol.DATA_SERVER:
+            this.streamManager = new LogicalStreamManager2(this);
+            break;
+        default:
+            throw new IllegalArgumentException("invalid servertype");
+        }
+		
+		this.serverType = serverType;		
 	}
 	
 	public RequestEngine getRequestEngine() {
