@@ -103,10 +103,10 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
 
         }
 
-        _poolManagerName = _args.getOpt("PoolMgr" ) ;
+        _poolManagerName = _args.getOpt("poolManager" ) ;
         _poolManagerName = _poolManagerName == null ?
         "PoolManager" : _poolManagerName ;
-        _pnfsManagerName = _args.getOpt("PnfsMgr" ) ;
+        _pnfsManagerName = _args.getOpt("pnfsManager" ) ;
         _pnfsManagerName = _pnfsManagerName == null ?
         "PnfsManager" : _pnfsManagerName ;
 
