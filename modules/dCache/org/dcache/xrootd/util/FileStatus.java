@@ -87,7 +87,6 @@ public class FileStatus {
 		info.append(flags);
 		info.append(" ");
 		info.append(modtime);
-		info.append('\0');
 		
 		return info.toString();
 	}
