@@ -14,7 +14,7 @@ import context -c setupContext
 #   Make sure we got what we need.
 #
 check -strong serviceLocatorPort serviceLocatorHost 
-check -strong dCapPort
+check -strong dCapGsiPort
 
 #
 create dmg.cells.services.RoutingManager  RoutingMgr
@@ -32,6 +32,23 @@ onerror continue
    set context -c gsidcapIoQueue              ""
    set context -c gsidcapIoQueueOverwrite     denied
    set context -c gsidcapMaxLogin             1500
+   
+#
+#  ----  Usage of Srm Space Manager
+#
+#   If srmSpaceManagerEnabled is on we need to use SrmSpaceManager
+#   as both poolManager and poolProxy
+#
+onerror continue
+set context -c srmSpaceManagerEnabled no
+define env srmSpaceManagerOn.exe endExe
+  set env -c doorPoolManager      "SrmSpaceManager"
+endExe
+eval ${srmSpaceManagerEnabled} yes ==
+set env srmSpaceManagerIsOn ${rc}
+exec env srmSpaceManagerOn.exe -run -ifok=srmSpaceManagerIsOn
+set context -c doorPoolManager              "PoolManager"
+   
 onerror shutdown
 #
 #
@@ -42,7 +59,8 @@ create dmg.cells.services.login.LoginManager DCap-gsi-${thisHostname} \
               -export \
               -prot=telnet -localOk \
               -maxLogin=${gsidcapMaxLogin} \
-	      -loginBroker=LoginBroker \
+              -poolManager=${doorPoolManager}  \
+              -loginBroker=LoginBroker \
               -brokerUpdateTime=120 \
               -protocolFamily=gsidcap \
               -protocolVersion=1.3.0 \
