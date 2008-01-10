@@ -2,25 +2,111 @@
 
 package diskCacheV111.pools;
 
-import diskCacheV111.vehicles.*;
-import diskCacheV111.util.*;
-import diskCacheV111.movers.*;
-import diskCacheV111.repository.*;
-import diskCacheV111.util.event.*;
-
-import dmg.cells.nucleus.*;
-import dmg.util.*;
-import dmg.cells.services.*;
-
-import java.util.*;
-import java.io.*;
-import java.net.*;
-import java.lang.reflect.*;
+import java.io.BufferedReader;
+import java.io.EOFException;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.NotSerializableException;
+import java.io.PrintWriter;
+import java.io.RandomAccessFile;
+import java.io.StringWriter;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Hashtable;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.MissingResourceException;
+import java.util.NoSuchElementException;
+import java.util.StringTokenizer;
+import java.util.TreeSet;
 
 import org.apache.log4j.Logger;
-
 import org.dcache.pool.repository.v4.CacheRepositoryV4;
-import com.sleepycat.je.DatabaseException;
+
+import diskCacheV111.movers.ChecksumMover;
+import diskCacheV111.movers.MoverProtocol;
+import diskCacheV111.repository.CacheRepository;
+import diskCacheV111.repository.CacheRepositoryEntry;
+import diskCacheV111.repository.PreallocationSpaceMonitor;
+import diskCacheV111.repository.ReadOnlySpaceMonitor;
+import diskCacheV111.repository.RepositoryCookie;
+import diskCacheV111.repository.RepositoryInterpreter;
+import diskCacheV111.repository.SpaceMonitor;
+import diskCacheV111.repository.SpaceMonitorWatch;
+import diskCacheV111.util.AccessLatency;
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.CacheFileAvailable;
+import diskCacheV111.util.Checksum;
+import diskCacheV111.util.ChecksumFactory;
+import diskCacheV111.util.FileInCacheException;
+import diskCacheV111.util.FileNotInCacheException;
+import diskCacheV111.util.HsmSet;
+import diskCacheV111.util.IoBatchable;
+import diskCacheV111.util.JobScheduler;
+import diskCacheV111.util.PnfsHandler;
+import diskCacheV111.util.PnfsId;
+import diskCacheV111.util.RetentionPolicy;
+import diskCacheV111.util.SimpleJobScheduler;
+import diskCacheV111.util.SysTimer;
+import diskCacheV111.util.UnitInteger;
+import diskCacheV111.util.event.CacheEvent;
+import diskCacheV111.util.event.CacheNeedSpaceEvent;
+import diskCacheV111.util.event.CacheRepositoryEvent;
+import diskCacheV111.util.event.CacheRepositoryListener;
+import diskCacheV111.vehicles.DCapProtocolInfo;
+import diskCacheV111.vehicles.DoorTransferFinishedMessage;
+import diskCacheV111.vehicles.IoJobInfo;
+import diskCacheV111.vehicles.JobInfo;
+import diskCacheV111.vehicles.Message;
+import diskCacheV111.vehicles.MoverInfoMessage;
+import diskCacheV111.vehicles.PnfsMapPathMessage;
+import diskCacheV111.vehicles.Pool2PoolTransferMsg;
+import diskCacheV111.vehicles.PoolAcceptFileMessage;
+import diskCacheV111.vehicles.PoolCheckFreeSpaceMessage;
+import diskCacheV111.vehicles.PoolCheckable;
+import diskCacheV111.vehicles.PoolDeliverFileMessage;
+import diskCacheV111.vehicles.PoolFetchFileMessage;
+import diskCacheV111.vehicles.PoolFileCheckable;
+import diskCacheV111.vehicles.PoolFlushControlMessage;
+import diskCacheV111.vehicles.PoolFreeSpaceReservationMessage;
+import diskCacheV111.vehicles.PoolIoFileMessage;
+import diskCacheV111.vehicles.PoolManagerPoolUpMessage;
+import diskCacheV111.vehicles.PoolMgrReplicateFileMsg;
+import diskCacheV111.vehicles.PoolModifyModeMessage;
+import diskCacheV111.vehicles.PoolModifyPersistencyMessage;
+import diskCacheV111.vehicles.PoolMoverKillMessage;
+import diskCacheV111.vehicles.PoolQueryRepositoryMsg;
+import diskCacheV111.vehicles.PoolQuerySpaceReservationMessage;
+import diskCacheV111.vehicles.PoolRemoveFilesFromHSMMessage;
+import diskCacheV111.vehicles.PoolRemoveFilesMessage;
+import diskCacheV111.vehicles.PoolReserveSpaceMessage;
+import diskCacheV111.vehicles.PoolSetStickyMessage;
+import diskCacheV111.vehicles.PoolSpaceReservationMessage;
+import diskCacheV111.vehicles.PoolUpdateCacheStatisticsMessage;
+import diskCacheV111.vehicles.ProtocolInfo;
+import diskCacheV111.vehicles.RemoveFileInfoMessage;
+import diskCacheV111.vehicles.StorageInfo;
+import dmg.cells.nucleus.CellAdapter;
+import dmg.cells.nucleus.CellInfo;
+import dmg.cells.nucleus.CellMessage;
+import dmg.cells.nucleus.CellNucleus;
+import dmg.cells.nucleus.CellPath;
+import dmg.cells.nucleus.CellVersion;
+import dmg.cells.nucleus.NoRouteToCellException;
+import dmg.cells.services.SetupInfoMessage;
+import dmg.util.Args;
+import dmg.util.CommandException;
+import dmg.util.CommandSyntaxException;
+import dmg.util.Logable;
 
 public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
 
@@ -587,32 +673,32 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
 
         public StringBuffer printJobQueue(StringBuffer sbin) {
             StringBuffer sb = sbin == null ? new StringBuffer() : sbin;
-            for (Iterator it = scheduler(); it.hasNext();) {
-                ((JobScheduler) it.next()).printJobQueue(sb);
+            for (Iterator<JobScheduler> it = scheduler(); it.hasNext();) {
+                (it.next()).printJobQueue(sb);
             }
             return sb;
         }
 
         public int getMaxActiveJobs() {
             int sum = 0;
-            for (Iterator it = scheduler(); it.hasNext();) {
-                sum += ((JobScheduler) it.next()).getMaxActiveJobs();
+            for (Iterator<JobScheduler> it = scheduler(); it.hasNext();) {
+                sum += (it.next()).getMaxActiveJobs();
             }
             return sum;
         }
 
         public int getActiveJobs() {
             int sum = 0;
-            for (Iterator it = scheduler(); it.hasNext();) {
-                sum += ((JobScheduler) it.next()).getActiveJobs();
+            for (Iterator<JobScheduler> it = scheduler(); it.hasNext();) {
+                sum += (it.next()).getActiveJobs();
             }
             return sum;
         }
 
         public int getQueueSize() {
             int sum = 0;
-            for (Iterator it = scheduler(); it.hasNext();) {
-                sum += ((JobScheduler) it.next()).getQueueSize();
+            for (Iterator<JobScheduler> it = scheduler(); it.hasNext();) {
+                sum += (it.next()).getQueueSize();
             }
             return sum;
         }
@@ -620,10 +706,10 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
         public void setMaxActiveJobs(int maxJobs) {
         }
 
-        public List getJobInfos() {
-            List list = new ArrayList();
-            for (Iterator it = scheduler(); it.hasNext();) {
-                list.addAll(((JobScheduler) it.next()).getJobInfos());
+        public List<JobInfo>  getJobInfos() {
+            List<JobInfo> list = new ArrayList<JobInfo> ();
+            for (Iterator<JobScheduler> it = scheduler(); it.hasNext();) {
+                list.addAll((it.next()).getJobInfos());
             }
             return list;
         }
@@ -1155,12 +1241,12 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
                 if (_dupRequest != DUP_REQ_NONE) {
 
                     JobInfo job = null;
-                    List list = _ioQueue.getJobInfos();
+                    List<JobInfo> list = _ioQueue.getJobInfos();
                     boolean found = false;
 
                     for (int l = 0; l < list.size(); l++) {
 
-                        job = (JobInfo) list.get(l);
+                        job = list.get(l);
                         if (newClient.equals(job.getClientName())
                             && (newId == job.getClientId())) {
 
@@ -1485,7 +1571,6 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
             SysTimer sysTimer = new SysTimer();
             long transferTimer = System.currentTimeMillis();
 
-            MoverProtocol moverProtocol = null;
             SpaceMonitor monitor = _repository;
             File cacheFile = null;
             ChecksumMover csmover = null;
@@ -2943,8 +3028,8 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
 
         IoQueueManager manager = (IoQueueManager) _ioQueue;
         if (manager.isConfigured()) {
-            for (Iterator it = manager.scheduler(); it.hasNext();) {
-                JobScheduler js = (JobScheduler) it.next();
+            for (Iterator<JobScheduler> it = manager.scheduler(); it.hasNext();) {
+                JobScheduler js = it.next();
                 info.addExtendedMoverQueueSizes(js.getSchedulerName(), js
 						.getActiveJobs(), js.getMaxActiveJobs(), js
 						.getQueueSize());
@@ -3109,9 +3194,9 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
             startTime = System.currentTimeMillis();
 
             try {
-                Iterator pnfsids = _repository.pnfsids();
+                Iterator<PnfsId> pnfsids = _repository.pnfsids();
                 while (pnfsids.hasNext() && !Thread.interrupted()) {
-                    PnfsId pnfsid = (PnfsId) pnfsids.next();
+                    PnfsId pnfsid = pnfsids.next();
                     _hybridCurrent++;
                     if (_activate)
                         _pnfs.addCacheLocation(pnfsid.toString());
@@ -3562,16 +3647,16 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
         IoQueueManager manager = (IoQueueManager) _ioQueue;
 
         if (args.getOpt("l") != null) {
-            for (Iterator it = manager.scheduler(); it.hasNext();) {
-                JobScheduler js = (JobScheduler) it.next();
+            for (Iterator<JobScheduler> it = manager.scheduler(); it.hasNext();) {
+                JobScheduler js = it.next();
                 sb.append(js.getSchedulerName()).append(" ").append(
                                                                     js.getActiveJobs()).append(" ").append(
                                                                                                            js.getMaxActiveJobs()).append(" ").append(
                                                                                                                                                      js.getQueueSize()).append("\n");
             }
         } else {
-            for (Iterator it = manager.scheduler(); it.hasNext();) {
-                sb.append(((JobScheduler) it.next()).getSchedulerName())
+            for (Iterator<JobScheduler> it = manager.scheduler(); it.hasNext();) {
+                sb.append((it.next()).getSchedulerName())
                     .append("\n");
             }
         }
@@ -3588,8 +3673,8 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
         if (queueName.length() == 0) {
             IoQueueManager manager = (IoQueueManager) _ioQueue;
             StringBuffer sb = new StringBuffer();
-            for (Iterator it = manager.scheduler(); it.hasNext();) {
-                JobScheduler js = (JobScheduler) it.next();
+            for (Iterator<JobScheduler> it = manager.scheduler(); it.hasNext();) {
+                JobScheduler js = it.next();
                 sb.append("[").append(js.getSchedulerName()).append("]\n");
                 sb.append(mover_ls(js, args).toString());
             }
