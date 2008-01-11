@@ -280,7 +280,7 @@ public class MetaDataRepositoryHelper implements MetaDataRepository {
                 if (sticky) {
                     _state.setSticky("system", -1);
                 } else {
-                    _state.cleanSticky("system", -1);
+                    _state.cleanSticky("system");
                 }
 
             } catch (IllegalStateException e) {
@@ -294,7 +294,7 @@ public class MetaDataRepositoryHelper implements MetaDataRepository {
                 if (sticky) {
                     _state.setSticky(owner, lifetime);
                 }else{
-                    _state.cleanSticky(owner, lifetime);
+                    _state.cleanSticky(owner);
                 }
 
             } catch (IllegalStateException e) {
@@ -339,6 +339,7 @@ public class MetaDataRepositoryHelper implements MetaDataRepository {
             return _state.stickyRecords();
         }
 
+        @Override
         public synchronized String toString()
         {
             StorageInfo info = getStorageInfo();
