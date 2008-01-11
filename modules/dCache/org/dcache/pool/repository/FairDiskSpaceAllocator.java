@@ -11,9 +11,15 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import org.apache.log4j.Logger;
+
 import diskCacheV111.repository.SpaceRequestable;
 
 public class FairDiskSpaceAllocator<T> implements PoolSpaceAllocatable<T> {
+
+
+    private final static Logger _logSpaceAllocation =
+        Logger.getLogger("logger.dev.org.dcache.poolspacemonitor." + FairDiskSpaceAllocator.class.getName());
 
     /**
      * Maps entries to the amount of bytes allocated for that entry.
@@ -75,6 +81,9 @@ public class FairDiskSpaceAllocator<T> implements PoolSpaceAllocatable<T> {
             throw new IllegalArgumentException("Negative total size");
         }
 
+        if( _logSpaceAllocation.isDebugEnabled() ) {
+            _logSpaceAllocation.debug("Initializing Space Allocator Total = " + totalSpace );
+        }
         _totalSpace = totalSpace;
         _freeSpace = _totalSpace;
     }
@@ -126,12 +135,15 @@ public class FairDiskSpaceAllocator<T> implements PoolSpaceAllocatable<T> {
                 _waitingThreads.remove(needSpace);
             }
 
-            long current = size;
+            long current = 0;
             final Long currentAllocation = _allocations.get(entry);
             if (currentAllocation != null) {
-                current += currentAllocation;
+                current = currentAllocation;
             }
-            _allocations.put(entry, Long.valueOf(current));
+            if( _logSpaceAllocation.isDebugEnabled() ) {
+                _logSpaceAllocation.debug("Allocating for " + entry + " " + size + " to existing " + current);
+            }
+            _allocations.put(entry, Long.valueOf(current + size));
             _freeSpace -= size;
 
             /*
@@ -149,13 +161,16 @@ public class FairDiskSpaceAllocator<T> implements PoolSpaceAllocatable<T> {
             IllegalArgumentException {
 
         if (entry == null) {
-            throw new NullPointerException("passed null as reference antry");
+            throw new NullPointerException("passed null as reference entry");
         }
 
         _exclusiveLock.lock();
         try {
             final Long allocation = _allocations.get(entry);
             if (allocation != null) {
+                if( _logSpaceAllocation.isDebugEnabled() ) {
+                    _logSpaceAllocation.debug("Freeing for " + entry + " " + allocation);
+                }
                 _freeSpace += allocation;
                 _allocations.remove(entry);
                 signalFreeSpaceAvailable(_freeSpace);
@@ -225,7 +240,7 @@ public class FairDiskSpaceAllocator<T> implements PoolSpaceAllocatable<T> {
             MissingResourceException {
 
         if (entry == null) {
-            throw new NullPointerException("passed null as reference antry");
+            throw new NullPointerException("passed null as reference entry");
         }
 
         if (size < 0) {
@@ -252,6 +267,9 @@ public class FairDiskSpaceAllocator<T> implements PoolSpaceAllocatable<T> {
             // case 1
             if (currentallocation == null) {
 
+                if( _logSpaceAllocation.isDebugEnabled() ) {
+                    _logSpaceAllocation.debug("Re-Allocating (initial) for " + entry + " " + size);
+                }
                 try {
                     allocate(entry, size, 0);
                 } catch (InterruptedException ie) {
@@ -264,6 +282,9 @@ public class FairDiskSpaceAllocator<T> implements PoolSpaceAllocatable<T> {
                 // case 2
                 if (currentallocation == size) {
                     // we are done
+                    if( _logSpaceAllocation.isDebugEnabled() ) {
+                        _logSpaceAllocation.debug("Re-Allocating (current == new)for " + entry + " " + size);
+                    }
                     return;
                 }
 
@@ -273,11 +294,17 @@ public class FairDiskSpaceAllocator<T> implements PoolSpaceAllocatable<T> {
                     long delta = currentallocation - size;
                     _freeSpace += delta;
                     _allocations.put(entry, size);
+                    if( _logSpaceAllocation.isDebugEnabled() ) {
+                        _logSpaceAllocation.debug("Re-Allocating (current > new) for " + entry + " " + size + " freeing " + delta);
+                    }
                     signalFreeSpaceAvailable(_freeSpace);
                 } else {
                     // case 4
                     long delta = size - currentallocation;
                     try {
+                        if( _logSpaceAllocation.isDebugEnabled() ) {
+                            _logSpaceAllocation.debug("Re-Allocating (current < new) for " + entry + " " + size + " requesting " + delta);
+                        }
                         allocate(entry, delta, 0);
                     } catch (InterruptedException ie) {
                         // never happens
@@ -317,12 +344,22 @@ public class FairDiskSpaceAllocator<T> implements PoolSpaceAllocatable<T> {
         try {
             // case 1
             if (space == _totalSpace) {
+                if( _logSpaceAllocation.isDebugEnabled() ) {
+                    _logSpaceAllocation.debug("Space Allocator Change size (current == new) " + space );
+                }
                 return;
             }
 
             // case 2
             if (space > _totalSpace) {
+
                 long delta = space - _totalSpace;
+
+                if( _logSpaceAllocation.isDebugEnabled() ) {
+                    _logSpaceAllocation.debug("Space Allocator Change size (current < new) old/oldfree/new/delta "
+                            + _totalSpace + " / " + _freeSpace + " / "+ space +  " / " + delta );
+                }
+
                 _totalSpace = space;
                 _freeSpace += delta;
                 signalFreeSpaceAvailable(_freeSpace);
@@ -331,10 +368,20 @@ public class FairDiskSpaceAllocator<T> implements PoolSpaceAllocatable<T> {
                 // case 3a
                 if (space > (_totalSpace - _freeSpace)) {
                     long delta = _totalSpace - space;
+
+                    if( _logSpaceAllocation.isDebugEnabled() ) {
+                        _logSpaceAllocation.debug("Space Allocator Change size (used < new < current) old/oldfree/new/delta "
+                                + _totalSpace + " / " + _freeSpace + " / "+ space +  " / " + delta );
+                    }
+
                     _totalSpace = space;
                     _freeSpace -= delta;
                 } else {
                     // case 3b
+                    if( _logSpaceAllocation.isDebugEnabled() ) {
+                        _logSpaceAllocation.debug("Space Allocator Change size (new < used) old/oldfree/new "
+                                + _totalSpace + " / " + _freeSpace + " / "+ space );
+                    }
                     throw new MissingResourceException(
                             "can't set total space smaller than used space", "", "");
                 }
