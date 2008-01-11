@@ -4,11 +4,12 @@ import static org.junit.Assert.*;
 
 import java.util.MissingResourceException;
 import java.util.Random;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 import org.dcache.pool.repository.FairDiskSpaceAllocator;
 import org.dcache.pool.repository.PoolSpaceAllocatable;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import diskCacheV111.repository.SpaceRequestable;
@@ -17,6 +18,12 @@ import diskCacheV111.repository.SpaceRequestable;
 public class DiskSpaceAllocatorTest {
 
 
+    @BeforeClass
+    public static void setUp() {
+
+      //  Logger.getLogger("logger.dev.org.dcache.poolspacemonitor").setLevel(Level.DEBUG);
+
+    }
 
     @Test
     public void testNegativeTotalSpace() {
@@ -394,11 +401,11 @@ public class DiskSpaceAllocatorTest {
 
         final Random random = new Random();
         final long space = Math.abs(random.nextLong());
-        final long newTotal = (long)(space*1.5);
 
         final PoolSpaceAllocatable<Long> spaceAllocator = new FairDiskSpaceAllocator<Long>(space);
 
         final long allocSize = space;
+        final long newTotal = (space + allocSize);
         final Long entry = Long.valueOf(1);
 
         spaceAllocator.allocate(entry, allocSize, 0);
@@ -502,13 +509,50 @@ public class DiskSpaceAllocatorTest {
 
         Thread t = DiskSpaceAllocationTestHelper.allocateInThread(spaceAllocator, entry4, -1, 100);
 
-        Thread.currentThread().sleep(100);
+        Thread.sleep(100);
 
         spaceAllocator.free(entry2);
         spaceAllocator.free(entry3);
 
         t.join(100);
         assertFalse("Allocation did not succeed", t.isAlive());
+    }
+
+    @Test
+    public void testAllocationsListNoAllocations() throws Exception {
+
+        final PoolSpaceAllocatable<Long> spaceAllocator =
+            new FairDiskSpaceAllocator<Long>(1000);
+
+        assertTrue("Non empty allocations list without allocations", spaceAllocator.allocations().isEmpty());
+
+    }
+
+
+    @Test
+    public void testAllocationsListAfterFree() throws Exception {
+
+        final PoolSpaceAllocatable<Long> spaceAllocator =
+            new FairDiskSpaceAllocator<Long>(1000);
+
+        final Long entry1 = new Long(1);
+        final Long entry2 = new Long(2);
+        final Long entry3 = new Long(3);
+
+
+        spaceAllocator.allocate(entry1, 880, 0);
+        spaceAllocator.allocate(entry2, 60, 0);
+        spaceAllocator.allocate(entry3, 60, 0);
+
+
+        assertEquals("Allocations miss match", 3 , spaceAllocator.allocations().size());
+
+
+        spaceAllocator.free(entry2);
+
+        assertEquals("Allocations miss match after free", 2 , spaceAllocator.allocations().size());
+
+        assertFalse("allocation still in the list after freeing", spaceAllocator.allocations().contains(entry2));
     }
 
 }

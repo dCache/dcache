@@ -439,4 +439,14 @@ public class FairDiskSpaceAllocator<T> implements PoolSpaceAllocatable<T> {
 
     }
 
+    public List<T> allocations() {
+        _exclusiveLock.lock();
+        try {
+            List<T> allocations = new ArrayList<T>(_allocations.keySet() );
+            return allocations;
+        }finally{
+            _exclusiveLock.unlock();
+        }
+    }
+
 }

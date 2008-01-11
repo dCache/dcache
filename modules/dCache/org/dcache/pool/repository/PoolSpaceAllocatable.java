@@ -3,6 +3,7 @@
  */
 package org.dcache.pool.repository;
 
+import java.util.List;
 import java.util.MissingResourceException;
 
 import diskCacheV111.repository.SpaceRequestable;
@@ -123,4 +124,10 @@ public interface PoolSpaceAllocatable<T> {
      */
     public long getUsedSpace();
 
+
+    /**
+     *
+     * @return the list of current allocations
+     */
+    public List<T> allocations();
 }
