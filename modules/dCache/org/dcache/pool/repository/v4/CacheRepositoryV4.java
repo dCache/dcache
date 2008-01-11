@@ -212,16 +212,10 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
         _operationLock.writeLock().lock();
         try {
             File dataFile = _dataRepository.get(pnfsId);
-            if (dataFile.exists()) {
-                _log.fatal("Entry already exists on disk: " + pnfsId);
+            if (_allEntries.containsKey(pnfsId) || dataFile.exists()) {
+                _log.warn("Entry already exists: " + pnfsId);
                 throw new
-                    CacheException(203, "Entry already exists (fs): " + pnfsId);
-            }
-
-            if (_allEntries.containsKey(pnfsId)) {
-                _log.error("Entry already exists in memory: " + pnfsId);
-                throw new
-                    FileInCacheException("Entry already exists (mem): " + pnfsId);
+                    FileInCacheException("Entry already exists: " + pnfsId);
             }
 
             CacheRepositoryEntry entry = _metaRepository.create(pnfsId);
