@@ -42,6 +42,7 @@ public class PnfsManagerV3 extends CellAdapter {
         private  StatItem( String name ){ _name = name ; }
         private  void request(){ _requests ++ ; }
         private  void failed(){ _failed ++ ; }
+        @Override
         public String toString(){
         	StringBuilder sb = new StringBuilder();
 
@@ -196,9 +197,11 @@ public class PnfsManagerV3 extends CellAdapter {
         start() ;
     }
 
-    public CellVersion getCellVersion(){ return new CellVersion(diskCacheV111.util.Version.getVersion(),"$Revision: 1.42 $" ); }
+    @Override
+    public CellVersion getCellVersion(){ return new CellVersion(diskCacheV111.util.Version.getVersion(),"$Revision$" ); }
+    @Override
     public void getInfo( PrintWriter pw ){
-        pw.println("$Revision: 1.42 $");
+        pw.println("$Revision$");
         pw.println( "NameSpace Provider: ");
         pw.println( _nameSpaceProvider.toString() );
         pw.println( "CacheLocation Provider: ");
@@ -217,10 +220,12 @@ public class PnfsManagerV3 extends CellAdapter {
         return ;
     }
 
+    @Override
     public void say( String str ){
         pin( str ) ;
         super.say( str ) ;
     }
+    @Override
     public void esay( String str ){
         pin( str ) ;
         super.esay( str ) ;
@@ -1207,6 +1212,7 @@ public class PnfsManagerV3 extends CellAdapter {
         }
     }
 
+    @Override
     public void messageArrived( CellMessage message ){
 
         Object pnfsMessage  = message.getMessageObject();
@@ -1330,7 +1336,7 @@ public class PnfsManagerV3 extends CellAdapter {
         else if( pnfsMessage instanceof PoolFileFlushedMessage ) {
         	_xfileFlushed.request();
         	processFlushMessage((PoolFileFlushedMessage) pnfsMessage );
-        } 
+        }
         else if ( pnfsMessage instanceof PnfsGetChecksumAllMessage ){
             _xlistChecksumTypes.request();
             listChecksumTypes((PnfsGetChecksumAllMessage)pnfsMessage);
