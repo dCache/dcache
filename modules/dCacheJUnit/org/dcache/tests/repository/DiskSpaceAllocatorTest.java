@@ -406,7 +406,7 @@ public class DiskSpaceAllocatorTest {
         try {
             DiskSpaceAllocationTestHelper.addSpace(spaceAllocator, newTotal, 2000);
             final long newAllocSize = space/4;
-            spaceAllocator.allocate(entry, newAllocSize, 3000);
+            spaceAllocator.allocate(entry, newAllocSize, 10000);
         }catch(MissingResourceException mre) {
             fail("No space available after increasing");
         }
