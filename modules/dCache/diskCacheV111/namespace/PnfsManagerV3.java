@@ -511,11 +511,15 @@ public class PnfsManagerV3 extends CellAdapter {
          * If the cache location provider happens to be the same as
          * the name space provider, then is unnecessary, as setting
          * the cache location will set level 2.
-         */
+         *
+         * NOTE: Temporarily uncommented, as file leakage is not
+         * fixed in the pool anyway.
+         *
         if (_nameSpaceProvider != _cacheLocationProvider) {
             _nameSpaceProvider.removeFileAttribute(pnfsId,
                                                    "_this_entry_doesn't_exist_");
         }
+         */
 
     	_cacheLocationProvider.addCacheLocation(pnfsId, cacheLocation);
 
@@ -714,11 +718,15 @@ public class PnfsManagerV3 extends CellAdapter {
              * If the cache location provider happens to be the same
              * as the name space provider, then is unnecessary, as
              * setting the cache location will set level 2.
-             */
+             *
+             * NOTE: Temporarily uncommented, as file leakage is not
+             * fixed in the pool anyway.
+             *
             if (_nameSpaceProvider != _cacheLocationProvider) {
                 _nameSpaceProvider.removeFileAttribute(pnfsMessage.getPnfsId(),
                                                        "_this_entry_doesn't_exist_");
             }
+             */
             _cacheLocationProvider.addCacheLocation(pnfsMessage.getPnfsId(),
                                                     pnfsMessage.getPoolName());
         } catch (FileNotFoundCacheException fnf ) {
