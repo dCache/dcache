@@ -22,7 +22,7 @@ public class GenericMockCellHelper extends CellAdapterHelper {
 
     public GenericMockCellHelper(String name, String args) {
         super(name, args);
-        _nucleus = new NucleusHelper(this, "nucleus");
+        _nucleus = new NucleusHelper(this, name+"-fake");
     }
 
     @Override
@@ -87,6 +87,7 @@ public class GenericMockCellHelper extends CellAdapterHelper {
      */
 
 
+    @Override
     public CellNucleus getNucleus() {
         return _nucleus;
 
@@ -95,7 +96,7 @@ public class GenericMockCellHelper extends CellAdapterHelper {
     public static class NucleusHelper extends CellNucleus {
         public final CellAdapter _cell;
         public NucleusHelper(CellAdapter cell, String name) {
-            super(cell, name);
+            super(cell, name, "Generic");
             _cell = cell;
         }
 
