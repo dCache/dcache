@@ -148,7 +148,7 @@ public class HsmFlushController implements Runnable {
         _maxActive = Integer.parseInt( args.argv(0) ) ;
         return "Max active flush = "+_maxActive ;
     }
-    public String hh_flush_set_interval = "<flushing check inteval/sec>" ;
+    public String hh_flush_set_interval = "<flushing check interval/sec>" ;
     public String ac_flush_set_interval_$_1( Args args ){
         _flushingInterval = Integer.parseInt( args.argv(0) ) ;
         trigger() ;
@@ -174,7 +174,7 @@ public class HsmFlushController implements Runnable {
             (  ( _holdUntil > System.currentTimeMillis() ) ? new Date(_holdUntil).toString(): "Locally Controlled" ) );
     }
     public Object ac_flush_ls( Args args ){
-        Iterator i = _storageQueue.getStorageClassInfos() ;
+        Iterator<StorageClassInfo> i = _storageQueue.getStorageClassInfos() ;
         long now = System.currentTimeMillis() ;
         if( args.getOpt("binary" ) == null ){
             StringBuffer sb = new StringBuffer() ;
@@ -186,7 +186,7 @@ public class HsmFlushController implements Runnable {
             sb.append( Formats.field( "Faied"    , 10 , Formats.RIGHT ) ) ;
             sb.append("\n");
             while( i.hasNext() ){
-                StorageClassInfo info = (StorageClassInfo)i.next() ;
+                StorageClassInfo info = i.next() ;
                 sb.append( Formats.field( info.getStorageClass()+"@"+info.getHsm() ,
                         20 , Formats.LEFT ) ) ;
                 sb.append( Formats.field( ""+info.getActiveCount() , 8 , Formats.RIGHT ) ) ;
@@ -202,7 +202,7 @@ public class HsmFlushController implements Runnable {
         }else{ // is binary
             ArrayList list = new ArrayList() ;
             while( i.hasNext() ){
-                StorageClassInfo info = (StorageClassInfo)i.next() ;
+                StorageClassInfo info = i.next() ;
                 Object [] o = new Object[7] ;
                 o[0] = info.getHsm() ;
                 o[1] = info.getStorageClass() ;
