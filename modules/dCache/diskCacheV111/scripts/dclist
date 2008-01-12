@@ -34,13 +34,12 @@ node=`uname -n| sed -e 's/\([^\.]\)\..*/\1/'`
 
 if [ -r /usr/local/bin/ENSTORE_HOME ]; then
    . /usr/local/bin/ENSTORE_HOME
+    top=$E_H/dcache-deploy
 else
-   echo `date` ERROR: Can NOT determine E_H.  Add /usr/local/bin/ENSTORE_HOME link
-   exit 1
+   top=/opt/d-cache
 fi
 
-top=$E_H/dcache-deploy
-etc=${top}/config 
+etc=${top}/etc 
 pwdfile=${etc}/dcache.kpwd
 CLASSPATH=${top}/classes/dcache.jar
 command=`basename "$0"`

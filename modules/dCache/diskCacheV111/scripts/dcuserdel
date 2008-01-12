@@ -1,9 +1,9 @@
 #!/bin/sh -f
 #
-# @(#) $Id: dcuserdel,v 1.3 2003-10-20 15:25:31 cvs Exp $
+# @(#) $Id: dclist,v 1.3 2003-10-20 15:25:31 cvs Exp $
 #
 # $Log: not supported by cvs2svn $
-# Revision 1.2  2003/05/09 18:33:50  cvs
+# Revision 1.2  2003/05/09 18:33:49  cvs
 # modified script by putting "$@" instead of $@ so that the parametes with spaces are not expanded
 #
 # Revision 1.1  2003/04/10 22:04:18  cvs
@@ -34,13 +34,12 @@ node=`uname -n| sed -e 's/\([^\.]\)\..*/\1/'`
 
 if [ -r /usr/local/bin/ENSTORE_HOME ]; then
    . /usr/local/bin/ENSTORE_HOME
+    top=$E_H/dcache-deploy
 else
-   echo `date` ERROR: Can NOT determine E_H.  Add /usr/local/bin/ENSTORE_HOME link
-   exit 1
+   top=/opt/d-cache
 fi
 
-top=$E_H/dcache-deploy
-etc=${top}/config 
+etc=${top}/etc 
 pwdfile=${etc}/dcache.kpwd
 CLASSPATH=${top}/classes/dcache.jar
 command=`basename "$0"`
