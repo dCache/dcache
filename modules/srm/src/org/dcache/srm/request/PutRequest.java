@@ -1,131 +1,4 @@
 // $Id: PutRequest.java,v 1.28 2007-10-11 20:17:32 timur Exp $
-// $Log: not supported by cvs2svn $
-// Revision 1.27  2007/04/13 15:17:27  timur
-// comply with the error code requirement for extend lifetime for the expired/canceled put/copy request
-//
-// Revision 1.26  2007/04/09 22:48:27  timur
-// added a flag that controls default overwrite behaviour, ouside of srmV2 specific reaction to the overwrite mode
-//
-// Revision 1.25  2007/03/10 00:13:20  timur
-// started work on adding support for optional overwrite
-//
-// Revision 1.24  2007/02/17 05:44:25  timur
-// propagate SRM_NO_FREE_SPACE to reserveSpace, refactored database code a bit
-//
-// Revision 1.23  2007/01/10 23:00:24  timur
-// implemented srmGetRequestTokens, store request description in database, fixed several srmv2 issues
-//
-// Revision 1.22  2006/12/20 15:38:47  timur
-// implemented getRequestSummary
-//
-// Revision 1.21  2006/10/02 23:29:17  timur
-// implemented srmPing and srmBringOnline (not tested yet), refactored Request.java
-//
-// Revision 1.20  2006/08/18 22:05:32  timur
-// srm usage of space by srmPrepareToPut implemented
-//
-// Revision 1.19  2006/06/21 20:29:53  timur
-// Upgraded code to the latest srmv2.2 wsdl (final)
-//
-// Revision 1.18  2006/06/20 15:42:17  timur
-// initial v2.2 commit, code is based on a week old wsdl, will update the wsdl and code next
-//
-// Revision 1.17  2006/05/26 21:17:46  timur
-// remove \' from the string
-//
-// Revision 1.16  2006/04/26 17:17:55  timur
-// store the history of the state transitions in the database
-//
-// Revision 1.15  2006/04/18 00:53:47  timur
-// added the job execution history storage for better diagnostics and profiling
-//
-// Revision 1.14  2006/04/12 23:16:23  timur
-// storing state transition time in database, storing transferId for copy requests in database, renaming tables if schema changes without asking
-//
-// Revision 1.13  2006/03/28 00:20:48  timur
-// added srmAbortFiles support
-//
-// Revision 1.12  2006/03/24 00:22:17  timur
-// regenerated stubs with array wrappers for v2_1
-//
-// Revision 1.11  2006/03/18 00:41:03  timur
-// srm v2 bug fixes
-//
-// Revision 1.10  2006/03/14 17:44:19  timur
-// moving toward the axis 1_3
-//
-// Revision 1.9  2005/12/14 02:00:42  timur
-//  fixed a v2 related bug
-//
-// Revision 1.8  2005/12/12 22:39:20  timur
-// fixed a minibug
-//
-// Revision 1.7  2005/12/12 22:35:47  timur
-// more work on srmPrepareToGet and related srm v2 functions
-//
-// Revision 1.6  2005/12/10 00:04:01  timur
-// working on srmPrepareToPut
-//
-// Revision 1.5  2005/05/04 21:54:52  timur
-// new scheduling policy on restart for put and get request - do not schedule the request if the user does not update its status
-//
-// Revision 1.4  2005/03/30 22:42:10  timur
-// more database schema changes
-//
-// Revision 1.3  2005/03/11 21:16:26  timur
-// making srm compatible with cern tools again
-//
-// Revision 1.2  2005/03/01 23:10:38  timur
-// Modified the database scema to increase database operations performance and to account for reserved space"and to account for reserved space
-//
-// Revision 1.1  2005/01/14 23:07:14  timur
-// moving general srm code in a separate repository
-//
-// Revision 1.8  2004/11/09 08:04:47  tigran
-// added SerialVersion ID
-//
-// Revision 1.7  2004/11/08 23:02:41  timur
-// remote gridftp manager kills the mover when the mover thread is killed,  further modified the srm database handling
-//
-// Revision 1.6  2004/10/30 04:19:07  timur
-// Fixed a problem related to the restoration of the job from database
-//
-// Revision 1.5  2004/10/28 02:41:31  timur
-// changed the database scema a little bit, fixed various synchronization bugs in the scheduler, added interactive shell to the File System srm
-//
-// Revision 1.4  2004/08/17 16:01:14  timur
-// simplifying scheduler, removing some bugs, and redusing the amount of logs
-//
-// Revision 1.3  2004/08/10 17:03:47  timur
-// more monitoring, change file request state, when request is complete
-//
-// Revision 1.2  2004/08/06 19:35:24  timur
-// merging branch srm-branch-12_May_2004 into the trunk
-//
-// Revision 1.1.2.13  2004/08/03 16:37:51  timur
-// removing unneeded dependancies on dcache
-//
-// Revision 1.1.2.12  2004/07/12 21:52:06  timur
-// remote srm error handling is improved, minor issues fixed
-//
-// Revision 1.1.2.11  2004/07/02 20:10:24  timur
-// fixed the leak of sql connections, added propogation of srm errors
-//
-// Revision 1.1.2.10  2004/06/30 20:37:24  timur
-// added more monitoring functions, added retries to the srm client part, adapted the srmclientv1 for usage in srmcp
-//
-// Revision 1.1.2.9  2004/06/24 23:03:07  timur
-// put requests, put file requests and copy file requests are now stored in database, copy requests need more work
-//
-// Revision 1.1.2.8  2004/06/22 01:38:06  timur
-// working on the database part, created persistent storage for getFileRequests, for the next requestId
-//
-// Revision 1.1.2.7  2004/06/16 22:14:31  timur
-// copy works for mulfile request
-//
-// Revision 1.1.2.6  2004/06/16 19:44:33  timur
-// added cvs logging tags and fermi copyright headers at the top, removed Copier.java and CopyJob.java
-//
 
 /*
 COPYRIGHT STATUS:
@@ -632,3 +505,130 @@ public class PutRequest extends ContainerRequest{
     }
    
 }
+// $Log: not supported by cvs2svn $
+// Revision 1.27  2007/04/13 15:17:27  timur
+// comply with the error code requirement for extend lifetime for the expired/canceled put/copy request
+//
+// Revision 1.26  2007/04/09 22:48:27  timur
+// added a flag that controls default overwrite behaviour, ouside of srmV2 specific reaction to the overwrite mode
+//
+// Revision 1.25  2007/03/10 00:13:20  timur
+// started work on adding support for optional overwrite
+//
+// Revision 1.24  2007/02/17 05:44:25  timur
+// propagate SRM_NO_FREE_SPACE to reserveSpace, refactored database code a bit
+//
+// Revision 1.23  2007/01/10 23:00:24  timur
+// implemented srmGetRequestTokens, store request description in database, fixed several srmv2 issues
+//
+// Revision 1.22  2006/12/20 15:38:47  timur
+// implemented getRequestSummary
+//
+// Revision 1.21  2006/10/02 23:29:17  timur
+// implemented srmPing and srmBringOnline (not tested yet), refactored Request.java
+//
+// Revision 1.20  2006/08/18 22:05:32  timur
+// srm usage of space by srmPrepareToPut implemented
+//
+// Revision 1.19  2006/06/21 20:29:53  timur
+// Upgraded code to the latest srmv2.2 wsdl (final)
+//
+// Revision 1.18  2006/06/20 15:42:17  timur
+// initial v2.2 commit, code is based on a week old wsdl, will update the wsdl and code next
+//
+// Revision 1.17  2006/05/26 21:17:46  timur
+// remove \' from the string
+//
+// Revision 1.16  2006/04/26 17:17:55  timur
+// store the history of the state transitions in the database
+//
+// Revision 1.15  2006/04/18 00:53:47  timur
+// added the job execution history storage for better diagnostics and profiling
+//
+// Revision 1.14  2006/04/12 23:16:23  timur
+// storing state transition time in database, storing transferId for copy requests in database, renaming tables if schema changes without asking
+//
+// Revision 1.13  2006/03/28 00:20:48  timur
+// added srmAbortFiles support
+//
+// Revision 1.12  2006/03/24 00:22:17  timur
+// regenerated stubs with array wrappers for v2_1
+//
+// Revision 1.11  2006/03/18 00:41:03  timur
+// srm v2 bug fixes
+//
+// Revision 1.10  2006/03/14 17:44:19  timur
+// moving toward the axis 1_3
+//
+// Revision 1.9  2005/12/14 02:00:42  timur
+//  fixed a v2 related bug
+//
+// Revision 1.8  2005/12/12 22:39:20  timur
+// fixed a minibug
+//
+// Revision 1.7  2005/12/12 22:35:47  timur
+// more work on srmPrepareToGet and related srm v2 functions
+//
+// Revision 1.6  2005/12/10 00:04:01  timur
+// working on srmPrepareToPut
+//
+// Revision 1.5  2005/05/04 21:54:52  timur
+// new scheduling policy on restart for put and get request - do not schedule the request if the user does not update its status
+//
+// Revision 1.4  2005/03/30 22:42:10  timur
+// more database schema changes
+//
+// Revision 1.3  2005/03/11 21:16:26  timur
+// making srm compatible with cern tools again
+//
+// Revision 1.2  2005/03/01 23:10:38  timur
+// Modified the database scema to increase database operations performance and to account for reserved space"and to account for reserved space
+//
+// Revision 1.1  2005/01/14 23:07:14  timur
+// moving general srm code in a separate repository
+//
+// Revision 1.8  2004/11/09 08:04:47  tigran
+// added SerialVersion ID
+//
+// Revision 1.7  2004/11/08 23:02:41  timur
+// remote gridftp manager kills the mover when the mover thread is killed,  further modified the srm database handling
+//
+// Revision 1.6  2004/10/30 04:19:07  timur
+// Fixed a problem related to the restoration of the job from database
+//
+// Revision 1.5  2004/10/28 02:41:31  timur
+// changed the database scema a little bit, fixed various synchronization bugs in the scheduler, added interactive shell to the File System srm
+//
+// Revision 1.4  2004/08/17 16:01:14  timur
+// simplifying scheduler, removing some bugs, and redusing the amount of logs
+//
+// Revision 1.3  2004/08/10 17:03:47  timur
+// more monitoring, change file request state, when request is complete
+//
+// Revision 1.2  2004/08/06 19:35:24  timur
+// merging branch srm-branch-12_May_2004 into the trunk
+//
+// Revision 1.1.2.13  2004/08/03 16:37:51  timur
+// removing unneeded dependancies on dcache
+//
+// Revision 1.1.2.12  2004/07/12 21:52:06  timur
+// remote srm error handling is improved, minor issues fixed
+//
+// Revision 1.1.2.11  2004/07/02 20:10:24  timur
+// fixed the leak of sql connections, added propogation of srm errors
+//
+// Revision 1.1.2.10  2004/06/30 20:37:24  timur
+// added more monitoring functions, added retries to the srm client part, adapted the srmclientv1 for usage in srmcp
+//
+// Revision 1.1.2.9  2004/06/24 23:03:07  timur
+// put requests, put file requests and copy file requests are now stored in database, copy requests need more work
+//
+// Revision 1.1.2.8  2004/06/22 01:38:06  timur
+// working on the database part, created persistent storage for getFileRequests, for the next requestId
+//
+// Revision 1.1.2.7  2004/06/16 22:14:31  timur
+// copy works for mulfile request
+//
+// Revision 1.1.2.6  2004/06/16 19:44:33  timur
+// added cvs logging tags and fermi copyright headers at the top, removed Copier.java and CopyJob.java
+//

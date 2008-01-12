@@ -352,6 +352,7 @@ public class Configuration {
     private Integer jdbcExecutionThreadNum;//null by default
     private String credentialsDirectory="/opt/d-cache/credentials";
     private boolean jdbcMonitoringEnabled=false;
+    private boolean jdbcMonitoringDebugLevel = false;
     private boolean overwrite = false;
     private boolean overwrite_by_default = false;
     
@@ -1316,8 +1317,7 @@ public class Configuration {
         sb.append("\n\tlambda_station_map_file=").append(this.lambda_station_map_file);
         sb.append("\n\tlambda_station_script=").append(this.lambda_station_script);
         sb.append("\n\tjdbcMonitoringEnabled=").append(this.jdbcMonitoringEnabled);
-        
-        
+        sb.append("\n\tjdbcMonitoringDebugLevel=").append(this.jdbcMonitoringDebugLevel);
         
         return sb.toString();
     }
@@ -2207,7 +2207,7 @@ public class Configuration {
     public void setPutRequestRestorePolicy(java.lang.String putRequestRestorePolicy) {
         if(putRequestRestorePolicy.equalsIgnoreCase(ON_RESTART_FAIL_REQUEST) ||
                 putRequestRestorePolicy.equalsIgnoreCase(ON_RESTART_RESTORE_REQUEST) ||
-                putRequestRestorePolicy.equalsIgnoreCase(ON_RESTART_RESTORE_REQUEST) ) {
+                putRequestRestorePolicy.equalsIgnoreCase(ON_RESTART_WAIT_FOR_UPDATE_REQUEST) ) {
             this.putRequestRestorePolicy = putRequestRestorePolicy;
         } else {
             throw new IllegalArgumentException("putRequestRestorePolicy value must be one of "+
@@ -2233,7 +2233,7 @@ public class Configuration {
     public void setGetRequestRestorePolicy(java.lang.String getRequestRestorePolicy) {
         if(getRequestRestorePolicy.equalsIgnoreCase(ON_RESTART_FAIL_REQUEST) ||
                 getRequestRestorePolicy.equalsIgnoreCase(ON_RESTART_RESTORE_REQUEST) ||
-                getRequestRestorePolicy.equalsIgnoreCase(ON_RESTART_RESTORE_REQUEST) ) {
+                getRequestRestorePolicy.equalsIgnoreCase(ON_RESTART_WAIT_FOR_UPDATE_REQUEST) ) {
             this.getRequestRestorePolicy = getRequestRestorePolicy;
         } else {
             throw new IllegalArgumentException("getRequestRestorePolicy value must be one of "+
@@ -2259,7 +2259,7 @@ public class Configuration {
     public void setCopyRequestRestorePolicy(java.lang.String copyRequestRestorePolicy) {
         if(copyRequestRestorePolicy.equalsIgnoreCase(ON_RESTART_FAIL_REQUEST) ||
                 copyRequestRestorePolicy.equalsIgnoreCase(ON_RESTART_RESTORE_REQUEST) ||
-                copyRequestRestorePolicy.equalsIgnoreCase(ON_RESTART_RESTORE_REQUEST) ) {
+                copyRequestRestorePolicy.equalsIgnoreCase(ON_RESTART_WAIT_FOR_UPDATE_REQUEST) ) {
             this.copyRequestRestorePolicy = copyRequestRestorePolicy;
         } else {
             throw new IllegalArgumentException("copyRequestRestorePolicy value must be one of "+
@@ -2394,6 +2394,14 @@ public class Configuration {
 
     public void setOverwrite_by_default(boolean overwrite_by_default) {
         this.overwrite_by_default = overwrite_by_default;
+    }
+
+    public boolean isJdbcMonitoringDebugLevel() {
+        return jdbcMonitoringDebugLevel;
+    }
+
+    public void setJdbcMonitoringDebugLevel(boolean jdbcMonitoringDebugLevel) {
+        this.jdbcMonitoringDebugLevel = jdbcMonitoringDebugLevel;
     }
     
     

@@ -392,6 +392,12 @@ public abstract class Request extends Job {
     public abstract String getMethod();
     
     private String description;
+    
+    public void addDebugHistoryEvent(String description) {
+        if(configuration.isJdbcMonitoringDebugLevel()) {
+            addHistoryEvent( description);
+        }
+    }
 
     
     public static Request getRequest(Long requestId)  {

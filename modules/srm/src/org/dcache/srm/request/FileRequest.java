@@ -313,6 +313,11 @@ public abstract class FileRequest extends Job {
         say("restored");
     }
     
+    public void addDebugHistoryEvent(String description) {
+        if(configuration.isJdbcMonitoringDebugLevel()) {
+            addHistoryEvent( description);
+        }
+    }
     
     public void say(String s) {
         storage.log("FileRequest reqId # "+requestId+" fileId # "+getId()+" : "+s);
