@@ -179,8 +179,7 @@ public class SimpleJobScheduler implements JobScheduler, Runnable {
 
             try {
                 if (runnable instanceof Batchable) {
-                    ((Batchable) runnable).ided(id);
-                    ((Batchable) runnable).queued();
+                    ((Batchable) runnable).queued(id);
                 }
             } catch (Throwable ee) {
                 throw new InvocationTargetException(ee, "reported by queued");

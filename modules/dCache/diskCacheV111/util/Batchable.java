@@ -2,13 +2,20 @@
 package diskCacheV111.util ;
 
 public interface Batchable extends Runnable {
-    //this method used to notify the Batchable that scheduler has assigned 
-    // an id to it
-    public void ided(int id);
-    public void queued() ;
+
+    /**
+     * invoked by job scheduler at the time when job added into a queue
+     * @param id assigned by the job scheduler
+     */
+    public void queued(int id) ;
+
+    /**
+     * invoked by job scheduler at the time when job is removed form a queue
+     */
     public void unqueued() ;
+
 //    public double getTransferRate() ;
-    public String getClient(); 
-    public long   getClientId() ; 
+    public String getClient();
+    public long   getClientId() ;
 
 }

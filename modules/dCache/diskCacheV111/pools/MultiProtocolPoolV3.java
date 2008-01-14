@@ -1542,8 +1542,9 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
             return _command.getId();
         }
 
-        public void queued() {
+        public void queued(int id) {
             say("JOB queued " + _pnfsId);
+            _command.setMoverId(id);
             if (prepare())
                 throw new IllegalArgumentException("prepare failed");
         }
@@ -1934,12 +1935,6 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
                 esay(eee);
             }
             say("IO thread finished : " + Thread.currentThread().toString());
-        }
-
-        public void ided(int id) {
-            // say("RepositoryIoHandler.ided("+id+")");
-
-            _command.setMoverId(id);
         }
 
     }

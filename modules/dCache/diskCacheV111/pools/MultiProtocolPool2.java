@@ -363,7 +363,7 @@ public class       MultiProtocolPool2
             _pingThread   = new PoolManagerPingThread() ;
 
             disablePool(PoolV2Mode.DISABLED_STRICT, 1, "Initializing");
-            
+
             say("Checking base directory ( reading setup) "+_baseDir);
             while( true ){
                 try{
@@ -417,11 +417,11 @@ public class       MultiProtocolPool2
             _p2pQueue = new SimpleJobScheduler( getNucleus().getThreadGroup() , "P2P" ) ;
 
             _flushingThread = new HsmFlushController( this , _storageQueue , _storageHandler ) ;
-            
+
             _checksumModule = new ChecksumModuleV1( this , _repository , _pnfs ) ;
 
             _p2pClient = new P2PClient( this , _repository, _checksumModule ) ;
-            
+
             _timeoutManager.addScheduler( "p2p" , _p2pQueue ) ;
             _timeoutManager.start() ;
             addCommandListener( _timeoutManager ) ;
@@ -438,9 +438,9 @@ public class       MultiProtocolPool2
             addCommandListener( _flushingThread ) ;
             addCommandListener( _p2pClient ) ;
             addCommandListener( _checksumModule ) ;
-            
+
             execFile( _setup ) ;
-            
+
         } catch (Exception e){
             say("Exception occurred on startup: "+e);
             start();
@@ -469,6 +469,7 @@ public class       MultiProtocolPool2
         }
         esay( "Constructor done (still waiting for 'inventory')");
     }
+    @Override
     public CellVersion getCellVersion(){ return new CellVersion(diskCacheV111.util.Version.getVersion(),"$Revision: 1.143 $" ); }
     private class IoQueueManager implements JobScheduler {
         private List<JobScheduler> _list         = new ArrayList<JobScheduler>() ;
@@ -501,14 +502,14 @@ public class       MultiProtocolPool2
            return new ArrayList<JobScheduler>( _list ).iterator() ;
         }
         private JobScheduler getSchedulerByName( String queueName ){
-           return (JobScheduler)_hash.get( queueName ) ;
+           return _hash.get( queueName ) ;
         }
         private JobScheduler getSchedulerById( int id ){
            int pos = id % 10 ;
            if( pos >= _list.size() )
               throw new
               IllegalArgumentException("Invalid id (doesn't below to any known scheduler)" );
-           return (JobScheduler)_list.get(pos);
+           return _list.get(pos);
         }
         public JobInfo getJobInfo( int id ){
           return  getSchedulerById( id ).getJobInfo( id ) ;
@@ -613,6 +614,7 @@ public class       MultiProtocolPool2
 
         }
     }
+    @Override
     public void cleanUp(){
         disablePool( PoolV2Mode.DISABLED_DEAD , 666  , "Shutdown" ) ;
     }
@@ -864,9 +866,10 @@ public class       MultiProtocolPool2
         return ;
     }
 
+    @Override
     public CellInfo getCellInfo()
-    {        
-        PoolCellInfo info = new PoolCellInfo(super.getCellInfo());        
+    {
+        PoolCellInfo info = new PoolCellInfo(super.getCellInfo());
         info.setPoolCostInfo(getPoolCostInfo());
         info.setTagMap(_tags);
         info.setErrorStatus(_poolStatusCode, _poolStatusMessage);
@@ -876,6 +879,7 @@ public class       MultiProtocolPool2
     public void log(String str  ){ say( str ) ; }
     public void elog(String str ){ esay( str ) ; }
     public void plog(String str ){ esay( "PANIC : "+str ) ; }
+    @Override
     public void getInfo( PrintWriter pw ){
         pw.println("Base directory    : "+_baseDir);
         pw.println("Revision          : [$Id: MultiProtocolPool2.java,v 1.143 2007-10-16 19:28:45 behrmann Exp $]" ) ;
@@ -962,10 +966,12 @@ public class       MultiProtocolPool2
         _checksumModule.getInfo(pw);
     }
 
+    @Override
     public void say( String str ){
         pin( str );
         super.say( str );
     }
+    @Override
     public void esay( String str ){
         pin( str ) ;
         super.esay( str ) ;
@@ -1148,6 +1154,7 @@ public class       MultiProtocolPool2
 
         }
         private boolean isWrite(){ return _create ; }
+        @Override
         public String toString(){
 
             MoverProtocol handler = (MoverProtocol)_handler;
@@ -1307,8 +1314,8 @@ public class       MultiProtocolPool2
                 return 0 ;
         }
         public double getTransferRate(){
-            if( _handler == null )return (double)10.000 ;
-            if( ! ( _handler instanceof MoverProtocol ) )return (double)10.0 ;
+            if( _handler == null )return 10.000 ;
+            if( ! ( _handler instanceof MoverProtocol ) )return 10.0 ;
             MoverProtocol handler = (MoverProtocol)_handler;
             long bt = handler.getBytesTransferred() ;
             long tm = handler.getTransferTime() ;
@@ -1319,8 +1326,9 @@ public class       MultiProtocolPool2
         //
         public String getClient(){ return _clientPath ; }
         public long   getClientId(){ return _command.getId() ; }
-        public void queued(){
+        public void queued(int id){
             say( "JOB queued "+_pnfsId ) ;
+            _command.setMoverId(id);
             if( prepare() )
                 throw new
                         IllegalArgumentException("prepare failed") ;
@@ -1350,7 +1358,7 @@ public class       MultiProtocolPool2
             File     cacheFile = null;
             ChecksumMover csmover = null;
             ChecksumFactory clientChecksumFactory = null;
-            
+
             if( ! _crashEnabled ) {
                 _storageInfo.setKey("crash",null) ;
             }else{
@@ -1386,7 +1394,7 @@ public class       MultiProtocolPool2
 
                     MoverProtocol handler = (MoverProtocol)_handler ;
                     csmover = handler instanceof ChecksumMover ? (ChecksumMover)handler : null ;
-                    
+
                     if( csmover != null ){
                         say("Checksum mover is set");
                         clientChecksumFactory = csmover.getChecksumFactory(_protocolInfo);
@@ -1394,9 +1402,9 @@ public class       MultiProtocolPool2
                         if ( clientChecksumFactory != null ){
                              say("Got checksum factory of "+clientChecksumFactory.getType());
                              checksum = clientChecksumFactory.create();
-                        } else                   
+                        } else
                              checksum = _checksumModule.getDefaultChecksumFactory().create();
-                      
+
                         if ( _checksumModule.checkOnTransfer() ){
                            csmover.setDigest(checksum);
                         }
@@ -1439,7 +1447,7 @@ public class       MultiProtocolPool2
                     // ( first remove the lock, otherwise the
                     //   state for the precious events is wrong.
                     //
-                    
+
                     /*
                      * Due to support of <AccessLatency> and <RetentionPolicy>
                      * the file state in the pool has changed has changed it's
@@ -1447,42 +1455,42 @@ public class       MultiProtocolPool2
                      *     precious: have to goto tape
                      *     cached: free to be removed by sweeper
                      *     cached+sticky: does not goes to tape, not removed by sweeper
-                     *     
+                     *
                      * new states depending on AL and RP:
                      *     Custodial+ONLINE   (T1D1) : precious+stily  => cached+stiky
                      *     Custodial+NEARLINE (T1D0) : precious        => cached
                      *     Output+ONLINE      (T0D1) : cached+stiky    => cached+stiky
-                     *  
-                     */                    
-                    
+                     *
+                     */
+
                     _entry.lock(false) ;
                     _entry.setStorageInfo( _storageInfo ) ;
-                                        
+
                     // flush to tape only if the file defined as a 'tape file'( RP = Custodial) and the HSM is defined
                     String hsm = _storageInfo.getHsm();
                     RetentionPolicy retentionPolicy = _storageInfo.getRetentionPolicy();
-                    if( retentionPolicy != null && retentionPolicy.equals(RetentionPolicy.CUSTODIAL) ) {                    	
+                    if( retentionPolicy != null && retentionPolicy.equals(RetentionPolicy.CUSTODIAL) ) {
 	                    if(hsm != null && !hsm.toLowerCase().equals("none") ) {
-	                    	_entry.setPrecious() ;	
+	                    	_entry.setPrecious() ;
 	                    }else{
 	                    	_entry.setCached() ;
 	                    }
                     }else{
                     	_entry.setCached() ;
                     }
-                    
-                    
+
+
                     AccessLatency accessLatency = _storageInfo.getAccessLatency();
                     if( accessLatency != null && accessLatency.equals( AccessLatency.ONLINE) ) {
-                    	
+
                     	// TODO: probably, we have to notify PinManager
                     	// HopingManager have to copy file into a 'read' pool if
-                    	// needed, set copy 'sticky' and remove sticky flag in the 'write' pool                    	
-                    	
+                    	// needed, set copy 'sticky' and remove sticky flag in the 'write' pool
+
                     	_entry.setSticky(true);
                     }else{
                     	_entry.setSticky(false);
-                    }                    
+                    }
 
 
                     if( overwrite ){
@@ -1675,12 +1683,6 @@ public class       MultiProtocolPool2
             say( "IO thread finished : "+Thread.currentThread().toString() ) ;
         }
 
-        public void ided(int id) {
-            //say("RepositoryIoHandler.ided("+id+")");
-
-            _command.setMoverId(id);
-        }
-
     }
     ////////////////////////////////////////////////////////////////
     //
@@ -1746,6 +1748,7 @@ public class       MultiProtocolPool2
           }
           return sb.toString();
         }
+        @Override
         public String toString(){
           StringBuffer sb = new StringBuffer() ;
 
@@ -2242,6 +2245,7 @@ public class       MultiProtocolPool2
         }
 
     }
+    @Override
     public void messageArrived( CellMessage cellMessage ){
         Object messageObject  = cellMessage.getMessageObject();
 
@@ -2252,7 +2256,7 @@ public class       MultiProtocolPool2
 
         Message poolMessage = (Message)messageObject ;
 
-        boolean replyRequired = ((Message)poolMessage).getReplyRequired() ;
+        boolean replyRequired = (poolMessage).getReplyRequired() ;
         if ( poolMessage instanceof PoolMoverKillMessage ) {
             PoolMoverKillMessage kill = (PoolMoverKillMessage)poolMessage;
             say("PoolMoverKillMessage for mover id "+kill.getMoverId());
@@ -2270,7 +2274,7 @@ public class       MultiProtocolPool2
 
         } else if ( poolMessage instanceof DoorTransferFinishedMessage ){
 
-            _p2pClient.messageArrived( (Message)poolMessage,  cellMessage );
+            _p2pClient.messageArrived( poolMessage,  cellMessage );
 
             return ;
 
@@ -2281,7 +2285,7 @@ public class       MultiProtocolPool2
             if( msg.isPool2Pool() && msg.isReply() ){
 
                 say("Pool2PoolIoFileMsg delivered to p2p Client");
-                _p2pClient.messageArrived( (Message)poolMessage , cellMessage ) ;
+                _p2pClient.messageArrived( poolMessage , cellMessage ) ;
 
             }else{
 
@@ -2292,7 +2296,7 @@ public class       MultiProtocolPool2
                         _poolMode.isDisabled(PoolV2Mode.DISABLED_FETCH )      ) ){
 
                     esay("PoolIoFileMessage Request rejected due to "+_poolMode);
-                    sentNotEnabledException( (Message)poolMessage , cellMessage ) ;
+                    sentNotEnabledException( poolMessage , cellMessage ) ;
                     return ;
 
                 }
@@ -2309,7 +2313,7 @@ public class       MultiProtocolPool2
             if( _poolMode.isDisabled(PoolV2Mode.DISABLED_P2P_CLIENT) ){
 
                 esay("Pool2PoolTransferMsg Request rejected due to "+_poolMode);
-                sentNotEnabledException( (Message) poolMessage , cellMessage ) ;
+                sentNotEnabledException( poolMessage , cellMessage ) ;
                 return ;
 
             }
@@ -2326,7 +2330,7 @@ public class       MultiProtocolPool2
                     ( _lfsMode != LFS_NONE                                 )    ){
 
                 esay("PoolFetchFileMessage  Request rejected due to "+_poolMode);
-                sentNotEnabledException( (Message)poolMessage , cellMessage ) ;
+                sentNotEnabledException( poolMessage , cellMessage ) ;
                 return ;
 
             }
@@ -2338,7 +2342,7 @@ public class       MultiProtocolPool2
             if( _poolMode.isDisabled(PoolV2Mode.DISABLED) ){
 
                 esay("PoolCheckFreeSpaceMessage Request rejected due to "+_poolMode);
-                sentNotEnabledException( (Message)poolMessage , cellMessage ) ;
+                sentNotEnabledException( poolMessage , cellMessage ) ;
                 return ;
 
             }
@@ -2352,7 +2356,7 @@ public class       MultiProtocolPool2
                 _poolMode.isDisabled(PoolV2Mode.DISABLED_DEAD)){
 
                 esay("PoolCheckable Request rejected due to "+_poolMode);
-                sentNotEnabledException( (Message)poolMessage , cellMessage ) ;
+                sentNotEnabledException( poolMessage , cellMessage ) ;
                 return ;
 
             }
@@ -2371,7 +2375,7 @@ public class       MultiProtocolPool2
             if( _poolMode.isDisabled(PoolV2Mode.DISABLED) ){
 
                 esay("PoolRemoveFilesMessage Request rejected due to "+_poolMode);
-                sentNotEnabledException( (Message)poolMessage , cellMessage ) ;
+                sentNotEnabledException( poolMessage , cellMessage ) ;
                 return ;
 
             }
@@ -2402,7 +2406,7 @@ public class       MultiProtocolPool2
 
         }else {
             say("Unexpected message class 2"+poolMessage.getClass());
-            say(" isReply = "+((Message)poolMessage).isReply()); //REMOVE
+            say(" isReply = "+(poolMessage).isReply()); //REMOVE
             say(" source = "+cellMessage.getSourceAddress());
             return;
         }
@@ -2568,7 +2572,7 @@ public class       MultiProtocolPool2
             }
 
             esay("Ping Thread sending Pool Down message");
-            disablePool(PoolV2Mode.DISABLED_DEAD, 666, 
+            disablePool(PoolV2Mode.DISABLED_DEAD, 666,
                         "PingThread terminated");
             esay("Ping Thread finished");
         }
@@ -2581,14 +2585,14 @@ public class       MultiProtocolPool2
         }
 
         private CellMessage getPoolManagerMessage()
-        {       
-            boolean disabled = 
+        {
+            boolean disabled =
                 _poolMode.isDisabled(PoolV2Mode.DISABLED_STRICT) ||
                 _poolMode.isDisabled(PoolV2Mode.DISABLED_DEAD);
             PoolCostInfo info = disabled ? null : getPoolCostInfo();
 
             PoolManagerPoolUpMessage poolManagerMessage =
-                new PoolManagerPoolUpMessage(_poolName, _serialId, 
+                new PoolManagerPoolUpMessage(_poolName, _serialId,
                                              _poolMode, info);
 
             poolManagerMessage.setTagMap( _tags ) ;

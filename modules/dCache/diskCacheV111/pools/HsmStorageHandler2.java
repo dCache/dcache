@@ -421,7 +421,7 @@ public class HsmStorageHandler2  {
        private final CacheRepositoryEntry _entry ;
        private final StorageInfoMessage   _infoMsg      ;
        private long                 _timestamp   = 0 ;
-       private int id;
+       private int _id;
        public FetchThread( CacheRepositoryEntry entry ){
           super( entry.getPnfsId() ) ;
           _entry   = entry ;
@@ -431,11 +431,13 @@ public class HsmStorageHandler2  {
                           _pnfsId ,
                           true ) ;
        }
-       public String toString(){ return _pnfsId.toString() ; }
+       @Override
+    public String toString(){ return _pnfsId.toString() ; }
        public String getClient(){ return "[Unknown]" ; }
        public long getClientId(){ return 0 ; }
-       public void queued(){
+       public void queued( int id ){
           _timestamp = System.currentTimeMillis() ;
+          id = id;
        }
        public double getTransferRate(){ return 10.0 ; }
        public void unqueued(){
@@ -640,9 +642,6 @@ public class HsmStorageHandler2  {
               esay("Could send 'billing info' : "+ie);
            }
        }
-       public void ided(int id) {
-           this.id = id;
-       }
     }
 
     //////////////////////////////////////////////////////////////////////
@@ -796,7 +795,7 @@ public class HsmStorageHandler2  {
         private final CacheRepositoryEntry _entry;
         private final StorageInfoMessage _infoMsg;
         private long _timestamp = 0;
-        private int id;
+        private int _id;
 
 	public StoreThread(CacheRepositoryEntry entry)
         {
@@ -808,7 +807,8 @@ public class HsmStorageHandler2  {
             _infoMsg = new StorageInfoMessage(myName, _pnfsId, false);
 	}
 
-       public String toString()
+       @Override
+    public String toString()
         {
             return _pnfsId.toString();
         }
@@ -828,9 +828,10 @@ public class HsmStorageHandler2  {
             return 0;
         }
 
-        public void queued()
+        public void queued(int id)
         {
             _timestamp = System.currentTimeMillis();
+            _id = id;
         }
 
         public void unqueued()
@@ -1063,8 +1064,5 @@ public class HsmStorageHandler2  {
             }
         }
 
-        public void ided(int id) {
-            this.id = id;
-        }
     }
 }

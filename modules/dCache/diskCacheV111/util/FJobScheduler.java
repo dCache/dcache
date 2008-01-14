@@ -180,13 +180,16 @@ public class FJobScheduler implements JobScheduler, Runnable {
         if ((priority < LOW) || (priority > HIGH))
             throw new IllegalArgumentException("Illegal Priority : " + priority);
         synchronized (_lock) {
+
+            int id = _nextId++;
+
             try {
                 if (runnable instanceof Batchable)
-                    ((Batchable) runnable).queued();
+                    ((Batchable) runnable).queued(id);
             } catch (Throwable ee) {
                 throw new InvocationTargetException(ee, "reported by queued");
             }
-            int id = _nextId++;
+
             SJob job = new SJob(runnable, id, priority);
             _jobs.put(Integer.valueOf(id), job);
             _queues[priority].add(job);

@@ -12,58 +12,57 @@ public class JobSchedulerTestCell extends CellAdapter {
       private Args _args = null ;
       private String _name = null ;
       public BJob( String name , String args ){
-         _name = name ; 
+         _name = name ;
          _args = new Args( args ) ;
       }
-      public String toString(){
+      @Override
+    public String toString(){
          return _name+" ["+_args+"]" ;
       }
       public String getClient(){ return "Dummy" ; }
       public long getClientId(){ return 1001 ; }
 
-      public void queued(){ say("Queued : "+_name) ; }
+      public void queued(int id){ say("Queued : "+_name + " id " + id) ; }
       public void unqueued(){ say("Unqueued : "+_name ) ; }
       public double getTransferRate(){ return 10.00 ; }
       public void run(){
          RunSystem r = new RunSystem( "/tmp/test" , 1000 , 1000000 , this ) ;
          try{
             say("Starting process" ) ;
-            r.go() ; 
+            r.go() ;
             say("Process terminated / asking result" ) ;
             int rc = r.getExitValue() ;
             say("Process returned : "+rc ) ;
          }catch(Exception e){
             say("Process throws exception : "+e ) ;
          }
-      
+
       }
       public void log(String log){ say("BJob: "+log ) ; }
       public void elog(String log){ esay("BJob: "+log ) ; }
       public void plog(String log){ say("BJob: "+log ) ; }
-      
-      public void ided(int id) {
-      }
-      
+
    }
    public class AJob implements Batchable {
       private String _name ;
       private Args   _args ;
       private long   _sleep = 0 ;
-      
+
       public AJob( String name , String args ){
          _name = name ;
          _args = new Args( args ) ;
          if( _args.argc() < 1 )
             throw new
             IllegalArgumentException( "Usage : <name> <time>") ;
-         _sleep = 1000L * (long)Integer.parseInt(_args.argv(0)) ;
+         _sleep = 1000L * Integer.parseInt(_args.argv(0)) ;
       }
-      public String toString(){
+      @Override
+    public String toString(){
          return _name+" ["+_args+"]" ;
       }
       public String getClient(){ return "Dummy" ; }
       public long getClientId(){ return 1001 ; }
-      public void queued(){ say("Queued : "+_name) ; }
+      public void queued(int id){ say("Queued : "+_name + " id " + id) ; }
       public void unqueued(){ say("Unqueued : "+_name ) ; }
       public double getTransferRate(){ return 10.00 ; }
       public void run(){
@@ -90,14 +89,11 @@ public class JobSchedulerTestCell extends CellAdapter {
          }
          say("Stopped : "+_name ) ;
       }
-      
-      public void ided(int id) {
-      }
-      
+
    }
    public JobSchedulerTestCell( String name , String argstring ){
       super( name , argstring , false ) ;
-      
+
       _scheduler = new SimpleJobScheduler( getNucleus().getThreadGroup() , "S" ) ;
       start() ;
    }
@@ -110,12 +106,12 @@ public class JobSchedulerTestCell extends CellAdapter {
        else if( prio.equals("regular") )priority = SimpleJobScheduler.REGULAR ;
        else if( prio.equals("low") )priority = SimpleJobScheduler.LOW ;
        else throw new IllegalArgumentException("Illegal priority : "+prio ) ;
-       
+
 //       BJob job = new BJob( args.argv(0) , args.argv(1) ) ;
        AJob job = new AJob( args.argv(0) , args.argv(1) ) ;
-       
+
        int id = _scheduler.add( job , priority ) ;
-              
+
        return "Queued ["+id+"] : "+job.toString() ;
    }
    public String ac_set_max_active_$_1( Args args )throws Exception {
@@ -152,5 +148,5 @@ public class JobSchedulerTestCell extends CellAdapter {
        StringBuffer sb = _scheduler.printJobQueue(null) ;
        return sb.toString() ;
    }
-   
+
 }
