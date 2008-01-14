@@ -11,20 +11,26 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.StringTokenizer;
 
+import org.dcache.chimera.DbConnectionInfo;
 import org.dcache.chimera.FsInode;
 import org.dcache.chimera.HimeraFsException;
 import org.dcache.chimera.JdbcFs;
 import org.dcache.chimera.UnixPermission;
 import org.dcache.chimera.XMLconfig;
 import org.dcache.chimera.posix.Stat;
+import org.dcache.chimera.util.SqlHelper;
 
 public class Pnfs2Himera {
 
-    private static void convertDirectory(FsInode dirInode, File dir, JdbcFs fs) {
+    private static void convertDirectory(Connection mappingdbConnection,  FsInode dirInode, File dir, JdbcFs fs) {
 
         String[] list = dir.list();
         if (list == null)
@@ -77,11 +83,9 @@ public class Pnfs2Himera {
                         newInode = fs.createFile(dirInode, f.getName(), stat
                                 .getUid(), stat.getGid(), stat.getMode());
                         fs.setFileSize(newInode, f.length());
-                        FsInode level7 = fs.createFileLevel(newInode, 7);
-                        byte[] pnfsIdBytes = pnfsId.getBytes();
-                        level7.write(0, pnfsIdBytes, 0,pnfsIdBytes.length );
 
-                        // FIXME: we are using level 7
+                        addMapping(mappingdbConnection, pnfsId, newInode.toString());
+
                         for( int level = 1; level < 7; level++) {
                         	File levelFile = new File(dir, ".(use)("+level+")("+list[i]+")");
                         	/*
@@ -133,7 +137,7 @@ public class Pnfs2Himera {
 
                 // System.out.println(sb.toString()) ;
                 if (f.isDirectory() && !isLink)
-                    convertDirectory(newInode, f, fs);
+                    convertDirectory(mappingdbConnection, newInode, f, fs);
 
             } catch (Exception linee) {
                 linee.printStackTrace();
@@ -390,6 +394,21 @@ public class Pnfs2Himera {
         return tagData;
      }
 
+
+    private static void addMapping(Connection mappingdbConnection, String pnfsid, String chimeraid ) throws SQLException {
+
+        PreparedStatement ps = mappingdbConnection.prepareStatement("INSERT INTO t_pnfsid_mapping VALUES (?,?)");
+
+        try {
+            ps.setString(1, pnfsid);
+            ps.setString(2, chimeraid);
+            ps.executeUpdate();
+        }finally {
+            SqlHelper.tryToClose(ps);
+        }
+
+    }
+
     public static void main(String[] args) throws Exception {
 
 
@@ -399,7 +418,14 @@ public class Pnfs2Himera {
             System.exit(4);
         }
 
+        XMLconfig config = new XMLconfig(new File(args[0]));
+
         JdbcFs fs = new JdbcFs(new XMLconfig(new File(args[0])));
+
+
+        DbConnectionInfo cInfo = config.getDbInfo(0);
+        Connection mappingdbConnection = DriverManager.getConnection(cInfo.getDBurl(), cInfo.getDBuser(), cInfo.getDBpass());
+        mappingdbConnection.setAutoCommit(true);
 
         File dir = new File(args[1]);
         FsInode root = fs.path2inode(args[2]);
@@ -411,7 +437,7 @@ public class Pnfs2Himera {
         FsInode dirInode = fs.mkdir(root, dir.getName(), stat.getUid(), stat.getGid(), stat
                 .getMode());
 
-        Pnfs2Himera.convertDirectory(dirInode, dir, fs);
+        Pnfs2Himera.convertDirectory(mappingdbConnection, dirInode, dir, fs);
 
 
     }
