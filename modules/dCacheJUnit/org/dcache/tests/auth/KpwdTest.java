@@ -22,4 +22,17 @@ public class KpwdTest {
 
     }
 
+
+
+    @Test
+    public void testFlavia() throws Exception {
+
+        _authServ = new KPWDAuthorizationPlugin("modules/dCacheJUnit/org/dcache/tests/auth/dcache.kpwd");
+
+        UserAuthBase pwdRecord =  _authServ.authorize("/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=flavia/CN=388195/CN=Flavia Donno", "", null, null, null);
+
+        assertNotNull("can't find user record", pwdRecord);
+
+    }
+
 }
