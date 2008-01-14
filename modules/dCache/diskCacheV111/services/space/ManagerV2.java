@@ -1911,6 +1911,10 @@ public class ManagerV2
 		long creationTime=System.currentTimeMillis();
 		int rc=0;
 		Space space = selectSpaceForUpdate(connection,spaceReservationId,sizeInBytes);
+		long currentTime = System.currentTimeMillis();
+		if(space.getLifetime() != -1 && space.getCreationTime()+space.getLifetime()  < currentTime) {
+			throw new SpaceExpiredException("space with id="+spaceReservationId+" has expired");
+		}
 		if (space.getState() == SpaceState.EXPIRED) {
 			throw new SpaceExpiredException("space with id="+spaceReservationId+" has expired");
 		}
