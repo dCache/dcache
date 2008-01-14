@@ -18,5 +18,5 @@ fi
 . ${ourHomeDir}/config/dCacheSetup
 
 ${java} ${java_options} -classpath ${externalLibsClassPath} \
-              -Xmx512M org.dcache.chimera.migration.Pnfs2Himera ${ourHomeDir}/config/chimera-config.xml $1 $2
+              -Xmx512M org.dcache.chimera.migration.Pnfs2Chimera ${ourHomeDir}/config/chimera-config.xml $1 $2
 

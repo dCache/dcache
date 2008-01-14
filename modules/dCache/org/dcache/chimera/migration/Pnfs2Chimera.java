@@ -28,7 +28,7 @@ import org.dcache.chimera.XMLconfig;
 import org.dcache.chimera.posix.Stat;
 import org.dcache.chimera.util.SqlHelper;
 
-public class Pnfs2Himera {
+public class Pnfs2Chimera {
 
     private static void convertDirectory(Connection mappingdbConnection,  FsInode dirInode, File dir, JdbcFs fs) {
 
@@ -413,7 +413,7 @@ public class Pnfs2Himera {
 
 
         if (args.length != 3) {
-            System.err.println("Usage :" + Pnfs2Himera.class.getName()
+            System.err.println("Usage :" + Pnfs2Chimera.class.getName()
                     + " <chimera.config> <pnfs path> <chimera path>");
             System.exit(4);
         }
@@ -437,7 +437,7 @@ public class Pnfs2Himera {
         FsInode dirInode = fs.mkdir(root, dir.getName(), stat.getUid(), stat.getGid(), stat
                 .getMode());
 
-        Pnfs2Himera.convertDirectory(mappingdbConnection, dirInode, dir, fs);
+        Pnfs2Chimera.convertDirectory(mappingdbConnection, dirInode, dir, fs);
 
 
     }
