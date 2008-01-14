@@ -98,7 +98,7 @@ import diskCacheV111.vehicles.GridProtocolInfo;
  *
  * @author  timur
  */
-public class Manager
+public class ManagerV2
         extends CellAdapter
         implements Runnable {
     
@@ -139,8 +139,8 @@ public class Manager
 	JdbcConnectionPool connection_pool;
 	DBManager manager;
 	
-	public Manager(String name, String argString) throws Exception {
-		super( name ,Manager.class.getName(), argString , false );
+	public ManagerV2(String name, String argString) throws Exception {
+		super( name ,ManagerV2.class.getName(), argString , false );
 		_args     = getArgs();
 		jdbcUrl   = _args.getOpt("jdbcUrl");
 		jdbcClass = _args.getOpt("jdbcDriver");
@@ -2065,7 +2065,7 @@ public class Manager
 							     " ADD COLUMN  allocatedspaceinbytes  BIGINT",
 							     ManagerSchemaConstants.POPULATE_USED_SPACE_IN_SRMSPACE_TABLE,
 							     ManagerSchemaConstants.POPULATE_RESERVED_SPACE_IN_SRMLINKGROUP_TABLE);
-					manager.update(Manager.updateVersion);
+					manager.update(ManagerV2.updateVersion);
 					System.out.println("SUCCESSFULLY UPDATED SPACE MANAGER SCHEMA TO VERSION 2");
 					System.out.println("IT IS SAFE TO START SRM");
 					System.exit(0);
@@ -2092,7 +2092,7 @@ public class Manager
 /*
 		Cell system = new SystemCell( "firstDomain" ) ;
 		Class.forName("org.apache.derby.jdbc.EmbeddedDriver");
-		Manager m = new Manager("m",
+		Manager m = new ManagerV2("m",
 					" -jdbcUrl=jdbc:derby:testdb;create=true "+
 					
 					"-jdbcDriver=org.apache.derby.jdbc.EmbeddedDriver "+
