@@ -87,12 +87,13 @@ import org.dcache.chimera.acl.Subject;
 import org.dcache.chimera.acl.enums.AuthType;
 import org.dcache.chimera.acl.enums.FileAttribute;
 import org.dcache.chimera.acl.enums.InetAddressType;
-import java.lang.Thread;
 import java.util.regex.*;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ExecutorService;
 import diskCacheV111.vehicles.spaceManager.SpaceManagerGetInfoAndLockReservationByPathMessage;
 import diskCacheV111.vehicles.spaceManager.SpaceManagerUtilizedSpaceMessage;
 import diskCacheV111.vehicles.spaceManager.SpaceManagerUnlockSpaceMessage;
@@ -101,78 +102,80 @@ import diskCacheV111.vehicles.IoDoorInfo;
 import diskCacheV111.vehicles.IoDoorEntry;
 import diskCacheV111.movers.GFtpPerfMarkersBlock;
 
+import org.dcache.services.AbstractCell;
+import org.dcache.services.Option;
+
+/**
+ * Exception indicating an error during processing of an FTP command.
+ */
+class FTPCommandException extends Exception
+{
+    /** FTP reply code. */
+    protected int    _code;
+
+    /** Human readable part of FTP reply. */
+    protected String _reply;
+
+    /**
+     * Constructs a command exception with the given ftp rely code and
+     * message. The message will be used for both the public FTP reply
+     * string and for the exception message.
+     */
+    public FTPCommandException(int code, String reply)
+    {
+        this(code, reply, reply);
+    }
+
+    /**
+     * Constructs a command exception with the given ftp reply code,
+     * public and internal message.
+     */
+    public FTPCommandException(int code, String reply, String msg)
+    {
+        super(msg);
+        _code = code;
+        _reply = reply;
+    }
+
+    /** Returns FTP reply code. */
+    public int getCode()
+    {
+        return _code;
+    }
+
+    /** Returns the public FTP reply string. */
+    public String getReply()
+    {
+        return _reply;
+    }
+}
+
+/**
+ * Exception indicating and error condition during a sendAndWait
+ * operation.
+ *
+ * TODO: This should be refined to better conway the actual error.
+ */
+class SendAndWaitException extends Exception
+{
+    public SendAndWaitException(String msg)
+    {
+        super(msg);
+    }
+
+    public SendAndWaitException(String msg, Throwable cause)
+    {
+        super(msg, cause);
+    }
+}
+
 /**
  * @author Charles G Waldman, Patrick, rich wellner, igor mandrichenko
  * @version 0.0, 15 Sep 1999
  */
-public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
+public abstract class AbstractFtpDoorV1
+    extends AbstractCell implements Runnable
 {
-
-    /**
-     * Exception indicating an error during processing of an FTP
-     * command.
-     */
-    protected static class FTPCommandException extends Exception
-    {
-        /** FTP reply code. */
-	protected int    _code;
-
-        /** Human readable part of FTP reply. */
-        protected String _reply;
-
-        /**
-         * Constructs a command exception with the given ftp rely code
-         * and message. The message will be used for both the public
-         * FTP reply string and for the exception message.
-         */
-	public FTPCommandException(int code, String reply)
-        {
-	    this(code, reply, reply);
-	}
-
-        /**
-         * Constructs a command exception with the given ftp reply
-         * code, public and internal message.
-         */
-	public FTPCommandException(int code, String reply, String msg)
-        {
-	    super(msg);
-	    _code = code;
-            _reply = reply;
-	}
-
-	/** Returns FTP reply code. */
-	public int getCode()
-	{
-	    return _code;
-	}
-
-        /** Returns the public FTP reply string. */
-        public String getReply()
-        {
-            return _reply;
-        }
-    }
-
-    /**
-     * Exception indicating and error condition during a sendAndWait
-     * operation.
-     *
-     * TODO: This should be refined to better conway the actual error.
-     */
-    protected class SendAndWaitException extends Exception
-    {
-	public SendAndWaitException(String msg)
-        {
-	    super(msg);
-	}
-
-	public SendAndWaitException(String msg, Throwable cause)
-        {
-	    super(msg, cause);
-	}
-    }
-
     /**
      * Enumeration type for representing the connection mode.
      *
@@ -190,12 +193,10 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
  	PASSIVE, ACTIVE;
     }
 
-
     /**
      * Used for generating session IDs unique to this domain.
      */
-    private static long   __counter = 10000 ;
-
+    private static long   __counter = 10000;
 
     /**
      * Feature strings returned when the client sends the FEAT
@@ -204,20 +205,18 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
     private static final String[] FEATURES = {
         "EOF", "PARALLEL", "SIZE", "SBUF",
         "ERET", "ESTO", "GETPUT",
-        "CKSUM "+buildChecksumList(),  "MODEX"
+        "CKSUM " + buildChecksumList(),  "MODEX"
     };
 
     private static final String buildChecksumList(){
-       String result="";
-       int mod = 0;
+        String result = "";
+        int mod = 0;
+        for (String type : ChecksumFactory.getTypes()) {
+            result += type + ",";
+            mod = 1;
+        }
 
-       String checksumTypes[] = ChecksumFactory.getTypes();
-       for ( int i =0 ; i < checksumTypes.length; ++i){
-         result += checksumTypes[i]+",";
-         mod = 1;
-       }
-
-      return result.substring(0,result.length()-mod);
+        return result.substring(0, result.length() - mod);
     }
 
     /**
@@ -226,11 +225,6 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
      * instantiation.
      */
     protected final StreamEngine        _engine;
-
-    /**
-     * Reader for control channel.
-     */
-    protected final BufferedReader      _in;
 
     /**
      * Writer for control channel.
@@ -243,117 +237,203 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
     protected final PnfsHandler         _pnfs;
 
     /**
-     *   Permission Handler
+     * User's Origin
+     */
+    protected final Origin	_origin;
+
+    /**
+     * Permission Handler
      */
     protected final PermissionHandlerInterface _permissionHandler;
 
-     /**
-      *   User's Origin
-      */
-     protected final Origin	_origin;
+    @Option(
+        name = "permission-handler",
+        defaultValue = "diskCacheV111.services.UnixPermissionHandler"
+    )
+    protected String _permissionHandlerName;
 
-	 /**
-     * Well known name of the pool manager.
-     */
-    protected final String              _poolManager;
+    @Option(
+        name = "poolManager",
+        description = "Well known name of the pool manager",
+        defaultValue = "PoolManager"
+    )
+    protected String _poolManager;
 
-    /**
-     * Well known name of the PNFS manager.
-     */
-    protected final String              _pnfsManager;
+    @Option(
+        name = "pnfsManager",
+        description = "Well known name of the PNFS manager",
+        defaultValue = "PnfsManager"
+    )
+    protected String _pnfsManager;
 
-    /**
-     * Full path to encp utility. May be null.
-     */
-    protected final String              _encpPutCmd;
+    @Option(
+        name = "encp-put",
+        description = "Path to encp utility"
+    )
+    protected String _encpPutCmd;
 
-    /**
-     * Whether to use the encp utility for various meta data
-     * operations.
-     */
-    protected final boolean             _useEncpScripts;
+    @Option(
+        name = "clientDataPortRange"
+    )
+    protected String _portRange;
 
-    /**
-     * Lowest allowable port to use for the data channel when using an
-     * adapter.
-     */
-    protected final int                 _lowDataListenPort;
-
-    /**
-     * Highest allowable port to use for the data channel when using
-     * an adapter.
-     */
-    protected final int                 _highDataListenPort;
-    protected final String              _poolProxy;
+    @Option(
+        name = "poolProxy"
+    )
+    protected String _poolProxy;
 
     /**
      * Name or IP address of the interface on which we listen for
      * connections from the pool in case an adapter is used.
      */
-    protected final String              _local_host;
+    @Option(
+        name = "ftp-adapter-internal-interface",
+        description = "Interface to bind to"
+    )
+    protected String _local_host;
 
-    protected final boolean             _readOnly;
-    protected final int                 _maxRetries;
-    protected final int                 _poolManagerTimeout;
-    protected final int                 _pnfsTimeout;
-    protected final int                 _poolTimeout;
-    protected final int                 _retryWait;
-    protected final int                 _spaceManagerTimeout = 5 * 60;
+    @Option(
+        name = "read-only",
+        description = "Whether to mark the FTP door read only",
+        defaultValue = "false"
+    )
+    protected boolean _readOnly;
+
+    @Option(
+        name = "maxRetries",
+        defaultValue = "3"
+    )
+    protected int _maxRetries;
+
+    @Option(
+        name = "poolManagerTimeout",
+        defaultValue = "1500",
+        unit = "seconds"
+    )
+    protected int _poolManagerTimeout;
+
+    @Option(
+        name = "pnfsTimeout",
+        defaultValue = "60",
+        unit = "seconds"
+    )
+    protected int _pnfsTimeout;
+
+    @Option(
+        name = "poolTimeout",
+        defaultValue = "300",
+        unit = "seconds"
+    )
+    protected int _poolTimeout;
+
+    @Option(
+        name = "retryWait",
+        defaultValue = "30",
+        unit = "seconds"
+    )
+    protected int _retryWait;
 
     /**
      * Size of the largest block used in the socket adapter in mode
      * E. Blocks larger than this are divided into smaller blocks.
      */
-    protected final int _maxBlockSize;
+    @Option(
+        name = "maxBlockSize",
+        defaultValue = "131072",
+        unit = "bytes"
+    )
+    protected int _maxBlockSize;
 
-    /**
-     * Remove files on incomplete transfers.
-     */
-    protected final boolean _removeFileOnIncompleteTransfer;
+    @Option(
+        name = "deleteOnConnectionClosed",
+        description = "Whether to remove files on incomplete transfers",
+        defaultValue = "false"
+    )
+    protected boolean _removeFileOnIncompleteTransfer;
 
     /**
      * True if passive pools are allowed, i.e. the client connects
      * directly to the pool, bypassing the proxy at the door. Set to
      * false if any of the pools are not at least at version 1.8.
      */
-    protected final boolean _allowPassivePool;
+    @Option(
+        name = "allowPassivePool",
+        description = "Whether to allow pools to be passive",
+        defaultValue = "false"
+    )
+    protected boolean _allowPassivePool;
 
     /**
      * True if active adapter is allowed, i.e. the client connects to
      * the new proxy adapter at the door, when the pools are on the
      * private network, for example.  Has to be set via arguments.
      */
-    protected final boolean _allowRelay;
+    @Option(
+        name = "allow-relay",
+        description = "Whether to allow the use of the relay adaptor",
+        defaultValue = "false"
+    )
+    protected boolean _allowRelay;
 
     /**
      * If space_reservation_enabled is true, then the door will
      * consult srmv2 module to check if the transfer is performed into
      * the space that has been prealocated by the user.
      */
-    protected final boolean _space_reservation_enabled;
+    @Option(
+        name = "space-reservation",
+        description = "SRM 2.2 style space reservation",
+        defaultValue = "false"
+    )
+    protected boolean _space_reservation_enabled;
 
     /**
      * This variable is only consulted if space_reservation_enabled is
      * true. If space_reservation_strict is true then the transfer
      * that was not precceded by the space allocation will fail.
      */
-    protected final boolean _space_reservation_strict;
+    @Option(
+        name = "space-reservation-strict",
+        description = "Whether space reservation is required",
+        defaultValue = "false"
+    )
+    protected boolean _space_reservation_strict;
 
+    /**
+     * If use_gplazmaAuthzCell is true, the door will first contact
+     * the GPLAZMA cell for authentification.
+     */
+    @Option(
+        name = "use-gplazma-authorization-cell",
+        description = "Whether to use gPlazma cell for authorization",
+        defaultValue = "false"
+    )
+    protected boolean _use_gplazmaAuthzCell;
+
+    @Option(
+        name = "delegate-to-gplazma",
+        description = "Whether to delegate credentials to gPlazma",
+        defaultValue = "false"
+    )
+    protected boolean _delegate_to_gplazma;
 
     /**
      * If use_gplazmaAuthzModule is true, then the door will consult
      * authorization module and use its policy configuration, else
      * door keeps using kpwd as in past.
      */
-    protected final boolean _use_gplazmaAuthzCell;
-    protected final boolean _delegate_to_gplazma;
+    @Option(
+        name = "use-gplazma-authorization-module",
+        description = "Whether to use the gPlazma module for authorization",
+        defaultValue = "false"
+    )
+    protected boolean _use_gplazmaAuthzModule;
 
-    /**
-     * If use_gplazmaAuthzCell is true, the door will first contact
-     * the GPLAZMA cell for authentification.
-     */
-    protected final boolean _use_gplazmaAuthzModule;
-    protected final String _gplazmaPolicyFilePath;
+    @Option(
+        name = "gplazma-authorization-module-policy",
+        description = "Path to gPlazma policy file"
+    )
+    protected String _gplazmaPolicyFilePath;
 
     /**
      * transferTimeout (in secs)
@@ -363,16 +443,72 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
      * needed because we are using adapters etc...  if 0 wait without
      * a timeout.
      */
-    protected final int _transferTimeout;
+    @Option(
+        name = "transfer-timeout",
+        description = "Transfer timeout",
+        defaultValue = "0",
+        unit = "seconds"
+    )
+    protected int _transferTimeout;
 
-    private final AsciiCommandPoller  _commandPoller =
-        new AsciiCommandPoller();
+    @Option(
+        name = "tlog",
+        description = "Path to FTP transaction log"
+    )
+    protected String _tLogRoot;
+
+    /**
+     * wlcg demands support for overwrite in srm and gridftp
+     * off by default
+     */
+    @Option(
+        name = "overwrite",
+        defaultValue = "false"
+    )
+    protected boolean _overwrite;
+
+    @Option(
+        name = "io-queue"
+    )
+    private String _ioQueueName;
+
+    @Option(
+        name = "maxStreamsPerClient",
+        defaultValue = "-1",
+        unit = "streams"
+    )
+    protected int _maxStreamsPerClient = -1;	// -1 = unlimited
+
+    protected final int _spaceManagerTimeout = 5 * 60;
+
+    protected final boolean _useEncpScripts;
+
+    /**
+     * Lowest allowable port to use for the data channel when using an
+     * adapter.
+     */
+    protected final int _lowDataListenPort;
+
+    /**
+     * Highest allowable port to use for the data channel when using
+     * an adapter.
+     */
+    protected final int _highDataListenPort;
+
+    private final CommandQueue        _commandQueue =
+        new CommandQueue();
     private final CountDownLatch      _shutdownGate =
         new CountDownLatch(1);
     private final Hashtable           _statusDict =
         new Hashtable();
     private final Map<String,Method>  _methodDict =
         new Hashtable();
+
+    /**
+     * Shared executor for processing FTP commands.
+     */
+    private final static ExecutorService _executor =
+        Executors.newCachedThreadPool();
 
     protected String         _dnUser;
     protected Thread         _workerThread;
@@ -398,7 +534,6 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
 
     protected boolean _confirmEOFs = false;
 
-    protected String _tLogRoot;
     protected UserAuthBase _pwdRecord;
     protected UserAuthBase _originalPwdRecord;
     protected String _pathRoot;
@@ -408,13 +543,11 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
     /**
      *   NEW
      */
-    //protected Subject _subject;
 
-
-    //generalized kpwd file path used by all flavors
+    /** Generalized kpwd file path used by all flavors. */
     protected String _kpwdFilePath;
 
-    // can be "mic", "conf", "enc", "clear"
+    /** Can be "mic", "conf", "enc", "clear". */
     protected String _gReplyType = "clear";
 
     protected Mode _mode = Mode.ACTIVE;
@@ -427,14 +560,27 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
     protected int _parallelMin = 5;
     protected int _parallelMax = 5;
     protected int _bufSize = 0;
-    protected int _maxStreamsPerClient = -1;	// -1 = unlimited
+
     protected String ftpDoorName = "FTP";
     protected Checksum _checkSum;
     protected ChecksumFactory _checkSumFactory;
     protected ChecksumFactory _optCheckSumFactory;
 
-    /** @todo breadcrumb - Perf Markers  */
+    /**
+     * Timer used to trigger performance markers. The timer is shared
+     * by all instances of the door.
+     */
+    private static final Timer _perfMarkerTimer = new Timer();
 
+    /**
+     * Task which periodically generates performance markers. May be
+     * null.
+     */
+    private PerfMarkerTask _perfMarkerTask;
+
+    /**
+     * Configuration parameters related to performance markers.
+     */
     protected PerfMarkerConf _perfMarkerConf = new PerfMarkerConf();
 
     protected static class PerfMarkerConf
@@ -448,10 +594,8 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
             period = 3 * 60 * 1000L; // default - 3 minutes
         }
     }
-    private PerfMarkerEngine     _perfMarkerEngine;
 
     protected volatile boolean _transferInProgress = false;
-    private String  _ioQueueName;
 
     /**
      * Queue used to pass the address on which a pool listens when in
@@ -460,13 +604,6 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
      */
     private BlockingQueue<GFtpTransferStartedMessage> _transferStartedMessages
         = new LinkedBlockingQueue<GFtpTransferStartedMessage>();
-
-
-    /**
-     * wlcg demands support for overwrite in srm and gridftp
-     * off by default
-     */
-    protected boolean _overwrite;
 
 
     /**
@@ -560,7 +697,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
 	}
     }
 
-    protected Transfer _transfer = null;
+    protected Transfer _transfer;
 
 
     //
@@ -583,7 +720,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
     public static CellVersion getStaticCellVersion()
     {
         return new CellVersion(diskCacheV111.util.Version.getVersion(),
-                               "$Revision: 1.137 $" );
+                               "$Rev$");
     }
 
     public void SetTLog(FTPTransactionLog tlog)
@@ -635,89 +772,27 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
         boolean success = false;
         try {
             _engine   = engine;
-            Reader reader = engine.getReader();
-            if (reader == null) {
-                esay(" !!!! engine.getReader() returned null !!!!");
-                start();
-                kill();
-                throw new
-                    IllegalStateException(" !!!! engine.getReader() returned null !!!!");
-            }
-            _in       = new BufferedReader(reader);
             _out      = new PrintWriter(engine.getWriter());
             _client_data_host = engine.getInetAddress().getHostName();
-            _commandPoller.setControlChannel(_in);
 
             say("client hostname in the constructor: " + _client_data_host);
 
-            _use_gplazmaAuthzCell =
-                parseOption("use-gplazma-authorization-cell", false);
-            _delegate_to_gplazma =
-                parseOption("delegate-to-gplazma", false);
-            _use_gplazmaAuthzModule =
-                parseOption("use-gplazma-authorization-module", false);
-            _poolManager =
-                parseOption("poolManager", "PoolManager");
-            _pnfsManager =
-                parseOption("pnfsManager", "PnfsManager");
-            _encpPutCmd  =
-                parseOption("encp-put", null);
-            _readOnly =
-                parseOption("read-only", false);
-            _transferTimeout =
-                parseOption("transfer-timeout", 0);
-            _space_reservation_enabled =
-                parseOption("space-reservation", false);
-            _space_reservation_strict =
-                _space_reservation_enabled
-                && parseOption("space-reservation-strict", false);
-            _tLogRoot =
-                parseOption("tlog", null);
-            _local_host =
-                parseOption("ftp-adapter-internal-interface",
-                            engine.getLocalAddress().getHostName());
-            _allowPassivePool =
-                parseOption("allowPassivePool", false);
-            _allowRelay =
-                parseOption("allow-relay", false);
-            _removeFileOnIncompleteTransfer =
-                parseOption("deleteOnConnectionClosed", false);
-            _maxRetries =
-                parseOption("maxRetries", 3);
-            _poolManagerTimeout =
-                parseOption("poolManagerTimeout", 1500);
-            _pnfsTimeout =
-                parseOption("pnfsTimeout", 1 * 60);
-            _retryWait =
-                parseOption("retryWait", 30);
-            _poolTimeout =
-                parseOption("poolTimeout", 5 * 60);
-            _maxStreamsPerClient =
-                parseOption("maxStreamsPerClient", -1);
-            _poolProxy =
-                parseOption("poolProxy", null);
-            _ioQueueName =
-                parseOption("io-queue", null);
-            _maxBlockSize =
-                parseOption("maxBlockSize", 131072); // 128 kb
-            _overwrite =
-                parseOption("overwrite", false);
+            if (!_space_reservation_enabled)
+                _space_reservation_strict = false;
 
-            if (_use_gplazmaAuthzModule) {
-                _gplazmaPolicyFilePath =
-                    parseOption("gplazma-authorization-module-policy", null);
-                if (_gplazmaPolicyFilePath == null){
-                    String s = "FTPDoor : -gplazma-authorization-module-policy file not specified";
-                    esay(s);
-                    throw new IllegalArgumentException(s);
-                }
-            } else {
+            if (_local_host == null)
+                _local_host = engine.getLocalAddress().getHostName();
+
+            if (!_use_gplazmaAuthzModule) {
                 _gplazmaPolicyFilePath = null;
+            } else if (_gplazmaPolicyFilePath == null) {
+                String s = "FTPDoor : -gplazma-authorization-module-policy file not specified";
+                esay(s);
+                throw new IllegalArgumentException(s);
             }
 
             if (_encpPutCmd != null) {
-                String s = "FTPDoor : -encp-put is specified. This is DEPRECATED, due to intermittent failures.";
-                esay(s);
+                esay("FTPDoor : -encp-put is specified. This is DEPRECATED, due to intermittent failures.");
                 _useEncpScripts = true;
             } else {
                 _useEncpScripts = false;
@@ -738,19 +813,18 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
 
             int low = 0;
             int high = 0;
-            String portRange = getArgs().getOpt("clientDataPortRange");
-            if (portRange != null) {
+            if (_portRange != null) {
                 try {
-                    int ind = portRange.indexOf(":");
-                    if ((ind <= 0) || (ind == (portRange.length() - 1)))
+                    int ind = _portRange.indexOf(":");
+                    if ((ind <= 0) || (ind == (_portRange.length() - 1)))
                         throw new IllegalArgumentException("Not a port range");
 
-                    low  = Integer.parseInt(portRange.substring(0, ind));
-                    high = Integer.parseInt(portRange.substring(ind + 1));
+                    low  = Integer.parseInt(_portRange.substring(0, ind));
+                    high = Integer.parseInt(_portRange.substring(ind + 1));
                     say("Selected client data port range [" +
                         low + ":" + high + "]");
                 } catch (NumberFormatException ee) {
-                    esay("Invalid port range string (command ignored) : " + portRange);
+                    esay("Invalid port range string (command ignored) : " + _portRange);
                 }
             }
             _lowDataListenPort = low;
@@ -761,14 +835,9 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
              * use user defined or PnfsManager based
              */
             //----------Unix-------------
-
-            String permissionHandler =
-                parseOption("permission-handler",
-                          "diskCacheV111.services.UnixPermissionHandler");
-
-            say("Loading permissionHandler: " + permissionHandler);
             Class<?> [] argClass = { dmg.cells.nucleus.CellAdapter.class };
-            Class<?> permissionHandlerClass = Class.forName(permissionHandler);
+            Class<?> permissionHandlerClass =
+                Class.forName(_permissionHandlerName);
             Constructor<?> permissionHandlerCon = permissionHandlerClass.getConstructor( argClass ) ;
             Object[] initargs = { this };
 
@@ -791,8 +860,10 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
 
              //////////////////NEW --> ////////////////////////
 
-   		    _origin =
-   		    	new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG, InetAddressType.IPv4, _engine.getInetAddress());
+            _origin =
+                new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG,
+                           InetAddressType.IPv4,
+                           _engine.getInetAddress());
             ///////////////////<--NEW////////////////////////
             _pnfs = new PnfsHandler(this, new CellPath(_pnfsManager));
             _pnfs.setPnfsTimeout(_pnfsTimeout*1000L);
@@ -844,79 +915,6 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
         }
     }
 
-    /**
-     * Returns the integer value of a named cell argument.
-     *
-     * @param name the name of the cell argument to return
-     * @param def the value to return when <code>name</code> is
-     *            not defined or cannot be parsed
-     */
-    private int parseOption(String name, int def)
-    {
-        int value = def;
-        String tmp = getArgs().getOpt(name);
-        if (tmp != null && tmp.length() > 0) {
-            try {
-                value = Integer.parseInt(tmp);
-            } catch (NumberFormatException e) {
-                esay("Unable to set " + name + " to " + tmp);
-            }
-        }
-
-        say(name + "=" + value);
-
-        return value;
-    }
-
-    /**
-     * Returns the boolean value of a named cell argument.
-     *
-     * @param name the name of the cell argument to return
-     * @param def the value to return when <code>name</code> is
-     *            not defined or cannot be parsed
-     */
-    private boolean parseOption(String name, boolean def)
-    {
-        boolean value;
-        String tmp = getArgs().getOpt(name);
-        if (tmp != null && tmp.length() > 0) {
-            value = tmp.equalsIgnoreCase("true") ||
-                tmp.equalsIgnoreCase("on") ||
-                tmp.equalsIgnoreCase("yes") ||
-                tmp.equalsIgnoreCase("enabled");
-        } else {
-            value = def;
-        }
-
-        say(name + "=" + value);
-
-        return value;
-    }
-
-    /**
-     * Returns the value of a named cell argument.
-     *
-     * @param name the name of the cell argument to return
-     * @param def the value to return when <code>name</code> is
-     *            not defined or cannot be parsed
-     */
-    private String parseOption(String name, String def)
-    {
-        String value;
-        String tmp = getArgs().getOpt(name);
-        if (tmp != null && tmp.length() > 0) {
-            value = tmp;
-        } else {
-            value = def;
-        }
-
-        if (value != null) {
-            say(name + "=" + value);
-        }
-
-        return value;
-    }
-
     private int spawn(String cmd, int errexit)
     {
         try {
@@ -936,6 +934,8 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
     public void ftpcommand(String cmdline)
         throws CommandExitException
     {
+        _lastCommand = cmdline;
+
         int l = 4;
         // Every FTP command is 3 or 4 characters
         if (cmdline.length() < 3) {
@@ -1007,12 +1007,33 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
         }
     }
 
+    private synchronized void shutdownInputStream()
+    {
+        try {
+            Socket socket = _engine.getSocket();
+            if (!socket.isInputShutdown())
+                socket.shutdownInput();
+        } catch (IOException e) {
+            esay("Failed to shut down input stream of the control channel: " + e.getMessage());
+        }
+    }
+
+
+    protected synchronized void closeAdapter()
+    {
+	if (_adapter != null) {
+            say("Closing adapter");
+	    _adapter.close();
+	    _adapter = null;
+	}
+    }
+
     /**
      * Main loop for FTP command processing.
      *
-     * Commands are received from the command poller and
-     * executed. Upon termination, most of the shutdown logic is in
-     * this method, including:
+     * Commands are read from the socket and submitted to the command
+     * queue for execution. Upon termination, most of the shutdown
+     * logic is in this method, including:
      *
      * - Emergency shutdown of performance marker engine
      * - Shut down of socket adapter
@@ -1024,74 +1045,69 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
      */
     public void run()
     {
-        if (Thread.currentThread() == _workerThread) {
+        try {
             try {
+                /* Notice that we do not close the input stream, as
+                 * doing so would close the socket as well. We don't
+                 * want to do that until cleanUp() is called.
+                 *
+                 * REVISIT: I hope that the StreamEngine does not
+                 * maintain any ressources that do not get
+                 * automatically freed when the socket is closed.
+                 */
+                BufferedReader in = new BufferedReader(_engine.getReader());
+
                 reply("220 " + ftpDoorName + " door ready");
 
-                Thread commandPollerThread =
-                    new Thread(_commandPoller, "commandPollerThread");
-                commandPollerThread.start();
-
-                do {
-                    _lastCommand = _commandPoller.nextCommand();
-                } while (_lastCommand != null && execute(_lastCommand) == 0);
-            } catch (InterruptedException e) {
-                esay("Door interrupted: " + e);
-            } catch (CommandExitException e) {
-                esay("Command execution failed: " + e);
-            } finally {
-                try {
-                    /* In case of failure, the performance marker engine
-                     * may still be running.
-                     */
-                    if (_perfMarkerEngine != null) {
-                        try {
-                            _perfMarkerEngine.stop();
-                        } catch (InterruptedException e) {
-                            /* Nothing is supposed to interrupt this
-                             * thread at this point, so better log the
-                             * error.
-                             */
-                            esay(e);
-                        }
-                    }
-
-                    /* In case of failure, we may have a transfer
-                     * hanging around.
-                     */
-                    if (_transfer != null) {
-                        transfer_error(451, "Aborting transfer due to session termination");
-                    }
-
-                    closeAdapter();
-
-                    /* I don't know why this is necessary... any ideas?
-                     */
-                    reply("");
-
-                    say("End of stream encountered");
-
-                } finally {
-                    /* cleanUp() waits for us to open the gate.
-                     */
-                    _shutdownGate.countDown();
-
-                    /* Killing the cell will cause cleanUp() to be
-                     * called (although from a different thread).
-                     */
-                    kill();
+                String s = in.readLine();
+                while (s != null) {
+                    _commandQueue.add(s);
+                    s = in.readLine();
                 }
-            }
-        }
-    }
+            } catch (IOException e) {
+                esay(e.getMessage());
+            } finally {
+                /* This will block until command processing has
+                 * finished.
+                 */
+                try {
+                    _commandQueue.stop();
+                } catch (InterruptedException e) {
+                    esay("Failed to shut down command processing: " + e.getMessage());
+                }
 
-    protected synchronized void closeAdapter()
-    {
-	if (_adapter != null) {
-            say("Closing adapter");
-	    _adapter.close();
-	    _adapter = null;
-	}
+                /* In case of failure, the performance marker task
+                 * may still be running.
+                 */
+                if (_perfMarkerTask != null) {
+                    _perfMarkerTask.stop();
+                }
+
+                /* In case of failure, we may have a transfer
+                 * hanging around.
+                 */
+                if (_transfer != null) {
+                    transfer_error(451, "Aborting transfer due to session termination");
+                }
+
+                closeAdapter();
+
+                /* I don't know why this is necessary... any ideas?
+                 */
+                reply("");
+
+                say("End of stream encountered");
+            }
+        } finally {
+            /* cleanUp() waits for us to open the gate.
+             */
+            _shutdownGate.countDown();
+
+            /* Killing the cell will cause cleanUp() to be
+             * called (although from a different thread).
+             */
+            kill();
+        }
     }
 
     /**
@@ -1108,14 +1124,13 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
      */
     public void cleanUp()
     {
-        /* Stopping the command poller will cause the FTP command
+        /* Closing the input stream will cause the FTP command
          * procesing thread to shut down. In case the shutdown was
          * initiated by the FTP client, this will already have
          * happened at this point. However if the cell is shut down
-         * explicitly, then we have to stop the command poller
-         * explicitly.
+         * explicitly, then we have to shutdown the input stream here.
          */
-        _commandPoller.close();
+        shutdownInputStream();
 
         /* The FTP command processing thread will open the gate after
          * shutdown.
@@ -1161,27 +1176,27 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
         }
     }
 
-    public int execute(String command)
-        throws CommandExitException
+    public void execute(String command)
     {
-        if (command.equals("")) {
-            reply(err("",""));
-            return 0;
-        }
         try {
-            _commandCounter++;
-            ftpcommand(command);
-            return 0;
-        } catch (CommandExitException cee) {
-            return 1;
+            if (command.equals("")) {
+                reply(err("",""));
+            } else {
+                _commandCounter++;
+                ftpcommand(command);
+            }
+        } catch (CommandExitException e) {
+            shutdownInputStream();
         }
     }
 
+    @Override
     public String toString()
     {
         return _user + "@" + _client_data_host;
     }
 
+    @Override
     public void getInfo(PrintWriter pw)
     {
         pw.println( "            FTPDoor");
@@ -1200,205 +1215,178 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
         pw.println(adminCommandListener.ac_get_door_info(new Args("")));
     }
 
-    //
-    // this object is used for synchronization between 1: and 2:
-    // 1: code that communicates
-    // between pool in case of stor/retr
-    // 2:code that hanles e messages received back from pool about transfer
-    // status
-    //
-    //handle post-transfer success/failure messages going back to the client
-    public void  messageArrived(CellMessage msg)
+    /**
+     * Handles post-transfer success/failure messages going back to
+     * the client.
+     */
+    public void messageArrived(CellMessage envelope,
+                               DoorTransferFinishedMessage reply)
     {
-        boolean timed_out = false;
-        Object object = msg.getMessageObject();
-        say("Message messageArrived [" + object.getClass() + "]="
-            + object.toString());
-        say("Message messageArrived source = " + msg.getSourceAddress());
-        if (object instanceof DoorTransferFinishedMessage) {
-            String adapterError = null;
-            boolean adapterClosed = false;
-            ProxyAdapter adapter;
+        String adapterError = null;
+        boolean adapterClosed = false;
+        ProxyAdapter adapter;
 
-            DoorTransferFinishedMessage reply =
-                (DoorTransferFinishedMessage)object;
+        /* The synchronization is required to ensure that the call
+         * to transfer() has returned before we clean up after the
+         * transfer. It is also needed to ensure that this block
+         * completes before we start shutting down the cell.
+         */
+        synchronized (this) {
+            say("DoorTransferFinishedMessage arrived");
 
-            /* The synchronization is required to ensure that the call
-             * to transfer() has returned before we clean up after the
-             * transfer. It is also needed to ensure that this block
-             * completes before we start shutting down the cell.
+            /* It may happen the transfer has been cancelled and
+             * cleaned up after already. This is not a failure.
              */
-            synchronized (this) {
-		say("DoorTransferFinishedMessage arrived");
-
-                /* It may happen the transfer has been cancelled and
-                 * cleaned up after already. This is not a failure.
-                 */
-                if (!_transferInProgress) {
-                    return;
-                }
-
-                /* Kill the adapter in case of errors or if it is an
-                 * ActiveAdapter (they have to be killed to shut down).
-                 */
-                adapter = _transfer.adapter;
-                if (adapter != null && (adapter instanceof ActiveAdapter
-                                        || reply.getReturnCode() != 0)) {
-                    say("Closing adapter");
-                    adapter.close();
-                    adapterClosed = true;
-                }
+            if (!_transferInProgress) {
+                return;
             }
 
-            /* Wait for adapter to shut down.
-             *
-             * We do this unsynchronized to avoid blocking while
-             * holding the monitor. Concurrent access to the adapter
-             * itself is safe and the following will be a noop if
-             * another thread happens to close the adapter.
+            /* Kill the adapter in case of errors or if it is an
+             * ActiveAdapter (they have to be killed to shut down).
              */
-            if (adapter != null) {
-                say("Waiting for adaptor to finish ...");
-                try {
-                    adapter.join(300000); // 5 minutes
-                    if (adapter.isAlive()) {
-                        esay("Killing adapter");
-                        adapterClosed = true;
-                        adapterError = "adapter did not shut down";
-                        adapter.close();
-                        adapter.join(10000); // 10 seconds
-                        if (adapter.isAlive()) {
-                            esay("Failed to kill adapter");
-                        }
-                    } else if (adapter.hasError()) {
-                        adapterError =_transfer.adapter.getError();
-                    }
-                } catch (InterruptedException e) {
-                    say("Join error: " + e);
+            adapter = _transfer.adapter;
+            if (adapter != null && (adapter instanceof ActiveAdapter
+                                    || reply.getReturnCode() != 0)) {
+                say("Closing adapter");
+                adapter.close();
+                adapterClosed = true;
+            }
+        }
+
+        /* Wait for adapter to shut down.
+         *
+         * We do this unsynchronized to avoid blocking while
+         * holding the monitor. Concurrent access to the adapter
+         * itself is safe and the following will be a noop if
+         * another thread happens to close the adapter.
+         */
+        if (adapter != null) {
+            say("Waiting for adaptor to finish ...");
+            try {
+                adapter.join(300000); // 5 minutes
+                if (adapter.isAlive()) {
+                    esay("Killing adapter");
+                    adapterClosed = true;
                     adapterError = "adapter did not shut down";
-                }
-
-                /* With GridFTP v2 GET and PUT commands, we may
-                 * have a temporary socket adapter specific to
-                 * this transfer. If so, close it.
-                 */
-                if (adapter != _adapter && !adapterClosed) {
-                    say("Closing adapter");
                     adapter.close();
-                    adapterClosed = true;
+                    adapter.join(10000); // 10 seconds
+                    if (adapter.isAlive()) {
+                        esay("Failed to kill adapter");
+                    }
+                } else if (adapter.hasError()) {
+                    adapterError =_transfer.adapter.getError();
                 }
+            } catch (InterruptedException e) {
+                say("Join error: " + e);
+                adapterError = "adapter did not shut down";
             }
 
-            synchronized (this) {
-                /* It may happen the transfer has been cancelled and
-                 * cleaned up after already. This is not a failure.
-                 */
-                if (!_transferInProgress) {
-                    return;
+            /* With GridFTP v2 GET and PUT commands, we may
+             * have a temporary socket adapter specific to
+             * this transfer. If so, close it.
+             */
+            if (adapter != _adapter && !adapterClosed) {
+                say("Closing adapter");
+                adapter.close();
+                adapterClosed = true;
+            }
+        }
+
+        synchronized (this) {
+            /* It may happen the transfer has been cancelled and
+             * cleaned up after already. This is not a failure.
+             */
+            if (!_transferInProgress) {
+                return;
+            }
+            _transferInProgress = false;
+
+            if (reply.getReturnCode() == 0 && adapterError == null) {
+                if (_perfMarkerTask != null) {
+                    try {
+                        _perfMarkerTask.stop((GFtpProtocolInfo)reply.getProtocolInfo());
+                    } catch (ClassCastException e) {
+                        /* The pool send the wrong protocol info
+                         * instance. Clearly a bug. Log it.
+                         */
+                        esay(e);
+                    }
                 }
-                _transferInProgress = false;
 
-                if (reply.getReturnCode() == 0 && adapterError == null) {
-                    if (_perfMarkerEngine != null) {
-                        try {
-                            _perfMarkerEngine.stop((GFtpProtocolInfo)reply.getProtocolInfo());
-                        } catch (ClassCastException e) {
-                            /* The pool send the wrong protocol info
-                             * instance. Clearly a bug. Log it.
-                             */
-                            esay(e);
-                        } catch (InterruptedException e) {
-                            /* Nothing is supposed to interrupt this
-                             * thread at this point, so better log the
-                             * error.
-                             */
-                            esay(e);
-                        }
+                if(_transfer.spaceReservationInfo != null) {
+                    long utilized = reply.getStorageInfo().getFileSize();
+                    say("reply.getStorageInfo().getFileSize()="+utilized);
+                    if(utilized > _transfer.spaceReservationInfo.getAvailableLockedSize()) {
+                        utilized = _transfer.spaceReservationInfo.getAvailableLockedSize();
                     }
+                    say("set utilized to "+utilized);
+                    SpaceManagerUtilizedSpaceMessage utilizedSpace =
+                        new SpaceManagerUtilizedSpaceMessage(_transfer.spaceReservationInfo.getSpaceToken(),utilized);
 
-                    if(_transfer.spaceReservationInfo != null) {
-                        long utilized = reply.getStorageInfo().getFileSize();
-                        say("reply.getStorageInfo().getFileSize()="+utilized);
-                        if(utilized > _transfer.spaceReservationInfo.getAvailableLockedSize()) {
-                            utilized = _transfer.spaceReservationInfo.getAvailableLockedSize();
-                        }
-                        say("set utilized to "+utilized);
-                        SpaceManagerUtilizedSpaceMessage utilizedSpace =
-                            new SpaceManagerUtilizedSpaceMessage(_transfer.spaceReservationInfo.getSpaceToken(),utilized);
-
-                        try {
-                            sendMessage(new CellMessage(new CellPath("SpaceManager"),
-                                                        utilizedSpace));
-                        } catch (NoRouteToCellException e) {
-                            String errmsg = "Can't send message to SRMV2 "+e;
-                            esay(errmsg);
-                            esay(e) ;
-                        } catch (NotSerializableException e) {
-                            throw new RuntimeException("Bug: Unserializable vehicle detected", e);
-                        }
+                    try {
+                        sendMessage(new CellMessage(new CellPath("SpaceManager"),
+                                                    utilizedSpace));
+                    } catch (NoRouteToCellException e) {
+                        String errmsg = "Can't send message to SRMV2 "+e;
+                        esay(errmsg);
+                        esay(e) ;
+                    } catch (NotSerializableException e) {
+                        throw new RuntimeException("Bug: Unserializable vehicle detected", e);
                     }
-                    StorageInfo storageInfo = reply.getStorageInfo();
-                    if (_tLog != null) {
-                        _tLog.middle(storageInfo.getFileSize());
-                        _tLog.success();
-                        SetTLog(null);
-                    }
+                }
+                StorageInfo storageInfo = reply.getStorageInfo();
+                if (_tLog != null) {
+                    _tLog.middle(storageInfo.getFileSize());
+                    _tLog.success();
+                    SetTLog(null);
+                }
 
 
-                    // RDK: Note that data/command channels both dropped (esp. ACTIVE mode) at same time
-                    //      can lead to a race. The transfer will be declared successful, this flag cleared,
-                    //      and THEN the command channel drop is reacted to. This is difficult to reproduce.
-                    //      Treat elsewhere to prevent a successful return code from being returned.
-                    //	Clear the _pnfsEntryIncomplete flag since transfer successful
-                    _transfer.sendDoorRequestInfo(0, "");
-                    _transfer = null;
-                    reply("226 Transfer complete.");
-                } else {
-                    if (_perfMarkerEngine != null) {
-                        try {
-                            _perfMarkerEngine.stop();
-                        } catch (InterruptedException e) {
-                            /* Nothing is supposed to interrupt this
-                             * thread at this point, so better log the
-                             * error.
-                             */
-                            esay(e);
-                        }
-                    }
+                // RDK: Note that data/command channels both dropped (esp. ACTIVE mode) at same time
+                //      can lead to a race. The transfer will be declared successful, this flag cleared,
+                //      and THEN the command channel drop is reacted to. This is difficult to reproduce.
+                //      Treat elsewhere to prevent a successful return code from being returned.
+                //	Clear the _pnfsEntryIncomplete flag since transfer successful
+                _transfer.sendDoorRequestInfo(0, "");
+                _transfer = null;
+                reply("226 Transfer complete.");
+            } else {
+                if (_perfMarkerTask != null) {
+                    _perfMarkerTask.stop();
+                }
 
-                    StringBuffer error =
-                        new StringBuffer("Transfer aborted (");
+                StringBuffer error =
+                    new StringBuffer("Transfer aborted (");
 
-                    if (reply.getReturnCode() != 0) {
-                        if (reply.getErrorObject() != null) {
-                            error.append(reply.getErrorObject());
-                        } else {
-                            error.append("mover failure");
-                        }
-                        if (adapterError != null) {
-                            error.append("/");
-                            error.append(adapterError);
-                        }
+                if (reply.getReturnCode() != 0) {
+                    if (reply.getErrorObject() != null) {
+                        error.append(reply.getErrorObject());
                     } else {
+                        error.append("mover failure");
+                    }
+                    if (adapterError != null) {
+                        error.append("/");
                         error.append(adapterError);
                     }
-                    error.append(")");
-
-                    transfer_error(426, error.toString());
+                } else {
+                    error.append(adapterError);
                 }
+                error.append(")");
+
+                transfer_error(426, error.toString());
             }
-        } // .end DoorTransferFinishedMessage
-        else if (object instanceof GFtpTransferStartedMessage) {
-            try {
-                _transferStartedMessages.put((GFtpTransferStartedMessage)object);
-            } catch (InterruptedException e) {
-                /* The queue is not bounded, thus this should never happen.
-                 */
-                esay("Unexpected exception: " + e);
-            }
-        } else {
-            say("Unexpected message class "+object.getClass());
-            say("source = "+msg.getSourceAddress());
+        }
+    }
+
+    public void messageArrived(CellMessage envelope,
+                               GFtpTransferStartedMessage message)
+    {
+        try {
+            _transferStartedMessages.put(message);
+        } catch (InterruptedException e) {
+            /* The queue is not bounded, thus this should never happen.
+             */
+            esay("Unexpected exception: " + e);
         }
     }
 
@@ -2631,7 +2619,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
              * transfer a few times.
              */
             int retry = 0;
-            _commandPoller.enableInterrupt();
+            _commandQueue.enableInterrupt();
             try {
                 for (;;) {
                     try {
@@ -2655,7 +2643,7 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
                     say("retrying " + retry);
                 }  //end of retry loop
             } finally {
-                _commandPoller.disableInterrupt();
+                _commandQueue.disableInterrupt();
             }
 
             // no perf markers on retry (REVISIT: why not?)
@@ -2995,20 +2983,24 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
                 }
             }
 
-            _commandPoller.enableInterrupt();
+            _commandQueue.enableInterrupt();
             try {
                 transfer(mode, xferMode, parallelStart,
                          parallelMin, parallelMax,
                          client, bufSize, 0, 0, storageInfo,
                          reply127, true);
             } finally {
-                _commandPoller.disableInterrupt();
+                _commandQueue.disableInterrupt();
             }
 
             if (_perfMarkerConf.use && xferMode.equals("E")) {
-                /** @todo: done ### ac_stor - breadcrumb - performance markers */
-                _perfMarkerEngine = new PerfMarkerEngine();
-                _perfMarkerEngine.start();
+                /** @todo: done ### ac_stor - breadcrumb - performance markers
+                 */
+                _perfMarkerTask = new PerfMarkerTask(_transfer.pool,
+                                                     _transfer.moverId,
+                                                     _poolTimeout * 1000);
+                _perfMarkerTimer.schedule(_perfMarkerTask,
+                                          _perfMarkerConf.period);
             }
         } catch (NotSerializableException e) {
             transfer_error(451, "Operation failed due to internal error", e);
@@ -3868,41 +3860,41 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
         _pwdRecord = _originalPwdRecord;
     }
 
-    private class PerfMarkerEngine
-        implements Runnable, CellMessageAnswerable
+    private class PerfMarkerTask
+        extends TimerTask implements CellMessageAnswerable
     {
-        private GFtpPerfMarkersBlock _perfMarkersBlock
+        private final GFtpPerfMarkersBlock _perfMarkersBlock
             = new GFtpPerfMarkersBlock(1);
-        private Thread  _myThread;
-        private boolean _stop       = false;
-        private boolean _stopped    = false;
-        private long    _timeout    = _poolTimeout * 1000;
+        private final long _timeout;
+        private final String _pool;
+        private final int _moverId;
+        private boolean _stopped = false;
 
-        public PerfMarkerEngine()
+        public PerfMarkerTask(String pool, int moverId, int timeout)
         {
-        }
+            _pool = pool;
+            _moverId = moverId;
+            _timeout = timeout;
 
-        public synchronized void start()
-        {
-            if (_myThread == null) {
-                _myThread = getNucleus().newThread(this, "gftp-PerfMarkerEngine");
-                _myThread.start();
-            }
+            /* For the first time, send markers with zero counts -
+             * requirement of the standard
+             */
+            sendMarker();
         }
 
         /**
-         * Stops the engine and blocks until it has shut down.
+         * Stops the task, preventing it from sending any further
+         * performance markers.
+         *
+         * Since the task obtains performance information
+         * asynchronously, cancelling the task is not enough to
+         * prevent it from sending further performance markers to the
+         * client.
          */
         public synchronized void stop()
-            throws InterruptedException
         {
-            _stop = true;
-            notifyAll();
-
-            say("Waiting for performance marker engine to finish ...");
-            while (!_stopped) {
-                wait();
-            }
+            cancel();
+            _stopped = true;
         }
 
         /**
@@ -3912,12 +3904,11 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
          * to generate the final performance marker.
          */
         public synchronized void stop(GFtpProtocolInfo info)
-            throws InterruptedException
         {
-            stop();
             setProgressInfo(info.getBytesTransferred(),
                             info.getTransferTime());
             sendMarker();
+            stop();
         }
 
         /**
@@ -3925,7 +3916,9 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
          */
         protected synchronized void sendMarker()
         {
-            reply(_perfMarkersBlock.markers(0).getReply(), false);
+            if (!_stopped) {
+                reply(_perfMarkersBlock.markers(0).getReply(), false);
+            }
         }
 
         protected synchronized void setProgressInfo(long bytes, long timeStamp)
@@ -3936,229 +3929,168 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
         public synchronized void run()
         {
             try {
-                if (! _transferInProgress || _transfer == null) {
-                    /** @todo - shall we report anything ? */
-                    return;
-                }
-
-                if (_transfer.pool == null) {
-                    esay("PerfMarkerEngine: 'pool' is not defined, stop");
-                    return;
-                }
-                if (_transfer.moverId == null) {
-                    esay("PerfMarkerEngine: 'moverId' is not defined, stop");
-                    return;
-                }
-
-                /* For the first time, send markers with zero counts
-                 * - requirement of the standard
-                 */
-                sendMarker();
-
-                if (!_stop) {
-                    wait(_perfMarkerConf.period);
-                    while (!_stop) {
-                        CellMessage msg =
-                            new CellMessage(new CellPath(_transfer.pool),
-                                            "mover ls -binary " + _transfer.moverId);
-                        sendMessage(msg, this, _timeout);
-                        wait(_perfMarkerConf.period);
-                    }
-                }
+                CellMessage msg =
+                    new CellMessage(new CellPath(_pool),
+                                    "mover ls -binary " + _moverId);
+                sendMessage(msg, this, _timeout);
             } catch (NotSerializableException e) {
                 /* This would be a bug in dCache. Propagate as a
                  * runtime exception.
                  */
                 throw new RuntimeException("Bug detected", e);
-            } catch (InterruptedException e) {
-                // We do not expect this thread to be interrupted. If
-                // it does anyway, we better log it such that we can
-                // debug it.
-                esay(e);
-            } finally {
-                _stopped = true;
-                notifyAll();
             }
         }
 
         public synchronized void exceptionArrived(CellMessage request, Exception exception)
         {
-            if (!_stopped) {
-                if (exception instanceof NoRouteToCellException) {
-                    /* Seems we lost connectivity to the pool. This is
-                     * not fatal, but we send a new marker to the
-                     * client to convince it that we are still alive.
-                     */
-                    sendMarker();
-                } else {
-                    esay("PerfMarkerEngine: reply is exception " +
-                         exception.getMessage());
-                    _stop = true;
-                    notifyAll();
-                }
+            if (exception instanceof NoRouteToCellException) {
+                /* Seems we lost connectivity to the pool. This is
+                 * not fatal, but we send a new marker to the
+                 * client to convince it that we are still alive.
+                 */
+                sendMarker();
+            } else {
+                esay("PerfMarkerEngine: reply is exception " +
+                     exception.getMessage());
             }
         }
 
         public synchronized void answerTimedOut(CellMessage request)
         {
-            if (!_stopped) {
-                sendMarker();
-            }
+            sendMarker();
         }
 
         public synchronized void answerArrived(CellMessage req, CellMessage answer)
         {
-            if (!_stopped) {
-                Object msg = answer.getMessageObject();
-                if (msg instanceof IoJobInfo) {
-                    IoJobInfo ioJobInfo = (IoJobInfo)msg;
-                    String status = ioJobInfo.getStatus();
+            Object msg = answer.getMessageObject();
+            if (msg instanceof IoJobInfo) {
+                IoJobInfo ioJobInfo = (IoJobInfo)msg;
+                String status = ioJobInfo.getStatus();
 
-                    if (status == null) {
-                        // Transfer has probably not started yet; don't do
-                        // anything.
-                    } else if (status.equals("A")) {
-                        // "Active" job
-                        setProgressInfo(ioJobInfo.getBytesTransferred(),
-                                        ioJobInfo.getLastTransferred());
-                        sendMarker();
-                    } else if (status.equals("K") || status.equals("R")) {
-                        // "Killed" or "Removed" job
-                        _stop = true;
-                        notifyAll();
-                    } else if (status.equals("W")) {
-                        // "Waiting" job
-                    } else {
-                        esay("Performance marker engine received unexcepted status value from mover: " + status);
-                        _stop = true;
-                        notifyAll();
-                    }
-                } else if (msg instanceof Exception) {
-                    esay("PerfMarkerEngine: reply is exception " +
-                         ((Exception)msg).getMessage());
-                    _stop = true;
-                    notifyAll();
-                } else if (msg instanceof String) {
-                    esay("PerfMarkerEngine: reply is error message '" +
-                         msg.toString() + "'");
-                    _stop = true;
-                    notifyAll();
+                if (status == null) {
+                    // Transfer has probably not started yet; don't do
+                    // anything.
+                } else if (status.equals("A")) {
+                    // "Active" job
+                    setProgressInfo(ioJobInfo.getBytesTransferred(),
+                                    ioJobInfo.getLastTransferred());
+                    sendMarker();
+                } else if (status.equals("K") || status.equals("R")) {
+                    // "Killed" or "Removed" job
+                } else if (status.equals("W")) {
+                    // "Waiting" job
                 } else {
-                    esay("PerfMarkerEngine: reply is unexpected class : " +
-                         msg.getClass().getName());
-                    _stop = true;
-                    notifyAll();
+                    esay("Performance marker engine received unexcepted status value from mover: " + status);
                 }
+            } else if (msg instanceof Exception) {
+                esay("PerfMarkerEngine: reply is exception " +
+                     ((Exception)msg).getMessage());
+            } else if (msg instanceof String) {
+                esay("PerfMarkerEngine: reply is error message '" +
+                     msg.toString() + "'");
+            } else {
+                esay("PerfMarkerEngine: reply is unexpected class : " +
+                     msg.getClass().getName());
             }
         }
-    } // PerfMarkersEngine
-
+    }
 
     /**
-     * Support class for reading commands from the control channel. To
-     * support notification of channel closure, this class is to be
-     * run in its own thread. Once that thread has been started, this
-     * thread should have exclusive rights to the input stream.
-     *
-     * The thread terminates when the input stream is closed. At that
-     * point the command poller is closed, which optionally may cause
-     * a notification of another thread.
-     *
-     * It is possible to close the command poller explicitly. This
-     * will however not cause the input stream to be closed, nor the
-     * command poller thread to terminate.
+     * Support class to implement FTP command processing on shared
+     * worker threads. Commands on the same queue are executed
+     * sequentially.
      */
-    private class AsciiCommandPoller implements Runnable
+    class CommandQueue
     {
-        /**
-         * Queue to communicate commands between the poller thread and
-         * the FTP worker thread.
-         *
-         * Allthough commands are strings, we do not specify the
-         * element type to be a String, since this would prohibit the
-         * use of an eos element to indicate the end of the stream.
+        /** Queue of FTP commands to execute.
          */
-        private final LinkedBlockingQueue _commands
-            = new LinkedBlockingQueue();
+        private final Queue<String> _commands = new LinkedList<String>();
 
         /**
-         * Input stream of the control channel.
-         */
-        private BufferedReader _in;
-
-        /**
-         * Parent thread to interrupt when the command poller is
+         * The thread to interrupt when the command poller is
          * closed. May be null if interrupts are disabled.
          */
         private Thread _thread;
 
         /**
-         * Whether the command poller was closed.
+         * True iff the command queue has been stopped.
          */
-        private boolean _closed = false;
-
-        AsciiCommandPoller()
-        {
-        }
+        private boolean _stopped = false;
 
         /**
-         * Sets the channel from which to read commands.
+         * True iff the command processing task is in the
+         * ExecutorService queue or is currently running.
          */
-        void setControlChannel(BufferedReader in)
-        {
-            _in = in;
-        }
+        private boolean _running = false;
 
-        public void run()
+        /**
+         * Adds a command to the command queue.
+         */
+        synchronized public void add(String command)
         {
-            try {
-                String command = _in.readLine();
-                while (command != null && _commands.offer(command)) {
-                    command = _in.readLine();
+            if (!_stopped) {
+                _commands.add(command);
+                if (!_running) {
+                    _running = true;
+                    _executor.submit(new Runnable() {
+                            public void run() {
+                                String command = get();
+                                while (command != null) {
+                                    execute(command);
+                                    command = get();
+                                }
+                                done();
+                            }
+                        });
                 }
-            } catch (SocketException e) {
-                /* When the FTP session is terminated by a QUIT
-                 * command, the worker thread closes the output
-                 * stream. This automatically closes the input stream
-                 * and in turn we get this exception here. Although
-                 * not elegant, the exception is not critical and we
-                 * ignore it.
-                 */
-            } catch (IOException e) {
-                esay(e.getMessage());
-            } finally {
-                close();
             }
         }
 
         /**
-         * Closes the command poller. After a call to this method,
-         * nextCommand() will return null. If interrupts are currently
-         * enabled, the parent thread is interrupted.
-         *
-         * Does nothing if the command poller is already closed.
+         * Returns the next command, or null if the queue has been
+         * stopped or if there is no command in the queue.
          */
-        synchronized void close()
+        synchronized private String get()
         {
-            if (_closed == false) {
-                _closed = true;
+            return _stopped ? null : _commands.poll();
+        }
+
+        /**
+         * Signals that the command processing loop was left.
+         */
+        synchronized private void done()
+        {
+            _running = false;
+            notifyAll();
+        }
+
+        /**
+         * Stops the command queue. After a call to this method,
+         * get() will return null. If interrupts are currently
+         * enabled, the target thread is interrupted.
+         *
+         * Does nothing if the command queue is already stopped.
+         */
+        synchronized public void stop()
+            throws InterruptedException
+        {
+            if (!_stopped) {
+                _stopped = true;
 
                 if (_thread != null) {
                     _thread.interrupt();
                 }
 
-                /* The worker thread may be blocked in
-                 * nextCommand(). Inserting an dummy element will
-                 * conveniently cause it to wake up.
-                 */
-                _commands.offer("");
+                if (_running) {
+                    wait();
+                }
             }
         }
 
         /**
-         * Enables interrupt upon command poller close. Until the next
-         * call of disableInterrupt(), a close of the command poller
-         * will cause the calling thread to be interrupted.
+         * Enables interrupt upon stop. Until the next call of
+         * disableInterrupt(), a call to <code>stop</code> will cause
+         * the calling thread to be interrupted.
          *
          * @throws InterruptedException if command poller is already
          * closed
@@ -4166,43 +4098,18 @@ public abstract class AbstractFtpDoorV1 extends CellAdapter implements Runnable
         synchronized void enableInterrupt()
             throws InterruptedException
         {
-            if (_closed) {
+            if (_stopped) {
                 throw new InterruptedException();
             }
             _thread = Thread.currentThread();
         }
 
         /**
-         * Disables interrupt upon command poller close.
+         * Disables interrupt upon stop.
          */
         synchronized void disableInterrupt()
         {
             _thread = null;
-        }
-
-        /**
-         * Returns true if and only if the command poller was closed.
-         */
-        synchronized boolean isClosed()
-        {
-            return _closed;
-        }
-
-        /**
-         * Returns the next command (i.e. line) from the control
-         * channel. Returns null when the command poller has been
-         * closed.
-         */
-        String nextCommand() throws InterruptedException
-        {
-            if (isClosed()) {
-                return null;
-            }
-            Object o = _commands.take();
-            if (isClosed()) {
-                return null;
-            }
-            return o.toString();
         }
     }
 
