@@ -257,9 +257,9 @@ public class RequestContainerV5 implements Runnable {
        pw.println( "Allow same host p2p : "+getSameHostCopyMode() ) ;
        pw.println( "    Same host retry : "+getSameHostRetryMode() ) ;
        if( _suspendIncoming )
-            pw.println( "   Suspend Incoming : on (not persistant)");
+            pw.println( "   Suspend Incoming : on (not persistent)");
        if( _suspendStaging )
-            pw.println( "   Suspend Staging  : on (not persistant)");
+            pw.println( "   Suspend Staging  : on (not persistent)");
     }
     public void dumpSetup( StringBuffer sb ){
        sb.append("#\n# Submodule [rc] : ").append(this.getClass().toString()).append("\n#\n");
@@ -391,7 +391,7 @@ public class RequestContainerV5 implements Runnable {
     public String fh_rc_set_poolpingtimer =
     " rc set poolpingtimer <timer/seconds> "+
     ""+
-    "    If set to a nonezero value, the restore handler will frequently"+
+    "    If set to a nonzero value, the restore handler will frequently"+
     "    check the pool whether the request is still pending, failed"+
     "    or has been successful" +
     "";
@@ -581,7 +581,7 @@ public class RequestContainerV5 implements Runnable {
        }
        return list.toArray( new RestoreHandlerInfo[list.size()] ) ;
     }
-    private static int __requestCounter = 1 ;
+;
     public void addRequest( CellMessage message ){
 
         boolean enforceP2P = false ;
@@ -852,6 +852,7 @@ public class RequestContainerV5 implements Runnable {
 		  _currentRc ,
 		  _currentRm ) ;
 	}
+        @Override
         public String toString(){
            return _name+" m="+_messages.size()+" r="+
                   _retryCounter+" ["+getPoolCandidateState()+"] ["+_state+"] "+
@@ -1059,7 +1060,8 @@ public class RequestContainerV5 implements Runnable {
                    _stateEngineActive = false ;
               }
            }
-           public String toString() {
+           @Override
+        public String toString() {
               return PoolRequestHandler.this.toString();
            }
         }
@@ -1375,7 +1377,7 @@ public class RequestContainerV5 implements Runnable {
                             }
                         }else{
                             _poolCandidateInfo = _bestPool ;
-                            say("ST_POOL_2_POOL : chosing hight cost pool "+_poolCandidateInfo.getPoolName());
+                            say("ST_POOL_2_POOL : Choosing high cost pool "+_poolCandidateInfo.getPoolName());
 
                           if( _sendCostInfo )sendCostMsg(_pnfsId, _bestPool , false);
 
@@ -1400,7 +1402,7 @@ public class RequestContainerV5 implements Runnable {
                           if( _bestPool != null ){
 
                               _poolCandidateInfo = _bestPool;
-                              say("ST_POOL_2_POOL : chosing hight cost pool "+_poolCandidateInfo.getPoolName());
+                              say("ST_POOL_2_POOL : Choosing high cost pool "+_poolCandidateInfo.getPoolName());
 
                              if( _sendCostInfo )sendCostMsg(_pnfsId, _bestPool , false);
                              setError(0,"");
@@ -1691,7 +1693,7 @@ public class RequestContainerV5 implements Runnable {
 
                  switch(_currentRc) {
                      case 0:
-                         // best candidate is the rith one
+                         // best candidate is the right one
                          rc = RT_OK;
                          break;
                      case CacheException.HSM_DELAY_ERROR:
@@ -2027,7 +2029,7 @@ public class RequestContainerV5 implements Runnable {
 
 				} else if ((!overwriteCost)
 						&& (parameter._alertCostCut > 0.0)
-						&& (((PoolCostCheckable) sources.get(0))
+						&& ((sources.get(0))
 								.getPerformanceCost() > parameter._alertCostCut)) {
 					//
 					// all source are too busy
@@ -2294,7 +2296,7 @@ public class RequestContainerV5 implements Runnable {
                        //
                        if( ( _sameHostRetry != SAME_HOST_RETRY_NOTCHECKED ) && ( currentCandidateHostName != null )){
                            //
-                           // rememeber the best even if it is on the same host, in case of 'best effort'.
+                           // Remember the best even if it is on the same host, in case of 'best effort'.
                            //
                            if( rememberBest == null )rememberBest = c  ;
                            //
@@ -2323,7 +2325,7 @@ public class RequestContainerV5 implements Runnable {
                  }
 
                  //
-                 // clear the pool candicate if this second shot didn't find a good pool. So we can try the first one
+                 // clear the pool candidate if this second shot didn't find a good pool. So we can try the first one
                  // again. If we don't, systems with a single pool for this request will never recover. (lionel bug 2132)
                  //
 
@@ -2345,7 +2347,7 @@ public class RequestContainerV5 implements Runnable {
         //   NOT_FOUND :
         //        - no pools configured
         //        - pools configured but not active
-        //        - no pools left after substracting primary candidate.
+        //        - no pools left after subtracting primary candidate.
         //   OUT_OF_RESOURCES :
         //        - too many requests queued
         //
