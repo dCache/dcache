@@ -28,6 +28,7 @@ public class PoolSpaceManagerTest {
 
 
     @Test
+    @Ignore("agreed as valid case: block until total space increased")
     public void testOverbook() {
 
 
@@ -38,13 +39,10 @@ public class PoolSpaceManagerTest {
         try {
             _poolSpaceMonitor.allocateSpace(space + 2, 1000);
         } catch (MissingResourceException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
             fail("Trying to allocate more than available");
         } catch (InterruptedException e) {
             fail("Trying to allocate more than available");
         }
-
 
     }
 
