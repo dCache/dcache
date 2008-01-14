@@ -2015,7 +2015,7 @@ public class ManagerV2
 	public static final void main(String[] args) throws Throwable {
 		if (args==null||args.length==0) { 
 			System.err.println("Need to specify DB connection arguments");
-			System.err.println("e.g.: -jdbcUrl=jdbc:postgresql://localhost/dcache  -jdbcDriver=org.postgresql.Driver -dbUser=srmdcache pgPass=srmdcache");
+			System.err.println("e.g.: -jdbcUrl=jdbc:postgresql://localhost/dcache  -jdbcDriver=org.postgresql.Driver -dbUser=srmdcache -dbPass=srmdcache");
 			System.exit(1);
 		}
 		Args arguments = new Args(args);
@@ -2049,18 +2049,23 @@ public class ManagerV2
 			}
 			if (previousVersion==1) { 
 				StringBuffer sb = new StringBuffer();
-				sb.append("VERY VERY IMPORTANT \n");
-				sb.append("We discovered that your current space manager schema version is "+previousVersion+".\n");
-				sb.append("We are upgrading to schema version 2.\n");
-				sb.append("We are going to execute these two queries:\n");
+				sb.append("\n");
+				sb.append("\t\t    VERY IMPORTANT \n");
+				sb.append("\n");				
+				sb.append("\tWe discovered that your current space manager schema version is "+previousVersion+".\n");
+				sb.append("\tWe are upgrading to schema version 2.\n");
+				sb.append("\tWe are going to execute these two queries:\n");
 				sb.append("\""+ManagerSchemaConstants.POPULATE_USED_SPACE_IN_SRMSPACE_TABLE+"\"\n");
-				sb.append("and\n");
+				sb.append("\tand\n");
 				sb.append("\""+ManagerSchemaConstants.POPULATE_RESERVED_SPACE_IN_SRMLINKGROUP_TABLE+"\"\n");
-				sb.append("For the space in space reservations to be counted correctly \n");
-				sb.append("+--------------------------------------------------------+\n");
-				sb.append("| IT IS ABSOLUTELY IMPORTANT TO LET THESE QUERIES FINISH |\n");
-				sb.append("| IT MAY TAKE A LONG TIME (MINUTES), PLEASE BEAR WITH US |\n");
-                                sb.append("+-------------------------------------------------------=+\n");
+				sb.append("\n");				
+				sb.append("\t+--------------------------------------------------------+\n");
+				sb.append("\t|      FOR THE SPACE RESERVATIONS TO WORK CORRECTLY      |\n");
+				sb.append("\t| IT IS ABSOLUTELY IMPORTANT TO LET THESE QUERIES FINISH |\n");
+				sb.append("\t| IT MAY TAKE A LONG TIME (MINUTES), PLEASE BEAR WITH US |\n");
+				sb.append("\t|                 DO NOT INTERRUPT                       |\n");
+				sb.append("\t| THIS ACTION WILL NOT BE REPEATED IN SUBSEQUENT STARTUPS|\n");
+                                sb.append("\t+--------------------------------------------------------+\n");
 				System.out.println(sb.toString());
 				try { 
 					manager.batchUpdates("ALTER TABLE " +ManagerSchemaConstants.LinkGroupTableName+ " ADD COLUMN  reservedspaceinbytes BIGINT",
@@ -2070,8 +2075,9 @@ public class ManagerV2
 							     ManagerSchemaConstants.POPULATE_USED_SPACE_IN_SRMSPACE_TABLE,
 							     ManagerSchemaConstants.POPULATE_RESERVED_SPACE_IN_SRMLINKGROUP_TABLE);
 					manager.update(ManagerV2.updateVersion);
-					System.out.println("SUCCESSFULLY UPDATED SPACE MANAGER SCHEMA TO VERSION 2");
-					System.out.println("IT IS SAFE TO START SRM");
+					System.out.println("\tSUCCESSFULLY UPDATED SPACE MANAGER SCHEMA TO VERSION 2");
+					System.out.println("\tIT IS SAFE TO START SRM");
+					System.out.println("\tStarting SRM\n");
 					System.exit(0);
 				}
 				catch (SQLException e) { 
