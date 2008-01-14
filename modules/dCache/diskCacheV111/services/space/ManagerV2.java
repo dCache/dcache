@@ -2013,7 +2013,7 @@ public class ManagerV2
 //------------------------------------------------------------------------------    
 
 	public static final void main(String[] args) throws Throwable {
-		if (args==null) { 
+		if (args==null||args.length==0) { 
 			System.err.println("Need to specify DB connection arguments");
 			System.err.println("e.g.: -jdbcUrl=jdbc:postgresql://localhost/dcache  -jdbcDriver=org.postgresql.Driver -dbUser=srmdcache pgPass=srmdcache");
 			System.exit(1);
