@@ -461,7 +461,7 @@
 		<mkdir dir="${buildDir}/chimera-provider" />
 		<javac destdir="${buildDir}/chimera-provider"  classpathref="chimera.classpath"  source="${javac.source}" target="${javac.target}" debug="${javac.debug}" verbose="${javac.verbose}">
 			<src path="${sourceDir}" />
-			<include name="org/dcache/chimera/namespace/**" />
+			<include name="org/dcache/chimera/**" />
 		</javac>
 	</target>
 
