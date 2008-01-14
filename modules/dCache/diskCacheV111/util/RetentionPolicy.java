@@ -154,10 +154,14 @@ public final class RetentionPolicy implements java.io.Serializable {
     }
     
     public static RetentionPolicy[] getAllPoliciess() {
-        return new RetentionPolicy[] {
-         REPLICA,
-         OUTPUT,
-         CUSTODIAL};
+	    return getAllPolicies();
+    }
+
+    public static RetentionPolicy[] getAllPolicies() {
+	    return new RetentionPolicy[] {
+		    REPLICA,
+		    OUTPUT,
+		    CUSTODIAL};
     }
     public String toString() {
         return _name;
