@@ -12,6 +12,7 @@ package diskCacheV111.services.space;
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.RetentionPolicy;
 
+
 /**
  *
  * @author timur
@@ -24,7 +25,8 @@ public class Space implements java.io.Serializable {
     private AccessLatency accessLatency;
     private long linkGroupId;
     private long sizeInBytes;
-    private Long usedSizeInBytes;
+    private long usedSizeInBytes;
+    private long allocatedSpaceInBytes;
     private long creationTime;
     private long lifetime;
     private String description;
@@ -45,7 +47,9 @@ public class Space implements java.io.Serializable {
             long creationTime,
             long lifetime,
             String description,
-            SpaceState state
+            SpaceState state,
+	    long used,
+	    long allocated
             ) {
         this.setId(id);
         this.voGroup = voGroup;
@@ -58,6 +62,38 @@ public class Space implements java.io.Serializable {
         this.setLifetime(lifetime);
         this.setDescription(description);
         this.setState(state);
+        this.setUsedSizeInBytes(used);
+        this.setAllocatedSpaceInBytes(allocated);
+    }
+
+	// for backward compatibility 
+
+    public Space(
+            long id,
+            String voGroup,
+            String voRole,
+            RetentionPolicy retentionPolicy,
+            AccessLatency accessLatency,
+            long linkGroupId,
+            long sizeInBytes,
+            long creationTime,
+            long lifetime,
+            String description,
+            SpaceState state)
+             {
+        this.setId(id);
+        this.voGroup = voGroup;
+        this.voRole = voRole;
+        this.retentionPolicy = retentionPolicy;
+        this.accessLatency = accessLatency;
+        this.setLinkGroupId(linkGroupId);
+        this.setSizeInBytes(sizeInBytes);
+        this.setCreationTime(creationTime);
+        this.setLifetime(lifetime);
+        this.setDescription(description);
+        this.setState(state);
+        this.setUsedSizeInBytes(0L);
+        this.setAllocatedSpaceInBytes(0L);
     }
     
     public long getId() {
@@ -133,6 +169,8 @@ public class Space implements java.io.Serializable {
                 sb.append(" expiration:").append(lifetime==-1?"NEVER":new java.util.Date(creationTime+lifetime).toString()).append(' ');
                 sb.append("descr:").append(description).append(' ');
                 sb.append("state:").append(state);
+                sb.append("used:").append(usedSizeInBytes);
+                sb.append("allocated:").append(allocatedSpaceInBytes);
     }
 
     public String getVoGroup() {
@@ -167,12 +205,26 @@ public class Space implements java.io.Serializable {
         this.accessLatency = accessLatency;
     }
 
-    public Long getUsedSizeInBytes() {
+    public long getUsedSizeInBytes() {
         return usedSizeInBytes;
     }
 
-    public void setUsedSizeInBytes(Long usedSizeInBytes) {
+    public void setUsedSizeInBytes(long usedSizeInBytes) {
         this.usedSizeInBytes = usedSizeInBytes;
+    }
+
+
+    public long getAllocatedSpaceInBytes() {
+        return allocatedSpaceInBytes;
+    }
+	
+	public long getAvailableSpaceInBytes() { 
+		return sizeInBytes-usedSizeInBytes-allocatedSpaceInBytes;
+	}
+
+	public void setAllocatedSpaceInBytes(long allocated) {
+		this.allocatedSpaceInBytes = allocated;
+						 
     }
     
 }
