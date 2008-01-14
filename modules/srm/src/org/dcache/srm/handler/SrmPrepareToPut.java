@@ -18,6 +18,7 @@ import org.dcache.srm.v2_2.TExtraInfo;
 import org.dcache.srm.v2_2.TOverwriteMode;
 import org.dcache.srm.v2_2.TPutRequestFileStatus;
 import org.dcache.srm.v2_2.ArrayOfTPutRequestFileStatus;
+import org.dcache.srm.v2_2.TFileStorageType;
 import org.dcache.srm.request.RequestUser;
 import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.AbstractStorageElement;
@@ -153,7 +154,11 @@ public class SrmPrepareToPut {
         
         
         say("Entering srmPrepareToPut()");
-        
+        TFileStorageType storageType = request.getDesiredFileStorageType();
+        if(storageType != null && !storageType.equals(TFileStorageType.PERMANENT)) {
+             return getFailedResponse("DesiredFileStorageType "+storageType+" is not supported",
+                 TStatusCode.SRM_NOT_SUPPORTED);
+        }
         String [] protocols = null;
         if(request.getTransferParameters() != null &&
                 request.getTransferParameters().getArrayOfTransferProtocols() != null ) {

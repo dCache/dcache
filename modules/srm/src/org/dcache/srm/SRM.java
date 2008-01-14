@@ -910,7 +910,9 @@ public class SRM {
             configuration.getCopyRetryTimeout(),
             configuration.getCopyMaxNumOfRetries(),
             SRMProtocol.V1_1,
-            null,null,null,null,null);
+            org.dcache.srm.v2_2.TFileStorageType.PERMANENT,
+            null,
+            null,null,null);
             say(" Copy Request = "+r);
             copyStorage.saveJob(r,true);
             // RequesScheduler will take care of the rest

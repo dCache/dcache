@@ -484,6 +484,11 @@ public class CopyRequest extends ContainerRequest implements PropertyChangeListe
         if(from_url_is_srm && ! from_url_is_local) {
             // this means that the from url is remote srm url
             // and a "to" url is a local srm url
+            if(storageType != null && !storageType.equals(TFileStorageType.PERMANENT)) {
+                  throw new 
+                      org.dcache.srm.scheduler.FatalJobFailure(
+                      "TargetFileStorageType "+storageType+" is not supported");
+            }
             RequestCredential credential = RequestCredential.getRequestCredential(credentialId);
             say("obtained credential="+credential+" id="+credential.getId());
             //String ls_client = "SRM"; // make it not hard coded
