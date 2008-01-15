@@ -69,7 +69,7 @@ public class RunSystem implements Runnable {
                     new InputStreamReader( _process.getInputStream() ) );
        _stderr  = new BufferedReader(
                     new InputStreamReader( _process.getErrorStream() ) );
-       
+
        /*
         * we do not need stdin of the process. To avoid file descriptor leaking close it.
         */
@@ -107,7 +107,7 @@ public class RunSystem implements Runnable {
                 long end = System.currentTimeMillis() + 5 * 1000 ;
                 while( ( _stoppedReader < 2 ) || ( ! _processDone )  ){
                    long rest = end - System.currentTimeMillis() ;
-                   if( rest <= 0 )break ;
+                   if( rest <= 0 ) break ;
                    wait( rest ) ;
                    say( "Master : Wait 2 returned : "+statusPrintout() ) ;
                 }
@@ -121,7 +121,7 @@ public class RunSystem implements Runnable {
                 _process.destroy() ;
              }
              if( ( l > 2 ) && ( _stoppedReader < 2 ) ){
-                 say( "Master : Wait 2 loop : Interruping readers" ) ;
+                 say( "Master : Wait 2 loop : Interrupting readers" ) ;
                  interruptReaders() ;
              }
           }
