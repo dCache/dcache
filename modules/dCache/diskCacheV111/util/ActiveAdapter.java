@@ -241,6 +241,8 @@ public class ActiveAdapter implements Runnable, ProxyAdapter {
             if (_ssc != null) {
                 _ssc.close();
                 _ssc = null;
+                _selector.close();
+                _selector = null;
             }
         } catch (IOException e) {
             esay("_clientListenerSock.close() failed with IOException, ignoring");
@@ -505,7 +507,7 @@ public class ActiveAdapter implements Runnable, ProxyAdapter {
             int r = scs.read(b);
 
             if (r < 0) {
-                esay("Can't read from " + scs);
+                say("Can't read from " + scs);
                 return false;
             } else if (r > 0) {
                 b.flip();
@@ -533,7 +535,7 @@ public class ActiveAdapter implements Runnable, ProxyAdapter {
             int r = sct.write(b);
             // System.err.printf("Wrote %d to %s%n", r, sct);
             if (r < 0) {
-                esay("Can't write to " + sct);
+                say("Can't write to " + sct);
                 return false;
             }
             if (b.hasRemaining()) {
