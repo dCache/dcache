@@ -884,7 +884,7 @@ public class ManagerV2
 	}
 
 //
-// the crap below is left w/o changes for now 
+// the code below is left w/o changes for now 
 //
 
 	public static final String selectNextIdForUpdate = 
@@ -979,7 +979,7 @@ public class ManagerV2
 	}
 
 //
-// unchanged crap ends here 
+// unchanged code ends here 
 //
 	public static final String selectLinkGroupVOs = 
 		"SELECT VOGroup,VORole FROM "+ManagerSchemaConstants.LinkGroupVOsTableName+
@@ -1067,8 +1067,8 @@ public class ManagerV2
 	//
 	// the function below returns list of linkgroup ids that correspond
 	// to linkgroups that satisfy retention policy/access latency criteria, 
-        // voGroup/voRoles criteria and havs sufficient space to accomodate new 
-        // space reservation. Sufficient space id defined as lg.freespaceinbytes-lg.reservedspaceinbytes
+        // voGroup/voRoles criteria and have sufficient space to accomodate new 
+        // space reservation. Sufficient space is defined as lg.freespaceinbytes-lg.reservedspaceinbytes
         // we do not use select for update here as we do not want to lock many 
         // rows. 
 	
