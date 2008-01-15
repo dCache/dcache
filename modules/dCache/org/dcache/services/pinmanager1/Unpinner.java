@@ -31,7 +31,7 @@ class Unpinner extends SMCTask
         _pin = pin;
         _pnfsManager = manager.getPnfsManager();
         String pool = _pin.getPool();
-        isOldStylePin = pool == null;
+        isOldStylePin = pool == null || pool.equals("unknown");
         if(!isOldStylePin) {
             locations.add(pool);
         }

@@ -251,7 +251,7 @@ class PinManagerDatabase
                 updateSchemaToVersion3From1(con);
             }
             catch (SQLException sqle) {
-                error("updateSchemaToVersion1 failed, shcema might have been updated already:");
+                error("updateSchemaToVersion3From1 failed, shcema might have been updated already:");
                 error(sqle.getMessage());
             }
             previousSchemaVersion = 3;
@@ -261,7 +261,7 @@ class PinManagerDatabase
                 updateSchemaToVersion3(con);
             }
             catch (SQLException sqle) {
-                error("updateSchemaToVersion1 failed, shcema might have been updated already:");
+                error("updateSchemaToVersion3 failed, shcema might have been updated already:");
                 error(sqle.getMessage());
             }
             previousSchemaVersion = 3;
@@ -352,11 +352,11 @@ class PinManagerDatabase
                 catch (SQLException sqle) {
                     //ignore as there possible duplications
                 }
-                
                 pinReqsInsertStmt.setLong(1,pinRequestId);
-                pinReqsInsertStmt.setLong(2,pinRequestId);
-                pinReqsInsertStmt.setLong(3,0);
-                pinReqsInsertStmt.setLong(4,expiration);
+                pinReqsInsertStmt.setLong(2,0);
+                pinReqsInsertStmt.setLong(3,pinRequestId);
+                pinReqsInsertStmt.setLong(4,0);
+                pinReqsInsertStmt.setLong(5,expiration);
                 pinReqsInsertStmt.executeUpdate();
                 
             }
@@ -376,8 +376,12 @@ class PinManagerDatabase
             info("DROP TABLE " + TABLE_OLDPINS);
             stmt.executeUpdate("DROP TABLE " + TABLE_OLDPINS);
             stmt.close();
+            stmt = con.createStatement();
+            info("DROP TABLE " + TABLE_OLDPINREQUEST);
+            stmt.executeUpdate("DROP TABLE " + TABLE_OLDPINREQUEST);
+            stmt.close();
         } catch (SQLException e) {
-            warn("Failed to read values from old pinrequest table: "
+            warn("Failed to drop old pinrequest table: "
                  + e.getMessage());
         }
     }
@@ -410,9 +414,10 @@ class PinManagerDatabase
                 }
                 
                 pinReqsInsertStmt.setLong(1,clientId);
-                pinReqsInsertStmt.setLong(2,pinId);
-                pinReqsInsertStmt.setLong(3,0);
-                pinReqsInsertStmt.setLong(4,expiration);
+                pinReqsInsertStmt.setLong(2,0);
+                pinReqsInsertStmt.setLong(3,pinId);
+                pinReqsInsertStmt.setLong(4,0);
+                pinReqsInsertStmt.setLong(5,expiration);
                 pinReqsInsertStmt.executeUpdate();
                 /* To avoid expiring lots of pins before all requests
                  * have been read, we put all expiration dates at
@@ -425,7 +430,17 @@ class PinManagerDatabase
             }
             rs.close();
             stmt.close();
-    
+            try {
+                //check if old pins table is still there
+                stmt = con.createStatement();
+                info("DROP TABLE " + TABLE_PINREQUEST_V2);
+                stmt.executeUpdate("DROP TABLE " + TABLE_PINREQUEST_V2);
+                stmt.close();
+            } catch (SQLException e) {
+                warn("Failed to drop PinRequests V2 table: "
+                     + e.getMessage());
+            }
+   
     }
 
         
