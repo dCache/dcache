@@ -101,14 +101,14 @@ import diskCacheV111.vehicles.AuthenticationMessage;
  * @author  timur
  */
 public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1 {
-    
+
     public static final String GLOBUS_URL_COPY_DEFAULT_USER =
     ":globus-mapping:";
-    
+
     protected GSSName GSSIdentity;
     //GSS general
     protected String _GSSFlavor = "unknown";
-    
+
     // GSS GSI context and others
     protected GSSContext serviceContext;
 
@@ -121,8 +121,8 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1 {
     public GssFtpDoorV1(String name, StreamEngine engine, Args args) throws Exception{
         super(name,engine,args);
     }
-    
-    
+
+
     protected void secure_reply(String answer, String code) {
         answer = answer+"\r\n";
         byte[] data = answer.getBytes();
@@ -136,7 +136,7 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1 {
         }
         println(code + " " + Base64.byteArrayToBase64(data));
     }
-    
+
     public void ac_auth(String arg)     {
         say("Going to authenticate "+_GSSFlavor);
         if ( !arg.equals("GSSAPI") ) {
@@ -147,7 +147,7 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1 {
             reply("234 Already authenticated");
             return;
         }
-        
+
         try {
             serviceContext = getServiceContext();
         }
@@ -157,13 +157,13 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1 {
         }
         reply("334 ADAT must follow");
     }
-    
+
     public void ac_adat(String arg) {
         if ( arg == null || arg.length() <= 0 ) {
             reply("501 ADAT must have data");
             return;
         }
-        
+
         if ( serviceContext == null ) {
             reply("503 Send AUTH first");
             return;
@@ -180,7 +180,7 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1 {
         {	reply("500 Can not determine address of local host: " + e);
                 return;
         }
-        
+
         try {
             //            serviceContext.setChannelBinding(cb);
             //say("CB set");
@@ -212,21 +212,21 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1 {
             }
         }
     }
-    
-    
+
+
     public void secure_command(String answer, String sectype)
     throws dmg.util.CommandExitException {
         if( answer == null || answer.length() <= 0 ) {
             reply("500 Wrong syntax of "+sectype+" command");
             return;
         }
-        
+
         if( serviceContext == null || !serviceContext.isEstablished()){
             reply("503 Security context is not established");
             return;
         }
-        
-        
+
+
         byte[] data = Base64.base64ToByteArray(answer);
         MessageProp prop = new MessageProp(0, false);
         try { data = serviceContext.unwrap(data, 0, data.length, prop); }
@@ -235,7 +235,7 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1 {
                 e.printStackTrace();
                 return;
         }
-        
+
         // At least one C-based client sends zero byte at the end
         // of secured command. Truncate trailing zeros.
         int i;
@@ -245,7 +245,7 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1 {
         String msg = new String(data, 0, i);
         msg = msg.trim();
         say("Secure command: <" + msg + ">");
-        
+
         if( msg.equalsIgnoreCase("CCC") ) {
             _gReplyType = "clear";
             reply("200 OK");
@@ -254,9 +254,9 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1 {
             _gReplyType = sectype;
             ftpcommand(msg);
         }
-        
+
     }
-    
+
     public static CellVersion getStaticCellVersion(){ return new CellVersion(diskCacheV111.util.Version.getVersion(),"$Revision: 1.18 $" ); }
 
 
@@ -272,12 +272,12 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1 {
         reply(err("USER",arg));
         return;
       }
-        
+
       if (serviceContext == null || !serviceContext.isEstablished()){
         reply("530 Authentication required");
         return;
       }
-        
+
       _user = arg;
       _dnUser = GSSIdentity.toString();
       if (!_use_gplazmaAuthzCell && !_use_gplazmaAuthzModule) {
@@ -288,7 +288,7 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1 {
           reply("530 User authentication file not found: " + e);
           return;
         }
-        
+
         if(_user.equals(GLOBUS_URL_COPY_DEFAULT_USER)) {
           say("special case , user is "+_user);
           _user = authf.getIdMapping(GSSIdentity.toString() );
@@ -298,7 +298,7 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1 {
             return;
           }
         }
-        
+
         _pwdRecord = authf.getUserRecord(_user);
         authmessage = new AuthenticationMessage(_pwdRecord);
         //authRecords = new LinkedList<UserAuthRecord>();
@@ -307,7 +307,7 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1 {
           reply("530 User " + _user + " not found.");
           return;
         }
-        
+
         say("Looking up: " + GSSIdentity.toString());
         if( !((UserAuthRecord)_pwdRecord).hasSecureIdentity(GSSIdentity.toString()) ) {
           _pwdRecord = null;
@@ -325,12 +325,12 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1 {
           if(!_use_gplazmaAuthzModule) {
             reply("530 Authorization Service failed: " + e);
           }
-          say("Authorization through gPlazma cell failed " + e);
+          esay("Authorization through gPlazma cell failed " + e);
           authmessage = null;
         }
       }
 
-      
+
       if (authmessage==null && _use_gplazmaAuthzModule) {
         try {
           authServ = new AuthorizationService(_gplazmaPolicyFilePath, this);
@@ -365,7 +365,7 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1 {
       reply("200 User "+_user+" logged in");
     }
 
-    public void resetPwdRecord() 
+    public void resetPwdRecord()
     {
         if (authmessage != null) {
             _userAuthRecords = authmessage.getUserAuthRecords().iterator();
@@ -375,12 +375,12 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1 {
         }
     }
 
-    public void setNextPwdRecord() 
+    public void setNextPwdRecord()
     {
         if (_userAuthRecords == null || !_userAuthRecords.hasNext()) {
             _pwdRecord = null;
         } else {
-            _pwdRecord = _userAuthRecords.next();        
+            _pwdRecord = _userAuthRecords.next();
             _user = _pwdRecord.Username;
             _curDirV = _pwdRecord.Home;
             _pathRoot = _pwdRecord.Root;
@@ -388,7 +388,7 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1 {
                 _pathRoot = "/";
         }
     }
-    
+
 // Some clients, even though the user is already logged in via GSS and ADAT
 //	will send a dummy PASS anyway. "Already logged in" is distracting
 //	and the "Going to evaluate strong password" message is misleading
@@ -405,8 +405,8 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1 {
             return;
         }
     }
-    
-    
+
+
     /**
      * the concrete implementation of this method returns the GSSContext
      * specific to the particular security mechanism
