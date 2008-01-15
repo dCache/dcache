@@ -1,5 +1,8 @@
 #!/bin/sh
 
+# chkconfig: - 92 8
+# description: chimera nfs3 startup script
+
 
 if [  -z ${ourHomeDir} ]
 then
