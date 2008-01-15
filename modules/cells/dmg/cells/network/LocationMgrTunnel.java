@@ -43,12 +43,12 @@ import dmg.util.Gate;
 import dmg.util.StreamEngine;
 
 /**
-  *  
+  *
   *
   * @author Patrick Fuhrmann
   * @version 0.1, 5 Mar 2001
   */
-public class      LocationMgrTunnel 
+public class      LocationMgrTunnel
        extends    CellAdapter
        implements Runnable,
                   CellTunnel   {
@@ -78,9 +78,9 @@ public class      LocationMgrTunnel
    private Socket             _socket        = null;
    private final Gate        _finalGate = new Gate(false) ;
    private SshClientAuthentication _clientAuth = null ;
-   
+
    private final static Logger _logMessages = Logger.getLogger("logger.org.dcache.cells.messages");
-   
+
    //
    // some statistics
    //
@@ -91,41 +91,41 @@ public class      LocationMgrTunnel
 
    public LocationMgrTunnel( String cellName , StreamEngine engine , Args args )
           throws Exception {
-        
+
      super( cellName , "System" , args , true ) ;
-     
+
       _engine   = engine ;
-      _mode     = "Accepted" ;      
+      _mode     = "Accepted" ;
       _nucleus  = getNucleus() ;
       _args     = getArgs() ;
 
       _acceptThread = _nucleus.newThread( this , "AcceptIoThread" ) ;
       _acceptThread.start() ;
-      
+
       say( "Constructor : acceptor started : "+args ) ;
-      
+
       _status = "<connected>" ;
-      
+
       setDebugValue() ;
    }
-   
+
    public LocationMgrTunnel( String cellName , String argString )
           throws Exception {
-          
+
       super( cellName , "System" , argString , false ) ;
-      
+
       _args    = getArgs() ;
       _nucleus = getNucleus() ;
-      _mode     = "Connected" ;      
+      _mode     = "Connected" ;
       try{
          if( _args.argc() < 2 )
-             throw new 
-             IllegalArgumentException( 
+             throw new
+             IllegalArgumentException(
                "Usage : ... <remoteDomain> <locationManager> [-overwriteLM]" ) ;
-         
+
          _remoteDomain    = _args.argv(0) ;
          _locationManager = _args.argv(1);
-         
+
          _overwriteLM = _args.getOpt("overwriteLM") != null ;
 
           setDebugValue();
@@ -135,7 +135,7 @@ public class      LocationMgrTunnel
          kill() ;
          throw ee ;
       }
-                     
+
       _connectionThread = _nucleus.newThread( this , "ConnectionIoThread" ) ;
       _connectionThread.start() ;
       start() ;
@@ -158,22 +158,22 @@ public class      LocationMgrTunnel
        }
    }
    public void findDomain() throws InterruptedException {
-   
+
       if( _overwriteLM ){
-      
+
          _host = _remoteDomain ;
          _port = Integer.parseInt( _locationManager ) ;
-         
+
          return ;
       }
       String      query = "where is "+_remoteDomain ;
       CellPath    path  = new CellPath( _locationManager ) ;
       CellMessage msg   = new CellMessage( path , query ) ;
       CellMessage reply = null ;
-      
+
       for( int i = 0 ; ! Thread.interrupted() ; i++ ){
         say("Sending ("+i+") '"+query+"'") ;
-        
+
         try{
            if( ( reply = sendAndWait( msg , 5000 ) ) != null ){
               Object obj = reply.getMessageObject() ;
@@ -184,10 +184,10 @@ public class      LocationMgrTunnel
                       ( ! args.argv(1).equals(_remoteDomain) )  )
                     throw new
                     IllegalArgumentException("Invalid reply : "+obj) ;
-                    
+
                   String address = args.argv(2) ;
                   if( address.equals("none") )
-                     throw new 
+                     throw new
                      Exception("Address not known to LocationManager yet");
 
                   int inx = address.indexOf(":") ;
@@ -197,7 +197,7 @@ public class      LocationMgrTunnel
 
                   _host = address.substring(0,inx);
                   _port = Integer.parseInt(address.substring(inx+1)) ;
-                  
+
                   String security = args.getOpt("security") ;
                   if( security != null ){
                       Args x = new Args(security);
@@ -210,7 +210,7 @@ public class      LocationMgrTunnel
                          throw new
                          IllegalArgumentException("Not a proper security context \""+security+"\"");
                       }
-                  
+
                   }
                   say("Got a proper address : host="+_host+";port="+_port+";security="+_security);
                   //
@@ -232,10 +232,10 @@ public class      LocationMgrTunnel
            esay( "'findDomain' (sleep) interrupted");
            throw ie ;
         }
-      } 
+      }
    }
-   
-    private void connectionThread()   
+
+    private void connectionThread()
     {
         long start = 0;
         while (!Thread.interrupted()) {
@@ -246,28 +246,28 @@ public class      LocationMgrTunnel
                 findDomain();
 
                 say("Trying to connect to <" + _host + ":" + _port + ">");
-                _status = "<connecting-" + _host  +":" 
+                _status = "<connecting-" + _host  +":"
                     + _port + "-" + _connectionRetries+">";
                 _connectionRetries++;
                 start = System.currentTimeMillis();
                 InetAddress inetAddress = InetAddress.getByName(_host);
-            
-                String niochannel = 
+
+                String niochannel =
                     _args == null ? null : _args.getOpt("niochannel");
                 say("niochannel : " + niochannel +  " " +_args);
-                if ((niochannel != null) 
+                if ((niochannel != null)
                     && (niochannel.equals("") || niochannel.equals("true"))) {
-                    SocketAddress address = 
+                    SocketAddress address =
                         new InetSocketAddress(inetAddress, _port);
                     _socketChannel = SocketChannel.open(address);
                     _socket = _socketChannel.socket();
                     //               _socket.setTcpNoDelay(true);
-               
+
                     makeObjectStreams(_socketChannel);
                     say("connectionThread running NIO");
                 } else {
                     _socket = new Socket(inetAddress, _port);
-               
+
                     if (_security == null) {
                         say("connectionThread non encrypted IO");
                         makeObjectStreams(_socket.getInputStream(),
@@ -277,17 +277,18 @@ public class      LocationMgrTunnel
                         _clientAuth = new SshCAuth_Key(_nucleus, _args);
 
                         say("connectionThread encrypted IO");
-                        SshStreamEngine engine = 
+                        SshStreamEngine engine =
                             new SshStreamEngine(_socket, _clientAuth);
                         makeObjectStreams(engine.getInputStream(),
                                           engine.getOutputStream());
                     } else {
                         throw new
                             Exception("Security mode not supported : " + _security);
-                    }   
+                    }
                     say("connectionThread running regular IO (non-nio)");
                 }
-           
+                _socket.setKeepAlive(true);
+
                 runIo();
             } catch (InterruptedIOException e) {
                 _status = "<interrupted>";
@@ -316,21 +317,22 @@ public class      LocationMgrTunnel
                     say("connectionThread : Sleep interrupted");
                     Thread.currentThread().interrupt();
                 }
-            }         
+            }
         }
         say("connectionThread finished");
     }
-   
+
     private void acceptThread()
     {
       try {
          _status = "<protocol>";
-         
+
          _socket = _engine.getSocket();
+         _socket.setKeepAlive(true);
          _socketChannel = _socket.getChannel();
-         
+
          if (_socketChannel == null) {
-            makeObjectStreams(_engine.getInputStream(), 
+            makeObjectStreams(_engine.getInputStream(),
                               _engine.getOutputStream());
             say("acceptThread : starting regular IO");
          } else {
@@ -356,7 +358,7 @@ public class      LocationMgrTunnel
       } finally {
          _status = "<io-shut>";
          say("acceptThread : finished");
-      }   
+      }
    }
 
    private void say(String str , CellMessage msg ){
@@ -373,30 +375,30 @@ public class      LocationMgrTunnel
         boolean success = false;
         _status = "<io>";
         try {
-            while (!Thread.currentThread().isInterrupted()) { 
+            while (!Thread.currentThread().isInterrupted()) {
                 CellMessage msg = (CellMessage)_input.readObject();
                 if (_debug > 0)
                     say("Tunnel to Domain : ", msg);
 
                 if (msg == null)
                     throw new EOFException("End of object stream detected");
-            
+
                 if (_logMessages.isDebugEnabled()) {
-                    String messageObject = 
+                    String messageObject =
                         msg.getMessageObject() == null
                         ? "NULL"
                         : msg.getMessageObject().getClass().getName();
 
-                    _logMessages.debug("tunnelSendMessage src=" 
-                                       + msg.getSourceAddress() 
-                                       + " dest=" + msg.getDestinationAddress() 
-                                       + " [" + messageObject + "] UOID=" 
+                    _logMessages.debug("tunnelSendMessage src="
+                                       + msg.getSourceAddress()
+                                       + " dest=" + msg.getDestinationAddress()
+                                       + " [" + messageObject + "] UOID="
                                        + msg.getUOID().toString());
                 }
 
                 try {
                     sendMessage(msg);
-                    _messagesToSystem++;              
+                    _messagesToSystem++;
                 } catch (NoRouteToCellException e) {
                     esay(e);
                 } catch (NotSerializableException e) {
@@ -420,21 +422,21 @@ public class      LocationMgrTunnel
                 synchronized (_tunnelOkLock) {
                     _tunnelOk = false;
                     _tunnelOkLock.notifyAll();
-                }                
+                }
             }
         }
     }
 
    public void   messageArrived( MessageEvent me ){
-     
+
      if( me instanceof RoutedMessageEvent ){
         synchronized( _tunnelOkLock ){
            CellMessage msg = me.getMessage() ;
            if( _debug > 0 )say("Domain to Tunnel : " , msg ) ;
-           
+
            if( _logMessages.isDebugEnabled() ) {
            	String messageObject = msg.getMessageObject() == null? "NULL" : msg.getMessageObject().getClass().getName();
-      	   _logMessages.debug("tunnelMessageArrived src=" + msg.getSourceAddress() + 
+      	   _logMessages.debug("tunnelMessageArrived src=" + msg.getSourceAddress() +
       			   " dest=" + msg.getDestinationAddress() + " [" + messageObject + "] UOID=" + msg.getUOID().toString() );
            }
            if( _tunnelOk ){
@@ -452,6 +454,13 @@ public class      LocationMgrTunnel
                   //
                   _tunnelOk = false ;
                   _tunnelOkLock.notifyAll() ;
+                  try {
+                      _socket.shutdownInput();
+                  } catch (IOException e) {
+                      /* This may happen if the socket is already
+                       * closed, in which case we are happy.
+                       */
+                  }
                }
            }else{
                esay( "Tunnel down : dumping : "+msg ) ;
@@ -463,7 +472,7 @@ public class      LocationMgrTunnel
      }else{
         esay( "messageArrived : dumping junk message "+me ) ;
      }
-     
+
    }
 
     public void run()
@@ -476,7 +485,7 @@ public class      LocationMgrTunnel
             }
         } finally {
             closeSocket();
-            kill(); 
+            kill();
         }
     }
 
@@ -484,7 +493,7 @@ public class      LocationMgrTunnel
       return new CellTunnelInfo( _nucleus.getCellName() ,
                                  _nucleus.getCellDomainInfo() ,
                                  _remoteDomainInfo ) ;
-   
+
    }
    private static final int BUFFER_SIZE = 4*1024;
    private class ByteArrayInputStream extends InputStream {
@@ -492,7 +501,7 @@ public class      LocationMgrTunnel
        private int _capacity = _buffer.capacity() ;
        private SocketChannel _channel = null ;
        public ByteArrayInputStream( SocketChannel channel ) throws IOException {
-          _channel = channel ;       
+          _channel = channel ;
        }
        public int read() throws IOException {
           byte [] b = new byte[1] ;
@@ -555,49 +564,49 @@ public class      LocationMgrTunnel
            }
        }
        public void write( byte [] b ) throws IOException {
-       
+
            write( b, 0 , b.length ) ;
-           
+
        }
        public void flush() throws IOException {
          super.flush();
        }
    }
    private void makeObjectStreams( SocketChannel channel )throws Exception {
-   
-      say( "Creating object (nio) streams" ) ;    
-      
+
+      say( "Creating object (nio) streams" ) ;
+
       makeObjectStreams( new ByteArrayInputStream( channel ) ,
                          new ByteArrayOutputStream( channel ) );
-          
-      
+
+
       say( "Object streams created (from nio channel)" ) ;
    }
-   private void makeObjectStreams( InputStream in , OutputStream out ) 
+   private void makeObjectStreams( InputStream in , OutputStream out )
            throws Exception {
-       
-      say( "Creating object streams" ) ;    
-      _output  = new ObjectOutputStream( out ) ;      
+
+      say( "Creating object streams" ) ;
+      _output  = new ObjectOutputStream( out ) ;
       if( _output == null )
-          throw new 
+          throw new
           IOException( "OutputStream == null" ) ;
-      
+
       _input   = new ObjectInputStream( new BufferedInputStream( in ) ) ;
       if( _input == null )
-          throw new 
+          throw new
           IOException( "InputStream == null" ) ;
-          
+
       say( "Object streams created (from regular streams)" ) ;
-      
+
       negotiateDomains() ;
-      
+
    }
-      
+
    private void negotiateDomains() throws Exception {
       say( "Exchangeing DomainInfos" ) ;
-      
+
       CellDomainInfo info = _nucleus.getCellDomainInfo() ;
-      
+
       say( "Sending Domain info : "+info ) ;
       //
       // send our info's
@@ -609,15 +618,15 @@ public class      LocationMgrTunnel
       //
       Object obj = _input.readObject() ;
       if( obj == null )
-         throw new 
+         throw new
          IOException( "EOS encountered while reading DomainInfo" ) ;
-            
+
       _remoteDomainInfo = (CellDomainInfo) obj ;
       say( "Received Domain info : "+_remoteDomainInfo ) ;
       //
       //  has to be done before adding the routed
       //
-      say("acceptThread : enabling tunnel" ) ; 
+      say("acceptThread : enabling tunnel" ) ;
       synchronized( _tunnelOkLock ){
            _tunnelOk = true ;
       }
@@ -626,7 +635,7 @@ public class      LocationMgrTunnel
       //
       removeRoute() ;
       addRoute( _remoteDomainInfo.getCellDomainName() ) ;
-     
+
    }
    public String toString(){
       if( _tunnelOk ){
@@ -647,10 +656,10 @@ public class      LocationMgrTunnel
      pw.println( "-> Domain     : "+_messagesToSystem ) ;
      if( _remoteDomainInfo == null )
         pw.println( "Peer          : N.N." ) ;
-     else 
+     else
         pw.println( "Peer          : "+
                    _remoteDomainInfo.getCellDomainName() ) ;
-     
+
      return ;
    }
    private synchronized void removeRoute(){
@@ -661,11 +670,11 @@ public class      LocationMgrTunnel
       }
    }
    private synchronized void addRoute( String remoteDomainName ){
-      _route = new CellRoute( 
-                   remoteDomainName , 
+      _route = new CellRoute(
+                   remoteDomainName ,
                    _nucleus.getCellName() ,
                    CellRoute.DOMAIN ) ;
-      say( "Adding Route : "+_route) ;     
+      say( "Adding Route : "+_route) ;
       _nucleus.routeAdd( _route ) ;
    }
 
@@ -693,16 +702,16 @@ public class      LocationMgrTunnel
            _tunnelOk = false;
        }
        _finalGate.check();
-       
+
        if (_acceptThread != null) {
            _acceptThread.interrupt();
        }
        if (_connectionThread != null) {
            _connectionThread.interrupt();
        }
-       
+
        closeSocket();
-       
+
        say( "Gate Opened. Bye Bye" );
    }
 
