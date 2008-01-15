@@ -82,7 +82,9 @@ public class PoolRepository2Chimera {
         ResultSet rs = null;
         try {
 
+            ps.setString(1, id);
             rs = ps.executeQuery();
+
             if( rs.next() ) {
                 return rs.getString(1);
             } else {
