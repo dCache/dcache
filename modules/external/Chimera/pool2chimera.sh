@@ -1,6 +1,6 @@
 #!/bin/sh
 
-if [ $# -ne 2 ]
+if [ $# -ne 1 ]
 then
     echo "Usage: `basename $0` <pool base dir>"
     echo "     convers id in pool to corresponding chimera id's."
