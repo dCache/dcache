@@ -3377,7 +3377,7 @@ public abstract class AbstractFtpDoorV1
             if (exception == null) {
                 esay(msg);
             } else {
-                esay(exception);
+                esay(msg + " (" + exception.getMessage() + ")");
             }
             _transfer = null;
             _transferInProgress = false;
