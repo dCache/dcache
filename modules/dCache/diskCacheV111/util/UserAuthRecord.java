@@ -6,6 +6,8 @@ import java.util.TreeSet;
 
 public class UserAuthRecord extends UserAuthBase
 {
+    private static final long serialVersionUID = 2212212275053022221L;
+
     public TreeSet<String> principals;
     public int[] GIDs;
     public int currentGIDindex=0;
