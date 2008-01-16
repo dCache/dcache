@@ -71,7 +71,7 @@ create diskCacheV111.services.SpaceManager SpaceManager \
 # ----------------------------------------------------------------------
 #
 #
-create diskCacheV111.services.PinManager PinManager \
+create org.dcache.services.pinmanager.PinManager PinManager \
        "default \
         -export  \
         -jdbcDriver=org.postgresql.Driver \
