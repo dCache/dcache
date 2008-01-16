@@ -2096,7 +2096,7 @@ public class ManagerV2
 				sb.append("\n");				
 				sb.append("\tWe discovered that your current space manager schema version is "+previousVersion+".\n");
 				sb.append("\tWe are upgrading to schema version 2.\n");
-				sb.append("\tWe are going to update infromation in srmspace ans srmlinkgroup execute these two queries:\n");
+				sb.append("\tWe are going to update infromation in srmspace and srmlinkgroup tables\n");
 				sb.append("\n");				
 				sb.append("\t+--------------------------------------------------------+\n");
 				sb.append("\t|      FOR THE SPACE RESERVATIONS TO WORK CORRECTLY      |\n");
