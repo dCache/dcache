@@ -78,7 +78,8 @@ public class LinkGroupIO extends IoPackage  {
 	public static final String DECREMENT_RESERVED_SPACE = "UPDATE "+LINKGROUP_TABLE+" SET reservedspaceinbytes = reservedspaceinbytes - ? where id=?";
 	public static final String INCREMENT_RESERVED_SPACE = "UPDATE "+LINKGROUP_TABLE+" SET reservedspaceinbytes = reservedspaceinbytes + ? where id=?";
 	public static final String UPDATE = "UPDATE "+LINKGROUP_TABLE+" SET freeSpaceInBytes=?,lastUpdateTime=?,onlineAllowed=?,nearlineAllowed=?,"+
-		"replicaAllowed=?,outputAllowed=?,custodialAllowed=? WHERE  id = ?";
+		"replicaAllowed=?,outputAllowed=?,custodialAllowed=? WHERE  id = ?";	
+	public static final String SELECT_ALL = "SELECT * FROM "+LINKGROUP_TABLE;
 
 	public LinkGroupIO() {
 	}

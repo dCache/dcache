@@ -356,8 +356,8 @@ public class ManagerV2
 			spaces=manager.selectPrepared(pkg,SpaceReservationIO.SELECT_CURRENT_SPACE_RESERVATIONS);
 			int count = spaces.size();
 			long totalReserved = 0;
-			for (Iterator<Space> i=spaces.iterator(); i.hasNext();) {
-				Space space = i.next();
+			for (Iterator i=spaces.iterator(); i.hasNext();) {
+				Space space = (Space)i.next();
 				totalReserved += space.getSizeInBytes();
 				space.toStringBuffer(sb);
 				sb.append('\n');
@@ -829,9 +829,51 @@ public class ManagerV2
 			manager.batchUpdates("ALTER TABLE " +ManagerSchemaConstants.LinkGroupTableName+ " ADD COLUMN  reservedspaceinbytes BIGINT",
 					     "ALTER TABLE " +ManagerSchemaConstants.SpaceTableName    + 
 					     " ADD COLUMN  usedspaceinbytes      BIGINT,"+
-					     " ADD COLUMN  allocatedspaceinbytes  BIGINT",
-					     ManagerSchemaConstants.POPULATE_USED_SPACE_IN_SRMSPACE_TABLE,
-					     ManagerSchemaConstants.POPULATE_RESERVED_SPACE_IN_SRMLINKGROUP_TABLE);
+					     " ADD COLUMN  allocatedspaceinbytes  BIGINT");
+			//
+			// Now we need to calculate space one by and as 
+			// doing it in one go takes too long
+			HashSet spaces = null;
+			try { 
+				spaces=manager.selectPrepared( new  SpaceReservationIO(),
+							       SpaceReservationIO.SELECT_CURRENT_SPACE_RESERVATIONS);
+				for (Iterator i=spaces.iterator(); i.hasNext();) {
+					Space space = (Space)i.next();
+					try { 
+						manager.update(ManagerSchemaConstants.POPULATE_USED_SPACE_IN_SRMSPACE_TABLE_BY_ID,
+							       space.getId());
+					}
+					catch(SQLException e) { 
+						esay("failed to execute "+ManagerSchemaConstants.POPULATE_USED_SPACE_IN_SRMSPACE_TABLE_BY_ID+",?="+space.getId());
+					}
+				}
+			}
+			catch (SQLException e) { 
+				esay(e);
+			}
+			//
+			// Do the same with linkgroups
+			//
+			HashSet groups = null;
+			try { 
+				groups=manager.selectPrepared( new LinkGroupIO(),
+							       LinkGroupIO.SELECT_ALL);
+				
+				for (Iterator i=groups.iterator(); i.hasNext();) {
+					LinkGroup group = (LinkGroup)i.next();
+					try {
+						manager.update(ManagerSchemaConstants.POPULATE_RESERVED_SPACE_IN_SRMLINKGROUP_TABLE_BY_ID,
+							group.getId());
+					}
+					catch(SQLException e) { 
+						esay("failed to execute "+ManagerSchemaConstants.POPULATE_RESERVED_SPACE_IN_SRMLINKGROUP_TABLE_BY_ID+",?="+group.getId());
+					}
+				}
+			}
+			catch (SQLException e) { 
+				esay(e);
+			}
+			
 			previousSchemaVersion=2;
 		}
 	}
@@ -2054,10 +2096,7 @@ public class ManagerV2
 				sb.append("\n");				
 				sb.append("\tWe discovered that your current space manager schema version is "+previousVersion+".\n");
 				sb.append("\tWe are upgrading to schema version 2.\n");
-				sb.append("\tWe are going to execute these two queries:\n");
-				sb.append("\""+ManagerSchemaConstants.POPULATE_USED_SPACE_IN_SRMSPACE_TABLE+"\"\n");
-				sb.append("\tand\n");
-				sb.append("\""+ManagerSchemaConstants.POPULATE_RESERVED_SPACE_IN_SRMLINKGROUP_TABLE+"\"\n");
+				sb.append("\tWe are going to update infromation in srmspace ans srmlinkgroup execute these two queries:\n");
 				sb.append("\n");				
 				sb.append("\t+--------------------------------------------------------+\n");
 				sb.append("\t|      FOR THE SPACE RESERVATIONS TO WORK CORRECTLY      |\n");
@@ -2071,10 +2110,53 @@ public class ManagerV2
 					manager.batchUpdates("ALTER TABLE " +ManagerSchemaConstants.LinkGroupTableName+ " ADD COLUMN  reservedspaceinbytes BIGINT",
 							     "ALTER TABLE " +ManagerSchemaConstants.SpaceTableName    + 
 							     " ADD COLUMN  usedspaceinbytes      BIGINT,"+
-							     " ADD COLUMN  allocatedspaceinbytes  BIGINT",
-							     ManagerSchemaConstants.POPULATE_USED_SPACE_IN_SRMSPACE_TABLE,
-							     ManagerSchemaConstants.POPULATE_RESERVED_SPACE_IN_SRMLINKGROUP_TABLE);
+							     " ADD COLUMN  allocatedspaceinbytes  BIGINT");
 					manager.update(ManagerV2.updateVersion);
+					HashSet spaces = null;
+					try { 
+						spaces=manager.selectPrepared( new  SpaceReservationIO(),
+									       SpaceReservationIO.SELECT_CURRENT_SPACE_RESERVATIONS);
+						if (spaces != null) { 
+							System.out.println("Found "+spaces.size() + " space reservations to update");
+						}
+						for (Iterator i=spaces.iterator(); i.hasNext();) {
+							Space space = (Space)i.next();
+							try { 
+								manager.update(ManagerSchemaConstants.POPULATE_USED_SPACE_IN_SRMSPACE_TABLE_BY_ID,
+									 space.getId());
+							}
+							catch(SQLException e) { 
+								System.err.println("failed to execute "+ManagerSchemaConstants.POPULATE_USED_SPACE_IN_SRMSPACE_TABLE_BY_ID+",?="+space.getId());
+							}
+						}
+					}
+					catch (SQLException e) { 
+						e.printStackTrace();
+					}
+					//
+					// Do the same with linkgroups
+					//
+					HashSet groups = null;
+					try { 
+						groups=manager.selectPrepared( new LinkGroupIO(),
+									       LinkGroupIO.SELECT_ALL);
+						if (groups != null) { 
+							System.out.println("Found "+groups.size() + " link groups to update");
+						}
+						for (Iterator i=groups.iterator(); i.hasNext();) {
+							LinkGroup group = (LinkGroup)i.next();
+							try {
+								manager.update(ManagerSchemaConstants.POPULATE_RESERVED_SPACE_IN_SRMLINKGROUP_TABLE_BY_ID,
+									group.getId());
+							}
+							catch(SQLException e) { 
+								System.err.println("failed to execute "+ManagerSchemaConstants.POPULATE_RESERVED_SPACE_IN_SRMLINKGROUP_TABLE_BY_ID+",?="+group.getId());
+							}
+						}
+					}
+					catch (SQLException e) { 
+						e.printStackTrace();
+					}
 					System.out.println("\tSUCCESSFULLY UPDATED SPACE MANAGER SCHEMA TO VERSION 2");
 					System.out.println("\tIT IS SAFE TO START SRM");
 					System.out.println("\tStarting SRM\n");
