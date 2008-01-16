@@ -3188,18 +3188,14 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
             say("HybridInventory started. _activate="+_activate);
             startTime = System.currentTimeMillis();
 
-            try {
-                for (PnfsId pnfsid : _repository.getValidPnfsidList()) {
-                    if (Thread.interrupted())
-                        break;
-                    _hybridCurrent++;
-                    if (_activate)
-                        _pnfs.addCacheLocation(pnfsid.toString());
-                    else
-                        _pnfs.clearCacheLocation(pnfsid.toString());
-                }
-            } catch (CacheException ce) {
-                esay(ce);
+            for (PnfsId pnfsid : _repository.getValidPnfsidList()) {
+                if (Thread.interrupted())
+                    break;
+                _hybridCurrent++;
+                if (_activate)
+                    _pnfs.addCacheLocation(pnfsid.toString());
+                else
+                    _pnfs.clearCacheLocation(pnfsid.toString());
             }
             stopTime = System.currentTimeMillis();
             synchronized (_hybridInventoryLock) {
