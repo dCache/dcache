@@ -258,6 +258,7 @@
 		<copy file="${sourceDir}/sbin/srmv1-deploy.wsdd" todir="${binDir}/etc" />
 		<copy file="${sourceDir}/sbin/srmv2.2-deploy.wsdd" todir="${binDir}/etc" />
 		<copy file="${sourceDir}/sbin/deploy_srmv2.sh" todir="${binDir}/install" />
+                <copy file="${sourceDir}/sbin/upgrade_space_manager_schema.sh" todir="${binDir}/install" />
 
 	</target>
 
