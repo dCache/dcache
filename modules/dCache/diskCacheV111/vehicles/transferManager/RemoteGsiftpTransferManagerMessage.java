@@ -15,8 +15,8 @@ public class RemoteGsiftpTransferManagerMessage extends TransferManagerMessage {
     // false if otherwise
     private boolean store;
     private String pnfsPath;
-    
-    
+    private String credentialName;
+
     public RemoteGsiftpTransferManagerMessage(
             String user,
             int uid,
@@ -27,11 +27,27 @@ public class RemoteGsiftpTransferManagerMessage extends TransferManagerMessage {
             Long credentialId,
             int bufferSize,
             int tcpBufferSize) {
+	this(user, uid, gid, gsiftpUrl, pnfsPath, store, credentialId, "Unknown",
+             bufferSize, tcpBufferSize);
+    }
+
+    public RemoteGsiftpTransferManagerMessage(
+            String user,
+            int uid,
+            int gid,
+            String gsiftpUrl,
+            String pnfsPath,
+            boolean store,
+            Long credentialId,
+            String credentialName,
+            int bufferSize,
+            int tcpBufferSize) {
         super(user, uid, gid, pnfsPath,gsiftpUrl, store,credentialId);
         if(bufferSize <=0 ) {
             throw new IllegalArgumentException(
                     "illegal buffer size "+bufferSize);
         }
+        this.credentialName = credentialName;
         this.bufferSize = bufferSize;
         this.tcpBufferSize = tcpBufferSize;
         this.pnfsPath = pnfsPath;
@@ -51,6 +67,24 @@ public class RemoteGsiftpTransferManagerMessage extends TransferManagerMessage {
             String spaceReservationId,
             boolean spaceReservationStrict,
             Long size) {
+        this(user, uid, gid, gsiftpUrl, pnfsPath, store, credentialId, "Unknown",
+             bufferSize, tcpBufferSize, spaceReservationId, spaceReservationStrict, size);
+    }
+
+    public RemoteGsiftpTransferManagerMessage(
+            String user,
+            int uid,
+            int gid,
+            String gsiftpUrl,
+            String pnfsPath,
+            boolean store,
+            Long credentialId,
+            String credentialName,
+            int bufferSize,
+            int tcpBufferSize,
+            String spaceReservationId,
+            boolean spaceReservationStrict,
+            Long size) {
         super(user,
                 uid,
                 gid,
@@ -65,6 +99,7 @@ public class RemoteGsiftpTransferManagerMessage extends TransferManagerMessage {
             throw new IllegalArgumentException(
                     "illegal buffer size "+bufferSize);
         }
+        this.credentialName = credentialName;
         this.bufferSize = bufferSize;
         this.tcpBufferSize = tcpBufferSize;
         this.pnfsPath = pnfsPath;
@@ -98,7 +133,14 @@ public class RemoteGsiftpTransferManagerMessage extends TransferManagerMessage {
     public java.lang.String getPnfsPath() {
         return pnfsPath;
     }
-    
+   
+    /** Getter for property credentialName.
+     * @return Value of credentialName.
+     */
+    public String getCredentialName() {
+        return credentialName;
+    }
+ 
     /** Getter for property emode.
      * @return Value of property emode.
      */

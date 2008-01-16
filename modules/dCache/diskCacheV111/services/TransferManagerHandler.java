@@ -27,6 +27,7 @@ import diskCacheV111.vehicles.PoolSetStickyMessage;
 
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.CacheException;
+import diskCacheV111.vehicles.DoorRequestInfoMessage;
 import diskCacheV111.vehicles.PnfsCreateEntryMessage;
 import diskCacheV111.vehicles.PnfsDeleteEntryMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
@@ -50,6 +51,8 @@ import diskCacheV111.vehicles.IpProtocolInfo;
 import diskCacheV111.vehicles.spaceManager.SpaceManagerGetInfoAndLockReservationMessage;
 import diskCacheV111.vehicles.spaceManager.SpaceManagerUtilizedSpaceMessage;
 import diskCacheV111.vehicles.spaceManager.SpaceManagerUnlockSpaceMessage;
+
+import java.io.NotSerializableException;
 import java.io.PrintWriter;
 import java.io.IOException;
 import java.net.InetAddress;
@@ -122,7 +125,7 @@ public class TransferManagerHandler implements CellMessageAnswerable {
 	private transient int _replyCode;
 	private transient Object _errorObject;
 	private transient boolean _cancelTimer;
-
+	private DoorRequestInfoMessage info;
 	
 	private TransferManagerHandler() { 
 	}
@@ -130,8 +133,13 @@ public class TransferManagerHandler implements CellMessageAnswerable {
 	public TransferManagerHandler(TransferManager tManager, 
 				      TransferManagerMessage message,
 				      CellPath sourcePath)  {
+		
+	    info = 
+			new DoorRequestInfoMessage(tManager.getNucleus().getCellName()+"@"+
+						   tManager.getNucleus().getCellDomainName());
 		numberOfRetries=0;
 		creationTime = System.currentTimeMillis();
+	    info.setTransactionTime(creationTime);
 		manager      = tManager;
 		id           = manager.getNextMessageID();
 		message.setId(id);
@@ -144,7 +152,20 @@ public class TransferManagerHandler implements CellMessageAnswerable {
 		store    = transferRequest.isStore();
 		remoteUrl= transferRequest.getRemoteURL();
                 credentialId = transferRequest.getCredentialId();
-		this.sourcePath = sourcePath;
+        info.setGid(gid);
+        info.setUid(uid);
+        info.setPath(pnfsPath);
+        info.setOwner(transferRequest.getUser());
+        info.setTimeQueued(-System.currentTimeMillis());
+        info.setMessageType("request");
+        this.sourcePath = sourcePath;
+        if (transferRequest instanceof RemoteGsiftpTransferManagerMessage)
+            info.setOwner(((RemoteGsiftpTransferManagerMessage)transferRequest).getCredentialName());
+        try {
+        	info.setClient(new org.globus.util.GlobusURL(transferRequest.getRemoteURL()).getHost());
+        } catch (Exception e){
+        	
+        }
 		try {
 			if(manager.getLogRootName() != null) {
 				tlog = new FTPTransactionLog(manager.getLogRootName(),manager);
@@ -169,6 +190,7 @@ public class TransferManagerHandler implements CellMessageAnswerable {
 		}
 		setState(INITIAL_STATE);
 	}
+
 /**      */        
 	public void say(String s) {
 		manager.say("["+toString()+"]:"+s);
@@ -483,7 +505,7 @@ public class TransferManagerHandler implements CellMessageAnswerable {
                     return;
                 }
 		pnfsIdString  = pnfsId.toString();
-
+		info.setPnfsId(pnfsId);
                 checkPermissionAndSelectPool();
 	}
 /**      */        
@@ -501,6 +523,7 @@ public class TransferManagerHandler implements CellMessageAnswerable {
 		// Added by litvinse@fnal.gov
 		//
 		pnfsId        = storage_info_msg.getPnfsId();
+		info.setPnfsId(pnfsId);
 		pnfsIdString  = pnfsId.toString();
 		manager.persist(this);
 		if ( store ) { 
@@ -661,7 +684,7 @@ public class TransferManagerHandler implements CellMessageAnswerable {
 		if( manager.getIoQueueName() != null ) { 
 			poolMessage.setIoQueueName(manager.getIoQueueName());
 		}
-
+		poolMessage.setInitiator(info.getTransaction());
 		poolMessage.setId( id ) ;
 		setState(WAITING_FIRST_POOL_REPLY_STATE);
 		manager.persist(this);
@@ -694,12 +717,14 @@ public class TransferManagerHandler implements CellMessageAnswerable {
 /**      */	    
 	public void poolFirstReplyArrived(PoolIoFileMessage poolMessage)  {
 		say("poolReply = "+poolMessage);
+		info.setTimeQueued(info.getTimeQueued() + System.currentTimeMillis());
 		if( poolMessage.getReturnCode() != 0 ) {
 			sendErrorReply(5, new
 				       CacheException( "Pool error: "+
 						       poolMessage.getErrorObject() ) );
 			return;
 		}
+		info.setTransactionTime(-System.currentTimeMillis());
 		say("Pool "+pool+" will deliver file "+pnfsId +" mover id is "+poolMessage.getMoverId());
 		say("Starting moverTimeout timer");
 		manager.startTimer(id);
@@ -782,7 +807,7 @@ public class TransferManagerHandler implements CellMessageAnswerable {
 				esay(ee);
 				sendErrorReply();
 				return ;
-			}
+				}
 		}
 	}
 	
@@ -855,6 +880,11 @@ public class TransferManagerHandler implements CellMessageAnswerable {
 				   " replyCode="+replyCode+" errorObject="+
 				   errorObject);
 		}
+		if (info.getTimeQueued() < 0)
+			info.setTimeQueued(info.getTimeQueued() + System.currentTimeMillis());
+		if (info.getTransactionTime() < 0)
+			info.setTransactionTime(info.getTransactionTime() + System.currentTimeMillis());
+		sendDoorRequestInfo(replyCode, errorObject.toString());
 
 		setState(SENT_ERROR_REPLY_STATE,errorObject);
 		manager.persist(this);
@@ -906,6 +936,11 @@ public class TransferManagerHandler implements CellMessageAnswerable {
 				   " replyCode="+replyCode+" errorObject="+
 				   errorObject);
 		}
+		if (info.getTimeQueued() < 0)
+			info.setTimeQueued(info.getTimeQueued() + System.currentTimeMillis());
+		if (info.getTransactionTime() < 0)
+			info.setTransactionTime(info.getTransactionTime() + System.currentTimeMillis());
+		sendDoorRequestInfo(replyCode, errorObject.toString());
 
 		setState(SENT_ERROR_REPLY_STATE,errorObject);
 		manager.persist(this);
@@ -940,6 +975,11 @@ public class TransferManagerHandler implements CellMessageAnswerable {
 /**      */        
 	public void sendSuccessReply() {
 		say("sendSuccessReply for: "+toString(true));
+		if (info.getTimeQueued() < 0)
+			info.setTimeQueued(info.getTimeQueued() + System.currentTimeMillis());
+		if (info.getTransactionTime() < 0)
+			info.setTransactionTime(info.getTransactionTime() + System.currentTimeMillis());
+		sendDoorRequestInfo(0, "");
 		setState(SENT_SUCCESS_REPLY_STATE);
 		manager.persist(this);
 		manager.stopTimer(id);
@@ -967,7 +1007,22 @@ public class TransferManagerHandler implements CellMessageAnswerable {
 			manager.removeActiveTransfer(longId);
 		}
 	}
-/**      */	    
+
+	/** Sends status information to the biling cell. */
+	void sendDoorRequestInfo(int code, String msg) 
+	{
+	    try {
+		info.setResult(code, msg);
+                esay("Sending info: " + info);
+		manager.sendMessage(new CellMessage(new CellPath("billing") , info));
+	    } catch (NoRouteToCellException e) {
+		esay("Couldn't send billing info : " + e);
+	    } catch (NotSerializableException e) {
+                throw new RuntimeException("Bug: Unserializable vehicle detected", e);
+            }
+	}
+	
+	/**      */	    
 	public CellPath getRequestSourcePath() {
 		return sourcePath;
 	}

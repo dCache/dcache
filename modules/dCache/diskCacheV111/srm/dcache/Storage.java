@@ -3681,6 +3681,12 @@ public class Storage
             
             // if space reservation was performed for a file of known size
             
+            RequestCredential remoteCredential =
+                RequestCredential.getRequestCredential(remoteCredentialId);
+            String credentialName = "Unknown";
+            if (remoteCredential != null)
+            	credentialName = remoteCredential.getCredentialName();
+
             if(store && spaceReservationId != null  && size != null) {
                 gsiftpTransferRequest = new RemoteGsiftpTransferManagerMessage(
                         duser.getName(),
@@ -3690,6 +3696,7 @@ public class Storage
                         actualFilePath,
                         store,
                         remoteCredentialId,
+                        credentialName,
                         config.getBuffer_size(),
                         config.getTcp_buffer_size(),
                         spaceReservationId,
@@ -3705,6 +3712,7 @@ public class Storage
                         actualFilePath,
                         store,
                         remoteCredentialId,
+                        credentialName,
                         config.getBuffer_size(),
                         config.getTcp_buffer_size()
                         );
