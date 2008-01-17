@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.ArrayList;
 import java.math.BigInteger;
+import java.io.PrintWriter;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Constructor;
@@ -76,11 +77,66 @@ class LongReceiver extends Receiver
 
 /**
  * Abstract cell implementation providing features needed by many
- * dCache cells:
+ * dCache cells.
  *
- * * Automatic dispatch of dCache messages to message handler.
+ * <h2>Automatic dispatch of dCache messages to message handler</h2>
  *
- * * Annotation based option parsing.
+ * <h2>Option parsing</h2>
+ *
+ * AbstractCell supports automatic option parsing based on annotations
+ * of fields. A field is annotated with the Option annotation. The
+ * annotation supports the following attributes:
+ *
+ * <dl>
+ * <dt>name</dt>
+ * <dd>The name of the option.</dd>
+ *
+ * <dt>description</dt>
+ * <dd>A one line description of the option.</dd>
+ *
+ * <dt>defaultValue</dt>
+ * <dd>The default value if the option is not specified,
+ * specified as a string.</dd>
+ *
+ * <dt>unit</dt>
+ * <dd>The unit of the value, if any, e.g. seconds.</dd>
+ *
+ * <dt>required</dt>
+ * <dd>Whether this is a mandatory option. Defaults to false.</dd>
+ *
+ * <dt>log</dt>
+ * <dd>Whether to log the value of the option during startup.
+ * Defaults to true, but should be disabled for sensitive
+ * information.</dd>
+ * </dl>
+ *
+ * Options are automatically converted to the type of the field. In
+ * case of non-POD fields, the class must have a one-argument
+ * constructor taking a String. The File class is an example of such a
+ * class.
+ *
+ * By defaults options are logged at the info level. The description
+ * and unit should be formulated in such a way that the a message can
+ * be formed as "<description> set to <value> <unit>".
+ *
+ * In case a required option is missing, an IllegalArgumentException
+ * is thrown during option parsing.
+ *
+ * It is important that fields used for storing options do not have an
+ * initializer. An initializer would overwrite the value retrieved
+ * from the option.
+ *
+ * Example code:
+ *
+ * <code>
+ *   @Option(
+ *       name = "maxPinDuration",
+ *       description = "Max. lifetime of a pin",
+ *       defaultValue = "86400000", // one day
+ *       unit = "ms"
+ *   )
+ *   protected long _maxPinDuration;
+ *
  */
 public class AbstractCell extends CellAdapter
 {
@@ -387,6 +443,36 @@ public class AbstractCell extends CellAdapter
                             } else {
                                 info(description + " set to " + value);
                             }
+                        }
+                    }
+                } catch (SecurityException e) {
+                    throw new RuntimeException("Bug detected while processing option " + option.name(), e);
+                } catch (IllegalAccessException e) {
+                    throw new RuntimeException("Bug detected while processing option " + option.name(), e);
+                }
+            }
+        }
+    }
+
+    /**
+     * Writes information about all options (Option annotated fields)
+     * to a writer.
+     */
+    protected void writeOptions(PrintWriter out)
+    {
+        for (Class c = getClass(); c != null; c = c.getSuperclass()) {
+            for (Field field : c.getDeclaredFields()) {
+                Option option = field.getAnnotation(Option.class);
+                try {
+                    if (option != null) {
+                        if (option.log()) {
+                            field.setAccessible(true);
+                            Object value = field.get(this);
+                            String description = option.description();
+                            String unit = option.unit();
+                            if (description.length() == 0)
+                                description = option.name();
+                            out.println(description + " set to " + value + " " + unit);
                         }
                     }
                 } catch (SecurityException e) {
