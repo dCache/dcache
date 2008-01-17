@@ -784,6 +784,8 @@ public class ManagerV2
 			}
 		}
 		if(previousSchemaVersion == currentSchemaVersion) {
+			manager.createIndexes(ManagerSchemaConstants.SpaceFileTableName,"spacereservationid","state");
+			manager.createIndexes(ManagerSchemaConstants.SpaceTableName,"linkgroupid","state");			
 			return;
 		}
 		//
@@ -830,6 +832,8 @@ public class ManagerV2
 					     "ALTER TABLE " +ManagerSchemaConstants.SpaceTableName    + 
 					     " ADD COLUMN  usedspaceinbytes      BIGINT,"+
 					     " ADD COLUMN  allocatedspaceinbytes  BIGINT");
+			manager.createIndexes(ManagerSchemaConstants.SpaceFileTableName,"spacereservationid","state");
+			manager.createIndexes(ManagerSchemaConstants.SpaceTableName,"linkgroupid","state");			
 			//
 			// Now we need to calculate space one by and as 
 			// doing it in one go takes too long
@@ -875,8 +879,7 @@ public class ManagerV2
 			}
 			catch (SQLException e) { 
 				esay(e);
-			}
-			
+			}			
 			previousSchemaVersion=2;
 		}
 	}
@@ -2114,6 +2117,8 @@ public class ManagerV2
 							     "ALTER TABLE " +ManagerSchemaConstants.SpaceTableName    + 
 							     " ADD COLUMN  usedspaceinbytes      BIGINT,"+
 							     " ADD COLUMN  allocatedspaceinbytes  BIGINT");
+					manager.createIndexes(ManagerSchemaConstants.SpaceFileTableName,"spacereservationid","state");
+					manager.createIndexes(ManagerSchemaConstants.SpaceTableName,"linkgroupid","state");			
 					manager.update(ManagerV2.updateVersion);
 					HashSet spaces = null;
 					try { 
