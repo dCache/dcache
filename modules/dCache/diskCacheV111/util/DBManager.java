@@ -165,7 +165,6 @@ public class DBManager {
 							int result = s.executeUpdate(statement);
 							connection.commit();
 							s.close();
-							connectionPool.returnConnection(connection);
 						}
 					} 
 					catch (SQLException e) {
@@ -188,7 +187,53 @@ public class DBManager {
 				if(connection != null) {
 					connectionPool.returnConnection(connection);
 				}
+				connection=null;
 			}
+	}
+
+	public void createIndexes( String name,
+				   String ... columns) 
+		throws SQLException {		
+		Connection connection = null; 
+		try { 
+				connection = connectionPool.getConnection();
+				DatabaseMetaData md = connection.getMetaData();
+				ResultSet set       = md.getIndexInfo(null, 
+								      null, 
+								      name,
+								      false, 
+								      false);
+				HashSet<String> listOfColumnsToBeIndexed = new HashSet<String>();
+				for (String column : columns) {
+					listOfColumnsToBeIndexed.add(column.toLowerCase());
+				}
+				while(set.next()) { 
+					String s = set.getString("column_name").toLowerCase();
+					if (listOfColumnsToBeIndexed.contains(s)) { 
+						listOfColumnsToBeIndexed.remove(s);
+					}
+				}
+				for (Iterator<String> i=listOfColumnsToBeIndexed.iterator();i.hasNext();) { 
+					String column = i.next();
+					String indexName=name.toLowerCase()+"_"+column+"_idx";
+					String createIndexStatementText = "CREATE INDEX "+indexName+" ON "+name+" ("+column+")";
+					Statement s = connection.createStatement();
+					int result = s.executeUpdate(createIndexStatementText);
+					connection.commit();
+					s.close();
+				}
+		}
+		catch (SQLException e) {
+			connectionPool.returnFailedConnection(connection);
+			connection = null;
+			throw e;
+		}
+		finally {
+			if(connection != null) {
+				connectionPool.returnConnection(connection);
+				connection = null;
+			}
+		}
 	}
 
 	public int update(String query,
