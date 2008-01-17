@@ -841,6 +841,8 @@ public class ManagerV2
 					Space space = (Space)i.next();
 					try { 
 						manager.update(ManagerSchemaConstants.POPULATE_USED_SPACE_IN_SRMSPACE_TABLE_BY_ID,
+							       space.getId(),
+							       space.getId(),
 							       space.getId());
 					}
 					catch(SQLException e) { 
@@ -863,7 +865,8 @@ public class ManagerV2
 					LinkGroup group = (LinkGroup)i.next();
 					try {
 						manager.update(ManagerSchemaConstants.POPULATE_RESERVED_SPACE_IN_SRMLINKGROUP_TABLE_BY_ID,
-							group.getId());
+							       group.getId(),
+							       group.getId());
 					}
 					catch(SQLException e) { 
 						esay("failed to execute "+ManagerSchemaConstants.POPULATE_RESERVED_SPACE_IN_SRMLINKGROUP_TABLE_BY_ID+",?="+group.getId());
@@ -2096,7 +2099,7 @@ public class ManagerV2
 				sb.append("\n");				
 				sb.append("\tWe discovered that your current space manager schema version is "+previousVersion+".\n");
 				sb.append("\tWe are upgrading to schema version 2.\n");
-				sb.append("\tWe are going to update infromation in srmspace and srmlinkgroup tables\n");
+				sb.append("\tWe are going to update information in srmspace and srmlinkgroup tables\n");
 				sb.append("\n");				
 				sb.append("\t+--------------------------------------------------------+\n");
 				sb.append("\t|      FOR THE SPACE RESERVATIONS TO WORK CORRECTLY      |\n");
@@ -2123,7 +2126,11 @@ public class ManagerV2
 							Space space = (Space)i.next();
 							try { 
 								manager.update(ManagerSchemaConstants.POPULATE_USED_SPACE_IN_SRMSPACE_TABLE_BY_ID,
-									 space.getId());
+									       space.getId(),
+									       space.getId(),
+									       space.getId());
+									      
+								
 							}
 							catch(SQLException e) { 
 								System.err.println("failed to execute "+ManagerSchemaConstants.POPULATE_USED_SPACE_IN_SRMSPACE_TABLE_BY_ID+",?="+space.getId());
@@ -2147,7 +2154,8 @@ public class ManagerV2
 							LinkGroup group = (LinkGroup)i.next();
 							try {
 								manager.update(ManagerSchemaConstants.POPULATE_RESERVED_SPACE_IN_SRMLINKGROUP_TABLE_BY_ID,
-									group.getId());
+									       group.getId(),
+									       group.getId());
 							}
 							catch(SQLException e) { 
 								System.err.println("failed to execute "+ManagerSchemaConstants.POPULATE_RESERVED_SPACE_IN_SRMLINKGROUP_TABLE_BY_ID+",?="+group.getId());
@@ -3282,6 +3290,8 @@ public class ManagerV2
 			return;
 		}
 		say("selectPool("+selectPool +")");
+		say("selectPool: LinkGroup="+selectPool.getLinkGroup() + 
+		    " pnfspath="+selectPool.getPnfsPath() +" poolName="+selectPool.getPoolName());
 		String pnfsPath = selectPool.getPnfsPath();
 		PnfsId pnfsId = selectPool.getPnfsId();
 		if( !(selectPool instanceof PoolMgrSelectWritePoolMsg)||pnfsPath == null) {
