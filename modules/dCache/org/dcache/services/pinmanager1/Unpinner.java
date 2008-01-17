@@ -35,7 +35,7 @@ class Unpinner extends SMCTask
         if(!isOldStylePin) {
             locations.add(pool);
         }
-        
+
         _fsm = new UnpinnerContext(this);
         setContext(_fsm);
         _fsm.go();
@@ -56,7 +56,7 @@ class Unpinner extends SMCTask
     boolean isOldStylePin() {
         return isOldStylePin;
     }
-    
+
     public String toString()
     {
         return _fsm.getState().toString();
@@ -81,14 +81,14 @@ class Unpinner extends SMCTask
         } catch (PinException pe) {
             error(pe.toString());
         }
-        
+
         //_pin.unpinSucceeded();
     }
 
     void deletePnfsFlags()
     {
         info("deletePnfsFlags");
-        PnfsFlagMessage pfm = new PnfsFlagMessage(_pnfsId, "s", "delete");
+        PnfsFlagMessage pfm = new PnfsFlagMessage(_pnfsId, "s", "remove");
         pfm.setValue("*");
         pfm.setReplyRequired(true);
         sendMessage(_pnfsManager, pfm, 60*60*1000);
@@ -106,7 +106,7 @@ class Unpinner extends SMCTask
         info("setLocations");
         this.locations.addAll(locations);
     }
-    
+
     void unsetStickyFlags()
     {
         for (String poolName: locations) {
@@ -116,7 +116,7 @@ class Unpinner extends SMCTask
             info("unsetStickyFlags in "+poolName+" for "+
                 _pnfsId+" stikyBitNameName:"+stickyBitName);
 
-            PoolSetStickyMessage setStickyRequest = 
+            PoolSetStickyMessage setStickyRequest =
                 new PoolSetStickyMessage(poolName,
                 _pnfsId, false,stickyBitName,-1);
             if(!isOldStylePin) {
@@ -124,12 +124,12 @@ class Unpinner extends SMCTask
                 sendMessage(new CellPath(poolName), setStickyRequest,60*60*1000);
             } else {
                 try {
-                    // unpin using new format 
+                    // unpin using new format
                     sendMessage(new CellPath(poolName), setStickyRequest);
-                    setStickyRequest = 
+                    setStickyRequest =
                         new PoolSetStickyMessage(poolName,
                             _pnfsId, false,oldStickyBitName,-1);
-                    // unpin using old format 
+                    // unpin using old format
                     sendMessage(new CellPath(poolName), setStickyRequest);
                 } catch (NoRouteToCellException e) {
                     error("PoolSetStickyMessage (false) failed : " + e.getMessage());

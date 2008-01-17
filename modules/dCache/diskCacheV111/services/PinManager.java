@@ -140,7 +140,7 @@ import diskCacheV111.util.Pgpass;
  *       Pnfs flag is not set anymore
  *       the file is staged if nessesary and pinned in a read pool
  *       with PinManager, as an owner, and lifetime
- *       
+ *
  *
  * UNPINNING
  *  1)if pin request expires / canseled and other pin requests
@@ -165,38 +165,38 @@ public class PinManager extends CellAdapter implements Runnable  {
     private String pwdfile;
     //keep the names  spelled in the lower case to make postgress driver to work
     // correctly
-    
+
     private static final String PinRequestTableName = "pinrequestsv2";
     private static final String NextPinRequestIdTableName = "nextpinrequestid";
     private static final String OldPinRequestTableName = "pinrequestsv1";
     private static final String OldPinsTableName = "pins";
-    
-    // timer waiting for expirations of pin requests    
+
+    // timer waiting for expirations of pin requests
     private Timer pinTimer = new Timer(true);
-    
+
     // a map from request ids to pin timer tasks
     private Map<Long,TimerTask> pinTimerTasks = new Hashtable<Long,TimerTask>();
-    
+
     // this is the most important data type in this class
     // for each pnfsId pinned there is one mapping here
-    // a mapping to possibly many pin requests stored as 
-    // PinRequest structures 
+    // a mapping to possibly many pin requests stored as
+    // PinRequest structures
     private Map<PnfsId,Pin> pnfsIdToPins = new Hashtable<PnfsId,Pin>();
-    
-    // all database oprations will be done in the lazy 
+
+    // all database oprations will be done in the lazy
     // fassion in a low priority thread
     private Thread databaseUpdateThread;
-    
-    // all database oprations will be done in the lazy 
+
+    // all database oprations will be done in the lazy
     // fassion in a low priority thread
     private Thread updateWaitQueueThread;
-    
+
     //this list will contain a list of sql database operations
     // we will have three types of operations
     // insertion of a new pin record
     // removal of the pin record
     // and update of the next pin request id
-    
+
     private List<String> databaseStatementsQueue = new LinkedList<String>();
     // database types
     private static final String stringType=" VARCHAR ";
@@ -204,12 +204,12 @@ public class PinManager extends CellAdapter implements Runnable  {
     private static final String intType=" numeric ";
     private static final String dateTimeType= " TIMESTAMP ";
     private static final String booleanType= " BOOLEAN ";
-    
+
     /** pool of jdbc connections */
     private JdbcConnectionPool pool;
-    
+
     private static final int PinTable_PnfsId = 1;
-    
+
     /**
      * we are going to use the currentTimeMillis
      * as the next PinRequestId
@@ -218,11 +218,11 @@ public class PinManager extends CellAdapter implements Runnable  {
      * if the PinRequestId already exists, we will increment by one
      * until we get a unique one
      */
-    
+
     private  String CreatePinRequestTable = "CREATE TABLE "+ PinRequestTableName+" ( "+
     " PinRequestId "+longType+" PRIMARY KEY,"+
     " PnfsId "+stringType+","+ //forein key
-    
+
     // Expiration is of type long,
     // its value is time in milliseconds since the midnight of 1970 GMT (i think)
     // which has the same meaning as the value returned by
@@ -233,7 +233,7 @@ public class PinManager extends CellAdapter implements Runnable  {
     " Expiration "+longType+","+
     " RequestId "+longType +
     ");";
-    private String CreateNextPinRequestIdTable = 
+    private String CreateNextPinRequestIdTable =
 	"CREATE TABLE " + NextPinRequestIdTableName + "(NEXTLONG BIGINT)";
     String insertNextPinRequestId = "INSERT INTO "+ NextPinRequestIdTableName+ " VALUES ("+Long.MIN_VALUE+")";
     /**
@@ -243,26 +243,26 @@ public class PinManager extends CellAdapter implements Runnable  {
     private static final int PinRequestTable_PinRequestId = 1;
     private static final int PinRequestTable_PnfsId = 2;
     private static final int PinRequestTable_Expiration = 3;
-    
-    
+
+
     private long nextRequestId;
-    
+
     private String InsertIntoPinRequestTable = "INSERT INTO "+PinRequestTableName+
     " VALUES ( ";
     private String UpdatePinRequestTable = "UPDATE "+PinRequestTableName+
     " SET ";
-    
-    
+
+
     private String DeleteFromPinRequests = "DELETE FROM "+PinRequestTableName +
     " WHERE PinRequestId = ";
-    
+
     private String SelectPinRequest = "SELECT * FROM "+PinRequestTableName +
     " WHERE PinRequestId = ";
-    
+
     private String SelectNextPinRequestId = "SELECT * FROM "+NextPinRequestIdTableName;
 
-    
-    
+
+
     /** in the begining we examine the whole database to see is there is a list of
      * outstanding pins which need to be expired or timed for experation
      */
@@ -271,7 +271,7 @@ public class PinManager extends CellAdapter implements Runnable  {
     PinRequestTableName+".Expiration, "+
     PinRequestTableName+".RequestId"+
     " FROM "+PinRequestTableName;
-    
+
     private String pnfsManager = "PnfsManager";
     private String poolManager = "PoolManager";
 
@@ -281,7 +281,7 @@ public class PinManager extends CellAdapter implements Runnable  {
 
     /** Creates a new instance of PinManager */
     public PinManager(String name , String argString) throws Exception {
-        
+
         super( name , PinManager.class.getName(), argString , false );
         Args _args = getArgs();
         jdbcUrl = _args.getOpt("jdbcUrl");
@@ -293,21 +293,21 @@ public class PinManager extends CellAdapter implements Runnable  {
             Pgpass pgpass = new Pgpass(pwdfile);      //VP
             pass = pgpass.getPgpass(jdbcUrl, user);   //VP
         }
-        
+
         pool = JdbcConnectionPool.getPool(jdbcUrl, jdbcClass, user, pass);
         if(_args.getOpt("poolManager") != null) {
             poolManager = _args.getOpt("poolManager");
         }
-        
+
         if(_args.getOpt("pnfsManager") != null) {
             poolManager = _args.getOpt("pnfsManager");
         }
-        
+
         if(_args.getOpt("maxPinDuration") != null) {
             maxPinDuration = Long.parseLong(_args.getOpt("maxPinDuration"));
         }
-        
-        
+
+
         try {
             dbinit();
             initializeDatabasePinRequests();
@@ -324,16 +324,16 @@ public class PinManager extends CellAdapter implements Runnable  {
             kill();
         }
         start();
-        
-        
+
+
     }
-    
+
     public CellVersion getCellVersion(){ return new CellVersion(diskCacheV111.util.Version.getVersion(),"$Revision: 1.42 $" ); }
 
     public long nextPinrequestId() {
          return nextLong();
     }
-    
+
     long _nextLongBase = 0;
     private static final String SelectNextPinRequestIdForUpdate =
         "SELECT * from "+NextPinRequestIdTableName+" FOR UPDATE ";
@@ -343,7 +343,7 @@ public class PinManager extends CellAdapter implements Runnable  {
         if(nextLongIncrement >= NEXT_LONG_STEP) {
             nextLongIncrement =0;
             Connection _con = null;
-            
+
             try {
                 _con = pool.getConnection();
                 PreparedStatement s = _con.prepareStatement(SelectNextPinRequestIdForUpdate);
@@ -366,44 +366,44 @@ public class PinManager extends CellAdapter implements Runnable  {
                 try{
                     _con.rollback();
                 }catch(Exception e1) {
-                    
+
                 }
                 pool.returnFailedConnection(_con);
                 _con = null;
                 nextLongBase = _nextLongBase;
-                
+
             } finally {
                 if(_con != null) {
                     pool.returnConnection(_con);
-                    
+
                 }
             }
             _nextLongBase = nextLongBase+ NEXT_LONG_STEP;
         }
-        
+
         long nextLong = nextLongBase +(nextLongIncrement++);;
         say(" return nextLong="+nextLong);
         return nextLong;
     }
-    
+
     public void addToDatabaseStatementsQueue(String statement) {
         synchronized(databaseStatementsQueue) {
             databaseStatementsQueue.add(statement);
             databaseStatementsQueue.notify();
         }
-        
+
     }
-    
-    
+
+
     public String hh_pin_pnfsid = "<pnfsId> <seconds> # pin a file by pnfsid for <seconds> seconds" ;
     public String ac_pin_pnfsid_$_2( Args args ) throws Exception {
         PnfsId pnfsId = new PnfsId( args.argv(0) ) ;
         long lifetime = Long.parseLong( args.argv(1) ) ;
         lifetime *=1000;
         return pin(pnfsId,lifetime,null,null);
-        
+
     }
-    
+
     public String hh_unpin = "<pinRequestId> <pnfsId> # unpin a a file by pinRequestId and by pnfsId" ;
     public String ac_unpin_$_2( Args args ) throws Exception {
         long pinRequestId = Long.parseLong(args.argv(0));
@@ -416,22 +416,22 @@ public class PinManager extends CellAdapter implements Runnable  {
         StringBuffer sb = new StringBuffer();
         long newMaxPinDuration = Long.parseLong(args.argv(0));
         if(newMaxPinDuration >0 ) {
-            
+
             sb.append("old max pin duration was ");
             sb.append(maxPinDuration).append(" milliseconds\n");
             maxPinDuration = newMaxPinDuration;
             sb.append("max pin duration value set to ");
             sb.append(maxPinDuration).append(" milliseconds\n");
-            
+
         } else {
             sb.append("max pin duration value must be nonnegative !!!");
         }
-        
+
         return sb.toString();
     }
     public String hh_get_max_pin_duration = " # gets current max pin duration value" ;
     public String ac_get_max_pin_duration_$_0( Args args ) throws Exception {
-        
+
         return Long.toString(maxPinDuration)+" milliseconds";
     }
 
@@ -451,10 +451,10 @@ public class PinManager extends CellAdapter implements Runnable  {
         StringBuffer sb = new StringBuffer();
         for (Pin pin : pins) {
             pin.append(sb);
-        }        
+        }
         return sb.toString();
     }
-    
+
     public void getInfo( java.io.PrintWriter printWriter ) {
         StringBuffer sb = new StringBuffer();
         sb.append("PinManager\n");
@@ -464,29 +464,29 @@ public class PinManager extends CellAdapter implements Runnable  {
         sb.append("\tmaxPinDuration=").append(maxPinDuration).append(" milliseconds \n");
         sb.append("\tnumber of files pinned=").append(pnfsIdToPins.size());
         printWriter.println(sb.toString());
-        
+
     }
-    
+
     private void dbinit() throws SQLException {
         //connection
             Connection _con = pool.getConnection();
             _con.setAutoCommit(true);
         try {
-            
+
             // Add driver to JDBC
             Class.forName(jdbcClass);
-            
-            
+
+
             //get database info
             DatabaseMetaData md = _con.getMetaData();
             String tables[] = new String[] {PinRequestTableName,NextPinRequestIdTableName};
             String createTables[] =
             new String[] {CreatePinRequestTable,CreateNextPinRequestIdTable};
-            
+
             for (int i =0; i<tables.length;++i) {
                 ResultSet tableRs = md.getTables(null, null, tables[i] , null );
-                
-                
+
+
                 if(!tableRs.next()) {
                     try {
                         Statement s = _con.createStatement();
@@ -501,23 +501,23 @@ public class PinManager extends CellAdapter implements Runnable  {
                         s.close();
                     }
                     catch(SQLException sqle) {
-                        
+
                         esay("SQL Exception (relation could already exist)");
                         esay(sqle);
-                        
+
                     }
                 }
-                
-                
+
+
             }
-            
+
             //check if old style pin requests table is present
             try {
                 ResultSet tableRs = md.getTables(null, null, OldPinRequestTableName , null );
                 if(tableRs.next()) {
                     //it is still there
                     //copy everything into the new table
-                    String SelectEverythingFromOldPinRewquestTable = 
+                    String SelectEverythingFromOldPinRewquestTable =
                     "SELECT "+OldPinRequestTableName+".PinRequestId, "+
                     OldPinRequestTableName+".PnfsId, "+
                      OldPinRequestTableName+".Expiration FROM "+OldPinRequestTableName;
@@ -547,7 +547,7 @@ public class PinManager extends CellAdapter implements Runnable  {
                 esay(" failed to read values from old pinrequest table ");
                 esay(sqlee);
             }
-            
+
             try {
                 //check if old pins table is still there
                 ResultSet tableRs = md.getTables(null, null, OldPinsTableName , null );
@@ -562,7 +562,7 @@ public class PinManager extends CellAdapter implements Runnable  {
                 esay(" failed to read values from old pinrequest table ");
                 esay(sqlee);
             }
-            
+
            Statement s = _con.createStatement();
            say("dbinit trying "+SelectNextPinRequestId);
            ResultSet rs = s.executeQuery(SelectNextPinRequestId);
@@ -576,9 +576,9 @@ public class PinManager extends CellAdapter implements Runnable  {
                esay("can't read nextRequestId!!!");
                nextRequestId = System.currentTimeMillis();
            }
-           
+
            s.close();
-           
+
             // to support our transactions
             _con.setAutoCommit(false);
             pool.returnConnection(_con);
@@ -595,12 +595,12 @@ public class PinManager extends CellAdapter implements Runnable  {
         finally{
             if(_con != null) pool.returnFailedConnection(_con);
         }
-        
-        
+
+
     }
-    
-    
-    
+
+
+
     /**
      * this method reads the pin requests from the database and either expires them or
      * starts timers, depending on the expiration time of each pin
@@ -609,7 +609,7 @@ public class PinManager extends CellAdapter implements Runnable  {
         long currentTimestamp = System.currentTimeMillis();
         Connection _con = pool.getConnection();
         try {
-            
+
             Statement stmt = _con.createStatement();
             say("initializeDatabasePinRequests, trying "+SelectEverything);
             ResultSet rs = stmt.executeQuery(SelectEverything);
@@ -631,10 +631,10 @@ public class PinManager extends CellAdapter implements Runnable  {
                     pin.setState(Pin.PINNED_STATE);
                     pnfsIdToPins.put(pnfsId,pin);
                 }
-                PinRequest pinRequest = new PinRequest(pinRequestId, 
+                PinRequest pinRequest = new PinRequest(pinRequestId,
                         expiration,
                         requestId);
-                
+
                 pin.addPinRequest(pinRequest);
                 startTimer(pnfsId, pinRequestId, lifetime);
             }
@@ -652,10 +652,10 @@ public class PinManager extends CellAdapter implements Runnable  {
                 pool.returnFailedConnection(_con);
             }
         }
-        
+
     }
-    
-    
+
+
     public void messageArrived( CellMessage cellMessage ) {
         Object o = cellMessage.getMessageObject();
         if(!(o instanceof PinManagerMessage )) {
@@ -674,19 +674,19 @@ public class PinManager extends CellAdapter implements Runnable  {
             extendLifetime(extendLifetimeRequest, cellMessage);
         }
     }
-    
+
     public void exceptionArrived(ExceptionEvent ee) {
         esay("Exception Arrived: "+ee);
         esay(ee.getException());
         super.exceptionArrived(ee);
     }
-    
+
     public void saveInPersistantStorage(PinRequest request, PnfsId pnfsId) {
         addToDatabaseStatementsQueue(InsertIntoPinRequestTable+
             request.getPinRequestId()+",\'"+pnfsId+"\',"+request.getExpiration()+
                 ","+request.getRequestId()+")");
     }
-    
+
     public void updateInPersistantStorage(PinRequest request, PnfsId pnfsId) {
         addToDatabaseStatementsQueue(UpdatePinRequestTable+
                 " Expiration"+request.getExpiration()+
@@ -696,7 +696,7 @@ public class PinManager extends CellAdapter implements Runnable  {
         addToDatabaseStatementsQueue(DeleteFromPinRequests
             +info.getPinRequestId());
     }
-    
+
     public void returnFailedResponse(Object reason,PinManagerMessage request,CellMessage cellMessage ) {
         esay("returnFailedResponse: "+reason);
 
@@ -743,7 +743,7 @@ public class PinManager extends CellAdapter implements Runnable  {
             }
         }
     }
-    
+
     public void pin(PinManagerPinMessage pinRequest,CellMessage cellMessage) {
         PnfsId pnfsId = pinRequest.getPnfsId();
         if(pnfsId == null ) {
@@ -758,9 +758,9 @@ public class PinManager extends CellAdapter implements Runnable  {
         }
         pin(pnfsId,lifetime,pinRequest,cellMessage);
     }
-    
+
     public String pin(PnfsId pnfsId,long lifetime,PinManagerPinMessage pinRequest,CellMessage cellMessage) {
-         
+
         say("pin pnfsId="+pnfsId+" lifetime="+lifetime);
         long requestId = 0;
         if(pinRequest != null) {
@@ -770,7 +770,7 @@ public class PinManager extends CellAdapter implements Runnable  {
             lifetime = maxPinDuration;
             say("Pin lifetime exceeded maxPinDuration, new lifetime is set to "+lifetime);
         }
-        
+
         synchronized(pnfsIdToPins) {
             Pin pin;
             if (pnfsIdToPins.containsKey(pnfsId)) {
@@ -783,8 +783,8 @@ public class PinManager extends CellAdapter implements Runnable  {
 
 
             long pinRequestId = nextPinrequestId();
-            PinRequest _pinRequest = 
-               new PinRequest(pinRequestId, 
+            PinRequest _pinRequest =
+               new PinRequest(pinRequestId,
                     System.currentTimeMillis()+lifetime,
                     requestId);
             _pinRequest.setRequest(pinRequest);
@@ -794,10 +794,10 @@ public class PinManager extends CellAdapter implements Runnable  {
         }
         return "pinning started";
     }
-    
-    
-    
-   
+
+
+
+
     public void extendLifetime(PinManagerExtendLifetimeMessage extendLifetimeRequest, CellMessage cellMessage) {
        // new Unpinner(unpinRequest.getPinId(),unpinRequest.getPnfsId(),unpinRequest,cellMessage);
         String pinIdStr = extendLifetimeRequest.getPinId();
@@ -827,13 +827,13 @@ public class PinManager extends CellAdapter implements Runnable  {
                 returnFailedResponse("pnfsId = "+pnfsId+" is not pinned", extendLifetimeRequest, cellMessage);
                 return "pnfsId = "+pnfsId+" is not pinned";
             }
-            
+
             Pin pin = pnfsIdToPins.get(pnfsId);
-            
-            
+
+
             PinRequest pinRequest = pin.getPinRequest(pinRequestId);
             if(pinRequest == null) {
-                returnFailedResponse("pinId = "+pinRequestId+" is not found to pin pnfsId = "+pnfsId, 
+                returnFailedResponse("pinId = "+pinRequestId+" is not found to pin pnfsId = "+pnfsId,
                         extendLifetimeRequest, cellMessage);
                 return "pinId = "+pinRequestId+" is not found to pin pnfsId = "+pnfsId;
             }
@@ -851,8 +851,8 @@ public class PinManager extends CellAdapter implements Runnable  {
             return "extendLifetime succeeded";
         }
     }
-  
-   
+
+
     public void unpin(PinManagerUnpinMessage unpinRequest, CellMessage cellMessage) {
        // new Unpinner(unpinRequest.getPinId(),unpinRequest.getPnfsId(),unpinRequest,cellMessage);
         String pinIdStr = unpinRequest.getPinId();
@@ -876,12 +876,12 @@ public class PinManager extends CellAdapter implements Runnable  {
                 returnFailedResponse("pnfsId = "+pnfsId+" is not pinned", unpinRequest, cellMessage);
                 return "pnfsId = "+pnfsId+" is not pinned";
             }
-            
+
            Pin pin = pnfsIdToPins.get(pnfsId);
-           
+
             PinRequest pinRequest = pin.getPinRequest(pinRequestId);
             if(pinRequest == null) {
-                returnFailedResponse("pinId = "+pinRequestId+" is not found to pin pnfsId = "+pnfsId, 
+                returnFailedResponse("pinId = "+pinRequestId+" is not found to pin pnfsId = "+pnfsId,
                         unpinRequest, cellMessage);
                 return "pinId = "+pinRequestId+" is not found to pin pnfsId = "+pnfsId;
             }
@@ -891,8 +891,8 @@ public class PinManager extends CellAdapter implements Runnable  {
         }
         return "unpinning started";
     }
-  
-    
+
+
     public void startTimer(final PnfsId pnfsId, final long requestId,long lifetime) {
         TimerTask tt = new TimerTask() {
             public void run() {
@@ -902,17 +902,17 @@ public class PinManager extends CellAdapter implements Runnable  {
                 if(tt == null) {
                     esay("TimerTask.run(): this timer for requestId="+requestId+" not found in pinTimerTasks hashtable");
                 }
-                
+
             }
         };
-        
+
         pinTimerTasks.put(requestId, tt);
-        
+
         // this is very approximate
         // but we do not need hard real time
         pinTimer.schedule(tt,lifetime);
     }
-    
+
     public void stopTimer( long requestId) {
         TimerTask tt = pinTimerTasks.remove(requestId);
         if (tt == null) {
@@ -921,8 +921,8 @@ public class PinManager extends CellAdapter implements Runnable  {
             tt.cancel();
         }
     }
-    
-    
+
+
     public void run()  {
         if(Thread.currentThread() == this.databaseUpdateThread) {
             while(true) {
@@ -957,7 +957,7 @@ public class PinManager extends CellAdapter implements Runnable  {
                 finally {
                     if(_con != null) {
                         pool.returnFailedConnection(_con);
-                    } 
+                    }
                 }
             }
         }
@@ -981,23 +981,23 @@ public class PinManager extends CellAdapter implements Runnable  {
         private long requestId;
         private PinManagerMessage request;
         private CellMessage cellMessage;
-       
 
-        
+
+
         public PinRequest(long pinRequestId,long expiration, long requestId) {
             this.pinRequestId = pinRequestId;
             this.expiration = expiration;
             this.requestId = requestId;
         }
-        
+
         public void say(String s) {
             PinManager.this.say("PinRequest : "+pinRequestId+" "+s);
         }
-        
+
         public void esay(String s) {
             PinManager.this.esay("PinRequest : "+pinRequestId+" "+s);
         }
-        
+
          public void esay(Throwable t) {
             PinManager.this.esay(t);
         }
@@ -1009,7 +1009,7 @@ public class PinManager extends CellAdapter implements Runnable  {
         public long getPinRequestId() {
             return pinRequestId;
         }
-        
+
         /** Getter for property expiration.
          * @return Value of property expiration.
          *
@@ -1017,17 +1017,17 @@ public class PinManager extends CellAdapter implements Runnable  {
         public long getExpiration() {
             return expiration;
         }
-        
+
         public void setExpiration(long expiration) {
             this.expiration = expiration;
         }
-        
+
         public String toString() {
             StringBuffer sb = new StringBuffer();
             append(sb);
             return sb.toString();
         }
-        
+
         public long getRequestId() {
             return requestId;
         }
@@ -1042,7 +1042,7 @@ public class PinManager extends CellAdapter implements Runnable  {
                 sb.append("request message : ").append(request);
             }
         }
-        
+
         /**
          * Getter for property request.
          * @return Value of property request.
@@ -1050,7 +1050,7 @@ public class PinManager extends CellAdapter implements Runnable  {
         public diskCacheV111.vehicles.PinManagerMessage getRequest() {
             return request;
         }
-        
+
         /**
          * Setter for property request.
          * @param request New value of property request.
@@ -1058,7 +1058,7 @@ public class PinManager extends CellAdapter implements Runnable  {
         public void setRequest(diskCacheV111.vehicles.PinManagerMessage request) {
             this.request = request;
         }
-        
+
         /**
          * Getter for property cellMessage.
          * @return Value of property cellMessage.
@@ -1066,7 +1066,7 @@ public class PinManager extends CellAdapter implements Runnable  {
         public dmg.cells.nucleus.CellMessage getCellMessage() {
             return cellMessage;
         }
-        
+
         /**
          * Setter for property cellMessage.
          * @param cellMessage New value of property cellMessage.
@@ -1130,9 +1130,9 @@ public class PinManager extends CellAdapter implements Runnable  {
 
         }
 
-        
+
     }
-    
+
      public  class Pin  {
         private PnfsId pnfsId;
         private StorageInfo storageInfo;
@@ -1143,24 +1143,24 @@ public class PinManager extends CellAdapter implements Runnable  {
         private static final int UNPINNING_STATE = 3;
         private static final int PIN_AFTER_UNPINNING_IS_DONE_STATE = 4;
         private Handler handler ;
-        
+
         public Pin(PnfsId pnfsId) {
             this.pnfsId = pnfsId;
         }
-        
+
         public void say(String s) {
             PinManager.this.say("Pin : "+pnfsId+" "+s);
         }
-        
+
         public void esay(String s) {
             PinManager.this.esay("Pin : "+pnfsId+" "+s);
         }
-        
+
          public void esay(Throwable t) {
             PinManager.this.esay(t);
         }
 
-        
+
         private String getStateString() {
             switch (getState()) {
                 case(INITIAL_STATE):
@@ -1193,12 +1193,12 @@ public class PinManager extends CellAdapter implements Runnable  {
          public void setState(int state) {
              this.state = state;
          }
-         
+
          private HashSet requests = new HashSet();
         //
          // this should be called from synchronized(pnfsIdToPins) block
          public void addPinRequest(PinRequest request) {
-             
+
              say("addPinRequest : "+request);
              if(storageInfo == null && request.getRequest() != null ) {
                  storageInfo = request.getRequest().getStorageInfo();
@@ -1244,7 +1244,7 @@ public class PinManager extends CellAdapter implements Runnable  {
                 }
             }
          }
-         
+
          // this should be called from synchronized(pnfsIdToPins)
          public void unpinRequest(PinRequest request) {
              say("unpinRequest "+request);
@@ -1307,7 +1307,7 @@ public class PinManager extends CellAdapter implements Runnable  {
             append(sb);
             return sb.toString();
         }
-        
+
         public void append(StringBuffer sb) {
             sb.append("pin of : ").append(pnfsId);
             sb.append(" state : ").append(getStateString());
@@ -1321,8 +1321,8 @@ public class PinManager extends CellAdapter implements Runnable  {
                 }
             }
         }
-        
-        
+
+
         /** Getter for property pnfsId.
          * @return Value of property pnfsId.
          *
@@ -1330,7 +1330,7 @@ public class PinManager extends CellAdapter implements Runnable  {
         public diskCacheV111.util.PnfsId getPnfsId() {
             return pnfsId;
         }
-        
+
         // this should be called from synchronized(pnfsIdToPins) block
         public PinRequest getPinRequest(long pinRequestId) {
              for(Iterator i = requests.iterator() ; i.hasNext();) {
@@ -1341,12 +1341,12 @@ public class PinManager extends CellAdapter implements Runnable  {
              }
              return null;
         }
-        
+
         public  void pinSucceded() {
              say("pinSucceded ");
              synchronized(pnfsIdToPins) {
                  if (state != PINNING_STATE){
-                    esay("pinSucceded, but state is not PINNING_STATE, state : "+getStateString()); 
+                    esay("pinSucceded, but state is not PINNING_STATE, state : "+getStateString());
                  }
                  state = PINNED_STATE;
                  handler = null;
@@ -1364,12 +1364,12 @@ public class PinManager extends CellAdapter implements Runnable  {
                  }
              }
         }
-        
+
         public void unpinSucceded() {
             say("unpinSucceded ");
             synchronized(pnfsIdToPins) {
                  if (state != UNPINNING_STATE){
-                    esay("unpinSucceded, but state is not UNPINNING_STATE, state : "+getStateString()); 
+                    esay("unpinSucceded, but state is not UNPINNING_STATE, state : "+getStateString());
                  }
                  handler = null;
                 if(requests.isEmpty()){
@@ -1383,14 +1383,14 @@ public class PinManager extends CellAdapter implements Runnable  {
                     state = PINNING_STATE;
                     handler = new Pinner(pnfsId, storageInfo,this);
                 }
-            }                
+            }
         }
 
         public void pinFailed(Object reason) {
             say("pinFailed ");
             synchronized(pnfsIdToPins) {
                  if (state != PINNING_STATE){
-                    esay("pinFailed, but state is not PINNING_STATE, state : "+getStateString()); 
+                    esay("pinFailed, but state is not PINNING_STATE, state : "+getStateString());
                  }
                  handler = null;
                 for(Iterator i = requests.iterator() ; i.hasNext();) {
@@ -1407,7 +1407,7 @@ public class PinManager extends CellAdapter implements Runnable  {
             say("unpinFailed");
             synchronized(pnfsIdToPins) {
                 if (state != UNPINNING_STATE){
-                   esay("unpinFailed, but state is not UNPINNING_STATE, state : "+getStateString()); 
+                   esay("unpinFailed, but state is not UNPINNING_STATE, state : "+getStateString());
                 }
                 handler = null;
                 if(requests.isEmpty()) {
@@ -1425,19 +1425,19 @@ public class PinManager extends CellAdapter implements Runnable  {
         }
     }
 
-    
+
     abstract class Handler implements CellMessageAnswerable {
         // state constats
-        
+
         protected static final int INITIAL=0;
         protected static final int FINAL_SUCCESS=-1;
         protected static final int FINAL_FAILED=-2;
-        
+
         protected PnfsId pnfsId;
         protected Pin pin;
-        
+
         protected volatile int state = INITIAL;
-        
+
         public Handler(PnfsId pnfsId, Pin pin ) {
             if(pnfsId == null || pin == null ) {
                 esay("pnfsId == null || pin == null");
@@ -1449,23 +1449,23 @@ public class PinManager extends CellAdapter implements Runnable  {
         private Object sync = new Object();
         private boolean completed = false;
         private Object errorObject = null;
-        
+
         public Object getErrorObject() {
             return errorObject;
         }
-        
+
         public void complete() {
             synchronized(sync) {
                 completed = true;
                 sync.notify();
             }
-            
+
         }
-        
+
         public boolean isSuccess() {
             return state == FINAL_SUCCESS;
         }
-        
+
         public void waitCompleteon() {
             while(true) {
                 synchronized(sync) {
@@ -1478,21 +1478,21 @@ public class PinManager extends CellAdapter implements Runnable  {
                 }
             }
         }
-        
-        
+
+
         public abstract void answerArrived(CellMessage request, CellMessage answer);
-        
+
         public void answerTimedOut(CellMessage request) {
         }
-        
+
         public void exceptionArrived(CellMessage request, Exception exception) {
         }
         public int getState(){
             return state;
         }
-        
+
     }
-    
+
     /** instance of this class is created for each pin request
      * its responsibility is to update  database, create timer
      * and communicate with other dCache cells in order to accomplish
@@ -1500,7 +1500,7 @@ public class PinManager extends CellAdapter implements Runnable  {
      */
     class Pinner extends Handler {
         // state constats
-        
+
         private static final int WAITNG_STORAGE_INFO = 1;
         private static final int RECEIVED_STORAGE_INFO = 2;
         private static final int WAITING_SET_PNFS_FLAG_REPLY = 3;
@@ -1513,8 +1513,8 @@ public class PinManager extends CellAdapter implements Runnable  {
         private static final int RECEIVED_SET_STIKY_RESPONCE = 10;
         private StorageInfo storageInfo;
         private String readPoolName;
-                
-        
+
+
         public Pinner(PnfsId pnfsId,StorageInfo storageInfo,Pin pin) {
             super(pnfsId, pin);
             say("constructor");
@@ -1528,7 +1528,7 @@ public class PinManager extends CellAdapter implements Runnable  {
                 returnFailedResponse(e);
             }
         }
- 
+
         private String getStateString() {
             switch (getState()) {
                 case(INITIAL):
@@ -1589,23 +1589,23 @@ public class PinManager extends CellAdapter implements Runnable  {
                 }
             }
         }
-        
+
         public void say(String s) {
             PinManager.this.say("Pinner : "+pnfsId+" "+s);
         }
-        
+
         public void esay(String s) {
             PinManager.this.esay("Pinner : "+pnfsId+" "+s);
         }
-        
+
          public void esay(Throwable t) {
             PinManager.this.esay(t);
         }
-        
+
         public String toString(){
             return "Pinner : "+pnfsId+" : "+getStateString();
         }
-        
+
         private void returnFailedResponse(Object reason){
             if(pin == null )
             {
@@ -1618,7 +1618,7 @@ public class PinManager extends CellAdapter implements Runnable  {
             state = FINAL_FAILED;
             complete();
         }
-        
+
         private void returnSuccess(){
             if(pin == null )
             {
@@ -1648,9 +1648,9 @@ public class PinManager extends CellAdapter implements Runnable  {
             this ,
             60*60*1000) ;
         }
-        
+
         private void pin() throws Exception {
-                
+
                 //we need to actually pin the file in pnfs
                 // set sticky flag at at least on read pool
                 // and then return success
@@ -1661,10 +1661,10 @@ public class PinManager extends CellAdapter implements Runnable  {
                     setPnfsFlag();
                 }
                 return;
-                
-            
+
+
         }
-        
+
         public void setPnfsFlag() {
             try {
                 PnfsFlagMessage pfm = new PnfsFlagMessage( pnfsId , "s" , "put" ) ;
@@ -1685,7 +1685,7 @@ public class PinManager extends CellAdapter implements Runnable  {
                 return ;
             }
         }
-        
+
         public void findReadPoolLocation() {
             say("findReadPoolLocation()");
             DCapProtocolInfo pinfo = new DCapProtocolInfo( "DCap",3,0,"localhost",0) ;
@@ -1700,7 +1700,7 @@ public class PinManager extends CellAdapter implements Runnable  {
             storageInfo,
             pinfo ,
             0);
-            
+
             say("sending PoolMgrSelectReadPoolMsg");
             try {
                 state = WAITNG_POOL_NAME;
@@ -1720,11 +1720,11 @@ public class PinManager extends CellAdapter implements Runnable  {
                 return ;
             }
         }
-        
+
         public void setStickyFlag() {
             PoolSetStickyMessage setStickyRequest =
             new PoolSetStickyMessage(readPoolName, pnfsId, true,getNucleus().getCellName(),-1);
-            
+
             say("sending PoolSetStickyMessage");
             try {
                 state = WAITNG_SET_STIKY_RESPONCE;
@@ -1744,7 +1744,7 @@ public class PinManager extends CellAdapter implements Runnable  {
                 return ;
             }
         }
-        
+
         public void answerArrived(CellMessage question, CellMessage answer) {
             Object o = answer.getMessageObject();
             if(o instanceof Message) {
@@ -1795,7 +1795,7 @@ public class PinManager extends CellAdapter implements Runnable  {
                     }
                     setPnfsFlag();
                     return;
-                    
+
                 }
                 else if(message instanceof PoolMgrSelectReadPoolMsg) {
                     PoolMgrSelectReadPoolMsg poolMgrResponce =
@@ -1835,18 +1835,18 @@ public class PinManager extends CellAdapter implements Runnable  {
             }
         }
     }
-    
+
     class Unpinner extends Handler {
         // state constats
-        
+
         private static final int WAITING_DELETE_PNFS_FLAG_REPLY = 3;
         private static final int RECEIVED_DELETE_PNFS_FLAG_REPLY = 4;
         private static final int WAITNG_CACHED_LOCATIONS = 7;
         private static final int RECEIVED_CACHED_LOCATIONS = 8;
-        
-        
+
+
         private volatile int state = INITIAL;
-        
+
         public Unpinner(PnfsId pnfsId ,Pin pin) {
             super(pnfsId, pin);
             this.pnfsId = pnfsId;
@@ -1856,11 +1856,11 @@ public class PinManager extends CellAdapter implements Runnable  {
             }
             catch(Exception e) {
                 esay(e);
-                
+
                 returnFailedResponse(e);
             }
         }
-        
+
         private String getStateString() {
             switch (getState()) {
                 case(INITIAL):
@@ -1897,23 +1897,23 @@ public class PinManager extends CellAdapter implements Runnable  {
                 }
             }
         }
-        
+
         public void say(String s) {
             PinManager.this.say("Unpinner : "+pnfsId+" "+s);
         }
-        
+
         public void esay(String s) {
             PinManager.this.esay("Unpinner : "+pnfsId+" "+s);
         }
-        
+
          public void esay(Throwable t) {
             PinManager.this.esay(t);
         }
-         
+
          public String toString(){
             return "Unpinner : "+pnfsId+" : "+getStateString();
         }
-         
+
         private void returnFailedResponse(Object reason){
             if(pin == null )
             {
@@ -1926,7 +1926,7 @@ public class PinManager extends CellAdapter implements Runnable  {
             state = FINAL_FAILED;
             complete();
         }
-        
+
         private void returnSuccess(){
             if(pin == null )
             {
@@ -1940,17 +1940,17 @@ public class PinManager extends CellAdapter implements Runnable  {
             complete();
         }
 
-       
+
         private void unpin() throws Exception {
                 deletePnfsFlag();
         }
-        
-        
-        
-        
+
+
+
+
         public void deletePnfsFlag() {
             try {
-                PnfsFlagMessage pfm = new PnfsFlagMessage( pnfsId , "s" , "delete" ) ;
+                PnfsFlagMessage pfm = new PnfsFlagMessage( pnfsId , "s" , "remove" ) ;
                 pfm.setValue( "*" ) ;
                 pfm.setReplyRequired(true);
                 state = WAITING_DELETE_PNFS_FLAG_REPLY;
@@ -1968,14 +1968,14 @@ public class PinManager extends CellAdapter implements Runnable  {
                 return ;
             }
         }
-        
-        
+
+
         public void findCacheLocations() {
             say("findCacheLocations()");
             PnfsGetCacheLocationsMessage request =
             new PnfsGetCacheLocationsMessage(
             pnfsId);
-            
+
             say("sending PnfsGetCacheLocationsMessage");
             try {
                 state = WAITNG_CACHED_LOCATIONS;
@@ -1995,11 +1995,11 @@ public class PinManager extends CellAdapter implements Runnable  {
                 return ;
             }
         }
-        
+
         public void unsetStickyFlag(String poolName) {
             PoolSetStickyMessage setStickyRequest =
             new PoolSetStickyMessage(poolName, pnfsId, false,getNucleus().getCellName(),-1);
-            
+
             say("sending PoolSetStickyMessage");
             try {
                 sendMessage(
@@ -2013,7 +2013,7 @@ public class PinManager extends CellAdapter implements Runnable  {
                 return ;
             }
         }
-        
+
         public void answerArrived(CellMessage question, CellMessage answer) {
             Object o = answer.getMessageObject();
             if(o instanceof Message) {

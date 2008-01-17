@@ -50,7 +50,7 @@ class Unpinner extends SMCTask
 
     void deletePnfsFlags()
     {
-        PnfsFlagMessage pfm = new PnfsFlagMessage(_pnfsId, "s", "delete");
+        PnfsFlagMessage pfm = new PnfsFlagMessage(_pnfsId, "s", "remove");
         pfm.setValue("*");
         pfm.setReplyRequired(true);
         sendMessage(_pnfsManager, pfm, 60*60*1000);
