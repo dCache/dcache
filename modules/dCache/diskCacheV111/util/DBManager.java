@@ -22,7 +22,6 @@ public class DBManager {
 	private static DBManager _instance=null;
 	private JdbcConnectionPool connectionPool=null;
 	private DBManager() { 
-		System.out.println("Constructor called");
 	}
 	private static Logger _logger =
 		Logger.getLogger("logger.org.dcache.db.sql");
