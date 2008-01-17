@@ -5,6 +5,7 @@ import java.net.URI;
 import java.io.File;
 import java.io.IOException;
 import java.io.FileNotFoundException;
+import java.io.PrintWriter;
 
 import java.util.Timer;
 import java.util.TimerTask;
@@ -188,6 +189,12 @@ public class HSMCleaner extends AbstractCell
         _executor.shutdownNow();
     }
 
+    public void getInfo(PrintWriter out)
+    {
+        super.getInfo(out);
+        writeOptions(out);
+    }
+
     /**
      * Perform a scan of the trash directory.
      */
@@ -301,18 +308,24 @@ public class HSMCleaner extends AbstractCell
         }
     }
 
+    public static final String hh_scan =
+        "# Trigger scan of the trash directory";
     public String ac_scan(Args args)
     {
         _executor.submit(_scanTask);
         return "";
     }
 
+    public static final String hh_recover =
+        "# Trigger recovery from failures";
     public String ac_recover(Args args)
     {
         _executor.submit(_recoverTask);
         return "";
     }
 
+    public static final String hh_flush =
+        "# Force information about failures to stable storage";
     public String ac_flush(Args args)
     {
         _executor.submit(_flushTask);
