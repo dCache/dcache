@@ -56,7 +56,7 @@ class GsiTunnel extends GssTunnel  {
                 _e_context.setOption(GSSConstants.TRUSTED_CERTIFICATES, trusted_certs);
 
                 _context = _e_context;
-                // do not use cannel binding with GSIGSS
+                // do not use channel binding with GSIGSS
                 super.useChannelBinding(false);
 
             }catch( Exception e ) {
