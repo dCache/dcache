@@ -3290,8 +3290,6 @@ public class ManagerV2
 			return;
 		}
 		say("selectPool("+selectPool +")");
-		say("selectPool: LinkGroup="+selectPool.getLinkGroup() + 
-		    " pnfspath="+selectPool.getPnfsPath() +" poolName="+selectPool.getPoolName());
 		String pnfsPath = selectPool.getPnfsPath();
 		PnfsId pnfsId = selectPool.getPnfsId();
 		if( !(selectPool instanceof PoolMgrSelectWritePoolMsg)||pnfsPath == null) {
