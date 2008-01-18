@@ -652,7 +652,7 @@ public String command( String c ) throws CommandExitException {
    //
    public String hh_sleep = "<secondsToSleep>" ;
    public String ac_sleep_$_1( Args args ) throws InterruptedException {
-      int s = new Integer( args.argv(0) ).intValue() ;
+      int s = Integer.valueOf( args.argv(0) ).intValue() ;
       Thread.sleep( s*1000) ;
       return "Ready\n" ;
 
