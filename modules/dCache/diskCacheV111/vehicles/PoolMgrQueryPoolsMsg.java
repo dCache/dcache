@@ -2,9 +2,11 @@
 
 package diskCacheV111.vehicles ;
 
+import diskCacheV111.poolManager.PoolSelectionUnit.DirectionType;
 import  java.util.*;
+
 public class PoolMgrQueryPoolsMsg extends Message {
-   private String _accessType       = null ;
+   private final DirectionType _accessType  ;
    private String _storeUnitName    = null ;
    private String _dCacheUnitName   = null ;
    private String _netUnitName      = null ;
@@ -14,7 +16,7 @@ public class PoolMgrQueryPoolsMsg extends Message {
    
    private static final long serialVersionUID = 4739697573589962019L;
    
-   public PoolMgrQueryPoolsMsg( String accessType ,
+   public PoolMgrQueryPoolsMsg( DirectionType accessType ,
                                 String storeUnitName ,
                                 String dCacheUnitName ,
                                 String netUnitName  ,
@@ -27,7 +29,7 @@ public class PoolMgrQueryPoolsMsg extends Message {
              netUnitName ,
              storageInfo );                            
    }
-   public PoolMgrQueryPoolsMsg( String accessType ,
+   public PoolMgrQueryPoolsMsg( DirectionType accessType ,
                                 String storeUnitName ,
                                 String dCacheUnitName ,
                                 String protocolUnitName ,
@@ -41,7 +43,7 @@ public class PoolMgrQueryPoolsMsg extends Message {
        _storageInfo      = storageInfo ;
 	setReplyRequired(true);
    }
-   public String getAccessType(){ return _accessType ; }
+   public DirectionType getAccessType(){ return _accessType ; }
    public String getStoreUnitName(){ return _storeUnitName ; }
    public String getDCacheUnitName(){ return _dCacheUnitName ; }
    public String getNetUnitName(){ return _netUnitName ; }

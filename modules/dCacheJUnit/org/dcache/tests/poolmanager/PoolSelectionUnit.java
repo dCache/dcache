@@ -9,6 +9,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import diskCacheV111.poolManager.PoolPreferenceLevel;
+import diskCacheV111.poolManager.PoolSelectionUnit.DirectionType;
 import diskCacheV111.poolManager.PoolSelectionUnitV2;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPool;
 
@@ -256,7 +257,7 @@ public class PoolSelectionUnit {
 
 
 			PoolPreferenceLevel[] preference = _psu.match(
-						"read",  // operation
+						DirectionType.READ,  // operation
 						"*@*",   // storage unit
 						null,    // dCache unit
 						"131.169.214.149", // net unit
@@ -285,7 +286,7 @@ public class PoolSelectionUnit {
 
 
 		PoolPreferenceLevel[] preference = _psu.match(
-					"read",  // operation
+					DirectionType.READ,  // operation
 					"*@*",   // storage unit
 					null,    // dCache unit
 					"131.169.214.149", // net unit
@@ -310,7 +311,7 @@ public class PoolSelectionUnit {
 
 
 		PoolPreferenceLevel[] preference = _psu.match(
-					"write",  // operation
+					DirectionType.WRITE,  // operation
 					"*@*",   // storage unit
 					null,    // dCache unit
 					"131.169.214.149", // net unit
@@ -334,7 +335,7 @@ public class PoolSelectionUnit {
 
 
 		PoolPreferenceLevel[] preference = _psu.match(
-					"write",  // operation
+					DirectionType.WRITE,  // operation
 					"h1:u1@osm",   // storage unit
 					null,    // dCache unit
 					"131.169.214.149", // net unit
@@ -358,7 +359,7 @@ public class PoolSelectionUnit {
 
 
 		PoolPreferenceLevel[] preference = _psu.match(
-					"read",  // operation
+					DirectionType.READ,  // operation
 					"h1:u1@osm",   // storage unit
 					null,    // dCache unit
 					"131.169.214.149", // net unit
@@ -383,7 +384,7 @@ public class PoolSelectionUnit {
 
 
 		PoolPreferenceLevel[] preference = _psu.match(
-					"read",  // operation
+					DirectionType.READ,  // operation
 					"h1:u1@osm",   // storage unit
 					null,    // dCache unit
 					"131.169.214.149", // net unit
@@ -437,7 +438,7 @@ public class PoolSelectionUnit {
 
 
 		PoolPreferenceLevel[] preference = _psu.match(
-					"read",  // operation
+					DirectionType.READ,  // operation
 					"h1:u1@osm",   // storage unit
 					null,    // dCache unit
 					"131.169.214.149", // net unit

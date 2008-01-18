@@ -1013,7 +1013,7 @@ public class PoolSelectionUnitV2 implements PoolSelectionUnit {
     }
 
     public Map<String, Link> match(Map<String, Link> map, Unit unit,
-            String ioType) {
+            DirectionType ioType) {
 
         Map<String, Link> newmap = match(unit, null, ioType);
         if (map == null)
@@ -1068,7 +1068,7 @@ public class PoolSelectionUnitV2 implements PoolSelectionUnit {
     }
 
     private LinkMap match(LinkMap linkMap, Unit unit, LinkGroup linkGroup,
-            String ioType) {
+            DirectionType ioType) {
         Map<String, Link> map = match(unit, linkGroup, ioType);
         for (Link link : map.values())
             linkMap.addLink(link);
@@ -1076,29 +1076,28 @@ public class PoolSelectionUnitV2 implements PoolSelectionUnit {
     }
 
     private static class LinkComparator implements Comparator<Link> {
-        private int _type = 0;
+        private final DirectionType _type;
 
-        private LinkComparator(String type) {
-            _type = type.equals("read") ? 0 : type.equals("cache") ? 1 : type
-                    .equals("write") ? 2 : 3;
+        private LinkComparator(DirectionType type) {
+            _type = type;
         }
 
         public int compare(Link link1, Link link2) {
 
             switch (_type) {
-                case 0: // read
+                case READ : // read
                     return link1._readPref == link2._readPref ? link1._name
                             .compareTo(link2._name)
                             : link1._readPref > link2._readPref ? -1 : 1;
-                case 1: // cache
+                case CACHE: // cache
                     return link1._cachePref == link2._cachePref ? link1._name
                             .compareTo(link2._name)
                             : link1._cachePref > link2._cachePref ? -1 : 1;
-                case 2: // write
+                case WRITE: // write
                     return link1._writePref == link2._writePref ? link1._name
                             .compareTo(link2._name)
                             : link1._writePref > link2._writePref ? -1 : 1;
-                case 3: // p2p
+                case P2P: // p2p
                     int pref1 = link1._p2pPref < 0 ? link1._readPref
                             : link1._p2pPref;
                     int pref2 = link2._p2pPref < 0 ? link2._readPref
@@ -1113,7 +1112,7 @@ public class PoolSelectionUnitV2 implements PoolSelectionUnit {
     /**
      * @Guarded by _psuReadLock
      */
-    public PoolPreferenceLevel[] match(String type, String storeUnitName,
+    public PoolPreferenceLevel[] match(DirectionType type, String storeUnitName,
             String dCacheUnitName, String netUnitName, String protocolUnitName,
             StorageInfo storageInfo, String linkGroupName) {
 
@@ -1316,48 +1315,57 @@ public class PoolSelectionUnitV2 implements PoolSelectionUnit {
             List<List<Link>> listList = new ArrayList<List<Link>>();
             List<Link> current = null;
 
-            if (type.equals("read")) {
-                for (Link link : sortedSet) {
-                    if (link._readPref < 1)
-                        continue;
-                    if (link._readPref != pref) {
-                        listList.add(current = new ArrayList<Link>());
-                        pref = link._readPref;
+            switch (type) {
+
+                case READ:
+                    for (Link link : sortedSet) {
+                        if (link._readPref < 1) {
+                            continue;
+                        }
+                        if (link._readPref != pref) {
+                            listList.add(current = new ArrayList<Link>());
+                            pref = link._readPref;
+                        }
+                        current.add(link);
                     }
-                    current.add(link);
-                }
-            } else if (type.equals("cache")) {
-                for (Link link : sortedSet) {
-                    if (link._cachePref < 1)
-                        continue;
-                    if (link._cachePref != pref) {
-                        listList.add(current = new ArrayList<Link>());
-                        pref = link._cachePref;
+                    break;
+                case CACHE:
+                    for (Link link : sortedSet) {
+                        if (link._cachePref < 1) {
+                            continue;
+                        }
+                        if (link._cachePref != pref) {
+                            listList.add(current = new ArrayList<Link>());
+                            pref = link._cachePref;
+                        }
+                        current.add(link);
                     }
-                    current.add(link);
-                }
-            } else if (type.equals("p2p")) {
-                for (Link link : sortedSet) {
-                    int tmpPref = link._p2pPref < 0 ? link._readPref
-                            : link._p2pPref;
-                    if (tmpPref < 1)
-                        continue;
-                    if (tmpPref != pref) {
-                        listList.add(current = new ArrayList<Link>());
-                        pref = tmpPref;
+                    break;
+                case P2P:
+                    for (Link link : sortedSet) {
+                        int tmpPref = link._p2pPref < 0 ? link._readPref
+                                : link._p2pPref;
+                        if (tmpPref < 1) {
+                            continue;
+                        }
+                        if (tmpPref != pref) {
+                            listList.add(current = new ArrayList<Link>());
+                            pref = tmpPref;
+                        }
+                        current.add(link);
                     }
-                    current.add(link);
-                }
-            } else {
-                for (Link link : sortedSet) {
-                    if (link._writePref < 1)
-                        continue;
-                    if (link._writePref != pref) {
-                        listList.add(current = new ArrayList<Link>());
-                        pref = link._writePref;
+                    break;
+                case WRITE:
+                    for (Link link : sortedSet) {
+                        if (link._writePref < 1) {
+                            continue;
+                        }
+                        if (link._writePref != pref) {
+                            listList.add(current = new ArrayList<Link>());
+                            pref = link._writePref;
+                        }
+                        current.add(link);
                     }
-                    current.add(link);
-                }
             }
             // System.out.println("PSUDEBUG : result list : "+listList);
             List<Link>[] x = listList.toArray(new List[listList.size()]);
@@ -1381,21 +1389,21 @@ public class PoolSelectionUnitV2 implements PoolSelectionUnit {
                     for (PoolCore poolCore : link._poolList.values()) {
                         if (poolCore instanceof Pool) {
                             Pool pool = (Pool) poolCore;
-                            if (((type.equals("read") && pool.canRead())
-                                 || (type.equals("cache") && pool.canReadFromTape()
+                            if (((type == DirectionType.READ && pool.canRead())
+                                 || (type == DirectionType.CACHE && pool.canReadFromTape()
                                      && poolCanStageFile(pool, storageInfo))
-                                 || (type.equals("write") && pool.canWrite())
-                                 || (type.equals("p2p") && pool.canReadForP2P()))
+                                 || (type == DirectionType.WRITE && pool.canWrite())
+                                 || (type == DirectionType.P2P && pool.canReadForP2P()))
                                 && (_allPoolsActive || pool.isActive())) {
                                 resultList.add(pool.getName());
                             }
                         } else {
                             for (Pool pool : ((PGroup)poolCore)._poolList.values()) {
-                                if (((type.equals("read") && pool.canRead())
-                                     || (type.equals("cache") && pool.canReadFromTape()
+                                if (((type == DirectionType.READ && pool.canRead())
+                                     || (type == DirectionType.CACHE && pool.canReadFromTape()
                                          && poolCanStageFile(pool, storageInfo))
-                                     || (type.equals("write") && pool.canWrite())
-                                     || (type.equals("p2p") && pool.canReadForP2P()))
+                                     || (type == DirectionType.WRITE && pool.canWrite())
+                                     || (type == DirectionType.P2P && pool.canReadForP2P()))
                                     && (_allPoolsActive || pool.isActive())) {
                                     resultList.add(pool.getName());
                                 }
@@ -1517,7 +1525,7 @@ public class PoolSelectionUnitV2 implements PoolSelectionUnit {
      *            if not defined (null)
      * @return the matching links
      */
-    public Map<String, Link> match(Unit unit, LinkGroup linkGroup, String iotype) {
+    public Map<String, Link> match(Unit unit, LinkGroup linkGroup, DirectionType iotype) {
 
         Map<String, Link> map = new HashMap<String, Link>();
 
@@ -1527,7 +1535,7 @@ public class PoolSelectionUnitV2 implements PoolSelectionUnit {
                 for (Link link : uGroup._linkList.values()) {
 
                     if (linkGroup == null) {
-                        if ("read".equals(iotype)
+                        if (iotype == DirectionType.READ
                                 || link.getLinkGroup() == null) {
                             //
                             // no link group specified
@@ -1601,8 +1609,8 @@ public class PoolSelectionUnitV2 implements PoolSelectionUnit {
     public String ac_psu_match_$_5(Args args) throws Exception {
         try {
             long start = System.currentTimeMillis();
-            PoolPreferenceLevel[] list = match(args.argv(0).equals("*") ? null
-                    : args.argv(0), args.argv(1).equals("*") ? null : args
+            PoolPreferenceLevel[] list = match(args.argv(0).equals("*") ? DirectionType.ANY
+                    : DirectionType.valueOf(args.argv(0)), args.argv(1).equals("*") ? null : args
                     .argv(1), args.argv(2).equals("*") ? null : args.argv(2),
                     args.argv(3).equals("*") ? null : args.argv(3), args
                             .argv(4).equals("*") ? null : args.argv(4), null,
@@ -1645,7 +1653,7 @@ public class PoolSelectionUnitV2 implements PoolSelectionUnit {
                     throw new IllegalArgumentException("Unit not found : "
                             + unitName);
                 // TODO:
-                map = match(map, unit, "read");
+                map = match(map, unit, DirectionType.READ);
             }
             String netUnitName = args.getOpt("net");
             if (netUnitName != null) {
@@ -1654,7 +1662,7 @@ public class PoolSelectionUnitV2 implements PoolSelectionUnit {
                     throw new IllegalArgumentException(
                             "Unit not found in netList : " + netUnitName);
                 // TODO:
-                map = match(map, unit, "read");
+                map = match(map, unit, DirectionType.READ);
             }
             for (Link link : map.values()) {
                 if (link._uGroupList.size() != required)
@@ -2145,7 +2153,7 @@ public class PoolSelectionUnitV2 implements PoolSelectionUnit {
 
     public Object ac_psux_match_$_5(Args args) throws Exception {
 
-        PoolPreferenceLevel[] list = match(args.argv(0), args.argv(1).equals(
+        PoolPreferenceLevel[] list = match(DirectionType.valueOf(args.argv(0)), args.argv(1).equals(
                 "*") ? null : args.argv(1), args.argv(2).equals("*") ? null
                 : args.argv(2), args.argv(3).equals("*") ? null : args.argv(3),
                 args.argv(4).equals("*") ? null : args.argv(4), null, args.getOpt("linkGroup"));

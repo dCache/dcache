@@ -2,6 +2,7 @@
 
 package diskCacheV111.poolManager ;
 
+import diskCacheV111.poolManager.PoolSelectionUnit.DirectionType;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -248,7 +249,7 @@ public class PoolMonitorV5 {
          //  pools.
          //
          PoolPreferenceLevel [] level =
-             _selectionUnit.match( "read" ,
+             _selectionUnit.match( DirectionType.READ ,
                                    storageClass+"@"+hsm ,
                                    cacheClass ,
                                    hostName ,
@@ -322,14 +323,14 @@ public class PoolMonitorV5 {
                               long         filesize)
            throws CacheException, InterruptedException
        {
-           return getFetchPoolMatrix("cache",
+           return getFetchPoolMatrix(DirectionType.CACHE,
                                      storageInfo,
                                      protocolInfo,
                                      filesize);
        }
 
        public List<List<PoolCostCheckable>>
-           getFetchPoolMatrix(String       mode ,        /* cache, p2p */
+           getFetchPoolMatrix(DirectionType       mode ,        /* cache, p2p */
                               StorageInfo  storageInfo ,
                               ProtocolInfo protocolInfo ,
                               long         filesize  )
@@ -451,7 +452,7 @@ public class PoolMonitorV5 {
                     null ;
          int  maxDepth      = 9999 ;
          PoolPreferenceLevel [] level =
-             _selectionUnit.match( "write" ,
+             _selectionUnit.match( DirectionType.WRITE ,
                                    storageClass+"@"+hsm ,
                                    cacheClass ,
                                    hostName ,

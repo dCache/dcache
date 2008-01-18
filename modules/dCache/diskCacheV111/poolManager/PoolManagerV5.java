@@ -2,6 +2,7 @@
 
 package diskCacheV111.poolManager ;
 
+import diskCacheV111.poolManager.PoolSelectionUnit.DirectionType;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -755,11 +756,8 @@ public class PoolManagerV5 extends CellAdapter {
     }
     private void queryPools( PoolMgrQueryPoolsMsg poolQueryMessage ,
                              CellMessage cellMessage ){
-       String accessType = poolQueryMessage.getAccessType() ;
+       DirectionType accessType = poolQueryMessage.getAccessType() ;
        List poolList     = null ;
-       if( accessType == null ){
-          poolQueryMessage.setReply( 101 , "AccessType == null" ) ;
-       }else{
           try{
              poolQueryMessage.setPoolList(
                PoolPreferenceLevel.fromPoolPreferenceLevelToList(
@@ -776,7 +774,7 @@ public class PoolManagerV5 extends CellAdapter {
           }catch(Exception ee){
              poolQueryMessage.setReply( 102 , ee ) ;
           }
-       }
+
        cellMessage.revertDirection() ;
        try{
           sendMessage( cellMessage ) ;

@@ -10,6 +10,22 @@ import diskCacheV111.pools.PoolV2Mode;
 import diskCacheV111.vehicles.StorageInfo;
 
 public interface PoolSelectionUnit  {
+    
+    /**
+     * data flow direction. Supported modes are:
+     *      READ - read cached file from a pool
+     *      WRITE - write a new file into a pool
+     *      CACHE - get a file from a tape
+     *      P2P   - internal pool 2 pool transfer
+     *      ALL   - any of above
+     */
+    public enum DirectionType {
+        READ,
+        WRITE,
+        CACHE,
+        P2P,
+        ANY,
+    }
 
    public interface SelectionLink {
       public String getName() ;
@@ -140,7 +156,7 @@ public interface PoolSelectionUnit  {
    public SelectionPool getPool( String poolName , boolean create ) ;
    public SelectionLink getLinkByName( String linkName ) throws NoSuchElementException ;
    public PoolPreferenceLevel [] 
-            match( String type ,
+            match( DirectionType type ,
                    String store , String dcache , String net , String protocol,
                    StorageInfo info, String linkGroup ) ;
    public String [] getActivePools() ;

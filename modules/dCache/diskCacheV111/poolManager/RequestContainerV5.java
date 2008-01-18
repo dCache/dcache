@@ -2,6 +2,7 @@
 
 package diskCacheV111.poolManager ;
 
+import diskCacheV111.poolManager.PoolSelectionUnit.DirectionType;
 import java.io.PrintWriter;
 import java.io.NotSerializableException;
 import java.lang.reflect.Constructor;
@@ -2050,7 +2051,7 @@ public class RequestContainerV5 implements Runnable {
 						: parameter._costCut;
 
 				List<List<PoolCostCheckable>> matrix =
-                                    _pnfsFileLocation.getFetchPoolMatrix("p2p",
+                                    _pnfsFileLocation.getFetchPoolMatrix(DirectionType.P2P,
 						_storageInfo, _protocolInfo, _storageInfo
 								.getFileSize());
 
@@ -2229,7 +2230,7 @@ public class RequestContainerV5 implements Runnable {
 
 		}
 
-        private PoolCostCheckable askForFileStoreLocation( String mode  )
+        private PoolCostCheckable askForFileStoreLocation( DirectionType mode  )
             throws CacheException, InterruptedException
         {
 
@@ -2355,7 +2356,7 @@ public class RequestContainerV5 implements Runnable {
 
            try{
 
-               _poolCandidateInfo = askForFileStoreLocation( "cache" ) ;
+               _poolCandidateInfo = askForFileStoreLocation( DirectionType.CACHE ) ;
 
                //_poolCandidate     = _poolCandidateInfo.getPoolName() ;
 

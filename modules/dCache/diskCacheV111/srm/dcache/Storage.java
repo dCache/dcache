@@ -70,6 +70,7 @@ COPYRIGHT STATUS:
 
 package diskCacheV111.srm.dcache;
 
+import diskCacheV111.poolManager.PoolSelectionUnit.DirectionType;
 import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.CellMessage;
@@ -1602,7 +1603,7 @@ public class Storage
     
     private boolean isCached(StorageInfo storage_info, PnfsId _pnfsId) {
         PoolMgrQueryPoolsMsg query =
-                new PoolMgrQueryPoolsMsg( "read" ,
+                new PoolMgrQueryPoolsMsg( DirectionType.READ ,
                       storage_info.getStorageClass()+"@"+storage_info.getHsm() ,
                       storage_info.getCacheClass(),
                       "*/*",

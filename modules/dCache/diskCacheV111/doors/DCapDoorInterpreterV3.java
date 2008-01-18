@@ -2,6 +2,7 @@
 //
 package diskCacheV111.doors;
 
+import diskCacheV111.poolManager.PoolSelectionUnit.DirectionType;
 import diskCacheV111.vehicles.*;
 import diskCacheV111.util.*;
 
@@ -2039,7 +2040,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
                 // we are not called if the pnfs request failed.
                 //
                 PoolMgrQueryPoolsMsg query =
-                new PoolMgrQueryPoolsMsg( "read" ,
+                new PoolMgrQueryPoolsMsg( DirectionType.READ ,
                 _storageInfo.getStorageClass()+"@"+
                 _storageInfo.getHsm() ,
                 _storageInfo.getCacheClass() ,
