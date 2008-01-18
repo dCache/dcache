@@ -69,7 +69,7 @@ class Pinner extends SMCTask
 
     void updatePnfsFlag()
     {
-        PnfsFlagMessage pfm = new PnfsFlagMessage(_pnfsId, "s", "put");
+        PnfsFlagMessage pfm = new PnfsFlagMessage(_pnfsId, "s", PnfsFlagMessage.FlagOperation.SET);
         pfm.setValue("*");
         pfm.setReplyRequired(true);
         sendMessage(_pnfsManager, pfm, 60 * 60 * 1000);

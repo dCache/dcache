@@ -88,7 +88,7 @@ class Unpinner extends SMCTask
     void deletePnfsFlags()
     {
         info("deletePnfsFlags");
-        PnfsFlagMessage pfm = new PnfsFlagMessage(_pnfsId, "s", "remove");
+        PnfsFlagMessage pfm = new PnfsFlagMessage(_pnfsId, "s", PnfsFlagMessage.FlagOperation.REMOVE);
         pfm.setValue("*");
         pfm.setReplyRequired(true);
         sendMessage(_pnfsManager, pfm, 60*60*1000);

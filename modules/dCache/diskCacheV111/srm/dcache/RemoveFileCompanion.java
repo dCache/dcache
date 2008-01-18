@@ -307,7 +307,7 @@ public class RemoveFileCompanion implements CellMessageAnswerable {
 				}
 			}
 			PnfsFlagMessage flag =
-				new PnfsFlagMessage( pnfsId , "d" , "put" );
+				new PnfsFlagMessage( pnfsId , "d" , PnfsFlagMessage.FlagOperation.SET );
 			flag.setReplyRequired( true );
 			flag.setValue( "true");
 			cell.sendMessage( new CellMessage(

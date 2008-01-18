@@ -446,7 +446,7 @@ public class PnfsHandler {
    throws CacheException
    {
        PnfsFlagMessage flagMessage =
-                new PnfsFlagMessage( pnfsId ,flag , "get" ) ;
+                new PnfsFlagMessage( pnfsId ,flag , PnfsFlagMessage.FlagOperation.GET ) ;
        flagMessage.setReplyRequired( true );
        flagMessage = (PnfsFlagMessage)pnfsRequest(flagMessage);
        return flagMessage.getValue();
@@ -457,7 +457,7 @@ public class PnfsHandler {
    throws CacheException
    {
        PnfsFlagMessage flagMessage =
-                new PnfsFlagMessage( pnfsId ,flag , "put" ) ;
+                new PnfsFlagMessage( pnfsId ,flag , PnfsFlagMessage.FlagOperation.SET ) ;
        flagMessage.setReplyRequired( false );
        flagMessage.setValue(value);
        send(flagMessage);

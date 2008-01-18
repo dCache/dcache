@@ -565,14 +565,14 @@ public class PnfsManager2 extends CellAdapter {
     private void updateFlag(PnfsFlagMessage pnfsMessage){
 
         PnfsId pnfsId    = pnfsMessage.getPnfsId();
-        String operation = pnfsMessage.getOperation() ;
+        PnfsFlagMessage.FlagOperation operation = pnfsMessage.getOperation() ;
         String flagName  = pnfsMessage.getFlagName() ;
         String value     = pnfsMessage.getValue() ;
         say("update flag "+operation+" flag="+flagName+" value="+
             value+" for "+pnfsId);
         try{
 
-            if( operation.equals( "get" ) ){
+            if( operation == PnfsFlagMessage.FlagOperation.GET ){
                 pnfsMessage.setValue( updateFlag( pnfsId , operation , flagName , value ) );
             }else{
                 updateFlag( pnfsId , operation , flagName , value );
@@ -584,7 +584,7 @@ public class PnfsManager2 extends CellAdapter {
             pnfsMessage.setFailed( 77 , e.getMessage() ) ;
         }
     }
-    private String updateFlag( PnfsId pnfsId , String operation , String flagName , String value )
+    private String updateFlag( PnfsId pnfsId , PnfsFlagMessage.FlagOperation operation , String flagName , String value )
     throws Exception {
 
         PnfsFile   pnfsFile = _pathManager.getFileByPnfsId( pnfsId );
@@ -595,11 +595,11 @@ public class PnfsManager2 extends CellAdapter {
         CacheInfo  info     = new CacheInfo( pnfsFile ) ;
         CacheInfo.CacheFlags flags    = info.getFlags() ;
 
-        if( operation.equals( "put" ) ){
+        if( operation == PnfsFlagMessage.FlagOperation.SET ){
             say( "flags set "+pnfsId+" "+flagName+"="+value ) ;
             flags.put( flagName , value ) ;
             info.writeCacheInfo(pnfsFile);
-        }else if( operation.equals( "put-dont-overwrite" ) ){
+        }else if( operation == PnfsFlagMessage.FlagOperation.SETNOOVERWRITE ){
             say( "flags set (dontoverwrite) "+pnfsId+" "+flagName+"="+value ) ;
             String x = flags.get( flagName ) ;
             if( ( x == null ) || ( ! x.equals(value) ) ){
@@ -607,11 +607,11 @@ public class PnfsManager2 extends CellAdapter {
                 flags.put( flagName , value ) ;
                 info.writeCacheInfo(pnfsFile);
             }
-        }else if( operation.equals( "get" ) ){
+        }else if( operation == PnfsFlagMessage.FlagOperation.GET ){
             String v = flags.get( flagName ) ;
             say( "flags ls "+pnfsId+" "+flagName+" -> "+v ) ;
             return v ;
-        }else if( operation.equals( "remove" ) ){
+        }else if( operation == PnfsFlagMessage.FlagOperation.REMOVE ){
             say( "flags remove "+pnfsId+" "+flagName ) ;
             flags.remove( flagName ) ;
             info.writeCacheInfo(pnfsFile);
@@ -1261,7 +1261,7 @@ public class PnfsManager2 extends CellAdapter {
 
             if( _simulateLargeFiles ){
 
-                updateFlag( pnfsId , "put" , "l" , ""+length ) ;
+                updateFlag( pnfsId , PnfsFlagMessage.FlagOperation.SET , "l" , ""+length ) ;
 
                 setFileSize( pnfsId , length > 0x7fffffffL ? 1L : length ) ;
 

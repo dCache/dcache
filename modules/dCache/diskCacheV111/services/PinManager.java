@@ -1667,7 +1667,7 @@ public class PinManager extends CellAdapter implements Runnable  {
 
         public void setPnfsFlag() {
             try {
-                PnfsFlagMessage pfm = new PnfsFlagMessage( pnfsId , "s" , "put" ) ;
+                PnfsFlagMessage pfm = new PnfsFlagMessage( pnfsId , "s" , PnfsFlagMessage.FlagOperation.SET ) ;
                 pfm.setValue( "*" ) ;
                 pfm.setReplyRequired(true);
                 state = WAITING_SET_PNFS_FLAG_REPLY;
@@ -1950,7 +1950,7 @@ public class PinManager extends CellAdapter implements Runnable  {
 
         public void deletePnfsFlag() {
             try {
-                PnfsFlagMessage pfm = new PnfsFlagMessage( pnfsId , "s" , "remove" ) ;
+                PnfsFlagMessage pfm = new PnfsFlagMessage( pnfsId , "s" , PnfsFlagMessage.FlagOperation.REMOVE ) ;
                 pfm.setValue( "*" ) ;
                 pfm.setReplyRequired(true);
                 state = WAITING_DELETE_PNFS_FLAG_REPLY;

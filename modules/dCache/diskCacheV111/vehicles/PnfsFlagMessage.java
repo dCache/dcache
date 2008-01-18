@@ -7,19 +7,28 @@ import  diskCacheV111.util.PnfsId ;
 
 
 public class PnfsFlagMessage extends PnfsMessage {
-   private String _flagName  = null ;
-   private String _operation = null ;
+    
+    public enum FlagOperation {
+        GET,
+        SET,
+        REMOVE,
+        REPLACE,
+        SETNOOVERWRITE
+    }
+    
+   private final String _flagName ;
+   private final FlagOperation _operation ;
    private String _value     = null ;
    
    private static final long serialVersionUID = 8848728352446647852L;
    
-   public PnfsFlagMessage( PnfsId pnfsId , String flag , String operation ){
+   public PnfsFlagMessage( PnfsId pnfsId , String flag , FlagOperation operation ){
       super( pnfsId ) ;
       _flagName  = flag ;
       _operation = operation ;
       setReplyRequired(true);
    }
-   public String getOperation(){ return _operation ; }
+   public FlagOperation getOperation(){ return _operation ; }
    public String getFlagName(){ return _flagName ; }
    public void setValue( String value ){ _value = value  ; }
    public String getValue(){ return _value ; }

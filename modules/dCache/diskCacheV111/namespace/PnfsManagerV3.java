@@ -653,7 +653,7 @@ public class PnfsManagerV3 extends CellAdapter {
     private void updateFlag(PnfsFlagMessage pnfsMessage){
 
         PnfsId pnfsId    = pnfsMessage.getPnfsId();
-        String operation = pnfsMessage.getOperation() ;
+        PnfsFlagMessage.FlagOperation operation = pnfsMessage.getOperation() ;
         String flagName  = pnfsMessage.getFlagName() ;
         String value     = pnfsMessage.getValue() ;
         say("update flag "+operation+" flag="+flagName+" value="+
@@ -661,7 +661,7 @@ public class PnfsManagerV3 extends CellAdapter {
 
         try{
 
-            if( operation.equals( "get" ) ){
+            if( operation == PnfsFlagMessage.FlagOperation.GET ){
                 pnfsMessage.setValue( updateFlag( pnfsId , operation , flagName , value ) );
             }else{
                 updateFlag( pnfsId , operation , flagName , value );
@@ -678,14 +678,14 @@ public class PnfsManagerV3 extends CellAdapter {
         }
 
     }
-    private String updateFlag( PnfsId pnfsId , String operation , String flagName , String value )
+    private String updateFlag( PnfsId pnfsId , PnfsFlagMessage.FlagOperation operation , String flagName , String value )
     throws Exception {
 
 
-        if( operation.equals( "put" ) ){
+        if( operation == PnfsFlagMessage.FlagOperation.SET ){
             say( "flags set "+pnfsId+" "+flagName+"="+value ) ;
             _nameSpaceProvider.setFileAttribute(pnfsId, flagName, value );
-        }else if( operation.equals( "put-dont-overwrite" ) ){
+        }else if( operation == PnfsFlagMessage.FlagOperation.SETNOOVERWRITE ){
             say( "flags set (dontoverwrite) "+pnfsId+" "+flagName+"="+value ) ;
             String x = (String)_nameSpaceProvider.getFileAttribute(pnfsId, flagName);
             if( ( x == null ) || ( ! x.equals(value) ) ){
@@ -693,11 +693,11 @@ public class PnfsManagerV3 extends CellAdapter {
                 _nameSpaceProvider.setFileAttribute(pnfsId, flagName, value );
 
             }
-        }else if( operation.equals( "get" ) ){
+        }else if( operation == PnfsFlagMessage.FlagOperation.GET ){
             String v = (String)_nameSpaceProvider.getFileAttribute(pnfsId, flagName);
             say( "flags ls "+pnfsId+" "+flagName+" -> "+v ) ;
             return v ;
-        }else if( operation.equals( "remove" ) ){
+        }else if( operation == PnfsFlagMessage.FlagOperation.REMOVE ){
             say( "flags remove "+pnfsId+" "+flagName ) ;
             _nameSpaceProvider.removeFileAttribute(pnfsId, flagName);
         }
@@ -1073,7 +1073,7 @@ public class PnfsManagerV3 extends CellAdapter {
 
         say("Set length of "+pnfsId+" to "+length+" (Simulate Large = "+_simulateLargeFiles+"; store size = "+_storeFilesize+")");
         try {
-            if( _storeFilesize )updateFlag( pnfsId , "put" , "l" , ""+length ) ;
+            if( _storeFilesize )updateFlag( pnfsId , PnfsFlagMessage.FlagOperation.SET , "l" , ""+length ) ;
 
             FileMetaData metadata = _nameSpaceProvider.getFileMetaData(pnfsId);
             if( _simulateLargeFiles ){

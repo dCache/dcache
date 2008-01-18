@@ -2450,7 +2450,7 @@ public class Storage
         }
 	
         PnfsFlagMessage flag =
-            new PnfsFlagMessage(pnfsId, "c", "get");
+            new PnfsFlagMessage(pnfsId, "c", PnfsFlagMessage.FlagOperation.GET);
         try {
             flag.setReplyRequired(true);
             CellMessage answer = 

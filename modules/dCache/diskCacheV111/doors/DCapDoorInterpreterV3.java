@@ -2477,7 +2477,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
         private void storeChecksumInPnfs( PnfsId pnfsId , String checksumString){
             try{
                 PnfsFlagMessage flag =
-                new PnfsFlagMessage(pnfsId,"c","put") ;
+                new PnfsFlagMessage(pnfsId,"c", PnfsFlagMessage.FlagOperation.SET) ;
                 flag.setReplyRequired(false) ;
                 flag.setValue(checksumString);
 

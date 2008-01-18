@@ -313,7 +313,7 @@ public class      DCacheAdminShell
        }
        
        
-       PnfsFlagMessage pfm = new PnfsFlagMessage( pnfsId , key , "put" ) ;
+       PnfsFlagMessage pfm = new PnfsFlagMessage( pnfsId , key, PnfsFlagMessage.FlagOperation.SET ) ;
        pfm.setValue( value ) ;
        
        PnfsFlagMessage result = (PnfsFlagMessage)sendObject( "PnfsManager" , pfm ) ;
@@ -358,7 +358,7 @@ public class      DCacheAdminShell
        }
        
        
-       PnfsFlagMessage pfm = new PnfsFlagMessage( pnfsId , key , "remove" ) ;
+       PnfsFlagMessage pfm = new PnfsFlagMessage( pnfsId , key, PnfsFlagMessage.FlagOperation.REMOVE ) ;
        
        PnfsFlagMessage result = (PnfsFlagMessage)sendObject( "PnfsManager" , pfm ) ;
        if( result.getReturnCode() != 0 ){
@@ -509,7 +509,7 @@ public class      DCacheAdminShell
        PnfsId       pnfsId = new PnfsId(args.argv(0));
        StringBuffer sb     = new StringBuffer() ;
 
-       PnfsFlagMessage pfm = new PnfsFlagMessage( pnfsId , "d" , "put" ) ;
+       PnfsFlagMessage pfm = new PnfsFlagMessage( pnfsId , "d", PnfsFlagMessage.FlagOperation.SET ) ;
        pfm.setValue("true");
        
        try{
@@ -597,7 +597,7 @@ public class      DCacheAdminShell
        }
        String key    = args.argv(1) ;
        
-       PnfsFlagMessage pfm = new PnfsFlagMessage( pnfsId , key , "get" ) ;
+       PnfsFlagMessage pfm = new PnfsFlagMessage( pnfsId , key, PnfsFlagMessage.FlagOperation.GET ) ;
        
        PnfsFlagMessage result = (PnfsFlagMessage)sendObject( "PnfsManager" , pfm ) ;
        
