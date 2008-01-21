@@ -662,7 +662,7 @@ AdvisoryDelete=true
 
 # LinkGroupAuthorizationFile contains the list of FQANs that are allowed to
 # make space reservations in a given link group
-#SpaceManagerLinkGroupAuthorizationFileName=""
+#SpaceManagerLinkGroupAuthorizationFileName=/opt/d-cache/etc/LinkGroupAuthorization.conf
 
 #
 
