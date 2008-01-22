@@ -16,4 +16,5 @@ version 2.1
 # ----------------------------------------------------------------------------------------------------
 
 authorize tigran        read-write    3750 500       / / /
-authorize tigrancms     read-write    3570 501       / / /
+authorize dteamuser     read-write    1001 101       / / /
+authorize tigrandteam     read-write    3570 501       / / /
