@@ -153,7 +153,11 @@ public class SrmSetPermission {
 			int requestOwner=iowner;
 			int requestGroup=igroup;
 			int requestOther=iother;
-
+			if (permissionType==TPermissionType.REMOVE) { 
+				requestOwner=0;
+				requestGroup=0;
+				requestOther=0;
+			}
 			if ( ownerPermission != null ) { 
 			    requestOwner = PermissionMaskToTPermissionMode.permissionModetoMask(ownerPermission);
 			}
@@ -174,7 +178,13 @@ public class SrmSetPermission {
 			    igroup|=requestGroup;
 			    iother|=requestOther;
 			}
-
+			else if (permissionType==TPermissionType.REMOVE) { 
+				if (requestGroup!=0) igroup^=requestGroup;
+				if (requestOther!=0) iother^=requestOther;
+				if (requestOwner!=0) iowner^=requestOwner;
+// 				if (groupPermission != null) igroup=0;
+// 				if (otherPermission != null) iother=0;
+			}
 			if ((permissionType==TPermissionType.ADD||permissionType==TPermissionType.CHANGE)) {  
 				if (ownerPermission==null && otherPermission==null && groupPermission==null ) {
 					ownerPermission = TPermissionMode.R;
@@ -191,11 +201,7 @@ public class SrmSetPermission {
 				}
 			}
 
-			if (permissionType==TPermissionType.REMOVE) { 
-			    //iowner=0;
-			    igroup=0;
-			    iother=0;
-			}
+
 			int newPermissions = ((iowner<<6)|(igroup<<3))|iother;
 			fmd.permMode=newPermissions;
 			try { 
