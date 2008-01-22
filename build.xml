@@ -639,7 +639,7 @@
        <svn>
             <copy revision="${current.revision}"
                 message="New Version ${release.id}-${build.number}"
-                srcUrl="svn+ssh://svn.dcache.org/data/svn/dCache/b12-official-CCRC08-release"
+                srcUrl="svn+ssh://svn.dcache.org/data/svn/dCache/branches/b12-official-CCRC08-release"
                 destUrl="svn+ssh://svn.dcache.org/data/svn/dCache/tags/b12-official-CCRC08-release-p${build.number}" />
         </svn>
 
