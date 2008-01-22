@@ -111,8 +111,8 @@ public class ManagerV2
 	private String user;
 	private String pass;
 	private String pwdfile;
-//	private long updateLinkGroupsPeriod = 3*60*1000;  //3 minutes default
-	private long updateLinkGroupsPeriod = 30*1000;  //3 minutes default
+	private long updateLinkGroupsPeriod = 3*60*1000;  //3 minutes default
+//	private long updateLinkGroupsPeriod = 30*1000;  //3 minutes default
 	private long expireSpaceReservationsPeriod     = 3*60*1000;  //3 minutes default
 	
 	private boolean deleteStoredFileRecord = false;
