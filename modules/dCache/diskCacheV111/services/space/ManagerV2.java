@@ -1995,7 +1995,7 @@ public class ManagerV2
 					  creationTime,
 					  lifetime,
 					  pnfsPath,
-					  pnfsId,
+					  pnfsId.toString(),
 					  state);
 		}
 		if(rc!=1 ){
