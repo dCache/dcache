@@ -622,11 +622,11 @@
         <!-- STEP 1 snd 2 : set rpm/tar name to release id -->
         <antcall target="server.rpm">
              <param name="build.minor.number" value="12p${build.number}" />
-             <param name="release.name" value="${release.id}-${build.number}" />
+             <param name="release.name" value="${release.id}-12p${build.number}" />
         </antcall>
         <antcall target="server.tgz">
              <param name="build.minor.number" value="12p${build.number}" />
-             <param name="release.name" value="${release.id}-${build.number}" />
+             <param name="release.name" value="${release.id}-12p${build.number}" />
         </antcall>
 
 
