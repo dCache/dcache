@@ -27,14 +27,14 @@
     </tstamp>
 
 	<!-- defalut minor vesion is next officail RC -->
-    <property name="build.minor.number" value="${build.number}rc" />
+    <property name="build.minor.number" value="12p${build.number}rc" />
 
 
 
 
     <loadproperties srcFile="release.properties" />
     <property name="release.version.id" value="${release.id}-${build.minor.number}-${file-timestamp}"/>
-	<property name="release.name" value="${release.version.id}" />
+    <property name="release.name" value="${release.version.id}" />
 
     <!--
           The other Modules
@@ -615,17 +615,17 @@
         3. tag all modules and build framework with release id
         4. commit build number
     -->
-    <target name="release" description="Make new release">
+    <target name="release" description="Make new patch release">
 
-        <echo message="building new release : ${release.id}-${build.number}" />
+        <echo message="building new release : ${release.id}-12p${build.number}" />
 
         <!-- STEP 1 snd 2 : set rpm/tar name to release id -->
         <antcall target="server.rpm">
-             <param name="build.minor.number" value="${build.number}" />
+             <param name="build.minor.number" value="12p${build.number}" />
              <param name="release.name" value="${release.id}-${build.number}" />
         </antcall>
         <antcall target="server.tgz">
-             <param name="build.minor.number" value="${build.number}" />
+             <param name="build.minor.number" value="12p${build.number}" />
              <param name="release.name" value="${release.id}-${build.number}" />
         </antcall>
 
@@ -636,18 +636,18 @@
         </svn>
 
         <!-- STEP 3 : copy current revision to a tag -->
-        <svn>
+       <svn>
             <copy revision="${current.revision}"
                 message="New Version ${release.id}-${build.number}"
-                srcUrl="svn+ssh://svn.dcache.org/data/svn/dCache/trunk"
-                destUrl="svn+ssh://svn.dcache.org/data/svn/dCache/tags/${release.id}-${build.number}" />
+                srcUrl="svn+ssh://svn.dcache.org/data/svn/dCache/b12-official-CCRC08-release"
+                destUrl="svn+ssh://svn.dcache.org/data/svn/dCache/tags/b12-official-CCRC08-release-p${build.number}" />
         </svn>
 
         <!-- STEP 4 : bump up version number and commit -->
         <!-- this will increase build number -->
         <buildnumber file="${build.id.store}" />
         <svn>
-            <commit message="New Version ${release.id}-${build.number}" file="${build.id.store}"  />
+            <commit message="New Version ${release.id}-12p${build.number}" file="${build.id.store}"  />
         </svn>
     </target>
 
