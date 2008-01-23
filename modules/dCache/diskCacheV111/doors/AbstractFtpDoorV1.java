@@ -3000,6 +3000,7 @@ public abstract class AbstractFtpDoorV1
                                                      _transfer.moverId,
                                                      _poolTimeout * 1000);
                 _perfMarkerTimer.schedule(_perfMarkerTask,
+                                          _perfMarkerConf.period,
                                           _perfMarkerConf.period);
             }
         } catch (NotSerializableException e) {
