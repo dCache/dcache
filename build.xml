@@ -639,7 +639,7 @@
         <svn>
             <copy revision="${current.revision}"
                 message="New Version ${release.id}-${build.number}"
-                srcUrl="svn+ssh://svn.dcache.org/data/svn/dCache/trunk"
+                srcUrl="svn+ssh://svn.dcache.org/data/svn/dCache/${svn.branch}"
                 destUrl="svn+ssh://svn.dcache.org/data/svn/dCache/tags/${release.id}-${build.number}" />
         </svn>
 
