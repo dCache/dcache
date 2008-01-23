@@ -2,12 +2,10 @@
 
 package diskCacheV111.poolManager ;
 
-import diskCacheV111.poolManager.PoolSelectionUnit.DirectionType;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
-import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -21,15 +19,7 @@ import java.util.StringTokenizer;
 
 import org.apache.log4j.Logger;
 
-import dmg.cells.nucleus.CellAdapter;
-import dmg.cells.nucleus.CellInfo;
-import dmg.cells.nucleus.CellMessage;
-import dmg.cells.nucleus.CellNucleus;
-import dmg.cells.nucleus.CellPath;
-import dmg.cells.nucleus.CellVersion;
-import dmg.util.Args;
-import dmg.util.CommandException;
-
+import diskCacheV111.poolManager.PoolSelectionUnit.DirectionType;
 import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.pools.PoolV2Mode;
 import diskCacheV111.util.CacheException;
@@ -53,6 +43,14 @@ import diskCacheV111.vehicles.PoolStatusChangedMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.QuotaMgrCheckQuotaMessage;
 import diskCacheV111.vehicles.StorageInfo;
+import dmg.cells.nucleus.CellAdapter;
+import dmg.cells.nucleus.CellInfo;
+import dmg.cells.nucleus.CellMessage;
+import dmg.cells.nucleus.CellNucleus;
+import dmg.cells.nucleus.CellPath;
+import dmg.cells.nucleus.CellVersion;
+import dmg.util.Args;
+import dmg.util.CommandException;
 
 public class PoolManagerV5 extends CellAdapter {
 
@@ -130,7 +128,7 @@ public class PoolManagerV5 extends CellAdapter {
 
            say("Starting Cost module");
            _costModule = _poolOperator = new PoolOperator(this) ;
-           say("Cost module sucessfully started");
+           say("Cost module successfully started");
 
            say("Cost module : "+_costModule);
            addCommandListener( _costModule );
@@ -239,6 +237,7 @@ public class PoolManagerV5 extends CellAdapter {
         }
 
     }
+    @Override
     public CellVersion getCellVersion(){ return new CellVersion(diskCacheV111.util.Version.getVersion(),"$Revision: 1.48 $" ); }
     private void dumpSetup() throws Exception {
 
@@ -344,6 +343,7 @@ public class PoolManagerV5 extends CellAdapter {
             say("watchdog finished");
         }
 
+        @Override
         public String toString() {
             return "DeathDetection=" + (_deathDetected / 1000L) + ";Sleep="
                     + (_sleepTimer / 1000L) + ";Counter="
@@ -416,10 +416,11 @@ public class PoolManagerV5 extends CellAdapter {
                     break;
                 }
             }
-            say("Message timeoutthread finished");
+            say("Message timeout thread finished");
         }
     }
 
+    @Override
     public void getInfo( PrintWriter pw ){
 	pw.println("PoolManager V [$Id: PoolManagerV5.java,v 1.48 2007-10-10 08:05:34 tigran Exp $]");
         pw.println(" SelectionUnit : "+_selectionUnit.getVersion() ) ;
@@ -440,6 +441,7 @@ public class PoolManagerV5 extends CellAdapter {
         if( _requestContainer != null )_requestContainer.getInfo( pw ) ;
         _costModule.getInfo(pw);
     }
+    @Override
     public CellInfo getCellInfo(){
         PoolManagerCellInfo info = new PoolManagerCellInfo(  super.getCellInfo() ) ;
         info.setPoolList( _selectionUnit.getActivePools() ) ;
@@ -495,8 +497,11 @@ public class PoolManagerV5 extends CellAdapter {
        }
        return sb.toString() ;
     }
+    @Override
     public void say( String str ){ pin( str ) ; super.say( str ) ; }
+    @Override
     public void esay( String str ){ pin( str ) ; super.esay( str ) ; }
+    @Override
     public void esay( Throwable t ){ super.esay( t ) ; }
 
     private synchronized
@@ -594,12 +599,14 @@ public class PoolManagerV5 extends CellAdapter {
           esay("Failed to send poolStatus changed message : "+ee ) ;
        }
     }
+    @Override
     public void messageToForward(  CellMessage cellMessage ){
 
         _costModule.messageArrived(cellMessage);
 
         super.messageToForward(cellMessage);
     }
+    @Override
     public void messageArrived( CellMessage cellMessage ){
 
         Object message  = cellMessage.getMessageObject();
@@ -683,7 +690,7 @@ public class PoolManagerV5 extends CellAdapter {
 	    					String poolName = pool.getName();
 	    					PoolCostInfo poolCostInfo = _costModule.getPoolCostInfo(poolName);
 	    					if(poolCostInfo != null) {
-	    						linkAvailableSpace += poolCostInfo.getSpaceInfo().getTotalSpace() - poolCostInfo.getSpaceInfo().getRemovableSpace();
+	    						linkAvailableSpace += poolCostInfo.getSpaceInfo().getFreeSpace() + poolCostInfo.getSpaceInfo().getRemovableSpace();
 	    						linkTotalSpace += poolCostInfo.getSpaceInfo().getTotalSpace();
 	    					}
     					}
@@ -733,13 +740,13 @@ public class PoolManagerV5 extends CellAdapter {
           String linkName = poolMessage.getLinkName() ;
           long   filesize = poolMessage.getFilesize() ;
 
-          List pools = _poolMonitor.queryPoolsByLinkName( linkName , filesize ) ;
+          List<PoolCostCheckable> pools = _poolMonitor.queryPoolsByLinkName( linkName , filesize ) ;
 
           if( ( pools == null ) ||  pools.isEmpty() )
              throw new
              NoSuchElementException("No appropriate pools found for link : "+linkName ) ;
 
-          poolMessage.setPoolName( ((PoolCostCheckable)(pools.get(0))).getPoolName() ) ;
+          poolMessage.setPoolName( pools.get(0).getPoolName() ) ;
 
        }catch(Exception ee ){
           poolMessage.setFailed( 57 , ee.getMessage() ) ;
@@ -757,7 +764,7 @@ public class PoolManagerV5 extends CellAdapter {
     private void queryPools( PoolMgrQueryPoolsMsg poolQueryMessage ,
                              CellMessage cellMessage ){
        DirectionType accessType = poolQueryMessage.getAccessType() ;
-       List poolList     = null ;
+
           try{
              poolQueryMessage.setPoolList(
                PoolPreferenceLevel.fromPoolPreferenceLevelToList(
@@ -805,10 +812,14 @@ public class PoolManagerV5 extends CellAdapter {
        private XStorageInfo( String hsm , String storageClass ){
     	   super(hsm,storageClass);
        }
-       public String getBitfileId(){ return "" ; }
-       public long   getFileSize(){ return 100 ; }
-       public void   setFileSize( long fileSize ){}
-       public boolean isStored(){ return true ; }
+       @Override
+    public String getBitfileId(){ return "" ; }
+       @Override
+    public long   getFileSize(){ return 100 ; }
+       @Override
+    public void   setFileSize( long fileSize ){}
+       @Override
+    public boolean isStored(){ return true ; }
 
     }
     public String hh_get_av_pools = "<pnfsId> <hsm> <storageClass> <host>" ;
@@ -924,7 +935,7 @@ public class PoolManagerV5 extends CellAdapter {
     }
     ///////////////////////////////////////////////////////////////
     //
-    // tthe write io request handler
+    // the write io request handler
     //
     private void choseWritePool( CellMessage cellMessage ){
        new WriteRequestHandler( cellMessage ) ;
@@ -1050,7 +1061,7 @@ public class PoolManagerV5 extends CellAdapter {
 	    					String poolName = pool.getName();
 	    					PoolCostInfo poolCostInfo = _costModule.getPoolCostInfo(poolName);
 	    					if(poolCostInfo != null) {
-	    						linkAvailableSpace += poolCostInfo.getSpaceInfo().getTotalSpace() - poolCostInfo.getSpaceInfo().getRemovableSpace();
+	    						linkAvailableSpace += poolCostInfo.getSpaceInfo().getFreeSpace() + poolCostInfo.getSpaceInfo().getRemovableSpace();
 	    						linkTotalSpace += poolCostInfo.getSpaceInfo().getTotalSpace();
 	    					}
     					}
