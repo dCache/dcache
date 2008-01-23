@@ -1288,7 +1288,6 @@ public class ManagerV2
 		return (File)o;
 	}
 
-	
 	public void removeFileFromSpace(long id) throws SQLException {
 		boolean found = false;
 		Connection connection = null;
@@ -1329,6 +1328,7 @@ public class ManagerV2
 		}
 		else if (f.getState() == FileState.STORED) { 
 			decrementUsedSpaceInSpaceReservation(connection,space,f.getSizeInBytes());
+			incrementFreeSpaceInLinkGroup(connection,space.getLinkGroupId(),f.getSizeInBytes()); // keep freespaceinbytes in check
 		}
 
 	}
@@ -1401,6 +1401,30 @@ public class ManagerV2
 					   Integer state) throws SQLException {
 
 		Space space = selectSpaceForUpdate(connection,id);
+		updateSpaceReservation(connection,
+				       voGroup,
+				       voRole,
+				       retentionPolicy,
+				       accessLatency,
+				       linkGroupId,
+				       sizeInBytes,
+				       lifetime,
+				       description,
+				       state,
+				       space);
+	}
+
+	public void updateSpaceReservation(Connection connection,
+					   String voGroup,
+					   String voRole,
+					   RetentionPolicy retentionPolicy,
+					   AccessLatency accessLatency,
+					   Long linkGroupId,
+					   Long sizeInBytes,
+					   Long lifetime,
+					   String description,
+					   Integer state, 
+					   Space space) throws SQLException {
 		if (voGroup!=null)         space.setVoGroup(voGroup);
 		if (voRole!=null)          space.setVoRole(voRole);
 		if (retentionPolicy!=null) space.setRetentionPolicy(retentionPolicy);
@@ -1427,7 +1451,7 @@ public class ManagerV2
 			}
 			space.setState(SpaceState.getState(state.intValue()));
 		}
-		say("executing statement: "+SpaceReservationIO.UPDATE+",?="+id);
+		say("executing statement: "+SpaceReservationIO.UPDATE+",?="+space.getId());
 		manager.update(connection, 
 			       SpaceReservationIO.UPDATE,
 			       space.getVoGroup(),
@@ -1853,6 +1877,7 @@ public class ManagerV2
 				if (deltaSize!=0) { 
 					if (f.getState()==FileState.STORED) { 
 						incrementUsedSpaceInSpaceReservation(connection,space,deltaSize);
+						decrementFreeSpaceInLinkGroup(connection,space.getLinkGroupId(),deltaSize); // keep freespaceinbytes in check
 					}
 					if (f.getState()==FileState.RESERVED || 
 					    f.getState()==FileState.TRANSFERING) { 
@@ -1866,6 +1891,7 @@ public class ManagerV2
 				if (f.getState() == FileState.STORED) { 
 					decrementAllocatedSpaceInSpaceReservation(connection,space,oldSize);
 					incrementUsedSpaceInSpaceReservation(connection,space,f.getSizeInBytes());
+					decrementFreeSpaceInLinkGroup(connection,space.getLinkGroupId(),f.getSizeInBytes()); // keep freespaceinbytes in check
 				}
 				else if (f.getState() == FileState.FLUSHED) { 
 					decrementAllocatedSpaceInSpaceReservation(connection,space,oldSize);
@@ -1874,12 +1900,33 @@ public class ManagerV2
 			else if (oldState== FileState.STORED) {
 				if (f.getState() == FileState.FLUSHED) { 
 					decrementUsedSpaceInSpaceReservation(connection,space,oldSize);
+					incrementFreeSpaceInLinkGroup(connection,space.getLinkGroupId(),f.getSizeInBytes()); // keep freespaceinbytes in check
 				}
 				else if (f.getState()==FileState.RESERVED || f.getState()==FileState.TRANSFERING) { 
 					// this should not happen
 					decrementUsedSpaceInSpaceReservation(connection,space,oldSize);
 					incrementAllocatedSpaceInSpaceReservation(connection,space,f.getSizeInBytes());
+					incrementFreeSpaceInLinkGroup(connection,space.getLinkGroupId(),f.getSizeInBytes()); // keep freespaceinbytes in check
 				}
+			}
+		}
+		//
+		// idea  below is questionable. We resize space reservation to fit this file. This way we 
+                // attempt to guarantee that there is no negative numbers in LinkGroup
+		//
+		if (sizeInBytes!=null) { 
+			if (f.getSizeInBytes() > space.getAvailableSpaceInBytes()) {
+				updateSpaceReservation(connection,
+						       null,
+						       null,
+						       null,
+						       null,
+						       null,
+						       new Long(space.getSizeInBytes()+f.getSizeInBytes()-space.getAvailableSpaceInBytes()),
+						       null,
+						       null,
+						       null,
+						       space);
 			}
 		}
 	}
@@ -2010,6 +2057,7 @@ public class ManagerV2
 		else if (state == FileState.STORED.getStateId()) { 
 			incrementUsedSpaceInSpaceReservation(connection,space,sizeInBytes);
 			decrementAllocatedSpaceInSpaceReservation(connection,space,sizeInBytes);
+			decrementFreeSpaceInLinkGroup(connection,space.getLinkGroupId(),sizeInBytes); // keep freespaceinbytes in check
 		}
 	}
 	
@@ -2841,8 +2889,7 @@ public class ManagerV2
 				connection_pool.returnConnection(connection);
 				connection = null;
 				return;
-			}
-			
+			}			
 			if(f.getState() == FileState.RESERVED ||
 			   f.getState() == FileState.TRANSFERING) {
 				updateSpaceFile(connection,
@@ -3514,6 +3561,18 @@ public class ManagerV2
 						      long id, 
 						      long size) throws SQLException {
 		manager.update(connection,LinkGroupIO.INCREMENT_RESERVED_SPACE,size,id);
+	}
+
+	public void decrementFreeSpaceInLinkGroup(Connection connection, 
+						  long id, 
+						  long size) throws SQLException {
+		manager.update(connection,LinkGroupIO.DECREMENT_FREE_SPACE,size,id);
+	}
+
+	public void incrementFreeSpaceInLinkGroup(Connection connection, 
+						  long id, 
+						  long size) throws SQLException {
+		manager.update(connection,LinkGroupIO.INCREMENT_FREE_SPACE,size,id);
 	}
 
 
