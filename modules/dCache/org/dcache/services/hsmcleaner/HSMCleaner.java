@@ -55,6 +55,8 @@ public class HSMCleaner extends AbstractCell
     private final RequestTracker _requests;
     private final ScheduledExecutorService _executor =
         new ScheduledThreadPoolExecutor(1);
+    private final EventHistogram _histogram =
+        new EventHistogram(12, 60 * 60 * 1000);
 
     private final Runnable _scanTask = new Runnable() {
             public void run() {
@@ -193,6 +195,7 @@ public class HSMCleaner extends AbstractCell
     {
         super.getInfo(out);
         writeOptions(out);
+        _histogram.write(out);
     }
 
     /**
@@ -273,6 +276,7 @@ public class HSMCleaner extends AbstractCell
         _limit.release();
         _trash.remove(uri);
         _failures.remove(uri);
+        _histogram.add();
     }
 
     /**
