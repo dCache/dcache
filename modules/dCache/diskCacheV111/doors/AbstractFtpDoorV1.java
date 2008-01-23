@@ -720,7 +720,7 @@ public abstract class AbstractFtpDoorV1
     public static CellVersion getStaticCellVersion()
     {
         return new CellVersion(diskCacheV111.util.Version.getVersion(),
-                               "$Rev$");
+                               "$Revision:$");
     }
 
     public void SetTLog(FTPTransactionLog tlog)
@@ -1122,6 +1122,7 @@ public abstract class AbstractFtpDoorV1
      * output stream. This is the only place where we can be 100%
      * certain, that all the other threads are done with their job.
      */
+    @Override
     public void cleanUp()
     {
         /* Closing the input stream will cause the FTP command
@@ -2080,7 +2081,7 @@ public abstract class AbstractFtpDoorV1
             try {
                 PnfsGetStorageInfoMessage storageInfoMsg = _pnfs.getStorageInfoByPath( absolutePath(path) );
 
-                Checksum checksum = cf.createFromPersistentState((CellAdapter)this,storageInfoMsg.getPnfsId());
+                Checksum checksum = cf.createFromPersistentState(this,storageInfoMsg.getPnfsId());
 
                 if (checksum == null) {
                     throw new FTPCommandException(504, "Checksum is not available, dynamic checksum calculation is not supported");
@@ -3927,6 +3928,7 @@ public abstract class AbstractFtpDoorV1
             _perfMarkersBlock.markers(0).setBytesWithTime(bytes, timeStamp);
         }
 
+        @Override
         public synchronized void run()
         {
             try {
