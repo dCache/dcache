@@ -1437,6 +1437,9 @@ public class ManagerV2
 			space.setSizeInBytes(sizeInBytes.longValue());
 			group = selectLinkGroupForUpdate(connection,
 							 space.getLinkGroupId());
+			if (group.getAvailableSpaceInBytes()<deltaSize) { 
+				throw new SQLException("No space available to resize space reservation");
+			}
 		}
 		if(lifetime!=null)         space.setLifetime(lifetime.longValue());
 		if(description!= null)     space.setDescription(description);
@@ -1834,9 +1837,42 @@ public class ManagerV2
 		long deltaSize=0;
 		Space space = null;
 		if (sizeInBytes!=null) { 
-			space = selectSpaceForUpdate(connection,f.getSpaceId());
 			f.setSizeInBytes(sizeInBytes.longValue());
 			deltaSize = sizeInBytes.longValue()-oldSize;
+			//
+			// idea below is questionable. We resize space reservation to fit this file. This way we 
+			// attempt to guarantee that there is no negative numbers in LinkGroup
+			//
+			Connection newConnection = null;
+			try { 
+				newConnection =  connection_pool.getConnection();
+				newConnection.setAutoCommit(false);
+				space = selectSpaceForUpdate(newConnection,f.getSpaceId());
+				if (f.getSizeInBytes() > space.getAvailableSpaceInBytes()) {
+					updateSpaceReservation(newConnection,
+							       null,
+							       null,
+							       null,
+							       null,
+							       null,
+							       new Long(space.getSizeInBytes()+f.getSizeInBytes()-space.getAvailableSpaceInBytes()),
+							       null,
+							       null,
+							       null,
+							       space);
+				}
+				newConnection.commit();
+				connection_pool.returnConnection(newConnection);
+				newConnection=null;
+			}
+			catch (SQLException e) { 
+				esay(e);				
+				newConnection.rollback();
+				connection_pool.returnFailedConnection(newConnection);
+				newConnection=null;
+				throw e;
+			}
+			space = selectSpaceForUpdate(connection,f.getSpaceId());
 		}
 		if (lifetime!=null) f.setLifetime(lifetime.longValue());
 		FileState oldState = f.getState();
@@ -1908,25 +1944,6 @@ public class ManagerV2
 					incrementAllocatedSpaceInSpaceReservation(connection,space,f.getSizeInBytes());
 					incrementFreeSpaceInLinkGroup(connection,space.getLinkGroupId(),f.getSizeInBytes()); // keep freespaceinbytes in check
 				}
-			}
-		}
-		//
-		// idea  below is questionable. We resize space reservation to fit this file. This way we 
-                // attempt to guarantee that there is no negative numbers in LinkGroup
-		//
-		if (sizeInBytes!=null) { 
-			if (f.getSizeInBytes() > space.getAvailableSpaceInBytes()) {
-				updateSpaceReservation(connection,
-						       null,
-						       null,
-						       null,
-						       null,
-						       null,
-						       new Long(space.getSizeInBytes()+f.getSizeInBytes()-space.getAvailableSpaceInBytes()),
-						       null,
-						       null,
-						       null,
-						       space);
 			}
 		}
 	}
@@ -2414,18 +2431,20 @@ public class ManagerV2
 			} 
 			else if ( object instanceof DoorTransferFinishedMessage) {
 				DoorTransferFinishedMessage finished = (DoorTransferFinishedMessage) object;
-				transferFinished(finished);
+				try { 
+					transferFinished(finished);
+				}
+				catch (Exception e) { 
+					//
+					// we fail if we were unable to put file in space reservation (litvinse@fnal.gov)
+					//
+					finished.setFailed(1,e)	
+				}
 			}
 		} 
 		catch (Exception e){
 			esay(e);
-			// should we fail the transfer if we were not able
-			// to set the correct AccessLatency and RetentionProperty attributes of the file
-			//finished.setFailed(1,e)
 		}
-		//
-		// and let it continue its travel
-		//
 		super.messageToForward(cellMessage) ;
 	}
     

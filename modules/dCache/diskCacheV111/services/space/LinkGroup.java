@@ -190,4 +190,8 @@ public class LinkGroup implements java.io.Serializable{
 	public void setReservedSpaceInBytes(long reserved) { 
 		this.reservedSpaceInBytes = reserved;
 	}
+	public long getAvailableSpaceInBytes() { 
+		return freeSpace-reservedSpaceInBytes;
+	}
+
 }
