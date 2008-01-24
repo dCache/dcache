@@ -487,7 +487,7 @@ public class PinManager extends AbstractCell implements Runnable  {
                 return;
             }
         } catch(Throwable t) {
-            esay(t);
+            error(t);
             message.setFailed(-1,t);
         }
          if(  message.getReplyRequired()  ) {
