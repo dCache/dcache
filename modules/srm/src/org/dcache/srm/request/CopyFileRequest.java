@@ -684,15 +684,19 @@ public class CopyFileRequest extends FileRequest {
             return;
         }
         say("known source size is "+size);
-        //reserve space only if the size is known
+        //reserve space even if the size is not known (0) as
+        // if only in order to select the pool corectly
+        // use 1 instead of 0, since this will cause faulure if there is no space
+        // available at all
+        // Space manager will account for used size correctly
+        // once it becomes available from the pool
         // and space is not reserved 
         // or if the space is reserved and we already tried to use this 
         // space reservation and failed 
         // (releasing previous space reservation)
         if(configuration.isReserve_space_implicitely() && 
-             spaceReservationId == null &&
-               size !=0) {
-                   
+             spaceReservationId == null ) {
+               
                synchronized(this) {
 
                     State state = getState();
@@ -704,7 +708,7 @@ public class CopyFileRequest extends FileRequest {
                }
                 
                 long remaining_lifetime = lifetime - ( System.currentTimeMillis() -creationTime);
-                say("reserving space, size="+size);
+                say("reserving space, size="+(size==0?1L:size));
                 SrmReserveSpaceCallbacks callbacks = new TheReserveSpaceCallbacks (getId());
                 TAccessLatency accessLatency =
                         ((CopyRequest)getRequest()).getTargetAccessLatency();
@@ -729,7 +733,7 @@ public class CopyFileRequest extends FileRequest {
                 
                 storage.srmReserveSpace(
                     getUser(), 
-                    size, 
+                    size==0?1L:size, 
                     remaining_lifetime, 
                     retentionPolicy == null ? null : retentionPolicy.getValue(),
                     accessLatency == null ? null : accessLatency.getValue(),
@@ -753,7 +757,7 @@ public class CopyFileRequest extends FileRequest {
             storage.srmMarkSpaceAsBeingUsed(getUser(),
                     spaceReservationId,
                     local_to_path,
-                    size,
+                    size==0?1:size,
                     remaining_lifetime,
                     callbacks );
             return;
@@ -1640,23 +1644,7 @@ public class CopyFileRequest extends FileRequest {
     public  TCopyRequestFileStatus getTCopyRequestFileStatus() throws java.sql.SQLException {
             TCopyRequestFileStatus copyRequestFileStatus = new TCopyRequestFileStatus();
 
-	    if ( getState() == State.DONE && toFmd == null ) {
-		try { 
-		    toFmd = storage.getFileMetaData(getUser(),getToPath(),null);
-		}
-		catch (Exception e) { 
-		    esay(e);
-		    toFmd=null;
-		}
-		
-	    }
-
-            if ( toFmd != null ) {
-                    copyRequestFileStatus.setFileSize(new org.apache.axis.types.UnsignedLong(toFmd.size));
-            }
-            else { 
-                    copyRequestFileStatus.setFileSize(new org.apache.axis.types.UnsignedLong(0));
-            }
+            copyRequestFileStatus.setFileSize(new org.apache.axis.types.UnsignedLong(size));
 
 
 
