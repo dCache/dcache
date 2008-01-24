@@ -2438,7 +2438,7 @@ public class ManagerV2
 					//
 					// we fail if we were unable to put file in space reservation (litvinse@fnal.gov)
 					//
-					finished.setFailed(1,e)	
+					finished.setFailed(1,e);
 				}
 			}
 		} 
