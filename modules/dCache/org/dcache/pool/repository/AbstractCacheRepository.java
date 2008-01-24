@@ -283,9 +283,9 @@ public abstract class AbstractCacheRepository
         if (millis == SpaceMonitor.NONBLOCKING) {
             synchronized (_spaceMonitor) {
                 if ((_spaceMonitor.getTotalSpace() -
-                     getPreciousSpace() - _reservedSpace ) < ( 3 * space ) )
+                     getPreciousSpace() - _reservedSpace ) < space)
                     throw new
-	                MissingResourceException("Not enough Space Left",
+	                MissingResourceException("Not enough space left",
                                                  this.getClass().getName(),
                                                  "Space");
                 _spaceMonitor.allocateSpace(space);
