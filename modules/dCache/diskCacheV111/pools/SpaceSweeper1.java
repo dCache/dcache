@@ -184,6 +184,16 @@ public class SpaceSweeper1 implements SpaceSweeper , Runnable  {
           esay(entry.getPnfsId().toString()+" : cached : "+ee ) ;
        }
     }
+
+    public String hh_sweeper_purge = "# Purges all removable files from pool";
+    public String ac_sweeper_purge(Args args) throws Exception {
+        long toFree = getRemovableSpace();
+        synchronized(this){
+            _spaceNeeded += toFree ;
+        }
+        return ""+toFree+" bytes added to reallocation queue" ;
+    }
+
     public String hh_sweeper_free = "<bytesToFree>" ;
     public String ac_sweeper_free_$_1( Args args )throws Exception {
        long toFree = Long.parseLong( args.argv(0) ) ;

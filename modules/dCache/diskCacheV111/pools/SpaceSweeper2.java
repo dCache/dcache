@@ -222,6 +222,15 @@ public class SpaceSweeper2 implements SpaceSweeper, Runnable
         }
     }
 
+    public String hh_sweeper_purge = "# Purges all removable files from pool";
+    public synchronized String ac_sweeper_purge(Args args) throws Exception
+    {
+        long toFree = getRemovableSpace();
+        _spaceNeeded += toFree;
+        notifyAll();
+        return "" + toFree + " bytes added to reallocation queue";
+    }
+
     public String hh_sweeper_free = "<bytesToFree>";
     public synchronized String ac_sweeper_free_$_1(Args args)
         throws NumberFormatException
