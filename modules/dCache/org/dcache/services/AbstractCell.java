@@ -5,8 +5,10 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.ArrayList;
+import java.util.StringTokenizer;
 import java.math.BigInteger;
 import java.io.PrintWriter;
+import java.io.StringWriter;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Constructor;
@@ -198,11 +200,32 @@ public class AbstractCell extends CellAdapter
         pin(str);
         _logger.error(str);
     }
+    // we still need the stack trace sometimes
+    public void error (Throwable t) {
+      pin(t.toString());
+      StringWriter sw = new StringWriter() ;
+      t.printStackTrace( new PrintWriter( sw ) ) ;
+      StringTokenizer st = new StringTokenizer( sw.toString() , "\n" ) ;
+      while( st.hasMoreTokens() ){
+         _logger.error(st.nextToken());
+      }
+    }
+    
 
     public void fatal(String str)
     {
         pin(str);
         _logger.fatal(str);
+    }
+
+    public void fatal (Throwable t) {
+      pin(t.toString());
+      StringWriter sw = new StringWriter() ;
+      t.printStackTrace( new PrintWriter( sw ) ) ;
+      StringTokenizer st = new StringTokenizer( sw.toString() , "\n" ) ;
+      while( st.hasMoreTokens() ){
+         _logger.fatal(st.nextToken());
+      }
     }
 
     /** @deprecated */
@@ -216,7 +239,14 @@ public class AbstractCell extends CellAdapter
     {
         error(s);
     }
+    
+    /** @deprecated */
+    public void esay(Throwable t)
+    {
+        error(t);
+    }
 
+    
     /**
      * Convert an instance to a specific type (kind of intelligent
      * casting).  Note: you can set primitive types as input
