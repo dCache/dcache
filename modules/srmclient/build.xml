@@ -61,7 +61,6 @@
 			<filename name="**/cells.jar" />
 			<filename name="**/srm.jar" />
 			<filename name="jdom/jdom.jar" />
-			<filename name="concurrent/concurrent.jar" />
 			<filename name="cog/**/*.jar" />
 			<filename name="axis/**/*.jar" />
 			<filename name="glue/**/GLUE-STD.jar" />
@@ -94,7 +93,6 @@
 		<cvs command="checkout" cvsroot="${cvs.cvsroot}" cvsrsh="ssh" dest="${internalLibDir}" package="external/tomcat" />
 		<cvs command="checkout" cvsroot="${cvs.cvsroot}" cvsrsh="ssh" dest="${internalLibDir}" package="external/axis" />
 		<cvs command="checkout" cvsroot="${cvs.cvsroot}" cvsrsh="ssh" dest="${internalLibDir}" package="external/glue" />
-		<cvs command="checkout" cvsroot="${cvs.cvsroot}" cvsrsh="ssh" dest="${internalLibDir}" package="external/concurrent" />
 		<cvs command="checkout" cvsroot="${cvs.cvsroot}" cvsrsh="ssh" dest="${internalLibDir}" package="external/jdom" />
 
 		<move todir="${internalLibDir}/jdom">

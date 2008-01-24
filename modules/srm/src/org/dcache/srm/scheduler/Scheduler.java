@@ -175,9 +175,10 @@ COPYRIGHT STATUS:
 
 package org.dcache.srm.scheduler;
 
-import EDU.oswego.cs.dl.util.concurrent.BoundedLinkedQueue;
-import EDU.oswego.cs.dl.util.concurrent.PooledExecutor;
-import EDU.oswego.cs.dl.util.concurrent.SynchronizedBoolean;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.beans.PropertyChangeListener;
@@ -223,7 +224,7 @@ public final class Scheduler implements Runnable, PropertyChangeListener {
 	private int runningThreadsNum;
 	private int threadPoolSize=30;
 	private HashMap runningThreadByCreator = new HashMap();
-	private PooledExecutor pooledExecutor;
+	private ThreadPoolExecutor pooledExecutor;
 	
 	// ready queue related variables
 	private int readyQueuedJobsNum;
@@ -330,8 +331,11 @@ public final class Scheduler implements Runnable, PropertyChangeListener {
 		}
 		threadQueue = new ModifiableQueue("ThreadQueue",id,maxThreadQueueSize);
 		priorityThreadQueue = new ModifiableQueue("PriorityThreadQueue",id,maxThreadQueueSize);
-		pooledExecutor = new PooledExecutor(threadPoolSize);
-		pooledExecutor.abortWhenBlocked();
+		pooledExecutor = new ThreadPoolExecutor(threadPoolSize,
+                    threadPoolSize,
+                    0,
+                    TimeUnit.MILLISECONDS,
+                    new LinkedBlockingQueue<Runnable>(1));
 		readyQueue = new ModifiableQueue("ReadyQueue",id,maxReadyQueueSize);
 		retryTimer = new Timer();
                 thread = new Thread(this,"Scheduler-"+id);
@@ -767,22 +771,24 @@ public final class Scheduler implements Runnable, PropertyChangeListener {
 			try {
 				say("updatePriorityThreadQueue ()  executing job id="+job.getId());
 				JobWrapper wrapper = new JobWrapper(job);
-				pooledExecutor.execute(wrapper);
-				say("updatePriorityThreadQueue() waiting startup");
+                                pooledExecutor.execute(wrapper);
+ 				say("updatePriorityThreadQueue() waiting startup");
 				wrapper.waitStartup();
 				say("updatePriorityThreadQueue() job started");
 				/** let the stateChanged() always remove the jobs from the queue
 				 */
 				// the job is running in a separate thread by this time
+			// when  ThreadPoolExecutor can not accept new Job,
+			// RejectedExecutionException will be thrown 
+                        } catch (RejectedExecutionException ree) {
+                            say("updatePriorityThreadQueue() cannot execute job id="+
+                                job.getId()+" at this time: RejectedExecutionException");
+				return;
 			}
-			// we set an aboort when blocked mode to the pooled executer
-			// so the InterruptedException will be thrown when it can not
-			// execute a job right away
 			catch(RuntimeException re) {
 				say("updatePriorityThreadQueue() cannot execute job id="+job.getId()+" at this time");
 				return;
-			}
-			catch(InterruptedException ie) {
+                        } catch (InterruptedException ie) {
 				say("updatePriorityThreadQueue() cannot execute job id="+job.getId()+" at this time");
 				return;
 			}
@@ -863,10 +869,13 @@ public final class Scheduler implements Runnable, PropertyChangeListener {
                     /*
                      * let the stateChanged() always remove the jobs from the queue
                      */
+            // when  ThreadPoolExecutor can not accept new Job,
+            // RejectedExecutionException will be thrown 
+            } catch (RejectedExecutionException ree) {
+                    say("updatePriorityThreadQueue() cannot execute job id="+
+                        job.getId()+" at this time: RejectedExecutionException");
+                    return;
             }
-            // we set an aboort when blocked mode to the pooled executer
-            // so the InterruptedException will be thrown when it can not
-            // execute a job right away
             catch(InterruptedException ie) {
                 esay("updateThreadQueue() cannot execute job id="+job.getId()+" at this time");
                 return;

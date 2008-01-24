@@ -163,16 +163,6 @@ if [ "$build_srm" -o "$build_srmv2" ]; then
       echo "Ok"
  fi
  
-if [ "$build_srmv2" -o "${build_srm}" ]; then
- #     rm -f ../classes/concurrent.jar
- #     cp ../srm/classes/concurrent.jar ../classes/concurrent.jar
- #     printf " Checking Concurrent . "
-      if [ ! -f "../classes/concurrent.jar" ]; then
-        echo "Failed : concurrent.jar  not found in ../classes/"
-        exit 4
-      fi
-      echo "Ok"
- fi
 #
  if [ "$build_srmv2" ]; then
       rm -rf ../classes/axis
@@ -326,7 +316,6 @@ if [ "${build_srm}" -o "${build_srmv2}" ]; then
     CLASSPATH=$CLASSPATH:../classes/glue/GLUE-STD.jar:../classes/glue/dom.jar
     CLASSPATH=$CLASSPATH:../classes/glue/jnet.jar:../classes/glue/jsse.jar
     CLASSPATH=$CLASSPATH:../classes/glue/jcert.jar:../classes/glue/servlet.jar
-    CLASSPATH=$CLASSPATH:../classes/concurrent.jar
     CLASSPATH=$CLASSPATH:../classes/axis/jaxrpc.jar
     CLASSPATH=$CLASSPATH:../classes/axis/saaj.jar
     CLASSPATH=$CLASSPATH:../classes/axis/axis.jar

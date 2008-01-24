@@ -106,12 +106,6 @@ if [ "$build_srm" -o "$build_srmv2" ]; then
       exit 4
     fi
     echo "Ok"
-      printf " Checking Concurrent ........"
-      if [ ! -f "lib/concurrent.jar" ]; then
-        echo "Failed : concurrent.jar  not found in lib/"
-        exit 4
-      fi
-      echo "Ok"
       printf " Checking Axis ........"
       if [ ! -f "lib/axis/jaxrpc.jar" ] ; then
         echo "Failed : jaxrpc.jar  not found in lib/axis"
@@ -146,7 +140,6 @@ for i in lib/axis/*.jar
   do
   CLASSPATH=$CLASSPATH:$i
 done
-    CLASSPATH=$CLASSPATH:lib/concurrent.jar
     CLASSPATH=$CLASSPATH:lib/glue/GLUE-STD.jar:lib/glue/dom.jar
     CLASSPATH=$CLASSPATH:lib/glue/jnet.jar:lib/glue/jsse.jar
     CLASSPATH=$CLASSPATH:lib/glue/jcert.jar:lib/glue/servlet.jar

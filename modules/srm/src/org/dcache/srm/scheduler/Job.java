@@ -200,8 +200,7 @@ COPYRIGHT STATUS:
  */
 
 package org.dcache.srm.scheduler;
-import EDU.oswego.cs.dl.util.concurrent.PooledExecutor;
-import EDU.oswego.cs.dl.util.concurrent.Semaphore;
+import java.util.concurrent.Semaphore;
 import java.beans.PropertyChangeSupport;
 import java.beans.PropertyChangeListener;
 import java.util.Timer;

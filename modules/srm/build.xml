@@ -55,7 +55,6 @@
     <or>
       <filename name="**/cells.jar"/>
       <filename name="jdom/jdom.jar"/>
-      <filename name="concurrent/concurrent.jar"/>
       <filename name="cog/**/*.jar"/>
       <filename name="axis/**/*.jar"/>
       <filename name="glue/**/GLUE-STD.jar"/>
@@ -102,9 +101,6 @@
       package="external/jdom" />
 
     <cvs command="checkout" cvsroot="${cvs.cvsroot}" cvsrsh="ssh" dest="${internalLibDir}"
-      package="external/concurrent" />
-
-    <cvs command="checkout" cvsroot="${cvs.cvsroot}" cvsrsh="ssh" dest="${internalLibDir}"
       package="external/axis" />
 
     <cvs command="checkout" cvsroot="${cvs.cvsroot}" cvsrsh="ssh" dest="${internalLibDir}"
@@ -118,7 +114,6 @@
 
     <move file="${internalLibDir}/external/cells" todir="${internalLibDir}" />
     <move file="${internalLibDir}/external/jdom" todir="${internalLibDir}" />
-    <move file="${internalLibDir}/external/concurrent" todir="${internalLibDir}" />
     <move file="${internalLibDir}/external/axis" todir="${internalLibDir}" />
     <move file="${internalLibDir}/external/tomcat" todir="${internalLibDir}" />
     <move file="${internalLibDir}/external/cog" todir="${internalLibDir}" />
@@ -143,7 +138,6 @@
     <!-- This is a list of classes which are needed from external libs -->
     <checkclass classname="dmg.util.CommandInterpreter" classpath="${srm.classpath.value}" />          <!-- Cells -->
     <checkclass classname="org.jdom.input.SAXBuilder" classpath="${srm.classpath.value}" />            <!-- JDom -->
-    <checkclass classname="EDU.oswego.cs.dl.util.concurrent.BoundedLinkedQueue" classpath="${srm.classpath.value}" /> <!-- Concurrent -->
     <checkclass classname="org.apache.axis.types.URI" classpath="${srm.classpath.value}" />            <!-- Axis  -->
     <checkclass classname="org.globus.gsi.GlobusCredential" classpath="${srm.classpath.value}" />      <!-- COG (jglobus) -->
     <!-- <checkclass classname="" classpath="${srm.classpath.value}" />                                     TODO: Appropriate classes for Tomcat  -->

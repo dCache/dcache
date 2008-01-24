@@ -59,7 +59,6 @@
 			<filename name="**/cells.jar" />
 			<filename name="**/srm.jar" />
 			<filename name="jdom/jdom.jar" />
-			<filename name="concurrent/concurrent.jar" />
 			<filename name="cog/**/*.jar" />
 			<filename name="axis/**/*.jar" />
 			<filename name="glue/**/GLUE-STD.jar" />
@@ -287,8 +286,6 @@
 			</fileset>
 		</copy>
 
-		<!-- concurent -->
-		<copy file="${libDir}/concurrent/concurrent.jar" todir="${binDir}/srm/lib" />
 
 
 		<!-- glue -->

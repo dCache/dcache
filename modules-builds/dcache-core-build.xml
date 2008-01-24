@@ -169,7 +169,6 @@
 			<filename name="**/srm.jar" />
 			<filename name="**/gplazma.jar" />
 			<filename name="jdom/jdom.jar" />
-			<filename name="concurrent/concurrent.jar" />
 			<filename name="cog/**/*.jar" />
 			<filename name="axis/**/*.jar" />
 			<filename name="glue/**/GLUE-STD.jar" />
@@ -235,7 +234,6 @@
 			<filename name="axis/**/*.jar" />
 			<filename name="gplazma-libs/**/*.jar" />
 			<filename name="security/bcprov-jdk15-133.jar" />
-			<filename name="concurrent/concurrent.jar" />
 		</or>
 	</selector>
 
@@ -811,11 +809,6 @@
 				<include name="*.jar" />
 			</fileset>
 		</copy>
-
-		<!-- concurrent -->
-		<mkdir dir="${binDir}/classes/concurrent" />
-		<copy file="${libDir}/concurrent/concurrent.jar" todir="${binDir}/classes/concurrent" />
-		<copy file="${libDir}/concurrent/backport-util-concurrent-2.2.jar" todir="${binDir}/classes/concurrent" />
 
 
 		<!-- glue -->

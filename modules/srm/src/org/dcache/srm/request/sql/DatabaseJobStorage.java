@@ -219,7 +219,7 @@ import org.dcache.srm.scheduler.State;
 import org.dcache.srm.scheduler.Scheduler;
 import org.dcache.srm.util.Configuration;
 import org.dcache.srm.Logger;
-import EDU.oswego.cs.dl.util.concurrent.Semaphore;
+import java.util.concurrent.Semaphore;
 /**
  *
  * @author  timur

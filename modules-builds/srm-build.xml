@@ -77,7 +77,6 @@
     <or>
       <filename name="**/cells.jar"/>
       <filename name="jdom/jdom.jar"/>
-      <filename name="concurrent/concurrent.jar"/>
       <filename name="cog/**/*.jar"/>
       <filename name="axis/**/*.jar"/>
       <filename name="glue/**/GLUE-STD.jar"/>
@@ -125,7 +124,6 @@
     <!-- This is a list of classes which are needed from external libs -->
     <checkclass classname="dmg.util.CommandInterpreter" classpath="${srm.classpath.value}" />          <!-- Cells -->
     <checkclass classname="org.jdom.input.SAXBuilder" classpath="${srm.classpath.value}" />            <!-- JDom -->
-    <checkclass classname="EDU.oswego.cs.dl.util.concurrent.BoundedLinkedQueue" classpath="${srm.classpath.value}" /> <!-- Concurrent -->
     <checkclass classname="org.apache.axis.types.URI" classpath="${srm.classpath.value}" />            <!-- Axis  -->
     <checkclass classname="org.globus.gsi.GlobusCredential" classpath="${srm.classpath.value}" />      <!-- COG (jglobus) -->
     <!-- <checkclass classname="" classpath="${srm.classpath.value}" />                                     TODO: Appropriate classes for Tomcat  -->

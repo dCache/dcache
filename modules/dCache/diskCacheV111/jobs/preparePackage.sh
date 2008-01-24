@@ -288,14 +288,6 @@ if [ "$build_srm" -o "$build_srmv2" ]; then
       echo "Ok"
  fi
  
-if [ "$build_srmv2" -o "${build_srm}" ]; then
-      printf " Checking Concurrent . "
-      if [ ! -f "../classes/concurrent.jar" ]; then
-        echo "Failed : concurrent.jar  not found in ../classes/"
-        exit 4
-      fi
-      echo "Ok"
- fi
 #
  if [ "$build_srmv2" ]; then
       printf " Checking Axis ....... "
@@ -324,10 +316,6 @@ if [ "$build_srmv2" -o "${build_srm}" ]; then
       rm -rf ../classes/gplazma/vo-mapping/endorsed/CVS
       rm -rf ../classes/gplazma/vo-mapping/etc/CVS
       printf " Checking gPLAZMA .... "
-      if [ ! -f "../classes/backport-util-concurrent-2.2.jar" ] ; then
-        echo "Failed : ../classes/backport-util-concurrent-2.2.jar not found."
-        exit 4
-      fi
       if [ ! -f "../classes/gplazma/gplazmalite/gplazmalite-services-suite-0.1.jar" ] ; then
         echo "Failed : ../classes/gplazma/gplazmalite/gplazmalite-services-suite-0.1.jar not found."
         exit 4
@@ -472,7 +460,6 @@ if [ "${build_srm}" -o "${build_srmv2}" ]; then
     CLASSPATH=$CLASSPATH:../classes/glue/GLUE-STD.jar:../classes/glue/dom.jar
     CLASSPATH=$CLASSPATH:../classes/glue/jnet.jar:../classes/glue/jsse.jar
     CLASSPATH=$CLASSPATH:../classes/glue/jcert.jar:../classes/glue/servlet.jar
-    CLASSPATH=$CLASSPATH:../classes/concurrent.jar
     CLASSPATH=$CLASSPATH:../classes/axis/jaxrpc.jar
     CLASSPATH=$CLASSPATH:../classes/axis/saaj.jar
     CLASSPATH=$CLASSPATH:../classes/axis/axis.jar
@@ -498,7 +485,6 @@ if [ "$build_gplazma" ]; then
         CLASSPATH=${CLASSPATH}:$file
    done
 
-      CLASSPATH=$CLASSPATH:../classes/backport-util-concurrent-2.2.jar
       CLASSPATH=$CLASSPATH:../classes/gplazma/gplazmalite/gplazmalite-services-suite-0.1.jar
       CLASSPATH=$CLASSPATH:../classes/gplazma/vo-mapping/lib/org.glite.security.voms-api-java.jar
       CLASSPATH=$CLASSPATH:../classes/gplazma/vo-mapping/endorsed/dom3-xml-apis-2.5.0.jar

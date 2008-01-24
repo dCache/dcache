@@ -101,12 +101,6 @@ if [ "$build_srm" -o "$build_srmv2" ]; then
       exit 4
     fi
     echo "Ok"
-      printf " Checking Concurrent ........"
-      if [ ! -f "classes/concurrent.jar" ]; then
-        echo "Failed : concurrent.jar  not found in classes/"
-        exit 4
-      fi
-      echo "Ok"
       printf " Checking Axis ........"
       if [ ! -f "classes/axis/jaxrpc.jar" ] ; then
         echo "Failed : jaxrpc.jar  not found in classes/axis"
@@ -136,7 +130,6 @@ export CLASSPATH=../..
     CLASSPATH=$CLASSPATH:classes/globus/cryptix-asn1.jar  
     CLASSPATH=$CLASSPATH:classes/globus/cryptix32.jar  
     CLASSPATH=$CLASSPATH:classes/globus/jce-jdk13-120.jar
-    CLASSPATH=$CLASSPATH:classes/concurrent.jar
     CLASSPATH=$CLASSPATH:classes/glue/GLUE-STD.jar:classes/glue/dom.jar
     CLASSPATH=$CLASSPATH:classes/glue/jnet.jar:classes/glue/jsse.jar
     CLASSPATH=$CLASSPATH:classes/glue/jcert.jar:classes/glue/servlet.jar
