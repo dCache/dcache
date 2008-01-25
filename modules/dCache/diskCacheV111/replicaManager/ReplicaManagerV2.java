@@ -28,7 +28,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
 
   private String _jdbcUrl = "jdbc:postgresql://localhost/replicas";
   private String _driver = "org.postgresql.Driver";
-  private String _user = "enstore";
+  private String _user = "postgres";
   private String _pass = "NoPassword";
   private String _pwdfile = null;
 
@@ -222,47 +222,49 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
             say("DEBUG: " + s);
     }
 
-  private void parseDBArgs() {
+    private void parseDBArgs() {
 
-    say("Parsing arguments..."+_args);
+        say("Parsing arguments..."+_args);
 
-    _jdbcUrl = "jdbc:postgresql://localhost/replicas";
-    _driver = "org.postgresql.Driver";
-    _user = "enstore";
-    _pass = "NoPassword";
+//        _jdbcUrl = "jdbc:postgresql://localhost/replicas";
+//        _driver = "org.postgresql.Driver";
+//        _user = "enstore";
+//        _pass = "NoPassword";
 
-    String cfURL = _args.getOpt("dbURL");
-    if( cfURL != null) {
-        _jdbcUrl = cfURL;
-    }
+        String cfURL = _args.getOpt("dbURL");
+        if (cfURL != null) {
+            _jdbcUrl = cfURL;
+        }
 
-    String cfDriver = _args.getOpt("jdbcDrv");
-    if( cfDriver != null ) {
-        _driver = cfDriver;
-    }
+        String cfDriver = _args.getOpt("jdbcDrv");
+        if (cfDriver != null) {
+            _driver = cfDriver;
+        }
 
-    String cfUser = _args.getOpt("dbUser");
-    if( cfUser != null ) {
-        _user = cfUser;
-    }
+        String cfUser = _args.getOpt("dbUser");
+        if (cfUser != null) {
+            _user = cfUser;
+        }
 
-    String cfPass = _args.getOpt("dbPass");
-    if( cfPass != null ) {
-        _pass = cfPass;
-    }
+        String cfPass = _args.getOpt("dbPass");
+        if (cfPass != null) {
+            _pass = cfPass;
+        }
 
-    _pwdfile = _args.getOpt("pgPass");
+        _pwdfile = _args.getOpt("pgPass");
 
-    // Now check if all required parameters are present
-    if ((cfURL == null )  ||  (cfDriver == null) || (cfUser == null)  ||  (cfPass == null && _pwdfile == null) ) {
-          throw new IllegalArgumentException("Not enough arguments to Init SQL database");
-    }
+        // Now check if all required parameters are present
+//      if ((cfURL == null ) || (cfDriver == null) || (cfUser == null) || (cfPass == null && _pwdfile == null) ) {
+        if ((_jdbcUrl == null ) || (_driver == null) || (_user == null) || (_pass == null && _pwdfile == null)) {
+            throw new IllegalArgumentException("Not enough arguments to Init SQL database");
+        }
 
-    if (_pwdfile != null && _pwdfile.length() > 0) {
+        if (_pwdfile != null && _pwdfile.length() > 0) {
             Pgpass pgpass = new Pgpass(_pwdfile);
-            _pass = pgpass.getPgpass(cfURL, cfUser);
+            String p = pgpass.getPgpass(cfURL, cfUser);
+            if (p != null) _pass = p;
+        }
     }
-  }
 
   private void parseArgs() {
     // Parse arguments
