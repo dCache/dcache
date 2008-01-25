@@ -2587,9 +2587,7 @@ public class ManagerV2
 			PoolLinkGroupInfo info = poolLinkGroupInfos[i];
 			String linkGroupName   = info.getName();
 			long avalSpaceInBytes  = info.getAvailableSpaceInBytes();
-			info.getAvailableSpaceInBytes();
 			VOInfo[] vos=null;
-			//VOInfo[] vos = info.getAllowedVOs();
 			boolean onlineAllowed    = info.isOnlineAllowed();
 			boolean nearlineAllowed  = info.isNearlineAllowed();
 			boolean replicaAllowed   = info.isReplicaAllowed();
