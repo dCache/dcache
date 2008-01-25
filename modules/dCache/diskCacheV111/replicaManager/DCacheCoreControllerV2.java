@@ -1150,12 +1150,12 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
        super.routeDeleted(ce);
        dsay("DCCC routeDeleted called, ce=" + ce);
    }
-
-   // end cellEventListener Interface
-
-   public void messageArrived( Message msg ){
+   /** do not overload - it will disable messageArrived( CellMessage m);
+   public void messageArrived( MessageEvent msg ){
      dsay( "DCacheCoreController: Got Message (ignored): " +msg );
    }
+   */
+   // end cellEventListener Interface
 
    public void messageArrived( CellMessage msg ) {
 
@@ -1317,7 +1317,8 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
            throws MissingResourceException,
                   java.io.NotSerializableException ,
                   NoRouteToCellException,
-                  InterruptedException                {
+                  InterruptedException
+     {
 
        PnfsGetStorageInfoMessage msg = new PnfsGetStorageInfoMessage(pnfsId) ;
 
@@ -1328,25 +1329,34 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
        answer = sendAndWait( cellMessage , _TO_GetStorageInfo ) ;
 
        if( answer == null )
-          throw new
-          MissingResourceException(
+         throw new
+             MissingResourceException(
             "Timeout "+ _TO_GetStorageInfo,
-             "PnfsManager",
-             "PnfsGetStorageInfoMessage" ) ;
+            "PnfsManager",
+            "PnfsGetStorageInfoMessage" ) ;
 
        msg = (PnfsGetStorageInfoMessage) answer.getMessageObject() ;
+
        if( msg.getReturnCode() != 0 ) {
          dsay("getStorageInfo() PnfsGetStorageInfoMessage answer error: err="
               +msg.getReturnCode()
               + ", message='" + msg + "'" );
-          throw new
-          MissingResourceException(
-             msg.getErrorObject().toString() ,
-             "PnfsManager",
-             "PnfsGetStorageInfoMessage" ) ;
+
+         if( msg.getReturnCode() == CacheException.FILE_NOT_FOUND ) {
+           throw new
+               MissingResourceException(
+                   "Pnfs File not found :" + msg.getErrorObject().toString() ,
+                   "PnfsManager",
+                   "PnfsGetCacheLocationsMessage" ) ;
+         }
+         throw new
+             MissingResourceException(
+                 msg.getErrorObject().toString(),
+                 "PnfsManager",
+                 "PnfsGetStorageInfoMessage");
        }
-       return msg.getStorageInfo() ;
-   }
+       return msg.getStorageInfo();
+     }
 
    protected void removeCopy( PnfsId pnfsId , String poolName , boolean force )
            throws Exception {
