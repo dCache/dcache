@@ -13,6 +13,7 @@ import  dmg.util.* ;
 
 import  java.io.* ;
 import  java.util.*;
+import  java.util.concurrent.atomic.*;
 
 /**
   *  Basic cell for performing central monitoring and
@@ -98,16 +99,6 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
         say("DEBUG: " +s) ;
    }
 
-   private StringBuffer itToSB(Iterator it) {
-
-     StringBuffer sb = new StringBuffer();
-
-     for ( ; it.hasNext(); ) {
-       sb.append(it.next().toString()).append(" ");
-     }
-     return sb;
-   }
-
    public DCacheCoreControllerV2( String cellName , String args ) throws Exception {
 
       super( cellName , args , false ) ;
@@ -162,6 +153,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
            say( _threadName + " thread finished" ) ;
        }
    }
+
 
 
    /**
@@ -293,8 +285,81 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
    private HashMap _taskHash         = new LinkedHashMap() ;
    private HashMap _messageHash      = new HashMap() ;
    private HashMap _modificationHash = new HashMap() ;
+   private P2pObserver _p2p          = new P2pObserver();
+
+   /** Keep track of p2p transfers scheduled by replicaManager
+    *  This class in NOT synchronized
+    */
+
+   private class P2pObserver {
+     // Hashtables to keep p2p transfer counters for each pool
+     //   addressed by pool name
+     private Hashtable<String,AtomicInteger> _p2pClientCount;
+     private Hashtable<String,AtomicInteger> _p2pServerCount;
+
+     synchronized public void reset() {
+       _p2pClientCount     = new Hashtable();
+       _p2pServerCount     = new Hashtable();
+     }
+
+     public P2pObserver () {
+       reset();
+     }
+
+     public int getClientCount( String dst ) {
+       AtomicInteger clientCount;
+
+       clientCount = _p2pClientCount.get(dst);
+       return (clientCount != null) ? clientCount.get() : 0;
+     }
+
+     public int getServerCount( String src ) {
+       AtomicInteger serverCount;
+
+       serverCount = _p2pServerCount.get(src);
+       return (serverCount != null) ? serverCount.get() : 0;
+     }
+
+     synchronized public void add(String src, String dst) {
+       AtomicInteger clientCount, serverCount;
+
+       serverCount =  _p2pServerCount.get( src );
+       if( serverCount == null ) {
+         serverCount = new AtomicInteger(1);
+         _p2pServerCount.put(src,serverCount);
+       } else {
+         serverCount.incrementAndGet();
+       }
+
+       clientCount =  _p2pClientCount.get( dst );
+       if( clientCount == null ) {
+         clientCount = new AtomicInteger(1);
+         _p2pClientCount.put(dst,clientCount);
+       } else {
+         clientCount.incrementAndGet();
+       }
+     }
+
+     synchronized public void remove(String src, String dst) {
+       AtomicInteger clients;
+       AtomicInteger servers;
+
+       servers  =  _p2pServerCount.get( src );
+       if( servers != null ) {
+         if( servers.decrementAndGet() <= 0 )
+           _p2pServerCount.remove( src );
+       }
+
+       clients  =  _p2pClientCount.get( dst );
+       if( clients != null ) {
+         if( clients.decrementAndGet() <= 0 )
+           _p2pClientCount.remove( dst );
+       }
+     }
+   }
+
    //
-   //  basic task observer. is the base class for
+   //  basic task observer. It is base class for
    //  all asynchronous commands.
    //
    public class TaskObserver {
@@ -353,9 +418,12 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
          _status    = "done";
          finished();
       }
+      private void taskFinishedHook(){
+      }
       public void  finished(){
           _done = true ;
           taskFinished(this); // synchronious callBack
+          taskFinishedHook();
 
           synchronized( _taskHash ){
               _taskHash.remove( new Long(_id) ) ;
@@ -478,7 +546,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
        public String getPool()   { return _poolName; } ;
    }
    //
-   // creates a replicum.
+   // creates replica
    //
    public class MoverTask extends TaskObserver {
       private PnfsId _pnfsId  = null ;
@@ -490,6 +558,10 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
         _pnfsId  = pnfsId;
         _srcPool = source;
         _dstPool = destination;
+        _p2p.add(_srcPool,_dstPool);
+      }
+      protected void taskFinishedHook() {
+        _p2p.remove(_srcPool,_dstPool);
       }
       public PnfsId getPnfsId()    { return _pnfsId; } ;
       public String getSrcPool()   { return _srcPool; } ;
@@ -642,6 +714,9 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
      *  Returns an Exception if there is no pool left, not
      *  holding a copy of this file.
      */
+    /** OBSOLETE
+     *
+
     protected TaskObserver replicatePnfsId(PnfsId pnfsId) throws Exception {
 
         List sourcePoolList = getCacheLocationList(pnfsId, true);
@@ -682,12 +757,18 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
 
         return replicatePnfsId(pnfsId, source, destination);
     }
+    ** end OBSOLETE
+     *
+     */
+
 
     private String bestDestPool(List pools, long fileSize, Set srcHosts ) throws Exception {
 
         double bestCost = 1.0;
         String bestPool = null;
         PoolCostInfo bestCostInfo = null;
+        boolean spaceFound = false;
+        boolean qFound = false;
 
         long total;
         long precious;
@@ -695,6 +776,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
         long removable;
         long available;
         long used;
+        int  qmax=1, qlength=0;
         String host;
 
         synchronized (_costTableLock) {
@@ -737,17 +819,34 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
                     available  = free + removable;
                     used       = total - available;
 
+                    PoolCostInfo.PoolQueueInfo cq = costInfo.getP2pClientQueue();
+                    qmax        = cq.getMaxActive();
+                    // use q max =1 when max was not set :
+                    qmax = (qmax==0) ? 1 : qmax;
+                    qmax = (qmax <0) ? 0 : qmax;
+                    // Get client queue info from cost table - ...
+                    // not valid and not updated, can not be used
+                    //  qlength    = cq.getActive() + cq.getQueued();
+
+                    // get internal replica manager's p2p client count :
+                    qlength    = _p2p.getClientCount(poolName);
+
                     double itCost = (double) used / (double) total;
-                    if ( (itCost < bestCost)
-                         && (free >= fileSize)) {
-                        bestCost     = itCost;
-                        bestCostInfo = costInfo;
+                    if (free >= fileSize) {
+                      spaceFound = true;
+                      if( qlength < qmax ) {
+                        qFound = true;
+                        if (itCost < bestCost) {
+                          bestCost = itCost;
+                          bestCostInfo = costInfo;
+                        }
+                      }
                     }
                 }  catch(Exception e)  {
                     /** @todo
                      *  WHAT exception ? track it
                      */
-                    say("bestPool : ignore exception " +e);
+                    esay("bestPool : ignore exception " +e);
 		    if ( _dcccDebug ) {
 			dsay("Stack dump for ignored exception :");
 			e.printStackTrace();
@@ -758,8 +857,8 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
 
             if (bestCostInfo == null) {
                 throw new IllegalArgumentException(
-                        "No pools found, can not get destination pool with available space="
-                                    +fileSize);
+                        "Try again : Can not find destination pool with available space="
+                                    +fileSize + " spaceFound=" +spaceFound +" and avalable slot in p2p client queue, queueFound=" + qFound);
             }
 
             total      = bestCostInfo.getSpaceInfo().getTotalSpace();
@@ -768,6 +867,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
             removable  = bestCostInfo.getSpaceInfo().getRemovableSpace();
 
             bestCostInfo.setSpaceUsage(total, free, precious, removable);
+//          bestCostInfo.getP2pClientQueue().modifyQueue( +1 );
         }
 
         bestPool = bestCostInfo.getPoolName();
@@ -884,7 +984,11 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
       /**
         *  Creates a new cache copy of the specified pnfsId.
         */
-      private MoverTask replicatePnfsId( PnfsId pnfsId, String source, String destination )
+
+       /** OBSOLETE
+        *
+       private MoverTask replicatePnfsId( PnfsId pnfsId, String source, String destination )
+
          throws Exception {
 
       StorageInfo storageInfo = getStorageInfo( pnfsId ) ;
@@ -902,12 +1006,14 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
 
       synchronized( _messageHash ){
 //        dsay("replicatePnfsId: sendMessage p2p, src=" +source + " dest=" +destination);
-        sendMessage( msg ) ;
         _messageHash.put( msg.getUOID() , task ) ;
+        sendMessage( msg ) ;
       }
       return task ;
 
    }
+   ** end OBSOLETE
+  */
 
    /**
     *  Creates a new cache copy of the specified pnfsId.
@@ -939,46 +1045,6 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
      }
      return task;
 
-   }
-
-   private long getFreeSpace(String poolName) throws InterruptedException,
-       NoRouteToCellException,
-       NotSerializableException {
-
-     String command = new String( "xcm ls " + poolName + " -l" );
-
-     CellMessage cellMessage = new CellMessage(
-         new CellPath("PoolManager"),
-         command );
-     CellMessage reply = null;
-
-     dsay("getFreeSpace: sendMessage, poolName=" + poolName
-          + " command=[" + command+"]\n"
-          + "message=" + cellMessage);
-
-     reply = sendAndWait(cellMessage, _TO_GetFreeSpace );
-
-     dsay("get free space reply arrived");
-
-     if (reply == null || ! (reply.getMessageObject()instanceof Object[])) {
-       reportGetFreeSpaceProblem(reply);
-       return -1L;
-     }
-
-     Object[] r = (Object[]) reply.getMessageObject();
-
-     if (r.length != 3) {
-       esay("getFreeSpace: The length of PoolManager reply=" + r.length + " != 3");
-       return -1L;
-     }
-     else {
-       PoolCostInfo info = (PoolCostInfo) r[1];
-       long freeSpace = info.getSpaceInfo().getFreeSpace();
-
-       dsay("getFreeSpace info: pool " + poolName + "\tfreeSpace=" + freeSpace + " (" +
-            freeSpace / 1024 / 1024 + " MB)");
-       return freeSpace;
-     }
    }
 
    private void getCostTable(CellAdapter cell)
@@ -1547,7 +1613,6 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
      }
    }
 
-//   protected String getPoolTags( String poolName )
    protected String getPoolHost( String poolName )
            throws InterruptedException, NoRouteToCellException,
            NotSerializableException {
@@ -1671,37 +1736,3 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
    }
 
 }
-
-/**
- * $Log: not supported by cvs2svn $
- * Revision 1.16.2.8  2007/04/14 00:42:20  aik
- * use correct confirmed list size as argument for random()
- *
- * Revision 1.16.2.7  2007/03/30 00:40:33  aik
- * - got hostname from pool by xgetcellinfo, nonreplication to poold on the same finished
- * - do not verify cachelocation consistency; I do check with pools file is present anyway
- * - when pool arrived and "enable" message to the pool has failed, do not try to get pool list from the dead pool
- *
- * Revision 1.16.2.6  2007/03/10 21:12:37  aik
- * add debug printout to track lost host name; implement task removal by pool name or all tasks
- *
- * Revision 1.16.2.5  2007/03/02 22:37:27  aik
- *  - fix iterators in source pool map and best pools check
- *  - cleanup - remove large commented out block of code which was never used "ignore all zero-size files" in getPoolRepository()
- *
- * Revision 1.16.2.4  2007/02/26 23:50:35  aik
- * 1) set 'reply required' when checking host name; 2) do not try to check replica in not writable pools
- *
- * Revision 1.16.2.3  2007/02/20 15:29:43  tigran
- * backport of java 1.5 code to 1.4
- *
- * Revision 1.16.2.2  2007/02/14 22:53:38  aik
- * merge in changes from trunk [disallow same host replication, more]. Backport generics to java 1.4
- *
- * Revision 1.20  2007/02/09 23:13:42  aik
- * - disallow same host replication on besteffort bassis when pool has host name tag.
- * Enabled by default and can be turned off to be used on test installations.
- * - do not replicate _to_ pools in drainoff and offline-prepare state.
- *
- *
- */

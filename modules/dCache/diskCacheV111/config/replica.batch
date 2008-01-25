@@ -38,6 +38,7 @@ onerror continue
    set context -c resilientGroupName           ResilientPools
    set context -c replicaPoolWatchDogPeriod    600
    set context -c replicaWaitDBUpdateTimeout   600
+   set context -c replicaExcludedFilesExpirationTimeout 43200
    set context -c replicaDelayDBStartTimeout   1200
    set context -c replicaAdjustStartTimeout    1200
    set context -c replicaWaitReplicateTimeout  43200
@@ -63,6 +64,7 @@ create diskCacheV111.replicaManager.ReplicaManagerV2 replicaManager \
         -max=${replicaMax} \
         -resilientGroupName=${resilientGroupName} \
         -poolWatchDogPeriod=${replicaPoolWatchDogPeriod} \
+        -excludedFilesExpirationTO=${replicaExcludedFilesExpirationTimeout} \
         -waitDBUpdateTO=${replicaWaitDBUpdateTimeout} \
         -delayDBStartTO=${replicaDelayDBStartTimeout} \
         -delayAdjStartTO=${replicaAdjustStartTimeout} \

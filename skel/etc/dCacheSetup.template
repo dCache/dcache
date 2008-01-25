@@ -358,6 +358,7 @@ sshPort=${portBase}124
 # resilientGroupName=ResilientPools
 # replicaPoolWatchDogPeriod=600
 # replicaWaitDBUpdateTimeout=600
+# replicaExcludedFilesExpirationTimeout=43200
 # replicaDelayDBStartTimeout=1200
 # replicaAdjustStartTimeout=1200
 # replicaWaitReplicateTimeout=43200

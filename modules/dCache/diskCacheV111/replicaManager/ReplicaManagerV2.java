@@ -284,41 +284,49 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
     String delayDBStartTO = _args.getOpt("delayDBStartTO");
     if (delayDBStartTO != null) {
       _delayDBStartTO = Integer.parseInt(delayDBStartTO) * 1000;
-      say("Set _delayDBStartTO to " + _delayDBStartTO + " ms");
+      say("Set _delayDBStartTO=" + _delayDBStartTO + " ms");
     }
 
     String delayAdjStartTO = _args.getOpt("delayAdjStartTO");
     if (delayAdjStartTO != null) {
       _delayAdjStartTO = Integer.parseInt(delayAdjStartTO) * 1000;
-      say("Set _delayAdjStartTO to " + _delayAdjStartTO + " ms");
+      say("Set _delayAdjStartTO=" + _delayAdjStartTO + " ms");
     }
 
     String waitDBUpdateTO = _args.getOpt("waitDBUpdateTO");
     if (waitDBUpdateTO != null) {
       long timeout = Integer.parseInt(waitDBUpdateTO) * 1000L;
       _adj.setWaitDBUpdateTO(timeout);
-      say("Set waitDBUpdateTO to " + timeout + " ms");
+      say("Set waitDBUpdateTO=" + timeout + " ms");
     }
 
     String waitReplicateTO = _args.getOpt("waitReplicateTO");
     if (waitReplicateTO != null) {
       long timeout = Integer.parseInt(waitReplicateTO) * 1000L;
       _adj.setWaitReplicateTO(timeout);
-      say("Set waitReplicateTO to " + timeout + " ms");
+      say("Set waitReplicateTO=" + timeout + " ms");
     }
 
     String waitReduceTO = _args.getOpt("waitReduceTO");
     if (waitReduceTO != null) {
       long timeout = Integer.parseInt(waitReduceTO) * 1000L;
       _adj.setWaitReduceTO(timeout);
-      say("Set waitReduceTO to " + timeout + " ms");
+      say("Set waitReduceTO=" + timeout + " ms");
     }
     String poolWatchDogPeriod = _args.getOpt("poolWatchDogPeriod");
     if (poolWatchDogPeriod != null) {
       long timeout = Integer.parseInt(poolWatchDogPeriod) * 1000L;
       _watchPools.setPeriod(timeout);
-      say("Set Pool WatchDog  period set to " + timeout + " ms");
+      say("Set poolWatchDogPeriod=" + timeout + " ms");
     }
+
+    String sExcludedFilesExpirationTO = _args.getOpt("excludedFilesExpirationTO");
+    if (sExcludedFilesExpirationTO != null) {
+      long timeout = Integer.parseInt(sExcludedFilesExpirationTO) * 1000L;
+      _watchPools.setExcludedExpiration(timeout);
+      say("Set excludedFilesExpirationTO=" + timeout + " ms");
+    }
+
     String maxWorkers = _args.getOpt("maxWorkers");
     if (maxWorkers != null) {
       int mx = Integer.parseInt(maxWorkers);
@@ -1130,9 +1138,9 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
                           ? replicatePnfsId(pnfsId,_poolsReadable, _poolsWritable)
                           : replicatePnfsId(pnfsId,_poolsWritable, _poolsWritable);
            } catch (MissingResourceException mrex) {
-               String exMsg = mrex.getMessage();
+               String exMsg   = mrex.getMessage();
                String exClass = mrex.getClassName();
-               String exKey = mrex.getKey();
+               String exKey   = mrex.getKey();
 
                say("replicate(" + pnfsId + ") reported : " + mrex);
 
@@ -1145,6 +1153,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
                } else {
                    dsay("msg='" + exMsg + "'  class='" + exClass + "' key='" +
                         exKey + "' ");
+                   // not excluded - will retry
                }
                return;
            } catch (IllegalArgumentException iaex) {
@@ -1165,8 +1174,8 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
                if (exMsg.startsWith("replicatePnfsId, argument")) {
                    say("There are not enough pools to get replica from or to put it to; try operation later");
                    sigFound = true;
-               } else if (exMsg.startsWith("replicatePnfsId - check Free Space,")) {
-                   say("There is not enough space in destination pools to put replica into; try operation later");
+               } else if (exMsg.startsWith("Try again :")) {
+                   say(exMsg);
                    sigFound = true;
                }
 
@@ -1243,7 +1252,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
 
                  synchronized (_dbLock) {
                    _db.removeTransaction(pnfsId);
-                   _db.addTransaction(pnfsId, timeStamp, 0);
+                   _db.addExcluded(pnfsId, timeStamp, String.valueOf(oErr), eMsg);
                  }
                  say("pnfsId=" + pnfsId +
                      " is excluded from replication. (err="
@@ -1335,7 +1344,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
        }
        stop = System.currentTimeMillis();
 
-       int oErr = observer.getErrorCode();
+       int oErr    = observer.getErrorCode();
        String eMsg = observer.getErrorMessage();
 
        long timeStamp = System.currentTimeMillis();
@@ -1363,7 +1372,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
          // ALWAYS exclude pnfsid if replication failed
          synchronized (_dbLock) {
            _db.removeTransaction(pnfsId);
-           _db.addTransaction(pnfsId, timeStamp, 0);
+           _db.addExcluded(pnfsId, timeStamp, String.valueOf(oErr), eMsg);
          }
          say("pnfsId=" + pnfsId + " excluded from replication. "
              + "(err=" + oErr + ", " + eMsg + ")");
@@ -1965,16 +1974,19 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
     }
 
     //--------------------------------------------------------------------------
-    public String hh_exclude = "<pnfsId>               # exclude <pnfsId> from replication";
-    public String ac_exclude_$_1(Args args) throws Exception {
+    public String hh_exclude = "<pnfsId> [iErrCode [sErrorMessage] ]  # exclude <pnfsId> from replication";
+    public String ac_exclude_$_1_3(Args args) throws Exception {
 
-      PnfsId pnfsId = new PnfsId(args.argv(0));
       long timeStamp = System.currentTimeMillis();
+      PnfsId pnfsId = new PnfsId(args.argv(0));
+      // It is supposed to be number
+      String iErr    = ( args.argc() > 1 ) ? args.argv(1) : "-2";
+      String eMsg = ( args.argc() > 2 ) ? args.argv(2) : "Operator intervention";
 
       synchronized (_dbLock) {
-        _dbrmv2.addTransaction( pnfsId, timeStamp, 0 );
+        _dbrmv2.addExcluded(pnfsId, timeStamp, iErr, eMsg);
       }
-      String msg = "pnfsId=" + pnfsId + " excluded from adjustments";
+      String msg = "pnfsId=" + pnfsId + " excluded from replication";
       say( msg );
       return msg;
     }
@@ -2233,8 +2245,8 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
 //    private long _timeout      = 10L * 1000L ; // 10 sec. - Pool Msg Reply timeout
     int     cntNoChangeMsgLastTime = 0;
 
-    private long _period       = 10 * 60L * 1000L ; //  10 min. - cycle period
-    private long _expire       = 12*3600*60* 1000L ; // 12 hours - expire excluded files after 12 hours
+    private long _period       = 10 *  60L * 1000L ; //  10 min. - cycle period
+    private long _expire       = 12 *3600  * 1000L ; // 12 hours - expire excluded files after 12 hours
 
     private boolean _restarted = false;
     private ReplicaDbV1 _db;
@@ -2324,15 +2336,15 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
       }
 
       List arrived    = new ArrayList( newPoolSet ) ;
-      List departured = new ArrayList( oldPoolSet ) ;
+      List departed = new ArrayList( oldPoolSet ) ;
 
       if (   arrived.size()    == 0
-          && departured.size() == 0 ) {
+          && departed.size() == 0 ) {
         hbMsg = "no changes";
         if ( ++cntNoChangeMsgLastTime < 5 )
-          say("WatchPool - no pools arrived or departured");
+          say("WatchPool - no pools arrived or departed");
         else if ( cntNoChangeMsgLastTime == 5 )
-          say("WatchPool - no pools arrived or departured, throttle future 'no change' messages ");
+          say("WatchPool - no pools arrived or departed, throttle future 'no change' messages ");
 
       } else {
         hbMsg = "conf changed";
@@ -2366,8 +2378,8 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
           }
         }
 
-        if (departured.size() == 0)
-          say("WatchPool - no pools departured");
+        if (departed.size() == 0)
+          say("WatchPool - no pools departed");
         else {
           // For pools which left UPDATE pool status in DB
           // because
@@ -2375,9 +2387,9 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
           //   if pool went down on node shut down,
           //      there will be no message until pool restarted manually
           //
-          for (Iterator i = departured.iterator(); i.hasNext(); ) {
+          for (Iterator i = departed.iterator(); i.hasNext(); ) {
             Object inext = i.next();
-            say("WatchPool - pool departured '" + inext + "'");
+            say("WatchPool - pool departed '" + inext + "'");
             synchronized (_dbLock) {
               updatePool( (String) inext, ReplicaDb1.DOWN, false);
               updated = true;
@@ -2390,7 +2402,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
       releasedCount = 0;
       try {
         long now = System.currentTimeMillis();
-        releasedCount = _db.releaseExcluded(now - _expire);
+        releasedCount = _db.releaseExcluded(now - getExcludedExpiration() );
       }
       catch (Exception ex) {
         ; // go on
@@ -2657,20 +2669,6 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
     }
     if ( poolStatus.equals(ReplicaDb1.DOWN) ) {
       taskTearDownByPoolName( poolName );
-    }
-  }
-
-  /*
-   * countOnlinePools()
-   */
-  private void countOnlinePools ( String poolStatusOld, String poolStatus ) {
-    if(      poolStatusOld.equals(ReplicaDb1.ONLINE)
-        && ! poolStatus.equals(ReplicaDb1.ONLINE) ) {
-      _cntOnlinePools--;
-    }else if (
-           ! poolStatusOld.equals(ReplicaDb1.ONLINE)
-        && poolStatus.equals(ReplicaDb1.ONLINE) ) {
-      _cntOnlinePools++;
     }
   }
 
