@@ -511,6 +511,10 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             stmt = (_conn == null) ? conn.createStatement() : _stmt;
 //          stmt.executeUpdate("BEGIN");
             conn.setAutoCommit(false);
+            stmt.executeUpdate("INSERT INTO history_b SELECT * FROM ONLY replicas");  // Save
+                                                                                      // into
+                                                                                      // history
+                                                                                      // table
             stmt.executeUpdate("DELETE FROM replicas");
             stmt.executeUpdate("DELETE FROM pools");
 //          stmt.executeUpdate("COMMIT");
@@ -688,7 +692,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
     public void removePoolStatus(String poolName) {
         Connection conn = null;
         Statement  stmt = null;
-        String sql = "delete from pools where pool='" + poolName + "'";
+        String sql = "DELETE FROM pools WHERE pool='" + poolName + "'";
         try {
             conn = (_conn == null) ? DATASOURCE.getConnection() : _conn;
             stmt = (_conn == null) ? conn.createStatement() : _stmt;
@@ -964,7 +968,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             stmt.executeUpdate(sql);
         } catch (Exception ex) {
             ex.printStackTrace();
-            esay("Can't remove pool from the DB");
+            esay("Can't remove pool '" + poolName + "' from the DB");
         } finally {
             if (_conn == null) {
                 try { stmt.close(); stmt = null; } catch (SQLException e) { }
@@ -1078,7 +1082,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
     public void removeHeartBeat(String name) {
         Connection conn = null;
         Statement  stmt = null;
-        final String sql = "delete from heartbeat where process = '" + name + "'";
+        final String sql = "DELETE FROM heartbeat WHERE process = '" + name + "'";
         try {
             conn = (_conn == null) ? DATASOURCE.getConnection() : _conn;
             stmt = (_conn == null) ? conn.createStatement() : _stmt;
@@ -1213,7 +1217,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
 //        ((GenericObjectPool) connectionPool).setMaxActive(50);
 //        ((GenericObjectPool) connectionPool).setWhenExhaustedAction(GenericObjectPool.WHEN_EXHAUSTED_GROW);
 
-	System.out.println("getMaxActive()="+((GenericObjectPool) connectionPool).getMaxActive());
+        System.out.println("getMaxActive()="+((GenericObjectPool) connectionPool).getMaxActive());
         System.out.println("getMaxIdle()="+((GenericObjectPool) connectionPool).getMaxIdle());
         System.out.println("getMaxWait()="+((GenericObjectPool) connectionPool).getMaxWait());
         System.out.println("getMinEvictableIdleTimeMillis()="+((GenericObjectPool) connectionPool).getMinEvictableIdleTimeMillis());
