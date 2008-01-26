@@ -682,7 +682,7 @@ public class PoolManagerV5 extends CellAdapter {
 	    					String poolName = pool.getName();
 	    					PoolCostInfo poolCostInfo = _costModule.getPoolCostInfo(poolName);
 	    					if(poolCostInfo != null) {
-	    						linkAvailableSpace += poolCostInfo.getSpaceInfo().getTotalSpace() - poolCostInfo.getSpaceInfo().getRemovableSpace();
+	    						linkAvailableSpace += poolCostInfo.getSpaceInfo().getFreeSpace() + poolCostInfo.getSpaceInfo().getRemovableSpace();
 	    						linkTotalSpace += poolCostInfo.getSpaceInfo().getTotalSpace();
 	    					}
     					}
@@ -1052,7 +1052,7 @@ public class PoolManagerV5 extends CellAdapter {
 	    					String poolName = pool.getName();
 	    					PoolCostInfo poolCostInfo = _costModule.getPoolCostInfo(poolName);
 	    					if(poolCostInfo != null) {
-	    						linkAvailableSpace += poolCostInfo.getSpaceInfo().getTotalSpace() - poolCostInfo.getSpaceInfo().getRemovableSpace();
+	    						linkAvailableSpace += poolCostInfo.getSpaceInfo().getFreeSpace() + poolCostInfo.getSpaceInfo().getRemovableSpace();
 	    						linkTotalSpace += poolCostInfo.getSpaceInfo().getTotalSpace();
 	    					}
     					}
