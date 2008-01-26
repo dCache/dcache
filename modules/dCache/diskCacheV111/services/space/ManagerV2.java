@@ -2957,8 +2957,18 @@ public class ManagerV2
 		try {
 			connection = connection_pool.getConnection();
 			connection.setAutoCommit(false);
-			File f = selectFileForUpdate(connection,pnfsId);
-			if(f == null) {
+			File f = null;
+			try { 
+				f = selectFileForUpdate(connection,pnfsId);
+				if(f == null) {
+					connection.rollback();
+					connection_pool.returnConnection(connection);
+					connection = null;
+					return;
+				}
+			}
+			catch (Exception e) { 
+				esay(e);
 				connection.rollback();
 				connection_pool.returnConnection(connection);
 				connection = null;
@@ -3015,7 +3025,7 @@ public class ManagerV2
 			}
 		} 
 		catch(SQLException sqle) {
-			esay("transferStarted failed with ");
+			esay("transferFinished failed with ");
 			esay(sqle);
 			try {
 				connection.rollback();
@@ -3023,6 +3033,7 @@ public class ManagerV2
 			catch(SQLException sqle1) {}
 			connection_pool.returnFailedConnection(connection);
 			connection = null;
+			throw sqle;
 		} 
 		finally {
 			if(connection != null) {
