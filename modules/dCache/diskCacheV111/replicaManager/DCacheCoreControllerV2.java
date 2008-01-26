@@ -418,12 +418,15 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
          _status    = "done";
          finished();
       }
-      private void taskFinishedHook(){
-      }
+
       public void  finished(){
           _done = true ;
           taskFinished(this); // synchronious callBack
-          taskFinishedHook();
+
+          if (this.getType().equals("Replication")) {
+            MoverTask mt = (MoverTask) this;
+            mt.moverTaskFinishedHook();
+          }
 
           synchronized( _taskHash ){
               _taskHash.remove( new Long(_id) ) ;
@@ -560,7 +563,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
         _dstPool = destination;
         _p2p.add(_srcPool,_dstPool);
       }
-      protected void taskFinishedHook() {
+      protected void moverTaskFinishedHook() {
         _p2p.remove(_srcPool,_dstPool);
       }
       public PnfsId getPnfsId()    { return _pnfsId; } ;
