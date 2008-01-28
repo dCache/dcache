@@ -963,7 +963,10 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
         BufferedReader br = new BufferedReader(new FileReader(setup));
         String line;
         try {
+            int lineCount = 0;
             while ((line = br.readLine()) != null) {
+                ++lineCount;
+
                 line = line.trim();
                 if (line.length() == 0)
                     continue;
@@ -973,8 +976,7 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
                 try {
                     command(new Args(line));
                 } catch (CommandException ce) {
-                    esay("Excecute setup failure : " + ce);
-                    esay("Excecute setup : won't continue");
+                    esay("Error executing line " + lineCount + " : " + ce);
                     throw ce;
                 }
             }
