@@ -2311,8 +2311,8 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
              * logic is following:
              *
              *    in case of file  not in repository, FileNotInCacheException will be thrown
-             *    if not, file is there. Check rediness - cache or precious.
-             *    other vise - not available, but waitng.
+             *    if not, file is there. Check readiness - cache or precious.
+             *    other wise - not available, but waiting.
              */
 
             poolMessage.setHave(false);
@@ -2325,11 +2325,11 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
                 poolMessage.setWaiting(true);
             }
         } catch (FileNotInCacheException fe) {
-            poolMessage.setHave(false);
+            // default state is fine
         } catch (Exception e) {
             esay("Could get information about <" + pnfsId + "> : "
                  + e.getMessage());
-            poolMessage.setHave(false);
+            // default state is fine
         }
     }
 
