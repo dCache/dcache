@@ -361,6 +361,13 @@ public class CommandInterpreter implements Interpretable {
 
    }
 
+   /**
+    * execute the content of the <i>source</i> file as a set of commands.
+    *
+    * @param source file to execute
+    * @throws CommandException
+    * @throws IOException
+    */
    public void execute(File source) throws CommandException, IOException {
 
        BufferedReader br = new BufferedReader(new FileReader(source));
