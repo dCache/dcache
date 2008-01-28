@@ -2306,13 +2306,23 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
     private void checkFile(PoolFileCheckable poolMessage) {
         PnfsId pnfsId = poolMessage.getPnfsId();
         try {
-            CacheRepositoryEntry entry = _repository.getEntry(pnfsId);
+
+            /*
+             * logic is following:
+             *
+             *    in case of file  not in repository, FileNotInCacheException will be thrown
+             *    if not, file is there. Check rediness - cache or precious.
+             *    other vise - not available, but waitng.
+             */
+
+            poolMessage.setHave(false);
             poolMessage.setWaiting(false);
-            if (entry.isReceivingFromClient() || entry.isReceivingFromStore()) {
-                poolMessage.setHave(false);
-                poolMessage.setWaiting(true);
-            } else {
+
+            CacheRepositoryEntry entry = _repository.getEntry(pnfsId);
+            if ( entry.isCached() || entry.isPrecious() ) {
                 poolMessage.setHave(true);
+            } else {
+                poolMessage.setWaiting(true);
             }
         } catch (FileNotInCacheException fe) {
             poolMessage.setHave(false);
