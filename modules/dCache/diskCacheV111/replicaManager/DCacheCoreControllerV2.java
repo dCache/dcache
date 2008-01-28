@@ -1350,7 +1350,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
                MissingResourceException(
                    "Pnfs File not found :" + msg.getErrorObject().toString() ,
                    "PnfsManager",
-                   "PnfsGetCacheLocationsMessage" ) ;
+                   "PnfsGetStorageInfoMessage" ) ;
          }
          throw new
              MissingResourceException(
