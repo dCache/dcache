@@ -213,8 +213,10 @@ public class PoolManagerV5 extends CellAdapter {
         BufferedReader reader = new BufferedReader(new FileReader(setupFile));
         try {
 
+            int lineCounter = 0;
             String line = null;
             while ((line = reader.readLine()) != null) {
+                ++lineCounter;
                 line = line.trim();
                 if (line.length() == 0)
                     continue;
@@ -226,7 +228,7 @@ public class PoolManagerV5 extends CellAdapter {
                     if (answer.length() > 0)
                         say("Answer    : " + answer);
                 } catch (Exception ee) {
-                    esay("Exception : " + ee.toString());
+                    esay("Exception at line " +lineCounter + " : " + ee.toString());
                     if (sb != null)
                         sb.append(line).append(" -> ").append(ee.toString())
                                 .append("\n");
