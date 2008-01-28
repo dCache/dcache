@@ -27,7 +27,6 @@ import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.GenericStorageInfo;
 import diskCacheV111.vehicles.IpProtocolInfo;
-import diskCacheV111.vehicles.PoolCheckable;
 import diskCacheV111.vehicles.PoolCostCheckable;
 import diskCacheV111.vehicles.PoolLinkGroupInfo;
 import diskCacheV111.vehicles.PoolManagerGetPoolListMessage;
@@ -67,13 +66,13 @@ public class PoolManagerV5 extends CellAdapter {
 
     private String  _pnfsManagerName   = "PnfsManager";
     private String  _selectionUnitName = "diskCacheV111.poolManager.PoolSelectionUnitV2" ;
-    private String  _setupFileName     = null ;
+    private final String  _setupFileName  ;
     private Map _readHandlerList   = new HashMap() ;
     private final Object  _readHandlerLock   = new Object() ;
 
-    private PnfsHandler       _pnfsHandler   = null ;
-    private PoolSelectionUnit _selectionUnit = null ;
-    private PoolMonitorV5     _poolMonitor   = null ;
+    private final PnfsHandler       _pnfsHandler  ;
+    private final PoolSelectionUnit _selectionUnit ;
+    private final PoolMonitorV5     _poolMonitor   ;
 
     private long _interval         = 15 * 1000;
     private long _pnfsTimeout      = 15 * 1000;
@@ -82,7 +81,7 @@ public class PoolManagerV5 extends CellAdapter {
     private long _writePoolTimeout = 15 * 1000;
     private long _poolTimeout      = 15 * 1000;
 
-    private CostModule   _costModule   = null ;
+    private final CostModule   _costModule  ;
     private PoolOperator _poolOperator = null ;
     private CellPath     _poolStatusRelayPath = null ;
     private double _spaceCostFactor       = 1.0 ;
@@ -90,9 +89,9 @@ public class PoolManagerV5 extends CellAdapter {
 
     private final Object _setupLock             = new Object() ;
 
-    private RequestContainerV5 _requestContainer = null ;
+    private final RequestContainerV5 _requestContainer ;
     private WatchdogThread     _watchdog         = null ;
-    private PartitionManager   _partitionManager = null ;
+    private final PartitionManager   _partitionManager ;
 
     private boolean _sendCostInfo  = false ;                   //VP
     private boolean _quotasEnabled = false ;
@@ -979,11 +978,13 @@ public class PoolManagerV5 extends CellAdapter {
            if( expectedLengthString != null ){
               try{
                  expectedLength = Long.parseLong(expectedLengthString) ;
-              }catch(Exception ee ){}
+              }catch(NumberFormatException ee ){
+                  // bad values are ignored
+              }
            }
            try{
 
-              List storeList = _poolMonitor.
+              List<PoolCostCheckable> storeList = _poolMonitor.
                                getPnfsFileLocation( _pnfsId , storageInfo , protocolInfo, _request.getLinkGroup() ).
                                getStorePoolList( expectedLength ) ;
               /*
@@ -992,11 +993,11 @@ public class PoolManagerV5 extends CellAdapter {
                                                   protocolInfo ,
                                                   expectedLength );
               */
-              String poolName = ((PoolCheckable)storeList.get(0)).getPoolName() ;
+              String poolName = storeList.get(0).getPoolName() ;
 
               if (_sendCostInfo)
                     _requestContainer.sendCostMsg(
-                             _pnfsId, (PoolCostCheckable)storeList.get(0), true
+                             _pnfsId, storeList.get(0), true
                                                  );        //VP
 
               say(_pnfsId+" write handler selected "+poolName+" after "+
