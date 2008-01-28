@@ -881,6 +881,16 @@ public abstract class AbstractFtpDoorV1
         }
     }
 
+    public void say(String s)
+    {
+        super.say("(" + getCellName() + ") " + s);
+    }
+
+    public void esay(String s)
+    {
+        super.esay("(" + getCellName() + ") " + s);
+    }
+
     protected AdminCommandListener adminCommandListener;
     public class AdminCommandListener
     {
