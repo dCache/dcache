@@ -24,7 +24,7 @@ import dmg.util.Args;
 import org.dcache.chimera.FileNotFoundHimeraFsException;
 import org.dcache.chimera.FsInode;
 import org.dcache.chimera.HimeraDirectoryEntry;
-import org.dcache.chimera.HimeraFsException;
+import org.dcache.chimera.ChimeraFsException;
 import org.dcache.chimera.JdbcFs;
 import org.dcache.chimera.XMLconfig;
 import org.dcache.vehicles.DirectoryListMessage;
@@ -37,70 +37,75 @@ import diskCacheV111.vehicles.DCapProtocolInfo;
 import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.PoolIoFileMessage;
 
-public class DirectoryLookUpPool extends CellAdapter {        
-    
+public class DirectoryLookUpPool extends CellAdapter {
+
     private final String      _poolName ;
     private final Args        _args     ;
     private final CellNucleus _nucleus  ;
     private final JdbcFs       _fs;
-    
-    
-    
+
+
+
     private final static int MAXCACHESIZE = 100;
-    
+
     private final Map<FsInode, LookupCacheEntry> _LOOKUP_CACHE = Collections.synchronizedMap( new LinkedHashMap<FsInode, LookupCacheEntry>(){
         // This method is called just after a new entry has been added
+        @Override
         public boolean removeEldestEntry(Map.Entry<FsInode, LookupCacheEntry> eldest) {
             return size() > MAXCACHESIZE;
         }
     } );
-    
-    private static final Logger _logNameSpace =  Logger.getLogger("logger.org.dcache.namespace");    
-    
-    
+
+    private static final Logger _logNameSpace =  Logger.getLogger("logger.org.dcache.namespace");
+
+
     public DirectoryLookUpPool(String poolName, String args) throws Exception {
         super( poolName, args , false );
-        
-        
+
+
         _poolName = poolName;
         _args     = getArgs();
-        _nucleus  = getNucleus() ;                
-        
+        _nucleus  = getNucleus() ;
+
         say("Lookup Pool "+poolName +" starting");
-        
+
         try {
-        	
+
     	    XMLconfig config = new XMLconfig( new File( _args.getOpt("chimeraConfig") ) );
     	    _fs = new JdbcFs(  config );
-    	                            
+
         } catch (Exception e){
             say("Exception occurred on startup: "+e);
             start();
             kill();
             throw e;
-        }        
-        
+        }
+
         useInterpreter( true );
         _nucleus.export();
         start() ;
-        
+
     }
-    
+
+    @Override
     public void getInfo( PrintWriter pw ){
         pw.println("JdbcFs            : "+_fs.getInfo());
         pw.println("Revision          : [$Id: DirectoryLookUpPool.java,v 1.5 2007-07-26 15:44:42 tigran Exp $]" ) ;
     }
-    
+
+    @Override
     public void say( String str ){
         pin( str );
     }
+    @Override
     public void esay( String str ){
         pin( str ) ;
     }
-        
+
+    @Override
     public void messageArrived( CellMessage cellMessage ){
-        
-    	
+
+
     	Message messageToProcess = (Message) cellMessage.getMessageObject();
 
 		if (messageToProcess instanceof DirectoryListMessage) {
@@ -109,8 +114,8 @@ public class DirectoryLookUpPool extends CellAdapter {
 			ioFile((PoolIoFileMessage) messageToProcess, cellMessage);
 			return;
 		}
-    	
-        
+
+
     	if ( messageToProcess.getReplyRequired() ) {
     		cellMessage.revertDirection();
     		try {
@@ -122,14 +127,14 @@ public class DirectoryLookUpPool extends CellAdapter {
 				_logNameSpace.info("Cant send reply to " + cellMessage.getDestinationPath() + " : " + e.getMessage());
 			}
     	}
-    	
+
     }
-    
-    
+
+
     private void processListRequest(DirectoryListMessage messageToProcess) {
-		
+
     	// TODO: and what about cookies? maxcount? maxbyte?
-    	
+
     	String[] list = list( new FsInode ( _fs, messageToProcess.getPnfsId().getId() ) );
 		if( list == null ) {
 			// TODO: more checks : not a dir, does not exist, by path....
@@ -142,21 +147,21 @@ public class DirectoryLookUpPool extends CellAdapter {
 	}
 
 	/**
-     * 
+     *
      * @param dirInode
      * @return An array of strings naming the files and directories in the directory denoted by this pnfsid.
      *         The array will be empty if the directory is empty or if no names were accepted by the filter.
      *         Returns null if this pnfsid does not denote a directory, or if an I/O error occurs.
      */
     private String[] list(FsInode dirInode) {
-    	
+
     	String[] list = null;
-    	    	    
+
     	if( !dirInode.isDirectory() ) return null;
     	try {
-	    	     	
+
 	    	LookupCacheEntry cacheEntry = _LOOKUP_CACHE.get(dirInode);
-	    	
+
 	    	if( cacheEntry != null && cacheEntry.mTime() > dirInode.statCache().getMTime() ) {
 	    		list =  cacheEntry.list();
 	    		if(_logNameSpace.isDebugEnabled() ) {
@@ -167,154 +172,154 @@ public class DirectoryLookUpPool extends CellAdapter {
 	    			_logNameSpace.debug("fetching new list for pnfsid " + dirInode.toString() );
 	    		}
 	    		list = _fs.listDir(dirInode);
-	    		cacheEntry = new LookupCacheEntry(System.currentTimeMillis(), list);	
+	    		cacheEntry = new LookupCacheEntry(System.currentTimeMillis(), list);
 	    		_LOOKUP_CACHE.put(dirInode, cacheEntry);
 	    	}
-    	}catch(HimeraFsException hfe ) {
+    	}catch(ChimeraFsException hfe ) {
     		// do noting as docu describes
     	}
-    	
+
     	return list;
-    	
+
     }
-    
+
     // commands
     public String hh_ls = " <path>";
     public String ac_ls_$_1( Args args ) throws Exception {
-    	
+
     	String path = args.argv(0);
         StringBuilder sb =  new StringBuilder();
-        
+
         FsInode inode = _fs.path2inode(args.argv(0));
-                    
+
             if( inode.isDirectory() ) {
                 HimeraDirectoryEntry[] list = _fs.listDirFull(inode) ;
-                
+
                 if( list != null ) {
-                    for( int i = 0; i < list.length; i++) {                    	                            
+                    for( int i = 0; i < list.length; i++) {
 
                         sb.append(list[i].getStat()).append("  ").append( list[i].getInode().toString() ).
                         append("  ").append(list[i].getName()).append('\n');
                     }
                 }
-            }else{             
+            }else{
                sb.append(inode.statCache()).append("  ").append( inode.toString() ).
                append("  ").append( new File(path).getName() ).append('\n');
             }
-        
-        return sb.toString();        
+
+        return sb.toString();
     }
-    
+
     // commands
     public String hh_dir = " <path>";
     public String ac_dir_$_1( Args args ) throws Exception {
-    	
+
         StringBuilder sb =  new StringBuilder();
-        
+
         FsInode inode = _fs.path2inode(args.argv(0));
 
         String[] list = list(inode);
-        
+
         if( list == null ) {
         	sb.append("not a directory");
         }else{
-        	for( int i = 0; i < list.length; i++) {                    	                            
+        	for( int i = 0; i < list.length; i++) {
 
                 sb.append(list[i]).append('\n');
             }
         }
-        
-        
-        return sb.toString();        
+
+
+        return sb.toString();
     }
-    
-    
+
+
     public String hh_mkdir = " <path>";
     public String ac_mkdir_$_1( Args args ) throws Exception {
-    	
+
     	_fs.mkdir(args.argv(0));
-    	
+
     	return "";
     }
-    
-    
+
+
     public String hh_touch = " <path>";
     public String ac_touch_$_1( Args args ) throws Exception {
-    	
+
     	FsInode inode = null;
-    	
+
         try {
              inode = _fs.path2inode(args.argv(0));
              _fs.setFileMTime(inode, System.currentTimeMillis());
-             
+
         }catch(FileNotFoundHimeraFsException e){
             try {
                  inode = _fs.createFile(args.argv(0));
-            }catch(HimeraFsException ee) {
+            }catch(ChimeraFsException ee) {
                 return ("unable to create file " + args.argv(0) + " : " + ee.getMessage());
             }
-        }        
-        
+        }
+
     	return "";
     }
-    
-    
+
+
     public String hh_chmod = " <path> <octal mode>";
     public String ac_chmod_$_2( Args args ) throws Exception {
-    	
-    	_fs.setFileMode( _fs.path2inode(args.argv(0)), Integer.parseInt(args.argv(1), 8)  );
-        
-    	return "";
-    }    
 
-    
+    	_fs.setFileMode( _fs.path2inode(args.argv(0)), Integer.parseInt(args.argv(1), 8)  );
+
+    	return "";
+    }
+
+
     public String hh_chown = " <path> <uid>";
     public String ac_chown_$_2( Args args ) throws Exception {
-    	
+
     	_fs.setFileOwner( _fs.path2inode(args.argv(0)), Integer.parseInt(args.argv(1))  );
-        
+
     	return "";
-    }    
-    
+    }
+
     public String hh_chgrp = " <path> <gid>";
     public String ac_chgrp_$_2( Args args ) throws Exception {
-    	
+
     	_fs.setFileGroup( _fs.path2inode(args.argv(0)), Integer.parseInt(args.argv(1))  );
-        
+
     	return "";
     }
-    
+
     public String hh_delete = " <path>";
     public String ac_delete_$_1( Args args ) throws Exception {
-    	
+
     	_fs.remove(args.argv(0));
-        
+
     	return "";
     }
-    
-   
-    
+
+
+
     private static class LookupCacheEntry {
-    	    	
+
     	private final String[] _list;
     	private final long _mtime;
-    
+
     	LookupCacheEntry(long mtime, String[] list) {
     		_mtime = mtime;
     		_list = list;
     	}
-    	
+
     	public String[] list() {
     		return _list;
     	}
-    	
+
     	public long mTime() {
     		return _mtime;
     	}
-    	
+
     }
-    
-    
+
+
 	// //////////////////////////////////////////////////////////////
 	//
 	// The io File Part
@@ -370,10 +375,10 @@ public class DirectoryLookUpPool extends CellAdapter {
 
 				connectToClinet();
 				String dirList = createDirEnt(_dirInode);
-				
+
 				while (!done && !Thread.currentThread().isInterrupted()) {
 
-					
+
 
 					commandSize = cntIn.readInt();
 
@@ -518,17 +523,17 @@ public class DirectoryLookUpPool extends CellAdapter {
 			return (int) rc;
 		}
 
-		
+
 		/*
 		 * create a string containing entries in following format:
-		 * 
+		 *
 		 * <pnfsid>:<type>:<namelen>:<name>\n
-		 * 
+		 *
 		 * where type is 'f' for a file and 'd' for a directory
 		 */
-		
-		private String createDirEnt(FsInode dirInode) throws HimeraFsException {
-			
+
+		private String createDirEnt(FsInode dirInode) throws ChimeraFsException {
+
 			StringBuilder sb = new StringBuilder();
 
 			if (!dirInode.exists()) {
@@ -540,7 +545,7 @@ public class DirectoryLookUpPool extends CellAdapter {
 					if (list != null) {
 						for (int i = 0; i < list.length; i++) {
 							FsInode inode = dirInode.inodeOf(list[i].getName());
-							try {								
+							try {
 								sb.append(inode.toString());
 							} catch (Exception e) {
 								continue;
@@ -563,5 +568,5 @@ public class DirectoryLookUpPool extends CellAdapter {
 		}
 
 	} // end of private class
-    
-}  
+
+}

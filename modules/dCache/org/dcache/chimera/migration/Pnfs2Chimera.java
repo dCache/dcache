@@ -21,7 +21,7 @@ import java.util.StringTokenizer;
 
 import org.dcache.chimera.DbConnectionInfo;
 import org.dcache.chimera.FsInode;
-import org.dcache.chimera.HimeraFsException;
+import org.dcache.chimera.ChimeraFsException;
 import org.dcache.chimera.JdbcFs;
 import org.dcache.chimera.UnixPermission;
 import org.dcache.chimera.XMLconfig;
@@ -69,7 +69,7 @@ public class Pnfs2Chimera {
                             if( isPrimaryTag(f, tagId)) {
                                 try {
                                     fs.statTag(newInode, tagName);
-                                }catch(HimeraFsException tnf) {
+                                }catch(ChimeraFsException tnf) {
                                     fs.createTag(newInode, tagName);
                                 }
 

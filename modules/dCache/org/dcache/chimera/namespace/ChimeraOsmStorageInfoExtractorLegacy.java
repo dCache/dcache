@@ -7,7 +7,7 @@ import org.dcache.chimera.FsInode;
 import org.dcache.chimera.FsInode_TAG;
 import org.dcache.chimera.StorageGenericLocation;
 import org.dcache.chimera.posix.Stat;
-import org.dcache.chimera.HimeraFsException;
+import org.dcache.chimera.ChimeraFsException;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.HsmLocation;
@@ -30,7 +30,7 @@ import org.dcache.chimera.store.AccessLatency;
 import org.dcache.chimera.store.RetentionPolicy;
 
 /**
- * 
+ *
  * Extractor store and restore storageInfo into pnfs levels
  *
  */
@@ -39,7 +39,7 @@ public class ChimeraOsmStorageInfoExtractorLegacy implements
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see diskCacheV111.util.StorageInfoExtractable#getStorageInfo(java.lang.String,
      *      diskCacheV111.util.PnfsId)
      */
@@ -49,10 +49,10 @@ public class ChimeraOsmStorageInfoExtractorLegacy implements
 
         if (inode.isDirectory()) {
             return getDirStorageInfo(inode);
-        } 
+        }
 
         return getFileStorageInfo(inode);
-        
+
     }
 
     private static StorageInfo getFileStorageInfo(FsInode inode) throws CacheException {
@@ -68,33 +68,33 @@ public class ChimeraOsmStorageInfoExtractorLegacy implements
         } else {
 
             try {
-                levelStat = level1.stat();                
+                levelStat = level1.stat();
 
                 byte[] buff = new byte[(int) levelStat.getSize()];
                 int len = level1.read(0, buff, 0, buff.length);
 
                 Map<Integer, String> levels = new HashMap<Integer, String>(1);
-                
+
                 levels.put(Integer.valueOf(1), new String(buff));
                 URI location = new OsmLocationExtractor(levels).location();
-                
+
                 InodeStorageInformation storageInfo = inode.getFs().getSorageInfo(inode);
-                
+
                 info = new OSMStorageInfo(storageInfo.storageGroup(), storageInfo.storageSubGroup());
                 info.addLocation(location);
-                
-            } catch (HimeraFsException e) {
+
+            } catch (ChimeraFsException e) {
                 throw new CacheException(e.getMessage());
             }
         }
-        
-        
+
+
         try {
             stat = inode.stat();
-        }catch( HimeraFsException hfe) {
+        }catch( ChimeraFsException hfe) {
             throw new CacheException(hfe.getMessage());
         }
-        
+
         info.setFileSize(stat.getSize());
         info.setIsNew((stat.getSize() == 0) && (!level2.exists()));
 
@@ -110,11 +110,11 @@ public class ChimeraOsmStorageInfoExtractorLegacy implements
             dirInode = inode;
         }
 
-        
+
         FsInode_TAG tagInode = new FsInode_TAG(dirInode.getFs(), dirInode.toString(), "OSMTemplate");
-                
+
         byte[] buff = new byte[256];
-        
+
         int len = tagInode.read(0, buff, 0, buff.length);
 
         StorageInfo si = null;
@@ -140,9 +140,9 @@ public class ChimeraOsmStorageInfoExtractorLegacy implements
                 throw new CacheException(37, "StoreName not found in template");
             }
 
-            tagInode = new FsInode_TAG(dirInode.getFs(), dirInode.toString(), "sGroup");                        
+            tagInode = new FsInode_TAG(dirInode.getFs(), dirInode.toString(), "sGroup");
             len = tagInode.read(0, buff, 0, buff.length);
-            
+
             ca = new CharArrayReader(new String(buff, 0, len).toCharArray());
             br = new BufferedReader(ca);
 
@@ -150,61 +150,61 @@ public class ChimeraOsmStorageInfoExtractorLegacy implements
 
             OSMStorageInfo info = new OSMStorageInfo(store, gr);
             info.addKeys(hash);
-            
+
             // overwrite htm type with hsmInstance tag
 
-            tagInode = new FsInode_TAG(dirInode.getFs(), dirInode.toString(), "hsmInstance");            
+            tagInode = new FsInode_TAG(dirInode.getFs(), dirInode.toString(), "hsmInstance");
             len = tagInode.read(0, buff, 0, buff.length);
-            
+
             ca = new CharArrayReader(new String(buff, 0, len).toCharArray());
             br = new BufferedReader(ca);
-            
+
             if( len > 0 ) {
             	String hsm = br.readLine();
             	if( hsm != null ) {
             		info.setHsm( hsm.toLowerCase());
             	}
             }
-            
-            
+
+
             si = info;
         } catch (IOException e) {
             System.out.println(e.getMessage());
             e.printStackTrace();
             throw new CacheException(e.getMessage());
         }
-        
+
         return si;
     }
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see diskCacheV111.util.StorageInfoExtractable#setStorageInfo(java.lang.String,
      *      diskCacheV111.util.PnfsId, diskCacheV111.vehicles.StorageInfo, int)
      */
     public void setStorageInfo(FsInode inode, StorageInfo dCacheStorageInfo,
             int arg3) throws CacheException {
 
-    	
+
     	RetentionPolicy retentionPolicy = RetentionPolicy.valueOf( dCacheStorageInfo.getRetentionPolicy().getId());
     	AccessLatency accessLatency = AccessLatency.valueOf(dCacheStorageInfo.getAccessLatency().getId());
-    	
-    	InodeStorageInformation storageInfo = new InodeStorageInformation(inode, 
-    			dCacheStorageInfo.getHsm(), 
-    			dCacheStorageInfo.getKey("store"), 
+
+    	InodeStorageInformation storageInfo = new InodeStorageInformation(inode,
+    			dCacheStorageInfo.getHsm(),
+    			dCacheStorageInfo.getKey("store"),
     			dCacheStorageInfo.getKey("group"),
-    			accessLatency, 
+    			accessLatency,
     			retentionPolicy);
-    	
+
     	try {
     		inode.getFs().setStorageInfo(inode, storageInfo);
-    	
+
     		if(dCacheStorageInfo.isSetAddLocation() ) {
 	    		List<URI> locationURIs = dCacheStorageInfo.locations();
 	    		for(URI location : locationURIs) {
 	    			HsmLocation hsmLocation = HsmLocationExtractorFactory.extractorOf(location);
-	    			
+
 	    			Map<Integer, String> levels = hsmLocation.toLevels();
 	    			for( Map.Entry<Integer, String> levelEntry: levels.entrySet() ) {
 	    				FsInode levelInode = new FsInode(inode.getFs(), inode.toString(), levelEntry.getKey().intValue() );
@@ -213,8 +213,8 @@ public class ChimeraOsmStorageInfoExtractorLegacy implements
 	    			}
 	    		}
     		}
-    		
-    	}catch(HimeraFsException he ) {
+
+    	}catch(ChimeraFsException he ) {
     		throw new CacheException(he.getMessage() );
     	}
     }

@@ -14,7 +14,7 @@ import org.apache.log4j.Logger;
 
 import org.dcache.chimera.FileExistsChimeraFsException;
 import org.dcache.chimera.FsInode;
-import org.dcache.chimera.HimeraFsException;
+import org.dcache.chimera.ChimeraFsException;
 import org.dcache.chimera.FileNotFoundHimeraFsException;
 import org.dcache.chimera.JdbcFs;
 import org.dcache.chimera.StorageGenericLocation;
@@ -26,11 +26,9 @@ import org.dcache.chimera.posix.Stat;
 import diskCacheV111.namespace.CacheLocationProvider;
 import diskCacheV111.namespace.NameSpaceProvider;
 import diskCacheV111.namespace.StorageInfoProvider;
-import diskCacheV111.namespace.provider.AttributeChecksumBridge;
 
 import diskCacheV111.util.FileExistsCacheException;
 import diskCacheV111.util.FileMetaData;
-import diskCacheV111.util.FileNotInCacheException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.util.FileNotFoundCacheException;
@@ -43,7 +41,6 @@ public class ChimeraNameSpaceProvider implements NameSpaceProvider, StorageInfoP
     private final JdbcFs       _fs;
     private final Args         _args;
     private final ChimeraStorageInfoExtractable _extractor;
-    private final AttributeChecksumBridge _attChecksumImpl;
 
     private static final Logger _logNameSpace =  Logger.getLogger("logger.org.dcache.namespace");
 
@@ -55,7 +52,6 @@ public class ChimeraNameSpaceProvider implements NameSpaceProvider, StorageInfoP
 
 	    Class<ChimeraStorageInfoExtractable> exClass = (Class<ChimeraStorageInfoExtractable>) Class.forName( _args.argv(0)) ;
         _extractor = exClass.newInstance() ;
-        _attChecksumImpl = new AttributeChecksumBridge(this);
 
     }
 
@@ -131,7 +127,7 @@ public class ChimeraNameSpaceProvider implements NameSpaceProvider, StorageInfoP
 
             inode.setStat(inodeStat);
 
-        }catch(HimeraFsException hfe) {
+        }catch(ChimeraFsException hfe) {
         	_logNameSpace.error("setFileMetadata failed: " + hfe.getMessage());
         }
 
@@ -217,7 +213,7 @@ public class ChimeraNameSpaceProvider implements NameSpaceProvider, StorageInfoP
         try {
         	FsInode inode = new FsInode(_fs, pnfsId.toIdString());
         	_fs.addInodeLocation(inode, StorageGenericLocation.DISK, cacheLocation);
-        } catch (HimeraFsException e){
+        } catch (ChimeraFsException e){
             _logNameSpace.error("Exception in addCacheLocation "+e);
             //no reply to this message
         }
@@ -259,7 +255,7 @@ public class ChimeraNameSpaceProvider implements NameSpaceProvider, StorageInfoP
         	    }
         	}
 
-        } catch (HimeraFsException e){
+        } catch (ChimeraFsException e){
             _logNameSpace.error("Exception in clearCacheLocation for : "+pnfsId+" -> "+e);
             //no reply to this message
         }
@@ -388,12 +384,13 @@ public class ChimeraNameSpaceProvider implements NameSpaceProvider, StorageInfoP
     	_fs.removeInodeChecksum(new FsInode(_fs, pnfsId.toString()), type);
     }
 
-    
+
     public int[] listChecksumTypes(PnfsId pnfsId ) throws Exception
     {
         return null;
     }
 
+    @Override
     public String toString() {
        StringBuilder sb = new StringBuilder();
 
