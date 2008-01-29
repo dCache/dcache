@@ -200,9 +200,6 @@ public class CellNucleus implements Runnable, ThreadFactory {
       }
       return info ;
    }
-   protected void finalize()  throws Throwable {
-      say( "finalize called " ) ;
-   }
    public void   setPrintoutLevel( int level ){ _printoutLevel = level ; }
    public int    getPrintoutLevel(){ return _printoutLevel ; }
    public void   setPrintoutLevel( String cellName , int level ){
