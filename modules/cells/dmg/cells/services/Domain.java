@@ -52,7 +52,7 @@ import java.io.* ;
   *                -debug
   *                    CellGlue and default printout is set to all.
   *  </pre>
-  *  
+  *
   *
   * @author Patrick Fuhrmann
   * @version 0.1, 15 Feb 1998
@@ -63,7 +63,7 @@ public class Domain {
   private static final int ASSEMBLE  = 1 ;
 
   public static void main( String [] args ){
-  
+
      if( args.length < 1 ){
         try{
             Class c = dmg.cells.nucleus.CellAdapter.class ;
@@ -78,7 +78,7 @@ public class Domain {
             }
         }catch(Exception ee){}
         System.out.println( "USAGE : <domainName> [options]" ) ;
-        System.out.println( "         -telnet  \"<telnetPort> [-acm=acm] "+ 
+        System.out.println( "         -telnet  \"<telnetPort> [-acm=acm] "+
                                                "[-localOk] [-passwd=<passwd>]\"" ) ;
         System.out.println( "         -tunnel(2)  <tunnelPort>" ) ;
         System.out.println( "         -connect(2) <host> <port>" ) ;
@@ -124,7 +124,7 @@ public class Domain {
                   columns.addElement( args[pos++] ) ;
                }
             break ;
-         
+
          }
       }
       if( state == ASSEMBLE ){
@@ -134,7 +134,7 @@ public class Domain {
       }
       Hashtable argHash = new Hashtable() ;
       for( int i = 0  ; i < rowVec.size() ; i++ ){
-          String [] el = (String [] )rowVec.elementAt(i) ; 
+          String [] el = (String [] )rowVec.elementAt(i) ;
           argHash.put( el[0] , el ) ;
       }
       /*
@@ -157,7 +157,7 @@ public class Domain {
          //
          systemCell = new  SystemCell( args[0] ) ;
          String [] tmp = null ;
-         // 
+         //
          if( argHash.get("-version") != null ){
             Package p = Package.getPackage("dmg.cells.nucleus");
             System.out.println(p.toString());
@@ -167,34 +167,33 @@ public class Domain {
          //
          if( ( ( tmp = (String[])argHash.get( "-param" ) ) != null ) &&
              ( tmp.length > 1 ) ){
-             
+
               String [] [] p = getParameter( tmp ) ;
-                 
+
               Dictionary dict = systemCell.getDomainContext() ;
-               
+
               for( int i = 0 ; i < p.length ; i++ )
-                 dict.put( p[i][0] , p[i][1] ) ; 
+                 dict.put( p[i][0] , p[i][1] ) ;
 
          }
 
          if( ( tmp = (String[])argHash.get( "-debug" ) ) != null ){
-             
-             
+
+
              System.out.println( "Starting DebugSequence" ) ;
-             Vector v = new Vector() ;
+             List<String> v = new ArrayList<String>() ;
              if( ( tmp.length > 1 ) && ( tmp[1].equals("full") ) ){
-                v.addElement( "set printout CellGlue all" ) ;
-                v.addElement( "set printout default all" ) ;
+                v.add( "set printout CellGlue all" ) ;
+                v.add( "set printout default all" ) ;
              }else{
-                v.addElement( "set printout default 3" ) ;
+                v.add( "set printout default 3" ) ;
              }
              String [] commands = new String[v.size()] ;
-             v.copyInto( commands ) ;
-             new BatchCell( "debug" , commands ) ;
-  
+             new BatchCell( "debug" , v.toArray( commands ) ) ;
+
          }
          if( ( tmp = (String[])argHash.get( "-cp" ) ) != null ){
-             
+
              StringBuffer sb = new StringBuffer() ;
              for( int i = 1 ; i < tmp.length ; i++ ){
                 sb.append(" ") ;
@@ -204,21 +203,20 @@ public class Domain {
                    sb.append(tmp[i]);
              }
              String a = sb.toString() ;
-             
+
              System.out.println( "Loading new CellPrinter "+a ) ;
-             Vector v = new Vector() ;
-             v.addElement( "load cellprinter "+a );
-                             
+             List<String> v = new ArrayList<String>() ;
+             v.add( "load cellprinter "+a );
+
              String [] commands = new String[v.size()] ;
-             v.copyInto( commands ) ;
-             new BatchCell( "cellprinter" , commands ) ;
-  
+             new BatchCell( "cellprinter" , v.toArray( commands )  ) ;
+
          }
          if( argHash.get("-routed") != null ){
              System.out.println( "Starting Routing Manager" ) ;
              new RoutingManager( "RoutingMgr" , "up0" ) ;
          }
-         
+
          if( ( ( tmp = (String[])argHash.get( "-lm" ) ) != null ) &&
              ( tmp.length > 1 ) ){
              StringBuffer sb = new StringBuffer() ;
@@ -236,22 +234,21 @@ public class Domain {
          }
 
          if( argHash.get( "-silent" ) != null ){
-             
-             
+
+
              System.out.println( "Starting Silent Sequence" ) ;
-             Vector v = new Vector() ;
-             v.addElement( "set printout CellGlue none" ) ;
-             v.addElement( "set printout default none" ) ;
+             List<String> v = new ArrayList<String>();
+             v.add( "set printout CellGlue none" ) ;
+             v.add( "set printout default none" ) ;
              String [] commands = new String[v.size()] ;
-             v.copyInto( commands ) ;
-             new BatchCell( "silent" , commands ) ;
-  
+             new BatchCell( "silent" , v.toArray( commands )  ) ;
+
          }
-         
-         
+
+
          if( ( ( tmp = (String[])argHash.get( "-telnet" ) ) != null ) &&
              ( tmp.length > 1 ) ){
-             
+
              StringBuffer sb = new StringBuffer() ;
              //
              // the port number class and protocol
@@ -263,17 +260,17 @@ public class Domain {
              // and possible options
              //
              for( int i = 3 ; i < tmp.length ; i++ ){
-                 
+
                  sb.append( " -" ).append( tmp[i] ) ;
              }
-                 
+
              System.out.println( "Starting LoginManager (telnet) on "+sb.toString() ) ;
              new LoginManager( "tlm" , sb.toString() ) ;
 
-         }  
+         }
          if( ( ( tmp = (String[])argHash.get( "-tunnel2" ) ) != null ) &&
              ( tmp.length > 1 ) ){
-             
+
              StringBuffer sb = new StringBuffer() ;
              //
              // the port number class and protocol
@@ -285,85 +282,84 @@ public class Domain {
              // and possible options
              //
              for( int i = 3 ; i < tmp.length ; i++ ){
-                 
+
                  sb.append( " -" ).append( tmp[i] ) ;
              }
-                 
+
              System.out.println( "Starting RetryTunnel2 (raw) on "+sb.toString() ) ;
              new LoginManager( "down" , sb.toString() ) ;
 
-         }  
+         }
          if( ( ( tmp = (String[])argHash.get( "-connect" ) ) != null ) &&
              ( tmp.length > 2 ) ){
-             
+
              System.out.println( "Starting RetryTunnel on "+tmp[1]+" "+tmp[2] ) ;
              new RetryTunnel( "up0" , tmp[1]+" "+tmp[2] ) ;
 
-         }  
+         }
          if( ( ( tmp = (String[])argHash.get( "-connect2" ) ) != null ) &&
              ( tmp.length > 2 ) ){
-             
+
              System.out.println( "Starting RetryTunnel2 on "+tmp[1]+" "+tmp[2] ) ;
              new RetryTunnel2( "up0" , tmp[1]+" "+tmp[2] ) ;
 
-         }  
+         }
          if( ( ( tmp = (String[])argHash.get( "-connectDomain" ) ) != null ) &&
              ( tmp.length > 1 ) ){
-             
+
              System.out.println( "Starting LocationMgrTunnel on "+tmp[1] ) ;
              new LocationMgrTunnel( "upD" , tmp[1]+" lm"  ) ;
 
-         }  
+         }
          if( ( ( tmp = (String[])argHash.get( "-acm" ) ) != null ) &&
              ( tmp.length > 1 ) ){
-             
+
              System.out.println( "Starting UserMgrCell on "+tmp[1] ) ;
              new UserMgrCell( "acm" , tmp[1] ) ;
 
-         }  
+         }
          if( ( ( tmp = (String[])argHash.get( "-tunnel" ) ) != null ) &&
              ( tmp.length > 1 ) ){
-             
+
              System.out.println( "Starting RetryTunnel on "+tmp[1] ) ;
              new GNLCell( "down" , "dmg.cells.network.RetryTunnel "+tmp[1] ) ;
 
          }
          if( ( ( tmp = (String[])argHash.get( "-accept" ) ) != null ) &&
              ( tmp.length > 0 ) ){
-             
+
              System.out.println( "Starting LocationMgrTunnel(listen)" ) ;
-             new LoginManager( 
-                   "downD" , 
+             new LoginManager(
+                   "downD" ,
                    "0 dmg.cells.network.LocationMgrTunnel "+
                    "-prot=raw -lm=lm" ) ;
 
          }
          if( ( ( tmp = (String[])argHash.get( "-boot" ) ) != null ) &&
              ( tmp.length > 1 ) ){
-             
-             
+
+
              System.out.println( "Starting BootSequence for Domain "+tmp[1] ) ;
-             Vector v = new Vector() ;
-             v.addElement( "onerror shutdown" ) ;
-             v.addElement( "set context bootDomain "+tmp[1] ) ;
-             v.addElement( "waitfor context Ready ${bootDomain}" ) ;
-             v.addElement( "copy context://${bootDomain}/${thisDomain}Setup "+
-                           "context:bootStrap" ) ;
-             v.addElement( "exec context bootStrap" );
-             v.addElement( "# exit" );
+             List<String> v = new ArrayList<String>() ;
+             v.add( "onerror shutdown" ) ;
+             v.add( "set context bootDomain "+tmp[1] ) ;
+             v.add( "waitfor context Ready ${bootDomain}" ) ;
+             v.add( "copy context://${bootDomain}/${thisDomain}Setup context:bootStrap" ) ;
+             v.add( "exec context bootStrap" );
+             v.add( "# exit" );
              String [] commands = new String[v.size()] ;
-             v.copyInto( commands ) ;
-             new BatchCell( "boot" , commands ) ;
-  
+
+             new BatchCell( "boot" , v.toArray( commands ) ) ;
+
          }
          if( ( ( tmp = (String[])argHash.get( "-spy" ) ) != null ) &&
              ( tmp.length > 1 ) ){
-             
-             
+
+
              System.out.println( "Starting TopologyManager " ) ;
              new TopoCell( "topo" , "" ) ;
              System.out.println( "Starting Spy Listener on "+tmp[1] ) ;
-             new LoginManager( "Spy" , 
+             new LoginManager( "Spy" ,
                 tmp[1]+
                 " dmg.cells.services.ObjectLoginCell"+
                 " -prot=raw" ) ;
@@ -371,16 +367,16 @@ public class Domain {
          }
          if( ( ( tmp = (String[])argHash.get( "-batch" ) ) != null ) &&
              ( tmp.length > 1 ) ){
-             
-             
+
+
              System.out.println( "Starting BatchCell on "+tmp[1] ) ;
              new BatchCell( "batch" , tmp[1] ) ;
 
          }
          if( ( ( tmp = (String[])argHash.get( "-ic" ) ) != null ) &&
              ( tmp.length > 1 ) ){
-             
-             
+
+
              System.out.println( "Installing interruptHandlerClass "+tmp[1] ) ;
              systemCell.enableInterrupts( tmp[1] ) ;
 
@@ -389,7 +385,7 @@ public class Domain {
           e.printStackTrace() ;
           System.exit(4);
       }
-      
+
       System.out.println( "Main thread finished" ) ;
   }
   private static String [] [] getParameter( String [] args ){
@@ -407,8 +403,8 @@ public class Domain {
           }
       }
       return param ;
-  
+
   }
 
 }
- 
+
