@@ -3,16 +3,18 @@ package dmg.cells.network ;
 import  dmg.cells.nucleus.* ;
 import  dmg.util.* ;
 import  java.util.Date ;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 import  java.io.* ;
 import  java.net.* ;
 
 /**
-  *  
+  *
   *
   * @author Patrick Fuhrmann
   * @version 0.1, 15 Feb 1998
   */
-public class RetryTunnel implements Cell, 
+public class RetryTunnel implements Cell,
                                     Runnable,
                                     CellTunnel,
                                     StateEngine  {
@@ -22,8 +24,8 @@ public class RetryTunnel implements Cell,
    private CellNucleus  _nucleus         = null ;
    private Thread       _receiverThread  = null ;
    private Object       _receiverLock    = new Object();
-   
-   private Fifo         _messageArrivedQueue = new Fifo() ;
+
+   private BlockingQueue<CellMessage>         _messageArrivedQueue = new LinkedBlockingQueue<CellMessage> () ;
    private Gate         _finalGate           = new Gate(false) ;
    private ObjectInputStream  _input     = null ;
    private ObjectOutputStream _output    = null ;
@@ -40,7 +42,7 @@ public class RetryTunnel implements Cell,
    private int  _connectionRequests    = 0 ;
    private int  _messagesToTunnel    = 0 ;
    private int  _messagesToSystem    = 0 ;
-   
+
    private final static int CST_CONNECTING    =  1 ;
    private final static int CST_CON_TIMEOUT   =  2 ;
    private final static int CST_CON_FAILED    =  3 ;
@@ -55,39 +57,39 @@ public class RetryTunnel implements Cell,
    private final static int SST_SEND_FAILED   = 12 ;
    private final static int SST_RECV_FAILED   = 13 ;
    private final static int CST_SHUTDOWN      = 14 ;
-   
+
    private final static String [] _cst_states = {
-   
+
       "<init>"         , "<connecting>"  , "<con_timeout>" ,
       "<con_failed>"   , "<connected>"   , "<prot_start>" ,
       "<prot_timeout>" , "<prot_failed>" , "<prot_ok>" ,
       "<send_ready>"   , "<sending>"     , "<send_timeout>" ,
-      "<send_failed>"  , "<recv_failed>" 
-       
+      "<send_failed>"  , "<recv_failed>"
+
    } ;
-   
+
    public RetryTunnel( String cellName , Socket socket )
           throws Exception {
-          
+
       _mode     = "Accepted" ;
       _socket   = socket ;
       _nucleus  = new CellNucleus( this , cellName ) ;
 
       _engine   = new StateThread( this ) ;
       _engine.start() ;
-      
+
    }
    public RetryTunnel( String cellName , String argString )
           throws Exception {
-          
+
       Args args = new Args( argString ) ;
       if( args.argc() < 2 )
-           throw new 
-           IllegalArgumentException( 
+           throw new
+           IllegalArgumentException(
              "Usage : RetryTunnel <host> <port>" ) ;
-      
-      
-      _RetryTunnel( cellName , 
+
+
+      _RetryTunnel( cellName ,
                      args.argv(0) ,
                      new Integer( args.argv(1) ).intValue() ) ;
    }
@@ -97,47 +99,47 @@ public class RetryTunnel implements Cell,
    }
    private void _RetryTunnel( String cellName , String host , int port )
           throws Exception {
-          
-      
+
+
       _mode    = "Connection" ;
-      
+
       _address = InetAddress.getByName( host ) ;
       _port    = port ;
-       
+
       _nucleus = new CellNucleus( this , cellName ) ;
 
       _engine   = new StateThread( this ) ;
       _engine.start() ;
-      
-   
+
+
    }
    public RetryTunnel( String cellName , InetAddress address , int port )
           throws Exception {
-          
-      
+
+
       _mode    = "Connection" ;
-      
+
       _address = address ;
       _port    = port ;
-       
+
       _nucleus = new CellNucleus( this , cellName ) ;
 
       _engine   = new StateThread( this ) ;
       _engine.start() ;
-      
-   
+
+
    }
    public void run(){
       if( Thread.currentThread() == _receiverThread ){
-      
+
         try{
            Object obj ;
            while( ( ( obj = _input.readObject() ) != null ) && ! Thread.interrupted() ){
               CellMessage msg = (CellMessage) obj ;
               _nucleus.say( "receiverThread : Message from tunnel : "+msg ) ;
-              try{  
+              try{
                  _nucleus.sendMessage( msg ) ;
-                 _messagesToSystem ++ ;              
+                 _messagesToSystem ++ ;
               }catch( NoRouteToCellException nrtce ){
                  _nucleus.say( "receiverThread : Exception in sendMessage : "+nrtce ) ;
               }
@@ -151,32 +153,32 @@ public class RetryTunnel implements Cell,
               _nucleus.kill() ;
            }
         }
-      
-      
+
+
       }
-   
+
    }
-   private String _printState(){ 
+   private String _printState(){
       int state = _engine.getState() ;
       if( ( state < 0 ) || ( state >= _cst_states.length ) )
          return "<Unknown>" ;
       return _cst_states[state] ;
    }
    public int runState( int state ){
-   
+
      long now = new Date().getTime() ;
-     
+
      _nucleus.say( " runState : "+_printState() ) ;
-     
+
      switch( state ){
        case 0 :
        if( _mode.equals("Connection") )return CST_CONNECTING ;
        if( _mode.equals("Accepted")   )return CST_CONNECTED ;
        return -1 ; // kind of panic
-       
+
        case CST_CONNECTING :
          _engine.setState( CST_CONNECTING ,
-                           20 ,  /* seconds timeout */ 
+                           20 ,  /* seconds timeout */
                            CST_CON_TIMEOUT     ) ;
          _connectionStarted = now ;
          try{
@@ -187,62 +189,62 @@ public class RetryTunnel implements Cell,
             _engine.setState( CST_CON_FAILED ) ;
          }
        break ;
-       
+
        case CST_CON_FAILED :
           if( _mode.equals("Accepted")   )return CST_SHUTDOWN ;
-       case CST_CON_TIMEOUT : 
+       case CST_CON_TIMEOUT :
        {
          int diff = (int)( now - _connectionStarted ) ;
          diff     = 30 - diff ;
          if( diff > 0 ){
            try{ Thread.sleep(diff*1000);}
-           catch( Exception se ){} ;
+           catch( Exception se ){}
          }
          _connectionRetries ++ ;
-         
+
          return CST_CONNECTING ;
        }
-       
-       
+
+
        case CST_CONNECTED :
        {
          _engine.setState( CST_PROT_START,
-                           20 ,  /* seconds timeout */ 
+                           20 ,  /* seconds timeout */
                            CST_PROT_TIMEOUT     ) ;
          try{
             _makeStreams() ;
             _engine.setState( CST_PROT_OK) ;
          }catch( Exception mse ){
             _engine.setState( CST_PROT_FAILED ) ;
-         
+
          }
-          
+
        }
        break ;
-       
+
        case CST_PROT_FAILED :
        case CST_PROT_TIMEOUT :
-          try{ _socket.close() ; }catch( Exception ce ){} ;
+          try{ _socket.close() ; }catch( Exception ce ){}
        return CST_CON_FAILED ;
-       
+
        case CST_PROT_OK :
          synchronized( _receiverLock ){
             if( _receiverThread != null )
                _receiverThread.interrupt() ;
             _receiverThread = new Thread( this ) ;
-            _receiverThread.start() ; 
-            _route = new CellRoute( 
-                         _remoteDomainInfo.getCellDomainName() , 
+            _receiverThread.start() ;
+            _route = new CellRoute(
+                         _remoteDomainInfo.getCellDomainName() ,
                          _nucleus.getCellName() ,
                          CellRoute.DOMAIN ) ;
-            _nucleus.routeAdd( _route ) ; 
+            _nucleus.routeAdd( _route ) ;
             _nucleus.say( " engine : Route added : "+_route );
          }
        return  SST_SEND_READY ;
-       
+
        case SST_SEND_READY :
        {
-          Object msg = _messageArrivedQueue.pop() ;
+          Object msg = _messageArrivedQueue.poll() ;
           _engine.setState( SST_SENDING , 10 , SST_SEND_TIMEOUT ) ;
           try{
              _output.writeObject( msg ) ;
@@ -258,24 +260,24 @@ public class RetryTunnel implements Cell,
        case SST_RECV_FAILED :
        case SST_SEND_FAILED :
        case SST_SEND_TIMEOUT :
-          try{ _socket.close() ; }catch( Exception ce ){} ;
+          try{ _socket.close() ; }catch( IOException ce ){}
           removeRoute() ;
        return CST_CON_FAILED ;
-       
+
        case CST_SHUTDOWN :
           _nucleus.kill() ;
        return -1 ;
-      
+
      }
      return 0 ;
-   
+
    }
-   
+
    public CellTunnelInfo getCellTunnelInfo(){
       return new CellTunnelInfo( _nucleus.getCellName() ,
                                  _nucleus.getCellDomainInfo() ,
                                  _remoteDomainInfo ) ;
-   
+
    }
    private void _makeStreams() throws Exception {
       _output  = new ObjectOutputStream( _socket.getOutputStream() ) ;
@@ -293,10 +295,11 @@ public class RetryTunnel implements Cell,
          throw new IOException( "Premature EOS encountered" ) ;
       _remoteDomainInfo = (CellDomainInfo) obj ;
    }
-   public String toString(){
+   @Override
+public String toString(){
       if( _remoteDomainInfo == null )
         return "M="+_mode+";S="+_printState() ;
-      else 
+      else
         return "M="+_mode+
                ";S="+_printState()+
                ";P="+_remoteDomainInfo.getCellDomainName() ;
@@ -312,26 +315,30 @@ public class RetryTunnel implements Cell,
      sb.append( "-> Domain     : "+_messagesToSystem+"\n" ) ;
      if( _remoteDomainInfo == null )
         sb.append( "Peer          : N.N.\n" ) ;
-     else 
+     else
         sb.append( "Peer          : "+
                    _remoteDomainInfo.getCellDomainName()+"\n" ) ;
-     
+
      return sb.toString() ;
    }
    public void   messageArrived( MessageEvent me ){
 //     _nucleus.say( "message Arrived : "+me ) ;
-     
+
      if( me instanceof RoutedMessageEvent ){
         CellMessage msg = me.getMessage() ;
         _nucleus.say( "messageArrived : queuing "+msg ) ;
-        _messageArrivedQueue.push( msg ) ;
+        try {
+            _messageArrivedQueue.put( msg ) ;
+        } catch (InterruptedException e) {
+           // forced by Blocking Queue interface
+        }
      }else if( me instanceof LastMessageEvent ){
         _nucleus.say( "messageArrived : opening final gate" ) ;
         _finalGate.open() ;
      }else{
         _nucleus.say( "messageArrived : dumping junk message "+me ) ;
      }
-     
+
    }
    private void removeRoute(){
      synchronized( _receiverLock ){
@@ -364,5 +371,5 @@ public class RetryTunnel implements Cell,
    public void   exceptionArrived( ExceptionEvent ce ){
      _nucleus.say( "exceptionArrived : "+ce ) ;
    }
- 
+
 }
