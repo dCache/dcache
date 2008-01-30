@@ -19,14 +19,14 @@ public class PoolInfoObserverEngineV2 implements HttpResponseEngine {
    private CellNucleus _nucleus    = null ;
    private String   [] _args       = null ;
    private DateFormat  _dataFormat = new SimpleDateFormat("MMM d, hh.mm.ss" ) ;
-   
+
    private int         _errorCounter   = 0 ;
    private int         _requestCounter = 0 ;
    private String      _cssFile        = "/pools/css/default.css" ;
    private Map         _tableSelection = new HashMap() ;
-   
+
    private PoolCellQueryContainer _container = null ;
-   
+
    public PoolInfoObserverEngineV2( CellNucleus nucleus , String [] args ){
        _nucleus = nucleus ;
        _args    = args ;
@@ -39,7 +39,7 @@ public class PoolInfoObserverEngineV2 implements HttpResponseEngine {
        _tableSelection.put("Cell View"      , "cells" ) ;
        _tableSelection.put("Space Usage"    , "spaces" ) ;
        _tableSelection.put("Request Queues" , "queues" ) ;
-      
+
    }
 
    public void queryUrl( HttpRequest request )
@@ -48,25 +48,25 @@ public class PoolInfoObserverEngineV2 implements HttpResponseEngine {
       String   [] urlItems = request.getRequestTokens() ;
       int         offset   = request.getRequestTokenOffset() ;
       PrintWriter pw       = request.getPrintWriter() ;
-      
+
       _requestCounter ++ ;
-      
+
       try{
           if( urlItems.length < 1 )return ;
-                    
+
           if( ( urlItems.length > 1 ) && ( urlItems[1].equals("css") ) ){
               //
               // the internal css stuff (if nothing else is specifed)
               //
               if( urlItems.length > 2 ){
-                   request.printHttpHeader(0);                   
-                   request.setContentType("text/css");                   
+                   request.setContentType("text/css");
+                   request.printHttpHeader(0);
                    printInternalCssFile( pw  ) ;
               }
               //
           }else if( ( urlItems.length > 1 ) && ( urlItems[1].equals("list") ) ){
              //
-             request.printHttpHeader(0);     
+             request.printHttpHeader(0);
              printConfigurationHeader(pw);
              //
              //
@@ -82,14 +82,14 @@ public class PoolInfoObserverEngineV2 implements HttpResponseEngine {
              String className = urlItems.length > 2 ? urlItems[2] : null ;
              String groupName = urlItems.length > 3 ? urlItems[3] : null ;
              String selection = urlItems.length > 4 ? urlItems[4] : null ;
-             
+
              printMenu( pw , className , groupName , selection ) ;
-             
+
              if( ( className == null ) || ( groupName == null ) || ( selection == null ) )return ;
-             
+
              Map poolMap = _container.getPoolMap( className , groupName ) ;
              if( poolMap == null )return ;
-             
+
              if( selection.equals("cells") ){
                 pw.println("<h3>Cell Info of group <font color=red>"+groupName);
                 pw.println("</font> in view <font color=red>"+className+"</font></h3>");
@@ -104,7 +104,7 @@ public class PoolInfoObserverEngineV2 implements HttpResponseEngine {
                 printPoolActions( pw , poolMap ) ;
              }
           }
-          
+
 
        }catch(Exception ee ){
           _errorCounter ++ ;
@@ -119,11 +119,11 @@ public class PoolInfoObserverEngineV2 implements HttpResponseEngine {
           pw.println( "</body>" ) ;
           pw.println( "</html>" ) ;
        }
-      
+
       return ;
    }
    private PrintPoolCellHelper _helper = new PrintPoolCellHelper() ;
-   
+
    private void printPoolActions( PrintWriter pw , Map poolMap ){
        StringBuffer sb = new StringBuffer() ;
       _helper.printPoolActionTable( sb , new TreeMap( poolMap).values() ) ;
@@ -140,17 +140,17 @@ public class PoolInfoObserverEngineV2 implements HttpResponseEngine {
       pw.println(sb.toString());
    }
    private void printMenu( PrintWriter pw , String className , String groupName , String selection ){
-   
+
       printClassMenu( pw , className ) ;
       printGroupMenu( pw , className , groupName ) ;
 
       if( ( className == null ) || ( groupName == null ) )return ;
-          
-      pw.println("<h3>Table Selection</h3>");   
+
+      pw.println("<h3>Table Selection</h3>");
       pw.println("<center>");
       printMenuTable( pw , _tableSelection.entrySet() ,
                       "/pools/list/"+className+"/"+groupName+"/" , selection ) ;
-             
+
       pw.println("</center>");
    }
    private void printClassMenu( PrintWriter pw , String className ){
@@ -162,13 +162,13 @@ public class PoolInfoObserverEngineV2 implements HttpResponseEngine {
    }
    private void printGroupMenu( PrintWriter pw , String className , String groupName ){
        if( className == null )return ;
-       
+
        Set groupSet = _container.getPoolGroupSetByClassName(className);
        //
        // this shouldn't happen
        //
        if( groupSet == null )return ;
-       
+
        pw.println("<h3>Pool Groups of View <font color=red>"+className+"</font></h3>");
        pw.println("<center>");
        printMenuTable( pw , groupSet , "/pools/list/"+className+"/" , groupName ) ;
@@ -176,7 +176,7 @@ public class PoolInfoObserverEngineV2 implements HttpResponseEngine {
    }
    private int _menuColumns = 4 ;
    private void printMenuTable( PrintWriter pw , Set itemSet , String linkBase , String currentItem ){
-       pw.println("<table class=\"m-table\" >") ;      
+       pw.println("<table class=\"m-table\" >") ;
 
        int n = 0 ;
        for(  Iterator i = itemSet.iterator() ; i.hasNext() ; n++ ){
@@ -190,7 +190,7 @@ public class PoolInfoObserverEngineV2 implements HttpResponseEngine {
              name     = (String)e.getKey() ;
              linkName = (String)e.getValue() ;
           }
-          
+
           if( n == 0 ){
               pw.println("<tr class=\"m-table\">" );
           }else if( ( n % _menuColumns ) == 0 ){
@@ -199,7 +199,7 @@ public class PoolInfoObserverEngineV2 implements HttpResponseEngine {
           }
           boolean us = currentItem != null && currentItem.equals(linkName) ;
           String alternateClass=us?"class=\"m-table-active\"":"class=\"m-table\"" ;
-          
+
           pw.print("<td class=\"m-table\"><a "+alternateClass+" href=\"") ;
           pw.print(linkBase);
           pw.print(linkName);
@@ -208,12 +208,12 @@ public class PoolInfoObserverEngineV2 implements HttpResponseEngine {
           pw.print(name);
           pw.print("</span>");
           pw.println( "</td>" );
-          
+
        }
        if( (n = n % _menuColumns) > 0 )
           for( ; n < _menuColumns ; n++ )
              pw.println("<td class=\"m-table\">&nbsp;</td>");
-       
+
 
        pw.println("</tr>" );
        pw.println("</table>") ;
@@ -225,7 +225,7 @@ public class PoolInfoObserverEngineV2 implements HttpResponseEngine {
       pw.println("<title>Pool Property Tables</title>");
       pw.println("<link rel=\"stylesheet\" type=\"text/css\" href=\""+_cssFile+"\">");
       pw.println("</head>");
-        
+
       pw.println( "<body class=\"m-body\">") ;
 
       pw.println("<center><table width=\"95%\"><tr>") ;
@@ -234,16 +234,16 @@ public class PoolInfoObserverEngineV2 implements HttpResponseEngine {
       pw.println(" href=\"/pools/list/*\"><h3><font color=red>Pool Info Home</font></h3></a></td>");
       pw.println("<td valign=center align=center width=\"80%\"><h1>Pool Property Tables</h1></td>");
       pw.println("</tr></table></center>");
-      
-   
+
+
    }
    private void decodeCss( String cssDetails ){
-   
+
       cssDetails = cssDetails.trim() ;
-      
+
       if(  ( cssDetails.length() > 0 ) && ! cssDetails.equals("default") )
          _cssFile = cssDetails ;
-      
+
    }
    private void showProblem( PrintWriter pw , String message ){
       pw.print("<font color=red><h1>") ;

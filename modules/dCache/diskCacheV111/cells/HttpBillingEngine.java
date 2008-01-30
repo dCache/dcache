@@ -12,10 +12,10 @@ import java.io.OutputStream;
 
 import diskCacheV111.util.HTMLWriter;
 
-public class HttpBillingEngine implements HttpResponseEngine 
+public class HttpBillingEngine implements HttpResponseEngine
 {
     private final CellNucleus _nucleus;
- 
+
     public HttpBillingEngine(CellNucleus nucleus, String [] args)
     {
         _nucleus = nucleus;
@@ -24,28 +24,28 @@ public class HttpBillingEngine implements HttpResponseEngine
     private void printTotalStatistics(HTMLWriter out, Object [][] x)
     {
         out.println("<h2>Total Request Overview</h2>");
-        out.beginTable("sortable", 
+        out.beginTable("sortable",
                        "action", "Action",
                        "count", "Total Request Count",
                        "failures", "Request Failed");
-        
+
         for (Object[] y : x) {
             String    key = (String)y[0];
             int    [] z   = (int [])y[1];
-            
+
             out.beginRow(null,  "odd");
             out.th("action", key);
             out.td("count", z[0]);
             out.td("failures", z[1]);
             out.endRow();
         }
-        out.endTable();   
+        out.endTable();
     }
 
     private void printPoolStatistics(HTMLWriter out, HashMap map, String pool)
-        throws HttpException 
-    {      
-        boolean perPool = pool != null ; 
+        throws HttpException
+    {
+        boolean perPool = pool != null ;
 
         out.print("<h2>Pool Statistics");
         if (perPool)
@@ -53,21 +53,21 @@ public class HttpBillingEngine implements HttpResponseEngine
         out.println("</h2>");
 
         if (perPool) {
-            out.beginTable("sortable", 
+            out.beginTable("sortable",
                            "pool_storageclass", "StorageClass",
                            "pool_transfers",    "Mover Transfers",
                            "pool_restores",     "Restores from HSM",
                            "pool_stores",       "Stores to HSM",
                            "pool_errors",       "Total Errors");
         } else {
-            out.beginTable("sortable", 
+            out.beginTable("sortable",
                            "pool_pool",         "Pool",
                            "pool_transfers",    "Mover Transfers",
                            "pool_restores",     "Restores from HSM",
                            "pool_stores",       "Stores to HSM",
                            "pool_errors",       "Total Errors");
         }
-        
+
         long []  total = new long[4] ;
         for (Map.Entry entry : (Set<Map.Entry>)new TreeMap(map).entrySet()) {
             String    s = (String)entry.getKey();
@@ -77,7 +77,7 @@ public class HttpBillingEngine implements HttpResponseEngine
             if (perPool) {
                 out.th("pool_storageclass", s);
             } else {
-                out.th("pool_pool", 
+                out.th("pool_pool",
                        "<a href=\"pool/" + s + "\">" + s + "</a>");
             }
             out.td("pool_transfers", counters[0]);
@@ -100,28 +100,28 @@ public class HttpBillingEngine implements HttpResponseEngine
         out.td("pool_restores", total[1]);
         out.td("pool_stores", total[2]);
         out.td("pool_errors", total[3]);
-        out.endRow();        
+        out.endRow();
         out.endTable();
     }
 
     private void printPerPoolStatisticsPage(OutputStream out, String pool)
-        throws HttpException 
-    {      
+        throws HttpException
+    {
         HTMLWriter html = new HTMLWriter(out, _nucleus.getDomainContext());
         try {
             html.addHeader("/styles/billing.css", "dCache Billing");
 
-            CellMessage result = 
+            CellMessage result =
                 _nucleus.sendAndWait(new CellMessage(new CellPath("billing"),
                                                      "get pool statistics "
                                                      + pool),
                                      5000);
             if (result == null)
                 throw new HttpException(500, "Request Timed Out");
-            
+
             HashMap map = (HashMap)result.getMessageObject();
-            
-            printPoolStatistics(html, map, pool);          
+
+            printPoolStatistics(html, map, pool);
         } catch (Exception e) {
             html.println("<p class=\"error\">This 'billingCell' doesn't support:  'get pool statistics &lt;poolName&gt;'</p>");
             html.print("<blockquote><pre>" + e + "</pre></blockquote>");
@@ -131,8 +131,8 @@ public class HttpBillingEngine implements HttpResponseEngine
     }
 
     private void printMainStatisticsPage(OutputStream out)
-        throws HttpException 
-    {           
+        throws HttpException
+    {
         CellMessage result = null;
         try {
             result =
@@ -142,7 +142,7 @@ public class HttpBillingEngine implements HttpResponseEngine
         } catch (Exception e) {
             throw new
                 HttpException(500, "Problem : " + e.getMessage());
-        }                                 
+        }
 
         if (result == null)
             throw new HttpException(500, "Request Timed Out");
@@ -153,7 +153,7 @@ public class HttpBillingEngine implements HttpResponseEngine
 
             html.addHeader("/styles/billing.css", "dCache Billing");
             printTotalStatistics(html, x);
-            
+
             try {
                 result =
                     _nucleus.sendAndWait(new CellMessage(new CellPath("billing"),
@@ -161,13 +161,13 @@ public class HttpBillingEngine implements HttpResponseEngine
                                          5000);
                 if (result == null)
                     throw new HttpException(500, "Request Timed Out");
-                
+
                 HashMap map = (HashMap)result.getMessageObject();
                 printPoolStatistics(html, map, null);
             } catch (Exception e) {
                 html.print("<p class=\"error\">This 'billingCell' doesn't support: 'get pool statistics':");
                 html.print("<blockquote><pre>" + e + "</pre></blockquote>");
-            }            
+            }
         } catch (Exception e) {
             throw new HttpException(500, "Problem: " + e.getMessage());
         } finally {
@@ -176,22 +176,24 @@ public class HttpBillingEngine implements HttpResponseEngine
     }
 
     public void queryUrl(HttpRequest request)
-        throws HttpException 
+        throws HttpException
     {
         OutputStream out   = request.getOutputStream();
         String [] urlItems = request.getRequestTokens();
         int       offset   = request.getRequestTokenOffset();
-       
+
         // System.out.println( "UrlItem (offset) "+offset ) ;
         // for( int i = 0 ; i < urlItems.length ; i++ )
         //   System.out.println("UrlItem : "+i+" "+urlItems[i] ) ;
+
+        request.printHttpHeader(0);
 
         int argc = urlItems.length - offset ;
         if (argc > 0) {
             if (urlItems[offset].equals("pool") && (argc > 1)) {
                 printPerPoolStatisticsPage(out, urlItems[offset + 1]);
             }
-        } else {   
+        } else {
             printMainStatisticsPage(out);
         }
     }
