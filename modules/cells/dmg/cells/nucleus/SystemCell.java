@@ -10,8 +10,9 @@ import  java.util.ArrayList;
   * @version 0.1, 15 Feb 1998
   */
 public class      SystemCell
-       extends    CellAdapter
-       implements Runnable      {
+    extends    CellAdapter
+    implements Runnable, Thread.UncaughtExceptionHandler
+{
 
    private final CellShell   _cellShell ;
    private final CellNucleus _nucleus ;
@@ -44,10 +45,12 @@ public class      SystemCell
 
        _runtime.addShutdownHook( new TheKiller() ) ;
 
+       Thread.setDefaultUncaughtExceptionHandler(this);
 //       setPrintoutLevel(0xff);
 
 //      addCellEventListener() ;
    }
+
    //
    // interface from Cell
    //
@@ -97,7 +100,7 @@ public class      SystemCell
         String [] names = _nucleus.getCellNames();
         List<String> nonSystem = new ArrayList<String>(names.length);
         List<String> system = new ArrayList<String>(names.length);
-       
+
         for (int i = 0; i < names.length; i++) {
             CellInfo info = _nucleus.getCellInfo(names[i]);
             if (info == null) continue;
@@ -120,7 +123,7 @@ public class      SystemCell
 
     /**
      * Shuts downs named cells. The method will block until the cells
-     * are dead or until a timeout has occured. 
+     * are dead or until a timeout has occured.
      *
      * @param cells List of names of cells to kill.
      * @param timeout Time in milliseconds to wait for a cell to die.
@@ -134,7 +137,7 @@ public class      SystemCell
                esay("Problem killing : " + cellName + " -> " + e.getMessage());
            }
        }
-       
+
        for (String cellName : cells) {
            try {
                if (_nucleus.join(cellName, timeout)) {
@@ -144,7 +147,7 @@ public class      SystemCell
                    break;
                }
            } catch (InterruptedException e) {
-               esay("Problem killing : " + cellName + " -> " + e.getMessage());           
+               esay("Problem killing : " + cellName + " -> " + e.getMessage());
                break;
            }
        }
@@ -249,4 +252,10 @@ public class      SystemCell
         }
    }
 
+    public void uncaughtException(Thread t, Throwable e)
+    {
+        _nucleus.esay("Uncaught exception in thread " + t.getName() + " ("
+                      + e.getMessage() + ")");
+        _nucleus.esay(e);
+    }
 }
