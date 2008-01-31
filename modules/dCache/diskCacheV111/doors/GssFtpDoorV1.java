@@ -244,7 +244,6 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1 {
         }
         String msg = new String(data, 0, i);
         msg = msg.trim();
-        say("Secure command: <" + msg + ">");
 
         if( msg.equalsIgnoreCase("CCC") ) {
             _gReplyType = "clear";

@@ -944,8 +944,6 @@ public abstract class AbstractFtpDoorV1
     public void ftpcommand(String cmdline)
         throws CommandExitException
     {
-        _lastCommand = cmdline;
-
         int l = 4;
         // Every FTP command is 3 or 4 characters
         if (cmdline.length() < 3) {
@@ -966,10 +964,10 @@ public abstract class AbstractFtpDoorV1
         // commands need special handling
         if (cmd.equals("mic" ) || cmd.equals("conf") || cmd.equals("enc") ||
 	    cmd.equals("adat") || cmd.equals("pass")) {
-            tsay("FTP CMD: <" + cmd + " ... >");
+            say("FTP CMD: <" + cmd + " ... >");
         } else {
             _lastCommand = cmdline;
-            tsay("FTP CMD: <" + cmdline + ">");
+            say("FTP CMD: <" + cmdline + ">");
         }
 
         // If a transfer is in progress, only permit ABORT and a few
@@ -1401,12 +1399,6 @@ public abstract class AbstractFtpDoorV1
         }
     }
 
-    private void tsay(String str)
-    {
-        Date d = new Date();
-        say("" + d + ": " + str);
-    }
-
     //
     // GSS authentication
     //
@@ -1457,7 +1449,6 @@ public abstract class AbstractFtpDoorV1
             return;
         }
 
-        say("real_value: " + real_value);
         st = real_value.split(",|;");
         _parallelStart = Integer.parseInt(st[0]);
         _parallelMin = Integer.parseInt(st[1]);
