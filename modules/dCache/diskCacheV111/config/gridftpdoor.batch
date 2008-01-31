@@ -42,6 +42,7 @@ set context -c gsiftpPoolTimeout          600
 set context -c gsiftpPnfsTimeout          300
 set context -c gsiftpMaxRetries            80
 set context -c gsiftpMaxStreamsPerClient   10
+set context -c gsiftpDefaultStreamsPerClient  5
 set context -c gsiftpDeleteOnConnectionClosed true
 set context -c gsiftpMaxLogin                 100
 set context -c clientDataPortRange            20000:25000
@@ -94,6 +95,7 @@ create dmg.cells.services.login.LoginManager GFTP-${thisHostname} \
              -pnfsTimeout=${gsiftpPnfsTimeout} \
              -maxRetries=${gsiftpMaxRetries} \
              -maxStreamsPerClient=${gsiftpMaxStreamsPerClient} \
+             -defaultStreamsPerClient=${gsiftpDefaultStreamsPerClient} \
              -deleteOnConnectionClosed=${gsiftpDeleteOnConnectionClosed} \
              -use-gplazma-authorization-cell=${useGPlazmaAuthorizationCell} \
              -delegate-to-gplazma=${delegateToGPlazma} \

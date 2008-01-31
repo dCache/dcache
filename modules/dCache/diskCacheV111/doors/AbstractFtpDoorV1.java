@@ -474,10 +474,19 @@ public abstract class AbstractFtpDoorV1
 
     @Option(
         name = "maxStreamsPerClient",
-        defaultValue = "-1",
+        description = "Maximum allowed streams per client in mode E",
+        defaultValue = "-1",                   // -1 = unlimited
         unit = "streams"
     )
-    protected int _maxStreamsPerClient = -1;	// -1 = unlimited
+    protected int _maxStreamsPerClient;
+
+    @Option(
+        name = "defaultStreamsPerClient",
+        description = "Default number of streams per client in mode E",
+        defaultValue = "5",
+        unit = "streams"
+    )
+    protected int _defaultStreamsPerClient;
 
     protected final int _spaceManagerTimeout = 5 * 60;
 
@@ -556,9 +565,9 @@ public abstract class AbstractFtpDoorV1
 
     //These are the number of parallel streams to have
     //when doing mode e transfers
-    protected int _parallelStart = 5;
-    protected int _parallelMin = 5;
-    protected int _parallelMax = 5;
+    protected int _parallelStart;
+    protected int _parallelMin;
+    protected int _parallelMax;
     protected int _bufSize = 0;
 
     protected String ftpDoorName = "FTP";
@@ -783,6 +792,13 @@ public abstract class AbstractFtpDoorV1
             if (_local_host == null)
                 _local_host = engine.getLocalAddress().getHostName();
 
+            if (_encpPutCmd != null) {
+                esay("FTPDoor : -encp-put is specified. This is DEPRECATED, due to intermittent failures.");
+                _useEncpScripts = true;
+            } else {
+                _useEncpScripts = false;
+            }
+
             if (!_use_gplazmaAuthzModule) {
                 _gplazmaPolicyFilePath = null;
             } else if (_gplazmaPolicyFilePath == null) {
@@ -791,16 +807,9 @@ public abstract class AbstractFtpDoorV1
                 throw new IllegalArgumentException(s);
             }
 
-            if (_encpPutCmd != null) {
-                esay("FTPDoor : -encp-put is specified. This is DEPRECATED, due to intermittent failures.");
-                _useEncpScripts = true;
-            } else {
-                _useEncpScripts = false;
-            }
-
+            /* Use kpwd file if gPlazma is not enabled.
+             */
             if (!(_use_gplazmaAuthzModule || _use_gplazmaAuthzCell)) {
-                /* Use kpwd file if gPlazma is not enabled.
-                 */
                 _kpwdFilePath = args.getOpt("kpwd-file");
                 if ((_kpwdFilePath == null) ||
                     (_kpwdFilePath.length() == 0) ||
@@ -811,6 +820,9 @@ public abstract class AbstractFtpDoorV1
                 }
             }
 
+            /* Data channel port range used when client issues PASV
+             * command.
+             */
             int low = 0;
             int high = 0;
             if (_portRange != null) {
@@ -830,43 +842,27 @@ public abstract class AbstractFtpDoorV1
             _lowDataListenPort = low;
             _highDataListenPort = high;
 
-            /*
-             * permission handler:
-             * use user defined or PnfsManager based
+            /* Parallelism for mode E transfers.
              */
-            //----------Unix-------------
+            _parallelStart = _parallelMin = _parallelMax =
+                _defaultStreamsPerClient;
+
+            /* Permission handler.
+             */
             Class<?> [] argClass = { dmg.cells.nucleus.CellAdapter.class };
             Class<?> permissionHandlerClass =
                 Class.forName(_permissionHandlerName);
             Constructor<?> permissionHandlerCon = permissionHandlerClass.getConstructor( argClass ) ;
             Object[] initargs = { this };
-
             _permissionHandler =
             	(PermissionHandlerInterface)permissionHandlerCon.newInstance(initargs);
-
-
-            /*
-            String metaDataProvider =
-                parseOption("meta-data-provider",
-                          "diskCacheV111.services.PnfsManagerFileMetaDataSource");
-            say("Loading " + metaDataProvider);
-            Class [] argClass = { dmg.cells.nucleus.CellAdapter.class };
-            Class fileMetaDataSourceClass = Class.forName(metaDataProvider);
-            Constructor fileMetaDataSourceCon = fileMetaDataSourceClass.getConstructor( argClass ) ;
-            Object[] initargs = { this };
-            _fileMetaDataSource =
-                (FileMetaDataSource)fileMetaDataSourceCon.newInstance(initargs);
-            */
-
-             //////////////////NEW --> ////////////////////////
-
             _origin =
                 new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG,
                            InetAddressType.IPv4,
                            _engine.getInetAddress());
-            ///////////////////<--NEW////////////////////////
+
             _pnfs = new PnfsHandler(this, new CellPath(_pnfsManager));
-            _pnfs.setPnfsTimeout(_pnfsTimeout*1000L);
+            _pnfs.setPnfsTimeout(_pnfsTimeout * 1000L);
 
             adminCommandListener = new AdminCommandListener();
             addCommandListener(adminCommandListener);
@@ -1453,6 +1449,12 @@ public abstract class AbstractFtpDoorV1
         _parallelStart = Integer.parseInt(st[0]);
         _parallelMin = Integer.parseInt(st[1]);
         _parallelMax = Integer.parseInt(st[2]);
+
+        if (_maxStreamsPerClient > 0) {
+            _parallelStart = Math.min(_parallelStart, _maxStreamsPerClient);
+            _parallelMin = Math.min(_parallelMin, _maxStreamsPerClient);
+            _parallelMax = Math.min(_parallelMax, _maxStreamsPerClient);
+        }
 
         reply("200 Parallel streams set (" + opt + ")");
     }

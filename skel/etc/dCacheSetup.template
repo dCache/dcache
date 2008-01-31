@@ -210,6 +210,7 @@ gplazmaPolicy=${ourHomeDir}/etc/dcachesrm-gplazma.policy
 # gsiftpPnfsTimeout=300
 # gsiftpMaxRetries=80
 # gsiftpMaxStreamsPerClient=10
+# gsiftpDefaultStreamsPerClient=5
 # gsiftpDeleteOnConnectionClosed=true
 # gsiftpMaxLogin=100
 # clientDataPortRange=20000:25000
