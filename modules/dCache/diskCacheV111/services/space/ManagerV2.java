@@ -551,10 +551,6 @@ public class ManagerV2
 		if (nRows < 0 ) { 
 			return "number of rows must be non-negative";
 		}
-		StringBuffer sb = new StringBuffer();
-		for (int i=0; i<args.argc();i++) { 
-			sb.append(args.argv(i)+" ");
-		}
 		int listOptions = RELEASED | EXPIRED;
 		if ( doExpired || doReleased ) {
 			// Add in the options that were specified
