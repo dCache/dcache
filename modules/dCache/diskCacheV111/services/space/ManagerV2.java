@@ -155,13 +155,9 @@ public class ManagerV2
 		if(pgBasedPass != null) {
 			pass = pgBasedPass;
 		}
-		
 		manager = DBManager.getInstance();
 		manager.initConnectionPool(jdbcUrl, jdbcClass, user, pass);
 		connection_pool = manager.getConnectionPool();
-
-//		connection_pool = JdbcConnectionPool.getPool(jdbcUrl, jdbcClass, user, pass);
-		
 		spaceManagerEnabled = 
 			isOptionSetToTrueOrYes("spaceManagerEnabled",spaceManagerEnabled);
 		say("spaceManagerEnabled="+spaceManagerEnabled);
@@ -531,8 +527,8 @@ public class ManagerV2
 		return sb.toString();
 	}
 
-	public String hh_listInvalidSpaces = " [-e] [-r]" +
-		" # e=expired, r=released, default is both";
+	public String hh_listInvalidSpaces = " [-e] [-r] <n>" +
+		" # e=expired, r=released, default is both, n=number of rows to retrieve";
 	
 	public static final int RELEASED = 1;
 	public static final int EXPIRED  = 2;
@@ -543,12 +539,22 @@ public class ManagerV2
     // @return a string containing a newline-separated list of all the fields
     //         of each expired/released space.
 
-	public String ac_listInvalidSpaces_$_0_2( Args args )
+	public String ac_listInvalidSpaces_$_0_3( Args args )
 		throws Exception {
 		int argCount       = args.optc();
 		boolean doExpired  = args.getOpt( "e" ) != null;
 		boolean doReleased = args.getOpt( "r" ) != null;
-		// If no options were given, do both released and expired objects.
+		int nRows = 1000;
+		if (args.argc()>0) { 
+			nRows = Integer.parseInt(args.argv(0));
+		}
+		if (nRows < 0 ) { 
+			return "number of rows must be non-negative";
+		}
+		StringBuffer sb = new StringBuffer();
+		for (int i=0; i<args.argc();i++) { 
+			sb.append(args.argv(i)+" ");
+		}
 		int listOptions = RELEASED | EXPIRED;
 		if ( doExpired || doReleased ) {
 			// Add in the options that were specified
@@ -566,8 +572,7 @@ public class ManagerV2
 			return "Unrecognized option.\nUsage: listInvalidSpaces" +
 				hh_listInvalidSpaces;
 		}
-		// Get a list of the expired spaces
-		List< Space > expiredSpaces = listInvalidSpaces( listOptions );
+		List< Space > expiredSpaces = listInvalidSpaces( listOptions , nRows );
 		if ( expiredSpaces.isEmpty() ) {
 			return "There are no " + badSpaceType[ listOptions-1 ] + " spaces.";
 		}
@@ -581,7 +586,7 @@ public class ManagerV2
 
 	public static final String SELECT_INVALID_SPACES = "SELECT * FROM "+ManagerSchemaConstants.SpaceTableName + " WHERE state = '";
 	
-	public List< Space > listInvalidSpaces( int spaceTypes )
+	public List< Space > listInvalidSpaces( int spaceTypes , int nRows)
 		throws SQLException,
 		Exception {
 		String query;
@@ -608,7 +613,10 @@ public class ManagerV2
 		try {
 			say( "executing statement: " + query );
 			con = connection_pool.getConnection();
-			PreparedStatement sqlStatement = con.prepareStatement( query );
+			PreparedStatement sqlStatement = con.prepareStatement( query );	
+			con.setAutoCommit(false);
+			sqlStatement.setFetchSize(10000);
+			sqlStatement.setMaxRows(nRows);
 			ResultSet set = sqlStatement.executeQuery();
 			while ( set.next() ) {
 				Space space = new Space(
@@ -3070,7 +3078,8 @@ public class ManagerV2
 				connection = null;
 			} 
 			catch(SQLException sqle) {
-				esay(sqle);
+				say(sqle.getMessage());
+				say( "fileRemoved("+pnfsId+"): file not in a reservation, do nothing");
 				try {
 					connection.rollback();
 				} 
