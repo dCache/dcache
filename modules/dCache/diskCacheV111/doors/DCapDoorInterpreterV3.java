@@ -2419,6 +2419,9 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
                 //
                 getPoolMessage = new PoolMgrSelectWritePoolMsg(_pnfsId,_storageInfo,_protocolInfo,0) ;
                 getPoolMessage.setIoQueueName(_ioQueueName );
+                if( _isUrl ) {
+                    getPoolMessage.setPnfsPath(_path);
+                }
             }else{
                 //
                 // sorry, we don't allow write (not yet)
