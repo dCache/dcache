@@ -2,7 +2,6 @@
 //
 package diskCacheV111.doors;
 
-import diskCacheV111.poolManager.PoolSelectionUnit.DirectionType;
 import diskCacheV111.vehicles.*;
 import diskCacheV111.util.*;
 
@@ -1219,7 +1218,10 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
         throws Exception {
 
             this( sessionId , commandId , args , false , true ) ;
-            _path           = args.getOpt("path");
+            /* if is url, _path is already pointing to to correct path */
+            if( _path == null ) {
+                _path           = args.getOpt("path");
+            }
             if(_path != null ) {
                 _info.setPath(_path);
             }
@@ -1306,6 +1308,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
                 _getStorageInfo.setPnfsPath( fileName ) ;
                 _info.setPath(fileName);
                 _isUrl     = true ;
+				_path = fileName;
             }
 
             say( "Requesting storageInfo for "+_getStorageInfo ) ;
@@ -2040,7 +2043,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
                 // we are not called if the pnfs request failed.
                 //
                 PoolMgrQueryPoolsMsg query =
-                new PoolMgrQueryPoolsMsg( DirectionType.READ ,
+                new PoolMgrQueryPoolsMsg( "read" ,
                 _storageInfo.getStorageClass()+"@"+
                 _storageInfo.getHsm() ,
                 _storageInfo.getCacheClass() ,
@@ -2419,7 +2422,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
                 //
                 getPoolMessage = new PoolMgrSelectWritePoolMsg(_pnfsId,_storageInfo,_protocolInfo,0) ;
                 getPoolMessage.setIoQueueName(_ioQueueName );
-                if( _isUrl ) {
+                if( _path != null ) {
                     getPoolMessage.setPnfsPath(_path);
                 }
             }else{
@@ -2481,7 +2484,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
         private void storeChecksumInPnfs( PnfsId pnfsId , String checksumString){
             try{
                 PnfsFlagMessage flag =
-                new PnfsFlagMessage(pnfsId,"c", PnfsFlagMessage.FlagOperation.SET) ;
+                new PnfsFlagMessage(pnfsId,"c","put") ;
                 flag.setReplyRequired(false) ;
                 flag.setValue(checksumString);
 
