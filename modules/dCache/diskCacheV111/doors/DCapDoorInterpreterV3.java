@@ -1218,7 +1218,10 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
         throws Exception {
 
             this( sessionId , commandId , args , false , true ) ;
-            _path           = args.getOpt("path");
+            /* if is url, _path is already pointing to to correct path */
+            if( _path == null ) {
+                _path           = args.getOpt("path");
+            }
             if(_path != null ) {
                 _info.setPath(_path);
             }
@@ -1305,6 +1308,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
                 _getStorageInfo.setPnfsPath( fileName ) ;
                 _info.setPath(fileName);
                 _isUrl     = true ;
+				_path = fileName;
             }
 
             say( "Requesting storageInfo for "+_getStorageInfo ) ;
@@ -2418,6 +2422,9 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
                 //
                 getPoolMessage = new PoolMgrSelectWritePoolMsg(_pnfsId,_storageInfo,_protocolInfo,0) ;
                 getPoolMessage.setIoQueueName(_ioQueueName );
+                if( _path != null ) {
+                    getPoolMessage.setPnfsPath(_path);
+                }
             }else{
                 //
                 // sorry, we don't allow write (not yet)
