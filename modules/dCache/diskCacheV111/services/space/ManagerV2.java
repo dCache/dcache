@@ -1726,7 +1726,6 @@ public class ManagerV2
 		say("executing statement: "+selectSpaceIds);
 		HashSet files = manager.select(new FileIO(), selectSpaceIds);
 		Set<Long> tokenSet = new HashSet<Long>();
-		
 		for (Iterator i=files.iterator();i.hasNext();){
 			File f=(File)i.next();
 			tokenSet.add(f.getSpaceId());
@@ -1835,42 +1834,44 @@ public class ManagerV2
 		long deltaSize=0;
 		Space space = null;
 		if (sizeInBytes!=null) { 
-			f.setSizeInBytes(sizeInBytes.longValue());
 			deltaSize = sizeInBytes.longValue()-oldSize;
-			//
-			// idea below is questionable. We resize space reservation to fit this file. This way we 
-			// attempt to guarantee that there is no negative numbers in LinkGroup
-			//
-			Connection newConnection = null;
-			try { 
-				newConnection =  connection_pool.getConnection();
-				newConnection.setAutoCommit(false);
-				space = selectSpaceForUpdate(newConnection,f.getSpaceId());
-				if (f.getSizeInBytes() > space.getAvailableSpaceInBytes()) {
-					updateSpaceReservation(newConnection,
-							       null,
-							       null,
-							       null,
-							       null,
-							       null,
-							       new Long(space.getSizeInBytes()+f.getSizeInBytes()-space.getAvailableSpaceInBytes()),
-							       null,
-							       null,
-							       null,
-							       space);
+			if (deltaSize!=0) { 
+				f.setSizeInBytes(sizeInBytes.longValue());
+				//
+				// idea below is questionable. We resize space reservation to fit this file. This way we 
+				// attempt to guarantee that there is no negative numbers in LinkGroup
+				//
+				Connection newConnection = null;
+				try { 
+					newConnection =  connection_pool.getConnection();
+					newConnection.setAutoCommit(false);
+					space = selectSpaceForUpdate(newConnection,f.getSpaceId());
+					if (deltaSize > space.getAvailableSpaceInBytes()) {
+						updateSpaceReservation(newConnection,
+								       null,
+								       null,
+								       null,
+								       null,
+								       null,
+								       new Long(space.getSizeInBytes()+deltaSize-space.getAvailableSpaceInBytes()),
+								       null,
+								       null,
+								       null,
+								       space);
+					}
+					newConnection.commit();
+					connection_pool.returnConnection(newConnection);
+					newConnection=null;
 				}
-				newConnection.commit();
-				connection_pool.returnConnection(newConnection);
-				newConnection=null;
+				catch (SQLException e) { 
+					esay(e);				
+					newConnection.rollback();
+					connection_pool.returnFailedConnection(newConnection);
+					newConnection=null;
+					throw e;
+				}
+				space = selectSpaceForUpdate(connection,f.getSpaceId());
 			}
-			catch (SQLException e) { 
-				esay(e);				
-				newConnection.rollback();
-				connection_pool.returnFailedConnection(newConnection);
-				newConnection=null;
-				throw e;
-			}
-			space = selectSpaceForUpdate(connection,f.getSpaceId());
 		}
 		if (lifetime!=null) f.setLifetime(lifetime.longValue());
 		FileState oldState = f.getState();
