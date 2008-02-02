@@ -167,17 +167,7 @@ public class SrmCopy {
                 ?configuration.getCopyLifetime()
                 :lifetimeInSeconds*1000
                 :configuration.getCopyLifetime();
-        String spaceToken = null;
-        
-        if(request.getTargetSpaceToken() != null ) {
-            try {
-                spaceToken = new Long(Long.parseLong(request.getTargetSpaceToken())).toString();
-            } catch (Exception e) {
-                return getFailedResponse("SrmCopy: invalid target space token: "+
-                        request.getTargetSpaceToken() ,
-                        TStatusCode.SRM_INVALID_REQUEST);
-            }
-        }
+        String spaceToken = request.getTargetSpaceToken();
         for (int i=0; i<arrayOfFileRequests.length; i++) {
             URI fromSURL = arrayOfFileRequests[i].getSourceSURL();
             URI toSURL   = arrayOfFileRequests[i].getTargetSURL();
