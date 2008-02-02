@@ -163,12 +163,11 @@ public class CopyRequest extends ContainerRequest implements PropertyChangeListe
     private LambdaStationMap LSMap;
     private boolean use_lambda_station ; // false by default
     private String lambda_station_script = null;
-    private Long spaceToken;
     private TFileStorageType storageType;
     private TRetentionPolicy targetRetentionPolicy;
     private TAccessLatency targetAccessLatency;
     private TOverwriteMode overwriteMode;
-
+    private String targetSpaceToken;
     
     public CopyRequest( String userId,
     Long requestCredentialId,
@@ -242,6 +241,7 @@ public class CopyRequest extends ContainerRequest implements PropertyChangeListe
         this.targetAccessLatency = targetAccessLatency;
         this.targetRetentionPolicy = targetRetentionPolicy;
         this.overwriteMode = overwriteMode;
+        this.targetSpaceToken = spaceToken;
         esay("Request.createCopyRequest : created new request succesfully");
     }
     
@@ -732,7 +732,8 @@ public class CopyRequest extends ContainerRequest implements PropertyChangeListe
                 storageType,
                 targetRetentionPolicy,
                 targetAccessLatency,
-                overwriteMode);
+                overwriteMode,
+                targetSpaceToken);
                 getter_putter.getInitialRequest();
                 remoteSrmProtocol = SRMProtocol.V2_1;
             }
@@ -746,7 +747,8 @@ public class CopyRequest extends ContainerRequest implements PropertyChangeListe
                 storageType,
                 targetRetentionPolicy,
                 targetAccessLatency,
-                overwriteMode);
+                overwriteMode,
+                targetSpaceToken);
                 getter_putter.getInitialRequest();
                 remoteSrmProtocol = SRMProtocol.V2_1;
             }
