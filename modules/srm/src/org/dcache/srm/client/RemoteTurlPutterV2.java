@@ -186,6 +186,7 @@ public class RemoteTurlPutterV2 extends TurlGetterPutter
 {
     private ISRM srmv2;
     private String requestToken;
+    private String targetSpaceToken;
     private HashMap pendingSurlsToIndex = new HashMap();
     private Object sync = new Object();
     SrmPrepareToPutResponse srmPrepareToPutResponse;
@@ -230,7 +231,8 @@ public class RemoteTurlPutterV2 extends TurlGetterPutter
     TFileStorageType storageType,
     TRetentionPolicy retentionPolicy,
     TAccessLatency accessLatency,
-    TOverwriteMode overwriteMode) {
+    TOverwriteMode overwriteMode,
+    String targetSpaceToken) {
         super(storage,credential,protocols);
         this.SURLs = SURLs;
         this.number_of_file_reqs = SURLs.length;
@@ -243,6 +245,7 @@ public class RemoteTurlPutterV2 extends TurlGetterPutter
         this.accessLatency = accessLatency;
         this.retentionPolicy = retentionPolicy;
         this.overwriteMode = overwriteMode;
+        this.targetSpaceToken = targetSpaceToken;
    }
     
    
@@ -307,10 +310,11 @@ public class RemoteTurlPutterV2 extends TurlGetterPutter
             transferParameters.setArrayOfTransferProtocols(new org.dcache.srm.v2_2.ArrayOfString(protocols));
             srmPrepareToPutRequest.setTransferParameters(transferParameters);
             srmPrepareToPutRequest.setArrayOfFileRequests(
-                new ArrayOfTPutFileRequest(fileRequests));
+                new ArrayOfTPutFileRequest(fileRequests));            
             srmPrepareToPutRequest.setDesiredFileStorageType(storageType);
             srmPrepareToPutRequest.setDesiredTotalRequestTime(new Integer((int)requestLifetime));
             srmPrepareToPutRequest.setOverwriteOption(overwriteMode);
+            srmPrepareToPutRequest.setTargetSpaceToken(targetSpaceToken);
             srmPrepareToPutResponse = srmv2.srmPrepareToPut(srmPrepareToPutRequest);
         }
         catch(Exception e) {
