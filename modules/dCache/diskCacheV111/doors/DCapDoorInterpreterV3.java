@@ -10,6 +10,7 @@ import dmg.cells.nucleus.*;
 import dmg.util.*;
 import dmg.security.CellUser;
 import diskCacheV111.services.PermissionHandler;
+import diskCacheV111.poolManager.PoolSelectionUnit.DirectionType;
 
 import java.util.*;
 import java.io.*;
@@ -2043,7 +2044,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
                 // we are not called if the pnfs request failed.
                 //
                 PoolMgrQueryPoolsMsg query =
-                new PoolMgrQueryPoolsMsg( "read" ,
+				  new PoolMgrQueryPoolsMsg( DirectionType.READ,
                 _storageInfo.getStorageClass()+"@"+
                 _storageInfo.getHsm() ,
                 _storageInfo.getCacheClass() ,
@@ -2484,7 +2485,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
         private void storeChecksumInPnfs( PnfsId pnfsId , String checksumString){
             try{
                 PnfsFlagMessage flag =
-                new PnfsFlagMessage(pnfsId,"c","put") ;
+                new PnfsFlagMessage(pnfsId,"c", PnfsFlagMessage.FlagOperation.SET) ;
                 flag.setReplyRequired(false) ;
                 flag.setValue(checksumString);
 
