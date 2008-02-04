@@ -108,6 +108,7 @@ public class UserAuthRecord extends UserAuthBase
     }
 
 
+    @Override
     public String toString()
     {
         StringBuffer sb = new StringBuffer(Username);
@@ -164,7 +165,9 @@ public class UserAuthRecord extends UserAuthBase
         return sb.toString();
     }
 
+    @Override
     public boolean isAnonymous() { return false; }
+    @Override
     public boolean isWeak() {return false; }
 
     public boolean hasSecureIdentity(String p)
@@ -196,16 +199,21 @@ public class UserAuthRecord extends UserAuthBase
         principals.removeAll(ids);
     }
 
+    @Override
     public int hashCode() {
         return UID;
     }
 
-  public boolean equals(Object obj) {
+  @Override
+    public boolean equals(Object obj) {
 
-    if( obj == this ) return true;
-	if( obj == null || !(obj instanceof UserAuthBase) ) return false;
-    UserAuthBase r = (UserAuthBase) obj;
-    return Username.equals(r.Username) &&	ReadOnly==r.ReadOnly && UID==r.UID && GID==r.GID && Home.equals(r.Home) &&	Root.equals(r.Root) &&	FsRoot.equals(r.FsRoot);
-  }
+        if (obj == this) return true;
+        if (obj == null || !(obj instanceof UserAuthRecord)) return false;
+        UserAuthRecord r = (UserAuthRecord) obj;
+        return Username.equals(r.Username) && ReadOnly == r.ReadOnly
+                && UID == r.UID && Arrays.equals(GIDs, r.GIDs)
+                && Home.equals(r.Home) && Root.equals(r.Root)
+                && FsRoot.equals(r.FsRoot);
+    }
 }
 
