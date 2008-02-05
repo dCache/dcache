@@ -658,9 +658,9 @@ public class PoolInfoObserverV2 extends CellAdapter implements Runnable
                 CellInfo cellInfo = info.getCellInfo();
                 if (cellInfo instanceof PoolCellInfo) {
                     container.put(info.getCellName(),
-                                  new PoolCellQueryContainer.PoolCellQueryInfo((PoolCellInfo) cellInfo,
-                                                                               info.getPingTime(),
-                                                                               info.getArrivalTime()));
+                                  new PoolCellQueryInfo((PoolCellInfo)cellInfo,
+                                                        info.getPingTime(),
+                                                        info.getArrivalTime()));
                 }
             }
         }
