@@ -373,11 +373,11 @@ public class SRMDispatcher {
 	}
 	catch(Exception e) {
 	    if(conf.isDebug()) { 
+		e.printStackTrace();
 		throw e;
 	    }
 	    else { 
 		System.err.println("srm client error: " + e.getMessage());
-		e.printStackTrace();
 		System.exit(1);
 	    }
 	}
