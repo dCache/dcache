@@ -73,12 +73,18 @@ public class CacheException extends Exception {
      * indicates, that HSM request to suspend current restore request
      */
     public final static int HSM_DELAY_ERROR = 10013;
-    
+
     /**
      * returned in case of file specific request ( like read ) on existing not a file
      * path or pnfsid,
      */
     public final static int NOT_FILE = 10014;
+
+
+    /**
+     * indicates that request contains invalid value
+     */
+    public final static int INVALID_ARGS = 10015;
 
     /**
      * default error code.
@@ -124,8 +130,10 @@ public class CacheException extends Exception {
         _rc = rc ;
     }
 
+    @Override
     public String getMessage(){ return _message ; }
     public int getRc(){ return _rc ; }
+    @Override
     public String toString(){
         return "CacheException(rc="+_rc+
                ";msg="+getMessage()+")" ;
