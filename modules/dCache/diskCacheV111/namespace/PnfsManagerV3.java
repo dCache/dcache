@@ -14,7 +14,12 @@ import  java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import org.apache.log4j.Logger;
+
 public class PnfsManagerV3 extends CellAdapter {
+
+
+    private static final Logger _logDeveloper = Logger.getLogger(PnfsManagerV3.class.getName());
 
     private final String      _cellName  ;
     private final Args        _args      ;
@@ -1356,7 +1361,10 @@ public class PnfsManagerV3 extends CellAdapter {
             return;
         }
 
-        say (pnfsMessage.getClass() +" processed in " + (System.currentTimeMillis() - ctime) + " milis");
+        if( pnfsMessage.getReturnCode() == CacheException.INVALID_ARGS ) {
+            _logDeveloper.error("Inconsistent message " + pnfsMessage.getClass() + " received form " + message.getSourceAddress() );
+        }
+        say (pnfsMessage.getClass() +" processed in " + (System.currentTimeMillis() - ctime) + " millis");
 
         if (! ((Message)pnfsMessage).getReplyRequired() ){
             return;
