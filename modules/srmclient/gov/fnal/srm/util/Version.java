@@ -1,44 +1,9 @@
-// $Id: Version.java,v 1.14 2006-10-04 21:18:39 timur Exp $
-// $Log: not supported by cvs2svn $
-// Revision 1.13  2006/08/02 16:09:28  timur
-// next version is 1.24
+//______________________________________________________________________________
 //
-// Revision 1.12  2006/04/03 17:25:23  timur
-// do not read/write web service path from the config.xml
+// $Author$
+// $id$ 
 //
-// Revision 1.11  2006/03/10 17:18:10  neha
-// changes by Neha- to display correct version
-//
-// Revision 1.10  2006/01/26 05:42:13  timur
-// updated version
-//
-// Revision 1.9  2005/11/14 21:13:34  litvinse
-// merged from head
-//
-// Revision 1.8  2005/11/14 17:07:48  litvinse
-// bumped up Version to 1.20
-//
-// Revision 1.7  2005/09/09 14:33:51  timur
-// gov/fnal/srm/util/Version.java
-//
-// Revision 1.6  2005/08/31 07:26:20  timur
-// fix spelling
-//
-// Revision 1.5  2005/07/26 19:46:09  litvinse
-// bumped up version number to 1.18 (srm script handles several protocols
-// outside of java code (yet))
-//
-// Revision 1.4  2005/06/15 15:27:55  timur
-// changed the version number in Version.java
-//
-// Revision 1.3  2005/05/25 22:20:50  timur
-// added versioning
-//
-// Revision 1.1  2005/05/25 21:47:48  timur
-// added the first version of Version to repository
-//
-//
-
+//______________________________________________________________________________
 /*
 COPYRIGHT STATUS:
   Dec 1st 2001, Fermi National Accelerator Laboratory (FNAL) documents and
@@ -105,11 +70,6 @@ COPYRIGHT STATUS:
   documents or software obtained from this server.
  */
 
-/*
- * Version.java
- *
- * Created on May 25, 2005, 4:28 PM
- */
 
 package gov.fnal.srm.util;
 
@@ -118,7 +78,7 @@ package gov.fnal.srm.util;
  * @author  timur
  */
 public class Version {
-    private static final String revision = "$Revision: 1.14 $";
+    private static final String revision = "$Revision$";
     private static final String tagName ="$Name: not supported by cvs2svn $";
     private static final String date ="$Date: 2006/03/10 11:12:55 CST 2006";
     private static final String version= "2.0";
