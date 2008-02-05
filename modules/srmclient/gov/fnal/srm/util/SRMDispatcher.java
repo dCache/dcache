@@ -1,5 +1,5 @@
-// $Id: SRMDispatcher.java,v 1.32 2007/10/25 01:37:22 litvinse Exp $
-// $Author: litvinse $ 
+// $Id$
+// $Author$ 
 /*
 COPYRIGHT STATUS:
   Dec 1st 2001, Fermi National Accelerator Laboratory (FNAL) documents and
@@ -376,8 +376,7 @@ public class SRMDispatcher {
 		throw e;
 	    }
 	    else { 
-		System.err.println("srm client error: " + e.getMessage());
-		e.printStackTrace();
+		System.err.println("srm client error: \"" + e.getMessage()+"\"");
 		System.exit(1);
 	    }
 	}
