@@ -430,6 +430,8 @@ public class GridftpClient
             verifyCksmValue(_current_source_sink,sourcepath);
         } catch ( ChecksumNotSupported ex){
           esay("Checksum is not supported:"+ex.toString());
+        } catch ( ChecksumValueFormatException cvfe) {
+          esay("Checksum format is not valid:"+cvfe.toString());
         }
 
         //make these remeber last values
@@ -584,7 +586,12 @@ public class GridftpClient
         }
     }
 
-   public Checksum negotiateCksm(String path) throws IOException, ServerException,ChecksumNotSupported {
+   public Checksum negotiateCksm(String path) 
+   throws IOException, 
+       ServerException,
+       ChecksumNotSupported,
+       ChecksumValueFormatException
+   {
 
        for ( int i = 0; i < cksmTypeList.length; ++i){
               try {
@@ -604,7 +611,11 @@ public class GridftpClient
    }
 
     private void verifyCksmValue(IDiskDataSourceSink source,String remotePath)
-        throws IOException,ServerException,NoSuchAlgorithmException,ChecksumNotSupported
+        throws IOException,
+        ServerException,
+        NoSuchAlgorithmException,
+        ChecksumNotSupported,
+        ChecksumValueFormatException
     {
         Checksum serverChecksum;
         if ( _cksmType == null )
@@ -988,6 +999,12 @@ public class GridftpClient
           public int getCode(){ return code; }
           private int code;
     }
+    
+   public static class ChecksumValueFormatException extends Exception {
+          public ChecksumValueFormatException(String msg){ 
+              super(msg); 
+          }
+    }
 
     public interface IDiskDataSourceSink extends  DataSink ,DataSource {
         /**
@@ -1143,18 +1160,38 @@ public class GridftpClient
             }
         }
 
-        public String getCksmValue(String type,String path) throws IOException, ServerException,ChecksumNotSupported {
+        public String getCksmValue(String type,String path) 
+        throws IOException, 
+            ServerException,
+            ChecksumNotSupported,
+            ChecksumValueFormatException
+        {
             try {
                org.globus.ftp.vanilla.Reply reply = quote("CKSM "+type+" 0 -1 "+path);
                if ( !org.globus.ftp.vanilla.Reply.isPositiveCompletion(reply) ){
                   throw new ChecksumNotSupported("Checksum type "+type+" can not be retrieved:"+reply.getMessage(),reply.getCode());
                }
-               return reply.getMessage();
+               return validateChecksumTypeValue(type,reply.getMessage());
             } catch ( org.globus.ftp.exception.ServerException ex){
               throw new ChecksumNotSupported("Checksum type "+type+" can not be retrieved:"+ex.toString(),parseCode(ex.toString()));
             }
         }
 
+        private String validateChecksumTypeValue(String type,String value) 
+        throws ChecksumValueFormatException {
+            if(type.equalsIgnoreCase("adler32")) {
+                try {
+                  long lvalue = Long.parseLong(value,16);
+                } catch(Exception e) {
+                    throw new 
+                        ChecksumValueFormatException("value = "+value+
+                        " caused by:"+ e.getMessage());
+                }
+            }
+            
+            return value;
+            
+        }
         private int parseCode(String msg){
          try {
             String delim = "Unexpected reply:";
