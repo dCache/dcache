@@ -743,7 +743,10 @@ public class GetFileRequest extends FileRequest {
             
             PinCallbacks callbacks = new ThePinCallbacks(getId());
             say("storage.pinFile("+fileId+",...)");
-            storage.pinFile(getUser(),fileId, fileMetaData, lifetime, 
+            storage.pinFile(getUser(),
+                fileId, 
+                getRequest().getClient_host(),
+                fileMetaData, lifetime, 
                     getRequestId().longValue() ,callbacks);
         }
         catch(Exception e) {

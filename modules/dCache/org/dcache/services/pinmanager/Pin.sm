@@ -37,7 +37,7 @@ Unknown
         adminPin(lifetime: long)
                 Pinning
                 {
-                        add(ctxt.createRequest(lifetime, 0));
+                        add(ctxt.createRequest(lifetime, 0,"localhost"));
                 }
         adminUnpin(pinId: long)
                 Dead
@@ -169,7 +169,7 @@ Default
         adminPin(lifetime: long)
                 nil
                 {
-                        add(ctxt.createRequest(lifetime, 0));
+                        add(ctxt.createRequest(lifetime, 0,"localhost"));
                 }
         messageArrived(envelope: CellMessage, message: PinManagerUnpinMessage) 
                         [ ctxt.getRequest(message) != null ]

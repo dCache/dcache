@@ -320,6 +320,8 @@ public interface AbstractStorageElement extends Logger{
      * i.e. put the file in "fast access state"
      * @param user User ID
      * @param fileId Storage Element internal file ID
+     * @param network address from which file will be read
+     *        null, if unknown
      * @param fmd File metadata returned by getFileMetaData
      * @param pinLifetime Requested pin operation lifetime in millis
      * @param requestId - ping will save request id
@@ -329,11 +331,13 @@ public interface AbstractStorageElement extends Logger{
      */
     
 
-    public void pinFile(SRMUser user,String fileId,
-            FileMetaData fmd, 
-            long pinLifetime,
-            long requestId,
-            PinCallbacks callbacks);
+    public void pinFile(SRMUser user,
+           String fileId,
+           String clientHost,
+           FileMetaData fmd, 
+           long pinLifetime,
+           long requestId,
+           PinCallbacks callbacks);
     
     /**
      * @param user User ID

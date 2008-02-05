@@ -28,13 +28,16 @@ public class Pin extends SMCDriver
 {
     /** PNFS ID of the pinned file. */
     private final PnfsId _pnfsId;
-
+    
     /** All requests to pin the file. */
     private final Collection<PinRequest> _requests =
         new ArrayList<PinRequest>();
 
     /** The pin manager which this pin belongs to. */
     private final PinManager _manager;
+    
+    /** Client Host tells which host client connected from */
+    private String _clientHost;
 
     /** The state machine containing all the logic. */
     private final PinContext _fsm;
@@ -44,6 +47,8 @@ public class Pin extends SMCDriver
 
     /** Pinner, unpinner or null if neither is running. */
     private Object _handler;
+    
+   
 
     /**
      * There is a timer task for each request to handle expiration.
@@ -222,9 +227,9 @@ public class Pin extends SMCDriver
      *
      * @see add
      */
-    PinRequest createRequest(long lifetime, long clientId)
+    PinRequest createRequest(long lifetime, long clientId, String clientHost)
     {
-        debug("pin pnfsId=" + _pnfsId + " lifetime=" + lifetime);
+        debug("pin pnfsId=" + _pnfsId + " lifetime=" + lifetime+" client host="+clientHost);
 
         long max = _manager.getMaxPinDuration();
         if (lifetime > max) {
@@ -234,7 +239,10 @@ public class Pin extends SMCDriver
         }
 
         long expiration = System.currentTimeMillis() + lifetime;
-        return _manager.getDatabase().createRequest(_pnfsId, expiration, clientId);
+        this._clientHost = clientHost;
+        return _manager.getDatabase().createRequest(_pnfsId, expiration, clientId,
+            clientHost);
+        
     }
 
     /**
@@ -247,7 +255,8 @@ public class Pin extends SMCDriver
     {
         long lifetime = message.getLifetime();
         long clientId = message.getRequestId();
-        PinRequest request = createRequest(lifetime, clientId);
+        String clientHost = message.getClientHost();
+        PinRequest request = createRequest(lifetime, clientId,clientHost);
         request.setCellMessage(envelope);
         return request;
     }
@@ -520,7 +529,11 @@ public class Pin extends SMCDriver
      */
     synchronized void startPinner()
     {
-        _handler = new Pinner(_manager, _pnfsId, _storageInfo, this);
+        _handler = new Pinner(_manager, 
+            _pnfsId,
+            _clientHost, 
+            _storageInfo, 
+            this);
     }
 
     /**

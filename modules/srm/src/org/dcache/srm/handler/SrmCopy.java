@@ -45,6 +45,7 @@ public class SrmCopy {
     CopyRequestStorage     copyRequestStorage;
     CopyFileRequestStorage copyFileRequestStorage;
     Configuration          configuration;
+    private String client_host;
     
     public SrmCopy(RequestUser user,
             RequestCredential credential,
@@ -79,6 +80,7 @@ public class SrmCopy {
         if(copyFileRequestStorage == null) {
             throw new NullPointerException("getFileRequestStorage is null");
         }
+        this.client_host = client_host;
     }
     
     private void say(String txt) {
@@ -190,7 +192,9 @@ public class SrmCopy {
         
         try {
             say("calling Request.createCopyRequest()");
-            ContainerRequest r = new CopyRequest(user.getId(),credential.getId(),
+            ContainerRequest r = new CopyRequest(
+                    user.getId(),
+                    credential.getId(),
                     copyRequestStorage,
                     from_urls,
                     to_urls,
@@ -205,6 +209,7 @@ public class SrmCopy {
                     targetRetentionPolicy,
                     targetAccessLatency,
                     request.getUserRequestDescription(),
+                    client_host,
                     overwriteMode);
             if (request.getSourceStorageSystemInfo()!=null) {
                 if ( request.getSourceStorageSystemInfo().getExtraInfoArray()!=null) {

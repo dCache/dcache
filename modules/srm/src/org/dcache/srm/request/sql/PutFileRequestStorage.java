@@ -71,7 +71,6 @@ public class PutFileRequestStorage extends DatabaseFileRequestStorage {
         String FILEID = set.getString(next_index++);
         String PARENTFILEID = set.getString(next_index++);
         String SPACERESERVATIONID = set.getString(next_index++);
-        String CLIENTHOST = set.getString(next_index++);
         long SIZE = set.getLong(next_index++);        
         String RETENTIONPOLICY = set.getString(next_index++);
         String ACCESSLATENCY = set.getString(next_index++);
@@ -108,7 +107,6 @@ public class PutFileRequestStorage extends DatabaseFileRequestStorage {
         FILEID,
         PARENTFILEID,
         SPACERESERVATIONID,
-        CLIENTHOST,
         SIZE,
         retentionPolicy,
         accessLatency
@@ -128,8 +126,6 @@ public class PutFileRequestStorage extends DatabaseFileRequestStorage {
         ", "+
         "SPACERESERVATIONID "+  stringType+
         ", "+
-        "CLIENTHOST "+  stringType+
-        ", "+
         "SIZE "+ longType+
         ", "+
         "RETENTIONPOLICY "+ stringType+
@@ -137,7 +133,7 @@ public class PutFileRequestStorage extends DatabaseFileRequestStorage {
         "ACCESSLATENCY "+ stringType;
     }
     
-   private static int ADDITIONAL_FIELDS = 9;
+   private static int ADDITIONAL_FIELDS = 8;
 
     
     public static final String TABLE_NAME="putfilerequests";
@@ -180,14 +176,7 @@ public class PutFileRequestStorage extends DatabaseFileRequestStorage {
         else {
             sb.append("SPACERESERVATIONID = '").append(tmp).append("', ");
         }
-         tmp =pfr.getClientHost();
-        if(tmp == null) {
-            sb.append(" CLIENTHOST =NULL, ");
-        }
-        else {
-            sb.append("CLIENTHOST = '").append(tmp).append("', ");
-        }
-         sb.append("SIZE = ").append(pfr.getSize()).append(", ");
+        sb.append("SIZE = ").append(pfr.getSize()).append(", ");
         TRetentionPolicy retentionPolicy = pfr.getRetentionPolicy();
         if(retentionPolicy == null) {
             sb.append("RETENTIONPOLICY=NULL, ");
@@ -236,14 +225,7 @@ public class PutFileRequestStorage extends DatabaseFileRequestStorage {
         else {
             sb.append('\'').append(tmp).append("', ");
         }
-         tmp = pfr.getClientHost();
-        if(tmp == null) {
-            sb.append("NULL, ");
-        }
-        else {
-            sb.append('\'').append(tmp).append("', ");
-        }
-         sb.append(pfr.getSize()).append(", ");
+        sb.append(pfr.getSize()).append(", ");
         TRetentionPolicy retentionPolicy = pfr.getRetentionPolicy();
         if(retentionPolicy == null) {
             sb.append("NULL, ");
@@ -263,18 +245,6 @@ public class PutFileRequestStorage extends DatabaseFileRequestStorage {
     }    
     
     protected void __verify(int nextIndex, int columnIndex, String tableName, String columnName, int columnType) throws SQLException {
-        /*","+
-        "SURL "+  stringType+
-        ","+
-        "TURL "+  stringType+
-        ","+
-        "FILEID "+  stringType+
-        ","+
-        "PARENTFILEID "+  stringType+
-        ","+
-        "SPACERESERVATIONID "+  stringType+
-        ","+
-        "CLIENTHOST"+  stringType;*/
         if(columnIndex == nextIndex) {
             verifyStringType("SURL",columnIndex,tableName, columnName, columnType);
         }
@@ -297,17 +267,13 @@ public class PutFileRequestStorage extends DatabaseFileRequestStorage {
         }
         else if(columnIndex == nextIndex+5)
         {
-            verifyStringType("CLIENTHOST",columnIndex,tableName, columnName, columnType);
+            verifyLongType("SIZE",columnIndex,tableName, columnName, columnType);
         }
         else if(columnIndex == nextIndex+6)
         {
-            verifyLongType("SIZE",columnIndex,tableName, columnName, columnType);
-        }
-        else if(columnIndex == nextIndex+7)
-        {
             verifyStringType("RETENTIONPOLICY",columnIndex,tableName, columnName, columnType);
         }
-        else if(columnIndex == nextIndex+8)
+        else if(columnIndex == nextIndex+7)
         {
             verifyStringType("ACCESSLATENCY",columnIndex,tableName, columnName, columnType);
         }

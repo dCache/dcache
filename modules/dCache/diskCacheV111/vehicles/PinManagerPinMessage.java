@@ -16,22 +16,31 @@ public class PinManagerPinMessage extends PinManagerMessage {
     private long requestId;
     private String pinId;
     private String readPoolName;
+    private String clientHost;
     
     
     private static final long serialVersionUID = 5292501618388506009L;
     
     /** Creates a new instance of PinManagerPinMessage */
-    public PinManagerPinMessage(String pnfsId,long lifetime, long requestId) {
+    public PinManagerPinMessage(String pnfsId, 
+        String clientHost, 
+        long lifetime, 
+        long requestId) {
         super(pnfsId);
         this.lifetime = lifetime;
         this.requestId = requestId;
+        this.clientHost = clientHost;
     }
     
-    public PinManagerPinMessage(PnfsId pnfsId,long lifetime, long requestId) {
+    public PinManagerPinMessage(PnfsId pnfsId,
+        String clientHost,
+        long lifetime, 
+        long requestId) {
         super(pnfsId);
         this.lifetime = lifetime;
         this.requestId = requestId;
-    }
+        this.clientHost = clientHost;
+   }
     
     /** Getter for property lifetime.
      * @return Value of property lifetime.
@@ -93,6 +102,10 @@ public class PinManagerPinMessage extends PinManagerMessage {
 
     public void setRequestId(long requestId) {
         this.requestId = requestId;
+    }
+
+    public String getClientHost() {
+        return clientHost;
     }
     
 }

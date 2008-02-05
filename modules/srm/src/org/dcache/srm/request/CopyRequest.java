@@ -185,6 +185,7 @@ public class CopyRequest extends ContainerRequest implements PropertyChangeListe
     TRetentionPolicy targetRetentionPolicy,
     TAccessLatency targetAccessLatency,
     String description,
+    String client_host,
     TOverwriteMode overwriteMode 
     ) throws Exception{
         super(userId,
@@ -194,7 +195,8 @@ public class CopyRequest extends ContainerRequest implements PropertyChangeListe
                 max_number_of_retries,
                 max_update_period,
                 lifetime,
-                description);
+                description,
+                client_host);
         java.util.ArrayList prot_list = new java.util.ArrayList(4);
                 
         if(configuration.isUseGsiftpForSrmCopy()) {
@@ -268,6 +270,7 @@ public class CopyRequest extends ContainerRequest implements PropertyChangeListe
     int retryDeltaTime,
     boolean should_updateretryDeltaTime,
     String description,
+    String client_host,
     String statusCodeString,
     TFileStorageType storageType,
     TRetentionPolicy targetRetentionPolicy,
@@ -293,6 +296,7 @@ public class CopyRequest extends ContainerRequest implements PropertyChangeListe
         retryDeltaTime, 
         should_updateretryDeltaTime,
         description,
+        client_host,
         statusCodeString,
         configuration);
         

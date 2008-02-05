@@ -596,7 +596,8 @@ public class BringOnlineFileRequest extends FileRequest {
         catch(IllegalStateTransition ist) {
             throw new NonFatalJobFailure(ist.toString());
         }
-        say("PinId is "+pinId+" returning, scheduler should change state to \"Ready\"");
+        say("PinId is "+pinId+" returning, scheduler should change" +
+            " state to \"Ready\"");
         
     }
     
@@ -610,7 +611,8 @@ public class BringOnlineFileRequest extends FileRequest {
             //(not in ftp root for example) this will throw exception
             // we do not care about the return value yet
             say("calling Job.getJob("+requestId+")");
-            BringOnlineRequest request = (BringOnlineRequest) Job.getJob(requestId);
+            BringOnlineRequest request = (BringOnlineRequest) 
+                Job.getJob(requestId);
             say("this file request's request is  "+request);
             //this will fail if the protocols are not supported
             String[] supported_prots = storage.supportedGetProtocols();
@@ -643,7 +645,10 @@ public class BringOnlineFileRequest extends FileRequest {
             
             PinCallbacks callbacks = new ThePinCallbacks(getId());
             say("storage.pinFile("+fileId+",...)");
-            storage.pinFile(getUser(),fileId, fileMetaData, lifetime, 
+            storage.pinFile(getUser(),
+                fileId, 
+                getRequest().getClient_host(),
+                fileMetaData, lifetime, 
                     getRequestId().longValue() ,
                     callbacks);
         }

@@ -26,6 +26,10 @@ public class PinRequest
 
     /** The ID used by the client to track the request. */
     private long _requestId;
+    
+    /** the adress of the cleint, used to determine the correct 
+     * pool link to use */
+    private String _clientHost; 
 
     /**
      * The message envelope of the pin request. May be null if the
@@ -40,11 +44,13 @@ public class PinRequest
      */
     private TimerTask _timer;
 
-    public PinRequest(long pinRequestId, long expiration, long requestId) 
+    public PinRequest(long pinRequestId, long expiration, long requestId,
+        String clientHost) 
     {
         _pinRequestId = pinRequestId;
         _expiration = expiration;
         _requestId = requestId;
+        _clientHost = clientHost;
     }
 
     /**
@@ -128,6 +134,7 @@ public class PinRequest
         if (request != null) {
             sb.append(" request message : ").append(request);
         }
+        sb.append(" client host : ").append(_clientHost);
         return sb.toString();
     }
                 

@@ -99,6 +99,7 @@ public class BringOnlineRequestStorage extends DatabaseContainerRequestStorage{
     int RETRYDELTATIME,
     boolean SHOULDUPDATERETRYDELTATIME,
     String DESCRIPTION,
+    String CLIENTHOST,
     String STATUSCODE,
     FileRequest[] fileRequests,
     java.sql.ResultSet set,
@@ -137,6 +138,7 @@ public class BringOnlineRequestStorage extends DatabaseContainerRequestStorage{
                         RETRYDELTATIME,
                         SHOULDUPDATERETRYDELTATIME,
                         DESCRIPTION,
+                        CLIENTHOST,
                         STATUSCODE,
                         configuration,
                         protocols

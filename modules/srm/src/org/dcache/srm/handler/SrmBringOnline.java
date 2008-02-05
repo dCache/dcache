@@ -43,6 +43,7 @@ public class SrmBringOnline {
     private int results_num;
     private int max_results_num;
     int numOfLevels =0;
+    String client_host;
     /** Creates a new instance of SrmLs */
     public SrmBringOnline(RequestUser user,
             RequestCredential credential,
@@ -55,6 +56,7 @@ public class SrmBringOnline {
         }
         this.request = request;
         this.user = user;
+        this.client_host = client_host;
         this.credential = credential;
         if(storage == null) {
             throw new NullPointerException("storage is null");
@@ -140,6 +142,7 @@ public class SrmBringOnline {
         say("Entering srmBringOnline.");
         
         String [] protocols = null;
+        
         if(request.getTransferParameters() != null &&
                 request.getTransferParameters().getArrayOfTransferProtocols() != null ) {
             protocols =
@@ -147,13 +150,29 @@ public class SrmBringOnline {
         }
         if(protocols == null || protocols.length <1) {
             esay("request contains no transfer protocols");
+           // not for bring online
+           // return getFailedResponse("request contains no transfer protocols",
+           //     TStatusCode.SRM_INVALID_REQUEST);
         }
+        
+        if(request.getTransferParameters() != null &&
+                request.getTransferParameters().getArrayOfClientNetworks() != null ) {
+            String[] clientNetworks = 
+                request.getTransferParameters().getArrayOfClientNetworks().getStringArray();
+            if(clientNetworks != null && 
+                clientNetworks.length >0 &&
+                clientNetworks[0] != null) {
+                client_host = clientNetworks[0];
+            }
+        }
+        
         TGetFileRequest [] fileRequests = null;
         if(request.getArrayOfFileRequests() != null ) {
             fileRequests = request.getArrayOfFileRequests().getRequestArray();
         }
         if(fileRequests == null || fileRequests.length <1) {
-            return getFailedResponse("request contains no file requests");
+            return getFailedResponse("request contains no file requests",
+                TStatusCode.SRM_INVALID_REQUEST);
         }
         String[] surls = new String[fileRequests.length];
         long lifetimeInSeconds = 0;
@@ -188,7 +207,8 @@ public class SrmBringOnline {
         try {
             say("BringOnlineStorage ="+bringOnlineStorage);
             BringOnlineRequest r =
-                    new  BringOnlineRequest(user.getId(),credential.getId(),
+                    new  BringOnlineRequest(user.getId(),
+                    credential.getId(),
                     bringOnlineStorage,
                     surls,
                     protocols,
@@ -197,7 +217,8 @@ public class SrmBringOnline {
                     bringOnlineFileRequestStorage,
                     configuration.getGetRetryTimeout(),
                     configuration.getGetMaxNumOfRetries(),
-                    request.getUserRequestDescription());
+                    request.getUserRequestDescription(),
+                    client_host);
 
 	    if (request.getStorageSystemInfo()!=null) { 
 		    if ( request.getStorageSystemInfo().getExtraInfoArray()!=null) { 

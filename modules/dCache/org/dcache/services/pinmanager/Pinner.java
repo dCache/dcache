@@ -21,9 +21,13 @@ class Pinner extends SMCTask
     private final CellPath _poolManager;
     private StorageInfo _storageInfo;
     private String _readPoolName;
+    private String _clientHost;
 
     public Pinner(PinManager manager,
-                  PnfsId pnfsId, StorageInfo storageInfo, Pin pin)
+        PnfsId pnfsId,
+        String clientHost,
+        StorageInfo storageInfo, 
+        Pin pin)
     {
         super(manager);
 
@@ -31,6 +35,7 @@ class Pinner extends SMCTask
         _poolManager = manager.getPoolManager();
         _pnfsId = pnfsId;
         _storageInfo = storageInfo;
+        _clientHost = clientHost;
         _pin = pin;
 
         _fsm = new PinnerContext(this);
@@ -77,8 +82,11 @@ class Pinner extends SMCTask
 
     void findReadPool()
     {
+        String host = _clientHost== null ? 
+            "localhost":
+                _clientHost;
         DCapProtocolInfo pinfo =
-            new DCapProtocolInfo("DCap", 3, 0, "localhost", 0);
+            new DCapProtocolInfo("DCap", 3, 0, host, 0);
 
         PoolMgrSelectReadPoolMsg request =
             new PoolMgrSelectReadPoolMsg(_pnfsId,

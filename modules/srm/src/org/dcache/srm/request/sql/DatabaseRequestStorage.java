@@ -58,6 +58,8 @@ public abstract class DatabaseRequestStorage extends DatabaseJobStorage implemen
         ", "+
         "DESCRIPTION "+ stringType+
         ", "+
+        "CLIENTHOST "+ stringType+
+        ", "+
         "STATUSCODE "+ stringType+
         getRequestCreateTableFields();
     }
@@ -80,6 +82,7 @@ public abstract class DatabaseRequestStorage extends DatabaseJobStorage implemen
     int RETRYDELTATIME,
     boolean SHOULDUPDATERETRYDELTATIME,
     String DESCRIPTION,
+    String CLIENTHOST,
     String STATUSCODE,
     java.sql.ResultSet set,
     int next_index)throws java.sql.SQLException;
@@ -106,6 +109,7 @@ public abstract class DatabaseRequestStorage extends DatabaseJobStorage implemen
         int RETRYDELTATIME = set.getInt(next_index++);
         boolean SHOULDUPDATERETRYDELTATIME = set.getBoolean(next_index++);
         String DESCRIPTION = set.getString(next_index++);
+        String CLIENTHOST = set.getString(next_index++);
         String STATUSCODE= set.getString(next_index++);
         return getRequest(
         _con,
@@ -125,6 +129,7 @@ public abstract class DatabaseRequestStorage extends DatabaseJobStorage implemen
         RETRYDELTATIME, 
         SHOULDUPDATERETRYDELTATIME,
         DESCRIPTION,
+        CLIENTHOST,
         STATUSCODE,
         set,
         next_index );
@@ -147,6 +152,14 @@ public abstract class DatabaseRequestStorage extends DatabaseJobStorage implemen
         else {
             sb.append('\'').append(DESCRIPTION).append('\'');
         }
+        sb.append(", CLIENTHOST = ");
+        String CLIENTHOST = r.getClient_host();
+        if(CLIENTHOST == null) {
+            sb.append( "NULL ");
+        }
+        else {
+            sb.append('\'').append(CLIENTHOST).append('\'');
+        }
         sb.append(", STATUSCODE = ");
         String STATUSCODE = r.getStatusCodeString();
         if(STATUSCODE == null) {
@@ -158,7 +171,7 @@ public abstract class DatabaseRequestStorage extends DatabaseJobStorage implemen
         getUpdateAssignements(r,sb);
         
     }
-    private static int ADDITIONAL_FIELDS_NUM=5;
+    private static int ADDITIONAL_FIELDS_NUM=6;
     
     public abstract  void getCreateList(Request r,StringBuffer sb);
     
@@ -178,6 +191,13 @@ public abstract class DatabaseRequestStorage extends DatabaseJobStorage implemen
         }
         else {
             sb.append(", '").append(DESCRIPTION).append('\'');
+        }
+        String CLIENTHOST = r.getClient_host();
+        if(CLIENTHOST == null) {
+            sb.append( ", NULL ");
+        }
+        else {
+            sb.append(", '").append(CLIENTHOST).append('\'');
         }
         String STATUSCODE = r.getStatusCodeString();
         if(STATUSCODE == null) {
@@ -261,6 +281,10 @@ public abstract class DatabaseRequestStorage extends DatabaseJobStorage implemen
         "SHOULDUPDATERETRYDELTATIME "+  booleanType+
         ","+
         "DESCRIPTION "+  stringType+
+        ","+
+        "CLIENTHOST "+ stringType+
+        ", "+
+        "STATUSCODE "+ stringType+
         */
         if(columnIndex == nextIndex) {
             verifyLongType("CREDENTIALID",columnIndex,tableName, columnName, columnType);
@@ -279,6 +303,10 @@ public abstract class DatabaseRequestStorage extends DatabaseJobStorage implemen
             verifyStringType("DESCRIPTION",columnIndex,tableName, columnName, columnType);
         }
         else if(columnIndex == nextIndex+4)
+        {
+            verifyStringType("CLIENTHOST",columnIndex,tableName, columnName, columnType);
+        }
+        else if(columnIndex == nextIndex+5)
         {
             verifyStringType("STATUSCODE",columnIndex,tableName, columnName, columnType);
         }

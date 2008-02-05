@@ -169,6 +169,17 @@ public class SrmPrepareToPut {
             return getFailedResponse("request contains no transfer protocols");
         }
 	
+        if(request.getTransferParameters() != null &&
+                request.getTransferParameters().getArrayOfClientNetworks() != null ) {
+            String[] clientNetworks = 
+                request.getTransferParameters().getArrayOfClientNetworks().getStringArray();
+            if(clientNetworks != null && 
+                clientNetworks.length >0 &&
+                clientNetworks[0] != null) {
+                client_host = clientNetworks[0];
+            }
+        }
+        
         String spaceToken = request.getTargetSpaceToken();
         TRetentionPolicy retentionPolicy =null;
         TAccessLatency accessLatency = null;

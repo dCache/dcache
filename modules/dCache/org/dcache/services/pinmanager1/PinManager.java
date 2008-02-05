@@ -94,10 +94,8 @@
 
 package org.dcache.services.pinmanager1;
 
-import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
-import dmg.cells.nucleus.CellMessageAnswerable;
 import dmg.util.Args;
 import dmg.cells.nucleus.ExceptionEvent;
 import dmg.cells.nucleus.CellVersion;
@@ -107,30 +105,14 @@ import diskCacheV111.vehicles.PinManagerPinMessage;
 import diskCacheV111.vehicles.PinManagerUnpinMessage;
 import diskCacheV111.vehicles.PinManagerExtendLifetimeMessage;
 import diskCacheV111.vehicles.StorageInfo;
-import java.sql.*;
-import java.util.Timer;
-import java.util.TimerTask;
 import diskCacheV111.util.PnfsId;
-import diskCacheV111.vehicles.PnfsGetStorageInfoMessage;
-import diskCacheV111.vehicles.PnfsFlagMessage;
-import diskCacheV111.vehicles.PnfsGetCacheLocationsMessage;
-import diskCacheV111.vehicles.PoolMgrSelectReadPoolMsg;
-import diskCacheV111.vehicles.PoolSetStickyMessage;
-import diskCacheV111.vehicles.DCapProtocolInfo;
 import java.util.Set;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Hashtable;
-import java.util.Iterator;
-import java.util.List;
-import java.util.LinkedList;
-import diskCacheV111.util.Pgpass;
 import org.dcache.services.Option;
 import org.dcache.services.AbstractCell;
-import diskCacheV111.services.JdbcConnectionPool;
-//import diskCacheV111.vehicles.PnfsG
+
 
 /**
  *   <pre>
@@ -297,7 +279,7 @@ public class PinManager extends AbstractCell implements Runnable  {
         PnfsId pnfsId = new PnfsId( args.argv(0) ) ;
         long lifetime = Long.parseLong( args.argv(1) ) ;
         lifetime *=1000;
-        pin(pnfsId,lifetime,0,null,null);
+        pin(pnfsId,null,lifetime,0,null,null);
         return "pin started";
         
     }
@@ -527,8 +509,8 @@ public class PinManager extends AbstractCell implements Runnable  {
             return;
         }
         long srmRequestId = pinRequest.getRequestId();
-        
-       pin(pnfsId,lifetime,srmRequestId,pinRequest,cellMessage) ; 
+        String clientHost = pinRequest.getClientHost();
+       pin(pnfsId,clientHost,lifetime,srmRequestId,pinRequest,cellMessage) ; 
     }
     
     private Map<Long, CellMessage> pinToRequestsMap = new
@@ -537,7 +519,9 @@ public class PinManager extends AbstractCell implements Runnable  {
      * this function should work with pinRequestMessage and 
      * cellMessage set to null as it might be invoked by an admin command
      */
-    private  void pin(PnfsId pnfsId,long lifetime,long srmRequestId,
+    private  void pin(PnfsId pnfsId,
+        String clientHost,
+        long lifetime,long srmRequestId,
         PinManagerPinMessage pinRequestMessage, CellMessage cellMessage) 
     throws PinException {
          
@@ -624,7 +608,7 @@ public class PinManager extends AbstractCell implements Runnable  {
                 // if processing succeeds before the commit is executed
                 // (a race condition )
                 
-                new Pinner(this, pnfsId, storageInfo, pin,
+                new Pinner(this, pnfsId,clientHost, storageInfo, pin,
                     pinRequest.getExpirationTime());
             } else {
                 info("pin returned is in the wrong state");

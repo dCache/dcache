@@ -1672,15 +1672,18 @@ public class Storage
     
     public void pinFile(SRMUser user,
         String fileId, 
+        String clientHost,
         FileMetaData fmd, 
         long pinLifetime,
         long requestId, 
         PinCallbacks callbacks) {
         DcacheFileMetaData dfmd = (DcacheFileMetaData) fmd;
         PinCompanion.pinFile((DCacheUser)user, 
-            fileId, callbacks, dfmd, pinLifetime, requestId, this);
-        
+            fileId, 
+            clientHost,
+            callbacks, dfmd, pinLifetime, requestId, this);        
     }
+    
     public void unPinFile(SRMUser user,String fileId,
             UnpinCallbacks callbacks,
             String pinId) {

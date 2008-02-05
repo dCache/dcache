@@ -42,6 +42,7 @@ public class SrmReserveSpace {
     RequestCredential       credential;
     Configuration           configuration;
     ReserveSpaceRequestStorage reserverSpaceRequestStorage;
+    private String client_host;
     
     public SrmReserveSpace(RequestUser user,
             RequestCredential credential,
@@ -68,6 +69,7 @@ public class SrmReserveSpace {
         if (configuration == null) {
             throw new NullPointerException("configuration is null");
         }
+        this.client_host = client_host;
         reserverSpaceRequestStorage = srm.getReserveSpaceRequestStorage();
     }
     
@@ -180,7 +182,8 @@ public class SrmReserveSpace {
                 lifetimeInSeconds == -1? -1L: lifetimeInSeconds*1000L,
                 retentionPolicy,
                 accessLatency,
-                description );
+                description,
+               client_host);
            
             reserverSpaceRequestStorage.saveJob(reserveRequest,true);
             reserveRequest.schedule(scheduler);

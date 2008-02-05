@@ -838,7 +838,8 @@ public class SRM {
     RequestCredential credential,
     String[] srcSURLS,
     String[] destSURLS,
-    boolean[] wantPerm) {
+    boolean[] wantPerm,
+    String client_host) {
         try {
             //require at least 10 minutes
             long cred_lifetime = 
@@ -912,7 +913,9 @@ public class SRM {
             SRMProtocol.V1_1,
             org.dcache.srm.v2_2.TFileStorageType.PERMANENT,
             null,
-            null,null,null);
+            null,null,
+            client_host,
+            null);
             say(" Copy Request = "+r);
             copyStorage.saveJob(r,true);
             // RequesScheduler will take care of the rest
@@ -948,7 +951,8 @@ public class SRM {
     public RequestStatus get(RequestUser user,
     RequestCredential credential,
     String[] surls,
-    String[] protocols) {
+    String[] protocols,
+    String client_host) {
         int len = protocols.length;
         int i = 0;
         // create a request object
@@ -962,7 +966,8 @@ public class SRM {
             getFileRequestStorage,
             configuration.getGetRetryTimeout(),
             configuration.getGetMaxNumOfRetries(),
-            null);
+            null,
+            client_host);
             r.setScheduler(getRequestScheduler.getId(),0);
             getStorage.saveJob(r,true);
             

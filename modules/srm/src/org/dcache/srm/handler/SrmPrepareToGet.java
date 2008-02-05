@@ -44,6 +44,7 @@ public class SrmPrepareToGet {
     private int results_num;
     private int max_results_num;
     int numOfLevels =0;
+    private String client_host;
     /** Creates a new instance of SrmLs */
     public SrmPrepareToGet(RequestUser user,
             RequestCredential credential,
@@ -57,6 +58,7 @@ public class SrmPrepareToGet {
         this.request = request;
         this.user = user;
         this.credential = credential;
+        this.client_host = client_host;
         if(storage == null) {
             throw new NullPointerException("storage is null");
         }
@@ -149,6 +151,18 @@ public class SrmPrepareToGet {
         if(protocols == null || protocols.length <1) {
             return getFailedResponse("request contains no transfer protocols");
         }
+
+        if(request.getTransferParameters() != null &&
+                request.getTransferParameters().getArrayOfClientNetworks() != null ) {
+            String[] clientNetworks = 
+                request.getTransferParameters().getArrayOfClientNetworks().getStringArray();
+            if(clientNetworks != null && 
+                clientNetworks.length >0 &&
+                clientNetworks[0] != null) {
+                client_host = clientNetworks[0];
+            }
+        }
+        
         TGetFileRequest [] fileRequests = null;
         if(request.getArrayOfFileRequests() != null ) {
             fileRequests = request.getArrayOfFileRequests().getRequestArray();
@@ -241,7 +255,8 @@ public class SrmPrepareToGet {
                     getFileRequestStorage,
                     configuration.getGetRetryTimeout(),
                     configuration.getGetMaxNumOfRetries(),
-                    request.getUserRequestDescription());
+                    request.getUserRequestDescription(),
+                    client_host);
 
 	    if (request.getStorageSystemInfo()!=null) { 
 		    if ( request.getStorageSystemInfo().getExtraInfoArray()!=null) { 

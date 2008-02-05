@@ -222,7 +222,7 @@ import org.dcache.srm.v2_2.TStatusCode;
  * @author timur
  */
 public abstract class Request extends Job {
-    
+    private String client_host;
     public Request(String userId,
     Long requestCredentalId,
     JobStorage requestJobsStorage,
@@ -230,7 +230,9 @@ public abstract class Request extends Job {
     int max_number_of_retries,
     long max_update_period,
     long lifetime,
-    String description) throws Exception{
+    String description,
+    String client_host
+        ) throws Exception{
         /*
         if(requestsproperties == null)
         {
@@ -261,6 +263,7 @@ public abstract class Request extends Job {
         this.configuration = configuration;
         this.max_update_period = max_update_period;
         this.description = description;
+        this.client_host = client_host;
     }
     
    /**
@@ -287,6 +290,7 @@ public abstract class Request extends Job {
     int retryDeltaTime,
     boolean should_updateretryDeltaTime,
     String description,
+    String client_host,
     String statusCodeString,
     Configuration configuration
     ) {
@@ -317,6 +321,7 @@ public abstract class Request extends Job {
         this.retryDeltaTime = retryDeltaTime;
         this.should_updateretryDeltaTime = should_updateretryDeltaTime;
         this.description = description;
+        this.client_host = client_host;
         this.statusCode = statusCodeString==null
                 ?null
                 :TStatusCode.fromString(statusCodeString);
@@ -523,6 +528,10 @@ public abstract class Request extends Job {
     }
     public void setStatusCode(String statusCode) {
         this.statusCode = statusCode==null?null:TStatusCode.fromString(statusCode);
+    }
+
+    public String getClient_host() {
+        return client_host;
     }
     
 }

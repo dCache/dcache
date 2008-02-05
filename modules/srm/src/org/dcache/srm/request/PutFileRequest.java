@@ -135,7 +135,6 @@ public class PutFileRequest extends FileRequest {
     private FileMetaData parentFmd;
     private String spaceReservationId;
     private boolean weReservedSpace;
-    private String clientHost;
     private TAccessLatency accessLatency ;//null by default
     private TRetentionPolicy retentionPolicy;//null default value
     private boolean spaceMarkedAsBeingUsed=false;
@@ -152,7 +151,6 @@ public class PutFileRequest extends FileRequest {
             JobStorage jobStorage,
             AbstractStorageElement storage,
             int maxNumberOfRetires,
-            String clientHost,
             String spaceReservationId,
             TRetentionPolicy retentionPolicy,
             TAccessLatency accessLatency
@@ -173,7 +171,6 @@ public class PutFileRequest extends FileRequest {
             throw new IllegalArgumentException(murle.toString());
         }
         this.size = size;
-        this.clientHost = clientHost;
         this.spaceReservationId = spaceReservationId;
         if(accessLatency != null) {
             this.accessLatency = accessLatency;
@@ -209,7 +206,6 @@ public class PutFileRequest extends FileRequest {
             String fileId,
             String parentFileId,
             String spaceReservationId,
-            String clientHost,
             long size,
             TRetentionPolicy retentionPolicy,
             TAccessLatency accessLatency
@@ -251,7 +247,6 @@ public class PutFileRequest extends FileRequest {
             this.parentFileId = parentFileId;
         }
         this.spaceReservationId = spaceReservationId;
-        this.clientHost = clientHost;
         this.size = size;
         this.accessLatency = accessLatency;
         this.retentionPolicy = retentionPolicy;
@@ -605,7 +600,7 @@ public class PutFileRequest extends FileRequest {
 
             }
 
-            if( size>0 && configuration.isReserve_space_implicitely() &&
+            if( configuration.isReserve_space_implicitely() &&
                     spaceReservationId == null
                     ) {
                 synchronized(this) {
@@ -643,10 +638,10 @@ public class PutFileRequest extends FileRequest {
                 if(accessLatency == null && parentFmd != null && parentFmd.retentionPolicyInfo != null ) {
                     accessLatency = parentFmd.retentionPolicyInfo.getAccessLatency();
                 }
-
+                say("reserving space, size="+(size==0?1L:size));
                 storage.srmReserveSpace(
                         getUser(),
-                        size,
+                        size==0?1L:size,
                         remaining_lifetime,
                         retentionPolicy ==null ? null: retentionPolicy.getValue(),
                         accessLatency == null? null:accessLatency.getValue(),
@@ -670,7 +665,7 @@ public class PutFileRequest extends FileRequest {
                 storage.srmMarkSpaceAsBeingUsed(getUser(),
                         spaceReservationId,
                         getPath(),
-                        size,
+                        size==0?1:size,
                         remaining_lifetime,
                         callbacks );
                 return;
@@ -757,16 +752,9 @@ public class PutFileRequest extends FileRequest {
      * @return Value of property clientHost.
      */
     public java.lang.String getClientHost() {
-        return clientHost;
+        return getRequest().getClient_host();
     }
 
-    /**
-     * Setter for property clientHost.
-     * @param clientHost New value of property clientHost.
-     */
-    public void setClientHost(java.lang.String clientHost) {
-        this.clientHost = clientHost;
-    }
 
     public TReturnStatus getReturnStatus() {
         TReturnStatus returnStatus = new TReturnStatus();

@@ -691,7 +691,9 @@ public class Storage
 
   /** */
   public void pinFile(SRMUser user,
-          String fileId, FileMetaData fmd, 
+          String fileId, 
+          String clientHost,
+          FileMetaData fmd, 
           long pinLifetime, 
           long requestId,
           PinCallbacks callbacks) {

@@ -318,7 +318,8 @@ public abstract class ContainerRequest extends Request {
     int max_number_of_retries,
     long max_update_period,
     long lifetime,
-    String description) throws Exception{
+    String description,
+    String client_host) throws Exception{
         /*
         if(requestsproperties == null)
         {
@@ -337,7 +338,8 @@ public abstract class ContainerRequest extends Request {
          max_number_of_retries,
          max_update_period,
          lifetime,
-         description);
+         description,
+         client_host);
 
     }
     
@@ -367,6 +369,7 @@ public abstract class ContainerRequest extends Request {
     int retryDeltaTime,
     boolean should_updateretryDeltaTime,
     String description,
+    String client_host,
     String statusCodeString,
     Configuration configuration
     ) {
@@ -388,6 +391,7 @@ public abstract class ContainerRequest extends Request {
      retryDeltaTime,
      should_updateretryDeltaTime,
      description,
+     client_host,
      statusCodeString,
      configuration
      );

@@ -85,6 +85,7 @@ public class ReserveSpaceRequestStorage extends DatabaseRequestStorage {
     int RETRYDELTATIME,
     boolean SHOULDUPDATERETRYDELTATIME,
     String DESCRIPTION,
+    String CLIENTHOST,
     String STATUSCODE,
     java.sql.ResultSet set,
     int next_index) throws java.sql.SQLException {
@@ -119,6 +120,7 @@ public class ReserveSpaceRequestStorage extends DatabaseRequestStorage {
                 RETENTIONPOLICY,
                 ACCESSLATENCY,
                 DESCRIPTION,
+                CLIENTHOST,
                 STATUSCODE,
                 configuration
                 );

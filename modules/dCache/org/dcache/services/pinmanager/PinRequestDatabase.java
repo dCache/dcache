@@ -308,7 +308,10 @@ class PinRequestDatabase
                 }
 
                 PinRequest request =
-                    new PinRequest(pinId, expiration, clientId);
+                    new PinRequest(pinId, 
+                    expiration, 
+                    clientId,
+                    null);
                 _manager.getPin(pnfsId).recover(request);
             }
             rs.close();
@@ -378,10 +381,15 @@ class PinRequestDatabase
     }
 
     public PinRequest createRequest(PnfsId pnfsId,
-                                    long expiration, long clientId)
+                                    long expiration, 
+                                    long clientId,
+                                    String clientHost)
     {
         long pinId = nextLong();
-        PinRequest request = new PinRequest(pinId, expiration, clientId);
+        PinRequest request = new PinRequest(pinId, 
+            expiration, 
+            clientId,
+            clientHost);
         submitUpdateStatement(InsertIntoPinRequestTable,
                               pinId, pnfsId.toString(),
                               expiration, clientId);

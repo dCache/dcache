@@ -237,7 +237,8 @@ public class ReserveSpaceRequest extends Request {
             long spaceReservationLifetime,
             TRetentionPolicy retentionPolicy,
             TAccessLatency accessLatency,
-            String description ) throws Exception {
+            String description,
+            String clienthost) throws Exception {
         /*Request(String userId,
     Long requestCredentalId,
     JobStorage requestJobsStorage,
@@ -253,7 +254,8 @@ public class ReserveSpaceRequest extends Request {
               maxNumberOfRetries,
               0,
               lifetime,
-              description);
+              description,
+              clienthost);
         
         this.sizeInBytes = sizeInBytes ;
         if(retentionPolicy != null ) {
@@ -296,6 +298,7 @@ public class ReserveSpaceRequest extends Request {
             String retentionPolicy,
             String accessLatency,
             String description,
+            String clienthost,
             String statusCodeString,
             Configuration configuration
             ) {
@@ -326,6 +329,7 @@ public class ReserveSpaceRequest extends Request {
                 0,
                 false,
                 description,
+                clienthost,
                 statusCodeString,
                 configuration);
         this.sizeInBytes = sizeInBytes;

@@ -143,7 +143,7 @@ public class PutRequest extends ContainerRequest{
     JobStorage fileRequestJobStorage,
     long max_update_period,
     int max_number_of_retries,
-    String cleint_host,
+    String client_host,
     String spaceToken,
     TRetentionPolicy retentionPolicy,
     TAccessLatency accessLatency,
@@ -157,7 +157,8 @@ public class PutRequest extends ContainerRequest{
                 max_number_of_retries,
                 max_update_period,
                 lifetime,
-                description);
+                description,
+                client_host);
         int len = protocols.length;
         this.protocols = new String[len];
         System.arraycopy(protocols,0,this.protocols,0,len);
@@ -181,7 +182,6 @@ public class PutRequest extends ContainerRequest{
             lifetime,
             fileRequestJobStorage  , 
             storage,max_number_of_retries,
-            cleint_host,
             spaceToken,
             retentionPolicy,
             accessLatency
@@ -212,6 +212,7 @@ public class PutRequest extends ContainerRequest{
     int retryDeltaTime,
     boolean should_updateretryDeltaTime,
     String description,
+    String client_host,
     String statusCodeString,
     Configuration configuration,
     String[] protocols
@@ -235,6 +236,7 @@ public class PutRequest extends ContainerRequest{
         retryDeltaTime, 
         should_updateretryDeltaTime,
         description,
+        client_host,
         statusCodeString,
         configuration );
         this.protocols = protocols;

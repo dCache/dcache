@@ -330,7 +330,8 @@ public class SRMServerV1 implements ISRM, IInformationProvider {
                 throw new RuntimeException(srmae);
             }
             RequestCredential credential = getRequestCredentilal(userCredential,null);
-            RequestStatus rs = srm.get(user,credential,surls,protocols);
+            RequestStatus rs = srm.get(user,credential,surls,protocols,
+                userCredential.clientHost);
             say("returning rs = "+rs);
             return rs;
         }
@@ -352,7 +353,8 @@ public class SRMServerV1 implements ISRM, IInformationProvider {
             throw new RuntimeException(srmae);
         }
         RequestCredential credential = getRequestCredentilal(userCredential,null);
-        return  srm.copy(user,credential,srcSURLS,destSURLS,wantPerm);
+        return  srm.copy(user,credential,srcSURLS,destSURLS,wantPerm,
+            userCredential.clientHost);
     }
     
     public RequestStatus getRequestStatus( int requestId ) {

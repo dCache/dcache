@@ -78,6 +78,7 @@ public abstract class DatabaseContainerRequestStorage extends DatabaseRequestSto
     int RETRYDELTATIME,
     boolean SHOULDUPDATERETRYDELTATIME,
     String DESCRIPTION,
+    String CLIENTHOST,
     String STATUSCODE,
     FileRequest[] fileRequests,
     java.sql.ResultSet set,
@@ -102,6 +103,7 @@ public abstract class DatabaseContainerRequestStorage extends DatabaseRequestSto
     int RETRYDELTATIME,
     boolean SHOULDUPDATERETRYDELTATIME,
     String DESCRIPTION,
+    String CLIENTHOST,
     String STATUSCODE,
     java.sql.ResultSet set,
     int next_index) throws java.sql.SQLException {
@@ -142,6 +144,7 @@ public abstract class DatabaseContainerRequestStorage extends DatabaseRequestSto
         RETRYDELTATIME, 
         SHOULDUPDATERETRYDELTATIME,
         DESCRIPTION,
+        CLIENTHOST,
         STATUSCODE,
         fileRequests,
         set,

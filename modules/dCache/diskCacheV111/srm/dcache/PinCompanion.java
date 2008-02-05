@@ -231,6 +231,7 @@ public class PinCompanion implements CellMessageAnswerable {
     public static void pinFile(
     DCacheUser user,
     String fileId,
+    String clientHost,
     PinCallbacks callbacks,
     DcacheFileMetaData dfmd,
     long pinLifetime,
@@ -244,7 +245,9 @@ public class PinCompanion implements CellMessageAnswerable {
         callbacks,cell);
         
         PinManagerPinMessage pinRequest =
-        new PinManagerPinMessage( pnfsId , pinLifetime,requestId) ;
+        new PinManagerPinMessage( pnfsId , 
+            clientHost,
+            pinLifetime,requestId) ;
         pinRequest.setStorageInfo(dfmd.getStorageInfo());
         pinRequest.setReplyRequired(true);
         companion.state = SENT_PIN_MGR_PIN_MSG;

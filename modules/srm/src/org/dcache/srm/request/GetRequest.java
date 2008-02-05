@@ -248,7 +248,8 @@ public class GetRequest extends ContainerRequest {
     JobStorage jobFileRequestStorage,
     long max_update_period,
     int max_number_of_retries,
-    String description
+    String description,
+    String client_host
     ) throws Exception {
         super(userId,
                 requestCredentialId,
@@ -257,7 +258,8 @@ public class GetRequest extends ContainerRequest {
                 max_number_of_retries,
                 max_update_period,
                 lifetime,
-                description);
+                description,
+                client_host);
         say("constructor");
         say("userId = "+userId);
         say("requestCredetialId="+requestCredentialId);
@@ -299,6 +301,7 @@ public class GetRequest extends ContainerRequest {
     int retryDeltaTime,
     boolean should_updateretryDeltaTime,
     String description,
+    String client_host,
     String statusCodeString,
     Configuration configuration,
     String[] protocols
@@ -322,6 +325,7 @@ public class GetRequest extends ContainerRequest {
         retryDeltaTime, 
         should_updateretryDeltaTime,
         description,
+        client_host,
         statusCodeString,
         configuration );
         this.protocols = protocols;

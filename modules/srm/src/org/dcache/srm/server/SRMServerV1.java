@@ -117,7 +117,11 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
       diskCacheV111.srm.RequestStatus requestStatus;
       try {
           
-         requestStatus = srmConn.getSrm().get(user,requestCredential,arg0,arg1);
+         requestStatus = srmConn.getSrm().get(user,
+             requestCredential,
+             arg0,
+             arg1,
+             userCred.clientHost);
       } catch(Exception e) {
          log.fatal(e);
          throw new java.rmi.RemoteException("srm get failed", e);
@@ -146,7 +150,12 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
       diskCacheV111.srm.RequestStatus requestStatus;
       try {
           
-         requestStatus = srmConn.getSrm().copy(user,requestCredential,arg0,arg1,arg2);
+         requestStatus = srmConn.getSrm().copy(user,
+             requestCredential,
+             arg0,
+             arg1,
+             arg2,
+             userCred.clientHost);
       } catch(Exception e) {
          log.fatal(e);
          throw new java.rmi.RemoteException("srm put failed", e);
