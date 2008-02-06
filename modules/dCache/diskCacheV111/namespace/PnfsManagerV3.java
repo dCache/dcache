@@ -1131,7 +1131,7 @@ public class PnfsManagerV3 extends CellAdapter {
             newName = uniqueName.toString();
         }
 
-        say("renameing " + pnfsId + " to " + newName );
+        say("Renaming " + pnfsId + " to " + newName );
         _nameSpaceProvider.renameEntry(pnfsId, newName);
     }
 
