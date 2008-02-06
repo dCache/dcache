@@ -777,6 +777,10 @@ public class PnfsManagerV3 extends CellAdapter {
                 // let's get the pnfsId
                 //
                 String  pnfsPath    = pnfsMessage.getPnfsPath() ;
+                if(pnfsPath == null ) {
+                    throw new InvalidMessageCacheException("no pnfsid or path defined");
+                }
+
                 say("get cache locations (by path) global : "+pnfsPath  ) ;
                 PnfsId     id       = _nameSpaceProvider.pathToPnfsid( pnfsPath, true);
 
@@ -899,6 +903,9 @@ public class PnfsManagerV3 extends CellAdapter {
                 // let's get the pnfsId
                 //
                 String  pnfsPath    = pnfsMessage.getPnfsPath() ;
+                if(pnfsPath == null ) {
+                    throw new InvalidMessageCacheException("no pnfsid or path defined");
+                }
                 say("setStorageInfo (by path) global : "+pnfsPath  ) ;
                 PnfsId     id       = _nameSpaceProvider.pathToPnfsid( pnfsPath, true);
 
@@ -941,6 +948,10 @@ public class PnfsManagerV3 extends CellAdapter {
                 // let's get the pnfsId
                 //
                 String  pnfsPath    = pnfsMessage.getPnfsPath() ;
+                if(pnfsPath == null ) {
+                    throw new InvalidMessageCacheException("no pnfsid or path defined");
+                }
+
                 say("getStorageInfo (by path) global : "+pnfsPath  ) ;
                 PnfsId     id       = _nameSpaceProvider.pathToPnfsid( pnfsPath, true);
 
@@ -990,8 +1001,13 @@ public class PnfsManagerV3 extends CellAdapter {
                 // if the pnfsid is not defined they want 'StorageInfo by path'
                 // let's get the pnfsId
                 //
-                say("getFileMetaData (by path) : "+  pnfsMessage.getPnfsPath() ) ;
-                PnfsId   id         = _nameSpaceProvider.pathToPnfsid(pnfsMessage.getPnfsPath(), resolve );
+                String pnfsPath = pnfsMessage.getPnfsPath();
+                if(pnfsPath == null ) {
+                    throw new InvalidMessageCacheException("no pnfsid or path defined");
+                }
+
+                say("getFileMetaData (by path) : "+  pnfsPath ) ;
+                PnfsId   id         = _nameSpaceProvider.pathToPnfsid(pnfsPath, resolve );
                 if( id == null ) {
                     throw new
                     CacheException( "can't get pnfsId (not a pnfsfile)" ) ;
