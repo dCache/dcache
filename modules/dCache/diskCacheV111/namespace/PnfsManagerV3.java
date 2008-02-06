@@ -683,31 +683,33 @@ public class PnfsManagerV3 extends CellAdapter {
         }
 
     }
-    private String updateFlag( PnfsId pnfsId , PnfsFlagMessage.FlagOperation operation , String flagName , String value )
-    throws Exception {
+    private String updateFlag(PnfsId pnfsId, PnfsFlagMessage.FlagOperation operation, String flagName,
+            String value) throws Exception {
 
+        switch (operation) {
 
-        if( operation == PnfsFlagMessage.FlagOperation.SET ){
-            say( "flags set "+pnfsId+" "+flagName+"="+value ) ;
-            _nameSpaceProvider.setFileAttribute(pnfsId, flagName, value );
-        }else if( operation == PnfsFlagMessage.FlagOperation.SETNOOVERWRITE ){
-            say( "flags set (dontoverwrite) "+pnfsId+" "+flagName+"="+value ) ;
-            String x = (String)_nameSpaceProvider.getFileAttribute(pnfsId, flagName);
-            if( ( x == null ) || ( ! x.equals(value) ) ){
-                say( "flags set "+pnfsId+" "+flagName+"="+value ) ;
-                _nameSpaceProvider.setFileAttribute(pnfsId, flagName, value );
-
-            }
-        }else if( operation == PnfsFlagMessage.FlagOperation.GET ){
-            String v = (String)_nameSpaceProvider.getFileAttribute(pnfsId, flagName);
-            say( "flags ls "+pnfsId+" "+flagName+" -> "+v ) ;
-            return v ;
-        }else if( operation == PnfsFlagMessage.FlagOperation.REMOVE ){
-            say( "flags remove "+pnfsId+" "+flagName ) ;
-            _nameSpaceProvider.removeFileAttribute(pnfsId, flagName);
+            case SET:
+                say("flags set " + pnfsId + " " + flagName + "=" + value);
+                _nameSpaceProvider.setFileAttribute(pnfsId, flagName, value);
+                break;
+            case SETNOOVERWRITE:
+                say("flags set (dontoverwrite) " + pnfsId + " " + flagName + "=" + value);
+                String x = (String) _nameSpaceProvider.getFileAttribute(pnfsId, flagName);
+                if ((x == null) || (!x.equals(value))) {
+                    say("flags set " + pnfsId + " " + flagName + "=" + value);
+                    _nameSpaceProvider.setFileAttribute(pnfsId, flagName, value);
+                }
+                break;
+            case GET:
+                String v = (String) _nameSpaceProvider.getFileAttribute(pnfsId, flagName);
+                say("flags ls " + pnfsId + " " + flagName + " -> " + v);
+                return v;
+            case REMOVE:
+                say("flags remove " + pnfsId + " " + flagName);
+                _nameSpaceProvider.removeFileAttribute(pnfsId, flagName);
+                break;
         }
-        return null ;
-
+        return null;
     }
 
     public void addCacheLocation(PnfsAddCacheLocationMessage pnfsMessage){
