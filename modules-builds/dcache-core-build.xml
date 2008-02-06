@@ -122,15 +122,15 @@
 	</selector>
 
 
-        <selector id="replica.classpath.selector">
-                <or>
-                        <filename name="**/cells.jar" />
-                        <filename name="**/dcache.jar" />
-                        <filename name="dbcp/commons-pool.jar" />
-                        <filename name="dbcp/commons-dbcp.jar" />
-                        <filename name="log4j/log4j-1.2.8.jar" />
-                </or>
-        </selector>
+    <selector id="replica.classpath.selector">
+        <or>
+            <filename name="**/cells.jar" />
+            <filename name="**/dcache.jar" />
+            <filename name="dbcp/commons-pool.jar" />
+            <filename name="dbcp/commons-dbcp.jar" />
+            <filename name="log4j/log4j-1.2.8.jar" />
+        </or>
+    </selector>
 
 
 	<path id="dcache.classpath">
@@ -151,21 +151,19 @@
 		</fileset>
 	</path>
 
-        <path id="replica.classpath">
-                <fileset dir="${classesDir}">
-                        <selector refid="replica.classpath.selector" />
-                </fileset>
-                <fileset dir="${libDir}">
-                        <selector refid="replica.classpath.selector" />
-                </fileset>
-        </path>
+    <path id="replica.classpath">
+        <fileset dir="${classesDir}">
+           <selector refid="replica.classpath.selector" />
+        </fileset>
+        <fileset dir="${libDir}">
+            <selector refid="replica.classpath.selector" />
+        </fileset>
+    </path>
 
  	<!-- Classpath for dcache-srm.jar - This is the same as for srm.jar in the srm CVS module -->
 
 	<selector id="dcache-srm.classpath.selector">
 		<or>
-			<filename name="**/cells.jar" />
-			<filename name="**/dcache.jar" />
 			<filename name="**/srm.jar" />
 			<filename name="**/gplazma.jar" />
 			<filename name="jdom/jdom.jar" />
@@ -193,7 +191,6 @@
 		<fileset dir="${libDir}">
 			<selector refid="dcache-srm.classpath.selector" />
 		</fileset>
-
 	</path>
 
 
@@ -218,8 +215,8 @@
 		<fileset dir="${libDir}">
 			<selector refid="dcache-srm-enhance.classpath.selector" />
 		</fileset>
-                <pathelement path="${buildDir}/dcache-srm"/>
-                <pathelement path="${buildDir}/core"/>
+	    <pathelement path="${buildDir}/dcache-srm"/>
+        <pathelement path="${buildDir}/core"/>
 	</path>
 
 
@@ -227,8 +224,6 @@
 
 	<selector id="gplazma.classpath.selector">
 		<or>
-			<filename name="**/dcache.jar" />
-			<filename name="**/cells.jar" />
 			<filename name="**/srm.jar" />
 			<filename name="cog/**/*.jar" />
 			<filename name="axis/**/*.jar" />
@@ -351,7 +346,7 @@
 		<mkdir dir="${buildDir}/core" />
 
 		<javac destdir="${buildDir}/core" classpathref="dcache.classpath" source="${javac.source}" target="${javac.target}" debug="${javac.debug}" verbose="${javac.verbose}"  encoding="${javac.encoding}">
-
+			
 			<src path="${sourceDir}" />
 			<include name="${dcache.packagePrefix}/**" />
 			<include name="org/**" />
@@ -494,9 +489,13 @@
 
 		<mkdir dir="${buildDir}/gplazma" />
 
-		<javac destdir="${buildDir}/gplazma" classpathref="gplazma.classpath" source="${javac.source}" target="${javac.target}" debug="${javac.debug}" verbose="${javac.verbose}">
-
+		<javac destdir="${buildDir}/gplazma" source="${javac.source}" target="${javac.target}" debug="${javac.debug}" verbose="${javac.verbose}">
+			
 			<src path="${sourceDir}" />
+			
+			<classpath refid="gplazma.classpath"/>
+			<classpath refid="dcache.classpath"/>
+			
 			<include name="${dcache.packagePrefix}/services/authorization/**" />
 			<include name="${dcache.packagePrefix}/admin/UserMetaDataProvider_gPlazma.java" />
 		</javac>
@@ -527,8 +526,12 @@
 
 		<mkdir dir="${buildDir}/xrootd-tokenauthz" />
 
-		<javac destdir="${buildDir}/xrootd-tokenauthz" classpathref="xrootd-tokenauthz.classpath" source="${javac.source}" target="${javac.target}" debug="${javac.debug}" verbose="${javac.verbose}">
+		<javac destdir="${buildDir}/xrootd-tokenauthz" source="${javac.source}" target="${javac.target}" debug="${javac.debug}" verbose="${javac.verbose}">
 			<src path="${sourceDir}" />
+			
+			<classpath refid="dcache.classpath"/>
+			<classpath refid="xrootd-tokenauthz.classpath"/>
+			
 			<include name="org/dcache/xrootd/security/plugins/tokenauthz/**" />
 		</javac>
 	</target>
@@ -569,9 +572,13 @@
 
 		<mkdir dir="${buildDir}/dcache-srm" />
 
-		<javac destdir="${buildDir}/dcache-srm" classpathref="dcache-srm.classpath" source="${javac.source}" target="${javac.target}" debug="${javac.debug}" verbose="${javac.verbose}">
+		<javac destdir="${buildDir}/dcache-srm" source="${javac.source}" target="${javac.target}" debug="${javac.debug}" verbose="${javac.verbose}">
 			<src path="${sourceDir}" />
 
+			<classpath refid="dcache-srm.classpath"/>
+			<classpath refid="dcache.classpath"/>
+			<classpath refid="gplazma.classpath"/>
+			
 			<include name="${dcache.packagePrefix}/doors/GsiFtpDoorV1.java" />
 			<include name="${dcache.packagePrefix}/movers/RemoteGsiftpTransferProtocol_1.java" />
 			<include name="${dcache.packagePrefix}/services/TransferManager.java" />
