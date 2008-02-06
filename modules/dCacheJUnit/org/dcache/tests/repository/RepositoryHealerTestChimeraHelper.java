@@ -12,7 +12,7 @@ import java.util.List;
 
 import org.dcache.chimera.FsInode;
 import org.dcache.chimera.HFile;
-import org.dcache.chimera.HimeraFsException;
+import org.dcache.chimera.ChimeraFsException;
 import org.dcache.chimera.IOHimeraFsException;
 import org.dcache.chimera.JdbcFs;
 import org.dcache.chimera.XMLconfig;
@@ -65,7 +65,7 @@ public class RepositoryHealerTestChimeraHelper implements DataFileRepository {
         }
     }
 
-    FsInode add(PnfsId pnfsid) throws HimeraFsException {
+    FsInode add(PnfsId pnfsid) throws ChimeraFsException {
 
         return _fs.createFile(_rootInode, pnfsid.toString() );
 
