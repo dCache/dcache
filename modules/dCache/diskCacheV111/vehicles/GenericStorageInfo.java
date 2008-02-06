@@ -18,9 +18,11 @@ public class GenericStorageInfo implements StorageInfo,
 	/*
 	 * to simulate the 'classic' behavior : new files go to tape and, after
 	 * flushing, removed by sweeper if space needed.
+         * Timur: defaults should be nulls, otherwise the space manager considers that the pnfs 
+         * tags are always set and system wide defaults are not used
 	 */
-	private AccessLatency _accessLatency = AccessLatency.NEARLINE;
-	private RetentionPolicy _retentionPolicy = RetentionPolicy.CUSTODIAL;
+	private AccessLatency _accessLatency = null;
+	private RetentionPolicy _retentionPolicy = null;
 	private Map<String, String> _keyHash = new HashMap<String, String>();
 	private List<URI> _locations = new ArrayList<URI>();
 	private boolean _setHsm = false;
@@ -257,14 +259,6 @@ public class GenericStorageInfo implements StorageInfo,
 	 * @Since 1.8
 	 */
 	Object readResolve() {
-
-	    if(_accessLatency == null ) {
-	        _accessLatency =  AccessLatency.NEARLINE;
-	    }
-
-	    if(_retentionPolicy == null ) {
-	        _retentionPolicy = RetentionPolicy.CUSTODIAL;
-	    }
 
 	    if(_locations == null ) {
 	        _locations = new ArrayList<URI>();
