@@ -2581,22 +2581,29 @@ public class Storage
             size = storage_info.getFileSize();
 	    TRetentionPolicy retention = null;
 	    TAccessLatency latency = null;
-	    if (storage_info.getRetentionPolicy().equals(RetentionPolicy.CUSTODIAL)) { 
-		retention = TRetentionPolicy.CUSTODIAL;
-	    } else if (storage_info.getRetentionPolicy().equals(RetentionPolicy.REPLICA)) { 
-		retention = TRetentionPolicy.REPLICA;
-	    } else if (storage_info.getRetentionPolicy().equals(RetentionPolicy.OUTPUT)) { 
-		retention = TRetentionPolicy.OUTPUT;
-	    } 
-
-            if (storage_info.getAccessLatency().equals(AccessLatency.ONLINE)) { 
-		latency = TAccessLatency.ONLINE;
-	    } else if (storage_info.getAccessLatency().equals(AccessLatency.NEARLINE)) { 
-		latency = TAccessLatency.NEARLINE;
-	    }
-
-	    fmd.retentionPolicyInfo = 
-                new TRetentionPolicyInfo(retention, latency);
+	    if (storage_info.getRetentionPolicy() != null) {
+                if(storage_info.getRetentionPolicy().equals(RetentionPolicy.CUSTODIAL)) { 
+                    retention = TRetentionPolicy.CUSTODIAL;
+                } else if (storage_info.getRetentionPolicy().equals(RetentionPolicy.REPLICA)) { 
+                    retention = TRetentionPolicy.REPLICA;
+                } else if (storage_info.getRetentionPolicy().equals(RetentionPolicy.OUTPUT)) { 
+                    retention = TRetentionPolicy.OUTPUT;
+                } 
+            }
+            if (storage_info.getAccessLatency() != null) {
+                if(storage_info.getAccessLatency().equals(AccessLatency.ONLINE)) { 
+                    latency = TAccessLatency.ONLINE;
+                } else if (storage_info.getAccessLatency().equals(AccessLatency.NEARLINE)) { 
+                    latency = TAccessLatency.NEARLINE;
+                }
+            }
+            // RetentionPolicy is non-nillable element of the 
+            // TRetentionPolicyInfo, if retetion is null, we shold leave
+            // the whole retentionPolicyInfo null
+            if(retention != null) {
+                fmd.retentionPolicyInfo = 
+                    new TRetentionPolicyInfo(retention, latency);
+            }
             fmd.setStorageInfo(storage_info);
 	    isStored=storage_info.isStored();
         }
