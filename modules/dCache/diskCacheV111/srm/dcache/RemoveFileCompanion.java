@@ -89,14 +89,8 @@ import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PnfsId;
 
 import diskCacheV111.vehicles.PnfsGetFileMetaDataMessage;
-import diskCacheV111.vehicles.PnfsGetCacheLocationsMessage;
-import diskCacheV111.vehicles.PoolModifyPersistencyMessage;
-import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.PnfsDeleteEntryMessage;
-import diskCacheV111.vehicles.PnfsFlagMessage;
-import java.net.InetAddress;
-import java.util.List;
 import org.dcache.srm.RemoveFileCallbacks;
 import org.dcache.srm.FileMetaData;
 import diskCacheV111.util.CacheException;
@@ -214,17 +208,6 @@ public class RemoveFileCompanion implements CellMessageAnswerable {
 				esay(this.toString()+" got unexpected PnfsGetStorageInfoMessage "+
 				     " : "+metadata_msg+" ; Ignoring");
 			}
-			else if (message instanceof PnfsGetCacheLocationsMessage ) {
-				PnfsGetCacheLocationsMessage get_cache_loc_msg =
-					(PnfsGetCacheLocationsMessage) message;
-				if (state == WAITING_FOR_CACHE_LOCATIONS_MESSAGE) {
-					state = RESEIVED_CACHE_LOCATIONS_MESSAGE;
-					cacheLocationsArrived(get_cache_loc_msg);
-					return;
-				}
-				esay(this.toString()+" got unexpected PnfsGetCacheLocationsMessage "+
-				     " : "+get_cache_loc_msg+" ; Ignoring");
-			}
 			else if (message instanceof PnfsDeleteEntryMessage ) {
 				PnfsDeleteEntryMessage delete_reply =
 					(PnfsDeleteEntryMessage) message;
@@ -240,28 +223,6 @@ public class RemoveFileCompanion implements CellMessageAnswerable {
 				}
 				esay(this.toString()+" got unexpected PnfsDeleteEntryMessage "+
 				     " : "+delete_reply+" ; Ignoring");
-			}
-			else if (message instanceof PoolModifyPersistencyMessage) {
-				PoolModifyPersistencyMessage modify_reply =
-					(PoolModifyPersistencyMessage) message;
-				if (state == WAITING_FOR_PNFS_AND_POOL_REPLIES_MESSAGES) {
-					modifyPersistencyReplyArrived(modify_reply);
-					return;
-				}
-				esay(this.toString()+" got unexpected PoolModifyPersistencyMessage "+
-				     " : "+modify_reply+" ; Ignoring");
-				
-			}
-			else if(message instanceof PnfsFlagMessage) {
-				PnfsFlagMessage flag_reply =
-					(PnfsFlagMessage) message;
-				if(state == WAITING_FOR_PNFS_AND_POOL_REPLIES_MESSAGES) {
-					flagReplyArrived(flag_reply);
-					return;
-				}
-				esay(this.toString()+" got unexpected PnfsFlagMessage "+
-				     " : "+flag_reply+" ; Ignoring");
-				
 			}
 			else {
 				esay(this.toString()+" got unknown message "+
@@ -279,109 +240,27 @@ public class RemoveFileCompanion implements CellMessageAnswerable {
 		}
 	}
 	
-	private List<String> cache_locations;
-	private boolean flag_set;
 
-	public void cacheLocationsArrived(PnfsGetCacheLocationsMessage cache_loc_msg) {
-		if(cache_loc_msg.getReturnCode() != 0) {
-			callbacks.RemoveFileFailed("can not get cached locations");
-			return;
-		}
-		cache_locations = cache_loc_msg.getCacheLocations();
-		int locations_num = cache_locations.size();
-		say("received "+locations_num+" cached locations: ");
-		try {
-			if (locations_num > 0) {
-				state = WAITING_FOR_PNFS_AND_POOL_REPLIES_MESSAGES;
-				for (int i = 0 ; i<locations_num; ++i) {
-					String pool = (String)cache_locations.get(i);
-					say("received cached location "+pool+ " asking to make non-precious");
-					PoolModifyPersistencyMessage modifyPersistencyRequest =
-						new PoolModifyPersistencyMessage(pool,pnfsId, false);
-					cell.sendMessage( new CellMessage(
-								  new CellPath(pool) ,
-								  modifyPersistencyRequest ) ,
-							  true , true ,
-							  this ,
-							  1*24*60*60*1000);
-				}
-			}
-			PnfsFlagMessage flag =
-				new PnfsFlagMessage( pnfsId , "d" , PnfsFlagMessage.FlagOperation.SET );
-			flag.setReplyRequired( true );
-			flag.setValue( "true");
-			cell.sendMessage( new CellMessage(
-						  new CellPath("PnfsManager") ,
-						  flag ) ,
-					  true , true ,
-					  this ,
-					  1*24*60*60*1000);
-			PnfsDeleteEntryMessage delete_request =
-				new PnfsDeleteEntryMessage(path);
-			delete_request.setReplyRequired(true);
-			try {
-				state = WAITING_FOR_PNFS_DELETE_MESSAGE;
-				cell.sendMessage( new CellMessage(
-							  new CellPath("PnfsManager") ,
-							  delete_request ) ,
-						  true , true ,
-						  this ,
-						  1*24*60*60*1000) ;
-			}
-			catch(Exception ee ) {
-				state = FINAL_STATE;
-				esay(ee);
-				callbacks.RemoveFileFailed("Exception");
-			}
-		}
-		catch(Exception ee ) {
-			state = FINAL_STATE;
-			esay(ee);
-			callbacks.RemoveFileFailed("Exception");
-		}
+	public void deleteEntry() {
+            PnfsDeleteEntryMessage delete_request =
+                    new PnfsDeleteEntryMessage(path);
+            delete_request.setReplyRequired(true);
+            try {
+                    state = WAITING_FOR_PNFS_DELETE_MESSAGE;
+                    cell.sendMessage( new CellMessage(
+                                              new CellPath("PnfsManager") ,
+                                              delete_request ) ,
+                                      true , true ,
+                                      this ,
+                                      1*24*60*60*1000) ;
+            }
+            catch(Exception ee ) {
+                    state = FINAL_STATE;
+                    esay(ee);
+                    callbacks.RemoveFileFailed("Exception");
+            }
 	}
 	
-	public void flagReplyArrived(PnfsFlagMessage reply) {
-		if (reply.getReturnCode() != 0) {
-			state = FINAL_STATE;
-			String error =
-				"can not set flag d=\"true\" of "+path;
-			esay(error);
-			callbacks.RemoveFileFailed(error);
-			return;
-		}
-		
-		flag_set = true;
-		if(cache_locations.isEmpty()) {
-			state = FINAL_STATE;
-			say("Remove Successeded for "+path);
-			callbacks.RemoveFileSucceeded();
-		}
-	}
-    
-	public void modifyPersistencyReplyArrived(PoolModifyPersistencyMessage reply) {
-		String pool = reply.getPoolName();
-		if(!cache_locations.contains(pool)) {
-			esay("received a responce from "+pool+", was not waiting for it, ignoring");
-			return;
-		}
-		if(reply.getReturnCode() != 0) {
-			state = FINAL_STATE;
-			String error =
-				"can not modify persistency of "+path+ " at pool \""+pool+"\"";
-			esay(error);
-			callbacks.RemoveFileFailed(error);
-			return;
-		}
-		else {
-			cache_locations.remove(pool);
-		}
-		if(cache_locations.isEmpty() && flag_set) {
-			state = FINAL_STATE;
-			say("RemoveFile Successeded for "+path);
-			callbacks.RemoveFileSucceeded();
-		}
-	}
 	
 	public void fileInfoArrived(PnfsGetFileMetaDataMessage metadata_msg) {
 		if(metadata_msg.getReturnCode() != 0) {
@@ -422,23 +301,8 @@ public class RemoveFileCompanion implements CellMessageAnswerable {
 			callbacks.RemoveFileFailed("permission denied");
 			return;
 		}
+                deleteEntry();
 
-		PnfsGetCacheLocationsMessage getCacheLocMsg =
-			new PnfsGetCacheLocationsMessage(pnfsId);
-		try {
-			state = WAITING_FOR_CACHE_LOCATIONS_MESSAGE;
-			cell.sendMessage( new CellMessage(
-						  new CellPath("PnfsManager") ,
-						  getCacheLocMsg ) ,
-					  true , true ,
-					  this ,
-					  1*24*60*60*1000) ;
-		}
-		catch (Exception ee ) {
-			state = FINAL_STATE;
-			esay(ee);
-			callbacks.RemoveFileFailed("Exception");
-		}
 	}
 	
 	public void exceptionArrived( CellMessage request , Exception exception ) {
