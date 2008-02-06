@@ -1,4 +1,4 @@
-<!-- $Id: dcache-core-build.xml,v 1.45 2007-10-05 09:22:38 behrmann Exp $ -->
+<!-- $Id: dcache-core-build.xml,v 1.45 2008-10-05 09:22:38 behrmann Exp $ -->
 
 <project name="Core" default="help" basedir=".">
 
@@ -394,7 +394,7 @@
 					<attribute name="Date" value="${jar.timestamp}" />
 				</section>
 				<section name="Copyright">
-					<attribute name="Copy" value="(C) dCache.ORG  2000 - 2007" />
+					<attribute name="Copy" value="(C) dCache.ORG  2000 - 2008" />
 				</section>
 				<attribute name="Main-Class" value="diskCacheV111.util.Version" />
 				<attribute name="Class-Path" value="cells.jar" />
@@ -434,7 +434,7 @@
                                         <attribute name="Date" value="${jar.timestamp}" />
                                 </section>
                                 <section name="Copyright">
-                                        <attribute name="Copy" value="(C) dCache.ORG  2000 - 2007" />
+                                        <attribute name="Copy" value="(C) dCache.ORG  2000 - 2008" />
                                 </section>
                                 <attribute name="Class-Path" value="dcache.jar" />
                                 <attribute name="Specification-Version" value="${release.name}" />
@@ -469,7 +469,7 @@
 					<attribute name="Date" value="${jar.timestamp}" />
 				</section>
 				<section name="Copyright">
-					<attribute name="Copy" value="(C) dCache.ORG  2000 - 2007" />
+					<attribute name="Copy" value="(C) dCache.ORG  2000 - 2008" />
 				</section>
 				<attribute name="Main-Class" value="diskCacheV111.util.Version" />
 				<attribute name="Class-Path" value="cells.jar" />
@@ -513,7 +513,7 @@
 					<attribute name="Date" value="${jar.timestamp}" />
 				</section>
 				<section name="Copyright">
-					<attribute name="Copy" value="(C) dCache.ORG  2000 - 2007" />
+					<attribute name="Copy" value="(C) dCache.ORG  2000 - 2008" />
 				</section>
 			</manifest>
 		</jar>
@@ -548,7 +548,7 @@
 					<attribute name="Date" value="${jar.timestamp}" />
 				</section>
 				<section name="Copyright">
-					<attribute name="Copy" value="(C) dCache.ORG  2000 - 2007" />
+					<attribute name="Copy" value="(C) dCache.ORG  2000 - 2008" />
 				</section>
 			</manifest>
 		</jar>
@@ -623,7 +623,7 @@
 					<attribute name="Date" value="${jar.timestamp}" />
 				</section>
 				<section name="Copyright">
-					<attribute name="Copy" value="(C) dCache.ORG  2000 - 2007" />
+					<attribute name="Copy" value="(C) dCache.ORG  2000 - 2008" />
 				</section>
 			</manifest>
 		</jar>
