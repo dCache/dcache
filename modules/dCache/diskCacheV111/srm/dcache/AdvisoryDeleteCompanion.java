@@ -1,38 +1,4 @@
 // $Id$
-// $Log: not supported by cvs2svn $
-// Revision 1.9  2007/05/24 13:51:09  tigran
-// merge of 1.7.1 and the head
-//
-// Revision 1.8  2006/09/25 20:30:58  timur
-// modify srm companions and srm cell to use ThreadManager
-//
-// Revision 1.7.8.2  2007/09/26 04:07:06  timur
-// make advisory delete only remove the pnfs entry without changing the files to cached
-//
-// Revision 1.7.8.1  2006/09/20 22:05:28  timur
-// modify most srm companions to use ThreadManager
-//
-// Revision 1.7  2005/10/07 22:59:46  timur
-// work towards v2
-//
-// Revision 1.6  2005/06/02 06:16:58  timur
-// changes to advisory delete behavior
-//
-// Revision 1.5  2005/03/11 21:17:27  timur
-// making srm compatible with cern tools again
-//
-// Revision 1.4  2005/01/25 05:17:31  timur
-// moving general srm stuff into srm repository
-//
-// Revision 1.3  2004/12/16 21:08:56  timur
-// modified database to prevent the slow down of srm caused by increase of number of records
-//
-// Revision 1.2  2004/08/06 19:35:22  timur
-// merging branch srm-branch-12_May_2004 into the trunk
-//
-// Revision 1.1.2.3  2004/06/15 22:15:41  timur
-// added cvs logging tags and fermi copyright headers at the top
-//
 
 /*
 COPYRIGHT STATUS:
@@ -117,14 +83,9 @@ import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PnfsId;
 
 import diskCacheV111.vehicles.PnfsGetStorageInfoMessage;
-import diskCacheV111.vehicles.PnfsGetCacheLocationsMessage;
-import diskCacheV111.vehicles.PoolModifyPersistencyMessage;
 import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.PnfsDeleteEntryMessage;
-import diskCacheV111.vehicles.PnfsFlagMessage;
-import java.net.InetAddress;
-import java.util.List;
 import org.dcache.srm.AdvisoryDeleteCallbacks;
 import org.dcache.srm.FileMetaData;
 
@@ -143,8 +104,6 @@ public class AdvisoryDeleteCompanion implements CellMessageAnswerable {
     private static final int INITIAL_STATE=0;
     private static final int WAITING_FOR_FILE_INFO_MESSAGE=1;
     private static final int RESEIVED_FILE_INFO_MESSAGE=2;
-    private static final int WAITING_FOR_CACHE_LOCATIONS_MESSAGE=3;
-    private static final int RESEIVED_CACHE_LOCATIONS_MESSAGE=4;
     private static final int WAITING_FOR_PNFS_DELETE_MESSAGE=5;
     private static final int RESEIVED_PNFS_DELETE_MESSAGE=6;
     //this state is assumed when we sent multiple "change  persistancy"
@@ -163,7 +122,6 @@ public class AdvisoryDeleteCompanion implements CellMessageAnswerable {
     private String      poolName = null ;
     private DCacheUser user;
     private boolean advisoryDeleteEnabled;
-    private static final boolean DELETE_ENTRY=true;
     
     private void say(String words_of_wisdom) {
         if(cell!=null) {
@@ -235,18 +193,6 @@ public class AdvisoryDeleteCompanion implements CellMessageAnswerable {
                 esay(this.toString()+" got unexpected PnfsGetStorageInfoMessage "+
                 " : "+storage_info_msg+" ; Ignoring");
             }
-            else if( message instanceof PnfsGetCacheLocationsMessage ) {
-                PnfsGetCacheLocationsMessage get_cache_loc_msg =
-                (PnfsGetCacheLocationsMessage) message;
-                if(state == WAITING_FOR_CACHE_LOCATIONS_MESSAGE) {
-                    state = RESEIVED_CACHE_LOCATIONS_MESSAGE;
-                    cacheLocationsArrived(get_cache_loc_msg);
-                    return;
-                }
-                esay(this.toString()+" got unexpected PnfsGetCacheLocationsMessage "+
-                " : "+get_cache_loc_msg+" ; Ignoring");
-                
-            }
             else if( message instanceof PnfsDeleteEntryMessage ) {
                 
                 PnfsDeleteEntryMessage delete_reply =
@@ -264,28 +210,6 @@ public class AdvisoryDeleteCompanion implements CellMessageAnswerable {
                 esay(this.toString()+" got unexpected PnfsDeleteEntryMessage "+
                 " : "+delete_reply+" ; Ignoring");
             }
-            else if(message instanceof PoolModifyPersistencyMessage) {
-                PoolModifyPersistencyMessage modify_reply =
-                (PoolModifyPersistencyMessage) message;
-                if(state == WAITING_FOR_PNFS_AND_POOL_REPLIES_MESSAGES) {
-                    modifyPersistancyReplyArrived(modify_reply);
-                    return;
-                }
-                esay(this.toString()+" got unexpected PoolModifyPersistencyMessage "+
-                " : "+modify_reply+" ; Ignoring");
-                
-            }
-            else if(message instanceof PnfsFlagMessage) {
-                PnfsFlagMessage flag_reply =
-                (PnfsFlagMessage) message;
-                if(state == WAITING_FOR_PNFS_AND_POOL_REPLIES_MESSAGES) {
-                    flagReplyArrived(flag_reply);
-                    return;
-                }
-                esay(this.toString()+" got unexpected PnfsFlagMessage "+
-                " : "+flag_reply+" ; Ignoring");
-                
-            }
             else {
                 esay(this.toString()+" got unknown message "+
                 " : "+message.getErrorObject());
@@ -300,61 +224,6 @@ public class AdvisoryDeleteCompanion implements CellMessageAnswerable {
             callbacks.Error(this.toString()+" got unknown object "+
             " : "+o) ;
         }
-    }
-    
-    private List<String> cache_locations;
-    private boolean flag_set;
-    public void cacheLocationsArrived(
-    PnfsGetCacheLocationsMessage cache_loc_msg) {
-        if(cache_loc_msg.getReturnCode() != 0) {
-            callbacks.Error("can not get cached locations");
-            return;
-        }
-        cache_locations = cache_loc_msg.getCacheLocations();
-        int locations_num = cache_locations.size();
-        say("received "+locations_num+" cached locations: ");
-
-        try {
-            if(locations_num > 0) {
-                state = WAITING_FOR_PNFS_AND_POOL_REPLIES_MESSAGES;
-                for(int i = 0 ; i<locations_num; ++i) {
-                   String pool = (String)cache_locations.get(i);
-                   say("received cached location "+pool+ " asking to make non-precious");
-                
-                   PoolModifyPersistencyMessage modifyPersistencyRequest =
-                   new PoolModifyPersistencyMessage(pool,pnfsId, false);
-                   cell.sendMessage( new CellMessage(
-                   new CellPath(pool) ,
-                   modifyPersistencyRequest ) ,
-                   true , true ,
-                   this ,
-                   1*24*60*60*1000) ;
-                }
-            }
-            
-            PnfsFlagMessage flag =
-            new PnfsFlagMessage( pnfsId , "d" , "put" ) ;
-            flag.setReplyRequired( true );
-            flag.setValue( "true");
-            cell.sendMessage( new CellMessage(
-            new CellPath("PnfsManager") ,
-            flag ) ,
-            true , true ,
-            this ,
-            1*24*60*60*1000) ;
-            
-            state = FINAL_STATE;
-            callbacks.AdvisoryDeleteSuccesseded();
-            return;
-        
-        }
-        catch(Exception ee ) {
-            state = FINAL_STATE;
-            esay(ee);
-            callbacks.Exception(ee);
-        }
-        
-        
     }
     
     public void deleteEntry() {
@@ -388,50 +257,7 @@ public class AdvisoryDeleteCompanion implements CellMessageAnswerable {
         }
     }
     
-    public void flagReplyArrived(PnfsFlagMessage reply) {
-        if(reply.getReturnCode() != 0) {
-            state = FINAL_STATE;
-            String error =
-            "can not set flag d=\"true\" of "+path;
-            esay(error);
-            callbacks.Error(error);
-            return;
-        }
-        
-        flag_set = true;
-        if(cache_locations.isEmpty()) {
-            state = FINAL_STATE;
-            say("Advisory Delete Successeded for "+path);
-            callbacks.AdvisoryDeleteSuccesseded();
-        }
-        
-    }
-    
-    public void modifyPersistancyReplyArrived(PoolModifyPersistencyMessage reply) {
-        String pool = reply.getPoolName();
-        if(!cache_locations.contains(pool)) {
-            esay("received a responce from "+pool+", was not waiting for it, ignoring");
-            return;
-        }
-        if(reply.getReturnCode() != 0) {
-            state = FINAL_STATE;
-            String error =
-            "can not modify persistency of "+path+ " at pool \""+pool+"\"";
-            esay(error);
-            callbacks.Error(error);
-            return;
-        }
-        else {
-            cache_locations.remove(pool);
-        }
-        
-        if(cache_locations.isEmpty() && flag_set) {
-            state = FINAL_STATE;
-            say("Advisory Delete Successeded for "+path);
-            callbacks.AdvisoryDeleteSuccesseded();
-        }
-        
-    }
+   
     
     public void fileInfoArrived(
     PnfsGetStorageInfoMessage storage_info_msg) {
@@ -477,27 +303,8 @@ public class AdvisoryDeleteCompanion implements CellMessageAnswerable {
             // without doing anything
             callbacks.AdvisoryDeleteSuccesseded();
         }
-        if(DELETE_ENTRY) {
-            deleteEntry();
-            return;
-        }
-        
-        PnfsGetCacheLocationsMessage getCacheLocMsg =
-        new PnfsGetCacheLocationsMessage(pnfsId);
-        try {
-            state = WAITING_FOR_CACHE_LOCATIONS_MESSAGE;
-            cell.sendMessage( new CellMessage(
-            new CellPath("PnfsManager") ,
-            getCacheLocMsg ) ,
-            true , true ,
-            this ,
-            1*24*60*60*1000) ;
-        }
-        catch(Exception ee ) {
-            state = FINAL_STATE;
-            esay(ee);
-            callbacks.Exception(ee);
-        }
+        deleteEntry();
+        return;
         
     }
     
@@ -559,4 +366,39 @@ public class AdvisoryDeleteCompanion implements CellMessageAnswerable {
     }
     
 }
+
+// $Log: not supported by cvs2svn $
+// Revision 1.9  2007/05/24 13:51:09  tigran
+// merge of 1.7.1 and the head
+//
+// Revision 1.8  2006/09/25 20:30:58  timur
+// modify srm companions and srm cell to use ThreadManager
+//
+// Revision 1.7.8.2  2007/09/26 04:07:06  timur
+// make advisory delete only remove the pnfs entry without changing the files to cached
+//
+// Revision 1.7.8.1  2006/09/20 22:05:28  timur
+// modify most srm companions to use ThreadManager
+//
+// Revision 1.7  2005/10/07 22:59:46  timur
+// work towards v2
+//
+// Revision 1.6  2005/06/02 06:16:58  timur
+// changes to advisory delete behavior
+//
+// Revision 1.5  2005/03/11 21:17:27  timur
+// making srm compatible with cern tools again
+//
+// Revision 1.4  2005/01/25 05:17:31  timur
+// moving general srm stuff into srm repository
+//
+// Revision 1.3  2004/12/16 21:08:56  timur
+// modified database to prevent the slow down of srm caused by increase of number of records
+//
+// Revision 1.2  2004/08/06 19:35:22  timur
+// merging branch srm-branch-12_May_2004 into the trunk
+//
+// Revision 1.1.2.3  2004/06/15 22:15:41  timur
+// added cvs logging tags and fermi copyright headers at the top
+//
 
