@@ -89,7 +89,16 @@ public class GsiftpTransferManager extends TransferManager{
          
         
         
-        String remoteHost =  new GlobusURL(transferRequest.getRemoteURL()).getHost();
+        String  gridftpurlString = transferRequest.getRemoteURL();
+        GlobusURL gsiftpurl = new GlobusURL(transferRequest.getRemoteURL());
+        String path = gsiftpurl.getPath();
+        if(!path.startsWith("/")) {
+            int indx =gridftpurlString.length() -path.length();
+            gridftpurlString = gridftpurlString.substring(0,indx-1);
+            gridftpurlString = gridftpurlString+"//"+path;
+            
+        }
+        String remoteHost =  gsiftpurl.getHost();
         InetAddress[] addresses = InetAddress.getAllByName( remoteHost );
         String[] hosts = new String[addresses.length];
          for(int i = 0; i<addresses.length; ++i)
@@ -101,7 +110,7 @@ public class GsiftpTransferManager extends TransferManager{
         new RemoteGsiftpTransferProtocolInfo(
             "RemoteGsiftpTransfer",
             1,1,hosts,0,
-            remGsiftpTransferRequest.getGsiftpUrl(),
+            gridftpurlString,
             _nucleus.getCellName(),
             _nucleus.getCellDomainName(),
             transferRequest.getId(),
