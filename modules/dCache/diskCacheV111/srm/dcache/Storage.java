@@ -2581,7 +2581,7 @@ public class Storage
             size = storage_info.getFileSize();
 	    TRetentionPolicy retention = null;
 	    TAccessLatency latency = null;
-	    if (storage_info.getRetentionPolicy() != null) {
+	    if (storage_info.isSetRetentionPolicy() && storage_info.getRetentionPolicy() != null) {
                 if(storage_info.getRetentionPolicy().equals(RetentionPolicy.CUSTODIAL)) { 
                     retention = TRetentionPolicy.CUSTODIAL;
                 } else if (storage_info.getRetentionPolicy().equals(RetentionPolicy.REPLICA)) { 
@@ -2590,7 +2590,7 @@ public class Storage
                     retention = TRetentionPolicy.OUTPUT;
                 } 
             }
-            if (storage_info.getAccessLatency() != null) {
+            if (storage_info.isSetAccessLatency() && storage_info.getAccessLatency() != null) {
                 if(storage_info.getAccessLatency().equals(AccessLatency.ONLINE)) { 
                     latency = TAccessLatency.ONLINE;
                 } else if (storage_info.getAccessLatency().equals(AccessLatency.NEARLINE)) { 
