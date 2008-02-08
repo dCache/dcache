@@ -228,7 +228,14 @@ public class SrmPrepareToPut {
 	if (!foundMatchedProtocol) { 
  	    TReturnStatus status = new TReturnStatus();
  	    status.setStatusCode(TStatusCode.SRM_NOT_SUPPORTED);
- 	    status.setExplanation("Protocol(s) specified not supported");
+            StringBuffer errorsb = 
+                new StringBuffer("Protocol(s) specified not supported: [ ");
+	    for(String protocol:protocols) {
+                errorsb.append(protocol).append(' ');
+            }
+            errorsb.append(']');
+ 	    status.setExplanation(errorsb.toString());
+            esay(errorsb.toString());
  	    SrmPrepareToPutResponse srmPrepareToPutResponse = new SrmPrepareToPutResponse();
  	    srmPrepareToPutResponse.setReturnStatus(status);
  	    org.dcache.srm.v2_2.TPutRequestFileStatus[] statusArray = new org.dcache.srm.v2_2.TPutRequestFileStatus[fileRequests.length];
@@ -239,7 +246,7 @@ public class SrmPrepareToPut {
  			TPutRequestFileStatus fileStatus = new TPutRequestFileStatus();
  			TReturnStatus fileReturnStatus = new TReturnStatus();
  			fileReturnStatus.setStatusCode(TStatusCode.SRM_FAILURE);
- 			fileReturnStatus.setExplanation("Protocol(s) specified not supported");
+ 			fileReturnStatus.setExplanation(errorsb.toString());
  			fileStatus.setSURL(fr.getTargetSURL());
  			fileStatus.setStatus(fileReturnStatus);
  			statusArray[i]=fileStatus;
