@@ -2518,6 +2518,10 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
                 removeUs() ;
                 return ;
             }
+            
+            // use the updated StorageInfo from PoolManager/SpaceManager
+            _storageInfo = reply.getStorageInfo();
+                        
             _pool = pool ;
             PoolIoFileMessage poolMessage  = null ;
 

@@ -3227,6 +3227,10 @@ public abstract class AbstractFtpDoorV1
             request.setPnfsPath(_transfer.path);
             request = sendAndWait(new CellPath(_poolManager), request,
                                   _poolManagerTimeout * 1000);
+            
+            // use the updated StorageInfo from the PoolManager/SpaceManager
+            storageInfo = request.getStorageInfo();
+            
             _transfer.pool = request.getPoolName();
         }
 
