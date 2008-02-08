@@ -958,6 +958,25 @@ public class SRM {
         // create a request object
         try {
             say("get(): user = "+user);
+            String[] supportedProtocols = storage.supportedPutProtocols();
+            boolean foundMatchedProtocol=false;
+            for(String supportedProtocol: supportedProtocols){
+                 for(String protocol:protocols) {
+                     if(supportedProtocol.equals(protocol)){
+                         foundMatchedProtocol=true;
+                         break;
+                     }
+                 }
+            }
+            if(!foundMatchedProtocol) {
+                StringBuffer errorsb = 
+                    new StringBuffer("Protocol(s) specified not supported: [ ");
+                for(String protocol:protocols) {
+                    errorsb.append(protocol).append(' ');
+                }
+                errorsb.append(']');
+                return  createFailedRequestStatus(errorsb.toString());
+            }
             ContainerRequest r =
             new  GetRequest(user.getId(),credential.getId(),
             getStorage,
@@ -1210,6 +1229,26 @@ public class SRM {
             }
         }
         try {
+            
+            String[] supportedProtocols = storage.supportedPutProtocols();
+            boolean foundMatchedProtocol=false;
+            for(String supportedProtocol: supportedProtocols){
+                 for(String protocol:protocols) {
+                     if(supportedProtocol.equals(protocol)){
+                         foundMatchedProtocol=true;
+                         break;
+                     }
+                 }
+            }
+            if(!foundMatchedProtocol) {
+                StringBuffer errorsb = 
+                    new StringBuffer("Protocol(s) specified not supported: [ ");
+                for(String protocol:protocols) {
+                    errorsb.append(protocol).append(' ');
+                }
+                errorsb.append(']');
+                return  createFailedRequestStatus(errorsb.toString());
+            }
             // create a new put request
             ContainerRequest r = new PutRequest(user.getId(),
             credential.getId(),
