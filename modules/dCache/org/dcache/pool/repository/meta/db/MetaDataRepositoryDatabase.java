@@ -26,12 +26,13 @@ public class MetaDataRepositoryDatabase
     private Database storageInfoDatabase;
     private Database stateDatabase;
 
-    public MetaDataRepositoryDatabase(File homeDirectory)
+    public MetaDataRepositoryDatabase(File homeDirectory, boolean readonly)
         throws DatabaseException, FileNotFoundException
     {
         EnvironmentConfig envConfig = new EnvironmentConfig();
         envConfig.setTransactional(true);
         envConfig.setAllowCreate(true);
+        envConfig.setReadOnly(readonly);
         envConfig.setConfigParam("je.maxMemoryPercent", "20");
 
         env = new Environment(homeDirectory, envConfig);
@@ -39,6 +40,7 @@ public class MetaDataRepositoryDatabase
         DatabaseConfig dbConfig = new DatabaseConfig();
         dbConfig.setTransactional(true);
         dbConfig.setAllowCreate(true);
+        dbConfig.setReadOnly(readonly);
 
         Database catalogDb = env.openDatabase(null, CLASS_CATALOG, dbConfig);
 

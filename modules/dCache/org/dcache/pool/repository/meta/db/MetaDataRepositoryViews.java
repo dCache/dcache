@@ -7,14 +7,20 @@ import com.sleepycat.collections.StoredMap;
 
 import diskCacheV111.vehicles.StorageInfo;
 
+import org.dcache.pool.repository.StickyRecord;
+
+import java.util.Map;
+import java.io.PrintWriter;
+import java.net.URI;
+
 /**
  * MetaDataRepositoryViews encapsulates creation of views into
- * MetaDataRepositoryDatabase. 
- */ 
+ * MetaDataRepositoryDatabase.
+ */
 class MetaDataRepositoryViews
 {
     private StoredMap storageInfoMap;
-    private StoredMap stateMap;     
+    private StoredMap stateMap;
 
     public MetaDataRepositoryViews(MetaDataRepositoryDatabase db)
     {
@@ -42,5 +48,44 @@ class MetaDataRepositoryViews
     public final StoredMap getStateMap()
     {
         return stateMap;
+    }
+
+    public void toYaml(PrintWriter out, PrintWriter error)
+    {
+        for (Object id : getStateMap().keySet()) {
+            try {
+                CacheRepositoryEntryState state =
+                    (CacheRepositoryEntryState)getStateMap().get(id);
+                StorageInfo info =
+                    (StorageInfo)getStorageInfoMap().get(id);
+
+                out.format("%s:\n", id);
+                out.format("  state: %s\n", state.toString());
+                out.format("  sticky:\n");
+                for (StickyRecord record : state.stickyRecords())
+                    out.format("    %s: %d\n", record.owner(), record.expire());
+                out.format("  storageinfo:\n");
+                if (info != null) {
+                    out.format("  storageclass: %s\n", info.getStorageClass());
+                    out.format("  cacheclass: %s\n", info.getCacheClass());
+                    out.format("  bitfileid: %s\n", info.getBitfileId());
+                    out.format("  locations:\n");
+                    for (URI location : info.locations())
+                        out.format("    - %s\n", location);
+                    out.format("  hsm: %s\n", info.getHsm());
+                    out.format("  filesize: %s\n", info.getFileSize());
+                    out.format("  map:\n");
+                    for (Map.Entry<String,String> entry : info.getMap().entrySet())
+                        out.format("    %s: %s\n", entry.getKey(), entry.getValue());
+                    out.format("  retentionpolicy: %s\n", info.getRetentionPolicy());
+                    out.format("  accesslatency: %s\n", info.getAccessLatency());
+                }
+            } catch (Throwable e) {
+                if (error != null)
+                    error.println("Failed to read " + id + ": " + e.getMessage());
+            }
+        }
+        out.flush();
+        error.flush();
     }
 }
