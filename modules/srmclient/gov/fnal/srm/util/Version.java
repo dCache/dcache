@@ -78,21 +78,37 @@ package gov.fnal.srm.util;
  * @author  timur
  */
 public class Version {
-    private static final String revision = "$Revision$";
-    private static final String tagName ="$Name: not supported by cvs2svn $";
-    private static final String date ="$Date$";
-    private static final String version= "2.0";
-    /** Creates a new instance of Version */
-    public Version() {
-    }
+	private static String revision = "$Revision$";
+	private static String tagName ="$Name: not supported by cvs2svn $";
+	private static String date ="$Date$";
+
+	private static String specVersion= "2.0";
+	private static String specVendor = "SRM Working Group http://sdm.lbl.gov/srm-wg";
+	private static String specTitle  = "Storage Resource Manager (SRM)";
+	private static String copyRight  = "Copyright (c) 2002-2008";
+	
+
+	
+
+	static {
+		Class c   = gov.fnal.srm.util.Version.class;
+		Package p = Package.getPackage("gov.fnal.srm.util");
+		if (p!=null) { 
+			String tmp = null ;
+			p.getSpecificationTitle() ;
+			if( ( tmp =  p.getSpecificationTitle() ) != null   ) specTitle   = tmp ;
+			if( ( tmp =  p.getSpecificationVersion() ) != null ) specVersion = tmp;
+			if( ( tmp =  p.getSpecificationVendor() ) != null  ) specVendor  = tmp ;
+		}
+	}	
+	/** Creates a new instance of Version */
+	public Version() {
+	}
     
     public String toString() {
-        
-        String s =  "Storage Resource Manager (SRM) CP Client version "+version+'\n';
-        s += "Copyright (c) 2002-2006 Fermi National Accelerator Laboratory\n";
-        if(!tagName.equals("$Name: not supported by cvs2svn $")) {
-            s +=" cvs tagname: "+tagName+" cvs date: "+tagName;
-        }
-        return s;
+	    String s =  specTitle + " implementation version "+specVersion+'\n';
+	    s+= copyRight + " "+specVendor+'\n';
+	    s+= "Specification Version 2.0 by SRM Working Group (http://sdm.lbl.gov/srm-wg)";
+	    return s;
     }
 }
