@@ -390,6 +390,7 @@
    	  <property name="sourceDir" location="${dCacheBox-module}/srmclient" />
   	  <property name="buildTop" location="${buildTop}" />
 	  <property name="release.name" value="${release.name}" />
+	  <property name="srm.minor.version" value="${build.number}" />
     </ant>
 
   </target>
@@ -405,6 +406,7 @@
   	  <property name="buildTop" location="${buildTop}" />
    	  <property name="binDir" location="${binDir}" />
 	  <property name="release.name" value="${release.name}" />
+	  <property name="srm.minor.version" value="${build.number}" />
     </ant>
 
   </target>
