@@ -134,6 +134,7 @@
 				<section name="Shared">
 					<attribute name="Title" value="Storage Resource Manager (SRM) Client" />
 					<attribute name="Vendor" value="Fermi National Accelerator Laboratory" />
+					<attribute name="Version" value="2.0.${srm.minor.version}" />
 					<attribute name="Date" value="${jar.timestamp}" />
 				</section>
 				<section name="Copyright">
@@ -141,10 +142,8 @@
 				</section>
 				<attribute name="Main-Class" value="gov.fnal.srm.util.Version" />
 				<attribute name="Specification-Version" value="2.0.${srm.minor.version}" />
-				<attribute name="Specification-Vendor" value="dCache.ORG (DESY,FERMI)" />
-				<attribute name="Package-Title" value="Storage Resource Manager (SRM) Client" />
-				<attribute name="Package-Version" value="2.0.${srm.minor.version}" />
-				<attribute name="Package-Vendor" value="Fermi National Accelerator Laboratory"	/>
+				<attribute name="Specification-Vendor" value="Fermi National Accelerator Laboratory" />
+				<attribute name="Specification-Title" value="Storage Resource Manager (SRM)" />
 			</manifest>
 		</jar>
 
