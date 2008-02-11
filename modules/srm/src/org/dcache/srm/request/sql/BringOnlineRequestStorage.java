@@ -163,6 +163,7 @@ public class BringOnlineRequestStorage extends DatabaseContainerRequestStorage{
         }
         BringOnlineRequest gr = (BringOnlineRequest)r;
         String[] protocols = gr.getProtocols();
+        if(protocols ==null)  return null;
         String[] statements  = new String[protocols.length];
         for(int i=0; i<protocols.length ; ++i){
                StringBuffer sb = new StringBuffer();

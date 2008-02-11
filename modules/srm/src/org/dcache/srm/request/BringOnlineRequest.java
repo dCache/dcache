@@ -271,9 +271,12 @@ public class BringOnlineRequest extends ContainerRequest {
         say("constructor");
         say("userId = "+userId);
         say("requestCredetialId="+requestCredentialId);
-        int len = protocols.length;
-        this.protocols = new String[len];
-        System.arraycopy(protocols,0,this.protocols,0,len);
+        int len;
+        if(protocols != null) {
+            len = protocols.length;
+            this.protocols = new String[len];
+            System.arraycopy(protocols,0,this.protocols,0,len);
+        }
         len = surls.length;
         fileRequests = new FileRequest[len];
         String creatorId = userId;
@@ -380,6 +383,7 @@ public class BringOnlineRequest extends ContainerRequest {
     }
     
      public String[] getProtocols() {
+        if(protocols == null) return null;
         String[] copy = new String[protocols.length];
         System.arraycopy(protocols, 0, copy, 0, protocols.length);
         return copy;
