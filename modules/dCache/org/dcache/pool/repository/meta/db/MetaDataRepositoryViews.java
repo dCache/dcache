@@ -64,7 +64,6 @@ class MetaDataRepositoryViews
                 out.format("  sticky:\n");
                 for (StickyRecord record : state.stickyRecords())
                     out.format("    %s: %d\n", record.owner(), record.expire());
-                out.format("  storageinfo:\n");
                 if (info != null) {
                     out.format("  storageclass: %s\n", info.getStorageClass());
                     out.format("  cacheclass: %s\n", info.getCacheClass());
