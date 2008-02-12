@@ -1223,46 +1223,71 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
            }
            stop = System.currentTimeMillis();
 
-           int oErr = observer.getErrorCode();
+           boolean completedOK = false;
+           boolean exclude     = false;
+
+           int    oErr    = observer.getErrorCode();
+           String oErrMsg = observer.getErrorMessage();
+           String excludeReason = oErrMsg;
+
            long timeStamp = System.currentTimeMillis();
+
            if (oErr == 0) {
+               completedOK = true;
                _replicated++;
                say(pnfsId.toString() + " replication done after " + (stop - start) +
                    " ms, result " + observer);
-
-               synchronized (_dbLock) {
-                 _db.addPool(pnfsId, poolName);
-                 _db.removeTransaction(pnfsId);
-               }
-               dsay("replicate("+pnfsId
-                    +") : cleanup action record and add pnfsid to the pool="
-                    +poolName +"- DB updated");
+               dsay("replicate(" + pnfsId
+                    + ") : cleanup action record and add pnfsid to the pool="
+                    + poolName + "- updating DB");
            } else {
                say(pnfsId.toString() + " replication ERROR=" + oErr
-                   + ", timer=" + (stop - start) +
-                   " ms, error " + observer.getErrorMessage());
+                   + ", timer=" + (stop - start) +" ms, error " + oErrMsg);
+               /** todo : formalize error codes
+                */
 
-               // was error '203' by "rc" code, but reply code is different
-               if (oErr == 102 || oErr == -1) {
-                 String eMsg;
-                 if (oErr == 102)
-                   eMsg = "entry already exists";
-                 else if (oErr == -1)
-                   eMsg = "operation timed out";
-                 else
-                   eMsg = "...";
-
-                 synchronized (_dbLock) {
-                   _db.removeTransaction(pnfsId);
-                   _db.addExcluded(pnfsId, timeStamp, String.valueOf(oErr), eMsg);
-                 }
-                 say("pnfsId=" + pnfsId +
-                     " is excluded from replication. (err="
-                     + oErr + ", " + eMsg + ")");
+               // Error codes :
+               //  oErr >    0 -- reported by dcache
+               //  oErr < -100 -- reported internally by DCacheCoreController
+               //  oErr <    0 -- reported internally
+               if (oErr == 102) {
+                 // it was error '203' by "rc" code, but reply code is different
+                 excludeReason = "entry already exists";
+                 exclude = true;
+               } else if (oErr > 0) {
+                 // excludeReason is set to oErrMsg;
+                 ; // do nothing - as before
+                 // exclude = true;
+               } else if (oErr < -100 ) {
+                 // excludeReason is set to oErrMsg;
+                 exclude = true;
                }
+               /** do not exclude file after timeout anymore:
+                * by default it would be another 12 hour after 12 hor timeout
+               else if (oErr == -1) {
+                 excludeReason = "replication timed out";
+                 exclude = true;
+               }
+               */
            }
-       }
-   }
+
+           synchronized (_dbLock) {
+             if ( completedOK )
+                  _db.addPool(pnfsId, poolName);
+
+             _db.removeTransaction(pnfsId);
+
+             if ( exclude ) {
+                  _db.addExcluded(pnfsId, timeStamp, String.valueOf(oErr), excludeReason);
+              }
+            }
+            if ( exclude ) {
+              say("pnfsId=" + pnfsId + " is excluded from replication. (err="
+                  + oErr + ", " + excludeReason + ")");
+            }
+
+          } // replicate()
+   } // Replicator
 
    private class Reducer implements Runnable {
      private PnfsId _pnfsId = null;
@@ -1346,7 +1371,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
        }
        stop = System.currentTimeMillis();
 
-       int oErr    = observer.getErrorCode();
+       int    oErr = observer.getErrorCode();
        String eMsg = observer.getErrorMessage();
 
        long timeStamp = System.currentTimeMillis();
@@ -1371,7 +1396,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
 //           eMsg = "operation timed out";
 //         }
 
-         // ALWAYS exclude pnfsid if replication failed
+         // ALWAYS exclude pnfsid if replica removal failed
          synchronized (_dbLock) {
            _db.removeTransaction(pnfsId);
            _db.addExcluded(pnfsId, timeStamp, String.valueOf(oErr), eMsg);
