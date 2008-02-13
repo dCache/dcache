@@ -575,7 +575,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
 
           // @todo : process destination pool error
           if( msg.getMessageObject() instanceof dmg.cells.nucleus.NoRouteToCellException ) {
-              setErrorCode(-3,"MoverTask: dmg.cells.nucleus.NoRouteToCellException");
+              setErrorCode(-103,"MoverTask: dmg.cells.nucleus.NoRouteToCellException");
               dsay("MoverTask got error NoRouteToCellException");
               return;
           }
@@ -583,7 +583,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
           try {
               reply = (Message) msg.getMessageObject();
           } catch (Exception ex) {
-              setErrorCode(-1,"MoverTask: exception converting reply message="+ ex.getMessage());
+              setErrorCode(-101,"MoverTask: exception converting reply message="+ ex.getMessage());
               return;
           }
 
@@ -1350,7 +1350,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
                MissingResourceException(
                    "Pnfs File not found :" + msg.getErrorObject().toString() ,
                    "PnfsManager",
-                   "PnfsGetCacheLocationsMessage" ) ;
+                   "PnfsGetStorageInfoMessage" ) ;
          }
          throw new
              MissingResourceException(

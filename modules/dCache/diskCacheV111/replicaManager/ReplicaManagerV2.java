@@ -28,7 +28,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
 
   private String _jdbcUrl = "jdbc:postgresql://localhost/replicas";
   private String _driver = "org.postgresql.Driver";
-  private String _user = "enstore";
+  private String _user = "postgres";
   private String _pass = "NoPassword";
   private String _pwdfile = null;
 
@@ -222,47 +222,49 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
             say("DEBUG: " + s);
     }
 
-  private void parseDBArgs() {
+    private void parseDBArgs() {
 
-    say("Parsing arguments..."+_args);
+        say("Parsing arguments..."+_args);
 
-    _jdbcUrl = "jdbc:postgresql://localhost/replicas";
-    _driver = "org.postgresql.Driver";
-    _user = "enstore";
-    _pass = "NoPassword";
+//        _jdbcUrl = "jdbc:postgresql://localhost/replicas";
+//        _driver = "org.postgresql.Driver";
+//        _user = "enstore";
+//        _pass = "NoPassword";
 
-    String cfURL = _args.getOpt("dbURL");
-    if( cfURL != null) {
-        _jdbcUrl = cfURL;
-    }
+        String cfURL = _args.getOpt("dbURL");
+        if (cfURL != null) {
+            _jdbcUrl = cfURL;
+        }
 
-    String cfDriver = _args.getOpt("jdbcDrv");
-    if( cfDriver != null ) {
-        _driver = cfDriver;
-    }
+        String cfDriver = _args.getOpt("jdbcDrv");
+        if (cfDriver != null) {
+            _driver = cfDriver;
+        }
 
-    String cfUser = _args.getOpt("dbUser");
-    if( cfUser != null ) {
-        _user = cfUser;
-    }
+        String cfUser = _args.getOpt("dbUser");
+        if (cfUser != null) {
+            _user = cfUser;
+        }
 
-    String cfPass = _args.getOpt("dbPass");
-    if( cfPass != null ) {
-        _pass = cfPass;
-    }
+        String cfPass = _args.getOpt("dbPass");
+        if (cfPass != null) {
+            _pass = cfPass;
+        }
 
-    _pwdfile = _args.getOpt("pgPass");
+        _pwdfile = _args.getOpt("pgPass");
 
-    // Now check if all required parameters are present
-    if ((cfURL == null )  ||  (cfDriver == null) || (cfUser == null)  ||  (cfPass == null && _pwdfile == null) ) {
-          throw new IllegalArgumentException("Not enough arguments to Init SQL database");
-    }
+        // Now check if all required parameters are present
+//      if ((cfURL == null ) || (cfDriver == null) || (cfUser == null) || (cfPass == null && _pwdfile == null) ) {
+        if ((_jdbcUrl == null ) || (_driver == null) || (_user == null) || (_pass == null && _pwdfile == null)) {
+            throw new IllegalArgumentException("Not enough arguments to Init SQL database");
+        }
 
-    if (_pwdfile != null && _pwdfile.length() > 0) {
+        if (_pwdfile != null && _pwdfile.length() > 0) {
             Pgpass pgpass = new Pgpass(_pwdfile);
-            _pass = pgpass.getPgpass(cfURL, cfUser);
+            String p = pgpass.getPgpass(cfURL, cfUser);
+            if (p != null) _pass = p;
+        }
     }
-  }
 
   private void parseArgs() {
     // Parse arguments
@@ -1221,46 +1223,71 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
            }
            stop = System.currentTimeMillis();
 
-           int oErr = observer.getErrorCode();
+           boolean completedOK = false;
+           boolean exclude     = false;
+
+           int    oErr    = observer.getErrorCode();
+           String oErrMsg = observer.getErrorMessage();
+           String excludeReason = oErrMsg;
+
            long timeStamp = System.currentTimeMillis();
+
            if (oErr == 0) {
+               completedOK = true;
                _replicated++;
                say(pnfsId.toString() + " replication done after " + (stop - start) +
                    " ms, result " + observer);
-
-               synchronized (_dbLock) {
-                 _db.addPool(pnfsId, poolName);
-                 _db.removeTransaction(pnfsId);
-               }
-               dsay("replicate("+pnfsId
-                    +") : cleanup action record and add pnfsid to the pool="
-                    +poolName +"- DB updated");
+               dsay("replicate(" + pnfsId
+                    + ") : cleanup action record and add pnfsid to the pool="
+                    + poolName + "- updating DB");
            } else {
                say(pnfsId.toString() + " replication ERROR=" + oErr
-                   + ", timer=" + (stop - start) +
-                   " ms, error " + observer.getErrorMessage());
+                   + ", timer=" + (stop - start) +" ms, error " + oErrMsg);
+               /** todo : formalize error codes
+                */
 
-               // was error '203' by "rc" code, but reply code is different
-               if (oErr == 102 || oErr == -1) {
-                 String eMsg;
-                 if (oErr == 102)
-                   eMsg = "entry already exists";
-                 else if (oErr == -1)
-                   eMsg = "operation timed out";
-                 else
-                   eMsg = "...";
-
-                 synchronized (_dbLock) {
-                   _db.removeTransaction(pnfsId);
-                   _db.addExcluded(pnfsId, timeStamp, String.valueOf(oErr), eMsg);
-                 }
-                 say("pnfsId=" + pnfsId +
-                     " is excluded from replication. (err="
-                     + oErr + ", " + eMsg + ")");
+               // Error codes :
+               //  oErr >    0 -- reported by dcache
+               //  oErr < -100 -- reported internally by DCacheCoreController
+               //  oErr <    0 -- reported internally
+               if (oErr == 102) {
+                 // it was error '203' by "rc" code, but reply code is different
+                 excludeReason = "entry already exists";
+                 exclude = true;
+               } else if (oErr > 0) {
+                 // excludeReason is set to oErrMsg;
+                 ; // do nothing - as before
+                 // exclude = true;
+               } else if (oErr < -100 ) {
+                 // excludeReason is set to oErrMsg;
+                 exclude = true;
                }
+               /** do not exclude file after timeout anymore:
+                * by default it would be another 12 hour after 12 hor timeout
+               else if (oErr == -1) {
+                 excludeReason = "replication timed out";
+                 exclude = true;
+               }
+               */
            }
-       }
-   }
+
+           synchronized (_dbLock) {
+             if ( completedOK )
+                  _db.addPool(pnfsId, poolName);
+
+             _db.removeTransaction(pnfsId);
+
+             if ( exclude ) {
+                  _db.addExcluded(pnfsId, timeStamp, String.valueOf(oErr), excludeReason);
+              }
+            }
+            if ( exclude ) {
+              say("pnfsId=" + pnfsId + " is excluded from replication. (err="
+                  + oErr + ", " + excludeReason + ")");
+            }
+
+          } // replicate()
+   } // Replicator
 
    private class Reducer implements Runnable {
      private PnfsId _pnfsId = null;
@@ -1344,7 +1371,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
        }
        stop = System.currentTimeMillis();
 
-       int oErr    = observer.getErrorCode();
+       int    oErr = observer.getErrorCode();
        String eMsg = observer.getErrorMessage();
 
        long timeStamp = System.currentTimeMillis();
@@ -1369,7 +1396,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
 //           eMsg = "operation timed out";
 //         }
 
-         // ALWAYS exclude pnfsid if replication failed
+         // ALWAYS exclude pnfsid if replica removal failed
          synchronized (_dbLock) {
            _db.removeTransaction(pnfsId);
            _db.addExcluded(pnfsId, timeStamp, String.valueOf(oErr), eMsg);
