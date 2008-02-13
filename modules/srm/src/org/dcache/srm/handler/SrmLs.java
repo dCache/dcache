@@ -375,6 +375,9 @@ public class SrmLs {
 	else { 
 	    fileLocality = TFileLocality.NEARLINE;
 	}
+	if (fmd.isDirectory) {
+		fileLocality = TFileLocality.NONE;	
+	}
 	metaDataPathDetail.setFileLocality(fileLocality);
 	if (fmd.retentionPolicyInfo!=null) { 
 	    metaDataPathDetail.setRetentionPolicyInfo(new TRetentionPolicyInfo(fmd.retentionPolicyInfo.getRetentionPolicy(),
@@ -652,14 +655,14 @@ public class SrmLs {
                                 sb.append(" locality:").append(locality.getValue());
                                 sb.append('\n');
                             }
-                            if (metaDataPathDetail.getCheckSumValue() != null) {
-                                sb.append(depthPrefix).append( " - Checksum value:  " +
-                                        metaDataPathDetail.getCheckSumValue() + '\n');
-                            }
 			    else { 
 				sb.append(" locality: null");
 				sb.append('\n');
 			    }
+                            if (metaDataPathDetail.getCheckSumValue() != null) {
+                                sb.append(depthPrefix).append( " - Checksum value:  " +
+                                        metaDataPathDetail.getCheckSumValue() + '\n');
+                            }
                             
                             if (metaDataPathDetail.getCheckSumType() != null) {
                                 sb.append(depthPrefix).append( " - Checksum type:  " +
