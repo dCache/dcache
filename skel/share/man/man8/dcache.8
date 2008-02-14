@@ -1,0 +1,145 @@
+.TH DCACHE 8 "July 2007" "" ""
+
+.SH NAME
+dcache \- The dCache distributed storage resource manager
+
+.SH SYNOPSIS
+
+\fBdcache\fR [OPTION]... COMMAND
+
+.SH DESCRIPTION
+
+This is an init and management script for dCache hosts. For a full
+description of dCache and its configuration, please visit the dCache
+webpage at http://www.dcache.org.
+
+This script only manages services running on the local host, i.e., all
+commands only affect the local host. The script is not intended for
+cental management a complete distributed dCache installation.
+
+.SH OPTIONS
+
+.TP
+\fB-d\fR=PATH
+where dCache is installed. The default location is /opt/d-cache/.
+
+.SH STARTUP COMMANDS
+
+.TP
+\fBstart [SERVICE|DOMAIN]...\fR
+
+Starts configured dCache services. If one or more services or domains
+are specified, only those services or domains are started. See the
+description of the \fBstatus\fR and \fBservices\fR commands on how to
+obtain a list of configured domains and services.
+
+.TP
+\fBstop [SERVICE|DOMAIN]...\fR
+Stops configured services. If one or more services or domains
+are specified, only those services or domains are stopped. See the
+description of the \fBstatus\fR and \fBservices\fR commands on how to
+obtain a list of configured domains and services.
+
+.TP
+\fBrestart [SERVICE|DOMAIN]...\fR
+Restarts configured services. If one or more services or domains
+are specified, only those services or domains are restarted. See the
+description of the \fBstatus\fR and \fBservices\fR commands on how to
+obtain a list of configured domains and services.
+
+.SH MONITORING COMMANDS
+
+.TP
+\fBstatus\fR
+Reports the status of all configured domains. This includes whether
+the domain is running, the current PID of the domain, and the 
+location of the log files.
+
+.TP
+\fBservices\fR
+Provides a list of configured services and the domains in which 
+they are hosted.
+
+.SH POOL MANAGEMENTS COMMANDS
+
+.TP
+\fBpool ls\fR
+Provides a list of all configured pools. This list includes the path
+to the pool, the pool name, the domain hosting the pool, the size of the
+pool and the amount of free space on the file system containing the pool.
+
+.TP
+\fBpool create SIZE PATH\fR
+Creates a new pool in the specified directory. The size must be
+specified in GiB and the directory must not exist. It is verified that
+the file system has enough free space to host a pool of the given
+size. 
+
+The directory will be created and populated with the necessary files
+to host a pool, however the pool will not be added to the dCache
+configuration. A separate invocation using the \fBpool add\fR is
+needed to do so.
+
+.TP
+\fBpool add [--fqdn] [--domain=DOMAIN] NAME PATH\fR
+Adds the pool created in PATH to the dCache configuration. The NAME
+must be a unique pool name. The script verifies that neither the pool
+name nor the pool path is already configured on the local host. 
+
+If no domain is specified, the pool is added to the default pool
+domain. The default pool domain name is generated from the hostname. A
+custom domain name may be specified, however the domain must not be
+used by any other service and the name must have the suffix
+\fBDomain\fR. If the domain is not previously defined, it will be
+after this call.
+
+A pool is always tagged with a host identifier. This tag is used by
+dCache to identify whether two pools run on the same host. By default,
+the hostname is chosen as the identifier. If the \fBfqdn\fR option is
+specified, the fully qualified domain name will be used instead. This
+is useful if a dCache installation is distributed over multible DNS
+domains.
+
+Notice that this check can not verify, that the pool name is unique
+throughout the whole dCache installation. It is the responsibility of
+the user to ensure that the name is indeed unique for the whole
+installation.
+
+.TP
+\fBpool remove NAME\fR
+Removes the pool with the given name from the dCache
+configuration. The pool is \fBnot\fR physically deleted from the file
+system. If a the domain hosting the pool becomes empty, that domain is
+removed from the configuration.
+
+.SH WHAT IS DCACHE
+
+The core part of the dCache has proven to combine heterogenous disk
+storage systems in the order of several hundred tera bytes and let its
+data repository appear under a single filesystem tree. It takes care
+of data hot spots, failing hardware and makes sure, if configured,
+that at least a minimum number of copies of each dataset resides
+within the system to ensure full data availability in case of disk
+server maintainance or failure. Furthermore, dCache supports a large
+set of standard access protocols to the data repository and its
+namespace.
+
+If dCache is connected to a Tertiary Storage System, it optimized
+access to such a system by various technics. Currently Enstore, the
+Open Storage Manager (OSM), the High Performance Storage System (HPSS)
+and the Tivoli Storage Manager (TSM) are supported by the dCache
+middleware.
+
+Moreover, dCache/SRM supports all interfaces of the LCG storage
+element definition.
+
+.SH PROJECT PARTNERS
+
+dCache is a joint venture between the Deutsches Elektronen-Synchrotron, 
+DESY and the Fermi National Accelerator Laboratory, FNAL. Since Jan 2007, 
+NDGF is contributing significantly to this project. 
+
+.SH AUTHORS
+
+This man page and the dcache script was written by 
+Gerd Behrmann <behrmann@ndgf.org>.
