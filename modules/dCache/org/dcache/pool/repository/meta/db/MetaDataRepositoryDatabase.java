@@ -13,7 +13,7 @@ import com.sleepycat.bind.serial.StoredClassCatalog;
 /**
  * MetaDataRepositoryDatabase encapsulates the initialisation of
  * the BerkelyDB used for storing meta data.
- */ 
+ */
 public class MetaDataRepositoryDatabase
 {
     private Environment env;
@@ -32,6 +32,7 @@ public class MetaDataRepositoryDatabase
         EnvironmentConfig envConfig = new EnvironmentConfig();
         envConfig.setTransactional(true);
         envConfig.setAllowCreate(true);
+        envConfig.setConfigParam("je.maxMemoryPercent", "20");
 
         env = new Environment(homeDirectory, envConfig);
 
@@ -42,8 +43,8 @@ public class MetaDataRepositoryDatabase
         Database catalogDb = env.openDatabase(null, CLASS_CATALOG, dbConfig);
 
         javaCatalog = new StoredClassCatalog(catalogDb);
-        
-        storageInfoDatabase = 
+
+        storageInfoDatabase =
             env.openDatabase(null, STORAGE_INFO_STORE, dbConfig);
         stateDatabase = env.openDatabase(null, STATE_STORE, dbConfig);
 
@@ -72,10 +73,10 @@ public class MetaDataRepositoryDatabase
         return env;
     }
 
-    public final StoredClassCatalog getClassCatalog() 
+    public final StoredClassCatalog getClassCatalog()
     {
         return javaCatalog;
-    } 
+    }
 
     public final Database getStorageInfoDatabase()
     {
