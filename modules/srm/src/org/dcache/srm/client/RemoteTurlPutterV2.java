@@ -403,14 +403,8 @@ public class RemoteTurlPutterV2 extends TurlGetterPutter
                     if(putRequestFileStatus.getTransferURL() != null ) {
                             String turl = putRequestFileStatus.getTransferURL().toString();
                             int indx = ((Integer) pendingSurlsToIndex.remove(surl_string)).intValue();
-                            long size=sizes[indx];
-                            if( putRequestFileStatus.getFileSize() != null ) {
-                                size = putRequestFileStatus.getFileSize().longValue();
-                            }
-                            else {
-                                esay("size is not set in FileStatus for SURL="+SURLs[indx]);
-                            }
-                            notifyOfTURL(SURLs[i], turl,requestToken,null,new Long(size));
+                            // in case of put we do not need the size from the destination
+                            notifyOfTURL(SURLs[i], turl,requestToken,null,null);
                         continue;
                     }
                     if(putRequestFileStatus.getEstimatedWaitTime() != null &&
