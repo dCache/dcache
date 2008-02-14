@@ -709,6 +709,8 @@ public class CopyRequest extends ContainerRequest implements PropertyChangeListe
             Long fileRequestId = (Long) remoteSurlToFileReqIds.get(remoteSurlsUniqueArray[i]);
             CopyFileRequest cfr = (CopyFileRequest)getFileRequest(fileRequestId);
             sizes[i] = (storage.getFileMetaData((SRMUser)getCreator(),cfr.getFromPath())).size;
+            say("getTURLs: local size  returned by storage.getFileMetaData is "+sizes[i]);
+            cfr.setSize(sizes[i]);
             dests[i] = cfr.getToURL();
         }
         
@@ -804,6 +806,9 @@ public class CopyRequest extends ContainerRequest implements PropertyChangeListe
                             long rate_MB = 100000000l; // 1Gb means 100MB
                             if (size != null) {
                                 transfer_time = size.longValue()/rate_MB;
+                            }
+                            else if(cfr.getSize() != 0) {
+                                 transfer_time =cfr.getSize()/rate_MB;
                             }
                             long extend_time = Math.max(transfer_time, 600l);
                             if (time_left - extend_time < 0) {
