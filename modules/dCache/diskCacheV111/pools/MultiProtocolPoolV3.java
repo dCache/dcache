@@ -1542,6 +1542,16 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
             return _command.getId();
         }
 
+        public String getIoQueueName() {
+            String name = _command.getIoQueueName();
+            if (name == null) {
+                IoQueueManager manager = (IoQueueManager)_ioQueue;
+                return manager.getDefaultScheduler().getSchedulerName();
+            } else {
+                return name;
+            }
+        }
+
         public void queued(int id) {
             say("JOB queued " + _pnfsId);
             _command.setMoverId(id);
@@ -1643,6 +1653,18 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
                                            watcher,
                                            MoverProtocol.WRITE
                                            | MoverProtocol.READ);
+
+                            /* The remaining steps are not safe to
+                             * interrupt and we therefore block the
+                             * timeout manager from killing us. If we
+                             * have already been killed, we raise an
+                             * exception right away.
+                             */
+                            _timeoutManager.protect(getIoQueueName(),
+                                                    (int)getClientId());
+                            if (Thread.interrupted()) {
+                                throw new InterruptedException("IO Job was killed");
+                            }
 
                             /* Some movers perform checksum
                              * computation after the
@@ -1782,6 +1804,18 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
                                        _pnfsId,
                                        new ReadOnlySpaceMonitor(_repository),
                                        MoverProtocol.READ);
+
+                        /* The remaining steps are not safe to
+                         * interrupt and we therefore block the
+                         * timeout manager from killing us. If we have
+                         * already been killed, we raise an exception
+                         * right away.
+                         */
+                        _timeoutManager.protect(getIoQueueName(),
+                                                (int)getClientId());
+                        if (Thread.interrupted()) {
+                            throw new InterruptedException("IO Job was killed");
+                        }
                     } finally {
                         /* This may throw an IOException, although it
                          * is not clear when this would happen. If it

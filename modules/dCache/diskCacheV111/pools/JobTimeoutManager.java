@@ -1,12 +1,13 @@
 // $Id: JobTimeoutManager.java,v 1.5 2007-07-25 12:54:59 tigran Exp $
 
-
 package diskCacheV111.pools;
 
 import java.io.PrintWriter;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.List;
 import java.util.Set;
+import java.util.HashSet;
+import java.util.Collection;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import diskCacheV111.util.JobScheduler;
 import diskCacheV111.vehicles.IoJobInfo;
@@ -14,169 +15,255 @@ import diskCacheV111.vehicles.JobInfo;
 import dmg.cells.nucleus.CellAdapter;
 import dmg.util.Args;
 
-public class  JobTimeoutManager implements Runnable  {
+class SchedulerEntry
+{
+    private final String _name;
+    private JobScheduler _scheduler;
+    private long _lastAccessed = 0L;
+    private long _total = 0L;
+    private final Set<Integer> _protected = new HashSet<Integer>();
 
-   private final CellAdapter _cell ;
-   private final Map<String, SchedulerEntry>     _map    = new HashMap<String, SchedulerEntry>() ;
-   private Thread      _worker = null ;
+    SchedulerEntry(String name)
+    {
+        _name = name;
+    }
 
-   public JobTimeoutManager( CellAdapter cell ){
-      _cell = cell ;
-   }
-   public synchronized void start(){
-      if( _worker != null )
-        throw new
-        IllegalArgumentException("Already running");
+    String getName()
+    {
+        return _name;
+    }
 
-      (_worker = _cell.getNucleus().newThread( this , "JobTimeoutManager" )).start() ;
-   }
-   private static class SchedulerEntry {
-        private final String _name;
-        private long lastAccessed = 0L;
-        private long total = 0L;
-        private JobScheduler _scheduler;
+    synchronized void setScheduler(JobScheduler scheduler)
+    {
+        _scheduler = scheduler;
+    }
 
-        private SchedulerEntry(String name, JobScheduler scheduler) {
-            this._name = name;
-            this._scheduler = scheduler;
-        }
+    synchronized JobScheduler getScheduler()
+    {
+        return _scheduler;
+    }
 
-        private SchedulerEntry(String name) {
-            this(name, null);
+    synchronized void setLastAccessed(long lastAccessed)
+    {
+        _lastAccessed = lastAccessed;
+    }
+
+    synchronized long getLastAccessed()
+    {
+        return _lastAccessed;
+    }
+
+    synchronized void setTotal(long total)
+    {
+        _total = total;
+    }
+
+    synchronized long getTotal()
+    {
+        return _total;
+    }
+
+    synchronized void protect(int id)
+    {
+        _protected.add(id);
+    }
+
+    synchronized boolean isProtected(int id)
+    {
+        return _protected.contains(id);
+    }
+
+    synchronized void retainAll(Collection<Integer> c)
+    {
+        _protected.retainAll(c);
+    }
+
+    synchronized boolean isExpired(JobInfo job, long now)
+    {
+        long started = job.getStartTime();
+        long lastAccessed =
+            job instanceof IoJobInfo ?
+            ((IoJobInfo)job).getLastTransferred() :
+            now;
+        int jobId = (int)job.getJobId();
+
+        return
+            !isProtected(jobId) &&
+            ((getLastAccessed() > 0L) && (lastAccessed > 0L) &&
+             ((now - lastAccessed) > getLastAccessed())) ||
+            ((getTotal() > 0L) && (started > 0L) &&
+             ((now - started) > getTotal()));
+    }
+}
+
+public class JobTimeoutManager implements Runnable
+{
+    private final CellAdapter _cell;
+    private final List<SchedulerEntry> _schedulers
+        = new CopyOnWriteArrayList<SchedulerEntry>();
+    private final Thread _worker;
+
+    public JobTimeoutManager(CellAdapter cell)
+    {
+        _cell = cell;
+        _worker = _cell.getNucleus().newThread(this , "JobTimeoutManager");
+    }
+
+    public synchronized void start()
+    {
+        if (_worker.isAlive())
+            throw new IllegalStateException("Already running");
+        _worker.start();
+    }
+
+    public void addScheduler(String type, JobScheduler scheduler)
+    {
+        say("Adding scheduler : " + type);
+        SchedulerEntry entry = findOrCreate(type);
+        entry.setScheduler(scheduler);
+    }
+
+    public void protect(String type, int id)
+    {
+        SchedulerEntry entry = find(type);
+        if (entry != null)
+            entry.protect(id);
+    }
+
+    public void printSetup(PrintWriter pw)
+    {
+        for (SchedulerEntry entry: _schedulers) {
+            pw.println("jtm set timeout -queue=" + entry.getName() +
+                       " -lastAccess=" + (entry.getLastAccessed() / 1000L) +
+                       " -total=" + (entry.getTotal() / 1000L));
         }
     }
-   public void addScheduler( String type , JobScheduler scheduler ){
-       say( "Adding scheduler : "+type ) ;
-       synchronized( _map ){
-          SchedulerEntry entry = _map.get(type) ;
-          if( entry == null )_map.put( type , entry = new SchedulerEntry( type ) ) ;
-          entry._scheduler = scheduler ;
-       }
-   }
-   public void printSetup( PrintWriter pw ){
-      synchronized( _map ){
 
-         for( SchedulerEntry entry: _map.values() ){
+    public void getInfo(PrintWriter pw)
+    {
+        pw.println("Job Timeout Manager");
 
-            pw.println( "jtm set timeout -queue="+entry._name+
-                             " -lastAccess="+(entry.lastAccessed/1000L)+
-                             " -total="+(entry.total/1000L) ) ;
-         }
-      }
-   }
-   public void getInfo( PrintWriter pw ){
-      synchronized( _map ){
-         pw.println("Job Timeout Manager");
+        for (SchedulerEntry entry: _schedulers) {
+            pw.println("  " + entry.getName() +
+                       " (lastAccess=" + (entry.getLastAccessed() / 1000L) +
+                       ";total=" + (entry.getTotal() / 1000L) + ")");
+        }
+    }
 
-         for ( SchedulerEntry entry: _map.values() ){
+    public String hh_jtm_go = "trigger the worker thread";
+    public synchronized String ac_jtm_go(Args args)
+    {
+        notifyAll();
+        return "";
+    }
 
-            pw.println("  "+entry._name+
-                             " (lastAccess="+(entry.lastAccessed/1000L)+
-                             ";total="+(entry.total/1000L)+")" ) ;
-         }
-      }
-   }
-   public String hh_jtm_go = "trigger the worker thread" ;
-   public String ac_jtm_go( Args args ){
-      synchronized( _map ){ _map.notifyAll() ; }
-      return "" ;
-   }
+    public String hh_jtm_ls = "list queues";
+    public String ac_jtm_ls(Args args)
+    {
+        StringBuilder sb = new StringBuilder();
+        for (SchedulerEntry entry : _schedulers) {
+            sb.append(entry.getName()).append(" ");
+        }
+        return sb.toString();
+    }
 
-
-   public String hh_jtm_ls = "list queues" ;
-   public String ac_jtm_ls( Args args ){
-
-	  String out = null;
-      synchronized( _map ){
-    	  Set<String> queueSet = _map.keySet() ;
-    	  StringBuilder sb = new StringBuilder();
-
-
-    	  for(String queue: queueSet) {
-    		  sb.append(queue).append(" ");
-    	  }
-
-    	  out = sb.toString();
-      }
-      return out ;
-   }
-
-   public String hh_jtm_set_timeout =
-        "[-total=<timeout/sec>] [-lastAccess=<timeout/sec>] [-queue=<queueName>]" ;
-   public String ac_jtm_set_timeout( Args args ){
-
-      String  queue         = args.getOpt("queue");
-      String  lastAccessStr = args.getOpt("lastAccess") ;
-      String  totalStr      = args.getOpt("total") ;
-
-      long lastAccess = lastAccessStr == null ? -1 : (Long.parseLong(lastAccessStr)*1000L) ;
-      long total      = totalStr      == null ? -1 : (Long.parseLong(totalStr)*1000L) ;
-
-      if( queue == null ){
-         synchronized( _map ){
-
-            for( SchedulerEntry entry:  _map.values()){
-
-               if( lastAccess >= 0L )entry.lastAccessed = lastAccess ;
-               if( total >= 0L )entry.total = total ;
+    private SchedulerEntry find(String name)
+    {
+        for (SchedulerEntry entry : _schedulers) {
+            if (entry.getName().equals(name)) {
+                return entry;
             }
-         }
-      }else{
-         synchronized( _map ){
-            SchedulerEntry entry = _map.get(queue) ;
-            if( entry == null )_map.put(queue,entry = new SchedulerEntry(queue) ) ;
-            if( lastAccess >= 0L )entry.lastAccessed = lastAccess ;
-            if( total >= 0L )entry.total = total ;
-         }
-      }
-      return "" ;
-   }
-   private void say( String str ){ _cell.say("JTM : "+str ) ; }
-   private void esay( String str ){ _cell.esay("JTM : "+str ) ; }
-   public void run(){
-       Map<String,SchedulerEntry > currentMap = null ;
-       while( ! Thread.interrupted() ){
-          try{
-             synchronized( _map ){
-                _map.wait(120000L) ;
-                currentMap = new HashMap<String,SchedulerEntry >( _map ) ;
-             }
+        }
+        return null;
+    }
 
-             long    now = System.currentTimeMillis() ;
-             for ( SchedulerEntry e: currentMap.values() ){
+    private synchronized SchedulerEntry findOrCreate(String name)
+    {
+        if (name == null)
+            throw new IllegalArgumentException("null argument not allowed");
 
-                JobScheduler jobs = e._scheduler ;
-                if( jobs == null )continue ;
+        SchedulerEntry entry = find(name);
+        if (entry == null) {
+            entry = new SchedulerEntry(name);
+            _schedulers.add(entry);
+        }
+        return entry;
+    }
 
-                for( JobInfo info: jobs.getJobInfos() ){
-                   long started = info.getStartTime() ;
-                   long lastAccessed =
-                          info instanceof IoJobInfo ?
-                          ((IoJobInfo)info).getLastTransferred() :
-                          now ;
+    public String hh_jtm_set_timeout =
+        "[-total=<timeout/sec>] [-lastAccess=<timeout/sec>] [-queue=<queueName>]" ;
+    public String ac_jtm_set_timeout(Args args)
+    {
+        String  queue         = args.getOpt("queue");
+        String  lastAccessStr = args.getOpt("lastAccess");
+        String  totalStr      = args.getOpt("total");
 
-                   if( ( ( e.lastAccessed > 0L ) && ( lastAccessed > 0L ) &&
-                         ( ( now - lastAccessed ) > e.lastAccessed ) ) ||
-                       ( ( e.total > 0L ) && ( started > 0L ) &&
-                         ( ( now - started ) > e.total ) ) ){
+        long lastAccess = lastAccessStr == null ? -1 : (Long.parseLong(lastAccessStr)*1000L) ;
+        long total      = totalStr      == null ? -1 : (Long.parseLong(totalStr)*1000L) ;
 
-                       int jobId = (int)info.getJobId() ;
-                       esay( "Trying to kill <"+e._name+"> id="+jobId ) ;
-                       jobs.kill( jobId ) ;
+        if (queue == null) {
+            for (SchedulerEntry entry: _schedulers) {
+                if (lastAccess >= 0L)
+                    entry.setLastAccessed(lastAccess);
+                if (total >= 0L)
+                    entry.setTotal(total);
+            }
+        } else {
+            SchedulerEntry entry = findOrCreate(queue);
+            if (lastAccess >= 0L)
+                entry.setLastAccessed(lastAccess);
+            if (total >= 0L)
+                entry.setTotal(total);
+        }
+        return "";
+    }
 
-                   }
+    private void say(String str)
+    {
+        _cell.say("JTM : " + str);
+    }
 
+    private void esay(String str)
+    {
+        _cell.esay("JTM : " + str);
+    }
+
+    public void run()
+    {
+        try {
+            while (!Thread.currentThread().isInterrupted()) {
+                synchronized (this) {
+                    wait(120000L);
                 }
-             }
-          }catch(InterruptedException ie ){
-             say( "interrupted ..." ) ;
-             break ;
-          }catch(Exception ee ){
-             esay("Exception in worker look : "+ee ) ;
-          }
 
-       }
-   }
+                long now = System.currentTimeMillis();
+                for (SchedulerEntry entry: _schedulers) {
+                    JobScheduler jobs = entry.getScheduler();
+                    if (jobs == null)
+                        continue;
 
+                    Set<Integer> ids = new HashSet<Integer>();
+                    for (JobInfo info: jobs.getJobInfos()) {
+                        int jobId = (int)info.getJobId();
+                        ids.add(jobId);
+                        if (entry.isExpired(info, now)) {
+                            esay("Trying to kill <" + entry.getName()
+                                 + "> id=" + jobId);
+                            jobs.kill(jobId);
+                        }
+                    }
 
+                    /* We need to get rid of old entries. Since we do
+                     * not have a notification mechanism for job
+                     * removal, we fall back to the following periodic
+                     * garbage collection step.
+                     */
+                    entry.retainAll(ids);
+                }
+            }
+        } catch (InterruptedException e) {
+            say("interrupted ...");
+            Thread.currentThread().interrupt();
+        }
+    }
 }
