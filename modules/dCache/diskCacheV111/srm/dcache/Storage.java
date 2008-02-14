@@ -3033,8 +3033,10 @@ public class Storage
             PnfsCreateDirectoryMessage createReply = 
                 (PnfsCreateDirectoryMessage) answer.getMessageObject();
             if (createReply.getReturnCode() != 0) {
-                esay("createDirectory: directory creation failed, got error " +
-                    "return code from pnfs");
+		    esay("createDirectory: directory creation failed, got error return code from pnfs");
+		    if (createReply.getReturnCode() == 2) { 
+			    throw new SRMDuplicationException(" already exists");
+		    }
                 Object error = createReply.getErrorObject();
                 
                 if(error instanceof Throwable) {
