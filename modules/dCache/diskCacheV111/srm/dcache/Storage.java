@@ -3028,13 +3028,15 @@ public class Storage
             esay("sent PnfsCreateDirectoryMessage to pnfs, received "+o+" back");
             throw new SRMException("Can't create, communication with pnfs failure");
         } else {
-            PnfsCreateDirectoryMessage createReply = 
-                (PnfsCreateDirectoryMessage) answer.getMessageObject();
-            if (createReply.getReturnCode() != 0) {
-                esay("createDirectory: directory creation failed, got error " +
-                    "return code from pnfs");
-                Object error = createReply.getErrorObject();
-                
+		PnfsCreateDirectoryMessage createReply = 
+			(PnfsCreateDirectoryMessage) answer.getMessageObject();
+		if (createReply.getReturnCode() != 0) {
+			esay("createDirectory: directory creation failed, got error " +
+			     "return code from pnfs");
+			if (createReply.getReturnCode()==2) {
+				throw new SRMDuplicationException(" already exists");
+			}
+			Object error = createReply.getErrorObject();
                 if(error instanceof Throwable) {
 		    esay((Throwable)error);
                    throw new SRMException("Failed to create, got error return " +
