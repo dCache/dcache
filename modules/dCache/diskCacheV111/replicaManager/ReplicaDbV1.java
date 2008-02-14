@@ -4,6 +4,7 @@ package diskCacheV111.replicaManager;
 
 import diskCacheV111.util.*;
 import dmg.cells.nucleus.*;
+import org.dcache.util.DMCFRetryProxyHandler;
 
 import java.util.*;
 //import java.io.IOException;
@@ -19,6 +20,9 @@ import org.apache.commons.dbcp.ConnectionFactory;
 import org.apache.commons.dbcp.PoolingDataSource;
 import org.apache.commons.dbcp.PoolableConnectionFactory;
 import org.apache.commons.dbcp.DriverManagerConnectionFactory;
+
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Proxy;
 
 //import uk.org.primrose.GeneralException;
 //import uk.org.primrose.vendor.standalone.*;
@@ -1199,6 +1203,15 @@ public class ReplicaDbV1 implements ReplicaDb1 {
         
         final ConnectionFactory connectionFactory = new DriverManagerConnectionFactory(connectURI, user, password);
 
+        // Create InvocationHandler
+        InvocationHandler retryHandler = new DMCFRetryProxyHandler(connectionFactory, 3600);
+
+        // Create Proxy
+        ConnectionFactory proxyConnectionFactory =
+                (ConnectionFactory)Proxy.newProxyInstance(connectionFactory.getClass().getClassLoader(),
+                                                          connectionFactory.getClass().getInterfaces(),
+                                                          retryHandler);
+
         // PoolableConnectionFactory(     ConnectionFactory connFactory,
         //                                ObjectPool pool,
         //                                KeyedObjectPoolFactory stmtPoolFactory,
@@ -1206,7 +1219,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
         //                                boolean defaultReadOnly,
         //                                boolean defaultAutoCommit)
         final PoolableConnectionFactory poolableConnectionFactory = 
-            new PoolableConnectionFactory(connectionFactory, 
+            new PoolableConnectionFactory(proxyConnectionFactory, 
                                           connectionPool,
                                           new StackKeyedObjectPoolFactory(), // null,
                                           "select current_date", 
