@@ -774,10 +774,10 @@ public class ManagerV2
 				// nothing is found in the schema version table,
 				// pretend it was just created
 				created.put(ManagerSchemaConstants.SpaceManagerSchemaVersionTableName, Boolean.TRUE);
-				manager.insert(insertVersion);
 			}
 		}  
 		if(created.get(ManagerSchemaConstants.SpaceManagerSchemaVersionTableName)) {
+			manager.insert(insertVersion);
 			if(created.get(ManagerSchemaConstants.LinkGroupTableName)) {
 				//everything is created for the first time
 				previousSchemaVersion = currentSchemaVersion;
@@ -2022,7 +2022,7 @@ public class ManagerV2
 			throw new SQLException("file with pnfsId="+pnfsId+" is not found");
 		}
 		if (files.size()>1) { 
-			throw new SQLException("found two records with pnfsId="+pnfsId);
+			throw new SQLException("found "+files.size()+" records with pnfsId="+pnfsId);
 		}
 		return (File)files.toArray()[0];
 	}
@@ -2036,7 +2036,7 @@ public class ManagerV2
 			throw new SQLException("file with pnfsPath="+pnfsPath+" is not found");
 		}
 		if (files.size()>1) { 
-			throw new SQLException("found two records with pnfsPath="+pnfsPath);
+			throw new SQLException("found "+files.size()+" records with pnfsPath="+pnfsPath);
 		}
 		return (File)files.toArray()[0];
 	}
@@ -2049,7 +2049,7 @@ public class ManagerV2
 			throw new SQLException("file with id="+id+" is not found");
 		}
 		if (files.size()>1) { 
-			throw new SQLException("found two records with id="+id);
+			throw new SQLException("found "+ files.size()+" records with id="+id);
 		}
 		return (File)files.toArray()[0];
 	}
