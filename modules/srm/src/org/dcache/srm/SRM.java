@@ -294,6 +294,7 @@ import org.dcache.srm.request.FileRequest;
 import org.dcache.srm.util.Configuration;
 import org.dcache.srm.request.ContainerRequest;
 import org.dcache.srm.request.PutRequest;
+import org.dcache.srm.request.PutFileRequest;
 import org.dcache.srm.request.GetRequest;
 import org.dcache.srm.request.CopyRequest;
 import org.dcache.srm.request.BringOnlineRequest;
@@ -1328,9 +1329,29 @@ public class SRM {
                 }
                 else
                 {
-                    // process request
-                    say(" calling fr.setStatus(\""+state+"\")");
-                    fr.setStatus(state);
+                    if(state.equalsIgnoreCase("done") && fr instanceof PutFileRequest &&
+                        (fr.getState() == State.READY || fr.getState() ==State.RUNNING )) {
+                        PutFileRequest pfr = (PutFileRequest) fr;
+                        if ( pfr.getTurlString()!=null) { 
+                            try { 
+                                FileMetaData fmd= storage.getFileMetaData(user,pfr.getPath());
+                                if(fmd == null) {
+                                    pfr.setState(State.FAILED,"file transfer was not performed on SURL");
+                                } else {
+                                    fr.setStatus(state);
+                                }
+                            }
+                            catch (Exception srme) { 
+                             pfr.setState(State.FAILED,"file transfer was not performed on SURL");
+                           }
+                        }
+                        
+                    } else {
+                        
+                        // process request
+                        say(" calling fr.setStatus(\""+state+"\")");
+                        fr.setStatus(state);
+                    }
                 }
             }
             
