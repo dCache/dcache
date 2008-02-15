@@ -580,7 +580,7 @@ public class ManagerV2
 		return report.toString();
 	}
 
-	public static final String SELECT_INVALID_SPACES = "SELECT * FROM "+ManagerSchemaConstants.SpaceTableName + " WHERE state = '";
+	public static final String SELECT_INVALID_SPACES = "SELECT * FROM "+ManagerSchemaConstants.SpaceTableName + " WHERE state = ";
 	
 	public List< Space > listInvalidSpaces( int spaceTypes , int nRows)
 		throws SQLException,
@@ -588,14 +588,14 @@ public class ManagerV2
 		String query;
 		switch ( spaceTypes ) {
 		case EXPIRED: // do just expired
-			query = SELECT_INVALID_SPACES + SpaceState.EXPIRED.getStateId() + "'";
+			query = SELECT_INVALID_SPACES + SpaceState.EXPIRED.getStateId();
 			break;
 		case RELEASED: // do just released
-			query = SELECT_INVALID_SPACES + SpaceState.RELEASED.getStateId() + "'";
+			query = SELECT_INVALID_SPACES + SpaceState.RELEASED.getStateId();
 			break;
 		case RELEASED | EXPIRED: // do both
 			query = SELECT_INVALID_SPACES + SpaceState.EXPIRED.getStateId() +
-				"' OR state = '" + SpaceState.RELEASED.getStateId() + "'";
+				" OR state = " + SpaceState.RELEASED.getStateId();
 			break;
 		default: // something is broken
 			String msg = "listInvalidSpaces: got invalid space type "
@@ -788,6 +788,8 @@ public class ManagerV2
 			}
 		}
 		if(previousSchemaVersion == currentSchemaVersion) {
+			manager.createIndexes(ManagerSchemaConstants.SpaceFileTableName,"spacereservationid","state","pnfspath","pnfsid");
+			manager.createIndexes(ManagerSchemaConstants.SpaceTableName,"linkgroupid","state","description");			
 			return;
 		}
 		//
@@ -834,6 +836,8 @@ public class ManagerV2
 					     "ALTER TABLE " +ManagerSchemaConstants.SpaceTableName    + 
 					     " ADD COLUMN  usedspaceinbytes      BIGINT,"+
 					     " ADD COLUMN  allocatedspaceinbytes  BIGINT");
+			manager.createIndexes(ManagerSchemaConstants.SpaceFileTableName,"spacereservationid","state","pnfspath","pnfsid");
+			manager.createIndexes(ManagerSchemaConstants.SpaceTableName,"linkgroupid","state","description");			
 			//
 			// Now we need to calculate space one by and as 
 			// doing it in one go takes too long
@@ -2118,6 +2122,8 @@ public class ManagerV2
 							     "ALTER TABLE " +ManagerSchemaConstants.SpaceTableName    + 
 							     " ADD COLUMN  usedspaceinbytes      BIGINT,"+
 							     " ADD COLUMN  allocatedspaceinbytes  BIGINT");
+					manager.createIndexes(ManagerSchemaConstants.SpaceFileTableName,"spacereservationid","state","pnfspath","pnfsid");
+					manager.createIndexes(ManagerSchemaConstants.SpaceTableName,"linkgroupid","state","description");			
 					manager.update(ManagerV2.updateVersion);
 					HashSet spaces = null;
 					try { 
