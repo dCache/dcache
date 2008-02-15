@@ -168,9 +168,9 @@ public class Space implements java.io.Serializable {
                 sb.append("lifetime:").append(lifetime).append("ms ");
                 sb.append(" expiration:").append(lifetime==-1?"NEVER":new java.util.Date(creationTime+lifetime).toString()).append(' ');
                 sb.append("descr:").append(description).append(' ');
-                sb.append("state:").append(state);
-                sb.append("used:").append(usedSizeInBytes);
-                sb.append("allocated:").append(allocatedSpaceInBytes);
+                sb.append("state:").append(state).append(' ');
+                sb.append("used:").append(usedSizeInBytes).append(' ');
+                sb.append("allocated:").append(allocatedSpaceInBytes).append(' ');
     }
 
     public String getVoGroup() {

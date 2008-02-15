@@ -114,7 +114,6 @@ public class ManagerV2
 //	private long updateLinkGroupsPeriod = 3*60*1000;  //3 minutes default
 	private long updateLinkGroupsPeriod = 30*1000;  //3 minutes default
 	private long expireSpaceReservationsPeriod     = 3*60*1000;  //3 minutes default
-	
 	private boolean deleteStoredFileRecord = false;
 	private String pnfsManager = "PnfsManager";
 	private String poolManager = "PoolManager";
@@ -351,7 +350,7 @@ public class ManagerV2
 			say("executing statement: "+SpaceReservationIO.SELECT_CURRENT_SPACE_RESERVATIONS);
 			spaces=manager.selectPrepared(pkg,SpaceReservationIO.SELECT_CURRENT_SPACE_RESERVATIONS);
 			int count = spaces.size();
-			long totalReserved = 0;
+			long totalReserved = 0L;
 			for (Iterator i=spaces.iterator(); i.hasNext();) {
 				Space space = (Space)i.next();
 				totalReserved += space.getSizeInBytes();
@@ -401,16 +400,19 @@ public class ManagerV2
 							      latestLinkGroupUpdateTime);
 			}
 			int count = groups.size();
-			long totalReservable = 0;
+			long totalReservable = 0L;
+			long totalReserved   = 0L; 
 			for (Iterator i=groups.iterator(); i.hasNext();) {
 				LinkGroup g = (LinkGroup)i.next();
-				totalReservable  += g.getFreeSpace();
+				totalReservable  += g.getAvailableSpaceInBytes();
+				totalReserved    += g.getReservedSpaceInBytes();
 				g.toStringBuffer(sb);
 				sb.append('\n');
 			}
 			sb.append("total number of linkGroups: ").append(count).append('\n');
 			sb.append("total number of bytes reservable: ").append(totalReservable).append('\n');
-			sb.append("last time all link groups were updated: ").append(latestLinkGroupUpdateTime);
+			sb.append("total number of bytes reserved  : ").append(totalReserved).append('\n');
+			sb.append("last time all link groups were updated: ").append((new Date(latestLinkGroupUpdateTime)).toString()).append("(").append(latestLinkGroupUpdateTime).append(")");
 			return;
 		} 
 		catch(SQLException sqle) {
@@ -1522,6 +1524,9 @@ public class ManagerV2
 			connection.setAutoCommit(false);
 			for (Iterator i=spaces.iterator(); i.hasNext(); ) {
 				Space space = (Space)i.next();
+				//
+				// for each space make a list of files in this space and clean them up 
+				//
 				try {
 					updateSpaceReservation(space.getId(),
 							       null,
