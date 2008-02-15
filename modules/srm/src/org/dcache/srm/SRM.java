@@ -314,6 +314,7 @@ import java.util.Iterator;
 import java.io.IOException;
 import java.net.InetAddress;
 
+import org.dcache.srm.request.PutFileRequest;
 import org.dcache.srm.scheduler.Scheduler;
 import org.dcache.srm.scheduler.State;
 import org.dcache.srm.scheduler.IllegalStateTransition;
@@ -1322,9 +1323,29 @@ public class SRM {
                 }
                 else
                 {
-                    // process request
-                    say(" calling fr.setStatus(\""+state+"\")");
-                    fr.setStatus(state);
+                    if(state.equalsIgnoreCase("done") && fr instanceof PutFileRequest &&
+                        (fr.getState() == State.READY || fr.getState() ==State.RUNNING )) {
+                        PutFileRequest pfr = (PutFileRequest) fr;
+                        if ( pfr.getTurlString()!=null) { 
+                            try { 
+                                FileMetaData fmd= storage.getFileMetaData(user,pfr.getPath());
+                                if(fmd == null) {
+                                    pfr.setState(State.FAILED,"file transfer was not performed on SURL");
+                                } else {
+                                    fr.setStatus(state);
+                                }
+                            }
+                            catch (Exception srme) { 
+                             pfr.setState(State.FAILED,"file transfer was not performed on SURL");
+                           }
+                        }
+                        
+                    } else {
+                        
+                        // process request
+                        say(" calling fr.setStatus(\""+state+"\")");
+                        fr.setStatus(state);
+                    }
                 }
             }
             

@@ -199,12 +199,12 @@ public class SrmPutDone {
 			if (fail_counter>0&&fail_counter<requests.length) { 
 			    putRequest.setStatusCode(TStatusCode.SRM_PARTIAL_SUCCESS);
 			    status.setStatusCode(TStatusCode.SRM_PARTIAL_SUCCESS);
-			    status.setExplanation("some file transfer(s) were not performed on all SURs");
+			    status.setExplanation("some file transfer(s) were not performed on all SURLs");
 
 			}
 			else if (fail_counter==requests.length) { 
 			    putRequest.setStatusCode(TStatusCode.SRM_FAILURE);
-			    putRequest.setState(State.FAILED,"no file transfer(s) were performed on SUR(s)");
+			    putRequest.setState(State.FAILED,"no file transfer(s) were performed on SURL(s)");
 			    status.setStatusCode(TStatusCode.SRM_FAILURE);
 			}
 		    }
