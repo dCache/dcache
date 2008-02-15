@@ -768,10 +768,10 @@ public class ManagerV2
 				// nothing is found in the schema version table,
 				// pretend it was just created
 				created.put(ManagerSchemaConstants.SpaceManagerSchemaVersionTableName, Boolean.TRUE);
-				manager.insert(insertVersion);
 			}
 		}  
 		if(created.get(ManagerSchemaConstants.SpaceManagerSchemaVersionTableName)) {
+			manager.insert(insertVersion);
 			if(created.get(ManagerSchemaConstants.LinkGroupTableName)) {
 				//everything is created for the first time
 				previousSchemaVersion = currentSchemaVersion;
