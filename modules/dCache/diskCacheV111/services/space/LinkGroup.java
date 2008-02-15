@@ -8,6 +8,7 @@
  */
 
 package diskCacheV111.services.space;
+import java.util.Date;
 import diskCacheV111.util.VOInfo;
 
 /**
@@ -113,6 +114,7 @@ public class LinkGroup implements java.io.Serializable{
 		sb.append("Name:").append(name).append(' ');
 		sb.append("FreeSpace:").append(freeSpace).append(' ');
 		sb.append("ReservedSpace:").append(reservedSpaceInBytes).append(' ');
+		sb.append("AvailableSpace:").append(getAvailableSpaceInBytes()).append(' ');
 		sb.append("VOs:");
 		for(int i = 0; i<vos.length; ++i) {
 			sb.append('{').append(vos[i]).append('}');
@@ -121,9 +123,9 @@ public class LinkGroup implements java.io.Serializable{
 		sb.append("onlineAllowed:").append(onlineAllowed).append(' ');
 		sb.append("nearlineAllowed:").append(nearlineAllowed).append(' ');
 		sb.append("replicaAllowed:").append(replicaAllowed).append(' ');
-		sb.append("onlineAllowed:").append(onlineAllowed).append(' ');
 		sb.append("custodialAllowed:").append(custodialAllowed).append(' ');
-		sb.append("UpdateTime:").append(updateTime);
+		sb.append("outputAllowed:").append(outputAllowed).append(' ');
+		sb.append("UpdateTime:").append((new Date(updateTime)).toString()).append("(").append(updateTime).append(")");
 	}
 	
 	

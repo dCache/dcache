@@ -400,16 +400,19 @@ public class ManagerV2
 							      latestLinkGroupUpdateTime);
 			}
 			int count = groups.size();
-			long totalReservable = 0;
+			long totalReservable = 0L;
+			long totalReserved   = 0L; 
 			for (Iterator i=groups.iterator(); i.hasNext();) {
 				LinkGroup g = (LinkGroup)i.next();
-				totalReservable  += g.getFreeSpace();
+				totalReservable  += g.getAvailableSpaceInBytes();
+				totalReserved    += g.getReservedSpaceInBytes();
 				g.toStringBuffer(sb);
 				sb.append('\n');
 			}
 			sb.append("total number of linkGroups: ").append(count).append('\n');
 			sb.append("total number of bytes reservable: ").append(totalReservable).append('\n');
-			sb.append("last time all link groups were updated: ").append(latestLinkGroupUpdateTime);
+			sb.append("total number of bytes reserved  : ").append(totalReserved).append('\n');
+			sb.append("last time all link groups were updated: ").append((new Date(latestLinkGroupUpdateTime)).toString()).append("(").append(latestLinkGroupUpdateTime).append(")");
 			return;
 		} 
 		catch(SQLException sqle) {
@@ -417,8 +420,6 @@ public class ManagerV2
 			sb.append(sqle.getMessage());
 		}
 	}
-
-
 
 	public String hh_ls_link_groups = " [-l] [-a]  <id> # list link groups";
 	public String ac_ls_link_groups_$_0_1(Args args) throws Exception {
