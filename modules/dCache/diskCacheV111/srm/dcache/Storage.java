@@ -3033,7 +3033,7 @@ public class Storage
 		if (createReply.getReturnCode() != 0) {
 			esay("createDirectory: directory creation failed, got error " +
 			     "return code from pnfs");
-			if (createReply.getReturnCode()== CacheException.FILE_EXIST) {
+			if (createReply.getReturnCode()== CacheException.FILE_EXISTS) {
 				throw new SRMDuplicationException(" already exists");
 			}
 			Object error = createReply.getErrorObject();
