@@ -616,7 +616,7 @@ public class Storage
         config.setOverwrite_by_default(isOptionSetToTrueOrYes("overwrite_by_default",
             config.isOverwrite_by_default())); //false by default
         
-        customGetHostByAddr = isOptionSetToTrueOrYes("overwrite_by_default",
+        customGetHostByAddr = isOptionSetToTrueOrYes("custom-get-host-by-addr",
             customGetHostByAddr);
 
         ignoreClientProtocolOrder = isOptionSetToTrueOrYes(
