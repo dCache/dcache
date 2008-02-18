@@ -500,7 +500,6 @@ public class GetFileRequest extends FileRequest {
         
         rfs.fileId = getId().intValue();
         rfs.SURL = getSurlString();
-        rfs.TURL = getTurlString();
         
         
         
@@ -510,6 +509,14 @@ public class GetFileRequest extends FileRequest {
         }
         
         State state = getState();
+        if(state == State.RQUEUED) {
+            tryToReady();
+            state = getState();
+        }
+        // call getTurlString only after we called
+        // tryToReady, otherwise we might get a ready 
+        // request without TURL!!!
+        rfs.TURL = getTurlString();
         if(state == State.DONE) {
             rfs.state = "Done";
         }

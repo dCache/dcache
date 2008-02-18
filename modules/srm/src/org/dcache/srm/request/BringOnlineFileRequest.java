@@ -458,6 +458,10 @@ public class BringOnlineFileRequest extends FileRequest {
         }
         
         State state = getState();
+        if(state == State.RQUEUED) {
+            tryToReady();
+            state = getState();
+        }
         if(state == State.DONE) {
             rfs.state = "Done";
         }

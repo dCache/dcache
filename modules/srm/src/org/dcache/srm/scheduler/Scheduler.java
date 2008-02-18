@@ -888,6 +888,33 @@ public final class Scheduler implements Runnable, PropertyChangeListener {
         }
     }
     
+    /*
+     * Package level visibility
+     */
+    void tryToReadyJob(Job job) {
+        if(readyJobsNum >= maxReadyJobs) {
+            // cann't add any more jobs to ready state
+            return;
+        }
+        synchronized(job)
+        {
+            /*
+             ** let the stateChanged() always remove the jobs from the queue
+             */
+            State state = job.getState();
+            if(state != State.RQUEUED ) {
+                
+            }
+            try {
+                job.setState(State.READY,"execution succeeded");
+
+            }
+            catch(IllegalStateTransition ist) {
+                //nothing we can do here
+            }
+        }            
+    }
+    
     private void updateReadyQueue()  throws java.sql.SQLException{
         while(true) {
             
@@ -933,25 +960,7 @@ public final class Scheduler implements Runnable, PropertyChangeListener {
             }
             
             say("updateReadyQueue(), found job id "+job.getId());
-            synchronized(job)
-            {
-                /*
-                 ** let the stateChanged() always remove the jobs from the queue
-                 */
-                State state = job.getState();
-                if(state != State.RQUEUED ) {
-                    esay("updateReadyQueue() : found a job in ready queue with a state different from RQUEUED, job id="+
-                        job.getId()+" state="+job.getState());
-                    readyQueue.remove(job);
-                }
-                try {
-                    job.setState(State.READY,"execution succeeded");
-
-                }
-                catch(IllegalStateTransition ist) {
-                    //nothing we can do here
-                }
-            }            
+            tryToReadyJob(job);
         }
     }
     
@@ -972,9 +981,11 @@ public final class Scheduler implements Runnable, PropertyChangeListener {
                 updatePriorityThreadQueue();
                 //say("Scheduler(id="+getId()+").run() updating Thread queue...");
                 updateThreadQueue();
-                //say("Scheduler(id="+getId()+").run() updating Ready queue...");
-                updateReadyQueue();
-                //say("Scheduler(id="+getId()+").run() done updating queues");
+                // say("Scheduler(id="+getId()+").run() updating Ready queue...");
+                // Do not update ready queue, let users ask for statuses
+                // which will lead to the updates
+                // updateReadyQueue();
+                // say("Scheduler(id="+getId()+").run() done updating queues");
                 
             }
             catch(InterruptedException ie) {

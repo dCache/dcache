@@ -713,6 +713,15 @@ public abstract class Job  {
         }
     }
     
+    public void tryToReady() {
+      if(schedulerId != null) {
+            Scheduler scheduler =   Scheduler.getScheduler(schedulerId);
+            if(scheduler != null) {
+                scheduler.tryToReadyJob(this);
+            }
+        }
+    }
+    
     /** Getter for property errorMessage.
      * @return Value of property errorMessage.
      *
