@@ -2,23 +2,24 @@
 
 package diskCacheV111.pools ;
 
-import  diskCacheV111.util.* ;
-import  diskCacheV111.vehicles .* ;
-import  diskCacheV111.repository.* ;
+import diskCacheV111.util.* ;
+import diskCacheV111.vehicles .* ;
+import diskCacheV111.repository.* ;
 
-import  dmg.util.* ;
-import  dmg.cells.nucleus.* ;
+import dmg.util.* ;
+import dmg.cells.nucleus.* ;
 
-import  java.util.* ;
-import  java.io.* ;
-import  java.security.MessageDigest ;
-import  java.security.NoSuchAlgorithmException ;
+import java.util.* ;
+import java.util.concurrent.ConcurrentHashMap;
+import java.io.* ;
+import java.security.MessageDigest ;
+import java.security.NoSuchAlgorithmException ;
 
 public class ChecksumModuleV1  {
 
    private final CellAdapter     _cell       ;
    private final CacheRepository _repository ;
-   
+
    private boolean _frequently = false ;
    private boolean _onRead     = false ;
    private boolean _onWrite    = false ;
@@ -26,22 +27,27 @@ public class ChecksumModuleV1  {
    private boolean _onRestore  = false ;
    private boolean _enforceCRC = false ;
    private boolean _updatepnfs = false ;
-   
+
    private long    _delayFile    =  1000L ;
    private long    _scanEvery    =  24L ;
 
    private ChecksumFactory _defaultChecksumFactory = null;
-   
+
    private final FullScan   _fullScan   = new FullScan() ;
    private final SingleScan _singleScan = new SingleScan();
-     
+
    private final PnfsHandler _pnfs ;
-   
+
    private boolean _fake_checksum_error = false ;
    private boolean _fake_checksum_ftp   = false ;
-   
-   public ChecksumModuleV1( CellAdapter cell , 
-                            CacheRepository repository , 
+
+    /** Errors found while running 'csm check'.
+     */
+    private final Map<PnfsId,Checksum> _bad =
+        new ConcurrentHashMap<PnfsId,Checksum>();
+
+   public ChecksumModuleV1( CellAdapter cell ,
+                            CacheRepository repository ,
                             PnfsHandler pnfs){
       _repository = repository ;
       _cell       = cell ;
@@ -57,7 +63,7 @@ public class ChecksumModuleV1  {
                                   ChecksumFactory clientChecksumFactory , // can be null
 				  Checksum clientChecksum, // can be null
                                   Checksum transferChecksum )
-          throws CacheException, 
+          throws CacheException,
                  InterruptedException,
                  IOException  {
 
@@ -68,8 +74,8 @@ public class ChecksumModuleV1  {
        if( _fake_checksum_ftp )clientChecksum = null ;
 
        _cell.say(entry.getPnfsId()+" client = "+clientChecksum+" transfer "+transferChecksum);
-       
-        
+
+
        Checksum pnfsChecksum = null ;
        //
        // take checksum from client (close mover protocol, or from pnfs)
@@ -79,7 +85,7 @@ public class ChecksumModuleV1  {
        if ( clientChecksumFactory != null ){
 	   defaultChecksumFactory = clientChecksumFactory;
        } else {
-	   defaultChecksumFactory = _defaultChecksumFactory;	   
+	   defaultChecksumFactory = _defaultChecksumFactory;
        }
 
        if ( clientChecksum == null ){
@@ -89,7 +95,7 @@ public class ChecksumModuleV1  {
 
        //
        // only if client and transfer is available, do the check.
-       //                 
+       //
        if( ( clientChecksum   != null ) &&
            ( transferChecksum != null ) &&
            ( ! clientChecksum.equals( transferChecksum ) ) )
@@ -97,13 +103,13 @@ public class ChecksumModuleV1  {
           CacheException("Checksum error client="+clientChecksum+";transfer="+transferChecksum) ;
 
        _cell.say(entry.getPnfsId()+" client = "+clientChecksum+" transfer "+transferChecksum);
-       
+
        Checksum  checksum     = clientChecksum == null ? transferChecksum : clientChecksum ;
 
        Checksum  fileChecksum = defaultChecksumFactory.create();
- 
-       fileChecksum = _onWrite ? 
-	   calculateFileChecksum( entry , defaultChecksumFactory.create() ) : 
+
+       fileChecksum = _onWrite ?
+	   calculateFileChecksum( entry , defaultChecksumFactory.create() ) :
                                 null;
 
        _cell.say(entry.getPnfsId()+" filechecksum = "+fileChecksum ) ;
@@ -113,9 +119,9 @@ public class ChecksumModuleV1  {
            ( ! checksum.equals( fileChecksum ) ) )
           throw new
           CacheException("Checksum error client="+checksum+";file="+fileChecksum) ;
-       
+
        checksum = checksum == null ? fileChecksum : checksum ;
-                  
+
        if( checksum == null ){
             if( ! _enforceCRC )return ;
             checksum = calculateFileChecksum( entry ,  defaultChecksumFactory.create() ) ;
@@ -123,37 +129,37 @@ public class ChecksumModuleV1  {
        if( ( checksum != null ) && ( pnfsChecksum == null ) ){
            _cell.say(entry.getPnfsId()+" sending checksum = "+checksum ) ;
            storeChecksumInPnfs(entry.getPnfsId() , checksum) ;
-       } 
-           
+       }
+
    }
-   public Checksum calculateFileChecksum( 
-                CacheRepositoryEntry entry , 
+   public Checksum calculateFileChecksum(
+                CacheRepositoryEntry entry ,
                 Checksum checksum          )throws IOException , CacheException {
-   
+
        _cell.say("Calculating checksum on "+entry.getDataFile());
        MessageDigest digest = checksum.getMessageDigest() ;
-       
+
        FileInputStream in = new FileInputStream( entry.getDataFile() ) ;
        byte [] buffer = new byte[64*1024] ;
        long sum = 0L ;
-       try{ 
+       try{
           while(true){
 
               int rc = in.read( buffer , 0 , buffer.length ) ;
               if( rc <=0 )break ;
               sum += rc ;
               digest.update( buffer , 0 , rc ) ;
-              
+
           }
        }finally{
-      
+
           try{ in.close() ; }catch(Exception ee ){}
-          
+
        }
        _cell.say("Calculating checksum on "+entry.getDataFile() + " done, length "+sum + " chsm "+checksum);
        checksum.getDigest();
        return checksum ;
-      
+
    }
    public void storeChecksumInPnfs( PnfsId pnfsId , Checksum checksum ){
       storeChecksumInPnfs( pnfsId , checksum , true ) ;
@@ -229,10 +235,10 @@ public class ChecksumModuleV1  {
           pw.print(")");
        }
        pw.println("");
-      
+
        pw.println("  "+_fullScan.toString());
    }
-   public String hh_csm_info = "" ;   
+   public String hh_csm_info = "" ;
    public String ac_csm_info_$_0( Args args ){
       StringBuffer sb = new StringBuffer() ;
       sb = getPolicies(sb);
@@ -242,7 +248,7 @@ public class ChecksumModuleV1  {
    }
    private StringBuffer getPolicies( StringBuffer sb ){
        if( sb == null )sb = new StringBuffer() ;
-       
+
        sb.append( " Policies :\n").
           append( "        on read : ").append(_onRead).append("\n").
           append( "       on write : ").append(_onWrite).append("\n").
@@ -253,12 +259,12 @@ public class ChecksumModuleV1  {
           append( "     frequently : ").append(_frequently).append("\n") ;
        if( _frequently ){
           sb.append("         file delay = ").append(_delayFile).append(" millis\n").
-             append("             every  = ").append(_scanEvery).append(" hours\n");     
+             append("             every  = ").append(_scanEvery).append(" hours\n");
        }
        return sb ;
    }
    public String hh_csm_set_policy = "[-<option>=on|off] ... # see 'help csm set policy" ;
-   public String fh_csm_set_policy = 
+   public String fh_csm_set_policy =
        "  Syntax : csm set policy [-<option>=on[|off]] ...\n"+
        "\n"+
        "    OPTIONS :\n"+
@@ -275,7 +281,7 @@ public class ChecksumModuleV1  {
        "       -getcrcfromhsm   : read the <pool>/data/<pnfsid>.crcval file and send to pnfs\n"+
        "\n" ;
    public String ac_csm_set_policy_$_0( Args args ){
-   
+
       _frequently = checkBoolean( args , "frequently"  , _frequently ) ;
       _onRead     = checkBoolean( args , "onread"      , _onRead ) ;
       _onWrite    = checkBoolean( args , "onwrite"     , _onWrite ) ;
@@ -283,27 +289,27 @@ public class ChecksumModuleV1  {
       _onTransfer = checkBoolean( args , "ontransfer"  , _onTransfer ) ;
       _enforceCRC = checkBoolean( args , "enforcecrc"  , _enforceCRC ) ;
       _updatepnfs = checkBoolean( args , "getcrcfromhsm"  , _updatepnfs ) ;
-      
+
       String value = args.getOpt("filedelay") ;
       if( value != null )_delayFile = Long.parseLong(value);
-         
+
 
       value = args.getOpt("every") ;
       if( value != null )_scanEvery = Integer.parseInt(value) ;
-      
+
       return args.getOpt("v") == null ? "" : getPolicies(null).toString() ;
    }
    public boolean getCrcFromHsm(){ return _updatepnfs ; }
    private Checksum checkFile( File file ) throws Exception {
-   
+
        Checksum      checksum = getDefaultChecksum() ;
        MessageDigest digest   = checksum.getMessageDigest() ;
 
        FileInputStream in = new FileInputStream( file ) ;
-       
+
        byte [] buffer = new byte[64*1024] ;
        long sum = 0L ;
-       
+
        try{
           while(true){
 
@@ -316,36 +322,83 @@ public class ChecksumModuleV1  {
           try{  in.close() ; }catch(Exception ee ){};
        }
        return checksum ;
-   
+
    }
    private CRC getCrc( CacheRepositoryEntry entry , boolean repair ) throws CacheException {
-   
+
        StorageInfo info = entry.getStorageInfo() ;
        if( info == null )info = _pnfs.getStorageInfo( entry.getPnfsId().toString() ) ;
-       
+
        return null;
    }
-   private class FullScan extends Singleton  {
-   
-      private HashSet  _badSet     = new HashSet() ;
-      private int      _totalCount = 0 ;
-      private int      _badCount   = 0 ;
-      
-      public FullScan(){ super( "FullScan" ) ; }
 
-      public void runIt() throws Exception {
-      
-      }
-      public String toString(){
-         return super.toString()+" " ;
-      }
+   private class FullScan extends Singleton
+   {
+       private int _totalCount;
+       private int _badCount;
+
+       public FullScan()
+       {
+           super("FullScan");
+       }
+
+       public void runIt() throws Exception
+       {
+           _totalCount = _badCount = 0;
+           _bad.clear();
+
+          for (PnfsId id: _repository.getValidPnfsidList()) {
+              try {
+                  CacheRepositoryEntry entry = _repository.getEntry(id);
+                  Checksum file, replica;
+
+                  replica = checkFile(entry.getDataFile());
+                  StorageInfo info = entry.getStorageInfo();
+                  String flags =
+                      (info == null ? null : info.getKey("flag-c"));
+
+                  if (flags == null) {
+                      file = getChecksumFromPnfs(id);
+                  } else {
+                      file = new Checksum(flags);
+                  }
+
+                  _totalCount++;
+
+                  if (file != null && !file.equals(replica)) {
+                      _bad.put(id, replica);
+                      _badCount++;
+                  }
+              } catch (FileNotInCacheException e) {
+                  /* It was removed before we could get it. No problem.
+                   */
+              } catch (Exception e) {
+                  /* Whatever it is, log it and continue with the task.
+                   */
+                  _cell.esay(e);
+              }
+          }
+       }
+
+       public String toString()
+       {
+           return super.toString() + " "
+               + _totalCount + " checked; "
+               + _badCount + " errors detected";
+       }
+
+       Map<PnfsId,Checksum> getErrors()
+       {
+           return _bad;
+       }
    }
+
    private class CRC {
-   
+
       private String _crcString = null ;
       private int    _crcType   = 0 ;
       private long   _crcValue  = 0L ;
-      
+
       private CRC( String string ) throws Exception {
          _crcString = string ;
          StringTokenizer st = new StringTokenizer(string,":") ;
@@ -356,7 +409,7 @@ public class ChecksumModuleV1  {
       private long getValue(){ return _crcValue ; }
    }
    private class SingleScan extends Singleton {
-       
+
       private PnfsId               _pnfsId        = null ;
       private CacheRepositoryEntry _expectedEntry = null ;
       private CacheRepositoryEntry _entry         = null ;
@@ -364,7 +417,7 @@ public class ChecksumModuleV1  {
       private Checksum             _infoCRC       = null ;
       private Exception            _error         = null ;
       public SingleScan(){ super("SingeScan" ) ; }
-      
+
       public synchronized void go( PnfsId pnfsId ) throws Exception {
          _expectedEntry = _repository.getEntry( pnfsId ) ;
          _error = null ;
@@ -388,6 +441,11 @@ public class ChecksumModuleV1  {
                 _infoCRC = flags == null ?
                            null :
                            new Checksum( flags );
+
+                if (_infoCRC != null && !_infoCRC.equals(_fileCRC)) {
+                    _bad.put(_pnfsId, _fileCRC);
+                }
+
             }catch(Exception ee ){
                 throw ee ;
             }
@@ -401,7 +459,7 @@ public class ChecksumModuleV1  {
          sb.append(super.toString());
          if( _pnfsId != null ){
              sb.append("  ").append(_pnfsId).append(" ");
-             
+
              if( _error != null ){
                 sb.append(_error.toString()) ;
              }else if( ( _fileCRC != null ) && ( _infoCRC == null ) ){
@@ -420,18 +478,18 @@ public class ChecksumModuleV1  {
       }
    }
    abstract private class Singleton {
-   
+
        private final Object  _lock     = new Object() ;
        private boolean _isActive = false ;
        private final String  _name ;
-       
+
        private Exception _lastException = null ;
        private Thread    _currentThread = null ;
-       
+
        private Singleton( String name ){ _name = name ; }
-       
+
        abstract public void runIt() throws Exception ;
-       
+
        public void kill(){
           synchronized( _lock ){
              if( _currentThread != null )_currentThread.interrupt() ;
@@ -444,7 +502,7 @@ public class ChecksumModuleV1  {
                 IllegalStateException("Still active") ;
               _isActive = true ;
               _lastException = null ;
-          
+
              _currentThread =
              _cell.getNucleus().newThread(
                   new Runnable(){
@@ -457,12 +515,12 @@ public class ChecksumModuleV1  {
                            synchronized( _lock ){
                                _isActive = false ;
                                _currentThread = null ;
-                           }           
+                           }
                         }
                      }
                   }
                   ,
-                  _name 
+                  _name
              );
           }
           _currentThread.start() ;
@@ -495,14 +553,29 @@ public class ChecksumModuleV1  {
    public String hh_csm_check = " [ * | <pnfsId> ]";
    public String ac_csm_check_$_0_1( Args args )throws Exception {
       if( args.argv(0).equals("*") ){
-          throw new
-          IllegalArgumentException ("Feature disabled");
-         // _fullScan.go() ;
+          _fullScan.go() ;
       }else{
           _singleScan.go( new PnfsId(args.argv(0)) ) ;
       }
       return "Started ...; check 'csm info' for results";
    }
+
+    public String hh_csm_show_errors = "# show errors found with 'csm check'";
+    public String ac_csm_show_errors(Args args)
+    {
+        StringBuilder builder = new StringBuilder();
+
+        for (Map.Entry<PnfsId,Checksum> e: _fullScan.getErrors().entrySet()) {
+            builder
+                .append(e.getKey().toString())
+                .append(" -> ")
+                .append(e.getValue().toString())
+                .append('\n');
+        }
+
+        return builder.toString();
+    }
+
    public String hh_csm_set_checksumtype = "adler32|md5" ;
    public String ac_csm_set_checksumtype_$_1( Args args ) throws Exception {
       String newChecksumType = args.argv(0) ;
@@ -521,9 +594,9 @@ public class ChecksumModuleV1  {
       if( value == null )return currentValue ;
       if( value.equals("on") || value.equals("") )return true ;
       else if( value.equals("off") )return false ;
-       
-      throw new 
+
+      throw new
       IllegalArgumentException("-"+key+"[=on|off]") ;
-         
+
    }
 }
