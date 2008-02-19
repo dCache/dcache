@@ -14,6 +14,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 
@@ -23,7 +25,8 @@ public class PoolInfoObserverEngineV2 implements HttpResponseEngine
 
     private final CellNucleus _nucleus;
     private final Map<String,String> _tableSelection =
-        new HashMap<String,String>();
+        new LinkedHashMap<String,String>();
+    private boolean _showPoolGroupUsage = false;
 
     private int _errorCounter = 0;
     private int _requestCounter = 0;
@@ -33,10 +36,14 @@ public class PoolInfoObserverEngineV2 implements HttpResponseEngine
     public PoolInfoObserverEngineV2(CellNucleus nucleus, String[] args)
     {
         _nucleus = nucleus;
-        for (int i = 0; i < args.length; i++) {
-            _nucleus.say("PoolInfoObserverEngineV2 : argument : " + i
-                         + " : " + args[i]);
+
+        for (String s : args) {
+            if (s.startsWith("showPoolGroupUsage=")) {
+                _showPoolGroupUsage =
+                    s.substring("showPoolGroupUsage=".length()).equals("true");
+            }
         }
+
         _tableSelection.put("Cell View"      , "cells");
         _tableSelection.put("Space Usage"    , "spaces");
         _tableSelection.put("Request Queues" , "queues");
@@ -75,9 +82,24 @@ public class PoolInfoObserverEngineV2 implements HttpResponseEngine
                 String groupName = urlItems.length > 3 ? urlItems[3] : null;
                 String selection = urlItems.length > 4 ? urlItems[4] : null;
 
-                printMenu(html, className, groupName, selection);
+                printClassMenu(html, className);
+                if (className == null)
+                    return;
 
-                if (className == null || groupName == null || selection == null)
+                if (_showPoolGroupUsage) {
+                    printGroupList(html, className);
+                } else {
+                    printGroupMenu(html, className, groupName);
+                }
+                if (groupName == null)
+                    return;
+
+                html.println("<h3>Pool group <emph>" + groupName + "</emph></h3>");
+                printMenuTable(html, _tableSelection.entrySet(),
+                               "/pools/list/" + className + "/"+groupName + "/",
+                               selection);
+
+                if (selection == null)
                     return;
 
                 Map<String,PoolCellQueryInfo> poolMap =
@@ -86,25 +108,10 @@ public class PoolInfoObserverEngineV2 implements HttpResponseEngine
                     return;
 
                 if (selection.equals("cells")) {
-                    html.append("<h3>Cell Info of group <emph>")
-                        .append(groupName)
-                        .append("</emph> in view <emph>")
-                        .append(className)
-                        .println("</emph></h3>");
                     printCells(html, poolMap);
                 } else if (selection.equals("spaces")) {
-                    html.append("<h3>Space Info of group <emph>")
-                        .append(groupName)
-                        .append("</emph> in view <emph>")
-                        .append(className)
-                        .println("</emph></h3>");
                     printPools(html, poolMap);
                 } else if (selection.equals("queues")) {
-                    html.append("<h3>Queue Info of group <emph>")
-                        .append(groupName)
-                        .append("</empg> in view <emph>")
-                        .append(className)
-                        .println("</emph></h3>");
                     printPoolActions(html, poolMap);
                 }
             }
@@ -130,28 +137,13 @@ public class PoolInfoObserverEngineV2 implements HttpResponseEngine
     private void printPools(HTMLWriter html, Map poolMap)
     {
         PoolInfoTableWriter writer = new PoolInfoTableWriter(html);
-        writer.print(new TreeMap(poolMap).values());
+        writer.print(new TreeMap(poolMap).values(), !_showPoolGroupUsage);
     }
 
     private void printCells(HTMLWriter html, Map poolMap)
     {
         CellInfoTableWriter writer = new CellInfoTableWriter(html);
         writer.print(new TreeMap(poolMap).values());
-    }
-
-    private void printMenu(HTMLWriter pw, String className,
-                           String groupName, String selection)
-    {
-        printClassMenu(pw, className);
-        printGroupMenu(pw, className, groupName);
-
-        if (className == null || groupName == null)
-            return;
-
-        pw.println("<h3>Table Selection</h3>");
-        printMenuTable(pw, _tableSelection.entrySet(),
-                       "/pools/list/" + className + "/"+groupName + "/",
-                       selection);
     }
 
     private void printClassMenu(HTMLWriter pw, String className)
@@ -163,21 +155,38 @@ public class PoolInfoObserverEngineV2 implements HttpResponseEngine
 
     private void printGroupMenu(HTMLWriter pw, String className, String groupName)
     {
-        if (className == null)
-            return;
-
         Set<String> groupSet =
             _container.getPoolGroupSetByClassName(className);
-        //
-        // this shouldn't happen
-        //
-        if (groupSet == null)
-            return;
 
-        pw.println("<h3>Pool groups of view <emph>"
-                   + className + "</emph></h3>");
-        printMenuTable(pw, groupSet,
-                       "/pools/list/" + className + "/", groupName);
+        if (groupSet != null) {
+            pw.println("<h3>Pool groups of <emph>"
+                       + className + "</emph></h3>");
+            printMenuTable(pw, groupSet,
+                           "/pools/list/" + className + "/", groupName);
+        }
+    }
+
+    private void printGroupList(HTMLWriter html, String className)
+    {
+        Set<String> groupSet =
+            _container.getPoolGroupSetByClassName(className);
+
+        if (groupSet != null) {
+            html.println("<h3>Pool groups of <emph>"
+                       + className + "</emph></h3>");
+
+            TreeMap<String,Collection<PoolCellQueryInfo>> info =
+                new TreeMap<String,Collection<PoolCellQueryInfo>>();
+
+            for (String group : groupSet) {
+                info.put(group,
+                         _container.getPoolMap(className, group).values());
+            }
+
+            PoolGroupInfoTableWriter writer =
+                new PoolGroupInfoTableWriter(html);
+            writer.print("/pools/list/" + className + "/", info);
+        }
     }
 
     private void printMenuTable(HTMLWriter html, Set itemSet,

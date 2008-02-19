@@ -8,18 +8,18 @@ import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.util.HTMLWriter;
 
 import java.util.Map;
-import java.util.TreeMap;
+import java.util.SortedMap;
 import java.util.Iterator;
 import java.util.Collection;
 import java.util.Set;
 import java.util.List;
 import java.util.ArrayList;
 
-public class PoolInfoTableWriter
+public class PoolGroupInfoTableWriter
 {
     private final HTMLWriter _html;
 
-    public PoolInfoTableWriter(HTMLWriter html)
+    public PoolGroupInfoTableWriter(HTMLWriter html)
     {
         _html = html;
     }
@@ -29,9 +29,9 @@ public class PoolInfoTableWriter
         return Math.floor(value * 10) / 10.0;
     }
 
-    private void printPoolInfoRow(String cell, String domain,
-                                  long total, long freespace, long precious, long removable,
-                                  String... classes)
+    private void printRow(String group,
+                          long total, long freespace, long precious, long removable,
+                          String... classes)
     {
         final long mb = 1024 * 1024;
 
@@ -41,8 +41,7 @@ public class PoolInfoTableWriter
         double blue    = Math.max(0, 100 - red - green - yellow);
 
         _html.beginRow(classes);
-        _html.td("cell",     cell);
-        _html.td("domain",   domain);
+        _html.td("group",    group);
         _html.td("total",    total / mb);
         _html.td("free",     freespace / mb);
         _html.td("precious", precious / mb);
@@ -56,34 +55,11 @@ public class PoolInfoTableWriter
         _html.endRow();
     }
 
-    private void printPoolInfoRow(PoolCellInfo cellInfo)
-    {
-        PoolCostInfo.PoolSpaceInfo info =
-            cellInfo.getPoolCostInfo().getSpaceInfo();
-
-        if (cellInfo.getErrorCode() == 0) {
-            printPoolInfoRow(cellInfo.getCellName(),
-                             cellInfo.getDomainName(),
-                             info.getTotalSpace(),
-                             info.getFreeSpace(),
-                             info.getPreciousSpace(),
-                             info.getRemovableSpace(),
-                             null, "odd");
-        } else {
-            _html.beginRow(null, "odd");
-            _html.td("cell",      cellInfo.getCellName());
-            _html.td("domain",    cellInfo.getDomainName());
-            _html.td("errorcode", "[", cellInfo.getErrorCode(), "]");
-            _html.td(3, "errormessage", cellInfo.getErrorMessage());
-            _html.endRow();
-        }
-    }
-
-    public void print(Collection<PoolCellQueryInfo> itemSet, boolean showSum)
+    public void print(String base,
+                      SortedMap<String,Collection<PoolCellQueryInfo>> info)
     {
         _html.beginTable("sortable",
-                         "cell",     "CellName",
-                         "domain",   "DomainName",
+                         "group",    "PoolGroup",
                          "total",    "Total Space/MB",
                          "free",     "Free Space/MB",
                          "precious", "Precious Space/MB",
@@ -92,29 +68,13 @@ public class PoolInfoTableWriter
                           "<span class=\"layout_used\">used/</span>" +
                           "<span class=\"layout_free\">free</span>)</span>");
 
-        long[] spaces = sumUpSpaces(itemSet);
-        if (showSum) {
-            printPoolInfoRow("SUM", "-",
-                             spaces[0], spaces[1], spaces[2], spaces[3],
-                             "total");
-        }
-
-        for (Object i : itemSet) {
-            try {
-                PoolCellQueryInfo info = (PoolCellQueryInfo)i;
-                CellInfo cellInfo  = info.getPoolCellInfo();
-                if (info.isOk() && (cellInfo instanceof PoolCellInfo)) {
-                    printPoolInfoRow((PoolCellInfo)cellInfo);
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-
-        if (showSum) {
-            printPoolInfoRow("SUM", "-",
-                             spaces[0], spaces[1], spaces[2], spaces[3],
-                             "total");
+        for (Map.Entry<String,Collection<PoolCellQueryInfo>> entry : info.entrySet()) {
+            String link = String.format("<a href=\"%s/%s/spaces\">%s</a>",
+                                        base, entry.getKey(), entry.getKey());
+            long[] spaces = sumUpSpaces(entry.getValue());
+            printRow(link,
+                     spaces[0], spaces[1], spaces[2], spaces[3],
+                     null, "odd");
         }
 
         _html.endTable();
