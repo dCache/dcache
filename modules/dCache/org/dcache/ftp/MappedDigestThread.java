@@ -8,20 +8,36 @@ public class MappedDigestThread extends DigestThread
 {
     public static final int MIN_SIZE = 1 << 20; // 1MB
     public static final int MAX_SIZE = 1 << 24; // 16MB
+    public static final int GRANULARITY = MIN_SIZE; // A multiplum of page size
 
-    public MappedDigestThread(FileChannel channel, BlockLog log, MessageDigest digest) 
+    public MappedDigestThread(FileChannel channel, BlockLog log, MessageDigest digest)
     {
         super(channel, log, digest);
     }
 
-    private long next(long position) 
+    /**
+     * Returns the size of the next block to return relative to
+     * <code>position</code>. The block will have a size between
+     * MIN_SIZE and MAX_SIZE, except for possibly the last block in
+     * the file.
+     *
+     * The size returned is always a multiplum of GRANULARITY, which
+     * means that unless the file size is a multiplum of GRANULARITY,
+     * the last (partial) block of the file will not be returned.
+     *
+     * This method blocks until enough data fitting these contraints
+     * are available, or until the complete file has been received, at
+     * which point zero may be returned.
+     */
+    private long next(long position)
         throws InterruptedException
     {
         advance(position + MIN_SIZE);
-        return Math.min(_log.getCompleted() - position, MAX_SIZE);
+        return Math.min(_log.getCompleted() - position, MAX_SIZE)
+            & ~(GRANULARITY - 1);
     }
 
-    public void run() 
+    public void run()
     {
 	try {
 	    MappedByteBuffer map;
@@ -35,6 +51,12 @@ public class MappedDigestThread extends DigestThread
 		position += size;
                 size = next(position);
 	    }
+
+            /* Process remaining chunk.
+             */
+            size = _log.getCompleted() - position;
+            map = _channel.map(FileChannel.MapMode.READ_ONLY, position, size);
+            _digest.update(map);
 	} catch (Exception e) {
 	    /* In theory we could attempt to resolve problems with the
 	     * map() call by trying to map a smaller memory
