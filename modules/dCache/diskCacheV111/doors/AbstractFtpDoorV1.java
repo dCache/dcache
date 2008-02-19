@@ -1037,9 +1037,9 @@ public abstract class AbstractFtpDoorV1
             if (te instanceof CommandExitException) {
                 throw (dmg.util.CommandExitException)te;
             }
-            te.printStackTrace();
             reply("500 " + ite.toString() + ": <" + cmd + ">");
             error("AbstractFtpDoorV1::ftpcommand: cause: " + te.getCause());
+            //error(te);
             _skipBytes = 0;
         } catch (IllegalAccessException e) {
             reportBug("ftpcommand", "got illegal access exception", e);
