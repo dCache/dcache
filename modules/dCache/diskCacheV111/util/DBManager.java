@@ -16,7 +16,7 @@ import java.util.Set;
 import java.util.HashSet;
 import java.sql.*;
 import org.apache.log4j.Logger;
-import diskCacheV111.services.JdbcConnectionPool;
+import org.dcache.util.JdbcConnectionPool;
 
 public class DBManager {
 	private static DBManager _instance=null;

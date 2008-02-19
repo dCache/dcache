@@ -123,6 +123,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.LinkedList;
 import diskCacheV111.util.Pgpass;
+import org.dcache.util.JdbcConnectionPool;
 //import diskCacheV111.vehicles.PnfsG
 
 /**

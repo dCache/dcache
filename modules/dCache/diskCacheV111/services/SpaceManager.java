@@ -138,6 +138,7 @@ import diskCacheV111.vehicles.spaceManager.SpaceManagerUnlockSpaceMessage;
 import diskCacheV111.vehicles.PoolStatusChangedMessage;
 import java.util.Date;
 import diskCacheV111.util.Pgpass;
+import org.dcache.util.JdbcConnectionPool;
 //import diskCacheV111.vehicles.PnfsG
 
 /**

@@ -6,7 +6,7 @@ import java.sql.Connection;
 
 import org.apache.log4j.Logger;
 
-import diskCacheV111.services.JdbcConnectionPool;
+import org.dcache.util.JdbcConnectionPool;
 
 /**
  * Abstraction over a database operation.

@@ -23,7 +23,7 @@ import java.sql.DatabaseMetaData;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.Pgpass;
 
-import diskCacheV111.services.JdbcConnectionPool;
+import org.dcache.util.JdbcConnectionPool;
 
 class PinManagerDatabase
 {

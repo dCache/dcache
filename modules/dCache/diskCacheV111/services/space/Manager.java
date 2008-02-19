@@ -242,7 +242,7 @@ import diskCacheV111.util.FsPath;
 import diskCacheV111.vehicles.PoolStatusChangedMessage;
 import java.util.Date;
 import diskCacheV111.util.Pgpass;
-import diskCacheV111.services.JdbcConnectionPool;
+import org.dcache.util.JdbcConnectionPool;
 import diskCacheV111.vehicles.PoolMgrSelectPoolMsg;
 import diskCacheV111.vehicles.PoolMgrSelectWritePoolMsg;
 import diskCacheV111.vehicles.PoolAcceptFileMessage;
