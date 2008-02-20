@@ -85,7 +85,7 @@ public final class FileState implements java.io.Serializable {
     private final int stateId;
     
     public static final FileState RESERVED       = new FileState("Reserved",    0);
-    public static final FileState TRANSFERING    = new FileState("Transfering", 1);
+    public static final FileState TRANSFERRING    = new FileState("Transferring", 1);
     public static final FileState STORED         = new FileState("Stored",      2);
     public static final FileState FLUSHED        = new FileState("Flushed",     3);
     
@@ -100,7 +100,7 @@ public final class FileState implements java.io.Serializable {
     public static FileState[] getAllStates() {
         return new FileState[] {
          RESERVED,
-         TRANSFERING,
+         TRANSFERRING,
          STORED,
          FLUSHED
         };
@@ -123,7 +123,7 @@ public final class FileState implements java.io.Serializable {
         
         if(RESERVED.name.equals(state)) return RESERVED;
         
-        if(TRANSFERING.name.equals(state)) return TRANSFERING;
+        if(TRANSFERRING.name.equals(state)) return TRANSFERRING;
         
         if(STORED.name.equals(state)) return STORED;
 
@@ -141,7 +141,7 @@ public final class FileState implements java.io.Serializable {
         
         if(RESERVED.stateId == stateId) return RESERVED;
         
-        if(TRANSFERING.stateId == stateId) return TRANSFERING;
+        if(TRANSFERRING.stateId == stateId) return TRANSFERRING;
         
         if(STORED.stateId == stateId) return STORED;
 

@@ -124,7 +124,7 @@ public final class LinkState implements java.io.Serializable {
     private final int stateId;
     
     public static final LinkState RESERVED        = new LinkState("Reserved",    0);
-    public static final LinkState TRANSFERING     = new LinkState("Transfering", 1);
+    public static final LinkState TRANSFERRING     = new LinkState("Transferring", 1);
     public static final LinkState STORED         = new LinkState("Stored",       2);
     
     /**
@@ -138,7 +138,7 @@ public final class LinkState implements java.io.Serializable {
     public static LinkState[] getAllStates() {
         return new LinkState[] {
          RESERVED,
-         TRANSFERING,
+         TRANSFERRING,
          STORED};
     }
     public String toString() {
@@ -159,7 +159,7 @@ public final class LinkState implements java.io.Serializable {
         
         if(RESERVED.name.equals(state)) return RESERVED;
         
-        if(TRANSFERING.name.equals(state)) return TRANSFERING;
+        if(TRANSFERRING.name.equals(state)) return TRANSFERRING;
         
         if(STORED.name.equals(state)) return STORED;
 
@@ -176,7 +176,7 @@ public final class LinkState implements java.io.Serializable {
         
         if(RESERVED.stateId == stateId) return RESERVED;
         
-        if(TRANSFERING.stateId == stateId) return TRANSFERING;
+        if(TRANSFERRING.stateId == stateId) return TRANSFERRING;
         
         if(STORED.stateId == stateId) return STORED;
 

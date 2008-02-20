@@ -15,7 +15,7 @@
 // srmspace  contains fields that caches sum(size) of all files from srmspace
 // that belong to this space reservation. Fields are usedspaceinbytes 
 //  (for files in state STORED) and allocatespaceinbytes 
-//  (for files in states RESERVED or TRANSFERING)
+//  (for files in states RESERVED or TRANSFERRING)
 // 
 // each time a space reservation is added/removed , reservedspaceinbytes in 
 // srmlinkgroup is updated 
@@ -785,6 +785,77 @@ public class ManagerV2
 	}
 
 
+
+	public String hh_removeFilesFromSpace = " [-r] [-t] [-s] [-f] <Space Token>" +
+		"# remove expired files from space, -r(reserved) -t(transferring) -s(stored) -f(flushed)";
+
+	public String ac_removeFilesFromSpace_$_1_4( Args args )
+		throws Exception {
+		long spaceId = Long.parseLong(args.argv(0));
+		int optCount           = args.optc();
+		StringBuffer sb = new StringBuffer();
+		if (optCount==0) { 
+			sb.append("No option specified, will remove expired RESERVED and TRANSFERRING files\n");
+		}
+		boolean doReserved     = args.getOpt( "r" ) != null;
+		boolean doTransferring = args.getOpt( "t" ) != null;
+		boolean doStored       = args.getOpt( "s" ) != null;
+		boolean doFlushed      = args.getOpt( "f" ) != null;
+		HashSet spaces=manager.selectPrepared(new SpaceReservationIO(),
+						      SpaceReservationIO.SELECT_SPACE_RESERVATION_BY_ID,
+						      spaceId);
+		if (spaces.isEmpty()==true) { 
+			sb.append("Space with "+spaceId+" does not exist\n");
+			return sb.toString();
+		}
+		for (Iterator i=spaces.iterator(); i.hasNext(); ) {
+			Space space = (Space)i.next();
+			HashSet files = manager.selectPrepared(new FileIO(),
+							       FileIO.SELECT_EXPIRED_SPACEFILES1,
+							       System.currentTimeMillis(),
+							       space.getId());
+			for (Iterator j=files.iterator(); j.hasNext(); ) {
+				File file = (File)j.next();
+				if (optCount==0) {
+					if (file.getState()==FileState.STORED || file.getState()==FileState.FLUSHED) continue;
+				}
+				else { 
+					if (!doReserved && file.getState()==FileState.RESERVED)         continue; 
+					if (!doTransferring && file.getState()==FileState.TRANSFERRING) continue; 
+					if (!doStored && file.getState()==FileState.STORED) continue; 
+					if (!doFlushed && file.getState()==FileState.FLUSHED) continue; 
+				}					
+				try { 
+					removeFileFromSpace(file.getId());
+				}
+				catch (SQLException e) { 
+					sb.append("Failed to remove file "+file+"\n");
+					esay(e);
+					continue;
+				}
+			}
+		}
+		return sb.toString();
+	}
+
+	public String hh_remove_file = " <id> " +
+		"# remove file by file id";
+
+	public String ac_remove_file_$_1( Args args )
+		throws Exception {
+		long id = Long.parseLong(args.argv(0));
+		try {
+			removeFileFromSpace(id);
+		}
+		catch (SQLException e) { 
+			esay(e);
+			return e.getMessage();
+		}
+		return "removed file with id="+id;
+	}
+
+
+
 	private static final String selectNextToken = "SELECT nexttoken  FROM "+ManagerSchemaConstants.SpaceManagerNextIdTableName;
 	private static final String insertNextToken = "INSERT INTO "+ManagerSchemaConstants.SpaceManagerNextIdTableName+
 		" (nexttoken) VALUES ( 0 )";
@@ -1418,7 +1489,7 @@ public class ManagerV2
 			throw new SQLException("delete returned row count ="+rc);
 		}
 		if(f.getState() == FileState.RESERVED ||
-		   f.getState() == FileState.TRANSFERING) {
+		   f.getState() == FileState.TRANSFERRING) {
 			decrementAllocatedSpaceInSpaceReservation(connection,space,f.getSizeInBytes());
 		}
 		else if (f.getState() == FileState.STORED) { 
@@ -2028,14 +2099,14 @@ public class ManagerV2
 						decrementFreeSpaceInLinkGroup(connection,space.getLinkGroupId(),deltaSize); // keep freespaceinbytes in check
 					}
 					if (f.getState()==FileState.RESERVED || 
-					    f.getState()==FileState.TRANSFERING) { 
+					    f.getState()==FileState.TRANSFERRING) { 
 						incrementAllocatedSpaceInSpaceReservation(connection,space,deltaSize);
 					}
 				}
 			}
 		}
 		else { 
-			if (oldState==FileState.RESERVED || oldState==FileState.TRANSFERING) {
+			if (oldState==FileState.RESERVED || oldState==FileState.TRANSFERRING) {
 				if (f.getState() == FileState.STORED) { 
 					decrementAllocatedSpaceInSpaceReservation(connection,space,oldSize);
 					incrementUsedSpaceInSpaceReservation(connection,space,f.getSizeInBytes());
@@ -2050,7 +2121,7 @@ public class ManagerV2
 					decrementUsedSpaceInSpaceReservation(connection,space,oldSize);
 					incrementFreeSpaceInLinkGroup(connection,space.getLinkGroupId(),f.getSizeInBytes()); // keep freespaceinbytes in check
 				}
-				else if (f.getState()==FileState.RESERVED || f.getState()==FileState.TRANSFERING) { 
+				else if (f.getState()==FileState.RESERVED || f.getState()==FileState.TRANSFERRING) { 
 					// this should not happen
 					decrementUsedSpaceInSpaceReservation(connection,space,oldSize);
 					incrementAllocatedSpaceInSpaceReservation(connection,space,f.getSizeInBytes());
@@ -2180,7 +2251,7 @@ public class ManagerV2
 		if(rc!=1 ){
 			throw new SQLException("insert returned row count ="+rc);
 		}
-		if (state == FileState.RESERVED.getStateId()||state==FileState.TRANSFERING.getStateId()) { 
+		if (state == FileState.RESERVED.getStateId()||state==FileState.TRANSFERRING.getStateId()) { 
 			incrementAllocatedSpaceInSpaceReservation(connection,space,sizeInBytes);
 		}
 		else if (state == FileState.STORED.getStateId()) { 
@@ -2998,7 +3069,7 @@ public class ManagerV2
 					return;
 				}
 				if(f.getState() == FileState.RESERVED ||
-				   f.getState() == FileState.TRANSFERING) {
+				   f.getState() == FileState.TRANSFERRING) {
 					removePnfsIdOfFileInSpace(connection,f.getId(),
 								  new Integer(FileState.RESERVED.getStateId()));
 					connection.commit();
@@ -3020,7 +3091,7 @@ public class ManagerV2
 				return;
 			}			
 			if(f.getState() == FileState.RESERVED ||
-			   f.getState() == FileState.TRANSFERING) {
+			   f.getState() == FileState.TRANSFERRING) {
 				updateSpaceFile(connection,
 						f.getId(),
 						null,
@@ -3028,7 +3099,7 @@ public class ManagerV2
 						null,
 						null,
 						null,
-						new Integer(FileState.TRANSFERING.getStateId()),
+						new Integer(FileState.TRANSFERRING.getStateId()),
 						f);
 				connection.commit();
 				connection_pool.returnConnection(connection);
@@ -3088,7 +3159,7 @@ public class ManagerV2
 			}
 			long spaceId = f.getSpaceId();
 			if(f.getState() == FileState.RESERVED ||
-			   f.getState() == FileState.TRANSFERING) {
+			   f.getState() == FileState.TRANSFERRING) {
 				if(success) {
 					if(returnFlushedSpaceToReservation && weDeleteStoredFileRecord) {
 						RetentionPolicy rp = getSpace(spaceId).getRetentionPolicy();
@@ -3295,7 +3366,7 @@ public class ManagerV2
 			connection.setAutoCommit(false);
 			File f = selectFileForUpdate(connection,pnfsPath);
 			if(f.getState() == FileState.RESERVED ||
-			   f.getState() == FileState.TRANSFERING) {
+			   f.getState() == FileState.TRANSFERRING) {
 				removeFileFromSpace(connection,f);
 				connection.commit();
 				connection_pool.returnConnection(connection);
