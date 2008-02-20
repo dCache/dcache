@@ -100,13 +100,13 @@ import diskCacheV111.vehicles.AuthenticationMessage;
  *
  * @author  timur
  */
-public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1 {
-
+public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
+{
     public static final String GLOBUS_URL_COPY_DEFAULT_USER =
-    ":globus-mapping:";
+        ":globus-mapping:";
 
     protected GSSName GSSIdentity;
-    //GSS general
+    // GSS general
     protected String _GSSFlavor = "unknown";
 
     // GSS GSI context and others
@@ -122,36 +122,33 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1 {
         super(name,engine,args);
     }
 
-
     protected void secure_reply(String answer, String code) {
         answer = answer+"\r\n";
         byte[] data = answer.getBytes();
         MessageProp prop = new MessageProp(0, false);
         try{
             data = serviceContext.wrap(data, 0, data.length, prop);
-        }
-        catch ( GSSException e ) {
-            println("500 Reply encrypton error: "+e);
+        } catch ( GSSException e ) {
+            println("500 Reply encryption error: " + e);
             return;
         }
         println(code + " " + Base64.byteArrayToBase64(data));
     }
 
-    public void ac_auth(String arg)     {
-        say("Going to authenticate "+_GSSFlavor);
+    public void ac_auth(String arg) {
+        info("GssFtpDoorV1::secure_reply: going to authenticate " + _GSSFlavor);
         if ( !arg.equals("GSSAPI") ) {
             reply("504 Authenticating method not supported");
             return;
         }
-        if( serviceContext != null && serviceContext.isEstablished()) {
+        if (serviceContext != null && serviceContext.isEstablished()) {
             reply("234 Already authenticated");
             return;
         }
 
         try {
             serviceContext = getServiceContext();
-        }
-        catch( Exception e ) {
+        } catch( Exception e ) {
             reply("500 Error: " + e.toString());
             return;
         }
@@ -173,29 +170,28 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1 {
         try {
             cb = new ChannelBinding(_engine.getInetAddress(),
             InetAddress.getLocalHost(), null);
-            //say("Local address: " + InetAddress.getLocalHost());
-            //say("Client address: " + _engine.getInetAddress());
-        }
-        catch( UnknownHostException e )
-        {	reply("500 Can not determine address of local host: " + e);
-                return;
+            //debug("GssFtpDoorV1::ac_adat: Local address: " + InetAddress.getLocalHost());
+            //debug("GssFtpDoorV1::ac_adat: Client address: " + _engine.getInetAddress());
+        } catch( UnknownHostException e ) {
+            reply("500 Can not determine address of local host: " + e);
+            return;
         }
 
         try {
-            //            serviceContext.setChannelBinding(cb);
-            //say("CB set");
+            //serviceContext.setChannelBinding(cb);
+            //debug("GssFtpDoorV1::ac_adat: CB set");
             token = serviceContext.acceptSecContext(token, 0, token.length);
-            //say("Token created");
+            //debug("GssFtpDoorV1::ac_adat: Token created");
             GSSIdentity = serviceContext.getSrcName();
-            //say("User principal: "+UserPrincipal);
-        }
-        catch( Exception e ) {
-            e.printStackTrace();
+            //debug("GssFtpDoorV1::ac_adat: User principal: " + UserPrincipal);
+        } catch( Exception e ) {
+            error("GssFtpDoorV1::ac_adat: got service context exception: " +
+                  e.getMessage());
             reply("535 Authentication failed: " + e);
             return;
         }
         if (token != null) {
-            if(!serviceContext.isEstablished()) {
+            if (!serviceContext.isEstablished()) {
                 reply("335 ADAT="+Base64.byteArrayToBase64(token));
             }
             else {
@@ -203,25 +199,25 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1 {
             }
         }
         else {
-            if(!serviceContext.isEstablished()) {
+            if (!serviceContext.isEstablished()) {
                 reply("335 ADAT=");
             }
             else {
-                say(" scurity context is established with "+GSSIdentity);
+                info("GssFtpDoorV1::ac_adat: security context established " +
+                     "with " + GSSIdentity);
                 reply("235 OK");
             }
         }
     }
 
-
     public void secure_command(String answer, String sectype)
     throws dmg.util.CommandExitException {
-        if( answer == null || answer.length() <= 0 ) {
+        if ( answer == null || answer.length() <= 0 ) {
             reply("500 Wrong syntax of "+sectype+" command");
             return;
         }
 
-        if( serviceContext == null || !serviceContext.isEstablished()){
+        if ( serviceContext == null || !serviceContext.isEstablished()) {
             reply("503 Security context is not established");
             return;
         }
@@ -229,15 +225,18 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1 {
 
         byte[] data = Base64.base64ToByteArray(answer);
         MessageProp prop = new MessageProp(0, false);
-        try { data = serviceContext.unwrap(data, 0, data.length, prop); }
-        catch( GSSException e )
-        {	reply("500 Can not decrypt command: " + e);
-                e.printStackTrace();
-                return;
+        try {
+            data = serviceContext.unwrap(data, 0, data.length, prop);
+        } catch( GSSException e ) {
+            reply("500 Can not decrypt command: " + e);
+            error("GssFtpDoorV1::secure_command: got GSSException: " +
+                   e.getMessage());
+            return;
         }
 
-        // At least one C-based client sends zero byte at the end
-        // of secured command. Truncate trailing zeros.
+        // At least one C-based client sends a zero byte at the end
+        // of a secured command. Truncate trailing zeros.
+        // Search from the right end of the string for a non-null character.
         int i;
         for(i = data.length;i > 0 && data[i-1] == 0 ;i--) {
             //do nothing, just decrement i
@@ -245,7 +244,7 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1 {
         String msg = new String(data, 0, i);
         msg = msg.trim();
 
-        if( msg.equalsIgnoreCase("CCC") ) {
+        if ( msg.equalsIgnoreCase("CCC") ) {
             _gReplyType = "clear";
             reply("200 OK");
         }
@@ -256,112 +255,119 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1 {
 
     }
 
-    public static CellVersion getStaticCellVersion(){ return new CellVersion(diskCacheV111.util.Version.getVersion(),"$Revision: 1.18 $" ); }
-
+    public static CellVersion getStaticCellVersion() {
+        return new CellVersion(diskCacheV111.util.Version.getVersion(),
+                               "$Revision: 1.18 $" );
+    }
 
     public void ac_user(String arg) {
 
-      KAuthFile authf;
-      AuthorizationService authServ=null;
+        KAuthFile authf;
+        AuthorizationService authServ = null;
 
-      _pwdRecord = null;
-      _user = null;
-      say("ac_user <"+arg+">");
-      if (arg.equals("")){
-        reply(err("USER",arg));
-        return;
-      }
-
-      if (serviceContext == null || !serviceContext.isEstablished()){
-        reply("530 Authentication required");
-        return;
-      }
-
-      _user = arg;
-      _dnUser = GSSIdentity.toString();
-      if (!_use_gplazmaAuthzCell && !_use_gplazmaAuthzModule) {
-        try {
-          authf = new KAuthFile(_kpwdFilePath);
-        }
-        catch( Exception e ) {
-          reply("530 User authentication file not found: " + e);
-          return;
-        }
-
-        if(_user.equals(GLOBUS_URL_COPY_DEFAULT_USER)) {
-          say("special case , user is "+_user);
-          _user = authf.getIdMapping(GSSIdentity.toString() );
-          if(_user == null) {
-            reply("530 User Name for GSI Identity" +
-            GSSIdentity.toString() + " not found.");
+        _pwdRecord = null;
+        _user = null;
+        info("GssFtpDoorV1::ac_user <" + arg + ">");
+        if (arg.equals("")) {
+            reply(err("USER",arg));
             return;
-          }
         }
 
-        _pwdRecord = authf.getUserRecord(_user);
-        authmessage = new AuthenticationMessage(_pwdRecord);
-        //authRecords = new LinkedList<UserAuthRecord>();
-
-        if( _pwdRecord == null ) {
-          reply("530 User " + _user + " not found.");
-          return;
-        }
-
-        say("Looking up: " + GSSIdentity.toString());
-        if( !((UserAuthRecord)_pwdRecord).hasSecureIdentity(GSSIdentity.toString()) ) {
-          _pwdRecord = null;
-          reply("530 Permission denied");
-          return;
-        }
-      }
-
-      if (_use_gplazmaAuthzCell) {
-        try {
-          authServ = new AuthorizationService(this);
-          authServ.setDelegateToGplazma(_delegate_to_gplazma);
-          authmessage = authServ.authenticate(serviceContext, _user, new CellPath("gPlazma"), this);
-        } catch( Exception e ) {
-          if(!_use_gplazmaAuthzModule) {
-            reply("530 Authorization Service failed: " + e);
-          }
-          esay("Authorization through gPlazma cell failed " + e);
-          authmessage = null;
-        }
-      }
-
-
-      if (authmessage==null && _use_gplazmaAuthzModule) {
-        try {
-          authServ = new AuthorizationService(_gplazmaPolicyFilePath, this);
-        } catch (Exception e) {
-          reply("530 Authorization Service failed to initialize: " + e);
-          return;
-        }
-        if(_user.equals(GLOBUS_URL_COPY_DEFAULT_USER)) {
-          say("special case, user is "+_user);
-          try {
-            authmessage = new AuthenticationMessage(authServ.authorize(serviceContext, null, null, null));
-          } catch ( Exception e ) {
-            reply("530 User Authorization record failed to be retrieved: " + e);
+        if (serviceContext == null || !serviceContext.isEstablished()) {
+            reply("530 Authentication required");
             return;
-          }
-        } else {
-          try {
-            authmessage = new AuthenticationMessage(authServ.authorize(serviceContext, _user, null, null));
-          } catch ( Exception e ) {
-            reply("530 User Authorization record failed to be retrieved: " + e);
-            return;
-          }
         }
-      }
 
-      resetPwdRecord();
-      if(_pwdRecord == null) {
-        reply("530 Permission denied");
-        return;
-      }
+        _user = arg;
+        _dnUser = GSSIdentity.toString();
+        if (!_use_gplazmaAuthzCell && !_use_gplazmaAuthzModule) {
+            try {
+                authf = new KAuthFile(_kpwdFilePath);
+            } catch( Exception e ) {
+                reply("530 User authentication file not found: " + e);
+                return;
+            }
 
-      reply("200 User "+_user+" logged in");
+            if (_user.equals(GLOBUS_URL_COPY_DEFAULT_USER)) {
+                info("GssFtpDoorV1::ac_user: non-gplazma special case, user is " + _user);
+                _user = authf.getIdMapping(GSSIdentity.toString() );
+                if (_user == null) {
+                    reply("530 User Name for GSI Identity" +
+                    GSSIdentity.toString() + " not found.");
+                    return;
+                }
+            }
+
+            _pwdRecord = authf.getUserRecord(_user);
+            authmessage = new AuthenticationMessage(_pwdRecord);
+            //authRecords = new LinkedList<UserAuthRecord>();
+
+            if ( _pwdRecord == null ) {
+                reply("530 User " + _user + " not found.");
+                return;
+            }
+
+            info("GssFtpDoorV1::ac_user: looking up: " +
+                 GSSIdentity.toString());
+            if ( !((UserAuthRecord)_pwdRecord).hasSecureIdentity(GSSIdentity.toString()) ) {
+                _pwdRecord = null;
+                reply("530 Permission denied");
+                return;
+            }
+        }
+
+        if (_use_gplazmaAuthzCell) {
+            try {
+                authServ = new AuthorizationService(this);
+                authServ.setDelegateToGplazma(_delegate_to_gplazma);
+                authmessage = authServ.authenticate(serviceContext, _user,
+                                                    new CellPath("gPlazma"),
+                                                    this);
+            } catch( Exception e ) {
+                if (!_use_gplazmaAuthzModule) {
+                    reply("530 Authorization Service failed: " + e);
+                }
+                error("GssFtpDoorV1::ac_user: authorization through gPlazma " +
+                      "cell failed: " + e.getMessage());
+                authmessage = null;
+            }
+        }
+
+
+        if (authmessage==null && _use_gplazmaAuthzModule) {
+            try {
+                authServ = new AuthorizationService(_gplazmaPolicyFilePath, this);
+            } catch (Exception e) {
+                reply("530 Authorization Service failed to initialize: " + e);
+                return;
+            }
+            if (_user.equals(GLOBUS_URL_COPY_DEFAULT_USER)) {
+                info("GssFtpDoorV1::ac_user: gplazma special case, user is " + _user);
+                try {
+                    authmessage = new AuthenticationMessage(
+                        authServ.authorize(serviceContext, null, null, null));
+                } catch ( Exception e ) {
+                    reply("530 User Authorization record failed to be retrieved: " + e);
+                    return;
+                }
+            } else {
+                try {
+                    authmessage = new AuthenticationMessage(
+                        authServ.authorize(serviceContext, _user, null, null));
+                } catch ( Exception e ) {
+                    reply("530 User Authorization record failed to be retrieved: " + e);
+                    return;
+                }
+            }
+        }
+
+        resetPwdRecord();
+        if (_pwdRecord == null) {
+            reply("530 Permission denied");
+            return;
+        }
+
+        reply("200 User "+_user+" logged in");
     }
 
     public void resetPwdRecord()
@@ -388,14 +394,14 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1 {
         }
     }
 
-// Some clients, even though the user is already logged in via GSS and ADAT
-//	will send a dummy PASS anyway. "Already logged in" is distracting
-//	and the "Going to evaluate strong password" message is misleading
-//	since nothing is actually done for this command.
-//      Example = ubftp client
+    // Some clients, even though the user is already logged in via GSS and ADAT,
+    // will send a dummy PASS anyway. "Already logged in" is distracting
+    // and the "Going to evaluate strong password" message is misleading
+    // since nothing is actually done for this command.
+    // Example = ubftp client
     public void ac_pass(String arg) {
-        say( "PASS is a no-op with GSSAPI authentication.");
-        if( _pwdRecord != null || GSSIdentity != null ) {
+        debug("GssFtpDoorV1::ac_pass: PASS is a no-op with GSSAPI authentication.");
+        if ( _pwdRecord != null || GSSIdentity != null ) {
             reply(ok("PASS"));
             return;
         }
@@ -407,8 +413,8 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1 {
 
 
     /**
-     * the concrete implementation of this method returns the GSSContext
-     * specific to the particular security mechanism
+     * The concrete implementation of this method returns the GSSContext
+     * specific to the particular security mechanism.
      */
     protected abstract GSSContext getServiceContext() throws GSSException;
 }
