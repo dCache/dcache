@@ -299,8 +299,8 @@ public class ManagerV2
 
 
 	public String hh_update_space_reservation = " <spaceToken>  <size>  # set new size for the space token \n " +
-		                                    "                                                # valid examples of size: 1000, 100kB, 100KB, 100KiB, 100MB, 100MiB, 100GB, 100GiB, 100TB, 100 TiB \n" +
-                                                    "                                                # see http://en.wikipedia.org/wiki/Gigabyte for explanation";
+		                                    "                                                # valid examples of size: 1000, 100kB, 100KB, 100KiB, 100MB, 100MiB, 100GB, 100GiB, 100TB, 10.5PB 100TiB \n" +
+                                                    "                                                 # see http://en.wikipedia.org/wiki/Gigabyte for explanation";
 
 	public String ac_update_space_reservation_$_2(Args args) throws Exception {
 		long reservationId = Long.parseLong(args.argv(0));
