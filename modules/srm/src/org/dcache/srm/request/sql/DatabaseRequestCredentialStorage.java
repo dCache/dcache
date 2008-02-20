@@ -199,6 +199,7 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
    }
    
    public void esay(Throwable t){
+      logger.elog(" DatabaseRequestCredentialStorage exception: ");
       if(logger != null) {
          logger.elog(t);
       }
@@ -388,14 +389,14 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
          pool.returnConnection(_con);
          _con = null;
          return credential;
-      } catch(SQLException sqle) {
+      } catch(Exception e) {
          if(_con != null) {
             pool.returnFailedConnection(_con);
             _con = null;
          }
          esay("deserialization of requestCredentialId satisfying condition= "+
             condition +" failed with ");
-         esay(sqle);
+         esay(e);
          return null;
          
       } finally {
