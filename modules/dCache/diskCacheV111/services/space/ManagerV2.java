@@ -255,7 +255,6 @@ public class ManagerV2
 		}
 	}
 	
-    
 	public CellVersion getCellVersion(){ return new CellVersion(diskCacheV111.util.Version.getVersion(),"$Revision: 1.63 $" ); }
 	
 	public void getInfo(java.io.PrintWriter printWriter) {
@@ -268,6 +267,7 @@ public class ManagerV2
 		printWriter.println("updateLinkGroupsPeriod="+updateLinkGroupsPeriod);
 		printWriter.println("expireSpaceReservationsPeriod="+expireSpaceReservationsPeriod);
 		printWriter.println("deleteStoredFileRecord="+deleteStoredFileRecord);
+		printWriter.println("cleanupExpiredSpaceFiles="+cleanupExpiredSpaceFiles);
 		printWriter.println("pnfsManager="+pnfsManager);
 		printWriter.println("poolManager="+poolManager);
 		printWriter.println("defaultLatency="+defaultLatency);
@@ -278,30 +278,6 @@ public class ManagerV2
 		printWriter.println("linkGroupAuthorizationFileName="+linkGroupAuthorizationFileName);
 	}
     
-	public String hh_release = " <spaceToken> [ <bytes> ] # release the space " +
-		"reservation identified by <spaceToken>" ;
-
-	public String ac_release_$_1_2(Args args) throws Exception {
-		boolean force = args.getOpt("force") != null;
-		long reservationId = Long.parseLong( args.argv(0));
-		Long spaceToReleaseInBytes = null;
-		if(args.argc() == 1) {
-			updateSpaceState(reservationId,SpaceState.RELEASED);
-			StringBuffer sb = new StringBuffer();
-			Space space = getSpace(reservationId);
-			space.toStringBuffer(sb);
-			return sb.toString();
-		} 
-		else {
-			return "partial release is not supported yet";
-		}
-	}
-
-
-	public String hh_update_space_reservation = " <spaceToken>  <size>  # set new size for the space token \n " +
-		                                    "                                                # valid examples of size: 1000, 100kB, 100KB, 100KiB, 100MB, 100MiB, 100GB, 100GiB, 100TB, 10.5PB 100TiB \n" +
-                                                    "                                                 # see http://en.wikipedia.org/wiki/Gigabyte for explanation";
-
 	public final long stringToSize(String s)  throws Exception {
 		long size=0L;
 		int endIndex=0;
@@ -355,6 +331,30 @@ public class ManagerV2
 		return size;
 	}
 
+	public String hh_release = " <spaceToken> [ <bytes> ] # release the space " +
+		"reservation identified by <spaceToken>" ;
+
+	public String ac_release_$_1_2(Args args) throws Exception {
+		boolean force = args.getOpt("force") != null;
+		long reservationId = Long.parseLong( args.argv(0));
+		Long spaceToReleaseInBytes = null;
+		if(args.argc() == 1) {
+			updateSpaceState(reservationId,SpaceState.RELEASED);
+			StringBuffer sb = new StringBuffer();
+			Space space = getSpace(reservationId);
+			space.toStringBuffer(sb);
+			return sb.toString();
+		} 
+		else {
+			return "partial release is not supported yet";
+		}
+	}
+
+
+	public String hh_update_space_reservation = " <spaceToken>  <size>  # set new size for the space token \n " +
+		                                    "                                                # valid examples of size: 1000, 100kB, 100KB, 100KiB, 100MB, 100MiB, 100GB, 100GiB, 100TB, 10.5PB 100TiB \n" +
+                                                    "                                                 # see http://en.wikipedia.org/wiki/Gigabyte for explanation";
+
 	public String ac_update_space_reservation_$_2(Args args) throws Exception {
 		long reservationId = Long.parseLong(args.argv(0));
 		long size = 0L;
@@ -380,6 +380,7 @@ public class ManagerV2
 		listSpaceReservations(false,id.toString(),sb);
 		return sb.toString();
 	}
+	
 
 	public String hh_update_link_groups = " #triggers update of the link groups";
 
@@ -1508,6 +1509,10 @@ public class ManagerV2
 		long oldSize =  space.getSizeInBytes();
 		LinkGroup group = null;
 		if (sizeInBytes != null)  { 
+			if (sizeInBytes.longValue() < space.getUsedSizeInBytes()+space.getAllocatedSpaceInBytes()) { 
+				long usedSpace = space.getUsedSizeInBytes()+space.getAllocatedSpaceInBytes();
+				throw new SQLException("Cannot downsize space reservation below "+usedSpace+"bytes, remove files first ");
+			}
 			deltaSize = sizeInBytes.longValue()-oldSize;
 			space.setSizeInBytes(sizeInBytes.longValue());
 			group = selectLinkGroupForUpdate(connection,
@@ -1925,9 +1930,34 @@ public class ManagerV2
 		long deltaSize=0;
 		Space space = null;
 		if (sizeInBytes!=null) { 
-			space = selectSpaceForUpdate(connection,f.getSpaceId());
-			f.setSizeInBytes(sizeInBytes.longValue());
 			deltaSize = sizeInBytes.longValue()-oldSize;
+			if (deltaSize!=0) { 
+				f.setSizeInBytes(sizeInBytes.longValue());
+				//
+				// idea below is questionable. We resize space reservation to fit this file. This way we 
+				// attempt to guarantee that there is no negative numbers in LinkGroup
+				//
+				Connection newConnection = null;
+				try { 
+					newConnection =  connection_pool.getConnection();
+					newConnection.setAutoCommit(false);
+					space = selectSpaceForUpdate(newConnection,f.getSpaceId());
+					if (deltaSize > space.getAvailableSpaceInBytes()) {
+						throw new SQLException("Cannot resize file beyond space reservation size");
+					}
+					newConnection.commit();
+					connection_pool.returnConnection(newConnection);
+					newConnection=null;
+				}
+				catch (SQLException e) { 
+					esay(e);				
+					newConnection.rollback();
+					connection_pool.returnFailedConnection(newConnection);
+					newConnection=null;
+					throw e;
+				}
+				space = selectSpaceForUpdate(connection,f.getSpaceId());
+			}
 		}
 		if (lifetime!=null) f.setLifetime(lifetime.longValue());
 		FileState oldState = f.getState();
