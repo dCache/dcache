@@ -388,14 +388,14 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
          pool.returnConnection(_con);
          _con = null;
          return credential;
-      } catch(SQLException sqle) {
+      } catch(Exception e) {
          if(_con != null) {
             pool.returnFailedConnection(_con);
             _con = null;
          }
          esay("deserialization of requestCredentialId satisfying condition= "+
             condition +" failed with ");
-         esay(sqle);
+         esay(e);
          return null;
          
       } finally {
