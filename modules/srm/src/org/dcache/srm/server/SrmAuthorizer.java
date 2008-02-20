@@ -106,6 +106,7 @@ import org.glite.security.voms.BasicVOMSTrustStore;
 import org.glite.security.util.DirectoryList;
 import org.bouncycastle.asn1.x509.TBSCertificateStructure;
 import java.security.cert.X509Certificate;
+import org.dcache.srm.SRMAuthorizationException;
 
 // The following imports are needed to extract the user's credential
 // from the servlet context
@@ -173,7 +174,7 @@ public class SrmAuthorizer {
    }
    
       
-   public UserCredential getUserCredentials() throws org.dcache.srm.SRMAuthorizationException {
+   public UserCredential getUserCredentials() throws SRMAuthorizationException {
       try {
          org.apache.axis.MessageContext mctx = 
          org.apache.axis.MessageContext.getCurrentContext();
@@ -182,7 +183,7 @@ public class SrmAuthorizer {
          org.ietf.jgss.GSSContext gsscontext  =
             (org.ietf.jgss.GSSContext)mctx.getProperty(GSIConstants.GSI_CONTEXT);
          if(gsscontext == null) {
-             throw new org.dcache.srm.SRMAuthorizationException(
+             throw new SRMAuthorizationException(
              "cant extract gsscontext from MessageContext, gsscontext is null");
          }
          String secureId = gsscontext.getSrcName().toString();
@@ -207,11 +208,11 @@ public class SrmAuthorizer {
              Inet4Address.getByName(remote_addr).getCanonicalHostName();
 
          return userCredential;
-      }catch (org.dcache.srm.SRMAuthorizationException srme){
+      }catch (SRMAuthorizationException srme){
           throw srme;
       } catch (Exception e) {
           log.error("getUserCredentials failed with exception",e);
-         throw new org.dcache.srm.SRMAuthorizationException(e.toString());
+         throw new SRMAuthorizationException(e.toString());
       }
    }
    
@@ -219,7 +220,7 @@ public class SrmAuthorizer {
    public org.dcache.srm.request.RequestUser getRequestUser(
        RequestCredential requestCredential,
        String role,
-       GSSContext context) throws org.dcache.srm.SRMAuthorizationException {
+       GSSContext context) throws SRMAuthorizationException {
 
       org.dcache.srm.request.RequestUser requestUser =
          authorization.authorize(requestCredential.getId(),requestCredential.getCredentialName(),
@@ -289,9 +290,13 @@ public class SrmAuthorizer {
         return getFQANsFromX509Chain(chain, validate);
     }
     
-    public static Collection <String> getFQANsFromContext(ExtendedGSSContext gssContext) throws Exception {
-        X509Certificate[] chain = (X509Certificate[]) gssContext.inquireByOid(GSSConstants.X509_CERT_CHAIN);
-        return getFQANsFromX509Chain(chain, false);
+    public static Collection <String> getFQANsFromContext(ExtendedGSSContext gssContext) throws SRMAuthorizationException {
+      try {
+            X509Certificate[] chain = (X509Certificate[]) gssContext.inquireByOid(GSSConstants.X509_CERT_CHAIN);
+            return getFQANsFromX509Chain(chain, false);
+      } catch (Exception e) {
+         throw new SRMAuthorizationException("getFQANsFromContext failed", e);
+      }
     }
     
     public static Collection <String> getValidatedFQANsFromX509Chain(X509Certificate[] chain) throws Exception {
@@ -317,9 +322,9 @@ public class SrmAuthorizer {
             //if(!role.equals(validatedrole))
             //hrow new AuthorizationServiceException("role "  + role + " did not match validated role " + validatedrole);
         } catch(org.ietf.jgss.GSSException gsse ) {
-            throw new org.dcache.srm.SRMAuthorizationException(gsse.toString());
+            throw new SRMAuthorizationException(gsse.toString());
         } catch(Exception e) {
-            throw new org.dcache.srm.SRMAuthorizationException("Could not validate role.");
+            throw new SRMAuthorizationException("Could not validate role.");
         }
         
         return validatedroles;
