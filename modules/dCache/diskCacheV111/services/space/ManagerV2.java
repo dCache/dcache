@@ -314,47 +314,46 @@ public class ManagerV2
 				endIndex=arg.indexOf("kB");	
 			}
 			String sSize = arg.substring(startIndex,endIndex);
-			size    = sSize.equals("") ? 1000L : Long.parseLong(sSize)*1000L;
+			size    = sSize.equals("") ? 1000L : (long)(Double.parseDouble(sSize)*1.e+3+0.5);
 		}
 		else if (arg.endsWith("KiB")) { 
 			endIndex=arg.indexOf("KiB");
 			String sSize = arg.substring(startIndex,endIndex);
-			size    = sSize.equals("") ? 1024L : Long.parseLong(sSize)*1024L;
+			size    = sSize.equals("") ? 1024L : (long)(Double.parseDouble(sSize)*1024.+0.5);
 		}
 		else if (arg.endsWith("MB")) { 
 			endIndex=arg.indexOf("MB");
 			String sSize = arg.substring(startIndex,endIndex);
-			size    = sSize.equals("") ? 1000000L : Long.parseLong(sSize)*1000000L;
+			size    = sSize.equals("") ? 1000000L : (long)(Double.parseDouble(sSize)*1.e+6+0.5);
 		}
 		else if (arg.endsWith("MiB")) { 
 			endIndex=arg.indexOf("MiB");
 			String sSize = arg.substring(startIndex,endIndex);
-			size    = sSize.equals("") ? 1048576L : Long.parseLong(sSize)*1048576L;
+			size    = sSize.equals("") ? 1048576L : (long)(Double.parseDouble(sSize)*1048576.+0.5);
 		}
 		else if (arg.endsWith("GB")) { 
 			endIndex=arg.indexOf("GB");
 			String sSize = arg.substring(startIndex,endIndex);
-			size    = sSize.equals("") ? 1000000000L : Long.parseLong(sSize)*1000000000L;
+			size    = sSize.equals("") ? 1000000000L : (long)(Double.parseDouble(sSize)*1.e+9+0.5);
 		}
 		else if (arg.endsWith("GiB")) { 
 			endIndex=arg.indexOf("GiB");
 			String sSize = arg.substring(startIndex,endIndex);
-			size    = sSize.equals("") ? 1073741824L : Long.parseLong(sSize)*1073741824L;
+			size    = sSize.equals("") ? 1073741824L : (long)(Double.parseDouble(sSize)*1073741824.+0.5);
 		}
 		else if (arg.endsWith("TB")) { 
 			endIndex=arg.indexOf("TB");
 			String sSize = arg.substring(startIndex,endIndex);
-			size    = sSize.equals("") ? 1000000000000L : Long.parseLong(sSize)*1000000000000L;
+			size    = sSize.equals("") ? 1000000000000L : (long)(Double.parseDouble(sSize)*1.e+12+0.5);
 		}
 		else if (arg.endsWith("TiB")) { 
 			endIndex=arg.indexOf("TiB");
 			String sSize = arg.substring(startIndex,endIndex);
-			size    = sSize.equals("") ? 1099511627776L : Long.parseLong(sSize)*1099511627776L;
+			size    = sSize.equals("") ? 1099511627776L : (long)(Double.parseDouble(sSize)*1099511627776.+0.5);
 		}
 		else {
 			size = Long.parseLong(arg);
 		}
-
 		try { 
 			updateSpaceReservation(reservationId,
 					       null,
@@ -376,7 +375,6 @@ public class ManagerV2
 		listSpaceReservations(false,id.toString(),sb);
 		return sb.toString();
 	}
-
 
 	public String hh_update_link_groups = " #triggers update of the link groups";
 
