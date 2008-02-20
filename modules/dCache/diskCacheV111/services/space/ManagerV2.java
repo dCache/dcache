@@ -1528,6 +1528,10 @@ public class ManagerV2
 		long oldSize =  space.getSizeInBytes();
 		LinkGroup group = null;
 		if (sizeInBytes != null)  { 
+			if (sizeInBytes.longValue() < space.getUsedSizeInBytes()+space.getAllocatedSpaceInBytes()) { 
+				long usedSpace = space.getUsedSizeInBytes()+space.getAllocatedSpaceInBytes();
+				throw new SQLException("Cannot downsize space reservation below "+usedSpace+"bytes, remove files first ");
+			}
 			deltaSize = sizeInBytes.longValue()-oldSize;
 			space.setSizeInBytes(sizeInBytes.longValue());
 			group = selectLinkGroupForUpdate(connection,
