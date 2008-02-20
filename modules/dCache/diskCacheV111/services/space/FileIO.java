@@ -77,10 +77,11 @@ public class FileIO extends IoPackage {
 
 	public static final String UPDATE_WO_PNFSID = "UPDATE "+SRM_SPACEFILE_TABLE+
 		" SET vogroup=?, vorole=?, sizeinbytes=?, lifetime=?, state=? WHERE id=?";
-
-	public static final String SELECT_EXPIRED_SPACEFILES="SELECT * FROM "+SRM_SPACEFILE_TABLE+ " WHERE state = "+FileState.RESERVED.getStateId()+
-		" AND lifetime != -1 and creationTime+lifetime < ? AND spacereservationid=?";
-
+	public static final String SELECT_EXPIRED_SPACEFILES="SELECT * FROM "+SRM_SPACEFILE_TABLE+ " WHERE (state= "+FileState.RESERVED.getStateId()+
+		" or state = "+ FileState.TRANSFERRING.getStateId() +") and creationTime+lifetime < ? AND spacereservationid=?";
+	public static final String SELECT_EXPIRED_SPACEFILES1="SELECT * FROM "+SRM_SPACEFILE_TABLE+ 
+		" WHERE creationTime+lifetime < ? AND spacereservationid=?";
+	
 	public FileIO() {
 	}
 

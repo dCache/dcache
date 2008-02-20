@@ -3679,7 +3679,7 @@ say( "size in bytes = " + sizeInBytes);
                     return;
                 }
                 if(f.getState() == FileState.RESERVED ||
-                        f.getState() == FileState.TRANSFERING) {
+                        f.getState() == FileState.TRANSFERRING) {
                     removePnfsIdOfFileInSpace(_con,f.getId(),
                             new Integer(FileState.RESERVED.getStateId()));
 
@@ -3704,14 +3704,14 @@ say( "size in bytes = " + sizeInBytes);
             }
             
             if(f.getState() == FileState.RESERVED ||
-                    f.getState() == FileState.TRANSFERING) {
+                    f.getState() == FileState.TRANSFERRING) {
                 updateFileInSpaceInfo(_con,f.getId(),
                         null,
                         null,
                         null,
                         null,
                         null,
-                        new Integer(FileState.TRANSFERING.getStateId()));
+                        new Integer(FileState.TRANSFERRING.getStateId()));
                 
                 say("COMMIT TRANSACTION");
                 _con.commit();
@@ -3764,7 +3764,7 @@ say( "size in bytes = " + sizeInBytes);
             long spaceId = f.getSpaceId();
             
             if(f.getState() == FileState.RESERVED ||
-                    f.getState() == FileState.TRANSFERING) {
+                    f.getState() == FileState.TRANSFERRING) {
                 if(success) {
                     if(returnFlushedSpaceToReservation && weDeleteStoredFileRecord) {
                         RetentionPolicy rp = getSpace(_con,spaceId).getRetentionPolicy();
@@ -4045,7 +4045,7 @@ say( "size in bytes = " + sizeInBytes);
             }
             else {
                 if(f.getState() == FileState.RESERVED ||
-                        f.getState() == FileState.TRANSFERING) {
+                        f.getState() == FileState.TRANSFERRING) {
                     deleteFileInSpaceSpace(_con,f.getId());
 
                     say("COMMIT TRANSACTION");
