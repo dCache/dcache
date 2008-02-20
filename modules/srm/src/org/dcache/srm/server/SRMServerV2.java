@@ -162,6 +162,9 @@ import org.dcache.srm.SRMAuthorizationException;
 import org.dcache.srm.request.RequestUser;
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.request.RequestCredential;
+import java.util.Collection;
+import org.gridforum.jgss.ExtendedGSSContext;
+
 
 public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM {
     
@@ -175,7 +178,8 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM {
     public SRMServerV2() throws java.rmi.RemoteException{
         try {
             // srmConn = SrmDCacheConnector.getInstance();
-            log = Logger.getLogger(this.getClass().getName());
+            log = Logger.getLogger("logger.org.dcache.authorization."+
+                this.getClass().getName());
             Context logctx = new InitialContext();
             String srmConfigFile =
                     (String) logctx.lookup("java:comp/env/srmConfigFile");
@@ -236,7 +240,10 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM {
             RequestCredential requestCredential = null;
             try {
                 userCred          = srmAuth.getUserCredentials();
-                requestCredential = srmAuth.getRequestCredential(userCred,null);
+                Collection roles = SrmAuthorizer.getFQANsFromContext((ExtendedGSSContext) userCred.context);                
+                String role = roles.isEmpty() ? null : (String) roles.toArray()[0];
+                log.debug("SRMServerV2."+requestName+"() : role is "+role);
+                requestCredential = srmAuth.getRequestCredential(userCred,role);
                 user              = srmAuth.getRequestUser(
                     requestCredential,
                     (String) null,
@@ -286,10 +293,11 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM {
                         "handler invocation failed"+ e);
             }
         } catch(Exception e) {
+            log.fatal(" handleRequest: ",e);
             try{
                 return getFailedResponse(capitalizedRequestName,
                         TStatusCode.SRM_INTERNAL_ERROR,
-                        "internal error"+ e);
+                        "internal error: "+ e);
             } catch(Exception ee){
                 throw new RemoteException("SRMServerV2."+requestName+"() exception",e);
             }
@@ -313,6 +321,7 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM {
             setReturnStatus.invoke(response, new Object[]{trs});
         }
         catch(Exception e) {
+            log.fatal("getFailedResponse invocation failed",e);
             Method setStatusCode = responseClass.getMethod("setStatusCode",new Class[]{TStatusCode.class});
             Method setExplanation = responseClass.getMethod("setExplanation",new Class[]{String.class});
             setStatusCode.invoke(response, new Object[]{statusCode});

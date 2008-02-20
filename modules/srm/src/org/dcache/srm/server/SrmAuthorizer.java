@@ -80,6 +80,33 @@ import org.ietf.jgss.GSSContext;
 
 import java.net.Inet4Address;
 
+import java.util.*;
+import java.io.IOException;
+import org.ietf.jgss.GSSException;
+import org.ietf.jgss.GSSContext;
+import org.ietf.jgss.GSSCredential;
+import org.ietf.jgss.GSSManager;
+import org.ietf.jgss.GSSName;
+import org.globus.gsi.gssapi.net.impl.GSIGssSocket;
+import org.globus.gsi.gssapi.net.GssSocketFactory;
+import org.globus.gsi.gssapi.net.GssSocket;
+import org.globus.gsi.gssapi.GlobusGSSCredentialImpl;
+import org.globus.gsi.gssapi.GSSConstants;
+import org.globus.gsi.gssapi.auth.NoAuthorization;
+import org.globus.gsi.GlobusCredential;
+import org.globus.gsi.GlobusCredentialException;
+import org.globus.gsi.TrustedCertificates;
+import org.globus.gsi.bc.BouncyCastleUtil;
+import org.dcache.srm.security.SslGsiSocketFactory;
+import org.gridforum.jgss.ExtendedGSSManager;
+import org.gridforum.jgss.ExtendedGSSContext;
+import org.glite.security.voms.VOMSValidator;
+import org.glite.security.voms.VOMSAttribute;
+import org.glite.security.voms.BasicVOMSTrustStore;
+import org.glite.security.util.DirectoryList;
+import org.bouncycastle.asn1.x509.TBSCertificateStructure;
+import java.security.cert.X509Certificate;
+
 // The following imports are needed to extract the user's credential
 // from the servlet context
 // from the servlet context
@@ -96,6 +123,17 @@ public class SrmAuthorizer {
    public org.apache.log4j.Logger log;
    private static boolean initialized = false;
    private String logConfigFile;
+   private static String vomsdir = "/etc/grid-security/vomsdir";
+   private static String service_trusted_certs = "/etc/grid-security/certificates";
+    
+   static {
+        try {
+            new DirectoryList(vomsdir).getListing();
+        } catch (IOException e) {
+            vomsdir = service_trusted_certs;
+        }
+        VOMSValidator.setTrustStore(new BasicVOMSTrustStore(vomsdir, 12*3600*1000));
+    }
    
    public SrmAuthorizer(SrmDCacheConnector srmConn) {
       initialize(srmConn);
@@ -104,7 +142,9 @@ public class SrmAuthorizer {
    
    private synchronized void initialize(SrmDCacheConnector srmConn) {
       try {
-         log = org.apache.log4j.Logger.getLogger(this.getClass().getName());
+         log = org.apache.log4j.Logger.getLogger(
+             "logger.org.dcache.authorization."+
+             this.getClass().getName());
          logConfigFile = srmConn.getLogFile();
          org.apache.log4j.xml.DOMConfigurator.configure(logConfigFile);
          // Below re-checks config file periodically; default 60 seconds
@@ -148,14 +188,15 @@ public class SrmAuthorizer {
          String secureId = gsscontext.getSrcName().toString();
          log.debug("User ID (secureId) is: " + secureId);
          org.ietf.jgss.GSSCredential delegcred = gsscontext.getDelegCred();
-         
-         try {
-            log.debug("User credential (delegcred) is: " +
-               delegcred.getName());
-         } catch (Exception e) {
-            log.debug("Caught occasional (usually harmless) exception" +
-               " when calling " + "delegcred.getName()): " + e);
-         }
+         if(delegcred != null) {
+             try {
+                log.debug("User credential (delegcred) is: " +
+                   delegcred.getName());
+             } catch (Exception e) {
+                log.debug("Caught occasional (usually harmless) exception" +
+                   " when calling " + "delegcred.getName()): ", e);
+             }
+          }
          
          UserCredential userCredential = new UserCredential();
          userCredential.secureId = secureId;
@@ -188,7 +229,8 @@ public class SrmAuthorizer {
       return requestUser;
    }
 
-   public org.dcache.srm.request.RequestCredential getRequestCredential(UserCredential userCredential, String role)  {
+   public org.dcache.srm.request.RequestCredential
+       getRequestCredential(UserCredential userCredential, String role)  {
       try {
          log.debug(
             "About to call RequestCredential.getRequestCredential(" +
@@ -241,4 +283,114 @@ public class SrmAuthorizer {
          msgContext.setProperty(REMOTE_ADDR, tmp);
       }
    }
+   
+  public static Collection <String> getFQANsFromContext(ExtendedGSSContext gssContext, boolean validate) throws Exception {
+        X509Certificate[] chain = (X509Certificate[]) gssContext.inquireByOid(GSSConstants.X509_CERT_CHAIN);
+        return getFQANsFromX509Chain(chain, validate);
+    }
+    
+    public static Collection <String> getFQANsFromContext(ExtendedGSSContext gssContext) throws Exception {
+        X509Certificate[] chain = (X509Certificate[]) gssContext.inquireByOid(GSSConstants.X509_CERT_CHAIN);
+        return getFQANsFromX509Chain(chain, false);
+    }
+    
+    public static Collection <String> getValidatedFQANsFromX509Chain(X509Certificate[] chain) throws Exception {
+        return getFQANsFromX509Chain(chain, true);
+    }
+    
+    public static Collection <String> getFQANsFromX509Chain(X509Certificate[] chain) throws Exception {
+        return getFQANsFromX509Chain(chain, false);
+    }
+    
+    public static Collection <String> getFQANsFromX509Chain(X509Certificate[] chain, boolean validate) throws Exception {
+        VOMSValidator validator = new VOMSValidator(chain);
+        return getFQANsFromX509Chain(validator, validate);
+    }
+    
+    public static Collection <String> getFQANsFromX509Chain(VOMSValidator validator, boolean validate) throws Exception {
+        
+        if(!validate) return getFQANs(validator);
+        Collection <String> validatedroles;
+        
+        try {
+            validatedroles = getValidatedFQANs(validator);
+            //if(!role.equals(validatedrole))
+            //hrow new AuthorizationServiceException("role "  + role + " did not match validated role " + validatedrole);
+        } catch(org.ietf.jgss.GSSException gsse ) {
+            throw new org.dcache.srm.SRMAuthorizationException(gsse.toString());
+        } catch(Exception e) {
+            throw new org.dcache.srm.SRMAuthorizationException("Could not validate role.");
+        }
+        
+        return validatedroles;
+    }
+    
+    public static Collection <String> getFQANs(X509Certificate[] chain) throws GSSException {
+        VOMSValidator validator = new VOMSValidator(chain);
+        return getFQANs(validator);
+    }
+    
+    public static Collection <String> getFQANs(VOMSValidator validator) throws GSSException {
+        LinkedHashSet <String> fqans = new LinkedHashSet <String> ();
+        validator.parse();
+        List listOfAttributes = validator.getVOMSAttributes();
+        
+        Iterator i = listOfAttributes.iterator();
+        while (i.hasNext()) {
+            VOMSAttribute vomsAttribute = (VOMSAttribute) i.next();
+            List listOfFqans = vomsAttribute.getFullyQualifiedAttributes();
+            Iterator j = listOfFqans.iterator();
+            if (j.hasNext()) {
+                fqans.add((String) j.next());
+            }
+        }
+        
+        return fqans;
+    }
+    
+    public static Collection <String> getValidatedFQANArray(X509Certificate[] chain) throws GSSException {
+        VOMSValidator validator = new VOMSValidator(chain);
+        return getValidatedFQANs(validator);
+    }
+    
+    public static Collection <String> getValidatedFQANs(VOMSValidator validator) throws GSSException {
+        LinkedHashSet <String> fqans = new LinkedHashSet <String> ();
+        validator.validate();
+        List listOfAttributes = validator.getVOMSAttributes();
+        
+        Iterator i = listOfAttributes.iterator();
+        while (i.hasNext()) {
+            VOMSAttribute vomsAttribute = (VOMSAttribute) i.next();
+            List listOfFqans = vomsAttribute.getFullyQualifiedAttributes();
+            Iterator j = listOfFqans.iterator();
+            if (j.hasNext()) {
+                fqans.add((String) j.next());
+            }
+        }
+        
+        return fqans;
+    }
+    
+    public static class NullIterator<String> implements Iterator {
+        private boolean hasnext = true;
+        public boolean hasNext() { return hasnext; }
+        public String next()
+        throws java.util.NoSuchElementException {
+            if(hasnext) {
+                hasnext = false;
+                return null;
+            }
+            throw new java.util.NoSuchElementException("no more nulls");
+        }
+        
+        public void remove() {}
+    }
+    
+    public static String getFormattedAuthRequestID(long id) {
+        String idstr;
+        idstr = String.valueOf(id);
+        while (idstr.length()<10) idstr = " " + idstr;
+        return idstr;
+    }
+
 }
