@@ -302,59 +302,64 @@ public class ManagerV2
 		                                    "                                                # valid examples of size: 1000, 100kB, 100KB, 100KiB, 100MB, 100MiB, 100GB, 100GiB, 100TB, 10.5PB 100TiB \n" +
                                                     "                                                 # see http://en.wikipedia.org/wiki/Gigabyte for explanation";
 
-	public String ac_update_space_reservation_$_2(Args args) throws Exception {
-		long reservationId = Long.parseLong(args.argv(0));
-		long size = 0L;
+	public final long stringToSize(String s)  throws Exception {
+		long size=0L;
 		int endIndex=0;
 		int startIndex=0;
-		String arg = args.argv(1);
-		if (arg.endsWith("kB") || arg.endsWith("KB")) { 
-			endIndex=arg.indexOf("KB");
+		if (s.endsWith("kB") || s.endsWith("KB")) { 
+			endIndex=s.indexOf("KB");
 			if (endIndex==-1) { 
-				endIndex=arg.indexOf("kB");	
+				endIndex=s.indexOf("kB");	
 			}
-			String sSize = arg.substring(startIndex,endIndex);
+			String sSize = s.substring(startIndex,endIndex);
 			size    = sSize.equals("") ? 1000L : (long)(Double.parseDouble(sSize)*1.e+3+0.5);
 		}
-		else if (arg.endsWith("KiB")) { 
-			endIndex=arg.indexOf("KiB");
-			String sSize = arg.substring(startIndex,endIndex);
+		else if (s.endsWith("KiB")) { 
+			endIndex=s.indexOf("KiB");
+			String sSize = s.substring(startIndex,endIndex);
 			size    = sSize.equals("") ? 1024L : (long)(Double.parseDouble(sSize)*1024.+0.5);
 		}
-		else if (arg.endsWith("MB")) { 
-			endIndex=arg.indexOf("MB");
-			String sSize = arg.substring(startIndex,endIndex);
+		else if (s.endsWith("MB")) { 
+			endIndex=s.indexOf("MB");
+			String sSize = s.substring(startIndex,endIndex);
 			size    = sSize.equals("") ? 1000000L : (long)(Double.parseDouble(sSize)*1.e+6+0.5);
 		}
-		else if (arg.endsWith("MiB")) { 
-			endIndex=arg.indexOf("MiB");
-			String sSize = arg.substring(startIndex,endIndex);
+		else if (s.endsWith("MiB")) { 
+			endIndex=s.indexOf("MiB");
+			String sSize = s.substring(startIndex,endIndex);
 			size    = sSize.equals("") ? 1048576L : (long)(Double.parseDouble(sSize)*1048576.+0.5);
 		}
-		else if (arg.endsWith("GB")) { 
-			endIndex=arg.indexOf("GB");
-			String sSize = arg.substring(startIndex,endIndex);
+		else if (s.endsWith("GB")) { 
+			endIndex=s.indexOf("GB");
+			String sSize = s.substring(startIndex,endIndex);
 			size    = sSize.equals("") ? 1000000000L : (long)(Double.parseDouble(sSize)*1.e+9+0.5);
 		}
-		else if (arg.endsWith("GiB")) { 
-			endIndex=arg.indexOf("GiB");
-			String sSize = arg.substring(startIndex,endIndex);
+		else if (s.endsWith("GiB")) { 
+			endIndex=s.indexOf("GiB");
+			String sSize = s.substring(startIndex,endIndex);
 			size    = sSize.equals("") ? 1073741824L : (long)(Double.parseDouble(sSize)*1073741824.+0.5);
 		}
-		else if (arg.endsWith("TB")) { 
-			endIndex=arg.indexOf("TB");
-			String sSize = arg.substring(startIndex,endIndex);
+		else if (s.endsWith("TB")) { 
+			endIndex=s.indexOf("TB");
+			String sSize = s.substring(startIndex,endIndex);
 			size    = sSize.equals("") ? 1000000000000L : (long)(Double.parseDouble(sSize)*1.e+12+0.5);
 		}
-		else if (arg.endsWith("TiB")) { 
-			endIndex=arg.indexOf("TiB");
-			String sSize = arg.substring(startIndex,endIndex);
+		else if (s.endsWith("TiB")) { 
+			endIndex=s.indexOf("TiB");
+			String sSize = s.substring(startIndex,endIndex);
 			size    = sSize.equals("") ? 1099511627776L : (long)(Double.parseDouble(sSize)*1099511627776.+0.5);
 		}
 		else {
-			size = Long.parseLong(arg);
-		}
-		try { 
+			size = Long.parseLong(s);
+		}		
+		return size;
+	}
+
+	public String ac_update_space_reservation_$_2(Args args) throws Exception {
+		long reservationId = Long.parseLong(args.argv(0));
+		long size = 0L;
+		try {
+			size = stringToSize(args.argv(1));
 			updateSpaceReservation(reservationId,
 					       null,
 					       null,
@@ -553,7 +558,13 @@ public class ManagerV2
 		" <sizeInBytes> <lifetimeInSecs (use quotes around negative one)>";   
 
 	public String ac_reserve_$_2(Args args) throws Exception {
-		long sizeInBytes = Long.parseLong(args.argv(0));
+		long sizeInBytes=0L;
+		try {
+			sizeInBytes=stringToSize(args.argv(0));
+		}
+		catch (Exception e) { 
+			return e.getMessage();	
+		}
 		long lifetime=Long.parseLong(args.argv(1));
 		if(lifetime > 0) {
 			lifetime *= 1000;
@@ -563,12 +574,10 @@ public class ManagerV2
 		String description   = args.getOpt("desc");
 		String latencyString = args.getOpt("acclat");
 		String policyString  = args.getOpt("retpol");
-		
 		AccessLatency latency = latencyString==null?
 			defaultLatency:AccessLatency.getAccessLatency(latencyString);
 		RetentionPolicy policy = policyString==null?
 			defaultPolicy:RetentionPolicy.getRetentionPolicy(policyString);
-		
 		String lgIdString = args.getOpt("lgid");
 		String lgName = args.getOpt("lg");
 		if(lgIdString != null && lgName != null) {
@@ -1503,6 +1512,9 @@ public class ManagerV2
 			space.setSizeInBytes(sizeInBytes.longValue());
 			group = selectLinkGroupForUpdate(connection,
 							 space.getLinkGroupId());
+			if (group.getAvailableSpaceInBytes()<deltaSize) { 
+				throw new SQLException("No space available to resize space reservation");
+			}
 		}
 		if(lifetime!=null)         space.setLifetime(lifetime.longValue());
 		if(description!= null)     space.setDescription(description);
