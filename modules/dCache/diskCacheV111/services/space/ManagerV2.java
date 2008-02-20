@@ -126,6 +126,7 @@ public class ManagerV2
 	private boolean reserveSpaceForNonSRMTransfers;
 	private boolean returnFlushedSpaceToReservation=true; 
 	private boolean returnRemovedSpaceToReservation=true; 
+	private boolean cleanupExpiredSpaceFiles=true;
 	
 	private String linkGroupAuthorizationFileName = null;
 	private boolean spaceManagerEnabled =true;
@@ -193,6 +194,10 @@ public class ManagerV2
 		if(_args.getOpt("deleteStoredFileRecord") != null) {
 			deleteStoredFileRecord=
 				_args.getOpt("deleteStoredFileRecord").equalsIgnoreCase("true");
+		}
+		if(_args.getOpt("cleanupExpiredSpaceFiles") != null) { 
+			cleanupExpiredSpaceFiles=
+				_args.getOpt("cleanupExpiredSpaceFiles").equalsIgnoreCase("true");
 		}
 		if(_args.getOpt("returnFlushedSpaceToReservation") != null) {
 			returnFlushedSpaceToReservation=
@@ -292,6 +297,84 @@ public class ManagerV2
 		else {
 			return "partial release is not supported yet";
 		}
+	}
+
+	public String hh_update_space_reservation = " <spaceToken>  <size>  # set new size for the space token \n " +
+		                                    "                                                # valid examples of size: 1000, 100kB, 100KB, 100KiB, 100MB, 100MiB, 100GB, 100GiB, 10.5TB, 100TiB \n" +
+                                                    "                                                 # see http://en.wikipedia.org/wiki/Gigabyte for explanation";
+
+	public String ac_update_space_reservation_$_2(Args args) throws Exception {
+		long reservationId = Long.parseLong(args.argv(0));
+		long size = 0L;
+		int endIndex=0;
+		int startIndex=0;
+		String arg = args.argv(1);
+		if (arg.endsWith("kB") || arg.endsWith("KB")) { 
+			endIndex=arg.indexOf("KB");
+			if (endIndex==-1) { 
+				endIndex=arg.indexOf("kB");	
+			}
+			String sSize = arg.substring(startIndex,endIndex);
+			size    = sSize.equals("") ? 1000L : (long)(Double.parseDouble(sSize)*1.e+3+0.5);
+		}
+		else if (arg.endsWith("KiB")) { 
+			endIndex=arg.indexOf("KiB");
+			String sSize = arg.substring(startIndex,endIndex);
+			size    = sSize.equals("") ? 1024L : (long)(Double.parseDouble(sSize)*1024.+0.5);
+		}
+		else if (arg.endsWith("MB")) { 
+			endIndex=arg.indexOf("MB");
+			String sSize = arg.substring(startIndex,endIndex);
+			size    = sSize.equals("") ? 1000000L : (long)(Double.parseDouble(sSize)*1.e+6+0.5);
+		}
+		else if (arg.endsWith("MiB")) { 
+			endIndex=arg.indexOf("MiB");
+			String sSize = arg.substring(startIndex,endIndex);
+			size    = sSize.equals("") ? 1048576L : (long)(Double.parseDouble(sSize)*1048576.+0.5);
+		}
+		else if (arg.endsWith("GB")) { 
+			endIndex=arg.indexOf("GB");
+			String sSize = arg.substring(startIndex,endIndex);
+			size    = sSize.equals("") ? 1000000000L : (long)(Double.parseDouble(sSize)*1.e+9+0.5);
+		}
+		else if (arg.endsWith("GiB")) { 
+			endIndex=arg.indexOf("GiB");
+			String sSize = arg.substring(startIndex,endIndex);
+			size    = sSize.equals("") ? 1073741824L : (long)(Double.parseDouble(sSize)*1073741824.+0.5);
+		}
+		else if (arg.endsWith("TB")) { 
+			endIndex=arg.indexOf("TB");
+			String sSize = arg.substring(startIndex,endIndex);
+			size    = sSize.equals("") ? 1000000000000L : (long)(Double.parseDouble(sSize)*1.e+12+0.5);
+		}
+		else if (arg.endsWith("TiB")) { 
+			endIndex=arg.indexOf("TiB");
+			String sSize = arg.substring(startIndex,endIndex);
+			size    = sSize.equals("") ? 1099511627776L : (long)(Double.parseDouble(sSize)*1099511627776.+0.5);
+		}
+		else {
+			size = Long.parseLong(arg);
+		}
+		try { 
+			updateSpaceReservation(reservationId,
+					       null,
+					       null,
+					       null,
+					       null,
+					       null,
+					       new Long(size),
+					       null,
+					       null,
+					       null);
+		}
+		catch (SQLException e) { 
+			return e.getMessage();
+		}
+		StringBuffer sb = new StringBuffer();
+		StringBuffer id = new StringBuffer();
+		id.append(reservationId);
+		listSpaceReservations(false,id.toString(),sb);
+		return sb.toString();
 	}
 
 	public String hh_update_link_groups = " #triggers update of the link groups";
@@ -784,8 +867,8 @@ public class ManagerV2
 			}
 		}
 		if(previousSchemaVersion == currentSchemaVersion) {
-			manager.createIndexes(ManagerSchemaConstants.SpaceFileTableName,"spacereservationid","state","pnfspath","pnfsid");
-			manager.createIndexes(ManagerSchemaConstants.SpaceTableName,"linkgroupid","state","description");			
+			manager.createIndexes(ManagerSchemaConstants.SpaceFileTableName,"spacereservationid","state","pnfspath","pnfsid","creationtime","lifetime");
+			manager.createIndexes(ManagerSchemaConstants.SpaceTableName,"linkgroupid","state","description","lifetime","creationtime");			
 			return;
 		}
 		//
@@ -832,8 +915,8 @@ public class ManagerV2
 					     "ALTER TABLE " +ManagerSchemaConstants.SpaceTableName    + 
 					     " ADD COLUMN  usedspaceinbytes      BIGINT,"+
 					     " ADD COLUMN  allocatedspaceinbytes  BIGINT");
-			manager.createIndexes(ManagerSchemaConstants.SpaceFileTableName,"spacereservationid","state","pnfspath","pnfsid");
-			manager.createIndexes(ManagerSchemaConstants.SpaceTableName,"linkgroupid","state","description");			
+			manager.createIndexes(ManagerSchemaConstants.SpaceFileTableName,"spacereservationid","state","pnfspath","pnfsid","creationtime","lifetime");
+			manager.createIndexes(ManagerSchemaConstants.SpaceTableName,"linkgroupid","state","description","lifetime","creationtime");			
 			//
 			// Now we need to calculate space one by and as 
 			// doing it in one go takes too long
@@ -1472,9 +1555,11 @@ public class ManagerV2
 		if (state==null) { 
 			if (sizeInBytes != null) {
 				if (deltaSize!=0) { 
-					incrementReservedSpaceInLinkGroup(connection,
-									  group.getId(),
-									  deltaSize);
+					if (!SpaceState.isFinalState(space.getState())) { 
+						incrementReservedSpaceInLinkGroup(connection,
+										  group.getId(),
+										  deltaSize);
+					}
 				}
 			}
 		}
@@ -1534,14 +1619,39 @@ public class ManagerV2
 	
 	public void expireSpaceReservations()  {
 		say("expireSpaceReservations()...");
-		Connection connection=null;
 		try { 
+			if (cleanupExpiredSpaceFiles) {
+				long time = System.currentTimeMillis();
+				say("Executing: "+SpaceReservationIO.SELECT_SPACE_RESERVATIONS_FOR_EXPIRED_FILES+"?="+time);
+				HashSet spaces = manager.selectPrepared(new SpaceReservationIO(),
+									SpaceReservationIO.SELECT_SPACE_RESERVATIONS_FOR_EXPIRED_FILES,
+									time);
+				for (Iterator i=spaces.iterator(); i.hasNext(); ) {
+					Space space = (Space)i.next();
+					//
+					// for each space make a list of files in this space and clean them up 
+					//
+					HashSet files = manager.selectPrepared(new FileIO(),
+									       FileIO.SELECT_EXPIRED_SPACEFILES,
+									       System.currentTimeMillis(),
+									       space.getId());
+					for (Iterator j=files.iterator(); j.hasNext(); ) {
+						File file = (File)j.next();
+						try { 
+							removeFileFromSpace(file.getId());
+						}
+						catch (SQLException e) { 
+							esay("Failed to remove file "+file);
+							esay(e);
+							continue;
+						}
+					}
+				}
+			}
 			say("Executing: "+SpaceReservationIO.SELECT_EXPIRED_SPACE_RESERVATIONS1);
 			HashSet spaces = manager.selectPrepared(new SpaceReservationIO(),
 								SpaceReservationIO.SELECT_EXPIRED_SPACE_RESERVATIONS1,
 								System.currentTimeMillis());
-			connection = connection_pool.getConnection();
-			connection.setAutoCommit(false);
 			for (Iterator i=spaces.iterator(); i.hasNext(); ) {
 				Space space = (Space)i.next();
 				try {
@@ -1555,32 +1665,17 @@ public class ManagerV2
 							       null,
 							       null,
 							       new Integer(SpaceState.EXPIRED.getStateId()));
-					connection.commit();
 				}
 				catch (SQLException e) { 
 					esay("Failed to expire space resevation ="+space);
 					esay(e);
-					connection.rollback();
 					continue;
 				}
 			}
 		}
 		catch(SQLException sqle) {
-			esay("update failed with ");
+			esay("expireSpaceReservations failed with ");
 			esay(sqle);
-			try {
-				connection.rollback();
-			} 
-			catch(SQLException sqle1) {
-				esay(sqle1);
-			}
-			connection_pool.returnFailedConnection(connection);
-			connection = null;
-		} 
-		finally {
-			if(connection != null) {
-				connection_pool.returnConnection(connection);
-			}
 		}
 	}
 
@@ -2183,8 +2278,8 @@ public class ManagerV2
 							     "ALTER TABLE " +ManagerSchemaConstants.SpaceTableName    + 
 							     " ADD COLUMN  usedspaceinbytes      BIGINT,"+
 							     " ADD COLUMN  allocatedspaceinbytes  BIGINT");
-					manager.createIndexes(ManagerSchemaConstants.SpaceFileTableName,"spacereservationid","state","pnfspath","pnfsid");
-					manager.createIndexes(ManagerSchemaConstants.SpaceTableName,"linkgroupid","state","description");			
+					manager.createIndexes(ManagerSchemaConstants.SpaceFileTableName,"spacereservationid","state","pnfspath","pnfsid","creationtime","lifetime");
+					manager.createIndexes(ManagerSchemaConstants.SpaceTableName,"linkgroupid","state","description","lifetime","creationtime");			
 					manager.update(ManagerV2.updateVersion);
 					HashSet spaces = null;
 					try { 
