@@ -215,8 +215,17 @@ public final class DCacheAuthorization implements SRMAuthorization {
 
           TimedUserAuthRecord tUserRec = getUsernameMapping(requestCredentialId);
             if( _logAuth.isDebugEnabled() ) {
-                    _logAuth.debug("tUserRec = "+tUserRec);
-            }
+              if(tUserRec != null ) {
+                  UserAuthRecord userRec = tUserRec.user_rec;
+                  if(userRec != null ) {
+                     _logAuth.debug("cached tUserRec = "+userRec);
+                  } else {
+                      _logAuth.debug("cached tUserRec = null ");
+                  }
+              } else {
+                  _logAuth.debug("cached tUserRec = null ");
+              }
+          }
 
           if( tUserRec!=null && tUserRec.age() < cache_lifetime &&
             tUserRec.sameDesiredUserName(name)) {
@@ -411,7 +420,7 @@ public final class DCacheAuthorization implements SRMAuthorization {
     return (TimedUserAuthRecord) UsernameMap.get(key);
   }
 
-  private class TimedUserAuthRecord extends UserAuthRecord {
+  private class TimedUserAuthRecord  {
     UserAuthRecord user_rec;
     long timestamp;
     String desiredUserName=null;
