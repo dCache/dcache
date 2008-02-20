@@ -110,7 +110,8 @@ public class UserAuthRecord extends UserAuthBase
 
     public String toString()
     {
-        StringBuffer sb = new StringBuffer(Username);
+        StringBuffer sb = new StringBuffer();
+        sb.append(Username);
         sb.append(' ').append( DN);
         sb.append(' ').append( getFqan());
           if(ReadOnly) {
