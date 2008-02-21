@@ -186,10 +186,10 @@ public class P2PClient {
 
             RandomAccessFile dataFile =
                 new RandomAccessFile(_companion.getDataFile(), "rw");
-            
+
             boolean checksummingOn = _checksumModule.checkOnTransfer();
             MessageDigest digest = checksummingOn ? new Adler32() : null;
-            
+
             try {
                 int challengeSize = in.readInt();
                 in.skipBytes(challengeSize);
@@ -278,7 +278,7 @@ public class P2PClient {
                     throw new IOException("Protocol Violation : NOT DATA : " + type);
 
                 byte[] data = new byte[256 * 1024];
-                
+
                 int nextPacket = 0;
                 long total = 0L;
                 while (true) {
@@ -372,9 +372,9 @@ public class P2PClient {
             }
 
             if (checksummingOn) {
-            
+
                 _companion.setTransferChecksum(new Checksum(digest));
-                                
+
                 StringBuilder sb = new StringBuilder(
                         "Adler32 checksum computed for p2p transfer (");
                 sb.append("SessionID=");
@@ -388,12 +388,12 @@ public class P2PClient {
                 sb.append(")");
                 esay(sb.toString());
             }
-            
-            
+
+
                 setStatus("<Done>");
-            
+
         }
-        
+
         private void adjustSpaceAllocation()
         {
             if (_companion != null) {
@@ -419,38 +419,41 @@ public class P2PClient {
                 }
             }
         }
-       
+
         public void run() {
             try {
-                runIO();
+                try {
+                    runIO();
 
-                _checksumModule.setMoverChecksums(_companion.getEntry(), null,
-                        null, _checksumModule.checkOnTransfer() ? _companion
-                                .getTransferChecksum() : null);
+                    _checksumModule.setMoverChecksums(_companion.getEntry(), null,
+                                                      null, _checksumModule.checkOnTransfer() ? _companion
+                                                      .getTransferChecksum() : null);
 
-                if (_simulateIOFailure)
-                    throw new IOException("Transfer failed (simulate)");
-            } catch (Exception e) {
-                /* Not having a companion at this point means an
-                 * unsolicited connect happened (e.g. a portscan).
-                 */
-                if (_companion == null) {
-                    esay("Unsolicited connection from " +
-                         _socket.getRemoteSocketAddress());
-                    return;
+                    if (_simulateIOFailure)
+                        throw new IOException("Transfer failed (simulate)");
+                } catch (Exception e) {
+                    /* Not having a companion at this point means an
+                     * unsolicited connect happened (e.g. a portscan).
+                     */
+                    if (_companion == null) {
+                        esay("Unsolicited connection from " +
+                             _socket.getRemoteSocketAddress());
+                        return;
+                    }
+                    throw e;
+                } finally {
+                    try {
+                        _socket.close();
+                    } catch (IOException e) {
+                        // take it easy
+                    }
+                    adjustSpaceAllocation();
                 }
-
+            } catch (Exception e) {
                 setStatus("Error : " + e.getMessage());
                 esay(e);
                 _companion.transferFailed(e);
                 return;
-            } finally {
-                try {
-                    _socket.close();
-                } catch (IOException e) {
-                    // take it easy
-                }
-                adjustSpaceAllocation();
             }
 
             CacheRepositoryEntry entry = _companion.getEntry();
@@ -561,7 +564,7 @@ public class P2PClient {
         }
 
         /**
-         * Deletes the repository entry associates with the companion.
+         * Deletes the repository entry associated with the companion.
          */
         private synchronized void removeEntry()
         {
