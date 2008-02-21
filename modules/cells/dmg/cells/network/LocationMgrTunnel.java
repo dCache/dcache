@@ -18,6 +18,9 @@ import java.net.SocketException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ClosedByInterruptException;
 import java.nio.channels.SocketChannel;
+import java.util.Map;
+import java.util.HashMap;
+
 
 import org.apache.log4j.Logger;
 
@@ -51,7 +54,97 @@ import dmg.util.StreamEngine;
 public class      LocationMgrTunnel
        extends    CellAdapter
        implements Runnable,
-                  CellTunnel   {
+                  CellTunnel
+{
+    /**
+     * This class encapsulates routing table management. It ensures
+     * that at most one tunnel to any given domain is registered at a
+     * time.
+     *
+     * It is assumed that all tunnels share the same cell glue (this
+     * is normally the case for cells in the same domain).
+     */
+    static class Tunnels
+    {
+        private Map<String,LocationMgrTunnel> _tunnels =
+            new HashMap<String,LocationMgrTunnel>();
+
+        /**
+         * Adds a new tunnel. A route for the tunnel destination is
+         * registered in the CellNucleus. The same tunnel cannot be
+         * registered twice; unregister it first.
+         *
+         * If another tunnel is already registered for the same
+         * destination, then the other tunnel is killed.
+         */
+        public synchronized void add(LocationMgrTunnel tunnel)
+            throws InterruptedException
+        {
+            CellNucleus nucleus = tunnel.getNucleus();
+
+            if (_tunnels.containsValue(tunnel))
+                throw new IllegalArgumentException("Cannot register the same tunnel twice");
+
+            String domain = tunnel._remoteDomainInfo.getCellDomainName();
+
+            /* Kill old tunnel first.
+             */
+            LocationMgrTunnel old;
+            while ((old = _tunnels.get(domain)) != null) {
+                old.kill();
+                wait();
+            }
+
+            /* Add new route.
+             */
+            CellRoute route = new CellRoute(domain,
+                                            nucleus.getCellName(),
+                                            CellRoute.DOMAIN);
+            try {
+                nucleus.routeAdd(route);
+            } catch (IllegalArgumentException e) {
+                /* Crap, somehow the entry already exists. Well, we
+                 * insist on adding a new one, so we delete the old
+                 * one first.
+                 */
+                nucleus.routeDelete(route);
+                nucleus.routeAdd(route);
+            }
+
+            /* Keep track of what we did.
+             */
+            _tunnels.put(domain, tunnel);
+            notifyAll();
+        }
+
+        /**
+         * Removes a tunnel and unregisters its routes. If the tunnel
+         * was already removed, then nothing happens.
+         *
+         * It is crucial that the <code>_remoteDomainInfo</code> of
+         * the tunnel does not change between the point at which it is
+         * added and the point at which it is removed.
+         */
+        public synchronized void remove(LocationMgrTunnel tunnel)
+        {
+            CellNucleus nucleus = tunnel.getNucleus();
+
+            String domain = tunnel._remoteDomainInfo.getCellDomainName();
+            if (_tunnels.get(domain) == tunnel) {
+                _tunnels.remove(domain);
+                nucleus.routeDelete(new CellRoute(domain,
+                                                  nucleus.getCellName(),
+                                                  CellRoute.DOMAIN));
+                notifyAll();
+            }
+        }
+    }
+
+    /**
+     * We use a single shared instance of Tunnels to coordinate route
+     * creation between tunnels.
+     */
+    private final static Tunnels _tunnels = new Tunnels();
 
    private String       _host             = null ;
    private Args         _args             = null ;
@@ -62,14 +155,12 @@ public class      LocationMgrTunnel
    private Thread       _acceptThread     = null ;
    private String       _remoteDomain     = null ;
    private String       _locationManager  = null ;
-   private final Object       _routeLock        = new Object() ;
    private final Object       _tunnelOkLock     = new Object() ;
    private boolean      _tunnelOk         = false ;
    private boolean      _overwriteLM      = false ;
    private int          _debug            = 0 ;
    private String          _mode              = "None" ;
    private String          _status            = "<init>" ;
-   private CellRoute       _route             = null ;
    private CellDomainInfo  _remoteDomainInfo  = null ;
    private StreamEngine    _engine            = null ;
    private ObjectInputStream  _input         = null ;
@@ -301,7 +392,7 @@ public class      LocationMgrTunnel
             } catch (Exception e) {
                 esay("Problem in connecting [" + _status + "] : " + e);
                 //            esay(ee) ;
-                removeRoute();
+                _tunnels.remove(this);
                 synchronized (_tunnelOkLock) {
                     _tunnelOk = false;
                 }
@@ -572,111 +663,87 @@ public class      LocationMgrTunnel
          super.flush();
        }
    }
-   private void makeObjectStreams( SocketChannel channel )throws Exception {
 
-      say( "Creating object (nio) streams" ) ;
+    private void makeObjectStreams(SocketChannel channel) throws Exception
+    {
+        say("Creating object (nio) streams");
+        makeObjectStreams(new ByteArrayInputStream(channel),
+                          new ByteArrayOutputStream(channel));
+        say("Object streams created (from nio channel)");
+    }
 
-      makeObjectStreams( new ByteArrayInputStream( channel ) ,
-                         new ByteArrayOutputStream( channel ) );
+    private synchronized void makeObjectStreams(InputStream in,
+                                                OutputStream out)
+        throws Exception
+    {
+        say("Creating object streams");
+        _output = new ObjectOutputStream(out);
+        _input = new ObjectInputStream(new BufferedInputStream(in));
 
+        say( "Object streams created (from regular streams)" ) ;
 
-      say( "Object streams created (from nio channel)" ) ;
-   }
-   private void makeObjectStreams( InputStream in , OutputStream out )
-           throws Exception {
+        negotiateDomains();
+    }
 
-      say( "Creating object streams" ) ;
-      _output  = new ObjectOutputStream( out ) ;
-      if( _output == null )
-          throw new
-          IOException( "OutputStream == null" ) ;
+    private synchronized void negotiateDomains() throws Exception
+    {
+        say("Exchanging domain information");
 
-      _input   = new ObjectInputStream( new BufferedInputStream( in ) ) ;
-      if( _input == null )
-          throw new
-          IOException( "InputStream == null" ) ;
+        CellDomainInfo info = _nucleus.getCellDomainInfo();
 
-      say( "Object streams created (from regular streams)" ) ;
+        say("Sending " + info);
+        _output.writeObject(_nucleus.getCellDomainInfo());
+        _output.flush();
 
-      negotiateDomains() ;
+        Object obj = _input.readObject();
+        if (obj == null)
+            throw new IOException("EOS encountered while reading DomainInfo");
 
-   }
+        _remoteDomainInfo = (CellDomainInfo)obj;
+        say("Received " + _remoteDomainInfo);
 
-   private void negotiateDomains() throws Exception {
-      say( "Exchangeing DomainInfos" ) ;
+        //
+        //  has to be done before adding the route
+        //
+        say("Enabling tunnel" );
+        synchronized (_tunnelOkLock) {
+            _tunnelOk = true;
+        }
 
-      CellDomainInfo info = _nucleus.getCellDomainInfo() ;
+        //
+        // install the remote DOMAIN route
+        //
+        _tunnels.remove(this);
+        _tunnels.add(this);
+    }
 
-      say( "Sending Domain info : "+info ) ;
-      //
-      // send our info's
-      //
-      _output.writeObject( _nucleus.getCellDomainInfo() ) ;
-      _output.flush();
-      //
-      // read remote info's
-      //
-      Object obj = _input.readObject() ;
-      if( obj == null )
-         throw new
-         IOException( "EOS encountered while reading DomainInfo" ) ;
+    public String toString()
+    {
+        if (_tunnelOk) {
+            return _status + "/" + _mode + " -> " +
+                (_remoteDomainInfo == null ? "???" :
+                 _remoteDomainInfo.getCellDomainName());
+        } else {
+            return _status + "/" + _mode;
+        }
+    }
 
-      _remoteDomainInfo = (CellDomainInfo) obj ;
-      say( "Received Domain info : "+_remoteDomainInfo ) ;
-      //
-      //  has to be done before adding the routed
-      //
-      say("acceptThread : enabling tunnel" ) ;
-      synchronized( _tunnelOkLock ){
-           _tunnelOk = true ;
-      }
-      //
-      // install the remove DOMAIN route
-      //
-      removeRoute() ;
-      addRoute( _remoteDomainInfo.getCellDomainName() ) ;
-
-   }
-   public String toString(){
-      if( _tunnelOk ){
-           return _status+"/"+_mode+" -> "+
-                  (_remoteDomainInfo==null?"???":
-                  _remoteDomainInfo.getCellDomainName()) ;
-      }else{
-           return _status+"/"+_mode ;
-      }
-   }
-   public void getInfo( PrintWriter pw ){
-     pw.println( "Location Mgr Tunnel : "+_nucleus.getCellName()) ;
-     pw.println( "Mode          : "+_mode) ;
-     pw.println( "Status        : "+_status) ;
-     pw.println( "con. Requests : "+_connectionRequests ) ;
-     pw.println( "con. Retries  : "+_connectionRetries ) ;
-     pw.println( "-> Tunnel     : "+_messagesToTunnel ) ;
-     pw.println( "-> Domain     : "+_messagesToSystem ) ;
-     if( _remoteDomainInfo == null )
-        pw.println( "Peer          : N.N." ) ;
-     else
-        pw.println( "Peer          : "+
-                   _remoteDomainInfo.getCellDomainName() ) ;
-
-     return ;
-   }
-   private synchronized void removeRoute(){
-      if( _route != null ){
-          say( "Removing Route : "+_route ) ;
-          _nucleus.routeDelete( _route ) ;
-          _route = null ;
-      }
-   }
-   private synchronized void addRoute( String remoteDomainName ){
-      _route = new CellRoute(
-                   remoteDomainName ,
-                   _nucleus.getCellName() ,
-                   CellRoute.DOMAIN ) ;
-      say( "Adding Route : "+_route) ;
-      _nucleus.routeAdd( _route ) ;
-   }
+    public void getInfo(PrintWriter pw)
+    {
+        pw.println("Location Mgr Tunnel : " + _nucleus.getCellName());
+        pw.println("Mode          : " + _mode);
+        pw.println("Status        : " + _status);
+        pw.println("con. Requests : " + _connectionRequests);
+        pw.println("con. Retries  : " + _connectionRetries);
+        pw.println("-> Tunnel     : " + _messagesToTunnel);
+        pw.println("-> Domain     : " + _messagesToSystem);
+        if (_remoteDomainInfo == null) {
+            pw.println("Peer          : none");
+        } else {
+            pw.println("Peer          : " +
+                       _remoteDomainInfo.getCellDomainName());
+        }
+    }
 
     private synchronized void closeSocket()
     {
@@ -695,27 +762,29 @@ public class      LocationMgrTunnel
         say("Socket closed");
     }
 
-   public synchronized void  prepareRemoval(KillEvent ce) {
-       removeRoute();
-       say("Setting tunnel down");
-       synchronized (_tunnelOkLock) {
-           _tunnelOk = false;
-       }
-       _finalGate.check();
 
-       if (_acceptThread != null) {
-           _acceptThread.interrupt();
-       }
-       if (_connectionThread != null) {
-           _connectionThread.interrupt();
-       }
+    public synchronized void prepareRemoval(KillEvent ce)
+    {
+        say("Setting tunnel down");
+        _tunnels.remove(this);
+        synchronized (_tunnelOkLock) {
+            _tunnelOk = false;
+        }
+        _finalGate.check();
 
-       closeSocket();
+        if (_acceptThread != null) {
+            _acceptThread.interrupt();
+        }
+        if (_connectionThread != null) {
+            _connectionThread.interrupt();
+        }
 
-       say( "Gate Opened. Bye Bye" );
-   }
+        closeSocket();
 
-   public void   exceptionArrived( ExceptionEvent ce ){
-     _nucleus.say( "exceptionArrived : "+ce ) ;
-   }
+        say("Gate Opened. Bye Bye");
+    }
+
+    public void exceptionArrived(ExceptionEvent ce) {
+        _nucleus.say("exceptionArrived : " + ce);
+    }
 }
