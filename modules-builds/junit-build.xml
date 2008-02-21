@@ -15,6 +15,7 @@
 	        <pathelement location="${classesDir}/dcache.jar"/>
 	        <pathelement location="${classesDir}/gplazma.jar"/>
 	        <pathelement location="${classesDir}/chimera-provider.jar"/>
+			<pathelement location="${classesDir}/xrootd-tokenauthz.jar"/>
 	        <pathelement location="${libDir}/Chimera/chimera.jar"/>
 	        <pathelement location="${libDir}/Chimera/chimera-acl.jar"/>
 	        <pathelement location="${libDir}/Chimera/hsqldb.jar"/>
