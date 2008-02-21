@@ -60,46 +60,44 @@ import java.util.regex.*;
  * @author  timur
  */
 public class WeakFtpDoorV1 extends AbstractFtpDoorV1 {
-    
+
     /** Creates a new instance of WeakFtpDoorV1 */
     public WeakFtpDoorV1(String name, StreamEngine engine, Args args) throws Exception {
         super(name,engine,args);
         ftpDoorName="Weak FTP";
-        
+
         _workerThread = new Thread( this );
         _workerThread.start();
         useInterpreter(true);
         start() ;
     }
-    
-    
+
     protected void secure_reply(String answer, String code) {
     }
-    
+
     public void ac_auth(String arg) {
         reply("500 Not Supported");
     }
-    
+
     public void ac_adat(String arg) {
         reply("500 Not Supported");
     }
-    
+
     public void secure_command(String arg, String sectype) throws dmg.util.CommandExitException {
     }
-    
+
     public void ac_user(String arg) {
         KAuthFile authf;
         _originalPwdRecord = null;
         _pwdRecord = null;
         _user = null;
-        
+
         if (arg.equals("")){
             println(err("USER",arg));
             return;
         }
         _user = arg;
-        
-        
+
         try {
             authf = new KAuthFile(_kpwdFilePath);
         }
@@ -107,9 +105,9 @@ public class WeakFtpDoorV1 extends AbstractFtpDoorV1 {
             println("530 Password file " + _kpwdFilePath + " not found.");
             return;
         }
-        
+
         _pwdRecord = authf.getUserPwdRecord(_user);
-        
+
         if( _pwdRecord == null || ((UserPwdRecord)_pwdRecord).isDisabled() ) {
             _pwdRecord = null;
             println("530 User " + _user + " not found.");
@@ -119,7 +117,7 @@ public class WeakFtpDoorV1 extends AbstractFtpDoorV1 {
         if( _needPass )
             println("331 Password required for "+_user+".");
     }
-    
+
     public void ac_pass(String arg) {
         if( _pwdRecord == null || ((UserPwdRecord)_pwdRecord).isDisabled() ||
         !((UserPwdRecord)_pwdRecord).isAnonymous() && ! ((UserPwdRecord)_pwdRecord).passwordIsValid(arg) ) {
@@ -129,7 +127,7 @@ public class WeakFtpDoorV1 extends AbstractFtpDoorV1 {
             _needUser = true;
             return;
         }
-        
+
         _needPass = false;
         if( ((UserPwdRecord)_pwdRecord).isAnonymous() )
             println( "231 Anonymous read-only access allowed");
@@ -140,24 +138,25 @@ public class WeakFtpDoorV1 extends AbstractFtpDoorV1 {
         if ( _pathRoot == null || _pathRoot.length() == 0 )
             _pathRoot = "/";
     }
-    
-    public void startTlog(String path,String action) {
-        if(_tLog == null ) { 
+
+    public void startTlog(String path, String action) {
+        if (_tLog == null) {
             return;
         }
         try {
-           String user_string = _user;
-            if(_pwdRecord != null) {
+            String user_string = _user;
+            if (_pwdRecord != null) {
                 user_string += "("+_pwdRecord.UID+"."+_pwdRecord.GID+")";
             }
-             _tLog.begin(user_string, "weakftp", action, path,
-            _engine.getInetAddress());
+            _tLog.begin(user_string, "weakftp", action, path,
+                        _engine.getInetAddress());
         }
-        catch( Exception e )
-        {	say("_tLog.begin() error: " + e);	}
+        catch (Exception e) {
+            error("WeakFtpDoorV1::startTlog: couldn't start tLog. " +
+                  "Ignoring exception: " + e.getMessage());
+        }
     }
-    
+
     public void echoStr1(String str) {
     }
-    
 }
