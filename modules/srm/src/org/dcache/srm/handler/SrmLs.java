@@ -400,72 +400,45 @@ public class SrmLs {
         metaDataPathDetail.setStatus(returnStatus);
 	
         say("depth = "+depth+" and numOfLevels = "+numOfLevels);
-        if (metaDataPathDetail.getType() == TFileType.DIRECTORY &&
-                depth < numOfLevels ) {
+        if (metaDataPathDetail.getType() == TFileType.DIRECTORY && depth<numOfLevels ) {
             say("depth < numOfLevels => get listing for this directory");
-            if(longFormat) {
-                String dirFiles[] = storage.listDirectory(user,path,fmd);
-		TMetaDataPathDetail dirMetaDataPathDetails[]=null;
-                if(dirFiles != null && dirFiles.length >0) {
-		    int end   = dirFiles.length;
-		    int start = offset;
-		    if ( count != 0 &&  offset + count <= dirFiles.length) { 
-			end = offset + count;
-		    }
-		    int len = end - start;
-		    if ( offset <  dirFiles.length ) { 
-			dirMetaDataPathDetails = new TMetaDataPathDetail[len];
-			for (int j = start; j < end; j++) {
-			    String subpath = path+'/'+dirFiles[j];
-			    try {
-				TMetaDataPathDetail dirMetaDataPathDetail = getMetaDataPathDetail(
-                                    subpath, depth+1,offset,count,fmd);
-				dirMetaDataPathDetails[j-start] = dirMetaDataPathDetail;
-			    } catch (SRMException srme) {
-				dirMetaDataPathDetails[j-start] = null;
-			    }
-			}
-		    }
-		}
-		metaDataPathDetail.setArrayOfSubPaths(new ArrayOfTMetaDataPathDetail(dirMetaDataPathDetails));
-            }
-	    else {
                 java.io.File dirFiles[] = storage.listDirectoryFiles(user,path,fmd);
 		TMetaDataPathDetail dirMetaDataPathDetails[]=null;
 		if(dirFiles != null && dirFiles.length >0) {
 		    int end   = dirFiles.length;
 		    int start = offset;
 		    if ( count != 0 &&  offset + count <= dirFiles.length) { 
-			end = offset + count;
+			    end = offset + count;
 		    }
 		    int len = end - start;
 		    if ( offset <  dirFiles.length ) { 
 			dirMetaDataPathDetails = new TMetaDataPathDetail[len];
-			
 			for (int j = start; j< end; j++) {
-			    String subpath = path+'/'+dirFiles[j].getName();
-			    try {
-				TMetaDataPathDetail dirMetaDataPathDetail;
-				if( ( (depth+1) >= numOfLevels ) ||
-                                    dirFiles[j].isFile()) {
-				    dirMetaDataPathDetail =
-                                        getMinimalMetaDataPathDetail(subpath,dirFiles[j]);
-				} else {
-				    
-				    dirMetaDataPathDetail = getMetaDataPathDetail(
-                                        subpath, depth+1,offset,count,fmd);
+				String subpath = path+'/'+dirFiles[j].getName();
+				try {
+					TMetaDataPathDetail dirMetaDataPathDetail;
+					if (longFormat) { 
+						dirMetaDataPathDetail = getMetaDataPathDetail(subpath, depth+1,offset,count,fmd);
+					}
+					else { 
+						if((depth+1>=numOfLevels)||dirFiles[j].isFile()) {
+							dirMetaDataPathDetail =  getMinimalMetaDataPathDetail(subpath,dirFiles[j]);
+						} 
+						else {
+							dirMetaDataPathDetail = getMetaDataPathDetail(subpath, depth+1,offset,count,fmd);
+						}
+					}
+					dirMetaDataPathDetails[j-start] = dirMetaDataPathDetail;
 				}
-				dirMetaDataPathDetails[j-start] = dirMetaDataPathDetail;
-			    } catch (SRMException srme) {
-				dirMetaDataPathDetails[j-start] = null;
-			    }
+				catch (SRMException srme) {
+					dirMetaDataPathDetails[j-start] = null;
+				}
 			}
 		    }
 		}
 		metaDataPathDetail.setArrayOfSubPaths(new ArrayOfTMetaDataPathDetail(dirMetaDataPathDetails));
-            }
 	}
-        return metaDataPathDetail;
+	return metaDataPathDetail;
     }
     
     public TMetaDataPathDetail getMinimalMetaDataPathDetail(
@@ -513,9 +486,14 @@ public class SrmLs {
         } else {
             say("file type is Unknown");
         }
-        
-        
-        metaDataPathDetail.setSize(new org.apache.axis.types.UnsignedLong(file.length()));
+
+	if (file.length()==1) {
+		FileMetaData fmd = storage.getFileMetaData(user, path, null);
+		 metaDataPathDetail.setSize(new org.apache.axis.types.UnsignedLong(fmd.size));
+	}
+	else { 
+		metaDataPathDetail.setSize(new org.apache.axis.types.UnsignedLong(file.length()));
+	}
         TReturnStatus returnStatus = new TReturnStatus();
         returnStatus.setStatusCode(TStatusCode.SRM_SUCCESS);
         metaDataPathDetail.setStatus(returnStatus);
