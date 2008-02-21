@@ -97,51 +97,59 @@ public class GsiFtpDoorV1 extends GssFtpDoorV1 {
         _GSSFlavor = "gsi";
 
         String arg_string = args.getOpt("service-key");
-        if(arg_string != null) {
+        if (arg_string != null) {
             service_key = arg_string;
         }
 
         arg_string = args.getOpt("service-cert");
-        if(arg_string != null) {
+        if (arg_string != null) {
             service_cert = arg_string;
         }
 
         arg_string = args.getOpt("service-trusted-certs");
-        if(arg_string != null) {
+        if (arg_string != null) {
             service_trusted_certs = arg_string;
         }
 
         // Grid FTP Performance Markers options:
         arg_string = args.getOpt("usePerfMarkers");
-        if(arg_string != null) {
+        if (arg_string != null) {
             if ( arg_string.equalsIgnoreCase("true") )
                 _perfMarkerConf.use = true;
             else if ( arg_string.equalsIgnoreCase("false") )
                 _perfMarkerConf.use = false;
             else {
-                esay("Illegal command option value in usePerfMarkers="+arg_string);
+                error("GsiFtpDoorV1: illegal command option value in " +
+                      "usePerfMarkers=" + arg_string + ". It must be 'true'" +
+		      " or 'false'.");
+// TODO: shouldn't we throw a RuntimeException? Or at least document that the
+//       error is being ignored?? If we are ignoring, then
+//       we MUST at least set _perfMarkerConf.use=false.
             }
         }
 
         arg_string = args.getOpt("perfMarkerPeriod");
-        if( ( arg_string != null ) && ( ! arg_string.equals("") ) ){
+        if ( ( arg_string != null ) && ( ! arg_string.equals("") ) ){
             try {
                 int period = Integer.parseInt(arg_string) ;
-                if( period <= 0 ){
+                if (period <= 0) {
                     _perfMarkerConf.period = 0;
                     _perfMarkerConf.use    = false;
-                }else{
+                } else {
                    _perfMarkerConf.period = period * 1000;
                    _perfMarkerConf.use    = true;
                 }
             } catch (NumberFormatException ex) {
                 _perfMarkerConf.period = 0;
                 _perfMarkerConf.use    = false;
-                esay("Can not convert integer value in perfMarkerPeriod="+arg_string);
+                warn("GsiFtpDoorV1: error in perfMarkerPeriod argument: '" +
+                      arg_string + "' is not an integer." +
+                     "Turning off PerfMarkerConf.");
+// TODO: this seems wrong. If an invalid argument is passed, abort the show.
             }
         }
-        say("Performance Markers : "+_perfMarkerConf.use+" Period : "+_perfMarkerConf.period ) ;
-        //--
+        info("GsiFtpDoorV1: Performance Markers : " + _perfMarkerConf.use +
+             " Period : " + _perfMarkerConf.period ) ;
 
         ftpDoorName="GSI FTP";
         _workerThread = new Thread( this );
@@ -151,55 +159,53 @@ public class GsiFtpDoorV1 extends GssFtpDoorV1 {
 
     }
 
-    public static CellVersion getStaticCellVersion(){ return new CellVersion(diskCacheV111.util.Version.getVersion(),"$Revision: 1.17 $" ); }
+    public static CellVersion getStaticCellVersion() {
+        return new CellVersion(diskCacheV111.util.Version.getVersion(),
+                               "$Revision: 1.17 $");
+    }
 
     public void startTlog(String path,String action) {
-        if(_tLog == null ) {
+        if (_tLog == null) {
             return;
         }
         try {
             String user_string = _user;
-            if(_pwdRecord != null) {
+            if (_pwdRecord != null) {
                 user_string += "("+_pwdRecord.UID+"."+_pwdRecord.GID+")";
             }
             _tLog.begin(user_string, "gsiftp", action, path,
-            _engine.getInetAddress());
+                        _engine.getInetAddress());
         }
-        catch( Exception e )
-        {	say("_tLog.begin() error: " + e);	}
+        catch (Exception e) {
+            error("GsiFtpDoorV1::startTlog: couldn't start tLog. " +
+                  "Ignoring exception: " + e.getMessage());
+        }
     }
 
     protected GSSContext getServiceContext() throws GSSException {
 
         GlobusCredential serviceCredential;
         try {
-            serviceCredential =new GlobusCredential(
-            service_cert,
-            service_key
-            );
+            serviceCredential = new GlobusCredential(service_cert, service_key);
         }
-        catch(GlobusCredentialException gce) {
-            esay(gce);
-            throw new GSSException(GSSException.NO_CRED ,
-            0,
-            "could not load host globus credentials "+gce.toString());
+        catch (GlobusCredentialException gce) {
+            String errmsg = "GsiFtpDoorV1::getServiceContext: couldn't load " +
+                            "host globus credentials: " + gce.toString();
+            error(errmsg);
+            throw new GSSException(GSSException.NO_CRED, 0, errmsg);
         }
-
 
         GSSCredential cred = new GlobusGSSCredentialImpl(serviceCredential,
-        GSSCredential.ACCEPT_ONLY);
+                                                    GSSCredential.ACCEPT_ONLY);
         TrustedCertificates trusted_certs =
-        TrustedCertificates.load(service_trusted_certs);
+                               TrustedCertificates.load(service_trusted_certs);
         GSSManager manager = ExtendedGSSManager.getInstance();
         ExtendedGSSContext context =
-        (ExtendedGSSContext) manager.createContext(cred);
+                               (ExtendedGSSContext)manager.createContext(cred);
 
-        context.setOption(GSSConstants.GSS_MODE,
-        GSIConstants.MODE_GSI);
-        context.setOption(GSSConstants.TRUSTED_CERTIFICATES,
-        trusted_certs);
+        context.setOption(GSSConstants.GSS_MODE, GSIConstants.MODE_GSI);
+        context.setOption(GSSConstants.TRUSTED_CERTIFICATES, trusted_certs);
 
         return context;
     }
-
 }
