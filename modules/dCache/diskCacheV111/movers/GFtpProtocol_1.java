@@ -113,17 +113,22 @@ public class GFtpProtocol_1 implements MoverProtocol, ChecksumMover, DataBlocksR
     private  Checksum  _transferChecksum      = null ;
 
     public GFtpProtocol_1( CellAdapter cell, int bufferSize ) {
-	this(cell);
-	_bufferSize = bufferSize;
+        this(cell);
+        _bufferSize = bufferSize;
     }
+
     public GFtpProtocol_1( CellAdapter cell ) {
         _cell = cell ;
         _cell.say( "GFtpProtocol_1 created" ) ;
-	_offsetRanges = new Ranges();
+        _offsetRanges = new Ranges();
     }
 
-   public void setAttribute( String name , Object attribute ){}
-   public Object getAttribute( String name ){ return null ; }
+    public void setAttribute(String name, Object attribute) {
+    }
+
+    public Object getAttribute(String name) {
+        return null;
+    }
 
     private void say( String str ) {
         _cell.say( "(GFtp_1) "+str ) ;
@@ -137,11 +142,13 @@ public class GFtpProtocol_1 implements MoverProtocol, ChecksumMover, DataBlocksR
         _cell.esay( t ) ;
     }
 
-   public String toString(){
-      return "SU="+_spaceUsed+";SA="+_spaceAllocated+";S="+_status ;
-   }
-   private RandomAccessFile raDiskFile;
-   public void runIO(
+    public String toString() {
+        return "SU="+_spaceUsed+";SA="+_spaceAllocated+";S="+_status ;
+    }
+
+    private RandomAccessFile raDiskFile;
+
+    public void runIO(
                   RandomAccessFile diskFile ,
                   ProtocolInfo protocol ,
                   StorageInfo  storage ,
@@ -149,44 +156,42 @@ public class GFtpProtocol_1 implements MoverProtocol, ChecksumMover, DataBlocksR
                   SpaceMonitor spaceMonitor ,
                   int          access )
 
-          throws Exception {
-       raDiskFile = diskFile;
-      _lastTransferred = System.currentTimeMillis() ;
-      if( ( access & MoverProtocol.WRITE ) != 0 ){
-         _wasChanged = true ;
-         runRemoteToDisk(  protocol , storage , pnfsId.toString() , spaceMonitor );
-      }else{
-         runDiskToRemote(  protocol , storage , pnfsId.toString()  ) ;
-      }
+    throws Exception {
+        raDiskFile = diskFile;
+        _lastTransferred = System.currentTimeMillis() ;
+        if( ( access & MoverProtocol.WRITE ) != 0 ) {
+            _wasChanged = true ;
+            runRemoteToDisk(  protocol , storage , pnfsId.toString() , spaceMonitor );
+        } else {
+            runDiskToRemote(  protocol , storage , pnfsId.toString()  ) ;
+        }
+    }
 
-
-   }
     public void runRemoteToDisk(
         ProtocolInfo protocol ,
         StorageInfo  storage ,
         String       pnfsId,
-	SpaceMonitor spaceMonitor )
+        SpaceMonitor spaceMonitor )
 
     throws Exception {
 
         if( ! ( protocol instanceof GFtpProtocolInfo ) ) {
-            throw new
-            CacheException( 44 , "protocol info not GFtpProtocolInfo" ) ;
-
+            throw new CacheException(44,
+                       "runRemoteToDisk: received wrong type of protocol info");
         }
 
         GFtpProtocolInfo ftp = (GFtpProtocolInfo)protocol ;
         String mode = ftp.getMode();
 
-        say("runRemoteToDisk called mode = "+ mode);
+        say("runRemoteToDisk: mode = " + mode);
 
         if ( mode.equalsIgnoreCase("S") ) {
             recvStream( ftp, storage, pnfsId, spaceMonitor);
         }
         else if ( mode.equalsIgnoreCase("E") ) {
-	    if (!recvEBlock( ftp, storage, pnfsId, spaceMonitor)) { 
-		throw new CacheException("failed in recvEBlock");
-	    }
+            if (!recvEBlock( ftp, storage, pnfsId, spaceMonitor)) { 
+                throw new CacheException("runRemoteToDisk: recvEBlock failed");
+            }
         }
     }
 
@@ -198,17 +203,17 @@ public class GFtpProtocol_1 implements MoverProtocol, ChecksumMover, DataBlocksR
     throws Exception {
 
         if( ! ( protocol instanceof GFtpProtocolInfo ) ) {
-            throw new
-            CacheException( 44 , "protocol info not GFtpProtocolInfo" ) ;
-
+            throw new CacheException(44,
+                       "runDiskToRemote: received wrong type of protocol info");
         }
         GFtpProtocolInfo ftp = (GFtpProtocolInfo)protocol ;
         String mode = ftp.getMode();
 
-        if ( mode.equalsIgnoreCase("S") )
+        if ( mode.equalsIgnoreCase("S") ) {
             sendStream( ftp, storage, pnfsId);
-        else if ( mode.equalsIgnoreCase("E") )
+        } else if ( mode.equalsIgnoreCase("E") ) {
             sendEBlock( ftp, storage, pnfsId);
+        }
     }
 
     private void sendStream(
@@ -223,39 +228,40 @@ public class GFtpProtocol_1 implements MoverProtocol, ChecksumMover, DataBlocksR
         // this is the offset and size as specified for
         // ERET in partial retrieve mode
         long prm_offset = ftp.getOffset();
-        long prm_size =ftp.getSize();
-        long    fileSize        = storage.getFileSize() ;
+        long prm_size = ftp.getSize();
+        long fileSize = storage.getFileSize();
         if(prm_offset < 0)
         {
-            String err = "prm_offset is "+prm_offset;
+            String err = "sendStream: invalid prm_offset: " + prm_offset;
             esay(err);
             throw new IllegalArgumentException(err);
         }
         if(prm_size < 0)
         {
-            String err = "prm_offset is "+prm_size;
+            String err = "sendStream: invalide prm_size: " + prm_size;
             esay(err);
             throw new IllegalArgumentException(err);
         }
 
         if(prm_offset+prm_size > fileSize)
         {
-            String err = "invalid prm_offset="+prm_offset+ " and prm_size "+
-            prm_size +" for file of size "+fileSize;
+            String err = "sendStream: invalid prm_offset=" + prm_offset +
+                         " plus prm_size " + prm_size +
+                         " for file of size " + fileSize;
             esay(err);
             throw new IllegalArgumentException(err);
         }
-        say( "Connecting to "+host+"("+port+")" ) ;
+        say("sendStream: connecting to " + host + ":" + port);
         Socket       dataSocket = new Socket( host, port ) ;
         OutputStream ostream    = dataSocket.getOutputStream() ;
-	if(ftp.getBufferSize()>0) {
-	    dataSocket.setReceiveBufferSize(ftp.getBufferSize());
-	    dataSocket.setSendBufferSize(ftp.getBufferSize());
-	}
-        say( "Connected to "+host+"("+port+")" ) ;
+        if(ftp.getBufferSize()>0) {
+            dataSocket.setReceiveBufferSize(ftp.getBufferSize());
+            dataSocket.setSendBufferSize(ftp.getBufferSize());
+        }
+        say("sendStream: connected to " + host + ":" + port);
         int data_length = 128*1024;
         byte [] data            = new byte[data_length] ;
-        say( "Expected filesize is "+fileSize+" bytes" ) ;
+        say("sendStream: expected filesize = " + fileSize + " bytes");
 
 
         int nbytes ;
@@ -265,26 +271,25 @@ public class GFtpProtocol_1 implements MoverProtocol, ChecksumMover, DataBlocksR
         sysTimer.getDifference() ;
         try {
             raDiskFile.seek(prm_offset);
-            while( (! Thread.currentThread().isInterrupted()) &&
-                    (_bytesTransferred < prm_size)
-                    )
+            while ((! Thread.currentThread().isInterrupted()) &&
+                    (_bytesTransferred < prm_size))
             {
                 if( Thread.currentThread().isInterrupted() )
                 {
                     throw new
-                    InterruptedException( "Transfer interrupted" ) ;
+                    InterruptedException("sendStream: transfer interrupted");
                 }
                 if(data_length+_bytesTransferred <= prm_size)
                 {
-                    nbytes = raDiskFile.read( data);
+                    nbytes = raDiskFile.read(data);
                 }
                 else
                 {
-                    nbytes = raDiskFile.read(data,0,
-                        (int)(prm_size -  _bytesTransferred));
+                    nbytes = raDiskFile.read(data, 0,
+                                          (int)(prm_size - _bytesTransferred));
                 }
 
-                //	       say("Transferring "+nbytes+" bytes");
+                //  say("Transferring "+nbytes+" bytes");
                 if( nbytes <= 0 )
                     break;
                 ostream.write( data , 0, nbytes );
@@ -294,33 +299,29 @@ public class GFtpProtocol_1 implements MoverProtocol, ChecksumMover, DataBlocksR
         }
         finally
         {
-            try
-            {
+            try {
                 dataSocket.close() ;
             }
-            catch(Exception xe)
-            {
+            catch(Exception xe) {
             }
             ftp.setBytesTransferred( _bytesTransferred ) ;
-            _transferTime = System.currentTimeMillis() -
-                            _transferStarted ;
+            _transferTime = System.currentTimeMillis() - _transferStarted ;
             ftp.setTransferTime( _transferTime ) ;
 
-            say( "Transfer finished : "+
-                 _bytesTransferred+" bytes in "+
-                 ( _transferTime/1000 ) +" seconds " ) ;
+            say("sendStream: transfered " + _bytesTransferred + " bytes in " +
+                ( _transferTime/1000 ) + " seconds " ) ;
             if( _transferTime > 0 ) {
                 double rate =
                     ((double)_bytesTransferred)/((double)_transferTime)/1024.*1000./1024.;
-                say( "TransferRate : "+rate+" MBytes/sec" ) ;
+                say("sendStream: transfer rate: " + rate + " MBytes/sec");
             }
-            say( "SysTimer : "+sysTimer.getDifference().toString() ) ;
+            say("sendStream: SysTimer: " + sysTimer.getDifference().toString()) ;
         }
     }
 
     private void put64(long x, byte [] buf, int offset)
     {
-        for( int i = offset + 7; i > offset -1; i -- )
+        for( int i = offset + 7; i > offset - 1; i-- )
         {
             buf[i] = (byte)x;
             x >>= 8;
@@ -344,26 +345,28 @@ public class GFtpProtocol_1 implements MoverProtocol, ChecksumMover, DataBlocksR
         long prm_size =protocol.getSize();
         if(prm_offset < 0)
         {
-            String err = "prm_offset is "+prm_offset;
+            String err = "sendEBlock: invalid prm_offset: " + prm_offset;
             esay(err);
             throw new IllegalArgumentException(err);
         }
         if(prm_size < 0)
         {
-            String err = "prm_offset is "+prm_size;
+            String err = "sendEBlock: invalid prm_offset: " + prm_size;
             esay(err);
             throw new IllegalArgumentException(err);
         }
 
         if(prm_offset+prm_size > fileSize)
         {
-            String err = "invalid prm_offset="+prm_offset+ " and prm_size "+
-            prm_size +" for file of size "+fileSize;
+            String err = "sendEBlock: invalid prm_offset=" + prm_offset +
+                         " plus prm_size " + prm_size +
+                         " for file of size " + fileSize;
             esay(err);
             throw new IllegalArgumentException(err);
         }
-        say("received prm_offset "+prm_offset+" prm_size "+prm_size);
-        say( "Connecting to "+host+"("+port+")" ) ;
+        say("sendEBlock: received prm_offset " + prm_offset +
+            " prm_size " + prm_size);
+        say("sendEBlock: connecting to " + host + ":" + port);
         int parallelStart = protocol.getParallelStart();
         OutputStream[] ostreams = new OutputStream[parallelStart];
         Socket[] sockets = new Socket[parallelStart];
@@ -371,8 +374,7 @@ public class GFtpProtocol_1 implements MoverProtocol, ChecksumMover, DataBlocksR
         Exception lastException=null;
         for( int i = 0; i < parallelStart; i++ )
         {
-            try
-            {
+            try {
                 Socket       dataSocket = new Socket( host, port ) ;
                 OutputStream ostream    = dataSocket.getOutputStream() ;
                 if(_bufferSize>0)
@@ -383,56 +385,54 @@ public class GFtpProtocol_1 implements MoverProtocol, ChecksumMover, DataBlocksR
                 sockets[i] = dataSocket;
                 ostreams[i] = ostream;
             }
-            catch( Exception e )
-            {
+            catch( Exception e ) {
                 lastException =e;
                 break;
             }
             data_channel_num++;
         }
         if(data_channel_num == 0) {
-            esay("could not open even a single data channel");
-            if(lastException !=null)
+            String errmsg ="sendEBlock: could not open any data channels";
+            esay(errmsg);
+            if(lastException != null)
             {
-               throw lastException;
+                throw lastException;
             }
             else
             {
-              throw new IOException("could not open even a single data channel");
+                throw new IOException(errmsg);
             }
-	}
-        say( "Connected to "+host+"("+port+")" ) ;
+        }
+        say("sendEBlock: connected to " + host + ":" + port);
 
-        int 	bufsize 		= 10*1024;
-        byte [] data            = new byte[bufsize + 17] ;
+        int bufsize = 10*1024;
+        byte [] data = new byte[bufsize + 17] ;
 
-        say( "Expected filesize is "+fileSize+" bytes" ) ;
-
+        say("sendEBlock: expected filesize = " + fileSize + " bytes");
 
         int nbytes ;
         _transferStarted  = System.currentTimeMillis() ;
         _bytesTransferred = 0 ;
         SysTimer sysTimer = new SysTimer() ;
         sysTimer.getDifference() ;
-        try
-        {
-            int 	idc = 0;
-            long	offset = prm_offset;
+        try {
+            int idc = 0;
+            long offset = prm_offset;
             raDiskFile.seek(prm_offset);
             while( ! Thread.currentThread().isInterrupted() &&
                     (_bytesTransferred < prm_size) )
             {
                 if( Thread.currentThread().isInterrupted() )
                 {
-                    throw new InterruptedException( "Transfer interrupted" ) ;
+                    throw new InterruptedException("sendEBlock: transfer interrupted");
                 }
                 if(bufsize+_bytesTransferred <= prm_size)
                 {
-                    nbytes = raDiskFile.read( data, 17, bufsize );
+                    nbytes = raDiskFile.read(data, 17, bufsize);
                 }
                 else
                 {
-                   nbytes = raDiskFile.read( data, 17,(int)(prm_size -  _bytesTransferred));
+                   nbytes = raDiskFile.read(data, 17, (int)(prm_size - _bytesTransferred));
                 }
                 if( nbytes <= 0 )
                 {
@@ -460,9 +460,9 @@ public class GFtpProtocol_1 implements MoverProtocol, ChecksumMover, DataBlocksR
             data[0] = 64|8|4;
             put64((long)0, data, 1);
             put64((long)data_channel_num, data, 9);
-            ostreams[0].write( data , 0, 17);
-            say("EODC("+data_channel_num+") + EOD on CHANNEL #0 sent");
-
+            ostreams[0].write(data, 0, 17);
+            say("sendEBlock: sent EODC(" + data_channel_num +
+                ") + EOD on CHANNEL #0");
 
             for( idc = 1; idc < data_channel_num; idc++ )
             {
@@ -471,13 +471,10 @@ public class GFtpProtocol_1 implements MoverProtocol, ChecksumMover, DataBlocksR
                 put64((long)0, data, 1);
                 put64(offset, data, 9);
                 ostreams[idc].write( data , 0, 17);
-                say("EOD on CHANNEL #"+idc+" sent");
+                say("sendEBlock: sent EOD on CHANNEL #" + idc);
             }
-
-
         }
-        finally
-        {
+        finally {
             for( int i = 0; i < data_channel_num; i++ )
             {
                 try
@@ -486,7 +483,8 @@ public class GFtpProtocol_1 implements MoverProtocol, ChecksumMover, DataBlocksR
                 }
                 catch(Exception xe)
                 {
-                    esay("error closing data socket "+sockets[i]+" : "+xe);
+                    esay("sendEBlock: error closing data socket " +
+                         sockets[i] + " : " + xe);
                 }
             }
             protocol.setBytesTransferred( _bytesTransferred ) ;
@@ -494,15 +492,14 @@ public class GFtpProtocol_1 implements MoverProtocol, ChecksumMover, DataBlocksR
                             _transferStarted ;
             protocol.setTransferTime( _transferTime ) ;
 
-            say( "Transfer finished : "+
-                 _bytesTransferred+" bytes in "+
-                 ( _transferTime/1000 ) +" seconds " ) ;
+            say("sendEBlock: transferred " + _bytesTransferred + " bytes in " +
+                 ( _transferTime/1000 ) + " seconds ");
             if( _transferTime > 0 ) {
                 double rate =
                     ((double)_bytesTransferred)/((double)_transferTime)/1024.*1000./1024.;
-                say( "TransferRate : "+rate+" MBytes/sec" ) ;
+                say("sendEBlock: transfer rate: " + rate + " MBytes/sec");
             }
-            say( "SysTimer : "+sysTimer.getDifference().toString() ) ;
+            say("sendEBlock: SysTimer: " + sysTimer.getDifference().toString());
         }
 
 
@@ -533,17 +530,17 @@ public class GFtpProtocol_1 implements MoverProtocol, ChecksumMover, DataBlocksR
                               GFtpProtocolInfo ftp,
                               StorageInfo  storage,
                               String       pnfsId,
-			      SpaceMonitor spaceMonitor)
+                              SpaceMonitor spaceMonitor)
     throws Exception {
         int    port = ftp.getPort() ;
         String host = ftp.getHost() ;
         Socket       dataSocket = new Socket( host, port ) ;
         InputStream  istream    = dataSocket.getInputStream() ;
-        say( "Connected to "+host+"("+port+")" ) ;
-	if(ftp.getBufferSize()>0) {
-	    dataSocket.setReceiveBufferSize(ftp.getBufferSize());
-	    dataSocket.setSendBufferSize(ftp.getBufferSize());
-	}
+        say("recvStream: connected to " + host + ":" + port);
+        if(ftp.getBufferSize()>0) {
+            dataSocket.setReceiveBufferSize(ftp.getBufferSize());
+            dataSocket.setSendBufferSize(ftp.getBufferSize());
+        }
         byte [] data = new byte[128*1024] ;
         int nbytes ;
         SysTimer sysTimer = new SysTimer() ;
@@ -553,20 +550,20 @@ public class GFtpProtocol_1 implements MoverProtocol, ChecksumMover, DataBlocksR
         try {
             while( ! Thread.currentThread().isInterrupted() ) {
                 if( Thread.currentThread().isInterrupted() ) {
-                    throw new
-                        InterruptedException( "Transfer interrupted" ) ;
+                    throw new InterruptedException(
+                                   "recvStream: transfer interrupted");
                 }
                 nbytes = istream.read( data );
                 //say("Transferring "+nbytes+" bytes ("+_bytesTransferred+")");
                 if( nbytes <= 0 )
                     break;
-		while( ( _spaceUsed + nbytes ) > _spaceAllocated ){
-		    _status = "WaitingForSpace("+_allocationSpace+")" ;
-		    spaceMonitor.allocateSpace( _allocationSpace ) ;
-		    _spaceAllocated += _allocationSpace ;
-		    _status = "" ;
-		}
-		_spaceUsed        += nbytes;
+                while( ( _spaceUsed + nbytes ) > _spaceAllocated ) {
+                    _status = "WaitingForSpace("+_allocationSpace+")" ;
+                    spaceMonitor.allocateSpace( _allocationSpace ) ;
+                    _spaceAllocated += _allocationSpace ;
+                    _status = "" ;
+                }
+                _spaceUsed        += nbytes;
 
                 receiveEBlock(data, 0, nbytes, _bytesTransferred);
                 _bytesTransferred += nbytes;
@@ -576,23 +573,26 @@ public class GFtpProtocol_1 implements MoverProtocol, ChecksumMover, DataBlocksR
         } finally {
             try {
                 dataSocket.close() ;
-            } catch(Exception xe) {}
+            } catch(Exception xe) {
+                // ignore
+            }
             ftp.setBytesTransferred( _bytesTransferred ) ;
-            _transferTime = System.currentTimeMillis() -
-                            _transferStarted ;
+            _transferTime = System.currentTimeMillis() - _transferStarted ;
             ftp.setTransferTime( _transferTime ) ;
-            say( "Transfer finished : "+
-                 _bytesTransferred+" bytes in "+
-                 ( _transferTime/1000 ) +" seconds " ) ;
+            say("recvStream: transferred " +
+                 _bytesTransferred + " bytes in " +
+                 ( _transferTime/1000 ) + " seconds.");
             if( _transferTime > 0 ) {
                 double rate =
                     ((double)_bytesTransferred)/((double)_transferTime)/1024.*1000./1024.;
-                say( "TransferRate : "+rate+" MBytes/sec" ) ;
+                say("recvStream: transfer rate: " + rate + " MBytes/sec");
             }
-            say( "SysTimer : "+sysTimer.getDifference().toString() ) ;
+            say("recvStream: SysTimer: " + sysTimer.getDifference().toString());
         }
-	long freeIt = _spaceAllocated - _spaceUsed ;
-	if( freeIt > 0 ) spaceMonitor.freeSpace( freeIt) ;
+        long freeIt = _spaceAllocated - _spaceUsed ;
+        if( freeIt > 0 ) {
+            spaceMonitor.freeSpace( freeIt);
+        }
         return true;
     }
 
@@ -600,66 +600,70 @@ public class GFtpProtocol_1 implements MoverProtocol, ChecksumMover, DataBlocksR
                               GFtpProtocolInfo ftp,
                               StorageInfo  storage,
                               String       pnfsId,
-			      SpaceMonitor spaceMonitor )
+                              SpaceMonitor spaceMonitor )
     throws Exception {
         String ftpErrorMsg = "";
-        say("Opening proxy mode connection to door");
+        say("recvEBlock: opening proxy mode connection to door");
         Socket dataSocket = null;
         try {
-	        dataSocket = new Socket(InetAddress.getByName(ftp.getHost()), ftp.getPort());
+            dataSocket = new Socket(InetAddress.getByName(ftp.getHost()), ftp.getPort());
             /** todo - check it is not null */
             _eBlockReceiver =
                 new EBlockReceiver(dataSocket,
-				   spaceMonitor,
+                                   spaceMonitor,
                                    this);
-            say("Proxy mode connection opened " + ftp.getHost() + " " + ftp.getPort());
-		    if(ftp.getBufferSize()>0) {
-				dataSocket.setReceiveBufferSize(ftp.getBufferSize());
-				dataSocket.setSendBufferSize(ftp.getBufferSize());
-		    }
+            say("recvEBlock: proxy mode connection opened to " + ftp.getHost() + ":" + ftp.getPort());
+            if(ftp.getBufferSize()>0) {
+                dataSocket.setReceiveBufferSize(ftp.getBufferSize());
+                dataSocket.setSendBufferSize(ftp.getBufferSize());
+            }
         } 
-	catch( IOException ex ) {
-            esay("Proxy mode connection failed");
+        catch( IOException ex ) {
+            esay("recvEBlock: failed to make proxy mode connection: " +
+                 ex.getMessage());
         }
         try {
             _eBlockReceiver.start();
             while( _eBlockReceiver.isAlive() ) { 
                 _eBlockReceiver.join();
-	    }
-	    say("Number of offset ranges = "+_offsetRanges.getRanges().size());
-	    if (!_offsetRanges.isContiguous()) { 
-		ftpErrorMsg = "451 Transmission error: " + "lost EOD blocks";
-		say(ftpErrorMsg);
-		_offsetRanges.clear();
-		_offsetRanges=null;
-		throw new
-		    CacheException(ftpErrorMsg) ;
-	    }
-	    _offsetRanges.clear();
-	    _offsetRanges=null;
+            }
+            say("recvEBlock: number of offset ranges = " + _offsetRanges.getRanges().size());
+            if (!_offsetRanges.isContiguous()) { 
+                ftpErrorMsg = "451 Transmission error: lost EOD blocks";
+                esay("recvEBlock: offset ranges are not contiguous");
+                _offsetRanges.clear();
+                _offsetRanges = null;
+                throw new CacheException(ftpErrorMsg) ;
+            }
+            _offsetRanges.clear();
+            _offsetRanges=null;
         } 
-	catch ( Exception e ) {
+        catch ( Exception e ) {
             ftpErrorMsg = "451 Transmission error: " + e;
-            say(ftpErrorMsg);
+            esay("recvEBlock: " + ftpErrorMsg);
             return false;
         }
-	finally {
-	    try  {   
-		dataSocket.close(); 
-	    } 
-	    catch(IOException ignored) {}
-	}
+        finally {
+            try  {   
+                dataSocket.close(); 
+            } 
+            catch(IOException ignored) {
+                // ignore
+            }
+        }
 
         if( _eBlockReceiver.failed() ) {
             ftpErrorMsg = "451 Receiver failed";
-            say(ftpErrorMsg);
+            esay("recvEBlock: " + ftpErrorMsg);
             return false;
         }
 
         return true;
     }
 
-    public boolean wasChanged(){ return _wasChanged ; }
+    public boolean wasChanged() {
+        return _wasChanged;
+    }
 
     // the following methods were adapted from DCapProtocol_3_nio mover
     public Checksum getClientChecksum() {
@@ -686,72 +690,71 @@ public class GFtpProtocol_1 implements MoverProtocol, ChecksumMover, DataBlocksR
 
             return _transferChecksum;
         }
-        catch(Exception e){
-            esay(e);
+        catch (Exception e) {
+            esay("getTransferChecksum: got exception: " + e.getMessage());
             return null;
         }
     }
 
     public void setDigest(Checksum checksum) {
-      _transferChecksum      =  checksum ;
-      _transferMessageDigest =
-        checksum != null? checksum.getMessageDigest() : null ;
-
+        _transferChecksum = checksum;
+        _transferMessageDigest =
+            checksum != null ? checksum.getMessageDigest() : null;
     }
    
-    public ChecksumFactory getChecksumFactory(ProtocolInfo protocol){
-        if( protocol instanceof GFtpProtocolInfo ){
+    public ChecksumFactory getChecksumFactory(ProtocolInfo protocol) {
+        if(protocol instanceof GFtpProtocolInfo) {
            GFtpProtocolInfo ftpp = (GFtpProtocolInfo)protocol;
            try {
                return ChecksumFactory.getFactory(ftpp.getChecksumType());
-           } catch ( NoSuchAlgorithmException ex){
-               esay("CRC Algorithm is not supported: "+ftpp.getChecksumType());
+           } catch (NoSuchAlgorithmException ex) {
+               esay("getChecksumFactory: CRC algorithm '" +
+                    ftpp.getChecksumType() + "' is not supported.");
            }
         }
         return null;
     }
 
-   // if we receive extendedn mode blocks,
-   // we still try to calculate the checksum
+    // if we receive extended mode blocks,
+    // we still try to calculate the checksum
     // but if this fails
     // we can calculate the checksum
     // on the end file
-   private long previousUpdateEndOffset = 0;
-   private boolean recalculateOnFile=false;
+    private long previousUpdateEndOffset = 0;
+    private boolean recalculateOnFile=false;
 
-   public synchronized void receiveEBlock(byte[] array,
-   int offset,
-   int length,
-   long offsetOfArrayInFile)
-   throws IOException
-   {
-      raDiskFile.seek(offsetOfArrayInFile);
-      raDiskFile.write( array , offset, length );
-      _offsetRanges.addRange(new Range(offsetOfArrayInFile,offsetOfArrayInFile+(long)length));
+    public synchronized void receiveEBlock(byte[] array,
+                                           int offset,
+                                           int length,
+                                           long offsetOfArrayInFile)
+    throws IOException {
 
-      if(_transferMessageDigest == null || recalculateOnFile ) {
+        raDiskFile.seek(offsetOfArrayInFile);
+        raDiskFile.write(array, offset, length);
+        _offsetRanges.addRange(new Range(offsetOfArrayInFile,offsetOfArrayInFile+(long)length));
 
-          return ;
-      }
+        if(_transferMessageDigest == null || recalculateOnFile) {
+            return;
+        }
 
-      if(_transferMessageDigest != null && previousUpdateEndOffset !=offsetOfArrayInFile ) {
-          say("previousUpdateEndOffset="+previousUpdateEndOffset+
-          " offsetOfArrayInFile="+offsetOfArrayInFile+
-          " : resetting the digest for future checksum calculation of the file");
-          recalculateOnFile = true;
-          _transferMessageDigest.reset();
-          return;
+        if(_transferMessageDigest != null &&
+           previousUpdateEndOffset != offsetOfArrayInFile) {
+            say("receiveEBlock: previousUpdateEndOffset=" +
+                previousUpdateEndOffset +
+                ", offsetOfArrayInFile=" + offsetOfArrayInFile +
+                " . Resetting the digest for future checksum calculation " +
+                "of the file");
+           recalculateOnFile = true;
+           _transferMessageDigest.reset();
+           return;
+        }
 
-      }
-
-      if( array == null ){
-          return;
-      }
-      previousUpdateEndOffset += length;
-      if(_transferMessageDigest != null) {
-	      _transferMessageDigest.update(array,offset,length);
-      }
-   }
-
-
+        if(array == null) {
+            return;
+        }
+        previousUpdateEndOffset += length;
+        if(_transferMessageDigest != null) {
+            _transferMessageDigest.update(array, offset, length);
+        }
+    }
 }
