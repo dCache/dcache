@@ -1741,15 +1741,11 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
                     _entry.lock(false) ;
                     _entry.setStorageInfo( _storageInfo ) ;
 
-                    // flush to tape only if the file defined as a 'tape file'( RP = Custodial) and the HSM is defined
-                    String hsm = _storageInfo.getHsm();
+                    // flush to tape only if the file defined as a 'tape file'( RP = Custodial)
                     RetentionPolicy retentionPolicy = _storageInfo.getRetentionPolicy();
                     if( retentionPolicy != null && retentionPolicy.equals(RetentionPolicy.CUSTODIAL) ) {
-                        if(hsm != null && !hsm.toLowerCase().equals("none") ) {
-                            _entry.setPrecious() ;
-                        }else{
-                            _entry.setCached() ;
-                        }
+                        _entry.setPrecious() ;
+
                     }else{
                     	_entry.setCached() ;
                     }
