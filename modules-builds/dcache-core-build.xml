@@ -496,9 +496,13 @@
 
 		<mkdir dir="${buildDir}/gplazma" />
 
-		<javac destdir="${buildDir}/gplazma" classpathref="gplazma.classpath" source="${javac.source}" target="${javac.target}" debug="${javac.debug}" verbose="${javac.verbose}">
+		<javac destdir="${buildDir}/gplazma" source="${javac.source}" target="${javac.target}" debug="${javac.debug}" verbose="${javac.verbose}">
 
 			<src path="${sourceDir}" />
+
+            <classpath refid="gplazma.classpath"/>
+            <classpath refid="dcache.classpath"/>
+
 			<include name="${dcache.packagePrefix}/services/authorization/**" />
 			<include name="${dcache.packagePrefix}/admin/UserMetaDataProvider_gPlazma.java" />
 		</javac>
@@ -529,8 +533,12 @@
 
 		<mkdir dir="${buildDir}/xrootd-tokenauthz" />
 
-		<javac destdir="${buildDir}/xrootd-tokenauthz" classpathref="xrootd-tokenauthz.classpath" source="${javac.source}" target="${javac.target}" debug="${javac.debug}" verbose="${javac.verbose}">
+		<javac destdir="${buildDir}/xrootd-tokenauthz" source="${javac.source}" target="${javac.target}" debug="${javac.debug}" verbose="${javac.verbose}">
 			<src path="${sourceDir}" />
+
+            <classpath refid="dcache.classpath"/>
+            <classpath refid="xrootd-tokenauthz.classpath"/>
+
 			<include name="org/dcache/xrootd/security/plugins/tokenauthz/**" />
 		</javac>
 	</target>
@@ -571,8 +579,12 @@
 
 		<mkdir dir="${buildDir}/dcache-srm" />
 
-		<javac destdir="${buildDir}/dcache-srm" classpathref="dcache-srm.classpath" source="${javac.source}" target="${javac.target}" debug="${javac.debug}" verbose="${javac.verbose}">
+		<javac destdir="${buildDir}/dcache-srm" source="${javac.source}" target="${javac.target}" debug="${javac.debug}" verbose="${javac.verbose}">
 			<src path="${sourceDir}" />
+
+            <classpath refid="dcache-srm.classpath"/>
+            <classpath refid="dcache.classpath"/>
+            <classpath refid="gplazma.classpath"/>
 
 			<include name="${dcache.packagePrefix}/doors/GsiFtpDoorV1.java" />
 			<include name="${dcache.packagePrefix}/movers/RemoteGsiftpTransferProtocol_1.java" />
