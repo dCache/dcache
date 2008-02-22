@@ -154,7 +154,7 @@ class FTPCommandException extends Exception
  * Exception indicating and error condition during a sendAndWait
  * operation.
  *
- * TODO: This should be refined to better conway the actual error.
+ * TODO: This should be refined to better convey the actual error.
  */
 class SendAndWaitException extends Exception
 {
