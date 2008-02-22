@@ -1,0 +1,114 @@
+package org.dcache.services.info.conduits;
+
+import org.apache.log4j.Logger;
+import org.dcache.services.info.*;
+
+/**
+ * A simple, abstract implementation of a blocking InfoConduit.  A new Thread
+ * is created on enable(), this calls the abstract method activity() which is
+ * presumed to block (e.g., for incoming network connections).
+ * <p>
+ * A further abstract method triggerActivityToReturn() allows the thread to
+ * escape from activity(), so the thread can be shut down cleanly.
+ * 
+ * @author Paul Millar
+ */
+abstract class AbstractThreadedConduit implements Runnable, Conduit {
+
+	private Thread _thd = null;
+	private Logger _logger = Logger.getLogger("logger.org.dcache.info");
+	protected int _callCount = 0;
+	volatile boolean _should_run=true;
+	
+	
+	/**
+	 *  Start conduit activity.
+	 */
+	public void enable() {
+		_callCount = 0;
+		_should_run = true;
+		
+		if( _thd == null) {
+			_thd = new Thread( this);
+			_thd.start();
+			_thd.setName( this.getClass().getSimpleName() + " conduit");
+		} else
+			InfoProvider.getInstance().say( "Request to start when thread is already running.");
+	}
+
+	/**
+	 *  Stop all conduit activity.
+	 */
+	public void disable() {
+		if( _thd == null)
+			return;
+		
+		_should_run = false;
+			
+		triggerBlockingActivityToReturn();
+			
+		_thd = null;
+	}
+	
+	public boolean isEnabled() {
+		return _thd != null;
+	}
+
+	
+	/**
+	 *  Typically, activity() will include some element that blocks.
+	 *  This method should break that blocking call and cause the activity()
+	 *  method to return quickly.
+	 */
+	abstract void triggerBlockingActivityToReturn();
+
+	
+	/**
+	 *  A method provides some activity; typically, this method
+	 *  will block, pending network activity.
+	 */
+	abstract void blockingActivity();
+	
+	
+	
+	/**
+	 *  This class's private thread.  Simply loop over the
+	 *  (subclass-specific) blocking activity.
+	 */
+	public void run() {
+		while( _should_run)
+			blockingActivity();
+	}
+	
+	
+	void say( String msg) {
+		if( _logger != null)
+			_logger.error(msg);
+	}
+	
+	/**
+	 * Since we anticipate each conduit to have only one instance, we return the Class simple
+	 * name here.
+	 */
+	public String toString() {
+		return this.getClass().getSimpleName();
+	}
+	
+	/**
+	 * Return some metadata about this conduit.
+	 */
+	public String getInfo() {
+		StringBuffer sb = new StringBuffer();
+		
+		sb.append( "[");
+		sb.append( isEnabled() ? "enabled" : "disabled");
+		
+		if( isEnabled()) {
+			sb.append( ", ");
+			sb.append( _callCount);
+		}
+		sb.append( "]");
+		
+		return sb.toString();
+	}
+}

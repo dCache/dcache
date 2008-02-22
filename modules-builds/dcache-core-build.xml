@@ -24,6 +24,7 @@
 	<property name="gplazma.jar" location="${classesDir}/gplazma.jar" />
 	<property name="xrootd-tokenauthz.jar" location="${classesDir}/xrootd-tokenauthz.jar" />
 	<property name="chimera-provider.jar" location="${classesDir}/chimera-provider.jar" />
+	<property name="info.jar" location="${classesDir}/info.jar" />
 
 	<!-- this should be in 'common.xml' but that didnt work -->
 	<target name="cleanall" depends="clean" description="Remove everything produced by me.">
@@ -31,6 +32,7 @@
 		<delete file="${dcache-srm.jar}" />
 		<delete file="${gplazma.jar}" />
 		<delete file="${xrootd-tokenauthz.jar}" />
+		<delete file="${info.jar}" />
 	</target>
 
 
@@ -85,6 +87,19 @@
 	          </uptodate>
 		    </and>
 		  </condition>
+	</target>
+	
+	<target name="isUptodate.info.jar">
+		<condition property="info.jar.upToDate">
+			<and>
+				<available file="${info.jar}" type="file" />
+				<uptodate targetfile="${info.jar}">
+					<srcfiles dir="${sourceDir}">
+						<include name="**/*.java"/>
+					</srcfiles>
+				</uptodate>
+			</and>
+		</condition>
 	</target>
 
         <target name="isDependPresent">
@@ -263,7 +278,24 @@
 			<selector refid="xrootd-tokenauthz.classpath.selector" />
 		</fileset>
 	</path>
+	
+	<!-- Classpath for info.jar -->
+	
+	<selector id="info.classpath.selector">
+		<or>
+			<filename name="**/dcache.jar" />
+			<filename name="**/cells.jar" />
+		</or>
+	</selector>
 
+	<path id="info.classpath">
+		<fileset dir="${classesDir}">
+			<selector refid="info.classpath.selector" />
+		</fileset>
+		<fileset dir="${libDir}">
+			<selector refid="info.classpath.selector" />
+		</fileset>
+	</path>
 
 	<!--       =======
              TARGETS
@@ -370,6 +402,7 @@
 			<exclude name="org/dcache/chimera/**"/>
 			<exclude name="org/dcache/xrootd/security/plugins/**" />
 			<exclude name="org/dcache/xrootd/tests/**" />
+			<exclude name="org/dcache/services/info/**" />
 			<exclude name="${dcache.packagePrefix}/replicaManager/Semaphore.java" />
 			<exclude name="${dcache.packagePrefix}/replicaManager/ReplicaManagerV2.java" />
 			<exclude name="${dcache.packagePrefix}/replicaManager/ReplicaManager.java" />
@@ -556,7 +589,41 @@
 		</jar>
 
 	</target>
+	
+	<!--  
+	     I N F O   S E R V I C E
+	-->
+	
+	<target name="info.compile" unless="info.jar.upToDate" depends="dcache.jar">
+		<mkdir dir="${buildDir}/info"/>
+		
+		<javac destdir="${buildDir}/info" source="${javac.source}" target="${javac.target}" debug="${javac.debug}" verbose="${javac.verbose}">
+			<src path="${sourceDir}" />
+			<classpath refid="dcache.classpath"/>
+			<classpath refid="info.classpath"/>
+			
+			<include name="org/dcache/services/info/**" />
+		</javac>
+	</target>
 
+	
+	<target name="info.jar" depends="isUptodate.info.jar,info.compile" unless="info.jar.upToDate" description="Create info.jar">
+		<jar jarfile="${info.jar}">
+			<fileset dir="${buildDir}/info" />
+
+			<manifest>
+				<section name="Shared">
+					<attribute name="Title" value="dCache info cell" />
+					<attribute name="Vendor" value="dCache.ORG" />
+					<attribute name="Date" value="${jar.timestamp}" />
+				</section>
+				<section name="Copyright">
+					<attribute name="Copy" value="(C) dCache.ORG  2000 - 2008" />
+				</section>
+			</manifest>
+		</jar>
+	</target>
+	
 	<!--
              Targets for dcache-srm.jar
   -->
@@ -873,6 +940,12 @@
 				<include name="bcprov-jdk15-133.jar" />
 			</fileset>
 		</copy>
+	</target>
+	
+	<target name="info-bin" depends="info.jar">
+		<mkdir dir="${binDir}/classes" />
+		
+		<copy file="${classesDir}/info.jar" todir="${binDir}/classes" />
 	</target>
 
 </project>

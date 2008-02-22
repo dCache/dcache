@@ -26,10 +26,8 @@
        <format property="file-timestamp" pattern="yyyyMMddhhmmss" />
     </tstamp>
 
-	<!-- defalut minor vesion is next officail RC -->
+	<!-- defalut minor version is next official RC -->
     <property name="build.minor.number" value="${build.number}rc" />
-
-
 
 
     <loadproperties srcFile="release.properties" />
@@ -608,7 +606,7 @@
     <!--
         MAKE NEW RELEASE.
 
-        current procedure contains foolowing steps:
+        current procedure contains following steps:
 
         1. set rpm/tar name to release id
         2. build rpm and tar
