@@ -11,6 +11,7 @@ import java.util.LinkedList;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.io.PrintWriter;
 
 import java.sql.SQLException;
@@ -259,7 +260,7 @@ class PinManagerDatabase
         }
         if(previousSchemaVersion == 2) {
             try {
-                updateSchemaToVersion3(con);
+                updateSchemaToVersion3from2(con);
             }
             catch (SQLException sqle) {
                 error("updateSchemaToVersion3 failed, shcema might have been updated already:");
@@ -393,7 +394,7 @@ class PinManagerDatabase
         }
     }
 
-        private void updateSchemaToVersion3(Connection con) throws SQLException {
+        private void updateSchemaToVersion3from2(Connection con) throws SQLException {
             PreparedStatement pinsInsertStmt =
                 con.prepareStatement(InsertIntoPinsTable);
             PreparedStatement pinReqsInsertStmt =
@@ -450,6 +451,21 @@ class PinManagerDatabase
    
     }
 
+   private void createIndecies() {
+    try {       
+       PinManagerDatabase.createIndexes(jdbc_pool,PinManagerPinsTableName,"PnfsId");
+    } catch (SQLException sqle) { debug("index creation failed "+ sqle); }
+    try {       
+       PinManagerDatabase.createIndexes(jdbc_pool,PinManagerPinsTableName,"State");
+    } catch (SQLException sqle) { debug("index creation failed "+ sqle); }
+    try {       
+       PinManagerDatabase.createIndexes(jdbc_pool,PinManagerRequestsTableName,"PinId");
+    } catch (SQLException sqle) { debug("index creation failed "+ sqle); }
+    try {       
+       PinManagerDatabase.createIndexes(jdbc_pool,PinManagerRequestsTableName,"Expiration");
+    } catch (SQLException sqle) { debug("index creation failed "+ sqle); }
+
+   }
         
    private void prepareTables() throws SQLException {
         try {
@@ -528,7 +544,8 @@ class PinManagerDatabase
             error(ex.toString());
             throw new SQLException(ex.toString());
         }       
-    }
+        createIndecies();
+   }
         
 
     private synchronized long nextLong(Connection _con)
@@ -903,20 +920,29 @@ class PinManagerDatabase
     }
  String selectAllPins =
             "SELECT * FROM "+ PinManagerPinsTableName;
-   private Collection<Pin> getAllPins(Connection _con) throws SQLException
+   private void allPinsToStringBuffer(Connection _con, StringBuffer sb) throws SQLException
     {
-        Collection<Pin> pins = new HashSet<Pin>();
-
-        PreparedStatement sqlStatement =
+         PreparedStatement sqlStatement =
                 _con.prepareStatement(selectAllPins);
         ResultSet set = sqlStatement.executeQuery();
+        int pcount = 0;
+        int preqcount = 0;
         while(set.next()) {
+            pcount++;
             Pin pin = extractPinFromResultSet( set );
             pin.setRequests(getPinRequestsByPin(_con,pin));
-            pins.add(pin);
+            preqcount += pin.getRequestsNum();
+            sb.append(pin.toString()).append('\n');
+        }
+        
+        if(pcount == 0)  {
+            sb.append("no files are pinned");
+        } else {
+            sb.append("total number of pins: ").append(pcount);
+            sb.append("\n total number of pin requests:").append(preqcount);
         }
         sqlStatement.close();
-        return pins;
+        return;
     }
 
     private static final String selectPinsByState =
@@ -960,7 +986,7 @@ class PinManagerDatabase
         return pins;
     }
 
-    public Collection<Pin> getAllPins() throws PinDBException
+    public void allPinsToStringBuffer(StringBuffer sb) throws PinDBException
     {
         Connection _con = getThreadLocalConnection();
         if(_con == null) {
@@ -968,7 +994,7 @@ class PinManagerDatabase
         }
        
         try {
-            return getAllPins(_con);
+             allPinsToStringBuffer(_con,sb);
         } catch(SQLException sqle) {
             error("getAllPins: "+sqle);
             throw new PinDBException(sqle.toString());
@@ -1287,6 +1313,52 @@ class PinManagerDatabase
             throw new PinDBException(sqle.getMessage());
         }
      }
+
+     private static void  createIndexes(JdbcConnectionPool connectionPool,
+            String name,
+            String ... columns) 
+		throws SQLException {		
+		Connection connection = null; 
+		try { 
+				connection = connectionPool.getConnection();
+				DatabaseMetaData md = connection.getMetaData();
+				ResultSet set       = md.getIndexInfo(null, 
+								      null, 
+								      name,
+								      false, 
+								      false);
+				HashSet<String> listOfColumnsToBeIndexed = new HashSet<String>();
+				for (String column : columns) {
+					listOfColumnsToBeIndexed.add(column.toLowerCase());
+				}
+				while(set.next()) { 
+					String s = set.getString("column_name").toLowerCase();
+					if (listOfColumnsToBeIndexed.contains(s)) { 
+						listOfColumnsToBeIndexed.remove(s);
+					}
+				}
+				for (Iterator<String> i=listOfColumnsToBeIndexed.iterator();i.hasNext();) { 
+					String column = i.next();
+					String indexName=name.toLowerCase()+"_"+column+"_idx";
+					String createIndexStatementText = "CREATE INDEX "+indexName+" ON "+name+" ("+column+")";
+					Statement s = connection.createStatement();
+					int result = s.executeUpdate(createIndexStatementText);
+					connection.commit();
+					s.close();
+				}
+		}
+		catch (SQLException e) {
+			connectionPool.returnFailedConnection(connection);
+			connection = null;
+			throw e;
+		}
+		finally {
+			if(connection != null) {
+				connectionPool.returnConnection(connection);
+				connection = null;
+			}
+		}
+	}
 
    
 }

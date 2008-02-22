@@ -347,21 +347,11 @@ public class PinManager extends AbstractCell implements Runnable  {
                 }
                 return sb.toString();
             }
-
-            Collection<Pin> pins = db.getAllPins();       
-            if (pins.isEmpty()) {
-                return "no files are pinned";
-            }
-
+            
             StringBuffer sb = new StringBuffer();
-            for (Pin pin : pins) {
-                sb.append(pin.toString());
-                    sb.append("\n  pinRequests: \n");
-                for (PinRequest pinReqiest:pin.getRequests()) {
-                    sb.append("  ").append(pinReqiest).append('\n');
-                }
-            }        
-            return sb.toString();
+            
+             db.allPinsToStringBuffer(sb);       
+             return sb.toString();
         } finally {
             db.commitDBOperations();
         }

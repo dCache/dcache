@@ -111,8 +111,13 @@ public class Pin {
         return requests;
     }
 
-public void setRequests(Set<PinRequest> requests) {
+    public void setRequests(Set<PinRequest> requests) {
         this.requests = requests;
+    }
+    
+    public int getRequestsNum() {
+        if(requests == null) return 0;
+        return requests.size();
     }
 
     
