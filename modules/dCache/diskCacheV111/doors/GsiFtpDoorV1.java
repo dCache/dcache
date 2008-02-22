@@ -119,12 +119,11 @@ public class GsiFtpDoorV1 extends GssFtpDoorV1 {
             else if ( arg_string.equalsIgnoreCase("false") )
                 _perfMarkerConf.use = false;
             else {
-                error("GsiFtpDoorV1: illegal command option value in " +
-                      "usePerfMarkers=" + arg_string + ". It must be 'true'" +
-		      " or 'false'.");
-// TODO: shouldn't we throw a RuntimeException? Or at least document that the
-//       error is being ignored?? If we are ignoring, then
-//       we MUST at least set _perfMarkerConf.use=false.
+                String msg = "GsiFtpDoorV1: illegal command option value in " +
+                             "usePerfMarkers=" + arg_string +
+                             ". It must be 'true' or 'false'.";
+                fatal(msg);
+                throw new RuntimeException(msg);
             }
         }
 
@@ -140,12 +139,11 @@ public class GsiFtpDoorV1 extends GssFtpDoorV1 {
                    _perfMarkerConf.use    = true;
                 }
             } catch (NumberFormatException ex) {
-                _perfMarkerConf.period = 0;
-                _perfMarkerConf.use    = false;
-                warn("GsiFtpDoorV1: error in perfMarkerPeriod argument: '" +
-                      arg_string + "' is not an integer." +
-                     "Turning off PerfMarkerConf.");
-// TODO: this seems wrong. If an invalid argument is passed, abort the show.
+                String msg = "GsiFtpDoorV1: error in -perfMarkerPeriod " +
+                             "argument: '" + arg_string +
+                             "' is not an integer.";
+                fatal(msg);
+                throw new RuntimeException(msg);
             }
         }
         info("GsiFtpDoorV1: Performance Markers : " + _perfMarkerConf.use +
