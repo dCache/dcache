@@ -1344,15 +1344,13 @@ public abstract class AbstractFtpDoorV1
 
             if (reply.getReturnCode() == 0 && adapterError == null) {
                 if (_perfMarkerTask != null) {
-                    try {
+                    ProtocolInfo pinfo = reply.getProtocolInfo();
+                    if(pinfo != null && pinfo instanceof GFtpProtocolInfo ) {
                         _perfMarkerTask.stop((GFtpProtocolInfo)reply.getProtocolInfo());
-                    } catch (ClassCastException e) {
-                        /* The pool sent the wrong protocol info
-                         * instance. Clearly a bug. Log it.
-                         */
-                        error("AbstractFtpDoorV1::messageArrived:" +
-                              " Error stopping PerfMarkerTask." +
-                              " Pool sent wrong protocol information.");
+                    } else {
+                        error("DoorTransferFinishedMessage arrived and  ProtocolInfo is null "+
+                            "or is not of type GFtpProtocolInfo");
+                        _perfMarkerTask.stop();
                     }
                 }
 
