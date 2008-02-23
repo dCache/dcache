@@ -2701,24 +2701,24 @@ public class ManagerV2
 	private long linkGroupAuthorizationFileLastUpdateTimestampt = 0;
 	
 	private void updateLinkGroupAuthorizationFile() {
-		say("updateLinkGroupAuthorizationFile");
+		//say("updateLinkGroupAuthorizationFile");
 		if(linkGroupAuthorizationFileName == null) {
 			return;
 		}
 		java.io.File f = new java.io.File (linkGroupAuthorizationFileName);
 		if(!f.exists()) {
-			say("LinkGroupAuthorizationFile "+linkGroupAuthorizationFileName+
-			     " not found");
+			//say("LinkGroupAuthorizationFile "+linkGroupAuthorizationFileName+
+			//     " not found");
 			linkGroupAuthorizationFile = null;
 		}
 		long lastModified = f.lastModified();
 		if(linkGroupAuthorizationFile == null || lastModified >= linkGroupAuthorizationFileLastUpdateTimestampt) {
 			linkGroupAuthorizationFileLastUpdateTimestampt = lastModified;
 			try {
-				say("reading "+linkGroupAuthorizationFileName);
+				//say("reading "+linkGroupAuthorizationFileName);
 				linkGroupAuthorizationFile = 
 					new LinkGroupAuthorizationFile(linkGroupAuthorizationFileName);
-				say("done reading "+linkGroupAuthorizationFileName);
+				//say("done reading "+linkGroupAuthorizationFileName);
 			}
 			catch(Exception e) {
 			    esay(e);
@@ -2728,13 +2728,13 @@ public class ManagerV2
 	
 	private void updateLinkGroups() {
 		long currentTime = System.currentTimeMillis();
-		say("updateLinkGroups()... at "+currentTime);
+		//say("updateLinkGroups()... at "+currentTime);
 		CellMessage cellMessage = new CellMessage(new CellPath(poolManager),
 							  new PoolMgrGetPoolLinkGroups());
 		PoolMgrGetPoolLinkGroups getLinkGroups = null;
 		try {
 			cellMessage = sendAndWait(cellMessage,1000*5*60);
-			say("updateLinkGroups() received reply");
+			//say("updateLinkGroups() received reply");
 			if(cellMessage == null ) {
 				esay("updateLinkGroups() : request timed out");
 			    return;
@@ -2744,8 +2744,8 @@ public class ManagerV2
 			    return;                
 			}
 			if( ! (cellMessage.getMessageObject() instanceof PoolMgrGetPoolLinkGroups)){
-				say("updateLinkGroups() : reply message is "+
-				     cellMessage.getMessageObject().getClass().getName());
+				//say("updateLinkGroups() : reply message is "+
+				 //    cellMessage.getMessageObject().getClass().getName());
 				return;                
 			}
 			getLinkGroups = (PoolMgrGetPoolLinkGroups)cellMessage.getMessageObject();
@@ -2761,7 +2761,7 @@ public class ManagerV2
 			return;
 		}
 		PoolLinkGroupInfo[] poolLinkGroupInfos = getLinkGroups.getPoolLinkGroupInfos();
-		say("updateLinkGroups() number of poolLinkGroupInfos is "+poolLinkGroupInfos.length);
+		//say("updateLinkGroups() number of poolLinkGroupInfos is "+poolLinkGroupInfos.length);
 		if(poolLinkGroupInfos.length == 0) {
 			return;
 		}
@@ -2776,17 +2776,17 @@ public class ManagerV2
 			boolean replicaAllowed   = info.isReplicaAllowed();
 			boolean outputAllowed    = info.isOutputAllowed();
 			boolean custodialAllowed = info.isCustodialAllowed();
-			say("updateLinkGroups: received LinkGroupInfo: name:"+linkGroupName+
-			    " onlineAllowed:"+onlineAllowed+
-			    " nearlineAllowed:"+nearlineAllowed+
-			    " replicaAllowed:"+replicaAllowed+
-			    " outputAllowed:"+outputAllowed+
-			    " custodialAllowed:"+custodialAllowed+
-			    " avalSpaceInBytes:"+avalSpaceInBytes);
+			//say("updateLinkGroups: received LinkGroupInfo: name:"+linkGroupName+
+			//    " onlineAllowed:"+onlineAllowed+
+			//    " nearlineAllowed:"+nearlineAllowed+
+			//    " replicaAllowed:"+replicaAllowed+
+			//    " outputAllowed:"+outputAllowed+
+			//    " custodialAllowed:"+custodialAllowed+
+			//    " avalSpaceInBytes:"+avalSpaceInBytes);
 			if(linkGroupAuthorizationFile != null) {
 				LinkGroupAuthorizationRecord record = 
 					linkGroupAuthorizationFile.getLinkGroupAuthorizationRecord(linkGroupName);
-				say("got LinkGroupAuthorizationRecord for "+linkGroupName+" record="+record);
+				//say("got LinkGroupAuthorizationRecord for "+linkGroupName+" record="+record);
 				if(record != null) {
 					FQAN[] fqans = record.getFqanArray();
 					if(fqans != null  && fqans.length >0) {
@@ -2801,7 +2801,7 @@ public class ManagerV2
 			}
 			if(vos != null) {
 				for(int j =0; j<vos.length ; ++j ) {
-					say("updateLinkGroups: VOInfo["+j+"]="+vos[j]);
+					//say("updateLinkGroups: VOInfo["+j+"]="+vos[j]);
 				}
 			}
 			try {
@@ -2834,16 +2834,16 @@ public class ManagerV2
 		boolean custodialAllowed,
 		VOInfo[] linkGroupVOs
 		) throws SQLException {
-		say("UpdateLinkGroupInfo( linkGroup="+linkGroupName+
-		     ", onlineAllowed ="+ onlineAllowed+
-		     ", nearlineAllowed ="+ nearlineAllowed+
-		     ", replicaAllowed ="+ replicaAllowed+
-		     ", outputAllowed ="+ outputAllowed+
-		    ", custodialAllowed ="+ custodialAllowed+
-		     ", freeSpace="+freeSpace);
+		//say("UpdateLinkGroupInfo( linkGroup="+linkGroupName+
+		//     ", onlineAllowed ="+ onlineAllowed+
+		//     ", nearlineAllowed ="+ nearlineAllowed+
+		//     ", replicaAllowed ="+ replicaAllowed+
+		//     ", outputAllowed ="+ outputAllowed+
+		//    ", custodialAllowed ="+ custodialAllowed+
+		//     ", freeSpace="+freeSpace);
 		if(linkGroupVOs != null) {
 			for(int i=0; i<linkGroupVOs.length; ++i) {
-				say("UpdateLinkGroupInfo( VO["+i+"]="+linkGroupVOs[i]);
+		//		say("UpdateLinkGroupInfo( VO["+i+"]="+linkGroupVOs[i]);
 			}
 		}
 		long id;
@@ -2851,7 +2851,7 @@ public class ManagerV2
 		try {
 			connection = connection_pool.getConnection();
 			connection.setAutoCommit(false);
-			say("Executing "+LinkGroupIO.SELECT_LINKGROUP_FOR_UPDATE_BY_NAME+" ?="+linkGroupName);
+			//say("Executing "+LinkGroupIO.SELECT_LINKGROUP_FOR_UPDATE_BY_NAME+" ?="+linkGroupName);
 			try { 
 				LinkGroup group = (LinkGroup) manager.selectForUpdate(connection,
 										      new LinkGroupIO(),
@@ -2900,7 +2900,7 @@ public class ManagerV2
 			PreparedStatement sqlStatement2 =
 				connection.prepareStatement(selectLinkGroupVOs);
 			sqlStatement2.setLong(1,id);
-			say("executing statement: "+selectLinkGroupVOs+" ?="+id);
+			// say("executing statement: "+selectLinkGroupVOs+" ?="+id);
 			ResultSet VOsSet = sqlStatement2.executeQuery();
 			Set<VOInfo> insertVOs = new HashSet<VOInfo>();
 			if(linkGroupVOs != null) {
@@ -2926,7 +2926,7 @@ public class ManagerV2
 					"','"+nextVo.getVoRole()+
 					"',"+id+")";
 				Statement sqlStatement3 = connection.createStatement();
-				say("executing statement: "+insertLinkGroupVO);
+				// say("executing statement: "+insertLinkGroupVO);
 				sqlStatement3.executeUpdate(insertLinkGroupVO);
 				sqlStatement3.close();
 				
@@ -2938,7 +2938,7 @@ public class ManagerV2
 					"' AND VORole ='"+nextVo.getVoRole()+
 					"' AND linkGroupId="+id;
 				Statement sqlStatement4 = connection.createStatement();
-				say("executing statement: "+insertLinkGroupVO);
+				// say("executing statement: "+insertLinkGroupVO);
 				sqlStatement4.executeUpdate(insertLinkGroupVO);
 				sqlStatement4.close();
 			}	

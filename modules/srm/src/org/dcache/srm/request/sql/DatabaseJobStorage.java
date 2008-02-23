@@ -1586,16 +1586,16 @@ public void updatePendingJobs() throws SQLException, InterruptedException,org.dc
                 pool = JdbcConnectionPool.getPool(jdbcUrl, jdbcClass, user, pass);
                 //connect
                 _con = pool.getConnection();
-                 String sqlStatementString =
+                String sqlStatementString =
                         "DELETE from "+getTableName() +
                         " WHERE CREATIONTIME+LIFETIME < "+
                         cutout_expiration_time;
                         Statement s = _con.createStatement();
-                        say("executing statement: "+sqlStatementString);
+                        //say("executing statement: "+sqlStatementString);
                         int result = s.executeUpdate(sqlStatementString);
                         s.close();
                         _con.commit();
-                        say("deleted "+result+" records ");
+                        //say("deleted "+result+" records ");
                }
                 catch (SQLException sqe) {
                     if(_con != null) {
