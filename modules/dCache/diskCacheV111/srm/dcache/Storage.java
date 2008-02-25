@@ -2388,7 +2388,13 @@ public class Storage
                                         FileMetaData parentFMD) 
         throws SRMException {        
         say("getFileMetaData(" + path + ")");
-        String absolute_path = srm_root + "/" + path;
+	String absolute_path=null;
+	if (path.startsWith(File.separator)) {
+		absolute_path = srm_root + path;
+	}
+	else {
+		absolute_path = srm_root + File.separator + path;
+	}
         diskCacheV111.util.FileMetaData parent_util_fmd = null;
         if (parentFMD != null && parentFMD instanceof DcacheFileMetaData) {
             DcacheFileMetaData dfmd = (DcacheFileMetaData)parentFMD;
@@ -2445,7 +2451,6 @@ public class Storage
         } 
 	catch (CacheException e) {
             esay("could not get storage info by path : ");
-            esay(e);
             throw new SRMException("could not get storage info by path : "+e);
         }
 	
