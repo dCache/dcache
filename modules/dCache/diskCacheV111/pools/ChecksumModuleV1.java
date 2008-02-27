@@ -132,35 +132,38 @@ public class ChecksumModuleV1  {
        }
 
    }
-   public Checksum calculateFileChecksum(
-                CacheRepositoryEntry entry ,
-                Checksum checksum          )throws IOException , CacheException {
 
-       _cell.say("Calculating checksum on "+entry.getDataFile());
-       MessageDigest digest = checksum.getMessageDigest() ;
+    public Checksum calculateFileChecksum(CacheRepositoryEntry entry,
+                                          Checksum checksum)
+        throws IOException, CacheException, InterruptedException
+    {
+        _cell.say("Calculating checksum on " + entry.getDataFile());
+        MessageDigest digest = checksum.getMessageDigest();
 
-       FileInputStream in = new FileInputStream( entry.getDataFile() ) ;
-       byte [] buffer = new byte[64*1024] ;
-       long sum = 0L ;
-       try{
-          while(true){
+        FileInputStream in = new FileInputStream(entry.getDataFile());
+        byte [] buffer = new byte[64 * 1024];
+        long sum = 0L ;
+        try {
+            int rc;
+            while ((rc = in.read(buffer, 0, buffer.length)) > 0) {
+                sum += rc;
+                digest.update(buffer, 0, rc);
+                if (Thread.interrupted()) {
+                    throw new InterruptedException();
+                }
+            }
+        } finally {
+            try {
+                in.close();
+            } catch (IOException e) {
+            }
+        }
+        _cell.say("Calculating checksum on " + entry.getDataFile()
+                  + " done, length " + sum + " chsm " + checksum);
+        checksum.getDigest();
+        return checksum;
+    }
 
-              int rc = in.read( buffer , 0 , buffer.length ) ;
-              if( rc <=0 )break ;
-              sum += rc ;
-              digest.update( buffer , 0 , rc ) ;
-
-          }
-       }finally{
-
-          try{ in.close() ; }catch(Exception ee ){}
-
-       }
-       _cell.say("Calculating checksum on "+entry.getDataFile() + " done, length "+sum + " chsm "+checksum);
-       checksum.getDigest();
-       return checksum ;
-
-   }
    public void storeChecksumInPnfs( PnfsId pnfsId , Checksum checksum ){
       storeChecksumInPnfs( pnfsId , checksum , true ) ;
    }
