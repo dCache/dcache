@@ -1342,6 +1342,12 @@ public abstract class AbstractFtpDoorV1
             }
             _transferInProgress = false;
 
+            /* Receiving DoorTransferFinishedMessage indicates that
+             * the mover is done. To avoid that the transfer_error
+             * method tries to kill the mover, we set moverId to null.
+             */
+            _transfer.moverId = null;
+
             if (reply.getReturnCode() == 0 && adapterError == null) {
                 if (_perfMarkerTask != null) {
                     ProtocolInfo pinfo = reply.getProtocolInfo();
