@@ -437,14 +437,14 @@ public class HsmStorageHandler2  {
        public long getClientId(){ return 0 ; }
        public void queued( int id ){
           _timestamp = System.currentTimeMillis() ;
-          id = id;
+          _id = id;
        }
        public double getTransferRate(){ return 10.0 ; }
        public void unqueued(){
 
-          say("Unqueuing "+_pnfsId ) ;
+          say("Dequeuing "+_pnfsId ) ;
 
-          CacheException cex = new CacheException( 33 , "Job unqueued (by operator)") ;
+          CacheException cex = new CacheException( 33 , "Job Dequeued (by operator)") ;
           executeCallbacks( getCallbackList( _restorePnfsidList , _pnfsId )  , _pnfsId , cex ) ;
 
           synchronized( _repository ){
@@ -456,7 +456,7 @@ public class HsmStorageHandler2  {
 
              }catch(Exception eee){
                 esay(_pnfsId.toString()+
-                     " : Failed to destroy repository entry after 'unqueue' : "+
+                     " : Failed to destroy repository entry after 'dequeue' : "+
                      eee) ;
              }
 
