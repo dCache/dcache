@@ -641,9 +641,8 @@ public class PoolMonitorV5 {
                 _cell.say("queryPoolsForPnfsId : reply : " + poolMessage);
 
                 boolean have = poolMessage.getHave();
-                boolean waiting = poolMessage.getWaiting();
                 String poolName = poolMessage.getPoolName();
-                if (have || waiting) {
+                if (have) {
 
                     PoolCheckAdapter check = new PoolCheckAdapter(_costModule
                             .getPoolCost(poolName, filesize));
