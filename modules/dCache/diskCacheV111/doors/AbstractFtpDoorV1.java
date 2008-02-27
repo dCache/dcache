@@ -402,7 +402,7 @@ public abstract class AbstractFtpDoorV1
     protected boolean _allowRelay;
 
     /**
-     * If space_reservation_enabled is true, then the door will consult 
+     * If space_reservation_enabled is true, then the door will consult
      * the srmv2 module to check if the transfer is performed into the
      * space that has been preallocated by the user.
      */
@@ -766,7 +766,7 @@ public abstract class AbstractFtpDoorV1
         // In some cases, passive retrieves are resetting tlog before it
         // can be used.
         if( tlog == null) {
-            info("AbstractFtpDoorV1::SetTLog: not setting _tLog to " + 
+            info("AbstractFtpDoorV1::SetTLog: not setting _tLog to " +
                  "null because it seems to screw things up");
         } else {
             info("AbstractFtpDoorV1::SetTLog: setting _tLog");
@@ -3280,10 +3280,10 @@ public abstract class AbstractFtpDoorV1
             request.setPnfsPath(_transfer.path);
             request = sendAndWait(new CellPath(_poolManager), request,
                                   _poolManagerTimeout * 1000);
-            
+
             // use the updated StorageInfo from the PoolManager/SpaceManager
             storageInfo = request.getStorageInfo();
-            
+
             _transfer.pool = request.getPoolName();
         }
 
@@ -3355,7 +3355,7 @@ public abstract class AbstractFtpDoorV1
             } while (!message.getPnfsId().equals(_transfer.pnfsId.getId()));
 
             if (message.getPassive() && !reply127) {
-                reportBug("transfer", 
+                reportBug("transfer",
                           "internal error: pool unexpectedly volunteered to " +
                           "be passive", null);
             }
@@ -3410,12 +3410,33 @@ public abstract class AbstractFtpDoorV1
                 _transfer.adapter.close();
             }
 
-            if (_transfer.spaceReservationInfo != null) {
-                SpaceManagerUnlockSpaceMessage unlockSpace =
-                    new SpaceManagerUnlockSpaceMessage
-                    (_transfer.spaceReservationInfo.getSpaceToken(),
-                     _transfer.spaceReservationInfo.getAvailableLockedSize());
+            if (_transfer.pool != null && _transfer.moverId != null) {
+                warn("AbstractFtpDoorV1::transfer_error: sending kill to "
+                     + _transfer.pool + " for mover " + _transfer.moverId);
                 try {
+                    PoolMoverKillMessage message =
+                        new PoolMoverKillMessage(_transfer.pool,
+                                                 _transfer.moverId);
+                    message.setReplyRequired(false);
+                    sendMessage(new CellMessage(new CellPath(_transfer.pool),
+                                                message));
+                } catch (NotSerializableException e) {
+                    reportBug("transfer_error",
+                              "got NotSerializableException sending message " +
+                              "to SpaceManager", e);
+                } catch (NoRouteToCellException e) {
+                    error("AbstractFtpDoorV1::transfer_error: cannot send "
+                          + "message to " + _transfer.pool
+                          + ": no route to cell.");
+                }
+            }
+
+            if (_transfer.spaceReservationInfo != null) {
+                try {
+                    SpaceManagerUnlockSpaceMessage unlockSpace =
+                        new SpaceManagerUnlockSpaceMessage
+                        (_transfer.spaceReservationInfo.getSpaceToken(),
+                         _transfer.spaceReservationInfo.getAvailableLockedSize());
                     sendMessage(new CellMessage(new CellPath("SpaceManager"),
                                                 unlockSpace ));
                 } catch (NotSerializableException e) {
@@ -3423,7 +3444,7 @@ public abstract class AbstractFtpDoorV1
                               "got NotSerializableException sending message " +
                               "to SpaceManager", e);
                 } catch (NoRouteToCellException e) {
-                    error("AbstractFtpDoorV1::transfer_error: can't send " +
+                    error("AbstractFtpDoorV1::transfer_error: cannot send " +
                           "message to SpaceManager: no route to cell.");
                 }
             }
@@ -3810,39 +3831,22 @@ public abstract class AbstractFtpDoorV1
     // --------------------------------------------
     // ABOR: close data channels, but leave command channel open
     // ---------------------------------------------
-    public void ac_abor(String arg)
+    public synchronized void ac_abor(String arg)
     {
-        synchronized(this) {
-            // Data transfer in progress: Send mover kill to pool, and send response 426 to client
-            if (_transferInProgress){
-                if (_transfer.pool != null && _transfer.moverId != null) {
-                    error("AbstractFtpDoorV1::ac_abor: sending mover kill to pool " +
-                          _transfer.pool + " for moverId=" + _transfer.moverId);
-                    PoolMoverKillMessage killMessage = new PoolMoverKillMessage(_transfer.pool,_transfer.moverId);
-                    killMessage.setReplyRequired(false);
-                    try {
-                        sendMessage(new CellMessage(new CellPath(_transfer.pool), killMessage));
-                    } catch(Exception e) {
-                        error("AbstractFtpDoorV1::ac_abor: got exception " +
-                              "sending message: " + e.getMessage());
-                    }
-                }
-                reply("426 Transfer aborted");
-            }
+        transfer_error(426, "Transfer aborted");
 
-            // In any case, close data socket and send response 226 to client
-            if (_dataSocket != null) {
-                try {
-                    _dataSocket.close();
-                } catch (IOException e) {
-                    // ignore
-                }
-                _dataSocket=null;
-                reply("226 Closing data connection, abort successful");
-            } else {
-                reply("226 Abort successful");
+        // In any case, close data socket and send response 226 to client
+        if (_dataSocket != null) {
+            try {
+                _dataSocket.close();
+            } catch (IOException e) {
+                // ignore
             }
-        } // sychronized
+            _dataSocket=null;
+            reply("226 Closing data connection, abort successful");
+        } else {
+            reply("226 Abort successful");
+        }
     }
 
     // --------------------------------------------
