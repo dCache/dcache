@@ -61,7 +61,7 @@
         </javac>
 
 
-        <junit printsummary="yes">
+        <junit fork="true" printsummary="yes">
             <classpath refid="junit.classpath" />
             <formatter type="xml" usefile="true" />
             <batchtest todir="${tests.report.home}" haltonfailure="no" >
