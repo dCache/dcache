@@ -1741,16 +1741,6 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
                     _entry.lock(false) ;
                     _entry.setStorageInfo( _storageInfo ) ;
 
-                    // flush to tape only if the file defined as a 'tape file'( RP = Custodial)
-                    RetentionPolicy retentionPolicy = _storageInfo.getRetentionPolicy();
-                    if( retentionPolicy != null && retentionPolicy.equals(RetentionPolicy.CUSTODIAL) ) {
-                        _entry.setPrecious() ;
-
-                    }else{
-                    	_entry.setCached() ;
-                    }
-
-
                     AccessLatency accessLatency = _storageInfo.getAccessLatency();
                     if( accessLatency != null && accessLatency.equals( AccessLatency.ONLINE) ) {
 
@@ -1763,10 +1753,19 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
                     	_entry.setSticky(false);
                     }
 
+                    // flush to tape only if the file defined as a 'tape file'( RP = Custodial) and the HSM is defined
+                    String hsm = _storageInfo.getHsm();
+                    RetentionPolicy retentionPolicy = _storageInfo.getRetentionPolicy();
+
                     if (overwrite) {
                         _entry.setCached();
                         say("Overwriting requested");
+                    } else if( retentionPolicy != null && retentionPolicy.equals(RetentionPolicy.CUSTODIAL) ) {
+                        _entry.setPrecious() ;
+                    } else {
+                    	_entry.setCached() ;
                     }
+
 
                     //
                     // setFileSize will throw an exception if the file is no
