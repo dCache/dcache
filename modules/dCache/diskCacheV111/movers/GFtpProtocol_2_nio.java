@@ -15,6 +15,7 @@ import java.util.Random;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 import java.nio.channels.ServerSocketChannel;
+import java.nio.channels.ClosedByInterruptException;
 
 import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellMessage;
@@ -42,9 +43,9 @@ import org.dcache.ftp.*;
 public class GFtpProtocol_2_nio
     implements ConnectionMonitor, MoverProtocol, ChecksumMover, ErrorListener
 {
-	
+
 	private final static Logger _logSpaceAllocation = Logger.getLogger("logger.dev.org.dcache.poolspacemonitor." + GFtpProtocol_2_nio.class.getName());
-	
+
     /** The minimum number of bytes to increment the space allocation. */
     public final static long SPACE_INC = 50 * 1024 * 1024; // 50 MB
 
@@ -310,34 +311,25 @@ public class GFtpProtocol_2_nio
 
 	    _multiplexer.add(mode);
 
-	    say("Entering event loop");
+            esay("Entering event loop");
 	    _multiplexer.loop();
+        } catch (ClosedByInterruptException e) {
+            /* Many NIO operations throw a ClosedByInterruptException
+             * rather than InterruptedException. We rethrow this as an
+             * InterruptedException and clear the interrupt flag on
+             * the thread.
+             */
+            Thread.interrupted();
+            throw new InterruptedException();
         } catch (InterruptedException e) {
-            say("Transfer was killed");
+            throw e;
+        } catch (FTPException e) {
             throw e;
 	} catch (Exception e) {
 	    esay(e);
 	    throw e;
 	} finally {
             _inProgress = false;
-
-	    /* Release any over allocation.
-	     */
-            if (_spaceMonitor != null && _role == Role.Receiver) {
-                long overAllocation = _reservedSpace - file.length();
-                if (overAllocation > 0) {
-                	_logSpaceAllocation.debug("FREE: " + id + " : " + overAllocation );
-                    _spaceMonitor.freeSpace(overAllocation);
-                } else if (overAllocation < 0) {
-                    /* This can only happen as a consequence of a bug
-                     * in the Mode implementation. We do our best to
-                     * recover from it by allocating some extra space.
-                     */
-                    esay("File is larger than expected (this is a bug - please report it");
-                    _logSpaceAllocation.debug("ALLOC: " + id + " : " + (-overAllocation) );
-                    _spaceMonitor.allocateSpace(-overAllocation);
-                }
-            }
 
 	    /* It is important that this is done before joining the
 	     * digest thread, since otherwise the digest thread would
@@ -601,6 +593,30 @@ public class GFtpProtocol_2_nio
 	     */
 	    ftp.setBytesTransferred(getBytesTransferred());
 	    ftp.setTransferTime(getTransferTime());
+
+	    /* Release any over allocation.
+             *
+             * In case of interrupts, this may fail because
+             * RandomAccessFile.length throws an exception. There is
+             * nothing we can do about this at the moment. The pool
+             * should use the SpaceMonitorWatch decorator to protect
+             * against accounting errors in these cases.
+	     */
+            if (spaceMonitor != null && role == Role.Receiver) {
+                long overAllocation = _reservedSpace - file.length();
+                if (overAllocation > 0) {
+                    _logSpaceAllocation.debug("FREE: " + id + " : " + overAllocation );
+                    spaceMonitor.freeSpace(overAllocation);
+                } else if (overAllocation < 0) {
+                    /* This can only happen as a consequence of a bug
+                     * in the Mode implementation. We do our best to
+                     * recover from it by allocating some extra space.
+                     */
+                    esay("File is larger than expected (this is a bug - please report it");
+                    _logSpaceAllocation.debug("ALLOC: " + id + " : " + (-overAllocation) );
+                    spaceMonitor.allocateSpace(-overAllocation);
+                }
+            }
 	}
     }
 
