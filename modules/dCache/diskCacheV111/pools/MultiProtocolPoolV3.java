@@ -1648,24 +1648,27 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
                         RandomAccessFile raf =
                             new RandomAccessFile(cacheFile, "rw");
                         try {
-                            _handler.runIO(raf,
-                                           _protocolInfo,
-                                           _storageInfo,
-                                           _pnfsId,
-                                           watcher,
-                                           MoverProtocol.WRITE
-                                           | MoverProtocol.READ);
+                            try {
+                                _handler.runIO(raf,
+                                               _protocolInfo,
+                                               _storageInfo,
+                                               _pnfsId,
+                                               watcher,
+                                               MoverProtocol.WRITE
+                                               | MoverProtocol.READ);
+                            } finally {
+                                /* The remaining steps are not safe to
+                                 * interrupt and we therefore block the
+                                 * timeout manager from killing us. If we
+                                 * have already been killed, we raise an
+                                 * exception right away.
+                                 */
+                                _timeoutManager.protect(getIoQueueName(),
+                                                        (int)getClientId());
 
-                            /* The remaining steps are not safe to
-                             * interrupt and we therefore block the
-                             * timeout manager from killing us. If we
-                             * have already been killed, we raise an
-                             * exception right away.
-                             */
-                            _timeoutManager.protect(getIoQueueName(),
-                                                    (int)getClientId());
-                            if (Thread.interrupted()) {
-                                throw new InterruptedException("IO Job was killed");
+                                if (Thread.interrupted()) {
+                                    throw new InterruptedException("IO Job was killed");
+                                }
                             }
 
                             /* Some movers perform checksum
@@ -1901,8 +1904,8 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
                     }
 
                 } catch (Throwable e) {
-                    esay("Stacked Exception (Original) for : " + _entry + " : "+ eofe);
-                    esay("Stacked Throwable (Resulting) for : " + _entry+ " : " + e);
+                    esay("Stacked Exception (Original) for " + _pnfsId + " : "+ eofe);
+                    esay("Stacked Throwable (Resulting) for " + _pnfsId + " : " + e);
                     esay(e);
                 } finally {
                     String errorMessage = "Unexpected Exception : " + eofe;
@@ -1917,7 +1920,7 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
                 }
 
             } catch (Throwable e) {
-                esay("Throwable in runIO() " + _entry + " " + e);
+                esay("Throwable in runIO() " + _pnfsId + " " + e);
                 esay(e);
 
                 _finished.setReply(34, e);
@@ -1941,9 +1944,9 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
                             _repository.applyReservedSpace(usedSpace);
                     }
 
-                } catch (CacheException ee) {
-                    esay("Problem  handling reserved space management : " + ee);
-                    esay(ee);
+                } catch (CacheException e) {
+                    esay("Problem  handling reserved space management : " + e);
+                    esay(e);
                 }
 
                 transferTimer = System.currentTimeMillis() - transferTimer;
@@ -1955,15 +1958,15 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
             try {
                 _message.setMessageObject(_finished);
                 sendMessage(_message);
-            } catch (Exception eee) {
-                esay("PANIC : Can't send message back to door : " + eee);
-                esay(eee);
+            } catch (Exception e) {
+                esay("PANIC : Can't send message back to door : " + e);
+                esay(e);
             }
             try {
                 sendMessage(new CellMessage(_billingCell, _info));
-            } catch (Exception eee) {
-                esay("PANIC : Can't report to 'billing cell' : " + eee);
-                esay(eee);
+            } catch (Exception e) {
+                esay("PANIC : Can't report to 'billing cell' : " + e);
+                esay(e);
             }
             say("IO thread finished : " + Thread.currentThread().toString());
         }
