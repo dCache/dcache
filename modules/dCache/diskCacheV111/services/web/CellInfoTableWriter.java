@@ -3,7 +3,6 @@ package diskCacheV111.services.web;
 
 import dmg.cells.nucleus.CellInfo;
 
-import diskCacheV111.pools.PoolCellInfo;
 import diskCacheV111.util.HTMLWriter;
 import java.util.Collection;
 import java.text.SimpleDateFormat;
@@ -39,8 +38,7 @@ public class CellInfoTableWriter
                     printCellInfoRow(cellInfo, pingTime);
                 } else {
                     printOfflineCellInfoRow(cellInfo.getCellName(),
-                                            (cellInfo == null ||
-                                             cellInfo.getDomainName().length() == 0)
+                                            cellInfo.getDomainName().length() == 0
                                             ? "&lt;unknown&gt"
                                             : cellInfo.getDomainName());
                 }
