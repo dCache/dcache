@@ -516,8 +516,10 @@ public class PoolManagerV5 extends CellAdapter {
         PoolV2Mode newMode = poolMessage.getPoolMode();
         PoolV2Mode oldMode = pool.getPoolMode();
 
-        if( _logPoolMonitor.isDebugEnabled() ) {
-            _logPoolMonitor.debug("PoolUp message from " + poolName + " (mode/serialId): " + newMode + " / " + poolMessage.getSerialId());
+        if (_logPoolMonitor.isDebugEnabled()) {
+            _logPoolMonitor.debug("PoolUp message from " + poolName
+                                  + " with mode " + newMode
+                                  + " and serialId " + poolMessage.getSerialId());
         }
 
         /* For compatibility with previous versions of dCache, a pool
@@ -557,10 +559,8 @@ public class PoolManagerV5 extends CellAdapter {
          * mode has changed.
          */
         if (changed) {
-
-            if( _logPoolMonitor.isInfoEnabled() ) {
-                _logPoolMonitor.info("PoolUp " + poolName + " mode changed(old/new) " + oldMode + " / " + newMode );
-            }
+            _logPoolMonitor.info("Pool " + poolName + " changed from mode "
+                                 + oldMode + " to " + newMode);
 
             if (disabled) {
                 _requestContainer.poolStatusChanged(poolName,
