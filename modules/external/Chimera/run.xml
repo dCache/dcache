@@ -26,7 +26,7 @@
 		NFSv3 frontend for Chimera
 	-->
 	<target name="run_nfs3" description="run NFSv3 frontend">
-		<java classname="org.dcache.chimera.nfsv3.Main2" fork="true">
+		<java classname="org.dcache.chimera.nfs.v3.Main2" fork="true">
 			<jvmarg value="-Dlog4j.configuration=file:config/log4j.properties" />
 			<jvmarg value="-Xmx512M" />
 			<classpath refid="chimera.runtime.classpath" />
@@ -39,7 +39,7 @@
 	-->
 
 	<target name="run_nfs4" description="run NFSv4 frontend">
-		<java classname="org.dcache.chimera.nfsv4.HimeraNFS4Server" fork="true">
+		<java classname="org.dcache.chimera.nfs.v4.HimeraNFS4Server" fork="true">
 			<jvmarg value="-Dlog4j.configuration=file:config/log4j.properties" />
 			<classpath refid="chimera.runtime.classpath" />
 			<arg value="config/chimera-config.xml" />

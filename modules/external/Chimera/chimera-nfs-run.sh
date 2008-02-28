@@ -30,7 +30,7 @@ case $1 in
 		fi
         echo "Starting Chimera-NFSv3 interface"
         ${java} ${java_options} -classpath ${externalLibsClassPath} \
-              -Xmx512M org.dcache.chimera.nfsv3.Main2 \
+              -Xmx512M org.dcache.chimera.nfs.v3.Main2 \
               ${ourHomeDir}/config/chimera-config.xml > ${log} 2>&1 &
         echo $! > ${pfile}
         ;;
