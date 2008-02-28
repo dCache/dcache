@@ -72,24 +72,29 @@ public class CleanerV2 extends CellAdapter implements Runnable {
           _out1 = out1 ;
           _out2 = out2 ;
        }
-       public void close() {
+       @Override
+    public void close() {
           try{ if( _out2 != null )_out2.close() ; }catch(IOException ee){}
           try{ if( _out1 != null )_out1.close() ; }catch(IOException ee){}
        }
 
-       public void flush() throws IOException {
+       @Override
+    public void flush() throws IOException {
           if( _out2 != null )_out2.flush() ;
           if( _out1 != null )_out1.flush() ;
        }
-       public void write( int n ) throws IOException {
+       @Override
+    public void write( int n ) throws IOException {
           if( _out1 != null )_out1.write(n) ;
           if( _out2 != null )_out2.write(n) ;
        }
-       public void write( byte [] n ) throws IOException {
+       @Override
+    public void write( byte [] n ) throws IOException {
           if( _out1 != null )_out1.write(n) ;
           if( _out2 != null )_out2.write(n) ;
        }
-       public void write( byte [] n , int offset , int len ) throws IOException {
+       @Override
+    public void write( byte [] n , int offset , int len ) throws IOException {
          if( _out1 != null )_out1.write(n,offset,len) ;
          if( _out2 != null )_out2.write(n,offset,len) ;
        }
@@ -279,6 +284,7 @@ public class CleanerV2 extends CellAdapter implements Runnable {
 	start() ;
     }
 
+    @Override
     public void getInfo( PrintWriter pw ){
 	pw.println("Cleaner (V2)");
 	pw.println("  Version           : $Id: CleanerV2.java,v 1.23 2007-05-24 13:51:12 tigran Exp $" ) ;
@@ -308,13 +314,16 @@ public class CleanerV2 extends CellAdapter implements Runnable {
 //                   " / "+_lastTimeUnremoveCounter);
 //	pw.println("  Exception         : " + _exceptionCounter);
     }
+    @Override
     public String toString(){
        return "Removed="+_removeCounter+";X="+_exceptionCounter ;
     }
+    @Override
     public void say( String str ){
 	pin( str ) ;
 	super.say( str ) ;
     }
+    @Override
     public void esay( String str ){
 	pin( str ) ;
 	super.esay( str ) ;
@@ -590,6 +599,7 @@ public class CleanerV2 extends CellAdapter implements Runnable {
         }
         return "" ;
     }
+    @Override
     public void cleanUp(){
 
         esay("Clean up called") ;
@@ -660,6 +670,8 @@ public class CleanerV2 extends CellAdapter implements Runnable {
     //       4) current/pool.<poolName> is removed.
     //
     private void runDelete( String [] poolFileList ){
+
+        if( poolFileList == null ) return;
 
        for( int i = 0 ; ( i < poolFileList.length ) &&
                         ! Thread.interrupted() ; i++ ){
@@ -973,7 +985,7 @@ public class CleanerV2 extends CellAdapter implements Runnable {
              String      pnfsId = st.nextToken() ;
              while( st.hasMoreTokens() ){
                 String pool = st.nextToken() ;
-                File   f    = (File)hash.get(pool) ;
+                File   f    = hash.get(pool) ;
 
                 if( f == null ){
                    hash.put( pool , f = new File( _currentDir , "pool."+pool ) ) ;
@@ -1299,7 +1311,8 @@ public class CleanerV2 extends CellAdapter implements Runnable {
          throw new
          IllegalStateException("operation locked");
   }
-   public void messageArrived( CellMessage message ){
+   @Override
+public void messageArrived( CellMessage message ){
       Object obj = message.getMessageObject() ;
       esay("Unexpected message arrived from : "+message.getSourcePath()+" "+obj.getClass().getName()+" "+obj.toString());
    }
