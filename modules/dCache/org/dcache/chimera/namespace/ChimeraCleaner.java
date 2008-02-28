@@ -175,6 +175,7 @@ public class ChimeraCleaner extends CellAdapter implements Runnable {
         return dbConnection;
     }
 
+    @Override
     public void cleanUp() {
 
         _logNamespace.debug("Clean up called");
@@ -194,11 +195,8 @@ public class ChimeraCleaner extends CellAdapter implements Runnable {
 
         	try {
 
-
-                List<String> poolListDB = new ArrayList<String>();
-
                 // get list of pool names from the trash_table
-                poolListDB = getPoolList(_dbConnection);
+                List<String> poolListDB = getPoolList(_dbConnection);
 
                 if (_logNamespace.isDebugEnabled()){
                 	_logNamespace.debug("List of Pools from the trash-table : "+ poolListDB);
@@ -456,7 +454,7 @@ public class ChimeraCleaner extends CellAdapter implements Runnable {
         } catch (NoRouteToCellException nrt) {
             // put poolName into BlackPoolList
 
-            _poolsBlackList.put(poolName, new Long(System.currentTimeMillis()));
+            _poolsBlackList.put(poolName, Long.valueOf(System.currentTimeMillis()));
 
             if (_logNamespace.isDebugEnabled())
             {
@@ -548,6 +546,7 @@ public class ChimeraCleaner extends CellAdapter implements Runnable {
 
     }
 
+    @Override
     public void messageArrived(CellMessage message) {
         Object obj = message.getMessageObject();
         if (obj instanceof PoolStatusChangedMessage) {
@@ -666,7 +665,7 @@ public class ChimeraCleaner extends CellAdapter implements Runnable {
     }
 
     /**
-     * send list of removed files to bradcaster
+     * send list of removed files to broadcaster
      *
      * @param fileList list of files to be removed
      */
@@ -837,7 +836,9 @@ public class ChimeraCleaner extends CellAdapter implements Runnable {
     }
 
 
+    @Override
     public CellVersion getCellVersion(){ return new CellVersion(diskCacheV111.util.Version.getVersion(),"$Revision: 1.23 $" ); }
+    @Override
     public void getInfo( PrintWriter pw ){
         pw.println("ChimeraCleaner $Revision: 1.23 $");
     }
