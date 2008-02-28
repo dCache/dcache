@@ -27,7 +27,7 @@ create dmg.cells.services.LocationManager lm \
 create diskCacheV111.poolManager.PoolManagerV5 PoolManager \
    "${config}/PoolManager.conf \
        -threadPool=diskCacheV111.util.ThreadPoolNG \
-       -replyObject \ 
+       -replyObject \
        -poolStatusRelay=broadcast \
        -costModule=diskCacheV111.poolManager.CostModuleV1"
 #
