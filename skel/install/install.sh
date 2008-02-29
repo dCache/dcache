@@ -2,9 +2,37 @@
 
 # Set up the preset values before we get to the command line
 # Note these values can be changed with the command line
-loglevel=20
+
+# Default Log level
+# Standard logging levels are
+# ABORT ERROR WARNING INFO DEBUG
+loglevel=14
+
+
+# Default Log File
+
+logfile=""
+
+
+# Default dCache Home dirrectory.
+
 ourHomeDir=/opt/d-cache
 
+
+
+usage()
+{
+  echo "dCache install script"
+  echo "--help             Show this help"
+  echo "--prefix PATH      Set install prefix (by default '/opt/dcache')"
+  echo "--loglevel LEVEL   Set loglevel (by default '15')"
+  echo "                   debug level ABORT=45"
+  echo "                   debug level ERROR=35"
+  echo "                   debug level WARNING=25"
+  echo "                   debug level INFO=15"
+  echo "                   debug level DEBUG=5"
+  
+}
 
 
 
@@ -44,14 +72,76 @@ done
 
 
 logmessage()
-{
-  echo $*
+{ 
+  local ThisLogLevel
+  local ThisPrefix
+  let ThisLogLevel=$1
+  if [ "$1" == "NONE" ] ; then
+    ThisLogLevel=55
+  fi
+  if [ "$1" == "ABORT" ] ; then
+    ThisLogLevel=45
+  fi
+  if [ "$1" == "ERROR" ] ; then
+    ThisLogLevel=35
+  fi
+  if [ "$1" == "WARNING" ] ; then
+    ThisLogLevel=25
+  fi
+  if [ "$1" == "INFO" ] ; then
+    ThisLogLevel=15
+  fi
+  if [ "$1" == "DEBUG" ] ; then
+    ThisLogLevel=5
+  fi
+  if [ $ThisLogLevel -lt 60 ] ; then
+    ThisPrefix="NONE:"
+  fi
+  if [ $ThisLogLevel -lt 50 ] ; then
+    ThisPrefix="ABORT:"
+  fi
+  if [ $ThisLogLevel -lt 40 ] ; then
+    ThisPrefix="ERROR:"
+  fi
+  if [ $ThisLogLevel -lt 30 ] ; then
+    ThisPrefix="WARNING:"
+  fi
+  if [ $ThisLogLevel -lt 20 ] ; then
+    ThisPrefix="INFO:"
+  fi
+  if [ $ThisLogLevel -lt 10 ] ; then
+    ThisPrefix="DEBUG:"
+  fi
+  if [ $# -ge 1 ]
+  then
+    shift 1
+    if [ ${ThisLogLevel} -gt ${loglevel} ]
+    then
+      if [ $# -eq 1 ]; then
+        echo ${ThisPrefix}$*
+        if [ "${logfile}" != "" ]
+        then
+          echo ${ThisPrefix}$* >> ${logfile}
+        fi
+      else
+        while read logline
+	do
+	  echo ${ThisPrefix}${logline}
+	  if [ "${logfile}" != "" ]
+          then
+            echo ${ThisPrefix}${logline} >> ${logfile}
+          fi
+	done
+      fi
+    fi
+  fi
 }
+
 
 check_shell()
 {
   if [ "$BASH_VERSION" = "" ] ; then
-    echo "ERROR: bash was not detected script exiting."    
+    logmessage ERROR "bash was not detected script exiting."  
     exit 1
   fi
 }
@@ -102,10 +192,12 @@ os_absolutePathOf() {
 }
 check_install()
 {
-  if [ ! -r ${ourHomeDir}/etc/node_config ]; then
-    echo "[ERROR] ${ourHomeDir}/etc/node_config missing."
-    echo "[HINT]  Copy ${ourHomeDir}/etc/node_config.template to ${ourHomeDir}/etc/node_config and customize it "
-    echo "        before running the install script. Exiting."
+  local dCacheHomeDir
+  dcacheInstallGetHome
+  dCacheHomeDir=$RET
+  if [ ! -r ${dCacheHomeDir}/etc/node_config ]; then
+    logmessage ABORT "${dCacheHomeDir}/etc/node_config missing."
+    logmessage INFO "Copy ${dCacheHomeDir}/etc/node_config.template to ${dCacheHomeDir}/etc/node_config and customize it before running the install script. Exiting."
     exit 4
   fi
 }
@@ -193,6 +285,29 @@ dcacheInstallGetExportPoint()
   exportPoint=`mount | grep ${pnfsMountPoint} | awk '{print $1}' | awk -F':' '{print $2}'`
 
   RET=${exportPoint}
+}
+
+dcacheInstallGetAdminNode()
+{
+  RET="`printConfig ADMIN_NODE`"
+}
+
+
+dcacheInstallGetPnfsServer()
+{
+  local pnfsServer
+  pnfsServer="`printConfig pnfsServer`"
+  if [ -z "${pnfsServer}" ] ; then
+    local ADMIN_NODE
+    dcacheInstallGetAdminNode
+    ADMIN_NODE=$RET
+    if [ -n "${ADMIN_NODE}" ] ; then
+      pnfsServer="${ADMIN_NODE}"
+    else
+      pnfsServer='localhost'
+    fi
+  fi
+  RET=${pnfsServer}
 }
 
 
@@ -320,10 +435,12 @@ dcacheInstallGetIsPnfsManager()
 
 dcacheInstallGetIsAdmin()
 {
+  logmessage DEBUG "dcacheInstallGetIsAdmin.start"
   # returns 1 if is an admin node is used 0 otherwise
   local NodeType
   NodeType=`printConfig NODE_TYPE |  tr -s '[:upper:]' '[:lower:]'`
   if [ "${NodeType}" == "admin" ] ; then
+    logmessage DEBUG "dcacheInstallGetIsAdmin.stop"
     return 1
   fi
   if [ "${NodeType}" == "custom" ] ; then
@@ -344,9 +461,11 @@ dcacheInstallGetIsAdmin()
     dcacheInstallGetIsUtilityDomain
     utilityDomain=$?
     if [ "${adminDoor}${httpDomain}${lmDomain}${poolManager}${utilityDomain}" == "11111" ] ; then
+      logmessage DEBUG "dcacheInstallGetIsAdmin.stop"
       return 1	
     fi
   fi
+  logmessage DEBUG "dcacheInstallGetIsAdmin.stop"
   return 0
 }
 
@@ -360,6 +479,7 @@ dcacheInstallGetdCapPort()
 
 dcacheInstallPnfsMountPointClient()
 { 
+  logmessage DEBUG "dcacheInstallPnfsMountPointClient.start"
   local PNFS_ROOT
   local SERVER_ID
   local DCACHE_HOME
@@ -374,50 +494,50 @@ dcacheInstallPnfsMountPointClient()
   DCACHE_HOME=$RET 
   dcacheInstallGetPnfsMountPoint
   pnfsMountPoint=${RET}
-  ADMIN_NODE="`printConfig ADMIN_NODE`"
-  echo ""
-  echo -n "[INFO]  Checking if ${pnfsMountPoint} mounted to the right export. ..."
+  dcacheInstallGetAdminNode
+  ADMIN_NODE=$RET
+  logmessage INFO "Checking if ${pnfsMountPoint} mounted to the right export. ..."
   dcacheInstallGetExportPoint
   exportPoint=$RET
   if [ "${exportPoint}" = '/pnfsdoors' ] ; then
-    echo "OK"
+    logmessage INFO "OK"
   else
-    echo ""
     if [ "${exportPoint}" != "" ] ; then
-      echo "[WARN]  ${pnfsMountPoint} mounted, however not to ${ADMIN_NODE}:/pnfsdoors."
-      echo "        Unmounting it now:"
+      logmessage WARNING "${pnfsMountPoint} mounted, however not to ${ADMIN_NODE}:/pnfsdoors."
+      logmessage INFO "Unmounting it now:"
       umount ${pnfsMountPoint}
-      echo ""
+      
     fi
 
     if [ -L "${pnfsMountPoint}" ] ; then
-      echo "[INFO]  Trying to remove symbolic link ${pnfsMountPoint} :"
+      logmessage INFO "Trying to remove symbolic link ${pnfsMountPoint} :"
       rm -f ${pnfsMountPoint}
       if [ $? -eq 0 ] ; then
-        echo "[INFO]  'rm -f ${pnfsMountPoint}' went fine."
+        logmessage INFO "'rm -f ${pnfsMountPoint}' went fine."
       else
-        echo "[ERROR] 'rm -f ${pnfsMountPoint}' failed. Please move it out of the way manually"
-        echo "        and run me again. Exiting."
+        logmessage ABORT "'rm -f ${pnfsMountPoint}' failed. Please move it out of the way manually"
+        logmessage ERROR "and run me again. Exiting."
         exit 1
       fi
     fi
 
     if [ ! -d "${pnfsMountPoint}" ]; then
       if [ -e "${pnfsMountPoint}" ] ; then
-        echo "[ERROR] The file ${pnfsMountPoint} is in the way. Please move it out of the way"
-        echo "        and call me again. Exiting."
+        logmessage ABORT "The file ${pnfsMountPoint} is in the way. Please move it out of the way"
+        logmessage ERROR "and call me again. Exiting."
         exit 1
       else
-        echo "[INFO]  Creating pnfs mount point (${pnfsMountPoint})"
+        logmessage INFO "Creating pnfs mount point (${pnfsMountPoint})"
         mkdir -p ${pnfsMountPoint}
       fi
     fi
-    echo "[INFO]  Will be mounted to ${ADMIN_NODE}:/pnfsdoors by dcache-core start-up script."
+    dcacheInstallGetPnfsServer
+    pnfsServer=$RET
+    logmessage INFO "Will be mounted to ${pnfsServer}:/pnfsdoors by dcache-core start-up script."
   fi
 
-  echo ""
   if [ ! -L "${PNFS_ROOT}/ftpBase" -a ! -e "${PNFS_ROOT}/ftpBase" ] ; then
-    echo "[INFO]  Creating link ${PNFS_ROOT}/ftpBase --> ${pnfsMountPoint} which is used by the GridFTP door."
+    logmessage INFO "Creating link ${PNFS_ROOT}/ftpBase --> ${pnfsMountPoint} which is used by the GridFTP door."
     ln -s ${pnfsMountPoint} ${PNFS_ROOT}/ftpBase
   else
     local ftpBaseLinkedTo
@@ -425,34 +545,33 @@ dcacheInstallPnfsMountPointClient()
     echo ftpBaseLinkedTo=$ftpBaseLinkedTo
     echo pnfsMountPoint=${pnfsMountPoint}
     if [ "${ftpBaseLinkedTo}" == "${pnfsMountPoint}" ] ; then
-      echo "[INFO]  Link ${PNFS_ROOT}/ftpBase --> ${pnfsMountPoint} already there."
+      logmessage INFO "Link ${PNFS_ROOT}/ftpBase --> ${pnfsMountPoint} already there."
     else
-      echo "[ERROR] Link ${PNFS_ROOT}/ftpBase --> ${pnfsMountPoint} cannot be created. Needed by the GridFTP door."
-      echo "        Please move ${PNFS_ROOT}/ftpBase and run this script again. Exiting."
+      logmessage ABORT "Link ${PNFS_ROOT}/ftpBase --> ${pnfsMountPoint} cannot be created. Needed by the GridFTP door."
+      logmessage ERROR "Please move ${PNFS_ROOT}/ftpBase and run this script again. Exiting."
       exit 1
     fi
   fi
 
   if ! grep "^ftpBase=${PNFS_ROOT}/ftpBase" ${DCACHE_HOME}/config/dCacheSetup 2>/dev/null >/dev/null ; then
-    echo ""
-    echo "[WARN]  The file ${DCACHE_HOME}/config/dCacheSetup does not contain:"
-    echo "           ftpBase=${PNFS_ROOT}/ftpBase"
-    echo "        Make shure it is set correctly before you start dCache."
+    logmessage WARNING "The file ${DCACHE_HOME}/config/dCacheSetup does not contain:"
+    logmessage WARNING "   ftpBase=${PNFS_ROOT}/ftpBase"
+    logmessage WARNING "Make shure it is set correctly before you start dCache."
   fi
 
   if mount | grep pnfs 2>/dev/null >/dev/null ; then
-    echo ""
-    echo "[WARN]  A pnfs export is already mounted. The GridFTP door will only use the"
-    echo "        mount at ${pnfsMountPoint} which will be mounted by the start-up script."
-    echo "        You might want to remove any mounts not needed anymore."
+    logmessage WARNING "A pnfs export is already mounted. The GridFTP door will only use the"
+    logmessage WARNING "mount at ${pnfsMountPoint} which will be mounted by the start-up script."
+    logmessage WARNING "You might want to remove any mounts not needed anymore."
   fi
-  echo ""
+  logmessage DEBUG "dcacheInstallPnfsMountPointClient.stop"
   
 }
 
 
 dcacheInstallPnfsMountPointServer()
 {
+  logmessage DEBUG "dcacheInstallPnfsMountPointServer.start"
   local PNFS_ROOT
   local SERVER_ID
   local DCACHE_HOME
@@ -468,59 +587,60 @@ dcacheInstallPnfsMountPointServer()
   DCACHE_HOME=$RET 
   PNFS_INSTALL_DIR=`printConfig PNFS_INSTALL_DIR`
   
-  echo ""
   #    Checking and creating mountpoint and link
   #
   pnfsMountPoint=${PNFS_ROOT}/fs
   if [ ! -d "${pnfsMountPoint}" ]; then
     if [ -e "${pnfsMountPoint}" ] ; then
-      echo "[ERROR] The file ${pnfsMountPoint} is in the way. Please move it out of the way"
-      echo "        and call me again. Exiting."
+      logmessage ERROR "The file ${pnfsMountPoint} is in the way. Please move it out of the way"
+      logmessage ERROR "and call me again. Exiting."
       exit 1
     else
-      echo "[INFO]  Creating pnfs mount point (${pnfsMountPoint})"
+      logmessage INFO "Creating pnfs mount point (${pnfsMountPoint})"
 	mkdir -p ${pnfsMountPoint}
     fi
   fi
-  echo "[INFO]  Will be mounted to ${pnfsServer}:/fs by dcache-core start-up script."
+  dcacheInstallGetPnfsServer
+  pnfsServer=$RET
+  logmessage INFO "Will be mounted to ${pnfsServer}:/fs by dcache-core start-up script."
 
   cd ${PNFS_ROOT}
   if [ ! -L "${SERVER_ID}" ]; then
     if [ -e "${SERVER_ID}" ] ; then
-      echo "[ERROR] The file/directory ${PNFS_ROOT}/${SERVER_ID} is in the way. Please move it out"
-      echo "        of the way and call me again. Exiting."
+      logmessage ERROR "The file/directory ${PNFS_ROOT}/${SERVER_ID} is in the way. Please move it out"
+      logmessage ERROR "of the way and call me again. Exiting."
     else
-      echo "[INFO]  Creating link ${PNFS_ROOT}/${SERVER_ID} --> ${pnfsMountPoint}/usr/"
+      logmessage INFO "Creating link ${PNFS_ROOT}/${SERVER_ID} --> ${pnfsMountPoint}/usr/"
       ln -s fs/usr ${SERVER_ID}
     fi
   fi
 
   cd ${PNFS_ROOT}
   if [ ! -L "${SERVER_ID}" -a ! -e "${SERVER_ID}" ] ; then
-    echo "[INFO]  Creating link ${PNFS_ROOT}/${SERVER_ID} --> ${PNFS_ROOT}/fs/usr."
+    logmessage INFO "Creating link ${PNFS_ROOT}/${SERVER_ID} --> ${PNFS_ROOT}/fs/usr."
     ln -s fs/usr ${SERVER_ID}
   else
     serverIdLinkedTo=`find ${PNFS_ROOT}/${SERVER_ID} -type l -printf '%l'`
     if [ "${serverIdLinkedTo}" = "fs/usr" -o "${serverIdLinkedTo}" = "${PNFS_ROOT}/fs/usr" ] ; then
-      echo "[INFO]  Link ${PNFS_ROOT}/${SERVER_ID} --> ${PNFS_ROOT}/fs/usr already there."
+      logmessage INFO "Link ${PNFS_ROOT}/${SERVER_ID} --> ${PNFS_ROOT}/fs/usr already there."
     else
-      echo "[ERROR] Link ${PNFS_ROOT}/${SERVER_ID} --> ${PNFS_ROOT}/fs/usr cannot be created."
-      echo "        Please move ${PNFS_ROOT}/${SERVER_ID} and run me again. Exiting."
+      logmessage ERROR "[ERROR] Link ${PNFS_ROOT}/${SERVER_ID} --> ${PNFS_ROOT}/fs/usr cannot be created."
+      logmessage ERROR "Please move ${PNFS_ROOT}/${SERVER_ID} and run me again. Exiting."
       exit 1
     fi
   fi
 
   cd ${PNFS_ROOT}
   if [ ! -L ${PNFS_ROOT}/ftpBase -a ! -e ${PNFS_ROOT}/ftpBase ] ; then
-    echo "[INFO]  Creating link ${PNFS_ROOT}/ftpBase --> ${pnfsMountPoint} which is used by the GridFTP door."
+    logmessage INFO "[INFO]  Creating link ${PNFS_ROOT}/ftpBase --> ${pnfsMountPoint} which is used by the GridFTP door."
     ln -s ${pnfsMountPoint} ${PNFS_ROOT}/ftpBase
   else
     ftpBaseLinkedTo=`find ${PNFS_ROOT}/ftpBase -type l -printf '%l'`
     if [ "${ftpBaseLinkedTo}" = "${pnfsMountPoint}" ] ; then
-      echo "[INFO]  Link ${PNFS_ROOT}/ftpBase --> ${pnfsMountPoint} already there."
+      logmessage INFO "Link ${PNFS_ROOT}/ftpBase --> ${pnfsMountPoint} already there."
     else
-      echo "[ERROR] Link ${PNFS_ROOT}/ftpBase --> ${pnfsMountPoint} cannot be created. and is needed by the GridFTP door."
-      echo "        Please move ${PNFS_ROOT}/ftpBase and run me again. Exiting."
+      logmessage ERROR "Link ${PNFS_ROOT}/ftpBase --> ${pnfsMountPoint} cannot be created. and is needed by the GridFTP door."
+      logmessage ERROR "Please move ${PNFS_ROOT}/ftpBase and run me again. Exiting."
       exit 1
     fi
   fi
@@ -531,7 +651,7 @@ dcacheInstallPnfsMountPointServer()
   which rpcinfo 2>&1 > /dev/null
   RC=$?
   if [ ${RC} -ne 0 ] ; then 
-    echo "ERROR: rpcinfo is not on the path"
+    logmessage ERROR "rpcinfo is not on the path"
     exit 1
   fi
 
@@ -542,42 +662,40 @@ dcacheInstallPnfsMountPointServer()
   rpcinfo -u localhost 100003 >/dev/null 2>&1
   RETVAL=$?
   if [ ${RETVAL} -eq 1 ]; then
-    echo ""
     if [ ! -x ${PNFS_INSTALL_DIR}/tools/pnfs.server ]; then
-      echo ""
-      echo "[ERROR] PNFS not installed but needed for dCache admin node installation. Exiting."
+      logmessage ERROR "PNFS not installed but needed for dCache admin node installation. Exiting."
       exit 1
     fi
-    echo ""
-    echo "[INFO]  PNFS is not running. It is needed to prepare dCache. ... "
+    logmessage INFO "PNFS is not running. It is needed to prepare dCache. ... "
     yesno=`printConfig PNFS_START`
     if [ \( "${yesno}" = "n" \) -o \( "${yesno}" = "no" \) ] ; then
-      echo "[ERROR] Not allowed to start it. Set PNFS_START in etc/node_config to 'yes' or start by hand. Exiting."
+      logmessage ERROR "Not allowed to start it. Set PNFS_START in etc/node_config to 'yes' or start by hand. Exiting."
       exit 1
     elif [ \( "${yesno}" = "y" \) -o \( "${yesno}" = "yes" \) ] ; then
-      echo "[INFO]  Trying to start it now:"
+      logmessage INFO "Trying to start it now:"
       ${PNFS_INSTALL_DIR}/tools/pnfs.server start
     fi
   fi
 
   #    Checking pnfs mount and possibly mounting
   #
-  echo ""
   cp=`df ${pnfsMountPoint} 2>/dev/null | grep "${pnfsMountPoint}" | awk '{print $2}'`
   if [ -z ${cp} ]; then
-    echo "[INFO]  ${pnfsMountPoint} mount point exists, but is not mounted - going to mount it now ..."
+    logmessage INFO "${pnfsMountPoint} mount point exists, but is not mounted - going to mount it now ..."
     mount -o intr,rw,noac,hard,nfsvers=2 ${pnfsServer}:/fs ${pnfsMountPoint}
   fi
   cp=`df ${pnfsMountPoint} 2>/dev/null | grep "${pnfsMountPoint}" | awk '{print $2}'`
   if [ -z $cp ]; then
-    echo "[ERROR] Was not able to mount ${pnfsServer}:/fs to ${pnfsMountPoint}. Exiting."
+    logmessage ERROR "Was not able to mount ${pnfsServer}:/fs to ${pnfsMountPoint}. Exiting."
     exit 1
   fi
   dcacheInstallPnfsConfigCheck
+  logmessage DEBUG "dcacheInstallPnfsMountPointServer.stop"
 }
 
 dcacheInstallPnfsMountPoints()
 {
+  logmessage DEBUG "dcacheInstallPnfsMountPoints.start"
   # Creating /pnfs/fs and Symbolic Link /pnfs/fs/usr to /pnfs/<domain> 
   # (e.g. /pnfs/fnal.gov) for GridFTP
   local isAdmin
@@ -599,10 +717,12 @@ dcacheInstallPnfsMountPoints()
   if [ "${isAdmin}${isPnfsManager}" == "10" -o "${isPnfsManager}" == "1" ] ; then
     dcacheInstallPnfsMountPointServer
   fi  
+  logmessage DEBUG "dcacheInstallPnfsMountPoints.stop"
 }
 
 dcacheInstallPnfsConfigCheck()
 {
+  logmessage DEBUG "dcacheInstallPnfsConfigCheck.start"
   # Checking if pnfs config exists
   #
   local PNFS_ROOT
@@ -619,26 +739,24 @@ dcacheInstallPnfsConfigCheck()
   PNFS_ROOT=$RET
   dcacheInstallGetdCapPort
   dCapPort=$RET
-  echo ""
-  echo "[INFO]  Checking on a possibly existing dCache/PNFS configuration ..."
+  logmessage INFO "Checking on a possibly existing dCache/PNFS configuration ..."
   if [ -f ${PNFS_ROOT}/fs/admin/etc/config/serverRoot ]; then
     WRITING_PNFS=no
   else
     WRITING_PNFS=yes
   fi
-  echo WRITING_PNFS=$WRITING_PNFS
+  logmessage DEBUG "WRITING_PNFS=$WRITING_PNFS"
   yesno=`printConfig PNFS_OVERWRITE`
   if [ \( "${yesno}" = "n" -o "${yesno}" = "no" \) -a "${WRITING_PNFS}" = "no" ] ; then
-    echo "[INFO]  Found an existing dCache/PNFS configuration!"
-    echo "[INFO]  Not allowed to overwrite existing configuration."
-    echo ""
+    logmessage INFO "Found an existing dCache/PNFS configuration!"
+    logmessage INFO "Not allowed to overwrite existing PNFS configuration."
   elif [ \( "${yesno}" = "y" -o "${yesno}" = "yes" \) -a "${WRITING_PNFS}" = "no" ] ; then
-    echo "[INFO]  Found an existing dCache/PNFS configuration!"
-    echo ""
-    echo "[WARN]  Overwriting existing dCache/PNFS configuration..."
-    echo ""
+    logmessage INFO "Found an existing dCache/PNFS configuration!"
+    
+    logmessage WARNING "Overwriting existing dCache/PNFS configuration..."
+    
     WRITING_PNFS=yes
-    echo ""
+    
     sleep 5
   fi
 
@@ -677,11 +795,13 @@ dcacheInstallPnfsConfigCheck()
     echo "STRING" > ".(tag)(sGroup)"
   fi
   dcacheInstallPnfsMount
+  logmessage DEBUG "dcacheInstallPnfsConfigCheck.stop"
 }
 
 
 dcacheInstallPnfsMount()
 {
+  logmessage DEBUG "dcacheInstallPnfsMount.start"
   #  ----  Mount point for doors
   #    This is done, even if PNFS_OVERWRITE=no in order to
   #    cleanly upgrade
@@ -689,22 +809,22 @@ dcacheInstallPnfsMount()
   local PNFS_ROOT
   dcacheInstallGetPnfsRoot
   PNFS_ROOT=$RET
-  echo ""
   cd ${PNFS_ROOT}/fs/admin/etc/exports
   if ! grep '^/pnfsdoors' * >/dev/null 2>/dev/null ; then
-    echo "[INFO]  Configuring pnfs export '/pnfsdoors' (needed from version 1.6.6 on)"
-    echo "        mountable by world."
+    logmessage INFO "Configuring pnfs export '/pnfsdoors' (needed from version 1.6.6 on)"
+    logmessage INFO "mountable by world."
     echo '/pnfsdoors /0/root/fs/usr/ 30 nooptions' >> '0.0.0.0..0.0.0.0'
   else
-    echo "[INFO]  There already are pnfs exports '/pnfsdoors' in"
-    echo "        /pnfs/fs/admin/etc/exports. The GridFTP doors need access to it."
+    logmessage INFO "There already are pnfs exports '/pnfsdoors' in"
+    logmessage INFO "        /pnfs/fs/admin/etc/exports. The GridFTP doors need access to it."
     if grep '^/pnfsdoors' * | grep -v ':/pnfsdoors[^[:graph:]]\+/0/root/fs/usr/[^[:graph:]]\+' >/dev/null 2>/dev/null ; then
-      echo "[WARN]  Make shure they all point to '/0/root/fs/usr/'! The GridFTP doors which"
-      echo "        are not on the admin node will mount these from version 1.6.6 on."
+      logmessage WARNING "  Make shure they all point to '/0/root/fs/usr/'! The GridFTP doors which"
+      logmessage WARNING "        are not on the admin node will mount these from version 1.6.6 on."
     fi
   fi
-  echo "[INFO]  You may restrict access to this export to the GridFTP doors which"
-  echo "        are not on the admin node. See the documentation." 
+  logmessage INFO "You may restrict access to this export to the GridFTP doors which"
+  logmessage INFO "are not on the admin node. See the documentation." 
+  logmessage DEBUG "dcacheInstallPnfsMount.stop"
 }
 
 
@@ -716,6 +836,9 @@ dcacheInstallPnfs()
 
 dcacheInstallSshKeys()
 {
+  # Install ssh keys for secure communication
+  #
+  logmessage DEBUG "dcacheInstallSshKeys.start"
   local DCACHE_HOME
   local nodeType
   dcacheInstallGetHome
@@ -723,24 +846,23 @@ dcacheInstallSshKeys()
   dcacheInstallGetIsAdmin
   nodeType=$?
   if [ "${nodeType}" = "1" ] ; then
-    #     Install ssh keys for secure communication
-    #
-    echo ""
-    echo "[INFO]  Generating ssh keys:"
     cd ${DCACHE_HOME}/config
     if [ -f ./server_key ]; then
-      rm ./server_key; rm ./host_key
+      logmessage INFO "Skipping ssh key generation"
+    else
+      logmessage INFO "Generating ssh keys:"
+      ssh-keygen -b 768 -t rsa1 -f ./server_key -N "" 2>&1 | logmessage INFO
+      ln -s /etc/ssh/ssh_host_key ./host_key
     fi
-    ssh-keygen -b 768 -t rsa1 -f ./server_key -N ""
-    ln -s /etc/ssh/ssh_host_key ./host_key
-    echo ""
   fi
+  logmessage DEBUG "dcacheInstallSshKeys.stop"
 }
 
 #    Pool configuration
 #
 dcacheInstallCheckPool() 
 {
+  logmessage DEBUG "dcacheInstallCheckPool.start"
   local WRITING_POOL
   local rt
   local size
@@ -764,17 +886,17 @@ dcacheInstallCheckPool()
   if [ "${WRITING_POOL}" = "no" ] ; then
     yesno=`echo ${rrt} | awk '{print $3}'`
     if [ \( "${yesno}" = "n" \) -o \( "${yesno}" = "no" \) ] ; then
-      echo "[INFO]  Not overwriting pool at ${rt}."	
+      logmessage INFO "Not overwriting pool at ${rt}."	
     elif [ \( "${yesno}" = "y" \) -o \( "${yesno}" = "yes" \) ] ; then
-      echo "[WARN]  Will overwrite pool at ${rt}."
+      logmessage WARNING "Will overwrite pool at ${rt}."
       WRITING_POOL=yes
     else
-      echo "[WARN]  Valid options for pool overwrite are y/yes or n/no. Assuming 'no'. "
+      logmessage WARNING "Valid options for pool overwrite are y/yes or n/no. Assuming 'no'. "
     fi
   fi
     
   if [ "${WRITING_POOL}" = "yes" ] ; then	
-    echo "[INFO]  Creating Pool" ${pn}
+    logmessage INFO "Creating Pool" ${pn}
     rm -rf ${rt}/pool
     mkdir -p ${rt}/pool
     mkdir -p ${rt}/pool/data
@@ -790,7 +912,7 @@ dcacheInstallCheckPool()
   ds=`eval df -k . | grep -v Filesystem | awk '{ print int($2/1048576) }'`
   let val=${ds}-${size}
   if [ ${val} -lt 0 ]; then
-    printf " Pool size exceeds partition size "
+    logmessage ERROR "Pool size exceeds partition size "
   else
     shortHostname=`shortname_os`
     pnl=`grep "${pn}" ${DCACHE_HOME}/config/${shortHostname}.poollist | awk '{print $1}'`
@@ -799,10 +921,12 @@ dcacheInstallCheckPool()
         >> ${DCACHE_HOME}/config/${shortHostname}.poollist
     fi
   fi
+  logmessage DEBUG "dcacheInstallCheckPool.stop"
 }
 
 dcacheInstallPool()
 {  
+  logmessage DEBUG "dcacheInstallPool.start" 
   local DCACHE_HOME
   local shortHostname
   local x
@@ -814,7 +938,7 @@ dcacheInstallPool()
     touch "${DCACHE_HOME}/config/${shortHostname}.poollist"
   fi
   if [ ! -r ${DCACHE_HOME}/etc/pool_path ]; then
-    echo "[WARN]  ${DCACHE_HOME}/etc/pool_path does not exist. No pools will be configured."
+    logmessage WARNING "${DCACHE_HOME}/etc/pool_path does not exist. No pools will be configured."
   else
     # For all the static areas under rt make a pool
     let x=0
@@ -824,11 +948,13 @@ dcacheInstallPool()
       dcacheInstallCheckPool
     done  < ${DCACHE_HOME}/etc/pool_path
   fi
+  logmessage DEBUG "dcacheInstallPool.stop" 
 }
 
 
 dcacheInstallSrm()
 {
+  logmessage DEBUG "dcacheInstallSrm.start"  
   local DCACHE_HOME
   local java
   dcacheInstallGetHome
@@ -843,7 +969,7 @@ dcacheInstallSrm()
   #
 
   if [ -z "${java}" ]; then
-    echo "[ERROR] java variable in ${DCACHE_HOME}/config/dCacheSetup not defined"
+    logmessage ABORT "java variable in ${DCACHE_HOME}/config/dCacheSetup not defined"
     exit 6
   fi
 
@@ -852,13 +978,13 @@ dcacheInstallSrm()
   #
   java=`os_absolutePathOf ${java}`
   if [ -z "${java}" ]; then
-    echo "[ERROR] java variable in ${DCACHE_HOME}/config/dCacheSetup do not point to existing binary"
+    logmessage ABORT "java variable in ${DCACHE_HOME}/config/dCacheSetup do not point to existing binary"
     exit 7
   fi
 
   ${java} -version 2>&1 | grep version | egrep "1\.[56]\." >/dev/null 2>&1
   if [ $? -ne 0 ]; then
-    echo "[ERROR] java variable in ${DCACHE_HOME}/config/dCacheSetup do not point to java version 1.5.x or 1.6.x"
+    logmessage ABORT "java variable in ${DCACHE_HOME}/config/dCacheSetup do not point to java version 1.5.x or 1.6.x"
     exit 6
   fi
   # standard javac location $JAVA_HOME/bin/java
@@ -869,8 +995,8 @@ dcacheInstallSrm()
     # to $JAVA_HOME/jre/bin/java. Try to go up another level.
     JAVA_HOME=${java%/jre/bin/*}
     if [ ! -x ${JAVA_HOME}/bin/javac ]; then
-	    echo "[ERROR] java installation looks like JRE, while JDK is needed."	
-	    exit 7
+      logmessage ABORT "java installation looks like JRE, while JDK is needed."	
+      exit 7
     fi
   fi
   # install SRM 
@@ -882,28 +1008,32 @@ dcacheInstallSrm()
     echo "JAVA_HOME=${JAVA_HOME}"
   ) > ${DCACHE_HOME}/etc/srm_setup.env.$$
   mv ${DCACHE_HOME}/etc/srm_setup.env.$$ ${DCACHE_HOME}/etc/srm_setup.env
-
+  
   if [ "`printConfig SRM`" = yes ] ; then
-    ${DCACHE_HOME}/install/deploy_srmv2.sh ${DCACHE_HOME}/etc/srm_setup.env
+    export loglevel logfile
+    logmessage DEBUG "Running ${DCACHE_HOME}/install/deploy_srmv2.sh ${DCACHE_HOME}/etc/srm_setup.env"
+    ${DCACHE_HOME}/install/deploy_srmv2.sh ${DCACHE_HOME}/etc/srm_setup.env 
   fi
-
+  logmessage DEBUG "dcacheInstallSrm.stop"  
 }
 
 dcacheInstallCreateWrappers()
 {
+  logmessage DEBUG "dcacheInstallCreateWrappers.start"  
   local DCACHE_HOME
   dcacheInstallGetHome
   DCACHE_HOME=$RET
   #
   # init package ( create wrappers in jobs directory )
   #
-  ${DCACHE_HOME}/jobs/initPackage.sh ${DCACHE_HOME}
+  logmessage DEBUG "Running ${DCACHE_HOME}/jobs/initPackage.sh ${DCACHE_HOME} "
+  ${DCACHE_HOME}/jobs/initPackage.sh ${DCACHE_HOME} 2>&1 
   if [ $? != 0 ]; then
-    echo "Failed to initalize dCache installation, exiting."
+    logmessage ABORT "Failed to initalize dCache installation, exiting."
     exit 2
   fi
+  logmessage DEBUG "dcacheInstallCreateWrappers.stop"  
 }
-
 
 
 # Do the inistialtion checks
@@ -930,15 +1060,26 @@ do
     ourHomeDir=$2
     shift_size=2
   fi
+  if [ $1 == "--help" ] 
+  then
+    # set dCache install location
+    usage
+    exit 0
+  fi
   if [ $1 == "--loglevel" ] 
   then
     # set dCache install location
     let loglevel=$2
     shift_size=2
   fi
+  if [ $1 == "--logfile" ] 
+  then
+    # set dCache install location
+    logfile=$2
+    shift_size=2
+  fi
   shift $shift_size
 done
-
 
 # Now check for missing files
 check_install
@@ -946,7 +1087,7 @@ check_install
 dcacheInstallGetHome
 fred=$RET
 if [ "$RET" != "${ourHomeDir}" ] ; then
-  echo "ERROR: Dcache HOME is set incorrectly." 
+  logmessage ERROR "Dcache HOME is set incorrectly."
   exit 1
 fi
 
