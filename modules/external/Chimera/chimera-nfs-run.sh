@@ -18,22 +18,24 @@ pfile=/var/run/chimera-nfsv3.pid
 case $1 in
 
     start)
-		if [ -f ${pfile} ]
-		then
-			pid=`cat ${pfile}`
-			kill -0 ${pid} > /dev/null 2>&1
-			if [ $? -eq 0 ]
-			then
-				echo "Old NFS process still running"
-				exit 1
-			fi
-		fi
+        if [ -f ${pfile} ]
+        then
+            pid=`cat ${pfile}`
+            kill -0 ${pid} > /dev/null 2>&1
+            if [ $? -eq 0 ]
+            then
+                echo "Old NFS process still running"
+                exit 1
+            fi
+        fi
+
         echo "Starting Chimera-NFSv3 interface"
         ${java} ${java_options} -classpath ${externalLibsClassPath} \
               -Xmx512M org.dcache.chimera.nfs.v3.Main2 \
               ${ourHomeDir}/config/chimera-config.xml > ${log} 2>&1 &
         echo $! > ${pfile}
         ;;
+
     stop)
         if [ -f ${pfile} ]
         then
@@ -41,18 +43,19 @@ case $1 in
             kill -0 ${pid} > /dev/null 2>&1
             if [ $? -eq 0 ]
             then
+                echo "Shuting down Chimera-NFSv3 interface"
+                kill `cat ${pfile}`
+                rm -f ${pfile}
+            else
                 echo "NFS process not running"
                 exit 1
-			else
-        		echo "Shuting down Chimera-NFSv3 interface"
-		        kill `cat ${pfile}`
             fi
-        	rm -f ${pfile}
-		else
-			echo "Pid file missing. NFS process not running?"
-			exit 1;
+        else
+            echo "Pid file missing. NFS process not running?"
+            exit 1;
         fi
         ;;
+
     restart)
         stop
         start
