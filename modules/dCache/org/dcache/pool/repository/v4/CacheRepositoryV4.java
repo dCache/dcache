@@ -25,7 +25,6 @@ import dmg.util.Logable;
 import dmg.util.Args;
 
 import org.dcache.pool.repository.StickyRecord;
-import org.dcache.pool.repository.v3.StickyInspector;
 import org.dcache.pool.repository.EventType;
 import org.dcache.pool.repository.AbstractCacheRepository;
 import org.dcache.pool.repository.MetaDataRepository;
@@ -33,7 +32,8 @@ import org.dcache.pool.repository.DataFileRepository;
 import org.dcache.pool.repository.FlatDataFileRepository;
 import org.dcache.pool.repository.RepositoryEntryHealer;
 import org.dcache.pool.repository.CacheEntryLRUOrder;
-import org.dcache.pool.repository.meta.db.BerkeleyDBMetaDataRepository;
+import org.dcache.pool.repository.DuplicateEntryException;
+import org.dcache.pool.repository.v3.StickyInspector;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileInCacheException;
@@ -218,7 +218,14 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
                     FileInCacheException("Entry already exists: " + pnfsId);
             }
 
-            CacheRepositoryEntry entry = _metaRepository.create(pnfsId);
+            CacheRepositoryEntry entry;
+            try {
+                entry = _metaRepository.create(pnfsId);
+            } catch (DuplicateEntryException e) {
+                _log.warn("Deleting orphaned meta data entry for " + pnfsId);
+                _metaRepository.remove(pnfsId);
+                entry = _metaRepository.create(pnfsId);
+            }
             _allEntries.put(pnfsId, entry);
             return entry;
         } finally {
