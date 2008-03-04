@@ -76,8 +76,9 @@ define context startPools endDefine
   -poolupDestination=${poolupDestination} \
   -sticky=allowed \
   -sendHitInfoMessages=no \
-  -sweeper=diskCacheV111.pools.SpaceSweeper1 \
+  -sweeper=diskCacheV111.pools.SpaceSweeper2 \
   -allowPassivePool=${gsiftpAllowPassivePool} \
+  -allowMmap=false \
   -metaDataRepository=${metaDataRepository} \
   -metaDataRepositoryImport=${metaDataRepositoryImport} \
   -${2} -${3} -${4} -${5} -${6} -${7} -${8} \

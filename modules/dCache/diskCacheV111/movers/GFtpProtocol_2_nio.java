@@ -44,7 +44,9 @@ public class GFtpProtocol_2_nio
     implements ConnectionMonitor, MoverProtocol, ChecksumMover, ErrorListener
 {
 
-	private final static Logger _logSpaceAllocation = Logger.getLogger("logger.dev.org.dcache.poolspacemonitor." + GFtpProtocol_2_nio.class.getName());
+    private final static Logger _logSpaceAllocation =
+        Logger.getLogger("logger.dev.org.dcache.poolspacemonitor." +
+                         GFtpProtocol_2_nio.class.getName());
 
     /** The minimum number of bytes to increment the space allocation. */
     public final static long SPACE_INC = 50 * 1024 * 1024; // 50 MB
@@ -150,6 +152,12 @@ public class GFtpProtocol_2_nio
     protected boolean      _inProgress = false;
 
     /**
+     * Whether to use memory mapped files when computing transfer
+     * checksums.
+     */
+    protected boolean      _mappedDigest = false;
+
+    /**
      * PNFS ID of file to be transferred.
      */
     protected String id = "";
@@ -186,6 +194,11 @@ public class GFtpProtocol_2_nio
                 _allowPassivePool =
                     Boolean.valueOf(_cell.getArgs().getOpt("allowPassivePool"));
             }
+
+            if (!jdk5 && _cell.getArgs().getOpt("allowMmap") != null) {
+                _mappedDigest =
+                    Boolean.valueOf(_cell.getArgs().getOpt("allowMmap"));
+            }
         }
     }
 
@@ -213,16 +226,15 @@ public class GFtpProtocol_2_nio
      */
     protected DigestThread createDigestThread()
     {
-        if (_checksum != null) {
-            if (jdk5) {
-                return new DirectDigestThread(_fileChannel, _log,
-                                              _checksum.getMessageDigest());
-            } else {
-                return new MappedDigestThread(_fileChannel, _log,
-                                              _checksum.getMessageDigest());
-            }
+        if (_checksum == null) {
+            return null;
+        } else if (_mappedDigest) {
+            return new MappedDigestThread(_fileChannel, _log,
+                                          _checksum.getMessageDigest());
+        } else {
+            return new DirectDigestThread(_fileChannel, _log,
+                                          _checksum.getMessageDigest());
         }
-        return null;
     }
 
     /** Utility method for logging. */
@@ -311,7 +323,7 @@ public class GFtpProtocol_2_nio
 
 	    _multiplexer.add(mode);
 
-            esay("Entering event loop");
+            say("Entering event loop");
 	    _multiplexer.loop();
         } catch (ClosedByInterruptException e) {
             /* Many NIO operations throw a ClosedByInterruptException
