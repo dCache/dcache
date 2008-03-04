@@ -729,8 +729,13 @@ public class BasicNameSpaceProvider implements NameSpaceProvider, StorageInfoPro
                     _logNameSpace.debug("getFileMetaData of " + pnfsId + " -> "
                             + meta);
                 }
+
                 return meta ;
-            }catch(Exception eee ){
+
+            }catch(NoSuchElementException nse) {
+                throw new
+                IOException("Illegal meta data format : "+pnfsId+" ("+line+")" ) ;
+            }catch(NumberFormatException eee ){
                 throw new
                 IOException("Illegal meta data format : "+pnfsId+" ("+line+")" ) ;
             }
@@ -739,6 +744,7 @@ public class BasicNameSpaceProvider implements NameSpaceProvider, StorageInfoPro
         }finally{
             if(br != null)try{ br.close() ; }catch(IOException ee){/* too late to react */}
         }
+
     }
 
     private void setFileMetaData( File mp , PnfsId pnfsId , int level,  FileMetaData newMetaData)
@@ -872,12 +878,13 @@ public class BasicNameSpaceProvider implements NameSpaceProvider, StorageInfoPro
 
 
 
+    @Override
     public String toString() {
 
         StringBuffer sb = new StringBuffer();
 
 
-        sb.append("$Id: BasicNameSpaceProvider.java,v 1.24 2007-09-24 07:01:38 tigran Exp $").append("\n");
+        sb.append("$Revision$").append("\n");
         for( PnfsFile.VirtualMountPoint vmp: _virtualMountPoints ){
 
             sb.append( " Server         : "+vmp.getServerId()+"("+vmp.getServerName()+")" ).append("\n") ;
