@@ -3,11 +3,16 @@ package org.dcache.pool.repository.meta.db;
 import java.io.File;
 import java.io.FileNotFoundException;
 
+import org.apache.log4j.Logger;
+
 import com.sleepycat.je.DatabaseException;
 import com.sleepycat.je.Environment;
 import com.sleepycat.je.EnvironmentConfig;
 import com.sleepycat.je.Database;
 import com.sleepycat.je.DatabaseConfig;
+import com.sleepycat.je.ExceptionListener;
+import com.sleepycat.je.ExceptionEvent;
+import com.sleepycat.je.RunRecoveryException;
 import com.sleepycat.bind.serial.StoredClassCatalog;
 
 /**
@@ -16,15 +21,19 @@ import com.sleepycat.bind.serial.StoredClassCatalog;
  */
 public class MetaDataRepositoryDatabase
 {
-    private Environment env;
+    private static Logger _log =
+        Logger.getLogger("logger.org.dcache.repository");
+
+    private final Environment env;
 
     private static final String CLASS_CATALOG = "java_class_catalog";
     private static final String STORAGE_INFO_STORE = "storage_info_store";
     private static final String STATE_STORE = "state_store";
 
-    private StoredClassCatalog javaCatalog;
-    private Database storageInfoDatabase;
-    private Database stateDatabase;
+    private final StoredClassCatalog javaCatalog;
+    private final Database storageInfoDatabase;
+    private final Database stateDatabase;
+    private boolean _failed = false;
 
     public MetaDataRepositoryDatabase(File homeDirectory, boolean readonly)
         throws DatabaseException, FileNotFoundException
@@ -34,6 +43,15 @@ public class MetaDataRepositoryDatabase
         envConfig.setAllowCreate(true);
         envConfig.setReadOnly(readonly);
         envConfig.setConfigParam("je.maxMemoryPercent", "20");
+        envConfig.setExceptionListener(new ExceptionListener() {
+                public void exceptionThrown(ExceptionEvent event) {
+                    if (event.getException() instanceof RunRecoveryException) {
+                        setFailed();
+                        _log.fatal("Pool restart required due to Berkeley DB failure: "
+                                   + event.getException().getMessage());
+                    }
+                }
+            });
 
         env = new Environment(homeDirectory, envConfig);
 
@@ -60,6 +78,16 @@ public class MetaDataRepositoryDatabase
                 }
             });
      }
+
+    private synchronized void setFailed()
+    {
+        _failed = true;
+    }
+
+    public synchronized boolean isFailed()
+    {
+        return _failed;
+    }
 
     public void close()
         throws DatabaseException

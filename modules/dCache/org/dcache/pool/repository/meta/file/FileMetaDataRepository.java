@@ -2,6 +2,7 @@ package org.dcache.pool.repository.meta.file;
 
 import java.io.File;
 import java.io.IOException;
+import org.apache.log4j.Logger;
 
 import org.dcache.pool.repository.DataFileRepository;
 import org.dcache.pool.repository.DuplicateEntryException;
@@ -16,31 +17,34 @@ import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.event.CacheRepositoryEvent;
 
 /**
- * 
+ *
  * This class wraps the old control- and SI-file- based metadata
  * access method.
  */
-public class FileMetaDataRepository 
-    implements MetaDataRepository, EventProcessor 
+public class FileMetaDataRepository
+    implements MetaDataRepository, EventProcessor
 {
+    private static Logger _log =
+        Logger.getLogger("logger.org.dcache.repository");
+
     private static final String DIRECTORY_NAME = "control";
 
     private DataFileRepository _dataRepository;
     private EventProcessor _eventProcessor;
     private File _metadir;
-		
+
     public FileMetaDataRepository(DataFileRepository dataRepository,
                                   EventProcessor eventProcessor,
                                   File baseDir)
-    
+
     {
     	_dataRepository = dataRepository;
     	_eventProcessor = eventProcessor;
     	_metadir = new File(baseDir, DIRECTORY_NAME);
     }
-	
+
     public CacheRepositoryEntry create(PnfsId id)
-        throws DuplicateEntryException, RepositoryException 
+        throws DuplicateEntryException, RepositoryException
     {
         try {
             File controlFile = new File(_metadir, id.toString());
@@ -52,20 +56,20 @@ public class FileMetaDataRepository
              */
             if (get(id) != null) {
                 throw new DuplicateEntryException(id);
-            } 
+            }
 
             /* In case of left over or corrupted files, we delete them
              * before creating a new entry.
              */
             if (controlFile.exists()) {
                 controlFile.delete();
-            } 
+            }
 
             if (siFile.exists()) {
                 siFile.delete();
             }
-			
-            return new CacheRepositoryEntryImpl(_eventProcessor, id, 
+
+            return new CacheRepositoryEntryImpl(_eventProcessor, id,
                                                 controlFile, dataFile, siFile);
         } catch (IOException e) {
             throw new RepositoryException("Failed to create new entry: "
@@ -76,18 +80,18 @@ public class FileMetaDataRepository
     // todo
     public CacheRepositoryEntry create(CacheRepositoryEntry entry)
         throws DuplicateEntryException, CacheException {
-		
+
         return null;
     }
 
     public CacheRepositoryEntry get(PnfsId id) {
-		
+
         try {
-            File siFile = new File(_metadir, "SI-"+id.toString());	
+            File siFile = new File(_metadir, "SI-"+id.toString());
             if (siFile.exists()) {
                 File controlFile = new File(_metadir, id.toString());
                 File dataFile = _dataRepository.get(id);
-	
+
                 return new CacheRepositoryEntryImpl(_eventProcessor, id, controlFile, dataFile, siFile);
             }
         } catch (RepositoryException e) {
@@ -101,27 +105,27 @@ public class FileMetaDataRepository
     public void remove(PnfsId id) {
         File controlFile = new File(_metadir, id.toString());
         File siFile = new File(_metadir, "SI-"+id.toString());
-		
+
         controlFile.delete();
         siFile.delete();
     }
-	
+
     public boolean isOk()
     {
-       try {
-           File tmp = new File(_metadir, ".repository_is_ok");
-	   tmp.delete();
-	   tmp.deleteOnExit();
+        File tmp = new File(_metadir, ".repository_is_ok");
+        try {
+            tmp.delete();
+            tmp.deleteOnExit();
 
-	   if (!tmp.createNewFile())
-               return false;
+            if (!tmp.createNewFile() || !tmp.exists()) {
+                _log.fatal("Could not create " + tmp);
+                return false;
+            }
 
-	   if (!tmp.exists())
-               return false;
-
-	   return true;
+            return true;
 	} catch (IOException e) {
-	   return false;
+            _log.fatal("Failed to touch " + tmp + ": " + e.getMessage());
+            return false;
 	}
     }
 
@@ -136,7 +140,7 @@ public class FileMetaDataRepository
 
 
     /**
-     * Returns the path 
+     * Returns the path
      */
     public String toString()
     {

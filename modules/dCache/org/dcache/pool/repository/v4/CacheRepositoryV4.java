@@ -453,18 +453,19 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
                return false;
 
            File setup = new File(_basedir, "setup");
-           if (!setup.exists())
+           if (!setup.exists()) {
+               _log.fatal("setup file is missing");
                return false;
+           }
 
            File tmp = new File(_basedir, "RepositoryOk");
 	   tmp.delete();
 	   tmp.deleteOnExit();
 
-	   if (!tmp.createNewFile())
+           if (!tmp.createNewFile() || !tmp.exists()) {
+               _log.fatal("Could not create " + tmp);
                return false;
-
-	   if (!tmp.exists())
-               return false;
+           }
 
 	   return true;
 	} catch (IOException e) {

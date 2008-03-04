@@ -5,6 +5,8 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
 
+import org.apache.log4j.Logger;
+
 import com.sleepycat.je.DatabaseException;
 import com.sleepycat.collections.StoredMap;
 
@@ -35,6 +37,9 @@ import diskCacheV111.util.CacheException;
 public class BerkeleyDBMetaDataRepository
     implements MetaDataRepository, EventProcessor
 {
+    private static Logger _log =
+        Logger.getLogger("logger.org.dcache.repository");
+
     private static final String DIRECTORY_NAME = "meta";
 
     /**
@@ -132,20 +137,24 @@ public class BerkeleyDBMetaDataRepository
 
     public boolean isOk()
     {
-       try {
-           File tmp = new File(_dir, ".repository_is_ok");
-	   tmp.delete();
-	   tmp.deleteOnExit();
+        File tmp = new File(_dir, ".repository_is_ok");
+        try {
+            tmp.delete();
+            tmp.deleteOnExit();
 
-	   if (!tmp.createNewFile())
-               return false;
+            if (!tmp.createNewFile() || !tmp.exists()) {
+                _log.fatal("Could not create " + tmp);
+                return false;
+            }
 
-	   if (!tmp.exists())
-               return false;
+            if (_database.isFailed()) {
+                return false;
+            }
 
-	   return true;
+            return true;
 	} catch (IOException e) {
-	   return false;
+            _log.fatal("Failed to touch " + tmp + ": " + e.getMessage());
+            return false;
 	}
     }
 
