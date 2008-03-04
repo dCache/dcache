@@ -132,7 +132,7 @@
 		<or>
 			<filename name="**/cells.jar" />
 			<filename name="**/dcache.jar" />
-			<filename name="Chimera/chimera.jar" />
+			<filename name="Chimera/chimera-core.jar" />
 		    <filename name="Chimera/chimera-acl.jar" />
 			<filename name="log4j/log4j-1.2.8.jar" />
 		</or>
@@ -787,14 +787,13 @@
 
 		<!-- Chimera -->
 		<mkdir dir="${binDir}/classes/chimera" />
-		<copy file="${libDir}/Chimera/chimera.jar" todir="${binDir}/classes/chimera" />
+		<copy file="${libDir}/Chimera/chimera-core.jar" todir="${binDir}/classes/chimera" />
 	    <copy file="${libDir}/Chimera/chimera-acl.jar" todir="${binDir}/classes/chimera" />
 		<copy file="${libDir}/Chimera/chimera-config.xml" todir="${binDir}/config" />
 		<copy file="${classesDir}/chimera-provider.jar" todir="${binDir}/classes/chimera" />
 	    <copy file="${libDir}/Chimera/oncrpc.jar" todir="${binDir}/classes/chimera" />
 	    <copy file="${libDir}/Chimera/portmap.jar" todir="${binDir}/classes/chimera" />
-	    <copy file="${libDir}/Chimera/nfs4prot.jar" todir="${binDir}/classes/chimera" />
-	    <copy file="${libDir}/Chimera/nfs3prot.jar" todir="${binDir}/classes/chimera" />
+	    <copy file="${libDir}/Chimera/chimera-nfs.jar" todir="${binDir}/classes/chimera" />
 		<copy file="${libDir}/Chimera/commons-cli-1.0.jar" todir="${binDir}/classes/chimera" />
 		<copy file="${libDir}/Chimera/commons-logging.jar" todir="${binDir}/classes/chimera" />
 		<copy file="${libDir}/dbcp/c3p0.properties" todir="${binDir}/config" />

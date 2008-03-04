@@ -15,9 +15,8 @@
 		<pathelement location="classes/log4j/log4j-1.2.8.jar"/>
 		<pathelement location="classes/dbcp/c3p0-0.9.1.2.jar"/>
 		<pathelement location="classes/jdbc-drivers/postgresql-8.1-405.jdbc3.jar"/>
-		<pathelement location="classes/chimera/nfs4prot.jar" />
-		<pathelement location="classes/chimera/nfs3prot.jar" />
-		<pathelement location="classes/chimera/chimera.jar" />
+		<pathelement location="classes/chimera/chimera-core.jar" />
+		<pathelement location="classes/chimera/chimera-nfs.jar" />
 		<pathelement location="classes/chimera/oncrpc.jar" />
 		<pathelement location="classes/chimera/portmap.jar" />
 	</path>
