@@ -59,7 +59,9 @@ import java.util.TimerTask;
 import java.util.List;
 import java.util.ArrayList;
 import diskCacheV111.util.PnfsId;
+import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.FQAN;
+import diskCacheV111.util.CacheException;
 import diskCacheV111.vehicles.PnfsGetStorageInfoMessage;
 import diskCacheV111.vehicles.PnfsFlagMessage;
 import diskCacheV111.vehicles.PnfsGetCacheLocationsMessage;
@@ -91,6 +93,9 @@ import diskCacheV111.vehicles.PoolFileFlushedMessage;
 import diskCacheV111.vehicles.PoolRemoveFilesMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.GridProtocolInfo;
+import diskCacheV111.namespace.StorageInfoProvider;
+
+
 /**
  *   <pre> Space Manager dCache service provides ability
  *    \to reserve space in the pool linkGroups
@@ -127,9 +132,9 @@ public class ManagerV2
 	private boolean returnFlushedSpaceToReservation=true; 
 	private boolean returnRemovedSpaceToReservation=true; 
 	private boolean cleanupExpiredSpaceFiles=true;
-	
 	private String linkGroupAuthorizationFileName = null;
 	private boolean spaceManagerEnabled =true;
+	private PnfsHandler pnfsHandler;
 	/*
 	 * Database storage related variables
 	 */
@@ -156,7 +161,6 @@ public class ManagerV2
 		if(pgBasedPass != null) {
 			pass = pgBasedPass;
 		}
-		
 		manager = DBManager.getInstance();
 		manager.initConnectionPool(jdbcUrl, jdbcClass, user, pass);
 		connection_pool = manager.getConnectionPool();
@@ -217,7 +221,7 @@ public class ManagerV2
 			esay("configuration conflict: returnRemovedSpaceToReservation == true and deleteStoredFileRecord == true");
 			throw new IllegalArgumentException("configuration conflict: returnRemovedSpaceToReservation == true and deleteStoredFileRecord == true");
 		}
-		
+		pnfsHandler = new  PnfsHandler( this, new CellPath(pnfsManager));
 		try {
 			dbinit();
 		} 
@@ -3067,9 +3071,16 @@ public class ManagerV2
 			info.isSetRetentionPolicy(true);
 			say("transferToBeStarted(), set AL to "+s.getAccessLatency()+
 			    " RP to "+s.getRetentionPolicy());
+			// 
+			// send message to PnfsManager 
+			//
+			pnfsHandler.setStorageInfoByPnfsId(pnfsId, info, StorageInfoProvider.SI_OVERWRITE);
 		} 
 		catch(SQLException sqle){
 			esay("transferToBeStarted(): could not get space reservation related to this transfer ");
+		}
+		catch(CacheException e) { 
+			esay("failed to set setStorageInfoByPnfsId");
 		}
 	}
 	
