@@ -61,8 +61,10 @@ public class DBManager {
 			set =  pkg.select(connection,query);
 		}
 		catch (SQLException e) { 
-			connectionPool.returnFailedConnection(connection);
-			connection = null;
+			if (connection!=null){ 
+				connectionPool.returnFailedConnection(connection);
+				connection = null;
+			}
 			throw e;
 		}
 		finally {
@@ -100,8 +102,10 @@ public class DBManager {
 			set =  pkg.selectPrepared(connection,stmt);
 		}
 		catch (SQLException e) { 
-			connectionPool.returnFailedConnection(connection);
-			connection = null;
+			if (connection!=null) { 
+				connectionPool.returnFailedConnection(connection);
+				connection = null;
+			}
 			throw e;
 		}
 		finally {
@@ -133,8 +137,10 @@ public class DBManager {
 			}
 		}
 		catch (SQLException e) { 
-			connectionPool.returnFailedConnection(connection);
-			connection = null;
+			if (connection!=null) { 
+				connectionPool.returnFailedConnection(connection);
+				connection = null;
+			}
 			throw e;
 		}
 		finally {
@@ -179,8 +185,10 @@ public class DBManager {
 				}
 			}
 			catch (SQLException e) {
-				connectionPool.returnFailedConnection(connection);
-				connection = null;
+				if (connection!=null) { 
+					connectionPool.returnFailedConnection(connection);
+					connection = null;
+				}
 				throw e;
 			}
 			finally {
@@ -224,8 +232,10 @@ public class DBManager {
 				}
 		}
 		catch (SQLException e) {
-			connectionPool.returnFailedConnection(connection);
-			connection = null;
+			if (connection!=null) { 
+				connectionPool.returnFailedConnection(connection);
+				connection = null;
+			}
 			throw e;
 		}
 		finally {
@@ -253,9 +263,11 @@ public class DBManager {
 			return result;
 		}
 		catch (SQLException e) { 
-			connection.rollback();
-			connectionPool.returnFailedConnection(connection);
-			connection = null;
+			if (connection!=null) { 
+				connection.rollback();
+				connectionPool.returnFailedConnection(connection);
+				connection = null;
+			}
 			throw e;
 		}
 		finally {
