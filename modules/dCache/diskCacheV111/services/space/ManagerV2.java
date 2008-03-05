@@ -2221,7 +2221,7 @@ public class ManagerV2
 		
 		pnfsPath =new FsPath(pnfsPath).toString();
 		HashSet files = manager.selectPrepared(new FileIO(),
-						       FileIO.SELECT_BY_PNFSPATH,
+						       FileIO.SELECT_TRANSFERRING_OR_RESERVED_BY_PNFSPATH,
 						       pnfsPath);
 		if (files!=null&&files.isEmpty()==false) { 
 			throw new SQLException("Already have "+files.size()+" record(s) with pnfsPath="+pnfsPath);
@@ -2724,24 +2724,19 @@ public class ManagerV2
 	private long linkGroupAuthorizationFileLastUpdateTimestampt = 0;
 	
 	private void updateLinkGroupAuthorizationFile() {
-		//say("updateLinkGroupAuthorizationFile");
 		if(linkGroupAuthorizationFileName == null) {
 			return;
 		}
 		java.io.File f = new java.io.File (linkGroupAuthorizationFileName);
 		if(!f.exists()) {
-			//say("LinkGroupAuthorizationFile "+linkGroupAuthorizationFileName+
-			//     " not found");
 			linkGroupAuthorizationFile = null;
 		}
 		long lastModified = f.lastModified();
 		if(linkGroupAuthorizationFile == null || lastModified >= linkGroupAuthorizationFileLastUpdateTimestampt) {
 			linkGroupAuthorizationFileLastUpdateTimestampt = lastModified;
 			try {
-				//say("reading "+linkGroupAuthorizationFileName);
 				linkGroupAuthorizationFile = 
 					new LinkGroupAuthorizationFile(linkGroupAuthorizationFileName);
-				//say("done reading "+linkGroupAuthorizationFileName);
 			}
 			catch(Exception e) {
 			    esay(e);
@@ -2751,13 +2746,11 @@ public class ManagerV2
 	
 	private void updateLinkGroups() {
 		long currentTime = System.currentTimeMillis();
-		//say("updateLinkGroups()... at "+currentTime);
 		CellMessage cellMessage = new CellMessage(new CellPath(poolManager),
 							  new PoolMgrGetPoolLinkGroups());
 		PoolMgrGetPoolLinkGroups getLinkGroups = null;
 		try {
 			cellMessage = sendAndWait(cellMessage,1000*5*60);
-			//say("updateLinkGroups() received reply");
 			if(cellMessage == null ) {
 				esay("updateLinkGroups() : request timed out");
 			    return;
