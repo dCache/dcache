@@ -2191,7 +2191,7 @@ public class ManagerV2
 		// make sure there is no this file already present
 		//
 		HashSet files = manager.selectPrepared(new FileIO(),
-						       FileIO.SELECT_BY_PNFSPATH,
+						       FileIO.SELECT_TRANSFERRING_OR_RESERVED_BY_PNFSPATH,
 						       pnfsPath);
 		if (files!=null&&files.isEmpty()==false) { 
 			throw new SQLException("Already have "+files.size()+" record(s) with pnfsPath="+pnfsPath);
