@@ -733,8 +733,10 @@ public class ManagerV2
 		}
 		catch ( SQLException sqe ) {
 			esay( sqe );
-			con.rollback();
-			connection_pool.returnFailedConnection( con );
+			if (con != null) { 
+				con.rollback();
+				connection_pool.returnFailedConnection( con );
+			}
 			con = null;
 			throw sqe;
 		}
@@ -1134,12 +1136,13 @@ public class ManagerV2
 			} 
 			catch(SQLException e) {
 				e.printStackTrace();
-				try
-				{
-					connection.rollback();
+				if (connection!=null) { 
+					try {
+						connection.rollback();
+					}
+					catch(Exception e1) { } //ignore
+					//use the _nextLongBase if database failed;
 				}
-				catch(Exception e1) { } //ignore
-				//use the _nextLongBase if database failed;
 				nextLongBase = _nextLongBase;
 			}
 			_nextLongBase = nextLongBase+ NEXT_LONG_STEP;
@@ -1176,12 +1179,14 @@ public class ManagerV2
 		} 
 		catch(SQLException e) {
 			e.printStackTrace();
-			try{
-				connection.rollback();
+			if (connection!=null) {
+				try {
+					connection.rollback();
+				}
+				catch(Exception e1) { } //ignore
+				connection_pool.returnFailedConnection(connection);
+				connection = null;
 			}
-			catch(Exception e1) { } //ignore
-			connection_pool.returnFailedConnection(connection);
-			connection = null;
 			//use the _nextLongBase if database failed;
 			nextLongBase = _nextLongBase;
 		} 
@@ -1472,9 +1477,11 @@ public class ManagerV2
 		catch(SQLException sqle) {
 			esay("delete failed with ");
 			esay(sqle);
-			connection.rollback();
-			connection_pool.returnFailedConnection(connection);
-			connection = null;
+			if (connection!=null) { 
+				connection.rollback();
+				connection_pool.returnFailedConnection(connection);
+				connection = null;
+			}
 			throw sqle;
 		} 
 		finally {
@@ -1783,9 +1790,11 @@ public class ManagerV2
 		} 
 		catch(SQLException sqle) {
 			esay(sqle);
-			connection.rollback();
-			connection_pool.returnFailedConnection(connection);
-			connection = null;
+			if (connection!=null) { 
+				connection.rollback();
+				connection_pool.returnFailedConnection(connection);
+				connection = null;
+			}
 			throw sqle;
 		} 
 		finally {
@@ -1925,9 +1934,11 @@ public class ManagerV2
  		} 
  		catch(SQLException sqle) {
  			esay(sqle);
- 			connection.rollback();
- 			connection_pool.returnFailedConnection(connection);
- 			connection = null;
+			if (connection!=null) { 
+				connection.rollback();
+				connection_pool.returnFailedConnection(connection);
+				connection = null;
+			}
  			throw sqle;
  		} 
  		finally {
@@ -1957,9 +1968,11 @@ public class ManagerV2
 		catch(SQLException sqle) {
 			esay("update failed with ");
 			esay(sqle);
-			connection.rollback();
-			connection_pool.returnFailedConnection(connection);
-			connection = null;
+			if (connection!=null) { 
+				connection.rollback();
+				connection_pool.returnFailedConnection(connection);
+				connection = null;
+			}
 			throw sqle;
 		} 
 		finally {
@@ -2018,10 +2031,12 @@ public class ManagerV2
 					newConnection=null;
 				}
 				catch (SQLException e) { 
-					esay(e);				
-					newConnection.rollback();
-					connection_pool.returnFailedConnection(newConnection);
-					newConnection=null;
+					esay(e);		
+					if (newConnection!=null) { 
+						newConnection.rollback();
+						connection_pool.returnFailedConnection(newConnection);
+						newConnection=null;
+					}
 					throw e;
 				}
 				space = selectSpaceForUpdate(connection,f.getSpaceId());
@@ -2137,17 +2152,21 @@ public class ManagerV2
 		catch(SQLException sqle) {
 			esay("insert failed with ");
 			esay(sqle);
-			connection.rollback();
-			connection_pool.returnFailedConnection(connection);
-			connection = null;
+			if (connection!= null) { 
+				connection.rollback();
+				connection_pool.returnFailedConnection(connection);
+				connection = null;
+			}
 			throw sqle;
 		} 
 		catch(SpaceException e ) {
 			esay("insert failed with ");
 			esay(e);
-			connection.rollback();
-			connection_pool.returnFailedConnection(connection);
-			connection = null;
+			if (connection!= null) { 
+				connection.rollback();
+				connection_pool.returnFailedConnection(connection);
+				connection = null;
+			}
 			throw e;
 		} 
 		finally {
@@ -2167,8 +2186,16 @@ public class ManagerV2
 				       String pnfsPath,
 				       PnfsId pnfsId,
 				       int state) throws SQLException ,SpaceException {
-		
 		pnfsPath =new FsPath(pnfsPath).toString();
+		//
+		// make sure there is no this file already present
+		//
+		HashSet files = manager.selectPrepared(new FileIO(),
+						       FileIO.SELECT_BY_PNFSPATH,
+						       pnfsPath);
+		if (files!=null&&files.isEmpty()==false) { 
+			throw new SQLException("Already have "+files.size()+" record(s) with pnfsPath="+pnfsPath);
+		}
 		long creationTime=System.currentTimeMillis();
 		int rc=0;
 		Space space = selectSpaceForUpdate(connection,spaceReservationId,sizeInBytes);
@@ -2844,9 +2871,11 @@ public class ManagerV2
 				catch (SQLException e1) { 
 					esay("Failed to insert Link Group ="+linkGroupName);
 					esay(e1);
-					connection.rollback();
-					connection_pool.returnFailedConnection(connection);
-					connection = null;
+					if (connection!= null) {
+						connection.rollback();
+						connection_pool.returnFailedConnection(connection);
+						connection = null;
+					}
 					throw e1;
 				}
 				
@@ -2914,9 +2943,11 @@ public class ManagerV2
 		catch(SQLException sqle) {
 			esay("update failed with ");
 			esay(sqle);
-			connection.rollback();
-			connection_pool.returnFailedConnection(connection);
-			connection = null;
+			if (connection!=null) {
+				connection.rollback();
+				connection_pool.returnFailedConnection(connection);
+				connection = null;
+			}
 			throw sqle;
 		} 
 		finally {
@@ -3081,12 +3112,14 @@ public class ManagerV2
 		catch(SQLException sqle) {
 			esay("transferStarted failed with ");
 			esay(sqle);
-			try { 
-				connection.rollback();
+			if (connection!=null) { 
+				try { 
+					connection.rollback();
+				}
+				catch (SQLException e) {}
+				connection_pool.returnFailedConnection(connection);
+				connection = null;
 			}
-			catch (SQLException e) {}
-			connection_pool.returnFailedConnection(connection);
-			connection = null;
 		} 
 		finally {
 			if(connection != null) {
@@ -3166,12 +3199,14 @@ public class ManagerV2
 		catch(SQLException sqle) {
 			esay("transferStarted failed with ");
 			esay(sqle);
-			try {
-				connection.rollback();
-			} 
-			catch(SQLException sqle1) {}
-			connection_pool.returnFailedConnection(connection);
-			connection = null;
+			if (connection!=null) { 
+				try {
+					connection.rollback();
+				} 
+				catch(SQLException sqle1) {}
+				connection_pool.returnFailedConnection(connection);
+				connection = null;
+			}
 		} 
 		finally {
 			if(connection != null) {
@@ -3238,12 +3273,14 @@ public class ManagerV2
 		catch(SQLException sqle) {
 			esay("returnSpaceToReservation failed with ");
 			esay(sqle);
-			try {
-				connection.rollback();
-			} 
-			catch(SQLException sqle1) {}
-			connection_pool.returnFailedConnection(connection);
-			connection = null;
+			if (connection!=null) { 
+				try {
+					connection.rollback();
+				} 
+				catch(SQLException sqle1) {}
+				connection_pool.returnFailedConnection(connection);
+				connection = null;
+			}
 			
 		} 
 		finally {
@@ -3290,12 +3327,14 @@ public class ManagerV2
 			catch(SQLException sqle) {
 				say(sqle.getMessage());
 				say( "fileRemoved("+pnfsId+"): file not in a reservation, do nothing");
-				try {
-					connection.rollback();
-				} 
-				catch(SQLException sqle1) {}
-				connection_pool.returnFailedConnection(connection);
-				connection = null;
+				if (connection!=null) { 
+					try {
+						connection.rollback();
+					} 
+					catch(SQLException sqle1) {}
+					connection_pool.returnFailedConnection(connection);
+					connection = null;
+				}
 				
 			} 
 			finally {
@@ -3332,9 +3371,11 @@ public class ManagerV2
 		catch(SQLException sqle) {
 			esay("cancelUseSpace failed with ");
 			esay(sqle);
-			connection.rollback();
-			connection_pool.returnFailedConnection(connection);
-			connection = null;
+			if (connection!=null) { 
+				connection.rollback();
+				connection_pool.returnFailedConnection(connection);
+				connection = null;
+			}
 			throw sqle;
 		} 
 		finally {
@@ -3430,9 +3471,11 @@ public class ManagerV2
 		catch(SQLException sqle) {
 			esay("failed to reserve space");
 			esay(sqle);
-			connection.rollback();
-			connection_pool.returnFailedConnection(connection);
-			connection = null;
+			if (connection!=null) { 
+				connection.rollback();
+				connection_pool.returnFailedConnection(connection);
+				connection = null;
+			}
 			throw sqle;
 		} 
 		finally {
@@ -3476,17 +3519,21 @@ public class ManagerV2
 		catch(SQLException sqle) {
 			esay("useSpace(): insertFileInSpace failed with ");
 			esay(sqle);
-			connection.rollback();
-			connection_pool.returnFailedConnection(connection);
-			connection = null;
+			if (connection!=null) { 
+				connection.rollback();
+				connection_pool.returnFailedConnection(connection);
+				connection = null;
+			}
 			throw sqle;
 		} 
 		catch (SpaceException e) { 
 			esay("useSpace(): insertFileInSpace failed with ");
 			esay(e);
-			connection.rollback();
-			connection_pool.returnFailedConnection(connection);
-			connection = null;
+			if (connection!=null) { 
+				connection.rollback();
+				connection_pool.returnFailedConnection(connection);
+				connection = null;
+			}
 			throw e;
 		}
 		finally {
@@ -3702,9 +3749,11 @@ public class ManagerV2
 		catch(SQLException sqle) {
 			esay("Failed to extend lifetime");
 			esay(sqle);
-			connection.rollback();
-			connection_pool.returnFailedConnection(connection);
-			connection = null;
+			if (connection!=null) {
+				connection.rollback();
+				connection_pool.returnFailedConnection(connection);
+				connection = null;
+			}
 			throw sqle;
 		} 
 		finally {
