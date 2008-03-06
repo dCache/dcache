@@ -156,9 +156,13 @@ public class ChimeraOsmStorageInfoExtractor implements
             if( hsmInstance != null ) {
             	info.setHsm( hsmInstance[0].toLowerCase().trim());
             }
+
+            String[] cacheClass = getTag(dirInode, "cacheClass");
+            if( cacheClass != null ) {
+                info.setCacheClass( cacheClass[0].toLowerCase().trim());
+            }
             
             si = info;
-            
             
             String[] accessLatency = getTag(dirInode, "AccessLatency");
             String[] retentionPolicy = getTag(dirInode, "RetentionPolicy");
