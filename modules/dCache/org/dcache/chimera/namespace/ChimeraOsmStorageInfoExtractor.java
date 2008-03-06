@@ -157,6 +157,11 @@ public class ChimeraOsmStorageInfoExtractor implements
                 info.setHsm( hsmInstance[0].toLowerCase().trim());
             }
 
+            String[] cacheClass = getTag(dirInode, "cacheClass");
+            if( cacheClass != null ) {
+                info.setCacheClass( cacheClass[0].toLowerCase().trim());
+            }
+
             si = info;
 
 
