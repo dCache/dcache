@@ -316,7 +316,7 @@ public class StateComposite implements StateComponent {
 			if( transition.childIsRemoved( ourPath, childName))
 				return false;
 
-			if( transition.childIsNew( ourPath, childName));
+			if( transition.childIsNew( ourPath, childName))
 				return true;
 		}
 		
