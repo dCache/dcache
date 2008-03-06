@@ -774,3 +774,9 @@ statisticsLocation=${ourHomeDir}/statistics
 
 # 	the mover queue on the pool where this request gets scheduled to
 # xrootdIoQueue=
+#
+# the number of simultaneous physical connections (aka Logins)
+# xrootdMaxLogin=50
+#
+# the number of simultaneous open files per physical connection (e.g. a single ROOT client instance)
+# xrootdMaxOpenFilesPerConnection=5000

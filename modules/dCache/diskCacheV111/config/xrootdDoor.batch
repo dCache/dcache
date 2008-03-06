@@ -35,6 +35,8 @@ onerror continue
   set context -c xrootdIoQueue ""
   set context -c xrootdAuthzPlugin none
   set context -c xrootdAuthzKeystore /opt/d-cache/etc/keystore
+  set context -c xrootdMaxLogin 50
+  set context -c xrootdMaxOpenFilesPerConnection 5000
 onerror shutdown
 #
 #
@@ -43,7 +45,7 @@ create dmg.cells.services.login.LoginManager Xrootd-${thisHostname} \
              org.dcache.doors.XrootdDoor \
              -export                     \
              -prot=telnet -localOk       \
-             -maxLogin=15                \
+             -maxLogin=${xrootdMaxLogin} \
              -clientVersion=0.0          \
              -brokerUpdateTime=30        \
              -protocolFamily=Xrootd      \
@@ -54,5 +56,6 @@ create dmg.cells.services.login.LoginManager Xrootd-${thisHostname} \
              -keystore=${xrootdAuthzKeystore} \
              -io-queue=${xrootdIoQueue} \
              -allowedPaths=${xrootdAllowedPaths} \
+             -maxFileOpensPerLogin=${xrootdMaxOpenFilesPerConnection} \
 "
 

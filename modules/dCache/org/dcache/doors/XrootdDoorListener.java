@@ -467,6 +467,7 @@ public class XrootdDoorListener implements StreamListener {
 //		
 		physicalXrootdConnection.getResponseEngine().sendResponseMessage(new RedirectResponse(req.getStreamID(), redirectAdress.getHostName(), redirectAdress.getPort()));
 		door.sendBillingInfo( this.info );
+		door.newFileOpen(fileHandle, req.getStreamID());
 	}
 		
 	private void respondWithError(int streamID, int errorCode, String errMsg) {

@@ -17,7 +17,7 @@ public class XrootdDoorController implements PhysicalConnectionListener {
 		this.door = door;
 		this.physicalXrootdConnection = physicalXrootdConnection;
 		
-		physicalXrootdConnection.setMaxStreams(100);
+		physicalXrootdConnection.setMaxStreams(door.getMaxFileOpens());
 		
 		physicalXrootdConnection.setResponseEngine(new ThreadedResponseEngine(physicalXrootdConnection));
 		physicalXrootdConnection.getResponseEngine().startEngine();

@@ -2,13 +2,10 @@ package org.dcache.doors;
 
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.lang.reflect.Constructor;
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Hashtable;
@@ -20,24 +17,18 @@ import java.util.Map;
 import org.dcache.vehicles.XrootdDoorAdressInfoMessage;
 import org.dcache.vehicles.XrootdProtocolInfo;
 import org.dcache.xrootd.core.connection.PhysicalXrootdConnection;
-import org.dcache.xrootd.core.stream.TooMuchLogicalStreamsException;
 import org.dcache.xrootd.protocol.XrootdProtocol;
-import org.dcache.xrootd.protocol.messages.CloseRequest;
 import org.dcache.xrootd.security.AbstractAuthorizationFactory;
 import org.dcache.xrootd.util.DoorRequestMsgWrapper;
 
 import diskCacheV111.movers.NetIFContainer;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileMetaData;
-import diskCacheV111.util.FsPath;
-import diskCacheV111.util.PnfsFile;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.FileMetaData.Permissions;
-import diskCacheV111.util.PnfsFile.VirtualMountPoint;
 import diskCacheV111.vehicles.DoorRequestInfoMessage;
 import diskCacheV111.vehicles.DoorTransferFinishedMessage;
-import diskCacheV111.vehicles.PnfsCreateDirectoryMessage;
 import diskCacheV111.vehicles.PnfsCreateEntryMessage;
 import diskCacheV111.vehicles.PnfsGetStorageInfoMessage;
 import diskCacheV111.vehicles.PoolAcceptFileMessage;
@@ -73,7 +64,7 @@ public class XrootdDoor extends CellAdapter {
 	private Hashtable _redirectTable = new Hashtable();
 	
 //	fileHandle -> Xrootd logicalStreamID 
-	private Hashtable _logicalStreamTable = new Hashtable();
+	private Hashtable<Integer, Integer> _logicalStreamTable = new Hashtable<Integer, Integer>();
 	
 	private int _fileHandleCounter = 0;
 	
@@ -97,6 +88,9 @@ public class XrootdDoor extends CellAdapter {
 
 //	the prefix of the transaction string used for billing
 	private String _transactionPrefix;
+
+//  the number of max open files per physical xrootd connection   
+	private int _maxFileOpens = 5000;
 
 //	the list of paths which are authorized for xrootd write access (via dCacheSetup) 
 	private static List _authorizedWritePaths = null;
@@ -161,6 +155,15 @@ public class XrootdDoor extends CellAdapter {
 			_ioQueue = null;
 		}
 		esay(_ioQueue != null ? "defined moverqueue: "+_ioQueue : "no moverqueue defined");
+		
+		String maxFileOpens = args.getOpt("maxFileOpensPerLogin");
+		if (maxFileOpens != null && maxFileOpens.length() > 0) {
+		    try {
+		        _maxFileOpens = Integer.parseInt(maxFileOpens);
+		    } catch (NumberFormatException e) {
+                esay("invalid format of 'maxFileOpensPerLogin' parameter, defaulting to "+_maxFileOpens);
+            }
+		}		
 		
 //		// we have to use 'CellAdapapter.newThread()' instead of
 //		// 'new Thread()' because we want to have the worker
@@ -463,44 +466,24 @@ public class XrootdDoor extends CellAdapter {
 				_redirectSync.notifyAll();
 			}
 		} else if (object instanceof DoorTransferFinishedMessage) {
-			say("ignoring DoorTransferFinished Msg.");
-//			DoorTransferFinishedMessage finishedMsg = (DoorTransferFinishedMessage) object;
-//			
-//			Integer fileHandle = Integer.valueOf(((XrootdProtocolInfo) finishedMsg.getProtocolInfo()).getXrootdFileHandle());
-//			
-//			say("received DoorTransferFinished-Message from mover (PnfsId="
-//					+ finishedMsg.getPnfsId() + " fileHandle="+fileHandle+")");
-//
-//						
-//			if (_logicalStreamTable.containsKey(fileHandle)) {
-//
-//				int streamID = ((Integer) _logicalStreamTable.get(fileHandle)).intValue();
-//				
-//				forgetFile(fileHandle.intValue());
-//				
-//				CloseRequest fakedCloseRequest = new FakedXrootdCloseRequest(
-//						streamID, fileHandle.intValue());
-//				
-//				try {
-//
-//					_physicalXrootdConnection.getStreamManager().getStream(
-//							streamID).getListener()
-//							.doOnClose(fakedCloseRequest);
-//
-//				} catch (TooMuchLogicalStreamsException e) {
-//					esay(e);
-//				}
-//
-//				
-//			} else {
-//				
-//				if (_logicalStreamTable.isEmpty()) {
-//					say("ignoring DoorTransferFinished Msg.: no active logical streams");
-//				} else {
-//					say("ignoring DoorTransferFinished Msg.: no active logical stream for filehandle "+fileHandle);
-//				}
-//			
-//			}
+			
+			DoorTransferFinishedMessage finishedMsg = (DoorTransferFinishedMessage) object;
+			
+			if ( (finishedMsg.getProtocolInfo() instanceof XrootdProtocolInfo)) {
+			    
+			    XrootdProtocolInfo protoInfo = (XrootdProtocolInfo) finishedMsg.getProtocolInfo(); 
+			    int fileHandle = protoInfo.getXrootdFileHandle();
+			
+				
+			    if (_logicalStreamTable.containsKey(fileHandle)) {
+
+			        say("received DoorTransferFinished-Message from mover, cleaning up (PnfsId="
+		                    + finishedMsg.getPnfsId() + " fileHandle="+fileHandle+")");
+				
+			        forgetFile(fileHandle);
+				
+			    }
+			}
 			
 		} else {
 			say("Unexpected message class " + object.getClass()+" (source = " + msg.getSourceAddress()+")");
@@ -509,7 +492,8 @@ public class XrootdDoor extends CellAdapter {
 	}
 	
 	public void forgetFile(int fileHandle) {
-		_logicalStreamTable.remove(fileHandle);		
+		int streamID = _logicalStreamTable.remove(fileHandle);
+		_physicalXrootdConnection.getStreamManager().destroyStream(streamID);
 	}
 
 	public synchronized ProtocolInfo createProtocolInfo(PnfsId pnfsId, int fileHandle, long checksum, InetSocketAddress client) {
@@ -762,4 +746,8 @@ public class XrootdDoor extends CellAdapter {
         
         say( msg.toString() );        
 	}
+
+    public int getMaxFileOpens() {
+        return _maxFileOpens;
+    }
 }
