@@ -44,11 +44,11 @@ public class ChimeraOsmStorageInfoExtractor implements
     public StorageInfo getStorageInfo(FsInode inode)
             throws CacheException {
 
-    	if( !inode.exists() ) {
-    		throw new FileNotFoundCacheException(inode.toString() + " does not exists");
-    	}
+        if( !inode.exists() ) {
+            throw new FileNotFoundCacheException(inode.toString() + " does not exists");
+        }
 
-    	StorageInfo info;
+        StorageInfo info;
 
         if (inode.isDirectory()) {
             info =  getDirStorageInfo(inode);
@@ -68,32 +68,32 @@ public class ChimeraOsmStorageInfoExtractor implements
 
         try {
 
-	        List<StorageLocatable> locations = inode.getFs().getInodeLocations(inode, StorageGenericLocation.TAPE );
+            List<StorageLocatable> locations = inode.getFs().getInodeLocations(inode, StorageGenericLocation.TAPE );
 
-	        if ( locations.isEmpty() ) {
-	            info = (OSMStorageInfo) getDirStorageInfo(inode);
-	        } else {
+            if ( locations.isEmpty() ) {
+                info = (OSMStorageInfo) getDirStorageInfo(inode);
+            } else {
 
 
-            	InodeStorageInformation inodeStorageInfo = inode.getFs().getSorageInfo(inode);
+                InodeStorageInformation inodeStorageInfo = inode.getFs().getSorageInfo(inode);
 
                 info = new OSMStorageInfo( inodeStorageInfo.storageGroup(),
-                		inodeStorageInfo.storageSubGroup() );
+                        inodeStorageInfo.storageSubGroup() );
 
                 info.setIsNew(false);
                 info.setAccessLatency(diskCacheV111.util.AccessLatency.getAccessLatency( inodeStorageInfo.accessLatency().getId() ) );
                 info.setRetentionPolicy(diskCacheV111.util.RetentionPolicy.getRetentionPolicy( inodeStorageInfo.retentionPolicy().getId() ) );
 
                 for(StorageLocatable location: locations) {
-                	if( location.isOnline() ) {
-                		try {
-							info.addLocation( new URI(location.location()) );
-						} catch (URISyntaxException e) {
-							// bad URI
-						}
-                	}
+                    if( location.isOnline() ) {
+                        try {
+                            info.addLocation( new URI(location.location()) );
+                        } catch (URISyntaxException e) {
+                            // bad URI
+                        }
+                    }
                 }
-	        }
+            }
 
         } catch (ChimeraFsException e) {
             throw new CacheException(e.getMessage());
@@ -125,11 +125,11 @@ public class ChimeraOsmStorageInfoExtractor implements
 
         try {
 
-        	String[] OSMTemplate = getTag(dirInode, "OSMTemplate");
+            String[] OSMTemplate = getTag(dirInode, "OSMTemplate");
             HashMap<String, String> hash = new HashMap<String, String>();
 
             for ( String line: OSMTemplate) {
-            	StringTokenizer st = new StringTokenizer(line);
+                StringTokenizer st = new StringTokenizer(line);
                 if (st.countTokens() < 2)
                     continue;
                 hash.put(st.nextToken(), st.nextToken());
@@ -142,7 +142,7 @@ public class ChimeraOsmStorageInfoExtractor implements
 
             String [] sGroup = getTag(dirInode, "sGroup");
             if( sGroup == null ) {
-            	throw new CacheException(37, "sGroup tag not found");
+                throw new CacheException(37, "sGroup tag not found");
             }
 
             String gr = sGroup[0].trim();
@@ -154,7 +154,7 @@ public class ChimeraOsmStorageInfoExtractor implements
 
             String[] hsmInstance = getTag(dirInode, "hsmInstance");
             if( hsmInstance != null ) {
-            	info.setHsm( hsmInstance[0].toLowerCase().trim());
+                info.setHsm( hsmInstance[0].toLowerCase().trim());
             }
 
             si = info;
@@ -169,21 +169,21 @@ public class ChimeraOsmStorageInfoExtractor implements
              * tag is default value only
              */
             if(accessLatency != null) {
-         	   try {
-         		   info.setAccessLatency( diskCacheV111.util.AccessLatency.getAccessLatency(accessLatency[0].trim()));
-         		   info.isSetAccessLatency(true);
-         	   }catch(IllegalArgumentException iae) {
-         		   // TODO: do we fail here or not?
-         	   }
+                try {
+                    info.setAccessLatency( diskCacheV111.util.AccessLatency.getAccessLatency(accessLatency[0].trim()));
+                    info.isSetAccessLatency(true);
+                }catch(IllegalArgumentException iae) {
+                    // TODO: do we fail here or not?
+                }
             }
 
             if(retentionPolicy != null) {
-         	   try {
-         		   info.setRetentionPolicy( diskCacheV111.util.RetentionPolicy.getRetentionPolicy(retentionPolicy[0].trim()));
-         		   info.isSetRetentionPolicy(true);
-         	   }catch(IllegalArgumentException iae) {
-         		   // TODO: do we fail here or not?
-         	   }
+                try {
+                    info.setRetentionPolicy( diskCacheV111.util.RetentionPolicy.getRetentionPolicy(retentionPolicy[0].trim()));
+                    info.isSetRetentionPolicy(true);
+                }catch(IllegalArgumentException iae) {
+                    // TODO: do we fail here or not?
+                }
             }
 
 
@@ -204,32 +204,32 @@ public class ChimeraOsmStorageInfoExtractor implements
             int arg3) throws CacheException {
 
 
-    	RetentionPolicy retentionPolicy = RetentionPolicy.valueOf( dCacheStorageInfo.getRetentionPolicy().getId());
-    	AccessLatency accessLatency = AccessLatency.valueOf(dCacheStorageInfo.getAccessLatency().getId());
+        RetentionPolicy retentionPolicy = RetentionPolicy.valueOf( dCacheStorageInfo.getRetentionPolicy().getId());
+        AccessLatency accessLatency = AccessLatency.valueOf(dCacheStorageInfo.getAccessLatency().getId());
 
-    	InodeStorageInformation storageInfo = new InodeStorageInformation(inode,
-    			dCacheStorageInfo.getHsm(),
-    			dCacheStorageInfo.getKey("store"),
-    			dCacheStorageInfo.getKey("group"),
-    			accessLatency,
-    			retentionPolicy);
+        InodeStorageInformation storageInfo = new InodeStorageInformation(inode,
+                dCacheStorageInfo.getHsm(),
+                dCacheStorageInfo.getKey("store"),
+                dCacheStorageInfo.getKey("group"),
+                accessLatency,
+                retentionPolicy);
 
-    	try {
-    		inode.getFs().setStorageInfo(inode, storageInfo);
-
-
-    		if(dCacheStorageInfo.isSetAddLocation() ) {
-	    		List<URI> locationURIs = dCacheStorageInfo.locations();
-	    		for(URI location : locationURIs) {
-	    			HsmLocation hsmLocation = HsmLocationExtractorFactory.extractorOf(location);
-	    			inode.getFs().addInodeLocation(inode, StorageGenericLocation.TAPE, hsmLocation.location().toString());
-	    		}
-    		}
+        try {
+            inode.getFs().setStorageInfo(inode, storageInfo);
 
 
-    	}catch(ChimeraFsException he ) {
-    		throw new CacheException(he.getMessage() );
-    	}
+            if(dCacheStorageInfo.isSetAddLocation() ) {
+                List<URI> locationURIs = dCacheStorageInfo.locations();
+                for(URI location : locationURIs) {
+                    HsmLocation hsmLocation = HsmLocationExtractorFactory.extractorOf(location);
+                    inode.getFs().addInodeLocation(inode, StorageGenericLocation.TAPE, hsmLocation.location().toString());
+                }
+            }
+
+
+        }catch(ChimeraFsException he ) {
+            throw new CacheException(he.getMessage() );
+        }
     }
 
     /**
@@ -242,35 +242,35 @@ public class ChimeraOsmStorageInfoExtractor implements
      * @throws IOException
      */
     private static String[] getTag(FsInode dirInode, String tag)
-			throws IOException {
+            throws IOException {
 
-		FsInode_TAG tagInode = new FsInode_TAG(dirInode.getFs(), dirInode
-				.toString(), tag);
+        FsInode_TAG tagInode = new FsInode_TAG(dirInode.getFs(), dirInode
+                .toString(), tag);
 
 
-		if( !tagInode.exists() ) {
-			return null;
-		}
+        if( !tagInode.exists() ) {
+            return null;
+        }
 
-		byte[] buff = new byte[256];
+        byte[] buff = new byte[256];
 
-		int len = tagInode.read(0, buff, 0, buff.length);
-		if( len < 0 ) {
-			return null;
-		}
+        int len = tagInode.read(0, buff, 0, buff.length);
+        if( len < 0 ) {
+            return null;
+        }
 
-		List<String> lines = new ArrayList<String>();
-		CharArrayReader ca = new CharArrayReader(new String(buff, 0, len)
-				.toCharArray());
+        List<String> lines = new ArrayList<String>();
+        CharArrayReader ca = new CharArrayReader(new String(buff, 0, len)
+                .toCharArray());
 
-		BufferedReader br = new BufferedReader(ca);
+        BufferedReader br = new BufferedReader(ca);
 
-		String line = null;
-		while ((line = br.readLine()) != null) {
-			lines.add(line);
-		}
+        String line = null;
+        while ((line = br.readLine()) != null) {
+            lines.add(line);
+        }
 
-		return lines.toArray(new String[lines.size()]);
+        return lines.toArray(new String[lines.size()]);
 
-	}
+    }
 }
