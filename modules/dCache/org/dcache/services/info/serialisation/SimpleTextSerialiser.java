@@ -21,9 +21,16 @@ public class SimpleTextSerialiser implements StateVisitor, StateSerialiser {
 	
 	private StringBuffer _result = new StringBuffer();
 	private StatePath _lastStateComponentPath=null;
+	private StatePath _startPath;
 	
 	public String serialise( StatePath start) {
 		_result = new StringBuffer();
+		_startPath = start;
+		
+		if( start != null) {
+			_result.append( start.toString());
+			_result.append(">\n");
+		}
 		
 		State.getInstance().visitState( this, start);
 		
@@ -63,7 +70,7 @@ public class SimpleTextSerialiser implements StateVisitor, StateSerialiser {
 		_lastStateComponentPath = path;
 	}
 	public void visitCompositePostDescend(StatePath path, Map<String, String> metadata) {
-		if( path.equals(_lastStateComponentPath) && !path.isSimplePath()) {
+		if( path != null && path.equals(_lastStateComponentPath) && !path.isSimplePath()) {
 			String type = LIST_TYPE;
 			
 			if( metadata != null) {
@@ -71,7 +78,7 @@ public class SimpleTextSerialiser implements StateVisitor, StateSerialiser {
 				if( className != null)
 					type = className;
 			}
-			outputMetric( path.parentPath(), path.getLastElement(), type);
+			outputMetric( path, "", type);
 		}
 	}
 	
@@ -86,7 +93,13 @@ public class SimpleTextSerialiser implements StateVisitor, StateSerialiser {
 	 * @param metricType the type of metric.
 	 */
 	private void outputMetric( StatePath path, String metricValue, String metricType) {
-		_result.append( path);
+		
+		if( _startPath != null)
+			_result.append( "  ");
+		
+		if( path != null)
+			_result.append( path.toString( _startPath));
+		
 		_result.append( ":  ");
 		_result.append( metricValue);
 		_result.append( " [");

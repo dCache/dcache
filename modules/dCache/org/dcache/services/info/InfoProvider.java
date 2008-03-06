@@ -3,18 +3,20 @@ package org.dcache.services.info;
 import java.util.*;
 import dmg.cells.nucleus.*;
 import dmg.util.Args;
-//import dmg.util.Args;
 import org.dcache.services.info.base.*;
 import org.dcache.services.info.conduits.*;
 import org.dcache.services.info.gathers.*;
 import org.dcache.services.info.serialisation.*;
+import org.dcache.services.info.secondaryInfoProviders.*;
 
 public class InfoProvider extends CellAdapter {
 	
 	private static InfoProvider _instance=null;
 	private static final String ADMIN_INTERFACE_OK = "Done.";
-	public static final String ADMIN_INTERFACE_NONE = "(none)";
-	public static final String ADMIN_INTERFACE_LIST_PREFIX = "  ";
+	private static final String ADMIN_INTERFACE_NONE = "(none)";
+	private static final String ADMIN_INTERFACE_LIST_PREFIX = "  ";
+	private static final String TOPLEVEL_DIRECTORY_LABEL = "(top)";
+
 	
 	/**
 	 * Poor man's singleton
@@ -63,6 +65,7 @@ public class InfoProvider extends CellAdapter {
 	    buildMessageHandlerChain();
 	    startDgaScheduler();
 		addDefaultConduits();
+		addDefaultWatchers();
 	    startConduits();
 		
 		start();  // Go, go gadget InfoProvider
@@ -76,6 +79,7 @@ public class InfoProvider extends CellAdapter {
 	public void cleanUp() {
 		stopConduits();
 		_scheduler.shutdown();
+		StateMaintainer.getInstance().shutdown();
 	}
 
 	
@@ -159,8 +163,8 @@ public class InfoProvider extends CellAdapter {
 	    _scheduler.addDefaultActivity();
 
         Thread ict = new Thread( _scheduler);
+        ict.setName("DGA-Scheduler");
         ict.start();
-        ict.setName("Data-Gathering thread");
 	}
 
 	
@@ -215,6 +219,14 @@ public class InfoProvider extends CellAdapter {
 	}
 	
 	/**
+	 *   S T A T E   W A T C H E R S
+	 */
+	private void addDefaultWatchers() {
+		State.getInstance().addStateWatcher(new PoolgroupSpaceWatcher());
+	}
+	
+	
+	/**
 	 *   H A N D L E R    A D M I N    C O M M A N D S
 	 */
 	
@@ -224,8 +236,19 @@ public class InfoProvider extends CellAdapter {
 		StringBuffer sb = new StringBuffer();
 		
 		sb.append( "Incoming Message Handlers:\n");
-		sb.append( _msgHandlerChain.listMessageHandlers());
-		
+		String msgHandlers[] = _msgHandlerChain.listMessageHandlers();
+		if( msgHandlers.length > 0) {
+			for( String msgHandler : msgHandlers) {
+				sb.append( ADMIN_INTERFACE_LIST_PREFIX);
+				sb.append( msgHandler);
+				sb.append( "\n");
+			}
+		} else {
+			sb.append( ADMIN_INTERFACE_LIST_PREFIX);
+			sb.append( ADMIN_INTERFACE_NONE);
+			sb.append( "\n");
+		}
+
 		return sb.toString();
 	}
 
@@ -281,7 +304,20 @@ public class InfoProvider extends CellAdapter {
 	public String ac_dga_ls_$_0( Args args) {
 		StringBuffer sb = new StringBuffer();
 		sb.append( "Data-Gathering Activity:\n");
-		sb.append( _scheduler.listActivity());
+		List<String> dgaList = _scheduler.listActivity();
+		
+		if( dgaList.size() > 0)
+			for( String activity : dgaList) {
+				sb.append( ADMIN_INTERFACE_LIST_PREFIX);
+				sb.append(activity);
+				sb.append( "\n");
+			}
+		else {
+			sb.append( ADMIN_INTERFACE_LIST_PREFIX);
+			sb.append( ADMIN_INTERFACE_NONE);
+			sb.append( "\n");
+		}
+
 		return sb.toString();
 	}
 	
@@ -390,12 +426,10 @@ public class InfoProvider extends CellAdapter {
 	public String ac_state_pwd_$_0( Args args) {
 		StringBuffer sb = new StringBuffer();
 		
-		sb.append( "dCache");
-		
-		if( _startSerialisingFrom != null) {
-			sb.append( ".");
+		if( _startSerialisingFrom != null)
 			sb.append( _startSerialisingFrom.toString());
-		}
+		else
+			sb.append(TOPLEVEL_DIRECTORY_LABEL);
 		
 		return sb.toString();
 	}
@@ -447,6 +481,24 @@ public class InfoProvider extends CellAdapter {
 			
 			pathElements = path.split( "/");
 		}
+
+		/**
+		 * As a special case: no slashes, single element in list containing dots that 
+		 * isn't "." or "..".  Treat this as a relative path, splitting on the dots.
+		 */
+		if( pathElements.length == 1) {
+			String element = pathElements [0];
+			
+			if( !element.contains( "/") && element.contains(".") && !element.equals(".") && !element.equals("..")) {
+				if( currentPath != null)
+					currentPath = currentPath.newChild( StatePath.parsePath( element));
+				else
+					currentPath = StatePath.parsePath( element);
+				
+				return currentPath;
+			}
+		}
+
 		
 		for( int i = 0; i < pathElements.length; i++) {
 		

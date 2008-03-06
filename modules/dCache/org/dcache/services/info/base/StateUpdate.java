@@ -5,33 +5,50 @@ package org.dcache.services.info.base;
 
 import java.util.*;
 
+import org.apache.log4j.Logger;
+
 /**
- * A concrete representation of one or more concurrent changes to
- * dCache's State.
- * 
- * Objects from this class are immutable and read-only.
+ * The StateUpdate is a simple collection containing zero or more proposed concurrent
+ * changes to dCache's State.  Each change consists of a StatePath and a StateComponent.
+ * The StatePath indicates where the update is to take place and the StateComponent is the
+ * new value to be stored.
+ * <p>
+ * StateUpdate objects are immutable, providing read-only access to proposed set of changes. 
  * 
  * @author Paul Millar <paul.millar@desy.de>
+ * @see StateTransition
  */
 public class StateUpdate {
 
-	private Map<StatePath,StateComponent> _updates;
-	private Date _expiryDate = null;
+	private static Logger _log = Logger.getLogger(StateUpdate.class);
+	
+	/**
+	 * A single update to dCache
+	 */
+	private class StateUpdateInstance {
+		StatePath _path;
+		StateComponent _newValue;
+		
+		StateUpdateInstance( StatePath path, StateComponent newValue) {
+			_path = path;
+			_newValue = newValue;
+		}
+	}
+
+	private List<StateUpdateInstance> _updates;
 	
 	public StateUpdate() {
-		_updates = new Hashtable<StatePath,StateComponent>();
+		_updates = new Vector<StateUpdateInstance>();
 	}
 
 	
 	/**
-	 * Provide a "cheap" read-only copy of an StateUpdate.
-	 * @param update
+	 * Count the number of metrics that are to be updated.
+	 * @return the number of metric updates contained within this StateUpdate.
 	 */
-	protected StateUpdate( StateUpdate su) {		
-		Map<StatePath,StateComponent> _updates = new Hashtable<StatePath,StateComponent>( su._updates.size());
-		_updates.putAll(su._updates);
+	public int count() {
+		return _updates.size();
 	}
-	
 	
 	/**
 	 * Provide a mechanism whereby we can append additional updates to
@@ -39,60 +56,27 @@ public class StateUpdate {
 	 * @param path: the StatePath of the new StateValue.
 	 * @param value: the new 
 	 */
-	protected void appendUpdate( StatePath path, StateComponent value) {
-		_updates.put( new StatePath(path), value);
+	public void appendUpdate( StatePath path, StateComponent value) {
+		_updates.add( new StateUpdateInstance( path, value));
+	}
 
-		Date expiryDate = value.getExpiryDate();
-		
-		if( expiryDate != null) {
-			if( _expiryDate != null && _expiryDate.after(expiryDate))
-				_expiryDate = expiryDate;
-		}
-	}
 	
 	/**
-	 * Provide the earliest date when any of the new metric values will expire.
-	 * 
-	 * @return first time data will expire, or null if all metric values are static.
+	 * Go through each of the proposed updates recorded and update the StateTransition object.
+	 * @param top the top-most StateComposite within dCache state
+	 * @param transition the StateTransition to update.
+	 * @throws BadStatePathException
 	 */
-	public Date getEarliestExpDate() {
-		return _expiryDate;
-	}
-	
-
-	/**
-	 * Check whether a watcher is interested in any of the updates present.
-	 * @param watcher  the StateWatcher in question
-	 * @return true if this StateWatcher StatePredicate matches any updates. 
-	 */
-	public boolean watcherIsInterested( StateWatcher watcher) {		
-		return watcher.getPredicate().matches( _updates.keySet());
-	}
-	
-		
-	/**
-	 * Add the changes under a specific StateComposite.  This "applies" each of the changes
-	 * to the "live" StateComponent state tree.
-	 * <p>
-	 * The process will attempt to apply all of the StateUpdate's entries in turn.  For each
-	 * entry [a (StatePath, StateValue) ordered pair], the StateComposite's add() method is
-	 * called.
-	 * <p>
-	 * Any number of these (StatePath,StateValue) ordered pairs may prove impossible to
-	 * satisfy.  If so, then a BadStatePathException will be thrown.
-	 * <p>
-	 * This method will attempt to satisfy as much of the update as possible: only the first
-	 * exception will be reported after the update has completed, any subsequent Exceptions
-	 * are ignored. 
-	 * @param sc the StateComposite the changes should be added underneath.
-	 * @throws BadStatePathException one (or more) StatePath s were impossible to satisfy.
-	 */
-	protected void updateStateUnderComposite( StateComposite sc) throws BadStatePathException {
+	protected void updateTransition( StateComposite top, StateTransition transition) throws BadStatePathException {
 		BadStatePathException caughtThis = null;
 		
-		for( Map.Entry<StatePath, StateComponent> entry : _updates.entrySet()) {
+		for( StateUpdateInstance update : _updates) {
+			
+			if( _log.isDebugEnabled())
+				_log.debug( "preparing transition to alter "+update._path.toString());
+			
 			try {
-				sc.add( entry.getKey(), entry.getValue());
+				top.buildTransition( null, update._path, update._newValue, transition);
 			} catch (BadStatePathException e) {
 				if( caughtThis == null)
 					caughtThis = e;
@@ -100,6 +84,6 @@ public class StateUpdate {
 		}
 		
 		if( caughtThis != null)
-			throw caughtThis;
+			throw caughtThis;		
 	}
 }

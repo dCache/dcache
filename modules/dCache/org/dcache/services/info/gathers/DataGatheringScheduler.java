@@ -2,7 +2,7 @@ package org.dcache.services.info.gathers;
 
 import java.util.*;
 
-import org.dcache.services.info.*;
+import org.apache.log4j.Logger;
 import org.dcache.services.info.base.*;
 
 /**
@@ -20,13 +20,16 @@ public class DataGatheringScheduler implements Runnable {
 
 	private boolean _timeToQuit = false;
 	private List<RegisteredActivity> _activity = new Vector<RegisteredActivity>();
-	
-	
+	private static Logger _logSched = Logger.getLogger(DataGatheringScheduler.class);
+	private static Logger _logRa = Logger.getLogger(RegisteredActivity.class);
+
+		
 	/**
 	 * Class holding a periodically repeated DataGatheringActivity
 	 * @author Paul Millar <paul.millar@desy.de>
 	 */
 	private class RegisteredActivity {
+		
 		
 		/** Min. delay (in ms). We prevent Schedulables from triggering more frequently than this */
 		private static final long MINIMUM_DGA_DELAY = 500;
@@ -61,7 +64,7 @@ public class DataGatheringScheduler implements Runnable {
 			Date nextTrigger = _dga.shouldNextBeTriggered();
 			
 			if( nextTrigger == null) {
-				InfoProvider.getInstance().say("dga returned null");
+				_logRa.error("registered dga returned null Date");
 				_nextTriggered = new Date( System.currentTimeMillis() + 5*60*1000);
 				return;
 			}
@@ -160,6 +163,8 @@ public class DataGatheringScheduler implements Runnable {
 		long delay;
 		Date now = new Date();
 
+		_logSched.debug("DGA Scheduler thread starting.");
+
 		synchronized( _activity) {			
 			do {
 				now.setTime(System.currentTimeMillis());
@@ -176,7 +181,9 @@ public class DataGatheringScheduler implements Runnable {
 				}
 				
 			} while( !_timeToQuit);
-		}		
+		}
+		
+		_logSched.debug("DGA Scheduler thread shutting down.");
 	}
 	
 
@@ -287,6 +294,7 @@ public class DataGatheringScheduler implements Runnable {
 	 * for data.
 	 */
 	public void shutdown() {
+		_logSched.debug("Requesting DGA Scheduler to shutdown.");
 		synchronized( _activity) {
 			_timeToQuit = true;
 			_activity.notify();
@@ -328,24 +336,15 @@ public class DataGatheringScheduler implements Runnable {
 	 * Return a human-readable list of known activity.
 	 * @return
 	 */
-	public String listActivity() {
-		StringBuffer sb = new StringBuffer();
+	public List<String> listActivity() {
+		List<String> activityList = new Vector<String>();
 		
 		synchronized( _activity) {			
-			if( _activity.size() > 0)
-				for( Iterator<RegisteredActivity> itr = _activity.iterator(); itr.hasNext();) {
-					sb.append( InfoProvider.ADMIN_INTERFACE_LIST_PREFIX);
-					sb.append( itr.next().getStatus());
-					sb.append( "\n");
-				}
-			else {
-				sb.append( InfoProvider.ADMIN_INTERFACE_LIST_PREFIX);
-				sb.append( InfoProvider.ADMIN_INTERFACE_NONE);
-				sb.append( "\n");
-			}
+			for( RegisteredActivity thisRa : _activity)
+				activityList.add(thisRa.getStatus());
 		}
 		
-		return sb.toString();
+		return activityList;
 	}
 	
 	
@@ -367,10 +366,10 @@ public class DataGatheringScheduler implements Runnable {
 		addActivity( new SingleMessageDga( "LoginBroker",     "ls -binary", msgHandler, 60));
 		addActivity( new SingleMessageDga( "srm-LoginBroker", "ls -binary", msgHandler, 60));
 
-		addActivity( new ListBasedMessageDga( new StatePath("dCache.pools"),      "PoolManager", "psux ls pool",   new PoolInfoMsgHandler()));
-		addActivity( new ListBasedMessageDga( new StatePath("dCache.poolgroups"), "PoolManager", "psux ls pgroup", new PoolGroupInfoMsgHandler()));
-		addActivity( new ListBasedMessageDga( new StatePath("dCache.units"),      "PoolManager", "psux ls unit",   new UnitInfoMsgHandler()));
-		addActivity( new ListBasedMessageDga( new StatePath("dCache.unitgroups"), "PoolManager", "psux ls ugroup", new UGroupInfoMsgHandler()));
+		addActivity( new ListBasedMessageDga( new StatePath("pools"),      "PoolManager", "psux ls pool",   new PoolInfoMsgHandler()));
+		addActivity( new ListBasedMessageDga( new StatePath("poolgroups"), "PoolManager", "psux ls pgroup", new PoolGroupInfoMsgHandler()));
+		addActivity( new ListBasedMessageDga( new StatePath("units"),      "PoolManager", "psux ls unit",   new UnitInfoMsgHandler()));
+		addActivity( new ListBasedMessageDga( new StatePath("unitgroups"), "PoolManager", "psux ls ugroup", new UGroupInfoMsgHandler()));
 	}
 
 

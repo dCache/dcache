@@ -1,7 +1,7 @@
 package org.dcache.services.info.gathers;
 
 import org.dcache.services.info.InfoProvider;
-import org.dcache.services.info.base.AppendableStateUpdate;
+import org.dcache.services.info.base.StateUpdate;
 import org.dcache.services.info.base.StatePath;
 
 public class PoolGroupInfoMsgHandler extends CellMessageHandlerSkel {
@@ -12,7 +12,7 @@ public class PoolGroupInfoMsgHandler extends CellMessageHandlerSkel {
 
 		Object array[];
 		
-		AppendableStateUpdate update = new AppendableStateUpdate();
+		StateUpdate update = new StateUpdate();
 		
 		array = (Object []) msgPayload;
 		

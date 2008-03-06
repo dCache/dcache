@@ -1,17 +1,21 @@
 package org.dcache.services.info.base;
 
-
+/**
+ * Extends the abstract StateValue class to allow storage of boolean values
+ * within dCache state.
+ * 
+ * @author Paul Millar <paul.millar@desy.de>
+ */
 public class BooleanStateValue extends StateValue {
+	private static final long DUMMY_VALUE = 0;
 	
 	private boolean _storage;
 
 	/**
-	 * Create a new BooleanStateValue with given value.  This
-	 * state value should not expire.
-	 * @param value the boolean to store.
+	 * Create a new Empherical Boolean StateValue.
 	 */
-	private BooleanStateValue( boolean value) {
-		super();
+	public BooleanStateValue( boolean value) {
+		super(false);
 		_storage = value;
 	}
 	
@@ -31,12 +35,6 @@ public class BooleanStateValue extends StateValue {
 	}
 
 
-	public StateValue clone() {		
-		BooleanStateValue sv = new BooleanStateValue( _storage);
-		sv._creationTime = this._creationTime;
-		return sv;
-	}
-
 	public String getTypeName() {
 		return "boolean";
 	}
@@ -48,6 +46,15 @@ public class BooleanStateValue extends StateValue {
 	 */
 	public void acceptVisitor(StatePath path, StateVisitor visitor) {
 		visitor.visitBoolean( path, this);
+	}
+	
+	public boolean shouldTriggerWatcher( StateComponent newValue) {
+		if( !(newValue instanceof BooleanStateValue))
+			return true;
+
+		BooleanStateValue newBoolValue = (BooleanStateValue) newValue;
+		
+		return newBoolValue._storage != _storage;
 	}
 
 }

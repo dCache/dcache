@@ -16,7 +16,7 @@ public class UGroupInfoMsgHandler extends CellMessageHandlerSkel {
 		
 		Object array[];
 		
-		AppendableStateUpdate update = new AppendableStateUpdate();
+		StateUpdate update = new StateUpdate();
 		
 		array = (Object []) msgPayload;
 		

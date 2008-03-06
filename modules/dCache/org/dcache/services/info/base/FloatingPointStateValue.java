@@ -2,7 +2,7 @@ package org.dcache.services.info.base;
 
 
 /**
- * Extends the generic StateValue to implement storing Floating-point numbers
+ * Extends the abstract StateValue to allow storing Floating-point numbers
  * within the dCache state tree.
  * 
  * @author Paul Millar <paul.millar@desy.de>
@@ -12,12 +12,12 @@ public class FloatingPointStateValue extends StateValue {
 	private double _storage;
 
 	/**
-	 * Create a new FloatingPointStateValue that will store
+	 * Create a new Empherical FloatingPoint StateValue that will store
 	 * a floating-point number.  This metric has no life-time.
 	 * @param value the value to be stored.
 	 */
-	private FloatingPointStateValue( double value) {
-		super();
+	public FloatingPointStateValue( double value) {
+		super( false);
 		_storage = value;
 	}
 	
@@ -34,12 +34,6 @@ public class FloatingPointStateValue extends StateValue {
 		_storage = value;
 	}
 
-	public StateValue clone() {
-		FloatingPointStateValue sv = new FloatingPointStateValue( _storage);
-		sv._expiryTime = this._expiryTime;
-		return sv;
-	}
-	
 	public String getTypeName() {
 		return "float";
 	}
@@ -54,6 +48,15 @@ public class FloatingPointStateValue extends StateValue {
 	 */
 	public void acceptVisitor(StatePath path, StateVisitor visitor) {
 		visitor.visitFloatingPoint( path, this);
+	}
+
+	public boolean shouldTriggerWatcher( StateComponent newValue) {
+		if( !(newValue instanceof FloatingPointStateValue))
+			return true;
+
+		FloatingPointStateValue newFPValue = (FloatingPointStateValue) newValue;
+		
+		return newFPValue._storage != _storage;
 	}
 
 }

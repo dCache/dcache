@@ -4,15 +4,20 @@
 package org.dcache.services.info.base;
 
 /**
- * A String value stored within dCache's State.
+ * The StringStateValue Class allows String values to be stored within dCache's State.
  * @author Paul Millar <paul.millar@desy.de>
  */
 public class StringStateValue extends StateValue {
-	
+
 	private String _storage;
 
-	private StringStateValue() {
-		super();
+	/**
+	 * Create a new Ephemeral String StateValue
+	 * @param value the String to be stored.
+	 */
+	public StringStateValue( String value) {
+		super( false);
+		_storage = new String( value);
 	}
 	
 	/**
@@ -22,18 +27,11 @@ public class StringStateValue extends StateValue {
 	 */
 	public StringStateValue( String value, long duration) {
 		super( duration);
-		_storage = value;
+		_storage = new String( value);
 	}
 	
 	public String toString() {
 		return _storage;
-	}
-	
-	public StateValue clone() {
-		StringStateValue newVal = new StringStateValue();
-		newVal._storage = this._storage;
-		newVal._expiryTime = this._expiryTime;
-		return newVal;
 	}
 	
 	public String getTypeName() {
@@ -47,4 +45,17 @@ public class StringStateValue extends StateValue {
 	public void acceptVisitor( StatePath path, StateVisitor visitor) {
 		visitor.visitString( path, this);
 	}
+	
+	/**
+	 * Whether the differences between supplied StateComponent and ourselves is sufficient
+	 * that it should trigger a StateWatcher.
+	 */
+	public boolean shouldTriggerWatcher( StateComponent newValue) {
+		if( !(newValue instanceof StringStateValue))
+			return true;
+		StringStateValue newStringValue = (StringStateValue) newValue;
+		
+		return !newStringValue._storage.equals( _storage);
+	}
+
 }

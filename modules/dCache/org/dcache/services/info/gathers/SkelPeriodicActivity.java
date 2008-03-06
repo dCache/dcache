@@ -2,6 +2,11 @@ package org.dcache.services.info.gathers;
 
 import java.util.Date;
 
+/**
+ * Implements a skeleton Schedulable Class that is triggered periodically.
+ * 
+ * @author Paul Millar <paul.millar@desy.de>
+ */
 public class SkelPeriodicActivity implements Schedulable {
 	
 	/** This activity's period, in seconds */

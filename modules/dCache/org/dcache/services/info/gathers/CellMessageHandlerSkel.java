@@ -25,7 +25,7 @@ abstract public class CellMessageHandlerSkel implements CellMessageHandler {
 	 * @param items an array of items.
 	 * @param metricLifetime how long the metric should last, in seconds.
 	 */
-	protected void addItems( AppendableStateUpdate update, StatePath parentPath,
+	protected void addItems( StateUpdate update, StatePath parentPath,
 							Object[] items, long metricLifetime) {
 		for( int i = 0; i < items.length; i++) {
 			String listItem = (String) items[i];
@@ -40,10 +40,6 @@ abstract public class CellMessageHandlerSkel implements CellMessageHandler {
 	 * @param update the StateUpdate to apply to the state tree.
 	 */
 	protected void applyUpdates( StateUpdate update) {
-		try {
-			State.getInstance().updateState(update);
-		} catch( BadStatePathException e) {
-			// TODO: log this.
-		}
+		State.getInstance().updateState(update);
 	}
 }

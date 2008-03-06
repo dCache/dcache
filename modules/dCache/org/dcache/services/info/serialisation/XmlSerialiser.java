@@ -31,6 +31,7 @@ public class XmlSerialiser implements StateVisitor, StateSerialiser {
 	private StatePath _lastBranchPath;
 	private String _lastBranchElementName;
 	private String _lastBranchIdName;
+	private boolean _haveLastBranch;
 	
 	
 	private class Attribute {
@@ -53,8 +54,10 @@ public class XmlSerialiser implements StateVisitor, StateSerialiser {
 	public String serialise( StatePath start) {
 		_out = new StringBuffer();
 		_isTopBranch = true;
-		_lastBranchPath = null;
-
+		_haveLastBranch = false;
+		_indentationLevel = 0;
+		updateIndentPrefix();
+		
 		addElement( "<?xml version=\"1.0\"?>");
 		
 		State.getInstance().visitState( this, start);
@@ -76,22 +79,22 @@ public class XmlSerialiser implements StateVisitor, StateSerialiser {
 	
 	/* Deal with metric values */
 	public void visitInteger( StatePath path, IntegerStateValue value) {
-		emitLastBranch(false);
+		emitLastBeginElement( false);
 		addElement( buildMetricElement( path.getLastElement(), value.getTypeName(), value.toString()));
 	}
 
 	public void visitString( StatePath path, StringStateValue value) {
-		emitLastBranch(false);
-		addElement( buildMetricElement( path.getLastElement(), value.getTypeName(), xmlMarkup(value.toString())));
+		emitLastBeginElement( false);
+		addElement( buildMetricElement( path.getLastElement(), value.getTypeName(), xmlTextMarkup(value.toString())));
 	}
 	
 	public void visitBoolean( StatePath path, BooleanStateValue value) {
-		emitLastBranch(false);
+		emitLastBeginElement( false);
 		addElement( buildMetricElement( path.getLastElement(), value.getTypeName(), value.toString()));
 	}
 	
 	public void visitFloatingPoint( StatePath path, FloatingPointStateValue value) {
-		emitLastBranch( false);
+		emitLastBeginElement( false);
 		addElement( buildMetricElement( path.getLastElement(), value.getTypeName(), value.toString()));		
 	}
 	
@@ -115,49 +118,62 @@ public class XmlSerialiser implements StateVisitor, StateSerialiser {
 	 *  @param metadata The keyword-value pairs for this branch. 
 	 */
 	private void enteringBranch( StatePath path, Map<String,String> metadata) {
-		emitLastBranch( false);
+		emitLastBeginElement( false);
 		
-		String branchClass = null;
-		_lastBranchIdName = null;
-		
-		if( metadata != null) {
-			branchClass = metadata.get( State.METADATA_BRANCH_CLASS_KEY);			
-			_lastBranchIdName = metadata.get( State.METADATA_BRANCH_IDNAME_KEY);
-		}
+		/* Build info and store it */
 		
 		_lastBranchPath = path;
-		_lastBranchElementName = branchClass != null ? branchClass : path.getLastElement();		
+		
+		String branchClass = null;
+		
+		if( metadata != null)
+			branchClass = metadata.get( State.METADATA_BRANCH_CLASS_KEY);
+		
+		if( branchClass != null) {
+			_lastBranchElementName = branchClass;
+			_lastBranchIdName = metadata.get( State.METADATA_BRANCH_IDNAME_KEY);
+		} else {
+			_lastBranchElementName = getBranchLabel( path); 
+			_lastBranchIdName = null;
+		}
+
+		_haveLastBranch = true;
 	}
 	
+	
 	/**
-	 * 
+	 * Method for handling the generic case when iterating out of a branch.
 	 * @param path
 	 * @param metadata
 	 */
 	private void exitingBranch( StatePath path, Map<String,String> metadata) {
-		if( path.equals( _lastBranchPath)) {
-			emitLastBranch( true);
-		} else {
-			emitLastBranch( false); // this should be a noop.
+
+		if( _haveLastBranch && ((path == null && _lastBranchPath == null) || (path != null && path.equals( _lastBranchPath))) ) {
+			emitLastBeginElement( true);
+			return;
+		}
+		
+		emitLastBeginElement( false); // this should be a noop: we should have no last-branch to emit.
 			
-			_indentationLevel--;
-			updateIndentPrefix();
-			
-			String lastElement = path.getLastElement();
-			String branchClass = metadata != null ? metadata.get( State.METADATA_BRANCH_CLASS_KEY) : null;
-			
-			addElement( endElement( branchClass != null ? branchClass : lastElement));
-		}		
+		_indentationLevel--;
+		updateIndentPrefix();
+						
+		String branchClass = metadata != null ? metadata.get( State.METADATA_BRANCH_CLASS_KEY) : null;
+		String label = branchClass != null ? branchClass : getBranchLabel( path);
+		addElement( endElement( label));
 	}
 	
 	
 	/**
-	 * emit XML for the previous branch.
+	 * emit XML for the previous branch.  If the previous element was not a branch then
+	 * this method does nothing.
 	 */
-	private void emitLastBranch( boolean isEmpty) {
+	private void emitLastBeginElement( boolean isEmpty) {
 
-		if( _lastBranchPath == null)
+		if( !_haveLastBranch)
 			return;
+
+		_haveLastBranch = false;
 		
 		Attribute[] attrs = null;
 		
@@ -168,9 +184,8 @@ public class XmlSerialiser implements StateVisitor, StateSerialiser {
 		} else {
 			if( _lastBranchIdName != null) {
 				attrs = new Attribute[1];
-				attrs[0] = new Attribute( _lastBranchIdName, _lastBranchPath.getLastElement());				
+				attrs[0] = new Attribute( _lastBranchIdName, getBranchLabel( _lastBranchPath));			
 			}
-			
 		}
 		
 		addElement( beginElement( _lastBranchElementName, attrs, isEmpty));
@@ -180,7 +195,6 @@ public class XmlSerialiser implements StateVisitor, StateSerialiser {
 			updateIndentPrefix();
 		}
 
-		_lastBranchPath = null;
 	}
 	
 	
@@ -203,12 +217,13 @@ public class XmlSerialiser implements StateVisitor, StateSerialiser {
 	 */
 	private String buildMetricElement( String name, String type, String value) {
 		StringBuffer sb = new StringBuffer();
-		Attribute attr[] = new Attribute[1];
-		attr[0] = new Attribute( "type", type);
+		Attribute attr[] = new Attribute[2];
+		attr[0] = new Attribute( "name", name);
+		attr[1] = new Attribute( "type", type);
 		
-		sb.append( beginElement( name, attr, false));
+		sb.append( beginElement( "metric", attr, false));
 		sb.append( value);
-		sb.append( endElement(name));
+		sb.append( endElement("metric"));
 
 		return sb.toString();
 	}
@@ -232,7 +247,7 @@ public class XmlSerialiser implements StateVisitor, StateSerialiser {
 				sb.append( " ");
 				sb.append( attr[i].name);
 				sb.append( "=\"");
-				sb.append( attr[i].value);
+				sb.append( xmlAttrMarkup( attr[i].value));
 				sb.append( "\"");
 			}
 		}
@@ -256,13 +271,24 @@ public class XmlSerialiser implements StateVisitor, StateSerialiser {
 	}
 
 	/**
-	 * Mark-up an String so it can be included as XML data.
+	 * Mark-up an String so it can be included as XML data.  Specificially, we
+	 * markup any occurances of '<', '&' and '>'
+	 * 
 	 * @param value the string value to mark-up
 	 * @return value that is safe to include in as an XML text-node.
 	 */
-	private String xmlMarkup( String value) {
-		// TODO: needs an actual implementation.
-		return value;
+	private String xmlTextMarkup( String value) {
+		return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll( ">", "&gt;");
+	}
+	
+	
+	/**
+	 * Markup an attribute's value. 
+	 * @param value before marking up
+	 * @return the markedup value.
+	 */
+	private String xmlAttrMarkup( String value) {
+		return value.replaceAll("\"", "&quot;");
 	}
 
 	
@@ -276,6 +302,16 @@ public class XmlSerialiser implements StateVisitor, StateSerialiser {
 			sb.append( "  ");
 		
 		_indentationPrefix = sb.toString();
+	}
+	
+	
+	/**
+	 * Return the suitable label to use for this branch
+	 * @param path the StatePath under consideration
+	 * @return the label for this branch.
+	 */
+	private String getBranchLabel( StatePath path) {
+		return path != null ? path.getLastElement() : "dCache"; 
 	}
 
 

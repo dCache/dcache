@@ -7,34 +7,43 @@ import java.util.*;
 
 
 /**
- * A collection of StatePaths that indicate a set of sub-trees of interest.
- *  
+ * A StatePathPredicate indicates interest in a particular part of the dCache state
+ * tree.  It is an extension of the StatePath in that, logically, any StatePath can
+ * be used to construct a StatePathPredicate.
+ * <p>
+ * The principle usage of the StatePathPredicate is select some subset of the values
+ * within dCache's state.  To do this, the <tt>matches()</tt> method should be used.
+ * <p>
+ * When testing whether a StatePath matches, a StatePathPredicate considers the
+ * asterisk character ('*') to be a wildcard and will match any corresponding value
+ * in the StatePath.
  * @author Paul Millar <paul.millar@desy.de>
  */
-public class StatePathPredicate {
+public class StatePathPredicate extends StatePath {
+	
+	/**
+	 * Parse a dot-separated path to build a StatePathPredicate 
+	 * @param path the path, as an ordered list of path elements, each element separated by a dot.
+	 * @return the corresponding StatePath.
+	 */
+	static public StatePathPredicate parsePath( String path) {
+		String elements[] = path.split("\\.");
+		return new StatePathPredicate( elements);
+	}
 
-	Collection<StatePath> _paths;
 	
 	public StatePathPredicate( StatePath path) {
-		_paths = new HashSet<StatePath>();
-		_paths.add(path);
-	}
-	
-	public StatePathPredicate( Collection<StatePath> paths) {
-		_paths = new HashSet<StatePath>( paths);
+		super( path);
 	}
 	
 	public StatePathPredicate( String path) {
-		StatePath statePath = new StatePath(path);
-		_paths = new HashSet<StatePath>();
-		_paths.add( statePath);
+		super( path);
 	}
 	
-	public StatePathPredicate( String path[]) {
-		Collection<StatePath> paths = StatePath.newPathCollection(path);
-		_paths = new HashSet<StatePath>( paths);
+	private StatePathPredicate( String[] elements) {
+		super( elements);
 	}
-		
+
 	/**
 	 * Indicate whether a particular StatePath matches the
 	 * predicate.
@@ -44,30 +53,45 @@ public class StatePathPredicate {
 	 */
 	public boolean matches(StatePath path) {
 		
-		for( StatePath thisPath : _paths) 
-			if( thisPath.equalsOrHasChild(path))
-				return true;
-
-		return false;
+		Iterator<String> myItr = this._elements.iterator();
+		for( String pathElement : path._elements) {
+			String myElement = myItr.next();
+			if( !pathElement.equals(myElement) && !myElement.equals("*"))
+				return false;
+		}
+		
+		return true;
 	}
 	
+	
 	/**
-	 * Given a collection of StatePath objects, does at least one
-	 * of them give matches() true?
-	 * 
-	 * This is a default implementation, subclasses may have a
-	 * better way of implementing this.
-	 * @param pathCol a Collection of StatePaths
-	 * @return true if there is at least on member of pathCol that
-	 * matches() would return true, false otherwise.
+	 * Check whether any of the StatePaths in the paths matches.
+	 * @param paths the set of StatePaths to consider
+	 * @return true if any match, false otherwise.
 	 */
-	public boolean matches(Collection<StatePath> pathCol) {
-
-		// TODO: this is a brute-force approach; we should be able to do better.
-		for( StatePath matchingPath : pathCol )
-			if( matches(matchingPath))
+	public boolean anyPathMatches( Set<StatePath> paths) {
+		for( StatePath path : paths)
+			if( this.matches(path))
 				return true;
 		
 		return false;
+	}
+	
+	public StatePathPredicate childPath() {
+		return new StatePathPredicate( super.childPath());
+	}
+	
+	/**
+	 * Return true if the top-most element matches this predicate. 
+	 * @param name the name of the child element
+	 * @return true if child element matches top-most element, false otherwise
+	 */
+	public boolean topElementMatches( String name) {
+		String topElement = _elements.get(0);
+		
+		if( topElement.equals("*"))
+			return true;
+		
+		return topElement.endsWith(name);
 	}
 }

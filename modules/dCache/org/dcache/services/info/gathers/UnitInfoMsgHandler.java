@@ -15,7 +15,7 @@ public class UnitInfoMsgHandler extends CellMessageHandlerSkel {
 	public void process(Object msgPayload, long metricLifetime) {
 		Object array[];
 		
-		AppendableStateUpdate update = new AppendableStateUpdate();
+		StateUpdate update = new StateUpdate();
 		
 		array = (Object []) msgPayload;
 		

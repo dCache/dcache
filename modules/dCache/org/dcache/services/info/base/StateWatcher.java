@@ -3,6 +3,7 @@
  */
 package org.dcache.services.info.base;
 
+import java.util.Collection;
 
 /**
  * Some objects want to know when (some portion of) dCache state changes.
@@ -20,7 +21,7 @@ public interface StateWatcher {
 	 * in evaluate() returning a different result.
 	 * @return a Set of predicates
 	 */
-	public StatePathPredicate getPredicate();
+	public Collection<StatePathPredicate> getPredicate();
 	
 	/**
 	 * Evaluate the forthcoming changes and calculate some
@@ -29,5 +30,5 @@ public interface StateWatcher {
 	 * should <i>not</i> contain any of the supplied information,
 	 * or null if no changes are necessary.
 	 */
-	public StateUpdate evaluate(StateUpdate updatedState);	
+	public void trigger(StateTransition str);	
 }

@@ -8,6 +8,7 @@ public class PrettyPrintTextSerialiser implements StateVisitor, StateSerialiser 
 	
 	private static final String MARK_STR  = " | ";
 	private static final String SPACE_STR = "   ";
+	private static final String DCACHE_LABEL = "dCache";
 
 	private StringBuffer _out;
 	private String _prefix;
@@ -52,7 +53,10 @@ public class PrettyPrintTextSerialiser implements StateVisitor, StateSerialiser 
 		String label;
 		
 		if( _depth == 0) {
-			label = path.toString();
+			if( path == null)
+				label = DCACHE_LABEL;
+			else
+				label = DCACHE_LABEL + "." + path.toString();
 		} else {
 
 			outputEmpty();

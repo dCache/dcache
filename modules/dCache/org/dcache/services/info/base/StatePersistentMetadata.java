@@ -24,7 +24,7 @@ public class StatePersistentMetadata {
 	/**
 	 * Look up a child reference given by the String.  If one doesn't exist, a new child
 	 * object is created and this is returned.  The special wildcard value "*" is treated
-	 * specially. 
+	 * differently. 
 	 * @param reference the label for this child object
 	 * @return a child StatePersistentMetadataContainer object
 	 */
@@ -101,34 +101,34 @@ public class StatePersistentMetadata {
 	 *  Add a default (hard-coded) set of persistent metadata.
 	 */
 	protected void addDefault() {
-		this.add( new StatePath("pools.*"), branchMetadata( "pool", "name"));
-		this.add( new StatePath("pools.*.poolgroups.*"), branchMetadata( "poolgroupref", "name"));
-		this.add( new StatePath("pools.*.queues.*"), branchMetadata( "queue", "type"));
-		this.add( new StatePath("pools.*.queues.named-queues.*"), branchMetadata( "queue", "name"));
+		this.add( StatePath.parsePath("pools.*"), branchMetadata( "pool", "name"));
+		this.add( StatePath.parsePath("pools.*.poolgroups.*"), branchMetadata( "poolgroupref", "name"));
+		this.add( StatePath.parsePath("pools.*.queues.*"), branchMetadata( "queue", "type"));
+		this.add( StatePath.parsePath("pools.*.queues.named-queues.*"), branchMetadata( "queue", "name"));
 		
-		this.add( new StatePath("poolgroups.*"), branchMetadata( "poolgroup", "name"));
-		this.add( new StatePath("poolgroups.*.links.*"), branchMetadata( "linkref", "name"));
-		this.add( new StatePath("poolgroups.*.pools.*"), branchMetadata( "poolref", "name"));
+		this.add( StatePath.parsePath("poolgroups.*"), branchMetadata( "poolgroup", "name"));
+		this.add( StatePath.parsePath("poolgroups.*.links.*"), branchMetadata( "linkref", "name"));
+		this.add( StatePath.parsePath("poolgroups.*.pools.*"), branchMetadata( "poolref", "name"));
 
-		this.add( new StatePath("links.*"), branchMetadata( "link", "name"));
-		this.add( new StatePath("links.*.poolgroups.*"), branchMetadata( "poolgroupref", "name"));
-		this.add( new StatePath("links.*.pools.*"), branchMetadata( "poolref", "name"));
-		this.add( new StatePath("links.*.unitgroups.*"), branchMetadata( "unitgroupref", "name"));
-		this.add( new StatePath("links.*.units.protocol.*"), branchMetadata( "unitref", "ref"));
-		this.add( new StatePath("links.*.units.net.*"), branchMetadata( "unitref", "ref"));
-		this.add( new StatePath("links.*.units.store.*"), branchMetadata( "unitref", "ref"));
-		this.add( new StatePath("links.*.units.dcache.*"), branchMetadata( "unitref", "ref"));
+		this.add( StatePath.parsePath("links.*"), branchMetadata( "link", "name"));
+		this.add( StatePath.parsePath("links.*.poolgroups.*"), branchMetadata( "poolgroupref", "name"));
+		this.add( StatePath.parsePath("links.*.pools.*"), branchMetadata( "poolref", "name"));
+		this.add( StatePath.parsePath("links.*.unitgroups.*"), branchMetadata( "unitgroupref", "name"));
+		this.add( StatePath.parsePath("links.*.units.protocol.*"), branchMetadata( "unitref", "name"));
+		this.add( StatePath.parsePath("links.*.units.net.*"), branchMetadata( "unitref", "name"));
+		this.add( StatePath.parsePath("links.*.units.store.*"), branchMetadata( "unitref", "name"));
+		this.add( StatePath.parsePath("links.*.units.dcache.*"), branchMetadata( "unitref", "name"));
 
-		this.add( new StatePath("units.*"), branchMetadata( "unit", "name"));
-		this.add( new StatePath("units.*.unitgroups.*"), branchMetadata( "unitgroupref", "name"));
+		this.add( StatePath.parsePath("units.*"), branchMetadata( "unit", "name"));
+		this.add( StatePath.parsePath("units.*.unitgroups.*"), branchMetadata( "unitgroupref", "ref"));
 
-		this.add( new StatePath("unitgroups.*"), branchMetadata( "unitgroup", "name"));
-		this.add( new StatePath("unitgroups.*.units.*"), branchMetadata( "unitref", "ref"));
-		this.add( new StatePath("unitgroups.*.links.*"), branchMetadata( "linkref", "name"));
+		this.add( StatePath.parsePath("unitgroups.*"), branchMetadata( "unitgroup", "name"));
+		this.add( StatePath.parsePath("unitgroups.*.units.*"), branchMetadata( "unitref", "name"));
+		this.add( StatePath.parsePath("unitgroups.*.links.*"), branchMetadata( "linkref", "name"));
 		
 
-		this.add( new StatePath("doors.*"), branchMetadata( "door", "ref"));
-		this.add( new StatePath("doors.*.hosts.*"), branchMetadata( "host", "address"));
+		this.add( StatePath.parsePath("doors.*"), branchMetadata( "door", "name"));
+		this.add( StatePath.parsePath("doors.*.hosts.*"), branchMetadata( "host", "address"));
 	}
 	
 	

@@ -16,7 +16,7 @@ public class LinkInfoMsgHandler extends CellMessageHandlerSkel {
 
 	public void process(Object msgPayload, long metricLifetime) {
 		
-		AppendableStateUpdate update = new AppendableStateUpdate();
+		StateUpdate update = new StateUpdate();
 
 		ArrayList linkInfoArray = (ArrayList) msgPayload;
 		
@@ -47,7 +47,7 @@ public class LinkInfoMsgHandler extends CellMessageHandlerSkel {
 	 * @param o the array of information for this link
 	 * @param lifetime how long, in seconds, this data should survive.
 	 */
-	private void processInfo( AppendableStateUpdate update, StatePath linksPath, Object[] o, long lifetime)
+	private void processInfo( StateUpdate update, StatePath linksPath, Object[] o, long lifetime)
 	{
 		String name = (String) o[0];
 		int readPref = ((Integer) o[1]).intValue();

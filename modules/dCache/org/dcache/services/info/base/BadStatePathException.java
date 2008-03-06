@@ -1,5 +1,11 @@
 package org.dcache.services.info.base;
 
+/**
+ * A generic exception, indicating that there was some problem with the
+ * StatePath.
+ * 
+ * @author Paul Millar <paul.millar@desy.de>
+ */
 public class BadStatePathException extends Exception {
 	
 	static final long serialVersionUID = 1;

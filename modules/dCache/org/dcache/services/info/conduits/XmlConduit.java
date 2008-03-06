@@ -3,7 +3,8 @@ package org.dcache.services.info.conduits;
 import java.net.*;
 import java.io.*;
 
-import org.dcache.services.info.*;
+import org.apache.log4j.Logger;
+import org.dcache.services.info.base.State;
 import org.dcache.services.info.serialisation.XmlSerialiser;
 
 /**
@@ -18,7 +19,9 @@ import org.dcache.services.info.serialisation.XmlSerialiser;
  * Note that client needs only to know the specializing class of the Schema.
  */
 public class XmlConduit extends AbstractThreadedConduit {
-	
+
+	private static Logger _log = Logger.getLogger( XmlConduit.class);
+
 	private static final int DEFAULT_PORT = 22112;
 	
 	/** TCP port that the server listen on by default */
@@ -37,8 +40,7 @@ public class XmlConduit extends AbstractThreadedConduit {
 			Thread.currentThread().interrupt();
 			return;
 		} catch(SecurityException e) {
-			InfoProvider.getInstance().say("security issue creating port "+_port);
-			InfoProvider.getInstance().esay(e);
+			_log.error( "security issue creating port "+_port, e);
 			return;
 		}
 		super.enable(); // start the thread.
@@ -52,7 +54,7 @@ public class XmlConduit extends AbstractThreadedConduit {
 		try {
 			_svr_skt.close();
 		} catch( IOException e) {
-			Thread.currentThread().interrupt();
+			_log.error("Problem closing server socket", e);
 		} finally {
 			_svr_skt = null;
 		}
@@ -67,37 +69,35 @@ public class XmlConduit extends AbstractThreadedConduit {
 		Socket skt=null;
 		
 		try {
-			skt = _svr_skt.accept();
+			skt = _svr_skt.accept();			
 		} catch( SocketException e) {
-			/* This may simply be a user disabling this Conduit */
-			// TODO: this is ugly!
-			if( !e.toString().equals("Socket closed")) {
-				InfoProvider.getInstance().say("accept() failed: >" + e.toString() +"< ");
-				InfoProvider.getInstance().esay(e);
+			if( this._should_run || !_svr_skt.isClosed()) {
+				_log.error( "accept() failed", e);
 			}
 		} catch( IOException e) {
 			Thread.currentThread().interrupt();
 			return;
 		} catch( SecurityException e) {
-			InfoProvider.getInstance().say("accept() failed for security reasons");
-			InfoProvider.getInstance().esay(e);
+			_log.error( "accept() failed for security reasons", e);
 			return;
 		} catch( Exception e) {
-			InfoProvider.getInstance().say("accept() induced an unknown exception");
-			InfoProvider.getInstance().esay(e);
+			_log.error( "accept() failed for an unknown reason", e);
 			return;
 		}
 
 		if( skt != null) {
+			
+			if( _log.isInfoEnabled())
+				_log.info("Incoming connection from " + skt.toString());
+			
 			try {
 				_callCount++;
 				String xmlData = _xmlSerialiser.serialise();
 				skt.getOutputStream().write( xmlData.getBytes());
 			} catch( IOException e) {
-				InfoProvider.getInstance().say("failed to write XML data.");
-				InfoProvider.getInstance().esay(e);
+				_log.error( "failed to write XML data", e);
 			} catch( Exception e) {
-				InfoProvider.getInstance().esay(e);
+				_log.error( "unknown failure writing XML data", e);
 			} finally {
 				try {
 					skt.close();			

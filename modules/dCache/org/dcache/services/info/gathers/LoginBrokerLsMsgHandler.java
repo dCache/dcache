@@ -15,7 +15,7 @@ public class LoginBrokerLsMsgHandler extends CellMessageHandlerSkel {
 
 	public void process(Object msgPayload, long metricLifetime) {
 
-		AppendableStateUpdate update = new AppendableStateUpdate();
+		StateUpdate update = new StateUpdate();
 		
 		Object[] array = (Object []) msgPayload;
 		
@@ -44,7 +44,7 @@ public class LoginBrokerLsMsgHandler extends CellMessageHandlerSkel {
 	 * @param info the information about the door.
 	 * @param lifetime the duration, in seconds, for this information
 	 */
-	private void addDoorInfo( AppendableStateUpdate update, StatePath pathToDoors, LoginBrokerInfo info, long lifetime) {
+	private void addDoorInfo( StateUpdate update, StatePath pathToDoors, LoginBrokerInfo info, long lifetime) {
 		
 		StatePath pathToDoor = pathToDoors.newChild( info.getIdentifier());
 
@@ -84,7 +84,7 @@ public class LoginBrokerLsMsgHandler extends CellMessageHandlerSkel {
 	 * @param value the metric's value, or null if the metric should not be added.
 	 * @param storeTime how long, in seconds the metric should be preserved.
 	 */
-	private void conditionalAddString( AppendableStateUpdate update, StatePath parentPath, String name, String value, long storeTime) {
+	private void conditionalAddString( StateUpdate update, StatePath parentPath, String name, String value, long storeTime) {
 		if( value != null) {
 			update.appendUpdate( parentPath.newChild(name),
 						new StringStateValue( value, storeTime));

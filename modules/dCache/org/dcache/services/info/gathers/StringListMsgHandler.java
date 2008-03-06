@@ -1,6 +1,5 @@
 package org.dcache.services.info.gathers;
 
-import org.dcache.services.info.*;
 import org.dcache.services.info.base.*;
 
 public class StringListMsgHandler extends CellMessageHandlerSkel {
@@ -14,7 +13,7 @@ public class StringListMsgHandler extends CellMessageHandlerSkel {
 	public void process( Object msgPayload, long metricLifetime) {		
 		Object array[];
 		
-		AppendableStateUpdate update = new AppendableStateUpdate();
+		StateUpdate update = new StateUpdate();
 		
 		array = (Object []) msgPayload;
 		

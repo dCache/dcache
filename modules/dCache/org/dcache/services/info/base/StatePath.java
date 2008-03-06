@@ -12,7 +12,8 @@ import java.util.*;
  *  <p>
  *  In addition to the constructor, various methods exist to create derived
  *  paths: StatePaths that are, in some sense, relative to an existing
- *  StatePath; for example, <tt>newChild()</tt> and <tt>childPath()</tt>.
+ *  StatePath; for examples of these, see the <tt>newChild()</tt> and
+ *  <tt>childPath()</tt> methods.
  *  <p>
  *  The constructor provides an easy method of creating a complex StatePath.
  *  It will parse the String and split it at dot boundaries, forming the
@@ -25,6 +26,19 @@ import java.util.*;
 public class StatePath {
 
 	List<String> _elements;
+	private int _myHashCode;
+	private boolean _haveHashCode = false;
+	
+	/**
+	 * Parse a dot-separated path to build a StatePath 
+	 * @param path the path, as an ordered list of path elements, each element separated by a dot.
+	 * @return the corresponding StatePath.
+	 */
+	static public StatePath parsePath( String path) {
+		String elements[] = path.split("\\.");
+		return new StatePath( elements);
+	}
+	
 
 	/**
 	 * Build a Collection of StatePaths from an array of paths.
@@ -58,37 +72,77 @@ public class StatePath {
 	 * Create a new StatePath based on a List of path elements.
 	 * @param elements
 	 */
-	private StatePath( List<String> elements) {
-		_elements = new ArrayList<String>();
+	private StatePath( List<String> elements, int elementCount) {
+		_elements = new ArrayList<String>(elementCount);
 		_elements.addAll(elements);
 	}
-
-
+	
 	/**
-	 * Provide a new StatePath by parsing a String representation.
-	 * @param path: the path, as a dot-seperated list of elements.
+	 * Build a new StatePath based on an array of elements.
+	 * @param elements the path elements, in order.
 	 */
-	public StatePath( String path) {
-		String elements[] = path.split("\\.");
-
-		_elements = new ArrayList<String>(elements.length);
-		for(int i=0; i < elements.length; i++)
-			_elements.add(elements[i]);
+	protected StatePath( String[] elements) {
+		_elements = new ArrayList<String>( elements.length);
+		
+		for( String element : elements)
+			_elements.add( element);
+	}	
+	
+	/**
+	 * Provide a new StatePath with a single path element.  The result is the
+	 * same as new StatePath().newChild(name);
+	 * @param name: the name of the path element.  
+	 */
+	public StatePath( String path) {		
+		_elements = new ArrayList<String>(1);
+		_elements.add(path);
 	}
+	
+	
+	/**
+	 *  Calculate the hash code and store it for later quick reference.
+	 */
+	void calcHashCode() {
+		int code = 0;
+
+		for( String element : _elements)
+			code ^= element.hashCode();
+		
+		_myHashCode = code;
+		_haveHashCode = true;
+	}
+
 
 	/**
 	 * Check whether another path points to the same location.
 	 * @param otherPath: the other path to compare
 	 * @return: whether the other path point to the same location.
 	 */
-	public boolean equals( StatePath otherPath) {
-		if( otherPath == null)
+	public boolean equals( Object otherObject) {
+		if( !( otherObject instanceof StatePath))
 			return false;
-
+			
+		if( otherObject == this)
+			return true;
+		
+		StatePath otherPath = (StatePath) otherObject;
+		
 		return _elements.equals(otherPath._elements);
 	}
 
-
+	
+	/**
+	 * Overload the hashCode to honour the contract:
+	 *    A.hashCode()==B.hashCode() =>  A.equals(B) 
+	 */
+	public int hashCode() {
+		if( !_haveHashCode)
+			calcHashCode();
+		
+		return _myHashCode;
+	}
+	
+	
 	/**
 	 * Check whether otherPath points to the same location, or
 	 * is a child of this path.  This is true iff each element of
@@ -143,6 +197,10 @@ public class StatePath {
 	 * @return
 	 */
 	public boolean isParentOf( StatePath otherPath) {
+		
+		if( otherPath == null)
+			return false;
+		
 		if( (_elements.size() + 1) != otherPath._elements.size())
 			return false;
 
@@ -160,20 +218,25 @@ public class StatePath {
 	 */
 	@Override
     public String toString() {
-		return toString(".");
+		return toString(".", 0);
 	}
 
 	/**
 	 * Convert a StatePath to a String representation.  Each element is
 	 * separated by the separator String.
 	 * @param separator the String to seperate each path element
+	 * @param don't display this number of initial elements 
 	 * @return the String representation.
 	 */
-	public String toString( String separator) {
+	public String toString( String separator, int count) {
 		StringBuffer out = new StringBuffer();
-
-		for( Iterator<String> itr = _elements.iterator(); itr.hasNext();) {
-			String e = itr.next();
+		int i=0;
+		
+		for( String e : _elements) {
+			
+			if( i++ < count)  // Skip if we need to.
+				continue;
+			
 			if( out.length() > 0)
 				out.append(separator);
 			out.append(e);
@@ -182,6 +245,19 @@ public class StatePath {
 		return out.toString();
 	}
 
+	
+	/**
+	 * Create a String representing this state with some initial elements removed.
+	 * The number of suppressed initial elements is the same as the number of
+	 * elements in the prefix StatePath
+	 * @param prefix the prefix to remove.
+	 * @return a string representation
+	 */
+	public String toString( StatePath prefix) {
+		int count = prefix != null ? prefix._elements.size() : 0;
+		return toString( ".", count);		
+	}
+	
 	/**
 	 * @return the first element of the path.
 	 */
@@ -201,11 +277,11 @@ public class StatePath {
 	 * Create a new StatePath with an extra path element.  This method does no
 	 * splitting of the parameter: it is safe to pass a String with dots.
 	 * <p>
-	 * If you want to create a newChild with dot-splitting one solution is
+	 * If you want to create a newChild with dot-splitting, one solution is
 	 * to first create a StatePath with the new path:
 	 * <p>
 	 * <pre>
-	 *     path = path.newChild( new StatePath( pathWithDots));
+	 *     path = path.newChild( StatePath.parsePath( pathWithDots));
 	 * </pre>
 	 *
 	 * @param element: the name of the child path element
@@ -213,11 +289,10 @@ public class StatePath {
 	 */
 	public StatePath newChild( String element) {
 
-
-		StatePath newPath = new StatePath( _elements);
-
-		newPath._elements.add( element );
-
+		StatePath newPath = new StatePath( _elements, _elements.size()+1);
+		
+		newPath._elements.add( element);
+		
 		return newPath;
 	}
 
@@ -231,7 +306,7 @@ public class StatePath {
 	 */
 	public StatePath newChild( StatePath subPath) {
 
-		StatePath newPath = new StatePath( _elements);
+		StatePath newPath = new StatePath( _elements, _elements.size() + subPath._elements.size());
 
 		newPath._elements.addAll( subPath._elements);
 
@@ -253,7 +328,7 @@ public class StatePath {
 		if( _elements == null || _elements.size() <= 1)
 			return null;
 
-		return new StatePath( _elements.subList(1, _elements.size()));
+		return new StatePath( _elements.subList(1, _elements.size()), _elements.size()-1);
 	}
 
 	/**
@@ -265,8 +340,8 @@ public class StatePath {
 	public StatePath parentPath() {
 		if( _elements.size() <= 1)
 			return null;
-
-		return new StatePath( _elements.subList(0, _elements.size()-1));
+		
+		return new StatePath( _elements.subList(0, _elements.size()-1), _elements.size()-1);		
 	}
 
 	/**

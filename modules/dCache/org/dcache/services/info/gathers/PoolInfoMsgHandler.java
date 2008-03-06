@@ -1,16 +1,30 @@
 package org.dcache.services.info.gathers;
 
+import org.apache.log4j.Logger;
 import org.dcache.services.info.InfoProvider;
 import org.dcache.services.info.base.*;
+import dmg.util.CommandThrowableException;
 
 public class PoolInfoMsgHandler extends CellMessageHandlerSkel {
+	
+	private static Logger _log = Logger.getLogger( PoolInfoMsgHandler.class);
 
 	private StatePath _pPath = new StatePath( "pools");
 
 	public void process(Object msgPayload, long metricLifetime) {
 
-		AppendableStateUpdate update = new AppendableStateUpdate();
+		StateUpdate update = new StateUpdate();
 		
+		if( msgPayload instanceof CommandThrowableException) {
+			CommandThrowableException e = (CommandThrowableException) msgPayload;
+			_log.error( "Got exception from pool: ", e);
+		}
+		
+		if( !msgPayload.getClass().isArray()) {
+			_log.error( "Received msg that isn't an array");
+			return;
+		}
+			
 		Object[] array = (Object []) msgPayload;
 		
 		if( array.length != 6) {

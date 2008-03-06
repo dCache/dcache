@@ -1,19 +1,12 @@
 package org.dcache.services.info.gathers;
 
 import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
 
-import org.dcache.services.info.base.BooleanStateValue;
-import org.dcache.services.info.base.FloatingPointStateValue;
-import org.dcache.services.info.base.IntegerStateValue;
-import org.dcache.services.info.base.State;
 import org.dcache.services.info.base.StatePath;
-import org.dcache.services.info.base.StateVisitor;
-import org.dcache.services.info.base.StringStateValue;
+import org.dcache.services.info.stateInfo.*;
 
 /**
  * Provide generic support for building a list of items, taken from some part of the current
@@ -42,9 +35,6 @@ abstract class SkelListBasedActivity implements Schedulable {
 	/** Time between sending successive messages, in milliseconds */
 	private static final int SUCCESSIVE_MSG_DELAY = 500;
 
-	/** Our visitor, for generating a fresh list */
-	private ListVisitor _lv;
-
 	/** For how long should the resulting metrics live? (in seconds) */
 	private long _metricLifetime;
 	
@@ -57,36 +47,8 @@ abstract class SkelListBasedActivity implements Schedulable {
 	/** Our collection of to-be-done work */
 	private Stack<String> _outstandingWork;
 
-	/**
-	 * A very simple StateVisitor class.  This visitor builds a list of the names of immediate
-	 * children of a StateComposite.  The parent StateComposite is described by the StatePath. 
-	 * @author Paul Millar <paul.millar@desy.de>
-	 */
-	private class ListVisitor implements StateVisitor {
-
-		StatePath _parent;
-		Stack<String> _stack;
-		
-		private ListVisitor( StatePath parent, Stack<String> stack) {
-			_parent = parent;
-			_stack = stack;
-		}
-		
-		public void visitString( StatePath path, StringStateValue value) {}
-		public void visitInteger( StatePath path, IntegerStateValue value) {}
-		public void visitBoolean( StatePath path, BooleanStateValue value) {}
-		public void visitFloatingPoint( StatePath path, FloatingPointStateValue value) {}
-		public void visitCompositePreLastDescend( StatePath path, Map<String,String> metadata) {}
-		public void visitCompositePostDescend( StatePath path, Map<String,String> metadata) {}
-		public void visitCompositePreSkipDescend( StatePath path, Map<String,String> metadata) {}
-		public void visitCompositePostSkipDescend( StatePath path, Map<String,String> metadata) {}
-		
-		public void visitCompositePreDescend( StatePath path, Map<String,String> metadata) {			
-			if( _parent.isParentOf(path))
-				_stack.add(path.getLastElement());	
-		}
-	}
-	
+	/** The StatePath pointing to the parent who's children we want to iterate over */
+	private StatePath _parentPath;
 
 	
 	/**
@@ -96,7 +58,9 @@ abstract class SkelListBasedActivity implements Schedulable {
 	 */
 	protected SkelListBasedActivity (  StatePath parentPath) {
 		_outstandingWork = new Stack<String>();
-		_lv = new ListVisitor( parentPath, _outstandingWork);
+		_parentPath = parentPath;
+
+		updateStack();  // Bring in initial work.
 		
 		/* Wait a random period before starting... */
 		_whenListRefresh = new Date( System.currentTimeMillis() + (long) (Math.random() * MINIMUM_LIST_REFRESH_PERIOD));		
@@ -115,7 +79,8 @@ abstract class SkelListBasedActivity implements Schedulable {
 	
 	/**
 	 * We maintain our outstanding work List by (potentially) fetching a new list from the
-	 * current state.
+	 * current state.  Classes that extend this class should call super() so getNextItem()
+	 * continues to work.
 	 */
 	public void trigger() {
 		Date now = new Date();
@@ -123,7 +88,7 @@ abstract class SkelListBasedActivity implements Schedulable {
 		if( !_outstandingWork.empty() || now.before( _whenListRefresh))
 			return;
 		
-		State.getInstance().visitState( _lv, null);
+		updateStack();
 			
 		/**
 		 *  Calculate the earliest we would like to do this again.
@@ -136,11 +101,22 @@ abstract class SkelListBasedActivity implements Schedulable {
 		/**
 		 *  All metrics that are generated should have a lifetime based on when we expect
 		 *  to refresh the list and generate more metrics.
-		 *  The 2.5 factor allows for 50% growth and a message being lost.
+		 *  The 2.5 factor allows for both 50% growth and a message being lost.
 		 */
 		_metricLifetime = (long) (2.5 * listRefreshPeriod / 1000.0);
 		
 		_nextSendMsg.setTime( System.currentTimeMillis() + SUCCESSIVE_MSG_DELAY);
+	}
+	
+	
+	/**
+	 *  Query dCache's current state and add the new Set to to our _outstandingWork Stack.
+	 */
+	private void updateStack() {
+		Set<String> items = ListVisitor.getDetails( _parentPath);
+		
+		for( String item : items)
+			_outstandingWork.add( item);
 	}
 	
 	

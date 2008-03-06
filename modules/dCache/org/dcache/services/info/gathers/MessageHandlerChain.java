@@ -57,25 +57,16 @@ public class MessageHandlerChain {
 	}
 
 	/**
-	 * @return a simple list of registered MessageHandlers subclass types.
+	 * @return a simple array of registered MessageHandlers subclass types.
 	 */
-	public String listMessageHandlers() {
-		StringBuffer sb = new StringBuffer();
-
-		if( !_messageHandler.isEmpty()) {
-			for( Iterator<MessageHandler> itr = _messageHandler.iterator(); itr.hasNext();) {
-				MessageHandler mh = itr.next();
-				sb.append( InfoProvider.ADMIN_INTERFACE_LIST_PREFIX);
-				sb.append( mh.getClass().getName());
-				sb.append( "\n");
-			}
-		} else {
-			sb.append( InfoProvider.ADMIN_INTERFACE_LIST_PREFIX);
-			sb.append( InfoProvider.ADMIN_INTERFACE_NONE);
-			sb.append( "\n");
-		}
+	public String[] listMessageHandlers() {
+		int i=0;
+		String[] msgHandlers = new String[_messageHandler.size()];
 		
-		return sb.toString();
+		for( MessageHandler mh : _messageHandler)
+			msgHandlers [i++] =  mh.getClass().getSimpleName(); // We're assuming only one instance per Class
+		
+		return msgHandlers;
 	}
 	
 	

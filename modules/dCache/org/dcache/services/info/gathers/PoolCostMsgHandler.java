@@ -1,6 +1,7 @@
 package org.dcache.services.info.gathers;
 
 import org.dcache.services.info.InfoProvider;
+import org.dcache.services.info.stateInfo.SpaceInfo;
 
 import diskCacheV111.vehicles.CostModulePoolInfoTable;
 import diskCacheV111.pools.PoolCostInfo;
@@ -19,7 +20,9 @@ import org.dcache.services.info.base.*;
  */
 public class PoolCostMsgHandler extends CellMessageHandlerSkel {
 
-	public void process(Object msgPayload, long metricLifetime) {
+	public void process(Object msgPayload, long msgDeliveryPeriod) {
+		
+		long metricLifetime = (long) (msgDeliveryPeriod * 2.5); // Give metrics a lifetime of 2.5* message deliver period
 		
 		if( !(msgPayload instanceof CostModulePoolInfoTable)) {
 			InfoProvider.getInstance().say("received non-CostModulePoolInfoTable object in message\n");
@@ -31,7 +34,7 @@ public class PoolCostMsgHandler extends CellMessageHandlerSkel {
 		Collection<PoolCostInfo> poolInfos = poolInfoTbl.poolInfos();
 		StatePath poolsPath = new StatePath("pools");
 		
-		AppendableStateUpdate update = new AppendableStateUpdate();
+		StateUpdate update = new StateUpdate();
 		
 		for( PoolCostInfo thisPoolInfo : poolInfos) {
 			
@@ -107,7 +110,7 @@ public class PoolCostMsgHandler extends CellMessageHandlerSkel {
 	 * "pools.mypool_1.queues")
 	 * @param queueName the name of the queue.
 	 */
-	private void addQueueInfo( AppendableStateUpdate stateUpdate, StatePath pathToQueues,
+	private void addQueueInfo( StateUpdate stateUpdate, StatePath pathToQueues,
 								String queueName, PoolQueueInfo info, long lifetime) {		
 		StatePath queuePath = pathToQueues.newChild(queueName);
 		
@@ -146,16 +149,12 @@ public class PoolCostMsgHandler extends CellMessageHandlerSkel {
 	 * @param path the StatePath pointing to the space branch
 	 * @param info the space information to include.
 	 */
-	private void addSpaceInfo( AppendableStateUpdate stateUpdate, StatePath pathToSpace, 
+	private void addSpaceInfo( StateUpdate stateUpdate, StatePath pathToSpace, 
 							PoolSpaceInfo info, long lifetime) {
-		stateUpdate.appendUpdate( pathToSpace.newChild("total"),
-					new IntegerStateValue( info.getTotalSpace(), lifetime));
-		stateUpdate.appendUpdate( pathToSpace.newChild("free"),
-				new IntegerStateValue( info.getFreeSpace(), lifetime));
-		stateUpdate.appendUpdate( pathToSpace.newChild("precious"),
-				new IntegerStateValue( info.getPreciousSpace(), lifetime));
-		stateUpdate.appendUpdate( pathToSpace.newChild("removable"),
-				new IntegerStateValue( info.getRemovableSpace(), lifetime));
+		SpaceInfo si = new SpaceInfo( info);
+		
+		si.addMetrics(stateUpdate, pathToSpace, lifetime);
+		
 		stateUpdate.appendUpdate( pathToSpace.newChild("gap"),
 				new IntegerStateValue( info.getGap(), lifetime));
 		stateUpdate.appendUpdate( pathToSpace.newChild("break-even"),
@@ -192,7 +191,7 @@ public class PoolCostMsgHandler extends CellMessageHandlerSkel {
 	 * @param pathToQueues the StatePath pointing to [queues] above
 	 * @param thisPoolInfo the information about this pool.
 	 */
-	private void addNamedQueues( AppendableStateUpdate update, StatePath pathToQueues, PoolCostInfo thisPoolInfo, long lifetime)	{
+	private void addNamedQueues( StateUpdate update, StatePath pathToQueues, PoolCostInfo thisPoolInfo, long lifetime)	{
 		Map<String, NamedPoolQueueInfo> namedQueuesInfo = thisPoolInfo.getExtendedMoverHash();
 
 		if( namedQueuesInfo == null)

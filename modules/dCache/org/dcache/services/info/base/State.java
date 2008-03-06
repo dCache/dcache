@@ -1,27 +1,26 @@
 package org.dcache.services.info.base;
 
+import org.apache.log4j.Logger;
 import java.util.*;
-
-import org.dcache.services.info.*;
 
 
 /**
  * This singleton class provides a (best-effort) complete representation of
  * dCache instance's current state.
- * 
+ * <p>
  * It receives fresh information through the updateState() method, which
  * accepts a StateUpdate object.  StateUpdate objects are created
  * by classes in the org.dcache.services.info.gathers package, either
  * synchronously (see DataGatheringScheduler), or by dCache messages received
  * asynchronously (see MessageHandlerChain).
- * 
+ * <p>
  * There is preliminary support for triggering activity on state changes through
  * StateWatcher interface.  Some class may use this to publish aggregated (or otherwise,
  * derived) data in a timely fashion (see org.dcache.services.info.secondaryInfoProvider
  * package).  Other classes may use StateWatcher interface to trigger external events,
  * although future work may include adding support for asynchronous event-based monitoring
  * that would interface with, but remain seperate from this state.
- * 
+ * <p>
  * The State object allows a visitor pattern, through the StateVisitor interface.  The
  * principle usage of this is to serialise the current content (see classes under
  * org.dcache.services.info.serialisation package), but some synchronous classes also
@@ -38,8 +37,9 @@ public class State {
 	public static final String METADATA_BRANCH_CLASS_KEY  = "branch";
 	public static final String METADATA_BRANCH_IDNAME_KEY = "id";
 	
+	private static Logger _log = Logger.getLogger(State.class);
+	
 	/** The singleton instance of State */
-	private static final StatePath _topStatePath = new StatePath( "dCache");
 	private static State _instance = null;
 
 	/**
@@ -66,6 +66,9 @@ public class State {
 	/** Our read/write lock */
 	private StateMonitor _monitor = new StateMonitor();
 	
+	/** Our list of pending Updates */
+	private Stack<StateUpdate> _pendingUpdates;
+	
 	/**
 	 *  The read/write monitor for this state. This controls access to the State
 	 *  information.
@@ -80,7 +83,8 @@ public class State {
 	 *  Specifically, the <code>startReading()</code> method will block
 	 *  if a thread has a writer-lock (that is, it is currently writing
 	 *  new values into dCache state) or if there are writers waiting to
-	 *  update dCache state.
+	 *  update dCache state. the <code>startWriting()</code> method will
+	 *  block while any thread holds a reading lock.
 	 */
 	private class StateMonitor {
 		
@@ -110,10 +114,18 @@ public class State {
 		 * @throws InterruptedException
 		 */
 		protected synchronized void startReading() throws InterruptedException {
+			if( _log.isDebugEnabled()) {
+				_log.debug("Thread " + Thread.currentThread().getName() + " requesting read lock.");
+			}
+			
 			while( _activeWriter != null || _waitingWriterCount > 0)
 				wait();
 			
 			_readerCount++;
+			
+			if( _log.isDebugEnabled()) {
+				_log.debug("Thread " + Thread.currentThread().getName() + " has read lock.");
+			}
 		}
 		
 		/**
@@ -123,6 +135,9 @@ public class State {
 		 * @throws InterruptedException
 		 */
 		protected synchronized void stopReading() {
+			if( _log.isDebugEnabled()) {
+				_log.debug("Thread " + Thread.currentThread().getName() + " releasing read lock.");
+			}
 			_readerCount--;
 			
 			if( _readerCount == 0)
@@ -139,6 +154,10 @@ public class State {
 		 */
 		protected synchronized void startWriting() throws InterruptedException {
 			
+			if( _log.isDebugEnabled()) {
+				_log.debug("Thread " + Thread.currentThread().getName() + " requesting write lock.");
+			}
+
 			if( _readerCount > 0) {
 				_waitingWriterCount++;
 				while( _readerCount > 0 || _activeWriter != null)
@@ -148,6 +167,10 @@ public class State {
 
 			// Make a note of which thread owns the writing lock
 			_activeWriter = Thread.currentThread();
+
+			if( _log.isDebugEnabled()) {
+				_log.debug("Thread " + Thread.currentThread().getName() + " obtained write lock.");
+			}
 		}
 		
 		/**
@@ -158,6 +181,10 @@ public class State {
 		protected synchronized void stopWriting() {
 			_activeWriter = null;
 			notifyAll();
+
+			if( _log.isDebugEnabled()) {
+				_log.debug("Thread " + Thread.currentThread().getName() + " released write lock.");
+			}
 		}
 		
 		/**
@@ -180,86 +207,152 @@ public class State {
 		metadata.addDefault();
 
 		// Build our top-level immortal StateComposite.
-		_state = new StateComposite( metadata);	
+		_state = new StateComposite( metadata);
+		
+		// Our stack of pending updates ...
+		_pendingUpdates = new Stack<StateUpdate>();		
 	}
 
+	
+	/**
+	 * Trigger the update of dCache state.
+	 * @param update the set of changes that should be made.
+	 */
+	public void updateState( StateUpdate update) {
+		_pendingUpdates.push(update);
+		StateMaintainer.getInstance().wakeUp();
+	}
+	
+	
+	/**
+	 * Discover when next to purge metrics from the dCache state.
+	 * @return the Date when a metric or branch will next need to be expired.
+	 */
+	protected Date getEarliestMetricExpiryDate() {
+		return _state.getEarliestChildExpiryDate();
+	}
+	
+	
+	
+	/**
+	 * Discover whether there are pending StateUpdates on the todo update stack.
+	 * @return true if there are updates to be done, false otherwise.
+	 */
+	protected int countPendingUpdates() {
+		return _pendingUpdates.size();
+	}
 	
 	/**
 	 * Update the currently stored state values with new primary
 	 * values.  This may trigger Secondary Information Providers to update
 	 * the information they provide.
-	 * @param update: the set of new state variables
+	 * @return true if something was done, false if nothing needed doing.
 	 */
-	public void updateState( StateUpdate primaryUpdate) throws BadStatePathException {
+	protected void processUpdateStack() {
 		
-		Map<StateWatcher,StateUpdate> interested = new HashMap<StateWatcher,StateUpdate>();
-		BadStatePathException badStatePath = null;
+		if( _pendingUpdates.empty())
+			return;
 
-		/**
-		 *  Which StateWatchers, if any, are interested?
-		 */
-		for( StateWatcher thisWatcher : _watchers)
-			if( primaryUpdate.watcherIsInterested( thisWatcher))
-				interested.put(thisWatcher, null);
+		StateUpdate update = _pendingUpdates.pop();
 		
-		/**
-		 * Inform StateWatchers of update, solicit further StateUpdate information.  
-		 */
+		if( _log.isInfoEnabled())
+			_log.info("Processing update with "+update.count()+" metric updates, "+_pendingUpdates.size()+" pending.");
+		
+		if( update.count() == 0) {
+			_log.warn( "StateUpdate with zero updates encountered");
+			return;
+		}
+		
+		StateTransition transition = new StateTransition();
+
 		try {
 			_monitor.startReading();
-			
-			for( StateWatcher thisWatcher : interested.keySet()) {			
-				StateUpdate watcherUpdate = thisWatcher.evaluate( new StateUpdate( primaryUpdate));
-				interested.put( thisWatcher, watcherUpdate);
+
+			/**
+			 *  Update our new StateTransition based on the StateUpdate.
+			 */			
+			try {
+				update.updateTransition( _state, transition);
+			} catch( BadStatePathException e) {
+				_log.error("Error updating state:", e);
 			}
+			
+			if( _log.isDebugEnabled())
+				_log.debug(" Dump of pending StateTransition follows...\n\n" + transition.dumpContents());
+			
+			checkWatchers( transition);
+			
 		} catch( InterruptedException e) {
 			Thread.currentThread().interrupt();
 		} finally {
 			_monitor.stopReading();
-		}
+		}		
 
+		applyTransition( transition);
+	}
+	
+
+	/**
+	 * Apply a StateTransition to dCache state.
+	 * <p>
+	 * This method will obtain a writer lock against dCache state.
+	 * @param transition the StateTransition to apply.
+	 */
+	private void applyTransition( StateTransition transition) {
 		try {
 			_monitor.startWriting();
+
+			_state.applyTransition(null, transition);
 			
-			/**
-			 *  Write SIP updates, if any; we capture exceptions to allow the primary update to
-			 *  proceed.
-			 */			
-			try {
-				for( StateUpdate sipUpdate : interested.values())
-					if( sipUpdate != null)
-						updateStateValues( sipUpdate);
-			} catch( BadStatePathException e) {
-				badStatePath = e;
-			}
-			
-			try {
-				updateStateValues( primaryUpdate);
-			} catch( BadStatePathException e) {
-				badStatePath = e;
-			}
-			
-			removeExpiredValues();
 		} catch( InterruptedException e) {
 			Thread.currentThread().interrupt();
 		} finally {
 			_monitor.stopWriting();
 		}		
-		
-		if( badStatePath != null)
-			throw badStatePath;
 	}
 	
 	
 	/**
-	 * Update State values based on supplied StateUpdate information.
-	 * @param update the StateUpdate information to apply.
+	 * Given a StateTransition, check the registered StateWatchers and trigger those who's
+	 * predicates have been triggered.  NB For consistency, the caller <i>must</i> hold a 
+	 * reader-lock that was established when the StateTransition was obtained.  For this reason
+	 * no locking is done within this method.
+	 * @param transition The StateTransition to apply
 	 */
-	private synchronized void updateStateValues( StateUpdate update) throws BadStatePathException {		
-		update.updateStateUnderComposite( _state);
-	}
+	private void checkWatchers( StateTransition transition) {
+		
+		synchronized( _watchers) {
+			for( StateWatcher thisWatcher : _watchers) {
+				if( _log.isDebugEnabled())
+					_log.debug( "checking watcher " + thisWatcher);
+			
+				boolean hasBeenTriggered = false;
+				
+				for( StatePathPredicate thisPredicate : thisWatcher.getPredicate()) {
 
-	
+					if( _log.isDebugEnabled())
+						_log.debug( "checking predicate " + thisPredicate);
+
+					try {
+						hasBeenTriggered = _state.predicateHasBeenTriggered( null, thisPredicate, transition);
+					}  catch( MetricStatePathException e) {
+						_log.warn("problem querying trigger:", e);
+					}
+					
+					if( hasBeenTriggered)
+						break; // we only need one predicate to match, so quit early. 
+				}
+
+				if( hasBeenTriggered) {
+					if( _log.isInfoEnabled())
+						_log.info("triggering watcher " + thisWatcher);
+					thisWatcher.trigger( transition);
+					break;
+				}
+			}
+		}		
+	}
+		
 	
 	/**
 	 * Add a watcher to the Collection of Secondary Information
@@ -305,31 +398,38 @@ public class State {
 	
 	
 	/**
-	 * Check all StateValues within dCache State to see if any have elapsed.
+	 *   Check all StateValues within dCache State to see if any have elapsed.
 	 */
-	private synchronized void removeExpiredValues() {
+	protected synchronized void removeExpiredMetrics() {
 		
-		// A quick check before obtaining the writing lock
-		Date expDate = _state.getEarliestChildExpiryDate();
+		// A quick check before obtaining the lock
+		Date expDate = getEarliestMetricExpiryDate();
+		
 		if( expDate == null || expDate.after( new Date()))
 			return;
 		
-		boolean locallyObtainedLock = false;
-
-		try {			
-			if( !_monitor.haveWritingLock()) {
-				_monitor.startWriting();
-				locallyObtainedLock = true;
-			}
-
-			_state.hasExpired(); // Trigger cascade
+		_log.info( "Building StateTransition for expired StateComponents");
+		StateTransition transition = new StateTransition();
+		
+		try {
+			_monitor.startReading();
+			
+			_state.buildRemovalTransition( null, transition, false);
+			
+			if( _log.isDebugEnabled())
+				_log.debug(" Dump of pending StateTransition follows...\n\n" + transition.dumpContents());
+			
+			checkWatchers( transition);
 			
 		} catch( InterruptedException e) {
+			
 			Thread.currentThread().interrupt();
+			
 		} finally {
-			if( locallyObtainedLock)
-				_monitor.stopWriting();
+			_monitor.stopReading();
 		}
+		
+		applyTransition( transition);
 	}
 	
 	
@@ -341,12 +441,10 @@ public class State {
 	 * @param predicate the selection criteria
 	 */
 	public void visitState( StateVisitor visitor, StatePath start) {
-		removeExpiredValues();
-
 		try {
 			_monitor.startReading();
 			
-			_state.acceptVisitor( _topStatePath, start, visitor);
+			_state.acceptVisitor( null, start, visitor);
 		} catch( InterruptedException e) {
 			Thread.currentThread().interrupt();
 		} finally {
@@ -354,5 +452,25 @@ public class State {
 		}					
 	}
 	
+	
+	/**
+	 * Allow an arbitrary algorithm to visit what dCache state would look like <i>after</i> a
+	 * StateTransition has been applied.
+	 * @param transition The StateTransition to consider. 
+	 * @param visitor the algorithm to apply
+	 * @param start the "starting" point within the dCache state
+	 */
+	public void visitState( StateTransition transition, StateVisitor visitor, StatePath start) {
+		try {
+			_monitor.startReading();
+			
+			_state.acceptVisitor( transition, null, start, visitor);
+		} catch( InterruptedException e) {
+			Thread.currentThread().interrupt();
+		} finally {
+			_monitor.stopReading();
+		}		
+	}
+
 
 }

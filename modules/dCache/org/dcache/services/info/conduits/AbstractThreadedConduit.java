@@ -1,7 +1,7 @@
 package org.dcache.services.info.conduits;
 
 import org.apache.log4j.Logger;
-import org.dcache.services.info.*;
+import org.dcache.services.info.base.State;
 
 /**
  * A simple, abstract implementation of a blocking InfoConduit.  A new Thread
@@ -15,8 +15,9 @@ import org.dcache.services.info.*;
  */
 abstract class AbstractThreadedConduit implements Runnable, Conduit {
 
+	private static Logger _log = Logger.getLogger(AbstractThreadedConduit.class);
+
 	private Thread _thd = null;
-	private Logger _logger = Logger.getLogger("logger.org.dcache.info");
 	protected int _callCount = 0;
 	volatile boolean _should_run=true;
 	
@@ -29,11 +30,13 @@ abstract class AbstractThreadedConduit implements Runnable, Conduit {
 		_should_run = true;
 		
 		if( _thd == null) {
-			_thd = new Thread( this);
+			_thd = new Thread( this, this.getClass().getSimpleName() + " conduit");
 			_thd.start();
-			_thd.setName( this.getClass().getSimpleName() + " conduit");
-		} else
-			InfoProvider.getInstance().say( "Request to start when thread is already running.");
+			if( _log.isInfoEnabled())
+				_log.info("Thread \"" + _thd.getName() + "\" started");
+		} else {
+			_log.error( "Request to start when thread is already running.");
+		}
 	}
 
 	/**
@@ -44,11 +47,23 @@ abstract class AbstractThreadedConduit implements Runnable, Conduit {
 			return;
 		
 		_should_run = false;
-			
+		
+		if( _log.isDebugEnabled())
+			_log.debug("Signalling thread \"" + _thd.getName() + "\" to stop");
+
 		triggerBlockingActivityToReturn();
-			
+		
+		_log.debug("Waiting for thread to finish...");
+		
+		try {
+			_thd.join();
+		} catch( InterruptedException e) {
+			Thread.currentThread().interrupt();
+		}
+		
 		_thd = null;
 	}
+	
 	
 	public boolean isEnabled() {
 		return _thd != null;
@@ -78,13 +93,11 @@ abstract class AbstractThreadedConduit implements Runnable, Conduit {
 	public void run() {
 		while( _should_run)
 			blockingActivity();
+		
+		if( _log.isInfoEnabled())
+			_log.info("Thread " + _thd.getName() + " stopped");
 	}
 	
-	
-	void say( String msg) {
-		if( _logger != null)
-			_logger.error(msg);
-	}
 	
 	/**
 	 * Since we anticipate each conduit to have only one instance, we return the Class simple

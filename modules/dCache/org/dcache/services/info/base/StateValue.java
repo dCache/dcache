@@ -6,10 +6,9 @@ package org.dcache.services.info.base;
 import java.util.Date;
 
 /**
- * A base-type for a metric within the dCache state.  All metrics of different type
- * must extend this base class.
- * <p>
- * Object from this Class (and subclasses) are immutable.
+ * A base-type for all metric values within the dCache state.  The different metrics types
+ * all extend this base Class.
+ * <p> 
  * 
  * @author Paul Millar <paul.millar@desy.de>
  */
@@ -21,13 +20,16 @@ abstract public class StateValue implements StateComponent {
 	
 	Date _creationTime;
 	Date _expiryTime;
+	boolean _isEphemeral;
 	
 	/**
-	 * Create a StateValue that will never expire.
+	 *  Create a StateValue that is either Immortal or Ephemeral
+	 *  @param isImmortal true if the StateValue is immortal
 	 */
-	protected StateValue() {
+	protected StateValue( boolean isImmortal) {
 		_creationTime = new Date();
 		_expiryTime = null;
+		_isEphemeral = !isImmortal;
 	}
 	
 	/**
@@ -75,12 +77,12 @@ abstract public class StateValue implements StateComponent {
 	 * false otherwise.
 	 */
 	public boolean hasExpired() {
+		if( _expiryTime == null)
+			return false;
+		
 		Date now = new Date();
-		return _expiryTime != null ? now.after(_expiryTime) : false;
+		return now.after(_expiryTime);
 	}
-	
-	/** Provide mechanism for generating read-only copies */
-	public abstract StateValue clone();
 	
 	/** Provide a generic name for subclasses of StateValue */
 	public abstract String getTypeName();
@@ -98,15 +100,49 @@ abstract public class StateValue implements StateComponent {
 		/** Call leaf-node specific visitor method. */
 		acceptVisitor( path, visitor);
 	}
+	
+	
+	/**
+	 * Sub-classes of StateValue all ignore the transition when being visited: the StateComposite takes
+	 * care of all effects from processing the transition.
+	 */
+	public void acceptVisitor( StateTransition transition, StatePath path, StatePath start, StateVisitor visitor) {
+		acceptVisitor( path, start, visitor);
+	}
 
-
-	/** Trying to add a new metric under a metric isn't going to work! */
-	public void add( StatePath path, StateComponent value)  throws BadStatePathException {
-		throw new MetricStatePathException( path.toString()); //TODO: is this correct exception?
+	
+	public void applyTransition( StatePath ourPath, StateTransition transition) {
+		// Simply do nothing. All activity takes place in StateComposite.
 	}
 	
-		
-	protected void removeExpiredChildren() {
-		// Simply do nothing.
+	
+	public void buildTransition( StatePath ourPath, StatePath childPath, StateComponent newChild, StateTransition transition) throws MetricStatePathException {
+		// If we're here, the user has specified a path with a metric in it.
+		throw new MetricStatePathException( ourPath.toString());
 	}
+		
+	public void buildRemovalTransition( StatePath ourPath, StateTransition transition, boolean forced) {
+		// Simply do nothing, all activity takes place in StateComposites
+	}
+	
+	public boolean predicateHasBeenTriggered( StatePath ourPath, StatePathPredicate predicate, StateTransition transition) throws MetricStatePathException {
+		throw new MetricStatePathException( ourPath.toString());
+	}
+	
+	public boolean isMortal() {
+		return _expiryTime != null;
+	}
+
+	public boolean isEphemeral() {
+		return _expiryTime == null && _isEphemeral;
+	}
+	
+	public boolean isImmortal() {
+		return _expiryTime == null && !_isEphemeral;
+	}
+
+	public Date getEarliestChildExpiryDate() {
+		return null; // we have no children.
+	}
+
 }
