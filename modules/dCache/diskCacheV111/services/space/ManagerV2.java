@@ -91,6 +91,8 @@ import diskCacheV111.vehicles.PoolFileFlushedMessage;
 import diskCacheV111.vehicles.PoolRemoveFilesMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.GridProtocolInfo;
+import diskCacheV111.namespace.StorageInfoProvider;
+
 /**
  *   <pre> Space Manager dCache service provides ability
  *    \to reserve space in the pool linkGroups
@@ -2542,6 +2544,13 @@ public class ManagerV2
 				getFileSpaceTokens(getFileTokens);
 				
 			} 
+			else if (spaceMessage instanceof PnfsSetStorageInfoMessage) { 
+				PnfsSetStorageInfoMessage setStorageInfoMessage = (PnfsSetStorageInfoMessage) spaceMessage;
+				if (setStorageInfoMessage.getReturnCode()!=0) { 
+					esay("Failed to set storageinfo");
+				}
+				return;
+			}
 			else {
 				esay("unknown Space Manager message type :"+spaceMessage.getClass().getName()+" value: "+spaceMessage);
 				super.messageArrived(cellMessage);
@@ -3043,6 +3052,15 @@ public class ManagerV2
 			info.isSetRetentionPolicy(true);
 			say("transferToBeStarted(), set AL to "+s.getAccessLatency()+
 			    " RP to "+s.getRetentionPolicy());
+			try { 
+				PnfsSetStorageInfoMessage msg = new PnfsSetStorageInfoMessage(pnfsId,info,StorageInfoProvider.SI_OVERWRITE);
+				msg.setReplyRequired(false);
+				sendMessage(new CellMessage(new CellPath(pnfsManager), 
+							    new PnfsSetStorageInfoMessage(pnfsId,info,StorageInfoProvider.SI_OVERWRITE)));
+			} 
+			catch (Exception e) {
+				esay("Can't send PnfsSetStorageInfoMessage message to pnfsmanager" + e.getMessage());
+			}
 		} 
 		catch(SQLException sqle){
 			esay("transferToBeStarted(): could not get space reservation related to this transfer ");
