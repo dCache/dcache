@@ -2581,21 +2581,24 @@ public class Storage
             size = storage_info.getFileSize();
 	    TRetentionPolicy retention = null;
 	    TAccessLatency latency = null;
-	    if (storage_info.isSetRetentionPolicy() && storage_info.getRetentionPolicy() != null) {
-                if(storage_info.getRetentionPolicy().equals(RetentionPolicy.CUSTODIAL)) { 
-                    retention = TRetentionPolicy.CUSTODIAL;
-                } else if (storage_info.getRetentionPolicy().equals(RetentionPolicy.REPLICA)) { 
-                    retention = TRetentionPolicy.REPLICA;
-                } else if (storage_info.getRetentionPolicy().equals(RetentionPolicy.OUTPUT)) { 
-                    retention = TRetentionPolicy.OUTPUT;
-                } 
+	    if (storage_info.getRetentionPolicy() != null) {
+		    if(storage_info.getRetentionPolicy().equals(RetentionPolicy.CUSTODIAL)) { 
+			    retention = TRetentionPolicy.CUSTODIAL;
+		    } 
+		    else if (storage_info.getRetentionPolicy().equals(RetentionPolicy.REPLICA)) { 
+			    retention = TRetentionPolicy.REPLICA;
+		    } 
+		    else if (storage_info.getRetentionPolicy().equals(RetentionPolicy.OUTPUT)) { 
+			    retention = TRetentionPolicy.OUTPUT;
+		    } 
             }
-            if (storage_info.isSetAccessLatency() && storage_info.getAccessLatency() != null) {
-                if(storage_info.getAccessLatency().equals(AccessLatency.ONLINE)) { 
-                    latency = TAccessLatency.ONLINE;
-                } else if (storage_info.getAccessLatency().equals(AccessLatency.NEARLINE)) { 
-                    latency = TAccessLatency.NEARLINE;
-                }
+            if (storage_info.getAccessLatency() != null) {
+		    if(storage_info.getAccessLatency().equals(AccessLatency.ONLINE)) { 
+			    latency = TAccessLatency.ONLINE;
+		    } 
+		    else if (storage_info.getAccessLatency().equals(AccessLatency.NEARLINE)) { 
+			    latency = TAccessLatency.NEARLINE;
+		    }
             }
             // RetentionPolicy is non-nillable element of the 
             // TRetentionPolicyInfo, if retetion is null, we shold leave
@@ -2926,14 +2929,14 @@ public class Storage
         PnfsId pnfsId;
         try {
             fileMetadataMessage = _pnfs.getFileMetaDataByPath(actualPnfsPath);
-            throw new SRMDuplicationException(" already exists");
+            throw new SRMDuplicationException("already exists");
         } catch( CacheException ce) {
             say("createDirectory "+actualPnfsPath+" does not exist, " +
                 "proceeding to create ");
         }
         if ( fileMetadataMessage != null ) {
             esay("createDirectory: "+actualPnfsPath+" already exists");
-            throw new SRMDuplicationException(" already exists");
+            throw new SRMDuplicationException("already exists");
         }
         //
         // checking parent
@@ -3035,7 +3038,7 @@ public class Storage
             if (createReply.getReturnCode() != 0) {
 		    esay("createDirectory: directory creation failed, got error return code from pnfs");
 		    if (createReply.getReturnCode() == CacheException.FILE_EXISTS) { 
-			    throw new SRMDuplicationException(" already exists");
+			    throw new SRMDuplicationException("already exists");
 		    }
                 Object error = createReply.getErrorObject();
                 
