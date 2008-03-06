@@ -2389,11 +2389,16 @@ public class Storage
         throws SRMException {        
         say("getFileMetaData(" + path + ")");
 	String absolute_path=null;
-	if (path.startsWith(File.separator)) {
-		absolute_path = srm_root + path;
+	if (path!=null) { 
+		if (path.startsWith(File.separator)) {
+			absolute_path = srm_root + path;
+		}
+		else {
+			absolute_path = srm_root + File.separator + path;
+		}
 	}
-	else {
-		absolute_path = srm_root + File.separator + path;
+	else { 
+		path=srm_root;
 	}
         diskCacheV111.util.FileMetaData parent_util_fmd = null;
         if (parentFMD != null && parentFMD instanceof DcacheFileMetaData) {
@@ -2582,23 +2587,24 @@ public class Storage
             size = storage_info.getFileSize();
 	    TRetentionPolicy retention = null;
 	    TAccessLatency latency = null;
-	    if (storage_info.isSetRetentionPolicy() && 
-                storage_info.getRetentionPolicy() != null) {
-                if(storage_info.getRetentionPolicy().equals(RetentionPolicy.CUSTODIAL)) { 
-                    retention = TRetentionPolicy.CUSTODIAL;
-                } else if (storage_info.getRetentionPolicy().equals(RetentionPolicy.REPLICA)) { 
-                    retention = TRetentionPolicy.REPLICA;
-                } else if (storage_info.getRetentionPolicy().equals(RetentionPolicy.OUTPUT)) { 
-                    retention = TRetentionPolicy.OUTPUT;
-                } 
+	    if (storage_info.getRetentionPolicy() != null) {
+		    if(storage_info.getRetentionPolicy().equals(RetentionPolicy.CUSTODIAL)) { 
+			    retention = TRetentionPolicy.CUSTODIAL;
+		    } 
+		    else if (storage_info.getRetentionPolicy().equals(RetentionPolicy.REPLICA)) { 
+			    retention = TRetentionPolicy.REPLICA;
+		    } 
+		    else if (storage_info.getRetentionPolicy().equals(RetentionPolicy.OUTPUT)) { 
+			    retention = TRetentionPolicy.OUTPUT;
+		    } 
             }
-            if (storage_info.isSetRetentionPolicy() && 
-                storage_info.getAccessLatency() != null) {
-                if(storage_info.getAccessLatency().equals(AccessLatency.ONLINE)) { 
-                    latency = TAccessLatency.ONLINE;
-                } else if (storage_info.getAccessLatency().equals(AccessLatency.NEARLINE)) { 
-                    latency = TAccessLatency.NEARLINE;
-                }
+            if (storage_info.getAccessLatency() != null) {
+		    if(storage_info.getAccessLatency().equals(AccessLatency.ONLINE)) { 
+			    latency = TAccessLatency.ONLINE;
+		    } 
+		    else if (storage_info.getAccessLatency().equals(AccessLatency.NEARLINE)) { 
+			    latency = TAccessLatency.NEARLINE;
+		    }
             }
             // RetentionPolicy is non-nillable element of the 
             // TRetentionPolicyInfo, if retetion is null, we shold leave
