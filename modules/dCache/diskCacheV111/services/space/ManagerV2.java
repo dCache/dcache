@@ -59,7 +59,6 @@ import java.util.TimerTask;
 import java.util.List;
 import java.util.ArrayList;
 import diskCacheV111.util.PnfsId;
-import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.FQAN;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.vehicles.PnfsGetStorageInfoMessage;
@@ -134,7 +133,6 @@ public class ManagerV2
 	private boolean cleanupExpiredSpaceFiles=true;
 	private String linkGroupAuthorizationFileName = null;
 	private boolean spaceManagerEnabled =true;
-	private PnfsHandler pnfsHandler;
 	/*
 	 * Database storage related variables
 	 */
@@ -221,7 +219,6 @@ public class ManagerV2
 			esay("configuration conflict: returnRemovedSpaceToReservation == true and deleteStoredFileRecord == true");
 			throw new IllegalArgumentException("configuration conflict: returnRemovedSpaceToReservation == true and deleteStoredFileRecord == true");
 		}
-		pnfsHandler = new  PnfsHandler( this, new CellPath(pnfsManager));
 		try {
 			dbinit();
 		} 
@@ -2577,6 +2574,13 @@ public class ManagerV2
 				getFileSpaceTokens(getFileTokens);
 				
 			} 
+			else if (spaceMessage instanceof PnfsSetStorageInfoMessage) { 
+				PnfsSetStorageInfoMessage setStorageInfoMessage = (PnfsSetStorageInfoMessage) spaceMessage;
+				if (setStorageInfoMessage.getReturnCode()!=0) { 
+					esay("Failed to set storageinfo");
+				}
+				return;
+			}
 			else {
 				esay("unknown Space Manager message type :"+spaceMessage.getClass().getName()+" value: "+spaceMessage);
 				super.messageArrived(cellMessage);
@@ -3069,18 +3073,22 @@ public class ManagerV2
 			info.isSetAccessLatency(true);
 			info.setRetentionPolicy(s.getRetentionPolicy());
 			info.isSetRetentionPolicy(true);
-			say("transferToBeStarted(), set AL to "+s.getAccessLatency()+
-			    " RP to "+s.getRetentionPolicy());
 			// 
 			// send message to PnfsManager 
 			//
-			pnfsHandler.setStorageInfoByPnfsId(pnfsId, info, StorageInfoProvider.SI_OVERWRITE);
+			say("transferToBeStarted(), set AL to "+s.getAccessLatency()+ " RP to "+s.getRetentionPolicy()+" , sending messaage to "+pnfsManager);
+			try { 
+				PnfsSetStorageInfoMessage msg = new PnfsSetStorageInfoMessage(pnfsId,info,StorageInfoProvider.SI_OVERWRITE);
+				msg.setReplyRequired(false);
+				sendMessage(new CellMessage(new CellPath(pnfsManager), 
+							    new PnfsSetStorageInfoMessage(pnfsId,info,StorageInfoProvider.SI_OVERWRITE)));
+			} 
+			catch (Exception e) {
+				esay("Can't send PnfsSetStorageInfoMessage message to pnfsmanager" + e.getMessage());
+			}
 		} 
 		catch(SQLException sqle){
 			esay("transferToBeStarted(): could not get space reservation related to this transfer ");
-		}
-		catch(CacheException e) { 
-			esay("failed to set setStorageInfoByPnfsId");
 		}
 	}
 	
