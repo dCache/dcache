@@ -1,5 +1,6 @@
 package org.dcache.services.info.gathers;
 
+import org.apache.log4j.Logger;
 import org.dcache.services.info.InfoProvider;
 import org.dcache.services.info.base.*;
 
@@ -11,7 +12,9 @@ import java.util.*;
  * @author Paul Millar <paul.millar@desy.de>
  */
 public class LinkInfoMsgHandler extends CellMessageHandlerSkel {
-	
+
+	private static Logger _log = Logger.getLogger( LinkInfoMsgHandler.class);
+
 	private static final int EXPECTED_ARRAY_SIZE=13;
 
 	public void process(Object msgPayload, long metricLifetime) {
@@ -24,12 +27,12 @@ public class LinkInfoMsgHandler extends CellMessageHandlerSkel {
 		
 		for( Object o : linkInfoArray) {
 			if( !o.getClass().isArray()) {
-				InfoProvider.getInstance().say("Link information not an array.");
+				_log.error( "Link information not an array.");
 				return;							
 			}
 			Object[] array = (Object[]) o;
 			if( array.length != EXPECTED_ARRAY_SIZE) {
-				InfoProvider.getInstance().say("Unexpected array size: "+array.length);
+				_log.error( "Unexpected array size: "+array.length);
 				return;
 			}
 			processInfo( update, linksPath, (Object[]) o, metricLifetime);

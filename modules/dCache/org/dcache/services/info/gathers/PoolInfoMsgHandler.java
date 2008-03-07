@@ -28,7 +28,7 @@ public class PoolInfoMsgHandler extends CellMessageHandlerSkel {
 		Object[] array = (Object []) msgPayload;
 		
 		if( array.length != 6) {
-			InfoProvider.getInstance().say("Unexpected array size: "+array.length);
+			_log.error( "Unexpected array size: "+array.length);
 			return;
 		}
 

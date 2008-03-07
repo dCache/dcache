@@ -1,5 +1,6 @@
 package org.dcache.services.info.gathers;
 
+import org.apache.log4j.Logger;
 import org.dcache.services.info.InfoProvider;
 import org.dcache.services.info.stateInfo.SpaceInfo;
 
@@ -20,12 +21,14 @@ import org.dcache.services.info.base.*;
  */
 public class PoolCostMsgHandler extends CellMessageHandlerSkel {
 
+	private static Logger _log = Logger.getLogger( PoolCostMsgHandler.class);
+
 	public void process(Object msgPayload, long msgDeliveryPeriod) {
 		
 		long metricLifetime = (long) (msgDeliveryPeriod * 2.5); // Give metrics a lifetime of 2.5* message deliver period
 		
 		if( !(msgPayload instanceof CostModulePoolInfoTable)) {
-			InfoProvider.getInstance().say("received non-CostModulePoolInfoTable object in message\n");
+			_log.error( "received non-CostModulePoolInfoTable object in message\n");
 			return;
 		}
 

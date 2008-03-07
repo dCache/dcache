@@ -1,5 +1,6 @@
 package org.dcache.services.info.gathers;
 
+import org.apache.log4j.Logger;
 import org.dcache.services.info.*;
 import org.dcache.services.info.base.*;
 
@@ -13,6 +14,8 @@ import dmg.cells.services.login.LoginBrokerInfo;
  */
 public class LoginBrokerLsMsgHandler extends CellMessageHandlerSkel {
 
+	private static Logger _log = Logger.getLogger( LoginBrokerLsMsgHandler.class);
+
 	public void process(Object msgPayload, long metricLifetime) {
 
 		StateUpdate update = new StateUpdate();
@@ -24,7 +27,7 @@ public class LoginBrokerLsMsgHandler extends CellMessageHandlerSkel {
 		for( int i = 0; i < array.length; i++) {
 			
 			if( !(array [i] instanceof LoginBrokerInfo)) {
-				InfoProvider.getInstance().say("Skipping array element that is not LoginBrokerInfo");
+				_log.warn( "Skipping array element that is not LoginBrokerInfo");
 				continue;
 			}
 			

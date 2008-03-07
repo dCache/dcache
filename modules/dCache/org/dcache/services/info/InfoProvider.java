@@ -3,6 +3,8 @@ package org.dcache.services.info;
 import java.util.*;
 import dmg.cells.nucleus.*;
 import dmg.util.Args;
+
+import org.apache.log4j.Logger;
 import org.dcache.services.info.base.*;
 import org.dcache.services.info.conduits.*;
 import org.dcache.services.info.gathers.*;
@@ -10,6 +12,9 @@ import org.dcache.services.info.serialisation.*;
 import org.dcache.services.info.secondaryInfoProviders.*;
 
 public class InfoProvider extends CellAdapter {
+	
+	private static Logger _log = Logger.getLogger(InfoProvider.class);
+
 	
 	private static InfoProvider _instance=null;
 	private static final String ADMIN_INTERFACE_OK = "Done.";
@@ -44,13 +49,12 @@ public class InfoProvider extends CellAdapter {
         setPrintoutLevel( CellNucleus.PRINT_CELL |
                           CellNucleus.PRINT_ERROR_CELL ) ;
 
-
-		say( "InfoProvider starting...");
+		_log.info( "InfoProvider starting...");
 		
 		if( _instance == null)
 			_instance = this;
 		else {
-			say( "Duplicate InfoProvider detected.");
+			_log.warn( "Duplicate InfoProvider detected.");
 		}
 
 		/**
@@ -195,7 +199,7 @@ public class InfoProvider extends CellAdapter {
 	 */
 	public synchronized void messageArrived( CellMessage msg ) {
 		if( !_msgHandlerChain.handleMessage( msg))
-			esay( "Unable to handle incoming message from: " + msg.getSourceAddress());
+			_log.warn( "Unable to handle incoming message from: " + msg.getSourceAddress());
 	}
 
 	/**
@@ -206,7 +210,7 @@ public class InfoProvider extends CellAdapter {
 		try { 
 			super.sendMessage(msg);
 		} catch(Exception e ) {
-			esay( "Problem sending msg: "+e );
+			_log.warn( "Problem sending msg: ", e);
 		}
 	}
 	

@@ -1,11 +1,14 @@
 package org.dcache.services.info.gathers;
 
+import org.apache.log4j.Logger;
 import org.dcache.services.info.InfoProvider;
 import org.dcache.services.info.base.StateUpdate;
 import org.dcache.services.info.base.StatePath;
 
 public class PoolGroupInfoMsgHandler extends CellMessageHandlerSkel {
-	
+
+	private static Logger _log = Logger.getLogger( PoolGroupInfoMsgHandler.class);
+
 	private StatePath _pgPath = new StatePath( "poolgroups");
 
 	public void process(Object msgPayload, long metricLifetime) {
@@ -17,7 +20,7 @@ public class PoolGroupInfoMsgHandler extends CellMessageHandlerSkel {
 		array = (Object []) msgPayload;
 		
 		if( array.length != 3) {
-			InfoProvider.getInstance().say("Unexpected array size: "+array.length);
+			_log.error( "Unexpected array size: "+array.length);
 			return;
 		}
 

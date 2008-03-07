@@ -1,5 +1,6 @@
 package org.dcache.services.info.gathers;
 
+import org.apache.log4j.Logger;
 import org.dcache.services.info.InfoProvider;
 import org.dcache.services.info.base.*;
 
@@ -9,7 +10,9 @@ import org.dcache.services.info.base.*;
  * @author Paul Millar <paul.millar@desy.de>
  */
 public class UnitInfoMsgHandler extends CellMessageHandlerSkel {
-	
+
+	private static Logger _log = Logger.getLogger( UnitInfoMsgHandler.class);
+
 	private StatePath _uPath = new StatePath( "units");
 	
 	public void process(Object msgPayload, long metricLifetime) {
@@ -20,7 +23,7 @@ public class UnitInfoMsgHandler extends CellMessageHandlerSkel {
 		array = (Object []) msgPayload;
 		
 		if( array.length != 3) {
-			InfoProvider.getInstance().say("Unexpected array size: "+array.length);
+			_log.error( "Unexpected array size: "+array.length);
 			return;
 		}
 
