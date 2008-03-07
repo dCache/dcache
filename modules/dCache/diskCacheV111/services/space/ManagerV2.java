@@ -3080,8 +3080,7 @@ public class ManagerV2
 			try { 
 				PnfsSetStorageInfoMessage msg = new PnfsSetStorageInfoMessage(pnfsId,info,StorageInfoProvider.SI_OVERWRITE);
 				msg.setReplyRequired(false);
-				sendMessage(new CellMessage(new CellPath(pnfsManager), 
-							    new PnfsSetStorageInfoMessage(pnfsId,info,StorageInfoProvider.SI_OVERWRITE)));
+				sendMessage(new CellMessage(new CellPath(pnfsManager),msg)); 
 			} 
 			catch (Exception e) {
 				esay("Can't send PnfsSetStorageInfoMessage message to pnfsmanager" + e.getMessage());
