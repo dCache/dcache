@@ -51,11 +51,11 @@ public class PinManagerTest {
 
     private  static PinManager pinManager;
     private static EchoCell echoCell;
-   
+
     private static String driver="org.postgresql.Driver";
     private static String dburl = "jdbc:postgresql://localhost/dcache";
     private static String dbuser = "srmdcache";
-    
+
     //private static String driver="org.hsqldb.jdbcDriver";
     //private static String dburl = "jdbc:hsqldb:mem:pinmem";
     //private static String dbuser = "srmdcache";
@@ -73,17 +73,17 @@ public class PinManagerTest {
 
         Connection conn = DriverManager.getConnection(dburl, dbuser, "");
         System.out.println("got connection");
-        conn.close();       
-        String args = 
+        conn.close();
+        String args =
         " -jdbcDriver="+driver+
         " -jdbcUrl="+dburl+
         " -dbUser="+dbuser+
         " -dbPass=\"\" "+
         " -poolManager=EchoCell "+
         " -pnfsManager=EchoCell ";
-        
 
-            
+
+
         pinManager =  new PinManager("testPinManager", args);
 
     }
@@ -94,28 +94,28 @@ public class PinManagerTest {
         PnfsId pnfsId = new PnfsId("000100000000000000001080");
         PinManagerPinMessage pinManagerPinMessage = new PinManagerPinMessage(
             pnfsId,"localhost",3600L,12345L);
-        
-        pinManagerPinMessage = 
-            (PinManagerPinMessage) 
+
+        pinManagerPinMessage =
+            (PinManagerPinMessage)
             echoCell.sendAndWait(
                 new CellMessage(new CellPath("testPinManager"),
                 pinManagerPinMessage),60000L).getMessageObject();
 
         assertTrue("failed to pin", pinManagerPinMessage.getReturnCode() == 0 );
         if(pinManagerPinMessage.getReturnCode() == 0) {
-            PinManagerUnpinMessage unpin = 
+            PinManagerUnpinMessage unpin =
                 new PinManagerUnpinMessage(pnfsId,pinManagerPinMessage.getPinId());
-            unpin = 
-                (PinManagerUnpinMessage) 
+            unpin =
+                (PinManagerUnpinMessage)
                 echoCell.sendAndWait(
                     new CellMessage(new CellPath("testPinManager"),
                     unpin),60000L).getMessageObject();
             assertTrue("failed to unpin", unpin.getReturnCode() == 0 );
-            
+
         }
 
     }
-    
+
     @Test
     public void test1000Pinning () throws Exception {
         System.out.println("test1000Pinning is running");
@@ -123,13 +123,13 @@ public class PinManagerTest {
             testPinning();
         }
     }
-    
+
     @AfterClass
     public static  void tearDown() throws Exception {
         System.out.println("Tearing down");
        echoCell.stop();
-            
-        pinManager.stop();
+
+       // pinManager.stop();
 
     }
 
@@ -137,12 +137,12 @@ public class PinManagerTest {
     public static junit.framework.Test suite() {
         return new junit.framework.JUnit4TestAdapter(PinManagerTest.class);
     }
-    
+
     public static final void main(String[] args) {
         org.junit.runner.JUnitCore.main(PinManagerTest.class.getName());
         //org.junit.runner.JUnitCore.runClasses(PinManagerTest.class);
         System.out.println("test completed");
     }
-    
-     
+
+
 }
