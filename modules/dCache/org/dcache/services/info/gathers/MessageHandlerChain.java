@@ -22,6 +22,10 @@ import dmg.cells.nucleus.*;
  */
 public class MessageHandlerChain {
 
+	/** The period between successive flushes of ancient metadata, in milliseconds */
+	private static final long METADATA_FLUSH_THRESHOLD = 3600000; // 1 hour
+	private static final long METADATA_FLUSH_PERIOD = 600000; // 10 minutes
+	
 	private static final Logger _log = Logger.getLogger( MessageHandlerChain.class);
 
 	private List<MessageHandler> _messageHandler = new LinkedList<MessageHandler>();
@@ -32,9 +36,9 @@ public class MessageHandlerChain {
 	 * to the message processing plugin.  The time is so we can (every so often) delete stale entries
 	 * due to message-loss.  
 	 */
-	private class MessageMetadata {
+	private static class MessageMetadata {
 		Date _timeSent;
-		long _ttl;
+		final long _ttl;
 		MessageMetadata( long ttl) {
 			_timeSent = new Date();
 			_ttl = ttl;
@@ -42,7 +46,7 @@ public class MessageHandlerChain {
 	}
 	
 	private Map<CellMessage,MessageMetadata> _msgMetadata = new HashMap<CellMessage,MessageMetadata>();
-	
+	private Date _nextFlushOldMetadata;
 	
 	/**
 	 * Add a new MessageHandler to the list.
@@ -141,6 +145,8 @@ public class MessageHandlerChain {
 	public boolean handleMessage( CellMessage msg) {
 		
 		long ttl = 0;
+		
+		flushOldMetadata();
 				
 		MessageMetadata mm = _msgMetadata.get(msg.getLastUOID());
 		if( mm != null) {
@@ -162,5 +168,29 @@ public class MessageHandlerChain {
 		
 		return false;		
 	}
+
 	
+	/**
+	 * Scan through our recorded Metadata and remove very old entries.
+	 * This is only done "every so often" and adds some safety against
+	 * lost packets resulting in accumulated memory usage. 
+	 */
+	void flushOldMetadata() {
+		
+		Date now = new Date();
+		
+		if( _nextFlushOldMetadata != null && now.before( _nextFlushOldMetadata))
+			return;
+		
+		// Flush ancient metadata
+		for( Iterator<MessageMetadata> itr = _msgMetadata.values().iterator(); itr.hasNext();) {
+			MessageMetadata item = itr.next();
+			
+			if( now.getTime() - item._timeSent.getTime() > METADATA_FLUSH_THRESHOLD)
+				itr.remove();
+		}
+		
+		_nextFlushOldMetadata = new Date( System.currentTimeMillis() + METADATA_FLUSH_PERIOD);
+	}
+
 }
