@@ -311,6 +311,21 @@ dcacheInstallGetPnfsServer()
   RET=${pnfsServer}
 }
 
+dcacheNameServerIs()
+{
+  dcacheInstallGetPnfsServer
+  pnfsHost=$RET
+  if [ "${pnfsHost}" == "localhost" ]
+  then
+    return 1
+  fi
+  if [ "${pnfsHost}" == `fqdn_os` ]
+  then
+    return 1
+  fi
+  return 0
+}
+
 
 
 dcacheInstallGetHome()
@@ -1092,10 +1107,28 @@ if [ "$RET" != "${ourHomeDir}" ] ; then
   exit 1
 fi
 
-if [ "x${NAMESPACE}" != "xchimera" ]
+
+dcacheNameServerIs
+dcacheNameServerIs=$?
+
+if [ "${dcacheNameServerIs}" == "1" ]
 then
-  dcacheInstallPnfs
+  nameServerFormat=`printConfig NAMESPACE`
+  if [ "${nameServerFormat}" != "pnfs" -a "${nameServerFormat}" != "chimera" ]
+  then
+    logmessage ERROR "node_config does not have NAMESPACE set to chimera or pnfs."
+    logmessage INFO "NAMESPACE=${nameServerFormat}"
+    exit 1
+  fi
+
+  if [ "${nameServerFormat}" == "pnfs" ]
+  then
+    dcacheInstallPnfs
+  fi
 fi
+
+
+
 dcacheInstallSshKeys
 dcacheInstallCreateWrappers
 dcacheInstallSrm
