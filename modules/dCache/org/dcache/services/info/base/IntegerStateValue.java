@@ -9,8 +9,6 @@ package org.dcache.services.info.base;
  */
 public class IntegerStateValue extends StateValue {
 	
-	private static final long DUMMY_VALUE = 0;
-
 	private long _storage;
 
 	/**
@@ -40,20 +38,6 @@ public class IntegerStateValue extends StateValue {
 		return Long.toString( _storage);
 	}
 
-	/**
-	 * Return a new StateValue.
-	 */
-	public StateValue clone() {		
-		IntegerStateValue sv;
-		
-		if( this.isEphemeral())
-			sv = new IntegerStateValue( _storage);
-		else {
-			sv = new IntegerStateValue( _storage, DUMMY_VALUE);
-			sv._expiryTime = this._expiryTime;
-		}
-		return sv;
-	}
 	
 	public String getTypeName() {
 		return "integer";
