@@ -94,8 +94,11 @@ usage() # $1 = exit status
 # Returns true if $1 is contained as a word in $2.
 contains() # $1 = word, $2 = list
 {
-    for i in $2; do 
-	if [ "$1" = "$i" ]; then
+    local word
+    word=$1
+    shift
+    for i in "$@"; do 
+	if [ "$word" = "$i" ]; then
 	    return 0
 	fi
     done
@@ -946,7 +949,7 @@ case "$1" in
     services)
 	printf "Service      Domains\n"
 	for service in `getServices`; do
-	    printf "%-13s%s\n" "${service}" `getDomains ${service}`
+	    printf "%-13s%s\n" "${service}" "`getDomains ${service}`"
 	done
 	;;
 
