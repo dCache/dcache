@@ -17,7 +17,7 @@ public class StringStateValue extends StateValue {
 	 */
 	public StringStateValue( String value) {
 		super( false);
-		_storage = new String( value);
+		_storage = value;
 	}
 	
 	/**
@@ -27,7 +27,7 @@ public class StringStateValue extends StateValue {
 	 */
 	public StringStateValue( String value, long duration) {
 		super( duration);
-		_storage = new String( value);
+		_storage = value;
 	}
 	
 	public String toString() {
