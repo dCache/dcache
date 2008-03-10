@@ -30,13 +30,13 @@ public class DataGatheringScheduler implements Runnable {
 	 * Class holding a periodically repeated DataGatheringActivity
 	 * @author Paul Millar <paul.millar@desy.de>
 	 */
-	private class RegisteredActivity {
+	private static class RegisteredActivity {
 		
 		
 		/** Min. delay (in ms). We prevent Schedulables from triggering more frequently than this */
 		private static final long MINIMUM_DGA_DELAY = 500;
 		
-		private Schedulable _dga;
+		private final Schedulable _dga;
 
 		/** The delay until this DataGatheringActivity should be next triggered */
 		private Date _nextTriggered;

@@ -27,7 +27,7 @@ public class StateTransition {
 	 * 	Removed StateComponent
 	 * @author Paul Millar <paul.millar@desy.de>
 	 */
-	private class CompositeChangeSet {
+	private static class CompositeChangeSet {
 		final Map<String, StateComponent> _newChildren = new HashMap<String, StateComponent>();
 		final Map<String, StateComponent> _updatedChildren = new HashMap<String, StateComponent>();
 		final Set<String> _removedChildren = new HashSet<String>();

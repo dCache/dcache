@@ -25,7 +25,7 @@ public class StateUpdate {
 	/**
 	 * A single update to dCache
 	 */
-	private class StateUpdateInstance {
+	private static class StateUpdateInstance {
 		final StatePath _path;
 		final StateComponent _newValue;
 		
