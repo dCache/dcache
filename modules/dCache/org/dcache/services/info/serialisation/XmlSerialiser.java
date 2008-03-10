@@ -34,8 +34,8 @@ public class XmlSerialiser implements StateVisitor, StateSerialiser {
 	private boolean _haveLastBranch;
 	
 	
-	private class Attribute {
-		String name, value;
+	private static class Attribute {
+		final String name, value;
 		Attribute( String iName, String iValue) {
 			name = iName;
 			value = iValue;
