@@ -199,25 +199,7 @@ public class StateTransition {
 		return changeSet == null ? false : changeSet._newChildren.containsKey(name);				
 	}
 	
-	
-	/**
-	 * Return whether this child has is new or has been updated. 
-	 * @param path the StatePath of the parent StateComponent
-	 * @param name the name of the child.
-	 * @return true if this child is new or updated.
-	 */
-	protected boolean childIsNewOrUpdated( StatePath path, String name) {
-		CompositeChangeSet changeSet = _allChanges.get(path);
 		
-		if( changeSet == null)
-			return false;
-		
-		if( changeSet._newChildren.containsKey(name))
-			return true;
-		
-		return changeSet._updatedChildren.containsKey(name);
-	}
-	
 	/**
 	 * Return the fresh value for a child.  If the child is new or
 	 * is to be updated then the new value is return.  If the child 
