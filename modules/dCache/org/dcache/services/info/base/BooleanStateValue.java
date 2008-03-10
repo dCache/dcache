@@ -7,7 +7,6 @@ package org.dcache.services.info.base;
  * @author Paul Millar <paul.millar@desy.de>
  */
 public class BooleanStateValue extends StateValue {
-	private static final long DUMMY_VALUE = 0;
 	
 	private boolean _storage;
 
