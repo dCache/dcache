@@ -103,8 +103,12 @@ class Unpinner extends SMCTask
     }
 
     void setLocations(List<String> locations) {
-        info("setLocations");
-        this.locations.addAll(locations);
+        if(locations != null) {
+            info("setLocations");
+            this.locations.addAll(locations);
+        } else { 
+            info("setLocations - no locations found");
+        }
     }
 
     void unsetStickyFlags()
