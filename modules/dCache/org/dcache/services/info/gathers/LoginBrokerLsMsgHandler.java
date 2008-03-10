@@ -1,7 +1,6 @@
 package org.dcache.services.info.gathers;
 
 import org.apache.log4j.Logger;
-import org.dcache.services.info.*;
 import org.dcache.services.info.base.*;
 
 import dmg.cells.services.login.LoginBrokerInfo;

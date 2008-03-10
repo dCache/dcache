@@ -1,7 +1,6 @@
 package org.dcache.services.info.gathers;
 
 import org.apache.log4j.Logger;
-import org.dcache.services.info.InfoProvider;
 import org.dcache.services.info.base.*;
 import dmg.util.CommandThrowableException;
 
@@ -17,18 +16,18 @@ public class PoolInfoMsgHandler extends CellMessageHandlerSkel {
 		
 		if( msgPayload instanceof CommandThrowableException) {
 			CommandThrowableException e = (CommandThrowableException) msgPayload;
-			_log.error( "Got exception from pool: ", e);
+			_log.error( "got exception from pool: ", e);
 		}
 		
 		if( !msgPayload.getClass().isArray()) {
-			_log.error( "Received msg that isn't an array");
+			_log.error( "received a message that isn't an array");
 			return;
 		}
 			
 		Object[] array = (Object []) msgPayload;
 		
 		if( array.length != 6) {
-			_log.error( "Unexpected array size: "+array.length);
+			_log.error( "unexpected array size: "+array.length);
 			return;
 		}
 
