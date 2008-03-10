@@ -56,9 +56,15 @@ Entry
                         findReadPool();
                 }
         answerArrived(message: PoolMgrSelectReadPoolMsg)
+                [ message.getReturnCode() == 0 && message.getPoolName() != null ]
                 MarkingSticky
                 {
                         setReadPool(message.getPoolName());
+                }
+        answerArrived(message: PoolMgrSelectReadPoolMsg)
+                Done
+                {
+                        fail("finding read pool failed");
                 }
 }
 
