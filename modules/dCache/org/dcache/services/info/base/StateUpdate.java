@@ -20,14 +20,14 @@ import org.apache.log4j.Logger;
  */
 public class StateUpdate {
 
-	private static Logger _log = Logger.getLogger(StateUpdate.class);
+	private static final Logger _log = Logger.getLogger(StateUpdate.class);
 	
 	/**
 	 * A single update to dCache
 	 */
 	private class StateUpdateInstance {
-		StatePath _path;
-		StateComponent _newValue;
+		final StatePath _path;
+		final StateComponent _newValue;
 		
 		StateUpdateInstance( StatePath path, StateComponent newValue) {
 			_path = path;
