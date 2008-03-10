@@ -14,6 +14,8 @@ import  dmg.util.* ;
 import  java.io.* ;
 import  java.util.*;
 import  java.util.concurrent.atomic.*;
+import  java.util.concurrent.BlockingQueue;
+import  java.util.concurrent.LinkedBlockingQueue;
 
 /**
   *  Basic cell for performing central monitoring and
@@ -63,7 +65,7 @@ import  java.util.concurrent.atomic.*;
   */
 
 abstract public class DCacheCoreControllerV2 extends CellAdapter {
-   private final static String _cvsId = "$Id$";
+   private final static String _svnId = "$Id$";
 
    private String      _cellName = null ;
    private Args        _args     = null ;
@@ -81,6 +83,9 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
 
    private File        _config   = null ;
    private boolean     _dcccDebug = false;
+
+   private final BlockingQueue<CellMessage> _msgFifo ;
+   private LinkedList<PnfsAddCacheLocationMessage> _cachedPnfsAddCacheLocationMessage = new LinkedList();
 
    private  static CostModulePoolInfoTable _costTable = null;
    private  static Object _costTableLock = new Object();
@@ -106,22 +111,21 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
       _cellName = cellName ;
       _args     = getArgs() ;
       _nucleus  = getNucleus() ;
+      _msgFifo = new LinkedBlockingQueue<CellMessage>() ;
 
       String tmp = _args.getOpt("configDirectory") ;
       if( tmp == null )
-         throw new
-         IllegalArgumentException("'configDirectory' not specified");
+         throw new IllegalArgumentException("'configDirectory' not specified");
 
       _config = new File(tmp) ;
 
       if( ! _config.isDirectory() )
-         throw new
-         IllegalArgumentException("'configDirectory' not a directory");
-
+        throw new IllegalArgumentException("'configDirectory' not a directory");
 
       useInterpreter( true ) ;
 
       new MessageTimeoutThread();
+      new MessageProcessThread();
 
       _nucleus.export() ;
       say("Starting");
@@ -154,6 +158,40 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
        }
    }
 
+   // Thread to re-queue messages queue
+
+   private class MessageProcessThread implements Runnable {
+     private final String _threadName = "DCacheCoreController-MessageProcessing";
+
+     public MessageProcessThread(){
+       _nucleus.newThread( this , _threadName ).start() ;
+     }
+
+     public void run() {
+       say("Thread <" + Thread.currentThread().getName() + "> started");
+
+       boolean done = false;
+       while (!done) {
+         CellMessage message = null;
+         try {
+           message = _msgFifo.take();
+         }
+         catch (InterruptedException e) {
+           done = true;
+           continue;
+         }
+
+         try {
+           processCellMessage(message);
+         }
+         catch (Throwable ex) {
+           esay(Thread.currentThread().getName() + " : " +ex);
+         }
+
+       } // - while()
+       say("Thread <" + Thread.currentThread().getName() + "> finished");
+     }  // - run()
+   }
 
 
    /**
@@ -175,6 +213,9 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
     * @return the object which is send back to the caller.
     *             If <code>null</code> nothing is send back.
     */
+   /*
+    * @todo : report "Failed to remove" to reduction task
+    */
    public Object commandArrived(String str, CommandSyntaxException cse) {
        if (str.startsWith("Removed ")) {
            dsay("commandArrived (ignored):  cse=[" + cse + "], str = ["+str+"]");
@@ -192,9 +233,14 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
        return super.commandArrived(str, cse);
    }
 
-   public void getInfo(PrintWriter pw) {
-    pw.println("       Version : " + _cvsId);
+   public String getSvnId() {
+    return( _svnId );
    }
+
+   public void getInfo(PrintWriter pw) {
+    pw.println("       Version : " + getSvnId() );
+   }
+
 
    //
    // task feature
@@ -486,6 +532,36 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
       }
    }
 
+   /**
+    * Scan reduce and replicate tasks and set flag 'pnfsid' is deleted
+    */
+   protected void  tagTaskPnfsIdDeleted( PnfsId pnfsid ){
+      HashSet allTasks;
+
+      // best effort - not strict locking
+      synchronized (_taskHash) {
+        allTasks = new HashSet(_taskHash.values());
+      }
+
+      for (Iterator i = allTasks.iterator(); i.hasNext(); ) {
+        TaskObserver task = (TaskObserver) i.next();
+        if (task != null && !task.isDone()) {
+          if (task.getType().equals("Replication")) {
+            MoverTask mt = (MoverTask) task;
+            if (mt.getPnfsId().equals(pnfsid.toString())) {
+              mt.setPnfsIdDeleted(true);
+            }
+          }
+          else if (task.getType().equals("Reduction")) {
+            ReductionObserver ro = (ReductionObserver) task;
+            if (ro.getPnfsId().equals(pnfsid.toString())) {
+              ro.setPnfsIdDeleted(true);
+            }
+          }
+        }
+      }
+    }
+
    //
    //  remove a copy of this file
    //
@@ -494,6 +570,8 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
        private String _poolName = null ;
        private TaskObserver _oldTask = null;
        private String _key = null;
+       private boolean _pnfsIdDeleted = false;
+
        public ReductionObserver( PnfsId pnfsId , String poolName ) throws Exception {
            super("Reduction");
           _pnfsId   = pnfsId ;
@@ -507,10 +585,12 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
                   + ", old task=" +_oldTask );
           }
        }
+/* OBSOLETE / UNUSED
        public void messageArrived( CellMessage msg ){
          dsay( "DCacheCoreController::ReductionObserver - "
               +"CellMessage arrived (ignored), " + msg ) ;
        };
+*/
        public void messageArrived( Message reply ){
           if( reply.getReturnCode() == 0 ){
              setOk() ;
@@ -545,8 +625,10 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
          }
          super.finished();
        }
-       public PnfsId getPnfsId() { return _pnfsId; } ;
-       public String getPool()   { return _poolName; } ;
+       public PnfsId getPnfsId() { return _pnfsId; }
+       public String getPool()   { return _poolName; }
+       public  boolean isPnfsIdDeleted()   { return _pnfsIdDeleted; }
+       public  void setPnfsIdDeleted( boolean b)   { _pnfsIdDeleted = b; }
    }
    //
    // creates replica
@@ -555,6 +637,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
       private PnfsId _pnfsId  = null ;
       private String _srcPool = null ;
       private String _dstPool = null ;
+      private boolean _pnfsIdDeleted = false;
 
       public MoverTask( PnfsId pnfsId , String source , String destination ){
         super("Replication");
@@ -566,9 +649,11 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
       protected void moverTaskFinishedHook() {
         _p2p.remove(_srcPool,_dstPool);
       }
-      public PnfsId getPnfsId()    { return _pnfsId; } ;
-      public String getSrcPool()   { return _srcPool; } ;
-      public String getDstPool()   { return _dstPool; } ;
+      public PnfsId getPnfsId()    { return _pnfsId; }
+      public String getSrcPool()   { return _srcPool; }
+      public String getDstPool()   { return _dstPool; }
+      public  boolean isPnfsIdDeleted()   { return _pnfsIdDeleted; }
+      public  void setPnfsIdDeleted( boolean b)   { _pnfsIdDeleted = b; }
 
       public void messageArrived( CellMessage msg ){
           Message reply = null;
@@ -623,6 +708,9 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
 
       HashSet hash = new HashSet(getCacheLocationList( pnfsId , false )) ;
 
+      /* @todo
+       * Cross check info from pnfs companion
+      */
       if( ! hash.contains(source) )
          throw new
          IllegalStateException("PnfsId "+pnfsId+" not found in "+source ) ;
@@ -641,11 +729,20 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
 
       MoverTask task = new MoverTask( pnfsId , source , destination ) ;
 
-      synchronized( _messageHash ){
-//        dsay("movePnfsId: sendMessage p2p, src=" +source + " dest=" +destination);
+      // Don't even think of it ...
+      synchronized( _messageHash ) {
+        sendMessage(msg);
         _messageHash.put( msg.getUOID() , task ) ;
-         sendMessage( msg ) ;
       }
+
+      /*
+      UOID idAfter = msg.getUOID();
+      dsay("movePnfsId: AFTER sendMessage p2p, msg src=" +source + " dest=" +destination
+           +" msg=<"+msg+">");
+
+      dsay("CellMessage UOID AFTER =" + idAfter + " pnfsId=" +pnfsId
+           +" is firstDest= " + msg.isFirstDestination() );
+      */
       return task ;
 
    }
@@ -654,6 +751,11 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
      * removes a copy from the cache of the specified pnfsId. An exception is thrown if
      * there is only one copy left.
      */
+
+/*
+ * OBSOLETE
+ * comment out - whether it breaks
+
    protected TaskObserver removeCopy( PnfsId pnfsId ) throws Exception {
 
       List sourcePoolList = getCacheLocationList( pnfsId , true ) ;
@@ -670,6 +772,8 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
 
       return new ReductionObserver( pnfsId , source ) ;
    }
+ * end OBSOLETE
+*/
 
    /**
     * removes a copy from the cache of the specified pnfsId.
@@ -690,7 +794,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
 
      if ( sourcePoolList.size() == 0 )
        throw new
-           IllegalStateException("no writable copy found for pnfsId=" + pnfsId );
+           IllegalStateException("no deletable replica found for pnfsId=" + pnfsId );
 
      List confirmedSourcePoolList = confirmCacheLocationList(pnfsId, sourcePoolList);
 
@@ -699,7 +803,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
          dsay("pnfsid = " +pnfsId+", writable pools=" + writablePools);
          dsay("pnfsid = " +pnfsId+", confirmed pools=" + confirmedSourcePoolList );
          throw new
-                 IllegalArgumentException("no writable 'online' copy found for pnfsId=" + pnfsId );
+                 IllegalArgumentException("no deletable 'online' replica found for pnfsId=" + pnfsId );
      }
      if ( confirmedSourcePoolList.size() == 1 )
        throw new
@@ -711,59 +815,6 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
 
      return new ReductionObserver(pnfsId, source);
    }
-
-   /**
-     *  Creates a new cache copy of the specified pnfsId.
-     *  Returns an Exception if there is no pool left, not
-     *  holding a copy of this file.
-     */
-    /** OBSOLETE
-     *
-
-    protected TaskObserver replicatePnfsId(PnfsId pnfsId) throws Exception {
-
-        List sourcePoolList = getCacheLocationList(pnfsId, true);
-        if (sourcePoolList.size() == 0)
-            throw new // do not change - initial substring is used as signature
-                    IllegalArgumentException(
-                    "No pools found, no source pools found");
-
-        HashSet allPools = new HashSet(getPoolListResilient());
-
-        for (Iterator i = sourcePoolList.iterator(); i.hasNext(); )
-            allPools.remove(i.next().toString());
-
-        if (allPools.size() == 0)
-            throw new // do not change - initial substring is used as signature
-                    IllegalArgumentException(
-                    "No pools found, no destination pools left");
-
-        List allPoolList = new ArrayList(allPools);
-
-        StorageInfo storageInfo = getStorageInfo(pnfsId);
-        long fileSize = storageInfo.getFileSize();
-
-        String source = (String) sourcePoolList.get(_random.nextInt(
-                sourcePoolList.size()));
-
-        //
-        // do not use pools on the same host
-        Set sourceHosts = new HashSet();
-
-        for (Iterator s = sourcePoolList.iterator(); s.hasNext(); ) {
-            String poolName = s.next().toString() ;
-            String host = (String)_hostMap.get(poolName);
-            sourceHosts.add(host);
-        }
-
-        String destination = bestDestPool(allPoolList, fileSize, sourceHosts );
-
-        return replicatePnfsId(pnfsId, source, destination);
-    }
-    ** end OBSOLETE
-     *
-     */
-
 
     private String bestDestPool(List pools, long fileSize, Set srcHosts ) throws Exception {
 
@@ -859,9 +910,9 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
             }
 
             if (bestCostInfo == null) {
-                throw new IllegalArgumentException(
-                        "Try again : Can not find destination pool with available space="
-                                    +fileSize + " spaceFound=" +spaceFound +" and avalable slot in p2p client queue, queueFound=" + qFound);
+              throw new IllegalArgumentException(
+                "Try again : Can not find good destination pool - no space is available or p2p client queue is full. "
+                +" File size="+fileSize + ", spaceFound=" +spaceFound +", queueAvailable=" + qFound);
             }
 
             total      = bestCostInfo.getSpaceInfo().getTotalSpace();
@@ -888,6 +939,9 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
        * Returns an Exception if there is no pool left, not holding a copy of
        * this file.
        */
+      protected static final String selectSourcePoolError      = "Select source pool error : ";
+      protected static final String selectDestinationPoolError = "Select destination pool error : ";
+
       protected MoverTask replicatePnfsId( PnfsId pnfsId, Set readablePools, Set writablePools )
           throws Exception {
 
@@ -919,15 +973,15 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
 
         if (sourcePoolList.size() == 0)
           throw new                    // do not change - initial substring is used as signature
-              IllegalArgumentException("No pools found,"
-                +" no source pools found for pnfsId=" + pnfsId );
+              IllegalArgumentException( selectSourcePoolError
+               +"PnfsManager reported no pools (cacheinfoof) for pnfsId=" + pnfsId );
 
         sourcePoolList.retainAll( allPools );       // pnfs manager knows about them
 
         if (sourcePoolList.size() == 0)
           throw new                    // do not change - initial substring is used as signature
-              IllegalArgumentException("No pools found,"
-                +" no known source pools found for pnfsId=" + pnfsId );
+              IllegalArgumentException( selectSourcePoolError
+               +"there are no resilient pools in the pool list provided by PnfsManager for pnfsId=" + pnfsId );
 
         /** @todo
          *  synchronize on readable pools; currently the copy is used.
@@ -937,16 +991,16 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
 
         if (sourcePoolList.size() == 0)
           throw new                    // do not change - initial substring is used as signature
-              IllegalArgumentException("No pools found,"
-                +" no readable source pools found for pnfsId=" + pnfsId );
+              IllegalArgumentException( selectSourcePoolError
+               +" replica found in resilient pool(s) but the pool is not in online,drainoff or offline-prepare state. pnfsId=" + pnfsId );
 
         List confirmedSourcePoolList = confirmCacheLocationList(pnfsId, sourcePoolList);
 
         //
         if (confirmedSourcePoolList.size() == 0)
           throw new                    // do not change - initial substring is used as signature
-              IllegalArgumentException("No pools found,"
-                +" no readable source pools found confirming pnfsId=" + pnfsId );
+              IllegalArgumentException( selectSourcePoolError
+                +"pools selectable for read did not confirm they have pnfsId=" + pnfsId );
 
         String source = (String) confirmedSourcePoolList.get(
                         _random.nextInt(confirmedSourcePoolList.size()) );
@@ -963,8 +1017,8 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
 
         if (destPools.size() == 0)
           throw new // do not change - initial substring is used as signature
-              IllegalArgumentException("No pools found,"
-                                       +" no writable destination pools found for pnfsId=" + pnfsId );
+              IllegalArgumentException(selectDestinationPoolError
+              +" no pools found in online state and not having listed pnfsId=" + pnfsId );
 
         StorageInfo storageInfo = getStorageInfo( pnfsId ) ;
         long fileSize  = storageInfo.getFileSize();
@@ -982,41 +1036,6 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
 
         return replicatePnfsId( storageInfo, pnfsId, source, destination);
       }
-
-
-      /**
-        *  Creates a new cache copy of the specified pnfsId.
-        */
-
-       /** OBSOLETE
-        *
-       private MoverTask replicatePnfsId( PnfsId pnfsId, String source, String destination )
-
-         throws Exception {
-
-      StorageInfo storageInfo = getStorageInfo( pnfsId ) ;
-
-      say("Sending p2p for "+pnfsId+" "+source+" -> "+destination);
-
-      Pool2PoolTransferMsg req =
-           new Pool2PoolTransferMsg( source , destination ,
-                                     pnfsId , storageInfo   ) ;
-      req.setDestinationFileStatus( Pool2PoolTransferMsg.PRECIOUS ) ;
-
-      CellMessage msg = new CellMessage( new CellPath(destination) , req ) ;
-
-      MoverTask task = new MoverTask( pnfsId , source , destination ) ;
-
-      synchronized( _messageHash ){
-//        dsay("replicatePnfsId: sendMessage p2p, src=" +source + " dest=" +destination);
-        _messageHash.put( msg.getUOID() , task ) ;
-        sendMessage( msg ) ;
-      }
-      return task ;
-
-   }
-   ** end OBSOLETE
-  */
 
    /**
     *  Creates a new cache copy of the specified pnfsId.
@@ -1041,13 +1060,20 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
 
      MoverTask task = new MoverTask(pnfsId, source, destination);
 
+     // Don't even think of it ...
      synchronized (_messageHash) {
- //        dsay("replicatePnfsId: sendMessage p2p, src=" +source + " dest=" +destination);
        sendMessage(msg);
        _messageHash.put(msg.getUOID(), task);
      }
-     return task;
+     /*
+     dsay("movePnfsId: replicatePnfsId AFTER send message, src=" +source + " dest=" +destination
+          +" msg=<"+msg+">");
 
+     UOID idAfter = msg.getUOID();
+     dsay("UOID AFTER =" + idAfter + " pnfsId=" +pnfsId
+          +" is firstDest= " + msg.isFirstDestination() );
+     */
+     return task;
    }
 
    private void getCostTable(CellAdapter cell)
@@ -1160,62 +1186,209 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
    */
    // end cellEventListener Interface
 
-   public void messageArrived( CellMessage msg ) {
+   public void messageArrived(CellMessage msg) {
+
+     dsay( "DCacheCoreController: message arrived. Original msg=" +msg );
+
+     boolean expected = preprocessCellMessage( msg ) ;
+
+     if ( expected ) {
+       /** @todo process exception
+        */
+       try {
+         _msgFifo.put(msg);
+       }
+       catch (InterruptedException ex) {
+         dsay("DCacheCoreController: messageArrived() - ignore InterruptedException");
+       }
+     }
+   }
+
+   protected CellMessage messageQueuePeek() {
+     return _msgFifo.peek();
+   }
+
+   /**
+    * @param msg CellMessage
+    * @return boolean - message recognized and needs further processing
+    */
+
+   public boolean preprocessCellMessage( CellMessage msg ) {
+     String poolName = null;
+     String msgName  = "";
 
      Object obj = msg.getMessageObject() ;
 
-     dsay( "DCacheCoreController: Got CELL message,"  +msg ) ;
+     if( obj == null ) {
+       dsay( "DCacheCoreController: preprocess Cell message null <" +msg +">" ) ;
+       return false;
+     }
 
      if ( _dcccDebug && obj instanceof Object[] ) {
+       dsay( "DCacheCoreController: preprocess Cell message Object[] <" +msg +">" ) ;
        Object[] arr = (Object[]) obj;
        for( int j=0; j<arr.length; j++ ) {
          dsay("msg[" +j+ "]='" +  arr[j].toString() +"'" );
        }
+       return false;
      }
 
+     boolean taskFound = false;
+     boolean msgFound  = true;
+
      if( obj instanceof PnfsAddCacheLocationMessage ){
-       dsay( "DCacheCoreController: Got PnfsAddCacheLocationMessage" ) ;
-       ourCacheLocationModified( (PnfsModifyCacheLocationMessage) obj, true ) ;
-       return ;
-     }else if( obj instanceof PnfsClearCacheLocationMessage ){
-       dsay( "DCacheCoreController: Got PnfsClearCacheLocationMessage" ) ;
-       ourCacheLocationModified( (PnfsModifyCacheLocationMessage) obj, false ) ;
+       msgName  =  "PnfsAddCacheLocationMessage";
+       PnfsAddCacheLocationMessage paclm = (PnfsAddCacheLocationMessage)obj;
+       poolName = paclm.getPoolName() ;
+       dsay( "DCacheCoreController: preprocess Cell message PnfsAddCacheLocationMessage <" + paclm +">" ) ;
+     }
+     else if( obj instanceof PnfsClearCacheLocationMessage ){
+       msgName  =  "PnfsClearCacheLocationMessage";
+       PnfsClearCacheLocationMessage pcclm = (PnfsClearCacheLocationMessage)obj;
+       poolName = pcclm.getPoolName() ;
+       dsay( "DCacheCoreController: preprocess Cell message PnfsClearCacheLocationMessage <" +pcclm +">" ) ;
+     }
+     else if( obj instanceof PoolStatusChangedMessage ){
+       msgName  =  "PoolStatusChangedMessage";
+       PoolStatusChangedMessage pscm = (PoolStatusChangedMessage)obj;
+       poolName = pscm.getPoolName() ;
+       dsay( "DCacheCoreController: preprocess Cell message PoolStatusChangedMessage <" +pscm +">" ) ;
+     }
+     else if ( obj instanceof PoolRemoveFilesMessage ) {
+       msgName  =  "PoolRemoveFilesMessage";
+       PoolRemoveFilesMessage prmf = (PoolRemoveFilesMessage)obj;
+       dsay( "DCacheCoreController: preprocess Cell message PoolRemoveFilesMessage <" +prmf +">" ) ;
+     } else {
+       msgFound  = false;
+
+       // Check message has associated task waiting
+       /**
+       UOID idAfter = msg.getLastUOID();
+       dsay("UOID CHECK =" + idAfter );
+       */
+       taskFound = _messageHash.containsKey( msg.getLastUOID() );
+     }
+
+     // DEBUG
+     //
+     if ( obj instanceof Pool2PoolTransferMsg ) {
+       Pool2PoolTransferMsg m = (Pool2PoolTransferMsg) obj;
+       dsay( "DCacheCoreController: preprocess DUMP Cell message Pool2PoolTransferMsg "
+             +m + " isReply=" +m.isReply()
+             + " id=" +m.getId() ) ;
+     }
+
+     /**
+      * @todo
+      * validate early pool name is on resilient pools list
+      */
+     dsay( "DCacheCoreController: preprocess Cell message. msgFound=" +msgFound
+     +" taskFound="+taskFound +" msg uiod O=" + msg.getLastUOID() );
+
+     if ( ! (msgFound || taskFound) )  {
+       esay( "DCacheCoreController: preprocess Cell message - ignore unexpected message "
+           + msg ) ;
+     }
+
+     return (msgFound || taskFound );
+   }
+
+   /**
+    *
+    * @param msg CellMessage
+    */
+
+   private void processCellMessage( CellMessage msg ) {
+
+     final int maxAddListSize = 1023; // Max # of accumulated "add" messages
+     LinkedList<PnfsAddCacheLocationMessage> l = _cachedPnfsAddCacheLocationMessage;
+
+     Object obj = msg.getMessageObject();
+
+     CellMessage nextMsg = messageQueuePeek();
+     Object      nextObj = (nextMsg == null) ? null
+         : nextMsg.getMessageObject();
+
+     boolean isPnfsAddCacheLocationMessage = (obj instanceof
+                                              PnfsAddCacheLocationMessage);
+     boolean nextPnfsAddCacheLocationMessage = (nextObj != null) &&
+         (nextObj instanceof PnfsAddCacheLocationMessage);
+
+     dsay("DCacheCoreController: process queued CellMessage. Before adding msg="
+         + msg + " qsize="+l.size() +" next=" +  nextPnfsAddCacheLocationMessage );
+
+     // Process PnfsAddCacheLocationMessage
+
+     if ( isPnfsAddCacheLocationMessage )
+       l.add( (PnfsAddCacheLocationMessage)obj );
+
+     // Process accumulated "add" messages when
+     //   - current message is not "entry added ti the pool"
+     //   - there is no next message in the queue
+     //   -   or next message is different then "add"
+     //   - too many messages accumulated
+
+     if ( ! isPnfsAddCacheLocationMessage
+      ||  ! nextPnfsAddCacheLocationMessage
+      || ( l.size() >= maxAddListSize ) ) {
+       if( l.size() != 0 ) {
+         dsay("DCacheCoreController: process queued CellMessage. Flush queue qsize="+l.size() );
+         processPnfsAddCacheLocationMessage( l );
+         l.clear();
+       }
+     }
+
+     if ( isPnfsAddCacheLocationMessage )
+       return;
+
+     // end PnfsAddCacheLocationMessage processing
+
+
+     if( obj instanceof PnfsClearCacheLocationMessage ){
+       processPnfsClearCacheLocationMessage( (PnfsClearCacheLocationMessage) obj ) ;
        return ;
      }
 
      if( obj instanceof PoolStatusChangedMessage ){
-       dsay( "DCacheCoreController: Got PoolStatusChangedMessage, " + msg ) ;
-       poolStatusChanged( (PoolStatusChangedMessage) obj );
+       processPoolStatusChangedMessage( (PoolStatusChangedMessage) obj );
        return ;
-     }else if ( obj instanceof PoolRemoveFilesMessage ) {
-       dsay( "DCacheCoreController: Got PoolRemoveFilesMessage, " + msg ) ;
-       poolRemoveFiles( (PoolRemoveFilesMessage) obj );
-       return ;
-     } else{
-       say( "DCacheCoreController: Got CellMessage, remove task from messageHash" + msg );
      }
+
+     if ( obj instanceof PoolRemoveFilesMessage ) {
+       processPoolRemoveFiles( (PoolRemoveFilesMessage) obj );
+       return ;
+     }
+
+     TaskObserver task = null;
+
+     /** DEBUG
+     UOID idAfter = msg.getLastUOID();
+     dsay("UOID REMOVE =" + idAfter );
+     */
 
      synchronized( _messageHash ){
-       TaskObserver task = (TaskObserver)_messageHash.remove( msg.getLastUOID() ) ;
-       if( task != null )
-         task.messageArrived( msg ) ;
-       else{
-         esay( "DCacheCoreController: " +
-              "task was not found in the messageHash for the CellMessage (msg ignored) " + msg );
-         dsay("ignored message=["+msg+"]");
-       }
+       task = (TaskObserver)_messageHash.remove( msg.getLastUOID() ) ;
+     }
+
+     if( task != null ) {
+       dsay( "DCacheCoreController: process CellMessage, task found for UOID=" + msg.getLastUOID() );
+       task.messageArrived(msg);
+     }
+     else{
+       esay( "DCacheCoreController: processCellMessage() - ignore message, task not found " +
+             "message=["+msg+"]");
      }
    }
 
    // Placeholder - This method can be overriden
-   protected void poolStatusChanged( PoolStatusChangedMessage msg ) {
-     dsay( "DCacheCoreController: default poolStatusChanged(...) called" ) ;
+   protected void processPoolStatusChangedMessage( PoolStatusChangedMessage msg ) {
+     dsay( "DCacheCoreController: default processPoolStatusChangedMessage() called for" + msg ) ;
    }
 
    // Placeholder - This method can be overriden
-   protected void poolRemoveFiles( PoolRemoveFilesMessage msg )
+   protected void processPoolRemoveFiles( PoolRemoveFilesMessage msg )
    {
-     dsay( "DCacheCoreController: default PoolRemoveFilesMessage(...) called" ) ;
+     dsay( "DCacheCoreController: default processPoolRemoveFilesMessage() called" ) ;
      String poolName     = msg.getPoolName();
      String filesList[]  = msg.getFiles();
      String stringPnfsId = null;
@@ -1238,42 +1411,37 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
      }
    }
 
-   private void ourCacheLocationModified(
-         PnfsModifyCacheLocationMessage msg ,
-         boolean wasAdded ){
-        PnfsId _pnfsId = null ;
-        String _poolName = null ;
-        String _key = null;
+   private void processPnfsAddCacheLocationMessage(PnfsAddCacheLocationMessage msg)
+   {
+     cacheLocationModified(msg, true);
+   }
 
-        cacheLocationModified(msg, wasAdded);
+   private void processPnfsAddCacheLocationMessage(List<PnfsAddCacheLocationMessage> ml)
+   {
+     cacheLocationAdded(ml);
+   }
 
-       // Only for PnfsClearCacheLocationMessage
+   private void processPnfsClearCacheLocationMessage( PnfsModifyCacheLocationMessage msg )
+   {
+     String poolName = msg.getPoolName();
+     PnfsId pnfsId   = msg.getPnfsId();
+     String key      = pnfsId.getId() + "@" + poolName;
 
-       if (wasAdded == false) {
-         _poolName = msg.getPoolName();
-         _pnfsId   = msg.getPnfsId();
-         _key = _pnfsId.getId() + "@" + _poolName;
+     cacheLocationModified(msg, false); // wasAdded=false, replica removed
 
-         synchronized (_modificationHash) {
-           ReductionObserver o = (ReductionObserver) _modificationHash.get(_key);
-           dsay("ourCacheLocationModified:: \n"
-               + " pool=" + _poolName + " wasAdded=" + wasAdded + "\n"
-               + " TaskObserver=[" + o + "]\n"
-               + " msg=[" + msg + ";pool=" + _poolName + "]");
-
-           if (o != null){
-             // Filter out async msgs which may come from Cleaner,
-             // for the same pool and different pnfsId
-             PnfsId pnfsId = msg.getPnfsId();
-             if (o.getPnfsId().equals( pnfsId ) )
-               o.messageArrived(msg);
-           }
-         }
-       }
+     synchronized (_modificationHash) {
+       ReductionObserver o = (ReductionObserver) _modificationHash.get(key);
+       dsay("processPnfsClearCacheLocationMessage() : TaskObserver=<" + o +
+            ">;msg=[" + msg + "]");
+       // Filter out async msgs triggered replica removals by Cleaner
+       // for the same pool and different pnfsId
+       if (o != null && o.getPnfsId().equals(pnfsId) )
+         o.messageArrived(msg);
+     }
    }
 
    /**
-     *  Called whenever a file cache location changes.
+     *  Obsolete : Called whenever a file cache location changes.
      * <pre>
      *    public void cacheLocationModified(
      *           PnfsModifyCacheLocationMessage msg , boolean wasAdded ){
@@ -1284,9 +1452,25 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
      *    }
      * </pre>
      */
-   abstract public
-            void cacheLocationModified(
-                 PnfsModifyCacheLocationMessage msg , boolean wasAdded ) ;
+    abstract public
+        void cacheLocationModified(
+          PnfsModifyCacheLocationMessage msg , boolean wasAdded ) ;
+
+    /**
+     *  Called whenever a file cache location changes - add message
+     * <pre>
+     *    public void cacheLocationAdded(
+     *           List<PnfsAddCacheLocationMessage> ml ){
+     *      Iterate throught list :
+     *      msg = ml.next();
+     *      PnfsId pnfsId   = msg.getPnfsId() ;
+     *      String poolName = msg.getPoolName() ;
+     *                 ...
+     *    }
+     * </pre>
+     */
+    abstract public
+        void cacheLocationAdded( List<PnfsAddCacheLocationMessage> ml );
 
    /**
      *  Called whenever a Task finished.
@@ -1312,7 +1496,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
      *  @throws MissingResourceException if the PoolManager is not available, times out or
      *          returns an illegal Object.
      *  @throws java.io.NotSerializableException in case of an assertion.
-     *  @throws NoRouteToCellException if the cell environment couldn't find the PoolManager.
+     *  @throws NoRouteToCellException if the cell environment couldn't find the PnfsManager.
      *  @throws InterruptedException if the method was interrupted.
      *
      */
@@ -1348,7 +1532,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
          if( msg.getReturnCode() == CacheException.FILE_NOT_FOUND ) {
            throw new
                MissingResourceException(
-                   "Pnfs File not found :" + msg.getErrorObject().toString() ,
+                   "Pnfs File not found : " + msg.getErrorObject().toString() ,
                    "PnfsManager",
                    "PnfsGetStorageInfoMessage" ) ;
          }
@@ -1421,7 +1605,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
 
            throw new
                MissingResourceException(
-                   "Pnfs File not found :" + msg.getErrorObject().toString() ,
+                   "Pnfs File not found : " + msg.getErrorObject().toString() ,
                    "PnfsManager",
                    "PnfsGetCacheLocationsMessage" ) ;
          } else {

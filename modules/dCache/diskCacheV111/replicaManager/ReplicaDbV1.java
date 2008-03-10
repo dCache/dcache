@@ -43,7 +43,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
     /**
      * Class constructor opens connection to the database and creates a
      * statement for queries
-     * @throws SQLException 
+     * @throws SQLException
      */
     public ReplicaDbV1(CellAdapter cell, boolean keep) throws SQLException {
 
@@ -63,7 +63,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
 
     /**
      * Class constructor
-     * @throws SQLException 
+     * @throws SQLException
      */
     public ReplicaDbV1(CellAdapter cell) throws SQLException {
         this(cell, false);
@@ -114,11 +114,13 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             // This error string is system dependent or even version dependent:
             if (exMsg.startsWith("ERROR:  Cannot insert a duplicate key into unique index replica")
                     || exMsg.startsWith("ERROR: duplicate key violates unique constraint")) {
+              ; // noop
+              /** do nothing
                 String s = exMsg.substring(5);
                 say("WARNING" + s + "; caused by duplicate message, ignore for now. pnfsid=" + pnfsId.toString() + " pool="
                         + poolName);
                 ignoredSQLException("addPool()", (SQLException) ex, sql);
-
+               */
             } else {
                 ex.printStackTrace();
                 esay("Database access error");
@@ -128,7 +130,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
                 try { stmt.close(); stmt = null; } catch (SQLException e) { }
                 try { conn.close(); } catch (SQLException e) { }
             }
-           
+
         }
     }
 
@@ -168,10 +170,12 @@ public class ReplicaDbV1 implements ReplicaDb1 {
                     // dependent:
                     if (exMsg.startsWith("ERROR:  Cannot insert a duplicate key into unique index replica")
                      || exMsg.startsWith("ERROR: duplicate key violates unique constraint")) {
-                        String s = exMsg.substring(5);
-                        say("WARNING" + s + "; caused by duplicate message, ignore for now. pnfsid=" + pnfsId + " pool=" + poolName);
-                        ignoredSQLException("addPool()", (SQLException) ex, sql);
-
+                      ; // noop
+                      /*
+                      String s = exMsg.substring(5);
+                      say("WARNING" + s + "; caused by duplicate message, ignore for now. pnfsid=" + pnfsId + " pool=" + poolName);
+                      ignoredSQLException("addPool()", (SQLException) ex, sql);
+                      */
                     } else {
                         ex.printStackTrace();
                         esay("Database access error");
@@ -309,7 +313,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
         public void remove() {
             throw new UnsupportedOperationException("No remove");
         }
-        
+
         public void close() {
             try { rset.close(); rset = null; } catch (SQLException e) { }
             try { stmt.close(); stmt = null; } catch (SQLException e) { }
@@ -343,7 +347,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
 
     /*
      * Returns all PNFSIDs from the DB
-     * 
+     *
      * @deprecated
      */
     public Iterator pnfsIds() {
@@ -371,7 +375,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
 
     /*
      * Returns all PNFSIDs for the given pool from the DB.
-     * 
+     *
      * @deprecated
      */
     public Iterator pnfsIds(String poolName) {
@@ -404,7 +408,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
 
         /**
          * Returns all pools from the DB
-         * 
+         *
          * @throws SQLException
          */
         private PoolsIterator() throws SQLException {
@@ -415,7 +419,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
 
         /**
          * Returns all pools for given pnfsid from the DB
-         * 
+         *
          * @throws SQLException
          */
         private PoolsIterator(PnfsId pnfsId) throws SQLException {
@@ -454,7 +458,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
     private class PoolsWritableIterator extends DbIterator {
         /**
          * Returns Writable pools from the DB
-         * 
+         *
          * @throws SQLException
          */
         private PoolsWritableIterator() throws SQLException {
@@ -480,7 +484,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
     private class PoolsReadableIterator extends DbIterator {
         /**
          * Returns Readable pools from the DB
-         * 
+         *
          * @throws SQLException
          */
         private PoolsReadableIterator() throws SQLException {
@@ -537,7 +541,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
 
     /**
      * Clears pools and replicas tables for the pool 'pool' in argument
-     * 
+     *
      * @throws SQLException
      *                 if can not remove pool from DB
      */
@@ -714,7 +718,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
 
     /**
      * Set the value of pool status.
-     * 
+     *
      * @param poolName
      *                Pool name.
      * @param poolStatus
@@ -749,7 +753,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
 
     /**
      * Get the value of pool status.
-     * 
+     *
      * @return value of pool status.
      */
     public String getPoolStatus(String poolName) {
@@ -791,7 +795,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
         else
             poolName = "exclude";
 //      poolName = (count==0) ? "exclude" : ((count > 0) ? "replicate" : "reduce");
-            
+
         final String sql = "INSERT INTO action VALUES ('" + poolName + "','" + pnfsId.toString() + "',now()," + timestamp + ")";
 
         try {
@@ -815,7 +819,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
     public void addExcluded(PnfsId pnfsId, long timestamp, String errcode, String errmsg) {
         Connection conn = null;
         Statement  stmt = null;
-            
+
         final String sql = "INSERT INTO action VALUES ('exclude','" + pnfsId.toString() + "',now()," + timestamp +
                             ",'"+errcode+"'" + ",'"+errmsg + "')";
 
@@ -855,7 +859,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             }
         }
     }
-    
+
     /**
      * Release excluded files from action table with timestamp older than "timesatamp"
      */
@@ -936,7 +940,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
 
     /*
      * Return the list of PNFSIDs which are older than 'timestamp'
-     * 
+     *
      * @deprecated
      */
     public Iterator pnfsIds(long timestamp) {
@@ -987,21 +991,21 @@ public class ReplicaDbV1 implements ReplicaDb1 {
     private class getDrainingIterator extends DbIterator {
 
         private getDrainingIterator() throws SQLException {
-            String sql = "SELECT rd.pnfsid " + 
-            "FROM ONLY replicas rd, pools pd " + 
-            "WHERE rd.pool = pd.pool AND pd.status = '" + DRAINOFF + "' " + 
-            "GROUP BY rd.pnfsid " + 
-            "EXCEPT " + 
-            "SELECT r.pnfsid " + 
+            String sql = "SELECT rd.pnfsid " +
+            "FROM ONLY replicas rd, pools pd " +
+            "WHERE rd.pool = pd.pool AND pd.status = '" + DRAINOFF + "' " +
+            "GROUP BY rd.pnfsid " +
+            "EXCEPT " +
+            "SELECT r.pnfsid " +
             "FROM (" +
             "       SELECT rr.pnfsid FROM ONLY replicas rr, pools pp " +
             "       WHERE rr.pool = pp.pool  AND pp.status = '" + DRAINOFF + "' " +
             "       GROUP BY rr.pnfsid" +
-            "     ) r, " + 
+            "     ) r, " +
             "     ONLY replicas r1, " + "     pools p1 " + "WHERE r.pnfsid  = r1.pnfsid" +
-            " AND  p1.pool   = r1.pool" + 
+            " AND  p1.pool   = r1.pool" +
             " AND  ( p1.status = '" + ONLINE + "' " +
-            "     OR r.pnfsid IN (SELECT pnfsid FROM action) ) " + 
+            "     OR r.pnfsid IN (SELECT pnfsid FROM action) ) " +
             "GROUP BY r.pnfsid";
             stmt = conn.createStatement();
             rset = stmt.executeQuery(sql);
@@ -1053,7 +1057,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
     }
 
     /**
-     * 
+     *
      */
     public void setHeartBeat(String name, String desc) {
         Connection conn = null;
@@ -1081,7 +1085,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
     }
 
     /**
-     * 
+     *
      */
     public void removeHeartBeat(String name) {
         Connection conn = null;
@@ -1125,7 +1129,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
         System.out.println("The class of " + obj + " is " + obj.getClass().getName());
     }
 
-    
+
 //    /*
 //     * Setup method for Primrose Connection Pool
 //     * @param poolname
@@ -1150,14 +1154,14 @@ public class ReplicaDbV1 implements ReplicaDb1 {
 //            e.printStackTrace();
 //        }
 //    }
-    
+
 //    private final static void d(String op) {
 //        System.out.println(op+": getNumActive: "+((GenericObjectPool) connectionPool).getNumActive()+" getNumIdle: "+((GenericObjectPool) connectionPool).getNumIdle());
 //    }
-    
+
     /**
      * Setup method to create connection to the database and the datasource
-     * 
+     *
      * @param connectURI
      * @param jdbcClass
      * @param user
@@ -1200,7 +1204,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
                          300000);
 
 
-        
+
         final ConnectionFactory connectionFactory = new DriverManagerConnectionFactory(connectURI, user, password);
 
         // Create InvocationHandler
@@ -1218,12 +1222,12 @@ public class ReplicaDbV1 implements ReplicaDb1 {
         //                                String validationQuery,
         //                                boolean defaultReadOnly,
         //                                boolean defaultAutoCommit)
-        final PoolableConnectionFactory poolableConnectionFactory = 
-            new PoolableConnectionFactory(proxyConnectionFactory, 
+        final PoolableConnectionFactory poolableConnectionFactory =
+            new PoolableConnectionFactory(proxyConnectionFactory,
                                           connectionPool,
                                           new StackKeyedObjectPoolFactory(), // null,
-                                          "select current_date", 
-                                          false, 
+                                          "select current_date",
+                                          false,
                                           true);
         final PoolingDataSource dataSource = new PoolingDataSource(connectionPool);
 //        ((GenericObjectPool) connectionPool).setTestOnBorrow(true);
@@ -1240,8 +1244,8 @@ public class ReplicaDbV1 implements ReplicaDb1 {
         DATASOURCE = dataSource;
     }
 
-   
-    public static void main(String[] args) throws SQLException 
+
+    public static void main(String[] args) throws SQLException
     {
         System.out.println("Test ReplicaDbV1, cvsId=" + _cvsId);
 
