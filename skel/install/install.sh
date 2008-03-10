@@ -68,6 +68,7 @@ do
     MatchLine="${CursorLine%%"\\"}\\"
     RET="$RET ${CursorLine%%"\\"}"
 done
+RET=`echo $RET | sed 's/^[ \t]*\"\([^"]*\)\"[ \t]*$/\1/'`
 }
 
 
