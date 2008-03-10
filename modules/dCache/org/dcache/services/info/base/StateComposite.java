@@ -103,7 +103,7 @@ public class StateComposite implements StateComponent {
 	 * no Mortal children.
 	 */
 	public Date getEarliestChildExpiryDate() {
-		return _earliestChildExpiry;
+		return _earliestChildExpiry != null ? new Date(_earliestChildExpiry.getTime()) : null;
 	}
 	
 
@@ -142,7 +142,7 @@ public class StateComposite implements StateComponent {
 	 * When we should expire.
 	 */
 	public Date getExpiryDate() {
-		return _whenIShouldExpire;
+		return _whenIShouldExpire != null ? new Date( _whenIShouldExpire.getTime()) : null;
 	}
 	
 	/**
