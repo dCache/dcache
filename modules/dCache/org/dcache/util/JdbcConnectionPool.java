@@ -57,6 +57,7 @@ public class JdbcConnectionPool {
     String jdbcClass,
     String user,
     String pass) throws SQLException {
+        if(pass == null) pass="";
         long starttimestamp = System.currentTimeMillis();
         for (Iterator i = pools.iterator();
         i.hasNext();) {
