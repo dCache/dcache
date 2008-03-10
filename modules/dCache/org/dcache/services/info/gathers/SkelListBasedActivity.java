@@ -1,10 +1,10 @@
 package org.dcache.services.info.gathers;
 
 import java.util.Date;
-import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
 
+import org.apache.log4j.Logger;
 import org.dcache.services.info.base.StatePath;
 import org.dcache.services.info.stateInfo.*;
 
@@ -28,6 +28,9 @@ import org.dcache.services.info.stateInfo.*;
  * @author Paul Millar <paul.millar@desy.de>
  */
 abstract class SkelListBasedActivity implements Schedulable {
+	
+	private static final Logger _log = Logger.getLogger( SkelListBasedActivity.class);
+
 
 	/** Minimum time between fetching a fresh list (or querying the same list-item), in milliseconds */
 	private static final int MINIMUM_LIST_REFRESH_PERIOD = 60000;
@@ -45,10 +48,10 @@ abstract class SkelListBasedActivity implements Schedulable {
 	private Date _nextSendMsg = new Date(); 
 
 	/** Our collection of to-be-done work */
-	private Stack<String> _outstandingWork;
+	private final Stack<String> _outstandingWork = new Stack<String>();
 
 	/** The StatePath pointing to the parent who's children we want to iterate over */
-	private StatePath _parentPath;
+	private final StatePath _parentPath;
 
 	
 	/**
@@ -57,7 +60,7 @@ abstract class SkelListBasedActivity implements Schedulable {
 	 * @param parentPath all list items must satisfy parentPath.isParentOf(item)
 	 */
 	protected SkelListBasedActivity (  StatePath parentPath) {
-		_outstandingWork = new Stack<String>();
+
 		_parentPath = parentPath;
 
 		updateStack();  // Bring in initial work.
@@ -72,8 +75,7 @@ abstract class SkelListBasedActivity implements Schedulable {
 	 *  @returns the desired time we should next be triggered. 
 	 */
 	public Date shouldNextBeTriggered() {
-		long millis = _outstandingWork.isEmpty() ? _whenListRefresh.getTime() : _nextSendMsg.getTime();
-		return new Date( millis);
+		return _outstandingWork.isEmpty() ? _whenListRefresh : _nextSendMsg;
 	}
 
 	
@@ -117,6 +119,11 @@ abstract class SkelListBasedActivity implements Schedulable {
 		
 		for( String item : items)
 			_outstandingWork.add( item);
+		
+		if( _log.isDebugEnabled()) {
+			_log.debug( "fresh todo list obtained for " + this.getClass().getSimpleName());
+			_log.debug("list now contains " + _outstandingWork.size() + " items");
+		}
 	}
 	
 	
@@ -130,7 +137,7 @@ abstract class SkelListBasedActivity implements Schedulable {
 		
 		return _outstandingWork.pop();
 	}
-	
+
 	
 	/**
 	 * @return an appropriate lifetime for a metric, in seconds.

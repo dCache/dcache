@@ -29,7 +29,7 @@ public class SingleMessageDga extends SkelPeriodicActivity {
 	private CellPath _cp;
 	private String _requestString;
 	private Message _requestMessage;
-	private CellMessageHandler _handler;
+	private CellMessageAnswerable _handler;
 	private MessageHandlerChain _msgHandlerChain = InfoProvider.getInstance().getMessageHandlerChain();
 
 	/**
@@ -38,7 +38,7 @@ public class SingleMessageDga extends SkelPeriodicActivity {
 	 * @param request the message string,
 	 * @param interval how often (in seconds) this should be sent.
 	 */
-	public SingleMessageDga( String cellName, String request, CellMessageHandler handler, long interval)
+	public SingleMessageDga( String cellName, String request, CellMessageAnswerable handler, long interval)
 	{
 		super( interval);
 		

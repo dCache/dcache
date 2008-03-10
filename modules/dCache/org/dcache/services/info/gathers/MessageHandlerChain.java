@@ -2,6 +2,7 @@ package org.dcache.services.info.gathers;
 
 import java.util.*;
 
+import org.apache.log4j.Logger;
 import org.dcache.services.info.InfoProvider;
 
 import diskCacheV111.vehicles.Message;
@@ -20,15 +21,10 @@ import dmg.cells.nucleus.*;
  * @author Paul Millar <paul.millar@desy.de>
  */
 public class MessageHandlerChain {
-	
+
+	private static final Logger _log = Logger.getLogger( MessageHandlerChain.class);
+
 	private List<MessageHandler> _messageHandler = new LinkedList<MessageHandler>();
-	
-	/**
-	 * Following variable stores association between out-going msg UOID and a handler to process
-	 * reply message payload.
-	 * @deprecated this is ugly and should be replaced by vehicles (subclasses of Message)
-	 */
-	private Map<UOID,CellMessageHandler> _cellMsgHandlerLookup= new HashMap<UOID,CellMessageHandler>();
 	
 	/**
 	 * For each message we send, a small amount of metadata is recorded (when it was sent and a long).
@@ -45,7 +41,7 @@ public class MessageHandlerChain {
 		}
 	}
 	
-	private Map<UOID,MessageMetadata> _msgMetadata = new HashMap<UOID,MessageMetadata>();
+	private Map<CellMessage,MessageMetadata> _msgMetadata = new HashMap<CellMessage,MessageMetadata>();
 	
 	
 	/**
@@ -78,17 +74,15 @@ public class MessageHandlerChain {
 	 * @param handler the call-back handler for the return message
 	 * @param ttl lifetime of resulting metric, in seconds.
 	 */
-	protected void sendCellMsg( CellPath path, String requestString, CellMessageHandler handler, long ttl) {
-		CellMessage msg = new CellMessage( path, requestString);
-
-		sendMessage( msg, ttl);
+	protected void sendCellMsg( CellPath path, String requestString, CellMessageAnswerable handler, long ttl) {
 		
-		/**
-		 *  We must register the handle *after* sending the message as the UOID may (in this case,
-		 *  will always) be altered.  This introduces a race-condition, but is unavoidable with
-		 *  current cell comms.
-		 */ 
-		_cellMsgHandlerLookup.put( msg.getUOID(), handler);
+		if( handler == null) {
+			_log.error( "ignoring attempt to send string-based message without call-back");
+			return;
+		}
+		
+		CellMessage envelope = new CellMessage( path, requestString);
+		sendMessage( envelope, ttl, handler);
 	}
 	
 	
@@ -100,7 +94,7 @@ public class MessageHandlerChain {
 	 */
 	protected void sendMessage( CellPath path, Message msg, long ttl) {
 		CellMessage envelope = new CellMessage( path, msg);
-		sendMessage( envelope, ttl);		
+		sendMessage( envelope, ttl, null);		
 	}
 	
 	
@@ -108,22 +102,46 @@ public class MessageHandlerChain {
 	 * Send a message envelope and record metadata against it.
 	 * @param envelope the message to send
 	 * @param ttl the metadata for the message
+	 * @param handler the call-back for this method, or null if none should be used.
 	 */
-	private void sendMessage( CellMessage envelope, long ttl) {
-		InfoProvider.getInstance().sendMessage( envelope);
-		_msgMetadata.put( envelope.getUOID(), new MessageMetadata( ttl));
+	private void sendMessage( CellMessage envelope, long ttl, CellMessageAnswerable handler) {
+		if( handler == null)
+			InfoProvider.getInstance().sendMessage( envelope);
+		else
+			InfoProvider.getInstance().sendMessage( envelope, handler);
+		
+		_msgMetadata.put( envelope, new MessageMetadata( ttl));
 	}
 	
 	
 	/**
-	 * Process an incoming message using registered MessageHandlers
+	 * Look up a CellMessage to see how long the metrics should last.
+	 * @param sentMessage the CellMessage sent
+	 * @return the recommended lifetime for generated metrics, or zero if no record could be found.
+	 */
+	protected long getMetricLifetime( CellMessage sentEnvelope) {
+		long ttl = 0;
+		
+		MessageMetadata mm = _msgMetadata.get( sentEnvelope);
+
+		if( mm != null) {
+			ttl = mm._ttl;
+			_msgMetadata.remove( sentEnvelope);
+		}		
+		
+		return ttl;
+	}
+	
+	
+	/**
+	 * Process an incoming message using registered MessageHandlers.
 	 * @param msg the incoming message's payload
 	 * @return true if the message was handled, false otherwise.
 	 */
 	public boolean handleMessage( CellMessage msg) {
 		
 		long ttl = 0;
-		
+				
 		MessageMetadata mm = _msgMetadata.get(msg.getLastUOID());
 		if( mm != null) {
 			ttl = mm._ttl;
@@ -132,43 +150,17 @@ public class MessageHandlerChain {
 		
 		Object messagePayload = msg.getMessageObject();
 		
-		if( messagePayload instanceof Message)
-			return handleVehicleMessage( (Message) messagePayload, ttl);
-		
-		/**
-		 * Deal with some damn awkward, ugly, ugly, existing code.
-		 * 
-		 * We are forced to record our CellMessage UIDs to figure out what to do with the
-		 * corresponding reply CellMessage.
-		 * 
-		 * TODO: replace this with type-safe transports (i.e. subclasses of Message)
-		 */
-		CellMessageHandler handler = _cellMsgHandlerLookup.get(msg.getLastUOID());
-		
-		if( handler != null) {
-			handler.process( messagePayload, ttl);
-			_cellMsgHandlerLookup.remove(msg.getLastUOID());
-			return true;
-		}
-		
-		return false;
-	}
-	
-	/**
-	 * Handle an incoming message that is of a specific Vehicle.
-	 * @param msg  the incoming message Message
-	 * @param delay the expected time, in seconds, until next delivery of msg
-	 * @return true if the Message was successfully processed. 
-	 */
-	private boolean handleVehicleMessage( Message msg, long delay) {
-		
+		if( !(messagePayload instanceof Message))
+			return false;
+
 		for( Iterator<MessageHandler> itr = _messageHandler.iterator(); itr.hasNext();) {
 			MessageHandler mh = itr.next();
 			
-			if( mh.handleMessage( msg, delay))
+			if( mh.handleMessage( (Message) messagePayload, ttl))
 				return true;
 		}
 		
 		return false;		
-	}	
+	}
+	
 }

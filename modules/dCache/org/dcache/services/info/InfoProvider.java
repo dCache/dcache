@@ -14,6 +14,9 @@ import org.dcache.services.info.secondaryInfoProviders.*;
 public class InfoProvider extends CellAdapter {
 	
 	private static Logger _log = Logger.getLogger(InfoProvider.class);
+	
+	/** Our default timeout for sending messages, in milliseconds */
+	private static final long STANDARD_TIMEOUT = 1000;
 
 	
 	private static InfoProvider _instance=null;
@@ -213,7 +216,21 @@ public class InfoProvider extends CellAdapter {
 			_log.warn( "Problem sending msg: ", e);
 		}
 	}
-	
+
+	/**
+	 * Override the CellAdapter default sendMessage() so we simply display
+	 * an error message if we get an exception
+	 * @param msg
+	 * @param callback
+	 */
+	public void sendMessage( CellMessage msg, CellMessageAnswerable callback) {
+		try { 
+			super.sendMessage(msg, callback, STANDARD_TIMEOUT);
+		} catch(Exception e ) {
+			_log.warn( "Problem sending msg: ", e);
+		}
+	}
+
 	
 	/**
 	 *   S E R I A L I S E R S

@@ -3,7 +3,8 @@ package org.dcache.services.info.gathers;
 import org.dcache.services.info.InfoProvider;
 import org.dcache.services.info.base.*;
 
-import dmg.cells.nucleus.CellPath;
+import dmg.cells.nucleus.*;
+
 
 /**
  * This class sends a series of messages based on the current state tree.
@@ -16,14 +17,15 @@ import dmg.cells.nucleus.CellPath;
  */
 public class ListBasedMessageDga extends SkelListBasedActivity {
 
-	private CellPath _cp;
-	private String _messagePrefix;
-	private CellMessageHandler _handler;
-	private MessageHandlerChain _msgHandlerChain = InfoProvider.getInstance().getMessageHandlerChain();
+	private final CellPath _cellPath;
+	private final String _messagePrefix;
+	private final CellMessageAnswerable _handler;
+	
+	private final MessageHandlerChain _msgHandlerChain = InfoProvider.getInstance().getMessageHandlerChain();
 	
 	/* The following two are only needed for toString() */
-	private String _cellName;
-	private String _parentPath;
+	private final String _cellName;
+	private final String _parentPath;
 	
 	
 	/**
@@ -33,7 +35,7 @@ public class ListBasedMessageDga extends SkelListBasedActivity {
 	 * @param message the message to send.
 	 * @param handler the cell handler for the return msg payload.
 	 */
-	public ListBasedMessageDga( StatePath parent, String cellName, String message, CellMessageHandler handler) {
+	public ListBasedMessageDga( StatePath parent, String cellName, String message, CellMessageAnswerable handler) {
 		
 		super( parent);
 		
@@ -42,7 +44,7 @@ public class ListBasedMessageDga extends SkelListBasedActivity {
 		_messagePrefix = message;
 		_handler = handler;
 		
-		_cp = new CellPath( cellName);
+		_cellPath = new CellPath( cellName);
 	}
 	
 
@@ -56,15 +58,15 @@ public class ListBasedMessageDga extends SkelListBasedActivity {
 		String item = getNextItem();
 
 		// Only null if there's nothing under _parentPath in dCache.
-		if( item != null) {
+		if( item == null)
+			return;
 			
-			StringBuffer sb = new StringBuffer();
-			sb.append(_messagePrefix);
-			sb.append( " ");
-			sb.append( item);
+		StringBuffer sb = new StringBuffer();
+		sb.append(_messagePrefix);
+		sb.append( " ");
+		sb.append( item);
 
-			_msgHandlerChain.sendCellMsg( _cp, sb.toString(), _handler, getMetricLifetime());
-		}
+		_msgHandlerChain.sendCellMsg( _cellPath, sb.toString(), _handler, getMetricLifetime());
 	}
 	
 	

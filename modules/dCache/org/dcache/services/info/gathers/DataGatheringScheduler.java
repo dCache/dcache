@@ -2,6 +2,8 @@ package org.dcache.services.info.gathers;
 
 import java.util.*;
 
+
+
 import org.apache.log4j.Logger;
 import org.dcache.services.info.base.*;
 
@@ -362,7 +364,7 @@ public class DataGatheringScheduler implements Runnable {
 
 		addActivity( new SingleMessageDga( "PoolManager", "psux ls link -x -resolve", new LinkInfoMsgHandler(), 60));
 
-		CellMessageHandler msgHandler = new LoginBrokerLsMsgHandler();
+		LoginBrokerLsMsgHandler msgHandler = new LoginBrokerLsMsgHandler();
 		addActivity( new SingleMessageDga( "LoginBroker",     "ls -binary", msgHandler, 60));
 		addActivity( new SingleMessageDga( "srm-LoginBroker", "ls -binary", msgHandler, 60));
 
