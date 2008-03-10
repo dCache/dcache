@@ -655,7 +655,6 @@ getSizeOfPool() # $1 = pool path
     size=`getPoolSetting ${path} set max diskspace`
     value=${size%?} # Strip the last character
 
-    # TODO Add code to translate space suffixes
     case $size in
         *k)
             printf "%d" $((value/(1024*1024)))
