@@ -224,7 +224,7 @@ public class PinManager extends AbstractCell implements Runnable  {
     protected static final long  POOL_LIFETIME_MARGIN=60*60*1000L;
 
     /** Creates a new instance of PinManager */
-    public PinManager(String name , String argString) throws Exception {
+    public PinManager(String name , String argString) throws Throwable {
         super(name, argString, false);
          
         try {
@@ -243,12 +243,17 @@ public class PinManager extends AbstractCell implements Runnable  {
             error(t.toString());
             start();
             kill();
+            throw t;
         }
         
         runInventoryBeforeStartPart();
         start();
         runInventoryAfterStartPart();
         
+    }
+    
+    public void stop() {
+        kill();
     }
     
     public long getMaxPinDuration()
