@@ -1,7 +1,6 @@
 package org.dcache.services.info.conduits;
 
 import org.apache.log4j.Logger;
-import org.dcache.services.info.base.State;
 
 /**
  * A simple, abstract implementation of a blocking InfoConduit.  A new Thread

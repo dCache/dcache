@@ -4,7 +4,6 @@ import java.net.*;
 import java.io.*;
 
 import org.apache.log4j.Logger;
-import org.dcache.services.info.base.State;
 import org.dcache.services.info.serialisation.XmlSerialiser;
 
 /**
