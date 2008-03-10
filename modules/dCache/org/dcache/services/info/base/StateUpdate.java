@@ -35,12 +35,8 @@ public class StateUpdate {
 		}
 	}
 
-	private List<StateUpdateInstance> _updates;
+	private final List<StateUpdateInstance> _updates = new Vector<StateUpdateInstance>();
 	
-	public StateUpdate() {
-		_updates = new Vector<StateUpdateInstance>();
-	}
-
 	
 	/**
 	 * Count the number of metrics that are to be updated.

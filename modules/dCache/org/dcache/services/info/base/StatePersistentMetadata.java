@@ -14,9 +14,9 @@ import java.util.*;
  */
 public class StatePersistentMetadata {
 
-	private Map<String,StatePersistentMetadata> _children = new HashMap<String,StatePersistentMetadata>();
+	private final Map<String,StatePersistentMetadata> _children = new HashMap<String,StatePersistentMetadata>();
+	private final Map<String,String> _payload = new HashMap<String,String>();
 	private StatePersistentMetadata _wildcard = null;
-	private Map<String,String> _payload = new HashMap<String,String>();
 	
 	protected StatePersistentMetadata() {} // Reduce visability of our constructor
 		

@@ -9,7 +9,7 @@ package org.dcache.services.info.base;
  */
 public class FloatingPointStateValue extends StateValue {
 	
-	private double _storage;
+	private final double _storage;
 
 	/**
 	 * Create a new Empherical FloatingPoint StateValue that will store

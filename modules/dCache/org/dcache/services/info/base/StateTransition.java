@@ -17,7 +17,7 @@ import java.util.*;
  */
 public class StateTransition {
 	
-	private static Set<String> EMPTY_SET = new HashSet<String>();
+	private static final Set<String> EMPTY_SET = new HashSet<String>();
 
 	/**
 	 * Information about a particular StateComposite's changes
@@ -28,15 +28,15 @@ public class StateTransition {
 	 * @author Paul Millar <paul.millar@desy.de>
 	 */
 	private class CompositeChangeSet {
-		Map<String, StateComponent> _newChildren = new HashMap<String, StateComponent>();
-		Map<String, StateComponent> _updatedChildren = new HashMap<String, StateComponent>();
-		Set<String> _removedChildren = new HashSet<String>();
-		Set<String> _itrChildren = new HashSet<String>();
+		final Map<String, StateComponent> _newChildren = new HashMap<String, StateComponent>();
+		final Map<String, StateComponent> _updatedChildren = new HashMap<String, StateComponent>();
+		final Set<String> _removedChildren = new HashSet<String>();
+		final Set<String> _itrChildren = new HashSet<String>();
 		Date _whenIShouldExpire = null;
 		boolean _hasImmortalChildren = false;
 	}
 	
-	Map<StatePath, CompositeChangeSet> _allChanges = new HashMap<StatePath, CompositeChangeSet>();
+	final Map<StatePath, CompositeChangeSet> _allChanges = new HashMap<StatePath, CompositeChangeSet>();
 	
 	/**
 	 * Record that a new child is to be added

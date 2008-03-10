@@ -26,7 +26,7 @@ import org.apache.log4j.Logger;
  */
 public class StateComposite implements StateComponent {
 
-	private static Logger _log = Logger.getLogger(StateComposite.class);
+	private static final Logger _log = Logger.getLogger(StateComposite.class);
 	
 	private static final int MILLIS_IN_SECOND = 1000;
 
@@ -34,7 +34,7 @@ public class StateComposite implements StateComponent {
 	/** Minimum lifetime for on-the-fly created StateComposites */  
 	private static final long DEFAULT_LIFETIME = 10;
 	
-	private Map<String, StateComponent> _children = new HashMap<String, StateComponent>();
+	private final Map<String, StateComponent> _children = new HashMap<String, StateComponent>();
 	private StatePersistentMetadata _metadataRef;
 	private Date _earliestChildExpiry = null;
 	private Date _whenIShouldExpire;

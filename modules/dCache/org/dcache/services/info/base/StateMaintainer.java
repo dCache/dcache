@@ -13,7 +13,7 @@ import org.apache.log4j.Logger;
  */
 public class StateMaintainer implements Runnable {
 	
-	private static Logger _log = Logger.getLogger(StateMaintainer.class);
+	private static final Logger _log = Logger.getLogger(StateMaintainer.class);
 	
 	private static StateMaintainer _instance = null;
 	private static Thread _smThread;

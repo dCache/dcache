@@ -14,20 +14,21 @@ import java.util.Date;
  */
 abstract public class StateValue implements StateComponent {
 	
+	private static final boolean DUMMY_ISEPHEMERAL_VALUE = false;
+	
 	/** The granularity of expiryTime, in milliseconds */ 
 	private static final int _granularity = 500;
 	private static final int _millisecondsInSecond = 1000;
 	
-	Date _creationTime;
-	Date _expiryTime;
-	boolean _isEphemeral;
+	private final Date _creationTime = new Date();
+	private final Date _expiryTime;
+	private final boolean _isEphemeral;
 	
 	/**
 	 *  Create a StateValue that is either Immortal or Ephemeral
 	 *  @param isImmortal true if the StateValue is immortal
 	 */
 	protected StateValue( boolean isImmortal) {
-		_creationTime = new Date();
 		_expiryTime = null;
 		_isEphemeral = !isImmortal;
 	}
@@ -39,7 +40,6 @@ abstract public class StateValue implements StateComponent {
 	 * @param duration the length of time, in seconds, this information will be held.
 	 */
 	protected StateValue( long duration) {
-		_creationTime = new Date();
 		
 		long tim = System.currentTimeMillis() + duration * _millisecondsInSecond;
 
@@ -50,6 +50,7 @@ abstract public class StateValue implements StateComponent {
 		tim = (1 + tim / _granularity) * _granularity;
 		
 		_expiryTime = new Date(tim);
+		_isEphemeral = DUMMY_ISEPHEMERAL_VALUE;
 	}
 	
 

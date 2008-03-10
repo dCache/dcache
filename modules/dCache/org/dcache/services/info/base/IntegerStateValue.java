@@ -9,7 +9,7 @@ package org.dcache.services.info.base;
  */
 public class IntegerStateValue extends StateValue {
 	
-	private long _storage;
+	private final long _storage;
 
 	/**
 	 * Create a mortal Integer StateValue.

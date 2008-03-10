@@ -8,7 +8,7 @@ package org.dcache.services.info.base;
  */
 public class BooleanStateValue extends StateValue {
 	
-	private boolean _storage;
+	private final boolean _storage;
 
 	/**
 	 * Create a new Empherical Boolean StateValue.

@@ -38,7 +38,7 @@ public class State {
 	public static final String METADATA_BRANCH_CLASS_KEY  = "branch";
 	public static final String METADATA_BRANCH_IDNAME_KEY = "id";
 	
-	private static Logger _log = Logger.getLogger(State.class);
+	private static final Logger _log = Logger.getLogger(State.class);
 	
 	/** The singleton instance of State */
 	private static State _instance = null;
@@ -59,18 +59,18 @@ public class State {
 	 */
 
 	/** Our current state */
-	private StateComposite _state;
+	private final StateComposite _state;
 	
 	/** All registered StateWatchers */
-	private Collection<StateWatcher> _watchers = new LinkedList<StateWatcher>();
+	private final Collection<StateWatcher> _watchers = new LinkedList<StateWatcher>();
 
 	/** Our read/write lock */
-	private ReadWriteLock _stateRWLock = new ReentrantReadWriteLock();
-	private Lock _stateReadLock = _stateRWLock.readLock();
-	private Lock _stateWriteLock = _stateRWLock.writeLock();
+	private final ReadWriteLock _stateRWLock = new ReentrantReadWriteLock();
+	private final Lock _stateReadLock = _stateRWLock.readLock();
+	private final Lock _stateWriteLock = _stateRWLock.writeLock();
 
 	/** Our list of pending Updates */
-	private Stack<StateUpdate> _pendingUpdates;
+	private final Stack<StateUpdate> _pendingUpdates = new Stack<StateUpdate>();
 	
 	
 	/**
@@ -84,9 +84,6 @@ public class State {
 
 		// Build our top-level immortal StateComposite.
 		_state = new StateComposite( metadata);
-		
-		// Our stack of pending updates ...
-		_pendingUpdates = new Stack<StateUpdate>();		
 	}
 
 	
@@ -336,6 +333,5 @@ public class State {
 			_stateReadLock.unlock();
 		}		
 	}
-
 
 }

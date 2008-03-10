@@ -9,7 +9,7 @@ package org.dcache.services.info.base;
  */
 public class StringStateValue extends StateValue {
 
-	private String _storage;
+	private final String _storage;
 
 	/**
 	 * Create a new Ephemeral String StateValue

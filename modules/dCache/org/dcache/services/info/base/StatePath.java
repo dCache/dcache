@@ -25,7 +25,7 @@ import java.util.*;
  */
 public class StatePath {
 
-	List<String> _elements;
+	protected final List<String> _elements;
 	private int _myHashCode;
 	private boolean _haveHashCode = false;
 	
