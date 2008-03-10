@@ -1,6 +1,7 @@
 package org.dcache.services.info.base;
 
 import org.apache.log4j.Logger;
+import java.util.concurrent.locks.*;
 import java.util.*;
 
 
@@ -64,138 +65,13 @@ public class State {
 	private Collection<StateWatcher> _watchers = new LinkedList<StateWatcher>();
 
 	/** Our read/write lock */
-	private StateMonitor _monitor = new StateMonitor();
-	
+	private ReadWriteLock _stateRWLock = new ReentrantReadWriteLock();
+	private Lock _stateReadLock = _stateRWLock.readLock();
+	private Lock _stateWriteLock = _stateRWLock.writeLock();
+
 	/** Our list of pending Updates */
 	private Stack<StateUpdate> _pendingUpdates;
 	
-	/**
-	 *  The read/write monitor for this state. This controls access to the State
-	 *  information.
-	 * <p>
-	 *  The monitor allows multiple concurrent readers, so reading state
-	 *  will not stop other threads from reading the state concurrently.
-	 *  However, a thread with a reader-lock will block any threads attempting
-	 *  to update dCache state.  Such a thread should release the lock
-	 *  as soon as it is no longer needed.
-	 * <p>
-	 *  This monitor prioritises writing activity over reading activity.
-	 *  Specifically, the <code>startReading()</code> method will block
-	 *  if a thread has a writer-lock (that is, it is currently writing
-	 *  new values into dCache state) or if there are writers waiting to
-	 *  update dCache state. the <code>startWriting()</code> method will
-	 *  block while any thread holds a reading lock.
-	 */
-	private class StateMonitor {
-		
-		private int _readerCount = 0;
-		private int _waitingWriterCount = 0;
-		private Thread _activeWriter = null;
-		
-		/**
-		 * Obtain a reader-lock.  A reader-lock guarentees that reading from
-		 * dCache state will yield valid and consistant results whilst the
-		 * lock is held.  When the lock is released, this guarentee is lost. 
-		 * <p>
-		 * The reader thread may be interrupted whilst it is waiting for
-		 * a reader-lock.  If this happens, an InterruptedException is thrown.
-		 * <p>
-		 * A reader must <i>always</i> release the reader-lock.  One way of
-		 * guarenteeing this is illustrated below:
-		 * 
-		 * <pre>
-		 *     try {
-		 *         startReading();
-		 *         // read state...
-		 *     } finally {
-		 *         stopReading();
-		 *     }
-		 * </pre>
-		 * @throws InterruptedException
-		 */
-		protected synchronized void startReading() throws InterruptedException {
-			if( _log.isDebugEnabled()) {
-				_log.debug("Thread " + Thread.currentThread().getName() + " requesting read lock.");
-			}
-			
-			while( _activeWriter != null || _waitingWriterCount > 0)
-				wait();
-			
-			_readerCount++;
-			
-			if( _log.isDebugEnabled()) {
-				_log.debug("Thread " + Thread.currentThread().getName() + " has read lock.");
-			}
-		}
-		
-		/**
-		 * Release a reader-lock.  The State allows multiple concurrent readers.
-		 * However, reading blolcks writing, so this method must <i>always</i> be
-		 * called after each <code>startReading()</code> to allow writing to occure.
-		 * @throws InterruptedException
-		 */
-		protected synchronized void stopReading() {
-			if( _log.isDebugEnabled()) {
-				_log.debug("Thread " + Thread.currentThread().getName() + " releasing read lock.");
-			}
-			_readerCount--;
-			
-			if( _readerCount == 0)
-				notifyAll();
-		}
-		
-		/**
-		 * Obtain a writing lock.  If there is reading underway, this method will
-		 * block until reading activity has finished.  Writing is prioriatised over
-		 * reading, so no new reading will be allowed until writing has completed.
-		 * The writing lock prevents any reading from occuring.  Because of this
-		 * caller must <i>always</i> call the <code>stopWriting()</code> method.
-		 * @throws InterruptedException
-		 */
-		protected synchronized void startWriting() throws InterruptedException {
-			
-			if( _log.isDebugEnabled()) {
-				_log.debug("Thread " + Thread.currentThread().getName() + " requesting write lock.");
-			}
-
-			if( _readerCount > 0) {
-				_waitingWriterCount++;
-				while( _readerCount > 0 || _activeWriter != null)
-					wait();
-				_waitingWriterCount--;
-			}
-
-			// Make a note of which thread owns the writing lock
-			_activeWriter = Thread.currentThread();
-
-			if( _log.isDebugEnabled()) {
-				_log.debug("Thread " + Thread.currentThread().getName() + " obtained write lock.");
-			}
-		}
-		
-		/**
-		 * Release the writing lock.  This allows further writing or (if there is
-		 * none) subsequent reading activity to take place.
-		 * @throws InterruptedException
-		 */
-		protected synchronized void stopWriting() {
-			_activeWriter = null;
-			notifyAll();
-
-			if( _log.isDebugEnabled()) {
-				_log.debug("Thread " + Thread.currentThread().getName() + " released write lock.");
-			}
-		}
-		
-		/**
-		 * Check whether the current thread has already obtained a writing lock.
- 		 * @return true if the current thread has the writing lock, false otherwise.
-		 */
-		protected synchronized boolean haveWritingLock() {
-			return _activeWriter != null ? _activeWriter.equals( Thread.currentThread()) : false;
-		}
-	}
-
 	
 	/**
 	 * Our private State constructor.
@@ -266,7 +142,7 @@ public class State {
 		StateTransition transition = new StateTransition();
 
 		try {
-			_monitor.startReading();
+			_stateReadLock.lock();
 
 			/**
 			 *  Update our new StateTransition based on the StateUpdate.
@@ -282,10 +158,8 @@ public class State {
 			
 			checkWatchers( transition);
 			
-		} catch( InterruptedException e) {
-			Thread.currentThread().interrupt();
 		} finally {
-			_monitor.stopReading();
+			_stateReadLock.unlock();
 		}		
 
 		applyTransition( transition);
@@ -300,14 +174,12 @@ public class State {
 	 */
 	private void applyTransition( StateTransition transition) {
 		try {
-			_monitor.startWriting();
+			_stateWriteLock.lock();
 
 			_state.applyTransition(null, transition);
 			
-		} catch( InterruptedException e) {
-			Thread.currentThread().interrupt();
 		} finally {
-			_monitor.stopWriting();
+			_stateWriteLock.unlock();
 		}		
 	}
 	
@@ -412,7 +284,7 @@ public class State {
 		StateTransition transition = new StateTransition();
 		
 		try {
-			_monitor.startReading();
+			_stateReadLock.lock();
 			
 			_state.buildRemovalTransition( null, transition, false);
 			
@@ -421,12 +293,8 @@ public class State {
 			
 			checkWatchers( transition);
 			
-		} catch( InterruptedException e) {
-			
-			Thread.currentThread().interrupt();
-			
 		} finally {
-			_monitor.stopReading();
+			_stateReadLock.unlock();
 		}
 		
 		applyTransition( transition);
@@ -442,13 +310,12 @@ public class State {
 	 */
 	public void visitState( StateVisitor visitor, StatePath start) {
 		try {
-			_monitor.startReading();
+			_stateReadLock.lock();
 			
 			_state.acceptVisitor( null, start, visitor);
-		} catch( InterruptedException e) {
-			Thread.currentThread().interrupt();
+			
 		} finally {
-			_monitor.stopReading();
+			_stateReadLock.unlock();
 		}					
 	}
 	
@@ -462,13 +329,11 @@ public class State {
 	 */
 	public void visitState( StateTransition transition, StateVisitor visitor, StatePath start) {
 		try {
-			_monitor.startReading();
+			_stateReadLock.lock();
 			
 			_state.acceptVisitor( transition, null, start, visitor);
-		} catch( InterruptedException e) {
-			Thread.currentThread().interrupt();
 		} finally {
-			_monitor.stopReading();
+			_stateReadLock.unlock();
 		}		
 	}
 
