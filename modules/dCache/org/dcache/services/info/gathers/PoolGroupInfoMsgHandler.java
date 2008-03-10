@@ -1,7 +1,6 @@
 package org.dcache.services.info.gathers;
 
 import org.apache.log4j.Logger;
-import org.dcache.services.info.InfoProvider;
 import org.dcache.services.info.base.StateUpdate;
 import org.dcache.services.info.base.StatePath;
 
@@ -13,11 +12,16 @@ public class PoolGroupInfoMsgHandler extends CellMessageHandlerSkel {
 
 	public void process(Object msgPayload, long metricLifetime) {
 
-		Object array[];
+		_log.info( "processing new poolgroup information");
 		
 		StateUpdate update = new StateUpdate();
 		
-		array = (Object []) msgPayload;
+		if( !msgPayload.getClass().isArray()) {
+			_log.error( "received a message that isn't an array");
+			return;
+		}
+		
+		Object array[] = (Object []) msgPayload;
 		
 		if( array.length != 3) {
 			_log.error( "Unexpected array size: "+array.length);
