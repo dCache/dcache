@@ -30,8 +30,8 @@ public class ListVisitor implements StateVisitor {
 	 * @return the Set of all items that have the path as their parent.
 	 */
 	static public Set<String> getDetails( StatePath path) {
-		if( _log.isInfoEnabled())
-			_log.info( "Gathering current status for path " + path);
+		if( _log.isDebugEnabled())
+			_log.debug( "Gathering current status for path " + path);
 		
 		ListVisitor visitor = new ListVisitor( path);
 		State.getInstance().visitState(visitor, path);		
