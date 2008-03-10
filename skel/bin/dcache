@@ -651,11 +651,48 @@ getFreeSpace() # $1 = path
 getSizeOfPool() # $1 = pool path
 {
     local size
+    local value
     size=`getPoolSetting ${path} set max diskspace`
-    
-    # TODO Add code to translate space suffixes
+    value=${size%?} # Strip the last character
 
-    printf "%d" $((size/(1024*1024*1024)))
+    # TODO Add code to translate space suffixes
+    case $size in
+        *k)
+            printf "%d" $((value/(1024*1024)))
+            ;;
+
+        *K)
+            printf "%d" $((value/(1024*1024)))
+            ;;
+
+        *m)
+            printf "%d" $((value/1024))
+            ;;
+
+        *M)
+            printf "%d" $((value/1024))
+            ;;
+
+        *g)
+            printf "%d" $value
+            ;;
+
+        *G)
+            printf "%d" $value
+            ;;
+
+        *t)
+            printf "%d" $((value*1024))
+            ;;
+
+        *T)
+            printf "%d" $((value*1024))
+            ;;
+
+        *)
+            printf "%d" $((size/(1024*1024*1024)))
+            ;;
+    esac
 }
 
 createPool() # $1 = size in GiB, $2 = path
