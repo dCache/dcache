@@ -20,7 +20,6 @@ abstract public class StateValue implements StateComponent {
 	private static final int _granularity = 500;
 	private static final int _millisecondsInSecond = 1000;
 	
-	private final Date _creationTime = new Date();
 	private final Date _expiryTime;
 	private final boolean _isEphemeral;
 	
@@ -55,20 +54,11 @@ abstract public class StateValue implements StateComponent {
 	
 
 	/**
-	 * Discover when this data was added into dCache's State.
-	 * @return the Date this object was created.
-	 */
-	public Date getCreationTime() {
-		return _creationTime;
-	}
-	
-	
-	/**
 	 * Make the actual data/time this value will expire available.
 	 * @return when this StateValue will expire
 	 */
 	public Date getExpiryDate() {
-		return _expiryTime;
+		return _expiryTime != null ? new Date( _expiryTime.getTime()) : null;
 	}
 	
 	/**
@@ -143,7 +133,7 @@ abstract public class StateValue implements StateComponent {
 	}
 
 	public Date getEarliestChildExpiryDate() {
-		return null; // we have no children.
+		return null; // we never have children.
 	}
 
 }
