@@ -514,6 +514,8 @@ public abstract class AbstractFtpDoorV1
     )
     protected int _defaultStreamsPerClient;
 
+    protected final int _sleepAfterMoverKill = 15; // seconds
+
     protected final int _spaceManagerTimeout = 5 * 60;
 
     protected final boolean _useEncpScripts;
@@ -3423,6 +3425,20 @@ public abstract class AbstractFtpDoorV1
                     message.setReplyRequired(false);
                     sendMessage(new CellMessage(new CellPath(_transfer.pool),
                                                 message));
+
+                    /* Since the mover doesn't register the file in
+                     * the companion until the transfer is completed,
+                     * we wait for some time to avoid orphaned
+                     * files. This is an imperfect hack, as there is
+                     * no upper bound on how long it could take to
+                     * kill the mover.
+                     */
+                    Thread.sleep(_sleepAfterMoverKill * 1000);
+                } catch (InterruptedException e) {
+                    /* Bugger, something decided that we are in a
+                     * hurry (most likely domain shutdown). We are
+                     * shutting down anyway, so continue doing that...
+                     */
                 } catch (NotSerializableException e) {
                     reportBug("transfer_error",
                               "got NotSerializableException sending message " +
