@@ -254,7 +254,7 @@ public class StateComposite implements StateComponent {
 
 		Set<String> children = buildChildrenList( ourPath, transition);
 		
-		// Iterate over them
+		// Iterate over our children
 		for(Iterator<String> itr = children.iterator(); itr.hasNext();) {
 			String childName = itr.next();
 
@@ -278,19 +278,13 @@ public class StateComposite implements StateComponent {
 	 */
 	private void visitNamedChild( StateVisitor visitor, StatePath ourPath, String childName, StatePath startPath, StateTransition transition) {
 
-		StateComponent child = _children.get( childName);
+		StateComponent child = null;
 		
 		if( transition != null) {
-			StateComponent freshChild = transition.getFreshChildValue( ourPath, childName);
-			
-			if( freshChild != null)
-				child = freshChild;
-			else {
-				if( transition.childIsRemoved( ourPath, childName)) {
-					_log.error( "Tried to visit deleted child " + childName + " of " + ourPath != null ? ourPath : "(top)");
-					return;
-				}
-			}
+			StateComponent freshChild = transition.getFreshChildValue( ourPath, childName);			
+			child = freshChild != null ? freshChild : _children.get( childName); 
+		} else {
+			child = _children.get( childName);
 		}
 		
 		if( child == null) {
@@ -311,16 +305,23 @@ public class StateComposite implements StateComponent {
 	 * @return the value of the child after transition.
 	 */
 	private boolean haveChild( StatePath ourPath, StateTransition transition, String childName) {
+		
+		boolean currentlyHaveChild = _children.containsKey( childName);
 
 		if( transition != null) {
-			if( transition.childIsRemoved( ourPath, childName))
-				return false;
-
-			if( transition.childIsNew( ourPath, childName))
-				return true;
+			
+			if( currentlyHaveChild) {
+				if( transition.childIsRemoved( ourPath, childName))
+					return false;
+				
+			} else {
+				
+				if( transition.childIsNew( ourPath, childName))
+					return true;				
+			}
 		}
 		
-		return _children.containsKey( childName);
+		return currentlyHaveChild;
 	}
 		
 
@@ -716,7 +717,7 @@ public class StateComposite implements StateComponent {
 		// Check each child in turn:
 		for( Map.Entry<String, StateComponent>entry : _children.entrySet()) {
 			
-			boolean shouldRemove = forced;
+			boolean shouldRemoveThisChild = forced;
 			boolean shouldItr = forced;
 
 			StateComponent childValue = entry.getValue();
@@ -727,7 +728,7 @@ public class StateComposite implements StateComponent {
 				if( _log.isDebugEnabled())
 					_log.debug("registering "+childName+" (in path "+ourPath+") for removal.");
 
-				shouldRemove = shouldItr = true;
+				shouldRemoveThisChild = shouldItr = true;
 			}			
 
 			// If *this* child has some child that has expired, iterate down.
@@ -736,11 +737,11 @@ public class StateComposite implements StateComponent {
 				shouldItr = true;
 			
 			if( shouldItr) {
-				if( shouldRemove)
+				if( shouldRemoveThisChild)
 					transition.recordRemovedChild( ourPath, childName);
 					
 				transition.recordChildItr( ourPath, childName);
-				childValue.buildRemovalTransition( buildChildPath(ourPath, childName), transition, shouldRemove);				
+				childValue.buildRemovalTransition( buildChildPath(ourPath, childName), transition, shouldRemoveThisChild);				
 			}
 		}
 	}
