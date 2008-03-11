@@ -72,8 +72,10 @@ public class DataGatheringScheduler implements Runnable {
 			}
 				
 			// Safety!  Check we wont trigger too quickly
-			Date earliestAcceptable = new Date (System.currentTimeMillis() + MINIMUM_DGA_DELAY);			
-			_nextTriggered = nextTrigger.after( earliestAcceptable) ? nextTrigger : earliestAcceptable;
+			if( nextTrigger.getTime() - System.currentTimeMillis() <  MINIMUM_DGA_DELAY)
+				nextTrigger = new Date (System.currentTimeMillis() + MINIMUM_DGA_DELAY);
+			
+			_nextTriggered = nextTrigger;
 		}
 		
 		/**
@@ -94,13 +96,12 @@ public class DataGatheringScheduler implements Runnable {
 			if( !_enabled)
 				return false;
 			
-			if( now.after(_nextTriggered)) {
-				_dga.trigger();
-				updateNextTrigger();
-				return true;
-			}
-
-			return false;
+			if( now.before(_nextTriggered))
+				return false;
+			
+			_dga.trigger();
+			updateNextTrigger();
+			return true;
 		}
 		
 		/**
@@ -111,6 +112,14 @@ public class DataGatheringScheduler implements Runnable {
 		long getDelay() {
 			long delay = _nextTriggered.getTime() - System.currentTimeMillis();
 			return delay > 0 ? delay : 0;
+		}
+		
+		/**
+		 * Return the time this will be next triggered.
+		 * @return
+		 */
+		long getNextTriggered() {
+			return _nextTriggered.getTime();
 		}
 		
 		boolean isEnabled() {
@@ -190,7 +199,7 @@ public class DataGatheringScheduler implements Runnable {
 	
 
 	/**
-	 * Add a new data-gathering activity with its default period. 
+	 * Add a new data-gathering activity. 
 	 * @param dga  The activity to add.
 	 */
 	public void addActivity( Schedulable dga) {
@@ -315,22 +324,30 @@ public class DataGatheringScheduler implements Runnable {
 	 * is no recorded delay.
 	 */
 	private long getWaitTimeout() {
-		boolean isFirst=true;
-		long shortestDelay=0;
+		long earliestTrig=0;
 		
-		for( RegisteredActivity thisPa : _activity) {
-			long thisDelay = thisPa.getDelay();
+		synchronized( _activity) {
+		
+			for( RegisteredActivity thisPa : _activity) {
+
+				if( !thisPa.isEnabled())
+					continue;
 			
-			if( thisDelay < 1)
-				thisDelay = 1;
+				long thisTrig = thisPa.getNextTriggered();
 				
-			if( thisPa.isEnabled() && (isFirst || thisDelay < shortestDelay)) {
-				isFirst = false;
-				shortestDelay = thisDelay;
+				if( thisTrig < earliestTrig || earliestTrig == 0)
+					earliestTrig = thisTrig;
 			}
 		}
 		
-		return shortestDelay;
+		long delay = 0;
+		
+		if( earliestTrig > 0) {
+			delay = earliestTrig - System.currentTimeMillis();
+			delay = delay < 1 ? 1 : delay; // enforce >1 to distinguish between "should trigger now" and "no registered activity".
+		}
+
+		return delay; 
 	}
 	
 	
@@ -372,6 +389,7 @@ public class DataGatheringScheduler implements Runnable {
 		addActivity( new ListBasedMessageDga( new StatePath("poolgroups"), "PoolManager", "psux ls pgroup", new PoolGroupInfoMsgHandler()));
 		addActivity( new ListBasedMessageDga( new StatePath("units"),      "PoolManager", "psux ls unit",   new UnitInfoMsgHandler()));
 		addActivity( new ListBasedMessageDga( new StatePath("unitgroups"), "PoolManager", "psux ls ugroup", new UGroupInfoMsgHandler()));
+		
 	}
 
 
