@@ -201,9 +201,13 @@ public class StateTransition {
 	
 		
 	/**
-	 * Return the fresh value for a child.  If the child is new or
-	 * is to be updated then the new value is return.  If the child 
-	 * is to be deleted or is unmodified, then null is returned. 
+	 * Return the fresh value for a child; that is, the value of this child
+	 * after the transition, provided it has been altered.
+	 * <p>
+	 * If the child is new or is to be updated then the new value is return.
+	 * If the child is to be deleted or is unmodified, then null is returned.
+	 * @param path the StatePath of the containing StateComposite
+	 * @param childName the name of the child.
 	 * @return the updated or new value for this child, or null.
 	 */
 	protected StateComponent getFreshChildValue( StatePath path, String childName) {
