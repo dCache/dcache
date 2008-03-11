@@ -24,7 +24,7 @@ public class EventHistogram
     }
 
     /**
-     * Shifts the elements off <code>_counters</code> such that the
+     * Shifts the elements of <code>_counters</code> such that the
      * current time falls within the first slot.
      */
     private void shift()
