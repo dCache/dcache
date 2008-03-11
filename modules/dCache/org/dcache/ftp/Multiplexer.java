@@ -21,7 +21,7 @@ public class Multiplexer implements ErrorListener
     protected Selector _selector;
     protected ErrorListener _errorListener;
 
-    /** 
+    /**
      * Constructs a new multiplexer. The multiplexer must be destroyed
      * by a call to close().
      */
@@ -65,26 +65,24 @@ public class Multiplexer implements ErrorListener
     public void loop() throws Exception {
 	while (!_shutdown) {
 	    _selector.select();
-            
-            if (Thread.currentThread().interrupted()) {
+
+            if (Thread.interrupted()) {
                 throw new InterruptedException();
             }
 
 	    for (SelectionKey key : _selector.selectedKeys()) {
-		MultiplexerListener listener = 
+		MultiplexerListener listener =
 		    (MultiplexerListener)key.attachment();
-		/* We only handle one type of event at a time. The
-		 * reason for this is that the listener may cancel the
-		 * key. If that happens, doing any further tests on it
-		 * will fail. 
-		 */
-		if (key.isConnectable()) {
+		if (key.isValid() && key.isConnectable() ) {
 		    listener.connect(this, key);
-		} else if (key.isAcceptable()) {
+		}
+                if (key.isValid() && key.isAcceptable()) {
 		    listener.accept(this, key);
-		} else if (key.isReadable()) {
+		}
+                if (key.isValid() && key.isReadable()) {
 		    listener.read(this, key);
-		} else if (key.isWritable()) {
+		}
+                if (key.isValid() && key.isWritable()) {
 		    listener.write(this, key);
 		}
 	    }
@@ -100,8 +98,8 @@ public class Multiplexer implements ErrorListener
      * type of events specifified by the op bitmask (@see
      * SelectionKey).
      */
-    public SelectionKey register(MultiplexerListener listener, 
-				 int op, SelectableChannel channel) 
+    public SelectionKey register(MultiplexerListener listener,
+				 int op, SelectableChannel channel)
 	throws IOException
     {
 	return channel.register(_selector, op, listener);
@@ -131,6 +129,7 @@ public class Multiplexer implements ErrorListener
      * Shuts down the multiplexer, causing it to leave the event loop.
      */
     public void shutdown() {
+        say("Multiplexer shutting down");
 	_shutdown = true;
     }
 }

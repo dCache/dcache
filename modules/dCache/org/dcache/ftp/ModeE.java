@@ -8,7 +8,7 @@ import java.nio.channels.FileChannel;
 import java.nio.channels.SelectionKey;
 
 /**
- * Implementation of MODE E. 
+ * Implementation of MODE E.
  *
  * Be aware that it is quite easy to introduce race conditions, so
  * please keep this in mind when making changes. In particular the EOD
@@ -38,13 +38,13 @@ public class ModeE extends Mode
     public static final int EOD_DESCRIPTOR                       = 8;
     public static final int SENDER_CLOSES_THIS_STREAM_DESCRIPTOR = 4;
 
-    public static final int KNOWN_DESCRIPTORS = 
+    public static final int KNOWN_DESCRIPTORS =
 	EOF_DESCRIPTOR | EOD_DESCRIPTOR | SENDER_CLOSES_THIS_STREAM_DESCRIPTOR;
 
     /** Position in file when sending data. Used by the sender. */
     private long _currentPosition;
 
-    /** 
+    /**
      * Number of bytes that have been transferred. Used by the sender.
      */
     private long _currentCount;
@@ -53,8 +53,8 @@ public class ModeE extends Mode
      * EOD count received. Zero as long as no EOD count was received.
      */
     private long _eodc;
-    
-    /** 
+
+    /**
      * Implementation of send in mode E. There will be an instance per
      * data channel. The sender repeatedly bites BLOCK_SIZE bytes of
      * the file and transfers it as a single block. I.e.
@@ -82,9 +82,9 @@ public class ModeE extends Mode
 	protected boolean       _sendEOF;
 
 	/** Buffer for sending the block header. */
-	protected ByteBuffer _header = 
+	protected ByteBuffer _header =
 	    ByteBuffer.allocateDirect(HEADER_LENGTH);
-       
+
 	public Sender(SocketChannel socket) {
 	    _socket  = socket;
 	    _state   = PREPARE_BLOCK;
@@ -96,7 +96,7 @@ public class ModeE extends Mode
 	}
 
 	public void write(Multiplexer multiplexer, SelectionKey key)
-	    throws Exception 
+	    throws Exception
 	{
 	    switch (_state) {
 	    case PREPARE_BLOCK:
@@ -143,11 +143,12 @@ public class ModeE extends Mode
 		/* Send header.
 		 */
 		_socket.write(_header);
+
 		if (_header.position() < _header.limit()) {
 		    break;
 		}
 
-		/* If at end of stream, close the channel. 
+		/* If at end of stream, close the channel.
 		 *
 		 * Notice that we allow close() to shut down the
 		 * multiplexer if all connections have been closed
@@ -178,7 +179,7 @@ public class ModeE extends Mode
 	}
     }
 
-    /** 
+    /**
      * Implementation of receive in mode E. There will be an instance
      * per data channel.
      */
@@ -200,9 +201,9 @@ public class ModeE extends Mode
 	protected boolean       _used;
 
 	/** Buffer for receiving the block header. */
-	protected ByteBuffer _header = 
+	protected ByteBuffer _header =
 	    ByteBuffer.allocateDirect(HEADER_LENGTH);
-	
+
 	public Receiver(SocketChannel socket) {
 	    _socket   = socket;
 	    _count    = 0;
@@ -216,7 +217,7 @@ public class ModeE extends Mode
 	}
 
 	public void read(Multiplexer multiplexer, SelectionKey key)
-	    throws Exception 
+	    throws Exception
 	{
 	    /* _count is zero when we have received all of the
 	     * previous block. We expect to read the header of the
@@ -248,7 +249,7 @@ public class ModeE extends Mode
 		     */
 		    return;
 		}
-		
+
 		_header.rewind();
 		_flags    = _header.get();
 		_count    = _header.getLong();
@@ -294,7 +295,7 @@ public class ModeE extends Mode
 			throw new FTPException("Non-positive EODC received");
 		    }
 		    _eodc = (int)_position;
-		    _count = _position = 0; // No data 
+		    _count = _position = 0; // No data
 		}
 
 
@@ -311,7 +312,7 @@ public class ModeE extends Mode
 		}
 
 		_monitor.preallocate(_position + _count);
-	    } 
+	    }
 
 	    /* Receive data.
 	     */
@@ -330,9 +331,9 @@ public class ModeE extends Mode
             }
 	}
     }
-    
+
     public ModeE(Role role, FileChannel file, ConnectionMonitor monitor)
-	throws IOException 
+	throws IOException
     {
 	super(role, file, monitor);
 	_currentPosition = getStartPosition();
@@ -340,7 +341,7 @@ public class ModeE extends Mode
 	_eodc            = 0;
     }
 
-    public void newConnection(Multiplexer multiplexer, SocketChannel socket) 
+    public void newConnection(Multiplexer multiplexer, SocketChannel socket)
 	throws Exception
     {
 	switch (_role) {

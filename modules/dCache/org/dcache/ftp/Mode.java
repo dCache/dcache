@@ -346,8 +346,7 @@ public abstract class Mode extends AbstractMultiplexerListener
 	if (channel != null) {
 	    Socket socket = channel.socket();
 	    _opened++;
-	    multiplexer.say("Connection from "
-                            + socket.getRemoteSocketAddress());
+	    multiplexer.say("Opened " + socket);
 	    channel.configureBlocking(false);
 	    if (_bufferSize > 0) {
 		channel.socket().setSendBufferSize(_bufferSize);
@@ -374,8 +373,7 @@ public abstract class Mode extends AbstractMultiplexerListener
 	    if (channel.finishConnect()) {
 		Socket socket = channel.socket();
 		_opened++;
-		multiplexer.say("Connected to "
-                                + socket.getRemoteSocketAddress());
+		multiplexer.say("Opened " + socket);
 		newConnection(multiplexer, channel);
 	    }
 	} catch (IOException e) {
@@ -400,8 +398,12 @@ public abstract class Mode extends AbstractMultiplexerListener
 			 boolean mayShutdown)
 	throws IOException
     {
-	((SocketChannel)key.channel()).socket().close();
+        SocketChannel channel = (SocketChannel)key.channel();
+        multiplexer.say("Closing " + channel.socket());
+
 	key.cancel();
+	channel.close();
+
 	_closed++;
 	if (mayShutdown && _closed == _opened) {
 	    multiplexer.shutdown();
@@ -428,8 +430,10 @@ public abstract class Mode extends AbstractMultiplexerListener
      */
     private void disableKey(SelectionKey key)
     {
-	disabled.put(key, key.interestOps());
-	key.interestOps(0);
+        if (!disabled.containsKey(key)) {
+            disabled.put(key, key.interestOps());
+            key.interestOps(0);
+        }
     }
 
     /**
