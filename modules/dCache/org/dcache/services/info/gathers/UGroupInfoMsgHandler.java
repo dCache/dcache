@@ -12,7 +12,7 @@ public class UGroupInfoMsgHandler extends CellMessageHandlerSkel {
 
 	private static Logger _log = Logger.getLogger( UGroupInfoMsgHandler.class);
 	
-	private StatePath _uGPath = new StatePath( "unitgroups");
+	private static final StatePath UNITGROUP_PATH = new StatePath( "unitgroups");
 	
 	public void process(Object msgPayload, long metricLifetime) {
 		
@@ -20,10 +20,15 @@ public class UGroupInfoMsgHandler extends CellMessageHandlerSkel {
 		
 		StateUpdate update = new StateUpdate();
 		
+		if( !msgPayload.getClass().isArray()) {
+			_log.error( "unexpected received non-array payload");
+			return;			
+		}
+		
 		array = (Object []) msgPayload;
 		
 		if( array.length != 3) {
-			_log.error( "Unexpected array size: "+array.length);
+			_log.error( "unexpected array size: "+array.length);
 			return;
 		}
 		
@@ -32,8 +37,9 @@ public class UGroupInfoMsgHandler extends CellMessageHandlerSkel {
 		 * array[1] = unit list
 		 * array[2] = link list
 		 */
+		String unitGroupName = (String) array[0];
 		
-		StatePath thisUGroupPath = _uGPath.newChild((String) array[0]);
+		StatePath thisUGroupPath = UNITGROUP_PATH.newChild( unitGroupName);
 
 		addItems( update, thisUGroupPath.newChild("units"), (Object []) array [1], metricLifetime);
 		addItems( update, thisUGroupPath.newChild("links"), (Object []) array [2], metricLifetime);

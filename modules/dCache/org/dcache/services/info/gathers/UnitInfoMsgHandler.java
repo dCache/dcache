@@ -12,7 +12,7 @@ public class UnitInfoMsgHandler extends CellMessageHandlerSkel {
 
 	private static Logger _log = Logger.getLogger( UnitInfoMsgHandler.class);
 
-	private StatePath _uPath = new StatePath( "units");
+	private static final StatePath UNITS_PATH = new StatePath( "units");
 	
 	public void process(Object msgPayload, long metricLifetime) {
 		Object array[];
@@ -32,10 +32,13 @@ public class UnitInfoMsgHandler extends CellMessageHandlerSkel {
 		 * array[2] = list of unitgroups.
 		 */
 		
-		StatePath thisUnitPath = _uPath.newChild((String) array[0]);
+		String unitName = (String) array[0].toString();
+		String unitType = (String) array[1].toString();
+		
+		StatePath thisUnitPath = UNITS_PATH.newChild( unitName);
 
 		update.appendUpdate( thisUnitPath.newChild("type"),
-					new StringStateValue( (String) array[1], metricLifetime));
+					new StringStateValue( unitType, metricLifetime));
 		
 		addItems( update, thisUnitPath.newChild("unitgroups"), (Object []) array [2], metricLifetime);
 

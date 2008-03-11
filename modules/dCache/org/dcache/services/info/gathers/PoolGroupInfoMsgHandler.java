@@ -8,7 +8,7 @@ public class PoolGroupInfoMsgHandler extends CellMessageHandlerSkel {
 
 	private static Logger _log = Logger.getLogger( PoolGroupInfoMsgHandler.class);
 
-	private StatePath _pgPath = new StatePath( "poolgroups");
+	private static final StatePath POOLGROUPS_PATH = new StatePath( "poolgroups");
 
 	public void process(Object msgPayload, long metricLifetime) {
 
@@ -27,8 +27,10 @@ public class PoolGroupInfoMsgHandler extends CellMessageHandlerSkel {
 			_log.error( "Unexpected array size: "+array.length);
 			return;
 		}
+		
+		String poolgroupName = (String) array[0];
 
-		StatePath thisPoolGroupPath = _pgPath.newChild( (String) array[0]); // poolgroup's name
+		StatePath thisPoolGroupPath = POOLGROUPS_PATH.newChild( poolgroupName);
 				
 		addItems( update, thisPoolGroupPath.newChild("pools"), (Object []) array[1], metricLifetime);
 		addItems( update, thisPoolGroupPath.newChild("links"), (Object []) array[2], metricLifetime);

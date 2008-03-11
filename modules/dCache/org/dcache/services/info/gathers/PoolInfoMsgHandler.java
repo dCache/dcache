@@ -2,23 +2,17 @@ package org.dcache.services.info.gathers;
 
 import org.apache.log4j.Logger;
 import org.dcache.services.info.base.*;
-import dmg.util.CommandThrowableException;
 
 public class PoolInfoMsgHandler extends CellMessageHandlerSkel {
 	
 	private static Logger _log = Logger.getLogger( PoolInfoMsgHandler.class);
 
-	private StatePath _pPath = new StatePath( "pools");
+	private static final StatePath POOLS_PATH = new StatePath( "pools");
 
 	public void process(Object msgPayload, long metricLifetime) {
 
 		StateUpdate update = new StateUpdate();
-		
-		if( msgPayload instanceof CommandThrowableException) {
-			CommandThrowableException e = (CommandThrowableException) msgPayload;
-			_log.error( "got exception from pool: ", e);
-		}
-		
+			
 		if( !msgPayload.getClass().isArray()) {
 			_log.error( "received a message that isn't an array");
 			return;
@@ -34,8 +28,10 @@ public class PoolInfoMsgHandler extends CellMessageHandlerSkel {
 		Boolean isEnabled = (Boolean) array[3];
 		Long heartBeat = (Long) array[4];
 		Boolean isReadOnly = (Boolean) array [5];
+		
+		String poolName = (String) array[0].toString();
 
-		StatePath thisPoolPath = _pPath.newChild((String) array[0]); // pool's name
+		StatePath thisPoolPath = POOLS_PATH.newChild( poolName);
 			
 		addItems( update, thisPoolPath.newChild("poolgroups"), (Object []) array [1], metricLifetime); 
 		addItems( update, thisPoolPath.newChild("links"), (Object []) array [2], metricLifetime); 
