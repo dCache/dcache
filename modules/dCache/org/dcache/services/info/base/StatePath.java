@@ -28,6 +28,7 @@ public class StatePath {
 	protected final List<String> _elements;
 	private int _myHashCode;
 	private boolean _haveHashCode = false;
+	private String _toString = null;
 	
 	/**
 	 * Parse a dot-separated path to build a StatePath 
@@ -38,35 +39,15 @@ public class StatePath {
 		String elements[] = path.split("\\.");
 		return new StatePath( elements);
 	}
-	
-
-	/**
-	 * Build a Collection of StatePaths from an array of paths.
-	 * @param paths an array of paths
-	 * @return a HashSet-backed Collection of StatePaths
-	 */
-	static public Collection<StatePath> newPathCollection( String paths[]) {
-		Collection<StatePath> collection = new HashSet<StatePath>( paths.length);
-
-		for( int i=0; i < paths.length; i++)
-			collection.add(new StatePath(paths[i]));
-
-		return collection;
-	}
-
-
-	private StatePath() {
-		_elements = new ArrayList<String>();
-	}
-
 
 	/**
 	 * Create a new StatePath that duplicates an existing one.
 	 * @param path the StatePath to copy.
 	 */
-	public StatePath( StatePath path) {
+	protected StatePath( StatePath path) {
 		_elements = new ArrayList<String>( path._elements);
 	}
+
 
 	/**
 	 * Create a new StatePath based on a List of path elements.
@@ -109,7 +90,7 @@ public class StatePath {
 			code ^= element.hashCode();
 		
 		_myHashCode = code;
-		_haveHashCode = true;
+		_haveHashCode = true;		
 	}
 
 
@@ -218,7 +199,10 @@ public class StatePath {
 	 */
 	@Override
     public String toString() {
-		return toString(".", 0);
+		if( _toString == null)
+			_toString = toString(".", 0);
+		
+		return _toString;
 	}
 
 	/**
@@ -234,12 +218,14 @@ public class StatePath {
 		
 		for( String e : _elements) {
 			
-			if( i++ < count)  // Skip if we need to.
-				continue;
+			if( i >= count) {
+				if( i > count)
+					out.append(separator);
 			
-			if( out.length() > 0)
-				out.append(separator);
-			out.append(e);
+				out.append(e);
+			}
+			
+			i++;
 		}
 
 		return out.toString();
