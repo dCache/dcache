@@ -21,7 +21,6 @@ class SchedulerEntry
     private JobScheduler _scheduler;
     private long _lastAccessed = 0L;
     private long _total = 0L;
-    private final Set<Integer> _protected = new HashSet<Integer>();
 
     SchedulerEntry(String name)
     {
@@ -63,21 +62,6 @@ class SchedulerEntry
         return _total;
     }
 
-    synchronized void protect(int id)
-    {
-        _protected.add(id);
-    }
-
-    synchronized boolean isProtected(int id)
-    {
-        return _protected.contains(id);
-    }
-
-    synchronized void retainAll(Collection<Integer> c)
-    {
-        _protected.retainAll(c);
-    }
-
     synchronized boolean isExpired(JobInfo job, long now)
     {
         long started = job.getStartTime();
@@ -88,7 +72,6 @@ class SchedulerEntry
         int jobId = (int)job.getJobId();
 
         return
-            !isProtected(jobId) &&
             ((getLastAccessed() > 0L) && (lastAccessed > 0L) &&
              ((now - lastAccessed) > getLastAccessed())) ||
             ((getTotal() > 0L) && (started > 0L) &&
@@ -121,13 +104,6 @@ public class JobTimeoutManager implements Runnable
         say("Adding scheduler : " + type);
         SchedulerEntry entry = findOrCreate(type);
         entry.setScheduler(scheduler);
-    }
-
-    public void protect(String type, int id)
-    {
-        SchedulerEntry entry = find(type);
-        if (entry != null)
-            entry.protect(id);
     }
 
     public void printSetup(PrintWriter pw)
@@ -242,23 +218,14 @@ public class JobTimeoutManager implements Runnable
                     if (jobs == null)
                         continue;
 
-                    Set<Integer> ids = new HashSet<Integer>();
                     for (JobInfo info: jobs.getJobInfos()) {
                         int jobId = (int)info.getJobId();
-                        ids.add(jobId);
                         if (entry.isExpired(info, now)) {
                             esay("Trying to kill <" + entry.getName()
                                  + "> id=" + jobId);
-                            jobs.kill(jobId);
+                            jobs.kill(jobId, false);
                         }
                     }
-
-                    /* We need to get rid of old entries. Since we do
-                     * not have a notification mechanism for job
-                     * removal, we fall back to the following periodic
-                     * garbage collection step.
-                     */
-                    entry.retainAll(ids);
                 }
             }
         } catch (InterruptedException e) {

@@ -422,6 +422,8 @@ public class HsmStorageHandler2  {
        private final StorageInfoMessage   _infoMsg      ;
        private long                 _timestamp   = 0 ;
        private int _id;
+       private Thread _thread;
+
        public FetchThread( CacheRepositoryEntry entry ){
           super( entry.getPnfsId() ) ;
           _entry   = entry ;
@@ -440,6 +442,23 @@ public class HsmStorageHandler2  {
           _id = id;
        }
        public double getTransferRate(){ return 10.0 ; }
+
+
+        protected synchronized void setThread(Thread thread)
+        {
+            _thread = thread;
+        }
+
+        @Override
+        public synchronized boolean kill()
+        {
+            if (_thread == null)
+                return false;
+
+            _thread.interrupt();
+            return true;
+        }
+
        public void unqueued(){
 
           say("Dequeuing "+_pnfsId ) ;
@@ -481,7 +500,11 @@ public class HsmStorageHandler2  {
            String    errmsg    = "ok" ;
            Exception excep     = null ;
            long      fileSize  = 0 ;
+
+           setThread(Thread.currentThread());
+
            say( "FetchThread started" ) ;
+
            try{
                _storageInfo = getStorageInfo( _entry ) ;
                _infoMsg.setStorageInfo( _storageInfo ) ;
@@ -796,6 +819,7 @@ public class HsmStorageHandler2  {
         private final StorageInfoMessage _infoMsg;
         private long _timestamp = 0;
         private int _id;
+        private Thread _thread;
 
 	public StoreThread(CacheRepositoryEntry entry)
         {
@@ -808,7 +832,7 @@ public class HsmStorageHandler2  {
 	}
 
        @Override
-    public String toString()
+       public String toString()
         {
             return _pnfsId.toString();
         }
@@ -826,6 +850,21 @@ public class HsmStorageHandler2  {
         public long getClientId()
         {
             return 0;
+        }
+
+        protected synchronized void setThread(Thread thread)
+        {
+            _thread = thread;
+        }
+
+        @Override
+        public synchronized boolean kill()
+        {
+            if (_thread == null)
+                return false;
+
+            _thread.interrupt();
+            return true;
         }
 
         public void queued(int id)
@@ -854,8 +893,9 @@ public class HsmStorageHandler2  {
             Throwable excep = null;
             StorageInfo storageInfo = null;
 
-            say(_pnfsId.toString() + " : StoreThread Started "
-                + Thread.currentThread());
+            setThread(Thread.currentThread());
+
+            say(_pnfsId.toString() + " : StoreThread Started " + _thread);
 
             try {
                 storageInfo = getStorageInfo(_entry);

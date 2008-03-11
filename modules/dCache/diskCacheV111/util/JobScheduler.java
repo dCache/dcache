@@ -18,8 +18,8 @@ public interface JobScheduler {
            throws InvocationTargetException ;
     public int  add( Runnable runnable , int priority )
            throws InvocationTargetException ;
-    public void kill( int jobId )
-           throws NoSuchElementException ;
+    public void kill( int jobId, boolean force )
+        throws NoSuchElementException;
     public void remove( int jobId )
            throws NoSuchElementException ;
     public StringBuffer printJobQueue( StringBuffer sb ) ;

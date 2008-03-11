@@ -26,7 +26,7 @@ public class SimpleJobScheduler implements JobScheduler, Runnable {
     private final Thread _worker;
     private final ThreadGroup _group;
     private final List<Job>[] _queues = new LinkedList[3];
-    private final Map<Integer, Job> _jobs = new HashMap<Integer, Job>();
+    private final Map<Integer, SJob> _jobs = new HashMap<Integer, SJob>();
     private final String _prefix;
     private int _batch = -1;
     private String _name = "regular";
@@ -84,6 +84,24 @@ public class SimpleJobScheduler implements JobScheduler, Runnable {
             _status = ACTIVE;
         }
 
+        public synchronized boolean kill(boolean force)
+        {
+            if (_status != ACTIVE)
+                throw new IllegalStateException("Not running");
+
+            if (_runnable instanceof Batchable) {
+                if (((Batchable)_runnable).kill()) {
+                    return true;
+                }
+                if (!force) {
+                    return false;
+                }
+            }
+
+            _thread.interrupt();
+            return true;
+        }
+
         public void run() {
             _startTime = System.currentTimeMillis();
             _thread = Thread.currentThread();
@@ -92,7 +110,7 @@ public class SimpleJobScheduler implements JobScheduler, Runnable {
             } finally {
                 synchronized (_lock) {
                     _status = REMOVED;
-                    _jobs.remove(Integer.valueOf(_id));
+                    _jobs.remove(_id);
                     _activeJobs--;
                     _lock.notifyAll();
                 }
@@ -185,8 +203,8 @@ public class SimpleJobScheduler implements JobScheduler, Runnable {
                 throw new InvocationTargetException(ee, "reported by queued");
             }
 
-            Job job = new SJob(runnable, id, priority);
-            _jobs.put(Integer.valueOf(id), job);
+            SJob job = new SJob(runnable, id, priority);
+            _jobs.put(id, job);
             _queues[priority].add(job);
             _lock.notifyAll();
             return id;
@@ -206,7 +224,7 @@ public class SimpleJobScheduler implements JobScheduler, Runnable {
 
     public JobInfo getJobInfo(int jobId) {
         synchronized (_lock) {
-            Job job = _jobs.get(Integer.valueOf(jobId));
+            Job job = _jobs.get(jobId);
             if (job == null) {
                 throw new NoSuchElementException("Job not found : Job-" + jobId);
             }
@@ -235,31 +253,35 @@ public class SimpleJobScheduler implements JobScheduler, Runnable {
         return sb;
     }
 
-    public void kill(int jobId) throws NoSuchElementException {
+    public void kill(int jobId, boolean force)
+        throws NoSuchElementException
+    {
         synchronized (_lock) {
-            SJob job = (SJob) _jobs.get(Integer.valueOf(jobId));
+            SJob job = _jobs.get(jobId);
             if (job == null)
                 throw new NoSuchElementException("Job not found : Job-" + jobId);
 
             // System.out.println("Huch : "+job._id+" <-> "+jobId+" :
             // "+job._runnable.toString()) ;
+
             switch (job._status) {
-                case WAITING:
-                    remove(jobId);
-                    return;
-                case ACTIVE:
-                    job._thread.interrupt();
-                    return;
-                default:
-                    throw new NoSuchElementException("Job is "
-                            + job.getStatusString() + " : Job-" + jobId);
+            case WAITING:
+                remove(jobId);
+                return;
+            case ACTIVE:
+                job.kill(force);
+                return;
+            default:
+                throw new NoSuchElementException("Job is "
+                                                 + job.getStatusString()
+                                                 + " : Job-" + jobId);
             }
         }
     }
 
     public void remove(int jobId) throws NoSuchElementException {
         synchronized (_lock) {
-            SJob job = (SJob) _jobs.get(Integer.valueOf(jobId));
+            SJob job = _jobs.get(jobId);
             if (job == null) {
                 throw new NoSuchElementException("Job not found : Job-" + jobId);
             }
@@ -270,7 +292,7 @@ public class SimpleJobScheduler implements JobScheduler, Runnable {
 
             List l = _queues[job._priority];
             l.remove(job);
-            _jobs.remove(Integer.valueOf(job._id));
+            _jobs.remove(job._id);
             if (job._runnable instanceof Batchable)
                 ((Batchable) job._runnable).unqueued();
         }
@@ -278,7 +300,7 @@ public class SimpleJobScheduler implements JobScheduler, Runnable {
 
     public Job getJob(int jobId) throws NoSuchElementException {
         synchronized (_lock) {
-            Job job = _jobs.get(Integer.valueOf(jobId));
+            Job job = _jobs.get(jobId);
             if (job == null) throw new NoSuchElementException("Job-" + jobId);
 
             return job;
@@ -361,15 +383,12 @@ public class SimpleJobScheduler implements JobScheduler, Runnable {
             // shutdown
             //
 
-            for (Job aJob : _jobs.values()) {
-
-                SJob job = (SJob) aJob;
-
+            for (SJob job : _jobs.values()) {
                 if (job._status == WAITING) {
                     if (job._runnable instanceof Batchable)
                         ((Batchable) job._runnable).unqueued();
                 } else if (job._status == ACTIVE) {
-                    job._thread.interrupt();
+                    job.kill(true);
                 }
                 long start = System.currentTimeMillis();
                 while ((_activeJobs > 0)

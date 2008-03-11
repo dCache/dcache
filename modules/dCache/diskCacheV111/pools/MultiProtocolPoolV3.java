@@ -663,8 +663,10 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
             return getDefaultScheduler().add(runnable, priority);
         }
 
-        public void kill(int jobId) throws NoSuchElementException {
-            getSchedulerById(jobId).kill(jobId);
+        public void kill(int jobId, boolean force)
+            throws NoSuchElementException
+        {
+            getSchedulerById(jobId).kill(jobId, force);
         }
 
         public void remove(int jobId) throws NoSuchElementException {
@@ -1269,7 +1271,7 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
                         long jobId = job.getJobId();
                         say("Dup Request : refresing <" + newClient + ":"
                             + newId + "> old = " + jobId);
-                        queueManager.kill((int) jobId);
+                        queueManager.kill((int) jobId, true);
                         queueManager.add(queueName, io,
                                          SimpleJobScheduler.REGULAR);
                     } else {
@@ -1308,6 +1310,8 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
         private DoorTransferFinishedMessage _finished = null;
         private MoverInfoMessage _info = null;
         private boolean _started = false;
+        private boolean _protected = false;
+        private Thread _thread;
 
         public RepositoryIoHandler(PoolIoFileMessage poolMessage,
                                    CellMessage originalCellMessage)
@@ -1355,6 +1359,30 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
 
         private boolean isWrite() {
             return _create;
+        }
+
+        protected synchronized void protect()
+            throws InterruptedException
+        {
+            if (Thread.interrupted()) {
+                throw new InterruptedException("IO Job was killed");
+            }
+            _protected = true;
+        }
+
+        protected synchronized void setThread(Thread value)
+        {
+            _thread = value;
+        }
+
+        @Override
+        public synchronized boolean kill()
+        {
+            if (_protected || _thread == null)
+                return false;
+
+            _thread.interrupt();
+            return true;
         }
 
         @Override
@@ -1574,6 +1602,8 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
         //
         public void run() {
 
+            setThread(Thread.currentThread());
+
             say("JOB run " + _pnfsId);
             if (prepare())
                 return;
@@ -1663,12 +1693,7 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
                                  * have already been killed, we raise an
                                  * exception right away.
                                  */
-                                _timeoutManager.protect(getIoQueueName(),
-                                                        (int)getClientId());
-
-                                if (Thread.interrupted()) {
-                                    throw new InterruptedException("IO Job was killed");
-                                }
+                                protect();
                             }
 
                             /* Some movers perform checksum
@@ -1798,23 +1823,21 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
                     RandomAccessFile raf =
                         new RandomAccessFile(cacheFile, "r");
                     try {
-                        _handler.runIO(raf,
-                                       _protocolInfo,
-                                       _storageInfo,
-                                       _pnfsId,
-                                       new ReadOnlySpaceMonitor(_repository),
-                                       MoverProtocol.READ);
-
-                        /* The remaining steps are not safe to
-                         * interrupt and we therefore block the
-                         * timeout manager from killing us. If we have
-                         * already been killed, we raise an exception
-                         * right away.
-                         */
-                        _timeoutManager.protect(getIoQueueName(),
-                                                (int)getClientId());
-                        if (Thread.interrupted()) {
-                            throw new InterruptedException("IO Job was killed");
+                        try {
+                            _handler.runIO(raf,
+                                           _protocolInfo,
+                                           _storageInfo,
+                                           _pnfsId,
+                                           new ReadOnlySpaceMonitor(_repository),
+                                           MoverProtocol.READ);
+                        } finally {
+                            /* The remaining steps are not safe to
+                             * interrupt and we therefore block the
+                             * timeout manager from killing us. If we
+                             * have already been killed, we raise an
+                             * exception right away.
+                             */
+                            protect();
                         }
                     } finally {
                         /* This may throw an IOException, although it
@@ -2583,12 +2606,11 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
             PoolMoverKillMessage kill = (PoolMoverKillMessage) poolMessage;
             say("PoolMoverKillMessage for mover id " + kill.getMoverId());
             try {
-                mover_kill(kill.getMoverId());
+                mover_kill(kill.getMoverId(), false);
             } catch (NoSuchElementException e) {
                 esay(e);
                 kill.setReply(1, e);
             }
-
         } else if (poolMessage instanceof PoolFlushControlMessage) {
 
             _flushingThread.messageArrived((PoolFlushControlMessage)poolMessage, cellMessage);
@@ -3633,11 +3655,11 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
     public String hh_mover_queue_ls = "";
     public String hh_mover_ls = "[-binary [jobId] ]";
     public String hh_mover_remove = "<jobId>";
-    public String hh_mover_kill = "<jobId>";
+    public String hh_mover_kill = "<jobId> [-force]" ;
     public String hh_p2p_set_max_active = "<maxActiveIoMovers>";
     public String hh_p2p_ls = "[-binary [jobId] ]";
     public String hh_p2p_remove = "<jobId>";
-    public String hh_p2p_kill = "<jobId>";
+    public String hh_p2p_kill = "<jobId> [-force]" ;
 
     public String ac_mover_set_max_active_$_1(Args args)
         throws NumberFormatException, IllegalArgumentException
@@ -3795,25 +3817,25 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
         return mover_kill(_p2pQueue, args);
     }
 
-    private void mover_kill(int id)
+    private void mover_kill(int id, boolean force)
         throws NoSuchElementException
     {
-        mover_kill(_ioQueue, id);
+        mover_kill(_ioQueue, id, force);
     }
 
     private String mover_kill(JobScheduler js, Args args)
         throws NoSuchElementException, NumberFormatException
     {
         int id = Integer.parseInt(args.argv(0));
-        mover_kill(js, id);
+        mover_kill(js, id, args.getOpt("force") != null);
         return "Kill initialized";
     }
 
-    private void mover_kill(JobScheduler js, int id)
+    private void mover_kill(JobScheduler js, int id, boolean force)
         throws NoSuchElementException
     {
 
-        js.kill(id);
+        js.kill(id, force);
     }
 
     // ////////////////////////////////////////////////////

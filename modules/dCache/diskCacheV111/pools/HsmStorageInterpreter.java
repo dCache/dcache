@@ -55,10 +55,10 @@ public class HsmStorageInterpreter {
        _fetchQueue.remove( id ) ;
        return "Removed" ;
     }
-    public String hh_rh_jobs_kill = "<jobId>" ;
+    public String hh_rh_jobs_kill = "<jobId> [-force]" ;
     public String ac_rh_jobs_kill_$_1( Args args )throws Exception {
        int id = Integer.parseInt( args.argv(0) ) ;
-       _fetchQueue.kill( id ) ;
+       _fetchQueue.kill( id, args.getOpt("force") != null ) ;
        return "Kill initialized" ;
     }
     public String hh_rh_ls = "[<pnfsId>]" ;
@@ -113,7 +113,7 @@ public class HsmStorageInterpreter {
     public String hh_st_jobs_kill = "<jobId>" ;
     public String ac_st_jobs_kill_$_1( Args args )throws Exception {
        int id = Integer.parseInt( args.argv(0) ) ;
-       _storeQueue.kill( id ) ;
+       _storeQueue.kill( id, args.getOpt("force") != null ) ;
        return "Kill initialized" ;
     }
     public String hh_st_ls = "[<pnfsId>]" ;
@@ -151,14 +151,14 @@ public class HsmStorageInterpreter {
     }
 
     public String hh_rm_set_max_active = "<maxActiveRemovers>";
-    public String ac_rm_set_max_active_$_1(Args args) throws Exception 
+    public String ac_rm_set_max_active_$_1(Args args) throws Exception
     {
         int active = Integer.parseInt(args.argv(0));
         if (active < 0)
             throw new
                 IllegalArgumentException("<maxActiveRemovers> must be >= 0");
         _storageHandler.setMaxRemoveJobs(active);
-           
+
         return "Max active remover processes set to " + active;
     }
 

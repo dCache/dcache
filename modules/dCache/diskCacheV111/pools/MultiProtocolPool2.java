@@ -528,8 +528,10 @@ public class       MultiProtocolPool2
         public int  add( Runnable runnable , int priority ) throws InvocationTargetException {
            return getDefaultScheduler().add( runnable , priority ) ;
         }
-        public void kill( int jobId )  throws NoSuchElementException {
-           getSchedulerById( jobId ).kill( jobId ) ;
+        public void kill( int jobId, boolean force )
+            throws NoSuchElementException
+        {
+            getSchedulerById( jobId ).kill( jobId, force ) ;
         }
         public void remove( int jobId )  throws NoSuchElementException {
            getSchedulerById( jobId ).remove( jobId ) ;
@@ -1060,7 +1062,7 @@ public class       MultiProtocolPool2
                     }else if( _dupRequest == DUP_REQ_REFRESH ){
                         long jobId = job.getJobId() ;
                         say("Dup Request : refresing <"+newClient+":"+newId+"> old = "+jobId ) ;
-                        queueManager.kill( (int)jobId ) ;
+                        queueManager.kill( (int)jobId, true ) ;
                         queueManager.add( queueName , io , SimpleJobScheduler.REGULAR ) ;
                     }else{
                         say("Dup Request : PANIC (code corrupted) <"+newClient+":"+newId+">") ;
@@ -1097,6 +1099,8 @@ public class       MultiProtocolPool2
         private DoorTransferFinishedMessage  _finished  = null ;
         private MoverInfoMessage             _info      = null ;
         private boolean                      _started   = false ;
+        private Thread                 _thread;
+
         public  RepositoryIoHandler(
                 PoolIoFileMessage poolMessage,
                 CellMessage originalCellMessage    ) throws CacheException {
@@ -1153,6 +1157,22 @@ public class       MultiProtocolPool2
             }
 
         }
+
+        protected synchronized void setThread(Thread value)
+        {
+            _thread = value;
+        }
+
+        @Override
+        public boolean kill()
+        {
+            if (_thread == null)
+                return false;
+
+            _thread.interrupt();
+            return true;
+        }
+
         private boolean isWrite(){ return _create ; }
         @Override
         public String toString(){
@@ -1344,6 +1364,8 @@ public class       MultiProtocolPool2
         //   the Runnable Interface
         //
         public void run(){
+
+            setThread(Thread.currentThread());
 
             say( "JOB run "+_pnfsId ) ;
             if( prepare() )return ;
@@ -3285,7 +3307,7 @@ public class       MultiProtocolPool2
 
     private void mover_kill( JobScheduler js , int id )throws Exception {
 
-        js.kill( id ) ;
+        js.kill( id, true ) ;
     }
     //////////////////////////////////////////////////////
     //

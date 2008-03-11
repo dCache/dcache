@@ -19,6 +19,10 @@ public class JobSchedulerTestCell extends CellAdapter {
     public String toString(){
          return _name+" ["+_args+"]" ;
       }
+       @Override
+       public boolean kill() {
+           return false;
+       }
       public String getClient(){ return "Dummy" ; }
       public long getClientId(){ return 1001 ; }
 
@@ -60,6 +64,10 @@ public class JobSchedulerTestCell extends CellAdapter {
     public String toString(){
          return _name+" ["+_args+"]" ;
       }
+       @Override
+       public boolean kill() {
+           return false;
+       }
       public String getClient(){ return "Dummy" ; }
       public long getClientId(){ return 1001 ; }
       public void queued(int id){ say("Queued : "+_name + " id " + id) ; }
@@ -136,12 +144,12 @@ public class JobSchedulerTestCell extends CellAdapter {
    }
    public String ac_kill_$_1( Args args )throws Exception {
       int id = Integer.parseInt( args.argv(0) ) ;
-      _scheduler.kill( id ) ;
+      _scheduler.kill( id, true ) ;
       return "Done" ;
    }
    public String ac_remove_$_1( Args args )throws Exception {
       int id = Integer.parseInt( args.argv(0) ) ;
-      _scheduler.kill( id ) ;
+      _scheduler.remove( id ) ;
       return "Done" ;
    }
    public String ac_ls( Args args )throws Exception {
