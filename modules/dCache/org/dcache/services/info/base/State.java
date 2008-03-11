@@ -92,7 +92,11 @@ public class State {
 	 * @param update the set of changes that should be made.
 	 */
 	public void updateState( StateUpdate update) {
-		_pendingUpdates.push(update);
+		
+		synchronized( _pendingUpdates) {
+			_pendingUpdates.push(update);
+		}
+		
 		StateMaintainer.getInstance().wakeUp();
 	}
 	
@@ -112,7 +116,9 @@ public class State {
 	 * @return true if there are updates to be done, false otherwise.
 	 */
 	protected int countPendingUpdates() {
-		return _pendingUpdates.size();
+		synchronized( _pendingUpdates) {
+			return _pendingUpdates.size();
+		}
 	}
 	
 	/**
@@ -122,14 +128,19 @@ public class State {
 	 * @return true if something was done, false if nothing needed doing.
 	 */
 	protected void processUpdateStack() {
+		StateUpdate update;
+		int pendingUpdates;
 		
-		if( _pendingUpdates.empty())
-			return;
-
-		StateUpdate update = _pendingUpdates.pop();
+		synchronized( _pendingUpdates) {
+			if( _pendingUpdates.empty())
+				return;
+			
+			update = _pendingUpdates.pop();
+			pendingUpdates = _pendingUpdates.size();
+		}
 		
 		if( _log.isInfoEnabled())
-			_log.info("Processing update with "+update.count()+" metric updates, "+_pendingUpdates.size()+" pending.");
+			_log.info("Processing update with "+update.count()+" metric updates, "+pendingUpdates+" pending.");
 		
 		if( update.count() == 0) {
 			_log.warn( "StateUpdate with zero updates encountered");
