@@ -13,9 +13,12 @@ if [ -r ${ourHomeDir}/etc/srm_setup.env ] ; then
   . ${ourHomeDir}/etc/srm_setup.env
 fi
 
+hostname=`hostname | awk -F. '{print $1}'`
+
 export JAVA_HOME
 export JAVA_OPTS
 export CATALINA_HOME=${TOMCAT_BASE_PATH}/apache-tomcat-5.5.20
+export CATALINA_PID=${ourHomeDir}/config/lastPid.srm-${hostname}
 
 export X509_CERT
 export X509_KEY
