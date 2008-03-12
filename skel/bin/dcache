@@ -273,19 +273,10 @@ parseOptions() # $1 = list of valid options
 # Prints setting from configuration file, $1 = parameter name
 printConfig() 
 {
-    key=$1
-    cat ${ourHomeDir}/etc/node_config \
-        ${ourHomeDir}/etc/door_config 2>/dev/null |
-    perl -e "
-      while (<STDIN>) { 
-         s/\#.*$// ;                        # Remove comments
-         s/\s*$// ;                         # Remove trailing space
-         if ( s/^\s*${key}\s*=*\s*//i ) {   # Remove key and equals
-            print;                          # Print if key found
-            last;                           # Only use first appearance
-         }
-      }
-    "
+    #          Comments      Trailing space  Print value
+    #          vvvvvvvv      vvvvvvv         vvvvvvvvvvvvvvvvvvvvvvvvvv
+    sed -n -e 's/#.*$//' -e 's/\s*$//'   -e "s/^\s*$1\s*=\s*\(.*\)/\1/p" \
+      ${ourHomeDir}/etc/node_config ${ourHomeDir}/etc/door_config 2> /dev/null
 }
 
 # Auto mount PNFS on FTP doors and check that PNFS in mounted on admin
@@ -296,7 +287,9 @@ autoMountNameSpace()
     local ADMIN_NODE
     local PNFS_ROOT
     local NODE_TYPE
+    local NAMESPACE
 
+    NAMESPACE=`printConfig NAMESPACE`
     if [ -z "${NAMESPACE}" ] || [ "${NAMESPACE}" = "pnfs" ]; then
         PNFS_ROOT=`printConfig PNFS_ROOT`
         NODE_TYPE=`printConfig NODE_TYPE`
@@ -382,7 +375,15 @@ getServices()
     nodeType=`printConfig NODE_TYPE`
     case ${nodeType} in 
         admin)
-            printf "lm dCache pnfs dir adminDoor httpd utility gPlazma "
+            printf "lm dCache "
+
+	    if [ "`printConfig NAMESPACE`" = "chimera" ] ; then
+		printf "chimera "
+	    else
+		printf "pnfs "
+	    fi		    
+
+            printf "dir adminDoor httpd utility gPlazma "
 
             if [ "`printConfig InfoProvider`" = "yes" ]; then
                 printf "infoProvider "
@@ -399,7 +400,11 @@ getServices()
                 printf "dCache "
             fi
             if [ "`printConfig pnfsManager`" = "yes" ]; then
-                printf "pnfs "
+	        if [ "`printConfig NAMESPACE`" = "chimera" ] ; then
+		    printf "chimera "
+	        else
+		    printf "pnfs "
+	        fi
             fi
             if [ "`printConfig dirDomain`" = "yes" ]; then
                 printf "dir "
@@ -657,7 +662,7 @@ getPoolsInDomain() # $1 = Pool domain
     cat $poolFile
 }
 
-getPoolSetting() # #1 = pool path, #2 = setting
+getPoolSetting() # #1 = pool path, #2+ = setting
 {
     local path
     local key
@@ -671,17 +676,10 @@ getPoolSetting() # #1 = pool path, #2 = setting
 	exit 4
     fi
 
-    cat ${path}/setup 2>/dev/null |
-    perl -e "
-      while (<STDIN>) { 
-         s/\#.*$// ;                        # Remove comments
-         s/\s*$// ;                         # Remove trailing space
-         if ( s/^\s*${key}\s*//i ) {        # Remove key 
-            print;                          # Print if key found
-            last;                           # Only use first appearance
-         }
-      }
-    "    
+    #          Comments      Trailing space  Print value
+    #          vvvvvvvv      vvvvvvv         vvvvvvvvvvvvvvvvvvvvvvvvvv
+    sed -n -e 's/#.*$//' -e 's/\s*$//'   -e "s/^\s*${key}\s*\(.*\)/\1/p" \
+      ${path}/setup
 }
 
 # Extracts the amount of free space in GiB.
@@ -938,7 +936,7 @@ if [ $# -eq 0 ]; then
 fi
 
 # Check prerequisites
-require awk df grep sed cat hostname wc perl dirname basename mount
+require awk df grep sed cat hostname wc dirname basename mount
 
 # Read dCacheSetup
 if [ -r ${ourHomeDir}/config/dCacheSetup ]; then
@@ -979,9 +977,6 @@ if [ -z "${SERVER_ID}" ]; then
         fi
     fi
 fi
-
-# NAMESPACE indicates if we are to use pnfs or chimera
-NAMESPACE=`printConfig NAMESPACE`
 
 # Set primary log position
 if [ -z "${logArea}" ]; then
