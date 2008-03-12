@@ -3,15 +3,15 @@
 package diskCacheV111.vehicles;
 
 import  diskCacheV111.util.IteratorCookie ;
-import diskCacheV111.util.PnfsId;
+import diskCacheV111.repository.CacheRepositoryEntryInfo;
 
 import  java.util.List ;
 public class PoolQueryRepositoryMsg extends PoolMessage {
 
    private IteratorCookie _cookie  = new IteratorCookie() ;
-   private List<PnfsId>           _pnfsids = null ;
+   private List<CacheRepositoryEntryInfo>           _infos = null ;
 
-   private static final long serialVersionUID = -7160190467703974689L;
+    private static final long serialVersionUID = 5505604194473710945L;
 
    public PoolQueryRepositoryMsg(String poolName ){
       super(poolName) ;
@@ -20,12 +20,12 @@ public class PoolQueryRepositoryMsg extends PoolMessage {
       this(poolName);
       _cookie = cookie ;
    }
-   public void setReply( IteratorCookie cookie , List<PnfsId> pnfsids ){
+   public void setReply( IteratorCookie cookie , List<CacheRepositoryEntryInfo> infos ){
       _cookie  = cookie ;
-      _pnfsids = pnfsids ;
+      _infos = infos ;
       setReply();
    }
-   public List<PnfsId> getPnfsIds(){ return _pnfsids ; }
+   public List<CacheRepositoryEntryInfo> getInfos(){ return _infos ; }
    public IteratorCookie getCookie(){ return _cookie ; }
 
 }

@@ -44,7 +44,9 @@ public interface CacheRepository extends SpaceMonitor {
    public long getReservedSpace() ;
 
    public Iterator<PnfsId> pnfsids() throws CacheException ;
+   public List<CacheRepositoryEntryInfo> getValidCacheRepostoryEntryInfoList() ;
    public List<PnfsId> getValidPnfsidList() ;
+
    public void addCacheRepositoryListener(
                   CacheRepositoryListener listener ) ;
 

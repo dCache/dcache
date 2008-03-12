@@ -41,6 +41,7 @@ import diskCacheV111.util.FileNotInCacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.event.CacheRepositoryEvent;
 import diskCacheV111.repository.CacheRepositoryEntry;
+import diskCacheV111.repository.CacheRepositoryEntryInfo;
 
 /**
  * The CacheRepositoryV4 is an implementation of the CacheRepository
@@ -279,6 +280,26 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
             for (CacheRepositoryEntry entry : entries) {
                 if (entry.isCached() || entry.isPrecious()) {
                     validIds.add(entry.getPnfsId());
+                }
+            }
+            return validIds;
+        } catch (CacheException e) {
+            throw new RuntimeException("Bug. This should not happen.", e);
+        } finally {
+            _operationLock.readLock().unlock();
+        }
+    }
+
+    public List<CacheRepositoryEntryInfo> getValidCacheRepostoryEntryInfoList()
+    {
+        _operationLock.readLock().lock();
+        try {
+            Collection<CacheRepositoryEntry> entries = _allEntries.values();
+            List<CacheRepositoryEntryInfo> validIds =
+                    new ArrayList<CacheRepositoryEntryInfo>(entries.size());
+            for (CacheRepositoryEntry entry : entries) {
+                if (entry.isCached() || entry.isPrecious()) {
+                    validIds.add(new CacheRepositoryEntryInfo(entry));
                 }
             }
             return validIds;

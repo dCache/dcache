@@ -2851,8 +2851,8 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
     }
 
     private void getRepositoryListing(PoolQueryRepositoryMsg queryMessage) {
-        queryMessage.setReply(new RepositoryCookie(), _repository
-                              .getValidPnfsidList());
+        queryMessage.setReply(new RepositoryCookie(),
+                _repository.getValidCacheRepostoryEntryInfoList());
     }
 
     private void sentNotEnabledException(Message poolMessage,

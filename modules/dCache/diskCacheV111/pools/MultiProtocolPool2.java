@@ -2510,7 +2510,7 @@ public class       MultiProtocolPool2
             Iterator pnfsids = _repository.pnfsids() ;
             while( pnfsids.hasNext() )list.add(pnfsids.next()) ;
 
-            queryMessage.setReply( new RepositoryCookie() , _repository.getValidPnfsidList() ) ;
+            queryMessage.setReply( new RepositoryCookie() , _repository.getValidCacheRepostoryEntryInfoList() ) ;
         }catch(CacheException ce ){
             queryMessage.setFailed( 304 , ce ) ;
         }

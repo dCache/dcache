@@ -824,6 +824,21 @@ public class CacheRepository2 implements CacheRepository {
        return result ;
     }
 
+    public List<CacheRepositoryEntryInfo> getValidCacheRepostoryEntryInfoList()
+    {
+       ArrayList result = new ArrayList() ;
+       Iterator i = _pnfsids.values().iterator() ;
+       while( i.hasNext() ){
+          CacheEntry e = (CacheEntry)i.next() ;
+          try{
+             if( e.isPrecious() || e.isCached() )
+                 result.add( new CacheRepositoryEntryInfo(e) ) ;
+          }catch(Exception ee ){
+          }
+       }
+       return result ;
+    }
+
     public synchronized CacheRepositoryEntry createEntry( PnfsId pnfsId )
            throws CacheException{
         CacheEntry entry = (CacheEntry)_pnfsids.get( pnfsId ) ;
