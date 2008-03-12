@@ -129,7 +129,7 @@ sanitisePath() # $1 = path
     path=`dirname $1`
     result=`basename $1`
 
-    while [ "$path" != "." -a "$path" != "/" ]; do
+    while [ "$path" != "." ] && [ "$path" != "/" ]; do
 	result="`basename ${path}`/${result}"
 	path="`dirname ${path}`"
     done
@@ -288,6 +288,50 @@ printConfig()
     "
 }
 
+# Auto mount PNFS on FTP doors and check that PNFS in mounted on admin
+# nodes.
+autoMountNameSpace()
+{
+    local cp
+    local ADMIN_NODE
+    local PNFS_ROOT
+    local NODE_TYPE
+
+    if [ -z "${NAMESPACE}" ] || [ "${NAMESPACE}" = "pnfs" ]; then
+        PNFS_ROOT=`printConfig PNFS_ROOT`
+        NODE_TYPE=`printConfig NODE_TYPE`
+	if [ "${NODE_TYPE}" = "admin" ]; then
+	    cp=`df ${PNFS_ROOT}/fs 2>/dev/null |grep "${PNFS_ROOT}" | awk '{print $2}'`
+	    if [ -z "$cp" ]; then
+		printp "[ERROR] ${PNFS_ROOT}/fs mount point exists, but is
+                        not mounted. Make sure pnfs is running on this 
+                        admin node. Exiting."
+		exit 1
+	    fi
+	elif [ "`printConfig GRIDFTP`" = "yes" ]; then
+	    cp=`df ${PNFS_ROOT}/${SERVER_ID} 2>/dev/null |grep "${PNFS_ROOT}" | awk '{print $2}'`
+	    if [ -z $cp ]; then
+		ADMIN_NODE=`printConfig ADMIN_NODE`
+		if [ -z "$ADMIN_NODE" ] || [ "$ADMIN_NODE" = myAdminNode ]; then
+		    printp "[ERROR] pnfs not mounted on 
+                            ${PNFS_ROOT}/${SERVER_ID}/ and ADMIN_NODE in 
+                            etc/node_config or etc/door_config not set
+                            properly. Exiting."
+		    exit 1
+		fi
+		printp "${PNFS_ROOT}/${SERVER_ID}/ not mounted - going to mount it now."
+		mount -o intr,rw,noac,hard,nfsvers=2 $ADMIN_NODE:/pnfsdoors ${PNFS_ROOT}/${SERVER_ID}
+		cp=`df ${PNFS_ROOT}/${SERVER_ID} 2>/dev/null |grep "${PNFS_ROOT}" | awk '{print $2}'`
+		if [ -z $cp ]; then
+		    printp "[ERROR] Still not mounted. Apparently no pnfs 
+                            server running on admin node $ADMIN_NODE. Exiting."
+		    exit 1
+		fi
+	    fi
+	fi	
+    fi
+}
+
 # Prints the service name of a domain. The service name corresponds to
 # the name of the batch file of that service, without the file
 # suffix. 
@@ -334,71 +378,72 @@ getService() # $1 = domain name
 # Prints list of configured services.
 getServices()
 {
+    local nodeType
     nodeType=`printConfig NODE_TYPE`
     case ${nodeType} in 
         admin)
             printf "lm dCache pnfs dir adminDoor httpd utility gPlazma "
 
-            if [ "`printConfig InfoProvider`" = yes ] ; then
+            if [ "`printConfig InfoProvider`" = "yes" ]; then
                 printf "infoProvider "
             fi
-            if [ "`printConfig statistics`" = yes ] ; then
+            if [ "`printConfig statistics`" = "yes" ]; then
                 printf "statistics "
             fi
             ;;
         custom)
-            if [ "`printConfig lmDomain`" = yes ] ; then
+            if [ "`printConfig lmDomain`" = "yes" ]; then
                 printf "lm "
             fi
-            if [ "`printConfig poolManager`" = yes ] ; then
+            if [ "`printConfig poolManager`" = "yes" ]; then
                 printf "dCache "
             fi
-            if [ "`printConfig pnfsManager`" = yes ] ; then
+            if [ "`printConfig pnfsManager`" = "yes" ]; then
                 printf "pnfs "
             fi
-            if [ "`printConfig dirDomain`" = yes ] ; then
+            if [ "`printConfig dirDomain`" = "yes" ]; then
                 printf "dir "
             fi
-            if [ "`printConfig adminDoor`" = yes ] ; then
+            if [ "`printConfig adminDoor`" = "yes" ]; then
                 printf "adminDoor "
             fi
-            if [ "`printConfig httpDomain`" = yes ] ; then
+            if [ "`printConfig httpDomain`" = "yes" ]; then
                 printf "httpd "
             fi
-            if [ "`printConfig utilityDomain`" = yes ] ; then
+            if [ "`printConfig utilityDomain`" = "yes" ]; then
                 printf "utility "
             fi
-            if [ "`printConfig InfoProvider`" = yes ] ; then
+            if [ "`printConfig InfoProvider`" = "yes" ]; then
                 printf "infoProvider "
             fi
-            if [ "`printConfig statistics`" = yes ] ; then
+            if [ "`printConfig statistics`" = "yes" ]; then
                 printf "statistics "
             fi
-            if [ "`printConfig gPlazmaService`" = yes ] ; then
+            if [ "`printConfig gPlazmaService`" = "yes" ]; then
                 printf "gPlazma "
             fi
             ;;
     esac    
     
-    if [ "`printConfig ReplicaManager`" = yes ] ; then
+    if [ "`printConfig ReplicaManager`" = "yes" ]; then
         printf "replica "
     fi
-    if [ "`printConfig DCAP`" = yes ] ; then
+    if [ "`printConfig DCAP`" = "yes" ]; then
         printf "dcap "
     fi
-    if [ "`printConfig XROOTD`" = yes ] ; then
+    if [ "`printConfig XROOTD`" = "yes" ]; then
         printf "xrootdDoor "
     fi	
-    if [ "`printConfig GRIDFTP`" = yes ] ; then
+    if [ "`printConfig GRIDFTP`" = "yes" ]; then
         printf "gridftpdoor "
     fi
-    if [ "`printConfig GSIDCAP`" = yes ] ; then
+    if [ "`printConfig GSIDCAP`" = "yes" ]; then
         printf "gsidcapdoor "
     fi
-    if [ "`printConfig SRM`" = yes ] ; then
+    if [ "`printConfig SRM`" = "yes" ]; then
         printf "srm "
     fi
-    if [ -n "`getDomains pool`" ] ; then
+    if [ -n "`getDomains pool`" ]; then
 	printf "pool "
     fi
 }
@@ -535,12 +580,12 @@ pidOfDomain() # $1 = Domain name
     local pid
 
     pidFile=${config}/lastPid.${1%*Domain}
-    if [ ! -f ${pidFile} ] ; then
+    if [ ! -f ${pidFile} ]; then
         return 1
     fi
       
     pid=`cat ${pidFile}`
-    if ! isRunning ${pid} ; then
+    if ! isRunning ${pid}; then
         return 1
     fi
 
@@ -558,7 +603,7 @@ logOfDomain() # $1 = Domain name
 	srm)
 	    # Getting the location of the SRM stuff is unfortunately 
             # somewhat messy...
-	    if [ -r ${ourHomeDir}/etc/srm_setup.env -a -r ${ourHomeDir}/bin/dcache-srm ] ; then
+	    if [ -r ${ourHomeDir}/etc/srm_setup.env ] && [ -r ${ourHomeDir}/bin/dcache-srm ]; then
 		. ${ourHomeDir}/etc/srm_setup.env
 		eval `grep "export CATALINA_HOME" ${ourHomeDir}/bin/dcache-srm`
 		printf "%s" "${CATALINA_HOME}/logs/catalina.out"
@@ -893,15 +938,29 @@ if [ $# -eq 0 ]; then
 fi
 
 # Check prerequisites
-require awk df grep sed cat hostname wc perl dirname basename
+require awk df grep sed cat hostname wc perl dirname basename mount
 
 # Read dCacheSetup
-if [ -r ${ourHomeDir}/config/dCacheSetup ] ; then
+if [ -r ${ourHomeDir}/config/dCacheSetup ]; then
     . ${ourHomeDir}/config/dCacheSetup
 else
     printp "${ourHomeDir}/config/dCacheSetup does not exist. You have
             to install and setup dCache before you can use this
             script." 1>&2
+    exit 1
+fi
+
+# Sanitycheck for serviceLocatorHost
+if [ -z "${serviceLocatorHost}" ] || [ "${serviceLocatorHost}" = "SERVER" ]; then
+    printp "[ERROR] The variable 'serviceLocatorHost' in 
+            ${ourHomeDir}/config/dCacheSetup has to be set properly. Exiting."
+    exit 1
+fi
+
+# Sanitycheck for java
+if [ -z "${java}" ] || [ ! -x "${java}" ] || ! ${java} -version 2>&1 | grep -E 'version "1\.[56]' >/dev/null ; then
+    printp "[ERROR] The variable 'java' in ${ourHomeDir}/config/dCacheSetup
+            has to be set to a Java VM version 1.5 or 1.6. Exiting."
     exit 1
 fi
 
@@ -911,9 +970,9 @@ hostname=`hostname | awk -F. '{print $1}'`
 
 # Find server ID
 SERVER_ID=`printConfig SERVER_ID`
-if [ -z "${SERVER_ID}" ] ; then
+if [ -z "${SERVER_ID}" ]; then
     SERVER_ID=`hostname -d 2>/dev/null`
-    if [ $? -ne 0 -o -z "${SERVER_ID}" ] ; then
+    if [ $? -ne 0 ] || [ -z "${SERVER_ID}" ]; then
         SERVER_ID="`cat /etc/resolv.conf | sed -e 's/#.*$//' | grep 'search' | awk '{ print($2) }'`"
         if [ -z "${SERVER_ID}" ]; then
             SERVER_ID="`cat /etc/resolv.conf | sed -e 's/#.*$//' | grep 'domain' | awk '{ print($2) }'`"
@@ -921,8 +980,11 @@ if [ -z "${SERVER_ID}" ] ; then
     fi
 fi
 
+# NAMESPACE indicates if we are to use pnfs or chimera
+NAMESPACE=`printConfig NAMESPACE`
+
 # Set primary log position
-if [ -z "${logArea}" ] ; then
+if [ -z "${logArea}" ]; then
     log=${ourHomeDir}/log
     logParam="-logArea=${log}"
 else
@@ -934,6 +996,8 @@ case "$1" in
     start)
         shift
         domains=`expandServiceAndDomainList $*`
+
+        autoMountNameSpace
 
         for domain in $domains; do
             run $domain start
