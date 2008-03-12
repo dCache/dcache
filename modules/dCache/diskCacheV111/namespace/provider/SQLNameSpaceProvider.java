@@ -90,8 +90,9 @@ public class SQLNameSpaceProvider implements  CacheLocationProvider {
         }
         
         if ( (pwdfile != null) && (pwdfile.length() != 0) ) {
-            Pgpass pgpass = new Pgpass(pwdfile);      //VP
-            pass = pgpass.getPgpass(jdbcUrl, user);   //VP
+            Pgpass pgpass = new Pgpass(pwdfile);          //VP
+            String p = pgpass.getPgpass(jdbcUrl, user);   //VP
+            if (null != p) pass = p;
         }
 
         try {
