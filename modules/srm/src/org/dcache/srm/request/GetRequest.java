@@ -477,13 +477,17 @@ public class GetRequest extends ContainerRequest {
     throws SRMException ,java.sql.SQLException {
         //say("getRequestStatus()");
         SrmPrepareToGetResponse response = new SrmPrepareToGetResponse();
+        // getTReturnStatus should be called before we get the
+       // statuses of the each file, as the call to the 
+       // getTReturnStatus() can now trigger the update of the statuses
+       // in particular move to the READY state, and TURL availability
+        response.setReturnStatus(getTReturnStatus());
         response.setRequestToken(getTRequestToken());
 
         ArrayOfTGetRequestFileStatus arrayOfTGetRequestFileStatus =
             new ArrayOfTGetRequestFileStatus();
         arrayOfTGetRequestFileStatus.setStatusArray(getArrayOfTGetRequestFileStatus(null));
         response.setArrayOfFileStatuses(arrayOfTGetRequestFileStatus);
-        response.setReturnStatus(getTReturnStatus());
         return response;
     }
     
@@ -498,12 +502,22 @@ public class GetRequest extends ContainerRequest {
     throws SRMException, java.sql.SQLException {
         //say("getRequestStatus()");
         SrmStatusOfGetRequestResponse response = new SrmStatusOfGetRequestResponse();
+        // getTReturnStatus should be called before we get the
+       // statuses of the each file, as the call to the 
+       // getTReturnStatus() can now trigger the update of the statuses
+       // in particular move to the READY state, and TURL availability
+        response.setReturnStatus(getTReturnStatus());
         ArrayOfTGetRequestFileStatus arrayOfTGetRequestFileStatus =
             new ArrayOfTGetRequestFileStatus();
         arrayOfTGetRequestFileStatus.setStatusArray(
             getArrayOfTGetRequestFileStatus(surls));
         response.setArrayOfFileStatuses(arrayOfTGetRequestFileStatus);
-        response.setReturnStatus(getTReturnStatus());
+        String s ="getSrmStatusOfGetRequestResponse:";
+        s+= " StatusCode = "+response.getReturnStatus().getStatusCode().toString();
+        for(TGetRequestFileStatus fs :arrayOfTGetRequestFileStatus.getStatusArray()) {
+            s += " FileStatusCode = "+fs.getStatus().getStatusCode();
+        }
+        say(s);
         return response;
     }
     

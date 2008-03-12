@@ -488,13 +488,17 @@ public class BringOnlineRequest extends ContainerRequest {
     throws SRMException ,java.sql.SQLException {
         //say("getRequestStatus()");
         SrmBringOnlineResponse response = new SrmBringOnlineResponse();
+      // getTReturnStatus should be called before we get the
+       // statuses of the each file, as the call to the 
+       // getTReturnStatus() can now trigger the update of the statuses
+       // in particular move to the READY state, and TURL availability
+        response.setReturnStatus(getTReturnStatus());
         response.setRequestToken(getTRequestToken());
 
         ArrayOfTBringOnlineRequestFileStatus arrayOfTBringOnlineRequestFileStatus =
             new ArrayOfTBringOnlineRequestFileStatus();
         arrayOfTBringOnlineRequestFileStatus.setStatusArray(getArrayOfTBringOnlineRequestFileStatus(null));
         response.setArrayOfFileStatuses(arrayOfTBringOnlineRequestFileStatus);
-        response.setReturnStatus(getTReturnStatus());
         return response;
     }
     
@@ -514,12 +518,22 @@ public class BringOnlineRequest extends ContainerRequest {
         //say("getRequestStatus()");
         SrmStatusOfBringOnlineRequestResponse response = 
                 new SrmStatusOfBringOnlineRequestResponse();
+      // getTReturnStatus should be called before we get the
+       // statuses of the each file, as the call to the 
+       // getTReturnStatus() can now trigger the update of the statuses
+       // in particular move to the READY state, and TURL availability
+        response.setReturnStatus(getTReturnStatus());
         ArrayOfTBringOnlineRequestFileStatus arrayOfTBringOnlineRequestFileStatus =
             new ArrayOfTBringOnlineRequestFileStatus();
         arrayOfTBringOnlineRequestFileStatus.setStatusArray(
             getArrayOfTBringOnlineRequestFileStatus(surls));
         response.setArrayOfFileStatuses(arrayOfTBringOnlineRequestFileStatus);
-        response.setReturnStatus(getTReturnStatus());
+        String s ="getSrmStatusOfBringOnlineRequestResponse:";
+        s+= " StatusCode = "+response.getReturnStatus().getStatusCode().toString();
+        for(TBringOnlineRequestFileStatus fs :arrayOfTBringOnlineRequestFileStatus.getStatusArray()) {
+            s += " FileStatusCode = "+fs.getStatus().getStatusCode();
+        }
+        say(s);
         return response;
     }
     
@@ -624,18 +638,23 @@ public class BringOnlineRequest extends ContainerRequest {
             
         }
         
-        TReturnStatus status = new TReturnStatus();
-        status.setStatusCode(TStatusCode.SRM_SUCCESS);
-        SrmReleaseFilesResponse srmReleaseFilesResponse = new SrmReleaseFilesResponse();
-        srmReleaseFilesResponse.setReturnStatus(status);
-        srmReleaseFilesResponse.setArrayOfFileStatuses(new ArrayOfTSURLReturnStatus(surlLReturnStatuses));
-        // we do this to make the srm update the status of the request if it changed
-        try{
+       try{
+       // we do this to make the srm update the status of the request if it changed
+       // getTReturnStatus should be called before we get the
+       // statuses of the each file, as the call to the 
+       // getTReturnStatus() can now trigger the update of the statuses
+       // in particular move to the READY state, and TURL availability
             getTReturnStatus();
         }
         catch(Exception e) {
             e.printStackTrace();
         }
+        
+        TReturnStatus status = new TReturnStatus();
+        status.setStatusCode(TStatusCode.SRM_SUCCESS);
+        SrmReleaseFilesResponse srmReleaseFilesResponse = new SrmReleaseFilesResponse();
+        srmReleaseFilesResponse.setReturnStatus(status);
+        srmReleaseFilesResponse.setArrayOfFileStatuses(new ArrayOfTSURLReturnStatus(surlLReturnStatuses));
         return srmReleaseFilesResponse;
 
     }

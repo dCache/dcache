@@ -382,13 +382,17 @@ public class PutRequest extends ContainerRequest{
     throws SRMException ,java.sql.SQLException {
         //say("getRequestStatus()");
         SrmPrepareToPutResponse response = new SrmPrepareToPutResponse();
+       // getTReturnStatus should be called before we get the
+       // statuses of the each file, as the call to the 
+       // getTReturnStatus() can now trigger the update of the statuses
+       // in particular move to the READY state, and TURL availability
+        response.setReturnStatus(getTReturnStatus());
         response.setRequestToken(getTRequestToken());
         ArrayOfTPutRequestFileStatus  arrayOfTPutRequestFileStatus = 
             new ArrayOfTPutRequestFileStatus();
         arrayOfTPutRequestFileStatus.setStatusArray(
             getArrayOfTPutRequestFileStatus(null));
         response.setArrayOfFileStatuses(arrayOfTPutRequestFileStatus);
-        response.setReturnStatus(getTReturnStatus());
         return response;
     }
     
@@ -403,12 +407,24 @@ public class PutRequest extends ContainerRequest{
     throws SRMException, java.sql.SQLException {
         //say("getRequestStatus()");
         SrmStatusOfPutRequestResponse response = new SrmStatusOfPutRequestResponse();
+        
+       // getTReturnStatus should be called before we get the
+       // statuses of the each file, as the call to the 
+       // getTReturnStatus() can now trigger the update of the statuses
+       // in particular move to the READY state, and TURL availability
+        response.setReturnStatus(getTReturnStatus());
+
         ArrayOfTPutRequestFileStatus  arrayOfTPutRequestFileStatus = 
         new ArrayOfTPutRequestFileStatus();
         arrayOfTPutRequestFileStatus.setStatusArray(
             getArrayOfTPutRequestFileStatus(surls));
         response.setArrayOfFileStatuses(arrayOfTPutRequestFileStatus);
-        response.setReturnStatus(getTReturnStatus());
+        String s ="getSrmStatusOfPutRequestResponse:";
+        s+= " StatusCode = "+response.getReturnStatus().getStatusCode().toString();
+        for(TPutRequestFileStatus fs :arrayOfTPutRequestFileStatus.getStatusArray()) {
+            s += " FileStatusCode = "+fs.getStatus().getStatusCode();
+        }
+        say(s);
         return response;
     }
     
