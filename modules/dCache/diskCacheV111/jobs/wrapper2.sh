@@ -61,7 +61,7 @@ irixFix=$0
       #
       #         get our location 
       #
-      PRG=`type -p $0` >/dev/null 2>&1
+      PRG=`which $0` >/dev/null 2>&1
       while [ -L "$PRG" ]
       do
           newprg=`expr "\`/bin/ls -l "$PRG"\`" : ".*$PRG -> \(.*\)"`
