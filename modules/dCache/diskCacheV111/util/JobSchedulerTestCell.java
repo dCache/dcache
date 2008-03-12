@@ -19,7 +19,6 @@ public class JobSchedulerTestCell extends CellAdapter {
     public String toString(){
          return _name+" ["+_args+"]" ;
       }
-       @Override
        public boolean kill() {
            return false;
        }
@@ -64,7 +63,6 @@ public class JobSchedulerTestCell extends CellAdapter {
     public String toString(){
          return _name+" ["+_args+"]" ;
       }
-       @Override
        public boolean kill() {
            return false;
        }

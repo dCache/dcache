@@ -1375,7 +1375,6 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
             _thread = value;
         }
 
-        @Override
         public synchronized boolean kill()
         {
             if (_protected || _thread == null)

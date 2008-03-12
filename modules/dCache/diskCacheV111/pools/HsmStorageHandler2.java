@@ -449,7 +449,6 @@ public class HsmStorageHandler2  {
             _thread = thread;
         }
 
-        @Override
         public synchronized boolean kill()
         {
             if (_thread == null)
@@ -857,7 +856,6 @@ public class HsmStorageHandler2  {
             _thread = thread;
         }
 
-        @Override
         public synchronized boolean kill()
         {
             if (_thread == null)

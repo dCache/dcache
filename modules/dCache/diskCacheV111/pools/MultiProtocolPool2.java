@@ -1163,7 +1163,6 @@ public class       MultiProtocolPool2
             _thread = value;
         }
 
-        @Override
         public boolean kill()
         {
             if (_thread == null)
