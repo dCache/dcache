@@ -16,6 +16,8 @@ import java.util.List;
  */
 class Unpinner extends SMCTask
 {
+    private final static long PNFS_TIMEOUT = 5 * 60 * 1000; // 5 minutes
+
     protected final PnfsId _pnfsId;
     protected final Pin _pin;
     protected final UnpinnerContext _fsm;
@@ -53,14 +55,14 @@ class Unpinner extends SMCTask
         PnfsFlagMessage pfm = new PnfsFlagMessage(_pnfsId, "s", PnfsFlagMessage.FlagOperation.REMOVE);
         pfm.setValue("*");
         pfm.setReplyRequired(true);
-        sendMessage(_pnfsManager, pfm, 60*60*1000);
+        sendMessage(_pnfsManager, pfm, PNFS_TIMEOUT);
     }
 
     void findCacheLocations()
     {
         PnfsGetCacheLocationsMessage request =
             new PnfsGetCacheLocationsMessage(_pnfsId);
-        sendMessage(_pnfsManager, request, 60*60*1000);
+        sendMessage(_pnfsManager, request, PNFS_TIMEOUT);
     }
 
     void unsetStickyFlags(List<String> locations)

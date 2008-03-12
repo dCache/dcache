@@ -14,6 +14,10 @@ import dmg.cells.nucleus.CellPath;
  */
 class Pinner extends SMCTask
 {
+    private final static long POOLMANAGER_TIMEOUT = 60 * 60 * 1000; // 1 hour
+    private final static long POOL_TIMEOUT = 60 * 1000; // 1 minute
+    private final static long PNFS_TIMEOUT = 5 * 60 * 1000; // 5 minutes
+
     private final Pin _pin;
     private final PnfsId _pnfsId;
     private final PinnerContext _fsm;
@@ -26,7 +30,7 @@ class Pinner extends SMCTask
     public Pinner(PinManager manager,
         PnfsId pnfsId,
         String clientHost,
-        StorageInfo storageInfo, 
+        StorageInfo storageInfo,
         Pin pin)
     {
         super(manager);
@@ -69,20 +73,12 @@ class Pinner extends SMCTask
     {
         sendMessage(_pnfsManager,
                     new PnfsGetStorageInfoMessage(_pnfsId),
-                    60 * 60 * 1000);
-    }
-
-    void updatePnfsFlag()
-    {
-        PnfsFlagMessage pfm = new PnfsFlagMessage(_pnfsId, "s", PnfsFlagMessage.FlagOperation.SET);
-        pfm.setValue("*");
-        pfm.setReplyRequired(true);
-        sendMessage(_pnfsManager, pfm, 60 * 60 * 1000);
+                    PNFS_TIMEOUT);
     }
 
     void findReadPool()
     {
-        String host = _clientHost== null ? 
+        String host = _clientHost== null ?
             "localhost":
                 _clientHost;
         DCapProtocolInfo pinfo =
@@ -94,7 +90,7 @@ class Pinner extends SMCTask
                                          pinfo,
                                          0);
 
-        sendMessage(_poolManager, request, 1*24*60*60*1000);
+        sendMessage(_poolManager, request, POOLMANAGER_TIMEOUT);
     }
 
     void markSticky()
@@ -103,7 +99,7 @@ class Pinner extends SMCTask
             new PoolSetStickyMessage(_readPoolName, _pnfsId, true,
                                      getCellName(), -1);
         sendMessage(new CellPath(_readPoolName), setStickyRequest,
-                    1 * 24 * 60 * 60 * 1000);
+                    POOL_TIMEOUT);
     }
 
     void succeed()
