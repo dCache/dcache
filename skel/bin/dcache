@@ -247,7 +247,7 @@ parseOptions() # $1 = list of valid options
 
 		    eval "opt_${name}=1"
 		done
-		count=$((count+1))
+		count=$((${count}+1))
 		shift
 		continue
 		;;
@@ -264,7 +264,7 @@ parseOptions() # $1 = list of valid options
 	eval "opt_${name}=${value}"
 
 	shift
-	count=$((count+1))
+	count=$((${count}+1))
     done
 
     return $count
@@ -700,19 +700,19 @@ getSizeOfPool() # $1 = pool path
 
     case $size in
         *k)
-            printf "%d" $((value/(1024*1024)))
+            printf "%d" $((${value}/(1024*1024)))
             ;;
 
         *K)
-            printf "%d" $((value/(1024*1024)))
+            printf "%d" $((${value}/(1024*1024)))
             ;;
 
         *m)
-            printf "%d" $((value/1024))
+            printf "%d" $((${value}/1024))
             ;;
 
         *M)
-            printf "%d" $((value/1024))
+            printf "%d" $((${value}/1024))
             ;;
 
         *g)
@@ -724,15 +724,15 @@ getSizeOfPool() # $1 = pool path
             ;;
 
         *t)
-            printf "%d" $((value*1024))
+            printf "%d" $((${value}*1024))
             ;;
 
         *T)
-            printf "%d" $((value*1024))
+            printf "%d" $((${value}*1024))
             ;;
 
         *)
-            printf "%d" $((size/(1024*1024*1024)))
+            printf "%d" $((${size}/(1024*1024*1024)))
             ;;
     esac
 }
@@ -767,7 +767,7 @@ createPool() # $1 = size in GiB, $2 = path
 
     mkdir -p ${path} ${path}/data ${path}/control || exit 2
 
-    set_size="s:set max diskspace 100g:set max diskspace $((size*1024*1024*1024)):g"
+    set_size="s:set max diskspace 100g:set max diskspace $((${size}*1024*1024*1024)):g"
     set_movers="s:mover set max active 10:mover set max active ${NUMBER_OF_MOVERS}:g"
     sed -e "$set_size" -e "$set_movers" ${config}/setup.temp > ${path}/setup || exit 2
 
