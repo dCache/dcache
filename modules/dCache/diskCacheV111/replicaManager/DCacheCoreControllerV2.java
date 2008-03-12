@@ -13,6 +13,7 @@ import  dmg.util.* ;
 
 import  java.io.* ;
 import  java.util.*;
+import diskCacheV111.repository.CacheRepositoryEntryInfo;
 import  java.util.concurrent.atomic.*;
 import  java.util.concurrent.BlockingQueue;
 import  java.util.concurrent.LinkedBlockingQueue;
@@ -411,11 +412,11 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
    public class TaskObserver {
 
       private long   _id        = __nextTaskId() ;
-      private String _type      = null ;
-      private int    _errorCode = 0 ;
-      private String _errorMsg  = null;
-      private boolean _done     = false ;
-      private String  _status   = "Active" ;
+      protected String _type      = null ;
+      protected int    _errorCode = 0 ;
+      protected String _errorMsg  = null;
+      protected boolean _done     = false ;
+      protected String  _status   = "Active" ;
       private long   _creationTime;
 
       public TaskObserver( String type ){
@@ -566,9 +567,9 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
    //  remove a copy of this file
    //
    public class ReductionObserver extends TaskObserver  {
-       private PnfsId _pnfsId = null ;
-       private String _poolName = null ;
-       private TaskObserver _oldTask = null;
+       protected PnfsId _pnfsId = null ;
+       protected String _poolName = null ;
+       protected TaskObserver _oldTask = null;
        private String _key = null;
        private boolean _pnfsIdDeleted = false;
 
@@ -1871,7 +1872,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
      *  @throws NoRouteToCellException if the cell environment couldn't find the PoolManager.
      *  @throws InterruptedException if the method was interrupted.
      */
-   protected List getPoolRepository( String poolName )
+   protected List<CacheRepositoryEntryInfo> getPoolRepository( String poolName )
           throws MissingResourceException ,
                  ConcurrentModificationException ,
                  java.io.NotSerializableException ,
@@ -1879,7 +1880,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
                  InterruptedException                {
 
 
-       List list = new ArrayList() ;
+       List<CacheRepositoryEntryInfo> list = new ArrayList<CacheRepositoryEntryInfo>() ;
 
        for(
             IteratorCookie cookie = new IteratorCookie() ;
@@ -1908,7 +1909,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
               throw new
               ConcurrentModificationException("Pool file list of "+poolName+" was invalidated" ) ;
 
-           list.addAll( msg.getPnfsIds() ) ;
+           list.addAll( msg.getInfos()) ;
 
        }
 

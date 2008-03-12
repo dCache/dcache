@@ -17,6 +17,7 @@ import  dmg.util.* ;
 import  java.io.* ;
 import  java.sql.SQLException;
 import  java.util.*;
+import diskCacheV111.repository.CacheRepositoryEntryInfo;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -506,7 +507,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
   //
   //
   private void dbUpdatePool(String poolName) throws Exception {
-    List fileList = null;
+    List<CacheRepositoryEntryInfo> fileList = null;
     String hostName = null;
 
     say(" dbUpdatePool " + poolName);
@@ -1093,7 +1094,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
        }
 
        PnfsId pnfsId = new PnfsId( ( (String) rec[0]));
-       int count = ( (Long) rec[1]).intValue();
+       int count = ( (Integer) rec[1]).intValue();
 
        int delta = min - count;
        if (delta <= 0) { // Must be positive for Deficient
@@ -1147,7 +1148,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
        }
 
        PnfsId pnfsId = new PnfsId( ( (String) rec[0]));
-       int count = ( (Long) rec[1]).intValue();
+       int count = ( (Integer) rec[1]).intValue();
 
        int delta = count - max;
 

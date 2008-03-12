@@ -3,26 +3,17 @@
 package diskCacheV111.replicaManager;
 
 import diskCacheV111.util.*;
+import diskCacheV111.repository.CacheRepositoryEntryInfo;
 import dmg.cells.nucleus.*;
-import org.dcache.util.DMCFRetryProxyHandler;
+import org.dcache.util.JdbcConnectionPool;
 
 import java.util.*;
-//import java.io.IOException;
 import java.sql.*;
+import java.text.MessageFormat;
 
-//import javax.naming.*;
 import javax.sql.DataSource;
 
-import org.apache.commons.pool.ObjectPool;
-import org.apache.commons.pool.impl.GenericObjectPool;
-import org.apache.commons.pool.impl.StackKeyedObjectPoolFactory;
-import org.apache.commons.dbcp.ConnectionFactory;
-import org.apache.commons.dbcp.PoolingDataSource;
-import org.apache.commons.dbcp.PoolableConnectionFactory;
-import org.apache.commons.dbcp.DriverManagerConnectionFactory;
 
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Proxy;
 
 //import uk.org.primrose.GeneralException;
 //import uk.org.primrose.vendor.standalone.*;
@@ -98,37 +89,42 @@ public class ReplicaDbV1 implements ReplicaDb1 {
      * Add record (poolname, pnfsid) to the table 'replicas'
      */
     public synchronized void addPool(PnfsId pnfsId, String poolName) {
-        final String sql = "insert into replicas values ('" + poolName + "','" + pnfsId.toString() + "',now())";
+//1     final String sql = "INSERT INTO replicas VALUES ('" + poolName + "','" + pnfsId.toString() + "',now())";
         Connection conn = null;
-        Statement  stmt = null;
+//1     Statement  stmt = null;
+        PreparedStatement pstmt = null;
+        final String sql1 = "INSERT INTO replicas SELECT ?, ?, now(), pools.poolid, ?, ?, ? FROM pools WHERE pools.pool=?";
         try {
             conn = (_conn == null) ? DATASOURCE.getConnection() : _conn;
-            stmt = (_conn == null) ? conn.createStatement() : _stmt;
-            stmt.executeUpdate(sql);
+//1         stmt = (_conn == null) ? conn.createStatement() : _stmt;
+//1         stmt.executeUpdate(sql);
+            pstmt = conn.prepareStatement(sql1);
+            pstmt.setString (1, poolName);
+            pstmt.setString (2, pnfsId.toString());
+            pstmt.setInt    (3, 1);
+            pstmt.setBoolean(4, true);
+            pstmt.setBoolean(5, false);
+            pstmt.setString (6, poolName);
+            pstmt.executeUpdate();
         } catch (Exception ex) {
             String exMsg = ex.getMessage();
-            // say("DEBUG: exMsg=["+exMsg+"]");
-            // exMsg=[ERROR: Cannot insert a duplicate key into unique index
-            // replica]
-
             // This error string is system dependent or even version dependent:
             if (exMsg.startsWith("ERROR:  Cannot insert a duplicate key into unique index replica")
                     || exMsg.startsWith("ERROR: duplicate key violates unique constraint")) {
-              ; // noop
-              /** do nothing
                 String s = exMsg.substring(5);
                 say("WARNING" + s + "; caused by duplicate message, ignore for now. pnfsid=" + pnfsId.toString() + " pool="
                         + poolName);
-                ignoredSQLException("addPool()", (SQLException) ex, sql);
-               */
+//1             ignoredSQLException("addPool()", (SQLException) ex, sql);
+                ignoredSQLException("addPool()", (SQLException) ex, sql1);
             } else {
                 ex.printStackTrace();
                 esay("Database access error");
             }
         } finally {
+            try { if (null!=pstmt) pstmt.close();  } catch (SQLException e) { }
             if (_conn == null) {
-                try { stmt.close(); stmt = null; } catch (SQLException e) { }
-                try { conn.close(); } catch (SQLException e) { }
+//1             try { if (null!=stmt) stmt.close();  } catch (SQLException e) { }
+                try { if (null!=conn) conn.close();  } catch (SQLException e) { }
             }
 
         }
@@ -137,11 +133,14 @@ public class ReplicaDbV1 implements ReplicaDb1 {
     /**
      * Add records (poolname, pnfsid) to the table 'replicas'
      */
-    public synchronized void addPnfsToPool(List fileList, String poolName) {
+    public synchronized void addPnfsToPool(List<CacheRepositoryEntryInfo> fileList, String poolName) {
         Connection conn = null;
         Statement  stmt = null;
         PreparedStatement pstmt = null;
-        String sql = "insert into replicas values ('" + poolName + "',?,now())";
+//      final String sql = "INSERT INTO replicas VALUES ('" + poolName + "',?,now())";
+        final String sql = MessageFormat.format(
+                "INSERT INTO replicas SELECT ''{0}'', ?, now(), pools.poolid, ?, ?, ? FROM pools WHERE pools.pool=''{0}''",
+                poolName);
         try {
             conn = (_conn == null) ? DATASOURCE.getConnection() : _conn;
             stmt = (_conn == null) ? conn.createStatement() : _stmt;
@@ -151,18 +150,22 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             esay("addPnfsToPool: prepareStatement error");
         }
         try {
-//          stmt.executeUpdate("BEGIN");
-            conn.setAutoCommit(false);
+            stmt.execute("BEGIN ISOLATION LEVEL SERIALIZABLE");
             //
-            for (Iterator n = fileList.iterator(); n.hasNext();) { // Now put
+            for (CacheRepositoryEntryInfo info:  fileList) {        // Now put
                                                                     // all
                                                                     // pnfsids
                                                                     // into
                                                                     // replicas
                                                                     // table
-                String pnfsId = ((PnfsId)n.next()).toString();
+                String pnfsId = info.getPnfsId().toString();
+                int bitmask = info.getBitMask();
+                boolean countable = bitmask==1;
                 try {
                     pstmt.setString(1, pnfsId);
+                    pstmt.setInt    (2, bitmask);
+                    pstmt.setBoolean(3, countable);
+                    pstmt.setBoolean(4, false);
                     pstmt.executeUpdate();
                 } catch (Exception ex) {
                     String exMsg = ex.getMessage();
@@ -170,12 +173,10 @@ public class ReplicaDbV1 implements ReplicaDb1 {
                     // dependent:
                     if (exMsg.startsWith("ERROR:  Cannot insert a duplicate key into unique index replica")
                      || exMsg.startsWith("ERROR: duplicate key violates unique constraint")) {
-                      ; // noop
-                      /*
                       String s = exMsg.substring(5);
                       say("WARNING" + s + "; caused by duplicate message, ignore for now. pnfsid=" + pnfsId + " pool=" + poolName);
                       ignoredSQLException("addPool()", (SQLException) ex, sql);
-                      */
+
                     } else {
                         ex.printStackTrace();
                         esay("Database access error");
@@ -183,20 +184,20 @@ public class ReplicaDbV1 implements ReplicaDb1 {
                 }
             }
             //
-            stmt.executeUpdate("INSERT INTO history_a SELECT * FROM ONLY replicas WHERE pool='" + poolName + "'");  // Save
+            stmt.executeUpdate("INSERT INTO history_a SELECT pool,pnfsid,datestamp FROM ONLY replicas WHERE pool='" + poolName + "'");  // Save
                                                                                                                     // into
                                                                                                                     // history
                                                                                                                     // table
-//          stmt.executeUpdate("COMMIT");
-            conn.commit();
+            stmt.execute("COMMIT");
         } catch (SQLException e) {
             try { conn.rollback(); } catch (SQLException e1) { }
             esay("Database access error");
             e.printStackTrace();
         } finally {
+            try { if (null!=pstmt) pstmt.close();  } catch (SQLException e) { }
             if (_conn == null) {
-                try { stmt.close(); stmt = null; } catch (SQLException e) { }
-                try { conn.close(); } catch (SQLException e) { }
+                try { if (null!=stmt) stmt.close();  } catch (SQLException e) { }
+                try { if (null!=conn) conn.close();  } catch (SQLException e) { }
             }
         }
     }
@@ -218,8 +219,8 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             reportSQLException("removePool()", ex, sql);
         } finally {
             if (_conn == null) {
-                try { stmt.close(); stmt = null; } catch (SQLException e) { }
-                try { conn.close(); } catch (SQLException e) { }
+                try { if (null!=stmt) stmt.close();  } catch (SQLException e) { }
+                try { if (null!=conn) conn.close();  } catch (SQLException e) { }
             }
         }
 
@@ -248,9 +249,9 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             return -1;
         } finally {
             if (_conn == null) {
-                try { rset.close(); rset = null; } catch (SQLException e) { }
-                try { stmt.close(); stmt = null; } catch (SQLException e) { }
-                try { conn.close(); } catch (SQLException e) { }
+                try { if (null!=rset) rset.close();  } catch (SQLException e) { }
+                try { if (null!=stmt) stmt.close();  } catch (SQLException e) { }
+                try { if (null!=conn) conn.close();  } catch (SQLException e) { }
             }
         }
     }
@@ -261,18 +262,23 @@ public class ReplicaDbV1 implements ReplicaDb1 {
     public void clearPools(PnfsId pnfsId) {
         Connection conn = null;
         Statement  stmt = null;
-        String sql = "DELETE FROM replicas WHERE pnfsId = '" + pnfsId.toString() + "'";
+        String sid = pnfsId.toString();
+        // If the file has been removed from PNFS, we also have to clean up "files" and "excluded" tables
         try {
             conn = (_conn == null) ? DATASOURCE.getConnection() : _conn;
             stmt = (_conn == null) ? conn.createStatement() : _stmt;
-            stmt.executeUpdate(sql);
+            stmt.execute("BEGIN ISOLATION LEVEL SERIALIZABLE");
+            stmt.executeUpdate("DELETE FROM replicas WHERE pnfsId = '" + sid + "'");
+            stmt.executeUpdate("DELETE FROM excluded WHERE pnfsId = '" + sid + "'");
+            stmt.executeUpdate("DELETE FROM files    WHERE pnfsId = '" + sid + "'");
+            stmt.execute("COMMIT");
         } catch (Exception ex) {
             ex.printStackTrace();
             esay("Database access error");
         } finally {
             if (_conn == null) {
-                try { stmt.close(); stmt = null; } catch (SQLException e) { }
-                try { conn.close(); } catch (SQLException e) { }
+                try { if (null!=stmt) stmt.close();  } catch (SQLException e) { }
+                try { if (null!=conn) conn.close();  } catch (SQLException e) { }
             }
         }
     }
@@ -315,9 +321,9 @@ public class ReplicaDbV1 implements ReplicaDb1 {
         }
 
         public void close() {
-            try { rset.close(); rset = null; } catch (SQLException e) { }
-            try { stmt.close(); stmt = null; } catch (SQLException e) { }
-            try { conn.close(); } catch (SQLException e) { }
+            try { if (null!=rset) rset.close();  } catch (SQLException e) { }
+            try { if (null!=stmt) stmt.close();  } catch (SQLException e) { }
+            try { if (null!=conn) conn.close();  } catch (SQLException e) { }
         }
     }
 
@@ -327,7 +333,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
     private class PnfsIdIterator extends DbIterator {
 
         private PnfsIdIterator() throws SQLException {
-            final String sql = "SELECT DISTINCT pnfsId FROM ONLY replicas";
+            final String sql = "SELECT pnfsId FROM ONLY replicas GROUP BY pnfsid";
             stmt = conn.createStatement();
             rset = stmt.executeQuery(sql);
         }
@@ -339,7 +345,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
         }
 
         private PnfsIdIterator(long timestamp) throws SQLException {
-            String sql = "SELECT pnfsId FROM action WHERE timestamp < '" + timestamp + "'";
+            String sql = "SELECT pnfsId FROM actions WHERE timestamp < " + timestamp;
             stmt = conn.createStatement();
             rset = stmt.executeQuery(sql);
         }
@@ -517,24 +523,21 @@ public class ReplicaDbV1 implements ReplicaDb1 {
         try {
             conn = (_conn == null) ? DATASOURCE.getConnection() : _conn;
             stmt = (_conn == null) ? conn.createStatement() : _stmt;
-//          stmt.executeUpdate("BEGIN");
-            conn.setAutoCommit(false);
-            stmt.executeUpdate("INSERT INTO history_b SELECT * FROM ONLY replicas");  // Save
-                                                                                      // into
-                                                                                      // history
-                                                                                      // table
-            stmt.executeUpdate("DELETE FROM replicas");
-            stmt.executeUpdate("DELETE FROM pools");
-//          stmt.executeUpdate("COMMIT");
-            conn.commit();
+            stmt.execute("BEGIN ISOLATION LEVEL SERIALIZABLE");
+            stmt.executeUpdate("INSERT INTO history_b SELECT pool,pnfsid,datestamp FROM ONLY replicas");    // Save
+                                                                                                            // into
+                                                                                                            // history
+                                                                                                            // table
+            stmt.executeUpdate("TRUNCATE TABLE replicas, pools");
+            stmt.execute("COMMIT");
         } catch (Exception ex) {
             try { conn.rollback(); } catch (SQLException e1) { }
 //          ex.printStackTrace();
             esay("Can't clear the tables");
         } finally {
             if (_conn == null) {
-                try { stmt.close(); stmt = null; } catch (SQLException e) { }
-                try { conn.close(); } catch (SQLException e) { }
+                try { if (null!=stmt) stmt.close();  } catch (SQLException e) { }
+                try { if (null!=conn) conn.close();  } catch (SQLException e) { }
             }
         }
     }
@@ -551,24 +554,22 @@ public class ReplicaDbV1 implements ReplicaDb1 {
         try {
             conn = (_conn == null) ? DATASOURCE.getConnection() : _conn;
             stmt = (_conn == null) ? conn.createStatement() : _stmt;
-//          stmt.executeUpdate("BEGIN");
-            conn.setAutoCommit(false);
-            stmt.executeUpdate("INSERT INTO history_b SELECT * FROM ONLY replicas WHERE pool='" + poolName + "'");  // Save
-                                                                                                                    // into
-                                                                                                                    // history
-                                                                                                                    // table
+            stmt.execute("BEGIN ISOLATION LEVEL SERIALIZABLE");
+            stmt.executeUpdate("INSERT INTO history_b SELECT pool,pnfsid,datestamp FROM ONLY replicas WHERE pool='" + poolName + "'");  // Save
+                                                                                                                                        // into
+                                                                                                                                        // history
+                                                                                                                                        // table
             stmt.executeUpdate("DELETE FROM ONLY replicas WHERE pool='" + poolName + "'");
             stmt.executeUpdate("DELETE FROM pools    WHERE pool='" + poolName + "'");
-//          stmt.executeUpdate("COMMIT");
-            conn.commit();
+            stmt.execute("COMMIT");
         } catch (SQLException ex) {
             try { conn.rollback(); } catch (SQLException e1) { }
 //          ex.printStackTrace();
             esay("Can't remove pool '" + poolName + "' from the DB");
         } finally {
             if (_conn == null) {
-                try { stmt.close(); stmt = null; } catch (SQLException e) { }
-                try { conn.close(); } catch (SQLException e) { }
+                try { if (null!=stmt) stmt.close();  } catch (SQLException e) { }
+                try { if (null!=conn) conn.close();  } catch (SQLException e) { }
             }
         }
     }
@@ -579,16 +580,31 @@ public class ReplicaDbV1 implements ReplicaDb1 {
     private class getRedundantIterator extends DbIterator {
 
         private getRedundantIterator(int maxcnt) throws SQLException {
-            // Workaround postgres 8.x feature :
-            // Do selection from 'replicas' and 'action', then drop pnfsid
-            // present in 'action'
-            // was : FROM ONLY replicas, pools ...
-
-            String sql = "SELECT * FROM (SELECT pnfsid, sum(CASE WHEN pools.status='" + ONLINE + "' THEN 1 ELSE 0 END) "
-                    + "FROM      replicas, pools WHERE replicas.pool=pools.pool GROUP BY pnfsid) AS tmp " + "WHERE sum > " + maxcnt
-                    + " AND pnfsid NOT IN (SELECT pnfsid FROM action) ORDER BY sum DESC";
+/*
+            String sql = "SELECT * FROM (SELECT pnfsid, sum(CASE WHEN pools.status='"
+                    + ONLINE + "' THEN 1 ELSE 0 END) "
+                    + "FROM      replicas, pools WHERE replicas.pool=pools.pool GROUP BY pnfsid) AS tmp "
+                    + "WHERE sum > " + maxcnt
+                    + " AND pnfsid NOT IN (SELECT pnfsid FROM actions) ORDER BY sum DESC";
+*/
             stmt = conn.createStatement();
-            rset = stmt.executeQuery(sql);
+            stmt.executeUpdate("BEGIN ISOLATION LEVEL SERIALIZABLE");
+            stmt.executeUpdate("TRUNCATE TABLE redundant");
+            final String sql;
+            sql = "INSERT  INTO redundant"
+                    +"  SELECT pnfsid, count(*)"
+                    +"  FROM ONLY replicas, pools"
+                    +"  WHERE"
+                    +"        replicas.poolid=pools.poolid"
+                    +"        AND pools.status='" + ONLINE + "'"
+                    +"       AND replicas.countable"
+                    +"  GROUP BY pnfsid"
+                    +"  HAVING count(*) > " + maxcnt;
+            stmt.executeUpdate(sql);
+            stmt.executeUpdate("DELETE FROM redundant WHERE pnfsid IN (SELECT pnfsid FROM actions)");
+            stmt.executeUpdate("COMMIT");
+            //
+            rset = stmt.executeQuery("SELECT * FROM redundant ORDER BY count DESC");
         }
 
         public Object next() {
@@ -621,16 +637,37 @@ public class ReplicaDbV1 implements ReplicaDb1 {
     private class getDeficientIterator extends DbIterator {
 
         private getDeficientIterator(int mincnt) throws SQLException {
-            // Workaround postgres 8.x feature :
-            // Do selection from 'replicas' and 'action', then drop pnfsid
-            // present in 'action'
-            // was : FROM ONLY replicas, pools ...
-            String sql = "SELECT * FROM (SELECT pnfsid," + "sum(CASE WHEN pools.status='" + ONLINE + "' OR pools.status='"
-                    + OFFLINE + "' OR pools.status='" + OFFLINE_PREPARE + "' THEN 1 ELSE 0 END) "
+/*
+            final String sql;
+            sql = "SELECT * FROM (SELECT pnfsid,"
+                    + "sum(CASE WHEN pools.status='" + ONLINE
+                    + "' OR pools.status='" + OFFLINE
+                    + "' OR pools.status='" + OFFLINE_PREPARE
+                    + "' THEN 1 ELSE 0 END) "
                     + "FROM      replicas, pools WHERE replicas.pool=pools.pool GROUP BY pnfsid) AS tmp "
-                    + "WHERE sum > 0 and sum < " + mincnt + " AND pnfsid NOT IN (SELECT pnfsid FROM action) ORDER BY sum ASC";
+                    + "WHERE sum > 0 and sum < " + mincnt
+                    + " AND pnfsid NOT IN (SELECT pnfsid FROM actions) ORDER BY sum ASC";
+*/
             stmt = conn.createStatement();
-            rset = stmt.executeQuery(sql);
+            stmt.executeUpdate("BEGIN ISOLATION LEVEL SERIALIZABLE");
+            stmt.executeUpdate("TRUNCATE TABLE deficient");
+            final String sql;
+            sql = "INSERT INTO deficient"+
+                    "  SELECT pnfsid, count(*)"+
+                    "  FROM replicas, pools"+
+                    "  WHERE"+
+            //      "--      replicas.pool=pools.pool"+
+                    "        replicas.poolid=pools.poolid"+
+                    "        AND pools.status IN ('"+ONLINE+"','"+OFFLINE+"','"+OFFLINE_PREPARE+"')"+
+            //      "--      AND pools.countable"+
+                    "       AND replicas.countable"+
+                    "  GROUP BY pnfsid"+
+                    "  HAVING count(*) < " + mincnt;
+            stmt.executeUpdate(sql);
+            stmt.executeUpdate("DELETE FROM deficient WHERE pnfsid IN (SELECT pnfsid FROM actions)");
+            stmt.executeUpdate("COMMIT");
+            //
+            rset = stmt.executeQuery("SELECT * FROM deficient ORDER BY count ASC");
         }
 
         public Object next() {
@@ -710,8 +747,8 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             esay("Can't remove pool '" + poolName + "' from the DB");
         } finally {
             if (_conn == null) {
-                try { stmt.close(); stmt = null; } catch (SQLException e) { }
-                try { conn.close(); } catch (SQLException e) { }
+                try { if (null!=stmt) stmt.close();  } catch (SQLException e) { }
+                try { if (null!=conn) conn.close();  } catch (SQLException e) { }
             }
         }
     }
@@ -745,8 +782,8 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             }
         } finally {
             if (_conn == null) {
-                try { stmt.close(); stmt = null; } catch (SQLException e) { }
-                try { conn.close(); } catch (SQLException e) { }
+                try { if (null!=stmt) stmt.close();  } catch (SQLException e) { }
+                try { if (null!=conn) conn.close();  } catch (SQLException e) { }
             }
         }
     }
@@ -774,9 +811,9 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             return "UNKNOWN";
         } finally {
             if (_conn == null) {
-                try { rset.close(); rset = null; } catch (SQLException e) { }
-                try { stmt.close(); stmt = null; } catch (SQLException e) { }
-                try { conn.close(); } catch (SQLException e) { }
+                try { if (null!=rset) rset.close();  } catch (SQLException e) { }
+                try { if (null!=stmt) stmt.close();  } catch (SQLException e) { }
+                try { if (null!=conn) conn.close();  } catch (SQLException e) { }
             }
         }
     }
@@ -787,16 +824,17 @@ public class ReplicaDbV1 implements ReplicaDb1 {
     public void addTransaction(PnfsId pnfsId, long timestamp, int count) {
         Connection conn = null;
         Statement  stmt = null;
-        String poolName = null;
+        String op;
         if (count > 0)
-            poolName = "replicate";
+            op = "replicate";
         else if (count < 0)
-            poolName = "reduce";
+            op = "reduce";
         else
-            poolName = "exclude";
-//      poolName = (count==0) ? "exclude" : ((count > 0) ? "replicate" : "reduce");
+            op = "exclude";
+//      op = (count==0) ? "exclude" : ((count > 0) ? "replicate" : "reduce");
 
-        final String sql = "INSERT INTO action VALUES ('" + poolName + "','" + pnfsId.toString() + "',now()," + timestamp + ")";
+        final String sql = MessageFormat.format("INSERT INTO actions VALUES (''{0}'',''{1}'',''{2}'',''{3}'',now(),{4,number,#})",
+                op, "s", pnfsId.toString(), "d", timestamp);
 
         try {
             conn = (_conn == null) ? DATASOURCE.getConnection() : _conn;
@@ -807,21 +845,25 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             esay("Can't add transaction to the DB");
         } finally {
             if (_conn == null) {
-                try { stmt.close(); stmt = null; } catch (SQLException e) { }
-                try { conn.close(); } catch (SQLException e) { }
+                try { if (null!=stmt) stmt.close();  } catch (SQLException e) { }
+                try { if (null!=conn) conn.close();  } catch (SQLException e) { }
             }
         }
     }
 
     /**
      * Add transaction into DB
+     * @param pnfsId
+     * @param timestamp
+     * @param errcode
+     * @param errmsg
      */
     public void addExcluded(PnfsId pnfsId, long timestamp, String errcode, String errmsg) {
         Connection conn = null;
         Statement  stmt = null;
 
-        final String sql = "INSERT INTO action VALUES ('exclude','" + pnfsId.toString() + "',now()," + timestamp +
-                            ",'"+errcode+"'" + ",'"+errmsg + "')";
+        final String sql = MessageFormat.format("INSERT INTO excluded VALUES (''{0}'',''{1}'',now(),{2,number,#},10000,{3,number,#},''{4}'',''{5}'')",
+                "s", pnfsId.toString(), timestamp, 0xFFFF, errcode, errmsg);
 
         try {
             conn = (_conn == null) ? DATASOURCE.getConnection() : _conn;
@@ -832,8 +874,8 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             esay("Can't add transaction to the DB");
         } finally {
             if (_conn == null) {
-                try { stmt.close(); stmt = null; } catch (SQLException e) { }
-                try { conn.close(); } catch (SQLException e) { }
+                try { if (null!=stmt) stmt.close();  } catch (SQLException e) { }
+                try { if (null!=conn) conn.close();  } catch (SQLException e) { }
             }
         }
     }
@@ -844,7 +886,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
     public void removeTransaction(PnfsId pnfsId) {
         Connection conn = null;
         Statement  stmt = null;
-        final String sql = "DELETE FROM action WHERE pnfsId = '" + pnfsId.toString() + "'";
+        final String sql = MessageFormat.format("DELETE FROM actions WHERE pnfsId = ''{0}''", pnfsId.toString());
         try {
             conn = (_conn == null) ? DATASOURCE.getConnection() : _conn;
             stmt = (_conn == null) ? conn.createStatement() : _stmt;
@@ -854,19 +896,19 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             esay("Can't remove transaction from the DB");
         } finally {
             if (_conn == null) {
-                try { stmt.close(); stmt = null; } catch (SQLException e) { }
-                try { conn.close(); } catch (SQLException e) { }
+                try { if (null!=stmt) stmt.close();  } catch (SQLException e) { }
+                try { if (null!=conn) conn.close();  } catch (SQLException e) { }
             }
         }
     }
 
     /**
-     * Release excluded files from action table with timestamp older than "timesatamp"
+     * Release excluded files from "excluded" table with timestamp older than "timesatamp"
      */
     public int releaseExcluded(long timestamp) {
         Connection conn = null;
         Statement  stmt = null;
-        String sql = "DELETE FROM action WHERE pool='exclude' AND timestamp < '" + timestamp + "'";
+        final String sql = "DELETE FROM excluded WHERE timestamp < " + timestamp;
         int count = 0;
         try {
             conn = (_conn == null) ? DATASOURCE.getConnection() : _conn;
@@ -874,11 +916,11 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             count = stmt.executeUpdate(sql);
         } catch (Exception ex) {
             ex.printStackTrace();
-            esay("Can't delete old 'exclude' records files from the action table");
+            esay("Can't delete old records from the 'excluded' table");
         } finally {
             if (_conn == null) {
-                try { stmt.close(); stmt = null; } catch (SQLException e) { }
-                try { conn.close(); } catch (SQLException e) { }
+                try { if (null!=stmt) stmt.close();  } catch (SQLException e) { }
+                try { if (null!=conn) conn.close();  } catch (SQLException e) { }
             }
         }
 
@@ -892,21 +934,20 @@ public class ReplicaDbV1 implements ReplicaDb1 {
     public void clearTransactions() {
         Connection conn = null;
         Statement  stmt = null;
-        final String sql1 = "DELETE FROM action WHERE pool='replicate'";
-        final String sql2 = "DELETE FROM action WHERE pool='reduce'";
+        final String sql = "DELETE FROM actions WHERE action IN ('replicate', 'reduce')";
+//      final String sql = "TRUNCATE actions";
 
         try {
             conn = (_conn == null) ? DATASOURCE.getConnection() : _conn;
             stmt = (_conn == null) ? conn.createStatement() : _stmt;
-            stmt.executeUpdate(sql1);
-            stmt.executeUpdate(sql2);
+            stmt.executeUpdate(sql);
         } catch (Exception ex) {
             ex.printStackTrace();
             esay("Can't clear transactions from the DB");
         } finally {
             if (_conn == null) {
-                try { stmt.close(); stmt = null; } catch (SQLException e) { }
-                try { conn.close(); } catch (SQLException e) { }
+                try { if (null!=stmt) stmt.close();  } catch (SQLException e) { }
+                try { if (null!=conn) conn.close();  } catch (SQLException e) { }
             }
         }
     }
@@ -918,7 +959,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
         Connection conn = null;
         Statement  stmt = null;
         ResultSet  rset = null;
-        String sql = "SELECT timestamp FROM action WHERE pnfsId = '" + pnfsId.toString() + "'";
+        String sql = "SELECT timestamp FROM actions WHERE pnfsId = '" + pnfsId.toString() + "'";
         try {
             conn = (_conn == null) ? DATASOURCE.getConnection() : _conn;
             stmt = (_conn == null) ? conn.createStatement() : _stmt;
@@ -931,9 +972,9 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             return -1;
         } finally {
             if (_conn == null) {
-                try { rset.close(); } catch (SQLException e) { }
-                try { stmt.close(); stmt = null; } catch (SQLException e) { }
-                try { conn.close(); } catch (SQLException e) { }
+                try { if (null!=rset) rset.close();  } catch (SQLException e) { }
+                try { if (null!=stmt) stmt.close();  } catch (SQLException e) { }
+                try { if (null!=conn) conn.close();  } catch (SQLException e) { }
             }
         }
     }
@@ -969,18 +1010,25 @@ public class ReplicaDbV1 implements ReplicaDb1 {
     public void removePool(String poolName) {
         Connection conn = null;
         Statement  stmt = null;
-        String sql = "DELETE FROM ONLY replicas WHERE pool = '" + poolName + "'";
+//      String sql = "DELETE FROM ONLY replicas WHERE pool = '" + poolName + "'";
         try {
             conn = (_conn == null) ? DATASOURCE.getConnection() : _conn;
             stmt = (_conn == null) ? conn.createStatement() : _stmt;
-            stmt.executeUpdate(sql);
+            stmt.execute("BEGIN ISOLATION LEVEL SERIALIZABLE");
+            stmt.executeUpdate("INSERT INTO history_b SELECT pool,pnfsid,datestamp FROM ONLY replicas WHERE pool='" + poolName + "'");  // Save
+                                                                                                                                        // into
+                                                                                                                                        // history
+                                                                                                                                        // table
+            stmt.executeUpdate("DELETE FROM ONLY replicas WHERE pool='" + poolName + "'");
+            stmt.execute("COMMIT");
         } catch (Exception ex) {
-            ex.printStackTrace();
+            try { conn.rollback(); } catch (SQLException e1) { }
+//          ex.printStackTrace();
             esay("Can't remove pool '" + poolName + "' from the DB");
         } finally {
             if (_conn == null) {
-                try { stmt.close(); stmt = null; } catch (SQLException e) { }
-                try { conn.close(); } catch (SQLException e) { }
+                try { if (null!=stmt) stmt.close();  } catch (SQLException e) { }
+                try { if (null!=conn) conn.close();  } catch (SQLException e) { }
             }
         }
     }
@@ -991,6 +1039,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
     private class getDrainingIterator extends DbIterator {
 
         private getDrainingIterator() throws SQLException {
+/*
             String sql = "SELECT rd.pnfsid " +
             "FROM ONLY replicas rd, pools pd " +
             "WHERE rd.pool = pd.pool AND pd.status = '" + DRAINOFF + "' " +
@@ -1005,10 +1054,31 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             "     ONLY replicas r1, " + "     pools p1 " + "WHERE r.pnfsid  = r1.pnfsid" +
             " AND  p1.pool   = r1.pool" +
             " AND  ( p1.status = '" + ONLINE + "' " +
-            "     OR r.pnfsid IN (SELECT pnfsid FROM action) ) " +
+            "     OR r.pnfsid IN (SELECT pnfsid FROM actions) ) " +
             "GROUP BY r.pnfsid";
+*/
             stmt = conn.createStatement();
-            rset = stmt.executeQuery(sql);
+            stmt.executeUpdate("BEGIN ISOLATION LEVEL SERIALIZABLE");
+            stmt.executeUpdate("TRUNCATE TABLE drainoff");
+            String sql;
+            sql = "INSERT INTO drainoff"
+                    +"        SELECT rd.pnfsid"
+                    +"        FROM ONLY replicas rd, pools pd"
+                    +"            WHERE rd.poolid = pd.poolid AND pd.status = '"+DRAINOFF+"'"
+                    +"        GROUP BY rd.pnfsid";
+            stmt.executeUpdate(sql);
+            sql = "DELETE FROM drainoff WHERE pnfsid IN"
+                    +"        (SELECT pnfsid"
+                    +"         FROM ONLY replicas rd, pools pd"
+                    +"            WHERE rd.poolid = pd.poolid AND pd.status = '"+ONLINE+"'"
+                    +"         GROUP BY pnfsid"
+                    +"         UNION ALL"
+                    +"         SELECT pnfsid FROM actions"
+                    +"        )";
+            stmt.executeUpdate(sql);
+            stmt.executeUpdate("COMMIT");
+            //
+            rset = stmt.executeQuery("SELECT * FROM drainoff ORDER BY pnfsid");
         }
     }
 
@@ -1037,7 +1107,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
                     + "       WHERE rr.pool = pp.pool  AND pp.status = '" + OFFLINE_PREPARE + "' " + "       GROUP BY rr.pnfsid"
                     + "     ) r, " + "     ONLY replicas r1, " + "     pools p1 " + "WHERE r.pnfsid = r1.pnfsid"
                     + " AND  p1.pool  = r1.pool" + " AND  ( p1.status = '" + ONLINE + "' "
-                    + "     OR r.pnfsid IN (SELECT pnfsid FROM action) ) " + "GROUP BY r.pnfsid";
+                    + "     OR r.pnfsid IN (SELECT pnfsid FROM actions) ) " + "GROUP BY r.pnfsid";
             stmt = conn.createStatement();
             rset = stmt.executeQuery(sql);
         }
@@ -1078,8 +1148,8 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             }
         } finally {
             if (_conn == null) {
-                try { stmt.close(); stmt = null; } catch (SQLException e) { }
-                try { conn.close(); } catch (SQLException e) { }
+                try { if (null!=stmt) stmt.close();  } catch (SQLException e) { }
+                try { if (null!=conn) conn.close();  } catch (SQLException e) { }
             }
         }
     }
@@ -1100,8 +1170,8 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             esay("Database access error");
         } finally {
             if (_conn == null) {
-                try { stmt.close(); stmt = null; } catch (SQLException e) { }
-                try { conn.close(); } catch (SQLException e) { }
+                try { if (null!=stmt) stmt.close();  } catch (SQLException e) { }
+                try { if (null!=conn) conn.close();  } catch (SQLException e) { }
             }
         }
     }
@@ -1168,80 +1238,12 @@ public class ReplicaDbV1 implements ReplicaDb1 {
      * @param password
      */
     public final static void setup(String connectURI, String jdbcClass, String user, String password) {
+
         try {
-            Class.forName(jdbcClass);
-        } catch (ClassNotFoundException e) {
+            DATASOURCE = JdbcConnectionPool.getDataSource(connectURI, jdbcClass, user, password);
+        } catch (SQLException e) {
             e.printStackTrace();
-            return;
         }
-
-//       final ObjectPool connectionPool = new GenericObjectPool(null);
-//       GenericObjectPool(PoolableObjectFactory factory,
-//                         int maxActive,
-//                         byte whenExhaustedAction,
-//                         long maxWait,
-//                         int maxIdle,
-//                         int minIdle,
-//                         boolean testOnBorrow,
-//                         boolean testOnReturn,
-//                         long timeBetweenEvictionRunsMillis,
-//                         int numTestsPerEvictionRun,
-//                         long minEvictableIdleTimeMillis,
-//                         boolean testWhileIdle,
-//                         long softMinEvictableIdleTimeMillis)
-        final ObjectPool connectionPool = new GenericObjectPool(null,
-                         10,
-                         GenericObjectPool.WHEN_EXHAUSTED_GROW,
-                         0, // Ignored because GenericObjectPool.WHEN_EXHAUSTED_GROW
-                         8,
-                         4,
-                         true,
-                         false,
-                         600000,
-                         2,
-                         300000,
-                         true,
-                         300000);
-
-
-
-        final ConnectionFactory connectionFactory = new DriverManagerConnectionFactory(connectURI, user, password);
-
-        // Create InvocationHandler
-        InvocationHandler retryHandler = new DMCFRetryProxyHandler(connectionFactory, 3600);
-
-        // Create Proxy
-        ConnectionFactory proxyConnectionFactory =
-                (ConnectionFactory)Proxy.newProxyInstance(connectionFactory.getClass().getClassLoader(),
-                                                          connectionFactory.getClass().getInterfaces(),
-                                                          retryHandler);
-
-        // PoolableConnectionFactory(     ConnectionFactory connFactory,
-        //                                ObjectPool pool,
-        //                                KeyedObjectPoolFactory stmtPoolFactory,
-        //                                String validationQuery,
-        //                                boolean defaultReadOnly,
-        //                                boolean defaultAutoCommit)
-        final PoolableConnectionFactory poolableConnectionFactory =
-            new PoolableConnectionFactory(proxyConnectionFactory,
-                                          connectionPool,
-                                          new StackKeyedObjectPoolFactory(), // null,
-                                          "select current_date",
-                                          false,
-                                          true);
-        final PoolingDataSource dataSource = new PoolingDataSource(connectionPool);
-//        ((GenericObjectPool) connectionPool).setTestOnBorrow(true);
-//        ((GenericObjectPool) connectionPool).setMaxActive(50);
-//        ((GenericObjectPool) connectionPool).setWhenExhaustedAction(GenericObjectPool.WHEN_EXHAUSTED_GROW);
-
-        System.out.println("getMaxActive()="+((GenericObjectPool) connectionPool).getMaxActive());
-        System.out.println("getMaxIdle()="+((GenericObjectPool) connectionPool).getMaxIdle());
-        System.out.println("getMaxWait()="+((GenericObjectPool) connectionPool).getMaxWait());
-        System.out.println("getMinEvictableIdleTimeMillis()="+((GenericObjectPool) connectionPool).getMinEvictableIdleTimeMillis());
-        System.out.println("getMinIdle()="+((GenericObjectPool) connectionPool).getMinIdle());
-        System.out.println("getWhenExhaustedAction()="+((GenericObjectPool) connectionPool).getWhenExhaustedAction());
-
-        DATASOURCE = dataSource;
     }
 
 
