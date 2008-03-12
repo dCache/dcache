@@ -23,7 +23,7 @@ public class PoolgroupSpaceWatcher extends AbstractStateWatcher {
 	private static final String paths[] = { "pools.*.space.*",
 											"poolgroups.*",
 											"poolgroups.*.pools.*"};
-	private static final StatePath _poolgroupsPath = new StatePath( "poolgroups");
+	private static final StatePath POOLGROUPS_PATH = new StatePath( "poolgroups");
 	
 	@Override
 	protected String[] getPredicates() {
@@ -42,14 +42,17 @@ public class PoolgroupSpaceWatcher extends AbstractStateWatcher {
 		Map<String, SpaceInfo> poolSpaceInfoPre = PoolSpaceVisitor.getDetails();		
 		Map<String, SpaceInfo> poolSpaceInfoPost = PoolSpaceVisitor.getDetails(transition);
 		
-		_log.debug( "Looking for changes in poolgroup membership.");		
+		if( _log.isDebugEnabled())
+			_log.debug( "Looking for changes in poolgroup membership.");		
 		updateTodoBasedOnMembership( recalcPoolgroup, transition, currentPoolgroupMembership, futurePoolgroupMembership);
 
-		_log.debug( "Looking for changes in pool space information.");
+		if( _log.isDebugEnabled())
+			_log.debug( "Looking for changes in pool space information.");
 		updateTodoBasedOnPoolSpace( recalcPoolgroup, transition, futurePoolgroupMembership, poolSpaceInfoPre, poolSpaceInfoPost);
 
 		if( recalcPoolgroup.size() == 0) {
-			_log.info( "No poolgroups need updating");
+			if( _log.isDebugEnabled())
+				_log.debug( "No poolgroups need updating");
 			return;
 		}
 			
@@ -57,10 +60,10 @@ public class PoolgroupSpaceWatcher extends AbstractStateWatcher {
 		
 		for( String thisPoolgroup : recalcPoolgroup) {
 
-			if( _log.isInfoEnabled())
-				_log.info( "Updating poolgroup " + thisPoolgroup);
+			if( _log.isDebugEnabled())
+				_log.debug( "Updating poolgroup " + thisPoolgroup);
 				
-			StatePath thisPgPath = _poolgroupsPath.newChild( thisPoolgroup);
+			StatePath thisPgPath = POOLGROUPS_PATH.newChild( thisPoolgroup);
 			
 			buildNewMetrics( update, thisPgPath.newChild("space"), futurePoolgroupMembership.get(thisPoolgroup), poolSpaceInfoPost);
 		}
@@ -139,6 +142,7 @@ public class PoolgroupSpaceWatcher extends AbstractStateWatcher {
 		// 1. a) disappeared or changed value.
 		for( Map.Entry<String, SpaceInfo> preInfoEntry : currentPoolSpaceInfo.entrySet()) {
 			String thisPool = preInfoEntry.getKey();
+			
 			SpaceInfo thisPoolPreInfo = preInfoEntry.getValue();
 			SpaceInfo thisPoolPostInfo = futurePoolSpaceInfo.get( thisPool);
 
@@ -164,7 +168,8 @@ public class PoolgroupSpaceWatcher extends AbstractStateWatcher {
 		
 		// 2.  Nothing doing?, do nothing more.
 		if( changedPools.size() == 0) {
-			_log.debug( "No pools have changed");
+			if( _log.isDebugEnabled())
+				_log.debug( "No pools have changed");
 			return;
 		}
 		
