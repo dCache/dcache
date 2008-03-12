@@ -17,8 +17,8 @@ public class LoginBrokerLsMsgHandler extends CellMessageHandlerSkel {
 
 	public void process(Object msgPayload, long metricLifetime) {
 
-		StateUpdate update = new StateUpdate();
-		
+		StateUpdate update = null;
+
 		Object[] array = (Object []) msgPayload;
 		
 		StatePath pathToDoors = new StatePath( "doors");
@@ -31,11 +31,15 @@ public class LoginBrokerLsMsgHandler extends CellMessageHandlerSkel {
 			}
 			
 			LoginBrokerInfo info = (LoginBrokerInfo) array[i];
+		
+			if( update == null)
+				update = new StateUpdate();
 			
 			addDoorInfo( update, pathToDoors, info, metricLifetime);
 		}
 		
-		applyUpdates( update);
+		if( update != null)
+			applyUpdates( update);
 	}
 	
 	
