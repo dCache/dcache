@@ -14,8 +14,9 @@ import java.util.Date;
  * <p>
  * To use this class, add a line like:
  * <pre>
- *        // Assuming 30s between pool update msgs, 100ms => 300 pools installed
- *        addActivity( new PseudoPoolDga("pseudo_1", 100, 40));
+ *        // A pool that sends status information every 30s
+ *        //     (called "pseudo_1" and containing 40 GiB)
+ *        addActivity( new PseudoPoolDga("pseudo_1", 30000, 40));
  * </pre>
  * to the <code>DataGatheringScheduler.addDefaultActivity()</code> method.
  * <p>
@@ -56,26 +57,26 @@ public class PseudoPoolDga implements Schedulable {
 	/** Supress how often files are removed  */
 	static final double REMOVABLE_DEL_SUPPRESS = 0.01;
 
-	private String _poolName;
-	private SpaceInfo _spaceInfo;
-	private StatePath _ourSpacePath;
+	private final String _poolName;
+	private final SpaceInfo _spaceInfo;
+	private final StatePath _ourSpacePath;
 	private StatePath _ourPgMembership;
 	/** Average time between successive calls, in milliseconds */	
-	private int _delay; 
+	private final int _delay; 
 	/** Std dev. for Normal spread of successive calls */
-	private int _spread;
+	private final int _spread;
 	/** Lifetime of metrics, in seconds */
-	private long _metricLifetime;
+	private final long _metricLifetime;
 	/** Maximum delay between successive queries, in milliseconds */
-	private long _maxDelay;
-	private Random _rnd = new Random();
+	private final long _maxDelay;
+	private final Random _rnd = new Random();
 	
 	/**
 	 * Create a new fake pool, injecting information roughly periodically
-	 * (5% spread) and a random walk in space usage.
+	 * (5% spread) and randomly increasing (and purging) space usage.
 	 * @param poolName the name of this pool
-	 * @param updatePeriod the average update period, in milliseconds
-	 * @param capacity of this pool, in GiB
+	 * @param how often (on average) update metrics should be sent, in milliseconds
+	 * @param the total capacity of this pool, in GiB
 	 */
 	public PseudoPoolDga( String poolName, int updatePeriod, long capacity) {
 		
