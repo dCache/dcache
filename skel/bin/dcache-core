@@ -128,7 +128,7 @@ case "$1" in
                 	echo "        Make sure pnfs is running on this admin node. Exiting."
 			exit 1
 		    fi
-		elif [ "`printConfig GRIDFTP`" = yes -o "`printConfig GRIDFTP`" = y ] ; then
+		elif [ "`printConfig GRIDFTP`" = yes -o "`printConfig GRIDFTP`" = y -o "`printConfig SRM`" = yes -o "`printConfig SRM`" = y  ] ; then
 
 		    cp=`df ${PNFS_ROOT}/${SERVER_ID} 2>/dev/null |grep "${PNFS_ROOT}" | awk '{print $2}'`
 		    if [ -z $cp ]; then
