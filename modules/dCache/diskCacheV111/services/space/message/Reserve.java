@@ -18,6 +18,7 @@ import diskCacheV111.util.AccessLatency;
  * @author timur
  */
 public class Reserve extends Message{
+    static final long serialVersionUID = 8295404238593418916L;
     private long spaceToken;
     private String voGroup;
     private String voRole;

@@ -18,6 +18,7 @@ import diskCacheV111.util.PnfsId;
  * @author timur
  */
 public class Use extends Message{
+    static final long serialVersionUID = 7864026870745603985L;
     private long spaceToken;
     private String voGroup;
     private String voRole;

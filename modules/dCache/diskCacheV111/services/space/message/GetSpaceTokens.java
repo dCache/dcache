@@ -19,6 +19,7 @@ import diskCacheV111.services.space.Space;
  * @author timur
  */
 public class GetSpaceTokens extends Message{
+    static final long serialVersionUID = -2482510383290374236L;
     private long[] spaceTokens;
     private String description;
     private String voRole;
