@@ -362,6 +362,20 @@ dcacheInstallGetUseGridFtp()
   return 0
 }
 
+dcacheInstallGetUseSrm()
+{
+  # returns 1 if gridFTP is used 0 otherwise
+  local UseGridFtp
+  UseGridFtp=`printConfig SRM |  tr -s '[:upper:]' '[:lower:]'`
+  if [ "${UseGridFtp}" == "yes" ] ; then
+    return 1
+  fi
+  if [ "${UseGridFtp}" == "y" ] ; then
+    return 1
+  fi
+  return 0
+}
+
 dcacheInstallGetIsAdminDoor()
 {
   # returns 1 if is an adminDoor is used 0 otherwise
@@ -716,17 +730,21 @@ dcacheInstallPnfsMountPoints()
   # (e.g. /pnfs/fnal.gov) for GridFTP
   local isAdmin
   local isGridFtp
+  local isSrm
   local isPnfsManager
 
   dcacheInstallGetIsAdmin
   isAdmin=$?
   dcacheInstallGetUseGridFtp
   isGridFtp=$?
+  dcacheInstallGetUseSrm
+  isSrm=$?
+  
   dcacheInstallGetIsPnfsManager
   isPnfsManager=$?
 
   #echo admin=${isAdmin}${isGridFtp}${isPnfsManager}
-  if [ "${isAdmin}${isGridFtp}" == "01" ] ; then
+  if [ "${isAdmin}${isGridFtp}" == "01" -o "${isAdmin}${isSrm}" == "01" ] ; then
     dcacheInstallPnfsMountPointClient
   fi
 
