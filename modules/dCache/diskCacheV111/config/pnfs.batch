@@ -62,6 +62,7 @@ create diskCacheV111.namespace.PnfsManagerV3 PnfsManager \
         -enableLargeFileSimulation \
         -storeFilesize  \
         -cmRelay=broadcast \
+        -pnfsDeleteRelay=SrmSpaceManager \
         -threads=${pnfsNumberOfThreads} \
         -default=${defaultPnfsServer} \
         -pnfs=${pnfs} \

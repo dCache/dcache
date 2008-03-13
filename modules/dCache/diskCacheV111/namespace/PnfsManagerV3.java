@@ -31,6 +31,7 @@ public class PnfsManagerV3 extends CellAdapter {
     private CellPath     _cacheModificationRelay = null ;
     private boolean      _simulateLargeFiles     = false ;
     private boolean      _storeFilesize          = false ;
+    private CellPath     _pnfsDeleteNotificationRelay = null;
 
     private final NameSpaceProvider     _nameSpaceProvider;
     private final CacheLocationProvider _cacheLocationProvider;
@@ -144,6 +145,11 @@ public class PnfsManagerV3 extends CellAdapter {
             if( tmp != null )_cacheModificationRelay = new CellPath(tmp) ;
             say("CacheModificationRelay = "+
                     ( _cacheModificationRelay == null ? "NONE" : _cacheModificationRelay.toString() ) );
+            
+            tmp = _args.getOpt("pnfsDeleteRelay") ;
+            if( tmp != null )_pnfsDeleteNotificationRelay = new CellPath(tmp) ;
+            say("pnfsDeleteRelay = "+
+                    ( _pnfsDeleteNotificationRelay == null ? "NONE" : _pnfsDeleteNotificationRelay.toString() ) );
             //
             //
             _simulateLargeFiles = _args.getOpt("enableLargeFileSimulation") != null ;
@@ -1057,6 +1063,7 @@ public class PnfsManagerV3 extends CellAdapter {
 
     public void deleteEntry(PnfsDeleteEntryMessage pnfsMessage){
         String path = pnfsMessage.getPath();
+        PnfsId pnfsId = null;
         if( path != null ) {
             say("delete PNFS entry for "+ path );
         }
@@ -1065,7 +1072,7 @@ public class PnfsManagerV3 extends CellAdapter {
         }
 
         try {
-            PnfsId pnfsId = pnfsMessage.getPnfsId();
+            pnfsId = pnfsMessage.getPnfsId();
             if( pnfsId == null ) {
                 pnfsId = _nameSpaceProvider.pathToPnfsid( path, false);
             }
@@ -1085,7 +1092,20 @@ public class PnfsManagerV3 extends CellAdapter {
 
         if( pnfsMessage.getReturnCode() != 0 ) {
             _xdeleteEntry.failed() ;
+        } else if( _pnfsDeleteNotificationRelay != null ) {
+            PnfsDeleteEntryNotificationMessage deleteNotification = 
+                new PnfsDeleteEntryNotificationMessage(pnfsId,path);
+            try{
+
+                sendMessage( new CellMessage( _cacheModificationRelay , 
+                    deleteNotification ) ) ;
+
+            }catch(Exception ee ){
+                esay("Problem "+ee.getMessage()+" relaying to "+
+                    _cacheModificationRelay+" : "+deleteNotification ) ;
+            }
         }
+
 
     }
 
