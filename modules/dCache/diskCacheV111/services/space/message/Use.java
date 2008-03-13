@@ -31,6 +31,7 @@ public class Use extends Message{
                            // not file lifetime after it is written
                            // this is how long user has to write the file
     private long fileId;
+    private boolean overwrite;
     /** Creates a new instance of Reserve */
     public Use() {
     }
@@ -43,6 +44,26 @@ public class Use extends Message{
             PnfsId pnfsId,
             long sizeInBytes,
             long lifetime){
+        
+        this( spaceToken,
+             voGroup, 
+             voRole, 
+             pnfsName,
+             pnfsId,
+             sizeInBytes,
+             lifetime,
+            false);
+    }
+    
+    public Use(
+            long spaceToken,
+            String voGroup, 
+            String voRole, 
+            String pnfsName,
+            PnfsId pnfsId,
+            long sizeInBytes,
+            long lifetime,
+            boolean overwrite){
         this.spaceToken = spaceToken;
         this.voGroup = voGroup;
         this.voRole = voRole;
@@ -50,6 +71,7 @@ public class Use extends Message{
         this.pnfsName= pnfsName;
         this.pnfsId = pnfsId;
         this.lifetime = lifetime;
+        this.overwrite = overwrite;
         setReplyRequired(true);
     }
 
@@ -132,6 +154,14 @@ public class Use extends Message{
 
     public void setVoRole(String voRole) {
         this.voRole = voRole;
+    }
+
+    public boolean isOverwrite() {
+        return overwrite;
+    }
+
+    public void setOverwrite(boolean overwrite) {
+        this.overwrite = overwrite;
     }
 
 }
