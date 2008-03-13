@@ -1222,7 +1222,9 @@ public class Storage
     public void srmReleaseSpace(SRMUser user, String spaceToken, Long sizeInBytes, SrmReleaseSpaceCallbacks callbacks) {
     }
 
-    public void srmMarkSpaceAsBeingUsed(SRMUser user, String spaceToken, String fileName, long sizeInBytes, long useLifetime, SrmUseSpaceCallbacks callbacks) {
+    public void srmMarkSpaceAsBeingUsed(SRMUser user, String spaceToken, String fileName, long sizeInBytes, long useLifetime, 
+        boolean overwrite,
+        SrmUseSpaceCallbacks callbacks) {
     }
  
 

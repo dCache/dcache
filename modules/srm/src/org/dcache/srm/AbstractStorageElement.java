@@ -713,6 +713,7 @@ public interface AbstractStorageElement extends Logger{
             String fileName,
             long sizeInBytes,
             long useLifetime,
+            boolean overwrite,
             SrmUseSpaceCallbacks callbacks);
     
     /**

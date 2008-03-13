@@ -170,6 +170,7 @@ public class SrmMarkSpaceAsBeingUsedCompanion implements CellMessageAnswerable {
     private CellAdapter cell;   
     private CellMessage request = null;
     private String spaceManagerPath = "SrmSpaceManager";
+    private boolean overwrite;
     private void say(String words_of_wisdom) {
         if(cell!=null) {
             cell.say(" SrmMarkSpaceAsBeingUsedCompanion : "+words_of_wisdom);
@@ -210,6 +211,7 @@ public class SrmMarkSpaceAsBeingUsedCompanion implements CellMessageAnswerable {
     String pnfPath,
     long sizeInBytes, 
     long markLifetime, 
+    boolean overwrite,
     SrmUseSpaceCallbacks callbacks,
     CellAdapter cell) {
         this.user = user;
@@ -219,6 +221,7 @@ public class SrmMarkSpaceAsBeingUsedCompanion implements CellMessageAnswerable {
         this.markLifetime = markLifetime;
         this.callbacks = callbacks;
         this.cell = cell;
+        this.overwrite = overwrite;
     }
     
     public void answerArrived( final CellMessage req , final CellMessage answer ) {
@@ -318,8 +321,8 @@ public class SrmMarkSpaceAsBeingUsedCompanion implements CellMessageAnswerable {
                     pnfPath,
                     null,
                     sizeInBytes,
-                    markLifetime
-                    );
+                    markLifetime,
+                    overwrite );
             use.setReplyRequired(true);
             state = WAITING_SPACE_MANAGER_RESPONCE_STATE;
             try {
@@ -343,6 +346,7 @@ public class SrmMarkSpaceAsBeingUsedCompanion implements CellMessageAnswerable {
     String pnfPath,
     long sizeInBytes, 
     long markLifetime, 
+    boolean overwrite,
     SrmUseSpaceCallbacks callbacks,
     CellAdapter cell) {
         cell.say(" SrmMarkSpaceAsBeingUsedCompanion.markSpace("+user+" for spaceToken"+spaceToken+
@@ -358,6 +362,7 @@ public class SrmMarkSpaceAsBeingUsedCompanion implements CellMessageAnswerable {
                   pnfPath,
                   sizeInBytes,
                   markLifetime,
+                  overwrite,
                   callbacks,            
                   cell);
         companion.markSpace();

@@ -674,6 +674,7 @@ public class PutFileRequest extends FileRequest {
                         getPath(),
                         size==0?1:size,
                         remaining_lifetime,
+                        ((PutRequest)getRequest()).isOverwrite(),
                         callbacks );
                 return;
             }

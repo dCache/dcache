@@ -759,6 +759,7 @@ public class CopyFileRequest extends FileRequest {
                     local_to_path,
                     size==0?1:size,
                     remaining_lifetime,
+                    ((CopyRequest)getRequest()).isOverwrite(),
                     callbacks );
             return;
         }

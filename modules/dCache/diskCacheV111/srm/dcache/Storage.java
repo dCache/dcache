@@ -2448,8 +2448,7 @@ public class Storage
             } 
         } 
 	catch (CacheException e) {
-            esay("could not get storage info by path : ");
-            esay(e);
+            say("could not get storage info by path : " +e.getMessage() +" rc="+e.getRc());
             throw new SRMException("could not get storage info by path : "+e);
         }
 	
@@ -4296,6 +4295,7 @@ public class Storage
             String fileName,
             long sizeInBytes,
             long useLifetime,
+            boolean overwrite,
             SrmUseSpaceCallbacks callbacks) {
         long longSpaceToken;
         try {
@@ -4313,6 +4313,7 @@ public class Storage
                 actualFilePath,
                 sizeInBytes,
                 useLifetime,
+                overwrite,
                 callbacks,
                 this);
     }
