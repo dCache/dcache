@@ -21,23 +21,25 @@ logmessage()
 { 
   local ThisLogLevel
   local ThisPrefix
-  let ThisLogLevel=$1
-  if [ "$1" == "NONE" ] ; then
+  local ThisLogLevel
+
+  ThisLogLevel=$1
+  if [ "$1" = "NONE" ] ; then
     ThisLogLevel=55
   fi
-  if [ "$1" == "ABORT" ] ; then
+  if [ "$1" = "ABORT" ] ; then
     ThisLogLevel=45
   fi
-  if [ "$1" == "ERROR" ] ; then
+  if [ "$1" = "ERROR" ] ; then
     ThisLogLevel=35
   fi
-  if [ "$1" == "WARNING" ] ; then
+  if [ "$1" = "WARNING" ] ; then
     ThisLogLevel=25
   fi
-  if [ "$1" == "INFO" ] ; then
+  if [ "$1" = "INFO" ] ; then
     ThisLogLevel=15
   fi
-  if [ "$1" == "DEBUG" ] ; then
+  if [ "$1" = "DEBUG" ] ; then
     ThisLogLevel=5
   fi
   if [ $ThisLogLevel -lt 60 ] ; then
@@ -330,7 +332,7 @@ add_java_opt()
   java_opt=$1
   java_opt_line="JAVA_OPTS=\"\${JAVA_OPTS} $java_opt\""
   grep -m 1 -e ".*$java_opt.*" ${CATALINA_SH} > /dev/null
-  if [ $? == 1 ] ; then
+  if [ $? -eq 1 ] ; then
     sed -e  "s/\(.*bootstrap.jar.*\)/\1\n\n$java_opt_line/"  ${CATALINA_SH} > $tmp
     mv $tmp ${CATALINA_SH}
     chmod 755 ${CATALINA_SH}
@@ -347,7 +349,7 @@ add_classpath()
   echo $CATALINA_CP_ADD1 | sed "s/\//\\\\\//g" > $tmp
   CATALINA_CP_ADD=`cat $tmp`
   grep -m 1 -e $ADDED_PATH ${SETCLASS_SH} > /dev/null
-  if [ $? == 1 ] ; then
+  if [ $? -eq 1 ] ; then
     cp -p ${SETCLASS_SH} $tmp
     echo >> $tmp
     echo ${CATALINA_CP_ADD} | sed "s/\\\//g" >> $tmp
@@ -466,10 +468,10 @@ echo "</SRMConfigInfo>">>${SRM_CONFIG}
 
 #find the line number containing "<servlet-mapping> - this is the beginning of the service section
 n=`grep -n -m 1 "^\W*<servlet-mapping>" ${AXIS_WEB_XML} | sed "s/:.*$//"`
-((n--))
+n=$((${n}-1))
 #break file in two parts
 sed -n "1,${n}p" ${AXIS_WEB_XML} >${tmp1}
-((n++))
+n=$((${n}+1))
 sed -n "${n},\$p" ${AXIS_WEB_XML} >${tmp3}
 cat >${tmp2} <<EOF
   <servlet-mapping>
@@ -521,7 +523,7 @@ logmessage INFO "enabling GSI HTTP in tomcat by modifying ${TOMCAT_CONFIG} ..."
 n=`grep -n -m 1 "^\W*<Service" ${TOMCAT_CONFIG} | sed "s/:.*$//"`
 #break file in two parts
 sed -n "1,${n}p" ${TOMCAT_CONFIG} >${tmp1}
-((n++))
+n=$((${n}+1))
 sed -n "${n},\$p" ${TOMCAT_CONFIG} >${tmp3}
 #now fill the middle
 cat >${tmp2} <<EOF
@@ -626,4 +628,4 @@ cmd="cp ${SETUP_FILE} /usr/etc/setupSrmTomcat"
 execute ${cmd}
 
 logmessage INFO "Installation complete" 
-logmessage INFO "please use ${DCACHE_HOME}/bin/dcache-srm start|stop|restart to startup, shutdown or  restart srm server"
+logmessage INFO "please use ${DCACHE_HOME}/bin/dcache srm start|stop|restart to startup, shutdown or  restart srm server"
