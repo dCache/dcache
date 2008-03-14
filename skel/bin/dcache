@@ -120,25 +120,7 @@ reverse() # $1 = space delimited list of words
 # slashes.
 sanitisePath() # $1 = path
 {
-    # We iteratively strip names of the path using 'basename' and
-    # 'dirname' and put them back together seperated with a slash.
-
-    local path
-    local result
-
-    path=`dirname $1`
-    result=`basename $1`
-
-    while [ "$path" != "." ] && [ "$path" != "/" ]; do
-	result="`basename ${path}`/${result}"
-	path="`dirname ${path}`"
-    done
-
-    if [ "$path" = "." ]; then
-	printf "./%s" "$result"
-    else
-	printf "/%s" "$result"
-    fi
+    echo $1 | sed -e 's_//*_/_g' -e 's_/$__'
 }
 
 # Returns the maximum width of any word in a given list.
