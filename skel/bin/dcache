@@ -141,6 +141,23 @@ sanitisePath() # $1 = path
     fi
 }
 
+# Returns the maximum width of any word in a given list.
+max_width() # $* = list of words
+{
+    local max
+    local width
+
+    max=0
+    for i in $*; do 
+        width=${#i}
+        if [ $max -lt $width ]; then
+            max=$width
+        fi
+    done
+
+    printf "%d" $max
+}
+
 # Utility function for printing to stdout with a line width 
 # maximum of 75 characters. Longer lines are broken into several
 # lines. Each argument is interpreted as a separate paragraph.  
@@ -640,8 +657,18 @@ getAllPoolDomains()
     fi
 }
 
-# Write the name of the pool list file for the  
-# given pool domain to stdout.
+# Prints the list of pools in the given pool domains.
+getAllPools() # $* = list of domains
+{
+    for domain in $*; do
+        getPoolsInDomain $domain | while read pool path param; do
+            printf "%s " $pool
+        done
+    done
+}
+
+# Writes the name of the pool list file for the given pool domain to
+# stdout.
 getPoolListFile() # $1 = domain name
 {
     printf "%s" "${config}/${1%Domain}.poollist"
@@ -1022,8 +1049,12 @@ case "$1" in
         ;;
 
     status)
-        printf "Domain                   Status      Pid Log file\n"
-        for domain in `getAllDomains`; do
+        local format
+        local domains
+        domains=`getAllDomains`
+        format="%-`max_width $domains`s %-10s%5s %s\n"
+        printf "$format" "Domain" "Status" "Pid" "Log file"
+        for domain in $domains; do
             if pid=`pidOfDomain ${domain}`; then
                 status="running"
             else
@@ -1036,8 +1067,7 @@ case "$1" in
 		logFile=""
 	    fi
             
-            printf "%-25s%-10s%5s %s\n" "${domain}" "${status}" "${pid}" "${logFile}"
-
+            printf "$format" "$domain" "$status" "$pid" "$logFile"
         done
         ;;
 
@@ -1061,12 +1091,19 @@ case "$1" in
         case "$command" in
             ls)
                 [ $# -gt 0 ] && usage 1
-                printf "Pool              Domain                      Size   Free Path\n"
-                for domain in `getAllPoolDomains`; do
+
+                local format
+                local domains
+                local pools
+                domains=`getAllPoolDomains`
+                pools=`getAllPools $domains`
+                format="%-`max_width $pools`s %-`max_width $domains`s %7s%7s %s\n"
+                printf "$format" "Pool" "Domain" "Size" "Free" "Path"
+                for domain in $domains; do
                     getPoolsInDomain $domain | while read pool path param; do
                         size=`getSizeOfPool ${path}`
 			free=`getFreeSpace ${path}`
-                        printf "%-18s%-25s%7s%7s %s\n" ${pool} ${domain} ${size} ${free} ${path}
+                        printf "$format" "$pool" "$domain" "$size" "$free" "$path"
                     done
                 done
                 
