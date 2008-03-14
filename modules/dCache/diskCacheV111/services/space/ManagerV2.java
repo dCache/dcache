@@ -28,6 +28,16 @@
 // $Author$
 //______________________________________________________________________________
 package diskCacheV111.services.space;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Set;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Hashtable;
+import java.util.Iterator;
+import java.util.Date;
 import diskCacheV111.services.space.message.Reserve;
 import diskCacheV111.services.space.message.Release;
 import diskCacheV111.services.space.message.Use;
@@ -36,14 +46,9 @@ import diskCacheV111.services.space.message.GetSpaceMetaData;
 import diskCacheV111.services.space.message.GetSpaceTokens;
 import diskCacheV111.services.space.message.ExtendLifetime;
 import diskCacheV111.services.space.message.GetFileSpaceTokensMessage;
-import diskCacheV111.util.AccessLatency;
-import diskCacheV111.util.RetentionPolicy;
-import diskCacheV111.util.DBManager;
-import diskCacheV111.util.IoPackage;
 import  dmg.cells.nucleus.SystemCell;
 import  dmg.cells.nucleus.Cell;
 //import  dmg.util.*;
-
 import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
@@ -51,48 +56,41 @@ import dmg.cells.nucleus.CellMessageAnswerable;
 import dmg.cells.nucleus.CellVersion;
 import dmg.util.Args;
 import dmg.cells.nucleus.ExceptionEvent;
+import java.sql.*;
 import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.StorageInfo;
-import java.sql.*;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.List;
-import java.util.ArrayList;
-import diskCacheV111.util.PnfsId;
-import diskCacheV111.util.FQAN;
-import diskCacheV111.util.CacheException;
 import diskCacheV111.vehicles.PnfsGetStorageInfoMessage;
 import diskCacheV111.vehicles.PnfsFlagMessage;
 import diskCacheV111.vehicles.PnfsGetCacheLocationsMessage;
 import diskCacheV111.vehicles.PoolMgrSelectReadPoolMsg;
 import diskCacheV111.vehicles.PoolSetStickyMessage;
 import diskCacheV111.vehicles.DCapProtocolInfo;
-
 import diskCacheV111.vehicles.PoolMgrGetPoolLinkGroups;
 import diskCacheV111.vehicles.PoolLinkGroupInfo;
-
-import java.util.Set;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Hashtable;
-import java.util.Iterator;
-import diskCacheV111.util.FsPath;
-import diskCacheV111.vehicles.PoolStatusChangedMessage;
-import java.util.Date;
-import diskCacheV111.util.Pgpass;
-import org.dcache.util.JdbcConnectionPool;
 import diskCacheV111.vehicles.PoolMgrSelectPoolMsg;
 import diskCacheV111.vehicles.PoolMgrSelectWritePoolMsg;
 import diskCacheV111.vehicles.PoolAcceptFileMessage;
 import diskCacheV111.vehicles.DoorTransferFinishedMessage;
 import diskCacheV111.vehicles.PnfsSetStorageInfoMessage;
-import diskCacheV111.util.VOInfo;
-import diskCacheV111.util.FsPath;
+import diskCacheV111.vehicles.PoolStatusChangedMessage;
 import diskCacheV111.vehicles.PoolFileFlushedMessage;
 import diskCacheV111.vehicles.PoolRemoveFilesMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.GridProtocolInfo;
+import diskCacheV111.vehicles.PnfsDeleteEntryNotificationMessage;
+import diskCacheV111.util.PnfsId;
+import diskCacheV111.util.FQAN;
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.FsPath;
+import diskCacheV111.util.Pgpass;
+import diskCacheV111.util.VOInfo;
+import diskCacheV111.util.FsPath;
+import diskCacheV111.util.AccessLatency;
+import diskCacheV111.util.RetentionPolicy;
+import diskCacheV111.util.DBManager;
+import diskCacheV111.util.IoPackage;
 import diskCacheV111.namespace.StorageInfoProvider;
+import org.dcache.util.JdbcConnectionPool;
 
 
 /**
@@ -136,7 +134,7 @@ public class ManagerV2
 	/*
 	 * Database storage related variables
 	 */
-	public static final int currentSchemaVersion = 2;
+	public static final int currentSchemaVersion = 3;
 	private int previousSchemaVersion;
 	private Args _args;
 
@@ -1050,6 +1048,10 @@ public class ManagerV2
 				esay(e);
 			}			
 			previousSchemaVersion=2;
+		}
+		if (previousSchemaVersion==2) { 
+			manager.batchUpdates("ALTER TABLE " +ManagerSchemaConstants.SpaceFileTableName+ " ADD COLUMN  deleted INTEGER");
+			previousSchemaVersion=3;
 		}
 	}
 	
@@ -2219,7 +2221,6 @@ public class ManagerV2
 				       String pnfsPath,
 				       PnfsId pnfsId,
 				       int state) throws SQLException ,SpaceException {
-		
 		pnfsPath =new FsPath(pnfsPath).toString();
 		HashSet files = manager.selectPrepared(new FileIO(),
 						       FileIO.SELECT_TRANSFERRING_OR_RESERVED_BY_PNFSPATH,
@@ -2229,7 +2230,8 @@ public class ManagerV2
 		}
 		long creationTime=System.currentTimeMillis();
 		int rc=0;
-		Space space = selectSpaceForUpdate(connection,spaceReservationId,sizeInBytes);
+//		Space space = selectSpaceForUpdate(connection,spaceReservationId,sizeInBytes);
+		Space space = selectSpaceForUpdate(connection,spaceReservationId,0L); // a hack needed to get a better error code from comparison below
 		long currentTime = System.currentTimeMillis();
 		if(space.getLifetime() != -1 && space.getCreationTime()+space.getLifetime()  < currentTime) {
 			throw new SpaceExpiredException("space with id="+spaceReservationId+" has expired");
@@ -2580,6 +2582,10 @@ public class ManagerV2
 					esay("Failed to set storageinfo");
 				}
 				return;
+			}
+			else if (spaceMessage instanceof PnfsDeleteEntryNotificationMessage) { 
+				PnfsDeleteEntryNotificationMessage msg = (PnfsDeleteEntryNotificationMessage)spaceMessage;
+				markFileDeleted(msg);
 			}
 			else {
 				esay("unknown Space Manager message type :"+spaceMessage.getClass().getName()+" value: "+spaceMessage);
@@ -3058,6 +3064,7 @@ public class ManagerV2
 		String pnfsPath = use.getPnfsName();
 		PnfsId pnfsId = use.getPnfsId();
 		long lifetime = use.getLifetime();
+		boolean overwriteFlag = use.isOverwrite();
 		long fileId = useSpace(reservationId,voGroup,voRole,sizeInBytes,lifetime,pnfsPath,pnfsId);
 		use.setFileId(fileId);
 	}
@@ -3093,6 +3100,7 @@ public class ManagerV2
 	
 	private void transferStarted(PnfsId pnfsId,boolean success) {
 		say("transferStarted("+pnfsId+","+success+")");
+		if ( !spaceManagerEnabled) return;
 		Connection connection = null;
 		try {
 			connection = connection_pool.getConnection();
@@ -3170,6 +3178,7 @@ public class ManagerV2
 	}
     
 	private void transferFinished(DoorTransferFinishedMessage finished) throws Exception {
+		if ( !spaceManagerEnabled) return;
 		boolean weDeleteStoredFileRecord = deleteStoredFileRecord;
 		PnfsId pnfsId = finished.getPnfsId();
 		StorageInfo storageInfo = finished.getStorageInfo();
@@ -3270,20 +3279,27 @@ public class ManagerV2
 	}
 	
 	private void  fileFlushed(PoolFileFlushedMessage fileFlushed) throws Exception {
-		PnfsId pnfsId = fileFlushed.getPnfsId();
-		StorageInfo storageInfo = fileFlushed.getStorageInfo();
-		say("fileFlushed("+pnfsId+")");
+		if (!spaceManagerEnabled) return;
 		if(!returnFlushedSpaceToReservation) {
 			return;
 		}
+		PnfsId pnfsId = fileFlushed.getPnfsId();
+		//
+		// if this file is not in srmspacefile table, silently quit
+		//
+		HashSet files = manager.selectPrepared(new FileIO(),
+						       FileIO.SELECT_BY_PNFSID,
+						       pnfsId.toString());
+		if (files.isEmpty()==true) return; 
+		say("fileFlushed("+pnfsId+")");
+		StorageInfo storageInfo = fileFlushed.getStorageInfo();
 		AccessLatency ac = storageInfo.getAccessLatency();
 		if ( ac != null && ac.equals(AccessLatency.ONLINE)) {
 			say("File Access latency is ONLINE fileFlushed does nothinig");
 			return;
-			
 		}
-		long size = storageInfo.getFileSize();
-                Connection connection = null;
+		long size               = storageInfo.getFileSize();
+                Connection connection   = null;
 		try {
 			connection = connection_pool.getConnection();
 			connection.setAutoCommit(false);
@@ -3344,6 +3360,7 @@ public class ManagerV2
 	}
     
 	private void  fileRemoved(PoolRemoveFilesMessage fileRemoved) throws Exception {
+		if ( !spaceManagerEnabled) return;
 		say("fileRemoved()");
 		String[] pnfsIdStrings = fileRemoved.getFiles();
 		if(pnfsIdStrings == null || pnfsIdStrings.length == 0) {
@@ -3563,7 +3580,7 @@ public class ManagerV2
 				lifetime,
 				pnfsPath,
 				pnfsId,
-				0);
+				SpaceState.RESERVED.getStateId());
 			connection.commit();
 			connection_pool.returnConnection(connection);
 			connection = null;
@@ -3689,7 +3706,55 @@ public class ManagerV2
 		}
 		return;
 	}
-    
+
+	public void markFileDeleted(PnfsDeleteEntryNotificationMessage msg) throws Exception {
+		if (msg.getReturnCode()!=0) return;
+		File file=null;
+		try { 
+			HashSet files = manager.selectPrepared(new FileIO(),
+							       FileIO.SELECT_BY_PNFSID,
+							       msg.getPnfsId().toString());
+			if (files.isEmpty()) return;
+			if (files.size()>1) { 
+				throw new SQLException("found two records with pnfsId="+(msg.getPnfsId()!=null?msg.getPnfsId():"null"));
+			}
+			file=(File)files.toArray()[0];
+		}
+		catch (Exception e) { 
+			esay("Failed to retrieve file by pnfs id "+ (msg.getPnfsId()!=null?msg.getPnfsId():"null")+" "
+			     +(msg.getPnfsPath()!=null?msg.getPnfsPath():"null"));
+			esay(e);
+			return;
+		}
+		say("Marking file as deleted "+file);
+		Connection connection = null;
+		int rc = 0;
+		try { 
+			connection = connection_pool.getConnection();
+			connection.setAutoCommit(false);
+			File f = selectFileForUpdate(connection,file.getId());
+			rc = manager.update(connection,
+					    FileIO.UPDATE_DELETED_FLAG,
+					    1,
+					    f.getId());
+			if (rc!=1) {
+				throw new SQLException("Update failed, row count="+rc);
+			}
+			connection.commit();
+			connection_pool.returnConnection(connection);
+			connection=null;
+		}
+		catch (SQLException e) { 
+			esay(e);		
+			if (connection!=null) { 
+				connection.rollback();
+				connection_pool.returnFailedConnection(connection);
+				connection=null;
+			}
+			throw e;
+		}
+	}
+
 	public String getPnfsManager() {
 		return pnfsManager;
 	}

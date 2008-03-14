@@ -144,6 +144,7 @@ public class ManagerSchemaConstants {
             ", pnfsPath "+stringType+" "+
             ", pnfsId "+stringType+" "+
             ", state "+intType+" "+
+            ", deleted "+intType+" "+
             ", CONSTRAINT fk_"+SpaceFileTableName+
             "_L FOREIGN KEY (spaceReservationId) REFERENCES "+
             SpaceTableName +" (id) "+
