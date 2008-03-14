@@ -53,7 +53,7 @@ XROOTD=no
 #    With this variable, it is possible to install the info provider
 #    on a separate node and not on the admin node.
 #
-#infoProvider=yes                # default: 'yes' on 'admin' node otherwise 'no'
+#infoProvider=yes                # default: no
 
 
 #  ----  Start the statistics module
