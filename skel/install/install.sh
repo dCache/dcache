@@ -1203,9 +1203,12 @@ done
 check_install
 
 dcacheInstallGetHome
-fred=$RET
-if [ "$RET" != "${ourHomeDir}" ] ; then
+dCacheInstallDir=`echo $RET | sed -e 's_//*_/_g' -e 's_/$__'`
+dCacheHomeDir=`echo ${ourHomeDir} | sed -e 's_//*_/_g' -e 's_/$__'`
+
+if [ "${dCacheInstallDir}" != "${dCacheHomeDir}" ] ; then
   logmessage ERROR "Dcache HOME is set incorrectly."
+  logmessage INFO "${dCacheInstallDir} not equal to ${dCacheHomeDir}"
   exit 1
 fi
 
