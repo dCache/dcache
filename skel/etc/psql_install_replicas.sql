@@ -324,9 +324,9 @@ CREATE RULE replace_heartbeat AS ON INSERT TO heartbeat WHERE (EXISTS (SELECT 1 
 --
 -- Name: replace_replicas; Type: RULE; Schema: public; 
 --
-
-CREATE RULE replace_replicas AS ON INSERT TO replicas WHERE (EXISTS (SELECT 1 FROM replicas WHERE ((replicas.pool = new.pool) AND (replicas.pnfsid = new.pnfsid)))) DO INSTEAD UPDATE replicas SET datestamp = now() WHERE ((replicas.pool = new.pool) AND (replicas.pnfsid = new.pnfsid));
-
+-- More test required
+--CREATE RULE replace_replicas AS ON INSERT TO replicas WHERE (EXISTS (SELECT 1 FROM replicas WHERE ((replicas.pool = new.pool) AND (replicas.pnfsid = new.pnfsid)))) DO INSTEAD UPDATE replicas SET datestamp = now() WHERE ((replicas.pool = new.pool) AND (replicas.pnfsid = new.pnfsid));
+--
 
 --
 -- Name: replicas_pool_fkey; Type: FK CONSTRAINT; Schema: public; 

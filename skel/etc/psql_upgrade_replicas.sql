@@ -92,12 +92,13 @@ CREATE OR REPLACE RULE add2files AS
 --
 -- Rule replace_replicas will be aplied second.
 --        
-CREATE OR REPLACE RULE replace_replicas AS
-        ON INSERT TO replicas
-                WHERE (EXISTS (SELECT 1 FROM replicas WHERE ((replicas.pool = new.pool) AND (replicas.pnfsid = new.pnfsid))))
-        DO INSTEAD
-        UPDATE replicas SET datestamp = now() WHERE ((replicas.pool = new.pool) AND (replicas.pnfsid = new.pnfsid));
-        
+-- More tests required
+--CREATE OR REPLACE RULE replace_replicas AS
+--        ON INSERT TO replicas
+--                WHERE (EXISTS (SELECT 1 FROM replicas WHERE ((replicas.pool = new.pool) AND (replicas.pnfsid = new.pnfsid))))
+--        DO INSTEAD
+--        UPDATE replicas SET datestamp = now() WHERE ((replicas.pool = new.pool) AND (replicas.pnfsid = new.pnfsid));
+--        
 
 CREATE OR REPLACE RULE replace_heartbeat AS 
 	ON INSERT TO heartbeat 
