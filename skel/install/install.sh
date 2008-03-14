@@ -365,12 +365,12 @@ dcacheInstallGetUseGridFtp()
 dcacheInstallGetUseSrm()
 {
   # returns 1 if gridFTP is used 0 otherwise
-  local UseGridFtp
-  UseGridFtp=`printConfig SRM |  tr -s '[:upper:]' '[:lower:]'`
-  if [ "${UseGridFtp}" == "yes" ] ; then
+  local UseSRM
+  UseSRM=`printConfig SRM |  tr -s '[:upper:]' '[:lower:]'`
+  if [ "${UseSRM}" == "yes" ] ; then
     return 1
   fi
-  if [ "${UseGridFtp}" == "y" ] ; then
+  if [ "${UseSRM}" == "y" ] ; then
     return 1
   fi
   return 0
@@ -380,11 +380,25 @@ dcacheInstallGetIsAdminDoor()
 {
   # returns 1 if is an adminDoor is used 0 otherwise
   local NodeType
-  NodeType=`printConfig adminDoor |  tr -s '[:upper:]' '[:lower:]'`
-  if [ "${NodeType}" == "yes" ] ; then
+  local adminDoor
+  NodeType=`printConfig NODE_TYPE |  tr -s '[:upper:]' '[:lower:]'`
+  if [ "${NodeType}" == "admin" ] ; then
+    logmessage DEBUG "node is admin so returns true"
     return 1
   fi
-  if [ "${NodeType}" == "y" ] ; then
+  if [ "${NodeType}" == "pool" ] ; then
+    logmessage DEBUG "node is pool so returns false"
+    return 0
+  fi
+  if [ "${NodeType}" == "door" ] ; then
+    logmessage DEBUG "node is door so returns false"
+    return 0
+  fi
+  adminDoor=`printConfig adminDoor |  tr -s '[:upper:]' '[:lower:]'`
+  if [ "${adminDoor}" == "yes" ] ; then
+    return 1
+  fi
+  if [ "${adminDoor}" == "y" ] ; then
     return 1
   fi
   return 0
@@ -395,11 +409,25 @@ dcacheInstallGetIsHttpDomain()
 {
   # returns 1 if is an httpDomain is used 0 otherwise
   local NodeType
-  NodeType=`printConfig httpDomain |  tr -s '[:upper:]' '[:lower:]'`
-  if [ "${NodeType}" == "yes" ] ; then
+  local httpDomain
+  NodeType=`printConfig NODE_TYPE |  tr -s '[:upper:]' '[:lower:]'`
+  if [ "${NodeType}" == "admin" ] ; then
+    logmessage DEBUG "node is admin so returns true"
     return 1
   fi
-  if [ "${NodeType}" == "y" ] ; then
+  if [ "${NodeType}" == "pool" ] ; then
+    logmessage DEBUG "node is pool so returns false"
+    return 0
+  fi
+  if [ "${NodeType}" == "door" ] ; then
+    logmessage DEBUG "node is door so returns false"
+    return 0
+  fi
+  httpDomain=`printConfig httpDomain |  tr -s '[:upper:]' '[:lower:]'`
+  if [ "${httpDomain}" == "yes" ] ; then
+    return 1
+  fi
+  if [ "${httpDomain}" == "y" ] ; then
     return 1
   fi
   return 0
@@ -410,11 +438,25 @@ dcacheInstallGetIsLmDomain()
 {
   # returns 1 if is an lmDomain is used 0 otherwise
   local NodeType
-  NodeType=`printConfig lmDomain |  tr -s '[:upper:]' '[:lower:]'`
-  if [ "${NodeType}" == "yes" ] ; then
+  local lmDomain
+  NodeType=`printConfig NODE_TYPE |  tr -s '[:upper:]' '[:lower:]'`
+  if [ "${NodeType}" == "admin" ] ; then
+    logmessage DEBUG "node is admin so returns true"
     return 1
   fi
-  if [ "${NodeType}" == "y" ] ; then
+  if [ "${NodeType}" == "pool" ] ; then
+    logmessage DEBUG "node is pool so returns false"
+    return 0
+  fi
+  if [ "${NodeType}" == "door" ] ; then
+    logmessage DEBUG "node is door so returns false"
+    return 0
+  fi  
+  lmDomain=`printConfig lmDomain |  tr -s '[:upper:]' '[:lower:]'`
+  if [ "${lmDomain}" == "yes" ] ; then
+    return 1
+  fi
+  if [ "${lmDomain}" == "y" ] ; then
     return 1
   fi
   return 0
@@ -424,11 +466,25 @@ dcacheInstallGetIsPoolManager()
 {
   # returns 1 if is an poolManager is used 0 otherwise
   local NodeType
-  NodeType=`printConfig poolManager |  tr -s '[:upper:]' '[:lower:]'`
-  if [ "${NodeType}" == "yes" ] ; then
+  local poolManager
+  NodeType=`printConfig NODE_TYPE |  tr -s '[:upper:]' '[:lower:]'`
+  if [ "${NodeType}" == "admin" ] ; then
+    logmessage DEBUG "node is admin so returns true"
     return 1
   fi
-  if [ "${NodeType}" == "y" ] ; then
+  if [ "${NodeType}" == "pool" ] ; then
+    logmessage DEBUG "node is pool so returns false"
+    return 0
+  fi
+  if [ "${NodeType}" == "door" ] ; then
+    logmessage DEBUG "node is door so returns false"
+    return 0
+  fi
+  poolManager=`printConfig poolManager |  tr -s '[:upper:]' '[:lower:]'`
+  if [ "${poolManager}" == "yes" ] ; then
+    return 1
+  fi
+  if [ "${poolManager}" == "y" ] ; then
     return 1
   fi
   return 0
@@ -438,11 +494,25 @@ dcacheInstallGetIsUtilityDomain()
 {
   # returns 1 if is an utilityDomain is used 0 otherwise
   local NodeType
-  NodeType=`printConfig utilityDomain |  tr -s '[:upper:]' '[:lower:]'`
-  if [ "${NodeType}" == "yes" ] ; then
+  local utilityDomain
+  NodeType=`printConfig NODE_TYPE |  tr -s '[:upper:]' '[:lower:]'`
+  if [ "${NodeType}" == "admin" ] ; then
+    logmessage DEBUG "node is admin so returns true"
     return 1
   fi
-  if [ "${NodeType}" == "y" ] ; then
+  if [ "${NodeType}" == "pool" ] ; then
+    logmessage DEBUG "node is pool so returns false"
+    return 0
+  fi
+  if [ "${NodeType}" == "door" ] ; then
+    logmessage DEBUG "node is door so returns false"
+    return 0
+  fi
+  utilityDomain=`printConfig utilityDomain |  tr -s '[:upper:]' '[:lower:]'`
+  if [ "${utilityDomain}" == "yes" ] ; then
+    return 1
+  fi
+  if [ "${utilityDomain}" == "y" ] ; then
     return 1
   fi
   return 0
@@ -452,11 +522,25 @@ dcacheInstallGetIsPnfsManager()
 {
   # returns 1 if is an pnfsManager is used 0 otherwise
   local NodeType
-  NodeType=`printConfig pnfsManager |  tr -s '[:upper:]' '[:lower:]'`
-  if [ "${NodeType}" == "yes" ] ; then
+  local pnfsManager
+  NodeType=`printConfig NODE_TYPE |  tr -s '[:upper:]' '[:lower:]'`
+  if [ "${NodeType}" == "admin" ] ; then
+    logmessage DEBUG "node is admin so returns true"
     return 1
   fi
-  if [ "${NodeType}" == "y" ] ; then
+  if [ "${NodeType}" == "pool" ] ; then
+    logmessage DEBUG "node is pool so returns false"
+    return 0
+  fi
+  if [ "${NodeType}" == "door" ] ; then
+    logmessage DEBUG "node is door so returns false"
+    return 0
+  fi
+  pnfsManager=`printConfig pnfsManager |  tr -s '[:upper:]' '[:lower:]'`
+  if [ "${pnfsManager}" == "yes" ] ; then
+    return 1
+  fi
+  if [ "${pnfsManager}" == "y" ] ; then
     return 1
   fi
   return 0
