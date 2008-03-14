@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# chkconfig: - 92 8
+# chkconfig: 345 25 75
 # description: chimera nfs3 startup script
 
 
