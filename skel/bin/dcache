@@ -292,7 +292,7 @@ printConfig()
 {
     #          Comments      Trailing space  Print value
     #          vvvvvvvv      vvvvvvv         vvvvvvvvvvvvvvvvvvvvvvvvvv
-    sed -n -e 's/#.*$//' -e 's/\s*$//'   -e "s/^\s*$1\s*=\s*\(.*\)/\1/p" \
+    sed -n -e 's/#.*$//' -e 's/\s*$//'   -e "s/^\s*$1\s*=\s*\(.*\)/\1/ip" \
       ${ourHomeDir}/etc/node_config ${ourHomeDir}/etc/door_config 2> /dev/null
 }
 
@@ -402,7 +402,7 @@ getServices()
 
             printf "dir adminDoor httpd utility gPlazma "
 
-            if [ "`printConfig InfoProvider`" = "yes" ]; then
+            if [ "`printConfig infoProvider`" = "yes" ]; then
                 printf "infoProvider "
             fi
             if [ "`printConfig statistics`" = "yes" ]; then
