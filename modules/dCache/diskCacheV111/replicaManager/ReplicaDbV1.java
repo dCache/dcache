@@ -150,7 +150,8 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             esay("addPnfsToPool: prepareStatement error");
         }
         try {
-            stmt.execute("BEGIN ISOLATION LEVEL SERIALIZABLE");
+//            stmt.execute("BEGIN ISOLATION LEVEL SERIALIZABLE");
+//            stmt.execute("BEGIN");
             //
             for (CacheRepositoryEntryInfo info:  fileList) {        // Now put
                                                                     // all
@@ -160,7 +161,17 @@ public class ReplicaDbV1 implements ReplicaDb1 {
                                                                     // table
                 String pnfsId = info.getPnfsId().toString();
                 int bitmask = info.getBitMask();
-                boolean countable = bitmask==1;
+                boolean countable =
+                        info.isPrecious() &&
+//                        info.isCached() &&
+                        !info.isReceivingFromClient() &&
+                        !info.isReceivingFromStore() &&
+//                        info.isSendingToStore() &&
+                        !info.isBad() &&
+                        !info.isRemoved() &&
+                        !info.isDestroyed();
+//                        info.isSticky();
+
                 try {
                     pstmt.setString(1, pnfsId);
                     pstmt.setInt    (2, bitmask);
@@ -188,7 +199,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
                                                                                                                     // into
                                                                                                                     // history
                                                                                                                     // table
-            stmt.execute("COMMIT");
+//            stmt.execute("COMMIT");
         } catch (SQLException e) {
             try { conn.rollback(); } catch (SQLException e1) { }
             esay("Database access error");
@@ -528,7 +539,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
                                                                                                             // into
                                                                                                             // history
                                                                                                             // table
-            stmt.executeUpdate("TRUNCATE TABLE replicas, pools");
+            stmt.executeUpdate("TRUNCATE TABLE replicas, pools, deficient, redundant, excluded");
             stmt.execute("COMMIT");
         } catch (Exception ex) {
             try { conn.rollback(); } catch (SQLException e1) { }
@@ -602,6 +613,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
                     +"  HAVING count(*) > " + maxcnt;
             stmt.executeUpdate(sql);
             stmt.executeUpdate("DELETE FROM redundant WHERE pnfsid IN (SELECT pnfsid FROM actions)");
+            stmt.executeUpdate("DELETE FROM redundant WHERE pnfsid IN (SELECT pnfsid FROM excluded)");
             stmt.executeUpdate("COMMIT");
             //
             rset = stmt.executeQuery("SELECT * FROM redundant ORDER BY count DESC");
@@ -665,6 +677,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
                     "  HAVING count(*) < " + mincnt;
             stmt.executeUpdate(sql);
             stmt.executeUpdate("DELETE FROM deficient WHERE pnfsid IN (SELECT pnfsid FROM actions)");
+            stmt.executeUpdate("DELETE FROM deficient WHERE pnfsid IN (SELECT pnfsid FROM excluded)");
             stmt.executeUpdate("COMMIT");
             //
             rset = stmt.executeQuery("SELECT * FROM deficient ORDER BY count ASC");
@@ -1074,6 +1087,8 @@ public class ReplicaDbV1 implements ReplicaDb1 {
                     +"         GROUP BY pnfsid"
                     +"         UNION ALL"
                     +"         SELECT pnfsid FROM actions"
+                    +"         UNION ALL"
+                    +"         SELECT pnfsid FROM excluded"
                     +"        )";
             stmt.executeUpdate(sql);
             stmt.executeUpdate("COMMIT");
@@ -1101,11 +1116,16 @@ public class ReplicaDbV1 implements ReplicaDb1 {
     private class getOfflineIterator extends DbIterator {
 
         private getOfflineIterator() throws SQLException {
-            String sql = "SELECT ro.pnfsid " + "FROM ONLY replicas ro, pools po " + "WHERE ro.pool = po.pool AND po.status = '"
-                    + OFFLINE_PREPARE + "' " + "GROUP BY ro.pnfsid " + "EXCEPT " + "SELECT r.pnfsid " + "FROM ("
+            String sql = "SELECT ro.pnfsid " + "FROM ONLY replicas ro, pools po "
+                    + "WHERE ro.pool = po.pool AND po.status = '"  + OFFLINE_PREPARE + "' " 
+                    + "GROUP BY ro.pnfsid "
+                    + "EXCEPT "
+                    + "SELECT r.pnfsid " + "FROM ("
                     + "       SELECT rr.pnfsid FROM ONLY replicas rr, pools pp "
-                    + "       WHERE rr.pool = pp.pool  AND pp.status = '" + OFFLINE_PREPARE + "' " + "       GROUP BY rr.pnfsid"
-                    + "     ) r, " + "     ONLY replicas r1, " + "     pools p1 " + "WHERE r.pnfsid = r1.pnfsid"
+                    + "       WHERE rr.pool = pp.pool  AND pp.status = '" + OFFLINE_PREPARE + "' "
+                    + "       GROUP BY rr.pnfsid"
+                    + "     ) r, " + "     ONLY replicas r1, " + "     pools p1 "
+                    + "WHERE r.pnfsid = r1.pnfsid"
                     + " AND  p1.pool  = r1.pool" + " AND  ( p1.status = '" + ONLINE + "' "
                     + "     OR r.pnfsid IN (SELECT pnfsid FROM actions) ) " + "GROUP BY r.pnfsid";
             stmt = conn.createStatement();
