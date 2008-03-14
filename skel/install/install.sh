@@ -124,7 +124,8 @@ logmessage()
         then
           echo ${ThisPrefix}$* >> ${logfile}
         fi
-      else
+      fi
+      if [ $# -eq 0 ]; then
         while read logline
 	do
 	  echo ${ThisPrefix}${logline}
@@ -1048,6 +1049,8 @@ dcacheInstallPool()
   local DCACHE_HOME
   local shortHostname
   local x
+  local fileToProcess
+  local linecount
   dcacheInstallGetHome
   DCACHE_HOME=$RET
   shortHostname=`shortname_os`
@@ -1059,13 +1062,20 @@ dcacheInstallPool()
     logmessage WARNING "${DCACHE_HOME}/etc/pool_path does not exist. No pools will be configured."
   else
     # For all the static areas under rt make a pool
-    let x=0
-    while read rrt; do
-      let x=${x}+1 
+    fileToProcess=${DCACHE_HOME}/etc/pool_path
+    let x=1
+    linecount=`wc -l ${fileToProcess} | cut -d" " -f1`
+    let linecount=${linecount}+1 
+    while [ $x -lt $linecount ]
+    do
+      rrt=`sed "${x}q;d" ${fileToProcess}`
       pn=${shortHostname}"_"${x}
       dcacheInstallCheckPool
-    done  < ${DCACHE_HOME}/etc/pool_path
+      let x=${x}+1
+    done 
+     
   fi
+  
   logmessage DEBUG "dcacheInstallPool.stop" 
 }
 
