@@ -269,7 +269,6 @@ public class SrmPutDone {
 			putRequest.setState(State.DONE,"SrmPutDone called");
 			status.setStatusCode(TStatusCode.SRM_SUCCESS);
 			status.setExplanation("success");
-
 		    }
 		    if (fail_counter>0&&fail_counter<requests.length) { 
 			putRequest.setStatusCode(TStatusCode.SRM_PARTIAL_SUCCESS);
@@ -282,19 +281,14 @@ public class SrmPutDone {
 			putRequest.setState(State.FAILED,"no file transfer(s) were performed on SURL(s)");
 			status.setStatusCode(TStatusCode.SRM_FAILURE);
 			status.setExplanation("no file transfer(s) were performed on SURL(s)");
-		    } else {
-			putRequest.setStatusCode(TStatusCode.SRM_FAILURE);
-			putRequest.setState(State.FAILED,"no file transfer(s) were performed on SURL(s)");
-			status.setStatusCode(TStatusCode.SRM_FAILURE);
-			status.setExplanation("no file transfer(s) were performed on SURL(s)");
-                    }
-                        
-		}
-	    } else {
-                int fail_counter=0;
-                int success_counter=0;
-                if( surls == null ){
-		    if ( requests != null ) { 
+		    }
+
+		} 
+		else {
+		int fail_counter=0;
+		int success_counter=0;
+		if( surls == null ){
+				if ( requests != null ) { 
 			for (int i=0;i<requests.length;i++) { 
 			    PutFileRequest fileRequest =  (PutFileRequest) requests[i];
 			    synchronized(fileRequest) { 
@@ -334,7 +328,6 @@ public class SrmPutDone {
                     status.setStatusCode(TStatusCode.SRM_SUCCESS);
                     status.setExplanation("success");
                 }
-
                 if (fail_counter>0&&fail_counter<requests.length) { 
                     putRequest.setStatusCode(TStatusCode.SRM_PARTIAL_SUCCESS);
                     status.setStatusCode(TStatusCode.SRM_PARTIAL_SUCCESS);
@@ -346,13 +339,6 @@ public class SrmPutDone {
                     putRequest.setState(State.FAILED,"no file transfer(s) were performed on SURL(s)");
                     status.setStatusCode(TStatusCode.SRM_FAILURE);
                     status.setExplanation("no file transfer(s) were performed on SURL(s)");
-                } else {
-                    putRequest.setStatusCode(TStatusCode.SRM_FAILURE);
-                    putRequest.setState(State.FAILED,"no file transfer(s) were performed on SURL(s)");
-                    status.setStatusCode(TStatusCode.SRM_FAILURE);
-                    status.setExplanation("no file transfer(s) were performed on SURL(s)");
-                }
-                
             }
 	    srmPutDoneResponse.setReturnStatus(status);
 	    if(surls != null) {
