@@ -382,17 +382,29 @@ public class SRMGetClientV2 extends SRMClient implements Runnable {
                     throw new IOException(" null srmStatusOfGetRequestResponse");
                 }
                 if(srmStatusOfGetRequestResponse.getArrayOfFileStatuses() == null ) {
-                    esay( "incorrect number of RequestFileStatuses");
-                    throw new IOException("incorrect number of RequestFileStatuses");
+                    String error =  "array of RequestFileStatuses is null ";
+                    statusCode = status.getStatusCode();
+                    if(statusCode != null) {
+                        error += " status : "+ statusCode+
+                            " explanation="+status.getExplanation();
+                    }
+                    esay(error);
+                    throw new IOException(error);
+                   //throw new IOException("array of RequestFileStatuses is null");
                 }
                 getRequestFileStatuses =
                         srmStatusOfGetRequestResponse.getArrayOfFileStatuses().getStatusArray();
                 
-                
                 if(getRequestFileStatuses == null ||
                         getRequestFileStatuses.length !=  expectedResponseLength) {
-                    esay( "incorrect number of RequestFileStatuses");
-                    throw new IOException("incorrect number of RequestFileStatuses");
+                    String error =  "incorrect number of RequestFileStatuses";
+                    statusCode = status.getStatusCode();
+                    if(statusCode != null) {
+                        error += " status : "+ statusCode+
+                            " explanation="+status.getExplanation();
+                    }
+                    esay(error);
+                    throw new IOException(error);
                 }
                 
                 status = srmStatusOfGetRequestResponse.getReturnStatus();
