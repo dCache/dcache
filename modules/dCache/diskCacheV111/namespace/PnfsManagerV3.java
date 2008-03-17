@@ -1097,7 +1097,7 @@ public class PnfsManagerV3 extends CellAdapter {
                 new PnfsDeleteEntryNotificationMessage(pnfsId,path);
             try{
 
-                sendMessage( new CellMessage( _cacheModificationRelay , 
+                sendMessage( new CellMessage( _pnfsDeleteNotificationRelay, 
                     deleteNotification ) ) ;
 
             }catch(Exception ee ){
