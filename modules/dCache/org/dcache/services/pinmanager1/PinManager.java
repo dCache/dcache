@@ -283,7 +283,9 @@ public class PinManager extends AbstractCell implements Runnable  {
     public String ac_pin_pnfsid_$_2( Args args ) throws Exception {
         PnfsId pnfsId = new PnfsId( args.argv(0) ) ;
         long lifetime = Long.parseLong( args.argv(1) ) ;
-        lifetime *=1000;
+        if(lifetime != -1) {
+            lifetime *=1000;
+        }
         pin(pnfsId,null,lifetime,0,null,null);
         return "pin started";
         
