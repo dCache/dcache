@@ -1048,8 +1048,6 @@ case "$1" in
         ;;
 
     status)
-        local format
-        local domains
         domains=`getAllDomains`
         format="%-`max_width $domains`s %-10s%5s %s\n"
         printf "$format" "Domain" "Status" "Pid" "Log file"
@@ -1091,9 +1089,6 @@ case "$1" in
             ls)
                 [ $# -gt 0 ] && usage 1
 
-                local format
-                local domains
-                local pools
                 domains=`getAllPoolDomains`
                 pools=`getAllPools $domains`
                 format="%-`max_width $pools`s %-`max_width $domains`s %7s%7s %s\n"
