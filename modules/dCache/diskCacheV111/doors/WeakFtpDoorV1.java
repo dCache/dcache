@@ -152,7 +152,7 @@ public class WeakFtpDoorV1 extends AbstractFtpDoorV1 {
                         _engine.getInetAddress());
         }
         catch (Exception e) {
-            error("WeakFtpDoorV1::startTlog: couldn't start tLog. " +
+            error("WeakFtpDoor: couldn't start tLog. " +
                   "Ignoring exception: " + e.getMessage());
         }
     }

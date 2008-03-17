@@ -119,9 +119,9 @@ public class GsiFtpDoorV1 extends GssFtpDoorV1 {
             else if ( arg_string.equalsIgnoreCase("false") )
                 _perfMarkerConf.use = false;
             else {
-                String msg = "GsiFtpDoorV1: illegal command option value in " +
-                             "usePerfMarkers=" + arg_string +
-                             ". It must be 'true' or 'false'.";
+                String msg = "GsiFtpDoor: illegal command option value in " +
+                             "usePerfMarkers='" + arg_string +
+                             "'. It must be 'true' or 'false'.";
                 fatal(msg);
                 throw new RuntimeException(msg);
             }
@@ -139,14 +139,14 @@ public class GsiFtpDoorV1 extends GssFtpDoorV1 {
                    _perfMarkerConf.use    = true;
                 }
             } catch (NumberFormatException ex) {
-                String msg = "GsiFtpDoorV1: error in -perfMarkerPeriod " +
+                String msg = "GsiFtpDoor: error in -perfMarkerPeriod " +
                              "argument: '" + arg_string +
                              "' is not an integer.";
                 fatal(msg);
                 throw new RuntimeException(msg);
             }
         }
-        info("GsiFtpDoorV1: Performance Markers : " + _perfMarkerConf.use +
+        info("GsiFtpDoor: Performance Markers : " + _perfMarkerConf.use +
              " Period : " + _perfMarkerConf.period ) ;
 
         ftpDoorName="GSI FTP";
@@ -175,7 +175,7 @@ public class GsiFtpDoorV1 extends GssFtpDoorV1 {
                         _engine.getInetAddress());
         }
         catch (Exception e) {
-            error("GsiFtpDoorV1::startTlog: couldn't start tLog. " +
+            error("GsiFtpDoor: couldn't start tLog. " +
                   "Ignoring exception: " + e.getMessage());
         }
     }
@@ -187,7 +187,7 @@ public class GsiFtpDoorV1 extends GssFtpDoorV1 {
             serviceCredential = new GlobusCredential(service_cert, service_key);
         }
         catch (GlobusCredentialException gce) {
-            String errmsg = "GsiFtpDoorV1::getServiceContext: couldn't load " +
+            String errmsg = "GsiFtpDoor: couldn't load " +
                             "host globus credentials: " + gce.toString();
             error(errmsg);
             throw new GSSException(GSSException.NO_CRED, 0, errmsg);
