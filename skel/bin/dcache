@@ -51,7 +51,7 @@
 #
 #    Domain                     Service
 #    dCacheDomain               dcache
-#    GFTP-dcache-vm             gridftpdoor
+#    GFTP-dcache-vm             gridftp
 #
 
 # Solaris doesn't have a POSIX compliant shell as /bin/sh. We
@@ -282,27 +282,24 @@ printConfig()
 # nodes.
 autoMountNameSpace()
 {
-    local cp
     local ADMIN_NODE
     local PNFS_ROOT
     local NODE_TYPE
     local NAMESPACE
 
     NAMESPACE=`printConfig NAMESPACE`
-    if [ -z "${NAMESPACE}" ] || [ "${NAMESPACE}" = "pnfs" ]; then
+    if [ -z "$NAMESPACE" ] || [ "$NAMESPACE" = pnfs ]; then
         PNFS_ROOT=`printConfig PNFS_ROOT`
         NODE_TYPE=`printConfig NODE_TYPE`
-	if [ "${NODE_TYPE}" = "admin" ]; then
-	    cp=`df ${PNFS_ROOT}/fs 2>/dev/null |grep "${PNFS_ROOT}" | awk '{print $2}'`
-	    if [ -z "$cp" ]; then
+	if [ "$NODE_TYPE" = admin ]; then
+	    if ! df ${PNFS_ROOT}/fs 2>/dev/null | grep -v "$PNFS_ROOT" > /dev/null; then
 		printp "[ERROR] ${PNFS_ROOT}/fs mount point exists, but is
                         not mounted. Make sure pnfs is running on this 
                         admin node. Exiting."
 		exit 1
 	    fi
-	elif [ "`printConfig GRIDFTP`" = "yes" ]; then
-	    cp=`df ${PNFS_ROOT}/${SERVER_ID} 2>/dev/null |grep "${PNFS_ROOT}" | awk '{print $2}'`
-	    if [ -z $cp ]; then
+	elif [ "`printConfig GRIDFTP`" = yes ]; then
+	    if ! df ${PNFS_ROOT}/${SERVER_ID} 2>/dev/null | grep "$PNFS_ROOT" > /dev/null; then
 		ADMIN_NODE=`printConfig ADMIN_NODE`
 		if [ -z "$ADMIN_NODE" ] || [ "$ADMIN_NODE" = myAdminNode ]; then
 		    printp "[ERROR] pnfs not mounted on 
@@ -313,8 +310,7 @@ autoMountNameSpace()
 		fi
 		printp "${PNFS_ROOT}/${SERVER_ID}/ not mounted - going to mount it now."
 		mount -o intr,rw,noac,hard,nfsvers=2 $ADMIN_NODE:/pnfsdoors ${PNFS_ROOT}/${SERVER_ID}
-		cp=`df ${PNFS_ROOT}/${SERVER_ID} 2>/dev/null |grep "${PNFS_ROOT}" | awk '{print $2}'`
-		if [ -z $cp ]; then
+		if df ${PNFS_ROOT}/${SERVER_ID} 2>/dev/null | grep "$PNFS_ROOT"; then
 		    printp "[ERROR] Still not mounted. Apparently no pnfs 
                             server running on admin node $ADMIN_NODE. Exiting."
 		    exit 1
@@ -330,7 +326,7 @@ autoMountNameSpace()
 getService() # $1 = domain name
 {
     case "$1" in
-        dcap-*Domain)
+        dcap*-*Domain)
             printf "dcap"
             ;;
         
@@ -339,15 +335,15 @@ getService() # $1 = domain name
             ;;
         
         xrootd-*Domain)
-            printf "xrootdDoor"
+            printf "xrootd"
             ;;
         
         gridftp-*Domain)
-            printf "gridftpdoor"
+            printf "gridftp"
             ;;
         
         gsidcap-*Domain)
-            printf "gsidcapdoor"
+            printf "gsidcap"
             ;;
 
 	srm-*Domain)
@@ -382,7 +378,7 @@ getServices()
 		printf "pnfs "
 	    fi		    
 
-            printf "dir adminDoor httpd utility gPlazma "
+            printf "dir admin httpd utility gPlazma "
 
             if [ "`printConfig infoProvider`" = "yes" ]; then
                 printf "infoProvider "
@@ -409,7 +405,7 @@ getServices()
                 printf "dir "
             fi
             if [ "`printConfig adminDoor`" = "yes" ]; then
-                printf "adminDoor "
+                printf "admin "
             fi
             if [ "`printConfig httpDomain`" = "yes" ]; then
                 printf "httpd "
@@ -436,13 +432,13 @@ getServices()
         printf "dcap "
     fi
     if [ "`printConfig XROOTD`" = "yes" ]; then
-        printf "xrootdDoor "
+        printf "xrootd "
     fi	
     if [ "`printConfig GRIDFTP`" = "yes" ]; then
-        printf "gridftpdoor "
+        printf "gridftp "
     fi
     if [ "`printConfig GSIDCAP`" = "yes" ]; then
-        printf "gsidcapdoor "
+        printf "gsidcap "
     fi
     if [ "`printConfig SRM`" = "yes" ]; then
         printf "srm "
@@ -471,15 +467,15 @@ getDomains() # $1 = service
             printf "%s" "gPlazma-${hostname}Domain "
             ;;
         
-        xrootdDoor)
+        xrootd)
             printf "%s" "xrootd-${hostname}Domain "
             ;;
         
-        gridftpdoor)
+        gridftp)
             printf "%s" "gridftp-${hostname}Domain "
             ;;
         
-        gsiftpdoor)
+        gsidcap)
             printf "%s" "gsidcap-${hostname}Domain "
             ;;
 
@@ -536,16 +532,39 @@ run() # $1 = domain, $2 = action
     local action
     local service
     local program
+    local door
 
     domain=$1
     action=$2
     service=`getService $1`
 
-    if [ "${service}" = "srm" ]; then
-	program="${ourHomeDir}/bin/dcache-srm"
-    else
-	program="${ourHomeDir}/jobs/${service}"
-    fi
+    # Translate service name to name of control script
+    case ${service} in
+        srm)
+            program="${ourHomeDir}/bin/dcache-srm"
+            ;;
+        dcap)
+	    # $domain has the format 'dcap${door}-${host}Domain'
+	    door=${domain#dcap}
+	    door=${door%-${hostname}Domain}
+            program="${ourHomeDir}/jobs/door${door}"
+            ;;
+        xrootd)
+            program="${ourHomeDir}/jobs/xrootdDoor"
+            ;;
+	gridftp)
+            program="${ourHomeDir}/jobs/gridftpdoor"
+            ;;	    
+	gsidcap)
+            program="${ourHomeDir}/jobs/gsidcapdoor"
+            ;;	    
+	admin)
+            program="${ourHomeDir}/jobs/adminDoor"
+            ;;
+        *)
+	    program="${ourHomeDir}/jobs/${service}"
+            ;;
+    esac
 
     if [ ! -x $program ]; then
 	printp "$program not found. The dCache domain $domain is 
@@ -559,11 +578,9 @@ run() # $1 = domain, $2 = action
 	pool)
 	    ${program} -pool=${domain%Domain} ${logParam} ${action}
 	    ;;
-
 	srm)
 	    ${program} ${action}
 	    ;;
-
 	*)
 	    ${program} -domain=${domain} ${logParam} ${action}
 	    ;;
@@ -980,9 +997,9 @@ SERVER_ID=`printConfig SERVER_ID`
 if [ -z "${SERVER_ID}" ]; then
     SERVER_ID=`hostname -d 2>/dev/null`
     if [ $? -ne 0 ] || [ -z "${SERVER_ID}" ]; then
-        SERVER_ID="`cat /etc/resolv.conf | sed -e 's/#.*$//' | grep 'search' | awk '{ print($2) }'`"
+        SERVER_ID=`sed -e 's/#.*$//' /etc/resolv.conf | awk '/^[ \t]*search/ { print $2 }'`
         if [ -z "${SERVER_ID}" ]; then
-            SERVER_ID="`cat /etc/resolv.conf | sed -e 's/#.*$//' | grep 'domain' | awk '{ print($2) }'`"
+            SERVER_ID=`sed -e 's/#.*$//' /etc/resolv.conf | awk '/^[ \t]*domain/ { print $2 }'`
         fi
     fi
 fi
