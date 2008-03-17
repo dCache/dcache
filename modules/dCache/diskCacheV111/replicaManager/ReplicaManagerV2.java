@@ -1121,7 +1121,7 @@ public class ReplicaManagerV2 extends DCacheCoreControllerV2 {
      if ( _stopThreads )
        dsay("processReplicateDeficient() - stopThreads detected, stopping");
      else if ( updated )
-       dsay("processReplicateDeficient() - DB update detexted, break replication pass");
+       dsay("processReplicateDeficient() - DB update detected, break replication pass");
 
      // We are not done with iterator yet or there we some replicas we skipped
      return ( it.hasNext() || haveMore );
