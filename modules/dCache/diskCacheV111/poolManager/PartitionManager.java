@@ -457,23 +457,23 @@ public class PartitionManager implements java.io.Serializable {
     
        PoolManagerParameter para = info._parameter ;
 
-       sb.append("pm st ").append(info._name).append(" ") ;
+       sb.append("pm set ").append(info._name).append(" ") ;
        dumpCostOptions( sb , para ) ;
        sb.append("\n") ;
          
-       sb.append("pm st ").append(info._name).append(" ") ;
+       sb.append("pm set ").append(info._name).append(" ") ;
        dumpThresholdOptions( sb , para ) ;
        sb.append("\n");
        
-       sb.append("pm st ").append(info._name).append(" ") ;
+       sb.append("pm set ").append(info._name).append(" ") ;
        dumpP2pOptions( sb , para ) ;
        sb.append("\n");
        
-       sb.append("pm st ").append(info._name).append(" ") ;
+       sb.append("pm set ").append(info._name).append(" ") ;
        dumpStageOptions( sb , para ) ;
        sb.append("\n");
        
-       sb.append("pm st ").append(info._name).append(" ") ;
+       sb.append("pm set ").append(info._name).append(" ") ;
        dumpMiscOptions( sb , para ) ;
        sb.append("\n");
        
