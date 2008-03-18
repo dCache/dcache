@@ -336,12 +336,39 @@ sshPort=${portBase}124
 #
 #spaceManagerDatabaseHost=localhost
 
+# ----------------------------------------------------------------
+#   pin manager tuning
+# ----------------------------------------------------------------
+#  ---- Pin Manager Database Host
+#   Do not change unless you know what you are doing.
+#   - If srmDbHost is set and this is not set, srmDbHost is used.
+#
+#pinManagerDbHost=localhost
+#
+#  ---- Pin Manager Database Name
+#   Do not change unless you know what you are doing.
+#   - If srmDbName is set and this is not set, srmDbName is used.
+#
+#pinManagerDbName=dcache
+#
+#  ---- Pin Manager Database User
+#   Do not change unless you know what you are doing.
+#   - If srmDbUser is set and this is not set, srmDbUser is used.
+#
+#pinManagerDbUser="srmdcache"
+#
+#  ---- Pin Manager Database Host
+#   Do not change unless yoy know what you are doing.
+#   - If srmDbPassword is set and this is not set, srmDbPassword is used.
+#
+#pinManagerDbPassword=
+#
 #  ---- Pin Manager Database Host
 #   Do not change unless yoy know what you are doing.
 #   - Database name: dcache
-#   - If srmDbHost is set and this is not set, srmDbHost is used.
+#   - If srmPasswordFile is set and this is not set, srmPasswordFile is used.
 #
-#pinManagerDatabaseHost=localhost
+#pinManagerPasswordFile=""
 
 #  ---- Replica Manager Database Host
 #   Do not change unless yoy know what you are doing.

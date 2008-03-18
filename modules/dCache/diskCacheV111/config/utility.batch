@@ -38,14 +38,22 @@ create diskCacheV111.admin.PAMAuthentificator gsi-pam \
 onerror continue
 
    set context -c srmDbHost localhost
-
-   set context -c pinManagerDatabaseHost    ${srmDbHost}
-   set context -c spaceManagerDatabaseHost  ${srmDbHost}
-
    set context -c srmDbName          dcache
    set context -c srmDbUser          srmdcache
    set context -c srmDbPassword      srmdcache
    set context -c srmPasswordFile    ""
+
+   set context -c spaceManagerDatabaseHost  ${srmDbHost}
+
+   set context -c pinManagerDbHost ${srmDbHost}
+   set context -c pinManagerDbName ${srmDbName}
+   set context -c pinManagerDbUser ${srmDbUser}
+   set context -c pinManagerDbPassword ${srmDbPassword}
+
+   set context -c pinManagerPasswordFile "${srmPasswordFile}"
+
+# in seconds, -1 for infinite 
+   set context -c pinManagerMaxPinDuration "-1"
 
    set context -c kpwdFile          ${ourHomeDir}/etc/dcache.kpwd
 
@@ -56,15 +64,15 @@ onerror shutdown
 # ----------------------------------------------------------------------
 #
 #
-create diskCacheV111.services.SpaceManager SpaceManager \
-       "default \
-        -export \
-        -jdbcDriver=org.postgresql.Driver \
-        -jdbcUrl=jdbc:postgresql://${spaceManagerDatabaseHost}/${srmDbName} \
-        -dbUser=${srmDbUser} \
-        -dbPass=${srmDbPassword} \
-       "
-
+#create diskCacheV111.services.SpaceManager SpaceManager \
+#       "default \
+#        -export \
+#        -jdbcDriver=org.postgresql.Driver \
+#        -jdbcUrl=jdbc:postgresql://${spaceManagerDatabaseHost}/${srmDbName} \
+#        -dbUser=${srmDbUser} \
+#        -dbPass=${srmDbPassword} \
+#       "
+#
 #
 # ----------------------------------------------------------------------
 #           Pin Manager Cell
@@ -75,9 +83,11 @@ create org.dcache.services.pinmanager.PinManager PinManager \
        "default \
         -export  \
         -jdbcDriver=org.postgresql.Driver \
-        -jdbcUrl=jdbc:postgresql://${pinManagerDatabaseHost}/${srmDbName} \
-        -dbUser=${srmDbUser} \
-        -dbPass=${srmDbPassword} \
+        -jdbcUrl=jdbc:postgresql://${pinManagerDbHost}/${pinManagerDbName} \
+        -dbUser=${pinManagerDbUser} \
+        -dbPass=${pinManagerDbPassword} \
+        -pgPass=${pinManagerPasswordFile} \
+        -maxPinDuration=${pinManagerMaxPinDuration} \
        "
 #
 #
