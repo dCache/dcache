@@ -1,5 +1,7 @@
 #!/bin/sh
-
+#
+# chkconfig: - 92 8
+# description: dCache init script
 
 # dcache start [DOMAIN] ...
 #
