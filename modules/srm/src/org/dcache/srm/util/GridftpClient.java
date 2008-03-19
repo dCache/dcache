@@ -1,4 +1,4 @@
-// $Id: GridftpClient.java,v 1.13 2007-10-23 07:38:45 behrmann Exp $
+// $Id$
 
 package org.dcache.srm.util;
 
@@ -648,7 +648,7 @@ public class GridftpClient
                     }
             }
         say("closing client : "+_client);
-        _client.close(true);
+        _client.close(false);
         say("closed client");
 
     }
