@@ -25,10 +25,13 @@ import java.util.*;
  */
 public class StatePath {
 
+	private static final int NULL_ELEMENT_HASH = 0xDEADBEAF;
+
 	protected final List<String> _elements;
 	private int _myHashCode;
 	private boolean _haveHashCode = false;
 	private String _toString = null;
+	
 	
 	/**
 	 * Parse a dot-separated path to build a StatePath 
@@ -39,7 +42,7 @@ public class StatePath {
 		String elements[] = path.split("\\.");
 		return new StatePath( elements);
 	}
-
+	
 	/**
 	 * Create a new StatePath that duplicates an existing one.
 	 * @param path the StatePath to copy.
@@ -66,7 +69,7 @@ public class StatePath {
 		_elements = new ArrayList<String>( elements.length);
 		
 		for( String element : elements)
-			_elements.add( element);
+			_elements.add( element.intern());
 	}	
 	
 	/**
@@ -74,9 +77,9 @@ public class StatePath {
 	 * same as new StatePath().newChild(name);
 	 * @param name: the name of the path element.  
 	 */
-	public StatePath( String path) {		
+	public StatePath( String element) {		
 		_elements = new ArrayList<String>(1);
-		_elements.add(path);
+		_elements.add(element != null ? element.intern() : null);
 	}
 	
 	
@@ -85,9 +88,27 @@ public class StatePath {
 	 */
 	void calcHashCode() {
 		int code = 0;
-
-		for( String element : _elements)
-			code ^= element.hashCode();
+		int elementCount = 0;
+		
+		for( String element : _elements) {
+			int stringHash=0;
+			
+			if( element == null) {
+				stringHash = NULL_ELEMENT_HASH;
+			} else {
+				// Since Java's String hashCode is so poor, spice it up a little.				
+				byte bytes[] = element.getBytes();
+				
+				int len = bytes.length > 10 ? 10 : bytes.length; // limit length
+				for( int i = 0; i < len; i++)
+					stringHash ^= ((int) bytes[i]) << (i*5 + elementCount) % 24;
+			}
+			
+			code ^= stringHash;
+			elementCount++;
+		}
+		
+		
 		
 		_myHashCode = code;
 		_haveHashCode = true;		
@@ -108,7 +129,14 @@ public class StatePath {
 		
 		StatePath otherPath = (StatePath) otherObject;
 		
-		return _elements.equals(otherPath._elements);
+		if( otherPath._elements.size() != _elements.size())
+			return false;
+		
+		for( int i=0; i < _elements.size(); i++)
+			if( otherPath._elements.get(i) != _elements.get(i))  // Our use of intern() allows this
+				return false;
+
+		return true;
 	}
 
 	
@@ -147,10 +175,8 @@ public class StatePath {
 			return false;
 
 		for( int i = 0; i < _elements.size(); i++) {
-
-			String thisElement = _elements.get(i);
-
-			if( !thisElement.equals( otherPath._elements.get(i)))
+			// We use intern()ed strings for this to work.
+			if( _elements.get(i) != otherPath._elements.get(i))
 				return false;
 		}
 
@@ -186,7 +212,7 @@ public class StatePath {
 			return false;
 
 		for( int i = 0; i < _elements.size(); i++)
-			if( !_elements.get(i).equals( otherPath._elements.get(i)))
+			if( _elements.get(i) != otherPath._elements.get(i)) 	// intern()ed Strings allows this.
 				return false;
 
 		return true;
@@ -277,7 +303,7 @@ public class StatePath {
 
 		StatePath newPath = new StatePath( _elements, _elements.size()+1);
 		
-		newPath._elements.add( element);
+		newPath._elements.add( element.intern());
 		
 		return newPath;
 	}
