@@ -23,6 +23,10 @@ public class CellAdapterHelper extends CellAdapter {
         return _systemCell;
     }
 
+    public void die() {
+        kill();
+    }
+
 
     @Override
     public void esay(String str) {
