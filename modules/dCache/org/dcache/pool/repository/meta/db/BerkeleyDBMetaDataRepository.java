@@ -192,6 +192,16 @@ public class BerkeleyDBMetaDataRepository
         return _views.getStateMap();
     }
 
+    /** Closes the database. */
+    public void close()
+    {
+        try {
+            _database.close();
+        } catch (DatabaseException e) {
+            _log.error("Ignored: Could not close database: " + e.getMessage());
+        }
+    }
+
     /**
      * Returns the path
      */

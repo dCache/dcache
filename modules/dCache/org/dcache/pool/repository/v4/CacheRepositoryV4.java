@@ -554,4 +554,8 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
         }
     }
 
+    public void close()
+    {
+        _metaRepository.close();
+    }
 }

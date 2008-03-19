@@ -129,6 +129,12 @@ public class FileMetaDataRepository
 	}
     }
 
+    /** NOP */
+    public void close()
+    {
+
+    }
+
     /**
      * Forwards an event to the CacheRepository. Used by the entries
      * for event notification.

@@ -30,7 +30,7 @@ public interface MetaDataRepository
      * @throws DuplicateEntryException if entry already exists
      * @throws RepositoryException if entry creation fails
      */
-    CacheRepositoryEntry create(PnfsId id) 
+    CacheRepositoryEntry create(PnfsId id)
         throws DuplicateEntryException, RepositoryException;
 
     /**
@@ -48,8 +48,8 @@ public interface MetaDataRepository
      * Limitations:
      * <ul>
      * <li> Due to limitations in the CacheRepositoryEntry interface, the
-     * locking status is currently not copied to the new entry. 
-     * <li> The storage info in both entries will refer to the same 
+     * locking status is currently not copied to the new entry.
+     * <li> The storage info in both entries will refer to the same
      * storage info object.
      * <li> The sending to client flag is not preserved.
      * </ul>
@@ -61,7 +61,7 @@ public interface MetaDataRepository
      */
     CacheRepositoryEntry create(CacheRepositoryEntry entry)
         throws DuplicateEntryException, CacheException;
-    
+
     /**
      * Removes a meta data entry. If the entry does not exist, nothing
      * happens.
@@ -74,5 +74,8 @@ public interface MetaDataRepository
      * Returns whether the repository appears healthy. How this is
      * determined is up to the implementation.
      */
-    public boolean isOk();
+    boolean isOk();
+
+    /** Closes the repository and frees any associated resources. */
+    void close();
 }

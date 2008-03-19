@@ -386,4 +386,7 @@ public class MetaDataRepositoryHelper implements MetaDataRepository {
         _entryList.remove(id);
     }
 
+    public void close() {
+    }
+
 }
