@@ -92,7 +92,7 @@ public class JobSchedulerTest {
         int jobId = _jobScheduler.add(job);
 
         startCounter.await();
-        _jobScheduler.kill(jobId);
+        _jobScheduler.kill(jobId, true);
 
 
         doneCounter.await();
