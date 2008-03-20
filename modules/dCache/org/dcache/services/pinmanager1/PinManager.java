@@ -339,20 +339,28 @@ public class PinManager extends AbstractCell implements Runnable  {
         return Long.toString(maxPinDuration)+" milliseconds";
     }
 
-    public String hh_ls = " [id] # lists all pins or a specified pin" ;
+    public String hh_ls = " [id|pnfsId] # lists all pins or a specified pin by request id or pnfsid" ;
     public String ac_ls_$_0_1(Args args) throws Exception {
         db.initDBConnection();
         try {
             if (args.argc() > 0) {
-                long  id = Long.parseLong(args.argv(0));
-                Pin pin  = db.getPin(id) ;
-                StringBuffer sb = new StringBuffer();
-                sb.append(pin.toString());
-                    sb.append("\n  pinRequests: \n");
-                for (PinRequest pinReqiest:pin.getRequests()) {
-                    sb.append("  ").append(pinReqiest).append('\n');
+                try {
+                    long  id = Long.parseLong(args.argv(0));
+                    Pin pin  = db.getPin(id) ;
+                    StringBuffer sb = new StringBuffer();
+                    sb.append(pin.toString());
+                        sb.append("\n  pinRequests: \n");
+                    for (PinRequest pinReqiest:pin.getRequests()) {
+                        sb.append("  ").append(pinReqiest).append('\n');
+                    }
+                    return sb.toString();
+                } catch (NumberFormatException nfe) {
+                    PnfsId pnfsId = new PnfsId(args.argv(0));
+                    StringBuffer sb = new StringBuffer();
+
+                     db.allPinsByPnfsIdToStringBuffer(sb,pnfsId);       
+                     return sb.toString();                    
                 }
-                return sb.toString();
             }
             
             StringBuffer sb = new StringBuffer();
@@ -1214,9 +1222,21 @@ public class PinManager extends AbstractCell implements Runnable  {
         }
         
     }
-    
+   //getExpiredPinsWithoutRequests 
     public void expirePinsWithoutRequests() throws PinDBException {
-        // TODO
+        Collection<Pin> expiredPins=null;
+        db.initDBConnection();
+        try {
+            expiredPins = db.getExpiredPinsWithoutRequests();
+           
+       
+        } finally {
+            db.commitDBOperations();
+        }
+        
+        for(Pin pin:expiredPins) {
+            forceUnpinning(pin);
+        }
     }
  
     public void run()  {

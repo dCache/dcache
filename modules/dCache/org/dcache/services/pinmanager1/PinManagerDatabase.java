@@ -237,12 +237,14 @@ class PinManagerDatabase
 
             String insert = "INSERT INTO "+PinManagerSchemaVersionTableName +
                 " VALUES ( "+currentSchemaVersion+" )";
-            Statement s1 = con.createStatement();
+                Statement s1 = con.createStatement();
              info("updateSchemaVersion trying "+insert);
             int result = s1.executeUpdate(insert);
             s1.close();
 
         }
+        info(" previouos schema version is "+ previousSchemaVersion+
+            " current schema version is "+currentSchemaVersion);
 
         if(previousSchemaVersion == currentSchemaVersion) {
             return;
@@ -253,7 +255,7 @@ class PinManagerDatabase
                 updateSchemaToVersion3From1(con);
             }
             catch (SQLException sqle) {
-                error("updateSchemaToVersion3From1 failed, shcema might have been updated already:");
+                error("updateSchemaToVersion3From1 failed, schema might have been updated already:");
                 error(sqle.getMessage());
             }
             previousSchemaVersion = 3;
@@ -263,8 +265,8 @@ class PinManagerDatabase
                 updateSchemaToVersion3from2(con);
             }
             catch (SQLException sqle) {
-                error("updateSchemaToVersion3 failed, shcema might have been updated already:");
-                error(sqle.getMessage());
+                error("updateSchemaToVersion3 failed, schema might have been updated already:");
+                error(sqle);
             }
             previousSchemaVersion = 3;
         }
@@ -418,11 +420,12 @@ class PinManagerDatabase
                     pinsInsertStmt.executeUpdate();
                 }
                 catch (SQLException sqle) {
+                    continue;
                     //ignore as there possible duplications
                 }
-                
-                pinReqsInsertStmt.setLong(1,clientId);
-                pinReqsInsertStmt.setLong(2,0);
+                long requestId=nextLong(con);
+                pinReqsInsertStmt.setLong(1,requestId);
+                pinReqsInsertStmt.setLong(2,clientId);
                 pinReqsInsertStmt.setLong(3,pinId);
                 pinReqsInsertStmt.setLong(4,0);
                 pinReqsInsertStmt.setLong(5,expiration);
@@ -945,6 +948,35 @@ class PinManagerDatabase
         return;
     }
 
+ String selectAllPinsWityhPnfsid =
+            "SELECT * FROM "+ PinManagerPinsTableName+" WHERE PnfsId =?";
+   private void allPinsByPnfsIdToStringBuffer(Connection _con, PnfsId pnfsId, 
+       StringBuffer sb) throws SQLException
+    {
+         PreparedStatement sqlStatement =
+                _con.prepareStatement(selectAllPins);
+         sqlStatement.setString(1,pnfsId.toIdString());
+        ResultSet set = sqlStatement.executeQuery();
+        int pcount = 0;
+        int preqcount = 0;
+        while(set.next()) {
+            pcount++;
+            Pin pin = extractPinFromResultSet( set );
+            pin.setRequests(getPinRequestsByPin(_con,pin));
+            preqcount += pin.getRequestsNum();
+            sb.append(pin.toString()).append('\n');
+        }
+        
+        if(pcount == 0)  {
+            sb.append("no files are pinned");
+        } else {
+            sb.append("total number of pins: ").append(pcount);
+            sb.append("\n total number of pin requests:").append(preqcount);
+        }
+        sqlStatement.close();
+        return;
+    }
+
     private static final String selectPinsByState =
             "SELECT * FROM "+ PinManagerPinsTableName+
             " WHERE State = ?";
@@ -1001,6 +1033,22 @@ class PinManagerDatabase
         }
     }
     
+    public void allPinsByPnfsIdToStringBuffer(StringBuffer sb, PnfsId pnfsId) throws PinDBException
+    {
+        Connection _con = getThreadLocalConnection();
+        if(_con == null) {
+           throw new PinDBException(1,"DB is not initialized in this thread!!!");
+        }
+       
+        try {
+             allPinsByPnfsIdToStringBuffer(_con,pnfsId,sb);
+        } catch(SQLException sqle) {
+            error("getAllPins: "+sqle);
+            throw new PinDBException(sqle.toString());
+        }
+    }
+    
+    
     public Collection<Pin> getAllPinsThatAreNotPinned() throws PinDBException
     {
         Connection _con = getThreadLocalConnection();
@@ -1031,7 +1079,7 @@ class PinManagerDatabase
         }
     }
    
-    private static final String selectExpiredPinRequest =
+   private static final String selectExpiredPinRequest =
         "SELECT * FROM "+ PinManagerRequestsTableName +
         " WHERE  Expiration != -1 AND " +
         " Expiration < ?";
@@ -1069,6 +1117,72 @@ class PinManagerDatabase
             throw new PinDBException(sqle.toString());
         }
     }
+    
+   private static final String selectIDsOfExpiredPinWithoutRequest =
+       " SELECT AllPinIds.Id FROM \n"+
+        "    ( SELECT "+
+            PinManagerPinsTableName+".Id as Id, "+
+            PinManagerPinsTableName+".Expiration as Expiration, "+
+            PinManagerRequestsTableName+".PinId as PinId\n"+
+       
+       "      FROM "+ PinManagerPinsTableName +
+            " LEFT OUTER JOIN " +PinManagerRequestsTableName +'\n'+
+       "      ON "+ PinManagerPinsTableName+".Id = "+ 
+        PinManagerRequestsTableName+".PinId \n"+
+       "      GROUP BY "+
+            PinManagerPinsTableName+".Id, "+
+            PinManagerPinsTableName+".Expiration, "+
+            PinManagerRequestsTableName+".PinId "+
+       " ) AS AllPinIds \n"+
+        " WHERE  AllPinIds.PinId IS NULL AND "  +
+        " AllPinIds.Expiration < ?";
+   
+
+  private Set<Pin> getExpiredPinsWithoutRequests(Connection _con) throws SQLException{
+        long currentTimeMissis = System.currentTimeMillis();
+        info("executing statement: "+selectIDsOfExpiredPinWithoutRequest);
+        PreparedStatement sqlStatement =
+                _con.prepareStatement(selectIDsOfExpiredPinWithoutRequest);
+        sqlStatement.setLong(1,currentTimeMissis);
+        ResultSet set = sqlStatement.executeQuery();
+        Set<Pin> pins =
+                new HashSet<Pin>();
+        while(set.next()) {
+            Pin pin =  getPin(_con,set.getLong(1) );
+            pin.setRequests(getPinRequestsByPin(_con,pin));
+            assert pin.getRequests().isEmpty() ;
+            pins.add(pin);
+        }
+        sqlStatement.close();
+        return pins;
+    }
+
+    public Set<Pin> getExpiredPinsWithoutRequests() throws PinDBException
+    {
+        Connection _con = getThreadLocalConnection();
+        if(_con == null) {
+           throw new PinDBException(1,"DB is not initialized in this thread!!!");
+        }
+       
+        try {
+            return getExpiredPinsWithoutRequests(_con);
+        } catch(SQLException sqle) {
+            error("getExpiredPinRequests: "+sqle);
+            throw new PinDBException(sqle.toString());
+        }
+    }
+    
+    private static final String _CreatePinManagerPinsTable =
+        "CREATE TABLE " + PinManagerPinsTableName + " ( " +
+        " Id numeric PRIMARY KEY," +
+        " PnfsId VARCHAR," + 
+        " Creation numeric, " +
+        " Expiration numeric, " +
+        " Pool VARCHAR, " +
+        " StateTranstionTime numeric, "+
+        " State numeric" +
+        ")";
+
 
     private Pin extractPinFromResultSet( ResultSet set )
         throws java.sql.SQLException
