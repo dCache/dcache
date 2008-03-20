@@ -316,7 +316,7 @@ public class PinManager extends AbstractCell implements Runnable  {
     public String hh_set_max_pin_duration = 
         " # sets new max pin duration value in milliseconds, -1 for infinite" ;
     public String ac_set_max_pin_duration_$_1( Args args ) throws Exception {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         long newMaxPinDuration = Long.parseLong(args.argv(0));
         if(newMaxPinDuration== -1 || newMaxPinDuration >0 ) {
             
@@ -347,7 +347,7 @@ public class PinManager extends AbstractCell implements Runnable  {
                 try {
                     long  id = Long.parseLong(args.argv(0));
                     Pin pin  = db.getPin(id) ;
-                    StringBuffer sb = new StringBuffer();
+                    StringBuilder sb = new StringBuilder();
                     sb.append(pin.toString());
                         sb.append("\n  pinRequests: \n");
                     for (PinRequest pinReqiest:pin.getRequests()) {
@@ -356,16 +356,16 @@ public class PinManager extends AbstractCell implements Runnable  {
                     return sb.toString();
                 } catch (NumberFormatException nfe) {
                     PnfsId pnfsId = new PnfsId(args.argv(0));
-                    StringBuffer sb = new StringBuffer();
+                    StringBuilder sb = new StringBuilder();
 
-                     db.allPinsByPnfsIdToStringBuffer(sb,pnfsId);       
+                     db.allPinsByPnfsIdToStringBuilder(sb,pnfsId);       
                      return sb.toString();                    
                 }
             }
             
-            StringBuffer sb = new StringBuffer();
+            StringBuilder sb = new StringBuilder();
             
-             db.allPinsToStringBuffer(sb);       
+             db.allPinsToStringBuilder(sb);       
              return sb.toString();
         } finally {
             db.commitDBOperations();
@@ -373,7 +373,7 @@ public class PinManager extends AbstractCell implements Runnable  {
     }
     
     public void getInfo( java.io.PrintWriter printWriter ) {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         sb.append("PinManager\n");
         sb.append("\tjdbcDriver=").append(jdbcDriver).append('\n');
         sb.append("\tjdbcUrl=").append(jdbcUrl).append('\n');

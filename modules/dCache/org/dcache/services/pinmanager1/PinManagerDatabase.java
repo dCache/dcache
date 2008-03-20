@@ -923,7 +923,7 @@ class PinManagerDatabase
     }
  String selectAllPins =
             "SELECT * FROM "+ PinManagerPinsTableName;
-   private void allPinsToStringBuffer(Connection _con, StringBuffer sb) throws SQLException
+   private void allPinsToStringBuilder(Connection _con, StringBuilder sb) throws SQLException
     {
          PreparedStatement sqlStatement =
                 _con.prepareStatement(selectAllPins);
@@ -950,8 +950,8 @@ class PinManagerDatabase
 
  String selectAllPinsWityhPnfsid =
             "SELECT * FROM "+ PinManagerPinsTableName+" WHERE PnfsId =?";
-   private void allPinsByPnfsIdToStringBuffer(Connection _con, PnfsId pnfsId, 
-       StringBuffer sb) throws SQLException
+   private void allPinsByPnfsIdToStringBuilder(Connection _con, PnfsId pnfsId, 
+       StringBuilder sb) throws SQLException
     {
          PreparedStatement sqlStatement =
                 _con.prepareStatement(selectAllPins);
@@ -1018,7 +1018,7 @@ class PinManagerDatabase
         return pins;
     }
 
-    public void allPinsToStringBuffer(StringBuffer sb) throws PinDBException
+    public void allPinsToStringBuilder(StringBuilder sb) throws PinDBException
     {
         Connection _con = getThreadLocalConnection();
         if(_con == null) {
@@ -1026,14 +1026,14 @@ class PinManagerDatabase
         }
        
         try {
-             allPinsToStringBuffer(_con,sb);
+             allPinsToStringBuilder(_con,sb);
         } catch(SQLException sqle) {
             error("getAllPins: "+sqle);
             throw new PinDBException(sqle.toString());
         }
     }
     
-    public void allPinsByPnfsIdToStringBuffer(StringBuffer sb, PnfsId pnfsId) throws PinDBException
+    public void allPinsByPnfsIdToStringBuilder(StringBuilder sb, PnfsId pnfsId) throws PinDBException
     {
         Connection _con = getThreadLocalConnection();
         if(_con == null) {
@@ -1041,7 +1041,7 @@ class PinManagerDatabase
         }
        
         try {
-             allPinsByPnfsIdToStringBuffer(_con,pnfsId,sb);
+             allPinsByPnfsIdToStringBuilder(_con,pnfsId,sb);
         } catch(SQLException sqle) {
             error("getAllPins: "+sqle);
             throw new PinDBException(sqle.toString());
