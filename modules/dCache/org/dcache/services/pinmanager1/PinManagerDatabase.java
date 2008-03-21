@@ -418,18 +418,22 @@ class PinManagerDatabase
                     pinsInsertStmt.setLong(6,0);
                     pinsInsertStmt.setInt(7, PinManagerPinState.PINNED.getStateId());
                     pinsInsertStmt.executeUpdate();
-                }
+                    
+                    // pin and request ids are the same,
+                    // they were one and the same in the 
+                    // previous version
+                    long requestId=pinId;
+                    pinReqsInsertStmt.setLong(1,requestId);
+                    pinReqsInsertStmt.setLong(2,clientId);
+                    pinReqsInsertStmt.setLong(3,pinId);
+                    pinReqsInsertStmt.setLong(4,0);
+                    pinReqsInsertStmt.setLong(5,expiration);
+                    pinReqsInsertStmt.executeUpdate();
+                    }
                 catch (SQLException sqle) {
                     continue;
                     //ignore as there possible duplications
                 }
-                long requestId=nextLong(con);
-                pinReqsInsertStmt.setLong(1,requestId);
-                pinReqsInsertStmt.setLong(2,clientId);
-                pinReqsInsertStmt.setLong(3,pinId);
-                pinReqsInsertStmt.setLong(4,0);
-                pinReqsInsertStmt.setLong(5,expiration);
-                pinReqsInsertStmt.executeUpdate();
                 /* To avoid expiring lots of pins before all requests
                  * have been read, we put all expiration dates at
                  * least 1 minute into the future.
