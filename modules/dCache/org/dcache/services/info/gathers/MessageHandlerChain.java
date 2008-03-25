@@ -166,12 +166,9 @@ public class MessageHandlerChain {
 		if( !(messagePayload instanceof Message))
 			return false;
 
-		for( Iterator<MessageHandler> itr = _messageHandler.iterator(); itr.hasNext();) {
-			MessageHandler mh = itr.next();
-			
+		for( MessageHandler mh : _messageHandler)			
 			if( mh.handleMessage( (Message) messagePayload, ttl))
 				return true;
-		}
 		
 		return false;		
 	}
