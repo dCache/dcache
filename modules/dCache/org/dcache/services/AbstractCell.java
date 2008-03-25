@@ -210,7 +210,7 @@ public class AbstractCell extends CellAdapter
          _logger.error(st.nextToken());
       }
     }
-    
+
 
     public void fatal(String str)
     {
@@ -239,14 +239,14 @@ public class AbstractCell extends CellAdapter
     {
         error(s);
     }
-    
+
     /** @deprecated */
     public void esay(Throwable t)
     {
         error(t);
     }
 
-    
+
     /**
      * Convert an instance to a specific type (kind of intelligent
      * casting).  Note: you can set primitive types as input
@@ -502,7 +502,7 @@ public class AbstractCell extends CellAdapter
                             String unit = option.unit();
                             if (description.length() == 0)
                                 description = option.name();
-                            out.println(description + " set to " + value + " " + unit);
+                            out.println(description + " is " + value + " " + unit);
                         }
                     }
                 } catch (SecurityException e) {
