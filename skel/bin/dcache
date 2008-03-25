@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# chkconfig: - 92 8
+# chkconfig: 2345 92 8
 # description: dCache init script
 
 # dcache start [DOMAIN] ...
@@ -55,6 +55,8 @@
 #    dCacheDomain               dcache
 #    GFTP-dcache-vm             gridftp
 #
+
+LOCK_FILE=/var/lock/subsys/dcache
 
 # Solaris doesn't have a POSIX compliant shell as /bin/sh. We
 # try to find one and execute it.
@@ -1025,6 +1027,8 @@ case "$1" in
         for domain in $domains; do
             run $domain start
         done
+
+        touch $LOCK_FILE 2> /dev/null
         ;;
 
     stop)
@@ -1034,6 +1038,8 @@ case "$1" in
         for domain in `reverse $domains`; do
             run $domain stop
         done
+
+        rm -f $LOCK_FILE
         ;;
 
     restart)
