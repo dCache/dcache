@@ -5,19 +5,22 @@ package org.dcache.services.info.secondaryInfoProviders;
 
 import org.dcache.services.info.base.StatePathPredicate;
 import org.dcache.services.info.base.StateWatcher;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
 
 /**
- * Provide secondary information about pools
+ * Provide a skeleton, basic implementation of a StateWatcher with
+ * static StatePathPredicates.  Sub-classes of this class must
+ * implement a getPredicates() method that returns an array of
+ * Strings (the predicates).   
+ * 
  * @author Paul Millar <paul.millar@desy.de>
  */
 abstract public class AbstractStateWatcher implements StateWatcher {
 
-	private Collection<StatePathPredicate> _predicates;
+	private final Collection<StatePathPredicate> _predicates = new ArrayList<StatePathPredicate>();
 	
 	public AbstractStateWatcher() {
-		_predicates = new Vector<StatePathPredicate>();
-
 		String[] paths = getPredicates();
 		
 		for( String path : paths)
@@ -26,14 +29,13 @@ abstract public class AbstractStateWatcher implements StateWatcher {
 
 	
 	/**
-	 * Override this method.
+	 * Override this method.  The method must return valid output
+	 * when called from the constructor.
 	 * @return an array of Strings, each a StatePathPredicate.
 	 */
-	protected String[] getPredicates() {
-		// Dummy value;
-		return new String[0];
-	}
+	abstract protected String[] getPredicates();
 
+	
 	public Collection<StatePathPredicate> getPredicate() {
 		return _predicates;
 	}
