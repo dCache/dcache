@@ -23,7 +23,7 @@ public class PoolgroupToPoolsVisitor implements StateVisitor {
 
 	private static Logger _log = Logger.getLogger( PoolgroupToPoolsVisitor.class);
 
-	private static final StatePath _poolgroupsPath = new StatePath( "poolgroups");
+	private static final StatePath POOLGROUPS_PATH = new StatePath( "poolgroups");
 	
 	/**
 	 * Obtain a Map between a poolgroup and the pools that are currently members of this poolgroup.
@@ -34,7 +34,7 @@ public class PoolgroupToPoolsVisitor implements StateVisitor {
 			_log.info( "Gathering current status");
 		
 		PoolgroupToPoolsVisitor visitor = new PoolgroupToPoolsVisitor();
-		State.getInstance().visitState(visitor, _poolgroupsPath);		
+		State.getInstance().visitState(visitor, POOLGROUPS_PATH);		
 		return visitor._poolgroups;		
 	}
 
@@ -49,7 +49,7 @@ public class PoolgroupToPoolsVisitor implements StateVisitor {
 			_log.info( "Gathering status after transition");
 		
 		PoolgroupToPoolsVisitor visitor = new PoolgroupToPoolsVisitor();
-		State.getInstance().visitState(transition, visitor, _poolgroupsPath);		
+		State.getInstance().visitState(transition, visitor, POOLGROUPS_PATH);		
 		return visitor._poolgroups;		
 	}
 
@@ -63,12 +63,13 @@ public class PoolgroupToPoolsVisitor implements StateVisitor {
 			_log.debug( "Examining "+path);
 
 		// If something like poolgroups.<some poolgroup>
-		if( _poolgroupsPath.isParentOf( path)) {
+		if( POOLGROUPS_PATH.isParentOf( path)) {
 			if( _log.isDebugEnabled())
 				_log.debug( "Found poolgroup "+path.getLastElement());
 
 			_currentPoolgroupPools = new HashSet<String>();
 			_poolgroups.put( path.getLastElement(), _currentPoolgroupPools);
+			
 			_poolMembershipPath = path.newChild("pools");
 		}
 		
@@ -83,10 +84,7 @@ public class PoolgroupToPoolsVisitor implements StateVisitor {
 	
 	public void visitCompositePreLastDescend( StatePath path, Map<String,String> metadata) {}		
 	public void visitCompositePostDescend( StatePath path, Map<String,String> metadata) {}
-	public void visitCompositePreSkipDescend( StatePath path, Map<String,String> metadata) {
-		if( _log.isDebugEnabled())
-			_log.debug( "Preskip with "+path);		
-	}
+	public void visitCompositePreSkipDescend( StatePath path, Map<String,String> metadata) {}
 	public void visitCompositePostSkipDescend( StatePath path, Map<String,String> metadata) {}
 	public void visitString( StatePath path, StringStateValue value) {}
 	public void visitBoolean( StatePath path, BooleanStateValue value) {}

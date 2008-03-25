@@ -14,8 +14,8 @@ import org.dcache.services.info.base.State;
 import org.dcache.services.info.base.StateTransition;
 
 /**
- * Scan through dCache state and build a map containing all pools and their corresponding SpaceInfo
- * information.
+ * Scan through dCache state and build a map containing all pools and
+ * their corresponding SpaceInfo information.
  * 
  * @author Paul Millar <paul.millar@desy.de>
  */
@@ -24,7 +24,7 @@ public class PoolSpaceVisitor implements StateVisitor {
 	private static Logger _log = Logger.getLogger( PoolSpaceVisitor.class);
 
 	
-	private static StatePath _poolsPath = new StatePath( "pools");
+	private static StatePath POOLS_PATH = new StatePath( "pools");
 	
 	/**
 	 * Obtain a Map between pools and their space information for current dCache state.
@@ -36,7 +36,8 @@ public class PoolSpaceVisitor implements StateVisitor {
 
 		PoolSpaceVisitor visitor = new PoolSpaceVisitor();
 		
-		State.getInstance().visitState(visitor, _poolsPath);		
+		State.getInstance().visitState( visitor, POOLS_PATH);
+		
 		return visitor._poolgroups;
 	}
 	
@@ -51,8 +52,8 @@ public class PoolSpaceVisitor implements StateVisitor {
 			_log.info( "Gathering status after transition");
 
 		PoolSpaceVisitor visitor = new PoolSpaceVisitor();
-		State.getInstance().visitState(transition, visitor, _poolsPath);		
-		return visitor._poolgroups;		
+		State.getInstance().visitState(transition, visitor, POOLS_PATH);		
+		return visitor._poolgroups;	
 	}
 
 	private Map <String,SpaceInfo> _poolgroups = new HashMap<String,SpaceInfo>();
@@ -61,7 +62,7 @@ public class PoolSpaceVisitor implements StateVisitor {
 
 	public void visitCompositePreDescend( StatePath path, Map<String,String> metadata) {			
 		// If something like pools.<some pool>
-		if( _poolsPath.isParentOf( path)) {
+		if( POOLS_PATH.isParentOf( path)) {
 			
 			if( _log.isDebugEnabled())
 				_log.debug( "Found pool " + path.getLastElement());
@@ -71,20 +72,24 @@ public class PoolSpaceVisitor implements StateVisitor {
 			_poolSpacePath = path.newChild("space");
 		}			
 	}
+	
 	public void visitInteger( StatePath path, IntegerStateValue value) {
 		if( _poolSpacePath == null || ! _poolSpacePath.isParentOf( path))
 			return;
 		
+		String metricName = path.getLastElement();
+		
 		if( _log.isDebugEnabled())
 			_log.debug( "Found metric " + path.getLastElement() + " = " + value.getValue());
 
-		if( path.getLastElement().equals("removable"))
+		// The following only works since we intern() all strings
+		if( metricName == "removable")
 			_thisPoolSpaceInfo.setRemovable( value.getValue());
-		else if( path.getLastElement().equals("free"))
+		else if( metricName == "free")
 			_thisPoolSpaceInfo.setFree( value.getValue());
-		else if( path.getLastElement().equals("total"))
+		else if( metricName == "total")
 			_thisPoolSpaceInfo.setTotal( value.getValue());
-		else if( path.getLastElement().equals("precious"))
+		else if( metricName == "precious")
 			_thisPoolSpaceInfo.setPrecious( value.getValue());			
 	}
 	
