@@ -1,14 +1,20 @@
 package org.dcache.services.info.secondaryInfoProviders;
 
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
 import org.apache.log4j.Logger;
 import org.dcache.services.info.base.State;
 import org.dcache.services.info.base.StateComposite;
 import org.dcache.services.info.base.StateUpdate;
 import org.dcache.services.info.base.StatePath;
 import org.dcache.services.info.base.StateTransition;
-import org.dcache.services.info.stateInfo.*;
+import org.dcache.services.info.stateInfo.PoolSpaceVisitor;
+import org.dcache.services.info.stateInfo.PoolgroupToPoolsVisitor;
+import org.dcache.services.info.stateInfo.SpaceInfo;
 
-import java.util.*;
 
 /**
  * The PoolgroupSpaceWatcher Class implements StateWatcher.  It is responsible for maintaining
@@ -20,14 +26,14 @@ import java.util.*;
 public class PoolgroupSpaceWatcher extends AbstractStateWatcher {
 
 	private static Logger _log = Logger.getLogger( PoolgroupSpaceWatcher.class);
-	private static final String paths[] = { "pools.*.space.*",
+	private static final String PREDICATE_PATHS[] = { "pools.*.space.*",
 											"poolgroups.*",
 											"poolgroups.*.pools.*"};
 	private static final StatePath POOLGROUPS_PATH = new StatePath( "poolgroups");
 	
 	@Override
 	protected String[] getPredicates() {
-		return paths;
+		return PREDICATE_PATHS;
 	}
 	
 	
@@ -153,7 +159,7 @@ public class PoolgroupSpaceWatcher extends AbstractStateWatcher {
 			if( thisPoolPostInfo == null || !thisPoolPostInfo.equals(thisPoolPreInfo)) {
 				changedPools.add( thisPool);
 				if( _log.isDebugEnabled())
-					_log.debug( "Pool " + thisPool + " has changed or disappered");
+					_log.debug( "Pool " + thisPool + " has changed or disappeared");
 			}
 		}
 		
