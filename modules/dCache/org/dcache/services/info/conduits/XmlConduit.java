@@ -9,10 +9,10 @@ import org.dcache.services.info.serialisation.XmlSerialiser;
 /**
  * Information Exporter class.<br>
  * This class is instantiated by the <code>InfoCollector</code> to send
- * over a plain tcp socket a <code>Schema</code> object that carries out
+ * over a plain TCP socket a <code>Schema</code> object that carries out
  * dynamic information from dCache.<br><br>
  * Also this class is independent from the particular implementation of 
- * Schema used. As matter of fact, this class serializes a generic Schema   
+ * Schema used. As matter of fact, this class serialises a generic Schema   
  * object over a socket. It's a job of the client to know what particular
  * implementation of Schema was sent.<br><br>
  * Note that client needs only to know the specializing class of the Schema.
