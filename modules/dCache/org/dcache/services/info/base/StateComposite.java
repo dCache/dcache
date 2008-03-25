@@ -135,7 +135,7 @@ public class StateComposite implements StateComponent {
 	 * Return a cryptic string describing this StateComposite.
 	 */
 	public String toString() {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append("StateComposite <");
 		sb.append( isMortal() ? "+" : isEphemeral() ? "*" : "+" );
 		sb.append("> {");

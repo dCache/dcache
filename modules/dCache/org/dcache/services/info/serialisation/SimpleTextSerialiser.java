@@ -28,12 +28,12 @@ public class SimpleTextSerialiser implements StateVisitor, StateSerialiser {
 	
 	private static final String LIST_TYPE = "List item";
 	
-	private StringBuffer _result = new StringBuffer();
+	private StringBuilder _result = new StringBuilder();
 	private StatePath _lastStateComponentPath=null;
 	private StatePath _startPath;
 	
 	public String serialise( StatePath start) {
-		_result = new StringBuffer();
+		_result = new StringBuilder();
 		_startPath = start;
 		
 		if( start != null) {
@@ -79,6 +79,8 @@ public class SimpleTextSerialiser implements StateVisitor, StateSerialiser {
 		_lastStateComponentPath = path;
 	}
 	public void visitCompositePostDescend(StatePath path, Map<String, String> metadata) {
+		
+		// If we just traversed a path without it containing any elements, treat it as a list.
 		if( path != null && path.equals(_lastStateComponentPath) && !path.isSimplePath()) {
 			String type = LIST_TYPE;
 			

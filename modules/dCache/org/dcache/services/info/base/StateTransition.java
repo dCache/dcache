@@ -59,7 +59,7 @@ public class StateTransition {
 	 * @return
 	 */
 	protected String dumpContents() {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		boolean isFirst = true;
 
 		for( Map.Entry<StatePath,StateChangeSet> entry :  _allChanges.entrySet()) {

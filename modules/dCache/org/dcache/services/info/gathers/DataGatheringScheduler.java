@@ -154,7 +154,7 @@ public class DataGatheringScheduler implements Runnable {
 		 * @return single-line String describing current status.
 		 */
 		public String getStatus() {
-			StringBuffer sb = new StringBuffer();
+			StringBuilder sb = new StringBuilder();
 			sb.append( this.toString());
 			sb.append( " [");
 			sb.append( _enabled ? "enabled" : "disabled");

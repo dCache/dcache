@@ -244,7 +244,7 @@ public class StateChangeSet {
 	 * @return
 	 */
 	protected String dumpContents() {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 
 		sb.append( "  new:\n");
 		for( Map.Entry<String, StateComponent> newEntry: _newChildren.entrySet()) {

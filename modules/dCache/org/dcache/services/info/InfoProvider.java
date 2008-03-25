@@ -284,7 +284,7 @@ public class InfoProvider extends CellAdapter {
 	public String fh_handler_ls = "List all known Message handlers.  These are responsible for updating dCache state.";
     public String hh_handler_ls = "";
 	public String ac_handler_ls_$_0( Args args ) {		
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		
 		sb.append( "Incoming Message Handlers:\n");
 		String msgHandlers[] = _msgHandlerChain.listMessageHandlers();
@@ -311,7 +311,7 @@ public class InfoProvider extends CellAdapter {
 	
 	public String fh_conduits_ls = "List all known conduits.  Conduits provide read-only access to dCache current state.";
 	public String ac_conduits_ls_$_0( Args args) {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		
 		sb.append("Conduits:\n");
 		
@@ -353,7 +353,7 @@ public class InfoProvider extends CellAdapter {
 	
 	public String fh_dga_ls = "list all known data-gathering activity, whether enabled or not.";
 	public String ac_dga_ls_$_0( Args args) {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append( "Data-Gathering Activity:\n");
 		List<String> dgaList = _scheduler.listActivity();
 		
@@ -401,7 +401,7 @@ public class InfoProvider extends CellAdapter {
 	public String fh_state_ls = "List current status of dCache";
 	public String hh_state_ls = "[<path>]";
 	public String ac_state_ls_$_0_1( Args args) {
-		StringBuffer sb = new StringBuffer();		
+		StringBuilder sb = new StringBuilder();		
 		StatePath start = _startSerialisingFrom;
 		
 		if( args.argc() == 1) {
@@ -428,7 +428,7 @@ public class InfoProvider extends CellAdapter {
 	public String fh_state_output = "view or change output format for the \"state ls\" command.";
 	public String hh_state_output = "[<format>]";
 	public String ac_state_output_$_0_1( Args args) {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 
 		if( args.argc() == 0) {
 			
@@ -459,7 +459,7 @@ public class InfoProvider extends CellAdapter {
 
 	
 	private String list_valid_output() {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append( "Valid output format");
 		sb.append( (_availableSerialisers.size() > 1) ? "s are" : " is");
 		sb.append( ": ");
@@ -475,7 +475,7 @@ public class InfoProvider extends CellAdapter {
 	
 	public String fh_state_pwd = "List the current directory for state ls";
 	public String ac_state_pwd_$_0( Args args) {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		
 		if( _startSerialisingFrom != null)
 			sb.append( _startSerialisingFrom.toString());
@@ -499,7 +499,7 @@ public class InfoProvider extends CellAdapter {
 
 		_startSerialisingFrom = newPath;
 
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append( "Path now: ");
 		sb.append(ac_state_pwd_$_0(null));
 		return sb.toString();
@@ -604,7 +604,7 @@ public class InfoProvider extends CellAdapter {
 	 */
 	public String fh_watcher_ls = "list all registered dCache state watchers";
 	public String ac_watcher_ls_$_0( Args args) {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append( "State Watchers:\n");
 		String watcherNames[] = State.getInstance().listStateWatcher();
 		

@@ -30,7 +30,7 @@ public class XmlSerialiser implements StateVisitor, StateSerialiser {
 	
 	private static final String _xmlns = "http://www.dcache.org/2008/dCache/state";
 
-	private StringBuffer _out;
+	private StringBuilder _out;
 	private int _indentationLevel = 0;
 	private String _indentationPrefix = ""; 
 	private boolean _isTopBranch;
@@ -59,7 +59,7 @@ public class XmlSerialiser implements StateVisitor, StateSerialiser {
 	}
 	
 	public String serialise( StatePath start) {
-		_out = new StringBuffer();
+		_out = new StringBuilder();
 		_isTopBranch = true;
 		_haveLastBranch = false;
 		_indentationLevel = 0;
@@ -223,7 +223,7 @@ public class XmlSerialiser implements StateVisitor, StateSerialiser {
 	 * @param value the value
 	 */
 	private String buildMetricElement( String name, String type, String value) {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		Attribute attr[] = new Attribute[2];
 		attr[0] = new Attribute( "name", name);
 		attr[1] = new Attribute( "type", type);
@@ -245,7 +245,7 @@ public class XmlSerialiser implements StateVisitor, StateSerialiser {
 	 * @return a String representing the start of this element
 	 */
 	private String beginElement( String name, Attribute[] attr, boolean isEmpty) {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		
 		sb.append("<" + name);
 		
@@ -303,7 +303,7 @@ public class XmlSerialiser implements StateVisitor, StateSerialiser {
 	 * Update our stored prefix for indentation.
 	 */
 	private void updateIndentPrefix() {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		
 		for( int i = 0; i < _indentationLevel; i++)
 			sb.append( "  ");

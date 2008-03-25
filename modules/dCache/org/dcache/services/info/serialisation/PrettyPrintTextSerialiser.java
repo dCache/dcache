@@ -30,9 +30,9 @@ public class PrettyPrintTextSerialiser implements StateVisitor, StateSerialiser 
 	private static final String SPACE_STR = "   ";
 	private static final String DCACHE_LABEL = "dCache";
 
-	private StringBuffer _out;
+	private StringBuilder _out;
 	private String _prefix;
-	private BitSet _tails;
+	private BitSet _tails = new BitSet();
 	private int _depth;
 	private boolean _nextShouldHaveBlankLine;
 
@@ -46,11 +46,14 @@ public class PrettyPrintTextSerialiser implements StateVisitor, StateSerialiser 
 
 	/**
 	 * Build out pretty-print output.
+	 * <p>
+	 * NB.  This method is <i>not</i> thread-safe.
 	 */
 	public String serialise( StatePath path) {
-		_out = new StringBuffer();
-		_tails = new BitSet();
-		_depth = 0;
+		_out = new StringBuilder();
+		_tails.clear();
+		
+		_depth = 0;  // This shouldn't be necessary; it's more of a safety feature.
 		_prefix = "";
 		_nextShouldHaveBlankLine = false;
 		
@@ -59,6 +62,9 @@ public class PrettyPrintTextSerialiser implements StateVisitor, StateSerialiser 
 		return _out.toString();
 	}
 	
+	/**
+	 * Provide serialisation, starting from top-most dCache state.
+	 */
 	public String serialise() {
 		return serialise( null);
 	}
@@ -70,31 +76,42 @@ public class PrettyPrintTextSerialiser implements StateVisitor, StateSerialiser 
 	public void visitCompositePreDescend(StatePath path,
 			Map<String, String> metadata) {
 		
-		String label;
+		StringBuilder labelSB = new StringBuilder();
 		
 		if( _depth == 0) {
-			if( path == null)
-				label = DCACHE_LABEL;
-			else
-				label = DCACHE_LABEL + "." + path.toString();
+			labelSB.append( DCACHE_LABEL);
+			
+			if( path != null) {
+				labelSB.append( ".");
+				labelSB.append( path);
+			}
+
 		} else {
+			boolean added = false;
 
 			outputEmpty();
-
-			label = path.getLastElement();			
 
 			if( metadata != null) {
 				String className = metadata.get(State.METADATA_BRANCH_CLASS_KEY);
 				String idName = metadata.get(State.METADATA_BRANCH_IDNAME_KEY);
 
-				if( className != null && idName != null)
-					label = className + ", "+idName+"=\""+path.getLastElement()+"\""; 
+				if( className != null && idName != null) {
+					labelSB.append( className);
+					labelSB.append( ", ");
+					labelSB.append( idName);
+					labelSB.append( "=\"");
+					labelSB.append( path.getLastElement());
+					labelSB.append( "\"");
+					added = true;
+				}
 			}
+			
+			if( !added)
+				labelSB.append( path.getLastElement());
 		}
 
-		outputBranch( label);
+		outputBranch( labelSB.toString());
 
-		
 		_tails.set( _depth);
 		_depth++;
 		updatePrefix();
@@ -179,7 +196,7 @@ public class PrettyPrintTextSerialiser implements StateVisitor, StateSerialiser 
 	 * Update the prefix, based on changing value of _tails.
 	 */
 	private void updatePrefix() {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		
 		for( int i = 0; i < _depth-1; i++)
 			sb.append( _tails.get(i) ? MARK_STR : SPACE_STR);

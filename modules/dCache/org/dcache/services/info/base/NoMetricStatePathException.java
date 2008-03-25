@@ -10,7 +10,7 @@ public class NoMetricStatePathException extends BadStatePathException {
 	static final long serialVersionUID = 1;
 
 	public NoMetricStatePathException( String path) {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 
 		sb.append("path does not exist: ");
 		sb.append(path);

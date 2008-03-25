@@ -62,7 +62,7 @@ public class ListBasedMessageDga extends SkelListBasedActivity {
 		if( item == null)
 			return;
 			
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append(_messagePrefix);
 		sb.append( " ");
 		sb.append( item);
@@ -73,7 +73,7 @@ public class ListBasedMessageDga extends SkelListBasedActivity {
 	
 
 	public String toString() {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		
 		sb.append(this.getClass().getSimpleName());
 		sb.append("[");

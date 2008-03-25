@@ -242,7 +242,7 @@ public class StatePath {
 	 * @return the String representation.
 	 */
 	public String toString( String separator, int count) {
-		StringBuffer out = new StringBuffer();
+		StringBuilder out = new StringBuilder();
 		int i=0;
 		
 		for( String e : _elements) {

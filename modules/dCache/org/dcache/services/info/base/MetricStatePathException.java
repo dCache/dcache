@@ -15,7 +15,7 @@ public class MetricStatePathException extends BadStatePathException {
 	
 
 	public MetricStatePathException( String path) {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append( DEFAULT_PREFIX);
 		sb.append(path);
 		
@@ -30,7 +30,7 @@ public class MetricStatePathException extends BadStatePathException {
 	 * @param childName the name of the child that should have been a StateComposite.
 	 */
 	public MetricStatePathException( StatePath pathToComposite, String childName) {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append( DEFAULT_PREFIX);
 		sb.append( pathToComposite.newChild(childName).toString());
 		

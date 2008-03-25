@@ -110,7 +110,7 @@ abstract class AbstractThreadedConduit implements Runnable, Conduit {
 	 * Return some metadata about this conduit.
 	 */
 	public String getInfo() {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		
 		sb.append( "[");
 		sb.append( isEnabled() ? "enabled" : "disabled");
