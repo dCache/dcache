@@ -11,7 +11,7 @@ public class BooleanStateValue extends StateValue {
 	private final boolean _storage;
 
 	/**
-	 * Create a new Empherical Boolean StateValue.
+	 * Create a new Ephemeral Boolean StateValue.
 	 */
 	public BooleanStateValue( boolean value) {
 		super(false);

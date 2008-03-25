@@ -12,7 +12,7 @@ public class FloatingPointStateValue extends StateValue {
 	private final double _storage;
 
 	/**
-	 * Create a new Empherical FloatingPoint StateValue that will store
+	 * Create a new Ephemeral FloatingPoint StateValue that will store
 	 * a floating-point number.  This metric has no life-time.
 	 * @param value the value to be stored.
 	 */

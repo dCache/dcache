@@ -234,7 +234,7 @@ public class StatePath {
 	/**
 	 * Convert a StatePath to a String representation.  Each element is
 	 * separated by the separator String.
-	 * @param separator the String to seperate each path element
+	 * @param separator the String to separate each path element
 	 * @param don't display this number of initial elements 
 	 * @return the String representation.
 	 */
@@ -329,7 +329,7 @@ public class StatePath {
 	/**
 	 * Build a new StatePath that points to the same location from the immediate
 	 * child's point-of-view.  For example, if the
-	 * current path is charactised as <tt>aa.bb.cc</tt>, then
+	 * current path is characterised as <tt>aa.bb.cc</tt>, then
 	 * the returned StatePath is characterised by <tt>bb.cc</tt>.
 	 * <p>
 	 * If the path has no children of children, null is returned.

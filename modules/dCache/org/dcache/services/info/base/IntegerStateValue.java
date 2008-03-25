@@ -23,7 +23,7 @@ public class IntegerStateValue extends StateValue {
 	}
 	
 	/**
-	 * Create an Emphemeral Integer StateValue.
+	 * Create an Ephemeral Integer StateValue.
 	 * @param value the Integer to store.
 	 */
 	public IntegerStateValue( long value) {

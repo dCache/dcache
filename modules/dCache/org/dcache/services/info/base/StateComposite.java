@@ -53,8 +53,8 @@ public class StateComposite implements StateComponent {
 	
 	
 	/**
-	 * Create an Ephemerial StateComposite.  These should <i>only</i> be used
-	 * when they are to contain only Ephemerial children.  Normally StateComposites
+	 * Create an Ephemeral StateComposite.  These should <i>only</i> be used
+	 * when they are to contain only Ephemeral children.  Normally StateComposites
 	 * should be created Mortal.
 	 */
 	public StateComposite() {
@@ -146,7 +146,7 @@ public class StateComposite implements StateComponent {
 	}
 	
 	/**
-	 *  This function checks whether our parent should expung us.
+	 *  This function checks whether our parent should expunge us.
 	 */
 	public boolean hasExpired() {
 		Date now = new Date();
@@ -191,7 +191,7 @@ public class StateComposite implements StateComponent {
 	 * <li> There are five StateVisitor call-backs from this StateComponent
 	 * </ul>
 	 * 
-	 * The standard callbacks are:
+	 * The standard call-backs are:
 	 * <ul>
 	 * <li>visitCompositePreDescend() called before visiting children.
 	 * <li>visitCompositePreLastDescend() called before visiting the last child.
@@ -350,7 +350,7 @@ public class StateComposite implements StateComponent {
 	/**
 	 * Apply a transition to our current state.  Children are added, updated or removed based on
 	 * the supplied transition.
-	 * @param ourPath the path to ourself within dCache tree, or null for top-most StateComposite
+	 * @param ourPath the path to this within dCache tree, or null for top-most StateComposite
 	 * @param transition the StateTransition to apply
 	 */
 	public void applyTransition( StatePath ourPath, StateTransition transition) {
@@ -370,7 +370,7 @@ public class StateComposite implements StateComponent {
 			_log.debug("getWhenIShouldExpireDate() returned null: no Mortal children?");
 		
 		if( changeSet.haveImmortalChild())
-			becomeImmortal(); // this is currently irreversable
+			becomeImmortal(); // this is currently irreversible
 
 		// First, remove those children we should remove.
 		for( String childName : changeSet.getRemovedChildren()) {

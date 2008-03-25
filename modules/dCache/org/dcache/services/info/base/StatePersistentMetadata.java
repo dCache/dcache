@@ -18,7 +18,7 @@ public class StatePersistentMetadata {
 	private final Map<String,String> _payload = new HashMap<String,String>();
 	private StatePersistentMetadata _wildcard = null;
 	
-	protected StatePersistentMetadata() {} // Reduce visability of our constructor
+	protected StatePersistentMetadata() {} // Reduce visibility of our constructor
 		
 	
 	/**

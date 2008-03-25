@@ -97,9 +97,9 @@ public class StatePathPredicate extends StatePath {
 		if( topElement == name)
 			return true;
 		
-		// TODO: Support for Reg.Exp here?
+		// TODO: Support for Regular Expression here?
 		// e.g. test first char matches '{', last char matches '}' then compile the RegExp state machine
-		// and check; as an ptimisation, compile the RegExp once and store it.
+		// and check; as an optimisation, compile the RegExp once and store it.
 		
 		return false;
 	}

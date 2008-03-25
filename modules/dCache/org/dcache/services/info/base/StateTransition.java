@@ -9,8 +9,8 @@ import java.util.*;
  * (i.e., branches) instead of a collection of StatePaths.  Each change-set contains information
  * on new children, children that are to be updated, and those that are to be removed.
  * <p>
- * Providing infomation like this, the Visitor pattern can be applied, iterating over
- * proposed changes, with the StateTransition object working in colaboration with the
+ * Providing information like this, the Visitor pattern can be applied, iterating over
+ * proposed changes, with the StateTransition object working in collaboration with the
  * existing dCache state tree. 
  * @see StateUpdate
  * @author Paul Millar <paul.millar@desy.de>

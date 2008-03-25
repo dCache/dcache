@@ -20,7 +20,7 @@ import java.util.*;
  * derived) data in a timely fashion (see org.dcache.services.info.secondaryInfoProvider
  * package).  Other classes may use StateWatcher interface to trigger external events,
  * although future work may include adding support for asynchronous event-based monitoring
- * that would interface with, but remain seperate from this state.
+ * that would interface with, but remain separate from this state.
  * <p>
  * The State object allows a visitor pattern, through the StateVisitor interface.  The
  * principle usage of this is to serialise the current content (see classes under
@@ -112,7 +112,7 @@ public class State {
 	
 	
 	/**
-	 * Discover whether there are pending StateUpdates on the todo update stack.
+	 * Discover whether there are pending StateUpdates on the To-Do update stack.
 	 * @return true if there are updates to be done, false otherwise.
 	 */
 	protected int countPendingUpdates() {

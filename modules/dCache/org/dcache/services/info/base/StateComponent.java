@@ -69,7 +69,7 @@ interface StateComponent {
 	/**
 	 * Update a StateTransition based adding a new metric. 
 	 * @param ourPath the StatePath of this component
-	 * @param childPath the StatePath, relateive to this component, of the new metric
+	 * @param childPath the StatePath, relative to this component, of the new metric
 	 * @param newChild the new metric value.
 	 * @param transition the StateTransition to update.
 	 * @throws MetricStatePathException
