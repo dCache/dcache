@@ -4572,7 +4572,7 @@ public class Storage
                 spaceMetaDatas[i] = new TMetaDataSpace();
                 spaceMetaDatas[i].setSpaceToken(Long.toString(tokens[i]));
                 spaceMetaDatas[i].setStatus(new TReturnStatus(
-                    TStatusCode.SRM_FAILURE,"space not found"));
+						   TStatusCode.SRM_INVALID_REQUEST,"space not found"));
             }
         }
         return spaceMetaDatas;
