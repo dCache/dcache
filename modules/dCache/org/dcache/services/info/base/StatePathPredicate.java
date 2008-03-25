@@ -82,16 +82,25 @@ public class StatePathPredicate extends StatePath {
 	}
 	
 	/**
-	 * Return true if the top-most element matches this predicate. 
+	 * Return true if the top-most element of this predicate matches the given String.
+	 * NB the String must have been intern().  This is true for all string-literals and
+	 * all elements within a StatePath.
 	 * @param name the name of the child element
 	 * @return true if child element matches top-most element, false otherwise
 	 */
 	public boolean topElementMatches( String name) {
 		String topElement = _elements.get(0);
 		
-		if( topElement.equals("*"))
+		if( topElement == "*")
 			return true;
 		
-		return topElement.endsWith(name);
+		if( topElement == name)
+			return true;
+		
+		// TODO: Support for Reg.Exp here?
+		// e.g. test first char matches '{', last char matches '}' then compile the RegExp state machine
+		// and check; as an ptimisation, compile the RegExp once and store it.
+		
+		return false;
 	}
 }
