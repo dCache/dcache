@@ -3,8 +3,8 @@
  */
 package org.dcache.services.info.base;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 
 import org.apache.log4j.Logger;
 
@@ -36,7 +36,7 @@ public class StateUpdate {
 		}
 	}
 
-	private final List<StateUpdateInstance> _updates = new Vector<StateUpdateInstance>();
+	private final List<StateUpdateInstance> _updates = new ArrayList<StateUpdateInstance>();
 	
 	
 	/**

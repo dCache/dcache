@@ -1,8 +1,8 @@
 package org.dcache.services.info.gathers;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.Vector;
 
 import org.apache.log4j.Logger;
 import org.dcache.services.info.base.StatePath;
@@ -21,7 +21,7 @@ import org.dcache.services.info.base.StatePath;
 public class DataGatheringScheduler implements Runnable {
 
 	private boolean _timeToQuit = false;
-	private List<RegisteredActivity> _activity = new Vector<RegisteredActivity>();
+	private List<RegisteredActivity> _activity = new ArrayList<RegisteredActivity>();
 	private static Logger _logSched = Logger.getLogger(DataGatheringScheduler.class);
 	private static Logger _logRa = Logger.getLogger(RegisteredActivity.class);
 
@@ -356,7 +356,7 @@ public class DataGatheringScheduler implements Runnable {
 	 * @return
 	 */
 	public List<String> listActivity() {
-		List<String> activityList = new Vector<String>();
+		List<String> activityList = new ArrayList<String>();
 		
 		synchronized( _activity) {			
 			for( RegisteredActivity thisRa : _activity)
