@@ -5,9 +5,19 @@ import java.util.Arrays;
 
 public class EventHistogram
 {
-    private long _period;
+    /** Event counters. */
     private int[] _counters;
+
+    /** Extent in milliseconds of a single counter. */
+    private long _period;
+
+    /**
+     * End time of the first counter (i.e. the first counter extends
+     * until <code>_time</code>).
+     */
     private long _time;
+
+    /** Output format. */
     private final String _format;
 
     public EventHistogram(int slots, long period)
@@ -19,8 +29,12 @@ public class EventHistogram
     {
         _period = period;
         _counters = new int[slots];
-        _time = System.currentTimeMillis() - slots * period;
         _format = format;
+
+        /* We set _time to a multiple of period to obtain nicer
+         * histograms.
+         */
+        _time = (System.currentTimeMillis() / _period) * _period + _period;
     }
 
     /**
@@ -29,17 +43,21 @@ public class EventHistogram
      */
     private void shift()
     {
-        int slots = _counters.length;
-        double d = System.currentTimeMillis() - (_time + slots * _period);
+        long now = System.currentTimeMillis();
 
-        int shift = Math.max(0, (int)Math.ceil(d / _period));
+        if (now > _time) {
+            int slots = _counters.length;
+            double d = now - _time;
 
-        System.arraycopy(_counters, 0,
-                         _counters, Math.min(shift, slots),
-                         Math.max(0, slots - shift));
-        Arrays.fill(_counters, 0, shift, 0);
+            int shift = (int)Math.ceil(d / _period);
 
-        _time += shift * _period;
+            System.arraycopy(_counters, 0,
+                             _counters, Math.min(shift, slots),
+                             Math.max(0, slots - shift));
+            Arrays.fill(_counters, 0, Math.min(shift, slots), 0);
+
+            _time += shift * _period;
+        }
     }
 
     /**
@@ -75,9 +93,10 @@ public class EventHistogram
 
         int max = Math.max(1, getMax());
         int slots = _counters.length;
+        long time = _time - slots * _period;
         for (int i = 0; i < slots; i++) {
             int events = _counters[slots - i - 1];
-            out.printf(_format, _time + i * _period,
+            out.printf(_format, time + i * _period,
                        repeat('#', events / max), events);
         }
     }
