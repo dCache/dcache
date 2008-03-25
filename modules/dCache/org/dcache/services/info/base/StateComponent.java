@@ -3,12 +3,12 @@ package org.dcache.services.info.base;
 import java.util.*;
 
 /**
- * All nodes within the State componsition must implement this interface.  Nodes are
+ * All nodes within the State composition must implement this interface.  Nodes are
  * either StateComposite class (i.e., branches) or sub-classes of the abstract StateValue
  * (i.e., data).
  * <p>
  * StateComponents may be mortal, ephemeral or immortal.  If mortal, then the
- * <code>getExpiryDate()</code> method specifies when this StateComponent should be removed.  Emphemeral
+ * <code>getExpiryDate()</code> method specifies when this StateComponent should be removed.  Ephemeral
  * StateComponents do not have a built-in expire time but do not affect the lifetime of their parent
  * StateComposite.  Immortal StateComponents never expire.   
  * <p>
