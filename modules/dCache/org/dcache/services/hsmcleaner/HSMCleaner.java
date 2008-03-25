@@ -195,6 +195,8 @@ public class HSMCleaner extends AbstractCell
     {
         super.getInfo(out);
         writeOptions(out);
+
+        out.println("Histogram:");
         _histogram.write(out);
     }
 
@@ -232,6 +234,8 @@ public class HSMCleaner extends AbstractCell
             error(e.getMessage());
         } catch (IOException e) {
             error(e.getMessage());
+        } catch (IllegalStateException e) {
+            error(e.getMessage());
         }
     }
 
@@ -246,8 +250,8 @@ public class HSMCleaner extends AbstractCell
                         onQuarantine(uri);
                     }
                 });
-        } catch (FileNotFoundException e) {
-            error(e.getMessage());
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
         } catch (IOException e) {
             error(e.getMessage());
         }

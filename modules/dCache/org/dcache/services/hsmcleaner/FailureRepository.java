@@ -63,7 +63,7 @@ public class FailureRepository
      * Filename filter for identifying files containing failed URIs.
      */
     protected final static FilenameFilter failureFiles =
-        new PatternFilenameFilter("failed-\\d+(-\\d+)?");
+        new PatternFilenameFilter("failed-.+");
 
     public FailureRepository(File directory)
     {
@@ -76,30 +76,40 @@ public class FailureRepository
     }
 
     /**
-     * Returns a new file name.
+     * Creates a new file name suitable for holding the failure
+     * repository.
      */
-    synchronized protected File nextFile()
+    protected void renameToUniqueName(File file)
         throws IOException
     {
-        long time = System.currentTimeMillis();
-        int counter = 1;
-        File file = new File(_directory, "failed-" + time);
-        while (!file.createNewFile()) {
-            file = new File(_directory,
-                            "failed-" + time + "-" + counter++);
+        /* Notice that File.createTempFile does not actually create a
+         * temporary file; it is not automatically removed.
+         */
+        File newName = File.createTempFile("failed-", "", _directory);
+
+        /* Since rename is not guaranteed to succeed if the target
+         * file name already exists, we delete the file
+         * first. File.createTempFile is guaranteed to not return the
+         * same file twice within the same instance of the JVM, so
+         * deleting the file does not give raise to a race condition.
+         */
+        if (!newName.delete()) {
+            throw new IOException("Cannot delete " + newName);
         }
-        return file;
+
+        if (!file.renameTo(newName)) {
+            throw new IOException("Failed to rename " + file);
+        }
     }
 
     /**
-     *
+     * Creates a new empty file suitable for generating a new failure
+     * file.
      */
-    protected File createTempFile()
+    protected File createFlushFile()
         throws IOException
     {
-        File f = File.createTempFile("flushing-", ".tmp", _directory);
-        f.deleteOnExit();
-        return f;
+        return File.createTempFile("flushing-", ".tmp", _directory);
     }
 
     /**
@@ -143,9 +153,8 @@ public class FailureRepository
      * @throws IOException           If an I/O error occurs.
      */
     public void flush(Sink<URI> sink)
-        throws FileNotFoundException, IOException
+        throws FileNotFoundException, IOException, InterruptedException
     {
-        boolean success = false;
         Set<URI> locations;
 
         /* Obtain exclusive access to the list of locations.
@@ -158,56 +167,66 @@ public class FailureRepository
             _locations = new HashSet<URI>();
         }
 
-        File tmpFile = createTempFile();
         try {
-            FileOutputStream os = new FileOutputStream(tmpFile);
+            File tmpFile = createFlushFile();
             try {
-                PrintStream out = new PrintStream(new BufferedOutputStream(os));
+                FileOutputStream os = new FileOutputStream(tmpFile);
+                try {
+                    PrintStream out = new PrintStream(new BufferedOutputStream(os));
 
-                /* Write locations to stable storage.
-                 */
-                for (URI location : locations) {
-                    out.println(location);
-                }
-                out.flush();
-                os.getFD().sync();
-                os.close();
-                if (out.checkError()) {
-                    // esay("Could not write to file: " + tmpFile);
-                    return;
-                }
-
-                /* Here we assume the rename is atomic.
-                 */
-                if (!tmpFile.renameTo(nextFile())) {
-                    // esay("Failed to rename: " + tmpFile);
-                    return;
-                }
-                success = true;
-
-                /* Confirm that locations have been written.
-                 */
-                for (URI location : locations) {
-                    sink.push(location);
-                }
-            } finally {
-                if (!success) {
-                    /* Something went wrong. Delete the file and add the
-                     * locations back to the set.
+                    /* Write locations to stable storage.
                      */
-                    synchronized (this) {
-                        _locations.addAll(locations);
+                    for (URI location : locations) {
+                        out.println(location);
                     }
+
+                    /* Any IO error that happened while writing to the
+                     * file is reported through checkError. checkError
+                     * also flushes the print stream.
+                     */
+                    if (out.checkError()) {
+                        throw new IOException("Could not write to " + tmpFile);
+                    }
+
+                    /* PrintStream.checkError may set the interrupt
+                     * flag in case writing to the file was
+                     * interrupted. Since the file may be incomplete
+                     * it is important that we check the flag.
+                     */
+                    if (Thread.interrupted()) {
+                        throw new InterruptedException();
+                    }
+
+                    os.getFD().sync();
                     os.close();
-                    tmpFile.delete();
+
+                    renameToUniqueName(tmpFile);
+
+                    /* Confirm that locations have been written.
+                     */
+                    for (URI location : locations) {
+                        sink.push(location);
+                    }
+                    locations.clear();
+                } finally {
+                    os.close();
                 }
+            } catch (FileNotFoundException e) {
+                throw new FileNotFoundException("Failed to create file "
+                                                + tmpFile + ": " + e.getMessage());
+            } finally {
+                /* In case of success, the temporary file no longer
+                 * exists, so either way it is safe to delete it.
+                 */
+                tmpFile.delete();
             }
-        } catch (FileNotFoundException e) {
-            throw new FileNotFoundException("Failed to create file "
-                                            + tmpFile + ": " + e.getMessage());
         } catch (IOException e) {
             throw new IOException("Failed to flush failure repository: "
                                   + e.getMessage());
+        } finally {
+            synchronized (this) {
+                _locations.addAll(locations);
+            }
         }
     }
 
@@ -251,8 +270,8 @@ public class FailureRepository
      * <code>add</code> or <code>remove</code> was called for each
      * location pushed to the sink.
      *
-     * This method is not reentrant and will throw a RuntimeException
-     * if concurrent calls are detected.
+     * This method is not reentrant and will throw an
+     * IllegalStateException if concurrent calls are detected.
      *
      * Notice that URIs pushed to the sink are kept in memory until
      * either <code>add</code> or <code>remove</code> have been
@@ -269,17 +288,17 @@ public class FailureRepository
      * @throws FileNotFoundException If the output file could not be
      *                               created.
      * @throws IOException           If an I/O error occurs.
+     * @throws IllegalStateException If recovery is running already.
      */
     public void recover(Sink<URI> sink)
         throws InterruptedException, FileNotFoundException, IOException
     {
-        boolean success = false;
-        File tmpFile = createTempFile();
-        FileOutputStream os = new FileOutputStream(tmpFile);
+        File tmpFile = createFlushFile();
         try {
+            FileOutputStream os = new FileOutputStream(tmpFile);
             synchronized (this) {
                 if (_out != null) {
-                    throw new RuntimeException("Concurrent calls detected");
+                    throw new IllegalStateException("Concurrent calls detected");
                 }
                 _out = new PrintStream(new BufferedOutputStream(os));
             }
@@ -290,26 +309,30 @@ public class FailureRepository
                  */
                 for (File file : inFiles) {
                     BufferedReader in = new BufferedReader(new FileReader(file));
-                    /* ...push each line to the sink.
-                     */
-                    String s;
-                    while ((s = in.readLine()) != null) {
-                        try {
-                            URI location = new URI(s);
-                            addToRecoverySet(location);
-                            sink.push(location);
-                        } catch (URISyntaxException e) {
-                            // Corrupted file. For now we ignore it, but
-                            // the safe thing would be to disable the
-                            // cleaner and notify the administrator. That
-                            // would require a mechanism for notifying the
-                            // administrator...
-                            // elog("Corrupted failure file. Cannot parse '" +
-                            //     s + "': " + e.getMessage());
+                    try {
+                        /* ...push each line to the sink.
+                         */
+                        String s;
+                        while ((s = in.readLine()) != null) {
+                            try {
+                                URI location = new URI(s);
+                                addToRecoverySet(location);
+                                sink.push(location);
+                             } catch (URISyntaxException e) {
+                                /* Corrupted file. We break out with
+                                 * an exception. This will effectively
+                                 * block recovery, so we hope the
+                                 * sysadmin will notice the message in
+                                 * the logs...
+                                 */
+                                throw new IOException("Failed to parse '" + s + "' in " + file + ": " + e.getMessage());
+                            }
+                            if (Thread.interrupted()) {
+                                throw new InterruptedException();
+                            }
                         }
-                        if (Thread.interrupted()) {
-                            throw new InterruptedException();
-                        }
+                    } finally {
+                        in.close();
                     }
                 }
 
@@ -320,22 +343,30 @@ public class FailureRepository
                         wait();
                     }
 
-                    /* Flush, sync and close the output stream.
+                    /* Any IO error that happened while writing to the
+                     * file is reported through checkError. checkError
+                     * also flushes the print stream.
                      */
-                    _out.flush();
+                    if (_out.checkError()) {
+                        throw new IOException("Could not write to " + tmpFile);
+                    }
+
+                    /* PrintStream.checkError may set the interrupt
+                     * flag in case writing to the file was
+                     * interrupted. Since the file may be incomplete
+                     * it is important that we check the flag.
+                     */
+                    if (Thread.interrupted()) {
+                        throw new InterruptedException();
+                    }
+
+                    /* Sync and close the output stream.
+                     */
                     os.getFD().sync();
                     os.close();
-
-                    /* Rename it to the final name. We assume that
-                     * this is an atomic operation.
-                     */
-                    if (!tmpFile.renameTo(nextFile())) {
-                        //elog("Failed to rename: " + tmpFile);
-                        return;
-                    }
                 }
 
-                success = true;
+                renameToUniqueName(tmpFile);
 
                 /* At this point we are certain that the new file was
                  * written to disk and we delete the old files.
@@ -360,9 +391,10 @@ public class FailureRepository
             throw new IOException("Failed to flush failure repository: "
                                   + e.getMessage());
         } finally {
-            if (!success) {
-                tmpFile.delete();
-            }
+            /* In case of success, the temporary file no longer
+             * exists, so either way it is safe to delete it.
+             */
+            tmpFile.delete();
         }
     }
 }
