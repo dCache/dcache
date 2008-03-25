@@ -338,7 +338,9 @@ public class SRMDispatcher {
 	    }
 	    else if (conf.isReserveSpace()) {
 		if(conf.getGuaranteedReserveSpaceSize()==0) { 
-		    logger.elog("guaranteed size of space reservation must be greater than 0");
+//		    logger.elog("guaranteed size of space reservation must be greater than 0");
+			logger.elog(conf.usage());
+		    
 		    System.exit(1);
 		}
                 if(conf.getDesiredReserveSpaceSize() < conf.getGuaranteedReserveSpaceSize()) {
@@ -357,7 +359,7 @@ public class SRMDispatcher {
 		    logger.elog("srm url identifying srm system must be specified");
 		    System.exit(1);
 		}
-		if(conf.getGetSpaceMetaDataTokens()==null ||conf.getGetSpaceMetaDataTokens().length <1 ) { 
+		if(conf.getSpaceTokensList()==null ||conf.getSpaceTokensList().length <1 ) { 
 		    logger.elog("at least one space token must be specified");
 		    System.exit(1);
 		}
@@ -376,7 +378,7 @@ public class SRMDispatcher {
 		throw e;
 	    }
 	    else { 
-		System.err.println("srm client error: \"" + e.getMessage()+"\"");
+		System.err.println("srm client error: \n" + e.getMessage());
 		System.exit(1);
 	    }
 	}

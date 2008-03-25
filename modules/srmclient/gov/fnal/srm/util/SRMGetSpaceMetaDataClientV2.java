@@ -134,7 +134,7 @@ public class SRMGetSpaceMetaDataClientV2 extends SRMClient  {
 			throw gsse;
 		}
 		try { 
-                        String[] tokens = configuration.getGetSpaceMetaDataTokens();
+                        String[] tokens = configuration.getSpaceTokensList();
                 	SrmGetSpaceMetaDataRequest request = new SrmGetSpaceMetaDataRequest(); 
                         request.setArrayOfSpaceTokens(new ArrayOfString(tokens));
 			

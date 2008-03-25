@@ -307,7 +307,7 @@ public class SRMPutClientV2 extends SRMClient implements Runnable {
                         new TRetentionPolicyInfo(retentionPolicy,accessLatency);
                 srmPrepareToPutRequest.setTargetFileRetentionPolicyInfo(retentionPolicyInfo);
             }
-            
+
             if(configuration.getOverwriteMode() != null) {
                 srmPrepareToPutRequest.setOverwriteOption(TOverwriteMode.fromString(configuration.getOverwriteMode()));
             }
