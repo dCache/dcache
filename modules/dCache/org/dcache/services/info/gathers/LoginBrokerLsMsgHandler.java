@@ -1,7 +1,12 @@
 package org.dcache.services.info.gathers;
 
 import org.apache.log4j.Logger;
-import org.dcache.services.info.base.*;
+import org.dcache.services.info.base.FloatingPointStateValue;
+import org.dcache.services.info.base.IntegerStateValue;
+import org.dcache.services.info.base.StateComposite;
+import org.dcache.services.info.base.StatePath;
+import org.dcache.services.info.base.StateUpdate;
+import org.dcache.services.info.base.StringStateValue;
 
 import dmg.cells.services.login.LoginBrokerInfo;
 

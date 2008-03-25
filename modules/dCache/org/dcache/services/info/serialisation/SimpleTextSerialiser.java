@@ -2,16 +2,25 @@ package org.dcache.services.info.serialisation;
 
 import java.util.Map;
 
-import org.dcache.services.info.base.*;
+import org.dcache.services.info.base.BooleanStateValue;
+import org.dcache.services.info.base.FloatingPointStateValue;
+import org.dcache.services.info.base.IntegerStateValue;
+import org.dcache.services.info.base.State;
+import org.dcache.services.info.base.StatePath;
+import org.dcache.services.info.base.StateVisitor;
+import org.dcache.services.info.base.StringStateValue;
+
 
 /**
  * The SimpleTextSerialiser converts the dCache State tree into a simple String
  * representation.  This representation contains multiple lines, each containing
  * the path to the metric followed by a colon, then a space, the value, then
  * finally the metric type (in square brackets).
- * 
+ * <p>
  * NB, instances of this Class are not thread-safe: the caller is responsible for
  * ensuring no concurrent calls to serialise().
+ * 
+ * @see PrettyPrintTextSerialiser 
  * 
  * @author Paul Millar <paul.millar@desy.de>
  */

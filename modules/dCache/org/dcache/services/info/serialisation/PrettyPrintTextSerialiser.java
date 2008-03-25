@@ -1,9 +1,29 @@
 package org.dcache.services.info.serialisation;
 
-import java.util.*;
+import java.util.BitSet;
+import java.util.Map;
 
-import org.dcache.services.info.base.*;
+import org.dcache.services.info.base.BooleanStateValue;
+import org.dcache.services.info.base.FloatingPointStateValue;
+import org.dcache.services.info.base.IntegerStateValue;
+import org.dcache.services.info.base.State;
+import org.dcache.services.info.base.StatePath;
+import org.dcache.services.info.base.StateValue;
+import org.dcache.services.info.base.StateVisitor;
+import org.dcache.services.info.base.StringStateValue;
 
+
+/**
+ * Create a pretty-print output of dCache state using ASCII-art.
+ * <p>
+ * This output has the advantage of making the tree structure more
+ * clear (compared to SimpleTextSerialiser) but the disadvantage of
+ * taking up more space.
+ * 
+ * @see SimpleTextSerialiser
+ * 
+ * @author Paul Millar <paul.millar@desy.de>
+ */
 public class PrettyPrintTextSerialiser implements StateVisitor, StateSerialiser {
 	
 	private static final String MARK_STR  = " | ";

@@ -6,14 +6,15 @@ import java.util.Stack;
 
 import org.apache.log4j.Logger;
 import org.dcache.services.info.base.StatePath;
-import org.dcache.services.info.stateInfo.*;
+import org.dcache.services.info.stateInfo.ListVisitor;
+
 
 /**
  * Provide generic support for building a list of items, taken from some part of the current
  * dCache state and triggering some activity based on this list.  Most likely this is
  * sending off messages, but it could (in principle) be anything.
  * <p>
- * Events will be triggered for each list item before the current state is reevaluated and a
+ * Events will be triggered for each list item before the current state is re-evaluated and a
  * fresh list generated.  The method getNextItem() treats the List as a stack and pops the next
  * item off the list.  It is assumed (although not required) that subclasses will call getNextItem()
  * once per trigger.
@@ -121,7 +122,7 @@ abstract class SkelListBasedActivity implements Schedulable {
 			_outstandingWork.add( item);
 		
 		if( _log.isDebugEnabled()) {
-			_log.debug( "fresh todo list obtained for " + this.getClass().getSimpleName());
+			_log.debug( "fresh to-do list obtained for " + this.getClass().getSimpleName());
 			_log.debug("list now contains " + _outstandingWork.size() + " items");
 		}
 	}

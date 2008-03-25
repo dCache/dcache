@@ -1,12 +1,19 @@
 package org.dcache.services.info.gathers;
 
-import java.util.*;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
 import org.apache.log4j.Logger;
 import org.dcache.services.info.InfoProvider;
 
 import diskCacheV111.vehicles.Message;
-import dmg.cells.nucleus.*;
+import dmg.cells.nucleus.CellMessage;
+import dmg.cells.nucleus.CellMessageAnswerable;
+import dmg.cells.nucleus.CellPath;
 
 
 /**
@@ -33,7 +40,7 @@ public class MessageHandlerChain {
 	/**
 	 * For each message we send, a small amount of metadata is recorded (when it was sent and a long).
 	 * The long is so, when the return message is received, we can pass this parameter on
-	 * to the message processing plugin.  The time is so we can (every so often) delete stale entries
+	 * to the message processing plug-in.  The time is so we can (every so often) delete stale entries
 	 * due to message-loss.  
 	 */
 	private static class MessageMetadata {
@@ -72,7 +79,7 @@ public class MessageHandlerChain {
 	
 	/**
 	 * Common method to send a CellMessage and register a handler for the return message.
-	 * This is depricated against using Vehicles and registering MessageHandlers. 
+	 * This is deprecated against using Vehicles and registering MessageHandlers. 
 	 * @param path the CellPath to target cell
 	 * @param requestString the String, requesting information
 	 * @param handler the call-back handler for the return message

@@ -1,6 +1,8 @@
 package org.dcache.services.info.base;
 
-import java.util.*;
+import java.util.Date;
+
+
 
 /**
  * All nodes within the State composition must implement this interface.  Nodes are
@@ -95,7 +97,7 @@ interface StateComponent {
 	/**
 	 * Update a StateTransition based on this StateComponent's children.
 	 * @param ourPath this StateComponent's path within dCache tree.  For the top-most
-	 * StateComponent this isnull
+	 * StateComponent this is null.
 	 * @param transition the StateTransition object within which we should register children to be deleted.
 	 * @param forced whether we should simply remove our children, or test whether they are to be deleted
 	 */

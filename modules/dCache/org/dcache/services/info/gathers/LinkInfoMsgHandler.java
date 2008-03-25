@@ -1,9 +1,13 @@
 package org.dcache.services.info.gathers;
 
-import org.apache.log4j.Logger;
-import org.dcache.services.info.base.*;
+import java.util.ArrayList;
 
-import java.util.*;
+import org.apache.log4j.Logger;
+import org.dcache.services.info.base.IntegerStateValue;
+import org.dcache.services.info.base.StatePath;
+import org.dcache.services.info.base.StateUpdate;
+import org.dcache.services.info.base.StringStateValue;
+
 
 /**
  * A class to handle reply messages from PoolManager's "psux ls -x -resolve" command.

@@ -1,6 +1,8 @@
 package org.dcache.services.info.base;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+
 
 /**
  * StatePersistentMetadataContainer is a hierarchical storage for information
@@ -133,7 +135,7 @@ public class StatePersistentMetadata {
 	
 	
 	/**
-	 * Prepare a Map that updates the persistent metadata heirarchy to include
+	 * Prepare a Map that updates the persistent metadata hierarchy to include
 	 * a Class and IdName values, these values are indexed by
 	 * <tt>METADATA_BRANCH_CLASS_KEY</tt> and <tt>METADATA_BRANCH_IDNAME_KEY</tt>
 	 * respectively.

@@ -1,6 +1,9 @@
 package org.dcache.services.info.base;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+
+
 
 /**
  * A StateTransition contains information about a pending alteration to the current

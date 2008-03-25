@@ -1,7 +1,9 @@
 package org.dcache.services.info.conduits;
 
-import java.net.*;
-import java.io.*;
+import java.io.IOException;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.SocketException;
 
 import org.apache.log4j.Logger;
 import org.dcache.services.info.serialisation.XmlSerialiser;

@@ -1,15 +1,16 @@
 package org.dcache.services.info.gathers;
 
 import org.dcache.services.info.InfoProvider;
-import org.dcache.services.info.base.*;
+import org.dcache.services.info.base.StatePath;
 
-import dmg.cells.nucleus.*;
+import dmg.cells.nucleus.CellMessageAnswerable;
+import dmg.cells.nucleus.CellPath;
 
 
 /**
  * This class sends a series of messages based on the current state tree.
  *   It uses a visitor to
- * extract all entried below a certain point in the state tree and constructs a message for 
+ * extract all entries below a certain point in the state tree and constructs a message for 
  * each entry; for example, if the path is "dCache.pools" and the state contains entries for
  * "dCache.pools.fandango_1" and "dCache.pools.fandango_2" then two CellMessages are sent.
  * <p>

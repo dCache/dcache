@@ -1,9 +1,13 @@
 package org.dcache.services.info.gathers;
 
 import java.util.Random;
-import org.dcache.services.info.stateInfo.*;
-import org.dcache.services.info.base.*;
 import java.util.Date;
+
+import org.dcache.services.info.base.State;
+import org.dcache.services.info.base.StateComposite;
+import org.dcache.services.info.base.StatePath;
+import org.dcache.services.info.base.StateUpdate;
+import org.dcache.services.info.stateInfo.SpaceInfo;
 
 
 /**
@@ -27,7 +31,7 @@ import java.util.Date;
  */
 public class PseudoPoolDga implements Schedulable {
 
-	/** Max number std.dev. to allow in delay */
+	/** Max number standard deviation to allow in delay */
 	static final private int NUM_SD = 4;
 	/** The safety margin we should ensure for metrics, in seconds */  
 	static final private int SAFETY_MARGIN = 2;
@@ -38,23 +42,23 @@ public class PseudoPoolDga implements Schedulable {
 	static final double PRECIOUS_ADD_LIKELIHOOD = 0.5;
 	/** Fraction of total space to add, on average */
 	static final double PRECIOUS_ADD_DELTA = 0.01;
-	/** std. dev. of space added, as fraction of avr */
+	/** Standard deviation of space added, as fraction of the average */
 	static final double PRECIOUS_ADD_SPREAD = 0.01;
 	static final double PRECIOUS_DEL_DELTA = 0.1;
 	static final double PRECIOUS_DEL_SPREAD = 0.01;
 	static final double PRECIOUS_DEL_SUPPRESS = 0.01;
 
-	/** Likelihood of adding files each itr. */
+	/** Likelihood of adding files each iteration */
 	static final double REMOVABLE_ADD_LIKELIHOOD = 0.8;
-	/** Frac. of total space that is max added in Zipf */
+	/** Fraction of total space that is max added in Zipf */
 	static final double REMOVABLE_ADD_MAX_FRAC = 0.03;
 	/** How fast the Zipf falls off, controls the spread of files */
 	static final double REMOVABLE_ADD_EXP = 0.05;
 	/** When removing, what fraction of removable is deleted*/
 	static final double REMOVABLE_DEL_DELTA = 0.3;
-	/** The std dev. of the removed amount, from  */
+	/** The standard deviation of the removed amount, from  */
 	static final double REMOVABLE_DEL_SPREAD = 0.05;
-	/** Supress how often files are removed  */
+	/** Suppress how often files are removed  */
 	static final double REMOVABLE_DEL_SUPPRESS = 0.01;
 
 	private final String _poolName;
@@ -63,7 +67,7 @@ public class PseudoPoolDga implements Schedulable {
 	private StatePath _ourPgMembership;
 	/** Average time between successive calls, in milliseconds */	
 	private final int _delay; 
-	/** Std dev. for Normal spread of successive calls */
+	/** Standard deviation for Normal spread of successive calls */
 	private final int _spread;
 	/** Lifetime of metrics, in seconds */
 	private final long _metricLifetime;
@@ -143,7 +147,7 @@ public class PseudoPoolDga implements Schedulable {
 			_spaceInfo.updatePrecious( -size);
 		}
 
-		// Likewise with removable, add some data, taken from a Zapf-like distribution.
+		// Likewise with removable, add some data, taken from a Zipf-like distribution.
 		if( _rnd.nextFloat() < REMOVABLE_ADD_LIKELIHOOD) {
 			long size = (long) (_spaceInfo.getTotal()*REMOVABLE_ADD_MAX_FRAC*Math.exp(-_rnd.nextDouble()/REMOVABLE_ADD_EXP));
 			_spaceInfo.updateRemovable(size);

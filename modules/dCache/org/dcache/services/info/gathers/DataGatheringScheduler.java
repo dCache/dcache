@@ -1,11 +1,11 @@
 package org.dcache.services.info.gathers;
 
-import java.util.*;
-
-
+import java.util.Date;
+import java.util.List;
+import java.util.Vector;
 
 import org.apache.log4j.Logger;
-import org.dcache.services.info.base.*;
+import org.dcache.services.info.base.StatePath;
 
 /**
  * This thread is responsible for scheduling various data-gathering activity.

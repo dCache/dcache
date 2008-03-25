@@ -1,6 +1,7 @@
 package org.dcache.services.info.base;
 
-import java.util.*;
+import java.util.Map;
+
 
 /**
  * Interface for an algorithm that wishes to iterate over the current state.

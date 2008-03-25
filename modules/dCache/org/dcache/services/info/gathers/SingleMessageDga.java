@@ -3,7 +3,9 @@ package org.dcache.services.info.gathers;
 import org.dcache.services.info.InfoProvider;
 
 import diskCacheV111.vehicles.Message;
-import dmg.cells.nucleus.*;
+import dmg.cells.nucleus.CellMessage;
+import dmg.cells.nucleus.CellMessageAnswerable;
+import dmg.cells.nucleus.CellPath;
 
 /**
  * Instances of the SingleMessageDga class will, when triggered, send a CellMessage with
@@ -20,7 +22,7 @@ import dmg.cells.nucleus.*;
  * a String will receive a generic object (e.g., of class Object), which requires
  * very special and careful treatment.
  * <p>
- * Supplying a String as a payload is depricated, vehicles should be used instead.
+ * Supplying a String as a payload is deprecated, vehicles should be used instead.
  *  
  * @author Paul Millar <paul.millar@desy.de>
  */

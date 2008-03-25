@@ -1,6 +1,13 @@
 package org.dcache.services.info.base;
 
-import java.util.*;
+
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
 
 import org.apache.log4j.Logger;
 
@@ -712,7 +719,7 @@ public class StateComposite implements StateComponent {
 	
 	/**
 	 * Ostensibly, we iterate over all children to find Mortal children that should be
-	 * removed.  In practise, cached knowlege of Mortal child expiry Dates means this
+	 * removed.  In practise, cached knowledge of Mortal child expiry Dates means this
 	 * iterates over only those StateComponents that contain children that have actually
 	 * expired.
 	 *  

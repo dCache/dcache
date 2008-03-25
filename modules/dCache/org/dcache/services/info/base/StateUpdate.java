@@ -3,7 +3,8 @@
  */
 package org.dcache.services.info.base;
 
-import java.util.*;
+import java.util.List;
+import java.util.Vector;
 
 import org.apache.log4j.Logger;
 

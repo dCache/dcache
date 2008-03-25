@@ -1,15 +1,22 @@
 package org.dcache.services.info.serialisation;
 
-import org.dcache.services.info.base.*;
+import java.util.Map;
 
-import java.util.*;
+import org.dcache.services.info.base.BooleanStateValue;
+import org.dcache.services.info.base.FloatingPointStateValue;
+import org.dcache.services.info.base.IntegerStateValue;
+import org.dcache.services.info.base.State;
+import org.dcache.services.info.base.StatePath;
+import org.dcache.services.info.base.StateVisitor;
+import org.dcache.services.info.base.StringStateValue;
+
 
 /**
  * This serialiser maps the dCache state directly into an XML InfoSet.
- * 
+ * <p>
  * For the most part, this is a simple mapping with some support for handling
  * branch-nodes with a known special parent branch differently.
- * 
+ * <p>
  * NB, instances of this Class are not thread-safe: the caller is responsible for
  * ensuring no concurrent calls to serialise().
  * 
@@ -104,8 +111,8 @@ public class XmlSerialiser implements StateVisitor, StateSerialiser {
 	 *  When dealing with lists, we use the branch metadata:
 	 *  <ul>
 	 *  <li> METADATA_BRANCH_CLASS_KEY is the name of the list item class (e.g.,
-	 *       for items under the dCache.pools branch, this is &quot;pool&quot;)
-	 *  <li> METADATA_BRANCH_IDNAME_KEY is the name of identifier (e.g., &quot;name&quot;)
+	 *       for items under the dCache.pools branch, this is "pool")
+	 *  <li> METADATA_BRANCH_IDNAME_KEY is the name of identifier (e.g., "name")
 	 *  </ul>  
 	 *  <p>
 	 *  We mostly push information onto a (single item) stack so we can
@@ -153,7 +160,7 @@ public class XmlSerialiser implements StateVisitor, StateSerialiser {
 			return;
 		}
 		
-		emitLastBeginElement( false); // this should be a noop: we should have no last-branch to emit.
+		emitLastBeginElement( false); // this should be a no-op: we should have no last-branch to emit.
 			
 		_indentationLevel--;
 		updateIndentPrefix();
@@ -271,8 +278,8 @@ public class XmlSerialiser implements StateVisitor, StateSerialiser {
 	}
 
 	/**
-	 * Mark-up an String so it can be included as XML data.  Specificially, we
-	 * markup any occurances of '<', '&' and '>'
+	 * Mark-up an String so it can be included as XML data.  Specifically, we
+	 * mark-up any occurrences of '<', '&' and '>'
 	 * 
 	 * @param value the string value to mark-up
 	 * @return value that is safe to include in as an XML text-node.
@@ -283,9 +290,9 @@ public class XmlSerialiser implements StateVisitor, StateSerialiser {
 	
 	
 	/**
-	 * Markup an attribute's value. 
+	 * Mark-up an attribute's value. 
 	 * @param value before marking up
-	 * @return the markedup value.
+	 * @return the marked-up value.
 	 */
 	private String xmlAttrMarkup( String value) {
 		return value.replaceAll("\"", "&quot;");

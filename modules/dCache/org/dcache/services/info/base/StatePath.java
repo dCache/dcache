@@ -3,7 +3,10 @@
  */
 package org.dcache.services.info.base;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+
+
 
 /**
  *  StatePath provides a representation of a value's location within the

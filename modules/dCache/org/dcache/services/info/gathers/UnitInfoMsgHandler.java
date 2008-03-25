@@ -1,7 +1,10 @@
 package org.dcache.services.info.gathers;
 
 import org.apache.log4j.Logger;
-import org.dcache.services.info.base.*;
+import org.dcache.services.info.base.StatePath;
+import org.dcache.services.info.base.StateUpdate;
+import org.dcache.services.info.base.StringStateValue;
+
 
 /**
  * Process incoming Object array (*shudder*) and update state.
