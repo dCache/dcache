@@ -78,6 +78,7 @@ procStop() {
      sleep 1
      kill -0 $x 1>/dev/null 2>/dev/null
      if [ $? -ne 0 ] ; then
+        rm -f $pidFile
         echo "Done" 
         exit 0
      fi
