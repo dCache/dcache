@@ -1103,9 +1103,13 @@ case "$1" in
                 printf "$format" "Pool" "Domain" "Size" "Free" "Path"
                 for domain in $domains; do
                     getPoolsInDomain $domain | while read pool path param; do
-                        size=`getSizeOfPool ${path}`
-			free=`getFreeSpace ${path}`
-                        printf "$format" "$pool" "$domain" "$size" "$free" "$path"
+			if [ -f "${path}/setup" ]; then
+                            size=`getSizeOfPool ${path}`
+			    free=`getFreeSpace ${path}`
+                            printf "$format" "$pool" "$domain" "$size" "$free" "$path"
+			else
+                            printf "$format" "$pool" "$domain" "-" "-" "$path (missing)"
+			fi
                     done
                 done
                 
