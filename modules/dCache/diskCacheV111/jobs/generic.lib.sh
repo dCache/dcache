@@ -43,25 +43,20 @@ if [ -z  "${logfile}" ] ; then
 fi
 touch ${logfile} 2>/dev/null
 if [ $? -ne 0 ] ; then
-  echo "Couldn't write to logfile ${logfile}; using /dev/null" 1>&2
+  echo "Could not write to logfile ${logfile}; using /dev/null" 1>&2
   logfile=/dev/null
 fi
-touch ${pidFile} 2>/dev/null
-if [ $? -ne 0 ] ; then
-   echo "Couldn't use pidFile ${pidFile}, can't startup !!" 1>&2
-   exit 4
-#   pidFile=/dev/null
-fi
+
 #
 #
 procStop() {
    if [ ! -f ${pidFile} ] ; then
-      echo "Can't find appropiate pidFile(${pidFile})" 1>&2
+      echo "Cannot find appropriate pid file (${pidFile})" 1>&2
       exit 0 
    fi
    x=`cat ${pidFile}`
    if [ -z "$x" ] ; then
-      echo "Pid File (${pidFile}) doesn't contain valid PID" 1>&2
+      echo "Pid file (${pidFile}) does not contain valid PID" 1>&2
       exit 1
    fi
    touch ${config}/realStop.${domainName} 2>/dev/null
@@ -101,7 +96,13 @@ procStart() {
         exit 4
      fi
   fi
-#
+
+  touch ${pidFile} 2>/dev/null
+  if [ $? -ne 0 ] ; then
+    echo "Could not use pid file ${pidFile}, cannot startup !!" 1>&2
+    exit 4
+  fi
+
   if [ ! -z "${telnetPort}" ] ; then
      TELNET_PORT="-telnet ${telnetPort}" 
   elif [ ! -z "${telnet}" ] ; then
@@ -115,7 +116,7 @@ procStart() {
   if [ -f "$batchFile" ] ; then 
       BATCH_FILE="-batch ${batchFile}" 
   else
-      echo "Batch file doesn't exist : ${batchFile}, can't continue ..." 1>&2
+      echo "Batch file does not exist: ${batchFile}, cannot continue ..." 1>&2
       exit 5
   fi
   if [ ! -z "${debug}" ] ; then DEBUG="-debug" ; fi
