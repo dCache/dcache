@@ -288,7 +288,7 @@ public class RequestTracker
      */
     synchronized private void timeout(String hsm, String pool)
     {
-        _cell.error("Timeout deleting files HSM " + hsm
+        _cell.error("Timeout deleting files on HSM " + hsm
                     + " attached to " + pool);
         _poolRequests.remove(hsm);
         _pools.remove(pool);
@@ -300,10 +300,18 @@ public class RequestTracker
      */
     synchronized public void messageArrived(PoolRemoveFilesFromHSMMessage msg)
     {
+        /* In case of failure we rely on the timeout to invalidate the
+         * entries.
+         */
+        if (msg.getReturnCode() != 0) {
+            _cell.error("Received failure from pool: " + msg.getErrorObject());
+            return;
+        }
+
         String hsm = msg.getHsm();
+        Collection<URI> locations = _locationsToDelete.get(hsm);
         Collection<URI> success = msg.getSucceeded();
         Collection<URI> failures = msg.getFailed();
-        Collection<URI> locations = _locationsToDelete.get(hsm);
 
         if (locations == null) {
             /* Seems we got a reply for something this instance did
