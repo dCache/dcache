@@ -1,15 +1,32 @@
 package org.dcache.services.info;
 
-import java.util.*;
-import dmg.cells.nucleus.*;
+import java.io.NotSerializableException;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
+
+import dmg.cells.nucleus.CellAdapter;
+import dmg.cells.nucleus.CellMessage;
+import dmg.cells.nucleus.CellMessageAnswerable;
+import dmg.cells.nucleus.CellNucleus;
+import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.Args;
 
 import org.apache.log4j.Logger;
-import org.dcache.services.info.base.*;
-import org.dcache.services.info.conduits.*;
-import org.dcache.services.info.gathers.*;
-import org.dcache.services.info.serialisation.*;
-import org.dcache.services.info.secondaryInfoProviders.*;
+import org.dcache.services.info.base.BadStatePathException;
+import org.dcache.services.info.base.State;
+import org.dcache.services.info.base.StateMaintainer;
+import org.dcache.services.info.base.StatePath;
+import org.dcache.services.info.conduits.Conduit;
+import org.dcache.services.info.conduits.XmlConduit;
+import org.dcache.services.info.gathers.DataGatheringScheduler;
+import org.dcache.services.info.gathers.MessageHandlerChain;
+import org.dcache.services.info.secondaryInfoProviders.PoolgroupSpaceWatcher;
+import org.dcache.services.info.serialisation.PrettyPrintTextSerialiser;
+import org.dcache.services.info.serialisation.SimpleTextSerialiser;
+import org.dcache.services.info.serialisation.StateSerialiser;
+import org.dcache.services.info.serialisation.XmlSerialiser;
 
 public class InfoProvider extends CellAdapter {
 	
@@ -19,7 +36,7 @@ public class InfoProvider extends CellAdapter {
 	private static final long STANDARD_TIMEOUT = 1000;
 
 	
-	private static InfoProvider _instance=null;
+	private static InfoProvider _instance;
 	private static final String ADMIN_INTERFACE_OK = "Done.";
 	private static final String ADMIN_INTERFACE_NONE = "(none)";
 	private static final String ADMIN_INTERFACE_LIST_PREFIX = "  ";
@@ -39,16 +56,13 @@ public class InfoProvider extends CellAdapter {
 	private MessageHandlerChain _msgHandlerChain;
 	private StateSerialiser _currentSerialiser = new SimpleTextSerialiser();
 	private Map<String,StateSerialiser> _availableSerialisers;
-	private StatePath _startSerialisingFrom = null;
+	private StatePath _startSerialisingFrom;
 	
 	
 	public InfoProvider(String name, String argstr) {
 		
 		super(name, argstr, false);
 		
-        /**
-         * TODO: should be done with cell commands
-         */
         setPrintoutLevel( CellNucleus.PRINT_CELL |
                           CellNucleus.PRINT_ERROR_CELL ) ;
 
@@ -81,7 +95,7 @@ public class InfoProvider extends CellAdapter {
 	
 
 	/**
-	 * Called from the Cell's finalize() fn.
+	 * Called from the Cell's finalize() method.
 	 */
 	public void cleanUp() {
 		stopConduits();
@@ -99,8 +113,8 @@ public class InfoProvider extends CellAdapter {
 	 *  Start all known conduits
 	 */
 	void startConduits() {
-		for( Iterator<Conduit> itr = _conduits.values().iterator(); itr.hasNext();)
-			itr.next().enable();
+		for( Conduit conduit : _conduits.values())
+			conduit.enable();
 	}
 	
 	
@@ -119,10 +133,16 @@ public class InfoProvider extends CellAdapter {
 	 * Stop any started conduits.
 	 */
 	void stopConduits() {
-		for( Iterator<Conduit> itr = _conduits.values().iterator(); itr.hasNext();)
-			itr.next().disable();		
+		for( Conduit conduit : _conduits.values())
+			conduit.disable();		
 	}
 	
+	
+	/**
+	 * Switch on "enable" a named conduit.
+	 * @param name the name of the conduit to enable.
+	 * @return null if there was no problem, or a description of the problem otherwise.
+	 */
 	private String enableConduit( String name) {
 		Conduit con = _conduits.get(name);
 		
@@ -137,6 +157,11 @@ public class InfoProvider extends CellAdapter {
 		return null;
 	}
 	
+	/**
+	 * Attempt to disable a named conduit.
+	 * @param name the name of the conduit to disable
+	 * @return null if there was no problem, a description of the problem otherwise.
+	 */
 	private String disableConduit( String name) {
 		Conduit con = _conduits.get( name);
 		
@@ -183,6 +208,8 @@ public class InfoProvider extends CellAdapter {
 		_msgHandlerChain = new MessageHandlerChain();
 		
 		//TODO: add default Handlers.
+		//Alternatively, use introspection to deliver messages to those methods that
+		// can handle them (c.f., Gerd's AbstractCell implementation)
 	}
 	
 	
@@ -212,8 +239,11 @@ public class InfoProvider extends CellAdapter {
 	public void sendMessage( CellMessage msg) {
 		try { 
 			super.sendMessage(msg);
-		} catch(Exception e ) {
-			_log.warn( "Problem sending msg: ", e);
+		} catch( NotSerializableException e) {
+			_log.warn( "Message could not be serialised (this should never happen) ", e);
+			throw( new RuntimeException(e));
+		} catch( NoRouteToCellException e) {
+			_log.info( "Cannot route message to cell, refraining from delivering msg.", e);
 		}
 	}
 
@@ -455,7 +485,7 @@ public class InfoProvider extends CellAdapter {
 		return sb.toString();
 	}
 	
-	public String fh_state_cd = "Change directory for state ls; path elements must be slash-seperated";
+	public String fh_state_cd = "Change directory for state ls; path elements must be slash-separated";
 	public String hh_state_cd = "<path>";
 	public String ac_state_cd_$_1( Args args) {
 		
@@ -479,9 +509,26 @@ public class InfoProvider extends CellAdapter {
 	
 	/**
 	 * Create a new StatePath based on a current path and a description of the new path.
-	 * The description of the path may be relative or absolute.  Absolute paths start
-	 * with '/', all other paths are relative.  The elements '.' and '..' have the
-	 * same meaning as in Unix FS.
+	 * The description of the path may be relative or absolute.  The separator between path
+	 * elements is a forward slash ("/").   Absolute paths start with '/', all other paths
+	 * are relative. 
+	 * <p>
+	 * Two special paths are also understood: "." and "..".  The "." path is always the current
+	 * element and ".." the parent element.  This allows for a filesystem-like paths to be
+	 * expressed, where sibling elements can be navigated to, using a combination of ".." and
+	 * the sibling path-element name.
+	 * <p>
+	 * Paths are normally displayed as a dot-separated list of elements.  This may lead to
+	 * confusion as, to change directory to <tt>aaa.bbb.ccc</tt> one would specify (as an absolute
+	 * path) <tt>/aaa/bbb/ccc</tt> or some path relative to the current location.
+	 * <p>
+	 * To allow users to "type what they see", a special case is introduced.  If the path has
+	 * no forward-slash and is neither of the two special elements ("." and ".."), then
+	 * the path is treated as relative, with dot-separated list of elements.
+	 * <p>
+	 * One final refinement is the presence of quote marks around the element.  If the first and last
+	 * characters are double-quote marks, then the contents is treated as a single path element
+	 * and no further special treatment is taken. 
 	 * 
 	 * @param cwd current path
 	 * @param path description of new path
@@ -491,11 +538,13 @@ public class InfoProvider extends CellAdapter {
 	private StatePath processPath( StatePath cwd, String path) throws BadStatePathException {
 		String[] pathElements;
 		StatePath currentPath = cwd;
+		boolean quoted = false;
 		
-		/* Treat a quoted arg as a single entry--don't split */ 
+		/* Treat a quoted argument as a single entry--don't split */ 
 		if( path.startsWith("\"") && path.endsWith("\"")) {
 			pathElements = new String[1];
 			pathElements[1] = path.substring(1, path.length()-2);
+			quoted = true;
 		} else {			
 			if( path.startsWith("/"))
 				currentPath = null; // cd is with absolute path, so reset our path.
@@ -507,7 +556,7 @@ public class InfoProvider extends CellAdapter {
 		 * As a special case: no slashes, single element in list containing dots that 
 		 * isn't "." or "..".  Treat this as a relative path, splitting on the dots.
 		 */
-		if( pathElements.length == 1) {
+		if( !quoted && pathElements.length == 1) {
 			String element = pathElements [0];
 			
 			if( !element.contains( "/") && element.contains(".") && !element.equals(".") && !element.equals("..")) {
@@ -524,7 +573,7 @@ public class InfoProvider extends CellAdapter {
 		for( int i = 0; i < pathElements.length; i++) {
 		
 			if( pathElements[i].equals("..")) {
-				// Ascend once in the hierachy.				
+				// Ascend once in the hierarchy.				
 				if( currentPath != null)
 					currentPath = currentPath.parentPath();
 				else
