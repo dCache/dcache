@@ -224,14 +224,16 @@ public class StateComposite implements StateComponent {
 
 		Map<String,String> branchMetadata = getMetadataInfo();
 		
+		StateChangeSet changeSet = (transition != null) ?  transition.getStateChangeSet( ourPath) : null;
+		
 
 		/** If start is not yet null, iterate down directly */
 		if( startPath != null) {
 			String childName = startPath.getFirstElement();
 			
-			if( haveChild( ourPath, transition, childName)) {
+			if( haveChild( changeSet, childName)) {
 				visitor.visitCompositePreSkipDescend(ourPath, branchMetadata);
-				visitNamedChild( visitor, ourPath, childName, startPath, transition);
+				visitNamedChild( visitor, ourPath, childName, startPath, transition, changeSet);
 				visitor.visitCompositePostSkipDescend(ourPath, branchMetadata);
 			} else {
 				
@@ -252,7 +254,7 @@ public class StateComposite implements StateComponent {
 
 		visitor.visitCompositePreDescend(ourPath, branchMetadata);
 
-		Set<String> children = buildChildrenList( ourPath, transition);
+		Set<String> children = buildChildrenList( changeSet);
 		
 		// Iterate over our children
 		for(Iterator<String> itr = children.iterator(); itr.hasNext();) {
@@ -261,7 +263,7 @@ public class StateComposite implements StateComponent {
 			if (!itr.hasNext())
 				visitor.visitCompositePreLastDescend(ourPath, branchMetadata);
 
-			visitNamedChild( visitor, ourPath, childName, null, transition);
+			visitNamedChild( visitor, ourPath, childName, null, transition, changeSet);
 		}
 
 		visitor.visitCompositePostDescend(ourPath, branchMetadata);
@@ -270,18 +272,13 @@ public class StateComposite implements StateComponent {
 	/**
 	 * Visit a specific child.  This is somewhat tricky as we must be careful, when there is
 	 * a transition, which child we visit.
-	 * @param visitor the StateVisitor we are applying 
-	 * @param ourPath the StatePath of this StateComposite
-	 * @param childName the name of the child
-	 * @param startPath the skip path, or null if none
-	 * @param transition the StateTransition to consider, or null if dealing with the current state.
 	 */
-	private void visitNamedChild( StateVisitor visitor, StatePath ourPath, String childName, StatePath startPath, StateTransition transition) {
+	private void visitNamedChild( StateVisitor visitor, StatePath ourPath, String childName, StatePath startPath, StateTransition transition, StateChangeSet changeSet) {
 
 		StateComponent child = null;
 		
-		if( transition != null) {
-			StateComponent freshChild = transition.getFreshChildValue( ourPath, childName);			
+		if( changeSet != null) {
+			StateComponent freshChild = changeSet.getFreshChildValue( childName);			
 			child = freshChild != null ? freshChild : _children.get( childName); 
 		} else {
 			child = _children.get( childName);
@@ -304,19 +301,18 @@ public class StateComposite implements StateComponent {
 	 * @param childName the name of the child StateComponent
 	 * @return the value of the child after transition.
 	 */
-	private boolean haveChild( StatePath ourPath, StateTransition transition, String childName) {
+	private boolean haveChild( StateChangeSet changeSet, String childName) {
 		
 		boolean currentlyHaveChild = _children.containsKey( childName);
 
-		if( transition != null) {
+		if( changeSet != null) {
 			
 			if( currentlyHaveChild) {
-				if( transition.childIsRemoved( ourPath, childName))
+				if( changeSet.childIsRemoved( childName))
 					return false;
 				
-			} else {
-				
-				if( transition.childIsNew( ourPath, childName))
+			} else {				
+				if( changeSet.childIsNew( childName))
 					return true;				
 			}
 		}
@@ -328,24 +324,21 @@ public class StateComposite implements StateComponent {
 	/**
 	 * Build a Set of our children, potentially taking into account a StateTransition.
 	 * The transition may be null, in which case this is equivalent to <code>_children.keySet()</code>  
-	 * @param ourPath the StatePath of this StateComposite
-	 * @param transition the transition to consider, or null if none.
-	 * @return a list of child names to iterate over.
 	 */
-	private Set<String> buildChildrenList( StatePath ourPath, StateTransition transition) {
-		if( transition == null)
+	private Set<String> buildChildrenList( StateChangeSet changeSet) {
+		if( changeSet == null)
 			return _children.keySet();
 
 		Set<String> allChildren = new HashSet<String>();
 		
-		Set<String> newChildren = transition.getNewChildren(ourPath);
+		Set<String> newChildren = changeSet.getNewChildren();
 			
 		if( newChildren != null)
 			allChildren.addAll( newChildren);
 			
 		allChildren.addAll( _children.keySet());
 		
-		Set<String> removedChildren = transition.getRemovedChildren(ourPath);
+		Set<String> removedChildren = changeSet.getRemovedChildren();
 
 		if( removedChildren != null)
 			allChildren.removeAll( removedChildren);
@@ -361,17 +354,26 @@ public class StateComposite implements StateComponent {
 	 * @param transition the StateTransition to apply
 	 */
 	public void applyTransition( StatePath ourPath, StateTransition transition) {
+
 		Set<String> removedChildren = new HashSet<String>();
-		Date newExpDate = transition.getWhenIShouldExpireDate(ourPath);
+		
+		StateChangeSet changeSet = transition.getStateChangeSet( ourPath);
+		
+		if( changeSet == null) {
+			_log.warn( "cannot find StateChangeSet for path " + ourPath + " Something must have gone wrong.");
+			return;
+		}
+
+		Date newExpDate = changeSet.getWhenIShouldExpireDate();
 		updateWhenIShouldExpireDate( newExpDate);
 		if( newExpDate == null)
 			_log.debug("getWhenIShouldExpireDate() returned null: no Mortal children?");
 		
-		if( transition.haveImmortalChild( ourPath))
+		if( changeSet.haveImmortalChild())
 			becomeImmortal(); // this is currently irreversable
 
 		// First, remove those children we should remove.
-		for( String childName : transition.getRemovedChildren( ourPath)) {
+		for( String childName : changeSet.getRemovedChildren()) {
 			if( _log.isDebugEnabled())
 				_log.debug("removing child " + childName);
 			_children.remove( childName);
@@ -379,8 +381,8 @@ public class StateComposite implements StateComponent {
 		}
 
 		// Then update our existing children.
-		for( String childName : transition.getUpdatedChildren( ourPath)) {
-			StateComponent updatedChildValue = transition.getUpdatedChildValue(ourPath, childName);
+		for( String childName : changeSet.getUpdatedChildren()) {
+			StateComponent updatedChildValue = changeSet.getUpdatedChildValue( childName);
 
 			if( updatedChildValue == null) {
 				_log.error( "Attempting to update " + childName + " in " + ourPath + ", but value is null; wilfully ignoring this.");
@@ -395,8 +397,8 @@ public class StateComposite implements StateComponent {
 
 
 		// Finally, add all new children.
-		for( String childName : transition.getNewChildren( ourPath)) {
-			StateComponent newChildValue = transition.getNewChildValue( ourPath, childName);
+		for( String childName : changeSet.getNewChildren()) {
+			StateComponent newChildValue = changeSet.getNewChildValue( childName);
 
 			if( _log.isDebugEnabled())
 				_log.debug("adding new child " + childName + ", new value " + newChildValue.toString());
@@ -408,7 +410,7 @@ public class StateComposite implements StateComponent {
 		}
 		
 		// Now, which children should we iterate into?
-		for( String childName : transition.getItrChildren( ourPath)) {
+		for( String childName : changeSet.getItrChildren()) {
 			StateComponent child = _children.get( childName);
 			
 			if( child == null) {
@@ -529,30 +531,33 @@ public class StateComposite implements StateComponent {
 	public void buildTransition( StatePath ourPath, StatePath newComponentPath, StateComponent newComponent, StateTransition transition) throws MetricStatePathException {
 
 		String childName = newComponentPath.getFirstElement();
+		StateChangeSet changeSet = transition.getOrCreateChangeSet( ourPath);
 		
 		/* If we are mortal and the new child is too, check we don't expire too soon */
 		if( this.isMortal() && newComponent.isMortal()) {
 			Date newComponentExpiryDate = newComponent.getExpiryDate();
-			transition.recordNewWhenIShouldExpireDate( ourPath, newComponentExpiryDate);			
+			changeSet.recordNewWhenIShouldExpireDate( newComponentExpiryDate);			
 		}
 		
 		/**
 		 * If newComponent is one of our children, process it directly.
 		 */
 		if( newComponentPath.isSimplePath()) {
+			
 			if( _children.containsKey(childName))
-				transition.recordUpdatedChild( ourPath, childName, newComponent);
+				changeSet.recordUpdatedChild( childName, newComponent);
 			else
-				transition.recordNewChild( ourPath, childName, newComponent);
+				changeSet.recordNewChild( childName, newComponent);
 			
 			if( newComponent instanceof StateComposite) {
 				StateComposite newComposite = (StateComposite) newComponent;
 				newComposite._metadataRef = getChildMetadata(childName);
 			}
-			
+
+
 			// Parents of an Immortal Child should know not to expire.
 			if( newComponent.isImmortal())
-				transition.recordChildIsImmortal( ourPath);
+				changeSet.recordChildIsImmortal();
 			
 			return;
 		}
@@ -566,19 +571,19 @@ public class StateComposite implements StateComponent {
 		if( child == null) {
 			
 			// Perhaps we're already adding a StateComposite with this transition?
-			child = transition.getNewChildValue( ourPath, childName);
+			child = changeSet.getNewChildValue( childName);
 			
 			if( child == null) {
 				// No? OK, create a new NewComposite and record it.
 				child = new StateComposite( getChildMetadata( childName), DEFAULT_LIFETIME);
-				transition.recordNewChild( ourPath, childName, child);
+				changeSet.recordNewChild( childName, child);
 			}
 		}
 		
 		/**
-		 * Even if we didn't change anything, record that we were here
+		 * Even if we didn't change anything, record that we're about to iterate down and do so.
 		 */
-		transition.recordChildItr( ourPath, childName);
+		changeSet.recordChildItr( childName);
 		child.buildTransition( buildChildPath(ourPath, childName), newComponentPath.childPath(), newComponent, transition);
 	}
 	
@@ -614,9 +619,14 @@ public class StateComposite implements StateComponent {
 
 		if( _log.isDebugEnabled())
 			_log.debug("entering ("+ (ourPath != null ? ourPath.toString() : "(null)") +", " + (predicate != null ? predicate.toString() : "(null)") + ")");
+
+		StateChangeSet changeSet = transition.getStateChangeSet( ourPath);
+		
+		if( changeSet == null)
+			return false;
 		
 		// Scan through the list of new children first.
-		Collection<String> newChildren = transition.getNewChildren(ourPath);
+		Collection<String> newChildren = changeSet.getNewChildren();
 		
 		if( newChildren != null) {
 			for( String newChildName : newChildren) {
@@ -625,15 +635,17 @@ public class StateComposite implements StateComponent {
 					continue;
 
 				if( predicate.isSimplePath())
-					return true; // a new child always triggers a predicate, if name matches
+					return true; // a new child always triggers a predicate
 
 				/**
 				 *  Ask this child whether the predicate is triggered.  If the child says "yes", we
-				 *  concur.  If the answer is no, we continue searching.
+				 *  concur.
 				 */ 
-				StateComponent child = transition.getNewChildValue( ourPath, newChildName);				
+				StateComponent child = changeSet.getNewChildValue( newChildName);				
 				if( child.predicateHasBeenTriggered( buildChildPath( ourPath, newChildName), predicate.childPath(), transition))
 					return true;
+				
+				// Carry on searching...
 			}
 		}
 		
@@ -642,7 +654,7 @@ public class StateComposite implements StateComponent {
 			StateComponent child = _children.get( childName);
 			
 			// If we've done nothing, it can't have changed.
-			if( !transition.hasChildChanged( ourPath, childName))
+			if( !changeSet.hasChildChanged( childName))
 				continue;
 			
 			// ignore unrelated children
@@ -656,11 +668,11 @@ public class StateComposite implements StateComponent {
 				// Check various options:
 				
 				// Removed children always triggers a predicate.
-				if( transition.childIsRemoved(ourPath, childName))
+				if( changeSet.childIsRemoved( childName))
 					return true; 
 				
 				// Has child changed "significantly" ?
-				StateComponent updatedChildValue = transition.getUpdatedChildValue( ourPath, childName);				
+				StateComponent updatedChildValue = changeSet.getUpdatedChildValue( childName);				
 				if( updatedChildValue != null && child.shouldTriggerWatcher(updatedChildValue))
 					return true;
 			} else {
@@ -736,11 +748,13 @@ public class StateComposite implements StateComponent {
 			if( childExp != null && now.after( childExp))
 				shouldItr = true;
 			
-			if( shouldItr) {
+			if( shouldItr) {				
+				StateChangeSet changeSet = transition.getOrCreateChangeSet( ourPath);
+
 				if( shouldRemoveThisChild)
-					transition.recordRemovedChild( ourPath, childName);
+					changeSet.recordRemovedChild( childName);
 					
-				transition.recordChildItr( ourPath, childName);
+				changeSet.recordChildItr( childName);
 				childValue.buildRemovalTransition( buildChildPath(ourPath, childName), transition, shouldRemoveThisChild);				
 			}
 		}
