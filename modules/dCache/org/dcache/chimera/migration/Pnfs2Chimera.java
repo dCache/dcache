@@ -420,7 +420,7 @@ public class Pnfs2Chimera {
 
         XMLconfig config = new XMLconfig(new File(args[0]));
 
-        JdbcFs fs = new JdbcFs(new XMLconfig(new File(args[0])));
+        JdbcFs fs = new JdbcFs(config);
 
 
         DbConnectionInfo cInfo = config.getDbInfo(0);
