@@ -69,11 +69,13 @@ to the pool, the pool name, the domain hosting the pool, the size of the
 pool and the amount of free space on the file system containing the pool.
 
 .TP
-\fBpool create SIZE PATH\fR
-Creates a new pool in the specified directory. The size must be
-specified in GiB and the directory must not exist. It is verified that
-the file system has enough free space to host a pool of the given
-size. 
+\fBpool create SIZE[M|G|T] PATH\fR
+
+Creates a new pool in the specified directory. The size is specified
+in bytes or with an optional suffix of M, G or T for mibibytes,
+gibibytes and tibibytes, respectively. The directory must not
+exist. It is verified that the file system has enough free space to
+host a pool of the given size.
 
 The directory will be created and populated with the necessary files
 to host a pool, however the pool will not be added to the dCache

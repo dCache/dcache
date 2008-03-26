@@ -720,51 +720,53 @@ getFreeSpace() # $1 = path
     df -P -B 1073741824 ${parent} | awk 'NR == 2 { print $4 }'
 }
 
-# Extracts the size of a pool in GiB.
-getSizeOfPool() # $1 = pool path
+# Converts a string describing some amount of disk space (using an
+# optional suffix in [kKmMgGtT]) to some number of GiB
+stringToGiB() # $1 = size
 {
-    local size
-    local value
-    size=`getPoolSetting ${path} set max diskspace`
-    value=${size%?} # Strip the last character
-
-    case $size in
+    case $1 in
         *k)
-            printf "%d" $((${value}/(1024*1024)))
+            printf "%d" $((${1%?}/(1024*1024)))
             ;;
 
         *K)
-            printf "%d" $((${value}/(1024*1024)))
+            printf "%d" $((${1%?}/(1024*1024)))
             ;;
 
         *m)
-            printf "%d" $((${value}/1024))
+            printf "%d" $((${1%?}/1024))
             ;;
 
         *M)
-            printf "%d" $((${value}/1024))
+            printf "%d" $((${1%?}/1024))
             ;;
 
         *g)
-            printf "%d" $value
+            printf "%d" $((${1%?}))
             ;;
 
         *G)
-            printf "%d" $value
+            printf "%d" $((${1%?}))
             ;;
 
         *t)
-            printf "%d" $((${value}*1024))
+            printf "%d" $((${1%?}*1024))
             ;;
 
         *T)
-            printf "%d" $((${value}*1024))
+            printf "%d" $((${1%?}*1024))
             ;;
 
         *)
-            printf "%d" $((${size}/(1024*1024*1024)))
+            printf "%d" $(($1/(1024*1024*1024)))
             ;;
     esac
+}
+
+# Extracts the size of a pool in GiB.
+getSizeOfPool() # $1 = pool path
+{
+    stringToGiB `getPoolSetting ${path} set max diskspace`
 }
 
 createPool() # $1 = size in GiB, $2 = path
@@ -776,7 +778,7 @@ createPool() # $1 = size in GiB, $2 = path
     local set_size
     local set_movers
 
-    size=$1
+    size=`stringToGiB $1`
     path=$2
 
     # Path must not exist
@@ -785,7 +787,7 @@ createPool() # $1 = size in GiB, $2 = path
 	exit 1
     fi
 
-    # We need to have enough free space    
+    # We need to have enough free space
     ds=`getFreeSpace ${path}`
     if [ "${ds}" -lt "${size}" ]; then
 	printp "Pool size exceeds available space. ${path} only 
@@ -797,13 +799,12 @@ createPool() # $1 = size in GiB, $2 = path
 
     mkdir -p ${path} ${path}/data ${path}/control || exit 2
 
-    set_size="s:set max diskspace 100g:set max diskspace $((${size}*1024*1024*1024)):g"
+    set_size="s:set max diskspace 100g:set max diskspace ${size}g:g"
     set_movers="s:mover set max active 10:mover set max active ${NUMBER_OF_MOVERS}:g"
     sed -e "$set_size" -e "$set_movers" ${config}/setup.temp > ${path}/setup || exit 2
 
-    printp "Created a ${size} GiB pool in ${path}. The pool cannot be 
-            used until it has been added to a domain. Use 'pool add' 
-            to do so."\
+    printp "Created a $size GiB pool in $path. The pool cannot be used
+            until it has been added to a domain. Use 'pool add' to do so."\
            "Please note that this script does not set the owner of the
             pool directory. You may need to adjust it."  
 }
@@ -894,7 +895,7 @@ addPool() # $1 = pool, $2 = path, $3 = domain, $4 = use fqdn
     printp "Added pool ${pool} in ${path} to ${domain}."\
            "The pool will not be operational until the domain has
             been started. Use 'start ${domain}' to start
-            the pool domains."
+            the pool domain."
 }
 
 removePool() # $1 = pool name
