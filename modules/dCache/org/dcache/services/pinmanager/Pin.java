@@ -28,14 +28,14 @@ public class Pin extends SMCDriver
 {
     /** PNFS ID of the pinned file. */
     private final PnfsId _pnfsId;
-    
+
     /** All requests to pin the file. */
     private final Collection<PinRequest> _requests =
         new ArrayList<PinRequest>();
 
     /** The pin manager which this pin belongs to. */
     private final PinManager _manager;
-    
+
     /** Client Host tells which host client connected from */
     private String _clientHost;
 
@@ -47,8 +47,8 @@ public class Pin extends SMCDriver
 
     /** Pinner, unpinner or null if neither is running. */
     private Object _handler;
-    
-   
+
+
 
     /**
      * There is a timer task for each request to handle expiration.
@@ -232,7 +232,7 @@ public class Pin extends SMCDriver
         debug("pin pnfsId=" + _pnfsId + " lifetime=" + lifetime+" client host="+clientHost);
 
         long max = _manager.getMaxPinDuration();
-        if (lifetime > max) {
+        if (max > 0 && lifetime > max) {
             lifetime = max;
             warn("Pin lifetime exceeded maxPinDuration, new lifetime set to "
                  + lifetime);
@@ -242,7 +242,7 @@ public class Pin extends SMCDriver
         this._clientHost = clientHost;
         return _manager.getDatabase().createRequest(_pnfsId, expiration, clientId,
             clientHost);
-        
+
     }
 
     /**
@@ -311,6 +311,9 @@ public class Pin extends SMCDriver
      * any timers and making sure the request is deleted from the
      * database.
      *
+     * If the request has been neither confirmed or failed yet, it is
+     * automatically failed.
+     *
      * @see add
      */
     synchronized void remove(PinRequest request)
@@ -318,6 +321,8 @@ public class Pin extends SMCDriver
         TimerTask task = request.getTimer();
         if (task != null)
             task.cancel();
+
+        fail(request);
 
         _requests.remove(request);
         _manager.getDatabase().deleteRequest(request);
@@ -470,13 +475,12 @@ public class Pin extends SMCDriver
      *
      * @see fail, remove
      */
-    synchronized void failAndRemoveAll()
+    synchronized void removeAll()
     {
         /* Since remove alters the _requests collection, we need to
          * make a copy of it to avoid ConcurrentModificationException.
          */
         for (PinRequest request : new ArrayList<PinRequest>(_requests)) {
-            fail(request);
             remove(request);
         }
     }
@@ -506,7 +510,7 @@ public class Pin extends SMCDriver
     void extendLifetime(PinRequest request, long newLifetime)
     {
         long max = _manager.getMaxPinDuration();
-        if (newLifetime > max) {
+        if (max > 0 && newLifetime > max) {
             newLifetime = max;
             warn("Pin duration exceeded maxPinDuration, lifetime set to "
                  + newLifetime);
@@ -529,10 +533,10 @@ public class Pin extends SMCDriver
      */
     synchronized void startPinner()
     {
-        _handler = new Pinner(_manager, 
+        _handler = new Pinner(_manager,
             _pnfsId,
-            _clientHost, 
-            _storageInfo, 
+            _clientHost,
+            _storageInfo,
             this);
     }
 

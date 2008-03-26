@@ -77,7 +77,7 @@ Entry
         pinFailed()
                 Dead
                 {
-                        failAndRemoveAll();
+                        removeAll();
                 }
 }
 

@@ -233,10 +233,6 @@ public class PinManager extends AbstractCell implements Runnable
         throws NumberFormatException
     {
         long newMaxPinDuration = Long.parseLong(args.argv(0));
-        if (newMaxPinDuration <= 0) {
-            return "Pin duration value must be positive";
-        }
-
         StringBuilder sb = new StringBuilder();
         sb.append("old max pin duration was ");
         sb.append(_maxPinDuration).append(" milliseconds\n");
