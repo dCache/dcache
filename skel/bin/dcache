@@ -242,7 +242,7 @@ parseOptions() # $1 = list of valid options
 		while [ -n "$option" ]; do
 		    rest=${option#?}       # Strip leading character
 		    name=${option%${rest}} # Strip the rest to get name
-		    if ! contains $name "$valid"; then
+		    if ! contains $name $valid; then
 			usage 1
 		    fi
 
@@ -260,7 +260,7 @@ parseOptions() # $1 = list of valid options
 		;;
 	esac
 
-	if ! contains $name "$valid"; then
+	if ! contains $name $valid; then
 	    usage 1
 	fi
 
@@ -809,20 +809,27 @@ createPool() # $1 = size in GiB, $2 = path
             pool directory. You may need to adjust it."  
 }
 
-addPool() # $1 = pool, $2 = path, $3 = domain, $4 = use fqdn
+addPool() # $1 = pool, $2 = path, $3 = domain, $4 = use fqdn, £5 = lfs
 {
     local pool
     local path
     local domain
     local use_fqdn
+    local lfs
     local file
-    local tag
-    local line
+    local param
 
     pool=$1
     path=`sanitisePath $2`
     domain=$3
     use_fqdn=$4
+    lfs=$5
+
+    # Check that LFS mode is valid
+    if ! contains $lfs none precious hsm volatile transient; then
+        printp "Invalid LFS mode." 1>&2
+        exit 1
+    fi
 
     # Check that path is absolute
     if [ "${path#/}" = "${path}" ]; then
@@ -882,14 +889,19 @@ addPool() # $1 = pool, $2 = path, $3 = domain, $4 = use fqdn
 	echo "${domain%Domain}" >> $file || exit 2
     fi
 
-    # Add pool to domain
-    if [ "$use_fqdn" -eq 1 ]; then
-	tag="${fqdn}"
-    else
-	tag="${hostname}"
+    # Determine pool parameters
+    param="sticky=allowed recover-space recover-control recover-anyway"
+    if [ "$lfs" != "none" ]; then
+        param="$param lfs=$lfs"
     fi
-    line="${pool}  ${path}  sticky=allowed recover-space recover-control recover-anyway lfs=precious tag.hostname=${tag}"
-    echo $line >> `getPoolListFile $domain` || exit 2
+    if [ "$use_fqdn" -eq 1 ]; then
+	param="$param tag.hostname=$fqdn"
+    else
+	param="$param tag.hostname=$hostname"
+    fi
+
+    # Add pool to domain
+    echo "$pool  $path  $param" >> `getPoolListFile $domain` || exit 2
 
     # Tell the user what we did
     printp "Added pool ${pool} in ${path} to ${domain}."\
@@ -1100,16 +1112,17 @@ case "$1" in
 
                 domains=`getAllPoolDomains`
                 pools=`getAllPools $domains`
-                format="%-`max_width $pools`s %-`max_width $domains`s %7s%7s %s\n"
-                printf "$format" "Pool" "Domain" "Size" "Free" "Path"
+                format="%-`max_width $pools`s %-`max_width $domains`s %-9s %7s%7s %s\n"
+                printf "$format" "Pool" "Domain" "LFS" "Size" "Free" "Path"
                 for domain in $domains; do
                     getPoolsInDomain $domain | while read pool path param; do
+                        lfs=`echo $param | sed -n -e 's/.*lfs=\([^ ]*\).*/\1/p'`
 			if [ -f "${path}/setup" ]; then
                             size=`getSizeOfPool ${path}`
 			    free=`getFreeSpace ${path}`
-                            printf "$format" "$pool" "$domain" "$size" "$free" "$path"
+                            printf "$format" "$pool" "$domain" "$lfs" "$size" "$free" "$path"
 			else
-                            printf "$format" "$pool" "$domain" "-" "-" "$path (missing)"
+                            printf "$format" "$pool" "$domain" "$lfs" "-" "-" "$path (missing)"
 			fi
                     done
                 done
@@ -1127,14 +1140,14 @@ case "$1" in
 		;;
 
             add)
-		parseOptions "domain fqdn" $*
+		parseOptions "domain fqdn lfs" $*
 		shift $?
 
                 [ $# -ne 2 ] && usage 1
 		pool=$1
 		path=$2
 
-		addPool ${pool} ${path} ${opt_domain:-"${hostname}Domain"} ${opt_fqdn}
+		addPool ${pool} ${path} ${opt_domain:-"${hostname}Domain"} ${opt_fqdn:-0} ${opt_lfs:-precious}
 		;;
 
             remove)

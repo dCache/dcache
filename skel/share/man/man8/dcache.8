@@ -83,7 +83,7 @@ configuration. A separate invocation using the \fBpool add\fR is
 needed to do so.
 
 .TP
-\fBpool add [--fqdn] [--domain=DOMAIN] NAME PATH\fR
+\fBpool add [--fqdn] [--domain=DOMAIN] [--lfs=MODE] NAME PATH\fR
 Adds the pool created in PATH to the dCache configuration. The NAME
 must be a unique pool name. The script verifies that neither the pool
 name nor the pool path is already configured on the local host. 
@@ -102,7 +102,13 @@ specified, the fully qualified domain name will be used instead. This
 is useful if a dCache installation is distributed over multible DNS
 domains.
 
-Notice that this check can not verify, that the pool name is unique
+The \fBlfs\fR option determines the large file store modeof the
+pool. The default is \fBprecious\fR. Possible values are \fBnone\fR,
+\fBprecious\fR, \fBhsm\fR, \fBvolatile\fR, and \fBtransient\fR. In
+most deployments \fBprecious\fR is used for a disk-only pool and
+\fBnone\fR for a tape attached pool.
+
+Notice that dCache cannot verify that the pool name is unique
 throughout the whole dCache installation. It is the responsibility of
 the user to ensure that the name is indeed unique for the whole
 installation.
