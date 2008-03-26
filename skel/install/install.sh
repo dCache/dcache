@@ -829,11 +829,10 @@ dcacheInstallPnfsMountPoints()
   isPnfsManager=$?
 
   #echo admin=${isAdmin}${isGridFtp}${isPnfsManager}
-  if [ "${isAdmin}${isGridFtp}" == "01" -o "${isAdmin}${isSrm}" == "01" ] ; then
+  if [ "${isPnfsManager}${isGridFtp}" == "01" -o "${isPnfsManager}${isSrm}" == "01" ] ; then
     dcacheInstallPnfsMountPointClient
   fi
-
-  if [ "${isAdmin}${isPnfsManager}" == "10" -o "${isPnfsManager}" == "1" ] ; then
+  if [ "${isAdmin}${isPnfsManager}" == "11" -o "${isPnfsManager}" == "1" ] ; then
     dcacheInstallPnfsMountPointServer
   fi  
   logmessage DEBUG "dcacheInstallPnfsMountPoints.stop"
@@ -1241,7 +1240,6 @@ then
     dcacheInstallPnfs
   fi
 fi
-
 
 
 dcacheInstallSshKeys
