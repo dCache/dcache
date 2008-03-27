@@ -169,7 +169,7 @@ public class SocketAdapter implements Runnable, ProxyAdapter
     /**
      * A thread driving the adapter
      */
-    private Thread _t = null;
+    private Thread _thread = null;
 
     /**
      * True when the adapter is closing or has been closed. Used to
@@ -340,7 +340,7 @@ public class SocketAdapter implements Runnable, ProxyAdapter
         _modeE        = false;
         _eodSeen      = 0;
         _door         = door;
-        _t	      = new Thread(this);
+        _thread	      = new Thread(this);
     }
 
     public SocketAdapter(CellAdapter door, int lowPort, int highPort) 
@@ -382,7 +382,7 @@ public class SocketAdapter implements Runnable, ProxyAdapter
         _clientToPool = true;
         _modeE        = false;
         _eodSeen      = 0;
-        _t	      = new Thread(this);
+        _thread	      = new Thread(this);
     }
 
     protected void say(String s) 
@@ -465,7 +465,7 @@ public class SocketAdapter implements Runnable, ProxyAdapter
         if (!isClosing()) {
             esay(msg);
             if (_error == null) {
-                _t.interrupt();
+                _thread.interrupt();
                 _error = msg;
             }
         }
@@ -481,7 +481,7 @@ public class SocketAdapter implements Runnable, ProxyAdapter
         if (!isClosing()) {
             esay(e);
             if (_error == null) {
-                _t.interrupt();
+                _thread.interrupt();
                 _error = e.getMessage();
             }
         }
@@ -658,7 +658,7 @@ public class SocketAdapter implements Runnable, ProxyAdapter
             int totalStreams = 0;
 	    inputSock.configureBlocking(false);
 	    inputSock.register(_selector, SelectionKey.OP_ACCEPT, null);
-	    while (!Thread.interrupted()
+	    while (!Thread.currentThread().isInterrupted()
 		   && totalStreams < getEODExpected()
 	           && getDataChannelConnections() < _maxStreams) {
 		_selector.select();
@@ -755,6 +755,10 @@ public class SocketAdapter implements Runnable, ProxyAdapter
                     output.write(block);
                 }
 	    }
+        } catch (InterruptedException e) {
+            /* This will always be a symptom of another error, so
+             * there is no reason to log this exception.
+             */
         } catch (Exception e) {
 	    setError(e);
         } finally {
@@ -805,7 +809,7 @@ public class SocketAdapter implements Runnable, ProxyAdapter
 	 * SocketAdapter.run() to break. SocketAdapter.run() will in
 	 * turn interrupt all redirectors.
 	 */
-	_t.interrupt();
+	_thread.interrupt();
 
         try {
 	    if (_clientListenerChannel != null) {
@@ -832,27 +836,27 @@ public class SocketAdapter implements Runnable, ProxyAdapter
      * @see diskCacheV111.util.ProxyAdapter#isAlive()
      */
     public boolean isAlive() {
-	return _t.isAlive();
+	return _thread.isAlive();
     }
 
     /* (non-Javadoc)
      * @see diskCacheV111.util.ProxyAdapter#join()
      */
     public void join() throws InterruptedException {
-	_t.join();
+	_thread.join();
     }
 
     /* (non-Javadoc)
      * @see diskCacheV111.util.ProxyAdapter#join(long)
      */
     public void join(long millis) throws InterruptedException {
-	_t.join(millis);
+	_thread.join(millis);
     }
 
     /* (non-Javadoc)
      * @see diskCacheV111.util.ProxyAdapter#start()
      */
     public void start() {
-	_t.start();
+	_thread.start();
     }
 }
