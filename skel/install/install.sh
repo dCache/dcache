@@ -1057,9 +1057,11 @@ dcacheInstallPool()
     rm -f "${DCACHE_HOME}/config/${shortHostname}.poollist"
     touch "${DCACHE_HOME}/config/${shortHostname}.poollist"
   fi
-  if [ ! -r ${DCACHE_HOME}/etc/pool_path ]; then
-    logmessage WARNING "${DCACHE_HOME}/etc/pool_path does not exist. No pools will be configured."
-  else
+  if [ -r ${DCACHE_HOME}/etc/pool_path ]; then
+    logmessage WARNING "Defining pools in ${DCACHE_HOME}/etc/pool_path is deprecated."
+    logmessage WARNING "Please use ${DCACHE_HOME}/bin/dcache pool create and"
+    logmessage WARNING "${DCACHE_HOME}/bin/dcache pool add instead."
+
     # For all the static areas under rt make a pool
     fileToProcess=${DCACHE_HOME}/etc/pool_path
     let x=1

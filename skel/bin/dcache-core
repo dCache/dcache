@@ -8,7 +8,7 @@
 ourHomeDir=/opt/d-cache
 
 echo "This script is deprecated and will be removed in a future"
-echo "release. Please use ${ourHomeDir}/bin/dcache instead."
+echo "release. Please use ${ourHomeDir}/bin/dcache $1 instead."
 
 if [ -r /etc/rc.d/init.d/functions ] ; then
     . /etc/rc.d/init.d/functions
