@@ -628,4 +628,4 @@ cmd="cp ${SETUP_FILE} /usr/etc/setupSrmTomcat"
 execute ${cmd}
 
 logmessage INFO "Installation complete" 
-logmessage INFO "please use ${DCACHE_HOME}/bin/dcache srm start|stop|restart to startup, shutdown or  restart srm server"
+logmessage INFO "please use ${DCACHE_HOME}/bin/dcache start|stop|restart srm to startup, shutdown or restart srm server"
