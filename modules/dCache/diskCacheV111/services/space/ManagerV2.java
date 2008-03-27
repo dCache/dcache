@@ -91,7 +91,7 @@ import diskCacheV111.util.DBManager;
 import diskCacheV111.util.IoPackage;
 import diskCacheV111.namespace.StorageInfoProvider;
 import org.dcache.util.JdbcConnectionPool;
-
+import org.apache.log4j.Logger;
 
 /**
  *   <pre> Space Manager dCache service provides ability
@@ -103,17 +103,13 @@ import org.dcache.util.JdbcConnectionPool;
 public class ManagerV2
         extends CellAdapter
         implements Runnable {
-    
-	/*
-	 *Configuration variables
-	 */
 	private long spaceReservationCleanupPeriodInSeconds = 60*60; // one hour in seconds
 	private String jdbcUrl;
 	private String jdbcClass;
 	private String user;
 	private String pass;
 	private String pwdfile;
-	private long updateLinkGroupsPeriod = 3*60*1000;  //3 minutes default
+	private long updateLinkGroupsPeriod = 3*60*1000;  //1 minutes default
 //	private long updateLinkGroupsPeriod = 30*1000;  //3 minutes default
 	private long expireSpaceReservationsPeriod     = 3*60*1000;  //3 minutes default
 	
@@ -131,16 +127,14 @@ public class ManagerV2
 	private boolean cleanupExpiredSpaceFiles=true;
 	private String linkGroupAuthorizationFileName = null;
 	private boolean spaceManagerEnabled =true;
-	/*
-	 * Database storage related variables
-	 */
 	public static final int currentSchemaVersion = 3;
 	private int previousSchemaVersion;
 	private Args _args;
 
 	JdbcConnectionPool connection_pool;
 	DBManager manager;
-	
+	private static Logger logger = Logger.getLogger("logger.org.dcache.spacemanagent"+ManagerV2.class.getName());
+
 	public ManagerV2(String name, String argString) throws Exception {
 		super( name ,ManagerV2.class.getName(), argString , false );
 		_args     = getArgs();
@@ -162,7 +156,7 @@ public class ManagerV2
 		connection_pool = manager.getConnectionPool();
 		spaceManagerEnabled = 
 			isOptionSetToTrueOrYes("spaceManagerEnabled",spaceManagerEnabled);
-		say("spaceManagerEnabled="+spaceManagerEnabled);
+		if (logger.isDebugEnabled()) logger.debug("USING LOGGER spaceManagerEnabled="+spaceManagerEnabled);
 		if(_args.getOpt("poolManager") != null) {
 			poolManager = _args.getOpt("poolManager");
 		}
@@ -378,7 +372,14 @@ public class ManagerV2
 		StringBuffer sb = new StringBuffer();
 		StringBuffer id = new StringBuffer();
 		id.append(reservationId);
-		listSpaceReservations(false,id.toString(),sb);
+		listSpaceReservations(false,
+				      id.toString(),
+				      null,
+				      null,
+				      null,
+				      null,
+				      null,
+				      sb);
 		return sb.toString();
 	}
 
@@ -390,27 +391,78 @@ public class ManagerV2
 		return "update started";
 	}
     
-	public String hh_ls = " [-l] <id> # list space reservations";
+	public String hh_ls = " [-lg=LinkGroupName] [-lgid=LinkGroupId] [-vog=vogroup] [-vor=vorole] [-desc=description] [-l] <id> # list space reservations";
 
 	public String ac_ls_$_0_1(Args args) throws Exception {
+		String lgName        = args.getOpt("lg");
+		String lgid          = args.getOpt("lgid");
+		String voGroup       = args.getOpt("vog");
+		String voRole        = args.getOpt("vor");
+		String description   = args.getOpt("desc");
 		boolean isLongFormat = args.getOpt("l") != null;
 		String id = null;
 		if (args.argc() == 1) {
 			id = args.argv(0);
 		}
+
 		StringBuffer sb = new StringBuffer();
-		sb.append("Reservations:\n");
-		listSpaceReservations(isLongFormat,id,sb);
-		sb.append("\n\nLinkGroups:\n");
-		listLinkGroups(isLongFormat,false,id,sb);
+		if (description != null && id !=null ) { 
+			sb.append("Do not handle \"desc\" and id simultaneously\n");
+			return sb.toString();
+		}
+		
+		if (lgName==null&&lgid==null&&voGroup==null&&description==null) { 
+			sb.append("Reservations:\n");
+		}
+		listSpaceReservations(isLongFormat,
+				      id,
+				      lgName, 
+				      lgid,
+				      description,
+				      voGroup,
+				      voRole,
+				      sb);
+		if (lgName==null&&lgid==null&&voGroup==null&&description==null) { 
+			sb.append("\n\nLinkGroups:\n");
+			listLinkGroups(isLongFormat,false,id,sb);
+		}
 		return sb.toString();
 	}
 
+
 	private void listSpaceReservations(boolean isLongFormat, 
 					   String id, 
+					   String linkGroupName,
+					   String linkGroupId, 
+					   String description,
+					   String group,
+					   String role,
 					   StringBuffer sb) throws Exception {
 		IoPackage pkg = new  SpaceReservationIO();
 		HashSet spaces = null;
+
+		long lgId = 0;
+		LinkGroup lg = null;
+
+		if (linkGroupId!=null) { 
+			lgId = Long.parseLong(linkGroupId);
+			lg = getLinkGroup(lgId);
+		}
+		
+		if (linkGroupName!=null) { 
+			lg = getLinkGroupByName(linkGroupName);	
+			if (lgId!=0) { 
+				if (lg.getId()!=lgId) { 
+					sb.append("Cannot find LinkGroup with id=").append(linkGroupId).append(" and name=").append(linkGroupName);
+					return;
+				}
+			}
+		}
+		if (lg!=null) {
+			sb.append("Found LinkGroup:\n");	
+			lg.toStringBuffer(sb);
+			sb.append("\n");
+		}
 		
 		if(id != null) {
 			long longid = Long.parseLong(id);
@@ -419,43 +471,243 @@ public class ManagerV2
 							      SpaceReservationIO.SELECT_SPACE_RESERVATION_BY_ID,
 							      id);
 				if (spaces.isEmpty()==true) { 
+					if(lg==null) {
+						sb.append("Space with id=").append(id).append(" not found ");
+					}
+					else { 
+						sb.append("LinkGroup with id=").append(lg.getId()).append(" and name=").append(lg.getName()).append(" does not contain space with id=").append(id);
+					}
+					return;
+				}
+				for (Iterator i=spaces.iterator();i.hasNext();) {
+					Space space = (Space)i.next();
+					if (space.getLinkGroupId()!=lg.getId()) {
+						sb.append("LinkGroup with id=").append(lg.getId()).append(" and name=").append(lg.getName()).append(" does not contain space with id=").append(id);
+					}
+					else { 
+						space.toStringBuffer(sb);
+					}
+					sb.append('\n');
+				}
+				return;
+			}
+			catch(SQLException e) {
+				if(lg==null) {
 					sb.append("Space with id=").append(id).append(" not found ");
+				}
+				else { 
+					sb.append("LinkGroup with id=").append(lg.getId()).append(" and name=").append(lg.getName()).append(" does not contain space with id=").append(id);
+				}
+				return;
+			}
+		}
+		if (linkGroupName==null&&linkGroupId==null&&description==null&&group==null&&role==null){
+			try {
+				say("executing statement: "+SpaceReservationIO.SELECT_CURRENT_SPACE_RESERVATIONS);
+				spaces=manager.selectPrepared(pkg,SpaceReservationIO.SELECT_CURRENT_SPACE_RESERVATIONS);
+				int count = spaces.size();
+				long totalReserved = 0;
+				for (Iterator i=spaces.iterator(); i.hasNext();) {
+					Space space = (Space)i.next();
+					totalReserved += space.getSizeInBytes();
+					space.toStringBuffer(sb);
+					sb.append('\n');
+				}
+				sb.append("total number of reservations: ").append(count).append('\n');
+				sb.append("total number of bytes reserved: ").append(totalReserved);
+				return;
+				
+			}
+			catch(SQLException sqle) {
+				esay(sqle);
+				sb.append(sqle.getMessage());
+				return;
+			} 
+		}
+		if (description==null&&group==null&&role==null&&lg!=null) { 
+			try {
+				spaces=manager.selectPrepared(pkg,
+							      SpaceReservationIO.SELECT_SPACE_RESERVATION_BY_LINKGROUP_ID,
+							      lg.getId());
+				if (spaces.isEmpty()==true) { 
+					sb.append("LinkGroup with id=").append(lg.getId()).append(" and name=").append(lg.getName()).append(" does not contain any space reservations\n");
 					return;
 				}
 				for (Iterator i=spaces.iterator();i.hasNext();) {
 					Space space = (Space)i.next();
 					space.toStringBuffer(sb);
 					sb.append('\n');
-					return;
 				}
+				return;
 			}
 			catch(SQLException e) {
-				sb.append("Space with id=").append(id).append(" not found ");
+				sb.append("LinkGroup with id=").append(lg.getId()).append(" and name=").append(lg.getName()).append(" does not contain any space reservations\n");
+				return;
+			}
+			
+		}
+		if (description!=null) { 
+			try { 
+				if (lg==null) { 
+					    say("executing statement: "+SpaceReservationIO.SELECT_SPACE_RESERVATION_BY_DESC);
+					    spaces=manager.selectPrepared(pkg,SpaceReservationIO.SELECT_SPACE_RESERVATION_BY_DESC,
+									  description);
+				}
+				else { 
+					say("executing statement: "+SpaceReservationIO.SELECT_SPACE_RESERVATION_BY_DESC_AND_LINKGROUP_ID);
+					spaces=manager.selectPrepared(pkg,SpaceReservationIO.SELECT_SPACE_RESERVATION_BY_DESC_AND_LINKGROUP_ID,
+								      description,
+								      lg.getId());
+				}
+				if (spaces.isEmpty()==true) { 
+					if (lg==null) { 
+						sb.append("Space with description ").append(description).append(" not found ");
+					}
+					else { 
+						sb.append("LinkGroup with id=").append(lg.getId()).append(" and name=").append(lg.getName()).append(" does not contain space with description ").append(description);	
+					}
+					return;
+				}
+				for (Iterator i=spaces.iterator();i.hasNext();) {
+					Space space = (Space)i.next();
+					space.toStringBuffer(sb);
+					sb.append('\n');
+				}
+				return;
+			}
+			catch(SQLException e) {
+				if (lg==null) { 
+					sb.append("Space with description ").append(description).append(" not found ");
+				}
+				else { 
+					sb.append("LinkGroup with id=").append(lg.getId()).append(" and name=").append(lg.getName()).append(" does not contain space with description ").append(description);	
+				}
 				return;
 			}
 		}
-		try {
-			say("executing statement: "+SpaceReservationIO.SELECT_CURRENT_SPACE_RESERVATIONS);
-			spaces=manager.selectPrepared(pkg,SpaceReservationIO.SELECT_CURRENT_SPACE_RESERVATIONS);
-			int count = spaces.size();
-			long totalReserved = 0;
-			for (Iterator i=spaces.iterator(); i.hasNext();) {
-				Space space = (Space)i.next();
-				totalReserved += space.getSizeInBytes();
-				space.toStringBuffer(sb);
-				sb.append('\n');
+		if (role!=null&&group!=null) { 
+			try { 
+				if (lg==null) {
+					say("executing statement: "+SpaceReservationIO.SELECT_SPACE_RESERVATION_BY_VOGROUP_AND_VOROLE);
+					spaces=manager.selectPrepared(pkg,SpaceReservationIO.SELECT_SPACE_RESERVATION_BY_VOGROUP_AND_VOROLE,
+								      group, 
+								      role);
+				}
+				else { 	
+					say("executing statement: "+SpaceReservationIO.SELECT_SPACE_RESERVATION_BY_VOGROUP_AND_VOROLE_AND_LINKGROUP_ID);
+					spaces=manager.selectPrepared(pkg,SpaceReservationIO.SELECT_SPACE_RESERVATION_BY_VOGROUP_AND_VOROLE_AND_LINKGROUP_ID,
+								      group, 
+								      role,
+								      lg.getId());
+				
+				}
+				if (spaces.isEmpty()==true) { 
+					if (lg==null) { 
+						sb.append("Space with vorole ").append(role).append(" and vogroup ").append(group).append(" not found ");
+					}
+					else { 
+						sb.append("LinkGroup with id=").append(lg.getId()).append(" and name=").append(lg.getName()).append(" does not contain space with vorole ").append(role).append(" and vogroup ").append(group);	
+					}
+					return;
+				}
+				for (Iterator i=spaces.iterator();i.hasNext();) {
+					Space space = (Space)i.next();
+					space.toStringBuffer(sb);
+					sb.append('\n');
+				}
+				return;
 			}
-			sb.append("total number of reservations: ").append(count).append('\n');
-			sb.append("total number of bytes reserved: ").append(totalReserved);
-			return;
+			catch(SQLException e) {
+				if (lg==null) { 
+					sb.append("Space with vorole ").append(role).append(" and vogroup ").append(group).append(" not found ");
+				}
+				else { 
+					sb.append("LinkGroup with id=").append(lg.getId()).append(" and name=").append(lg.getName()).append(" does not contain space with vorole ").append(role).append(" and vogroup ").append(group);	
+				}
+				return;
+			}
 		}
-		catch(SQLException sqle) {
-			esay(sqle);
-			sb.append(sqle.getMessage());
-			return;
-		} 
+		if (group!=null) { 
+			try { 
+				if (lg==null) { 
+					say("executing statement: "+SpaceReservationIO.SELECT_SPACE_RESERVATION_BY_VOGROUP);
+					spaces=manager.selectPrepared(pkg,SpaceReservationIO.SELECT_SPACE_RESERVATION_BY_VOGROUP,
+								      group);
+				}
+				else { 
+					say("executing statement: "+SpaceReservationIO.SELECT_SPACE_RESERVATION_BY_VOGROUP_AND_LINKGROUP_ID);
+					spaces=manager.selectPrepared(pkg,SpaceReservationIO.SELECT_SPACE_RESERVATION_BY_VOGROUP_AND_LINKGROUP_ID,
+								      group,
+								      lg.getId());
+				}
+				if (spaces.isEmpty()==true) { 
+					if (lg==null) { 
+						sb.append("Space with vogroup ").append(group).append(" not found ");
+					}
+					else {
+						sb.append("LinkGroup with id=").append(lg.getId()).append(" and name=").append(" does not contain space with vogroup=").append(group);	
+					}
+					return;
+				}
+				for (Iterator i=spaces.iterator();i.hasNext();) {
+					Space space = (Space)i.next();
+					space.toStringBuffer(sb);
+					sb.append('\n');
+				}
+				return;
+			}
+			catch(SQLException e) {
+				if (lg==null) { 
+					sb.append("Space with vogroup ").append(group).append(" not found ");
+				}
+				else {
+					sb.append("LinkGroup with id=").append(lg.getId()).append(" and name=").append(" does not contain space with vogroup=").append(group);	
+				}
+				return;
+			}
+		}    
+		if (role!=null) { 
+			try { 
+				if (lg==null) { 
+					say("executing statement: "+SpaceReservationIO.SELECT_SPACE_RESERVATION_BY_VOROLE);
+					spaces=manager.selectPrepared(pkg,SpaceReservationIO.SELECT_SPACE_RESERVATION_BY_VOROLE,
+							      group);
+				}
+				else { 
+					say("executing statement: "+SpaceReservationIO.SELECT_SPACE_RESERVATION_BY_VOROLE_AND_LINKGROUP_ID);
+					spaces=manager.selectPrepared(pkg,SpaceReservationIO.SELECT_SPACE_RESERVATION_BY_VOROLE_AND_LINKGROUP_ID,
+								      group,
+								      lg.getId());
+				}
+				if (spaces.isEmpty()==true) { 
+					if (lg==null) { 
+						sb.append("Space with vogroup ").append(group).append(" not found ");
+					}
+					else { 
+						sb.append("LinkGroup with id=").append(lg.getId()).append(" and name=").append(" does not contain space with vorole=").append(role);	
+					}
+					return;
+				}
+				for (Iterator i=spaces.iterator();i.hasNext();) {
+					Space space = (Space)i.next();
+					space.toStringBuffer(sb);
+					sb.append('\n');
+				}
+				return;
+			}
+			catch(SQLException e) {
+				if (lg==null) { 
+					sb.append("Space with vogroup ").append(group).append(" not found ");
+				}
+				else { 
+					sb.append("LinkGroup with id=").append(lg.getId()).append(" and name=").append(" does not contain space with vorole=").append(role);	
+				}
+				return;
+			}
+		}
+		
 	}
-
+		
 	private void listLinkGroups(boolean isLongFormat, 
 				    boolean all, 
 				    String id, 
@@ -3200,7 +3452,7 @@ public class ManagerV2
 				}
 			}
 			catch (Exception e) { 
-				esay(e);
+				esay("file "+pnfsId+":"+e.getMessage());
 				if (connection!=null) { 
 					connection.rollback();
 					connection_pool.returnConnection(connection);
