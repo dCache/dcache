@@ -150,7 +150,7 @@ public class AbstractCell extends CellAdapter
     protected Logger _logger;
 
     /** Cached message handlers for fast dispatch. */
-    final private Map<Class,Collection<Receiver>> _receivers =
+    private final Map<Class,Collection<Receiver>> _receivers =
         new HashMap<Class,Collection<Receiver>>();
 
     /**
@@ -158,7 +158,7 @@ public class AbstractCell extends CellAdapter
      *
      * @see addMessageListener
      */
-    final private Collection<Object> _messageListeners =
+    private final Collection<Object> _messageListeners =
         new ArrayList<Object>();
 
     public AbstractCell(String cellName, String args, boolean startNow)
@@ -178,54 +178,62 @@ public class AbstractCell extends CellAdapter
         addMessageListener(this);
     }
 
+    /**
+     * Returns the friendly cell name used for logging. It defaults to
+     * the cell name.
+     */
+    protected String getFriendlyName()
+    {
+        return getCellName();
+    }
+
     public void debug(String str)
     {
-        _logger.debug(str);
+        _logger.debug("(" + getFriendlyName() + ") " + str);
     }
 
     public void info(String str)
     {
         pin(str);
-        _logger.info(str);
+        _logger.info("(" + getFriendlyName() + ") " + str);
     }
 
     public void warn(String str)
     {
         pin(str);
-        _logger.warn(str);
+        _logger.warn("(" + getFriendlyName() + ") " + str);
     }
 
     public void error(String str)
     {
         pin(str);
-        _logger.error(str);
-    }
-    // we still need the stack trace sometimes
-    public void error (Throwable t) {
-      pin(t.toString());
-      StringWriter sw = new StringWriter() ;
-      t.printStackTrace( new PrintWriter( sw ) ) ;
-      StringTokenizer st = new StringTokenizer( sw.toString() , "\n" ) ;
-      while( st.hasMoreTokens() ){
-         _logger.error(st.nextToken());
-      }
+        _logger.error("(" + getFriendlyName() + ") " + str);
     }
 
+    public void error(Throwable t)
+    {
+        pin(t.toString());
+        StringWriter sw = new StringWriter();
+        t.printStackTrace(new PrintWriter(sw));
+        for (String s : sw.toString().split("\n")) {
+            _logger.error("(" + getFriendlyName() + ") " + s);
+        }
+    }
 
     public void fatal(String str)
     {
         pin(str);
-        _logger.fatal(str);
+        _logger.fatal("(" + getFriendlyName() + ") " + str);
     }
 
-    public void fatal (Throwable t) {
-      pin(t.toString());
-      StringWriter sw = new StringWriter() ;
-      t.printStackTrace( new PrintWriter( sw ) ) ;
-      StringTokenizer st = new StringTokenizer( sw.toString() , "\n" ) ;
-      while( st.hasMoreTokens() ){
-         _logger.fatal(st.nextToken());
-      }
+    public void fatal(Throwable t)
+    {
+        pin(t.toString());
+        StringWriter sw = new StringWriter();
+        t.printStackTrace(new PrintWriter(sw));
+        for (String s : sw.toString().split("\n")) {
+            _logger.error("(" + getFriendlyName() + ") " + s);
+        }
     }
 
     /** @deprecated */
