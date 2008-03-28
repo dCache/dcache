@@ -260,7 +260,7 @@ public class SrmLs {
 		else { 
 		    status = new TReturnStatus(TStatusCode.SRM_INVALID_PATH, srme.getMessage());
 		    srmLsResponse.getReturnStatus().setStatusCode(TStatusCode.SRM_FAILURE);
-		    srmLsResponse.getReturnStatus().setExplanation("path does not exist for one or more files specified, check individual statuses");
+		    srmLsResponse.getReturnStatus().setExplanation("path does not exist for one or more files specified, check individual statuses \n");
 		}
 
 		metaDataPathDetail =  new TMetaDataPathDetail(path,
@@ -560,8 +560,8 @@ public class SrmLs {
                     if (metaDataPathDetail.getStatus().getStatusCode() ==
 			TStatusCode.fromString(TStatusCode._SRM_INVALID_PATH)) {
                         
-                        sb.append(depthPrefix).append(" File/directory " + i + " " +
-						      metaDataPathDetail.getPath() + " does not exist.");
+			    sb.append(TStatusCode._SRM_INVALID_PATH).append(" ").append(depthPrefix).append(" File/directory " + i + " " +
+						      metaDataPathDetail.getPath() + " does not exist. \n" );
                     } 
 		    else {                        
                         sb.append(depthPrefix);
