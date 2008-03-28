@@ -383,7 +383,8 @@ public class Storage
             __poolManagerTimeout);
         
         config.setPort(getIntOption("srmport",config.getPort()));
-        config.setGlue_mapfile(getOption("srmmap",config.getGlue_mapfile()));
+        config.setSizeOfSingleRemoveBatch(getIntOption("size-of-single-remove-batch",config.getSizeOfSingleRemoveBatch()));
+	config.setGlue_mapfile(getOption("srmmap",config.getGlue_mapfile()));
         
         config.setKpwdfile( getOption("kpwd-file",config.getKpwdfile()) );
         config.setUseGplazmaAuthzCellFlag(isOptionSetToTrueOrYes(
