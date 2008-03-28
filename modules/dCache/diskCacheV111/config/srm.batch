@@ -115,7 +115,7 @@ set context -c lsScript          ${ourHomeDir}/lambdastation/scripts/open_ls_tic
 set context -c overwriteEnabled false
 set context -c srmOverwriteByDefault false
 
-# variable that controls number of simulaneous rm requests 
+# variable that controls number of simultaneous rm requests 
 # sent by srmrm to PnfsManager
 set context -c srmSizeOfSingleRemoveBatch 100
 
