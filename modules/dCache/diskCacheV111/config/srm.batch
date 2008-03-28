@@ -115,6 +115,10 @@ set context -c lsScript          ${ourHomeDir}/lambdastation/scripts/open_ls_tic
 set context -c overwriteEnabled false
 set context -c srmOverwriteByDefault false
 
+# variable that controls number of simulaneous rm requests 
+# sent by srmrm to PnfsManager
+set context -c srmSizeOfSingleRemoveBatch=100
+
 # this is the directory in which the delegated user credentials will be stored 
 # as files. We recommend set permissions to 700 on this dir
 set context -c srmUserCredentialsDirectory  ${ourHomeDir}/credentials
@@ -388,4 +392,5 @@ create diskCacheV111.srm.dcache.Storage  SRM-${thisHostname} \
         -overwrite_by_default=${srmOverwriteByDefault} \
         -custom-get-host-by-addr=${srmCustomGetHostByAddr} \
         -ignore-client-protocol-order=${srmIgnoreClientProtocolOrder}\
+        -size-of-single-remove-batch=${srmSizeOfSingleRemoveBatch}\
        "
