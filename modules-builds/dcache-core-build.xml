@@ -88,7 +88,7 @@
 		    </and>
 		  </condition>
 	</target>
-	
+
 	<target name="isUptodate.info.jar">
 		<condition property="info.jar.upToDate">
 			<and>
@@ -278,9 +278,9 @@
 			<selector refid="xrootd-tokenauthz.classpath.selector" />
 		</fileset>
 	</path>
-	
+
 	<!-- Classpath for info.jar -->
-	
+
 	<selector id="info.classpath.selector">
 		<or>
 			<filename name="**/dcache.jar" />
@@ -343,7 +343,7 @@
            <smc target="graph"
                smfile="${sourceDir}/org/dcache/services/pinmanager/Pin.sm"
                destdir="${fsmDir}"
-               smcjar="${smc.jar}"/> 
+               smcjar="${smc.jar}"/>
           <smc target="java"
                smfile="${sourceDir}/org/dcache/services/pinmanager/Pinner.sm"
                destdir="${sourceDir}/org/dcache/services/pinmanager/"
@@ -380,7 +380,7 @@
 		<mkdir dir="${buildDir}/core" />
 
 		<javac destdir="${buildDir}/core" classpathref="dcache.classpath" source="${javac.source}" target="${javac.target}" debug="${javac.debug}" verbose="${javac.verbose}"  encoding="${javac.encoding}">
-			
+
 			<src path="${sourceDir}" />
 			<include name="${dcache.packagePrefix}/**" />
 			<include name="org/**" />
@@ -525,12 +525,12 @@
 		<mkdir dir="${buildDir}/gplazma" />
 
 		<javac destdir="${buildDir}/gplazma" source="${javac.source}" target="${javac.target}" debug="${javac.debug}" verbose="${javac.verbose}">
-			
+
 			<src path="${sourceDir}" />
-			
+
 			<classpath refid="gplazma.classpath"/>
 			<classpath refid="dcache.classpath"/>
-			
+
 			<include name="${dcache.packagePrefix}/services/authorization/**" />
 			<include name="${dcache.packagePrefix}/admin/UserMetaDataProvider_gPlazma.java" />
 		</javac>
@@ -563,10 +563,10 @@
 
 		<javac destdir="${buildDir}/xrootd-tokenauthz" source="${javac.source}" target="${javac.target}" debug="${javac.debug}" verbose="${javac.verbose}">
 			<src path="${sourceDir}" />
-			
+
 			<classpath refid="dcache.classpath"/>
 			<classpath refid="xrootd-tokenauthz.classpath"/>
-			
+
 			<include name="org/dcache/xrootd/security/plugins/tokenauthz/**" />
 		</javac>
 	</target>
@@ -589,24 +589,24 @@
 		</jar>
 
 	</target>
-	
-	<!--  
+
+	<!--
 	     I N F O   S E R V I C E
 	-->
-	
+
 	<target name="info.compile" unless="info.jar.upToDate" depends="dcache.jar">
 		<mkdir dir="${buildDir}/info"/>
-		
+
 		<javac destdir="${buildDir}/info" source="${javac.source}" target="${javac.target}" debug="${javac.debug}" verbose="${javac.verbose}">
 			<src path="${sourceDir}" />
 			<classpath refid="dcache.classpath"/>
 			<classpath refid="info.classpath"/>
-			
+
 			<include name="org/dcache/services/info/**" />
 		</javac>
 	</target>
 
-	
+
 	<target name="info.jar" depends="isUptodate.info.jar,info.compile" unless="info.jar.upToDate" description="Create info.jar">
 		<jar jarfile="${info.jar}">
 			<fileset dir="${buildDir}/info" />
@@ -623,7 +623,7 @@
 			</manifest>
 		</jar>
 	</target>
-	
+
 	<!--
              Targets for dcache-srm.jar
   -->
@@ -647,7 +647,7 @@
 			<classpath refid="dcache-srm.classpath"/>
 			<classpath refid="dcache.classpath"/>
 			<classpath refid="gplazma.classpath"/>
-			
+
 			<include name="${dcache.packagePrefix}/doors/GsiFtpDoorV1.java" />
 			<include name="${dcache.packagePrefix}/movers/RemoteGsiftpTransferProtocol_1.java" />
 			<include name="${dcache.packagePrefix}/services/TransferManager.java" />
@@ -804,11 +804,13 @@
 		<copy file="${libDir}/Chimera/chimera-set-acl.sh" tofile="${binDir}/libexec/chimera/chimera-set-acl.sh" />
 		<copy file="${libDir}/Chimera/pnfs2chimera.sh" tofile="${binDir}/libexec/chimera/pnfs2chimera.sh" />
 		<copy file="${libDir}/Chimera/pool2chimera.sh" tofile="${binDir}/libexec/chimera/pool2chimera.sh" />
+		<copy file="${libDir}/Chimera/cli.sh" tofile="${binDir}/libexec/chimera/cli.sh" />
 	    <chmod file="${binDir}/libexec/chimera/chimera-nfs-run.sh"  perm="ugo+rx" />
 	    <chmod file="${binDir}/libexec/chimera/chimera-set-acl.sh"  perm="ugo+rx" />
 	    <chmod file="${binDir}/libexec/chimera/chimera-get-acl.sh"  perm="ugo+rx" />
 	    <chmod file="${binDir}/libexec/chimera/pnfs2chimera.sh"  perm="ugo+rx" />
-	      <chmod file="${binDir}/libexec/chimera/pool2chimera.sh"  perm="ugo+rx" />
+	    <chmod file="${binDir}/libexec/chimera/pool2chimera.sh"  perm="ugo+rx" />
+		<chmod file="${binDir}/libexec/chimera/cli.sh"  perm="ugo+rx" />
 	    <copy todir="${binDir}/libexec/chimera/sql">
 	        <fileset dir="${libDir}/Chimera/sql" />
 	    </copy>
@@ -940,10 +942,10 @@
 			</fileset>
 		</copy>
 	</target>
-	
+
 	<target name="info-bin" depends="info.jar">
 		<mkdir dir="${binDir}/classes" />
-		
+
 		<copy file="${classesDir}/info.jar" todir="${binDir}/classes" />
 	</target>
 
