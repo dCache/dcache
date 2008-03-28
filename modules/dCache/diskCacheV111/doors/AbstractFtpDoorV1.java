@@ -1137,10 +1137,6 @@ public abstract class AbstractFtpDoorV1
 
                 closeAdapter();
 
-                /* I don't know why this is necessary... any ideas?
-                 */
-                reply("");
-
                 debug("FTP Door: end of stream encountered");
             }
         } finally {
