@@ -1,125 +1,4 @@
-// $Id: Configuration.java,v 1.30 2007-10-19 20:57:05 tdh Exp $
-// $Log: not supported by cvs2svn $
-// Revision 1.29  2007/09/14 21:11:44  timur
-// rename srmSpaceManager option into srmImplicitSpaceManagerEnabled, make its value set to yes by default is srmSpaceManagerEnabled=yes and always set to no if srmImplicitSpaceManagerEnabled=no
-//
-// Revision 1.28  2007/04/09 22:48:27  timur
-// added a flag that controls default overwrite behaviour, ouside of srmV2 specific reaction to the overwrite mode
-//
-// Revision 1.27  2007/03/27 23:38:32  timur
-// fixed overwrite mode support related bug
-//
-// Revision 1.26  2007/03/10 00:13:21  timur
-// started work on adding support for optional overwrite
-//
-// Revision 1.25  2007/03/08 23:36:56  timur
-// merging changes from the 1-7 branch related to database performance and reduced usage of database when monitoring is not used
-//
-// Revision 1.24  2007/03/06 23:12:54  timur
-// limit queue of jdbc requests, allow multiple threads for sql request execution
-// Revision 1.18.2.7  2007/03/08 01:14:05  timur
-// make RequestCredentialStorage store delegated credential in file instead of database
-//
-// Revision 1.23  2007/01/06 00:23:56  timur
-// merging production branch changes to database layer to improve performance and reduce number of updates
-//
-// Revision 1.18.2.3  2007/01/04 02:58:56  timur
-// changes to database layer to improve performance and reduce number of updates
-//
-// Revision 1.18.2.2  2006/10/04 21:52:58  litvinse
-// protect against empty file name of postres password file
-//
-// Revision 1.18.2.1  2006/08/31 20:35:40  podstvkv
-// testing cvs, no functionality changes (dmitry)
-//
-// Revision 1.18  2006/06/09 15:25:37  tdh
-// dded use_gplazmaAuthzCellFlag to turn on use of gplazma cell for authentification/Storage Element info.
-//
-// Revision 1.17  2006/03/23 22:43:54  moibenko
-// added Lambda Station related parameters
-//
-// Revision 1.16  2006/01/19 02:04:23  timur
-// restore policy for copy
-//
-// Revision 1.15  2005/11/16 22:14:09  litvinse
-// implemented Mv
-//
-// Revision 1.14  2005/11/15 01:11:03  litvinse
-// implemented SrmMkdir function
-//
-// Revision 1.13  2005/11/12 22:16:02  litvinse
-// implemented SrmRmDir
-//
-// WARNING: if directory is sym-link or recursion level is specified an
-// 	 a subdirectory contains sym-link - it will follow it. Do not
-// 	 use if there are symbolic link.
-//
-// Revision 1.12  2005/11/01 17:07:40  litvinse
-// implemented SrmRm
-//
-// Revision 1.11  2005/10/25 00:07:43  timur
-// more v2 changes
-//
-// Revision 1.10  2005/08/24 23:40:05  podstvkv
-// MD5 password authentication added
-//
-// Revision 1.9  2005/06/06 21:59:05  leoheska
-// Added srm-ls functionality
-//
-// Revision 1.8  2005/05/19 19:38:33  timur
-// adding the Abhishek Rana's modification for auth. service support
-//
-// Revision 1.7  2005/05/04 21:54:53  timur
-// new scheduling policy on restart for put and get request - do not schedule the request if the user does not update its status
-//
-// Revision 1.6  2005/04/28 13:09:58  timur
-// added postgres vacuum thread
-//
-// Revision 1.5  2005/04/01 05:00:33  timur
-// config change used for storage-element-info
-//
-// Revision 1.4  2005/03/23 18:10:39  timur
-// more space reservation related changes, need to support it in case of "copy"
-//
-// Revision 1.3  2005/03/09 23:21:18  timur
-// more database checks, more space reservation code
-//
-// Revision 1.2  2005/03/01 23:10:39  timur
-// Modified the database scema to increase database operations performance and to account for reserved space"and to account for reserved space
-//
-// Revision 1.1  2005/01/14 23:07:16  timur
-// moving general srm code in a separate repository
-//
-// Revision 1.15  2005/01/07 20:55:31  timur
-// changed the implementation of the built in client to use apache axis soap toolkit
-//
-// Revision 1.14  2004/11/17 21:56:49  timur
-// adding the option which allows to store the pending or running requests in memory, fixed a restore from database bug
-//
-// Revision 1.13  2004/10/28 02:41:32  timur
-// changed the database scema a little bit, fixed various synchronization bugs in the scheduler, added interactive shell to the File System srm
-//
-// Revision 1.12  2004/08/06 19:35:26  timur
-// merging branch srm-branch-12_May_2004 into the trunk
-//
-// Revision 1.11.2.7  2004/07/29 22:17:30  timur
-// Some functionality for disk srm is working
-//
-// Revision 1.11.2.6  2004/07/23 19:53:56  timur
-// Configuration now can be saved to or restored from an xml file
-//
-// Revision 1.11.2.5  2004/06/28 21:54:11  timur
-// added configuration options for the schedulers
-//
-// Revision 1.11.2.4  2004/06/22 01:38:07  timur
-// working on the database part, created persistent storage for getFileRequests, for the next requestId
-//
-// Revision 1.11.2.3  2004/06/18 22:20:53  timur
-// adding sql database storage for requests
-//
-// Revision 1.11.2.2  2004/06/16 19:44:34  timur
-// added cvs logging tags and fermi copyright headers at the top, removed Copier.java and CopyJob.java
-//
+// $Id$
 
 /*
 COPYRIGHT STATUS:
@@ -355,6 +234,7 @@ public class Configuration {
     private boolean jdbcMonitoringDebugLevel = false;
     private boolean overwrite = false;
     private boolean overwrite_by_default = false;
+	private int sizeOfSingleRemoveBatch = 100;
     
     /** Creates a new instance of Configuration */
     public Configuration() {
@@ -2386,6 +2266,14 @@ public class Configuration {
 
     public void setOverwrite(boolean overwrite) {
         this.overwrite = overwrite;
+    }
+
+    public int getSizeOfSingleRemoveBatch() {
+	    return sizeOfSingleRemoveBatch;
+    }
+
+    public void setSizeOfSingleRemoveBatch(int size) {
+	    sizeOfSingleRemoveBatch=size;
     }
 
     public boolean isOverwrite_by_default() {
