@@ -451,7 +451,7 @@ public class Configuration {
     
 	private String rm_options =
 		" rm options :\n"+
-		"\t\t no additional options are suported for \"\t-rm\". \n"+
+		"\t\t no additional options are suported for srmrm. \n"+
 		"\t\t Applies to files only.\n"+
 		"Examples: \n"+
 		"\t\t srmrm srm://fledgling06.fnal.gov:8443/srm/managerv2?SFN=/dir/file  \n"+
@@ -495,7 +495,7 @@ public class Configuration {
 				" default options will be read from configuration file \n"+
 				" but can be overridden by the command line options\n"+
 				" the command line options are one or more of the following:\n"+
-				general_options+storage_info_options;
+				(isHelp()==true?general_options+storage_info_options:storage_info_options);
 		}
 		if (getFileMetaData) {
 			return
@@ -565,7 +565,7 @@ public class Configuration {
 				" default options will be read from configuration file \n"+
 				" but can be overridden by the command line options\n"+
 				" the command line options are one or more of the following:\n"+
-				general_options+getSpaceMetaData_options;
+				(isHelp()==true?general_options+getSpaceMetaData_options:getSpaceMetaData_options);
             
             
 		}
@@ -575,7 +575,7 @@ public class Configuration {
 				" default options will be read from configuration file \n"+
 				" but can be overridden by the command line options\n"+
 				" the command line options are one or more of the following:\n"+
-				general_options+releaseSpace_options;
+				(isHelp()==true?general_options+releaseSpace_options:releaseSpace_options);
 		}
 		if (ls) {
 			return
@@ -583,7 +583,7 @@ public class Configuration {
 				" default options will be read from configuration file \n"+
 				" but can be overridden by the command line options\n"+
 				" the command line options are one or more of the following:\n"+
-				general_options+ls_options;
+				(isHelp()==true?general_options+ls_options:ls_options);
 		}
 		if (is_rm) {
 			return
@@ -591,7 +591,7 @@ public class Configuration {
 				" default options will be read from configuration file \n"+
 				" but can be overridden by the command line options\n"+
 				" the command line options are one or more of the following:\n"+
-				general_options+rm_options;
+				(isHelp()==true?general_options+rm_options:rm_options);
 		}
 		if (is_mv) {
 			return
@@ -599,7 +599,7 @@ public class Configuration {
 				" default options will be read from configuration file \n"+
 				" but can be overridden by the command line options\n"+
 				" the command line options are one or more of the following:\n"+
-				general_options+move_options;
+				(isHelp()==true?general_options+move_options:move_options);
 		}
 		if (is_getRequestSummary) {
 			return
@@ -615,7 +615,7 @@ public class Configuration {
 				" default options will be read from configuration file \n"+
 				" but can be overridden by the command line options\n"+
 				" the command line options are one or more of the following:\n"+
-				general_options+get_request_summary_options;
+				(isHelp()==true?general_options+get_request_summary_options:get_request_summary_options);
 		}
 		if (is_rmdir) {
 			return
@@ -623,7 +623,7 @@ public class Configuration {
 				" default options will be read from configuration file \n"+
 				" but can be overridden by the command line options\n"+
 				" the command line options are one or more of the following:\n"+
-				general_options+rmdir_options;
+				(isHelp()==true?general_options+rmdir_options:rmdir_options);
 		}
 		if (is_mkdir) {
 			return
@@ -631,7 +631,7 @@ public class Configuration {
 				" default options will be read from configuration file \n"+
 				" but can be overridden by the command line options\n"+
 				" the command line options are one or more of the following:\n"+
-				general_options+mkdir_options;
+				(isHelp()==true?general_options+mkdir_options:mkdir_options);
 		}
 		if(stage) {
 			return
@@ -639,7 +639,7 @@ public class Configuration {
 				" default options will be read from configuration file \n"+
 				" but can be overridden by the command line options\n"+
 				" the command line options are one or more of the following:\n"+
-				general_options+stage_options;
+				(isHelp()==true?general_options+stage_options:stage_options);
             
 		}
 		if(getPermission) {
@@ -648,7 +648,7 @@ public class Configuration {
 				" default options will be read from configuration file \n"+
 				" but can be overridden by the command line options\n"+
 				" the command line options are one or more of the following:\n"+
-				general_options+getPermission_options;
+				(isHelp()==true?general_options+getPermission_options:getPermission_options);
 		}
 		if(checkPermission) {
 			return
@@ -656,7 +656,7 @@ public class Configuration {
 				" default options will be read from configuration file \n"+
 				" but can be overridden by the command line options\n"+
 				" the command line options are one or more of the following:\n"+
-				general_options+checkPermission_options;
+				(isHelp()==true?general_options+checkPermission_options:checkPermission_options);
 		}
 		if(setPermission) {
 			return
@@ -664,7 +664,7 @@ public class Configuration {
 				" default options will be read from configuration file \n"+
 				" but can be overridden by the command line options\n"+
 				" the command line options are one or more of the following:\n"+
-				general_options+setPermission_options;
+				(isHelp()==true?general_options+setPermission_options:setPermission_options);
 		}
 		if(extendFileLifetime) { 
 			return
@@ -672,7 +672,7 @@ public class Configuration {
 				" default options will be read from configuration file \n"+
 				" but can be overridden by the command line options\n"+
 				" the command line options are one or more of the following:\n"+
-				general_options+extendFileLifetime_options;
+				(isHelp()==true?general_options+extendFileLifetime_options:extendFileLifetime_options);
 		}
 		if(ping) {
 			return
