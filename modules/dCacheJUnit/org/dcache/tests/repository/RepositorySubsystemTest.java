@@ -7,15 +7,20 @@ import java.util.*;
 import java.io.*;
 
 import org.junit.*;
-import junit.framework.AssertionFailedError;
 
 import com.sleepycat.je.DatabaseException;
 import diskCacheV111.repository.*;
-import diskCacheV111.util.*;
+import diskCacheV111.util.PnfsId;
+import diskCacheV111.util.PnfsHandler;
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.FileNotInCacheException;
+import diskCacheV111.util.FileInCacheException;
 import diskCacheV111.vehicles.*;
 import dmg.cells.nucleus.*;
 import dmg.util.*;
 import org.dcache.tests.cells.CellAdapterHelper;
+import org.dcache.tests.cells.CellStubHelper;
+import org.dcache.tests.cells.Message;
 
 import org.dcache.pool.repository.v4.CacheRepositoryV4;
 import org.dcache.pool.repository.v5.CacheRepositoryV5;
@@ -24,9 +29,11 @@ import org.dcache.pool.repository.SpaceRecord;
 import org.dcache.pool.repository.EntryState;
 import static org.dcache.pool.repository.EntryState.*;
 import org.dcache.pool.repository.ReadHandle;
+import org.dcache.pool.repository.WriteHandle;
 import org.dcache.pool.repository.CacheEntry;
 import org.dcache.pool.repository.StateChangeListener;
 import org.dcache.pool.repository.StateChangeEvent;;
+import org.dcache.pool.repository.v3.RepositoryException;
 
 public class RepositorySubsystemTest
     implements StateChangeListener
@@ -34,6 +41,7 @@ public class RepositorySubsystemTest
     private long size1 = 1024;
     private long size2 = 1024;
     private long size3 = 1024;
+    private long size4 = 1024;
 
     private PnfsId id1; // Precious
     private PnfsId id2; // Cached
@@ -43,6 +51,7 @@ public class RepositorySubsystemTest
     private StorageInfo info1;
     private StorageInfo info2;
     private StorageInfo info3;
+    private StorageInfo info4;
 
     private PnfsHandler pnfs;
 
@@ -117,6 +126,7 @@ public class RepositorySubsystemTest
         info1 = createStorageInfo(size1);
         info2 = createStorageInfo(size2);
         info3 = createStorageInfo(size3);
+        info4 = createStorageInfo(0);
 
         root = File.createTempFile("dtest", null);
         if (!root.delete())
@@ -151,6 +161,7 @@ public class RepositorySubsystemTest
 
     @After
     public void tearDown()
+        throws InterruptedException
     {
         if (root != null)
             deleteDirectory(root);
@@ -173,8 +184,8 @@ public class RepositorySubsystemTest
     public void assertNoStateChangeEvent()
     {
         if (stateChangeEvents.size() > 0)
-            throw new AssertionFailedError("Unexpected state change event: "
-                                           + stateChangeEvents.remove());
+            fail("Unexpected state change event: "
+                 + stateChangeEvents.remove());
     }
 
     private void assertSpaceRecord(long total, long free, long precious, long removable)
@@ -205,8 +216,15 @@ public class RepositorySubsystemTest
                 handle.close();
             }
         } catch (FileNotInCacheException e) {
-            throw new AssertionFailedError("Expected entry " + id + " not found");
+            fail("Expected entry " + id + " not found");
         }
+    }
+
+    @Test(expected=IllegalStateException.class)
+    public void testRunInventoryTwiceFails()
+        throws IOException, RepositoryException
+    {
+        repository.runInventory();
     }
 
     @Test
@@ -223,8 +241,15 @@ public class RepositorySubsystemTest
         assertCanOpen(id3, size3, CACHED);
     }
 
+    @Test(expected=FileNotInCacheException.class)
+    public void testOpenEntryFileNotFound()
+        throws FileNotInCacheException
+    {
+        repository.openEntry(id4);
+    }
+
     @Test
-    public void testStateChange()
+    public void testSetState()
         throws FileNotInCacheException
     {
         assertCanOpen(id1, size1, PRECIOUS);
@@ -235,6 +260,27 @@ public class RepositorySubsystemTest
         repository.setState(id1, PRECIOUS);
         expectStateChangeEvent(id1, CACHED, PRECIOUS);
         assertCanOpen(id1, size1, PRECIOUS);
+    }
+
+    @Test(expected=FileNotInCacheException.class)
+    public void testSetStateFileNotFound()
+        throws FileNotInCacheException
+    {
+        repository.setState(id4, CACHED);
+    }
+
+    @Test(expected=IllegalArgumentException.class)
+    public void testSetStateToNew()
+        throws FileNotInCacheException
+    {
+        repository.setState(id1, NEW);
+    }
+
+    @Test(expected=IllegalArgumentException.class)
+    public void testSetStateToDestroyed()
+        throws FileNotInCacheException
+    {
+        repository.setState(id1, DESTROYED);
     }
 
     @Test(expected=IllegalStateException.class)
@@ -315,6 +361,132 @@ public class RepositorySubsystemTest
         repository.openEntry(id1);
     }
 
+    @Test(expected=FileInCacheException.class)
+    public void testCreateEntryFileExists()
+        throws FileInCacheException
+    {
+        repository.createEntry(id1, info1, FROM_CLIENT, PRECIOUS, null);
+    }
+
+    /* Helper method for creating a fourth entry in the repository.
+     */
+    private void createEntry4(final long overallocation,
+                              final boolean failSetLength,
+                              final boolean failAddCacheLocation,
+                              final boolean cancel,
+                              final boolean keep,
+                              final EntryState transferState,
+                              final EntryState finalState)
+        throws Throwable
+    {
+        new CellStubHelper() {
+            @Message(required=true,step=1,cell="pnfs")
+            public Object message(PnfsSetLengthMessage msg)
+            {
+                assertEquals(size4, msg.getLength());
+                if (failSetLength) {
+                    msg.setFailed(1, null);
+                } else {
+                    msg.setSucceeded();
+                }
+                return msg;
+            }
+
+            @Message(required=true,step=1,cell="pnfs")
+            public Object message(PnfsAddCacheLocationMessage msg)
+            {
+                if (failAddCacheLocation) {
+                    msg.setFailed(1, null);
+                } else {
+                    msg.setSucceeded();
+                }
+                return msg;
+            }
+
+            protected void run()
+                throws FileInCacheException,
+                       CacheException,
+                       InterruptedException,
+                       IOException
+            {
+                WriteHandle handle =
+                    repository.createEntry(id4, info4, transferState,
+                                           finalState, null);
+                try {
+                    handle.allocate(size4 + overallocation);
+                    createFile(handle.getFile(), size4);
+                    if (cancel)
+                        handle.cancel(keep);
+                    assertStep("No messages received yet", 0);
+                } finally {
+                    handle.close();
+                }
+            }
+        };
+    }
+
+
+    @Test
+    public void testCreateEntry()
+        throws Throwable
+    {
+        createEntry4(0, false, false, false, false, FROM_CLIENT, PRECIOUS);
+        assertCanOpen(id4, size4, PRECIOUS);
+        assertSpaceRecord(5120, 1024, 2048, 1024);
+    }
+
+    @Test(expected=CacheException.class)
+    public void testCreateEntrySetLengthFailed()
+        throws Throwable
+    {
+        try {
+            createEntry4(0, true, false, false, false, FROM_CLIENT, PRECIOUS);
+        } finally {
+            assertCanOpen(id4, size4, BROKEN);
+            assertSpaceRecord(5120, 1024, 1024, 1024);
+        }
+        // TODO: Check notification
+    }
+
+    @Test
+    public void testCreateEntryUnderallocation()
+        throws Throwable
+    {
+        createEntry4(-100, false, false, false, false, FROM_CLIENT, PRECIOUS);
+        assertCanOpen(id4, size4, PRECIOUS);
+        assertSpaceRecord(5120, 1024, 2048, 1024);
+        // TODO: Check notification
+    }
+
+    @Test
+    public void testCreateEntryOverallocation()
+        throws Throwable
+    {
+        createEntry4(100, false, false, false, false, FROM_CLIENT, PRECIOUS);
+        assertCanOpen(id4, size4, PRECIOUS);
+        assertSpaceRecord(5120, 1024, 2048, 1024);
+        // TODO: Check notification
+    }
+
+    @Test(expected=IllegalArgumentException.class)
+    public void testCreateEntryNegativeAllocation()
+        throws Throwable
+    {
+        WriteHandle handle =
+            repository.createEntry(id4, info4, FROM_CLIENT, PRECIOUS, null);
+        handle.allocate(-1);
+    }
+
+    @Test
+    public void testCreateEntryOutOfSpace()
+        throws Throwable
+    {
+        repository.setSize(3072);
+        createEntry4(0,false, false, false, false, FROM_CLIENT, PRECIOUS);
+        assertCanOpen(id4, size4, PRECIOUS);
+        assertSpaceRecord(3072, 0, 2048, 0);
+        // TODO: Check notification
+    }
 }
 
 
