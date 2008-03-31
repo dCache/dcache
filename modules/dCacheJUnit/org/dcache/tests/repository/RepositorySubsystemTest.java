@@ -63,8 +63,7 @@ public class RepositorySubsystemTest
 
     private Queue<StateChangeEvent> stateChangeEvents;
 
-    private String args =
-        "-metaDataRepository=org.dcache.pool.repository.meta.db.BerkeleyDBMetaDataRepository -sweeper=diskCacheV111.pools.SpaceSweeper2";
+    private String args;
     private CellAdapterHelper cell;
 
     private void createFile(File file, long size)
@@ -141,6 +140,10 @@ public class RepositorySubsystemTest
         if (!metaDir.mkdir())
             throw new IOException("Could not create meta dir");
 
+        args = root.toString()
+            + " -metaDataRepository=org.dcache.pool.repository.meta.db.BerkeleyDBMetaDataRepository"
+            + " -sweeper=diskCacheV111.pools.SpaceSweeper2";
+
         CacheRepositoryV4 rep = new CacheRepositoryV4(root, new Args(args));
         createEntry(rep, id1, info1).setPrecious(true);
         createEntry(rep, id2, info2).setCached();
@@ -151,7 +154,7 @@ public class RepositorySubsystemTest
 
         cell = new CellAdapterHelper("pool", args);
         pnfs = new PnfsHandler(cell, new CellPath("pnfs"), "pool");
-        repository = new CacheRepositoryV5(cell, pnfs, root, new Args(args));
+        repository = new CacheRepositoryV5(cell, pnfs);
         repository.setSize(5120);
         repository.runInventory();
         repository.addListener(this);

@@ -114,14 +114,15 @@ public class CacheRepositoryV5// extends CellCompanion implements CacheRepositor
         }
     }
 
-    // REVISIT: Consider taking base from the args. Consider taking
-    // args from the cell. Consider creating the pnfs handler based on
-    // the args.
-    public CacheRepositoryV5(CellAdapter cell, PnfsHandler pnfs,
-                             File base, Args args)
+    // REVISIT: Consider creating a new pnfs handler rather than
+    // requiring it as a parameter
+    public CacheRepositoryV5(CellAdapter cell, PnfsHandler pnfs)
         throws IOException, RepositoryException
     {
         try {
+            Args args = cell.getArgs();
+            File base = new File(args.argv(0));
+
             _initialised = false;
             _cell = cell;
             _pnfs = pnfs;
@@ -143,6 +144,10 @@ public class CacheRepositoryV5// extends CellCompanion implements CacheRepositor
     /**
      * Loads the repository from the on disk state. Must be done
      * exactly once before any other operation can be performed.
+     *
+     * @throws IllegalStateException if called multiple times
+     * @throws IOException if an io error occurs
+     * @throws RepositoryException in case of other internal errors
      */
     public void runInventory()
         throws IOException, RepositoryException, IllegalStateException
