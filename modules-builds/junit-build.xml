@@ -45,6 +45,7 @@
 	                    <include name="**/*.class" />
 	                    <exclude name="**/*$*.class" />
 	                    <exclude name="**/*Helper.class" />
+                            <exclude name="org.dcache.tests.cell.Message"/>
 	                </fileset>
 	            </batchtest>
             </junit>
@@ -71,6 +72,7 @@
                     <include name="**/*.class" />
                     <exclude name="**/*$*.class" />
                     <exclude name="**/*Helper.class" />
+                    <exclude name="org.dcache.tests.cell.Message"/>
                 </fileset>
             </batchtest>
         </junit>
