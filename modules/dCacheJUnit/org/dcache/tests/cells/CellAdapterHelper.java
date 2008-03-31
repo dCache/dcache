@@ -2,6 +2,7 @@ package org.dcache.tests.cells;
 
 import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.SystemCell;
+import java.util.concurrent.CountDownLatch;
 
 /**
  * Dummy cells
@@ -11,6 +12,8 @@ import dmg.cells.nucleus.SystemCell;
 public class CellAdapterHelper extends CellAdapter {
 
     private final static SystemCell _systemCell = new SystemCell("JUnitTestDomain");
+
+    private final CountDownLatch _latch = new CountDownLatch(1);
 
     public CellAdapterHelper(String name, String args) {
 
@@ -23,10 +26,15 @@ public class CellAdapterHelper extends CellAdapter {
         return _systemCell;
     }
 
-    public void die() {
+    public void die() throws InterruptedException
+    {
         kill();
+        _latch.await();
     }
 
+    public void cleanUp() {
+        _latch.countDown();
+    }
 
     @Override
     public void esay(String str) {
