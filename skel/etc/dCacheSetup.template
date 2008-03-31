@@ -140,6 +140,12 @@ kpwdFile=${ourHomeDir}/etc/dcache.kpwd
 # checkRepository=true
 # waitForRepositoryReady=false
 #
+# ---- Allow pool to remove precious files on request from cleaner.
+#    this option respected only when pool connected to HSM ( lfs=none ).
+#    If lfs=precious, then removal of precious files is always allowed.
+#
+# allowCleaningPreciousFiles=false
+#
 #  ---- Which meta data repository implementation to use.
 #    Values: org.dcache.pool.repository.meta.file.FileMetaDataRepository
 #            org.dcache.pool.repository.meta.db.BerkeleyDBMetaDataRepository
@@ -638,7 +644,7 @@ cacheInfo=companion
 # monitoring tool
 # srmJdbcMonitoringLogEnabled=false
 #
-# turning this on turns off the latest changes that made service 
+# turning this on turns off the latest changes that made service
 # to honor the srm client's prococol list order for
 # get/put commands
 # this is needed temprorarily to support old srmcp clients

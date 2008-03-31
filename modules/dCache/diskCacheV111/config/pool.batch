@@ -1,7 +1,7 @@
 set printout default 2
 set printout CellGlue none
 
-onerror shutdown 
+onerror shutdown
 
 #
 check -strong setupFile
@@ -11,7 +11,7 @@ copy file:${setupFile} context:setupContext
 #  import the variables into our $context.
 #  don't overwrite already existing variables.
 #
-import context -c setupContext 
+import context -c setupContext
 #
 #   Make sure we got what we need.
 #
@@ -25,7 +25,7 @@ create dmg.cells.services.LocationManager lm \
      "${serviceLocatorHost} ${serviceLocatorPort}"
 #
 say -level=2 "Sleeping 60 seconds"
-sleep 60     
+sleep 60
 #
 onerror continue
 
@@ -36,7 +36,7 @@ onerror continue
   set context -c metaDataRepository     org.dcache.pool.repository.meta.file.FileMetaDataRepository
   set context -c metaDataRepositoryImport ""
   set context -c gsiftpReadAhead        16777216
-
+  set context -c allowCleaningPreciousFiles false
 onerror shutdown
 
 
@@ -79,6 +79,7 @@ define context startPools endDefine
   -sweeper=diskCacheV111.pools.SpaceSweeper2 \
   -allowPassivePool=${gsiftpAllowPassivePool} \
   -allowMmap=false \
+  -allowCleaningPreciousFiles=${allowCleaningPreciousFiles} \
   -metaDataRepository=${metaDataRepository} \
   -metaDataRepositoryImport=${metaDataRepositoryImport} \
   -${2} -${3} -${4} -${5} -${6} -${7} -${8} \
