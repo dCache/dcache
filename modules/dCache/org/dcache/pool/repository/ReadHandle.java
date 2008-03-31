@@ -3,6 +3,16 @@ package org.dcache.pool.repository;
 import java.util.concurrent.TimeoutException;
 import java.io.File;
 
+/**
+ * Repository handle providing read access to an entry.
+ *
+ * The handle must be explicitly closed when read access is no longer
+ * desired. While the handle is open, an entry is not destroyed.
+ *
+ * Two or more read handles for the same entry can be open
+ * simultaneously. An open read handle does not prevent entry state
+ * changes.
+ */
 public interface ReadHandle
 {
     /**

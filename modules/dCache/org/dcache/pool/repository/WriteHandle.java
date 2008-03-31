@@ -4,6 +4,19 @@ import diskCacheV111.util.CacheException;
 import java.util.concurrent.TimeoutException;
 import java.io.File;
 
+/**
+ * Repository handle providing write access to an entry.
+ *
+ * The only way to create a new entry is through a write handle.  A
+ * handle must be explicitly closed after the write has
+ * completed. Failure to create the file can be signaled through the
+ * <code>cancel</code> method.
+ *
+ * The write handle provides methods for allocating space for the
+ * entry. Space must be allocated before it is consumed on the
+ * disk. It is the reponsibility of the write handle to release any
+ * over allocation after the transfer has completed.
+ */
 public interface WriteHandle
 {
     /**

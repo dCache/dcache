@@ -203,9 +203,9 @@ class WriteHandleImpl implements WriteHandle
 
             StorageInfo info = _entry.getStorageInfo();
 
-            /* If this is a new file, i.e. we did get it from tape or
-             * another pool, then update the size in the storage info
-             * and in PNFS.
+            /* If this is a new file, i.e. we did not get it from tape
+             * or another pool, then update the size in the storage
+             * info and in PNFS.
              */
             if (_initialState == EntryState.FROM_CLIENT
                 && info.getFileSize() == 0) {
