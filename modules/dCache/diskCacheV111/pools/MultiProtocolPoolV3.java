@@ -327,7 +327,7 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
             recover = _args.getOpt("allowCleaningPreciousFiles");
 
             _cleanPreciousFiles = (recover != null)
-                && (recover.equals("yes") || recover.equals("true"));
+                && (recover.equalsIgnoreCase("yes") || recover.equalsIgnoreCase("true"));
 
             say("allowCleaningPreciousFiles : " + _cleanPreciousFiles);
 
