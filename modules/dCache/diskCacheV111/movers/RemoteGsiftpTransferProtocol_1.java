@@ -110,7 +110,7 @@ public class RemoteGsiftpTransferProtocol_1
     implements MoverProtocol,ChecksumMover,DataBlocksRecipient
 {
 	private final static org.apache.log4j.Logger _logSpaceAllocation = org.apache.log4j.Logger.getLogger("logger.dev.org.dcache.poolspacemonitor." + DCapProtocol_3_nio.class.getName());
-	
+
     private final CellAdapter _cell;
     private long _starttime;
     private long _timeout_time;
@@ -126,7 +126,7 @@ public class RemoteGsiftpTransferProtocol_1
     private org.dcache.srm.util.GridftpClient.Checksum _ftpCksm;
     private diskCacheV111.util.ChecksumFactory _cksmFactory;
 
-    { 
+    {
         // set checksum type set for further cksm negotiations
         org.dcache.srm.util.GridftpClient.setSupportedChecksumTypes(ChecksumFactory.getTypes());
     }
@@ -378,6 +378,11 @@ public class RemoteGsiftpTransferProtocol_1
             } finally {
                 try {
                     _client.close();
+                } catch (IOException e) {
+                    /* JGlobus is not happy when pre-1.8.0-14 dCaches
+                     * send an empty line at the end of the
+                     * session. Therefore we ignore this exception.
+                     */
                 } finally {
                     /* Adjust space reservation to fit the final size of
                      * the file.
@@ -627,8 +632,8 @@ public class RemoteGsiftpTransferProtocol_1
             try {
                String hexValue = getCksmValue("adler32");
                return Long.parseLong(hexValue,16);
-            } catch ( java.security.NoSuchAlgorithmException ex){ 
-              throw new IOException("adler 32 is not supported:"+ ex.toString()); 
+            } catch ( java.security.NoSuchAlgorithmException ex){
+              throw new IOException("adler 32 is not supported:"+ ex.toString());
             }
         }
 
