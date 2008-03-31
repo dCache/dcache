@@ -32,7 +32,7 @@ import org.dcache.pool.repository.ReadHandle;
 import org.dcache.pool.repository.WriteHandle;
 import org.dcache.pool.repository.CacheEntry;
 import org.dcache.pool.repository.StateChangeListener;
-import org.dcache.pool.repository.StateChangeEvent;;
+import org.dcache.pool.repository.StateChangeEvent;
 import org.dcache.pool.repository.v3.RepositoryException;
 
 public class RepositorySubsystemTest
