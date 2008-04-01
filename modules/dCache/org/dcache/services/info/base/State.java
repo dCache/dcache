@@ -2,8 +2,8 @@ package org.dcache.services.info.base;
 
 import java.util.Collection;
 import java.util.Date;
-import java.util.LinkedList;
 import java.util.Stack;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -68,7 +68,7 @@ public class State {
 	private final StateComposite _state;
 	
 	/** All registered StateWatchers */
-	private final Collection<StateWatcher> _watchers = new LinkedList<StateWatcher>();
+	private final Collection<StateWatcher> _watchers = new CopyOnWriteArrayList<StateWatcher>();
 
 	/** Our read/write lock */
 	private final ReadWriteLock _stateRWLock = new ReentrantReadWriteLock();
@@ -207,34 +207,32 @@ public class State {
 	 */
 	private void checkWatchers( StateTransition transition) {
 		
-		synchronized( _watchers) {
-			for( StateWatcher thisWatcher : _watchers) {
-				if( _log.isDebugEnabled())
-					_log.debug( "checking watcher " + thisWatcher);
+		for( StateWatcher thisWatcher : _watchers) {
+			if( _log.isDebugEnabled())
+				_log.debug( "checking watcher " + thisWatcher);
 			
-				boolean hasBeenTriggered = false;
-				
-				for( StatePathPredicate thisPredicate : thisWatcher.getPredicate()) {
+			boolean hasBeenTriggered = false;
+			
+			for( StatePathPredicate thisPredicate : thisWatcher.getPredicate()) {
 
-					if( _log.isDebugEnabled())
-						_log.debug( "checking predicate " + thisPredicate);
+				if( _log.isDebugEnabled())
+					_log.debug( "checking predicate " + thisPredicate);
 
-					try {
-						hasBeenTriggered = _state.predicateHasBeenTriggered( null, thisPredicate, transition);
-					}  catch( MetricStatePathException e) {
-						_log.warn("problem querying trigger:", e);
-					}
+				try {
+					hasBeenTriggered = _state.predicateHasBeenTriggered( null, thisPredicate, transition);
+				}  catch( MetricStatePathException e) {
+					_log.warn("problem querying trigger:", e);
+				}
 					
-					if( hasBeenTriggered)
-						break; // we only need one predicate to match, so quit early. 
-				}
+				if( hasBeenTriggered)
+					break; // we only need one predicate to match, so quit early. 
+			}
 
-				if( hasBeenTriggered) {
-					if( _log.isInfoEnabled())
-						_log.info("triggering watcher " + thisWatcher);
-					thisWatcher.trigger( transition);
-					break;
-				}
+			if( hasBeenTriggered) {
+				if( _log.isInfoEnabled())
+					_log.info("triggering watcher " + thisWatcher);
+				thisWatcher.trigger( transition);
+				break;
 			}
 		}		
 	}
@@ -246,9 +244,7 @@ public class State {
 	 * @param watcher: the Secondary Information Provider plug-in.
 	 */
 	public void addStateWatcher( StateWatcher watcher) {
-		synchronized( _watchers) {
-			_watchers.add(watcher);
-		}
+		_watchers.add(watcher);
 	}
 	
 	/**
@@ -256,9 +252,7 @@ public class State {
 	 * @param watcher: the Secondary Information Provider to remove.
 	 */
 	public void removeStateWatcher( StateWatcher watcher) {
-		synchronized( _watchers) {
-			_watchers.remove(watcher);
-		}
+		_watchers.remove(watcher);
 	}
 	
 	/**
@@ -269,14 +263,12 @@ public class State {
 	public String[] listStateWatcher() {		
 		String[] watchers;
 		
-		synchronized( _watchers) {
-			watchers = new String[_watchers.size()];
+		watchers = new String[_watchers.size()];
 			
-			if( !_watchers.isEmpty()) {
-				int i=0;
-				for( StateWatcher thisWatcher : _watchers)
-					watchers [i++] = thisWatcher.toString();
-			}
+		if( !_watchers.isEmpty()) {
+			int i=0;
+			for( StateWatcher thisWatcher : _watchers)
+				watchers [i++] = thisWatcher.toString();
 		}
 		
 		return watchers;
