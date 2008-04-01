@@ -59,7 +59,7 @@ public class StatePersistentMetadata {
 	 * Look for the best-match child StatePersistentMetadata object for the named
 	 * child.  Will return null if not suitable reference is available.
 	 * @param name the child object in the State hierarchy
-	 * @returns child persistent metadata object, if one is available, or null.
+	 * @return child persistent metadata object, if one is available, or null.
 	 */
 	protected StatePersistentMetadata getChild( String name) {
 		StatePersistentMetadata child = _children.get( name);
@@ -77,6 +77,10 @@ public class StatePersistentMetadata {
 	 * @param update the set of updates to administer.
 	 */
 	void add( StatePath path, Map<String,String> update) {
+		
+		/** Catch bad input */
+		if( update == null)
+			return;
 		
 		/** If we still have more path to traverse, do so */
 		if( path != null) {
