@@ -23,16 +23,45 @@ import java.util.Set;
  */
 public class StatePathPredicate extends StatePath {
 	
+	private static final String WILDCARD_ELEMENT = "*";
+	
+	
 	/**
 	 * Parse a dot-separated path to build a StatePathPredicate 
 	 * @param path the path, as an ordered list of path elements, each element separated by a dot.
 	 * @return the corresponding StatePath.
 	 */
 	static public StatePathPredicate parsePath( String path) {
+		
+		if( path == null)
+			return null;
+		
 		String elements[] = path.split("\\.");
 		return new StatePathPredicate( elements);
 	}
 
+	
+	/**
+	 * Whether two elements are considered matching.
+	 * @param predicateElement
+	 * @param pathElement
+	 * @return true if pathElement matches predicateElement
+	 */
+	static private boolean elementsMatch( String predicateElement, String pathElement) {
+
+		if( pathElement == null || predicateElement == null)
+			return false;
+		
+		if( predicateElement.equals( WILDCARD_ELEMENT))
+			return true;
+		
+		if( pathElement.equals( predicateElement))
+			return true;
+		
+		return false;
+	}
+
+	
 	
 	public StatePathPredicate( StatePath path) {
 		super( path);
@@ -48,21 +77,32 @@ public class StatePathPredicate extends StatePath {
 
 	/**
 	 * Indicate whether a particular StatePath matches the
-	 * predicate.
+	 * predicate.  A match is where each element of this predicate matches
+	 * the corresponding element of the StatePath.  The StatePath length must
+	 * be equal to or greater than this StatePathPredicte.
 	 * 
-	 * @param path the particular path within dCache's state
+	 * @param path the particular path within dCache's state.
 	 * @return true if this path matches this predicate, false otherwise.
 	 */
 	public boolean matches(StatePath path) {
 		
+		if( path == null)
+			return false;
+		
 		Iterator<String> myItr = this._elements.iterator();
+		
 		for( String pathElement : path._elements) {
+			
+			if( !myItr.hasNext())
+				break;
+			
 			String myElement = myItr.next();
-			if( !pathElement.equals(myElement) && !myElement.equals("*"))
+			
+			if( !StatePathPredicate.elementsMatch( myElement, pathElement))
 				return false;
 		}
 		
-		return true;
+		return !myItr.hasNext();
 	}
 	
 	
@@ -85,24 +125,13 @@ public class StatePathPredicate extends StatePath {
 	
 	/**
 	 * Return true if the top-most element of this predicate matches the given String.
-	 * NB the String must have been intern().  This is true for all string-literals and
-	 * all elements within a StatePath.
 	 * @param name the name of the child element
 	 * @return true if child element matches top-most element, false otherwise
 	 */
 	public boolean topElementMatches( String name) {
-		String topElement = _elements.get(0);
-		
-		if( topElement == "*")
-			return true;
-		
-		if( topElement == name)
-			return true;
-		
-		// TODO: Support for Regular Expression here?
-		// e.g. test first char matches '{', last char matches '}' then compile the RegExp state machine
-		// and check; as an optimisation, compile the RegExp once and store it.
-		
-		return false;
+		return StatePathPredicate.elementsMatch( _elements.get(0), name);
 	}
+	
+	
+
 }
