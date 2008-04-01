@@ -8,6 +8,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.log4j.Logger;
 
@@ -35,8 +36,6 @@ public class StateComposite implements StateComponent {
 
 	private static final Logger _log = Logger.getLogger(StateComposite.class);
 	
-	private static final int MILLIS_IN_SECOND = 1000;
-
 	
 	/** Minimum lifetime for on-the-fly created StateComposites */  
 	private static final long DEFAULT_LIFETIME = 10;
@@ -183,7 +182,7 @@ public class StateComposite implements StateComponent {
 	 * @param lifetime the time, in seconds.
 	 */
 	private void becomeMortal( long lifetime) {
-		_whenIShouldExpire = new Date( System.currentTimeMillis() + lifetime * MILLIS_IN_SECOND);
+		_whenIShouldExpire = new Date( System.currentTimeMillis() + TimeUnit.SECONDS.toMillis( lifetime)); 
 	}
 	
 	
