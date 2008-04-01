@@ -329,42 +329,42 @@ autoMountNameSpace()
 # suffix. 
 getService() # $1 = domain name
 {
-    case "$1" in
-        dcap*-*Domain)
-            printf "dcap"
-            ;;
-        
-        gPlazma-*Domain)
-            printf "gPlazma"
-            ;;
-        
-        xrootd-*Domain)
-            printf "xrootd"
-            ;;
-        
-        gridftp-*Domain)
-            printf "gridftp"
-            ;;
-        
-        gsidcap-*Domain)
-            printf "gsidcap"
-            ;;
-
-	srm-*Domain)
-	    printf "srm"
-	    ;;
-
-        *Domain)
-	    if contains $1 `getAllPoolDomains`; then
-		printf "pool"
-	    else
+    if contains $1 `getAllPoolDomains`; then
+	printf "pool"
+    else
+	case "$1" in
+            dcap*-*Domain)
+		printf "dcap"
+		;;
+            
+            gPlazma-*Domain)
+		printf "gPlazma"
+		;;
+            
+            xrootd-*Domain)
+		printf "xrootd"
+		;;
+            
+            gridftp-*Domain)
+		printf "gridftp"
+		;;
+            
+            gsidcap-*Domain)
+		printf "gsidcap"
+		;;
+	    
+	    srm-*Domain)
+		printf "srm"
+		;;
+	    
+            *Domain)
 		printf "%s" "${1%Domain}"
-	    fi
-            ;;
-
-        *)
-            ;;
-    esac
+		;;
+	    
+            *)
+		;;
+	esac
+    fi
 }
 
 # Prints list of configured services.
@@ -640,7 +640,7 @@ logOfDomain() # $1 = Domain name
     esac
 }
 
-# Prints the list of all configured pool list domains, including empty
+# Prints the list of all configured pool domains, including empty
 # domains.
 getAllPoolDomains() 
 {
