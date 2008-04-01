@@ -89,12 +89,12 @@ public class StatePathPredicate extends StatePath {
 		if( path == null)
 			return false;
 		
+		if( path._elements.size() != this._elements.size())
+			return false;
+		
 		Iterator<String> myItr = this._elements.iterator();
 		
 		for( String pathElement : path._elements) {
-			
-			if( !myItr.hasNext())
-				break;
 			
 			String myElement = myItr.next();
 			
@@ -102,7 +102,7 @@ public class StatePathPredicate extends StatePath {
 				return false;
 		}
 		
-		return !myItr.hasNext();
+		return true;
 	}
 	
 
