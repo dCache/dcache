@@ -105,10 +105,22 @@ public class StatePathPredicate extends StatePath {
 		return !myItr.hasNext();
 	}
 	
-	
+
+	/**
+	 * Build a new StatePathPredicate that matches the childPaths of the StatePaths
+	 * that match this StatePathPredicate.  For example, if the current
+	 * StatePathPredicate is characterised as <tt>aa.bb.*.cc</tt>, then
+	 * the returned StatePathPredicate is characterised by <tt>bb.*.cc</tt>.
+	 * <p>
+	 * If the StatePathPredicate has no children of children, null is returned.
+	 *
+	 * @return the path for the child element, or null if there is no child.
+	 */
 	public StatePathPredicate childPath() {
-		return new StatePathPredicate( super.childPath());
+		StatePath childPath = super.childPath();	
+		return childPath == null ? null : new StatePathPredicate( childPath);
 	}
+
 	
 	/**
 	 * Return true if the top-most element of this predicate matches the given String.
