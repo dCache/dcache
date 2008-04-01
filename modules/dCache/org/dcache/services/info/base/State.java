@@ -98,7 +98,10 @@ public class State {
 
 	
 	/**
-	 * Trigger the update of dCache state.
+	 * Record a set of new metric values that are to be incorporated within dCache's
+	 * current state.  This is achieved by placing the StateUpdate on a Stack of
+	 * pending updates and, if necessary, waking up the separate StateMaintainer
+	 * thread.
 	 * @param update the set of changes that should be made.
 	 */
 	public void updateState( StateUpdate update) {
@@ -122,8 +125,8 @@ public class State {
 	
 	
 	/**
-	 * Discover whether there are pending StateUpdates on the To-Do update stack.
-	 * @return true if there are updates to be done, false otherwise.
+	 * Discover whether there are pending StateUpdates on the pending update stack.
+	 * @return the number of StateUpdates on the pending updates Stack.
 	 */
 	protected int countPendingUpdates() {
 		synchronized( _pendingUpdates) {
@@ -132,10 +135,16 @@ public class State {
 	}
 	
 	/**
-	 * Update the currently stored state values with new primary
-	 * values.  This may trigger Secondary Information Providers to update
-	 * the information they provide.
-	 * @return true if something was done, false if nothing needed doing.
+	 * Update the current dCache state by applying, at most, a single StateUpdate
+	 * from a Stack of pending updates.  If no updates are needed, the routine will
+	 * return quickly, although there is the cost of entering the Stack's monitor.
+	 * <p>
+	 * Updating dCache state, by adding additional metrics, has three phases:
+	 * <ol>
+	 * <li> Compile a StateTransition, describing the changes within the hierarchy.
+	 * <li> Check StateWatchers' StatePathPredicates and triggering those affected.
+	 * <li> Traverse the tree, applying the StateTransition 
+	 * </ol>
 	 */
 	protected void processUpdateStack() {
 		StateUpdate update;
@@ -185,9 +194,9 @@ public class State {
 	
 
 	/**
-	 * Apply a StateTransition to dCache state.
-	 * <p>
-	 * This method will obtain a writer lock against dCache state.
+	 * Apply a StateTransition to dCache state.  This is the final step in updating
+	 * the dCache state where the proposed changes are made permanent.  This requires
+	 * obtaining a writer-lock on the state.
 	 * @param transition the StateTransition to apply.
 	 */
 	private void applyTransition( StateTransition transition) {
@@ -203,10 +212,16 @@ public class State {
 	
 	
 	/**
-	 * Given a StateTransition, check the registered StateWatchers and trigger those who's
-	 * predicates have been triggered.  NB For consistency, the caller <i>must</i> hold a 
-	 * reader-lock that was established when the StateTransition was obtained.  For this reason
-	 * no locking is done within this method.
+	 * For a given a StateTransition, check all registered StateWatchers to see if they
+	 * are affected.  This is achieved by checking each StateWatcher's Collection of
+	 * StatePathPredicates.
+	 * <p>
+	 * If the StatePathPredicate matches some significant change within the StateTransition,
+	 * the corresponding StateWatcher's <code>trigger()</code> method is called.
+	 * <p>
+	 * NB For consistency, the caller <i>must</i> hold a reader-lock that was established
+	 * when the StateTransition was obtained.  For this reason no locking is done within
+	 * this method.
 	 * @param transition The StateTransition to apply
 	 */
 	private void checkWatchers( StateTransition transition) {
@@ -243,9 +258,8 @@ public class State {
 		
 	
 	/**
-	 * Add a watcher to the Collection of Secondary Information
-	 * Provider plug-ins.
-	 * @param watcher: the Secondary Information Provider plug-in.
+	 * Add a watcher to the Collection of StateWatchers.
+	 * @param watcher: the StateWatcher to add.
 	 */
 	public void addStateWatcher( StateWatcher watcher) {
 		_watchers.add(watcher);
@@ -280,7 +294,17 @@ public class State {
 	
 	
 	/**
-	 *   Check all StateValues within dCache State to see if any have elapsed.
+	 *  Check for, and remove, expired (mortal) StateComponents.  This will also remove all
+	 *  ephemeral children of moral StateComposites (branches).
+	 *  <p>
+	 *  The process of removing data from dCache tree is similar to
+	 *  <code>processUpdateStack()</code> and may trigger StateWatchers.  This method
+	 *  has three phases:
+	 *  <ol>
+	 *  <li>Build a StateTransition, describing the affected StateComponents,
+	 *  <li>Check for, and trigger, affected StateWatchers,
+	 *  <li>Apply the changes described in the StateTransition
+	 *  <ol>
 	 */
 	protected synchronized void removeExpiredMetrics() {
 		
@@ -313,10 +337,15 @@ public class State {
 	
 	
 	/**
-	 * Allow an arbitrary algorithm to visit our state, but selecting a subset of
-	 * all available values.
+	 * Allow an arbitrary algorithm to visit the current dCache state, that is,
+	 * to receive call-backs describing the process of walking over the state and
+	 * the contents therein.
+	 * <p>
+	 * The data obtained from a single call of <code>visitState()</code> is protected
+	 * from inconsistencies due to data being updated whilst the iteration is taking
+	 * place.  No such protection is available for multiple calls to <code>visitState()</code>.
 	 * @param visitor the algorithm that wishes to visit our current state
-	 * @param predicate the selection criteria
+	 * @param start the StatePath of the point to start walking the tree.
 	 */
 	public void visitState( StateVisitor visitor, StatePath start) {
 		try {
