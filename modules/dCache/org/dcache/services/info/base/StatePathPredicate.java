@@ -106,19 +106,6 @@ public class StatePathPredicate extends StatePath {
 	}
 	
 	
-	/**
-	 * Check whether any of the StatePaths in the paths matches.
-	 * @param paths the set of StatePaths to consider
-	 * @return true if any match, false otherwise.
-	 */
-	public boolean anyPathMatches( Set<StatePath> paths) {
-		for( StatePath path : paths)
-			if( this.matches(path))
-				return true;
-		
-		return false;
-	}
-	
 	public StatePathPredicate childPath() {
 		return new StatePathPredicate( super.childPath());
 	}
