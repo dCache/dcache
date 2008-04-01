@@ -47,15 +47,19 @@ public class State {
 	private static final Logger _log = Logger.getLogger(State.class);
 	
 	/** The singleton instance of State */
-	private static State _instance = null;
+	private static State _instance;
+
+	/** Static initialisation of static members */
+	static {
+		/** Create our singleton instance */
+		_instance = new State();
+	}
 
 	/**
 	 * Discover the single instance of State
 	 * @return the State object.
 	 */
 	public static State getInstance() {
-		if( _instance == null)
-			_instance = new State();
 		return _instance;
 	}
 	
