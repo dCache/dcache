@@ -279,15 +279,11 @@ public class State {
 	 * @return the list of watchers.
 	 */
 	public String[] listStateWatcher() {		
-		String[] watchers;
-		
-		watchers = new String[_watchers.size()];
+		String[] watchers = new String[_watchers.size()];
 			
-		if( !_watchers.isEmpty()) {
-			int i=0;
-			for( StateWatcher thisWatcher : _watchers)
-				watchers [i++] = thisWatcher.toString();
-		}
+		int i=0;
+		for( StateWatcher thisWatcher : _watchers)
+			watchers [i++] = thisWatcher.toString();
 		
 		return watchers;
 	}
