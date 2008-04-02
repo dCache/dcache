@@ -47,15 +47,23 @@ public class StringStateValue extends StateValue {
 	}
 	
 	/**
-	 * Whether the differences between supplied StateComponent and ourselves is sufficient
-	 * that it should trigger a StateWatcher.
+	 * Override the default hashCode to honour the hashCode() equals() contract.
 	 */
-	public boolean shouldTriggerWatcher( StateComponent newValue) {
-		if( !(newValue instanceof StringStateValue))
-			return true;
-		StringStateValue newStringValue = (StringStateValue) newValue;
-		
-		return !newStringValue._storage.equals( _storage);
+	@Override
+	public int hashCode() {
+		return _storage.hashCode();
 	}
-
+	
+	/**
+	 * Override the default equals.
+	 */
+	@Override
+	public boolean equals( Object other) {
+		if( !(other instanceof StringStateValue))
+			return false;
+		
+		StringStateValue otherValue = (StringStateValue) other;
+		
+		return _storage.equals( otherValue._storage);
+	}
 }

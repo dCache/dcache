@@ -594,17 +594,6 @@ public class StateComposite implements StateComponent {
 	}
 	
 	
-	public boolean shouldTriggerWatcher( StateComponent newValue) {
-		
-		/**
-		 * If the new value is a new StateComposite, nothing significant will change so 
-		 * should not trigger a StateWatcher.  Replacing a StateComposite with anything else
-		 * <i>is</i> significant.
-		 */
-		return !(newValue instanceof StateComposite);
-	}
-
-	
 	/**
 	 * Check whether the specified StatePathPredicate has been triggered by the given StateTransition.
 	 * <p>
@@ -679,7 +668,7 @@ public class StateComposite implements StateComponent {
 				
 				// Has child changed "significantly" ?
 				StateComponent updatedChildValue = changeSet.getUpdatedChildValue( childName);				
-				if( updatedChildValue != null && child.shouldTriggerWatcher(updatedChildValue))
+				if( updatedChildValue != null && !child.equals(updatedChildValue))
 					return true;
 			} else {
 				// ... otherwise, try iterating down.
@@ -765,5 +754,26 @@ public class StateComposite implements StateComponent {
 			}
 		}
 	}
+	
+
+	/**
+	 * Honour the equals() / hashCode() contract
+	 */
+	@Override
+	public int hashCode() {
+		return 1;
+	}
+	
+	/**
+	 * Override the public equals method.  All StateComposites are considered equal.
+	 */
+	@Override
+	public boolean equals( Object other) {
+		if( !(other instanceof StateComposite))
+			return false;
 		
+		// All StateComposites are considered equal.
+		return true;
+	}
+	
 }

@@ -47,13 +47,27 @@ public class BooleanStateValue extends StateValue {
 		visitor.visitBoolean( path, this);
 	}
 	
-	public boolean shouldTriggerWatcher( StateComponent newValue) {
-		if( !(newValue instanceof BooleanStateValue))
-			return true;
-
-		BooleanStateValue newBoolValue = (BooleanStateValue) newValue;
-		
-		return newBoolValue._storage != _storage;
+	/**
+	 *  Override the default hashCode() method, to honour the hashCode() / equals() contract.
+	 */
+	@Override
+	public int hashCode() {
+		return _storage ? 1 : 0;
 	}
+	
 
+	/**
+	 *  Override the default equals() method. 
+	 */
+	@Override
+	public boolean equals( Object other) {
+		
+		if( !( other instanceof BooleanStateValue))
+			return false;
+		
+		BooleanStateValue otherValue = (BooleanStateValue) other;
+		
+		return _storage == otherValue._storage;
+	}
+	
 }

@@ -59,13 +59,28 @@ public class IntegerStateValue extends StateValue {
 		visitor.visitInteger( path, this);
 	}
 	
-	public boolean shouldTriggerWatcher( StateComponent newValue) {
-		if( !(newValue instanceof IntegerStateValue))
-			return true;
-
-		IntegerStateValue newIntValue = (IntegerStateValue) newValue;
-		
-		return newIntValue._storage != _storage;
+	/**
+	 *  Override the default hashCode() method, to honour the hashCode() / equals() contract.
+	 */
+	@Override
+	public int hashCode() {
+		return (int)_storage;
 	}
+	
+
+	/**
+	 *  Override the default equals() method. 
+	 */
+	@Override
+	public boolean equals( Object other) {
+		
+		if( !( other instanceof IntegerStateValue))
+			return false;
+		
+		IntegerStateValue otherValue = (IntegerStateValue) other;
+		
+		return _storage == otherValue._storage;
+	}
+	
 
 }

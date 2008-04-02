@@ -81,6 +81,12 @@ abstract public class StateValue implements StateComponent {
 	/** Sub-classes must provide a leaf-node's visitor support */
 	public abstract void acceptVisitor( StatePath path, StateVisitor visitor);
 	
+	
+	/** Force subclasses to override equals and hashCode */
+	public abstract boolean equals( Object other);
+	public abstract int hashCode();
+	
+	
 	/**
 	 * A simple wrapper to check for non-null start values.
 	 */

@@ -44,13 +44,7 @@ interface StateComponent {
 	 */
 	void acceptVisitor( StateTransition transition, StatePath path, StatePath start, StateVisitor visitor);
 
-	/**
-	 *  Check whether the change to newValue should trigger a StateWatcher.
-	 *  This method has broadly the same semantics as equals(). 
-	 */
-	boolean shouldTriggerWatcher( StateComponent newValue);
 	
-
 	/**
 	 * Check whether a predicate has been triggered
 	 * @param ourPath  The StatePath to this StateComponent

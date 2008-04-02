@@ -50,13 +50,30 @@ public class FloatingPointStateValue extends StateValue {
 		visitor.visitFloatingPoint( path, this);
 	}
 
-	public boolean shouldTriggerWatcher( StateComponent newValue) {
-		if( !(newValue instanceof FloatingPointStateValue))
-			return true;
-
-		FloatingPointStateValue newFPValue = (FloatingPointStateValue) newValue;
-		
-		return newFPValue._storage != _storage;
+	/**
+	 *  Override the default hashCode() method, to honour the hashCode() / equals() contract.
+	 */
+	@Override
+	public int hashCode() {
+		// TODO: do something better here.
+		Float floatVal = new Float( _storage);
+		return floatVal.hashCode();
 	}
+	
+
+	/**
+	 *  Override the default equals() method. 
+	 */
+	@Override
+	public boolean equals( Object other) {
+		
+		if( !( other instanceof FloatingPointStateValue))
+			return false;
+		
+		FloatingPointStateValue otherValue = (FloatingPointStateValue) other;
+		
+		return _storage == otherValue._storage;
+	}
+	
 
 }
