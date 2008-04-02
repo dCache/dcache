@@ -511,26 +511,14 @@ public class StateComposite implements StateComponent {
 	 * @return a StatePersistentMetadata entry, or null if none is appropriate.
 	 */
 	private StatePersistentMetadata getChildMetadata( String childName) {
-		StatePersistentMetadata childMetadata = null;
-		
-		if( _metadataRef != null)
-			childMetadata = _metadataRef.getChild( childName);
-		
-		return childMetadata;
+		return _metadataRef == null ? null : _metadataRef.getChild( childName);
 	}
-	
-	
 	
 	/**
 	 * @return our metadata info, if there is any, otherwise null.
 	 */
 	private Map<String,String> getMetadataInfo() {
-		Map<String,String> ourMetadataInfo = null;
-
-		if( _metadataRef != null)
-			ourMetadataInfo = _metadataRef.getMetadata();
-
-		return ourMetadataInfo;
+		return _metadataRef == null ? null : _metadataRef.getMetadata();
 	}
 	
 	
