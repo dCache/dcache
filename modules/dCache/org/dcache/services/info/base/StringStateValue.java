@@ -10,6 +10,7 @@ package org.dcache.services.info.base;
 public class StringStateValue extends StateValue {
 
 	private final String _storage;
+	private static final int NULL_HASH_CODE = 0xdeadbeaf;
 
 	/**
 	 * Create a new Ephemeral String StateValue
@@ -31,7 +32,7 @@ public class StringStateValue extends StateValue {
 	}
 	
 	public String toString() {
-		return _storage;
+		return _storage != null ? _storage : "(null)";
 	}
 	
 	public String getTypeName() {
@@ -51,7 +52,7 @@ public class StringStateValue extends StateValue {
 	 */
 	@Override
 	public int hashCode() {
-		return _storage.hashCode();
+		return _storage == null ? NULL_HASH_CODE : _storage.hashCode();
 	}
 	
 	/**
@@ -59,10 +60,14 @@ public class StringStateValue extends StateValue {
 	 */
 	@Override
 	public boolean equals( Object other) {
+
 		if( !(other instanceof StringStateValue))
 			return false;
 		
 		StringStateValue otherValue = (StringStateValue) other;
+		
+		if( _storage == null)
+			return otherValue._storage == null;
 		
 		return _storage.equals( otherValue._storage);
 	}
