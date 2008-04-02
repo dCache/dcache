@@ -8,7 +8,7 @@ import org.dcache.services.info.base.StatePath;
 import java.util.Set;
 import java.util.TreeSet;
 
-public class StatePathTest {
+public class StatePathTest extends InfoBaseTest {
 
 	// The number of elements in the array must be prime for stride to work
 	private static final String PATH_ELEMENTS[] = {"foo", "bar", "baz"};
@@ -597,25 +597,6 @@ public class StatePathTest {
 			array [arrayIdx] = PATH_ELEMENTS [(arrayIdx * stride + offset) % PATH_ELEMENTS.length];
 
 		return array;
-	}
-	
-	
-	/**
-	 * A test-and-set routine that checks whether a hashCode has already been
-	 * seen.  If it has not, an Integer is added to the Set.
-	 * @param seenHashCodes the Set for storing the hashes
-	 * @param hash the hash value to test-and-set.
-	 * @return true if the hash has already been seen, false otherwise.
-	 */
-	private boolean hashAlreadySeen( Set<Integer> seenHashCodes, int hash) {
-		Integer hashInt = new Integer( hash);
-		
-		if( seenHashCodes.contains(hash))
-			return true;
-		
-		seenHashCodes.add( hashInt);
-		
-		return false;
 	}
 
 }
