@@ -215,7 +215,57 @@ public class StateComposite implements StateComponent {
 	 * @param visitor the object that implements the StateVisitor class.
 	 */
 	public void acceptVisitor(StatePath path, StatePath start, StateVisitor visitor) {
-		acceptVisitor( null, path, start, visitor);
+		if( _log.isDebugEnabled())
+			_log.debug( "acceptVisitor( " + (path != null ? path : "(null)") + ", " + (start != null ? start : "(null)") + " )");
+
+		Map<String,String> branchMetadata = getMetadataInfo();
+
+		if( start != null) {
+			String childName = start.getFirstElement();
+						
+			if( _children.containsKey( childName)) {
+				visitor.visitCompositePreSkipDescend( path, branchMetadata);
+				
+				StateComponent child = _children.get( childName);
+				StatePath childStartPath = start != null ? start.childPath() : null;
+				child.acceptVisitor( buildChildPath( path, childName), childStartPath, visitor);
+				
+				visitor.visitCompositePostSkipDescend( path, branchMetadata);
+				
+			} else {
+				
+				if( _log.isDebugEnabled())
+					_log.debug( this.toString() + " no children when accepting for " + start);
+
+				/**
+				 * No data is available at this level.  This is because the
+				 * client has specified a start-path that (currently) doesn't exist.
+				 * The path may be "correct" and will be filled with data "soon",
+				 * or may be "incorrect" and data will never appear here.
+				 * <p>
+				 * Since we cannot distinguish between the two, we silently fail. 
+				 */
+			}
+			return;
+		}
+
+		visitor.visitCompositePreDescend( path, branchMetadata);
+
+		// Iterate over our children
+		for(Iterator<Map.Entry<String, StateComponent>> itr = _children.entrySet().iterator(); itr.hasNext();) {
+			Map.Entry<String, StateComponent> mapEntry = itr.next();
+
+			String childName = mapEntry.getKey();
+			StateComponent child = mapEntry.getValue();
+
+			if (!itr.hasNext())
+				visitor.visitCompositePreLastDescend( path, branchMetadata);
+
+			StatePath childStartPath = start != null ? start.childPath() : null;
+			child.acceptVisitor( buildChildPath( path, childName), childStartPath, visitor);
+		}
+
+		visitor.visitCompositePostDescend( path, branchMetadata);
 	}
 	
 	
@@ -227,12 +277,13 @@ public class StateComposite implements StateComponent {
 
 		if( _log.isDebugEnabled())
 			_log.debug( "acceptVisitor( " + (transition != null ? "not null" : "(null)")+ ", " + (ourPath != null ? ourPath : "(null)") + ", " + (startPath != null ? startPath : "(null)") + " )");
+		
+		assert( transition != null);
 
 		Map<String,String> branchMetadata = getMetadataInfo();
 		
-		StateChangeSet changeSet = (transition != null) ?  transition.getStateChangeSet( ourPath) : null;
+		StateChangeSet changeSet = transition.getStateChangeSet( ourPath);
 		
-
 		/** If start is not yet null, iterate down directly */
 		if( startPath != null) {
 			String childName = startPath.getFirstElement();
