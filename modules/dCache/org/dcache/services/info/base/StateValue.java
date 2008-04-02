@@ -40,6 +40,9 @@ abstract public class StateValue implements StateComponent {
 	 */
 	protected StateValue( long duration) {
 		
+		if( duration < 0)
+			duration = 0;
+		
 		long tim = System.currentTimeMillis() + duration * _millisecondsInSecond;
 
 		/**

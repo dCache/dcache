@@ -53,6 +53,10 @@ public class StateComposite implements StateComponent {
 	 * should persist.
 	 */
 	public StateComposite( long lifetime) {
+		
+		if( lifetime < 0)
+			lifetime = 0;
+		
 		becomeMortal( lifetime);
 		_metadataRef = null;  // Set when added to state tree
 	}
