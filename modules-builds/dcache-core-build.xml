@@ -804,13 +804,13 @@
 		<copy file="${libDir}/Chimera/chimera-set-acl.sh" tofile="${binDir}/libexec/chimera/chimera-set-acl.sh" />
 		<copy file="${libDir}/Chimera/pnfs2chimera.sh" tofile="${binDir}/libexec/chimera/pnfs2chimera.sh" />
 		<copy file="${libDir}/Chimera/pool2chimera.sh" tofile="${binDir}/libexec/chimera/pool2chimera.sh" />
-		<copy file="${libDir}/Chimera/cli.sh" tofile="${binDir}/libexec/chimera/cli.sh" />
+		<copy file="${libDir}/Chimera/chimera-cli.sh" tofile="${binDir}/libexec/chimera/chimera-cli.sh" />
 	    <chmod file="${binDir}/libexec/chimera/chimera-nfs-run.sh"  perm="ugo+rx" />
 	    <chmod file="${binDir}/libexec/chimera/chimera-set-acl.sh"  perm="ugo+rx" />
 	    <chmod file="${binDir}/libexec/chimera/chimera-get-acl.sh"  perm="ugo+rx" />
 	    <chmod file="${binDir}/libexec/chimera/pnfs2chimera.sh"  perm="ugo+rx" />
 	    <chmod file="${binDir}/libexec/chimera/pool2chimera.sh"  perm="ugo+rx" />
-		<chmod file="${binDir}/libexec/chimera/cli.sh"  perm="ugo+rx" />
+		<chmod file="${binDir}/libexec/chimera/chimera-cli.sh"  perm="ugo+rx" />
 	    <copy todir="${binDir}/libexec/chimera/sql">
 	        <fileset dir="${libDir}/Chimera/sql" />
 	    </copy>
