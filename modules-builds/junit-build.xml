@@ -43,9 +43,11 @@
 	            <batchtest todir="${tests.report.home}" haltonfailure="no" >
 	                <fileset dir="${buildDir}/junit" >
 	                    <include name="**/*.class" />
+	                	
+	                	<!-- Ignore any classes that are not, by themselves, test-cases -->
 	                    <exclude name="**/*$*.class" />
 	                    <exclude name="**/*Helper.class" />
-                            <exclude name="org.dcache.tests.cell.Message"/>
+                        <exclude name="org/dcache/tests/cell/Message.class"/>
 	                	<exclude name="org/dcache/services/info/base/InfoBaseTest.class"/>
 	                </fileset>
 	            </batchtest>
@@ -71,9 +73,11 @@
             <batchtest todir="${tests.report.home}" haltonfailure="no" >
                 <fileset dir="${buildDir}/junit" >
                     <include name="**/*.class" />
+                	                	
+                	<!-- Ignore any classes that are not, by themselves, test-cases -->
                     <exclude name="**/*$*.class" />
                     <exclude name="**/*Helper.class" />
-                    <exclude name="org.dcache.tests.cell.Message"/>
+                    <exclude name="org/dcache/tests/cell/Message.class"/>
                 	<exclude name="org/dcache/services/info/base/InfoBaseTest.class"/>
                 </fileset>
             </batchtest>
