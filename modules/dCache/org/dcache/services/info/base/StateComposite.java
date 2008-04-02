@@ -37,7 +37,7 @@ public class StateComposite implements StateComponent {
 	private static final Logger _log = Logger.getLogger(StateComposite.class);
 	
 	
-	/** Minimum lifetime for on-the-fly created StateComposites */  
+	/** Minimum lifetime for on-the-fly created StateComposites, in seconds */  
 	private static final long DEFAULT_LIFETIME = 10;
 	
 	private final Map<String, StateComponent> _children = new HashMap<String, StateComponent>();
@@ -136,7 +136,7 @@ public class StateComposite implements StateComponent {
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append("StateComposite <");
-		sb.append( isMortal() ? "+" : isEphemeral() ? "*" : "+" );
+		sb.append( isMortal() ? "+" : isEphemeral() ? "*" : "#" );
 		sb.append("> {");
 		sb.append( _children.size());
 		sb.append("}");
