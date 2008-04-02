@@ -1,12 +1,12 @@
 #
 #  defined :
-#     ourBaseName  
+#     ourBaseName
 #     setupFilePath
 #     thisDir
 #     ourHomeDir
 #     config
 #
-if [ ! -z "${pool}" ] ; then  
+if [ ! -z "${pool}" ] ; then
      poolFile=${config}/${pool}
      if [ ! -f ${poolFile} ] ; then
         if [ -f ${poolFile}.poollist ] ; then
@@ -36,9 +36,9 @@ if [ ! -z "${domain}" ] ; then
 fi
 if [ -z  "${logfile}" ] ; then
    if [ -z "${logArea}" ] ; then
-     logfile=/tmp/${domainName}.log 
+     logfile=/tmp/${domainName}.log
    else
-     logfile=${logArea}/${domainName}.log 
+     logfile=${logArea}/${domainName}.log
    fi
 fi
 touch ${logfile} 2>/dev/null
@@ -52,7 +52,7 @@ fi
 procStop() {
    if [ ! -f ${pidFile} ] ; then
       echo "Cannot find appropriate pid file (${pidFile})" 1>&2
-      exit 0 
+      exit 0
    fi
    x=`cat ${pidFile}`
    if [ -z "$x" ] ; then
@@ -65,16 +65,16 @@ procStop() {
 
    kill -0 $x 1>/dev/null 2>/dev/null
    if [ $? -ne 0 ] ; then
-       echo "Done" 
+       echo "Done"
        exit 0
    fi
-   
-   for c in  0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20; do 
+
+   for c in  0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20; do
      sleep 1
      kill -0 $x 1>/dev/null 2>/dev/null
      if [ $? -ne 0 ] ; then
         rm -f $pidFile
-        echo "Done" 
+        echo "Done"
         exit 0
      fi
      printf "$c "
@@ -104,7 +104,7 @@ procStart() {
   fi
 
   if [ ! -z "${telnetPort}" ] ; then
-     TELNET_PORT="-telnet ${telnetPort}" 
+     TELNET_PORT="-telnet ${telnetPort}"
   elif [ ! -z "${telnet}" ] ; then
      TELNET_PORT="-telnet ${telnet}"
   fi
@@ -113,8 +113,8 @@ procStart() {
   else
      batchFile=${config}/${ourBaseName}.batch
   fi
-  if [ -f "$batchFile" ] ; then 
-      BATCH_FILE="-batch ${batchFile}" 
+  if [ -f "$batchFile" ] ; then
+      BATCH_FILE="-batch ${batchFile}"
   else
       echo "Batch file does not exist: ${batchFile}, cannot continue ..." 1>&2
       exit 5
@@ -124,6 +124,15 @@ procStart() {
   CLASSPATH=${classpath}:${thisDir}/../..:${thisDir}/../classes/cells.jar:${thisDir}/../classes/dcache.jar:${externalLibsClassPath}
   export LD_LIBRARY_PATH
   LD_LIBRARY_PATH=${librarypath}
+
+# use local jre ( ${ourHomeDir}/jre if it exist. This will allows to
+# us to package required jre with dCache.
+
+if [ -x  ${ourHomeDir}/jre/bin/java ]
+then
+	java=${ourHomeDir}/jre/bin/java
+fi
+
 #
 #  echo "(Using classpath : $CLASSPATH )"
 #  echo "(Using librarypath : $LD_LIBRARY_PATH )"
@@ -139,7 +148,7 @@ procStart() {
                        ${POOL} \
                 $BATCH_FILE $DEBUG  1>>${logfile}  2>&1 </dev/null &
         latestPid=$!
-        echo ${latestPid} >${pidFile} 
+        echo ${latestPid} >${pidFile}
         wait
         if [ -f "${config}/realStop.${domainName}" ] ; then break ; fi
         [ "${logMode}" = "new" ] && mv ${logfile} ${logfile}.old 2>/dev/null
@@ -149,7 +158,7 @@ procStart() {
         fi
      done ) >/dev/null 2>&1 </dev/null &
      printf "Starting ${domainName}  "
-     for c in 6 5 4 3 2 1 0 ; do 
+     for c in 6 5 4 3 2 1 0 ; do
         latestPid=`cat ${pidFile} 2>/dev/null`
         kill -0 ${latestPid} 1>/dev/null 2>/dev/null
         if [ $? -eq 0 ] ; then
