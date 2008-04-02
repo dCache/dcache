@@ -16,7 +16,7 @@ import context -c setupContext
 #
 #   Make sure we got what we need.
 #
-check -strong serviceLocatorPort serviceLocatorHost 
+check -strong serviceLocatorPort serviceLocatorHost
 check -strong srmPort
 #
 #
@@ -28,7 +28,7 @@ create dmg.cells.services.LocationManager lm \
        "${serviceLocatorHost} ${serviceLocatorPort}"
 #
 #
-#   srm     c e l l 
+#   srm     c e l l
 #
 #
 #   Default values (it not specified in dCacheSetup
@@ -62,7 +62,7 @@ set context -c srmGetReqThreadQueueSize             10000
 set context -c srmGetReqThreadPoolSize                250
 set context -c srmGetReqMaxWaitingRequests           1000
 set context -c srmGetReqReadyQueueSize              10000
-set context -c srmGetReqMaxReadyRequests             2000 
+set context -c srmGetReqMaxReadyRequests             2000
 set context -c srmGetReqMaxNumberOfRetries             10
 set context -c srmGetReqRetryTimeout                60000
 set context -c srmGetReqMaxNumOfRunningBySameOwner    100
@@ -74,7 +74,7 @@ set context -c srmPutReqReadyQueueSize              10000
 set context -c srmPutReqMaxReadyRequests             1000
 set context -c srmPutReqMaxNumberOfRetries             10
 set context -c srmPutReqRetryTimeout                60000
-set context -c srmPutReqMaxNumOfRunningBySameOwner    100 
+set context -c srmPutReqMaxNumOfRunningBySameOwner    100
 
 set context -c srmCopyReqThreadQueueSize             10000
 set context -c srmCopyReqThreadPoolSize                250
@@ -115,11 +115,11 @@ set context -c lsScript          ${ourHomeDir}/lambdastation/scripts/open_ls_tic
 set context -c overwriteEnabled false
 set context -c srmOverwriteByDefault false
 
-# variable that controls number of simultaneous rm requests 
+# variable that controls number of simultaneous rm requests
 # sent by srmrm to PnfsManager
 set context -c srmSizeOfSingleRemoveBatch 100
 
-# this is the directory in which the delegated user credentials will be stored 
+# this is the directory in which the delegated user credentials will be stored
 # as files. We recommend set permissions to 700 on this dir
 set context -c srmUserCredentialsDirectory  ${ourHomeDir}/credentials
 
@@ -135,7 +135,7 @@ set context -c srmPoolManagerTimeout 60
 #number of doors in the random selection
 #srm will order doors according to their load
 #and select sertain number of the least loaded
-#and then randomly choose which one to use 
+#and then randomly choose which one to use
 set context -c srmNumberOfDoorsInRandomSelection 5
 
 #srm will hold srm requests and their history in database
@@ -148,15 +148,15 @@ set context -c srmOldRequestRemovalPeriodSeconds 60
 
 # srmJdbcMonitoringLogEnabled is set to true srm will store sufficient
 # information about srm requests and their execution history in database
-# for monitoring interface to work 
+# for monitoring interface to work
 # if it is set to false, only the absiolutely necessary information will be stored
 set context -c srmJdbcMonitoringLogEnabled false
 
-#jdbc updates are now queued and their execution is 
+#jdbc updates are now queued and their execution is
 #decoupled from the execution of the srm requests
-# the srmJdbcExecutionThreadNum controls the number of the threads 
-#that will be dedicated to execution of these updates 
-# and the srmMaxNumberOfJdbcTasksInQueue controls the maximum 
+# the srmJdbcExecutionThreadNum controls the number of the threads
+#that will be dedicated to execution of these updates
+# and the srmMaxNumberOfJdbcTasksInQueue controls the maximum
 # length of the queue
 set context -c srmJdbcExecutionThreadNum 5
 set context -c srmMaxNumberOfJdbcTasksInQueue 1000
@@ -169,11 +169,11 @@ set context -c SpaceManagerDefaultRetentionPolicy CUSTODIAL
 # we will assign this access latency by default
 set context -c SpaceManagerDefaultAccessLatency NEARLINE
 
-#if the transfer request come from the door, and there was not prior 
-# space reservation made for this file, should we try to reserve 
+#if the transfer request come from the door, and there was not prior
+# space reservation made for this file, should we try to reserve
 # space before satisfying the request
 set context -c SpaceManagerReserveSpaceForNonSRMTransfers false
- 
+
 #
 #  ----  Usage of Srm Space Manager
 #
@@ -200,7 +200,7 @@ eval ${srmSpaceManagerEnabled} yes ==
 set env srmSpaceManagerIsOn ${rc}
 exec env srmSpaceManagerOn.exe -run -ifok=srmSpaceManagerIsOn
 
-eval ${srmSpaceManageriEnabled} yes !=
+eval ${srmSpaceManagerEnabled} yes !=
 set env srmSpaceManagerIsOff ${rc}
 exec env srmSpaceManagerOff.exe -run -ifok=srmSpaceManagerIsOff
 
@@ -208,17 +208,17 @@ set context -c remoteTransferManagerPoolProxy                "PoolManager"
 set context -c remoteTransferManagerPoolManager              "PoolManager"
 
 
-# srmCustomGetHostByAddr enables using the BNL developed procedure 
+# srmCustomGetHostByAddr enables using the BNL developed procedure
 # for host by ip resolution if standard InetAddress method failed
 #
 set context -c srmCustomGetHostByAddr false
 
-# LinkGroupAuthorizationFile contains the list of FQANs that are allowed to 
+# LinkGroupAuthorizationFile contains the list of FQANs that are allowed to
 # make space reservations in a given link group
 set context -c SpaceManagerLinkGroupAuthorizationFileName ""
 
 #
-# turning this on turns off the latest changes that made service 
+# turning this on turns off the latest changes that made service
 # to honor the srm client's prococol list order for
 # get/put commands
 # this is needed temprorarily to support old srmcp clients
