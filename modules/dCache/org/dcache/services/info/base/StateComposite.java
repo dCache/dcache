@@ -412,12 +412,10 @@ public class StateComposite implements StateComponent {
 	 */
 	public void applyTransition( StatePath ourPath, StateTransition transition) {
 
-		Set<String> removedChildren = new HashSet<String>();
-		
 		StateChangeSet changeSet = transition.getStateChangeSet( ourPath);
 		
 		if( changeSet == null) {
-			_log.warn( "cannot find StateChangeSet for path " + ourPath + " Something must have gone wrong.");
+			_log.warn( "cannot find StateChangeSet for path " + ourPath + ". Something must have gone wrong.");
 			return;
 		}
 
@@ -434,7 +432,6 @@ public class StateComposite implements StateComponent {
 			if( _log.isDebugEnabled())
 				_log.debug("removing child " + childName);
 			_children.remove( childName);
-			removedChildren.add( childName);
 		}
 
 		// Then update our existing children.
@@ -471,7 +468,7 @@ public class StateComposite implements StateComponent {
 			StateComponent child = _children.get( childName);
 			
 			if( child == null) {
-				if( !removedChildren.contains( childName))
+				if( !changeSet.getRemovedChildren().contains( childName))
 					_log.error( "Whilst in "+ourPath+", avoided attempting to applyTransition() on missing child " + childName);
 				continue;
 			}
@@ -486,6 +483,8 @@ public class StateComposite implements StateComponent {
 	/**
 	 * Recalculate _earliestChildExpiryDate() by asking our children for their earliest expiring
 	 * child.
+	 * TODO: this isn't always necessary, but it's hard to know when.  Also, it isn't clear that the
+	 * cost of figuring out when it is necessary is less than the CPU time saved by always recalculating.
 	 */
 	private void recalcEarliestChildExpiry() {
 		
