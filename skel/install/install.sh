@@ -23,14 +23,15 @@ ourHomeDir=/opt/d-cache
 usage()
 {
   echo "dCache install script"
-  echo "--help             Show this help"
-  echo "--prefix PATH      Set install prefix (by default '/opt/dcache')"
-  echo "--loglevel LEVEL   Set loglevel (by default '15')"
-  echo "                   debug level ABORT=45"
-  echo "                   debug level ERROR=35"
-  echo "                   debug level WARNING=25"
-  echo "                   debug level INFO=15"
-  echo "                   debug level DEBUG=5"
+  echo ""
+  echo "-h --help             Show this help"
+  echo "-p PATH  --prefix   PATH    Set install prefix (by default '/opt/dcache')"
+  echo "-l LEVEL --loglevel LEVEL   Set loglevel (by default '15')"
+  echo "                        debug level ABORT=45"
+  echo "                        debug level ERROR=35"
+  echo "                        debug level WARNING=25"
+  echo "                        debug level INFO=15"
+  echo "                        debug level DEBUG=5"
   
 }
 
@@ -1183,19 +1184,19 @@ while [ $# -ne 0 ]
 do	
   # Default to shifting to next parameter
   shift_size=1		
-  if [ $1 == "--prefix" ] 
+  if [ $1 == "--prefix" -o $1 == "-p" ] 
   then
     # set dCache install location
     ourHomeDir=$2
     shift_size=2
   fi
-  if [ $1 == "--help" ] 
+  if [ $1 == "--help" -o $1 == "-h" ] 
   then
     # set dCache install location
     usage
     exit 0
   fi
-  if [ $1 == "--loglevel" ] 
+  if [ $1 == "--loglevel"-o $1 == "-l"  ] 
   then
     # set dCache install location
     let loglevel=$2
