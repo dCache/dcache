@@ -404,7 +404,6 @@ public class ManagerV2
 		if (args.argc() == 1) {
 			id = args.argv(0);
 		}
-
 		StringBuffer sb = new StringBuffer();
 		if (description != null && id !=null ) { 
 			sb.append("Do not handle \"desc\" and id simultaneously\n");
@@ -481,8 +480,10 @@ public class ManagerV2
 				}
 				for (Iterator i=spaces.iterator();i.hasNext();) {
 					Space space = (Space)i.next();
-					if (space.getLinkGroupId()!=lg.getId()) {
-						sb.append("LinkGroup with id=").append(lg.getId()).append(" and name=").append(lg.getName()).append(" does not contain space with id=").append(id);
+					if (lg!=null) { 
+						if (space.getLinkGroupId()!=lg.getId()) {
+							sb.append("LinkGroup with id=").append(lg.getId()).append(" and name=").append(lg.getName()).append(" does not contain space with id=").append(id);
+						}
 					}
 					else { 
 						space.toStringBuffer(sb);
