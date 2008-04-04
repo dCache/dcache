@@ -272,7 +272,7 @@ public class PoolManagerV5 extends CellAdapter {
           tmpFile.delete() ;
           throw ee ;
        }finally{
-          try{ writer.close() ; }catch(Exception eee ){}
+          writer.close() ;
        }
        if( ! tmpFile.renameTo( setupFile ) ){
 
