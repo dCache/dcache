@@ -421,7 +421,7 @@ public class ManagerV2
 				      voGroup,
 				      voRole,
 				      sb);
-		if (lgName==null&&lgid==null&&voGroup==null&&description==null) { 
+		if (lgName==null&&lgid==null&&voGroup==null&&description==null&id==null) { 
 			sb.append("\n\nLinkGroups:\n");
 			listLinkGroups(isLongFormat,false,id,sb);
 		}
@@ -445,7 +445,7 @@ public class ManagerV2
 
 		if (linkGroupId!=null) { 
 			lgId = Long.parseLong(linkGroupId);
-			lg = getLinkGroup(lgId);
+			lg   = getLinkGroup(lgId);
 		}
 		
 		if (linkGroupName!=null) { 
