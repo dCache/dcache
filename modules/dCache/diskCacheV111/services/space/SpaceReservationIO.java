@@ -51,15 +51,15 @@ public class SpaceReservationIO extends IoPackage {
 		" set vogroup=?,vorole=?,retentionpolicy=?,accesslatency=?,linkgroupid=?,sizeinbytes=?,"+
                 " creationtime=?,lifetime=?,description=?,state=? where id=?";
 	public static final String SELECT_SPACE_RESERVATION_BY_ID="SELECT * FROM "+SRM_SPACE_TABLE+" where id=?";
-	public static final String SELECT_SPACE_RESERVATION_BY_LINKGROUP_ID="SELECT * FROM "+SRM_SPACE_TABLE+" where linkgroupid=?";
+	public static final String SELECT_SPACE_RESERVATION_BY_LINKGROUP_ID="SELECT * FROM "+SRM_SPACE_TABLE+" where linkgroupid=? and state not in ("+SpaceState.RELEASED.getStateId()+","+SpaceState.EXPIRED.getStateId()+")";
 	public static final String SELECT_SPACE_RESERVATION_BY_DESC="SELECT * FROM "+SRM_SPACE_TABLE+" where description ~ ?";
-	public static final String SELECT_SPACE_RESERVATION_BY_DESC_AND_LINKGROUP_ID="SELECT * FROM "+SRM_SPACE_TABLE+" where description ~ ? and linkgroupid=?";
-	public static final String SELECT_SPACE_RESERVATION_BY_VOROLE="SELECT * FROM "+SRM_SPACE_TABLE+" where vorole ~ ?";
-	public static final String SELECT_SPACE_RESERVATION_BY_VOROLE_AND_LINKGROUP_ID="SELECT * FROM "+SRM_SPACE_TABLE+" where vorole ~ ? and linkgroupid=?";
-	public static final String SELECT_SPACE_RESERVATION_BY_VOGROUP="SELECT * FROM "+SRM_SPACE_TABLE+" where vogroup ~ ?";
-	public static final String SELECT_SPACE_RESERVATION_BY_VOGROUP_AND_LINKGROUP_ID="SELECT * FROM "+SRM_SPACE_TABLE+" where vogroup ~ ? and linkgroupid=?";
-	public static final String SELECT_SPACE_RESERVATION_BY_VOGROUP_AND_VOROLE="SELECT * FROM "+SRM_SPACE_TABLE+" where vogroup ~ ? and vorole ?";
-	public static final String SELECT_SPACE_RESERVATION_BY_VOGROUP_AND_VOROLE_AND_LINKGROUP_ID="SELECT * FROM "+SRM_SPACE_TABLE+" where vogroup ~ ? and vorole ~ ? and linkgroupid=?";
+	public static final String SELECT_SPACE_RESERVATION_BY_DESC_AND_LINKGROUP_ID="SELECT * FROM "+SRM_SPACE_TABLE+" where description ~ ? and linkgroupid=? and state not in ("+SpaceState.RELEASED.getStateId()+","+SpaceState.EXPIRED.getStateId()+")";
+	public static final String SELECT_SPACE_RESERVATION_BY_VOROLE="SELECT * FROM "+SRM_SPACE_TABLE+" where vorole ~ ? and state not in ("+SpaceState.RELEASED.getStateId()+","+SpaceState.EXPIRED.getStateId()+")";
+	public static final String SELECT_SPACE_RESERVATION_BY_VOROLE_AND_LINKGROUP_ID="SELECT * FROM "+SRM_SPACE_TABLE+" where vorole ~ ? and linkgroupid=? and state not in ("+SpaceState.RELEASED.getStateId()+","+SpaceState.EXPIRED.getStateId()+")  ";
+	public static final String SELECT_SPACE_RESERVATION_BY_VOGROUP="SELECT * FROM "+SRM_SPACE_TABLE+" where vogroup ~ ? and state not in ("+SpaceState.RELEASED.getStateId()+","+SpaceState.EXPIRED.getStateId()+")";
+	public static final String SELECT_SPACE_RESERVATION_BY_VOGROUP_AND_LINKGROUP_ID="SELECT * FROM "+SRM_SPACE_TABLE+" where vogroup ~ ? and linkgroupid=? and state not in ("+SpaceState.RELEASED.getStateId()+","+SpaceState.EXPIRED.getStateId()+")";
+	public static final String SELECT_SPACE_RESERVATION_BY_VOGROUP_AND_VOROLE="SELECT * FROM "+SRM_SPACE_TABLE+" where vogroup ~ ? and vorole ? and state not in ("+SpaceState.RELEASED.getStateId()+","+SpaceState.EXPIRED.getStateId()+")";
+	public static final String SELECT_SPACE_RESERVATION_BY_VOGROUP_AND_VOROLE_AND_LINKGROUP_ID="SELECT * FROM "+SRM_SPACE_TABLE+" where vogroup ~ ? and vorole ~ ? and linkgroupid=? and state not in ("+SpaceState.RELEASED.getStateId()+","+SpaceState.EXPIRED.getStateId()+")";
 	public static final String SELECT_ALL_SPACE_RESERVATIONS ="SELECT * FROM "+SRM_SPACE_TABLE;
 	public static final String SELECT_EXPIRED_SPACE_RESERVATIONS="SELECT * FROM "+SRM_SPACE_TABLE+ " WHERE state = "+SpaceState.EXPIRED.getStateId();
 	public static final String SELECT_EXPIRED_SPACE_RESERVATIONS1="SELECT * FROM "+SRM_SPACE_TABLE+ " WHERE state = "+SpaceState.RESERVED.getStateId() +
