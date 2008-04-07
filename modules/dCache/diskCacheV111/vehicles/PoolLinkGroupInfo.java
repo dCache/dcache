@@ -12,61 +12,61 @@ import diskCacheV111.poolManager.PoolSelectionUnit.SelectionLinkGroup;
 
 public class PoolLinkGroupInfo implements Serializable {
 
-	private final String _groupName;
-	private final long _totalSpaceInBytes;
-	private final long _availableSpaceInBytes;
-	private final boolean _custodialAllowed;
-	private final boolean _replicaAllowed;
-	private final boolean _outputAllowed;
-	private final boolean _nearlineAllowed;
-	private final boolean _onlineAllowed;
-	private final Map<String,Set<String> > _attributes = new HashMap<String,Set<String> >();
+    private final String _groupName;
+    private final long _totalSpaceInBytes;
+    private final long _availableSpaceInBytes;
+    private final boolean _custodialAllowed;
+    private final boolean _replicaAllowed;
+    private final boolean _outputAllowed;
+    private final boolean _nearlineAllowed;
+    private final boolean _onlineAllowed;
+    private final Map<String,Set<String> > _attributes = new HashMap<String,Set<String> >();
 
 
-	public PoolLinkGroupInfo(SelectionLinkGroup linkGroup, long totalSpace, long availableSpace) {
-		_groupName = linkGroup.getName();
-		_availableSpaceInBytes = availableSpace;
-		_totalSpaceInBytes = totalSpace;
-		_custodialAllowed = linkGroup.isCustodialAllowed();
-		_replicaAllowed = linkGroup.isReplicaAllowed();
-		_outputAllowed = linkGroup.isOutputAllowed();
-		_nearlineAllowed = linkGroup.isNearlineAllowed();
-		_onlineAllowed = linkGroup.isOnlineAllowed();
+    public PoolLinkGroupInfo(SelectionLinkGroup linkGroup, long totalSpace, long availableSpace) {
+        _groupName = linkGroup.getName();
+        _availableSpaceInBytes = availableSpace;
+        _totalSpaceInBytes = totalSpace;
+        _custodialAllowed = linkGroup.isCustodialAllowed();
+        _replicaAllowed = linkGroup.isReplicaAllowed();
+        _outputAllowed = linkGroup.isOutputAllowed();
+        _nearlineAllowed = linkGroup.isNearlineAllowed();
+        _onlineAllowed = linkGroup.isOnlineAllowed();
 
-		Map<String, Set<String>> attributes = linkGroup.attributes();
-		if(attributes != null ) {
-			_attributes.putAll(attributes);
-		}
-	}
+        Map<String, Set<String>> attributes = linkGroup.attributes();
+        if(attributes != null ) {
+            _attributes.putAll(attributes);
+        }
+    }
 
-	/**
-	 *
-	 * @return the linkGroup name
-	 */
-	public String getName() {
-		return _groupName;
-	}
+    /**
+     *
+     * @return the linkGroup name
+     */
+    public String getName() {
+        return _groupName;
+    }
 
-	/**
-	 *
-	 * @return total space of all pools in the linkGroup in bytes
-	 */
-	public long getTotalSpace() {
-	    return _totalSpaceInBytes;
-	}
+    /**
+     *
+     * @return total space of all pools in the linkGroup in bytes
+     */
+    public long getTotalSpace() {
+        return _totalSpaceInBytes;
+    }
 
-	/**
-	 *
-	 * @return available space of all pools in the linkGroup in bytes
-	 */
-	public long getAvailableSpaceInBytes() {
+    /**
+     *
+     * @return available space of all pools in the linkGroup in bytes
+     */
+    public long getAvailableSpaceInBytes() {
         return _availableSpaceInBytes;
     }
 
-	@Deprecated
-	public Set<String> getAttribute(String attribute) {
-		return _attributes.get(attribute);
-	}
+    @Deprecated
+    public Set<String> getAttribute(String attribute) {
+        return _attributes.get(attribute);
+    }
 
 
     /**
