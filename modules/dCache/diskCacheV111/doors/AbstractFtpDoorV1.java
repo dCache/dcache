@@ -205,8 +205,12 @@ public abstract class AbstractFtpDoorV1
     private static final String[] FEATURES = {
         "EOF", "PARALLEL", "SIZE", "SBUF",
         "ERET", "ESTO", "GETPUT",
-        "CKSUM " + buildChecksumList(),  "MODEX",
-        "DCAU"
+        "CKSUM " + buildChecksumList(),  "MODEX"
+        /*
+         * do not publish DCAU as supported feature. This will force
+         * some clients to always encrypt data channel
+         */
+        // "DCAU"
     };
 
     private static final String buildChecksumList(){
