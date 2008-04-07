@@ -43,13 +43,18 @@ abstract public class StateValue implements StateComponent {
 		if( duration < 0)
 			duration = 0;
 		
-		long tim = System.currentTimeMillis() + duration * _millisecondsInSecond;
+		long tim = System.currentTimeMillis();
+		
+		if( duration > 0) {
+			tim += duration * _millisecondsInSecond;
 
-		/**
-		 *  round up to nearest _granularity milliseconds.  This is to attempt to allow metrics
-		 *  to be purged at the same time.
-		 */
-		tim = (1 + tim / _granularity) * _granularity;
+			/**
+			 *  round up to nearest _granularity milliseconds.  This is to allow
+			 *  metrics to be purged at the same time.
+			 */
+			tim = Math.round( (double)tim / _granularity) * _granularity;
+		}
+
 		
 		_expiryTime = new Date(tim);
 		_isEphemeral = DUMMY_ISEPHEMERAL_VALUE;
@@ -75,7 +80,7 @@ abstract public class StateValue implements StateComponent {
 			return false;
 		
 		Date now = new Date();
-		return now.after(_expiryTime);
+		return !now.before(_expiryTime);
 	}
 	
 	/** Provide a generic name for subclasses of StateValue */
