@@ -137,7 +137,6 @@ public class SRMGetSpaceTokensClientV2 extends SRMClient  {
                         String tokenDescription = configuration.getSpaceTokenDescription();
                 	SrmGetSpaceTokensRequest request = new SrmGetSpaceTokensRequest(); 
                         request.setUserSpaceTokenDescription(tokenDescription);
-			
 			SrmGetSpaceTokensResponse response = srmv2.srmGetSpaceTokens(request);
 
 
@@ -165,8 +164,7 @@ public class SRMGetSpaceTokensClientV2 extends SRMClient  {
 
  		}
 		catch(Exception e) {
-			say(e.toString());
-                        
+			throw e;
 		}
 	}
 }

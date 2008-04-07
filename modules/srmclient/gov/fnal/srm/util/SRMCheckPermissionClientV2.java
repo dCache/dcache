@@ -176,8 +176,7 @@ public class SRMCheckPermissionClientV2 extends SRMClient {
 			}
 		}
 		catch (Exception e) { 
-			e.printStackTrace();
-			System.exit(1);
+			throw e;
 		}
 	}
 

@@ -374,12 +374,12 @@ public class SRMDispatcher {
 	    dispatcher.work();
 	}
 	catch(Exception e) {
-	    if(conf.isDebug()) { 
+	   if(conf.isDebug()) { 
 		throw e;
 	    }
 	    else { 
-		System.err.println("srm client error: \n" + e.getMessage());
-		System.exit(1);
+		    System.err.println("srm client error: \n" + e.getMessage());
+		    System.exit(1);
 	    }
 	}
     }

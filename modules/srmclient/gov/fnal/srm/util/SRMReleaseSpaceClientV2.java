@@ -155,7 +155,7 @@ public class SRMReleaseSpaceClientV2 extends SRMClient  {
 
  		}
 		catch(Exception e) {
-			esay(e.toString());
+			throw e;
 		}
 	}
 	

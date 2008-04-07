@@ -102,8 +102,7 @@ public class SRMGetRequestSummaryClientV2 extends SRMClient  {
 	    }
 	}
 	catch(Exception e) {
-	    say(e.toString());
-	    
+		throw e;
 	}
     }
 }
