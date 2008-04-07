@@ -10,6 +10,7 @@ import java.util.Set;
 import diskCacheV111.poolManager.CostModule;
 import diskCacheV111.poolManager.PoolSelectionUnit;
 import diskCacheV111.pools.PoolCostInfo;
+import diskCacheV111.vehicles.PoolLinkGroupInfo;
 
 public class Utils {
 
@@ -23,10 +24,10 @@ public class Utils {
 
 
 
-    public static Map<String, Long> linkGroupSize(PoolSelectionUnit selectionUnit, CostModule costModule ) {
+    public static Map<String, PoolLinkGroupInfo> linkGroupInfos(PoolSelectionUnit selectionUnit, CostModule costModule ) {
 
         String [] linkGroups = selectionUnit.getLinkGroups();
-        Map<String, Long> linkGroupSize = new HashMap<String, Long>(linkGroups.length);
+        Map<String, PoolLinkGroupInfo> linkGroupInfos = new HashMap<String, PoolLinkGroupInfo>(linkGroups.length);
 
         /*
          * get list of all defined link groups
@@ -68,10 +69,12 @@ public class Utils {
                     }
                 }
 
-                linkGroupSize.put(linkGroups[i_goup], Long.valueOf(linkAvailableSpace));
+                PoolSelectionUnit.SelectionLinkGroup linkGroup = selectionUnit.getLinkGroupByName(linkGroups[i_goup]);
+                PoolLinkGroupInfo linkGroupInfo = new PoolLinkGroupInfo(linkGroup, linkTotalSpace, linkAvailableSpace);
+                linkGroupInfos.put(linkGroups[i_goup], linkGroupInfo);
         }
 
-        return linkGroupSize;
+        return linkGroupInfos;
     }
 
 }

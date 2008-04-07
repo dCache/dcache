@@ -9,15 +9,18 @@ import java.io.FileWriter;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Set;
 import java.util.StringTokenizer;
 
 import org.apache.log4j.Logger;
+import org.dcache.poolmanager.Utils;
 
 import diskCacheV111.poolManager.PoolSelectionUnit.DirectionType;
 import diskCacheV111.pools.PoolCostInfo;
@@ -664,50 +667,10 @@ public class PoolManagerV5 extends CellAdapter {
     }
 
     private void getLinkGroups(PoolMgrGetPoolLinkGroups poolMessage,CellMessage cellMessage ){
-    	String [] linkGroups = _selectionUnit.getLinkGroups();
-    	//PoolLinkGroupInfo[] linkGroupInfo = new PoolLinkGroupInfo[linkGroups.length];
-    	List<PoolLinkGroupInfo> linkGroupInfoList = new ArrayList<PoolLinkGroupInfo>();
 
-    	/*
-    	 * get list of all defined link groups
-    	 * for each link group get list of links
-    	 * for each link in the group find all active pools and
-    	 * calculate available space ( total - removable )
-    	 */
+        Collection<PoolLinkGroupInfo> linkGroupInfos = Utils.linkGroupInfos(_selectionUnit, _costModule).values();
 
-
-    	for( int i_goup = 0; i_goup < linkGroups.length; i_goup++ ) {
-    		try {
-    			String[] links = _selectionUnit.getLinksByGroupName(linkGroups[i_goup]);
-    			long linkAvailableSpace = 0;
-    			long linkTotalSpace = 0;
-                    for(int i_link = 0; i_link < links.length; i_link++ ) {
-
-                    PoolSelectionUnit.SelectionLink selectionLink = _selectionUnit.getLinkByName(links[i_link]);
-    				Iterator<PoolSelectionUnit.SelectionPool> poolsIterator = selectionLink.pools();
-    				while( poolsIterator.hasNext() ) {
-    					PoolSelectionUnit.SelectionPool pool = poolsIterator.next();
-    					if ( pool.isEnabled() ) {
-	    					String poolName = pool.getName();
-	    					PoolCostInfo poolCostInfo = _costModule.getPoolCostInfo(poolName);
-	    					if(poolCostInfo != null) {
-	    						linkAvailableSpace += poolCostInfo.getSpaceInfo().getFreeSpace() + poolCostInfo.getSpaceInfo().getRemovableSpace();
-	    						linkTotalSpace += poolCostInfo.getSpaceInfo().getTotalSpace();
-	    					}
-    					}
-    				}
-
-    			}
-
-                PoolSelectionUnit.SelectionLinkGroup linkGroup = _selectionUnit.getLinkGroupByName(linkGroups[i_goup]);
-    			PoolLinkGroupInfo linkGroupInfo = new PoolLinkGroupInfo(linkGroup, linkTotalSpace, linkAvailableSpace);
-    		    linkGroupInfoList.add(linkGroupInfo);
-    		}catch(Exception e) {
-    			esay(e);
-    		}
-    	}
-
-    	PoolLinkGroupInfo[] poolLinkGroupInfos = linkGroupInfoList.toArray(new PoolLinkGroupInfo[linkGroupInfoList.size()]);
+    	PoolLinkGroupInfo[] poolLinkGroupInfos = linkGroupInfos.toArray(new PoolLinkGroupInfo[linkGroupInfos.size()]);
     	poolMessage.setPoolLinkGroupInfos(poolLinkGroupInfos);
         poolMessage.setReply();
 
@@ -1036,54 +999,14 @@ public class PoolManagerV5 extends CellAdapter {
 
     public String ac_free_$_0(Args args) {
 
-    	String [] linkGroups = _selectionUnit.getLinkGroups();
-    	//PoolLinkGroupInfo[] linkGroupInfo = new PoolLinkGroupInfo[linkGroups.length];
-    	Map<String, Long> linkGroupSize = new HashMap<String, Long>(linkGroups.length);
 
-    	/*
-    	 * get list of all defined link groups
-    	 * for each link group get list of links
-    	 * for each link in the group find all active pools and
-    	 * calculate available space ( total - removable )
-    	 */
-
-
-    	for( int i_goup = 0; i_goup < linkGroups.length; i_goup++ ) {
-    		try {
-
-    			String[] links = _selectionUnit.getLinksByGroupName(linkGroups[i_goup]);
-    			long linkAvailableSpace = 0;
-    			long linkTotalSpace = 0;
-    			for(int i_link = 0; i_link < links.length; i_link++ ) {
-
-    				PoolSelectionUnit.SelectionLink selectionLink = _selectionUnit.getLinkByName(links[i_link]);
-    				Iterator<PoolSelectionUnit.SelectionPool> poolsIterator = selectionLink.pools();
-    				while( poolsIterator.hasNext() ) {
-    					PoolSelectionUnit.SelectionPool pool = poolsIterator.next();
-    					if ( pool.isEnabled() ) {
-	    					String poolName = pool.getName();
-	    					PoolCostInfo poolCostInfo = _costModule.getPoolCostInfo(poolName);
-	    					if(poolCostInfo != null) {
-	    						linkAvailableSpace += poolCostInfo.getSpaceInfo().getFreeSpace() + poolCostInfo.getSpaceInfo().getRemovableSpace();
-	    						linkTotalSpace += poolCostInfo.getSpaceInfo().getTotalSpace();
-	    					}
-    					}
-    				}
-    			}
-
-    			linkGroupSize.put(linkGroups[i_goup], Long.valueOf(linkAvailableSpace));
-    		}catch(Exception e) {
-    		       esay("Exception in free : "+e);
-    		       esay(e);
-    		       return "Exception in free : "+e;
-    		}
-    	}
+    	Map<String, PoolLinkGroupInfo> linkGroupSize = Utils.linkGroupInfos(_selectionUnit, _costModule);
 
     	StringBuilder sb = new StringBuilder();
 
-    	for(Map.Entry<String, Long> linkGourp: linkGroupSize.entrySet() ) {
+    	for(Map.Entry<String, PoolLinkGroupInfo> linkGourp: linkGroupSize.entrySet() ) {
     		sb.append(linkGourp.getKey()).append(" : ")
-    			.append(linkGourp.getValue() ).append("\n");
+    			.append(linkGourp.getValue().getAvailableSpaceInBytes() ).append("\n");
     	}
 
     	return sb.toString();

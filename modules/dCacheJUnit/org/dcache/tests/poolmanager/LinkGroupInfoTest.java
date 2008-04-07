@@ -12,6 +12,7 @@ import diskCacheV111.poolManager.CostModule;
 import diskCacheV111.poolManager.CostModuleV1;
 import diskCacheV111.poolManager.PoolSelectionUnit;
 import diskCacheV111.poolManager.PoolSelectionUnitV2;
+import diskCacheV111.vehicles.PoolLinkGroupInfo;
 import dmg.util.Args;
 import dmg.util.CommandException;
 import dmg.util.CommandInterpreter;
@@ -94,11 +95,11 @@ public class LinkGroupInfoTest {
 
         PoolCostInfoHelper.setCost(_costModule, "p0", 100, 20, 60, 20);
 
-        Map<String, Long> linkGroupSize = Utils.linkGroupSize(_selectionUnit, _costModule);
+        Map<String, PoolLinkGroupInfo> linkGroupSize = Utils.linkGroupInfos(_selectionUnit, _costModule);
 
 
         assertNotNull("Link group missing", linkGroupSize.containsKey("link-ga"));
-        assertEquals("Link group size misscalculated (single pool)", 40, linkGroupSize.get("link-ga"));
+        assertEquals("Link group size misscalculated (single pool)", 40, linkGroupSize.get("link-ga").getAvailableSpaceInBytes());
 
     }
 
@@ -110,10 +111,10 @@ public class LinkGroupInfoTest {
         PoolCostInfoHelper.setCost(_costModule, "p0", 100, 20, 60, 20);
         PoolCostInfoHelper.setCost(_costModule, "p1", 100, 80, 0, 20);
 
-        Map<String, Long> linkGroupSize = Utils.linkGroupSize(_selectionUnit, _costModule);
+        Map<String, PoolLinkGroupInfo> linkGroupSize = Utils.linkGroupInfos(_selectionUnit, _costModule);
 
         assertNotNull("Link group missing", linkGroupSize.containsKey("link-ga"));
-        assertEquals("Link group size misscalculated (two pool in the same pgoup)", 140, linkGroupSize.get("link-ga"));
+        assertEquals("Link group size misscalculated (two pool in the same pgoup)", 140, linkGroupSize.get("link-ga").getAvailableSpaceInBytes());
 
     }
 
@@ -124,10 +125,10 @@ public class LinkGroupInfoTest {
         PoolCostInfoHelper.setCost(_costModule, "p0", 100, 20, 60, 20);
         PoolCostInfoHelper.setCost(_costModule, "p3", 100, 20, 60, 20);
 
-        Map<String, Long> linkGroupSize = Utils.linkGroupSize(_selectionUnit, _costModule);
+        Map<String, PoolLinkGroupInfo> linkGroupSize = Utils.linkGroupInfos(_selectionUnit, _costModule);
 
         assertNotNull("Link group missing", linkGroupSize.containsKey("link-ga"));
-        assertEquals("Link group size misscalculated (two links)", 80, linkGroupSize.get("link-ga"));
+        assertEquals("Link group size misscalculated (two links)", 80, linkGroupSize.get("link-ga").getAvailableSpaceInBytes());
 
     }
 
@@ -141,10 +142,10 @@ public class LinkGroupInfoTest {
         _ci.command( new Args("psu addto pgroup pg-a p3" )  );
 
 
-        Map<String, Long> linkGroupSize = Utils.linkGroupSize(_selectionUnit, _costModule);
+        Map<String, PoolLinkGroupInfo> linkGroupSize = Utils.linkGroupInfos(_selectionUnit, _costModule);
 
         assertNotNull("Link group missing", linkGroupSize.containsKey("link-ga"));
-        assertEquals("Link group size misscalculated (same pool in multiple links)", 80, linkGroupSize.get("link-ga"));
+        assertEquals("Link group size misscalculated (same pool in multiple links)", 80, linkGroupSize.get("link-ga").getAvailableSpaceInBytes());
 
     }
 
