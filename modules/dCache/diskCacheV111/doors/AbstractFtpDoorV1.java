@@ -3821,6 +3821,21 @@ public abstract class AbstractFtpDoorV1
         list(args, false);
     }
 
+    //----------------------------------------------
+    // DCAU: data channel authtication
+    // currentrly ( 07.04.2008 ) it's not supported
+    //----------------------------------------------
+    public void ac_dcau(String arg)
+    {
+
+        if(arg.equalsIgnoreCase("N")) {
+            reply("200 data channel authtication switched off");
+        }else{
+            reply("202 data channel authtication not sopported");
+        }
+
+    }
+
     // ---------------------------------------------
     // QUIT: close command channel.
     // If transfer is in progress, wait for it to finish, so set pending_quit state.
