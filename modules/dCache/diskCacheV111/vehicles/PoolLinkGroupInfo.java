@@ -4,15 +4,11 @@
 package diskCacheV111.vehicles;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionLinkGroup;
-import diskCacheV111.util.VOInfo;
 
 public class PoolLinkGroupInfo implements Serializable {
 
@@ -25,16 +21,7 @@ public class PoolLinkGroupInfo implements Serializable {
 	private final boolean _nearlineAllowed;
 	private final boolean _onlineAllowed;
 	private final Map<String,Set<String> > _attributes = new HashMap<String,Set<String> >();
-        //
-        // I have put some default values for testing purposes
-        // (*,*) will match every vo.
-        //
-        private VOInfo[] _allowedVOs = new VOInfo[]{new VOInfo("*","*")};
-        //
-        // this for retention policy replica and output
-        // custodial must have something non-None :)
-        //
-        private String _hsmType="None";
+
 
 	public PoolLinkGroupInfo(SelectionLinkGroup linkGroup, long totalSpace, long availableSpace) {
 		_groupName = linkGroup.getName();
@@ -49,54 +36,6 @@ public class PoolLinkGroupInfo implements Serializable {
 		Map<String, Set<String>> attributes = linkGroup.attributes();
 		if(attributes != null ) {
 			_attributes.putAll(attributes);
-
-
-			/*
-			 * TODO: this path is GRID/SRM related and has nothing to do with linkGroup
-			 */
-
-
-			Set<String> suportedVO = attributes.get("VO");
-                        if(suportedVO != null) {
-                            List <VOInfo> voInfoList = new ArrayList<VOInfo>();
-                            for( String vo: suportedVO) {
-                                    if(attributes.containsKey(vo+"Role") ) {
-                                            Set<String> voRoles = attributes.get(vo+"Role");
-                                            for( String voRole: voRoles ) {
-                                                    voInfoList.add( new VOInfo(vo, voRole) );
-                                            }
-                                    }
-
-                                    if(attributes.containsKey(vo+"/Role") ) {
-                                            Set<String> voRoles = attributes.get(vo+"/Role");
-                                            for( String voRole: voRoles ) {
-                                                    voInfoList.add( new VOInfo(vo, voRole) );
-                                            }
-                                    }
-
-                                    if(voInfoList.isEmpty())
-                                    {
-                                            voInfoList.add( new VOInfo(vo, "*") );
-                                    }
-                            }
-
-                            _allowedVOs = voInfoList.toArray( new VOInfo[voInfoList.size()]);
-                        }
-
-			/*
-			 * the attribute HSM has to be created with -r option,
-			 * which guarantees to have only one value. In to future, we can add the suport for
-			 * many HSMs
-			 *
-			 */
-			Set<String> hsmTypeAttribyte =  attributes.get("HSM");
-			if( hsmTypeAttribyte != null ) {
-				Iterator<String> hsmType  = hsmTypeAttribyte.iterator();
-				if(hsmType.hasNext() ) {
-					_hsmType = hsmType.next();
-				}
-			}
-
 		}
 	}
 
@@ -168,26 +107,6 @@ public class PoolLinkGroupInfo implements Serializable {
      */
     public boolean isNearlineAllowed() {
         return _nearlineAllowed;
-    }
-
-
-	/*
-	 * FIXME: this path is GRID/SRM related and has nothing to do with linkGroup
-	 */
-
-    @Deprecated
-    public VOInfo[] getAllowedVOs() {
-        return _allowedVOs;
-    }
-
-    @Deprecated
-    public String getHsmType() {
-        return _hsmType;
-    }
-
-    @Deprecated
-    public void setHsmType(String hsmType) {
-        this._hsmType = hsmType;
     }
 
 }
