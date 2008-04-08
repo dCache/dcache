@@ -400,7 +400,10 @@ public class DiskSpaceAllocatorTest {
     public void testAllocateWithSetTotalInc() throws Exception {
 
         final Random random = new Random();
-        final long space = Math.abs(random.nextLong());
+        /*
+         * while we use later on space+space we hate to guarantee that it still positive number
+         */
+        final long space = Math.abs(random.nextLong())/2;
 
         final PoolSpaceAllocatable<Long> spaceAllocator = new FairDiskSpaceAllocator<Long>(space);
 
