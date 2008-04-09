@@ -331,7 +331,7 @@ public class Configuration {
     
 	private String releaseSpace_options =
 		" release options: \n"+
-		"\t-space_tokens=<Space Reservation Token to be released>\n"+
+		"\t-space_token=<Space Reservation Token to be released>\n"+
 		"\t-force=<true|false>\n";
     
 	private String getSpaceMetaData_options=
@@ -667,7 +667,7 @@ public class Configuration {
 		}
 		if(extendFileLifetime) { 
 			return
-				"Usage: srm-etxend-file-lifetime [command line options] srmUrl [[srmUrl]...] \n" +
+				"Usage: srm-extend-file-lifetime [command line options] srmUrl [[srmUrl]...] \n" +
 				" default options will be read from configuration file \n"+
 				" but can be overridden by the command line options\n"+
 				" the command line options are one or more of the following:\n"+
