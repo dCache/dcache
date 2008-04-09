@@ -4520,8 +4520,7 @@ public class Storage
                     spaceMetaDatas[i].setLifetimeAssigned(Integer.valueOf(-1));
                     spaceMetaDatas[i].setLifetimeLeft(Integer.valueOf(-1));
                 } else {
-                    lifetimeleft = (int)(space.getCreationTime() +
-                                lifetime - System.currentTimeMillis())/1000;
+			lifetimeleft = (int)((space.getCreationTime()+lifetime - System.currentTimeMillis())/1000);
                     lifetimeleft= lifetimeleft < 0? 0: lifetimeleft;
                     spaceMetaDatas[i].setLifetimeAssigned(new Integer((int)(
                             lifetime/1000)));
