@@ -64,11 +64,11 @@ public class SrmRm {
 		}
 	}
 	
-    private void esay(String txt) {
-	    if(storage!=null) {
-		    storage.elog(txt);
-	    }
-    }
+	private void esay(String txt) {
+		if(storage!=null) {
+			storage.elog(txt);
+		}
+	}
 	
 	private void esay(Throwable t) {
 		if(storage!=null) {
@@ -272,7 +272,6 @@ public class SrmRm {
 						return;
 					}
 					wait(3600);
-					
 				}
 			}
 		}

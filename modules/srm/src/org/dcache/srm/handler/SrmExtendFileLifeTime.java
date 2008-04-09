@@ -322,13 +322,13 @@ public class SrmExtendFileLifeTime {
         token = request.getRequestToken();
         if(token == null) {
             if(newFileLifetime ==null) {
-                return getFailedResponse(" both requesToken and newFileLifetime parameters are null",
+                return getFailedResponse(" both requestToken and newFileLifetime parameters are null",
                         TStatusCode.SRM_INVALID_REQUEST);
             }
             return srmExtendSURLLifeTime();
         } else {
             if(newPinLifetime == null) {
-                return getFailedResponse(" requesToken is not null and newPinLifetime is null",
+                return getFailedResponse(" requestToken is not null and newPinLifetime is null",
                         TStatusCode.SRM_INVALID_REQUEST);
             }
             
