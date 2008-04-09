@@ -561,7 +561,6 @@ public class Configuration {
 		if(getSpaceMetaData) {
 			return
 				"Usage: srm-get-space-metadata [commnad line options] srmUrl "+
-				" spaceToken0 [spaceToken1 [...[spaceTokenN]...]\n"+
 				" default options will be read from configuration file \n"+
 				" but can be overridden by the command line options\n"+
 				" the command line options are one or more of the following:\n"+
