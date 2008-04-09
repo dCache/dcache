@@ -874,22 +874,15 @@ public class Configuration {
 			System.err.println(new Version().toString());
 		}
         
-		String [] arguments = parser.getCommandArguments();
-
-		if (arguments==null) { 
-			usage();
-			throw new IllegalArgumentException("Please specify command line arguments\n"+usage());
-			 
-		}
-		if (arguments.length==0) { 
-			usage();
-			throw new IllegalArgumentException("Please specify command line arguments\n"+usage());
-		}
         
 		if( isHelp()) {
 			return;
 		}
-        
+		
+		if(version) { 
+			System.exit(0);
+		}
+
 		if (!( is_mv ^
 		       is_mkdir ^
 		       is_rmdir ^
@@ -914,12 +907,24 @@ public class Configuration {
 		       is_getRequestSummary ^
 		       is_getRequestTokens
 			    )) {
-			if(version) System.exit(1);
+
 			throw new IllegalArgumentException(
 				"one and only one of the following options must be " +
 				"specified:\n\n" + usage());
 		}
         
+		String [] arguments = parser.getCommandArguments();
+
+		if (arguments==null) { 
+			usage();
+			throw new IllegalArgumentException("Please specify command line arguments\n"+usage());
+			 
+		}
+		if (arguments.length==0) { 
+			usage();
+			throw new IllegalArgumentException("Please specify command line arguments\n"+usage());
+		}
+
 		if (getFileMetaData) {
 			getFileMetaDataSurls = arguments;
 		}
