@@ -163,8 +163,7 @@ public class SRMReserveSpaceClientV2 extends SRMClient implements Runnable {
             Runtime.getRuntime().addShutdownHook(hook);
             
             SrmReserveSpaceResponse response = srmv2.srmReserveSpace(request);
-            
-            
+
             if ( response == null ) {
                 throw new IOException(" null SrmReserveSpace");
             }
@@ -215,20 +214,8 @@ public class SRMReserveSpaceClientV2 extends SRMClient implements Runnable {
                     throw new IOException(" null status code");
                 }
                 if (RequestStatusTool.isFailedRequestStatus(status)){
-                    
                     logger.log("status: code="+status.getStatusCode()+
                         " explanantion="+status.getExplanation());
-                    logger.log("lifetime = "+
-                        statusOfReserveSpaceRequestResponse.getLifetimeOfReservedSpace());
-                    logger.log("access latency = "+
-                        statusOfReserveSpaceRequestResponse.getRetentionPolicyInfo().getAccessLatency());
-                    logger.log("retention policy = "+
-                        statusOfReserveSpaceRequestResponse.getRetentionPolicyInfo().getRetentionPolicy());
-                    logger.log("guaranteed size = "+
-                        statusOfReserveSpaceRequestResponse.getSizeOfGuaranteedReservedSpace());
-                    logger.log("total size = "+
-                        statusOfReserveSpaceRequestResponse.getSizeOfTotalReservedSpace());
-                    
                     throw new IOException("SrmStatusOfReserveSpaceRequest unexpected or failed status : "+
                         status.getStatusCode() +" explanation="+status.getExplanation());
                 }
@@ -257,13 +244,15 @@ public class SRMReserveSpaceClientV2 extends SRMClient implements Runnable {
             }
             Runtime.getRuntime().removeShutdownHook(hook);
         } catch(Exception e) {
-            say(e.toString());
+            esay(e.toString());
             try {
                 if ( requestToken != null ) {
                     abortRequest();
                 }
+		System.exit(1);
             } catch (Exception e1) {
                 logger.elog(e1);
+		System.exit(1);
             }
         }
     }
