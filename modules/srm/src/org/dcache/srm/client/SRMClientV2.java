@@ -187,7 +187,7 @@ public class SRMClientV2 implements org.dcache.srm.v2_2.ISRM {
             catch(java.lang.reflect.InvocationTargetException ite) {
                 Throwable e= ite.getCause();
                 esay(name +": try # "+i+" failed with error");
-                esay(e);
+                esay(e.getMessage());
                 if(retry) {
                     if(i <retries) {
                         i++;
@@ -214,7 +214,7 @@ public class SRMClientV2 implements org.dcache.srm.v2_2.ISRM {
             }
             catch(RuntimeException e) {
                 esay(name +": try # "+i+" failed with error");
-                esay(e);
+                esay(e.getMessage());
                 if(retry){
                     if(i <retries) {
                         i++;
