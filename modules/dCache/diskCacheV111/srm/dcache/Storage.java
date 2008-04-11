@@ -3086,7 +3086,7 @@ public class Storage
 	    catch(CacheException e2) {
                 esay("moveEntry: \"from\" path does not exist");
                 esay(e2);
-                throw new SRMException(actualFromPnfsPath+" (source) does not exist");
+                throw new SRMInvalidPathException(actualFromPnfsPath+" (source) does not exist");
             }
         }
         if ( storageInfoMessage  != null) {
