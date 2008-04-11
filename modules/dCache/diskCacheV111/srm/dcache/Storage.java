@@ -624,6 +624,37 @@ public class Storage
         ignoreClientProtocolOrder = isOptionSetToTrueOrYes(
             "ignore-client-protocol-order",ignoreClientProtocolOrder);
 
+
+        config.setCredentialsDirectory(getOption("credentials-dir",
+            config.getCredentialsDirectory()));
+
+        
+        tmpstr = _args.getOpt("use_lambdastation");
+	if(tmpstr != null) {
+	    if (tmpstr.equalsIgnoreCase("true")) {
+		config.setLambdaStationEnabled(true);
+	    }
+	    else {
+		config.setLambdaStationEnabled(false);
+	    }
+	}
+
+	tmpstr = _args.getOpt("lambdastation_map_file");
+	if(tmpstr != null) {
+	    config.setLambda_station_map_file(tmpstr);
+	}
+	else {
+	    config.setLambdaStationEnabled(false);
+	}
+	    
+	tmpstr = _args.getOpt("lambdastation_script");
+	if(tmpstr != null) {
+	    config.setLambda_station_script(tmpstr);
+	}
+	else {
+	    config.setLambdaStationEnabled(false);
+	 }
+
         say("scheduler parameter read, starting");
         this.useInterpreter(true);
         this.getNucleus().export();
@@ -1023,6 +1054,37 @@ public class Storage
         }
     }
     
+
+    public String fh_lambdastation= " Syntax: labmdastation [<on|off>] ";
+    public String hh_lambdastation= " on|off";
+    public String ac_lambdastation_$_0_1(Args args) {
+	boolean ls;
+	try {
+	    if (args.argc() == 1) {
+		if (args.argv(0).equalsIgnoreCase("on")) {
+		    ls = true;
+		}
+		else {
+		    ls = false;
+		}
+		config.setLambdaStationEnabled(ls);
+	    }
+	    if (config.getLambdaStationEnabled()) {
+		return "on";
+	    }
+	    else {
+		return "off";
+	    }
+	    
+	}catch(Throwable t) {
+            t.printStackTrace();
+            return t.toString();
+	}
+    }
+
+
+
+
     public String fh_ls_completed= " Syntax: ls completed [-get] [-put]" +
         " [-copy] [-l] [max_count]"+
             " #will list completed (done, failed or canceled) requests, " +
@@ -4520,7 +4582,8 @@ public class Storage
                     spaceMetaDatas[i].setLifetimeAssigned(Integer.valueOf(-1));
                     spaceMetaDatas[i].setLifetimeLeft(Integer.valueOf(-1));
                 } else {
-			lifetimeleft = (int)((space.getCreationTime()+lifetime - System.currentTimeMillis())/1000);
+                    lifetimeleft = (int)(space.getCreationTime() +
+                                lifetime - System.currentTimeMillis())/1000;
                     lifetimeleft= lifetimeleft < 0? 0: lifetimeleft;
                     spaceMetaDatas[i].setLifetimeAssigned(new Integer((int)(
                             lifetime/1000)));
