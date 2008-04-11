@@ -222,6 +222,7 @@ public class Configuration {
     private String lambda_station_map_file=null;
     private LambdaStationMap LSMap=null;
     private String lambda_station_script=null;
+    private boolean lambda_station_enabled=false;
     private String getPriorityPolicyPlugin="DefaultJobAppraiser";
     private String putPriorityPolicyPlugin="DefaultJobAppraiser";
     private String copyPriorityPolicyPlugin="DefaultJobAppraiser";
@@ -1194,6 +1195,7 @@ public class Configuration {
         sb.append("\n\tstorage_info_update_period=").append(this.storage_info_update_period);
         sb.append("\n\tvacuum=").append(this.vacuum);
         sb.append("\n\tvacuum_period_sec=").append(this.vacuum_period_sec);
+        sb.append("\n\tlambda_station_enabled=").append(this.lambda_station_enabled);
         sb.append("\n\tlambda_station_map_file=").append(this.lambda_station_map_file);
         sb.append("\n\tlambda_station_script=").append(this.lambda_station_script);
         sb.append("\n\tjdbcMonitoringEnabled=").append(this.jdbcMonitoringEnabled);
@@ -2165,18 +2167,31 @@ public class Configuration {
         this.start_server = start_server;
     }
     
+
     public LambdaStationMap setLambdaStationMap() {
         if (lambda_station_map_file != null) {
             LSMap = new LambdaStationMap(lambda_station_map_file);
         }
+	else {
+	    LSMap = null;
+	}
         return LSMap;
     }
+
     public LambdaStationMap getLambdaStationMap() {
         return LSMap;
     }
     
     public String getLambdaStationScript() {
         return lambda_station_script;
+    }
+
+    public void setLambdaStationEnabled(boolean ls_en) {
+	lambda_station_enabled = ls_en;
+    }
+
+    public boolean getLambdaStationEnabled() {
+	return lambda_station_enabled;
     }
 
     public int getNumDaysHistory() {
@@ -2291,6 +2306,12 @@ public class Configuration {
     public void setJdbcMonitoringDebugLevel(boolean jdbcMonitoringDebugLevel) {
         this.jdbcMonitoringDebugLevel = jdbcMonitoringDebugLevel;
     }
-    
+    public void setLambda_station_map_file(String lambda_station_map_file) {
+        this.lambda_station_map_file = lambda_station_map_file;
+    }
+   
+    public void setLambda_station_script(String lambda_station_script) {
+        this.lambda_station_script = lambda_station_script;
+    }
     
 }
