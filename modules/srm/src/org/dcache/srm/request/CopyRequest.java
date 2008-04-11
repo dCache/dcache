@@ -161,7 +161,7 @@ public class CopyRequest extends ContainerRequest implements PropertyChangeListe
     private SRMProtocol remoteSrmProtocol;
     private boolean remoteSrmGet;
     private LambdaStationMap LSMap;
-    private boolean use_lambda_station ; // false by default
+    private boolean use_lambda_station = false; // false by default
     private String lambda_station_script = null;
     private TFileStorageType storageType;
     private TRetentionPolicy targetRetentionPolicy;
@@ -234,7 +234,9 @@ public class CopyRequest extends ContainerRequest implements PropertyChangeListe
         }
         this.callerSrmProtocol = callerSrmProtocol;
         LSMap = configuration.setLambdaStationMap();
-        if (LSMap != null) {
+	System.out.println("LSMAP"+LSMap);
+        LSMap = configuration.setLambdaStationMap();
+        if ((LSMap != null) && (configuration.getLambdaStationEnabled())) {
             // can be more conditions
             use_lambda_station = true;
             lambda_station_script = configuration.getLambdaStationScript();
@@ -317,7 +319,7 @@ public class CopyRequest extends ContainerRequest implements PropertyChangeListe
         
         protocols = (String[]) prot_list.toArray(new String[0]);
         LSMap = configuration.setLambdaStationMap();
-        if (LSMap != null) {
+        if ((LSMap != null) && (configuration.getLambdaStationEnabled())) {
             // can be more conditions
             use_lambda_station = true;
             lambda_station_script = configuration.getLambdaStationScript();
