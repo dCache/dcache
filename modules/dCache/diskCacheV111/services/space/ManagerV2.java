@@ -2485,6 +2485,40 @@ public class ManagerV2
 		int rc=0;
 //		Space space = selectSpaceForUpdate(connection,spaceReservationId,sizeInBytes);
 		Space space = selectSpaceForUpdate(connection,spaceReservationId,0L); // a hack needed to get a better error code from comparison below
+		if (voGroup==null) {
+			if (space.getVoGroup()!=null) {
+				if (!space.getVoGroup().equals("")&&!space.getVoGroup().equals("*")) { 
+					throw new SpaceAuthorizationException("VO group does not match, specified null, must be "+space.getVoGroup());
+				}
+			}
+		}
+		else { 
+			if (space.getVoGroup()!=null) { 
+				if (!space.getVoGroup().equals(voGroup)&&!space.getVoGroup().equals("*")) { 
+					throw new SpaceAuthorizationException("VO group does not match, specified "+voGroup +", must be "+space.getVoGroup());
+				}
+			}
+			else { 
+				throw new SpaceAuthorizationException("VO group does not match, specified "+voGroup +", must be null");
+			}
+		}
+		if (voRole==null) {
+			if (space.getVoRole()!=null) {
+				if (!space.getVoRole().equals("")&&!space.getVoRole().equals("*")) { 
+					throw new SpaceAuthorizationException("VO role does not match, specified null, must be "+space.getVoRole());
+				}
+			}
+		}
+		else { 
+			if (space.getVoRole()!=null) { 
+				if (!space.getVoRole().equals(voRole)&&!space.getVoRole().equals("*")) { 
+					throw new SpaceAuthorizationException("VO role does not match, specified "+voRole +", must be "+space.getVoRole());
+				}
+			}
+			else { 
+				throw new SpaceAuthorizationException("VO role does not match, specified "+voRole +", must be null");
+			}
+		}
 		long currentTime = System.currentTimeMillis();
 		if(space.getLifetime() != -1 && space.getCreationTime()+space.getLifetime()  < currentTime) {
 			throw new SpaceExpiredException("space with id="+spaceReservationId+" has expired");
@@ -3027,8 +3061,6 @@ public class ManagerV2
 			    return;                
 			}
 			if( ! (cellMessage.getMessageObject() instanceof PoolMgrGetPoolLinkGroups)){
-				//say("updateLinkGroups() : reply message is "+
-				 //    cellMessage.getMessageObject().getClass().getName());
 				return;                
 			}
 			getLinkGroups = (PoolMgrGetPoolLinkGroups)cellMessage.getMessageObject();
@@ -3044,7 +3076,6 @@ public class ManagerV2
 			return;
 		}
 		PoolLinkGroupInfo[] poolLinkGroupInfos = getLinkGroups.getPoolLinkGroupInfos();
-		//say("updateLinkGroups() number of poolLinkGroupInfos is "+poolLinkGroupInfos.length);
 		if(poolLinkGroupInfos.length == 0) {
 			return;
 		}
@@ -3059,17 +3090,9 @@ public class ManagerV2
 			boolean replicaAllowed   = info.isReplicaAllowed();
 			boolean outputAllowed    = info.isOutputAllowed();
 			boolean custodialAllowed = info.isCustodialAllowed();
-			//say("updateLinkGroups: received LinkGroupInfo: name:"+linkGroupName+
-			//    " onlineAllowed:"+onlineAllowed+
-			//    " nearlineAllowed:"+nearlineAllowed+
-			//    " replicaAllowed:"+replicaAllowed+
-			//    " outputAllowed:"+outputAllowed+
-			//    " custodialAllowed:"+custodialAllowed+
-			//    " avalSpaceInBytes:"+avalSpaceInBytes);
 			if(linkGroupAuthorizationFile != null) {
 				LinkGroupAuthorizationRecord record = 
 					linkGroupAuthorizationFile.getLinkGroupAuthorizationRecord(linkGroupName);
-				//say("got LinkGroupAuthorizationRecord for "+linkGroupName+" record="+record);
 				if(record != null) {
 					FQAN[] fqans = record.getFqanArray();
 					if(fqans != null  && fqans.length >0) {
