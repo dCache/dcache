@@ -141,6 +141,7 @@ import diskCacheV111.services.space.SpaceException;
 import diskCacheV111.services.space.SpaceReleasedException;
 import diskCacheV111.services.space.SpaceExpiredException;
 import diskCacheV111.services.space.NoFreeSpaceException;
+import diskCacheV111.services.space.SpaceAuthorizationException;
 import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.vehicles.Message;
@@ -251,17 +252,25 @@ public class SrmMarkSpaceAsBeingUsedCompanion implements CellMessageAnswerable {
                         if(eo instanceof NoFreeSpaceException) {
                             callbacks.SrmNoFreeSpace(
                                     ((NoFreeSpaceException)eo).getMessage());
-                        } else if(eo instanceof SpaceExpiredException) {
+                        } 
+			else if(eo instanceof SpaceExpiredException) {
                             callbacks.SrmExpired(
                                     ((SpaceExpiredException)eo).getMessage());
-                        } else if(eo instanceof SpaceReleasedException) {
+                        } 
+			else if(eo instanceof SpaceAuthorizationException) {
+                            callbacks.SrmNotAuthorized(
+                                    ((SpaceAuthorizationException)eo).getMessage());
+                        } 
+			else if(eo instanceof SpaceReleasedException) {
                             callbacks.SrmReleased(
                                     ((SpaceReleasedException)eo).getMessage());
-                        } else if(eo instanceof Exception) {
+                        } 
+			else if(eo instanceof Exception) {
                             callbacks.SrmUseSpaceFailed(
                             "Marking Space as Being Used failed =>"+
                                     ((Exception)eo).getMessage());
-                        } else  {
+                        } 
+			else  {
                          callbacks.SrmUseSpaceFailed(
                           "Marking Space as Being Used failed =>"+eo);
                         }
