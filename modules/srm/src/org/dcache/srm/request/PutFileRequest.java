@@ -1,4 +1,4 @@
-// $Id: PutFileRequest.java,v 1.44 2007-10-08 19:42:15 timur Exp $
+// $Id$
 
 /*
 COPYRIGHT STATUS:
@@ -1265,6 +1265,32 @@ public class PutFileRequest extends FileRequest {
                         State state = fr.getState();
                         if(!State.isFinalState(state)) {
                             fr.setStatusCode(TStatusCode.SRM_SPACE_LIFETIME_EXPIRED);
+                            fr.setState(State.FAILED,reason);
+                        }
+                    }
+                } catch(IllegalStateTransition ist) {
+                    fr.esay("can not fail state:"+ist);
+                }
+
+                fr.esay("PutUseSpaceCallbacks error: "+ reason);
+            } catch(Exception e) {
+                e.printStackTrace();
+            }
+
+        }
+
+        /**
+         * call this if space reservation exists, but not authorized
+         */
+        public void SrmNotAuthorized(String reason){
+            try {
+                PutFileRequest fr = getPutFileRequest();
+                try {
+                    synchronized(fr) {
+
+                        State state = fr.getState();
+                        if(!State.isFinalState(state)) {
+                            fr.setStatusCode(TStatusCode.SRM_AUTHORIZATION_FAILURE);
                             fr.setState(State.FAILED,reason);
                         }
                     }
