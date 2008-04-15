@@ -848,7 +848,7 @@ public class Storage
     
     public CellVersion getCellVersion(){ 
         return new CellVersion(
-        diskCacheV111.util.Version.getVersion(),"$Revision: 1.151 $" ); 
+        diskCacheV111.util.Version.getVersion(),"$Revision$" ); 
     }
     
     public String fh_db_history_log= " Syntax: db history log [on|off] "+
