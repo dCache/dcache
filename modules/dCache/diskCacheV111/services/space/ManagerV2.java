@@ -127,6 +127,7 @@ public class ManagerV2
 	private boolean cleanupExpiredSpaceFiles=true;
 	private String linkGroupAuthorizationFileName = null;
 	private boolean spaceManagerEnabled =true;
+	private boolean matchVoGroupAndVoRole=false;
 	public static final int currentSchemaVersion = 3;
 	private int previousSchemaVersion;
 	private Args _args;
@@ -200,6 +201,10 @@ public class ManagerV2
 		if(_args.getOpt("returnRemovedSpaceToReservation") != null) {
 			returnRemovedSpaceToReservation=
 				_args.getOpt("returnRemovedSpaceToReservation").equalsIgnoreCase("true");
+		}
+		if(_args.getOpt("matchVoGroupAndVoRole") != null) {
+			matchVoGroupAndVoRole=
+				_args.getOpt("matchVoGroupAndVoRole").equalsIgnoreCase("true");
 		}
 		if(_args.getOpt("linkGroupAuthorizationFileName") != null) {
 			String tmp = _args.getOpt("linkGroupAuthorizationFileName").trim();
@@ -2485,38 +2490,40 @@ public class ManagerV2
 		int rc=0;
 //		Space space = selectSpaceForUpdate(connection,spaceReservationId,sizeInBytes);
 		Space space = selectSpaceForUpdate(connection,spaceReservationId,0L); // a hack needed to get a better error code from comparison below
-		if (voGroup==null) {
-			if (space.getVoGroup()!=null) {
-				if (!space.getVoGroup().equals("")&&!space.getVoGroup().equals("*")) { 
-					throw new SpaceAuthorizationException("VO group does not match, specified null, must be "+space.getVoGroup());
-				}
-			}
-		}
-		else { 
-			if (space.getVoGroup()!=null) { 
-				if (!space.getVoGroup().equals(voGroup)&&!space.getVoGroup().equals("*")) { 
-					throw new SpaceAuthorizationException("VO group does not match, specified "+voGroup +", must be "+space.getVoGroup());
+		if (matchVoGroupAndVoRole==true) { 
+			if (voGroup==null) {
+				if (space.getVoGroup()!=null) {
+					if (!space.getVoGroup().equals("")&&!space.getVoGroup().equals("*")) { 
+						throw new SpaceAuthorizationException("VO group does not match, specified null, must be "+space.getVoGroup());
+					}
 				}
 			}
 			else { 
-				throw new SpaceAuthorizationException("VO group does not match, specified "+voGroup +", must be null");
-			}
-		}
-		if (voRole==null) {
-			if (space.getVoRole()!=null) {
-				if (!space.getVoRole().equals("")&&!space.getVoRole().equals("*")) { 
-					throw new SpaceAuthorizationException("VO role does not match, specified null, must be "+space.getVoRole());
+				if (space.getVoGroup()!=null) { 
+					if (!space.getVoGroup().equals(voGroup)&&!space.getVoGroup().equals("*")) { 
+						throw new SpaceAuthorizationException("VO group does not match, specified "+voGroup +", must be "+space.getVoGroup());
+					}
+				}
+				else { 
+					throw new SpaceAuthorizationException("VO group does not match, specified "+voGroup +", must be null");
 				}
 			}
-		}
-		else { 
-			if (space.getVoRole()!=null) { 
-				if (!space.getVoRole().equals(voRole)&&!space.getVoRole().equals("*")) { 
-					throw new SpaceAuthorizationException("VO role does not match, specified "+voRole +", must be "+space.getVoRole());
+			if (voRole==null) {
+				if (space.getVoRole()!=null) {
+					if (!space.getVoRole().equals("")&&!space.getVoRole().equals("*")) { 
+						throw new SpaceAuthorizationException("VO role does not match, specified null, must be "+space.getVoRole());
+					}
 				}
 			}
 			else { 
-				throw new SpaceAuthorizationException("VO role does not match, specified "+voRole +", must be null");
+				if (space.getVoRole()!=null) { 
+					if (!space.getVoRole().equals(voRole)&&!space.getVoRole().equals("*")) { 
+						throw new SpaceAuthorizationException("VO role does not match, specified "+voRole +", must be "+space.getVoRole());
+					}
+				}
+				else { 
+					throw new SpaceAuthorizationException("VO role does not match, specified "+voRole +", must be null");
+				}
 			}
 		}
 		long currentTime = System.currentTimeMillis();
