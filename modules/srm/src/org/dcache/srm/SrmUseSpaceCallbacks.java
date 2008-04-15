@@ -1,4 +1,4 @@
-// $Id: SrmUseSpaceCallbacks.java,v 1.3 2007-06-18 21:44:57 timur Exp $
+// $Id$
 // $Log: not supported by cvs2svn $
 // Revision 1.2  2007/04/11 23:34:41  timur
 // Propagate SrmNoFreeSpace and SrmSpaceReleased errors in case of useSpace function
@@ -159,9 +159,17 @@ public interface SrmUseSpaceCallbacks {
     /**
      * call this if space reservation exists, but has been released
      */
-    public void SrmExpired(String reason);
-    
     public void SrmReleased(String reason);
+    
+    /**
+     * call this if space reservation exists, but has been expired
+     */
+    public void SrmExpired(String reason);
+
+    /**
+     * call this if space reservation exists, but not authorized
+     */
+    public void SrmNotAuthorized(String reason);
     
     public void SpaceUsed();
     
