@@ -145,7 +145,7 @@ public class PnfsManagerV3 extends CellAdapter {
             if( tmp != null )_cacheModificationRelay = new CellPath(tmp) ;
             say("CacheModificationRelay = "+
                     ( _cacheModificationRelay == null ? "NONE" : _cacheModificationRelay.toString() ) );
-            
+
             tmp = _args.getOpt("pnfsDeleteRelay") ;
             if( tmp != null )_pnfsDeleteNotificationRelay = new CellPath(tmp) ;
             say("pnfsDeleteRelay = "+
@@ -356,6 +356,58 @@ public class PnfsManagerV3 extends CellAdapter {
 
         return reply ;
     }
+
+    public String hh_set_storageinfo = "<pnfsid>|<globalPath> [-<option>=<value>] # depricated";
+    public String ac_set_storageinfo_$_1(Args args) throws Exception {
+
+        PnfsId pnfsId = null;
+        String reply = "";
+
+        try {
+
+            try {
+
+                pnfsId = new PnfsId(args.argv(0));
+
+            } catch (Exception ee) {
+                pnfsId = _nameSpaceProvider.pathToPnfsid(args.argv(0), true);
+            }
+
+            StorageInfo storageInfo = _storageInfoProvider.getStorageInfo(pnfsId);
+
+            String accessLatency = args.getOpt("accessLatency");
+            if( accessLatency != null ) {
+                AccessLatency al = AccessLatency.getAccessLatency(accessLatency);
+                if( !al.equals(storageInfo.getAccessLatency()) ) {
+                    storageInfo.setAccessLatency(al);
+                    storageInfo.isSetAccessLatency(true);
+                    _storageInfoProvider.setStorageInfo(pnfsId, storageInfo, StorageInfoProvider.SI_OVERWRITE);
+
+                    // get list of known locations and modify sticky flag
+                    List<String> locations = _cacheLocationProvider.getCacheLocation(pnfsId);
+                    for( String pool : locations ) {
+
+                        PoolSetStickyMessage setSticky = new PoolSetStickyMessage(pool, pnfsId, al.equals(AccessLatency.ONLINE));
+                        setSticky.setReplyRequired(false);
+                        CellMessage cellMessage = new CellMessage(new CellPath(pool), setSticky);
+
+                        try {
+                            sendMessage(cellMessage);
+                        }catch(NoRouteToCellException nrtc) {
+                            // TODO: report it
+                        }
+
+                    }
+                }
+            }
+
+        } catch (Exception e) {
+            reply = "set storageinfo failed: + " + e.getMessage();
+        }
+
+        return reply;
+    }
+
     public String fh_storageinfoof =
         "   storageinfoof <pnfsid>|<globalPath> [-v] [-n] [-se]\n"+
         "        -v    verbose\n"+
@@ -1093,11 +1145,11 @@ public class PnfsManagerV3 extends CellAdapter {
         if( pnfsMessage.getReturnCode() != 0 ) {
             _xdeleteEntry.failed() ;
         } else if( _pnfsDeleteNotificationRelay != null ) {
-            PnfsDeleteEntryNotificationMessage deleteNotification = 
+            PnfsDeleteEntryNotificationMessage deleteNotification =
                 new PnfsDeleteEntryNotificationMessage(pnfsId,path);
             try{
 
-                sendMessage( new CellMessage( _pnfsDeleteNotificationRelay, 
+                sendMessage( new CellMessage( _pnfsDeleteNotificationRelay,
                     deleteNotification ) ) ;
 
             }catch(Exception ee ){
