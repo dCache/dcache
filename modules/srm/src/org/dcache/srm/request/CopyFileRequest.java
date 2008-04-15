@@ -5,7 +5,7 @@
 // Revision 1.24.2.1  2006/08/22 21:04:25  timur
 // change to RUNNINGWITHOUTTHREAD is done inside synchronized block
 //
-// $Id: CopyFileRequest.java,v 1.49 2007-10-08 19:42:15 timur Exp $
+// $Id$
 // Revision 1.29  2006/10/04 21:20:33  timur
 // different calculation of the v2.2 status
 //
@@ -2140,6 +2140,33 @@ public class CopyFileRequest extends FileRequest {
             
         }
          
+        /**
+         * call this if space reservation exists, but not authorized
+         */
+        public void SrmNotAuthorized(String reason) {
+            try {
+                CopyFileRequest fr = getCopyFileRequest();
+                try {
+                    synchronized(fr) {
+                        
+                        State state = fr.getState();
+                        if(!State.isFinalState(state)) {
+				fr.setStatusCode(TStatusCode.SRM_AUTHORIZATION_FAILURE);
+                            fr.setState(State.FAILED,reason);
+                        }
+                    }
+                } catch(IllegalStateTransition ist) {
+                    fr.esay("can not fail state:"+ist);
+                }
+                
+                fr.esay("CopyUseSpaceCallbacks error: "+ reason);
+            } catch(Exception e) {
+                e.printStackTrace();
+            }
+            
+        }
+         
+
         /**
          * call this if space reservation exists, but has been released
          */
