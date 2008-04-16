@@ -3,6 +3,8 @@ package org.dcache.tests.poolmanager;
 import static org.junit.Assert.*;
 
 import java.net.URI;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -469,6 +471,11 @@ public class PoolSelectionUnit {
         StorageInfo storageInfo = new GenericStorageInfo("osm","h1:u1" );
 
         storageInfo.addLocation( new URI("osm://osm/?store=h1&bfid=1234") );
+
+        Set<String> supportedHSM = new HashSet<String>();
+        supportedHSM.add("osm");
+
+        _psu.getPool("h1-read").setHsmInstances( supportedHSM );
 
         PoolPreferenceLevel[] preference = _psu.match(
                     DirectionType.CACHE,  // operation
