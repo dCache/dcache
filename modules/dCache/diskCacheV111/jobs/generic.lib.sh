@@ -63,14 +63,7 @@ procStop() {
    kill -TERM $x 1>/dev/null 2>/dev/null
    printf "Stopping ${domainName} (pid=`cat ${pidFile}`) "
 
-   kill -0 $x 1>/dev/null 2>/dev/null
-   if [ $? -ne 0 ] ; then
-       echo "Done"
-       exit 0
-   fi
-
    for c in  0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20; do
-     sleep 1
      kill -0 $x 1>/dev/null 2>/dev/null
      if [ $? -ne 0 ] ; then
         rm -f $pidFile
@@ -78,7 +71,8 @@ procStop() {
         exit 0
      fi
      printf "$c "
-     if [ $c -eq 8 ] ; then
+     sleep 1
+     if [ $c -eq 9 ] ; then
          kill -9 $x
      fi
    done
