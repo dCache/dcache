@@ -19,7 +19,7 @@ public class RepositoryInterpreter {
         _repository = repository;
     }
     private void displayEntry( CacheRepositoryEntry entry , StringBuffer sb )throws CacheException {
-       String status = 
+       String status =
            entry.isPrecious()?"precious":
            entry.isCached()?"cached":
            entry.isReceivingFromClient()?"Recv. from client":
@@ -45,25 +45,25 @@ public class RepositoryInterpreter {
        if( args.getOpt("o") != null) {
            owner=args.getOpt("o");
        }
-       
+
        long lifetime = -1;
        if(args.getOpt("l") != null) {
            lifetime= System.currentTimeMillis()+Long.parseLong(args.getOpt("l"));
        }
-       
+
        CacheRepositoryEntry entry = _repository.getEntry( pnfsId ) ;
        if( state.equals("on" ) ){
            entry.setSticky(true,owner,lifetime);
-                
+
        }else if( state.equals("off") ){
           entry.setSticky(false,owner,lifetime);
        }else
           throw new
           IllegalArgumentException( "invalid sticky state : "+state ) ;
-          
+
        return "" ;
     }
-    
+
     public String hh_rep_sticky_ls = "<pnfsid>" ;
     public String ac_rep_sticky_ls_$_1( Args args ) throws CacheException {
        PnfsId pnfsId  = new PnfsId( args.argv(0) ) ;
@@ -75,12 +75,12 @@ public class RepositoryInterpreter {
         }
        return sb.toString() ;
     }
-    
+
    public String hh_rep_set_bad = "<pnfsid> on|off" ;
     public String ac_rep_set_bad_$_2( Args args ) throws CacheException {
        PnfsId pnfsId  = new PnfsId( args.argv(0) ) ;
        String state   = args.argv(1) ;
-       
+
        CacheRepositoryEntry entry = _repository.getEntry( pnfsId ) ;
        if( state.equals("on" ) ){
           entry.setBad(true);
@@ -89,10 +89,10 @@ public class RepositoryInterpreter {
        }else
           throw new
           IllegalArgumentException( "invalid 'bad' state : "+state ) ;
-          
+
        return "" ;
     }
-    public String fh_rep_ls = 
+    public String fh_rep_ls =
        "\n"+
        " Format I  :  [<pnfsId> [<pnfsId> [...]]]\n"+
        " Format II : -l[=<selectionOptions>] [-s]\n"+
@@ -125,13 +125,13 @@ public class RepositoryInterpreter {
                     append(ce.getMessage());
                 }
                 sb.append("\n");
-            }       
+            }
             return sb.toString();
         }
 
         final CellMessage msg = _cell.getThisMessage();
         Thread task = new Thread() {
-                void reply(Object o) 
+                void reply(Object o)
                 {
                     try {
                         msg.revertDirection();
@@ -141,9 +141,9 @@ public class RepositoryInterpreter {
                         _cell.esay("PANIC : Problem returning answer : " + e);
                     }
                 }
-                    
-                public void run() 
-                {          
+
+                public void run()
+                {
                     try {
                         StringBuilder sb = new StringBuilder();
                         String stat = args.getOpt("s");
@@ -158,8 +158,8 @@ public class RepositoryInterpreter {
                             dev = (stat.indexOf("t") > -1) ||
                                 (stat.indexOf("T") > -1) ? (1024L*1024L*1024L*1024L) : dev;
 
-                            Iterator<PnfsId>       e1  = _repository.pnfsids(); 
-                            HashMap<String,long[]> map = new HashMap<String,long[]>(); 
+                            Iterator<PnfsId>       e1  = _repository.pnfsids();
+                            HashMap<String,long[]> map = new HashMap<String,long[]>();
                             long removable = 0L;
                             while (e1.hasNext()) {
                                 CacheRepositoryEntry entry = _repository.getGenericEntry(e1.next());
@@ -174,7 +174,7 @@ public class RepositoryInterpreter {
                                 long[] counter = map.get(sc);
                                 if (counter == null)
                                     map.put(sc, counter = new long[8]);
-                                
+
                                 long entrySize = info.getFileSize();
 
                                 counter[0] += entrySize;
@@ -200,20 +200,20 @@ public class RepositoryInterpreter {
                                 counter[1] = _repository.getFreeSpace();
                                 counter[2] = removable;
                             }
-                            
+
                             Iterator<String> e2 = map.keySet().iterator();
                             if (args.getOpt("binary") != null) {
                                 Object [] result = new Object[map.size()];
                                 for (int i = 0; e2.hasNext(); i++) {
-                                    Object[] ex =  new Object[2]; 
+                                    Object[] ex =  new Object[2];
                                     ex[0]  = e2.next();
                                     ex[1]  = map.get(ex[0]);
                                     result[i] = ex;
                                 }
                                 reply(result);
                                 return;
-                            } 
-                          
+                            }
+
                             while (e2.hasNext()) {
                                 String sc = e2.next();
                                 long[] counter = map.get(sc);
@@ -239,14 +239,14 @@ public class RepositoryInterpreter {
                         } else  {
                             String format = args.getOpt("l");
                             format = format == null ? "" : format;
-                        
+
                             boolean notcached = format.indexOf("nc") > -1;
                             boolean precious  = format.indexOf('p')  > -1;
                             boolean locked    = format.indexOf('l')  > -1;
                             boolean sticky    = format.indexOf('s')  > -1;
                             boolean used      = format.indexOf('u')  > -1;
                             boolean bad       = format.indexOf('e')  > -1;
-                        
+
                             Iterator<PnfsId> e = _repository.pnfsids();
                             while (e.hasNext()) {
                                 CacheRepositoryEntry entry = _repository.getGenericEntry(e.next());
@@ -285,20 +285,20 @@ public class RepositoryInterpreter {
     }
 
     public String hh_rep_rmclass = "<storageClass> # removes the from the cache";
-    public String ac_rep_rmclass_$_1(Args args) throws Exception 
+    public String ac_rep_rmclass_$_1(Args args) throws Exception
     {
         final String storageClassName = args.argv(0);
         new Thread(new Runnable() {
-                public void run() 
+                public void run()
                 {
                     try {
-                        List<CacheRepositoryEntry> map = 
+                        List<CacheRepositoryEntry> map =
                             new ArrayList<CacheRepositoryEntry>();
                         Iterator<PnfsId> i
                             = _repository.pnfsids();
                         while (i.hasNext()) {
                             PnfsId pnfsId = i.next();
-                            CacheRepositoryEntry entry = 
+                            CacheRepositoryEntry entry =
                                 _repository.getGenericEntry(pnfsId);
                             //
                             // info can be null if we are 'static' or a write
@@ -324,7 +324,7 @@ public class RepositoryInterpreter {
         return "Backgrounded";
     }
 
-    public String fh_rep_rm = 
+    public String fh_rep_rm =
       " rep rm <pnfsid> [-force]\n" +
       "        removes the <pnfsid> from the cache repository.\n"+
       "        The file is only removed if in 'cached' state, which\n"+
@@ -349,26 +349,43 @@ public class RepositoryInterpreter {
        }else if( entry.isReceivingFromClient() || entry.isReceivingFromStore() ){
            throw new
            CacheException( 13 , "Pnfsid is still receiving  : "+pnfsId ) ;
-       } 
+       }
        throw new
            CacheException( 13 , "Pnfsid is in an undefined state : "+pnfsId ) ;
     }
+
+    protected boolean isWriting(PnfsId id) throws CacheException
+    {
+        CacheRepositoryEntry entry = _repository.getEntry(id);
+        return (entry.isReceivingFromClient() || entry.isReceivingFromStore());
+    }
+
     public String hh_rep_set_precious = "<pnfsId> [-force]" ;
     public String ac_rep_set_precious_$_1( Args args ) throws CacheException {
        PnfsId pnfsId  = new PnfsId( args.argv(0) ) ;
+
+       if (isWriting(pnfsId)) {
+           return "File is still being written. The state has not been changed.";
+       }
+
        CacheRepositoryEntry entry = _repository.getEntry( pnfsId ) ;
 
        entry.setPrecious( args.getOpt("force") != null ) ;
-       
+
        return "" ;
     }
     public String hh_rep_set_cached = "<pnfsId> # DON'T USE , Potentially dangerous" ;
     public String ac_rep_set_cached_$_1( Args args ) throws CacheException {
        PnfsId pnfsId  = new PnfsId( args.argv(0) ) ;
+
+       if (isWriting(pnfsId)) {
+           return "File is still being written. The state has not been changed.";
+       }
+
        CacheRepositoryEntry entry = _repository.getEntry( pnfsId ) ;
 
        entry.setCached() ;
-       
+
        return "" ;
     }
     public String hh_rep_lock = "<pnfsId> [on | off | <time/sec>]" ;
@@ -398,23 +415,23 @@ public class RepositoryInterpreter {
        return " Reserved Space : "+_repository.getReservedSpace() ;
     }
     public String hh_rep_sr_reserve = "[-blocking] <Space to reserve (bytes)>" ;
-    public String ac_rep_sr_reserve_$_1( Args args ) 
-           throws CacheException , 
+    public String ac_rep_sr_reserve_$_1( Args args )
+           throws CacheException ,
                   InterruptedException {
-       
+
        boolean blocking = args.getOpt("blocking") != null ;
        _repository.reserveSpace( Long.parseLong( args.argv(0) ) , blocking ) ;
        return "" ;
     }
     public String hh_rep_sr_free = "<Space to free from reserve (bytes)>" ;
     public String ac_rep_sr_free_$_1( Args args ) throws CacheException {
-       
+
        _repository.freeReservedSpace( Long.parseLong( args.argv(0) ) );
        return "" ;
     }
     public String hh_rep_sr_apply = "<Space to apply from reserve (bytes)>" ;
     public String ac_rep_sr_apply_$_1( Args args ) throws CacheException {
-       
+
        _repository.applyReservedSpace( Long.parseLong( args.argv(0) ) );
        return "" ;
     }
