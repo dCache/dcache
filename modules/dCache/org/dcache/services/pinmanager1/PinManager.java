@@ -577,6 +577,7 @@ public class PinManager extends AbstractCell implements Runnable  {
                     pinRequestMessage.setPinId(
                         Long.toString(pinRequest.getId()));
                }
+               db.commitDBOperations();
                 new Extender(this,pin,pinRequest,cellMessage,pinRequestMessage,
                     pinRequest.getExpirationTime());
                 return;

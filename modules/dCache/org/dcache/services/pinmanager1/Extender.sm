@@ -11,9 +11,24 @@
 %import diskCacheV111.vehicles.PnfsGetCacheLocationsMessage
 %import diskCacheV111.vehicles.PoolSetStickyMessage
 
-%start ExtenderFSM::ExtendingStickyFlags
+%start ExtenderFSM::Init
 %map ExtenderFSM
 %%
+Init
+{
+        go
+                [ ctxt.getPool() == null || ctxt.getPool().equals("unknown") ]
+                Done
+                {
+                        succeed();
+                }
+        go
+                ExtendingStickyFlags
+                {
+                        
+                }
+}
+
 ExtendingStickyFlags
 Entry
 {

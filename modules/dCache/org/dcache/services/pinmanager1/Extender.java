@@ -42,16 +42,16 @@ class Extender extends SMCTask
         _extendMessage = extendMessage;
         _fsm = new ExtenderContext(this);
         setContext(_fsm);
-        //_fsm.go();
+        _fsm.go();
         info("Extender constructor done ");
     }
 
     private void info(String s) {
-        getManager().info("Unpinner: "+s);
+        getManager().info("Extender: "+s);
     }
 
     private void error(String s) {
-        getManager().error("Unpinner: "+s);
+        getManager().error("Extender: "+s);
     }
 
     private PinManager getManager() {
@@ -90,7 +90,9 @@ class Extender extends SMCTask
         //_pin.unpinSucceeded();
     }
 
-    
+    String getPool() {
+        return _pin.getPool();
+    }
     void extendStickyFlagLifetime()
     {
         String poolName = _pin.getPool();
