@@ -30,7 +30,6 @@ import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.Logable;
 
-import diskCacheV111.movers.DCapProtocol_3_nio;
 import diskCacheV111.repository.CacheRepository;
 import diskCacheV111.repository.CacheRepositoryEntry;
 import diskCacheV111.util.Batchable;
@@ -444,6 +443,7 @@ public class HsmStorageHandler2  {
        public double getTransferRate(){ return 10.0 ; }
 
 
+        @Override
         protected synchronized void setThread(Thread thread)
         {
             _thread = thread;
@@ -581,7 +581,7 @@ public class HsmStorageHandler2  {
                     	/*
                     	 * due to this fact, we have to remove bad entry.
                     	 * to keep space calculation in sync with physical used file
-                    	 * ajdust file size to expected one. Do this only if real file GT
+                    	 * Adjust file size to expected one. Do this only if real file GT
                     	 * expected.
                     	 */
 
@@ -635,7 +635,7 @@ public class HsmStorageHandler2  {
                         _entry.lock(false) ;
                         long size = _entry.getSize() ;
                         //
-                        // removeentry will 'free' the actual number of
+                        // remove entry will 'free' the actual number of
                         // bytes = size of the file on disk.
                         //
                        _repository.removeEntry( _entry ) ;
@@ -710,8 +710,8 @@ public class HsmStorageHandler2  {
                 IllegalArgumentException("Info not found for : " + hsmType);
         }
 
-        // If multible HSMs are defined for the given type, then we
-        // currently pick the first. We may consider randomising this
+        // If multiple HSMs are defined for the given type, then we
+        // currently pick the first. We may consider randomizing this
         // choice.
         HsmSet.HsmInfo hsm = hsms.get(0);
 
@@ -851,6 +851,7 @@ public class HsmStorageHandler2  {
             return 0;
         }
 
+        @Override
         protected synchronized void setThread(Thread thread)
         {
             _thread = thread;
