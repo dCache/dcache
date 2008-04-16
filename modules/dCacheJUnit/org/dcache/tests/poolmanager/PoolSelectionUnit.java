@@ -2,6 +2,8 @@ package org.dcache.tests.poolmanager;
 
 import static org.junit.Assert.*;
 
+import java.net.URI;
+
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.junit.Before;
@@ -12,6 +14,8 @@ import diskCacheV111.poolManager.PoolPreferenceLevel;
 import diskCacheV111.poolManager.PoolSelectionUnit.DirectionType;
 import diskCacheV111.poolManager.PoolSelectionUnitV2;
 import diskCacheV111.poolManager.PoolSelectionUnit.SelectionPool;
+import diskCacheV111.vehicles.GenericStorageInfo;
+import diskCacheV111.vehicles.StorageInfo;
 
 import dmg.util.Args;
 import dmg.util.CommandException;
@@ -29,7 +33,7 @@ public class PoolSelectionUnit {
 	@Before
 	public void setUp() throws Exception {
 
-	    Logger.getLogger("logger.org.dcache.poolselection").setLevel(Level.ERROR);
+	    Logger.getLogger("logger.org.dcache.poolselection").setLevel(Level.DEBUG);
 		// storage units
 
 		_ci.command( new Args("psu create unit -store  h1:u1@osm" )  );
@@ -451,6 +455,34 @@ public class PoolSelectionUnit {
 		assertEquals("Only h1 read pool with attracion 0 (h1-read)", "h1-read", preference[0].getPoolList().get(0));
 	}
 
+    /*
+     * test case: check that we do not get pools from LinkGroup
+     */
+    @Test
+    public void testSelectStagePoolByLinkGroup() throws Exception {
+
+
+        _ci.command("psu set allpoolsactive on");
+        _ci.command(new Args("psu create linkGroup h1-link-group"));
+        _ci.command(new Args("psu addto linkGroup h1-link-group h1-read-link" ) );
+
+        StorageInfo storageInfo = new GenericStorageInfo("osm","h1:u1" );
+
+        storageInfo.addLocation( new URI("osm://osm/?store=h1&bfid=1234") );
+
+        PoolPreferenceLevel[] preference = _psu.match(
+                    DirectionType.CACHE,  // operation
+                    "h1:u1@osm",   // storage unit
+                    null,    // dCache unit
+                    "131.169.214.149", // net unit
+                    null,  // protocol
+                    storageInfo,  // map
+                    "h1-link-group"); // linkGroup
+
+        assertEquals("Only h1 cache link have to be triggered", 1, preference.length);
+        assertEquals("Only h1 cache pool with attracion 0", 1, preference[0].getPoolList().size());
+        assertEquals("Only h1 cache pool with attracion 0 (h1-read)", "h1-read", preference[0].getPoolList().get(0));
+    }
 
 	@Test
 	public void testActive() throws CommandException {
