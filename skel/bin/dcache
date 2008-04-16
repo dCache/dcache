@@ -290,9 +290,21 @@ autoMountNameSpace()
     local PNFS_ROOT
     local NODE_TYPE
     local NAMESPACE
+    local SERVER_ID
 
     NAMESPACE=`printConfig NAMESPACE`
     if [ -z "$NAMESPACE" ] || [ "$NAMESPACE" = pnfs ]; then
+        SERVER_ID=`printConfig SERVER_ID`
+        if [ -z "${SERVER_ID}" ]; then
+            SERVER_ID=$domainname
+            if [ -z "${SERVER_ID}" ]; then
+                SERVER_ID=`sed -e 's/#.*$//' /etc/resolv.conf | awk '/^[ \t]*search/ { print $2 }'`
+                if [ -z "${SERVER_ID}" ]; then
+                    SERVER_ID=`sed -e 's/#.*$//' /etc/resolv.conf | awk '/^[ \t]*domain/ { print $2 }'`
+                fi
+            fi
+        fi
+
         PNFS_ROOT=`printConfig PNFS_ROOT`
         NODE_TYPE=`printConfig NODE_TYPE`
 	if [ "$NODE_TYPE" = admin ]; then
@@ -302,7 +314,7 @@ autoMountNameSpace()
                         admin node. Exiting."
 		exit 1
 	    fi
-	elif [ "`printConfig GRIDFTP`" = yes ]; then
+	elif [ "`printConfig GRIDFTP`" = yes ] || [ "`printConfig SRM`" = yes ]; then
 	    if ! df ${PNFS_ROOT}/${SERVER_ID} 2>/dev/null | grep "$PNFS_ROOT" > /dev/null; then
 		ADMIN_NODE=`printConfig ADMIN_NODE`
 		if [ -z "$ADMIN_NODE" ] || [ "$ADMIN_NODE" = myAdminNode ]; then
@@ -312,8 +324,19 @@ autoMountNameSpace()
                             properly. Exiting."
 		    exit 1
 		fi
+
+                # Solaris specific fix
+                case `uname` in
+                    SunOS)
+                        NFSVERS=vers
+                        ;;
+                    *)
+                        NFSVERS=nfsvers
+                        ;;
+                esac 
+
 		printp "${PNFS_ROOT}/${SERVER_ID}/ not mounted - going to mount it now."
-		mount -o intr,rw,noac,hard,nfsvers=2 $ADMIN_NODE:/pnfsdoors ${PNFS_ROOT}/${SERVER_ID}
+		mount -o intr,rw,noac,hard,${NFSVERS}=2 $ADMIN_NODE:/pnfsdoors ${PNFS_ROOT}/${SERVER_ID}
 		if df ${PNFS_ROOT}/${SERVER_ID} 2>/dev/null | grep "$PNFS_ROOT"; then
 		    printp "[ERROR] Still not mounted. Apparently no pnfs 
                             server running on admin node $ADMIN_NODE. Exiting."
@@ -969,6 +992,81 @@ require() # $1 = executable
     done
 }
 
+# Read dCacheSetup into variables. Terminates with exit value 1 if the
+# file cannot be read or fails basic sanity checks.
+readSetup()
+{
+    if [ -r ${ourHomeDir}/config/dCacheSetup ]; then
+        . ${ourHomeDir}/config/dCacheSetup
+    else
+        printp "${ourHomeDir}/config/dCacheSetup does not exist. You have
+            to install and setup dCache before you can use this
+            script." 1>&2
+        exit 1
+    fi
+
+    # Sanitycheck for serviceLocatorHost
+    if [ -z "${serviceLocatorHost}" ] || [ "${serviceLocatorHost}" = "SERVER" ]; then
+        printp "[ERROR] The variable 'serviceLocatorHost' in 
+            ${ourHomeDir}/config/dCacheSetup has to be set properly. Exiting."
+        exit 1
+    fi
+    
+    # Sanitycheck for java
+    if [ -z "${java}" ] || [ ! -x "${java}" ] || ! ${java} -version 2>&1 | egrep -e 'version "1\.[56]' >/dev/null ; then
+        printp "[ERROR] The variable 'java' in ${ourHomeDir}/config/dCacheSetup
+            has to be set to a Java VM version 1.5 or 1.6. Exiting."
+        exit 1
+    fi
+}
+
+# Check that NODE_TYPE has a valid value.
+#
+#     admin  : head node
+#     custom : custom service definition
+#     door   : door only
+#     pool   : pool only
+#
+checkNodeType()
+{
+    case `printConfig NODE_TYPE` in	
+	admin|door|custom|pool)
+            # OK
+	    ;;
+	dummy)
+	    # not specified
+	    echo "[ERROR] ${ourHomeDir}/etc/node_config not configured. Exiting."
+	    exit 1		
+	    ;;
+	*)
+	    # bad falue
+	    echo "[ERROR] ${ourHomeDir}/etc/node_config missing or not useful. Exiting."
+	    exit 2
+	    ;;
+    esac
+}
+
+# Sets the fqdn, hostname, and domainname variables
+determineHostName()
+{
+    case `uname` in
+        Linux)
+            fqdn=`hostname -f`
+            ;;
+        *)
+            fqdn=`hostname`
+            ;;
+    esac
+
+    hostname=${fqdn%%.*}
+    
+    if [ "$hostname" = "$fqdn" ]; then
+        domainname=
+    else
+        domainname=${fqdn#*.}
+    fi
+}
+
 # Parse global options
 parseOptions "d" $*
 shift $?
@@ -979,47 +1077,11 @@ if [ $# -eq 0 ]; then
 fi
 
 # Check prerequisites
-require awk df grep sed cat hostname wc dirname basename mount
+require awk df egrep grep sed cat hostname wc dirname basename mount
 
-# Read dCacheSetup
-if [ -r ${ourHomeDir}/config/dCacheSetup ]; then
-    . ${ourHomeDir}/config/dCacheSetup
-else
-    printp "${ourHomeDir}/config/dCacheSetup does not exist. You have
-            to install and setup dCache before you can use this
-            script." 1>&2
-    exit 1
-fi
-
-# Sanitycheck for serviceLocatorHost
-if [ -z "${serviceLocatorHost}" ] || [ "${serviceLocatorHost}" = "SERVER" ]; then
-    printp "[ERROR] The variable 'serviceLocatorHost' in 
-            ${ourHomeDir}/config/dCacheSetup has to be set properly. Exiting."
-    exit 1
-fi
-
-# Sanitycheck for java
-if [ -z "${java}" ] || [ ! -x "${java}" ] || ! ${java} -version 2>&1 | grep -E 'version "1\.[56]' >/dev/null ; then
-    printp "[ERROR] The variable 'java' in ${ourHomeDir}/config/dCacheSetup
-            has to be set to a Java VM version 1.5 or 1.6. Exiting."
-    exit 1
-fi
-
-# Get host names
-fqdn=`hostname -f`
-hostname=`hostname | awk -F. '{print $1}'`
-
-# Find server ID
-SERVER_ID=`printConfig SERVER_ID`
-if [ -z "${SERVER_ID}" ]; then
-    SERVER_ID=`hostname -d 2>/dev/null`
-    if [ $? -ne 0 ] || [ -z "${SERVER_ID}" ]; then
-        SERVER_ID=`sed -e 's/#.*$//' /etc/resolv.conf | awk '/^[ \t]*search/ { print $2 }'`
-        if [ -z "${SERVER_ID}" ]; then
-            SERVER_ID=`sed -e 's/#.*$//' /etc/resolv.conf | awk '/^[ \t]*domain/ { print $2 }'`
-        fi
-    fi
-fi
+checkNodeType
+readSetup
+determineHostName
 
 # Set primary log position
 if [ -z "${logArea}" ]; then
