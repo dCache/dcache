@@ -167,6 +167,7 @@ public class ChimeraOsmStorageInfoExtractor implements
 
             String[] accessLatency = getTag(dirInode, "AccessLatency");
             String[] retentionPolicy = getTag(dirInode, "RetentionPolicy");
+            String [] spaceToken = getTag(dirInode, "WriteToken");
 
             /*
              * if Access latency and/or retention policy is defined for a directory
@@ -192,6 +193,9 @@ public class ChimeraOsmStorageInfoExtractor implements
             }
 
 
+            if( spaceToken != null ) {
+                info.setKey("writeToken", spaceToken[0].trim());
+            }
         } catch (IOException e) {
             throw new CacheException(e.getMessage());
         }
