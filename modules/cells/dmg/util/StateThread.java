@@ -1,9 +1,9 @@
 package dmg.util ;
 import  java.util.* ;
 
-public class       StateThread 
+public class       StateThread
        implements  Runnable     {
-   
+
    private StateEngine _engine = null ;
    private Thread _timerThread  = null ;
    private Thread _workerThread = null ;
@@ -13,17 +13,17 @@ public class       StateThread
    private int    _timerState   = 0 ;
    private int    _timeoutState = 0 ;
    private long   _timeStamp    = 0L ;
-   
+
    public StateThread( StateEngine engine ){
       _engine       = engine ;
       _timeStamp    = new Date().getTime() ;
       _tickerThread = new Thread( this ) ;
       _workerThread = new Thread( this ) ;
-      
+
 //            _tickerThread.start() ;
 
 //      _workerThread.start() ;
-   } 
+   }
    public void stop(){
       synchronized( _timerLock ){
          if( _tickerThread != null )_tickerThread.interrupt() ;
@@ -51,12 +51,12 @@ public class       StateThread
    }
    public int setFinalState(){ return setState(-1) ; }
    public int setState( int state ){
-      synchronized( _timerLock ){ 
+      synchronized( _timerLock ){
          if( Thread.currentThread() != _workerThread ){
             if( _workerThread != null )_workerThread.interrupt() ;
             _workerThread  = new Thread( this ) ;
             _workerThread.start() ;
-          } 
+          }
          _resetTimer() ;
          _timerState   = state ;
          _timeoutState = 0 ;
@@ -67,12 +67,12 @@ public class       StateThread
       }
    }
    public int setState( int state , int to , int toState ){
-      synchronized( _timerLock ){  
+      synchronized( _timerLock ){
          if( Thread.currentThread() != _workerThread ){
             if( _workerThread != null )_workerThread.interrupt() ;
             _workerThread  = new Thread( this ) ;
             _workerThread.start() ;
-          } 
+          }
          _resetTimer() ;
          _timerState   = state ;
          _timeoutState = toState ;
@@ -90,7 +90,7 @@ public class       StateThread
       }
       return value ;
    }
-       
+
    public void run(){
      if( Thread.currentThread() == _workerThread ){
        int state = getState() ;
@@ -104,11 +104,13 @@ public class       StateThread
         while( true ){
            int state = getState() ;
            System.out.println( " Ticker : state = "+state ) ;
-           try{
-             Thread.currentThread().sleep( 1000 ) ;
-           }catch( Exception eee){}
+             try {
+                Thread.sleep( 1000 ) ;
+            } catch (InterruptedException e) {
+                // take it easy
+            }
            if( state < 0 )return ;
-        
+
         }
      }else if( Thread.currentThread() == _timerThread ){
         synchronized( _timerLock ){
@@ -121,8 +123,8 @@ public class       StateThread
            _workerThread.start() ;
         }
      }
-   
-   
-   }      
-       
+
+
+   }
+
 }
