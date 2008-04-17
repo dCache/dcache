@@ -4,8 +4,8 @@ import  diskCacheV111.vehicles.* ;
 
 import  java.util.* ;
 import  java.io.* ;
-public class       EnstoreInfoExtractor 
-       implements  StorageInfoExtractable {   
+public class       EnstoreInfoExtractor
+       implements  StorageInfoExtractable {
 
    public void setStorageInfo( String pnfsMountpoint , PnfsId pnfsId ,
                                StorageInfo storageInfo , int accessMode )
@@ -13,32 +13,32 @@ public class       EnstoreInfoExtractor
 
 
 	   PnfsFile pnfsFile = PnfsFile.getFileByPnfsId( pnfsMountpoint , pnfsId ) ;
-	   
-       // FIXME: HACK -  AccessLatency and RetentionPolicy stored as a flags 
+
+       // FIXME: HACK -  AccessLatency and RetentionPolicy stored as a flags
        try {
 	       CacheInfo info   = new CacheInfo( pnfsFile ) ;
 	       CacheInfo.CacheFlags flags = info.getFlags() ;
-	       
+
 	       if( storageInfo.isSetAccessLatency() ) {
-	           flags.put( "al" , storageInfo.getAccessLatency().toString() ) ;	    	   
+	           flags.put( "al" , storageInfo.getAccessLatency().toString() ) ;
 	       }
-	       
+
 	       if(storageInfo.isSetRetentionPolicy() ) {
 	    	   flags.put( "rp" , storageInfo.getRetentionPolicy().toString() ) ;
 	       }
 
            info.writeCacheInfo( pnfsFile ) ;
-	       
+
        }catch(IOException ee ){
-           throw new 
+           throw new
            CacheException(107,"Problem in set(OSM)StorageInfo : "+ee ) ;
         }
-       
+
        if( storageInfo.isSetBitFileId() ) {
     	   throw new
-           CacheException( 1 , "Operation not suppported : setStorageInfo" ) ;    	   
+           CacheException( 1 , "Operation not suppported : setStorageInfo" ) ;
        }
-	   
+
     }
 
     public StorageInfo getStorageInfo( String mp , PnfsId pnfsId )
@@ -46,14 +46,14 @@ public class       EnstoreInfoExtractor
        try{
           PnfsFile x = PnfsFile.getFileByPnfsId( mp , pnfsId ) ;
           if( x == null ){
-             throw new 
+             throw new
              CacheException( 37 , "Not a valid PnfsId "+pnfsId ) ;
           }else if( x.isDirectory() ){
               return extractDirectory( mp , x ) ;
           }else if( x.isFile() ){
               return extractFile( mp , x ) ;
           }else
-             throw new 
+             throw new
              CacheException( 34 , "Can't find file "+pnfsId ) ;
        }catch(CacheException ce ){
           throw ce ;
@@ -62,11 +62,11 @@ public class       EnstoreInfoExtractor
           throw new
           CacheException( 33 , "unexpected : "+e ) ;
        }
-    
+
     }
     private EnstoreStorageInfo extractDirectory( String mp , PnfsFile x )
             throws Exception {
-            
+
            PnfsFile parentDir = null ;
            if( x.isDirectory() ){
                parentDir = x ;
@@ -77,20 +77,21 @@ public class       EnstoreInfoExtractor
                   CacheException( 36, "Couldn't determine parent ID" ) ;
                 parentDir = PnfsFile.getFileByPnfsId( mp , parent ) ;
            }
-           
+
            String [] template = parentDir.getTag("OSMTemplate") ;
            String [] group    = parentDir.getTag("storage_group" ) ;
            String [] family   = parentDir.getTag("file_family" ) ;
            String [] accessLatency = parentDir.getTag("AccessLatency");
            String [] retentionPolicy = parentDir.getTag("RetentionPolicy");
-           
-           
+           String [] spaceToken = parentDir.getTag("WriteToken");
+
+
            if( ( family == null     ) || ( family.length == 0 ) )
               throw new
-              CacheException( 
+              CacheException(
                 35, "Enstore info not found in "+parentDir+"(type="+
                 parentDir.getPnfsFileType()+")" ) ;
-                
+
            Hashtable       hash = new Hashtable() ;
            if( template != null ){
               StringTokenizer st   = null ;
@@ -99,16 +100,16 @@ public class       EnstoreInfoExtractor
                  if( st.countTokens() < 2 )continue ;
                  hash.put( st.nextToken() , st.nextToken() ) ;
               }
-           }                 
+           }
            String gr = ( group        == null ) ||
                        ( group.length == 0    ) ||
                        ( ( gr = group[0].trim() ).equals("") ) ? "None" : gr ;
-           
-           
+
+
            EnstoreStorageInfo info = new EnstoreStorageInfo( gr , family[0].trim() ) ;
            info.addKeys( hash ) ;
-        
-           
+
+
            /*
             * if Access latency and/or retention policy is defined for a directory
             * apply it to the file and make it persistent, while it's a file attribute and directory
@@ -119,7 +120,7 @@ public class       EnstoreInfoExtractor
         		   info.setAccessLatency( AccessLatency.getAccessLatency(accessLatency[0].trim()));
         		   info.isSetAccessLatency(true);
         	   }catch(IllegalArgumentException iae) {
-        		   // TODO: do we fail here or not? 
+        		   // TODO: do we fail here or not?
         	   }
            }
 
@@ -128,20 +129,23 @@ public class       EnstoreInfoExtractor
         		   info.setRetentionPolicy( RetentionPolicy.getRetentionPolicy(retentionPolicy[0].trim()));
         		   info.isSetRetentionPolicy(true);
         	   }catch(IllegalArgumentException iae) {
-        		   // TODO: do we fail here or not? 
+        		   // TODO: do we fail here or not?
         	   }
            }
-           
-           
+
+           if( spaceToken != null ) {
+               info.setKey("writeToken", spaceToken[0].trim());
+           }
+
            return info ;
     }
-     
+
     private static final long TWOGIG = 2L*1024*1024*1024;
     private StorageInfo extractFile( String mp , PnfsFile x )
             throws Exception {
         EnstoreStorageInfo info = null ;
         File level = x.getLevelFile(4) ;
-        
+
         long fileSize = x.length();
         if( level.length() == 0 ){
            //
@@ -159,7 +163,7 @@ public class       EnstoreInfoExtractor
            BufferedReader br = new BufferedReader(  new FileReader( level ) ) ;
            try{
               for( int i =  0 ; ; i++ ){
-                  try{ 
+                  try{
                       if( ( line = br.readLine() ) == null )break ;
                   }catch(IOException ioe ){
                       break ;
@@ -177,7 +181,7 @@ public class       EnstoreInfoExtractor
            }
            if( ( family == null ) || ( bfid == null ) )
              throw new
-             CacheException( 37 , 
+             CacheException( 37 ,
              "Level 4 content of "+x.getPnfsId()+" is invalid (nobfid)" ) ;
            if(sizeStr != null) {
                try {
@@ -199,37 +203,37 @@ public class       EnstoreInfoExtractor
 
            info = new EnstoreStorageInfo( helper.getStorageGroup() ,
                                           family ,
-                                          bfid ) ;  
+                                          bfid ) ;
            info.setVolume( volume ) ;
-           info.setLocation( location ) ;        
+           info.setLocation( location ) ;
         }
 
         info.setFileSize( fileSize ) ;
         info.setIsNew( ( x.length() == 0 ) && ( x.getLevelFile(2).length() == 0 ) );
         info.setIsStored( level.length() > 0 );
-        
-        // FIXME: HACK -  AccessLatency and RetentionPolicy stored as a flags 
+
+        // FIXME: HACK -  AccessLatency and RetentionPolicy stored as a flags
         try {
  	       CacheInfo cacheInfo   = new CacheInfo( x ) ;
  	       CacheInfo.CacheFlags flags = cacheInfo.getFlags() ;
- 	       
+
  	       String al = flags.get("al");
  	       if( al != null ) {
- 	    	  info.setAccessLatency( AccessLatency.getAccessLatency(al) ); 
+ 	    	  info.setAccessLatency( AccessLatency.getAccessLatency(al) );
  	       }
- 	       
+
  	       String rp = flags.get("rp");
  	       if(rp != null ) {
  	    	  info.setRetentionPolicy(RetentionPolicy.getRetentionPolicy(rp) );
- 	       } 	       
- 	       
+ 	       }
+
         }catch(IOException ee ){
-            throw new 
+            throw new
             CacheException(107,"Problem in set(OSM)StorageInfo : "+ee ) ;
-         }        
-        
+         }
+
         return info ;
-            
+
     }
     public static void main( String [] args ) throws Exception {
        if( args.length < 2 ){
@@ -237,7 +241,7 @@ public class       EnstoreInfoExtractor
           System.exit(4);
        }
        StorageInfoExtractable sie = new EnstoreInfoExtractor() ;
-       
+
        StorageInfo info = sie.getStorageInfo( args[0] , new PnfsId(args[1]) ) ;
        System.out.println( "java class        = ["+info.getClass().getName()+"]") ;
        System.out.println( "object.toString() = "+info.toString() ) ;
