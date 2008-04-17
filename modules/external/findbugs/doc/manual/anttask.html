@@ -1,20 +1,20 @@
 <html><head>
       <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
-   <title>Chapter&nbsp;6.&nbsp;Using the FindBugs&#8482; Ant task</title><meta name="generator" content="DocBook XSL Stylesheets V1.71.1"><link rel="start" href="index.html" title="FindBugs&#8482; Manual"><link rel="up" href="index.html" title="FindBugs&#8482; Manual"><link rel="prev" href="textui.html" title="Chapter&nbsp;5.&nbsp;Using the FindBugs&#8482; Command Line Interface"><link rel="next" href="eclipse.html" title="Chapter&nbsp;7.&nbsp;Using the FindBugs&#8482; Eclipse plugin"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">Chapter&nbsp;6.&nbsp;Using the <span class="application">FindBugs</span>&#8482; <span class="application">Ant</span> task</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="textui.html">Prev</a>&nbsp;</td><th width="60%" align="center">&nbsp;</th><td width="20%" align="right">&nbsp;<a accesskey="n" href="eclipse.html">Next</a></td></tr></table><hr></div><div class="chapter" lang="en"><div class="titlepage"><div><div><h2 class="title"><a name="anttask"></a>Chapter&nbsp;6.&nbsp;Using the <span class="application">FindBugs</span>&#8482; <span class="application">Ant</span> task</h2></div></div></div><div class="toc"><p><b>Table of Contents</b></p><dl><dt><span class="sect1"><a href="anttask.html#d0e1012">1. Installing the <span class="application">Ant</span> task</a></span></dt><dt><span class="sect1"><a href="anttask.html#d0e1050">2. Modifying build.xml</a></span></dt><dt><span class="sect1"><a href="anttask.html#d0e1121">3. Executing the task</a></span></dt><dt><span class="sect1"><a href="anttask.html#d0e1146">4. Parameters</a></span></dt></dl></div><p>
+   <title>Chapter&nbsp;6.&nbsp;Using the FindBugs&#8482; Ant task</title><meta name="generator" content="DocBook XSL Stylesheets V1.71.1"><link rel="start" href="index.html" title="FindBugs&#8482; Manual"><link rel="up" href="index.html" title="FindBugs&#8482; Manual"><link rel="prev" href="textui.html" title="Chapter&nbsp;5.&nbsp;Using the FindBugs&#8482; Command Line Interface"><link rel="next" href="eclipse.html" title="Chapter&nbsp;7.&nbsp;Using the FindBugs&#8482; Eclipse plugin"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">Chapter&nbsp;6.&nbsp;Using the <span class="application">FindBugs</span>&#8482; <span class="application">Ant</span> task</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="textui.html">Prev</a>&nbsp;</td><th width="60%" align="center">&nbsp;</th><td width="20%" align="right">&nbsp;<a accesskey="n" href="eclipse.html">Next</a></td></tr></table><hr></div><div class="chapter" lang="en"><div class="titlepage"><div><div><h2 class="title"><a name="anttask"></a>Chapter&nbsp;6.&nbsp;Using the <span class="application">FindBugs</span>&#8482; <span class="application">Ant</span> task</h2></div></div></div><div class="toc"><p><b>Table of Contents</b></p><dl><dt><span class="sect1"><a href="anttask.html#d0e1018">1. Installing the <span class="application">Ant</span> task</a></span></dt><dt><span class="sect1"><a href="anttask.html#d0e1056">2. Modifying build.xml</a></span></dt><dt><span class="sect1"><a href="anttask.html#d0e1127">3. Executing the task</a></span></dt><dt><span class="sect1"><a href="anttask.html#d0e1152">4. Parameters</a></span></dt></dl></div><p>
 This chapter describes how to integrate <span class="application">FindBugs</span> into a build script
 for <a href="http://ant.apache.org/" target="_top"><span class="application">Ant</span></a>, which is a popular Java build
 and deployment tool.  Using the <span class="application">FindBugs</span> <span class="application">Ant</span> task, your build script can
 automatically run <span class="application">FindBugs</span> on your Java code.
 </p><p>
 The <span class="application">Ant</span> task was generously contributed by Mike Fagan.
-</p><div class="sect1" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="d0e1012"></a>1.&nbsp;Installing the <span class="application">Ant</span> task</h2></div></div></div><p>
+</p><div class="sect1" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="d0e1018"></a>1.&nbsp;Installing the <span class="application">Ant</span> task</h2></div></div></div><p>
 To install the <span class="application">Ant</span> task, simply copy <code class="filename"><em class="replaceable"><code>$FINDBUGS_HOME</code></em>/lib/findbugs-ant.jar</code>
 into the <code class="filename">lib</code> subdirectory of your <span class="application">Ant</span> installation.
 
 </p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Note"><tr><td rowspan="2" align="center" valign="top" width="25"><img alt="[Note]" src="note.png"></td><th align="left">Note</th></tr><tr><td align="left" valign="top"><p>It is strongly recommended that you use the <span class="application">Ant</span> task with the version
 of <span class="application">FindBugs</span> it was included with.  We do not guarantee that the <span class="application">Ant</span> task Jar file
 will work with any version of <span class="application">FindBugs</span> other than the one it was included with.</p></td></tr></table></div><p>
-</p></div><div class="sect1" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="d0e1050"></a>2.&nbsp;Modifying build.xml</h2></div></div></div><p>
+</p></div><div class="sect1" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="d0e1056"></a>2.&nbsp;Modifying build.xml</h2></div></div></div><p>
 To incorporate <span class="application">FindBugs</span> into <code class="filename">build.xml</code> (the build script
 for <span class="application">Ant</span>), you first need to add a task definition.  This should appear as follows:
 
@@ -56,7 +56,7 @@ The output of <span class="application">FindBugs</span> will be saved in XML for
 An auxiliary Jar file, <code class="filename">Regex.jar</code>, is added to the aux classpath,
 because it is referenced by the main BCEL library.  A source path is specified
 so that the saved bug data will have accurate references to the BCEL source code.
-</p></div><div class="sect1" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="d0e1121"></a>3.&nbsp;Executing the task</h2></div></div></div><p>
+</p></div><div class="sect1" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="d0e1127"></a>3.&nbsp;Executing the task</h2></div></div></div><p>
 Here is an example of invoking <span class="application">Ant</span> from the command line, using the <code class="literal">findbugs</code>
 target defined above.
 
@@ -83,7 +83,7 @@ target defined above.
 
 In this case, because we saved the bug results in an XML file, we can
 use the <span class="application">FindBugs</span> GUI to view the results; see <a href="gui.html" title="Chapter&nbsp;4.&nbsp;Using the FindBugs&#8482; Graphical User Interface">Chapter&nbsp;4, <i>Using the <span class="application">FindBugs</span>&#8482; Graphical User Interface</i></a>.
-</p></div><div class="sect1" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="d0e1146"></a>4.&nbsp;Parameters</h2></div></div></div><p>This section describes the parameters that may be specified when
+</p></div><div class="sect1" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="d0e1152"></a>4.&nbsp;Parameters</h2></div></div></div><p>This section describes the parameters that may be specified when
 using the <span class="application">FindBugs</span> task.
 
 </p><div class="variablelist"><dl><dt><span class="term"><code class="literal">class</code></span></dt><dd><p>

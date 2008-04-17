@@ -30,7 +30,7 @@ if [ -d "$findbugs_home/share/findbugs" ]; then
 fi
 
 # Make absolute
-findbugs_home=`cd "$findbugs_home" && /bin/pwd`
+findbugs_home=`cd "$findbugs_home" && pwd`
 
 fb_pathsep=':'
 
@@ -38,6 +38,10 @@ fb_pathsep=':'
 fb_osname=`uname`
 if [ `expr "$fb_osname" : CYGWIN` -ne 0 ]; then
 	findbugs_home=`cygpath --mixed "$findbugs_home"`
+	fb_pathsep=';'
+fi
+# Handle MKS, courtesy of Kelly O'Hair
+if [ "${fb_osname}" = "Windows_NT" ]; then
 	fb_pathsep=';'
 fi
 
