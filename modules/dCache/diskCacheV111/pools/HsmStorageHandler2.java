@@ -560,10 +560,14 @@ public class HsmStorageHandler2  {
                returnCode = 3 ;
                excep = itse ;
            }catch( IllegalArgumentException iae ){
-               esay( errmsg = "FetchThread : can't determine 'hsmInfo' for "+
+               esay( errmsg = "FetchThread : ("+_pnfsId+") Can't determine 'hsmInfo' for "+
                      _storageInfo+" {"+iae+"}" ) ;
                returnCode = 4 ;
                excep = iae ;
+           }catch (Exception e) {
+               esay(errmsg = "FetchThread : ("+_pnfsId+") " + e);
+               returnCode = 5;
+               excep = e;
            }
            //
            // we can't use the entry as lock because within this
