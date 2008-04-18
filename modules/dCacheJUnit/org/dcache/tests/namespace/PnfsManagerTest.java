@@ -19,8 +19,6 @@ import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import dmg.cells.nucleus.SystemCell;
-
 import org.dcache.chimera.ChimeraFsException;
 import org.dcache.chimera.FsInode;
 import org.dcache.chimera.JdbcFs;
@@ -225,7 +223,7 @@ public class PnfsManagerTest {
 
         _fs.setTag(dirInode, "WriteToken", writeToken.getBytes(), 0,writeToken.getBytes().length );
 
-        PnfsCreateEntryMessage pnfsCreateEntryMessage = new PnfsCreateEntryMessage("/pnfs/testRoot/testCreateDup");
+        PnfsCreateEntryMessage pnfsCreateEntryMessage = new PnfsCreateEntryMessage("/pnfs/testRoot/writeTokenTestFile");
         _pnfsManager.createEntry(pnfsCreateEntryMessage);
 
         StorageInfo storageInfo = pnfsCreateEntryMessage.getStorageInfo();
