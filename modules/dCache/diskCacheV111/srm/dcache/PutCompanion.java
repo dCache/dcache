@@ -1,84 +1,5 @@
 // $Id$
 // $Log: not supported by cvs2svn $
-// Revision 1.18  2007/03/28 02:58:23  timur
-// Support overwrite, less logging
-//
-// Revision 1.17  2007/03/10 00:13:21  timur
-// started work on adding support for optional overwrite
-//
-// Revision 1.16  2007/02/20 01:46:35  timur
-// more changes to report status according to the spec
-//
-// Revision 1.15  2007/02/17 05:48:48  timur
-// detect file name that is too long for pnfs in putCompanion
-//
-// Revision 1.14  2006/11/17 21:59:30  litvinse
-// put 10 minite timeouts for PNFS messages
-//
-// Revision 1.13  2006/11/17 21:17:09  litvinse
-// create missing directory subpath with permissions and ownership based
-// on its parent
-//
-// Revision 1.12  2006/09/25 20:30:58  timur
-// modify srm companions and srm cell to use ThreadManager
-//
-// Revision 1.11  2005/10/07 22:59:46  timur
-// work towards v2
-//
-// Revision 1.10  2005/05/12 21:45:00  timur
-// better error report
-//
-// Revision 1.9  2005/04/07 21:13:53  timur
-// check that the file metadata in the PnfsGetFileMetaDataMessage is not null, even when the return code is 0
-//
-// Revision 1.8  2005/03/11 21:17:28  timur
-// making srm compatible with cern tools again
-//
-// Revision 1.7  2005/03/07 22:59:11  timur
-// use pnfs get metadata instead of get storageInfo on directories
-//
-// Revision 1.6  2005/01/25 05:17:31  timur
-// moving general srm stuff into srm repository
-//
-// Revision 1.5  2004/10/20 21:29:46  timur
-// corrected one log message format
-//
-// Revision 1.4  2004/09/21 16:55:04  timur
-// fixed unregesering the directory creators
-//
-// Revision 1.3  2004/09/21 03:24:02  timur
-// fixed the bug, leaving the directory creation hanging
-//
-// Revision 1.2  2004/08/06 19:35:23  timur
-// merging branch srm-branch-12_May_2004 into the trunk
-//
-// Revision 1.1.2.3  2004/06/15 22:15:42  timur
-// added cvs logging tags and fermi copyright headers at the top
-//
-// Revision 1.1.2.2  2004/05/21 21:46:47  timur
-//  refactored interface, work on srm get implementation pining part
-//
-// Revision 1.1.2.1  2004/05/18 21:40:30  timur
-// incorporation of the new scheduler into srm, repackaging of all the srm classes
-//
-// Revision 1.11  2004/03/02 19:30:55  timur
-// implemented advisory delete
-//
-// Revision 1.10  2004/03/01 03:05:58  timur
-// fixed directory creation code, started implementation of advisory delete
-//
-// Revision 1.9  2004/02/24 21:37:39  timur
-// added information provider, working on advisory delete
-//
-// Revision 1.8  2004/02/12 20:14:30  timur
-// dirrectory creation code is modified
-//
-// Revision 1.7  2004/01/28 13:02:27  timur
-// added support for dynamic directoy tree creation, when writing into unexisting , but legitimate path through srm
-//
-// Revision 1.6  2003/10/02 18:50:28  cvs
-// timur: added cvs version and log in comments
-//
 /*
 COPYRIGHT STATUS:
   Dec 1st 2001, Fermi National Accelerator Laboratory (FNAL) documents and
@@ -202,8 +123,8 @@ public class PutCompanion implements CellMessageAnswerable {
     private static final int RESEIVED_FILE_INFO_MESSAGE=2;
     private static final int WAITING_FOR_DIRECTORY_INFO_MESSAGE=3;
     private static final int RECEIVED_DIRECTORY_INFO_MESSAGE=4;
-    private static final int WAITING_FOR_CREATE_DIRECTORY_RESPONCE_MESSAGE=5;
-    private static final int RECEIVED_CREATE_DIRECTORY_RESPONCE_MESSAGE=6;
+    private static final int WAITING_FOR_CREATE_DIRECTORY_RESPONSE_MESSAGE=5;
+    private static final int RECEIVED_CREATE_DIRECTORY_RESPONSE_MESSAGE=6;
     private static final int FINAL_STATE=8;
     private static final int PASSIVELY_WAITING_FOR_DIRECTORY_INFO_MESSAGE=9;
     private volatile int state=INITIAL_STATE;
@@ -277,8 +198,8 @@ public class PutCompanion implements CellMessageAnswerable {
             if( message instanceof PnfsCreateDirectoryMessage) {
                 PnfsCreateDirectoryMessage create_directory_responce =
                 (PnfsCreateDirectoryMessage)message;
-                if( state == WAITING_FOR_CREATE_DIRECTORY_RESPONCE_MESSAGE) {
-                    state = RECEIVED_CREATE_DIRECTORY_RESPONCE_MESSAGE;
+                if( state == WAITING_FOR_CREATE_DIRECTORY_RESPONSE_MESSAGE) {
+                    state = RECEIVED_CREATE_DIRECTORY_RESPONSE_MESSAGE;
                     directoryInfoArrived(create_directory_responce);
                     return;
                 }
@@ -365,7 +286,7 @@ public class PutCompanion implements CellMessageAnswerable {
         try{
         
         if(metadata_msg.getReturnCode() != 0) {
-            if(state == RECEIVED_CREATE_DIRECTORY_RESPONCE_MESSAGE) {
+            if(state == RECEIVED_CREATE_DIRECTORY_RESPONSE_MESSAGE) {
                 String error = "directory creation failed: "+getCurrentDirPath()+" reason: "+
                 metadata_msg.getErrorObject();
                 unregisterAndFailCreator(error);
@@ -425,6 +346,7 @@ public class PutCompanion implements CellMessageAnswerable {
         if(srm_dirFmd.retentionPolicyInfo != null) {
             say(" got  srm_dirFmd.retentionPolicyInfo.AccessLatency ="+srm_dirFmd.retentionPolicyInfo.getAccessLatency());
             say(" got  srm_dirFmd.retentionPolicyInfo.RetentionPolicy ="+srm_dirFmd.retentionPolicyInfo.getRetentionPolicy());
+            say(" got  srm_dirFmd.spaceTokens ="+(srm_dirFmd.spaceTokens!=null?srm_dirFmd.spaceTokens[0]:"NONE"));
         }   
         if((pathItems.size() -1 ) >current_dir_depth) {
             
@@ -458,30 +380,6 @@ public class PutCompanion implements CellMessageAnswerable {
         }
     }
     
-    /*private static PnfsFileId createFileId(PnfsId pnfsId,StorageInfo storageInfo,
-        diskCacheV111.util.FileMetaData fmd)
-    {
-        diskCacheV111.util.FileMetaData.Permissions perms =
-        fmd.getUserPermissions ();
-        int permissions = (perms.canRead ()    ? 4 : 0) |
-        (perms.canWrite ()   ? 2 : 0) |
-        (perms.canExecute () ? 1 : 0) ;
-        permissions <<=3;
-        perms = fmd.getGroupPermissions ();
-        permissions |=    (perms.canRead ()    ? 4 : 0) |
-        (perms.canWrite ()   ? 2 : 0) |
-        (perms.canExecute () ? 1 : 0) ;
-        permissions <<=3;
-        perms = fmd.getWorldPermissions ();
-        permissions |=    (perms.canRead ()    ? 4 : 0) |
-        (perms.canWrite ()   ? 2 : 0) |
-        (perms.canExecute () ? 1 : 0) ;
-        PnfsFileId fileId = new PnfsFileId(null,pnfsId,
-          fmd.getUid(), fmd.getGid(), permissions);
-        return fileId;
-    }*/
-    
-    
     /** 
 	This code was added to perform the automatic creation of the directories
 	the permissions and ownership is inherited from the parent path
@@ -504,7 +402,7 @@ public class PutCompanion implements CellMessageAnswerable {
         
         PnfsGetStorageInfoMessage dirMsg
         = new PnfsCreateDirectoryMessage(newDirPath,uid,gid,perm) ;
-        state = WAITING_FOR_CREATE_DIRECTORY_RESPONCE_MESSAGE;
+        state = WAITING_FOR_CREATE_DIRECTORY_RESPONSE_MESSAGE;
         
         dirMsg.setReplyRequired(true);
         
@@ -612,7 +510,7 @@ public class PutCompanion implements CellMessageAnswerable {
         sb.append("\" lastOperation:").append(new Date(lastOperationTime).toString());
         
        if (state == WAITING_FOR_DIRECTORY_INFO_MESSAGE ||
-            state == WAITING_FOR_CREATE_DIRECTORY_RESPONCE_MESSAGE) {
+            state == WAITING_FOR_CREATE_DIRECTORY_RESPONSE_MESSAGE) {
             try {
                for( int i = current_dir_depth;
                          i<pathItems.size();
@@ -655,10 +553,10 @@ public class PutCompanion implements CellMessageAnswerable {
                 return "WAITING_FOR_DIRECTORY_INFO_MESSAGE";
             case RECEIVED_DIRECTORY_INFO_MESSAGE:
                 return "RECEIVED_DIRECTORY_INFO_MESSAGE";
-            case WAITING_FOR_CREATE_DIRECTORY_RESPONCE_MESSAGE:
-                return "WAITING_FOR_CREATE_DIRECTORY_RESPONCE_MESSAGE";
-            case RECEIVED_CREATE_DIRECTORY_RESPONCE_MESSAGE:
-                return "RECEIVED_CREATE_DIRECTORY_RESPONCE_MESSAGE";
+            case WAITING_FOR_CREATE_DIRECTORY_RESPONSE_MESSAGE:
+                return "WAITING_FOR_CREATE_DIRECTORY_RESPONSE_MESSAGE";
+            case RECEIVED_CREATE_DIRECTORY_RESPONSE_MESSAGE:
+                return "RECEIVED_CREATE_DIRECTORY_RESPONSE_MESSAGE";
             case FINAL_STATE:
                 return "FINAL_STATE";
             case PASSIVELY_WAITING_FOR_DIRECTORY_INFO_MESSAGE:
