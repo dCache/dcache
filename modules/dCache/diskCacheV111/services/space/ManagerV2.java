@@ -849,6 +849,14 @@ public class ManagerV2
 						     description);
 		} 
 		else {
+			Long[] linkGroups = findLinkGroupIds(sizeInBytes,
+							     voGroup,
+							     voRole,
+							     latency,
+							     policy);
+			if(linkGroups.length == 0) {
+				return "There is no linkgroup that can accomodate this space reservation\n";
+			}
 			long lgId;
 			if (lgIdString != null){
 				lgId =Long.parseLong(lgIdString);
@@ -859,6 +867,16 @@ public class ManagerV2
 					return "Error, could not find link group with name = '"+lgName+"'";
 				}
 				lgId = lg.getId();
+			}
+			boolean yes=false;
+			for(int i=0;i<linkGroups.length;i++) {
+				if (linkGroups[i]==lgId) { 
+					yes=true;
+					break;
+				}
+			}
+			if (!yes) { 
+				return "Error, the linkgroup chosen cannot accomodate this space reservation\n";
 			}
 			reservationId = reserveSpaceInLinkGroup(
 				lgId,
