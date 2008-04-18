@@ -21,6 +21,7 @@ import org.junit.Test;
 
 import dmg.cells.nucleus.SystemCell;
 
+import org.dcache.chimera.ChimeraFsException;
 import org.dcache.chimera.FsInode;
 import org.dcache.chimera.JdbcFs;
 import org.dcache.chimera.XMLconfig;
@@ -37,6 +38,7 @@ import diskCacheV111.vehicles.PnfsCreateEntryMessage;
 import diskCacheV111.vehicles.PnfsGetCacheLocationsMessage;
 import diskCacheV111.vehicles.PnfsGetFileMetaDataMessage;
 import diskCacheV111.vehicles.PnfsGetStorageInfoMessage;
+import diskCacheV111.vehicles.StorageInfo;
 
 public class PnfsManagerTest {
 
@@ -211,6 +213,27 @@ public class PnfsManagerTest {
 
     }
 
+
+    @Test
+    public void testWriteTokenTag() throws ChimeraFsException {
+
+        // use back boor to create the tag
+        FsInode dirInode = _fs.path2inode("/pnfs/testRoot");
+        _fs.createTag(dirInode, "WriteToken");
+
+        String writeToken = "myFavoriteToeken";
+
+        _fs.setTag(dirInode, "WriteToken", writeToken.getBytes(), 0,writeToken.getBytes().length );
+
+        PnfsCreateEntryMessage pnfsCreateEntryMessage = new PnfsCreateEntryMessage("/pnfs/testRoot/testCreateDup");
+        _pnfsManager.createEntry(pnfsCreateEntryMessage);
+
+        StorageInfo storageInfo = pnfsCreateEntryMessage.getStorageInfo();
+
+        assertEquals("Invalid entry in storageInfo map", writeToken, storageInfo.getMap().get("writeToken") );
+
+    }
+
     @Test
     @Ignore
     public void testAddCacheLocationNonExist() {
@@ -218,7 +241,7 @@ public class PnfsManagerTest {
         PnfsAddCacheLocationMessage pnfsAddCacheLocationMessage = new PnfsAddCacheLocationMessage(new PnfsId("000000000000000000000000000000000001"), "aPool");
 
         _pnfsManager.addCacheLocation(pnfsAddCacheLocationMessage);
-        assertTrue("add cache clocation of non existing file should return FILE_NOT_FOUND", pnfsAddCacheLocationMessage.getReturnCode() == CacheException.FILE_NOT_FOUND );
+        assertTrue("add cache location of non existing file should return FILE_NOT_FOUND", pnfsAddCacheLocationMessage.getReturnCode() == CacheException.FILE_NOT_FOUND );
     }
 
     @AfterClass
