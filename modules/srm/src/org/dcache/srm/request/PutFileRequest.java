@@ -606,29 +606,39 @@ public class PutFileRequest extends FileRequest {
                 return;
 
             }
+	    long defaultSpaceReservationId=0;
+	    if (parentFmd.spaceTokens!=null) { 
+		    if (parentFmd.spaceTokens.length>0) { 
+			    defaultSpaceReservationId=parentFmd.spaceTokens[0];
+		    }
+	    }
 
-            if( configuration.isReserve_space_implicitely() &&
-                    spaceReservationId == null
-                    ) {
-                synchronized(this) {
-
-                    State state = getState();
-                    if(!State.isFinalState(state)) {
-                        setState(State.ASYNCWAIT,"reserving space");
-                    }
-                }
+            if( configuration.isReserve_space_implicitely()&&spaceReservationId == null) {
+		    synchronized(this) {
+			    State state = getState();
+			    if(!State.isFinalState(state)) {
+				    setState(State.ASYNCWAIT,"reserving space");
+			    }
+		    }
 
                 long remaining_lifetime = lifetime - ( System.currentTimeMillis() -creationTime);
+		if(retentionPolicy==null&&
+		   accessLatency==null&&
+		   defaultSpaceReservationId!=0&&
+		   !spaceMarkedAsBeingUsed) {
+			SrmUseSpaceCallbacks  callbacks = new PutUseSpaceCallbacks(getId());
+			StringBuffer sb = new StringBuffer();
+			sb.append(defaultSpaceReservationId);
+			storage.srmMarkSpaceAsBeingUsed(getUser(),
+							sb.toString(),
+							getPath(),
+							size==0?1:size,
+							remaining_lifetime,
+							((PutRequest)getRequest()).isOverwrite(),
+							callbacks );
+			return;
+		}
                 SrmReserveSpaceCallbacks callbacks = new PutReserveSpaceCallbacks(getId());
-                /*
-                 *    public void srmReserveSpace(SRMUser user,
-                    long sizeInBytes,
-                    long spaceReservationLifetime,
-                    String retentionPolicy,
-                    String accessLatency,
-                    String description,
-                    SrmReserveSpaceCallbacks callbacks);
-                 */
                 //
                 //the following code allows the inheritance of the
                 // retention policy from the directory metatada
@@ -636,8 +646,6 @@ public class PutFileRequest extends FileRequest {
                 if(retentionPolicy == null && parentFmd != null && parentFmd.retentionPolicyInfo != null ) {
                     retentionPolicy = parentFmd.retentionPolicyInfo.getRetentionPolicy();
                 }
-
-
                 //
                 //the following code allows the inheritance of the
                 // access latency from the directory metatada
