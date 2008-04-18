@@ -19,9 +19,9 @@
   <property name="libDir" location="${externalLibDir}" />
 
   <!-- Define task for invoking SMC - the state machine compiler -->
-  <taskdef name="smc" 
-           classname="net.sf.smc.ant.SmcJarWrapper" 
-           classpath="${libDir}/smc/smc-ant.jar"/> 
+  <taskdef name="smc"
+           classname="net.sf.smc.ant.SmcJarWrapper"
+           classpath="${libDir}/smc/smc-ant.jar"/>
   <property name="smc.jar" location="${libDir}/smc/Smc.jar"/>
 
   <!--
@@ -268,11 +268,11 @@
     </ant>
 
   </target>
-	
-	<!-- 
+
+	<!--
 			Info
 	-->
-	
+
 	<target name="info" depends="prepare,cells,dcache-srm" description="Compile info package and create info.jar">
 		<ant dir="modules-builds" antfile="dcache-core-build.xml" target="info.jar" inheritAll="false">
 			<property name="libDir" location="${libDir}" />
@@ -283,7 +283,7 @@
 			<property name="release.name" value="${release.name}" />
 		</ant>
 	</target>
-	
+
 	<target name="info.bin" depends="dcache-srm.bin" description="Compile info package and create info.jar in 'binDir'">
 		<ant  dir="modules-builds" antfile="dcache-core-build.xml" target="info-bin" inheritAll="false">
 			<property name="libDir" location="${libDir}" />
@@ -295,8 +295,8 @@
 			<property name="release.name" value="${release.name}" />
 		</ant>
 	</target>
-		
-	
+
+
 
 	<!--
 	          xrootd-token authorization plugin
@@ -466,47 +466,6 @@
 
   <path id="cc.dummy" />
 
-  <macrodef name="checkclass">
-    <attribute name="classname"/>
-    <attribute name="classpathref" default="cc.dummy" />
-    <attribute name="classpath" default="" />
-    <sequential>
-      <condition property="cc.cpv.@{classname}" value="@{classpath}" >
-	<not>
-	  <equals arg1="" arg2="@{classpath}" />
-	</not>
-      </condition>
-      <property name="cc.cpv.@{classname}" refid="@{classpathref}" />
-      <fail unless="cc.cpv.@{classname}" >Either the classpathref or the classpath attribute has to be set.</fail>
-      <condition property="checkclassMissing" value="">
-	<not>
-	  <available classname="@{classname}" classpath="${cc.cpv.@{classname}}" />
-	</not>
-      </condition>
-      <condition property="ccls.@{classname}" value="@{classname}">
-	<not>
-	  <available classname="@{classname}" classpath="${cc.cpv.@{classname}}" />
-	</not>
-      </condition>
-    </sequential>
-  </macrodef>
-
-  <macrodef name="checkclassfail">
-    <attribute name="message" default=""/>
-    <text name="textcontent" optional="true"/>
-    <sequential>
-      <propertyset id="checkclass.ps">
-	<propertyref prefix="ccls."/>
-      </propertyset>
-      <property name="checkclassList" refid="checkclass.ps" />
-      <fail if="checkclassMissing" >
-	@{message}
-	@{textcontent}
-	List of missing classes:
-	${checkclassList}
-      </fail>
-    </sequential>
-  </macrodef>
 
   <!--
           By default show help :)

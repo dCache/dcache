@@ -121,30 +121,12 @@
              Targets for javatunnel.jar
   -->
 
-  <!-- Depend -->
-
-  <target name="javatunnel.depend" description="Check dependencies for javatunnel.compile" >
-
-    <property name="javatunnel.classpath.value" refid="javatunnel.classpath"/>
-
-    <!-- Debug/Info only -->
-    <echo>Classpath of javatunnel: ${javatunnel.classpath.value} </echo>
-
-    <!-- This is a list of classes which are needed from external libs -->
-    <checkclass classname="org.apache.log4j.Logger" classpath="${javatunnel.classpath.value}" />
-    <checkclass classname="org.globus.gsi.GlobusCredential" classpath="${javatunnel.classpath.value}" />
-
-    <checkclassfail>.
-        The following classes are missing in the classpath.
-        They might be fetchted from CVS with 'ant libs.cvs'.
-    </checkclassfail>
-
-  </target>
+  <property name="javatunnel.classpath.value" refid="javatunnel.classpath"/>
 
   <!-- Compile -->
 
 
-  <target name="javatunnel.compile" depends="prepare,javatunnel.depend" description="Compile Java code for javatunnel.jar" >
+  <target name="javatunnel.compile" depends="prepare" description="Compile Java code for javatunnel.jar" >
 
     <javac destdir="${buildDir}"
            classpath="${javatunnel.classpath.value}"
