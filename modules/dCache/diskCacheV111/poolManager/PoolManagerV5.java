@@ -242,7 +242,7 @@ public class PoolManagerV5 extends CellAdapter {
 
     }
     @Override
-    public CellVersion getCellVersion(){ return new CellVersion(diskCacheV111.util.Version.getVersion(),"$Revision: 1.48 $" ); }
+    public CellVersion getCellVersion(){ return new CellVersion(diskCacheV111.util.Version.getVersion(),"$Revision$" ); }
     private void dumpSetup() throws Exception {
 
        File setupFile = new File( _setupFileName ).getCanonicalFile() ;
