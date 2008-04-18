@@ -1,4 +1,4 @@
-// $Id: ReserveSpaceRequest.java,v 1.13 2007/10/19 20:57:04 tdh Exp $
+// $Id$
 // $Log: ReserveSpaceRequest.java,v $
 // Revision 1.13  2007/10/19 20:57:04  tdh
 // Merge of caching of gPlazma authorization in srm.

@@ -1,4 +1,4 @@
-// $Id: SRMAbortedException.java,v 1.1 2007-02-09 21:24:22 timur Exp $
+// $Id$
 // $Log: not supported by cvs2svn $
 // Revision 1.1  2005/01/14 23:07:13  timur
 // moving general srm code in a separate repository

@@ -1,4 +1,4 @@
-// $Id: BringOnlineRequestStorage.java,v 1.4 2007-02-17 05:44:25 timur Exp $
+// $Id$
 // $Log: not supported by cvs2svn $
 // Revision 1.3  2007/01/10 23:00:25  timur
 // implemented srmGetRequestTokens, store request description in database, fixed several srmv2 issues

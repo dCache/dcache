@@ -1,4 +1,4 @@
-// $Id: LambdaStationMap.java,v 1.3 2006-06-15 20:47:50 moibenko Exp $
+// $Id$
 // $Log: not supported by cvs2svn $
 // Revision 1.1  2006/03/23 22:36:46  moibenko
 // maps domains to LS sites.

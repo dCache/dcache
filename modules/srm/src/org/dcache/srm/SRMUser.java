@@ -1,4 +1,4 @@
-// $Id: SRMUser.java,v 1.3 2006-08-02 22:03:12 timur Exp $
+// $Id$
 // $Log: not supported by cvs2svn $
 // Revision 1.2  2005/10/07 22:57:15  timur
 // work for srm v2

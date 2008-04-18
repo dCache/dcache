@@ -1,4 +1,4 @@
-// $Id: SRMDuplicationException.java,v 1.1 2007-02-23 17:05:24 timur Exp $
+// $Id$
 // $Log: not supported by cvs2svn $
 // Revision 1.1  2007/02/09 21:24:22  timur
 // srmExtendFileLifeTime is about 70% done

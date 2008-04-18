@@ -1,4 +1,4 @@
-// $Id: RequestUser.java,v 1.1 2005-01-14 23:07:14 timur Exp $
+// $Id$
 // $Log: not supported by cvs2svn $
 // Revision 1.3  2004/11/09 08:04:47  tigran
 // added SerialVersion ID

@@ -1,4 +1,4 @@
-// $Id: RequestCredential.java,v 1.7 2007-10-19 20:57:04 tdh Exp $
+// $Id$
 // $Log: not supported by cvs2svn $
 // Revision 1.6  2007/08/03 20:20:40  timur
 // implementing some of the findbug bugs and recommendations, avoid selfassignment, possible nullpointer exceptions, syncronization issues, etc

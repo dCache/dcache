@@ -1,5 +1,5 @@
-// $Id: CopyRequest.java,v 1.36 2007-08-03 20:20:39 timur Exp $
-// $Author: timur $
+// $Id$
+// $Author$
 /*
 COPYRIGHT STATUS:
   Dec 1st 2001, Fermi National Accelerator Laboratory (FNAL) documents and

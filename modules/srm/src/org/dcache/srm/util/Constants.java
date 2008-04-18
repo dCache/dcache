@@ -1,7 +1,7 @@
 //______________________________________________________________________________
 //
-// $Id: Constants.java,v 1.1 2006-11-17 21:56:53 litvinse Exp $
-// $Author: litvinse $
+// $Id$
+// $Author$
 //
 // created 11/06 by Dmitry Litvintsev (litvinse@fnal.gov)
 //

@@ -1,4 +1,4 @@
-// $Id: Version.java,v 1.12 2005-11-21 07:10:05 patrick Exp $
+// $Id$
 package diskCacheV111.util ;
 
 /**

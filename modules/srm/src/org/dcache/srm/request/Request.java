@@ -1,4 +1,4 @@
-// $Id: Request.java,v 1.27 2007-10-19 20:57:04 tdh Exp $
+// $Id$
 // $Log: not supported by cvs2svn $
 // Revision 1.26  2007/02/20 01:37:56  timur
 // more changes to report status according to the spec and make ls report lifetime as -1 (infinite)

@@ -1,4 +1,4 @@
-//$Id: AbstractStorageElement.java,v 1.31 2007-10-23 19:41:23 litvinse Exp $
+//$Id$
 //$Log: not supported by cvs2svn $
 //Revision 1.30  2007/03/10 00:13:19  timur
 //started work on adding support for optional overwrite

@@ -1,4 +1,4 @@
-// $Id: DatabaseRequestCredentialStorage.java,v 1.8 2007-08-03 15:47:59 timur Exp $
+// $Id$
 // $Log: not supported by cvs2svn $
 // Revision 1.7  2007/03/08 23:36:55  timur
 // merging changes from the 1-7 branch related to database performance and reduced usage of database when monitoring is not used

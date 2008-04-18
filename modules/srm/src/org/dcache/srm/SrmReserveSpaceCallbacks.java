@@ -1,4 +1,4 @@
-// $Id: SrmReserveSpaceCallbacks.java,v 1.2 2007-02-17 05:44:24 timur Exp $
+// $Id$
 // $Log: not supported by cvs2svn $
 // Revision 1.1  2006/07/29 18:10:41  timur
 // added schedulable requests for execution reserve space requests

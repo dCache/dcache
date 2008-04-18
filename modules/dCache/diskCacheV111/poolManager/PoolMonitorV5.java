@@ -459,6 +459,7 @@ public class PoolMonitorV5 {
                                    protocolInfo.getProtocol()+"/"+protocolInfo.getMajorVersion() ,
                                    storageInfo,
                                    _linkGroup ) ;
+	 say("SHIT "+storageClass+" "+hsm+" "+cacheClass+" "+hostName+" "+protocolInfo.getProtocol()+" "+protocolInfo.getMajorVersion()+" "+storageInfo+" "+_linkGroup);
          //
          // this is the final knock out.
          //

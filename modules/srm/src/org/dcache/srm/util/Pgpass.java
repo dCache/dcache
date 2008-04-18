@@ -1,5 +1,5 @@
 //
-// $Id: Pgpass.java,v 1.2 2005-08-25 00:26:34 podstvkv Exp $
+// $Id$
 //
 
 package org.dcache.srm.util;

@@ -1,4 +1,4 @@
-//$Id: LambdaStationTicket.java,v 1.3 2006-06-15 20:49:50 moibenko Exp $
+//$Id$
 
 package org.dcache.srm.lambdastation;
 import java.io.PrintWriter;

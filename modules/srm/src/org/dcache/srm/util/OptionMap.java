@@ -1,4 +1,4 @@
-// $Id: OptionMap.java,v 1.1 2007-10-08 20:45:51 abaranov Exp $
+// $Id$
 // $Log: not supported by cvs2svn $
 // Revision 1.11  2006/01/26 04:40:59  timur
 

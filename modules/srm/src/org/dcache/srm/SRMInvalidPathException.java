@@ -1,7 +1,7 @@
 //______________________________________________________________________________
 //
-// $Id: SRMInvalidPathException.java,v 1.1 2007-04-13 17:01:30 litvinse Exp $
-// $Author: litvinse $
+// $Id$
+// $Author$
 //
 // created 04/07 by Dmitry Litvintsev (litvinse@fnal.gov)
 //

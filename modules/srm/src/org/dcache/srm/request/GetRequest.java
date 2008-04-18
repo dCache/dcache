@@ -1,4 +1,4 @@
-// $Id: GetRequest.java,v 1.22 2007-02-17 05:44:25 timur Exp $
+// $Id$
 // $Log: not supported by cvs2svn $
 // Revision 1.21  2007/01/10 23:00:24  timur
 // implemented srmGetRequestTokens, store request description in database, fixed several srmv2 issues

@@ -1,4 +1,4 @@
-// $Id: UnixfsUser.java,v 1.2 2006-08-02 22:03:13 timur Exp $
+// $Id$
 
 /*
  * UnixfsUser.java

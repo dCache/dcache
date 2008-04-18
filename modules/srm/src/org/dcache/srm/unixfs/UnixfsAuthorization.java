@@ -1,4 +1,4 @@
-// $Id: UnixfsAuthorization.java,v 1.3 2007-10-19 20:57:04 tdh Exp $
+// $Id$
 
 /*
  * UnixfsAuthorization.java

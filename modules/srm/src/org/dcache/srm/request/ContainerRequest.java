@@ -1,4 +1,4 @@
-// $Id: ContainerRequest.java,v 1.20 2007-10-21 19:50:57 litvinse Exp $
+// $Id$
 // $Log: not supported by cvs2svn $
 // Revision 1.19  2007/10/21 18:49:31  litvinse
 // fix syntax error

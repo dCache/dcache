@@ -1,4 +1,4 @@
-// $Id: GetFileInfoCallbacks.java,v 1.4 2007-02-23 17:05:24 timur Exp $
+// $Id$
 // $Log: not supported by cvs2svn $
 // Revision 1.3  2005/10/07 22:57:15  timur
 // work for srm v2

@@ -1,4 +1,4 @@
-// $Id: SRMAuthorization.java,v 1.4 2007-10-19 20:57:04 tdh Exp $
+// $Id$
 // $Log: not supported by cvs2svn $
 // Revision 1.3  2005/07/22 17:32:55  leoheska
 // srm-ls modifications

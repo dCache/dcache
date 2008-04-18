@@ -1,4 +1,4 @@
-// $Id: DatabaseJobStorage.java,v 1.23 2007-10-24 04:15:24 timur Exp $
+// $Id$
 // $Log: not supported by cvs2svn $
 // Revision 1.22  2007/08/14 15:56:12  timur
 // fix an ArrayOutOfBounds error

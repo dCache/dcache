@@ -1,23 +1,5 @@
-// $Id: PrepareToPutCallbacks.java,v 1.5 2007-09-13 19:14:29 timur Exp $
+// $Id$
 // $Log: not supported by cvs2svn $
-// Revision 1.4  2007/02/20 01:37:55  timur
-// more changes to report status according to the spec and make ls report lifetime as -1 (infinite)
-//
-// Revision 1.3  2005/10/07 22:57:15  timur
-// work for srm v2
-//
-// Revision 1.2  2005/03/11 21:16:24  timur
-// making srm compatible with cern tools again
-//
-// Revision 1.1  2005/01/14 23:07:13  timur
-// moving general srm code in a separate repository
-//
-// Revision 1.5  2004/08/06 19:35:21  timur
-// merging branch srm-branch-12_May_2004 into the trunk
-//
-// Revision 1.4.2.2  2004/06/15 22:15:41  timur
-// added cvs logging tags and fermi copyright headers at the top
-//
 
 /*
 COPYRIGHT STATUS:
