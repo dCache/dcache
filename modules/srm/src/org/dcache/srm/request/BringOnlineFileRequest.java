@@ -928,8 +928,12 @@ public class BringOnlineFileRequest extends FileRequest {
         
         
         
-        public void StorageInfoArrived(String fileId,FileMetaData fileMetaData) {
+        public void StorageInfoArrived(String fileId,FileMetaData fileMetaData) {            
             try {
+                if (fileMetaData.isDirectory) {
+                    FileNotFound("Path is a directory");
+                    return;
+                }
                 BringOnlineFileRequest fr = getBringOnlineFileRequest();
                 fr.say("StorageInfoArrived: FileId:"+fileId);
                 State state ;
