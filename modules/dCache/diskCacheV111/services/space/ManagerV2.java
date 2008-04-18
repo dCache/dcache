@@ -444,15 +444,12 @@ public class ManagerV2
 					   StringBuffer sb) throws Exception {
 		IoPackage pkg = new  SpaceReservationIO();
 		HashSet spaces = null;
-
 		long lgId = 0;
 		LinkGroup lg = null;
-
 		if (linkGroupId!=null) { 
 			lgId = Long.parseLong(linkGroupId);
 			lg   = getLinkGroup(lgId);
 		}
-		
 		if (linkGroupName!=null) { 
 			lg = getLinkGroupByName(linkGroupName);	
 			if (lgId!=0) { 
@@ -2132,13 +2129,13 @@ public class ManagerV2
 		String selectSpace =
 			"SELECT * FROM "+ManagerSchemaConstants.SpaceTableName +
 			" WHERE  state = "+SpaceState.RESERVED.getStateId();
-		if(description == null) {
+		if (voGroup!=null) { 
 			selectSpace +=" AND voGroup = '"+voGroup+'\'';            
-			if(voRole != null) {
-				selectSpace += " AND voRole = '"+voRole+'\'';
-			}
-		} 
-		else {
+		}
+		if(voRole != null) {
+			selectSpace += " AND voRole = '"+voRole+'\'';
+		}
+		if(description != null) {
 			selectSpace += " AND description = '"+description+'\'';
 		}
 		say("executing statement: "+selectSpace);
@@ -3328,7 +3325,7 @@ public class ManagerV2
 			voRole = voinfo.getVoRole();
 		}
 		String description = null;
-		long reservationId = reserveSpace(voGroup,voRole,sizeInBytes,latency , policy, lifetime,description);
+		long reservationId = reserveSpace(voGroup,voRole,sizeInBytes,latency,policy,lifetime,description);
 		long fileId = useSpace(reservationId,voGroup,voRole,sizeInBytes,lifetime,pnfsPath,pnfsId);
 		File file = getFile(fileId);
 		return file;
@@ -3981,6 +3978,12 @@ public class ManagerV2
 		selectPool.setLinkGroup(linkGroupName);
 		StorageInfo storageInfo = selectPool.getStorageInfo();
 		storageInfo.setKey("SpaceToken",Long.toString(spaceId));
+		//
+		// add Space Token description
+		//
+		if (space.getDescription()!=null) { 
+			storageInfo.setKey("SpaceTokenDescription",space.getDescription());
+		}
 		if(!willBeForwarded) {
 			cellMessage.getDestinationPath().add( new CellPath(poolManager) ) ;
 			cellMessage.nextDestination() ;
