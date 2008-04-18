@@ -2671,6 +2671,15 @@ public class Storage
             }
             fmd.setStorageInfo(storage_info);
 	    isStored=storage_info.isStored();
+	    if(storage_info.getMap()!=null) { 
+		    if (storage_info.getMap().get("writeToken")!=null) { 
+			    fmd.spaceTokens = new long[1];
+			    try { 
+				    fmd.spaceTokens[0] = Long.parseLong(storage_info.getMap().get("writeToken"));
+			    }
+			    catch (Exception e) {} 
+		    }
+	    }
         }
         fmd.isPinned = isPinned;
         fmd.isPermanent = isPermanent;
