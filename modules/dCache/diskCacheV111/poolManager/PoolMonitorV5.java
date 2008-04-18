@@ -1,4 +1,4 @@
-// $Id: PoolMonitorV5.java,v 1.32 2007-08-01 20:00:45 tigran Exp $
+//  $Id: PoolMonitorV5.java,v 1.32 2007-08-01 20:00:45 tigran Exp $
 
 package diskCacheV111.poolManager ;
 
@@ -459,7 +459,6 @@ public class PoolMonitorV5 {
                                    protocolInfo.getProtocol()+"/"+protocolInfo.getMajorVersion() ,
                                    storageInfo,
                                    _linkGroup ) ;
-	 say("SHIT "+storageClass+" "+hsm+" "+cacheClass+" "+hostName+" "+protocolInfo.getProtocol()+" "+protocolInfo.getMajorVersion()+" "+storageInfo+" "+_linkGroup);
          //
          // this is the final knock out.
          //
