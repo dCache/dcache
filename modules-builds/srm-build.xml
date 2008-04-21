@@ -118,7 +118,7 @@
   <target name="srm.compile" unless="srm.jar.upToDate" depends="prepare,lib.tomcat.untar,lib.axis.untar,lib.glue.untar">
 
     <javac destdir="${buildDir}"
-           classpath="${srm.classpath}"
+    	   classpathref="srm.classpath"
            source="${javac.source}"
            target="${javac.target}"
            debug="${javac.debug}"
@@ -156,7 +156,7 @@
   <target name="srm-tomcat.compile" unless="isUptodate.srm-tomcat.jar" depends="prepare,lib.tomcat.untar,lib.axis.untar,lib.glue.untar">
 
     <javac destdir="${buildDir}"
-           classpath="${srm.classpath}"
+    	   classpathref="srm.classpath"
            source="${javac.source}"
            target="${javac.target}"
            debug="${javac.debug}"
