@@ -79,7 +79,7 @@ onerror shutdown
 # ----------------------------------------------------------------------
 #
 #
-create org.dcache.services.pinmanager.PinManager PinManager \
+create org.dcache.services.pinmanager1.PinManager PinManager \
        "default \
         -export  \
         -jdbcDriver=org.postgresql.Driver \

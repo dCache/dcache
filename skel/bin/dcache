@@ -1050,11 +1050,11 @@ checkNodeType()
 determineHostName()
 {
     case `uname` in
-        Linux)
-            fqdn=`hostname -f`
+        SunOS)
+            fqdn=`/usr/lib/mail/sh/check-hostname |cut -d" " -f7`
             ;;
         *)
-            fqdn=`hostname`
+            fqdn=`hostname --fqdn`
             ;;
     esac
 
