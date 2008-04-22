@@ -79,4 +79,9 @@ endDefine
 #
 create dmg.cells.services.multicaster.BroadcastCell broadcast  \
           "default -export"
-
+#
+#  --- LoginBroker startup. It is used by SRM for discovery of 
+#      available doors and their loads
+#
+create dmg.cells.services.login.LoginBroker LoginBroker "default -export"
+#

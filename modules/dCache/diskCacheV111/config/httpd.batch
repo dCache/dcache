@@ -64,7 +64,6 @@ create dmg.cells.network.TopoCell topo "none -update=100 -export"
 #       "22222 dmg.cells.services.ObjectLoginCell  -prot=raw"
 #
 #
-create dmg.cells.services.login.LoginBroker LoginBroker "default -export"
 create dmg.cells.services.login.LoginBroker srm-LoginBroker "default -export"
 #
 define context TransferObserverSetup endDefine
