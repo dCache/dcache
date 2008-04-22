@@ -27,7 +27,7 @@
     </tstamp>
 
 	<!-- defalut minor version is next official RC -->
-    <property name="build.minor.number" value="${build.number}rc" />
+    <property name="build.minor.number" value="15p${build.number}rc" />
 
 
     <loadproperties srcFile="release.properties" />
@@ -615,16 +615,16 @@
     -->
     <target name="release" description="Make new release">
 
-        <echo message="building new release : ${release.id}-${build.number}" />
+        <echo message="building new release : ${release.id}-15p${build.number}" />
 
         <!-- STEP 1 snd 2 : set rpm/tar name to release id -->
         <antcall target="server.rpm">
-             <param name="build.minor.number" value="${build.number}" />
-             <param name="release.name" value="${release.id}-${build.number}" />
+             <param name="build.minor.number" value="15p${build.number}" />
+             <param name="release.name" value="${release.id}-15p${build.number}" />
         </antcall>
         <antcall target="server.tgz">
-             <param name="build.minor.number" value="${build.number}" />
-             <param name="release.name" value="${release.id}-${build.number}" />
+             <param name="build.minor.number" value="15p${build.number}" />
+             <param name="release.name" value="${release.id}-15p${build.number}" />
         </antcall>
 
 
@@ -638,14 +638,14 @@
             <copy revision="${current.revision}"
                 message="New Version ${release.id}-${build.number}"
                 srcUrl="svn+ssh://svn.dcache.org/data/svn/dCache/${svn.branch}"
-                destUrl="svn+ssh://svn.dcache.org/data/svn/dCache/tags/${release.id}-${build.number}" />
+                destUrl="svn+ssh://svn.dcache.org/data/svn/dCache/tags/b15-official-CCRC08-release-p${build.number}" />
         </svn>
 
         <!-- STEP 4 : bump up version number and commit -->
         <!-- this will increase build number -->
         <buildnumber file="${build.id.store}" />
         <svn>
-            <commit message="New Version ${release.id}-${build.number}" file="${build.id.store}"  />
+            <commit message="New Version ${release.id}-15p${build.number}" file="${build.id.store}"  />
         </svn>
     </target>
 
