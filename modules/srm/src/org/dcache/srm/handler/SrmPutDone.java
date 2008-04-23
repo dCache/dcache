@@ -351,11 +351,11 @@ public class SrmPutDone {
 				status.setStatusCode(TStatusCode.SRM_FAILURE);
 				status.setExplanation("no file transfer(s) were performed on SURL(s)");
 			}
-			if(surls != null) {
-				srmPutDoneResponse.setArrayOfFileStatuses(
-					new ArrayOfTSURLReturnStatus(
-						putRequest.getArrayOfTSURLReturnStatus(surl_strings)));
-			}
+		}
+		if(surls != null) {
+			srmPutDoneResponse.setArrayOfFileStatuses(
+				new ArrayOfTSURLReturnStatus(
+					putRequest.getArrayOfTSURLReturnStatus(surl_strings)));
 		}
 		srmPutDoneResponse.setReturnStatus(status);
 	}
