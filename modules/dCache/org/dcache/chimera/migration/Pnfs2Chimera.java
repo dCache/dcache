@@ -229,9 +229,9 @@ public class Pnfs2Chimera {
             stat.setMode(Integer.parseInt(fields[0], 8));
             stat.setUid(Integer.parseInt(fields[1]));
             stat.setGid(Integer.parseInt(fields[2]));
-            stat.setATime(Long.parseLong(fields[3], 16));
-            stat.setMTime(Long.parseLong(fields[4], 16));
-            stat.setCTime(Long.parseLong(fields[5], 16));
+            stat.setATime(Long.parseLong(fields[3], 16)*1000);
+            stat.setMTime(Long.parseLong(fields[4], 16)*1000);
+            stat.setCTime(Long.parseLong(fields[5], 16)*1000);
 
         } finally {
             try {
