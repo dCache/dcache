@@ -68,7 +68,7 @@ define context broadcastSetup endDefine
 
    register diskCacheV111.vehicles.PoolRemoveFilesMessage         billing
 
-   register diskCacheV111.vehicles.PoolStatusChangedMessage       SpaceManager
+#   register diskCacheV111.vehicles.PoolStatusChangedMessage       SpaceManager
    register diskCacheV111.vehicles.PoolFileFlushedMessage         SrmSpaceManager
    register diskCacheV111.vehicles.PoolRemoveFilesMessage         SrmSpaceManager
    register diskCacheV111.vehicles.PoolManagerPoolUpMessage       PoolManager
