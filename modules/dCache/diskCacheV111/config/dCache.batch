@@ -13,7 +13,7 @@ import context -c setupContext
 #
 #   Make sure we got what we need.
 #
-check -strong serviceLocatorPort serviceLocatorHost 
+check -strong serviceLocatorPort serviceLocatorHost
 
 #
 create dmg.cells.services.RoutingManager  RoutingMgr
@@ -68,7 +68,7 @@ define context broadcastSetup endDefine
 
    register diskCacheV111.vehicles.PoolRemoveFilesMessage         billing
 
-   register diskCacheV111.vehicles.PoolStatusChangedMessage       SpaceManager
+#   register diskCacheV111.vehicles.PoolStatusChangedMessage       SpaceManager
    register diskCacheV111.vehicles.PoolFileFlushedMessage         SrmSpaceManager
    register diskCacheV111.vehicles.PoolRemoveFilesMessage         SrmSpaceManager
    register diskCacheV111.vehicles.PoolManagerPoolUpMessage       PoolManager
