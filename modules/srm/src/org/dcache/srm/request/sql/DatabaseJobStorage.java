@@ -1,139 +1,5 @@
 // $Id$
 // $Log: not supported by cvs2svn $
-// Revision 1.22  2007/08/14 15:56:12  timur
-// fix an ArrayOutOfBounds error
-// Revision 1.10.2.9  2007/10/11 02:50:41  timur
-// use Semaphore for syncronization of the sql statement executions from the same Job, to eliminate the 'duplicate' errors
-//
-// Revision 1.10.2.8  2007/08/14 20:49:20  behrmann
-// fix an ArrayOutOfBounds error (backported from head)
-//
-// Revision 1.21  2007/08/03 15:47:58  timur
-// closing sql statement, implementing hashCode functions, not passing null args, resing classes, not comparing objects using == or !=,  etc, per findbug recommendations
-//
-// Revision 1.20  2007/06/21 20:25:49  timur
-// use integer instead of varchar for RequestID foreign key in protocols table, create index on it
-//
-// Revision 1.19  2007/03/08 23:36:55  timur
-// merging changes from the 1-7 branch related to database performance and reduced usage of database when monitoring is not used
-//
-// Revision 1.10.2.6  2007/03/08 23:09:13  timur
-// reduce database usage for cases when monitoring is not enabled
-//
-// Revision 1.10.2.5  2007/03/07 01:15:45  timur
-// merging changes from trunk: limit queue of jdbc requests, allow multiple threads for sql request execution
-//
-// Revision 1.18  2007/03/07 00:47:18  timur
-// make history inserted together with job in the same JdbcTask, multithreading can break ordering of the sql statements
-//
-// Revision 1.17  2007/03/06 23:12:53  timur
-// limit queue of jdbc requests, allow multiple threads for sql request execution
-//
-// Revision 1.16  2007/01/06 00:23:55  timur
-// merging production branch changes to database layer to improve performance and reduce number of updates
-//
-// Revision 1.12  2006/08/31 01:20:14  litvinse
-// added (or rather) modified exiting function createIndex.
-//
-// Revision 1.11  2006/08/25 22:28:31  timur
-// clean up operational srm tables with pending and running requests on the restart
-//
-// Revision 1.10  2006/04/26 17:17:56  timur
-// store the history of the state transitions in the database
-//
-// Revision 1.9  2006/04/12 23:16:23  timur
-// storing state transition time in database, storing transferId for copy requests in database, renaming tables if schema changes without asking
-//
-// Revision 1.8  2005/09/30 21:48:25  timur
-// log commnent spelling
-//
-// Revision 1.7  2005/04/05 00:41:12  timur
-// check  that error sting does not contain single quote symbol
-//
-// Revision 1.6  2005/03/30 22:42:10  timur
-// more database schema changes
-//
-// Revision 1.5  2005/03/09 23:21:17  timur
-// more database checks, more space reservation code
-//
-// Revision 1.4  2005/03/07 22:55:33  timur
-// refined the space reservation call, restored logging of sql commands while debugging the sql performance
-//
-// Revision 1.3  2005/03/01 23:10:39  timur
-// Modified the database scema to increase database operations performance and to account for reserved space"and to account for reserved space
-//
-// Revision 1.2  2005/02/21 20:48:54  timur
-// use lowercase in tables' names as workaround the postgres jdbc driver bug
-//
-// Revision 1.1  2005/01/14 23:07:14  timur
-// moving general srm code in a separate repository
-//
-// Revision 1.14  2004/12/17 18:45:54  timur
-// make sure the connections are returned to connection pool even in case of exceptions
-//
-// Revision 1.13  2004/12/16 21:08:56  timur
-// modified database to prevent the slow down of srm caused by increase of number of records
-//
-// Revision 1.12  2004/11/18 17:19:33  timur
-// check for null job value, when adding to Hashtable
-//
-// Revision 1.11  2004/11/17 21:56:49  timur
-// adding the option which allows to store the pending or running requests in memory, fixed a restore from database bug
-//
-// Revision 1.10  2004/11/10 03:29:00  timur
-// modified the sql code to be compatible with both Cloudescape and postges
-//
-// Revision 1.9  2004/11/08 23:02:41  timur
-// remote gridftp manager kills the mover when the mover thread is killed,  further modified the srm database handling
-//
-// Revision 1.8  2004/11/01 20:41:16  timur
-//  fixed the problem causing the exhaust of the jdbc connections
-//
-// Revision 1.7  2004/10/30 04:19:07  timur
-// Fixed a problem related to the restoration of the job from database
-//
-// Revision 1.6  2004/10/28 02:41:31  timur
-// changed the database scema a little bit, fixed various synchronization bugs in the scheduler, added interactive shell to the File System srm
-//
-// Revision 1.5  2004/08/26 17:44:25  timur
-// remove checking for the index existance, since it throws exception with the old pdjdbc2.jar
-//
-// Revision 1.4  2004/08/17 16:01:14  timur
-// simplifying scheduler, removing some bugs, and redusing the amount of logs
-//
-// Revision 1.3  2004/08/10 22:17:16  timur
-// added indeces creation for state field, update postgres driver
-//
-// Revision 1.2  2004/08/06 19:35:24  timur
-// merging branch srm-branch-12_May_2004 into the trunk
-//
-// Revision 1.1.2.8  2004/07/29 22:17:29  timur
-// Some functionality for disk srm is working
-//
-// Revision 1.1.2.7  2004/07/12 21:52:07  timur
-// remote srm error handling is improved, minor issues fixed
-//
-// Revision 1.1.2.6  2004/07/02 20:10:24  timur
-// fixed the leak of sql connections, added propogation of srm errors
-//
-// Revision 1.1.2.5  2004/06/30 20:37:24  timur
-// added more monitoring functions, added retries to the srm client part, adapted the srmclientv1 for usage in srmcp
-//
-// Revision 1.1.2.4  2004/06/23 21:56:01  timur
-// Get Requests are now stored in database, Request Credentials are now stored in database too
-//
-// Revision 1.1.2.3  2004/06/22 17:06:53  timur
-// continue on database part
-//
-// Revision 1.1.2.2  2004/06/22 01:38:07  timur
-// working on the database part, created persistent storage for getFileRequests, for the next requestId
-//
-// Revision 1.1.2.1  2004/06/18 22:20:52  timur
-// adding sql database storage for requests
-//
-// Revision 1.1.2.2  2004/06/16 19:44:34  timur
-// added cvs logging tags and fermi copyright headers at the top, removed Copier.java and CopyJob.java
-//
 
 /*
 COPYRIGHT STATUS:
@@ -371,12 +237,9 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
             " ON DELETE CASCADE"+
             " )";
             createTable(historyTableName, createHistoryTable);
-            
-	    
 	    //
 	    // create indexes (litvinse@fnal.gov), some hack
 	    //
-
 	    String columns[] = {
 		    "NEXTJOBID",
 		    "CREATIONTIME",
@@ -388,7 +251,8 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
 
 	    String history_columns[] = {
 		    "STATEID",
-		    "TRANSITIONTIME"};
+		    "TRANSITIONTIME", 
+	            "JOBID"};
 	    createIndex(history_columns,getHistoryTableName().toLowerCase());
 	    _dbInit();
     }
@@ -1351,7 +1215,7 @@ public void updatePendingJobs() throws SQLException, InterruptedException,org.dc
 			Iterator i = listOfColumnsToBeIndexed.iterator();
 			while(i.hasNext()) { 
 				String columnName=(String)i.next();
-				String indexName=tableName.toLowerCase()+"_"+columnName+"_idx";
+				String indexName=tableName.toLowerCase()+"_"+columnName+INDEX_SUFFIX;
 				String createIndexStatementText = "CREATE INDEX "+indexName+" ON "+tableName+" ("+columnName+")";
 				Statement createIndexStatement = _con.createStatement();
 				say("Executing "+createIndexStatementText);
