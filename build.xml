@@ -636,7 +636,7 @@
         <!-- STEP 3 : copy current revision to a tag -->
         <svn>
             <copy revision="${current.revision}"
-                message="New Version ${release.id}-${build.number}"
+                message="New Version ${release.id}-15p${build.number}"
                 srcUrl="svn+ssh://svn.dcache.org/data/svn/dCache/${svn.branch}"
                 destUrl="svn+ssh://svn.dcache.org/data/svn/dCache/tags/b15-official-CCRC08-release-p${build.number}" />
         </svn>
