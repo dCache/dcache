@@ -466,11 +466,11 @@ public class ManagerV2
 		}
 		
 		if(id != null) {
-			long longid = Long.parseLong(id);
+			Long longid = Long.valueOf(id);
 			try {
 				spaces=manager.selectPrepared(pkg,
 							      SpaceReservationIO.SELECT_SPACE_RESERVATION_BY_ID,
-							      id);
+							      longid);
 				if (spaces.isEmpty()==true) { 
 					if(lg==null) {
 						sb.append("Space with id=").append(id).append(" not found ");
