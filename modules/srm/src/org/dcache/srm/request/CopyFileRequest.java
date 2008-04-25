@@ -521,12 +521,25 @@ public class CopyFileRequest extends FileRequest {
 		// defaultSpaceReservationId is a tag in PNFS directory
 		//
 		long defaultSpaceReservationId=0;
-		if (toParentFmd.spaceTokens!=null) {
-			if (toParentFmd.spaceTokens.length>0) {
+		if (toParentFmd.spaceTokens!=null) { 
+			if (toParentFmd.spaceTokens.length>0) { 
 				defaultSpaceReservationId=toParentFmd.spaceTokens[0];
+		    }
+		}
+		TAccessLatency accessLatency =
+			((CopyRequest)getRequest()).getTargetAccessLatency();
+		TRetentionPolicy retentionPolicy =
+			((CopyRequest)getRequest()).getTargetRetentionPolicy();
+		if (spaceReservationId==null) { 
+			if (defaultSpaceReservationId!=0) {
+				if(retentionPolicy==null&&accessLatency==null) { 
+					StringBuffer sb = new StringBuffer();
+					sb.append(defaultSpaceReservationId);
+					spaceReservationId=sb.toString();
+				}
 			}
 		}
-		if (spaceReservationId == null) {
+		if (configuration.isReserve_space_implicitely()&&spaceReservationId == null) { 
 			synchronized(this) {
 				State state = getState();
 				if(!State.isFinalState(state)) {
@@ -538,72 +551,49 @@ public class CopyFileRequest extends FileRequest {
 			}
 			long remaining_lifetime = lifetime - ( System.currentTimeMillis() -creationTime);
 			say("reserving space, size="+(size==0?1L:size));
-			TAccessLatency accessLatency =
-				((CopyRequest)getRequest()).getTargetAccessLatency();
-			TRetentionPolicy retentionPolicy =
-				((CopyRequest)getRequest()).getTargetRetentionPolicy();
-			if(retentionPolicy==null&&
-			   accessLatency==null&&
-			   defaultSpaceReservationId!=0&&
-			   !spaceMarkedAsBeingUsed) {
-				SrmUseSpaceCallbacks  callbacks = new CopyUseSpaceCallbacks(getId());
-				StringBuffer sb = new StringBuffer();
-				sb.append(defaultSpaceReservationId);
-				storage.srmMarkSpaceAsBeingUsed(getUser(),
-								sb.toString(),
-								local_to_path,
-								size==0?1:size,
-								remaining_lifetime,
-								((CopyRequest)getRequest()).isOverwrite(),
-								callbacks );
-				return;
+			//
+			//the following code allows the inheritance of the 
+			// retention policy from the directory metatada
+			//
+			if(retentionPolicy == null && toParentFmd!= null && toParentFmd.retentionPolicyInfo != null ) {
+				retentionPolicy = toParentFmd.retentionPolicyInfo.getRetentionPolicy();
 			}
-			if (configuration.isReserve_space_implicitely()) { 
-				//
-				//the following code allows the inheritance of the 
-				// retention policy from the directory metatada
-				//
-				if(retentionPolicy == null && toParentFmd!= null && toParentFmd.retentionPolicyInfo != null ) {
-					retentionPolicy = toParentFmd.retentionPolicyInfo.getRetentionPolicy();
-				}
-				//
-				//the following code allows the inheritance of the 
-				// access latency from the directory metatada
-				//
-				if(accessLatency == null && toParentFmd != null && toParentFmd.retentionPolicyInfo != null ) {
-					accessLatency = toParentFmd.retentionPolicyInfo.getAccessLatency();
-				}
-				SrmReserveSpaceCallbacks callbacks = new TheReserveSpaceCallbacks (getId());
-				storage.srmReserveSpace(
-					getUser(), 
-					size==0?1L:size, 
-					remaining_lifetime, 
-					retentionPolicy == null ? null : retentionPolicy.getValue(),
-					accessLatency == null ? null : accessLatency.getValue(),
-					null,
-					callbacks);
-				return;
+			//
+			//the following code allows the inheritance of the 
+			// access latency from the directory metatada
+			//
+			if(accessLatency == null && toParentFmd != null && toParentFmd.retentionPolicyInfo != null ) {
+				accessLatency = toParentFmd.retentionPolicyInfo.getAccessLatency();
 			}
+			SrmReserveSpaceCallbacks callbacks = new TheReserveSpaceCallbacks (getId());
+			storage.srmReserveSpace(
+				getUser(), 
+				size==0?1L:size, 
+				remaining_lifetime, 
+				retentionPolicy == null ? null : retentionPolicy.getValue(),
+				accessLatency == null ? null : accessLatency.getValue(),
+				null,
+				callbacks);
+			return;
 		}
-		else { 
-			if(!spaceMarkedAsBeingUsed) {
-				synchronized(this) {
-					State state = getState();
-					if(!State.isFinalState(state)) {
-						setState(State.ASYNCWAIT,"marking space as being used");
-					}
+		if( spaceReservationId != null &&
+		    !spaceMarkedAsBeingUsed) {
+			synchronized(this) {
+				State state = getState();
+				if(!State.isFinalState(state)) {
+					setState(State.ASYNCWAIT,"marking space as being used");
 				}
-				long remaining_lifetime = lifetime - ( System.currentTimeMillis() -creationTime);
-				SrmUseSpaceCallbacks  callbacks = new CopyUseSpaceCallbacks(getId());
-				storage.srmMarkSpaceAsBeingUsed(getUser(),
-								spaceReservationId,
-								local_to_path,
-								size==0?1:size,
-								remaining_lifetime,
-								((CopyRequest)getRequest()).isOverwrite(),
-								callbacks );
-				return;
 			}
+			long remaining_lifetime = lifetime - ( System.currentTimeMillis() -creationTime);
+			SrmUseSpaceCallbacks  callbacks = new CopyUseSpaceCallbacks(getId());
+			storage.srmMarkSpaceAsBeingUsed(getUser(),
+							spaceReservationId,
+							local_to_path,
+							size==0?1:size,
+							remaining_lifetime,
+							((CopyRequest)getRequest()).isOverwrite(),
+							callbacks );
+			return;
 		}
 		if(transferId == null) {
 			synchronized(this) {
@@ -627,18 +617,6 @@ public class CopyFileRequest extends FileRequest {
 								       copycallbacks);
 				
 			} 
-			else if (defaultSpaceReservationId!=0) {
-				StringBuffer sb = new StringBuffer();
-				sb.append(defaultSpaceReservationId);
-				transferId = storage.getFromRemoteTURL(getUser(),
-								       from_turl.getURL(),
-								       local_to_path, 
-								       getUser().getName(),
-								       credential.getId(), 
-								       sb.toString(),
-								       size,
-								       copycallbacks);
-			}
 			else {
 				transferId = storage.getFromRemoteTURL(getUser(),
 								       from_turl.getURL(),
