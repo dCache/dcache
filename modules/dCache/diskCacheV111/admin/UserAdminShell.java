@@ -469,7 +469,7 @@ public class      UserAdminShell
 
        boolean verbose = sb != null ;
 
-       PnfsFlagReply reply = setPnfsFlag( destination , "s" , target ) ;
+       PnfsFlagReply reply = setPnfsFlag( destination , "s" , target, mode ) ;
 
        PnfsId pnfsId = reply.getPnfsId() ;
 
@@ -637,12 +637,16 @@ public class      UserAdminShell
        String value  = args.argv(2) ;
 
        PnfsFlagMessage result =
-           setPnfsFlag( destination , key , value ).getPnfsFlagMessage() ;
+           setPnfsFlag( destination , key , value, true ).getPnfsFlagMessage() ;
 
        return result.getReturnCode() == 0 ? "" : result.getErrorObject().toString() ;
 
     }
-    private PnfsFlagReply setPnfsFlag( String destination , String key , String value )
+    private PnfsFlagReply setPnfsFlag( 
+        String destination , 
+        String key , 
+        String value , 
+        boolean mode)
             throws Exception {
 
        PnfsId pnfsId = null ;
@@ -677,7 +681,8 @@ public class      UserAdminShell
        }
 
 
-       PnfsFlagMessage pfm = new PnfsFlagMessage( pnfsId , key, PnfsFlagMessage.FlagOperation.SET ) ;
+       PnfsFlagMessage pfm = new PnfsFlagMessage( pnfsId , key,
+           mode?PnfsFlagMessage.FlagOperation.SET:PnfsFlagMessage.FlagOperation.REMOVE ) ;
        pfm.setValue( value ) ;
 
        PnfsFlagMessage result = (PnfsFlagMessage)sendObject( "PnfsManager" , pfm ) ;
