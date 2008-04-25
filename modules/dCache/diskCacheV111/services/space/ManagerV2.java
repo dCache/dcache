@@ -2035,6 +2035,8 @@ public class ManagerV2
 					continue;
 				}
 			}
+			// now need to run this query:
+			// delete from srmspace where state in (1,2) and id not in (select spacereservationid from srmspacefile);
 		}
 		catch(SQLException sqle) {
 			esay("expireSpaceReservations failed with ");
