@@ -2186,13 +2186,13 @@ public class ManagerV2
 		String selectSpace =
 			"SELECT * FROM "+ManagerSchemaConstants.SpaceTableName +
 			" WHERE  state = "+SpaceState.RESERVED.getStateId();
-		if (voGroup!=null) {
+		if (voGroup!=null && !voGroup.equals("")) {
 			selectSpace +=" AND voGroup = '"+voGroup+'\'';
 		}
-		if(voRole != null) {
+		if(voRole != null && !voRole.equals("")) {
 			selectSpace += " AND voRole = '"+voRole+'\'';
 		}
-		if(description != null) {
+		if(description != null && !description.equals("")) {
 			selectSpace += " AND description = '"+description+'\'';
 		}
 		say("executing statement: "+selectSpace);
