@@ -612,101 +612,90 @@ public class PutFileRequest extends FileRequest {
 			    defaultSpaceReservationId=parentFmd.spaceTokens[0];
 		    }
 	    }
-
-            if( configuration.isReserve_space_implicitely()&&spaceReservationId == null) {
+	    if (spaceReservationId==null) { 
+		    if (defaultSpaceReservationId!=0) {
+			    if(retentionPolicy==null&&accessLatency==null) { 
+				    StringBuffer sb = new StringBuffer();
+				    sb.append(defaultSpaceReservationId);
+				    spaceReservationId=sb.toString();
+			    }
+		    }
+	    }
+	    
+	    if (configuration.isReserve_space_implicitely()&&spaceReservationId == null) { 
 		    synchronized(this) {
 			    State state = getState();
 			    if(!State.isFinalState(state)) {
 				    setState(State.ASYNCWAIT,"reserving space");
 			    }
 		    }
-
-                long remaining_lifetime = lifetime - ( System.currentTimeMillis() -creationTime);
-		if(retentionPolicy==null&&
-		   accessLatency==null&&
-		   defaultSpaceReservationId!=0&&
-		   !spaceMarkedAsBeingUsed) {
-			SrmUseSpaceCallbacks  callbacks = new PutUseSpaceCallbacks(getId());
-			StringBuffer sb = new StringBuffer();
-			sb.append(defaultSpaceReservationId);
-			storage.srmMarkSpaceAsBeingUsed(getUser(),
-							sb.toString(),
-							getPath(),
-							size==0?1:size,
-							remaining_lifetime,
-							((PutRequest)getRequest()).isOverwrite(),
-							callbacks );
-			return;
+		    long remaining_lifetime = lifetime - ( System.currentTimeMillis() -creationTime);
+		    SrmReserveSpaceCallbacks callbacks = new PutReserveSpaceCallbacks(getId());
+		    //
+		    //the following code allows the inheritance of the
+		    // retention policy from the directory metatada
+		    //
+		    if(retentionPolicy == null && parentFmd != null && parentFmd.retentionPolicyInfo != null ) {
+			    retentionPolicy = parentFmd.retentionPolicyInfo.getRetentionPolicy();
+		    }
+		    //
+		    //the following code allows the inheritance of the
+		    // access latency from the directory metatada
+		    //
+		    if(accessLatency == null && parentFmd != null && parentFmd.retentionPolicyInfo != null ) {
+			    accessLatency = parentFmd.retentionPolicyInfo.getAccessLatency();
+		    }
+		    say("reserving space, size="+(size==0?1L:size));
+		    storage.srmReserveSpace(
+			    getUser(),
+			    size==0?1L:size,
+			    remaining_lifetime,
+			    retentionPolicy ==null ? null: retentionPolicy.getValue(),
+			    accessLatency == null? null:accessLatency.getValue(),
+				    null,
+			    callbacks);
+		    return;
+	    }
+	    if( spaceReservationId != null &&
+		!spaceMarkedAsBeingUsed) {
+		    synchronized(this) {
+			    State state = getState();
+			    if(!State.isFinalState(state)) {
+				    setState(State.ASYNCWAIT,"marking space as being used");
+			    }
+		    }
+		    long remaining_lifetime = lifetime - ( System.currentTimeMillis() -creationTime);
+		    SrmUseSpaceCallbacks  callbacks = new PutUseSpaceCallbacks(getId());
+		    storage.srmMarkSpaceAsBeingUsed(getUser(),
+						    spaceReservationId,
+						    getPath(),
+						    size==0?1:size,
+						    remaining_lifetime,
+						    ((PutRequest)getRequest()).isOverwrite(),
+							    callbacks );
+		    return;
+	    }
+	    say("run() returns, scheduler should bring file request into the ready state eventually");
+	    return;
+	}
+	catch(Exception e) {
+		esay("can not prepare to put : ");
+		esay(e);
+		String error ="can not prepare to put : "+e;
+		try {
+			synchronized(this) {
+				State state = getState();
+				if(!State.isFinalState(state)) {
+					setState(State.FAILED,error);
+				}
+			}
+		} 
+		catch(IllegalStateTransition ist) {
+			esay("can not faile state:"+ist);
 		}
-                SrmReserveSpaceCallbacks callbacks = new PutReserveSpaceCallbacks(getId());
-                //
-                //the following code allows the inheritance of the
-                // retention policy from the directory metatada
-                //
-                if(retentionPolicy == null && parentFmd != null && parentFmd.retentionPolicyInfo != null ) {
-                    retentionPolicy = parentFmd.retentionPolicyInfo.getRetentionPolicy();
-                }
-                //
-                //the following code allows the inheritance of the
-                // access latency from the directory metatada
-                //
-                if(accessLatency == null && parentFmd != null && parentFmd.retentionPolicyInfo != null ) {
-                    accessLatency = parentFmd.retentionPolicyInfo.getAccessLatency();
-                }
-                say("reserving space, size="+(size==0?1L:size));
-                storage.srmReserveSpace(
-                        getUser(),
-                        size==0?1L:size,
-                        remaining_lifetime,
-                        retentionPolicy ==null ? null: retentionPolicy.getValue(),
-                        accessLatency == null? null:accessLatency.getValue(),
-                        null,
-                        callbacks);
-                return;
-            }
-
-            if( spaceReservationId != null &&
-                    !spaceMarkedAsBeingUsed) {
-
-                synchronized(this) {
-
-                    State state = getState();
-                    if(!State.isFinalState(state)) {
-                        setState(State.ASYNCWAIT,"marking space as being used");
-                    }
-                }
-                long remaining_lifetime = lifetime - ( System.currentTimeMillis() -creationTime);
-                SrmUseSpaceCallbacks  callbacks = new PutUseSpaceCallbacks(getId());
-                storage.srmMarkSpaceAsBeingUsed(getUser(),
-                        spaceReservationId,
-                        getPath(),
-                        size==0?1:size,
-                        remaining_lifetime,
-                        ((PutRequest)getRequest()).isOverwrite(),
-                        callbacks );
-                return;
-            }
-            say("run() returns, scheduler should bring file request into the ready state eventually");
-            return;
-        } catch(Exception e) {
-            esay("can not prepare to put : ");
-            esay(e);
-            String error ="can not prepare to put : "+e;
-            try {
-                synchronized(this) {
-
-                    State state = getState();
-                    if(!State.isFinalState(state)) {
-                        setState(State.FAILED,error);
-                    }
-                }
-            } catch(IllegalStateTransition ist) {
-                esay("can not faile state:"+ist);
-            }
-        }
-
+	}
     }
-
+	
 
     protected void stateChanged(org.dcache.srm.scheduler.State oldState) {
         State state = getState();
