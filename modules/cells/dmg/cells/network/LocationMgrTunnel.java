@@ -84,7 +84,10 @@ public class      LocationMgrTunnel
 
             if (_tunnels.containsValue(tunnel))
                 throw new IllegalArgumentException("Cannot register the same tunnel twice");
-
+           
+             if(tunnel._remoteDomainInfo ==null) 
+                throw new IllegalArgumentException("tunnel remote domain info is null");
+            
             String domain = tunnel._remoteDomainInfo.getCellDomainName();
 
             /* Kill old tunnel first.
@@ -128,14 +131,15 @@ public class      LocationMgrTunnel
         public synchronized void remove(LocationMgrTunnel tunnel)
         {
             CellNucleus nucleus = tunnel.getNucleus();
-
-            String domain = tunnel._remoteDomainInfo.getCellDomainName();
-            if (_tunnels.get(domain) == tunnel) {
-                _tunnels.remove(domain);
-                nucleus.routeDelete(new CellRoute(domain,
-                                                  nucleus.getCellName(),
-                                                  CellRoute.DOMAIN));
-                notifyAll();
+            if( tunnel._remoteDomainInfo != null ) {
+                String domain = tunnel._remoteDomainInfo.getCellDomainName();
+                if (_tunnels.get(domain) == tunnel) {
+                    _tunnels.remove(domain);
+                    nucleus.routeDelete(new CellRoute(domain,
+                                                      nucleus.getCellName(),
+                                                      CellRoute.DOMAIN));
+                    notifyAll();
+                }
             }
         }
     }
