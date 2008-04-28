@@ -84,11 +84,8 @@ public class      LocationMgrTunnel
 
             if (_tunnels.containsValue(tunnel))
                 throw new IllegalArgumentException("Cannot register the same tunnel twice");
-           
-             if(tunnel._remoteDomainInfo ==null) 
-                throw new IllegalArgumentException("tunnel remote domain info is null");
-            
-            String domain = tunnel._remoteDomainInfo.getCellDomainName();
+
+            String domain = tunnel.getRemoteDomainName();
 
             /* Kill old tunnel first.
              */
@@ -131,15 +128,14 @@ public class      LocationMgrTunnel
         public synchronized void remove(LocationMgrTunnel tunnel)
         {
             CellNucleus nucleus = tunnel.getNucleus();
-            if( tunnel._remoteDomainInfo != null ) {
-                String domain = tunnel._remoteDomainInfo.getCellDomainName();
-                if (_tunnels.get(domain) == tunnel) {
-                    _tunnels.remove(domain);
-                    nucleus.routeDelete(new CellRoute(domain,
-                                                      nucleus.getCellName(),
-                                                      CellRoute.DOMAIN));
-                    notifyAll();
-                }
+
+            String domain = tunnel.getRemoteDomainName();
+            if (_tunnels.get(domain) == tunnel) {
+                _tunnels.remove(domain);
+                nucleus.routeDelete(new CellRoute(domain,
+                                                  nucleus.getCellName(),
+                                                  CellRoute.DOMAIN));
+                notifyAll();
             }
         }
     }
@@ -396,7 +392,6 @@ public class      LocationMgrTunnel
             } catch (Exception e) {
                 esay("Problem in connecting [" + _status + "] : " + e);
                 //            esay(ee) ;
-                _tunnels.remove(this);
                 synchronized (_tunnelOkLock) {
                     _tunnelOk = false;
                 }
@@ -470,6 +465,7 @@ public class      LocationMgrTunnel
         boolean success = false;
         _status = "<io>";
         try {
+            _tunnels.add(this);
             while (!Thread.currentThread().isInterrupted()) {
                 CellMessage msg = (CellMessage)_input.readObject();
                 if (_debug > 0)
@@ -501,9 +497,11 @@ public class      LocationMgrTunnel
                      * be serialized. This should not happen, so if it
                      * does this is clearly a bug.
                      */
-                    throw new RuntimeException("Bug found", e);
+                    throw new RuntimeException("Bug: Unserializable vehicle detected", e);
                 }
             }
+            success = true;
+        } catch (InterruptedException e) {
             success = true;
         } catch (SocketException e) {
             if (Thread.currentThread().isInterrupted()) {
@@ -512,6 +510,7 @@ public class      LocationMgrTunnel
                 throw e;
             }
         } finally {
+            _tunnels.remove(this);
             _status = "<io-shutdown>";
             if (!success) {
                 synchronized (_tunnelOkLock) {
@@ -590,6 +589,12 @@ public class      LocationMgrTunnel
                                  _remoteDomainInfo ) ;
 
    }
+
+    public String getRemoteDomainName()
+    {
+        return _remoteDomainInfo == null ? null : _remoteDomainInfo.getCellDomainName();
+    }
+
    private static final int BUFFER_SIZE = 4*1024;
    private class ByteArrayInputStream extends InputStream {
        private ByteBuffer _buffer = ByteBuffer.allocateDirect(BUFFER_SIZE) ;
@@ -713,12 +718,6 @@ public class      LocationMgrTunnel
         synchronized (_tunnelOkLock) {
             _tunnelOk = true;
         }
-
-        //
-        // install the remote DOMAIN route
-        //
-        _tunnels.remove(this);
-        _tunnels.add(this);
     }
 
     public String toString()
@@ -770,7 +769,6 @@ public class      LocationMgrTunnel
     public synchronized void prepareRemoval(KillEvent ce)
     {
         say("Setting tunnel down");
-        _tunnels.remove(this);
         synchronized (_tunnelOkLock) {
             _tunnelOk = false;
         }
