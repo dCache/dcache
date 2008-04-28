@@ -105,6 +105,7 @@ import diskCacheV111.vehicles.PinManagerPinMessage;
 import diskCacheV111.vehicles.PinManagerUnpinMessage;
 import diskCacheV111.vehicles.PinManagerExtendLifetimeMessage;
 import diskCacheV111.vehicles.StorageInfo;
+import diskCacheV111.vehicles.PoolRemoveFilesMessage;
 import diskCacheV111.util.PnfsId;
 import java.util.Set;
 import java.util.Collection;
@@ -412,16 +413,16 @@ public class PinManager extends AbstractCell implements Runnable  {
     
     private void unpinAllInitiallyUnpinnedPins() {
         for(Pin pin:unconnectedPins) {
-            forceUnpinning(pin);
+            forceUnpinning(pin, false);
         }
         //we do not need this anymore
         unconnectedPins = null;
     }
 
-    private void forceUnpinning(final Pin pin) {
+    private void forceUnpinning(final Pin pin, boolean retry) {
         Collection<PinRequest> pinRequests = pin.getRequests();
         if(pinRequests.isEmpty()) {
-            new Unpinner(this,pin.getPnfsId(),pin);
+            new Unpinner(this,pin.getPnfsId(),pin,retry);
         }
         else {
             for(PinRequest pinRequest: pinRequests) {
@@ -467,6 +468,10 @@ public class PinManager extends AbstractCell implements Runnable  {
                 PinManagerExtendLifetimeMessage extendLifetimeRequest = 
                         (PinManagerExtendLifetimeMessage) message;
                 extendLifetime(extendLifetimeRequest, cellMessage);
+            } else if (message instanceof  PoolRemoveFilesMessage) {
+                PoolRemoveFilesMessage removeFile = 
+                        (PoolRemoveFilesMessage) message;
+                removeFiles(removeFile);
             } else {
                 error("unknown to Pin Manager message type :"+
                         message.getClass().getName()+" value: "+message);
@@ -704,7 +709,7 @@ public class PinManager extends AbstractCell implements Runnable  {
                 //otherwise we might not see the request in database
                 // if processing succeeds before the commit is executed
                 // (a race condition )
-                new Unpinner(this,pin.getPnfsId(),pin);
+                new Unpinner(this,pin.getPnfsId(),pin,false);
             }
             db.commitDBOperations();
         } catch (PinDBException pdbe ) {
@@ -970,6 +975,7 @@ public class PinManager extends AbstractCell implements Runnable  {
     public void extendFailed ( Pin pin ,PinRequest pinRequest,
         PinManagerMessage extendMessage ,
            CellMessage envelope,Object reason) throws PinException {
+        error("extenderFailed for pin "+pin+" reason="+reason);
         if(extendMessage != null) {
             returnFailedResponse(reason,extendMessage,envelope);
         }
@@ -1048,7 +1054,7 @@ public class PinManager extends AbstractCell implements Runnable  {
                 // will be done by process message automatically
                 return;
             } 
-            // we are the last request
+            // we are the last request or force is enabled
             if(force || pin.getState().equals(PinManagerPinState.PINNED)) {
                     if(unpinRequest != null && 
                             unpinRequest.getReplyRequired() ) {
@@ -1067,7 +1073,7 @@ public class PinManager extends AbstractCell implements Runnable  {
                     // if processing succeeds before the commit is executed
                     // (a race condition )
 
-                    new Unpinner(this,pin.getPnfsId(),pin);
+                    new Unpinner(this,pin.getPnfsId(),pin,false);
             } else if (pin.getState().equals(PinManagerPinState.INITIAL) ||
                  pin.getState().equals(PinManagerPinState.PINNING)) {
                 error("unpin: in request with id = "+pinRequestId+
@@ -1194,16 +1200,12 @@ public class PinManager extends AbstractCell implements Runnable  {
         db.initDBConnection();
         try {
             failedPins=db.getPinsByState(PinManagerPinState.UNPINNINGFAILED);
-            for(Pin pin:failedPins) {
-                forceUnpinning(pin);
-            }
-       
         } finally {
             db.commitDBOperations();
         }
         
         for(Pin pin: failedPins) {
-            forceUnpinning(pin);           
+            forceUnpinning(pin,true);           
         }
     }
     
@@ -1236,7 +1238,7 @@ public class PinManager extends AbstractCell implements Runnable  {
         }
         
         for(Pin pin:expiredPins) {
-            forceUnpinning(pin);
+            forceUnpinning(pin,false);
         }
     }
  
@@ -1284,8 +1286,62 @@ public class PinManager extends AbstractCell implements Runnable  {
             }
         }
     }
+    
+    private void removeFiles(PoolRemoveFilesMessage removeFile) {
+        String[] pnfsIds = removeFile.getFiles();
+        if(pnfsIds == null || pnfsIds.length == 0) {
+            return;
+        }
+        
+        for(String pnfsIdString: pnfsIds) {
+            PnfsId pnfsId = null;
+            try {
+              pnfsId =  new PnfsId(pnfsIdString);
+            } catch (Exception e) {
+                super.error("removeFiles: PoolRemoveFilesMessage has an invalid pnfsid: "+pnfsIdString);
+                continue;
+            }
+            
+            assert pnfsId != null;
+            try {
+                try {
+                    db.initDBConnection();
+                    Set<Pin> pins = db.allPinsByPnfsId(pnfsId);
+                    
+                    for(Pin apin : pins) {
+                        info(pnfsIdString+" is  deleted, removing pin request" +apin );
+                        Pin pin = db.getPinForUpdate(apin.getId());// this locks the 
+                                                                              // the pin
+                        for(PinRequest pinRequest:pin.getRequests()) {
+                            db.deletePinRequest(pinRequest.getId());
+                            CellMessage envelope = 
+                                    pinToRequestsMap.remove(pinRequest.getId());
+                            info("removeFiles: found pin request: "+pinRequest+
+                                    " its cellmessage: "+envelope);
+                            if(envelope != null) {
+                                PinManagerPinMessage pinMessage = 
+                                    (PinManagerPinMessage)envelope.getMessageObject();
+                                pinMessage.setPinId(Long.toString(pinRequest.getId()));
+                                returnFailedResponse("File Removed",pinMessage,envelope);
+                            }
+                        }
+                        db.deletePin(pin.getId());
+                    }
+                } finally {
+                    db.commitDBOperations();
+                }
+            } catch (PinDBException pdbe) {
+                error(pdbe);
+            }
+        }
+    }
 
-   
+     private void removeFile(String pnfsid) {
+        if(pnfsid == null || pnfsid.length() ==0 ) {
+            return;
+        }
+    }
+  
     
  
 }

@@ -984,6 +984,40 @@ class PinManagerDatabase
         return;
     }
 
+    public Set<Pin> allPinsByPnfsId(PnfsId pnfsId)  throws PinDBException{
+        Connection _con = getThreadLocalConnection();
+        if(_con == null) {
+           throw new PinDBException(1,"DB is not initialized in this thread!!!");
+        }
+        
+        try {
+            Set<Pin> pins =  allPinsByPnfsId(_con,pnfsId);
+            return pins;
+            
+        } catch(SQLException sqle) {
+            error("getPin: "+sqle);
+            throw new PinDBException(sqle.toString());
+        }
+    }
+   
+    private Set<Pin>  allPinsByPnfsId(Connection _con, PnfsId pnfsId) 
+        throws SQLException
+    {
+        Set<Pin> pins = new HashSet<Pin>();
+        info("executing statement: "+selectAllPinsWithPnfsid);
+        PreparedStatement sqlStatement =
+                _con.prepareStatement(selectAllPinsWithPnfsid);
+        sqlStatement.setString(1,pnfsId.toIdString());
+        ResultSet set = sqlStatement.executeQuery();
+        while(set.next()) {
+            Pin pin = extractPinFromResultSet( set );
+            pin.setRequests(getPinRequestsByPin(_con,pin));
+            pins.add(pin);
+        }
+        return pins;
+        
+    }
+
     private static final String selectPinsByState =
             "SELECT * FROM "+ PinManagerPinsTableName+
             " WHERE State = ?";

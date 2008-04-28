@@ -49,7 +49,12 @@ Entry
                         succeed();
                         
                 }
-
+        answerArrived(message: PoolSetStickyMessage)
+                Done
+                {
+                       fail(message.getErrorObject());    
+                        
+                }
 }
 
 Done
