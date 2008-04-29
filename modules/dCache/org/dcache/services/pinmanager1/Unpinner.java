@@ -23,10 +23,12 @@ class Unpinner extends SMCTask
     protected final CellPath _pnfsManager;
     protected  final List<String> locations = new ArrayList<String>();
     protected final boolean isOldStylePin;
-    public Unpinner(PinManager manager, PnfsId pnfsId, Pin pin)
+    protected final boolean _retry;
+    
+    public Unpinner(PinManager manager, PnfsId pnfsId, Pin pin, boolean retry)
     {
         super(manager);
-
+        _retry = retry;
         _pnfsId = pnfsId;
         _pin = pin;
         _pnfsManager = manager.getPnfsManager();
@@ -57,6 +59,10 @@ class Unpinner extends SMCTask
         return isOldStylePin;
     }
 
+   boolean isRetry() {
+        return _retry;
+    }
+
     public String toString()
     {
         return _fsm.getState().toString();
@@ -85,6 +91,18 @@ class Unpinner extends SMCTask
         //_pin.unpinSucceeded();
     }
 
+    void fileRemoved()
+    {
+        info("fileRemoved, make unpin succeed");
+        try {
+            getManager().unpinSucceeded(_pin);
+        } catch (PinException pe) {
+            error(pe.toString());
+        }
+
+        //_pin.unpinSucceeded();
+    }
+
     void deletePnfsFlags()
     {
         info("deletePnfsFlags");
@@ -92,6 +110,15 @@ class Unpinner extends SMCTask
         pfm.setValue("*");
         pfm.setReplyRequired(true);
         sendMessage(_pnfsManager, pfm, 60*60*1000);
+    }
+    
+    void  getPnfsMetadata() 
+    {
+        info("getPnfsMetadata");
+        PnfsGetFileMetaDataMessage getMetadata = 
+            new PnfsGetFileMetaDataMessage(_pnfsId);
+        getMetadata.setReplyRequired(true);
+        sendMessage(_pnfsManager, getMetadata, 60*60*1000);
     }
 
     void findCacheLocations()

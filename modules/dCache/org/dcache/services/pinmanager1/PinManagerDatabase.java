@@ -929,6 +929,7 @@ class PinManagerDatabase
             "SELECT * FROM "+ PinManagerPinsTableName;
    private void allPinsToStringBuilder(Connection _con, StringBuilder sb) throws SQLException
     {
+           info("executing statement: "+selectAllPins);
          PreparedStatement sqlStatement =
                 _con.prepareStatement(selectAllPins);
         ResultSet set = sqlStatement.executeQuery();
@@ -952,14 +953,16 @@ class PinManagerDatabase
         return;
     }
 
- String selectAllPinsWityhPnfsid =
+   private String selectAllPinsWithPnfsid =
             "SELECT * FROM "+ PinManagerPinsTableName+" WHERE PnfsId =?";
+   
    private void allPinsByPnfsIdToStringBuilder(Connection _con, PnfsId pnfsId, 
        StringBuilder sb) throws SQLException
     {
-         PreparedStatement sqlStatement =
-                _con.prepareStatement(selectAllPins);
-         sqlStatement.setString(1,pnfsId.toIdString());
+        info("executing statement: "+selectAllPinsWithPnfsid);
+        PreparedStatement sqlStatement =
+                _con.prepareStatement(selectAllPinsWithPnfsid);
+        sqlStatement.setString(1,pnfsId.toIdString());
         ResultSet set = sqlStatement.executeQuery();
         int pcount = 0;
         int preqcount = 0;
@@ -979,6 +982,40 @@ class PinManagerDatabase
         }
         sqlStatement.close();
         return;
+    }
+
+    public Set<Pin> allPinsByPnfsId(PnfsId pnfsId)  throws PinDBException{
+        Connection _con = getThreadLocalConnection();
+        if(_con == null) {
+           throw new PinDBException(1,"DB is not initialized in this thread!!!");
+        }
+        
+        try {
+            Set<Pin> pins =  allPinsByPnfsId(_con,pnfsId);
+            return pins;
+            
+        } catch(SQLException sqle) {
+            error("getPin: "+sqle);
+            throw new PinDBException(sqle.toString());
+        }
+    }
+   
+    private Set<Pin>  allPinsByPnfsId(Connection _con, PnfsId pnfsId) 
+        throws SQLException
+    {
+        Set<Pin> pins = new HashSet<Pin>();
+        info("executing statement: "+selectAllPinsWithPnfsid);
+        PreparedStatement sqlStatement =
+                _con.prepareStatement(selectAllPinsWithPnfsid);
+        sqlStatement.setString(1,pnfsId.toIdString());
+        ResultSet set = sqlStatement.executeQuery();
+        while(set.next()) {
+            Pin pin = extractPinFromResultSet( set );
+            pin.setRequests(getPinRequestsByPin(_con,pin));
+            pins.add(pin);
+        }
+        return pins;
+        
     }
 
     private static final String selectPinsByState =
@@ -1032,7 +1069,7 @@ class PinManagerDatabase
         try {
              allPinsToStringBuilder(_con,sb);
         } catch(SQLException sqle) {
-            error("getAllPins: "+sqle);
+            error("getAllPinsThatAreNotPinned: "+sqle);
             throw new PinDBException(sqle.toString());
         }
     }
@@ -1047,7 +1084,7 @@ class PinManagerDatabase
         try {
              allPinsByPnfsIdToStringBuilder(_con,pnfsId,sb);
         } catch(SQLException sqle) {
-            error("getAllPins: "+sqle);
+            error("allPinsByPnfsIdToStringBuilder: "+sqle);
             throw new PinDBException(sqle.toString());
         }
     }

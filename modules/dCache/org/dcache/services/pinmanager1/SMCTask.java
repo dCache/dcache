@@ -33,22 +33,30 @@ class SMCTask implements CellMessageAnswerable
 
     private void transition(String name, Object ...arguments)
     {
+        _cell.esay("transition("+ name+", "+java.util.Arrays.deepToString(arguments)+")");
         try {
             Class[] parameterTypes = new Class[arguments.length];
             for (int i = 0; i < arguments.length; i++)
                 parameterTypes[i] = arguments[i].getClass();
             Method m =
                 ReflectionUtils.resolve(_fsm.getClass(), name, parameterTypes);
+             _cell.esay("transition() invoking method "+m);
             if (m != null)
                 m.invoke(_fsm, arguments);
         } catch (IllegalAccessException e) {
             // We are not allowed to call this method. Better escalate it.
+            _cell.esay(e);
             throw new RuntimeException("Bug detected", e);
         } catch (InvocationTargetException e) {
             // The context is not supposed to throw exceptions, so
             // smells like a bug.
+            _cell.esay(e);
+            if(e.getTargetException() != null) {
+                _cell.esay(e.getTargetException());
+            }
             throw new RuntimeException("Bug detected", e);
         } catch (statemap.TransitionUndefinedException e) {
+            _cell.esay(e);
             throw new RuntimeException("State machine is incomplete", e);
         }
     }
