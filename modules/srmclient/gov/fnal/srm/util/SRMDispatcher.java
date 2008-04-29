@@ -355,7 +355,7 @@ public class SRMDispatcher {
 		}
 	    }
 	    else if (conf.isGetSpaceMetaData()) {
-		if(conf.getGetSpaceMetaDataURL()==null ) { 
+		if(conf.getSrmUrl()==null ) { 
 		    logger.elog("srm url identifying srm system must be specified");
 		    System.exit(1);
 		}
@@ -365,7 +365,7 @@ public class SRMDispatcher {
 		}
 	    }
 	    else if (conf.isGetSpaceTokens()) {
-		if(conf.getGetSpaceTokenSurl()==null ) { 
+		if(conf.getSrmUrl()==null ) { 
 		    logger.elog("srm url identifying srm system must be specified");
 		    System.exit(1);
 		}
@@ -503,7 +503,7 @@ public class SRMDispatcher {
 	    srmclient              = new SRMReleaseSpaceClientV2(configuration, surls[0]);
 	}
 	else if (configuration.isGetSpaceMetaData()) {
-	    String surl_string  = configuration.getGetSpaceMetaDataURL();
+	    String surl_string  = configuration.getSrmUrl();
 	    if (  surl_string == null ) { 
 		throw new IllegalArgumentException("Must specify SRM URL" ) ;
 	    }
@@ -511,7 +511,7 @@ public class SRMDispatcher {
 	    srmclient              = new SRMGetSpaceMetaDataClientV2(configuration, surl);
 	}
 	else if (configuration.isGetSpaceTokens()) {
-	    String surl_string  = configuration.getGetSpaceTokenSurl();
+	    String surl_string  = configuration.getSrmUrl();
 	    if (  surl_string == null ) { 
 		throw new IllegalArgumentException("Must specify SRM URL" ) ;
 	    }
@@ -762,15 +762,24 @@ public class SRMDispatcher {
 	    }
 	    checkURLSUniformity(SRM_URL, surls, false);
 	    srmclient              = new SRMBringOnlineClientV2(configuration, surls);
-	} else if(configuration.isPing()) {
-	    String surl_string = configuration.getPingSurl();
-	    GlobusURL surl = new GlobusURL(surl_string);
-	    if(configuration.getSrmProtocolVersion() == 1) {
-		srmclient  = new SRMPingClientV1(configuration,surl);
+	} 
+	else if(configuration.isPing()) {
+		String surl_string = configuration.getSrmUrl();
+		GlobusURL surl = new GlobusURL(surl_string);
+		if(configuration.getSrmProtocolVersion() == 1) {
+			srmclient  = new SRMPingClientV1(configuration,surl);
 	    }
 	    if(configuration.getSrmProtocolVersion() == 2) {
 		srmclient  = new SRMPingClientV2(configuration,surl);
 	    }
+	}
+	else if (configuration.isAbortRequest()) { 
+		String surl_string  = configuration.getSrmUrl();
+		if (  surl_string == null ) { 
+			throw new IllegalArgumentException("Must specify SRM URL" ) ;
+		}
+		GlobusURL surl      = new GlobusURL(surl_string);
+		srmclient           = new SRMAbortRequestClientV2(configuration, surl);
 	}
 	else {
 	    System.err.println(" unknown action requested");

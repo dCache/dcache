@@ -172,14 +172,13 @@ public class Configuration {
 	//
 	// SrmGetSpaceMetaData parameters
 	private boolean getSpaceMetaData;
-	private String getSpaceMetaDataURL;
 
 	private String[] spaceTokensList;
     
 	private String[] from;
 	private String to;
 	private String[] bringOnlineSurls;
-	private String pingSurl;
+	private String srmUrl;
 	private String copyjobfile;
 	private String wsdl_url;
 	private boolean use_urlcopy_script;
@@ -188,7 +187,6 @@ public class Configuration {
 	private boolean ls;
 
 	private boolean getSpaceTokens;
-	private String getSpaceTokenSurl;
 	//
 	// I am using lsURLs for all directory functions (litvinse@fnal.gov)
 	//
@@ -253,6 +251,7 @@ public class Configuration {
 	private String cksm_value = null;
 
 	private String arrayOfRequestTokens[] = null;
+	boolean is_AbortRequest=false;
 
     
 	/** Creates a new instance of Configuration */
@@ -341,6 +340,10 @@ public class Configuration {
     
 	private String getRequestSummary_options=
 		" srm-get-request-summary options:\n"+
+		"\t-request_tokens=<id>,<id1>,<id2>... (Request Token(s))\n";
+
+	private String abortRequest_options=
+		" srm-abort-request options: \n"+
 		"\t-request_tokens=<id>,<id1>,<id2>... (Request Token(s))\n";
 
 	private String getRequestTokens_options=
@@ -615,6 +618,14 @@ public class Configuration {
 				" the command line options are one or more of the following:\n"+
 				(isHelp()==true?general_options+getRequestSummary_options:getRequestSummary_options);
 		}
+		if (is_AbortRequest) {
+			return
+				"Usage: srm-abort-request [command line options] srmUrl \n"+
+				" default options will be read from configuration file \n"+
+				" but can be overridden by the command line options\n"+
+				" the command line options are one or more of the following:\n"+
+				(isHelp()==true?general_options+abortRequest_options:abortRequest_options);
+		}
 		if (is_getRequestTokens) {
 			return
 				"Usage: srm-get-request-tokens [command line options] srmUrl  \n"+
@@ -708,6 +719,7 @@ public class Configuration {
 			" -extendFileLietime      extend lifetime of existing SURL(s) pf volatile and durable files \n"+
 			"                         or pinned lifetime of TURL(s)\n"+
 			" -advisoryDelete         performs srm advisory delete \n"+
+			" -abortRequest           to abort request.  \n"+
 			" -getRequestStatus       obtains and prints srm request status \n"+
 			" -getRequestSummary      is to retrieve a summary of the previously submitted request.  \n"+
 			" -getGetRequestTokens    retrieves request tokens for the clients requests, given client provided request description.\n"+
@@ -804,6 +816,7 @@ public class Configuration {
 		parser.addVoidOption(null,"advisoryDelete", "performs AdvisoryDelete");
 		parser.addVoidOption(null,"getRequestStatus", "gets Request Status");
 		parser.addVoidOption(null,"getRequestSummary", "retrieve a summary of the previously submitted request.");
+		parser.addVoidOption(null,"abortRequest", "abort request.");
 		parser.addVoidOption(null,"getRequestTokens", "retrieves request tokens for the client\u2019s requests, given client provided request description.");
 		parser.addVoidOption(null,"ping", "pings srm");
 		parser.addIntegerOption(null,"retry_timeout",
@@ -912,7 +925,8 @@ public class Configuration {
 		       getSpaceMetaData ^
 		       getSpaceTokens ^
 		       is_getRequestSummary ^
-		       is_getRequestTokens
+		       is_getRequestTokens ^
+		       is_AbortRequest
 			    )) {
 
 			throw new IllegalArgumentException(
@@ -962,6 +976,10 @@ public class Configuration {
 			getRequestStatusSurl = arguments[0];
 			arrayOfRequestTokens=readListOfOptions(parser,"request_tokens");
 		}
+		else if (is_AbortRequest) {
+			srmUrl = arguments[0];
+			arrayOfRequestTokens=readListOfOptions(parser,"request_tokens");
+		}
 		else if (getStorageElementInfo) {
 			if (arguments != null && arguments.length == 1) {
 				storageElementInfoServerWSDL = arguments[0];
@@ -988,12 +1006,12 @@ public class Configuration {
 		else if (getSpaceMetaData) {
 			srm_protocol_version =2;
 			spaceTokensList=readListOfOptions(parser,"space_tokens");
-			getSpaceMetaDataURL = arguments[0];
+			srmUrl = arguments[0];
 		} 
 		else if(getSpaceTokens) {
 			srm_protocol_version =2;
 			readGetSpaceTokensOptions(parser);
-			getSpaceTokenSurl = arguments[0];
+			srmUrl = arguments[0];
 		} 
 		else if (copy||is_mv) {
 			if (copy) {
@@ -1067,7 +1085,7 @@ public class Configuration {
 		} 
 		else if(ping){
 			readBringOnlineOptions(parser);
-			pingSurl = arguments[0];
+			srmUrl = arguments[0];
 		} 
 		else if (ls) {
 			srm_protocol_version =2;
@@ -1236,6 +1254,7 @@ public class Configuration {
 		getRequestStatus      = parser.isOptionSet(null, "getRequestStatus");
 		is_getRequestSummary  = parser.isOptionSet(null, "getRequestSummary");
 		is_getRequestTokens   = parser.isOptionSet(null, "getRequestTokens");
+		is_AbortRequest       = parser.isOptionSet(null, "abortRequest");
 		ls                    = parser.isOptionSet(null, "ls");
 		is_rm                 = parser.isOptionSet(null, "rm");
 		is_mv                 = parser.isOptionSet(null, "mv");
@@ -1785,7 +1804,7 @@ public class Configuration {
 				System.exit(1);
 			}
 		} else if (conf.getSpaceTokens) {
-			if (conf.getSpaceTokenSurl == null) {
+			if (conf.srmUrl == null) {
 				System.err.println("surl is not specified");
 				System.exit(1);
 			}
@@ -1967,8 +1986,8 @@ public class Configuration {
 				sb.append("\n\tsurl["+i+"]=").append(this.getFileMetaDataSurls[i]);
 			}
 		}
-		if (getSpaceTokens && getSpaceTokenSurl != null) {
-			sb.append("\n\tsurl=").append(this.getSpaceTokenSurl);
+		if (getSpaceTokens && srmUrl != null) {
+			sb.append("\n\tsurl=").append(this.srmUrl);
 			sb.append("\n\tspace token description="+spaceTokenDescription);
 		}
 		if (getPermission &&  getPermissionSurls != null) {
@@ -2056,7 +2075,7 @@ public class Configuration {
 		}
 		if (getSpaceMetaData) {
 			sb.append("\n\taction is getSpaceMetaData");
-			sb.append("\n\tsrm url=").append(getSpaceMetaDataURL);
+			sb.append("\n\tsrm url=").append(srmUrl);
 			if ( getSpaceTokensList() != null ) {
 				for(int i = 0; i< getSpaceTokensList().length; i++) {
 					sb.append("\n\tgetSpaceMetaDataToken =").append(getSpaceTokensList()[i]);
@@ -3061,6 +3080,14 @@ public class Configuration {
 	}
 
 
+	public boolean isAbortRequest() {
+		return is_AbortRequest;
+	}
+	public void setAbortRequest(boolean abortRequest) { 
+		this.is_AbortRequest = abortRequest;
+	}
+
+
 	public boolean isGetRequestTokens() {
 		return is_getRequestTokens;
 	}
@@ -3235,12 +3262,12 @@ public class Configuration {
 		this.bringOnlineSurls = bringOnlineSurls;
 	}
     
-	public String getPingSurl() {
-		return pingSurl;
+	public String getSrmUrl() {
+		return srmUrl;
 	}
     
-	public void setPingSurl(String pingSurl) {
-		this.pingSurl = pingSurl;
+	public void setSrmUrl(String srmUrl) {
+		this.srmUrl = srmUrl;
 	}
 	public void setJobPriority(int p) {
 		this.extraParameters.put("priority",Integer.toString(p));
@@ -3261,14 +3288,6 @@ public class Configuration {
 		this.getSpaceMetaData = getSpaceMetaData;
 	}
 
-	public String getGetSpaceMetaDataURL() {
-		return getSpaceMetaDataURL;
-	}
-
-	public void setGetSpaceMetaDataURL(String getSpaceMetaDataURL) {
-		this.getSpaceMetaDataURL = getSpaceMetaDataURL;
-	}
-
 	public String[] getSpaceTokensList() {
 		return spaceTokensList;
 	}
@@ -3283,14 +3302,6 @@ public class Configuration {
 
 	public void setGetSpaceTokens(boolean getSpaceTokens) {
 		this.getSpaceTokens = getSpaceTokens;
-	}
-
-	public String getGetSpaceTokenSurl() {
-		return getSpaceTokenSurl;
-	}
-
-	public void setGetSpaceTokenSurl(String getSpaceTokenSurl) {
-		this.getSpaceTokenSurl = getSpaceTokenSurl;
 	}
 
 	public String getOverwriteMode() {

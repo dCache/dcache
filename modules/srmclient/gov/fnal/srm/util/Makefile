@@ -48,6 +48,7 @@ JAVA_TARGET =ArgParser.class \
              SRMGetSpaceMetaDataClientV2.class \
              SRMGetSpaceTokensClientV2.class \
              SRMGetRequestSummaryClientV2.class \
+             SRMAbortRequestClientV2.class \
              SRMGetRequestTokensClientV2.class 
               
 
