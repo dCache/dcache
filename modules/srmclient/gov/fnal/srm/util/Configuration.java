@@ -145,6 +145,7 @@ public class Configuration {
 	private boolean copy;
 	private boolean bringOnline;
 	private boolean ping;
+	private boolean abortRequest;
 	
 	//
 	// SrmReserveSpace parameters
@@ -335,8 +336,16 @@ public class Configuration {
 		"\t-force=<true|false>\n";
     
 	private String getSpaceMetaData_options=
-		" get-space-metadata options:\n"+
+		" srm-get-space-metadata options:\n"+
 		"\t-space_tokens=<id>,<id1>,<id2>... (Space Reservation Token(s))\n";
+    
+	private String getRequestSummary_options=
+		" srm-get-request-summary options:\n"+
+		"\t-request_tokens=<id>,<id1>,<id2>... (Request Token(s))\n";
+
+	private String getRequestTokens_options=
+		" srm-get-request-tokens options:\n"+
+		"\t-request_desc=<Description> (Request Token Description)\n";
     
     
 	private String copy_options =
@@ -424,8 +433,6 @@ public class Configuration {
 		"\t\t srm -mv srm://fledgling06.fnal.gov:8443/srm/managerv2?SFN=/from_path/ \n"+
 		" srm://fledgling06.fnal.gov:8443/srm/managerv2?SFN=/to_path/ \n";
 
-	private String get_request_summary_options ="";
-    
 	private String rmdir_options =
 		" rmdir options :\n"+
 		"\t-recursive[=<boolean>] recursive empty directory deletion (any number not euqal to 0).\n"+
@@ -602,19 +609,19 @@ public class Configuration {
 		}
 		if (is_getRequestSummary) {
 			return
-				"Usage: srm-get-request-summary [command line options] srmUrl [[requestToken]...] \n"+
+				"Usage: srm-get-request-summary [command line options] srmUrl \n"+
 				" default options will be read from configuration file \n"+
 				" but can be overridden by the command line options\n"+
 				" the command line options are one or more of the following:\n"+
-				general_options;
+				(isHelp()==true?general_options+getRequestSummary_options:getRequestSummary_options);
 		}
 		if (is_getRequestTokens) {
 			return
-				"Usage: srm-get-request-tokens [command line options] srmUrl userRequestDescription \n"+
+				"Usage: srm-get-request-tokens [command line options] srmUrl  \n"+
 				" default options will be read from configuration file \n"+
 				" but can be overridden by the command line options\n"+
 				" the command line options are one or more of the following:\n"+
-				(isHelp()==true?general_options+get_request_summary_options:get_request_summary_options);
+				(isHelp()==true?general_options+getRequestTokens_options:getRequestTokens_options);
 		}
 		if (is_rmdir) {
 			return
@@ -723,6 +730,7 @@ public class Configuration {
 		parser.addBooleanOption(null,"force","force space reservation release, default is false");
 		parser.addStringOption(null,"space_token","space reservation token, default is null");
 		parser.addStringOption(null,"space_tokens","space reservation tokens, default is null");
+		parser.addStringOption(null,"request_tokens","comma separated list of request tokens, default is null");
 		parser.addStringOption(null,"space_desc","space reservation description, default is null");
 		parser.addStringOption(null,"retention_policy","retention policy, default is null");
 		parser.addStringOption(null,"access_pattern","access pattern, default is \"TRANSFER_MODE\"");
@@ -945,31 +953,14 @@ public class Configuration {
 			}
 		} 
 		else if (is_getRequestTokens) {
-			if (arguments.length > 2 || arguments.length < 1 ) {
-				if (version) {
-					System.exit(1);
-				}
-				throw new IllegalArgumentException(
-					"have to specify at least SRM url");
-			}
 			getRequestStatusSurl = arguments[0];
-			if (arguments.length==2) { 
-				userRequestDescription = arguments[1];
+			if (parser.isOptionSet(null,"request_desc")) {
+				userRequestDescription = parser.stringOptionValue(null,"request_desc");
 			}
 		}
 		else if (is_getRequestSummary) {
-			if (arguments.length>2) {
-				getRequestStatusSurl = arguments[0];
-				arrayOfRequestTokens= new String[arguments.length-1];
-				System.arraycopy(arguments,1,getArrayOfRequestTokens(), 0,arguments.length-1);
-			}
-			else {
-				if (version) {
-					System.exit(1);
-				}
-				throw new IllegalArgumentException(
-					"have to specify SRM url and space separated list of request tokens");
-			}
+			getRequestStatusSurl = arguments[0];
+			arrayOfRequestTokens=readListOfOptions(parser,"request_tokens");
 		}
 		else if (getStorageElementInfo) {
 			if (arguments != null && arguments.length == 1) {
@@ -996,7 +987,7 @@ public class Configuration {
 		} 
 		else if (getSpaceMetaData) {
 			srm_protocol_version =2;
-			readSpaceTokes(parser);
+			spaceTokensList=readListOfOptions(parser,"space_tokens");
 			getSpaceMetaDataURL = arguments[0];
 		} 
 		else if(getSpaceTokens) {
@@ -1371,6 +1362,26 @@ public class Configuration {
 				spaceTokensList[i]=st.nextToken();
 			}
 		}
+	}
+
+	private String[] readListOfOptions(ArgParser parser,
+					   String optionName) throws Exception { 
+		return readListOfOptions(parser,optionName,",");
+	}
+
+	private String[] readListOfOptions(ArgParser parser,
+					   String optionName, 
+					   String separator) throws Exception { 
+		String[] listOfOptions = null;
+		if (parser.isOptionSet(null,optionName)) {
+			String tokens =  parser.stringOptionValue(null,optionName);
+			java.util.StringTokenizer st = new java.util.StringTokenizer(tokens,separator);
+			listOfOptions = new String[st.countTokens()];
+			for (int i=0;st.hasMoreTokens();i++) { 
+				listOfOptions[i]=st.nextToken();
+			}
+		}
+		return listOfOptions;
 	}
     
 	private void readReserveSpaceOptions(ArgParser parser) throws Exception {
