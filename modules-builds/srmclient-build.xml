@@ -197,6 +197,9 @@
 		<copy file="${sourceDir}/bin/srmcp" todir="${binDir}/srm/bin/" />
                 <chmod file="${binDir}/srm/bin/srmcp"  perm="+x"/>
 
+		<copy file="${sourceDir}/bin/srm-abort-request" todir="${binDir}/srm/bin/" />
+                <chmod file="${binDir}/srm/bin/srm-abort-request"  perm="+x"/>
+
 		<copy file="${sourceDir}/bin/srmls" todir="${binDir}/srm/bin/" />
                 <chmod file="${binDir}/srm/bin/srmls"  perm="+x"/>
 
