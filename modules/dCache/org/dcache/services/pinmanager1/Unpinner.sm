@@ -169,6 +169,58 @@ Default
                              + context.getState().getName()
                              + ": " + context.getTransition());
                 }
+        answerArrived(message: PnfsFlagMessage)
+                [ message.getReturnCode() != 0 ]
+                Done
+                {
+                        fail(message.getErrorObject());    
+                }
+        answerArrived(message: PnfsFlagMessage)
+                Done
+                {
+                        fail("Unexpected answer received in state " 
+                             + context.getState().getName()
+                             + ": " + context.getTransition());
+                }
+        answerArrived(message: PnfsGetFileMetaDataMessage)
+                [ message.getReturnCode() != 0 ]
+                Done
+                {
+                        fail(message.getErrorObject());    
+                }
+        answerArrived(message: PnfsGetFileMetaDataMessage)
+                Done
+                {
+                        fail("Unexpected answer received in state " 
+                             + context.getState().getName()
+                             + ": " + context.getTransition());
+                }
+        answerArrived(message: PnfsGetCacheLocationsMessage)
+                [ message.getReturnCode() != 0 ]
+                Done
+                {
+                        fail(message.getErrorObject());    
+                }
+        answerArrived(message: PnfsGetCacheLocationsMessage)
+                Done
+                {
+                        fail("Unexpected answer received in state " 
+                             + context.getState().getName()
+                             + ": " + context.getTransition());
+                }
+        answerArrived(message: PoolSetStickyMessage)
+                [ message.getReturnCode() != 0 ]
+                Done
+                {
+                        fail(message.getErrorObject());    
+                }
+        answerArrived(message: PoolSetStickyMessage)
+                Done
+                {
+                        fail("Unexpected answer received in state " 
+                             + context.getState().getName()
+                             + ": " + context.getTransition());
+                }
         exceptionArrived(exception: Exception)
                 Done
                 {
