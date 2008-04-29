@@ -914,12 +914,12 @@ public class Configuration {
         
 		String [] arguments = parser.getCommandArguments();
 
-		if (arguments==null) { 
+		if (arguments==null && copyjobfile==null) { 
 			usage();
 			throw new IllegalArgumentException("Please specify command line arguments\n"+usage());
 			 
 		}
-		if (arguments.length==0) { 
+		if (arguments.length==0 && copyjobfile==null) { 
 			usage();
 			throw new IllegalArgumentException("Please specify command line arguments\n"+usage());
 		}
@@ -1260,6 +1260,10 @@ public class Configuration {
 		getSpaceMetaData      = parser.isOptionSet(null, "getSpaceMetaData");
 		getSpaceTokens        = parser.isOptionSet(null, "getSpaceTokens");
 		ping                  = parser.isOptionSet(null, "ping");
+
+		if (parser.isOptionSet(null, "copyjobfile")) {
+			copyjobfile=parser.stringOptionValue(null,"copyjobfile");
+		}
 	}
     
 	private void readCopyOptions(ArgParser parser) throws Exception {
@@ -1303,9 +1307,6 @@ public class Configuration {
 			}
 		}
         
-		if (parser.isOptionSet(null, "copyjobfile")) {
-			copyjobfile=parser.stringOptionValue(null,"copyjobfile");
-		}
 		if (parser.isOptionSet(null, "report")) {
 			report=parser.stringOptionValue(null,"report");
 		}
@@ -1621,7 +1622,6 @@ public class Configuration {
 		} else if(name.equals("pin_lifetime")) {
 			newPinLifetime = Integer.parseInt(value);
 		} else {
-			//System.err.println("set::trying to set unknown name \""+ name+ "\" to \""+ value+"\"");
 		}
 	}
     
