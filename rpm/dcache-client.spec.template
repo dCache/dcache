@@ -75,6 +75,9 @@ This package contains the clinet components.
 %attr(0755,root,root) /opt/d-cache/srm/bin/srm-reserve-space
 %attr(0755,root,root) /opt/d-cache/srm/bin/srm-set-permissions
 %attr(0755,root,root) /opt/d-cache/srm/bin/srm-check-permissions
+%attr(0755,root,root) /opt/d-cache/srm/bin/srm-abort-files
+%attr(0755,root,root) /opt/d-cache/srm/bin/srm-abort-request
+%attr(0755,root,root) /opt/d-cache/srm/bin/srm-release-files
 %attr(0755,root,root) /opt/d-cache/srm/sbin/srm
 %attr(0755,root,root) /opt/d-cache/srm/sbin/url-copy.sh
 %attr(0755,root,root) /opt/d-cache/srm/sbin/timeout.sh
