@@ -649,12 +649,20 @@ public class BringOnlineFileRequest extends FileRequest {
             
             PinCallbacks callbacks = new ThePinCallbacks(getId());
             say("storage.pinFile("+fileId+",...)");
+            long desiredPinLifetime =
+                ((BringOnlineRequest)getRequest()).getDesiredOnlineLifetimeInSeconds();
+            if(desiredPinLifetime != -1) {
+                //convert to millis
+                desiredPinLifetime *= 1000;
+            }
+                
             storage.pinFile(getUser(),
                 fileId, 
                 getRequest().getClient_host(),
-                fileMetaData, lifetime, 
-                    getRequestId().longValue() ,
-                    callbacks);
+                fileMetaData, 
+                desiredPinLifetime, 
+                getRequestId().longValue() ,
+                callbacks);
         }
         catch(Exception e) {
             esay(e);

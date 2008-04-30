@@ -72,7 +72,7 @@ public class PinRequest {
             " pinId:"+pinId+
             " srmId:"+srmRequestId+
             " created:"+ new Date(creationTime).toString()+
-            " expires:"+ new Date(expirationTime).toString();
+            " expires:"+ (expirationTime==-1?"Never":new Date(expirationTime).toString());
     }
     
 }
