@@ -161,7 +161,7 @@ public class Configuration {
 	private String connectionType="WAN";
 	private long desiredReserveSpaceSize=0;
 	private long guaranteedReserveSpaceSize=0;
-	private long reserveSpaceLifetime=0;
+	private long desiredLifetime=0;
     
 	//
 	// SrmReleaseSpace parameters
@@ -233,7 +233,7 @@ public class Configuration {
 	private int lsOffset=0;
 	private int lsCount=0;
 	private int srm_protocol_version=1;
-	private long request_lifetime=60*60*24; //default request lifetime in seconds
+	private long request_lifetime=60*60*24; //default request desiredLifetime in seconds
 	private Map extraParameters;
 	private String overwriteMode;
 
@@ -315,7 +315,7 @@ public class Configuration {
 		"\t-connection_type=<WAN|LAN>\n"+
 		"\t-desired_size in Bytes \n"+
 		"\t-guaranteed_size in Bytes \n"+
-		"\t-lifetime in seconds \n";
+		"\t-lifetime=<num of seconds> desired lifetime in seconds, -1 for infinite lifetime \n";
 
 	private String getSpaceTokensOptions =
 		" get-space-tokens-options :\n"+
@@ -421,6 +421,7 @@ public class Configuration {
 		"\t-srm_protocol_version=<1 or 2> 1 for srm 1.1 or 2 for srm 2.2, no other protocols are supported\n"+
 		"\t\t or just specify -1  or -2 \n"+
 		"\t-request_lifetime=<num of seconds> request lifetime in seconds\n"+
+		"\t-lifetime=<num of seconds> desired lifetime of online state in seconds, -1 for infinite \n"+
 		"\t-priority=<int> specify job priority \n"+
 		"\t-report=<report_file> where <report_file> is the path to the report file\n"+
 		"\t\t if specified, it will contain the resutls of the execution srm-bring-online \n";
@@ -772,7 +773,7 @@ public class Configuration {
 		parser.addStringOption(null,"array_of_client_networks","array of client networks");
 		parser.addStringOption(null,"connection_type","connection type, default is \"WAN\"");
 		parser.addStringOption(null,"desired_size","desired space reservation size in Bytes");
-		parser.addStringOption(null,"lifetime","space reservation lifetime in seconds");
+		parser.addStringOption(null,"lifetime","desired lifetime or space reservation lifetime in seconds");
 		parser.addStringOption(null,"guaranteed_size","guaranteed space reservation size in Bytes");
 		parser.addBooleanOption(null,"version","print debug info if debug is true");
 		parser.addStringOption(null,"srmcphome","path to the srmcp product directory");
@@ -893,7 +894,7 @@ public class Configuration {
 		parser.addIntegerOption(null,"srm_protocol_version","1 for srm 1.1 or 2 for srm 2.1.1, no other protocols are supported ",1,2);
 		parser.addBooleanOption(null,"1", "srm version 1.1 is used if true");
 		parser.addBooleanOption(null,"2", "srm version 2.2 is used if true");
-		parser.addIntegerOption(null,"request_lifetime","request lifetime in seconds",1,Integer.MAX_VALUE);
+		parser.addIntegerOption(null,"request_lifetime","request lifetime in seconds",-1,Integer.MAX_VALUE);
 		parser.addIntegerOption(null,"priority","specify request priority, 0 is lowest",
 					0,Integer.MAX_VALUE);
   
@@ -1297,7 +1298,7 @@ public class Configuration {
 		}
 		if(parser.isOptionSet(null,"request_lifetime")) {
 			request_lifetime = (long)parser.intOptionValue(null,"request_lifetime");
-			if(request_lifetime <= 0) {
+			if(request_lifetime <= 0 && request_lifetime != -1) {
 				throw new IllegalArgumentException("illegal value for request lifetime"+
 								   request_lifetime);
 			}
@@ -1427,6 +1428,10 @@ public class Configuration {
 		if (parser.isOptionSet(null,"access_latency")) {
 			accessLatency = parser.stringOptionValue(null,"access_latency");
 		}
+		if (parser.isOptionSet(null,"lifetime")) {
+			desiredLifetime = 
+                            Long.parseLong(parser.stringOptionValue(null,"lifetime"));
+		}
         
 	}
 	
@@ -1503,8 +1508,8 @@ public class Configuration {
 			guaranteedReserveSpaceSize = Long.parseLong(string_size);
 		}
 		if (parser.isOptionSet(null,"lifetime")) {
-			String string_life = parser.stringOptionValue(null,"lifetime");
-			reserveSpaceLifetime = Long.parseLong(string_life);
+			desiredLifetime = 
+                            Long.parseLong(parser.stringOptionValue(null,"lifetime"));
 		}
 	}
     
@@ -2100,7 +2105,7 @@ public class Configuration {
 			sb.append("\n\taction is reserveSpace");
 			sb.append("\n\tdesired size="+desiredReserveSpaceSize);
 			sb.append("\n\tguaranteed size="+guaranteedReserveSpaceSize);
-			sb.append("\n\tlifetime="+reserveSpaceLifetime);
+			sb.append("\n\tlifetime="+desiredLifetime);
 			if ( surls != null ) {
 				for(int i = 0; i< surls.length; i++) {
 					sb.append("\n\tsrm url=").append(this.surls[i]);
@@ -2931,8 +2936,8 @@ public class Configuration {
 		return reserveSpace;
 	}
     
-	public long getReserveSpaceLifetime() {
-		return reserveSpaceLifetime;
+	public long getDesiredLifetime() {
+		return desiredLifetime;
 	}
     
 	public boolean isReleaseSpace() {
@@ -3012,7 +3017,7 @@ public class Configuration {
 	}
     
 	public void setReserveSpaceLifetime(long life) {
-		reserveSpaceLifetime=life;
+		desiredLifetime=life;
 	}
     
 	public long getGuaranteedReserveSpaceSize() {

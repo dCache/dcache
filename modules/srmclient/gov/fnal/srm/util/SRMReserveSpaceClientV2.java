@@ -152,7 +152,7 @@ public class SRMReserveSpaceClientV2 extends SRMClient implements Runnable {
             request.setDesiredSizeOfTotalSpace(new org.apache.axis.types.UnsignedLong(configuration.getDesiredReserveSpaceSize()));
             request.setDesiredSizeOfGuaranteedSpace(new org.apache.axis.types.UnsignedLong(configuration.getGuaranteedReserveSpaceSize()));
             request.setUserSpaceTokenDescription(configuration.getSpaceTokenDescription());
-            request.setDesiredLifetimeOfReservedSpace(new Integer((int)configuration.getReserveSpaceLifetime()));
+            request.setDesiredLifetimeOfReservedSpace(new Integer((int)configuration.getDesiredLifetime()));
             TTransferParameters tp = new TTransferParameters();
             tp.setArrayOfClientNetworks(new ArrayOfString(configuration.getArrayOfClientNetworks()));
             tp.setConnectionType(TConnectionType.fromString(configuration.getConnectionType()));

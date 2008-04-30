@@ -231,6 +231,9 @@ public class SRMBringOnlineClientV2 extends SRMClient implements Runnable {
             SrmBringOnlineRequest srmBringOnlineRequest = new SrmBringOnlineRequest();
             srmBringOnlineRequest.setDesiredTotalRequestTime(
                     new Integer((int)configuration.getRequestLifetime()));
+            //
+            srmBringOnlineRequest.setDesiredLifeTime(
+                new Integer((int)configuration.getDesiredLifetime()));
             srmBringOnlineRequest.setTargetFileRetentionPolicyInfo(
                     new TRetentionPolicyInfo(TRetentionPolicy.CUSTODIAL,
                     TAccessLatency.NEARLINE));
