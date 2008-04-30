@@ -781,6 +781,12 @@ public class SRMDispatcher {
 		GlobusURL surl      = new GlobusURL(surl_string);
 		srmclient           = new SRMAbortRequestClientV2(configuration, surl);
 	}
+	else if (configuration.isAbortFiles()) { 
+		srmclient           = new SRMAbortFilesClientV2(configuration);
+	}
+	else if (configuration.isReleaseFiles()) { 
+		srmclient           = new SRMAbortFilesClientV2(configuration);
+	}
 	else {
 	    System.err.println(" unknown action requested");
 	    System.exit(1);
@@ -982,17 +988,4 @@ public class SRMDispatcher {
     }
 }
 
-// $Log: SRMDispatcher.java,v $
-// Revision 1.32  2007/10/25 01:37:22  litvinse
-// implemented srmGetRequestSummary client
-//
-// Revision 1.31  2007/04/17 22:45:57  timur
-// allow file to file and file to gridftp and gridftp to file copy with srmcp
-//
-// Revision 1.30  2007/03/26 21:23:57  litvinse
-// printStackTrace
-//
-// Revision 1.29  2007/02/10 02:10:03  litvinse
-// implemented extend file lifetime client
-//
 

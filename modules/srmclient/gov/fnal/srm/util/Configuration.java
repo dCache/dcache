@@ -119,7 +119,7 @@ public class Configuration {
 	private String srmcphome="..";
 	private String urlcopy="sbin/urlcopy.sh";
 	private String gsiftpclinet = "globus-url-copy";
-	private boolean help;
+	private boolean help=false;
 	private boolean gsissl = true;
 	private String glue_mapfile="conf/SRMServerV1.map";
 	private String webservice_path =null;
@@ -142,16 +142,17 @@ public class Configuration {
 	private String save_config_file;
 	private Logger logger;
 	private String[] protocols = new String[]   {"gsiftp","dcap","http"};
-	private boolean copy;
-	private boolean bringOnline;
-	private boolean ping;
-	private boolean abortRequest;
+	private boolean doRemove=false;
+
+	private boolean copy=false;
+	private boolean bringOnline=false;
+	private boolean ping=false;
 	
 	//
 	// SrmReserveSpace parameters
 	//
     
-	private boolean reserveSpace;
+	private boolean reserveSpace=false;
 	private String[] arrayOfClientNetworks;
 	private String retentionPolicy=null;
 	private String spaceTokenDescription;
@@ -166,32 +167,34 @@ public class Configuration {
 	// SrmReleaseSpace parameters
 	//
     
-	private boolean releaseSpace;
+	private boolean releaseSpace=false;
 	private String spaceToken;
-	private boolean forceFileRelease;
+	private boolean forceFileRelease=false;
 	//
 	// SrmGetSpaceMetaData parameters
-	private boolean getSpaceMetaData;
+	private boolean getSpaceMetaData=false;
 
 	private String[] spaceTokensList;
 	private String[] from;
 	private String to;
 	private String copyjobfile;
 	private String wsdl_url;
-	private boolean use_urlcopy_script;
-	private boolean getFileMetaData;
-	private boolean ls;
+	private boolean use_urlcopy_script=false;
+	private boolean getFileMetaData=false;
+	private boolean ls=false;
 
-	private boolean getSpaceTokens;
-	private boolean is_rm;
-	private boolean is_rmdir;
-	private boolean is_mv;
-	private boolean is_mkdir;
-	private boolean getPermission;
-	private boolean checkPermission;
-	private boolean setPermission;
-	private boolean is_getRequestSummary;
-	private boolean is_getRequestTokens;
+	private boolean getSpaceTokens=false;
+	private boolean is_rm=false;
+	private boolean is_rmdir=false;
+	private boolean is_mv=false;
+	private boolean is_mkdir=false;
+	private boolean getPermission=false;
+	private boolean checkPermission=false;
+	private boolean setPermission=false;
+	private boolean is_getRequestSummary=false;
+	private boolean is_getRequestTokens=false;
+	private boolean is_AbortFiles=false;
+	private boolean is_ReleaseFiles=false;
 	private String  userRequestDescription=null;
 
 	private String setPermissionType=null;
@@ -208,11 +211,11 @@ public class Configuration {
 	private Integer  newPinLifetime=null;
 	private boolean extendFileLifetime=false;
     
-	private boolean advisoryDelete;
-	private boolean getRequestStatus;
+	private boolean advisoryDelete=false;
+	private boolean getRequestStatus=false;
 	private String getRequestStatusSurl;
 	private int getRequestStatusId;
-	private boolean getStorageElementInfo;
+	private boolean getStorageElementInfo=false;
 	private String storageElementInfoServerWSDL;
 	private long retry_timeout=10000;
 	private int retry_num=20;
@@ -335,6 +338,15 @@ public class Configuration {
 	private String abortRequest_options=
 		" srm-abort-request options: \n"+
 		"\t-request_tokens=<id>,<id1>,<id2>... (Request Token(s))\n";
+
+	private String abortFiles_options=
+		" srm-abort-files options: \n"+
+		"\t-request_tokens=<id>,<id1>,<id2>... (Request Token(s))\n";
+
+	private String releaseFiles_options=
+		" srm-release-files options: \n"+
+		"\t-request_tokens=<id>,<id1>,<id2>... (Request Token(s))\n"+
+		"\t-do_remove=<id>,<id1>,<id2>... (Request Token(s))\n";
 
 	private String getRequestTokens_options=
 		" srm-get-request-tokens options:\n"+
@@ -616,6 +628,22 @@ public class Configuration {
 				" the command line options are one or more of the following:\n"+
 				(isHelp()==true?general_options+abortRequest_options:abortRequest_options);
 		}
+		if (is_AbortFiles) {
+			return
+				"Usage: srm-abort-files [command line options] srmUrl [[srmUrl]...] \n"+
+				" default options will be read from configuration file \n"+
+				" but can be overridden by the command line options\n"+
+				" the command line options are one or more of the following:\n"+
+				(isHelp()==true?general_options+abortFiles_options:abortFiles_options);
+		}
+		if (is_ReleaseFiles) {
+			return
+				"Usage: srm-relese-files [command line options] srmUrl [[srmUrl]...] \n"+
+				" default options will be read from configuration file \n"+
+				" but can be overridden by the command line options\n"+
+				" the command line options are one or more of the following:\n"+
+				(isHelp()==true?general_options+releaseFiles_options:releaseFiles_options);
+		}
 		if (is_getRequestTokens) {
 			return
 				"Usage: srm-get-request-tokens [command line options] srmUrl  \n"+
@@ -710,6 +738,8 @@ public class Configuration {
 			"                         or pinned lifetime of TURL(s)\n"+
 			" -advisoryDelete         performs srm advisory delete \n"+
 			" -abortRequest           to abort request.  \n"+
+			" -abortFiles             to abort files.  \n"+
+			" -releaseFiles           to unpin files.  \n"+
 			" -getRequestStatus       obtains and prints srm request status \n"+
 			" -getRequestSummary      is to retrieve a summary of the previously submitted request.  \n"+
 			" -getGetRequestTokens    retrieves request tokens for the clients requests, given client provided request description.\n"+
@@ -733,6 +763,7 @@ public class Configuration {
 		parser.addStringOption(null,"space_token","space reservation token, default is null");
 		parser.addStringOption(null,"space_tokens","space reservation tokens, default is null");
 		parser.addStringOption(null,"request_tokens","comma separated list of request tokens, default is null");
+		parser.addStringOption(null,"do_remove","remove files when executing srm-release-files");
 		parser.addStringOption(null,"space_desc","space reservation description, default is null");
 		parser.addStringOption(null,"retention_policy","retention policy, default is null");
 		parser.addStringOption(null,"access_pattern","access pattern, default is \"TRANSFER_MODE\"");
@@ -807,6 +838,8 @@ public class Configuration {
 		parser.addVoidOption(null,"getRequestStatus", "gets Request Status");
 		parser.addVoidOption(null,"getRequestSummary", "retrieve a summary of the previously submitted request.");
 		parser.addVoidOption(null,"abortRequest", "abort request.");
+		parser.addVoidOption(null,"abortFiles", "abort files.");
+		parser.addVoidOption(null,"releaseFiles", "unpin files.");
 		parser.addVoidOption(null,"getRequestTokens", "retrieves request tokens for the client\u2019s requests, given client provided request description.");
 		parser.addVoidOption(null,"ping", "pings srm");
 		parser.addIntegerOption(null,"retry_timeout",
@@ -916,7 +949,9 @@ public class Configuration {
 		       getSpaceTokens ^
 		       is_getRequestSummary ^
 		       is_getRequestTokens ^
-		       is_AbortRequest
+		       is_AbortRequest ^
+		       is_AbortFiles ^
+		       is_ReleaseFiles
 			    )) {
 
 			throw new IllegalArgumentException(
@@ -969,6 +1004,37 @@ public class Configuration {
 		else if (is_AbortRequest) {
 			srmUrl = arguments[0];
 			arrayOfRequestTokens=readListOfOptions(parser,"request_tokens");
+		}
+		else if (is_AbortFiles) {
+			srmUrl=arguments[0];
+			if(arguments.length>1) { 
+				surls=arguments;
+			}
+			else { 
+				srmUrl = arguments[0];
+			}
+			arrayOfRequestTokens=readListOfOptions(parser,"request_tokens");
+			if(arrayOfRequestTokens!=null&&surls!=null) { 
+				throw new IllegalArgumentException(
+					"specify request token or list of surls (exclusively)");
+			}
+		}
+		else if (is_ReleaseFiles) {
+			srmUrl=arguments[0];
+			if(arguments.length>1) { 
+				surls=arguments;
+			}
+			else { 
+				srmUrl = arguments[0];
+			}
+			if (parser.isOptionSet(null,"do_remove")) {
+				doRemove = parser.booleanOptionValue(null,"do_remove");
+			}
+			arrayOfRequestTokens=readListOfOptions(parser,"request_tokens");
+			if(arrayOfRequestTokens!=null&&surls!=null) { 
+				throw new IllegalArgumentException(
+					"specify request token or list of surls (exclusively)");
+			}
 		}
 		else if (getStorageElementInfo) {
 			if (arguments != null && arguments.length == 1) {
@@ -1245,6 +1311,8 @@ public class Configuration {
 		is_getRequestSummary  = parser.isOptionSet(null, "getRequestSummary");
 		is_getRequestTokens   = parser.isOptionSet(null, "getRequestTokens");
 		is_AbortRequest       = parser.isOptionSet(null, "abortRequest");
+		is_AbortFiles         = parser.isOptionSet(null, "abortFiles");
+		is_ReleaseFiles        = parser.isOptionSet(null, "releaseFiles");
 		ls                    = parser.isOptionSet(null, "ls");
 		is_rm                 = parser.isOptionSet(null, "rm");
 		is_mv                 = parser.isOptionSet(null, "mv");
@@ -2586,6 +2654,14 @@ public class Configuration {
 	public void setLsURLs(String[] inURLs) {
 		surls = inURLs;
 	}
+
+	public String[] getSurls() {
+		return surls;
+	}
+
+	public void setSurls(String[] inURLs) {
+		surls = inURLs;
+	}
     
 	public String[] getArrayOfRequestTokens() { 
 		return arrayOfRequestTokens;
@@ -3076,6 +3152,22 @@ public class Configuration {
 	}
 
 
+	public boolean isAbortFiles() {
+		return is_AbortFiles;
+	}
+	public void setAbortFiles(boolean yes) { 
+		this.is_AbortFiles = yes;
+	}
+
+
+	public boolean isReleaseFiles() {
+		return is_ReleaseFiles;
+	}
+	public void setReleaseFiles(boolean yes) { 
+		this.is_ReleaseFiles = yes;
+	}
+
+
 	public boolean isGetRequestTokens() {
 		return is_getRequestTokens;
 	}
@@ -3327,6 +3419,14 @@ public class Configuration {
 
 	public void setCksmValue(String cksm_value){
 		this.cksm_value = cksm_value;
+	}
+	
+	public boolean getDoRemove() { 
+		return this.doRemove;
+	}
+
+	public void setDoRemove(boolean yes) { 
+		this.doRemove=yes;
 	}
 
 }
