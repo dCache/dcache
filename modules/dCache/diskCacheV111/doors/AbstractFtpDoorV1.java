@@ -911,6 +911,8 @@ public abstract class AbstractFtpDoorV1
             success = true;
         } finally {
             if (!success) {
+                reply("421 " + ftpDoorName + " door not ready");
+
                 _shutdownGate.countDown();
                 start();
                 kill();
@@ -1047,9 +1049,17 @@ public abstract class AbstractFtpDoorV1
             if (te instanceof CommandExitException) {
                 throw (dmg.util.CommandExitException)te;
             }
-            reply("500 " + ite.toString() + ": <" + cmd + ">");
-            error("FTP door: ftp command '" + cmd +
-                  "' got exception: " + te.getCause());
+            reply("500 Operation failed due to internal error: " + 
+                  te.getMessage());
+
+            /* We don't want to call reportBug, since throwing a
+             * RuntimeException at this point will lead to other error
+             * messages being generated. Just log the exception as
+             * fatal and continue.
+             */
+            fatal("FTP door: ftp command '" + cmd +
+                  "' got exception: " + te.getMessage());
+            fatal(te);
             _skipBytes = 0;
         } catch (IllegalAccessException e) {
             reportBug("ftpcommand", "got illegal access exception", e);
@@ -1060,7 +1070,7 @@ public abstract class AbstractFtpDoorV1
     {
         try {
             Socket socket = _engine.getSocket();
-            if (!socket.isInputShutdown())
+            if (!socket.isClosed() && !socket.isInputShutdown())
                 socket.shutdownInput();
         } catch (IOException e) {
             warn("FTP Door failed to shut down input stream of the " +
