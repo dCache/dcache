@@ -92,7 +92,7 @@ public class Pin {
             " PnfsId:"+pnfsId+
             " SI:"+storageInfo+
             " created:"+ new Date(creationTime).toString()+" "+
-            " expires:"+ new Date(expirationTime).toString()+" "+
+            " expires:"+ (expirationTime==-1?"Never":new Date(expirationTime).toString())+" "+
             " pool:"+pool+
             " stateChangedAt:"+ new Date(stateTransitionTime).toString()+
             " state:"+ state+" ";

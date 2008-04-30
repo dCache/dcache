@@ -513,7 +513,7 @@ public class PinManager extends AbstractCell implements Runnable  {
             return;
         }
         long lifetime = pinRequest.getLifetime();
-        if(lifetime <=0 )
+        if(lifetime <=0 && lifetime != -1 )
         {
             pinRequest.setFailed(1, "lifetime <=0");
             return;
@@ -531,7 +531,7 @@ public class PinManager extends AbstractCell implements Runnable  {
      */
     private  void pin(PnfsId pnfsId,
         String clientHost,
-        long lifetime,long srmRequestId,
+    long lifetime,long srmRequestId,
         PinManagerPinMessage pinRequestMessage, CellMessage cellMessage) 
     throws PinException {
          
@@ -952,11 +952,20 @@ public class PinManager extends AbstractCell implements Runnable  {
                 }
                 
             } else {
-                if(pinRequest.getExpirationTime()< expiration) {
-                    db.updatePinRequest(pinRequest.getId(),expiration);
-                }
-                if(pin.getExpirationTime()< expiration) {
-                    db.updatePin(pin.getId(),new Long(expiration),null,null);
+                if(expiration == -1) {
+                    if(pinRequest.getExpirationTime() != -1) {
+                        db.updatePinRequest(pinRequest.getId(),-1);
+                    }
+                    if(pin.getExpirationTime() != -1 ) {
+                        db.updatePin(pin.getId(),new Long(-1),null,null);
+                    }
+                } else {
+                    if( pinRequest.getExpirationTime() !=  expiration) {
+                        db.updatePinRequest(pinRequest.getId(),expiration);
+                    }
+                    if(pin.getExpirationTime() != -1 && pin.getExpirationTime()< expiration) {
+                        db.updatePin(pin.getId(),new Long(expiration),null,null);
+                    }
                 }
             }
             

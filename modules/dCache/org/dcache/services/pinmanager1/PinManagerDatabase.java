@@ -1251,7 +1251,8 @@ class PinManagerDatabase
    
     public PinRequest insertPinRequestIntoNewOrExistingPin( 
         PnfsId pnfsId,long lifetime,long srmRequestId) throws PinDBException {
-        long expirationTime = 
+        long expirationTime = lifetime == -1?
+            -1:
             System.currentTimeMillis() + lifetime;
         Connection _con = getThreadLocalConnection();
         if(_con == null) {

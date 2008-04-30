@@ -182,6 +182,11 @@ public class SrmBringOnline {
                 lifetimeInSeconds = reqLifetime;
             }
         }
+        long desiredLietimeInSeconds = lifetimeInSeconds;
+        if (request.getDesiredLifeTime() != null ) {
+            desiredLietimeInSeconds = 
+                (long)request.getDesiredLifeTime().intValue();
+        }
         for (int i = 0; i < fileRequests.length ; ++i ) {
             TGetFileRequest nextRequest = fileRequests[i];
             if(nextRequest == null ) {
@@ -214,6 +219,7 @@ public class SrmBringOnline {
                     protocols,
                     configuration,
                     lifetime,
+                    desiredLietimeInSeconds,
                     bringOnlineFileRequestStorage,
                     configuration.getGetRetryTimeout(),
                     configuration.getGetMaxNumOfRetries(),

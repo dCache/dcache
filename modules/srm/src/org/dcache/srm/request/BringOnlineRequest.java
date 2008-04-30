@@ -245,6 +245,7 @@ import org.apache.axis.types.URI;
 public class BringOnlineRequest extends ContainerRequest {
     /** array of protocols supported by client or server (copy) */
     protected String[] protocols;
+    private long desiredOnlineLifetimeInSeconds;
     
     
     public BringOnlineRequest(String userId,
@@ -254,6 +255,7 @@ public class BringOnlineRequest extends ContainerRequest {
     String[] protocols,
     Configuration configuration,
     long lifetime,
+    long desiredOnlineLifetimeInSeconds,
     JobStorage jobFileRequestStorage,
     long max_update_period,
     int max_number_of_retries,
@@ -277,6 +279,7 @@ public class BringOnlineRequest extends ContainerRequest {
             this.protocols = new String[len];
             System.arraycopy(protocols,0,this.protocols,0,len);
         }
+        this.desiredOnlineLifetimeInSeconds = desiredOnlineLifetimeInSeconds;
         len = surls.length;
         fileRequests = new FileRequest[len];
         String creatorId = userId;
@@ -661,6 +664,10 @@ public class BringOnlineRequest extends ContainerRequest {
 
     public TRequestType getRequestType() {
         return TRequestType.BRING_ONLINE;
+    }
+
+    public long getDesiredOnlineLifetimeInSeconds() {
+        return desiredOnlineLifetimeInSeconds;
     }
 
 }
