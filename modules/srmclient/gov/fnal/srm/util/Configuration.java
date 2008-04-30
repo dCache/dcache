@@ -119,7 +119,7 @@ public class Configuration {
 	private String srmcphome="..";
 	private String urlcopy="sbin/urlcopy.sh";
 	private String gsiftpclinet = "globus-url-copy";
-	private boolean help;
+	private boolean help=false;
 	private boolean gsissl = true;
 	private String glue_mapfile="conf/SRMServerV1.map";
 	private String webservice_path =null;
@@ -142,16 +142,17 @@ public class Configuration {
 	private String save_config_file;
 	private Logger logger;
 	private String[] protocols = new String[]   {"gsiftp","dcap","http"};
-	private boolean copy;
-	private boolean bringOnline;
-	private boolean ping;
-	private boolean abortRequest;
+	private boolean doRemove=false;
+
+	private boolean copy=false;
+	private boolean bringOnline=false;
+	private boolean ping=false;
 	
 	//
 	// SrmReserveSpace parameters
 	//
     
-	private boolean reserveSpace;
+	private boolean reserveSpace=false;
 	private String[] arrayOfClientNetworks;
 	private String retentionPolicy=null;
 	private String spaceTokenDescription;
@@ -166,44 +167,34 @@ public class Configuration {
 	// SrmReleaseSpace parameters
 	//
     
-	private boolean releaseSpace;
+	private boolean releaseSpace=false;
 	private String spaceToken;
-	private boolean forceFileRelease;
+	private boolean forceFileRelease=false;
 	//
 	// SrmGetSpaceMetaData parameters
-	private boolean getSpaceMetaData;
-	private String getSpaceMetaDataURL;
+	private boolean getSpaceMetaData=false;
 
 	private String[] spaceTokensList;
-    
 	private String[] from;
 	private String to;
-	private String[] bringOnlineSurls;
-	private String pingSurl;
 	private String copyjobfile;
 	private String wsdl_url;
-	private boolean use_urlcopy_script;
-	private boolean getFileMetaData;
-	private String[] getFileMetaDataSurls;
-	private boolean ls;
+	private boolean use_urlcopy_script=false;
+	private boolean getFileMetaData=false;
+	private boolean ls=false;
 
-	private boolean getSpaceTokens;
-	private String getSpaceTokenSurl;
-	//
-	// I am using lsURLs for all directory functions (litvinse@fnal.gov)
-	//
-	private String[] lsURLs;
-	private boolean is_rm;
-	private boolean is_rmdir;
-	private boolean is_mv;
-	private boolean is_mkdir;
-	private boolean getPermission;
-	private String[] checkPermissionSurls;
-	private boolean checkPermission;
-	private String[] getPermissionSurls;
-	private boolean setPermission;
-	private boolean is_getRequestSummary;
-	private boolean is_getRequestTokens;
+	private boolean getSpaceTokens=false;
+	private boolean is_rm=false;
+	private boolean is_rmdir=false;
+	private boolean is_mv=false;
+	private boolean is_mkdir=false;
+	private boolean getPermission=false;
+	private boolean checkPermission=false;
+	private boolean setPermission=false;
+	private boolean is_getRequestSummary=false;
+	private boolean is_getRequestTokens=false;
+	private boolean is_AbortFiles=false;
+	private boolean is_ReleaseFiles=false;
 	private String  userRequestDescription=null;
 
 	private String setPermissionType=null;
@@ -215,18 +206,16 @@ public class Configuration {
 	//
 	// srmExtendFileLifeTime parameters
 	//
-	private String srmExtendFileLifetimeSurls[];
 	private String srmExtendFileLifetimeRequestToken=null;
 	private Integer  newFileLifetime=null;
 	private Integer  newPinLifetime=null;
 	private boolean extendFileLifetime=false;
     
-	private boolean advisoryDelete;
-	private String[] advisoryDeleteSurls;
-	private boolean getRequestStatus;
+	private boolean advisoryDelete=false;
+	private boolean getRequestStatus=false;
 	private String getRequestStatusSurl;
 	private int getRequestStatusId;
-	private boolean getStorageElementInfo;
+	private boolean getStorageElementInfo=false;
 	private String storageElementInfoServerWSDL;
 	private long retry_timeout=10000;
 	private int retry_num=20;
@@ -253,8 +242,11 @@ public class Configuration {
 	private String cksm_value = null;
 
 	private String arrayOfRequestTokens[] = null;
+	boolean is_AbortRequest=false;
 
-    
+	private String srmUrl;
+	private String surls[];
+
 	/** Creates a new instance of Configuration */
 	public Configuration() {
 		extraParameters = new HashMap();
@@ -342,6 +334,19 @@ public class Configuration {
 	private String getRequestSummary_options=
 		" srm-get-request-summary options:\n"+
 		"\t-request_tokens=<id>,<id1>,<id2>... (Request Token(s))\n";
+
+	private String abortRequest_options=
+		" srm-abort-request options: \n"+
+		"\t-request_tokens=<id>,<id1>,<id2>... (Request Token(s))\n";
+
+	private String abortFiles_options=
+		" srm-abort-files options: \n"+
+		"\t-request_tokens=<id>,<id1>,<id2>... (Request Token(s))\n";
+
+	private String releaseFiles_options=
+		" srm-release-files options: \n"+
+		"\t-request_tokens=<id>,<id1>,<id2>... (Request Token(s))\n"+
+		"\t-do_remove=<id>,<id1>,<id2>... (Request Token(s))\n";
 
 	private String getRequestTokens_options=
 		" srm-get-request-tokens options:\n"+
@@ -615,6 +620,30 @@ public class Configuration {
 				" the command line options are one or more of the following:\n"+
 				(isHelp()==true?general_options+getRequestSummary_options:getRequestSummary_options);
 		}
+		if (is_AbortRequest) {
+			return
+				"Usage: srm-abort-request [command line options] srmUrl \n"+
+				" default options will be read from configuration file \n"+
+				" but can be overridden by the command line options\n"+
+				" the command line options are one or more of the following:\n"+
+				(isHelp()==true?general_options+abortRequest_options:abortRequest_options);
+		}
+		if (is_AbortFiles) {
+			return
+				"Usage: srm-abort-files [command line options] srmUrl [[srmUrl]...] \n"+
+				" default options will be read from configuration file \n"+
+				" but can be overridden by the command line options\n"+
+				" the command line options are one or more of the following:\n"+
+				(isHelp()==true?general_options+abortFiles_options:abortFiles_options);
+		}
+		if (is_ReleaseFiles) {
+			return
+				"Usage: srm-relese-files [command line options] srmUrl [[srmUrl]...] \n"+
+				" default options will be read from configuration file \n"+
+				" but can be overridden by the command line options\n"+
+				" the command line options are one or more of the following:\n"+
+				(isHelp()==true?general_options+releaseFiles_options:releaseFiles_options);
+		}
 		if (is_getRequestTokens) {
 			return
 				"Usage: srm-get-request-tokens [command line options] srmUrl  \n"+
@@ -708,11 +737,14 @@ public class Configuration {
 			" -extendFileLietime      extend lifetime of existing SURL(s) pf volatile and durable files \n"+
 			"                         or pinned lifetime of TURL(s)\n"+
 			" -advisoryDelete         performs srm advisory delete \n"+
+			" -abortRequest           to abort request.  \n"+
+			" -abortFiles             to abort files.  \n"+
+			" -releaseFiles           to unpin files.  \n"+
 			" -getRequestStatus       obtains and prints srm request status \n"+
 			" -getRequestSummary      is to retrieve a summary of the previously submitted request.  \n"+
 			" -getGetRequestTokens    retrieves request tokens for the clients requests, given client provided request description.\n"+
 			"                         This is to accommodate lost request tokens. This can also be used for getting all request tokens.\n"+
-			" -getFileMetaData        gets srm meta data for specified sulrs\n"+
+			" -getFileMetaData        gets srm meta data for specified surls\n"+
 			" -getSpaceTokens         gets space tokens belonging to this user\n"+
 			"                         which have a corresponding description (if provided)\n"+
 			" -getStorageElementInfo  prints storage element info, in particular\n"+
@@ -731,6 +763,7 @@ public class Configuration {
 		parser.addStringOption(null,"space_token","space reservation token, default is null");
 		parser.addStringOption(null,"space_tokens","space reservation tokens, default is null");
 		parser.addStringOption(null,"request_tokens","comma separated list of request tokens, default is null");
+		parser.addStringOption(null,"do_remove","remove files when executing srm-release-files");
 		parser.addStringOption(null,"space_desc","space reservation description, default is null");
 		parser.addStringOption(null,"retention_policy","retention policy, default is null");
 		parser.addStringOption(null,"access_pattern","access pattern, default is \"TRANSFER_MODE\"");
@@ -804,6 +837,9 @@ public class Configuration {
 		parser.addVoidOption(null,"advisoryDelete", "performs AdvisoryDelete");
 		parser.addVoidOption(null,"getRequestStatus", "gets Request Status");
 		parser.addVoidOption(null,"getRequestSummary", "retrieve a summary of the previously submitted request.");
+		parser.addVoidOption(null,"abortRequest", "abort request.");
+		parser.addVoidOption(null,"abortFiles", "abort files.");
+		parser.addVoidOption(null,"releaseFiles", "unpin files.");
 		parser.addVoidOption(null,"getRequestTokens", "retrieves request tokens for the client\u2019s requests, given client provided request description.");
 		parser.addVoidOption(null,"ping", "pings srm");
 		parser.addIntegerOption(null,"retry_timeout",
@@ -912,7 +948,10 @@ public class Configuration {
 		       getSpaceMetaData ^
 		       getSpaceTokens ^
 		       is_getRequestSummary ^
-		       is_getRequestTokens
+		       is_getRequestTokens ^
+		       is_AbortRequest ^
+		       is_AbortFiles ^
+		       is_ReleaseFiles
 			    )) {
 
 			throw new IllegalArgumentException(
@@ -933,10 +972,10 @@ public class Configuration {
 		}
 
 		if (getFileMetaData) {
-			getFileMetaDataSurls = arguments;
+			surls = arguments;
 		}
 		else if (advisoryDelete) {
-			advisoryDeleteSurls = arguments;
+			surls = arguments;
 		} 
 		else if (getRequestStatus) {
 			if (arguments != null && arguments.length == 2) {
@@ -962,6 +1001,41 @@ public class Configuration {
 			getRequestStatusSurl = arguments[0];
 			arrayOfRequestTokens=readListOfOptions(parser,"request_tokens");
 		}
+		else if (is_AbortRequest) {
+			srmUrl = arguments[0];
+			arrayOfRequestTokens=readListOfOptions(parser,"request_tokens");
+		}
+		else if (is_AbortFiles) {
+			srmUrl=arguments[0];
+			if(arguments.length>1) { 
+				surls=arguments;
+			}
+			else { 
+				srmUrl = arguments[0];
+			}
+			arrayOfRequestTokens=readListOfOptions(parser,"request_tokens");
+			if(arrayOfRequestTokens!=null&&surls!=null) { 
+				throw new IllegalArgumentException(
+					"specify request token or list of surls (exclusively)");
+			}
+		}
+		else if (is_ReleaseFiles) {
+			srmUrl=arguments[0];
+			if(arguments.length>1) { 
+				surls=arguments;
+			}
+			else { 
+				srmUrl = arguments[0];
+			}
+			if (parser.isOptionSet(null,"do_remove")) {
+				doRemove = parser.booleanOptionValue(null,"do_remove");
+			}
+			arrayOfRequestTokens=readListOfOptions(parser,"request_tokens");
+			if(arrayOfRequestTokens!=null&&surls!=null) { 
+				throw new IllegalArgumentException(
+					"specify request token or list of surls (exclusively)");
+			}
+		}
 		else if (getStorageElementInfo) {
 			if (arguments != null && arguments.length == 1) {
 				storageElementInfoServerWSDL = arguments[0];
@@ -978,22 +1052,22 @@ public class Configuration {
 		else if (reserveSpace) {
 			srm_protocol_version =2;
 			readReserveSpaceOptions(parser);
-			lsURLs = arguments;
+			surls = arguments;
 		} 
 		else if (releaseSpace) {
 			srm_protocol_version =2;
 			readReleaseSpaceOptions(parser);
-			lsURLs = arguments;
+			surls = arguments;
 		} 
 		else if (getSpaceMetaData) {
 			srm_protocol_version =2;
 			spaceTokensList=readListOfOptions(parser,"space_tokens");
-			getSpaceMetaDataURL = arguments[0];
+			srmUrl = arguments[0];
 		} 
 		else if(getSpaceTokens) {
 			srm_protocol_version =2;
 			readGetSpaceTokensOptions(parser);
-			getSpaceTokenSurl = arguments[0];
+			srmUrl = arguments[0];
 		} 
 		else if (copy||is_mv) {
 			if (copy) {
@@ -1055,7 +1129,7 @@ public class Configuration {
 		else if(bringOnline){
 			srm_protocol_version =2;
 			readBringOnlineOptions(parser);
-			bringOnlineSurls = arguments;
+			surls = arguments;
 			if(parser.isOptionSet(null,"priority")) {
 				int jobPriority = parser.intOptionValue(null,"priority");
 				if(jobPriority < 0) {
@@ -1067,38 +1141,38 @@ public class Configuration {
 		} 
 		else if(ping){
 			readBringOnlineOptions(parser);
-			pingSurl = arguments[0];
+			srmUrl = arguments[0];
 		} 
 		else if (ls) {
 			srm_protocol_version =2;
 			readLsOptions(parser);
-			lsURLs = arguments;
+			surls = arguments;
 		} 
 		else if (is_rm ) {
 			srm_protocol_version =2;
 			readRmOptions(parser);
-			lsURLs = arguments;
+			surls = arguments;
 		} 
 		else if ( is_rmdir ) {
 			srm_protocol_version =2;
 			readRmdirOptions(parser);
-			lsURLs = arguments;
+			surls = arguments;
 		} 
 		else if ( is_mkdir ) {
 			srm_protocol_version =2;
-			lsURLs = arguments;
+			surls = arguments;
 		} 
 		else if (stage) {
 			srm_protocol_version =2;
-			lsURLs = arguments;
+			surls = arguments;
 		} 
 		else if (getPermission) {
 			srm_protocol_version =2;
-			getPermissionSurls = arguments;
+			surls = arguments;
 		} 
 		else if (checkPermission) {
 			srm_protocol_version =2;
-			checkPermissionSurls = arguments;
+			surls = arguments;
 		} 
 		else if (setPermission) {
 			srm_protocol_version =2;
@@ -1108,7 +1182,7 @@ public class Configuration {
 		else if (extendFileLifetime) { 
 			srm_protocol_version =2;
 			readExtendFileLifetimeOptions(parser);
-			srmExtendFileLifetimeSurls= arguments;
+			surls= arguments;
 		} 
 		else {
 			if (version) {
@@ -1236,6 +1310,9 @@ public class Configuration {
 		getRequestStatus      = parser.isOptionSet(null, "getRequestStatus");
 		is_getRequestSummary  = parser.isOptionSet(null, "getRequestSummary");
 		is_getRequestTokens   = parser.isOptionSet(null, "getRequestTokens");
+		is_AbortRequest       = parser.isOptionSet(null, "abortRequest");
+		is_AbortFiles         = parser.isOptionSet(null, "abortFiles");
+		is_ReleaseFiles        = parser.isOptionSet(null, "releaseFiles");
 		ls                    = parser.isOptionSet(null, "ls");
 		is_rm                 = parser.isOptionSet(null, "rm");
 		is_mv                 = parser.isOptionSet(null, "mv");
@@ -1780,27 +1857,27 @@ public class Configuration {
 			System.exit(0);
 		}
 		if (conf.getFileMetaData) {
-			if (conf.getFileMetaDataSurls == null) {
+			if (conf.surls == null) {
 				System.err.println("surls are not specified");
 				System.exit(1);
 			}
 		} else if (conf.getSpaceTokens) {
-			if (conf.getSpaceTokenSurl == null) {
+			if (conf.srmUrl == null) {
 				System.err.println("surl is not specified");
 				System.exit(1);
 			}
 		} else if (conf.getPermission) {
-			if (conf.getPermissionSurls == null) {
+			if (conf.surls == null) {
 				System.err.println("surls are not specified");
 				System.exit(1);
 			}
 		} else if (conf.checkPermission) {
-			if (conf.checkPermissionSurls == null) {
+			if (conf.surls == null) {
 				System.err.println("surls are not specified");
 				System.exit(1);
 			}
 		} else if (conf.extendFileLifetime) {
-			if (conf.srmExtendFileLifetimeSurls == null) {
+			if (conf.surls == null) {
 				System.err.println("surls are not specified");
 				System.exit(1);
 			}
@@ -1962,71 +2039,71 @@ public class Configuration {
 			Object key = i.next();
 			sb.append("\n\t"+key+"="+extraParameters.get(key));
 		}
-		if (getFileMetaData && getFileMetaDataSurls != null) {
-			for (int i = 0; i<getFileMetaDataSurls.length; ++i) {
-				sb.append("\n\tsurl["+i+"]=").append(this.getFileMetaDataSurls[i]);
+		if (getFileMetaData && surls != null) {
+			for (int i = 0; i<surls.length; ++i) {
+				sb.append("\n\tsurl["+i+"]=").append(this.surls[i]);
 			}
 		}
-		if (getSpaceTokens && getSpaceTokenSurl != null) {
-			sb.append("\n\tsurl=").append(this.getSpaceTokenSurl);
+		if (getSpaceTokens && srmUrl != null) {
+			sb.append("\n\tsurl=").append(this.srmUrl);
 			sb.append("\n\tspace token description="+spaceTokenDescription);
 		}
-		if (getPermission &&  getPermissionSurls != null) {
+		if (getPermission && surls != null) {
 			sb.append("\n\taction is getPermissions");
-			for (int i = 0; i<getPermissionSurls.length; ++i) {
-				sb.append("\n\tsurl["+i+"]=").append(this.getPermissionSurls[i]);
+			for (int i = 0; i<surls.length; ++i) {
+				sb.append("\n\tsurl["+i+"]=").append(this.surls[i]);
 			}
 		}
-		if (checkPermission &&  checkPermissionSurls != null) {
+		if (checkPermission &&  surls != null) {
 			sb.append("\n\taction is checkPermissions");
-			for (int i = 0; i<checkPermissionSurls.length; ++i) {
-				sb.append("\n\tsurl["+i+"]=").append(this.checkPermissionSurls[i]);
+			for (int i = 0; i<surls.length; ++i) {
+				sb.append("\n\tsurl["+i+"]=").append(this.surls[i]);
 			}
 		}
 		if (setPermission &&  setPermissionSurl != null) {
 			sb.append("\n\taction is setPermissions");
 			sb.append("\n\tsur=").append(this.setPermissionSurl);
 		}
-		if (extendFileLifetime && srmExtendFileLifetimeSurls != null) {
+		if (extendFileLifetime && surls != null) {
 			sb.append("\n\taction is extendFileLifetime");
-			for (int i = 0; i<srmExtendFileLifetimeSurls.length; ++i) {
-				sb.append("\n\tsurl["+i+"]=").append(this.srmExtendFileLifetimeSurls[i]);
+			for (int i = 0; i<surls.length; ++i) {
+				sb.append("\n\tsurl["+i+"]=").append(this.surls[i]);
 			}
 		}
-		if (ls && lsURLs != null) {
+		if (ls && surls != null) {
 			sb.append("\n\taction is ls");
 			sb.append("\n\trecursion depth=" + recursionDepth);
 			sb.append("\n\toffset=" + lsOffset);
 			sb.append("\n\tcount=" + lsCount);
 			sb.append("\n\tis long listing mode=" + longLsFormat);
-			for(int i = 0; i< lsURLs.length; i++)
-				sb.append("\n\tsurl[" + i + "]=").append(this.lsURLs[i]);
+			for(int i = 0; i< surls.length; i++)
+				sb.append("\n\tsurl[" + i + "]=").append(this.surls[i]);
 		}
-		if (is_rm && lsURLs != null) {
+		if (is_rm && surls != null) {
 			sb.append("\n\taction is rm");
 			sb.append("\n\trecursion level=" + recursionDepth);
-			for(int i = 0; i< lsURLs.length; i++)
-				sb.append("\n\tsurl[" + i + "]=").append(this.lsURLs[i]);
+			for(int i = 0; i< surls.length; i++)
+				sb.append("\n\tsurl[" + i + "]=").append(this.surls[i]);
 		}
-		if (is_rmdir && lsURLs != null) {
+		if (is_rmdir && surls != null) {
 			sb.append("\n\taction is rmdir");
 			sb.append("\n\trecursive =" + recursive);
-			for(int i = 0; i< lsURLs.length; i++)
-				sb.append("\n\tsurl[" + i + "]=").append(this.lsURLs[i]);
+			for(int i = 0; i< surls.length; i++)
+				sb.append("\n\tsurl[" + i + "]=").append(this.surls[i]);
 		}
-		if (is_mkdir && lsURLs != null) {
+		if (is_mkdir && surls != null) {
 			sb.append("\n\taction is mkdir");
-			for(int i = 0; i< lsURLs.length; i++)
-				sb.append("\n\tsurl[" + i + "]=").append(this.lsURLs[i]);
+			for(int i = 0; i< surls.length; i++)
+				sb.append("\n\tsurl[" + i + "]=").append(this.surls[i]);
 		}
 		if (reserveSpace) {
 			sb.append("\n\taction is reserveSpace");
 			sb.append("\n\tdesired size="+desiredReserveSpaceSize);
 			sb.append("\n\tguaranteed size="+guaranteedReserveSpaceSize);
 			sb.append("\n\tlifetime="+reserveSpaceLifetime);
-			if ( lsURLs != null ) {
-				for(int i = 0; i< lsURLs.length; i++) {
-					sb.append("\n\tsrm url=").append(this.lsURLs[i]);
+			if ( surls != null ) {
+				for(int i = 0; i< surls.length; i++) {
+					sb.append("\n\tsrm url=").append(this.surls[i]);
 				}
 			}
 			sb.append("\n\tprotocols");
@@ -2046,9 +2123,9 @@ public class Configuration {
 		}
 		if (releaseSpace) {
 			sb.append("\n\taction is releaseSpace");
-			if ( lsURLs != null ) {
-				for(int i = 0; i< lsURLs.length; i++) {
-					sb.append("\n\tsrm url=").append(this.lsURLs[i]);
+			if ( surls != null ) {
+				for(int i = 0; i< surls.length; i++) {
+					sb.append("\n\tsrm url=").append(this.surls[i]);
 				}
 			}
 			sb.append("\n\tspace token="+spaceToken);
@@ -2056,7 +2133,7 @@ public class Configuration {
 		}
 		if (getSpaceMetaData) {
 			sb.append("\n\taction is getSpaceMetaData");
-			sb.append("\n\tsrm url=").append(getSpaceMetaDataURL);
+			sb.append("\n\tsrm url=").append(srmUrl);
 			if ( getSpaceTokensList() != null ) {
 				for(int i = 0; i< getSpaceTokensList().length; i++) {
 					sb.append("\n\tgetSpaceMetaDataToken =").append(getSpaceTokensList()[i]);
@@ -2571,11 +2648,19 @@ public class Configuration {
 	}
     
 	public String[] getLsURLs() {
-		return lsURLs;
+		return surls;
 	}
 
 	public void setLsURLs(String[] inURLs) {
-		lsURLs = inURLs;
+		surls = inURLs;
+	}
+
+	public String[] getSurls() {
+		return surls;
+	}
+
+	public void setSurls(String[] inURLs) {
+		surls = inURLs;
 	}
     
 	public String[] getArrayOfRequestTokens() { 
@@ -2587,45 +2672,45 @@ public class Configuration {
 	}
     
 	public String[] getReserveSpaceURLs() {
-		return lsURLs;
+		return surls;
 	}
     
 	public void setReserveSpaceURLs(String[] inURLs) {
-		lsURLs = inURLs;
+		surls = inURLs;
 	}
     
     
 	public String[] getReleaseSpaceURLs() {
-		return lsURLs;
+		return surls;
 	}
     
 	public void setReleaseSpaceURLs(String[] inURLs) {
-		lsURLs = inURLs;
+		surls = inURLs;
 	}
     
     
 	public String[] getRmURLs() {
-		return lsURLs;
+		return surls;
 	}
     
 	public String[] getRmdirURLs() {
-		return lsURLs;
+		return surls;
 	}
     
 	public void setRmURLs(String[] inURLs) {
-		lsURLs = inURLs;
+		surls = inURLs;
 	}
     
 	public String[] getMkDirURLs() {
-		return lsURLs;
+		return surls;
 	}
     
 	public void setMkDirURLs(String[] inURLs) {
-		lsURLs = inURLs;
+		surls = inURLs;
 	}
     
 	public void setRmdirURLs(String[] inURLs) {
-		lsURLs = inURLs;
+		surls = inURLs;
 	}
 
 	public int getRecursionDepth() {
@@ -2649,7 +2734,7 @@ public class Configuration {
 	 *
 	 */
 	public java.lang.String[] getGetFileMetaDataSurls() {
-		return this.getFileMetaDataSurls;
+		return this.surls;
 	}
     
 	/** Setter for property getFileMetaDataSurls.
@@ -2657,7 +2742,7 @@ public class Configuration {
 	 *
 	 */
 	public void setGetFileMetaDataSurls(java.lang.String[] getFileMetaDataSurls) {
-		this.getFileMetaDataSurls = getFileMetaDataSurls;
+		this.surls = getFileMetaDataSurls;
 	}
     
 	/** Getter for property getPermissionSurls.
@@ -2665,7 +2750,7 @@ public class Configuration {
 	 *
 	 */
 	public java.lang.String[] getGetPermissionSurls() {
-		return this.getPermissionSurls;
+		return this.surls;
 	}
 
 	/** Getter for property checkPermissionSurls.
@@ -2673,11 +2758,11 @@ public class Configuration {
 	 *
 	 */
 	public java.lang.String[] getCheckPermissionSurls() {
-		return this.checkPermissionSurls;
+		return this.surls;
 	}
 
 	public java.lang.String[] getExtendFileLifetimeSurls() { 
-		return this.srmExtendFileLifetimeSurls; 
+		return this.surls; 
 	}
 
 	public Integer getNewFileLifetime() { return newFileLifetime; } 
@@ -2729,15 +2814,13 @@ public class Configuration {
 	public void setSetOtherPermissionMode(String x) { 
 		this.setOtherPermissionMode=x;
 	}
-    
-    
-    
+
 	/** Setter for property getPermissionSurls.
 	 * @param getPermissionSurls New value of property getPermissionSurls.
 	 *
 	 */
 	public void setGetPermissionSurls(java.lang.String[] getPermissionSurls) {
-		this.getPermissionSurls = getPermissionSurls;
+		this.surls = getPermissionSurls;
 	}
 
 	/** Setter for property checkPermissionSurls.
@@ -2745,7 +2828,7 @@ public class Configuration {
 	 *
 	 */
 	public void setCheckPermissionSurls(java.lang.String[] checkPermissionSurls) {
-		this.checkPermissionSurls = checkPermissionSurls;
+		this.surls = checkPermissionSurls;
 	}
 
 	/** Setter for property setPermissionSurls.
@@ -2757,7 +2840,7 @@ public class Configuration {
 	}
 
 	public void setExtendFileLifetimeSurls(java.lang.String surls[]) {
-		this.srmExtendFileLifetimeSurls = surls;
+		this.surls = surls;
 	}
     
 	/** Getter for property getStorageElementInfo.
@@ -2985,7 +3068,7 @@ public class Configuration {
 	 *
 	 */
 	public java.lang.String[] getAdvisoryDeleteSurls() {
-		return this.advisoryDeleteSurls;
+		return this.surls;
 	}
     
 	/** Setter for property advisoryDeleteSurls.
@@ -2993,7 +3076,7 @@ public class Configuration {
 	 *
 	 */
 	public void setAdvisoryDeleteSurls(java.lang.String[] advisoryDeleteSurls) {
-		this.advisoryDeleteSurls = advisoryDeleteSurls;
+		this.surls = advisoryDeleteSurls;
 	}
     
 	/**
@@ -3058,6 +3141,30 @@ public class Configuration {
 	 */
 	public void setGetRequestSummary(boolean getRequestSummary) {
 		this.is_getRequestSummary = getRequestSummary;
+	}
+
+
+	public boolean isAbortRequest() {
+		return is_AbortRequest;
+	}
+	public void setAbortRequest(boolean abortRequest) { 
+		this.is_AbortRequest = abortRequest;
+	}
+
+
+	public boolean isAbortFiles() {
+		return is_AbortFiles;
+	}
+	public void setAbortFiles(boolean yes) { 
+		this.is_AbortFiles = yes;
+	}
+
+
+	public boolean isReleaseFiles() {
+		return is_ReleaseFiles;
+	}
+	public void setReleaseFiles(boolean yes) { 
+		this.is_ReleaseFiles = yes;
 	}
 
 
@@ -3228,19 +3335,19 @@ public class Configuration {
 	}
     
 	public String[] getBringOnlineSurls() {
-		return bringOnlineSurls;
+		return surls;
 	}
     
 	public void setBringOnlineSurls(String[] bringOnlineSurls) {
-		this.bringOnlineSurls = bringOnlineSurls;
+		this.surls = bringOnlineSurls;
 	}
     
-	public String getPingSurl() {
-		return pingSurl;
+	public String getSrmUrl() {
+		return srmUrl;
 	}
     
-	public void setPingSurl(String pingSurl) {
-		this.pingSurl = pingSurl;
+	public void setSrmUrl(String srmUrl) {
+		this.srmUrl = srmUrl;
 	}
 	public void setJobPriority(int p) {
 		this.extraParameters.put("priority",Integer.toString(p));
@@ -3261,14 +3368,6 @@ public class Configuration {
 		this.getSpaceMetaData = getSpaceMetaData;
 	}
 
-	public String getGetSpaceMetaDataURL() {
-		return getSpaceMetaDataURL;
-	}
-
-	public void setGetSpaceMetaDataURL(String getSpaceMetaDataURL) {
-		this.getSpaceMetaDataURL = getSpaceMetaDataURL;
-	}
-
 	public String[] getSpaceTokensList() {
 		return spaceTokensList;
 	}
@@ -3283,14 +3382,6 @@ public class Configuration {
 
 	public void setGetSpaceTokens(boolean getSpaceTokens) {
 		this.getSpaceTokens = getSpaceTokens;
-	}
-
-	public String getGetSpaceTokenSurl() {
-		return getSpaceTokenSurl;
-	}
-
-	public void setGetSpaceTokenSurl(String getSpaceTokenSurl) {
-		this.getSpaceTokenSurl = getSpaceTokenSurl;
 	}
 
 	public String getOverwriteMode() {
@@ -3328,6 +3419,14 @@ public class Configuration {
 
 	public void setCksmValue(String cksm_value){
 		this.cksm_value = cksm_value;
+	}
+	
+	public boolean getDoRemove() { 
+		return this.doRemove;
+	}
+
+	public void setDoRemove(boolean yes) { 
+		this.doRemove=yes;
 	}
 
 }

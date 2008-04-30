@@ -355,7 +355,7 @@ public class SRMDispatcher {
 		}
 	    }
 	    else if (conf.isGetSpaceMetaData()) {
-		if(conf.getGetSpaceMetaDataURL()==null ) { 
+		if(conf.getSrmUrl()==null ) { 
 		    logger.elog("srm url identifying srm system must be specified");
 		    System.exit(1);
 		}
@@ -365,7 +365,7 @@ public class SRMDispatcher {
 		}
 	    }
 	    else if (conf.isGetSpaceTokens()) {
-		if(conf.getGetSpaceTokenSurl()==null ) { 
+		if(conf.getSrmUrl()==null ) { 
 		    logger.elog("srm url identifying srm system must be specified");
 		    System.exit(1);
 		}
@@ -503,7 +503,7 @@ public class SRMDispatcher {
 	    srmclient              = new SRMReleaseSpaceClientV2(configuration, surls[0]);
 	}
 	else if (configuration.isGetSpaceMetaData()) {
-	    String surl_string  = configuration.getGetSpaceMetaDataURL();
+	    String surl_string  = configuration.getSrmUrl();
 	    if (  surl_string == null ) { 
 		throw new IllegalArgumentException("Must specify SRM URL" ) ;
 	    }
@@ -511,7 +511,7 @@ public class SRMDispatcher {
 	    srmclient              = new SRMGetSpaceMetaDataClientV2(configuration, surl);
 	}
 	else if (configuration.isGetSpaceTokens()) {
-	    String surl_string  = configuration.getGetSpaceTokenSurl();
+	    String surl_string  = configuration.getSrmUrl();
 	    if (  surl_string == null ) { 
 		throw new IllegalArgumentException("Must specify SRM URL" ) ;
 	    }
@@ -762,15 +762,30 @@ public class SRMDispatcher {
 	    }
 	    checkURLSUniformity(SRM_URL, surls, false);
 	    srmclient              = new SRMBringOnlineClientV2(configuration, surls);
-	} else if(configuration.isPing()) {
-	    String surl_string = configuration.getPingSurl();
-	    GlobusURL surl = new GlobusURL(surl_string);
-	    if(configuration.getSrmProtocolVersion() == 1) {
-		srmclient  = new SRMPingClientV1(configuration,surl);
+	} 
+	else if(configuration.isPing()) {
+		String surl_string = configuration.getSrmUrl();
+		GlobusURL surl = new GlobusURL(surl_string);
+		if(configuration.getSrmProtocolVersion() == 1) {
+			srmclient  = new SRMPingClientV1(configuration,surl);
 	    }
 	    if(configuration.getSrmProtocolVersion() == 2) {
 		srmclient  = new SRMPingClientV2(configuration,surl);
 	    }
+	}
+	else if (configuration.isAbortRequest()) { 
+		String surl_string  = configuration.getSrmUrl();
+		if (  surl_string == null ) { 
+			throw new IllegalArgumentException("Must specify SRM URL" ) ;
+		}
+		GlobusURL surl      = new GlobusURL(surl_string);
+		srmclient           = new SRMAbortRequestClientV2(configuration, surl);
+	}
+	else if (configuration.isAbortFiles()) { 
+		srmclient           = new SRMAbortFilesClientV2(configuration);
+	}
+	else if (configuration.isReleaseFiles()) { 
+		srmclient           = new SRMAbortFilesClientV2(configuration);
 	}
 	else {
 	    System.err.println(" unknown action requested");
@@ -973,17 +988,4 @@ public class SRMDispatcher {
     }
 }
 
-// $Log: SRMDispatcher.java,v $
-// Revision 1.32  2007/10/25 01:37:22  litvinse
-// implemented srmGetRequestSummary client
-//
-// Revision 1.31  2007/04/17 22:45:57  timur
-// allow file to file and file to gridftp and gridftp to file copy with srmcp
-//
-// Revision 1.30  2007/03/26 21:23:57  litvinse
-// printStackTrace
-//
-// Revision 1.29  2007/02/10 02:10:03  litvinse
-// implemented extend file lifetime client
-//
 
