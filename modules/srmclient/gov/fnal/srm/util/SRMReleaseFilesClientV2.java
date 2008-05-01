@@ -60,7 +60,7 @@ public class SRMReleaseFilesClientV2 extends SRMClient {
 				request.setDoRemove(configuration.getDoRemove());
 				SrmReleaseFilesResponse response = srm.srmReleaseFiles(request);
 				if (response==null) { 
-					throw new IOException(" null SrmReleaseFilesRespinse for request token " +requestToken);
+					throw new IOException(" null SrmReleaseFilesResponse for request token " +requestToken);
 				}
 				TReturnStatus rs     = response.getReturnStatus();
 				if ( rs == null) {

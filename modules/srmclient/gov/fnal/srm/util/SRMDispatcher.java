@@ -785,7 +785,7 @@ public class SRMDispatcher {
 		srmclient           = new SRMAbortFilesClientV2(configuration);
 	}
 	else if (configuration.isReleaseFiles()) { 
-		srmclient           = new SRMAbortFilesClientV2(configuration);
+		srmclient           = new SRMReleaseFilesClientV2(configuration);
 	}
 	else {
 	    System.err.println(" unknown action requested");
