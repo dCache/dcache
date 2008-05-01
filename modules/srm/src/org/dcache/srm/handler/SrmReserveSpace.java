@@ -76,13 +76,13 @@ public class SrmReserveSpace {
     
     private void say(String txt) {
         if(storage!=null) {
-            storage.log(txt);
+            storage.log("SrmReserveSpace "+txt);
         }
     }
     
     private void esay(String txt) {
         if(storage!=null) {
-            storage.elog(txt);
+            storage.elog("SrmReserveSpace "+txt);
         }
     }
     

@@ -52,13 +52,13 @@ public class SrmMkdir {
 	
 	private void say(String txt) {
 		if(storage!=null) {
-			storage.log(txt);
+			storage.log("SrmMkdir "+txt);
 		}
 	}
 	
 	private void esay(String txt) {
 		if(storage!=null) {
-			storage.elog(txt);
+			storage.elog("SrmMkdir "+txt);
 		}
 	}
 	

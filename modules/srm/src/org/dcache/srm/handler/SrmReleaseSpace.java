@@ -73,19 +73,19 @@ public class SrmReleaseSpace {
     
     private void say(String txt) {
         if(storage!=null) {
-            storage.log(txt);
+            storage.log("SrmReleaseSpace "+txt);
         }
     }
     
     private void esay(String txt) {
         if(storage!=null) {
-            storage.elog(txt);
+            storage.elog("SrmReleaseSpace "+txt);
         }
     }
     
     private void esay(Throwable t) {
         if(storage!=null) {
-            storage.elog(" SrmCopy exception : ");
+            storage.elog(" SrmReleaseSpace exception : ");
             storage.elog(t);
         }
     }

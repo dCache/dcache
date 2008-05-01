@@ -55,13 +55,13 @@ public class SrmRmdir {
 	
 	private void say(String txt) {
 		if(storage!=null) {
-			storage.log(txt);
+			storage.log("SrmRmdir "+txt);
 		}
 	}
 	
 	private void esay(String txt) {
 		if(storage!=null) {
-			storage.elog(txt);
+			storage.elog("SrmRmdir "+txt);
 		}
 	}
 	

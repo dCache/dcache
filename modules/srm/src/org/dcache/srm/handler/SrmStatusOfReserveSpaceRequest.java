@@ -71,13 +71,13 @@ public class SrmStatusOfReserveSpaceRequest {
     
     private void say(String txt) {
         if(storage!=null) {
-            storage.log(txt);
+            storage.log("SrmStatusOfReserveSpaceRequest "+txt);
         }
     }
     
     private void esay(String txt) {
         if(storage!=null) {
-            storage.elog(txt);
+            storage.elog("SrmStatusOfReserveSpaceRequest "+txt);
         }
     }
     
