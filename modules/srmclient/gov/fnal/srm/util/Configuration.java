@@ -346,7 +346,7 @@ public class Configuration {
 	private String releaseFiles_options=
 		" srm-release-files options: \n"+
 		"\t-request_tokens=<id>,<id1>,<id2>... (Request Token(s))\n"+
-		"\t-do_remove=<id>,<id1>,<id2>... (Request Token(s))\n";
+		"\t-do_remove=<true|false>\n";
 
 	private String getRequestTokens_options=
 		" srm-get-request-tokens options:\n"+
