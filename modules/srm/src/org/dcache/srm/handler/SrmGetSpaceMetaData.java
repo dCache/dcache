@@ -65,13 +65,13 @@ public class SrmGetSpaceMetaData {
     
     private void say(String txt) {
         if(storage!=null) {
-            storage.log(txt);
+            storage.log("SrmGetSpaceMetaData "+txt);
         }
     }
     
     private void esay(String txt) {
         if(storage!=null) {
-            storage.elog(txt);
+            storage.elog("SrmGetSpaceMetaData "+txt);
         }
     }
     

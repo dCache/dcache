@@ -60,18 +60,18 @@ public class SrmAbortFiles {
     
     private void say(String words_of_wisdom) {
         if(storage!=null) {
-            storage.log("SrmReleaseFiles "+words_of_wisdom);
+            storage.log("SrmAbortFiles "+words_of_wisdom);
         }
     }
     
     private void esay(String words_of_despare) {
         if(storage!=null) {
-            storage.elog("SrmReleaseFiles "+words_of_despare);
+            storage.elog("SrmAbortFiles "+words_of_despare);
         }
     }
     private void esay(Throwable t) {
         if(storage!=null) {
-            storage.elog(" SrmReleaseFiles exception : ");
+            storage.elog(" SrmAbortFiles exception : ");
             storage.elog(t);
         }
     }

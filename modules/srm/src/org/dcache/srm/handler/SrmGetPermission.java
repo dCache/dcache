@@ -48,13 +48,13 @@ public class SrmGetPermission {
     
 	private void say(String txt) {
 		if(storage!=null) {
-			storage.log(txt);
+			storage.log("SrmGetPermission "+txt);
 		}
 	}
     
 	private void esay(String txt) {
 		if(storage!=null) {
-			storage.elog(txt);
+			storage.elog("SrmGetPermission "+txt);
 		}
 	}
 	

@@ -52,14 +52,14 @@ public class SrmMv {
 	
 	private void say(String txt) {
 		if(storage!=null) {
-			storage.log(txt);
+			storage.log("SrmMv "+txt);
 		}
 	}
 	
     
 	private void esay(String txt) {
 		if(storage!=null) {
-			storage.elog(txt);
+			storage.elog("SrmMv "+txt);
 		}
 	}
     

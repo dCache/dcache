@@ -58,13 +58,13 @@ public class SrmPing {
     
     private void say(String txt) {
         if(storage!=null) {
-            storage.log(txt);
+            storage.log("SrmPing "+txt);
         }
     }
     
     private void esay(String txt) {
         if(storage!=null) {
-            storage.elog(txt);
+            storage.elog("SrmPing "+txt);
         }
     }
     

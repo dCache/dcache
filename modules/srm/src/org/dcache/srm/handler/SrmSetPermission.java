@@ -55,13 +55,13 @@ public class SrmSetPermission {
 	
 	private void say(String txt) {
 		if(storage!=null) {
-			storage.log(txt);
+			storage.log("SrmSetPermission "+txt);
 		}
 	}
 	
 	private void esay(String txt) {
 		if(storage!=null) {
-			storage.elog(txt);
+			storage.elog("SrmSetPermission "+txt);
 		}
 	}
 	

@@ -65,13 +65,13 @@ public class SrmGetSpaceTokens {
     
     private void say(String txt) {
         if(storage!=null) {
-            storage.log(txt);
+            storage.log("SrmGetSpaceTokens "+txt);
         }
     }
     
     private void esay(String txt) {
         if(storage!=null) {
-            storage.elog(txt);
+            storage.elog("SrmGetSpaceTokens "+txt);
         }
     }
     

@@ -72,13 +72,13 @@ public class SrmGetTransferProtocols {
     
     private void say(String txt) {
         if(storage!=null) {
-            storage.log(toString()+" "+txt);
+            storage.log("SrmGetTransferProtocols "+" "+txt);
         }
     }
     
     private void esay(String txt) {
         if(storage!=null) {
-            storage.elog(toString()+" "+txt);
+            storage.elog("SrmGetTransferProtocols "+" "+txt);
         }
     }
     
