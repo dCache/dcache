@@ -994,21 +994,65 @@ public class PinManager extends AbstractCell implements Runnable  {
     public void unpin(PinManagerUnpinMessage unpinRequest,
             CellMessage cellMessage)
     throws PinException {
-        String pinIdStr = unpinRequest.getPinId();
-        if(pinIdStr == null) {
-            failResponse("pinIdStr == null",1, unpinRequest);
-            return;
-        }
         PnfsId pnfsId = unpinRequest.getPnfsId();
         if(pnfsId == null ) {
             failResponse("pnfsId == null",1, unpinRequest);
             return;
         }
-        long pinId = Long.parseLong(pinIdStr);
-        unpin(pnfsId, pinId, unpinRequest, cellMessage,false);
+        String pinIdStr = unpinRequest.getPinId();
+        Long srmRequestId = unpinRequest.getSrmRequestId();
+        if(pinIdStr == null && srmRequestId == null ) {
+            failResponse("pinId is null and srmRequestId is null",1, unpinRequest);
+            return;
+        }
+        
+        
+        unpin(pnfsId, pinIdStr,srmRequestId , unpinRequest, cellMessage,false);
     }
     private Map<Long, CellMessage> pinRequestToUnpinRequestsMap = new
         HashMap<Long, CellMessage> ();
+    
+       /**
+     * this function should work with unpinRequest and 
+     * cellMessage set to null as it might be invoked by an admin command
+     * or by watchdog thread
+     */
+    public void unpin(PnfsId pnfsId, 
+        String pinRequestIdStr,
+        Long srmRequestId,
+        PinManagerUnpinMessage unpinRequest, 
+        CellMessage cellMessage,
+        boolean force)
+    throws PinException {
+        info("unpin pnfsId="+pnfsId+" pinId="+pinRequestIdStr+" srmRequestId="+srmRequestId);
+        
+        long pinRequestId;
+        db.initDBConnection();
+        
+        try {
+            
+            if(pinRequestIdStr != null) {
+                pinRequestId = Long.parseLong(pinRequestIdStr);
+            } else {
+                pinRequestId = 
+                    db.getPinRequestIdByByPnfsIdandSrmRequestId(pnfsId,srmRequestId);
+            }
+        } catch (PinDBException pdbe ) {
+            error("unpin: "+pdbe.toString());
+            db.rollbackDBOperations();
+            if(unpinRequest != null) {
+                failResponse(pdbe,3,unpinRequest);
+            }
+            return;
+        }
+        finally {
+            db.commitDBOperations();
+        }
+        
+        unpin(pnfsId,pinRequestId,unpinRequest,cellMessage,force);
+       
+    }
+
 
     /**
      * this function should work with unpinRequest and 

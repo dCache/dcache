@@ -1754,6 +1754,13 @@ public class Storage
     }
     
     
+    public void unPinFileBySrmRequestId(SRMUser user,String fileId,
+            UnpinCallbacks callbacks,
+            long srmRequestId) {
+        UnpinCompanion.unpinFileBySrmRequestId((DCacheUser)user, fileId, srmRequestId, callbacks,this);
+    }
+    
+    
     public String selectGetProtocol(String[] protocols)
     throws SRMException {
         //say("selectGetProtocol("+protocols+")");

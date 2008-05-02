@@ -471,6 +471,9 @@ class PinManagerDatabase
     try {       
        PinManagerDatabase.createIndexes(jdbc_pool,PinManagerRequestsTableName,"Expiration");
     } catch (SQLException sqle) { debug("index creation failed "+ sqle); }
+    try {       
+       PinManagerDatabase.createIndexes(jdbc_pool,PinManagerRequestsTableName,"SRMId");
+    } catch (SQLException sqle) { debug("index creation failed "+ sqle); }
 
    }
         
@@ -862,6 +865,35 @@ class PinManagerDatabase
             PinRequest pinRequest = extractPinRequestFromResultSet( set );
             sqlStatement.close();
             return pinRequest;
+    }
+    
+   private static final String selectPinRequestByPnfsIdandSrmRequestId =
+                    "SELECT "+PinManagerRequestsTableName+".id " +
+                    "FROM "+ PinManagerRequestsTableName +", "+
+                     PinManagerPinsTableName+
+       
+                    " WHERE  "+PinManagerRequestsTableName+".PinId = " +
+                          PinManagerPinsTableName+".id AND "+
+                    PinManagerPinsTableName+".PnfsId = ? AND "+
+                    PinManagerRequestsTableName+ ".SRMId = ?";
+
+    private long getPinRequestIdByByPnfsIdandSrmRequestId(Connection _con,
+        PnfsId pnfsId, long SrmId) throws SQLException{
+            info("executing statement: "+
+                selectPinRequestByPnfsIdandSrmRequestId+" ?="+pnfsId+
+                " ?="+SrmId);
+            PreparedStatement sqlStatement =
+                    _con.prepareStatement(selectPinRequestByPnfsIdandSrmRequestId);
+            sqlStatement.setString(1,pnfsId.toIdString());
+            sqlStatement.setLong(2,SrmId);
+            ResultSet set = sqlStatement.executeQuery();
+            if(!set.next()) {
+                throw new SQLException("pin request with pnfsid="+pnfsId+
+                    " and SrmRequestId="+ SrmId+" is not found");
+            }
+            long id  = set.getLong( 1 );
+            sqlStatement.close();
+            return id;
     }
 
     private static final String selectPinRequestsByPin =
@@ -1313,6 +1345,22 @@ class PinManagerDatabase
             throw new PinDBException(sqle.toString());
         }            
     }
+
+    public long getPinRequestIdByByPnfsIdandSrmRequestId(PnfsId pnfsId, long srmrequestId)
+    throws PinDBException {
+        Connection _con = getThreadLocalConnection();
+        if(_con == null) {
+           throw new PinDBException(1,"DB is not initialized in this thread!!!");
+        }
+        try {
+            long requestId = 
+                getPinRequestIdByByPnfsIdandSrmRequestId(_con,pnfsId,srmrequestId);
+            return requestId;
+        } catch (SQLException sqle) {
+            throw new PinDBException(sqle.toString());
+        }            
+    }
+    
     
     public Pin getPinForUpdate(long pinId)
     throws PinDBException {

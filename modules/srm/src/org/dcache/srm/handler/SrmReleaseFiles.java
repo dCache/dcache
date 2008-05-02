@@ -20,10 +20,14 @@ import org.dcache.srm.request.ContainerRequest;
 import org.dcache.srm.request.FileRequest;
 import org.dcache.srm.request.GetRequest;
 import org.dcache.srm.request.BringOnlineRequest;
+import org.dcache.srm.request.BringOnlineFileRequest;
 import org.dcache.srm.util.Configuration;
 import org.dcache.srm.scheduler.State;
 import org.dcache.srm.scheduler.IllegalStateTransition;
 import org.dcache.srm.v2_2.ArrayOfTSURLReturnStatus;
+import org.apache.axis.types.URI; 
+import org.apache.log4j.Logger;
+
 
 /**
  *
@@ -31,6 +35,9 @@ import org.dcache.srm.v2_2.ArrayOfTSURLReturnStatus;
  */
 public class SrmReleaseFiles {
     
+    
+    private static final Logger logger= 
+        Logger.getLogger(SrmReleaseFiles.class.getName()) ;
     
     private final static String SFN_STRING="?SFN=";
     AbstractStorageElement storage;
@@ -50,6 +57,7 @@ public class SrmReleaseFiles {
             AbstractStorageElement storage,
             org.dcache.srm.SRM srm,
             String client_host) {
+        logger.info("SrmReleaseFiles user="+user);
         this.srmReleaseFilesRequest = srmReleaseFilesRequest;
         this.user = user;
         this.credential = credential;
@@ -99,6 +107,8 @@ public class SrmReleaseFiles {
         if(statusCode == null) {
             statusCode =TStatusCode.SRM_FAILURE;
         }
+        logger.error("getFailedResponce: "+error+" StatusCode "+statusCode);
+ 
         TReturnStatus status = new TReturnStatus();
         status.setStatusCode(statusCode);
         status.setExplanation(error);
@@ -130,11 +140,24 @@ public class SrmReleaseFiles {
 				     TStatusCode.SRM_INVALID_REQUEST);
         }
         
+        URI [] surls ;
+        if(  srmReleaseFilesRequest.getArrayOfSURLs() == null ){
+            surls = null;
+        }  
+	else {
+            surls = srmReleaseFilesRequest.getArrayOfSURLs().getUrlArray();
+        }
+        
         ContainerRequest request =(ContainerRequest) ContainerRequest.getRequest(requestId);
         if(request == null) {
-            return getFailedResponse("request for requestToken \""+
-				     requestToken+"\"is not found",
-				     TStatusCode.SRM_INVALID_REQUEST);
+            if(surls != null && surls.length > 0) {
+                return unpinFilesDirectlyBySURLAndRequestId(requestId, surls);
+               
+            } else {
+                return getFailedResponse("request for requestToken \""+
+                                         requestToken+"\"is not found",
+                                         TStatusCode.SRM_INVALID_REQUEST);
+            }
             
         }
         if ( !(request instanceof GetRequest || request instanceof BringOnlineRequest) ){
@@ -144,15 +167,9 @@ public class SrmReleaseFiles {
         }
         
         //if(request instanceof GetRequest) {
-        org.apache.axis.types.URI [] surls ;
-        if(  srmReleaseFilesRequest.getArrayOfSURLs() == null ){
-            surls = null;
-        }  
-	else {
-            surls = srmReleaseFilesRequest.getArrayOfSURLs().getUrlArray();
-        }
         String surl_strings[] = null;
         if( surls == null ){
+        say( "surls == null");
             if(request instanceof GetRequest) {
                 synchronized(request) {
                     State state = request.getState();
@@ -165,7 +182,8 @@ public class SrmReleaseFiles {
                 return bringOnlineRequest.releaseFiles(null,null);
             }
         } else {
-            if(surls.length == 0) {
+         say( "surls != null");
+           if(surls.length == 0) {
                 return getFailedResponse("0 lenght SiteURLs array");
             }
             surl_strings = new String[surls.length];
@@ -210,6 +228,44 @@ public class SrmReleaseFiles {
         request.getTReturnStatus();
         return srmReleaseFilesResponse;
         
+    }
+
+    private SrmReleaseFilesResponse unpinFilesDirectlyBySURLAndRequestId(final Long requestId, final URI[] surls) {
+        say("unpinFilesDirectlyBySURLAndRequestId");
+        TSURLReturnStatus[] surlReturnStatusArray = 
+            new TSURLReturnStatus[surls.length];
+        int failure_num=0;
+        for (int i = 0; i< surls.length; ++i) {
+           URI surl =  surls[i];
+           surlReturnStatusArray[i] = new TSURLReturnStatus();
+           surlReturnStatusArray[i].setSurl(surl);
+            try {
+                BringOnlineFileRequest.unpinBySURLandRequestId(storage,
+                    user,requestId,surl.toString());
+                surlReturnStatusArray[i].setStatus(
+                    new TReturnStatus(TStatusCode.SRM_SUCCESS,"released"));
+            }
+            catch(Exception e) {
+                surlReturnStatusArray[i].setStatus(
+                    new TReturnStatus(TStatusCode.SRM_FAILURE,"release failed: "+e));
+                failure_num++;
+                
+            }
+        }
+        
+        TReturnStatus status = new TReturnStatus();
+        if(failure_num == 0) {
+            status.setStatusCode(TStatusCode.SRM_SUCCESS);
+        } else if(failure_num < surls.length) {
+            status.setStatusCode(TStatusCode.SRM_PARTIAL_SUCCESS);
+        } else {
+            status.setStatusCode(TStatusCode.SRM_FAILURE);
+        }
+        SrmReleaseFilesResponse srmReleaseFilesResponse = new SrmReleaseFilesResponse();
+        srmReleaseFilesResponse.setReturnStatus(status);
+        srmReleaseFilesResponse.setArrayOfFileStatuses(
+                                new ArrayOfTSURLReturnStatus(surlReturnStatusArray));
+        return srmReleaseFilesResponse;
     }
     
     

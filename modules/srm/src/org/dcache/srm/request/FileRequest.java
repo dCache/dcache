@@ -491,4 +491,19 @@ public abstract class FileRequest extends Job {
     public void setStatusCode(String statusCode) {
         this.statusCode = statusCode==null?null:TStatusCode.fromString(statusCode);
     }   
+    
+    public static String getPath(GlobusURL surl) {
+        String path = surl.getPath();
+        int indx=path.indexOf(SFN_STRING);
+        if( indx != -1) {
+            
+            path=path.substring(indx+SFN_STRING.length());
+        }
+        
+        if(!path.startsWith("/")) {
+            path = "/"+path;
+        }
+        return path;
+    }
+
 }
