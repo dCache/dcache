@@ -19,6 +19,7 @@ public class FileMetaData extends diskCacheV111.srm.FileMetaData{
     public long lastAccessTime=0;
     public long spaceTokens[]=null;
     public boolean isStored=false; // on tape 
+    public String fileId;
     /** Creates a new instance of FileMetaData */
     public FileMetaData() {
         super();
@@ -34,6 +35,7 @@ public class FileMetaData extends diskCacheV111.srm.FileMetaData{
 	    this.spaceTokens = new long[fmd1.spaceTokens.length];
 	    System.arraycopy(fmd1.spaceTokens,0,this.spaceTokens,0,fmd1.spaceTokens.length);
 	    this.isStored=fmd1.isStored;
+            this.fileId = fileId;
         }
     }
 }

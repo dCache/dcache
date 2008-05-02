@@ -1302,4 +1302,10 @@ public class Storage
     }
     
     public String getStorageBackendVersion() { return "$Revision: 1.35 $"; } 
+    
+    public void unPinFileBySrmRequestId(SRMUser user,String fileId,
+        UnpinCallbacks callbacks,
+        long srmRequestId)   {
+    }
+
 }

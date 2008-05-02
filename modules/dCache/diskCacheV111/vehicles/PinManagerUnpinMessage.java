@@ -13,6 +13,7 @@ import diskCacheV111.util.PnfsId;
  */
 public class PinManagerUnpinMessage extends PinManagerMessage {
     private String pinId;
+    private Long srmRequestId;
     
     private static final long serialVersionUID = -2435476735204095804L;
     
@@ -22,11 +23,20 @@ public class PinManagerUnpinMessage extends PinManagerMessage {
         this.pinId = pinId;
     }
     
+    public PinManagerUnpinMessage(String pnfsId, Long srmRequestId) {
+        super(pnfsId);
+        this.srmRequestId = srmRequestId;
+    }
+     
     public PinManagerUnpinMessage(PnfsId pnfsId, String pinId) {
         super(pnfsId);
         this.pinId = pinId;
     }
     
+    public PinManagerUnpinMessage(PnfsId pnfsId, Long srmRequestId) {
+        super(pnfsId);
+        this.srmRequestId = srmRequestId;
+    }
    
     /** Getter for property pinId.
      * @return Value of property pinId.
@@ -48,6 +58,14 @@ public class PinManagerUnpinMessage extends PinManagerMessage {
         return "PinManagerUnpinMessage["+getPnfsId()+
                 (pinId==null?"":(","+pinId))+
                 "]";
+    }
+
+    public Long getSrmRequestId() {
+        return srmRequestId;
+    }
+
+    public void setSrmRequestId(Long srmRequestId) {
+        this.srmRequestId = srmRequestId;
     }
         
 }

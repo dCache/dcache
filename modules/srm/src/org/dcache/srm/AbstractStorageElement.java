@@ -492,6 +492,18 @@ public interface AbstractStorageElement extends Logger{
      */
     public void unPinFile(SRMUser user,String fileId,UnpinCallbacks callbacks,String pinId);
     
+    /** This method allows to unpin file in the Storage Element,
+     * i.e. cancel the request to have the file in "fast access state"
+     * @param user User ID
+     * @param fileId Storage Element internal file ID
+     * @param callbacks This interface is used for asyncronous notification of SRM of the
+     * various actions performed to "unpin" file in the storage
+     * @param srmRequestId id given to the storage  during pinFile operation 
+     */
+    public void unPinFileBySrmRequestId(SRMUser user,String fileId,
+            UnpinCallbacks callbacks,
+            long srmRequestId);
+    
     /** This method tells SE that the specified file can be removed from the storage.
      * This is up to SE to decide when the file will be deleted
      * @param user User ID

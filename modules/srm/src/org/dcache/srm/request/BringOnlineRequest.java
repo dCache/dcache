@@ -212,6 +212,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Iterator;
 import org.dcache.srm.SRMException;
+import org.dcache.srm.SRMFileRequestNotFoundException;
 import org.dcache.srm.util.Configuration;
 import org.dcache.srm.scheduler.JobStorage;
 import org.dcache.srm.scheduler.Job;
@@ -239,6 +240,7 @@ import org.dcache.srm.v2_2.TBringOnlineRequestFileStatus;
 import org.dcache.srm.v2_2.SrmReleaseFilesResponse;
 import org.dcache.srm.v2_2.ArrayOfTSURLReturnStatus;
 import org.apache.axis.types.URI;
+import org.dcache.srm.FileMetaData;
 /*
  * @author  timur
  */
@@ -362,7 +364,7 @@ public class BringOnlineRequest extends ContainerRequest {
                 return fileRequests[i];
             }
         }
-        throw new SRMException("file request for surl ="+surl +" is not found");
+        throw new SRMFileRequestNotFoundException("file request for surl ="+surl +" is not found");
     }
   
     public void schedule(Scheduler scheduler) throws InterruptedException,
@@ -420,7 +422,7 @@ public class BringOnlineRequest extends ContainerRequest {
      */
     
     public String getMethod() {
-        return "Get";
+        return "BringOnline";
     }
     
     //we do not want to stop handler if the
@@ -604,6 +606,7 @@ public class BringOnlineRequest extends ContainerRequest {
     }
     
     public SrmReleaseFilesResponse releaseFiles(URI[] surls,String[] surl_strings) {
+        say("releaseFiles");
         int len ;
         TSURLReturnStatus[] surlLReturnStatuses;
         if(surls == null) {
@@ -615,6 +618,7 @@ public class BringOnlineRequest extends ContainerRequest {
            surlLReturnStatuses = new TSURLReturnStatus[surls.length];
         }
         if(surls == null) {
+            say("releaseFiles, surls is null, releasing all "+len+" files");
             for(int i = 0; i< len; ++i) {
                 //say("getRequestStatus() getFileRequest("+fileRequestsIds[i]+" );");
                 BringOnlineFileRequest fr =(BringOnlineFileRequest)fileRequests[i];
@@ -624,15 +628,57 @@ public class BringOnlineRequest extends ContainerRequest {
         } else {
             for(int i = 0; i< len; ++i) {
                 //say("getRequestStatus() getFileRequest("+fileRequestsIds[i]+" );");
+                BringOnlineFileRequest fr = null;
+               say("releaseFiles, releasing file "+surl_strings[i]);
                 try{
-                    BringOnlineFileRequest fr =(BringOnlineFileRequest)getFileRequestBySurl(surl_strings[i]);
+                    fr =(BringOnlineFileRequest)getFileRequestBySurl(surl_strings[i]);
                     //say("getRequestStatus() received FileRequest frs");
-                    surlLReturnStatuses[i] = fr.releaseFile();
-                } catch (Exception e) {
+                } catch (SRMFileRequestNotFoundException sfrnfe ) {
+                    try {
+                        String surl_string = surl_strings[i];
+                        SRMUser user =(SRMUser) getUser();
+                        long id =getId();
+                        BringOnlineFileRequest.unpinBySURLandRequestId(
+                            storage, user, id, surl_string);
+                        TSURLReturnStatus surlStatus = new TSURLReturnStatus();
+                        TReturnStatus surlReturnStatus = new TReturnStatus();
+                        surlReturnStatus.setStatusCode(TStatusCode.SRM_SUCCESS);
+                        surlStatus.setSurl(surls[i]);
+                        surlStatus.setStatus(surlReturnStatus);
+                        surlLReturnStatuses[i] = surlStatus;
+                        continue;
+                    } catch (Exception e) {
+                        TSURLReturnStatus surlStatus = new TSURLReturnStatus();
+                        TReturnStatus surlReturnStatus = new TReturnStatus();
+                        surlReturnStatus.setStatusCode(TStatusCode.SRM_INTERNAL_ERROR);
+                        surlReturnStatus.setExplanation(
+                            "could not release file, neither file request " +
+                            "for surl, nor pin is found: "+e);
+                        surlStatus.setSurl(surls[i]);
+                        surlStatus.setStatus(surlReturnStatus);
+                        surlLReturnStatuses[i] = surlStatus;
+                    }
+                    
+                }
+                catch (Exception e) {
                     TSURLReturnStatus surlStatus = new TSURLReturnStatus();
                     TReturnStatus surlReturnStatus = new TReturnStatus();
                     surlReturnStatus.setStatusCode(TStatusCode.SRM_INVALID_PATH);
-                    surlReturnStatus.setExplanation("no file request for surl");
+                    surlReturnStatus.setExplanation(
+                        "error retrieving a file request for an surl: "+e);
+                    surlStatus.setSurl(surls[i]);
+                    surlStatus.setStatus(surlReturnStatus);
+                    surlLReturnStatuses[i] = surlStatus;
+                }
+                
+                try {
+                    surlLReturnStatuses[i] = fr.releaseFile();
+                }
+                catch (Exception e) {
+                    TSURLReturnStatus surlStatus = new TSURLReturnStatus();
+                    TReturnStatus surlReturnStatus = new TReturnStatus();
+                    surlReturnStatus.setStatusCode(TStatusCode.SRM_INTERNAL_ERROR);
+                    surlReturnStatus.setExplanation("could not releaseFile file: "+e);
                     surlStatus.setSurl(surls[i]);
                     surlStatus.setStatus(surlReturnStatus);
                     surlLReturnStatuses[i] = surlStatus;
@@ -652,15 +698,29 @@ public class BringOnlineRequest extends ContainerRequest {
         catch(Exception e) {
             e.printStackTrace();
         }
+        int errors_cnt = 0;
         
+        for (TSURLReturnStatus surlLReturnStatus: surlLReturnStatuses) {
+            if(surlLReturnStatus == null || !surlLReturnStatus.getStatus().
+                getStatusCode().equals(TStatusCode.SRM_SUCCESS)) {
+                errors_cnt++;
+            }
+        }
         TReturnStatus status = new TReturnStatus();
-        status.setStatusCode(TStatusCode.SRM_SUCCESS);
+        if(errors_cnt == 0) {
+            status.setStatusCode(TStatusCode.SRM_SUCCESS);
+        } else if (errors_cnt < len) {
+            status.setStatusCode(TStatusCode.SRM_PARTIAL_SUCCESS);
+        } else {
+            status.setStatusCode(TStatusCode.SRM_FAILURE);
+        }
         SrmReleaseFilesResponse srmReleaseFilesResponse = new SrmReleaseFilesResponse();
         srmReleaseFilesResponse.setReturnStatus(status);
         srmReleaseFilesResponse.setArrayOfFileStatuses(new ArrayOfTSURLReturnStatus(surlLReturnStatuses));
         return srmReleaseFilesResponse;
 
     }
+
 
     public TRequestType getRequestType() {
         return TRequestType.BRING_ONLINE;

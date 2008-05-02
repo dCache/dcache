@@ -264,7 +264,6 @@ import org.dcache.srm.v2_2.TSURLReturnStatus;
  * @version
  */
 public class BringOnlineFileRequest extends FileRequest {
-    public static final String SFN_STRING="?SFN=";
     
     // the globus url class created from surl_string
     private GlobusURL surl;
@@ -401,17 +400,7 @@ public class BringOnlineFileRequest extends FileRequest {
     
     
     public String getPath() {
-        String path = surl.getPath();
-        int indx=path.indexOf(SFN_STRING);
-        if( indx != -1) {
-            
-            path=path.substring(indx+SFN_STRING.length());
-        }
-        
-        if(!path.startsWith("/")) {
-            path = "/"+path;
-        }
-        return path;
+        return getPath(surl);
     }
     
     
@@ -1118,7 +1107,7 @@ public class BringOnlineFileRequest extends FileRequest {
         
     }
     
-    private  static class TheUnpinCallbacks implements UnpinCallbacks {
+    private static class TheUnpinCallbacks implements UnpinCallbacks {
         
         Long fileRequestJobId;
         
@@ -1127,9 +1116,11 @@ public class BringOnlineFileRequest extends FileRequest {
         }
         
         public BringOnlineFileRequest getBringOnlineFileRequest() throws java.sql.SQLException {
-            Job job = Job.getJob(fileRequestJobId);
-            if(job != null) {
-                return (BringOnlineFileRequest) job;
+            if(fileRequestJobId != null) {
+                Job job = Job.getJob(fileRequestJobId);
+                if(job != null) {
+                    return (BringOnlineFileRequest) job;
+                }
             }
             return null;
         }
@@ -1150,7 +1141,9 @@ public class BringOnlineFileRequest extends FileRequest {
                 }
                  */
                 this.error = "TheUnpinCallbacks error: "+ error;
-                fr.esay(this.error);
+                if(fr != null) {
+                    fr.esay(this.error);
+                }
                 success = false;
                 done();
             }
@@ -1175,8 +1168,10 @@ public class BringOnlineFileRequest extends FileRequest {
                     //fr.esay("can not fail state:"+ist);
                 }
                  */
-                fr.esay("TheUnpinCallbacks exception");
-                fr.esay(e);
+                if(fr != null) {
+                    fr.esay("TheUnpinCallbacks exception");
+                    fr.esay(e);
+                }
                 this.error = "TheUninCallbacks exception: "+e.toString();
                 success = false;
                 done();
@@ -1207,7 +1202,9 @@ public class BringOnlineFileRequest extends FileRequest {
                  */
                 
                 this.error = "TheUninCallbacks Timeout";
-                fr.esay(this.error);
+                if(fr  != null) {
+                    fr.esay(this.error);
+               }
                 success = false;
                 done();
                 
@@ -1221,19 +1218,21 @@ public class BringOnlineFileRequest extends FileRequest {
         public void Unpinned(String pinId) {
             try {
                 BringOnlineFileRequest fr = getBringOnlineFileRequest();
-                fr.say("TheUnpinCallbacks: Unpinned() pinId:"+pinId);
-                State state;
-                synchronized(fr ) {
-                    state = fr.getState();
-                }
-               if(state == State.ASYNCWAIT) {
-                    fr.pinId = pinId;
-                    Scheduler scheduler = Scheduler.getScheduler(fr.getSchedulerId());
-                    try {
-                        scheduler.schedule(fr);
+                if(fr != null) {
+                    fr.say("TheUnpinCallbacks: Unpinned() pinId:"+pinId);
+                    State state;
+                    synchronized(fr ) {
+                        state = fr.getState();
                     }
-                    catch(Exception ie) {
-                        fr.esay(ie);
+                   if(state == State.ASYNCWAIT) {
+                        fr.pinId = pinId;
+                        Scheduler scheduler = Scheduler.getScheduler(fr.getSchedulerId());
+                        try {
+                            scheduler.schedule(fr);
+                        }
+                        catch(Exception ie) {
+                            fr.esay(ie);
+                        }
                     }
                 }
                 success = true;
@@ -1262,7 +1261,9 @@ public class BringOnlineFileRequest extends FileRequest {
                  */
                 
                 this.error = "TheUnpinCallbacks error: "+ reason;
-                fr.esay(this.error);
+                if(fr  != null) {
+                    fr.esay(this.error);
+                }
                 success = false;
                 done();
 
@@ -1276,7 +1277,10 @@ public class BringOnlineFileRequest extends FileRequest {
         private boolean done = false;
         private boolean success  = true;
         private String error;
-       
+        
+        public boolean isSuccess() {
+            return done && success;
+        }
         public  boolean waitCompleteion(long timeout) throws InterruptedException {
            long starttime = System.currentTimeMillis();
             while(true) {
@@ -1306,5 +1310,36 @@ public class BringOnlineFileRequest extends FileRequest {
         }        
 
         
+    }
+    public static void unpinBySURLandRequestId(
+        AbstractStorageElement storage,
+        final SRMUser user, 
+        final long id,
+        final String surl_string) throws SRMException, MalformedURLException {
+        GlobusURL surl = new GlobusURL(surl_string);
+        String path = FileRequest.getPath(surl);
+        
+        FileMetaData fmd =
+            storage.getFileMetaData(user,path);
+        String fileId = fmd.fileId;
+        if(fileId != null) {
+            BringOnlineFileRequest.TheUnpinCallbacks unpinCallbacks = 
+                new BringOnlineFileRequest.TheUnpinCallbacks(null);
+            storage.unPinFileBySrmRequestId(user,
+                fileId,unpinCallbacks,id);
+          try {   
+                unpinCallbacks.waitCompleteion(60000); //one minute
+                if(unpinCallbacks.isSuccess()) {
+                    return;
+                } else {
+                    throw new SRMException("unpinning of "+surl_string+" by SrmRequestId "+id+
+                        " failed or took too long");
+                }
+            } catch( InterruptedException ie) {
+                ie.printStackTrace();
+                throw new SRMException("unpinning of "+surl_string+" by SrmRequestId "+id+
+                        " got interrupted");
+            }
+         }
     }
 }
