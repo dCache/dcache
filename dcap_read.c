@@ -574,6 +574,9 @@ int dc_readv2(int fd, iovec2 *vector, int count) {
 	int vPos = 0; /* position in current buffer */
 	int bPos = 0; /* position in current transfer block */
 
+	int vectorIndex = 0; /* offset of current vector */
+	int vectorCount; /* number of vectors to process */
+
 #ifdef DC_CALL_TRACE
 	showTraceBack();
 #endif
@@ -582,12 +585,11 @@ int dc_readv2(int fd, iovec2 *vector, int count) {
 	dc_errno = DEOK;
 
 
-	if( (count == 0) || (count > IOV_MAX) ) {
-		dc_debug(DC_ERROR, "Invalid vector size %d", count);
-		errno = EINVAL;
-		return -1;
-	}
 
+	if( count  == 0 ) {
+		/* nothing to do */
+		return 0;
+	}
 
 	node = get_vsp_node(fd);
 	if (node == NULL) {
@@ -603,92 +605,114 @@ int dc_readv2(int fd, iovec2 *vector, int count) {
 	}
 
 
-	readvmsg = malloc(12 + count*12); /* header + for each request */
-	if(readvmsg == NULL) {
-		dc_debug(DC_ERROR, "Failed to allocate memory for readv2");
-		dc_errno = DEMALLOC;
-		m_unlock(&node->mux);
-		return -1;
-	}
-	msglen = 3 + count*3;
+	/*
+	 * while maximal command block size at pool is 8K we can send only
+	 * 1024 requests at once.
+	 * if sincle reav2 contains more vectors to read, split it into multiple requests,
+	 * other wise ROOT ( main client of readv2 ) will fall back to single reads
+	 */
 
-	readvmsg[0] = htonl(8+count*12); /* bytes following */
-	readvmsg[1] = htonl(IOCMD_READV);
-	readvmsg[2] = htonl(count);
-	for( i = 0, j=3; i < count; i++ ) {
-		int64_t offset = htonll(vector[i].offset);
-		memcpy( (char *) &readvmsg[j], (char *) &offset, sizeof(offset));
-		j+=2;
-		readvmsg[j] = htonl(vector[i].len);
-		j++;
-		totalToRead += vector[i].len;
-	}
+	while(vectorIndex < count) {
+
+		v = vectorIndex; /* indes of current buffer */
+		vPos = 0; /* position in current buffer */
+		bPos = 0; /* position in current transfer block */
+		totalToRead = 0; /* byte to read in current chunk*/
 
 
-	dc_debug(DC_IO, "dc_readv2: %d blocks, %d bytes in total", count, totalToRead);
-	dcap_set_alarm(DCAP_IO_TIMEOUT);
+		vectorCount = ((count - vectorIndex)  > IOV_MAX) ? IOV_MAX : (count - vectorIndex);
+		dc_debug(DC_IO, "total to read %d, chunk %d, index %d", count, vectorCount, vectorIndex);
 
-	rc = sendDataMessage(node, (char *) readvmsg, msglen*sizeof(int32_t), ASCII_NULL, NULL);
-
-	if (rc != 0) {
-		/* remove timeout */
-		dcap_set_alarm(0);
-		free(readvmsg);
-		m_unlock(&node->mux);
-		return -1;
-	}
-
-
-	rc = get_data(node);
-	if (rc < 0) {
-		dc_debug(DC_IO, "sendDataMessage failed.");
-		/* remove timeout */
-		dcap_set_alarm(0);
-		free(readvmsg);
-		m_unlock(&node->mux);
-		return -1;
-	}
-
-
-
-	totalRecieved = 0;
-
-	while( totalRecieved < totalToRead) {
-
-		rc = readn(node->dataFd, (char *) &blocksize, sizeof(blocksize), NULL);
-		blocksize = ntohl(blocksize);
-		bPos = 0;
-		dc_debug(DC_IO, "dc_readv2: transfer blocksize %d", blocksize);
-
-		if(vector[v].len ==  vPos) {
-			vPos = 0;
-			v++;
+		readvmsg = malloc(12 + vectorCount*12); /* header + for each request */
+		if(readvmsg == NULL) {
+			dc_debug(DC_ERROR, "Failed to allocate memory for readv2");
+			dc_errno = DEMALLOC;
+			m_unlock(&node->mux);
+			return -1;
 		}
-		if(vPos == 0 )	{
-			dc_debug(DC_IO, "dc_readv2: feeling %d size=%d offset=%lld", v, vector[v].len, vector[v].offset);
+		msglen = 3 + vectorCount*3;
+
+		readvmsg[0] = htonl(8+vectorCount*12); /* bytes following */
+		readvmsg[1] = htonl(IOCMD_READV);
+		readvmsg[2] = htonl(vectorCount);
+		for( i = vectorIndex, j=3; i < vectorIndex+vectorCount; i++ ) {
+			int64_t offset = htonll(vector[i].offset);
+			memcpy( (char *) &readvmsg[j], (char *) &offset, sizeof(offset));
+			j+=2;
+			readvmsg[j] = htonl(vector[i].len);
+			j++;
+			totalToRead += vector[i].len;
 		}
-		while( blocksize > 0 ) {
 
 
-			if( blocksize <= (vector[v].len - vPos) ) {
-				rc = readn(node->dataFd, (char *)&vector[v].buf[vPos] , blocksize, NULL);
-				vPos += rc;
-				blocksize -= rc;
-				totalRecieved+=rc;
-			} else {
-				rc = readn(node->dataFd, &vector[v].buf[vPos] , vector[v].len - vPos, NULL);
-				vPos += rc;
-				blocksize -= rc;
-				totalRecieved+=rc;
+		dc_debug(DC_IO, "dc_readv2: %d blocks, %d bytes in total", count, totalToRead);
+		dcap_set_alarm(DCAP_IO_TIMEOUT);
+
+		rc = sendDataMessage(node, (char *) readvmsg, msglen*sizeof(int32_t), ASCII_NULL, NULL);
+
+		if (rc != 0) {
+			/* remove timeout */
+			dcap_set_alarm(0);
+			free(readvmsg);
+			m_unlock(&node->mux);
+			return -1;
+		}
+
+
+		rc = get_data(node);
+		if (rc < 0) {
+			dc_debug(DC_IO, "sendDataMessage failed.");
+			/* remove timeout */
+			dcap_set_alarm(0);
+			free(readvmsg);
+			m_unlock(&node->mux);
+			return -1;
+		}
+
+
+
+		totalRecieved = 0;
+
+		while( totalRecieved < totalToRead) {
+
+			rc = readn(node->dataFd, (char *) &blocksize, sizeof(blocksize), NULL);
+			blocksize = ntohl(blocksize);
+			bPos = 0;
+			dc_debug(DC_IO, "dc_readv2: transfer blocksize %d", blocksize);
+
+			if(vector[v].len ==  vPos) {
+				vPos = 0;
+				v++;
+			}
+			if(vPos == 0 )	{
+				dc_debug(DC_IO, "dc_readv2: feeling %d size=%d offset=%lld", v, vector[v].len, vector[v].offset);
+			}
+			while( blocksize > 0 ) {
+
+
+				if( blocksize <= (vector[v].len - vPos) ) {
+					rc = readn(node->dataFd, (char *)&vector[v].buf[vPos] , blocksize, NULL);
+					vPos += rc;
+					blocksize -= rc;
+					totalRecieved+=rc;
+				} else {
+					rc = readn(node->dataFd, &vector[v].buf[vPos] , vector[v].len - vPos, NULL);
+					vPos += rc;
+					blocksize -= rc;
+					totalRecieved+=rc;
+				}
+
 			}
 
 		}
 
-	}
+	    if ( get_fin(node) == -1 ) {
+	    	dc_debug(DC_ERROR, "Failed go get FIN block");
+	    }
 
-    if ( get_fin(node) == -1 ) {
-    	dc_debug(DC_ERROR, "Failed go get FIN block");
-    }
+	    vectorIndex += vectorCount;
+
+	}
 
 	dcap_set_alarm(0);
 	free(readvmsg);
