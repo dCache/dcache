@@ -9,8 +9,8 @@
  *   See the file COPYING.LIB
  *
  */
- 
- 
+
+
 /*
  * $Id: dcap_read.c,v 1.20 2007-07-09 19:33:18 tigran Exp $
  */
@@ -37,8 +37,8 @@ dc_read(int fd, void *buff, size_t buflen)
 #endif
 
 	/* nothing wrong ... yet */
-	dc_errno = DEOK;	
-	
+	dc_errno = DEOK;
+
 	node = get_vsp_node(fd);
 	if (node == NULL) {
 		/* we have not such file descriptor, so lets give a try to system */
@@ -47,16 +47,16 @@ dc_read(int fd, void *buff, size_t buflen)
 
 	n = dc_real_read(node, buff, buflen);
 	m_unlock(&node->mux);
-	
-	return n;	
-	
+
+	return n;
+
 }
 
 
 ssize_t
 dc_pread(int fd, void *buff, size_t buflen, off_t offset)
-{	
-	return dc_pread64(fd, buff, buflen, (off64_t)offset);	
+{
+	return dc_pread64(fd, buff, buflen, (off64_t)offset);
 }
 
 
@@ -69,10 +69,10 @@ dc_pread64(int fd, void *buff, size_t buflen, off64_t offset)
 #ifdef DC_CALL_TRACE
 	showTraceBack();
 #endif
-	
+
 	/* nothing wrong ... yet */
-	dc_errno = DEOK;	
-	
+	dc_errno = DEOK;
+
 	node = get_vsp_node(fd);
 	if (node == NULL) {
 		/* we have not such file descriptor, so lets give a try to system */
@@ -82,11 +82,11 @@ dc_pread64(int fd, void *buff, size_t buflen, off64_t offset)
 	if( dc_real_lseek(node, offset, SEEK_SET) >=0 ) {
 		n = dc_real_read(node, buff, buflen);
 	}
-	
+
 	m_unlock(&node->mux);
-	
-	return n;	
-	
+
+	return n;
+
 }
 
 
@@ -145,35 +145,43 @@ dc_real_read( struct vsp_node *node, void *buff, size_t buflen)
 						node->ahead->cur = 0;
 					}
 				}else{
-					if( (node->ahead->cur + buflen) <= node->ahead->used ) {
+					rest = node->ahead->used - node->ahead->cur;
+					if( buflen <= rest ) {
 						dc_debug(DC_IO, "[%d] Using existing buffer to read %ld bytes.", node->dataFd, buflen);
 						memcpy(buff, node->ahead->buffer + node->ahead->cur, buflen);
 						node->ahead->cur += buflen;
 						return buflen;
-						
-					}else{
-
-						rest = node->ahead->used - node->ahead->cur;
+					} else {
 						memcpy(buff, node->ahead->buffer + node->ahead->cur, rest);
-						dc_debug(DC_IO, "[%d] Taking the rest %ld and Fetching new buffer.", node->dataFd, rest);
+						dc_debug(DC_IO, "[%d] Taking the rest %ld first.", node->dataFd, rest);
 						node->ahead->cur = 0;
-						readSize = node->ahead->size; /* remember the actual read size for reconnect */
-						size = htonll(node->ahead->size);
+				        if ( buflen - rest >= node->ahead->size ) {
+							dc_debug(DC_IO, "[%d] Buffer .GE. than read-ahead buffer + unreaded data.", node->dataFd);
+							readSize = buflen - rest;
+							size = htonll(readSize);
+							use_ahead = 0;
+							node->ahead->used = 0;
+							node->ahead->cur = 0;
+				        } else{
+							dc_debug(DC_IO, "[%d] Fetching new buffer then.", node->dataFd);
+							readSize = node->ahead->size; /* remember the actual read size for reconnect */
+							size = htonll(node->ahead->size);
+						}
 					}
 				}
 			}else{
 				readSize = buflen; /* remember the actual read size for reconnect */
 				size = htonll(buflen);
-			}				
-		
+			}
+
 		readmsg[0] = htonl(12);
 		readmsg[1] = htonl(IOCMD_READ);
 		dc_debug(DC_IO,"[%d] Sending IOCMD_READ (%ld).", node->dataFd, readSize);
 		memcpy( (char *) &readmsg[2], (char *) &size, sizeof(size));
 		msglen = 4;
-		
+
 	}else{
-	
+
 		if(use_ahead) {
 			if( (!node->ahead->used) || (node->ahead->cur == node->ahead->used) ) {
 				if(buflen >= node->ahead->size) {
@@ -198,21 +206,21 @@ dc_real_read( struct vsp_node *node, void *buff, size_t buflen)
 		}
 
 		memcpy( (char *) &readmsg[5], (char *) &size, sizeof(size));
-	
+
 		readmsg[0] = htonl(24);
 		readmsg[1] = htonl(IOCMD_SEEK_READ);
 		dc_debug(DC_IO,"[%d] Sending IOCMD_SEEK_READ. (%ld)", node->dataFd, readSize);
-		
+
 		size = htonll(node->seek);
 		memcpy( (char *) &readmsg[2],(char *) &size, sizeof(size));
-		
+
 		if(node->whence == SEEK_SET) {
 			readmsg[4] = htonl(IOCMD_SEEK_SET);
 		}else{
-			readmsg[4] = htonl(IOCMD_SEEK_CURRENT);		
+			readmsg[4] = htonl(IOCMD_SEEK_CURRENT);
 		}
 
-		msglen = 7;		
+		msglen = 7;
 	}
 
 
@@ -223,7 +231,7 @@ dc_real_read( struct vsp_node *node, void *buff, size_t buflen)
 	tmp = sendDataMessage(node, (char *) readmsg, msglen*sizeof(int32_t), ASCII_NULL, NULL);
 
 
-	if (tmp != 0) {		
+	if (tmp != 0) {
 		/* remove timeout */
 		dcap_set_alarm(0);
 		return -1;
@@ -231,7 +239,7 @@ dc_real_read( struct vsp_node *node, void *buff, size_t buflen)
 
 	/* if sendDataMessage successed, update the file pointer */
 	if( node->whence == SEEK_SET ) {
-		node->pos = node->seek;	
+		node->pos = node->seek;
 	} else { /* SEEK_CUR */
 		node->pos += node->seek;
 	}
@@ -239,7 +247,7 @@ dc_real_read( struct vsp_node *node, void *buff, size_t buflen)
 
 	tmp = get_data(node);
 	if (tmp < 0) {
-		dc_debug(DC_ERROR, "sendDataMessage failed.");		
+		dc_debug(DC_ERROR, "sendDataMessage failed.");
 		/* remove timeout */
 		dcap_set_alarm(0);
 		return -1;
@@ -247,18 +255,18 @@ dc_real_read( struct vsp_node *node, void *buff, size_t buflen)
 	/* so here we should start receiving data  */
 
 	if(use_ahead) {
-		input_buffer = node->ahead->buffer;		
+		input_buffer = node->ahead->buffer;
 		node->ahead->base = node->pos;
 		node->ahead->used = 0;
 		node->ahead->cur = 0;
 	}else{
-		input_buffer = buff;
+		input_buffer = buff + rest;
 	}
-	
+
 	totsize = 0;
     lastBlockSize = 0;
-	while (1) {	
-		
+	while (1) {
+
 		tmp = readn(node->dataFd, (char *) &blocksize, sizeof(blocksize), NULL);
 
 		if( (tmp < 0 ) && isIOFailed ) {
@@ -267,11 +275,11 @@ dc_real_read( struct vsp_node *node, void *buff, size_t buflen)
                 errorState = 1;
 				break;
 			}else{
-				/* Xa-xa we successed in reconnection! */								
+				/* Xa-xa we successed in reconnection! */
 				continue;
-			}			
+			}
 		}
-		
+
 		blocksize = ntohl(blocksize);
 		dc_debug(DC_TRACE, "dc_read: transfer blocksize %d", blocksize);
 
@@ -287,55 +295,55 @@ dc_real_read( struct vsp_node *node, void *buff, size_t buflen)
                 /* roll back */
         		input_buffer -= lastBlockSize;
                 totsize -= lastBlockSize;
-		
+
                 node->pos -= lastBlockSize;
                 if( use_ahead ) {
                     node->ahead->used -=lastBlockSize;
                 }
 
-    			if(reconnected(node, DCFT_POS_AND_REED, readSize - totsize) == 0) {                    
-                    /* Xa-xa we successed in reconnection! */								
+    			if(reconnected(node, DCFT_POS_AND_REED, readSize - totsize) == 0) {
+                    /* Xa-xa we successed in reconnection! */
                     continue;
                 }
                 /* no way to continue */
-                errorState = 1;		                
+                errorState = 1;
             }
 
             break;
-		}		
+		}
 
-        
+
 		tmp = readn(node->dataFd, input_buffer, blocksize, NULL);
-		
+
 		if( (tmp < 0 ) && isIOFailed ) {
 			dc_debug(DC_ERROR, "Timeout on read [2]. Requested %ld, readed %ld", readSize, totsize);
 			if(reconnected(node, DCFT_POS_AND_REED, readSize - totsize) != 0) {
                 errorState = 1;
 				break;
 			}else{
-				/* Xa-xa we successed in reconnection! */								
+				/* Xa-xa we successed in reconnection! */
 				continue;
-			}			
+			}
 		}
-		
+
 		if (tmp != blocksize) {
 			dc_debug(DC_ERROR, "[%d] dc_read: requested %ld => received %ld. Total to read %ld, done %ld ", node->dataFd, blocksize, tmp, readSize, totsize );
-			/* FIXME: in some condition we start to loop. As a quick hack do not loop more than two times */			
+			/* FIXME: in some condition we start to loop. As a quick hack do not loop more than two times */
 			loop++;
 			if( (loop > 3) || (reconnected(node, DCFT_POS_AND_REED, readSize - totsize) != 0) ) {
                 errorState = 1;
 				break;
 			}else{
-				/* Xa-xa we successed in reconnection! */								
+				/* Xa-xa we successed in reconnection! */
 				continue;
-			}			
+			}
 		}
-		
-		
+
+
 		input_buffer += tmp;
 		totsize += tmp;
-		
-		/* correct file position */	
+
+		/* correct file position */
 		node->pos += tmp;
 		if( use_ahead ) {
 			node->ahead->used +=tmp;
@@ -349,8 +357,8 @@ dc_real_read( struct vsp_node *node, void *buff, size_t buflen)
         dc_debug(DC_ERROR, "[%d] unrecoverable read error", node->dataFd);
         errno = EIO;
         return -1;
-    }	
-	
+    }
+
 	if(use_ahead) {
 	    if(totsize <=  buflen - rest) {
 			memcpy((char *)buff + rest, node->ahead->buffer, totsize);
@@ -362,29 +370,28 @@ dc_real_read( struct vsp_node *node, void *buff, size_t buflen)
 			nbytes = buflen;
 		}
 	}else{
-		nbytes = totsize;
+		nbytes = totsize + rest;
 	}
-	
+
 	node->seek = 0;
 	node->whence = -1;
 
-	dc_debug(DC_IO, "[%d] Expected position: %lu @ %lu bytes readed. Returning %lu", 
+	dc_debug(DC_IO, "[%d] Expected position: %lu @ %lu bytes readed. Returning %lu",
 		node->dataFd, node->pos, totsize, nbytes);
 	if(use_ahead) {
 		dc_debug(DC_IO, "     cur (%ld) used (%ld).", node->ahead->cur, node->ahead->used );
 		dc_debug(DC_IO, "     pos (%ld) base (%ld).", node->pos, node->ahead->base );
 	}
-	
+
 	/* remove timeout */
 	dcap_set_alarm(0);
-	
+
 	return nbytes;
 }
 
 
-
 ssize_t dc_readv(int fd, const struct iovec *vector, int count) {
-	
+
 	ssize_t n;
 	struct vsp_node *node;
 	char *iobuf;
@@ -398,61 +405,61 @@ ssize_t dc_readv(int fd, const struct iovec *vector, int count) {
 #endif
 
 	/* nothing wrong ... yet */
-	dc_errno = DEOK;	
-	
-	
+	dc_errno = DEOK;
+
+
 	if( (count == 0) || (count > IOV_MAX) ) {
 		errno = EINVAL;
 		return -1;
 	}
-	
-	
+
+
 	node = get_vsp_node(fd);
 	if (node == NULL) {
 		/* we have not such file descriptor, so lets give a try to system */
 		return system_readv(fd, vector, count);
 	}
-	
-	
+
+
 	iobuf_len = 0;
 	for(i = 0; i < count; i++) {
 		iobuf_len += vector[i].iov_len;
 	}
-	
+
 	/* check for overflow */
 	if( iobuf_len < 0 ) {
 		errno = EINVAL;
 		return -1;
 	}
-	
+
 	iobuf = (char *)malloc(iobuf_len);
 	if(iobuf == NULL) {
 		m_unlock(&node->mux);
 		return -1;
 	}
-	
-	
+
+
 	n = dc_real_read(node, iobuf, iobuf_len);
-	
+
 	/* we do not need the lock any more */
 	m_unlock(&node->mux);
-	
+
 	/* error ? */
 	if(n < 0 ) {
 		free(iobuf);
 		return n;
 	}
-	
-	
+
+
 	iobuf_pos = 0;
 	/* copy into each buf as much as it can take */
-	for(i = 0; (i < count) && (n<iobuf_pos); i++) {					
-		size_t cain = vector[i].iov_len > (n - iobuf_pos) ? (n - iobuf_pos) : vector[i].iov_len;					
+	for(i = 0; (i < count) && (n<iobuf_pos); i++) {
+		size_t cain = vector[i].iov_len > (n - iobuf_pos) ? (n - iobuf_pos) : vector[i].iov_len;
 		memcpy(vector[i].iov_base, iobuf + iobuf_pos, cain);
 		iobuf_pos += cain;
-	}		
-	
-	free(iobuf);	
+	}
+
+	free(iobuf);
 	return n;
 }
 
@@ -461,7 +468,7 @@ ssize_t dc_readv(int fd, const struct iovec *vector, int count) {
 
 ssize_t dc_readTo(int srcfd, int destdf, size_t size)
 {
-	
+
 	ssize_t transfer_size=0;
 	struct vsp_node *node;
 	int32_t         readmsg[4];
@@ -472,14 +479,14 @@ ssize_t dc_readTo(int srcfd, int destdf, size_t size)
 	int input_buffer_len = 0;
 	int64_t requestSize;
 	unsigned long sum = 1;
-	
+
 	node = get_vsp_node(srcfd);
 	if (node == NULL) {
 		/* we have not such file descriptor, so lets give a try to system */
 		return -1;
 	}
-	
-	
+
+
 	readmsg[0] = htonl(12);
 	readmsg[1] = htonl(IOCMD_READ);
 	dc_debug(DC_IO,"[%d] Sending IOCMD_READ (%ld).", node->dataFd, size);
@@ -487,28 +494,28 @@ ssize_t dc_readTo(int srcfd, int destdf, size_t size)
 	memcpy( (char *) &readmsg[2], (char *) &requestSize, sizeof(requestSize));
 	msglen = 4;
 
-	
+
 	tmp = sendDataMessage(node, (char *) readmsg, msglen*sizeof(int32_t), ASCII_NULL, NULL);
 
 
 		if (tmp != 0) {
-			goto out; 
+			goto out;
 		}
 
 		tmp = get_data(node);
 		if (tmp < 0) {
 			goto out;
 		}
-		
-		while (1) {	
-			
+
+		while (1) {
+
 			tmp = readn(node->dataFd, (char *) &blocksize, sizeof(blocksize), NULL);
-			
+
 			blocksize = ntohl(blocksize);
 			dc_debug(DC_TRACE, "dc_read: transfer blocksize %d", blocksize);
 
-			if (blocksize == -1) {				
-				
+			if (blocksize == -1) {
+
 	            /* here is only place where we can brake without error */
 	            if ( get_fin(node) == -1 ) {
 	                /* O-o...... */
@@ -517,32 +524,32 @@ ssize_t dc_readTo(int srcfd, int destdf, size_t size)
 	            }
 
 	            break;
-			}		
+			}
 
 	        if( input_buffer_len < blocksize ) {
 	        	input_buffer = realloc(input_buffer, blocksize);
 	        }
-			
+
 			tmp = readn(node->dataFd, input_buffer, blocksize, NULL);
-			
-			
+
+
 			if (tmp != blocksize) {
 				dc_debug(DC_ERROR, "[%d] dc_read: requested %ld => received %ld.", node->dataFd, blocksize, tmp );
 				/* FIXME: in some condition we start to loop. As a quick hack do not loop more than two times */
 				goto out;
 			}
-			
+
 			sum = update_adler32(sum, (unsigned char *)input_buffer, blocksize);
-			
+
 			dc_debug(DC_INFO, "block len = %d, checksum is: 0x%.8x",blocksize, sum );
-			
+
 			transfer_size+=blocksize;
 			writen(destdf,input_buffer, blocksize, NULL );
 		}
-out:	
-	
+out:
+
 	m_unlock(&node->mux);
-			
+
 	if(input_buffer != NULL) {
 		free(input_buffer);
 	}
@@ -552,7 +559,7 @@ out:
 
 
 int dc_readv2(int fd, iovec2 *vector, int count) {
-	
+
 	int rc;
 	struct vsp_node *node;
 	int32_t  *readvmsg;
@@ -572,16 +579,16 @@ int dc_readv2(int fd, iovec2 *vector, int count) {
 #endif
 
 	/* nothing wrong ... yet */
-	dc_errno = DEOK;	
-	
-	
+	dc_errno = DEOK;
+
+
 	if( (count == 0) || (count > IOV_MAX) ) {
 		dc_debug(DC_ERROR, "Invalid vector size %d", count);
 		errno = EINVAL;
 		return -1;
 	}
-	
-	
+
+
 	node = get_vsp_node(fd);
 	if (node == NULL) {
 		/* we have not such file descriptor, so lets give a try to system */
@@ -591,7 +598,7 @@ int dc_readv2(int fd, iovec2 *vector, int count) {
 				return -1;
 			}
 		}
-		
+
 		return 0;
 	}
 
@@ -604,7 +611,7 @@ int dc_readv2(int fd, iovec2 *vector, int count) {
 		return -1;
 	}
 	msglen = 3 + count*3;
-	
+
 	readvmsg[0] = htonl(8+count*12); /* bytes following */
 	readvmsg[1] = htonl(IOCMD_READV);
 	readvmsg[2] = htonl(count);
@@ -616,76 +623,76 @@ int dc_readv2(int fd, iovec2 *vector, int count) {
 		j++;
 		totalToRead += vector[i].len;
 	}
-	
+
 
 	dc_debug(DC_IO, "dc_readv2: %d blocks, %d bytes in total", count, totalToRead);
 	dcap_set_alarm(DCAP_IO_TIMEOUT);
 
 	rc = sendDataMessage(node, (char *) readvmsg, msglen*sizeof(int32_t), ASCII_NULL, NULL);
-	
-	if (rc != 0) {		
+
+	if (rc != 0) {
 		/* remove timeout */
 		dcap_set_alarm(0);
 		free(readvmsg);
 		m_unlock(&node->mux);
 		return -1;
 	}
-	
-	
+
+
 	rc = get_data(node);
 	if (rc < 0) {
-		dc_debug(DC_IO, "sendDataMessage failed.");		
+		dc_debug(DC_IO, "sendDataMessage failed.");
 		/* remove timeout */
 		dcap_set_alarm(0);
 		free(readvmsg);
 		m_unlock(&node->mux);
 		return -1;
 	}
-	
-	
-	
+
+
+
 	totalRecieved = 0;
-	
+
 	while( totalRecieved < totalToRead) {
-		
+
 		rc = readn(node->dataFd, (char *) &blocksize, sizeof(blocksize), NULL);
 		blocksize = ntohl(blocksize);
 		bPos = 0;
 		dc_debug(DC_IO, "dc_readv2: transfer blocksize %d", blocksize);
-		
+
 		if(vector[v].len ==  vPos) {
-			vPos = 0;				
-			v++;				
+			vPos = 0;
+			v++;
 		}
 		if(vPos == 0 )	{
 			dc_debug(DC_IO, "dc_readv2: feeling %d size=%d offset=%lld", v, vector[v].len, vector[v].offset);
 		}
 		while( blocksize > 0 ) {
-	
-			
+
+
 			if( blocksize <= (vector[v].len - vPos) ) {
 				rc = readn(node->dataFd, (char *)&vector[v].buf[vPos] , blocksize, NULL);
 				vPos += rc;
 				blocksize -= rc;
-				totalRecieved+=rc;				
+				totalRecieved+=rc;
 			} else {
 				rc = readn(node->dataFd, &vector[v].buf[vPos] , vector[v].len - vPos, NULL);
 				vPos += rc;
 				blocksize -= rc;
 				totalRecieved+=rc;
 			}
-		
+
 		}
-		
+
 	}
-	
+
     if ( get_fin(node) == -1 ) {
     	dc_debug(DC_ERROR, "Failed go get FIN block");
     }
-	
+
 	dcap_set_alarm(0);
 	free(readvmsg);
 	m_unlock(&node->mux);
-	
+
 	return 0;
 }
