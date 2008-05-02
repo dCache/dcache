@@ -20,12 +20,12 @@ fi
 
 args=$* 
 
-function error() {
+error() {
     echo "Can't copy from \"${1}\" protocol to \"${2}\"  protocol"
     exit 1
 }
 
-function check_protocols() {
+check_protocols() {
     case "$1" in 
 	gsiftp)
 	    ;;
@@ -43,7 +43,7 @@ function check_protocols() {
 
 skip=0
 i=0
-fargs=()
+fargs=
 
 for arg in $args;
   do
@@ -61,7 +61,7 @@ for arg in $args;
 	  ;;
   esac
   fargs[i]=${arg}
-  let i=i+1
+  i=$((${i}+1))
 done
 
 
@@ -70,11 +70,11 @@ done
 #
 
 length=${#fargs[*]}
-let last=length-1
+last=$((${length}-1))
 first=${#fargs[0]}
 
 cmd=""
-if [[ "${skip}" -eq 0 ]] 
+if [ "${skip}" -eq 0 ]
     then
     if [ ${length} -lt 2 ]
 	then
@@ -82,12 +82,12 @@ if [[ "${skip}" -eq 0 ]]
 	exit 1
     else
 	i=0
-	src_protocols=()
-	src_files=()
+	src_protocols=
+	src_files=
 	while [ $i -lt ${last} ] 
 	do
 	  src_protocols[$i]=`echo ${fargs[$i]} | grep ":" | cut -d":" -f1`
-	  let i=i+1
+	  i=$((${i}+1))
 	done
 	n_src_protocols=`echo  ${src_protocols[@]} | tr A-Z a-z | tr ' ' '\012' | sort | uniq | wc -l`
 	if [  ${n_src_protocols} -ne 1 ] 
@@ -115,18 +115,18 @@ if [[ "${skip}" -eq 0 ]]
 		esac
 	    else
 
-		if [[ "${src_protocol}" = "gsiftp" || "${dst_protocol}" = "gsiftp" ]] 
+		if [ "${src_protocol}" = "gsiftp" -o "${dst_protocol}" = "gsiftp" ] 
 		    then
 		    cmd="globus-url-copy ${fargs[*]}"
 		fi
 
-		if [[ "${src_protocol}" = "enstore" || "${dst_protocol}" = "enstore" ]] 
+		if [ "${src_protocol}" = "enstore" -o "${dst_protocol}" = "enstore" ] 
 		    then
 		    cmd="encp `echo ${fargs[*]} | sed -e "s/${src_protocol}://g" | sed -e "s/${dst_protocol}://g"`"
 		fi
 
 
-		if [[ "${src_protocol}" = "dcap"  ||  "${dst_protocol}" = "dcap" ]]
+		if [ "${src_protocol}" = "dcap" -o  "${dst_protocol}" = "dcap" ]
 		    then
 		    if [ "${src_protocol}" = "file" ] 
 			then
@@ -140,33 +140,33 @@ if [[ "${skip}" -eq 0 ]]
 		# all bad cases go here
 		#
 
-		if [[ "${src_protocol}" = "gsiftp" && "${dst_protocol}" = "enstore" ]] 
+		if [ "${src_protocol}" = "gsiftp" -a "${dst_protocol}" = "enstore" ] 
 		    then
 		    error ${src_protocol} ${dst_protocol}
 		fi
 
-		if [[ "${dst_protocol}" = "gsiftp" && "${src_protocol}" = "enstore" ]] 
+		if [ "${dst_protocol}" = "gsiftp" -a "${src_protocol}" = "enstore" ]
 		    then
 		    error ${src_protocol} ${dst_protocol}
 		fi
 		
 
-		if [[ "${src_protocol}" = "dcap" && "${dst_protocol}" = "gsiftp" ]] 
+		if [ "${src_protocol}" = "dcap" -a "${dst_protocol}" = "gsiftp" ]
 		    then
 		    error ${src_protocol} ${dst_protocol}
 		fi
 
-		if [[ "${dst_protocol}" = "dcap" && "${src_protocol}" = "gsiftp" ]] 
+		if [ "${dst_protocol}" = "dcap" -a "${src_protocol}" = "gsiftp" ]
 		    then
 		    error ${src_protocol} ${dst_protocol}
 		fi
 
-		if [[ "${src_protocol}" = "dcap" && "${dst_protocol}" = "enstore" ]] 
+		if [ "${src_protocol}" = "dcap" -a "${dst_protocol}" = "enstore" ]
 		    then
 		    error ${src_protocol} ${dst_protocol}
 		fi
 
-		if [[ "${dst_protocol}" = "dcap" && "${src_protocol}" = "enstore" ]] 
+		if [ "${dst_protocol}" = "dcap" -a "${src_protocol}" = "enstore" ]
 		    then
 		    error ${src_protocol} ${dst_protocol}
 		fi

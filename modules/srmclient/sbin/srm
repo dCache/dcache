@@ -34,7 +34,7 @@ compare() {
         temp1=$(for i in "$1" "$2" ; do echo $i ; done | sort)
         #echo "temp $temp"
         #echo "temp1 $temp1"
-        if [ "$temp" == "$temp1" ] ; then
+        if [ "$temp" = "$temp1" ] ; then
                 #echo "equal"
                 return 0
         else
@@ -86,7 +86,7 @@ else
 	fi
 fi
 #If we find any of the dir above
-if [ "$java_location" == "" ]; then
+if [ "$java_location" = "" ]; then
 	echo "JAVA_HOME not defined. java doesnot exist in PATH " >&2
 	echo "Also java not found in usual places" >&2
 	echo "Make sure java is installed. Exiting ..."  >&2
