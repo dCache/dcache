@@ -293,6 +293,7 @@ public class Domain {
          if( ( ( tmp = (String[])argHash.get( "-connect" ) ) != null ) &&
              ( tmp.length > 2 ) ){
 
+
              System.out.println( "Starting RetryTunnel on "+tmp[1]+" "+tmp[2] ) ;
              new RetryTunnel( "up0" , tmp[1]+" "+tmp[2] ) ;
 
@@ -308,8 +309,7 @@ public class Domain {
              ( tmp.length > 1 ) ){
 
              System.out.println( "Starting LocationMgrTunnel on "+tmp[1] ) ;
-             new LocationMgrTunnel( "upD" , tmp[1]+" lm"  ) ;
-
+             new LocationManagerConnector("upD", "-lm=lm " + "-domain=" + tmp[1]);
          }
          if( ( ( tmp = (String[])argHash.get( "-acm" ) ) != null ) &&
              ( tmp.length > 1 ) ){

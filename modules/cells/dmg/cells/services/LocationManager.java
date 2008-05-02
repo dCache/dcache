@@ -719,8 +719,8 @@ public class LocationManager extends CellAdapter {
       }
 
       private String askServer( String message , long waitTime )
-              throws Exception {
-
+          throws IOException, InterruptedException
+       {
          _requestsSent ++ ;
 
          int serial ;
@@ -757,9 +757,7 @@ public class LocationManager extends CellAdapter {
             }
             _map.remove(s);
          }
-         throw new
-         Exception( "Request timed out" ) ;
-
+         throw new IOException( "Request timed out" ) ;
       }
 
        /**
@@ -905,9 +903,12 @@ public class LocationManager extends CellAdapter {
          say( "Created : "+c ) ;
          return ;
       }
-      private void startConnector( String remoteDomain ) throws Exception {
-         String cellName  = "c*" ;
-         String cellClass = "dmg.cells.network.LocationMgrTunnel" ;
+
+       private void startConnector(final String remoteDomain)
+           throws Exception
+       {
+         String cellName  = "c*";
+         String cellClass = "dmg.cells.network.LocationManagerConnector";
 
          String clientKey = _args.getOpt("clientKey") ;
                 clientKey = ( clientKey != null ) && ( clientKey.length() > 0 ) ?
@@ -916,17 +917,18 @@ public class LocationManager extends CellAdapter {
                 clientName = ( clientName != null ) && ( clientName.length() > 0 ) ?
                             ("-clientUserName="+clientName ) : "" ;
 
-         String cellArgs  = remoteDomain  +" "+
-                            getCellName() +" "+
-                            clientKey     +" "+
-                            clientName    +" "+
-                           ( _useNio ? " -niochannel=true" : "" );
+         String cellArgs =
+             "-domain=" + remoteDomain + " "
+             + "-lm=" + getCellName() + " "
+             + clientKey + " "
+             + clientName + " "
+             + (_useNio ? "-nio" : "");
 
-         say(" LocationManager starting connector with "+cellArgs ) ;
-         Cell c = _nucleus.createNewCell( cellClass , cellName , cellArgs , true ) ;
-         say( "Created : "+c ) ;
-         return ;
-      }
+         say("LocationManager starting connector with " + cellArgs);
+         Cell c = _nucleus.createNewCell(cellClass, cellName, cellArgs, true);
+         say("Created : " + c);
+       }
+
       private void setDefaultRoute( String domain ) throws Exception {
           _nucleus.routeAdd( new CellRoute( null ,  "*@"+domain , CellRoute.DEFAULT ) ) ;
       }
@@ -1144,6 +1146,7 @@ public class LocationManager extends CellAdapter {
       if( _server != null )sb.append(_server.toString()) ;
       return sb.toString();
    }
+
    static class XXClient {
        XXClient( InetAddress address , int port , String message )throws Exception {
            byte [] data = message.getBytes() ;
