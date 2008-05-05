@@ -215,6 +215,18 @@ shortname_os() {
     esac
 }
 
+domainname_os() {
+    case `uname` in
+        Linux)
+            echo `hostname -d`
+            ;;
+        SunOS)
+            echo `/usr/lib/mail//sh/check-hostname |cut -d" " -f7 | awk -F. '{ for( i=2; i <= NF; i++){ printf("%s",$i); if( i  <NF) printf("."); } } '`
+            ;;
+    esac
+}
+
+
 printConfig() {
     key=$1
     cat ${ourHomeDir}/etc/node_config \
@@ -833,7 +845,7 @@ dcacheInstallPnfsMountPoints()
   if [ "${isPnfsManager}${isGridFtp}" == "01" -o "${isPnfsManager}${isSrm}" == "01" ] ; then
     dcacheInstallPnfsMountPointClient
   fi
-  if [ "${isAdmin}${isPnfsManager}" == "11" -o "${isPnfsManager}" == "1" ] ; then
+  if [ "${isAdmin}" == "1" -o "${isPnfsManager}" == "1" ] ; then
     dcacheInstallPnfsMountPointServer
   fi  
   logmessage DEBUG "dcacheInstallPnfsMountPoints.stop"
@@ -885,10 +897,12 @@ dcacheInstallPnfsConfigCheck()
 
     cd ${PNFS_ROOT}/fs
     serverRoot=`cat ".(id)(usr)"`
-
+    logmessage DEBUG serverRoot=$serverRoot
     #     Writing Wormhole information
     #
+    logmessage DEBUG "Changing directory to ${PNFS_ROOT}/fs/admin/etc/config"
     cd ${PNFS_ROOT}/fs/admin/etc/config
+    
     echo "${fqHostname}" > ./serverName
     echo "${SERVER_ID}" >./serverId
     echo "$serverRoot ." > ./serverRoot
@@ -1196,7 +1210,7 @@ do
     usage
     exit 0
   fi
-  if [ $1 == "--loglevel"-o $1 == "-l"  ] 
+  if [ $1 == "--loglevel" -o $1 == "-l"  ] 
   then
     # set dCache install location
     let loglevel=$2
