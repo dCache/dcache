@@ -2249,6 +2249,10 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
             if( _ioMode.equals("r") )
                 throw new
                 CacheException( 2 , "No such file or directory" );
+
+            if(_readOnly ) {
+                throw new CacheException( 2 , "Read only access allowed" );
+            }
             //
             // for now we regard each error as 'file not found'
             // (so we can create it);
@@ -2270,7 +2274,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
             if( _authorizationStrong && ( _userUid < 0 ) )
                 throw new
                 CacheException( 2 , "No Meta data found for user : "+_user.getName() ) ;
-            if( ! writeAllowed || _readOnly)
+
+            if( ! writeAllowed )
                 throw new
                 CacheException( 2 , "Permission denied (Parent)" );
 
@@ -2519,10 +2524,10 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
                 removeUs() ;
                 return ;
             }
-            
+
             // use the updated StorageInfo from PoolManager/SpaceManager
             _storageInfo = reply.getStorageInfo();
-                        
+
             _pool = pool ;
             PoolIoFileMessage poolMessage  = null ;
 
