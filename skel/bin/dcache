@@ -73,6 +73,23 @@ elif [ "`uname`" = "SunOS" ]; then
     fi
 fi
 
+
+dcacheInstallGetNameSpaceServer()
+{
+  local namespaceServer
+  namespaceServer="`printConfig NAMESPACE_NODE`"
+  if [ -z "${namespaceServer}" ] ; then
+    namespaceServer="`printConfig ADMIN_NODE`"
+    if [ -z "${namespaceServer}" ] ; then
+      printp "[WARNING] No 'NAMESPACE_NODE' or 'ADMIN_NODE' set in 'node_config' using 'localhost'"
+      namespaceServer='localhost'
+    else
+      printp "[WARNING] No 'NAMESPACE_NODE' set in 'node_config' using depricated 'ADMIN_NODE' value '${namespaceServer}'"
+    fi
+  fi
+  RET=${namespaceServer}
+}
+
 # Prints help screen
 usage() # $1 = exit status
 {
@@ -286,7 +303,7 @@ printConfig()
 # nodes.
 autoMountNameSpace()
 {
-    local ADMIN_NODE
+    local NAMESPACE_NODE
     local PNFS_ROOT
     local NODE_TYPE
     local NAMESPACE
@@ -316,10 +333,11 @@ autoMountNameSpace()
 	    fi
 	elif [ "`printConfig GRIDFTP`" = yes ] || [ "`printConfig SRM`" = yes ]; then
 	    if ! df ${PNFS_ROOT}/${SERVER_ID} 2>/dev/null | grep "$PNFS_ROOT" > /dev/null; then
-		ADMIN_NODE=`printConfig ADMIN_NODE`
-		if [ -z "$ADMIN_NODE" ] || [ "$ADMIN_NODE" = myAdminNode ]; then
+	    	dcacheInstallGetNameSpaceServer
+		NAMESPACE_NODE=$RET
+		if [ -z "$NAMESPACE_NODE" ] || [ "$NAMESPACE_NODE" = myAdminNode ] || [ "$NAMESPACE_NODE" = myNameSpaceNode ] ; then
 		    printp "[ERROR] pnfs not mounted on 
-                            ${PNFS_ROOT}/${SERVER_ID}/ and ADMIN_NODE in 
+                            ${PNFS_ROOT}/${SERVER_ID}/ and NAMESPACE_NODE in 
                             etc/node_config or etc/door_config not set
                             properly. Exiting."
 		    exit 1
@@ -336,10 +354,10 @@ autoMountNameSpace()
                 esac 
 
 		printp "${PNFS_ROOT}/${SERVER_ID}/ not mounted - going to mount it now."
-		mount -o intr,rw,noac,hard,${NFSVERS}=2 $ADMIN_NODE:/pnfsdoors ${PNFS_ROOT}/${SERVER_ID}
+		mount -o intr,rw,noac,hard,${NFSVERS}=2 $NAMESPACE_NODE:/pnfsdoors ${PNFS_ROOT}/${SERVER_ID}
 		if df ${PNFS_ROOT}/${SERVER_ID} 2>/dev/null | grep "$PNFS_ROOT"; then
 		    printp "[ERROR] Still not mounted. Apparently no pnfs 
-                            server running on admin node $ADMIN_NODE. Exiting."
+                            server running on admin node $NAMESPACE_NODE. Exiting."
 		    exit 1
 		fi
 	    fi

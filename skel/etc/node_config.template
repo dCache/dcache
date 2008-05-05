@@ -18,8 +18,17 @@ PNFS_INSTALL_DIR=/opt/pnfs
 PNFS_START=yes
 PNFS_OVERWRITE=no
 
-# SERVER_ID=domain.name         # defaults to `hostname -d`
-ADMIN_NODE=myAdminNode          # Only used for mounting the name server.
+
+# SERVER_ID defaults to `hostname -d`
+#SERVER_ID=domain.name 
+
+#  ----  Name Space Node
+#    The name space node is the node running Chimera or PNFS
+#    
+#    This node was formally known as the "ADMIN_NODE" and now 
+#    has been renamed.
+#
+#NAMESPACE_NODE=myNameSpaceNode
 
 #  ----  Services to be started on this node 
 #    The following services are only started on this node 

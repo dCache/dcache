@@ -302,32 +302,27 @@ dcacheInstallGetExportPoint()
   RET=${exportPoint}
 }
 
-dcacheInstallGetAdminNode()
-{
-  RET="`printConfig ADMIN_NODE`"
-}
 
 
-dcacheInstallGetPnfsServer()
+dcacheInstallGetNameSpaceServer()
 {
-  local pnfsServer
-  pnfsServer="`printConfig pnfsServer`"
-  if [ -z "${pnfsServer}" ] ; then
-    local ADMIN_NODE
-    dcacheInstallGetAdminNode
-    ADMIN_NODE=$RET
-    if [ -n "${ADMIN_NODE}" ] ; then
-      pnfsServer="${ADMIN_NODE}"
+  local namespaceServer
+  namespaceServer="`printConfig NAMESPACE_NODE`"
+  if [ -z "${namespaceServer}" ] ; then
+    namespaceServer="`printConfig ADMIN_NODE`"
+    if [ -z "${namespaceServer}" ] ; then
+      logmessage WARNING "No 'NAMESPACE_NODE' or 'ADMIN_NODE' set in 'node_config' using 'localhost'"
+      namespaceServer='localhost'
     else
-      pnfsServer='localhost'
+      logmessage WARNING "No 'NAMESPACE_NODE' set in 'node_config' using depricated 'ADMIN_NODE' value '${namespaceServer}'"
     fi
   fi
-  RET=${pnfsServer}
+  RET=${namespaceServer}
 }
 
 dcacheNameServerIs()
 {
-  dcacheInstallGetPnfsServer
+  dcacheInstallGetNameSpaceServer
   pnfsHost=$RET
   if [ "${pnfsHost}" == "localhost" ]
   then
@@ -612,7 +607,7 @@ dcacheInstallPnfsMountPointClient()
   local SERVER_ID
   local DCACHE_HOME
   local pnfsMountPoint
-  local ADMIN_NODE
+  local NAMESPACE_NODE
   local exportPoint
   dcacheInstallGetServerId
   SERVER_ID=$RET
@@ -622,8 +617,8 @@ dcacheInstallPnfsMountPointClient()
   DCACHE_HOME=$RET 
   dcacheInstallGetPnfsMountPoint
   pnfsMountPoint=${RET}
-  dcacheInstallGetAdminNode
-  ADMIN_NODE=$RET
+  dcacheInstallGetNameSpaceServer
+  NAMESPACE_NODE=$RET
   logmessage INFO "Checking if ${pnfsMountPoint} mounted to the right export. ..."
   dcacheInstallGetExportPoint
   exportPoint=$RET
@@ -631,7 +626,7 @@ dcacheInstallPnfsMountPointClient()
     logmessage INFO "OK"
   else
     if [ "${exportPoint}" != "" ] ; then
-      logmessage WARNING "${pnfsMountPoint} mounted, however not to ${ADMIN_NODE}:/pnfsdoors."
+      logmessage WARNING "${pnfsMountPoint} mounted, however not to ${NAMESPACE_NODE}:/pnfsdoors."
       logmessage INFO "Unmounting it now:"
       umount ${pnfsMountPoint}
       
@@ -659,7 +654,7 @@ dcacheInstallPnfsMountPointClient()
         mkdir -p ${pnfsMountPoint}
       fi
     fi
-    dcacheInstallGetPnfsServer
+    dcacheInstallGetNameSpaceServer
     pnfsServer=$RET
     logmessage INFO "Will be mounted to ${pnfsServer}:/pnfsdoors by dcache-core start-up script."
   fi
@@ -728,7 +723,7 @@ dcacheInstallPnfsMountPointServer()
 	mkdir -p ${pnfsMountPoint}
     fi
   fi
-  dcacheInstallGetPnfsServer
+  dcacheInstallGetNameSpaceServer
   pnfsServer=$RET
   logmessage INFO "Will be mounted to ${pnfsServer}:/fs by dcache-core start-up script."
 

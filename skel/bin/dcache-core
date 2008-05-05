@@ -34,6 +34,24 @@ printConfig() {
 }
 
 
+
+
+dcacheInstallGetNameSpaceServer()
+{
+  local namespaceServer
+  namespaceServer="`printConfig NAMESPACE_NODE`"
+  if [ -z "${namespaceServer}" ] ; then
+    namespaceServer="`printConfig ADMIN_NODE`"
+    if [ -z "${namespaceServer}" ] ; then
+      echo "[WARNING] No 'NAMESPACE_NODE' or 'ADMIN_NODE' set in 'node_config' using 'localhost'"
+      namespaceServer='localhost'
+    else
+      echo "[WARNING] No 'NAMESPACE_NODE' set in 'node_config' using depricated 'ADMIN_NODE' value '${namespaceServer}'"
+    fi
+  fi
+  RET=${namespaceServer}
+}
+
 #
 # valid valued for NODE_TYPE:
 #     admin  : head node
@@ -132,18 +150,19 @@ case "$1" in
 
 		    cp=`df ${PNFS_ROOT}/${SERVER_ID} 2>/dev/null |grep "${PNFS_ROOT}" | awk '{print $2}'`
 		    if [ -z $cp ]; then
-			ADMIN_NODE=`printConfig ADMIN_NODE`
-			if [ -z "$ADMIN_NODE" -o "$ADMIN_NODE" = myAdminNode ] ; then
-			    echo "[ERROR] pnfs not mounted on ${PNFS_ROOT}/${SERVER_ID}/ and ADMIN_NODE"
+		    	dcacheInstallGetNameSpaceServer
+			NAMESPACE_NODE=$RET
+			if [ -z "$NAMESPACE_NODE" -o "$NAMESPACE_NODE" = myAdminNode  -o "$NAMESPACE_NODE" = myNameSpaceNode ] ; then
+			    echo "[ERROR] pnfs not mounted on ${PNFS_ROOT}/${SERVER_ID}/ and NAMESPACE_NODE"
                 	    echo "        in etc/node_config or etc/door_config not set properly. Exiting."
 			    exit 1
 			fi
 			echo "${PNFS_ROOT}/${SERVER_ID}/ not mounted - going to mount it now ... "
-			mount -o intr,rw,noac,hard,nfsvers=2 $ADMIN_NODE:/pnfsdoors ${PNFS_ROOT}/${SERVER_ID}
+			mount -o intr,rw,noac,hard,nfsvers=2 $NAMESPACE_NODE:/pnfsdoors ${PNFS_ROOT}/${SERVER_ID}
 			cp=`df ${PNFS_ROOT}/${SERVER_ID} 2>/dev/null |grep "${PNFS_ROOT}" | awk '{print $2}'`
 			if [ -z $cp ]; then
 			    echo "[ERROR] Still not mounted. Apparently no pnfs server running on admin"
-                	    echo "        node $ADMIN_NODE. Exiting."
+                	    echo "        node $NAMESPACE_NODE. Exiting."
 			    exit 1
 			fi
 		    fi
