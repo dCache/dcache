@@ -763,7 +763,7 @@ public abstract class Job  {
     
     public void addHistoryEvent(String description){
         synchronized(jobHistory) {
-            jobHistory.add( new JobHistory(generator.nextLong(),state,description,lastStateTransitionTime));
+            jobHistory.add( new JobHistory(generator.nextLong(),state,description, System.currentTimeMillis()));
         }
         
     }
