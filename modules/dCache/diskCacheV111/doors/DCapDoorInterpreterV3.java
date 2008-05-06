@@ -415,7 +415,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
             synchronized( _messageLock ){
                SessionHandler se =  new IoHandler(sessionId,commandId,args);
 
-               // if user authentificated tell it to Session Handler
+               // if user authenticated tell it to Session Handler
                if( _userMetaProvider != null ) {
 
                    se.setOwner( _user.getName() ) ;
