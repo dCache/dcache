@@ -123,11 +123,11 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
 
         _isAccessLatencyOverwriteAllowed = _args.getOpt("allow-access-policy-overwrite") != null ;
         if(_isAccessLatencyOverwriteAllowed) {
-        	_cell.say("Allowes to overwrite AccessLatency");
+            _cell.say("Allowes to overwrite AccessLatency");
         }
         _isRetentionPolicyOverwriteAllowed = _args.getOpt("allow-retention-policy-overwrite") != null;
         if(_isRetentionPolicyOverwriteAllowed){
-        	_cell.say("Allowed to overwrite RetentionPolicy");
+            _cell.say("Allowed to overwrite RetentionPolicy");
         }
 
         if(_args.getOpt("usermap-timeout") != null) {
@@ -198,9 +198,9 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
          */
         _readOnly = _args.getOpt("readOnly") != null ;
         if (_readOnly)
-	    _cell.say("Door is configured as read-only");
+        _cell.say("Door is configured as read-only");
         else
-	    _cell.say("Door is configured as read/write");
+        _cell.say("Door is configured as read/write");
 
         _cell.say("Check : "+(_checkStrict?"Strict":"Fuzzy"));
         _cell.say("Constructor Done" ) ;
@@ -394,10 +394,10 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
             CommandException( 5 , "Duplicated session id" ) ;
 
         if( _userMetaProvider != null ){
-        	getUserMetadata( _user.getName(), _user.getRole() , _userMetaProvider ) ;
+            getUserMetadata( _user.getName(), _user.getRole() , _userMetaProvider ) ;
         }
         _cell.say("Door authenticated for "+
-        		_user.getName()+"("+_user.getRole()+","+_userUid+","+
+                _user.getName()+"("+_user.getRole()+","+_userUid+","+
         _userGid+","+_userHome+")");
         if( _authorizationStrong && ( _userUid < 0 ) ) {
             throw new
@@ -453,10 +453,10 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
             CommandException( 5 , "Duplicated session id" ) ;
 
         if( _userMetaProvider != null ){
-        	getUserMetadata( _user.getName(), _user.getRole() , _userMetaProvider ) ;
+            getUserMetadata( _user.getName(), _user.getRole() , _userMetaProvider ) ;
         }
         _cell.say("Door authenticated for "+
-        		_user.getName()+"("+_user.getRole()+","+_userUid+","+
+                _user.getName()+"("+_user.getRole()+","+_userUid+","+
         _userGid+","+_userHome+")");
         if( _authorizationStrong && ( _userUid < 0 ) ) {
             throw new
@@ -497,9 +497,9 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
     public synchronized String com_unlink( int sessionId , int commandId , VspArgs args )
     throws Exception {
 
-    	if (_readOnly) {
-	    throw new CacheException( 2 , "Cannot execute 'unlink': Permission denied") ;
-    	}
+        if (_readOnly) {
+        throw new CacheException( 2 , "Cannot execute 'unlink': Permission denied") ;
+        }
         return do_unlink( sessionId , commandId , args , true ) ;
 
     }
@@ -507,9 +507,9 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
     public synchronized String com_rename( int sessionId , int commandId , VspArgs args )
     throws Exception {
 
-    	if (_readOnly) {
-	    throw new CacheException( 2 , "Cannot execute 'rename': Permission denied") ;
-    	}
+        if (_readOnly) {
+        throw new CacheException( 2 , "Cannot execute 'rename': Permission denied") ;
+        }
         return do_rename( sessionId , commandId , args ) ;
 
     }
@@ -517,9 +517,9 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
     public synchronized String com_rmdir( int sessionId , int commandId , VspArgs args )
     throws Exception {
 
-    	if (_readOnly) {
-	    throw new CacheException( 2 , "Cannot execute 'rmdir': Permission denied") ;
-    	}
+        if (_readOnly) {
+        throw new CacheException( 2 , "Cannot execute 'rmdir': Permission denied") ;
+        }
         return do_rmdir( sessionId , commandId , args , true ) ;
 
     }
@@ -527,9 +527,9 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
     public synchronized String com_mkdir( int sessionId , int commandId , VspArgs args )
     throws Exception {
 
-    	if (_readOnly) {
-	    throw new CacheException( 2 , "Cannot execute 'mkdir': Permission denied") ;
-    	}
+        if (_readOnly) {
+        throw new CacheException( 2 , "Cannot execute 'mkdir': Permission denied") ;
+        }
         return do_mkdir( sessionId , commandId , args , true ) ;
 
     }
@@ -537,9 +537,9 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
     public synchronized String com_chmod( int sessionId , int commandId , VspArgs args )
     throws Exception {
 
-    	if (_readOnly) {
-	    throw new CacheException( 2 , "Cannot execute 'chmod': Permission denied") ;
-    	}
+        if (_readOnly) {
+        throw new CacheException( 2 , "Cannot execute 'chmod': Permission denied") ;
+        }
         return do_chmod( sessionId , commandId , args , true ) ;
 
     }
@@ -547,9 +547,9 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
     public synchronized String com_chown( int sessionId , int commandId , VspArgs args )
     throws Exception {
 
-    	if (_readOnly) {
-	    throw new CacheException( 2 , "Cannot execute 'chown': Permission denied") ;
-    	}
+        if (_readOnly) {
+        throw new CacheException( 2 , "Cannot execute 'chown': Permission denied") ;
+        }
         return do_chown( sessionId , commandId , args , true ) ;
 
     }
@@ -558,9 +558,9 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
     public synchronized String com_chgrp( int sessionId , int commandId , VspArgs args )
     throws Exception {
 
-    	if (_readOnly) {
-	    throw new CacheException( 2 , "Cannot execute 'chgrp': Permission denied") ;
-    	}
+        if (_readOnly) {
+        throw new CacheException( 2 , "Cannot execute 'chgrp': Permission denied") ;
+        }
         return do_chgrp( sessionId , commandId , args , true ) ;
 
     }
@@ -587,10 +587,10 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
             CommandException( 5 , "Duplicated session id" ) ;
 
         if( _userMetaProvider != null ){
-        	getUserMetadata( _user.getName(), _user.getRole() , _userMetaProvider ) ;
+            getUserMetadata( _user.getName(), _user.getRole() , _userMetaProvider ) ;
         }
         _cell.say("Door authenticated for "+
-        		_user.getName()+"("+_user.getRole()+","+_userUid+","+
+                _user.getName()+"("+_user.getRole()+","+_userUid+","+
         _userGid+","+_userHome+")");
         if( _authorizationStrong && ( _userUid < 0 ) ) {
             throw new
@@ -630,10 +630,10 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
             CommandException( 5 , "Duplicated session id" ) ;
 
         if( _userMetaProvider != null ){
-        	getUserMetadata( _user.getName(), _user.getRole() , _userMetaProvider ) ;
+            getUserMetadata( _user.getName(), _user.getRole() , _userMetaProvider ) ;
         }
         _cell.say("Door authenticated for "+
-        		_user.getName()+"("+_user.getRole()+","+_userUid+","+
+                _user.getName()+"("+_user.getRole()+","+_userUid+","+
         _userGid+","+_userHome+")");
         if( _authorizationStrong && ( _userUid < 0 ) ) {
             throw new
@@ -672,10 +672,10 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
             CommandException( 5 , "Duplicated session id" ) ;
 
         if( _userMetaProvider != null ){
-        	getUserMetadata( _user.getName(), _user.getRole() , _userMetaProvider ) ;
+            getUserMetadata( _user.getName(), _user.getRole() , _userMetaProvider ) ;
         }
         _cell.say("Door authenticated for "+
-        		_user.getName()+"("+_user.getRole()+","+_userUid+","+
+                _user.getName()+"("+_user.getRole()+","+_userUid+","+
         _userGid+","+_userHome+")");
         if( _authorizationStrong && ( _userUid < 0 ) ) {
             throw new
@@ -713,10 +713,10 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
             CommandException( 5 , "Duplicated session id" ) ;
 
         if( _userMetaProvider != null ){
-        	getUserMetadata( _user.getName(), _user.getRole() , _userMetaProvider ) ;
+            getUserMetadata( _user.getName(), _user.getRole() , _userMetaProvider ) ;
         }
         _cell.say("Door authenticated for "+
-        		_user.getName()+"("+_user.getRole()+","+_userUid+","+
+                _user.getName()+"("+_user.getRole()+","+_userUid+","+
         _userGid+","+_userHome+")");
         if( _authorizationStrong && ( _userUid < 0 ) ) {
             throw new
@@ -754,10 +754,10 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
             CommandException( 5 , "Duplicated session id" ) ;
 
         if( _userMetaProvider != null ){
-        	getUserMetadata( _user.getName(), _user.getRole() , _userMetaProvider ) ;
+            getUserMetadata( _user.getName(), _user.getRole() , _userMetaProvider ) ;
         }
         _cell.say("Door authenticated for "+
-        		_user.getName()+"("+_user.getRole()+","+_userUid+","+
+                _user.getName()+"("+_user.getRole()+","+_userUid+","+
         _userGid+","+_userHome+")");
         if( _authorizationStrong && ( _userUid < 0 ) ) {
             throw new
@@ -795,10 +795,10 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
                     CommandException( 5 , "Duplicated session id" ) ;
 
                 if( _userMetaProvider != null ){
-                	getUserMetadata( _user.getName(), _user.getRole() , _userMetaProvider ) ;
+                    getUserMetadata( _user.getName(), _user.getRole() , _userMetaProvider ) ;
                 }
                 _cell.say("Door authenticated for "+
-                		_user.getName()+"("+_user.getRole()+","+_userUid+","+
+                        _user.getName()+"("+_user.getRole()+","+_userUid+","+
                 _userGid+","+_userHome+")");
                 if( _authorizationStrong && ( _userUid < 0 ) ) {
                     throw new
@@ -836,10 +836,10 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
                     CommandException( 5 , "Duplicated session id" ) ;
 
                 if( _userMetaProvider != null ){
-                	getUserMetadata( _user.getName(), _user.getRole() , _userMetaProvider ) ;
+                    getUserMetadata( _user.getName(), _user.getRole() , _userMetaProvider ) ;
                 }
                 _cell.say("Door authenticated for "+
-                		_user.getName()+"("+_user.getRole()+","+_userUid+","+
+                        _user.getName()+"("+_user.getRole()+","+_userUid+","+
                 _userGid+","+_userHome+")");
                 if( _authorizationStrong && ( _userUid < 0 ) ) {
                     throw new
@@ -876,10 +876,10 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
             CommandException( 5 , "Duplicated session id" ) ;
 
         if( _userMetaProvider != null ){
-        	getUserMetadata( _user.getName(), _user.getRole() , _userMetaProvider ) ;
+            getUserMetadata( _user.getName(), _user.getRole() , _userMetaProvider ) ;
         }
         _cell.say("Door authenticated for "+
-        		_user.getName()+"("+_user.getRole()+","+_userUid+","+
+                _user.getName()+"("+_user.getRole()+","+_userUid+","+
         _userGid+","+_userHome+")");
         if( _authorizationStrong && ( _userUid < 0 ) ) {
             throw new
@@ -970,10 +970,10 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
             CommandException( 5 , "Duplicated session id" ) ;
 
         if( _userMetaProvider != null ){
-        	getUserMetadata( _user.getName(), _user.getRole() , _userMetaProvider ) ;
+            getUserMetadata( _user.getName(), _user.getRole() , _userMetaProvider ) ;
         }
         _cell.say("Door authenticated for "+
-        		_user.getName()+"("+_user.getRole()+","+_userUid+","+
+                _user.getName()+"("+_user.getRole()+","+_userUid+","+
         _userGid+","+_userHome+")");
         if( _authorizationStrong && ( _userUid < 0 ) ) {
             throw new
@@ -1309,7 +1309,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
                 _getStorageInfo.setPnfsPath( fileName ) ;
                 _info.setPath(fileName);
                 _isUrl     = true ;
-				_path = fileName;
+                _path = fileName;
             }
 
             say( "Requesting storageInfo for "+_getStorageInfo ) ;
@@ -2014,9 +2014,9 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
             _destination      = args.getOpt( "location" ) ;
             String protocolName = args.getOpt( "protocol" ) ;
             if( protocolName == null) {
-            	_protocolName     = "DCap/3" ;
+                _protocolName     = "DCap/3" ;
             }else{
-            	_protocolName     = protocolName ;
+                _protocolName     = protocolName ;
             }
             _assumedLocations = locations;
         }
@@ -2044,7 +2044,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
                 // we are not called if the pnfs request failed.
                 //
                 PoolMgrQueryPoolsMsg query =
-				  new PoolMgrQueryPoolsMsg( DirectionType.READ,
+                  new PoolMgrQueryPoolsMsg( DirectionType.READ,
                 _storageInfo.getStorageClass()+"@"+
                 _storageInfo.getHsm() ,
                 _storageInfo.getCacheClass() ,
@@ -2405,21 +2405,21 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
                 // adjust accessLatency and retention policy if it' allowed and defined
 
                 if( _isAccessLatencyOverwriteAllowed && _accessLatency != null ) {
-                	try {
-                		AccessLatency accessLatency = AccessLatency.getAccessLatency(_accessLatency);
-                		_storageInfo.setAccessLatency(accessLatency);
-                		_storageInfo.isSetAccessLatency(true);
+                    try {
+                        AccessLatency accessLatency = AccessLatency.getAccessLatency(_accessLatency);
+                        _storageInfo.setAccessLatency(accessLatency);
+                        _storageInfo.isSetAccessLatency(true);
 
-                	}catch(IllegalArgumentException e) { /* bad AccessLatency ignored*/}
+                    }catch(IllegalArgumentException e) { /* bad AccessLatency ignored*/}
                 }
 
                 if( _isRetentionPolicyOverwriteAllowed && _retentionPolicy != null ) {
-                	try {
-                		RetentionPolicy retentionPolicy = RetentionPolicy.getRetentionPolicy(_retentionPolicy);
-                		_storageInfo.setRetentionPolicy(retentionPolicy);
-                		_storageInfo.isSetRetentionPolicy(true);
+                    try {
+                        RetentionPolicy retentionPolicy = RetentionPolicy.getRetentionPolicy(_retentionPolicy);
+                        _storageInfo.setRetentionPolicy(retentionPolicy);
+                        _storageInfo.isSetRetentionPolicy(true);
 
-                	}catch(IllegalArgumentException e) { /* bad RetentionPolicy ignored*/}
+                    }catch(IllegalArgumentException e) { /* bad RetentionPolicy ignored*/}
                 }
 
 
@@ -2673,7 +2673,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
             append(" connect ").append(poolSocketAddress.getHostName() ).
             append(" ").append(poolSocketAddress.getPort() ).append(" ").
             append(diskCacheV111.util.Base64.byteArrayToBase64(reply.challange()) );
-            ;
+
             println( sb.toString() ) ;
             setStatus( "WaitingForDoorTransferOk" ) ;
 
@@ -2767,25 +2767,25 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
 
             PoolIoFileMessage poolIoFileMessage = new PoolIoFileMessage(_pool,_pnfsId, _protocolInfo);
 
-			poolIoFileMessage.setId(_sessionId);
-			if (_ioQueueName != null) {
-				poolIoFileMessage.setIoQueueName(_ioQueueName);
-			}
-			if (_ioQueueAllowOverwrite && (_ioHandlerQueue != null)
-					&& (_ioHandlerQueue.length() > 0)) {
-				poolIoFileMessage.setIoQueueName(_ioHandlerQueue);
-			}
+            poolIoFileMessage.setId(_sessionId);
+            if (_ioQueueName != null) {
+                poolIoFileMessage.setIoQueueName(_ioQueueName);
+            }
+            if (_ioQueueAllowOverwrite && (_ioHandlerQueue != null)
+                    && (_ioHandlerQueue.length() > 0)) {
+                poolIoFileMessage.setIoQueueName(_ioHandlerQueue);
+            }
 
-			synchronized (_messageLock) {
-				try {
-					_cell.sendMessage(new CellMessage(new CellPath(_pool),
-							poolIoFileMessage));
-				} catch (Exception ie) {
-					sendReply("poolMgrGetPoolArrived", 2, ie.toString());
-					removeUs();
-					return;
-				}
-			}
+            synchronized (_messageLock) {
+                try {
+                    _cell.sendMessage(new CellMessage(new CellPath(_pool),
+                            poolIoFileMessage));
+                } catch (Exception ie) {
+                    sendReply("poolMgrGetPoolArrived", 2, ie.toString());
+                    removeUs();
+                    return;
+                }
+            }
 
 
 
