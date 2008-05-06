@@ -450,7 +450,7 @@ public class PnfsManagerV3 extends CellAdapter {
         "        -v    verbose\n"+
         "        -n    don't resolve links\n"+
         "        -se   suppress exceptions\n" ;
-    public String hh_metadataof = "<pnfsid>|<globalPath> [-v] [-n] [-se]" ; ;
+    public String hh_metadataof = "<pnfsid>|<globalPath> [-v] [-n] [-se]" ;
     public String ac_metadataof_$_1( Args args )throws Exception {
         PnfsId    pnfsId = null ;
         StringBuffer sb = new StringBuffer() ;
