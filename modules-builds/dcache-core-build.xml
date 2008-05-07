@@ -751,6 +751,7 @@
 		<copy file="${sourceDir}/${dcache.packagePrefix}/config/statistics.batch" todir="${binDir}/config" />
 		<copy file="${sourceDir}/${dcache.packagePrefix}/config/xrootdDoor.batch" todir="${binDir}/config" />
 		<copy file="${sourceDir}/${dcache.packagePrefix}/config/chimera.batch" todir="${binDir}/config" />
+		<copy file="${sourceDir}/${dcache.packagePrefix}/config/aclcell.batch" todir="${binDir}/config" />
 		<!-- configs  -->
 		<copy file="${sourceDir}/${dcache.packagePrefix}/config/PoolManager.conf" todir="${binDir}/config" />
 		<copy file="${sourceDir}/${dcache.packagePrefix}/config/lm.config" todir="${binDir}/config" />
@@ -814,7 +815,10 @@
 	    <copy todir="${binDir}/libexec/chimera/sql">
 	        <fileset dir="${libDir}/Chimera/sql" />
 	    </copy>
-
+	   
+	   <!-- ACL -->
+	   <copy file="${buildTop}/common/acl.properties" todir="${binDir}/config" />
+       
        <!-- log4j -->
        <mkdir dir="${binDir}/classes/log4j" />
        <property name="log4jVersion" value="1.2.8" />
