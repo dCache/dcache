@@ -26,7 +26,7 @@ public class HsmFlushController implements Runnable {
     private final CellAdapter            _cell ;
     private final HsmStorageHandler2     _storageHandler;
 
-    HsmFlushController(
+    public HsmFlushController(
               CellAdapter cellAdapter ,
               StorageClassContainer  storageQueue ,
               HsmStorageHandler2 storageHandler  ){
@@ -123,7 +123,7 @@ public class HsmFlushController implements Runnable {
             }
         }
     }
-    long flushStorageClass( String hsm , String storageClass , int maxCount ){
+    public long flushStorageClass( String hsm , String storageClass , int maxCount ){
         return flushStorageClass( hsm , storageClass , maxCount  , null ) ;
     }
     long flushStorageClass( String hsm , String storageClass , int maxCount , StorageClassInfoFlushable callback ){

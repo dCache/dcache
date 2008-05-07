@@ -242,7 +242,7 @@ public class HsmStorageHandler2  {
     //
     //   the fetch part
     //
-    JobScheduler getFetchScheduler(){ return _fetchQueue ; }
+    public JobScheduler getFetchScheduler(){ return _fetchQueue ; }
     public boolean fetch( PnfsId pnfsId ,
                           StorageInfo storageInfo ,
                           CacheFileAvailable callback )
@@ -727,7 +727,7 @@ public class HsmStorageHandler2  {
         return _storePnfsidList.get( pnfsId ) ;
     }
 
-    JobScheduler getStoreScheduler(){ return _storeQueue ; }
+    public JobScheduler getStoreScheduler(){ return _storeQueue ; }
 
     public boolean store( CacheRepositoryEntry entry , CacheFileAvailable callback )
 
