@@ -29,8 +29,7 @@ public class SpaceSweeper2 implements SpaceSweeper, Runnable
 
     public SpaceSweeper2(CellAdapter cell,
                          PnfsHandler pnfs,
-                         CacheRepository repository,
-                         HsmStorageHandler2 storage)
+                         CacheRepository repository)
     {
         _repository = repository;
         _cell       = cell;

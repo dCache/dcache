@@ -18,7 +18,6 @@ public class SpaceSweeper1 implements SpaceSweeper , Runnable  {
     private final CacheRepository _repository ;
     private final CellAdapter     _cell       ;
     private final PnfsHandler     _pnfs       ;
-    private final HsmStorageHandler2 _storage ;
 
     private final List<CacheRepositoryEntry>       _list       = new ArrayList<CacheRepositoryEntry>() ;
 
@@ -31,13 +30,11 @@ public class SpaceSweeper1 implements SpaceSweeper , Runnable  {
 
     public SpaceSweeper1( CellAdapter cell ,
                           PnfsHandler pnfs ,
-                          CacheRepository repository ,
-                          HsmStorageHandler2 storage     ){
+                          CacheRepository repository){
 
        _repository = repository ;
        _cell       = cell ;
        _pnfs       = pnfs ;
-       _storage    = storage ;
 
        _repository.addCacheRepositoryListener(this);
        _cell.getNucleus().newThread( this , "sweeper" ).start() ;

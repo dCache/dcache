@@ -595,13 +595,19 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
 
             StringTokenizer st = new StringTokenizer(ioQueueList, ",");
             while (st.hasMoreTokens()) {
+                boolean fifo = true;
                 String queueName = st.nextToken();
+                if (queueName.startsWith("-")) {
+                    queueName = queueName.substring(1);
+                    fifo = false;
+                }
+
                 if (_hash.get(queueName) != null) {
                     esay("Duplicated queue name (ignored) : " + queueName);
                     continue;
                 }
                 int id = _list.size();
-                JobScheduler job = new SimpleJobScheduler(group, "IO-" + id);
+                JobScheduler job = new SimpleJobScheduler(group, "IO-" + id, fifo);
                 _list.add(job);
                 _hash.put(queueName, job);
                 job.setSchedulerId(queueName, id);
@@ -792,11 +798,10 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
     {
         Class<?>[] argClass = { dmg.cells.nucleus.CellAdapter.class,
 				diskCacheV111.util.PnfsHandler.class,
-				diskCacheV111.repository.CacheRepository.class,
-				diskCacheV111.pools.HsmStorageHandler2.class };
+				diskCacheV111.repository.CacheRepository.class };
         Class<?> sweeperClass = Class.forName(_sweeperClass);
         Constructor<?> sweeperCon = sweeperClass.getConstructor(argClass);
-        Object[] args = { this, _pnfs, _repository, _storageHandler };
+        Object[] args = { this, _pnfs, _repository };
 
         return (SpaceSweeper) sweeperCon.newInstance(args);
     }

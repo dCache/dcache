@@ -25,12 +25,13 @@ public class SimpleJobScheduler implements JobScheduler, Runnable {
     private final Object _lock = new Object();
     private final Thread _worker;
     private final ThreadGroup _group;
-    private final List<Job>[] _queues = new LinkedList[3];
+    private final LinkedList<SJob>[] _queues = new LinkedList[3];
     private final Map<Integer, SJob> _jobs = new HashMap<Integer, SJob>();
     private final String _prefix;
     private int _batch = -1;
     private String _name = "regular";
     private int _id = -1;
+    private boolean _fifo;
 
     private String[] _st_string = { "W", "A", "K", "R" };
 
@@ -152,9 +153,14 @@ public class SimpleJobScheduler implements JobScheduler, Runnable {
     }
 
     public SimpleJobScheduler(ThreadGroup group, String prefix) {
+        this(group, prefix, true);
+    }
+
+    public SimpleJobScheduler(ThreadGroup group, String prefix, boolean fifo) {
         _prefix = prefix;
+        _fifo = fifo;
         for (int i = 0; i < _queues.length; i++) {
-            _queues[i] = new LinkedList<Job>();
+            _queues[i] = new LinkedList<SJob>();
         }
 
         _jobExecutor = Executors.newCachedThreadPool(new ThreadFactory() {
@@ -371,7 +377,12 @@ public class SimpleJobScheduler implements JobScheduler, Runnable {
                 for (int i = HIGH; i >= 0; i--) {
                     while (_activeJobs < _maxActiveJobs) {
                         if (_queues[i].isEmpty()) break;
-                        SJob job = (SJob) _queues[i].remove(0);
+                        SJob job;
+                        if (_fifo) {
+                            job = _queues[i].removeFirst();
+                        } else {
+                            job = _queues[i].removeLast();
+                        }
                         // System.out.println("Starting : "+job ) ;
                         _activeJobs++;
                         _batch = _batch > 0 ? _batch - 1 : _batch;
