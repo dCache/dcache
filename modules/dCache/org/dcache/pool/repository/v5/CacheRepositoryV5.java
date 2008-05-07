@@ -96,11 +96,10 @@ public class CacheRepositoryV5// extends CellCompanion implements CacheRepositor
         try {
             Class<?>[] argClass = { dmg.cells.nucleus.CellAdapter.class,
                                     diskCacheV111.util.PnfsHandler.class,
-                                    diskCacheV111.repository.CacheRepository.class,
-                                    diskCacheV111.pools.HsmStorageHandler2.class };
+                                    diskCacheV111.repository.CacheRepository.class };
             Class<?> c = Class.forName(sweeperClass);
             Constructor<?> con = c.getConstructor(argClass);
-            return (SpaceSweeper)con.newInstance(_cell, _pnfs, _repository, null);
+            return (SpaceSweeper)con.newInstance(_cell, _pnfs, _repository);
         } catch (Exception e) {
             throw new IllegalArgumentException("Could not instantiate "
                                                + sweeperClass + ": "
