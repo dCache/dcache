@@ -71,12 +71,6 @@ public class CacheRepositoryV5// extends CellCompanion implements CacheRepositor
     private final SpaceSweeper _sweeper;
 
     /**
-     * Reader-writer lock used for most accesses.
-     */
-    private final ReadWriteLock _operationLock =
-        new ReentrantReadWriteLock();
-
-    /**
      * True if inventory has been build, otherwise false.
      */
     private boolean _initialised;
@@ -149,10 +143,9 @@ public class CacheRepositoryV5// extends CellCompanion implements CacheRepositor
      * @throws IOException if an io error occurs
      * @throws RepositoryException in case of other internal errors
      */
-    public void runInventory()
+    public synchronized void runInventory()
         throws IOException, RepositoryException, IllegalStateException
     {
-        _operationLock.writeLock().lock();
         try {
             if (_initialised)
                 throw new IllegalStateException("Can only load repository once.");
@@ -160,8 +153,6 @@ public class CacheRepositoryV5// extends CellCompanion implements CacheRepositor
             _repository.runInventory(null, _pnfs, 0);
         } catch (CacheException e) {
             throw new RepositoryException("Failed to initialise repository: " + e.getMessage());
-        } finally {
-            _operationLock.writeLock().unlock();
         }
     }
 
@@ -185,14 +176,13 @@ public class CacheRepositoryV5// extends CellCompanion implements CacheRepositor
      * @throws FileInCacheException if an entry with the same ID
      * already exists.
      */
-    public WriteHandle createEntry(PnfsId id,
-                                   StorageInfo info,
-                                   EntryState transferState,
-                                   EntryState targetState,
-                                   StickyRecord sticky)
+    public synchronized WriteHandle createEntry(PnfsId id,
+                                                StorageInfo info,
+                                                EntryState transferState,
+                                                EntryState targetState,
+                                                StickyRecord sticky)
         throws FileInCacheException
     {
-        _operationLock.writeLock().lock();
         try {
             return new WriteHandleImpl(this,
                                        _repository,
@@ -202,13 +192,12 @@ public class CacheRepositoryV5// extends CellCompanion implements CacheRepositor
                                        transferState,
                                        targetState,
                                        sticky);
+            // TODO: Remove entry in case of failures!
         } catch (FileInCacheException e) {
             throw e;
         } catch (CacheException e) {
             // FIXME: Shut down repository
             throw new RuntimeException("Internal repository error: " + e.getMessage());
-        } finally {
-            _operationLock.writeLock().unlock();
         }
     }
 
@@ -227,10 +216,9 @@ public class CacheRepositoryV5// extends CellCompanion implements CacheRepositor
      * @throws FileNotInCacheException if file not found or scheduled
      * for removal.
      */
-    public ReadHandle openEntry(PnfsId id)
+    public synchronized ReadHandle openEntry(PnfsId id)
         throws FileNotInCacheException
     {
-        _operationLock.readLock().lock();
         try {
             return new ReadHandleImpl(this, _repository.getEntry(id));
         } catch (FileNotInCacheException e) {
@@ -238,18 +226,17 @@ public class CacheRepositoryV5// extends CellCompanion implements CacheRepositor
         } catch (CacheException e) {
             throw new RuntimeException("Internal repository error: "
                                        + e.getMessage());
-        } finally {
-            _operationLock.readLock().unlock();
         }
     }
 
     /**
-     *
+     * Returns information about an entry. Equivalent to calling
+     * <code>getEntry</code> on a read handle, but avoid the cost of
+     * creating a read handle.
      */
-    public CacheEntry getEntry(PnfsId id)
+    public synchronized CacheEntry getEntry(PnfsId id)
         throws FileNotInCacheException
     {
-        _operationLock.readLock().lock();
         try {
             return new CacheEntryImpl(_repository.getEntry(id), getState(id));
         } catch (FileNotInCacheException e) {
@@ -257,8 +244,6 @@ public class CacheRepositoryV5// extends CellCompanion implements CacheRepositor
         } catch (CacheException e) {
             throw new RuntimeException("Internal repository error: "
                                        + e.getMessage());
-        } finally {
-            _operationLock.readLock().unlock();
         }
     }
 
@@ -269,18 +254,13 @@ public class CacheRepositoryV5// extends CellCompanion implements CacheRepositor
      *
      * @return snapshot of current space usage record
      */
-    public SpaceRecord getSpaceRecord()
+    public synchronized SpaceRecord getSpaceRecord()
     {
-        _operationLock.readLock().lock();
-        try {
-            // REVISIT: This is not atomic!
-            return new SpaceRecord(_repository.getTotalSpace(),
-                                   _repository.getFreeSpace(),
-                                   _repository.getPreciousSpace(),
-                                   _sweeper.getRemovableSpace());
-        } finally {
-            _operationLock.readLock().unlock();
-        }
+        // REVISIT: This is not atomic!
+        return new SpaceRecord(_repository.getTotalSpace(),
+                               _repository.getFreeSpace(),
+                               _repository.getPreciousSpace(),
+                               _sweeper.getRemovableSpace());
     }
 
     /**
@@ -290,14 +270,9 @@ public class CacheRepositoryV5// extends CellCompanion implements CacheRepositor
      * @throws IllegalArgumentException if new size is smaller than
      * current non removable space.
      */
-    public void setSize(long size) throws IllegalArgumentException
+    public synchronized void setSize(long size) throws IllegalArgumentException
     {
-        _operationLock.writeLock().lock();
-        try {
-            _repository.setTotalSpace(size);
-        } finally {
-            _operationLock.writeLock().unlock();
-        }
+        _repository.setTotalSpace(size);
     }
 
     /**
@@ -311,10 +286,9 @@ public class CacheRepositoryV5// extends CellCompanion implements CacheRepositor
      * @throws IllegalArgumentException is <code>state</code> is NEW
      * or DESTROYED.
      */
-    public void setState(PnfsId id, EntryState state)
+    public synchronized void setState(PnfsId id, EntryState state)
         throws FileNotInCacheException
     {
-        _operationLock.readLock().lock();
         try {
             CacheRepositoryEntry entry = _repository.getEntry(id);
 
@@ -355,8 +329,6 @@ public class CacheRepositoryV5// extends CellCompanion implements CacheRepositor
         } catch (CacheException e) {
             throw new RuntimeException("Internal repository error: " +
                                        e.getMessage());
-        } finally {
-            _operationLock.readLock().unlock();
         }
     }
 
@@ -459,8 +431,9 @@ public class CacheRepositoryV5// extends CellCompanion implements CacheRepositor
     /** Callback. */
     public void removed(CacheRepositoryEvent event)
     {
-        updateState(event.getRepositoryEntry().getPnfsId(), REMOVED);
-        // TODO Unregister in PNFS
+        PnfsId id = event.getRepositoryEntry().getPnfsId();
+        updateState(id, REMOVED);
+        _pnfs.clearCacheLocation(id, false); // TODO: lfsmode?
     }
 
     /** Callback. */

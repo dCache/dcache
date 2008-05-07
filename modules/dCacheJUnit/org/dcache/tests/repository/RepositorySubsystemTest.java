@@ -334,34 +334,75 @@ public class RepositorySubsystemTest
 
     @Test(expected=FileNotInCacheException.class)
     public void testRemoval()
-        throws FileNotInCacheException
+        throws Throwable
     {
-        repository.setState(id1, REMOVED);
-        expectStateChangeEvent(id1, PRECIOUS, REMOVED);
-        expectStateChangeEvent(id1, REMOVED, DESTROYED);
-        repository.openEntry(id1);
+        new CellStubHelper() {
+            @Message(required=true,step=1,cell="pnfs")
+            public Object message(PnfsClearCacheLocationMessage msg)
+            {
+                msg.setSucceeded();
+                return msg;
+            }
+
+            protected void run() 
+                throws FileNotInCacheException
+            {
+                repository.setState(id1, REMOVED);
+                expectStateChangeEvent(id1, PRECIOUS, REMOVED);
+                expectStateChangeEvent(id1, REMOVED, DESTROYED);
+                assertStep("Cache location cleared", 1);
+                repository.openEntry(id1);
+            }
+        };
     }
 
     @Test
     public void testRemoveWhileReading()
-        throws FileNotInCacheException
+        throws Throwable
     {
-        ReadHandle handle1 = repository.openEntry(id1);
-        repository.setState(id1, REMOVED);
-        expectStateChangeEvent(id1, PRECIOUS, REMOVED);
-        assertNoStateChangeEvent();
+        new CellStubHelper() {
+            @Message(required=true,step=1,cell="pnfs")
+            public Object message(PnfsClearCacheLocationMessage msg)
+            {
+                msg.setSucceeded();
+                return msg;
+            }
 
-        handle1.close();
-        expectStateChangeEvent(id1, REMOVED, DESTROYED);
+            protected void run() 
+                throws FileNotInCacheException
+            {
+                ReadHandle handle1 = repository.openEntry(id1);
+                repository.setState(id1, REMOVED);
+                expectStateChangeEvent(id1, PRECIOUS, REMOVED);
+                assertNoStateChangeEvent();                
+                assertStep("No messages received yet", 0);
+                handle1.close();
+                expectStateChangeEvent(id1, REMOVED, DESTROYED);
+                assertStep("Cache location cleared", 1);
+            }
+        };
     }
 
     @Test(expected=FileNotInCacheException.class)
     public void testRemoveOpenAgainFails()
-        throws FileNotInCacheException
+        throws Throwable
     {
-        repository.openEntry(id1);
-        repository.setState(id1, REMOVED);
-        repository.openEntry(id1);
+        new CellStubHelper() {
+            @Message(required=true,step=1,cell="pnfs")
+            public Object message(PnfsClearCacheLocationMessage msg)
+            {
+                msg.setSucceeded();
+                return msg;
+            }
+
+            protected void run() 
+                throws FileNotInCacheException
+            {
+                repository.openEntry(id1);
+                repository.setState(id1, REMOVED);
+                repository.openEntry(id1);
+            }
+        };
     }
 
     @Test(expected=FileInCacheException.class)
@@ -403,6 +444,13 @@ public class RepositorySubsystemTest
                 } else {
                     msg.setSucceeded();
                 }
+                return msg;
+            }
+
+            @Message(required=false,step=0,cell="pnfs")
+            public Object message(PnfsClearCacheLocationMessage msg)
+            {
+                msg.setSucceeded();
                 return msg;
             }
 
