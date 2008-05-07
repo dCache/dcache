@@ -20,7 +20,7 @@ import java.net.URI;
 /**
  * Encapsulates the task to process a PoolRemoveFilesFromHSMMessage. 
  */
-class HsmRemoveTask implements Runnable
+public class HsmRemoveTask implements Runnable
 {
     /** The cell used to send back a reply to the requester.
      */

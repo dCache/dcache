@@ -48,25 +48,25 @@ public class StorageClassInfo implements CacheFileAvailable {
           TreeSet<CacheRepositoryEntry> ts = new TreeSet<CacheRepositoryEntry> ( __repositoryComparator ) ;
           ts.addAll( _requests.values() ) ;
           try{
-             info._time         = ts.size() == 0 ? 0L : ts.first().getCreationTime() ;
+              info.setOldestFileTimestamp(ts.size() == 0 ? 0L : ts.first().getCreationTime());
           }catch(Exception ee){
-             info._time         = 0L;
+              info.setOldestFileTimestamp(0L);
           }
-          info._requestCount    = _requests.size() ;
-          info._failedRequestCount = _failedRequests.size() ;
-          info._expiration      = _expiration ;
-          info._pending         = _pending ;
-          info._totalSize       = _totalSize ;
-          info._maxTotalSize    = _maxTotalSize ;
+          info.setRequestCount(_requests.size());
+          info.setFailedRequestCount(_failedRequests.size());
+          info.setExpirationTime(_expiration);
+          info.setMaximumPendingFileCount(_pending);
+          info.setTotalPendingFileSize(_totalSize);
+          info.setMaximumAllowedPendingFileSize(_maxTotalSize);
        }
        synchronized( _activeCounterLock ){
-          info._activeCounter   = _activeCounter ;
+           info.setActiveCount(_activeCounter);
        }
-       info._suspended       = _suspended ;
-       info._errorCounter    = _errorCounter ;
-       info._lastSubmittedAt = _lastSubmittedAt ;
-       info._recentFlushId   = _recentFlushId ;
-       return info ;
+       info.setSuspended(_suspended);
+       info.setErrorCounter(_errorCounter);
+       info.setLastSubmittedTime(_lastSubmittedAt);
+       info.setFlushId(_recentFlushId);
+       return info;
    }
    private static RepositoryEntryComparator __repositoryComparator = null ;
    static {
