@@ -500,7 +500,8 @@ public class PoolV4 extends CellAdapter implements Logable {
 
             _pnfs = new PnfsHandler(this, new CellPath(_pnfsManagerName), _poolName);
 
-            _storageHandler = new HsmStorageHandler2(this, _repository, _hsmSet, _pnfs);
+//             _storageHandler = new HsmStorageHandler2(this, _repository, _hsmSet, _pnfs);
+            _storageHandler = new HsmStorageHandler2(this, null, _hsmSet, _pnfs);
 
             _storageHandler.setStickyAllowed(_allowSticky);
 
@@ -532,7 +533,8 @@ public class PoolV4 extends CellAdapter implements Logable {
 
             _checksumModule = new ChecksumModuleV1(this, _repository, _pnfs);
 
-            _p2pClient = new P2PClient(this, _repository, _checksumModule);
+//             _p2pClient = new P2PClient(this, _repository, _checksumModule);
+            _p2pClient = new P2PClient(this, null, _checksumModule);
 
             _timeoutManager.addScheduler("p2p", _p2pQueue);
             _timeoutManager.start();
@@ -804,11 +806,10 @@ public class PoolV4 extends CellAdapter implements Logable {
     {
         Class<?>[] argClass = { dmg.cells.nucleus.CellAdapter.class,
 				diskCacheV111.util.PnfsHandler.class,
-				diskCacheV111.repository.CacheRepository.class,
-				diskCacheV111.pools.HsmStorageHandler2.class };
+				diskCacheV111.repository.CacheRepository.class };
         Class<?> sweeperClass = Class.forName(_sweeperClass);
         Constructor<?> sweeperCon = sweeperClass.getConstructor(argClass);
-        Object[] args = { this, _pnfs, _repository, _storageHandler };
+        Object[] args = { this, _pnfs, _repository };
 
         return (SpaceSweeper) sweeperCon.newInstance(args);
     }
@@ -2368,7 +2369,6 @@ public class PoolV4 extends CellAdapter implements Logable {
             poolMessage.setFailed(100, ui);
             return true;
         }
-
     }
 
     private void checkFile(PoolFileCheckable poolMessage) {
@@ -3088,13 +3088,13 @@ public class PoolV4 extends CellAdapter implements Logable {
 
         info.setQueueSizes(_ioQueue.getActiveJobs(), _ioQueue
                            .getMaxActiveJobs(), _ioQueue.getQueueSize(), _storageHandler
-                           .getFetchScheduler().getActiveJobs(), _suppressHsmLoad ? 0
-                           : _storageHandler.getFetchScheduler().getMaxActiveJobs(),
-                           _storageHandler.getFetchScheduler().getQueueSize(),
-                           _storageHandler.getStoreScheduler().getActiveJobs(),
-                           _suppressHsmLoad ? 0 : _storageHandler.getStoreScheduler()
-                           .getMaxActiveJobs(), _storageHandler
-                           .getStoreScheduler().getQueueSize()
+                            .getFetchScheduler().getActiveJobs(), _suppressHsmLoad ? 0
+                            : _storageHandler.getFetchScheduler().getMaxActiveJobs(),
+                            _storageHandler.getFetchScheduler().getQueueSize(),
+                            _storageHandler.getStoreScheduler().getActiveJobs(),
+                            _suppressHsmLoad ? 0 : _storageHandler.getStoreScheduler()
+                            .getMaxActiveJobs(), _storageHandler
+                            .getStoreScheduler().getQueueSize()
 
                            );
 
