@@ -172,6 +172,58 @@
 
   <!-- Compile -->
 
+ <target name="dcap.compile" depends="lib.globus32.untar,lib.heimdal.untar" description="Compile dCap client libraries" >
+
+        <mkdir dir="${buildDir}" />
+
+        <!-- make install == make cleanall; make all; cp output to BIN_PATH -->
+    <echo>make install BIN_PATH=${distDir}</echo>
+    <exec executable="make" dir="${sourceDir}" failonerror="true" output="${buildDir}/dcap.log" append="true" >
+      <arg value="install" />
+      <arg value="BIN_PATH=${distDir}" />
+    </exec>
+
+    <echo>cd security_plugins/gssapi
+make -f Makefile.gsi clean</echo>
+    <exec executable="make" dir="${sourceDir}/security_plugins/gssapi" failonerror="true" output="${buildDir}/dcap.log" append="true">
+      <arg value="-f" />
+      <arg value="Makefile.gsi" />
+      <arg value="clean" />
+    </exec>
+
+    <echo>cd security_plugins/gssapi
+make -f Makefile.gsi GSI=${globus.untaredTo}</echo>
+    <exec executable="make" dir="${sourceDir}/security_plugins/gssapi" failonerror="true" output="${buildDir}/dcap.log" append="true" >
+      <arg value="-f" />
+      <arg value="Makefile.gsi" />
+      <arg value="GSI=${globus.untaredTo}" />
+
+    </exec>
+
+
+    <echo>cd security_plugins/telnet
+make -f Makefile clean</echo>
+    <exec executable="make" dir="${sourceDir}/security_plugins/telnet" failonerror="true" output="${buildDir}/dcap.log" append="true">
+      <arg value="-f" />
+      <arg value="Makefile" />
+      <arg value="clean" />
+    </exec>
+
+    <echo>cd security_plugins/telnet
+make -f Makefile</echo>
+    <exec executable="make" dir="${sourceDir}/security_plugins/telnet" failonerror="true" output="${buildDir}/dcap.log" append="true" >
+      <arg value="-f" />
+      <arg value="Makefile" />
+
+    </exec>
+
+
+    <copy file="${sourceDir}/security_plugins/gssapi/libgsiTunnel.so" todir="${distDir}/lib" />
+    <copy file="${sourceDir}/security_plugins/telnet/libtelnetTunnel.so" todir="${distDir}/lib" />
+
+  </target>
+
+
   <target name="dcap32.compile" depends="lib.globus32.untar,lib.heimdal.untar" description="Compile dCap client libraries" >
 
 	<mkdir dir="${buildDir}" />
@@ -200,12 +252,31 @@ make -f Makefile.gsi GSI=${globus.untaredTo}</echo>
 
     </exec>
 
+
+    <echo>cd security_plugins/telnet
+make -f Makefile clean</echo>
+    <exec executable="make" dir="${sourceDir}/security_plugins/telnet" failonerror="true" output="${buildDir}/dcap.log" append="true">
+      <arg value="-f" />
+      <arg value="Makefile" />
+      <arg value="clean" />
+    </exec>
+
+    <echo>cd security_plugins/telnet
+make -f Makefile</echo>
+    <exec executable="make" dir="${sourceDir}/security_plugins/telnet" failonerror="true" output="${buildDir}/dcap.log" append="true" >
+      <arg value="-f" />
+      <arg value="Makefile" />
+
+    </exec>
+
+
     <copy file="${sourceDir}/security_plugins/gssapi/libgsiTunnel.so" todir="${distDir}/lib" />
+    <copy file="${sourceDir}/security_plugins/telnet/libtelnetTunnel.so" todir="${distDir}/lib" />
 
   </target>
 
 
-    <target name="dcap64.compile" depends="lib.globus64.untar" description="Compile dCap client libraries" >
+  <target name="dcap64.compile" depends="lib.globus64.untar" description="Compile dCap client libraries" >
 
       <mkdir dir="${buildDir}" />
 
@@ -232,9 +303,27 @@ make -f Makefile.gsi GSI=${globus.untaredTo}</echo>
         <arg value="GSI=${globus.untaredTo}" />
       </exec>
 
-      <copy file="${sourceDir}/security_plugins/gssapi/libgsiTunnel.so" todir="${distDir}/lib" />
+   <echo>cd security_plugins/telnet
+make -f Makefile clean</echo>
+    <exec executable="make" dir="${sourceDir}/security_plugins/telnet" failonerror="true" output="${buildDir}/dcap.log" append="true">
+      <arg value="-f" />
+      <arg value="Makefile" />
+      <arg value="clean" />
+    </exec>
 
-    </target>
+    <echo>cd security_plugins/telnet
+make -f Makefile</echo>
+    <exec executable="make" dir="${sourceDir}/security_plugins/telnet" failonerror="true" output="${buildDir}/dcap.log" append="true" >
+      <arg value="-f" />
+      <arg value="Makefile" />
+
+    </exec>
+
+
+    <copy file="${sourceDir}/security_plugins/gssapi/libgsiTunnel.so" todir="${distDir}/lib" />
+    <copy file="${sourceDir}/security_plugins/telnet/libtelnetTunnel.so" todir="${distDir}/lib" />
+
+  </target>
 
 
 </project>
