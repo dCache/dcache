@@ -101,6 +101,7 @@ import diskCacheV111.vehicles.DoorRequestInfoMessage;
 import diskCacheV111.vehicles.IoDoorInfo;
 import diskCacheV111.vehicles.IoDoorEntry;
 import diskCacheV111.movers.GFtpPerfMarkersBlock;
+import diskCacheV111.movers.GFtpPerfMarker;
 
 import org.dcache.services.AbstractCell;
 import org.dcache.services.Option;
@@ -541,8 +542,6 @@ public abstract class AbstractFtpDoorV1
         new CommandQueue();
     private final CountDownLatch      _shutdownGate =
         new CountDownLatch(1);
-    private final Hashtable           _statusDict =
-        new Hashtable();
     private final Map<String,Method>  _methodDict =
         new Hashtable();
 
@@ -4032,8 +4031,11 @@ public abstract class AbstractFtpDoorV1
          */
         public synchronized void stop(GFtpProtocolInfo info)
         {
+            /* The protocol info does not contain a timestamp, so
+             * we use the current time instead.
+             */
             setProgressInfo(info.getBytesTransferred(),
-                            info.getTransferTime());
+                            System.currentTimeMillis());
             sendMarker();
             stop();
         }
@@ -4050,7 +4052,13 @@ public abstract class AbstractFtpDoorV1
 
         protected synchronized void setProgressInfo(long bytes, long timeStamp)
         {
-            _perfMarkersBlock.markers(0).setBytesWithTime(bytes, timeStamp);
+            /* Since the timestamp in some cases is generated at the
+             * pool and in some cases at the door, we need to ensure
+             * that time stamps are never decreasing.
+             */
+            GFtpPerfMarker marker = _perfMarkersBlock.markers(0);
+            timeStamp = Math.max(timeStamp, marker.getTimeStamp());
+            marker.setBytesWithTime(bytes, timeStamp);
         }
 
         @Override
