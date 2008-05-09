@@ -218,6 +218,9 @@ os_absolutePathOf() {
             ;;
     esac
 }
+
+
+
 check_install()
 {
   local dCacheHomeDir
@@ -229,6 +232,11 @@ check_install()
     exit 4
   fi
 }
+
+
+
+
+
 shortname_os() {
     case `uname` in
         Linux)
@@ -267,6 +275,8 @@ printConfig() {
       }
     "
 }
+
+
 fqdn_os() {
     case `uname` in
         Linux)
@@ -277,11 +287,15 @@ fqdn_os() {
             ;;
     esac
 }
+
+
 dcacheInstallGetPnfsRoot()
 {
   # To make shure to use the right dCache dir
   RET=`printConfig PNFS_ROOT` 
 }
+
+
 
 dcacheInstallGetServerId()
 {
@@ -300,6 +314,8 @@ dcacheInstallGetServerId()
   fi
   RET=${SERVER_ID}
 }
+
+
 
 dcacheInstallGetPnfsMountPoint()
 {
@@ -325,6 +341,15 @@ dcacheInstallGetExportPoint()
   exportPoint=`mount | grep ${pnfsMountPoint} | awk '{print $1}' | awk -F':' '{print $2}'`
 
   RET=${exportPoint}
+}
+
+
+absfpath () {
+  CURDIR=`pwd`
+  cd `dirname $1`
+  ABSPATH=`pwd`/`basename $1`
+  cd "$CURDIR"
+  echo ${ABSPATH}
 }
 
 
@@ -1276,15 +1301,13 @@ then
     exit 1
   fi
 
-  if [ "${nameServerFormat}" == "pnfs" ]
-  then
-    dcacheInstallPnfs
-  fi
 fi
 
 
 dcacheInstallSshKeys
 dcacheInstallCreateWrappers
+dcacheInstallPnfsMountPoints
 dcacheInstallSrm
 dcacheInstallPool
+
 exit 0
