@@ -1187,10 +1187,6 @@ dcacheInstallSrm()
     # on some system (e.g. Debian), $JAVA_HOME/bin/java points
     # to $JAVA_HOME/jre/bin/java. Try to go up another level.
     JAVA_HOME=${java%/jre/bin/*}
-    if [ ! -x ${JAVA_HOME}/bin/javac ]; then
-      logmessage ABORT "java installation looks like JRE, while JDK is needed."	
-      exit 7
-    fi
   fi
   # install SRM 
   #
