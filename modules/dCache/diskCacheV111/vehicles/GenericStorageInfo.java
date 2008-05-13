@@ -15,12 +15,14 @@ public class GenericStorageInfo implements StorageInfo,
 
 	static final long serialVersionUID = 2089636591513548893L;
 
-	/*
-	 * to simulate the 'classic' behavior : new files go to tape and, after
-	 * flushing, removed by sweeper if space needed.
-	 */
-	private AccessLatency _accessLatency = AccessLatency.NEARLINE;
-	private RetentionPolicy _retentionPolicy = RetentionPolicy.CUSTODIAL;
+        //  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        //There should be no default values for 
+        //  AccessLatency and RetentionPolicy 
+        // Default values break the advertized mechanizm
+        // of configuring system wide defaults 
+        //  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	private AccessLatency _accessLatency = null;
+	private RetentionPolicy _retentionPolicy = null;
 	private Map<String, String> _keyHash = new HashMap<String, String>();
 	private List<URI> _locations = new ArrayList<URI>();
 	private boolean _setHsm = false;
