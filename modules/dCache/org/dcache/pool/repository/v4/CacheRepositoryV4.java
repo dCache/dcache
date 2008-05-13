@@ -365,6 +365,28 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
         runInventory(null, null, 0);
     }
 
+    /**
+     * Returns true if this file is removable. This is the case if the
+     * file is not sticky and is cached (which under normal
+     * circumstances implies that it is ready and not precious).
+     */
+    private boolean isRemovable(CacheRepositoryEntry entry)
+    {
+        try {
+            synchronized (entry) {
+                return !entry.isReceivingFromClient()
+                    && !entry.isReceivingFromStore()
+                    && !entry.isPrecious()
+                    && !entry.isSticky()
+                    && entry.isCached();
+            }
+        } catch (CacheException e) {
+            /* Returning false is the safe option.
+             */
+            return false;
+        }
+    }
+
     public synchronized void runInventory(Logable log, PnfsHandler pnfs, int flags)
         throws CacheException
     {
@@ -372,6 +394,7 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
 
         List<PnfsId> ids = _dataRepository.list();
         long usedDataSpace = 0L;
+        long removableSpace = 0L;
 
         _log.info("Found " + ids.size() + " data files");
 
@@ -395,9 +418,15 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
              */
             for (PnfsId id: ids) {
                 CacheRepositoryEntry entry = healer.entryOf(id);
-                if (entry == null) continue;
+                if (entry == null)  {
+                    continue;
+                }
 
-                usedDataSpace += entry.getSize();
+                long size = entry.getSize();
+                usedDataSpace += size;
+                if (isRemovable(entry)) {
+                    removableSpace += size;
+                }
 
                 if (_log.isDebugEnabled()) {
                     _log.debug(id +" " + entry.getState());
@@ -418,18 +447,21 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
             long total = getTotalSpace();
             if (usedDataSpace > total) {
                 String error =
-                    "Inventory overbooked " + usedDataSpace +" > " + total;
+                    "Overbooked, " + usedDataSpace + 
+                    " bytes of data exceeds inventory size of " +
+                    total + " bytes";
                 if ((flags & ALLOW_SPACE_RECOVERY) == 0)
                     throw new CacheException(206, error);
+                
+                _log.error(error);
 
-                log.elog(error);
-
-                long diff = usedDataSpace - total;
-                if (diff  > 0.1 * total)
+                if (usedDataSpace - removableSpace > total) {
                     throw new
-                        CacheException("Inventory space exceeded by more than 10%, cannot recover");
-            }
+                        CacheException("Inventory overbooked and excess data is not removable. Cannot recover.");
+                }
 
+                _log.warn("Found " + removableSpace + " bytes of removable data. Proceeding by removing excess data.");
+            }
 
             /* Report SCAN events and resolve overbooking in LRU order.
              */
@@ -439,11 +471,12 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
             for (CacheRepositoryEntry entry : entries) {
                 processEvent(EventType.SCAN,
                              new CacheRepositoryEvent(this, entry));
-                if (!entry.isPrecious() && !entry.isSticky()
-                    && usedDataSpace > total) {
+                if (isRemovable(entry) && usedDataSpace > total) {
+                    long size = entry.getSize();
                     _log.warn("Pool overbooked: " + entry.getPnfsId()
                               + " removed");
-                    usedDataSpace -= entry.getSize();
+                    usedDataSpace -= size;
+                    removableSpace -= size;
                     removeEntry(entry);
                 }
             }
