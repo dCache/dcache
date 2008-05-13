@@ -694,11 +694,11 @@
 				<section name="Copyright">
 					<attribute name="Copy" value="(C) dCache.ORG  2000 - 2008" />
 				</section>
- 				<attribute name="Main-Class" value="diskCacheV111.util.Version" />
 				<attribute name="Class-Path" value="dcache.jar" />
+				<attribute name="Specification-Title" value="dCache SRM" />
 				<attribute name="Specification-Version" value="${release.name}" />
 				<attribute name="Specification-Vendor" value="dCache.ORG (DESY,FERMI)" />
-				<attribute name="Package-Title" value="dmg.util" />
+				<attribute name="Package-Title" value="dCache SRM" />
 				<attribute name="Package-Version" value="${release.name}" />
 				<attribute name="Package-Vendor" value="dCache.ORG (DESY,FERMI)"	/>
 			</manifest>
@@ -749,6 +749,7 @@
 		<copy file="${sourceDir}/${dcache.packagePrefix}/config/lm.batch" todir="${binDir}/config" />
 		<copy file="${sourceDir}/${dcache.packagePrefix}/config/dir.batch" todir="${binDir}/config" />
 		<copy file="${sourceDir}/${dcache.packagePrefix}/config/door.batch" todir="${binDir}/config" />
+	        <copy file="${sourceDir}/${dcache.packagePrefix}/config/authdoor.batch" todir="${binDir}/config" />
 		<copy file="${sourceDir}/${dcache.packagePrefix}/config/adminDoor.batch" todir="${binDir}/config" />
 		<copy file="${sourceDir}/${dcache.packagePrefix}/config/httpd.batch" todir="${binDir}/config" />
 		<copy file="${sourceDir}/${dcache.packagePrefix}/config/infoProvider.batch" todir="${binDir}/config" />
@@ -758,6 +759,7 @@
 		<copy file="${sourceDir}/${dcache.packagePrefix}/config/statistics.batch" todir="${binDir}/config" />
 		<copy file="${sourceDir}/${dcache.packagePrefix}/config/xrootdDoor.batch" todir="${binDir}/config" />
 		<copy file="${sourceDir}/${dcache.packagePrefix}/config/chimera.batch" todir="${binDir}/config" />
+		<!--<copy file="${sourceDir}/${dcache.packagePrefix}/config/aclcell.batch" todir="${binDir}/config" /> -->
 		<!-- configs  -->
 		<copy file="${sourceDir}/${dcache.packagePrefix}/config/PoolManager.conf" todir="${binDir}/config" />
 		<copy file="${sourceDir}/${dcache.packagePrefix}/config/lm.config" todir="${binDir}/config" />
@@ -821,7 +823,10 @@
 	    <copy todir="${binDir}/libexec/chimera/sql">
 	        <fileset dir="${libDir}/Chimera/sql" />
 	    </copy>
-
+	   
+	   <!-- ACL -->
+	   <!--<copy file="${buildTop}/common/acl.properties" todir="${binDir}/config" /> -->
+       
        <!-- log4j -->
        <mkdir dir="${binDir}/classes/log4j" />
        <property name="log4jVersion" value="1.2.8" />
