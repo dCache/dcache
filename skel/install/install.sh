@@ -54,6 +54,7 @@ if [ ! -f ${FILE} ] ; then
     echo yaim_config_file_get_value called with no file, file=$FILE
     exit 1
 fi
+
 cursor=`grep -n "^[\t ]*${Key}[\t ]*=" $FILE | cut -d: -f1 | tail -n 1`
 if [ "${cursor}X" == "X" ] ; then
   RET=""
@@ -71,6 +72,30 @@ do
 done
 RET=`echo $RET | sed 's/^[ \t]*\"\([^"]*\)\"[ \t]*$/\1/'`
 }
+dcaches_config_file_get_value()
+{
+# Returns 0 on success
+local FILE
+local Key
+local cursor
+local CursorLine
+local MatchLine
+FILE=$1
+Key=$2
+if [ ! -f ${FILE} ] ; then
+    echo dcaches_config_file_get_value called with no file, file=$FILE
+    exit 1
+fi
+# First find matching lines
+# Pipoe to next sed
+# Delete all lines before first line 
+# remove all text after '#'
+# Remove all trailing white space
+
+RET=`sed -n "s/^[\t ]*${Key}*=//p;" ${FILE} | sed '$!d; s/#.*$//g;  s/[ \t]*//g;'`
+}
+
+
 
 
 logmessage()
@@ -193,6 +218,9 @@ os_absolutePathOf() {
             ;;
     esac
 }
+
+
+
 check_install()
 {
   local dCacheHomeDir
@@ -204,6 +232,11 @@ check_install()
     exit 4
   fi
 }
+
+
+
+
+
 shortname_os() {
     case `uname` in
         Linux)
@@ -214,6 +247,18 @@ shortname_os() {
             ;;
     esac
 }
+
+domainname_os() {
+    case `uname` in
+        Linux)
+            echo `hostname -d`
+            ;;
+        SunOS)
+            echo `/usr/lib/mail//sh/check-hostname |cut -d" " -f7 | awk -F. '{ for( i=2; i <= NF; i++){ printf("%s",$i); if( i  <NF) printf("."); } } '`
+            ;;
+    esac
+}
+
 
 printConfig() {
     key=$1
@@ -230,6 +275,8 @@ printConfig() {
       }
     "
 }
+
+
 fqdn_os() {
     case `uname` in
         Linux)
@@ -240,11 +287,15 @@ fqdn_os() {
             ;;
     esac
 }
+
+
 dcacheInstallGetPnfsRoot()
 {
   # To make shure to use the right dCache dir
   RET=`printConfig PNFS_ROOT` 
 }
+
+
 
 dcacheInstallGetServerId()
 {
@@ -263,6 +314,8 @@ dcacheInstallGetServerId()
   fi
   RET=${SERVER_ID}
 }
+
+
 
 dcacheInstallGetPnfsMountPoint()
 {
@@ -290,32 +343,36 @@ dcacheInstallGetExportPoint()
   RET=${exportPoint}
 }
 
-dcacheInstallGetAdminNode()
-{
-  RET="`printConfig ADMIN_NODE`"
+
+absfpath () {
+  CURDIR=`pwd`
+  cd `dirname $1`
+  ABSPATH=`pwd`/`basename $1`
+  cd "$CURDIR"
+  echo ${ABSPATH}
 }
 
 
-dcacheInstallGetPnfsServer()
+
+dcacheInstallGetNameSpaceServer()
 {
-  local pnfsServer
-  pnfsServer="`printConfig pnfsServer`"
-  if [ -z "${pnfsServer}" ] ; then
-    local ADMIN_NODE
-    dcacheInstallGetAdminNode
-    ADMIN_NODE=$RET
-    if [ -n "${ADMIN_NODE}" ] ; then
-      pnfsServer="${ADMIN_NODE}"
+  local namespaceServer
+  namespaceServer="`printConfig NAMESPACE_NODE`"
+  if [ -z "${namespaceServer}" ] ; then
+    namespaceServer="`printConfig ADMIN_NODE`"
+    if [ -z "${namespaceServer}" ] ; then
+      logmessage WARNING "No 'NAMESPACE_NODE' or 'ADMIN_NODE' set in 'node_config' using 'localhost'"
+      namespaceServer='localhost'
     else
-      pnfsServer='localhost'
+      logmessage WARNING "No 'NAMESPACE_NODE' set in 'node_config' using depricated 'ADMIN_NODE' value '${namespaceServer}'"
     fi
   fi
-  RET=${pnfsServer}
+  RET=${namespaceServer}
 }
 
 dcacheNameServerIs()
 {
-  dcacheInstallGetPnfsServer
+  dcacheInstallGetNameSpaceServer
   pnfsHost=$RET
   if [ "${pnfsHost}" == "localhost" ]
   then
@@ -590,7 +647,7 @@ dcacheInstallGetdCapPort()
   local DCACHE_HOME
   dcacheInstallGetHome
   DCACHE_HOME=$RET
-  yaim_config_file_get_value ${DCACHE_HOME}/config/dCacheSetup dCapPort
+  dcaches_config_file_get_value ${DCACHE_HOME}/config/dCacheSetup dCapPort
 }
 
 dcacheInstallPnfsMountPointClient()
@@ -600,7 +657,7 @@ dcacheInstallPnfsMountPointClient()
   local SERVER_ID
   local DCACHE_HOME
   local pnfsMountPoint
-  local ADMIN_NODE
+  local NAMESPACE_NODE
   local exportPoint
   dcacheInstallGetServerId
   SERVER_ID=$RET
@@ -610,8 +667,8 @@ dcacheInstallPnfsMountPointClient()
   DCACHE_HOME=$RET 
   dcacheInstallGetPnfsMountPoint
   pnfsMountPoint=${RET}
-  dcacheInstallGetAdminNode
-  ADMIN_NODE=$RET
+  dcacheInstallGetNameSpaceServer
+  NAMESPACE_NODE=$RET
   logmessage INFO "Checking if ${pnfsMountPoint} mounted to the right export. ..."
   dcacheInstallGetExportPoint
   exportPoint=$RET
@@ -619,7 +676,7 @@ dcacheInstallPnfsMountPointClient()
     logmessage INFO "OK"
   else
     if [ "${exportPoint}" != "" ] ; then
-      logmessage WARNING "${pnfsMountPoint} mounted, however not to ${ADMIN_NODE}:/pnfsdoors."
+      logmessage WARNING "${pnfsMountPoint} mounted, however not to ${NAMESPACE_NODE}:/pnfsdoors."
       logmessage INFO "Unmounting it now:"
       umount ${pnfsMountPoint}
       
@@ -647,7 +704,7 @@ dcacheInstallPnfsMountPointClient()
         mkdir -p ${pnfsMountPoint}
       fi
     fi
-    dcacheInstallGetPnfsServer
+    dcacheInstallGetNameSpaceServer
     pnfsServer=$RET
     logmessage INFO "Will be mounted to ${pnfsServer}:/pnfsdoors by dcache-core start-up script."
   fi
@@ -706,7 +763,9 @@ dcacheInstallPnfsMountPointServer()
   #    Checking and creating mountpoint and link
   #
   pnfsMountPoint=${PNFS_ROOT}/fs
+  # if not a directory
   if [ ! -d "${pnfsMountPoint}" ]; then
+    # if exists directory
     if [ -e "${pnfsMountPoint}" ] ; then
       logmessage ERROR "The file ${pnfsMountPoint} is in the way. Please move it out of the way"
       logmessage ERROR "and call me again. Exiting."
@@ -716,18 +775,21 @@ dcacheInstallPnfsMountPointServer()
 	mkdir -p ${pnfsMountPoint}
     fi
   fi
-  dcacheInstallGetPnfsServer
+  dcacheInstallGetNameSpaceServer
   pnfsServer=$RET
   logmessage INFO "Will be mounted to ${pnfsServer}:/fs by dcache-core start-up script."
 
   cd ${PNFS_ROOT}
+  # if file is not a symbolic link
   if [ ! -L "${SERVER_ID}" ]; then
+    # if file exists
     if [ -e "${SERVER_ID}" ] ; then
       logmessage ERROR "The file/directory ${PNFS_ROOT}/${SERVER_ID} is in the way. Please move it out"
       logmessage ERROR "of the way and call me again. Exiting."
     else
       logmessage INFO "Creating link ${PNFS_ROOT}/${SERVER_ID} --> ${pnfsMountPoint}/usr/"
       ln -s fs/usr ${SERVER_ID}
+      echo MADE THE SYMBOLIC LINK
     fi
   fi
 
@@ -833,7 +895,7 @@ dcacheInstallPnfsMountPoints()
   if [ "${isPnfsManager}${isGridFtp}" == "01" -o "${isPnfsManager}${isSrm}" == "01" ] ; then
     dcacheInstallPnfsMountPointClient
   fi
-  if [ "${isAdmin}${isPnfsManager}" == "11" -o "${isPnfsManager}" == "1" ] ; then
+  if [ "${isAdmin}" == "1" -o "${isPnfsManager}" == "1" ] ; then
     dcacheInstallPnfsMountPointServer
   fi  
   logmessage DEBUG "dcacheInstallPnfsMountPoints.stop"
@@ -885,10 +947,12 @@ dcacheInstallPnfsConfigCheck()
 
     cd ${PNFS_ROOT}/fs
     serverRoot=`cat ".(id)(usr)"`
-
+    logmessage DEBUG serverRoot=$serverRoot
     #     Writing Wormhole information
     #
+    logmessage DEBUG "Changing directory to ${PNFS_ROOT}/fs/admin/etc/config"
     cd ${PNFS_ROOT}/fs/admin/etc/config
+    
     echo "${fqHostname}" > ./serverName
     echo "${SERVER_ID}" >./serverId
     echo "$serverRoot ." > ./serverRoot
@@ -1089,10 +1153,9 @@ dcacheInstallSrm()
   local java
   dcacheInstallGetHome
   DCACHE_HOME=$RET
-  yaim_config_file_get_value ${DCACHE_HOME}/config/dCacheSetup java
+  dcaches_config_file_get_value ${DCACHE_HOME}/config/dCacheSetup java
   java=$RET
-
-
+  
   #
   # check java:
   #     jdk >= 1.5 , ( javac needed by tomcat/SRM )
@@ -1124,10 +1187,6 @@ dcacheInstallSrm()
     # on some system (e.g. Debian), $JAVA_HOME/bin/java points
     # to $JAVA_HOME/jre/bin/java. Try to go up another level.
     JAVA_HOME=${java%/jre/bin/*}
-    if [ ! -x ${JAVA_HOME}/bin/javac ]; then
-      logmessage ABORT "java installation looks like JRE, while JDK is needed."	
-      exit 7
-    fi
   fi
   # install SRM 
   #
@@ -1196,7 +1255,7 @@ do
     usage
     exit 0
   fi
-  if [ $1 == "--loglevel"-o $1 == "-l"  ] 
+  if [ $1 == "--loglevel" -o $1 == "-l"  ] 
   then
     # set dCache install location
     let loglevel=$2
@@ -1238,15 +1297,13 @@ then
     exit 1
   fi
 
-  if [ "${nameServerFormat}" == "pnfs" ]
-  then
-    dcacheInstallPnfs
-  fi
 fi
 
 
 dcacheInstallSshKeys
 dcacheInstallCreateWrappers
+dcacheInstallPnfsMountPoints
 dcacheInstallSrm
 dcacheInstallPool
+
 exit 0
