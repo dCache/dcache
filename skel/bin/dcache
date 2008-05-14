@@ -278,7 +278,7 @@ printConfig()
 {
     #          Comments      Trailing space  Print value
     #          vvvvvvvv      vvvvvvv         vvvvvvvvvvvvvvvvvvvvvvvvvv
-    sed -n -e 's/#.*$//' -e 's/\s*$//'   -e "s/^\s*$1\s*=\s*\(.*\)/\1/ip" \
+    sed -n -e 's/#.*$//' -e 's/\s*$//'   -e "s/^\s*$1\s*=\s*\(.*\)/\1/p" \
       ${ourHomeDir}/etc/node_config ${ourHomeDir}/etc/door_config 2> /dev/null
 }
 
@@ -1039,7 +1039,7 @@ checkNodeType()
 	    exit 1		
 	    ;;
 	*)
-	    # bad falue
+	    # bad value
 	    echo "[ERROR] ${ourHomeDir}/etc/node_config missing or not useful. Exiting."
 	    exit 2
 	    ;;
