@@ -3065,7 +3065,7 @@ public abstract class AbstractFtpDoorV1
                  */
                 _perfMarkerTask = new PerfMarkerTask(_transfer.pool,
                                                      _transfer.moverId,
-                                                     _poolTimeout * 1000);
+                                                     _perfMarkerConf.period / 2);
                 _perfMarkerTimer.schedule(_perfMarkerTask,
                                           _perfMarkerConf.period,
                                           _perfMarkerConf.period);
@@ -3986,7 +3986,7 @@ public abstract class AbstractFtpDoorV1
         private final int _moverId;
         private boolean _stopped = false;
 
-        public PerfMarkerTask(String pool, int moverId, int timeout)
+        public PerfMarkerTask(String pool, int moverId, long timeout)
         {
             _pool = pool;
             _moverId = moverId;
@@ -4092,8 +4092,7 @@ public abstract class AbstractFtpDoorV1
                 String status = ioJobInfo.getStatus();
 
                 if (status == null) {
-                    // Transfer has probably not started yet; don't do
-                    // anything.
+                    sendMarker();
                 } else if (status.equals("A")) {
                     // "Active" job
                     setProgressInfo(ioJobInfo.getBytesTransferred(),
@@ -4102,7 +4101,7 @@ public abstract class AbstractFtpDoorV1
                 } else if (status.equals("K") || status.equals("R")) {
                     // "Killed" or "Removed" job
                 } else if (status.equals("W")) {
-                    // "Waiting" job
+                    sendMarker();
                 } else {
                     error("FTP Door: performance marker engine " +
                           "received unexcepted status from mover: " + status);
