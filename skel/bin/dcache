@@ -276,9 +276,9 @@ parseOptions() # $1 = list of valid options
 # Prints setting from configuration file, $1 = parameter name
 printConfig() 
 {
-    #          Comments      Trailing space  Print value
-    #          vvvvvvvv      vvvvvvv         vvvvvvvvvvvvvvvvvvvvvvvvvv
-    sed -n -e 's/#.*$//' -e 's/\s*$//'   -e "s/^\s*$1\s*=\s*\(.*\)/\1/p" \
+    #         Comments      Trailing space         Print value
+    #         vvvvvvvv      vvvvvvvvvvvvvvvv       vvvvvvvvvvvvvvvvvvvvvvvvvv
+    sed -n -e 's/#.*$//' -e 's/[ 	]*$//' -e "s/^[ 	]*$1[ 	]*=[ 	]*\(.*\)$/\1/p" \
       ${ourHomeDir}/etc/node_config ${ourHomeDir}/etc/door_config 2> /dev/null
 }
 
@@ -729,9 +729,9 @@ getPoolSetting() # #1 = pool path, #2+ = setting
 	exit 4
     fi
 
-    #          Comments      Trailing space  Print value
-    #          vvvvvvvv      vvvvvvv         vvvvvvvvvvvvvvvvvvvvvvvvvv
-    sed -n -e 's/#.*$//' -e 's/\s*$//'   -e "s/^\s*${key}\s*\(.*\)/\1/p" \
+    #          Comments      Trailing space       Print value
+    #          vvvvvvvv      vvvvvvv              vvvvvvvvvvvvvvvvvvvvvvvvvv
+    sed -n -e 's/#.*$//' -e 's/[ 	]*$//' -e "s/^[ 	]*${key}[ 	]*\(.*\)/\1/p" \
       ${path}/setup
 }
 
