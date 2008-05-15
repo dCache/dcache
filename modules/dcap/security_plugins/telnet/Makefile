@@ -8,17 +8,21 @@ LIBS =
 LDFLAGS = -shared
 CFLAGS = -I. -fPIC
 
-OBJS = telnetTunnel.o user.o
+OBJS = telnetTunnel.o user.o 
+OBJS_pwd = dcapPasswd.o 
 
 
-all: $(OBJS)  plugin
+all: $(OBJS)  plugin 
 
-	
+dcapPasswd: $(OBJS_pwd)
+	$(CC) -o dcapPasswd $(OBJS_pwd) -lcrypt
+
+
 plugin:
 	$(LD) $(LDFLAGS) -o libtelnetTunnel.so $(OBJS) $(LIBS)
 	
 clean:
-	@rm -f *.o core a.out libtelnetTunnel.so $(OBJS)
+	@rm -f *.o core a.out libtelnetTunnel.so dcapPasswd $(OBJS)
 
 .c.o:
 	$(CC) -c $(CFLAGS) $<
