@@ -198,6 +198,7 @@ public class PoolSelectionUnitV2 implements PoolSelectionUnit {
             super(name);
         }
 
+        @Override
         public String toString() {
             return _name + "  (links=" + _linkList.size() + ";pools="
                     + _poolList.size() + ")";
@@ -285,6 +286,7 @@ public class PoolSelectionUnitV2 implements PoolSelectionUnit {
             return new HashMap<String, Set<String>>(_attributes);
         }
 
+        @Override
         public String toString() {
 
             StringBuilder sb = new StringBuilder(_name);
@@ -483,6 +485,7 @@ public class PoolSelectionUnitV2 implements PoolSelectionUnit {
             return _ping;
         }
 
+        @Override
         public String toString() {
             return _name
                 + "  (enabled=" + _enabled
@@ -550,6 +553,7 @@ public class PoolSelectionUnitV2 implements PoolSelectionUnit {
             _name = name;
         }
 
+        @Override
         public String toString() {
             return _name + "  (pref=" + _readPref + "/" + _cachePref + "/"
                     + _p2pPref + "/" + _writePref + ";"
@@ -611,6 +615,7 @@ public class PoolSelectionUnitV2 implements PoolSelectionUnit {
             return _name;
         }
 
+        @Override
         public String toString() {
             return _name + "  (links=" + _linkList.size() + ";units="
                     + _unitList.size() + ")";
@@ -646,6 +651,7 @@ public class PoolSelectionUnitV2 implements PoolSelectionUnit {
                             : "Unknown";
         }
 
+        @Override
         public String toString() {
             return _name + "  (type=" + getType() + ";canonical="
                     + getCanonicalName() + ";uGroups=" + _uGroupList.size()
@@ -857,6 +863,7 @@ public class PoolSelectionUnitV2 implements PoolSelectionUnit {
             return _address;
         }
 
+        @Override
         public String getCanonicalName() {
             return _canonicalName;
         }
@@ -889,6 +896,7 @@ public class PoolSelectionUnitV2 implements PoolSelectionUnit {
             }
         }
 
+        @Override
         public String getName() {
             return _protocol + (_version > -1 ? ("/" + _version) : "/*");
         }
@@ -1610,7 +1618,7 @@ public class PoolSelectionUnitV2 implements PoolSelectionUnit {
         try {
             long start = System.currentTimeMillis();
             PoolPreferenceLevel[] list = match(args.argv(0).equals("*") ? DirectionType.ANY
-                    : DirectionType.valueOf(args.argv(0)), args.argv(1).equals("*") ? null : args
+                    : DirectionType.valueOf(args.argv(0).toUpperCase()), args.argv(1).equals("*") ? null : args
                     .argv(1), args.argv(2).equals("*") ? null : args.argv(2),
                     args.argv(3).equals("*") ? null : args.argv(3), args
                             .argv(4).equals("*") ? null : args.argv(4), null,
