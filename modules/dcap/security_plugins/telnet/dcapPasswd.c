@@ -27,7 +27,7 @@ int main (int argn, char **argv) {
     newpasswd = argv[3]; 
   } 
 
-  valid_change = 0;
+  valid_change = 0; long pos = ftell (fpfd); 
   while ((p = fgetpwent(fpfd)) != NULL) {
     /* Change entry if found. */
     if (strcmp(p->pw_name, user) == 0) {
@@ -39,10 +39,13 @@ int main (int argn, char **argv) {
       p->pw_dir = "/tmp"; 
       p->pw_shell = "/bin/false"; 
       valid_change = 1; 
-      printf ("User %s found -- changing password \n", p->pw_name); 
-    }
-    /* Put passwd entry into ptmp. */
-    putpwent(p, fpfd);
+      printf ("User %s found -- changin password \n", p->pw_name); 
+      /* Put passwd entry into ptmp. */
+      fseek (fpfd, pos, SEEK_SET); 
+      putpwent(p, fpfd);
+    } else { 
+      pos = ftell (fpfd); 
+    } 
   } 
 
   if (valid_change == 0) { 
@@ -57,6 +60,7 @@ int main (int argn, char **argv) {
     p->pw_dir = "/tmp";
     p->pw_shell = "/bin/false";
     putpwent(p, fpfd); 
+    free (p); 
   } 
 
   fclose (fpfd); close (pfd); 
