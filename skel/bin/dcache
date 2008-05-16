@@ -337,7 +337,7 @@ autoMountNameSpace()
 
 		printp "${PNFS_ROOT}/${SERVER_ID}/ not mounted - going to mount it now."
 		mount -o intr,rw,noac,hard,${NFSVERS}=2 $ADMIN_NODE:/pnfsdoors ${PNFS_ROOT}/${SERVER_ID}
-		if df ${PNFS_ROOT}/${SERVER_ID} 2>/dev/null | grep "$PNFS_ROOT"; then
+		if ! df ${PNFS_ROOT}/${SERVER_ID} 2>/dev/null | grep "$PNFS_ROOT"; then
 		    printp "[ERROR] Still not mounted. Apparently no pnfs 
                             server running on admin node $ADMIN_NODE. Exiting."
 		    exit 1
