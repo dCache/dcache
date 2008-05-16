@@ -115,7 +115,25 @@ public class BasicNameSpaceProvider implements NameSpaceProvider, StorageInfoPro
         ( ! defaultServerName.equals("*") ) )
             _pathManager.setDefaultServerName( defaultServerName ) ;
 
-        _logNameSpace.debug("Using default pnfs server : "+_pathManager.getDefaultServerName());
+        if (_logNameSpace.isDebugEnabled()) {
+            _logNameSpace.debug("Using default pnfs server : "+_pathManager.getDefaultServerName());
+        }
+        // Process 'delete-registration' argument
+        String dirName;
+        if (((dirName = _args.getOpt("delete-registration")) == null) || (dirName.equals(""))) {
+            _logNameSpace.warn("'delete-registration' is not defined.");
+            dirName = null;
+        } else {
+            File trashLocation = new File(dirName);
+            if ((!trashLocation.exists()) || (!trashLocation.isDirectory())) {
+                _logNameSpace.error("Directory '" + dirName + "' does not exist");
+                dirName = null;
+            }
+        }
+        if (_logNameSpace.isDebugEnabled()) {
+            _logNameSpace.debug("'delete-registration' set to " + dirName);
+        }
+        PnfsFile.setTrashLocation(dirName);
     }
 
     public void addCacheLocation(PnfsId pnfsId, String cacheLocation) {
@@ -252,11 +270,11 @@ public class BasicNameSpaceProvider implements NameSpaceProvider, StorageInfoPro
 
     public void deleteEntry(PnfsId pnfsId) throws Exception {
 
-        boolean rc = false;
+        boolean rc;
         String  pnfsIdPath = this.pnfsidToPath(pnfsId) ;
         _logNameSpace.debug("delete PNFS entry for " + pnfsId + " path " + pnfsIdPath);
 
-        PnfsFile pf =  new PnfsFile( this.pnfsidToPath(pnfsId) );
+        PnfsFile pf =  new PnfsFile(pnfsIdPath);
 
         if (! pf.exists()){
             _logNameSpace.debug(pnfsId+": no such file");
@@ -280,8 +298,6 @@ public class BasicNameSpaceProvider implements NameSpaceProvider, StorageInfoPro
                 throw new IllegalArgumentException( "Failed to remove entry " + pnfsId + " : Unknown reason.");
             }
         }
-
-        return;
     }
 
     public List<String> getCacheLocation(PnfsId pnfsId) throws Exception{
@@ -608,7 +624,7 @@ public class BasicNameSpaceProvider implements NameSpaceProvider, StorageInfoPro
 
             return vmp.getRealMountPoint() ;
         }
-        public PnfsFile getFileByPnfsId( PnfsId pnfsId ) throws FileNotFoundCacheException{
+        public PnfsFile getFileByPnfsId( PnfsId pnfsId ) throws CacheException {
             return PnfsFile.getFileByPnfsId(
             getMountPointByPnfsId(pnfsId) ,
             pnfsId ) ;
@@ -740,7 +756,17 @@ public class BasicNameSpaceProvider implements NameSpaceProvider, StorageInfoPro
                 IOException("Illegal meta data format : "+pnfsId+" ("+line+")" ) ;
             }
         }catch(FileNotFoundException fnf ) {
-        	throw new FileNotFoundCacheException("no such file or directory " + pnfsId.getId() );
+//        	throw new FileNotFoundCacheException("no such file or directory " + pnfsId.getId() );
+            boolean deleted;
+            try {
+                deleted = PnfsFile.isDeleted(pnfsId);
+            } catch (IllegalArgumentException ee) {
+                throw new CacheException(CacheException.NO_TRASH, "No 'trash' defined");
+            }
+            if (deleted)
+                throw new FileNotFoundCacheException("no such file or directory " + pnfsId.getId() );
+            else
+                throw new CacheException(CacheException.NOT_IN_TRASH, "Not in trash: " + pnfsId.toString());
         }finally{
             if(br != null)try{ br.close() ; }catch(IOException ee){/* too late to react */}
         }

@@ -8,6 +8,7 @@ public class PnfsFile extends File  {
    private String  _absolute   = null ;
    private PnfsId  _pnfsId     = null ;
    private FileMetaData  _meta = null ;
+   private static String _trash       = null;
 
    public PnfsFile( String path ){
       super( path ) ;
@@ -106,7 +107,34 @@ public class PnfsFile extends File  {
      if( _pnfsId == null )return super.delete() ;
      return false ;
    }
-   public boolean setLength( long length ){
+
+    /*
+     * This method checks if the file with a name as given pnfsid exists in the trash directory
+     * The result can be 'true/false' or IllegalArgumentException exception if the trash is not configured,
+     * in latter case the behaviour should be as it was before  
+     */
+    public static boolean isDeleted(PnfsId pnfsId) {
+        // Check if trash location is defined
+        if (_trash == null) {
+            throw new IllegalArgumentException("'trash' not defined.");
+        }
+/* Do we need to do it every time?
+        // Check if this location exists and is a directory
+        File tl = new File(_trash);
+        if ((!tl.exists()) || (!tl.isDirectory())) {
+            throw new IllegalArgumentException("Directory '" + _trash + "' does not exist");
+        }
+*/
+        // Check if such entry exists in the trash and return the result
+        File inTrash = new File(_trash, pnfsId.getId());
+        return inTrash.exists();
+    }
+
+    public static void setTrashLocation(String trash) {
+        _trash = trash;    
+    }
+
+    public boolean setLength( long length ){
 
 	   File setSizeCommand = null;
 
@@ -519,29 +547,49 @@ public class PnfsFile extends File  {
       return super.getCanonicalPath() ;
    }
    */
-   public static PnfsFile getFileByPnfsId( String mountpoint , PnfsId id ) throws FileNotFoundCacheException{
-       PnfsFile mp = new PnfsFile( mountpoint ) ;
-       if( ( ! mp.isDirectory() ) || ( ! mp.isPnfs() ) ) {
-    	   throw new IllegalArgumentException("mountpoing [" +mountpoint+ "] does not exist or not in the pnfs");
+   public static PnfsFile getFileByPnfsId(String mountpoint, PnfsId id) throws CacheException {
+       PnfsFile mp = new PnfsFile(mountpoint);
+       if ((!mp.isDirectory()) || (!mp.isPnfs())) {
+           throw new IllegalArgumentException("mountpoint [" + mountpoint + "] does not exist or not in the pnfs");
        }
-       PnfsFile f = new PnfsFile( mountpoint , ".(access)("+id+")" , id ) ;
-       if( ! f.exists() ) {
-    	   throw new FileNotFoundCacheException( id.toString() );
+       PnfsFile f = new PnfsFile(mountpoint, ".(access)(" + id + ")", id);
+       if (!f.exists()) {
+           boolean deleted;
+           try {
+               deleted = isDeleted(id);
+           } catch (IllegalArgumentException ee) {
+               throw new CacheException(CacheException.NO_TRASH, "No 'trash' defined");
+           }
+           if (deleted)
+               throw new FileNotFoundCacheException(id.toString());    // Old code
+           else
+               throw new CacheException(CacheException.NOT_IN_TRASH, "Not in trash: " + id.toString());
        }
-       return f ;
+       return f;
    }
-   public static PnfsFile getFileByPnfsId( File mountpoint , PnfsId id ) throws FileNotFoundCacheException{
-       PnfsFile mp = new PnfsFile( mountpoint.getAbsolutePath() ) ;
-       if( ( ! mp.isDirectory() ) || ( ! mp.isPnfs() ) ){
-    	   throw new IllegalArgumentException("mountpoing [" +mountpoint+ "] does not exist or not in the pnfs");
-       }
-       PnfsFile f = new PnfsFile( mountpoint.getAbsolutePath() , ".(access)("+id+")" , id ) ;
-       if( ! f.exists() ){
-    	   throw new FileNotFoundCacheException( id.toString() );
-       }
-       return f ;
-   }
-   /**
+
+    public static PnfsFile getFileByPnfsId(File mountpoint, PnfsId id) throws CacheException {
+        PnfsFile mp = new PnfsFile(mountpoint.getAbsolutePath());
+        if ((!mp.isDirectory()) || (!mp.isPnfs())) {
+            throw new IllegalArgumentException("mountpoint [" + mountpoint + "] does not exist or not in the pnfs");
+        }
+        PnfsFile f = new PnfsFile(mountpoint.getAbsolutePath(), ".(access)(" + id + ")", id);
+        if (!f.exists()) {
+            boolean deleted;
+            try {
+                deleted = isDeleted(id);
+            } catch (IllegalArgumentException ee) {
+                throw new CacheException(CacheException.NO_TRASH, "No 'trash' defined");
+            }
+            if (deleted)
+                throw new FileNotFoundCacheException(id.toString());    // Old code
+            else
+                throw new CacheException(CacheException.NOT_IN_TRASH, "Not in trash: " + id.toString());
+        }
+        return f;
+    }
+
+    /**
      */
    protected static List<String> getServerAttributes( File mountpoint , String key )throws IOException {
       if( ( ! mountpoint.exists()      ) ||

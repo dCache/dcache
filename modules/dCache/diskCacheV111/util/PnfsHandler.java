@@ -149,7 +149,7 @@ public class PnfsHandler {
    private PnfsMessage pnfsRequest( PnfsMessage msg )
            throws CacheException {
 
-       PnfsMessage pnfsReply = null ;
+       PnfsMessage pnfsReply;
        Object      pnfsReplyObject;
        CellMessage pnfsCellReply ;
        try {
@@ -164,7 +164,8 @@ public class PnfsHandler {
            esay( problem ) ;
            esay(e) ;
 	   throw new
-           CacheException( 115 , problem ) ;
+//           CacheException( 115 , problem ) ;
+                   CacheException(CacheException.PANIC, problem);
        }
 
        if (pnfsCellReply == null) {
@@ -187,15 +188,19 @@ public class PnfsHandler {
                                        + pnfsReply.getReturnCode());
     	   }
 
-           if (pnfsReply.getErrorObject() instanceof CacheException)
+           if (pnfsReply.getErrorObject() instanceof FileNotFoundCacheException)
+               throw (FileNotFoundCacheException)pnfsReply.getErrorObject();
+           else if (pnfsReply.getErrorObject() instanceof CacheException)
                throw (CacheException)pnfsReply.getErrorObject();
-
-    	   throw new CacheException(pnfsReply.getReturnCode(),
+           else
+    	       throw new CacheException(pnfsReply.getReturnCode(),
                                     String.valueOf(pnfsReply.getErrorObject()));
        }
 
        return pnfsReply;
    }
+
+/*
    public Message messageRequest( CellPath path , Message msg )
            throws CacheException {
 
@@ -243,6 +248,7 @@ public class PnfsHandler {
        }
        return reply ;
    }
+*/
 
    public PnfsCreateEntryMessage createPnfsDirectory( String path )
           throws CacheException                {

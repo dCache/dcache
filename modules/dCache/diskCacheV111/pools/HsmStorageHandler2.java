@@ -460,7 +460,7 @@ public class HsmStorageHandler2  {
 
        public void unqueued(){
 
-          say("Dequeuing "+_pnfsId ) ;
+          say("Dequeueing "+_pnfsId ) ;
 
           CacheException cex = new CacheException( 33 , "Job Dequeued (by operator)") ;
           executeCallbacks( getCallbackList( _restorePnfsidList , _pnfsId )  , _pnfsId , cex ) ;
@@ -754,50 +754,47 @@ public class HsmStorageHandler2  {
           _storePnfsidList.put( pnfsId , info = new StoreThread( entry )  ) ;
 
           try{
-              if( _checkPnfs && _removeUnexistingEntries ){
-                 //
-                 // make sure the file still exists in pnfs.
-                 //
-                 say( pnfsId.toString()+" Getting storageinfo" ) ;
-                 try{
+              if (_checkPnfs && _removeUnexistingEntries) {
+                  //
+                  // make sure the file still exists in pnfs.
+                  //
+                  say(pnfsId.toString() + " Getting storageinfo");
+                  try {
 
-                    //
-                    // just to check if file still exists
-                    //
-                    StorageInfo storageInfo = _pnfs.getStorageInfo(pnfsId.toString());
+                      //
+                      // just to check if file still exists
+                      //
+                      StorageInfo storageInfo = _pnfs.getStorageInfo(pnfsId.toString());
 
-                 }catch(CacheException exc ){
+                  } catch (CacheException exc) {
 
-                    esay(pnfsId.toString()+" : Checking if exists in pnfs : "+exc ) ;
-                    int rc = exc.getRc() ;
-                    //
-                    // in general we remove the entry if we get an
-                    // exception. Except for the case were there is
-                    // no answer (or the wrong one)  from the PnfsManager.
-                    //
-                    if( ( rc != CacheException.TIMEOUT ) && ( rc != CacheException.PANIC ) ){
+                      esay(pnfsId.toString() + " : Checking if exists in pnfs : " + exc);
+                      int rc = exc.getRc();
+                      //
+                      // We remove the entry if we get a FILE_NOT_FOUND exception
+                      //
+                      if (rc == CacheException.FILE_NOT_FOUND) {
 
+                          esay(pnfsId.toString() + " REMOVING ENTRY from repository (nonexistent)");
 
-                       esay( pnfsId.toString()+" REMOVEING ENTRY from repository (nonexistent)" ) ;
+                          _repository.removeEntry(entry);
 
-                       _repository.removeEntry( entry ) ;
+                      }
 
-                    }
+                      throw exc /* new Exception("File already removed") */ ;
 
-                    throw exc /* new Exception("File already removed") */ ;
-
-                 }
+                  }
               }
 
-               entry.setSendingToStore(true) ;
-               entry.lock(true);
+              entry.setSendingToStore(true);
+              entry.lock(true);
 
-              if( callback != null )info.addCallback(callback);
+              if (callback != null) info.addCallback(callback);
 
-              _storeQueue.add( info ) ;
+              _storeQueue.add(info);
 
-              say("DEBUGFLUSH : store : added to flush queue "+entry + " (callback="+callback+")" ) ;
-              return false ;
+              say("DEBUGFLUSH : store : added to flush queue " + entry + " (callback=" + callback + ")");
+              return false;
 
           }catch( Throwable excep ){
 
@@ -805,7 +802,7 @@ public class HsmStorageHandler2  {
                             ((InvocationTargetException)excep).getTargetException() :
                             excep ;
 
-              esay( pnfsId.toString()+" REMOVEING ENTRY from _storePnfsidList due to "+excep);
+              esay( pnfsId.toString()+" REMOVING ENTRY from _storePnfsidList due to "+excep);
 
               _storePnfsidList.remove( pnfsId ) ;
 

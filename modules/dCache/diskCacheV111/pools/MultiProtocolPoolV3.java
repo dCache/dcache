@@ -3046,7 +3046,7 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
                                              _poolMode, info);
 
             if( _logPoolMonitor.isDebugEnabled() ) {
-                _logPoolMonitor.debug(_poolName + " - sending poolUpMessage (mode/seialId): " + _poolMode + " / " + _serialId);
+                _logPoolMonitor.debug(_poolName + " - sending poolUpMessage (mode/serialId): " + _poolMode + " / " + _serialId);
             }
             poolManagerMessage.setTagMap( _tags ) ;
             poolManagerMessage.setHsmInstances(new TreeSet<String>(_hsmSet.getHsmInstances()));

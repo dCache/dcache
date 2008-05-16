@@ -228,7 +228,7 @@ public class PnfsManager2 extends CellAdapter {
 
             return vmp.getRealMountPoint() ;
         }
-        public PnfsFile getFileByPnfsId( PnfsId pnfsId ) throws FileNotFoundCacheException{
+        public PnfsFile getFileByPnfsId( PnfsId pnfsId ) throws CacheException {
             return PnfsFile.getFileByPnfsId(
             getMountPointByPnfsId(pnfsId) ,
             pnfsId ) ;

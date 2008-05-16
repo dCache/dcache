@@ -94,7 +94,7 @@ public class       HpssInfoExtractor
               return extractFile( mp , x ) ;
           }else
              throw new
-             CacheException( 34 , "Can't file "+pnfsId ) ;
+             CacheException( 34 , "Can't find file "+pnfsId ) ;
        }catch(CacheException ce ){
           throw ce ;
        }catch(Exception e ){
