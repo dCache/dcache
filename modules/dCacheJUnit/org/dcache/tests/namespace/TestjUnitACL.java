@@ -31,7 +31,7 @@ import org.dcache.chimera.acl.enums.AceType;
 import org.dcache.chimera.acl.enums.Action;
 import org.dcache.chimera.acl.enums.AuthType;
 import org.dcache.chimera.acl.enums.FileAttribute;
-import org.dcache.chimera.acl.enums.InetAddressType;
+import org.dcache.chimera.acl.enums.OpenType;
 import org.dcache.chimera.acl.enums.RsType;
 import org.dcache.chimera.acl.enums.Who;
 import org.dcache.chimera.acl.handler.AclHandler;
@@ -114,7 +114,11 @@ public class TestjUnitACL {
 		aces.add(new ACE(AceType.ACCESS_DENIED_ACE_TYPE, 0,
 				AccessMask.READ_DATA.getValue(), Who.USER, 7,
 				ACE.DEFAULT_ADDRESS_MSK, 2));
-
+        //for another user: 
+		aces.add(new ACE(AceType.ACCESS_ALLOWED_ACE_TYPE, 0,
+				AccessMask.DELETE.getValue(), Who.USER, 777,
+				ACE.DEFAULT_ADDRESS_MSK, 3));
+		
 		ACL newACL = new ACL(rsID, rsType, aces);
 
 		aclHandler.setACL(newACL);
@@ -134,14 +138,38 @@ public class TestjUnitACL {
 		// Create test user subjectNew. who_id=7 as above.
 		Subject subjectNew = new Subject(7, 100);
 
-		Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_WEAK,
-				InetAddressType.IPv4, "127.0.0.1");
+		Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_WEAK, "127.0.0.1");
 
 		Owner ownerNew = new Owner(0, 0);
 
 		Permission permissionNew = AclMapper.getPermission(subjectNew,
 				originNew, ownerNew, newACL);
 
+		//NEW 15.05.2008 permission for parent directory (in order to check 'remove this file from parent directory') 
+		String parentRsID = genRsID();
+		RsType parentRsType = RsType.DIR;
+		List<ACE> parentAces = new ArrayList<ACE>();
+		parentAces.add(new ACE(AceType.ACCESS_ALLOWED_ACE_TYPE, 1,
+				AccessMask.DELETE_CHILD.getValue(), Who.USER, 7,
+				ACE.DEFAULT_ADDRESS_MSK, 0));
+		//for another user:
+		parentAces.add(new ACE(AceType.ACCESS_ALLOWED_ACE_TYPE, 1,
+				AccessMask.DELETE_CHILD.getValue(), Who.USER, 777,
+				ACE.DEFAULT_ADDRESS_MSK, 1));	
+		ACL parentACL = new ACL(parentRsID, parentRsType, parentAces);
+		aclHandler.setACL(parentACL);
+		Permission permissionNewParentDir = AclMapper.getPermission(subjectNew,
+				originNew, ownerNew, parentACL);
+		//create another user (he is allowed to REMOVE file):
+		Subject subjectNewUser777 = new Subject(777, 100);
+		//permissions of user 777 on parent directory  
+		Permission permissionParentDirUser777 = AclMapper.getPermission(subjectNewUser777,
+				originNew, ownerNew, parentACL);
+		//permissions of user 777 on file in this directory
+		Permission permissionUser777 = AclMapper.getPermission(subjectNewUser777,
+				originNew, ownerNew, newACL);
+		//<-- end NEW
+		
 		// Action READ.
 		Action actionREAD = Action.READ;
 		Boolean check1 = AclNFSv4Matcher.isAllowed(permissionNew, actionREAD);
@@ -156,12 +184,20 @@ public class TestjUnitACL {
 
 		// Action REMOVE. Undefined, expected NULL.
 		Action actionREMOVE = Action.REMOVE;
-		// USE THIS METHOD: isAllowed(Permission perm, Action action, Boolean
-		// isDir)
-		Boolean check3 = AclNFSv4Matcher.isAllowed(permissionNew, actionREMOVE,
+		//use Boolean isAllowed(Permission perm1, Permission perm2, Action action, Boolean isDir)
+		//where perm1 - permission for parent directory, perm2 - permission for child (file in this case)
+		Boolean check3 = AclNFSv4Matcher.isAllowed(permissionNewParentDir, permissionNew, actionREMOVE,
 				Boolean.FALSE);
 		assertNull("user who_id=7, action REMOVE is undefined", check3);
 
+		// Action REMOVE. Allowed to remove file (For user 777, file: DELETE allowed, parentdir: DELETE_CHILD allowed).
+		//use: Boolean isAllowed(Permission perm1, Permission perm2, Action action, Boolean isDir)
+		//where perm1 - permission for parent directory, perm2 - permission for child (file in this case)
+		Boolean check3a = AclNFSv4Matcher.isAllowed(permissionParentDirUser777, permissionUser777, actionREMOVE,
+				Boolean.FALSE);
+		assertTrue("user who_id=777, action REMOVE file is allowed ", check3a);
+		
+		
 		// ALSO CHECK LOOUP "Lookup filename". Bit to check: EXECUTE
 		Action actionLOOKUP = Action.LOOKUP;
 		Boolean checkLOOKUP = AclNFSv4Matcher.isAllowed(permissionNew,
@@ -195,13 +231,9 @@ public class TestjUnitACL {
 		aces.add(new ACE(AceType.ACCESS_ALLOWED_ACE_TYPE, 0, mask5, Who.USER,
 				1000, ACE.DEFAULT_ADDRESS_MSK, 0));
 
-		aces.add(new ACE(AceType.ACCESS_ALLOWED_ACE_TYPE, 0,
-				AccessMask.DELETE_CHILD.getValue(), Who.USER, 1000,
-				ACE.DEFAULT_ADDRESS_MSK, 1));
-
 		aces.add(new ACE(AceType.ACCESS_DENIED_ACE_TYPE, 0,
 				AccessMask.READ_DATA.getValue(), Who.USER, 1000,
-				ACE.DEFAULT_ADDRESS_MSK, 2));
+				ACE.DEFAULT_ADDRESS_MSK, 1));
 
 		ACL newACL = new ACL(rsID, rsType, aces);
 		aclHandler.setACL(newACL);
@@ -221,7 +253,7 @@ public class TestjUnitACL {
 		Subject subjectNew = new Subject(1000, 100);
 
 		Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG,
-				InetAddressType.IPv4, "127.0.0.1");
+				  "127.0.0.1");
 
 		Owner ownerNew = new Owner(0, 0);
 
@@ -231,7 +263,6 @@ public class TestjUnitACL {
 		// /////////////////////////////////////////////////////////////////////////////
 		// Bits ADD_FILE, EXECUTE, READ_DATA, WRITE_DATA are allowed as defined
 		// in mask5.
-		// DELETE_CHILD is allowed as well (ACE:1)
 		// ////////////////////////////////////////////////////////////////////////////
 
 		// Action LINK.
@@ -270,22 +301,22 @@ public class TestjUnitACL {
 		// //////////////////////////////////////////////////////////////////////
 		// Action OPEN
 		Action actionOPEN = Action.OPEN;
-		// USE: isAllowed(Permission perm, Action action, Boolean isDir)
+		//USE: Boolean isAllowed(Permission perm, Action action, OpenType opentype) 
 		Boolean checkOPEN = AclNFSv4Matcher.isAllowed(permissionNew,
-				actionOPEN, Boolean.FALSE);
+				actionOPEN, OpenType.OPEN4_NOCREATE);
 		assertTrue(
-				"user who_id=1000 is allowed to OPEN file as all required bits are defined in mask5 ",
+				"user who_id=1000 is allowed to OPEN file as READ_DATA in mask5 is allowed",
 				checkOPEN);
 
 		// //////////////////////////////////////////////////////////////////////
 		// Action RENAME.
-		Action actionRENAME = Action.RENAME;
+		//Action actionRENAME = Action.RENAME;
 		// USE METHOD: isAllowed(Permission perm, Action action, Boolean isDir)
-		Boolean checkRENAME = AclNFSv4Matcher.isAllowed(permissionNew,
-				actionRENAME, Boolean.FALSE);
-		assertTrue(
-				"user who_id=1000, action RENAME is allowed as bits DELETE_CHILD and ADD_FILE are allowed",
-				checkRENAME);
+		//Boolean checkRENAME = AclNFSv4Matcher.isAllowed(permissionNew,
+		//		actionRENAME, Boolean.FALSE);
+		//assertTrue(
+		//		"user who_id=1000, action RENAME is allowed as bits DELETE_CHILD and ADD_FILE are allowed",
+		//		checkRENAME);
 
 		// ALSO CHECK LOOUP "Lookup filename". Bit to check: EXECUTE
 		Action actionLOOKUP = Action.LOOKUP;
@@ -300,90 +331,88 @@ public class TestjUnitACL {
 	// ///////////////////////////////////////////
 
 	@Test
-	public void testCREATEdirAllow() throws Exception {
+	public void testCREATEdirAllowDeny_testLINK() throws Exception {
 
-		String rsID = genRsID();
-		RsType rsType = RsType.DIR;
+		//ask for permission to create sub-directory in parent directory (having parentACL) 
+		String parentRsID = genRsID();
+		RsType parentRsType = RsType.DIR;
 
-		List<ACE> aces = new ArrayList<ACE>();
+		List<ACE> parentAces = new ArrayList<ACE>();
 
-		aces.add(new ACE(AceType.ACCESS_ALLOWED_ACE_TYPE, 0,
-				AccessMask.ADD_SUBDIRECTORY.getValue()
-						| AccessMask.ADD_FILE.getValue(), Who.USER, 1001,
+		parentAces.add(new ACE(AceType.ACCESS_ALLOWED_ACE_TYPE, 1,
+				AccessMask.ADD_SUBDIRECTORY.getValue(), Who.USER, 111,
 				ACE.DEFAULT_ADDRESS_MSK, 0));
+		parentAces.add(new ACE(AceType.ACCESS_DENIED_ACE_TYPE, 1,
+				AccessMask.ADD_SUBDIRECTORY.getValue(), Who.USER, 222,
+				ACE.DEFAULT_ADDRESS_MSK, 1));
+		parentAces.add(new ACE(AceType.ACCESS_ALLOWED_ACE_TYPE, 1,
+				AccessMask.ADD_FILE.getValue(), Who.USER, 333,
+				ACE.DEFAULT_ADDRESS_MSK, 2));
 
-		ACL newACL = new ACL(rsID, rsType, aces);
-		aclHandler.setACL(newACL);
+		ACL parentACL = new ACL(parentRsID, parentRsType, parentAces);
+		aclHandler.setACL(parentACL);
 
-		Subject subjectNew = new Subject(1001, 100);
+		Subject subjectNew = new Subject(111, 100);
 
 		Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG,
-				InetAddressType.IPv4, "127.0.0.1");
+				  "127.0.0.1");
 
 		Owner ownerNew = new Owner(0, 0);
 
+		//permission for user 111 on object 'parent directory'
 		Permission permissionNew = AclMapper.getPermission(subjectNew,
-				originNew, ownerNew, newACL);
+				originNew, ownerNew, parentACL);
 
 		Action actionCREATE = Action.CREATE;
 		// USE: isAllowed(Permission perm, Action action, Boolean isDir)
-		Boolean checkCREATE1 = AclNFSv4Matcher.isAllowed(permissionNew,
+		Boolean checkCREATE = AclNFSv4Matcher.isAllowed(permissionNew,
 				actionCREATE, Boolean.TRUE);
 		assertTrue(
-				"For user who_id=1001 action CREATE (create new directory) is allowed as bit ADD_SUBDIRECTORY are set to allow",
-				checkCREATE1);
-
-		// ALSO CHECK action LINK. Bit to check: ADD_FILE.
+				"User who_id=111 is allowed to create a new directory in parent directory (as bit ADD_SUBDIRECTORY is allowed fro parent directory)",
+				checkCREATE);
+		
+		//user 222 is NOT ALLOWED to create a new directory in this parent directory,
+		//as bit ADD_SUBDIRECTORY is denied for this user on 'parent directory'
+		Subject subjectUser222 = new Subject(222, 100);
+		
+		Permission permissionUser222 = AclMapper.getPermission(subjectUser222,
+				originNew, ownerNew, parentACL);
+		
+		Boolean checkCREATE2 = AclNFSv4Matcher.isAllowed(permissionUser222,
+				actionCREATE, Boolean.TRUE);
+		assertFalse(
+				"User who_id=222 is NOT allowed to create a new directory in parent directory (as bit ADD_SUBDIRECTORY is DENIED for parent directory)",
+				checkCREATE2);
+		
+		
+		//for user 333 it is UNDEFINED whether he can create a new directory in this parent directory,
+		//as only bit ADD_FILE is allowed for this user on 'parent directory', and ADD_SUBDIRECTORY is not defined.
+		//That is action CREATE directory is UNDEFINED for this user.
+		Subject subjectUser333 = new Subject(333, 100);
+		
+		Permission permissionUser333 = AclMapper.getPermission(subjectUser333,
+				originNew, ownerNew, parentACL);
+		
+		Boolean checkCREATE3 = AclNFSv4Matcher.isAllowed(permissionUser333,
+				actionCREATE, Boolean.TRUE);
+		assertNull(
+				"User who_id=222 is NOT allowed to create a new directory in parent directory (as bit ADD_SUBDIRECTORY is DENIED for parent directory)",
+				checkCREATE3);
+		
+		
+		// ALSO CHECK action LINK for user 333. Bit to check on parent directory: ADD_FILE.
 		Action actionLINK = Action.LINK;
 		// USE: isAllowed(Permission perm, Action action)
-		Boolean checkLINK1 = AclNFSv4Matcher.isAllowed(permissionNew,
+		Boolean checkLINK1 = AclNFSv4Matcher.isAllowed(permissionUser333,
 				actionLINK);
 		assertTrue(
 				"For user who_id=1001 action LINK is allowed: bit ADD_FILE is allowed",
 				checkLINK1);
 
-	}
+	
 
-	// ///////////////////////////////////////////
-
-	@Test
-	public void testCREATEdirDeny() throws Exception {
-
-		String rsID = genRsID();
-		RsType rsType = RsType.DIR;
-
-		List<ACE> aces = new ArrayList<ACE>();
-
-		aces.add(new ACE(AceType.ACCESS_ALLOWED_ACE_TYPE, 0,
-				AccessMask.ADD_FILE.getValue() + AccessMask.EXECUTE.getValue(),
-				Who.USER, 1001, ACE.DEFAULT_ADDRESS_MSK, 0));
-
-		aces.add(new ACE(AceType.ACCESS_DENIED_ACE_TYPE, 0,
-				AccessMask.ADD_SUBDIRECTORY.getValue(), Who.USER, 1001,
-				ACE.DEFAULT_ADDRESS_MSK, 1));
-
-		ACL newACL = new ACL(rsID, rsType, aces);
-		aclHandler.setACL(newACL);
-
-		Subject subjectNew = new Subject(1001, 100);
-
-		Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG,
-				InetAddressType.IPv4, "127.0.0.1");
-
-		Owner ownerNew = new Owner(0, 0);
-
-		Permission permissionNew = AclMapper.getPermission(subjectNew,
-				originNew, ownerNew, newACL);
-
-		Action actionCREATE = Action.CREATE;
-		// USE: isAllowed(Permission perm, Action action, Boolean isDir)
-		Boolean checkCREATE2 = AclNFSv4Matcher.isAllowed(permissionNew,
-				actionCREATE, Boolean.TRUE);
-		assertFalse(
-				"For who_id=1001 action CREATE (create new directory) is denied: bit ADD_SUBDIRECTORY denied",
-				checkCREATE2);
-
-		// ALSO CHECK LOOUPP "Lookup parent directory". Bit to check: EXECUTE
+	/*
+		// ALSO CHECK LOOKUPP "Lookup parent directory". Bit to check: EXECUTE
 		Action actionLOOKUPP = Action.LOOKUPP;
 		// USE: isAllowed(Permission perm, Action action)
 		Boolean checkLOOKUPP = AclNFSv4Matcher.isAllowed(permissionNew,
@@ -401,8 +430,8 @@ public class TestjUnitACL {
 				"user who_id=1001 is allowed to READLINK : bit EXECUTE is allowed ",
 				isAllowedOrNot);
 
+	*/   
 	}
-
 	// ///////////////////////////////////////////
 
 	@Test
@@ -427,7 +456,7 @@ public class TestjUnitACL {
 		Subject subjectNew = new Subject(1001, 100);
 
 		Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG,
-				InetAddressType.IPv4, "127.0.0.1");
+				  "127.0.0.1");
 
 		Owner ownerNew = new Owner(0, 0);
 
@@ -476,7 +505,7 @@ public class TestjUnitACL {
 		Subject subjectNew = new Subject(1001, 100);
 
 		Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG,
-				InetAddressType.IPv4, "127.0.0.1");
+				  "127.0.0.1");
 
 		Owner ownerNew = new Owner(0, 0);
 
@@ -523,7 +552,7 @@ public class TestjUnitACL {
 		Subject subjectNew = new Subject(1001, 100);
 
 		Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG,
-				InetAddressType.IPv4, "127.0.0.1");
+				  "127.0.0.1");
 
 		Owner ownerNew = new Owner(0, 0);
 
@@ -563,7 +592,7 @@ public class TestjUnitACL {
 		Subject subjectNew = new Subject(1001, 100);
 
 		Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG,
-				InetAddressType.IPv4, "127.0.0.1");
+				  "127.0.0.1");
 
 		Owner ownerNew = new Owner(0, 0);
 
@@ -603,7 +632,7 @@ public class TestjUnitACL {
 		Subject subjectNew = new Subject(1001, 100);
 
 		Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG,
-				InetAddressType.IPv4, "127.0.0.1");
+				  "127.0.0.1");
 
 		Owner ownerNew = new Owner(0, 0);
 
@@ -640,7 +669,7 @@ public class TestjUnitACL {
 		Subject subjectNew = new Subject(111, 100);
 
 		Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG,
-				InetAddressType.IPv4, "127.0.0.1");
+				  "127.0.0.1");
 
 		Owner ownerNew = new Owner(0, 0);
 
@@ -660,81 +689,77 @@ public class TestjUnitACL {
 	// ///////////////////////////////////////////
 
 	@Test
-	public void testREMOVEDirectoryAllow() throws Exception {
+	public void testREMOVEDirectory() throws Exception {
 
 		String rsID = genRsID();
 		RsType rsType = RsType.DIR;
+		
+		String parentRsID = genRsID();
+		RsType parentRsType = RsType.DIR;
 
 		List<ACE> aces = new ArrayList<ACE>();
-
+		List<ACE> parentAces = new ArrayList<ACE>();
+		
 		aces.add(new ACE(AceType.ACCESS_ALLOWED_ACE_TYPE, 0,
+				AccessMask.DELETE.getValue(), Who.USER, 111,
+				ACE.DEFAULT_ADDRESS_MSK, 0));
+		aces.add(new ACE(AceType.ACCESS_ALLOWED_ACE_TYPE, 0,
+				AccessMask.DELETE.getValue(), Who.USER, 222,
+				ACE.DEFAULT_ADDRESS_MSK, 1));
+		
+		parentAces.add(new ACE(AceType.ACCESS_ALLOWED_ACE_TYPE, 1,
 				AccessMask.DELETE_CHILD.getValue(), Who.USER, 111,
 				ACE.DEFAULT_ADDRESS_MSK, 0));
+		parentAces.add(new ACE(AceType.ACCESS_DENIED_ACE_TYPE, 1,
+				AccessMask.DELETE_CHILD.getValue(), Who.USER, 222,
+				ACE.DEFAULT_ADDRESS_MSK, 1));
+		
 
-		ACL newACL = new ACL(rsID, rsType, aces);
-		aclHandler.setACL(newACL);
+		ACL childACL = new ACL(rsID, rsType, aces);
+		aclHandler.setACL(childACL);
 
+		ACL parentACL = new ACL(parentRsID, parentRsType, parentAces);
+		aclHandler.setACL(parentACL);
+		
 		Subject subjectNew = new Subject(111, 100);
-
+		Subject subjectNextUser = new Subject(222, 100);
+		
 		Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG,
-				InetAddressType.IPv4, "127.0.0.1");
+				  "127.0.0.1");
 
 		Owner ownerNew = new Owner(0, 0);
 
-		Permission permissionNew = AclMapper.getPermission(subjectNew,
-				originNew, ownerNew, newACL);
-
-		// Check REMOVE. Bits: DELETE_CHILD
+		Permission permissionChild = AclMapper.getPermission(subjectNew,
+				originNew, ownerNew, childACL);
+		
+		Permission permissionParent = AclMapper.getPermission(subjectNew,
+				originNew, ownerNew, parentACL);
+		
+		// Check REMOVE. 
+		////use: Boolean isAllowed(Permission perm1, Permission perm2, Action action, Boolean isDir)
 		Action actionREMOVE = Action.REMOVE;
-		Boolean checkREMOVE = AclNFSv4Matcher.isAllowed(permissionNew,
+		Boolean checkREMOVE = AclNFSv4Matcher.isAllowed(permissionParent, permissionChild,
 				actionREMOVE, Boolean.TRUE);
 		assertTrue(
-				"For who_id=111 action REMOVE is allowed: bit DELETE_CHILD allowed",
+				"For who_id=111 action REMOVE directory is allowed: bit DELETE_CHILD allowed for parent directory, bit DELETE allowed for directory itself",
 				checkREMOVE);
-
-	}
-
-	// ///////////////////////////////////////////
-
-	@Test
-	public void testREMOVEDirectoryDeny() throws Exception {
-
-		String rsID = genRsID();
-		RsType rsType = RsType.DIR;
-
-		List<ACE> aces = new ArrayList<ACE>();
-
-		aces.add(new ACE(AceType.ACCESS_ALLOWED_ACE_TYPE, 0, AccessMask.DELETE
-				.getValue(), Who.USER, 111, ACE.DEFAULT_ADDRESS_MSK, 0));
-
-		aces.add(new ACE(AceType.ACCESS_DENIED_ACE_TYPE, 0,
-				AccessMask.DELETE_CHILD.getValue(), Who.USER, 111,
-				ACE.DEFAULT_ADDRESS_MSK, 1));
-
-		ACL newACL = new ACL(rsID, rsType, aces);
-		aclHandler.setACL(newACL);
-
-		Subject subjectNew = new Subject(111, 100);
-
-		Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG,
-				InetAddressType.IPv4, "127.0.0.1");
-
-		Owner ownerNew = new Owner(0, 0);
-
-		Permission permissionNew = AclMapper.getPermission(subjectNew,
-				originNew, ownerNew, newACL);
-
-		// Check REMOVE. Bits: DELETE_CHILD
-		Action actionREMOVE = Action.REMOVE;
-		Boolean checkREMOVE = AclNFSv4Matcher.isAllowed(permissionNew,
+		
+		//for user 222:
+		//For who_id=222 action REMOVE directory is NOT allowed, as bit DELETE_CHILD DENIED for parent directory
+		Permission permissionChildNextUser = AclMapper.getPermission(subjectNextUser,
+				originNew, ownerNew, childACL);
+		
+		Permission permissionParentNextUser = AclMapper.getPermission(subjectNextUser,
+				originNew, ownerNew, parentACL);
+		
+		Boolean checkREMOVENextUser = AclNFSv4Matcher.isAllowed(permissionParentNextUser, permissionChildNextUser,
 				actionREMOVE, Boolean.TRUE);
 		assertFalse(
-				"For who_id=111 action REMOVE is denied: bit DELETE_CHILD denied",
-				checkREMOVE);
-
+				"For who_id=222 action REMOVE directory is NOT allowed, as bit DELETE_CHILD denied for parent directory ",
+				checkREMOVENextUser);
 	}
 
-	// ///////////////////////////////////////////
+	/////////////////////////////////////////////
 
 	@Test
 	public void testREMOVEFileAllow() throws Exception {
@@ -742,35 +767,53 @@ public class TestjUnitACL {
 		String rsID = genRsID();
 		RsType rsType = RsType.FILE;
 
+		String parentRsID = genRsID();
+		RsType parentRsType = RsType.DIR;
+		
 		List<ACE> aces = new ArrayList<ACE>();
-
+		List<ACE> parentAces = new ArrayList<ACE>();
+		
 		aces.add(new ACE(AceType.ACCESS_ALLOWED_ACE_TYPE, 0, AccessMask.DELETE
 				.getValue(), Who.USER, 111, ACE.DEFAULT_ADDRESS_MSK, 0));
 
-		aces.add(new ACE(AceType.ACCESS_DENIED_ACE_TYPE, 0,
+		parentAces.add(new ACE(AceType.ACCESS_ALLOWED_ACE_TYPE, 1,
 				AccessMask.DELETE_CHILD.getValue(), Who.USER, 111,
-				ACE.DEFAULT_ADDRESS_MSK, 1));
-
+				ACE.DEFAULT_ADDRESS_MSK, 0));
+			
 		ACL newACL = new ACL(rsID, rsType, aces);
 		aclHandler.setACL(newACL);
 
 		Subject subjectNew = new Subject(111, 100);
 
 		Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG,
-				InetAddressType.IPv4, "127.0.0.1");
+				  "127.0.0.1");
 
 		Owner ownerNew = new Owner(0, 0);
 
 		Permission permissionNew = AclMapper.getPermission(subjectNew,
 				originNew, ownerNew, newACL);
 
-		// Check REMOVE (for file). Bits: DELETE
+		//for parent directory:
+		ACL parentACL = new ACL(parentRsID, parentRsType, parentAces);
+		aclHandler.setACL(parentACL);
+		
+		Permission permissionParentDir = AclMapper.getPermission(subjectNew,
+				originNew, ownerNew, parentACL);
+		
+		// Check REMOVE (for file). Bits: DELETE for file, DELETE_CHILD for directory are allowed
+		//USE: Boolean isAllowed(Permission perm1, Permission perm2, Action action, Boolean isDir)
+		//@param isDir is not used for action REMOVE
 		Action actionREMOVE = Action.REMOVE;
-		Boolean checkREMOVE = AclNFSv4Matcher.isAllowed(permissionNew,
+		Boolean checkREMOVE = AclNFSv4Matcher.isAllowed(permissionParentDir, permissionNew,
 				actionREMOVE, Boolean.FALSE);
+		Boolean checkREMOVE2 = AclNFSv4Matcher.isAllowed(permissionParentDir, permissionNew,
+				actionREMOVE, Boolean.TRUE);
 		assertTrue(
-				"For who_id=111 action REMOVE file is allowed: bit DELETE allowed",
+				"For who_id=111 action REMOVE file is allowed: bit DELETE for file and DELETE_CHILD for directory are allowed",
 				checkREMOVE);
+		assertTrue(
+				"For who_id=111 action REMOVE file is allowed: bit DELETE for file and DELETE_CHILD for directory are allowed",
+				checkREMOVE2);
 
 	}
 
@@ -781,13 +824,17 @@ public class TestjUnitACL {
 
 		String rsID = genRsID();
 		RsType rsType = RsType.FILE;
-
+		
+		String parentRsID = genRsID();
+		RsType parentRsType = RsType.DIR;
+		
 		List<ACE> aces = new ArrayList<ACE>();
-
+		List<ACE> parentAces = new ArrayList<ACE>();
+		
 		aces.add(new ACE(AceType.ACCESS_DENIED_ACE_TYPE, 0, AccessMask.DELETE
 				.getValue(), Who.USER, 111, ACE.DEFAULT_ADDRESS_MSK, 0));
 
-		aces.add(new ACE(AceType.ACCESS_ALLOWED_ACE_TYPE, 0,
+		parentAces.add(new ACE(AceType.ACCESS_ALLOWED_ACE_TYPE, 1,
 				AccessMask.DELETE_CHILD.getValue(), Who.USER, 111,
 				ACE.DEFAULT_ADDRESS_MSK, 1));
 
@@ -797,16 +844,24 @@ public class TestjUnitACL {
 		Subject subjectNew = new Subject(111, 100);
 
 		Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG,
-				InetAddressType.IPv4, "127.0.0.1");
+				  "127.0.0.1");
 
 		Owner ownerNew = new Owner(0, 0);
 
 		Permission permissionNew = AclMapper.getPermission(subjectNew,
 				originNew, ownerNew, newACL);
-
-		// Check REMOVE (for file). Bits: DELETE
+		
+		//for parent directory:
+		ACL parentACL = new ACL(parentRsID, parentRsType, parentAces);
+		aclHandler.setACL(parentACL);
+		
+		Permission permissionParentDir = AclMapper.getPermission(subjectNew,
+				originNew, ownerNew, parentACL);
+		
+		// Check REMOVE (for file). Bits: DELETE for file denied, DELETE_CHILD for parent dir allowed.
+		// then action REMOVE must be denied
 		Action actionREMOVE = Action.REMOVE;
-		Boolean checkREMOVE = AclNFSv4Matcher.isAllowed(permissionNew,
+		Boolean checkREMOVE = AclNFSv4Matcher.isAllowed(permissionParentDir, permissionNew,
 				actionREMOVE, Boolean.FALSE);
 		assertFalse(
 				"For who_id=111 action REMOVE file is denied: bit DELETE denied",
@@ -821,13 +876,21 @@ public class TestjUnitACL {
 
 		String rsID = genRsID();
 		RsType rsType = RsType.DIR;
-
+		
+		String parentRsID = genRsID();
+		RsType parentRsType = RsType.DIR;
+		
 		List<ACE> aces = new ArrayList<ACE>();
-
+		List<ACE> parentAces = new ArrayList<ACE>();
+		
 		aces.add(new ACE(AceType.ACCESS_ALLOWED_ACE_TYPE, 0,
-				AccessMask.DELETE_CHILD.getValue()
-						| AccessMask.ADD_SUBDIRECTORY.getValue(), Who.USER,
+				AccessMask.DELETE.getValue(), Who.USER,
 				111, ACE.DEFAULT_ADDRESS_MSK, 0));
+		
+		parentAces.add(new ACE(AceType.ACCESS_ALLOWED_ACE_TYPE, 0,
+				AccessMask.DELETE_CHILD.getValue()|AccessMask.ADD_SUBDIRECTORY.getValue(), Who.USER,
+				111, ACE.DEFAULT_ADDRESS_MSK, 0));
+		
 
 		ACL newACL = new ACL(rsID, rsType, aces);
 		aclHandler.setACL(newACL);
@@ -835,16 +898,27 @@ public class TestjUnitACL {
 		Subject subjectNew = new Subject(111, 100);
 
 		Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG,
-				InetAddressType.IPv4, "127.0.0.1");
+				  "127.0.0.1");
 
 		Owner ownerNew = new Owner(0, 0);
 
 		Permission permissionNew = AclMapper.getPermission(subjectNew,
 				originNew, ownerNew, newACL);
-
-		// Check RENAME (directory). Bits: DELETE_CHILD, ADD_FILE
+		
+		//for parent directory:
+		ACL parentACL = new ACL(parentRsID, parentRsType, parentAces);
+		aclHandler.setACL(parentACL);
+		
+		Permission permissionParentDir = AclMapper.getPermission(subjectNew,
+				originNew, ownerNew, parentACL);
+		
+		// Check RENAME (directory). Bits: DELETE_CHILD, ADD_SUBDIRECTORY for parent directory
+		//and DELETE for directory to be renamed are allowed. Action RENAME must be allowed
+		//USE :Boolean isAllowed(Permission perm1, Permission perm2, Action action, Boolean isDir)
+		//perm 1 - for a source directory, perm2 - for destination directory,
+		//isDir TRUE if action applied to directory
 		Action actionRENAMEdir = Action.RENAME;
-		Boolean checkRENAMEdir = AclNFSv4Matcher.isAllowed(permissionNew,
+		Boolean checkRENAMEdir = AclNFSv4Matcher.isAllowed(permissionParentDir, permissionNew,
 				actionRENAMEdir, Boolean.TRUE);
 		assertTrue(
 				"For who_id=111 action RENAME directory is allowed: DELETE_CHILD, ADD_SUBDIRECTORY allowed",
@@ -876,7 +950,7 @@ public class TestjUnitACL {
 		Subject subjectNew = new Subject(111, 100);
 
 		Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG,
-				InetAddressType.IPv4, "127.0.0.1");
+				  "127.0.0.1");
 
 		Owner ownerNew = new Owner(0, 0);
 
@@ -917,7 +991,7 @@ public class TestjUnitACL {
 		Subject subjectNew = new Subject(111, 100);
 
 		Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG,
-				InetAddressType.IPv4, "127.0.0.1");
+				  "127.0.0.1");
 
 		Owner ownerNew = new Owner(0, 0);
 
@@ -958,7 +1032,7 @@ public class TestjUnitACL {
 		Subject subjectNew = new Subject(111, 100);
 
 		Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG,
-				InetAddressType.IPv4, "127.0.0.1");
+				  "127.0.0.1");
 
 		Owner ownerNew = new Owner(0, 0);
 
@@ -999,7 +1073,7 @@ public class TestjUnitACL {
 		Subject subjectNew = new Subject(111, 100);
 
 		Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_WEAK,
-				InetAddressType.IPv4, "127.0.0.1");
+				  "127.0.0.1");
 
 		Owner ownerNew = new Owner(0, 0);
 
@@ -1039,7 +1113,7 @@ public class TestjUnitACL {
 		Subject subjectNew = new Subject(111, 100);
 
 		Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_WEAK,
-				InetAddressType.IPv4, "127.0.0.1");
+				  "127.0.0.1");
 
 		Owner ownerNew = new Owner(0, 0);
 
@@ -1080,7 +1154,7 @@ public class TestjUnitACL {
 		Subject subjectNew = new Subject(111, 100);
 
 		Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_WEAK,
-				InetAddressType.IPv4, "127.0.0.1");
+				  "127.0.0.1");
 
 		Owner ownerNew = new Owner(0, 0);
 
@@ -1120,7 +1194,7 @@ public class TestjUnitACL {
 		Subject subjectNew = new Subject(111, 100);
 
 		Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG,
-				InetAddressType.IPv4, "127.0.0.1");
+				  "127.0.0.1");
 
 		Owner ownerNew = new Owner(0, 0);
 
@@ -1169,7 +1243,7 @@ public class TestjUnitACL {
 		Subject subjectNew = new Subject(111, 100);
 
 		Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG,
-				InetAddressType.IPv4, "127.0.0.1");
+				  "127.0.0.1");
 
 		Owner ownerNew = new Owner(0, 0);
 
@@ -1243,7 +1317,7 @@ public class TestjUnitACL {
 		Subject subjectNew = new Subject(111, 100);
 
 		Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG,
-				InetAddressType.IPv4, "127.0.0.1");
+				  "127.0.0.1");
 
 		Owner ownerNew = new Owner(0, 0);
 
@@ -1314,7 +1388,7 @@ public class TestjUnitACL {
 		Subject subjectNew = new Subject(111, 100);
 
 		Origin originNew = new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG,
-				InetAddressType.IPv4, "127.0.0.1");
+				  "127.0.0.1");
 
 		Owner ownerNew = new Owner(0, 0);
 
