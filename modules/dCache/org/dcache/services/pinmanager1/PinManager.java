@@ -515,7 +515,8 @@ public class PinManager extends AbstractCell implements Runnable  {
         long lifetime = pinRequest.getLifetime();
         if(lifetime <=0 && lifetime != -1 )
         {
-            pinRequest.setFailed(1, "lifetime <=0");
+              
+            pinRequest.setFailed(1, "lifetime ="+lifetime+" <=0");
             return;
         }
         long srmRequestId = pinRequest.getRequestId();
