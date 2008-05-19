@@ -2153,7 +2153,7 @@ public class ManagerV2
 		}
 
 		boolean linkgroupid=false;
-		String subSelect   = "select linkgroupid from LinkGroupIO.LINKGROUP_VO_TABLE where ";
+		String subSelect   = "select linkgroupid from " + LinkGroupIO.LINKGROUP_VO_TABLE + " where ";
 		if (voGroup!=null && !voGroup.equals("")) {
 			linkgroupid=true;
 			subSelect +=" voGroup = '"+voGroup+'\'';
