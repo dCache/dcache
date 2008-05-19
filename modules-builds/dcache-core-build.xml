@@ -749,7 +749,6 @@
 		<copy file="${sourceDir}/${dcache.packagePrefix}/config/lm.batch" todir="${binDir}/config" />
 		<copy file="${sourceDir}/${dcache.packagePrefix}/config/dir.batch" todir="${binDir}/config" />
 		<copy file="${sourceDir}/${dcache.packagePrefix}/config/door.batch" todir="${binDir}/config" />
-	        <copy file="${sourceDir}/${dcache.packagePrefix}/config/authdoor.batch" todir="${binDir}/config" />
 		<copy file="${sourceDir}/${dcache.packagePrefix}/config/adminDoor.batch" todir="${binDir}/config" />
 		<copy file="${sourceDir}/${dcache.packagePrefix}/config/httpd.batch" todir="${binDir}/config" />
 		<copy file="${sourceDir}/${dcache.packagePrefix}/config/infoProvider.batch" todir="${binDir}/config" />
@@ -759,8 +758,6 @@
 		<copy file="${sourceDir}/${dcache.packagePrefix}/config/statistics.batch" todir="${binDir}/config" />
 		<copy file="${sourceDir}/${dcache.packagePrefix}/config/xrootdDoor.batch" todir="${binDir}/config" />
 		<copy file="${sourceDir}/${dcache.packagePrefix}/config/chimera.batch" todir="${binDir}/config" />
-		<!--<copy file="${sourceDir}/${dcache.packagePrefix}/config/aclcell.batch" todir="${binDir}/config" /> -->
-		<!-- configs  -->
 		<copy file="${sourceDir}/${dcache.packagePrefix}/config/PoolManager.conf" todir="${binDir}/config" />
 		<copy file="${sourceDir}/${dcache.packagePrefix}/config/lm.config" todir="${binDir}/config" />
 
