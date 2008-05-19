@@ -2156,15 +2156,15 @@ public class ManagerV2
 		String subSelect   = "select linkgroupid from " + LinkGroupIO.LINKGROUP_VO_TABLE + " where ";
 		if (voGroup!=null && !voGroup.equals("")) {
 			linkgroupid=true;
-			subSelect +=" voGroup = '"+voGroup+'\'';
+			subSelect +=" ( voGroup = '"+voGroup+"' OR vogroup='*') ";
 		}
 		if(voRole != null && !voRole.equals("")) {
 			if(linkgroupid==false) { 
 				linkgroupid=true;
-				subSelect += " voRole = '"+voRole+'\'';
+				subSelect += " ( voRole = '"+voRole+"' or vorole='*' ) ";
 			}
 			else { 
-				subSelect += " AND voRole = '"+voRole+'\'';
+				subSelect += " AND ( voRole = '"+voRole+"' or  vorole='*' )";
 			}
 		}
 		if (linkgroupid==true) { 
