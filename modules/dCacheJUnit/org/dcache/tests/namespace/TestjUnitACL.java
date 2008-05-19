@@ -873,27 +873,19 @@ public class TestjUnitACL {
 
 	@Test
 	public void testRENAMEDirAllow() throws Exception {
-
-		String rsID = genRsID();
-		RsType rsType = RsType.DIR;
 		
 		String parentRsID = genRsID();
 		RsType parentRsType = RsType.DIR;
 		
-		List<ACE> aces = new ArrayList<ACE>();
 		List<ACE> parentAces = new ArrayList<ACE>();
-		
-		aces.add(new ACE(AceType.ACCESS_ALLOWED_ACE_TYPE, 0,
-				AccessMask.DELETE.getValue(), Who.USER,
-				111, ACE.DEFAULT_ADDRESS_MSK, 0));
 		
 		parentAces.add(new ACE(AceType.ACCESS_ALLOWED_ACE_TYPE, 0,
 				AccessMask.DELETE_CHILD.getValue()|AccessMask.ADD_SUBDIRECTORY.getValue(), Who.USER,
 				111, ACE.DEFAULT_ADDRESS_MSK, 0));
 		
 
-		ACL newACL = new ACL(rsID, rsType, aces);
-		aclHandler.setACL(newACL);
+		ACL parentACL = new ACL(parentRsID, parentRsType, parentAces);
+		aclHandler.setACL(parentACL);
 
 		Subject subjectNew = new Subject(111, 100);
 
@@ -902,26 +894,20 @@ public class TestjUnitACL {
 
 		Owner ownerNew = new Owner(0, 0);
 
-		Permission permissionNew = AclMapper.getPermission(subjectNew,
-				originNew, ownerNew, newACL);
-		
-		//for parent directory:
-		ACL parentACL = new ACL(parentRsID, parentRsType, parentAces);
-		aclHandler.setACL(parentACL);
-		
-		Permission permissionParentDir = AclMapper.getPermission(subjectNew,
+		Permission parentPermission = AclMapper.getPermission(subjectNew,
 				originNew, ownerNew, parentACL);
-		
-		// Check RENAME (directory). Bits: DELETE_CHILD, ADD_SUBDIRECTORY for parent directory
-		//and DELETE for directory to be renamed are allowed. Action RENAME must be allowed
+
+		// Check RENAME (directory). Bits that has to checked for parent directory: DELETE_CHILD, ADD_SUBDIRECTORY.
 		//USE :Boolean isAllowed(Permission perm1, Permission perm2, Action action, Boolean isDir)
-		//perm 1 - for a source directory, perm2 - for destination directory,
-		//isDir TRUE if action applied to directory
+		//Example rename: a/b/c/dir1  ->  d/f/g/dir2  
+		//perm 1 - for source directory (parent of object that has to be renamed, in example above a/b/c), 
+		//perm2 - for destination directory (parent directory of 'new' object, in example above d/f/g)
+		//isDir TRUE if action applied to directory (in example dir1)
 		Action actionRENAMEdir = Action.RENAME;
-		Boolean checkRENAMEdir = AclNFSv4Matcher.isAllowed(permissionParentDir, permissionNew,
+		Boolean checkRENAMEdir = AclNFSv4Matcher.isAllowed(parentPermission, parentPermission,
 				actionRENAMEdir, Boolean.TRUE);
 		assertTrue(
-				"For who_id=111 action RENAME directory is allowed: DELETE_CHILD, ADD_SUBDIRECTORY allowed",
+				"For who_id=111 action RENAME directory is allowed: DELETE_CHILD, ADD_SUBDIRECTORY allowed. (assume parent directory is the same as destination directory)",
 				checkRENAMEdir);
 
 	}
@@ -931,21 +917,21 @@ public class TestjUnitACL {
 	@Test
 	public void testRENAMEdirDeny() throws Exception {
 
-		String rsID = genRsID();
-		RsType rsType = RsType.DIR;
+		String parentRsID = genRsID();
+		RsType parentRsType = RsType.DIR;
 
-		List<ACE> aces = new ArrayList<ACE>();
+		List<ACE> parentAces = new ArrayList<ACE>();
 
-		aces.add(new ACE(AceType.ACCESS_ALLOWED_ACE_TYPE, 0,
+		parentAces.add(new ACE(AceType.ACCESS_ALLOWED_ACE_TYPE, 0,
 				AccessMask.DELETE_CHILD.getValue(), Who.USER, 111,
 				ACE.DEFAULT_ADDRESS_MSK, 0));
 
-		aces.add(new ACE(AceType.ACCESS_DENIED_ACE_TYPE, 0,
+		parentAces.add(new ACE(AceType.ACCESS_DENIED_ACE_TYPE, 0,
 				AccessMask.ADD_SUBDIRECTORY.getValue(), Who.USER, 111,
 				ACE.DEFAULT_ADDRESS_MSK, 1));
 
-		ACL newACL = new ACL(rsID, rsType, aces);
-		aclHandler.setACL(newACL);
+		ACL parentACL = new ACL(parentRsID, parentRsType, parentAces);
+		aclHandler.setACL(parentACL);
 
 		Subject subjectNew = new Subject(111, 100);
 
@@ -954,15 +940,16 @@ public class TestjUnitACL {
 
 		Owner ownerNew = new Owner(0, 0);
 
-		Permission permissionNew = AclMapper.getPermission(subjectNew,
-				originNew, ownerNew, newACL);
+		Permission parentPermission = AclMapper.getPermission(subjectNew,
+				originNew, ownerNew, parentACL);
 
-		// Check RENAME (directory). Bits: DELETE_CHILD, ADD_SUBDIRECTORY
+		// Check RENAME (directory). Bits that are checked for parent directory of the directory
+        //that has to be renamed: DELETE_CHILD, ADD_SUBDIRECTORY
 		Action actionRENAMEdir = Action.RENAME;
-		Boolean checkRENAMEdir = AclNFSv4Matcher.isAllowed(permissionNew,
+		Boolean checkRENAMEdir = AclNFSv4Matcher.isAllowed(parentPermission, parentPermission,
 				actionRENAMEdir, Boolean.TRUE);
 		assertFalse(
-				"For who_id=111 action RENAME directory is denied: DELETE_CHILD allowed, ADD_SUBDIRECTORY denied",
+				"For who_id=111 action RENAME directory is denied: DELETE_CHILD allowed, ADD_SUBDIRECTORY denied.(assume parent directory is the same as destination directory) ",
 				checkRENAMEdir);
 
 	}
@@ -998,12 +985,12 @@ public class TestjUnitACL {
 		Permission permissionNew = AclMapper.getPermission(subjectNew,
 				originNew, ownerNew, newACL);
 
-		// Check RENAME (directory). Bits: DELETE_CHILD, ADD_SUBDIRECTORY
+		// Check RENAME (directory). Bits checked for parent directory: DELETE_CHILD, ADD_SUBDIRECTORY
 		Action actionRENAMEdir = Action.RENAME;
-		Boolean checkRENAMEdir = AclNFSv4Matcher.isAllowed(permissionNew,
+		Boolean checkRENAMEdir = AclNFSv4Matcher.isAllowed(permissionNew, permissionNew,
 				actionRENAMEdir, Boolean.TRUE);
 		assertFalse(
-				"For who_id=111 action RENAME directory is denied: DELETE_CHILD denied, ADD_SUBDIRECTORY allowed",
+				"For who_id=111 action RENAME directory is denied: DELETE_CHILD denied, ADD_SUBDIRECTORY allowed. (assume parent directory is the same as destination directory)",
 				checkRENAMEdir);
 
 	}
@@ -1018,11 +1005,12 @@ public class TestjUnitACL {
 
 		List<ACE> aces = new ArrayList<ACE>();
 
-		aces.add(new ACE(AceType.ACCESS_ALLOWED_ACE_TYPE, 0,
+		//these are ACEs of the directory, that contains a file to be renamed    
+		aces.add(new ACE(AceType.ACCESS_ALLOWED_ACE_TYPE, 1,
 				AccessMask.DELETE_CHILD.getValue(), Who.USER, 111,
 				ACE.DEFAULT_ADDRESS_MSK, 0));
 
-		aces.add(new ACE(AceType.ACCESS_ALLOWED_ACE_TYPE, 0,
+		aces.add(new ACE(AceType.ACCESS_ALLOWED_ACE_TYPE, 1,
 				AccessMask.ADD_FILE.getValue(), Who.USER, 111,
 				ACE.DEFAULT_ADDRESS_MSK, 1));
 
@@ -1041,10 +1029,10 @@ public class TestjUnitACL {
 
 		// Check RENAME (file). Bits: DELETE_CHILD, ADD_FILE
 		Action actionRENAMEfile = Action.RENAME;
-		Boolean checkRENAMEfile = AclNFSv4Matcher.isAllowed(permissionNew,
+		Boolean checkRENAMEfile = AclNFSv4Matcher.isAllowed(permissionNew, permissionNew,
 				actionRENAMEfile, Boolean.FALSE);
 		assertTrue(
-				"For who_id=111 action RENAME file is allowed: DELETE_CHILD, ADD_FILE are allowed",
+				"For who_id=111 action RENAME file is allowed: DELETE_CHILD, ADD_FILE are allowed for parent directory (assume parent directory is the same as destination directory)",
 				checkRENAMEfile);
 
 	}
@@ -1058,12 +1046,13 @@ public class TestjUnitACL {
 		RsType rsType = RsType.FILE;
 
 		List<ACE> aces = new ArrayList<ACE>();
-
-		aces.add(new ACE(AceType.ACCESS_DENIED_ACE_TYPE, 0,
+		
+		//these are ACEs of the directory, that contains a file to be renamed
+		aces.add(new ACE(AceType.ACCESS_DENIED_ACE_TYPE, 1,
 				AccessMask.DELETE_CHILD.getValue(), Who.USER, 111,
 				ACE.DEFAULT_ADDRESS_MSK, 0));
 
-		aces.add(new ACE(AceType.ACCESS_ALLOWED_ACE_TYPE, 0,
+		aces.add(new ACE(AceType.ACCESS_ALLOWED_ACE_TYPE, 1,
 				AccessMask.ADD_FILE.getValue(), Who.USER, 111,
 				ACE.DEFAULT_ADDRESS_MSK, 1));
 
@@ -1080,12 +1069,13 @@ public class TestjUnitACL {
 		Permission permissionNew = AclMapper.getPermission(subjectNew,
 				originNew, ownerNew, newACL);
 
-		// Check RENAME (file). Bits: DELETE_CHILD, ADD_FILE
+		// Check RENAME (file). Bits: DELETE_CHILD, ADD_FILE for parent(source) directory.
+		// in this test 'source directory'='destination directory' 
 		Action actionRENAMEfile = Action.RENAME;
-		Boolean checkRENAMEfile = AclNFSv4Matcher.isAllowed(permissionNew,
+		Boolean checkRENAMEfile = AclNFSv4Matcher.isAllowed(permissionNew, permissionNew,
 				actionRENAMEfile, Boolean.FALSE);
 		assertFalse(
-				"For who_id=111 action RENAME file is denied: DELETE_CHILD denied, ADD_FILE allowed",
+				"For who_id=111 action RENAME file is denied: DELETE_CHILD denied, ADD_FILE allowed.(assume parent directory is the same as destination directory) ",
 				checkRENAMEfile);
 
 	}
@@ -1120,12 +1110,13 @@ public class TestjUnitACL {
 		Permission permissionNew = AclMapper.getPermission(subjectNew,
 				originNew, ownerNew, newACL);
 
-		// Check RENAME (file). Bits: DELETE_CHILD, ADD_FILE
+		// Check RENAME (file). Bits: DELETE_CHILD, ADD_FILE for parent(source) directory.
+		// in this test 'source directory'='destination directory'
 		Action actionRENAMEfile = Action.RENAME;
-		Boolean checkRENAMEfile = AclNFSv4Matcher.isAllowed(permissionNew,
+		Boolean checkRENAMEfile = AclNFSv4Matcher.isAllowed(permissionNew, permissionNew,
 				actionRENAMEfile, Boolean.FALSE);
 		assertFalse(
-				"For who_id=111 action RENAME file is denied: DELETE_CHILD allowed, ADD_FILE denied",
+				"For who_id=111 action RENAME file is denied: DELETE_CHILD allowed, ADD_FILE denied.",
 				checkRENAMEfile);
 
 	}
