@@ -40,10 +40,11 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.lang.reflect.Constructor;
 
-public class CacheRepositoryV5// extends CellCompanion implements CacheRepository
-    implements CacheRepositoryListener
+public class CacheRepositoryV5// extends CellCompanion
+    implements CacheRepositoryListener, Iterable<PnfsId>
 {
     private final List<StateChangeListener> _listeners =
         new CopyOnWriteArrayList<StateChangeListener>();
@@ -142,17 +143,27 @@ public class CacheRepositoryV5// extends CellCompanion implements CacheRepositor
      * @throws IOException if an io error occurs
      * @throws RepositoryException in case of other internal errors
      */
-    public synchronized void runInventory()
+    public synchronized void runInventory(int flags)
         throws IOException, RepositoryException, IllegalStateException
     {
         try {
             if (_initialised)
                 throw new IllegalStateException("Can only load repository once.");
             _initialised = true;
-            _repository.runInventory(null, _pnfs, 0);
+            _repository.runInventory(null, _pnfs, flags);
         } catch (CacheException e) {
             throw new RepositoryException("Failed to initialise repository: " + e.getMessage());
         }
+    }
+
+    /**
+     * Returns the list of PNFS IDs of entries in the repository.
+     */
+    public synchronized Iterator<PnfsId> iterator()
+    {
+        if (!_initialised)
+            throw new IllegalStateException("Repository has not been initialized");
+        return _repository.pnfsids();
     }
 
     /**
@@ -182,21 +193,34 @@ public class CacheRepositoryV5// extends CellCompanion implements CacheRepositor
                                                 StickyRecord sticky)
         throws FileInCacheException
     {
+        if (!_initialised)
+            throw new IllegalStateException("Repository has not been initialized");
         try {
-            return new WriteHandleImpl(this,
-                                       _repository,
-                                       _pnfs,
-                                       _repository.createEntry(id),
-                                       info,
-                                       transferState,
-                                       targetState,
-                                       sticky);
-            // TODO: Remove entry in case of failures!
+            CacheRepositoryEntry entry = _repository.createEntry(id);
+            try {
+                WriteHandle handle = new WriteHandleImpl(this,
+                                                         _repository,
+                                                         _pnfs,
+                                                         entry,
+                                                         info,
+                                                         transferState,
+                                                         targetState,
+                                                         sticky);
+                entry = null;
+                return handle;
+            } finally {
+                if (entry != null) {
+                    entry.lock(false);
+                    _repository.removeEntry(entry);
+                }
+            }
         } catch (FileInCacheException e) {
             throw e;
+        } catch (IOException e) {
+            throw new RuntimeException("Internal repository error", e);
         } catch (CacheException e) {
             // FIXME: Shut down repository
-            throw new RuntimeException("Internal repository error: " + e.getMessage());
+            throw new RuntimeException("Internal repository error", e);
         }
     }
 
@@ -218,9 +242,25 @@ public class CacheRepositoryV5// extends CellCompanion implements CacheRepositor
     public synchronized ReadHandle openEntry(PnfsId id)
         throws FileNotInCacheException
     {
+        if (!_initialised)
+            throw new IllegalStateException("Repository has not been initialized");
+
+        switch (getState(id)) {
+        case FROM_CLIENT:
+        case FROM_STORE:
+        case FROM_POOL:
+            throw new FileNotInCacheException("File is incomplete");
+        default:
+            break;
+        }
+
         try {
             return new ReadHandleImpl(this, _repository.getEntry(id));
         } catch (FileNotInCacheException e) {
+            /* Somebody got the idea that we have the file, so we make
+             * sure to remove any stray pointers.
+             */
+            _pnfs.clearCacheLocation(id);
             throw e;
         } catch (CacheException e) {
             throw new RuntimeException("Internal repository error: "
@@ -236,6 +276,8 @@ public class CacheRepositoryV5// extends CellCompanion implements CacheRepositor
     public synchronized CacheEntry getEntry(PnfsId id)
         throws FileNotInCacheException
     {
+        if (!_initialised)
+            throw new IllegalStateException("Repository has not been initialized");
         try {
             return new CacheEntryImpl(_repository.getEntry(id), getState(id));
         } catch (FileNotInCacheException e) {
@@ -245,7 +287,6 @@ public class CacheRepositoryV5// extends CellCompanion implements CacheRepositor
                                        + e.getMessage());
         }
     }
-
 
     /**
      * Returns information about the size and space usage of the
@@ -259,7 +300,8 @@ public class CacheRepositoryV5// extends CellCompanion implements CacheRepositor
         return new SpaceRecord(_repository.getTotalSpace(),
                                _repository.getFreeSpace(),
                                _repository.getPreciousSpace(),
-                               _sweeper.getRemovableSpace());
+                               _sweeper.getRemovableSpace(),
+                               _sweeper.getLRUSeconds());
     }
 
     /**
@@ -275,22 +317,22 @@ public class CacheRepositoryV5// extends CellCompanion implements CacheRepositor
     }
 
     /**
-     * Sets the state of an entry.
+     * Internal method for setting the state of an entry.
      *
-     * @param id a PNFS ID
+     * @param entry a repository entry
      * @param state an entry state
-     * @throws NullPointerException if <code>id</code> is null
-     * @throws FileNotInCacheException if file not found or scheduled
-     * for removal.
      * @throws IllegalArgumentException is <code>state</code> is NEW
      * or DESTROYED.
      */
-    public synchronized void setState(PnfsId id, EntryState state)
-        throws FileNotInCacheException
+    synchronized void setState(CacheRepositoryEntry entry, EntryState state)
     {
+        // FIXME: Should we be able to mark a state anything else
+        // but REMOVED, PRECIOUS or CACHED?
+        //
+        // What if we refuse deletion? We need to be able to signal
+        // this - e.g. we cannot remove a file that is still
+        // transient. Requires serious rethinking!
         try {
-            CacheRepositoryEntry entry = _repository.getEntry(id);
-
             if (entry.isBad()) {
                 entry.setBad(false);
             }
@@ -309,7 +351,7 @@ public class CacheRepositoryV5// extends CellCompanion implements CacheRepositor
                 break;
             case BROKEN:
                 entry.setBad(true);
-                updateState(id, BROKEN);
+                updateState(entry.getPnfsId(), BROKEN);
                 break;
             case CACHED:
                 entry.setCached();
@@ -318,13 +360,76 @@ public class CacheRepositoryV5// extends CellCompanion implements CacheRepositor
                 entry.setPrecious(true);
                 break;
             case REMOVED:
-                entry.setRemoved();
+                _repository.removeEntry(entry);
                 break;
             case DESTROYED:
                 throw new IllegalArgumentException("Cannot mark entry destroyed");
             }
+        } catch (CacheException e) {
+            throw new RuntimeException("Internal repository error: " +
+                                       e.getMessage());
+        }
+    }
+
+
+    /**
+     * Sets the state of an entry. Only the following transitions are
+     * allowed:
+     *
+     * <ul>
+     * <li>{NEW, REMOVED, DESTROYED} to REMOVED.
+     * <li>{PRECIOUS, CACHED, BROKEN} to {PRECIOUS, CACHED, BROKEN, REMOVED}.
+     * </ul>
+     *
+     * @param id a PNFS ID
+     * @param state an entry state
+     * @throws IllegalTransitionException if the transition is illegal.
+     * @throws IllegalArgumentException if <code>id</code> is null.
+     */
+    public synchronized void setState(PnfsId id, EntryState state)
+        throws IllegalTransitionException, IllegalArgumentException
+    {
+        if (id == null)
+            throw new IllegalArgumentException("id is null");
+
+        try {
+            EntryState source = getState(id);
+            switch (source) {
+            case NEW:
+            case REMOVED:
+            case DESTROYED:
+                if (state == EntryState.REMOVED) {
+                    /* File doesn't exist or is already
+                     * deleted. That's all we care about.
+                     */
+                    return;
+                }
+                break;
+            case PRECIOUS:
+            case CACHED:
+            case BROKEN:
+                switch (state) {
+                case REMOVED:
+                case CACHED:
+                case PRECIOUS:
+                case BROKEN:
+                    setState(_repository.getEntry(id), state);
+                    return;
+                default:
+                    break;
+                }
+            default:
+                break;
+            }
+            throw new IllegalTransitionException(id, source, state);
         } catch (FileNotInCacheException e) {
-            throw e;
+            /* File disappeared before we could change the
+             * state. That's okay if we wanted to remove it, otherwise
+             * not.
+             */
+            if (state != REMOVED) {
+                throw new IllegalTransitionException(id, NEW, state);
+            }
         } catch (CacheException e) {
             throw new RuntimeException("Internal repository error: " +
                                        e.getMessage());
@@ -362,7 +467,7 @@ public class CacheRepositoryV5// extends CellCompanion implements CacheRepositor
      *
      * @param id the PNFS ID of an entry
      */
-    EntryState getState(PnfsId id)
+    public EntryState getState(PnfsId id)
     {
         synchronized (_states) {
             EntryState oldState = _states.get(id);

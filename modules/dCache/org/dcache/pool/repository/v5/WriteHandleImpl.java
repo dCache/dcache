@@ -16,6 +16,7 @@ import org.dcache.pool.repository.EntryState;
 
 import java.util.concurrent.TimeoutException;
 import java.io.File;
+import java.io.IOException;
 
 class WriteHandleImpl implements WriteHandle
 {
@@ -57,7 +58,7 @@ class WriteHandleImpl implements WriteHandle
                     EntryState initialState,
                     EntryState targetState,
                     StickyRecord sticky)
-        throws CacheException
+        throws CacheException, IOException
     {
         switch (initialState) {
         case FROM_CLIENT:
@@ -86,10 +87,14 @@ class WriteHandleImpl implements WriteHandle
         _open = true;
         _allocated = 0;
 
+        if (!getFile().createNewFile())
+            throw new CacheException(CacheException.PANIC,
+                                     "File exists, although we didn't expect it to");
+
         _entry.lock(true);
         _entry.setStorageInfo(info);
 
-        _repository.setState(_entry.getPnfsId(), initialState);
+        _repository.setState(_entry, initialState);
     }
 
 
@@ -208,7 +213,8 @@ class WriteHandleImpl implements WriteHandle
              * info and in PNFS.
              */
             if (_initialState == EntryState.FROM_CLIENT
-                && info.getFileSize() == 0) {
+                && info.getFileSize() == 0
+                && _targetState != EntryState.REMOVED) {
                 info.setFileSize(length);
                 _entry.setStorageInfo(info);
 
@@ -235,8 +241,8 @@ class WriteHandleImpl implements WriteHandle
                 _pnfs.addCacheLocation(_entry.getPnfsId());
             }
 
-            _repository.setState(_entry.getPnfsId(), _targetState);
             _entry.lock(false);
+            _repository.setState(_entry, _targetState);
             _open = false;
         }
     }
