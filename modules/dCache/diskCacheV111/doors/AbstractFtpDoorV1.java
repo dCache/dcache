@@ -898,7 +898,6 @@ public abstract class AbstractFtpDoorV1
                 (PermissionHandlerInterface)permissionHandlerCon.newInstance(initargs);
             _origin =
                 new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG,
-                           InetAddressType.IPv4,
                            _engine.getInetAddress());
 
             _pnfs = new PnfsHandler(this, new CellPath(_pnfsManager));
@@ -1048,7 +1047,7 @@ public abstract class AbstractFtpDoorV1
             if (te instanceof CommandExitException) {
                 throw (dmg.util.CommandExitException)te;
             }
-            reply("500 Operation failed due to internal error: " + 
+            reply("500 Operation failed due to internal error: " +
                   te.getMessage());
 
             /* We don't want to call reportBug, since throwing a
