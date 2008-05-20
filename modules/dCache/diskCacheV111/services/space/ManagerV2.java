@@ -2144,6 +2144,21 @@ public class ManagerV2
 	public long[] getSpaceTokens(String voGroup,
 				     String voRole,
 				     String description)  throws SQLException{
+
+                String selectSpace =
+                        "SELECT * FROM "+ManagerSchemaConstants.SpaceTableName +
+                        " WHERE  state = "+SpaceState.RESERVED.getStateId();
+                if(description == null) {
+                        selectSpace +=" AND voGroup = '"+voGroup+'\'';
+                        if(voRole != null) {
+                                selectSpace += " AND voRole = '"+voRole+'\'';
+                        }
+                }
+                else {
+                        selectSpace += " AND description = '"+description+'\'';
+                }
+
+/*
 		String selectSpace =
 			"SELECT * FROM "+ManagerSchemaConstants.SpaceTableName +
 			" WHERE  state = "+SpaceState.RESERVED.getStateId();
@@ -2170,6 +2185,7 @@ public class ManagerV2
 		if (linkgroupid==true) { 
 			selectSpace += "  AND linkgroupid in ( "+subSelect +")";
 		}
+*/
 
 		say("executing statement: "+selectSpace);
 		HashSet spaces = manager.select(new  SpaceReservationIO(),
