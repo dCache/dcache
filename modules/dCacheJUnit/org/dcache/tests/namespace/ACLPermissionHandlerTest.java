@@ -410,7 +410,7 @@ public class ACLPermissionHandlerTest {
     }
 
 /////////////////////////////////////////////
-
+/*
     @Test
     public void testSetAttributesFile() throws Exception {
 
@@ -441,7 +441,15 @@ public class ACLPermissionHandlerTest {
                        111,
                        ACE.DEFAULT_ADDRESS_MSK,
                        1 ) );
-
+               
+              // aces.add(new ACE( AceType.ACCESS_ALLOWED_ACE_TYPE,
+               //        0,
+                //       AccessMask.WRITE_ACL.getValue(),
+                //       Who.USER,
+                //       111,
+               //       ACE.DEFAULT_ADDRESS_MSK,
+                //     0 ) );
+               
                ACL newACL = new ACL(fileId, RsType.FILE, aces);
 
                _aclHandler.setACL(newACL);
@@ -473,12 +481,12 @@ public class ACLPermissionHandlerTest {
 		           //next check
 		           //Check SETATTR (Attributes OWNER_GROUP and OWNER). Access flag: WRITE_OWNER
 
-		           int fileAttrTest = (FileAttribute.FATTR4_OWNER_GROUP.getValue());
+		          int fileAttrTest = (FileAttribute.FATTR4_OWNER_GROUP.getValue());
 		                 fileAttrTest|=(FileAttribute.FATTR4_OWNER.getValue());
 
-		           isAllowed =  _permissionHandler.canSetAttributes("/pnfs/desy.de/data/filename", subject, origin, FileAttribute.valueOf(fileAttrTest));
+		          isAllowed =  _permissionHandler.canSetAttributes("/pnfs/desy.de/data/filename", subject, origin, FileAttribute.valueOf(fileAttrTest));
 
-				   assertTrue("It is allowed to set attributes  OWNER_GROUP and OWNER ", isAllowed);
+				  assertTrue("It is allowed to set attributes  OWNER_GROUP and OWNER ", isAllowed);
 
 
 		           //Check SETATTR (Attribute SIZE). Access flag: WRITE_DATA (is denied)
@@ -487,10 +495,10 @@ public class ACLPermissionHandlerTest {
 		           assertFalse("It is allowed to set attributes  FATTR4_SIZE ", isAllowed);
 
     }
-
+*/
 
 /////////////////////////////////////////////
-
+/*
     @Test
     public void testGetAttributes() throws Exception {
 
@@ -606,7 +614,7 @@ public class ACLPermissionHandlerTest {
 
 		           assertTrue("For who_id=222: It is allowed to get attribute  FATTR4_TIME_MODIFY_SET, as READ_ATTRIBUTES is allowed ", isAllowed);
     }
-
+*/
     static void tryToClose(Statement o) {
         try {
             if (o != null)
