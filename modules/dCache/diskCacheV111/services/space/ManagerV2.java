@@ -2157,9 +2157,7 @@ public class ManagerV2
                         }
                 }
                 else {
-			if(!description.equals("")) {
-				selectSpace += " AND description = '"+description+'\'';
-			}
+			selectSpace += " AND description = '"+description+'\'';
                 }
 
 /*
