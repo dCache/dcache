@@ -30,24 +30,22 @@ import java.util.StringTokenizer;
 import java.util.TreeSet;
 
 import org.apache.log4j.Logger;
-import org.dcache.pool.repository.v4.CacheRepositoryV4;
 
+import org.dcache.pool.repository.v5.CacheRepositoryV5;
+import org.dcache.pool.repository.v5.IllegalTransitionException;
+import org.dcache.pool.repository.SpaceRecord;
+import org.dcache.pool.repository.EntryState;
+import org.dcache.pool.repository.WriteHandle;
 import diskCacheV111.pools.PoolV2Mode;
 import diskCacheV111.pools.SpaceSweeper;
 import diskCacheV111.pools.JobTimeoutManager;
-import diskCacheV111.pools.ChecksumModuleV1;
 import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.pools.PoolCellInfo;
 import diskCacheV111.movers.ChecksumMover;
 import diskCacheV111.movers.MoverProtocol;
 import diskCacheV111.repository.CacheRepository;
-import diskCacheV111.repository.CacheRepositoryEntry;
-import diskCacheV111.repository.PreallocationSpaceMonitor;
-import diskCacheV111.repository.ReadOnlySpaceMonitor;
+import diskCacheV111.repository.CacheRepositoryEntryInfo;
 import diskCacheV111.repository.RepositoryCookie;
-import diskCacheV111.repository.RepositoryInterpreter;
-import diskCacheV111.repository.SpaceMonitor;
-import diskCacheV111.repository.SpaceMonitorWatch;
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.CacheFileAvailable;
@@ -66,8 +64,6 @@ import diskCacheV111.util.SysTimer;
 import diskCacheV111.util.UnitInteger;
 import diskCacheV111.util.event.CacheEvent;
 import diskCacheV111.util.event.CacheNeedSpaceEvent;
-import diskCacheV111.util.event.CacheRepositoryEvent;
-import diskCacheV111.util.event.CacheRepositoryListener;
 import diskCacheV111.vehicles.DCapProtocolInfo;
 import diskCacheV111.vehicles.DoorTransferFinishedMessage;
 import diskCacheV111.vehicles.IoJobInfo;
@@ -156,15 +152,13 @@ public class PoolV4 extends CellAdapter implements Logable {
     private int        _poolStatusCode  = 0;
 
     private final PnfsHandler _pnfs;
-    private final CacheRepository _repository;
     private final StorageClassContainer _storageQueue;
-    private final SpaceSweeper _sweeper;
+    private final CacheRepositoryV5 _repository;
 
     private String _setupManager = null;
     private String _pnfsManagerName = "PnfsManager";
     private String _poolManagerName = "PoolManager";
     private String _poolupDestination = "PoolManager";
-    private String _hsmPoolManagerName = "HsmPoolManager";
     private String _sweeperClass = "diskCacheV111.pools.SpaceSweeper0";
     private static final String _dummySweeperClass = "diskCacheV111.pools.DummySpaceSweeper";
 
@@ -187,7 +181,6 @@ public class PoolV4 extends CellAdapter implements Logable {
     private String _crashType = "exception";
     private boolean _isPermanent = false;
     private boolean _allowSticky = false;
-    private boolean _isHsmPool = false;
     private boolean _blockOnNoSpace = true;
     private boolean _checkRepository = true;
     private boolean _waitForRepositoryOk = false;
@@ -346,7 +339,6 @@ public class PoolV4 extends CellAdapter implements Logable {
                     || lfsModeString.equals("")) {
 
                     _lfsMode = LFS_PRECIOUS;
-                    _isHsmPool = lfsModeString.equals("hsm");
 
                 } else if (lfsModeString.equals("volatile")
                            || lfsModeString.equals("transient")) {
@@ -363,7 +355,6 @@ public class PoolV4 extends CellAdapter implements Logable {
                 + (_lfsMode == LFS_NONE ? "None"
                    : _lfsMode == LFS_VOLATILE ? "Volatile"
                    : "Precious"));
-            say("isHsmPool = " + _isHsmPool);
 
             lfsModeString = _args.getOpt("p2p");
             lfsModeString = lfsModeString == null ? _args.getOpt("p2pFileMode")
@@ -403,8 +394,7 @@ public class PoolV4 extends CellAdapter implements Logable {
                    : "Refresh"));
 
             String tmp = _args.getOpt("poolManager");
-            _poolManagerName = tmp == null ? (_isHsmPool ? _hsmPoolManagerName
-                                              : _poolManagerName) : tmp;
+            _poolManagerName = tmp == null ? _poolManagerName : tmp;
 
             say("PoolManagerName : " + _poolManagerName);
 
@@ -495,17 +485,14 @@ public class PoolV4 extends CellAdapter implements Logable {
             say("Base dir ok");
 
             _storageQueue = new StorageClassContainer(poolName);
-            _repository = new CacheRepositoryV4(_base, _args);
-            _repository.setLogable(this);
 
             _pnfs = new PnfsHandler(this, new CellPath(_pnfsManagerName), _poolName);
+            _repository = new CacheRepositoryV5(this, _pnfs);
 
 //             _storageHandler = new HsmStorageHandler2(this, _repository, _hsmSet, _pnfs);
             _storageHandler = new HsmStorageHandler2(this, null, _hsmSet, _pnfs);
 
             _storageHandler.setStickyAllowed(_allowSticky);
-
-            _sweeper = getSweeperHandler();
 
             //
             // transfer queue management
@@ -533,8 +520,7 @@ public class PoolV4 extends CellAdapter implements Logable {
 
             _checksumModule = new ChecksumModuleV1(this, _repository, _pnfs);
 
-//             _p2pClient = new P2PClient(this, _repository, _checksumModule);
-            _p2pClient = new P2PClient(this, null, _checksumModule);
+            _p2pClient = new P2PClient(this, _repository, _checksumModule);
 
             _timeoutManager.addScheduler("p2p", _p2pQueue);
             _timeoutManager.start();
@@ -544,9 +530,7 @@ public class PoolV4 extends CellAdapter implements Logable {
             // add the command listeners before we execute the setupFile.
             //
 
-            addCommandListener(_sweeper);
             addCommandListener(_hsmSet);
-            addCommandListener(new RepositoryInterpreter(this, _repository));
             addCommandListener(_storageQueue);
             addCommandListener(new HsmStorageInterpreter(this, _storageHandler));
             addCommandListener(_flushingThread);
@@ -564,7 +548,7 @@ public class PoolV4 extends CellAdapter implements Logable {
 
         _pingThread.start();
 
-        _repository.addCacheRepositoryListener(new RepositoryLoader());
+//         _repository.addCacheRepositoryListener(new RepositoryLoader());
 
         start();
 
@@ -749,6 +733,17 @@ public class PoolV4 extends CellAdapter implements Logable {
                            + js.getSchedulerName() + " " + js.getMaxActiveJobs());
             }
         }
+
+        public JobInfo findJob(String client, long id)
+        {
+            for (JobInfo info : getJobInfos()) {
+                if (client.equals(info.getClientName())
+                    && id == info.getClientId()) {
+                    return info;
+                }
+            }
+            return null;
+        }
     }
 
     private class InventoryScanner implements Runnable {
@@ -764,7 +759,7 @@ public class PoolV4 extends CellAdapter implements Logable {
             _logClass.log("Repository seems to be ok");
             try {
 
-                _repository.runInventory(_logClass, _pnfs, _recoveryFlags);
+                _repository.runInventory(_recoveryFlags);
                 enablePool();
                 _logClass.elog("Pool enabled " + _poolName);
 
@@ -791,186 +786,163 @@ public class PoolV4 extends CellAdapter implements Logable {
                     666, "Shutdown");
     }
 
-    // public void setMaxActiveIOs( int ios ){ _ioQueue.setMaxActiveJobs( ios) ;
-    // }
-    //
-    // The sweeper class loader
-    //
-    //
-    private SpaceSweeper getSweeperHandler()
-        throws InstantiationException,
-               ClassNotFoundException,
-               IllegalAccessException,
-               InvocationTargetException,
-               NoSuchMethodException
-    {
-        Class<?>[] argClass = { dmg.cells.nucleus.CellAdapter.class,
-				diskCacheV111.util.PnfsHandler.class,
-				diskCacheV111.repository.CacheRepository.class };
-        Class<?> sweeperClass = Class.forName(_sweeperClass);
-        Constructor<?> sweeperCon = sweeperClass.getConstructor(argClass);
-        Object[] args = { this, _pnfs, _repository };
+//     private void setDummyStorageInfo(CacheRepositoryEntry entry) {
+//         try {
 
-        return (SpaceSweeper) sweeperCon.newInstance(args);
-    }
+//             StorageInfo storageInfo = entry.getStorageInfo();
+//             storageInfo.setBitfileId("*");
 
-    private void setDummyStorageInfo(CacheRepositoryEntry entry) {
-        try {
+//             _pnfs.setStorageInfoByPnfsId(entry.getPnfsId(), storageInfo, 0 // write
+//                                          // (don't overwrite)
+//                                          );
+//         } catch (CacheException e) {
+//             //
+//             // for now we just ignore this exception (its dummy only)
+//             //
+//             esay("Problem in setDummyStorageInfo of : " + entry + " : " + e);
+//         }
+//     }
 
-            StorageInfo storageInfo = entry.getStorageInfo();
-            storageInfo.setBitfileId("*");
+//     //
+//     // interface between the repository and the StorageQueueContainer
+//     // (we do the pnfs stuff here as well)
+//     //
+//     private class RepositoryLoader implements CacheRepositoryListener {
+//         public void actionPerformed(CacheEvent event) {
+//             // forced by interface
+//         }
 
-            _pnfs.setStorageInfoByPnfsId(entry.getPnfsId(), storageInfo, 0 // write
-                                         // (don't overwrite)
-                                         );
-        } catch (CacheException e) {
-            //
-            // for now we just ignore this exception (its dummy only)
-            //
-            esay("Problem in setDummyStorageInfo of : " + entry + " : " + e);
-        }
-    }
+//         public void sticky(CacheRepositoryEvent event) {
+//             say("RepositoryLoader : sticky : " + event);
+//         }
 
-    //
-    // interface between the repository and the StorageQueueContainer
-    // (we do the pnfs stuff here as well)
-    //
-    private class RepositoryLoader implements CacheRepositoryListener {
-        public void actionPerformed(CacheEvent event) {
-            // forced by interface
-        }
+//         public void precious(CacheRepositoryEvent event) {
+//             say("RepositoryLoader : precious : " + event);
+//             CacheRepositoryEntry entry = event.getRepositoryEntry();
+//             long size = 0L;
+//             try {
+//                 size = entry.getSize();
+//             } catch (CacheException ee) {
+//                 esay("RepositoryLoader : can't get filesize : " + ee);
+//                 //
+//                 // if we can't get the size, so to be on the save side.
+//                 //
+//                 size = 1;
+//             }
 
-        public void sticky(CacheRepositoryEvent event) {
-            say("RepositoryLoader : sticky : " + event);
-        }
+//             try {
+//                 if ((size == 0) && !_flushZeroSizeFiles) {
 
-        public void precious(CacheRepositoryEvent event) {
-            say("RepositoryLoader : precious : " + event);
-            CacheRepositoryEntry entry = event.getRepositoryEntry();
-            long size = 0L;
-            try {
-                size = entry.getSize();
-            } catch (CacheException ee) {
-                esay("RepositoryLoader : can't get filesize : " + ee);
-                //
-                // if we can't get the size, so to be on the save side.
-                //
-                size = 1;
-            }
+//                     say("RepositoryLoader : 0 size file set cached (no HSM flush)");
+//                     if ((_lfsMode == LFS_NONE) || (_lfsMode == LFS_VOLATILE)) {
 
-            try {
-                if ((size == 0) && !_flushZeroSizeFiles) {
+//                         entry.setCached();
+//                         setDummyStorageInfo(entry);
+//                     }
+//                 } else {
 
-                    say("RepositoryLoader : 0 size file set cached (no HSM flush)");
-                    if ((_lfsMode == LFS_NONE) || (_lfsMode == LFS_VOLATILE)) {
+//                     if (_lfsMode == LFS_NONE)
+//                         _storageQueue.addCacheEntry(entry);
+//                     if (_lfsMode == LFS_VOLATILE)
+//                         entry.setCached();
 
-                        entry.setCached();
-                        setDummyStorageInfo(entry);
-                    }
-                } else {
+//                 }
+//             } catch (CacheException ce) {
+//                 esay("RepositoryLoader : Cache Exception in addCacheEntry ["
+//                      + entry.getPnfsId() + "] : " + ce.getMessage());
+//             }
+//         }
 
-                    if (_lfsMode == LFS_NONE)
-                        _storageQueue.addCacheEntry(entry);
-                    if (_lfsMode == LFS_VOLATILE)
-                        entry.setCached();
+//         public void cached(CacheRepositoryEvent event) {
+//             say("RepositoryLoader : cached : " + event);
+//             //
+//             // the remove will fail if the file
+//             // is coming FROM the store.
+//             //
+//             CacheRepositoryEntry entry = event.getRepositoryEntry();
+//             try {
+//                 CacheRepositoryEntry e = _storageQueue.removeCacheEntry(entry
+//                                                                         .getPnfsId());
+//                 say("RepositoryLoader : removing " + entry.getPnfsId()
+//                     + (e == null ? " failed" : " ok"));
+//             } catch (CacheException ce) {
+//                 esay("RepositoryLoader : remove " + entry.getPnfsId()
+//                      + " failed : " + ce);
+//             }
+//         }
 
-                }
-            } catch (CacheException ce) {
-                esay("RepositoryLoader : Cache Exception in addCacheEntry ["
-                     + entry.getPnfsId() + "] : " + ce.getMessage());
-            }
-        }
+//         public void available(CacheRepositoryEvent event) {
+//             say("RepositoryLoader : available : " + event);
+//             _pnfs.addCacheLocation(event.getRepositoryEntry().getPnfsId());
+//             event.getRepositoryEntry().lock(false);
+//         }
 
-        public void cached(CacheRepositoryEvent event) {
-            say("RepositoryLoader : cached : " + event);
-            //
-            // the remove will fail if the file
-            // is coming FROM the store.
-            //
-            CacheRepositoryEntry entry = event.getRepositoryEntry();
-            try {
-                CacheRepositoryEntry e = _storageQueue.removeCacheEntry(entry
-                                                                        .getPnfsId());
-                say("RepositoryLoader : removing " + entry.getPnfsId()
-                    + (e == null ? " failed" : " ok"));
-            } catch (CacheException ce) {
-                esay("RepositoryLoader : remove " + entry.getPnfsId()
-                     + " failed : " + ce);
-            }
-        }
+//         public void created(CacheRepositoryEvent event) {
+//             say("RepositoryLoader : created : " + event);
+//         }
 
-        public void available(CacheRepositoryEvent event) {
-            say("RepositoryLoader : available : " + event);
-            _pnfs.addCacheLocation(event.getRepositoryEntry().getPnfsId());
-            event.getRepositoryEntry().lock(false);
-        }
+//         public void touched(CacheRepositoryEvent event) {
+//             say("RepositoryLoader : touched : " + event);
+//         }
 
-        public void created(CacheRepositoryEvent event) {
-            say("RepositoryLoader : created : " + event);
-        }
+//         public void removed(CacheRepositoryEvent event) {
+//             say("RepositoryLoader : removed : " + event);
+//             CacheRepositoryEntry entry = event.getRepositoryEntry();
+//             try {
+//                 _storageQueue.removeCacheEntry(entry.getPnfsId());
+//             } catch (CacheException ce) {
+//                 esay("RepositoryLoader : PANIC : " + entry.getPnfsId()
+//                      + " removing from storage queue failed : " + ce);
+//             }
+//             //
+//             // although we may be inconsistent now, we clear the database
+//             // (volatile systems remove the entry from pnfs if this was the last
+//             // copy)
+//             //
+//             _pnfs.clearCacheLocation(entry.getPnfsId(),
+//                                      _lfsMode == LFS_VOLATILE);
+//             //
+//             //
+//             if (_reportOnRemovals) {
+//                 try {
+//                     sendMessage(new CellMessage(_billingCell,
+//                                                 new RemoveFileInfoMessage(getCellName() + "@"
+//                                                                           + getCellDomainName(), entry.getPnfsId())));
+//                 } catch (NotSerializableException e) {
+//                     throw new RuntimeException("Bug detected: Unserializable vehicle", e);
+//                 } catch (NoRouteToCellException e) {
+//                     esay("Could not report removal of : " + entry.getPnfsId()
+//                          + " : " + e.getMessage());
+//                 }
+//             }
+//         }
 
-        public void touched(CacheRepositoryEvent event) {
-            say("RepositoryLoader : touched : " + event);
-        }
+//         public void destroyed(CacheRepositoryEvent event) {
+//             say("RepositoryLoader : destroyed : " + event);
+//         }
 
-        public void removed(CacheRepositoryEvent event) {
-            say("RepositoryLoader : removed : " + event);
-            CacheRepositoryEntry entry = event.getRepositoryEntry();
-            try {
-                _storageQueue.removeCacheEntry(entry.getPnfsId());
-            } catch (CacheException ce) {
-                esay("RepositoryLoader : PANIC : " + entry.getPnfsId()
-                     + " removing from storage queue failed : " + ce);
-            }
-            //
-            // although we may be inconsistent now, we clear the database
-            // (volatile systems remove the entry from pnfs if this was the last
-            // copy)
-            //
-            _pnfs.clearCacheLocation(entry.getPnfsId(),
-                                     _lfsMode == LFS_VOLATILE);
-            //
-            //
-            if (_reportOnRemovals) {
-                try {
-                    sendMessage(new CellMessage(_billingCell,
-                                                new RemoveFileInfoMessage(getCellName() + "@"
-                                                                          + getCellDomainName(), entry.getPnfsId())));
-                } catch (NotSerializableException e) {
-                    throw new RuntimeException("Bug detected: Unserializable vehicle", e);
-                } catch (NoRouteToCellException e) {
-                    esay("Could not report removal of : " + entry.getPnfsId()
-                         + " : " + e.getMessage());
-                }
-            }
-        }
+//         public void needSpace(CacheNeedSpaceEvent event) {
+//             say("RepositoryLoader : needSpace : " + event);
+//         }
 
-        public void destroyed(CacheRepositoryEvent event) {
-            say("RepositoryLoader : destroyed : " + event);
-        }
+//         public void scanned(CacheRepositoryEvent event) {
+//             CacheRepositoryEntry entry = event.getRepositoryEntry();
 
-        public void needSpace(CacheNeedSpaceEvent event) {
-            say("RepositoryLoader : needSpace : " + event);
-        }
+//             try {
+//                 if (entry.isPrecious() && (!entry.isBad())
+//                     && (_lfsMode == LFS_NONE)) {
 
-        public void scanned(CacheRepositoryEvent event) {
-            CacheRepositoryEntry entry = event.getRepositoryEntry();
+//                     _storageQueue.addCacheEntry(entry);
+//                     say("RepositoryLoader : Scanning " + entry.getPnfsId()
+//                         + " ok");
 
-            try {
-                if (entry.isPrecious() && (!entry.isBad())
-                    && (_lfsMode == LFS_NONE)) {
-
-                    _storageQueue.addCacheEntry(entry);
-                    say("RepositoryLoader : Scanning " + entry.getPnfsId()
-                        + " ok");
-
-                }
-            } catch (CacheException ce) {
-                esay("RepositoryLoader : Scanning " + entry.getPnfsId()
-                     + " failed " + ce.getMessage());
-            }
-        }
-    }
+//                 }
+//             } catch (CacheException ce) {
+//                 esay("RepositoryLoader : Scanning " + entry.getPnfsId()
+//                      + " failed " + ce.getMessage());
+//             }
+//         }
+//     }
 
     private void execFile(File setup)
         throws IOException, CommandException
@@ -1005,10 +977,12 @@ public class PoolV4 extends CellAdapter implements Logable {
     }
 
     private void dumpSetup(PrintWriter pw) {
+        SpaceRecord space = _repository.getSpaceRecord();
+
         pw.println("#\n# Created by " + getCellName() + "("
                    + this.getClass().getName() + ") at " + (new Date()).toString()
                    + "\n#");
-        pw.println("set max diskspace " + _repository.getTotalSpace());
+        pw.println("set max diskspace " + space.getTotalSpace());
         pw.println("set heartbeat " + _pingThread.getHeartbeat());
         pw.println("set sticky " + (_allowSticky ? "allowed" : "denied"));
         pw.println("set report remove " + (_reportOnRemovals ? "on" : "off"));
@@ -1030,8 +1004,8 @@ public class PoolV4 extends CellAdapter implements Logable {
             _storageHandler.printSetup(pw);
         if (_hsmSet != null)
             _hsmSet.printSetup(pw);
-        if (_sweeper != null)
-            _sweeper.printSetup(pw);
+//         if (_sweeper != null)
+//             _sweeper.printSetup(pw);
         if (_ioQueue != null)
             ((IoQueueManager) _ioQueue).dumpSetup(pw);
         if (_p2pQueue != null) {
@@ -1136,28 +1110,26 @@ public class PoolV4 extends CellAdapter implements Logable {
         if (_hybridInventoryActive) {
             pw.println("Inventory         : " + _hybridCurrent);
         }
-        pw.println("Diskspace usage   : ");
-        if (_repository != null) {
-            long total = _repository.getTotalSpace();
-            long used = total - _repository.getFreeSpace();
-            long precious = _repository.getPreciousSpace();
 
-            pw.println("    Total    : " + UnitInteger.toUnitString(total));
-            pw.println("    Used     : " + used + "    ["
-                       + (((float) used) / ((float) total)) + "]");
-            pw.println("    Free     : " + (total - used));
-            pw.println("    Precious : " + precious + "    ["
-                       + (((float) precious) / ((float) total)) + "]");
-            pw
-                .println("    Removable: "
-                         + _sweeper.getRemovableSpace()
-                         + "    ["
-                         + (((float) _sweeper.getRemovableSpace()) / ((float) total))
-                         + "]");
-            pw.println("    Reserved : " + _repository.getReservedSpace());
-        } else {
-            pw.println("No Yet known");
-        }
+        SpaceRecord space = _repository.getSpaceRecord();
+        pw.println("Diskspace usage   : ");
+        long total = space.getTotalSpace();
+        long used = total - space.getFreeSpace();
+        long precious = space.getPreciousSpace();
+
+        pw.println("    Total    : " + UnitInteger.toUnitString(total));
+        pw.println("    Used     : " + used + "    ["
+                   + (((float) used) / ((float) total)) + "]");
+        pw.println("    Free     : " + (total - used));
+        pw.println("    Precious : " + precious + "    ["
+                   + (((float) precious) / ((float) total)) + "]");
+        pw
+            .println("    Removable: "
+                     + space.getRemovableSpace()
+                     + "    ["
+                     + (((float) space.getRemovableSpace()) / ((float) total))
+                     + "]");
+//         pw.println("    Reserved : " + _repository.getReservedSpace());
 
         if (_flushingThread != null)
             _flushingThread.getInfo(pw);
@@ -1204,809 +1176,1033 @@ public class PoolV4 extends CellAdapter implements Logable {
         super.esay(str);
     }
 
+
     // //////////////////////////////////////////////////////////////
     //
     // The io File Part
     //
     //
-    private void ioFile(PoolIoFileMessage poolMessage, CellMessage cellMessage) {
 
-        cellMessage.revertDirection();
-
-        RepositoryIoHandler io = null;
-        try {
-            io = new RepositoryIoHandler(poolMessage, cellMessage);
-        } catch (CacheException ce) {
-            poolMessage.setFailed(ce.getRc(), ce.getMessage());
-            esay(ce.getMessage());
-            try {
-                sendMessage(cellMessage);
-            } catch (NotSerializableException e) {
-                throw new RuntimeException("Bug detected: Unserializable vehicle", e);
-            } catch (NoRouteToCellException e) {
-                esay(e);
-            }
-            return;
-        }
-
-        for ( Map.Entry<?,?> attribute : _moverAttributes.entrySet() ) {
-            try {
-                Object key = attribute.getKey();
-                Object value = attribute.getValue();
-                say("Setting mover " + key.toString() + " -> " + value);
-                io.setAttribute(key.toString(), value);
-            } catch (IllegalArgumentException iae) {
-                esay("setAttribute : " + iae.getMessage());
-            }
-        }
-        String queueName = poolMessage.getIoQueueName();
-        IoQueueManager queueManager = (IoQueueManager) _ioQueue;
-        try {
-            if (io.isWrite()) {
-
-                queueManager.add(queueName, io, SimpleJobScheduler.HIGH);
-
-            } else if (poolMessage.isPool2Pool()) {
-
-                (_p2pMode == P2P_INTEGRATED ? _ioQueue : _p2pQueue).add(io,
-                                                                        SimpleJobScheduler.HIGH);
-
+    private int queueIoRequest(PoolIoFileMessage message,
+                               PoolIORequest request)
+        throws InvocationTargetException
+    {
+        String queueName = message.getIoQueueName();
+        IoQueueManager queue = (IoQueueManager) _ioQueue;
+        if (message instanceof PoolAcceptFileMessage) {
+            return queue.add(queueName, request, SimpleJobScheduler.HIGH);
+        } else if (message.isPool2Pool()) {
+            if (_p2pMode == P2P_INTEGRATED) {
+                return queue.add(request, SimpleJobScheduler.HIGH);
             } else {
-                String newClient = io.getClient();
-                long newId = io.getClientId();
-
-                if (_dupRequest != DUP_REQ_NONE) {
-
-                    JobInfo job = null;
-                    List<JobInfo> list = _ioQueue.getJobInfos();
-                    boolean found = false;
-
-                    for (int l = 0; l < list.size(); l++) {
-
-                        job = list.get(l);
-                        if (newClient.equals(job.getClientName())
-                            && (newId == job.getClientId())) {
-
-                            found = true;
-                            break;
-
-                        }
-                    }
-                    if (!found) {
-                        say("Dup Request : regular <" + newClient + ":" + newId
-                            + ">");
-                        queueManager.add(queueName, io,
-                                         SimpleJobScheduler.REGULAR);
-                    } else if (_dupRequest == DUP_REQ_IGNORE) {
-                        say("Dup Request : ignoring <" + newClient + ":"
-                            + newId + ">");
-                    } else if (_dupRequest == DUP_REQ_REFRESH) {
-                        long jobId = job.getJobId();
-                        say("Dup Request : refresing <" + newClient + ":"
-                            + newId + "> old = " + jobId);
-                        queueManager.kill((int) jobId, true);
-                        queueManager.add(queueName, io,
-                                         SimpleJobScheduler.REGULAR);
-                    } else {
-                        say("Dup Request : PANIC (code corrupted) <"
-                            + newClient + ":" + newId + ">");
-                    }
-
-                } else {
-
-                    say("Dup Request : none <" + newClient + ":" + newId + ">");
-                    queueManager.add(queueName, io, SimpleJobScheduler.REGULAR);
-
-                }
+                return _p2pQueue.add(request, SimpleJobScheduler.HIGH);
             }
-        } catch (InvocationTargetException ite) {
-            esay("" + io + " not added due to : " + ite.getTargetException());
-            esay(ite);
+        } else {
+            return queue.add(queueName, request, SimpleJobScheduler.REGULAR);
         }
-        return;
     }
 
-    private class RepositoryIoHandler implements IoBatchable {
+    private void ioFile(CellMessage envelope, PoolIoFileMessage message)
+    {
+        try {
+            long id = message.getId();
+            ProtocolInfo pi = message.getProtocolInfo();
+            StorageInfo si = message.getStorageInfo();
+            PnfsId pnfsId = message.getPnfsId();
+            String initiator = message.getInitiator();
+            String pool = message.getPoolName();
+            String queueName = message.getIoQueueName();
+            CellPath source = envelope.getSourcePath();
+            String door =
+                source.getCellName() + "@" + source.getCellDomainName();
 
-        private PoolIoFileMessage _command = null;
-        private CellMessage _message = null;
-        private String _clientPath = null;
-        private PnfsId _pnfsId = null;
-        private MoverProtocol _handler = null;
-        private ProtocolInfo _protocolInfo = null;
-        private StorageInfo _storageInfo = null;
-        private CellPath _destination = null;
-        private boolean _rdOnly = true;
-        private boolean _create = false;
-        private CacheRepositoryEntry _entry = null;
-        private boolean _preparationDone = false;
-        private DoorTransferFinishedMessage _finished = null;
-        private MoverInfoMessage _info = null;
-        private boolean _started = false;
-        private boolean _protected = false;
+            /* Eliminate duplicate requests.
+             */
+            if (!(message instanceof PoolAcceptFileMessage)
+                && !message.isPool2Pool()) {
+                IoQueueManager queue = (IoQueueManager) _ioQueue;
+
+                JobInfo job = queue.findJob(door, id);
+                if (job != null) {
+                    switch (_dupRequest) {
+                    case DUP_REQ_NONE:
+                        say("Dup Request : none <" + door + ":" + id + ">");
+                        break;
+                    case DUP_REQ_IGNORE:
+                        say("Dup Request : ignoring <" + door + ":" + id + ">");
+                        return;
+                    case DUP_REQ_REFRESH:
+                        long jobId = job.getJobId();
+                        say("Dup Request : refresing <" + door + ":"
+                            + id + "> old = " + jobId);
+                        queue.kill((int)jobId, true);
+                        break;
+                    default:
+                        throw new RuntimeException("Dup Request : PANIC (code corrupted) <"
+                                                   + door + ":" + id + ">");
+                    }
+                }
+            }
+
+            /* Queue new request.
+             */
+            MoverProtocol mover = getProtocolHandler(pi);
+            if (mover == null)
+                throw new CacheException(27,
+                                         "PANIC : Could not get handler for " +
+                                         pi);
+
+            PoolIOTransfer transfer;
+            if (message instanceof PoolAcceptFileMessage) {
+                transfer =
+                    new PoolIOWriteTransfer(pnfsId, pi, si, mover, _repository,
+                                            _checksumModule);
+            } else {
+                transfer =
+                    new PoolIOReadTransfer(pnfsId, pi, si, mover, _repository);
+            }
+            try {
+                PoolIORequest request =
+                    new PoolIORequest(transfer, id, initiator,
+                                      door, pool, queueName);
+                message.setMoverId(queueIoRequest(message, request));
+                transfer = null;
+            } finally {
+                if (transfer != null) {
+                    transfer.close();
+                }
+            }
+            message.setSucceeded();
+            // TODO: Finish exception handling!
+        } catch (InvocationTargetException e) {
+//             throw e.getTargetException();
+        } catch (InterruptedException e) {
+
+        } catch (IOException e) {
+
+        } catch (CacheException e) {
+            esay(e.getMessage());
+            message.setFailed(e.getRc(), e.getMessage());
+
+//         } catch (Throwable e) {
+//             esay("Possible bug found: " + e.getMessage());
+        }
+
+        try {
+            envelope.revertDirection();
+            sendMessage(envelope);
+        } catch (NotSerializableException e) {
+            throw new RuntimeException("Bug detected: Unserializable vehicle", e);
+        } catch (NoRouteToCellException e) {
+            esay(e);
+        }
+    }
+
+    /**
+     * PoolIORequest encapsulates queuing, execution and notification
+     * of a file transfer.
+     *
+     * The transfer is represented by a PoolIOTransfer instance, and
+     * PoolIORequest manages the lifetime of the transfer object.
+     *
+     * Billing and door notifications are send after completed or
+     * failed transfer, or upon dequeuing the request.
+     */
+    private class PoolIORequest implements IoBatchable
+    {
+        private final PoolIOTransfer _transfer;
+        private final long _id;
+        private final String _queue;
+        private final String _pool;
+        private final String _door;
+        private final String _initiator;
+
         private Thread _thread;
 
-        public RepositoryIoHandler(PoolIoFileMessage poolMessage,
-                                   CellMessage originalCellMessage)
-            throws CacheException
+        public PoolIORequest(PoolIOTransfer transfer,
+                             long id, String initiator,
+                             String door, String pool, String queue)
         {
-            _message = originalCellMessage;
-            _command = poolMessage;
-            _destination = _message.getDestinationPath();
-            _pnfsId = _command.getPnfsId();
-            _protocolInfo = _command.getProtocolInfo();
-            _storageInfo = _command.getStorageInfo();
-            _info = new MoverInfoMessage(getCellName() + "@"
-                                         + getCellDomainName(), _pnfsId);
-            _info.setInitiator(_command.getInitiator());
-            CellPath tmp = (CellPath) _destination.clone();
-            tmp.revert();
-            _clientPath = tmp.getCellName() + "@" + tmp.getCellDomainName();
-            //
-            // prepare the final reply
-            //
-            _finished = new DoorTransferFinishedMessage(_command.getId(),
-                                                        _pnfsId, _protocolInfo, _storageInfo, poolMessage
-							.getPoolName());
-            _finished.setIoQueueName(poolMessage.getIoQueueName());
+            _transfer = transfer;
+            _id = id;
+            _initiator = initiator;
+            _door = door;
+            _pool = pool;
+            _queue = queue;
+        }
 
-            //
-            // we need to change the next two lines as soon
-            // as we allow 'transient files'.
-            //
-            _rdOnly = poolMessage instanceof PoolDeliverFileMessage;
-            _create = !_rdOnly;
+        private void sendBillingMessage(int rc, String message)
+        {
+            MoverInfoMessage info =
+                new MoverInfoMessage(getCellName() + "@" + getCellDomainName(),
+                                     getPnfsId());
+            info.setInitiator(_initiator);
+            info.setFileCreated(_transfer instanceof PoolIOWriteTransfer);
+            info.setStorageInfo(getStorageInfo());
+            info.setFileSize(_transfer.getFileSize());
+            info.setResult(rc, message);
+            info.setTransferAttributes(getBytesTransferred(),
+                                       getTransferTime(),
+                                       getProtocolInfo());
 
-            _info.setFileCreated(_create);
-            _info.setStorageInfo(_storageInfo);
+            try {
+                sendMessage(new CellMessage(_billingCell, info));
+            } catch (NotSerializableException e) {
+                throw new RuntimeException("Bug: Unserializable vehicle detected", e);
+            } catch (NoRouteToCellException e) {
+                esay("Cannot send message to " + _billingCell + ": No route to cell");
+            }
+        }
 
-            // check for file existence
-            if (_rdOnly && !_repository.contains(_pnfsId)) {
-                // remove 'BAD' cachelocation in pnfs
-                _pnfs.clearCacheLocation(_pnfsId);
-                throw new FileNotInCacheException("Entry not in repository : "
-                                                  + _pnfsId);
+        private void sendFinished(int rc, String msg)
+        {
+            DoorTransferFinishedMessage finished =
+                new DoorTransferFinishedMessage(getClientId(),
+                                                getPnfsId(),
+                                                getProtocolInfo(),
+                                                getStorageInfo(),
+                                                _pool);
+            finished.setIoQueueName(_queue);
+            if (rc == 0) {
+                finished.setSucceeded();
+            } else {
+                finished.setReply(rc, msg);
             }
 
-        }
-
-        private boolean isWrite() {
-            return _create;
-        }
-
-        protected synchronized void protect()
-            throws InterruptedException
-        {
-            if (Thread.interrupted()) {
-                throw new InterruptedException("IO Job was killed");
+            try {
+                sendMessage(new CellMessage(new CellPath(_door), finished));
+            } catch (NotSerializableException e) {
+                throw new RuntimeException("Bug: Unserializable vehicle detected", e);
+            } catch (NoRouteToCellException e) {
+                esay("Cannot send message to " + _door + ": No route to cell");
             }
-            _protected = true;
         }
 
-        protected synchronized void setThread(Thread value)
+        protected ProtocolInfo getProtocolInfo()
         {
-            _thread = value;
+            return _transfer.getProtocolInfo();
+        }
+
+        protected StorageInfo getStorageInfo()
+        {
+            return _transfer.getStorageInfo();
+        }
+
+        public long getTransferTime()
+        {
+            return _transfer.getTransferTime();
+        }
+
+        public long getBytesTransferred()
+        {
+            return _transfer.getBytesTransferred();
+        }
+
+        public double getTransferRate()
+        {
+            return _transfer.getTransferRate();
+        }
+
+        public long getLastTransferred()
+        {
+            return _transfer.getLastTransferred();
+        }
+
+        public PnfsId getPnfsId()
+        {
+            return _transfer.getPnfsId();
+        }
+
+        public void queued(int id)
+        {
+        }
+
+        public void unqueued()
+        {
+            /* Closing the transfer object should not throw an
+             * exception when the transfer has not begun yet. If it
+             * does, we log the error, but otherwise there is not much
+             * we can do. REVISIT: Consider to disable the pool.
+             */
+            try {
+                _transfer.close();
+            } catch (CacheException e) {
+                esay("Failed to cancel transfer: " + e);
+            } catch (IOException e) {
+                esay("Failed to cancel transfer: " + e);
+            } catch (InterruptedException e) {
+                esay("Failed to cancel transfer: " + e);
+            }
+
+            sendFinished(CacheException.DEFAULT_ERROR_CODE,
+                         "Transfer was killed");
+        }
+
+        public String getClient()
+        {
+            return _door;
+        }
+
+        public long getClientId()
+        {
+            return _id;
+        }
+
+        private synchronized void setThread(Thread thread)
+        {
+            _thread = thread;
         }
 
         public synchronized boolean kill()
         {
-            if (_protected || _thread == null)
+            if (_thread == null) {
                 return false;
-
+            }
             _thread.interrupt();
             return true;
         }
 
-        @Override
-        public String toString() {
-
-            StringBuffer sb = new StringBuffer();
-            sb.append(_pnfsId.toString());
-            if (_handler == null) {
-                sb.append(" h={NoHandlerYet}");
-            } else {
-                sb.append(" h={").append(_handler.toString())
-                    .append("} bytes=").append(
-                                               _handler.getBytesTransferred()).append(
-                                                                                      " time/sec=").append(getTransferTime() / 1000L)
-                    .append(" LM=");
-
-                long lastTransferTime = getLastTransferred();
-                if (lastTransferTime == 0L) {
-                    sb.append(0);
-                } else {
-                    sb.append((System.currentTimeMillis() - lastTransferTime) / 1000L);
-                }
-            }
-            return sb.toString();
-        }
-
-        private void setAttribute(String name, Object attribute) {
-
-            if (_handler == null) {
-                throw new IllegalArgumentException("Handler not yet installed");
-            }
-
-            _handler.setAttribute(name, attribute);
-        }
-
-        private Object getAttribute(String name) {
-            if (_handler == null) {
-                throw new IllegalArgumentException("Handler not yet installed");
-            }
-
-            return _handler.getAttribute(name);
-        }
-
-        private synchronized boolean prepare() {
-            if (_preparationDone)
-                return false;
-            _preparationDone = true;
-            boolean failed = false;
-            say("JOB prepare " + _pnfsId);
-            //
-            // do all the preliminary stuff
-            // - load Protocol Handler
-            // - check File is ok
-            // - increment the link count (to prevent the file from been
-            // removed)
-            //
-            PnfsId pnfsId = _pnfsId;
+        public void run()
+        {
+            int rc;
+            String msg;
             try {
-                _handler = getProtocolHandler(_protocolInfo);
-                if (_handler == null)
-                    throw new CacheException(27,
-                                             "PANIC : Couldn't get handler for " + _protocolInfo);
-
-                if (_create && _rdOnly)
-                    throw new IllegalArgumentException("Can't read and create");
-
-                synchronized (_repository) {
-                    if (_create) {
-                        _entry = _repository.createEntry(pnfsId);
-                        _entry.lock(true);
-                        _entry.setReceivingFromClient();
-                    } else {
-                        _entry = _repository.getEntry(pnfsId);
-                        say("Entry for " + pnfsId + " found and is " + _entry);
-                        if ((!_entry.isCached()) && (!_entry.isPrecious()))
-                            throw new CacheException(301,
-                                                     "File is still transient : " + pnfsId);
-                    }
-                    _entry.incrementLinkCount();
-                }
-                _command.setSucceeded();
-
-            } catch (FileNotInCacheException fce) {
-                esay(_pnfsId + " not in repository");
-                // probably bad entry in cacheInfo, clean it
-                _pnfs.clearCacheLocation(_pnfsId);
-                failed = true;
-                _command.setFailed(fce.getRc(), fce.getMessage());
-            } catch (CacheException ce) {
-                esay("Io Thread Cache Exception : " + ce);
-                esay(ce);
-                if (ce.getRc() == CacheRepository.ERROR_IO_DISK)
-                    disablePool(PoolV2Mode.DISABLED_STRICT, ce.getRc(), ce
-                                .getMessage());
-                failed = true;
-                _command.setFailed(ce.getRc(), ce.getMessage());
-            } catch (Exception exc) {
-                esay("Thread Exception : " + exc);
-                esay(exc);
-                failed = true;
-                _command.setFailed(11, exc.toString());
-            }
-            //
-            // send first acknowledge.
-            //
-            try {
-                sendMessage(_message);
-            } catch (NotSerializableException e) {
-                throw new RuntimeException("Bug detected: Unserializable vehicle", e);
-            } catch (NoRouteToCellException e) {
-                esay("Can't send message back to door : " + e.getMessage());
-                esay(e);
-                failed = true;
-            }
-            if (failed) {
+                setThread(Thread.currentThread());
                 try {
-                    if (_create) {
-                        _entry.lock(false);
-                        _repository.removeEntry(_entry);
-                    }
-                } catch (CacheException ce) {
-                    esay("PANIC : couldn't remove entry : " + _entry);
-                }
-                esay("IoFile thread finished (request failure)");
-            }
-            return failed;
-        }
-
-        //
-        // the IoBatchable Interface
-        //
-        public PnfsId getPnfsId() {
-            return _pnfsId;
-        }
-
-        public long getLastTransferred() {
-            synchronized (this) {
-                if (!_started)
-                    return 0L;
-            }
-            if (_handler == null) {
-                return 0;
-            } else {
-                return _handler.getLastTransferred();
-            }
-
-        }
-
-        public long getTransferTime() {
-            synchronized (this) {
-                if (!_started)
-                    return 0L;
-            }
-            if (_handler == null) {
-                return 0;
-            } else {
-                return _handler.getTransferTime();
-            }
-        }
-
-        public long getBytesTransferred() {
-            if (_handler == null) {
-                return 0;
-            } else {
-                return _handler.getBytesTransferred();
-            }
-        }
-
-        public double getTransferRate() {
-            if (_handler == null) {
-                return 10.000;
-            } else {
-                long bt = _handler.getBytesTransferred();
-                long tm = _handler.getTransferTime();
-                return tm == 0L ? (double) 10.00 : ((double) bt / (double) tm);
-            }
-        }
-
-        //
-        // the Batchable Interface
-        //
-        public String getClient() {
-            return _clientPath;
-        }
-
-        public long getClientId() {
-            return _command.getId();
-        }
-
-        public String getIoQueueName() {
-            String name = _command.getIoQueueName();
-            if (name == null) {
-                IoQueueManager manager = (IoQueueManager)_ioQueue;
-                return manager.getDefaultScheduler().getSchedulerName();
-            } else {
-                return name;
-            }
-        }
-
-        public void queued(int id) {
-            say("JOB queued " + _pnfsId);
-            _command.setMoverId(id);
-            if (prepare())
-                throw new IllegalArgumentException("prepare failed");
-        }
-
-        public void unqueued() {
-            say("JOB unqueued " + _pnfsId);
-            //
-            // TBD: have to send 'failed' as last message
-            //
-            return;
-        }
-
-        //
-        // the Runnable Interface
-        //
-        public void run() {
-
-            setThread(Thread.currentThread());
-
-            say("JOB run " + _pnfsId);
-            if (prepare())
-                return;
-
-            synchronized (this) {
-                _started = true;
-            }
-            SysTimer sysTimer = new SysTimer();
-            long transferTimer = System.currentTimeMillis();
-
-            SpaceMonitor monitor = _repository;
-            File cacheFile = null;
-            ChecksumMover csmover = null;
-            ChecksumFactory clientChecksumFactory = null;
-
-            if (!_crashEnabled) {
-                _storageInfo.setKey("crash", null);
-            } else {
-                _storageInfo.setKey("crashType", _crashType);
-            }
-
-            try {
-                cacheFile = _entry.getDataFile();
-
-                say("Trying to open " + cacheFile);
-                if (_create) {
-
-                    sysTimer.getDifference();
-
-                    String tmp = null;
-                    long preallocatedSpace = 0L;
-                    long maxAllocatedSpace = 0L;
-                    if ((tmp = _storageInfo.getKey(PREALLOCATED_SPACE)) != null) {
-                        try {
-                            preallocatedSpace = Long.parseLong(tmp);
-                        } catch (NumberFormatException ee) { /* ignore 'bad' values*/ }
-                    }
-                    if ((tmp = _storageInfo.getKey(MAX_SPACE)) != null) {
-                        try {
-                            maxAllocatedSpace = Long.parseLong(tmp);
-                        } catch (NumberFormatException ee) {/* ignore 'bad' values*/ }
-                    }
-
-                    if ((preallocatedSpace > 0L) || (maxAllocatedSpace > 0L))
-                        monitor = new PreallocationSpaceMonitor(_repository,
-								preallocatedSpace, maxAllocatedSpace);
-
-                    if( _handler instanceof ChecksumMover ){
-
-                        csmover = (ChecksumMover)_handler;
-                        say("Checksum mover is set");
-                        clientChecksumFactory = csmover.getChecksumFactory(_protocolInfo);
-                        Checksum checksum = null;
-                        if ( clientChecksumFactory != null ){
-                            say("Got checksum factory of "+clientChecksumFactory.getType());
-                            checksum = clientChecksumFactory.create();
-                        } else
-                            checksum = _checksumModule.getDefaultChecksumFactory().create();
-
-                        if ( _checksumModule.checkOnTransfer() ){
-                            csmover.setDigest(checksum);
-                        }
-                    }
-
-                    /* To protect against bugs in the mover, we
-                     * decorate the space monitor and correct any
-                     * discrepancies after the transfer.
-                     */
-                    SpaceMonitorWatch watcher =
-                        new SpaceMonitorWatch(monitor);
-                    try {
-                        RandomAccessFile raf =
-                            new RandomAccessFile(cacheFile, "rw");
-                        try {
-                            try {
-                                _handler.runIO(raf,
-                                               _protocolInfo,
-                                               _storageInfo,
-                                               _pnfsId,
-                                               watcher,
-                                               MoverProtocol.WRITE
-                                               | MoverProtocol.READ);
-                            } finally {
-                                /* The remaining steps are not safe to
-                                 * interrupt and we therefore block the
-                                 * timeout manager from killing us. If we
-                                 * have already been killed, we raise an
-                                 * exception right away.
-                                 */
-                                protect();
-                            }
-
-                            /* Some movers perform checksum
-                             * computation after the
-                             * transfer. Therefore we cannot close the
-                             * file until we have retrieved the
-                             * checksum.
-                             */
-                            if (csmover != null) {
-                                _checksumModule.setMoverChecksums(_entry,
-                                                                  clientChecksumFactory,
-                                                                  csmover.getClientChecksum(),
-                                                                  _checksumModule.checkOnTransfer()
-                                                                  ? csmover.getTransferChecksum()
-                                                                  : null);
-                            } else {
-                                _checksumModule.setMoverChecksums(_entry,
-                                                                  null,
-                                                                  null,
-                                                                  null);
-                            }
-                        } finally {
-                            /* This may throw an IOException, although it
-                             * is not clear when this would happen. If it
-                             * does, we are probably better off
-                             * propagating the exception, which is why we
-                             * do not catch it here.
-                             */
-                            raf.close();
-                        }
-                    } finally {
-                        long diff = watcher.correctSpace(cacheFile.length());
-                        if (diff != 0) {
-                            esay("Bug (please report this): Broken space allocation for "
-                                 + _pnfsId + " with mover "
-                                 + _handler.getClass().getName() +
-                                 " and difference " + diff
-                                 + " (" + watcher + ")");
-                        }
-                    }
-
-                    long fileSize = cacheFile.length();
-                    _storageInfo.setFileSize(fileSize);
-                    _info.setFileSize(fileSize);
-
-                    say(_pnfsId.toString()
-                        + ";length=" + fileSize
-                        + ";timer=" + sysTimer.getDifference().toString());
-
-                    boolean overwrite = _storageInfo.getKey("overwrite") != null;
-
-                    //
-                    // store the storage info and set the file precious.
-                    // ( first remove the lock, otherwise the
-                    // state for the precious events is wrong.
-                    //
-
-                    /*
-                     * Due to support of <AccessLatency> and <RetentionPolicy>
-                     * the file state in the pool has changed has changed it's
-                     * meaning:
-                     *     precious: have to goto tape
-                     *     cached: free to be removed by sweeper
-                     *     cached+sticky: does not go to tape, isn't removed by sweeper
-                     *
-                     * new states depending on AL and RP:
-                     *     Custodial+ONLINE   (T1D1) : precious+sticky  => cached+sticky
-                     *     Custodial+NEARLINE (T1D0) : precious         => cached
-                     *     Output+ONLINE      (T0D1) : cached+sticky    => cached+sticky
-                     *
-                     */
-
-                    _entry.lock(false) ;
-                    _entry.setStorageInfo( _storageInfo ) ;
-
-                    AccessLatency accessLatency = _storageInfo.getAccessLatency();
-                    if( accessLatency != null && accessLatency.equals( AccessLatency.ONLINE) ) {
-
-                    	// TODO: probably, we have to notify PinManager
-                    	// HopingManager have to copy file into a 'read' pool if
-                    	// needed, set copy 'sticky' and remove sticky flag in the 'write' pool
-
-                    	_entry.setSticky(true);
-                    }else{
-                    	_entry.setSticky(false);
-                    }
-
-                    // flush to tape only if the file defined as a 'tape file'( RP = Custodial) and the HSM is defined
-                    String hsm = _storageInfo.getHsm();
-                    RetentionPolicy retentionPolicy = _storageInfo.getRetentionPolicy();
-
-                    if (overwrite) {
-                        _entry.setCached();
-                        say("Overwriting requested");
-                    } else if( retentionPolicy != null && retentionPolicy.equals(RetentionPolicy.CUSTODIAL) ) {
-                        _entry.setPrecious() ;
-                    } else {
-                    	_entry.setCached() ;
-                    }
-
-
-                    //
-                    // setFileSize will throw an exception if the file is no
-                    // longer in pnfs. As a result, the client will let the
-                    // close fail and we will remove the entries from the
-                    // the repository.
-                    //
-                    if ((!overwrite) && (!_isHsmPool)) {
-                        _pnfs.setFileSize(_pnfsId, fileSize);
-                        if (_lfsMode == LFS_NONE) {
-                            _pnfs.putPnfsFlag(_pnfsId, "h", "yes");
-                        } else {
-                            _pnfs.putPnfsFlag(_pnfsId, "h", "no");
-                        }
-                    }
-                    //
-                    _replicationHandler.initiateReplication(_entry, "write");
-                    //
-                    // cache location changed by event handler
-                    //
-                    //
-                } else {
-                    sysTimer.getDifference();
-                    long fileSize = cacheFile.length();
-                    _info.setFileSize(fileSize);
-
-                    RandomAccessFile raf =
-                        new RandomAccessFile(cacheFile, "r");
-                    try {
-                        try {
-                            _handler.runIO(raf,
-                                           _protocolInfo,
-                                           _storageInfo,
-                                           _pnfsId,
-                                           new ReadOnlySpaceMonitor(_repository),
-                                           MoverProtocol.READ);
-                        } finally {
-                            /* The remaining steps are not safe to
-                             * interrupt and we therefore block the
-                             * timeout manager from killing us. If we
-                             * have already been killed, we raise an
-                             * exception right away.
-                             */
-                            protect();
-                        }
-                    } finally {
-                        /* This may throw an IOException, although it
-                         * is not clear when this would happen. If it
-                         * does, we are probably better off
-                         * propagating the exception.
-                         */
-                        raf.close();
-                    }
-
-                    if (_handler.wasChanged()) {
-                        throw new RuntimeException("Bug: Mover changed read-only file");
-                    }
-
-                    say(_pnfsId.toString() + ";length=" + fileSize + ";timer="
-                        + sysTimer.getDifference().toString());
-
-                }
-                _finished.setSucceeded();
-
-            } catch (Exception eofe) {
-
-                esay("Exception in runIO for : " + _pnfsId + " " + eofe);
-
-                if (!(eofe instanceof EOFException))
-                    esay(eofe);
-
-                if (eofe instanceof CacheException) {
-                    int errorCode = ((CacheException) eofe).getRc();
-                    if (errorCode == CacheRepository.ERROR_IO_DISK) {
-                        disablePool(PoolV2Mode.DISABLED_STRICT, errorCode, eofe
-                                    .getMessage());
-                        fsay(eofe.getMessage());
-                    }
-                }
-
-                try {
-                    if (_create) {
-
-                        long fileSize = cacheFile.length();
-                        if (fileSize == 0) {
-                            // remove newly created zero size files if
-                            // there was a problem to write it
-                            esay("removing empty file: " + _pnfsId);
-                            _entry.lock(false);
-                            _repository.removeEntry(_entry);
-                            if (!_isHsmPool)
-                                _pnfs.deletePnfsEntry(_pnfsId);
-                        } else {
-
-                            // FIXME: this part is not as elegant as it's should
-                            // be - duplicated code
-
-                            // set file size
-                            esay("Storing incomplete file : " + _pnfsId
-                                 + " with " + fileSize);
-
-                            _storageInfo.setFileSize(fileSize);
-                            _info.setFileSize(fileSize);
-                            _entry.lock(false);
-                            _entry.setStorageInfo(_storageInfo);
-                            _entry.setPrecious();
-                            if (!_isHsmPool) {
-                                _pnfs.setFileSize(_pnfsId, fileSize);
-                                if (_lfsMode == LFS_NONE) {
-                                    _pnfs.putPnfsFlag(_pnfsId, "h", "yes");
-                                } else {
-                                    _pnfs.putPnfsFlag(_pnfsId, "h", "no");
-                                }
-                            }
-                            // set checksum
-                            if (csmover != null) {
-                                _checksumModule
-                                    .setMoverChecksums(
-                                                       _entry,  clientChecksumFactory,
-                                                       csmover.getClientChecksum(),
-                                                       _checksumModule
-                                                       .checkOnTransfer() ? csmover
-                                                       .getTransferChecksum()
-                                                       : null);
-                            } else {
-                                _checksumModule.setMoverChecksums(_entry, null, null,
-                                                                  null);
-                            }
-
-                        }
-                    }
-
-                } catch (Throwable e) {
-                    esay("Stacked Exception (Original) for " + _pnfsId + " : "+ eofe);
-                    esay("Stacked Throwable (Resulting) for " + _pnfsId + " : " + e);
-                    esay(e);
+                    _transfer.transfer();
                 } finally {
-                    String errorMessage = "Unexpected Exception : " + eofe;
-                    int errorCode = 33;
-
-                    if (eofe instanceof CacheException) {
-                        errorCode = ((CacheException) eofe).getRc();
-                        errorMessage = eofe.getMessage();
-                    }
-                    _finished.setReply(errorCode, errorMessage);
-                    _info.setResult(errorCode, errorMessage);
+                    setThread(null);
+                    _transfer.close();
                 }
 
-            } catch (Throwable e) {
-                esay("Throwable in runIO() " + _pnfsId + " " + e);
-                esay(e);
-
-                _finished.setReply(34, e);
-                _info.setResult(34, e.toString());
-
-            } finally {
-                try {
-                    _entry.decrementLinkCount();
-                } catch (CacheException e) {
-                    // Exception never thrown
-                    throw new RuntimeException("Bug: decrementLinkCount threw unexpected exception", e);
+                rc = 0;
+                msg = "";
+            } catch (InterruptedException e) {
+                rc = 37;
+                msg = "Transfer was killed";
+            } catch (CacheException e) {
+                if (e.getRc() == CacheRepository.ERROR_IO_DISK) {
+                    disablePool(PoolV2Mode.DISABLED_STRICT,
+                                CacheRepository.ERROR_IO_DISK,
+                                e.getMessage());
                 }
-
-                try {
-
-                    if (monitor instanceof PreallocationSpaceMonitor) {
-                        PreallocationSpaceMonitor m = (PreallocationSpaceMonitor) monitor;
-                        long usedSpace = m.getUsedSpace();
-                        say("Applying preallocated space : " + usedSpace);
-                        if (usedSpace > 0L)
-                            _repository.applyReservedSpace(usedSpace);
-                    }
-
-                } catch (CacheException e) {
-                    esay("Problem  handling reserved space management : " + e);
-                    esay(e);
-                }
-
-                transferTimer = System.currentTimeMillis() - transferTimer;
-                long bytesTransferred = _handler.getBytesTransferred();
-                _info.setTransferAttributes(bytesTransferred, transferTimer,
-                                            _protocolInfo);
-
-            }
-            try {
-                _message.setMessageObject(_finished);
-                sendMessage(_message);
+                rc = e.getRc();
+                msg = e.getMessage();
             } catch (Exception e) {
-                esay("PANIC : Can't send message back to door : " + e);
-                esay(e);
+                rc = 37;
+                msg = "Unexpected exception: " + e.getMessage();
             }
-            try {
-                sendMessage(new CellMessage(_billingCell, _info));
-            } catch (Exception e) {
-                esay("PANIC : Can't report to 'billing cell' : " + e);
-                esay(e);
-            }
-            say("IO thread finished : " + Thread.currentThread().toString());
+            sendFinished(rc, msg);
+            sendBillingMessage(rc, msg);
+        }
+
+        @Override
+        public String toString()
+        {
+            return _transfer.toString();
         }
 
     }
+
+//     private class RepositoryIoHandler implements IoBatchable {
+
+//         private PoolIoFileMessage _command = null;
+//         private CellMessage _message = null;
+//         private String _clientPath = null;
+//         private PnfsId _pnfsId = null;
+//         private MoverProtocol _handler = null;
+//         private ProtocolInfo _protocolInfo = null;
+//         private StorageInfo _storageInfo = null;
+//         private CellPath _destination = null;
+//         private boolean _rdOnly = true;
+//         private boolean _create = false;
+//         private boolean _preparationDone = false;
+//         private DoorTransferFinishedMessage _finished = null;
+//         private MoverInfoMessage _info = null;
+//         private boolean _started = false;
+//         private boolean _protected = false;
+//         private Thread _thread;
+
+//         public RepositoryIoHandler(PoolIoFileMessage poolMessage,
+//                                    CellMessage originalCellMessage)
+//             throws CacheException
+//         {
+//             _message = originalCellMessage;
+//             _command = poolMessage;
+//             _destination = _message.getDestinationPath();
+//             _pnfsId = _command.getPnfsId();
+//             _protocolInfo = _command.getProtocolInfo();
+//             _storageInfo = _command.getStorageInfo();
+//             _info = new MoverInfoMessage(getCellName() + "@"
+//                                          + getCellDomainName(), _pnfsId);
+//             _info.setInitiator(_command.getInitiator());
+//             CellPath tmp = (CellPath) _destination.clone();
+//             tmp.revert();
+//             _clientPath = tmp.getCellName() + "@" + tmp.getCellDomainName();
+//             //
+//             // prepare the final reply
+//             //
+//             _finished = new DoorTransferFinishedMessage(_command.getId(),
+//                                                         _pnfsId, _protocolInfo, _storageInfo, poolMessage
+// 							.getPoolName());
+//             _finished.setIoQueueName(poolMessage.getIoQueueName());
+
+//             //
+//             // we need to change the next two lines as soon
+//             // as we allow 'transient files'.
+//             //
+//             _rdOnly = poolMessage instanceof PoolDeliverFileMessage;
+//             _create = !_rdOnly;
+
+//             _info.setFileCreated(_create);
+//             _info.setStorageInfo(_storageInfo);
+
+//             // check for file existence
+//             if (_rdOnly) {
+//                 try {
+//                     _repository.getEntry(_pnfsId);
+//                 } catch (FileNotInCacheException e) {
+//                     _pnfs.clearCacheLocation(_pnfsId);
+//                     throw e;
+//                 }
+//             }
+//         }
+
+//         private boolean isWrite() {
+//             return _create;
+//         }
+
+//         protected synchronized void protect()
+//             throws InterruptedException
+//         {
+//             if (Thread.interrupted()) {
+//                 throw new InterruptedException("IO Job was killed");
+//             }
+//             _protected = true;
+//         }
+
+//         protected synchronized void setThread(Thread value)
+//         {
+//             _thread = value;
+//         }
+
+//         public synchronized boolean kill()
+//         {
+//             if (_protected || _thread == null)
+//                 return false;
+
+//             _thread.interrupt();
+//             return true;
+//         }
+
+//         @Override
+//         public String toString() {
+
+//             StringBuffer sb = new StringBuffer();
+//             sb.append(_pnfsId.toString());
+//             if (_handler == null) {
+//                 sb.append(" h={NoHandlerYet}");
+//             } else {
+//                 sb.append(" h={").append(_handler.toString())
+//                     .append("} bytes=").append(
+//                                                _handler.getBytesTransferred()).append(
+//                                                                                       " time/sec=").append(getTransferTime() / 1000L)
+//                     .append(" LM=");
+
+//                 long lastTransferTime = getLastTransferred();
+//                 if (lastTransferTime == 0L) {
+//                     sb.append(0);
+//                 } else {
+//                     sb.append((System.currentTimeMillis() - lastTransferTime) / 1000L);
+//                 }
+//             }
+//             return sb.toString();
+//         }
+
+//         private void setAttribute(String name, Object attribute) {
+
+//             if (_handler == null) {
+//                 throw new IllegalArgumentException("Handler not yet installed");
+//             }
+
+//             _handler.setAttribute(name, attribute);
+//         }
+
+//         private Object getAttribute(String name) {
+//             if (_handler == null) {
+//                 throw new IllegalArgumentException("Handler not yet installed");
+//             }
+
+//             return _handler.getAttribute(name);
+//         }
+
+//         private synchronized boolean prepare() {
+//             if (_preparationDone)
+//                 return false;
+//             _preparationDone = true;
+//             boolean failed = false;
+//             say("JOB prepare " + _pnfsId);
+//             //
+//             // do all the preliminary stuff
+//             // - load Protocol Handler
+//             // - check File is ok
+//             // - increment the link count (to prevent the file from been
+//             // removed)
+//             //
+//             PnfsId pnfsId = _pnfsId;
+//             try {
+//                 _handler = getProtocolHandler(_protocolInfo);
+//                 if (_handler == null)
+//                     throw new CacheException(27,
+//                                              "PANIC : Couldn't get handler for " + _protocolInfo);
+
+//                 if (_create && _rdOnly)
+//                     throw new IllegalArgumentException("Can't read and create");
+
+//                 synchronized (_repository) {
+//                     if (_create) {
+//                         _entry = _repository.createEntry(pnfsId);
+//                         _entry.lock(true);
+//                         _entry.setReceivingFromClient();
+//                     } else {
+//                         _entry = _repository.getEntry(pnfsId);
+//                         say("Entry for " + pnfsId + " found and is " + _entry);
+//                         if ((!_entry.isCached()) && (!_entry.isPrecious()))
+//                             throw new CacheException(301,
+//                                                      "File is still transient : " + pnfsId);
+//                     }
+//                     _entry.incrementLinkCount();
+//                 }
+//                 _command.setSucceeded();
+
+//             } catch (FileNotInCacheException fce) {
+//                 esay(_pnfsId + " not in repository");
+//                 // probably bad entry in cacheInfo, clean it
+//                 _pnfs.clearCacheLocation(_pnfsId);
+//                 failed = true;
+//                 _command.setFailed(fce.getRc(), fce.getMessage());
+//             } catch (CacheException ce) {
+//                 esay("Io Thread Cache Exception : " + ce);
+//                 esay(ce);
+//                 if (ce.getRc() == CacheRepository.ERROR_IO_DISK)
+//                     disablePool(PoolV2Mode.DISABLED_STRICT, ce.getRc(), ce
+//                                 .getMessage());
+//                 failed = true;
+//                 _command.setFailed(ce.getRc(), ce.getMessage());
+//             } catch (Exception exc) {
+//                 esay("Thread Exception : " + exc);
+//                 esay(exc);
+//                 failed = true;
+//                 _command.setFailed(11, exc.toString());
+//             }
+//             //
+//             // send first acknowledge.
+//             //
+//             try {
+//                 sendMessage(_message);
+//             } catch (NotSerializableException e) {
+//                 throw new RuntimeException("Bug detected: Unserializable vehicle", e);
+//             } catch (NoRouteToCellException e) {
+//                 esay("Can't send message back to door : " + e.getMessage());
+//                 esay(e);
+//                 failed = true;
+//             }
+//             if (failed) {
+//                 try {
+//                     if (_create) {
+//                         _entry.lock(false);
+//                         _repository.removeEntry(_entry);
+//                     }
+//                 } catch (CacheException ce) {
+//                     esay("PANIC : couldn't remove entry : " + _entry);
+//                 }
+//                 esay("IoFile thread finished (request failure)");
+//             }
+//             return failed;
+//         }
+
+//         //
+//         // the IoBatchable Interface
+//         //
+//         public PnfsId getPnfsId() {
+//             return _pnfsId;
+//         }
+
+//         public long getLastTransferred() {
+//             synchronized (this) {
+//                 if (!_started)
+//                     return 0L;
+//             }
+//             if (_handler == null) {
+//                 return 0;
+//             } else {
+//                 return _handler.getLastTransferred();
+//             }
+
+//         }
+
+//         public long getTransferTime() {
+//             synchronized (this) {
+//                 if (!_started)
+//                     return 0L;
+//             }
+//             if (_handler == null) {
+//                 return 0;
+//             } else {
+//                 return _handler.getTransferTime();
+//             }
+//         }
+
+//         public long getBytesTransferred() {
+//             if (_handler == null) {
+//                 return 0;
+//             } else {
+//                 return _handler.getBytesTransferred();
+//             }
+//         }
+
+//         public double getTransferRate() {
+//             if (_handler == null) {
+//                 return 10.000;
+//             } else {
+//                 long bt = _handler.getBytesTransferred();
+//                 long tm = _handler.getTransferTime();
+//                 return tm == 0L ? (double) 10.00 : ((double) bt / (double) tm);
+//             }
+//         }
+
+//         //
+//         // the Batchable Interface
+//         //
+//         public String getClient() {
+//             return _clientPath;
+//         }
+
+//         public long getClientId() {
+//             return _command.getId();
+//         }
+
+//         public String getIoQueueName() {
+//             String name = _command.getIoQueueName();
+//             if (name == null) {
+//                 IoQueueManager manager = (IoQueueManager)_ioQueue;
+//                 return manager.getDefaultScheduler().getSchedulerName();
+//             } else {
+//                 return name;
+//             }
+//         }
+
+//         public void queued(int id) {
+//             say("JOB queued " + _pnfsId);
+//             _command.setMoverId(id);
+//             if (prepare())
+//                 throw new IllegalArgumentException("prepare failed");
+//         }
+
+//         public void unqueued() {
+//             say("JOB unqueued " + _pnfsId);
+//             //
+//             // TBD: have to send 'failed' as last message
+//             //
+//             return;
+//         }
+
+//         //
+//         // the Runnable Interface
+//         //
+//         public void run() {
+
+//             setThread(Thread.currentThread());
+
+//             say("JOB run " + _pnfsId);
+//             if (prepare())
+//                 return;
+
+//             synchronized (this) {
+//                 _started = true;
+//             }
+//             SysTimer sysTimer = new SysTimer();
+//             long transferTimer = System.currentTimeMillis();
+
+//             SpaceMonitor monitor = _repository;
+//             File cacheFile = null;
+//             ChecksumMover csmover = null;
+//             ChecksumFactory clientChecksumFactory = null;
+
+//             if (!_crashEnabled) {
+//                 _storageInfo.setKey("crash", null);
+//             } else {
+//                 _storageInfo.setKey("crashType", _crashType);
+//             }
+
+//             try {
+//                 cacheFile = _entry.getDataFile();
+
+//                 say("Trying to open " + cacheFile);
+//                 if (_create) {
+
+//                     sysTimer.getDifference();
+
+//                     String tmp = null;
+//                     long preallocatedSpace = 0L;
+//                     long maxAllocatedSpace = 0L;
+//                     if ((tmp = _storageInfo.getKey(PREALLOCATED_SPACE)) != null) {
+//                         try {
+//                             preallocatedSpace = Long.parseLong(tmp);
+//                         } catch (NumberFormatException ee) { /* ignore 'bad' values*/ }
+//                     }
+//                     if ((tmp = _storageInfo.getKey(MAX_SPACE)) != null) {
+//                         try {
+//                             maxAllocatedSpace = Long.parseLong(tmp);
+//                         } catch (NumberFormatException ee) {/* ignore 'bad' values*/ }
+//                     }
+
+//                     if ((preallocatedSpace > 0L) || (maxAllocatedSpace > 0L))
+//                         monitor = new PreallocationSpaceMonitor(_repository,
+// 								preallocatedSpace, maxAllocatedSpace);
+
+//                     if( _handler instanceof ChecksumMover ){
+
+//                         csmover = (ChecksumMover)_handler;
+//                         say("Checksum mover is set");
+//                         clientChecksumFactory = csmover.getChecksumFactory(_protocolInfo);
+//                         Checksum checksum = null;
+//                         if ( clientChecksumFactory != null ){
+//                             say("Got checksum factory of "+clientChecksumFactory.getType());
+//                             checksum = clientChecksumFactory.create();
+//                         } else
+//                             checksum = _checksumModule.getDefaultChecksumFactory().create();
+
+//                         if ( _checksumModule.checkOnTransfer() ){
+//                             csmover.setDigest(checksum);
+//                         }
+//                     }
+
+//                     /* To protect against bugs in the mover, we
+//                      * decorate the space monitor and correct any
+//                      * discrepancies after the transfer.
+//                      */
+//                     SpaceMonitorWatch watcher =
+//                         new SpaceMonitorWatch(monitor);
+//                     try {
+//                         RandomAccessFile raf =
+//                             new RandomAccessFile(cacheFile, "rw");
+//                         try {
+//                             try {
+//                                 _handler.runIO(raf,
+//                                                _protocolInfo,
+//                                                _storageInfo,
+//                                                _pnfsId,
+//                                                watcher,
+//                                                MoverProtocol.WRITE
+//                                                | MoverProtocol.READ);
+//                             } finally {
+//                                 /* The remaining steps are not safe to
+//                                  * interrupt and we therefore block the
+//                                  * timeout manager from killing us. If we
+//                                  * have already been killed, we raise an
+//                                  * exception right away.
+//                                  */
+//                                 protect();
+//                             }
+
+//                             /* Some movers perform checksum
+//                              * computation after the
+//                              * transfer. Therefore we cannot close the
+//                              * file until we have retrieved the
+//                              * checksum.
+//                              */
+//                             if (csmover != null) {
+//                                 _checksumModule.setMoverChecksums(_entry,
+//                                                                   clientChecksumFactory,
+//                                                                   csmover.getClientChecksum(),
+//                                                                   _checksumModule.checkOnTransfer()
+//                                                                   ? csmover.getTransferChecksum()
+//                                                                   : null);
+//                             } else {
+//                                 _checksumModule.setMoverChecksums(_entry,
+//                                                                   null,
+//                                                                   null,
+//                                                                   null);
+//                             }
+//                         } finally {
+//                             /* This may throw an IOException, although it
+//                              * is not clear when this would happen. If it
+//                              * does, we are probably better off
+//                              * propagating the exception, which is why we
+//                              * do not catch it here.
+//                              */
+//                             raf.close();
+//                         }
+//                     } finally {
+//                         long diff = watcher.correctSpace(cacheFile.length());
+//                         if (diff != 0) {
+//                             esay("Bug (please report this): Broken space allocation for "
+//                                  + _pnfsId + " with mover "
+//                                  + _handler.getClass().getName() +
+//                                  " and difference " + diff
+//                                  + " (" + watcher + ")");
+//                         }
+//                     }
+
+//                     long fileSize = cacheFile.length();
+//                     _storageInfo.setFileSize(fileSize);
+//                     _info.setFileSize(fileSize);
+
+//                     say(_pnfsId.toString()
+//                         + ";length=" + fileSize
+//                         + ";timer=" + sysTimer.getDifference().toString());
+
+//                     boolean overwrite = _storageInfo.getKey("overwrite") != null;
+
+//                     //
+//                     // store the storage info and set the file precious.
+//                     // ( first remove the lock, otherwise the
+//                     // state for the precious events is wrong.
+//                     //
+
+//                     /*
+//                      * Due to support of <AccessLatency> and <RetentionPolicy>
+//                      * the file state in the pool has changed has changed it's
+//                      * meaning:
+//                      *     precious: have to goto tape
+//                      *     cached: free to be removed by sweeper
+//                      *     cached+sticky: does not go to tape, isn't removed by sweeper
+//                      *
+//                      * new states depending on AL and RP:
+//                      *     Custodial+ONLINE   (T1D1) : precious+sticky  => cached+sticky
+//                      *     Custodial+NEARLINE (T1D0) : precious         => cached
+//                      *     Output+ONLINE      (T0D1) : cached+sticky    => cached+sticky
+//                      *
+//                      */
+
+//                     _entry.lock(false) ;
+//                     _entry.setStorageInfo( _storageInfo ) ;
+
+//                     AccessLatency accessLatency = _storageInfo.getAccessLatency();
+//                     if( accessLatency != null && accessLatency.equals( AccessLatency.ONLINE) ) {
+
+//                     	// TODO: probably, we have to notify PinManager
+//                     	// HopingManager have to copy file into a 'read' pool if
+//                     	// needed, set copy 'sticky' and remove sticky flag in the 'write' pool
+
+//                     	_entry.setSticky(true);
+//                     }else{
+//                     	_entry.setSticky(false);
+//                     }
+
+//                     // flush to tape only if the file defined as a 'tape file'( RP = Custodial) and the HSM is defined
+//                     String hsm = _storageInfo.getHsm();
+//                     RetentionPolicy retentionPolicy = _storageInfo.getRetentionPolicy();
+
+//                     if (overwrite) {
+//                         _entry.setCached();
+//                         say("Overwriting requested");
+//                     } else if( retentionPolicy != null && retentionPolicy.equals(RetentionPolicy.CUSTODIAL) ) {
+//                         _entry.setPrecious() ;
+//                     } else {
+//                     	_entry.setCached() ;
+//                     }
+
+
+//                     //
+//                     // setFileSize will throw an exception if the file is no
+//                     // longer in pnfs. As a result, the client will let the
+//                     // close fail and we will remove the entries from the
+//                     // the repository.
+//                     //
+//                     if (!overwrite) {
+//                         _pnfs.setFileSize(_pnfsId, fileSize);
+//                         if (_lfsMode == LFS_NONE) {
+//                             _pnfs.putPnfsFlag(_pnfsId, "h", "yes");
+//                         } else {
+//                             _pnfs.putPnfsFlag(_pnfsId, "h", "no");
+//                         }
+//                     }
+//                     //
+//                     _replicationHandler.initiateReplication(_entry, "write");
+//                     //
+//                     // cache location changed by event handler
+//                     //
+//                     //
+//                 } else {
+//                     sysTimer.getDifference();
+//                     long fileSize = cacheFile.length();
+//                     _info.setFileSize(fileSize);
+
+//                     RandomAccessFile raf =
+//                         new RandomAccessFile(cacheFile, "r");
+//                     try {
+//                         try {
+//                             _handler.runIO(raf,
+//                                            _protocolInfo,
+//                                            _storageInfo,
+//                                            _pnfsId,
+//                                            new ReadOnlySpaceMonitor(_repository),
+//                                            MoverProtocol.READ);
+//                         } finally {
+//                             /* The remaining steps are not safe to
+//                              * interrupt and we therefore block the
+//                              * timeout manager from killing us. If we
+//                              * have already been killed, we raise an
+//                              * exception right away.
+//                              */
+//                             protect();
+//                         }
+//                     } finally {
+//                         /* This may throw an IOException, although it
+//                          * is not clear when this would happen. If it
+//                          * does, we are probably better off
+//                          * propagating the exception.
+//                          */
+//                         raf.close();
+//                     }
+
+//                     if (_handler.wasChanged()) {
+//                         throw new RuntimeException("Bug: Mover changed read-only file");
+//                     }
+
+//                     say(_pnfsId.toString() + ";length=" + fileSize + ";timer="
+//                         + sysTimer.getDifference().toString());
+
+//                 }
+//                 _finished.setSucceeded();
+
+//             } catch (Exception eofe) {
+
+//                 esay("Exception in runIO for : " + _pnfsId + " " + eofe);
+
+//                 if (!(eofe instanceof EOFException))
+//                     esay(eofe);
+
+//                 if (eofe instanceof CacheException) {
+//                     int errorCode = ((CacheException) eofe).getRc();
+//                     if (errorCode == CacheRepository.ERROR_IO_DISK) {
+//                         disablePool(PoolV2Mode.DISABLED_STRICT, errorCode, eofe
+//                                     .getMessage());
+//                         fsay(eofe.getMessage());
+//                     }
+//                 }
+
+//                 try {
+//                     if (_create) {
+
+//                         long fileSize = cacheFile.length();
+//                         if (fileSize == 0) {
+//                             // remove newly created zero size files if
+//                             // there was a problem to write it
+//                             esay("removing empty file: " + _pnfsId);
+//                             _entry.lock(false);
+//                             _repository.removeEntry(_entry);
+//                             _pnfs.deletePnfsEntry(_pnfsId);
+//                         } else {
+
+//                             // FIXME: this part is not as elegant as it's should
+//                             // be - duplicated code
+
+//                             // set file size
+//                             esay("Storing incomplete file : " + _pnfsId
+//                                  + " with " + fileSize);
+
+//                             _storageInfo.setFileSize(fileSize);
+//                             _info.setFileSize(fileSize);
+//                             _entry.lock(false);
+//                             _entry.setStorageInfo(_storageInfo);
+//                             _entry.setPrecious();
+//                             _pnfs.setFileSize(_pnfsId, fileSize);
+//                             if (_lfsMode == LFS_NONE) {
+//                                 _pnfs.putPnfsFlag(_pnfsId, "h", "yes");
+//                             } else {
+//                                 _pnfs.putPnfsFlag(_pnfsId, "h", "no");
+//                             }
+//                             // set checksum
+//                             if (csmover != null) {
+//                                 _checksumModule
+//                                     .setMoverChecksums(
+//                                                        _entry,  clientChecksumFactory,
+//                                                        csmover.getClientChecksum(),
+//                                                        _checksumModule
+//                                                        .checkOnTransfer() ? csmover
+//                                                        .getTransferChecksum()
+//                                                        : null);
+//                             } else {
+//                                 _checksumModule.setMoverChecksums(_entry, null, null,
+//                                                                   null);
+//                             }
+
+//                         }
+//                     }
+
+//                 } catch (Throwable e) {
+//                     esay("Stacked Exception (Original) for " + _pnfsId + " : "+ eofe);
+//                     esay("Stacked Throwable (Resulting) for " + _pnfsId + " : " + e);
+//                     esay(e);
+//                 } finally {
+//                     String errorMessage = "Unexpected Exception : " + eofe;
+//                     int errorCode = 33;
+
+//                     if (eofe instanceof CacheException) {
+//                         errorCode = ((CacheException) eofe).getRc();
+//                         errorMessage = eofe.getMessage();
+//                     }
+//                     _finished.setReply(errorCode, errorMessage);
+//                     _info.setResult(errorCode, errorMessage);
+//                 }
+
+//             } catch (Throwable e) {
+//                 esay("Throwable in runIO() " + _pnfsId + " " + e);
+//                 esay(e);
+
+//                 _finished.setReply(34, e);
+//                 _info.setResult(34, e.toString());
+
+//             } finally {
+//                 try {
+//                     _entry.decrementLinkCount();
+//                 } catch (CacheException e) {
+//                     // Exception never thrown
+//                     throw new RuntimeException("Bug: decrementLinkCount threw unexpected exception", e);
+//                 }
+
+//                 try {
+
+//                     if (monitor instanceof PreallocationSpaceMonitor) {
+//                         PreallocationSpaceMonitor m = (PreallocationSpaceMonitor) monitor;
+//                         long usedSpace = m.getUsedSpace();
+//                         say("Applying preallocated space : " + usedSpace);
+//                         if (usedSpace > 0L)
+//                             _repository.applyReservedSpace(usedSpace);
+//                     }
+
+//                 } catch (CacheException e) {
+//                     esay("Problem  handling reserved space management : " + e);
+//                     esay(e);
+//                 }
+
+//                 transferTimer = System.currentTimeMillis() - transferTimer;
+//                 long bytesTransferred = _handler.getBytesTransferred();
+//                 _info.setTransferAttributes(bytesTransferred, transferTimer,
+//                                             _protocolInfo);
+
+//             }
+//             try {
+//                 _message.setMessageObject(_finished);
+//                 sendMessage(_message);
+//             } catch (Exception e) {
+//                 esay("PANIC : Can't send message back to door : " + e);
+//                 esay(e);
+//             }
+//             try {
+//                 sendMessage(new CellMessage(_billingCell, _info));
+//             } catch (Exception e) {
+//                 esay("PANIC : Can't report to 'billing cell' : " + e);
+//                 esay(e);
+//             }
+//             say("IO thread finished : " + Thread.currentThread().toString());
+//         }
+
+//     }
+
 
     // //////////////////////////////////////////////////////////////
     //
@@ -2095,43 +2291,43 @@ public class PoolV4 extends CellAdapter implements Logable {
             return sb.toString();
         }
 
-        private void initiateReplication(CacheRepositoryEntry entry,
-                                         String source) {
-            if ((!_enabled)
-                || (source.equals("restore") && !_replicateOnRestore))
-                return;
-            try {
-                _initiateReplication(entry, source);
-            } catch (CacheException e) {
-                esay("Problem in sending replication request : " + e);
-            } catch (NoRouteToCellException e) {
-                esay("Problem in sending replication request : " + e.getMessage());
-            }
-        }
+//         private void initiateReplication(CacheRepositoryEntry entry,
+//                                          String source) {
+//             if ((!_enabled)
+//                 || (source.equals("restore") && !_replicateOnRestore))
+//                 return;
+//             try {
+//                 _initiateReplication(entry, source);
+//             } catch (CacheException e) {
+//                 esay("Problem in sending replication request : " + e);
+//             } catch (NoRouteToCellException e) {
+//                 esay("Problem in sending replication request : " + e.getMessage());
+//             }
+//         }
 
-        private void _initiateReplication(CacheRepositoryEntry entry,
-                                          String source)
-            throws CacheException, NoRouteToCellException
-        {
-            PnfsId pnfsId = entry.getPnfsId();
-            StorageInfo storageInfo = entry.getStorageInfo();
+//         private void _initiateReplication(CacheRepositoryEntry entry,
+//                                           String source)
+//             throws CacheException, NoRouteToCellException
+//         {
+//             PnfsId pnfsId = entry.getPnfsId();
+//             StorageInfo storageInfo = entry.getStorageInfo();
 
-            storageInfo.setKey("replication.source", source);
+//             storageInfo.setKey("replication.source", source);
 
-            PoolMgrReplicateFileMsg req =
-                new PoolMgrReplicateFileMsg(pnfsId,
-                                            storageInfo,
-                                            new DCapProtocolInfo("DCap", 3, 0,
-                                                                 _destinationHostName, 2222),
-                                            storageInfo.getFileSize());
-            req.setReplyRequired(false);
-            try {
-                sendMessage(new CellMessage(new CellPath(_replicationManager), req));
-            } catch (NotSerializableException e) {
-                throw new RuntimeException("Bug detected: Unserializable vehicle", e);
-            }
+//             PoolMgrReplicateFileMsg req =
+//                 new PoolMgrReplicateFileMsg(pnfsId,
+//                                             storageInfo,
+//                                             new DCapProtocolInfo("DCap", 3, 0,
+//                                                                  _destinationHostName, 2222),
+//                                             storageInfo.getFileSize());
+//             req.setReplyRequired(false);
+//             try {
+//                 sendMessage(new CellMessage(new CellPath(_replicationManager), req));
+//             } catch (NotSerializableException e) {
+//                 throw new RuntimeException("Bug detected: Unserializable vehicle", e);
+//             }
 
-        }
+//         }
     }
 
     // ///////////////////////////////////////////////////////////
@@ -2164,8 +2360,19 @@ public class PoolV4 extends CellAdapter implements Logable {
             }
             Constructor<?> moverCon = mover.getConstructor(argsClass);
             Object[] args = { this };
-            return (MoverProtocol) moverCon.newInstance(args);
+            MoverProtocol instance = (MoverProtocol) moverCon.newInstance(args);
 
+            for (Map.Entry<?,?> attribute : _moverAttributes.entrySet()) {
+                try {
+                    Object key = attribute.getKey();
+                    Object value = attribute.getValue();
+                    instance.setAttribute(key.toString(), value);
+                } catch (IllegalArgumentException e) {
+                    esay("setAttribute : " + e.getMessage());
+                }
+            }
+
+            return instance;
         } catch (Exception e) {
             esay("Couldn't get Handler Class" + moverClassName);
             esay(e);
@@ -2211,26 +2418,26 @@ public class PoolV4 extends CellAdapter implements Logable {
 
             } else {
 
-                try {
+//                 try {
 
-                    PnfsId id = new PnfsId(pnfsId);
+//                     PnfsId id = new PnfsId(pnfsId);
 
-                    CacheRepositoryEntry entry = _repository.getEntry(id);
+//                     CacheRepositoryEntry entry = _repository.getEntry(id);
 
-                    msg.setSucceeded();
+//                     msg.setSucceeded();
 
-                    doChecksum(id, entry);
+//                     doChecksum(id, entry);
 
-                    _replicationHandler.initiateReplication(entry,
-                                                            "restore");
+//                     _replicationHandler.initiateReplication(entry,
+//                                                             "restore");
 
 
-                } catch (CacheException ee2) {
+//                 } catch (CacheException ee2) {
 
-                    msg.setFailed(1010, "Checksum calculation failed " + ee2);
-                    esay("Checksum calculation failed : " + ee2);
-                    esay(ee);
-                }
+//                     msg.setFailed(1010, "Checksum calculation failed " + ee2);
+//                     esay("Checksum calculation failed : " + ee2);
+//                     esay(ee);
+//                 }
             }
 
             _cellMessage.revertDirection();
@@ -2246,84 +2453,84 @@ public class PoolV4 extends CellAdapter implements Logable {
 
         }
 
-        private void doChecksum(PnfsId pnfsId, CacheRepositoryEntry entry)
-            throws CacheException
-        {
+//         private void doChecksum(PnfsId pnfsId, CacheRepositoryEntry entry)
+//             throws CacheException
+//         {
 
-            Message msg = (Message) _cellMessage.getMessageObject();
+//             Message msg = (Message) _cellMessage.getMessageObject();
 
-            if (_checksumModule.getCrcFromHsm())
-                getChecksumFromHsm(pnfsId, entry);
+//             if (_checksumModule.getCrcFromHsm())
+//                 getChecksumFromHsm(pnfsId, entry);
 
-            if (!_checksumModule.checkOnRestore())
-                return;
+//             if (!_checksumModule.checkOnRestore())
+//                 return;
 
-            say("Calculating checksum of " + pnfsId);
+//             say("Calculating checksum of " + pnfsId);
 
-            try {
-                StorageInfo info = entry.getStorageInfo();
-                String checksumString = info.getKey("flag-c");
+//             try {
+//                 StorageInfo info = entry.getStorageInfo();
+//                 String checksumString = info.getKey("flag-c");
 
-                if (checksumString == null)
-                    throw new CacheException("Checksum not in StorageInfo");
+//                 if (checksumString == null)
+//                     throw new CacheException("Checksum not in StorageInfo");
 
-                long start = System.currentTimeMillis();
+//                 long start = System.currentTimeMillis();
 
-                Checksum infoChecksum = new Checksum(checksumString);
-                Checksum fileChecksum = _checksumModule.calculateFileChecksum(
-                                                                              entry, _checksumModule.getDefaultChecksum());
+//                 Checksum infoChecksum = new Checksum(checksumString);
+//                 Checksum fileChecksum = _checksumModule.calculateFileChecksum(
+//                                                                               entry, _checksumModule.getDefaultChecksum());
 
-                say("Checksum for " + pnfsId + " info=" + infoChecksum
-                    + ";file=" + fileChecksum + " in "
-                    + (System.currentTimeMillis() - start));
+//                 say("Checksum for " + pnfsId + " info=" + infoChecksum
+//                     + ";file=" + fileChecksum + " in "
+//                     + (System.currentTimeMillis() - start));
 
-                if (!infoChecksum.equals(fileChecksum)) {
+//                 if (!infoChecksum.equals(fileChecksum)) {
 
-                    esay("Checksum of " + pnfsId + " differs info="
-                         + infoChecksum + ";file=" + fileChecksum);
-                    try {
-                        _repository.removeEntry(entry);
-                    } catch (CacheException ee2) {
-                        esay("Couldn't remove file : " + pnfsId + " : " + ee2);
-                    }
-                    msg.setFailed(1009, "Checksum error : info=" + infoChecksum
-                                  + ";file=" + fileChecksum);
-                }
-            } catch (Exception ee3) {
-                esay("Couldn't compare checksum of " + pnfsId + " : " + ee3);
-                ee3.printStackTrace();
-            }
+//                     esay("Checksum of " + pnfsId + " differs info="
+//                          + infoChecksum + ";file=" + fileChecksum);
+//                     try {
+//                         _repository.removeEntry(entry);
+//                     } catch (CacheException ee2) {
+//                         esay("Couldn't remove file : " + pnfsId + " : " + ee2);
+//                     }
+//                     msg.setFailed(1009, "Checksum error : info=" + infoChecksum
+//                                   + ";file=" + fileChecksum);
+//                 }
+//             } catch (Exception ee3) {
+//                 esay("Couldn't compare checksum of " + pnfsId + " : " + ee3);
+//                 ee3.printStackTrace();
+//             }
 
-        }
+//         }
 
-        private void getChecksumFromHsm(PnfsId pnfsId,
-                                        CacheRepositoryEntry entry) {
-            String line = null;
-            try {
-                File f = entry.getDataFile();
-                f = new File(f.getCanonicalPath() + ".crcval");
-                Checksum checksum = null;
-                if (f.exists()) {
-                    BufferedReader br = new BufferedReader(new FileReader(f));
-                    try {
-                        line = "1:" + br.readLine();
-                        checksum = new Checksum(line);
-                    } finally {
-                        try {
-                            br.close();
-                        } catch (IOException ioio) {
-                        }
-                        f.delete();
-                    }
-                    say(pnfsId + " : sending adler32 to pnfs : " + line);
-                    _checksumModule
-                        .storeChecksumInPnfs(pnfsId, checksum, false);
-                }
-            } catch (Exception waste) {
-                esay("Couldn't send checksum (" + line + ") to pnfs : " + waste);
-            }
+//         private void getChecksumFromHsm(PnfsId pnfsId,
+//                                         CacheRepositoryEntry entry) {
+//             String line = null;
+//             try {
+//                 File f = entry.getDataFile();
+//                 f = new File(f.getCanonicalPath() + ".crcval");
+//                 Checksum checksum = null;
+//                 if (f.exists()) {
+//                     BufferedReader br = new BufferedReader(new FileReader(f));
+//                     try {
+//                         line = "1:" + br.readLine();
+//                         checksum = new Checksum(line);
+//                     } finally {
+//                         try {
+//                             br.close();
+//                         } catch (IOException ioio) {
+//                         }
+//                         f.delete();
+//                     }
+//                     say(pnfsId + " : sending adler32 to pnfs : " + line);
+//                     _checksumModule
+//                         .storeChecksumInPnfs(pnfsId, checksum, false);
+//                 }
+//             } catch (Exception waste) {
+//                 esay("Couldn't send checksum (" + line + ") to pnfs : " + waste);
+//             }
 
-        }
+//         }
     }
 
     private boolean fetchFile(PoolFetchFileMessage poolMessage,
@@ -2335,15 +2542,15 @@ public class PoolV4 extends CellAdapter implements Logable {
             + storageInfo.getHsm() + ")");
 
         try {
-
-            if ((storageInfo.getFileSize() == 0) && !_flushZeroSizeFiles) {
-
-                CacheRepositoryEntry entry = _repository.createEntry(pnfsId);
-                entry.setStorageInfo(storageInfo);
-                entry.setReceivingFromStore();
-                entry.setCached();
+            if (storageInfo.getFileSize() == 0 && !_flushZeroSizeFiles) {
+                WriteHandle handle =
+                    _repository.createEntry(pnfsId,
+                                            storageInfo,
+                                            EntryState.FROM_STORE,
+                                            EntryState.CACHED,
+                                            null);
+                handle.close();
                 return true;
-
             }
             ReplyToPoolFetch reply = new ReplyToPoolFetch(cellMessage);
             if (_storageHandler.fetch(pnfsId, storageInfo, reply)) {
@@ -2371,33 +2578,24 @@ public class PoolV4 extends CellAdapter implements Logable {
         }
     }
 
-    private void checkFile(PoolFileCheckable poolMessage) {
-        PnfsId pnfsId = poolMessage.getPnfsId();
-        try {
-
-            /*
-             * logic is following:
-             *
-             *    in case of file  not in repository, FileNotInCacheException will be thrown
-             *    if not, file is there. Check readiness - cache or precious.
-             *    other wise - not available, but waiting.
-             */
-
+    private void checkFile(PoolFileCheckable poolMessage)
+    {
+        switch (_repository.getState(poolMessage.getPnfsId())) {
+        case PRECIOUS:
+        case CACHED:
+            poolMessage.setHave(true);
+            poolMessage.setWaiting(false);
+            break;
+        case FROM_CLIENT:
+        case FROM_STORE:
+        case FROM_POOL:
+            poolMessage.setHave(false);
+            poolMessage.setWaiting(true);
+            break;
+        default:
             poolMessage.setHave(false);
             poolMessage.setWaiting(false);
-
-            CacheRepositoryEntry entry = _repository.getEntry(pnfsId);
-            if ( entry.isCached() || entry.isPrecious() ) {
-                poolMessage.setHave(true);
-            } else {
-                poolMessage.setWaiting(true);
-            }
-        } catch (FileNotInCacheException fe) {
-            // default state is fine
-        } catch (Exception e) {
-            esay("Could get information about <" + pnfsId + "> : "
-                 + e.getMessage());
-            // default state is fine
+            break;
         }
     }
 
@@ -2411,17 +2609,17 @@ public class PoolV4 extends CellAdapter implements Logable {
 
         try {
 
-            /*
-             * add sticky owner and lifetime if repository supports it
-             */
-            CacheRepositoryEntry entry = _repository.getEntry(pnfsId);
-            entry.setSticky(stickyMessage
-                            .isSticky(), stickyMessage.getOwner(), stickyMessage
-                            .getLifeTime());
+//             /*
+//              * add sticky owner and lifetime if repository supports it
+//              */
+//             CacheRepositoryEntry entry = _repository.getEntry(pnfsId);
+//             entry.setSticky(stickyMessage
+//                             .isSticky(), stickyMessage.getOwner(), stickyMessage
+//                             .getLifeTime());
 
-        } catch (CacheException ce) {
-            stickyMessage.setFailed(ce.getRc(), ce);
-            return;
+//         } catch (CacheException ce) {
+//             stickyMessage.setFailed(ce.getRc(), ce);
+//             return;
         } catch (Exception ee) {
             stickyMessage.setFailed(100, ee);
             return;
@@ -2429,40 +2627,43 @@ public class PoolV4 extends CellAdapter implements Logable {
         return;
     }
 
-    private void modifyPersistency(
-                                   PoolModifyPersistencyMessage persistencyMessage) {
-
-        PnfsId pnfsId = persistencyMessage.getPnfsId();
-
+    private void modifyPersistency(PoolModifyPersistencyMessage persistencyMessage)
+    {
         try {
-
-            CacheRepositoryEntry entry = _repository.getEntry(pnfsId);
-            if (entry.isPrecious()) {
-
+            PnfsId pnfsId = persistencyMessage.getPnfsId();
+            switch (_repository.getState(pnfsId)) {
+            case PRECIOUS:
                 if (persistencyMessage.isCached())
-                    entry.setCached();
+                    _repository.setState(pnfsId, EntryState.CACHED);
+                break;
 
-            } else if (entry.isCached()) {
-
+            case CACHED:
                 if (persistencyMessage.isPrecious())
-                    entry.setPrecious(true);
+                    _repository.setState(pnfsId, EntryState.PRECIOUS);
+                break;
 
-            } else {
+            case FROM_CLIENT:
+            case FROM_POOL:
+            case FROM_STORE:
+                persistencyMessage.setFailed(101, "File still transient: "
+                                             + pnfsId);
+                break;
 
-                persistencyMessage.setFailed(101, "File still transient : "
-                                             + entry);
-                return;
+            case BROKEN:
+                persistencyMessage.setFailed(101, "File is broken: "
+                                             + pnfsId);
+                break;
 
+            case NEW:
+            case REMOVED:
+            case DESTROYED:
+                persistencyMessage.setFailed(101, "File does not exist: "
+                                             + pnfsId);
+                break;
             }
-
-        } catch (CacheException ce) {
-            persistencyMessage.setFailed(ce.getRc(), ce);
-            return;
         } catch (Exception ee) {
             persistencyMessage.setFailed(100, ee);
-            return;
         }
-        return;
     }
 
     private void modifyPoolMode(PoolModifyModeMessage modeMessage) {
@@ -2495,78 +2696,40 @@ public class PoolV4 extends CellAdapter implements Logable {
 
     private class CompanionFileAvailableCallback implements CacheFileAvailable {
 
-        private final CellMessage _cellMessage ;
-        private final Pool2PoolTransferMsg _poolMessage ;
-        private final PnfsId _pnfsId ;
+        private final CellMessage _envelope;
+        private final Pool2PoolTransferMsg _message;
 
-        private CompanionFileAvailableCallback(CellMessage cellMessage,
-                                               Pool2PoolTransferMsg poolMessage, PnfsId pnfsId) {
-
-            this._cellMessage = cellMessage;
-            this._poolMessage = poolMessage;
-            this._pnfsId = pnfsId;
+        private CompanionFileAvailableCallback(CellMessage envelope,
+                                               Pool2PoolTransferMsg message)
+        {
+            _envelope = envelope;
+            _message = message;
         }
 
-        public void cacheFileAvailable(String pnfsIdString, Throwable e) {
-
-            if (e != null) {
-                if (e instanceof CacheException) {
-                    _poolMessage.setReply(((CacheException) e).getRc(), e);
-                } else {
-                    _poolMessage.setReply(102, e);
-                }
-            } else {
-                try {
-                    //
-                    // the default mode of a p2p copy is 'cached'.
-                    // So we only have to change the mode if the customer
-                    // needs something different.
-                    //
-                    // ( API overwrites the configuration setting )
-                    //
-                    CacheRepositoryEntry entry = _repository.getEntry(_pnfsId);
-                    try {
-                        int fileMode = _poolMessage.getDestinationFileStatus();
-                        if (fileMode != Pool2PoolTransferMsg.UNDETERMINED) {
-                            if (fileMode == Pool2PoolTransferMsg.PRECIOUS)
-                                entry.setPrecious(true);
-                        } else {
-                            if ((_lfsMode == LFS_PRECIOUS)
-                                && (_p2pFileMode == P2P_PRECIOUS)) {
-
-                                entry.setPrecious(true);
-
-                            }
-                        }
-                    } catch (CacheException ee) {
-                        esay("Couldn't set precious : " + entry + " : " + ee);
-                        throw ee;
+        public void cacheFileAvailable(String pnfsIdString, Throwable error)
+        {
+            if (_message.getReplyRequired()) {
+                if (error != null) {
+                    if (error instanceof FileInCacheException) {
+                        _message.setReply(0, null);
+                    } else if (error instanceof CacheException) {
+                        _message.setReply(((CacheException) error).getRc(), error);
+                    } else {
+                        _message.setReply(102, error);
                     }
-                } catch (CacheException ee) {
-                    //
-                    // we regard this transfer as OK, even if setting
-                    // the file mode failed.
-                    //
-                    esay("Problems setting file mode : " + ee);
                 }
-            }
-            if (_poolMessage.getReplyRequired()) {
 
-                say("Sending p2p reply " + _poolMessage);
+                say("Sending p2p reply " + _message);
                 try {
-                    say("CellMessage before revert : " + _cellMessage);
-                    _cellMessage.revertDirection();
-                    say("CellMessage after revert : " + _cellMessage);
-                    sendMessage(_cellMessage);
-                } catch (NotSerializableException ee) {
-                    throw new RuntimeException("Bug detected: Unserializable vehicle", ee);
-                } catch (NoRouteToCellException ee) {
-                    esay("Cannot reply p2p message : " + ee.getMessage());
+                    _envelope.revertDirection();
+                    sendMessage(_envelope);
+                } catch (NotSerializableException e) {
+                    throw new RuntimeException("Bug detected: Unserializable vehicle", e);
+                } catch (NoRouteToCellException e) {
+                    esay("Cannot reply p2p message : " + e.getMessage());
                 }
             }
-
         }
-
     }
 
     private void runPool2PoolClient(final CellMessage cellMessage,
@@ -2575,30 +2738,19 @@ public class PoolV4 extends CellAdapter implements Logable {
         String poolName = poolMessage.getPoolName();
         PnfsId pnfsId = poolMessage.getPnfsId();
         StorageInfo storageInfo = poolMessage.getStorageInfo();
-        try {
+        CacheFileAvailable callback =
+            new CompanionFileAvailableCallback(cellMessage, poolMessage);
 
-            CacheFileAvailable callback = new CompanionFileAvailableCallback(
-                                                                             cellMessage, poolMessage, pnfsId);
-
-            _p2pClient.newCompanion(pnfsId, poolName, storageInfo, callback);
-
-        } catch (Exception ee) {
-            esay("Exception from _p2pClient.newCompanion of : " + pnfsId
-                 + " : " + ee);
-            if (ee instanceof FileInCacheException) {
-                poolMessage.setReply(0, null);
-            } else {
-                poolMessage.setReply(102, ee);
-            }
-            try {
-                say("Sending p2p reply " + poolMessage);
-                cellMessage.revertDirection();
-                sendMessage(cellMessage);
-            } catch (Exception eee) {
-                esay("Can't reply p2p message : " + eee);
-            }
+        EntryState targetState = EntryState.CACHED;
+        int fileMode = poolMessage.getDestinationFileStatus();
+        if (fileMode != Pool2PoolTransferMsg.UNDETERMINED) {
+            if (fileMode == Pool2PoolTransferMsg.PRECIOUS)
+                targetState = EntryState.PRECIOUS;
+        } else if (_lfsMode == LFS_PRECIOUS && _p2pFileMode == P2P_PRECIOUS) {
+            targetState = EntryState.PRECIOUS;
         }
 
+        _p2pClient.newCompanion(pnfsId, poolName, storageInfo, targetState, callback);
     }
 
     @Override
@@ -2637,31 +2789,21 @@ public class PoolV4 extends CellAdapter implements Logable {
 
             PoolIoFileMessage msg = (PoolIoFileMessage) poolMessage;
 
-            if (msg.isPool2Pool() && msg.isReply()) {
+            say("PoolIoFileMessage delivered to ioFile (method)");
+            if (((poolMessage instanceof PoolAcceptFileMessage)
+                 && _poolMode.isDisabled(PoolV2Mode.DISABLED_STORE))
+                || ((poolMessage instanceof PoolDeliverFileMessage)
+                    && _poolMode.isDisabled(PoolV2Mode.DISABLED_FETCH))) {
 
-                say("Pool2PoolIoFileMsg delivered to p2p Client");
-                _p2pClient.messageArrived(poolMessage, cellMessage);
-
-            } else {
-
-                say("PoolIoFileMessage delivered to ioFile (method)");
-                if (((poolMessage instanceof PoolAcceptFileMessage)
-                     && _poolMode.isDisabled(PoolV2Mode.DISABLED_STORE))
-                    || ((poolMessage instanceof PoolDeliverFileMessage)
-                        && _poolMode.isDisabled(PoolV2Mode.DISABLED_FETCH))) {
-
-                    esay("PoolIoFileMessage Request rejected due to "
-                         + _poolMode);
-                    sentNotEnabledException(poolMessage, cellMessage);
-                    return;
-
-                }
-
-                msg.setReply();
-                ioFile((PoolIoFileMessage) poolMessage, cellMessage);
+                esay("PoolIoFileMessage Request rejected due to "
+                     + _poolMode);
+                sentNotEnabledException(poolMessage, cellMessage);
+                return;
 
             }
 
+            msg.setReply();
+            ioFile(cellMessage, (PoolIoFileMessage) poolMessage);
             return;
 
         } else if (poolMessage instanceof Pool2PoolTransferMsg) {
@@ -2772,11 +2914,11 @@ public class PoolV4 extends CellAdapter implements Logable {
             getRepositoryListing((PoolQueryRepositoryMsg) poolMessage);
             replyRequired = true;
 
-        } else if (poolMessage instanceof PoolSpaceReservationMessage) {
+//         } else if (poolMessage instanceof PoolSpaceReservationMessage) {
 
-            replyRequired = false;
-            runSpaceReservation((PoolSpaceReservationMessage)poolMessage,
-                                cellMessage);
+//             replyRequired = false;
+//             runSpaceReservation((PoolSpaceReservationMessage)poolMessage,
+//                                 cellMessage);
 
         } else {
             say("Unexpected message class 2" + poolMessage.getClass());
@@ -2797,73 +2939,93 @@ public class PoolV4 extends CellAdapter implements Logable {
         }
     }
 
-    private void runSpaceReservation(final PoolSpaceReservationMessage spaceReservationMessage,
-                                     final CellMessage cellMessage) {
+//     private void runSpaceReservation(final PoolSpaceReservationMessage spaceReservationMessage,
+//                                      final CellMessage cellMessage) {
 
-        if (_blockOnNoSpace
-            && (spaceReservationMessage instanceof PoolReserveSpaceMessage)) {
-            getNucleus().newThread(new Runnable() {
-                    public void run() {
-                        say("Reservation job started");
-                        spaceReservation(spaceReservationMessage, cellMessage);
-                        say("Reservation job finished");
-                    }
-                }, "reservationThread").start();
-        } else {
+//         if (_blockOnNoSpace
+//             && (spaceReservationMessage instanceof PoolReserveSpaceMessage)) {
+//             getNucleus().newThread(new Runnable() {
+//                     public void run() {
+//                         say("Reservation job started");
+//                         spaceReservation(spaceReservationMessage, cellMessage);
+//                         say("Reservation job finished");
+//                     }
+//                 }, "reservationThread").start();
+//         } else {
 
-            spaceReservation(spaceReservationMessage, cellMessage);
+//             spaceReservation(spaceReservationMessage, cellMessage);
 
-        }
+//         }
 
-    }
+//     }
 
-    private void spaceReservation(
-                                  PoolSpaceReservationMessage spaceReservationMessage,
-                                  CellMessage cellMessage) {
+//     private void spaceReservation(
+//                                   PoolSpaceReservationMessage spaceReservationMessage,
+//                                   CellMessage cellMessage) {
 
-        try {
+//         try {
 
-            if (spaceReservationMessage instanceof PoolReserveSpaceMessage) {
+//             if (spaceReservationMessage instanceof PoolReserveSpaceMessage) {
 
-                PoolReserveSpaceMessage reserve = (PoolReserveSpaceMessage) spaceReservationMessage;
+//                 PoolReserveSpaceMessage reserve = (PoolReserveSpaceMessage) spaceReservationMessage;
 
-                _repository.reserveSpace(reserve.getSpaceReservationSize(),
-                                         _blockOnNoSpace);
+//                 _repository.reserveSpace(reserve.getSpaceReservationSize(),
+//                                          _blockOnNoSpace);
 
-            } else if (spaceReservationMessage instanceof PoolFreeSpaceReservationMessage) {
+//             } else if (spaceReservationMessage instanceof PoolFreeSpaceReservationMessage) {
 
-                _repository
-                    .freeReservedSpace(((PoolFreeSpaceReservationMessage) spaceReservationMessage)
-                                       .getFreeSpaceReservationSize());
+//                 _repository
+//                     .freeReservedSpace(((PoolFreeSpaceReservationMessage) spaceReservationMessage)
+//                                        .getFreeSpaceReservationSize());
 
-            } else if (spaceReservationMessage instanceof PoolQuerySpaceReservationMessage) {
+//             } else if (spaceReservationMessage instanceof PoolQuerySpaceReservationMessage) {
+//             }
+
+//             spaceReservationMessage.setReservedSpace(_repository
+//                                                      .getReservedSpace());
+
+//         } catch (CacheException ce) {
+//             spaceReservationMessage.setFailed(ce.getRc(), ce.getMessage());
+//         } catch (MissingResourceException mre) {
+//             spaceReservationMessage.setFailed(104, mre);
+//         } catch (Exception ee) {
+//             spaceReservationMessage.setFailed(101, ee.toString());
+//         }
+//         try {
+//             say("Sending reply " + spaceReservationMessage);
+//             cellMessage.revertDirection();
+//             sendMessage(cellMessage);
+//         } catch (NotSerializableException e) {
+//             throw new RuntimeException("Bug detected: Unserializable vehicle", e);
+//         } catch (NoRouteToCellException e) {
+//             esay("Cannot reply message : " + e.getMessage());
+//         }
+
+//     }
+
+    private void getRepositoryListing(PoolQueryRepositoryMsg queryMessage)
+    {
+        List<CacheRepositoryEntryInfo> listing = new ArrayList();
+        for (PnfsId pnfsid : _repository) {
+            try {
+                switch (_repository.getState(pnfsid)) {
+                case PRECIOUS:
+                case CACHED:
+                case BROKEN:
+                    listing.add(new CacheRepositoryEntryInfo(_repository.getEntry(pnfsid)));
+                    break;
+                default:
+                    break;
+                }
+            } catch (FileNotInCacheException e) {
+                /* The file was deleted before we got a chance to add
+                 * it to the list. Since deleted files are not
+                 * supposed to be on the list, the exception is not a
+                 * problem.
+                 */
             }
-
-            spaceReservationMessage.setReservedSpace(_repository
-                                                     .getReservedSpace());
-
-        } catch (CacheException ce) {
-            spaceReservationMessage.setFailed(ce.getRc(), ce.getMessage());
-        } catch (MissingResourceException mre) {
-            spaceReservationMessage.setFailed(104, mre);
-        } catch (Exception ee) {
-            spaceReservationMessage.setFailed(101, ee.toString());
         }
-        try {
-            say("Sending reply " + spaceReservationMessage);
-            cellMessage.revertDirection();
-            sendMessage(cellMessage);
-        } catch (NotSerializableException e) {
-            throw new RuntimeException("Bug detected: Unserializable vehicle", e);
-        } catch (NoRouteToCellException e) {
-            esay("Cannot reply message : " + e.getMessage());
-        }
-
-    }
-
-    private void getRepositoryListing(PoolQueryRepositoryMsg queryMessage) {
-        queryMessage.setReply(new RepositoryCookie(),
-                _repository.getValidCacheRepostoryEntryInfoList());
+        queryMessage.setReply(new RepositoryCookie(), listing);
     }
 
     private void sentNotEnabledException(Message poolMessage,
@@ -2932,10 +3094,11 @@ public class PoolV4 extends CellAdapter implements Logable {
      */
     private boolean checkSpaceAccounting()
     {
-        long removable = _sweeper.getRemovableSpace();
-        long total = _repository.getTotalSpace();
-        long free = _repository.getFreeSpace();
-        long precious = _repository.getPreciousSpace();
+        SpaceRecord record = _repository.getSpaceRecord();
+        long removable = record.getRemovableSpace();
+        long total = record.getTotalSpace();
+        long free = record.getFreeSpace();
+        long precious = record.getPreciousSpace();
         long used = total - free;
 
         if (removable < 0) {
@@ -2997,11 +3160,11 @@ public class PoolV4 extends CellAdapter implements Logable {
                 if (!_poolMode.isDisabled(PoolV2Mode.DISABLED_STRICT)
                     && _checkRepository) {
 
-                    if (!_repository.isRepositoryOk()) {
-                        esay("Pool disabled due to problems in repository") ;
-                        disablePool(PoolV2Mode.DISABLED_STRICT, 99,
-                                    "Pool disabled due to problems in repository");
-                    }
+//                     if (!_repository.isRepositoryOk()) {
+//                         esay("Pool disabled due to problems in repository") ;
+//                         disablePool(PoolV2Mode.DISABLED_STRICT, 99,
+//                                     "Pool disabled due to problems in repository");
+//                     }
 
                     if (!checkSpaceAccounting()) {
                         esay("Marking pool read-only due to accounting errors. This is a bug. Please report it to support@dcache.org.");
@@ -3079,10 +3242,11 @@ public class PoolV4 extends CellAdapter implements Logable {
     private PoolCostInfo getPoolCostInfo() {
 
         PoolCostInfo info = new PoolCostInfo(_poolName);
+        SpaceRecord space = _repository.getSpaceRecord();
 
-        info.setSpaceUsage(_repository.getTotalSpace(), _repository
-                           .getFreeSpace(), _repository.getPreciousSpace(), _sweeper
-                           .getRemovableSpace(), _sweeper.getLRUSeconds());
+        info.setSpaceUsage(space.getTotalSpace(), space.getFreeSpace(),
+                           space.getPreciousSpace(), space.getRemovableSpace(),
+                           space.getLRU());
 
         info.getSpaceInfo().setParameter(_breakEven, _gap);
 
@@ -3189,49 +3353,30 @@ public class PoolV4 extends CellAdapter implements Logable {
      *
      */
 
-    private synchronized void removeFiles(PoolRemoveFilesMessage poolMessage) {
-
+    private synchronized void removeFiles(PoolRemoveFilesMessage poolMessage)
+    {
         String[] fileList = poolMessage.getFiles();
         int counter = 0;
         for (int i = 0; i < fileList.length; i++) {
-
-            synchronized (_repository) {
-                try {
-                    String pnfsIdString = fileList[i];
-                    if ((pnfsIdString == null) || (pnfsIdString.length() == 0)) {
-                        esay("removeFiles : invalid syntax in remove filespec >"
-                             + pnfsIdString + "<");
-                        continue;
-                    }
-                    PnfsId pnfsId = new PnfsId(fileList[i]);
-                    CacheRepositoryEntry entry = _repository.getEntry(pnfsId);
-                    if ((!_cleanPreciousFiles) && (_lfsMode == LFS_NONE)
-                        && (entry.isPrecious())) {
-                        counter++;
-                        say("removeFiles : File " + fileList[i]
-                            + " kept. (precious)");
-                    } else if (!_repository.removeEntry(_repository
-							.getEntry(pnfsId))) {
-                        //
-                        // the entry couldn't be removed because the
-                        // file is still in an unstable phase.
-                        //
-                        counter++;
-                        say("removeFiles : File " + fileList[i]
-                            + " kept. (locked)");
-                    } else {
-                        say("removeFiles : File " + fileList[i] + " deleted.");
-                        fileList[i] = null;
-                    }
-                } catch (FileNotInCacheException fce) {
-                    esay("removeFiles : File " + fileList[i] + " delete CE : "
-                         + fce.getMessage());
-                    fileList[i] = null; // let them remove it
-                } catch (CacheException ce) {
+            try {
+                PnfsId pnfsId = new PnfsId(fileList[i]);
+                if (!_cleanPreciousFiles && _lfsMode == LFS_NONE
+                    && _repository.getState(pnfsId) == EntryState.PRECIOUS) {
                     counter++;
-                    say("removeFiles : File " + fileList[i] + " kept. CE : "
-                        + ce.getMessage());
+                    say("removeFiles : File " + fileList[i] + " kept. (precious)");
+                } else {
+                    _repository.setState(pnfsId, EntryState.REMOVED);
+                    say("removeFiles : File " + fileList[i] + " deleted.");
+                    fileList[i] = null;
                 }
+            } catch (IllegalTransitionException e) {
+                esay("removeFiles : File " + fileList[i] + " delete CE : "
+                     + e.getMessage());
+                counter++;
+            } catch (IllegalArgumentException e) {
+                esay("removeFiles : invalid syntax in remove filespec ("
+                     + fileList[i] + ")");
+                counter++;
             }
         }
         if (counter > 0) {
@@ -3243,7 +3388,6 @@ public class PoolV4 extends CellAdapter implements Logable {
         } else {
             poolMessage.setSucceeded();
         }
-
     }
 
     // /////////////////////////////////////////////////
@@ -3265,14 +3409,22 @@ public class PoolV4 extends CellAdapter implements Logable {
             say("HybridInventory started. _activate="+_activate);
             startTime = System.currentTimeMillis();
 
-            for (PnfsId pnfsid : _repository.getValidPnfsidList()) {
+            for (PnfsId pnfsid : _repository) {
                 if (Thread.interrupted())
                     break;
-                _hybridCurrent++;
-                if (_activate)
-                    _pnfs.addCacheLocation(pnfsid.toString());
-                else
-                    _pnfs.clearCacheLocation(pnfsid.toString());
+                switch (_repository.getState(pnfsid)) {
+                case PRECIOUS:
+                case CACHED:
+                case BROKEN:
+                    _hybridCurrent++;
+                    if (_activate)
+                        _pnfs.addCacheLocation(pnfsid.toString());
+                    else
+                        _pnfs.clearCacheLocation(pnfsid.toString());
+                    break;
+                default:
+                    break;
+                }
             }
             stopTime = System.currentTimeMillis();
             synchronized (_hybridInventoryLock) {
@@ -3359,31 +3511,31 @@ public class PoolV4 extends CellAdapter implements Logable {
         return _replicationHandler.toString();
     }
 
-    public String hh_pool_inventory = "DEBUG ONLY";
+//     public String hh_pool_inventory = "DEBUG ONLY";
 
-    public String ac_pool_inventory(Args args)
-        throws CacheException
-    {
-        final StringBuffer sb = new StringBuffer();
-        Logable l = new Logable() {
-                public void log(String msg) {
-                    _logClass.log(msg);
-                };
+//     public String ac_pool_inventory(Args args)
+//         throws CacheException
+//     {
+//         final StringBuffer sb = new StringBuffer();
+//         Logable l = new Logable() {
+//                 public void log(String msg) {
+//                     _logClass.log(msg);
+//                 };
 
-                public void elog(String msg) {
-                    sb.append(msg).append("\n");
-                    _logClass.elog(msg);
-                }
+//                 public void elog(String msg) {
+//                     sb.append(msg).append("\n");
+//                     _logClass.elog(msg);
+//                 }
 
-                public void plog(String msg) {
-                    sb.append(msg).append("\n");
-                    _logClass.plog(msg);
-                }
-            };
-        _repository.runInventory(l, _pnfs, _recoveryFlags);
-        return sb.toString();
+//                 public void plog(String msg) {
+//                     sb.append(msg).append("\n");
+//                     _logClass.plog(msg);
+//                 }
+//             };
+//         _repository.runInventory(l, _pnfs, _recoveryFlags);
+//         return sb.toString();
 
-    }
+//     }
 
     public String hh_pool_suppress_hsmload = "on|off";
 
@@ -3603,7 +3755,7 @@ public class PoolV4 extends CellAdapter implements Logable {
     public String ac_set_max_diskspace_$_1(Args args) {
 
         long maxDisk = UnitInteger.parseUnitLong(args.argv(0));
-        _repository.setTotalSpace(maxDisk);
+        _repository.setSize(maxDisk);
         say("set maximum diskspace =" + UnitInteger.toUnitString(maxDisk));
         return "";
     }
@@ -3638,9 +3790,9 @@ public class PoolV4 extends CellAdapter implements Logable {
     public String ac_flush_pnfsid_$_1(Args args)
         throws CacheException
     {
-        CacheRepositoryEntry entry = _repository.getEntry(new PnfsId(args
-                                                                     .argv(0)));
-        _storageHandler.store(entry, null);
+//         CacheRepositoryEntry entry = _repository.getEntry(new PnfsId(args
+//                                                                      .argv(0)));
+//         _storageHandler.store(entry, null);
         return "Flush Initiated";
     }
 
