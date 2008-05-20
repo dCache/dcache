@@ -100,7 +100,7 @@ public class CacheException extends Exception {
      * default error code.
      * <b>It's recommended to use more specific error codes</b>
      */
-    private static final int DEFAULT_ERROR_CODE = 666; // I don't like this number....
+    public final static int DEFAULT_ERROR_CODE = 666; // I don't like this number....
 
 
     private static final long serialVersionUID = 3219663683702355240L;
