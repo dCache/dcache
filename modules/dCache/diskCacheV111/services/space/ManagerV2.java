@@ -2149,13 +2149,17 @@ public class ManagerV2
                         "SELECT * FROM "+ManagerSchemaConstants.SpaceTableName +
                         " WHERE  state = "+SpaceState.RESERVED.getStateId();
                 if(description == null) {
-                        selectSpace +=" AND voGroup = '"+voGroup+'\'';
-                        if(voRole != null) {
+			if (voGroup!=null&& !voGroup.equals("")) { 
+				selectSpace +=" AND voGroup = '"+voGroup+'\'';
+			}
+                        if(voRole != null && !voRole.equals("")) {
                                 selectSpace += " AND voRole = '"+voRole+'\'';
                         }
                 }
                 else {
-                        selectSpace += " AND description = '"+description+'\'';
+			if(!description.equals("")) {
+				selectSpace += " AND description = '"+description+'\'';
+			}
                 }
 
 /*
