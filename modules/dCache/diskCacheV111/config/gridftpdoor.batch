@@ -103,7 +103,7 @@ create dmg.cells.services.login.LoginManager GFTP-${thisHostname} \
              -gplazma-authorization-module-policy=${gplazmaPolicy} \
              -io-queue=${gsiftpIoQueue} \
              -kpwd-file=${kpwdFile} \
-#             -permission-handler=diskCacheV111.services.ACLPermissionHandler \
+#             -permission-handler=diskCacheV111.services.acl.ACLPermissionHandler \
 #             -acl-permission-handler-config=acl.properties \
              -ftp-adapter-internal-interface=${gsiftpAdapterInternalInterface} \
              -meta-data-provider=${PermissionHandlerDataSource} \

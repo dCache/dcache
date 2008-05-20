@@ -71,6 +71,7 @@ package diskCacheV111.doors;
 import diskCacheV111.vehicles.*;
 import diskCacheV111.util.*;
 import diskCacheV111.services.*;
+import diskCacheV111.services.acl.PermissionHandlerInterface;
 
 
 import dmg.cells.nucleus.*;
@@ -82,6 +83,7 @@ import java.net.*;
 import java.lang.reflect.*;
 import java.security.NoSuchAlgorithmException;
 
+import org.dcache.chimera.acl.ACLException;
 import org.dcache.chimera.acl.Origin;
 import org.dcache.chimera.acl.Subject;
 import org.dcache.chimera.acl.enums.AuthType;
@@ -1624,7 +1626,7 @@ public abstract class AbstractFtpDoorV1
         } else {
             try {
                 Subject subject = new Subject(_pwdRecord.UID, _pwdRecord.GID);
-                if (_permissionHandler.canDeleteFile(subject, pathInPnfs,  _origin)) {
+                if (_permissionHandler.canDeleteFile(pathInPnfs, subject,   _origin)) {
                     _pnfs.deletePnfsEntry(pathInPnfs);
                 } else {
                     setNextPwdRecord();
@@ -1636,6 +1638,10 @@ public abstract class AbstractFtpDoorV1
                         return;
                     }
                 }
+            }catch(ACLException e) {
+                reply("553 Permission denied");
+                error("FTP Door: DELE got AclException: " + e.getMessage());
+                return;
             } catch (CacheException e) {
                 error("FTP Door: DELE got CacheException: " + e.getMessage());
                 setNextPwdRecord();
@@ -1789,7 +1795,7 @@ public abstract class AbstractFtpDoorV1
         // canDeleteDir() will test that isDirectory() and canWrite()
         try {
             Subject subject = new Subject(_pwdRecord.UID, _pwdRecord.GID);
-            if (_permissionHandler.canDeleteDir(subject, pathInPnfs,  _origin)) {
+            if (_permissionHandler.canDeleteDir(pathInPnfs, subject,  _origin)) {
                 File theDirToDelete = new File(pathInPnfs);
                 if (theDirToDelete.list().length == 0) { // Only delete empty directories
                     _pnfs.deletePnfsEntry(pathInPnfs);
@@ -1813,6 +1819,10 @@ public abstract class AbstractFtpDoorV1
                     return;
                 }
             }
+        }catch(ACLException e) {
+            reply("553 Permission denied, reason (Acl) ");
+            error("FTP Door: ACL module failed: " + e);
+            return;
         } catch (CacheException ce) {
             setNextPwdRecord();
             if (_pwdRecord == null) {
@@ -1906,7 +1916,7 @@ public abstract class AbstractFtpDoorV1
         } else {
             try {
                 Subject subject = new Subject(_pwdRecord.UID, _pwdRecord.GID);
-                if (_permissionHandler.canCreateDir(subject, pathInPnfs, _origin)) {
+                if (_permissionHandler.canCreateDir(pathInPnfs, subject, _origin)) {
                     _pnfs.createPnfsDirectory(pathInPnfs,_pwdRecord.UID,_pwdRecord.GID, 0755);
                 } else {
                     setNextPwdRecord();
@@ -1918,6 +1928,10 @@ public abstract class AbstractFtpDoorV1
                         return;
                     }
                 }
+            }catch(ACLException e) {
+                reply("553 Permission denied, reason (Acl) ");
+                error("FTP Door: ACL module failed: " + e);
+                return;
             } catch(CacheException ce) {
                 setNextPwdRecord();
                 if (_pwdRecord == null) {
@@ -2623,7 +2637,7 @@ public abstract class AbstractFtpDoorV1
 
                 Subject subject = new Subject(_pwdRecord.UID, _pwdRecord.GID);
                 try {
-                    if (!_permissionHandler.canReadFile(subject, _transfer.path, _origin)) {
+                    if (!_permissionHandler.canReadFile(_transfer.path, subject, _origin)) {
                         setNextPwdRecord();
                         if (_pwdRecord != null) {
                             retrieve(file, offset, size,
@@ -2634,6 +2648,10 @@ public abstract class AbstractFtpDoorV1
                         }
                         throw new FTPCommandException(550, "Permission denied");
                     }
+                }catch(ACLException e) {
+                    reply("553 Permission denied, reason (Acl) ");
+                    error("FTP Door: ACL module failed: " + e);
+                    return;
                 } catch(NotFileCacheException ce ) {
                     throw new FTPCommandException(550, "Not a file");
                 }
@@ -2954,19 +2972,24 @@ public abstract class AbstractFtpDoorV1
                 info("FTP Door: store: checking permissions via permission " +
                      "handler for path: " + _transfer.path);
                 Subject subject = new Subject(_pwdRecord.UID, _pwdRecord.GID);
-                if (!_permissionHandler.canCreateFile(subject, _transfer.path, _origin)) {
-                    setNextPwdRecord();
-                    if(_pwdRecord==null) {
-                        throw new FTPCommandException
-                            (550,
-                             "Permission denied",
-                             "Permission denied for path: " + _transfer.path);
-                    } else {
-                        store(file, mode, xferMode,
-                              parallelStart, parallelMin, parallelMax,
-                              client, bufSize, reply127);
-                        return;
+                try{
+                    if (!_permissionHandler.canCreateFile(_transfer.path, subject, _origin)) {
+                        setNextPwdRecord();
+                        if(_pwdRecord==null) {
+                            throw new FTPCommandException
+                                (550,
+                                 "Permission denied",
+                                 "Permission denied for path: " + _transfer.path);
+                        } else {
+                            store(file, mode, xferMode,
+                                  parallelStart, parallelMin, parallelMax,
+                                  client, bufSize, reply127);
+                            return;
+                        }
                     }
+                }catch(ACLException e) {
+                    error("FTP Door: ACL module failed: " + e);
+                    throw new FTPCommandException(553," Permission denied, reason (Acl) ");
                 }
             }
 
@@ -3541,7 +3564,7 @@ public abstract class AbstractFtpDoorV1
             try {
                 PnfsGetStorageInfoMessage info = _pnfs.getStorageInfoByPath(path);
                 Subject subject = new Subject(_pwdRecord.UID, _pwdRecord.GID);
-                if (_permissionHandler.canGetAttributes(subject, path, _origin, FileAttribute.FATTR4_ACL)) {
+                if (_permissionHandler.canGetAttributes(path, subject, _origin, FileAttribute.FATTR4_ACL)) {
                     filelength = info.getMetaData().getFileSize();
                 } else {
                     setNextPwdRecord();
@@ -3552,6 +3575,10 @@ public abstract class AbstractFtpDoorV1
                     }
                     return;
                 }
+            }catch(ACLException e) {
+                reply("553 Permission denied, reason (Acl) ");
+                error("FTP Door: ACL module failed: " + e);
+                return;
             } catch (CacheException ce) {
                 reply("553 Permission denied, reason: " + ce);
                 return;
@@ -3595,7 +3622,7 @@ public abstract class AbstractFtpDoorV1
             try {
                 PnfsGetStorageInfoMessage info = _pnfs.getStorageInfoByPath(path);
                 Subject subject = new Subject(_pwdRecord.UID, _pwdRecord.GID);
-                if (_permissionHandler.canReadFile(subject, path, _origin)) {
+                if (_permissionHandler.canReadFile(path, subject, _origin)) {
                     modification_time = info.getMetaData().getLastModifiedTime();
                 } else {
                     setNextPwdRecord();
@@ -3606,6 +3633,10 @@ public abstract class AbstractFtpDoorV1
                     }
                     return;
                 }
+            } catch(ACLException e) {
+                reply("553 Permission denied, reason (Acl) ");
+                error("FTP Door: ACL module failed: " + e);
+                return;
             } catch (CacheException ce) {
                 reply("553 Permission denied, reason: " + ce);
                 return;
@@ -3763,9 +3794,9 @@ public abstract class AbstractFtpDoorV1
                     Subject subject = new Subject(_pwdRecord.UID, _pwdRecord.GID);
                     result.append(nextf.isDirectory()?'d':'-');
                     line_length++;
-                    result.append( _permissionHandler.canReadFile(subject, nextf.getAbsolutePath(), _origin) ?'r':'-');
+                    result.append( _permissionHandler.canReadFile(nextf.getAbsolutePath(), subject, _origin) ?'r':'-');
                     line_length++;
-                    result.append( _permissionHandler.canWriteFile(subject, nextf.getAbsolutePath(), _origin) ?'w':'-');
+                    result.append( _permissionHandler.canWriteFile(nextf.getAbsolutePath(), subject, _origin) ?'w':'-');
                     line_length++;
 
                     result.append("               ");
@@ -3774,6 +3805,10 @@ public abstract class AbstractFtpDoorV1
                     String length_str = Long.toString(length);
                     result.append(length_str);
                     line_length +=length_str.length();
+
+                } catch(ACLException e) {
+                    result.append('?');
+                    error("FTP Door: ACL module failed: " + e);
                 } catch (CacheException e){
                     result.append('?');
                 }
