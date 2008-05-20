@@ -33,6 +33,7 @@ import org.dcache.pool.repository.FlatDataFileRepository;
 import org.dcache.pool.repository.RepositoryEntryHealer;
 import org.dcache.pool.repository.CacheEntryLRUOrder;
 import org.dcache.pool.repository.DuplicateEntryException;
+import org.dcache.pool.repository.v3.RepositoryException;
 import org.dcache.pool.repository.v3.StickyInspector;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.CacheException;
@@ -204,7 +205,7 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
     }
 
     public synchronized CacheRepositoryEntry createEntry(PnfsId pnfsId)
-        throws CacheException
+        throws FileInCacheException, RepositoryException
     {
         if (_log.isInfoEnabled()) {
             _log.info("Creating new entry for " + pnfsId);
@@ -225,7 +226,12 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
             } catch (DuplicateEntryException e) {
                 _log.warn("Deleting orphaned meta data entry for " + pnfsId);
                 _metaRepository.remove(pnfsId);
-                entry = _metaRepository.create(pnfsId);
+                try {
+                    entry = _metaRepository.create(pnfsId);
+                } catch (DuplicateEntryException f) {
+                    throw 
+                        new RuntimeException("Unexpected repository error", e);
+                }
             }
             _allEntries.put(pnfsId, entry);
             return entry;
@@ -313,7 +319,7 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
     /**
      * return all known iterator pnfsid
      */
-    public Iterator<PnfsId> pnfsids() throws CacheException
+    public Iterator<PnfsId> pnfsids() 
     {
         _operationLock.readLock().lock();
         try {
@@ -335,7 +341,7 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
      * drops to zero.
      */
     public synchronized boolean removeEntry(CacheRepositoryEntry entry)
-        throws CacheException
+        throws CacheException, FileNotInCacheException
     {
         if (_log.isInfoEnabled()) {
             _log.info("remove entry for: " + entry.getPnfsId().toString());
