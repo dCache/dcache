@@ -19,9 +19,14 @@ import diskCacheV111.util.FileMetaData;
 public class UnixPermissionHandlerTest {
 
 
+    //private final static String cellArgs =
+    //    " -meta-data-provider=org.dcache.tests.namespace.FileMetaDataProviderHelper";
+    
+    private final static String aclProperties = "modules/dCacheJUnit/org/dcache/tests/namespace/acl.properties"; 
     private final static String cellArgs =
-        " -meta-data-provider=org.dcache.tests.namespace.FileMetaDataProviderHelper";
-
+        " -acl-permission-handler-config=" + aclProperties +
+        " -meta-data-provider=org.dcache.tests.namespace.FileMetaDataProviderHelper"; 
+    
     private final static CellAdapterHelper _dummyCell = new CellAdapterHelper("UnixPermissionsTtestCell", cellArgs) ;
     private final FileMetaDataProviderHelper _metaDataSource = new FileMetaDataProviderHelper(_dummyCell);
 
