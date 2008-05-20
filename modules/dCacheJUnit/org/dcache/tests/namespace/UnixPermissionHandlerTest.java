@@ -12,7 +12,6 @@ import org.dcache.chimera.acl.Subject;
 import org.dcache.chimera.acl.enums.AuthType;
 import org.dcache.tests.cells.CellAdapterHelper;
 
-import diskCacheV111.services.FsPermissionHandler;
 import diskCacheV111.services.acl.UnixPermissionHandler;
 import diskCacheV111.util.FileMetaData;
 
@@ -21,12 +20,12 @@ public class UnixPermissionHandlerTest {
 
     //private final static String cellArgs =
     //    " -meta-data-provider=org.dcache.tests.namespace.FileMetaDataProviderHelper";
-    
-    private final static String aclProperties = "modules/dCacheJUnit/org/dcache/tests/namespace/acl.properties"; 
+
+    private final static String aclProperties = "modules/dCacheJUnit/org/dcache/tests/namespace/acl.properties";
     private final static String cellArgs =
         " -acl-permission-handler-config=" + aclProperties +
-        " -meta-data-provider=org.dcache.tests.namespace.FileMetaDataProviderHelper"; 
-    
+        " -meta-data-provider=org.dcache.tests.namespace.FileMetaDataProviderHelper";
+
     private final static CellAdapterHelper _dummyCell = new CellAdapterHelper("UnixPermissionsTtestCell", cellArgs) ;
     private final FileMetaDataProviderHelper _metaDataSource = new FileMetaDataProviderHelper(_dummyCell);
 

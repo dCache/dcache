@@ -23,7 +23,7 @@ public class ACLPermissionHandler extends AbstractPermissionHandler {
 	private static final Logger logger = Logger.getLogger("logger.org.dcache.authorization." + ACLPermissionHandler.class.getName());
 	private static final boolean IS_DEBUG_ENABLED = logger.isDebugEnabled();
 
-	public ACLPermissionHandler(CellAdapter cell) throws ACLException, Exception {
+	public ACLPermissionHandler(CellAdapter cell) throws ACLException {
 		super(cell);
 	}
 
@@ -113,7 +113,7 @@ public class ACLPermissionHandler extends AbstractPermissionHandler {
 
 		return res;
 	}
-	
+
 	public boolean canGetAttributes(String pnfsPath, Subject subject, Origin origin, FileAttribute attribute) throws CacheException, ACLException {
 		return canGetSetAttributes(pnfsPath, subject, origin, attribute, false);
 	}
@@ -157,7 +157,7 @@ public class ACLPermissionHandler extends AbstractPermissionHandler {
 
 		return res;
 	}
-	
+
 	public boolean setDefaultPermissions(PnfsId pnfsId) throws CacheException, ACLException {
 		final String OPERATION = "ACLPermisionHandler.setDefaultPermissions ";
 		if ( IS_DEBUG_ENABLED )
@@ -231,7 +231,7 @@ public class ACLPermissionHandler extends AbstractPermissionHandler {
 
 		return res;
 	}
-	
+
 	private boolean canCreate(String pnfsPath, Subject subject, Origin origin, Boolean isDir) throws CacheException, ACLException {
 		final String OPERATION = "ACLPermisionHandler.canCreate" + (isDir ? "Dir " : "File ");
 		if ( IS_DEBUG_ENABLED )
@@ -352,7 +352,7 @@ public class ACLPermissionHandler extends AbstractPermissionHandler {
 
 		return res;
 	}
-	
+
 	private boolean canGetSetAttributes(String pnfsPath, Subject subject, Origin origin, FileAttribute attribute, boolean set) throws CacheException, ACLException {
 		final String OPERATION = "ACLPermisionHandler.can" + (set ? "Get" : "Set") + "Attributes ";
 		if ( IS_DEBUG_ENABLED )

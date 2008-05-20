@@ -21,19 +21,13 @@ import org.junit.Test;
 import org.dcache.chimera.acl.ACE;
 import org.dcache.chimera.acl.ACL;
 import org.dcache.chimera.acl.Origin;
-import org.dcache.chimera.acl.Owner;
-import org.dcache.chimera.acl.Permission;
 import org.dcache.chimera.acl.Subject;
 import org.dcache.chimera.acl.enums.AccessMask;
 import org.dcache.chimera.acl.enums.AceType;
-import org.dcache.chimera.acl.enums.Action;
 import org.dcache.chimera.acl.enums.AuthType;
-import org.dcache.chimera.acl.enums.FileAttribute;
 import org.dcache.chimera.acl.enums.RsType;
 import org.dcache.chimera.acl.enums.Who;
 import org.dcache.chimera.acl.handler.AclHandler;
-import org.dcache.chimera.acl.mapper.AclMapper;
-import org.dcache.chimera.acl.matcher.AclNFSv4Matcher;
 import org.dcache.tests.cells.CellAdapterHelper;
 
 import diskCacheV111.services.acl.ACLPermissionHandler;
@@ -61,7 +55,7 @@ public class ACLPermissionHandlerTest {
 
     private ACLPermissionHandler _permissionHandler;
 
-    private AclHandler _aclHandler; 
+    private AclHandler _aclHandler;
 
 
     @BeforeClass
@@ -441,7 +435,7 @@ public class ACLPermissionHandlerTest {
                        111,
                        ACE.DEFAULT_ADDRESS_MSK,
                        1 ) );
-               
+
               // aces.add(new ACE( AceType.ACCESS_ALLOWED_ACE_TYPE,
                //        0,
                 //       AccessMask.WRITE_ACL.getValue(),
@@ -449,7 +443,7 @@ public class ACLPermissionHandlerTest {
                 //       111,
                //       ACE.DEFAULT_ADDRESS_MSK,
                 //     0 ) );
-               
+
                ACL newACL = new ACL(fileId, RsType.FILE, aces);
 
                _aclHandler.setACL(newACL);
@@ -508,8 +502,8 @@ public class ACLPermissionHandlerTest {
         String fileId =  "0000FF948A460C4F00000FF9948A40000FF9";
 
                 List<ACE> aces = new ArrayList<ACE>();
-               
-                //for user who_id=111: READ_ACL allowed, READ_ATTRIBUTES denied 
+
+                //for user who_id=111: READ_ACL allowed, READ_ATTRIBUTES denied
                aces.add(new ACE( AceType.ACCESS_ALLOWED_ACE_TYPE,
                         0,
                         AccessMask.READ_ACL.getValue(),
@@ -525,8 +519,8 @@ public class ACLPermissionHandlerTest {
                        111,
                        ACE.DEFAULT_ADDRESS_MSK,
                        1 ) );
-               
-               //for user who_id=222: READ_ACL denied, READ_ATTRIBUTES allowed 
+
+               //for user who_id=222: READ_ACL denied, READ_ATTRIBUTES allowed
                aces.add(new ACE( AceType.ACCESS_DENIED_ACE_TYPE,
                        0,
                        AccessMask.READ_ACL.getValue(),
@@ -542,7 +536,7 @@ public class ACLPermissionHandlerTest {
                       222,
                       ACE.DEFAULT_ADDRESS_MSK,
                       3 ) );
-              
+
                ACL newACL = new ACL(fileId, RsType.FILE, aces);
 
                _aclHandler.setACL(newACL);
@@ -559,20 +553,20 @@ public class ACLPermissionHandlerTest {
 		          //Set metadata for the file
 		           _metaDataSource.setXMetaData("/pnfs/desy.de/data/filename", fileMetaData);
 
-		        
-		           //Check GETATTR (Attribute ACL). 
+
+		           //Check GETATTR (Attribute ACL).
 		           isAllowed =  _permissionHandler.canGetAttributes( "/pnfs/desy.de/data/filename", subject, origin, FileAttribute.FATTR4_ACL);
 
 		           assertTrue("It is allowed to get attribute FATTR4_ACL (read ACL) ", isAllowed);
 
-		          
+
 		           //Check GETATTR (Attribute OWNER_GROUP).
 		           isAllowed =  _permissionHandler.canGetAttributes("/pnfs/desy.de/data/filename", subject, origin, FileAttribute.FATTR4_OWNER_GROUP);
 
 		           assertFalse("It is NOT allowed to get attribute OWNER_GROUP, as bit READ_ATTRIBUTES is denied", isAllowed);
 
-		      
-		           //Check GETATTR (Attributes OWNER_GROUP and OWNER). 
+
+		           //Check GETATTR (Attributes OWNER_GROUP and OWNER).
 
 		           int fileAttrTest = (FileAttribute.FATTR4_OWNER_GROUP.getValue());
 		                 fileAttrTest|=(FileAttribute.FATTR4_OWNER.getValue());
@@ -582,34 +576,34 @@ public class ACLPermissionHandlerTest {
 				   assertFalse("It is NOT allowed to get attributes  OWNER_GROUP and OWNER, as bit READ_ATTRIBUTES is denied ", isAllowed);
 
 
-		           //Check GETATTR (Attribute SIZE). 
+		           //Check GETATTR (Attribute SIZE).
 				   isAllowed =  _permissionHandler.canGetAttributes("/pnfs/desy.de/data/filename", subject, origin, FileAttribute.FATTR4_SIZE);
 
 		           assertFalse("It is NOT allowed to get attribute  FATTR4_SIZE, as bit READ_ATTRIBUTES is denied ", isAllowed);
 
 		           ///////////////////////////////////////////////////
-		           
+
 		           //Take user who_id=222, where READ_ACL denied, READ_ATTRIBUTES allowed
 		       	   Subject subject2 = new Subject(222,1000);
-		           
-		       	   //Check GETATTR (Attribute ACL). 
+
+		       	   //Check GETATTR (Attribute ACL).
 		           isAllowed =  _permissionHandler.canGetAttributes("/pnfs/desy.de/data/filename", subject2, origin, FileAttribute.FATTR4_ACL);
 
 		           assertFalse("For who_id=222: It is NOT allowed to get attribute FATTR4_ACL (read ACL), as READ_ACL is denied ", isAllowed);
 
-		          
+
 		           //Check GETATTR (Attribute FATTR4_ARCHIVE).
 		           isAllowed =  _permissionHandler.canGetAttributes("/pnfs/desy.de/data/filename", subject2, origin, FileAttribute.FATTR4_ARCHIVE);
 
 		           assertTrue("For who_id=222: It is allowed to get attribute FATTR4_ARCHIVE, as READ_ATTRIBUTES is allowed", isAllowed);
-		           
+
 		           //Check GETATTR (Attributes OWNER_GROUP and OWNER).
 		           isAllowed =  _permissionHandler.canGetAttributes("/pnfs/desy.de/data/filename", subject2, origin, FileAttribute.valueOf(fileAttrTest));
 
 				   assertTrue("For who_id=222: It is allowed to get attributes  OWNER_GROUP and OWNER, as READ_ATTRIBUTES is allowed ", isAllowed);
 
 
-		           //Check GETATTR (Attribute FATTR4_TIME_MODIFY_SET). 
+		           //Check GETATTR (Attribute FATTR4_TIME_MODIFY_SET).
 				   isAllowed =  _permissionHandler.canGetAttributes("/pnfs/desy.de/data/filename", subject2, origin, FileAttribute.FATTR4_TIME_MODIFY_SET);
 
 		           assertTrue("For who_id=222: It is allowed to get attribute  FATTR4_TIME_MODIFY_SET, as READ_ATTRIBUTES is allowed ", isAllowed);

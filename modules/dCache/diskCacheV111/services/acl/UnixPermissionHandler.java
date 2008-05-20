@@ -23,16 +23,16 @@ import dmg.cells.nucleus.CellAdapter;
 
 /**
  * UnixPermissionHandler
- * 
+ *
  * @author tigran, irinak, optimized by mdavid
- * 
+ *
  */
 public class UnixPermissionHandler extends AbstractPermissionHandler {
 
 	private static final Logger logger = Logger.getLogger("logger.org.dcache.authorization." + UnixPermissionHandler.class.getName());
 	private static final boolean IS_DEBUG_ENABLED = logger.isDebugEnabled();
 
-	public UnixPermissionHandler(CellAdapter cell) throws ACLException, Exception {
+	public UnixPermissionHandler(CellAdapter cell) throws ACLException {
 		super(cell);
 	}
 
@@ -93,7 +93,7 @@ public class UnixPermissionHandler extends AbstractPermissionHandler {
 			logger.debug("UnixPermisionHandler.canCreateDir:dirCanWrite - " + (allowed ? "ALLOWED" : "DENIED"));
 		return allowed;
 	}
-	
+
 	public boolean canDeleteDir(String pnfsPath, Subject subject, Origin origin) throws CacheException {
 		if ( IS_DEBUG_ENABLED )
 			logger.debug("UnixPermisionHandler.canDeleteDir " + args2String(pnfsPath, subject, origin));
@@ -126,7 +126,7 @@ public class UnixPermissionHandler extends AbstractPermissionHandler {
 			logger.debug("UnixPermisionHandler.canDeleteDir:fileCanWrite - " + (allowed ? "ALLOWED" : "DENIED"));
 		return allowed;
 	}
-	
+
 	public boolean canDeleteFile(String pnfsPath, Subject subject, Origin origin) throws CacheException {
 		if ( IS_DEBUG_ENABLED )
 			logger.debug("UnixPermisionHandler.canDeleteFile " + args2String(pnfsPath, subject, origin));
@@ -167,7 +167,7 @@ public class UnixPermissionHandler extends AbstractPermissionHandler {
 			logger.debug("UnixPermisionHandler.canDeleteFile:fileCanWrite - " + (allowed ? "ALLOWED" : "DENIED"));
 		return allowed;
 	}
-	
+
 	public boolean canReadFile(String pnfsPath, Subject subject, Origin origin) throws CacheException {
 		if ( IS_DEBUG_ENABLED )
 			logger.debug("UnixPermisionHandler.canReadFile " + args2String(pnfsPath, subject, origin));
@@ -214,7 +214,7 @@ public class UnixPermissionHandler extends AbstractPermissionHandler {
 			logger.debug("UnixPermisionHandler.canReadFile:dirCanRead - " + (allowed ? "ALLOWED" : "DENIED"));
 		return allowed;
 	}
-	
+
 	public boolean canCreateFile(String pnfsPath, Subject subject, Origin origin) throws CacheException {
 		if ( IS_DEBUG_ENABLED )
 			logger.debug("UnixPermisionHandler.canCreateFile " + args2String(pnfsPath, subject, origin));
@@ -251,7 +251,7 @@ public class UnixPermissionHandler extends AbstractPermissionHandler {
 			logger.debug("UnixPermisionHandler.canCreateFile:dirCanWrite - " + (allowed ? "ALLOWED" : "DENIED"));
 		return allowed;
 	}
-	
+
 	public boolean canListDir(String pnfsPath, Subject subject, Origin origin) throws CacheException {
 		if ( IS_DEBUG_ENABLED )
 			logger.debug("UnixPermisionHandler.canListDir " + args2String(pnfsPath, subject, origin));
@@ -270,7 +270,7 @@ public class UnixPermissionHandler extends AbstractPermissionHandler {
 			logger.debug("UnixPermisionHandler.canListDir:dirCanRead - " + (allowed ? "ALLOWED" : "DENIED"));
 		return allowed;
 	}
-	
+
 	public boolean canSetAttributes(String pnfsPath, Subject subject, Origin origin, FileAttribute attribute) throws CacheException {
 		if ( IS_DEBUG_ENABLED )
 			logger.debug("UnixPermisionHandler.canSetAttributes " + args2String(pnfsPath, subject, origin, attribute));
@@ -305,7 +305,7 @@ public class UnixPermissionHandler extends AbstractPermissionHandler {
 			logger.debug("UnixPermisionHandler.canSetAttributes:canWriteFile - " + (allowed ? "ALLOWED" : "DENIED"));
 		return allowed;
 	}
-	
+
 	public boolean canGetAttributes(String pnfsPath, Subject subject, Origin origin, FileAttribute attribute) throws CacheException {
 		if ( IS_DEBUG_ENABLED ) {
 			logger.debug("UnixPermisionHandler.canGetAttributes " + args2String(pnfsPath, subject, origin, attribute));
@@ -320,7 +320,7 @@ public class UnixPermissionHandler extends AbstractPermissionHandler {
 		}
 		return true;
 	}
-	
+
 	public boolean setDefaultPermissions(String pnfsPath) throws CacheException, ACLException {
 		return true;
 	}
@@ -328,10 +328,10 @@ public class UnixPermissionHandler extends AbstractPermissionHandler {
 		return true;
 	}
 
-	/** 
+	/**
 	 * private method(s)
 	 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-	
+
 //	private boolean dirCanRead(Subject subject, String path) throws CacheException {
 //		FileMetaData metadata = metadataSource.getMetaData(path);
 //		if ( IS_DEBUG_ENABLED )
@@ -353,7 +353,7 @@ public class UnixPermissionHandler extends AbstractPermissionHandler {
 			metadata = metadataSource.getMetaData((PnfsId)object);
 		else
 			throw new IllegalArgumentException("Invalid type: " + object.getClass().getName());
-				
+
 		if ( IS_DEBUG_ENABLED )
 			logger.debug("File Metadata: " + metadata.toString());
 
@@ -365,7 +365,7 @@ public class UnixPermissionHandler extends AbstractPermissionHandler {
 
 		return true;
 	}
-	
+
 //	private boolean dirCanWrite(Subject subject, String path) throws CacheException {
 //		FileMetaData metadata = metadataSource.getMetaData(path);
 //		if ( IS_DEBUG_ENABLED )
@@ -399,7 +399,7 @@ public class UnixPermissionHandler extends AbstractPermissionHandler {
 
 		return true;
 	}
-	
+
 //	private boolean dirCanDelete(Subject subject, String path) throws CacheException {
 //		FileMetaData metadata = metadataSource.getMetaData(path);
 //		if ( IS_DEBUG_ENABLED )
@@ -434,7 +434,7 @@ public class UnixPermissionHandler extends AbstractPermissionHandler {
 		return true;
 	}
 
-	
+
 	// Low level checks
 	// ///////////////////////////////////////////////////////////////////////////////
 
