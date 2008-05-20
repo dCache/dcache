@@ -87,8 +87,6 @@ public class PoolManagerV5 extends CellAdapter {
     private final CostModule   _costModule  ;
     private PoolOperator _poolOperator = null ;
     private CellPath     _poolStatusRelayPath = null ;
-    private double _spaceCostFactor       = 1.0 ;
-    private double _performanceCostFactor = 1.0 ;
 
     private final Object _setupLock             = new Object() ;
 
@@ -431,8 +429,6 @@ public class PoolManagerV5 extends CellAdapter {
         pw.println(" Write Threads : "+_writeThreads) ;
         pw.println(" Read  Threads : "+_readThreads) ;
         pw.println("  Pool Timeout : "+_poolMonitor.getPoolTimeout()/1000L) ;
-        pw.println(" Decision : space="+_spaceCostFactor+
-                              " cpu="+_performanceCostFactor ) ;
         pw.println("Message counts") ;
         pw.println("           PoolUp : "+_counterPoolUp ) ;
         pw.println("   SelectReadPool : "+_counterSelectReadPool ) ;
