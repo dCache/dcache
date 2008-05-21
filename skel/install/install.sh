@@ -339,7 +339,6 @@ dcacheInstallGetExportPoint()
   pnfsMountPoint=$RET
   
   exportPoint=`mount | grep ${pnfsMountPoint} | awk '{print $1}' | awk -F':' '{print $2}'`
-
   RET=${exportPoint}
 }
 
@@ -901,6 +900,98 @@ dcacheInstallPnfsMountPoints()
   logmessage DEBUG "dcacheInstallPnfsMountPoints.stop"
 }
 
+dcacheInstallChimeraMountPointServer()
+{  
+  dcacheInstallGetPnfsRoot
+  PNFS_ROOT=$RET
+  if [ ! -d "${PNFS_ROOT}" ] ; then
+    mkdir "${PNFS_ROOT}"
+  fi
+  dcacheInstallGetNameSpaceServer
+  pnfsServer=$RET
+  
+  cmdline="mount -o intr,rw,noac,hard ${pnfsServer}:/pnfs /pnfs"
+  counter=1
+  tryToMount=1
+  
+  while [ "${tryToMount}" == "1" ] ; do
+    $cmdline
+    mountrc=$?
+    if [ "${mountrc}" == "0" ] ; then
+      logmessage INFO " Failed running $cmdline trying again"
+      tryToMount=0
+    else
+      let counter="$counter + 1"
+      if [ "$counter" == "12" ] ; then
+        logmessage ERROR " Failed running $cmdline and giving up"
+        tryToMount=0
+      fi
+    fi
+    sleep 1
+  done
+}
+
+
+
+dcacheInstallChimeraMountPoints()
+{
+  logmessage DEBUG "dcacheInstallChimeraMountPoints.start"
+  # Creating /pnfs/fs and Symbolic Link /pnfs/fs/usr to /pnfs/<domain> 
+  # (e.g. /pnfs/fnal.gov) for GridFTP
+  local isAdmin
+  local isGridFtp
+  local isSrm
+  local isPnfsManager
+
+  dcacheInstallGetIsAdmin
+  isAdmin=$?
+  dcacheInstallGetUseGridFtp
+  isGridFtp=$?
+  dcacheInstallGetUseSrm
+  isSrm=$?
+  
+  dcacheInstallGetIsPnfsManager
+  isPnfsManager=$?
+
+  #echo admin=${isAdmin}${isGridFtp}${isPnfsManager}
+  if [ "${isPnfsManager}${isGridFtp}" == "01" -o "${isPnfsManager}${isSrm}" == "01" ] ; then
+    /etc/init.d/portmap restart
+    /etc/init.d/dcacheChimeraNfs stop
+    /etc/init.d/dcacheChimeraNfs start    
+    dcacheInstallChimeraMountPointServer
+  fi
+  if [ "${isAdmin}" == "1" -o "${isPnfsManager}" == "1" ] ; then
+    /etc/init.d/portmap restart
+    /etc/init.d/dcacheChimeraNfs stop
+    /etc/init.d/dcacheChimeraNfs start
+    dcacheInstallChimeraMountPointServer
+  fi  
+  logmessage DEBUG "dcacheInstallChimeraMountPoints.stop"
+}
+
+dcacheInstallMountPoints()
+{
+  logmessage DEBUG "dcacheInstallMountPoints.start"
+  dcacheNameServerIs
+  dcacheNameServerIs=$?
+
+  if [ "${dcacheNameServerIs}" == "1" ]
+  then
+    nameServerFormat=`printConfig NAMESPACE`
+    if [ "${nameServerFormat}" == "pnfs" ]
+    then
+      dcacheInstallPnfsMountPoints
+    fi
+    if [ "${nameServerFormat}" == "chimera" ]
+    then
+      dcacheInstallChimeraMountPoints
+    fi
+  fi
+  logmessage DEBUG "dcacheInstallMountPoints.stop"
+  
+}
+
+
 dcacheInstallPnfsConfigCheck()
 {
   logmessage DEBUG "dcacheInstallPnfsConfigCheck.start"
@@ -1302,7 +1393,12 @@ fi
 
 dcacheInstallSshKeys
 dcacheInstallCreateWrappers
-dcacheInstallPnfsMountPoints
+
+
+
+
+dcacheInstallMountPoints
+
 dcacheInstallSrm
 dcacheInstallPool
 
