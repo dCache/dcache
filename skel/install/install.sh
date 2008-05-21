@@ -918,13 +918,16 @@ dcacheInstallChimeraMountPointServer()
     $cmdline
     mountrc=$?
     if [ "${mountrc}" == "0" ] ; then
-      logmessage INFO " Failed running $cmdline trying again"
+      logmessage INFO " Successflly mounted Chimera running $cmdline"
       tryToMount=0
     else
       let counter="$counter + 1"
       if [ "$counter" == "12" ] ; then
         logmessage ERROR " Failed running $cmdline and giving up"
         tryToMount=0
+      else
+        logmessage INFO "Trying to mount Chimera failed, will retry."
+        logmessage DEBUG "Using command: $cmdline"
       fi
     fi
     sleep 1
