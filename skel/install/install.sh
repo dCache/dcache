@@ -909,8 +909,11 @@ dcacheInstallChimeraMountPointServer()
   fi
   dcacheInstallGetNameSpaceServer
   pnfsServer=$RET
-  
-  cmdline="mount -o intr,rw,noac,hard ${pnfsServer}:/pnfs /pnfs"
+  localhostName=`fqdn_os`
+  if [ "$pnfsServer" == "$localhostName" ] ; then
+    pnfsServer="localhost"
+  fi
+  cmdline="mount -o intr,rw,hard ${pnfsServer}:/pnfs /pnfs"
   counter=1
   tryToMount=1
   
