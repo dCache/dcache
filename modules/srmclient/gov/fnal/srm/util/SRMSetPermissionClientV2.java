@@ -142,12 +142,10 @@ public class SRMSetPermissionClientV2 extends SRMClient {
 			mode = TPermissionMode.fromString(configuration.getSetOwnerPermissionMode());
 		}
 		req.setOwnerPermission(mode);
-//		ArrayOfTUserPermission arrayOfUserPermissions = new ArrayOfTUserPermission();
-//		req.setArrayOfUserPermissions(arrayOfUserPermissions);
 		ArrayOfTGroupPermission arrayOfGroupPermissions = new ArrayOfTGroupPermission();
-		TGroupPermission grouppermissions[] = new  TGroupPermission[1];
-		grouppermissions[0] = null;
+		TGroupPermission grouppermissions[] = null;
 		if ( configuration.getSetGroupPermissionMode()!=null ) { 
+			grouppermissions = new  TGroupPermission[1];
 			grouppermissions[0] = new TGroupPermission();
 			grouppermissions[0].setMode(TPermissionMode.fromString(configuration.getSetGroupPermissionMode()));
 			grouppermissions[0].setGroupID("500");
