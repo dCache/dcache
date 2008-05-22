@@ -5,7 +5,7 @@
 so that FindBugs can issue warnings more appropriately. You need to use
 Java 5 to use annotations, and must place the annotations.jar and jsr305.jar
 files in the classpath while compiling your program.
-</p><div class="variablelist"><dl><dt><span class="term"><span><strong class="command">edu.umd.cs.findbugs.annotations.CheckForNull</strong></span></span></dt><dd><span><strong class="command">[Target]</strong></span> Field, Method, Parameter, Local variable
+</p><div class="variablelist"><dl><dt><span class="term"><span><strong class="command">edu.umd.cs.findbugs.annotations.CheckForNull</strong></span></span></dt><dd><span><strong class="command">[Target]</strong></span> Field, Method, Parameter
     <p>
 The annotated element might be null, and uses of the element should check for null.
 When this annotation is applied to a method it applies to the method return value.
@@ -48,11 +48,11 @@ This is same as the DefaultAnnotation except it only applys to methods.
               <span><strong class="command">priority:</strong></span>Default priority(HIGH, MEDIUM, LOW, IGNORE). Default value:MEDIUM.
             </p></dd></dl></div><p>
 This is same as the DefaultAnnotation except it only applys to method parameters.
-      </p></dd><dt><span class="term"><span><strong class="command">edu.umd.cs.findbugs.annotations.NonNull</strong></span></span></dt><dd><span><strong class="command">[Target]</strong></span> Field, Method, Parameter, Local variable
+      </p></dd><dt><span class="term"><span><strong class="command">edu.umd.cs.findbugs.annotations.NonNull</strong></span></span></dt><dd><span><strong class="command">[Target]</strong></span> Field, Method, Parameter
     <p>
 The annotated element must not be null.
 Annotated fields must not be null after construction has completed. Annotated methods must have non-null return values.
-      </p></dd><dt><span class="term"><span><strong class="command">edu.umd.cs.findbugs.annotations.Nullable</strong></span></span></dt><dd><span><strong class="command">[Target]</strong></span> Field, Method, Parameter, Local variable
+      </p></dd><dt><span class="term"><span><strong class="command">edu.umd.cs.findbugs.annotations.Nullable</strong></span></span></dt><dd><span><strong class="command">[Target]</strong></span> Field, Method, Parameter
     <p>
 The annotated element could be null under some circumstances. In general, this means
 developers will have to read the documentation to determine when a null value is
@@ -73,7 +73,7 @@ at any time, at the beginning of the overriding method, or at the end of the ove
 (This anotation is not implmemented in FindBugs as of September 8, 2006).
       </p></dd><dt><span class="term"><span><strong class="command">edu.umd.cs.findbugs.annotations.PossiblyNull</strong></span></span></dt><dd><p>
 This annotation is deprecated. Use CheckForNull instead.
-      </p></dd><dt><span class="term"><span><strong class="command">edu.umd.cs.findbugs.annotations.SuppressWarnings</strong></span></span></dt><dd><span><strong class="command">[Target]</strong></span> Type, Field, Method, Parameter, Constructor, Local variable, Package
+      </p></dd><dt><span class="term"><span><strong class="command">edu.umd.cs.findbugs.annotations.SuppressWarnings</strong></span></span></dt><dd><span><strong class="command">[Target]</strong></span> Type, Field, Method, Parameter, Constructor, Package
     <div class="variablelist"><dl><dt><span class="term"><span><strong class="command">[Parameter]</strong></span></span></dt><dd><p>
               <span><strong class="command">value:</strong></span>The name of the warning. More than one name can be specified.
             </p><p>
@@ -86,10 +86,10 @@ must ignore any warning names they do not recognize. They are, however, free to 
 warning if an annotation contains an unrecognized warning name. Compiler vendors should
 document the warning names they support in conjunction with this annotation type. They
 are encouraged to cooperate to ensure that the same names work across multiple compilers.
-      </p></dd><dt><span class="term"><span><strong class="command">edu.umd.cs.findbugs.annotations.UnknownNullness</strong></span></span></dt><dd><span><strong class="command">[Target]</strong></span> Field, Method, Parameter, Local variable
+      </p></dd><dt><span class="term"><span><strong class="command">edu.umd.cs.findbugs.annotations.UnknownNullness</strong></span></span></dt><dd><span><strong class="command">[Target]</strong></span> Field, Method, Parameter
     <p>
 Used to indicate that the nullness of the target is unknown, or my vary in unknown ways in subclasses.
-      </p></dd><dt><span class="term"><span><strong class="command">edu.umd.cs.findbugs.annotations.UnknownNullness</strong></span></span></dt><dd><span><strong class="command">[Target]</strong></span> Field, Method, Parameter, Local variable
+      </p></dd><dt><span class="term"><span><strong class="command">edu.umd.cs.findbugs.annotations.UnknownNullness</strong></span></span></dt><dd><span><strong class="command">[Target]</strong></span> Field, Method, Parameter
     <p>
 Used to indicate that the nullness of the target is unknown, or my vary in unknown ways in subclasses.
       </p></dd></dl></div><p>

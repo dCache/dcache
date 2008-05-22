@@ -158,7 +158,11 @@ of Object. </a></td><td>Bad practice</td></tr>
 <tr bgcolor="#eeeeee"><td><a href="#EC_UNRELATED_INTERFACES">EC: Call to equals() comparing different interface types</a></td><td>Correctness</td></tr>
 <tr bgcolor="#ffffff"><td><a href="#EC_UNRELATED_TYPES">EC: Call to equals() comparing different types</a></td><td>Correctness</td></tr>
 <tr bgcolor="#eeeeee"><td><a href="#EC_UNRELATED_TYPES_USING_POINTER_EQUALITY">EC: Using pointer equality  to compare  different types</a></td><td>Correctness</td></tr>
-<tr bgcolor="#ffffff"><td><a href="#EQ_DONT_DEFINE_EQUALS_FOR_ENUM">Eq: Covariant equals() method defined for enum</a></td><td>Correctness</td></tr>
+<tr bgcolor="#ffffff"><td><a href="#EQ_ALWAYS_FALSE">Eq: equals method always returns false</a></td><td>Correctness</td></tr>
+<tr bgcolor="#eeeeee"><td><a href="#EQ_ALWAYS_TRUE">Eq: equals method always returns true</a></td><td>Correctness</td></tr>
+<tr bgcolor="#ffffff"><td><a href="#EQ_COMPARING_CLASS_NAMES">Eq: equals method compares class names rather than class objects</a></td><td>Correctness</td></tr>
+<tr bgcolor="#eeeeee"><td><a href="#EQ_DONT_DEFINE_EQUALS_FOR_ENUM">Eq: Covariant equals() method defined for enum</a></td><td>Correctness</td></tr>
+<tr bgcolor="#ffffff"><td><a href="#EQ_GETCLASS_AND_CLASS_CONSTANT">Eq: equals method fails for subtypes</a></td><td>Correctness</td></tr>
 <tr bgcolor="#eeeeee"><td><a href="#EQ_OTHER_NO_OBJECT">Eq: equals() method defined that doesn't override equals(Object)</a></td><td>Correctness</td></tr>
 <tr bgcolor="#ffffff"><td><a href="#EQ_OTHER_USE_OBJECT">Eq: equals() method defined that doesn't override Object.equals(Object)</a></td><td>Correctness</td></tr>
 <tr bgcolor="#eeeeee"><td><a href="#EQ_OVERRIDING_EQUALS_NOT_SYMMETRIC">Eq: equals method overrides equals in superclass and may not be symmetric</a></td><td>Correctness</td></tr>
@@ -231,7 +235,7 @@ of Object. </a></td><td>Bad practice</td></tr>
 <tr bgcolor="#ffffff"><td><a href="#SQL_BAD_RESULTSET_ACCESS">SQL: Method attempts to access a result set field with index 0</a></td><td>Correctness</td></tr>
 <tr bgcolor="#eeeeee"><td><a href="#STI_INTERRUPTED_ON_CURRENTTHREAD">STI: Unneeded use of currentThread() call, to call interrupted() </a></td><td>Correctness</td></tr>
 <tr bgcolor="#ffffff"><td><a href="#STI_INTERRUPTED_ON_UNKNOWNTHREAD">STI: Static Thread.interrupted() method invoked on thread instance</a></td><td>Correctness</td></tr>
-<tr bgcolor="#eeeeee"><td><a href="#TESTING">TEST: Testing</a></td><td>Correctness</td></tr>
+<tr bgcolor="#eeeeee"><td><a href="#SE_READ_RESOLVE_IS_STATIC">Se: The readResolve method must not be declared as a static method.  </a></td><td>Correctness</td></tr>
 <tr bgcolor="#ffffff"><td><a href="#TQ_ALWAYS_VALUE_USED_WHERE_NEVER_REQUIRED">TQ: Value annotated as carrying a type qualifier used where a value that must not carry that qualifier is required</a></td><td>Correctness</td></tr>
 <tr bgcolor="#eeeeee"><td><a href="#TQ_MAYBE_SOURCE_VALUE_REACHES_ALWAYS_SINK">TQ: Value that might not carry a type qualifier reaches a use requiring that type qualifier</a></td><td>Correctness</td></tr>
 <tr bgcolor="#ffffff"><td><a href="#TQ_MAYBE_SOURCE_VALUE_REACHES_NEVER_SINK">TQ: Unknown value reaches a use which forbids values carrying type qualifier annotation</a></td><td>Correctness</td></tr>
@@ -271,26 +275,28 @@ of Object. </a></td><td>Bad practice</td></tr>
 <tr bgcolor="#ffffff"><td><a href="#LI_LAZY_INIT_UPDATE_STATIC">LI: Incorrect lazy initialization and update of static field</a></td><td>Multithreaded correctness</td></tr>
 <tr bgcolor="#eeeeee"><td><a href="#ML_SYNC_ON_FIELD_TO_GUARD_CHANGING_THAT_FIELD">ML: Synchronization on field in futile attempt to guard that field</a></td><td>Multithreaded correctness</td></tr>
 <tr bgcolor="#ffffff"><td><a href="#ML_SYNC_ON_UPDATED_FIELD">ML: Method synchronizes on an updated field</a></td><td>Multithreaded correctness</td></tr>
-<tr bgcolor="#eeeeee"><td><a href="#MWN_MISMATCHED_NOTIFY">MWN: Mismatched notify()</a></td><td>Multithreaded correctness</td></tr>
-<tr bgcolor="#ffffff"><td><a href="#MWN_MISMATCHED_WAIT">MWN: Mismatched wait()</a></td><td>Multithreaded correctness</td></tr>
-<tr bgcolor="#eeeeee"><td><a href="#NN_NAKED_NOTIFY">NN: Naked notify</a></td><td>Multithreaded correctness</td></tr>
-<tr bgcolor="#ffffff"><td><a href="#NP_SYNC_AND_NULL_CHECK_FIELD">NP: Synchronize and null check on the same field.</a></td><td>Multithreaded correctness</td></tr>
-<tr bgcolor="#eeeeee"><td><a href="#NO_NOTIFY_NOT_NOTIFYALL">No: Using notify() rather than notifyAll()</a></td><td>Multithreaded correctness</td></tr>
-<tr bgcolor="#ffffff"><td><a href="#RS_READOBJECT_SYNC">RS: Class's readObject() method is synchronized</a></td><td>Multithreaded correctness</td></tr>
-<tr bgcolor="#eeeeee"><td><a href="#RU_INVOKE_RUN">Ru: Invokes run on a thread (did you mean to start it instead?)</a></td><td>Multithreaded correctness</td></tr>
-<tr bgcolor="#ffffff"><td><a href="#SC_START_IN_CTOR">SC: Constructor invokes Thread.start()</a></td><td>Multithreaded correctness</td></tr>
-<tr bgcolor="#eeeeee"><td><a href="#SP_SPIN_ON_FIELD">SP: Method spins on field</a></td><td>Multithreaded correctness</td></tr>
-<tr bgcolor="#ffffff"><td><a href="#STCAL_INVOKE_ON_STATIC_CALENDAR_INSTANCE">STCAL: Call to static Calendar</a></td><td>Multithreaded correctness</td></tr>
-<tr bgcolor="#eeeeee"><td><a href="#STCAL_INVOKE_ON_STATIC_DATE_FORMAT_INSTANCE">STCAL: Call to static DateFormat</a></td><td>Multithreaded correctness</td></tr>
-<tr bgcolor="#ffffff"><td><a href="#STCAL_STATIC_CALENDAR_INSTANCE">STCAL: Static Calendar</a></td><td>Multithreaded correctness</td></tr>
-<tr bgcolor="#eeeeee"><td><a href="#STCAL_STATIC_SIMPLE_DATE_FORMAT_INSTANCE">STCAL: Static DateFormat</a></td><td>Multithreaded correctness</td></tr>
-<tr bgcolor="#ffffff"><td><a href="#SWL_SLEEP_WITH_LOCK_HELD">SWL: Method calls Thread.sleep() with a lock held</a></td><td>Multithreaded correctness</td></tr>
-<tr bgcolor="#eeeeee"><td><a href="#TLW_TWO_LOCK_WAIT">TLW: Wait with two locks held</a></td><td>Multithreaded correctness</td></tr>
-<tr bgcolor="#ffffff"><td><a href="#UG_SYNC_SET_UNSYNC_GET">UG: Unsynchronized get method, synchronized set method</a></td><td>Multithreaded correctness</td></tr>
-<tr bgcolor="#eeeeee"><td><a href="#UL_UNRELEASED_LOCK">UL: Method does not release lock on all paths</a></td><td>Multithreaded correctness</td></tr>
-<tr bgcolor="#ffffff"><td><a href="#UL_UNRELEASED_LOCK_EXCEPTION_PATH">UL: Method does not release lock on all exception paths</a></td><td>Multithreaded correctness</td></tr>
-<tr bgcolor="#eeeeee"><td><a href="#UW_UNCOND_WAIT">UW: Unconditional wait</a></td><td>Multithreaded correctness</td></tr>
-<tr bgcolor="#ffffff"><td><a href="#VO_VOLATILE_REFERENCE_TO_ARRAY">VO: A volatile reference to an array doesn't treat the array elements as volatile</a></td><td>Multithreaded correctness</td></tr>
+<tr bgcolor="#eeeeee"><td><a href="#MSF_MUTABLE_SERVLET_FIELD">MSF: Mutable servlet field</a></td><td>Multithreaded correctness</td></tr>
+<tr bgcolor="#ffffff"><td><a href="#MWN_MISMATCHED_NOTIFY">MWN: Mismatched notify()</a></td><td>Multithreaded correctness</td></tr>
+<tr bgcolor="#eeeeee"><td><a href="#MWN_MISMATCHED_WAIT">MWN: Mismatched wait()</a></td><td>Multithreaded correctness</td></tr>
+<tr bgcolor="#ffffff"><td><a href="#NN_NAKED_NOTIFY">NN: Naked notify</a></td><td>Multithreaded correctness</td></tr>
+<tr bgcolor="#eeeeee"><td><a href="#NP_SYNC_AND_NULL_CHECK_FIELD">NP: Synchronize and null check on the same field.</a></td><td>Multithreaded correctness</td></tr>
+<tr bgcolor="#ffffff"><td><a href="#NO_NOTIFY_NOT_NOTIFYALL">No: Using notify() rather than notifyAll()</a></td><td>Multithreaded correctness</td></tr>
+<tr bgcolor="#eeeeee"><td><a href="#RS_READOBJECT_SYNC">RS: Class's readObject() method is synchronized</a></td><td>Multithreaded correctness</td></tr>
+<tr bgcolor="#ffffff"><td><a href="#RU_INVOKE_RUN">Ru: Invokes run on a thread (did you mean to start it instead?)</a></td><td>Multithreaded correctness</td></tr>
+<tr bgcolor="#eeeeee"><td><a href="#SC_START_IN_CTOR">SC: Constructor invokes Thread.start()</a></td><td>Multithreaded correctness</td></tr>
+<tr bgcolor="#ffffff"><td><a href="#SP_SPIN_ON_FIELD">SP: Method spins on field</a></td><td>Multithreaded correctness</td></tr>
+<tr bgcolor="#eeeeee"><td><a href="#STCAL_INVOKE_ON_STATIC_CALENDAR_INSTANCE">STCAL: Call to static Calendar</a></td><td>Multithreaded correctness</td></tr>
+<tr bgcolor="#ffffff"><td><a href="#STCAL_INVOKE_ON_STATIC_DATE_FORMAT_INSTANCE">STCAL: Call to static DateFormat</a></td><td>Multithreaded correctness</td></tr>
+<tr bgcolor="#eeeeee"><td><a href="#STCAL_STATIC_CALENDAR_INSTANCE">STCAL: Static Calendar</a></td><td>Multithreaded correctness</td></tr>
+<tr bgcolor="#ffffff"><td><a href="#STCAL_STATIC_SIMPLE_DATE_FORMAT_INSTANCE">STCAL: Static DateFormat</a></td><td>Multithreaded correctness</td></tr>
+<tr bgcolor="#eeeeee"><td><a href="#SWL_SLEEP_WITH_LOCK_HELD">SWL: Method calls Thread.sleep() with a lock held</a></td><td>Multithreaded correctness</td></tr>
+<tr bgcolor="#ffffff"><td><a href="#TLW_TWO_LOCK_WAIT">TLW: Wait with two locks held</a></td><td>Multithreaded correctness</td></tr>
+<tr bgcolor="#eeeeee"><td><a href="#UG_SYNC_SET_UNSYNC_GET">UG: Unsynchronized get method, synchronized set method</a></td><td>Multithreaded correctness</td></tr>
+<tr bgcolor="#ffffff"><td><a href="#UL_UNRELEASED_LOCK">UL: Method does not release lock on all paths</a></td><td>Multithreaded correctness</td></tr>
+<tr bgcolor="#eeeeee"><td><a href="#UL_UNRELEASED_LOCK_EXCEPTION_PATH">UL: Method does not release lock on all exception paths</a></td><td>Multithreaded correctness</td></tr>
+<tr bgcolor="#ffffff"><td><a href="#UW_UNCOND_WAIT">UW: Unconditional wait</a></td><td>Multithreaded correctness</td></tr>
+<tr bgcolor="#eeeeee"><td><a href="#VO_VOLATILE_REFERENCE_TO_ARRAY">VO: A volatile reference to an array doesn't treat the array elements as volatile</a></td><td>Multithreaded correctness</td></tr>
+<tr bgcolor="#ffffff"><td><a href="#WL_USING_GETCLASS_RATHER_THAN_CLASS_LITERAL">WL: Sychronization on getClass rather than class literal</a></td><td>Multithreaded correctness</td></tr>
 <tr bgcolor="#eeeeee"><td><a href="#WS_WRITEOBJECT_SYNC">WS: Class's writeObject() method is synchronized but nothing else is</a></td><td>Multithreaded correctness</td></tr>
 <tr bgcolor="#ffffff"><td><a href="#WA_AWAIT_NOT_IN_LOOP">Wa: Condition.await() not in loop </a></td><td>Multithreaded correctness</td></tr>
 <tr bgcolor="#eeeeee"><td><a href="#WA_NOT_IN_LOOP">Wa: Wait not in loop </a></td><td>Multithreaded correctness</td></tr>
@@ -328,21 +334,23 @@ of Object. </a></td><td>Bad practice</td></tr>
 <tr bgcolor="#eeeeee"><td><a href="#SQL_NONCONSTANT_STRING_PASSED_TO_EXECUTE">SQL: Nonconstant string passed to execute method on an SQL statement</a></td><td>Security</td></tr>
 <tr bgcolor="#ffffff"><td><a href="#SQL_PREPARED_STATEMENT_GENERATED_FROM_NONCONSTANT_STRING">SQL: A prepared statement is generated from a nonconstant String</a></td><td>Security</td></tr>
 <tr bgcolor="#eeeeee"><td><a href="#XSS_REQUEST_PARAMETER_TO_JSP_WRITER">XSS: JSP reflected cross site scripting vulnerability</a></td><td>Security</td></tr>
-<tr bgcolor="#ffffff"><td><a href="#XSS_REQUEST_PARAMETER_TO_SERVLET_WRITER">XSS: Servlet reflected cross site scripting vulnerability</a></td><td>Security</td></tr>
-<tr bgcolor="#eeeeee"><td><a href="#BC_BAD_CAST_TO_ABSTRACT_COLLECTION">BC: Questionable cast to abstract collection </a></td><td>Dodgy</td></tr>
-<tr bgcolor="#ffffff"><td><a href="#BC_BAD_CAST_TO_CONCRETE_COLLECTION">BC: Questionable cast to concrete collection</a></td><td>Dodgy</td></tr>
-<tr bgcolor="#eeeeee"><td><a href="#BC_UNCONFIRMED_CAST">BC: Unchecked/unconfirmed cast</a></td><td>Dodgy</td></tr>
-<tr bgcolor="#ffffff"><td><a href="#BC_VACUOUS_INSTANCEOF">BC: instanceof will always return true</a></td><td>Dodgy</td></tr>
-<tr bgcolor="#eeeeee"><td><a href="#CI_CONFUSED_INHERITANCE">CI: Class is final but declares protected field</a></td><td>Dodgy</td></tr>
-<tr bgcolor="#ffffff"><td><a href="#DB_DUPLICATE_BRANCHES">DB: Method uses the same code for two branches</a></td><td>Dodgy</td></tr>
-<tr bgcolor="#eeeeee"><td><a href="#DB_DUPLICATE_SWITCH_CLAUSES">DB: Method uses the same code for two switch clauses</a></td><td>Dodgy</td></tr>
-<tr bgcolor="#ffffff"><td><a href="#DLS_DEAD_LOCAL_STORE">DLS: Dead store to local variable</a></td><td>Dodgy</td></tr>
-<tr bgcolor="#eeeeee"><td><a href="#DLS_DEAD_LOCAL_STORE_OF_NULL">DLS: Dead store of null to local variable</a></td><td>Dodgy</td></tr>
-<tr bgcolor="#ffffff"><td><a href="#DMI_HARDCODED_ABSOLUTE_FILENAME">DMI: Code contains a hard coded reference to an absolute pathname</a></td><td>Dodgy</td></tr>
-<tr bgcolor="#eeeeee"><td><a href="#DMI_NONSERIALIZABLE_OBJECT_WRITTEN">DMI: Non serializable object written to ObjectOutput</a></td><td>Dodgy</td></tr>
-<tr bgcolor="#ffffff"><td><a href="#DMI_USELESS_SUBSTRING">DMI: Invocation of substring(0), which returns the original value</a></td><td>Dodgy</td></tr>
-<tr bgcolor="#eeeeee"><td><a href="#DMI_THREAD_PASSED_WHERE_RUNNABLE_EXPECTED">Dm: Thread passed where Runnable expected</a></td><td>Dodgy</td></tr>
-<tr bgcolor="#ffffff"><td><a href="#EQ_DOESNT_OVERRIDE_EQUALS">Eq: Class doesn't override equals in superclass</a></td><td>Dodgy</td></tr>
+<tr bgcolor="#ffffff"><td><a href="#XSS_REQUEST_PARAMETER_TO_SEND_ERROR">XSS: Servlet reflected cross site scripting vulnerability</a></td><td>Security</td></tr>
+<tr bgcolor="#eeeeee"><td><a href="#XSS_REQUEST_PARAMETER_TO_SERVLET_WRITER">XSS: Servlet reflected cross site scripting vulnerability</a></td><td>Security</td></tr>
+<tr bgcolor="#ffffff"><td><a href="#BC_BAD_CAST_TO_ABSTRACT_COLLECTION">BC: Questionable cast to abstract collection </a></td><td>Dodgy</td></tr>
+<tr bgcolor="#eeeeee"><td><a href="#BC_BAD_CAST_TO_CONCRETE_COLLECTION">BC: Questionable cast to concrete collection</a></td><td>Dodgy</td></tr>
+<tr bgcolor="#ffffff"><td><a href="#BC_UNCONFIRMED_CAST">BC: Unchecked/unconfirmed cast</a></td><td>Dodgy</td></tr>
+<tr bgcolor="#eeeeee"><td><a href="#BC_VACUOUS_INSTANCEOF">BC: instanceof will always return true</a></td><td>Dodgy</td></tr>
+<tr bgcolor="#ffffff"><td><a href="#CI_CONFUSED_INHERITANCE">CI: Class is final but declares protected field</a></td><td>Dodgy</td></tr>
+<tr bgcolor="#eeeeee"><td><a href="#DB_DUPLICATE_BRANCHES">DB: Method uses the same code for two branches</a></td><td>Dodgy</td></tr>
+<tr bgcolor="#ffffff"><td><a href="#DB_DUPLICATE_SWITCH_CLAUSES">DB: Method uses the same code for two switch clauses</a></td><td>Dodgy</td></tr>
+<tr bgcolor="#eeeeee"><td><a href="#DLS_DEAD_LOCAL_STORE">DLS: Dead store to local variable</a></td><td>Dodgy</td></tr>
+<tr bgcolor="#ffffff"><td><a href="#DLS_DEAD_LOCAL_STORE_OF_NULL">DLS: Dead store of null to local variable</a></td><td>Dodgy</td></tr>
+<tr bgcolor="#eeeeee"><td><a href="#DMI_HARDCODED_ABSOLUTE_FILENAME">DMI: Code contains a hard coded reference to an absolute pathname</a></td><td>Dodgy</td></tr>
+<tr bgcolor="#ffffff"><td><a href="#DMI_NONSERIALIZABLE_OBJECT_WRITTEN">DMI: Non serializable object written to ObjectOutput</a></td><td>Dodgy</td></tr>
+<tr bgcolor="#eeeeee"><td><a href="#DMI_USELESS_SUBSTRING">DMI: Invocation of substring(0), which returns the original value</a></td><td>Dodgy</td></tr>
+<tr bgcolor="#ffffff"><td><a href="#DMI_THREAD_PASSED_WHERE_RUNNABLE_EXPECTED">Dm: Thread passed where Runnable expected</a></td><td>Dodgy</td></tr>
+<tr bgcolor="#eeeeee"><td><a href="#EQ_DOESNT_OVERRIDE_EQUALS">Eq: Class doesn't override equals in superclass</a></td><td>Dodgy</td></tr>
+<tr bgcolor="#ffffff"><td><a href="#EQ_UNUSUAL">Eq: Unusual equals method </a></td><td>Dodgy</td></tr>
 <tr bgcolor="#eeeeee"><td><a href="#FE_FLOATING_POINT_EQUALITY">FE: Test for floating point equality</a></td><td>Dodgy</td></tr>
 <tr bgcolor="#ffffff"><td><a href="#IA_AMBIGUOUS_INVOCATION_OF_INHERITED_OR_OUTER_METHOD">IA: Ambiguous invocation of either an inherited or outer method</a></td><td>Dodgy</td></tr>
 <tr bgcolor="#eeeeee"><td><a href="#IC_INIT_CIRCULARITY">IC: Initialization circularity</a></td><td>Dodgy</td></tr>
@@ -375,10 +383,11 @@ of Object. </a></td><td>Bad practice</td></tr>
 <tr bgcolor="#ffffff"><td><a href="#SA_LOCAL_SELF_ASSIGNMENT">SA: Self assignment of local variable</a></td><td>Dodgy</td></tr>
 <tr bgcolor="#eeeeee"><td><a href="#SF_SWITCH_FALLTHROUGH">SF: Switch statement found where one case falls through to the next case</a></td><td>Dodgy</td></tr>
 <tr bgcolor="#ffffff"><td><a href="#ST_WRITE_TO_STATIC_FROM_INSTANCE_METHOD">ST: Write to static field from instance method</a></td><td>Dodgy</td></tr>
-<tr bgcolor="#eeeeee"><td><a href="#SE_TRANSIENT_FIELD_OF_NONSERIALIZABLE_CLASS">Se: Transient field of class that isn't Serializable. </a></td><td>Dodgy</td></tr>
-<tr bgcolor="#ffffff"><td><a href="#UCF_USELESS_CONTROL_FLOW">UCF: Useless control flow</a></td><td>Dodgy</td></tr>
-<tr bgcolor="#eeeeee"><td><a href="#UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR">UwF: Field not initialized in constructor</a></td><td>Dodgy</td></tr>
-<tr bgcolor="#ffffff"><td><a href="#XFB_XML_FACTORY_BYPASS">XFB: Method directly allocates a specific implementation of xml interfaces</a></td><td>Dodgy</td></tr>
+<tr bgcolor="#eeeeee"><td><a href="#SE_PRIVATE_READ_RESOLVE_NOT_INHERITED">Se: private readResolve method not inherited by subclasses</a></td><td>Dodgy</td></tr>
+<tr bgcolor="#ffffff"><td><a href="#SE_TRANSIENT_FIELD_OF_NONSERIALIZABLE_CLASS">Se: Transient field of class that isn't Serializable. </a></td><td>Dodgy</td></tr>
+<tr bgcolor="#eeeeee"><td><a href="#UCF_USELESS_CONTROL_FLOW">UCF: Useless control flow</a></td><td>Dodgy</td></tr>
+<tr bgcolor="#ffffff"><td><a href="#UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR">UwF: Field not initialized in constructor</a></td><td>Dodgy</td></tr>
+<tr bgcolor="#eeeeee"><td><a href="#XFB_XML_FACTORY_BYPASS">XFB: Method directly allocates a specific implementation of xml interfaces</a></td><td>Dodgy</td></tr>
 </table>
 <h2>Descriptions</h2>
 <h3><a name="AM_CREATES_EMPTY_JAR_FILE_ENTRY">AM: Creates an empty jar file entry (AM_CREATES_EMPTY_JAR_FILE_ENTRY)</a></h3>
@@ -1176,7 +1185,7 @@ of Object.  (SE_READ_RESOLVE_MUST_RETURN_OBJECT)</a></h3>
 
 
   <p> In order for the readResolve method to be recognized by the serialization
-mechanism.
+mechanism, it must be declared to have a return type of Object.
 </p>
 
     
@@ -1510,6 +1519,36 @@ different types.  The result of this comparison will always be false at runtime.
 </p>
 
     
+<h3><a name="EQ_ALWAYS_FALSE">Eq: equals method always returns false (EQ_ALWAYS_FALSE)</a></h3>
+
+
+  <p> This class defines an equals method that always returns false. This means that an object is not equal to itself, and it is impossible to create useful Maps or Sets of this class. More fundementally, it means
+that equals is not reflexive, one of the requirements of the equals method.</p>
+<p>The likely intended semantics are object identity: that an object is equal to itself. This is the behavior inherited from class <code>Object</code>. If you need to override an equals inherited from a different 
+superclass, you can use use:
+<pre>
+public boolean equals(Object o) { return this == o; }
+</pre>
+</p>
+
+    
+<h3><a name="EQ_ALWAYS_TRUE">Eq: equals method always returns true (EQ_ALWAYS_TRUE)</a></h3>
+
+
+  <p> This class defines an equals method that always returns true. This is imaginative, but not very smart.
+Plus, it means that the equals method is not symmetric.
+</p>
+
+    
+<h3><a name="EQ_COMPARING_CLASS_NAMES">Eq: equals method compares class names rather than class objects (EQ_COMPARING_CLASS_NAMES)</a></h3>
+
+
+  <p> This method checks to see if two objects are the same class by checking to see if the names
+of their classes are equal. You can have different classes with the same name if they are loaded by
+different class loaders. Just check to see if the class objects are the same.
+</p>
+
+    
 <h3><a name="EQ_DONT_DEFINE_EQUALS_FOR_ENUM">Eq: Covariant equals() method defined for enum (EQ_DONT_DEFINE_EQUALS_FOR_ENUM)</a></h3>
 
 
@@ -1519,6 +1558,16 @@ value is exceptionally bad practice, since it would likely result
 in having two different enumeration values that compare as equals using
 the covariant enum method, and as not equal when compared normally.
 Don't do it.
+</p>
+
+    
+<h3><a name="EQ_GETCLASS_AND_CLASS_CONSTANT">Eq: equals method fails for subtypes (EQ_GETCLASS_AND_CLASS_CONSTANT)</a></h3>
+
+
+  <p> This class has an equals method that will be broken if it is inherited by subclasses.
+It compares a class literal with the class of the argument (e.g., in class <code>Foo</code>
+it might check if <code>Foo.class == o.getClass()</code>).
+It is better to check  if  <code>this.getClass() == o.getClass()</code>.
 </p>
 
     
@@ -1552,6 +1601,7 @@ since it is important that the equals method is symetrical (in other words, <cod
 If B is a subtype of A, and A's equals method checks that the argument is an instanceof A, and B's equals method
 checks that the argument is an instanceof B, it is quite likely that the equivalence relation defined by these
 methods is not symmetric.
+</p>
 
     
 <h3><a name="EQ_SELF_USE_OBJECT">Eq: Covariant equals() method defined, Object.equals(Object) inherited (EQ_SELF_USE_OBJECT)</a></h3>
@@ -2281,11 +2331,12 @@ object than the one the author intended.
 </p>
 
     
-<h3><a name="TESTING">TEST: Testing (TESTING)</a></h3>
+<h3><a name="SE_READ_RESOLVE_IS_STATIC">Se: The readResolve method must not be declared as a static method.   (SE_READ_RESOLVE_IS_STATIC)</a></h3>
 
 
-<p>This bug pattern is only generated by new, incompletely implemented
-bug detectors.</p>
+  <p> In order for the readResolve method to be recognized by the serialization
+mechanism, it must not be declared as a static method.
+</p>
 
     
 <h3><a name="TQ_ALWAYS_VALUE_USED_WHERE_NEVER_REQUIRED">TQ: Value annotated as carrying a type qualifier used where a value that must not carry that qualifier is required (TQ_ALWAYS_VALUE_USED_WHERE_NEVER_REQUIRED)</a></h3>
@@ -2599,7 +2650,7 @@ private static Boolean inited = Boolean.FALSE;
   synchronized(inited) { 
     if (!inited) {
        init();
-       inited = BOOLEAN.TRUE;
+       inited = Boolean.TRUE;
        }
      }
 ...
@@ -2729,9 +2780,6 @@ than less contrived solutions.
   distinguishing locked vs. unlocked accesses, the code in question may still
   be correct.</p>
 
-  <p> This description refers to the "IS2" version of the pattern detector,
-  which has more accurate ways of detecting locked vs. unlocked accesses
-  than the older "IS" detector.</p>
 
     
 <h3><a name="IS_FIELD_NOT_GUARDED">IS: Field not guarded against concurrent access (IS_FIELD_NOT_GUARDED)</a></h3>
@@ -2808,6 +2856,17 @@ private Long getNotificationSequenceNumber() {
    referenced from a mutable field.
    This is unlikely to have useful semantics, since different
 threads may be synchronizing on different objects.</p>
+
+    
+<h3><a name="MSF_MUTABLE_SERVLET_FIELD">MSF: Mutable servlet field (MSF_MUTABLE_SERVLET_FIELD)</a></h3>
+
+
+<p>A web server generally only creates one instance of servlet or jsp class (i.e., treates
+the class as a Singleton), 
+and will 
+have multiple threads invoke methods on that instance to service multiple 
+simultaneous requests.
+Thus, having a mutable instance field generally creates race conditions.
 
     
 <h3><a name="MWN_MISMATCHED_NOTIFY">MWN: Mismatched notify() (MWN_MISMATCHED_NOTIFY)</a></h3>
@@ -3033,6 +3092,36 @@ are non-volatile. To get volatile array elements, you will need to use
 one of the atomic array classes in java.util.concurrent (provided
 in Java 5.0).</p>
 
+    
+<h3><a name="WL_USING_GETCLASS_RATHER_THAN_CLASS_LITERAL">WL: Sychronization on getClass rather than class literal (WL_USING_GETCLASS_RATHER_THAN_CLASS_LITERAL)</a></h3>
+
+      
+      <p>
+     This instance method synchronizes on <code>this.getClass()</code>. If this class is subclassed,
+     subclasses will synchronize on the class object for the subclass, which isn't likely what was intended.
+     For example, consider this code from java.awt.Label:
+     <pre>
+     private static final String base = "label";
+     private static int nameCounter = 0;
+     String constructComponentName() {
+        synchronized (getClass()) {
+            return base + nameCounter++;
+        }
+     }
+     </pre></p>
+     <p>Subclasses of <code>Label</code> won't synchronize on the same subclass, giving rise to a datarace.
+     Instead, this code should be synchronizing on <code>Label.class</code>
+      <pre>
+     private static final String base = "label";
+     private static int nameCounter = 0;
+     String constructComponentName() {
+        synchronized (Label.class) {
+            return base + nameCounter++;
+        }
+     }
+     </pre></p>
+      <p>Bug pattern contributed by Jason Mehrens</p>
+      
     
 <h3><a name="WS_WRITEOBJECT_SYNC">WS: Class's writeObject() method is synchronized but nothing else is (WS_WRITEOBJECT_SYNC)</a></h3>
 
@@ -3513,6 +3602,23 @@ as part of the <a href="http://opensource.fortifysoftware.com/welcome.html">JOR 
 </p>
 
     
+<h3><a name="XSS_REQUEST_PARAMETER_TO_SEND_ERROR">XSS: Servlet reflected cross site scripting vulnerability (XSS_REQUEST_PARAMETER_TO_SEND_ERROR)</a></h3>
+
+
+	<p>This code directly writes an HTTP parameter to a Server error page (using HttpServletResponse.sendError). Echoing this untrusted input allows
+for a reflected cross site scripting
+vulnerability. See <a href="http://en.wikipedia.org/wiki/Cross-site_scripting">http://en.wikipedia.org/wiki/Cross-site_scripting</a>
+for more information.</p>
+<p>FindBugs looks only for the most blatent, obvious cases of cross site scripting.
+If FindBugs found <em>any</em>, you <em>almostly certainly</em> have more cross site scripting
+vulnerabilities that FindBugs doesn't report. If you are concerned about cross site scripting, you should seriously 
+consider using a commercial static analysis or pen-testing tool, such as those provided by <a href="http://www.fortify.com/">Fortify Software</a>,
+a sponsor of the FindBugs project. If your software is open source, Fortify will scan your code for free
+as part of the <a href="http://opensource.fortifysoftware.com/welcome.html">JOR (Java Open Review)</a> effort.
+</p>
+
+
+    
 <h3><a name="XSS_REQUEST_PARAMETER_TO_SERVLET_WRITER">XSS: Servlet reflected cross site scripting vulnerability (XSS_REQUEST_PARAMETER_TO_SERVLET_WRITER)</a></h3>
 
 
@@ -3673,6 +3779,15 @@ the equals method, consider overriding it anyway to document the fact
 that the equals method for the subclass just return the result of
 invoking super.equals(o).
   </p>
+
+    
+<h3><a name="EQ_UNUSUAL">Eq: Unusual equals method  (EQ_UNUSUAL)</a></h3>
+
+
+  <p> This class doesn't do any of the patterns we recognize for checking that the type of the argument 
+is compatible with the type of the <code>this</code> object. There might not be anything wrong with
+this code, but it is worth reviewing.
+</p>
 
     
 <h3><a name="FE_FLOATING_POINT_EQUALITY">FE: Test for floating point equality (FE_FLOATING_POINT_EQUALITY)</a></h3>
@@ -4064,6 +4179,14 @@ Such assignments are useless, and may indicate a logic error or typo.
   <p> This instance method writes to a static field. This is tricky to get
 correct if multiple instances are being manipulated,
 and generally bad practice.
+</p>
+
+    
+<h3><a name="SE_PRIVATE_READ_RESOLVE_NOT_INHERITED">Se: private readResolve method not inherited by subclasses (SE_PRIVATE_READ_RESOLVE_NOT_INHERITED)</a></h3>
+
+
+  <p> This class defines a private readResolve method. Since it is private, it won't be inherited by subclasses.
+This might be intentional and OK, but should be reviewed to ensure it is what is intended.
 </p>
 
     
