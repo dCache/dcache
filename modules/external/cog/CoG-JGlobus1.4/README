@@ -1,0 +1,6 @@
+Source distribution + JAVADOC of CoG JGlobus 1.4
+http://dev.globus.org/wiki/CoG_JGlobus_1.4
+
+note:
+
+The Cog Library depends (among others) on a modified version of puretls v0.9b4. The distribution contains only the puretls binary, not the modified sources.
