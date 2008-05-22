@@ -316,10 +316,21 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM {
         Constructor responseConstructor = responseClass.getConstructor((Class[])null);
         Object response = responseConstructor.newInstance((Object[])null);
         try {
-            TReturnStatus trs = new TReturnStatus(statusCode,errorMessage );
-            Method setReturnStatus = responseClass.getMethod("setReturnStatus",new Class[]{TReturnStatus.class});
-            setReturnStatus.invoke(response, new Object[]{trs});
+		TReturnStatus trs = new TReturnStatus(statusCode,errorMessage );
+		Method setReturnStatus = responseClass.getMethod("setReturnStatus",new Class[]{TReturnStatus.class});
+		setReturnStatus.invoke(response, new Object[]{trs});
         }
+	catch (java.lang.NoSuchMethodException nsme) { 
+		// A hack to handle SrmPingResponse which does not have "setReturnStatus" method
+		// I put it here cause it will go away as soon as this method is present
+		// (by Dmitry Litvintsev (litvinse@fnal.gov))
+		log.fatal("getFailedResponse invocation failed for "+capitalizedRequestName+"Response.setReturnStatus");
+		if (capitalizedRequestName.equals("SrmPing")) { 
+			Class handlerClass = Class.forName("org.dcache.srm.handler."+capitalizedRequestName);
+			Method getFailedRespose = handlerClass.getMethod("getFailedResponse",new Class[]{String.class});
+			return getFailedRespose.invoke(null,new Object[]{errorMessage});
+		}
+	}
         catch(Exception e) {
             log.fatal("getFailedResponse invocation failed",e);
             Method setStatusCode = responseClass.getMethod("setStatusCode",new Class[]{TStatusCode.class});
