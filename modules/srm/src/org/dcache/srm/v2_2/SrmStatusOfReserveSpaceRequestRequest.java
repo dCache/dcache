@@ -118,7 +118,7 @@ public class SrmStatusOfReserveSpaceRequestRequest  implements java.io.Serializa
         elemField.setFieldName("requestToken");
         elemField.setXmlName(new javax.xml.namespace.QName("", "requestToken"));
         elemField.setXmlType(new javax.xml.namespace.QName("http://www.w3.org/2001/XMLSchema", "string"));
-        elemField.setNillable(false);
+	elemField.setNillable(true);
         typeDesc.addFieldDesc(elemField);
     }
 
