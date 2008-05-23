@@ -138,8 +138,8 @@ import java.net.InetAddress;
  */
 public class ReleaseSpaceCompanion implements CellMessageAnswerable {
     private  static final int NOT_WAITING_STATE=0;
-    private  static final int WAITING_RELEASE_RESPONCE_STATE=1;
-    private  static final int RECEIVED_RELEASE_RESPONCE_STATE=2;
+    private  static final int WAITING_RELEASE_RESPONSE_STATE=1;
+    private  static final int RECEIVED_RELEASE_RESPONSE_STATE=2;
     private volatile int state = NOT_WAITING_STATE;
     private dmg.cells.nucleus.CellAdapter cell;
     private ReleaseSpaceCallbacks callbacks;
@@ -172,8 +172,8 @@ public class ReleaseSpaceCompanion implements CellMessageAnswerable {
         switch(state) {
             case NOT_WAITING_STATE:
                 return "NOT_WAITING_STATE";
-            case WAITING_RELEASE_RESPONCE_STATE:
-                return "WAITING_RELEASE_RESPONCE_STATE";
+            case WAITING_RELEASE_RESPONSE_STATE:
+                return "WAITING_RELEASE_RESPONSE_STATE";
             default:
                 return "UNKNOWN";
         }
@@ -221,8 +221,8 @@ public class ReleaseSpaceCompanion implements CellMessageAnswerable {
         if(o instanceof Message) {
             Message message = (Message)answer.getMessageObject() ;
             if( message instanceof SpaceManagerReleaseSpaceMessage  &&
-            current_state == WAITING_RELEASE_RESPONCE_STATE) {
-                state=RECEIVED_RELEASE_RESPONCE_STATE;
+            current_state == WAITING_RELEASE_RESPONSE_STATE) {
+                state=RECEIVED_RELEASE_RESPONSE_STATE;
                 say("SpaceManagerReleaseSpaceMessage  arrived");
                 if(message.getReturnCode() != 0) {
                     esay("SpaceManagerReleaseSpaceMessage message.getReturnCode () != 0");
@@ -285,7 +285,7 @@ public class ReleaseSpaceCompanion implements CellMessageAnswerable {
         spaceSize,
         cell);
         
-        companion.state = WAITING_RELEASE_RESPONCE_STATE;
+        companion.state = WAITING_RELEASE_RESPONSE_STATE;
         try {
             cell.sendMessage( new CellMessage(
             new CellPath("SpaceManager") ,
@@ -316,7 +316,7 @@ public class ReleaseSpaceCompanion implements CellMessageAnswerable {
         callbacks,
         cell);
         
-        companion.state = WAITING_RELEASE_RESPONCE_STATE;
+        companion.state = WAITING_RELEASE_RESPONSE_STATE;
         try {
             cell.sendMessage( new CellMessage(
             new CellPath("SpaceManager") ,

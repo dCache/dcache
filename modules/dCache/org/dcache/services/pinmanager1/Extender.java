@@ -99,7 +99,7 @@ class Extender extends SMCTask
             String stickyBitName = getCellName()+
                                Long.toString(_pin.getId());
            info("extend sticky flag  in "+poolName+" for "+
-                _pin.getPnfsId()+" stikyBitNameName:"+stickyBitName);
+                _pin.getPnfsId()+" stickyBitNameName:"+stickyBitName);
 
             PoolSetStickyMessage setStickyRequest = 
                 new PoolSetStickyMessage(poolName,

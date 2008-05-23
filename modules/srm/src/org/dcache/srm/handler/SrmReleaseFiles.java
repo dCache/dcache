@@ -107,7 +107,7 @@ public class SrmReleaseFiles {
         if(statusCode == null) {
             statusCode =TStatusCode.SRM_FAILURE;
         }
-        logger.error("getFailedResponce: "+error+" StatusCode "+statusCode);
+        logger.error("getFailedResponse: "+error+" StatusCode "+statusCode);
  
         TReturnStatus status = new TReturnStatus();
         status.setStatusCode(statusCode);

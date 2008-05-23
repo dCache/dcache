@@ -1478,9 +1478,9 @@ public class       MultiProtocolPool2
                      *     cached+sticky: does not goes to tape, not removed by sweeper
                      *
                      * new states depending on AL and RP:
-                     *     Custodial+ONLINE   (T1D1) : precious+stily  => cached+stiky
+                     *     Custodial+ONLINE   (T1D1) : precious+stily  => cached+sticky
                      *     Custodial+NEARLINE (T1D0) : precious        => cached
-                     *     Output+ONLINE      (T0D1) : cached+stiky    => cached+stiky
+                     *     Output+ONLINE      (T0D1) : cached+sticky    => cached+sticky
                      *
                      */
 

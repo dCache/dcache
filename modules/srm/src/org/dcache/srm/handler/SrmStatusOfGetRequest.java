@@ -108,9 +108,9 @@ public class SrmStatusOfGetRequest {
         TReturnStatus status = new TReturnStatus();
         status.setStatusCode(statusCode);
         status.setExplanation(error);
-        SrmStatusOfGetRequestResponse srmPrepareToGetResponce = new SrmStatusOfGetRequestResponse();
-        srmPrepareToGetResponce.setReturnStatus(status);
-        return srmPrepareToGetResponce;
+        SrmStatusOfGetRequestResponse srmPrepareToGetResponse = new SrmStatusOfGetRequestResponse();
+        srmPrepareToGetResponse.setReturnStatus(status);
+        return srmPrepareToGetResponse;
     }
     /**
      * implementation of srm get status

@@ -111,9 +111,9 @@ class Pinner extends SMCTask
     void markSticky()
     {
         info("markSticky");
-        long stikyBitExpiration = _expiration;
-        if(stikyBitExpiration > 0) {
-            stikyBitExpiration += PinManager.POOL_LIFETIME_MARGIN;
+        long stickyBitExpiration = _expiration;
+        if(stickyBitExpiration > 0) {
+            stickyBitExpiration += PinManager.POOL_LIFETIME_MARGIN;
         }
         PoolSetStickyMessage setStickyRequest =
             new PoolSetStickyMessage(_readPoolName,
@@ -124,7 +124,7 @@ class Pinner extends SMCTask
             // needed if the unpinning is started and new pin request 
             // has arrived
             getCellName()+_pin.getId(), 
-            stikyBitExpiration);
+            stickyBitExpiration);
         sendMessage(new CellPath(_readPoolName), setStickyRequest,
                     1 * 24 * 60 * 60 * 1000);
     }

@@ -254,7 +254,7 @@ public class TransferManagerHandler implements CellMessageAnswerable {
 					(PnfsCreateEntryMessage)message;
 				if( state == WAITING_FOR_PNFS_ENTRY_CREATION_INFO_STATE) {
 					setState(RECEIVED_PNFS_ENTRY_CREATION_INFO_STATE);
-					createEntryResponceArrived(create_msg);
+					createEntryResponseArrived(create_msg);
 					return;
 				}
 				esay(this.toString()+" got unexpected PnfsCreateEntryMessage "+
@@ -449,7 +449,7 @@ public class TransferManagerHandler implements CellMessageAnswerable {
 		return ;
 	}
 /**      */	    
-	public void createEntryResponceArrived(PnfsCreateEntryMessage create) {
+	public void createEntryResponseArrived(PnfsCreateEntryMessage create) {
         	if(create.getReturnCode() == 0) {
 			created = true;
 			manager.persist(this);

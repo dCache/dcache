@@ -34,7 +34,7 @@ public class SrmPrepareToGet {
     private final static String SFN_STRING="?SFN=";
     AbstractStorageElement storage;
     SrmPrepareToGetRequest request;
-    SrmPrepareToGetResponse responce;
+    SrmPrepareToGetResponse response;
     Scheduler getScheduler;
     RequestUser user;
     RequestCredential credential;
@@ -103,19 +103,19 @@ public class SrmPrepareToGet {
     int port;
     String host;
     public SrmPrepareToGetResponse getResponse() {
-        if(responce != null ) return responce;
+        if(response != null ) return response;
         try {
-            responce = srmPrepareToGet();
+            response = srmPrepareToGet();
         } catch(Exception e) {
             storage.elog(e);
-            responce = new SrmPrepareToGetResponse();
+            response = new SrmPrepareToGetResponse();
             TReturnStatus returnStatus = new TReturnStatus();
             returnStatus.setStatusCode(TStatusCode.SRM_FAILURE);
             returnStatus.setExplanation(e.toString());
-            responce.setReturnStatus(returnStatus);
+            response.setReturnStatus(returnStatus);
         }
         
-        return responce;
+        return response;
     }
     
     public static final SrmPrepareToGetResponse getFailedResponse(String error) {
@@ -129,9 +129,9 @@ public class SrmPrepareToGet {
         TReturnStatus status = new TReturnStatus();
         status.setStatusCode(statusCode);
         status.setExplanation(error);
-        SrmPrepareToGetResponse srmPrepareToGetResponce = new SrmPrepareToGetResponse();
-        srmPrepareToGetResponce.setReturnStatus(status);
-        return srmPrepareToGetResponce;
+        SrmPrepareToGetResponse srmPrepareToGetResponse = new SrmPrepareToGetResponse();
+        srmPrepareToGetResponse.setReturnStatus(status);
+        return srmPrepareToGetResponse;
     }
     /**
      * implementation of srm ls

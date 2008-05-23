@@ -1590,7 +1590,7 @@ public class SpaceManager  extends CellAdapter implements Runnable {
             sendMessage(cellMessage);
         }
         catch(Exception e) {
-            esay("can not send a failed responce");
+            esay("can not send a failed response");
             esay(e);
         }
     }
@@ -1602,7 +1602,7 @@ public class SpaceManager  extends CellAdapter implements Runnable {
             sendMessage(cellMessage);
         }
         catch(Exception e) {
-            esay("can not send a responce");
+            esay("can not send a response");
             esay(e);
         }
         

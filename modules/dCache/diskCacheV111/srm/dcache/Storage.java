@@ -1620,7 +1620,7 @@ public class Storage
     /**
      * Receives the Cell Messages
      * we currently process messages received as the
-     * responce to something we sent
+     * response to something we sent
      * to other cells
      *
      * @param  cellMessage
@@ -2781,12 +2781,12 @@ public class Storage
             esay(emsg);
             throw new SRMException(emsg);
         }
-        CopyManagerMessage copyResponce =
+        CopyManagerMessage copyResponse =
                 (CopyManagerMessage) object;
-        int rc = copyResponce.getReturnCode();
+        int rc = copyResponse.getReturnCode();
         if( rc != 0) {
             String emsg =" local copy failed with code ="+ rc +
-                    " details: "+copyResponce.getDescription();
+                    " details: "+copyResponse.getDescription();
             esay(emsg);
             throw new SRMException(emsg);
         }

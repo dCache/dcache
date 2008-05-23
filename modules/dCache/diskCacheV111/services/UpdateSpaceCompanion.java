@@ -149,9 +149,9 @@ import java.net.InetAddress;
  */
 public class UpdateSpaceCompanion implements CellMessageAnswerable {
     private  static final int NOT_WAITING_STATE=0;
-    private  static final int WAITING_POOL_QUERY_RESPONCE_STATE=1;
-    private  static final int WAITING_POOL_RESERVE_RESPONCE_STATE=2;
-    private  static final int WAITING_POOL_RELEASE_RESPONCE_STATE=3;
+    private  static final int WAITING_POOL_QUERY_RESPONSE_STATE=1;
+    private  static final int WAITING_POOL_RESERVE_RESPONSE_STATE=2;
+    private  static final int WAITING_POOL_RELEASE_RESPONSE_STATE=3;
     private volatile int state = NOT_WAITING_STATE;
     private dmg.cells.nucleus.CellAdapter cell;
     private String pool;
@@ -178,12 +178,12 @@ public class UpdateSpaceCompanion implements CellMessageAnswerable {
         switch(state) {
             case NOT_WAITING_STATE:
                 return "NOT_WAITING_STATE";
-            case WAITING_POOL_QUERY_RESPONCE_STATE:
-                return "WAITING_POOL_QUERY_RESPONCE_STATE";
-            case WAITING_POOL_RESERVE_RESPONCE_STATE:
-                return "WAITING_POOL_RESERVE_RESPONCE_STATE";
-            case WAITING_POOL_RELEASE_RESPONCE_STATE:
-                return "WAITING_POOL_RELEASE_RESPONCE_STATE";
+            case WAITING_POOL_QUERY_RESPONSE_STATE:
+                return "WAITING_POOL_QUERY_RESPONSE_STATE";
+            case WAITING_POOL_RESERVE_RESPONSE_STATE:
+                return "WAITING_POOL_RESERVE_RESPONSE_STATE";
+            case WAITING_POOL_RELEASE_RESPONSE_STATE:
+                return "WAITING_POOL_RELEASE_RESPONSE_STATE";
             default:
                 return "UNKNOWN";
         }
@@ -207,21 +207,21 @@ public class UpdateSpaceCompanion implements CellMessageAnswerable {
         if(o instanceof Message) {
             Message message = (Message)answer.getMessageObject() ;
             if(message instanceof PoolQuerySpaceReservationMessage  &&
-                current_state == WAITING_POOL_QUERY_RESPONCE_STATE) {
+                current_state == WAITING_POOL_QUERY_RESPONSE_STATE) {
                 state=NOT_WAITING_STATE;
                 PoolQuerySpaceReservationMessage msg =
                 (PoolQuerySpaceReservationMessage)message;
                queryResponseArrived(msg);
             }
             else if(message instanceof PoolReserveSpaceMessage  &&
-                current_state == WAITING_POOL_RESERVE_RESPONCE_STATE) {
+                current_state == WAITING_POOL_RESERVE_RESPONSE_STATE) {
                 say("researve answer arrived "+message);
                 if(message.getReturnCode() != 0) {
                     esay("researve failed"+message.getErrorObject());
                 }
             }
             else if(message instanceof PoolFreeSpaceReservationMessage  &&
-                current_state == WAITING_POOL_RELEASE_RESPONCE_STATE) {
+                current_state == WAITING_POOL_RELEASE_RESPONSE_STATE) {
                 say("release answer arrived "+message);
                 if(message.getReturnCode() != 0) {
                     esay("release failed"+message.getErrorObject());
@@ -263,7 +263,7 @@ public class UpdateSpaceCompanion implements CellMessageAnswerable {
         PoolReserveSpaceMessage reserveRequest =
         new PoolReserveSpaceMessage(pool,reserveSize);
         try {
-            state = WAITING_POOL_RESERVE_RESPONCE_STATE;
+            state = WAITING_POOL_RESERVE_RESPONSE_STATE;
             cell.sendMessage( new CellMessage(
             new CellPath(pool) ,
             reserveRequest ) ,
@@ -284,7 +284,7 @@ public class UpdateSpaceCompanion implements CellMessageAnswerable {
         PoolFreeSpaceReservationMessage releaseRequest =
         new PoolFreeSpaceReservationMessage(pool,releaseSize);
         try {
-            state = WAITING_POOL_RELEASE_RESPONCE_STATE;
+            state = WAITING_POOL_RELEASE_RESPONSE_STATE;
             cell.sendMessage( new CellMessage(
             new CellPath(pool) ,
             releaseRequest ) ,
@@ -302,7 +302,7 @@ public class UpdateSpaceCompanion implements CellMessageAnswerable {
         PoolQuerySpaceReservationMessage queryRequest =
         new PoolQuerySpaceReservationMessage(pool);
         try {
-            state = WAITING_POOL_QUERY_RESPONCE_STATE;
+            state = WAITING_POOL_QUERY_RESPONSE_STATE;
             cell.sendMessage( new CellMessage(
             new CellPath(pool) ,
             queryRequest ) ,

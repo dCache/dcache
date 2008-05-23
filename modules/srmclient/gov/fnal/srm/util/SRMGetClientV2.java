@@ -258,7 +258,7 @@ public class SRMGetClientV2 extends SRMClient implements Runnable {
             say("calling srmPrepareToGet");
 
             SrmPrepareToGetResponse response = srmv2.srmPrepareToGet(srmPrepareToGetRequest);
-            say("received responce");
+            say("received response");
             if(response == null) {
                 throw new IOException(" null response");
             }

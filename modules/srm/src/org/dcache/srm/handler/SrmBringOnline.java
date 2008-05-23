@@ -33,7 +33,7 @@ public class SrmBringOnline {
     private final static String SFN_STRING="?SFN=";
     AbstractStorageElement storage;
     SrmBringOnlineRequest request;
-    SrmBringOnlineResponse responce;
+    SrmBringOnlineResponse response;
     Scheduler bringOnlineScheduler;
     RequestUser user;
     RequestCredential credential;
@@ -102,19 +102,19 @@ public class SrmBringOnline {
     int port;
     String host;
     public SrmBringOnlineResponse getResponse() {
-        if(responce != null ) return responce;
+        if(response != null ) return response;
         try {
-            responce = srmBringOnline();
+            response = srmBringOnline();
         } catch(Exception e) {
             storage.elog(e);
-            responce = new SrmBringOnlineResponse();
+            response = new SrmBringOnlineResponse();
             TReturnStatus returnStatus = new TReturnStatus();
             returnStatus.setStatusCode(TStatusCode.SRM_FAILURE);
             returnStatus.setExplanation(e.toString());
-            responce.setReturnStatus(returnStatus);
+            response.setReturnStatus(returnStatus);
         }
         
-        return responce;
+        return response;
     }
     
     public static final SrmBringOnlineResponse getFailedResponse(String error) {
@@ -128,9 +128,9 @@ public class SrmBringOnline {
         TReturnStatus status = new TReturnStatus();
         status.setStatusCode(statusCode);
         status.setExplanation(error);
-        SrmBringOnlineResponse srmBringOnlineResponce = new SrmBringOnlineResponse();
-        srmBringOnlineResponce.setReturnStatus(status);
-        return srmBringOnlineResponce;
+        SrmBringOnlineResponse srmBringOnlineResponse = new SrmBringOnlineResponse();
+        srmBringOnlineResponse.setReturnStatus(status);
+        return srmBringOnlineResponse;
     }
     /**
      * implementation of srm ls

@@ -121,7 +121,7 @@ import java.net.InetAddress;
  */
 public class ReleaseSpaceCompanion implements CellMessageAnswerable {
     private  static final int NOT_WAITING_STATE=0;
-    private  static final int WAITING_POOL_RESPONCE_STATE=1;
+    private  static final int WAITING_POOL_RESPONSE_STATE=1;
     private volatile int state = NOT_WAITING_STATE;
     private dmg.cells.nucleus.CellAdapter cell;
     private ReleaseSpaceCallbacks callbacks;
@@ -154,8 +154,8 @@ public class ReleaseSpaceCompanion implements CellMessageAnswerable {
         switch(state) {
             case NOT_WAITING_STATE:
                 return "NOT_WAITING_STATE";
-            case WAITING_POOL_RESPONCE_STATE:
-                return "WAITING_POOL_RESPONCE_STATE";
+            case WAITING_POOL_RESPONSE_STATE:
+                return "WAITING_POOL_RESPONSE_STATE";
             default:
                 return "UNKNOWN";
         }
@@ -184,7 +184,7 @@ public class ReleaseSpaceCompanion implements CellMessageAnswerable {
         if(o instanceof Message) {
             Message message = (Message)answer.getMessageObject() ;
             if( message instanceof PoolFreeSpaceReservationMessage  &&
-            current_state == WAITING_POOL_RESPONCE_STATE) {
+            current_state == WAITING_POOL_RESPONSE_STATE) {
                 state=NOT_WAITING_STATE;
                 say("PoolFreeSpaceReservationMessage  arrived");
                 if(message.getReturnCode() != 0) {
@@ -256,7 +256,7 @@ public class ReleaseSpaceCompanion implements CellMessageAnswerable {
         spaceSize,
         cell);
         
-        companion.state = WAITING_POOL_RESPONCE_STATE;
+        companion.state = WAITING_POOL_RESPONSE_STATE;
         try {
             cell.sendMessage( new CellMessage(
             new CellPath(poolname) ,

@@ -57,7 +57,7 @@ import diskCacheV111.vehicles.PoolMgrSelectReadPoolMsg;
  *  for the same file exist, no action is taken, other then removal
  *  of the database  pin request record
  *  2) if last pin request is removed then the file is unpinned
- * which means sending of the "set stiky to false message" is send to all
+ * which means sending of the "set sticky to false message" is send to all
  * locations,
  * the pnfs flag is removed
  * database  pin request record is removed

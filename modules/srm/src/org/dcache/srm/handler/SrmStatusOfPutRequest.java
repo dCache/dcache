@@ -106,9 +106,9 @@ public class SrmStatusOfPutRequest {
         TReturnStatus status = new TReturnStatus();
         status.setStatusCode(statusCode);
         status.setExplanation(error);
-        SrmStatusOfPutRequestResponse srmPrepareToPutResponce = new SrmStatusOfPutRequestResponse();
-        srmPrepareToPutResponce.setReturnStatus(status);
-        return srmPrepareToPutResponce;
+        SrmStatusOfPutRequestResponse srmPrepareToPutResponse = new SrmStatusOfPutRequestResponse();
+        srmPrepareToPutResponse.setReturnStatus(status);
+        return srmPrepareToPutResponse;
     }
     /**
      * implementation of srm put status

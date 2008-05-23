@@ -147,8 +147,8 @@ import diskCacheV111.vehicles.Message;
  */
 public class SrmReserveSpaceCompanion implements CellMessageAnswerable {
     private  static final int NOT_WAITING_STATE=0;
-    private  static final int WAITING_SPACE_MANAGER_RESPONCE_STATE=1;
-    private  static final int RECEIVED_SPACE_MANAGER_RESPONCE_STATE=2;
+    private  static final int WAITING_SPACE_MANAGER_RESPONSE_STATE=1;
+    private  static final int RECEIVED_SPACE_MANAGER_RESPONSE_STATE=2;
     private volatile int state = NOT_WAITING_STATE;
     private DCacheUser user;
     private long sizeInBytes; 
@@ -182,10 +182,10 @@ public class SrmReserveSpaceCompanion implements CellMessageAnswerable {
         switch(state) {
             case NOT_WAITING_STATE:
                 return "NOT_WAITING_STATE";
-            case WAITING_SPACE_MANAGER_RESPONCE_STATE:
-                return "WAITING_SPACE_MANAGER_RESPONCE_STATE";
-            case RECEIVED_SPACE_MANAGER_RESPONCE_STATE:
-                return "RECEIVED_SPACE_MANAGER_RESPONCE_STATE";
+            case WAITING_SPACE_MANAGER_RESPONSE_STATE:
+                return "WAITING_SPACE_MANAGER_RESPONSE_STATE";
+            case RECEIVED_SPACE_MANAGER_RESPONSE_STATE:
+                return "RECEIVED_SPACE_MANAGER_RESPONSE_STATE";
             default:
                 return "UNKNOWN";
         }
@@ -230,8 +230,8 @@ public class SrmReserveSpaceCompanion implements CellMessageAnswerable {
         if(o instanceof Message) {
             Message message = (Message)answer.getMessageObject() ;
             if( message instanceof Reserve  &&
-            current_state == WAITING_SPACE_MANAGER_RESPONCE_STATE) {
-                state= RECEIVED_SPACE_MANAGER_RESPONCE_STATE;
+            current_state == WAITING_SPACE_MANAGER_RESPONSE_STATE) {
+                state= RECEIVED_SPACE_MANAGER_RESPONSE_STATE;
                 say("space.message.Reserve arrived");
                 if(message.getReturnCode() != 0) {
                     esay("Space Reservation Failed message.getReturnCode () " +
@@ -253,11 +253,11 @@ public class SrmReserveSpaceCompanion implements CellMessageAnswerable {
                     "getReturnCode () != 0 =>"+message.getErrorObject());
                     return ;
                 }
-                Reserve reservationResponce =
+                Reserve reservationResponse =
                  (Reserve) message;
                 callbacks.SpaceReserved(
-                Long.toString(reservationResponce.getSpaceToken()),
-                reservationResponce.getSizeInBytes());
+                Long.toString(reservationResponse.getSpaceToken()),
+                reservationResponse.getSizeInBytes());
                 return;
             }
             else {
@@ -323,7 +323,7 @@ public class SrmReserveSpaceCompanion implements CellMessageAnswerable {
                     description
                     );
 
-            state = WAITING_SPACE_MANAGER_RESPONCE_STATE;
+            state = WAITING_SPACE_MANAGER_RESPONSE_STATE;
             try {
                 cell.sendMessage( new CellMessage(
                 new CellPath(spaceManagerPath) ,

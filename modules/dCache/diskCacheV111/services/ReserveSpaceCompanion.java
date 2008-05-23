@@ -157,12 +157,12 @@ import java.net.InetAddress;
  */
 public class ReserveSpaceCompanion implements CellMessageAnswerable {
     private  static final int NOT_WAITING_STATE=0;
-    private  static final int WAITING_PNFS_GET_STORAGE_INFO_RESPONCE_STATE=1;
-    private  static final int WAITING_POOLMANAGER_RESPONCE_STATE=2;
-    private  static final int WAITING_POOL_RESPONCE_STATE=3;
-    private  static final int WAITING_PNFS_CREATE_ENTRY_RESPONCE_STATE=4;
-    private  static final int WAITING_PNFS_DELETE_ENTRY_RESPONCE_STATE=5;
-    private  static final int WAITING_PNFS_GET_PARENT_STORAGE_INFO_RESPONCE_STATE=6;
+    private  static final int WAITING_PNFS_GET_STORAGE_INFO_RESPONSE_STATE=1;
+    private  static final int WAITING_POOLMANAGER_RESPONSE_STATE=2;
+    private  static final int WAITING_POOL_RESPONSE_STATE=3;
+    private  static final int WAITING_PNFS_CREATE_ENTRY_RESPONSE_STATE=4;
+    private  static final int WAITING_PNFS_DELETE_ENTRY_RESPONSE_STATE=5;
+    private  static final int WAITING_PNFS_GET_PARENT_STORAGE_INFO_RESPONSE_STATE=6;
 
     private volatile int state = NOT_WAITING_STATE;
     private dmg.cells.nucleus.CellAdapter cell;
@@ -203,18 +203,18 @@ public class ReserveSpaceCompanion implements CellMessageAnswerable {
         switch(state) {
             case NOT_WAITING_STATE:
                 return "NOT_WAITING_STATE";
-            case WAITING_PNFS_GET_STORAGE_INFO_RESPONCE_STATE:
-                return "WAITING_PNFS_GET_STORAGE_INFO_RESPONCE_STATE";
-            case WAITING_POOLMANAGER_RESPONCE_STATE:
-                return "WAITING_POOLMANAGER_RESPONCE_STATE";
-            case WAITING_POOL_RESPONCE_STATE:
-                return "WAITING_POOL_RESPONCE_STATE";
-            case WAITING_PNFS_CREATE_ENTRY_RESPONCE_STATE:
-                return "WAITING_PNFS_CREATE_ENTRY_RESPONCE_STATE";
-            case WAITING_PNFS_DELETE_ENTRY_RESPONCE_STATE:
-                return "WAITING_PNFS_DELETE_ENTRY_RESPONCE_STATE";
-            case WAITING_PNFS_GET_PARENT_STORAGE_INFO_RESPONCE_STATE:
-                return "WAITING_PNFS_GET_PARENT_STORAGE_INFO_RESPONCE_STATE";
+            case WAITING_PNFS_GET_STORAGE_INFO_RESPONSE_STATE:
+                return "WAITING_PNFS_GET_STORAGE_INFO_RESPONSE_STATE";
+            case WAITING_POOLMANAGER_RESPONSE_STATE:
+                return "WAITING_POOLMANAGER_RESPONSE_STATE";
+            case WAITING_POOL_RESPONSE_STATE:
+                return "WAITING_POOL_RESPONSE_STATE";
+            case WAITING_PNFS_CREATE_ENTRY_RESPONSE_STATE:
+                return "WAITING_PNFS_CREATE_ENTRY_RESPONSE_STATE";
+            case WAITING_PNFS_DELETE_ENTRY_RESPONSE_STATE:
+                return "WAITING_PNFS_DELETE_ENTRY_RESPONSE_STATE";
+            case WAITING_PNFS_GET_PARENT_STORAGE_INFO_RESPONSE_STATE:
+                return "WAITING_PNFS_GET_PARENT_STORAGE_INFO_RESPONSE_STATE";
             default:
                 return "UNKNOWN";
         }
@@ -282,7 +282,7 @@ public class ReserveSpaceCompanion implements CellMessageAnswerable {
         if(o instanceof Message) {
             Message message = (Message)answer.getMessageObject() ;
             if( message instanceof PnfsGetStorageInfoMessage  &&
-                current_state == WAITING_PNFS_GET_STORAGE_INFO_RESPONCE_STATE) {
+                current_state == WAITING_PNFS_GET_STORAGE_INFO_RESPONSE_STATE) {
                 state=NOT_WAITING_STATE;
                 PnfsGetStorageInfoMessage storage_info_msg =
                 (PnfsGetStorageInfoMessage)message;
@@ -290,7 +290,7 @@ public class ReserveSpaceCompanion implements CellMessageAnswerable {
                 return;
             }
             if( message instanceof PnfsGetStorageInfoMessage  &&
-                current_state == WAITING_PNFS_GET_PARENT_STORAGE_INFO_RESPONCE_STATE) {
+                current_state == WAITING_PNFS_GET_PARENT_STORAGE_INFO_RESPONSE_STATE) {
                 state=NOT_WAITING_STATE;
                 PnfsGetStorageInfoMessage storage_info_msg =
                 (PnfsGetStorageInfoMessage)message;
@@ -298,7 +298,7 @@ public class ReserveSpaceCompanion implements CellMessageAnswerable {
                 return;
             }
             else if( message instanceof PnfsCreateEntryMessage  &&
-                current_state == WAITING_PNFS_CREATE_ENTRY_RESPONCE_STATE) {
+                current_state == WAITING_PNFS_CREATE_ENTRY_RESPONSE_STATE) {
                 state=NOT_WAITING_STATE;
                 PnfsCreateEntryMessage create_entry_msg =
                 (PnfsCreateEntryMessage)message;
@@ -306,7 +306,7 @@ public class ReserveSpaceCompanion implements CellMessageAnswerable {
                 return;
             }
             else if(message instanceof PoolMgrSelectWritePoolMsg  &&
-                current_state == WAITING_POOLMANAGER_RESPONCE_STATE) {
+                current_state == WAITING_POOLMANAGER_RESPONSE_STATE) {
                 state=NOT_WAITING_STATE;
                 PoolMgrSelectWritePoolMsg msg =
                 (PoolMgrSelectWritePoolMsg)message;
@@ -315,14 +315,14 @@ public class ReserveSpaceCompanion implements CellMessageAnswerable {
 
             }
             else if(message instanceof PoolReserveSpaceMessage  &&
-                current_state == WAITING_POOL_RESPONCE_STATE) {
+                current_state == WAITING_POOL_RESPONSE_STATE) {
                 state=NOT_WAITING_STATE;
                 PoolReserveSpaceMessage msg =
                 (PoolReserveSpaceMessage)message;
                 poolSpaceReservedArrived(msg);
             }
             else if(message instanceof PnfsDeleteEntryMessage &&
-                current_state == WAITING_PNFS_DELETE_ENTRY_RESPONCE_STATE){
+                current_state == WAITING_PNFS_DELETE_ENTRY_RESPONSE_STATE){
                     callbacks.SpaceReserved(pool,totalPoolReservedSpaceSize);
                     return;
             }
@@ -364,7 +364,7 @@ public class ReserveSpaceCompanion implements CellMessageAnswerable {
             create_entry_msg.getErrorObject());
             return ;
         }
-        say(" got storage info from create responce");
+        say(" got storage info from create response");
         pnfsId = create_entry_msg.getPnfsId();
         storageInfo =
         create_entry_msg.getStorageInfo();
@@ -382,7 +382,7 @@ public class ReserveSpaceCompanion implements CellMessageAnswerable {
             FsPath pnfsPathFile = new FsPath(path);
             pnfsPathFile.add("..");
             String parentPnfsPath =pnfsPathFile.toString();
-            state = WAITING_PNFS_GET_PARENT_STORAGE_INFO_RESPONCE_STATE;
+            state = WAITING_PNFS_GET_PARENT_STORAGE_INFO_RESPONSE_STATE;
             askStorageInfo(parentPnfsPath);
             return ;
         }
@@ -436,7 +436,7 @@ public class ReserveSpaceCompanion implements CellMessageAnswerable {
 
         PoolReserveSpaceMessage reserve =
         new PoolReserveSpaceMessage( pool , spaceSize) ;
-        state = WAITING_POOL_RESPONCE_STATE;
+        state = WAITING_POOL_RESPONSE_STATE;
         try {
             cell.sendMessage( new CellMessage(
             new CellPath(pool) ,
@@ -473,7 +473,7 @@ public class ReserveSpaceCompanion implements CellMessageAnswerable {
         msg.getReservedSpace());
         totalPoolReservedSpaceSize = msg.getReservedSpace();
         if(created) {
-            state = WAITING_PNFS_DELETE_ENTRY_RESPONCE_STATE;
+            state = WAITING_PNFS_DELETE_ENTRY_RESPONSE_STATE;
             try {
                 deletePnfsEntry(true);
             }
@@ -515,7 +515,7 @@ public class ReserveSpaceCompanion implements CellMessageAnswerable {
         space_user_host,
         cell);
 
-        companion.state = WAITING_PNFS_GET_STORAGE_INFO_RESPONCE_STATE;
+        companion.state = WAITING_PNFS_GET_STORAGE_INFO_RESPONSE_STATE;
         try {
             cell.sendMessage( new CellMessage(
             new CellPath("PnfsManager") ,
@@ -551,7 +551,7 @@ public class ReserveSpaceCompanion implements CellMessageAnswerable {
         storageInfo,
         protocolInfo ,
         spaceSize );
-        this.state = WAITING_POOLMANAGER_RESPONCE_STATE;
+        this.state = WAITING_POOLMANAGER_RESPONSE_STATE;
         try {
             cell.sendMessage( new CellMessage(
             new CellPath("PoolManager") ,
@@ -617,7 +617,7 @@ public class ReserveSpaceCompanion implements CellMessageAnswerable {
         spaceSize,
         space_user_host,
         cell);
-        companion.state= WAITING_PNFS_GET_STORAGE_INFO_RESPONCE_STATE;
+        companion.state= WAITING_PNFS_GET_STORAGE_INFO_RESPONSE_STATE;
         companion.askStorageInfo(pnfsPath);
 
     }
@@ -645,7 +645,7 @@ public class ReserveSpaceCompanion implements CellMessageAnswerable {
     private void createPnfsEntry() {
         PnfsCreateEntryMessage createPnfsEntry =
             new PnfsCreateEntryMessage( path , uid , gid , 0644 );
-        state = WAITING_PNFS_CREATE_ENTRY_RESPONCE_STATE;
+        state = WAITING_PNFS_CREATE_ENTRY_RESPONSE_STATE;
          try {
             cell.sendMessage( new CellMessage(
             new CellPath("PnfsManager") ,

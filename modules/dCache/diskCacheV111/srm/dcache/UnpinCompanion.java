@@ -171,9 +171,9 @@ public class UnpinCompanion implements CellMessageAnswerable {
                     return;
                 }
                 state = RECEIVED_PIN_MGR_PIN_MSG;
-                PinManagerUnpinMessage unpinResponce =
+                PinManagerUnpinMessage unpinResponse =
                         (PinManagerUnpinMessage)message;
-                pinManagerUnpinMessageArrived(unpinResponce);
+                pinManagerUnpinMessageArrived(unpinResponse);
             } else {
                 esay(this.toString()+" got unknown message "+
                         " : "+message.getErrorObject());
@@ -190,15 +190,15 @@ public class UnpinCompanion implements CellMessageAnswerable {
     }
     
     
-    private void pinManagerUnpinMessageArrived(PinManagerUnpinMessage unpinResponce) {
+    private void pinManagerUnpinMessageArrived(PinManagerUnpinMessage unpinResponse) {
         say(" message is PinManagerUnpinMessage");
-        if(unpinResponce.getReturnCode() != 0) {
+        if(unpinResponse.getReturnCode() != 0) {
             esay("UnpinRequest Failed");
-            callbacks.UnpinningFailed(unpinResponce.getErrorObject().toString());
+            callbacks.UnpinningFailed(unpinResponse.getErrorObject().toString());
             return ;
         }
         say("unpinned");
-        callbacks.Unpinned(unpinResponce.getPinId());
+        callbacks.Unpinned(unpinResponse.getPinId());
     }
     
     public void exceptionArrived( CellMessage request , Exception exception ) {

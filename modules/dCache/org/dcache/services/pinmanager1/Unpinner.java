@@ -145,7 +145,7 @@ class Unpinner extends SMCTask
                     Long.toString(_pin.getId());
             String oldStickyBitName = getCellName();
             info("unsetStickyFlags in "+poolName+" for "+
-                _pnfsId+" stikyBitNameName:"+stickyBitName);
+                _pnfsId+" stickyBitNameName:"+stickyBitName);
 
             PoolSetStickyMessage setStickyRequest =
                 new PoolSetStickyMessage(poolName,

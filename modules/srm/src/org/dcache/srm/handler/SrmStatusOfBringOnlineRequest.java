@@ -108,9 +108,9 @@ public class SrmStatusOfBringOnlineRequest {
         TReturnStatus status = new TReturnStatus();
         status.setStatusCode(statusCode);
         status.setExplanation(error);
-        SrmStatusOfBringOnlineRequestResponse srmPrepareToGetResponce = new SrmStatusOfBringOnlineRequestResponse();
-        srmPrepareToGetResponce.setReturnStatus(status);
-        return srmPrepareToGetResponce;
+        SrmStatusOfBringOnlineRequestResponse srmPrepareToGetResponse = new SrmStatusOfBringOnlineRequestResponse();
+        srmPrepareToGetResponse.setReturnStatus(status);
+        return srmPrepareToGetResponse;
     }
     /**
      * implementation of srm ls

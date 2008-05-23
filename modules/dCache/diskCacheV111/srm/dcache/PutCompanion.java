@@ -196,15 +196,15 @@ public class PutCompanion implements CellMessageAnswerable {
             // note that PnfsCreateDirectoryMessage is a subclass
             // of PnfsGetStorageInfoMessage
             if( message instanceof PnfsCreateDirectoryMessage) {
-                PnfsCreateDirectoryMessage create_directory_responce =
+                PnfsCreateDirectoryMessage create_directory_response =
                 (PnfsCreateDirectoryMessage)message;
                 if( state == WAITING_FOR_CREATE_DIRECTORY_RESPONSE_MESSAGE) {
                     state = RECEIVED_CREATE_DIRECTORY_RESPONSE_MESSAGE;
-                    directoryInfoArrived(create_directory_responce);
+                    directoryInfoArrived(create_directory_response);
                     return;
                 }
                 esay(this.toString()+" got unexpected PnfsCreateDirectoryMessage "+
-                " : "+create_directory_responce+" ; Ignoring");
+                " : "+create_directory_response+" ; Ignoring");
             }
             else if( message instanceof PnfsGetStorageInfoMessage ) {
                 PnfsGetStorageInfoMessage storage_info_msg =

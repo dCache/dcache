@@ -182,9 +182,9 @@ public class PinCompanion implements CellMessageAnswerable {
                     return;
                 }
                 state = RECEIVED_PIN_MGR_PIN_MSG;
-                PinManagerPinMessage pinResponce =
+                PinManagerPinMessage pinResponse =
                 (PinManagerPinMessage)message;
-                pinManagerPinMessageArrived(pinResponce);
+                pinManagerPinMessageArrived(pinResponse);
             }
             else {
                 esay(this.toString()+" got unknown message "+
@@ -203,15 +203,15 @@ public class PinCompanion implements CellMessageAnswerable {
     }
     
     
-    private void pinManagerPinMessageArrived(PinManagerPinMessage pinResponce) {
+    private void pinManagerPinMessageArrived(PinManagerPinMessage pinResponse) {
         say(" message is PinManagerPinMessage");
-        if(pinResponce.getReturnCode() != 0) {
+        if(pinResponse.getReturnCode() != 0) {
             esay("PinRequest Failed");
-            callbacks.PinningFailed(pinResponce.getErrorObject().toString());
+            callbacks.PinningFailed(pinResponse.getErrorObject().toString());
             return ;
         }
         say("pinned");
-        callbacks.Pinned(pinResponce.getPinId());
+        callbacks.Pinned(pinResponse.getPinId());
     }
     
     public void exceptionArrived( CellMessage request , Exception exception ) {

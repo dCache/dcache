@@ -148,7 +148,7 @@ import org.dcache.util.JdbcConnectionPool;
  *  for the same file exist, no action is taken, other then removal
  *  of the database  pin request record
  *  2) if last pin request is removed then the file is unpinned
- * which means sending of the "set stiky to false message" is send to all
+ * which means sending of the "set sticky to false message" is send to all
  * locations,
  *the pnfs flag is removed
  * database  pin request record is removed
@@ -718,7 +718,7 @@ public class PinManager extends CellAdapter implements Runnable  {
                 PinManager.this.sendMessage(cellMessage);
             }
             catch(Exception e) {
-                esay("can not send a failed responce");
+                esay("can not send a failed response");
                 esay(e);
             }
         }
@@ -739,7 +739,7 @@ public class PinManager extends CellAdapter implements Runnable  {
                 PinManager.this.sendMessage(cellMessage);
             }
             catch(Exception e) {
-                esay("can not send a responce");
+                esay("can not send a response");
                 esay(e);
             }
         }
@@ -1095,7 +1095,7 @@ public class PinManager extends CellAdapter implements Runnable  {
                     PinManager.this.sendMessage(cellMessage);
                 }
                 catch(Exception e) {
-                    esay("can not send a failed responce");
+                    esay("can not send a failed response");
                     esay(e);
                 }
             }
@@ -1119,7 +1119,7 @@ public class PinManager extends CellAdapter implements Runnable  {
                     sendMessage(cellMessage);
                 }
                 catch(Exception e) {
-                    esay("can not send a responce");
+                    esay("can not send a response");
                     esay(e);
                 }
             }
@@ -1510,8 +1510,8 @@ public class PinManager extends CellAdapter implements Runnable  {
         private static final int RECEIVED_STORAGE_INFO_WHILE_PINNING = 6;
         private static final int WAITNG_POOL_NAME = 7;
         private static final int RECEIVED_POOL_NAME = 8;
-        private static final int WAITNG_SET_STIKY_RESPONCE = 9;
-        private static final int RECEIVED_SET_STIKY_RESPONCE = 10;
+        private static final int WAITNG_SET_STICKY_RESPONSE = 9;
+        private static final int RECEIVED_SET_STICKY_RESPONSE = 10;
         private StorageInfo storageInfo;
         private String readPoolName;
 
@@ -1576,13 +1576,13 @@ public class PinManager extends CellAdapter implements Runnable  {
                 {
                     return "RECEIVED_POOL_NAME";
                 }
-                case(WAITNG_SET_STIKY_RESPONCE):
+                case(WAITNG_SET_STICKY_RESPONSE):
                 {
-                    return "WAITNG_SET_STIKY_RESPONCE";
+                    return "WAITNG_SET_STICKY_RESPONSE";
                 }
-                case(RECEIVED_SET_STIKY_RESPONCE):
+                case(RECEIVED_SET_STICKY_RESPONSE):
                 {
-                    return "RECEIVED_SET_STIKY_RESPONCE";
+                    return "RECEIVED_SET_STICKY_RESPONSE";
                 }
                 default:
                 {
@@ -1613,7 +1613,7 @@ public class PinManager extends CellAdapter implements Runnable  {
                 esay("returnFailedResponse is called, but pin is null !!!");
                 return;
             }
-            esay("return Failed Responce: "+reason);
+            esay("return Failed Response: "+reason);
             pin.pinFailed(reason);
             pin = null;
             state = FINAL_FAILED;
@@ -1728,7 +1728,7 @@ public class PinManager extends CellAdapter implements Runnable  {
 
             say("sending PoolSetStickyMessage");
             try {
-                state = WAITNG_SET_STIKY_RESPONCE;
+                state = WAITNG_SET_STICKY_RESPONSE;
                 sendMessage(
                 new CellMessage(
                 new CellPath(readPoolName) ,
@@ -1751,7 +1751,7 @@ public class PinManager extends CellAdapter implements Runnable  {
             if(o instanceof Message) {
                 Message message = (Message)answer.getMessageObject() ;
                 if(message instanceof PnfsFlagMessage) {
-                    PnfsFlagMessage setFlagResponce =
+                    PnfsFlagMessage setFlagResponse =
                     (PnfsFlagMessage) message;
                     if(state != WAITING_SET_PNFS_FLAG_REPLY) {
                         esay(" PnfsFlagMessage arrived, "+
@@ -1759,16 +1759,16 @@ public class PinManager extends CellAdapter implements Runnable  {
                         return;
                     }
                     state = RECEIVED_SET_PNFS_FLAG_REPLY;
-                    if(setFlagResponce.getReturnCode() != 0) {
-                        esay(" failed to set the pnfs flag: "+setFlagResponce.getErrorObject());
-                        returnFailedResponse(setFlagResponce.getErrorObject());
+                    if(setFlagResponse.getReturnCode() != 0) {
+                        esay(" failed to set the pnfs flag: "+setFlagResponse.getErrorObject());
+                        returnFailedResponse(setFlagResponse.getErrorObject());
                     }
                     say("pnfs flag is set successfully");
                     findReadPoolLocation();
                     return;
                 }
                 else if( message instanceof PnfsGetStorageInfoMessage ) {
-                    PnfsGetStorageInfoMessage pnfsGetStorageInfoResponce =
+                    PnfsGetStorageInfoMessage pnfsGetStorageInfoResponse =
                     (PnfsGetStorageInfoMessage)message;
                     if(state != WAITNG_STORAGE_INFO && state !=WAITNG_STORAGE_INFO_WHILE_PINNING ) {
                         esay(" PnfsGetStorageInfoMessage arrived, "+
@@ -1777,14 +1777,14 @@ public class PinManager extends CellAdapter implements Runnable  {
                         return;
                     }
                     state = RECEIVED_STORAGE_INFO;
-                    if(pnfsGetStorageInfoResponce.getReturnCode() != 0) {
-                        esay(" failed to receive the storage info: "+pnfsGetStorageInfoResponce.getErrorObject());
-                        returnFailedResponse(pnfsGetStorageInfoResponce.getErrorObject());
+                    if(pnfsGetStorageInfoResponse.getReturnCode() != 0) {
+                        esay(" failed to receive the storage info: "+pnfsGetStorageInfoResponse.getErrorObject());
+                        returnFailedResponse(pnfsGetStorageInfoResponse.getErrorObject());
                         return;
                     }
-                    say("pnfs info arrived: "+pnfsGetStorageInfoResponce);
-                    this.pnfsId = pnfsGetStorageInfoResponce.getPnfsId();
-                    this.storageInfo = pnfsGetStorageInfoResponce.getStorageInfo();
+                    say("pnfs info arrived: "+pnfsGetStorageInfoResponse);
+                    this.pnfsId = pnfsGetStorageInfoResponse.getPnfsId();
+                    this.storageInfo = pnfsGetStorageInfoResponse.getStorageInfo();
                     if(state == WAITNG_STORAGE_INFO) {
                         try {
                             pin();
@@ -1799,7 +1799,7 @@ public class PinManager extends CellAdapter implements Runnable  {
 
                 }
                 else if(message instanceof PoolMgrSelectReadPoolMsg) {
-                    PoolMgrSelectReadPoolMsg poolMgrResponce =
+                    PoolMgrSelectReadPoolMsg poolMgrResponse =
                     (PoolMgrSelectReadPoolMsg) message;
                     if(state != WAITNG_POOL_NAME) {
                         esay(" PoolMgrSelectReadPoolMsg arrived, "+
@@ -1807,27 +1807,27 @@ public class PinManager extends CellAdapter implements Runnable  {
                         return;
                     }
                     state = RECEIVED_POOL_NAME;
-                    if(poolMgrResponce.getReturnCode() != 0) {
-                        esay(" failed to get pool name: "+poolMgrResponce.getErrorObject());
-                        returnFailedResponse(poolMgrResponce.getErrorObject());
+                    if(poolMgrResponse.getReturnCode() != 0) {
+                        esay(" failed to get pool name: "+poolMgrResponse.getErrorObject());
+                        returnFailedResponse(poolMgrResponse.getErrorObject());
                     }
                     say("received read pool name successfully");
-                    readPoolName = poolMgrResponce.getPoolName();
+                    readPoolName = poolMgrResponse.getPoolName();
                     setStickyFlag();
                     return;
                 }
                 else if(message instanceof PoolSetStickyMessage) {
-                    PoolSetStickyMessage poolSetStickyResponce =
+                    PoolSetStickyMessage poolSetStickyResponse =
                     (PoolSetStickyMessage) message;
-                    if(state != WAITNG_SET_STIKY_RESPONCE) {
+                    if(state != WAITNG_SET_STICKY_RESPONSE) {
                         esay(" PoolSetStickyMessage arrived, "+
-                        "but the state != WAITNG_SET_STIKY_RESPONCE, state is "+state);
+                        "but the state != WAITNG_SET_STICKY_RESPONSE, state is "+state);
                         return;
                     }
-                    state = RECEIVED_SET_STIKY_RESPONCE;
-                    if(poolSetStickyResponce.getReturnCode() != 0) {
-                        esay(" failed to set sticky: "+poolSetStickyResponce.getErrorObject());
-                        returnFailedResponse(poolSetStickyResponce.getErrorObject());
+                    state = RECEIVED_SET_STICKY_RESPONSE;
+                    if(poolSetStickyResponse.getReturnCode() != 0) {
+                        esay(" failed to set sticky: "+poolSetStickyResponse.getErrorObject());
+                        returnFailedResponse(poolSetStickyResponse.getErrorObject());
                     }
                     say("set sticky successfully");
                     returnSuccess();
@@ -1921,7 +1921,7 @@ public class PinManager extends CellAdapter implements Runnable  {
                 esay("returnFailedResponse is called, but pin is null !!!");
                 return;
             }
-            esay("return Failed Responce: "+reason);
+            esay("return Failed Response: "+reason);
             pin.unpinFailed(reason);
             pin = null;
             state = FINAL_FAILED;
@@ -2020,7 +2020,7 @@ public class PinManager extends CellAdapter implements Runnable  {
             if(o instanceof Message) {
                 Message message = (Message)answer.getMessageObject() ;
                 if(message instanceof PnfsFlagMessage) {
-                    PnfsFlagMessage setFlagResponce =
+                    PnfsFlagMessage setFlagResponse =
                     (PnfsFlagMessage) message;
                     if(state != WAITING_DELETE_PNFS_FLAG_REPLY) {
                         esay(" PnfsFlagMessage arrived, "+
@@ -2028,16 +2028,16 @@ public class PinManager extends CellAdapter implements Runnable  {
                         return;
                     }
                     state = RECEIVED_DELETE_PNFS_FLAG_REPLY;
-                    if(setFlagResponce.getReturnCode() != 0) {
-                        esay(" failed to delete the pnfs flag: "+setFlagResponce.getErrorObject());
-                        returnFailedResponse(setFlagResponce.getErrorObject());
+                    if(setFlagResponse.getReturnCode() != 0) {
+                        esay(" failed to delete the pnfs flag: "+setFlagResponse.getErrorObject());
+                        returnFailedResponse(setFlagResponse.getErrorObject());
                     }
                     say("pnfs flag is deleted successfully");
                     findCacheLocations();
                     return;
                 }
                 else if(message instanceof PnfsGetCacheLocationsMessage) {
-                    PnfsGetCacheLocationsMessage cachedLocationsResponce =
+                    PnfsGetCacheLocationsMessage cachedLocationsResponse =
                     (PnfsGetCacheLocationsMessage) message;
                     if(state != WAITNG_CACHED_LOCATIONS) {
                         esay(" PnfsGetCacheLocationsMessage arrived, "+
@@ -2045,12 +2045,12 @@ public class PinManager extends CellAdapter implements Runnable  {
                         return;
                     }
                     state = RECEIVED_CACHED_LOCATIONS;
-                    if(cachedLocationsResponce.getReturnCode() != 0) {
-                        esay(" failed to get cached locations: "+cachedLocationsResponce.getErrorObject());
-                        returnFailedResponse(cachedLocationsResponce.getErrorObject());
+                    if(cachedLocationsResponse.getReturnCode() != 0) {
+                        esay(" failed to get cached locations: "+cachedLocationsResponse.getErrorObject());
+                        returnFailedResponse(cachedLocationsResponse.getErrorObject());
                     }
                     say("received cached locations successfully");
-                    List<String> locations = cachedLocationsResponce.getCacheLocations();
+                    List<String> locations = cachedLocationsResponse.getCacheLocations();
                     for(String nextLocation: locations) {
                         unsetStickyFlag(nextLocation);
                     }

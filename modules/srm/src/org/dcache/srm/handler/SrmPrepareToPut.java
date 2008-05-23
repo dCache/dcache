@@ -39,7 +39,7 @@ public class SrmPrepareToPut {
     private final static String SFN_STRING="?SFN=";
     AbstractStorageElement storage;
     SrmPrepareToPutRequest request;
-    SrmPrepareToPutResponse responce;
+    SrmPrepareToPutResponse response;
     Scheduler putScheduler;
     RequestUser user;
     RequestCredential credential;
@@ -118,19 +118,19 @@ public class SrmPrepareToPut {
     int port;
     String host;
     public SrmPrepareToPutResponse getResponse() {
-        if(responce != null ) return responce;
+        if(response != null ) return response;
         try {
-            responce = srmPrepareToPut();
+            response = srmPrepareToPut();
         } catch(Exception e) {
             storage.elog(e);
-            responce = new SrmPrepareToPutResponse();
+            response = new SrmPrepareToPutResponse();
             TReturnStatus returnStatus = new TReturnStatus();
             returnStatus.setStatusCode(TStatusCode.SRM_FAILURE);
             returnStatus.setExplanation(e.toString());
-            responce.setReturnStatus(returnStatus);
+            response.setReturnStatus(returnStatus);
         }
         
-        return responce;
+        return response;
     }
     
     public static final SrmPrepareToPutResponse getFailedResponse(String error) {
@@ -144,9 +144,9 @@ public class SrmPrepareToPut {
         TReturnStatus status = new TReturnStatus();
         status.setStatusCode(statusCode);
         status.setExplanation(error);
-        SrmPrepareToPutResponse srmPrepareToPutResponce = new SrmPrepareToPutResponse();
-        srmPrepareToPutResponce.setReturnStatus(status);
-        return srmPrepareToPutResponce;
+        SrmPrepareToPutResponse srmPrepareToPutResponse = new SrmPrepareToPutResponse();
+        srmPrepareToPutResponse.setReturnStatus(status);
+        return srmPrepareToPutResponse;
     }
 
     public SrmPrepareToPutResponse srmPrepareToPut()
