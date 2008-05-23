@@ -97,19 +97,18 @@ public class GPLAZMALiteVORoleAuthzPlugin extends AuthorizationServicePlugin {
 	StorageAuthorizationRecord authRecord;
 	GSSContext context;
 	String desiredUserName;
-  String dynamic_mapper = "gplazma.gplazmalite.storageauthzdbService.DynamicMappingMethods";
 
   public static final String capnull = "/Capability=NULL";
   public static final int capnulllen = capnull.length();
   public static final String rolenull ="/Role=NULL";
-	public static final int rolenulllen = rolenull.length();
+  public static final int rolenulllen = rolenull.length();
 
-  static Logger log = Logger.	getLogger(GPLAZMALiteVORoleAuthzPlugin.class.getSimpleName());
+  static Logger log = Logger.getLogger(GPLAZMALiteVORoleAuthzPlugin.class.getSimpleName());
   private static String logpattern = "%d{MM/dd HH:mm:ss,SSS} %m%n";
   private static PatternLayout loglayout = new PatternLayout(logpattern);
   //private DateFormat _df   = new SimpleDateFormat("MM/dd HH:mm:ss" );
 
-	public GPLAZMALiteVORoleAuthzPlugin(String gridVORoleMapPath, String storageAuthzPath, long authRequestID)
+  public GPLAZMALiteVORoleAuthzPlugin(String gridVORoleMapPath, String storageAuthzPath, long authRequestID)
 	throws AuthorizationServiceException {
 		this.gridVORoleMapPath = gridVORoleMapPath;
 		this.storageAuthzPath = storageAuthzPath;
@@ -264,7 +263,7 @@ public class GPLAZMALiteVORoleAuthzPlugin extends AuthorizationServicePlugin {
       DynamicAuthorizationRecord dynrecord = (DynamicAuthorizationRecord) authRecord;
       dynrecord.subjectDN = subjectDN;
       dynrecord.role = role;
-      authRecord = getDynamicRecord(dynamic_mapper, dynrecord);
+      authRecord = getDynamicRecord(user_name, dynrecord);
     }
 
     String  user=authRecord.Username;
