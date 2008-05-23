@@ -613,7 +613,7 @@ public class SrmLs {
 				    sb.append('\n');
 				}
 				TAccessLatency al = rpi.getAccessLatency();
-				if (rt != null) { 
+				if (al != null) { 
 				    sb.append(depthPrefix);
 				    sb.append(" access latency:").append(al.getValue());
 				    sb.append('\n');
