@@ -1,116 +1,5 @@
 // $Id: SRMPutClientV2.java,v 1.25 2007/09/20 16:59:13 litvinse Exp $
 // $Log: SRMPutClientV2.java,v $
-// Revision 1.25  2007/09/20 16:59:13  litvinse
-// handle SRM_NOT_SUPPORTED
-//
-// Revision 1.24  2007/03/15 17:43:33  timur
-// make overwrite_mode option available
-//
-// Revision 1.23  2006/12/14 22:45:07  timur
-// making code compatible with java 1.4 again
-//
-// Revision 1.22  2006/11/06 18:42:11  litvinse
-// remove logging
-//
-// Revision 1.21  2006/10/24 22:58:14  litvinse
-// added handling of Extra Info parameters in kind of generic
-// manner. Now is used to pass request priority to SRM server
-//
-// Revision 1.20  2006/09/06 15:53:47  timur
-//  reformated code, improved error reporting
-//
-// Revision 1.19  2006/08/21 21:39:22  timur
-// better error reporting
-//
-// Revision 1.18  2006/08/17 02:02:02  timur
-// make srmPrepareToPut aware of space token, retention policy and access latency
-//
-// Revision 1.17  2006/08/10 22:49:35  litvinse
-// added explicit space reservation clien
-//
-// Revision 1.16  2006/06/21 20:31:56  timur
-// Upgraded code to the latest srmv2.2 wsdl (final)" src wsdl sbin/srmv2.2-deploy.wsdd
-//
-// Revision 1.15  2006/06/21 03:40:27  timur
-// updated client to wsdl2.2, need to get latest wsdl next
-//
-// Revision 1.14  2006/04/21 22:54:29  timur
-// better debug info printout
-//
-// Revision 1.13  2006/03/24 00:29:03  timur
-// regenerated stubs with array wrappers for v2_1
-//
-// Revision 1.12  2006/03/22 01:03:11  timur
-// use abort files instead or release in case of interrupts or failures, better CTRL-C handling
-//
-// Revision 1.11  2006/03/18 00:41:34  timur
-// srm v2 bug fixes
-//
-// Revision 1.10  2006/03/14 18:10:04  timur
-// moving toward the axis 1_3
-//
-// Revision 1.9  2006/03/02 19:09:31  neha
-// changes by Neha: To fix bug causing NullPointerException
-//
-// Revision 1.8  2006/02/27 22:54:25  timur
-//  do not use Keep Space parameter in srmReleaseFiles, reduce default wait time
-//
-// Revision 1.7  2006/02/23 22:22:05  neha
-// Changes by Neha- For Version 2- allow user specified value of command line option 'webservice_path'
-// to override any default value.
-//
-// Revision 1.6  2006/02/08 23:26:31  neha
-// by Neha- removing word 'hahaha' while printing storage type
-//
-// Revision 1.5  2006/02/08 23:21:58  neha
-// changes by Neha. Added new command line option -storagetype
-// Its values could be permanent,volatile or durable;permanent by default
-//
-// Revision 1.3  2006/01/24 21:14:47  timur
-// changes related to the return code
-//
-// Revision 1.2  2006/01/20 21:50:33  timur
-// remove unneeded connect
-//
-// Revision 1.1  2005/12/14 01:58:44  timur
-// srmPrepareToPut client is ready
-//
-// Revision 1.1  2005/12/13 23:07:52  timur
-// modifying the names of classes for consistency
-//
-// Revision 1.24  2005/12/07 02:05:22  timur
-// working towards srm v2 get client
-//
-// Revision 1.23  2005/10/20 21:02:41  timur
-// moving SRMCopy to SRMDispatcher
-//
-// Revision 1.22  2005/09/09 14:31:40  timur
-// set sources to the same values as destinations in case of put
-//
-// Revision 1.21  2005/06/08 22:34:55  timur
-// fixed a bug, which led to recognition of some valid file ids as invalid
-//
-// Revision 1.20  2005/04/27 19:20:55  timur
-// make sure client works even if report option is not specified
-//
-// Revision 1.19  2005/04/27 16:40:00  timur
-// more work on report added gridftpcopy and adler32 binaries
-//
-// Revision 1.18  2005/04/26 02:06:08  timur
-// added the ability to create a report file
-//
-// Revision 1.17  2005/03/11 21:18:36  timur
-// making srm compatible with cern tools again
-//
-// Revision 1.16  2005/01/25 23:20:20  timur
-// srmclient now uses srm libraries
-//
-// Revision 1.15  2005/01/11 18:19:29  timur
-// fixed issues related to cern srm, make sure not to change file status for failed files
-//
-// Revision 1.14  2004/06/30 21:57:05  timur
-//  added retries on each step, added the ability to use srmclient used by srm copy in the server, added srm-get-request-status
-//
 
 /*
 COPYRIGHT STATUS:
@@ -286,9 +175,16 @@ public class SRMPutClientV2 extends SRMClient implements Runnable {
             
             srmPrepareToPutRequest.setArrayOfFileRequests(
                     new ArrayOfTPutFileRequest(fileRequests));
-            srmPrepareToPutRequest.setTransferParameters(new TTransferParameters(
-                    TAccessPattern.TRANSFER_MODE,TConnectionType.WAN,
-                    null,new ArrayOfString(protocols)));
+
+	    TAccessPattern  ap = TAccessPattern.TRANSFER_MODE;
+	    if(configuration.getAccessPattern() != null ) {
+		    ap = TAccessPattern.fromString(configuration.getAccessPattern());
+            }
+	    TConnectionType ct = TConnectionType.WAN;
+	    if(configuration.getConnectionType() != null ) {
+		    ct = TConnectionType.fromString(configuration.getConnectionType());
+            }
+	    srmPrepareToPutRequest.setTransferParameters(new TTransferParameters(ap,ct,null,new ArrayOfString(protocols)));
             TTransferParameters transferParams = new
                     TTransferParameters();
             TRetentionPolicy retentionPolicy = null;
