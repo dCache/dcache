@@ -182,6 +182,7 @@ import java.util.LinkedList;
 import java.util.Iterator;
 import java.util.Collection;
 import java.util.Arrays;
+import org.bouncycastle.jce.provider.X509CertificateObject;
 import java.security.cert.X509Certificate;
 
 /**GPLAZMA Cell.<br/>
@@ -1159,7 +1160,7 @@ public class GPLAZMA extends CellAdapter implements Runnable {
 
     String subjectDN;
     try {
-      subjectDN = AuthorizationService.getSubjectFromX509Chain(chain);
+      subjectDN = authServ.getSubjectFromX509Chain(chain);
     } catch (Exception e) {
       throw new  AuthorizationServiceException("\nException thrown by " + this.getClass().getName() + ": " + e.getMessage());
     }
