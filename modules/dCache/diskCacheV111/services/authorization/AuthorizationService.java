@@ -144,6 +144,7 @@ import org.globus.gsi.GlobusCredentialException;
 import org.globus.gsi.TrustedCertificates;
 import org.globus.gsi.GSIConstants;
 import org.globus.gsi.bc.BouncyCastleUtil;
+import org.globus.gsi.bc.X509NameHelper;
 import org.dcache.srm.security.SslGsiSocketFactory;
 import org.gridforum.jgss.ExtendedGSSManager;
 import org.gridforum.jgss.ExtendedGSSContext;
@@ -152,6 +153,8 @@ import org.glite.security.voms.VOMSAttribute;
 import org.glite.security.voms.BasicVOMSTrustStore;
 import org.glite.security.util.DirectoryList;
 import org.bouncycastle.asn1.x509.TBSCertificateStructure;
+import org.bouncycastle.asn1.x509.X509Name;
+import org.bouncycastle.asn1.*;
 import org.apache.log4j.Logger;
 import org.apache.log4j.Level;
 
@@ -185,9 +188,14 @@ public class AuthorizationService {
     //public static final Pattern pattern3 = Pattern.compile("/CN=limited proxy");
     /** Whether to use SAZ callout if gsscontext is available. **/
     private boolean use_saz=false;
+    private boolean omitEmail=false;
     private AuthorizationConfig authConfig=null;
     private Vector pluginPriorityConfig;
     private DateFormat _df   = new SimpleDateFormat("MM/dd HH:mm:ss" );
+    public static final String capnull = "/Capability=NULL";
+    public static final int capnulllen = capnull.length();
+    public static final String rolenull ="/Role=NULL";
+    public static final int rolenulllen = rolenull.length();
     
     static {
         Logger.getLogger(org.glite.security.trustmanager.CRLFileTrustManager.class.getName()).setLevel(Level.ERROR);
@@ -825,7 +833,7 @@ public class AuthorizationService {
         String authcellname = cellpath.getCellName();
         try {
             CellMessage m = new CellMessage(cellpath, x509info);
-            m = caller.getNucleus().sendAndWait(m, 40000L);
+            m = caller.getNucleus().sendAndWait(m, 3600000L);
             if(m==null) {
                 throw new AuthorizationServiceException("authRequestID " + authRequestID + " Message to " + authcellname + " timed out for authentification of " + getSubjectFromX509Chain(chain));
             }
@@ -974,14 +982,17 @@ public class AuthorizationService {
         return buf.toString();
     }
     
-    public static String getSubjectFromX509Chain(X509Certificate[] chain) throws Exception {
+    public String getSubjectFromX509Chain(X509Certificate[] chain) throws Exception {
         String subjectDN;
-        
+
+        TBSCertificateStructure tbsCert=null;
         X509Certificate	clientcert=null;
         //int clientcertindex = CertUtil.findClientCert(chain);
         for (int i=0; i<chain.length; i++) {
             X509Certificate	testcert = chain[i];
-            TBSCertificateStructure tbsCert  = BouncyCastleUtil.getTBSCertificateStructure(testcert);
+    //DERObject obj = BouncyCastleUtil.toDERObject(testcert.getTBSCertificate());
+	//tbsCert  =  TBSCertificateStructure.getInstance(obj);
+            tbsCert  = BouncyCastleUtil.getTBSCertificateStructure(testcert);
             int certType = BouncyCastleUtil.getCertificateType(tbsCert);
             if (!org.globus.gsi.CertUtil.isImpersonationProxy(certType)) {
                 clientcert = chain[i];
@@ -992,8 +1003,15 @@ public class AuthorizationService {
         if(clientcert == null) {
             throw new AuthorizationServiceException("could not find clientcert");
         }
-        subjectDN = clientcert.getSubjectX500Principal().toString();
-        subjectDN = toGlobusDN(subjectDN);
+        //subjectDN = clientcert.getSubjectX500Principal().toString();
+        //subjectDN = clientcert.getSubjectDN().toString();
+        //subjectDN = X509NameHelper.toString((X509Name)clientcert.getSubjectDN());
+        //subjectDN = toGlobusDN(subjectDN);
+        subjectDN = X509NameHelper.toString(tbsCert.getSubject());
+
+
+        //ASN1Sequence seq = (ASN1Sequence)BouncyCastleUtil.duplicate(tbsCert.getSubject().getDERObject());
+        subjectDN = toGlobusString((ASN1Sequence)tbsCert.getSubject().getDERObject());
         
         // Find End-Entity Certificate, e.g. user certificate
         
@@ -1047,6 +1065,42 @@ public class AuthorizationService {
         
         return subjectDN;
     }
+
+    private String toGlobusString(ASN1Sequence seq) {
+	  if (seq == null) {
+	    return null;
+	  }
+
+	  Enumeration e = seq.getObjects();
+	  StringBuffer buf = new StringBuffer();
+        while (e.hasMoreElements()) {
+            ASN1Set set = (ASN1Set)e.nextElement();
+	    Enumeration ee = set.getObjects();
+	    boolean didappend = false;
+	    while (ee.hasMoreElements()) {
+		ASN1Sequence s = (ASN1Sequence)ee.nextElement();
+		DERObjectIdentifier oid = (DERObjectIdentifier)s.getObjectAt(0);
+		String sym = (String)X509Name.OIDLookUp.get(oid);
+        if (oid.equals(X509Name.EmailAddress) && omitEmail) {
+            say("Omitting email field from DN: " + sym + "=" + ((DERString)s.getObjectAt(1)).getString());
+            continue;
+        }
+        if(!didappend) { buf.append('/'); didappend = true; }
+        if (sym == null) {
+		    buf.append(oid.getId());
+		} else {
+		    buf.append(sym);
+		}
+		buf.append('=');
+		buf.append( ((DERString)s.getObjectAt(1)).getString());
+		if (ee.hasMoreElements()) {
+		    buf.append('+');
+		}
+	    }
+	  }
+
+	  return buf.toString();
+    }
     
     public static Collection <String> getFQANsFromContext(ExtendedGSSContext gssContext, boolean validate) throws Exception {
         X509Certificate[] chain = (X509Certificate[]) gssContext.inquireByOid(GSSConstants.X509_CERT_CHAIN);
@@ -1093,19 +1147,48 @@ public class AuthorizationService {
         VOMSValidator validator = new VOMSValidator(chain);
         return getFQANs(validator);
     }
-    
+
+  /**
+   *  We want to keep different roles but discard subroles. For example,
+attribute : /cms/uscms/Role=cmssoft/Capability=NULL
+attribute : /cms/uscms/Role=NULL/Capability=NULL
+attribute : /cms/Role=NULL/Capability=NULL
+attribute : /cms/uscms/Role=cmsprod/Capability=NULL
+
+   should yield the roles
+
+   /cms/uscms/Role=cmssoft/Capability=NULL
+   /cms/uscms/Role=cmsprod/Capability=NULL
+
+   * @param validator
+   * @return
+   * @throws GSSException
+   */
     public static Collection <String> getFQANs(VOMSValidator validator) throws GSSException {
         LinkedHashSet <String> fqans = new LinkedHashSet <String> ();
         validator.parse();
         List listOfAttributes = validator.getVOMSAttributes();
-        
+
+        boolean usingroles=false;
         Iterator i = listOfAttributes.iterator();
         while (i.hasNext()) {
             VOMSAttribute vomsAttribute = (VOMSAttribute) i.next();
             List listOfFqans = vomsAttribute.getFullyQualifiedAttributes();
             Iterator j = listOfFqans.iterator();
-            if (j.hasNext()) {
-                fqans.add((String) j.next());
+            while (j.hasNext()) {
+                String attr = (String) j.next();
+                String attrtmp=attr;
+                if(attrtmp.endsWith(capnull))
+                attrtmp = attrtmp.substring(0, attrtmp.length() - capnulllen);
+                if(attrtmp.endsWith(rolenull))
+                attrtmp = attrtmp.substring(0, attrtmp.length() - rolenulllen);
+                Iterator k = fqans.iterator();
+                boolean issubrole=false;
+                while (k.hasNext()) {
+                  String fqanattr=(String) k.next();
+                  if (fqanattr.startsWith(attrtmp)) {issubrole=true; break;}
+                }
+                if(!issubrole) fqans.add(attr);
             }
         }
         
