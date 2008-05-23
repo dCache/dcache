@@ -6,6 +6,7 @@ import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 import java.io.*;
 import java.lang.*;
+import java.lang.reflect.Method;
 
 /**
  *
@@ -30,6 +31,20 @@ public class DCacheSRMauthzRecordsService {
     private static LinkedHashMap pwd_records_static;
     private static LinkedHashMap dynamic_records_static;
     private static long prev_refresh_time=0;
+    static final String dynamic_mapper = "gplazma.gplazmalite.storageauthzdbService.DynamicMappingMethods";
+    static final Map<String, Method> dynamic_methods = new HashMap<String, Method>();
+
+    static {
+        try {
+          Class DynamicMapper = Class.forName(dynamic_mapper);
+          Method[] methods = DynamicMapper.getMethods();
+          for (Method meth : methods) {
+             dynamic_methods.put(meth.getName(), meth);
+          }
+        } catch (ClassNotFoundException cnfe) {
+          System.out.println("ClassNotFoundException for DynamicMapper " + dynamic_mapper);
+        }
+    }
 
     /*
     public DCacheSRMauthzRecordsService(String filename)
@@ -114,7 +129,7 @@ public class DCacheSRMauthzRecordsService {
                 DynamicAuthorizationRecord rec = readNextDynamicRecord(dynkey, line);
                 if(rec != null) {
                   if(dynamic_records==null) dynamic_records = new LinkedHashMap();
-                  dynamic_records.put(dynkey, rec);
+                  dynamic_records.put(rec.Username, rec);
                 }
             }
             else if(line.startsWith(PWD_RECORD_MARKER)) {
@@ -222,6 +237,16 @@ public class DCacheSRMauthzRecordsService {
       if(dynamic_records==null) return null;
       return (DynamicAuthorizationRecord) dynamic_records.get(dynkey);
     }
+
+    public static String getDynamicMapper() {
+      return dynamic_mapper;
+    }
+
+    public static Map getDynamicMethods() {
+      return dynamic_methods;
+    }
+
+
   
 }
 
