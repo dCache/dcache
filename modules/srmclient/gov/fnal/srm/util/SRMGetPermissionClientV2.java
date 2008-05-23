@@ -148,9 +148,10 @@ public class SRMGetPermissionClientV2 extends SRMClient {
 		SrmGetPermissionResponse resp = srm.srmGetPermission(req);
 		TReturnStatus rs   = resp.getReturnStatus();
 		ArrayOfTPermissionReturn permissions=resp.getArrayOfPermissionReturns();
-		TPermissionReturn[] permissionarray=permissions.getPermissionArray();
-		
-
+		TPermissionReturn[] permissionarray=null;
+		if (permissions!=null) { 
+			permissionarray=permissions.getPermissionArray();
+		}
 		if (rs.getStatusCode() != TStatusCode.SRM_SUCCESS) {  
 			TStatusCode rc  = rs.getStatusCode();
 			StringBuffer sb = new StringBuffer();
@@ -160,6 +161,11 @@ public class SRMGetPermissionClientV2 extends SRMClient {
 		}
 
 		StringBuffer txt = new StringBuffer();
+		if (permissionarray==null) { 
+			txt.append("permissions array is null\n");
+			System.out.println(txt.toString());
+			System.exit(1);
+		}
 		for(int i=0;i<permissionarray.length;i++){
 			txt.append("# file  : "+permissionarray[i].getSurl()+"\n");
 			if (rs.getStatusCode() != TStatusCode.SRM_SUCCESS) {  
