@@ -258,7 +258,7 @@ public class SRMBringOnlineClientV2 extends SRMClient implements Runnable {
 	    }
             say("calling srmBringOnline");
             SrmBringOnlineResponse response = srmv2.srmBringOnline(srmBringOnlineRequest);
-            say("received responce");
+            say("received response");
             if(response == null) {
                 throw new IOException(" null response");
             }
