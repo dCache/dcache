@@ -1,8 +1,7 @@
 package gplazma.gplazmalite.storageauthzdbService;
 
-import java.util.Iterator;
-import java.util.regex.Pattern;
-import java.util.regex.Matcher;
+import gplazma.gplazmalite.gridmapfileService.UIDMapFileAuthzService;
+import gplazma.gplazmalite.gridmapfileService.GIDMapFileAuthzService;
 
 public class DynamicMappingMethods {
 
@@ -52,6 +51,72 @@ public class DynamicMappingMethods {
 
   public static String gums_dnrole(String subjectDN, String role) {
     return null;
+  }
+
+  public static String dn_uidmap(String subjectDN, String role) throws Exception {
+
+    UIDMapFileAuthzService gridmapServ = null;
+    String UID;
+
+    try {
+      gridmapServ = new UIDMapFileAuthzService("/etc/grid-security/grid-uidmap");
+    } catch(Exception ase) {
+	  System.out.println("Exception in reading grid-uidmap configuration file");
+      System.out.println("/etc/grid-security/grid-uidmap" + " " + ase);
+	  //throw new AuthorizationServiceException (ase.toString());
+      throw ase;
+    }
+
+	try {
+	  UID = gridmapServ.getMappedUID(subjectDN);
+	} catch(Exception e) {
+	  //throw new AuthorizationServiceException(e.toString());
+      throw e;
+    }
+
+    System.out.println("Subject DN " + subjectDN + " is mapped to UID: " + UID);
+
+    if (UID == null) {
+	  String denied = /*DENIED_MESSAGE + */": Cannot determine UID from grid-uidmap file for DN " + subjectDN;
+      System.out.println(denied);
+      //throw new AuthorizationServiceException(denied);
+      throw new Exception("Cannot determine UID from grid-uidmap file for DN " + subjectDN);
+    }
+
+    return UID;
+  }
+
+  public static String role_gidmap(String subjectDN, String role) throws Exception {
+
+    GIDMapFileAuthzService gridmapServ = null;
+    String GID;
+
+    try {
+      gridmapServ = new GIDMapFileAuthzService("/etc/grid-security/grid-gidmap");
+    } catch(Exception ase) {
+	  System.out.println("Exception in reading grid-gidmap configuration file");
+      System.out.println("/etc/grid-security/grid-gidmap" + " " + ase);
+	  //throw new AuthorizationServiceException (ase.toString());
+      throw ase;
+    }
+
+	try {
+	  GID = gridmapServ.getMappedGID(role);
+	} catch(Exception e) {
+	  //throw new AuthorizationServiceException(e.toString());
+      throw e;
+    }
+
+    System.out.println("Role " + role + " is mapped to GID: " + GID);
+
+    if (GID == null) {
+	  String denied = /*DENIED_MESSAGE + */": Cannot determine GID from grid-gidmap file for role " + role;
+      System.out.println(denied);
+      //throw new AuthorizationServiceException(denied);
+      throw new Exception("Cannot determine GID from grid-gidmap file for role " + role);
+    }
+
+    return GID;
   }
 
   public static String regular_expression(String re, String input) {
