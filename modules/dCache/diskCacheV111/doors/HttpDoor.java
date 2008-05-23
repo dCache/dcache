@@ -100,7 +100,7 @@ public class HttpDoor extends CellAdapter  implements Runnable
     host     = engine.getInetAddress().getHostName();
     pnfs_handler = new PnfsHandler( this, pnfsManagerPath ) ;
     // HttpConnectionHandler will read the http request header and 
-    // generate a redirection or error responce for us
+    // generate a redirection or error response for us
     try
     {
       // create HttpConnectionHandler
