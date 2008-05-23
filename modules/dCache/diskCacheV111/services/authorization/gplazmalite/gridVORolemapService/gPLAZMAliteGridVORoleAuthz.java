@@ -17,8 +17,8 @@ import java.lang.*;
 
 public class gPLAZMAliteGridVORoleAuthz {
 
-	private static final String GRID_VOROLE_AUTHZ_DB="grid-vorolemap";
-	private HashMap gridFineGrainMap = new HashMap();
+  private static final String GRID_VOROLE_AUTHZ_DB="grid-vorolemap";
+  private HashMap gridFineGrainMap = new HashMap();
   private HashMap<String, LinkedList<String>> gridFineGrainMapMultiple = new HashMap();
   private static HashMap gridFineGrainMap_static;
   private static HashMap<String, LinkedList<String>> gridFineGrainMapMultiple_static;
