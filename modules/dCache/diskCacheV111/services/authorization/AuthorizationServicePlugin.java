@@ -31,6 +31,7 @@ import org.ietf.jgss.GSSName;
 import org.ietf.jgss.MessageProp;
 import gplazma.gplazmalite.storageauthzdbService.DynamicAuthorizationRecord;
 import gplazma.gplazmalite.storageauthzdbService.StorageAuthorizationRecord;
+import gplazma.gplazmalite.storageauthzdbService.DCacheSRMauthzRecordsService;
 
 
 /**
@@ -60,7 +61,8 @@ public abstract class AuthorizationServicePlugin {
 
   public String getDynamicString(String dynamic_mapper, String id_method, String subjectDN, String role) throws AuthorizationServiceException {
     try {
-      return  getDynamicValue(dynamic_mapper, id_method, subjectDN, role).toString();
+      Object retobj = getDynamicValue(dynamic_mapper, id_method, subjectDN, role);
+      return  (retobj==null) ? null : retobj.toString();
     } catch (Exception e) {
       throw new AuthorizationServiceException("Method " + id_method + " failed for DynamicMapper " + dynamic_mapper + " for DN " + subjectDN + " and role " + role);
     }
@@ -81,13 +83,19 @@ public abstract class AuthorizationServicePlugin {
     Object ret_val;
 
         try {
-          Class DynamicMapper = Class.forName(dynamic_mapper);
-          Method meth = DynamicMapper.getMethod(id_method, STR_CLASS, STR_CLASS);
-          ret_val = meth.invoke(this, subjectDN, role);
-        } catch (ClassNotFoundException cnfe) {
-          throw new AuthorizationServiceException("ClassNotFoundException for DynamicMapper " + dynamic_mapper + " for DN " + subjectDN + " and role " + role);
-        } catch (NoSuchMethodException nsm) {
-          throw new AuthorizationServiceException("NoSuchMethodException from uid mapping method " + id_method + " for DN " + subjectDN + " and role " + role);
+          //Class DynamicMapper = Class.forName(dynamic_mapper);
+          //Method meth = DynamicMapper.getMethod(id_method, STR_CLASS, STR_CLASS);
+          Method meth = (Method) DCacheSRMauthzRecordsService.getDynamicMethods().get(id_method);
+          if(meth==null) {
+              //throw new AuthorizationServiceException("No method " + id_method + " found in " + DCacheSRMauthzRecordsService.getDynamicMapper());
+              return null;
+          } else {
+            ret_val = meth.invoke(this, subjectDN, role);
+          }
+        //} catch (ClassNotFoundException cnfe) {
+          //throw new AuthorizationServiceException("ClassNotFoundException for DynamicMapper " + dynamic_mapper + " for DN " + subjectDN + " and role " + role);
+        //} catch (NoSuchMethodException nsm) {
+          //throw new AuthorizationServiceException("NoSuchMethodException from uid mapping method " + id_method + " for DN " + subjectDN + " and role " + role);
         } catch (InvocationTargetException ite) {
           throw new AuthorizationServiceException("InvocationTargetException from uid mapping method " + id_method + " for DN " + subjectDN + " and role " + role);
         } catch (IllegalAccessException iac) {
@@ -108,25 +116,26 @@ public abstract class AuthorizationServicePlugin {
     throws AuthorizationServiceException {
 
     String subjectDN = dynrecord.subjectDN;
-    String role = dynrecord.subjectDN;
+    String role = dynrecord.role;
     Map<String, String> strvals;
     String method=null;
 
     try {
-      strvals = dynrecord.getStringValues();
+      DynamicAuthorizationRecord retrecord = new DynamicAuthorizationRecord(dynrecord);
+      strvals = retrecord.getStringValues();
 
       for( Map.Entry<String, String> strval : strvals.entrySet()) {
         String key = strval.getKey();
         method = strval.getValue();
-        String result, input = getRegExInput(method, dynrecord);
+        String result, input = getRegExInput(method, retrecord);
         if(input==null)
           result = getDynamicString(dynamic_mapper, method, subjectDN, role);
         else
           result = getDynamicString(dynamic_mapper, "regular_expression", method, input);
-        strvals.put(key, result);
+        if (result!=null) strvals.put(key, result);
       }
 
-      return new DynamicAuthorizationRecord(dynrecord);
+      return new DynamicAuthorizationRecord(retrecord);
 
     } catch (AuthorizationServiceException ase) {
       throw ase;
