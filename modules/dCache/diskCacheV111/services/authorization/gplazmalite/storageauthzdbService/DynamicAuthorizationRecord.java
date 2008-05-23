@@ -27,7 +27,7 @@ public class DynamicAuthorizationRecord extends StorageAuthorizationRecord
     public DynamicAuthorizationRecord(
                           String dynkey,
                           String user,
-			                    String readonly_str,
+			              String readonly_str,
                           String priority_str,
                           String uid_str,
                           String gid_str,
