@@ -486,7 +486,7 @@
    <complexType name="srmStatusOfReserveSpaceRequestRequest">
     <sequence>
      <element name="authorizationID" minOccurs="0" maxOccurs="1" nillable="true" type="xsd:string"/>
-     <element name="requestToken" nillable="true" type="xsd:string" />
+     <element name="requestToken" type="xsd:string"/>
     </sequence>
    </complexType>
    <complexType name="srmStatusOfReserveSpaceRequestResponse">
