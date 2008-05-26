@@ -213,19 +213,24 @@ public class ChimeraOsmStorageInfoExtractor implements
             int arg3) throws CacheException {
 
 
-        RetentionPolicy retentionPolicy = RetentionPolicy.valueOf( dCacheStorageInfo.getRetentionPolicy().getId());
-        AccessLatency accessLatency = AccessLatency.valueOf(dCacheStorageInfo.getAccessLatency().getId());
-
-        InodeStorageInformation storageInfo = new InodeStorageInformation(inode,
-                dCacheStorageInfo.getHsm(),
-                dCacheStorageInfo.getKey("store"),
-                dCacheStorageInfo.getKey("group"),
-                accessLatency,
-                retentionPolicy);
 
         try {
-            inode.getFs().setStorageInfo(inode, storageInfo);
 
+            if( dCacheStorageInfo.isSetAccessLatency() || dCacheStorageInfo.isSetRetentionPolicy() ) {
+
+                RetentionPolicy retentionPolicy = RetentionPolicy.valueOf( dCacheStorageInfo.getRetentionPolicy().getId());
+                AccessLatency accessLatency = AccessLatency.valueOf(dCacheStorageInfo.getAccessLatency().getId());
+
+                InodeStorageInformation storageInfo = new InodeStorageInformation(inode,
+                        dCacheStorageInfo.getHsm(),
+                        dCacheStorageInfo.getKey("store"),
+                        dCacheStorageInfo.getKey("group"),
+                        accessLatency,
+                        retentionPolicy);
+
+
+                inode.getFs().setStorageInfo(inode, storageInfo);
+            }
 
             if(dCacheStorageInfo.isSetAddLocation() ) {
                 List<URI> locationURIs = dCacheStorageInfo.locations();
