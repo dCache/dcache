@@ -23,7 +23,6 @@ public class StorageClassInfo implements CacheFileAvailable {
    private long      _maxTotalSize    = 0L ;
    private int       _activeCounter   = 0 ;
    private boolean   _suspended       = false ;
-   private boolean   _isActive        = false ;
    private int       _errorCounter    = 0 ;
    private long      _lastSubmittedAt = 0L ;
    private long      _recentFlushId   = 0L ;
@@ -37,7 +36,6 @@ public class StorageClassInfo implements CacheFileAvailable {
    //                _failedRequests
    //     synchronized(_activeCounterLock)
    //                _activeCounter
-   //                _isActive
    //                _flushCallback
    //
    public StorageClassFlushInfo getFlushInfo(){
@@ -119,7 +117,6 @@ public class StorageClassInfo implements CacheFileAvailable {
           _activeCounter -- ;
           //System.out.println("DEBUGFLUSH2 : adding : "+pnfsId ) ;
           if( _activeCounter <= 0 ){
-             _isActive = false ;
              _activeCounter = 0 ;
              if( _flushCallback != null )new InformFlushCallback() ;
           }
@@ -147,16 +144,6 @@ public class StorageClassInfo implements CacheFileAvailable {
    }
    public long submit( HsmStorageHandler2 storageHandler , int maxCount , StorageClassInfoFlushable flushCallback ){
 
-      synchronized( _activeCounterLock ){
-
-         if( _isActive )
-            throw new
-            IllegalArgumentException( "Is already active" ) ;
-
-         _isActive      = true ;
-         _flushCallback = flushCallback ;
-      }
-
       Iterator<CacheRepositoryEntry> i = null ;
 
       synchronized( this ){
@@ -168,16 +155,23 @@ public class StorageClassInfo implements CacheFileAvailable {
          i = ts.iterator() ;
 
       }
-      maxCount = maxCount <= 0 ? 0Xfffffff : maxCount ;
-      _errorCounter = 0 ;
-      _requestsSubmitted = 0 ;
+
       //
-      //   As long as we are in this loop, we will stuck
-      //   in the first 'cacheFileAvailable'.
-      //   (Should not be a problem because the store routine
-      //   is non blocking.)
+      //   As long as we are in this loop block, we will be stuck in
+      //   the first 'cacheFileAvailable'.  (Should not be a problem
+      //   because the store routine is non blocking.)
       //
       synchronized( _activeCounterLock ){
+
+         if( _activeCounter > 0 )
+            throw new
+            IllegalArgumentException( "Is already active" ) ;
+
+         _flushCallback = flushCallback ;
+
+         maxCount = maxCount <= 0 ? 0Xfffffff : maxCount ;
+         _errorCounter = 0 ;
+         _requestsSubmitted = 0 ;
 
           _recentFlushId = _lastSubmittedAt = System.currentTimeMillis() ;
 
@@ -204,8 +198,7 @@ public class StorageClassInfo implements CacheFileAvailable {
 
           }
 
-          _isActive = _activeCounter > 0 ;
-          if( ! _isActive ){
+          if( _activeCounter <= 0 ){
              _activeCounter = 0 ;
              if( _flushCallback != null )new InformFlushCallback() ;
           }
