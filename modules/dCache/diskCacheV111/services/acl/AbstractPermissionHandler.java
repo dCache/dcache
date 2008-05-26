@@ -25,17 +25,10 @@ public abstract class AbstractPermissionHandler implements PermissionHandlerInte
 
 	private static final Logger logger = Logger.getLogger("logger.org.dcache.authorization." + AbstractPermissionHandler.class.getName());
 
-	protected final AclFsHandler aclHandler;
 	protected final FileMetaDataSource metadataSource ;
 
 	protected AbstractPermissionHandler(CellAdapter cell) throws ACLException {
 		final Args args = cell.getArgs();
-
-		String acl_props = args.getOpt("acl-permission-handler-config");
-		if ( acl_props == null || acl_props.length() == 0 )
-			throw new IllegalArgumentException("acl-permission-handler-config option not defined");
-
-		aclHandler = new AclFsHandler(acl_props);
 
 		String metadataProvider = args.getOpt("meta-data-provider");
 		if ( metadataProvider == null || metadataProvider.length() == 0 )

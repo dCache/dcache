@@ -7,6 +7,7 @@ import org.dcache.chimera.acl.Owner;
 import org.dcache.chimera.acl.Subject;
 import org.dcache.chimera.acl.enums.Action;
 import org.dcache.chimera.acl.enums.FileAttribute;
+import org.dcache.chimera.acl.handler.AclFsHandler;
 import org.dcache.chimera.acl.mapper.AclMapper;
 import org.dcache.chimera.acl.matcher.AclNFSv4Matcher;
 
@@ -23,8 +24,16 @@ public class ACLPermissionHandler extends AbstractPermissionHandler {
 	private static final Logger logger = Logger.getLogger("logger.org.dcache.authorization." + ACLPermissionHandler.class.getName());
 	private static final boolean IS_DEBUG_ENABLED = logger.isDebugEnabled();
 
+	private final AclFsHandler aclHandler;
+
 	public ACLPermissionHandler(CellAdapter cell) throws ACLException {
 		super(cell);
+
+	      String acl_props = cell.getArgs().getOpt("acl-permission-handler-config");
+	        if ( acl_props == null || acl_props.length() == 0 )
+	            throw new IllegalArgumentException("acl-permission-handler-config option not defined");
+
+	        aclHandler = new AclFsHandler(acl_props);
 	}
 
 	public boolean canReadFile(String pnfsPath, Subject subject, Origin origin) throws CacheException, ACLException {
