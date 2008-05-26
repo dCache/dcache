@@ -282,7 +282,7 @@ public abstract class AbstractFtpDoorV1
 
     @Option(
         name = "permission-handler",
-        defaultValue = "diskCacheV111.services.UnixPermissionHandler"
+        defaultValue = "diskCacheV111.services.acl.UnixPermissionHandler"
     )
     protected String _permissionHandlerName;
 
