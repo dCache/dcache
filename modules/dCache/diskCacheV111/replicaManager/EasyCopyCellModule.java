@@ -427,7 +427,8 @@ public class EasyCopyCellModule implements  CommandTaskCell.CellCommandTaskable,
              long xall = info._freeSpace + info._removableSpace ;
              return all < xall ? -1 : all > xall ? 1 : _poolName.compareTo(info._poolName) ;
           }
-          public String toString(){
+          @Override
+		public String toString(){
              return _poolName+";free="+_freeSpace+";rem="+_removableSpace;
           }
           public long getAvailableSpace(){ return _freeSpace+_removableSpace ; }
@@ -453,7 +454,8 @@ public class EasyCopyCellModule implements  CommandTaskCell.CellCommandTaskable,
       private PoolInfo getBestPool(){
           return (_pools.size() == 0 ? null : Collections.max(_pools.values()));
       }
-      public String toString(){
+      @Override
+	public String toString(){
          StringBuffer sb = new StringBuffer() ;
          TreeSet<PoolInfo> set = new TreeSet<PoolInfo>(_pools.values());
          for (PoolInfo info : set) {
@@ -510,6 +512,12 @@ public class EasyCopyCellModule implements  CommandTaskCell.CellCommandTaskable,
               _cell.say("PoolGroup list : "+_poolGroupList);
               int waitingFor = 0 ;
               for (Object o : _poolGroupList) {
+                  /*
+                   * FIXME: in error conditions the counter of waiting messages is not
+                   * updated and we start to wait for ever.
+                   * probably we have to use java.util.concurrent.Condition for this.
+                   *
+                   */
                  String poolName = (String)o;
                  try{
                     _core.sendMessage( new CellMessage( new CellPath(poolName) , "xgetcellinfo") ) ;
@@ -1317,7 +1325,7 @@ public class EasyCopyCellModule implements  CommandTaskCell.CellCommandTaskable,
    private String drawProgressBar( int width , long cursor , long maxCursor ){
       StringBuffer sb = new StringBuffer() ;
       String skip = "  " ;
-      double x    = (double)cursor / (double) maxCursor * (double)width ;
+      double x    = (double)cursor / (double) maxCursor * width ;
       int    n    = Math.min( (int) x , width ) ;
       int    i    = 0 ;
 
@@ -1334,7 +1342,8 @@ public class EasyCopyCellModule implements  CommandTaskCell.CellCommandTaskable,
    public void timer(){
        //_cell.say("Timer of "+_core.getName()+" triggered");
    }
-   public String toString(){
+   @Override
+public String toString(){
       return  _core.getName()+";Status="+_stateStrings[_state]+";m="+_message ;
    }
    /**
@@ -1363,7 +1372,8 @@ public class EasyCopyCellModule implements  CommandTaskCell.CellCommandTaskable,
              append(">");
           return sb.toString();
        }
-       public String toString(){
+       @Override
+	public String toString(){
           StringBuffer sb = new StringBuffer() ;
           sb.append(_pnfsId.toString()).append(" ").
              append(getModeString()).append(" ").
