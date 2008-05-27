@@ -290,14 +290,14 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM {
                 log.fatal("handler invocation failed",e);
                 return getFailedResponse(capitalizedRequestName,
                         TStatusCode.SRM_FAILURE,
-                        "handler invocation failed"+ e);
+					 "handler invocation failed"+ e.getMessage());
             }
         } catch(Exception e) {
             log.fatal(" handleRequest: ",e);
             try{
                 return getFailedResponse(capitalizedRequestName,
                         TStatusCode.SRM_INTERNAL_ERROR,
-                        "internal error: "+ e);
+					 "internal error: "+ e.getMessage());
             } catch(Exception ee){
                 throw new RemoteException("SRMServerV2."+requestName+"() exception",e);
             }
