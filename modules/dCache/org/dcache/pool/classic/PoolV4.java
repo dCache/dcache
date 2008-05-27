@@ -8,6 +8,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.FileNotFoundException;
 import java.io.NotSerializableException;
 import java.io.PrintWriter;
 import java.io.RandomAccessFile;
@@ -36,6 +37,7 @@ import org.dcache.pool.repository.v5.IllegalTransitionException;
 import org.dcache.pool.repository.SpaceRecord;
 import org.dcache.pool.repository.EntryState;
 import org.dcache.pool.repository.WriteHandle;
+import org.dcache.pool.repository.ReadHandle;
 import org.dcache.pool.repository.CacheEntry;
 import org.dcache.pool.repository.StateChangeListener;
 import org.dcache.pool.repository.StateChangeEvent;
@@ -2319,144 +2321,172 @@ public class PoolV4 extends CellAdapter implements Logable {
             _cellMessage = cellMessage;
         }
 
-        public void cacheFileAvailable(String pnfsId, Throwable ee) {
-
-            Message msg = (Message) _cellMessage.getMessageObject();
-
-            if (ee != null) {
-
-                if (ee instanceof CacheException) {
-
-                    CacheException ce = (CacheException) ee;
-                    int errorCode = ce.getRc();
-                    msg.setFailed(errorCode, ce.getMessage());
-
-                    switch (errorCode) {
-                    case 41:
-                    case 42:
-                    case 43:
-                        disablePool(PoolV2Mode.DISABLED_STRICT, errorCode, ce
-                                    .getMessage());
-                    }
-                } else {
-                    msg.setFailed(1000, ee);
-                }
-
-            } else {
-
-//                 try {
-
-//                     PnfsId id = new PnfsId(pnfsId);
-
-//                     CacheRepositoryEntry entry = _repository.getEntry(id);
-
-//                     msg.setSucceeded();
-
-//                     doChecksum(id, entry);
-
-//                     _replicationHandler.initiateReplication(entry,
-//                                                             "restore");
-
-
-//                 } catch (CacheException ee2) {
-
-//                     msg.setFailed(1010, "Checksum calculation failed " + ee2);
-//                     esay("Checksum calculation failed : " + ee2);
-//                     esay(ee);
-//                 }
-            }
-
-            _cellMessage.revertDirection();
-            esay("cacheFileAvailable : Returning from restore : "
-                 + _cellMessage.getMessageObject());
+        public void cacheFileAvailable(String pnfsId, Throwable ee)
+        {
             try {
-                sendMessage(_cellMessage);
-            } catch (NotSerializableException e) {
-                throw new RuntimeException("Bug detected: Unserializable vehicle", e);
-            } catch (NoRouteToCellException e) {
-                esay("Couldn't send ack to poolManager : " + e.getMessage());
-            }
+                Message msg = (Message) _cellMessage.getMessageObject();
+                msg.setFailed(1010,
+                              "Unknown error during checksum calculation");
+                PnfsId id = new PnfsId(pnfsId);
+                try {
+                    if (ee != null) {
 
+                        if (ee instanceof CacheException) {
+
+                            CacheException ce = (CacheException) ee;
+                            int errorCode = ce.getRc();
+                            msg.setFailed(errorCode, ce.getMessage());
+
+                            switch (errorCode) {
+                            case 41:
+                            case 42:
+                            case 43:
+                                disablePool(PoolV2Mode.DISABLED_STRICT, errorCode, ce
+                                            .getMessage());
+                            }
+                        } else {
+                            msg.setFailed(1000, ee);
+                        }
+
+                    } else {
+                        doChecksum(id);
+
+                        //                     _replicationHandler.initiateReplication(entry,
+                        //                                                             "restore");
+
+
+                        msg.setSucceeded();
+                    }
+                } catch (InterruptedException e) {
+                    msg.setFailed(1010, "Checksum calculation interrupted");
+                    throw e;
+                } catch (CacheException e) {
+                    msg.setFailed(e.getRc(), e.getMessage());
+                } finally {
+                    if (msg.getReturnCode() != 0) {
+                        esay(msg.getErrorObject().toString());
+
+                        /* Something went wrong. We delete the file to be
+                         * on the safe side (better waste tape bandwidth
+                         * than risk leaving a broken file).
+                         */
+                        try {
+                            _repository.setState(id, EntryState.REMOVED);
+                        } catch (IllegalTransitionException e) {
+                            /* Most likely indicate that the file was removed
+                             * before we could do it. Log the problem, but
+                             * otherwise ignore it.
+                             */
+                            esay("Failed to remove " + pnfsId +  ": "
+                                 + e.getMessage());
+                        }
+                    }
+
+                    _cellMessage.revertDirection();
+                    esay("cacheFileAvailable : Returning from restore : "
+                         + _cellMessage.getMessageObject());
+                    try {
+                        sendMessage(_cellMessage);
+                    } catch (NotSerializableException e) {
+                        throw new RuntimeException("Bug detected: Unserializable vehicle", e);
+                    } catch (NoRouteToCellException e) {
+                        esay("Couldn't send ack to poolManager : " + e.getMessage());
+                    }
+                }
+            } catch (InterruptedException e) {
+                /* Propagate the interrupt.
+                 */
+                Thread.currentThread().interrupt();
+            }
         }
 
-//         private void doChecksum(PnfsId pnfsId, CacheRepositoryEntry entry)
-//             throws CacheException
-//         {
+        private void doChecksum(PnfsId pnfsId)
+            throws CacheException, InterruptedException
+        {
+            /* Return early without opening the entry if we don't need
+             * to.
+             */
+            if (!_checksumModule.getCrcFromHsm() &&
+                !_checksumModule.checkOnRestore())
+                return;
 
-//             Message msg = (Message) _cellMessage.getMessageObject();
+            /* Check the checksum.
+             */
+            Checksum infoChecksum, fileChecksum;
+            ReadHandle handle = _repository.openEntry(pnfsId);
+            try {
+                CacheEntry entry = handle.getEntry();
 
-//             if (_checksumModule.getCrcFromHsm())
-//                 getChecksumFromHsm(pnfsId, entry);
+                if (_checksumModule.getCrcFromHsm())
+                    getChecksumFromHsm(pnfsId, handle.getFile());
 
-//             if (!_checksumModule.checkOnRestore())
-//                 return;
+                if (!_checksumModule.checkOnRestore())
+                    return;
 
-//             say("Calculating checksum of " + pnfsId);
+                StorageInfo info = entry.getStorageInfo();
+                String checksumString = info.getKey("flag-c");
 
-//             try {
-//                 StorageInfo info = entry.getStorageInfo();
-//                 String checksumString = info.getKey("flag-c");
+                if (checksumString == null)
+                    throw new CacheException("Checksum not in StorageInfo");
 
-//                 if (checksumString == null)
-//                     throw new CacheException("Checksum not in StorageInfo");
+                long start = System.currentTimeMillis();
 
-//                 long start = System.currentTimeMillis();
+                infoChecksum = new Checksum(checksumString);
+                fileChecksum =
+                    _checksumModule.calculateFileChecksum(handle.getFile(),
+                                                          _checksumModule.getDefaultChecksum());
 
-//                 Checksum infoChecksum = new Checksum(checksumString);
-//                 Checksum fileChecksum = _checksumModule.calculateFileChecksum(
-//                                                                               entry, _checksumModule.getDefaultChecksum());
+                say("Checksum for " + pnfsId + " info=" + infoChecksum
+                    + ";file=" + fileChecksum + " in "
+                    + (System.currentTimeMillis() - start));
+            } catch (IOException e) {
+                throw new CacheException(1010, "Checksum calculation failed due to I/O error: " + e.getMessage());
+            } catch (CacheException e) {
+                throw new CacheException(1010, "Checksum calculation failed: " + e.getMessage());
+            } finally {
+                handle.close();
+            }
 
-//                 say("Checksum for " + pnfsId + " info=" + infoChecksum
-//                     + ";file=" + fileChecksum + " in "
-//                     + (System.currentTimeMillis() - start));
+            /* Report failure in case of mismatch.
+             */
+            if (!infoChecksum.equals(fileChecksum)) {
+                esay("Checksum of " + pnfsId + " differs info="
+                     + infoChecksum + ";file=" + fileChecksum);
+                throw new CacheException(1009,
+                                         "Checksum error : info=" + infoChecksum
+                                         + ";file=" + fileChecksum);
+            }
+        }
 
-//                 if (!infoChecksum.equals(fileChecksum)) {
-
-//                     esay("Checksum of " + pnfsId + " differs info="
-//                          + infoChecksum + ";file=" + fileChecksum);
-//                     try {
-//                         _repository.removeEntry(entry);
-//                     } catch (CacheException ee2) {
-//                         esay("Couldn't remove file : " + pnfsId + " : " + ee2);
-//                     }
-//                     msg.setFailed(1009, "Checksum error : info=" + infoChecksum
-//                                   + ";file=" + fileChecksum);
-//                 }
-//             } catch (Exception ee3) {
-//                 esay("Couldn't compare checksum of " + pnfsId + " : " + ee3);
-//                 ee3.printStackTrace();
-//             }
-
-//         }
-
-//         private void getChecksumFromHsm(PnfsId pnfsId,
-//                                         CacheRepositoryEntry entry) {
-//             String line = null;
-//             try {
-//                 File f = entry.getDataFile();
-//                 f = new File(f.getCanonicalPath() + ".crcval");
-//                 Checksum checksum = null;
-//                 if (f.exists()) {
-//                     BufferedReader br = new BufferedReader(new FileReader(f));
-//                     try {
-//                         line = "1:" + br.readLine();
-//                         checksum = new Checksum(line);
-//                     } finally {
-//                         try {
-//                             br.close();
-//                         } catch (IOException ioio) {
-//                         }
-//                         f.delete();
-//                     }
-//                     say(pnfsId + " : sending adler32 to pnfs : " + line);
-//                     _checksumModule
-//                         .storeChecksumInPnfs(pnfsId, checksum, false);
-//                 }
-//             } catch (Exception waste) {
-//                 esay("Couldn't send checksum (" + line + ") to pnfs : " + waste);
-//             }
-
-//         }
+        private void getChecksumFromHsm(PnfsId pnfsId, File file)
+            throws IOException
+        {
+            file = new File(file.getCanonicalPath() + ".crcval");
+            try {
+                String line;
+                if (file.exists()) {
+                    BufferedReader br =
+                        new BufferedReader(new FileReader(file));
+                    try {
+                        line = "1:" + br.readLine();
+                    } finally {
+                        try {
+                            br.close();
+                        } catch (IOException e) {
+                        }
+                        file.delete();
+                    }
+                    Checksum checksum = new Checksum(line);
+                    say(pnfsId + " : sending adler32 to pnfs : " + line);
+                    _checksumModule.storeChecksumInPnfs(pnfsId, checksum, false);
+                }
+            } catch (FileNotFoundException e) {
+                /* Should not happen unless somebody else is removing
+                 * the file before we got a chance to read it.
+                 */
+                throw new RuntimeException("File not found: " + file, e);
+            }
+        }
     }
 
     private boolean fetchFile(PoolFetchFileMessage poolMessage,
