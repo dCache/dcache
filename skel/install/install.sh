@@ -452,12 +452,14 @@ dcacheInstallGetIsAdminDoor()
     logmessage DEBUG "node is door so returns false"
     return 0
   fi
-  adminDoor=`printConfig adminDoor |  tr -s '[:upper:]' '[:lower:]'`
-  if [ "${adminDoor}" == "yes" ] ; then
-    return 1
-  fi
-  if [ "${adminDoor}" == "y" ] ; then
-    return 1
+  if [ "${NodeType}" == "custom" ] ; then
+    adminDoor=`printConfig adminDoor |  tr -s '[:upper:]' '[:lower:]'`
+    if [ "${adminDoor}" == "yes" ] ; then
+      return 1
+    fi
+    if [ "${adminDoor}" == "y" ] ; then
+      return 1
+    fi
   fi
   return 0
 }
@@ -481,12 +483,14 @@ dcacheInstallGetIsHttpDomain()
     logmessage DEBUG "node is door so returns false"
     return 0
   fi
-  httpDomain=`printConfig httpDomain |  tr -s '[:upper:]' '[:lower:]'`
-  if [ "${httpDomain}" == "yes" ] ; then
-    return 1
-  fi
-  if [ "${httpDomain}" == "y" ] ; then
-    return 1
+  if [ "${NodeType}" == "custom" ] ; then
+    httpDomain=`printConfig httpDomain |  tr -s '[:upper:]' '[:lower:]'`
+    if [ "${httpDomain}" == "yes" ] ; then
+      return 1
+    fi
+    if [ "${httpDomain}" == "y" ] ; then
+      return 1
+    fi
   fi
   return 0
 }
@@ -510,12 +514,14 @@ dcacheInstallGetIsLmDomain()
     logmessage DEBUG "node is door so returns false"
     return 0
   fi  
-  lmDomain=`printConfig lmDomain |  tr -s '[:upper:]' '[:lower:]'`
-  if [ "${lmDomain}" == "yes" ] ; then
-    return 1
-  fi
-  if [ "${lmDomain}" == "y" ] ; then
-    return 1
+  if [ "${NodeType}" == "custom" ] ; then
+    lmDomain=`printConfig lmDomain |  tr -s '[:upper:]' '[:lower:]'`
+    if [ "${lmDomain}" == "yes" ] ; then
+      return 1
+    fi
+    if [ "${lmDomain}" == "y" ] ; then
+      return 1
+    fi
   fi
   return 0
 }
@@ -538,12 +544,14 @@ dcacheInstallGetIsPoolManager()
     logmessage DEBUG "node is door so returns false"
     return 0
   fi
-  poolManager=`printConfig poolManager |  tr -s '[:upper:]' '[:lower:]'`
-  if [ "${poolManager}" == "yes" ] ; then
-    return 1
-  fi
-  if [ "${poolManager}" == "y" ] ; then
-    return 1
+  if [ "${NodeType}" == "custom" ] ; then
+    poolManager=`printConfig poolManager |  tr -s '[:upper:]' '[:lower:]'`
+    if [ "${poolManager}" == "yes" ] ; then
+      return 1
+    fi
+    if [ "${poolManager}" == "y" ] ; then
+      return 1
+    fi
   fi
   return 0
 }
@@ -566,12 +574,14 @@ dcacheInstallGetIsUtilityDomain()
     logmessage DEBUG "node is door so returns false"
     return 0
   fi
-  utilityDomain=`printConfig utilityDomain |  tr -s '[:upper:]' '[:lower:]'`
-  if [ "${utilityDomain}" == "yes" ] ; then
-    return 1
-  fi
-  if [ "${utilityDomain}" == "y" ] ; then
-    return 1
+  if [ "${NodeType}" == "custom" ] ; then
+    utilityDomain=`printConfig utilityDomain |  tr -s '[:upper:]' '[:lower:]'`
+    if [ "${utilityDomain}" == "yes" ] ; then
+      return 1
+    fi
+    if [ "${utilityDomain}" == "y" ] ; then
+      return 1
+    fi
   fi
   return 0
 }
@@ -594,12 +604,14 @@ dcacheInstallGetIsPnfsManager()
     logmessage DEBUG "node is door so returns false"
     return 0
   fi
-  pnfsManager=`printConfig pnfsManager |  tr -s '[:upper:]' '[:lower:]'`
-  if [ "${pnfsManager}" == "yes" ] ; then
-    return 1
-  fi
-  if [ "${pnfsManager}" == "y" ] ; then
-    return 1
+  if [ "${NodeType}" == "custom" ] ; then
+    pnfsManager=`printConfig pnfsManager |  tr -s '[:upper:]' '[:lower:]'`
+    if [ "${pnfsManager}" == "yes" ] ; then
+      return 1
+    fi
+    if [ "${pnfsManager}" == "y" ] ; then
+      return 1
+    fi
   fi
   return 0
 }
