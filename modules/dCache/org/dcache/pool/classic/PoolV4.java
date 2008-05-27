@@ -3668,9 +3668,7 @@ public class PoolV4 extends CellAdapter implements Logable {
     public String ac_flush_pnfsid_$_1(Args args)
         throws CacheException
     {
-//         CacheRepositoryEntry entry = _repository.getEntry(new PnfsId(args
-//                                                                      .argv(0)));
-//         _storageHandler.store(entry, null);
+        _storageHandler.store(new PnfsId(args.argv(0)), null);
         return "Flush Initiated";
     }
 
