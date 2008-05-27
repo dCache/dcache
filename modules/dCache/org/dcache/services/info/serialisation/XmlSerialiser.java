@@ -24,6 +24,7 @@ import org.dcache.services.info.base.StringStateValue;
  */
 public class XmlSerialiser implements StateVisitor, StateSerialiser {
 	
+	public static final String NAME = "xml";
 	
 	/** The types used within the XML structure */
 	private static final String _newline = "\n";
@@ -74,7 +75,7 @@ public class XmlSerialiser implements StateVisitor, StateSerialiser {
 
 	
 	public String getName() {
-		return "xml";
+		return NAME;
 	}
 
 	/* Deal with branch movement */
