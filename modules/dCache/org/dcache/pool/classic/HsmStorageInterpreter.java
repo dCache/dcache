@@ -8,6 +8,7 @@ import dmg.cells.nucleus.* ;
 import dmg.util.* ;
 
 import diskCacheV111.util.* ;
+import diskCacheV111.vehicles.StorageInfo;
 
 public class HsmStorageInterpreter {
 
@@ -15,13 +16,16 @@ public class HsmStorageInterpreter {
    private final HsmStorageHandler2 _storageHandler ;
    private final JobScheduler       _fetchQueue     ;
    private final JobScheduler       _storeQueue     ;
+   private final PnfsHandler        _pnfs;
 
    public HsmStorageInterpreter( CellAdapter cell ,
-                                 HsmStorageHandler2 handler ){
+                                 HsmStorageHandler2 handler,
+                                 PnfsHandler pnfs){
 
 
       _cell           = cell ;
       _storageHandler = handler ;
+      _pnfs           = pnfs;
       _fetchQueue     = _storageHandler.getFetchScheduler() ;
       _storeQueue     = _storageHandler.getStoreScheduler() ;
    }
@@ -160,33 +164,44 @@ public class HsmStorageInterpreter {
     //
     public String hh_rh_restore = "<pnfsId>" ;
     public String ac_rh_restore_$_1(Args args)throws Exception {
-              String       pnfsId = args.argv(0) ;
-
-        CellMessage  msgx    = _cell.getThisMessage() ;
+        final String pnfsId = args.argv(0);
+        final CellMessage msgx = _cell.getThisMessage();
         final CellPath path = (CellPath)msgx.getSourceAddress().clone() ;
+
         path.revert() ;
-        CacheFileAvailable cfa    = new CacheFileAvailable(){
-            public void cacheFileAvailable( String pnfsId , Throwable ee ){
-               _cell.say( "Callback called for "+pnfsId) ;
-               CellMessage msg = new CellMessage( path , "" ) ;
-               if( ee == null ){
-                  msg.setMessageObject("Done : "+pnfsId ) ;
-               }else{
-                  msg.setMessageObject("Problem with "+pnfsId+" : "+ee ) ;
-               }
-               try{
-                  _cell.say("Sending message to "+path ) ;
-                  _cell.sendMessage( msg ) ;
-               }catch(Exception eee ){
-                  _cell.say("Callback : "+eee ) ;
-                  eee.printStackTrace() ;
-               }
-            }
-        } ;
+        final CacheFileAvailable cfa = new CacheFileAvailable(){
+                public void cacheFileAvailable( String pnfsId , Throwable ee ){
+                    _cell.say( "Callback called for "+pnfsId) ;
+                    CellMessage msg = new CellMessage( path , "" ) ;
+                    if( ee == null ){
+                        msg.setMessageObject("Done : "+pnfsId ) ;
+                    }else{
+                        msg.setMessageObject("Problem with "+pnfsId+" : "+ee ) ;
+                    }
+                    try{
+                        _cell.say("Sending message to "+path ) ;
+                        _cell.sendMessage( msg ) ;
+                    }catch(Exception eee ){
+                        _cell.say("Callback : "+eee ) ;
+                        eee.printStackTrace() ;
+                    }
+                }
+            };
 
-        // FIXME
-
-        _storageHandler.fetch(new PnfsId(pnfsId), null, cfa);
+        /* We need to fetch the storage info and we don't
+         * want to block the message thread while waiting for the reply.
+         */
+        Thread t = new Thread() {
+                public void run() {
+                    try {
+                        StorageInfo si = _pnfs.getStorageInfo(pnfsId);
+                        _storageHandler.fetch(new PnfsId(pnfsId), si, cfa);
+                    } catch (CacheException e) {
+                        cfa.cacheFileAvailable(pnfsId, e);
+                    }
+                }
+            };
+        t.start();
 
         return "Fetch request queued";
     }

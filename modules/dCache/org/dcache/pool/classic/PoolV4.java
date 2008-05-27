@@ -520,7 +520,7 @@ public class PoolV4 extends CellAdapter implements Logable {
 
             addCommandListener(_hsmSet);
             addCommandListener(_storageQueue);
-            addCommandListener(new HsmStorageInterpreter(this, _storageHandler));
+            addCommandListener(new HsmStorageInterpreter(this, _storageHandler, _pnfs));
             addCommandListener(_flushingThread);
             addCommandListener(_p2pClient);
             addCommandListener(_checksumModule);
