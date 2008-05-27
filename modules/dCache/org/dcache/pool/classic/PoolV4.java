@@ -83,7 +83,6 @@ import diskCacheV111.vehicles.PoolDeliverFileMessage;
 import diskCacheV111.vehicles.PoolFetchFileMessage;
 import diskCacheV111.vehicles.PoolFileCheckable;
 import diskCacheV111.vehicles.PoolFlushControlMessage;
-import diskCacheV111.vehicles.PoolFreeSpaceReservationMessage;
 import diskCacheV111.vehicles.PoolIoFileMessage;
 import diskCacheV111.vehicles.PoolManagerPoolUpMessage;
 import diskCacheV111.vehicles.PoolMgrReplicateFileMsg;
@@ -91,12 +90,10 @@ import diskCacheV111.vehicles.PoolModifyModeMessage;
 import diskCacheV111.vehicles.PoolModifyPersistencyMessage;
 import diskCacheV111.vehicles.PoolMoverKillMessage;
 import diskCacheV111.vehicles.PoolQueryRepositoryMsg;
-import diskCacheV111.vehicles.PoolQuerySpaceReservationMessage;
 import diskCacheV111.vehicles.PoolRemoveFilesFromHSMMessage;
 import diskCacheV111.vehicles.PoolRemoveFilesMessage;
 import diskCacheV111.vehicles.PoolReserveSpaceMessage;
 import diskCacheV111.vehicles.PoolSetStickyMessage;
-import diskCacheV111.vehicles.PoolSpaceReservationMessage;
 import diskCacheV111.vehicles.PoolUpdateCacheStatisticsMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.RemoveFileInfoMessage;
@@ -2839,12 +2836,6 @@ public class PoolV4 extends CellAdapter implements Logable {
             getRepositoryListing((PoolQueryRepositoryMsg) poolMessage);
             replyRequired = true;
 
-//         } else if (poolMessage instanceof PoolSpaceReservationMessage) {
-
-//             replyRequired = false;
-//             runSpaceReservation((PoolSpaceReservationMessage)poolMessage,
-//                                 cellMessage);
-
         } else {
             say("Unexpected message class 2" + poolMessage.getClass());
             say(" isReply = " + ( poolMessage).isReply()); // REMOVE
@@ -2863,70 +2854,6 @@ public class PoolV4 extends CellAdapter implements Logable {
             esay("Cannot reply message : " + e.getMessage());
         }
     }
-
-//     private void runSpaceReservation(final PoolSpaceReservationMessage spaceReservationMessage,
-//                                      final CellMessage cellMessage) {
-
-//         if (_blockOnNoSpace
-//             && (spaceReservationMessage instanceof PoolReserveSpaceMessage)) {
-//             getNucleus().newThread(new Runnable() {
-//                     public void run() {
-//                         say("Reservation job started");
-//                         spaceReservation(spaceReservationMessage, cellMessage);
-//                         say("Reservation job finished");
-//                     }
-//                 }, "reservationThread").start();
-//         } else {
-
-//             spaceReservation(spaceReservationMessage, cellMessage);
-
-//         }
-
-//     }
-
-//     private void spaceReservation(
-//                                   PoolSpaceReservationMessage spaceReservationMessage,
-//                                   CellMessage cellMessage) {
-
-//         try {
-
-//             if (spaceReservationMessage instanceof PoolReserveSpaceMessage) {
-
-//                 PoolReserveSpaceMessage reserve = (PoolReserveSpaceMessage) spaceReservationMessage;
-
-//                 _repository.reserveSpace(reserve.getSpaceReservationSize(),
-//                                          _blockOnNoSpace);
-
-//             } else if (spaceReservationMessage instanceof PoolFreeSpaceReservationMessage) {
-
-//                 _repository
-//                     .freeReservedSpace(((PoolFreeSpaceReservationMessage) spaceReservationMessage)
-//                                        .getFreeSpaceReservationSize());
-
-//             } else if (spaceReservationMessage instanceof PoolQuerySpaceReservationMessage) {
-//             }
-
-//             spaceReservationMessage.setReservedSpace(_repository
-//                                                      .getReservedSpace());
-
-//         } catch (CacheException ce) {
-//             spaceReservationMessage.setFailed(ce.getRc(), ce.getMessage());
-//         } catch (MissingResourceException mre) {
-//             spaceReservationMessage.setFailed(104, mre);
-//         } catch (Exception ee) {
-//             spaceReservationMessage.setFailed(101, ee.toString());
-//         }
-//         try {
-//             say("Sending reply " + spaceReservationMessage);
-//             cellMessage.revertDirection();
-//             sendMessage(cellMessage);
-//         } catch (NotSerializableException e) {
-//             throw new RuntimeException("Bug detected: Unserializable vehicle", e);
-//         } catch (NoRouteToCellException e) {
-//             esay("Cannot reply message : " + e.getMessage());
-//         }
-
-//     }
 
     private void getRepositoryListing(PoolQueryRepositoryMsg queryMessage)
     {
