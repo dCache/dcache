@@ -4,9 +4,9 @@ require 'fileutils'
 require 'uri'
 
 def usage 
-  STDERR.puts "Usage : put <pnfsId> <filePath> -si=<storageInfo> [-key[=value] ...]" 
-  STDERR.puts "        get <pnfsId> <filePath> -uri=<uri> [-key[=value] ...]" 
-  STDERR.puts "        remove -uri=<uri> [-key[=value] ...]" 
+  STDERR.puts "Usage : put <pnfsId> <filePath> -hsmBase=<path> -hsmInstace=<name> -si=<storageInfo> [-key[=value] ...]" 
+  STDERR.puts "        get <pnfsId> <filePath> -hsmBase=<path> -uri=<uri> [-key[=value] ...]" 
+  STDERR.puts "        remove -uri=<uri> -hsmBase=<path> [-key[=value] ...]" 
   exit 4
 end
 
