@@ -53,6 +53,7 @@ public class      HttpServiceCell
     
    }  
    private class AliasEntry {
+	  private String _intFailureMsg = null;
       private String _type ;
       private Object _obj  ;
       private String _spec ;
@@ -82,8 +83,10 @@ public class      HttpServiceCell
             pw.println("Exception : "+ee ) ;
          }
       }
+      public void setIntFailureMsg( String entry){ _intFailureMsg = entry ; }
       public void setOnError( String entry ){ _onError = entry ; }
       public void setOverwrite( String entry ){ _overwrite = entry ; }
+      public String getIntFailureMsg(){ return _intFailureMsg ;}
       public String getOnError(){ return _onError ;}
       public String getOverwrite(){ return _overwrite ;}
       public String getType(){ return _type ; }
@@ -201,10 +204,26 @@ public class      HttpServiceCell
              arg[i] = args.argv(3+i) ;
              sb.append( ";" ).append(arg[i]) ;
          }
-         HttpResponseEngine engine  = invokeHttpEngine( spec , arg ) ;
          
-         _aliasHash.put( alias , new AliasEntry( type , engine , sb.toString() ) ) ;
-         return alias+" -> class("+sb.toString()+")" ;
+         HttpResponseEngine engine=null;
+         String intFailureMsg=null, retMsg;
+         
+         try {
+        	 engine  = invokeHttpEngine( spec , arg ) ;
+        	 retMsg = alias+" -> class("+sb.toString()+")";
+         } catch( ClassNotFoundException e) {
+        	 type = "badconfig";
+        	 intFailureMsg = "failed to load class "+spec;
+        	 retMsg = alias+" -> class("+sb.toString()+")  FAILED TO LOAD CLASS";
+         }
+
+         AliasEntry aliasEntry = new AliasEntry( type , engine , sb.toString());
+         _aliasHash.put( alias , aliasEntry) ;
+         
+         if( engine == null)
+        	 aliasEntry.setIntFailureMsg( intFailureMsg);
+         
+         return retMsg;
          
       }else if( type.equals( "cell" ) ){
       
@@ -415,8 +434,20 @@ public class      HttpServiceCell
        private void switchHttpType( AliasEntry entry ) throws Exception {
                
           String type = entry.getType() ;
+          
+          if( type.equals( "badconfig")) {
+        	  StringBuilder sb = new StringBuilder();
+        	  
+        	  sb.append( "HTTP Server badly configured");
+        	  if( entry.getIntFailureMsg() != null) {
+        		  sb.append( ": ");
+        		  sb.append( entry.getIntFailureMsg());
+        	  }
+        	  sb.append( ".");
+        	  
+        	  throw new HttpException(  500 , sb.toString());
 
-          if( type.equals( "directory" ) ){
+          } else if( type.equals( "directory" ) ){
 
              sendFile( (File)entry.getSpecific() , _tokens ) ;
 
