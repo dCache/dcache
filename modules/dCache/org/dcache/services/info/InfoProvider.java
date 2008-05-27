@@ -28,6 +28,8 @@ import org.dcache.services.info.serialisation.SimpleTextSerialiser;
 import org.dcache.services.info.serialisation.StateSerialiser;
 import org.dcache.services.info.serialisation.XmlSerialiser;
 
+import org.dcache.vehicles.InfoGetSerialisedDataMessage;
+
 public class InfoProvider extends CellAdapter {
 	
 	private static Logger _log = Logger.getLogger(InfoProvider.class);
@@ -206,10 +208,9 @@ public class InfoProvider extends CellAdapter {
 	 */
 	private void buildMessageHandlerChain() {
 		_msgHandlerChain = new MessageHandlerChain();
-		
-		//TODO: add default Handlers.
-		//Alternatively, use introspection to deliver messages to those methods that
-		// can handle them (c.f., Gerd's AbstractCell implementation)
+			
+		// TODO: add default Message Handlers.
+		//_msgHandlerChain.addDefaultHandlers();
 	}
 	
 	
@@ -228,6 +229,24 @@ public class InfoProvider extends CellAdapter {
 	 * instance.
 	 */
 	public synchronized void messageArrived( CellMessage msg ) {
+		
+		if( msg.getMessageObject() instanceof InfoGetSerialisedDataMessage) {
+			addSerialisedDataToMsg( (InfoGetSerialisedDataMessage) msg.getMessageObject());
+			
+	    	msg.revertDirection();
+    		try {
+				super.sendMessage(msg);
+			} catch (NotSerializableException e) {
+				// This should never happen.
+				_log.error( "unable to serialise reply message");
+			} catch (NoRouteToCellException e) {
+				// This can happen if the querying cell dies whilst we are preparing the serialised output.
+				_log.warn("can't send reply message to "+ msg.getDestinationPath() + " : " + e.getMessage());
+			}
+
+			return;
+		}
+		
 		if( !_msgHandlerChain.handleMessage( msg))
 			_log.warn( "Unable to handle incoming message from: " + msg.getSourceAddress());
 	}
@@ -622,4 +641,30 @@ public class InfoProvider extends CellAdapter {
 			
 		return sb.toString();
 	}
+
+	/**
+	 * Satisfy an incoming request for serialised dCache state.
+	 * 
+	 * @param msg the Message (Vehicle) requesting the data.
+	 */
+	private void addSerialisedDataToMsg( InfoGetSerialisedDataMessage msg) {
+
+		if( _log.isInfoEnabled())
+			_log.info("Received InfoGetSerialisedDataMessage.");
+
+		StateSerialiser xmlSerialiser = _availableSerialisers.get( XmlSerialiser.NAME);
+		String data;
+		
+		if( xmlSerialiser != null)
+			data = xmlSerialiser.serialise();
+		else {
+			_log.error("Couldn't find the xmlSerialiser");
+			
+			// Really, we should propagate this back as an Exception.
+			data = null;
+		}
+		
+		msg.setData( data);		
+	}
+
 }
