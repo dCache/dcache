@@ -36,6 +36,9 @@ import org.dcache.pool.repository.v5.IllegalTransitionException;
 import org.dcache.pool.repository.SpaceRecord;
 import org.dcache.pool.repository.EntryState;
 import org.dcache.pool.repository.WriteHandle;
+import org.dcache.pool.repository.CacheEntry;
+import org.dcache.pool.repository.StateChangeListener;
+import org.dcache.pool.repository.StateChangeEvent;
 import diskCacheV111.pools.PoolV2Mode;
 import diskCacheV111.pools.SpaceSweeper;
 import diskCacheV111.pools.JobTimeoutManager;
@@ -65,6 +68,7 @@ import diskCacheV111.util.UnitInteger;
 import diskCacheV111.util.event.CacheEvent;
 import diskCacheV111.util.event.CacheNeedSpaceEvent;
 import diskCacheV111.vehicles.DCapProtocolInfo;
+import diskCacheV111.vehicles.InfoMessage;
 import diskCacheV111.vehicles.DoorTransferFinishedMessage;
 import diskCacheV111.vehicles.IoJobInfo;
 import diskCacheV111.vehicles.JobInfo;
@@ -119,7 +123,6 @@ public class PoolV4 extends CellAdapter implements Logable {
 
     private final static int LFS_NONE = 0;
     private final static int LFS_PRECIOUS = 1;
-    private final static int LFS_VOLATILE = 2;
 
     private final static int DUP_REQ_NONE = 0;
     private final static int DUP_REQ_IGNORE = 1;
@@ -333,28 +336,16 @@ public class PoolV4 extends CellAdapter implements Logable {
             String lfsModeString = _args.getOpt("lfs");
             lfsModeString = lfsModeString == null ? _args
                 .getOpt("largeFileStore") : lfsModeString;
-            if (lfsModeString != null) {
-                if (lfsModeString.equals("precious")
-                    || lfsModeString.equals("hsm")
-                    || lfsModeString.equals("")) {
-
-                    _lfsMode = LFS_PRECIOUS;
-
-                } else if (lfsModeString.equals("volatile")
-                           || lfsModeString.equals("transient")) {
-
-                    _lfsMode = LFS_VOLATILE;
-                } else {
-                    throw new IllegalArgumentException(
-                                                       "lfs[=volatile|precious|transient]");
-                }
-            } else {
+            if (lfsModeString != null &&
+                (lfsModeString.equals("precious") || lfsModeString.equals(""))){
+                _lfsMode = LFS_PRECIOUS;
+            } else if (lfsModeString == null || lfsModeString.equals("none")) {
                 _lfsMode = LFS_NONE;
+            } else {
+                throw new IllegalArgumentException("lfs=[none|precious]");
             }
             say("LargeFileStore Mode : "
-                + (_lfsMode == LFS_NONE ? "None"
-                   : _lfsMode == LFS_VOLATILE ? "Volatile"
-                   : "Precious"));
+                + (_lfsMode == LFS_NONE ? "None" : "Precious"));
 
             lfsModeString = _args.getOpt("p2p");
             lfsModeString = lfsModeString == null ? _args.getOpt("p2pFileMode")
@@ -484,14 +475,11 @@ public class PoolV4 extends CellAdapter implements Logable {
             }
             say("Base dir ok");
 
-            _storageQueue = new StorageClassContainer(poolName);
-
             _pnfs = new PnfsHandler(this, new CellPath(_pnfsManagerName), _poolName);
             _repository = new CacheRepositoryV5(this, _pnfs);
 
-//             _storageHandler = new HsmStorageHandler2(this, _repository, _hsmSet, _pnfs);
-            _storageHandler = new HsmStorageHandler2(this, null, _hsmSet, _pnfs);
-
+            _storageQueue = new StorageClassContainer(_repository, poolName);
+            _storageHandler = new HsmStorageHandler2(this, _repository, _hsmSet, _pnfs);
             _storageHandler.setStickyAllowed(_allowSticky);
 
             //
@@ -548,7 +536,8 @@ public class PoolV4 extends CellAdapter implements Logable {
 
         _pingThread.start();
 
-//         _repository.addCacheRepositoryListener(new RepositoryLoader());
+        _repository.addListener(new RepositoryLoader());
+        _repository.addListener(new NotifyBillingOnRemoveListener());
 
         start();
 
@@ -781,168 +770,110 @@ public class PoolV4 extends CellAdapter implements Logable {
     }
 
     @Override
-    public void cleanUp() {
+    public void cleanUp()
+    {
         disablePool(PoolV2Mode.DISABLED_DEAD | PoolV2Mode.DISABLED_STRICT,
                     666, "Shutdown");
     }
 
-//     private void setDummyStorageInfo(CacheRepositoryEntry entry) {
-//         try {
+    private void setDummyStorageInfo(CacheEntry entry)
+    {
+        try {
+            StorageInfo storageInfo = entry.getStorageInfo();
+            storageInfo.setBitfileId("*");
 
-//             StorageInfo storageInfo = entry.getStorageInfo();
-//             storageInfo.setBitfileId("*");
+            _pnfs.setStorageInfoByPnfsId(entry.getPnfsId(), storageInfo, 0 // write
+                                         // (don't overwrite)
+                                         );
+        } catch (CacheException e) {
+            //
+            // for now we just ignore this exception (its dummy only)
+            //
+            esay("Problem in sending storage info of " + entry.getPnfsId()
+                 + " to PNFS: " + e.getMessage());
+        }
+    }
 
-//             _pnfs.setStorageInfoByPnfsId(entry.getPnfsId(), storageInfo, 0 // write
-//                                          // (don't overwrite)
-//                                          );
-//         } catch (CacheException e) {
-//             //
-//             // for now we just ignore this exception (its dummy only)
-//             //
-//             esay("Problem in setDummyStorageInfo of : " + entry + " : " + e);
-//         }
-//     }
+    /**
+     * Interface between the repository and the StorageQueueContainer.
+     */
+    private class RepositoryLoader implements StateChangeListener
+    {
+        public void stateChanged(StateChangeEvent event)
+        {
+            PnfsId id = event.getPnfsId();
+            EntryState from = event.getOldState();
+            EntryState to = event.getNewState();
 
-//     //
-//     // interface between the repository and the StorageQueueContainer
-//     // (we do the pnfs stuff here as well)
-//     //
-//     private class RepositoryLoader implements CacheRepositoryListener {
-//         public void actionPerformed(CacheEvent event) {
-//             // forced by interface
-//         }
+            if (from == to)
+                return;
 
-//         public void sticky(CacheRepositoryEvent event) {
-//             say("RepositoryLoader : sticky : " + event);
-//         }
+            if (to == EntryState.PRECIOUS) {
+                say("Adding " + id + " to flush queue");
 
-//         public void precious(CacheRepositoryEvent event) {
-//             say("RepositoryLoader : precious : " + event);
-//             CacheRepositoryEntry entry = event.getRepositoryEntry();
-//             long size = 0L;
-//             try {
-//                 size = entry.getSize();
-//             } catch (CacheException ee) {
-//                 esay("RepositoryLoader : can't get filesize : " + ee);
-//                 //
-//                 // if we can't get the size, so to be on the save side.
-//                 //
-//                 size = 1;
-//             }
+                if (_lfsMode == LFS_NONE) {
+                    try {
+                        CacheEntry entry = _repository.getEntry(id);
+                        long size = entry.getReplicaSize();
+                        if (size == 0 && !_flushZeroSizeFiles) {
+                            say("Empty file set cached without HSM flush");
+                            _repository.setState(id, EntryState.CACHED);
+                            setDummyStorageInfo(entry);
+                        } else {
+                            _storageQueue.addCacheEntry(id);
+                        }
+                    } catch (IllegalTransitionException e) {
+                        /* We are supposed to be able to make PRECIOUS
+                         * files CACHED. Therefore seeing this
+                         * exception would indicate that the file was
+                         * changed into some other state, probably
+                         * deleted.
+                         */
+                        say("Could not change state for " + id + ": "
+                            + e.getMessage());
+                    } catch (FileNotInCacheException e) {
+                        /* File was deleted before we got a chance to do
+                         * anything with it. We don't care about deleted
+                         * files so we ignore this.
+                         */
+                        say("Could not change state for " + id + ": File is no longer in the pool");
+                    } catch (CacheException e) {
+                        esay("Error adding " + id + " to flush queue: "
+                             + e.getMessage());
+                    }
+                }
+            } else if (from == EntryState.PRECIOUS) {
+                say("Removing " + id + " from flush queue");
+                try {
+                    if (!_storageQueue.removeCacheEntry(id))
+                        say("File " + id + " not found in flush queue");
+                } catch (CacheException e) {
+                    esay("Error removing " + id + " from flush queue: " + e);
+                }
+            }
+        }
+    }
 
-//             try {
-//                 if ((size == 0) && !_flushZeroSizeFiles) {
-
-//                     say("RepositoryLoader : 0 size file set cached (no HSM flush)");
-//                     if ((_lfsMode == LFS_NONE) || (_lfsMode == LFS_VOLATILE)) {
-
-//                         entry.setCached();
-//                         setDummyStorageInfo(entry);
-//                     }
-//                 } else {
-
-//                     if (_lfsMode == LFS_NONE)
-//                         _storageQueue.addCacheEntry(entry);
-//                     if (_lfsMode == LFS_VOLATILE)
-//                         entry.setCached();
-
-//                 }
-//             } catch (CacheException ce) {
-//                 esay("RepositoryLoader : Cache Exception in addCacheEntry ["
-//                      + entry.getPnfsId() + "] : " + ce.getMessage());
-//             }
-//         }
-
-//         public void cached(CacheRepositoryEvent event) {
-//             say("RepositoryLoader : cached : " + event);
-//             //
-//             // the remove will fail if the file
-//             // is coming FROM the store.
-//             //
-//             CacheRepositoryEntry entry = event.getRepositoryEntry();
-//             try {
-//                 CacheRepositoryEntry e = _storageQueue.removeCacheEntry(entry
-//                                                                         .getPnfsId());
-//                 say("RepositoryLoader : removing " + entry.getPnfsId()
-//                     + (e == null ? " failed" : " ok"));
-//             } catch (CacheException ce) {
-//                 esay("RepositoryLoader : remove " + entry.getPnfsId()
-//                      + " failed : " + ce);
-//             }
-//         }
-
-//         public void available(CacheRepositoryEvent event) {
-//             say("RepositoryLoader : available : " + event);
-//             _pnfs.addCacheLocation(event.getRepositoryEntry().getPnfsId());
-//             event.getRepositoryEntry().lock(false);
-//         }
-
-//         public void created(CacheRepositoryEvent event) {
-//             say("RepositoryLoader : created : " + event);
-//         }
-
-//         public void touched(CacheRepositoryEvent event) {
-//             say("RepositoryLoader : touched : " + event);
-//         }
-
-//         public void removed(CacheRepositoryEvent event) {
-//             say("RepositoryLoader : removed : " + event);
-//             CacheRepositoryEntry entry = event.getRepositoryEntry();
-//             try {
-//                 _storageQueue.removeCacheEntry(entry.getPnfsId());
-//             } catch (CacheException ce) {
-//                 esay("RepositoryLoader : PANIC : " + entry.getPnfsId()
-//                      + " removing from storage queue failed : " + ce);
-//             }
-//             //
-//             // although we may be inconsistent now, we clear the database
-//             // (volatile systems remove the entry from pnfs if this was the last
-//             // copy)
-//             //
-//             _pnfs.clearCacheLocation(entry.getPnfsId(),
-//                                      _lfsMode == LFS_VOLATILE);
-//             //
-//             //
-//             if (_reportOnRemovals) {
-//                 try {
-//                     sendMessage(new CellMessage(_billingCell,
-//                                                 new RemoveFileInfoMessage(getCellName() + "@"
-//                                                                           + getCellDomainName(), entry.getPnfsId())));
-//                 } catch (NotSerializableException e) {
-//                     throw new RuntimeException("Bug detected: Unserializable vehicle", e);
-//                 } catch (NoRouteToCellException e) {
-//                     esay("Could not report removal of : " + entry.getPnfsId()
-//                          + " : " + e.getMessage());
-//                 }
-//             }
-//         }
-
-//         public void destroyed(CacheRepositoryEvent event) {
-//             say("RepositoryLoader : destroyed : " + event);
-//         }
-
-//         public void needSpace(CacheNeedSpaceEvent event) {
-//             say("RepositoryLoader : needSpace : " + event);
-//         }
-
-//         public void scanned(CacheRepositoryEvent event) {
-//             CacheRepositoryEntry entry = event.getRepositoryEntry();
-
-//             try {
-//                 if (entry.isPrecious() && (!entry.isBad())
-//                     && (_lfsMode == LFS_NONE)) {
-
-//                     _storageQueue.addCacheEntry(entry);
-//                     say("RepositoryLoader : Scanning " + entry.getPnfsId()
-//                         + " ok");
-
-//                 }
-//             } catch (CacheException ce) {
-//                 esay("RepositoryLoader : Scanning " + entry.getPnfsId()
-//                      + " failed " + ce.getMessage());
-//             }
-//         }
-//     }
+    private class NotifyBillingOnRemoveListener implements StateChangeListener
+    {
+        public void stateChanged(StateChangeEvent event)
+        {
+            if (_reportOnRemovals && event.getNewState() == EntryState.REMOVED) {
+                PnfsId id = event.getPnfsId();
+                try {
+                    String source = getCellName() + "@" + getCellDomainName();
+                    InfoMessage msg =
+                        new RemoveFileInfoMessage(source, id);
+                    sendMessage(new CellMessage(_billingCell, msg));
+                } catch (NotSerializableException e) {
+                    throw new RuntimeException("Bug detected: Unserializable vehicle", e);
+                } catch (NoRouteToCellException e) {
+                    esay("Failed to send message to " + _billingCell + ": "
+                         + e.getMessage());
+                }
+            }
+        }
+    }
 
     private void execFile(File setup)
         throws IOException, CommandException
@@ -1073,14 +1004,13 @@ public class PoolV4 extends CellAdapter implements Logable {
                    + (_allowSticky ? "allowed" : "denied"));
         pw.println("Gap               : " + _gap);
         pw.println("Report remove     : " + (_reportOnRemovals ? "on" : "off"));
-        pw
-            .println("Recovery          : "
-                     + ((_recoveryFlags & CacheRepository.ALLOW_CONTROL_RECOVERY) > 0 ? "CONTROL "
-                        : "")
-                     + ((_recoveryFlags & CacheRepository.ALLOW_SPACE_RECOVERY) > 0 ? "SPACE "
-                        : "")
-                     + ((_recoveryFlags & CacheRepository.ALLOW_RECOVER_ANYWAY) > 0 ? "ANYWAY "
-                        : ""));
+        pw.println("Recovery          : "
+                   + ((_recoveryFlags & CacheRepository.ALLOW_CONTROL_RECOVERY) > 0 ? "CONTROL "
+                      : "")
+                   + ((_recoveryFlags & CacheRepository.ALLOW_SPACE_RECOVERY) > 0 ? "SPACE "
+                      : "")
+                   + ((_recoveryFlags & CacheRepository.ALLOW_RECOVER_ANYWAY) > 0 ? "ANYWAY "
+                      : ""));
         pw.println("Pool Mode         : " + _poolMode);
         if (_poolMode.isDisabled()) {
             pw.println("Detail            : [" + _poolStatusCode + "] "
@@ -1096,8 +1026,7 @@ public class PoolV4 extends CellAdapter implements Logable {
         pw.println("ReplicationMgr    : " + _replicationHandler);
         pw.println("Check Repository  : " + _checkRepository);
         pw.println("LargeFileStore    : "
-                   + (_lfsMode == LFS_NONE ? "None"
-                      : _lfsMode == LFS_VOLATILE ? "Volatile" : "Precious"));
+                   + (_lfsMode == LFS_NONE ? "None" : "Precious"));
         pw.println("DuplicateRequests : "
                    + (_dupRequest == DUP_REQ_NONE ? "None"
                       : _dupRequest == DUP_REQ_IGNORE ? "Ignored"
@@ -2534,8 +2463,8 @@ public class PoolV4 extends CellAdapter implements Logable {
     }
 
     private boolean fetchFile(PoolFetchFileMessage poolMessage,
-                              CellMessage cellMessage) {
-
+                              CellMessage cellMessage)
+    {
         PnfsId pnfsId = poolMessage.getPnfsId();
         StorageInfo storageInfo = poolMessage.getStorageInfo();
         say("Pool " + _poolName + " asked to fetch file " + pnfsId + " (hsm="
@@ -2552,17 +2481,13 @@ public class PoolV4 extends CellAdapter implements Logable {
                 handle.close();
                 return true;
             }
-            ReplyToPoolFetch reply = new ReplyToPoolFetch(cellMessage);
-            if (_storageHandler.fetch(pnfsId, storageInfo, reply)) {
-                poolMessage.setSucceeded();
-                return true;
-            } else {
-                return false;
-            }
 
+            ReplyToPoolFetch reply = new ReplyToPoolFetch(cellMessage);
+            _storageHandler.fetch(pnfsId, storageInfo, reply);
+            return false;
         } catch (FileInCacheException ce) {
             esay(ce);
-            poolMessage.setFailed(0, null);
+            poolMessage.setSucceeded();
             return true;
         } catch (CacheException ce) {
             esay(ce);
@@ -3504,41 +3429,13 @@ public class PoolV4 extends CellAdapter implements Logable {
     }
 
     public String hh_set_replication = "off|on|<mgr>,<host>,<destMode>";
-
     public String ac_set_replication_$_1(Args args) {
         String mode = args.argv(0);
         _replicationHandler.init(mode);
         return _replicationHandler.toString();
     }
 
-//     public String hh_pool_inventory = "DEBUG ONLY";
-
-//     public String ac_pool_inventory(Args args)
-//         throws CacheException
-//     {
-//         final StringBuffer sb = new StringBuffer();
-//         Logable l = new Logable() {
-//                 public void log(String msg) {
-//                     _logClass.log(msg);
-//                 };
-
-//                 public void elog(String msg) {
-//                     sb.append(msg).append("\n");
-//                     _logClass.elog(msg);
-//                 }
-
-//                 public void plog(String msg) {
-//                     sb.append(msg).append("\n");
-//                     _logClass.plog(msg);
-//                 }
-//             };
-//         _repository.runInventory(l, _pnfs, _recoveryFlags);
-//         return sb.toString();
-
-//     }
-
     public String hh_pool_suppress_hsmload = "on|off";
-
     public String ac_pool_suppress_hsmload_$_1(Args args) {
         String mode = args.argv(0);
         if (mode.equals("on")) {
@@ -3553,19 +3450,18 @@ public class PoolV4 extends CellAdapter implements Logable {
     }
 
     public String hh_movermap_define = "<protocol>-<major> <moverClassName>";
-    public String hh_movermap_undefine = "<protocol>-<major>";
-    public String hh_movermap_ls = "";
-
     public String ac_movermap_define_$_2(Args args) throws Exception {
         _moverHash.put(args.argv(0), Class.forName(args.argv(1)));
         return "";
     }
 
+    public String hh_movermap_undefine = "<protocol>-<major>";
     public String ac_movermap_undefine_$_1(Args args) {
         _moverHash.remove(args.argv(0));
         return "";
     }
 
+    public String hh_movermap_ls = "";
     public String ac_movermap_ls(Args args) {
         StringBuilder sb = new StringBuilder();
 
@@ -3577,25 +3473,21 @@ public class PoolV4 extends CellAdapter implements Logable {
         return sb.toString();
     }
 
-    public String hh_pool_lfs = "none|precious|volatile # FOR DEBUG ONLY";
-
+    public String hh_pool_lfs = "none|precious # FOR DEBUG ONLY";
     public String ac_pool_lfs_$_1(Args args) throws CommandSyntaxException {
         String mode = args.argv(0);
         if (mode.equals("none")) {
             _lfsMode = LFS_NONE;
         } else if (mode.equals("precious")) {
             _lfsMode = LFS_PRECIOUS;
-        } else if (mode.equals("volatile")) {
-            _lfsMode = LFS_VOLATILE;
         } else {
             throw new CommandSyntaxException("Not Found : ",
-                                             "Usage : pool lfs none|precious|volatile");
+                                             "Usage : pool lfs none|precious");
         }
         return "";
     }
 
     public String hh_set_duplicate_request = "none|ignore|refresh";
-
     public String ac_set_duplicate_request_$_1(Args args)
         throws CommandSyntaxException {
         String mode = args.argv(0);
@@ -3613,7 +3505,6 @@ public class PoolV4 extends CellAdapter implements Logable {
     }
 
     public String hh_set_p2p = "integrated|separated";
-
     public String ac_set_p2p_$_1(Args args) throws CommandSyntaxException {
         String mode = args.argv(0);
         if (mode.equals("integrated")) {
@@ -3628,7 +3519,6 @@ public class PoolV4 extends CellAdapter implements Logable {
     }
 
     public String hh_pool_disablemode = "strict|fuzzy # DEPRICATED, use pool disable [options]";
-
     public String ac_pool_disablemode_$_1(Args args) {
         return "# DEPRICATED, use pool disable [options]";
     }
@@ -3642,7 +3532,6 @@ public class PoolV4 extends CellAdapter implements Logable {
         + "        -rdonly   #  := store,stage,p2p-client\n"
         + "        -strict   #  := disallows everything\n";
     public String hh_pool_disable = "[options] [<errorCode> [<errorMessage>]] # suspend sending 'up messages'";
-
     public String ac_pool_disable_$_0_2(Args args) {
 
         if (_poolMode.isDisabled(PoolV2Mode.DISABLED_DEAD))
@@ -3673,7 +3562,6 @@ public class PoolV4 extends CellAdapter implements Logable {
     }
 
     public String hh_pool_enable = " # resume sending up messages'";
-
     public String ac_pool_enable(Args args) {
         if (_poolMode.isDisabled(PoolV2Mode.DISABLED_DEAD))
             return "The pool is dead and a restart is required to enable it";
@@ -3682,7 +3570,6 @@ public class PoolV4 extends CellAdapter implements Logable {
     }
 
     public String hh_set_max_movers = "!!! Please use 'mover|st|rh set max active <jobs>'";
-
     public String ac_set_max_movers_$_1(Args args)
         throws IllegalArgumentException {
         int num = Integer.parseInt(args.argv(0));
@@ -3693,14 +3580,12 @@ public class PoolV4 extends CellAdapter implements Logable {
     }
 
     public String hh_set_gap = "<always removable gap>/size[<unit>] # unit = k|m|g";
-
     public String ac_set_gap_$_1(Args args) {
         _gap = UnitInteger.parseUnitLong(args.argv(0));
         return "Gap set to " + _gap;
     }
 
     public String hh_set_report_remove = "on|off";
-
     public String ac_set_report_remove_$_1(Args args)
         throws CommandSyntaxException {
         String onoff = args.argv(0);
@@ -3714,7 +3599,6 @@ public class PoolV4 extends CellAdapter implements Logable {
     }
 
     public String hh_crash = "disabled|shutdown|exception";
-
     public String ac_crash_$_0_1(Args args) throws IllegalArgumentException {
         if (args.argc() < 1) {
             return "Crash is " + (_crashEnabled ? _crashType : "disabled");
@@ -3735,7 +3619,6 @@ public class PoolV4 extends CellAdapter implements Logable {
     }
 
     public String hh_set_sticky = "allowed|denied";
-
     public String ac_set_sticky_$_0_1(Args args) {
         if (args.argc() > 0) {
             String mode = args.argv(0);
@@ -3751,7 +3634,6 @@ public class PoolV4 extends CellAdapter implements Logable {
     }
 
     public String hh_set_max_diskspace = "<space>[<unit>] # unit = k|m|g";
-
     public String ac_set_max_diskspace_$_1(Args args) {
 
         long maxDisk = UnitInteger.parseUnitLong(args.argv(0));
@@ -3761,7 +3643,6 @@ public class PoolV4 extends CellAdapter implements Logable {
     }
 
     public String hh_set_cleaning_interval = "<interval/sec>";
-
     public String ac_set_cleaning_interval_$_1(Args args) {
         _cleaningInterval = Integer.parseInt(args.argv(0));
         say("_cleaningInterval=" + _cleaningInterval);
@@ -3769,13 +3650,11 @@ public class PoolV4 extends CellAdapter implements Logable {
     }
 
     public String hh_set_flushing_interval = "DEPRECATED (use flush set interval <time/sec>)";
-
     public String ac_set_flushing_interval_$_1(Args args) {
         return "DEPRECATED (use flush set interval <time/sec>)";
     }
 
     public String hh_flush_class = "<hsm> <storageClass> [-count=<count>]";
-
     public String ac_flush_class_$_2(Args args) {
         String tmp = args.getOpt("count");
         int count = (tmp == null) || (tmp.equals("")) ? 0 : Integer
@@ -3786,7 +3665,6 @@ public class PoolV4 extends CellAdapter implements Logable {
     }
 
     public String hh_flush_pnfsid = "<pnfsid> # flushs a single pnfsid";
-
     public String ac_flush_pnfsid_$_1(Args args)
         throws CacheException
     {

@@ -63,11 +63,8 @@ public class HsmStorageInterpreter {
     }
     public String hh_rh_ls = "[<pnfsId>]" ;
     public String ac_rh_ls( Args args )throws Exception {
-        Iterator     e  = _storageHandler.getRestorePnfsIds() ;
         StringBuffer sb = new StringBuffer() ;
-        while( e.hasNext() ){
-           PnfsId pnfsId = (PnfsId)e.next() ;
-
+        for (PnfsId pnfsId : _storageHandler.getRestorePnfsIds()) {
            HsmStorageHandler2.Info info = _storageHandler.getRestoreInfoByPnfsId(pnfsId) ;
 
            if( info == null ){
@@ -118,12 +115,8 @@ public class HsmStorageInterpreter {
     }
     public String hh_st_ls = "[<pnfsId>]" ;
     public String ac_st_ls( Args args )throws Exception {
-        _cell.say("trying to Get store pnfsid list");
-        Iterator     e  = _storageHandler.getStorePnfsIds() ;
-        _cell.say("Got store pnfsid list");
         StringBuffer sb = new StringBuffer() ;
-        while( e.hasNext() ){
-           PnfsId pnfsId = (PnfsId)e.next() ;
+        for (PnfsId pnfsId : _storageHandler.getStorePnfsIds()) {
            _cell.say("ok "+pnfsId);
            HsmStorageHandler2.Info info = _storageHandler.getStoreInfoByPnfsId(pnfsId) ;
            _cell.say("done "+info);
@@ -190,9 +183,11 @@ public class HsmStorageInterpreter {
                }
             }
         } ;
-        boolean wasStored = _storageHandler.fetch( new PnfsId(pnfsId) ,
-                               null,
-                               cfa ) ;
-        return wasStored ? "Already in cache" : "Stay tuned" ;
+
+        // FIXME
+
+        _storageHandler.fetch(new PnfsId(pnfsId), null, cfa);
+
+        return "Fetch request queued";
     }
 }

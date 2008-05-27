@@ -2,6 +2,7 @@
 
 package org.dcache.pool.classic;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.NotSerializableException;
 import java.io.PrintWriter;
@@ -12,10 +13,11 @@ import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
-import java.util.Hashtable;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Collection;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -31,12 +33,11 @@ import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.Logable;
 
 import diskCacheV111.pools.HsmRemoveTask;
-import diskCacheV111.repository.CacheRepository;
-import diskCacheV111.repository.CacheRepositoryEntry;
 import diskCacheV111.util.Batchable;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.CacheFileAvailable;
 import diskCacheV111.util.FileNotInCacheException;
+import diskCacheV111.util.FileInCacheException;
 import diskCacheV111.util.HsmSet;
 import diskCacheV111.util.InconsistentCacheException;
 import diskCacheV111.util.JobScheduler;
@@ -49,22 +50,26 @@ import diskCacheV111.vehicles.PoolRemoveFilesFromHSMMessage;
 import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.StorageInfoMessage;
 
+import org.dcache.pool.repository.v5.CacheRepositoryV5;
+import org.dcache.pool.repository.v5.IllegalTransitionException;
+import org.dcache.pool.repository.WriteHandle;
+import org.dcache.pool.repository.ReadHandle;
+import org.dcache.pool.repository.CacheEntry;
+import org.dcache.pool.repository.StickyRecord;
+import org.dcache.pool.repository.EntryState;
+
+
 public class HsmStorageHandler2
 {
     private static Logger _logRepository =
         Logger.getLogger("logger.org.dcache.repository");
-    private final static Logger _logSpaceAllocation =
-        Logger.getLogger("logger.dev.org.dcache.poolspacemonitor." +
-                         HsmStorageHandler2.class.getName());
 
-    private final CacheRepository _repository;
+    private final CacheRepositoryV5 _repository;
     private final HsmSet _hsmSet;
     private final PnfsHandler _pnfs;
     private final CellAdapter _cell;
-    private final Map<PnfsId, StoreThread> _storePnfsidList   = new Hashtable();
-    private final Map<PnfsId, FetchThread> _restorePnfsidList = new Hashtable();
-    private final Object _listLock = new Object();
-    private final HsmStorageHandler2 _storageHandler;
+    private final Map<PnfsId, StoreThread> _storePnfsidList   = new HashMap();
+    private final Map<PnfsId, FetchThread> _restorePnfsidList = new HashMap();
     private final JobScheduler _fetchQueue;
     private final JobScheduler _storeQueue;
     private final boolean _checkPnfs = true;
@@ -135,9 +140,18 @@ public class HsmStorageHandler2
             _callbacks.add(callback);
         }
 
-        synchronized List<CacheFileAvailable> getCallbacks()
+        synchronized void executeCallbacks(Throwable exc)
         {
-            return new ArrayList<CacheFileAvailable>(_callbacks);
+            say("DEBUGFLUSH : executeCallbacks : excecuting callbacks  "
+                + _pnfsId + " (callback=" + _callbacks + ") " + exc);
+            for (CacheFileAvailable callback : _callbacks) {
+                try {
+                    callback.cacheFileAvailable(_pnfsId.toString(), exc);
+                } catch (Throwable t) {
+                    esay("Throwable in callback to " +
+                         callback.getClass().getName() + " : " + t);
+                }
+            }
         }
 
         void setThread(Thread thread)
@@ -146,17 +160,17 @@ public class HsmStorageHandler2
         }
     }
 
-    public HsmStorageHandler2(CellAdapter     cell,
-                              CacheRepository repository,
-                              HsmSet          hsmSet,
-                              PnfsHandler     pnfs)
+    public HsmStorageHandler2(CellAdapter cell,
+                              CacheRepositoryV5 repository,
+                              HsmSet hsmSet,
+                              PnfsHandler pnfs)
     {
         _repository = repository;
         _hsmSet     = hsmSet;
         _pnfs       = pnfs;
         _cell       = cell;
-        _storageHandler = this;
-        if (cell instanceof Logable)setLogable((Logable)cell);
+        if (cell instanceof Logable)
+            setLogable((Logable)cell);
 
         _fetchQueue = new SimpleJobScheduler(cell.getNucleus().getThreadGroup(), "F");
         _storeQueue = new SimpleJobScheduler(cell.getNucleus().getThreadGroup(), "S");
@@ -164,24 +178,24 @@ public class HsmStorageHandler2
         _removeUnexistingEntries = Boolean.valueOf(_cell.getArgs().getOpt("remove-unexisting-entries-on-flush")).booleanValue();
     }
 
-    void setTimeout(long storeTimeout, long restoreTimeout, long removeTimeout)
+    synchronized void setTimeout(long storeTimeout, long restoreTimeout, long removeTimeout)
     {
-        if (storeTimeout > 0  )_maxStoreRun   = storeTimeout;
-        if (restoreTimeout > 0)_maxRestoreRun = restoreTimeout;
-        if (removeTimeout > 0)_maxRemoveRun = removeTimeout;
+        if (storeTimeout > 0) _maxStoreRun = storeTimeout;
+        if (restoreTimeout > 0) _maxRestoreRun = restoreTimeout;
+        if (removeTimeout > 0) _maxRemoveRun = removeTimeout;
     }
 
-    public void setStickyAllowed(boolean sticky)
+    public synchronized void setStickyAllowed(boolean sticky)
     {
         _stickyAllowed = sticky;
     }
 
-    public void setMaxActiveRestores(int restores)
+    public synchronized void setMaxActiveRestores(int restores)
     {
         _fetchQueue.setMaxActiveJobs(restores);
     }
 
-    public void printSetup(PrintWriter pw)
+    public synchronized void printSetup(PrintWriter pw)
     {
         pw.println("#\n# HsmStorageHandler2("+getClass().getName()+")\n#");
         pw.println("rh set max active "+_fetchQueue.getMaxActiveJobs());
@@ -192,7 +206,7 @@ public class HsmStorageHandler2
         pw.println("rm set timeout "+(_maxRemoveRun/1000L));
     }
 
-    public void getInfo(PrintWriter pw)
+    public synchronized void getInfo(PrintWriter pw)
     {
         pw.println("StorageHandler ["+this.getClass().getName()+"]");
         pw.println("  Version         : [$Id: HsmStorageHandler2.java,v 1.47 2007-10-26 11:17:06 behrmann Exp $]");
@@ -212,33 +226,8 @@ public class HsmStorageHandler2
                     ")/"+"");
     }
 
-    public Info getStorageInfoByPnfsId(PnfsId pnfsId)
-    {
-        synchronized(_listLock){
-            Info info = _restorePnfsidList.get(pnfsId);
-            if (info == null)return _storePnfsidList.get(pnfsId);
-            return info;
-        }
-    }
-
-    private StorageInfo getStorageInfo(CacheRepositoryEntry entry)
-        throws CacheException, InterruptedException
-    {
-        PnfsId pnfsId  = entry.getPnfsId();
-        StorageInfo si = entry.getStorageInfo();
-        if (si == null) {
-            si = _pnfs.getStorageInfo(pnfsId.toString());
-            if (si == null)
-                throw new
-                    CacheException("Couldn't get storage info of "+pnfsId);
-            entry.setStorageInfo(si);
-
-        }
-        return si;
-    }
-
     private synchronized String
-        getSystemCommand(PnfsId pnfsId, StorageInfo storageInfo,
+        getSystemCommand(File file, PnfsId pnfsId, StorageInfo storageInfo,
                          HsmSet.HsmInfo hsm, String direction)
             throws CacheException
     {
@@ -247,7 +236,7 @@ public class HsmStorageHandler2
             throw new
                 IllegalArgumentException("hsmCommand not specified in HsmSet");
 
-        String localPath = _repository.getEntry(pnfsId).getDataFile().getPath();
+        String localPath = file.getPath();
 
         StringBuilder sb = new StringBuilder();
 
@@ -271,7 +260,7 @@ public class HsmStorageHandler2
              * new style
              */
 
-            for(URI location: storageInfo.locations()) {
+            for (URI location: storageInfo.locations()) {
                 if (location.getScheme().equals(hsm.getType()) && location.getAuthority().equals(hsm.getInstance())) {
                     sb.append(" -uri=").append(location.toString());
                     break;
@@ -311,116 +300,61 @@ public class HsmStorageHandler2
         return _fetchQueue;
     }
 
-    public boolean fetch(PnfsId pnfsId,
-                         StorageInfo storageInfo,
-                         CacheFileAvailable callback)
-        throws Exception
-    {
-        boolean wasCreated = false;
-        CacheRepositoryEntry entry = null;
-        synchronized (_repository) {
-            say("fetch : request for "+pnfsId);
-            try {
-                entry = _repository.getEntry(pnfsId);
-                say("fetch : entry found <"+entry+">");
-            } catch (FileNotInCacheException fnice) {
-                entry = _repository.createEntry(pnfsId);
-                wasCreated = true;
-                say("fetch : entry created <"+entry+">");
-                try {
-                    StorageInfo info  = storageInfo;
-                    String      value = info.getKey("flag-s");
-
-                    if ((value != null) && (! value.equals(""))) {
-                        if (_stickyAllowed) {
-                            say("setting sticky bit of "+pnfsId);
-                            entry.setSticky(true);
-                        }else{
-                            say(pnfsId.toString()+" : setting sticky denied");
-                        }
-                    }
-                } catch (Exception ee) {
-                    esay("RepositoryLoader : ["+entry.getPnfsId()+
-                         "] Can't set sticky/nonsticky due to : "+ee);
-                }
-            }
-            //
-            // sync(repository) is not enough to
-            // read/mod/write the entry.isXXX routines.
-            //
-            synchronized (entry) {
-                if (entry.isCached() || entry.isPrecious())return true;
-
-                if (wasCreated) {
-                    try {
-                        entry.lock(true);
-                        entry.setReceivingFromStore();
-                        if (storageInfo != null)entry.setStorageInfo(storageInfo);
-                    } catch (Exception ce) {
-                        esay("fetchFile (1) : "+ce);
-                        try {_repository.removeEntry(entry);} catch (Exception ee) {}
-                        throw ce;
-                    }
-                }
-
-                if (! entry.isReceivingFromStore())
-                    throw new
-                        InconsistentCacheException(14,
-                                                   "entry not receiving from store but : "+entry.toString());
-
-                _storageHandler.fetch(entry, callback);
-
-            }
-        }
-        return false;
-
-    }
-
-    public synchronized void fetch(CacheRepositoryEntry entry,
+    public synchronized void fetch(PnfsId pnfsId,
+                                   StorageInfo storageInfo,
                                    CacheFileAvailable callback)
+        throws FileInCacheException, CacheException
     {
-        PnfsId       pnfsId = entry.getPnfsId();
-        FetchThread  info   = _restorePnfsidList.get(pnfsId);
+        FetchThread info = _restorePnfsidList.get(pnfsId);
 
         if (info != null) {
-            if (callback != null)info.addCallback(callback);
+            if (callback != null)
+                info.addCallback(callback);
             return;
         }
-        info = new FetchThread(entry);
-        if (callback != null)info.addCallback(callback);
-        _restorePnfsidList.put(pnfsId, info);
+
+        info = new FetchThread(pnfsId, storageInfo);
+        if (callback != null)
+            info.addCallback(callback);
 
         try {
             _fetchQueue.add(info);
-        } catch (InvocationTargetException ite) {
-            _restorePnfsidList.remove(pnfsId);
-            esay("Restore "+info+" not started due to : "+ite.getTargetException());
+            _restorePnfsidList.put(pnfsId, info);
+        } catch (InvocationTargetException e) {
+            /* This happens when the queued method of the FetchThread
+             * throws an exception. They have been designed not to
+             * throw any exceptions, so if this happens it must be a
+             * bug.
+             */
+            throw new RuntimeException("Failed to queue fetch request", e);
         }
     }
 
-    public synchronized Iterator<PnfsId> getPnfsIds()
+    protected synchronized void removeFetchEntry(PnfsId id)
+    {
+        _restorePnfsidList.remove(id);
+    }
+
+    public synchronized Collection<PnfsId> getPnfsIds()
     {
     	// to avoid extra buffer copy tell array size in advance
-        List<PnfsId> v = new ArrayList<PnfsId>(_restorePnfsidList.size() + _storePnfsidList.size());
+        List<PnfsId> v =
+            new ArrayList<PnfsId>(_restorePnfsidList.size() + _storePnfsidList.size());
 
         v.addAll(_restorePnfsidList.keySet());
         v.addAll(_storePnfsidList.keySet());
 
-        return v.iterator();
+        return v;
     }
 
-    public synchronized Iterator<PnfsId> getStorePnfsIds()
+    public synchronized Collection<PnfsId> getStorePnfsIds()
     {
-        List<PnfsId> v = new ArrayList<PnfsId>();
-        v.addAll(_storePnfsidList.keySet());
-        return v.iterator();
+        return new ArrayList<PnfsId>(_storePnfsidList.keySet());
     }
 
-    public synchronized Iterator<PnfsId> getRestorePnfsIds()
+    public synchronized Collection <PnfsId> getRestorePnfsIds()
     {
-        List<PnfsId> v = new ArrayList<PnfsId>();
-        v.addAll(_restorePnfsidList.keySet());
-        return v.iterator();
+        return new ArrayList<PnfsId>(_restorePnfsidList.keySet());
     }
 
     public synchronized Info getRestoreInfoByPnfsId(PnfsId pnfsId)
@@ -450,7 +384,7 @@ public class HsmStorageHandler2
     }
 
     private synchronized String
-        getFetchCommand(PnfsId pnfsId, StorageInfo storageInfo)
+        getFetchCommand(File file, PnfsId pnfsId, StorageInfo storageInfo)
             throws CacheException
     {
         String instance = findAccessibleLocation(storageInfo);
@@ -464,53 +398,58 @@ public class HsmStorageHandler2
         say("getFetchCommand for pnfsid=" + pnfsId +
             ";hsm=" + instance + ";si=" + storageInfo);
 
-        return getSystemCommand(pnfsId, storageInfo, hsm, "get");
-    }
-
-    private synchronized List<CacheFileAvailable> getCallbackList(Map map, PnfsId pnfsId)
-    {
-        Info info  = (Info)map.get(pnfsId);
-
-        return info == null ? new ArrayList<CacheFileAvailable>() : info.getCallbacks();
-    }
-
-    private void executeCallbacks(List<CacheFileAvailable> list, PnfsId pnfsId, Throwable exc)
-    {
-        say("DEBUGFLUSH : executeCallbacks : excecuting callbacks  "+pnfsId + " (callback="+list+") "+exc);
-        for (CacheFileAvailable callback: list) {
-            try {
-                callback.cacheFileAvailable(pnfsId.toString(), exc);
-            } catch (Throwable t) {
-                esay("Throwable in callback to "+callback.getClass().getName()+" : "+t);
-            }
-        }
+        return getSystemCommand(file, pnfsId, storageInfo, hsm, "get");
     }
 
     private class FetchThread extends Info implements Batchable
     {
-        private final PnfsId _pnfsId;
-        private final CacheRepositoryEntry _entry;
+        private final WriteHandle _handle;
         private final StorageInfoMessage _infoMsg;
-        private StorageInfo _storageInfo;
         private long _timestamp = 0;
         private int _id;
         private Thread _thread;
 
-        public FetchThread(CacheRepositoryEntry entry)
+        public FetchThread(PnfsId pnfsId, StorageInfo storageInfo)
+            throws CacheException, FileInCacheException
         {
-            super(entry.getPnfsId());
-            _entry   = entry;
-            _pnfsId  = entry.getPnfsId();
+            super(pnfsId);
             _infoMsg =
                 new StorageInfoMessage(_cell.getCellName()+"@"+_cell.getCellDomainName(),
-                                       _pnfsId,
-                                       true);
+                                       pnfsId, true);
+
+            _infoMsg.setStorageInfo(storageInfo);
+
+            long fileSize = storageInfo.getFileSize();
+
+            // Fixme!
+            if (fileSize == 0)
+                throw new
+                    CacheException("Couldn't get file size of " + pnfsId);
+
+            _infoMsg.setFileSize(fileSize);
+
+            StickyRecord sticky = null;
+            String value = storageInfo.getKey("flag-s");
+            if (value != null && value.length() > 0) {
+                if (_stickyAllowed) {
+                    say("setting sticky bit of " + pnfsId);
+                    sticky = new StickyRecord("system", -1);
+                } else {
+                    say(pnfsId.toString() + " : setting sticky denied");
+                }
+            }
+
+            _handle = _repository.createEntry(pnfsId,
+                                              storageInfo,
+                                              EntryState.FROM_STORE,
+                                              EntryState.CACHED,
+                                              sticky);
         }
 
         @Override
         public String toString()
         {
-            return _pnfsId.toString();
+            return getPnfsId().toString();
         }
 
         public String getClient()
@@ -549,75 +488,73 @@ public class HsmStorageHandler2
             return true;
         }
 
-        public void unqueued()
+        private void sendBillingInfo()
         {
-            say("Dequeuing "+_pnfsId);
-
-            CacheException cex = new CacheException(33, "Job Dequeued (by operator)");
-            executeCallbacks(getCallbackList(_restorePnfsidList, _pnfsId) , _pnfsId, cex);
-
-            synchronized (_repository) {
-                try {
-                    _entry.lock(false);
-                    _repository.removeEntry(_entry);
-                } catch (Exception eee) {
-                    esay(_pnfsId.toString()+
-                         " : Failed to destroy repository entry after 'dequeue' : "+
-                         eee);
-                }
-            }
-
-            synchronized (HsmStorageHandler2.this) {
-                _restorePnfsidList.remove(_pnfsId);
-            }
-
-            _infoMsg.setTimeQueued(System.currentTimeMillis() - _timestamp);
-            _infoMsg.setResult(cex.getRc(), cex.getMessage());
             try {
                 _cell.sendMessage(new CellMessage(new CellPath("billing"), _infoMsg));
-            } catch (Exception ie) {
-                esay("Could send 'billing info' : "+ie);
+            } catch (NotSerializableException e) {
+                throw new RuntimeException("Bug: Unserializable vehicle.", e);
+            } catch (NoRouteToCellException e) {
+                esay("Failed to send message to billing: " + e.getMessage());
+            }
+        }
+
+        public void unqueued()
+        {
+            PnfsId pnfsId = getPnfsId();
+
+            try {
+                say("Dequeuing " + pnfsId);
+                _handle.cancel(false);
+                _handle.close();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            } catch (CacheException e) {
+                esay("Error while removing replica: " + e.getMessage());
+            } finally {
+                removeFetchEntry(pnfsId);
+
+                CacheException e =
+                    new CacheException(33, "Job dequeued (by operator)");
+
+                executeCallbacks(e);
+
+                _infoMsg.setTimeQueued(System.currentTimeMillis() - _timestamp);
+                _infoMsg.setResult(e.getRc(), e.getMessage());
+                sendBillingInfo();
             }
         }
 
         public void run()
         {
-            int    returnCode   = 1;
-            RunSystem run       = null;
-            String    errmsg    = "ok";
-            Exception excep     = null;
-            long      fileSize  = 0;
-
-            setThread(Thread.currentThread());
-
-            say("FetchThread started");
+            int returnCode = 1;
+            Exception excep = null;
+            PnfsId pnfsId = getPnfsId();
+            CacheEntry entry = _handle.getEntry();
+            StorageInfo storageInfo = entry.getStorageInfo();
 
             try {
-                _storageInfo = getStorageInfo(_entry);
-                _infoMsg.setStorageInfo(_storageInfo);
+                setThread(Thread.currentThread());
 
-                if ((fileSize = _storageInfo.getFileSize()) == 0)
-                    throw new
-                        CacheException("Couldn't get file size of "+_pnfsId);
+                say("FetchThread started");
 
-                _infoMsg.setFileSize(fileSize);
                 long now = System.currentTimeMillis();
                 _infoMsg.setTimeQueued(now - _timestamp);
                 _timestamp = now;
 
-                String fetchCommand = getFetchCommand(_pnfsId, _storageInfo);
+                String fetchCommand =
+                    getFetchCommand(_handle.getFile(), pnfsId, storageInfo);
+                long fileSize = storageInfo.getFileSize();
 
-                say("Waiting for space ("+fileSize+" Bytes)");
-                _logSpaceAllocation.debug("ALLOC: " + _pnfsId + " : " + fileSize);
-                _repository.allocateSpace(fileSize);
-                say("Got Space ("+fileSize+" Bytes)");
+                say("Waiting for space (" + fileSize + " bytes)");
+                _handle.allocate(fileSize);
+                say("Got Space (" + fileSize + " bytes)");
 
-
-                run = new RunSystem(fetchCommand, _maxLines, _maxRestoreRun, _log);
+                RunSystem run =
+                    new RunSystem(fetchCommand, _maxLines, _maxRestoreRun, _log);
                 run.go();
                 returnCode = run.getExitValue();
                 if (returnCode != 0) {
-                    errmsg = run.getErrorString();
                     /*
                      * while shell do not return error code bigger than 255,
                      * do a trick here
@@ -625,135 +562,68 @@ public class HsmStorageHandler2
                     if (returnCode == 71 ) {
                         returnCode = CacheException.HSM_DELAY_ERROR;
                     }
-                    excep  = new CacheException(returnCode, errmsg);
+                    excep  =
+                        new CacheException(returnCode, run.getErrorString());
                     esay("RunSystem. -> "+returnCode+" : "+run.getErrorString());
                 } else {
                     say("RunSystem. -> "+returnCode+" : "+run.getErrorString());
                 }
 
-            } catch (CacheException cie) {
-                esay(errmsg = "FetchThread : ("+_pnfsId+") CacheException : "+cie);
+            } catch (CacheException e) {
+                esay("FetchThread : ("+pnfsId+") CacheException : "+e);
                 returnCode = 1;
-                excep = cie;
-            } catch (InterruptedException ie) {
-                esay(errmsg = "FetchThread : ("+_pnfsId+") Process interrupted (timed out)");
+                excep = e;
+            } catch (InterruptedException e) {
+                esay("FetchThread : ("+pnfsId+") Process interrupted (timed out)");
                 returnCode = 1;
-                excep = ie;
-            } catch (IOException  ioe) {
-                esay(errmsg = "FetchThread : ("+_pnfsId+") Process got an IOException : "+ioe);
+                excep = e;
+            } catch (IOException  e) {
+                esay("FetchThread : ("+pnfsId+") Process got an IOException : "+e);
                 returnCode = 2;
-                excep = ioe;
-            } catch (IllegalThreadStateException  itse) {
-                esay(errmsg = "FetchThread : ("+_pnfsId+") Can't stop process : "+itse);
+                excep = e;
+            } catch (IllegalThreadStateException  e) {
+                esay("FetchThread : ("+pnfsId+") Can't stop process : "+e);
                 returnCode = 3;
-                excep = itse;
-            } catch (IllegalArgumentException iae) {
-                esay(errmsg = "FetchThread : ("+_pnfsId+") Can't determine 'hsmInfo' for "+
-                      _storageInfo+" {"+iae+"}");
+                excep = e;
+            } catch (IllegalArgumentException e) {
+                esay("FetchThread : ("+pnfsId+") Can't determine 'hsmInfo' for "+
+                     storageInfo+" {"+e+"}");
                 returnCode = 4;
-                excep = iae;
+                excep = e;
             } catch (Exception e) {
-                esay(errmsg = "FetchThread : ("+_pnfsId+") " + e);
+                esay("FetchThread : ("+pnfsId+") " + e);
                 returnCode = 5;
                 excep = e;
-            }
-            //
-            // we can't use the entry as lock because within this
-            // lock we try to get the repository lock (implicitly
-            // by _repository.destroyEntry. But this would be
-            // the wrong sequence. we usually first get the
-            // repository and then the entry. ===>>>> DEADLOCK
-            //
-            synchronized (_repository) {
+            } finally {
                 try {
-                    if (returnCode == 0) {
-                        long realFilesize = _entry.getSize();
-                        if (realFilesize != fileSize) {
-
-                            /*
-                             * due to this fact, we have to remove bad entry.
-                             * to keep space calculation in sync with physical used file
-                             * Adjust file size to expected one. Do this only if real file GT
-                             * expected.
-                             */
-
-
-                            if (realFilesize > fileSize) {
-	                    	RandomAccessFile raf = null;
-	                    	try {
-
-                                    raf = new RandomAccessFile(_entry.getDataFile(), "rw");
-                                    raf.setLength(fileSize);
-
-	                    	} catch (IOException ioe) {
-
-	                    	}finally{
-                                    if (raf != null) {
-                                        try {
-                                            raf.close();
-                                        } catch (IOException ignored) {}
-                                    }
-	                    	}
-                            }
-
-                            // trigger cleanup
-                            throw new
-                                CacheException(1,
-                                                "Filesize mismatch (expected="+fileSize+
-                                                ";found="+realFilesize+")");
-                        }
-                        say("Filesize check : ok");
-                        _entry.setCached();
-                    }
-                } catch (CacheException iii) {
-                    esay(iii.toString());
-                    excep = iii;
-                } finally {
-
-                    /*
-                     * this part have to run in any case.
-                     * callback execution is important to keep jobs counter in sync with
-                     * real number of running jobs
-                     */
                     if (excep != null) {
-                        if (excep instanceof CacheException) {
-                            _infoMsg.setResult(((CacheException)excep).getRc(),
-                                                ((CacheException)excep).getMessage());
-                        }else{
-                            _infoMsg.setResult(44, excep.toString());
-                        }
-                        esay("Removing entry ("+_pnfsId+") from repository");
-                        try {
-                            _entry.lock(false);
-                            long size = _entry.getSize();
-                            //
-                            // remove entry will 'free' the actual number of
-                            // bytes = size of the file on disk.
-                            //
-                            _repository.removeEntry(_entry);
-                            _logSpaceAllocation.debug("FREE: " + _pnfsId + " : " + (fileSize-size));
-                            _repository.freeSpace(Math.max(0L,fileSize-size));
-                        } catch (Exception eee) {
-                            esay("PANIC : can't destroyEntry failed after 'failed Restore'");
-                        }
+                        _handle.cancel(false);
                     }
-
+                    _handle.close();
+                } catch (InterruptedException e) {
+                    esay("FetchThread : (" + pnfsId + ") Interrupted");
+                    excep = e;
+                } catch (CacheException e) {
+                    esay("FetchThread : ("+pnfsId+") CacheException : "+e);
+                    excep = e;
                 }
 
-                executeCallbacks(getCallbackList(_restorePnfsidList, _pnfsId) , _pnfsId, excep);
+                removeFetchEntry(pnfsId);
 
-            }
+                executeCallbacks(excep);
 
-            synchronized (HsmStorageHandler2.this) {
-                _restorePnfsidList.remove(_pnfsId);
-            }
+                if (excep != null) {
+                    if (excep instanceof CacheException) {
+                        _infoMsg.setResult(((CacheException)excep).getRc(),
+                                           ((CacheException)excep).getMessage());
+                    } else {
+                        _infoMsg.setResult(44, excep.toString());
+                    }
+                }
+                _infoMsg.setTransferTime(System.currentTimeMillis() - _timestamp);
+                sendBillingInfo();
 
-            say(_pnfsId.toString()+" : FetchThread Done");
-            _infoMsg.setTransferTime(System.currentTimeMillis() - _timestamp);
-            try {
-                _cell.sendMessage(new CellMessage(new CellPath("billing"), _infoMsg));
-            } catch (Exception ie) {
-                esay("Could send 'billing info' : "+ie);
+                say(pnfsId.toString()+" : FetchThread Done");
             }
         }
     }
@@ -790,7 +660,7 @@ public class HsmStorageHandler2
     //   the store part
     //
     private synchronized String
-        getStoreCommand(PnfsId pnfsId, StorageInfo storageInfo)
+        getStoreCommand(File file, PnfsId pnfsId, StorageInfo storageInfo)
             throws CacheException
     {
         String hsmType = storageInfo.getHsm();
@@ -807,9 +677,7 @@ public class HsmStorageHandler2
         // choice.
         HsmSet.HsmInfo hsm = hsms.get(0);
 
-        //TODO:        storageInfo.addHsmStorageLocation(hsm.getInstance());
-
-        return getSystemCommand(pnfsId, storageInfo, hsm, "put");
+        return getSystemCommand(file, pnfsId, storageInfo, hsm, "put");
     }
 
     public synchronized Info getStoreInfoByPnfsId(PnfsId pnfsId)
@@ -822,114 +690,76 @@ public class HsmStorageHandler2
         return _storeQueue;
     }
 
-    public boolean store(CacheRepositoryEntry entry, CacheFileAvailable callback)
+    public synchronized boolean store(PnfsId pnfsId, CacheFileAvailable callback)
         throws CacheException
     {
-        say("DEBUGFLUSH : store : requested for "+entry+(callback == null ? " w/o " : " with ") + "callback");
-        if (entry.isCached()) {
-            say("DEBUGFLUSH : store : isAlreadyCached "+entry);
+        say("DEBUGFLUSH : store : requested for " + pnfsId +
+            (callback == null ? " w/o " : " with ") + "callback");
+
+        if (_repository.getState(pnfsId) == EntryState.CACHED) {
+            say("DEBUGFLUSH : store : isAlreadyCached " + pnfsId);
             return true;
         }
-        PnfsId       pnfsId = entry.getPnfsId();
-        StoreThread  info   = null;
 
-        synchronized (this) {
-
-            if ((info = _storePnfsidList.get(pnfsId)) != null) {
-
-                if (callback != null)info.addCallback(callback);
-                say("DEBUGFLUSH : store : flush already in progress "+entry + " (callback="+callback+")");
-                return false;
-
-            }
-
-            _storePnfsidList.put(pnfsId, info = new StoreThread(entry) );
-
-            try {
-                if (_checkPnfs && _removeUnexistingEntries) {
-                    //
-                    // make sure the file still exists in pnfs.
-                    //
-                    say(pnfsId.toString()+" Getting storageinfo");
-                    try {
-
-                        //
-                        // just to check if file still exists
-                        //
-                        StorageInfo storageInfo = _pnfs.getStorageInfo(pnfsId.toString());
-
-                    } catch (CacheException exc) {
-
-                        esay(pnfsId.toString()+" : Checking if exists in pnfs : "+exc);
-                        int rc = exc.getRc();
-                        //
-                        // in general we remove the entry if we get an
-                        // exception. Except for the case were there is
-                        // no answer (or the wrong one)  from the PnfsManager.
-                        //
-                        if ((rc != CacheException.TIMEOUT) && (rc != CacheException.PANIC)) {
-
-
-                            esay(pnfsId.toString()+" REMOVEING ENTRY from repository (nonexistent)");
-
-                            _repository.removeEntry(entry);
-
-                        }
-
-                        throw exc /* new Exception("File already removed") */;
-
-                    }
-                }
-
-                entry.setSendingToStore(true);
-                entry.lock(true);
-
-                if (callback != null)info.addCallback(callback);
-
-                _storeQueue.add(info);
-
-                say("DEBUGFLUSH : store : added to flush queue "+entry + " (callback="+callback+")");
-                return false;
-
-            } catch (Throwable excep) {
-
-                Throwable t = excep instanceof InvocationTargetException ?
-                    ((InvocationTargetException)excep).getTargetException() :
-                    excep;
-
-                esay(pnfsId.toString()+" REMOVEING ENTRY from _storePnfsidList due to "+excep);
-
-                _storePnfsidList.remove(pnfsId);
-
-                throw new CacheException(44, "Problem detected : "+excep);
-            }
-
+        StoreThread  info = _storePnfsidList.get(pnfsId);
+        if (info != null) {
+            if (callback != null)
+                info.addCallback(callback);
+            say("DEBUGFLUSH : store : flush already in progress "
+                + pnfsId + " (callback=" + callback + ")");
+            return false;
         }
+
+        info = new StoreThread(pnfsId);
+
+        try {
+            if (callback != null)
+                info.addCallback(callback);
+
+            _storeQueue.add(info);
+            _storePnfsidList.put(pnfsId, info);
+
+            say("DEBUGFLUSH : store : added to flush queue " + pnfsId + " (callback="+callback+")");
+            return false;
+        } catch (Throwable excep) {
+
+            Throwable t = excep instanceof InvocationTargetException ?
+                ((InvocationTargetException)excep).getTargetException() :
+                excep;
+
+            esay(pnfsId.toString()+" REMOVEING ENTRY from _storePnfsidList due to "+excep);
+
+            _storePnfsidList.remove(pnfsId);
+
+            throw new CacheException(44, "Problem detected : "+excep);
+        }
+    }
+
+    protected synchronized void removeStoreEntry(PnfsId id)
+    {
+        _storePnfsidList.remove(id);
     }
 
     private class StoreThread extends Info implements Batchable
     {
-    	private final PnfsId _pnfsId;
-        private final CacheRepositoryEntry _entry;
         private final StorageInfoMessage _infoMsg;
         private long _timestamp = 0;
         private int _id;
         private Thread _thread;
 
-	public StoreThread(CacheRepositoryEntry entry)
+	public StoreThread(PnfsId pnfsId)
+            throws FileNotInCacheException
         {
-	    super(entry.getPnfsId());
+	    super(pnfsId);
             String myName =
                 _cell.getCellName() + "@" + _cell.getCellDomainName();
-            _entry = entry;
-            _pnfsId = entry.getPnfsId();
-            _infoMsg = new StorageInfoMessage(myName, _pnfsId, false);
+            _infoMsg = new StorageInfoMessage(myName, pnfsId, false);
 	}
 
         @Override
         public String toString()
         {
-            return _pnfsId.toString();
+            return getPnfsId().toString();
         }
 
         public double getTransferRate()
@@ -968,94 +798,78 @@ public class HsmStorageHandler2
             _id = id;
         }
 
-        public void unqueued()
+        private void sendBillingInfo()
         {
-            _infoMsg.setTimeQueued(System.currentTimeMillis() - _timestamp);
-            _infoMsg.setResult(44, "Unqueued ... ");
             try {
                 _cell.sendMessage(new CellMessage(new CellPath("billing"), _infoMsg));
-            } catch (Exception e) {
-                esay("Could send 'billing info' : " + e);
+            } catch (NotSerializableException e) {
+                throw new RuntimeException("Bug: Unserializable vehicle.", e);
+            } catch (NoRouteToCellException e) {
+                esay("Failed to send message to billing: " + e.getMessage());
             }
-            _storePnfsidList.remove(_pnfsId);
+        }
+
+        public void unqueued()
+        {
+            removeStoreEntry(getPnfsId());
+
+            CacheException e =
+                new CacheException(44, "Job dequeued (by operator)");
+
+            executeCallbacks(e);
+
+            _infoMsg.setTimeQueued(System.currentTimeMillis() - _timestamp);
+            _infoMsg.setResult(e.getRc(), e.getMessage());
+            sendBillingInfo();
         }
 
 	public void run()
         {
-            int returnCode = 1;
-            RunSystem run = null;
-            String errmsg = "ok";
+            int returnCode;
+            PnfsId pnfsId = getPnfsId();
             Throwable excep = null;
-            StorageInfo storageInfo = null;
-
-            setThread(Thread.currentThread());
-
-            say(_pnfsId.toString() + " : StoreThread Started " + _thread);
 
             try {
-                storageInfo = getStorageInfo(_entry);
-                _infoMsg.setStorageInfo(storageInfo);
-                _infoMsg.setFileSize(storageInfo.getFileSize());
-                long now = System.currentTimeMillis();
-                _infoMsg.setTimeQueued(now - _timestamp);
-                _timestamp = now;
+                setThread(Thread.currentThread());
 
-                String storeCommand = getStoreCommand(_pnfsId, storageInfo);
+                say(pnfsId.toString() + " : StoreThread Started " + _thread);
 
-                run = new RunSystem(storeCommand, _maxLines, _maxStoreRun, _log);
-                run.go();
-                returnCode = run.getExitValue();
-                if (returnCode != 0) {
-                    errmsg = run.getErrorString();
-                    excep  = new CacheException(returnCode, errmsg);
-                    esay("RunSystem. -> " + returnCode + " : "
-                         + run.getErrorString());
-                } else {
-                    say("RunSystem. -> " + returnCode + " : "
-                        + run.getErrorString());
+                if (_checkPnfs) {
+                    say(pnfsId.toString() + " getting storageinfo");
+                    try {
+                        _pnfs.getStorageInfo(pnfsId.toString());
+                    } catch (CacheException e) {
+                        throw new CacheException("Cannot verify that file still exists");
+                    }
                 }
 
-            } catch (CacheException e) {
-                esay(errmsg = "StoreThread : (" + _pnfsId
-                     + ") CacheException : " + e);
-                returnCode = 1;
-                excep = e;
-            } catch (InterruptedException e) {
-                esay(errmsg = "StoreThread : (" + _pnfsId
-                     + ") Process interrupted (timed out)");
-                returnCode = 1;
-                excep = e;
-            } catch (IOException e) {
-                esay(errmsg = "StoreThread : (" + _pnfsId
-                     + ") Process got an IOException : " + e);
-                returnCode = 2;
-                excep = e;
-            } catch (IllegalThreadStateException e) {
-                esay(errmsg = "StoreThread : (" + _pnfsId
-                     + ") Can't stop process : " + e);
-                returnCode = 3;
-                excep = e;
-            } catch (IllegalArgumentException e) {
-                esay(errmsg = "StoreThread : can't determine 'hsmInfo' for "
-                     + storageInfo+" {" + e + "}");
-                returnCode = 4;
-                excep = e;
-            } catch (Throwable t) {
-                esay(errmsg = "StoreThread : unexpected throwable " +
-                     storageInfo + " {" + t + "}");
-                returnCode = 666;
-                excep = t;
-            } finally {
+
+                StorageInfo storageInfo;
+                ReadHandle handle = _repository.openEntry(pnfsId);
                 try {
-                    _entry.lock(false);
-                    _entry.setSendingToStore(false);
-                } catch (CacheException e) {
-                    esay("Panic : can't set entry status to 'done' " + e);
-                }
-            }
+                    storageInfo = handle.getEntry().getStorageInfo();
+                    _infoMsg.setStorageInfo(storageInfo);
+                    _infoMsg.setFileSize(storageInfo.getFileSize());
+                    long now = System.currentTimeMillis();
+                    _infoMsg.setTimeQueued(now - _timestamp);
+                    _timestamp = now;
 
-            try {
-                if (returnCode == 0) {
+                    String storeCommand =
+                        getStoreCommand(handle.getFile(), pnfsId, storageInfo);
+
+                    RunSystem run =
+                        new RunSystem(storeCommand, _maxLines, _maxStoreRun, _log);
+                    run.go();
+                    returnCode = run.getExitValue();
+                    if (returnCode != 0) {
+                        esay("RunSystem. -> " + returnCode + " : "
+                             + run.getErrorString());
+                        throw new CacheException(returnCode, run.getErrorString());
+                    } else {
+                        say("RunSystem. -> " + returnCode + " : "
+                            + run.getErrorString());
+                    }
+
                     String outputData = run.getOutputString();
                     if (outputData != null && outputData.length() != 0) {
                         BufferedReader in =
@@ -1066,12 +880,12 @@ public class HsmStorageHandler2
                                 URI location = new URI(line);
                                 storageInfo.addLocation(location);
                                 storageInfo.isSetAddLocation(true);
-                                _logRepository.debug(_pnfsId.toString()
+                                _logRepository.debug(pnfsId.toString()
                                                      + ": added HSM location "
                                                      + location);
                             }
                         } catch (URISyntaxException use) {
-                            esay(_entry.getPnfsId().toString() +
+                            esay(pnfsId.toString() +
                                  " :  flush script produces BAD URI : " + line);
                             throw new CacheException(2, use.getMessage());
                         } catch (IOException ie) {
@@ -1079,97 +893,101 @@ public class HsmStorageHandler2
                             throw new RuntimeException("Bug detected");
                         }
                     }
+                } finally {
+                    handle.close();
+                }
 
-                    for (;;) {
-                        try {
-                            /* It is very important that we use
-                             * storageInfo rather than
-                             * _entry.getStorageInfo(), as we added
-                             * new URIs to the former.
+                for (;;) {
+                    try {
+                        _pnfs.fileFlushed(pnfsId, storageInfo);
+                        break;
+                    } catch (CacheException e) {
+                        if (e.getRc() == CacheException.FILE_NOT_FOUND) {
+                            /* In case the file was deleted, we are
+                             * presented with the problem that the
+                             * file is now on tape, however the
+                             * location has not been registered
+                             * centrally. Hence the copy on tape will
+                             * not be removed by the HSM cleaner. The
+                             * sensible thing seems to be to remove
+                             * the file from tape here. For now we
+                             * ignore this issue (REVISIT).
                              */
-                            _pnfs.fileFlushed(_pnfsId, storageInfo);
                             break;
-                        } catch (CacheException e) {
-                            if (e.getRc() == CacheException.FILE_NOT_FOUND) {
-                                /* In case the file was deleted, we are
-                                 * presented with the problem that the
-                                 * file is now on tape, however the
-                                 * location has not been registered
-                                 * centrally. Hence the copy on the tape
-                                 * will not be removed by the HSM
-                                 * cleaner. The sensible thing seems to be
-                                 * to remove the file from tape here. For
-                                 * now we ignore this issue (REVISIT).
-                                 */
-                                break;
-                            }
-
-                            /* The message to the PnfsManager
-                             * failed. There are several possible
-                             * reasons for this; we may have lost the
-                             * connection to the PnfsManager; the
-                             * PnfsManager may have lost its
-                             * connection to PNFS or otherwise be in
-                             * trouble; bugs; etc.
-                             *
-                             * We keep retrying until we succeed. This
-                             * will effectively block this thread from
-                             * flushing any other files, which seems
-                             * sensible when we have trouble talking
-                             * to the PnfsManager. If the pool crashes
-                             * or gets restarted while waiting here,
-                             * we will end up flushing the file
-                             * again. We assume that the HSM script is
-                             * able to eliminate the duplicate; or at
-                             * least tolerate the duplicate (given
-                             * that this situation should be rare, we
-                             * can live with a little bit of wasted
-                             * tape).
-                             */
-                            esay("Error notifying PNFS about a flushed file: "
-                                 + e.getMessage() + "(" + e.getRc() + ")");
                         }
-                        Thread.sleep(120000); // 2 minutes
+
+                        /* The message to the PnfsManager
+                         * failed. There are several possible
+                         * reasons for this; we may have lost the
+                         * connection to the PnfsManager; the
+                         * PnfsManager may have lost its
+                         * connection to PNFS or otherwise be in
+                         * trouble; bugs; etc.
+                         *
+                         * We keep retrying until we succeed. This
+                         * will effectively block this thread from
+                         * flushing any other files, which seems
+                         * sensible when we have trouble talking
+                         * to the PnfsManager. If the pool crashes
+                         * or gets restarted while waiting here,
+                         * we will end up flushing the file
+                         * again. We assume that the HSM script is
+                         * able to eliminate the duplicate; or at
+                         * least tolerate the duplicate (given
+                         * that this situation should be rare, we
+                         * can live with a little bit of wasted
+                         * tape).
+                         */
+                        esay("Error notifying PNFS about a flushed file: "
+                             + e.getMessage() + "(" + e.getRc() + ")");
                     }
-
-                    _entry.setCached();
-
-                    notifyFlushMessageTarget(storageInfo);
+                    Thread.sleep(120000); // 2 minutes
                 }
-            } catch (InterruptedException e) {
-                esay(e.toString());
-                excep = e;
-            } catch (CacheException e) {
-                esay(e.toString());
-                excep = e;
-            } finally {
-                /*
-                 * this part have to run in any case.
-                 * callback execution is important to keep jobs counter in sync with
-                 * real number of running jobs
+
+                notifyFlushMessageTarget(storageInfo);
+
+                _repository.setState(pnfsId, EntryState.CACHED);
+            } catch (IllegalTransitionException e) {
+                /* Apparently the file is no longer precious. Most
+                 * likely it got deleted, which is fine, since the
+                 * flush already succeeded.
                  */
-                if (excep != null) {
-                    if (excep instanceof CacheException) {
-                        _infoMsg.setResult(((CacheException)excep).getRc(),
-                                           ((CacheException)excep).getMessage());
-                    } else {
-                        _infoMsg.setResult(44, excep.toString());
-                    }
-                }
+            } catch (CacheException e) {
+                excep = e;
+                esay("StoreThread : (" + pnfsId + ") CacheException : " + e);
+                _infoMsg.setResult(e.getRc(), e.getMessage());
+            } catch (InterruptedException e) {
+                excep = e;
+                esay("StoreThread : (" + pnfsId + ") Process interrupted (timed out)");
+                _infoMsg.setResult(1, "Flush timed out");
+            } catch (IOException e) {
+                excep = e;
+                esay("StoreThread : (" + pnfsId
+                     + ") Process got an IOException : " + e);
+                _infoMsg.setResult(2, "IO Error: " + e.getMessage());
+            } catch (IllegalThreadStateException e) {
+                excep = e;
+                esay("StoreThread : (" + pnfsId + ") Cannot stop process : " + e);
+                _infoMsg.setResult(3, e.getMessage());
+            } catch (IllegalArgumentException e) {
+                excep = e;
+                esay("StoreThread : cannot determine 'hsmInfo' for "
+                     + pnfsId + " {" + e + "}");
+                _infoMsg.setResult(4, e.getMessage());
+            } catch (Throwable t) {
+                excep = t;
+                esay("StoreThread : unexpected throwable " +
+                     pnfsId + " {" + t + "}");
+                _infoMsg.setResult(666, t.getMessage());
+            } finally {
+                say(pnfsId.toString() + " : StoreThread Done " + Thread.currentThread());
 
-                executeCallbacks(getCallbackList(_storePnfsidList, _pnfsId), _pnfsId, excep);
-            }
+                removeStoreEntry(pnfsId);
+                _infoMsg.setTransferTime(System.currentTimeMillis() - _timestamp);
 
-            synchronized (HsmStorageHandler2.this) {
-                _storePnfsidList.remove(_pnfsId);
-            }
-            say(_pnfsId.toString() + " : StoreThread Done " +
-                Thread.currentThread());
-            _infoMsg.setTransferTime(System.currentTimeMillis() - _timestamp);
-            try {
-                _cell.sendMessage(new CellMessage(new CellPath("billing"), _infoMsg));
-            } catch (Exception e) {
-                esay("Could send 'billing info' : " + e);
+                sendBillingInfo();
+
+                executeCallbacks(excep);
             }
         }
 
@@ -1183,7 +1001,7 @@ public class HsmStorageHandler2
             try {
                 PoolFileFlushedMessage poolFileFlushedMessage =
                     new PoolFileFlushedMessage(_cell.getCellName(),
-                                               _pnfsId, info);
+                                               getPnfsId(), info);
                 /*
                  * no replays from secondary message targets
                  */
@@ -1193,7 +1011,7 @@ public class HsmStorageHandler2
                                     poolFileFlushedMessage);
                 _cell.sendMessage(msg);
             } catch (NotSerializableException e) {
-                // never happens
+                throw new RuntimeException("Bug: Unserializable vehicle." , e);
             } catch (NoRouteToCellException e) {
                 _logRepository.info("failed to send message to flushMessageTarget (" + flushMessageTarget + ") : " + e.getMessage());
             }

@@ -41,17 +41,19 @@ public class HsmFlushController implements Runnable {
         say("HsmFlushController : $Id: HsmFlushController.java,v 1.6 2007-05-24 13:51:10 tigran Exp $");
 
     }
-    private void setFlushInfos( PoolFlushControlInfoMessage flushInfo ){
 
-       flushInfo.setCellInfo( (PoolCellInfo)_cell.getCellInfo() ) ;
-       List<StorageClassFlushInfo> list = new ArrayList<StorageClassFlushInfo>() ;
+    private void setFlushInfos(PoolFlushControlInfoMessage flushInfo)
+    {
+       flushInfo.setCellInfo((PoolCellInfo)_cell.getCellInfo());
+       List<StorageClassFlushInfo> list =
+           new ArrayList<StorageClassFlushInfo>() ;
 
-       for( Iterator<StorageClassInfo> i = _storageQueue.getStorageClassInfos() ; i.hasNext() ; ){
-          list.add( i.next().getFlushInfo() ) ;
+       for (StorageClassInfo info : _storageQueue.getStorageClassInfos()) {
+           list.add(info.getFlushInfo());
        }
-       flushInfo.setFlushInfos( list.toArray( new StorageClassFlushInfo[list.size()] ) ) ;
-
+       flushInfo.setFlushInfos(list.toArray(new StorageClassFlushInfo[list.size()]));
     }
+
     public synchronized void  messageArrived( PoolFlushControlMessage flushControl , CellMessage message ){
        if( flushControl instanceof PoolFlushGainControlMessage ){
 
@@ -138,6 +140,7 @@ public class HsmFlushController implements Runnable {
     }
     public void say( String message ){ _cell.say(message);}
     public void esay( String message ){ _cell.esay(message);}
+    public void esay( Throwable t ){ _cell.esay(t);}
     public void start(){ _worker.start() ; }
     public String ac_flush_exception( Args args )throws Exception {
         Exception e = new Exception("Dummy Exception");
@@ -177,7 +180,6 @@ public class HsmFlushController implements Runnable {
             (  ( _holdUntil > System.currentTimeMillis() ) ? new Date(_holdUntil).toString(): "Locally Controlled" ) );
     }
     public Object ac_flush_ls( Args args ){
-        Iterator<StorageClassInfo> i = _storageQueue.getStorageClassInfos() ;
         long now = System.currentTimeMillis() ;
         if( args.getOpt("binary" ) == null ){
             StringBuffer sb = new StringBuffer() ;
@@ -186,10 +188,9 @@ public class HsmFlushController implements Runnable {
             sb.append( Formats.field( "Error"  , 8 , Formats.RIGHT ) ) ;
             sb.append( Formats.field( "Last/min" , 10 , Formats.RIGHT ) ) ;
             sb.append( Formats.field( "Requests" , 10 , Formats.RIGHT ) ) ;
-            sb.append( Formats.field( "Faied"    , 10 , Formats.RIGHT ) ) ;
+            sb.append( Formats.field( "Failed"   , 10 , Formats.RIGHT ) ) ;
             sb.append("\n");
-            while( i.hasNext() ){
-                StorageClassInfo info = i.next() ;
+            for (StorageClassInfo info : _storageQueue.getStorageClassInfos()) {
                 sb.append( Formats.field( info.getStorageClass()+"@"+info.getHsm() ,
                         20 , Formats.LEFT ) ) ;
                 sb.append( Formats.field( ""+info.getActiveCount() , 8 , Formats.RIGHT ) ) ;
@@ -203,9 +204,8 @@ public class HsmFlushController implements Runnable {
             }
             return sb.toString();
         }else{ // is binary
-            ArrayList list = new ArrayList() ;
-            while( i.hasNext() ){
-                StorageClassInfo info = i.next() ;
+            List list = new ArrayList();
+            for (StorageClassInfo info : _storageQueue.getStorageClassInfos()) {
                 Object [] o = new Object[7] ;
                 o[0] = info.getHsm() ;
                 o[1] = info.getStorageClass() ;
@@ -224,41 +224,44 @@ public class HsmFlushController implements Runnable {
     public synchronized void run() {
         say("Flush Thread starting");
         long holdUntil = 0L;
-        while( ! Thread.interrupted() ){
-            long now = System.currentTimeMillis() ;
-            synchronized( _parameterLock ){ holdUntil = _holdUntil ;}
-            try{
+
+        while (!Thread.interrupted()) {
+            try {
+                long now = System.currentTimeMillis() ;
+                synchronized( _parameterLock ){ holdUntil = _holdUntil ;}
                 if( _holdUntil < now ){
-                   Iterator<StorageClassInfo> e   = _storageQueue.getStorageClassInfos();
+                    Iterator<StorageClassInfo> e = _storageQueue.getStorageClassInfos().iterator();
 
-                   for( int active = 0 ; e.hasNext() && ( active < _maxActive ) ; ){
+                    for( int active = 0 ; e.hasNext() && ( active < _maxActive ) ; ){
 
-                       StorageClassInfo info     = e.next() ;
-                       boolean          isActive = info.getActiveCount() > 0 ;
-                       if( isActive ){
+                        StorageClassInfo info     = e.next() ;
+                        boolean          isActive = info.getActiveCount() > 0 ;
+                        if( isActive ){
 
-                           active ++ ;
+                            active ++ ;
 
-                       }else if( info.isTriggered() &&
-                               ( ( now - info.getLastSubmitted() ) > (_retryDelayOnError*1000) ) ){
+                        }else if( info.isTriggered() &&
+                                  ( ( now - info.getLastSubmitted() ) > (_retryDelayOnError*1000) ) ){
 
-                           say( "Flushing : "+info ) ;
-                           flushStorageClass( info.getHsm()  , info.getStorageClass() , 0 ) ;
-                           active ++ ;
-                       }
-                   }
+                            say( "Flushing : "+info ) ;
+                            flushStorageClass( info.getHsm()  , info.getStorageClass() , 0 ) ;
+                            active ++ ;
+                        }
+                    }
                 }
-                try{
-                    wait(_flushingInterval*1000);
-                }catch (InterruptedException exc){
-                    say( "Flushing Thread interrupted" ) ;
-                    break ;
-                }
-            }catch( Exception me ){
-                esay( "Flush thread : loop interrupted : "+me ) ;
+            } catch (Exception me) {
+                /* Catch all - we should not see any exceptions at this
+                 * point so better dump the stack trace.
+                 */
+                esay(me);
+            }
+            try {
+                wait(_flushingInterval * 1000);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
             }
         }
-        say( "Flushing Thread finished" ) ;
+        say("Flushing Thread finished");
     }
     public synchronized void trigger(){
         notifyAll() ;

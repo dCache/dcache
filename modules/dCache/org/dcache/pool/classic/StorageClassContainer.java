@@ -5,7 +5,9 @@ package org.dcache.pool.classic;
 import diskCacheV111.vehicles.*;
 import diskCacheV111.util.*;
 import diskCacheV111.util.event.*;
-import diskCacheV111.repository.*;
+
+import org.dcache.pool.repository.CacheEntry;
+import org.dcache.pool.repository.v5.CacheRepositoryV5;
 
 import dmg.util.*;
 
@@ -14,6 +16,7 @@ import java.util.*;
 
 public class StorageClassContainer
 {
+    private CacheRepositoryV5 _repository;
     private final Object _storageClassLock = new Object();
     private final String   _poolName;
     private final Map<String, StorageClassInfo> _storageClasses =
@@ -21,18 +24,16 @@ public class StorageClassContainer
     private final Map<PnfsId, StorageClassInfo> _pnfsIds =
         new HashMap();
     private boolean  _poolStatusInfoChanged = true;
-    private StorageClassContainer _storageQueue = this;
 
-    public StorageClassContainer(String poolName)
+    public StorageClassContainer(CacheRepositoryV5 repository, String poolName)
     {
+        _repository = repository;
         _poolName = poolName;
     }
 
-    public synchronized Iterator<StorageClassInfo> getStorageClassInfos()
+    public synchronized Collection<StorageClassInfo> getStorageClassInfos()
     {
-        List<StorageClassInfo> list =
-            new ArrayList<StorageClassInfo>(_storageClasses.values());
-        return list.iterator();
+        return new ArrayList<StorageClassInfo>(_storageClasses.values());
     }
 
     public synchronized boolean poolStatusChanged()
@@ -121,33 +122,39 @@ public class StorageClassContainer
         void suspendStorageClasses(boolean suspend)
     {
         synchronized (_storageClassLock) {
-            for (Iterator i = _storageClasses.keySet().iterator(); i.hasNext();) {
-                ((StorageClassInfo)_storageClasses.get((String)i.next())).
-                    setSuspended(suspend);
+            for (StorageClassInfo info : _storageClasses.values()) {
+                info.setSuspended(suspend);
             }
         }
     }
+
     /**
-     *  adds/removes a CacheEntry to the list of HSM storage requests.
+     * Removes an entry from the list of HSM storage requests.
+     *
+     * @returns true if the entry was found and removed, false otherwise.
      */
-    public synchronized CacheRepositoryEntry
+    public synchronized boolean
         removeCacheEntry(PnfsId pnfsId) throws CacheException
     {
         StorageClassInfo info = (StorageClassInfo)_pnfsIds.remove(pnfsId);
         if (info == null)
-            return null;
+            return false;
 
-        CacheRepositoryEntry entry = (CacheRepositoryEntry)info.removeRequest(pnfsId);
+        boolean removed = info.remove(pnfsId);
         synchronized (_storageClassLock) {
             if ((info.size() == 0) && ! info.isDefined())
                 _storageClasses.remove(info.getName()+"@"+info.getHsm());
         }
-        return entry;
+        return removed;
     }
 
-    public synchronized boolean
-        addCacheEntry(CacheRepositoryEntry entry) throws CacheException
+    /**
+     *  adds a CacheEntry to the list of HSM storage requests.
+     */
+    public synchronized boolean addCacheEntry(PnfsId id)
+        throws CacheException
     {
+        CacheEntry entry = _repository.getEntry(id);
         String storageClass = entry.getStorageInfo().getStorageClass();
         String hsmName      = entry.getStorageInfo().getHsm().toLowerCase();
 
@@ -173,7 +180,7 @@ public class StorageClassContainer
                 _storageClasses.put(composedName, classInfo);
             }
 
-            classInfo.addRequest(entry);
+            classInfo.add(entry);
             _pnfsIds.put(entry.getPnfsId(), classInfo);
             return classInfo.size() >= classInfo.getPending();
         }
@@ -193,22 +200,11 @@ public class StorageClassContainer
         }
     }
 
-    public synchronized
-        Iterator getRequestsOfClass(String storageClass)
-    {
-
-        StorageClassInfo info = (StorageClassInfo)_storageClasses.get(storageClass);
-        if (info == null)
-            return (new ArrayList()).iterator();
-
-        return  info.getRequests();
-    }
-
     //////////////////////////////////////////////////////////////////////////////////
     //
     //   the interpreter
     //
-    private void dumpClassInfo(StringBuffer sb, StorageClassInfo classInfo)
+    private void dumpClassInfo(StringBuilder sb, StorageClassInfo classInfo)
     {
         sb.append("                   Name : ").append(classInfo.getName()).append("\n");
         sb.append("              Class@Hsm : ").append(classInfo.getStorageClass()).
@@ -285,11 +281,9 @@ public class StorageClassContainer
     public String hh_queue_ls_classes = " [-l}";
     public String ac_queue_ls_classes(Args args) throws CacheException
     {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         boolean l = args.getOpt("l") != null;
-        Iterator e = _storageQueue.getStorageClassInfos();
-        while (e.hasNext()) {
-            StorageClassInfo classInfo = (StorageClassInfo)e.next();
+        for (StorageClassInfo classInfo : getStorageClassInfos()) {
             if (l) {
                 dumpClassInfo(sb, classInfo);
             } else {
@@ -309,12 +303,10 @@ public class StorageClassContainer
     public String hh_queue_ls_queue = " [-l]";
     public String ac_queue_ls_queue(Args args) throws CacheException
     {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         boolean l = args.getOpt("l") != null;
         try {
-            Iterator<StorageClassInfo> e = _storageQueue.getStorageClassInfos();
-            while (e.hasNext()) {
-                StorageClassInfo classInfo = e.next();
+            for (StorageClassInfo classInfo : getStorageClassInfos()) {
                 boolean suspended = classInfo.isSuspended();
                 if (l) {
                     dumpClassInfo(sb, classInfo);
@@ -326,38 +318,49 @@ public class StorageClassContainer
                         append(suspended?"  SUSPENDED":"").
                         append("\n");
                 }
-                Iterator f = classInfo.getRequests();
-                while (f.hasNext()) {
-                    CacheRepositoryEntry info = (CacheRepositoryEntry)f.next();
-                    String      pnfsId = info.getPnfsId().toString();
-                    long        time   = info.getLastAccessTime();
-                    StorageInfo sinfo  = info.getStorageInfo();
-                    String      sclass = sinfo.getStorageClass();
-                    String      hsm    = sinfo.getHsm();
-                    String      cclass = sinfo.getCacheClass();
-                    sb.append("  ").append(pnfsId).append("  ").
-                        append(Formats.field(hsm,8,Formats.LEFT)).
-                        append(Formats.field(sclass==null?"-":sclass,20,Formats.LEFT)).
-                        append(Formats.field(cclass==null?"-":cclass,20,Formats.LEFT)).
-                        append("\n");
+                for (PnfsId id : classInfo.getRequests()) {
+                    try {
+                        CacheEntry info = _repository.getEntry(id);
+                        long        time   = info.getLastAccessTime();
+                        StorageInfo sinfo  = info.getStorageInfo();
+                        String      sclass = sinfo.getStorageClass();
+                        String      hsm    = sinfo.getHsm();
+                        String      cclass = sinfo.getCacheClass();
+                        sb.append("  ").append(id).append("  ").
+                            append(Formats.field(hsm,8,Formats.LEFT)).
+                            append(Formats.field(sclass==null?"-":sclass,20,Formats.LEFT)).
+                            append(Formats.field(cclass==null?"-":cclass,20,Formats.LEFT)).
+                            append("\n");
+                    } catch (FileNotInCacheException e) {
+                        /* Temporary inconsistency because the entry
+                         * was deleted after generating the list.
+                         */
+                    }
                 }
                 boolean headerDone = false;
 
-                f = classInfo.getFailedRequests();
-                while (f.hasNext()) {
-                    if (! headerDone) { headerDone = true;  sb.append("\n Deactivated Requests\n\n"); }
-                    CacheRepositoryEntry info = (CacheRepositoryEntry)f.next();
-                    String      pnfsId = info.getPnfsId().toString();
-                    long        time   = info.getLastAccessTime();
-                    StorageInfo sinfo  = info.getStorageInfo();
-                    String      sclass = sinfo.getStorageClass();
-                    String      hsm    = sinfo.getHsm();
-                    String      cclass = sinfo.getCacheClass();
-                    sb.append("  ").append(pnfsId).append("  ").
-                        append(Formats.field(hsm,8,Formats.LEFT)).
-                        append(Formats.field(sclass==null?"-":sclass,20,Formats.LEFT)).
-                        append(Formats.field(cclass==null?"-":cclass,20,Formats.LEFT)).
-                        append("\n");
+                for (PnfsId id : classInfo.getFailedRequests()) {
+                    try {
+                        if (! headerDone) {
+                            headerDone = true;
+                            sb.append("\n Deactivated Requests\n\n");
+                        }
+                        CacheEntry info = _repository.getEntry(id);
+                        long        time   = info.getLastAccessTime();
+                        StorageInfo sinfo  = info.getStorageInfo();
+                        String      sclass = sinfo.getStorageClass();
+                        String      hsm    = sinfo.getHsm();
+                        String      cclass = sinfo.getCacheClass();
+                        sb.append("  ").append(id).append("  ").
+                            append(Formats.field(hsm,8,Formats.LEFT)).
+                            append(Formats.field(sclass==null?"-":sclass,20,Formats.LEFT)).
+                            append(Formats.field(cclass==null?"-":cclass,20,Formats.LEFT)).
+                            append("\n");
+                    } catch (FileNotInCacheException e) {
+                        /* Temporary inconsistency because the entry
+                         * was deleted after generating the list.
+                         */
+                    }
                 }
                 sb.append("\n");
             }
@@ -374,7 +377,7 @@ public class StorageClassContainer
     {
         String hsmName   = args.argv(0);
         String className = args.argv(1);
-        _storageQueue.removeStorageClass(hsmName.toLowerCase(), className);
+        removeStorageClass(hsmName.toLowerCase(), className);
         return "";
     }
 
@@ -382,11 +385,11 @@ public class StorageClassContainer
     public String ac_queue_suspend_class_$_1_2(Args args) throws Exception
     {
         if (args.argv(0).equals("*")) {
-            _storageQueue.suspendStorageClasses(true);
+            suspendStorageClasses(true);
         } else {
             String hsmName   = args.argv(0);
             String className = args.argv(1);
-            _storageQueue.suspendStorageClass(hsmName.toLowerCase(), className, true);
+            suspendStorageClass(hsmName.toLowerCase(), className, true);
         }
         return "";
     }
@@ -395,31 +398,31 @@ public class StorageClassContainer
     public String ac_queue_resume_class_$_1_2(Args args) throws Exception
     {
         if (args.argv(0).equals("*")) {
-            _storageQueue.suspendStorageClasses(false);
+            suspendStorageClasses(false);
         } else {
             String hsmName   = args.argv(0);
             String className = args.argv(1);
-            _storageQueue.suspendStorageClass(hsmName.toLowerCase(), className, false);
+            suspendStorageClass(hsmName.toLowerCase(), className, false);
         }
         return "";
     }
-
-    public String hh_queue_define_class = "<hsm> <storageClass> " +
-        "[-expire=<expirationTime/sec>] " +
-        "[-total=<maxTotalSize/bytes>] " +
-        "[-pending=<maxPending>] ";
 
     public String hh_define_class = "DEPRICATED";
     public String ac_define_class_$_2(Args args) throws Exception
     {
         return ac_queue_define_class_$_2(args);
     }
+
+    public String hh_queue_define_class = "<hsm> <storageClass> " +
+        "[-expire=<expirationTime/sec>] " +
+        "[-total=<maxTotalSize/bytes>] " +
+        "[-pending=<maxPending>] ";
     public String ac_queue_define_class_$_2(Args args) throws Exception
     {
         String hsmName   = args.argv(0);
         String className = args.argv(1);
         StorageClassInfo info =
-            _storageQueue.defineStorageClass(hsmName.toLowerCase(), className);
+            defineStorageClass(hsmName.toLowerCase(), className);
 
         String tmp = null;
         if ((tmp = args.getOpt("expire")) != null)
@@ -437,13 +440,9 @@ public class StorageClassContainer
     public String ac_queue_remove_pnfsid_$_1(Args args) throws Exception
     {
         PnfsId pnfsId = new PnfsId(args.argv(0));
-        CacheRepositoryEntry info =
-            (CacheRepositoryEntry)_storageQueue.removeCacheEntry(pnfsId);
+        if (!removeCacheEntry(pnfsId))
+            throw new IllegalArgumentException("Not found : " + pnfsId);
 
-        if (info == null)
-            throw new
-                IllegalArgumentException("Not found : "+pnfsId);
-
-        return "Removed : "+pnfsId;
+        return "Removed : " + pnfsId;
     }
 }
