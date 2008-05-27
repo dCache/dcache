@@ -692,7 +692,6 @@ dcacheInstallPnfsMountPointClient()
       umount ${pnfsMountPoint}
       
     fi
-
     if [ -L "${pnfsMountPoint}" ] ; then
       logmessage INFO "Trying to remove symbolic link ${pnfsMountPoint} :"
       rm -f ${pnfsMountPoint}
@@ -704,7 +703,6 @@ dcacheInstallPnfsMountPointClient()
         exit 1
       fi
     fi
-
     if [ ! -d "${pnfsMountPoint}" ]; then
       if [ -e "${pnfsMountPoint}" ] ; then
         logmessage ABORT "The file ${pnfsMountPoint} is in the way. Please move it out of the way"
@@ -719,7 +717,6 @@ dcacheInstallPnfsMountPointClient()
     pnfsServer=$RET
     logmessage INFO "Will be mounted to ${pnfsServer}:/pnfsdoors by dcache-core start-up script."
   fi
-
   if [ ! -L "${PNFS_ROOT}/ftpBase" -a ! -e "${PNFS_ROOT}/ftpBase" ] ; then
     logmessage INFO "Creating link ${PNFS_ROOT}/ftpBase --> ${pnfsMountPoint} which is used by the GridFTP door."
     ln -s ${pnfsMountPoint} ${PNFS_ROOT}/ftpBase
@@ -736,7 +733,6 @@ dcacheInstallPnfsMountPointClient()
       exit 1
     fi
   fi
-
   if ! grep "^ftpBase=${PNFS_ROOT}/ftpBase" ${DCACHE_HOME}/config/dCacheSetup 2>/dev/null >/dev/null ; then
     logmessage WARNING "The file ${DCACHE_HOME}/config/dCacheSetup does not contain:"
     logmessage WARNING "   ftpBase=${PNFS_ROOT}/ftpBase"
@@ -901,13 +897,13 @@ dcacheInstallPnfsMountPoints()
   
   dcacheInstallGetIsPnfsManager
   isPnfsManager=$?
-
-  #echo admin=${isAdmin}${isGridFtp}${isPnfsManager}
-  if [ "${isPnfsManager}${isGridFtp}" == "01" -o "${isPnfsManager}${isSrm}" == "01" ] ; then
-    dcacheInstallPnfsMountPointClient
-  fi
   if [ "${isAdmin}" == "1" -o "${isPnfsManager}" == "1" ] ; then
     dcacheInstallPnfsMountPointServer
+  else 
+    if [ "${isPnfsManager}${isGridFtp}" == "01" -o "${isPnfsManager}${isSrm}" == "01" ] ; then
+      dcacheInstallPnfsMountPointClient
+    
+    fi
   fi  
   logmessage DEBUG "dcacheInstallPnfsMountPoints.stop"
 }
