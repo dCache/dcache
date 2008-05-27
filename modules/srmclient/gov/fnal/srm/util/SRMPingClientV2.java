@@ -91,56 +91,50 @@ import org.dcache.srm.util.RequestStatusTool;
  * @author  timur
  */
 public class SRMPingClientV2 extends SRMClient  {
-    private ISRM srmv2;
-    GlobusURL srmurl;
-    /** Creates a new instance of SRMGetClient */
-    public SRMPingClientV2(Configuration configuration, GlobusURL srmurl) {
-        super(configuration);
-        this.srmurl = srmurl;
-    }
-    
-    
-    public void connect() throws Exception {
-        srmv2 = new SRMClientV2(srmurl,
-                getGssCredential(),
-                configuration.getRetry_timeout(),
-                configuration.getRetry_num(),
-                configuration.getLogger(),
-                doDelegation,
-                fullDelegation,
-                gss_expected_name,
-                configuration.getWebservice_path());
-    }
-    
-    
-    public void start() throws Exception {
-        try {
-            SrmPingRequest request = new SrmPingRequest();
-            SrmPingResponse response = srmv2.srmPing(request);
-            say("received response");
-            if(response == null) {
-                throw new IOException(" null response");
-            }
-	    StringBuffer sb = new StringBuffer();
-	    sb.append("VersionInfo : "+response.getVersionInfo()+"\n");
-	    if (response.getOtherInfo()!=null) { 
-		ArrayOfTExtraInfo info = response.getOtherInfo();
-		if (info.getExtraInfoArray()!=null) {
-		    for (int i=0;i<info.getExtraInfoArray().length;i++) { 
-			TExtraInfo extraInfo = info.getExtraInfoArray()[i];
-			sb.append(extraInfo.getKey() +":"+(extraInfo.getValue())+"\n");
-		    }
+	private ISRM srmv2;
+	GlobusURL srmurl;
+	/** Creates a new instance of SRMGetClient */
+	public SRMPingClientV2(Configuration configuration, GlobusURL srmurl) {
+		super(configuration);
+		this.srmurl = srmurl;
+	}
+	
+	public void connect() throws Exception {
+		srmv2 = new SRMClientV2(srmurl,
+					getGssCredential(),
+					configuration.getRetry_timeout(),
+					configuration.getRetry_num(),
+					configuration.getLogger(),
+					doDelegation,
+					fullDelegation,
+					gss_expected_name,
+					configuration.getWebservice_path());
+	}
+	
+	
+	public void start() throws Exception {
+		try {
+			SrmPingRequest request = new SrmPingRequest();
+			SrmPingResponse response = srmv2.srmPing(request);
+			say("received response");
+			if(response == null) {
+				throw new IOException(" null response");
+			}
+			StringBuffer sb = new StringBuffer();
+			sb.append("VersionInfo : "+response.getVersionInfo()+"\n");
+			if (response.getOtherInfo()!=null) { 
+				ArrayOfTExtraInfo info = response.getOtherInfo();
+				if (info.getExtraInfoArray()!=null) {
+					for (int i=0;i<info.getExtraInfoArray().length;i++) { 
+						TExtraInfo extraInfo = info.getExtraInfoArray()[i];
+						sb.append(extraInfo.getKey() +":"+(extraInfo.getValue())+"\n");
+					}
+				}
+			}
+			say(sb.toString());
 		}
-	    }
-	    say(sb.toString());
-        }catch (Exception e){
-            if(configuration.isDebug()) {
-                e.printStackTrace();
-            } else {
-                esay(e.toString());
-            }
-            throw e;
-        }
-    }
-    
+		catch (Exception e){
+			throw e;
+		}
+	}
 }

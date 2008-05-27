@@ -209,7 +209,6 @@ public abstract class SRMClient {
          dsay("got proxy of type "+srm.getClass());
          
       } catch (Exception srme) {
-         srme.printStackTrace();
          throw new IOException(srme.toString());
       }
       if(srm == null) {
