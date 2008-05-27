@@ -135,6 +135,7 @@ public class HsmFlushController implements Runnable {
     }
     public void say( String message ){ _cell.say(message);}
     public void esay( String message ){ _cell.esay(message);}
+    public void esay( Throwable t ){ _cell.esay(t);}
     public void start(){ _worker.start() ; }
     public String ac_flush_exception( Args args )throws Exception {
         Exception e = new Exception("Dummy Exception");
@@ -245,14 +246,17 @@ public class HsmFlushController implements Runnable {
                        }
                    }
                 }
-                try{
-                    wait(_flushingInterval*1000);
-                }catch (InterruptedException exc){
-                    say( "Flushing Thread interrupted" ) ;
-                    break ;
-                }
             }catch( Exception me ){
-                esay( "Flush thread : loop interrupted : "+me ) ;
+                /* Catch all - we should not see any exceptions at
+                 * this point so better dump the stack trace (seeing
+                 * an exception here is a bug).
+                 */
+                esay(me);
+            }
+            try{
+                wait(_flushingInterval*1000);
+            }catch (InterruptedException e){
+                Thread.currentThread().interrupt();
             }
         }
         say( "Flushing Thread finished" ) ;
