@@ -3480,7 +3480,7 @@ public abstract class AbstractFtpDoorV1
                     warn("FTP Door: Transfer error. Removing incomplete file "
                          + _transfer.pnfsId + ": " + _transfer.path);
                     try {
-                        _pnfs.deletePnfsEntry(_transfer.pnfsid);
+                        _pnfs.deletePnfsEntry(_transfer.pnfsId);
                     } catch (CacheException e) {
                         error("FTP Door: Failed to delete " + _transfer.pnfsId
                               + ": " + e.getMessage());
