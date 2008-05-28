@@ -1420,6 +1420,15 @@ public class PoolV4 extends CellAdapter implements Logable {
                 rc = 37;
                 msg = "Unexpected exception: " + e.getMessage();
             }
+
+            /* REVISIT: Temporary hack for replication. This should be
+             * handled somewhere else, e.g., in a state change
+             * listener.
+             */
+            if (_transfer instanceof PoolIOWriteTransfer) {
+                _replicationHandler.initiateReplication(getPnfsId(), "write");
+            }
+
             sendFinished(rc, msg);
             sendBillingMessage(rc, msg);
         }
@@ -2219,43 +2228,41 @@ public class PoolV4 extends CellAdapter implements Logable {
             return sb.toString();
         }
 
-//         private void initiateReplication(CacheRepositoryEntry entry,
-//                                          String source) {
-//             if ((!_enabled)
-//                 || (source.equals("restore") && !_replicateOnRestore))
-//                 return;
-//             try {
-//                 _initiateReplication(entry, source);
-//             } catch (CacheException e) {
-//                 esay("Problem in sending replication request : " + e);
-//             } catch (NoRouteToCellException e) {
-//                 esay("Problem in sending replication request : " + e.getMessage());
-//             }
-//         }
+        private void initiateReplication(PnfsId id, String source) {
+            if ((!_enabled)
+                || (source.equals("restore") && !_replicateOnRestore))
+                return;
+            try {
+                _initiateReplication(_repository.getEntry(id), source);
+            } catch (CacheException e) {
+                esay("Problem in sending replication request : " + e);
+            } catch (NoRouteToCellException e) {
+                esay("Problem in sending replication request : " + e.getMessage());
+            }
+        }
 
-//         private void _initiateReplication(CacheRepositoryEntry entry,
-//                                           String source)
-//             throws CacheException, NoRouteToCellException
-//         {
-//             PnfsId pnfsId = entry.getPnfsId();
-//             StorageInfo storageInfo = entry.getStorageInfo();
+        private void _initiateReplication(CacheEntry entry, String source)
+            throws CacheException, NoRouteToCellException
+        {
+            PnfsId pnfsId = entry.getPnfsId();
+            StorageInfo storageInfo = entry.getStorageInfo();
 
-//             storageInfo.setKey("replication.source", source);
+            storageInfo.setKey("replication.source", source);
 
-//             PoolMgrReplicateFileMsg req =
-//                 new PoolMgrReplicateFileMsg(pnfsId,
-//                                             storageInfo,
-//                                             new DCapProtocolInfo("DCap", 3, 0,
-//                                                                  _destinationHostName, 2222),
-//                                             storageInfo.getFileSize());
-//             req.setReplyRequired(false);
-//             try {
-//                 sendMessage(new CellMessage(new CellPath(_replicationManager), req));
-//             } catch (NotSerializableException e) {
-//                 throw new RuntimeException("Bug detected: Unserializable vehicle", e);
-//             }
+            PoolMgrReplicateFileMsg req =
+                new PoolMgrReplicateFileMsg(pnfsId,
+                                            storageInfo,
+                                            new DCapProtocolInfo("DCap", 3, 0,
+                                                                 _destinationHostName, 2222),
+                                            storageInfo.getFileSize());
+            req.setReplyRequired(false);
+            try {
+                sendMessage(new CellMessage(new CellPath(_replicationManager), req));
+            } catch (NotSerializableException e) {
+                throw new RuntimeException("Bug detected: Unserializable vehicle", e);
+            }
 
-//         }
+        }
     }
 
     // ///////////////////////////////////////////////////////////
@@ -2351,9 +2358,7 @@ public class PoolV4 extends CellAdapter implements Logable {
                     } else {
                         doChecksum(id);
 
-                        //                     _replicationHandler.initiateReplication(entry,
-                        //                                                             "restore");
-
+                        _replicationHandler.initiateReplication(id, "restore");
 
                         msg.setSucceeded();
                     }
