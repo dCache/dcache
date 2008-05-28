@@ -25,6 +25,11 @@ public class PoolMonitorHelper {
 
 
 
+    /**
+     * Populate Selection unit with pools
+     * @param unit selection unit to populate
+     * @param pools list of pools
+     */
     public static void prepareSelectionUnit(PoolSelectionUnit unit, List<String> pools) throws CommandException {
 
 
