@@ -25,6 +25,7 @@ import dmg.util.Logable;
 import dmg.util.Args;
 
 import org.dcache.pool.repository.StickyRecord;
+import org.dcache.pool.repository.v3.StickyInspector;
 import org.dcache.pool.repository.EventType;
 import org.dcache.pool.repository.AbstractCacheRepository;
 import org.dcache.pool.repository.MetaDataRepository;
@@ -33,7 +34,6 @@ import org.dcache.pool.repository.FlatDataFileRepository;
 import org.dcache.pool.repository.RepositoryEntryHealer;
 import org.dcache.pool.repository.CacheEntryLRUOrder;
 import org.dcache.pool.repository.DuplicateEntryException;
-import org.dcache.pool.repository.v3.StickyInspector;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileInCacheException;
@@ -106,17 +106,6 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
     private final MetaDataRepository _importRepository;
 
     /**
-     * Clears sticky flag if it is expired.
-     */
-    private final StickyInspector _stickyInspector;
-
-    /**
-     * Thread driving the sticky inspector. Started as soon as
-     * the inventory is finished.
-     */
-    private final Thread _stickyInspectorThread;
-
-    /**
      * True while an inventory is build. During this period we block
      * event processing.
      */
@@ -187,10 +176,6 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
 
         _spaceReservation =
             new File(directory, SPACE_RESERVATION);
-        _stickyInspector =
-            new StickyInspector(this);
-        _stickyInspectorThread =
-            new Thread(_stickyInspector, "StickyInspectorThread");
     }
 
     public boolean contains(PnfsId pnfsId)
@@ -225,7 +210,12 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
             } catch (DuplicateEntryException e) {
                 _log.warn("Deleting orphaned meta data entry for " + pnfsId);
                 _metaRepository.remove(pnfsId);
-                entry = _metaRepository.create(pnfsId);
+                try {
+                    entry = _metaRepository.create(pnfsId);
+                } catch (DuplicateEntryException f) {
+                    throw
+                        new RuntimeException("Unexpected repository error", e);
+                }
             }
             _allEntries.put(pnfsId, entry);
             return entry;
@@ -313,7 +303,7 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
     /**
      * return all known iterator pnfsid
      */
-    public Iterator<PnfsId> pnfsids() throws CacheException
+    public Iterator<PnfsId> pnfsids()
     {
         _operationLock.readLock().lock();
         try {
@@ -365,9 +355,14 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
         runInventory(null, null, 0);
     }
 
+    /* Must not be executed more than once!
+     */
     public synchronized void runInventory(Logable log, PnfsHandler pnfs, int flags)
         throws CacheException
     {
+        if (!_allEntries.isEmpty())
+            throw new IllegalStateException("Repository already has an inventory");
+
         _log.info("Generating inventory");
 
         List<PnfsId> ids = _dataRepository.list();
@@ -404,10 +399,6 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
                 }
 
                 _allEntries.put(id, entry);
-
-                for (StickyRecord record : entry.stickyRecords()) {
-                    _stickyInspector.add(entry.getPnfsId(), record);
-                }
             }
 
             _log.info("Registering files with event listeners");
@@ -418,11 +409,13 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
             long total = getTotalSpace();
             if (usedDataSpace > total) {
                 String error =
-                    "Inventory overbooked " + usedDataSpace +" > " + total;
+                    "Overbooked, " + usedDataSpace +
+                    " bytes of data exceeds inventory size of " +
+                    total + " bytes";
                 if ((flags & ALLOW_SPACE_RECOVERY) == 0)
                     throw new CacheException(206, error);
 
-                log.elog(error);
+                _log.error(error);
 
                 long diff = usedDataSpace - total;
                 if (diff  > 0.1 * total)
@@ -456,7 +449,13 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
                                     _allEntries.size(), getTotalSpace(),
                                     usedDataSpace, getFreeSpace()));
 
-            _stickyInspectorThread.start();
+            /* We have to create the sticky inspector as the last
+             * thing. Otherwise we would risk that it changes the
+             * sticky flag on entries while generating the inventory,
+             * which would screw up the accounting.
+             */
+            _runningInventory = false;
+            addCacheRepositoryListener(new StickyInspector(_allEntries.values()));
         } catch (IOException e) {
             throw new CacheException(ERROR_IO_DISK , "Failed to load repository: " + e);
         } finally {
