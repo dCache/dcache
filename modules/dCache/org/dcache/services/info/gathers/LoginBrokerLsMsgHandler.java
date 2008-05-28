@@ -74,6 +74,13 @@ public class LoginBrokerLsMsgHandler extends CellMessageHandlerSkel {
 					new FloatingPointStateValue( info.getLoad(), lifetime));
 		update.appendUpdate( pathToDoor.newChild( "port"),
 					new IntegerStateValue( info.getPort(), lifetime));
+		
+		update.appendUpdate( pathToDoor.newChild( "cell"),
+					new StringStateValue( info.getCellName(), lifetime));
+
+		update.appendUpdate( pathToDoor.newChild( "domain"),
+				new StringStateValue( info.getDomainName(), lifetime));
+
 		update.appendUpdate( pathToDoor.newChild( "update-time"),
 					new IntegerStateValue( info.getUpdateTime(), lifetime));
 
