@@ -166,8 +166,4 @@ public class PseudoPoolDga implements Schedulable {
 		return this.getClass().getSimpleName() + "[" + _poolName + "]";
 	}
 
-	// BREAK THINGS DELIBERATELY
-	THIS LINE WILL NOT COMPILE.
-
-
 }
