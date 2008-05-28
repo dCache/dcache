@@ -2770,30 +2770,6 @@ public abstract class AbstractFtpDoorV1
         }
     }
 
-    private void deleteEntry(String path)
-    {
-        try {
-            _pnfs.deletePnfsEntry(path);
-        } catch (CacheException ingnored) {}
-        /*
-          CellPath pnfsCellPath;
-          CellMessage pnfsCellMessage;
-          PnfsDeleteEntryMessage pnfsMessage;
-
-          pnfsCellPath = new CellPath(pnfsManager);
-          pnfsMessage = new PnfsDeleteEntryMessage(path);
-          pnfsCellMessage = new CellMessage(pnfsCellPath, pnfsMessage);
-
-          info("FTP Door: deleting PNFS entry " + path);
-
-          try {
-              sendMessage(pnfsCellMessage);
-          } catch (Exception e){
-              error("FTP Door: deleteEntry cannot send message " + e);
-          }
-        */
-    }
-
     private void setLength(PnfsId pnfsId, long length)
     {
         CellPath pnfsCellPath;
@@ -3501,12 +3477,17 @@ public abstract class AbstractFtpDoorV1
 
             if (_transfer.pnfsEntryIncomplete) {
                 if (_removeFileOnIncompleteTransfer) {
-                    warn("FTP Door: Transfer error. Removing incomplete file: "
-                         + _transfer.path);
-                    deleteEntry(_transfer.path);
+                    warn("FTP Door: Transfer error. Removing incomplete file "
+                         + _transfer.pnfsId + ": " + _transfer.path);
+                    try {
+                        _pnfs.deletePnfsEntry(_transfer.pnfsid);
+                    } catch (CacheException e) {
+                        error("FTP Door: Failed to delete " + _transfer.pnfsId
+                              + ": " + e.getMessage());
+                    }
                 } else {
-                    warn("FTP Door: Transfer error: incomplete file: "
-                        + _transfer.path + " was not removed.");
+                    warn("FTP Door: Transfer error. Incomplete file was not removed:"
+                         + _transfer.path);
                 }
             }
 
