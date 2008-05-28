@@ -23,7 +23,7 @@ public class      HttpServiceCell
    private HashMap      _aliasHash = new HashMap() ;
    private Dictionary   _context   = null ;
    private SimpleDateFormat _dateFormat = 
-                new SimpleDateFormat( "EEEE, dd-MMM-yy hh:mm:ss z") ;
+                new SimpleDateFormat( "EEE, dd MMM yyyy hh:mm:ss z");
                 
    public HttpServiceCell( String name , String args ) throws Exception {
        super( name , args , false ) ;
@@ -31,6 +31,9 @@ public class      HttpServiceCell
        _args    = getArgs() ;
        _nucleus = getNucleus() ;
        _context = getDomainContext() ;
+       
+       // The time *must* be in GMT
+       _dateFormat.setTimeZone( TimeZone.getTimeZone("GMT"));
        
        try{
           if( _args.argc() < 1 )
