@@ -1,9 +1,13 @@
 package org.dcache.services.info.gathers;
 
+import java.net.Inet4Address;
+import java.net.Inet6Address;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+
 import org.apache.log4j.Logger;
 import org.dcache.services.info.base.FloatingPointStateValue;
 import org.dcache.services.info.base.IntegerStateValue;
-import org.dcache.services.info.base.StateComposite;
 import org.dcache.services.info.base.StatePath;
 import org.dcache.services.info.base.StateUpdate;
 import org.dcache.services.info.base.StringStateValue;
@@ -59,7 +63,7 @@ public class LoginBrokerLsMsgHandler extends CellMessageHandlerSkel {
 		
 		StatePath pathToDoor = pathToDoors.newChild( info.getIdentifier());
 
-		conditionalAddString( update, pathToDoor, "host", info.getHost(), lifetime);
+		addHostInfo( update, pathToDoor, "host", info.getHost(), lifetime);
 		
 		StatePath pathToProtocol = pathToDoor.newChild( "protocol");
 		
@@ -80,8 +84,7 @@ public class LoginBrokerLsMsgHandler extends CellMessageHandlerSkel {
 		if( hosts != null) {
 			for( int i = 0; i < hosts.length; i++) {
 				if( hosts[i] != null)
-					update.appendUpdate( pathToHosts.newChild(hosts[i]),
-								new StateComposite(lifetime));
+					addHostInfo( update, pathToHosts, hosts[i], hosts[i], lifetime);
 			}
 		}
 	}
@@ -100,6 +103,66 @@ public class LoginBrokerLsMsgHandler extends CellMessageHandlerSkel {
 			update.appendUpdate( parentPath.newChild(name),
 						new StringStateValue( value, storeTime));
 		}
+	}
+	
+
+	/**
+	 * Add a standardised amount of information about a host.  This is in the form:
+	 * <pre>
+	 *     [parentPath]
+	 *       |
+	 *       |
+	 *       +--[ id ] (branch)
+	 *       |   |
+	 *       |   +-- "name" (string metric: the host's name, as presented by the door)
+	 *       |   +-- "FQDN" (string metric: the host's FQDN)
+	 *       |   +--[ "IP" ] (branch)
+	 *       |       |
+	 *       |       +-- "address" (string metric: the host's IP address)
+	 *       |       +-- "type"    (string metric: "IPv4", "IPv6" or "unknown")
+	 *       |
+	 * </pre> 
+	 * @param update The StateUpdate to append the new metrics.
+	 * @param parentPath the path that the id branch will be added.  
+	 * @param id the name of the branch containing this host's information
+	 * @param name something that identifies the host (e.g., IP address or simple name).
+	 * @param lifetime how long the created metrics should last.
+	 */
+	private void addHostInfo( StateUpdate update, StatePath parentPath, String id, String name, long lifetime) {
+		
+		StatePath pathToHostBranch = parentPath.newChild(id);
+		InetAddress address;
+		
+		try {
+			address = InetAddress.getByName(name);
+		} catch( UnknownHostException e) {
+			// Simply add the name and quit.
+			update.appendUpdate( pathToHostBranch.newChild( "name"), new StringStateValue( name, lifetime));
+			return;
+		}
+		
+		/**
+		 *  Add information under the main branch.
+		 */
+
+		update.appendUpdate( pathToHostBranch.newChild( "name"), new StringStateValue( name, lifetime));
+		update.appendUpdate( pathToHostBranch.newChild( "FQDN"), new StringStateValue( address.getCanonicalHostName(), lifetime));
+				
+		/**
+		 *   Add the IP address.
+		 */
+		
+		StatePath pathToIP = pathToHostBranch.newChild( "IP");
+		String type = "unknown";
+		
+		if( address instanceof Inet4Address) {
+			type = "IPv4";
+		} else if( address instanceof Inet6Address) {
+			type = "IPv6";
+		}
+
+		update.appendUpdate( pathToIP.newChild( "address"), new StringStateValue( address.getHostAddress(), lifetime));
+		update.appendUpdate( pathToIP.newChild( "type"), new StringStateValue( type, lifetime));		
 	}
 
 }
