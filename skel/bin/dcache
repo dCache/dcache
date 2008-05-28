@@ -440,7 +440,7 @@ getServices()
             if [ "`printConfig utilityDomain`" = "yes" ]; then
                 printf "utility "
             fi
-            if [ "`printConfig InfoProvider`" = "yes" ]; then
+            if [ "`printConfig infoProvider`" = "yes" ]; then
                 printf "infoProvider "
             fi
             if [ "`printConfig statistics`" = "yes" ]; then
