@@ -497,8 +497,15 @@ public class      HttpServiceCell
           }else if( type.equals( "class" ) ){
 
              HttpResponseEngine engine =  (HttpResponseEngine)entry.getSpecific() ;
-             engine.queryUrl( this ) ;
-
+             
+             try {
+            	 engine.queryUrl( this ) ;
+             } catch( HttpException e) {
+            	 throw e;
+             } catch( Exception e) {
+            	 throw new HttpException( 500, "HttpResponseEngine ("+engine.getClass().getCanonicalName()+") is broken, please report this to sysadmin.");
+             }
+  
           }
           return ;
        }
