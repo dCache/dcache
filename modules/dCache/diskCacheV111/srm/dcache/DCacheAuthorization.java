@@ -276,7 +276,9 @@ public final class DCacheAuthorization implements SRMAuthorization {
             if ( username.equals( user.getName()) &&
                  root.equals(user.getRoot()) &&
                  uid == user.getUid() &&
-                 gid == user.getGid() ){
+                 gid == user.getGid() &&
+                 voGroup == user.getVoGroup() &&
+                 (voRole==null || voRole == user.getVoRole())){
                 return user;
             }
            _logAuth.error(" Warning: user parameters for user "+ user+ " have changed ");
