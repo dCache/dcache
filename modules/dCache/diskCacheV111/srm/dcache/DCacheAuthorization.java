@@ -277,7 +277,7 @@ public final class DCacheAuthorization implements SRMAuthorization {
                  root.equals(user.getRoot()) &&
                  uid == user.getUid() &&
                  gid == user.getGid() &&
-                 voGroup == user.getVoGroup() &&
+                 voGroup.equals(user.getVoGroup()) &&
                  (voRole==null || voRole.equals(user.getVoRole()))){
                 return user;
             }
