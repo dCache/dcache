@@ -1,7 +1,9 @@
 package org.dcache.services.info;
 
 import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.io.NotSerializableException;
 import java.io.IOException;
 import java.util.concurrent.TimeoutException; // We hijack this exception.
@@ -56,10 +58,10 @@ public class InfoHttpEngine implements HttpResponseEngine, Cell {
 	private final CellPath _infoCellPath = new CellPath( INFO_CELL_NAME);
 	private final CellNucleus _nucleus;
 
-	/** Our local cache of the XML data */
+	/** Our local cache of the complete XML data */
 	private byte _cache[];
 	private Date _whenReceived;
-
+	
 
 	/**
 	 * The constructor simply creates a new nucleus for us to use when sending messages.
@@ -77,6 +79,9 @@ public class InfoHttpEngine implements HttpResponseEngine, Cell {
 	 */
 	public void queryUrl(HttpRequest request) throws HttpException {
 
+		List<String> pathElements = null;
+		byte recv[];
+		
 		String[]    urlItems = request.getRequestTokens();
         OutputStream out     = request.getOutputStream();
 
@@ -90,31 +95,42 @@ public class InfoHttpEngine implements HttpResponseEngine, Cell {
         	}
         	_log.info( "Received request for: " + sb.toString());
         }
+
+        if( urlItems.length > 1) {
+        	pathElements = new ArrayList<String>( urlItems.length-1);
         
+        	for( int i = 1; i < urlItems.length; i++)
+        		pathElements.add(i-1, urlItems[i]);
+        }
         
         /**
          * Maintain our cache of XML.  This prevents end-users from thrashing the info cell.
          */
-        if( _whenReceived == null || System.currentTimeMillis() - _whenReceived.getTime() > MAX_CACHE_AGE) {
-
-        	try {
-        		updateXMLCache();
-        	} catch( TimeoutException e) {
-                throw new HttpException( 503 , "The info cell took too long to reply, suspect trouble.");        		
-        	} catch( NotSerializableException e) {
-                throw new HttpException( 500, "Internal error when requesting info from info cell.");
-        	} catch( NoRouteToCellException e) {
-                throw new HttpException( 503 , "Unable to contact the info cell.  Please ensure the info cell is running.");        		
-        	} catch( NullPointerException e) {
-        		throw new HttpException( 500, "Received no sensible reply from info cell.  See info cell for details.");
-        	}
-        }
+       	try {
+       		if( pathElements == null) {
+       			if( _whenReceived == null || System.currentTimeMillis() - _whenReceived.getTime() > MAX_CACHE_AGE)
+       				updateXMLCache();
+       			recv = _cache;
+       		} else {
+       			recv = fetchXML( pathElements);
+       		}
+       	} catch( TimeoutException e) {
+               throw new HttpException( 503 , "The info cell took too long to reply, suspect trouble.");        		
+       	} catch( NotSerializableException e) {
+               throw new HttpException( 500, "Internal error when requesting info from info cell.");
+       	} catch( NoRouteToCellException e) {
+               throw new HttpException( 503 , "Unable to contact the info cell.  Please ensure the info cell is running.");        		
+       	} catch( NullPointerException e) {
+       		throw new HttpException( 500, "Received no sensible reply from info cell.  See info cell for details.");
+       	} catch( InterruptedException e) {
+       		throw new HttpException( 503, "Received interrupt whilst processing data. Please try again later.");
+       	}
         
         request.setContentType( "application/xml");
 
         try {
-            request.printHttpHeader( _cache.length);
-        	out.write( _cache);
+            request.printHttpHeader( recv.length);
+        	out.write( recv);
         } catch( IOException e) {
         	_log.error("IOException caught whilst writing output : " + e.getMessage());
         }
@@ -124,12 +140,27 @@ public class InfoHttpEngine implements HttpResponseEngine, Cell {
 	/**
 	 * Send a message off to the info cell
 	 */
-	public void updateXMLCache() throws NotSerializableException, NoRouteToCellException, TimeoutException {
+	public void updateXMLCache() throws InterruptedException, NotSerializableException, NoRouteToCellException, TimeoutException {
+		_cache = fetchXML( null);
+		_whenReceived = new Date();
+	}
+	
+	
+	/**
+	 * Attempt to gather XML data for given path, or complete tree if pathElements is null.
+	 * @param pathElements
+	 * @return
+	 */
+	private byte[] fetchXML( List<String> pathElements) throws InterruptedException, NotSerializableException, NoRouteToCellException, TimeoutException {
 
-		if( _log.isDebugEnabled())
-        	_log.debug( "Attempting to update XML cache");
+		String serialisedData = null;
 		
-		CellMessage envelope = new CellMessage( _infoCellPath, new InfoGetSerialisedDataMessage());
+		if( _log.isDebugEnabled())
+        	_log.debug( "Attempting to fetch XML +" + (pathElements == null ? "complete" : "partial") + " tree");
+
+		InfoGetSerialisedDataMessage sendMsg = (pathElements == null) ? new InfoGetSerialisedDataMessage() : new InfoGetSerialisedDataMessage( pathElements);  
+		
+		CellMessage envelope = new CellMessage( _infoCellPath, sendMsg);
 
 		try {
 			CellMessage replyMsg = _nucleus.sendAndWait( envelope, INFO_CELL_TIMEOUT);
@@ -149,13 +180,9 @@ public class InfoHttpEngine implements HttpResponseEngine, Cell {
 			
 			InfoGetSerialisedDataMessage reply = (InfoGetSerialisedDataMessage) replyObj;
 			
-			String serialisedData = reply.getSerialisedData();
+			serialisedData = reply.getSerialisedData();
 			
-			if( serialisedData != null) {
-				_cache = serialisedData.getBytes();
-				_whenReceived = new Date();
-			} else {
-				
+			if( serialisedData == null) {
 				/**
 				 *  TODO: replyStr == null should only come from a problem within the Info cell
 				 *  when serialising the content.  This should be handled by a specific Exception
@@ -167,8 +194,10 @@ public class InfoHttpEngine implements HttpResponseEngine, Cell {
 		} catch( InterruptedException e) {
 			_cache = null;
 			_whenReceived = null;
-			// But otherwise, we ignore this Exception (is this correct?)
+			throw e;
 		}
+		
+		return serialisedData.getBytes();
 	}
 	
 		

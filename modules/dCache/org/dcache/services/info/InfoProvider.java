@@ -655,9 +655,11 @@ public class InfoProvider extends CellAdapter {
 		StateSerialiser xmlSerialiser = _availableSerialisers.get( XmlSerialiser.NAME);
 		String data;
 		
-		if( xmlSerialiser != null)
-			data = xmlSerialiser.serialise();
-		else {
+		if( xmlSerialiser != null) {
+			
+			data = msg.isCompleteDump() ? xmlSerialiser.serialise() : xmlSerialiser.serialise( StatePath.buildFromList( msg.getPathElements()));
+			
+		} else {
 			_log.error("Couldn't find the xmlSerialiser");
 			
 			// Really, we should propagate this back as an Exception.
