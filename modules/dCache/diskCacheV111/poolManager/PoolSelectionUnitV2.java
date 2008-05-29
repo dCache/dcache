@@ -902,9 +902,6 @@ public class PoolSelectionUnitV2 implements PoolSelectionUnit {
         }
     }
 
-    public PoolSelectionUnitV2() {
-    }
-
     public void clear() {
 
         _psuWriteLock.lock();
@@ -1397,6 +1394,9 @@ public class PoolSelectionUnitV2 implements PoolSelectionUnit {
                     for (PoolCore poolCore : link._poolList.values()) {
                         if (poolCore instanceof Pool) {
                             Pool pool = (Pool) poolCore;
+                            if( _logPoolSelection.isDebugEnabled() ) {
+                                _logPoolSelection.debug("Pool: " + pool + " can read from tape? : " + pool.canReadFromTape());
+                            }
                             if (((type == DirectionType.READ && pool.canRead())
                                  || (type == DirectionType.CACHE && pool.canReadFromTape()
                                      && poolCanStageFile(pool, storageInfo))
@@ -1407,6 +1407,9 @@ public class PoolSelectionUnitV2 implements PoolSelectionUnit {
                             }
                         } else {
                             for (Pool pool : ((PGroup)poolCore)._poolList.values()) {
+                                if( _logPoolSelection.isDebugEnabled() ) {
+                                    _logPoolSelection.debug("Pool: " + pool + " can read from tape? : " + pool.canReadFromTape());
+                                }
                                 if (((type == DirectionType.READ && pool.canRead())
                                      || (type == DirectionType.CACHE && pool.canReadFromTape()
                                          && poolCanStageFile(pool, storageInfo))
@@ -3278,18 +3281,22 @@ public class PoolSelectionUnitV2 implements PoolSelectionUnit {
      * the only case if the file is located on an HSM connected to the pool.
      */
     private boolean poolCanStageFile(Pool pool, StorageInfo file) {
+        boolean rc  = false;
         if (file.locations().isEmpty()
                 && pool.getHsmInstances().contains(file.getHsm())) {
             // This is for backwards compatibility until all info
             // extractors support URIs.
-            return true;
+            rc = true;
         } else {
             for (URI uri : file.locations()) {
                 if (pool.getHsmInstances().contains(uri.getAuthority())) {
-                    return true;
+                    rc = true;
                 }
             }
         }
-        return false;
+        if( _logPoolSelection.isDebugEnabled() ) {
+            _logPoolSelection.debug(pool.getName() + ": matching hsm ("+ file.getHsm() +") found?: " + rc);
+        }
+        return rc;
     }
 }
