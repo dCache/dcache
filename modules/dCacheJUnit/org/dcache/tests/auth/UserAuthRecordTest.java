@@ -58,4 +58,29 @@ public class UserAuthRecordTest {
 
         assertTrue("Users with the same attributes have to be equal", userRecord1.equals(userRecord2));
     }
+
+    @Test
+    public void testNotEqualsByFQAN() {
+
+        int uid = 3750;
+        boolean readOnly = false;
+        String fqan1 = "Role1";
+        String fqan2 = "Role2";
+        String user = "tigran";
+        String DN = "/";
+        HashSet<String> principals = new HashSet<String>();
+        String home = "/";
+        String fsroot = "/";
+        String root = "/";
+        int priority = 1;
+
+
+        int gids[] = new int[] {1};
+
+
+        UserAuthRecord userRecord1 = new UserAuthRecord(user, DN, fqan1, readOnly, priority, uid, gids, home, root, fsroot, principals);
+        UserAuthRecord userRecord2 = new UserAuthRecord(user, DN, fqan2, readOnly, priority, uid, gids, home, root, fsroot, principals);
+
+        assertFalse("User with different FQAN can't be equals", userRecord1.equals(userRecord2));
+    }
 }
