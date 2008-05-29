@@ -22,10 +22,8 @@ public class TopoMapHandler extends CellMessageHandlerSkel {
 
 
 	@Override
-	public void process(Object msgPayload, long msgDeliveryPeriod) {
+	public void process(Object msgPayload, long metricLifetime) {
 		
-		long metricLifetime = (long) (msgDeliveryPeriod * 2.5); // Give metrics a lifetime of 2.5* message deliver period
-
 		// The TopoCell may return null whilst starting up.
 		if( msgPayload == null)
 			return;
