@@ -53,21 +53,58 @@ abstract class SkelListBasedActivity implements Schedulable {
 
 	/** The StatePath pointing to the parent who's children we want to iterate over */
 	private final StatePath _parentPath;
-
 	
+	/** Minimum time between fetching a fresh list (or querying the same list-item), in milliseconds */
+	private final int _minimumListRefreshPeriod;
+	
+	/** Time between sending successive messages, in milliseconds */
+	private final int _successiveMsgDelay;
+	
+	/** Whether we are processing the first item in the list */
+	private boolean _isFirstItem;
+	
+
 	/**
 	 * Create a new List-based activity, based on the list of items below parentPath in
 	 * dCache's state.
 	 * @param parentPath all list items must satisfy parentPath.isParentOf(item)
 	 */
 	protected SkelListBasedActivity (  StatePath parentPath) {
-
 		_parentPath = parentPath;
 
 		updateStack();  // Bring in initial work.
+
+		_minimumListRefreshPeriod = MINIMUM_LIST_REFRESH_PERIOD;
+		_successiveMsgDelay = SUCCESSIVE_MSG_DELAY;
+
+		randomiseDelay(); // Randomise our initial offset.
+	}
+	
+	/**
+	 * Create a new List-based activity that is based on a list of items below parentPath
+	 * in dCache's state.  The trigger() method is called periodically and getNextItem() method
+	 * provides the name of the item to be processed. 
+	 * @param parentPath the path of the parent object we should iterate over
+	 * @param minimumListRefreshPeriod An enforced minimum time, in milliseconds, between the same item being called.
+	 * @param successiveMsgDelay The minimum time between triggering() successive items, in milliseconds. 
+	 */
+	protected SkelListBasedActivity (  StatePath parentPath, int minimumListRefreshPeriod, int successiveMsgDelay) {
+		_parentPath = parentPath;
 		
-		/* Wait a random period before starting... */
-		_whenListRefresh = new Date( System.currentTimeMillis() + (long) (Math.random() * MINIMUM_LIST_REFRESH_PERIOD));		
+		updateStack();  // Bring in initial work.
+		
+		_minimumListRefreshPeriod = minimumListRefreshPeriod;
+		_successiveMsgDelay = successiveMsgDelay;
+		
+		randomiseDelay();  // Randomise our initial offset.
+	}
+	
+	/**
+	 * Set when we are next to trigger an event to be a random fraction of
+	 * the minimum refresh period.  This is most useful when starting up.
+	 */
+	private void randomiseDelay() {
+		_whenListRefresh = new Date( System.currentTimeMillis() + (long) (Math.random() * _minimumListRefreshPeriod));		
 	}
 
 	
@@ -76,7 +113,7 @@ abstract class SkelListBasedActivity implements Schedulable {
 	 *  @returns the desired time we should next be triggered. 
 	 */
 	public Date shouldNextBeTriggered() {
-		return _outstandingWork.isEmpty() ? _whenListRefresh : _nextSendMsg;
+		return _outstandingWork.empty() ? _whenListRefresh : _nextSendMsg;
 	}
 
 	
@@ -87,28 +124,32 @@ abstract class SkelListBasedActivity implements Schedulable {
 	 */
 	public void trigger() {
 		Date now = new Date();
+
+		_nextSendMsg = new Date( System.currentTimeMillis() + _successiveMsgDelay);
 		
 		if( !_outstandingWork.empty() || now.before( _whenListRefresh))
-			return;
+			return;		
 		
-		updateStack();
-			
 		/**
 		 *  Calculate the earliest we would like to do this again.
 		 */
-		long timeToSendAllMsgs = (long) (_outstandingWork.size() * SUCCESSIVE_MSG_DELAY);
-		long listRefreshPeriod = timeToSendAllMsgs < MINIMUM_LIST_REFRESH_PERIOD ? MINIMUM_LIST_REFRESH_PERIOD : timeToSendAllMsgs;
+		if( _isFirstItem) {
+			_isFirstItem = false;
 			
-		_whenListRefresh = new Date( System.currentTimeMillis() + listRefreshPeriod);
+			long timeToSendAllMsgs = (long) (_outstandingWork.size() * _successiveMsgDelay);
+			long listRefreshPeriod = timeToSendAllMsgs < _minimumListRefreshPeriod ? _minimumListRefreshPeriod : timeToSendAllMsgs;
+			_whenListRefresh = new Date( System.currentTimeMillis() + listRefreshPeriod);
 			
-		/**
-		 *  All metrics that are generated should have a lifetime based on when we expect
-		 *  to refresh the list and generate more metrics.
-		 *  The 2.5 factor allows for both 50% growth and a message being lost.
-		 */
-		_metricLifetime = (long) (2.5 * listRefreshPeriod / 1000.0);
+			
+			/**
+			 *  All metrics that are generated should have a lifetime based on when we expect
+			 *  to refresh the list and generate more metrics.
+			 *  The 2.5 factor allows for both 50% growth and a message being lost.
+			 */
+			_metricLifetime = (long) (2.5 * listRefreshPeriod / 1000.0);
+		}
 		
-		_nextSendMsg.setTime( System.currentTimeMillis() + SUCCESSIVE_MSG_DELAY);
+		updateStack();
 	}
 	
 	
@@ -120,6 +161,8 @@ abstract class SkelListBasedActivity implements Schedulable {
 		
 		for( String item : items)
 			_outstandingWork.add( item);
+		
+		_isFirstItem = true;
 		
 		if( _log.isDebugEnabled()) {
 			_log.debug( "fresh to-do list obtained for " + this.getClass().getSimpleName());
