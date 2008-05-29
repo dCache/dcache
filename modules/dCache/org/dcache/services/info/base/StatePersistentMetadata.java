@@ -131,10 +131,11 @@ public class StatePersistentMetadata {
 		this.add( StatePath.parsePath("unitgroups.*"), branchMetadata( "unitgroup", "name"));
 		this.add( StatePath.parsePath("unitgroups.*.units.*"), branchMetadata( "unitref", "name"));
 		this.add( StatePath.parsePath("unitgroups.*.links.*"), branchMetadata( "linkref", "name"));
-		
 
 		this.add( StatePath.parsePath("doors.*"), branchMetadata( "door", "name"));
 		this.add( StatePath.parsePath("doors.*.hosts.*"), branchMetadata( "host", "address"));
+
+		this.add( StatePath.parsePath("domains.*"), branchMetadata( "domain", "name"));
 	}
 	
 	

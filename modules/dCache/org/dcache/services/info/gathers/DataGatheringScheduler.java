@@ -384,6 +384,8 @@ public class DataGatheringScheduler implements Runnable {
 		LoginBrokerLsMsgHandler msgHandler = new LoginBrokerLsMsgHandler();
 		addActivity( new SingleMessageDga( "LoginBroker",     "ls -binary", msgHandler, 60));
 		addActivity( new SingleMessageDga( "srm-LoginBroker", "ls -binary", msgHandler, 60));
+		
+		addActivity( new SingleMessageDga( "topo", "gettopomap", new TopoMapHandler(), 120));
 
 		addActivity( new ListBasedMessageDga( new StatePath("pools"),      "PoolManager", "psux ls pool",   new PoolInfoMsgHandler()));
 		addActivity( new ListBasedMessageDga( new StatePath("poolgroups"), "PoolManager", "psux ls pgroup", new PoolGroupInfoMsgHandler()));
