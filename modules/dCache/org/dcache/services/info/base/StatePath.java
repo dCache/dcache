@@ -54,6 +54,15 @@ public class StatePath {
 		_elements = new ArrayList<String>( path._elements);
 	}
 
+	/**
+	 * Create a new StatePath when given a List of path elements.
+	 * @param pathElements  The List of path elements from which to construct the state path.
+	 * @return the corresponding StatePath
+	 */
+	static public StatePath buildFromList( List<String> pathElements ) {
+		return new StatePath( pathElements, pathElements.size());
+	}
+						
 
 	/**
 	 * Create a new StatePath based on a List of path elements.
