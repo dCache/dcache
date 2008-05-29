@@ -37,7 +37,7 @@ abstract class SkelListBasedActivity implements Schedulable {
 	private static final int MINIMUM_LIST_REFRESH_PERIOD = 60000;
 	
 	/** Time between sending successive messages, in milliseconds */
-	private static final int SUCCESSIVE_MSG_DELAY = 500;
+	private static final int SUCCESSIVE_MSG_DELAY = 10000;
 
 	/** For how long should the resulting metrics live? (in seconds) */
 	private long _metricLifetime;
@@ -59,9 +59,6 @@ abstract class SkelListBasedActivity implements Schedulable {
 	
 	/** Time between sending successive messages, in milliseconds */
 	private final int _successiveMsgDelay;
-	
-	/** Whether we are processing the first item in the list */
-	private boolean _isFirstItem;
 	
 
 	/**
@@ -129,27 +126,23 @@ abstract class SkelListBasedActivity implements Schedulable {
 		
 		if( !_outstandingWork.empty() || now.before( _whenListRefresh))
 			return;		
-		
+
+		updateStack();
+
 		/**
 		 *  Calculate the earliest we would like to do this again.
 		 */
-		if( _isFirstItem) {
-			_isFirstItem = false;
-			
-			long timeToSendAllMsgs = (long) (_outstandingWork.size() * _successiveMsgDelay);
-			long listRefreshPeriod = timeToSendAllMsgs < _minimumListRefreshPeriod ? _minimumListRefreshPeriod : timeToSendAllMsgs;
-			_whenListRefresh = new Date( System.currentTimeMillis() + listRefreshPeriod);
+		long timeToSendAllMsgs = (long) (_outstandingWork.size() * _successiveMsgDelay);
+		long listRefreshPeriod = timeToSendAllMsgs < _minimumListRefreshPeriod ? _minimumListRefreshPeriod : timeToSendAllMsgs;
+		_whenListRefresh = new Date( System.currentTimeMillis() + listRefreshPeriod);
 			
 			
-			/**
-			 *  All metrics that are generated should have a lifetime based on when we expect
-			 *  to refresh the list and generate more metrics.
-			 *  The 2.5 factor allows for both 50% growth and a message being lost.
-			 */
-			_metricLifetime = (long) (2.5 * listRefreshPeriod / 1000.0);
-		}
-		
-		updateStack();
+		/**
+		 *  All metrics that are generated should have a lifetime based on when we expect
+		 *  to refresh the list and generate more metrics.
+		 *  The 2.5 factor allows for both 50% growth and a message being lost.
+		 */
+		_metricLifetime = (long) (2.5 * listRefreshPeriod / 1000.0);
 	}
 	
 	
@@ -161,8 +154,6 @@ abstract class SkelListBasedActivity implements Schedulable {
 		
 		for( String item : items)
 			_outstandingWork.add( item);
-		
-		_isFirstItem = true;
 		
 		if( _log.isDebugEnabled()) {
 			_log.debug( "fresh to-do list obtained for " + this.getClass().getSimpleName());
