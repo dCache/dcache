@@ -20,6 +20,8 @@ import org.dcache.services.info.base.StatePath;
  */
 public class DataGatheringScheduler implements Runnable {
 
+	private static final long FIVE_MINUTES = 5*60*1000;
+	
 	private boolean _timeToQuit = false;
 	private List<RegisteredActivity> _activity = new ArrayList<RegisteredActivity>();
 	private static Logger _logSched = Logger.getLogger(DataGatheringScheduler.class);
@@ -34,7 +36,7 @@ public class DataGatheringScheduler implements Runnable {
 		
 		
 		/** Min. delay (in ms). We prevent Schedulables from triggering more frequently than this */
-		private static final long MINIMUM_DGA_DELAY = 500;
+		private static final long MINIMUM_DGA_DELAY = 400;
 		
 		private final Schedulable _dga;
 
@@ -67,13 +69,16 @@ public class DataGatheringScheduler implements Runnable {
 			
 			if( nextTrigger == null) {
 				_logRa.error("registered dga returned null Date");
-				_nextTriggered = new Date( System.currentTimeMillis() + 5*60*1000);
-				return;
-			}
+				nextTrigger = new Date( System.currentTimeMillis() + FIVE_MINUTES);
 				
-			// Safety!  Check we wont trigger too quickly
-			if( nextTrigger.getTime() - System.currentTimeMillis() <  MINIMUM_DGA_DELAY)
-				nextTrigger = new Date (System.currentTimeMillis() + MINIMUM_DGA_DELAY);
+			} else {
+				
+				// Safety!  Check we wont trigger too quickly
+				if( nextTrigger.getTime() - System.currentTimeMillis() <  MINIMUM_DGA_DELAY) {
+					_logRa.warn( "DGA "+_dga.toString()+" triggering too quickly ("+(nextTrigger.getTime() - System.currentTimeMillis())+"ms): engaging safety.");
+					nextTrigger = new Date (System.currentTimeMillis() + MINIMUM_DGA_DELAY);
+				}
+			}
 			
 			_nextTriggered = nextTrigger;
 		}
@@ -385,13 +390,15 @@ public class DataGatheringScheduler implements Runnable {
 		addActivity( new SingleMessageDga( "LoginBroker",     "ls -binary", msgHandler, 60));
 		addActivity( new SingleMessageDga( "srm-LoginBroker", "ls -binary", msgHandler, 60));
 		
+		// Pick up domains
 		addActivity( new SingleMessageDga( "topo", "gettopomap", new TopoMapHandler(), 120));
+		// Pick up cell information
+		addActivity( new CellInfoDga( new CellInfoMsgHandler()));
 
 		addActivity( new ListBasedMessageDga( new StatePath("pools"),      "PoolManager", "psux ls pool",   new PoolInfoMsgHandler()));
 		addActivity( new ListBasedMessageDga( new StatePath("poolgroups"), "PoolManager", "psux ls pgroup", new PoolGroupInfoMsgHandler()));
 		addActivity( new ListBasedMessageDga( new StatePath("units"),      "PoolManager", "psux ls unit",   new UnitInfoMsgHandler()));
 		addActivity( new ListBasedMessageDga( new StatePath("unitgroups"), "PoolManager", "psux ls ugroup", new UGroupInfoMsgHandler()));
-		
 	}
 
 

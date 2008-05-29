@@ -136,6 +136,7 @@ public class StatePersistentMetadata {
 		this.add( StatePath.parsePath("doors.*.hosts.*"), branchMetadata( "host", "address"));
 
 		this.add( StatePath.parsePath("domains.*"), branchMetadata( "domain", "name"));
+		this.add( StatePath.parsePath("domains.*.cells.*"), branchMetadata( "cell", "name"));
 	}
 	
 	
