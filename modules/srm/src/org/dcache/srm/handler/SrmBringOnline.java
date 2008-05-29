@@ -182,12 +182,26 @@ public class SrmBringOnline {
                 lifetimeInSeconds = reqLifetime;
             }
         }
-        long desiredLietimeInSeconds = lifetimeInSeconds;
+        
+        //for bring online request we do not limit lifetime from above for
+        // bring online request
+        long lifetime =
+                lifetimeInSeconds>0
+                ?lifetimeInSeconds*1000
+                :configuration.getGetLifetime();
+        
+        long desiredLietimeInSeconds ;
+        
         if (request.getDesiredLifeTime() != null 
             && request.getDesiredLifeTime().intValue() != 0) {
             desiredLietimeInSeconds = 
                 (long)request.getDesiredLifeTime().intValue();
+        } else if( lifetimeInSeconds>0 ) {
+            desiredLietimeInSeconds = lifetimeInSeconds;
+        } else {
+            desiredLietimeInSeconds = configuration.getGetLifetime() / 1000;
         }
+        
         for (int i = 0; i < fileRequests.length ; ++i ) {
             TGetFileRequest nextRequest = fileRequests[i];
             if(nextRequest == null ) {
@@ -205,11 +219,6 @@ public class SrmBringOnline {
             }
             surls[i] = nextSurl;
         }
-        //for bring online request we do not limit lifetime from above for bring online request
-        long lifetime =
-                lifetimeInSeconds>0
-                ?lifetimeInSeconds*1000
-                :configuration.getGetLifetime();
         try {
             say("BringOnlineStorage ="+bringOnlineStorage);
             BringOnlineRequest r =
