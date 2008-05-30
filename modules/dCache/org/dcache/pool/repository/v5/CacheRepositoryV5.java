@@ -28,9 +28,9 @@ import org.dcache.pool.repository.EntryState;
 import org.dcache.pool.repository.SpaceRecord;
 import static org.dcache.pool.repository.EntryState.*;
 
-
 import com.sleepycat.je.DatabaseException;
 
+import java.io.PrintWriter;
 import java.io.IOException;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -630,5 +630,10 @@ public class CacheRepositoryV5// extends CellCompanion
     public void actionPerformed(CacheEvent event)
     {
 
+    }
+
+    public void printSetup(PrintWriter pw)
+    {
+        _sweeper.printSetup(pw);
     }
 }

@@ -113,9 +113,10 @@ import dmg.util.CommandException;
 import dmg.util.CommandSyntaxException;
 import dmg.util.Logable;
 
-public class PoolV4 extends CellAdapter implements Logable {
-
-    private final static Logger _logPoolMonitor = Logger.getLogger("logger.org.dcache.poolmonitor." + PoolV4.class.getName());
+public class PoolV4 extends CellAdapter implements Logable
+{
+    private final static Logger _logPoolMonitor =
+        Logger.getLogger("logger.org.dcache.poolmonitor." + PoolV4.class.getName());
 
     private static final String MAX_SPACE = "use-max-space";
     private static final String PREALLOCATED_SPACE = "use-preallocated-space";
@@ -157,7 +158,7 @@ public class PoolV4 extends CellAdapter implements Logable {
     private final StorageClassContainer _storageQueue;
     private final CacheRepositoryV5 _repository;
 
-    private String _setupManager = null;
+    private String _setupManager;
     private String _pnfsManagerName = "PnfsManager";
     private String _poolManagerName = "PoolManager";
     private String _poolupDestination = "PoolManager";
@@ -934,8 +935,8 @@ public class PoolV4 extends CellAdapter implements Logable {
             _storageHandler.printSetup(pw);
         if (_hsmSet != null)
             _hsmSet.printSetup(pw);
-//         if (_sweeper != null)
-//             _sweeper.printSetup(pw);
+        if (_repository != null)
+            _repository.printSetup(pw);
         if (_ioQueue != null)
             ((IoQueueManager) _ioQueue).dumpSetup(pw);
         if (_p2pQueue != null) {
@@ -1057,7 +1058,6 @@ public class PoolV4 extends CellAdapter implements Logable {
                      + "    ["
                      + (((float) space.getRemovableSpace()) / ((float) total))
                      + "]");
-//         pw.println("    Reserved : " + _repository.getReservedSpace());
 
         if (_flushingThread != null)
             _flushingThread.getInfo(pw);
