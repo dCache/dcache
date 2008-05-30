@@ -834,7 +834,7 @@ public class ManagerV2
 			defaultPolicy:RetentionPolicy.getRetentionPolicy(policyString);
 		
 		String lgIdString = args.getOpt("lgid");
-		String lgName = args.getOpt("lg");
+		String lgName     = args.getOpt("lg");
 		if(lgIdString != null && lgName != null) {
 			return "Error: both exclusive options -lg and -lgid are specified";
 		}
@@ -1666,70 +1666,111 @@ public class ManagerV2
 // select for update functions
 //------------------------------------------------------------------------------
 	public LinkGroup selectLinkGroupForUpdate(Connection connection,long id,long sizeInBytes)  throws SQLException{
-		Object o = manager.selectForUpdate(connection,
-						   new LinkGroupIO(),
-						   LinkGroupIO.SELECT_LINKGROUP_INFO_FOR_UPDATE,
-						   id,
-						   sizeInBytes);
+		Object o = null;
+		try { 
+			o = manager.selectForUpdate(connection,
+						    new LinkGroupIO(),
+						    LinkGroupIO.SELECT_LINKGROUP_INFO_FOR_UPDATE,
+						    id,
+						    sizeInBytes);
+		}
+		catch (SQLException e) { 
+			throw new SQLException("There is no linkgroup with id="+id+" and available space="+sizeInBytes);
+		}
 		return (LinkGroup)o;
-		
 	}
-
+	
 	
 
 	public LinkGroup selectLinkGroupForUpdate(Connection connection,long id)  throws SQLException{
 		say("executing statement: "+LinkGroupIO.SELECT_LINKGROUP_FOR_UPDATE_BY_ID+",?="+id);
-		Object o = manager.selectForUpdate(connection,
-						   new LinkGroupIO(),
-						   LinkGroupIO.SELECT_LINKGROUP_FOR_UPDATE_BY_ID,
-						   id);
+		Object o = null;
+		try { 
+			o = manager.selectForUpdate(connection,
+						    new LinkGroupIO(),
+						    LinkGroupIO.SELECT_LINKGROUP_FOR_UPDATE_BY_ID,
+						    id);
+		}
+		catch (SQLException e) { 
+			throw new SQLException("There is no linkgroup with id="+id);
+		}
 		return (LinkGroup)o;
 	}
 
 	public Space selectSpaceForUpdate(Connection connection,long id,long sizeInBytes)  throws SQLException{
 		say("executing statement: "+SpaceReservationIO.SELECT_FOR_UPDATE_BY_ID_AND_SIZE+",?="+id+","+sizeInBytes);
-		Object o = manager.selectForUpdate(connection,
-						   new SpaceReservationIO(),
-						   SpaceReservationIO.SELECT_FOR_UPDATE_BY_ID_AND_SIZE,
-						   id,
-						   sizeInBytes);
+		Object o = null;
+		try { 
+			o = manager.selectForUpdate(connection,
+						    new SpaceReservationIO(),
+						    SpaceReservationIO.SELECT_FOR_UPDATE_BY_ID_AND_SIZE,
+						    id,
+						    sizeInBytes);
+		}
+		catch (SQLException e) { 
+			throw new SQLException("There is no space reservation with id="+id+" and available size="+sizeInBytes);
+		}
 		return (Space)o;
 	}
 	
 	public Space selectSpaceForUpdate(Connection connection,long id)  throws SQLException{
 		say("executing statement: "+SpaceReservationIO.SELECT_FOR_UPDATE_BY_ID+",?="+id);
-		Object o = manager.selectForUpdate(connection,
-						   new SpaceReservationIO(),
-						   SpaceReservationIO.SELECT_FOR_UPDATE_BY_ID,
-						   id);
+		Object o = null;
+		try { 
+			o = manager.selectForUpdate(connection,
+						    new SpaceReservationIO(),
+						    SpaceReservationIO.SELECT_FOR_UPDATE_BY_ID,
+						    id);
+		}
+		catch (SQLException e){ 
+			throw new SQLException("There is no space reservation with id="+id);
+		}
 		return (Space)o;
 	}
 
 	public File selectFileForUpdate(Connection connection,String pnfsPath)  throws SQLException{
 		pnfsPath =new FsPath(pnfsPath).toString();
 		say("executing statement: "+FileIO.SELECT_FOR_UPDATE_BY_PNFSPATH+",?="+pnfsPath);
-		Object o = manager.selectForUpdate(connection,
-						   new FileIO(),
-						   FileIO.SELECT_FOR_UPDATE_BY_PNFSPATH,
-						   pnfsPath);
+		Object o = null;
+		try { 
+			o = manager.selectForUpdate(connection,
+						    new FileIO(),
+						    FileIO.SELECT_FOR_UPDATE_BY_PNFSPATH,
+						    pnfsPath);
+		}
+		catch (SQLException e){ 
+			throw new SQLException("There is no file with pnfspath="+pnfsPath);
+		}
 		return (File)o;
 	}
 
 	public File selectFileForUpdate(Connection connection,PnfsId pnfsId)  throws SQLException{
 		say("executing statement: "+FileIO.SELECT_FOR_UPDATE_BY_PNFSID+",?="+pnfsId);
-		Object o = manager.selectForUpdate(connection,
-						   new FileIO(),
-						   FileIO.SELECT_FOR_UPDATE_BY_PNFSID,
-						   pnfsId.toString());
+		Object o = null;
+		try { 
+			o = manager.selectForUpdate(connection,
+						    new FileIO(),
+						    FileIO.SELECT_FOR_UPDATE_BY_PNFSID,
+						    pnfsId.toString());
+		}
+		catch (SQLException e){ 
+			throw new SQLException("There is no file with pnfsid="+pnfsId);
+		}
 		return (File)o;
 	}
 
 	public File selectFileForUpdate(Connection connection,long id)  throws SQLException{
 		say("executing statement: "+FileIO.SELECT_FOR_UPDATE_BY_ID+",?="+id);
-		Object o = manager.selectForUpdate(connection,
-						   new FileIO(),
-						   FileIO.SELECT_FOR_UPDATE_BY_ID,
-						   id);
+		Object o = null;
+		try { 
+			o = manager.selectForUpdate(connection,
+						    new FileIO(),
+						    FileIO.SELECT_FOR_UPDATE_BY_ID,
+						    id);
+		}
+		catch (SQLException e){ 
+			throw new SQLException("There is no file with id="+id);
+		}
 		return (File)o;
 	}
 
