@@ -105,7 +105,7 @@ fi
 
 #  ----  Sanitycheck for ${java}
 
-if test -z "${java}" || ! test -x ${java} || ! ${java} -version 2>&1 | grep -E 'version "1\.[456]' >/dev/null ; then
+if test -z "${java}" || ! test -x ${java} || ! ${java} -version 2>&1 | grep 'version "1\.[456]' >/dev/null ; then
     echo "[ERROR] The variable 'java' in '${ourHomeDir}/config/dCacheSetup' has to be set to a java VM version 1.4 or 1.5. Exiting."
     exit 1
 fi
