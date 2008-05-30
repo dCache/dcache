@@ -722,9 +722,9 @@ dcacheInstallPnfsMountPointClient()
     ln -s ${pnfsMountPoint} ${PNFS_ROOT}/ftpBase
   else
     local ftpBaseLinkedTo
-    ftpBaseLinkedTo=`find ${PNFS_ROOT}/ftpBase -type l -printf '%l'`
-    echo ftpBaseLinkedTo=$ftpBaseLinkedTo
-    echo pnfsMountPoint=${pnfsMountPoint}
+    ftpBaseLinkedTo=`find ${PNFS_ROOT}/ftpBase -type l | xargs readlink`
+    logmessage INFO "ftpBaseLinkedTo=$ftpBaseLinkedTo"
+    logmessage INFO "pnfsMountPoint=${pnfsMountPoint}"
     if [ "${ftpBaseLinkedTo}" == "${pnfsMountPoint}" ] ; then
       logmessage INFO "Link ${PNFS_ROOT}/ftpBase --> ${pnfsMountPoint} already there."
     else
@@ -805,7 +805,7 @@ dcacheInstallPnfsMountPointServer()
     logmessage INFO "Creating link ${PNFS_ROOT}/${SERVER_ID} --> ${PNFS_ROOT}/fs/usr."
     ln -s fs/usr ${SERVER_ID}
   else
-    serverIdLinkedTo=`find ${PNFS_ROOT}/${SERVER_ID} -type l -printf '%l'`
+    serverIdLinkedTo=`find ${PNFS_ROOT}/${SERVER_ID} -type l | xargs readlink `
     if [ "${serverIdLinkedTo}" = "fs/usr" -o "${serverIdLinkedTo}" = "${PNFS_ROOT}/fs/usr" ] ; then
       logmessage INFO "Link ${PNFS_ROOT}/${SERVER_ID} --> ${PNFS_ROOT}/fs/usr already there."
     else
@@ -820,7 +820,7 @@ dcacheInstallPnfsMountPointServer()
     logmessage INFO "[INFO]  Creating link ${PNFS_ROOT}/ftpBase --> ${pnfsMountPoint} which is used by the GridFTP door."
     ln -s ${pnfsMountPoint} ${PNFS_ROOT}/ftpBase
   else
-    ftpBaseLinkedTo=`find ${PNFS_ROOT}/ftpBase -type l -printf '%l'`
+    ftpBaseLinkedTo=`find ${PNFS_ROOT}/ftpBase -type l | xargs readlink `
     if [ "${ftpBaseLinkedTo}" = "${pnfsMountPoint}" ] ; then
       logmessage INFO "Link ${PNFS_ROOT}/ftpBase --> ${pnfsMountPoint} already there."
     else
