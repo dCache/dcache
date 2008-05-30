@@ -8,6 +8,9 @@ import diskCacheV111.repository.CacheRepositoryEntry;
 
 import org.dcache.pool.repository.CacheEntry;
 import org.dcache.pool.repository.EntryState;
+import org.dcache.pool.repository.StickyRecord;
+
+import java.util.Collection;
 
 public class CacheEntryImpl implements CacheEntry
 {
@@ -17,6 +20,8 @@ public class CacheEntryImpl implements CacheEntry
     private final EntryState _state;
     private final long _created_at;
     private final long _accessed_at;
+    private final boolean _isSticky;
+    private final Collection<StickyRecord> _sticky;
 
     public CacheEntryImpl(CacheRepositoryEntry entry, EntryState state)
         throws CacheException
@@ -26,6 +31,8 @@ public class CacheEntryImpl implements CacheEntry
         _info = entry.getStorageInfo();
         _created_at = entry.getCreationTime();
         _accessed_at = entry.getLastAccessTime();
+        _isSticky = entry.isSticky();
+        _sticky = entry.stickyRecords();
         _state = state;
     }
 
@@ -78,7 +85,22 @@ public class CacheEntryImpl implements CacheEntry
      */
     public long getLastAccessTime()
     {
-
         return _accessed_at;
+    }
+
+    /**
+     * @return true iff entry is sticky.
+     */
+    public boolean isSticky()
+    {
+        return _isSticky;
+    }
+
+    /**
+     * @return the sticky records for this entry.
+     */
+    public Collection<StickyRecord> getStickyRecords()
+    {
+        return _sticky;
     }
 }

@@ -289,6 +289,40 @@ public class CacheRepositoryV5// extends CellCompanion
     }
 
     /**
+     * Sets the lifetime of a named sticky flag. If expiration time is
+     * -1, then the sticky flag never expires. If is is 0, the flag
+     * expires immediately.
+     *
+     * @param id the PNFS ID of the entry for which to change the flag
+     * @param owner the owner of the sticky flag
+     * @param expire expiration time in milliseconds since the epoch
+     * @throws FileNotInCacheException when an entry with the given id
+     * is not found in the repository
+     * @throws IllegalArgumentException when <code>id</code> or
+     * <code>owner</code> are null or when <code>lifetime</code> is
+     * smaller than -1.
+     */
+    public synchronized void setSticky(PnfsId id, String owner, long expire)
+        throws IllegalArgumentException,
+               FileNotInCacheException
+    {
+        try {
+            if (expire < -1)
+                throw new IllegalArgumentException("Expiration time must be -1 or non-negative");
+            if (id == null || owner == null)
+                throw new IllegalArgumentException("Null argument not allowed");
+
+            _repository.getEntry(id).setSticky(expire != 0, owner, expire);
+        } catch (FileNotInCacheException e) {
+            throw e;
+        } catch (CacheException e) {
+            // TODO: shut down
+            throw new RuntimeException("Internal repository error: "
+                                       + e.getMessage());
+        }
+    }
+
+    /**
      * Returns information about the size and space usage of the
      * repository.
      *
@@ -370,7 +404,6 @@ public class CacheRepositoryV5// extends CellCompanion
                                        e.getMessage());
         }
     }
-
 
     /**
      * Sets the state of an entry. Only the following transitions are

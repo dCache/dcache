@@ -565,6 +565,31 @@ public class RepositorySubsystemTest
         assertSpaceRecord(3072, 0, 2048, 0);
         // TODO: Check notification
     }
+
+    @Test
+    public void testStickyExpiration()
+        throws FileNotInCacheException, InterruptedException
+    {
+        long now = System.currentTimeMillis();
+        assertFalse(repository.getEntry(id2).isSticky());
+        repository.setSticky(id2, "system", now + 500);
+        assertTrue(repository.getEntry(id2).isSticky());
+        Thread.currentThread().sleep(700);
+        assertFalse(repository.getEntry(id2).isSticky());
+    }
+
+    @Test
+    public void testStickyClear()
+        throws FileNotInCacheException
+    {
+        long now = System.currentTimeMillis();
+
+        assertFalse(repository.getEntry(id2).isSticky());
+        repository.setSticky(id2, "system", now + 500);
+        assertTrue(repository.getEntry(id2).isSticky());
+        repository.setSticky(id2, "system", 0);
+        assertFalse(repository.getEntry(id2).isSticky());
+    }
 }
 
 

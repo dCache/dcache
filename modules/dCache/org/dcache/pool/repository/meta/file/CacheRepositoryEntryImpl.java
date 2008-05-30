@@ -333,10 +333,10 @@ public class CacheRepositoryEntryImpl implements CacheRepositoryEntry {
 		}
 	}
 
-	public void setSticky(boolean sticky, String owner, long lifetime) throws CacheException {
+	public void setSticky(boolean sticky, String owner, long expire) throws CacheException {
 		try {
 			if( sticky ) {
-				_state.setSticky(owner, lifetime);
+				_state.setSticky(owner, expire);
 			}else{
 				_state.cleanSticky(owner);
 			}

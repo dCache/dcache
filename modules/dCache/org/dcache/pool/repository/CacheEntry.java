@@ -4,6 +4,8 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.StorageInfo;
 
+import java.util.Collection;
+
 public interface CacheEntry
 {
     /**
@@ -40,4 +42,13 @@ public interface CacheEntry
      */
     public long getLastAccessTime();
 
+    /**
+     * @return true iff entry is sticky.
+     */
+    public boolean isSticky();
+
+    /**
+     * @return the sticky records for this entry.
+     */
+    public Collection<StickyRecord> getStickyRecords();
 }
