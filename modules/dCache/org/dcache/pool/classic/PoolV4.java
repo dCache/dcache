@@ -2556,32 +2556,23 @@ public class PoolV4 extends CellAdapter implements Logable {
         }
     }
 
-    private void setSticky(PoolSetStickyMessage stickyMessage) {
-        if (stickyMessage.isSticky() && (!_allowSticky)) {
+    private void setSticky(PoolSetStickyMessage stickyMessage)
+    {
+        if (stickyMessage.isSticky() && !_allowSticky) {
             stickyMessage.setFailed(101, "making sticky denied by pool : "
                                     + _poolName);
             return;
         }
-        PnfsId pnfsId = stickyMessage.getPnfsId();
 
         try {
-
-//             /*
-//              * add sticky owner and lifetime if repository supports it
-//              */
-//             CacheRepositoryEntry entry = _repository.getEntry(pnfsId);
-//             entry.setSticky(stickyMessage
-//                             .isSticky(), stickyMessage.getOwner(), stickyMessage
-//                             .getLifeTime());
-
-//         } catch (CacheException ce) {
-//             stickyMessage.setFailed(ce.getRc(), ce);
-//             return;
-        } catch (Exception ee) {
-            stickyMessage.setFailed(100, ee);
-            return;
+            _repository.setSticky(stickyMessage.getPnfsId(),
+                                  stickyMessage.getOwner(),
+                                  stickyMessage.isSticky()
+                                  ? stickyMessage.getLifeTime()
+                                  : 0);
+        } catch (FileNotInCacheException e) {
+            stickyMessage.setFailed(e.getRc(), e);
         }
-        return;
     }
 
     private void modifyPersistency(PoolModifyPersistencyMessage persistencyMessage)
