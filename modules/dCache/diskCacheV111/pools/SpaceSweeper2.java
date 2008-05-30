@@ -314,7 +314,7 @@ public class SpaceSweeper2 implements SpaceSweeper, Runnable
                 /* Take the needed space out of the 'queue'.
                  */
                 synchronized (this) {
-                    while (spaceNeeded + _spaceNeeded == 0) {
+                    while (spaceNeeded + _spaceNeeded == 0 || _list.isEmpty()) {
                         wait();
                     }
                     spaceNeeded += _spaceNeeded;
