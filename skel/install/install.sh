@@ -410,7 +410,7 @@ dcacheInstallGetUseGridFtp()
 {
   # returns 1 if gridFTP is used 0 otherwise
   local UseGridFtp
-  UseGridFtp=`printConfig GRIDFTP |  tr -s '[:upper:]' '[:lower:]'`
+  UseGridFtp=`printConfig GRIDFTP |  tr -s '[A-Z]' '[a-z]'`
   if [ "${UseGridFtp}" == "yes" ] ; then
     return 1
   fi
@@ -424,7 +424,7 @@ dcacheInstallGetUseSrm()
 {
   # returns 1 if gridFTP is used 0 otherwise
   local UseSRM
-  UseSRM=`printConfig SRM |  tr -s '[:upper:]' '[:lower:]'`
+  UseSRM=`printConfig SRM |  tr -s '[A-Z]' '[a-z]'`
   if [ "${UseSRM}" == "yes" ] ; then
     return 1
   fi
@@ -439,7 +439,7 @@ dcacheInstallGetIsAdminDoor()
   # returns 1 if is an adminDoor is used 0 otherwise
   local NodeType
   local adminDoor
-  NodeType=`printConfig NODE_TYPE |  tr -s '[:upper:]' '[:lower:]'`
+  NodeType=`printConfig NODE_TYPE |  tr -s '[A-Z]' '[a-z]'`
   if [ "${NodeType}" == "admin" ] ; then
     logmessage DEBUG "node is admin so returns true"
     return 1
@@ -453,7 +453,7 @@ dcacheInstallGetIsAdminDoor()
     return 0
   fi
   if [ "${NodeType}" == "custom" ] ; then
-    adminDoor=`printConfig adminDoor |  tr -s '[:upper:]' '[:lower:]'`
+    adminDoor=`printConfig adminDoor |  tr -s '[A-Z]' '[a-z]'`
     if [ "${adminDoor}" == "yes" ] ; then
       return 1
     fi
@@ -470,7 +470,7 @@ dcacheInstallGetIsHttpDomain()
   # returns 1 if is an httpDomain is used 0 otherwise
   local NodeType
   local httpDomain
-  NodeType=`printConfig NODE_TYPE |  tr -s '[:upper:]' '[:lower:]'`
+  NodeType=`printConfig NODE_TYPE |  tr -s '[A-Z]' '[a-z]'`
   if [ "${NodeType}" == "admin" ] ; then
     logmessage DEBUG "node is admin so returns true"
     return 1
@@ -484,7 +484,7 @@ dcacheInstallGetIsHttpDomain()
     return 0
   fi
   if [ "${NodeType}" == "custom" ] ; then
-    httpDomain=`printConfig httpDomain |  tr -s '[:upper:]' '[:lower:]'`
+    httpDomain=`printConfig httpDomain |  tr -s '[A-Z]' '[a-z]'`
     if [ "${httpDomain}" == "yes" ] ; then
       return 1
     fi
@@ -501,7 +501,7 @@ dcacheInstallGetIsLmDomain()
   # returns 1 if is an lmDomain is used 0 otherwise
   local NodeType
   local lmDomain
-  NodeType=`printConfig NODE_TYPE |  tr -s '[:upper:]' '[:lower:]'`
+  NodeType=`printConfig NODE_TYPE |  tr -s '[A-Z]' '[a-z]'`
   if [ "${NodeType}" == "admin" ] ; then
     logmessage DEBUG "node is admin so returns true"
     return 1
@@ -515,7 +515,7 @@ dcacheInstallGetIsLmDomain()
     return 0
   fi  
   if [ "${NodeType}" == "custom" ] ; then
-    lmDomain=`printConfig lmDomain |  tr -s '[:upper:]' '[:lower:]'`
+    lmDomain=`printConfig lmDomain |  tr -s '[A-Z]' '[a-z]'`
     if [ "${lmDomain}" == "yes" ] ; then
       return 1
     fi
@@ -531,7 +531,7 @@ dcacheInstallGetIsPoolManager()
   # returns 1 if is an poolManager is used 0 otherwise
   local NodeType
   local poolManager
-  NodeType=`printConfig NODE_TYPE |  tr -s '[:upper:]' '[:lower:]'`
+  NodeType=`printConfig NODE_TYPE |  tr -s '[A-Z]' '[a-z]'`
   if [ "${NodeType}" == "admin" ] ; then
     logmessage DEBUG "node is admin so returns true"
     return 1
@@ -545,7 +545,7 @@ dcacheInstallGetIsPoolManager()
     return 0
   fi
   if [ "${NodeType}" == "custom" ] ; then
-    poolManager=`printConfig poolManager |  tr -s '[:upper:]' '[:lower:]'`
+    poolManager=`printConfig poolManager |  tr -s '[A-Z]' '[a-z]'`
     if [ "${poolManager}" == "yes" ] ; then
       return 1
     fi
@@ -561,7 +561,7 @@ dcacheInstallGetIsUtilityDomain()
   # returns 1 if is an utilityDomain is used 0 otherwise
   local NodeType
   local utilityDomain
-  NodeType=`printConfig NODE_TYPE |  tr -s '[:upper:]' '[:lower:]'`
+  NodeType=`printConfig NODE_TYPE |  tr -s '[A-Z]' '[a-z]'`
   if [ "${NodeType}" == "admin" ] ; then
     logmessage DEBUG "node is admin so returns true"
     return 1
@@ -575,7 +575,7 @@ dcacheInstallGetIsUtilityDomain()
     return 0
   fi
   if [ "${NodeType}" == "custom" ] ; then
-    utilityDomain=`printConfig utilityDomain |  tr -s '[:upper:]' '[:lower:]'`
+    utilityDomain=`printConfig utilityDomain |  tr -s '[A-Z]' '[a-z]'`
     if [ "${utilityDomain}" == "yes" ] ; then
       return 1
     fi
@@ -591,7 +591,7 @@ dcacheInstallGetIsPnfsManager()
   # returns 1 if is an pnfsManager is used 0 otherwise
   local NodeType
   local pnfsManager
-  NodeType=`printConfig NODE_TYPE |  tr -s '[:upper:]' '[:lower:]'`
+  NodeType=`printConfig NODE_TYPE |  tr -s '[A-Z]' '[a-z]'`
   if [ "${NodeType}" == "admin" ] ; then
     logmessage DEBUG "node is admin so returns true"
     return 1
@@ -605,7 +605,7 @@ dcacheInstallGetIsPnfsManager()
     return 0
   fi
   if [ "${NodeType}" == "custom" ] ; then
-    pnfsManager=`printConfig pnfsManager |  tr -s '[:upper:]' '[:lower:]'`
+    pnfsManager=`printConfig pnfsManager |  tr -s '[A-Z]' '[a-z]'`
     if [ "${pnfsManager}" == "yes" ] ; then
       return 1
     fi
@@ -622,7 +622,7 @@ dcacheInstallGetIsAdmin()
   logmessage DEBUG "dcacheInstallGetIsAdmin.start"
   # returns 1 if is an admin node is used 0 otherwise
   local NodeType
-  NodeType=`printConfig NODE_TYPE |  tr -s '[:upper:]' '[:lower:]'`
+  NodeType=`printConfig NODE_TYPE |  tr -s '[A-Z]' '[a-z]'`
   if [ "${NodeType}" == "admin" ] ; then
     logmessage DEBUG "dcacheInstallGetIsAdmin.stop"
     return 1
