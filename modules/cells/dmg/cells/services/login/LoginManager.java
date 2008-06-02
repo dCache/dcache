@@ -43,11 +43,11 @@ public class       LoginManager
   private Method       _loginPrintMethod  = null ;
   private int          _maxLogin          = -1 ;
   private final Map<String,Object>      _childHash   = new HashMap<String,Object>() ;
-  
+
   /**
    * actually, _childCount have to be equal to _childHash.size(). But while
    * cells needs some time to die, _childHash contains cells which are in removing state,
-   * while  _childCount shows active cells only. 
+   * while  _childCount shows active cells only.
    */
   private int          _childCount        = 0 ;
   private String       _authenticator     = null ;
@@ -255,7 +255,8 @@ public class       LoginManager
       start() ;
 
   }
-  public CellVersion getCellVersion(){
+  @Override
+public CellVersion getCellVersion(){
      try{
 
        Method m = _loginClass.getMethod( "getStaticCellVersion" , (Class[])null ) ;
@@ -452,7 +453,7 @@ public class       LoginManager
 
           try{
              if( sendAndWait( msg , 5000 ) != null ){
-                say("Portnumber sucessfully sent to "+dest ) ;
+                say("Portnumber successfully sent to "+dest ) ;
                 _sending = false ;
                 break ;
              }
@@ -542,12 +543,14 @@ public class       LoginManager
   //
   // the cell implementation
   //
-  public String toString(){
+  @Override
+public String toString(){
      return
         "p="+(_listenThread==null?"???":(""+_listenThread.getListenPort()))+
         ";c="+_loginClass.getName() ;
   }
-  public void getInfo( PrintWriter pw ){
+  @Override
+public void getInfo( PrintWriter pw ){
     pw.println( "  -- Login Manager $Revision: 1.46 $") ;
     pw.println( "  Listen Port    : "+_listenThread.getListenPort() ) ;
     pw.println( "  Login Class    : "+_loginClass ) ;
@@ -588,13 +591,16 @@ public class       LoginManager
       }
       return "" ;
   }
-  public void cleanUp(){
+  @Override
+public void cleanUp(){
      say( "cleanUp requested by nucleus, closing listen socket" ) ;
      if( _listenThread != null )_listenThread.shutdown() ;
      say( "Bye Bye" ) ;
   }
-  public void say( String str ){ pin( str ) ; super.say( str ) ; }
-  public void esay( String str ){ pin( str ) ; super.esay( str ) ; }
+  @Override
+public void say( String str ){ pin( str ) ; super.say( str ) ; }
+  @Override
+public void esay( String str ){ pin( str ) ; super.esay( str ) ; }
 
   private class ListenThread implements Runnable {
      private int          _listenPort   = 0 ;
@@ -617,12 +623,12 @@ public class       LoginManager
      private void openPort() throws Exception {
 
         String ssf = _args.getOpt("socketfactory") ;
+        String local   = _args.getOpt("listen");
+
         if( ssf == null ){
            String context = (String)getDomainContext().get("niochannel");
            String channel = _args.getOpt("niochannel") ;
            channel = channel != null ? channel : context ;
-
-           String local   = _args.getOpt("listen");
 
            SocketAddress socketAddress = null;
 
@@ -640,9 +646,7 @@ public class       LoginManager
 
            _serverSocket.bind( socketAddress );
            _listenPort   = _serverSocket.getLocalPort() ;
-        	if( _logSocketIO.isDebugEnabled() ) {
-        		_logSocketIO.debug("Socket BIND local = " + _serverSocket.getInetAddress() + ":" + _serverSocket.getLocalPort() );
-        	}
+
         }else{
            StringTokenizer st = new StringTokenizer(ssf,",");
            List<String> list = new ArrayList<String>() ;
@@ -674,13 +678,20 @@ public class       LoginManager
            Object     obj = ssfConstructor.newInstance(args) ;
 
            Method meth = ssfClass.getMethod("createServerSocket",methodArgClass) ;
-               args[0] = Integer.valueOf(_listenPort);
+           _serverSocket = (ServerSocket)meth.invoke( obj ) ;
 
-           _serverSocket = (ServerSocket)meth.invoke( obj , args ) ;
-       	if( _logSocketIO.isDebugEnabled() ) {
-    		_logSocketIO.debug("Socket BIND local = " + _serverSocket.getInetAddress() + ":" + _serverSocket.getLocalPort() );
-    	}
+           if ( (local == null ) || local.equals("*") || local.equals("")  ) {
+               _serverSocket.bind(new InetSocketAddress( _listenPort ) );
+           }else{
+               _serverSocket.bind(new InetSocketAddress(InetAddress.getByName(local), _listenPort ) );
+               _isDedicated = true;
+           }
+
            say("ListenThread : got serverSocket class : "+_serverSocket.getClass().getName());
+        }
+
+        if( _logSocketIO.isDebugEnabled() ) {
+            _logSocketIO.debug("Socket BIND local = " + _serverSocket.getInetAddress() + ":" + _serverSocket.getLocalPort() );
         }
         say("Nio Socket Channel : "+(_serverSocket.getChannel()!=null));
      }
@@ -735,8 +746,8 @@ public class       LoginManager
             					" local = " +socket.getLocalAddress() + ":" + socket.getLocalPort() );
             	}
                say("Nio Channel (accept) : "+(socket.getChannel()!=null));
-               
-               
+
+
                _connectionRequestCounter ++ ;
                int currentChildHash = 0 ;
                 synchronized( _childHash ){ currentChildHash = _childCount ; }
@@ -754,7 +765,7 @@ public class       LoginManager
                _nucleus.newThread(
                    new RunEngineThread(socket) ,
                    "ClinetThread-" + socket.getInetAddress() + ":" + socket.getPort()    ).start() ;
-               
+
             }catch( InterruptedIOException ioe ){
                esay("Listen thread interrupted") ;
                try{ _serverSocket.close() ; }catch(Exception ee){}
@@ -765,7 +776,7 @@ public class       LoginManager
                 }
 
                esay( "Got an IO Exception ( closing server ) : "+ioe ) ;
-               try{ _serverSocket.close() ; }catch(Exception ee){}
+               try{ _serverSocket.close() ; }catch(IOException ee){}
                if( _acceptErrorTimeout <= 0L )break ;
                esay( "Waiting "+_acceptErrorTimeout+" msecs");
                try{
@@ -808,6 +819,9 @@ public class       LoginManager
               outputStream = _socket.getOutputStream() ;
               outputStream.close() ;
               byte [] buffer = new byte[1024] ;
+              /*
+               * eat the outstanding date from socket and close it
+               */
               while( inputStream.read(buffer,0,buffer.length) > 0 ) ;
               inputStream.close() ;
            }catch(Exception ee ){
@@ -909,7 +923,7 @@ public class       LoginManager
              args[1] = engine ;
              args[2] = getArgs().clone() ;
           }
-          
+
           Object cell = _loginConstructor.newInstance( args ) ;
           if( _loginPrintMethod != null ){
              try{
@@ -940,7 +954,7 @@ public class       LoginManager
                          _childHash.remove(cellName);
                          esay("Cell died, removing " + cellName) ;
                       }
-                      
+
                    childrenCounterChanged() ;
                 }
              }catch( Exception ee ){
