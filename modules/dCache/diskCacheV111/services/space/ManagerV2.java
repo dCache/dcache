@@ -351,6 +351,9 @@ public class ManagerV2
 		else {
 			size = Long.parseLong(s);
 		}		
+		if (size<0L) { 
+			throw new IllegalArgumentException("size have to be non-negative"); 
+		}
 		return size;
 	}
 
@@ -372,7 +375,7 @@ public class ManagerV2
 					       null);
 		}
 		catch (SQLException e) { 
-			return e.getMessage();
+			return e.toString();
 		}
 		StringBuffer sb = new StringBuffer();
 		StringBuffer id = new StringBuffer();
@@ -816,7 +819,11 @@ public class ManagerV2
 			sizeInBytes=stringToSize(args.argv(0));
 		}
 		catch (Exception e) { 
-			return e.getMessage();	
+			return "Cannot convert size specified ("+ args.argv(0)+") to non-negative number. \n"+
+			       "Valid definition of size:\n"+
+				"\t\t - a number of bytes (long integer less than 2^64) \n"+
+				"\t\t - 100kB, 100KB, 100KiB, 100MB, 100MiB, 100GB, 100GiB, 10.5TB, 100TiB \n"+
+				"see http://en.wikipedia.org/wiki/Gigabyte for explanation";
 		}
 		long lifetime=Long.parseLong(args.argv(1));
 		if(lifetime > 0) {
@@ -840,34 +847,55 @@ public class ManagerV2
 		}
 		long reservationId;
 		if(lgIdString == null && lgName == null) {
-			reservationId = reserveSpace(voGroup,
-						     voRole,
-						     sizeInBytes,
-						     latency , 
-						     policy, 
-						     lifetime,
-						     description);
+			try { 
+				reservationId = reserveSpace(voGroup,
+							     voRole,
+							     sizeInBytes,
+							     latency , 
+							     policy, 
+							     lifetime,
+							     description);
+			}
+			catch (Exception e) { 
+				return "Failed to find likgroup taht can accommodate this space reservation. \n"+
+					e.getMessage()+'\n'+
+					"check that you have any link groups that satisfy the following criteria: \n"+
+					"\t can fit the size you are requesting ("+sizeInBytes+")\n"+
+					"\t vogroup,vorole you specified ("+voGroup+","+voRole+") are allowed, and \n"+
+					"\t retention policy and access latency you specified ("+policyString+","+latencyString+") are allowed \n";
+			}
 		} 
 		else {
+			long lgId;
+			LinkGroup lg=null;
+			if (lgIdString != null){
+				lgId =Long.parseLong(lgIdString);
+				lg   = getLinkGroup(lgId);
+				if(lg ==null) {
+					return "Error, could not find link group with id = "+lgIdString+'\n';
+				}
+			} 
+			else {
+				lg = getLinkGroupByName(lgName);
+				if(lg ==null) {
+					return "Error, could not find link group with name = '"+lgName+"'\n";
+				}
+				lgId = lg.getId();
+			}
+
 			Long[] linkGroups = findLinkGroupIds(sizeInBytes,
 							     voGroup,
 							     voRole,
 							     latency,
 							     policy);
 			if(linkGroups.length == 0) {
-				return "There is no linkgroup that can accommodate this space reservation\n";
+				return "Link Group "+lg+" is found, but it cannot accommodate the reservation requested, \n"+ 
+					"check that the link group satisfies the following criteria: \n"+
+					"\t it can fit the size you are requesting ("+sizeInBytes+")\n"+
+					"\t vogroup,vorole you specified ("+voGroup+","+voRole+") are allowed, and \n"+
+					"\t retention policy and access latency you specified ("+policyString+","+latencyString+") are allowed \n";
 			}
-			long lgId;
-			if (lgIdString != null){
-				lgId =Long.parseLong(lgIdString);
-			} 
-			else {
-				LinkGroup lg = getLinkGroupByName(lgName);
-				if(lg ==null) {
-					return "Error, could not find link group with name = '"+lgName+"'";
-				}
-				lgId = lg.getId();
-			}
+
 			boolean yes=false;
 			for(int i=0;i<linkGroups.length;i++) {
 				if (linkGroups[i]==lgId) { 
@@ -876,7 +904,11 @@ public class ManagerV2
 				}
 			}
 			if (!yes) { 
-				return "Error, the linkgroup chosen cannot accommodate this space reservation\n";
+				return "Link Group "+lg+" is found, but it cannot accommodate the reservation requested, \n"+ 
+					"check that the link group satisfies the following criteria: \n"+
+					"\t it can fit the size you are requesting ("+sizeInBytes+")\n"+
+					"\t vogroup,vorole you specified ("+voGroup+","+voRole+") are allowed, and \n"+
+					"\t retention policy and access latency you specified ("+policyString+","+latencyString+") are allowed \n";
 			}
 			reservationId = reserveSpaceInLinkGroup(
 				lgId,
@@ -3865,7 +3897,7 @@ public class ManagerV2
 					lifetime,
 					description);
 			}
-			throw new SQLException(" can not find availabe space");
+			throw new SQLException(" can not find availabe space ");
 		}
 
 	
