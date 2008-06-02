@@ -3926,8 +3926,8 @@ public abstract class AbstractFtpDoorV1
      * Asks a pool to perform a transfer.
      *
      * Information about which pool to ask and the file to ask for is
-     * taken from the <tt>transfer<\tt> parameter. On success, the
-     * moverId field of <tt>transfer<\tt> will be filled in. On
+     * taken from the <tt>transfer</tt> parameter. On success, the
+     * moverId field of <tt>transfer</tt> will be filled in. On
      * failure, Exception is thrown.
      *
      * @param transfer     The transfer to perform.
