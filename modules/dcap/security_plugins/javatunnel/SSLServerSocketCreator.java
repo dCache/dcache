@@ -5,23 +5,25 @@
 
 package javatunnel;
 
-import java.io.*;
-import java.net.*;
-import java.util.*;
-
-import javax.net.ssl.*;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.ServerSocket;
 import java.security.KeyStore;
-import javax.net.*;
-import javax.net.ssl.*;
-import javax.security.cert.X509Certificate;
+import java.util.Map;
+
+import javax.net.ServerSocketFactory;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLServerSocketFactory;
 
 import dmg.util.UserValidatable;
 
-public class SSLServerSocketCreator {
+public class SSLServerSocketCreator extends ServerSocketFactory {
 
 
 	private SSLServerSocketFactory ssf = null;
-	private UserValidatable uv = null;	
+	private UserValidatable uv = null;
 
 
 	public  SSLServerSocketCreator(String[] args, Map map) throws IOException {
@@ -29,20 +31,20 @@ public class SSLServerSocketCreator {
 		uv = (UserValidatable)map.get("UserValidatable");
 	}
 
-	
+
 	public SSLServerSocketCreator(String[] args) throws IOException {
 
 		// args[0] : keystore
 		// args[1] : passphrase
 
-			
+
 			try {
 				// set up key manager to do server authentication
 				SSLContext ctx;
 				KeyManagerFactory kmf;
  				KeyStore ks;
  				char[] passphrase = null;
-				
+
 				if( (args.length > 1 ) && (args[1] != null) ){
 					passphrase = args[1].toCharArray();
 				}
@@ -56,17 +58,37 @@ public class SSLServerSocketCreator {
 				ctx.init(kmf.getKeyManagers(), null, null);
 
 				ssf = ctx.getServerSocketFactory();
-				
+
 			} catch (Exception e) {
 				e.printStackTrace();
 				throw new IOException("ssl failed");
 			}
-			
+
 	}
 
 
+    @Override
     public ServerSocket createServerSocket( int port ) throws java.io.IOException {
         return new SSLTunnelServerSocket(port, ssf, uv );
+    }
+
+    @Override
+    public ServerSocket createServerSocket() throws java.io.IOException {
+        return new SSLTunnelServerSocket(ssf, uv );
+    }
+
+    @Override
+    public ServerSocket createServerSocket(int port, int backlog)
+            throws IOException {
+
+        return new SSLTunnelServerSocket(port, backlog, ssf, uv);
+    }
+
+    @Override
+    public ServerSocket createServerSocket(int port, int backlog,
+            InetAddress ifAddress) throws IOException {
+
+        return new SSLTunnelServerSocket(port, backlog, ifAddress, ssf, uv);
     }
 
 
@@ -79,6 +101,5 @@ public class SSLServerSocketCreator {
 			e.printStackTrace();
 		}
 	}
-
 
 }
