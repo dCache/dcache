@@ -440,7 +440,7 @@ getServices()
             if [ "`printConfig utilityDomain`" = "yes" ]; then
                 printf "utility "
             fi
-            if [ "`printConfig infoProvider`" = "yes" ]; then
+            if [ "`printConfig InfoProvider`" = "yes" ]; then
                 printf "infoProvider "
             fi
             if [ "`printConfig statistics`" = "yes" ]; then
@@ -740,7 +740,7 @@ getFreeSpace() # $1 = path
 {
     local parent
     parent=`dirname ${1}`
-    df -P -B 1073741824 ${parent} | awk 'NR == 2 { print $4 }'
+    RET=$( df -k "${parent}" | awk 'NR == 2 { printf "%d", $4 / 1024 }' )
 }
 
 # Converts a string describing some amount of disk space (using an
@@ -800,7 +800,6 @@ createPool() # $1 = size in GiB, $2 = path
     local NUMBER_OF_MOVERS
     local set_size
     local set_movers
-
     size=`stringToGiB $1`
     path=$2
 
@@ -811,7 +810,9 @@ createPool() # $1 = size in GiB, $2 = path
     fi
 
     # We need to have enough free space
-    ds=`getFreeSpace ${path}`
+    getFreeSpace ${path}
+    ds=$RET
+
     if [ "${ds}" -lt "${size}" ]; then
 	printp "Pool size exceeds available space. ${path} only 
                 has ${ds} GiB of free space. Operation aborted." 1>&2
@@ -1181,7 +1182,8 @@ case "$1" in
                         lfs=`echo $param | sed -n -e 's/.*lfs=\([^ ]*\).*/\1/p'`
 			if [ -f "${path}/setup" ]; then
                             size=`getSizeOfPool ${path}`
-			    free=`getFreeSpace ${path}`
+			    getFreeSpace ${path}
+                            free=$RET
                             printf "$format" "$pool" "$domain" "$lfs" "$size" "$free" "$path"
 			else
                             printf "$format" "$pool" "$domain" "$lfs" "-" "-" "$path (missing)"
