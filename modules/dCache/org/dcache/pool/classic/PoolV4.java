@@ -32,6 +32,7 @@ import java.util.TreeSet;
 
 import org.apache.log4j.Logger;
 
+import org.dcache.services.AbstractCell;
 import org.dcache.pool.repository.v5.CacheRepositoryV5;
 import org.dcache.pool.repository.v5.IllegalTransitionException;
 import org.dcache.pool.repository.SpaceRecord;
@@ -113,11 +114,8 @@ import dmg.util.CommandException;
 import dmg.util.CommandSyntaxException;
 import dmg.util.Logable;
 
-public class PoolV4 extends CellAdapter implements Logable
+public class PoolV4 extends AbstractCell implements Logable
 {
-    private final static Logger _logPoolMonitor =
-        Logger.getLogger("logger.org.dcache.poolmonitor." + PoolV4.class.getName());
-
     private static final String MAX_SPACE = "use-max-space";
     private static final String PREALLOCATED_SPACE = "use-preallocated-space";
 
@@ -996,8 +994,7 @@ public class PoolV4 extends CellAdapter implements Logable
     @Override
     public void getInfo(PrintWriter pw) {
         pw.println("Base directory    : " + _baseDir);
-        pw
-            .println("Revision          : [$Revision$]");
+        pw.println("Revision          : [$Revision$]");
         pw.println("Version           : " + getCellVersion() + " (Sub="
                    + _version + ")");
         pw.println("StickyFiles       : "
@@ -3093,10 +3090,7 @@ public class PoolV4 extends CellAdapter implements Logable
                 new PoolManagerPoolUpMessage(_poolName, _serialId,
                                              _poolMode, info);
 
-            if( _logPoolMonitor.isDebugEnabled() ) {
-                _logPoolMonitor.debug(_poolName + " - sending poolUpMessage (mode/seialId): " + _poolMode + " / " + _serialId);
-            }
-            poolManagerMessage.setTagMap( _tags ) ;
+            poolManagerMessage.setTagMap(_tags);
             poolManagerMessage.setHsmInstances(new TreeSet<String>(_hsmSet.getHsmInstances()));
             poolManagerMessage.setMessage(_poolStatusMessage);
             poolManagerMessage.setCode(_poolStatusCode);
