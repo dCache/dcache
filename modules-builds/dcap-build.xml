@@ -121,12 +121,12 @@
              Targets for javatunnel.jar
   -->
 
-  <property name="javatunnel.classpath.value" refid="javatunnel.classpath"/>
-
   <!-- Compile -->
 
 
   <target name="javatunnel.compile" depends="prepare" description="Compile Java code for javatunnel.jar" >
+
+  	<property name="javatunnel.classpath.value" refid="javatunnel.classpath"/>
 
     <javac destdir="${buildDir}"
            classpath="${javatunnel.classpath.value}"
