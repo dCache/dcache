@@ -96,6 +96,7 @@ public class GenericMockCellHelper extends CellAdapterHelper {
             // there is something pre-defined
             MessageAction action =  actions.get(msg.getMessageObject().getClass());
             if( action != null) {
+                msg.revertDirection();
                 action.messageArraved(msg);
             }
         }
@@ -203,4 +204,10 @@ public class GenericMockCellHelper extends CellAdapterHelper {
 
     }
 
+
+
+    public static void clean() {
+        _messageActions.clear();
+        _messageQueue.clear();
+    }
 }
