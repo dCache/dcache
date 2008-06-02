@@ -38,7 +38,7 @@ usage()
 
 
 
-# Now we start the code proper
+
 yaim_config_file_get_value()
 {
 # Returns 0 on success
@@ -55,7 +55,7 @@ if [ ! -f ${FILE} ] ; then
     exit 1
 fi
 
-cursor=`grep -n "^[\t ]*${Key}[\t ]*=" $FILE | cut -d: -f1 | tail -n 1`
+cursor=`grep -n "^[\t ]*${Key}[\t ]*=" $FILE | cut -d: -f1 | sed '$!d'`
 if [ "${cursor}X" == "X" ] ; then
   RET=""
   return 2
@@ -658,7 +658,7 @@ dcacheInstallGetdCapPort()
   local DCACHE_HOME
   dcacheInstallGetHome
   DCACHE_HOME=$RET
-  dcaches_config_file_get_value ${DCACHE_HOME}/config/dCacheSetup dCapPort
+  yaim_config_file_get_value ${DCACHE_HOME}/config/dCacheSetup dCapPort
 }
 
 dcacheInstallPnfsMountPointClient()
@@ -1265,7 +1265,7 @@ dcacheInstallSrm()
   local java
   dcacheInstallGetHome
   DCACHE_HOME=$RET
-  dcaches_config_file_get_value ${DCACHE_HOME}/config/dCacheSetup java
+  yaim_config_file_get_value ${DCACHE_HOME}/config/dCacheSetup java
   java=$RET
   
   #
