@@ -93,7 +93,7 @@ public class CacheRepositoryEntryInfo implements java.io.Serializable {
         case DESTROYED:
             throw new RuntimeException("Bug. An entry should never be in NEW or DESTROYED.");
         }
-        //TODO:        setBit(STICKY_BIT,cacheRepositoryEntry.isSticky());
+        setBit(STICKY_BIT, entry.isSticky());
     }
 
     private final void setBit(int bitnum, boolean val) {
