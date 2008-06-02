@@ -40,6 +40,8 @@ public class GenericMockCellHelper extends CellAdapterHelper {
 
 
     private static final Map<CellPath, Map<String, List<MessageEnvelope>>> _messageQueue = new HashMap<CellPath, Map<String, List<MessageEnvelope>>>();
+    private final static Map<String, Map<Class<?>, MessageAction>> _messageActions = new HashMap<String, Map<Class<?>,MessageAction>>();
+
     private final CellNucleus _nucleus;
 
     public GenericMockCellHelper(String name, String args) {
@@ -75,6 +77,7 @@ public class GenericMockCellHelper extends CellAdapterHelper {
             }
 
             Message message = messageEnvelope.getMessage();
+            message.setReply();
             msg.setMessageObject(message);
 
             return msg;
@@ -85,7 +88,18 @@ public class GenericMockCellHelper extends CellAdapterHelper {
 
     @Override
     public void sendMessage(CellMessage msg) throws NotSerializableException, NoRouteToCellException {
-        // OK :)
+
+        String destinations = msg.getDestinationPath().getCellName();
+
+        Map<Class<?>, MessageAction> actions = _messageActions.get(destinations);
+        if(actions != null ) {
+            // there is something pre-defined
+            MessageAction action =  actions.get(msg.getMessageObject().getClass());
+            if( action != null) {
+                action.messageArraved(msg);
+            }
+        }
+
     }
 
     /**
@@ -168,5 +182,25 @@ public class GenericMockCellHelper extends CellAdapterHelper {
 
     }
 
+    public static void registerAction(String cellName, Class<?> messageClass, MessageAction action ) {
+
+
+        Map<Class<?>,MessageAction> actions = _messageActions.get(cellName);
+        if( actions == null ) {
+            actions = new HashMap<Class<?>,MessageAction>();
+            _messageActions.put(cellName, actions);
+        }
+
+        actions.put(messageClass, action);
+
+    }
+
+
+
+    public interface MessageAction {
+
+        public void messageArraved(CellMessage message);
+
+    }
 
 }
