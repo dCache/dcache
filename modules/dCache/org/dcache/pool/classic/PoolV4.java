@@ -33,6 +33,8 @@ import java.util.TreeSet;
 import org.apache.log4j.Logger;
 
 import org.dcache.services.AbstractCell;
+import org.dcache.pool.FaultListener;
+import org.dcache.pool.FaultEvent;
 import org.dcache.pool.repository.v5.CacheRepositoryV5;
 import org.dcache.pool.repository.v5.IllegalTransitionException;
 import org.dcache.pool.repository.SpaceRecord;
@@ -114,7 +116,9 @@ import dmg.util.CommandException;
 import dmg.util.CommandSyntaxException;
 import dmg.util.Logable;
 
-public class PoolV4 extends AbstractCell implements Logable
+public class PoolV4 extends AbstractCell
+    implements Logable,
+               FaultListener
 {
     private static final String MAX_SPACE = "use-max-space";
     private static final String PREALLOCATED_SPACE = "use-preallocated-space";
@@ -475,6 +479,7 @@ public class PoolV4 extends AbstractCell implements Logable
 
             _pnfs = new PnfsHandler(this, new CellPath(_pnfsManagerName), _poolName);
             _repository = new CacheRepositoryV5(this, _pnfs);
+            _repository.addFaultListener(this);
 
             _storageQueue = new StorageClassContainer(_repository, poolName);
             _storageHandler = new HsmStorageHandler2(this, _repository, _hsmSet, _pnfs);
@@ -553,6 +558,33 @@ public class PoolV4 extends AbstractCell implements Logable
             _flushingThread.start();
         }
         esay("Constructor done (still waiting for 'inventory')");
+    }
+
+    /**
+     * Called by subsystems upon serious faults.
+     */
+    public void faultOccurred(FaultEvent event)
+    {
+        esay("Fault occured in " + event.getSource() + ": " + event.getMessage());
+        if (event.getCause() != null)
+            esay(event.getCause());
+
+        switch (event.getAction()) {
+        case READONLY:
+            disablePool(PoolV2Mode.DISABLED_RDONLY, 99,
+                        "Pool read-only: " + event.getMessage());
+            break;
+
+        case DISABLED:
+            disablePool(PoolV2Mode.DISABLED_STRICT, 99,
+                        "Pool disabled: " + event.getMessage());
+            break;
+
+        default:
+            disablePool(PoolV2Mode.DISABLED_STRICT | PoolV2Mode.DISABLED_DEAD, 666,
+                        "Pool disabled: " + event.getMessage());
+            break;
+        }
     }
 
     @Override
@@ -1088,19 +1120,6 @@ public class PoolV4 extends AbstractCell implements Logable
         _timeoutManager.getInfo(pw);
         _checksumModule.getInfo(pw);
     }
-
-    @Override
-    public void say(String str) {
-        pin(str);
-        super.say(str);
-    }
-
-    @Override
-    public void esay(String str) {
-        pin(str);
-        super.esay(str);
-    }
-
 
     // //////////////////////////////////////////////////////////////
     //

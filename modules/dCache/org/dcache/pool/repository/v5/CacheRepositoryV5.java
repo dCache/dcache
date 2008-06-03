@@ -26,6 +26,9 @@ import org.dcache.pool.repository.WriteHandle;
 import org.dcache.pool.repository.CacheEntry;
 import org.dcache.pool.repository.EntryState;
 import org.dcache.pool.repository.SpaceRecord;
+import org.dcache.pool.FaultEvent;
+import org.dcache.pool.FaultListener;
+import org.dcache.pool.FaultAction;
 import static org.dcache.pool.repository.EntryState.*;
 
 import com.sleepycat.je.DatabaseException;
@@ -46,9 +49,11 @@ import java.lang.reflect.Constructor;
 public class CacheRepositoryV5// extends CellCompanion
     implements CacheRepositoryListener, Iterable<PnfsId>
 {
-    private final List<StateChangeListener> _listeners =
+    private final List<StateChangeListener> _stateChangeListeners =
         new CopyOnWriteArrayList<StateChangeListener>();
 
+    private final List<FaultListener> _faultListeners =
+        new CopyOnWriteArrayList<FaultListener>();
     /**
      * Map to keep track of states. Temporary hack because we do not
      * have enough information in the actual repository.
@@ -217,9 +222,10 @@ public class CacheRepositoryV5// extends CellCompanion
         } catch (FileInCacheException e) {
             throw e;
         } catch (IOException e) {
-            throw new RuntimeException("Internal repository error", e);
+            fail(FaultAction.DISABLED, "Failed to create file", e);
+            throw new RuntimeException("Failed to create file", e);
         } catch (CacheException e) {
-            // FIXME: Shut down repository
+            fail(FaultAction.READONLY, "Internal repository error", e);
             throw new RuntimeException("Internal repository error", e);
         }
     }
@@ -263,8 +269,8 @@ public class CacheRepositoryV5// extends CellCompanion
             _pnfs.clearCacheLocation(id);
             throw e;
         } catch (CacheException e) {
-            throw new RuntimeException("Internal repository error: "
-                                       + e.getMessage());
+            fail(FaultAction.READONLY, "Internal repository error", e);
+            throw new RuntimeException("Internal repository error", e);
         }
     }
 
@@ -283,8 +289,8 @@ public class CacheRepositoryV5// extends CellCompanion
         } catch (FileNotInCacheException e) {
             throw e;
         } catch (CacheException e) {
-            throw new RuntimeException("Internal repository error: "
-                                       + e.getMessage());
+            fail(FaultAction.READONLY, "Internal repository error", e);
+            throw new RuntimeException("Internal repository error", e);
         }
     }
 
@@ -316,9 +322,8 @@ public class CacheRepositoryV5// extends CellCompanion
         } catch (FileNotInCacheException e) {
             throw e;
         } catch (CacheException e) {
-            // TODO: shut down
-            throw new RuntimeException("Internal repository error: "
-                                       + e.getMessage());
+            fail(FaultAction.READONLY, "Internal repository error", e);
+            throw new RuntimeException("Internal repository error", e);
         }
     }
 
@@ -400,8 +405,8 @@ public class CacheRepositoryV5// extends CellCompanion
                 throw new IllegalArgumentException("Cannot mark entry destroyed");
             }
         } catch (CacheException e) {
-            throw new RuntimeException("Internal repository error: " +
-                                       e.getMessage());
+            fail(FaultAction.READONLY, "Internal repository error", e);
+            throw new RuntimeException("Internal repository error", e);
         }
     }
 
@@ -464,8 +469,8 @@ public class CacheRepositoryV5// extends CellCompanion
                 throw new IllegalTransitionException(id, NEW, state);
             }
         } catch (CacheException e) {
-            throw new RuntimeException("Internal repository error: " +
-                                       e.getMessage());
+            fail(FaultAction.READONLY, "Internal repository error", e);
+            throw new RuntimeException("Internal repository error", e);
         }
     }
 
@@ -475,8 +480,27 @@ public class CacheRepositoryV5// extends CellCompanion
     protected void notify(PnfsId id, EntryState oldState, EntryState newState)
     {
         StateChangeEvent event = new StateChangeEvent(id, oldState, newState);
-        for (StateChangeListener listener : _listeners)
+        for (StateChangeListener listener : _stateChangeListeners)
             listener.stateChanged(event);
+    }
+
+    /**
+     * Reports a fault to all fault listeners.
+     */
+    void fail(FaultAction action, String message, Throwable cause)
+    {
+        FaultEvent event =
+            new FaultEvent("repository", action, message, cause);
+        for (FaultListener listener : _faultListeners)
+            listener.faultOccurred(event);
+    }
+
+    /**
+     * Reports a fault to all fault listeners.
+     */
+    void fail(FaultAction action, String message)
+    {
+        fail(action, message, null);
     }
 
     /**
@@ -484,7 +508,7 @@ public class CacheRepositoryV5// extends CellCompanion
      */
     public void addListener(StateChangeListener listener)
     {
-        _listeners.add(listener);
+        _stateChangeListeners.add(listener);
     }
 
     /**
@@ -492,7 +516,23 @@ public class CacheRepositoryV5// extends CellCompanion
      */
     public void removeListener(StateChangeListener listener)
     {
-        _listeners.remove(listener);
+        _stateChangeListeners.remove(listener);
+    }
+
+    /**
+     * Adds a state change listener.
+     */
+    public void addFaultListener(FaultListener listener)
+    {
+        _faultListeners.add(listener);
+    }
+
+    /**
+     * Removes a fault change listener.
+     */
+    public void remoteFaultListener(FaultListener listener)
+    {
+        _faultListeners.remove(listener);
     }
 
     /**
@@ -554,8 +594,8 @@ public class CacheRepositoryV5// extends CellCompanion
             else if (entry.isReceivingFromStore())
                 updateState(entry.getPnfsId(), FROM_STORE);
         } catch (CacheException e) {
-            throw new RuntimeException("Internal repository failure: "
-                                       + e.getMessage());
+            fail(FaultAction.READONLY, "Internal repository error", e);
+            throw new RuntimeException("Internal repository error", e);
         }
     }
 
@@ -603,8 +643,8 @@ public class CacheRepositoryV5// extends CellCompanion
 
             updateState(entry.getPnfsId(), state);
         } catch (CacheException e) {
-            throw new RuntimeException("Internal repository error: "
-                                       + e.getMessage());
+            fail(FaultAction.READONLY, "Internal repository error", e);
+            throw new RuntimeException("Internal repository error", e);
         }
     }
 
@@ -635,5 +675,10 @@ public class CacheRepositoryV5// extends CellCompanion
     public void printSetup(PrintWriter pw)
     {
         _sweeper.printSetup(pw);
+    }
+
+    boolean isRepositoryOk()
+    {
+        return _repository.isRepositoryOk();
     }
 }
