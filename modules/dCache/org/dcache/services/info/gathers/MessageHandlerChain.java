@@ -14,6 +14,7 @@ import diskCacheV111.vehicles.Message;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageAnswerable;
 import dmg.cells.nucleus.CellPath;
+import dmg.cells.nucleus.UOID;
 
 
 /**
@@ -52,7 +53,7 @@ public class MessageHandlerChain {
 		}
 	}
 	
-	private Map<CellMessage,MessageMetadata> _msgMetadata = new HashMap<CellMessage,MessageMetadata>();
+	private Map<UOID,MessageMetadata> _msgMetadata = new HashMap<UOID,MessageMetadata>();
 	private Date _nextFlushOldMetadata;
 	
 	/**
@@ -121,7 +122,7 @@ public class MessageHandlerChain {
 		else
 			InfoProvider.getInstance().sendMessage( envelope, handler);
 		
-		_msgMetadata.put( envelope, new MessageMetadata( ttl));
+		_msgMetadata.put( envelope.getUOID(), new MessageMetadata( ttl));
 	}
 	
 	
@@ -130,15 +131,20 @@ public class MessageHandlerChain {
 	 * @param sentMessage the CellMessage sent
 	 * @return the recommended lifetime for generated metrics, or zero if no record could be found.
 	 */
-	protected long getMetricLifetime( CellMessage sentEnvelope) {
+	protected long getMetricLifetime( UOID msgOUID) {
 		long ttl = 0;
+
+		flushOldMetadata();
 		
-		MessageMetadata mm = _msgMetadata.get( sentEnvelope);
+		MessageMetadata mm = _msgMetadata.get( msgOUID);
 
 		if( mm != null) {
 			ttl = mm._ttl;
-			_msgMetadata.remove( sentEnvelope);
-		}		
+			_msgMetadata.remove( msgOUID);
+		} else {
+			if( _log.isDebugEnabled())
+				_log.debug( "tried to look up OUID "+msgOUID+" but couldn't find corresponding metadata.");
+		}
 		
 		return ttl;
 	}
@@ -151,20 +157,16 @@ public class MessageHandlerChain {
 	 */
 	public boolean handleMessage( CellMessage msg) {
 		
-		long ttl = 0;
-		
-		flushOldMetadata();
-				
-		MessageMetadata mm = _msgMetadata.get(msg.getLastUOID());
-		if( mm != null) {
-			ttl = mm._ttl;
-			_msgMetadata.remove(msg.getLastUOID());
-		}
-		
+		long ttl = this.getMetricLifetime( msg.getLastUOID());
+						
 		Object messagePayload = msg.getMessageObject();
 		
-		if( !(messagePayload instanceof Message))
+		if( !(messagePayload instanceof Message)) {
+			if( _log.isDebugEnabled())
+				_log.debug( "Received msg where payload is not instanceof Message");
+
 			return false;
+		}
 
 		for( MessageHandler mh : _messageHandler)			
 			if( mh.handleMessage( (Message) messagePayload, ttl))
@@ -179,7 +181,7 @@ public class MessageHandlerChain {
 	 * This is only done "every so often" and adds some safety against
 	 * lost packets resulting in accumulated memory usage. 
 	 */
-	void flushOldMetadata() {
+	private void flushOldMetadata() {
 		
 		Date now = new Date();
 		
@@ -196,5 +198,6 @@ public class MessageHandlerChain {
 		
 		_nextFlushOldMetadata = new Date( System.currentTimeMillis() + METADATA_FLUSH_PERIOD);
 	}
+	
 
 }
