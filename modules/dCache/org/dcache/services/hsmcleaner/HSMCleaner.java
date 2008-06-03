@@ -53,8 +53,7 @@ public class HSMCleaner extends AbstractCell
     private final FailureRepository _failures;
     private final Trash _trash;
     private final RequestTracker _requests;
-    private final ScheduledExecutorService _executor =
-        new ScheduledThreadPoolExecutor(1);
+    private final ScheduledExecutorService _executor;
     private final EventHistogram _histogram =
         new EventHistogram(12, 60 * 60 * 1000);
 
@@ -175,6 +174,8 @@ public class HSMCleaner extends AbstractCell
                     onFailure(uri);
                 }
             });
+
+        _executor = new ScheduledThreadPoolExecutor(1, getNucleus());
 
         _executor.scheduleWithFixedDelay(_scanTask, _scanInterval,
                                          _scanInterval, TimeUnit.SECONDS);

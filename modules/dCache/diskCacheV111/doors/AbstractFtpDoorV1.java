@@ -549,6 +549,10 @@ public abstract class AbstractFtpDoorV1
 
     /**
      * Shared executor for processing FTP commands.
+     *
+     * FIXME: This will be created within the thread group creating
+     * the first FTP door. This will usually be the login manager and
+     * works fine, but it isn't clean.
      */
     private final static ExecutorService _executor =
         Executors.newCachedThreadPool();
@@ -4079,6 +4083,8 @@ public abstract class AbstractFtpDoorV1
         @Override
         public synchronized void run()
         {
+            initLoggingContext();
+
             try {
                 CellMessage msg =
                     new CellMessage(new CellPath(_pool),
@@ -4183,6 +4189,7 @@ public abstract class AbstractFtpDoorV1
                     _running = true;
                     _executor.submit(new Runnable() {
                             public void run() {
+                                initLoggingContext();
                                 String command = get();
                                 while (command != null) {
                                     execute(command);
