@@ -89,6 +89,7 @@ public class HsmRestoreTest {
          */
         _partitionManager.ac_rc_set_stage_$_1_2(new Args("on"));
         _rc = new RequestContainerV5(_cell, _selectionUnit, _poolMonitor, _partitionManager);
+        _rc.ac_rc_set_retry_$_1(new Args("0"));
 
         __messages = new ArrayList<CellMessage>();
     }
@@ -257,6 +258,94 @@ public class HsmRestoreTest {
 
         assertEquals("No stage request sent to pools1", 1, stageRequests1.get());
         assertEquals("No stage request sent to pools2", 1, stageRequests2.get());
+
+    }
+
+
+    @Test
+    public void testRestoreNoLocationsSinglePool() throws Exception {
+
+        PnfsId pnfsId = new PnfsId("000000000000000000000000000000000001");
+
+
+        /*
+         * pre-configure pool selection unit
+         */
+        List<String> pools = new ArrayList<String>(3);
+        pools.add("pool1");
+        PoolMonitorHelper.prepareSelectionUnit(_selectionUnit, pools);
+
+        /*
+         * prepare reply for getCacheLocation request
+         */
+        /*
+         * no locations
+         */
+        List<String> locations = new ArrayList<String>(0);
+        PnfsGetCacheLocationsMessage message = PoolMonitorHelper.prepareGetCacheLocation(pnfsId, locations);
+
+        GenericMockCellHelper.prepareMessage(new CellPath("PnfsManager"), message, true);
+        /*
+         * prepare reply for GetStorageInfo
+         */
+
+        _storageInfo.addLocation(new URI("osm://osm?"));
+        _storageInfo.setFileSize(5);
+        _storageInfo.setIsNew(false);
+
+        PnfsGetStorageInfoMessage storageInfoMessage = new PnfsGetStorageInfoMessage(pnfsId);
+        storageInfoMessage.setStorageInfo(_storageInfo);
+        GenericMockCellHelper.prepareMessage(new CellPath("PnfsManager"), storageInfoMessage, true);
+
+
+
+        /*
+         * make pools know to 'PoolManager'
+         */
+
+        long serialId = System.currentTimeMillis();
+        PoolV2Mode poolMode = new PoolV2Mode(PoolV2Mode.ENABLED);
+        Set<String> connectedHSM = new HashSet<String>(1);
+        connectedHSM.add("osm");
+
+        for( String pool : pools) {
+
+            PoolCostInfo poolCostInfo = new PoolCostInfo(pool);
+            poolCostInfo.setSpaceUsage(100, 20, 30, 50);
+            poolCostInfo.setQueueSizes(0, 10, 0, 0, 10, 0, 0, 10, 0);
+
+            PoolManagerPoolUpMessage poolUpMessage = new PoolManagerPoolUpMessage(pool, serialId, poolMode, poolCostInfo);
+
+            _selectionUnit.getPool(pool).setHsmInstances(connectedHSM);
+
+            CellMessage cellMessage = new CellMessage( new CellPath("CostModule"), poolUpMessage);
+            _costModule.messageArrived(cellMessage);
+
+        }
+
+
+        final AtomicInteger stageRequests1 = new AtomicInteger(0);
+        final AtomicInteger stageRequests2 = new AtomicInteger(0);
+
+        MessageAction messageAction1 = new StageMessageAction(stageRequests1);
+        MessageAction messageAction2 = new StageMessageAction(stageRequests2);
+        GenericMockCellHelper.registerAction("pool1", PoolFetchFileMessage.class,messageAction1 );
+        GenericMockCellHelper.registerAction("pool2", PoolFetchFileMessage.class,messageAction2 );
+
+        PoolMgrSelectReadPoolMsg selectReadPool = new PoolMgrSelectReadPoolMsg(pnfsId, _storageInfo, _protocolInfo, _storageInfo.getFileSize());
+        CellMessage cellMessage = new CellMessage( new CellPath("PoolManager"), selectReadPool);
+
+        _rc.addRequest(cellMessage);
+
+        // first pool replays an  error
+        CellMessage m = __messages.get(0);
+        PoolFetchFileMessage ff = (PoolFetchFileMessage)m.getMessageObject();
+        ff.setFailed(17, "pech");
+        _rc.messageArrived(m);
+
+
+        assertEquals("Single Pool excluded on second shot", 2, stageRequests1.get());
+
 
     }
 
