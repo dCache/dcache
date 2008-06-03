@@ -1779,7 +1779,7 @@ public class RequestContainerV5 implements Runnable {
         //        bestPool = 0 , return NOT_FOUND
         //
         //  else
-        //        determince best pool by
+        //        determine best pool by
         //
         //        if allowFallback :
         //           first row for which cost < costCut or
@@ -1950,7 +1950,7 @@ public class RequestContainerV5 implements Runnable {
 
                     if( costValue < _parameter._minCostCut ){
                        //
-                       // here we sort it arbitrary but reproducable
+                       // here we sort it arbitrary but reproducible
                        // (whatever that means)
                        //
                        String poolName = cost.getPoolName() ;
@@ -2289,7 +2289,7 @@ public class RequestContainerV5 implements Runnable {
                        //
                        // skip this one if we tried this last time
                        //
-                       if( c.getPoolName().equals(_poolCandidateInfo.getPoolName()) )continue;
+                       if( c.getPoolName().equals(_poolCandidateInfo.getPoolName()) &&  n.hasNext())continue;
 
                        //
                        //  If the setting disallows 'sameHostRetry' and the hostname information
