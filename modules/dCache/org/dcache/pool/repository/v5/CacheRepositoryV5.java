@@ -14,6 +14,7 @@ import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.FileInCacheException;
 import diskCacheV111.util.FileNotInCacheException;
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.UnitInteger;
 import diskCacheV111.vehicles.StorageInfo;
 
 import org.dcache.pool.repository.v3.RepositoryException;
@@ -83,6 +84,9 @@ public class CacheRepositoryV5// extends CellCompanion
     /** Executor for periodic tasks. */
     private final ScheduledExecutorService _executor;
 
+    /** Whether periodic consistency checks are run or not. */
+    private final boolean _checkRepository;
+
     /**
      * True if inventory has been build, otherwise false.
      */
@@ -145,7 +149,8 @@ public class CacheRepositoryV5// extends CellCompanion
             _repository.setTotalSpace(Long.MAX_VALUE);
             _repository.addCacheRepositoryListener(this);
 
-            if (getBoolean(args, "checkRepository", true)) {
+            _checkRepository = getBoolean(args, "checkRepository", true);
+            if (_checkRepository) {
                 _executor.scheduleWithFixedDelay(new CheckHealthTask(this),
                                                  30, 30, TimeUnit.SECONDS);
             }
@@ -698,6 +703,29 @@ public class CacheRepositoryV5// extends CellCompanion
     public void actionPerformed(CacheEvent event)
     {
 
+    }
+
+    public void getInfo(PrintWriter pw)
+    {
+        pw.println("Check Repository  : " + _checkRepository);
+
+        SpaceRecord space = getSpaceRecord();
+        pw.println("Diskspace usage   : ");
+        long total = space.getTotalSpace();
+        long used = total - space.getFreeSpace();
+        long precious = space.getPreciousSpace();
+
+        pw.println("    Total    : " + UnitInteger.toUnitString(total));
+        pw.println("    Used     : " + used + "    ["
+                   + (((float) used) / ((float) total)) + "]");
+        pw.println("    Free     : " + (total - used));
+        pw.println("    Precious : " + precious + "    ["
+                   + (((float) precious) / ((float) total)) + "]");
+        pw.println("    Removable: "
+                   + space.getRemovableSpace()
+                   + "    ["
+                   + (((float) space.getRemovableSpace()) / ((float) total))
+                   + "]");
     }
 
     public void printSetup(PrintWriter pw)
