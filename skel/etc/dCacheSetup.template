@@ -730,19 +730,13 @@ billingDb=${ourHomeDir}/billing
 #billingToDb=no
 
 #   The PostgreSQL database host:
-#billingDatabaseHost=localhost
-
 #   EXPERT: First is default if billingToDb=no, second for billingToDb=yes
-#   Do NOT put passwords in setup file! They can be read by anyone logging into
-#   the dCache admin interface!
-#billingDbParams=
-#billingDbParams="\
-#                 -useSQL \
-#                 -jdbcUrl=jdbc:postgresql://${billingDatabaseHost}/billing \
-#                 -jdbcDriver=org.postgresql.Driver \
-#                 -dbUser=srmdcache \
-#                 -dbPass=srmdcache \
-#                "
+
+#billingDatabaseHost=localhost
+#billingDbUer=srmdcache
+#billingDbPass=srmdcache
+#billingDbName=billing
+
 
 #  -----------------------------------------------------------------------
 #       Info Provider
