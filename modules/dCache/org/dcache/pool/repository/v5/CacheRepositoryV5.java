@@ -40,10 +40,14 @@ import java.io.FileNotFoundException;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Timer;
 import java.lang.reflect.Constructor;
 
 public class CacheRepositoryV5// extends CellCompanion
@@ -75,6 +79,9 @@ public class CacheRepositoryV5// extends CellCompanion
 
     /** Sweeper for GC cached files. */
     private final SpaceSweeper _sweeper;
+
+    /** Executor for periodic tasks. */
+    private final ScheduledExecutorService _executor;
 
     /**
      * True if inventory has been build, otherwise false.
@@ -126,6 +133,8 @@ public class CacheRepositoryV5// extends CellCompanion
             _cell = cell;
             _pnfs = pnfs;
             _repository = new CacheRepositoryV4(base, args);
+            _executor =
+                Executors.newSingleThreadScheduledExecutor(_cell.getNucleus());
 
             _sweeper = createSweeper(args);
             _interpreter = new RepositoryInterpreter(_cell, _repository);
@@ -135,9 +144,28 @@ public class CacheRepositoryV5// extends CellCompanion
 
             _repository.setTotalSpace(Long.MAX_VALUE);
             _repository.addCacheRepositoryListener(this);
+
+            if (getBoolean(args, "checkRepository", true)) {
+                _executor.scheduleWithFixedDelay(new CheckHealthTask(this),
+                                                 30, 30, TimeUnit.SECONDS);
+            }
+
         } catch (DatabaseException e) {
             throw new RepositoryException("Failed to initialise repository: " + e.getMessage());
         }
+    }
+
+    private boolean getBoolean(Args args, String option, boolean def)
+    {
+        String s = args.getOpt("checkRepository");
+        if (s == null) {
+            return def;
+        } else if (s.equals("yes") || s.equals("true")) {
+            return true;
+        } else if (s.equals("no") || s.equals("false")) {
+            return false;
+        }
+        throw new IllegalArgumentException("Invalid value for " + option + ": " + s);
     }
 
     /**

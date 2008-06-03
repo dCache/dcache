@@ -187,7 +187,6 @@ public class PoolV4 extends AbstractCell
     private boolean _isPermanent = false;
     private boolean _allowSticky = false;
     private boolean _blockOnNoSpace = true;
-    private boolean _checkRepository = true;
     private boolean _waitForRepositoryOk = false;
     private long _gap = 4L * 1024L * 1024L * 1024L;
     private int _lfsMode = LFS_NONE;
@@ -288,16 +287,6 @@ public class PoolV4 extends AbstractCell
                 _recoveryFlags |= CacheRepository.ALLOW_SPACE_RECOVERY;
                 say("Enabled : recover-space");
             }
-
-            recover = _args.getOpt("checkRepository");
-            if (recover != null) {
-                if (recover.equals("yes") || recover.equals("true")) {
-                    _checkRepository = true;
-                } else if (recover.equals("no") || recover.equals("false")) {
-                    _checkRepository = false;
-                }
-            }
-            say("CheckRepository : " + _checkRepository);
 
             recover = _args.getOpt("waitForRepositoryReady");
             if (recover != null) {
@@ -1053,7 +1042,7 @@ public class PoolV4 extends AbstractCell
         pw.println("Storage Mode      : "
                    + (_isPermanent ? "Static" : "Dynamic"));
         pw.println("ReplicationMgr    : " + _replicationHandler);
-        pw.println("Check Repository  : " + _checkRepository);
+//         pw.println("Check Repository  : " + _checkRepository);
         pw.println("LargeFileStore    : "
                    + (_lfsMode == LFS_NONE ? "None" : "Precious"));
         pw.println("DuplicateRequests : "
@@ -2980,57 +2969,6 @@ public class PoolV4 extends AbstractCell
         esay("New Pool Mode : " + _poolMode);
     }
 
-    /**
-     * Performs basic sanity checks on space accounting. Problems are
-     * logged.
-     *
-     * @return true when all checks pass, false otherwise.
-     */
-    private boolean checkSpaceAccounting()
-    {
-        SpaceRecord record = _repository.getSpaceRecord();
-        long removable = record.getRemovableSpace();
-        long total = record.getTotalSpace();
-        long free = record.getFreeSpace();
-        long precious = record.getPreciousSpace();
-        long used = total - free;
-
-        if (removable < 0) {
-            esay("Removable space is negative.");
-            return false;
-        }
-
-        if (total < 0) {
-            esay("Repository size is negative.");
-            return false;
-        }
-
-        if (free < 0) {
-            esay("Free space is negative.");
-            return false;
-        }
-
-        if (precious < 0) {
-            esay("Precious space is negative.");
-            return false;
-        }
-
-        if (used < 0) {
-            esay("Used space is negative.");
-            return false;
-        }
-
-        /* The following check cannot be made consistently, since we
-         * do not retrieve these values atomically. Therefore we log
-         * the error, but do not return false.
-         */
-        if (precious + removable > used) {
-            esay("Used space is less than the sum of precious and removable space (this may be a temporary problem - if it persists then please report it to support@dcache.org).");
-        }
-
-        return true;
-    }
-
     private class PoolManagerPingThread implements Runnable
     {
         private final Thread _worker;
@@ -3049,31 +2987,13 @@ public class PoolV4 extends AbstractCell
         public void run()
         {
             say("Ping Thread started");
-            while (!Thread.interrupted()) {
-
-                if (!_poolMode.isDisabled(PoolV2Mode.DISABLED_STRICT)
-                    && _checkRepository) {
-
-//                     if (!_repository.isRepositoryOk()) {
-//                         esay("Pool disabled due to problems in repository") ;
-//                         disablePool(PoolV2Mode.DISABLED_STRICT, 99,
-//                                     "Pool disabled due to problems in repository");
-//                     }
-
-                    if (!checkSpaceAccounting()) {
-                        esay("Marking pool read-only due to accounting errors. This is a bug. Please report it to support@dcache.org.");
-                        disablePool(PoolV2Mode.DISABLED_RDONLY, 99,
-                                    "Pool is read-only due to accounting errors");
-                    }
-		}
-                sendPoolManagerMessage(true);
-
-                try {
-                    Thread.sleep(_heartbeat*1000);
-                } catch(InterruptedException e) {
-                    esay("Ping Thread was interrupted");
-                    break;
+            try {
+                while (!Thread.interrupted()) {
+                    sendPoolManagerMessage(true);
+                    Thread.sleep(_heartbeat * 1000);
                 }
+            } catch (InterruptedException e) {
+                esay("Ping Thread was interrupted");
             }
 
             esay("Ping Thread sending Pool Down message");
