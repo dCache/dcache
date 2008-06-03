@@ -63,8 +63,6 @@ public class LoginBrokerLsMsgHandler extends CellMessageHandlerSkel {
 		
 		StatePath pathToDoor = pathToDoors.newChild( info.getIdentifier());
 
-		addHostInfo( update, pathToDoor, "host", info.getHost(), lifetime);
-		
 		StatePath pathToProtocol = pathToDoor.newChild( "protocol");
 		
 		conditionalAddString( update, pathToProtocol, "engine", info.getProtocolEngine(), lifetime);
@@ -84,7 +82,7 @@ public class LoginBrokerLsMsgHandler extends CellMessageHandlerSkel {
 		update.appendUpdate( pathToDoor.newChild( "update-time"),
 					new IntegerStateValue( info.getUpdateTime(), lifetime));
 
-		StatePath pathToHosts = pathToDoor.newChild("hosts");
+		StatePath pathToHosts = pathToDoor.newChild("interfaces");
 		
 		String[] hosts = info.getHosts();
 		
