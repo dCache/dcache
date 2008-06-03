@@ -22,6 +22,7 @@ import dmg.cells.nucleus.CellMessage;
 import diskCacheV111.vehicles.Message;
 
 import org.dcache.util.ReflectionUtils;
+import org.dcache.util.PinboardAppender;
 
 /**
  * Helper class for message dispatching. Used internally in
@@ -170,8 +171,9 @@ public class AbstractCell extends CellAdapter
     {
         super(cellName, args, startNow);
 
-        _logger =
-            Logger.getLogger(getClass().getPackage().getName());
+        _logger = Logger.getLogger(getClass().getName());
+
+        PinboardAppender.addCell(this);
 
         parseOptions();
 
@@ -189,50 +191,46 @@ public class AbstractCell extends CellAdapter
 
     public void debug(String str)
     {
-        _logger.debug("(" + getFriendlyName() + ") " + str);
+        _logger.debug(str);
     }
 
     public void info(String str)
     {
-        pin(str);
-        _logger.info("(" + getFriendlyName() + ") " + str);
+        _logger.info(str);
     }
 
     public void warn(String str)
     {
-        pin(str);
-        _logger.warn("(" + getFriendlyName() + ") " + str);
+        _logger.warn(str);
     }
 
     public void error(String str)
     {
-        pin(str);
-        _logger.error("(" + getFriendlyName() + ") " + str);
+        _logger.error(str);
     }
 
     public void error(Throwable t)
     {
-        pin(t.toString());
+        _logger.error(t.getMessage());
         StringWriter sw = new StringWriter();
         t.printStackTrace(new PrintWriter(sw));
         for (String s : sw.toString().split("\n")) {
-            _logger.error("(" + getFriendlyName() + ") " + s);
+            _logger.error(s);
         }
     }
 
     public void fatal(String str)
     {
-        pin(str);
-        _logger.fatal("(" + getFriendlyName() + ") " + str);
+        _logger.fatal(str);
     }
 
     public void fatal(Throwable t)
     {
-        pin(t.toString());
+        _logger.fatal(t.getMessage());
         StringWriter sw = new StringWriter();
         t.printStackTrace(new PrintWriter(sw));
         for (String s : sw.toString().split("\n")) {
-            _logger.error("(" + getFriendlyName() + ") " + s);
+            _logger.fatal(s);
         }
     }
 
@@ -253,7 +251,6 @@ public class AbstractCell extends CellAdapter
     {
         error(t);
     }
-
 
     /**
      * Convert an instance to a specific type (kind of intelligent
