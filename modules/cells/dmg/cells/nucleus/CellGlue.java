@@ -36,7 +36,7 @@ class CellGlue {
    private CellPrinter          _cellPrinter        = _defaultCellPrinter ;
 
    private final static Logger _logMessages = Logger.getLogger("logger.org.dcache.cells.messages");
-   
+
    CellGlue( String cellDomainName ){
 
       String cellDomainNameLocal  = cellDomainName ;
@@ -224,7 +224,7 @@ class CellGlue {
       for( CellNucleus cellNucleus : _cellList.values() ){
 
          Cell c = cellNucleus.getThisCell() ;
-         
+
          if( c instanceof CellTunnel ){
             v.add( ((CellTunnel)c).getCellTunnelInfo() ) ;
          }
@@ -417,20 +417,20 @@ class CellGlue {
      * @return The cell with the given name or null if there is no such
      * cell.
      */
-    CellNucleus getCell(String cellName) 
+    CellNucleus getCell(String cellName)
     {
         CellNucleus nucleus = (CellNucleus)_cellList.get(cellName);
         if (nucleus == null) {
             nucleus = (CellNucleus)_killedCellList.get(cellName);
-        }   
+        }
         return nucleus;
     }
-    
+
     /**
      * Blocks until the given cell is dead.
      *
-     * @param cellName the name of the cell 
-     * @param timeout the time to wait in milliseconds. A timeout 
+     * @param cellName the name of the cell
+     * @param timeout the time to wait in milliseconds. A timeout
      *                of 0 means to wait forever.
      * @throws InterruptedException if another thread interrupted the
      *         current thread before or while the current thread was
@@ -534,17 +534,17 @@ class CellGlue {
 
       say( "sendMessage : "+transponder.getUOID()+" send to "+destination);
       if( _logMessages.isDebugEnabled() ) {
-    	  
+
     	  CellMessage messageToSend;
-    	  
+
     	  if( transponder.isStreamMode() ) {
     		  messageToSend = new CellMessage(transponder);
     	  }else{
     		  messageToSend = transponder;
     	  }
-    	  
+
     	  String messageObject = messageToSend.getMessageObject() == null? "NULL" : messageToSend.getMessageObject().getClass().getName();
-    	  _logMessages.debug("glueSendMessage src=" + messageToSend.getSourceAddress() + 
+    	  _logMessages.debug("glueSendMessage src=" + messageToSend.getSourceAddress() +
   			   " dest=" + messageToSend.getDestinationAddress() + " [" + messageObject + "] UOID=" + messageToSend.getUOID().toString() );
       }
       //

@@ -10,6 +10,8 @@ import  java.lang.reflect.* ;
 import  java.net.Socket ;
 
 import org.apache.log4j.Logger;
+import org.apache.log4j.MDC;
+
 
 /**
   *
@@ -91,6 +93,7 @@ public class CellNucleus implements Runnable, ThreadFactory {
          }
       }
       _cell = cell ;
+
       //
       // for the use in restricted sandboxes
       //
@@ -208,6 +211,18 @@ public class CellNucleus implements Runnable, ThreadFactory {
    public int    getPrintoutLevel( String cellName ){
       return __cellGlue.getPrintoutLevel( cellName ) ;
    }
+
+    /**
+     * Setup the logging context of the calling thread. Threads
+     * created from the calling thread automatically inherit this
+     * information.
+     */
+    public void initLoggingContext()
+    {
+       MDC.put("cell", getCellName());
+       MDC.put("domain", getCellDomainName());
+    }
+
    public void   sendMessage( CellMessage msg )
           throws NotSerializableException,
                  NoRouteToCellException    {
@@ -231,7 +246,7 @@ public class CellNucleus implements Runnable, ThreadFactory {
        if (!msg.isStreamMode()) {
           msg.touch();
        }
-      __cellGlue.sendMessage( this , msg , locally , remotely ) ;
+       __cellGlue.sendMessage( this , msg , locally , remotely ) ;
 
    }
    public CellMessage   sendAndWait( CellMessage msg , long timeout )
@@ -241,12 +256,12 @@ public class CellNucleus implements Runnable, ThreadFactory {
        return sendAndWait( msg  , true , true , timeout ) ;
    }
 
-   public CellMessage   sendAndWait( CellMessage msg ,
-                                     boolean local ,
-                                     boolean remote ,
-                                     long    timeout )
-          throws NotSerializableException,
-                 NoRouteToCellException   ,
+    public CellMessage sendAndWait(CellMessage msg,
+                                   boolean local,
+                                   boolean remote,
+                                   long    timeout)
+        throws NotSerializableException,
+               NoRouteToCellException,
                InterruptedException
     {
         if (!msg.isStreamMode()) {
@@ -255,34 +270,33 @@ public class CellNucleus implements Runnable, ThreadFactory {
 
         UOID uoid = msg.getUOID();
         try {
-      CellLock    lock   = new CellLock() ;
-         synchronized( _waitHash ){
-            _waitHash.put( uoid , lock ) ;
-         }
+            CellLock lock = new CellLock();
+            synchronized (_waitHash) {
+                _waitHash.put(uoid, lock);
+            }
             nsay("sendAndWait : adding to hash : " + uoid);
 
             __cellGlue.sendMessage(this, msg, local, remote);
 
-         //
-         // because of a linux native thread problem with
-         // wait( n > 0 ) , we have to use a interruptedFlag
-         // and the time messurement.
-         //
+            //
+            // because of a linux native thread problem with
+            // wait( n > 0 ) , we have to use a interruptedFlag
+            // and the time messurement.
+            //
             synchronized (lock) {
-         long start = System.currentTimeMillis() ;
+                long start = System.currentTimeMillis() ;
                 while (lock.getObject() == null && timeout > 0) {
-               lock.wait( timeout ) ;
-               timeout -= ( System.currentTimeMillis() - start ) ;
+                    lock.wait( timeout ) ;
+                    timeout -= (System.currentTimeMillis() - start);
+                }
             }
-         }
-
             CellMessage answer = (CellMessage)lock.getObject();
             return answer == null ? null : new CellMessage(answer);
         } finally {
             synchronized (_waitHash) {
-            _waitHash.remove( uoid ) ;
-         }
-      }
+                _waitHash.remove(uoid);
+            }
+        }
     }
 
    public Map<UOID,CellLock > getWaitQueue(){
@@ -323,11 +337,11 @@ public class CellNucleus implements Runnable, ThreadFactory {
         return size;
    }
 
-   public void sendMessage( CellMessage msg ,
-                            boolean local ,
-                            boolean remote ,
-                            CellMessageAnswerable callback ,
-                            long    timeout )
+    public void sendMessage(CellMessage msg,
+                            boolean local,
+                            boolean remote,
+                            CellMessageAnswerable callback,
+                            long timeout)
         throws NotSerializableException
     {
         if (!msg.isStreamMode()) {
@@ -335,28 +349,26 @@ public class CellNucleus implements Runnable, ThreadFactory {
         }
 
         UOID uoid = msg.getUOID();
-
         boolean success = false;
         try {
-      CellLock    lock   = new CellLock( msg , callback , timeout ) ;
+            CellLock lock = new CellLock(msg, callback, timeout);
             synchronized (_waitHash) {
                 _waitHash.put(uoid, lock);
             }
 
-                __cellGlue.sendMessage( this , msg , local , remote ) ;
+            __cellGlue.sendMessage(this, msg, local, remote);
             success = true;
         } catch (NoRouteToCellException e) {
-                if( callback != null )
+            if (callback != null)
                 callback.exceptionArrived(msg, e);
         } finally {
             if (!success) {
                 synchronized (_waitHash) {
                     _waitHash.remove(uoid);
+                }
             }
-         }
-      }
-   }
-
+        }
+    }
    public void addCellEventListener( CellEventListener listener ){
       __cellGlue.addCellEventListener( this , listener ) ;
 
@@ -398,7 +410,10 @@ public class CellNucleus implements Runnable, ThreadFactory {
         return __cellGlue.join(cellName, timeout);
     }
 
+
    public void run(){
+       initLoggingContext();
+
      if( Thread.currentThread() == _eventThread ){
         CellEvent event ;
         nsay( "messageThread : started" ) ;
@@ -496,12 +511,27 @@ public class CellNucleus implements Runnable, ThreadFactory {
         nsay( "killerThread : stopped" ) ;
      }
    }
-   public Thread newThread( Runnable target ){
-      return new Thread( _threads , target ) ;
-   }
-   public Thread newThread( Runnable target , String name ){
-      return new Thread( _threads , target , name ) ;
-   }
+
+    private Runnable wrapLoggingContext(final Runnable runnable)
+    {
+        return new Runnable() {
+            public void run() {
+                initLoggingContext();
+                runnable.run();
+            }
+        };
+    }
+
+    public Thread newThread(Runnable target)
+    {
+        return new Thread(_threads, wrapLoggingContext(target));
+    }
+
+    public Thread newThread(Runnable target, String name)
+    {
+        return new Thread(_threads, wrapLoggingContext(target), name);
+    }
+
    //
    //  package
    //

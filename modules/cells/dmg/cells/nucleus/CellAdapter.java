@@ -320,6 +320,14 @@ public class   CellAdapter
      * @param Throwable to be printed to <code>stderr</code>.
      */
    public void esay(Throwable t ){  _nucleus.esay(t) ;  }
+
+    /**
+     * Setup the logging context of the calling thread. Threads
+     * created from the calling thread automatically inherit this
+     * information.
+     */
+    public void initLoggingContext() { _nucleus.initLoggingContext(); }
+
    /**
      *  informs the CellCore to remove this cell.
      *  The cell kernel will start the kill sequence as soon as

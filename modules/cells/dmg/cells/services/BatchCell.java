@@ -7,7 +7,7 @@ import java.util.* ;
 import java.io.* ;
 
 /**
-  *  
+  *
   *
   * @author Patrick Fuhrmann
   * @version 0.1, 15 Feb 1998
@@ -17,11 +17,11 @@ public class BatchCell extends CellAdapter implements Runnable {
    private Thread         _worker = null ;
    private CellShell      _shell  = null ;
    private CellNucleus    _nucleus ;
-   
+
    public BatchCell( String name , String [] argStrings )
           throws Exception {
       super( name , ""  , true ) ;
-      
+
       useInterpreter(false) ;
 //      setPrintoutLevel( 3 ) ;
       _nucleus = getNucleus() ;
@@ -53,44 +53,45 @@ public class BatchCell extends CellAdapter implements Runnable {
       }catch( Exception e ){
           kill() ;
           throw e ;
-          
+
       }
-      kill() ; 
+      kill() ;
    }
    public BatchCell( String name , String argString )
           throws Exception {
       super( name , argString  , false ) ;
-      
+
       Args args = getArgs() ;
-      
+
       useInterpreter(false) ;
 //      setPrintoutLevel( 3 ) ;
       _nucleus = getNucleus() ;
       try{
          if( args.argc() < 1 )
             throw new IllegalArgumentException( "Usage : ... <batchFilename>" ) ;
-            
+
          String inputObject = args.argv(0) ;
-         
+
          if( args.getOpt("jar") != null ){
             InputStream input = ClassLoader.getSystemResourceAsStream(inputObject) ;
             if( input == null )
                throw new
                IllegalArgumentException("Resource not found : "+inputObject);
-            _in = new BufferedReader( new InputStreamReader(input) ) ; 
+            _in = new BufferedReader( new InputStreamReader(input) ) ;
          }else{
             _in = new BufferedReader( new FileReader( inputObject ) ) ;
          }
          _shell   = new CellShell( getNucleus() ) ;
-         _worker  = new Thread( this ) ;
+         //         _worker  = getNucleus().newThread(this);
+         _worker = new Thread(this);
          _worker.start() ;
       }catch( Exception e ){
           start() ;
           kill() ;
           throw e ;
-          
+
       }
-      start() ; 
+      start() ;
    }
    public void run(){
      if( Thread.currentThread() == _worker ){
@@ -131,13 +132,13 @@ public class BatchCell extends CellAdapter implements Runnable {
                  break ;
               }
            }
-        
+
         }catch( IOException ioe ){
            esay( "Io Problem : "+ioe ) ;
         }
         try{ _in.close() ; }catch( IOException e ) {}
         kill() ;
      }
-   } 
- 
+   }
+
 }
