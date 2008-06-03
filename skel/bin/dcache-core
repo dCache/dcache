@@ -34,6 +34,24 @@ printConfig() {
 }
 
 
+
+
+dcacheInstallGetNameSpaceServer()
+{
+  local namespaceServer
+  namespaceServer="`printConfig NAMESPACE_NODE`"
+  if [ -z "${namespaceServer}" ] ; then
+    namespaceServer="`printConfig ADMIN_NODE`"
+    if [ -z "${namespaceServer}" ] ; then
+      echo "[WARNING] No 'NAMESPACE_NODE' or 'ADMIN_NODE' set in 'node_config' using 'localhost'"
+      namespaceServer='localhost'
+    else
+      echo "[WARNING] No 'NAMESPACE_NODE' set in 'node_config' using depricated 'ADMIN_NODE' value '${namespaceServer}'"
+    fi
+  fi
+  RET=${namespaceServer}
+}
+
 #
 # valid valued for NODE_TYPE:
 #     admin  : head node
@@ -87,7 +105,7 @@ fi
 
 #  ----  Sanitycheck for ${java}
 
-if test -z "${java}" || ! test -x ${java} || ! ${java} -version 2>&1 | grep -E 'version "1\.[456]' >/dev/null ; then
+if test -z "${java}" || ! test -x ${java} || ! ${java} -version 2>&1 | grep 'version "1\.[456]' >/dev/null ; then
     echo "[ERROR] The variable 'java' in '${ourHomeDir}/config/dCacheSetup' has to be set to a java VM version 1.4 or 1.5. Exiting."
     exit 1
 fi
@@ -132,18 +150,19 @@ case "$1" in
 
 		    cp=`df ${PNFS_ROOT}/${SERVER_ID} 2>/dev/null |grep "${PNFS_ROOT}" | awk '{print $2}'`
 		    if [ -z $cp ]; then
-			ADMIN_NODE=`printConfig ADMIN_NODE`
-			if [ -z "$ADMIN_NODE" -o "$ADMIN_NODE" = myAdminNode ] ; then
-			    echo "[ERROR] pnfs not mounted on ${PNFS_ROOT}/${SERVER_ID}/ and ADMIN_NODE"
+		    	dcacheInstallGetNameSpaceServer
+			NAMESPACE_NODE=$RET
+			if [ -z "$NAMESPACE_NODE" -o "$NAMESPACE_NODE" = myAdminNode  -o "$NAMESPACE_NODE" = myNameSpaceNode ] ; then
+			    echo "[ERROR] pnfs not mounted on ${PNFS_ROOT}/${SERVER_ID}/ and NAMESPACE_NODE"
                 	    echo "        in etc/node_config or etc/door_config not set properly. Exiting."
 			    exit 1
 			fi
 			echo "${PNFS_ROOT}/${SERVER_ID}/ not mounted - going to mount it now ... "
-			mount -o intr,rw,noac,hard,nfsvers=2 $ADMIN_NODE:/pnfsdoors ${PNFS_ROOT}/${SERVER_ID}
+			mount -o intr,rw,noac,hard,nfsvers=2 $NAMESPACE_NODE:/pnfsdoors ${PNFS_ROOT}/${SERVER_ID}
 			cp=`df ${PNFS_ROOT}/${SERVER_ID} 2>/dev/null |grep "${PNFS_ROOT}" | awk '{print $2}'`
 			if [ -z $cp ]; then
 			    echo "[ERROR] Still not mounted. Apparently no pnfs server running on admin"
-                	    echo "        node $ADMIN_NODE. Exiting."
+                	    echo "        node $NAMESPACE_NODE. Exiting."
 			    exit 1
 			fi
 		    fi
