@@ -87,7 +87,7 @@ abstract public class CellMessageHandlerSkel implements CellMessageAnswerable {
 		if( _log.isDebugEnabled())
 			_log.debug( "incoming CellMessage received from " + answer.getSourceAddress());
 
-		long ttl = _msgHandlerChain.getMetricLifetime( request);
+		long ttl = _msgHandlerChain.getMetricLifetime( request.getUOID());
 		
 		process( payload, ttl);
 	}
