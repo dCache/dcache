@@ -105,6 +105,7 @@ define context httpdSetup endDefine
    set alias flushManager class diskCacheV111.hsmControl.flush.HttpHsmFlushMgrEngineV1 mgr=hfc css=default
    set alias pools class diskCacheV111.services.web.PoolInfoObserverEngineV2 -showPoolGroupUsage=true
    set alias statistics directory ${statisticsLocation}
+   set alias info class org.dcache.services.info.InfoHttpEngine
    set update 60
 endDefine
 
