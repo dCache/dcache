@@ -874,7 +874,12 @@ dcacheInstallPnfsMountPointServer()
     logmessage ERROR "Was not able to mount ${pnfsServer}:/fs to ${pnfsMountPoint}. Exiting."
     exit 1
   fi
-  dcacheInstallPnfsConfigCheck
+  dcacheNameServerIs
+  dcacheNameServerIs=$?
+  if [ "${dcacheNameServerIs}" == "1" ]
+  then
+    dcacheInstallPnfsConfigCheck
+  fi
   logmessage DEBUG "dcacheInstallPnfsMountPointServer.stop"
 }
 
