@@ -40,7 +40,7 @@ public class CellNucleus implements Runnable, ThreadFactory {
    private final static Logger _logMessages = Logger.getLogger("logger.org.dcache.cells.messages");
 
    //  have to be synchronized map
-   private final  Map<UOID, CellLock> _waitHash         = new Hashtable<UOID, CellLock>() ;
+   private final  Map<UOID, CellLock> _waitHash = new HashMap<UOID, CellLock>();
    private        boolean   _runAsyncCallback = false ;
 
    public CellNucleus( Cell cell , String name ){
@@ -212,14 +212,14 @@ public class CellNucleus implements Runnable, ThreadFactory {
           throws NotSerializableException,
                  NoRouteToCellException    {
 
-      __cellGlue.sendMessage( this , msg , true , true ) ;
+       sendMessage( msg , true , true ) ;
 
    }
    public void   resendMessage( CellMessage msg )
           throws NotSerializableException,
                  NoRouteToCellException    {
 
-      __cellGlue.sendMessage( this , msg , false , true ) ;
+       sendMessage( msg , false , true ) ;
 
    }
    public void   sendMessage( CellMessage msg ,
@@ -228,6 +228,9 @@ public class CellNucleus implements Runnable, ThreadFactory {
           throws NotSerializableException,
                  NoRouteToCellException    {
 
+       if (!msg.isStreamMode()) {
+          msg.touch();
+       }
       __cellGlue.sendMessage( this , msg , locally , remotely ) ;
 
    }
@@ -237,54 +240,51 @@ public class CellNucleus implements Runnable, ThreadFactory {
                  InterruptedException      {
        return sendAndWait( msg  , true , true , timeout ) ;
    }
+
    public CellMessage   sendAndWait( CellMessage msg ,
                                      boolean local ,
                                      boolean remote ,
                                      long    timeout )
           throws NotSerializableException,
                  NoRouteToCellException   ,
-                 InterruptedException      {
+               InterruptedException
+    {
+        if (!msg.isStreamMode()) {
+            msg.touch();
+        }
 
+        UOID uoid = msg.getUOID();
+        try {
       CellLock    lock   = new CellLock() ;
-      CellMessage answer = null ;
-      UOID        uoid   = null ;
-
-      synchronized( lock ){
-
          synchronized( _waitHash ){
-            __cellGlue.sendMessage( this , msg , local , remote ) ;
-            uoid = msg.getUOID();
             _waitHash.put( uoid , lock ) ;
-            nsay( "sendAndWait : adding to hash : "+msg.getUOID() ) ;
          }
+            nsay("sendAndWait : adding to hash : " + uoid);
+
+            __cellGlue.sendMessage(this, msg, local, remote);
+
          //
          // because of a linux native thread problem with
          // wait( n > 0 ) , we have to use a interruptedFlag
          // and the time messurement.
          //
+            synchronized (lock) {
          long start = System.currentTimeMillis() ;
-         try{
-            while( timeout > 0 ){
+                while (lock.getObject() == null && timeout > 0) {
                lock.wait( timeout ) ;
-               if( lock.getObject() != null )break ;
                timeout -= ( System.currentTimeMillis() - start ) ;
             }
-         }catch(InterruptedException we ){
-            _waitHash.remove( uoid ) ;
-            throw we ;
          }
 
-         answer = (CellMessage)lock.getObject() ;
-
-         if( answer == null ){
+            CellMessage answer = (CellMessage)lock.getObject();
+            return answer == null ? null : new CellMessage(answer);
+        } finally {
+            synchronized (_waitHash) {
             _waitHash.remove( uoid ) ;
-            return null ;
          }
-
       }
-      return new CellMessage( answer ) ;
+    }
 
-   }
    public Map<UOID,CellLock > getWaitQueue(){
 
       Map<UOID,CellLock > hash = new HashMap<UOID,CellLock >() ;
@@ -328,26 +328,33 @@ public class CellNucleus implements Runnable, ThreadFactory {
                             boolean remote ,
                             CellMessageAnswerable callback ,
                             long    timeout )
-          throws NotSerializableException  {
+        throws NotSerializableException
+    {
+        if (!msg.isStreamMode()) {
+            msg.touch();
+        }
 
+        UOID uoid = msg.getUOID();
+
+        boolean success = false;
+        try {
       CellLock    lock   = new CellLock( msg , callback , timeout ) ;
-
-      synchronized( lock ){
-
-         synchronized( _waitHash ){
-            try{
-                __cellGlue.sendMessage( this , msg , local , remote ) ;
-            }catch( NoRouteToCellException nrtce ){
-                if( callback != null )
-                    callback.exceptionArrived( msg , nrtce ) ;
-                return ;
+            synchronized (_waitHash) {
+                _waitHash.put(uoid, lock);
             }
-            _waitHash.put( msg.getUOID() , lock ) ;
+
+                __cellGlue.sendMessage( this , msg , local , remote ) ;
+            success = true;
+        } catch (NoRouteToCellException e) {
+                if( callback != null )
+                callback.exceptionArrived(msg, e);
+        } finally {
+            if (!success) {
+                synchronized (_waitHash) {
+                    _waitHash.remove(uoid);
+            }
          }
-
       }
-      return ;
-
    }
 
    public void addCellEventListener( CellEventListener listener ){
@@ -548,6 +555,7 @@ public class CellNucleus implements Runnable, ThreadFactory {
          if( msg != null ){
             nsay( "addToEventQueue : message arrived : "+msg ) ;
             CellLock lock ;
+
             synchronized( _waitHash ){
                 lock = _waitHash.remove( msg.getLastUOID() ) ;
             }

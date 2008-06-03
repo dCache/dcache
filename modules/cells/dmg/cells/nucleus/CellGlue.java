@@ -519,7 +519,6 @@ class CellGlue {
           // - we have to convert the message to stream.
           // - and we have to set our address to find the way back
           //
-          msg.touch() ;
           transponder = new CellMessage( msg ) ;
           transponder.addSourceAddress( nucleus.getThisAddress() ) ;
       }
