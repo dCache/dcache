@@ -653,23 +653,28 @@
     <!--
         MAKE TEST BUILD.
 
-        the timestamp used as rpm version to guarantee increased version numbers.
+        the revision number is used as rpm version to guarantee increased version numbers.
         this will help some tools like yum and apt to autoinstall new builds.
 
         current procedure contains following steps:
 
-        1. set rpm/tar name to relese id + time, e.q. production-1.8.0-b20080602112600
+        1. set rpm/tar name to relese id + time, e.q. production-1.8.0-b9200
         2. build rpm and tar
         3. publish to apt/yum repository
     -->
     <target name="test-build" description="Build a new version for testing">
 
-        <echo message="new test build : ${release.id}-b${file-timestamp}" />
+        <!-- get repository current  revision -->
+        <svn>
+            <status path="." revisionProperty="current.revision" />
+        </svn>
+
+        <echo message="new test build : ${release.id}-b${current.revision}" />
 
         <!-- STEP 1 snd 2 : set rpm name to release id and build -->
         <antcall target="server.rpm">
-             <param name="build.minor.number" value="b${file-timestamp}" />
-             <param name="release.name" value="b${file-timestamp}" />
+             <param name="build.minor.number" value="b${current.revision}" />
+             <param name="release.name" value="b${current.revision}" />
         </antcall>
 
     </target>
