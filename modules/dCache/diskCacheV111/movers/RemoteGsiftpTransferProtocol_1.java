@@ -484,8 +484,18 @@ public class RemoteGsiftpTransferProtocol_1
                 _ftpCksm = _client.negotiateCksm(src_url.getPath());
                 _cksmFactory = ChecksumFactory.getFactory(_ftpCksm.type);
                 return _cksmFactory;
+            } catch (NoSuchAlgorithmException e) {
+                esay("Checksum algorithm is not supported: " + e.getMessage());
+            } catch (NoRouteToCellException e) {
+                esay("Failed to communicate with transfer manager: " + e.getMessage());
+            } catch (GlobusCredentialException e) {
+                esay("Failed to authenticate with FTP server: " + e.getMessage());
+            } catch (GSSException e) {
+                esay("Failed to authenticate with FTP server: " + e.getMessage());
+            } catch (IOException e) {
+                esay("I/O failure talking to FTP server: " + e.getMessage());
             } catch (Exception e) {
-                esay("Checksum Algorithm is not supported: " + e.toString());
+                esay("Failed to negotiate checksum with FTP server: " + e.getMessage());
             }
         }
         return null;
