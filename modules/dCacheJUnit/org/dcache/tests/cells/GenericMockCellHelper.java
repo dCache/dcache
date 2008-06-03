@@ -17,7 +17,31 @@ import diskCacheV111.vehicles.Message;
 
 public class GenericMockCellHelper extends CellAdapterHelper {
 
-    private static final Map<CellPath, Map<String, List<Message>>> _messageQueue = new HashMap<CellPath, Map<String, List<Message>>>();
+
+
+    private static class MessageEnvelope {
+
+        private final Message _message;
+        private final boolean _isPersistent;
+
+        MessageEnvelope(Message message, boolean isPersistent) {
+            _message = message;
+            _isPersistent = isPersistent;
+        }
+
+        Message getMessage() {
+            return _message;
+        }
+
+        boolean isPesistent() {
+            return _isPersistent;
+        }
+    }
+
+
+    private static final Map<CellPath, Map<String, List<MessageEnvelope>>> _messageQueue = new HashMap<CellPath, Map<String, List<MessageEnvelope>>>();
+    private final static Map<String, Map<Class<?>, MessageAction>> _messageActions = new HashMap<String, Map<Class<?>,MessageAction>>();
+
     private final CellNucleus _nucleus;
 
     public GenericMockCellHelper(String name, String args) {
@@ -35,19 +59,25 @@ public class GenericMockCellHelper extends CellAdapterHelper {
 
             CellPath destinationPath = msg.getDestinationAddress();
 
-            Map<String, List<Message>> messagesByType = _messageQueue.get(destinationPath);
+            Map<String, List<MessageEnvelope>> messagesByType = _messageQueue.get(destinationPath);
             if( messagesByType == null ) {
                 return null;
             }
 
             String messageType = messageObject.getClass().getName();
-            List<Message> messages = messagesByType.get(messageType);
+            List<MessageEnvelope> messages = messagesByType.get(messageType);
 
             if( messages == null || messages.isEmpty() ) {
                 return null;
             }
 
-            Message message = messages.remove(0);
+            MessageEnvelope messageEnvelope = messages.get(0);
+            if( !messageEnvelope.isPesistent() ) {
+                messages.remove(0);
+            }
+
+            Message message = messageEnvelope.getMessage();
+            message.setReply();
             msg.setMessageObject(message);
 
             return msg;
@@ -58,26 +88,56 @@ public class GenericMockCellHelper extends CellAdapterHelper {
 
     @Override
     public void sendMessage(CellMessage msg) throws NotSerializableException, NoRouteToCellException {
-        // OK :)
+
+        String destinations = msg.getDestinationPath().getCellName();
+
+        Map<Class<?>, MessageAction> actions = _messageActions.get(destinations);
+        if(actions != null ) {
+            // there is something pre-defined
+            MessageAction action =  actions.get(msg.getMessageObject().getClass());
+            if( action != null) {
+                msg.revertDirection();
+                action.messageArraved(msg);
+            }
+        }
+
+    }
+
+    /**
+     *
+     * same as <i>prepareMessage( cellPath, message, false);</i>
+     *
+     * @param cellPath
+     * @param message
+     */
+    public static void prepareMessage(CellPath cellPath, Message message) {
+        prepareMessage( cellPath, message, false);
     }
 
 
-    public static void prepareMessage(CellPath cellPath, Message message) {
+    /**
+     * create pre-defined reply from a cell.
+     *
+     * @param cellPath
+     * @param message
+     * @param isPesistent remove message from reply list if false
+     */
+    public static void prepareMessage(CellPath cellPath, Message message, boolean isPesistent) {
 
-        Map<String, List<Message>> messagesByType = _messageQueue.get(cellPath);
+        Map<String, List<MessageEnvelope>> messagesByType = _messageQueue.get(cellPath);
 
         if( messagesByType == null ) {
-            messagesByType = new HashMap<String,List<Message>>();
+            messagesByType = new HashMap<String,List<MessageEnvelope>>();
             _messageQueue.put(cellPath, messagesByType);
         }
 
         String messageType = message.getClass().getName();
-        List<Message> messages = messagesByType.get(messageType);
+        List<MessageEnvelope> messages = messagesByType.get(messageType);
         if(messages == null) {
-            messages = new ArrayList<Message>();
+            messages = new ArrayList<MessageEnvelope>();
             messagesByType.put(messageType, messages);
         }
-        messages.add(message);
+        messages.add( new MessageEnvelope(message, isPesistent));
 
     }
 
@@ -123,5 +183,31 @@ public class GenericMockCellHelper extends CellAdapterHelper {
 
     }
 
+    public static void registerAction(String cellName, Class<?> messageClass, MessageAction action ) {
 
+
+        Map<Class<?>,MessageAction> actions = _messageActions.get(cellName);
+        if( actions == null ) {
+            actions = new HashMap<Class<?>,MessageAction>();
+            _messageActions.put(cellName, actions);
+        }
+
+        actions.put(messageClass, action);
+
+    }
+
+
+
+    public interface MessageAction {
+
+        public void messageArraved(CellMessage message);
+
+    }
+
+
+
+    public static void clean() {
+        _messageActions.clear();
+        _messageQueue.clear();
+    }
 }
