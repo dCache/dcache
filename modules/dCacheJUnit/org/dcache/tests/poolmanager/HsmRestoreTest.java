@@ -325,12 +325,9 @@ public class HsmRestoreTest {
 
 
         final AtomicInteger stageRequests1 = new AtomicInteger(0);
-        final AtomicInteger stageRequests2 = new AtomicInteger(0);
 
         MessageAction messageAction1 = new StageMessageAction(stageRequests1);
-        MessageAction messageAction2 = new StageMessageAction(stageRequests2);
         GenericMockCellHelper.registerAction("pool1", PoolFetchFileMessage.class,messageAction1 );
-        GenericMockCellHelper.registerAction("pool2", PoolFetchFileMessage.class,messageAction2 );
 
         PoolMgrSelectReadPoolMsg selectReadPool = new PoolMgrSelectReadPoolMsg(pnfsId, _storageInfo, _protocolInfo, _storageInfo.getFileSize());
         CellMessage cellMessage = new CellMessage( new CellPath("PoolManager"), selectReadPool);
