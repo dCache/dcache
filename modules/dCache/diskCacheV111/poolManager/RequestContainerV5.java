@@ -2266,8 +2266,6 @@ public class RequestContainerV5 implements Runnable {
                  }
             }else{
 
-                say("askFor "+mode+" : Second shot excluding : "+_poolCandidateInfo.getPoolName() ) ;
-
                  //
                  // find a pool which is not identical to the first candidate
                  //
@@ -2289,7 +2287,10 @@ public class RequestContainerV5 implements Runnable {
                        //
                        // skip this one if we tried this last time
                        //
-                       if( c.getPoolName().equals(_poolCandidateInfo.getPoolName()) &&  n.hasNext())continue;
+                       if( c.getPoolName().equals(_poolCandidateInfo.getPoolName()) &&  n.hasNext() ) {
+                           say("askFor "+mode+" : Second shot excluding : " + _poolCandidateInfo.getPoolName() ) ;
+                           continue;
+                       }
 
                        //
                        //  If the setting disallows 'sameHostRetry' and the hostname information
