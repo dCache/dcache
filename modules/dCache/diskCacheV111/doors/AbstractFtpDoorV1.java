@@ -1023,7 +1023,7 @@ public abstract class AbstractFtpDoorV1
             if (_transferInProgress &&
                 !(cmd.equals("abor") || cmd.equals("mic")
                   || cmd.equals("conf") || cmd.equals("enc"))) {
-                reply("503  Transfer in progress", false);
+                reply("503 Transfer in progress", false);
                 return;
             }
         }
@@ -3057,7 +3057,7 @@ public abstract class AbstractFtpDoorV1
                     ChecksumPersistence.getPersistenceMgr().store(this, _transfer.pnfsId, _checkSum, true);
                 } catch (Exception e) {
                     throw new FTPCommandException(451,
-                                                  "Failed to send crc to PnfsManager : "
+                                                  "Failed to store checksum: "
                                                   + e.getMessage());
                 }
             }
