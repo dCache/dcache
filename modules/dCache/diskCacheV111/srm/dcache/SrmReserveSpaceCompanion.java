@@ -54,28 +54,28 @@ COPYRIGHT STATUS:
   and software for U.S. Government purposes.  All documents and software
   available from this server are protected under the U.S. and Foreign
   Copyright Laws, and FNAL reserves all rights.
- 
- 
+
+
  Distribution of the software available from this server is free of
  charge subject to the user following the terms of the Fermitools
  Software Legal Information.
- 
+
  Redistribution and/or modification of the software shall be accompanied
  by the Fermitools Software Legal Information  (including the copyright
  notice).
- 
+
  The user is asked to feed back problems, benefits, and/or suggestions
  about the software to the Fermilab Software Providers.
- 
- 
+
+
  Neither the name of Fermilab, the  URA, nor the names of the contributors
  may be used to endorse or promote products derived from this software
  without specific prior written permission.
- 
- 
- 
+
+
+
   DISCLAIMER OF LIABILITY (BSD):
- 
+
   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
   "AS IS" AND ANY EXPRESS OR IMPLIED  WARRANTIES, INCLUDING, BUT NOT
   LIMITED TO, THE IMPLIED  WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -88,10 +88,10 @@ COPYRIGHT STATUS:
   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT  OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE  POSSIBILITY OF SUCH DAMAGE.
- 
- 
+
+
   Liabilities of the Government:
- 
+
   This software is provided by URA, independent from its Prime Contract
   with the U.S. Department of Energy. URA is acting independently from
   the Government and in its own private capacity and is not acting on
@@ -101,10 +101,10 @@ COPYRIGHT STATUS:
   be liable for nor assume any responsibility or obligation for any claim,
   cost, or damages arising out of or resulting from the use of the software
   available from this server.
- 
- 
+
+
   Export Control:
- 
+
   All documents and software available from this server are subject to U.S.
   export control laws.  Anyone downloading information from this server is
   obligated to secure any necessary Government licenses before exporting
@@ -124,7 +124,6 @@ import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageAnswerable;
 
-import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PnfsId;
 import org.dcache.srm.SrmReserveSpaceCallbacks;
 import diskCacheV111.services.space.message.Reserve;
@@ -151,13 +150,13 @@ public class SrmReserveSpaceCompanion implements CellMessageAnswerable {
     private  static final int RECEIVED_SPACE_MANAGER_RESPONSE_STATE=2;
     private volatile int state = NOT_WAITING_STATE;
     private DCacheUser user;
-    private long sizeInBytes; 
+    private long sizeInBytes;
     private long spaceReservationLifetime;
     private String retentionPolicy;
     private String accessLatency;
-    private String description;          
+    private String description;
     private SrmReserveSpaceCallbacks callbacks;
-    private CellAdapter cell;   
+    private CellAdapter cell;
     private CellMessage request = null;
     private String spaceManagerPath = "SrmSpaceManager";
     private void say(String words_of_wisdom) {
@@ -165,7 +164,7 @@ public class SrmReserveSpaceCompanion implements CellMessageAnswerable {
             cell.say(" ReserveSpaceCompanion : "+words_of_wisdom);
         }
     }
-    
+
     private void esay(String words_of_despare) {
         if(cell!=null) {
             cell.esay(" ReserveSpaceCompanion : "+words_of_despare);
@@ -177,7 +176,7 @@ public class SrmReserveSpaceCompanion implements CellMessageAnswerable {
             cell.esay(t);
         }
     }
-    
+
     public static final String getStateString(int state) {
         switch(state) {
             case NOT_WAITING_STATE:
@@ -190,17 +189,17 @@ public class SrmReserveSpaceCompanion implements CellMessageAnswerable {
                 return "UNKNOWN";
         }
     }
-    
-    
+
+
     /** Creates a new instance of StageAndPinCompanion */
-    
+
     private SrmReserveSpaceCompanion(
     DCacheUser user,
-    long sizeInBytes, 
-    long spaceReservationLifetime, 
-    String retentionPolicy, 
-    String accessLatency, 
-    String description,            
+    long sizeInBytes,
+    long spaceReservationLifetime,
+    String retentionPolicy,
+    String accessLatency,
+    String description,
     SrmReserveSpaceCallbacks callbacks,
     CellAdapter cell) {
         this.user = user;
@@ -212,7 +211,7 @@ public class SrmReserveSpaceCompanion implements CellMessageAnswerable {
         this.callbacks = callbacks;
         this.cell = cell;
     }
-    
+
     public void answerArrived( final CellMessage req , final CellMessage answer ) {
         say("answerArrived");
         diskCacheV111.util.ThreadManager.execute(new Runnable() {
@@ -221,7 +220,7 @@ public class SrmReserveSpaceCompanion implements CellMessageAnswerable {
             }
         });
     }
-    
+
     private void processMessage( CellMessage req , CellMessage answer ) {
         int current_state = state;
         say("answerArrived, state="+getStateString(current_state));
@@ -246,7 +245,7 @@ public class SrmReserveSpaceCompanion implements CellMessageAnswerable {
                         SpaceException se = (SpaceException)eo;
                         callbacks.ReserveSpaceFailed(se.getMessage());
                         return;
-                        
+
                     }
                     callbacks.ReserveSpaceFailed(
                     "Space Reservation failed: SpaceManagerReserveSpaceMessage."+
@@ -273,7 +272,7 @@ public class SrmReserveSpaceCompanion implements CellMessageAnswerable {
             //" : "+o) ;
         }
     }
-    
+
     public void exceptionArrived( CellMessage request , Exception exception ) {
         esay("exceptionArrived "+exception+" for request "+request);
         callbacks.ReserveSpaceFailed(exception);
@@ -283,10 +282,10 @@ public class SrmReserveSpaceCompanion implements CellMessageAnswerable {
         callbacks.ReserveSpaceFailed("answerTimedOut for request "+request);
     }
     public String toString() {
-        
+
         return this.getClass().getName()+sizeInBytes;
     }
-    
+
     private void reserveSpace() {
         AccessLatency accessLatency=null;
         RetentionPolicy retentionPolicy=null;
@@ -302,7 +301,7 @@ public class SrmReserveSpaceCompanion implements CellMessageAnswerable {
         }
         if(this.retentionPolicy != null) {
             try{
-        
+
                 retentionPolicy =
                         RetentionPolicy.getRetentionPolicy(this.retentionPolicy);
             }
@@ -311,8 +310,8 @@ public class SrmReserveSpaceCompanion implements CellMessageAnswerable {
                 return;
             }
         }
-            
-            Reserve reserve = 
+
+            Reserve reserve =
             new Reserve(
                     user.getVoGroup(),
                     user.getVoRole(),
@@ -336,23 +335,23 @@ public class SrmReserveSpaceCompanion implements CellMessageAnswerable {
                 callbacks.ReserveSpaceFailed("can not contact space manager: " +
                 ee.toString());
             }
-        
+
     }
-    
+
     public static void reserveSpace(
     DCacheUser user,
-    long sizeInBytes, 
-    long spaceReservationLifetime, 
-    String retentionPolicy, 
-    String accessLatency, 
+    long sizeInBytes,
+    long spaceReservationLifetime,
+    String retentionPolicy,
+    String accessLatency,
     String description,
     SrmReserveSpaceCallbacks callbacks,
     CellAdapter cell) {
         cell.say(" SrmReserveSpaceCompanion.reserveSpace("+user+" for "+sizeInBytes+
                 " bytes, access lat.="+accessLatency+" retention pol.="+retentionPolicy+
                 ")");
-                
-        
+
+
 
         SrmReserveSpaceCompanion companion = new SrmReserveSpaceCompanion(
                   user,
@@ -361,10 +360,10 @@ public class SrmReserveSpaceCompanion implements CellMessageAnswerable {
                   retentionPolicy,
                   accessLatency,
                   description,
-                  callbacks,            
+                  callbacks,
                   cell);
         companion.reserveSpace();
     }
-    
+
 }
 

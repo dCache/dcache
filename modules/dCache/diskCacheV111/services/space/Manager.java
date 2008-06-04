@@ -238,7 +238,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Hashtable;
 import java.util.Iterator;
-import diskCacheV111.util.FsPath;
 import diskCacheV111.vehicles.PoolStatusChangedMessage;
 import java.util.Date;
 import diskCacheV111.util.Pgpass;
@@ -264,7 +263,7 @@ import diskCacheV111.vehicles.GridProtocolInfo;
 public class Manager
         extends CellAdapter
         implements Runnable {
-    
+
     /*
      *Configuration variables
      */
@@ -276,7 +275,7 @@ public class Manager
     private String pwdfile;
     private long updateLinkGroupsPeriod = 3*60*1000;  //3 minutes default
     private long expireSpaceReservationsPeriod     = 3*60*1000;  //3 minutes default
-    
+
     private boolean deleteStoredFileRecord = false;
     private String pnfsManager = "PnfsManager";
     private String poolManager = "PoolManager";
@@ -286,9 +285,9 @@ public class Manager
     private AccessLatency defaultLatency = AccessLatency.NEARLINE;
     private RetentionPolicy defaultPolicy = RetentionPolicy.CUSTODIAL;
     private boolean reserveSpaceForNonSRMTransfers;
-    private boolean returnFlushedSpaceToReservation=true; 
-    private boolean returnRemovedSpaceToReservation=true; 
-    
+    private boolean returnFlushedSpaceToReservation=true;
+    private boolean returnRemovedSpaceToReservation=true;
+
     private String linkGroupAuthorizationFileName = null;
     private boolean spaceManagerEnabled =true;
 
@@ -299,13 +298,13 @@ public class Manager
     private int previousSchemaVersion;
     private static final String SpaceManagerSchemaVersionTableName =
             "srmspacemanagerschemaversion" ;
-    
-    
+
+
     private static final String SpaceManagerNextIdTableName =
             "srmspacemanagernextid";
     private static final String LinkGroupTableName =
             "srmLinkGroup".toLowerCase();
-    
+
     // LinkGroup Storage Groups
     private static final String LinkGroupVOsTableName =
             "srmLinkGroupVOs".toLowerCase();
@@ -323,7 +322,7 @@ public class Manager
 // assume the states are known numbers for now
 //    private String SpaceReservationFileStateTableName =
 //        "srmSpaceReservationFileState".toLowerCase();
-    
+
     protected static final String stringType=" VARCHAR(32672) ";
     protected static final String longType=" BIGINT ";
     protected static final String intType=" INTEGER ";
@@ -336,7 +335,7 @@ public class Manager
     private static final String CreateSpaceManagerNextIdTable =
             "CREATE TABLE "+SpaceManagerNextIdTableName+
             " ( NextToken "+ longType + " )";
-    
+
     private static final String CreateLinkGroupTable =
             "CREATE TABLE "+ LinkGroupTableName+" ( "+
             " id "+longType+" NOT NULL PRIMARY KEY "+
@@ -349,7 +348,7 @@ public class Manager
             ", outputAllowed"+booleanType+" "+
             ", custodialAllowed"+booleanType+" "+
             ")";
-    
+
     private static final String CreateLinkGroupVOsTable =
             "CREATE TABLE "+ LinkGroupVOsTableName+" ( "+
             " VOGroup "+stringType+" NOT NULL "+
@@ -361,17 +360,17 @@ public class Manager
             LinkGroupTableName +" (id) "+
             " ON DELETE RESTRICT"+
             ")";
-    
+
     private static final String CreateRetentionPolicyTable =
             "CREATE TABLE "+ RetentionPolicyTableName+" ( "+
             " id "+intType+" NOT NULL PRIMARY KEY "+
             ", name "+stringType+" )";
-    
+
     private static final String CreateAccessLatencyTable =
             "CREATE TABLE "+ AccessLatencyTableName+" ( "+
             " id "+intType+" NOT NULL PRIMARY KEY "+
             ", name "+stringType+" )";
-    
+
     private static final String CreateSpaceTable =
             "CREATE TABLE "+ SpaceTableName+" ( "+
             " id "+longType+" NOT NULL PRIMARY KEY "+
@@ -396,7 +395,7 @@ public class Manager
             RetentionPolicyTableName +" (id) "+
             " ON DELETE RESTRICT"+
             ")";
-    
+
     private static final String CreateSpaceFileTable =
             "CREATE TABLE "+ SpaceFileTableName+" ( "+
             " id "+longType+" NOT NULL PRIMARY KEY "+
@@ -415,10 +414,10 @@ public class Manager
             " ON DELETE RESTRICT"+
             ")";
     private Args _args;
-    
+
     /** Creates a new instance of SpaceManager */
     public Manager(String name, String argString) throws Exception {
-        
+
         super( name ,Manager.class.getName(), argString , false );
 
         _args = getArgs();
@@ -435,31 +434,31 @@ public class Manager
         if(pgBasedPass != null) {
             pass = pgBasedPass;
         }
-        
+
         connection_pool = JdbcConnectionPool.getPool(jdbcUrl, jdbcClass, user, pass);
-        
-        spaceManagerEnabled = 
+
+        spaceManagerEnabled =
                 isOptionSetToTrueOrYes("spaceManagerEnabled",spaceManagerEnabled);
         say("spaceManagerEnabled="+spaceManagerEnabled);
-        
+
         if(_args.getOpt("poolManager") != null) {
             poolManager = _args.getOpt("poolManager");
         }
         if(_args.getOpt("quotaManager") != null) {
             quotaManager = _args.getOpt("quotaManager");
         }
-        
+
         if(_args.getOpt("pnfsManager") != null) {
             pnfsManager = _args.getOpt("pnfsManager");
         }
-        
+
         if(_args.getOpt("updateLinkGroupsPeriod") != null) {
             updateLinkGroupsPeriod = Long.parseLong(_args.getOpt("updateLinkGroupsPeriod"));
         }
         if(_args.getOpt("expireSpaceReservationsPeriod") != null) {
             expireSpaceReservationsPeriod = Long.parseLong(_args.getOpt("expireSpaceReservationsPeriod"));
         }
-        
+
         if(_args.getOpt("cleanupPeriod") != null) {
             spaceReservationCleanupPeriodInSeconds = Long.parseLong(_args.getOpt("cleanupPeriod"));
         }
@@ -485,23 +484,23 @@ public class Manager
             returnRemovedSpaceToReservation=
                     _args.getOpt("returnRemovedSpaceToReservation").equalsIgnoreCase("true");
         }
-        
+
         if(_args.getOpt("linkGroupAuthorizationFileName") != null) {
             String tmp = _args.getOpt("linkGroupAuthorizationFileName").trim();
             if(tmp.length() >0) {
                 linkGroupAuthorizationFileName = tmp;
             }
         }
-        
+
         if(deleteStoredFileRecord  && returnRemovedSpaceToReservation) {
             esay("configuration conflict: returnRemovedSpaceToReservation == true and deleteStoredFileRecord == true");
             throw new IllegalArgumentException("configuration conflict: returnRemovedSpaceToReservation == true and deleteStoredFileRecord == true");
         }
-        
+
         try {
             dbinit();
             //initializeDatabasePinRequests();
-            
+
         } catch (Throwable t) {
             esay("error starting space.Manager");
             esay(t);
@@ -513,22 +512,22 @@ public class Manager
         getNucleus().setPrintoutLevel(3);
         (updateLinkGroups = getNucleus().newThread(this,"UpdateLinkGroups")).start();
         (expireSpaceReservations = getNucleus().newThread(this,"ExpireThreadReservations")).start();
-        
+
     }
       private boolean isOptionSetToTrueOrYes(String value) {
         String tmpstr = _args.getOpt(value);
         return tmpstr != null &&
-            (tmpstr.equalsIgnoreCase("true") || 
+            (tmpstr.equalsIgnoreCase("true") ||
              tmpstr.equalsIgnoreCase("on")   ||
              tmpstr.equalsIgnoreCase("yes")  ||
              tmpstr.equalsIgnoreCase("enabled") ) ;
     }
-    
+
     private boolean isOptionSetToTrueOrYes(String value, boolean default_value) {
         String tmpstr = _args.getOpt(value);
        if( tmpstr != null) {
             return
-             tmpstr.equalsIgnoreCase("true") || 
+             tmpstr.equalsIgnoreCase("true") ||
              tmpstr.equalsIgnoreCase("on")   ||
              tmpstr.equalsIgnoreCase("yes")  ||
              tmpstr.equalsIgnoreCase("enabled") ;
@@ -536,10 +535,10 @@ public class Manager
             return default_value;
        }
     }
- 
-    
+
+
     public CellVersion getCellVersion(){ return new CellVersion(diskCacheV111.util.Version.getVersion(),"$Revision: 1.63 $" ); }
-    
+
     public void getInfo(java.io.PrintWriter printWriter) {
         printWriter.println("space.Manager "+getCellName());
         printWriter.println("spaceManagerEnabled="+spaceManagerEnabled);
@@ -559,7 +558,7 @@ public class Manager
         printWriter.println("returnRemovedSpaceToReservation="+returnRemovedSpaceToReservation);
         printWriter.println("linkGroupAuthorizationFileName="+linkGroupAuthorizationFileName);
     }
-    
+
     public String hh_release = " <spaceToken> [ <bytes> ] # release the space " +
         "reservation identified by <spaceToken>" ;
     public String ac_release_$_1_2(Args args) throws Exception {
@@ -583,7 +582,7 @@ public class Manager
         }
         return "update started";
     }
-    
+
     public String hh_ls = " [-l] <id> # list space reservations";
     public String ac_ls_$_0_1(Args args) throws Exception {
         boolean isLongFormat = args.getOpt("l") != null;
@@ -612,7 +611,7 @@ public class Manager
         listLinkGroups(isLongFormat,all,id,sb);
         return sb.toString();
     }
-     
+
     public String hh_ls_file_space_tokens = " <pnfsId>|<pnfsPath> # list space tokens " +
         "that contain a file";
      public String ac_ls_file_space_tokens_$_1(Args args) throws Exception {
@@ -636,12 +635,12 @@ public class Manager
         }
         return sb.toString();
     }
-    
+
     public String hh_reserve = "  [-vog=voGroup] [-vor=voRole] " +
          "[-acclat=AccessLatency] [-retpol=RetentionPolicy] [-desc=Description] " +
         " [-lgid=LinkGroupId]" +
         " [-lg=LinkGroupName]" +
-         " <sizeInBytes> <lifetimeInSecs (use quotes around negative one)>";   
+         " <sizeInBytes> <lifetimeInSecs (use quotes around negative one)>";
     public String ac_reserve_$_2(Args args) throws Exception {
         long sizeInBytes = Long.parseLong(args.argv(0));
         long lifetime=Long.parseLong(args.argv(1));
@@ -653,12 +652,12 @@ public class Manager
         String description = args.getOpt("desc");
         String latencyString = args.getOpt("acclat");
         String policyString = args.getOpt("retpol");
-        
+
         AccessLatency latency = latencyString==null?
             defaultLatency:AccessLatency.getAccessLatency(latencyString);
         RetentionPolicy policy = policyString==null?
             defaultPolicy:RetentionPolicy.getRetentionPolicy(policyString);
-        
+
         String lgIdString = args.getOpt("lgid");
         String lgName = args.getOpt("lg");
         if(lgIdString != null && lgName != null) {
@@ -669,12 +668,12 @@ public class Manager
             reservationId = reserveSpace(voGroup,
                 voRole,
                 sizeInBytes,
-                latency , 
-                policy, 
+                latency ,
+                policy,
                 lifetime,
                 description);
         } else {
-            
+
           long lgId;
             if (lgIdString != null){
                 lgId =Long.parseLong(lgIdString);
@@ -685,14 +684,14 @@ public class Manager
               }
               lgId = lg.getId();
             }
-          
+
             reservationId = reserveSpaceInLinkGroup(
                 lgId,
                 voGroup,
                 voRole,
                 sizeInBytes,
-                latency , 
-                policy, 
+                latency ,
+                policy,
                 lifetime,
                 description);
         }
@@ -704,7 +703,7 @@ public class Manager
 
     public String hh_listInvalidSpaces = " [-e] [-r]" +
                                          " # e=expired, r=released, default is both";
-    
+
     private static final int RELEASED = 1;
     private static final int EXPIRED = 2;
 
@@ -744,7 +743,7 @@ public class Manager
             return "Unrecognized option.\nUsage: listInvalidSpaces" +
                    hh_listInvalidSpaces;
         }
-        
+
         // Get a list of the expired spaces
         List< Space > expiredSpaces = listInvalidSpaces( listOptions );
         if ( expiredSpaces.isEmpty() )
@@ -785,7 +784,7 @@ public class Manager
 
         case RELEASED | EXPIRED: // do both
             query = selectInvalidSpaces + SpaceState.EXPIRED.getStateId() +
-                
+
             "' OR state = '" + SpaceState.RELEASED.getStateId() + "'";
             break;
 
@@ -844,8 +843,8 @@ public class Manager
         }
         return result;
     }
-    
-    
+
+
     private static String selectFilesInSpace =  "SELECT * FROM " +
         SpaceFileTableName + " WHERE spaceReservationId = ?";
 
@@ -870,8 +869,8 @@ public class Manager
         }
         return report.toString();
     }
-    
-    
+
+
     // This method returns an array of all the files in the specified space.
     public List< File > listFilesInSpace( long spaceId )
         throws SQLException
@@ -887,7 +886,7 @@ public class Manager
             ResultSet fileSet = sqlStatement.executeQuery();
             // Note that we return an empty list if "fileSet" is empty.
             while ( fileSet.next() )
-            {       
+            {
                 File file = extractFileFromResultSet( fileSet );
                 result.add( file );
             }
@@ -913,13 +912,13 @@ public class Manager
         }
         return result;
     }
-            
+
     private void dbinit() throws SQLException {
         try {
-            
+
             // Add driver to JDBC
             Class.forName(jdbcClass);
-            
+
             //connect
             Connection _con = connection_pool.getConnection();
             _con.setAutoCommit(true);
@@ -929,7 +928,7 @@ public class Manager
             // LinkGroupTableName
             // SpaceTableName
             // SpaceFileTableName
-            
+
             String tables[] = new String[] {
                 SpaceManagerSchemaVersionTableName,
                 SpaceManagerNextIdTableName,
@@ -951,12 +950,12 @@ public class Manager
                 CreateSpaceFileTable};
             Map<String,Boolean> created = new Hashtable<String,Boolean>();
             for (int i =0; i<tables.length;++i) {
-                
+
                 created.put(tables[i], Boolean.FALSE);
-                
+
                 ResultSet tableRs = md.getTables(null, null, tables[i] , null );
-                
-                
+
+
                 if(!tableRs.next()) {
                     try {
                         Statement s = _con.createStatement();
@@ -965,16 +964,16 @@ public class Manager
                         s.close();
                        created.put(tables[i], Boolean.TRUE);
                     } catch(SQLException sqle) {
-                        
+
                         esay("SQL Exception (relation "+tables[i]+" could already exist)");
                         esay(sqle);
-                        
+
                     }
                 }
             }
-            
+
             updateSchemaVersion(created,_con);
-            
+
             // need to initialize the NextToken value
             String select = "SELECT * FROM "+SpaceManagerNextIdTableName;
             Statement s = _con.createStatement();
@@ -1004,13 +1003,13 @@ public class Manager
             esay(ex);
             throw new SQLException(ex.toString());
         }
-        
-        
+
+
     }
-    
-    private void updateSchemaVersion (Map<String,Boolean> created, Connection _con) 
+
+    private void updateSchemaVersion (Map<String,Boolean> created, Connection _con)
         throws SQLException {
-        
+
             if(!created.get(SpaceManagerSchemaVersionTableName)) {
                 String select = "SELECT * FROM "+
                     SpaceManagerSchemaVersionTableName ;
@@ -1035,8 +1034,8 @@ public class Manager
                      created.put(SpaceManagerSchemaVersionTableName, Boolean.TRUE);
                  }
                  s1.close();
-           }  
-            
+           }
+
            if(created.get(SpaceManagerSchemaVersionTableName)) {
                 if(created.get(LinkGroupTableName)) {
                     //everything is created for the first time
@@ -1051,13 +1050,13 @@ public class Manager
                  say("dbInit trying "+insert);
                 int result = s1.executeUpdate(insert);
                 s1.close();
-                
+
             }
-            
+
             if(previousSchemaVersion == currentSchemaVersion) {
                 return;
             }
-            
+
             if(previousSchemaVersion == 0) {
                 try {
                     updateSchemaToVersion1(_con);
@@ -1069,9 +1068,9 @@ public class Manager
                 previousSchemaVersion = 1;
             }
     }
-    
+
     private void updateSchemaToVersion1(Connection _con) throws SQLException{
-        
+
         String alter = "ALTER TABLE " + LinkGroupTableName+
             " ADD COLUMN  onlineAllowed INT,"+
             " ADD COLUMN  nearlineAllowed INT,"+
@@ -1082,7 +1081,7 @@ public class Manager
          say("dbInit trying "+alter);
         s.executeUpdate(alter);
         s.close();
-        
+
         String update = "UPDATE  "+ LinkGroupTableName+
             "\n SET onlineAllowed = 1 ," +
             "\n     nearlineAllowed = 1 ,"+
@@ -1093,18 +1092,18 @@ public class Manager
          say("dbInit trying "+update);
         s.executeUpdate(update);
         s.close();
-        
+
         String alter1 = "ALTER TABLE " + LinkGroupTableName+
             " DROP  COLUMN  hsmType ";
          s = _con.createStatement();
          say("dbInit trying "+alter1);
          s.executeUpdate(alter1);
          s.close();
-           
-         
+
+
     }
-    
-    private static final String countPolicies = 
+
+    private static final String countPolicies =
             "SELECT count(*) from "+RetentionPolicyTableName;
     private void insertRetentionPolicies(Connection _con) throws  SQLException{
         RetentionPolicy[] policies = RetentionPolicy.getAllPoliciess();
@@ -1114,7 +1113,7 @@ public class Manager
             int count = rs.getInt(1);
             if(count != policies.length) {
                 for(int i = 0; i<policies.length; ++i) {
-                    
+
                     String insertPolicy = "INSERT INTO "+
                             RetentionPolicyTableName+" VALUES ("+
                             policies[i].getId()+
@@ -1132,8 +1131,8 @@ public class Manager
             }
         }
     }
-    
-    private static final String countLatencies = 
+
+    private static final String countLatencies =
             "SELECT count(*) from "+AccessLatencyTableName;
     private void insertAccessLatencies(Connection _con) throws  SQLException{
         AccessLatency[] latencies = AccessLatency.getAllLatencies();
@@ -1143,7 +1142,7 @@ public class Manager
             int count = rs.getInt(1);
             if(count != latencies.length) {
                 for(int i = 0; i<latencies.length; ++i) {
-                    
+
                     String insertLatency = "INSERT INTO "+
                             AccessLatencyTableName+" VALUES ("+
                             latencies[i].getId()+
@@ -1161,26 +1160,26 @@ public class Manager
             }
         }
     }
-    private static final String selectNextIdForUpdate = 
+    private static final String selectNextIdForUpdate =
         "SELECT * from "+SpaceManagerNextIdTableName+" FOR UPDATE ";
-    
-   
+
+
     private static final long NEXT_LONG_STEP=10000;
-    
+
     private static final String increaseNextId = "UPDATE "+SpaceManagerNextIdTableName+
                         " SET NextToken=NextToken+"+NEXT_LONG_STEP;
     private long nextLongBase;
     private long _nextLongBase = 0;
-    private long nextLongIncrement=NEXT_LONG_STEP; //trigure going into database 
+    private long nextLongIncrement=NEXT_LONG_STEP; //trigure going into database
                                                    // on startup
 
-    
+
     public synchronized  long getNextToken() throws SQLException  {
         if(nextLongIncrement >= NEXT_LONG_STEP) {
             nextLongIncrement =0;
             incrementNextLongBase();
         }
-        
+
         long nextLong = nextLongBase +(nextLongIncrement++);;
         say(" return nextLong="+nextLong);
         return nextLong;
@@ -1201,12 +1200,12 @@ public class Manager
             }
             _nextLongBase = nextLongBase+ NEXT_LONG_STEP;
         }
-        
+
         long nextLong = nextLongBase +(nextLongIncrement++);;
         say(" return nextLong="+nextLong);
         return nextLong;
     }
-    
+
     private void incrementNextLongBase(Connection _con) throws SQLException{
         PreparedStatement s = _con.prepareStatement(selectNextIdForUpdate);
         say("getNextToken trying "+selectNextIdForUpdate);
@@ -1218,16 +1217,16 @@ public class Manager
         nextLongBase = set.getLong(1);
         s.close();
         say("nextLongBase is ="+nextLongBase);
-        s = _con.prepareStatement(increaseNextId);              
+        s = _con.prepareStatement(increaseNextId);
         say("executing statement: "+increaseNextId);
         int i = s.executeUpdate();
         s.close();
-        _con.commit();       
+        _con.commit();
     }
-    
+
     private void incrementNextLongBase()
     {
-            
+
             Connection _con = null;
             try {
                 _con = connection_pool.getConnection();
@@ -1241,25 +1240,25 @@ public class Manager
                 _con = null;
                 //use the _nextLongBase if database failed;
                 nextLongBase = _nextLongBase;
-                
+
             } finally {
                 if(_con != null) {
                     connection_pool.returnConnection(_con);
-                    
+
                 }
             }
             _nextLongBase = nextLongBase+ NEXT_LONG_STEP;
-         
+
     }
     private static final String selectLinkGroupInfoForUpdate =
                     "SELECT * FROM "+ LinkGroupTableName +
                     " WHERE  name = ? FOR UPDATE";
-    private static final String insertLinkGroupInfo = 
-            "INSERT INTO "+LinkGroupTableName + 
+    private static final String insertLinkGroupInfo =
+            "INSERT INTO "+LinkGroupTableName +
             " (id, name, freeSpaceInBytes, lastUpdateTime, onlineAllowed," +
             " nearlineAllowed, replicaAllowed, outputAllowed, custodialAllowed)"+
             " VALUES ( ?,?,?,?,?,?,?,?,?)";
-    private static final String selectLinkGroupVOs = 
+    private static final String selectLinkGroupVOs =
             "SELECT VOGroup,VORole FROM "+LinkGroupVOsTableName+
                     " WHERE linkGroupId=?";
     private static final String updateLinkGroupInfo = "UPDATE "+LinkGroupTableName +
@@ -1272,7 +1271,7 @@ public class Manager
                     ",outputAllowed= ? "+
                     ",custodialAllowed= ? "+
                     " WHERE  id = ? ";
-           
+
     private long updateLinkGroupInfo(
             String linkGroup,
             long freeSpace,
@@ -1310,14 +1309,14 @@ public class Manager
                     _con.prepareStatement(selectLinkGroupInfoForUpdate);
             sqlStatement.setString(1,linkGroup);
             ResultSet updateSet = sqlStatement.executeQuery();
-            
+
             if (!updateSet.next()) {
-                
+
                 // we did not find anything, try to insert a new linkGroup record
                 sqlStatement.close();
                 try {
-                    
-                    id = getNextToken();  //getNextToken(_con) will commit the 
+
+                    id = getNextToken();  //getNextToken(_con) will commit the
                                       // transaction which is not allowed here
                     sqlStatement = _con.prepareStatement(insertLinkGroupInfo);
                     sqlStatement.setLong(1,id);
@@ -1364,10 +1363,10 @@ public class Manager
                     _con.commit();
                     return id;
                 } catch (SQLException e) {
-                    
+
                     esay(e);
                     esay("ignoring, it might happen that someone else has created a record");
-                    
+
                 }
                 say("executing statement: "+selectLinkGroupInfoForUpdate+
               " ?="+linkGroup);
@@ -1393,7 +1392,7 @@ public class Manager
                 insertVOs.addAll(java.util.Arrays.asList(linkGroupVOs));
             }
             Set<VOInfo> deleteVOs = new HashSet<VOInfo>();
-            
+
             while(VOsSet.next()) {
                 String nextVOGroup =    VOsSet.getString(1);
                 String nextVORole =    VOsSet.getString(2);
@@ -1415,7 +1414,7 @@ public class Manager
                 say("executing statement: "+insertLinkGroupVO);
                 sqlStatement3.executeUpdate(insertLinkGroupVO);
                 sqlStatement3.close();
-                
+
             }
             for(Iterator<VOInfo> i = deleteVOs.iterator(); i.hasNext();) {
                 VOInfo nextVo=i.next();
@@ -1428,7 +1427,7 @@ public class Manager
                 sqlStatement4.executeUpdate(insertLinkGroupVO);
                 sqlStatement4.close();
             }
-            
+
      /*
      *           "CREATE TABLE "+ LinkGroupTableName+" ( "+
             " id "+longType+" NOT NULL PRIMARY KEY "+
@@ -1466,7 +1465,7 @@ public class Manager
             say("COMMIT TRANSACTION");
             _con.commit();
             return id;
-            
+
         } catch(SQLException sqle) {
             esay("update failed with ");
             esay(sqle);
@@ -1481,7 +1480,7 @@ public class Manager
             }
         }
     }
-    
+
     private static final String onlineSelectionCondition =
         "onlineAllowed = 1 ";
     private static final String nearlineSelectionCondition =
@@ -1525,7 +1524,7 @@ public class Manager
         "\n         AND UNUSEDLINKS.";
     private static final String selectLinkGroupInfoForUpdatePart2 =
         "\n         AND UNUSEDLINKS.";
-    
+
     private static final String selectLinkGroupInfoForUpdatePart3 =
         "\n         AND UNUSEDLINKS.lastUpdateTime >= ?"+ //?(1)
         "\n         AND ( "+LinkGroupVOsTableName+".VOGroup = ?"+ //?(2)
@@ -1546,12 +1545,12 @@ public class Manager
         "\n         AND "+LinkGroupTableName+".id = "+
         LinkGroupVOsTableName+".linkGroupId "+
         "\n         AND "+LinkGroupTableName+".";
-    
+
     private static final String selectLinkGroupInfoForUpdatePart4 =
         "\n         AND "+LinkGroupTableName+".";
-    
+
     private static final String selectLinkGroupInfoForUpdatePart5 =
-    
+
         "\n         AND "+LinkGroupTableName+".lastUpdateTime >= ?"+//?(4)
         "\n         AND ( "+LinkGroupVOsTableName+".VOGroup = ?"+//?(5)
         "\n                OR "+LinkGroupVOsTableName+".VOGroup = '*' )"+
@@ -1561,7 +1560,7 @@ public class Manager
         LinkGroupTableName +".freeSpaceInBytes "+
         " \n    ) AS FOO "+
         " \n WHERE available >= ?";
-    
+
     private static final String selectOnlineReplicaLinkGroupForUpdate =
         selectLinkGroupInfoForUpdatePart1 +
         onlineSelectionCondition+
@@ -1572,7 +1571,7 @@ public class Manager
         selectLinkGroupInfoForUpdatePart4+
         replicaSelectionCondition+
         selectLinkGroupInfoForUpdatePart5;
-    
+
     private static final String selectOnlineOutputLinkGroupForUpdate =
         selectLinkGroupInfoForUpdatePart1 +
         onlineSelectionCondition+
@@ -1583,7 +1582,7 @@ public class Manager
         selectLinkGroupInfoForUpdatePart4+
         outputSelectionCondition+
         selectLinkGroupInfoForUpdatePart5;
-        
+
     private static final String selectOnlineCustodialLinkGroupForUpdate =
         selectLinkGroupInfoForUpdatePart1 +
         onlineSelectionCondition+
@@ -1595,7 +1594,7 @@ public class Manager
         custodialSelectionCondition+
         selectLinkGroupInfoForUpdatePart5;
 
-    
+
     private static final String selectNearlineReplicaLinkGroupForUpdate =
         selectLinkGroupInfoForUpdatePart1 +
         nearlineSelectionCondition+
@@ -1606,7 +1605,7 @@ public class Manager
         selectLinkGroupInfoForUpdatePart4+
         replicaSelectionCondition+
         selectLinkGroupInfoForUpdatePart5;
-    
+
     private static final String selectNearlineOutputLinkGroupForUpdate =
         selectLinkGroupInfoForUpdatePart1 +
         nearlineSelectionCondition+
@@ -1617,7 +1616,7 @@ public class Manager
         selectLinkGroupInfoForUpdatePart4+
         outputSelectionCondition+
         selectLinkGroupInfoForUpdatePart5;
-        
+
     private static final String selectNearlineCustodialLinkGroupForUpdate =
         selectLinkGroupInfoForUpdatePart1 +
         nearlineSelectionCondition+
@@ -1628,8 +1627,8 @@ public class Manager
         selectLinkGroupInfoForUpdatePart4+
         custodialSelectionCondition+
         selectLinkGroupInfoForUpdatePart5;
-    
-    
+
+
     private Long[] findLinkGroupIds(
             long sizeInBytes,
             String voGroup,
@@ -1648,29 +1647,29 @@ public class Manager
             // The following somewhat complecated sql query
             // (at least complicated up to me, Timur P.)
             // selects linkGroups that have co
-            
+
             PreparedStatement sqlStatement;
             String select;
             if( al.equals(AccessLatency.ONLINE)) {
                 if(rp.equals(RetentionPolicy.REPLICA)) {
                     select = selectOnlineReplicaLinkGroupForUpdate;
-                } else 
+                } else
                 if ( rp.equals(RetentionPolicy.OUTPUT)) {
                     select = selectOnlineOutputLinkGroupForUpdate;
                 } else {
                     select = selectOnlineCustodialLinkGroupForUpdate;
                 }
-                
+
             } else {
                 if(rp.equals(RetentionPolicy.REPLICA)) {
                     select = selectNearlineReplicaLinkGroupForUpdate;
-                } else 
+                } else
                 if ( rp.equals(RetentionPolicy.OUTPUT)) {
                     select = selectNearlineOutputLinkGroupForUpdate;
                 } else {
                     select = selectNearlineCustodialLinkGroupForUpdate;
                 }
-                
+
             }
             sqlStatement = _con.prepareStatement(select);
             say("executing statement: "+select+
@@ -1713,10 +1712,10 @@ public class Manager
                 connection_pool.returnConnection(_con);
             }
         }
-        
+
     }
- 
-    
+
+
     public LinkGroup getLinkGroup(long id)  throws SQLException{
         say("getLinkGroup("+id+")");
         Connection _con = null;
@@ -1737,7 +1736,7 @@ public class Manager
             }
         }
     }
-    
+
     public LinkGroup getLinkGroup(Connection _con, long id)  throws SQLException{
         String selectLinkGroup =
                 "SELECT * FROM "+ LinkGroupTableName +
@@ -1787,7 +1786,7 @@ public class Manager
         sqlStatement.close();
         return linkGroup;
     }
-    
+
     public LinkGroup getLinkGroupByName(String name)  throws SQLException{
         say("getLinkGroupByName("+name+")");
         Connection _con = null;
@@ -1808,7 +1807,7 @@ public class Manager
             }
         }
     }
-        
+
     public LinkGroup getLinkGroupByName(Connection _con, String name)  throws SQLException{
         String selectLinkGroup =
                 "SELECT * FROM "+ LinkGroupTableName +
@@ -1859,8 +1858,8 @@ public class Manager
         sqlStatement.close();
         return linkGroup;
     }
-    
-   
+
+
     public void selectLinkGroupForUpdate(Connection _con,Long id,long sizeInBytes)  throws SQLException{
         String selectLinkGroupInfoForUpdate =
                 "SELECT * FROM "+ LinkGroupTableName +
@@ -1875,9 +1874,9 @@ public class Manager
             throw new SQLException("linkGroup with id="+id+" not found or does not have enough space");
         }
     }
-    
+
     public void updateSpaceState(long id,SpaceState spaceState)throws SQLException{
-        
+
         updateSpaceReservation(id,
                 null,
                 null,
@@ -1889,7 +1888,7 @@ public class Manager
                 null,
                 new Integer(spaceState.getStateId()));
     }
-    
+
     public void updateSpaceLifetime(Connection _con,long id, long newLifetime)
     throws SQLException {
         updateSpaceReservation(_con,
@@ -1904,7 +1903,7 @@ public class Manager
                 null,
                 null);
     }
-    
+
     public void updateSpaceReservation(Connection _con,
             long id,
             String voGroup,
@@ -1916,7 +1915,7 @@ public class Manager
             Long lifetime,
             String description,
             Integer state) throws SQLException {
-        
+
         String updateSpaceReservation = "UPDATE "+SpaceTableName +
                 " SET ";
         boolean added = false;
@@ -1925,7 +1924,7 @@ public class Manager
             added = true;
         }
         if(voRole != null )  {
-            
+
             if(added) {
                 updateSpaceReservation += ",";
             }
@@ -1933,7 +1932,7 @@ public class Manager
             updateSpaceReservation += " voRole ='"+voRole+"'";
         }
         if(retentionPolicy != null )  {
-            
+
             if(added) {
                 updateSpaceReservation += ",";
             }
@@ -1941,7 +1940,7 @@ public class Manager
             updateSpaceReservation += " retentionPolicy ="+retentionPolicy.getId()+"";
         }
         if(accessLatency != null )  {
-            
+
             if(added) {
                 updateSpaceReservation += ",";
             }
@@ -1984,17 +1983,17 @@ public class Manager
             updateSpaceReservation += " state = "+state;
         }
         updateSpaceReservation += " WHERE  id = "+id;
-        
+
         if(!added) {
             throw new SQLException("nothing to update");
         }
-        
+
         say("executing statement: "+updateSpaceReservation);
         Statement sqlStatement =
                 _con.createStatement();
         sqlStatement.executeUpdate(updateSpaceReservation);
     }
-    
+
     public void updateSpaceReservation(long id,
             String voGroup,
             String voRole,
@@ -2017,12 +2016,12 @@ public class Manager
                     _con.createStatement();
             ResultSet updateSet = sqlStatement.executeQuery(
                     selectSpaceReservationUpdate);
-            
+
             long updateTime = System.currentTimeMillis();
             found = updateSet.next();
             sqlStatement.close();
             if (found) {
-                
+
                 String updateSpaceReservation = "UPDATE "+SpaceTableName +
                         " SET ";
                 boolean added = false;
@@ -2031,7 +2030,7 @@ public class Manager
                     added = true;
                 }
                 if(voRole != null )  {
-                    
+
                     if(added) {
                         updateSpaceReservation += ",";
                     }
@@ -2039,7 +2038,7 @@ public class Manager
                     updateSpaceReservation += " voRole ='"+voRole+"'";
                 }
                 if(retentionPolicy != null )  {
-                    
+
                     if(added) {
                         updateSpaceReservation += ",";
                     }
@@ -2047,7 +2046,7 @@ public class Manager
                     updateSpaceReservation += " retentionPolicy ="+retentionPolicy.getId()+"";
                 }
                 if(accessLatency != null )  {
-                    
+
                     if(added) {
                         updateSpaceReservation += ",";
                     }
@@ -2090,11 +2089,11 @@ public class Manager
                     updateSpaceReservation += " state = "+state;
                 }
                 updateSpaceReservation += " WHERE  id = "+id;
-                
+
                 if(!added) {
                     throw new SQLException("nothing to update");
                 }
-                
+
                 say("executing statement: "+updateSpaceReservation);
                 sqlStatement =
                         _con.createStatement();
@@ -2111,7 +2110,7 @@ public class Manager
                 _con = null;
                 throw new SQLException("Space Reservation with id="+id+" is not found!");
             }
-            
+
         } catch(SQLException sqle) {
             esay("update failed with ");
             esay(sqle);
@@ -2131,7 +2130,7 @@ public class Manager
             throw new SQLException(" no record of space reservation "+id+" found");
         }
     }
-    
+
     public void expireSpaceReservations()  {
         say("expireSpaceReservations()...");
         Connection _con = null;
@@ -2143,8 +2142,8 @@ public class Manager
             updateSpaceReservation += " WHERE state = "+SpaceState.RESERVED.getStateId()+
                     " AND lifetime != -1 AND creationTime + lifetime < "+
                     System.currentTimeMillis();
-            
-            
+
+
             say("executing statement: "+updateSpaceReservation);
             Statement sqlStatement =
                     _con.createStatement();
@@ -2155,7 +2154,7 @@ public class Manager
             connection_pool.returnConnection(_con);
             _con = null;
             say(" expired "+count+" space reservations");
-            
+
         } catch(SQLException sqle) {
             esay("update failed with ");
             esay(sqle);
@@ -2173,7 +2172,7 @@ public class Manager
             }
         }
     }
-    
+
     public long insertSpaceReservation(
             String voGroup,
             String voRole,
@@ -2187,7 +2186,7 @@ public class Manager
        boolean found = false;
         Connection _con = null;
         try {
-            
+
             _con = connection_pool.getConnection();
              long id = getNextToken(_con);
              long creationTime=System.currentTimeMillis();
@@ -2231,9 +2230,9 @@ public class Manager
                 connection_pool.returnConnection(_con);
             }
         }
-        
+
     }
-    
+
     public void insertSpaceReservation(Connection _con,
             long id,
             String voGroup,
@@ -2246,7 +2245,7 @@ public class Manager
             String description,
             int state) throws SQLException {
         boolean found = false;
-        
+
         long creationTime=System.currentTimeMillis();
         String inserSpaceReservation =
                 "INSERT INTO "+ SpaceTableName +
@@ -2270,17 +2269,17 @@ public class Manager
             throw new SQLException("insert returned row count ="+inserRowCount);
         }
     }
-    
+
     private static final String selectCurrentSpaceIds =
                     "SELECT id FROM "+ SpaceTableName +
                 " where state != "+SpaceState.EXPIRED.getStateId() +
                 " AND state != "+SpaceState.RELEASED.getStateId();
-    
+
     private void listSpaceReservations(boolean isLongFormat, String id, StringBuffer sb) throws Exception{
         Connection _con = null;
         try {
             _con = connection_pool.getConnection();
-            
+
             if(id != null) {
                 long longid = Long.parseLong(id);
                 Space space;
@@ -2293,7 +2292,7 @@ public class Manager
                 space.toStringBuffer(sb);
                 return;
             }
-            
+
             say("executing statement: "+selectCurrentSpaceIds);
             PreparedStatement sqlStatement =
                     _con.prepareStatement(selectCurrentSpaceIds);
@@ -2308,7 +2307,7 @@ public class Manager
                 space.toStringBuffer(sb);
                 sb.append('\n');
             }
-            
+
             sb.append("total number of reservations: ").append(count).append('\n');
             sb.append("total number of bytes reserved: ").append(totalReserved);
             sqlStatement.close();
@@ -2326,9 +2325,9 @@ public class Manager
                 connection_pool.returnConnection(_con);
             }
         }
-        
+
     }
-    
+
     private static final String selectLinkGroups =
                     "SELECT id FROM "+ LinkGroupTableName+
         " WHERE "+LinkGroupTableName+".lastUpdateTime >= ?";
@@ -2338,7 +2337,7 @@ public class Manager
         Connection _con = null;
         try {
             _con = connection_pool.getConnection();
-            
+
             if(id != null) {
                 long longid =  Long.parseLong(id);
                 LinkGroup linkGroup = getLinkGroup(longid);
@@ -2353,7 +2352,7 @@ public class Manager
             }
             PreparedStatement sqlStatement;
             if(all) {
-                
+
                 say("executing statement: "+selectAllLinkGroups);
                 sqlStatement =
                         _con.prepareStatement(selectAllLinkGroups);
@@ -2362,7 +2361,7 @@ public class Manager
                 sqlStatement =
                         _con.prepareStatement(selectLinkGroups);
                 sqlStatement.setLong(1,latestLinkGroupUpdateTime);
-                
+
             }
             ResultSet set = sqlStatement.executeQuery();
             int count = 0;
@@ -2375,7 +2374,7 @@ public class Manager
                 linkGroup.toStringBuffer(sb);
                 sb.append('\n');
             }
-            
+
             sb.append("total number of linkGroups: ").append(count).append('\n');
             sb.append("total number of bytes reservable: ").append(totalReservable).append('\n');
             sb.append("last time all link groups were updated: ").append(latestLinkGroupUpdateTime);
@@ -2391,7 +2390,7 @@ public class Manager
                 connection_pool.returnConnection(_con);
             }
         }
-        
+
     }
     public long[] getSpaceTokens(Connection _con,
             String voGroup,
@@ -2401,7 +2400,7 @@ public class Manager
                 "SELECT id FROM "+ SpaceTableName +
                 " WHERE  state = "+SpaceState.RESERVED.getStateId();
         if(description == null) {
-            selectSpace +=" AND voGroup = '"+voGroup+'\'';            
+            selectSpace +=" AND voGroup = '"+voGroup+'\'';
             if(voRole != null) {
                 selectSpace += " AND voRole = '"+voRole+'\'';
             }
@@ -2442,7 +2441,7 @@ public class Manager
             " ON DELETE RESTRICT"+
             ")";
 */
-    
+
     public long[] getFileSpaceTokens(Connection _con,
             PnfsId pnfsId,
             String pnfsPath)  throws SQLException{
@@ -2450,17 +2449,17 @@ public class Manager
 	    "SELECT spaceReservationId FROM "+ SpaceFileTableName + " WHERE ";
 //	    " WHERE  state = "+FileState.STORED.getStateId();
 
-	boolean needAnd=false; 
+	boolean needAnd=false;
 	if(pnfsId != null) {
-            selectSpaceIds +=" pnfsId = '"+pnfsId+'\''; 
+            selectSpaceIds +=" pnfsId = '"+pnfsId+'\'';
 	    needAnd=true;
         }
-        
+
          if(pnfsPath != null) {
-	     if (needAnd == true ) { 
+	     if (needAnd == true ) {
 		 selectSpaceIds +=" AND ";
 	     }
-	     selectSpaceIds +=" pnfsPath = '"+pnfsPath+'\''; 
+	     selectSpaceIds +=" pnfsPath = '"+pnfsPath+'\'';
 
         }
         say("executing statement: "+selectSpaceIds);
@@ -2501,7 +2500,7 @@ public class Manager
             }
         }
     }
-    
+
     public long[] getFileSpaceTokens(PnfsId pnfsId,
             String pnfsPath)  throws SQLException{
         Connection _con = null;
@@ -2522,7 +2521,7 @@ public class Manager
             }
         }
     }
-    
+
     public Space getSpace(Connection _con,long id)  throws SQLException{
         String selectSpace =
                 "SELECT * FROM "+ SpaceTableName +
@@ -2552,7 +2551,7 @@ public class Manager
         say("getSpace("+id+") returns "+space);
         return space;
     }
-    
+
     public Space getSpace(long id)  throws SQLException{
         Connection _con = null;
         try {
@@ -2572,7 +2571,7 @@ public class Manager
             }
         }
     }
-    
+
     public Space getSpaceWithUsedSize(Connection _con, long id)  throws SQLException{
         say("getSpaceWithAvailableSize");
         Space space =  getSpaceForUpdate(_con,id);
@@ -2594,7 +2593,7 @@ public class Manager
         }
         return space;
     }
-    
+
     public Space getSpaceWithUsedSize(long id)  throws SQLException{
         say("getSpaceWithAvailableSize");
         Connection _con = null;
@@ -2606,7 +2605,7 @@ public class Manager
             connection_pool.returnConnection(_con);
             _con = null;
             return space;
-            
+
         } catch(SQLException sqle) {
             esay("update failed with ");
             esay(sqle);
@@ -2623,7 +2622,7 @@ public class Manager
             }
         }
     }
-    
+
     public Space getSpaceForUpdate(Connection _con,long id)  throws SQLException{
         String selectSpace =
                 "SELECT * FROM "+ SpaceTableName +
@@ -2653,7 +2652,7 @@ public class Manager
         space.setState(SpaceState.getState(set.getInt("state")));
         return space;
     }
-    
+
     public void deleteSpaceReservation(
             Connection _con,
             long id) throws SQLException {
@@ -2669,7 +2668,7 @@ public class Manager
             throw new SQLException("delete returned row count ="+deleteRowCount);
         }
     }
-    
+
     public void deleteSpaceReservation(
             long id) throws SQLException {
         boolean found = false;
@@ -2695,7 +2694,7 @@ public class Manager
             }
         }
     }
-    
+
     public void lockSpaceIfSpaceIsAvailable(Connection _con,long id,long sizeInBytes )  throws SQLException,SpaceException{
         String selectSpaceForUpdate =
                 "SELECT * FROM "+ SpaceTableName +
@@ -2706,7 +2705,7 @@ public class Manager
                 _con.createStatement();
         ResultSet set = sqlStatement.executeQuery(
                 selectSpaceForUpdate);
-        
+
         if(!set.next()) {
             throw new SQLException("space with id="+id+" not found");
         }
@@ -2714,14 +2713,14 @@ public class Manager
         long lifetime  =set.getLong("lifetime");
         long currentTime = System.currentTimeMillis();
         if(lifetime != -1 && creationTime +lifetime < currentTime) {
-             throw new SpaceExpiredException("space with id="+id+" has expired");           
+             throw new SpaceExpiredException("space with id="+id+" has expired");
         }
-        
+
         SpaceState state = SpaceState.getState(set.getInt("state"));
         if(state == SpaceState.EXPIRED) {
             throw new SpaceExpiredException("space with id="+id+" has expired");
         }
-        
+
         if(state == SpaceState.RELEASED) {
             throw new SpaceReleasedException("space with id="+id+" was released");
         }
@@ -2742,10 +2741,10 @@ say( "size in bytes = " + sizeInBytes);
         if(availableSpaceSize <sizeInBytes){
             throw new NoFreeSpaceException("space with id="+id+" does not have enough space");
         }
-        
+
     }
-    
-    
+
+
     public void updateFileInSpaceInfo(
             long id,
             String voGroup,
@@ -2766,7 +2765,7 @@ say( "size in bytes = " + sizeInBytes);
                     _con.createStatement();
             ResultSet updateSet = sqlStatement.executeQuery(
                     selectFileForUpdate);
-            
+
             long updateTime = System.currentTimeMillis();
             found = updateSet.next();
             if (found) {
@@ -2779,7 +2778,7 @@ say( "size in bytes = " + sizeInBytes);
                         sizeInBytes,
                         lifetime,
                         state);
-                
+
                 sqlStatement.close();
                 say("COMMIT TRANSACTION");
                 _con.commit();
@@ -2792,7 +2791,7 @@ say( "size in bytes = " + sizeInBytes);
                 connection_pool.returnConnection(_con);
                 _con = null;
             }
-            
+
         } catch(SQLException sqle) {
             esay("update failed with ");
             esay(sqle);
@@ -2810,7 +2809,7 @@ say( "size in bytes = " + sizeInBytes);
             throw new SQLException(" no record of space reservation "+id+" found");
         }
     }
-    
+
     public void updateFileInSpaceInfo(
             Connection _con,
             long id,
@@ -2820,9 +2819,9 @@ say( "size in bytes = " + sizeInBytes);
             Long sizeInBytes,
             Long lifetime,
             Integer state) throws SQLException {
-        
+
         long updateTime = System.currentTimeMillis();
-        
+
         boolean setField = false;
         String updateFile = "UPDATE "+SpaceFileTableName +
                 " SET ";
@@ -2871,17 +2870,17 @@ say( "size in bytes = " + sizeInBytes);
                 _con.createStatement();
         sqlStatement.executeUpdate(updateFile);
     }
-    
+
     public void removePnfsIdOfFileInSpace(
             Connection _con,
             long id,
             Integer state) throws SQLException {
-        
+
         long updateTime = System.currentTimeMillis();
-        
+
         String updateFile = "UPDATE "+SpaceFileTableName +
                 " SET  pnfsId = NULL ";
-        
+
         if(state != null) {
                 updateFile += ", state = "+state;
         }
@@ -2891,7 +2890,7 @@ say( "size in bytes = " + sizeInBytes);
                 _con.createStatement();
         sqlStatement.executeUpdate(updateFile);
     }
-    
+
     public long insertFileInSpace(
             String voGroup,
             String voRole,
@@ -2904,7 +2903,7 @@ say( "size in bytes = " + sizeInBytes);
         pnfsPath =new FsPath(pnfsPath).toString();
         Connection _con = null;
         try {
-            
+
             _con = connection_pool.getConnection();
             long id = getNextToken(_con);
             long creationTime=System.currentTimeMillis();
@@ -2948,7 +2947,7 @@ say( "size in bytes = " + sizeInBytes);
             }
         }
     }
-    
+
     public void insertFileInSpace( Connection _con,
             long id,
             String voGroup,
@@ -2959,7 +2958,7 @@ say( "size in bytes = " + sizeInBytes);
             String pnfsPath,
             PnfsId pnfsId,
             int state) throws SQLException {
-        
+
         pnfsPath =new FsPath(pnfsPath).toString();
         long creationTime=System.currentTimeMillis();
         String inserFileInSpace =
@@ -2983,7 +2982,7 @@ say( "size in bytes = " + sizeInBytes);
             throw new SQLException("insert returned row count ="+inserRowCount);
         }
     }
-    
+
     public File getFile(long id)  throws SQLException{
         Connection _con = null;
         try {
@@ -3003,7 +3002,7 @@ say( "size in bytes = " + sizeInBytes);
             }
         }
     }
-    
+
     private File extractFileFromResultSet( ResultSet set )
         throws java.sql.SQLException
     {
@@ -3025,7 +3024,7 @@ say( "size in bytes = " + sizeInBytes);
                         FileState.getState( set.getInt( "state" ) )
                        );
     }
-    
+
    public File getFile(Connection _con, long id)  throws SQLException{
             String selectFile =
                     "SELECT * FROM "+ SpaceFileTableName +
@@ -3042,7 +3041,7 @@ say( "size in bytes = " + sizeInBytes);
             sqlStatement.close();
             return file;
     }
-    
+
     public File getFile(PnfsId pnfsId)  throws SQLException{
         Connection _con = null;
         try {
@@ -3075,7 +3074,7 @@ say( "size in bytes = " + sizeInBytes);
             }
         }
     }
-    
+
     public File getFile(String pnfsPath)  throws SQLException{
         pnfsPath =new FsPath(pnfsPath).toString();
         Connection _con = null;
@@ -3130,12 +3129,12 @@ say( "size in bytes = " + sizeInBytes);
         sqlStatement.close();
         return file;
     }
-    
+
     private static final String selectFileForUpdateByPnfsId =
         "SELECT * FROM "+ SpaceFileTableName +
             " WHERE  pnfsId = ?"+
             " FOR UPDATE ";
-    
+
     public File getFileForUpdate(Connection _con,PnfsId pnfsId)  throws SQLException{
         say("executing statement: "+selectFileForUpdateByPnfsId+" ?="+pnfsId);
         PreparedStatement sqlStatement =
@@ -3150,7 +3149,7 @@ say( "size in bytes = " + sizeInBytes);
         sqlStatement.close();
         return file;
     }
-    
+
     public void deleteFileInSpaceSpace(
             long id) throws SQLException {
         boolean found = false;
@@ -3189,26 +3188,26 @@ say( "size in bytes = " + sizeInBytes);
             throw new SQLException("delete returned row count ="+deleteRowCount);
         }
     }
-    
+
     public static final void main(String[] args) throws Throwable {
         Cell system = new SystemCell( "firstDomain" ) ;
         Class.forName("org.apache.derby.jdbc.EmbeddedDriver");
         Manager m = new Manager("m",
                 " -jdbcUrl=jdbc:derby:testdb;create=true "+
-                
+
                 "-jdbcDriver=org.apache.derby.jdbc.EmbeddedDriver "+
                 "-dbUser=user -dbPass=pass");
         long currentTime = System.currentTimeMillis();
-        long linkGroupId = 
+        long linkGroupId =
                 m.updateLinkGroupInfo("linkGroup1",56,currentTime,true,true,true,true,true,
                 new VOInfo[] {new VOInfo("cms","cmsprod")});
-        linkGroupId = m.updateLinkGroupInfo("linkGroup1", 
+        linkGroupId = m.updateLinkGroupInfo("linkGroup1",
             156,currentTime,true,true,true,true,true,new VOInfo[] {new VOInfo("cms","cmsprod")});
         LinkGroup linkGroup = m.getLinkGroup(linkGroupId);
         m.say("LinkGroup = "+linkGroup);
         long spaceId = m.insertSpaceReservation("/cms/uscms","owner1",RetentionPolicy.CUSTODIAL,AccessLatency.NEARLINE,linkGroupId,10,3600,"something",0);
         Reserve reserve = new Reserve("/cms/uscms","user",10,
-                
+
                 RetentionPolicy.CUSTODIAL,
                 AccessLatency.NEARLINE,
                 10000,
@@ -3233,15 +3232,15 @@ say( "size in bytes = " + sizeInBytes);
         m.deleteFileInSpaceSpace(fileId);
         m.deleteSpaceReservation(spaceId);
     }
-    
+
     public void messageArrived( final CellMessage cellMessage ) {
          diskCacheV111.util.ThreadManager.execute(new Runnable() {
             public void run() {
                 processMessage(cellMessage);
             }
-        });    
+        });
     }
-    
+
     private void processMessage( CellMessage cellMessage ) {
         Object object = cellMessage.getMessageObject();
         say("Message  arrived: "+object +" from "+cellMessage.getSourcePath());
@@ -3268,7 +3267,7 @@ say( "size in bytes = " + sizeInBytes);
                 cancelUseSpace(cancelUse);
             } else if(spaceMessage instanceof PoolMgrSelectPoolMsg) {
                 selectPool(cellMessage,false);
-                //replyRequired should be set only after successful 
+                //replyRequired should be set only after successful
                 // invocation of selectPool
                 // if select pool throws exception, we need to return a message
                 replyRequired = false;
@@ -3290,7 +3289,7 @@ say( "size in bytes = " + sizeInBytes);
             }else if(spaceMessage instanceof GetFileSpaceTokensMessage) {
                 GetFileSpaceTokensMessage getFileTokens = (GetFileSpaceTokensMessage) spaceMessage;
                 getFileSpaceTokens(getFileTokens);
-                
+
             } else {
                 esay("unknown Space Manager message type :"+spaceMessage.getClass().getName()+" value: "+spaceMessage);
                 super.messageArrived(cellMessage);
@@ -3315,15 +3314,15 @@ say( "size in bytes = " + sizeInBytes);
             say("reply is not required, finished processing");
         }
     }
-    
+
     public void messageToForward(final CellMessage cellMessage ){
          diskCacheV111.util.ThreadManager.execute(new Runnable() {
             public void run() {
                 processMessageToForward(cellMessage);
             }
-        });    
+        });
     }
-    
+
     public void processMessageToForward(CellMessage cellMessage ) {
         Object object = cellMessage.getMessageObject();
         //
@@ -3336,11 +3335,11 @@ say( "size in bytes = " + sizeInBytes);
             if( object instanceof PoolMgrSelectPoolMsg) {
                 selectPool(cellMessage,true);
             } else if( object instanceof PoolAcceptFileMessage ) {
-                
+
                 PoolAcceptFileMessage poolRequest = (PoolAcceptFileMessage)object;
                 if(poolRequest.isReply()) {
                     PnfsId pnfsId = poolRequest.getPnfsId();
-                    
+
                     //mark file as being transfered
                     transferStarted(pnfsId,poolRequest.getReturnCode() == 0);
                 } else {
@@ -3348,7 +3347,7 @@ say( "size in bytes = " + sizeInBytes);
                     // we need to set the AccessLatency, RetentionPolicy and StorageGroup
                     transferToBeStarted(poolRequest);
                 }
-                
+
             } else if ( object instanceof DoorTransferFinishedMessage) {
                 DoorTransferFinishedMessage finished = (DoorTransferFinishedMessage) object;
                 transferFinished(finished);
@@ -3359,25 +3358,25 @@ say( "size in bytes = " + sizeInBytes);
             // to set the correct AccessLatency and RetentionProperty attributes of the file
             //finished.setFailed(1,e)
         }
-        
+
         //
         // and let it continue its travel
         //
         super.messageToForward(cellMessage) ;
-        
+
     }
-    
+
     public void exceptionArrived(ExceptionEvent ee) {
         say("Exception Arrived: "+ee);
         super.exceptionArrived(ee);
     }
-        
+
     public void returnFailedResponse(Object reason ,
             Message spaceManagerMessage, CellMessage cellMessage) {
         if( reason != null && !(reason instanceof java.io.Serializable)) {
             reason = reason.toString();
         }
-        
+
         try {
             spaceManagerMessage.setReply();
             spaceManagerMessage.setFailed(1, reason);
@@ -3388,7 +3387,7 @@ say( "size in bytes = " + sizeInBytes);
             esay(e);
         }
     }
-    
+
     public void returnMessage(Message message, CellMessage cellMessage) {
         try {
             message.setReply();
@@ -3398,9 +3397,9 @@ say( "size in bytes = " + sizeInBytes);
             esay("can not send a response");
             esay(e);
         }
-        
+
     }
-    
+
     private final Object updateLinkGroupsSyncObject = new Object();
     public void run(){
         if(Thread.currentThread() == expireSpaceReservations) {
@@ -3412,9 +3411,9 @@ say( "size in bytes = " + sizeInBytes);
                     esay("expire SpaceReservations thread has been interrupted");
                     return;
                 }
-                
+
             }
-            
+
         } else if(Thread.currentThread() == updateLinkGroups) {
             while(true) {
                 updateLinkGroups();
@@ -3426,11 +3425,11 @@ say( "size in bytes = " + sizeInBytes);
                         return;
                     }
                 }
-                
+
             }
         }
     }
-    
+
     private long latestLinkGroupUpdateTime =System.currentTimeMillis();
     private LinkGroupAuthorizationFile linkGroupAuthorizationFile;
     private long linkGroupAuthorizationFileLastUpdateTimestampt = 0;
@@ -3441,20 +3440,20 @@ say( "size in bytes = " + sizeInBytes);
         if(linkGroupAuthorizationFileName == null) {
             return;
         }
-        
+
         java.io.File f = new java.io.File (linkGroupAuthorizationFileName);
         if(!f.exists()) {
             esay("LinkGroupAuthorizationFile "+linkGroupAuthorizationFileName+
                 " not found");
             linkGroupAuthorizationFile = null;
         }
-        
+
         long lastModified = f.lastModified();
         if(linkGroupAuthorizationFile == null || lastModified >= linkGroupAuthorizationFileLastUpdateTimestampt) {
             linkGroupAuthorizationFileLastUpdateTimestampt = lastModified;
             try {
                 say("reading "+linkGroupAuthorizationFileName);
-                linkGroupAuthorizationFile = 
+                linkGroupAuthorizationFile =
                     new LinkGroupAuthorizationFile(linkGroupAuthorizationFileName);
                 say("done reading "+linkGroupAuthorizationFileName);
             }
@@ -3476,19 +3475,19 @@ say( "size in bytes = " + sizeInBytes);
             if(cellMessage == null ) {
                 esay("updateLinkGroups() : request timed out");
                 return;
-                
+
             }
             if (cellMessage.getMessageObject() == null ) {
                 esay("updateLinkGroups() : reply message is null");
-                return;                
+                return;
             }
             if( ! (cellMessage.getMessageObject() instanceof PoolMgrGetPoolLinkGroups)){
                 esay("updateLinkGroups() : reply message is "+
                         cellMessage.getMessageObject().getClass().getName());
-                return;                
-                
+                return;
+
             }
-            
+
             getLinkGroups = (PoolMgrGetPoolLinkGroups)cellMessage.getMessageObject();
             if(getLinkGroups.getReturnCode() != 0) {
                 esay("  PoolMgrGetPoolLinkGroups reply return code ="+getLinkGroups.getReturnCode() +
@@ -3499,17 +3498,17 @@ say( "size in bytes = " + sizeInBytes);
             esay("update failed");
             esay(e);
             return;
-            
+
         }
         PoolLinkGroupInfo[] poolLinkGroupInfos = getLinkGroups.getPoolLinkGroupInfos();
-        
+
         say("updateLinkGroups() number of poolLinkGroupInfos is "+poolLinkGroupInfos.length);
         if(poolLinkGroupInfos.length == 0) {
             return;
         }
-        
+
         updateLinkGroupAuthorizationFile();
-        
+
         for (int i = 0 ; i<poolLinkGroupInfos.length; ++i) {
             PoolLinkGroupInfo info = poolLinkGroupInfos[i];
             String linkGroupName = info.getName();
@@ -3517,7 +3516,7 @@ say( "size in bytes = " + sizeInBytes);
             info.getAvailableSpaceInBytes();
             VOInfo[] vos=null;
             //VOInfo[] vos = info.getAllowedVOs();
-            
+
             boolean onlineAllowed = info.isOnlineAllowed();
             boolean nearlineAllowed = info.isNearlineAllowed();
             boolean replicaAllowed = info.isReplicaAllowed();
@@ -3525,7 +3524,7 @@ say( "size in bytes = " + sizeInBytes);
             boolean custodialAllowed = info.isCustodialAllowed();
 
             //boolean replica = info.getHsmType().equals("None");
-            
+
 
             say("updateLinkGroups: received LinkGroupInfo: name:"+linkGroupName+
                     " onlineAllowed:"+onlineAllowed+
@@ -3535,8 +3534,8 @@ say( "size in bytes = " + sizeInBytes);
                     " custodialAllowed:"+custodialAllowed+
                     " avalSpaceInBytes:"+avalSpaceInBytes);
             if(linkGroupAuthorizationFile != null) {
-                
-                 LinkGroupAuthorizationRecord record = 
+
+                 LinkGroupAuthorizationRecord record =
                     linkGroupAuthorizationFile.getLinkGroupAuthorizationRecord(linkGroupName);
                  say("got LinkGroupAuthorizationRecord for "+linkGroupName+" record="+record);
                  if(record != null) {
@@ -3547,17 +3546,17 @@ say( "size in bytes = " + sizeInBytes);
                          for(int j = 0; j<fqans.length ; ++j) {
                              vos[j] = new VOInfo(fqans[j].getGroup(), fqans[j].getRole());
                          }
-                         
+
                      }
                  }
             }
-            
+
             if(vos != null) {
                 for(int j =0; j<vos.length ; ++j ) {
                     say("updateLinkGroups: VOInfo["+j+"]="+vos[j]);
                 }
             }
-            
+
             try {
                 updateLinkGroupInfo(linkGroupName,avalSpaceInBytes,currentTime,
                     onlineAllowed,
@@ -3574,8 +3573,8 @@ say( "size in bytes = " + sizeInBytes);
         latestLinkGroupUpdateTime = currentTime;
         // insert update of linkGroups here
     }
-    
-    private void releaseSpace(Release release) throws 
+
+    private void releaseSpace(Release release) throws
        SQLException,SpaceException {
         say("releaseSpace("+release+")");
          if(!spaceManagerEnabled) {
@@ -3590,7 +3589,7 @@ say( "size in bytes = " + sizeInBytes);
             throw new SQLException("partial release is not supported yet");
         }
     }
-    
+
     java.util.Random rand = new java.util.Random();
     private void reserveSpace(Reserve reserve)
     throws SQLException,java.io.IOException,SpaceException{
@@ -3610,10 +3609,10 @@ say( "size in bytes = " + sizeInBytes);
         long reservationId = reserveSpace(voGroup,voRole,sizeInBytes,latency , policy, lifetime,description);
         reserve.setSpaceToken(reservationId);
     }
-    
+
     public File reserveAndUseSpace(String pnfsPath,PnfsId pnfsId,long size,AccessLatency latency,RetentionPolicy policy,VOInfo voinfo)
     throws SQLException,java.io.IOException,SpaceException{
-        
+
         long sizeInBytes = size;
         long lifetime = 1000*60*60;
         String voGroup = null;
@@ -3628,7 +3627,7 @@ say( "size in bytes = " + sizeInBytes);
         File file = getFile(fileId);
         return file;
     }
-    
+
     private void useSpace(Use use)
     throws SQLException, SpaceException{
         if(!spaceManagerEnabled) {
@@ -3652,7 +3651,7 @@ say( "size in bytes = " + sizeInBytes);
             File f = getFile(pnfsId);
             Space s = getSpace(f.getSpaceId());
             StorageInfo info = poolRequest.getStorageInfo();
-            
+
             info.setAccessLatency(s.getAccessLatency());
             info.isSetAccessLatency(true);
             info.setRetentionPolicy(s.getRetentionPolicy());
@@ -3663,7 +3662,7 @@ say( "size in bytes = " + sizeInBytes);
             esay("transferToBeStarted(): could bnot get space reservation related to this transfer ");
         }
     }
-    
+
     private void transferStarted(PnfsId pnfsId,boolean success) {
         say("transferStarted("+pnfsId+","+success+")");
         Connection _con = null;
@@ -3702,7 +3701,7 @@ say( "size in bytes = " + sizeInBytes);
                 _con = null;
                 return;
             }
-            
+
             if(f.getState() == FileState.RESERVED ||
                     f.getState() == FileState.TRANSFERRING) {
                 updateFileInSpaceInfo(_con,f.getId(),
@@ -3712,7 +3711,7 @@ say( "size in bytes = " + sizeInBytes);
                         null,
                         null,
                         new Integer(FileState.TRANSFERRING.getStateId()));
-                
+
                 say("COMMIT TRANSACTION");
                 _con.commit();
                 connection_pool.returnConnection(_con);
@@ -3723,7 +3722,7 @@ say( "size in bytes = " + sizeInBytes);
                 connection_pool.returnConnection(_con);
                 _con = null;
             }
-            
+
         } catch(SQLException sqle) {
             esay("transferStarted failed with ");
             esay(sqle);
@@ -3733,23 +3732,23 @@ say( "size in bytes = " + sizeInBytes);
             } catch(SQLException sqle1) {}
             connection_pool.returnFailedConnection(_con);
             _con = null;
-            
+
         } finally {
             if(_con != null) {
                 connection_pool.returnConnection(_con);
             }
         }
-        
+
     }
-    
+
     private void transferFinished(DoorTransferFinishedMessage finished) throws Exception {
         boolean weDeleteStoredFileRecord = deleteStoredFileRecord;
         PnfsId pnfsId = finished.getPnfsId();
         StorageInfo storageInfo = finished.getStorageInfo();
-        
+
         long size = storageInfo.getFileSize();
         boolean success = finished.getReturnCode() == 0;
-        
+
         say("transferFinished("+pnfsId+","+success+")");
         Connection _con = null;
         try {
@@ -3762,20 +3761,20 @@ say( "size in bytes = " + sizeInBytes);
                 return;
             }
             long spaceId = f.getSpaceId();
-            
+
             if(f.getState() == FileState.RESERVED ||
                     f.getState() == FileState.TRANSFERRING) {
                 if(success) {
                     if(returnFlushedSpaceToReservation && weDeleteStoredFileRecord) {
                         RetentionPolicy rp = getSpace(_con,spaceId).getRetentionPolicy();
                         if(rp.equals(RetentionPolicy.CUSTODIAL)) {
-                            //we do not delete it here, since the 
+                            //we do not delete it here, since the
                             // file will get flushed and we will need
                             // to account for that
                             weDeleteStoredFileRecord = false;
                         }
                     }
-                    
+
                     if(weDeleteStoredFileRecord) {
                         say("file transfered, deleting file record");
                         deleteFileInSpaceSpace(_con,f.getId());
@@ -3810,9 +3809,9 @@ say( "size in bytes = " + sizeInBytes);
                                     null,
                                     new Long(availSpaceSize-size),
                                     null,null,null);
-                            
+
                         }
-                        
+
                     } else {
                         say("file transfered, updating file record");
                         Space space = getSpaceForUpdate(_con,spaceId);
@@ -3828,7 +3827,7 @@ say( "size in bytes = " + sizeInBytes);
                                 null,
                                 new Integer(FileState.STORED.getStateId()));
                     }
-                    
+
                 } else {
                     updateFileInSpaceInfo(_con,f.getId(),
                             null,
@@ -3837,7 +3836,7 @@ say( "size in bytes = " + sizeInBytes);
                             null,
                             null,
                             new Integer(FileState.RESERVED.getStateId()));
-                    
+
                 }
                 say("COMMIT TRANSACTION");
                 _con.commit();
@@ -3849,7 +3848,7 @@ say( "size in bytes = " + sizeInBytes);
                 connection_pool.returnConnection(_con);
                 _con = null;
             }
-            
+
         } catch(SQLException sqle) {
             esay("transferStarted failed with ");
             esay(sqle);
@@ -3859,7 +3858,7 @@ say( "size in bytes = " + sizeInBytes);
             } catch(SQLException sqle1) {}
             connection_pool.returnFailedConnection(_con);
             _con = null;
-            
+
         } finally {
             if(_con != null) {
                 connection_pool.returnConnection(_con);
@@ -3871,7 +3870,7 @@ say( "size in bytes = " + sizeInBytes);
         //setStorageInfo.setReply(false);
         //sendMessage(new CellMessage(new CellPath(pnfsManager),setStorageInfo));
     }
-    
+
     private void  fileFlushed(PoolFileFlushedMessage fileFlushed) throws Exception {
 	//
 	// check if file is ONLINE or NEARLINE (NB)
@@ -3892,7 +3891,7 @@ say( "size in bytes = " + sizeInBytes);
 	}
 
         long size = storageInfo.getFileSize();
-        
+
         Connection _con = null;
         try {
             _con = connection_pool.getConnection();
@@ -3906,7 +3905,7 @@ say( "size in bytes = " + sizeInBytes);
                 return;
             }
             long spaceId = f.getSpaceId();
-            
+
             if(f.getState() == FileState.STORED) {
                 if(deleteStoredFileRecord) {
                     say("returnSpaceToReservation, deleting file record");
@@ -3937,7 +3936,7 @@ say( "size in bytes = " + sizeInBytes);
                 connection_pool.returnConnection(_con);
                 _con = null;
             }
-            
+
         } catch(SQLException sqle) {
             esay("returnSpaceToReservation failed with ");
             esay(sqle);
@@ -3947,7 +3946,7 @@ say( "size in bytes = " + sizeInBytes);
             } catch(SQLException sqle1) {}
             connection_pool.returnFailedConnection(_con);
             _con = null;
-            
+
         } finally {
             if(_con != null) {
                 connection_pool.returnConnection(_con);
@@ -3959,7 +3958,7 @@ say( "size in bytes = " + sizeInBytes);
         //setStorageInfo.setReply(false);
         //sendMessage(new CellMessage(new CellPath(pnfsManager),setStorageInfo));
     }
-    
+
     private void  fileRemoved(PoolRemoveFilesMessage fileRemoved) throws Exception {
         String[] pnfsIdStrings = fileRemoved.getFiles();
         if(pnfsIdStrings == null || pnfsIdStrings.length == 0) {
@@ -3974,7 +3973,7 @@ say( "size in bytes = " + sizeInBytes);
                 esay(e);
                 continue;
             }
-            
+
             say("fileRemoved("+pnfsId+")");
             if(!returnRemovedSpaceToReservation) {
                 //do nothing
@@ -4022,7 +4021,7 @@ say( "size in bytes = " + sizeInBytes);
         //setStorageInfo.setReply(false);
         //sendMessage(new CellMessage(new CellPath(pnfsManager),setStorageInfo));
     }
-    
+
     private void cancelUseSpace(CancelUse cancelUse)
     throws SQLException,SpaceException{
         if(!spaceManagerEnabled) {
@@ -4073,7 +4072,7 @@ say( "size in bytes = " + sizeInBytes);
             }
         }
     }
-    
+
     private long reserveSpace(
             String voGroup,
             String voRole,
@@ -4089,7 +4088,7 @@ say( "size in bytes = " + sizeInBytes);
         say("reserveSpace(group="+voGroup+", role="+voRole+", sz="+sizeInBytes+
                 ", latency="+latency+", policy="+policy+", lifetime="+lifetime+
                 ", description="+description);
-        
+
         boolean needHsmBackup = policy.equals(RetentionPolicy.CUSTODIAL);
         say("policy is "+policy+", needHsmBackup is "+needHsmBackup);
         for(int i =0;i<10;++i) {
@@ -4104,7 +4103,7 @@ say( "size in bytes = " + sizeInBytes);
             Long linkGroupId = linkGroups[rand.nextInt(linkGroups.length)];
             say("selected linkGroup with id="+linkGroupId);
             Connection _con =null;
-            
+
             try {
                 _con = connection_pool.getConnection();
                 long reservationId = getNextToken(_con);
@@ -4128,7 +4127,7 @@ say( "size in bytes = " + sizeInBytes);
                 _con.commit();
                 connection_pool.returnConnection(_con);
                 _con = null;
-                
+
                 return reservationId;
             } catch(SQLException sqle) {
                 esay("selectLinkGroupForUpdate failed with ");
@@ -4148,7 +4147,7 @@ say( "size in bytes = " + sizeInBytes);
         }
         throw new SQLException(" can not find availabe space");
     }
-    
+
     private long reserveSpaceInLinkGroup(
             long linkGroupId,
             String voGroup,
@@ -4166,14 +4165,14 @@ say( "size in bytes = " + sizeInBytes);
             "group="+voGroup+", role="+voRole+", sz="+sizeInBytes+
                 ", latency="+latency+", policy="+policy+", lifetime="+lifetime+
                 ", description="+description);
-        
+
         boolean needHsmBackup = policy.equals(RetentionPolicy.CUSTODIAL);
         LinkGroup lg = getLinkGroup(linkGroupId);
         if(lg == null ) {
             throw new SpaceException("Link Group with id="+linkGroupId+
                 " is not found");
         }
-        
+
         Connection _con =null;
 
         try {
@@ -4216,7 +4215,7 @@ say( "size in bytes = " + sizeInBytes);
         }
 
     }
-    
+
     private long useSpace(long reservationId,
             String voGroup,
             String voRole,
@@ -4246,7 +4245,7 @@ say( "size in bytes = " + sizeInBytes);
             _con.commit();
             connection_pool.returnConnection(_con);
             _con = null;
-            
+
             return fileId;
         } catch(SQLException sqle) {
             esay("selecSpaceForUpdate or insert file failed with ");
@@ -4262,7 +4261,7 @@ say( "size in bytes = " + sizeInBytes);
             }
         }
     }
-    
+
     public void selectPool(CellMessage cellMessage, boolean willBeForwarded ) throws Exception{
         PoolMgrSelectPoolMsg selectPool = (PoolMgrSelectPoolMsg)cellMessage.getMessageObject();
         if(!spaceManagerEnabled ) {
@@ -4274,7 +4273,7 @@ say( "size in bytes = " + sizeInBytes);
             }
             return;
         }
-        
+
         say("selectPool("+selectPool +")");
         String pnfsPath = selectPool.getPnfsPath();
         PnfsId pnfsId = selectPool.getPnfsId();
@@ -4301,7 +4300,7 @@ say( "size in bytes = " + sizeInBytes);
                 ProtocolInfo protocolInfo = selectPool.getProtocolInfo();
                 VOInfo voinfo = null;
                 if(protocolInfo instanceof GridProtocolInfo) {
-                    voinfo = 
+                    voinfo =
                         ((GridProtocolInfo)protocolInfo).getVOInfo();
                     say("protocol info is GridProtocolInfo");
                     say(" voinfo="+voinfo);
@@ -4321,7 +4320,7 @@ say( "size in bytes = " + sizeInBytes);
                 file = reserveAndUseSpace(pnfsPath,
                         selectPool.getPnfsId(),
                         selectPool.getFileSize(),
-                        al, 
+                        al,
                         rp,
                         voinfo);
             } else {
@@ -4333,13 +4332,13 @@ say( "size in bytes = " + sizeInBytes);
                     sendMessage(cellMessage) ;
                 }
                 return;
-                
+
             }
         } else {
             say("selectPool: file is not null, calling updateFileInSpaceInfo()");
             updateFileInSpaceInfo(file.getId(),null,null,pnfsId,null,null,null);
         }
-        
+
         long spaceId = file.getSpaceId();
         Space space = getSpace(spaceId);
         long linkGroupid = space.getLinkGroupId();
@@ -4356,15 +4355,15 @@ say( "size in bytes = " + sizeInBytes);
         }
         return;
     }
-    
+
     public String getPnfsManager() {
         return pnfsManager;
     }
-    
+
     public String getPoolManager() {
         return poolManager;
     }
-    
+
     public void getSpaceMetaData(GetSpaceMetaData gsmd) throws Exception{
         if(!spaceManagerEnabled) {
             throw new SpaceException("SpaceManager is disabled in configuration");
@@ -4384,7 +4383,7 @@ say( "size in bytes = " + sizeInBytes);
         }
         gsmd.setSpaces(spaces);
     }
-    
+
     public void getSpaceTokens(GetSpaceTokens gst) throws Exception{
         if(!spaceManagerEnabled) {
             throw new SpaceException("SpaceManager is disabled in configuration");
@@ -4398,7 +4397,7 @@ say( "size in bytes = " + sizeInBytes);
         long [] tokens = getSpaceTokens(voGroup, voRole, description);
         gst.setSpaceToken(tokens);
     }
-    
+
     public void getFileSpaceTokens(GetFileSpaceTokensMessage getFileTokens) throws Exception{
         if(!spaceManagerEnabled) {
             throw new SpaceException("SpaceManager is disabled in configuration");
@@ -4407,13 +4406,13 @@ say( "size in bytes = " + sizeInBytes);
         String pnfsPath = getFileTokens.getPnfsPath();
         if(pnfsId == null && pnfsPath == null) {
             throw new IllegalArgumentException("null voGroup");
-            
+
         }
         long [] tokens = getFileSpaceTokens(pnfsId,pnfsPath);
         getFileTokens.setSpaceToken(tokens);
-        
+
     }
-    
+
     public void extendLifetime(ExtendLifetime extendLifetime) throws Exception{
         if(!spaceManagerEnabled) {
             throw new SpaceException("SpaceManager is disabled in configuration");
@@ -4443,7 +4442,7 @@ say( "size in bytes = " + sizeInBytes);
                 say("COMMIT TRANSACTION");
                 _con.commit();
                 connection_pool.returnConnection(_con);
-                _con = null;  
+                _con = null;
                 return;
             }
             long currentTime = System.currentTimeMillis();
@@ -4460,7 +4459,7 @@ say( "size in bytes = " + sizeInBytes);
             _con.commit();
             connection_pool.returnConnection(_con);
             _con = null;
-            
+
         } catch(SQLException sqle) {
             esay("selecSpaceForUpdate or insert file failed with ");
             esay(sqle);

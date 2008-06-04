@@ -13,7 +13,6 @@ import dmg.util.*;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.PnfsFile;
-import diskCacheV111.util.FsPath;
 
 import diskCacheV111.vehicles.PnfsGetStorageInfoMessage;
 import diskCacheV111.vehicles.StorageInfo;
@@ -62,29 +61,29 @@ public class CopyManager extends CellAdapter {
     protected String poolManager ="PoolManager";
     private String poolProxy ;
 
-                                                    
+
     /** Creates a new instance of CopyManager */
     public CopyManager(String cellName, String argString) throws Exception
-    {  
+    {
         super(cellName,argString,false);
        _nucleus  = getNucleus() ;
         _args = new Args(argString);
        _pnfsPath = new CellPath ( "PnfsManager" );
-        InetAddress[] addresses = InetAddress.getAllByName( 
+        InetAddress[] addresses = InetAddress.getAllByName(
             InetAddress.getLocalHost().getHostName());
         _hosts = new String[addresses.length];
          for(int i = 0; i<addresses.length; ++i)
          {
              _hosts[i] = addresses[i].getHostName();
          }
-        
+
          String tmpstr = _args.getOpt ("pool_manager_timeout");
          if(tmpstr != null)
          {
             __poolManagerTimeout =Integer.parseInt (tmpstr);
          }
 
-         
+
          tmpstr = _args.getOpt ("pool_timeout");
          if(tmpstr != null)
          {
@@ -106,7 +105,7 @@ public class CopyManager extends CellAdapter {
                  poolManager = _args.getOpt("poolManager");
          }
          _poolMgrPath     = new CellPath ( poolManager ) ;
-        
+
          poolProxy = _args.getOpt("poolProxy");
             say("Pool Proxy "+( poolProxy == null ? "not set" : ( "set to "+poolProxy ) ) );
 
@@ -114,16 +113,16 @@ public class CopyManager extends CellAdapter {
         getNucleus ().export ();
         start() ;
 
-        
+
     }
-    
+
     // transfers ls
     // queue ls
     // kill active
     // remove queued
-    
-    
-    
+
+
+
     public String hh_set_max_transfers = "<#max transfers>" ;
     public String ac_set_max_transfers_$_1( Args args )throws CommandException
     {
@@ -159,7 +158,7 @@ public class CopyManager extends CellAdapter {
        poolTimeout = timeout;
        return "set pool timeout to "+timeout+ " seconds";
     }
-    
+
     public String hh_set_pool_manager_timeout = "<#seconds>" ;
     public String ac_set_pool_manager_timeout_$_1( Args args )throws CommandException
     {
@@ -171,7 +170,7 @@ public class CopyManager extends CellAdapter {
        __poolManagerTimeout = timeout;
        return "set pool manager timeout to "+timeout+ " seconds";
     }
-    
+
     public String hh_ls = "[-l] [<#transferId>]" ;
     public String ac_ls_$_0_1( Args args )throws CommandException
     {
@@ -189,10 +188,10 @@ public class CopyManager extends CellAdapter {
                {
                    return "ID not found : "+id;
                }
-               CopyHandler transferHandler = 
+               CopyHandler transferHandler =
                 (CopyHandler)
                     activeTransfersIDsToHandlerMap.get(id);
-               return " transfer id="+id+" : "+ 
+               return " transfer id="+id+" : "+
                     transferHandler.toString(long_format);
            }
        }
@@ -208,15 +207,15 @@ public class CopyManager extends CellAdapter {
            while(iter.hasNext())
            {
                id = (Long) iter.next();
-               CopyHandler transferHandler = 
+               CopyHandler transferHandler =
                 (CopyHandler)
                     activeTransfersIDsToHandlerMap.get(id);
                sb.append("\n#").append(id);
                sb.append(" ").append( transferHandler.toString(long_format));
            }
-               
+
        }
-       return sb.toString();           
+       return sb.toString();
     }
 
     public String hh_queue = "[-l]" ;
@@ -236,13 +235,13 @@ public class CopyManager extends CellAdapter {
               sb.append("\n#").append(i);
               CellMessage cellMessage = (CellMessage) queue.get(i);
               CopyManagerMessage transfer_request =
-                (CopyManagerMessage) 
+                (CopyManagerMessage)
                 cellMessage.getMessageObject();
                sb.append(" store src=");
                sb.append(transfer_request.getSrcPnfsPath());
                sb.append(" dest=");
                sb.append(transfer_request.getDstPnfsPath());
-              
+
                if(!long_format)
                {
                    continue;
@@ -250,7 +249,7 @@ public class CopyManager extends CellAdapter {
                sb.append("\n    uid=").append(transfer_request.getUid());
                sb.append(" gid=").append(transfer_request.getGid());
                sb.append(" try#").append(transfer_request.getNumberOfPerformedRetries());
-              
+
            }
            return sb.toString();
        }
@@ -288,14 +287,14 @@ public class CopyManager extends CellAdapter {
        printWriter.println( sb.toString()) ;
    }
 
-    
+
     public void notifyHandler(long handlerId,Object message)
     {
         say("CopyManager.notifyHandler()");
-        
+
         synchronized(activeTransfersIDsToHandlerMap)
         {
-            CopyHandler handler = 
+            CopyHandler handler =
                 (CopyHandler)
                 activeTransfersIDsToHandlerMap.get(Long.valueOf(handlerId));
             if(handler != null)
@@ -316,17 +315,17 @@ public class CopyManager extends CellAdapter {
         say("Message messageArrived source = "+cellMessage.getSourceAddress());
         if (object instanceof DoorTransferFinishedMessage)
         {
-            
+
             long id = ((DoorTransferFinishedMessage)object ).getId();
             notifyHandler(id,object);
-            
+
             return;
         }
         else if(object instanceof DCapClientPortAvailableMessage)
         {
             long id = ((DCapClientPortAvailableMessage)object).getId();
             notifyHandler(id,object);
-            
+
             return;
         }
         else if(object instanceof CopyManagerMessage)
@@ -344,8 +343,8 @@ public class CopyManager extends CellAdapter {
             return;
         }
         super.messageArrived (cellMessage);
-        
-        
+
+
     }
     public void returnError(CellMessage cellMessage,String errormsg)
     {
@@ -364,23 +363,23 @@ public class CopyManager extends CellAdapter {
             esay(e);
         }
     }
-    
+
     PnfsHandler pnfs_handler;
     public PnfsHandler getPnfsHandler()
     {
         if(pnfs_handler == null)
         {
-            pnfs_handler = new PnfsHandler( CopyManager.this, 
+            pnfs_handler = new PnfsHandler( CopyManager.this,
                     _pnfsPath );
         }
         return pnfs_handler;
     }
-    
-         
+
+
     private class CopyHandler implements Runnable
     {
-        
-        
+
+
         private CellMessage cellMessage;
         private CopyManagerMessage transfer_request;
         private boolean requeue;
@@ -406,7 +405,7 @@ public class CopyManager extends CellAdapter {
                 sync.notify();
             }
         }
-        
+
         public Object messageWait(long timeout)
         {
             synchronized(sync)
@@ -429,8 +428,8 @@ public class CopyManager extends CellAdapter {
                 return incommingMessage;
             }
         }
-        
-        public CopyHandler(CellMessage cellMessage) 
+
+        public CopyHandler(CellMessage cellMessage)
         {
              this.cellMessage = cellMessage;
         }
@@ -441,7 +440,7 @@ public class CopyManager extends CellAdapter {
             {
                 return state;
             }
-            
+
            StringBuffer sb = new StringBuffer();
            sb.append("store src=");
            sb.append(transfer_request.getSrcPnfsPath());
@@ -480,19 +479,19 @@ public class CopyManager extends CellAdapter {
                sb.append("\n   dstPool=").append(dstPool);
            }
            return sb.toString();
-          
+
         }
 
         public synchronized String getState()
         {
             return state;
         }
-        
+
         public synchronized void setState(String state)
         {
             this.state = state;
         }
-        
+
         public String getSrcPnfsPath()
         {
             CopyManagerMessage req =
@@ -503,7 +502,7 @@ public class CopyManager extends CellAdapter {
             }
             return "unknown";
         }
-        
+
         public String getDstPnfsPath()
         {
             CopyManagerMessage req =
@@ -514,18 +513,18 @@ public class CopyManager extends CellAdapter {
             }
             return "unknown";
         }
-        
-        
+
+
         public  PnfsId  getSrcPnfsId()
         {
             return srcPnfsId;
         }
-        
+
         public  PnfsId  getDstPnfsId()
         {
             return srcPnfsId;
         }
-        
+
         public StorageInfo getSrcStorageInfo()
         {
             return srcStorageInfo;
@@ -534,18 +533,18 @@ public class CopyManager extends CellAdapter {
         {
             return dstStorageInfo;
         }
-        
+
         public String getSrcPool()
         {
             return srcPool;
         }
-        
+
         public String getDstPool()
         {
             return dstPool;
         }
-        
-        public void run() 
+
+        public void run()
         {
             while(cellMessage != null)
             {
@@ -554,8 +553,8 @@ public class CopyManager extends CellAdapter {
                 {
                      synchronized(this)
                      {
-                       
-                       this.transfer_request=(CopyManagerMessage) 
+
+                       this.transfer_request=(CopyManagerMessage)
                             cellMessage.getMessageObject();
                             say("starting  processing transfer message with id "+transfer_request.getId());
                             state ="Pending";
@@ -565,7 +564,7 @@ public class CopyManager extends CellAdapter {
                             dstStorageInfo = null;
                             srcPool = null;
                             dstPool = null;
-                       
+
                      }
 
                        copy(
@@ -573,9 +572,9 @@ public class CopyManager extends CellAdapter {
                         transfer_request.getGid(),
                         transfer_request.getSrcPnfsPath(),
                         transfer_request.getDstPnfsPath());
-                       
+
                         transfer_request.setReturnCode(0);
-                        
+
                         transfer_request.setDescription("file "+
                         transfer_request.getDstPnfsPath() +
                         " has been copied from "+
@@ -585,7 +584,7 @@ public class CopyManager extends CellAdapter {
                 {
                     int number_or_retries = transfer_request.getNumberOfRetries()-1;
                     transfer_request.setNumberOfRetries(number_or_retries);
-                    
+
                     if(number_or_retries >0)
                     {
                         requeue = true;
@@ -619,13 +618,13 @@ public class CopyManager extends CellAdapter {
                         }
                     }
                 }
-                
+
                 cellMessage = nextFromQueue();
             }
-        }        
-        
+        }
+
         private void copy(
-            int uid, 
+            int uid,
             int gid,
             String srcPnfsFilePath,
             String dstPnfsFilePath)
@@ -638,7 +637,7 @@ public class CopyManager extends CellAdapter {
                     activeTransfersIDs.add(longId);
                     activeTransfersIDsToHandlerMap.put(longId,this);
                 }
-                setState("checking user permissions");   
+                setState("checking user permissions");
                 PnfsHandler pnfs_handler = getPnfsHandler();
                 PnfsCreateEntryMessage dstPnfsEntry = null;
                 try
@@ -652,10 +651,10 @@ public class CopyManager extends CellAdapter {
                     srcPnfsId = srcPnfsEntry.getPnfsId();
                     srcStorageInfo = srcPnfsEntry.getStorageInfo();
                     //
-                    // second check that we have permissions 
+                    // second check that we have permissions
                     // to, and then create destination file entry
-                    // 
-                    dstPnfsEntry = 
+                    //
+                    dstPnfsEntry =
                         createDestinationPnfsEntry(uid,gid,dstPnfsFilePath);
                     dstPnfsId = dstPnfsEntry.getPnfsId();
                     dstStorageInfo = dstPnfsEntry.getStorageInfo();
@@ -672,24 +671,24 @@ public class CopyManager extends CellAdapter {
                         tcp_buffer_size
                         );
                     Thread current = Thread.currentThread();
-                    setState("waiting for a write pool");   
-                     
+                    setState("waiting for a write pool");
+
                     dstPool = askForReadWritePool(dstPnfsId,
                         dstStorageInfo,dst_protocol_info,true);
-                    
+
                     setState("wating for a write mover to give us "+
-                        " a listening port");   
-                    
+                        " a listening port");
+
                     askForFile(dstPool,
                         dstPnfsId,
                         dstStorageInfo,
                         dst_protocol_info,
                         true,id);
-                    
+
                     say("copy is calling messageWait");
                     Object o = messageWait(moverTimeout*1000);
                     say("messageWait returned "+ o);
-                    
+
                     if(o == null )
                     {
                         esay("copy: wait expired ");
@@ -697,7 +696,7 @@ public class CopyManager extends CellAdapter {
                         throw new java.io.IOException(
                             "copy failed: wait for port from write mover expired");
                     }
-                    
+
                     if(!(o instanceof DCapClientPortAvailableMessage))
                     {
                         esay("copy: unexpected message arrived " +o);
@@ -705,28 +704,28 @@ public class CopyManager extends CellAdapter {
                             "copy failed: received unexpected message while waiting "+
                             "for port from write mover " + o);
                     }
-                    
+
                     DCapClientPortAvailableMessage deleg_req =
                         (DCapClientPortAvailableMessage)o;
-                    
-                   DCapProtocolInfo src_protocol_info = 
-                       new DCapProtocolInfo( 
+
+                   DCapProtocolInfo src_protocol_info =
+                       new DCapProtocolInfo(
                             "DCap" , 3 , 0 ,
                             deleg_req.getHost(),
                             deleg_req.getPort() ) ;
                    src_protocol_info.setSessionId( getSessionNextId());
-                   setState("waiting for a read pool");   
+                   setState("waiting for a read pool");
                    srcPool = askForReadWritePool(srcPnfsId,
                         srcStorageInfo,
                         src_protocol_info,
                         false);
-                   
+
                     askForFile(srcPool,
                         srcPnfsId,
                         srcStorageInfo,
                         src_protocol_info,
                         false,id);
-                    
+
                     boolean srcDone = false;
                     boolean dstDone = false;
                     while(true)
@@ -752,13 +751,13 @@ public class CopyManager extends CellAdapter {
                                     say("src mover reported success ");
                                     srcDone = true;
                                 }
-                                
+
                                 if(finished.getPnfsId().equals(dstPnfsId))
                                 {
                                     say("dst mover reported success ");
                                     dstDone = true;
                                 }
-                                
+
                                 if(srcDone && dstDone)
                                 {
                                     setState("success");
@@ -801,7 +800,7 @@ public class CopyManager extends CellAdapter {
                             esay(e1);
                         }
                     }
-                        
+
                     setState("error :" +e.toString());
                     esay(e);
                     throw new java.io.IOException(e.toString());
@@ -816,14 +815,14 @@ public class CopyManager extends CellAdapter {
                     }
                 }
         }
-            
+
         PnfsCreateEntryMessage createDestinationPnfsEntry(int uid,int gid,
             String dstPnfsFilePath)
             throws Exception
         {
             PnfsHandler pnfs_handler = getPnfsHandler();
             int last_slash_pos = dstPnfsFilePath.lastIndexOf('/');
-            
+
             if(last_slash_pos == -1)
             {
                 throw new java.io.IOException(
@@ -831,10 +830,10 @@ public class CopyManager extends CellAdapter {
             }
             String parentDir = dstPnfsFilePath.substring(0,last_slash_pos);
             PnfsCreateEntryMessage pnfsEntry = null;
-            
+
              PnfsGetStorageInfoMessage parent_info =
                 pnfs_handler.getStorageInfoByPath(parentDir);
-            diskCacheV111.util.FileMetaData parent_data = 
+            diskCacheV111.util.FileMetaData parent_data =
                 parent_info.getMetaData();
             boolean can_write = (parent_data.getUid() == uid) &&
             parent_data.getUserPermissions().canWrite() &&
@@ -855,21 +854,21 @@ public class CopyManager extends CellAdapter {
             return    pnfs_handler.createPnfsEntry(dstPnfsFilePath, uid,
                 gid,0644);
 
-           
+
         }
-        
-        private PnfsGetStorageInfoMessage getSrcPnfsInfo(int uid, int gid, 
+
+        private PnfsGetStorageInfoMessage getSrcPnfsInfo(int uid, int gid,
             String srcPnfsFilePath)
             throws Exception
         {
             PnfsHandler pnfs_handler = getPnfsHandler();
-            
+
             PnfsGetStorageInfoMessage info =
                 pnfs_handler.getStorageInfoByPath(srcPnfsFilePath);
-            
-            diskCacheV111.util.FileMetaData metadata = 
+
+            diskCacheV111.util.FileMetaData metadata =
                 info.getMetaData();
-            
+
             boolean can_read = (metadata.getUid() == uid) &&
                 metadata.getUserPermissions().canRead();
 
@@ -882,16 +881,16 @@ public class CopyManager extends CellAdapter {
             {
                 throw new java.io.IOException("user has no permission to read this file");
             }
-            
+
             return info;
         }
-        
+
     }
     private String askForReadWritePool( PnfsId       pnfsId ,
     StorageInfo  storageInfo ,
     ProtocolInfo protocolInfo ,
     boolean      isWrite       ) throws CacheException {
-        
+
         //
         // ask for a pool
         //
@@ -910,7 +909,7 @@ public class CopyManager extends CellAdapter {
             storageInfo,
             protocolInfo ,
             0L                 );
-            
+
             say("PoolMgrSelectPoolMsg: " + request.toString() );
             CellMessage reply;
             try
@@ -926,44 +925,44 @@ public class CopyManager extends CellAdapter {
                 esay(e);
                 throw new CacheException(e.toString());
             }
-            
+
             say("CellMessage (reply): " + reply);
             if( reply == null )
                 throw new
                 CacheException("PoolMgrSelectReadPoolMsg timed out") ;
-            
+
             Object replyObject = reply.getMessageObject();
-            
+
             if( ! ( replyObject instanceof  PoolMgrSelectPoolMsg ) )
                 throw new
                 CacheException( "Not a PoolMgrSelectPoolMsg : "+
                 replyObject.getClass().getName() ) ;
-            
+
             request =  (PoolMgrSelectPoolMsg)replyObject;
-            
+
             say("poolManagerReply = "+request);
-            
+
             if( request.getReturnCode() != 0 )
                 throw new
                 CacheException( "Pool manager error: "+
                 request.getErrorObject() ) ;
-            
+
             String pool = request.getPoolName();
             say("Positive reply from pool "+pool);
-            
+
             return pool ;
-            
+
     }
-    
+
     private void askForFile( String       pool ,
     PnfsId       pnfsId ,
     StorageInfo  storageInfo ,
     ProtocolInfo protocolInfo ,
     boolean      isWrite,
     long id) throws CacheException {
-        
+
         say("Trying pool "+pool+" for "+(isWrite?"Write":"Read"));
-        
+
         PoolIoFileMessage poolMessage ;
         if( isWrite )
         {
@@ -982,7 +981,7 @@ public class CopyManager extends CellAdapter {
                 storageInfo     );
         }
             poolMessage.setId( id ) ;
-            
+
            CellPath poolCellPath;
             if( poolProxy == null ){
                     poolCellPath = new CellPath(pool);
@@ -1005,30 +1004,30 @@ public class CopyManager extends CellAdapter {
                 esay(e);
                 throw new CacheException(e.toString());
             }
-            
+
             if( reply == null)
                 throw new
                 CacheException( "Pool request timed out : "+pool ) ;
-            
+
             Object replyObject = reply.getMessageObject();
-            
+
             if( ! ( replyObject instanceof PoolIoFileMessage ) )
                 throw new
                 CacheException( "Illegal Object received : "+
                 replyObject.getClass().getName());
-            
+
             PoolIoFileMessage poolReply = (PoolIoFileMessage)replyObject;
-            
+
             if (poolReply.getReturnCode() != 0)
                 throw new
                 CacheException( "Pool error: "+poolReply.getErrorObject() ) ;
-            
+
             say("Pool "+pool+" will deliver file "+pnfsId);
-            
+
     }
-    
+
     private static long   nextMessageID = 10000 ;
-    
+
     private static synchronized long getNextMessageID()
     {
         if(nextMessageID == Long.MAX_VALUE)
@@ -1041,18 +1040,18 @@ public class CopyManager extends CellAdapter {
 
     private int max_transfers = 30;
     private int num_transfers = 0;
-    
+
     /** Getter for property max_transfers.
      * @return Value of property max_transfers.
      */
     public int getMax_transfers() {
         return max_transfers;
     }
-    
+
     /** Setter for property max_transfers.
      * @param max_transfers New value of property max_transfers.
      */
-    public void setMax_transfers(int max_transfers) 
+    public void setMax_transfers(int max_transfers)
     {
         this.max_transfers = max_transfers;
         synchronized(queue)
@@ -1063,7 +1062,7 @@ public class CopyManager extends CellAdapter {
                 {
                     break;
                 }
-                CellMessage nextMessage = 
+                CellMessage nextMessage =
                 (CellMessage) queue.remove(0);
                  _nucleus.newThread(
                     new CopyManager.CopyHandler(
@@ -1071,7 +1070,7 @@ public class CopyManager extends CellAdapter {
             }
         }
     }
-    
+
     private synchronized boolean new_transfer()
     {
         say("new_transfer() num_transfers = "+num_transfers+
@@ -1085,7 +1084,7 @@ public class CopyManager extends CellAdapter {
         num_transfers++;
         return true;
     }
-        
+
     private synchronized int active_transfers()
     {
         return num_transfers;
@@ -1095,17 +1094,17 @@ public class CopyManager extends CellAdapter {
         say("finish_transfer() num_transfers = "+num_transfers+" DECREMENT");
         num_transfers--;
     }
-    
+
     private ArrayList queue = new ArrayList();
 
     private synchronized void putOnQueue(CellMessage request)
     {
         queue.add(request);
     }
-    
+
     private synchronized CellMessage nextFromQueue()
     {
-            
+
         if(queue.size() >0)
         {
             if(new_transfer())
@@ -1117,8 +1116,8 @@ public class CopyManager extends CellAdapter {
     }
    private int                nextSessionId      = 100 ;
    private synchronized int getSessionNextId(){ return nextSessionId++ ; }
-  
-    
+
+
 }
 
 
