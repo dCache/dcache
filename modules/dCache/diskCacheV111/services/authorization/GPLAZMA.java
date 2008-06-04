@@ -301,8 +301,7 @@ public class GPLAZMA extends CellAdapter implements Runnable {
               TimeUnit.SECONDS,
               new LinkedBlockingQueue());
 
-      delaychecker =
-          Executors.newScheduledThreadPool(THREAD_COUNT, getNucleus());
+      delaychecker = Executors.newScheduledThreadPool(THREAD_COUNT);
 
       say(this.toString() + " started");
 
@@ -909,7 +908,7 @@ public class GPLAZMA extends CellAdapter implements Runnable {
                           long keepAliveTime,
                           TimeUnit unit,
                           BlockingQueue workQueue) {
-        super(corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue, getNucleus());
+        super(corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue);
     }
 
     /**
