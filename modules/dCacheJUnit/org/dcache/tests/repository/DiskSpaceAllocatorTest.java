@@ -462,21 +462,18 @@ public class DiskSpaceAllocatorTest {
     public void testAllocationOrder() throws Exception {
 
         final Random random = new Random();
-        final long space = Math.abs(random.nextLong());
+        final long allocSize = Math.abs(random.nextLong()) % (1L << 60) + 1;
 
-        final PoolSpaceAllocatable<Long> spaceAllocator = new FairDiskSpaceAllocator<Long>(space);
-
-        final long allocSize = space/4;
+        final PoolSpaceAllocatable<Long> spaceAllocator = new FairDiskSpaceAllocator<Long>(4 * allocSize);
 
         final Long entry = Long.valueOf(0);
         final Long entry1 = Long.valueOf(1);
         final Long entry2 = Long.valueOf(2);
 
-
         spaceAllocator.allocate(entry, allocSize *4 , 0);
 
         DiskSpaceAllocationTestHelper.allocateInThread(spaceAllocator, entry1, 10000, allocSize);
-        Thread.currentThread().sleep(100);
+        Thread.currentThread().sleep(500);
         DiskSpaceAllocationTestHelper.allocateInThread(spaceAllocator, entry2, 10000, allocSize);
 
 
