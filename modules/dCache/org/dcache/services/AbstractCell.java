@@ -194,6 +194,16 @@ public class AbstractCell extends CellAdapter
         _logger.debug(str);
     }
 
+    public void debug(Throwable t)
+    {
+        _logger.debug(t.getMessage());
+        StringWriter sw = new StringWriter();
+        t.printStackTrace(new PrintWriter(sw));
+        for (String s : sw.toString().split("\n")) {
+            _logger.debug(s);
+        }
+    }
+
     public void info(String str)
     {
         _logger.info(str);
