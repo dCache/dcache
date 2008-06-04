@@ -2761,6 +2761,9 @@ public abstract class AbstractFtpDoorV1
             case CacheException.TIMEOUT:
                 transfer_error(451, "Internal timeout", e);
                 break;
+            case CacheException.NOT_DIR:
+                transfer_error(550, "Not a directory");
+                break;
             default:
                 transfer_error(451, "Operation failed: " + e.getMessage(), e);
                 break;
@@ -3104,6 +3107,9 @@ public abstract class AbstractFtpDoorV1
             case CacheException.TIMEOUT:
                 transfer_error(451, "Internal timeout", e);
                 break;
+            case CacheException.NOT_DIR:
+                transfer_error(550, "Not a directory");
+                break;
             default:
                 transfer_error(451, "Operation failed: " + e.getMessage(), e);
                 break;
@@ -3419,6 +3425,31 @@ public abstract class AbstractFtpDoorV1
         transfer_error(replyCode, msg, null);
     }
 
+    /**
+     * Aborts a transfer and performs all necessary cleanup steps,
+     * including killing movers and removing incomplete files. A
+     * failure message is send to the client. Both the reply code and
+     * reply message are logged as errors.
+     *
+     * If an exception is specified, then the error message in the
+     * exception is logged too and the exception itself is logged at a
+     * debug level. The intention is that an exception is only
+     * specified for exceptional cases, i.e. errors we would not
+     * expect to appear in normal use (potential bugs). Communication
+     * errors and the like should not be logged with an exception.
+     *
+     * In case the caller knows that an exception is certainly a bug,
+     * <code>reportBug</code> should be called. That method logs the
+     * exception as fatal, meaning it will always be added to the
+     * log. In most cases <code>reportBug</code> should be called
+     * instead of <code>transfer_error</code>, since the former will
+     * throw a <code>RuntimeException</code>, which in turn causes
+     * <code>transfer_error</code> to be called.
+     *
+     * @param replyCode reply code to send the the client
+     * @param replyMsg error message to send back to the client
+     * @param exception exception to log or null
+     */
     private synchronized void transfer_error(int replyCode, String replyMsg,
                                              Exception exception)
     {
@@ -3508,6 +3539,7 @@ public abstract class AbstractFtpDoorV1
             } else {
                 error("FTP Door: Transfer error: " + msg
                       + " (" + exception.getMessage() + ")");
+                debug(exception);
             }
             _transfer = null;
             _transferInProgress = false;
