@@ -13,13 +13,14 @@ public class Message  implements java.io.Serializable {
     private long    _id            = 0 ;
 
     private static final long serialVersionUID = 2056896713066252504L;
-    
+
     public Message(){
     }
-    
+
     public Message(boolean replyRequired){
 	_replyRequired = replyRequired;
     }
+    @Override
     public String toString(){
         return _returnCode==0?"":"("+_returnCode+")="+_errorObject ;
     }
@@ -49,11 +50,11 @@ public class Message  implements java.io.Serializable {
 	_returnCode  = 0;
 	_errorObject = null;
     }
-    
+
     public int getReturnCode(){
 	return _returnCode;
     }
-    
+
     public Object getErrorObject(){
 	return _errorObject;
     }
