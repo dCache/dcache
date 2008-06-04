@@ -102,7 +102,7 @@ public class KerberosFtpDoorV1 extends GssFtpDoorV1 {
             }
         }
         ftpDoorName="Kerberos FTP";
-        _workerThread = new Thread( this );
+        _workerThread = getNucleus().newThread(this);
         _workerThread.start();
         useInterpreter(true);
         start();
