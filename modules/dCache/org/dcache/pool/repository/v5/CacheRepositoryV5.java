@@ -733,8 +733,14 @@ public class CacheRepositoryV5// extends CellCompanion
         _sweeper.printSetup(pw);
     }
 
+    public void shutdown()
+    {
+        _executor.shutdown();
+    }
+
     boolean isRepositoryOk()
     {
         return _repository.isRepositoryOk();
     }
+
 }

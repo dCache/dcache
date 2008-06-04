@@ -169,6 +169,7 @@ public class RepositorySubsystemTest
     {
         if (root != null)
             deleteDirectory(root);
+        repository.shutdown();
         cell.die();
     }
 

@@ -793,6 +793,7 @@ public class PoolV4 extends AbstractCell
     {
         disablePool(PoolV2Mode.DISABLED_DEAD | PoolV2Mode.DISABLED_STRICT,
                     666, "Shutdown");
+        _repository.shutdown();
     }
 
     private void setDummyStorageInfo(CacheEntry entry)
