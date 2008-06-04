@@ -487,6 +487,10 @@ public class GPLAZMA extends CellAdapter implements Runnable {
     synchronized( this ){
       notifyAll() ;
     }
+
+    authpool.shutdownNow();
+    delaychecker.shutdownNow();
+
     debug( " Done" ) ;
   }
 
