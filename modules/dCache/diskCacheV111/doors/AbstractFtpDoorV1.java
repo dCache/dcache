@@ -3717,20 +3717,19 @@ public abstract class AbstractFtpDoorV1
             String parent = parent_path.toString();
             if (parent.indexOf('*') != -1 || parent.indexOf('?') != -1 ||
                (parent.indexOf('[') != -1 && parent.indexOf(']') != -1)) {
-                reply(" 451 Parent Path Pattern Matching is not supported");
+                reply("504 Parent Path Pattern Matching is not supported");
                 return;
             }
             String absolute_parent_path = absolutePath(parent_path.toString());
             if (absolute_parent_path == null) {
                 FsPath relativeToRootPath = new FsPath(_curDirV);
                 relativeToRootPath.add(parent_path.toString());
-                reply("451 " + relativeToRootPath + " not found.");
+                reply("550 " + relativeToRootPath + " not found.");
                 return;
             }
             f = new PnfsFile(absolute_parent_path);
             if (!f.isDirectory()) {
-                reply("451 Cannot list file according to pattern \"" + pattern +
-                      "\" in " + parent + " which not a directory");
+                reply("550 Not a directory");
                 return;
             }
 
@@ -3741,19 +3740,19 @@ public abstract class AbstractFtpDoorV1
             if (absolutepath == null) {
                 FsPath relativeToRootPath = new FsPath(_curDirV);
                 relativeToRootPath.add(arg);
-                reply("451 "+relativeToRootPath+" not found.");
+                reply("550 " + relativeToRootPath + " not found.");
                 return;
             }
             f = new PnfsFile(absolutepath);
         }
 
         if (!f.exists()) {
-            reply("451 " + arg + "  not found");
+            reply("550 " + arg + " not found");
             return;
         }
 
         if (!f.isPnfs()) {
-            reply("451 non pnfs file. Access deny.");
+            reply("550 Not in PNFS. Access denied.");
             return;
         }
 
