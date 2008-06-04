@@ -452,7 +452,7 @@ getServices()
             ;;
     esac    
     
-    if [ "`printConfig ReplicaManager`" = "yes" ]; then
+    if [ "`printConfig replicaManager`" = "yes" ]; then
         printf "replica "
     fi
     if [ "`printConfig DCAP`" = "yes" ]; then
