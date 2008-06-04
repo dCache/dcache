@@ -385,8 +385,6 @@ public class Domain {
           e.printStackTrace() ;
           System.exit(4);
       }
-
-      System.out.println( "Main thread finished" ) ;
   }
   private static String [] [] getParameter( String [] args ){
       String [][] param = new String[args.length-1][] ;
