@@ -68,45 +68,96 @@ COPYRIGHT STATUS:
 
 package diskCacheV111.doors;
 
-import diskCacheV111.vehicles.*;
-import diskCacheV111.util.*;
-import diskCacheV111.services.*;
-import diskCacheV111.services.acl.PermissionHandlerInterface;
-
-
-import dmg.cells.nucleus.*;
-import dmg.util.*;
-
-import java.util.*;
-import java.io.*;
-import java.net.*;
-import java.lang.reflect.*;
-import java.security.NoSuchAlgorithmException;
-
-import org.dcache.chimera.acl.ACLException;
-import org.dcache.chimera.acl.Origin;
-import org.dcache.chimera.acl.Subject;
-import org.dcache.chimera.acl.enums.AuthType;
-import org.dcache.chimera.acl.enums.FileAttribute;
-import org.dcache.chimera.acl.enums.InetAddressType;
-import java.util.regex.*;
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
+import java.util.Queue;
+import java.util.List;
+import java.util.LinkedList;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.Map;
+import java.util.HashMap;
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.BufferedReader;
+import java.io.FilenameFilter;
+import java.io.OutputStream;
+import java.io.NotSerializableException;
+import java.net.Socket;
+import java.net.InetSocketAddress;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Constructor;
+import java.security.NoSuchAlgorithmException;
+
+import dmg.cells.nucleus.CellMessage;
+import dmg.cells.nucleus.CellMessageAnswerable;
+import dmg.cells.nucleus.CellAdapter;
+import dmg.cells.nucleus.NoRouteToCellException;
+import dmg.cells.nucleus.CellPath;
+import dmg.cells.nucleus.CellVersion;
+import dmg.util.CommandExitException;
+import dmg.util.Args;
+import dmg.util.StreamEngine;
+
 import diskCacheV111.vehicles.spaceManager.SpaceManagerGetInfoAndLockReservationByPathMessage;
 import diskCacheV111.vehicles.spaceManager.SpaceManagerUtilizedSpaceMessage;
 import diskCacheV111.vehicles.spaceManager.SpaceManagerUnlockSpaceMessage;
 import diskCacheV111.vehicles.DoorRequestInfoMessage;
 import diskCacheV111.vehicles.IoDoorInfo;
 import diskCacheV111.vehicles.IoDoorEntry;
+import diskCacheV111.vehicles.GFtpTransferStartedMessage;
+import diskCacheV111.vehicles.DoorTransferFinishedMessage;
+import diskCacheV111.vehicles.Message;
+import diskCacheV111.vehicles.StorageInfo;
+import diskCacheV111.vehicles.ProtocolInfo;
+import diskCacheV111.vehicles.GFtpProtocolInfo;
+import diskCacheV111.vehicles.PnfsGetStorageInfoMessage;
+import diskCacheV111.vehicles.PnfsSetLengthMessage;
+import diskCacheV111.vehicles.PnfsGetFileMetaDataMessage;
+import diskCacheV111.vehicles.PoolMgrSelectPoolMsg;
+import diskCacheV111.vehicles.PoolMgrSelectWritePoolMsg;
+import diskCacheV111.vehicles.PoolMgrSelectReadPoolMsg;
+import diskCacheV111.vehicles.PoolMoverKillMessage;
+import diskCacheV111.vehicles.PoolIoFileMessage;
+import diskCacheV111.vehicles.PoolDeliverFileMessage;
+import diskCacheV111.vehicles.PoolAcceptFileMessage;
+import diskCacheV111.vehicles.IoJobInfo;
 import diskCacheV111.movers.GFtpPerfMarkersBlock;
 import diskCacheV111.movers.GFtpPerfMarker;
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.FileExistsCacheException;
+import diskCacheV111.util.NotFileCacheException;
+import diskCacheV111.util.PnfsId;
+import diskCacheV111.util.FileMetaData;
+import diskCacheV111.util.PnfsFile;
+import diskCacheV111.util.FsPath;
+import diskCacheV111.util.VOInfo;
+import diskCacheV111.util.ProxyAdapter;
+import diskCacheV111.util.SocketAdapter;
+import diskCacheV111.util.ActiveAdapter;
+import diskCacheV111.util.ChecksumPersistence;
+import diskCacheV111.util.ChecksumFactory;
+import diskCacheV111.util.Checksum;
+import diskCacheV111.util.PnfsHandler;
+import diskCacheV111.util.UserAuthBase;
+import diskCacheV111.services.acl.PermissionHandlerInterface;
 
 import org.dcache.services.AbstractCell;
 import org.dcache.services.Option;
+import org.dcache.chimera.acl.ACLException;
+import org.dcache.chimera.acl.Origin;
+import org.dcache.chimera.acl.Subject;
+import org.dcache.chimera.acl.enums.AuthType;
+import org.dcache.chimera.acl.enums.FileAttribute;
+import org.dcache.chimera.acl.enums.InetAddressType;
 
 /**
  * Exception indicating an error during processing of an FTP command.
@@ -545,7 +596,7 @@ public abstract class AbstractFtpDoorV1
     private final CountDownLatch      _shutdownGate =
         new CountDownLatch(1);
     private final Map<String,Method>  _methodDict =
-        new Hashtable();
+        new HashMap();
 
     /**
      * Shared executor for processing FTP commands.
