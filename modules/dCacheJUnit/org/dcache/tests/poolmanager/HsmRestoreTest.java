@@ -342,7 +342,6 @@ public class HsmRestoreTest {
     }
 
 
-    @Ignore
     @Test
     public void testRestoreNoLocationsAllPoolsCantStage() throws Exception {
 
