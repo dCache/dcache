@@ -476,6 +476,7 @@ public class DiskSpaceAllocatorTest {
         spaceAllocator.allocate(entry, allocSize *4 , 0);
 
         DiskSpaceAllocationTestHelper.allocateInThread(spaceAllocator, entry1, 10000, allocSize);
+        Thread.currentThread().sleep(100);
         DiskSpaceAllocationTestHelper.allocateInThread(spaceAllocator, entry2, 10000, allocSize);
 
 
