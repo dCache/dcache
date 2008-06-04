@@ -13,8 +13,6 @@ public class CellAdapterHelper extends CellAdapter {
 
     private final static SystemCell _systemCell = new SystemCell("JUnitTestDomain");
 
-    private final CountDownLatch _latch = new CountDownLatch(1);
-
     public CellAdapterHelper(String name, String args) {
 
         super(name, args, true);
@@ -29,11 +27,8 @@ public class CellAdapterHelper extends CellAdapter {
     public void die() throws InterruptedException
     {
         kill();
-        _latch.await();
-    }
-
-    public void cleanUp() {
-        _latch.countDown();
+        if (!getNucleus().join(getCellName(), 1000))
+            throw new RuntimeException("Failed to kill cell within 1 second");
     }
 
     @Override
