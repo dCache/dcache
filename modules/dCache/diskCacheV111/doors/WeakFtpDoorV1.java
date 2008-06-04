@@ -106,13 +106,14 @@ public class WeakFtpDoorV1 extends AbstractFtpDoorV1 {
             return;
         }
 
-        _pwdRecord = authf.getUserPwdRecord(_user);
+        _originalPwdRecord = _pwdRecord = authf.getUserPwdRecord(_user);
 
         if( _pwdRecord == null || ((UserPwdRecord)_pwdRecord).isDisabled() ) {
             _pwdRecord = null;
             println("530 User " + _user + " not found.");
             return;
         }
+
         _needPass = true;
         if( _needPass )
             println("331 Password required for "+_user+".");
