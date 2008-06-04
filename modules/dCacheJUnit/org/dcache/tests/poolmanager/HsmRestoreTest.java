@@ -430,6 +430,11 @@ public class HsmRestoreTest {
         ff.setFailed(17, "pech");
         _rc.messageArrived(m);
 
+        /*
+         * request container retry timeout
+         */
+        Thread.sleep(62000);
+
         assertEquals("Second shot have to go to first pool", 2, stageRequests1.get());
         assertEquals("No stage request sent to pools2", 1, stageRequests2.get());
 
