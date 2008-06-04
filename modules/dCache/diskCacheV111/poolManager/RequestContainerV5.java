@@ -90,7 +90,6 @@ public class RequestContainerV5 implements Runnable {
     private final ThreadPool         _threadPool ;
     private final Map<PnfsId, CacheException>            _selections       = new HashMap<PnfsId, CacheException>() ;
     private final PartitionManager   _partitionManager ;
-    private long               _started          = System.currentTimeMillis();
     private long               _checkFilePingTimer = 10 * 60 * 1000 ;
 
     /**
@@ -118,6 +117,7 @@ public class RequestContainerV5 implements Runnable {
 
        _cell.getNucleus().newThread(this,"Container-ticker").start();
     }
+
     private ThreadPool createThreadPool( String poolClass ){
 
        ThreadPool threadPool = null ;
@@ -582,7 +582,7 @@ public class RequestContainerV5 implements Runnable {
        }
        return list.toArray( new RestoreHandlerInfo[list.size()] ) ;
     }
-;
+
     public void addRequest( CellMessage message ){
 
         boolean enforceP2P = false ;
@@ -706,7 +706,6 @@ public class RequestContainerV5 implements Runnable {
 
         private   String       _state         = "[<idle>]";
         private   int          _mode          = ST_INIT ;
-        private   int   _emergencyLoopCounter = 0 ;
         private   int          _currentRc     = 0 ;
         private   String       _currentRm     = "" ;
 
@@ -732,9 +731,7 @@ public class RequestContainerV5 implements Runnable {
         private class CheckFilePingHandler {
            private   long         _timeInterval = 0 ;
            private   long         _timer        = 0 ;
-           private   long         _lastPing     = 0 ;
            private   String       _candidate    = null ;
-           private   UOID         _waitingFor   = null ;
 
            private CheckFilePingHandler( long timerInterval ){
               _timeInterval = timerInterval ;
@@ -781,9 +778,6 @@ public class RequestContainerV5 implements Runnable {
                     esay(ee);
                 }
              }
-           }
-           private int replyArrived( PoolCheckFileMessage message ){
-              return 0 ;
            }
         }
 
