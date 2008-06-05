@@ -677,7 +677,7 @@ public void esay( String str ){ pin( str ) ; super.esay( str ) ; }
            }
            Object     obj = ssfConstructor.newInstance(args) ;
 
-           Method meth = ssfClass.getMethod("createServerSocket",null) ;
+           Method meth = ssfClass.getMethod("createServerSocket", new Class[0]) ;
            _serverSocket = (ServerSocket)meth.invoke( obj ) ;
 
            if ( (local == null ) || local.equals("*") || local.equals("")  ) {
