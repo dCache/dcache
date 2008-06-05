@@ -472,8 +472,13 @@ public class DiskSpaceAllocatorTest {
 
         spaceAllocator.allocate(entry, allocSize *4 , 0);
 
-        DiskSpaceAllocationTestHelper.allocateInThread(spaceAllocator, entry1, 10000, allocSize);
-        Thread.currentThread().sleep(500);
+        /*
+         * too guarantee allocation order second allocation called only when first thread is running
+         */
+        Thread t = DiskSpaceAllocationTestHelper.allocateInThread(spaceAllocator, entry1, 10000, allocSize);
+        while( !t.isAlive() ) {
+            Thread.sleep(100);
+        }
         DiskSpaceAllocationTestHelper.allocateInThread(spaceAllocator, entry2, 10000, allocSize);
 
 
