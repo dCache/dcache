@@ -657,7 +657,7 @@ public void esay( String str ){ pin( str ) ; super.esay( str ) ; }
 
            Class []  constructorArgClassA = { java.lang.String[].class , java.util.Map.class } ;
            Class []  constructorArgClassB = { java.lang.String[].class } ;
-           Class []        methodArgClass = { int.class } ;
+
 
            Class     ssfClass = Class.forName(list.remove(0));
            Object [] args     = null ;
@@ -677,7 +677,7 @@ public void esay( String str ){ pin( str ) ; super.esay( str ) ; }
            }
            Object     obj = ssfConstructor.newInstance(args) ;
 
-           Method meth = ssfClass.getMethod("createServerSocket",methodArgClass) ;
+           Method meth = ssfClass.getMethod("createServerSocket",null) ;
            _serverSocket = (ServerSocket)meth.invoke( obj ) ;
 
            if ( (local == null ) || local.equals("*") || local.equals("")  ) {
