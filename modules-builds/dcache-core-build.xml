@@ -133,6 +133,9 @@
 			<filename name="**/cells.jar" />
 			<filename name="**/dcache.jar" />
 			<filename name="Chimera/chimera-core.jar" />
+			<filename name="Chimera/chimera-nfs.jar" />
+            <filename name="Chimera/oncrpc.jar" />
+            <filename name="Chimera/portmap.jar" />
 		    <filename name="Chimera/chimera-acl.jar" />
 			<filename name="log4j/log4j-1.2.8.jar" />
 		</or>
