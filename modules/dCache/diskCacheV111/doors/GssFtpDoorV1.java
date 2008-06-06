@@ -387,7 +387,8 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
         } else {
             _pwdRecord = _userAuthRecords.next();
             _user = _pwdRecord.Username;
-            _curDirV = _pwdRecord.Home;
+            if (_curDirV==null)
+                _curDirV = _pwdRecord.Home;
             _pathRoot = _pwdRecord.Root;
             if (_pathRoot == null || _pathRoot.length() == 0)
                 _pathRoot = "/";
