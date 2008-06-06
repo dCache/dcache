@@ -2563,21 +2563,28 @@ public class Storage
                     absolute_path+"("+pnfsId+")");
             }
 	    else { 
-		getSpaceTokensMessage = 
-                    (GetFileSpaceTokensMessage)answer.getMessageObject();
-		if (getSpaceTokensMessage.getReturnCode() != 0) {
-		    say("Failed to retrieve space reservation tokens for file "+
-                        absolute_path+"("+pnfsId+")");
-		}
-		else {
-		    if (getSpaceTokensMessage.getSpaceTokens()!=null) { 
-			fmd.spaceTokens = 
-                            new long[getSpaceTokensMessage.getSpaceTokens().length];
-			System.arraycopy(getSpaceTokensMessage.getSpaceTokens(),0,
-                             fmd.spaceTokens,0,
-                            getSpaceTokensMessage.getSpaceTokens().length);
-		    }
-		}
+                Object messageObject =answer.getMessageObject();
+                if(messageObject instanceof GetFileSpaceTokensMessage) {
+                    getSpaceTokensMessage = 
+                        (GetFileSpaceTokensMessage)answer.getMessageObject();
+                    if (getSpaceTokensMessage.getReturnCode() != 0) {
+                        say("Failed to retrieve space reservation tokens for file "+
+                            absolute_path+"("+pnfsId+")");
+                    }
+                    else {
+                        if (getSpaceTokensMessage.getSpaceTokens()!=null) { 
+                            fmd.spaceTokens = 
+                                new long[getSpaceTokensMessage.getSpaceTokens().length];
+                            System.arraycopy(getSpaceTokensMessage.getSpaceTokens(),0,
+                                 fmd.spaceTokens,0,
+                                getSpaceTokensMessage.getSpaceTokens().length);
+                        }
+                    }
+                } 
+                else {
+                   say("Failed to retrieve space reservation tokens for file "+
+                    absolute_path+"("+pnfsId+") : "+messageObject);
+                }
 	    }
 	}
 	catch (Exception ee) { 
