@@ -30,6 +30,18 @@ public class IntegerStateValue extends StateValue {
 		super( false);
 		_storage = value;
 	}
+
+	
+	/**
+	 * Create a Integer StateValue that is either immortal or ephemeral.
+	 * @param value the numerical value to store
+	 * @param isImmortal whether this metric is immortal. If false, then an ephemeral value is
+	 * created, equivalent to IntegerStateValue( value).  
+	 */
+	public IntegerStateValue( long value, boolean isImmortal) {
+		super( isImmortal);
+		_storage = value;
+	}
 	
 	/**
 	 * Return a string representation.

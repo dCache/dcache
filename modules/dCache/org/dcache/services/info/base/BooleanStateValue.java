@@ -18,6 +18,15 @@ public class BooleanStateValue extends StateValue {
 		_storage = value;
 	}
 	
+	
+	/**
+	 * Create a new Boolean StateValue that is either Immortal or Ephemeral.
+	 */
+	public BooleanStateValue( boolean value, boolean isImmortal) {
+		super( isImmortal);
+		_storage = value;
+	}
+	
 	/**
 	 * Create a new BooleanStateValue with given value.  This
 	 * StateValue should expire after a certain time has elapsed.

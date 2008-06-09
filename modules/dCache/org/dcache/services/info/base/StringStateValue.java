@@ -22,6 +22,16 @@ public class StringStateValue extends StateValue {
 	}
 	
 	/**
+	 * Create a String StateValue that is either immortal or ephermal.
+	 * @param value the String value to store
+	 * @param isImmortal true if the value is immortal, false otherwise 
+	 */
+	public StringStateValue( String value, boolean isImmortal) {
+		super( isImmortal);
+		_storage = value;
+	}
+	
+	/**
 	 * Create an expiring String StateValue.
 	 * @param value the String to store.
 	 * @param duration the duration, in seconds, this should be maintained within dCache state.

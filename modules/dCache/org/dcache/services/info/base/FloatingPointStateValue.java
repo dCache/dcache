@@ -21,6 +21,17 @@ public class FloatingPointStateValue extends StateValue {
 		_storage = value;
 	}
 	
+	
+	/**
+	 * Create a new FloatingPoint StateValue that is either Immortal or Ephemeral.
+	 * @param value the floating-point number to store.
+	 * @param isImmortal true if this is immortal, otherwise ephemeral.
+	 */
+	public FloatingPointStateValue( double value, boolean isImmortal) {
+		super( isImmortal);
+		_storage = value;
+	}
+	
 	/**
 	 * Create a new FloatingPointStateValue that will store
 	 * a floating-point number within the dCache state tree.
