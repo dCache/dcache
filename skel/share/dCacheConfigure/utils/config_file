@@ -1,0 +1,240 @@
+# New Yaim Configuration and setup for D-Cache 1.6.6-X
+# Maintained by Owen Synge on behalf of GridPP
+
+# This file is a library for processing key value configuration files.
+
+
+yaim_config_file_backup()
+{
+  RET="$1".`date +%y%m%d_%H%M%S`.old
+  test -f "$1" && cp -p "$1" $RET
+}
+
+# takes file name as a parameter
+# returns a temp file for manipulation
+# see yaim_config_pool_manager_add_lines for example
+yaim_config_file_update_prepare()
+{
+yaimlog DEBUG "function yaim_config_file_update_prepare start"
+local managed_file
+local md5sum_orig
+local file2update
+
+managed_file=$1
+if [ -z ${managed_file} ] ; then
+echo yaim_config_file_update_prepare called with no file
+exit 1
+fi
+if [ ! -f ${managed_file} ] ; then
+    touch ${managed_file}
+fi
+file2update=${managed_file}.${md5sum_orig}
+md5sum_orig=$(md5sum ${managed_file} | cut -d" " -f1)
+RET=${managed_file}.${md5sum_orig}
+#echo cp ${managed_file} ${RET}
+cp ${managed_file} ${RET}
+yaimlog DEBUG "function yaim_config_file_update_prepare stop"
+}
+
+
+# takes file name as a parameter
+# Gets the temp file, checks the checksum against the
+# old file, if different update and atomicly update
+# using mv functionality which on POSIX systems is atomic.
+# returns 0 on no update
+# returns 1 on update
+# see yaim_config_pool_manager_add_lines for example
+yaim_config_file_update_done()
+{
+yaimlog DEBUG "function yaim_config_file_update_done start"
+local managed_file
+local md5sum_orig
+local file2update
+local md5sum_new
+
+
+managed_file=$1
+if [ -z ${managed_file} ] ; then
+echo yaim_config_file_update_done called with no file name
+exit 1
+fi
+
+if [ ! -f ${managed_file} ] ; then
+echo yaim_config_file_update_done called with no file that exists
+echo filename=${managed_file}
+exit 1
+fi
+md5sum_orig=$(md5sum ${managed_file} | cut -d" " -f1)
+file2update=${managed_file}.${md5sum_orig}
+md5sum_new=$(md5sum ${file2update} | cut -d" " -f1)
+if [ "${md5sum_orig}" != "${md5sum_new}" ] ; then
+    yaim_config_file_backup ${managed_file}
+    mv ${file2update} ${managed_file}
+else
+    rm ${file2update}
+fi
+yaimlog DEBUG "function yaim_config_file_update_done stop"
+if [ "${md5sum_orig}" == "${md5sum_new}" ] ; then
+    return 0
+else
+    return 1
+fi
+}
+
+
+
+yaim_config_file_get_value()
+{
+yaimlog DEBUG "function yaim_config_file_get_value start"
+local FILE
+local Key
+local cursor
+local CursorLine
+local MatchLine
+FILE=$1
+Key=$2
+if [ ! -f ${FILE} ] ; then
+    echo yaim_config_file_get_value called with no file
+    exit 1
+fi
+cursor=$(grep -n "^[\t ]*$Key[\t ]*=" $FILE | cut -d: -f1 | tail -n 1)
+#yaimlog DEBUG "cursor=$cursor"
+if [ -n "$cursor" ] ; then
+  CursorLine=$(sed "${cursor}q;d" $FILE | cut -s -d= -f2-)
+  #yaimlog DEBUG "CursorLine=$CursorLine"
+  MatchLine="${CursorLine%%"\\"}\\"
+  RET="${CursorLine%%"\\"}"
+  while [ "${CursorLine}" == "${MatchLine}" ]
+  do
+    let cursor+=1
+    CursorLine=$(sed "${cursor}q;d" $FILE)
+    MatchLine="${CursorLine%%"\\"}\\"
+    RET="$RET ${CursorLine%%"\\"}"
+  done
+else
+  RET=""
+fi
+yaimlog DEBUG "function yaim_config_file_get_value stop"
+}
+
+
+yaim_config_file_set_value()
+{
+yaimlog DEBUG "function yaim_config_file_set_value start"
+local FILE
+local Key
+local Value
+local tmpfile
+local AddedValue
+local line
+local CursorLine
+local linesWithKeys
+local cursor
+local MatchCursorLine
+local lastline
+# File to edit
+FILE=$1
+# Key to set 
+Key=$2
+# Value to Set
+Value=$3
+# Use as Flag for adding value
+# 0 Not yet added
+# 1 Should add as soon as posible
+# 2 Already Added
+AddedValue=0
+tmpfile=$FILE.bakup
+rm -f $tmpfile
+linesWithKeys=`grep -n "^[\t ]*$Key=" $FILE | cut -d: -f1`
+if [ "" == "$linesWithKeys" ] ; then
+    # No Value already exists.
+    lastLineCommented=`grep -n "^[\t# ]*$Key=" $FILE | cut -d: -f1 | tail -n 1`
+    if [ "" == "$lastLineCommented" ] ; then
+        # No commented out line exists
+        cp $FILE $tmpfile
+        echo "$Key=$Value" >> $tmpfile
+    else
+        # Commented out line = $lastLineCommented        
+        let cursor=$lastLineCommented
+        CursorLine=$(sed "${cursor}q;d" $FILE)
+        MatchCursorLine="${CursorLine%%"\\"}\\"
+        while [ "${CursorLine}" == "${MatchCursorLine}" ]
+        do
+            let cursor+=1
+            CursorLine=$(sed "${cursor}q;d" $FILE)
+            MatchCursorLine="${CursorLine%%"\\"}\\"
+        done
+        sed "${cursor}q" $FILE >> $tmpfile
+        echo "$Key=$Value" >> $tmpfile
+        line=`cat  $FILE | wc -l |  sed -e "s/ *//g"`
+        let cursor+=1
+        sed -n "${cursor},${line}p" $FILE >> $tmpfile
+    fi
+else
+    
+    #linesCommented=`grep -n "^[\t# ]*$Key=" $FILE | cut -d: -f1`
+    linesContinued=`grep -n '\\\\$' $FILE | cut -d: -f1`
+    #echo linesWithKeys=$linesWithKeys
+    #echo linesContinued=$linesContinued
+    #echo linesCommented=$linesCommented
+    previousLine=1
+    cursor=1
+    commentcursor=0
+    supercommentcursor=0
+    for keyLine in $linesWithKeys
+    do
+        cursor=$keyLine
+        if [ "${previousLine}" != "${cursor}" ] ; then
+            #echo previousLine != cursor
+            #echo previousLine=${previousLine} cursor=${cursor}
+            let before_cursor=${cursor}-1
+            sed -n "${previousLine},${before_cursor}p" $FILE >> $tmpfile
+        fi
+        CursorLine=$(sed "${cursor}q;d" $FILE)
+        if [ "${CursorLine}" == "${Key}=${Value}" ] ; then
+            echo "$Key=$Value" >> $tmpfile
+            AddedValue=2
+        else
+            commentcursor=${cursor}
+            for lineCont in $linesContinued
+            do
+                if [ "${cursor}" == "${lineCont}" ] ;then 
+                   let cursor+=1
+                fi
+            done
+            sed -n "${commentcursor},${cursor}p" $FILE | sed -e "s/^/#/" >> $tmpfile
+        fi
+        let previousLine=$cursor+1
+    done
+    if [ "$AddedValue" == "0" ] ; then
+        echo "$Key=$Value" >> $tmpfile
+        AddedValue=2
+    fi
+    lastline=$(cat $FILE | wc -l |  sed -e "s/ *//g")
+    sed -n "${previousLine},${lastline}p" $FILE >> $tmpfile
+fi
+mv $tmpfile $FILE
+yaimlog DEBUG "function yaim_config_file_set_value stop"
+}
+
+
+
+# Comments out the key and value if already set
+yaim_config_file_remove_value()
+{
+    yaimlog DEBUG "function yaim_config_file_remove_value start"
+    local FILE
+    local Key
+    local SED
+    FILE=$1
+    Key=$2
+    tmpfile=$FILE.bak
+    if [ ! -f ${FILE} ] ; then
+        echo yaim_config_file_remove_value called with no file
+        exit 1
+    fi
+
+    sed -e  "s/^${Key}=/#${Key}=/"  $FILE > $tmpfile
+    mv $tmpfile $FILE
+    yaimlog DEBUG "function yaim_config_file_remove_value stop"
+}

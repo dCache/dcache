@@ -1,0 +1,19 @@
+function central_certs () {
+
+if [ "$X509_CERT_DIR" -a -d "$X509_CERT_DIR" ]; then
+    return 0
+fi
+
+if [ ! -d /etc/grid-security/certificates ]; then
+    return 1
+fi
+
+central_certs=`find /etc/grid-security/certificates -ctime -1 -name '*.r0' -maxdepth 1 | wc -l`
+
+if [ $central_certs -gt 0 ]; then
+    return 0
+else
+    return 1
+fi
+
+}

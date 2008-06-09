@@ -1,0 +1,629 @@
+##############################################################################
+# Copyright (c) Members of the EGEE Collaboration. 2004. 
+# See http://www.eu-egee.org/partners/ for details on the copyright 
+# holders.  
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); 
+# you may not use this file except in compliance with the License. 
+# You may obtain a copy of the License at 
+#
+#    http://www.apache.org/licenses/LICENSE-2.0 
+#
+# Unless required by applicable law or agreed to in writing, software 
+# distributed under the License is distributed on an "AS IS" BASIS, 
+# WITHOUT WARRANTIES OR CONDITIONS 
+# OF ANY KIND, either express or implied. 
+# See the License for the specific language governing permissions and 
+# limitations under the License.
+##############################################################################
+#
+# NAME :        site-info.def
+#
+# DESCRIPTION : This is the main configuration file needed to execute the
+#               yaim command. It contains a list of the variables needed to
+#               configure a service.
+#
+# AUTHORS :     yaim-contact@cern.ch
+#
+# NOTES :       - site-info.def currently contains the whole list of variables
+#                 needed to configure a site. However we have started to  move
+#                 towards a new approach where node type specific variables will 
+#                 be distributed by its corresponding module. 
+#                 Although a unique site-info.def can still be used at configuration time.
+#               
+#               - Service specific variables will be distributed under 
+#                 /opt/glite/yaim/examples/siteinfo/services/glite_<node_type_name>
+#                 The definition of the variables can be done there or copy them in site-info.def.  
+#
+#               - VO variables are currently distributed for a number of VOs with
+#                 real values that can be directly used by sys admins.
+#                 We have started to move towards a new approach where yaim will no longer distribute
+#                 these variables. Instead, VO values will be downloaded directly from the CIC
+#                 portal and will be integrated using the YAIM configurator.
+#
+#               - For more information on YAIM, please check:
+#                 https://twiki.cern.ch/twiki/bin/view/EGEE/YAIM
+#
+#               - For more details on the CIC portal, visit:
+#                 http://cic.in2p3.fr/
+#                 To know more about the YAIM configurator go to the VO management section.
+#
+# YAIM MODULE:  glite-yaim-core
+#                 
+##############################################################################
+
+##########################
+# YAIM related variables #
+##########################
+
+# This a variable to debug your configuration.
+# If it is set, functions will print debugging information.
+# Values: NONE, ABORT, ERROR, WARNING, INFO, DEBUG
+YAIM_LOGGING_LEVEL=INFO
+
+# Repository settings
+# Be aware that the install option is only available for 3.0 services.
+# You can ignore this variables if you are configuring a 3.1 service.
+LCG_REPOSITORY="'rpm http://glitesoft.cern.ch/EGEE/gLite/APT/R3.0/ rhel30 externals Release3.0 updates'"
+CA_REPOSITORY="rpm http://linuxsoft.cern.ch/ LCG-CAs/current production"
+REPOSITORY_TYPE="apt"
+
+###################################
+# General configuration variables #
+###################################
+
+MY_DOMAIN=$(hostname -d)
+INSTALL_ROOT=/opt
+
+# These variables tell YAIM where to find additional configuration files.
+WN_LIST=/opt/glite/yaim/etc/wn-list.conf
+USERS_CONF=/opt/glite/yaim/etc/users.conf
+GROUPS_CONF=/opt/glite/yaim/etc/groups.conf
+FUNCTIONS_DIR=/opt/glite/yaim/functions
+
+# gLite pool account home directory
+# Please, uncomment this variable is you want to specify a home directory different from /home.
+# USER_HOME_PREFIX=my_home_directory
+
+# Set this to "yes" if your site provides an X509toKERBEROS Authentication Server
+# Only for sites with Experiment Software Area under AFS
+GSSKLOG=no
+GSSKLOG_SERVER=my-gssklog.$MY_DOMAIN
+
+OUTPUT_STORAGE=/tmp/jobOutput
+JAVA_LOCATION="/usr/java/j2sdk1.4.2_12"
+
+# Set this to '/dev/null' or some other dir if you want
+# to turn off yaim installation of cron jobs
+CRON_DIR=/etc/cron.d
+
+# Set this to your prefered and firewall allowed port range
+# YAIM automatically handles the syntax of this variable depending on the version of VDT. 
+# If it is VDT 1.6 it leaves "num1,num2". If it is a version < VDT 1.6 it changes to "num1 num2". 
+GLOBUS_TCP_PORT_RANGE="20000,25000"
+
+# Choose a good password !
+# And be sure that this file cannot be read by any grid job !
+MYSQL_PASSWORD=set_this_to_a_good_password
+
+# Site-wide settings
+SITE_EMAIL=root@localhost
+SITE_CRON_EMAIL=$SITE_EMAIL  # not yet used will appear in a later release
+SITE_SUPPORT_EMAIL=$SITE_EMAIL
+SITE_NAME=my-site-name
+SITE_LOC="City, Country"
+SITE_LAT=0.0 # -90 to 90 degrees
+SITE_LONG=0.0 # -180 to 180 degrees
+SITE_WEB="http://www.my-site.org"
+SITE_TIER="TIER 2"
+SITE_SUPPORT_SITE="my-bigger-site.their_domain"
+#SITE_HTTP_PROXY="http-proxy.my.domain"
+
+# Set this if your WNs have a shared directory for temporary storage
+CE_DATADIR=""
+
+##############################
+# CE configuration variables #
+##############################
+
+CE_HOST=my-ce.$MY_DOMAIN
+
+# Architecture and enviroment specific settings
+CE_CPU_MODEL=PIII
+CE_CPU_VENDOR=intel
+CE_CPU_SPEED=1001
+CE_OS="Scientific Linux"
+CE_OS_RELEASE=3.0.6
+CE_OS_VERSION="SL"
+# CE_OS_ARCH should be set to result of `uname -m` runned on WN
+CE_OS_ARCH=i686
+CE_MINPHYSMEM=513
+CE_MINVIRTMEM=1025
+CE_PHYSCPU=1
+CE_LOGCPU=1
+CE_SMPSIZE=2
+CE_SI00=381
+CE_SF00=0
+CE_OUTBOUNDIP=TRUE
+CE_INBOUNDIP=FALSE
+CE_RUNTIMEENV="
+    LCG-2
+    LCG-2_1_0
+    LCG-2_1_1
+    LCG-2_2_0
+    LCG-2_3_0
+    LCG-2_3_1
+    LCG-2_4_0
+    LCG-2_5_0
+    LCG-2_6_0
+    LCG-2_7_0
+    GLITE-3_0_0
+    GLITE-3_1_0
+    R-GMA
+"
+
+##############################
+# RB configuration variables #
+##############################
+
+RB_HOST=my-rb.$MY_DOMAIN
+
+###############################
+# WMS configuration variables #
+###############################
+
+WMS_HOST=my-wms.$MY_DOMAIN
+
+###################################
+# myproxy configuration variables #
+###################################
+
+PX_HOST=my-px.$MY_DOMAIN
+
+# GRID_TRUSTED_BROKERS: DNs of services (RBs) allowed to renew/retrives
+# credentials from/at the myproxy server. Put single quotes around each trusted DN !!!
+
+GRID_TRUSTED_BROKERS="
+'broker one'
+'broker two'
+"
+
+################################
+# RGMA configuration variables #
+################################
+
+MON_HOST=my-mon.$MY_DOMAIN
+REG_HOST=lcgic01.gridpp.rl.ac.uk	
+
+###################################
+# FTS configuration variables #
+###################################
+
+FTS_HOST=my-fts.$MY_DOMAIN
+FTS_SERVER_URL="https://fts.${MY_DOMAIN}:8443/path/glite-data-transfer-fts"
+
+###############################
+# LFC configuration variables #
+###############################
+
+LFC_HOST=my-lfc.$MY_DOMAIN
+
+LFC_DB_PASSWORD="lfc_password"
+
+# Default value is to put the standard database on the LFC host
+LFC_DB_HOST=$LFC_HOST
+LFC_DB=cns_db
+
+# If you use a DNS alias in front of your LFC, specify it here
+LFC_HOST_ALIAS=""
+
+# All catalogues are local unless you add a VO to
+# LFC_CENTRAL, in which case that will be central
+LFC_CENTRAL=""
+
+# If you want to limit the VOs your LFC serves, add the locals here
+LFC_LOCAL=""
+
+#########################################
+# Torque server configuration variables #
+#########################################
+
+# Change this if your torque server is not on the CE
+# This is ignored for other batch systems
+BATCH_SERVER=$CE_HOST
+
+# Jobmanager specific settings
+JOB_MANAGER=lcgpbs
+CE_BATCH_SYS=torque
+BATCH_BIN_DIR=/usr/bin
+BATCH_VERSION=torque-1.0.1b
+BATCH_LOG_DIR=/var/spool/pbs
+
+#################################
+# VOBOX configuration variables #
+#################################
+
+VOBOX_HOST=my-vobox.$MY_DOMAIN
+VOBOX_PORT=1975
+
+################################
+# APEL configuration variables #
+################################
+
+APEL_DB_PASSWORD="APELDB_PWD"
+
+##########################################
+# Gridice server configuration variables #
+##########################################
+
+# GridIce server host name (usually run on the MON node).
+GRIDICE_SERVER_HOST=$MON_HOST
+
+####################################
+# E2EMONIT configuration variables #
+####################################
+
+# This specifies the location to download the host specific configuration file
+E2EMONIT_LOCATION=grid-deployment.web.cern.ch/grid-deployment/e2emonit/production
+
+# Replace this with the siteid supplied by the person setting up the networking
+# topology.
+E2EMONIT_SITEID=my.siteid
+
+######################################
+# SE classic configuration variables #
+######################################
+
+# Classic SE
+CLASSIC_HOST="classic_SE_host"
+CLASSIC_STORAGE_DIR="/storage"
+
+##################################
+# dcache configuration variables #
+##################################
+
+# dCache-specific settings
+# ignore if you are not running d-cache
+
+# Your dcache admin node
+DCACHE_ADMIN="my-admin-node"
+
+# Pools must include host:/absolutePath and may optionally include
+# size host:size:/absolutePath if the size is not set the pool will 
+# fill the partition it is installed upon. size cannot be smaller 
+# than 4 (Gb) unless you are an expert.
+
+DCACHE_POOLS="my-pool-node1:[size]:/pool-path1 my-pool-node2:/pool-path2"
+
+# Optional
+
+# For large sites the load on the admin-node is a limiting factor. Pnfs
+# accounts for a lot of this load and so can be placed on a different
+# node to balance the load better.
+
+
+# Set DCACHE_DOOR_* to "off" if you dont want the door to start on any host
+#
+
+# DCACHE_DOOR_SRM="door_node1[:port]"
+# DCACHE_DOOR_GSIFTP="door_node1[:port] door_node2[:port]"
+# DCACHE_DOOR_GSIDCAP="door_node1[:port] door_node2[:port]"
+# DCACHE_DOOR_DCAP="door_node1[:port] door_node2[:port]"
+# DCACHE_DOOR_XROOTD="door_node1[:port] door_node2[:port]"
+# DCACHE_DOOR_LDAP="admin_node"
+# DCACHE_DOOR_XROOTD="door_node1[:port] door_node2[:port]"
+
+# This option sets the name server it defaults to the admin node if 
+# not stated.
+#
+# DCACHE_NAME_SERVER=${DCACHE_ADMIN}
+
+# dCache supports two name servers these can be PNFS or Chimera 
+# but not both. PNFS is the mature solution but Chimera is both 
+# simpler and higher performance. For these reasons we provide 
+# support for both PNFS and Chimera. We recomend fresh installs
+# use Chimera but do not intend to force sites to change to 
+# Chimera.
+#
+# If your site does not specify an explist Name server the 
+# nameserver will default to Chimera. If your site wishes to 
+# explisitly use PNFS or Chimera it is recomended to specify the
+# variable DCACHE_PNFS_SERVER or DCACHE_CHIMERA_SERVER explisitly.
+#
+# DCACHE_PNFS_SERVER=${DCACHE_ADMIN}
+# DCACHE_CHIMERA_SERVER=${DCACHE_ADMIN}
+# Sets the portrange for dcache as a GSIFTP server in "passive" mode
+#
+# DCACHE_PORT_RANGE_PROTOCOLS_SERVER_GSIFTP=50000,52000
+#
+# Sets the portrange for dcache as a (GSI)DCAP and xrootd server in 
+# "passive" mode
+#
+# DCACHE_PORT_RANGE_PROTOCOLS_SERVER_MISC=60000,62000
+#
+# Sets the portrange for dcache as a GSIFTP client in "active" mode
+#
+# DCACHE_PORT_RANGE_PROTOCOLS_CLIENT_GSIFTP=33115,33215
+
+# This option sets the pnfs server it defaults to the admin node if 
+# not stated.
+#
+# DCACHE_PNFS_SERVER="pnfs_node"
+#
+# Sets the portrange for dcache as a GSIFTP server in "passive" mode
+#
+# DCACHE_PORT_RANGE_PROTOCOLS_SERVER_GSIFTP=50000,52000
+#
+# Sets the portrange for dcache as a (GSI)DCAP and xrootd server in 
+# "passive" mode
+#
+# DCACHE_PORT_RANGE_PROTOCOLS_SERVER_MISC=60000,62000
+#
+# Sets the portrange for dcache as a GSIFTP client in "active" mode
+#
+# DCACHE_PORT_RANGE_PROTOCOLS_CLIENT_GSIFTP=33115,33215
+
+# Only change if your site has an existing D-Cache installed
+# To a different storage root.
+# DCACHE_PNFS_VO_DIR="/pnfs/${MY_DOMAIN}/data"
+
+# Set to "yes" only if YAIM shall reset the dCache configuration,
+# or install DCache for the first time.
+# i.e. if you want YAIM to configure dCache - WARNING:
+# this may wipe out any dCache parameters previously configured!
+
+# RESET_DCACHE_CONFIGURATION=no
+
+# Set to "yes" only if YAIM shall reset the dCache nameserver,
+# Or install DCache for the first time.
+# i.e. if you want YAIM to clear the content of dCache - WARNING:
+# this may wipe out any dCache files previously stored!
+# RESET_DCACHE_PNFS=no
+
+# Set to "yes" only if YAIM shall reset the dCache Databases,
+# or install DCache for the first time.
+# i.e. if you want YAIM to clear the metadata of dCache - WARNING:
+# this may wipe out any dCache files names previously stored!
+# Leaving your system without any way to reestablish which files 
+# are stored.
+# RESET_DCACHE_RDBMS=no
+
+###############################
+# DPM configuration variables #
+###############################
+
+# DPMDATA is now deprecated. Use an entry like $DPM_HOST:/filesystem in
+# the DPM_FILESYSTEMS variable.
+# From now on we use DPM_DB_USER and DPM_DB_PASSWORD to make clear
+# its different role from that of the dpmmgr unix user who owns the
+# directories and runs the daemons.
+
+# The name of the DPM head node 
+DPM_HOST=""   # my-dpm.$MY_DOMAIN
+
+# The DPM pool name (max 15 character long name)
+DPMPOOL=the_dpm_pool_name
+
+# The filesystems/partitions parts of the pool
+DPM_FILESYSTEMS="$DPM_HOST:/path1 my-dpm-poolnode.$MY_DOMAIN:/path2"
+
+# The database user
+DPM_DB_USER=the-dpm-db-user
+
+# The database user password
+DPM_DB_PASSWORD=the-dpm-db-user-pwd
+
+# The DPM database host
+DPM_DB_HOST=$DPM_HOST
+
+# The DPM db name. Default is dpm_db
+# DPM_DB=dpm_db
+
+# The DPNS db name. Default is cns_db
+# DPNS_DB=cns_db
+
+# The DPM infosystem user name
+DPM_INFO_USER=dpminfo
+
+# The DPM infosystem user password
+DPM_INFO_PASS=the-dpminfo-db-user-pwd
+
+# Specifies the default amount of space reserved  for a file
+DPMFSIZE=200M
+
+# Variable for the port range  - Optional, default value is shown
+# RFIO_PORT_RANGE="20000 25000" 
+
+###########
+# SE_LIST #
+###########
+
+SE_LIST="$CLASSIC_HOST $DPM_HOST $DCACHE_ADMIN"
+SE_ARCH="multidisk" # "disk, tape, multidisk, other"
+
+#############################################
+# GRIDFTP logfile location variable for SEs #
+#############################################
+
+# Variable necessary to configure Gridview service client on the SEs.
+# It sets the location and filename of the gridftp server logfile on 
+# different types of SEs. Needed gridftp logfile for gridview is the 
+# netlogger file which contain info for each transfer (created with
+# -Z/-log-transfer option for globus-gridftp-server). 
+# Ex: DATE=20071206082249.108921 HOST=hostname.cern.ch PROG=globus-gridftp-server 
+# NL.EVNT=FTP_INFO START=20071206082248.831173 USER=atlas102 FILE=/storage/atlas/ 
+# BUFFER=0 BLOCK=262144 NBYTES=330 VOLUME=/ STREAMS=1 STRIPES=1 DEST=[127.0.0.1] 
+# TYPE=LIST CODE=226
+# Default locations for DPM: /var/log/dpm-gsiftp/dpm-gsiftp.log
+#            and SE_classic: /var/log/globus-gridftp.log
+
+SE_GRIDFTP_LOGFILE=path_to_gridftp_logfile.log
+
+
+
+################################
+# BDII configuration variables #
+################################
+
+BDII_HOST=my-bdii.$MY_DOMAIN
+SITE_BDII_HOST=my-bdii.$MY_DOMAIN
+
+BDII_SITE_TIMEOUT=120
+BDII_RESOURCE_TIMEOUT=`expr "$BDII_SITE_TIMEOUT" - 5`
+GIP_RESPONSE=`expr "$BDII_RESOURCE_TIMEOUT" - 5`
+GIP_FRESHNESS=60
+GIP_CACHE_TTL=300
+GIP_TIMEOUT=150
+
+# Check the validity of this URL in the documentation
+BDII_HTTP_URL="http://lcg-bdii-conf.cern.ch/bdii-conf/bdii.conf"
+
+# The Freedom of Choice of Resources service allows a top-level BDII
+# to be instructed to remove VO-specific access control lines for
+# resources that do not meet the VO requirements
+BDII_FCR=http://lcg-fcr.cern.ch:8083/fcr-data/exclude.ldif
+
+# Ex.: BDII_REGIONS="CE SE RB PX VOBOX"
+BDII_REGIONS="BDII CE SE"    # list of the services provided by the site
+
+# The following examples are valid for node types using MDS. 
+# If you the node type is using BDII instead (all 3.1 nodes)
+# change the port to 2170 and mds-vo-name=resource
+BDII_BDII_URL="ldap://$SITE_BDII_HOST:2170/mds-vo-name=resource,o=grid"
+BDII_CE_URL="ldap://$CE_HOST:2135/mds-vo-name=local,o=grid"
+BDII_SE_URL="ldap://$CLASSIC_HOST:2135/mds-vo-name=local,o=grid"
+BDII_RB_URL="ldap://$RB_HOST:2135/mds-vo-name=local,o=grid"
+BDII_PX_URL="ldap://$PX_HOST:2135/mds-vo-name=local,o=grid"
+BDII_LFC_URL="ldap://$LFC_HOST:2135/mds-vo-name=local,o=grid"
+BDII_VOBOX_URL="ldap://$VOBOX_HOST:2135/mds-vo-name=local,o=grid"
+BDII_FTS_URL="ldap://$FTS_HOST:2170/mds-vo-name=resource,o=grid"
+BDII_DPM_URL="ldap://$DPM_HOST:2170/mds-vo-name=resource,o=grid"
+
+##############################
+# VO configuration variables #
+##############################
+#
+# This file contains variables defined for the following VOs
+# atlas
+# alice
+# lhcb
+# cms
+# dteam
+# biomed
+# ops
+#
+# Edit the following set of variables if you want to configure a different VO:
+# VO_<vo_name>_SW_DIR
+# VO_<vo_name>_DEFAULT_SE
+# VO_<vo_name>_STORAGE_DIR 
+# VO_<vo_name>_POOL_PATH  (optional)
+# VO_<vo_name>_VOMS_SERVERS
+# VO_<vo_name>_VOMS_EXTRA_MAPS (optional)
+# VO_<vo_name>_VOMSES
+# VO_<vo_name>_VOMS_CA_DN
+# 
+# If you are configuring a DNS-like VO, please check
+# the following URL: https://twiki.cern.ch/twiki/bin/view/LCG/YaimGuide400#vo_d_directory
+#
+# IMPORTANT! Please, take into account that in the future YAIM will no longer provide VO
+# related variables for these VOs. This information should be obtained out of the CIC portal:
+# http://cic.in2p3.fr/
+#
+# The VO variables will be automatically generated by the YAIM configurator and integrated in YAIM. 
+
+# Space separated list of supported VOs by your site
+VOS="atlas alice lhcb cms dteam biomed ops"
+QUEUES=${VOS}
+
+# For each queue define a _GROUP_ENABLE variable which is a list
+# of VO names and VOMS FQANs
+# Ex.: MYQUEUE_GROUP_ENABLE="ops atlas cms /VO=cms/GROUP=/cms/Susy"
+# In DNS like VO names dots and dashes shoul be replaced with underscore:
+# Ex.: MYQUEUE_GROUP_ENABLE="my.test-queue"
+#      MY_TEST_QUEUE_GROUP_ENABLE="ops atlas"
+
+ATLAS_GROUP_ENABLE="atlas"
+ALICE_GROUP_ENABLE="alice"
+LHCB_GROUP_ENABLE="lhcb"
+CMS_GROUP_ENABLE="cms"
+DTEAM_GROUP_ENABLE="dteam"
+BIOMED_GROUP_ENABLE="biomed"
+OPS_GROUP_ENABLE="ops"
+
+VO_SW_DIR=/opt/exp_soft
+
+# Set this if you want a scratch directory for jobs
+EDG_WL_SCRATCH=""
+
+#########
+# atlas #
+#########
+VO_ATLAS_SW_DIR=$VO_SW_DIR/atlas
+VO_ATLAS_DEFAULT_SE=$CLASSIC_HOST
+VO_ATLAS_STORAGE_DIR=$CLASSIC_STORAGE_DIR/atlas
+VO_ATLAS_VOMS_SERVERS='vomss://voms.cern.ch:8443/voms/atlas?/atlas/'
+#VO_ATLAS_VOMS_EXTRA_MAPS="'Role=production production' 'usatlas .usatlas'"
+VO_ATLAS_VOMSES="'atlas lcg-voms.cern.ch 15001 /DC=ch/DC=cern/OU=computers/CN=lcg-voms.cern.ch atlas 24' 'atlas voms.cern.ch 15001 /DC=ch/DC=cern/OU=computers/CN=voms.cern.ch atlas 24'"
+VO_ATLAS_VOMS_CA_DN="'/DC=ch/DC=cern/CN=CERN Trusted Certification Authority' '/DC=ch/DC=cern/CN=CERN Trusted Certification Authority'"
+#VO_ATLAS_RBS="atlasrb1.cern.ch atlasrb2.cern.ch"
+
+##########
+# alice  #
+##########
+VO_ALICE_SW_DIR=$VO_SW_DIR/alice
+VO_ALICE_DEFAULT_SE=$CLASSIC_HOST
+VO_ALICE_STORAGE_DIR=$CLASSIC_STORAGE_DIR/alice
+VO_ALICE_VOMS_SERVERS='vomss://voms.cern.ch:8443/voms/alice?/alice/'
+VO_ALICE_VOMSES="'alice lcg-voms.cern.ch 15000 /DC=ch/DC=cern/OU=computers/CN=lcg-voms.cern.ch alice 24' 'alice voms.cern.ch 15000 /DC=ch/DC=cern/OU=computers/CN=voms.cern.ch alice 24'"
+VO_ALICE_VOMS_CA_DN="'/DC=ch/DC=cern/CN=CERN Trusted Certification Authority' '/DC=ch/DC=cern/CN=CERN Trusted Certification Authority'"
+
+#######
+# cms #
+#######
+VO_CMS_SW_DIR=$VO_SW_DIR/cms
+VO_CMS_DEFAULT_SE=$CLASSIC_HOST
+VO_CMS_STORAGE_DIR=$CLASSIC_STORAGE_DIR/cms
+VO_CMS_VOMS_SERVERS='vomss://voms.cern.ch:8443/voms/cms?/cms/'
+VO_CMS_VOMSES="'cms lcg-voms.cern.ch 15002 /DC=ch/DC=cern/OU=computers/CN=lcg-voms.cern.ch cms 24' 'cms voms.cern.ch 15002 /DC=ch/DC=cern/OU=computers/CN=voms.cern.ch cms 24'"
+VO_CMS_VOMS_CA_DN="'/DC=ch/DC=cern/CN=CERN Trusted Certification Authority' '/DC=ch/DC=cern/CN=CERN Trusted Certification Authority'"
+
+########
+# lhcb #
+########
+VO_LHCB_SW_DIR=$VO_SW_DIR/lhcb
+VO_LHCB_DEFAULT_SE=$CLASSIC_HOST
+VO_LHCB_STORAGE_DIR=$CLASSIC_STORAGE_DIR/lhcb
+VO_LHCB_VOMS_SERVERS='vomss://voms.cern.ch:8443/voms/lhcb?/lhcb/'
+VO_LHCB_VOMS_EXTRA_MAPS="lcgprod lhcbprod"
+VO_LHCB_VOMSES="'lhcb lcg-voms.cern.ch 15003 /DC=ch/DC=cern/OU=computers/CN=lcg-voms.cern.ch lhcb 24' 'lhcb voms.cern.ch 15003 /DC=ch/DC=cern/OU=computers/CN=voms.cern.ch lhcb 24'"
+VO_LHCB_VOMS_CA_DN="'/DC=ch/DC=cern/CN=CERN Trusted Certification Authority' '/DC=ch/DC=cern/CN=CERN Trusted Certification Authority'"
+
+#########
+# dteam #
+#########
+VO_DTEAM_SW_DIR=$VO_SW_DIR/dteam
+VO_DTEAM_DEFAULT_SE=$CLASSIC_HOST
+VO_DTEAM_STORAGE_DIR=$CLASSIC_STORAGE_DIR/dteam
+VO_DTEAM_VOMS_SERVERS='vomss://voms.cern.ch:8443/voms/dteam?/dteam/'
+VO_DTEAM_VOMSES="'dteam lcg-voms.cern.ch 15004 /DC=ch/DC=cern/OU=computers/CN=lcg-voms.cern.ch dteam 24' 'dteam voms.cern.ch 15004 /DC=ch/DC=cern/OU=computers/CN=voms.cern.ch dteam 24'"
+VO_DTEAM_VOMS_CA_DN="'/DC=ch/DC=cern/CN=CERN Trusted Certification Authority' '/DC=ch/DC=cern/CN=CERN Trusted Certification Authority'"
+
+##########
+# biomed #
+##########
+VO_BIOMED_SW_DIR=$VO_SW_DIR/biomed
+VO_BIOMED_DEFAULT_SE=$CLASSIC_HOST
+VO_BIOMED_STORAGE_DIR=$CLASSIC_STORAGE_DIR/biomed
+VO_BIOMED_VOMS_SERVERS="vomss://cclcgvomsli01.in2p3.fr:8443/voms/biomed?/biomed/"
+VO_BIOMED_VOMSES="'biomed cclcgvomsli01.in2p3.fr 15000 /O=GRID-FR/C=FR/O=CNRS/OU=CC-LYON/CN=cclcgvomsli01.in2p3.fr biomed 24'"
+VO_BIOMED_VOMS_CA_DN="'/C=FR/O=CNRS/CN=GRID-FR'"
+
+#######
+# ops #
+#######
+VO_OPS_SW_DIR=$VO_SW_DIR/ops
+VO_OPS_DEFAULT_SE=$CLASSIC_HOST
+VO_OPS_STORAGE_DIR=$CLASSIC_STORAGE_DIR/ops
+VO_OPS_VOMS_SERVERS="vomss://voms.cern.ch:8443/voms/ops?/ops/"
+VO_OPS_VOMSES="'ops lcg-voms.cern.ch 15009 /DC=ch/DC=cern/OU=computers/CN=lcg-voms.cern.ch ops 24' 'ops voms.cern.ch 15004 /DC=ch/DC=cern/OU=computers/CN=voms.cern.ch ops 24'"
+VO_OPS_VOMS_CA_DN="'/DC=ch/DC=cern/CN=CERN Trusted Certification Authority' '/DC=ch/DC=cern/CN=CERN Trusted Certification Authority'"

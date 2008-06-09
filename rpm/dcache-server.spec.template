@@ -17,6 +17,8 @@ Obsoletes: dcache-core
 Obsoletes: dcache-opt
 Obsoletes: dcache-pool
 Obsoletes: dcache
+Obsoletes: dCacheConfigure
+Provides: dCachePostInstallConfigurationScripts
 Provides: d-cache-core <= @Version@
 Provides: d-cache-opt <= @Version@
 AutoReqProv: no

@@ -1,0 +1,14 @@
+config_bdii_only(){
+
+INSTALL_ROOT=${INSTALL_ROOT:-/opt}
+
+chown -R bdiiuser:bdiiuser $INSTALL_ROOT/bdii/etc
+chown -R bdiiuser:bdiiuser $INSTALL_ROOT/bdii/var
+
+/sbin/chkconfig --add bdii
+/sbin/service bdii stop
+/sbin/service bdii start
+
+return 0
+}
+
