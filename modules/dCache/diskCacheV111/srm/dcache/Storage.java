@@ -1666,91 +1666,91 @@ public class Storage
     }
 
     
-    private boolean isCached(StorageInfo storage_info, PnfsId _pnfsId) {
-	    PnfsGetCacheLocationsMessage msg = new PnfsGetCacheLocationsMessage(_pnfsId);
-	    CellMessage checkMessage = new CellMessage( _pnfsPath, msg );
-	    say("isCached: Waiting for PnfsGetCacheLocationsMessage reply from PnfsManager");
-	    try { 
-		    checkMessage = sendAndWait(checkMessage,
-					       __pnfsTimeout*1000 ) ;
-		    if(checkMessage == null) {
-			    esay("isCached(): timeout expired");
-			    return false;
-		    }
-		    msg = (PnfsGetCacheLocationsMessage) checkMessage.getMessageObject() ;
-	    } 
-	    catch(Exception ee ) {
-		    esay("isCached(): error receiving message back from PnfsManager : "+ee);
-		    return false;
-	    }
-	    if (msg.getReturnCode()!=0) { 
-		    esay("isCached(): Failed to get PnfsGetCacheLocationsMessage");
-		    return false;
-	    }
-	    StringBuffer sb = new StringBuffer();
-	    sb.append("isCached(): cache locations for file "+_pnfsId+ ":");
-	    for(Iterator<String> i=msg.getCacheLocations().iterator();i.hasNext();) {
-		    sb.append(i.next()).append(" ");
-	    }
-	    say(sb.toString());
-	    return (msg.getCacheLocations().isEmpty()==false);
-    }
+//     private boolean isCached(StorageInfo storage_info, PnfsId _pnfsId) {
+// 	    PnfsGetCacheLocationsMessage msg = new PnfsGetCacheLocationsMessage(_pnfsId);
+// 	    CellMessage checkMessage = new CellMessage( _pnfsPath, msg );
+// 	    say("isCached: Waiting for PnfsGetCacheLocationsMessage reply from PnfsManager");
+// 	    try { 
+// 		    checkMessage = sendAndWait(checkMessage,
+// 					       __pnfsTimeout*1000 ) ;
+// 		    if(checkMessage == null) {
+// 			    esay("isCached(): timeout expired");
+// 			    return false;
+// 		    }
+// 		    msg = (PnfsGetCacheLocationsMessage) checkMessage.getMessageObject() ;
+// 	    } 
+// 	    catch(Exception ee ) {
+// 		    esay("isCached(): error receiving message back from PnfsManager : "+ee);
+// 		    return false;
+// 	    }
+// 	    if (msg.getReturnCode()!=0) { 
+// 		    esay("isCached(): Failed to get PnfsGetCacheLocationsMessage");
+// 		    return false;
+// 	    }
+// 	    StringBuffer sb = new StringBuffer();
+// 	    sb.append("isCached(): cache locations for file "+_pnfsId+ ":");
+// 	    for(Iterator<String> i=msg.getCacheLocations().iterator();i.hasNext();) {
+// 		    sb.append(i.next()).append(" ");
+// 	    }
+// 	    say(sb.toString());
+// 	    return (msg.getCacheLocations().isEmpty()==false);
+//     }
 	    
 	    
 
-//     private boolean isCached(StorageInfo storage_info, PnfsId _pnfsId) {
-//         PoolMgrQueryPoolsMsg query =
-//                 new PoolMgrQueryPoolsMsg( DirectionType.READ ,
-//                       storage_info.getStorageClass()+"@"+storage_info.getHsm() ,
-//                       storage_info.getCacheClass(),
-//                       "*/*",
-//                       config.getSrmhost(),
-//                       null);
+    private boolean isCached(StorageInfo storage_info, PnfsId _pnfsId) {
+         PoolMgrQueryPoolsMsg query =
+                 new PoolMgrQueryPoolsMsg( DirectionType.READ ,
+                       storage_info.getStorageClass()+"@"+storage_info.getHsm() ,
+                       storage_info.getCacheClass(),
+                       "*/*",
+                       config.getSrmhost(),
+                       null);
 	
-//         CellMessage checkMessage = new CellMessage( _poolMgrPath , query ) ;
-//         say("isCached: Waiting for PoolMgrQueryPoolsMsg reply from PoolManager");
-//         try {
-//             checkMessage = sendAndWait(  checkMessage , __poolManagerTimeout*1000 ) ;
-//             if(checkMessage == null) {
-//                 esay("isCached(): timeout expired");
-//                 return false;
-//             }
-//             query = (PoolMgrQueryPoolsMsg) checkMessage.getMessageObject() ;
-//         } 
-// 	catch(Exception ee ) {
-//             esay("isCached(): error receiving message back from PoolManager : "+ee);
-//             return false;
-//         }
-        
-//         if( query.getReturnCode() != 0 ) {
-//             say( "storageInfo Available") ;
-//         }
-//         try {
-//             List assumedLocations = _pnfs.getCacheLocations(_pnfsId) ;
-//             List<String> [] lists = query.getPools() ;
-//             HashMap hash = new HashMap() ;
-            
-//             for( int i = 0 ; i < lists.length ; i++ ) {
-//                 Iterator nn = lists[i].iterator() ;
-//                 while( nn.hasNext() ) {
-//                     hash.put( nn.next() , "" ) ;
-//                 }
-//             }
-            
-//             Iterator nn = assumedLocations.iterator() ;
-            
-//             while( nn.hasNext() ) {
-//                 if( hash.get( nn.next() ) != null ) {
-//                     return true;
-//                 }
-//             }
-//         } 
-// 	catch(Exception e) {
-//             say("isCached exception : "+ e);
-// 	    e.printStackTrace();
-//         }
-//         return false;
-//     }
+         CellMessage checkMessage = new CellMessage( _poolMgrPath , query ) ;
+         say("isCached: Waiting for PoolMgrQueryPoolsMsg reply from PoolManager");
+         try {
+             checkMessage = sendAndWait(  checkMessage , __poolManagerTimeout*1000 ) ;
+             if(checkMessage == null) {
+                 esay("isCached(): timeout expired");
+                 return false;
+             }
+             query = (PoolMgrQueryPoolsMsg) checkMessage.getMessageObject() ;
+         } 
+ 	catch(Exception ee ) {
+             esay("isCached(): error receiving message back from PoolManager : "+ee);
+             return false;
+         }
+      
+         if( query.getReturnCode() != 0 ) {
+             say( "storageInfo Available") ;
+         }
+         try {
+             List assumedLocations = _pnfs.getCacheLocations(_pnfsId) ;
+             List<String> [] lists = query.getPools() ;
+             HashMap hash = new HashMap() ;
+          
+             for( int i = 0 ; i < lists.length ; i++ ) {
+                 Iterator nn = lists[i].iterator() ;
+                 while( nn.hasNext() ) {
+                     hash.put( nn.next() , "" ) ;
+                 }
+             }
+          
+             Iterator nn = assumedLocations.iterator() ;
+          
+             while( nn.hasNext() ) {
+                 if( hash.get( nn.next() ) != null ) {
+                     return true;
+                 }
+             }
+         } 
+ 	catch(Exception e) {
+             say("isCached exception : "+ e);
+ 	    e.printStackTrace();
+         }
+         return false;
+     }
     
     
     
