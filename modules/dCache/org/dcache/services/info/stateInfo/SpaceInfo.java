@@ -85,6 +85,40 @@ public class SpaceInfo {
 		_removable = removableSpace;
 	}
 	
+
+	/**
+	 * Add additional space unconditionally to the recorded total space.
+	 * @param extraTotalSpace amount to add
+	 */
+	public void addToTotal( long extraTotalSpace) {
+		_total += extraTotalSpace;
+	}
+
+	/**
+	 * Add additional space unconditionally to the recorded free space.
+	 * @param extraFreeSpace amount to add
+	 */
+	public void addToFree( long extraFreeSpace) {
+		_free += extraFreeSpace;
+	}
+
+	/**
+	 * Add additional space unconditionally to the recorded removable space.
+	 * @param extraRemovableSpace amount to add
+	 */
+	public void addToRemovable( long extraRemovableSpace) {
+		_removable += extraRemovableSpace;
+	}
+	
+	/**
+	 * Add additional space unconditionally to the recorded precious space
+	 * @param extraPreciousSpace amount to add
+	 */
+	public void addToPrecious( long extraPreciousSpace) {
+		_precious += extraPreciousSpace;
+	}
+	
+	
 	
 	/**
 	 * Update the precious space, applying a delta.
@@ -168,14 +202,24 @@ public class SpaceInfo {
 	
 	/**
 	 * Add StateUpdate entries to update dCache state that add or update the standard metrics
-	 * values.  All metrics are added under a common StatePath.  StateValues will be Emphemeral.
+	 * values.  All metrics are added under a common StatePath.  StateValues will be Ephemeral
+	 * or Immortal
 	 * @param update the StateUpdate to append these values.  
 	 * @param path the StatePath under which the StateValues will be added.
+	 * @param isImmortal if true, the metric will be immortal, otherwise ephemeral.
 	 */
-	public void addMetrics( StateUpdate update, StatePath path) {
-		update.appendUpdate(path.newChild("total"), new IntegerStateValue( _total));
-		update.appendUpdate(path.newChild("free"), new IntegerStateValue( _free));
-		update.appendUpdate(path.newChild("precious"), new IntegerStateValue( _precious));
-		update.appendUpdate(path.newChild("removable"), new IntegerStateValue( _removable));		
+	public void addMetrics( StateUpdate update, StatePath path, boolean isImmortal) {
+		update.appendUpdate(path.newChild("total"), new IntegerStateValue( _total, isImmortal));
+		update.appendUpdate(path.newChild("free"), new IntegerStateValue( _free, isImmortal));
+		update.appendUpdate(path.newChild("precious"), new IntegerStateValue( _precious, isImmortal));
+		update.appendUpdate(path.newChild("removable"), new IntegerStateValue( _removable, isImmortal));		
+	}
+	
+	
+	/**
+	 * A string describing this SpaceInfo object.
+	 */
+	public String toString() {
+		return "[SpaceInfo: total="+_total+", precious=" + _precious + ", removable="+ _removable + ", free="+_free+"]";
 	}
 }

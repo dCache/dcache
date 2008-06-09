@@ -99,7 +99,7 @@ public class PoolgroupSpaceWatcher extends AbstractStateWatcher {
 					pgSpaceInfo.add( poolSpace);
 			}
 		
-		pgSpaceInfo.addMetrics(update, path);
+		pgSpaceInfo.addMetrics(update, path, false);
 	}
 
 
