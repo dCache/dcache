@@ -5,7 +5,6 @@ import org.dcache.services.info.base.State;
 import org.dcache.services.info.base.StatePath;
 import org.dcache.services.info.base.StateTransition;
 import org.dcache.services.info.base.StateUpdate;
-import org.dcache.services.info.base.IntegerStateValue;
 import org.dcache.services.info.stateInfo.PoolSummaryVisitor;
 import org.dcache.services.info.stateInfo.SpaceInfo;
 
