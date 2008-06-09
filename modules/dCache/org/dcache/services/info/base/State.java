@@ -251,7 +251,6 @@ public class State {
 				if( _log.isInfoEnabled())
 					_log.info("triggering watcher " + thisWatcher);
 				thisWatcher.trigger( transition);
-				break;
 			}
 		}		
 	}
