@@ -221,9 +221,13 @@ public class SrmAuthorizer {
        RequestCredential requestCredential,
        String role,
        GSSContext context) throws SRMAuthorizationException {
+     if(role == null) {
+         role = requestCredential.getRole();
+     }
 
       org.dcache.srm.request.RequestUser requestUser =
-         authorization.authorize(requestCredential.getId(),requestCredential.getCredentialName(),
+         authorization.authorize(requestCredential.getId(),
+         requestCredential.getCredentialName(),
          role,
          context);
       
