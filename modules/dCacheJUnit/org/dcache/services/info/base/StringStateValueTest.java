@@ -112,13 +112,22 @@ public class StringStateValueTest extends InfoBaseTest {
 			}
 		}	
 	}
-
+	
 	@Test
 	public void testStringStateValueString() {		
 		for( String stringVal : TEST_STRINGS)
 			assertIsEphemeral( "creating with a regular string: " + stringVal, new StringStateValue( stringVal));
 	}
+
 	
+	@Test 
+	public void testStringStateValueStringBoolean() {
+		for( String stringVal : TEST_STRINGS)
+			assertIsEphemeral( "creating with a regular string: " + stringVal, new StringStateValue( stringVal, false));
+		for( String stringVal : TEST_STRINGS)
+			assertIsImmortal( "creating with a regular string: " + stringVal, new StringStateValue( stringVal, true));
+	}
+
 	
 	@Test
 	public void testStringStateValueStringLong() {

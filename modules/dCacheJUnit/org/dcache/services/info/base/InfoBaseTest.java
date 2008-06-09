@@ -46,6 +46,22 @@ public class InfoBaseTest {
 		assertTrue( msg, component.isEphemeral());
 		assertFalse( msg, component.isMortal());
 	}
+	
+
+	/**
+	 * Assert that a StateComponent is not null and immortal.
+	 * @param msg a String message to display if the StateComponent is not immortal. 
+	 * @param component the StateComponent to test.
+	 */
+	protected void assertIsImmortal( String msg, StateComponent component) {
+		assertNotNull( msg, component);
+		
+		assertTrue( msg, component.isImmortal());
+		assertFalse( msg, component.isEphemeral());
+		assertFalse( msg, component.isMortal());
+	}
+	
+	
 
 	/**
 	 * Assert that a StateComponent is not null is mortal and will expire at the expected number

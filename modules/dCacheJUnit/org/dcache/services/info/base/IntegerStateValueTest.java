@@ -104,28 +104,25 @@ public class IntegerStateValueTest extends InfoBaseTest {
 
 	@Test
 	public void testIntegerStateValueLongLong() {
-		for( long intVal : TEST_INTEGERS) {
-			IntegerStateValue testVal = new IntegerStateValue( intVal);
-
-			assertTrue( "not ephemeral", testVal.isEphemeral());
-			assertFalse( "is mortal", testVal.isMortal());
-			assertFalse( "is immortal", testVal.isImmortal());
-		}
+		for( long intVal : TEST_INTEGERS)
+			assertIsEphemeral( "creating with integer: " + intVal, new IntegerStateValue( intVal));
 	}
 	
+	@Test
+	public void testIntegerStateValueLongBoolean() {
+		for( long intVal : TEST_INTEGERS)
+			assertIsEphemeral( "creating with integer: " + intVal, new IntegerStateValue( intVal, false));
+		for( long intVal : TEST_INTEGERS)
+			assertIsImmortal( "creating with integer: " + intVal, new IntegerStateValue( intVal, true));		
+	}
 
+	
 	@Test
 	public void testIntegerStateValueLong() {
 		for( long intVal : TEST_INTEGERS) {
 			
 			for( long duration : TEST_DURATIONS) {
-
 				IntegerStateValue testVal = new IntegerStateValue( intVal, duration);
-				
-				assertFalse( "is ephemeral", testVal.isEphemeral());
-				assertTrue( "not mortal", testVal.isMortal());
-				assertFalse( "is immortal", testVal.isImmortal());
-				
 				assertIsMortal( "IntegerStateValue \"" + intVal + "\" + " + Long.toString(duration), testVal, duration < 0 ? 0 : duration);
 			}
 			
