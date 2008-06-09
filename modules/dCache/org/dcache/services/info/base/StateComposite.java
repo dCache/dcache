@@ -587,6 +587,10 @@ public class StateComposite implements StateComponent {
 			changeSet.recordNewWhenIShouldExpireDate( newComponentExpiryDate);			
 		}
 		
+		// All parents of an Immortal Child should know not to expire.
+		if( newComponent.isImmortal())
+			changeSet.recordChildIsImmortal();
+		
 		/**
 		 * If newComponent is one of our children, process it directly.
 		 */
@@ -603,10 +607,6 @@ public class StateComposite implements StateComponent {
 			}
 
 
-			// Parents of an Immortal Child should know not to expire.
-			if( newComponent.isImmortal())
-				changeSet.recordChildIsImmortal();
-			
 			return;
 		}
 
