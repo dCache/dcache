@@ -1666,7 +1666,7 @@ public class Storage
     
     private boolean isCached(StorageInfo storage_info, PnfsId _pnfsId) {
         PoolMgrQueryPoolsMsg query =
-                new PoolMgrQueryPoolsMsg( DirectionType.ANY,
+                new PoolMgrQueryPoolsMsg( DirectionType.READ,
                       storage_info.getStorageClass()+"@"+storage_info.getHsm() ,
                       storage_info.getCacheClass(),
                       "*/*",
