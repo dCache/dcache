@@ -38,14 +38,7 @@ import java.util.Map;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.Date;
-import diskCacheV111.services.space.message.Reserve;
-import diskCacheV111.services.space.message.Release;
-import diskCacheV111.services.space.message.Use;
-import diskCacheV111.services.space.message.CancelUse;
-import diskCacheV111.services.space.message.GetSpaceMetaData;
-import diskCacheV111.services.space.message.GetSpaceTokens;
-import diskCacheV111.services.space.message.ExtendLifetime;
-import diskCacheV111.services.space.message.GetFileSpaceTokensMessage;
+import diskCacheV111.services.space.message.*;
 import  dmg.cells.nucleus.SystemCell;
 import  dmg.cells.nucleus.Cell;
 //import  dmg.util.*;
@@ -2212,6 +2205,49 @@ public class ManagerV2
 		incrementReservedSpaceInLinkGroup(connection,linkGroupId,sizeInBytes);
 	}
 
+       	public void getValidSpaceTokens(GetSpaceTokensMessage msg) { 
+		say("executing statement: "+SpaceReservationIO.SELECT_CURRENT_SPACE_RESERVATIONS);
+		HashSet<Space> spaces = null;
+		try { 
+			spaces=manager.selectPrepared(new SpaceReservationIO(),
+						      SpaceReservationIO.SELECT_CURRENT_SPACE_RESERVATIONS);
+		}
+		catch (Exception e) { 
+		}
+		msg.setSpaceTokenSet(spaces);
+	}
+
+	public void getLinkGroups(GetLinkGroupsMessage msg) { 
+		HashSet<LinkGroup> groups = null;
+		say("executing statement: "+LinkGroupIO.SELECT_ALL_LINKGROUPS);
+		try {
+			groups=manager.selectPrepared(new LinkGroupIO(),
+						      LinkGroupIO.SELECT_ALL_LINKGROUPS);		
+		}
+		catch (Exception e) { 
+		}
+		msg.setLinkGroupSet(groups);
+	}
+
+	public void getLinkGroupNames(GetLinkGroupNamesMessage msg) { 
+		HashSet<LinkGroup> groups = null;
+		say("executing statement: "+LinkGroupIO.SELECT_ALL_LINKGROUPS);
+		try {
+			groups=manager.selectPrepared(new LinkGroupIO(),
+						      LinkGroupIO.SELECT_ALL_LINKGROUPS);		
+		}
+		catch (Exception e) { 
+		}
+		if (groups!=null) { 
+			String[] names = new String[groups.size()];
+			int j=0;
+			for (Iterator i=groups.iterator(); i.hasNext();) {
+				LinkGroup g = (LinkGroup)i.next();
+				names[j++]=g.getName();
+			}
+			msg.setLinkGroupNames(names);
+		}
+	}
 
 	public long[] getSpaceTokens(String voGroup,
 				     String voRole,
@@ -2948,6 +2984,18 @@ public class ManagerV2
 			if(spaceMessage instanceof Reserve) {
 				Reserve reserve = (Reserve) spaceMessage;
 				reserveSpace(reserve);
+			}
+			else if(spaceMessage instanceof GetSpaceTokensMessage) { 
+				GetSpaceTokensMessage message = (GetSpaceTokensMessage) spaceMessage;
+				getValidSpaceTokens(message);
+			}
+			else if(spaceMessage instanceof GetLinkGroupsMessage) { 
+				GetLinkGroupsMessage message = (GetLinkGroupsMessage) spaceMessage;
+				getLinkGroups(message);
+			}
+			else if(spaceMessage instanceof GetLinkGroupNamesMessage) { 
+				GetLinkGroupNamesMessage message = (GetLinkGroupNamesMessage) spaceMessage;
+				getLinkGroupNames(message);
 			}
 			else if(spaceMessage instanceof Release) {
 				Release release = (Release) spaceMessage;
