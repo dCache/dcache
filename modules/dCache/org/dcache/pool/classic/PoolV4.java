@@ -1120,11 +1120,11 @@ public class PoolV4 extends AbstractCell
 
     private void ioFile(CellMessage envelope, PoolIoFileMessage message)
     {
+        PnfsId pnfsId = message.getPnfsId();
         try {
             long id = message.getId();
             ProtocolInfo pi = message.getProtocolInfo();
             StorageInfo si = message.getStorageInfo();
-            PnfsId pnfsId = message.getPnfsId();
             String initiator = message.getInitiator();
             String pool = message.getPoolName();
             String queueName = message.getIoQueueName();
@@ -1183,25 +1183,40 @@ public class PoolV4 extends AbstractCell
                                       door, pool, queueName);
                 message.setMoverId(queueIoRequest(message, request));
                 transfer = null;
+            } catch (InvocationTargetException e) {
+                throw e.getTargetException();
             } finally {
                 if (transfer != null) {
-                    transfer.close();
+                    /* This is only executed if enqueuing the request
+                     * failed. Therefore we only log failures and
+                     * propagate the original error to the client.
+                     */
+                    try {
+                        transfer.close();
+                    } catch (IOException e) {
+                        esay("IO error while closing " + pnfsId
+                             + ": " + e.getMessage());
+                    } catch (InterruptedException e) {
+                        esay("Interrupted while closing " + pnfsId
+                             + ": " + e.getMessage());
+                    }
                 }
             }
             message.setSucceeded();
-            // TODO: Finish exception handling!
-        } catch (InvocationTargetException e) {
-//             throw e.getTargetException();
-        } catch (InterruptedException e) {
-
-        } catch (IOException e) {
-
+        } catch (FileInCacheException e) {
+            warn("Attempted to create existing replica " + pnfsId);
+            message.setFailed(e.getRc(), "Pool already contains " + pnfsId);
+        } catch (FileNotInCacheException e) {
+            warn("Attempted to open non-existing replica " + pnfsId);
+            message.setFailed(e.getRc(), "Pool does not contain " + pnfsId);
         } catch (CacheException e) {
-            esay(e.getMessage());
+            error(e.getMessage());
             message.setFailed(e.getRc(), e.getMessage());
-
-//         } catch (Throwable e) {
-//             esay("Possible bug found: " + e.getMessage());
+        } catch (Throwable e) {
+            fatal("Possible bug found: " + e.getMessage());
+            debug(e);
+            message.setFailed(CacheException.DEFAULT_ERROR_CODE,
+                              "Failed to enqueue mover: " + e.getMessage());
         }
 
         try {
