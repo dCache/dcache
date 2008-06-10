@@ -72,9 +72,8 @@ public class XmlConduit extends AbstractThreadedConduit {
 		try {
 			skt = _svr_skt.accept();			
 		} catch( SocketException e) {
-			if( this._should_run || !_svr_skt.isClosed()) {
+			if( _svr_skt != null && (this._should_run || !_svr_skt.isClosed()))
 				_log.error( "accept() failed", e);
-			}
 		} catch( IOException e) {
 			Thread.currentThread().interrupt();
 			return;
