@@ -44,7 +44,7 @@ public class LoginBrokerLsMsgHandler extends CellMessageHandlerSkel {
 			if( update == null)
 				update = new StateUpdate();
 			
-			addDoorInfo( update, pathToDoors, info, metricLifetime);
+			addDoorInfo( update, pathToDoors.newChild( info.getIdentifier()), info, metricLifetime);
 		}
 		
 		if( update != null)
@@ -55,13 +55,11 @@ public class LoginBrokerLsMsgHandler extends CellMessageHandlerSkel {
 	/**
 	 * Add additional state-update to record information about a door.
 	 * @param update the StateUpdate we are to add metrics to.
-	 * @param pathToDoors a StatePath under which we are to add data.
+	 * @param pathToDoor a StatePath under which we are to add data.
 	 * @param info the information about the door.
 	 * @param lifetime the duration, in seconds, for this information
 	 */
-	private void addDoorInfo( StateUpdate update, StatePath pathToDoors, LoginBrokerInfo info, long lifetime) {
-		
-		StatePath pathToDoor = pathToDoors.newChild( info.getIdentifier());
+	private void addDoorInfo( StateUpdate update, StatePath pathToDoor, LoginBrokerInfo info, long lifetime) {
 
 		StatePath pathToProtocol = pathToDoor.newChild( "protocol");
 		
@@ -82,14 +80,14 @@ public class LoginBrokerLsMsgHandler extends CellMessageHandlerSkel {
 		update.appendUpdate( pathToDoor.newChild( "update-time"),
 					new IntegerStateValue( info.getUpdateTime(), lifetime));
 
-		StatePath pathToHosts = pathToDoor.newChild("interfaces");
+		StatePath pathToInterfaces = pathToDoor.newChild("interfaces");
 		
-		String[] hosts = info.getHosts();
+		String[] interfaceNames = info.getHosts();
 		
-		if( hosts != null) {
-			for( int i = 0; i < hosts.length; i++) {
-				if( hosts[i] != null)
-					addHostInfo( update, pathToHosts, hosts[i], hosts[i], lifetime);
+		if( interfaceNames != null) {
+			for( int i = 0; i < interfaceNames.length; i++) {
+				if( interfaceNames[i] != null)
+					addInterfaceInfo( update, pathToInterfaces, interfaceNames[i], lifetime);
 			}
 		}
 	}
@@ -112,62 +110,47 @@ public class LoginBrokerLsMsgHandler extends CellMessageHandlerSkel {
 	
 
 	/**
-	 * Add a standardised amount of information about a host.  This is in the form:
+	 * Add a standardised amount of information about an interface.  This is in the form:
 	 * <pre>
-	 *     [parentPath]
+	 *     [interfaces]
 	 *       |
 	 *       |
-	 *       +--[ id ] (branch)
+	 *       +--[ name ] (branch)
 	 *       |   |
 	 *       |   +-- "name" (string metric: the host's name, as presented by the door)
 	 *       |   +-- "FQDN" (string metric: the host's FQDN)
-	 *       |   +--[ "IP" ] (branch)
-	 *       |       |
-	 *       |       +-- "address" (string metric: the host's IP address)
-	 *       |       +-- "type"    (string metric: "IPv4", "IPv6" or "unknown")
+	 *       |   +-- "address" (string metric: the host's address; e.g., "127.0.0.1")
+	 *       |   +-- "address-type"    (string metric: "IPv4", "IPv6" or "unknown")
 	 *       |
 	 * </pre> 
 	 * @param update The StateUpdate to append the new metrics.
 	 * @param parentPath the path that the id branch will be added.  
-	 * @param id the name of the branch containing this host's information
-	 * @param name something that identifies the host (e.g., IP address or simple name).
+	 * @param name something that identifies the interface (e.g., IP address or simple name).
 	 * @param lifetime how long the created metrics should last.
 	 */
-	private void addHostInfo( StateUpdate update, StatePath parentPath, String id, String name, long lifetime) {
+	private void addInterfaceInfo( StateUpdate update, StatePath parentPath, String name, long lifetime) {
 		
-		StatePath pathToHostBranch = parentPath.newChild(id);
-		InetAddress address;
+		StatePath pathToInterfaceBranch = parentPath.newChild(name);
 		
+		// Always add the name
+		update.appendUpdate( pathToInterfaceBranch.newChild( "name"), new StringStateValue( name, lifetime));
+
+		// Attempt to add information after resolving the interface
 		try {
-			address = InetAddress.getByName(name);
+			InetAddress address = InetAddress.getByName(name);
+			
+			update.appendUpdate( pathToInterfaceBranch.newChild( "FQDN"), new StringStateValue( address.getCanonicalHostName(), lifetime));
+					
+			update.appendUpdate( pathToInterfaceBranch.newChild( "address"), new StringStateValue( address.getHostAddress(), lifetime));
+			update.appendUpdate( pathToInterfaceBranch.newChild( "address-type"),
+								new StringStateValue( (address instanceof Inet4Address) ? "IPv4" : (address instanceof Inet6Address) ? "IPv6" : "unknown", lifetime));
+			
 		} catch( UnknownHostException e) {
-			// Simply add the name and quit.
-			update.appendUpdate( pathToHostBranch.newChild( "name"), new StringStateValue( name, lifetime));
-			return;
+			/**
+			 *  If interface is (for whatever reason) unknown, simply skip publishing the
+			 *  related information.
+			 */
 		}
-		
-		/**
-		 *  Add information under the main branch.
-		 */
-
-		update.appendUpdate( pathToHostBranch.newChild( "name"), new StringStateValue( name, lifetime));
-		update.appendUpdate( pathToHostBranch.newChild( "FQDN"), new StringStateValue( address.getCanonicalHostName(), lifetime));
-				
-		/**
-		 *   Add the IP address.
-		 */
-		
-		StatePath pathToIP = pathToHostBranch.newChild( "IP");
-		String type = "unknown";
-		
-		if( address instanceof Inet4Address) {
-			type = "IPv4";
-		} else if( address instanceof Inet6Address) {
-			type = "IPv6";
-		}
-
-		update.appendUpdate( pathToIP.newChild( "address"), new StringStateValue( address.getHostAddress(), lifetime));
-		update.appendUpdate( pathToIP.newChild( "type"), new StringStateValue( type, lifetime));		
 	}
 
 }
