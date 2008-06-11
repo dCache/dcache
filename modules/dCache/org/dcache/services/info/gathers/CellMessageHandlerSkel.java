@@ -1,11 +1,18 @@
 package org.dcache.services.info.gathers;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.TimeZone;
+
 import org.apache.log4j.Logger;
 import org.dcache.services.info.InfoProvider;
+import org.dcache.services.info.base.IntegerStateValue;
 import org.dcache.services.info.base.State;
 import org.dcache.services.info.base.StateComposite;
 import org.dcache.services.info.base.StatePath;
 import org.dcache.services.info.base.StateUpdate;
+import org.dcache.services.info.base.StringStateValue;
 
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageAnswerable;
@@ -21,6 +28,38 @@ abstract public class CellMessageHandlerSkel implements CellMessageAnswerable {
 	
 	private static final Logger _log = Logger.getLogger( CellMessageHandlerSkel.class);
 
+	private final static DateFormat _simpleDateFormat = new SimpleDateFormat("MMM d, HH:mm:ss z" );
+	private final static DateFormat _iso8601DateFormat = new SimpleDateFormat( "yyyy-MM-dd'T'HH:mm'Z'");
+
+	static {
+		_iso8601DateFormat.setTimeZone( TimeZone.getTimeZone("GMT"));
+	}
+	
+	/**
+	 * Adds a standard set of metrics that represent some point in time.  We add three metrics that
+	 * are (in essence) the same date to allow dumb clients (e.g., xslt) to select which one makes
+	 * sense to them.
+	 * @param update  The StateUpdate the three additional metrics will be added to.
+	 * @param parentPath the StatePath of the parent branch.
+	 * @param theTime the Date describing the time to record.
+	 * @param lifetime how long, in seconds, the metric should last.
+	 */
+	protected static void addTimeMetrics( StateUpdate update, StatePath parentPath, Date theTime, long lifetime) {
+		
+		// Supply time as seconds since 1970
+		update.appendUpdate( parentPath.newChild("unix"),
+				new IntegerStateValue( theTime.getTime() / 1000, lifetime));
+
+		// Supply the time in a simple format
+		update.appendUpdate( parentPath.newChild("simple"),
+				new StringStateValue( _simpleDateFormat.format( theTime), lifetime));
+
+		// Supply the time in UTC in a standard format
+		update.appendUpdate( parentPath.newChild("ISO-8601"),
+				new StringStateValue( _iso8601DateFormat.format( theTime), lifetime));
+	}
+
+	
 	private final State _state = State.getInstance();
 	private final MessageHandlerChain _msgHandlerChain = InfoProvider.getInstance().getMessageHandlerChain();
 	

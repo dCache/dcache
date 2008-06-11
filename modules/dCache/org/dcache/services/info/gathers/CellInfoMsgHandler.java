@@ -1,17 +1,11 @@
 package org.dcache.services.info.gathers;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.TimeZone;
-
 import org.apache.log4j.Logger;
 import org.dcache.services.info.base.IntegerStateValue;
 import org.dcache.services.info.base.StatePath;
 import org.dcache.services.info.base.StateUpdate;
 import org.dcache.services.info.base.StringStateValue;
 
-import dmg.cells.network.CellDomainNode;
 import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.CellVersion;
 
@@ -27,13 +21,6 @@ public class CellInfoMsgHandler extends CellMessageHandlerSkel {
 	
 	private static final StatePath DOMAINS_PATH = new StatePath( "domains");
 	
-	private final DateFormat _simpleDateFormat = new SimpleDateFormat("MMM d, HH:mm:ss z" );
-	private final DateFormat _iso8601DateFormat = new SimpleDateFormat( "yyyy-MM-dd'T'HH:mm'Z'");
-	
-	public CellInfoMsgHandler() {
-		_iso8601DateFormat.setTimeZone( TimeZone.getTimeZone("GMT"));
-	}
-
 	@Override
 	public void process(Object msgPayload, long metricLifetime) {
 		
@@ -94,8 +81,9 @@ public class CellInfoMsgHandler extends CellMessageHandlerSkel {
 		update.appendUpdate( thisCellPath.newChild("type"),
 				new StringStateValue( thisCell.getCellType(), lifetime));
 		
-		addVersionInfo( update, thisCellPath, thisCell.getCellVersion(), lifetime);		
-		addCreationTime( update, thisCellPath.newChild( "created"), thisCell.getCreationTime(), lifetime);
+		addVersionInfo( update, thisCellPath, thisCell.getCellVersion(), lifetime);
+		
+		CellMessageHandlerSkel.addTimeMetrics( update, thisCellPath.newChild( "created"), thisCell.getCreationTime(), lifetime);
 
 		update.appendUpdate( thisCellPath.newChild("event-queue-size"),
 				new IntegerStateValue( thisCell.getEventQueueSize(), lifetime));
@@ -123,26 +111,4 @@ public class CellInfoMsgHandler extends CellMessageHandlerSkel {
 		
 	}
 	
-	/**
-	 * Add the time in different formats.
-	 * @param update The StateUpdate to append new metrics
-	 * @param parentPath the path under which the time metrics will be added
-	 * @param theTime the time to record
-	 * @param lifetime how long these metrics should last.
-	 */
-	private void addCreationTime( StateUpdate update, StatePath parentPath, Date theTime, long lifetime) {
-				
-		// Supply time as seconds since 1970
-		update.appendUpdate( parentPath.newChild("unix"),
-				new IntegerStateValue( theTime.getTime() / 1000, lifetime));
-
-		// Supply the time in a simple format
-		update.appendUpdate( parentPath.newChild("simple"),
-				new StringStateValue( _simpleDateFormat.format( theTime), lifetime));
-
-		// Supply the time in UTC in a standard format
-		update.appendUpdate( parentPath.newChild("ISO-8601"),
-				new StringStateValue( _iso8601DateFormat.format( theTime), lifetime));
-	}
-
 }
