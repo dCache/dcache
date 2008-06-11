@@ -150,7 +150,6 @@ public class PoolV4 extends AbstractCell
     private int _recoveryFlags = 0;
     private final PoolV2Mode _poolMode = new PoolV2Mode();
     private boolean _reportOnRemovals = false;
-    private boolean _flushZeroSizeFiles = false;
     private boolean _suppressHsmLoad = false;
     private boolean _cleanPreciousFiles = false;
     private String     _poolStatusMessage = "OK";
@@ -222,7 +221,6 @@ public class PoolV4 extends AbstractCell
     // [-billing=<name>] : default : billing
     // [-setupManager=<name>] : default : none
     // [-dupRequest=none|ignore|refresh]: default : ignore
-    // [-flushZeroSizeFiles=yes|no] : default : no
     // [-blockOnNoSpace=yes|no|auto] : default : auto
     // [-allowCleaningPreciousFiles] : default : false
     // [-checkRepository] : default : true
@@ -395,16 +393,6 @@ public class PoolV4 extends AbstractCell
             }
 
             say("Billing Cell : " + _billingCell);
-
-            tmp = _args.getOpt("flushZeroSizeFiles");
-            if (tmp != null) {
-                if (tmp.equals("yes") || tmp.equals("true")) {
-                    _flushZeroSizeFiles = true;
-                } else if (tmp.equals("no") || tmp.equals("false")) {
-                    _flushZeroSizeFiles = false;
-                }
-            }
-            say("flushZeroSizeFiles = " + _flushZeroSizeFiles);
 
             _setupManager = _args.getOpt("setupManager");
             say("SetupManager set to "
@@ -796,24 +784,6 @@ public class PoolV4 extends AbstractCell
         _repository.shutdown();
     }
 
-    private void setDummyStorageInfo(CacheEntry entry)
-    {
-        try {
-            StorageInfo storageInfo = entry.getStorageInfo();
-            storageInfo.setBitfileId("*");
-
-            _pnfs.setStorageInfoByPnfsId(entry.getPnfsId(), storageInfo, 0 // write
-                                         // (don't overwrite)
-                                         );
-        } catch (CacheException e) {
-            //
-            // for now we just ignore this exception (its dummy only)
-            //
-            esay("Problem in sending storage info of " + entry.getPnfsId()
-                 + " to PNFS: " + e.getMessage());
-        }
-    }
-
     /**
      * Interface between the repository and the StorageQueueContainer.
      */
@@ -833,30 +803,13 @@ public class PoolV4 extends AbstractCell
 
                 if (_lfsMode == LFS_NONE) {
                     try {
-                        CacheEntry entry = _repository.getEntry(id);
-                        long size = entry.getReplicaSize();
-                        if (size == 0 && !_flushZeroSizeFiles) {
-                            say("Empty file set cached without HSM flush");
-                            _repository.setState(id, EntryState.CACHED);
-                            setDummyStorageInfo(entry);
-                        } else {
-                            _storageQueue.addCacheEntry(id);
-                        }
-                    } catch (IllegalTransitionException e) {
-                        /* We are supposed to be able to make PRECIOUS
-                         * files CACHED. Therefore seeing this
-                         * exception would indicate that the file was
-                         * changed into some other state, probably
-                         * deleted.
-                         */
-                        say("Could not change state for " + id + ": "
-                            + e.getMessage());
+                        _storageQueue.addCacheEntry(id);
                     } catch (FileNotInCacheException e) {
                         /* File was deleted before we got a chance to do
                          * anything with it. We don't care about deleted
                          * files so we ignore this.
                          */
-                        say("Could not change state for " + id + ": File is no longer in the pool");
+                        say("Failed to flush " + id + ": Replica is no longer in the pool");
                     } catch (CacheException e) {
                         esay("Error adding " + id + " to flush queue: "
                              + e.getMessage());
@@ -1639,31 +1592,24 @@ public class PoolV4 extends AbstractCell
                               "Unknown error during checksum calculation");
                 PnfsId id = new PnfsId(pnfsId);
                 try {
-                    if (ee != null) {
-
-                        if (ee instanceof CacheException) {
-
-                            CacheException ce = (CacheException) ee;
-                            int errorCode = ce.getRc();
-                            msg.setFailed(errorCode, ce.getMessage());
-
-                            switch (errorCode) {
-                            case 41:
-                            case 42:
-                            case 43:
-                                disablePool(PoolV2Mode.DISABLED_STRICT, errorCode, ce
-                                            .getMessage());
-                            }
-                        } else {
-                            msg.setFailed(1000, ee);
-                        }
-
-                    } else {
+                    if (ee == null) {
                         doChecksum(id);
-
                         _replicationHandler.initiateReplication(id, "restore");
-
                         msg.setSucceeded();
+                    } else if (ee instanceof CacheException) {
+                        CacheException ce = (CacheException) ee;
+                        int errorCode = ce.getRc();
+                        msg.setFailed(errorCode, ce.getMessage());
+
+                        switch (errorCode) {
+                        case 41:
+                        case 42:
+                        case 43:
+                            disablePool(PoolV2Mode.DISABLED_STRICT, errorCode, ce
+                                        .getMessage());
+                        }
+                    } else {
+                        msg.setFailed(1000, ee);
                     }
                 } catch (InterruptedException e) {
                     msg.setFailed(1010, "Checksum calculation interrupted");
@@ -1806,17 +1752,6 @@ public class PoolV4 extends AbstractCell
             + storageInfo.getHsm() + ")");
 
         try {
-            if (storageInfo.getFileSize() == 0 && !_flushZeroSizeFiles) {
-                WriteHandle handle =
-                    _repository.createEntry(pnfsId,
-                                            storageInfo,
-                                            EntryState.FROM_STORE,
-                                            EntryState.CACHED,
-                                            null);
-                handle.close();
-                return true;
-            }
-
             ReplyToPoolFetch reply = new ReplyToPoolFetch(cellMessage);
             _storageHandler.fetch(pnfsId, storageInfo, reply);
             return false;
