@@ -24,20 +24,19 @@ public class StringListMsgHandler extends CellMessageHandlerSkel {
 	}
 	
 	public void process( Object msgPayload, long metricLifetime) {		
-		Object array[];
 		
-		StateUpdate update = new StateUpdate();
-		
-		array = (Object []) msgPayload;
+		Object array[] = (Object []) msgPayload;
 		
 		if( array.length == 0)
 			return;
-		
+
+		StateUpdate update = new StateUpdate();
+
 		for( int i = 0; i < array.length; i++) {
-			String listItem = (String) array[i];
+			String listItem = (String) array[i];			
 			update.appendUpdate( _path.newChild(listItem), new StateComposite(metricLifetime));
 		}
-	
+
 		applyUpdates( update);
 	}
 
