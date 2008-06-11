@@ -143,6 +143,8 @@ class SelfTest {
                 TunnelSocket ts = (TunnelSocket)s;
                 ts.verify();
                 System.out.println( ts.getUserPrincipal() );
+                System.out.println( ts.getGroup() );
+                System.out.println( ts.getRole() );
 
                    out  = s.getOutputStream();
                    in  =  s.getInputStream();
