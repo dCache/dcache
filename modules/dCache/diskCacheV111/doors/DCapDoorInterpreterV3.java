@@ -2725,7 +2725,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
     @SuppressWarnings("deprecation")
     private UserAuthRecord getUserMetadata(String name, String role) throws CacheException {
 
-        UserAuthRecord user = new UserAuthRecord("nobody", name, role, true, 0, -1, -1, "/", "/", "/", new HashSet<String>(0)) ;
+        UserAuthRecord user = null ;
 
         if( _authService != null ) {
             try {
