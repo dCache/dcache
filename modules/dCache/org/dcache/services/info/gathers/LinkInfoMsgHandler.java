@@ -22,7 +22,7 @@ public class LinkInfoMsgHandler extends CellMessageHandlerSkel {
 
 	public void process(Object msgPayload, long metricLifetime) {
 		
-		StateUpdate update = new StateUpdate();
+		StateUpdate update = null;
 
 		ArrayList linkInfoArray = (ArrayList) msgPayload;
 		
@@ -31,17 +31,22 @@ public class LinkInfoMsgHandler extends CellMessageHandlerSkel {
 		for( Object o : linkInfoArray) {
 			if( !o.getClass().isArray()) {
 				_log.error( "Link information not an array.");
-				return;							
+				continue;
 			}
 			Object[] array = (Object[]) o;
 			if( array.length != EXPECTED_ARRAY_SIZE) {
 				_log.error( "Unexpected array size: "+array.length);
-				return;
+				continue;
 			}
+			
+			if( update == null)
+				update = new StateUpdate();
+			
 			processInfo( update, linksPath, (Object[]) o, metricLifetime);
 		}
 
-		applyUpdates( update);
+		if( update != null)
+			applyUpdates( update);
 	}
 	
 	
