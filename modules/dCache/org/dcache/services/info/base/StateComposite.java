@@ -462,9 +462,6 @@ public class StateComposite implements StateComponent {
 				_log.debug("adding new child " + childName + ", new value " + newChildValue.toString());
 			
 			addComponent( childName, newChildValue);
-			
-			if( newChildValue.isImmortal())
-				_log.warn("Adding an immortal child: this is not well supported.");			
 		}
 		
 		// Now, which children should we iterate into?
