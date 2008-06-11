@@ -18,11 +18,13 @@ public class UnitInfoMsgHandler extends CellMessageHandlerSkel {
 	private static final StatePath UNITS_PATH = new StatePath( "units");
 	
 	public void process(Object msgPayload, long metricLifetime) {
-		Object array[];
+
+		if( !msgPayload.getClass().isArray()) {
+			_log.error( "unexpected received non-array payload");
+			return;			
+		}
 		
-		StateUpdate update = new StateUpdate();
-		
-		array = (Object []) msgPayload;
+		Object array[] = (Object []) msgPayload;
 		
 		if( array.length != 3) {
 			_log.error( "Unexpected array size: "+array.length);
@@ -40,6 +42,8 @@ public class UnitInfoMsgHandler extends CellMessageHandlerSkel {
 		
 		StatePath thisUnitPath = UNITS_PATH.newChild( unitName);
 
+		StateUpdate update = new StateUpdate();
+		
 		update.appendUpdate( thisUnitPath.newChild("type"),
 					new StringStateValue( unitType, metricLifetime));
 		
