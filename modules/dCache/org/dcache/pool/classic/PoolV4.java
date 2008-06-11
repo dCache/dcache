@@ -518,6 +518,7 @@ public class PoolV4 extends AbstractCell
 
         _repository.addListener(new RepositoryLoader());
         _repository.addListener(new NotifyBillingOnRemoveListener());
+        _repository.addListener(new HFlagMaintainer());
 
         start();
 
@@ -782,6 +783,25 @@ public class PoolV4 extends AbstractCell
         disablePool(PoolV2Mode.DISABLED_DEAD | PoolV2Mode.DISABLED_STRICT,
                     666, "Shutdown");
         _repository.shutdown();
+    }
+
+    /**
+     * Sets the h-flag in PNFS.
+     */
+    private class HFlagMaintainer implements StateChangeListener
+    {
+        public void stateChanged(StateChangeEvent event)
+        {
+            PnfsId id = event.getPnfsId();
+            EntryState from = event.getOldState();
+            EntryState to = event.getNewState();
+
+            if (_lfsMode == LFS_NONE && from == EntryState.FROM_CLIENT) {
+                _pnfs.putPnfsFlag(id, "h", "yes");
+            } else {
+                _pnfs.putPnfsFlag(id, "h", "no");
+            }
+        }
     }
 
     /**
