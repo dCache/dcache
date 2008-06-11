@@ -10,14 +10,16 @@ import diskCacheV111.pools.PoolV2Mode;
 import diskCacheV111.vehicles.StorageInfo;
 
 public interface PoolSelectionUnit  {
-    
+
     /**
      * data flow direction. Supported modes are:
+     * <pre>
      *      READ - read cached file from a pool
      *      WRITE - write a new file into a pool
      *      CACHE - get a file from a tape
      *      P2P   - internal pool 2 pool transfer
-     *      ALL   - any of above
+     *      ANY   - any of above
+     * </pre>
      */
     public enum DirectionType {
         READ,
@@ -32,13 +34,13 @@ public interface PoolSelectionUnit  {
       public Iterator<SelectionPool> pools() ;
       public String  getTag() ;
    }
-      
+
     /**
      * Encapsulates information about a pool. The information is
      * updated periodically. Due to the distributed nature of dCache,
      * the information may be outdated.
      */
-    public interface SelectionPool 
+    public interface SelectionPool
     {
         public String  getName();
 
@@ -47,12 +49,12 @@ public interface PoolSelectionUnit  {
          * from the pool.
          */
         public long    getActive();
-       
+
         /**
          * Sets whether the pool is active or not. This is also used to
          * deliver a hearbeat, i.e. calling this method with an
          * argument of 'true' will reset the heartbeat counter.
-         */       
+         */
         public void    setActive(boolean active);
 
         /**
@@ -92,8 +94,8 @@ public interface PoolSelectionUnit  {
          * are enabled at the pool.
          */
         public void setPoolMode(PoolV2Mode mode);
-       
-        /** 
+
+        /**
          * Returns the pool mode.
          *
          * @see setPoolMode
@@ -101,7 +103,7 @@ public interface PoolSelectionUnit  {
         public PoolV2Mode getPoolMode();
 
         /**
-         * Returns whether the pool can perform read operations. 
+         * Returns whether the pool can perform read operations.
          */
         public boolean canRead();
 
@@ -118,7 +120,7 @@ public interface PoolSelectionUnit  {
 
         /**
          * Returns whether the pool can perform serve files for P2P
-         * operations. 
+         * operations.
          */
         public boolean canReadForP2P();
 
@@ -127,8 +129,8 @@ public interface PoolSelectionUnit  {
 
         /** Sets the set of names of attached HSM instances. */
         public void setHsmInstances(Set<String> hsmInstances);
-    }    
-   
+    }
+
    public interface SelectionLinkGroup {
 	   public String  getName() ;
 	   public void add(SelectionLink link);
@@ -136,7 +138,7 @@ public interface PoolSelectionUnit  {
 	   Collection<SelectionLink> links();
 	   void attribute(String attribute, String value, boolean replace);
 	   Set<String> attribute(String attribute);
-	   void removeAttribute(String attribute, String value);	
+	   void removeAttribute(String attribute, String value);
 	   Map<String, Set<String>> attributes();
 
        void setCustodialAllowed(boolean isAllowed);
@@ -144,7 +146,7 @@ public interface PoolSelectionUnit  {
        void setReplicaAllowed(boolean isAllowed);
        void setOnlineAllowed(boolean isAllowed);
        void setNearlineAllowed(boolean isAllowed);
-	   
+
 	   public boolean isCustodialAllowed();
 	   public boolean isOutputAllowed();
 	   public boolean isReplicaAllowed();
@@ -155,7 +157,7 @@ public interface PoolSelectionUnit  {
    public SelectionPool getPool( String poolName ) ;
    public SelectionPool getPool( String poolName , boolean create ) ;
    public SelectionLink getLinkByName( String linkName ) throws NoSuchElementException ;
-   public PoolPreferenceLevel [] 
+   public PoolPreferenceLevel []
             match( DirectionType type ,
                    String store , String dcache , String net , String protocol,
                    StorageInfo info, String linkGroup ) ;
@@ -167,5 +169,5 @@ public interface PoolSelectionUnit  {
    public void clear() ;
    public SelectionLinkGroup getLinkGroupByName(String linkGroupName) throws NoSuchElementException ;
    public String [] getLinkGroups();
-   public String [] getLinksByGroupName(String linkGroupName) throws NoSuchElementException ;   
+   public String [] getLinksByGroupName(String linkGroupName) throws NoSuchElementException ;
 }
