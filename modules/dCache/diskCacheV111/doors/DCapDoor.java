@@ -22,7 +22,6 @@ import dmg.security.CellUser;
 import dmg.util.Args;
 import dmg.util.CommandException;
 import dmg.util.CommandExitException;
-import dmg.util.Gate;
 import dmg.util.KeepAliveListener;
 import dmg.util.StreamEngine;
 
@@ -47,7 +46,6 @@ public class      DCapDoor
     private String         _host;
     private CellUser         _username;
     private Thread         _workerThread , _anyThread ;
-    private Gate           _readyGate      = new Gate(false);
     private int            _commandCounter = 0;
     private String         _lastCommand    = "<init>";
     private Reader         _reader         = null;
@@ -64,17 +62,7 @@ public class      DCapDoor
     //       -) create the command method hashtable
     //
     // ..........................................................
-    ///
-    // we need a unique serial number for all DCapDoors.
-    // So it has to be a class variable (static).
-    // As a matter of fact it has to be unique
-    // concerning all possible doors. We will use the
-    // the cell context for it later.
-    //
-    private static long   __counter = 10000 ;
-    private synchronized static long nextUniqueId(){
-       return __counter++ ;
-    }
+
     //
     // create a hashtable for the client commands
     //
