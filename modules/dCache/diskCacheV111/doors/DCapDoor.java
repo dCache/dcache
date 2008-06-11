@@ -222,6 +222,7 @@ public class      DCapDoor
     public static CellVersion getStaticCellVersion(){
         return new CellVersion(diskCacheV111.util.Version.getVersion(),"$Revision: 1.17 $" );
     }
+    @Override
     public  CellVersion getCellVersion(){
         return getStaticCellVersion() ;
     }
@@ -229,10 +230,12 @@ public class      DCapDoor
        if( _interpreter instanceof KeepAliveListener )
           ((KeepAliveListener)_interpreter).keepAlive();
     }
+    @Override
     public void say( String str ){
        super.say(str) ;
        pin(str) ;
     }
+    @Override
     public void esay( String str ){
        super.esay(str) ;
        pin("ERROR : "+str) ;
@@ -458,6 +461,7 @@ public class      DCapDoor
            wait( rest ) ;
        }
     }
+    @Override
     public void   cleanUp(){
 
 	say( "CleanUp : starting" );
@@ -587,10 +591,12 @@ public class      DCapDoor
     //
     // the stuff which makes us a cell
     //
+    @Override
     public String toString(){
         return _username+"@"+_host+( _dcapLock ? " (LOCKED)" : "" ) ;
     }
 
+    @Override
     public void getInfo( PrintWriter pw ){
 	pw.println( "            DCapDoor" +( _dcapLock ? " (LOCKED)" : "" ));
 	pw.println( "         User  : "+_username );
@@ -610,6 +616,7 @@ public class      DCapDoor
         }
     }
 
+    @Override
     public void   messageArrived( CellMessage msg ){
        if( __messageArrived != null ){
            Object [] args = new Object[1] ;
