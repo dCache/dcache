@@ -649,31 +649,45 @@ public void esay( String str ){ pin( str ) ; super.esay( str ) ; }
 
         }else{
            StringTokenizer st = new StringTokenizer(ssf,",");
-           List<String> list = new ArrayList<String>() ;
-           while( st.hasMoreTokens() )list.add(st.nextToken());
-           if( list.size() == 0 )
-              throw new
-              IllegalArgumentException( "Invalid Arguments for 'socketfactory'");
+
+           /*
+            * socket factory initialization has following format:
+            *   <classname>[<arg1>,...]
+            */
+           if( st.countTokens() < 2 ) {
+               throw new
+               IllegalArgumentException( "Invalid Arguments for 'socketfactory'");
+           }
+
+           String tunnelFactoryClass = st.nextToken();
+           /*
+            * the rest is passed to factory constructor as String[]
+            */
+           String[] farctoryArgs = new String[ st.countTokens()];
+           for( int i = 0; st.hasMoreTokens() ; i++) {
+               farctoryArgs[i] = st.nextToken();
+           }
+
 
            Class []  constructorArgClassA = { java.lang.String[].class , java.util.Map.class } ;
            Class []  constructorArgClassB = { java.lang.String[].class } ;
 
 
-           Class     ssfClass = Class.forName(list.remove(0));
+           Class     ssfClass = Class.forName(tunnelFactoryClass);
            Object [] args     = null ;
 
            Constructor ssfConstructor = null ;
            try{
               ssfConstructor = ssfClass.getConstructor(constructorArgClassA) ;
               args = new Object[2] ;
-              args[0] = list.toArray(new String[list.size()]);
+              args[0] = farctoryArgs;
               Map map = new HashMap((Map)getDomainContext()) ;
               map.put( "UserValidatable" , LoginManager.this ) ;
               args[1] = map ;
            }catch( Exception ee ){
               ssfConstructor = ssfClass.getConstructor(constructorArgClassB) ;
               args = new Object[1] ;
-              args[0] = list.toArray(new String[list.size()]);
+              args[0] = farctoryArgs;
            }
            Object     obj = ssfConstructor.newInstance(args) ;
 
@@ -768,7 +782,7 @@ public void esay( String str ){ pin( str ) ; super.esay( str ) ; }
 
             }catch( InterruptedIOException ioe ){
                esay("Listen thread interrupted") ;
-               try{ _serverSocket.close() ; }catch(Exception ee){}
+               try{ _serverSocket.close() ; }catch(IOException ee){}
                break ;
             }catch( IOException ioe ){
                 if (_serverSocket.isClosed()) {
