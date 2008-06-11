@@ -205,6 +205,7 @@ public class MessageHandlerChain {
 	 */
 	public void addDefaultHandlers() {
 		addMessageHandler( new LinkgroupListMsgHandler());
+		addMessageHandler( new LinkgroupDetailsMsgHandler());
 	}
 
 }

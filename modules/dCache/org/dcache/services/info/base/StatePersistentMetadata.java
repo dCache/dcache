@@ -126,7 +126,8 @@ public class StatePersistentMetadata {
 		this.add( StatePath.parsePath("links.*.units.dcache.*"), branchMetadata( "unitref", "name"));
 		
 		this.add( StatePath.parsePath("linkgroups.*"), branchMetadata("linkgroup", "name"));
-
+		this.add( StatePath.parsePath("linkgroups.*.authorisation.*"), branchMetadata("authorised", "name"));
+		
 		this.add( StatePath.parsePath("units.*"), branchMetadata( "unit", "name"));
 		this.add( StatePath.parsePath("units.*.unitgroups.*"), branchMetadata( "unitgroupref", "ref"));
 
