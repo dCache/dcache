@@ -43,10 +43,34 @@ SRM=no
 XROOTD=no
 
 
+##
+## Following variables are for admin or custom node types
+##
 
+#  ----  Start the info provider on this node.
+#    With this variable, it is possible to install the info provider
+#    on a separate node and not on the admin node.
 #
-# Following variables is for admin node only
+#infoProvider=yes  			# default: no
+
+#  ----  Start the info service on this node.
+#    With this variable, it is possible to control whether the info
+#    runs on this node.
 #
+#info=yes         			# default: no
+
+#  ----  Start the statistics module
+#
+# Make sure that statisticsLocation variable in dCacheSetup file points to
+# an existing directory.
+#
+#statistics=no    			# default: 'no'
+
+
+
+##
+## Following variable is for all node types
+##
 
 #  ----  Start the Replica Manager on this node.
 #    The variable 'replicaManager' in config/dCacheSetup has to be set 
@@ -55,22 +79,9 @@ XROOTD=no
 #    Make sure that there is only one replica manager running in a dCache
 #    instance.
 #
-#replicaManager=no              # default: no
+#replicaManager=no  			# default: no
 
 
-#  ----  Start the info provider on this node.
-#    With this variable, it is possible to install the info provider
-#    on a separate node and not on the admin node.
-#
-#infoProvider=yes                # default: no
-
-
-#  ----  Start the statistics module
-#
-# Make sure that statisticsLocation variable in dCacheSetup file points to
-# an existing directory.
-#
-#statistics=no                # default: 'no'
 
 ################################################################################
 #                                                                              #
