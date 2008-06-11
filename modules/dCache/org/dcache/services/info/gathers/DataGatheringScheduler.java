@@ -390,6 +390,9 @@ public class DataGatheringScheduler implements Runnable {
 		addActivity( new SingleMessageDga( "LoginBroker",     "ls -binary", msgHandler, 60));
 		addActivity( new SingleMessageDga( "srm-LoginBroker", "ls -binary", msgHandler, 60));
 		
+		// Add SRM DGAs..
+		addActivity( new LinkgroupListDga( 60));
+		
 		// Pick up domains
 		addActivity( new SingleMessageDga( "topo", "gettopomap", new TopoMapHandler(), 120));
 		// Pick up cell information

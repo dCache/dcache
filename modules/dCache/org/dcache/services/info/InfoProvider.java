@@ -210,8 +210,7 @@ public class InfoProvider extends CellAdapter {
 	private void buildMessageHandlerChain() {
 		_msgHandlerChain = new MessageHandlerChain();
 			
-		// TODO: add default Message Handlers.
-		//_msgHandlerChain.addDefaultHandlers();
+		_msgHandlerChain.addDefaultHandlers();
 	}
 	
 	

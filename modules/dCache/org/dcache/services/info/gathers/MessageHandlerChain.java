@@ -199,5 +199,12 @@ public class MessageHandlerChain {
 		_nextFlushOldMetadata = new Date( System.currentTimeMillis() + METADATA_FLUSH_PERIOD);
 	}
 	
+	
+	/**
+	 * Add a standard set of handlers for reply Messages
+	 */
+	public void addDefaultHandlers() {
+		addMessageHandler( new LinkgroupListMsgHandler());
+	}
 
 }
