@@ -24,14 +24,22 @@ public class LoginBrokerLsMsgHandler extends CellMessageHandlerSkel {
 
 	private static Logger _log = Logger.getLogger( LoginBrokerLsMsgHandler.class);
 
+	private static final StatePath PATH_TO_DOORS = new StatePath( "doors");
+
 	public void process(Object msgPayload, long metricLifetime) {
 
-		StateUpdate update = null;
+		if( !msgPayload.getClass().isArray()) {
+			_log.error( "unexpected received non-array payload");
+			return;			
+		}
 
 		Object[] array = (Object []) msgPayload;
-		
-		StatePath pathToDoors = new StatePath( "doors");
-		
+
+		if( array.length == 0)
+			return;
+
+		StateUpdate update = new StateUpdate();
+
 		for( int i = 0; i < array.length; i++) {
 			
 			if( !(array [i] instanceof LoginBrokerInfo)) {
@@ -40,15 +48,10 @@ public class LoginBrokerLsMsgHandler extends CellMessageHandlerSkel {
 			}
 			
 			LoginBrokerInfo info = (LoginBrokerInfo) array[i];
-		
-			if( update == null)
-				update = new StateUpdate();
-			
-			addDoorInfo( update, pathToDoors.newChild( info.getIdentifier()), info, metricLifetime);
+			addDoorInfo( update, PATH_TO_DOORS.newChild( info.getIdentifier()), info, metricLifetime);
 		}
 		
-		if( update != null)
-			applyUpdates( update);
+		applyUpdates( update);
 	}
 	
 	
