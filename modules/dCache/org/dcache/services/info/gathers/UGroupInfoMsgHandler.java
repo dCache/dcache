@@ -18,16 +18,12 @@ public class UGroupInfoMsgHandler extends CellMessageHandlerSkel {
 	
 	public void process(Object msgPayload, long metricLifetime) {
 		
-		Object array[];
-		
-		StateUpdate update = new StateUpdate();
-		
 		if( !msgPayload.getClass().isArray()) {
 			_log.error( "unexpected received non-array payload");
 			return;			
 		}
 		
-		array = (Object []) msgPayload;
+		Object array[] = (Object []) msgPayload;
 		
 		if( array.length != 3) {
 			_log.error( "unexpected array size: "+array.length);
@@ -43,6 +39,8 @@ public class UGroupInfoMsgHandler extends CellMessageHandlerSkel {
 		
 		StatePath thisUGroupPath = UNITGROUP_PATH.newChild( unitGroupName);
 
+		StateUpdate update = new StateUpdate();
+		
 		addItems( update, thisUGroupPath.newChild("units"), (Object []) array [1], metricLifetime);
 		addItems( update, thisUGroupPath.newChild("links"), (Object []) array [2], metricLifetime);
 		
