@@ -71,10 +71,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
     @SuppressWarnings("deprecation")
     private GplazmaService _authService = null;
 
-    /**
-     * a flag which is true if strong authentication succeeded
-     */
-    private boolean _isAuthorized = false;
     private boolean _strictSize            = false ;
     private String  _poolProxy        = null ;
     private Version _minClientVersion = null ;
@@ -106,16 +102,16 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
         _args = _cell.getArgs() ;
         _user = user;
 
-        if( _user.getName() == null ) {
-            throw new IllegalArgumentException("user name null");
-        }
 
-        if( _user.getRole() == null ) {
-            throw new IllegalArgumentException("Role is null");
-        }
+        String auth = _args.getOpt("authorization") ;
+        _authorizationStrong   = ( auth != null ) && auth.equals("strong") ;
+        _authorizationRequired = ( auth != null ) &&
+        ( auth.equals("strong") || auth.equals("required") ) ;
 
+        if( _authorizationRequired )_cell.say("Authorization required");
+        if( _authorizationStrong   )_cell.say("Authorization strong");
 
-        if( _user.getName() != null && _user.getRole() != null ) {
+        if( _authorizationStrong || _authorizationRequired ) {
 
             try {
                 _authService = GplazmaService.getInstance(_cell.getArgs());
@@ -131,12 +127,14 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
 
         }
 
-        _poolManagerName = _args.getOpt("poolManager" ) ;
-        _poolManagerName = _poolManagerName == null ?
-        "PoolManager" : _poolManagerName ;
         _pnfsManagerName = _args.getOpt("pnfsManager" ) ;
         _pnfsManagerName = _pnfsManagerName == null ?
         "PnfsManager" : _pnfsManagerName ;
+
+        _poolManagerName = _args.getOpt("poolManager" ) ;
+        _poolManagerName = _poolManagerName == null ?
+        "PoolManager" : _poolManagerName ;
+
 
         _poolProxy       = _args.getOpt("poolProxy");
         _cell.say("Pool Proxy "+( _poolProxy == null ? "not set" : ( "set to "+_poolProxy ) ) );
@@ -189,14 +187,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
                 _cell.esay("Problem in setting PoolRetry Value : "+ee ) ;
             }
         _cell.say("PoolRetry timer set to "+(_poolRetry/1000L)+" seconds");
-
-        String auth = _args.getOpt("authorization") ;
-        _authorizationStrong   = ( auth != null ) && auth.equals("strong") ;
-        _authorizationRequired = ( auth != null ) &&
-        ( auth.equals("strong") || auth.equals("required") ) ;
-
-        if( _authorizationRequired )_cell.say("Authorization required");
-        if( _authorizationStrong   )_cell.say("Authorization strong");
 
         _ioQueueName = _args.getOpt("io-queue") ;
         _ioQueueName = ( _ioQueueName == null ) || ( _ioQueueName.length() == 0 ) ? null : _ioQueueName ;
@@ -2072,7 +2062,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
             //
             _protocolInfo = new DCapProtocolInfo( "DCap",3,0, _hosts , port  ) ;
             _protocolInfo.setSessionId( _sessionId ) ;
-            if( _isAuthorized ) {
+            if( _voInfo != null ) {
                 _protocolInfo.setVOInfo(_voInfo);
             }
 
@@ -2735,13 +2725,17 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
     @SuppressWarnings("deprecation")
     private UserAuthRecord getUserMetadata(String name, String role) throws CacheException {
 
-        UserAuthRecord user;
+        UserAuthRecord user = new UserAuthRecord("nobody", name, role, true, 0, -1, -1, "/", "/", "/", new HashSet<String>(0)) ;
 
-        try {
-            user = _authService.getUserRecord(_cell, name, role, _cell.getArgs());
-            _voInfo = new VOInfo(user.getGroup(), user.getRole() );
-        } catch (AuthorizationServiceException e) {
-            user = new UserAuthRecord("nobody", name, role, true, 0, -1, -1, "/", "/", "/", new HashSet<String>(0));
+        if( _authService != null ) {
+            try {
+                user = _authService.getUserRecord(_cell, name, role, _cell.getArgs());
+                _voInfo = new VOInfo(user.getGroup(), user.getRole() );
+            } catch (AuthorizationServiceException e) {
+                user = new UserAuthRecord("nobody", name, role, true, 0, -1, -1, "/", "/", "/", new HashSet<String>(0)) ;
+            }
+        }else{
+            user = new UserAuthRecord("nobody", name, role, true, 0, -1, -1, "/", "/", "/", new HashSet<String>(0)) ;
         }
 
         _cell.say("Door authenticated for "+
