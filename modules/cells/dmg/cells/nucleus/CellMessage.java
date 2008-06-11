@@ -1,6 +1,5 @@
 package dmg.cells.nucleus ;
 import  java.io.* ;
-import  java.util.Date ;
 
 /**
   *
@@ -37,7 +36,8 @@ public class CellMessage implements Cloneable , Serializable {
      _umid         = new UOID() ;
      _lastUmid     = _umid ;
   }
-  public String toString(){
+  @Override
+public String toString(){
     StringBuffer sb = new StringBuffer() ;
     sb.append( "<CM: S=" ).append( _source.toString() ).
        append( ";D=").append( _destination.toString() ) ;
@@ -54,8 +54,10 @@ public class CellMessage implements Cloneable , Serializable {
     sb.append( ";O=" ).append( _umid ).append( ";LO=" ).append( _lastUmid ).append( ">" ) ;
     return sb.toString() ;
   }
-  public int     hashCode(){ return _umid.hashCode() ; }
-  public boolean equals( Object obj ){
+  @Override
+public int     hashCode(){ return _umid.hashCode() ; }
+  @Override
+public boolean equals( Object obj ){
       if( obj instanceof CellMessage )
          return ((CellMessage)obj)._umid.equals( _umid ) ;
       else if( obj instanceof UOID )
@@ -109,7 +111,7 @@ public class CellMessage implements Cloneable , Serializable {
   // package methods
   //
   void    isRouted( boolean r ){ _isRouted = r ; }
-  boolean wasRouted(){ return _isRouted ; } ;
+  boolean wasRouted(){ return _isRouted ; }
   boolean isStreamMode(){ return _mode == STREAM_MODE  ; }
   void touch(){
     if( _destination.isFirstDestination() ){

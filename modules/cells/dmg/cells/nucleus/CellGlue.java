@@ -358,25 +358,26 @@ class CellGlue {
    int  getPrintoutLevel(){ return _printoutLevel ; }
    int  getDefaultPrintoutLevel(){ return _defPrintoutLevel ; }
    void setPrintoutLevel( String cellName , int level ){
-      try{
-          if( cellName.equals("CellGlue") ){
-             setPrintoutLevel(level) ;
-             return ;
-          }else if( cellName.equals("default") ){
-             _defPrintoutLevel = level ;
-             return ;
-          }
-          CellNucleus nucleus = _cellList.get( cellName ) ;
-          if( nucleus != null )nucleus.setPrintoutLevel( level ) ;
-      }catch( Exception e ){}
+
+      if( cellName.equals("CellGlue") ){
+         setPrintoutLevel(level) ;
+         return ;
+      }else if( cellName.equals("default") ){
+         _defPrintoutLevel = level ;
+         return ;
+      }
+
+      CellNucleus nucleus = _cellList.get( cellName ) ;
+      if( nucleus != null )nucleus.setPrintoutLevel( level ) ;
    }
    int getPrintoutLevel( String cellName ){
-      try{
-          if( cellName.equals("CellGlue") )return getPrintoutLevel() ;
-          if( cellName.equals("default") )return getDefaultPrintoutLevel() ;
-          CellNucleus nucleus =  _cellList.get( cellName ) ;
-          if( nucleus != null )return nucleus.getPrintoutLevel() ;
-      }catch( Exception e ){ }
+
+      if( cellName.equals("CellGlue") )return getPrintoutLevel() ;
+      if( cellName.equals("default") )return getDefaultPrintoutLevel() ;
+      CellNucleus nucleus =  _cellList.get( cellName ) ;
+
+      if( nucleus != null )return nucleus.getPrintoutLevel() ;
+
       return -1 ;
    }
    void say( String str ){
@@ -419,9 +420,9 @@ class CellGlue {
      */
     CellNucleus getCell(String cellName)
     {
-        CellNucleus nucleus = (CellNucleus)_cellList.get(cellName);
+        CellNucleus nucleus = _cellList.get(cellName);
         if (nucleus == null) {
-            nucleus = (CellNucleus)_killedCellList.get(cellName);
+            nucleus = _killedCellList.get(cellName);
         }
         return nucleus;
     }
@@ -730,6 +731,8 @@ class CellGlue {
       }
       v.add( listener ) ;
    }
+
+   @Override
    public String toString(){ return _cellDomainName ; }
 
 }
