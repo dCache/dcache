@@ -485,7 +485,6 @@
             <class location="${classesDir}/dcache-srm.jar" />
             <class location="${classesDir}/srm.jar" />
             <class location="${classesDir}/srm-tomcat.jar" />
-            <class location="${classesDir}/gplazma.jar" />
             <class location="${classesDir}/javatunnel.jar" />
             <class location="${classesDir}/infoDynamicSE.jar" />
             <class location="${classesDir}/xrootd-tokenauthz.jar" />
@@ -508,7 +507,6 @@
             <class location="${classesDir}/dcache-srm.jar" />
             <class location="${classesDir}/srm.jar" />
             <class location="${classesDir}/srm-tomcat.jar" />
-            <class location="${classesDir}/gplazma.jar" />
             <class location="${classesDir}/javatunnel.jar" />
             <class location="${classesDir}/infoDynamicSE.jar" />
             <class location="${classesDir}/xrootd-tokenauthz.jar" />
@@ -562,7 +560,6 @@
 
             <auxClasspath path="" />
             <class location="${classesDir}/dcache-srm.jar" />
-            <class location="${classesDir}/gplazma.jar" />
             <class location="${classesDir}/javatunnel.jar" />
         </findbugs>
     </target>
