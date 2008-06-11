@@ -39,10 +39,13 @@ public class CellUser implements  Principal, java.io.Serializable {
 		return _role;
 	}
 	
-	public void setRole( String newRole) {
-		_role = newRole;
-	}	
-	
+    /**
+     * set new role. If newRole is <i>null</i> old role remain
+     * @param newRole
+     */
+    public void setRole(String newRole) {
+        if (newRole != null) _role = newRole;
+    }
 	
 	public String toString() {
 		return  _name + ":" + _role + ":" + _group;
