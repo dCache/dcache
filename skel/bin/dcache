@@ -410,6 +410,9 @@ getServices()
             if [ "`printConfig infoProvider`" = "yes" ]; then
                 printf "infoProvider "
             fi
+            if [ "`printConfig info`" = "yes" ]; then
+                printf "info "
+            fi
             if [ "`printConfig statistics`" = "yes" ]; then
                 printf "statistics "
             fi
@@ -442,6 +445,9 @@ getServices()
             fi
             if [ "`printConfig InfoProvider`" = "yes" ]; then
                 printf "infoProvider "
+            fi
+            if [ "`printConfig info`" = "yes" ]; then
+                printf "info "
             fi
             if [ "`printConfig statistics`" = "yes" ]; then
                 printf "statistics "
