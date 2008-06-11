@@ -128,6 +128,8 @@ public class StatePersistentMetadata {
 		this.add( StatePath.parsePath("linkgroups.*"), branchMetadata("linkgroup", "name"));
 		this.add( StatePath.parsePath("linkgroups.*.authorisation.*"), branchMetadata("authorised", "name"));
 		
+		this.add( StatePath.parsePath("srm.spaces.*"), branchMetadata("space", "space-id"));
+		
 		this.add( StatePath.parsePath("units.*"), branchMetadata( "unit", "name"));
 		this.add( StatePath.parsePath("units.*.unitgroups.*"), branchMetadata( "unitgroupref", "ref"));
 

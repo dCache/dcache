@@ -393,6 +393,7 @@ public class DataGatheringScheduler implements Runnable {
 		// Add SRM DGAs..
 		addActivity( new LinkgroupListDga( 60));
 		addActivity( new LinkgroupDetailsDga( 300)); // every five minutes, as this may be a heavy-weight operation.
+		addActivity( new SrmSpaceDetailsDga( 300)); // every five minutes, as this may be a heavy-weight operation.
 		
 		// Pick up domains
 		addActivity( new SingleMessageDga( "topo", "gettopomap", new TopoMapHandler(), 120));
