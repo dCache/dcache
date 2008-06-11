@@ -13,7 +13,7 @@ import context -c setupContext
 #
 #   Make sure we got what we need.
 #
-check -strong serviceLocatorPort serviceLocatorHost 
+check -strong serviceLocatorPort serviceLocatorHost
 check -strong dCapGsiPort
 
 #
@@ -32,7 +32,7 @@ onerror continue
    set context -c gsidcapIoQueue              ""
    set context -c gsidcapIoQueueOverwrite     denied
    set context -c gsidcapMaxLogin             1500
-   
+
 #
 #  ----  Usage of Srm Space Manager
 #
@@ -48,7 +48,7 @@ eval ${srmSpaceManagerEnabled} yes ==
 set env srmSpaceManagerIsOn ${rc}
 exec env srmSpaceManagerOn.exe -run -ifok=srmSpaceManagerIsOn
 set context -c doorPoolManager              "PoolManager"
-   
+
 onerror shutdown
 #
 #
@@ -66,19 +66,12 @@ create dmg.cells.services.login.LoginManager DCap-gsi-${thisHostname} \
               -protocolVersion=1.3.0 \
               -authorization=strong \
               -poolProxy=PoolManager  \
-              -usermap=gsi-pam \
               -io-queue=${gsidcapIoQueue} \
               -io-queue-overwrite=${gsidcapIoQueueOverwrite} \
+              -use-gplazma-authorization-module=${useGPlazmaAuthorizationModule} \
+              -use-gplazma-authorization-cell=${useGPlazmaAuthorizationCell} \
+              -gplazma-authorization-module-policy=${gplazmaPolicy} \
               -socketfactory=javatunnel.TunnelServerSocketCreator,javatunnel.GsiTunnel,dummy"
-#
-#
-#
-create diskCacheV111.admin.PAMAuthentificator gsi-pam \
-             "default    \
-             -users=class:diskCacheV111.admin.UserMetaDataProvider_gPlazma \
-             -use-gplazma-authorization-module=${useGPlazmaAuthorizationModule} \
-             -use-gplazma-authorization-cell=${useGPlazmaAuthorizationCell} \
-             -gplazma-authorization-module-policy=${gplazmaPolicy} \
-"
+
 #
 #
