@@ -421,7 +421,7 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
       
       if(role == null || role.equalsIgnoreCase("null")) 
          condition = " CREDENTIALNAME='" +credentialName + "' "+
-                       "ROLE is NULL";
+                       "AND ROLE is NULL";
          
       else condition = " CREDENTIALNAME='" + credentialName + "' AND " +
                        "ROLE='" + role + "' ";
