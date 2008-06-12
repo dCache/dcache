@@ -2506,7 +2506,7 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
                 if (e instanceof CacheException) {
                     _poolMessage.setReply(((CacheException) e).getRc(), e);
                 } else {
-                    _poolMessage.setReply(102, e);
+                    _poolMessage.setReply(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e);
                 }
             } else {
                 try {
