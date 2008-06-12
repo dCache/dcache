@@ -13,9 +13,9 @@ public class CellVersion implements Serializable {
 
   static final long serialVersionUID = 883744769418282912L;
 
-  private String _version  = "Unkown" ;
-  private String _release  = "Unkown" ;
-  private String _revision = "Unkown" ;
+  private String _version  = "Unknown" ;
+  private String _release  = "Unknown" ;
+  private String _revision = "Unknown" ;
 
   public CellVersion(){}
 //  public CellVersion( String version ){ 
