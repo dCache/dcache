@@ -12,6 +12,7 @@ import org.apache.log4j.Logger;
 
 import org.dcache.vehicles.InfoGetSerialisedDataMessage;
 
+import dmg.cells.nucleus.CellVersion;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.Cell;
 import dmg.cells.nucleus.CellMessage;
@@ -72,6 +73,16 @@ public class InfoHttpEngine implements HttpResponseEngine, Cell {
 
 		_nucleus = new CellNucleus( this, this.getClass().getSimpleName());
 	}
+
+	/**
+	 * Correctly report our version and revision information.
+	 * @return a CellVersion for this cell.
+	 */
+    public CellVersion getCellVersion() {
+        return new CellVersion(diskCacheV111.util.Version.getVersion(),
+                               "$Revision: 9086 $");
+    }
+
 
 	/**
 	 * Handle a request for data.  This either returns the cached contents (if
