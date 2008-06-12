@@ -792,14 +792,13 @@ public class PoolV4 extends AbstractCell
     {
         public void stateChanged(StateChangeEvent event)
         {
-            PnfsId id = event.getPnfsId();
-            EntryState from = event.getOldState();
-            EntryState to = event.getNewState();
-
-            if (_lfsMode == LFS_NONE && from == EntryState.FROM_CLIENT) {
-                _pnfs.putPnfsFlag(id, "h", "yes");
-            } else {
-                _pnfs.putPnfsFlag(id, "h", "no");
+            if (event.getOldState() == EntryState.FROM_CLIENT) {
+                PnfsId id = event.getPnfsId();
+                if (_lfsMode == LFS_NONE) {
+                    _pnfs.putPnfsFlag(id, "h", "yes");
+                } else {
+                    _pnfs.putPnfsFlag(id, "h", "no");
+                }
             }
         }
     }
