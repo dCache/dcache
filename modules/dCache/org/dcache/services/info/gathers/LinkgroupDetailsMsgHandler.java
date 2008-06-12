@@ -21,7 +21,9 @@ public class LinkgroupDetailsMsgHandler implements MessageHandler {
 
 	private static Logger _log = Logger.getLogger( LinkgroupDetailsMsgHandler.class);
 	private static final StatePath LINKGROUPS_PATH = new StatePath("linkgroups");
+	private static final StatePath SUMMARY_LINKGROUP_BY_VO = StatePath.parsePath( "summary.linkgroup-by-vo");
 	private static final String WILDCARD_ROLE = "*";
+	private static final String WILDCARD_VO = "*";
 	
 	private State _state = State.getInstance();
 
@@ -45,10 +47,13 @@ public class LinkgroupDetailsMsgHandler implements MessageHandler {
 		StateUpdate update = new StateUpdate();
 
 		for( LinkGroup linkGroup : linkGroups) {
-			StatePath thisLinkGroupPath = LINKGROUPS_PATH.newChild( String.valueOf(linkGroup.getId()));
 			
+			String lgid = String.valueOf( linkGroup.getId());
+
+			StatePath thisLinkGroupPath = LINKGROUPS_PATH.newChild( lgid);
+
 			update.appendUpdate( thisLinkGroupPath.newChild("name"), new StringStateValue( linkGroup.getName(), metricLifetime));
-			update.appendUpdate( thisLinkGroupPath.newChild("id"), new IntegerStateValue( linkGroup.getId(), metricLifetime));
+			update.appendUpdate( thisLinkGroupPath.newChild("id"), new StringStateValue( lgid, metricLifetime));
 			
 			StatePath spacePath = thisLinkGroupPath.newChild( "space");
 			update.appendUpdate( spacePath.newChild("free"), new IntegerStateValue( linkGroup.getFreeSpace(), metricLifetime));
@@ -73,7 +78,7 @@ public class LinkgroupDetailsMsgHandler implements MessageHandler {
 			if( voInfo.length > 0) { 
 				for( int i = 0; i < voInfo.length; i++) {
 					VOInfo thisVO = voInfo[i];
-					addVoInfo( update, vosPath.newChild(thisVO.toString()), thisVO, metricLifetime);
+					addVoInfo( update, vosPath.newChild(thisVO.toString()), thisVO, metricLifetime, lgid);
 				}
 			} else {
 				// Ensure the VOs branch exists.
@@ -92,7 +97,7 @@ public class LinkgroupDetailsMsgHandler implements MessageHandler {
 	 * @param vosPath the branch that metrics will be added underneath. 
 	 * @param vo the VOInfo of this VO.
 	 */
-	private void addVoInfo( StateUpdate update, StatePath voPath, VOInfo vo, long metricLifetime) {
+	private void addVoInfo( StateUpdate update, StatePath voPath, VOInfo vo, long metricLifetime, String lgid) {
 		String group = vo.getVoGroup();
 		String role = vo.getVoRole();
 		
@@ -113,6 +118,15 @@ public class LinkgroupDetailsMsgHandler implements MessageHandler {
 			}
 
 			update.appendUpdate( voPath.newChild( "FQAN"), new StringStateValue( fqan.toString(), metricLifetime));
+			
+			// If this entry authorises a whole VO, make a special note of this.
+			if( (role != null || role.equals( WILDCARD_ROLE)) && group.indexOf('/', 1) == -1) {
+				String voName = group.startsWith("/") ? group.substring(1) : group;
+				
+				if( !voName.equals( WILDCARD_VO))
+					update.appendUpdate( SUMMARY_LINKGROUP_BY_VO.newChild( voName).newChild("linkgroups").newChild(lgid),
+										new StateComposite( metricLifetime));
+			}
 		}
 	}
 
