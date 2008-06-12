@@ -162,14 +162,8 @@ public class ChecksumModuleV1
     public void storeChecksumInPnfs(PnfsId pnfsId, Checksum checksum)
         throws CacheException, NoRouteToCellException
     {
-        storeChecksumInPnfs(pnfsId, checksum, false);
-    }
-
-    public void storeChecksumInPnfs(PnfsId pnfsId, Checksum checksum, boolean overwrite)
-        throws CacheException, NoRouteToCellException
-    {
         try {
-            ChecksumPersistence.getPersistenceMgr().store(_cell, pnfsId, checksum,overwrite);
+            ChecksumPersistence.getPersistenceMgr().store(_cell, pnfsId, checksum);
         } catch (CacheException e) {
             throw e;
         } catch (NoRouteToCellException e) {

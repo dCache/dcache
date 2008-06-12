@@ -34,7 +34,7 @@ import  java.security.NoSuchAlgorithmException ;
 import java.io.RandomAccessFile;
 
 public abstract class ChecksumPersistence {
-  public abstract void store(CellAdapter cell,PnfsId pnfsId, diskCacheV111.util.Checksum value,boolean overwrite) throws Exception;
+  public abstract void store(CellAdapter cell,PnfsId pnfsId, diskCacheV111.util.Checksum value) throws Exception;
   public abstract String retrieve(CellAdapter cell, PnfsId pnfsId,int type) throws Exception ;
   public abstract int[] listChecksumTypes(CellAdapter cell, PnfsId pnfsId) throws Exception;
 
@@ -43,7 +43,7 @@ public abstract class ChecksumPersistence {
   }
 }
 
-// not really exception safe 
+// not really exception safe
 class ChecksumPersistenceImpl extends ChecksumPersistence {
 
   private static final String basePath = System.getProperty("CHECKSUM_DB","/tmp");
@@ -52,7 +52,7 @@ class ChecksumPersistenceImpl extends ChecksumPersistence {
      return basePath+"/"+pnfsId.toString()+"_"+Integer.toString(type);
   }
 
-  public void store(CellAdapter cell, PnfsId pnfsId, diskCacheV111.util.Checksum value,boolean overwrite) throws Exception {
+  public void store(CellAdapter cell, PnfsId pnfsId, diskCacheV111.util.Checksum value) throws Exception {
 
     RandomAccessFile raf = new RandomAccessFile(getdbFileName(pnfsId,value.getType()),"rw");
     raf.write(value.toHexString().getBytes());
@@ -69,7 +69,7 @@ class ChecksumPersistenceImpl extends ChecksumPersistence {
 
      byte [] digest = new byte[(int)numRead];
 
-   
+
      numRead = raf.read(digest);
 
      raf.close();
@@ -86,10 +86,10 @@ class ChecksumPersistenceImpl extends ChecksumPersistence {
 
 class ChecksumPersistencePnfsImpl extends ChecksumPersistence {
 
-  public void store(CellAdapter cell, PnfsId pnfsId, diskCacheV111.util.Checksum value,boolean overwrite) throws Exception {
+  public void store(CellAdapter cell, PnfsId pnfsId, diskCacheV111.util.Checksum value) throws Exception {
          PnfsSetChecksumMessage flag =
             new PnfsSetChecksumMessage(pnfsId, value.getType(), value.toHexString() ) ;
-         flag.setReplyRequired(false) ;
+         flag.setReplyRequired(true);
 
          cell.sendMessage(
             new CellMessage(
@@ -115,7 +115,7 @@ class ChecksumPersistencePnfsImpl extends ChecksumPersistence {
                     return null ;
                 }
                 return flags.getValue() ; // assume this is the right type
-            } 
+            }
 
             throw new Exception("Got message of unrecognized type. Expected PnfsGetChecksumMessage");
   }

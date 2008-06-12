@@ -164,12 +164,9 @@ public class ChecksumModuleV1  {
         return checksum;
     }
 
-   public void storeChecksumInPnfs( PnfsId pnfsId , Checksum checksum ){
-      storeChecksumInPnfs( pnfsId , checksum , true ) ;
-   }
-   public void storeChecksumInPnfs( PnfsId pnfsId , Checksum checksum , boolean overwrite ){
+   public void storeChecksumInPnfs( PnfsId pnfsId , Checksum checksum){
       try{
-	  ChecksumPersistence.getPersistenceMgr().store(_cell, pnfsId , checksum,overwrite ) ;
+	  ChecksumPersistence.getPersistenceMgr().store(_cell, pnfsId , checksum) ;
        }catch(Exception eee ){
          _cell.esay("Failed to send crc to PnfsManager : "+eee ) ;
        }

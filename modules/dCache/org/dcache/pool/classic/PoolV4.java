@@ -1731,7 +1731,7 @@ public class PoolV4 extends AbstractCell
                     infoChecksum = getChecksumFromHsm(handle.getFile());
                     if (infoChecksum != null) {
                         say("Got checksum for " + pnfsId + " from HSM: " + infoChecksum);
-                        _checksumModule.storeChecksumInPnfs(pnfsId, infoChecksum, false);
+                        _checksumModule.storeChecksumInPnfs(pnfsId, infoChecksum);
                     }
                 } else {
                     infoChecksum = null;
