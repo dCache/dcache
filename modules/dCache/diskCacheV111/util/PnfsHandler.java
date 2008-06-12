@@ -460,7 +460,6 @@ public class PnfsHandler {
    }
 
    public void putPnfsFlag(PnfsId pnfsId, String flag, String value)
-   throws CacheException
    {
        PnfsFlagMessage flagMessage =
                 new PnfsFlagMessage( pnfsId ,flag , PnfsFlagMessage.FlagOperation.SET ) ;
