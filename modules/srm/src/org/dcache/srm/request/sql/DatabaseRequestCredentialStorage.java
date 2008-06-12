@@ -454,7 +454,7 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
             sb.append(" CREDENTIALNAME = '").append(requestCredential.getCredentialName()).append("',");
             String tmp = requestCredential.getRole();
             if(tmp == null) {
-               sb.append(" ROLE is NULL,");
+               sb.append(" ROLE = NULL,");
             } else {
                sb.append(" ROLE = '").append(tmp).append("',");
             }
