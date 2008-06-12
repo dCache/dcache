@@ -420,7 +420,8 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
       String condition;
       
       if(role == null || role.equalsIgnoreCase("null")) 
-         condition = " CREDENTIALNAME='" +credentialName + "'";
+         condition = " CREDENTIALNAME='" +credentialName + "' "+
+                       "ROLE is NULL";
          
       else condition = " CREDENTIALNAME='" + credentialName + "' AND " +
                        "ROLE='" + role + "' ";
@@ -453,7 +454,7 @@ public class DatabaseRequestCredentialStorage implements RequestCredentialStorag
             sb.append(" CREDENTIALNAME = '").append(requestCredential.getCredentialName()).append("',");
             String tmp = requestCredential.getRole();
             if(tmp == null) {
-               sb.append(" ROLE = NULL,");
+               sb.append(" ROLE is NULL,");
             } else {
                sb.append(" ROLE = '").append(tmp).append("',");
             }
