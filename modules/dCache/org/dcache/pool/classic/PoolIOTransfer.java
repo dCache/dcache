@@ -6,6 +6,8 @@ import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.movers.MoverProtocol;
 
+import dmg.cells.nucleus.NoRouteToCellException;
+
 import java.io.IOException;
 
 /**
@@ -108,7 +110,8 @@ abstract class PoolIOTransfer
      * <code>transfer</code> failed or was not invoked.
      */
     public abstract void close()
-        throws CacheException, InterruptedException, IOException;
+        throws CacheException, InterruptedException,
+               IOException, NoRouteToCellException;
 
     /**
      * Returns the size of the replica that was transferred. Must not

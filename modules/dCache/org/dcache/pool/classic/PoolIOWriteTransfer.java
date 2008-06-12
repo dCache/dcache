@@ -19,6 +19,8 @@ import diskCacheV111.movers.ChecksumMover;
 import diskCacheV111.repository.SpaceMonitor;
 import diskCacheV111.repository.CacheRepository;
 
+import dmg.cells.nucleus.NoRouteToCellException;
+
 import java.io.File;
 import java.io.RandomAccessFile;
 import java.io.FileNotFoundException;
@@ -166,7 +168,8 @@ class PoolIOWriteTransfer
     }
 
     public void close()
-        throws CacheException, InterruptedException, IOException
+        throws CacheException, InterruptedException,
+               IOException, NoRouteToCellException
     {
         _size = _file.length();
         boolean exists = _size > 0;
@@ -177,14 +180,6 @@ class PoolIOWriteTransfer
                                                   _checksumFactory,
                                                   _clientChecksum,
                                                   _transferChecksum);
-
-//                 if (_storageInfo.getKey("overwrite") == null) {
-//                     if (_lfsMode == LFS_NONE) {
-//                         _pnfs.putPnfsFlag(_pnfsId, "h", "yes");
-//                     } else {
-//                         _pnfs.putPnfsFlag(_pnfsId, "h", "no");
-//                     }
-//                 }
             }
         } finally {
             if (!_success) {
@@ -192,10 +187,6 @@ class PoolIOWriteTransfer
             }
             _handle.close();
         }
-
-//         if (_success) {
-//             _replicationHandler.initiateReplication(_entry, "write");
-//         }
     }
 
     public long getFileSize()

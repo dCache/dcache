@@ -17,6 +17,8 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Enumeration;
@@ -306,8 +308,7 @@ public class PoolV4 extends AbstractCell
             if (recover == null) {
                 _replicationHandler = new ReplicationHandler();
             } else {
-                _replicationHandler = new ReplicationHandler(
-                                                             recover.equals("") ? "on" : recover);
+                _replicationHandler = new ReplicationHandler(recover.equals("") ? "on" : recover);
             }
             say("ReplicationHandler : " + _replicationHandler);
 
@@ -566,29 +567,29 @@ public class PoolV4 extends AbstractCell
     }
 
     @Override
-    public CellVersion getCellVersion() {
+    public CellVersion getCellVersion()
+    {
         return new CellVersion(diskCacheV111.util.Version.getVersion(),
                                "$Revision$");
     }
 
-    private class IoQueueManager implements JobScheduler {
+    private class IoQueueManager implements JobScheduler
+    {
         private ArrayList<JobScheduler> _list = new ArrayList<JobScheduler>();
         private HashMap<String, JobScheduler> _hash = new HashMap<String, JobScheduler>();
         private boolean _isConfigured = false;
 
-        private IoQueueManager(ThreadGroup group, String ioQueueList) {
+        private IoQueueManager(ThreadGroup group, String ioQueueList)
+        {
             _isConfigured = (ioQueueList != null) && (ioQueueList.length() > 0);
-            if( !_isConfigured ) {
+            if (!_isConfigured) {
                 ioQueueList = "regular";
             }
 
-            StringTokenizer st = new StringTokenizer(ioQueueList, ",");
-            while (st.hasMoreTokens()) {
-                boolean fifo = true;
-                String queueName = st.nextToken();
-                if (queueName.startsWith("-")) {
+            for (String queueName : ioQueueList.split(",")) {
+                boolean fifo = !queueName.startsWith("-");
+                if (!fifo) {
                     queueName = queueName.substring(1);
-                    fifo = false;
                 }
 
                 if (_hash.get(queueName) != null) {
@@ -609,23 +610,28 @@ public class PoolV4 extends AbstractCell
             }
         }
 
-        private boolean isConfigured() {
+        private boolean isConfigured()
+        {
             return _isConfigured;
         }
 
-        private JobScheduler getDefaultScheduler() {
+        private JobScheduler getDefaultScheduler()
+        {
             return _list.get(0);
         }
 
-        private Iterator<JobScheduler> scheduler() {
-            return new ArrayList<JobScheduler>(_list).iterator();
+        private Collection<JobScheduler> getSchedulers()
+        {
+            return Collections.unmodifiableCollection(_list);
         }
 
-        private JobScheduler getSchedulerByName(String queueName) {
+        private JobScheduler getSchedulerByName(String queueName)
+        {
             return _hash.get(queueName);
         }
 
-        private JobScheduler getSchedulerById(int id) {
+        private JobScheduler getSchedulerById(int id)
+        {
             int pos = id % 10;
             if (pos >= _list.size()) {
                 throw new IllegalArgumentException(
@@ -634,27 +640,29 @@ public class PoolV4 extends AbstractCell
             return  _list.get(pos);
         }
 
-        public JobInfo getJobInfo(int id) {
+        public JobInfo getJobInfo(int id)
+        {
             return getSchedulerById(id).getJobInfo(id);
         }
 
         public int add(String queueName, Runnable runnable, int priority)
-            throws InvocationTargetException {
-
+            throws InvocationTargetException
+        {
             JobScheduler js = queueName == null ? null : (JobScheduler) _hash
                 .get(queueName);
 
             return js == null ? add(runnable, priority) : js.add(runnable,
                                                                  priority);
-
         }
 
-        public int add(Runnable runnable) throws InvocationTargetException {
+        public int add(Runnable runnable) throws InvocationTargetException
+        {
             return getDefaultScheduler().add(runnable);
         }
 
         public int add(Runnable runnable, int priority)
-            throws InvocationTargetException {
+            throws InvocationTargetException
+        {
             return getDefaultScheduler().add(runnable, priority);
         }
 
@@ -664,70 +672,81 @@ public class PoolV4 extends AbstractCell
             getSchedulerById(jobId).kill(jobId, force);
         }
 
-        public void remove(int jobId) throws NoSuchElementException {
+        public void remove(int jobId) throws NoSuchElementException
+        {
             getSchedulerById(jobId).remove(jobId);
         }
 
-        public StringBuffer printJobQueue(StringBuffer sbin) {
-            StringBuffer sb = sbin == null ? new StringBuffer() : sbin;
-            for (Iterator<JobScheduler> it = scheduler(); it.hasNext();) {
-                (it.next()).printJobQueue(sb);
+        public StringBuffer printJobQueue(StringBuffer sb)
+        {
+            if (sb == null) {
+                sb = new StringBuffer();
+            }
+            for (JobScheduler s : _list) {
+                s.printJobQueue(sb);
             }
             return sb;
         }
 
-        public int getMaxActiveJobs() {
+        public int getMaxActiveJobs()
+        {
             int sum = 0;
-            for (Iterator<JobScheduler> it = scheduler(); it.hasNext();) {
-                sum += (it.next()).getMaxActiveJobs();
+            for (JobScheduler s : _list) {
+                sum += s.getMaxActiveJobs();
             }
             return sum;
         }
 
-        public int getActiveJobs() {
+        public int getActiveJobs()
+        {
             int sum = 0;
-            for (Iterator<JobScheduler> it = scheduler(); it.hasNext();) {
-                sum += (it.next()).getActiveJobs();
+            for (JobScheduler s : _list) {
+               sum += s.getActiveJobs();
             }
             return sum;
         }
 
-        public int getQueueSize() {
+        public int getQueueSize()
+        {
             int sum = 0;
-            for (Iterator<JobScheduler> it = scheduler(); it.hasNext();) {
-                sum += (it.next()).getQueueSize();
+            for (JobScheduler s : _list) {
+                sum += s.getQueueSize();
             }
             return sum;
         }
 
-        public void setMaxActiveJobs(int maxJobs) {
+        public void setMaxActiveJobs(int maxJobs)
+        {
         }
 
-        public List<JobInfo>  getJobInfos() {
-            List<JobInfo> list = new ArrayList<JobInfo> ();
-            for (Iterator<JobScheduler> it = scheduler(); it.hasNext();) {
-                list.addAll((it.next()).getJobInfos());
+        public List<JobInfo>  getJobInfos()
+        {
+            List<JobInfo> list = new ArrayList<JobInfo>();
+            for (JobScheduler s : _list) {
+                list.addAll(s.getJobInfos());
             }
             return list;
         }
 
-        public void setSchedulerId(String name, int id) {
-            return;
+        public void setSchedulerId(String name, int id)
+        {
         }
 
-        public String getSchedulerName() {
+        public String getSchedulerName()
+        {
             return "Manager";
         }
 
-        public int getSchedulerId() {
+        public int getSchedulerId()
+        {
             return -1;
         }
 
-        public void dumpSetup(PrintWriter pw) {
-            for (Iterator<JobScheduler> it = scheduler(); it.hasNext();) {
-                JobScheduler js = it.next();
+        public void dumpSetup(PrintWriter pw)
+        {
+            for (JobScheduler s : _list) {
                 pw.println("mover set max active -queue="
-                           + js.getSchedulerName() + " " + js.getMaxActiveJobs());
+                           + s.getSchedulerName() + " " + s.getMaxActiveJobs());
             }
         }
 
@@ -743,15 +762,17 @@ public class PoolV4 extends AbstractCell
         }
     }
 
-    private class InventoryScanner implements Runnable {
-        private Object _notifyMe = null;
+    private class InventoryScanner implements Runnable
+    {
+        private final Object _notifyMe;
 
-        private InventoryScanner(Object notifyMe) {
+        private InventoryScanner(Object notifyMe)
+        {
             _notifyMe = notifyMe;
         }
 
-        public void run() {
-
+        public void run()
+        {
             _logClass.log("Running Repository (Cell is locked)");
             _logClass.log("Repository seems to be ok");
             try {
@@ -759,7 +780,6 @@ public class PoolV4 extends AbstractCell
                 _repository.runInventory(_recoveryFlags);
                 enablePool();
                 _logClass.elog("Pool enabled " + _poolName);
-
             } catch (Throwable e) {
                 _logClass.elog("Repository reported a problem : "
                                + e.getMessage());
@@ -899,7 +919,8 @@ public class PoolV4 extends AbstractCell
         }
     }
 
-    private void dumpSetup(PrintWriter pw) {
+    private void dumpSetup(PrintWriter pw)
+    {
         SpaceRecord space = _repository.getSpaceRecord();
 
         pw.println("#\n# Created by " + getCellName() + "("
@@ -973,20 +994,24 @@ public class PoolV4 extends AbstractCell
         return info;
     }
 
-    public void log(String str) {
+    public void log(String str)
+    {
         say(str);
     }
 
-    public void elog(String str) {
+    public void elog(String str)
+    {
         esay(str);
     }
 
-    public void plog(String str) {
+    public void plog(String str)
+    {
         esay("PANIC : " + str);
     }
 
     @Override
-    public void getInfo(PrintWriter pw) {
+    public void getInfo(PrintWriter pw)
+    {
         pw.println("Base directory    : " + _baseDir);
         pw.println("Revision          : [$Revision$]");
         pw.println("Version           : " + getCellVersion() + " (Sub="
@@ -1046,8 +1071,7 @@ public class PoolV4 extends AbstractCell
             IoQueueManager manager = (IoQueueManager) _ioQueue;
             pw.println("Mover Queue Manager : "
                        + (manager.isConfigured() ? "Active" : "Not Configured"));
-            for (Iterator<JobScheduler> it = manager.scheduler(); it.hasNext();) {
-                JobScheduler js = it.next();
+            for (JobScheduler js : manager.getSchedulers()) {
                 pw.println("Mover Queue (" + js.getSchedulerName() + ") "
                            + js.getActiveJobs() + "(" + js.getMaxActiveJobs()
                            + ")/" + js.getQueueSize());
@@ -1165,6 +1189,9 @@ public class PoolV4 extends AbstractCell
                      */
                     try {
                         transfer.close();
+                    } catch (NoRouteToCellException e) {
+                        esay("Communication failure while closing " + pnfsId
+                             + ": " + e.getMessage());
                     } catch (IOException e) {
                         esay("IO error while closing " + pnfsId
                              + ": " + e.getMessage());
@@ -1329,6 +1356,8 @@ public class PoolV4 extends AbstractCell
              */
             try {
                 _transfer.close();
+            } catch (NoRouteToCellException e) {
+                esay("Failed to cancel transfer: " + e);
             } catch (CacheException e) {
                 esay("Failed to cancel transfer: " + e);
             } catch (IOException e) {
@@ -1420,8 +1449,8 @@ public class PoolV4 extends AbstractCell
     //
     // replication on data arrived
     //
-    private class ReplicationHandler {
-
+    private class ReplicationHandler
+    {
         private boolean _enabled = false;
         private String _replicationManager = "PoolManager";
         private String _destinationHostName = null;
@@ -1431,16 +1460,18 @@ public class PoolV4 extends AbstractCell
         //
         // replicationManager,Hostname,modeOfDestFile
         //
-        private ReplicationHandler() {
+        private ReplicationHandler()
+        {
             init(null);
         }
 
-        private ReplicationHandler(String vars) {
+        private ReplicationHandler(String vars)
+        {
             init(vars);
         }
 
-        public void init(String vars) {
-
+        public void init(String vars)
+        {
             if (_destinationHostName == null) {
                 try {
                     _destinationHostName = InetAddress.getLocalHost()
@@ -1474,12 +1505,11 @@ public class PoolV4 extends AbstractCell
                     _destinationHostName = "localhost";
                 }
             }
-
-            return;
         }
 
-        public String getParameterString() {
-            StringBuffer sb = new StringBuffer();
+        public String getParameterString()
+        {
+            StringBuilder sb = new StringBuilder();
             if (_enabled) {
                 sb.append(_replicationManager).append(_destinationHostName)
                     .append(_destinationMode);
@@ -1490,8 +1520,9 @@ public class PoolV4 extends AbstractCell
         }
 
         @Override
-        public String toString() {
-            StringBuffer sb = new StringBuffer();
+        public String toString()
+        {
+            StringBuilder sb = new StringBuilder();
 
             if (_enabled) {
                 sb.append("{Mgr=").append(_replicationManager).append(",Host=")
@@ -1503,7 +1534,8 @@ public class PoolV4 extends AbstractCell
             return sb.toString();
         }
 
-        private void initiateReplication(PnfsId id, String source) {
+        private void initiateReplication(PnfsId id, String source)
+        {
             if ((!_enabled)
                 || (source.equals("restore") && !_replicateOnRestore))
                 return;
@@ -1545,17 +1577,17 @@ public class PoolV4 extends AbstractCell
     // The mover class loader
     //
     //
-    private Map<String, Class<?>> _handlerClasses = new Hashtable<String, Class<?>>();
+    private Map<String, Class<?>> _handlerClasses =
+        new Hashtable<String, Class<?>>();
 
-    private MoverProtocol getProtocolHandler(ProtocolInfo info) {
-
+    private MoverProtocol getProtocolHandler(ProtocolInfo info)
+    {
         Class<?>[] argsClass = { dmg.cells.nucleus.CellAdapter.class };
         String moverClassName = info.getProtocol() + "-"
             + info.getMajorVersion();
         Class<?> mover = _moverHash.get(moverClassName);
 
         try {
-
             if (mover == null) {
                 moverClassName = "diskCacheV111.movers." + info.getProtocol()
                     + "Protocol_" + info.getMajorVersion();
@@ -1588,7 +1620,6 @@ public class PoolV4 extends AbstractCell
             esay(e);
             return null;
         }
-
     }
 
 
@@ -1596,10 +1627,12 @@ public class PoolV4 extends AbstractCell
     //
     // interface to the HsmRestoreHandler
     //
-    private class ReplyToPoolFetch implements CacheFileAvailable {
+    private class ReplyToPoolFetch implements CacheFileAvailable
+    {
         private CellMessage _cellMessage = null;
 
-        private ReplyToPoolFetch(CellMessage cellMessage) {
+        private ReplyToPoolFetch(CellMessage cellMessage)
+        {
             _cellMessage = cellMessage;
         }
 
@@ -1630,6 +1663,10 @@ public class PoolV4 extends AbstractCell
                     } else {
                         msg.setFailed(1000, ee);
                     }
+                } catch (NoRouteToCellException e) {
+                    msg.setFailed(CacheException.DEFAULT_ERROR_CODE,
+                                  "Cell communication failure after stage: " +
+                                  e.getMessage());
                 } catch (InterruptedException e) {
                     msg.setFailed(1010, "Checksum calculation interrupted");
                     throw e;
@@ -1663,7 +1700,7 @@ public class PoolV4 extends AbstractCell
                     } catch (NotSerializableException e) {
                         throw new RuntimeException("Bug detected: Unserializable vehicle", e);
                     } catch (NoRouteToCellException e) {
-                        esay("Couldn't send ack to poolManager : " + e.getMessage());
+                        esay("Failed to send reply to " + _cellMessage.getDestinationAddress() + ": " + e.getMessage());
                     }
                 }
             } catch (InterruptedException e) {
@@ -1674,7 +1711,7 @@ public class PoolV4 extends AbstractCell
         }
 
         private void doChecksum(PnfsId pnfsId)
-            throws CacheException, InterruptedException
+            throws CacheException, InterruptedException, NoRouteToCellException
         {
             /* Return early without opening the entry if we don't need
              * to.
@@ -1690,21 +1727,29 @@ public class PoolV4 extends AbstractCell
             try {
                 CacheEntry entry = handle.getEntry();
 
-                if (_checksumModule.getCrcFromHsm())
-                    getChecksumFromHsm(pnfsId, handle.getFile());
+                if (_checksumModule.getCrcFromHsm()) {
+                    infoChecksum = getChecksumFromHsm(handle.getFile());
+                    if (infoChecksum != null) {
+                        say("Got checksum for " + pnfsId + " from HSM: " + infoChecksum);
+                        _checksumModule.storeChecksumInPnfs(pnfsId, infoChecksum, false);
+                    }
+                } else {
+                    infoChecksum = null;
+                }
 
                 if (!_checksumModule.checkOnRestore())
                     return;
 
-                StorageInfo info = entry.getStorageInfo();
-                String checksumString = info.getKey("flag-c");
-
-                if (checksumString == null)
-                    throw new CacheException("Checksum not in StorageInfo");
+                if (infoChecksum == null) {
+                    infoChecksum = _checksumModule.getChecksumFromPnfs(pnfsId);
+                    if (infoChecksum == null) {
+                        warn(pnfsId.toString() + " has no checksum; checksum not verified after restore.");
+                        return;
+                    }
+                }
 
                 long start = System.currentTimeMillis();
 
-                infoChecksum = new Checksum(checksumString);
                 fileChecksum =
                     _checksumModule.calculateFileChecksum(handle.getFile(),
                                                           _checksumModule.getDefaultChecksum());
@@ -1731,7 +1776,7 @@ public class PoolV4 extends AbstractCell
             }
         }
 
-        private void getChecksumFromHsm(PnfsId pnfsId, File file)
+        private Checksum getChecksumFromHsm(File file)
             throws IOException
         {
             file = new File(file.getCanonicalPath() + ".crcval");
@@ -1749,9 +1794,7 @@ public class PoolV4 extends AbstractCell
                         }
                         file.delete();
                     }
-                    Checksum checksum = new Checksum(line);
-                    say(pnfsId + " : sending adler32 to pnfs : " + line);
-                    _checksumModule.storeChecksumInPnfs(pnfsId, checksum, false);
+                    return new Checksum(line);
                 }
             } catch (FileNotFoundException e) {
                 /* Should not happen unless somebody else is removing
@@ -1759,6 +1802,7 @@ public class PoolV4 extends AbstractCell
                  */
                 throw new RuntimeException("File not found: " + file, e);
             }
+            return null;
         }
     }
 
@@ -1871,7 +1915,8 @@ public class PoolV4 extends AbstractCell
         }
     }
 
-    private void modifyPoolMode(PoolModifyModeMessage modeMessage) {
+    private void modifyPoolMode(PoolModifyModeMessage modeMessage)
+    {
         PoolV2Mode mode = modeMessage.getPoolMode();
         if (mode == null)
             return;
@@ -1882,11 +1927,10 @@ public class PoolV4 extends AbstractCell
             disablePool(mode.getMode(), modeMessage.getStatusCode(),
                         modeMessage.getStatusMessage());
         }
-
-        return;
     }
 
-    private void checkFreeSpace(PoolCheckFreeSpaceMessage poolMessage) {
+    private void checkFreeSpace(PoolCheckFreeSpaceMessage poolMessage)
+    {
         // long freeSpace = _repository.getFreeSpace() ;
         long freeSpace = 1024L * 1024L * 1024L * 100L;
         say("XChecking free space [ result = " + freeSpace + " ] ");
@@ -1894,13 +1938,13 @@ public class PoolV4 extends AbstractCell
         poolMessage.setSucceeded();
     }
 
-    private void updateCacheStatistics(
-                                       PoolUpdateCacheStatisticsMessage poolMessage) {
+    private void updateCacheStatistics(PoolUpdateCacheStatisticsMessage poolMessage)
+    {
         // /
     }
 
-    private class CompanionFileAvailableCallback implements CacheFileAvailable {
-
+    private class CompanionFileAvailableCallback implements CacheFileAvailable
+    {
         private final CellMessage _envelope;
         private final Pool2PoolTransferMsg _message;
 
@@ -1920,7 +1964,7 @@ public class PoolV4 extends AbstractCell
                     } else if (error instanceof CacheException) {
                         _message.setReply(((CacheException) error).getRc(), error);
                     } else {
-                        _message.setReply(102, error);
+                        _message.setReply(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, error);
                     }
                 }
 
@@ -1938,8 +1982,8 @@ public class PoolV4 extends AbstractCell
     }
 
     private void runPool2PoolClient(final CellMessage cellMessage,
-                                    final Pool2PoolTransferMsg poolMessage) {
-
+                                    final Pool2PoolTransferMsg poolMessage)
+    {
         String poolName = poolMessage.getPoolName();
         PnfsId pnfsId = poolMessage.getPnfsId();
         StorageInfo storageInfo = poolMessage.getStorageInfo();
@@ -1959,7 +2003,8 @@ public class PoolV4 extends AbstractCell
     }
 
     @Override
-    public void messageArrived(CellMessage cellMessage) {
+    public void messageArrived(CellMessage cellMessage)
+    {
         Object messageObject = cellMessage.getMessageObject();
 
         if (!(messageObject instanceof Message)) {
@@ -2164,7 +2209,8 @@ public class PoolV4 extends AbstractCell
     }
 
     private void sentNotEnabledException(Message poolMessage,
-                                         CellMessage cellMessage) {
+                                         CellMessage cellMessage)
+    {
         try {
             say("Sending reply " + poolMessage);
             poolMessage.setFailed(104, "Pool is disabled");
@@ -2302,8 +2348,8 @@ public class PoolV4 extends AbstractCell
         }
     }
 
-    private PoolCostInfo getPoolCostInfo() {
-
+    private PoolCostInfo getPoolCostInfo()
+    {
         PoolCostInfo info = new PoolCostInfo(_poolName);
         SpaceRecord space = _repository.getSpaceRecord();
 
@@ -2327,8 +2373,7 @@ public class PoolV4 extends AbstractCell
 
         IoQueueManager manager = (IoQueueManager) _ioQueue;
         if (manager.isConfigured()) {
-            for (Iterator<JobScheduler> it = manager.scheduler(); it.hasNext();) {
-                JobScheduler js = it.next();
+            for (JobScheduler js : manager.getSchedulers()) {
                 info.addExtendedMoverQueueSizes(js.getSchedulerName(), js
 						.getActiveJobs(), js.getMaxActiveJobs(), js
 						.getQueueSize());
@@ -2353,7 +2398,8 @@ public class PoolV4 extends AbstractCell
     //
     public String hh_set_breakeven = "<breakEven> # free and recovable space";
 
-    public String ac_set_breakeven_$_0_1(Args args) {
+    public String ac_set_breakeven_$_0_1(Args args)
+    {
         if (args.argc() > 0)
             _breakEven = Double.parseDouble(args.argv(0));
         return "BreakEven = " + _breakEven;
@@ -2361,7 +2407,8 @@ public class PoolV4 extends AbstractCell
 
     public String hh_get_cost = " [filesize] # get space and performance cost";
 
-    public String ac_get_cost_$_0_1(Args args) {
+    public String ac_get_cost_$_0_1(Args args)
+    {
         return "DEPRICATED # cost now solely calculated in PoolManager";
         /*
          * long filesize = 0 ; if( args.argc() > 0 )filesize =
@@ -2457,15 +2504,18 @@ public class PoolV4 extends AbstractCell
     //
     // the hybrid inventory part
     //
-    private class HybridInventory implements Runnable {
+    private class HybridInventory implements Runnable
+    {
         private boolean _activate = true;
 
-        public HybridInventory(boolean activate) {
+        public HybridInventory(boolean activate)
+        {
             _activate = activate;
             _nucleus.newThread(this, "HybridInventory").start();
         }
 
-        public void run() {
+        public void run()
+        {
             _hybridCurrent = 0;
 
             long startTime, stopTime;
@@ -2504,7 +2554,8 @@ public class PoolV4 extends AbstractCell
     public String hh_pnfs_register = " # add entry of all files into pnfs";
     public String hh_pnfs_unregister = " # remove entry of all files from pnfs";
 
-    public String ac_pnfs_register(Args args) {
+    public String ac_pnfs_register(Args args)
+    {
         synchronized (_hybridInventoryLock) {
             if (_hybridInventoryActive)
                 throw new IllegalArgumentException(
@@ -2515,7 +2566,8 @@ public class PoolV4 extends AbstractCell
         return "";
     }
 
-    public String ac_pnfs_unregister(Args args) {
+    public String ac_pnfs_unregister(Args args)
+    {
         synchronized (_hybridInventoryLock) {
             if (_hybridInventoryActive)
                 throw new IllegalArgumentException(
@@ -2528,7 +2580,8 @@ public class PoolV4 extends AbstractCell
 
     public String hh_run_hybrid_inventory = " [-destroy]";
 
-    public String ac_run_hybrid_inventory(Args args) {
+    public String ac_run_hybrid_inventory(Args args)
+    {
         synchronized (_hybridInventoryLock) {
             if (_hybridInventoryActive)
                 throw new IllegalArgumentException(
@@ -2545,7 +2598,8 @@ public class PoolV4 extends AbstractCell
     //
     public String hh_pf = "<pnfsId>";
 
-    public String ac_pf_$_1(Args args) throws Exception {
+    public String ac_pf_$_1(Args args) throws Exception
+    {
         PnfsId pnfsId = new PnfsId(args.argv(0));
         PnfsMapPathMessage info = new PnfsMapPathMessage(pnfsId);
         CellPath path = new CellPath("PnfsManager");
@@ -2567,14 +2621,16 @@ public class PoolV4 extends AbstractCell
     }
 
     public String hh_set_replication = "off|on|<mgr>,<host>,<destMode>";
-    public String ac_set_replication_$_1(Args args) {
+    public String ac_set_replication_$_1(Args args)
+    {
         String mode = args.argv(0);
         _replicationHandler.init(mode);
         return _replicationHandler.toString();
     }
 
     public String hh_pool_suppress_hsmload = "on|off";
-    public String ac_pool_suppress_hsmload_$_1(Args args) {
+    public String ac_pool_suppress_hsmload_$_1(Args args)
+    {
         String mode = args.argv(0);
         if (mode.equals("on")) {
             _suppressHsmLoad = true;
@@ -2588,31 +2644,33 @@ public class PoolV4 extends AbstractCell
     }
 
     public String hh_movermap_define = "<protocol>-<major> <moverClassName>";
-    public String ac_movermap_define_$_2(Args args) throws Exception {
+    public String ac_movermap_define_$_2(Args args) throws Exception
+    {
         _moverHash.put(args.argv(0), Class.forName(args.argv(1)));
         return "";
     }
 
     public String hh_movermap_undefine = "<protocol>-<major>";
-    public String ac_movermap_undefine_$_1(Args args) {
+    public String ac_movermap_undefine_$_1(Args args)
+    {
         _moverHash.remove(args.argv(0));
         return "";
     }
 
     public String hh_movermap_ls = "";
-    public String ac_movermap_ls(Args args) {
+    public String ac_movermap_ls(Args args)
+    {
         StringBuilder sb = new StringBuilder();
 
         for (Map.Entry<String, Class<?>> entry: _moverHash.entrySet()) {
-
-            sb.append(entry.getKey()).append(" -> ").append(
-                                                            entry.getValue().getName()).append("\n");
+            sb.append(entry.getKey()).append(" -> ").append(entry.getValue().getName()).append("\n");
         }
         return sb.toString();
     }
 
     public String hh_pool_lfs = "none|precious # FOR DEBUG ONLY";
-    public String ac_pool_lfs_$_1(Args args) throws CommandSyntaxException {
+    public String ac_pool_lfs_$_1(Args args) throws CommandSyntaxException
+    {
         String mode = args.argv(0);
         if (mode.equals("none")) {
             _lfsMode = LFS_NONE;
@@ -2627,7 +2685,8 @@ public class PoolV4 extends AbstractCell
 
     public String hh_set_duplicate_request = "none|ignore|refresh";
     public String ac_set_duplicate_request_$_1(Args args)
-        throws CommandSyntaxException {
+        throws CommandSyntaxException
+    {
         String mode = args.argv(0);
         if (mode.equals("none")) {
             _dupRequest = DUP_REQ_NONE;
@@ -2643,7 +2702,8 @@ public class PoolV4 extends AbstractCell
     }
 
     public String hh_set_p2p = "integrated|separated";
-    public String ac_set_p2p_$_1(Args args) throws CommandSyntaxException {
+    public String ac_set_p2p_$_1(Args args) throws CommandSyntaxException
+    {
         String mode = args.argv(0);
         if (mode.equals("integrated")) {
             _p2pMode = P2P_INTEGRATED;
@@ -2657,7 +2717,8 @@ public class PoolV4 extends AbstractCell
     }
 
     public String hh_pool_disablemode = "strict|fuzzy # DEPRICATED, use pool disable [options]";
-    public String ac_pool_disablemode_$_1(Args args) {
+    public String ac_pool_disablemode_$_1(Args args)
+    {
         return "# DEPRICATED, use pool disable [options]";
     }
 
@@ -2670,8 +2731,8 @@ public class PoolV4 extends AbstractCell
         + "        -rdonly   #  := store,stage,p2p-client\n"
         + "        -strict   #  := disallows everything\n";
     public String hh_pool_disable = "[options] [<errorCode> [<errorMessage>]] # suspend sending 'up messages'";
-    public String ac_pool_disable_$_0_2(Args args) {
-
+    public String ac_pool_disable_$_0_2(Args args)
+    {
         if (_poolMode.isDisabled(PoolV2Mode.DISABLED_DEAD))
             return "The pool is dead and a restart is required to enable it";
 
@@ -2700,7 +2761,8 @@ public class PoolV4 extends AbstractCell
     }
 
     public String hh_pool_enable = " # resume sending up messages'";
-    public String ac_pool_enable(Args args) {
+    public String ac_pool_enable(Args args)
+    {
         if (_poolMode.isDisabled(PoolV2Mode.DISABLED_DEAD))
             return "The pool is dead and a restart is required to enable it";
         enablePool();
@@ -2709,7 +2771,8 @@ public class PoolV4 extends AbstractCell
 
     public String hh_set_max_movers = "!!! Please use 'mover|st|rh set max active <jobs>'";
     public String ac_set_max_movers_$_1(Args args)
-        throws IllegalArgumentException {
+        throws IllegalArgumentException
+    {
         int num = Integer.parseInt(args.argv(0));
         if ((num < 0) || (num > 10000))
             throw new IllegalArgumentException("Not in range (0...10000)");
@@ -2718,14 +2781,16 @@ public class PoolV4 extends AbstractCell
     }
 
     public String hh_set_gap = "<always removable gap>/size[<unit>] # unit = k|m|g";
-    public String ac_set_gap_$_1(Args args) {
+    public String ac_set_gap_$_1(Args args)
+    {
         _gap = UnitInteger.parseUnitLong(args.argv(0));
         return "Gap set to " + _gap;
     }
 
     public String hh_set_report_remove = "on|off";
     public String ac_set_report_remove_$_1(Args args)
-        throws CommandSyntaxException {
+        throws CommandSyntaxException
+    {
         String onoff = args.argv(0);
         if (onoff.equals("on"))
             _reportOnRemovals = true;
@@ -2737,7 +2802,8 @@ public class PoolV4 extends AbstractCell
     }
 
     public String hh_crash = "disabled|shutdown|exception";
-    public String ac_crash_$_0_1(Args args) throws IllegalArgumentException {
+    public String ac_crash_$_0_1(Args args) throws IllegalArgumentException
+    {
         if (args.argc() < 1) {
             return "Crash is " + (_crashEnabled ? _crashType : "disabled");
 
@@ -2757,7 +2823,8 @@ public class PoolV4 extends AbstractCell
     }
 
     public String hh_set_sticky = "allowed|denied";
-    public String ac_set_sticky_$_0_1(Args args) {
+    public String ac_set_sticky_$_0_1(Args args)
+    {
         if (args.argc() > 0) {
             String mode = args.argv(0);
             if (mode.equals("allowed")) {
@@ -2772,8 +2839,8 @@ public class PoolV4 extends AbstractCell
     }
 
     public String hh_set_max_diskspace = "<space>[<unit>] # unit = k|m|g";
-    public String ac_set_max_diskspace_$_1(Args args) {
-
+    public String ac_set_max_diskspace_$_1(Args args)
+    {
         long maxDisk = UnitInteger.parseUnitLong(args.argv(0));
         _repository.setSize(maxDisk);
         say("set maximum diskspace =" + UnitInteger.toUnitString(maxDisk));
@@ -2781,19 +2848,22 @@ public class PoolV4 extends AbstractCell
     }
 
     public String hh_set_cleaning_interval = "<interval/sec>";
-    public String ac_set_cleaning_interval_$_1(Args args) {
+    public String ac_set_cleaning_interval_$_1(Args args)
+    {
         _cleaningInterval = Integer.parseInt(args.argv(0));
         say("_cleaningInterval=" + _cleaningInterval);
         return "";
     }
 
     public String hh_set_flushing_interval = "DEPRECATED (use flush set interval <time/sec>)";
-    public String ac_set_flushing_interval_$_1(Args args) {
+    public String ac_set_flushing_interval_$_1(Args args)
+    {
         return "DEPRECATED (use flush set interval <time/sec>)";
     }
 
     public String hh_flush_class = "<hsm> <storageClass> [-count=<count>]";
-    public String ac_flush_class_$_2(Args args) {
+    public String ac_flush_class_$_2(Args args)
+    {
         String tmp = args.getOpt("count");
         int count = (tmp == null) || (tmp.equals("")) ? 0 : Integer
             .parseInt(tmp);
@@ -2876,21 +2946,19 @@ public class PoolV4 extends AbstractCell
 
     public Object ac_mover_queue_ls_$_0_1(Args args)
     {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         IoQueueManager manager = (IoQueueManager) _ioQueue;
 
         if (args.getOpt("l") != null) {
-            for (Iterator<JobScheduler> it = manager.scheduler(); it.hasNext();) {
-                JobScheduler js = it.next();
-                sb.append(js.getSchedulerName()).append(" ").append(
-                                                                    js.getActiveJobs()).append(" ").append(
-                                                                                                           js.getMaxActiveJobs()).append(" ").append(
-                                                                                                                                                     js.getQueueSize()).append("\n");
+            for (JobScheduler js : manager.getSchedulers()) {
+                sb.append(js.getSchedulerName())
+                    .append(" ").append(js.getActiveJobs())
+                    .append(" ").append(js.getMaxActiveJobs())
+                    .append(" ").append(js.getQueueSize()).append("\n");
             }
         } else {
-            for (Iterator<JobScheduler> it = manager.scheduler(); it.hasNext();) {
-                sb.append((it.next()).getSchedulerName())
-                    .append("\n");
+            for (JobScheduler js : manager.getSchedulers()) {
+                sb.append(js.getSchedulerName()).append("\n");
             }
         }
         return sb.toString();
@@ -2905,9 +2973,8 @@ public class PoolV4 extends AbstractCell
 
         if (queueName.length() == 0) {
             IoQueueManager manager = (IoQueueManager) _ioQueue;
-            StringBuffer sb = new StringBuffer();
-            for (Iterator<JobScheduler> it = manager.scheduler(); it.hasNext();) {
-                JobScheduler js = it.next();
+            StringBuilder sb = new StringBuilder();
+            for (JobScheduler js : manager.getSchedulers()) {
                 sb.append("[").append(js.getSchedulerName()).append("]\n");
                 sb.append(mover_ls(js, args).toString());
             }

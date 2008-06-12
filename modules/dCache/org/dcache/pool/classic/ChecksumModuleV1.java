@@ -16,7 +16,7 @@ import java.io.*;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
-public class ChecksumModuleV1  
+public class ChecksumModuleV1
 {
     private final CellAdapter _cell;
     private final CacheRepositoryV5 _repository;
@@ -69,7 +69,8 @@ public class ChecksumModuleV1
                                   Checksum transferChecksum)
         throws CacheException,
                InterruptedException,
-               IOException  
+               IOException,
+               NoRouteToCellException
     {
         if (_fake_checksum_error)
             throw new CacheException("Checksum error");
@@ -158,21 +159,29 @@ public class ChecksumModuleV1
         return checksum;
     }
 
-    public void storeChecksumInPnfs(PnfsId pnfsId, Checksum checksum) 
+    public void storeChecksumInPnfs(PnfsId pnfsId, Checksum checksum)
+        throws CacheException, NoRouteToCellException
     {
-        storeChecksumInPnfs(pnfsId, checksum, true);
+        storeChecksumInPnfs(pnfsId, checksum, false);
     }
 
-    public void storeChecksumInPnfs(PnfsId pnfsId, Checksum checksum, boolean overwrite) 
+    public void storeChecksumInPnfs(PnfsId pnfsId, Checksum checksum, boolean overwrite)
+        throws CacheException, NoRouteToCellException
     {
         try {
             ChecksumPersistence.getPersistenceMgr().store(_cell, pnfsId, checksum,overwrite);
-        } catch(Exception eee) {
-            _cell.esay("Failed to send crc to PnfsManager : "+eee);
+        } catch (CacheException e) {
+            throw e;
+        } catch (NoRouteToCellException e) {
+            throw e;
+        } catch (Exception e) {
+           _cell.esay("Failed to set checksum: " + e);
+           throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                                    "Failed to set checksum: " + e.getMessage());
         }
     }
 
-    private Checksum getChecksumFromPnfs(PnfsId pnfsId) 
+    public Checksum getChecksumFromPnfs(PnfsId pnfsId)
     {
         try {
             return _defaultChecksumFactory.createFromPersistentState(_cell,pnfsId);
@@ -182,23 +191,23 @@ public class ChecksumModuleV1
         return null;
     }
 
-    public ChecksumFactory getDefaultChecksumFactory() 
+    public ChecksumFactory getDefaultChecksumFactory()
     {
         return _defaultChecksumFactory;
     }
 
-    public Checksum getDefaultChecksum() 
+    public Checksum getDefaultChecksum()
     {
         return _defaultChecksumFactory.create();
     }
 
-    public Checksum checksumOf(String type) 
-        throws java.security.NoSuchAlgorithmException 
+    public Checksum checksumOf(String type)
+        throws java.security.NoSuchAlgorithmException
     {
         return ChecksumFactory.getFactory(type).create();
     }
 
-    public void dumpSetup(PrintWriter pw) 
+    public void dumpSetup(PrintWriter pw)
     {
         pw.println("csm set checksumtype "+_defaultChecksumFactory.getType());
         if (_frequently) {
@@ -218,32 +227,32 @@ public class ChecksumModuleV1
         pw.println("");
     }
 
-    public boolean checkOnRead() 
+    public boolean checkOnRead()
     {
-        return _onRead; 
+        return _onRead;
     }
 
-    public boolean checkOnRestore() 
+    public boolean checkOnRestore()
     {
-        return _onRestore; 
-    }
-    
-    public boolean checkOnWrite() 
-    {
-        return _onWrite; 
-    }
-    
-    public boolean checkOnTransfer() 
-    {
-        return _onTransfer; 
+        return _onRestore;
     }
 
-    public boolean enforceCRC() 
+    public boolean checkOnWrite()
     {
-        return _enforceCRC; 
+        return _onWrite;
     }
 
-    public void getInfo(PrintWriter pw) 
+    public boolean checkOnTransfer()
+    {
+        return _onTransfer;
+    }
+
+    public boolean enforceCRC()
+    {
+        return _enforceCRC;
+    }
+
+    public void getInfo(PrintWriter pw)
     {
         pw.println("ChecksumModuleV1 : $Id: ChecksumModuleV1.java,v 1.11 2007-08-30 21:11:02 abaranov Exp $");
         pw.println("          Checksum type : "+_defaultChecksumFactory.getType());
@@ -274,7 +283,7 @@ public class ChecksumModuleV1
     }
 
     public String hh_csm_info = "";
-    public String ac_csm_info_$_0(Args args) 
+    public String ac_csm_info_$_0(Args args)
     {
         StringBuffer sb = new StringBuffer();
         sb = getPolicies(sb);
@@ -283,7 +292,7 @@ public class ChecksumModuleV1
         return sb.toString();
     }
 
-    private StringBuffer getPolicies(StringBuffer sb) 
+    private StringBuffer getPolicies(StringBuffer sb)
     {
         if (sb == null)sb = new StringBuffer();
 
@@ -320,7 +329,7 @@ public class ChecksumModuleV1
         "       -getcrcfromhsm   : read the <pool>/data/<pnfsid>.crcval file and send to pnfs\n"+
         "\n";
 
-    public String ac_csm_set_policy_$_0(Args args) 
+    public String ac_csm_set_policy_$_0(Args args)
     {
         _frequently = checkBoolean(args, "frequently" , _frequently);
         _onRead     = checkBoolean(args, "onread"     , _onRead);
@@ -340,9 +349,9 @@ public class ChecksumModuleV1
         return args.getOpt("v") == null ? "" : getPolicies(null).toString();
     }
 
-    public boolean getCrcFromHsm() 
+    public boolean getCrcFromHsm()
     {
-        return _updatepnfs; 
+        return _updatepnfs;
     }
 
     private Checksum checkFile(File file) throws Exception
@@ -389,7 +398,7 @@ public class ChecksumModuleV1
                             _badCount++;
                         }
                     } finally {
-                        handle.close();                      
+                        handle.close();
                     }
                 } catch (FileNotInCacheException e) {
                     /* It was removed before we could get it. No problem.
@@ -415,7 +424,7 @@ public class ChecksumModuleV1
         }
     }
 
-    private class CRC 
+    private class CRC
     {
         private String _crcString = null;
         private int    _crcType   = 0;
@@ -429,26 +438,26 @@ public class ChecksumModuleV1
             _crcValue = Long.parseLong(st.nextToken(), 16);
         }
 
-        private int getType() 
+        private int getType()
         {
-            return _crcType; 
+            return _crcType;
         }
 
-        private long getValue() 
+        private long getValue()
         {
-            return _crcValue; 
+            return _crcValue;
         }
     }
 
-    private class SingleScan extends Singleton 
+    private class SingleScan extends Singleton
     {
         private PnfsId               _pnfsId        = null;
         private Checksum             _fileCRC       = null;
         private Checksum             _infoCRC       = null;
         private Exception            _error         = null;
-        public SingleScan() 
+        public SingleScan()
         {
-            super("SingeScan"); 
+            super("SingeScan");
         }
 
         public synchronized void go(PnfsId pnfsId) throws Exception
@@ -458,7 +467,7 @@ public class ChecksumModuleV1
             super.go();
         }
 
-        public void runIt() throws Exception 
+        public void runIt() throws Exception
         {
             _fileCRC = null;
             _infoCRC = null;
@@ -491,7 +500,7 @@ public class ChecksumModuleV1
             }
         }
 
-        public String toString() 
+        public String toString()
         {
             StringBuffer sb = new StringBuffer();
             sb.append(super.toString());
@@ -516,7 +525,7 @@ public class ChecksumModuleV1
         }
     }
 
-    abstract private class Singleton 
+    abstract private class Singleton
     {
         private final Object _lock = new Object();
         private boolean _isActive = false;
@@ -527,19 +536,19 @@ public class ChecksumModuleV1
 
         private Singleton(String name)
         {
-            _name = name; 
+            _name = name;
         }
 
         abstract public void runIt() throws Exception;
 
-        public void kill() 
+        public void kill()
         {
             synchronized(_lock) {
                 if (_currentThread != null)_currentThread.interrupt();
             }
         }
 
-        public void go() throws Exception 
+        public void go() throws Exception
         {
             synchronized (_lock) {
                 if (_isActive)
@@ -570,7 +579,7 @@ public class ChecksumModuleV1
             _currentThread.start();
         }
 
-        public String toString() 
+        public String toString()
         {
             synchronized(_lock) {
                 return _name + (_isActive?" Active ":" Idle ") +
@@ -580,7 +589,7 @@ public class ChecksumModuleV1
     }
 
     public String hh_csm_fake_ftp = "on|off";
-    public String ac_csm_fake_ftp_$_1(Args args) 
+    public String ac_csm_fake_ftp_$_1(Args args)
     {
         String value = args.argv(0);
         if (value.equals("on"))
@@ -592,7 +601,7 @@ public class ChecksumModuleV1
     }
 
     public String hh_csm_fake_checksumerror = "on|off";
-    public String ac_csm_fake_checksumerror_$_1(Args args) 
+    public String ac_csm_fake_checksumerror_$_1(Args args)
     {
         String value = args.argv(0);
         if (value.equals("on"))
@@ -605,7 +614,7 @@ public class ChecksumModuleV1
     }
 
     public String hh_csm_check = " [ * | <pnfsId> ]";
-    public String ac_csm_check_$_0_1(Args args) throws Exception 
+    public String ac_csm_check_$_0_1(Args args) throws Exception
     {
         if (args.argv(0).equals("*")) {
             _fullScan.go();
@@ -632,7 +641,7 @@ public class ChecksumModuleV1
     }
 
     public String hh_csm_set_checksumtype = "adler32|md5";
-    public String ac_csm_set_checksumtype_$_1(Args args) throws Exception 
+    public String ac_csm_set_checksumtype_$_1(Args args) throws Exception
     {
         String newChecksumType = args.argv(0);
         //
@@ -646,7 +655,7 @@ public class ChecksumModuleV1
         return "New checksumtype : "+ _defaultChecksumFactory.getType();
     }
 
-    private boolean checkBoolean(Args args, String key, boolean currentValue) 
+    private boolean checkBoolean(Args args, String key, boolean currentValue)
     {
         String value = args.getOpt(key);
         if (value == null)
