@@ -45,7 +45,7 @@ public class LinkgroupDetailsMsgHandler implements MessageHandler {
 		StateUpdate update = new StateUpdate();
 
 		for( LinkGroup linkGroup : linkGroups) {
-			StatePath thisLinkGroupPath = LINKGROUPS_PATH.newChild( linkGroup.getName());
+			StatePath thisLinkGroupPath = LINKGROUPS_PATH.newChild( String.valueOf(linkGroup.getId()));
 			
 			update.appendUpdate( thisLinkGroupPath.newChild("name"), new StringStateValue( linkGroup.getName(), metricLifetime));
 			update.appendUpdate( thisLinkGroupPath.newChild("id"), new IntegerStateValue( linkGroup.getId(), metricLifetime));

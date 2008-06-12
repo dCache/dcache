@@ -391,7 +391,9 @@ public class DataGatheringScheduler implements Runnable {
 		addActivity( new SingleMessageDga( "srm-LoginBroker", "ls -binary", msgHandler, 60));
 		
 		// Add SRM DGAs..
-		addActivity( new LinkgroupListDga( 60));
+		// We don't use LinkgroupListDga as it provides the wrong information, and isn't needed as
+		// LinkgroupDetailsDga (mistakenly) provides all information about all linkgroups.
+		//addActivity( new LinkgroupListDga( 60));
 		addActivity( new LinkgroupDetailsDga( 300)); // every five minutes, as this may be a heavy-weight operation.
 		addActivity( new SrmSpaceDetailsDga( 300)); // every five minutes, as this may be a heavy-weight operation.
 		
