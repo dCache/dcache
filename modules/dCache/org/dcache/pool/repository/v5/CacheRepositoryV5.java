@@ -273,10 +273,14 @@ public class CacheRepositoryV5// extends CellCompanion
      * entry from being deleted. Notice that an open read handle does
      * not prevent state changes.
      *
+     * TODO: Refine the exceptions. Throwing FileNotInCacheException
+     * implies that one could create the entry, however this is not
+     * the case for broken or incomplet files.
+     *
      * @param id the PNFS ID of the entry to open
      * @return IO descriptor
-     * @throws FileNotInCacheException if file not found or scheduled
-     * for removal.
+     * @throws FileNotInCacheException if file not found or in a state
+     * in which it cannot be opened
      */
     public synchronized ReadHandle openEntry(PnfsId id)
         throws FileNotInCacheException
@@ -289,6 +293,8 @@ public class CacheRepositoryV5// extends CellCompanion
         case FROM_STORE:
         case FROM_POOL:
             throw new FileNotInCacheException("File is incomplete");
+        case BROKEN:
+            throw new FileNotInCacheException("Replica marked broken. Cannot open broken replica.");
         default:
             break;
         }
