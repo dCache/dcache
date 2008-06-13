@@ -328,9 +328,11 @@ public class NFSv41Door extends CellAdapter implements NFSv41DeviceManager {
                 throw new IOException(e.getMessage());
             }
         }catch(ChimeraFsException ce) {
-            throw new IOException(ce.getMessage(), ce);
+            // java6 way,  throw new IOException(ce.getMessage(), ce);
+            throw new IOException(ce.getMessage());
         } catch (CacheException ce) {
-            throw new IOException(ce.getMessage(), ce);
+            // java6 way, throw new IOException(ce.getMessage(), ce);
+            throw new IOException(ce.getMessage());
         }
 
         synchronized (_requestReplayMap) {
