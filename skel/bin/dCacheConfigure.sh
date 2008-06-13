@@ -174,7 +174,7 @@ done
 for module in `ls ${MODULEDIR}/`
 do
   if [ -f "${MODULEDIR}/$module" ] ; then
-    . ${MODULEDIR}/$module
+    . ${MODULEDIR}/${module}
     #echo ${module}_check
     ${module}_check 2> /dev/null
     moduleRet=$?
@@ -243,5 +243,5 @@ fi
 # Now run the modules
 for module in ${VERIFIEDMODS}
 do
-  $module
+  ${module}_run
 done

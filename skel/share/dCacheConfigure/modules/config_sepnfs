@@ -672,19 +672,15 @@ config_sepnfs_check()
   return 0
 }
 
+config_sepnfs_run()
+{
+   config_sedcache_pnfs
+}
+
 config_sepnfs()
 {
   local rcpnfsserver
   if [ "yes" == "$DESYOVERRIDE" ] ; then
     return 0
   fi
-  yaim_query_conf_node_dcache_pnfsserver
-  rcpnfsserver=$?
-  if [ "${rcpnfsserver}" == "1" ] ; then
-    yaimlog INFO "configuring pnfs"
-    config_sedcache_pnfs
-    #config_dcache_pnfs_databases
-  else
-    yaimlog INFO "This node does not need pnfs configured"
-  fi 
 }

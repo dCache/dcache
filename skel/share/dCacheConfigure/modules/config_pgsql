@@ -556,6 +556,7 @@ config_sedcache_pgsql()
   local rcdbserver
   local rcrmpgsql
   local rcdbserver
+  
   yaim_query_conf_node_dcache_dbserver
   rcdbserver=$?
   if [ "$rcdbserver" == "1" ]
@@ -569,7 +570,6 @@ config_sedcache_pgsql()
       RESET_DCACHE_PNFS=yes
       config_pgsql_install
     else
-
       yaim_state_postgresql_started
       postgresql_started=$?
       if [ "${postgresql_started}" != "0" ] ; then
@@ -585,7 +585,10 @@ config_sedcache_pgsql()
   yaimlog DEBUG "function config_sedcache_pgsql stop"
 }
 
-
+config_pgsql_run()
+{
+   config_sedcache_pgsql
+}
 
 config_pgsql()
 {

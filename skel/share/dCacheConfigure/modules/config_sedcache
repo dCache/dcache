@@ -1630,6 +1630,10 @@ yaimlog DEBUG "function config_dcache_kpwd_update stop"
 config_dcache_gen_voms2gplasmaconf_header()
 {
   file2update=$1
+  if [ "X${file2update}" == "X" ] ; then
+    yaimlog ERROR "config_dcache_gen_voms2gplasmaconf_header called with no parameter"
+    exit 1
+  fi
   echo "# grid-vorolemap path" >> ${file2update}
   echo "vorolemap /etc/grid-security/grid-vorolemap" >> ${file2update}
   echo >> ${file2update}
@@ -1679,11 +1683,12 @@ do
     VoFlagGetsNamesRC=$?
     username=`echo "$RET" | head -1`
     if [ "${VoFlagGetsNamesRC}" != "0" ] ; then
-      yaimlog ERROR "VoFlagGetsNames ${thisvo} reetrurned an error exiting."
+      yaimlog ERROR "VoFlagGetsNames ${thisvo} returned an error exiting."
       exit 1
     fi
     if [ -z "${username}" ] ; then
-      yaimlog WARNING "VoFlagGetsNames vo="${thisvo}" returned no users so not supporting this VO role."
+      yaimlog WARNING "VoFlagGetsNames vo="${thisvo}" returned no users so not supporting this VO."
+      yaimlog WARNING "Please check the \$USERS_CONF in site-info.def and that the file exists and contains an entry for ${thisvo} with no flags."
       continue
     fi
     users_NameGetsUid ${username}
@@ -2244,8 +2249,7 @@ config_sedcache_check()
   return 0
 }
 
-
-config_sedcache() 
+config_sedcache_run() 
 {
   local rcadmin
   local rcclient
@@ -2288,7 +2292,6 @@ config_sedcache()
   #    exit 1
   #  fi
   #  check_users_conf_format
-
   config_sedcache_pgsql
   
 
@@ -2304,18 +2307,14 @@ config_sedcache()
     config_dcache_config_files
     config_sedcache_check_sanity || exit $?
     config_dcache_config_system_files    
-    
   else
     echo "Skipping D-Cache config Reset"
   fi
   yaim_config_dcache_files_key_value
   
-  config_sechimera
-  
-  config_sepnfs
-  
-  config_gip_dcache
-  
+  config_sechimera_run
+  config_sepnfs_run
+  config_gip_dcache_run
   config_dcache_config_dcache_scripts  
   config_dcache_pnfs_databases
   yaim_query_conf_voms
@@ -2336,7 +2335,14 @@ config_sedcache()
   config_sedcache_cron
   echo "D-cache takes some time to initialise. Please wait 8-10 Min's for the service to start."
   return 0
+
 }
 
-
+config_sedcache() 
+{
+  if [ "yes" == "$DESYOVERRIDE" ] ; then
+    return 0
+  fi
+  config_sedcache_run
+}
 

@@ -795,7 +795,7 @@ config_gip_dcache_check()
   return 0
 }
 
-config_gip_dcache()
+config_gip_dcache_run()
 {
   yaimlog DEBUG "function yaim_config_info_system start"
   yaim_query_conf_info_system_door
@@ -807,4 +807,13 @@ config_gip_dcache()
     yaim_config_info_system
   fi
   yaimlog DEBUG "function yaim_config_info_system end"
+}
+
+
+
+config_gip_dcache()
+{
+  if [ "yes" == "$DESYOVERRIDE" ] ; then
+    return 0
+  fi
 }

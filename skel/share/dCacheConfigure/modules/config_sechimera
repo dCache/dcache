@@ -397,18 +397,30 @@ yaim_config_sechimera()
 {
   local resetChimera
   yaimlog DEBUG "function yaim_config_sechimera start"
-  chimera_create_nfs_stop
-  yaim_query_conf_node_dcache_chimera_reset
-  resetChimera=$?
-  if [ "${resetChimera}" == "1" ] ; then
-    sleep 2
-    chimeraReset
-  fi
-  yaim_configure_exports /etc/exports
-  chimera_pgdb_create
-  chimera_create_link
-  chimera_create_mount_points_api
-  chimera_create_nfs_start
+  
+  
+  yaim_query_conf_node_dcache_chimera
+  rcchimeraserver=$?
+  if [ "${rcchimeraserver}" == "1" ] ; then
+    yaimlog INFO "configuring chimera"    
+    chimera_create_nfs_stop
+    yaim_query_conf_node_dcache_chimera_reset
+    resetChimera=$?
+    if [ "${resetChimera}" == "1" ] ; then
+      sleep 2
+      chimeraReset
+    fi
+    yaim_configure_exports /etc/exports
+    chimera_pgdb_create
+    chimera_create_link
+    chimera_create_mount_points_api
+    chimera_create_nfs_start
+  
+  else
+    yaimlog INFO "This node does not need chimera configured"
+  fi 
+  
+  
   yaimlog DEBUG "function yaim_config_sechimera stop"
 }
 
@@ -418,19 +430,18 @@ config_sechimera_check()
   return 0
 }
 
+config_sechimera_run()
+{
+   yaim_config_sechimera
+}
+
+
+
 config_sechimera()
 {
   yaimlog DEBUG "function config_sechimera start"
   if [ "yes" == "$DESYOVERRIDE" ] ; then
     return 0
-  fi
-  yaim_query_conf_node_dcache_chimera
-  rcchimeraserver=$?
-  if [ "${rcchimeraserver}" == "1" ] ; then
-    yaimlog INFO "configuring chimera"
-    yaim_config_sechimera
-  else
-    yaimlog INFO "This node does not need chimera configured"
   fi
   yaimlog DEBUG "function config_sechimera stop"
 }

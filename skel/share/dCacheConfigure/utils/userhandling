@@ -84,7 +84,7 @@ users_NameGetsLine()
   fi
   RET=`awk --posix -F: '$2==localname {print $0}' localname=${Name} "${UserFile}"`
   if [ -z "${RET}" ] ; then
-    yaimlog WARNING "users_NameGetsLine found no data"
+    yaimlog WARNING "found no data from the function users_NameGetsLine \"${Name}\""
     return 1
   fi  
   return 0
@@ -111,7 +111,7 @@ users_NameGetsUid()
   fi
   RET=`awk --posix -F: '$2==localname {print $1}' localname=${Name} "${UserFile}"`
   if [ -z "${RET}" ] ; then
-    yaimlog WARNING "users_NameGetsUid found no data"
+    yaimlog WARNING "found no data from the function users_NameGetsUid \"${Name}\""
     return 1
   fi   
   return 0
@@ -138,7 +138,7 @@ users_NameGetsGid()
   fi
   RET=`awk --posix -F: '$2==localname {print $3}' localname=${Name} "${UserFile}"`
   if [ -z "${RET}" ] ; then
-    yaimlog WARNING "users_NameGetsGid found no data"
+    yaimlog WARNING "found no data from the function users_NameGetsGid \"${Name}\""
     return 1
   fi 
   return 0
@@ -165,7 +165,7 @@ users_NameGetsGroup()
   fi
   RET=`awk --posix -F: '$2==localname {print $4}' localname=${Name} "${UserFile}"`
   if [ -z "${RET}" ] ; then
-    yaimlog WARNING "users_NameGetsGroup found no data"
+    yaimlog WARNING "found no data from the function users_NameGetsGroup \"${Name}\""
     return 1
   fi 
   return 0
@@ -192,7 +192,7 @@ users_NameGetsVo()
   fi
   RET=`awk --posix -F: '$2==localname {print $5}' localname=${Name} "${UserFile}"`
   if [ -z "${RET}" ] ; then
-    yaimlog WARNING "users_NameGetsVo found no data"
+    yaimlog WARNING "found no data from the function users_NameGetsVo ${Name}"
     return 1
   fi 
   return 0
@@ -219,7 +219,7 @@ users_NameGetsFlags()
   fi
   RET=`awk --posix -F: '$2==localname {print $5}' localname=${Name} "${UserFile}"`
   if [ -z "${RET}" ] ; then
-    yaimlog WARNING "users_NameGetsFlags found no data"
+    yaimlog WARNING "found no data from the function users_NameGetsFlags \"${Name}\""
     return 1
   fi
   return 0
@@ -256,7 +256,7 @@ users_VoFlagGetsNames()
   fi
   RET=`awk --posix -F: '$6==Flag && $5==virtorg {print $2}' virtorg=${ThisVo} Flag=${ThisFlag} "${UserFile}" | sort | uniq`
   if [ -z "${RET}" ] ; then
-    yaimlog WARNING "users_NameGetsFlag found no data"
+    yaimlog WARNING "found no data users_VoFlagGetsNames \"${ThisVo}\" \"${ThisFlag}\" "    
   fi
   return 0
 }
@@ -280,7 +280,7 @@ users_VoGetsFlags()
   fi
   RET=`awk --posix -F: '$5==virtorg {print $6}' virtorg=${ThisVo} "${UserFile}" | sort | uniq`
   if [ -z "${RET}" ] ; then
-    yaimlog WARNING "users_NameGetsFlag found no data"
+    yaimlog WARNING "found no data users_VoGetsFlags \"${ThisVo}\""
   fi
   return 0
 }
@@ -302,7 +302,7 @@ users_VoGetsGid()
   fi
   RET=`awk --posix -F: '$4==vo {print $3}' vo=${Name} "${UserFile}" | sort | uniq | head -n 1`
   if [ -z "${RET}" ] ; then
-    yaimlog WARNING "users_NameGetsGid found no data"
+    yaimlog WARNING "found no data users_VoGetsGid \"${Name}\""
     return 1
   fi 
   return 0
