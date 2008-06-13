@@ -163,7 +163,7 @@ public final class DCacheAuthorization implements SRMAuthorization {
     
     private static  org.apache.log4j.Logger _logAuth =
              org.apache.log4j.Logger.getLogger(
-            "logger.org.dcache.authorization"+
+            "logger.org.dcache.authorization."+
             SRMAuthorization.class.getName());
     private static DCacheAuthorization srmauthorization;
     private String kAuthFileName;
@@ -201,6 +201,7 @@ public final class DCacheAuthorization implements SRMAuthorization {
     throws SRMAuthorizationException {
 
         UserAuthRecord user_rec = null;
+        
         if( _logAuth.isDebugEnabled() ) {
                 _logAuth.debug("authorize " + requestCredentialId + ":"+
                     secureId+":"+
@@ -219,7 +220,7 @@ public final class DCacheAuthorization implements SRMAuthorization {
                   UserAuthRecord userRec = tUserRec.user_rec;
                   if(userRec != null ) {
                      _logAuth.debug("cached tUserRec = "+userRec);
-                  } else {
+                  } else { 
                       _logAuth.debug("cached tUserRec = null ");
                   }
               } else {
