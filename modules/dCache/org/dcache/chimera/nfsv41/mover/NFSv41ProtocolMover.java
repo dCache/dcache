@@ -78,9 +78,15 @@ public class NFSv41ProtocolMover implements MoverProtocol {
         Enumeration<NetworkInterface> ne = NetworkInterface.getNetworkInterfaces();
         while(ne.hasMoreElements() ) {
             NetworkInterface iface = ne.nextElement();
-            if( !iface.isLoopback() && iface.isUp() ) {
-                localIp = iface.getInetAddresses().nextElement();
-            }
+            // java 6 way to do it
+//            if( !iface.isLoopback() && iface.isUp() ) {
+//                localIp = iface.getInetAddresses().nextElement();
+//                break;
+//            }
+
+            localIp = iface.getInetAddresses().nextElement();
+            if( !localIp.isLoopbackAddress() ) break;
+
         }
 
         _nfsIO.addHandler(pnfsId, fileChannel.getChannel());
