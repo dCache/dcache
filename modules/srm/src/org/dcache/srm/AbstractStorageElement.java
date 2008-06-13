@@ -480,7 +480,9 @@ public interface AbstractStorageElement extends Logger{
      * @param path
      * @return
      */
-    public FileMetaData getFileMetaData(SRMUser user,String path,FileMetaData parentFMD) throws SRMException;
+    public FileMetaData getFileMetaData(SRMUser user,String path,FileMetaData parentFMD,
+        boolean ... ignoreIsSetflags) throws SRMException;
+    
     
     /** This method allows to unpin file in the Storage Element,
      * i.e. cancel the request to have the file in "fast access state"

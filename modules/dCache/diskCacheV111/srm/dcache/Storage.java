@@ -2459,9 +2459,14 @@ public class Storage
     
     public FileMetaData getFileMetaData(SRMUser user, 
 					String path, 
-                                        FileMetaData parentFMD) 
-        throws SRMException {        
-        say("getFileMetaData(" + path + ")");
+                                        FileMetaData parentFMD,
+                                         boolean ... ignoreIsSetflags) 
+        throws SRMException { 
+        boolean ignoreIsSetFlag = false;
+        if(ignoreIsSetflags != null && ignoreIsSetflags.length >=1 ) {
+            ignoreIsSetFlag = ignoreIsSetflags[0];
+        }
+        say("getFileMetaData(" + path + ",ignoreIsSetFlag="+ignoreIsSetFlag+" )");
         String absolute_path = srm_root + "/" + path;
         diskCacheV111.util.FileMetaData parent_util_fmd = null;
         if (parentFMD != null && parentFMD instanceof DcacheFileMetaData) {
@@ -2546,7 +2551,8 @@ public class Storage
         }
         FileMetaData fmd =
             getFileMetaData(user, absolute_path, pnfsId, 
-                            storage_info, util_fmd, flag);
+                            storage_info, util_fmd, flag,
+                            ignoreIsSetFlag);
         if (storage_info != null) {
             fmd.isCached = isCached(storage_info, pnfsId);
         }
@@ -2599,8 +2605,13 @@ public class Storage
                         PnfsId pnfsId, 
                         StorageInfo storage_info,
                         diskCacheV111.util.FileMetaData util_fmd,
-                        PnfsFlagMessage flag) 
-    {
+                        PnfsFlagMessage flag,
+                        boolean ... ignoreIsSetflags) 
+    { 
+        boolean ignoreIsSetFlag = false;
+        if(ignoreIsSetflags != null && ignoreIsSetflags.length >=1 ) {
+            ignoreIsSetFlag = ignoreIsSetflags[0];
+        }
         boolean isRegular = false;
         boolean isLink = false;
         boolean isDirectory = false;
@@ -2657,7 +2668,8 @@ public class Storage
             size = storage_info.getFileSize();
 	    TRetentionPolicy retention = null;
 	    TAccessLatency latency = null;
-	    if (storage_info.isSetRetentionPolicy() &&storage_info.getRetentionPolicy() != null) {
+	    if ( (storage_info.isSetRetentionPolicy() || ignoreIsSetFlag) &&
+                storage_info.getRetentionPolicy() != null) {
 		    if(storage_info.getRetentionPolicy().equals(RetentionPolicy.CUSTODIAL)) { 
 			    retention = TRetentionPolicy.CUSTODIAL;
 		    } 
@@ -2668,7 +2680,8 @@ public class Storage
 			    retention = TRetentionPolicy.OUTPUT;
 		    } 
             }
-            if (storage_info.isSetAccessLatency() && storage_info.getAccessLatency() != null) {
+            if ( (storage_info.isSetAccessLatency() || ignoreIsSetFlag) && 
+                storage_info.getAccessLatency() != null) {
 		    if(storage_info.getAccessLatency().equals(AccessLatency.ONLINE)) { 
 			    latency = TAccessLatency.ONLINE;
 		    } 

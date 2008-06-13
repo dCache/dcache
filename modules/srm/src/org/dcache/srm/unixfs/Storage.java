@@ -1130,7 +1130,8 @@ public class Storage
 
 	}
   
-      public FileMetaData getFileMetaData(SRMUser user, String filePath, FileMetaData parentFMD) throws SRMException {
+      public FileMetaData getFileMetaData(SRMUser user, String filePath, FileMetaData parentFMD,
+           boolean ... ignoreIsSetflags) throws SRMException {
         /**@todo getFileMetaData() - process exception */
         return _getFileMetaData(user, filePath);
       }

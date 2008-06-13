@@ -305,7 +305,7 @@ public class SrmLs {
         if(!increaseResultsNumAndContinue()) {
             throw new SRMTooManyResultsException("max results number of "+max_results_num+" exceeded. Try to narrow down with offset and count \n");
         }
-        FileMetaData fmd = storage.getFileMetaData(user, path,parent_fmd);
+        FileMetaData fmd = storage.getFileMetaData(user, path,parent_fmd,true);
         if(!canRead(user,fmd)) {
             return null;
         }
@@ -488,7 +488,7 @@ public class SrmLs {
         }
 
 	if (file.length()==1) {
-		FileMetaData fmd = storage.getFileMetaData(user, path, null);
+		FileMetaData fmd = storage.getFileMetaData(user, path, null, true);
 		 metaDataPathDetail.setSize(new org.apache.axis.types.UnsignedLong(fmd.size));
 	}
 	else { 
