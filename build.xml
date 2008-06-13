@@ -494,7 +494,7 @@
     <target name="findbugs-testbuild" depends="cells-log4j.bin,srm.bin,dcache-srm.bin,infoProvider.bin,xrootd-tokenauthz.bin,javatunnel.bin" description="bug hunting">
         <taskdef name="findbugs" classname="edu.umd.cs.findbugs.anttask.FindBugsTask" classpath="${libDir}/findbugs/lib/findbugs-ant.jar"/>
         <findbugs home="${findbugs.home}"
-                    output="xml"
+                    output="xml:withMessages"
                     outputFile="${distDir}/findbugs.xml"
                     jvmargs="-Xmx512M"
                     timeout="36000000"
