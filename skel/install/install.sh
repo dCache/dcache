@@ -874,7 +874,12 @@ dcacheInstallPnfsMountPointServer()
     logmessage ERROR "Was not able to mount ${pnfsServer}:/fs to ${pnfsMountPoint}. Exiting."
     exit 1
   fi
-  dcacheInstallPnfsConfigCheck
+  dcacheNameServerIs
+  dcacheNameServerIs=$?
+  if [ "${dcacheNameServerIs}" == "1" ]
+  then
+    dcacheInstallPnfsConfigCheck
+  fi
   logmessage DEBUG "dcacheInstallPnfsMountPointServer.stop"
 }
 
@@ -1398,8 +1403,15 @@ fi
 
 dcacheNameServerIs
 dcacheNameServerIs=$?
+dcacheInstallGetIsAdmin
+isAdmin=$?
+dcacheInstallGetUseGridFtp
+isGridFtp=$?
+dcacheInstallGetUseSrm
+isSrm=$?
+nodetype=$(echo "${dcacheNameServerIs}${isAdmin}${isGridFtp}${isSrm}" | grep 1)
 
-if [ "${dcacheNameServerIs}" == "1" ]
+if [ "X${nodetype}" != "X" ]
 then
   nameServerFormat=`printConfig NAMESPACE`
   if [ "${nameServerFormat}" != "pnfs" -a "${nameServerFormat}" != "chimera" ]
