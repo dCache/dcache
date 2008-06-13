@@ -675,6 +675,7 @@ public class CopyManager extends CellAdapter {
                     setState("waiting for a write pool");   
                      
                     dstPool = askForReadWritePool(dstPnfsId,
+                        dstPnfsFilePath,
                         dstStorageInfo,dst_protocol_info,true);
                     
                     setState("wating for a write mover to give us "+
@@ -717,6 +718,7 @@ public class CopyManager extends CellAdapter {
                    src_protocol_info.setSessionId( getSessionNextId());
                    setState("waiting for a read pool");   
                    srcPool = askForReadWritePool(srcPnfsId,
+                        srcPnfsFilePath,
                         srcStorageInfo,
                         src_protocol_info,
                         false);
@@ -888,6 +890,7 @@ public class CopyManager extends CellAdapter {
         
     }
     private String askForReadWritePool( PnfsId       pnfsId ,
+    String pnfsPath,
     StorageInfo  storageInfo ,
     ProtocolInfo protocolInfo ,
     boolean      isWrite       ) throws CacheException {
@@ -910,7 +913,8 @@ public class CopyManager extends CellAdapter {
             storageInfo,
             protocolInfo ,
             0L                 );
-            
+        request.setPnfsPath(pnfsPath);
+
             say("PoolMgrSelectPoolMsg: " + request.toString() );
             CellMessage reply;
             try
