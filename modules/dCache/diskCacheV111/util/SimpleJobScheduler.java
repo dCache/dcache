@@ -24,7 +24,6 @@ public class SimpleJobScheduler implements JobScheduler, Runnable {
     private int _nextId = 1000;
     private final Object _lock = new Object();
     private final Thread _worker;
-    private final ThreadGroup _group;
     private final LinkedList<SJob>[] _queues = new LinkedList[3];
     private final Map<Integer, SJob> _jobs = new HashMap<Integer, SJob>();
     private final String _prefix;
@@ -148,15 +147,15 @@ public class SimpleJobScheduler implements JobScheduler, Runnable {
         }
     }
 
-    public SimpleJobScheduler(ThreadGroup group) {
-        this(group, "x");
+    public SimpleJobScheduler(ThreadFactory factory) {
+        this(factory, "x");
     }
 
-    public SimpleJobScheduler(ThreadGroup group, String prefix) {
-        this(group, prefix, true);
+    public SimpleJobScheduler(ThreadFactory factory, String prefix) {
+        this(factory, prefix, true);
     }
 
-    public SimpleJobScheduler(ThreadGroup group, String prefix, boolean fifo) {
+    public SimpleJobScheduler(final ThreadFactory factory, String prefix, boolean fifo) {
         _prefix = prefix;
         _fifo = fifo;
         for (int i = 0; i < _queues.length; i++) {
@@ -166,11 +165,14 @@ public class SimpleJobScheduler implements JobScheduler, Runnable {
         _jobExecutor = Executors.newCachedThreadPool(new ThreadFactory() {
 
             public Thread newThread(Runnable r) {
-                return new Thread(_group, r, "Scheduler-" + _prefix + "-worker");
+                Thread t = factory.newThread(r);
+                t.setName("Scheduler-" + _prefix + "-worker");
+                return t;
             }
         });
 
-        _worker = new Thread(_group = group, this, "Scheduler-" + _prefix);
+        _worker = factory.newThread(this);
+        _worker.setName("Scheduler-" + _prefix);
         _worker.start();
     }
 

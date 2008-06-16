@@ -31,6 +31,7 @@ import java.util.MissingResourceException;
 import java.util.NoSuchElementException;
 import java.util.StringTokenizer;
 import java.util.TreeSet;
+import java.util.concurrent.ThreadFactory;
 
 import org.apache.log4j.Logger;
 
@@ -478,11 +479,9 @@ public class PoolV4 extends AbstractCell
             // _args.getOpt("io-queues" ) ) ;
             // _ioQueue = _ioQueueManager.getDefaultScheduler() ;
 
-            _ioQueue = new IoQueueManager(getNucleus().getThreadGroup(), _args
-                                          .getOpt("io-queues"));
+            _ioQueue = new IoQueueManager(getNucleus(), _args.getOpt("io-queues"));
 
-            _p2pQueue = new SimpleJobScheduler(getNucleus().getThreadGroup(),
-                                               "P2P");
+            _p2pQueue = new SimpleJobScheduler(getNucleus(), "P2P");
 
             _flushingThread = new HsmFlushController(this, _storageQueue,
                                                      _storageHandler);
@@ -579,7 +578,7 @@ public class PoolV4 extends AbstractCell
         private HashMap<String, JobScheduler> _hash = new HashMap<String, JobScheduler>();
         private boolean _isConfigured = false;
 
-        private IoQueueManager(ThreadGroup group, String ioQueueList)
+        private IoQueueManager(ThreadFactory factory, String ioQueueList)
         {
             _isConfigured = (ioQueueList != null) && (ioQueueList.length() > 0);
             if (!_isConfigured) {
@@ -597,7 +596,7 @@ public class PoolV4 extends AbstractCell
                     continue;
                 }
                 int id = _list.size();
-                JobScheduler job = new SimpleJobScheduler(group, "IO-" + id, fifo);
+                JobScheduler job = new SimpleJobScheduler(factory, "IO-" + id, fifo);
                 _list.add(job);
                 _hash.put(queueName, job);
                 job.setSchedulerId(queueName, id);
