@@ -9,6 +9,8 @@ import java.io.PrintWriter;
 import java.io.RandomAccessFile;
 import java.io.BufferedReader;
 import java.io.StringReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -45,6 +47,7 @@ import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.RunSystem;
 import diskCacheV111.util.SimpleJobScheduler;
+import diskCacheV111.util.Checksum;
 import diskCacheV111.vehicles.PoolFileFlushedMessage;
 import diskCacheV111.vehicles.PoolRemoveFilesFromHSMMessage;
 import diskCacheV111.vehicles.StorageInfo;
@@ -68,6 +71,7 @@ public class HsmStorageHandler2
     private final HsmSet _hsmSet;
     private final PnfsHandler _pnfs;
     private final CellAdapter _cell;
+    private final ChecksumModuleV1 _checksumModule;
     private final Map<PnfsId, StoreThread> _storePnfsidList   = new HashMap();
     private final Map<PnfsId, FetchThread> _restorePnfsidList = new HashMap();
     private final JobScheduler _fetchQueue;
@@ -163,12 +167,15 @@ public class HsmStorageHandler2
     public HsmStorageHandler2(CellAdapter cell,
                               CacheRepositoryV5 repository,
                               HsmSet hsmSet,
-                              PnfsHandler pnfs)
+                              PnfsHandler pnfs,
+                              ChecksumModuleV1 checksumModule)
     {
         _repository = repository;
-        _hsmSet     = hsmSet;
-        _pnfs       = pnfs;
-        _cell       = cell;
+        _hsmSet = hsmSet;
+        _pnfs = pnfs;
+        _cell = cell;
+        _checksumModule = checksumModule;
+
         if (cell instanceof Logable)
             setLogable((Logable)cell);
 
@@ -569,6 +576,7 @@ public class HsmStorageHandler2
                     say("RunSystem. -> "+returnCode+" : "+run.getErrorString());
                 }
 
+                doChecksum(_handle);
             } catch (CacheException e) {
                 esay("FetchThread : ("+pnfsId+") CacheException : "+e);
                 returnCode = 1;
@@ -589,6 +597,10 @@ public class HsmStorageHandler2
                 esay("FetchThread : ("+pnfsId+") Can't determine 'hsmInfo' for "+
                      storageInfo+" {"+e+"}");
                 returnCode = 4;
+                excep = e;
+            } catch (NoRouteToCellException e) {
+                esay("FetchThread : ("+pnfsId+") Cell communication error: " + e.getMessage());
+                returnCode = 6;
                 excep = e;
             } catch (Exception e) {
                 esay("FetchThread : ("+pnfsId+") " + e);
@@ -625,6 +637,99 @@ public class HsmStorageHandler2
 
                 say(pnfsId.toString()+" : FetchThread Done");
             }
+        }
+
+        private void doChecksum(WriteHandle handle)
+            throws CacheException, InterruptedException, NoRouteToCellException
+        {
+            /* Return early without opening the entry if we don't need
+             * to.
+             */
+            if (!_checksumModule.getCrcFromHsm() &&
+                !_checksumModule.checkOnRestore())
+                return;
+
+            /* Check the checksum.
+             */
+            CacheEntry entry = handle.getEntry();
+            PnfsId pnfsId = entry.getPnfsId();
+
+            Checksum infoChecksum, fileChecksum;
+            try {
+                if (_checksumModule.getCrcFromHsm()) {
+                    infoChecksum = getChecksumFromHsm(handle.getFile());
+                    if (infoChecksum != null) {
+                        say("Got checksum for " + pnfsId + " from HSM: " + infoChecksum);
+                        _checksumModule.storeChecksumInPnfs(pnfsId, infoChecksum);
+                    }
+                } else {
+                    infoChecksum = null;
+                }
+
+                if (!_checksumModule.checkOnRestore())
+                    return;
+
+                if (infoChecksum == null) {
+                    infoChecksum = _checksumModule.getChecksumFromPnfs(pnfsId);
+                    if (infoChecksum == null) {
+                        esay(pnfsId.toString() + " has no checksum; checksum not verified after restore.");
+                        return;
+                    }
+                }
+
+                long start = System.currentTimeMillis();
+
+                fileChecksum =
+                    _checksumModule.calculateFileChecksum(handle.getFile(),
+                                                          _checksumModule.getDefaultChecksum());
+
+                say("Checksum for " + pnfsId + " info=" + infoChecksum
+                    + ";file=" + fileChecksum + " in "
+                    + (System.currentTimeMillis() - start));
+            } catch (IOException e) {
+                throw new CacheException(1010, "Checksum calculation failed due to I/O error: " + e.getMessage());
+            } catch (CacheException e) {
+                throw new CacheException(1010, "Checksum calculation failed: " + e.getMessage());
+            }
+
+            /* Report failure in case of mismatch.
+             */
+            if (!infoChecksum.equals(fileChecksum)) {
+                esay("Checksum of " + pnfsId + " differs info="
+                     + infoChecksum + ";file=" + fileChecksum);
+                throw new CacheException(1009,
+                                         "Checksum error : info=" + infoChecksum
+                                         + ";file=" + fileChecksum);
+            }
+        }
+
+        private Checksum getChecksumFromHsm(File file)
+            throws IOException
+        {
+            file = new File(file.getCanonicalPath() + ".crcval");
+            try {
+                String line;
+                if (file.exists()) {
+                    BufferedReader br =
+                        new BufferedReader(new FileReader(file));
+                    try {
+                        line = "1:" + br.readLine();
+                    } finally {
+                        try {
+                            br.close();
+                        } catch (IOException e) {
+                        }
+                        file.delete();
+                    }
+                    return new Checksum(line);
+                }
+            } catch (FileNotFoundException e) {
+                /* Should not happen unless somebody else is removing
+                 * the file before we got a chance to read it.
+                 */
+                throw new RuntimeException("File not found: " + file, e);
+            }
+            return null;
         }
     }
 
@@ -839,7 +944,7 @@ public class HsmStorageHandler2
                     try {
                         _pnfs.getStorageInfo(pnfsId.toString());
                     } catch (CacheException e) {
-                        throw new CacheException("Cannot verify that file still exists");
+                        throw new CacheException("Cannot verify that file still exists:" + e.getMessage());
                     }
                 }
 
