@@ -160,13 +160,15 @@ public class ChecksumModuleV1
     }
 
     public void storeChecksumInPnfs(PnfsId pnfsId, Checksum checksum)
-        throws CacheException, NoRouteToCellException
+        throws CacheException, NoRouteToCellException, InterruptedException
     {
         try {
             ChecksumPersistence.getPersistenceMgr().store(_cell, pnfsId, checksum);
         } catch (CacheException e) {
             throw e;
         } catch (NoRouteToCellException e) {
+            throw e;
+        } catch (InterruptedException e) {
             throw e;
         } catch (Exception e) {
            _cell.esay("Failed to set checksum: " + e);
