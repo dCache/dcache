@@ -521,7 +521,7 @@ public class RepositorySubsystemTest
         try {
             createEntry4(0, true, false, false, false, FROM_CLIENT, PRECIOUS);
         } finally {
-            assertCanOpen(id4, size4, BROKEN);
+            assertCacheEntry(repository.getEntry(id4), id4, size4, BROKEN);
             assertSpaceRecord(5120, 1024, 1024, 1024);
         }
         // TODO: Check notification
