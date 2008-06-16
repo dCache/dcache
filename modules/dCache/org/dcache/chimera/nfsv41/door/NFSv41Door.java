@@ -234,7 +234,7 @@ public class NFSv41Door extends CellAdapter implements NFSv41DeviceManager {
              * TODO: the PoolPassiveIoFileMessage have to be adopted to send list
              * of all interfaces
              */
-            InetSocketAddress[] addresses = new InetSocketAddress[0];
+            InetSocketAddress[] addresses = new InetSocketAddress[1];
             addresses[0] = poolAddress;
             device_addr4 deviceAddr = DeviceManager.deviceAddrOf( addresses );
 
