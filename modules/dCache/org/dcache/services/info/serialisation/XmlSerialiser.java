@@ -29,7 +29,7 @@ public class XmlSerialiser implements StateVisitor, StateSerialiser {
 	/** The types used within the XML structure */
 	private static final String _newline = "\n";
 	
-	private static final String _xmlns = "http://www.dcache.org/2008/dCache/state";
+	private static final String _xmlns = "http://www.dcache.org/2008/01/dCache/Info";
 
 	private StringBuilder _out;
 	private int _indentationLevel = 0;
