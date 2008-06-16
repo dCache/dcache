@@ -91,12 +91,8 @@ class ChecksumPersistencePnfsImpl extends ChecksumPersistence {
             new PnfsSetChecksumMessage(pnfsId, value.getType(), value.toHexString() ) ;
          flag.setReplyRequired(true);
 
-         cell.sendMessage(
-            new CellMessage(
-               new CellPath("PnfsManager") ,
-               flag
-            )
-         );
+         cell.sendAndWait(new CellMessage(new CellPath("PnfsManager"),
+                                          flag), 60000L);
   }
 
   public String retrieve(CellAdapter cell, PnfsId pnfsId,int type) throws Exception
