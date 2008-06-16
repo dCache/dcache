@@ -114,11 +114,18 @@ public abstract class CellStubHelper
             if (!cell.equals(dest.getCellName()))
                 return false;
 
+            /* Advance step. Will fail if required handlers belonging
+             * to earlier steps have not been called.
+             */
+            _used = true;
+            assertStep("Required messages missing", getStep());
+
             /* Deliver message.
              */
             try {
                 Object obj = msg.getMessageObject();
                 obj = _method.invoke(CellStubHelper.this, obj);
+
                 if (obj != null) {
                     msg.revertDirection();
                     msg.setMessageObject(obj);
@@ -129,13 +136,6 @@ public abstract class CellStubHelper
                  */
                 return false;
             }
-
-            _used = true;
-
-            /* Advance step. Will fail if required handlers belonging
-             * to earlier steps have not been called.
-             */
-            assertStep("Required messages missing", getStep());
 
             return true;
         }
@@ -240,6 +240,16 @@ public abstract class CellStubHelper
 
     protected void assertStep(String message, int step)
     {
+        /* We need to make sure that messages have actually been
+         * delivered. Currently I cannot find a better way that to
+         * sleep for a moment... (REVISIT).
+         */
+        try {
+            Thread.currentThread().sleep(50);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+
         assertTrue(message, _step <= step);
 
         for (Handler handler: _handlers) {
