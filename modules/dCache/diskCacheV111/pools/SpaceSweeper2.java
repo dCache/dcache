@@ -310,16 +310,6 @@ public class SpaceSweeper2 implements SpaceSweeper, Runnable
 
         try {
             while (!Thread.interrupted()) {
-                /* The list maintained by the sweeper is imperfect in
-                 * the sense that it can contain locked entries or
-                 * entries in use. Thus we could be caught in a busy
-                 * wait loop in which the list is not empty, but non
-                 * of the entries can be removed. To aoid excessive
-                 * CPU consumption we sleep for 10 seconds after each
-                 * iteration.
-                 */
-                Thread.currentThread().sleep(10000);
-
                 /* Take the needed space out of the 'queue'.
                  */
                 synchronized (this) {
@@ -375,6 +365,18 @@ public class SpaceSweeper2 implements SpaceSweeper, Runnable
                     /* Loop exited, this is not an error.  We are not
                      * supposed to do exact space allocation.
                      */
+                }
+
+                if (tmpList.isEmpty()) {
+                    /* The list maintained by the sweeper is imperfect
+                     * in the sense that it can contain locked entries
+                     * or entries in use. Thus we could be caught in a
+                     * busy wait loop in which the list is not empty,
+                     * but non of the entries can be removed. To avoid
+                     * excessive CPU consumption we sleep for 10
+                     * seconds after each iteration.
+                     */
+                    Thread.currentThread().sleep(10000);
                 }
 
                 /* Delete the files.
