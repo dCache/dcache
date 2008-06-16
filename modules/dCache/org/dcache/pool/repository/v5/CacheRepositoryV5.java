@@ -649,7 +649,7 @@ public class CacheRepositoryV5// extends CellCompanion
     {
         PnfsId id = event.getRepositoryEntry().getPnfsId();
         updateState(id, REMOVED);
-        _pnfs.clearCacheLocation(id, false); // TODO: lfsmode?
+        _pnfs.clearCacheLocation(id, false);
     }
 
     /** Callback. */
