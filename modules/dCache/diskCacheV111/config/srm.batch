@@ -117,7 +117,7 @@ set context -c srmOverwriteByDefault false
 
 # variable that controls number of simultaneous rm requests
 # sent by srmrm to PnfsManager
-set context -c srmSizeOfSingleRemoveBatch 100
+set context -c srmSizeOfSingleRemoveBatch 10
 
 # this is the directory in which the delegated user credentials will be stored
 # as files. We recommend set permissions to 700 on this dir
