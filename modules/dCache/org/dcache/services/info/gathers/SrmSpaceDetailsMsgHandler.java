@@ -18,7 +18,7 @@ import diskCacheV111.vehicles.Message;
 public class SrmSpaceDetailsMsgHandler implements MessageHandler {
 	
 	private static Logger _log = Logger.getLogger( SrmSpaceDetailsMsgHandler.class);
-	private static final StatePath SRM_SPACES_PATH = StatePath.parsePath("srm.spaces");
+	private static final StatePath SPACES_PATH = StatePath.parsePath("spaces");
 	private static final StatePath LINKGROUPS = new StatePath("linkgroups");
 	private static final String SRM_ROLE_WILDCARD = "*";
 	
@@ -44,7 +44,7 @@ public class SrmSpaceDetailsMsgHandler implements MessageHandler {
 		StateUpdate update = new StateUpdate();
 
 		for( Space space : spaces) {
-			StatePath thisSpacePath = SRM_SPACES_PATH.newChild( String.valueOf( space.getId()));
+			StatePath thisSpacePath = SPACES_PATH.newChild( String.valueOf( space.getId()));
 
 			update.appendUpdate( thisSpacePath.newChild("description"), new StringStateValue( space.getDescription(), metricLifetime));
 
