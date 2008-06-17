@@ -127,9 +127,9 @@ public class StatePersistentMetadata {
 		
 		this.add( StatePath.parsePath("linkgroups.*"), branchMetadata("linkgroup", "lgid"));
 		this.add( StatePath.parsePath("linkgroups.*.authorisation.*"), branchMetadata("authorised", "name"));
-		this.add( StatePath.parsePath("linkgroups.*.spaces.*"), branchMetadata("spaceref", "space-id"));
+		this.add( StatePath.parsePath("linkgroups.*.reservations.*"), branchMetadata("reservationref", "reservation-id"));
 		
-		this.add( StatePath.parsePath("spaces.*"), branchMetadata("space", "space-id"));
+		this.add( StatePath.parsePath("reservations.*"), branchMetadata("reservation", "reservation-id"));
 		
 		this.add( StatePath.parsePath("summary.linkgroup.blanket-auth.by-VO.*"), branchMetadata("VO", "name"));
 		this.add( StatePath.parsePath("summary.linkgroup.blanket-auth.by-VO.*.linkgroups.*"), branchMetadata("linkgroupref", "lgid"));

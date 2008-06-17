@@ -18,7 +18,7 @@ import diskCacheV111.vehicles.Message;
 public class SrmSpaceDetailsMsgHandler implements MessageHandler {
 	
 	private static Logger _log = Logger.getLogger( SrmSpaceDetailsMsgHandler.class);
-	private static final StatePath SPACES_PATH = StatePath.parsePath("spaces");
+	private static final StatePath SPACES_PATH = StatePath.parsePath("reservations");
 	private static final StatePath LINKGROUPS = new StatePath("linkgroups");
 	private static final String SRM_ROLE_WILDCARD = "*";
 	
@@ -121,7 +121,7 @@ public class SrmSpaceDetailsMsgHandler implements MessageHandler {
 		update.appendUpdate( parentPath.newChild( "linkgroupref"), new StringStateValue( lgid, metricLifetime));
 		
 		// Add the reference to this space reservation within the corresponding linkgroup
-		update.appendUpdate( LINKGROUPS.newChild( lgid).newChild("spaces").newChild( spaceId), new StateComposite( metricLifetime));		
+		update.appendUpdate( LINKGROUPS.newChild( lgid).newChild("reservations").newChild( spaceId), new StateComposite( metricLifetime));		
 	}
 
 }
