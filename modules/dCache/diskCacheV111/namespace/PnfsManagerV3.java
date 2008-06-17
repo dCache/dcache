@@ -40,6 +40,17 @@ public class PnfsManagerV3 extends CellAdapter {
     private final static String defaultCacheLocationProvider  = "diskCacheV111.namespace.provider.BasicNameSpaceProviderFactory";
     private final static String defaultStorageInfoProvider    = "diskCacheV111.namespace.provider.BasicNameSpaceProviderFactory";
 
+
+    /**
+     * default access latency for newly created files
+     */
+    private final AccessLatency _defaultAccessLatency;
+
+    /**
+     * default retention policy for newly created files
+     */
+    private final RetentionPolicy _defaultRetentionPolicy;
+
     private static class StatItem {
 
         private final String _name ;
@@ -188,6 +199,26 @@ public class PnfsManagerV3 extends CellAdapter {
             _storageInfoProvider = (StorageInfoProvider)storageInfoProviderFactory.getProvider(_args, _nucleus);
 
 
+            String accessLatensyOption = _args.getOpt("DefaultAccessLatency");
+            if( accessLatensyOption != null && accessLatensyOption.length() > 0) {
+                /*
+                 * IllegalArgumentException thrown if option is invalid
+                 */
+                _defaultAccessLatency = AccessLatency.getAccessLatency(accessLatensyOption);
+            }else{
+                _defaultAccessLatency = AccessLatency.NEARLINE;
+            }
+
+            String retentionPolicyOption = _args.getOpt("DefaultRetentionPolicy");
+            if( retentionPolicyOption != null && retentionPolicyOption.length() > 0) {
+                /*
+                 * IllegalArgumentException thrown if option is invalid
+                 */
+                _defaultRetentionPolicy = RetentionPolicy.getRetentionPolicy(retentionPolicyOption);
+            }else{
+                _defaultRetentionPolicy = RetentionPolicy.CUSTODIAL;
+            }
+
             //
             // and now the thread and fifos
             //
@@ -219,14 +250,18 @@ public class PnfsManagerV3 extends CellAdapter {
         pw.println( _cacheLocationProvider.toString() );
         pw.println( "StorageInfo Provider: " );
         pw.println( _storageInfoProvider.toString() );
-
-        pw.println(" Threads ("+_threads+") Queue" ) ;
+        pw.println();
+        pw.println("Default Access   Latency: " + _defaultAccessLatency);
+        pw.println("Default Retention Policy: " + _defaultRetentionPolicy);
+        pw.println();
+        pw.println("Threads ("+_threads+") Queue" ) ;
         for( int i = 0 ; i < _threads ; i++ ){
             pw.println( "    ["+i+"] "+_fifos[i].size() ) ;
         }
+        pw.println();
         pw.println( "Statistics:" ) ;
         for( int i = 0 , n = _requestSet.length ; i < n ; i++ ){
-            pw.println(_requestSet[i].toString());
+            pw.println("  " + _requestSet[i].toString());
         }
         return ;
     }
@@ -931,6 +966,17 @@ public class PnfsManagerV3 extends CellAdapter {
         	FileMetaData metadata = new FileMetaData(false, pnfsMessage.getUid(), pnfsMessage.getGid(), pnfsMessage.getMode());
             pnfsId = _nameSpaceProvider.createEntry( pnfsMessage.getPath(),metadata, false );
 
+
+            /*
+             * apply defaults
+             */
+             StorageInfo si = new GenericStorageInfo();
+             si.setAccessLatency(_defaultAccessLatency);
+             si.isSetAccessLatency(true);
+             si.setRetentionPolicy(_defaultRetentionPolicy);
+             si.isSetRetentionPolicy(true);
+             _storageInfoProvider.setStorageInfo(pnfsId, si, StorageInfoProvider.SI_OVERWRITE);
+
             pnfsMessage.setPnfsId(pnfsId);
             pnfsMessage.setSucceeded();
 
@@ -958,6 +1004,7 @@ public class PnfsManagerV3 extends CellAdapter {
             pnfsMessage.setFailed(ce.getRc(), ce.getMessage());
         }catch ( Exception ia ) {
             pnfsMessage.setFailed(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, ia.getMessage());
+            esay(ia);
         }
 
         if( pnfsMessage.getReturnCode() != 0 ) {
