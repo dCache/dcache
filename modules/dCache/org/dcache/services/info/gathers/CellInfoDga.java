@@ -15,7 +15,7 @@ public class CellInfoDga extends SkelListBasedActivity {
 
 	/**
 	 *  Use our own list timings.  Enforce a minimum delay of two minutes between successive
-	 *  allcellinfos requests to the *same* domain, and a delay of at least two seconds between
+	 *  getcellinfos requests to the *same* domain, and a delay of at least two seconds between
 	 *  successive requests of information from any domain.
 	 */
 	private static int MIN_LIST_REFRESH_PERIOD = 120000;
@@ -43,7 +43,11 @@ public class CellInfoDga extends SkelListBasedActivity {
 		if( domainName == null)
 			return;
 
+		
 		CellPath systemCellPath = new CellPath( "System", domainName);
+		
+		if( _log.isInfoEnabled())
+			_log.info( "sending message getcellinfos to System cell on domain " + domainName);
 		
 		_msgHandlerChain.sendCellMsg( systemCellPath, "getcellinfos", _handler, getMetricLifetime());
 	}
