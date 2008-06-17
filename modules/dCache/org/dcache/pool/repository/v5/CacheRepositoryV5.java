@@ -569,7 +569,7 @@ public class CacheRepositoryV5// extends CellCompanion
     /**
      * Removes a fault change listener.
      */
-    public void remoteFaultListener(FaultListener listener)
+    public void removeFaultListener(FaultListener listener)
     {
         _faultListeners.remove(listener);
     }
