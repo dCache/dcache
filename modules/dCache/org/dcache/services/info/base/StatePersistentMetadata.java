@@ -127,6 +127,7 @@ public class StatePersistentMetadata {
 		
 		this.add( StatePath.parsePath("linkgroups.*"), branchMetadata("linkgroup", "lgid"));
 		this.add( StatePath.parsePath("linkgroups.*.authorisation.*"), branchMetadata("authorised", "name"));
+		this.add( StatePath.parsePath("linkgroups.*.spaces.*"), branchMetadata("spaceref", "space-id"));
 		
 		this.add( StatePath.parsePath("srm.spaces.*"), branchMetadata("space", "space-id"));
 		

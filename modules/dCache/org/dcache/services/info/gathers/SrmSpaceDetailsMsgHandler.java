@@ -6,6 +6,7 @@ import java.util.Set;
 import org.apache.log4j.Logger;
 import org.dcache.services.info.base.IntegerStateValue;
 import org.dcache.services.info.base.State;
+import org.dcache.services.info.base.StateComposite;
 import org.dcache.services.info.base.StatePath;
 import org.dcache.services.info.base.StateUpdate;
 import org.dcache.services.info.base.StringStateValue;
@@ -18,6 +19,7 @@ public class SrmSpaceDetailsMsgHandler implements MessageHandler {
 	
 	private static Logger _log = Logger.getLogger( SrmSpaceDetailsMsgHandler.class);
 	private static final StatePath SRM_SPACES_PATH = StatePath.parsePath("srm.spaces");
+	private static final StatePath LINKGROUPS = new StatePath("linkgroups");
 	private static final String SRM_ROLE_WILDCARD = "*";
 	
 	private State _state = State.getInstance();
@@ -65,7 +67,7 @@ public class SrmSpaceDetailsMsgHandler implements MessageHandler {
 			if( spaceLifetime > 0)
 				update.appendUpdate( thisSpacePath.newChild( "lifetime"), new IntegerStateValue( spaceLifetime, metricLifetime));
 				
-			update.appendUpdate( thisSpacePath.newChild( "linkgroupref"), new IntegerStateValue( space.getLinkGroupId(), metricLifetime));
+			addLinkgroup( update, thisSpacePath, String.valueOf( space.getLinkGroupId()), String.valueOf(space.getId()), metricLifetime);
 			
 			addVoInfo( update, thisSpacePath.newChild( "authorisation"), space.getVoGroup(), space.getVoRole(), metricLifetime);
 		}
@@ -103,5 +105,22 @@ public class SrmSpaceDetailsMsgHandler implements MessageHandler {
 		}
 	}
 
+
+	/**
+	 * Add references between space reservations and corresponding linkgroup 
+	 * @param update the StateUpdate to append metric-updates to
+	 * @param parentPath the path to the space under consideration
+	 * @param lgid the linkgroup ID
+	 * @param spaceId the space ID
+	 * @param metricLifetime how long, in seconds, a metric should last.
+	 */
+	private void addLinkgroup( StateUpdate update, StatePath parentPath, String lgid, String spaceId, long metricLifetime) {
+		
+		// Add the reference to the linkgroup within the space.
+		update.appendUpdate( parentPath.newChild( "linkgroupref"), new StringStateValue( lgid, metricLifetime));
+		
+		// Add the reference to this space reservation within the corresponding linkgroup
+		update.appendUpdate( LINKGROUPS.newChild( lgid).newChild("spaces").newChild( spaceId), new StateComposite( metricLifetime));		
+	}
 
 }
