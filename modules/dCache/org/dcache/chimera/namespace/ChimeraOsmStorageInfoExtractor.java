@@ -72,6 +72,21 @@ public class ChimeraOsmStorageInfoExtractor implements
 
             if ( locations.isEmpty() ) {
                 info = (OSMStorageInfo) getDirStorageInfo(inode);
+                AccessLatency al = inode.getFs().getAccessLatency(inode);
+
+                /*
+                 * currently storage class and AL and RP are asymmetric:
+                 *   storage class of the file is bound to directory as log as file is not stored on tape,
+                 *   while AL and RP are bound to file
+                 */
+                if(al != null) {
+                    info.setAccessLatency(diskCacheV111.util.AccessLatency.getAccessLatency(al.getId()));
+                }
+
+                RetentionPolicy rp = inode.getFs().getRetentionPolicy(inode);
+                if( rp != null ) {
+                    info.setRetentionPolicy(diskCacheV111.util.RetentionPolicy.getRetentionPolicy(rp.getId()));
+                }
             } else {
 
 
@@ -212,24 +227,16 @@ public class ChimeraOsmStorageInfoExtractor implements
     public void setStorageInfo(FsInode inode, StorageInfo dCacheStorageInfo,
             int arg3) throws CacheException {
 
-
-
         try {
 
-            if( dCacheStorageInfo.isSetAccessLatency() || dCacheStorageInfo.isSetRetentionPolicy() ) {
-
-                RetentionPolicy retentionPolicy = RetentionPolicy.valueOf( dCacheStorageInfo.getRetentionPolicy().getId());
+            if( dCacheStorageInfo.isSetAccessLatency() ) {
                 AccessLatency accessLatency = AccessLatency.valueOf(dCacheStorageInfo.getAccessLatency().getId());
+                inode.getFs().setAccessLatency(inode, accessLatency);
+            }
 
-                InodeStorageInformation storageInfo = new InodeStorageInformation(inode,
-                        dCacheStorageInfo.getHsm(),
-                        dCacheStorageInfo.getKey("store"),
-                        dCacheStorageInfo.getKey("group"),
-                        accessLatency,
-                        retentionPolicy);
-
-
-                inode.getFs().setStorageInfo(inode, storageInfo);
+            if( dCacheStorageInfo.isSetRetentionPolicy() ) {
+                RetentionPolicy retentionPolicy = RetentionPolicy.valueOf( dCacheStorageInfo.getRetentionPolicy().getId());
+                inode.getFs().setRetentionPolicy(inode, retentionPolicy);
             }
 
             if(dCacheStorageInfo.isSetAddLocation() ) {
@@ -239,7 +246,6 @@ public class ChimeraOsmStorageInfoExtractor implements
                     inode.getFs().addInodeLocation(inode, StorageGenericLocation.TAPE, hsmLocation.location().toString());
                 }
             }
-
 
         }catch(ChimeraFsException he ) {
             throw new CacheException(he.getMessage() );
