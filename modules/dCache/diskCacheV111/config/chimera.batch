@@ -57,6 +57,15 @@ set context -c pnfsNumberOfThreads 4
 set context -c pnfsDbUser        srmdcache
 set context -c pnfsDbPassword    srmdcache
 set context -c pnfsPasswordFile  ""
+
+
+#
+# defaults for Access Latency and Retention Policy
+#
+
+set context -c DefaultAccessLatency ""
+set context -c DefaultRetentionPolicy ""
+
 onerror shutdown
 #
 create diskCacheV111.namespace.PnfsManagerV3 PnfsManager \
@@ -65,9 +74,11 @@ create diskCacheV111.namespace.PnfsManagerV3 PnfsManager \
         -threads=${pnfsNumberOfThreads} \
         -default=${defaultPnfsServer} \
         -pnfs=${pnfs} \
-	-chimeraConfig=${config}/chimera-config.xml \
+        -DefaultAccessLatency=${DefaultAccessLatency} \
+        -DefaultRetentionPolicy=${DefaultRetentionPolicy} \
+        -chimeraConfig=${config}/chimera-config.xml \
         -namespace-provider=org.dcache.chimera.namespace.ChimeraNameSpaceProviderFactory \
-	-storageinfo-provider=org.dcache.chimera.namespace.ChimeraNameSpaceProviderFactory \
+        -storageinfo-provider=org.dcache.chimera.namespace.ChimeraNameSpaceProviderFactory \
         -cachelocation-provider=${cacheInfoProvider} \
         -cachelocation-provider-dbURL=jdbc:postgresql://${companionDatabaseHost}/companion \
         -cachelocation-provider-jdbcDrv=org.postgresql.Driver \

@@ -55,6 +55,16 @@ set context -c namespaceProvider diskCacheV111.namespace.provider.BasicNameSpace
 set context -c pnfsDbUser        srmdcache
 set context -c pnfsDbPassword    srmdcache
 set context -c pnfsPasswordFile  ""
+
+
+#
+# defaults for Access Latency and Retention Policy
+#
+
+set context -c DefaultAccessLatency ""
+set context -c DefaultRetentionPolicy ""
+
+
 onerror shutdown
 #
 create diskCacheV111.namespace.PnfsManagerV3 PnfsManager \
@@ -66,6 +76,8 @@ create diskCacheV111.namespace.PnfsManagerV3 PnfsManager \
         -threads=${pnfsNumberOfThreads} \
         -default=${defaultPnfsServer} \
         -pnfs=${pnfs} \
+        -namespace-provider=org.dcache.chimera.namespace.ChimeraNameSpaceProviderFactory \
+        -storageinfo-provider=org.dcache.chimera.namespace.ChimeraNameSpaceProviderFactory \
         -namespace-provider=${namespaceProvider} \
         -cachelocation-provider=${cacheInfoProvider} \
         -cachelocation-provider-dbURL=jdbc:postgresql://${companionDatabaseHost}/companion \

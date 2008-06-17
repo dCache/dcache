@@ -474,6 +474,15 @@ cacheInfo=companion
 #
 #
 
+#
+# defualt Access Latency and Retention Policy for newly created files
+#
+# possible values:
+#    AccessLatency  : NEARLINE, ONLINE
+#    RetentionPolicy: CUSTODIAL, REPLICA, OUTPUT (don't use it)
+#
+# DefaultRetentionPolicy=CUSTODIAL
+# DefaultAccessLatency=NEARLINE
 
 #  ---- Location of the trash directory
 #   The cleaner (which can only run on the pnfs server machine itself)
@@ -681,14 +690,6 @@ AdvisoryDelete=true
 #
 # pinManagerDatabaseHost=${srmDbHost}
 # spaceManagerDatabaseHost=${srmDbHost}
-#
-# ----if space reservation request does not specify retention policy
-#     we will assign this retention policy by default
-# SpaceManagerDefaultRetentionPolicy=CUSTODIAL
-#
-# ----if space reservation request does not specify access latency
-#     we will assign this access latency by default
-# SpaceManagerDefaultAccessLatency=NEARLINE
 #
 # ----if the transfer request come from the door, and there was not prior
 #     space reservation made for this file, should we try to reserve
