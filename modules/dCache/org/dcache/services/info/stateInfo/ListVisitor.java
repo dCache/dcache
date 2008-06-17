@@ -10,6 +10,7 @@ import org.dcache.services.info.base.FloatingPointStateValue;
 import org.dcache.services.info.base.IntegerStateValue;
 import org.dcache.services.info.base.State;
 import org.dcache.services.info.base.StatePath;
+import org.dcache.services.info.base.StateTransition;
 import org.dcache.services.info.base.StateVisitor;
 import org.dcache.services.info.base.StringStateValue;
 
@@ -36,6 +37,22 @@ public class ListVisitor implements StateVisitor {
 		ListVisitor visitor = new ListVisitor( path);
 		State.getInstance().visitState(visitor, path);		
 		return visitor._listItems;
+	}
+
+	/**
+	 * Obtain the set of items below a certain path within the future dCache state
+	 * after a StateTransition has been applied.
+	 * @param str the StateTransition that is pending.
+	 * @param path the StatePath that is the parent to the require list of items.
+	 * @return the Set of all items that have the path as their parent.
+	 */
+	static public Set<String> getDetails( StateTransition str, StatePath path) {
+		if( _log.isDebugEnabled())
+			_log.debug( "Gathering current status for path " + path);
+		
+		ListVisitor visitor = new ListVisitor( path);
+		State.getInstance().visitState( str, visitor, path);
+		return visitor._listItems;		
 	}
 
 	StatePath _parent;
