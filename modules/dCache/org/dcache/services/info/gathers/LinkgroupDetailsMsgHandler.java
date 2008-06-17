@@ -21,7 +21,8 @@ public class LinkgroupDetailsMsgHandler implements MessageHandler {
 
 	private static Logger _log = Logger.getLogger( LinkgroupDetailsMsgHandler.class);
 	private static final StatePath LINKGROUPS_PATH = new StatePath("linkgroups");
-	private static final StatePath SUMMARY_LINKGROUP_BY_VO = StatePath.parsePath( "summary.linkgroup-by-vo");
+	private static final StatePath SUMMARY_LINKGROUP_BLANKET_AUTH_ALL = StatePath.parsePath( "summary.linkgroup.blanket-auth.all");
+	private static final StatePath SUMMARY_LINKGROUP_BLANKET_AUTH_BY_VO = StatePath.parsePath( "summary.linkgroup.blanket-auth.by-VO");
 	private static final String WILDCARD_ROLE = "*";
 	private static final String WILDCARD_VO = "*";
 	
@@ -119,13 +120,12 @@ public class LinkgroupDetailsMsgHandler implements MessageHandler {
 
 			update.appendUpdate( voPath.newChild( "FQAN"), new StringStateValue( fqan.toString(), metricLifetime));
 			
-			// If this entry authorises a whole VO, make a special note of this.
-			if( (role != null || role.equals( WILDCARD_ROLE)) && group.indexOf('/', 1) == -1) {
+			// If this entry authorises a whole VO (or all VOs), make a special note of this.
+			if( (role == null || role.equals( WILDCARD_ROLE)) && group.indexOf('/', 1) == -1) {
 				String voName = group.startsWith("/") ? group.substring(1) : group;
 				
-				if( !voName.equals( WILDCARD_VO))
-					update.appendUpdate( SUMMARY_LINKGROUP_BY_VO.newChild( voName).newChild("linkgroups").newChild(lgid),
-										new StateComposite( metricLifetime));
+				StatePath rootPath = voName.equals( WILDCARD_VO) ? SUMMARY_LINKGROUP_BLANKET_AUTH_ALL :  SUMMARY_LINKGROUP_BLANKET_AUTH_BY_VO.newChild( voName);
+				update.appendUpdate( rootPath.newChild("linkgroups").newChild(lgid), new StateComposite( metricLifetime));
 			}
 		}
 	}
