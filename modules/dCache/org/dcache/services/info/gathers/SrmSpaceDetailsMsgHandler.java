@@ -46,7 +46,8 @@ public class SrmSpaceDetailsMsgHandler implements MessageHandler {
 		for( Space space : spaces) {
 			StatePath thisSpacePath = SPACES_PATH.newChild( String.valueOf( space.getId()));
 
-			update.appendUpdate( thisSpacePath.newChild("description"), new StringStateValue( space.getDescription(), metricLifetime));
+			if( space.getDescription() != null)
+				update.appendUpdate( thisSpacePath.newChild("description"), new StringStateValue( space.getDescription(), metricLifetime));
 
 			update.appendUpdate( thisSpacePath.newChild("access-latency"), new StringStateValue( space.getAccessLatency().toString(), metricLifetime));
 			update.appendUpdate( thisSpacePath.newChild("retention-policy"), new StringStateValue( space.getRetentionPolicy().toString(), metricLifetime));
