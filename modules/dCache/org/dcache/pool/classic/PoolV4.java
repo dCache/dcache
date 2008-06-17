@@ -251,6 +251,15 @@ public class PoolV4 extends AbstractCell
 
         try {
 
+            //
+            // repository and ping thread must exist BEFORE the
+            // setup file is scanned. PingThread will be start
+            // after all the setup is done.
+            //
+            _pingThread = new PoolManagerPingThread();
+
+            disablePool(PoolV2Mode.DISABLED_STRICT, 1, "Initializing");
+
             if (argc < 1) {
                 throw new IllegalArgumentException("no base dir specified");
             }
@@ -430,14 +439,6 @@ public class PoolV4 extends AbstractCell
                     say(" Extra Tag Option : " + e.getKey() + " -> "+ e.getValue());
                 }
             }
-            //
-            // repository and ping thread must exist BEFORE the
-            // setup file is scanned. PingThread will be start
-            // after all the setup is done.
-            //
-            _pingThread = new PoolManagerPingThread();
-
-            disablePool(PoolV2Mode.DISABLED_STRICT, 1, "Initializing");
 
             say("Checking base directory ( reading setup) " + _baseDir);
             _base = new File(_baseDir);
