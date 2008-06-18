@@ -82,7 +82,7 @@ usage() # $1 = exit status
     echo "   -d=<path to dcache installation>   default is /opt/d-cache"
     echo    
     echo "Valid commands are:"
-    echo "   pool create <size in GiB> <directory>"
+    echo "   pool create <size> <directory>"
     echo "   pool add [ --fqdn ] [ --domain=<domain> ] <pool name> <directory>"
     echo "   pool ls"
     echo "   pool remove <pool name>"
@@ -91,6 +91,10 @@ usage() # $1 = exit status
     echo "   start [ <domain or service> ... ]"
     echo "   status"
     echo "   stop [ <domain or service> ... ]"
+    echo
+    echo "Size is specified in bytes, or optionally followed by K, M, G or T"
+    echo "for powers of 1024. Size is rounded down to the nearest integer "
+    echo "number of GiB."
 #    echo "   version"
     exit $1
 }
@@ -744,7 +748,8 @@ getFreeSpace() # $1 = path
 }
 
 # Converts a string describing some amount of disk space (using an
-# optional suffix in [kKmMgGtT]) to some number of GiB
+# optional suffix of k, K, m, M, g, G, t, T, for powers of 1024) to an
+# integer number of GiB.
 stringToGiB() # $1 = size
 {
     case $1 in
