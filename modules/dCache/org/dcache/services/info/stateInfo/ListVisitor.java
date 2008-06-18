@@ -20,7 +20,7 @@ import org.dcache.services.info.base.StringStateValue;
  * children of a StateComposite.  The parent StateComposite is described by the StatePath. 
  * @author Paul Millar <paul.millar@desy.de>
  */
-public class ListVisitor implements StateVisitor {
+public class ListVisitor extends SkeletonListVisitor {
 	
 	private static Logger _log = Logger.getLogger( ListVisitor.class);
 
@@ -36,7 +36,7 @@ public class ListVisitor implements StateVisitor {
 		
 		ListVisitor visitor = new ListVisitor( path);
 		State.getInstance().visitState(visitor, path);		
-		return visitor._listItems;
+		return visitor.getItems();
 	}
 
 	/**
@@ -52,28 +52,23 @@ public class ListVisitor implements StateVisitor {
 		
 		ListVisitor visitor = new ListVisitor( path);
 		State.getInstance().visitState( str, visitor, path);
-		return visitor._listItems;		
+		return visitor.getItems();		
 	}
 
-	StatePath _parent;
-	Set<String> _listItems;
+	private Set<String> _listItems;
 	
-	public ListVisitor( StatePath parent) {
-		_parent = parent;
+	public ListVisitor( StatePath parent) {		
+		super( parent);
 		_listItems = new HashSet<String>();
 	}
+
+	@Override
+	protected void newListItem( String name) {
+		newListItem( name);
+		_listItems.add( name);
+	}
 	
-	public void visitString( StatePath path, StringStateValue value) {}
-	public void visitInteger( StatePath path, IntegerStateValue value) {}
-	public void visitBoolean( StatePath path, BooleanStateValue value) {}
-	public void visitFloatingPoint( StatePath path, FloatingPointStateValue value) {}
-	public void visitCompositePreLastDescend( StatePath path, Map<String,String> metadata) {}
-	public void visitCompositePostDescend( StatePath path, Map<String,String> metadata) {}
-	public void visitCompositePreSkipDescend( StatePath path, Map<String,String> metadata) {}
-	public void visitCompositePostSkipDescend( StatePath path, Map<String,String> metadata) {}
-	
-	public void visitCompositePreDescend( StatePath path, Map<String,String> metadata) {			
-		if( _parent.isParentOf(path))
-			_listItems.add(path.getLastElement());	
+	public Set<String> getItems() {
+		return _listItems;
 	}
 }

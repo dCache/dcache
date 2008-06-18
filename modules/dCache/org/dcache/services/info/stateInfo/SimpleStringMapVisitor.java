@@ -65,8 +65,8 @@ public class SimpleStringMapVisitor extends SimpleSkeletonMapVisitor {
 	
 	@Override
 	public void visitString(StatePath path, StringStateValue value) {
-		if( path.equals( _pathToMetric))
-			_map.put( _thisKey, value.toString());
+		if( path.equals( getPathToMetric()))
+			_map.put( getKey(), value.toString());
 	}
 
 	Map<String,String> getMap() {
