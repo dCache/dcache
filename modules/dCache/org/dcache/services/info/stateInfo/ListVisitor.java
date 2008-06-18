@@ -1,18 +1,12 @@
 package org.dcache.services.info.stateInfo;
 
-import java.util.Map;
 import java.util.Set;
 import java.util.HashSet;
 
 import org.apache.log4j.Logger;
-import org.dcache.services.info.base.BooleanStateValue;
-import org.dcache.services.info.base.FloatingPointStateValue;
-import org.dcache.services.info.base.IntegerStateValue;
 import org.dcache.services.info.base.State;
 import org.dcache.services.info.base.StatePath;
 import org.dcache.services.info.base.StateTransition;
-import org.dcache.services.info.base.StateVisitor;
-import org.dcache.services.info.base.StringStateValue;
 
 
 /**
