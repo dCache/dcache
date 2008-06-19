@@ -4,6 +4,7 @@ import java.util.ArrayList;
 
 import org.apache.log4j.Logger;
 import org.dcache.services.info.base.IntegerStateValue;
+import org.dcache.services.info.base.StateComposite;
 import org.dcache.services.info.base.StatePath;
 import org.dcache.services.info.base.StateUpdate;
 import org.dcache.services.info.base.StringStateValue;
@@ -98,5 +99,13 @@ public class LinkInfoMsgHandler extends CellMessageHandlerSkel {
 		addItems( update, unitPath.newChild("net"), net, lifetime);
 		addItems( update, unitPath.newChild("dcache"), dcache, lifetime);
 		addItems( update, unitPath.newChild("protocol"), protocol, lifetime);
+		
+		/**
+		 * We must add the space branch explicitly as it must be mortal.  This is to prevent the
+		 * state engine from killing the automatically created (ephemeral) branch when adding the
+		 * ephemeral space children: the space metrics calculated by the LinkSpaceMainter SIP.
+		 * TODO: come up with a better solution!
+		 */
+		update.appendUpdate( thisLinkPath.newChild("space"), new StateComposite( lifetime));		
 	}
 }
