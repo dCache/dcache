@@ -215,7 +215,7 @@ public class GridftpClient
     public static String getCksmValue(RandomAccessFile diskFile,String type)
         throws IOException,NoSuchAlgorithmException
     {
-        if (type.equals("adler32"))
+        if (type.toLowerCase().equals("adler32"))
             return long32bitToHexString(getAdler32(diskFile));
 
         MessageDigest md = MessageDigest.getInstance(type);
