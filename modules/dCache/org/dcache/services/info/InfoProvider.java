@@ -22,6 +22,7 @@ import org.dcache.services.info.conduits.Conduit;
 import org.dcache.services.info.conduits.XmlConduit;
 import org.dcache.services.info.gathers.DataGatheringScheduler;
 import org.dcache.services.info.gathers.MessageHandlerChain;
+import org.dcache.services.info.secondaryInfoProviders.LinkgroupTotalSpaceMaintainer;
 import org.dcache.services.info.secondaryInfoProviders.PoolgroupSpaceWatcher;
 import org.dcache.services.info.secondaryInfoProviders.PoolsSummaryMaintainer;
 import org.dcache.services.info.serialisation.PrettyPrintTextSerialiser;
@@ -294,6 +295,7 @@ public class InfoProvider extends CellAdapter {
 	private void addDefaultWatchers() {
 		State.getInstance().addStateWatcher(new PoolgroupSpaceWatcher());
 		State.getInstance().addStateWatcher(new PoolsSummaryMaintainer());
+		State.getInstance().addStateWatcher(new LinkgroupTotalSpaceMaintainer());
 	}
 	
 	
