@@ -2169,7 +2169,7 @@ public class Configuration {
     
 
     public LambdaStationMap setLambdaStationMap() {
-        if (lambda_station_map_file != null) {
+        if (lambda_station_enabled && lambda_station_map_file != null) {
             LSMap = new LambdaStationMap(lambda_station_map_file);
         }
 	else {

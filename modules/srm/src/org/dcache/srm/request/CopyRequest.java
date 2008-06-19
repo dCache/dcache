@@ -235,11 +235,15 @@ public class CopyRequest extends ContainerRequest implements PropertyChangeListe
         this.callerSrmProtocol = callerSrmProtocol;
         LSMap = configuration.setLambdaStationMap();
 	System.out.println("LSMAP"+LSMap);
-        LSMap = configuration.setLambdaStationMap();
-        if ((LSMap != null) && (configuration.getLambdaStationEnabled())) {
-            // can be more conditions
-            use_lambda_station = true;
-            lambda_station_script = configuration.getLambdaStationScript();
+        if (configuration.getLambdaStationEnabled()) {
+            LSMap = configuration.setLambdaStationMap();
+            if(LSMap != null) {
+                lambda_station_script = configuration.getLambdaStationScript();
+                if(lambda_station_script != null) {
+                    use_lambda_station = true;
+
+                }
+            }
         } 
         this.storageType = storageType;
         this.targetAccessLatency = targetAccessLatency;
