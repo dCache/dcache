@@ -17,8 +17,6 @@ public class       HpssInfoExtractor
        //     2 append
        //
 
-       HpssStorageInfo hpss = (HpssStorageInfo)storageInfo ;
-
        PnfsFile x = PnfsFile.getFileByPnfsId( pnfsMountpoint , pnfsId ) ;
        if( x == null )
           throw new
@@ -47,6 +45,8 @@ public class       HpssInfoExtractor
 
 
        if( storageInfo.isSetBitFileId() ) {
+
+           HpssStorageInfo hpss = (HpssStorageInfo)storageInfo ;
 
 	       File levelFile = x.getLevelFile(1) ;
 
