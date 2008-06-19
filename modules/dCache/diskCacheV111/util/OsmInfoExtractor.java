@@ -30,8 +30,6 @@ public class       OsmInfoExtractor
        //     2 append
        //
 
-       OSMStorageInfo osm = (OSMStorageInfo)storageInfo ;
-
        PnfsFile pnfsFile = PnfsFile.getFileByPnfsId( pnfsMountpoint , pnfsId ) ;
        if( pnfsFile == null ) {
           throw new
@@ -61,6 +59,8 @@ public class       OsmInfoExtractor
 
 
        if( storageInfo.isSetBitFileId() ) {
+
+           OSMStorageInfo osm = (OSMStorageInfo)storageInfo ;
 
 	       File levelFile = pnfsFile.getLevelFile(1) ;
 
