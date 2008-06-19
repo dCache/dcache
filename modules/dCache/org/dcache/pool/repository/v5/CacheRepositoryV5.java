@@ -88,6 +88,11 @@ public class CacheRepositoryV5// extends CellCompanion
     private final boolean _checkRepository;
 
     /**
+     * Whether pool is volatile.
+     */
+    private boolean _volatile = false;
+
+    /**
      * True if inventory has been build, otherwise false.
      */
     private boolean _initialised;
@@ -173,6 +178,22 @@ public class CacheRepositoryV5// extends CellCompanion
         throw new IllegalArgumentException("Invalid value for " + option + ": " + s);
     }
 
+    public boolean getVolatile()
+    {
+        return _volatile;
+    }
+
+    /**
+     * Sets whether pool is volatile. On volatile pools target states
+     * of PRECIOUS are silently changed to CACHED, and
+     * ClearCacheLocation messages are flagged to trigger deletion of
+     * the namespace entry when the last known replica is deleted.
+     */
+    public void setVolatile(boolean value)
+    {
+        _volatile = value;
+    }
+
     /**
      * Loads the repository from the on disk state. Must be done
      * exactly once before any other operation can be performed.
@@ -236,6 +257,10 @@ public class CacheRepositoryV5// extends CellCompanion
         try {
             CacheRepositoryEntry entry = _repository.createEntry(id);
             try {
+                if (_volatile && targetState == PRECIOUS) {
+                    targetState = CACHED;
+                }
+
                 WriteHandle handle = new WriteHandleImpl(this,
                                                          _repository,
                                                          _pnfs,
@@ -649,7 +674,7 @@ public class CacheRepositoryV5// extends CellCompanion
     {
         PnfsId id = event.getRepositoryEntry().getPnfsId();
         updateState(id, REMOVED);
-        _pnfs.clearCacheLocation(id, false);
+        _pnfs.clearCacheLocation(id, _volatile);
     }
 
     /** Callback. */
@@ -690,7 +715,6 @@ public class CacheRepositoryV5// extends CellCompanion
     /** Callback. */
     public void available(CacheRepositoryEvent event)
     {
-        // TODO Register in PNFS
     }
 
     /** Callback. */

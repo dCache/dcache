@@ -128,6 +128,7 @@ public class PoolV4 extends AbstractCell
 
     private final static int LFS_NONE = 0;
     private final static int LFS_PRECIOUS = 1;
+    private final static int LFS_VOLATILE = 2;
 
     private final static int DUP_REQ_NONE = 0;
     private final static int DUP_REQ_IGNORE = 1;
@@ -188,7 +189,6 @@ public class PoolV4 extends AbstractCell
     private String _crashType = "exception";
     private boolean _isPermanent = false;
     private boolean _allowSticky = false;
-    private boolean _blockOnNoSpace = true;
     private boolean _waitForRepositoryOk = false;
     private long _gap = 4L * 1024L * 1024L * 1024L;
     private int _lfsMode = LFS_NONE;
@@ -224,7 +224,6 @@ public class PoolV4 extends AbstractCell
     // [-billing=<name>] : default : billing
     // [-setupManager=<name>] : default : none
     // [-dupRequest=none|ignore|refresh]: default : ignore
-    // [-blockOnNoSpace=yes|no|auto] : default : auto
     // [-allowCleaningPreciousFiles] : default : false
     // [-checkRepository] : default : true
     // [-waitForRepositoryOk] : default : false
@@ -336,13 +335,14 @@ public class PoolV4 extends AbstractCell
             String lfsModeString = _args.getOpt("lfs");
             lfsModeString = lfsModeString == null ? _args
                 .getOpt("largeFileStore") : lfsModeString;
-            if (lfsModeString != null &&
-                (lfsModeString.equals("precious") || lfsModeString.equals(""))){
-                _lfsMode = LFS_PRECIOUS;
-            } else if (lfsModeString == null || lfsModeString.equals("none")) {
+            if (lfsModeString == null || lfsModeString.equals("none")) {
                 _lfsMode = LFS_NONE;
+            } else if (lfsModeString.equals("precious") || lfsModeString.equals("")){
+                _lfsMode = LFS_PRECIOUS;
+            } else if (lfsModeString.equals("volatile") || lfsModeString.equals("precious")) {
+                _lfsMode = LFS_VOLATILE;
             } else {
-                throw new IllegalArgumentException("lfs=[none|precious]");
+                throw new IllegalArgumentException("lfs=[none|precious|volatile|transient]");
             }
             say("LargeFileStore Mode : "
                 + (_lfsMode == LFS_NONE ? "None" : "Precious"));
@@ -410,18 +410,6 @@ public class PoolV4 extends AbstractCell
                 + (_setupManager == null ? "none" : _setupManager));
 
             //
-            // block 'reserve space' only if we have a chance to
-            // make space available. So not for LFS_PRECIOUS.
-            //
-            _blockOnNoSpace = _lfsMode != LFS_PRECIOUS;
-            //
-            // and allow overwriting
-            //
-            tmp = _args.getOpt("blockOnNoSpace");
-            if ((tmp != null) && !tmp.equals("auto"))
-                _blockOnNoSpace = tmp.equals("yes");
-            say("BlockOnNoSpace : " + _blockOnNoSpace);
-            //
             // get additional tags
             //
             {
@@ -460,6 +448,7 @@ public class PoolV4 extends AbstractCell
             _pnfs = new PnfsHandler(this, new CellPath(_pnfsManagerName), _poolName);
             _repository = new CacheRepositoryV5(this, _pnfs);
             _repository.addFaultListener(this);
+            _repository.setVolatile(_lfsMode == LFS_VOLATILE);
             _checksumModule = new ChecksumModuleV1(this, _repository, _pnfs);
 
             _storageQueue = new StorageClassContainer(_repository, poolName);
@@ -1040,8 +1029,17 @@ public class PoolV4 extends AbstractCell
         pw.println("Storage Mode      : "
                    + (_isPermanent ? "Static" : "Dynamic"));
         pw.println("ReplicationMgr    : " + _replicationHandler);
-        pw.println("LargeFileStore    : "
-                   + (_lfsMode == LFS_NONE ? "None" : "Precious"));
+        switch (_lfsMode) {
+        case LFS_NONE:
+            pw.println("LargeFileStore    : None");
+            break;
+        case LFS_PRECIOUS:
+            pw.println("LargeFileStore    : Precious");
+            break;
+        case LFS_VOLATILE:
+            pw.println("LargeFileStore    : Volatile");
+            break;
+        }
         pw.println("DuplicateRequests : "
                    + (_dupRequest == DUP_REQ_NONE ? "None"
                       : _dupRequest == DUP_REQ_IGNORE ? "Ignored"
@@ -2561,10 +2559,13 @@ public class PoolV4 extends AbstractCell
             _lfsMode = LFS_NONE;
         } else if (mode.equals("precious")) {
             _lfsMode = LFS_PRECIOUS;
+        } else if (mode.equals("volatile") || mode.equals("transient")) {
+            _lfsMode = LFS_VOLATILE;
         } else {
             throw new CommandSyntaxException("Not Found : ",
                                              "Usage : pool lfs none|precious");
         }
+        _repository.setVolatile(_lfsMode == LFS_VOLATILE);
         return "";
     }
 
