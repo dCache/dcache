@@ -12,7 +12,7 @@ import org.dcache.services.info.base.StateUpdate;
 import org.dcache.services.info.base.StatePath;
 import org.dcache.services.info.base.StateTransition;
 import org.dcache.services.info.stateInfo.PoolSpaceVisitor;
-import org.dcache.services.info.stateInfo.PoolgroupToPoolsVisitor;
+import org.dcache.services.info.stateInfo.SetMapVisitor;
 import org.dcache.services.info.stateInfo.SpaceInfo;
 
 
@@ -30,6 +30,7 @@ public class PoolgroupSpaceWatcher extends AbstractStateWatcher {
 											"poolgroups.*",
 											"poolgroups.*.pools.*"};
 	private static final StatePath POOLGROUPS_PATH = new StatePath( "poolgroups");
+	private static final StatePath POOL_MEMBERSHIP_REL_PATH = new StatePath( "pools");
 	
 	@Override
 	protected String[] getPredicates() {
@@ -42,8 +43,8 @@ public class PoolgroupSpaceWatcher extends AbstractStateWatcher {
 		if( _log.isInfoEnabled())
 			_log.info( "Watcher " + this.getClass().getSimpleName() + " triggered");
 		
-		Map <String,Set<String>> currentPoolgroupMembership = PoolgroupToPoolsVisitor.getDetails();
-		Map <String,Set<String>> futurePoolgroupMembership = PoolgroupToPoolsVisitor.getDetails( transition);
+		Map <String,Set<String>> currentPoolgroupMembership = SetMapVisitor.getDetails( POOLGROUPS_PATH, POOL_MEMBERSHIP_REL_PATH); 
+		Map <String,Set<String>> futurePoolgroupMembership = SetMapVisitor.getDetails( transition, POOLGROUPS_PATH, POOL_MEMBERSHIP_REL_PATH);
 		
 		Map<String, SpaceInfo> poolSpaceInfoPre = PoolSpaceVisitor.getDetails();		
 		Map<String, SpaceInfo> poolSpaceInfoPost = PoolSpaceVisitor.getDetails(transition);
