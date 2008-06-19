@@ -95,6 +95,7 @@ public class BatchCell extends CellAdapter implements Runnable {
    }
    public void run(){
      if( Thread.currentThread() == _worker ){
+        initLoggingContext();
         String line = null ;
         StringBuffer sb = null ;
         try{
