@@ -76,8 +76,8 @@ create diskCacheV111.namespace.PnfsManagerV3 PnfsManager \
         -threads=${pnfsNumberOfThreads} \
         -default=${defaultPnfsServer} \
         -pnfs=${pnfs} \
-        -namespace-provider=org.dcache.chimera.namespace.ChimeraNameSpaceProviderFactory \
-        -storageinfo-provider=org.dcache.chimera.namespace.ChimeraNameSpaceProviderFactory \
+        -DefaultAccessLatency=${DefaultAccessLatency} \
+        -DefaultRetentionPolicy=${DefaultRetentionPolicy} \
         -namespace-provider=${namespaceProvider} \
         -cachelocation-provider=${cacheInfoProvider} \
         -cachelocation-provider-dbURL=jdbc:postgresql://${companionDatabaseHost}/companion \
