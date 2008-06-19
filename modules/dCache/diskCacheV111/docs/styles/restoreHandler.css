@@ -24,9 +24,9 @@ h1
   margin-bottom: 50px;
 }
 
-tr.even.error
+tr.error
 {
-  background: red;
+  background: orangered;
   color: white;
 }
 
