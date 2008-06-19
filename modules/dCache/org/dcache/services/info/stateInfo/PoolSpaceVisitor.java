@@ -4,12 +4,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
-import org.dcache.services.info.base.BooleanStateValue;
-import org.dcache.services.info.base.FloatingPointStateValue;
 import org.dcache.services.info.base.IntegerStateValue;
 import org.dcache.services.info.base.StatePath;
-import org.dcache.services.info.base.StateVisitor;
-import org.dcache.services.info.base.StringStateValue;
 import org.dcache.services.info.base.State;
 import org.dcache.services.info.base.StateTransition;
 
@@ -19,10 +15,9 @@ import org.dcache.services.info.base.StateTransition;
  * 
  * @author Paul Millar <paul.millar@desy.de>
  */
-public class PoolSpaceVisitor implements StateVisitor {
+public class PoolSpaceVisitor extends SkeletonListVisitor {
 	
 	private static Logger _log = Logger.getLogger( PoolSpaceVisitor.class);
-
 	
 	private static StatePath POOLS_PATH = new StatePath( "pools");
 	
@@ -59,20 +54,23 @@ public class PoolSpaceVisitor implements StateVisitor {
 	private Map <String,SpaceInfo> _poolgroups = new HashMap<String,SpaceInfo>();
 	private SpaceInfo _thisPoolSpaceInfo;
 	private StatePath _poolSpacePath = null;
-
-	public void visitCompositePreDescend( StatePath path, Map<String,String> metadata) {			
-		// If something like pools.<some pool>
-		if( POOLS_PATH.isParentOf( path)) {
-			
-			if( _log.isDebugEnabled())
-				_log.debug( "Found pool " + path.getLastElement());
-
-			_thisPoolSpaceInfo = new SpaceInfo();
-			_poolgroups.put( path.getLastElement(), _thisPoolSpaceInfo);
-			_poolSpacePath = path.newChild("space");
-		}			
+	
+	public PoolSpaceVisitor() {
+		super( POOLS_PATH);
 	}
 	
+	@Override
+	protected void newListItem( String itemName) {		
+		if( _log.isDebugEnabled())
+			_log.debug( "Found pool " + itemName);
+
+		_thisPoolSpaceInfo = new SpaceInfo();
+		_poolgroups.put( itemName, _thisPoolSpaceInfo);
+		
+		_poolSpacePath = getPathToList().newChild(itemName).newChild("space");
+	}
+
+	@Override
 	public void visitInteger( StatePath path, IntegerStateValue value) {
 		if( _poolSpacePath == null || ! _poolSpacePath.isParentOf( path))
 			return;
@@ -83,21 +81,14 @@ public class PoolSpaceVisitor implements StateVisitor {
 			_log.debug( "Found metric " + path.getLastElement() + " = " + value.getValue());
 
 		// The following only works since we intern() all strings
-		if( metricName == "removable")
+		if( metricName.equals("removable"))
 			_thisPoolSpaceInfo.setRemovable( value.getValue());
-		else if( metricName == "free")
+		else if( metricName.equals("free"))
 			_thisPoolSpaceInfo.setFree( value.getValue());
-		else if( metricName == "total")
+		else if( metricName.equals("total"))
 			_thisPoolSpaceInfo.setTotal( value.getValue());
-		else if( metricName == "precious")
+		else if( metricName.equals("precious"))
 			_thisPoolSpaceInfo.setPrecious( value.getValue());			
 	}
 	
-	public void visitCompositePreLastDescend( StatePath path, Map<String,String> metadata) {}		
-	public void visitCompositePostDescend( StatePath path, Map<String,String> metadata) {}
-	public void visitCompositePreSkipDescend( StatePath path, Map<String,String> metadata) {}
-	public void visitCompositePostSkipDescend( StatePath path, Map<String,String> metadata) {}
-	public void visitString( StatePath path, StringStateValue value) {}
-	public void visitBoolean( StatePath path, BooleanStateValue value) {}
-	public void visitFloatingPoint( StatePath path, FloatingPointStateValue value) {}		
 }
