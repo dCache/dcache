@@ -92,7 +92,7 @@ public class       EnstoreInfoExtractor
                 35, "Enstore info not found in "+parentDir+"(type="+
                 parentDir.getPnfsFileType()+")" ) ;
 
-           Hashtable       hash = new Hashtable() ;
+           Map<String, String>       hash = new HashMap<String, String>() ;
            if( template != null ){
               StringTokenizer st   = null ;
               for( int i = 0 ; i < template.length ; i++ ){
