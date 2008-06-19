@@ -58,7 +58,7 @@ public class ListVisitor extends SkeletonListVisitor {
 
 	@Override
 	protected void newListItem( String name) {
-		newListItem( name);
+		super.newListItem( name);
 		_listItems.add( name);
 	}
 	
