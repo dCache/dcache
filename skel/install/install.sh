@@ -351,6 +351,19 @@ absfpath () {
   echo ${ABSPATH}
 }
 
+dcacheInstallGetNameSpaceType()
+{
+  local nameServerFormat
+  nameServerFormat=`printConfig NAMESPACE`
+  if [ "${nameServerFormat}" != "pnfs" -a "${nameServerFormat}" != "chimera" ]
+  then
+    logmessage WARNING "node_config does not have NAMESPACE set to chimera or pnfs."
+    logmessage INFO "NAMESPACE=${nameServerFormat}"
+    nameServerFormat="pnfs"
+    logmessage WARNING "Defaulting node_config to pnfs. This behaviour will change in future dCache releases."
+  fi
+  RET=$nameServerFormat
+}
 
 
 dcacheInstallGetNameSpaceServer()
@@ -1003,8 +1016,8 @@ dcacheInstallChimeraMountPoints()
 dcacheInstallMountPoints()
 {
   logmessage DEBUG "dcacheInstallMountPoints.start"
-
-  nameServerFormat=`printConfig NAMESPACE`
+  dcacheInstallGetNameSpaceType
+  nameServerFormat=${RET}
   if [ "${nameServerFormat}" == "pnfs" ]
   then
     dcacheInstallPnfsMountPoints
@@ -1413,14 +1426,7 @@ nodetype=$(echo "${dcacheNameServerIs}${isAdmin}${isGridFtp}${isSrm}" | grep 1)
 
 if [ "X${nodetype}" != "X" ]
 then
-  nameServerFormat=`printConfig NAMESPACE`
-  if [ "${nameServerFormat}" != "pnfs" -a "${nameServerFormat}" != "chimera" ]
-  then
-    logmessage ERROR "node_config does not have NAMESPACE set to chimera or pnfs."
-    logmessage INFO "NAMESPACE=${nameServerFormat}"
-    exit 1
-  fi
-
+  logmessage INFO "This node will need to mount the name server."
 fi
 
 
