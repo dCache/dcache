@@ -107,4 +107,13 @@ public class SkeletonListVisitor implements StateVisitor {
 	protected String getKey() {
 		return _thisKey;
 	}
+	
+	/**
+	 * Check whether the visitor is within (underneath) the list item.  If so,
+	 * then getKey() will return the valid key.
+	 * @return true if visitor is within a list item, false otherwise.
+	 */
+	protected boolean isInListItem() {
+		return _thisKey != null;
+	}
 }
