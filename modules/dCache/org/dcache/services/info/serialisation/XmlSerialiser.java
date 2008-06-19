@@ -58,7 +58,14 @@ public class XmlSerialiser implements StateVisitor, StateSerialiser {
 	public String serialise() {
 		return serialise( null);
 	}
-	
+
+	/**
+	 *  Serialise the current dCache state into XML, starting at the given path.  This
+	 *  selects only a subset of the total available XML infoset, but the resulting document
+	 *  will validate.
+	 *  @param start the StatePath to start serialising data. 
+	 *  @return a String containing dCache current state as XML data.
+	 */
 	public String serialise( StatePath start) {
 		_out = new StringBuilder();
 		_isTopBranch = true;
@@ -70,6 +77,17 @@ public class XmlSerialiser implements StateVisitor, StateSerialiser {
 		
 		State.getInstance().visitState( this, start);
 		
+		/**
+		 *  We ensure that there is always at least one element (the &lt;dCache/> element).
+		 *  _isTopBranch is true only if no state has been traversed, so no &lt;dCache> element
+		 *  emitted.
+		 */
+		if( _isTopBranch) {
+			_haveLastBranch = true;
+			_lastBranchElementName = getBranchLabel( null); 
+			emitLastBeginElement( true);
+		}
+			
 		return _out.toString();		
 	}
 
