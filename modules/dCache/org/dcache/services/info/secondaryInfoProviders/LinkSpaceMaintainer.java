@@ -22,7 +22,7 @@ public class LinkSpaceMaintainer extends AbstractStateWatcher {
 
 	private static final String PREDICATE_PATHS[] = { "links.*",
 					"links.*.pools.*",
-					"pools.*.size.*"};
+					"pools.*.space.*"};
 	
 	private static final StatePath LINKS_PATH = new StatePath( "links");
 	private static final StatePath POOL_MEMBERSHIP_REL_PATH = new StatePath( "pools");
