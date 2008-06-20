@@ -124,17 +124,17 @@ public class ACLPermissionHandler extends AbstractPermissionHandler {
 	}
 
 	public boolean canGetAttributes(String pnfsPath, Subject subject, Origin origin, FileAttribute attribute) throws CacheException, ACLException {
-		return canGetSetAttributes(pnfsPath, subject, origin, attribute, false);
+		return canGetSetAttributes(pnfsPath, subject, origin, attribute, true);
 	}
 	public boolean canSetAttributes(String pnfsPath, Subject subject, Origin origin, FileAttribute attribute) throws CacheException, ACLException {
-		return canGetSetAttributes(pnfsPath, subject, origin, attribute, true);
+		return canGetSetAttributes(pnfsPath, subject, origin, attribute, false);
 	}
 
 	public boolean canGetAttributes(PnfsId pnfsId, Subject subject, Origin origin, FileAttribute attribute) throws CacheException, ACLException {
-		return canGetSetAttributes(pnfsId, subject, origin, attribute, false);
+		return canGetSetAttributes(pnfsId, subject, origin, attribute, true);
 	}
 	public boolean canSetAttributes(PnfsId pnfsId, Subject subject, Origin origin, FileAttribute attribute) throws CacheException, ACLException {
-		return canGetSetAttributes(pnfsId, subject, origin, attribute, true);
+		return canGetSetAttributes(pnfsId, subject, origin, attribute, false);
 	}
 
 	public boolean setDefaultPermissions(String pnfsPath) throws CacheException, ACLException {
@@ -362,8 +362,8 @@ public class ACLPermissionHandler extends AbstractPermissionHandler {
 		return res;
 	}
 
-	private boolean canGetSetAttributes(String pnfsPath, Subject subject, Origin origin, FileAttribute attribute, boolean set) throws CacheException, ACLException {
-		final String OPERATION = "ACLPermisionHandler.can" + (set ? "Get" : "Set") + "Attributes ";
+	private boolean canGetSetAttributes(String pnfsPath, Subject subject, Origin origin, FileAttribute attribute, boolean get) throws CacheException, ACLException {
+		final String OPERATION = "ACLPermisionHandler.can" + (get ? "Get" : "Set") + "Attributes ";
 		if ( IS_DEBUG_ENABLED )
 			logger.debug(OPERATION + args2String(pnfsPath, subject, origin, attribute));
 
@@ -375,7 +375,7 @@ public class ACLPermissionHandler extends AbstractPermissionHandler {
 		Boolean allowed = AclNFSv4Matcher.isAllowed(
 				AclMapper.getPermission(subject, origin, new Owner(metadata.getUid(), metadata.getGid()),
 						aclHandler.getACL(metadataX.getPnfsId().toString())),
-						(set ? Action.GETATTR : Action.SETATTR), attribute);
+						(get ? Action.GETATTR : Action.SETATTR), attribute);
 
 		boolean res = allowed != null && allowed.equals(Boolean.TRUE);
 		if ( IS_DEBUG_ENABLED )
@@ -383,8 +383,8 @@ public class ACLPermissionHandler extends AbstractPermissionHandler {
 
 		return res;
 	}
-	private boolean canGetSetAttributes(PnfsId pnfsId, Subject subject, Origin origin, FileAttribute attribute, boolean set) throws CacheException, ACLException {
-		final String OPERATION = "ACLPermisionHandler.can" + (set ? "Get" : "Set") + "Attributes ";
+	private boolean canGetSetAttributes(PnfsId pnfsId, Subject subject, Origin origin, FileAttribute attribute, boolean get) throws CacheException, ACLException {
+		final String OPERATION = "ACLPermisionHandler.can" + (get ? "Get" : "Set") + "Attributes ";
 		if ( IS_DEBUG_ENABLED )
 			logger.debug(OPERATION + args2String(pnfsId, subject, origin, attribute));
 
@@ -395,7 +395,7 @@ public class ACLPermissionHandler extends AbstractPermissionHandler {
 		Boolean allowed = AclNFSv4Matcher.isAllowed(
 				AclMapper.getPermission(subject, origin, new Owner(metadata.getUid(), metadata.getGid()),
 						aclHandler.getACL(pnfsId.toString())),
-						(set ? Action.GETATTR : Action.SETATTR), attribute);
+						(get ? Action.GETATTR : Action.SETATTR), attribute);
 
 		boolean res = allowed != null && allowed.equals(Boolean.TRUE);
 		if ( IS_DEBUG_ENABLED )
