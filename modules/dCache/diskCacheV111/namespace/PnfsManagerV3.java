@@ -969,6 +969,10 @@ public class PnfsManagerV3 extends CellAdapter {
 
             /*
              * apply defaults
+             *
+             * TODO: as soon as pnfs obsolete we can move this functionality in Chimera
+             * as a database trigger
+             *
              */
              StorageInfo si = new GenericStorageInfo();
              si.setAccessLatency(_defaultAccessLatency);
@@ -993,6 +997,14 @@ public class PnfsManagerV3 extends CellAdapter {
 
                 StorageInfo info = _storageInfoProvider.getStorageInfo( pnfsId)  ;
                 info.setKey("path", pnfsMessage.getPath() );
+
+                /*
+                 * due to legacy use of level to probe isNew() and while storing default
+                 * access latency and retention policy on create breaking this rule we have to
+                 * fix it.
+                 */
+                info.setIsNew(true);
+
                 pnfsMessage.setStorageInfo( info ) ;
                 pnfsMessage.setMetaData( _nameSpaceProvider.getFileMetaData( pnfsId ) ) ;
 
