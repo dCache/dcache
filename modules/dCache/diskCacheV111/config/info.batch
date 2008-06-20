@@ -7,18 +7,22 @@ set printout CellGlue none
 
 onerror shutdown
 
-#
+
 check -strong setupFile
-#
+
 copy file:${setupFile} context:setupContext
-#
-#  import the variables into our $context.
-#  don't overwrite already existing variables.
-#
+
+##
+##  Import the variables into our $context.
+##  Don't overwrite already existing variables.
+##
+
 import context -c setupContext
-#
-#   Make sure we got what we need.
-#
+
+##
+##   Make sure we got what we need.
+##
+
 check -strong serviceLocatorHost serviceLocatorPort
 
 create dmg.cells.services.RoutingManager  RoutingMgr
@@ -26,8 +30,11 @@ create dmg.cells.services.RoutingManager  RoutingMgr
 create dmg.cells.services.LocationManager lm \
      "${serviceLocatorHost} ${serviceLocatorPort}"
 
-#
-#  ---- Info Cell: broadcasting to "civilisation"
-#
+#   Run our own local topo cell but don't register it.
+create dmg.cells.network.TopoCell topo "none -update=100"
+
+##
+##  ---- Info Cell: broadcasting to "civilisation"
+##
 
 create  org.dcache.services.info.InfoProvider info
