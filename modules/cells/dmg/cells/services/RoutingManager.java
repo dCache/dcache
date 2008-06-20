@@ -276,4 +276,43 @@ public class RoutingManager
         updateUpstream();
         return "Done";      
     }
+    
+    /**
+     * This method returns the current state of the RoutingMgr cell as a (binary) Object.
+     * <p>
+     * NB. <b>This is a hack</b>.  The correct method of receiving information from a
+     * Cell is via a Vehicle.  However, as the RoutingMgr is within the cells module (which
+     * does not have the concept of Vehicles) this cannot be (easily) done.  Instead, we
+     * use the existing mechanism of obtaining a binary object via the admin interface and
+     * flag this functionality as something that should be improved later.
+     * 
+     * @return a representation of the RoutingManager's little brain.
+     */
+    @Deprecated
+    public Object ac_ls_$_0( Args args) {
+    	
+    	Object info;
+    	
+    	if (args.getOpt("x") == null) {
+    		// Throw together some meaningful output.
+    		ByteArrayOutputStream os = new ByteArrayOutputStream();
+    		PrintWriter pw = new PrintWriter( os); 
+        	getInfo( pw);
+        	pw.flush();
+        	info = os.toString();
+        } else {
+        	Object infoArray[] = new Object[3];
+
+        	infoArray[0] = _nucleus.getCellDomainName();
+        	infoArray[1] = _localExports;
+        	infoArray[2] = _domainHash;
+
+        	info = infoArray;
+        }
+    	
+    	return info;
+    }
+    
+    public String hh_ls = "[-x]";
+
 }
