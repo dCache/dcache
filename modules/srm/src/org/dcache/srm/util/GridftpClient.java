@@ -648,7 +648,11 @@ public class GridftpClient
                     }
             }
         say("closing client : "+_client);
-        _client.close(false);
+	try { 
+		_client.close(false);
+	}
+	catch (IOException e) { 
+	}
         say("closed client");
 
     }
