@@ -66,6 +66,8 @@ abstract public class CellMessageHandlerSkel implements CellMessageAnswerable {
 	/**
 	 *  Process the information payload.  The metricLifetime gives how long
 	 *  the metrics should last, in seconds.
+	 *  
+	 *  We guarantee that msgPayload is never null and is never instanceof Exception.
 	 */
 	abstract public void process( Object msgPayload, long metricLifetime);
 
@@ -127,6 +129,15 @@ abstract public class CellMessageHandlerSkel implements CellMessageAnswerable {
 			_log.debug( "incoming CellMessage received from " + answer.getSourceAddress());
 
 		long ttl = _msgHandlerChain.getMetricLifetime( request.getUOID());
+		
+		/**
+		 * If we receive an exception, make a note of it and don't bother the super class. 
+		 */
+		if( payload instanceof Exception) {
+			Exception e = (Exception) payload;
+			_log.info( "received exception: " + e.getMessage());
+			return;
+		}
 		
 		process( payload, ttl);
 	}
