@@ -10,6 +10,7 @@ import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageAnswerable;
 import dmg.cells.nucleus.CellNucleus;
+import dmg.cells.nucleus.CellVersion;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.Args;
 
@@ -63,6 +64,17 @@ public class InfoProvider extends CellAdapter {
 	private Map<String,StateSerialiser> _availableSerialisers;
 	private StatePath _startSerialisingFrom;
 	
+
+	/**
+	 * Correctly report our version and revision information.
+	 * @return a CellVersion for this cell.
+	 */
+    public CellVersion getCellVersion() {
+        return new CellVersion(diskCacheV111.util.Version.getVersion(),
+                               "$Revision: 9086 $");
+    }
+
+
 	
 	public InfoProvider(String name, String argstr) {
 		
