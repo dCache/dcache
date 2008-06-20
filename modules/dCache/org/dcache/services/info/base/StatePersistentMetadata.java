@@ -107,6 +107,14 @@ public class StatePersistentMetadata {
 	 *  Add a default (hard-coded) set of persistent metadata.
 	 */
 	protected void addDefault() {
+		this.add( StatePath.parsePath("domains.*"), branchMetadata( "domain", "name"));
+		this.add( StatePath.parsePath("domains.*.cells.*"), branchMetadata( "cell", "name"));
+		this.add( StatePath.parsePath("domains.*.routing.local.*"), branchMetadata( "cellref", "name"));
+		this.add( StatePath.parsePath("domains.*.routing.named-cells.*"), branchMetadata( "cell", "name"));
+		this.add( StatePath.parsePath("domains.*.routing.named-cells.*.*"), branchMetadata( "domainref", "name"));
+		this.add( StatePath.parsePath("domains.*.routing.remote.*"), branchMetadata( "domain", "name"));
+		this.add( StatePath.parsePath("domains.*.routing.remote.*.*"), branchMetadata( "cellref", "name"));
+
 		this.add( StatePath.parsePath("pools.*"), branchMetadata( "pool", "name"));
 		this.add( StatePath.parsePath("pools.*.poolgroups.*"), branchMetadata( "poolgroupref", "name"));
 		this.add( StatePath.parsePath("pools.*.queues.*"), branchMetadata( "queue", "type"));
@@ -145,8 +153,6 @@ public class StatePersistentMetadata {
 		this.add( StatePath.parsePath("doors.*"), branchMetadata( "door", "name"));
 		this.add( StatePath.parsePath("doors.*.interfaces.*"), branchMetadata( "interface", "name"));
 
-		this.add( StatePath.parsePath("domains.*"), branchMetadata( "domain", "name"));
-		this.add( StatePath.parsePath("domains.*.cells.*"), branchMetadata( "cell", "name"));
 	}
 	
 	

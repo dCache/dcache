@@ -401,6 +401,9 @@ public class DataGatheringScheduler implements Runnable {
 		addActivity( new SingleMessageDga( "topo", "gettopomap", new TopoMapHandler(), 120));
 		// Pick up cell information
 		addActivity( new CellInfoDga( new CellInfoMsgHandler()));
+		
+		// Pick up a domain's routing information.
+		addActivity( new RoutingMgrDga( new RoutingMgrMsgHandler()));
 
 		addActivity( new ListBasedMessageDga( new StatePath("pools"),      "PoolManager", "psux ls pool",   new PoolInfoMsgHandler()));
 		addActivity( new ListBasedMessageDga( new StatePath("poolgroups"), "PoolManager", "psux ls pgroup", new PoolGroupInfoMsgHandler()));
