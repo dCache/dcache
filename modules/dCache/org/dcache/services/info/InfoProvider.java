@@ -1,10 +1,12 @@
 package org.dcache.services.info;
 
 import java.io.NotSerializableException;
+import java.io.PrintWriter;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.Set;
 
 import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellMessage;
@@ -72,6 +74,31 @@ public class InfoProvider extends CellAdapter {
     public CellVersion getCellVersion() {
         return new CellVersion(diskCacheV111.util.Version.getVersion(),
                                "$Revision: 9086 $");
+    }
+
+    /**
+     * Provide information for the info command.
+     */
+    public void getInfo(PrintWriter pw)
+    {
+        pw.println("    Information about the info cell:\n");
+
+        pw.print( _conduits.size());
+        pw.print( " conduit"+ (_conduits.size()==1?"":"s") + " (");
+        int count=0;
+        for( Conduit c : _conduits.values())
+        	count += c.isEnabled() ? 1 : 0;
+        pw.print( count);
+        pw.println( " enabled)");
+        
+        pw.print( _scheduler.listActivity().size());
+        pw.println( " data-gathering activities.");
+
+        pw.print( State.getInstance().listStateWatcher().length);
+        pw.println( " state watchers.");
+        
+        pw.print( _availableSerialisers.size());
+        pw.println( " available serialisers.");
     }
 
 
