@@ -106,9 +106,10 @@ public class Version {
 	}
     
     public String toString() {
-	    String s =  specTitle + " implementation version "+specVersion+'\n';
+	    String s =  specTitle + " Client version "+specVersion+'\n';
 	    s+= copyRight + " "+specVendor+'\n';
-	    s+= "Specification Version 2.0 by SRM Working Group (http://sdm.lbl.gov/srm-wg)";
+// This is incorrect and unnecessary
+//	    s+= "Specification Version 2.0 by SRM Working Group (http://sdm.lbl.gov/srm-wg)";
 	    return s;
     }
 }
