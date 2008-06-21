@@ -215,7 +215,7 @@ public class GridftpClient
     public static String getCksmValue(RandomAccessFile diskFile,String type)
         throws IOException,NoSuchAlgorithmException
     {
-        if (type.toLowerCase().equals("adler32"))
+        if (type.equalsIgnoreCase("adler32"))
             return long32bitToHexString(getAdler32(diskFile));
 
         MessageDigest md = MessageDigest.getInstance(type);
@@ -1149,14 +1149,14 @@ public class GridftpClient
                 Reply reply = quote("SCKS "+type+" "+value);
 
                 if ( !Reply.isPositiveCompletion(reply) ){
-                    if ( type.toLowerCase().equals("adler32") ){
+                    if ( type.equalsIgnoreCase("adler32") ){
                         sendAddler32Checksum(value);
                         return;
                     }
                     throw new IOException(reply.getMessage());
                 }
             } catch ( ServerException ex ){
-                if ( type.toLowerCase().equals("adler32") ){
+                if ( type.equalsIgnoreCase("adler32") ){
                     sendAddler32Checksum(value);
                     return;
                 }
