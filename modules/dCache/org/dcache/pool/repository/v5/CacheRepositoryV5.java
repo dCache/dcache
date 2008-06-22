@@ -97,10 +97,10 @@ public class CacheRepositoryV5// extends CellCompanion
      */
     private boolean _initialised;
 
-    private static final String DEFAULT_SWEEPER =
-        "diskCacheV111.pools.SpaceSweeper0";
-    private static final String DUMMY_SWEEPER =
-        "diskCacheV111.pools.DummySpaceSweeper";
+    private static final Class DEFAULT_SWEEPER =
+        diskCacheV111.pools.SpaceSweeper0.class;
+    private static final Class DUMMY_SWEEPER =
+        diskCacheV111.pools.DummySpaceSweeper.class;
 
     /**
      * Instantiates a new sweeper. The sweeper to create is determined
@@ -110,27 +110,30 @@ public class CacheRepositoryV5// extends CellCompanion
         throws IllegalArgumentException
     {
         String sweeperClass = args.getOpt("sweeper");
-        if (args.getOpt("permanent") != null)
-            sweeperClass = DUMMY_SWEEPER;
-        else if (sweeperClass == null)
-            sweeperClass = DEFAULT_SWEEPER;
+        Class<?> c;
+        try {
+            if (args.getOpt("permanent") != null)
+                c = DUMMY_SWEEPER;
+            else if (sweeperClass == null)
+                c = DEFAULT_SWEEPER;
+            else
+                c = Class.forName(sweeperClass);
+        } catch (ClassNotFoundException e) {
+            throw new IllegalArgumentException("Could not find " + sweeperClass);
+        }
 
         try {
             Class<?>[] argClass = { dmg.cells.nucleus.CellAdapter.class,
                                     diskCacheV111.util.PnfsHandler.class,
                                     diskCacheV111.repository.CacheRepository.class };
-            Class<?> c = Class.forName(sweeperClass);
             Constructor<?> con = c.getConstructor(argClass);
             return (SpaceSweeper)con.newInstance(_cell, _pnfs, _repository);
         } catch (Exception e) {
             throw new IllegalArgumentException("Could not instantiate "
-                                               + sweeperClass + ": "
-                                               + e.getMessage());
+                                               + c + ": " + e.getMessage());
         }
     }
 
-    // REVISIT: Consider creating a new pnfs handler rather than
-    // requiring it as a parameter
     public CacheRepositoryV5(CellAdapter cell, PnfsHandler pnfs)
         throws IOException, RepositoryException
     {
@@ -731,6 +734,8 @@ public class CacheRepositoryV5// extends CellCompanion
 
     public void getInfo(PrintWriter pw)
     {
+        pw.println("Storage Mode      : "
+                   + (DUMMY_SWEEPER.isInstance(_sweeper) ? "Static" : "Dynamic"));
         pw.println("Check Repository  : " + _checkRepository);
 
         SpaceRecord space = getSpaceRecord();
