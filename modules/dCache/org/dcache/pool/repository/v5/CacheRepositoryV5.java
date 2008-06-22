@@ -429,12 +429,6 @@ public class CacheRepositoryV5// extends CellCompanion
      */
     synchronized void setState(CacheRepositoryEntry entry, EntryState state)
     {
-        // FIXME: Should we be able to mark a state anything else
-        // but REMOVED, PRECIOUS or CACHED?
-        //
-        // What if we refuse deletion? We need to be able to signal
-        // this - e.g. we cannot remove a file that is still
-        // transient. Requires serious rethinking!
         try {
             if (entry.isBad()) {
                 entry.setBad(false);
