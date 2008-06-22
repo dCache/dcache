@@ -678,6 +678,9 @@
 		<!-- pool setup template  -->
 		<copy file="${sourceDir}/${dcache.packagePrefix}/config/setup.temp" todir="${binDir}/config" />
 
+                <!-- spring files -->
+		<copy file="${sourceDir}/${dcache.packagePrefix}/config/pool.xml" todir="${binDir}/config" />
+
 		<!-- httpd images, etc -->
 		<copy todir="${binDir}/docs/images">
 			<fileset dir="${sourceDir}/${dcache.packagePrefix}/docs/images" />

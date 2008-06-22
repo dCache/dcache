@@ -38,6 +38,7 @@ import org.apache.log4j.Logger;
 import org.dcache.services.AbstractCell;
 import org.dcache.pool.FaultListener;
 import org.dcache.pool.FaultEvent;
+import org.dcache.pool.repository.v3.RepositoryException;
 import org.dcache.pool.repository.v5.CacheRepositoryV5;
 import org.dcache.pool.repository.v5.IllegalTransitionException;
 import org.dcache.pool.repository.SpaceRecord;
@@ -159,37 +160,33 @@ public class PoolV4 extends AbstractCell
     private String     _poolStatusMessage = "OK";
     private int        _poolStatusCode  = 0;
 
-    private final PnfsHandler _pnfs;
-    private final StorageClassContainer _storageQueue;
-    private final CacheRepositoryV5 _repository;
+    private PnfsHandler _pnfs;
+    private StorageClassContainer _storageQueue;
+    private CacheRepositoryV5 _repository;
 
     private String _setupManager;
     private String _pnfsManagerName = "PnfsManager";
     private String _poolManagerName = "PoolManager";
     private String _poolupDestination = "PoolManager";
-    private String _sweeperClass = "diskCacheV111.pools.SpaceSweeper0";
-    private static final String _dummySweeperClass = "diskCacheV111.pools.DummySpaceSweeper";
 
     private int _version = 4;
-    private final CellPath _billingCell ;
+    private CellPath _billingCell = new CellPath("billing");
     private final Map<String, String> _tags = new HashMap<String, String>();
-    private final String _baseDir;
+    private String _baseDir;
     private File _base;
     private File _setup;
 
     private final PoolManagerPingThread _pingThread ;
-    private final HsmFlushController _flushingThread;
-    private final JobScheduler _ioQueue ;
-    private final JobScheduler _p2pQueue;
-    private final JobTimeoutManager _timeoutManager;
-    private final HsmSet _hsmSet = new HsmSet();
-    private final HsmStorageHandler2 _storageHandler;
+    private HsmFlushController _flushingThread;
+    private JobScheduler _ioQueue ;
+    private JobScheduler _p2pQueue;
+    private JobTimeoutManager _timeoutManager;
+    private HsmSet _hsmSet;
+    private HsmStorageHandler2 _storageHandler;
     private Logable _logClass = this;
     private boolean _crashEnabled = false;
     private String _crashType = "exception";
-    private boolean _isPermanent = false;
     private boolean _allowSticky = false;
-    private boolean _waitForRepositoryOk = false;
     private long _gap = 4L * 1024L * 1024L * 1024L;
     private int _lfsMode = LFS_NONE;
     private int _p2pFileMode = P2P_CACHED;
@@ -206,18 +203,20 @@ public class PoolV4 extends AbstractCell
     private boolean _hybridInventoryActive = false;
     private int _hybridCurrent = 0;
 
-    private ChecksumModuleV1 _checksumModule = null;
-    private ReplicationHandler _replicationHandler = null;
+    private ChecksumModuleV1 _checksumModule;
+    private ReplicationHandler _replicationHandler = new ReplicationHandler();
+
+    private boolean _running = false;
+    private double _breakEven = 250.0;
 
     //
     // arguments :
     // MPP2 <poolBasePath> no default
-    // [-permanent] : default : dynamic
     // [-version=<version>] : default : 4
     // [-sticky=allowed|denied] ; default : denied
     // [-recover-space[=no]] : default : no
     // [-recover-control[=no]] : default : no
-    // [-lfs=precious]
+    // [-lfs=none|precious|volatile] : default : none
     // [-p2p=<p2pFileMode>] : default : cached
     // [-poolManager=<name>] : default : PoolManager
     // [-poolupDestination=<name>] : default : PoolManager
@@ -226,7 +225,6 @@ public class PoolV4 extends AbstractCell
     // [-dupRequest=none|ignore|refresh]: default : ignore
     // [-allowCleaningPreciousFiles] : default : false
     // [-checkRepository] : default : true
-    // [-waitForRepositoryOk] : default : false
     // [-replicateOnArrival[=[Manager],[host],[mode]]] : default :
     // PoolManager,thisHost,keep
     //
@@ -249,7 +247,6 @@ public class PoolV4 extends AbstractCell
         say("Pool " + poolName + " starting");
 
         try {
-
             //
             // repository and ping thread must exist BEFORE the
             // setup file is scanned. PingThread will be start
@@ -258,33 +255,6 @@ public class PoolV4 extends AbstractCell
             _pingThread = new PoolManagerPingThread();
 
             disablePool(PoolV2Mode.DISABLED_STRICT, 1, "Initializing");
-
-            if (argc < 1) {
-                throw new IllegalArgumentException("no base dir specified");
-            }
-
-            _baseDir = _args.argv(0);
-
-            String versionString = _args.getOpt("version");
-            if (versionString != null) {
-                try {
-                    _version = Integer.parseInt(versionString);
-                } catch (NumberFormatException e) { /* bad string, ignored */}
-            }
-
-            _isPermanent = _args.getOpt("permanent") != null;
-
-            String stickyString = _args.getOpt("sticky");
-            if (stickyString != null)
-                _allowSticky = stickyString.equals("allowed");
-            say("Sticky files : " + (_allowSticky ? "allowed" : "denied"));
-
-            String sweeperClass = _args.getOpt("sweeper");
-            if (sweeperClass != null)
-                _sweeperClass = sweeperClass;
-            if (_isPermanent)
-                _sweeperClass = _dummySweeperClass;
-            say("Using sweeper : " + _sweeperClass);
 
             String recover = _args.getOpt("recover-control");
             if ((recover != null) && (!recover.equals("no"))) {
@@ -297,143 +267,225 @@ public class PoolV4 extends AbstractCell
                 say("Enabled : recover-space");
             }
 
-            recover = _args.getOpt("waitForRepositoryReady");
-            if (recover != null) {
-                if (recover.equals("yes") || recover.equals("true")) {
-                    _waitForRepositoryOk = true;
-                } else if (recover.equals("no") || recover.equals("false")) {
-                    _waitForRepositoryOk = false;
-                }
-            }
-            say("waitForRepositoryReady : " + _waitForRepositoryOk);
-
             recover = _args.getOpt("recover-anyway");
             if ((recover != null) && (!recover.equals("no"))) {
                 _recoveryFlags |= CacheRepository.ALLOW_RECOVER_ANYWAY;
                 say("Enabled : recover-anyway");
             }
 
-            recover = _args.getOpt("replicateOnArrival");
-            if (recover == null) {
-                _replicationHandler = new ReplicationHandler();
-            } else {
-                _replicationHandler = new ReplicationHandler(recover.equals("") ? "on" : recover);
-            }
-            say("ReplicationHandler : " + _replicationHandler);
-
-            /**
-             * If cleaner sends its remove list, do we allow to remove precious
-             * files for HSM connected pools ?
-             */
-            recover = _args.getOpt("allowCleaningPreciousFiles");
-
-            _cleanPreciousFiles = (recover != null)
-                && (recover.equalsIgnoreCase("yes") || recover.equalsIgnoreCase("true"));
-
-            say("allowCleaningPreciousFiles : " + _cleanPreciousFiles);
-
-            String lfsModeString = _args.getOpt("lfs");
-            lfsModeString = lfsModeString == null ? _args
-                .getOpt("largeFileStore") : lfsModeString;
-            if (lfsModeString == null || lfsModeString.equals("none")) {
-                _lfsMode = LFS_NONE;
-            } else if (lfsModeString.equals("precious") || lfsModeString.equals("")){
-                _lfsMode = LFS_PRECIOUS;
-            } else if (lfsModeString.equals("volatile") || lfsModeString.equals("precious")) {
-                _lfsMode = LFS_VOLATILE;
-            } else {
-                throw new IllegalArgumentException("lfs=[none|precious|volatile|transient]");
-            }
-            say("LargeFileStore Mode : "
-                + (_lfsMode == LFS_NONE ? "None" : "Precious"));
-
-            lfsModeString = _args.getOpt("p2p");
-            lfsModeString = lfsModeString == null ? _args.getOpt("p2pFileMode")
-                : lfsModeString;
-            if (lfsModeString != null) {
-                if (lfsModeString.equals("precious")) {
-
-                    _p2pFileMode = P2P_PRECIOUS;
-
-                } else if (lfsModeString.equals("cached")) {
-
-                    _p2pFileMode = P2P_CACHED;
-
-                } else {
-                    throw new IllegalArgumentException("p2p=precious|cached");
-                }
-            } else {
-                _p2pFileMode = P2P_CACHED;
-            }
-            say("Pool2Pool File Mode : "
-                + (_p2pFileMode == P2P_CACHED ? "cached" : "precious"));
-
-            String dupString = _args.getOpt("dupRequest");
-            if ((dupString == null) || dupString.equals("none")) {
-                _dupRequest = DUP_REQ_NONE;
-            } else if (dupString.equals("ignore")) {
-                _dupRequest = DUP_REQ_IGNORE;
-            } else if (dupString.equals("refresh")) {
-                _dupRequest = DUP_REQ_REFRESH;
-            } else {
-                esay("Illegal 'dupRequest' value : " + dupString
-                     + " (using 'none')");
-            }
-            say("DuplicateRequest Mode : "
-                + (_dupRequest == DUP_REQ_NONE ? "None"
-                   : _dupRequest == DUP_REQ_IGNORE ? "Ignore"
-                   : "Refresh"));
-
-            String tmp = _args.getOpt("poolManager");
-            _poolManagerName = tmp == null ? _poolManagerName : tmp;
-
-            say("PoolManagerName : " + _poolManagerName);
-
-            tmp = _args.getOpt("poolupDestination");
-            if (tmp != null)
-                _poolupDestination = tmp;
-            else
-                _poolupDestination = _poolManagerName;
-            say("Pool up destination: " + _poolupDestination);
-
-            tmp = _args.getOpt("billing");
-            if (tmp != null) {
-                _billingCell = new CellPath(tmp);
-            }else{
-                _billingCell = new CellPath("billing");
-            }
-
-            say("Billing Cell : " + _billingCell);
-
-            _setupManager = _args.getOpt("setupManager");
-            say("SetupManager set to "
-                + (_setupManager == null ? "none" : _setupManager));
-
             //
             // get additional tags
             //
-            {
-                for (Enumeration<String> options = _args.options().keys(); options
-                         .hasMoreElements();) {
+            for (Enumeration<String> options = _args.options().keys(); options
+                     .hasMoreElements();) {
 
-                    String key = options.nextElement();
-                    say("Tag scanning : " + key);
-                    if ((key.length() > 4) && key.startsWith("tag.")) {
-                        _tags.put(key.substring(4), _args.getOpt(key));
-                    }
-                }
-                for (Map.Entry<String, String> e: _tags.entrySet() ) {
-
-                    say(" Extra Tag Option : " + e.getKey() + " -> "+ e.getValue());
+                String key = options.nextElement();
+                say("Tag scanning : " + key);
+                if ((key.length() > 4) && key.startsWith("tag.")) {
+                    _tags.put(key.substring(4), _args.getOpt(key));
                 }
             }
+            for (Map.Entry<String, String> e: _tags.entrySet() ) {
 
-            say("Checking base directory ( reading setup) " + _baseDir);
-            _base = new File(_baseDir);
-            _setup = new File(_base, "setup");
+                say(" Extra Tag Option : " + e.getKey() + " -> "+ e.getValue());
+            }
+        } catch (Exception e) {
+            say("Exception occurred on startup: " + e);
+            start();
+            kill();
+            throw e;
+        }
+    }
 
+    protected void assertNotRunning(String error)
+    {
+        if (_running)
+            throw new IllegalStateException(error);
+    }
+
+    public void setBaseDir(String baseDir)
+    {
+        assertNotRunning("Cannot change base dir after initialisation");
+        _baseDir = baseDir;
+        _base = new File(_baseDir);
+        _setup = new File(_base, "setup");
+    }
+
+    public void setVersion(int version)
+    {
+        _version = version;
+    }
+
+    public void setStickyAllowed(boolean sticky)
+    {
+        _allowSticky = sticky;
+        if (_storageHandler != null)
+            _storageHandler.setStickyAllowed(sticky);
+    }
+
+    public void setStickyAllowed(String sticky)
+    {
+        setStickyAllowed("allowed".equals(sticky));
+    }
+
+    public void setReplicateOnArrival(String replicate)
+    {
+        _replicationHandler =
+            new ReplicationHandler(replicate.equals("") ? "on" : replicate);
+    }
+
+    public void setAllowCleaningPreciousFiles(boolean allow)
+    {
+        _cleanPreciousFiles = allow;
+    }
+
+    public void setLFSMode(String lfs)
+    {
+        if (lfs == null || lfs.equals("none")) {
+            _lfsMode = LFS_NONE;
+        } else if (lfs.equals("precious") || lfs.equals("")){
+            _lfsMode = LFS_PRECIOUS;
+        } else if (lfs.equals("volatile") || lfs.equals("transient")) {
+            _lfsMode = LFS_PRECIOUS;
+        } else {
+            throw new IllegalArgumentException("lfs=[none|precious|volatile]");
+        }
+        if (_repository != null)
+            _repository.setVolatile(_lfsMode == LFS_VOLATILE);
+    }
+
+    public void setP2PMode(String mode)
+    {
+        if (mode == null) {
+            _p2pFileMode = P2P_CACHED;
+        } else if (mode.equals("precious")) {
+            _p2pFileMode = P2P_PRECIOUS;
+        } else if (mode.equals("cached")) {
+            _p2pFileMode = P2P_CACHED;
+        } else {
+            throw new IllegalArgumentException("p2p=precious|cached");
+        }
+    }
+
+    public void setDuplicateRequestMode(String mode)
+    {
+        if (mode == null || mode.equals("none")) {
+            _dupRequest = DUP_REQ_NONE;
+        } else if (mode.equals("ignore")) {
+            _dupRequest = DUP_REQ_IGNORE;
+        } else if (mode.equals("refresh")) {
+            _dupRequest = DUP_REQ_REFRESH;
+        } else {
+            throw new IllegalArgumentException("Illegal 'dupRequest' value");
+        }
+    }
+
+    public void setPoolManagerName(String name)
+    {
+        _poolManagerName = name;
+    }
+
+    public void setPoolUpDestination(String name)
+    {
+        _poolupDestination = name;
+    }
+
+    public void setBillingCellName(String name)
+    {
+        _billingCell = new CellPath(name);
+    }
+
+    public void setSetupMananger(String name)
+    {
+        _setupManager = name;
+    }
+
+    public void setPnfsHandler(PnfsHandler pnfs)
+    {
+        _pnfs = pnfs;
+    }
+
+    public void setRepository(CacheRepositoryV5 repository)
+    {
+        if (_repository != null)
+            _repository.removeFaultListener(this);
+        _repository = repository;
+        _repository.addFaultListener(this);
+        _repository.addListener(new RepositoryLoader());
+        _repository.addListener(new NotifyBillingOnRemoveListener());
+        _repository.addListener(new HFlagMaintainer());
+        _repository.setVolatile(_lfsMode == LFS_VOLATILE);
+    }
+
+    public void setChecksumModule(ChecksumModuleV1 module)
+    {
+        assertNotRunning("Cannot set checksum module after initialization");
+        _checksumModule = module;
+        addCommandListener(_checksumModule);
+    }
+
+    public void setStorageQueue(StorageClassContainer queue)
+    {
+        assertNotRunning("Cannot set storage queue after initialization");
+        _storageQueue = queue;
+        addCommandListener(_storageQueue);
+    }
+
+    public void setStorageHandler(HsmStorageHandler2 handler)
+    {
+        _storageHandler = handler;
+        _storageHandler.setStickyAllowed(_allowSticky);
+    }
+
+    public void setHSMSet(HsmSet set)
+    {
+        assertNotRunning("Cannot set HSM set after initialization");
+        _hsmSet = set;
+        addCommandListener(_hsmSet);
+    }
+
+    public void setTimeoutManager(JobTimeoutManager manager)
+    {
+        assertNotRunning("Cannot set timeout manager after initialization");
+        _timeoutManager = manager;
+        addCommandListener(_timeoutManager);
+    }
+
+    public void setFlushController(HsmFlushController controller)
+    {
+        assertNotRunning("Cannot set flushing controller after initialization");
+        _flushingThread = controller;
+        addCommandListener(_flushingThread);
+    }
+
+    public void setPPClient(P2PClient client)
+    {
+        assertNotRunning("Cannot set P2P client after initialization");
+        _p2pClient = client;
+        addCommandListener(_p2pClient);
+    }
+
+
+    public void init()
+        throws InterruptedException, IOException,
+               RepositoryException, CommandException
+    {
+        assertNotRunning("Cannot initialize several times");
+
+        assert _baseDir != null : "Base directory must be set";
+        assert _pnfs != null : "PNFS handler must be set";
+        assert _repository != null : "Repository must be set";
+        assert _checksumModule != null : "Checksum module must be set";
+        assert _storageQueue != null : "Storage queue must be set";
+        assert _storageHandler != null : "Storage handler must be set";
+        assert _hsmSet != null : "HSM set must be set";
+        assert _timeoutManager != null : "Timeout manager must be set";
+        assert _flushingThread != null : "Flush controller must be set";
+        assert _p2pClient != null : "P2P client must be set";
+
+        try {
             while (!_setup.canRead()) {
-                disablePool(PoolV2Mode.DISABLED_STRICT,1,"Initializing : Repository seems not to be ready - setup file does not exist or not readble");
+                disablePool(PoolV2Mode.DISABLED_STRICT,1,"Initializing : Repository seems not to be ready - setup file does not exist or not readable");
                 esay("Can't read setup file: exists? " +
                      Boolean.toString(_setup.exists()) + " can read? " + Boolean.toString(_setup.canRead()) );
                 try {
@@ -443,71 +495,32 @@ public class PoolV4 extends AbstractCell
                     throw new InterruptedException("Waiting for repository was interrupted");
                 }
             }
-            say("Base dir ok");
-
-            _pnfs = new PnfsHandler(this, new CellPath(_pnfsManagerName), _poolName);
-            _repository = new CacheRepositoryV5(this, _pnfs);
-            _repository.addFaultListener(this);
-            _repository.setVolatile(_lfsMode == LFS_VOLATILE);
-            _checksumModule = new ChecksumModuleV1(this, _repository, _pnfs);
-
-            _storageQueue = new StorageClassContainer(_repository, poolName);
-            _storageHandler = new HsmStorageHandler2(this, _repository, _hsmSet, _pnfs, _checksumModule);
-            _storageHandler.setStickyAllowed(_allowSticky);
-
-            //
-            // transfer queue management
-            //
-            _timeoutManager = new JobTimeoutManager(this);
-            //
-            // _ioQueue = new SimpleJobScheduler( getNucleus().getThreadGroup()
-            // , "IO" ) ;
-            // _ioQueue.setSchedulerId( "regular" , 2 ) ;
-            // _timeoutManager.addScheduler( "io" , _ioQueue ) ;
-            //
-            // _ioQueueManager = new IoQueueManager(
-            // getNucleus().getThreadGroup() ,
-            // _args.getOpt("io-queues" ) ) ;
-            // _ioQueue = _ioQueueManager.getDefaultScheduler() ;
 
             _ioQueue = new IoQueueManager(getNucleus(), _args.getOpt("io-queues"));
 
             _p2pQueue = new SimpleJobScheduler(getNucleus(), "P2P");
 
-            _flushingThread = new HsmFlushController(this, _storageQueue,
-                                                     _storageHandler);
-
-            _p2pClient = new P2PClient(this, _repository, _checksumModule);
-
             _timeoutManager.addScheduler("p2p", _p2pQueue);
             _timeoutManager.start();
-            addCommandListener(_timeoutManager);
 
             //
             // add the command listeners before we execute the setupFile.
             //
 
-            addCommandListener(_hsmSet);
-            addCommandListener(_storageQueue);
             addCommandListener(new HsmStorageInterpreter(this, _storageHandler, _pnfs));
-            addCommandListener(_flushingThread);
-            addCommandListener(_p2pClient);
-            addCommandListener(_checksumModule);
 
             execFile(_setup);
 
-        } catch (Exception e) {
-            say("Exception occurred on startup: " + e);
-            start();
-            kill();
-            throw e;
+            _running = true;
+
+        } finally {
+            if (!_running) {
+                start();
+                kill();
+            }
         }
 
         _pingThread.start();
-
-        _repository.addListener(new RepositoryLoader());
-        _repository.addListener(new NotifyBillingOnRemoveListener());
-        _repository.addListener(new HFlagMaintainer());
 
         start();
 
@@ -517,9 +530,9 @@ public class PoolV4 extends AbstractCell
                 .start();
             try {
                 weAreDone.wait();
-            } catch (InterruptedException ee) {
+            } catch (InterruptedException e) {
                 kill();
-                throw ee;
+                throw e;
             }
             _logClass.elog("Starting Flushing Thread");
             _flushingThread.start();
@@ -791,7 +804,8 @@ public class PoolV4 extends AbstractCell
     {
         disablePool(PoolV2Mode.DISABLED_DEAD | PoolV2Mode.DISABLED_STRICT,
                     666, "Shutdown");
-        _repository.shutdown();
+        if (_repository != null)
+            _repository.shutdown();
     }
 
     /**
@@ -1026,8 +1040,6 @@ public class PoolV4 extends AbstractCell
         pw.println("Hsm Load Suppr.   : " + (_suppressHsmLoad ? "on" : "off"));
         pw.println("Ping Heartbeat    : " + _pingThread.getHeartbeat()
                    + " seconds");
-        pw.println("Storage Mode      : "
-                   + (_isPermanent ? "Static" : "Dynamic"));
         pw.println("ReplicationMgr    : " + _replicationHandler);
         switch (_lfsMode) {
         case LFS_NONE:
@@ -1720,8 +1732,10 @@ public class PoolV4 extends AbstractCell
     }
 
     private void checkFile(PoolFileCheckable poolMessage)
+        throws CacheException
     {
-        switch (_repository.getState(poolMessage.getPnfsId())) {
+        PnfsId id = poolMessage.getPnfsId();
+        switch (_repository.getState(id)) {
         case PRECIOUS:
         case CACHED:
             poolMessage.setHave(true);
@@ -1733,6 +1747,9 @@ public class PoolV4 extends AbstractCell
             poolMessage.setHave(false);
             poolMessage.setWaiting(true);
             break;
+        case BROKEN:
+            throw new CacheException(CacheException.DEFAULT_ERROR_CODE,
+                                     id.toString() + " is broken in " + _poolName);
         default:
             poolMessage.setHave(false);
             poolMessage.setWaiting(false);
@@ -1922,7 +1939,6 @@ public class PoolV4 extends AbstractCell
 
             PoolIoFileMessage msg = (PoolIoFileMessage) poolMessage;
 
-            say("PoolIoFileMessage delivered to ioFile (method)");
             if (((poolMessage instanceof PoolAcceptFileMessage)
                  && _poolMode.isDisabled(PoolV2Mode.DISABLED_STORE))
                 || ((poolMessage instanceof PoolDeliverFileMessage)
@@ -1999,21 +2015,22 @@ public class PoolV4 extends AbstractCell
             checkFreeSpace((PoolCheckFreeSpaceMessage) poolMessage);
 
         } else if (poolMessage instanceof PoolCheckable) {
+            try {
+                if (_poolMode.isDisabled(PoolV2Mode.DISABLED) ||
+                    _poolMode.isDisabled(PoolV2Mode.DISABLED_FETCH)) {
 
-            if( _poolMode.isDisabled(PoolV2Mode.DISABLED) ||
-                _poolMode.isDisabled(PoolV2Mode.DISABLED_FETCH)){
+                    esay("PoolCheckable Request rejected due to " + _poolMode);
+                    sentNotEnabledException(poolMessage, cellMessage);
+                    return;
+                }
 
-                esay("PoolCheckable Request rejected due to " + _poolMode);
-                sentNotEnabledException(poolMessage, cellMessage);
-                return;
-
-            }
-
-            if (poolMessage instanceof PoolFileCheckable) {
-                checkFile((PoolFileCheckable) poolMessage);
+                if (poolMessage instanceof PoolFileCheckable) {
+                    checkFile((PoolFileCheckable) poolMessage);
+                }
                 poolMessage.setSucceeded();
+            } catch (CacheException e) {
+                poolMessage.setFailed(e.getRc(), e.getMessage());
             }
-
         } else if (poolMessage instanceof PoolUpdateCacheStatisticsMessage) {
 
             updateCacheStatistics((PoolUpdateCacheStatisticsMessage) poolMessage);
@@ -2056,7 +2073,6 @@ public class PoolV4 extends AbstractCell
         if (!replyRequired)
             return;
         try {
-            say("Sending reply " + poolMessage);
             cellMessage.revertDirection();
             sendMessage(cellMessage);
         } catch (NotSerializableException e) {
@@ -2095,7 +2111,6 @@ public class PoolV4 extends AbstractCell
                                          CellMessage cellMessage)
     {
         try {
-            say("Sending reply " + poolMessage);
             poolMessage.setFailed(104, "Pool is disabled");
             cellMessage.revertDirection();
             sendMessage(cellMessage);
@@ -2211,7 +2226,8 @@ public class PoolV4 extends AbstractCell
                                              _poolMode, info);
 
             poolManagerMessage.setTagMap(_tags);
-            poolManagerMessage.setHsmInstances(new TreeSet<String>(_hsmSet.getHsmInstances()));
+            if (_hsmSet != null)
+                poolManagerMessage.setHsmInstances(new TreeSet<String>(_hsmSet.getHsmInstances()));
             poolManagerMessage.setMessage(_poolStatusMessage);
             poolManagerMessage.setCode(_poolStatusCode);
 
@@ -2288,64 +2304,6 @@ public class PoolV4 extends AbstractCell
         return "BreakEven = " + _breakEven;
     }
 
-    public String hh_get_cost = " [filesize] # get space and performance cost";
-
-    public String ac_get_cost_$_0_1(Args args)
-    {
-        return "DEPRICATED # cost now solely calculated in PoolManager";
-        /*
-         * long filesize = 0 ; if( args.argc() > 0 )filesize =
-         * Long.parseLong(args.argv(0));
-         *
-         * PoolCheckCostMessage m = new PoolCheckCostMessage(
-         * _nucleus.getCellName() , filesize ) ;
-         *
-         * checkCost( m ) ; return m.toString() ;
-         */
-    }
-
-    private double _breakEven = 250.0;
-
-    /*
-     * private CostCalculationEngine _costCalculationEngine = new
-     * CostCalculationEngine("V5") ;
-     *
-     * private void checkCost( PoolCostCheckable poolMessage ) {
-     *
-     * CostCalculatable cost = _costCalculationEngine.getCostCalculatable(
-     * getPoolCostInfo() ) ;
-     *
-     * cost.recalculate( poolMessage.getFilesize() ) ;
-     *
-     *
-     * if( _simSpaceCost > (double)(-1.0) ){
-     *
-     * poolMessage.setSpaceCost( _simSpaceCost ) ;
-     *
-     * }else if( ! _isPermanent ){
-     *
-     * poolMessage.setSpaceCost( cost.getSpaceCost() ) ;
-     *
-     * }else{
-     *
-     * poolMessage.setSpaceCost( (double)200000000.0 );
-     *  }
-     *
-     * if( _simCpuCost > (double) (-1.0))
-     *
-     * poolMessage.setPerformanceCost( _simCpuCost ) ;
-     *
-     *
-     * else
-     *
-     * poolMessage.setPerformanceCost( cost.getSpaceCost() );
-     *
-     * poolMessage.setSucceeded(); say("checking cost for
-     * PoolCheckCostMessage["+poolMessage+"]"); }
-     *
-     *
-     */
-
     private synchronized void removeFiles(PoolRemoveFilesMessage poolMessage)
     {
         String[] fileList = poolMessage.getFiles();
@@ -2356,10 +2314,9 @@ public class PoolV4 extends AbstractCell
                 if (!_cleanPreciousFiles && _lfsMode == LFS_NONE
                     && _repository.getState(pnfsId) == EntryState.PRECIOUS) {
                     counter++;
-                    say("removeFiles : File " + fileList[i] + " kept. (precious)");
+                    esay("removeFiles : File " + fileList[i] + " kept. (precious)");
                 } else {
                     _repository.setState(pnfsId, EntryState.REMOVED);
-                    say("removeFiles : File " + fileList[i] + " deleted.");
                     fileList[i] = null;
                 }
             } catch (IllegalTransitionException e) {
@@ -2554,18 +2511,7 @@ public class PoolV4 extends AbstractCell
     public String hh_pool_lfs = "none|precious # FOR DEBUG ONLY";
     public String ac_pool_lfs_$_1(Args args) throws CommandSyntaxException
     {
-        String mode = args.argv(0);
-        if (mode.equals("none")) {
-            _lfsMode = LFS_NONE;
-        } else if (mode.equals("precious")) {
-            _lfsMode = LFS_PRECIOUS;
-        } else if (mode.equals("volatile") || mode.equals("transient")) {
-            _lfsMode = LFS_VOLATILE;
-        } else {
-            throw new CommandSyntaxException("Not Found : ",
-                                             "Usage : pool lfs none|precious");
-        }
-        _repository.setVolatile(_lfsMode == LFS_VOLATILE);
+        setLFSMode(args.argv(0));
         return "";
     }
 
@@ -2714,13 +2660,12 @@ public class PoolV4 extends AbstractCell
         if (args.argc() > 0) {
             String mode = args.argv(0);
             if (mode.equals("allowed")) {
-                _allowSticky = true;
+                setStickyAllowed(true);
             } else if (mode.equals("denied")) {
-                _allowSticky = false;
+                setStickyAllowed(false);
             } else
                 throw new IllegalArgumentException("set sticky allowed|denied");
         }
-        _storageHandler.setStickyAllowed(_allowSticky);
         return "Sticky Bit " + (_allowSticky ? "allowed" : "denied");
     }
 

@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+           http://www.springframework.org/schema/beans/spring-beans-2.5.xsd">
+
+  
+  <!-- This bean makes configuration data available as shell like
+       ${...}  placeholders. domaincontext: is a resource provided by
+       my Cell/Spring glue code and contains the domain context. Those
+       values override the properties defined below, which thus become
+       default values in case the domain context doesn't define them.
+  -->
+  <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+    <property name="location" value="domaincontext:"/>
+    <property name="properties">
+      <value>
+        poolIoQueue=
+        checkRepository=true
+        waitForRepositoryReady=false
+        gsiftpAllowPassivePool=true
+        metaDataRepository=org.dcache.pool.repository.meta.file.FileMetaDataRepository
+        metaDataRepositoryImport=
+        gsiftpReadAhead=16777216
+        allowCleaningPreciousFiles=false
+        poolupDestination=PoolManager
+        lfs=none
+        sticky=allowed
+        pnfsmanager=PnfsManager
+      </value>
+    </property>
+  </bean>
+
+  <!-- The pool cell. Since some legacy components rely on getting
+       configuration settings via the cell arguments, I still need to
+       specify those. This can be changed once they are also managed
+       by the Spring IoC container.
+       
+       Properties are mapped to setters in normal JavaBean
+       fashion. Notice that most of these properties are reference to
+       other beans.
+
+       We also use Spring's support for initialisation methods. Once
+       the cell has been instantiated and all properties set, Spring
+       calls the init method. In the init method I start the cell
+       message delivery and initiate the inventory construction.
+  -->
+  <bean id="cell" class="org.dcache.pool.classic.PoolV4" init-method="init">
+    <constructor-arg index="0" value="${poolname}"/>
+    <constructor-arg index="1" value="
+        !MoverMap 
+        ${pooldir}
+        -recover-control=yes 
+        -io-queues=${poolIoQueue} 
+        -checkRepository=${checkRepository} 
+        -sendHitInfoMessages=no 
+        -allowPassivePool=${gsiftpAllowPassivePool} 
+        -allowMmap=false 
+        -metaDataRepository=${metaDataRepository} 
+        -metaDataRepositoryImport=${metaDataRepositoryImport} 
+        -sweeper=diskCacheV111.pools.SpaceSweeper2
+        ${arguments}"/>
+
+    <property name="baseDir"
+              value="${pooldir}"/>
+    <property name="version" 
+              value="4"/>
+    <property name="poolUpDestination" 
+              value="${poolupDestination}"/>
+    <property name="stickyAllowed" 
+              value="${sticky}"/>
+    <property name="allowCleaningPreciousFiles" 
+              value="${allowCleaningPreciousFiles}"/>
+    <property name="LFSMode" 
+              value="${lfs}"/>
+
+    <property name="pnfsHandler" ref="pnfs"/>
+    <property name="repository" ref="repository"/>
+    <property name="checksumModule" ref="checksum"/>
+    <property name="storageQueue" ref="storagequeue"/>
+    <property name="storageHandler" ref="storagehandler"/>
+    <property name="HSMSet" ref="hsmset"/>
+    <property name="timeoutManager" ref="timeout"/>
+    <property name="flushController" ref="flush"/>
+    <property name="PPClient" ref="p2p"/>
+  </bean>
+
+  <!-- The PnfsHandler class takes a CellPath constructor
+       argument. Notice how we can instantiate such an object
+       'inline'. Spring calls this an anonymous bean, since we didn't
+       give it a name and we cannot reference it from anywhere else.
+  -->
+  <bean id="pnfs" class="diskCacheV111.util.PnfsHandler">
+    <constructor-arg ref="cell"/>
+    <constructor-arg>
+      <bean class="dmg.cells.nucleus.CellPath">
+        <constructor-arg value="${pnfsmanager}"/>
+      </bean>
+    </constructor-arg>
+    <constructor-arg value="${poolname}"/>
+  </bean>
+
+  <bean id="repository" class="org.dcache.pool.repository.v5.CacheRepositoryV5">
+    <constructor-arg ref="cell"/>
+    <constructor-arg ref="pnfs"/>
+  </bean>
+
+  <bean id="checksum" class="org.dcache.pool.classic.ChecksumModuleV1">
+    <constructor-arg ref="cell"/>
+    <constructor-arg ref="repository"/>
+    <constructor-arg ref="pnfs"/>
+  </bean>
+
+  <bean id="storagequeue" class="org.dcache.pool.classic.StorageClassContainer">
+    <constructor-arg ref="repository"/>
+    <constructor-arg value="${poolname}"/>
+  </bean>
+
+  <bean id="hsmset" class="diskCacheV111.util.HsmSet"/>
+
+  <bean id="storagehandler" class="org.dcache.pool.classic.HsmStorageHandler2">
+    <constructor-arg ref="cell"/>
+    <constructor-arg ref="repository"/>
+    <constructor-arg ref="pnfs"/>
+    <constructor-arg ref="hsmset"/>
+    <constructor-arg ref="checksum"/>
+  </bean>
+
+  <bean id="timeout" class="diskCacheV111.pools.JobTimeoutManager">
+    <constructor-arg ref="cell"/>
+  </bean>
+
+  <bean id="flush" class="org.dcache.pool.classic.HsmFlushController">
+    <constructor-arg ref="cell"/>
+    <constructor-arg ref="storagequeue"/>
+    <constructor-arg ref="storagehandler"/>
+  </bean>
+
+  <bean id="p2p" class="org.dcache.pool.classic.P2PClient">
+    <constructor-arg ref="cell"/>
+    <constructor-arg ref="repository"/>
+    <constructor-arg ref="checksum"/>
+  </bean>
+
+</beans>

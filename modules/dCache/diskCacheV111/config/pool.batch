@@ -85,6 +85,15 @@ define context startPools endDefine
   -${2} -${3} -${4} -${5} -${6} -${7} -${8} \
 "
 endDefine
+
+# Use the following to activate the new pool code.
+#
+#define context startPools endDefine
+#  create org.dcache.util.SpringCell spring* \
+#    "file:${ourHomeDir}/config/pool.xml \
+#    -poolname=${0} -pooldir=${1} -${2} -${3} -${4} -${5} -${6} -${7} -${8}"
+#endDefine
+
 #
 # oh weia
 #
