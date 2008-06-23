@@ -24,11 +24,12 @@ public class PoolCostInfo implements java.io.Serializable {
 
         }
         public String getName(){ return _name ; }
+        @Override
         public String toString(){
            return _name+"={"+super.toString()+"}" ;
         }
     }
-    public class PoolQueueInfo implements java.io.Serializable {
+    public static class PoolQueueInfo implements java.io.Serializable {
 
         private int _active    = 0;
         private int _maxActive =0 ;
@@ -40,6 +41,7 @@ public class PoolCostInfo implements java.io.Serializable {
            _queued    = queued ;
 
         }
+        @Override
         public String toString(){ return "a="+_active+";m="+_maxActive+";q="+_queued ; }
         public int getActive(){ return _active ; }
         public int getMaxActive(){ return _maxActive ; }
@@ -60,18 +62,33 @@ public class PoolCostInfo implements java.io.Serializable {
     public PoolQueueInfo getP2pClientQueue(){ return _p2pClient ; }
     public PoolSpaceInfo getSpaceInfo(){ return _space ; }
 
-    public class PoolSpaceInfo implements java.io.Serializable {
+    public static class PoolSpaceInfo implements java.io.Serializable {
         private long _total = 0 , _free = 0 , _precious = 0 , _removable = 0 , _lru = 0 ;
         private long _gap   = 0 ;
         private double _breakEven = 0;
-        private PoolSpaceInfo( long total , long free , long precious , long removable ){
-           _total     = total ;
-           _free      = free ;
-           _precious  = precious ;
-           _removable = removable ;
 
+        private PoolSpaceInfo( long total , long free , long precious , long removable ){
+            this(total, free, precious, removable, 0);
         }
+
         private PoolSpaceInfo( long total , long free , long precious , long removable , long lru ){
+
+            if( total < free ) {
+                throw new IllegalArgumentException("total >= free");
+            }
+
+            if( total < precious ) {
+                throw new IllegalArgumentException("total >= precious");
+            }
+
+            if( total < removable ) {
+                throw new IllegalArgumentException("total >= removable");
+            }
+
+            if( total < free + removable + precious ) {
+                throw new IllegalArgumentException("total >= free + removable + precious");
+            }
+
            _total     = total ;
            _free      = free ;
            _precious  = precious ;
@@ -82,6 +99,7 @@ public class PoolCostInfo implements java.io.Serializable {
            _breakEven = breakEven ;
            _gap       = gap ;
         }
+        @Override
         public String toString(){
            return "t="+_total+
                   ";f="+_free+
@@ -134,6 +152,7 @@ public class PoolCostInfo implements java.io.Serializable {
     public void setP2pClientQueueSizes( int p2pClientActive     , int p2pClientMaxActive     , int p2pClientQueued ){
        _p2pClient = new PoolQueueInfo( p2pClientActive   , p2pClientMaxActive   , p2pClientQueued ) ;
     }
+    @Override
     public String toString() {
        StringBuffer sb = new StringBuffer() ;
 
