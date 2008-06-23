@@ -1377,7 +1377,6 @@ public String command( String c ) throws CommandExitException {
 						} catch (FileNotFoundException e) {
 							throw new CommandException(66,
 									"Context not found : " + context);
-						} catch (CommandExitException cee) {
 						}
 					}
 				} catch (IOException ioe) {
@@ -1504,24 +1503,15 @@ public String command( String c ) throws CommandExitException {
       //
       try{
          while( ( line = bRead.readLine() ) != null ){
-            try{
-               Object answer = shell.objectCommand( line ) ;
-               if( answer == null )continue ;
-               if( sb != null ){
-                   String str = answer.toString() ;
-                   sb.append( str ) ;
-                   if( ( str.length() > 0 ) &&
-                       ( str.charAt(str.length()-1) != '\n' ) )
-                       sb.append( '\n' ) ;
-               }
-            }catch( CommandExitException cee ){
-               //
-               // errorCode and errorMsg are set by the  objectCommand.
-               //
-               sb.append( "Exit from 'source' rc="+_errorCode+
-                          ";msg="+(_errorMsg==null?"<none>":_errorMsg)+"\n") ;
-               break ;
-            }
+             Object answer = shell.objectCommand( line ) ;
+             if( answer == null )continue ;
+             if( sb != null ){
+                 String str = answer.toString() ;
+                 sb.append( str ) ;
+                 if( ( str.length() > 0 ) &&
+                     ( str.charAt(str.length()-1) != '\n' ) )
+                     sb.append( '\n' ) ;
+             }
          }
       }catch( IOException e ){
          throw new
