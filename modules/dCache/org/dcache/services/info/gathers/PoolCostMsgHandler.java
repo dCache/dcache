@@ -142,6 +142,8 @@ public class PoolCostMsgHandler extends CellMessageHandlerSkel {
 	 *  |   |   |   +--free: nnn
 	 *  |   |   |   +--precious: nnn
 	 *  |   |   |   +--removable: nnn
+	 *  |   |   |   +--pinned: nnn
+	 *  |   |   |   +--used: nnn
 	 *  |   |   |   +--gap: nnn
 	 *  |   |   |   +--break-even: nnn
 	 *  |   |   |   +--LRU-seconds: nnn
