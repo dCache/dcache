@@ -143,11 +143,11 @@ public class SRMLsClientV2 extends SRMClient {
 
      if(resp.getReturnStatus().getStatusCode() != TStatusCode.SRM_SUCCESS) {
          sb.append(
-            "Response from call to srmls:\n" +
             "Return status:\n" +
             " - Status code:  " +
 	    resp.getReturnStatus().getStatusCode().getValue() + '\n' +
             " - Explanation:  " + resp.getReturnStatus().getExplanation() );
+	 throw new Exception(sb.toString());
      }
      
      if(resp.getDetails() == null){
