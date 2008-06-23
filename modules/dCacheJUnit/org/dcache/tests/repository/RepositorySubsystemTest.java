@@ -141,9 +141,7 @@ public class RepositorySubsystemTest
         if (!metaDir.mkdir())
             throw new IOException("Could not create meta dir");
 
-        args = root.toString()
-            + " -metaDataRepository=org.dcache.pool.repository.meta.db.BerkeleyDBMetaDataRepository"
-            + " -sweeper=diskCacheV111.pools.SpaceSweeper2";
+        args = "-metaDataRepository=org.dcache.pool.repository.meta.db.BerkeleyDBMetaDataRepository";
 
         CacheRepositoryV4 rep = new CacheRepositoryV4(root, new Args(args));
         createEntry(rep, id1, info1).setPrecious(true);
@@ -155,9 +153,14 @@ public class RepositorySubsystemTest
 
         cell = new CellAdapterHelper("pool", args);
         pnfs = new PnfsHandler(cell, new CellPath("pnfs"), "pool");
-        repository = new CacheRepositoryV5(cell, pnfs);
+        repository = new CacheRepositoryV5();
+        repository.setBaseDir(root);
+        repository.setCell(cell);
+        repository.setPnfsHandler(pnfs);
         repository.setSize(5120);
-        repository.runInventory(0);
+        repository.setSweeper(diskCacheV111.pools.SpaceSweeper2.class);
+        repository.setMetaDataRepository(org.dcache.pool.repository.meta.db.BerkeleyDBMetaDataRepository.class);
+        repository.init(0);
         repository.addListener(this);
 
         stateChangeEvents = new LinkedList<StateChangeEvent>();
@@ -167,10 +170,10 @@ public class RepositorySubsystemTest
     public void tearDown()
         throws InterruptedException
     {
-        if (root != null)
-            deleteDirectory(root);
         repository.shutdown();
         cell.die();
+        if (root != null)
+            deleteDirectory(root);
     }
 
     public void stateChanged(StateChangeEvent event)
@@ -226,10 +229,10 @@ public class RepositorySubsystemTest
     }
 
     @Test(expected=IllegalStateException.class)
-    public void testRunInventoryTwiceFails()
+    public void testInitTwiceFails()
         throws IOException, RepositoryException
     {
-        repository.runInventory(0);
+        repository.init(0);
     }
 
     @Test
