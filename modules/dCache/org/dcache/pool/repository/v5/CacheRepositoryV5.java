@@ -27,6 +27,7 @@ import org.dcache.pool.repository.WriteHandle;
 import org.dcache.pool.repository.CacheEntry;
 import org.dcache.pool.repository.EntryState;
 import org.dcache.pool.repository.SpaceRecord;
+import org.dcache.pool.repository.MetaDataRepository;
 import org.dcache.pool.FaultEvent;
 import org.dcache.pool.FaultListener;
 import org.dcache.pool.FaultAction;
@@ -59,6 +60,7 @@ public class CacheRepositoryV5// extends CellCompanion
 
     private final List<FaultListener> _faultListeners =
         new CopyOnWriteArrayList<FaultListener>();
+
     /**
      * Map to keep track of states. Temporary hack because we do not
      * have enough information in the actual repository.
@@ -66,61 +68,44 @@ public class CacheRepositoryV5// extends CellCompanion
     private final Map<PnfsId, EntryState> _states =
         new HashMap<PnfsId, EntryState>();
 
-    /** Cell used for communication. */
-    private final CellAdapter _cell;
-
     /** Classic repository used for tracking entries. */
-    private final CacheRepositoryV4 _repository;
+    private CacheRepositoryV4 _repository;
 
     /** Cell command interpreter for the repository. */
-    private final RepositoryInterpreter _interpreter;
-
-    /** Handler for talking to the PNFS manager. */
-    private final PnfsHandler _pnfs;
-
-    /** Sweeper for GC cached files. */
-    private final SpaceSweeper _sweeper;
+    private RepositoryInterpreter _interpreter;
 
     /** Executor for periodic tasks. */
-    private final ScheduledExecutorService _executor;
-
-    /** Whether periodic consistency checks are run or not. */
-    private final boolean _checkRepository;
-
-    /**
-     * Whether pool is volatile.
-     */
-    private boolean _volatile = false;
+    private ScheduledExecutorService _executor;
 
     /**
      * True if inventory has been build, otherwise false.
      */
-    private boolean _initialised;
+    private boolean _initialised = false;
 
-    private static final Class DEFAULT_SWEEPER =
+    private long _size = Long.MAX_VALUE;
+    private SpaceSweeper _sweeper;
+    private CellAdapter _cell;
+    private PnfsHandler _pnfs;
+    private boolean _checkRepository = true;
+    private boolean _volatile = false;
+    private boolean _isPermanent = false;
+    private File _baseDir;
+    private Class _sweeperClass =
         diskCacheV111.pools.SpaceSweeper0.class;
+    private Class _metaDataClass =
+        org.dcache.pool.repository.meta.file.FileMetaDataRepository.class;
+    private Class _metaDataImportClass = null;
+
     private static final Class DUMMY_SWEEPER =
         diskCacheV111.pools.DummySpaceSweeper.class;
 
     /**
-     * Instantiates a new sweeper. The sweeper to create is determined
-     * by the -sweeper option.
+     * Instantiates a new sweeper.
      */
-    protected SpaceSweeper createSweeper(Args args)
+    protected SpaceSweeper createSweeper()
         throws IllegalArgumentException
     {
-        String sweeperClass = args.getOpt("sweeper");
-        Class<?> c;
-        try {
-            if (args.getOpt("permanent") != null)
-                c = DUMMY_SWEEPER;
-            else if (sweeperClass == null)
-                c = DEFAULT_SWEEPER;
-            else
-                c = Class.forName(sweeperClass);
-        } catch (ClassNotFoundException e) {
-            throw new IllegalArgumentException("Could not find " + sweeperClass);
-        }
+        Class c = _isPermanent ? DUMMY_SWEEPER : _sweeperClass;
 
         try {
             Class<?>[] argClass = { dmg.cells.nucleus.CellAdapter.class,
@@ -134,67 +119,121 @@ public class CacheRepositoryV5// extends CellCompanion
         }
     }
 
-    public CacheRepositoryV5(CellAdapter cell, PnfsHandler pnfs)
-        throws IOException, RepositoryException
+    public CacheRepositoryV5()
     {
-        try {
-            Args args = cell.getArgs();
-            File base = new File(args.argv(0));
-
-            _initialised = false;
-            _cell = cell;
-            _pnfs = pnfs;
-            _repository = new CacheRepositoryV4(base, args);
-            _executor =
-                Executors.newSingleThreadScheduledExecutor(_cell.getNucleus());
-
-            _sweeper = createSweeper(args);
-            _interpreter = new RepositoryInterpreter(_cell, _repository);
-
-            _cell.addCommandListener(_interpreter);
-            _cell.addCommandListener(_sweeper);
-
-            _repository.setTotalSpace(Long.MAX_VALUE);
-            _repository.addCacheRepositoryListener(this);
-
-            _checkRepository = getBoolean(args, "checkRepository", true);
-            if (_checkRepository) {
-                _executor.scheduleWithFixedDelay(new CheckHealthTask(this),
-                                                 30, 30, TimeUnit.SECONDS);
-            }
-
-        } catch (DatabaseException e) {
-            throw new RepositoryException("Failed to initialise repository: " + e.getMessage());
-        }
     }
 
-    private boolean getBoolean(Args args, String option, boolean def)
+    /**
+     * Throws an IllegalStateException if the object has been initialised.
+     */
+    private void assertNotInitialised()
     {
-        String s = args.getOpt("checkRepository");
-        if (s == null) {
-            return def;
-        } else if (s.equals("yes") || s.equals("true")) {
-            return true;
-        } else if (s.equals("no") || s.equals("false")) {
-            return false;
-        }
-        throw new IllegalArgumentException("Invalid value for " + option + ": " + s);
+        if (_initialised)
+            throw new IllegalStateException("Cannot be changed after initialisation");
     }
 
-    public boolean getVolatile()
+    /**
+     * Sets the cell used for communication, etc.
+     */
+    public synchronized void setCell(CellAdapter cell)
+    {
+        assertNotInitialised();
+        _cell = cell;
+    }
+
+    /**
+     * Sets the handler for talking to the PNFS manager.
+     */
+    public synchronized void setPnfsHandler(PnfsHandler pnfs)
+    {
+        assertNotInitialised();
+        _pnfs = pnfs;
+    }
+
+    /**
+     * Enables or disables periodic consistency checks.
+     */
+    public synchronized void setPeriodicChecks(boolean enable)
+    {
+        assertNotInitialised();
+        _checkRepository = enable;
+    }
+
+    /**
+     * Sets whether the pool is permanent. A permanent pool does not
+     * garbage collect files.
+     */
+    public synchronized void setPermanent(boolean permanent)
+    {
+        assertNotInitialised();
+        _isPermanent = permanent;
+    }
+
+    public synchronized void setSweeper(Class sweeper)
+    {
+        if (sweeper == null)
+            throw new IllegalArgumentException("Sweeper must not be null");
+        if (!SpaceSweeper.class.isAssignableFrom(sweeper))
+            throw new IllegalArgumentException("Class does not implement MetaDataRepository: " + sweeper);
+        assertNotInitialised();
+        _sweeperClass = sweeper;
+    }
+
+    public synchronized void setMetaDataRepository(Class c)
+    {
+        if (c == null)
+            throw new IllegalArgumentException("Meta data repository must not be null");
+        if (!MetaDataRepository.class.isAssignableFrom(c))
+            throw new IllegalArgumentException("Class does not implement MetaDataRepository: " + c);
+        assertNotInitialised();
+        _metaDataClass = c;
+    }
+
+    public synchronized void setMetaDataImportRepository(Class c)
+    {
+        if (c != null && !MetaDataRepository.class.isAssignableFrom(c))
+            throw new IllegalArgumentException("Class does not implement MetaDataRepository: " + c);
+        assertNotInitialised();
+        _metaDataImportClass = c;
+    }
+
+    public synchronized void setBaseDir(File baseDir)
+    {
+        if (!baseDir.isDirectory())
+            throw new IllegalArgumentException("No such directory: " + baseDir);
+        _baseDir = baseDir;
+    }
+
+    public synchronized boolean getVolatile()
     {
         return _volatile;
     }
 
     /**
-     * Sets whether pool is volatile. On volatile pools target states
+     * Sets whether pool is volatile. On volatile pools, target states
      * of PRECIOUS are silently changed to CACHED, and
      * ClearCacheLocation messages are flagged to trigger deletion of
      * the namespace entry when the last known replica is deleted.
      */
-    public void setVolatile(boolean value)
+    public synchronized void setVolatile(boolean value)
     {
         _volatile = value;
+    }
+
+    /**
+     * Sets the size of the repository.
+     *
+     * @param size in bytes
+     * @throws IllegalArgumentException if new size is smaller than
+     * current non removable space.
+     */
+    public synchronized void setSize(long size) throws IllegalArgumentException
+    {
+        if (size < 0)
+            throw new IllegalArgumentException("Size must not be negative");
+        _size = size;
+        if (_repository != null)
+            _repository.setTotalSpace(_size);
     }
 
     /**
@@ -205,14 +244,45 @@ public class CacheRepositoryV5// extends CellCompanion
      * @throws IOException if an io error occurs
      * @throws RepositoryException in case of other internal errors
      */
-    public synchronized void runInventory(int flags)
+    public synchronized void init(int flags)
         throws IOException, RepositoryException, IllegalStateException
     {
+        assert _baseDir != null : "Base directory must be set";
+        assert _cell != null : "Cell must be set";
+        assert _pnfs != null : "Pnfs handler must be set";
+
         try {
             if (_initialised)
                 throw new IllegalStateException("Can only load repository once.");
             _initialised = true;
+
+            /* CacheRepositoryV4 still relies on an argument string.
+             */
+            String args = "-metaDataRepository=" + _metaDataClass.getName();
+            if (_metaDataImportClass != null) {
+                args = args + " -metaDataRepositoryImport"
+                    + _metaDataImportClass.getName();
+            }
+
+            _repository = new CacheRepositoryV4(_baseDir, new Args(args));
+            _repository.setTotalSpace(_size);
+            _repository.addCacheRepositoryListener(this);
+
+            _sweeper = createSweeper();
+            _interpreter = new RepositoryInterpreter(_cell, _repository);
+            _cell.addCommandListener(_interpreter);
+            _cell.addCommandListener(_sweeper);
+
             _repository.runInventory(null, _pnfs, flags);
+
+            _executor =
+                Executors.newSingleThreadScheduledExecutor(_cell.getNucleus());
+            if (_checkRepository) {
+                _executor.scheduleWithFixedDelay(new CheckHealthTask(this),
+                                                 30, 30, TimeUnit.SECONDS);
+            }
+        } catch (DatabaseException e) {
+            throw new RepositoryException("Failed to initialise repository: " + e.getMessage());
         } catch (CacheException e) {
             throw new RepositoryException("Failed to initialise repository: " + e.getMessage());
         }
@@ -408,18 +478,6 @@ public class CacheRepositoryV5// extends CellCompanion
                                _repository.getPreciousSpace(),
                                _sweeper.getRemovableSpace(),
                                _sweeper.getLRUSeconds());
-    }
-
-    /**
-     * Sets the size of the repository.
-     *
-     * @param size in bytes
-     * @throws IllegalArgumentException if new size is smaller than
-     * current non removable space.
-     */
-    public synchronized void setSize(long size) throws IllegalArgumentException
-    {
-        _repository.setTotalSpace(size);
     }
 
     /**
@@ -767,6 +825,10 @@ public class CacheRepositoryV5// extends CellCompanion
         _executor.shutdown();
     }
 
+    /**
+     * Performs basic health check of the repository. Called by
+     * CheckHealthTask.
+     */
     boolean isRepositoryOk()
     {
         return _repository.isRepositoryOk();

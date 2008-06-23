@@ -248,9 +248,9 @@ public class PoolV4 extends AbstractCell
 
         try {
             //
-            // repository and ping thread must exist BEFORE the
-            // setup file is scanned. PingThread will be start
-            // after all the setup is done.
+            // repository and ping thread must exist BEFORE the setup
+            // file is scanned. PingThread will be started after all
+            // the setup is done.
             //
             _pingThread = new PoolManagerPingThread();
 
@@ -534,10 +534,8 @@ public class PoolV4 extends AbstractCell
                 kill();
                 throw e;
             }
-            _logClass.elog("Starting Flushing Thread");
             _flushingThread.start();
         }
-        esay("Constructor done (still waiting for 'inventory')");
     }
 
     /**
@@ -778,10 +776,8 @@ public class PoolV4 extends AbstractCell
             _logClass.log("Running Repository (Cell is locked)");
             _logClass.log("Repository seems to be ok");
             try {
-
-                _repository.runInventory(_recoveryFlags);
+                _repository.init(_recoveryFlags);
                 enablePool();
-                _logClass.elog("Pool enabled " + _poolName);
             } catch (Throwable e) {
                 _logClass.elog("Repository reported a problem : "
                                + e.getMessage());
@@ -795,7 +791,6 @@ public class PoolV4 extends AbstractCell
                     _notifyMe.notifyAll();
                 }
             }
-
         }
     }
 

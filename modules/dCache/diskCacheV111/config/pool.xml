@@ -49,16 +49,10 @@
     <constructor-arg index="0" value="${poolname}"/>
     <constructor-arg index="1" value="
         !MoverMap 
-        ${pooldir}
         -recover-control=yes 
         -io-queues=${poolIoQueue} 
-        -checkRepository=${checkRepository} 
-        -sendHitInfoMessages=no 
         -allowPassivePool=${gsiftpAllowPassivePool} 
         -allowMmap=false 
-        -metaDataRepository=${metaDataRepository} 
-        -metaDataRepositoryImport=${metaDataRepositoryImport} 
-        -sweeper=diskCacheV111.pools.SpaceSweeper2
         ${arguments}"/>
 
     <property name="baseDir"
@@ -101,8 +95,13 @@
   </bean>
 
   <bean id="repository" class="org.dcache.pool.repository.v5.CacheRepositoryV5">
-    <constructor-arg ref="cell"/>
-    <constructor-arg ref="pnfs"/>
+    <property name="baseDir" value="${pooldir}"/>
+    <property name="cell" ref="cell"/>
+    <property name="pnfsHandler" ref="pnfs"/>
+    <property name="sweeper" value="diskCacheV111.pools.SpaceSweeper2"/>
+    <property name="periodicChecks" value="${checkRepository}"/>
+    <property name="metaDataRepository" value="${metaDataRepository}"/>
+    <property name="metaDataImportRepository" value="${metaDataRepositoryImport}"/>
   </bean>
 
   <bean id="checksum" class="org.dcache.pool.classic.ChecksumModuleV1">
