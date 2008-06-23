@@ -174,7 +174,7 @@ class PoolIOWriteTransfer
         _size = _file.length();
         boolean exists = _size > 0;
         try {
-            if (exists) {
+            if (_success) {
                 _checksumModule.setMoverChecksums(_pnfsId,
                                                   _file,
                                                   _checksumFactory,
