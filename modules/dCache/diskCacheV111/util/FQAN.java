@@ -17,6 +17,7 @@ import java.util.regex.Matcher;
  */
 public class FQAN implements java.io.Serializable {
     
+    static final long serialVersionUID = -2212735007788920585L;
     private static Pattern p1 = Pattern.compile("(.*)/Role=(.*)/Capability=(.*)");
     private static Pattern p2 = Pattern.compile("(.*)/Role=(.*)(.*)");
     private static Pattern p3 = Pattern.compile("(.*)(.*)(.*)");
