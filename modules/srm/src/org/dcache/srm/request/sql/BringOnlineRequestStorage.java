@@ -68,7 +68,7 @@ public class BringOnlineRequestStorage extends DatabaseContainerRequestStorage{
            String protocolsTableName = getProtocolsTableName().toLowerCase();
             String createProtocolsTable = "CREATE TABLE "+ protocolsTableName+" ( "+
             " PROTOCOL "+stringType+ ","+
-            " RequestID "+stringType+ ", "+ //forein key
+            " RequestID "+longType+ ", "+ //forein key
             " CONSTRAINT fk_"+getTableName()+"_PG FOREIGN KEY (RequestID) REFERENCES "+
             getTableName() +" (ID) "+
             " ON DELETE CASCADE"+
@@ -149,7 +149,7 @@ public class BringOnlineRequestStorage extends DatabaseContainerRequestStorage{
     public String getRequestCreateTableFields() {
         return "";
     }
-    public static final String TABLE_NAME ="bringonlinerequestss";
+    public static final String TABLE_NAME ="bringonlinerequests";
     public String getTableName() {
         return TABLE_NAME;
     }
