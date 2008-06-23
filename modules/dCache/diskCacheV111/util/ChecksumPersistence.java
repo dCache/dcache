@@ -107,7 +107,6 @@ class ChecksumPersistencePnfsImpl extends ChecksumPersistence {
             if( obj instanceof PnfsGetChecksumMessage){
                 PnfsGetChecksumMessage flags = (PnfsGetChecksumMessage)obj ;
                 if( flags.getValue() == null ){
-                    cell.esay("getChecksumFromPnfs : No crc available for "+pnfsId);
                     return null ;
                 }
                 return flags.getValue() ; // assume this is the right type
@@ -128,8 +127,7 @@ class ChecksumPersistencePnfsImpl extends ChecksumPersistence {
             if( obj instanceof PnfsGetChecksumAllMessage){
                 PnfsGetChecksumAllMessage flags = (PnfsGetChecksumAllMessage)obj ;
                 if( flags.getValue() == null ){
-                    cell.esay("getChecksumFromPnfs : No checksum available for "+pnfsId);
-                    return null ;
+                    return new int[0];
                 }
                 return flags.getValue() ; // assume this is the right type
             }
