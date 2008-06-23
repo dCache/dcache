@@ -657,10 +657,18 @@ public abstract class ContainerRequest extends Request {
        }
 
         int len = getNumOfFileRequest();
+        
+        if (len == 0) {
+            //no single failure - we should not get to this piece if code 
+            status.setStatusCode(TStatusCode.SRM_INTERNAL_ERROR);
+            status.setExplanation("Could not find (deserialize) files in the request," +
+                " NumOfFileRequest is 0");
+            say("assigned status.statusCode : "+status.getStatusCode());
+            say("assigned status.explanation : "+status.getExplanation());
+            return status;
+            
+        }
 
-	//
-	// some crazy shit
-	//
 
         int failed_req           = 0;
         int failed_space_expired = 0;
