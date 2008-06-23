@@ -180,7 +180,7 @@ public class BringOnlineRequestStorage extends DatabaseContainerRequestStorage{
     
     
     public String getFileRequestsTableName() {
-        return GetFileRequestStorage.TABLE_NAME;
+        return BringOnlineFileRequestStorage.TABLE_NAME;
     }
     
     protected void __verify(int nextIndex, int columnIndex, String tableName, String columnName, int columnType) throws SQLException {
