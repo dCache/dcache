@@ -148,7 +148,8 @@ public class SrmStatusOfBringOnlineRequest {
             
         }
         BringOnlineRequest getRequest = (BringOnlineRequest) request;
-        if( statusOfBringOnlineRequest.getArrayOfSourceSURLs() == null ){
+        if( statusOfBringOnlineRequest.getArrayOfSourceSURLs() == null 
+            || statusOfBringOnlineRequest.getArrayOfSourceSURLs().getUrlArray() == null){
             return getRequest.getSrmStatusOfBringOnlineRequestResponse();
         }
         
