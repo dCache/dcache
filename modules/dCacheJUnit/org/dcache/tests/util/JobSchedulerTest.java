@@ -5,6 +5,7 @@ import static org.junit.Assert.*;
 import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.junit.Before;
@@ -59,7 +60,11 @@ public class JobSchedulerTest {
 
     @Before
     public void setUp() throws Exception {
-        _jobScheduler = new SimpleJobScheduler(null);
+        _jobScheduler = new SimpleJobScheduler(new ThreadFactory() {
+                public Thread newThread(Runnable r) {
+                    return new Thread(r);
+                }
+            });
         Thread.sleep(5000);
     }
 
