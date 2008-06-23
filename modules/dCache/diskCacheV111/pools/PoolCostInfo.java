@@ -94,6 +94,8 @@ public class PoolCostInfo implements java.io.Serializable {
         public long getTotalSpace(){ return _total ; }
         public long getPreciousSpace(){ return _precious ; }
         public long getRemovableSpace(){ return _removable ; }
+        public long getUsedSpace(){ return _total - _free ; }
+        public long getPinnedSpace(){ return _total - _free - _precious - _removable ; }
         public long getGap(){ return _gap ; }
         public double getBreakEven(){ return _breakEven ; }
         public long getLRUSeconds(){ return _lru ; }
