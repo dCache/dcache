@@ -23,6 +23,7 @@ import org.dcache.pool.repository.v5.CacheRepositoryV5;
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.pool.repository.EntryState;
 import org.dcache.pool.repository.WriteHandle;
+import org.dcache.pool.repository.CacheEntry;
 import diskCacheV111.movers.DCapConstants;
 import diskCacheV111.movers.DCapProtocol_3_nio;
 import diskCacheV111.util.Adler32;
@@ -350,12 +351,18 @@ public class P2PClient
                 }
 
                 try {
-                    companion.connected(this);
-                    runIO(out, in, companion.getFile(), companion.getFileSize());
+                    WriteHandle handle = companion.connected(this);
+                    File file = handle.getFile();
+                    CacheEntry entry = handle.getEntry();
+                    long size = entry.getStorageInfo().getFileSize();
+
+                    handle.allocate(size);
+
+                    runIO(out, in, file, size);
 
                     _checksumModule
-                        .setMoverChecksums(companion.getPnfsId(),
-                                           companion.getFile(),
+                        .setMoverChecksums(entry.getPnfsId(),
+                                           file,
                                            _checksumModule.getDefaultChecksumFactory(),
                                            null,
                                            _digest != null ? new Checksum(_digest) : null);
@@ -420,25 +427,6 @@ public class P2PClient
             _sessions.put(_id, this);
 
             sendStorageInfoRequest();
-        }
-
-        synchronized public PnfsId getPnfsId()
-        {
-            return _pnfsId;
-        }
-
-        synchronized public File getFile()
-        {
-            if (_handle == null)
-                throw new IllegalStateException("File not available");
-            return _handle.getFile();
-        }
-
-        synchronized public long getFileSize()
-        {
-            if (_storageInfo == null)
-                throw new IllegalStateException("File size not available");
-            return _storageInfo.getFileSize();
         }
 
         synchronized private void setStorageInfo(StorageInfo info)
@@ -525,7 +513,7 @@ public class P2PClient
             }
         }
 
-        synchronized public void connected(IOHandler handler)
+        synchronized public WriteHandle connected(IOHandler handler)
         {
             if (_connected)
                 throw new IllegalStateException("Already connected");
@@ -533,6 +521,7 @@ public class P2PClient
             _status = "Connected to pool";
             _connected = true;
             _ioHandler = handler;
+            return _handle;
         }
 
         synchronized public void messageArrived(DoorTransferFinishedMessage msg)
