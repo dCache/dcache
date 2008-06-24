@@ -945,38 +945,41 @@ dcacheInstallChimeraMountPointServer()
   dcacheInstallGetNameSpaceServer
   pnfsServer=$RET
   localhostName=`fqdn_os`
-  tryToMount=0
+  tryToMount=1
   if [ "$pnfsServer" == "$localhostName" ] ; then
     pnfsServer="localhost"
   fi
-  if [ -z "$(mount | grep "${pnfsServer}" )" ] ; then
-    tryToMount=1
-    logmessage INFO "Need to mount ${pnfsServer}"
-  else
+  if [ -n "$(mount | grep "${pnfsServer}" )" ] ; then
     tryToMount=0
-    logmessage INFO "Already Mounted ${pnfsServer}"
   fi
-  cmdline="mount -o intr,rw,hard ${pnfsServer}:/pnfs /pnfs"
-  counter=1
-  
-  while [ "${tryToMount}" == "1" ] ; do
-    $cmdline
-    mountrc=$?
-    if [ "${mountrc}" == "0" ] ; then
-      logmessage INFO "Successflly mounted Chimera running $cmdline"
-      tryToMount=0
-    else
-      let counter="$counter + 1"
-      if [ "$counter" == "12" ] ; then
-        logmessage ERROR "Failed running $cmdline and giving up"
+  if [ -n "$(mount | grep "/pnfs" )" ] ; then
+    tryToMount=0
+  fi
+  if [ "${tryToMount}" == "0" ] ; then
+    logmessage INFO "Already Mounted ${pnfsServer}"
+  else
+    cmdline="mount -o intr,rw,hard ${pnfsServer}:/pnfs /pnfs"
+    counter=1
+    logmessage INFO "Need to mount ${pnfsServer}"
+    while [ "${tryToMount}" == "1" ] ; do
+      $cmdline
+      mountrc=$?
+      if [ "${mountrc}" == "0" ] ; then
+        logmessage INFO "Successflly mounted Chimera running $cmdline"
         tryToMount=0
       else
-        logmessage INFO "Trying to mount Chimera failed, will retry."
-        logmessage DEBUG "Using command: $cmdline"
+        let counter="$counter + 1"
+        if [ "$counter" == "12" ] ; then
+          logmessage ERROR "Failed running $cmdline and giving up"
+          tryToMount=0
+        else
+          logmessage INFO "Trying to mount Chimera failed, will retry."
+          logmessage DEBUG "Using command: $cmdline"
+        fi
       fi
-    fi
-    sleep 1
-  done
+      sleep 1
+    done
+  fi
 }
 
 
