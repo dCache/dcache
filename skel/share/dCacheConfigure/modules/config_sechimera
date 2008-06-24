@@ -317,7 +317,7 @@ chimera_create_mount_points_api()
         yaimlog ERROR "running command ${cmd} failed"
         exit 1
       fi
-      users_NameGetsUid ${currentVo}
+      users_NameGetsUid ${thisvo}
       users_VoGetsUidrc=$?
       VoUID=${RET}
       if [ "${users_VoGetsUidrc}" != "0" ] ; then
@@ -333,7 +333,7 @@ chimera_create_mount_points_api()
         yaimlog ERROR "running command ${cmd} failed"
         exit 1
       fi
-      users_VoGetsGid ${currentVo}
+      users_VoGetsGid ${thisvo}
       users_VoGetsGidrc=$?
       VoGID=${RET}
       if [ "${users_VoGetsGidrc}" != "0" ] ; then
