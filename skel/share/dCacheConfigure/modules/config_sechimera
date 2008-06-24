@@ -317,33 +317,72 @@ chimera_create_mount_points_api()
         yaimlog ERROR "running command ${cmd} failed"
         exit 1
       fi
-      
-    fi
-    cmd="$chimeracli Lstag ${currentPath}/${thisvo}"
-    yaimlog DEBUG "Running $cmd"
-    CurrentTags=` ${cmd} | sed "1,2d" `
-    if [ -n "$(echo CurrentTags | grep sGroup)" ] ; then
-      cmd="$chimeracli Readtag ${currentPath}/${thisvo} sGroup"
+      users_NameGetsUid ${currentVo}
+      users_VoGetsUidrc=$?
+      VoUID=${RET}
+      if [ "${users_VoGetsUidrc}" != "0" ] ; then
+        yaimlog ERROR "users_VoGetsGid returned an error exiting"
+        exit 4
+      fi
+      yaimlog INFO "Directory ${currentPath}/${thisvo} setting the directory owner"
+      cmd="$chimeracli Chown ${currentPath}/${thisvo} ${VoUID}"
+      yaimlog DEBUG "Running ${cmd}"
+      $cmd 
+      mkdirRc=$?
+      if [ "${mkdirRc}" != "0" ] ; then
+        yaimlog ERROR "running command ${cmd} failed"
+        exit 1
+      fi
+      users_VoGetsGid ${currentVo}
+      users_VoGetsGidrc=$?
+      VoGID=${RET}
+      if [ "${users_VoGetsGidrc}" != "0" ] ; then
+        yaimlog ERROR "users_VoGetsGid returned an error exiting"
+        exit 4
+      fi
+      yaimlog INFO "Directory ${currentPath}/${thisvo} setting the permisions"
+      cmd="$chimeracli Chgrp ${currentPath}/${thisvo} ${VoGID}"
+      yaimlog DEBUG "Running ${cmd}"
+      $cmd 
+      mkdirRc=$?
+      if [ "${mkdirRc}" != "0" ] ; then
+        yaimlog ERROR "running command ${cmd} failed"
+        exit 1
+      fi
+      cmd="$chimeracli Chmod ${currentPath}/${thisvo} 775"
+      yaimlog DEBUG "Running ${cmd}"
+      $cmd 
+      mkdirRc=$?
+      if [ "${mkdirRc}" != "0" ] ; then
+        yaimlog ERROR "running command ${cmd} failed"
+        exit 1
+      fi
+      cmd="$chimeracli Lstag ${currentPath}/${thisvo}"
       yaimlog DEBUG "Running $cmd"
-      CurrentSgroup=` ${cmd} | sed "1,1d" `
-    else
-      CurrentSgroup=""
+      CurrentTags=` ${cmd} | sed "1,2d" `
+      if [ -n "$(echo CurrentTags | grep sGroup)" ] ; then
+        cmd="$chimeracli Readtag ${currentPath}/${thisvo} sGroup"
+        yaimlog DEBUG "Running $cmd"
+        CurrentSgroup=` ${cmd} | sed "1,1d" `
+      else
+        CurrentSgroup=""
+      fi
+      if [ "${CurrentSgroup}" != "STATIC" ] ;  then
+        yaimlog DEBUG "Adding tag STATIC to directory ${currentPath}/${thisvo}"
+        echo "STATIC" | $chimeracli Writetag ${currentPath}/${thisvo} sGroup
+      fi
+      if [ -n "$(echo CurrentTags | grep OSMTemplate)" ] ; then
+        cmd="$chimeracli Readtag ${currentPath}/${thisvo} OSMTemplate"
+        yaimlog DEBUG "Running $cmd"
+        CurrentOSMTemplate=` ${cmd} | sed "1,1d" `
+      else
+        CurrentOSMTemplate=""
+      fi
+      if [ "${CurrentOSMTemplate}" != "StoreName" ] ;  then
+        yaimlog DEBUG "Adding tag OSMTemplate to directory ${currentPath}/${thisvo}"
+        echo "StoreName ${thisvo}" | $chimeracli Writetag ${currentPath}/${thisvo} OSMTemplate
+      fi
     fi
-    if [ "${CurrentSgroup}" != "STATIC" ] ;  then
-      yaimlog DEBUG "Adding tag STATIC to directory ${currentPath}/${thisvo}"
-      echo "STATIC" | $chimeracli Writetag ${currentPath}/${thisvo} sGroup
-    fi
-    if [ -n "$(echo CurrentTags | grep OSMTemplate)" ] ; then
-      cmd="$chimeracli Readtag ${currentPath}/${thisvo} OSMTemplate"
-      yaimlog DEBUG "Running $cmd"
-      CurrentOSMTemplate=` ${cmd} | sed "1,1d" `
-    else
-      CurrentOSMTemplate=""
-    fi
-    if [ "${CurrentOSMTemplate}" != "StoreName" ] ;  then
-      yaimlog DEBUG "Adding tag OSMTemplate to directory ${currentPath}/${thisvo}"
-      echo "StoreName ${thisvo}" | $chimeracli Writetag ${currentPath}/${thisvo} OSMTemplate
-    fi 
   done
   yaimlog DEBUG "function chimera_create_mount_points_api stop"
 }
