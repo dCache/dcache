@@ -289,6 +289,32 @@ users_VoGetsFlags()
   fi
   return 0
 }
+
+users_VoGetsUid()
+{
+  local foundUserFile
+  local Name
+  Name=$1
+  if [ -z "${Name}" ] ; then
+    yaimlog ERROR "Programming Error users_VoGetsUID requires an argument"
+    return 1
+  fi
+  users_confFileGet
+  foundUserFile=$?
+  UserFile=$RET
+  if [ "${foundUserFile}" != "0" ] ; then
+    yaimlog ERROR "Could not find Uid's For Name as mapping file unavailable"
+    return 1
+  fi
+  RET=`awk --posix -F: '$4==vo {print $1}' vo=${Name} "${UserFile}" | sort | uniq | head -n 1`
+  if [ -z "${RET}" ] ; then
+    yaimlog WARNING "found no data users_VoGetsUid \"${Name}\""
+    return 1
+  fi 
+  return 0
+}
+
+
 users_VoGetsGid()
 {
   local foundUserFile
