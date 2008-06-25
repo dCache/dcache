@@ -12,7 +12,6 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 
 import dmg.cells.nucleus.CellMessage;
-import diskCacheV111.vehicles.Message;
 
 import org.dcache.util.ReflectionUtils;
 
@@ -31,7 +30,7 @@ abstract class Receiver
         _method = method;
     }
 
-    abstract public void deliver(CellMessage envelope, Message message)
+    abstract public void deliver(CellMessage envelope, Object message)
         throws IllegalAccessException, InvocationTargetException;
 
     public String toString()
@@ -47,7 +46,7 @@ class ShortReceiver extends Receiver
         super(object, method);
     }
 
-    public void deliver(CellMessage envelope, Message message)
+    public void deliver(CellMessage envelope, Object message)
         throws IllegalAccessException, InvocationTargetException
     {
         _method.invoke(_object, message);
@@ -62,7 +61,7 @@ class LongReceiver extends Receiver
         super(object, method);
     }
 
-    public void deliver(CellMessage envelope, Message message)
+    public void deliver(CellMessage envelope, Object message)
         throws IllegalAccessException, InvocationTargetException
     {
         _method.invoke(_object, envelope, message);
@@ -146,7 +145,6 @@ public class CellMessageDispatcher
                 _receivers.clear();
             }
         }
-
     }
 
     /**
@@ -189,24 +187,22 @@ public class CellMessageDispatcher
         throws InvocationTargetException
     {
         Object message = envelope.getMessageObject();
-        if (message instanceof Message) {
-            Class c = message.getClass();
-            Collection<Receiver> receivers;
+        Class c = message.getClass();
+        Collection<Receiver> receivers;
 
-            synchronized (_receivers) {
-                receivers = _receivers.get(c);
-                if (receivers == null) {
-                    receivers = findReceivers(c);
-                    _receivers.put(c, receivers);
-                }
+        synchronized (_receivers) {
+            receivers = _receivers.get(c);
+            if (receivers == null) {
+                receivers = findReceivers(c);
+                _receivers.put(c, receivers);
             }
+        }
 
-            for (Receiver receiver : receivers) {
-                try {
-                    receiver.deliver(envelope, (Message)message);
-                } catch (IllegalAccessException e) {
-                    throw new RuntimeException("Cannot process message due to access error", e);
-                }
+        for (Receiver receiver : receivers) {
+            try {
+                receiver.deliver(envelope, message);
+            } catch (IllegalAccessException e) {
+                throw new RuntimeException("Cannot process message due to access error", e);
             }
         }
     }
