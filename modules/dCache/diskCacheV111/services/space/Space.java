@@ -162,12 +162,14 @@ public class Space implements java.io.Serializable {
                 sb.append(id).append(' ');
                 sb.append("voGroup:").append(voGroup).append(' ');
                 sb.append("voRole:").append(voRole).append(' ');
+		sb.append("retentionPolicy:").append(retentionPolicy.toString()).append(' ');
+		sb.append("accessLatency:").append(accessLatency.toString()).append(' ');
                 sb.append("linkGroupId:").append(linkGroupId).append(' ');
                 sb.append("size:").append(sizeInBytes).append(' ');
                 sb.append("created:").append((new java.util.Date(creationTime))).append(' ');
                 sb.append("lifetime:").append(lifetime).append("ms ");
-                sb.append(" expiration:").append(lifetime==-1?"NEVER":new java.util.Date(creationTime+lifetime).toString()).append(' ');
-                sb.append("descr:").append(description).append(' ');
+                sb.append("expiration:").append(lifetime==-1?"NEVER":new java.util.Date(creationTime+lifetime).toString()).append(' ');
+                sb.append("description:").append(description).append(' ');
                 sb.append("state:").append(state).append(' ');
                 sb.append("used:").append(usedSizeInBytes).append(' ');
                 sb.append("allocated:").append(allocatedSpaceInBytes).append(' ');
