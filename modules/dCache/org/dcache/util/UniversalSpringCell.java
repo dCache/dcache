@@ -155,7 +155,7 @@ public class UniversalSpringCell
     {
         String name = args.argv(0);
         try {
-            if (_context.isSingleton(name)) {
+            if (_context == null && _context.isSingleton(name)) {
                 Object bean = _context.getBean(name);
                 if (CellInfoProvider.class.isInstance(bean)) {
                     StringWriter s = new StringWriter();
@@ -185,17 +185,18 @@ public class UniversalSpringCell
     public static final String hh_bean_ls = "# lists running beans";
     public String ac_bean_ls(Args args)
     {
-        final String format = "%-30s %s\n";
-        ConfigurableListableBeanFactory factory = _context.getBeanFactory();
         Formatter s = new Formatter(new StringBuilder());
+        if (_context != null) {
+            final String format = "%-30s %s\n";
+            ConfigurableListableBeanFactory factory = _context.getBeanFactory();
 
-        s.format(format, "Bean", "Used by");
-        for (String name : factory.getSingletonNames()) {
-            Object bean = factory.getBean(name);
-            String[] usedby = factory.getDependentBeans(name);
-            s.format(format, name, arrayToString(usedby));
+            s.format(format, "Bean", "Used by");
+            for (String name : factory.getSingletonNames()) {
+                Object bean = factory.getBean(name);
+                String[] usedby = factory.getDependentBeans(name);
+                s.format(format, name, arrayToString(usedby));
+            }
         }
-
         return s.toString();
     }
 
@@ -205,7 +206,7 @@ public class UniversalSpringCell
     {
         String name = args.argv(0);
         try {
-            if (_context.isSingleton(name)) {
+            if (_context != null && _context.isSingleton(name)) {
                 StringBuilder s = new StringBuilder();
                 BeanWrapper bean = new BeanWrapperImpl(_context.getBean(name));
                 for (PropertyDescriptor p : bean.getPropertyDescriptors()) {
