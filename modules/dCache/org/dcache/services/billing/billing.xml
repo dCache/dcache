@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+           http://www.springframework.org/schema/beans/spring-beans-2.5.xsd">
+
+  <bean id="properties" 
+        class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+    <property name="location" value="domaincontext:"/>
+    <property name="properties">
+      <value>
+        mode=1
+      </value>
+    </property>
+  </bean>
+
+  <bean id="billing-info" class="org.dcache.services.billing.BillingInfo"/>
+
+  <bean id="file-logger" class="org.dcache.services.billing.FileLogger">
+    <property name="printMode" value="${mode}"/>
+    <property name="billingDirectory" value="${path}"/>
+  </bean>
+
+  <bean id="error-logger" class="org.dcache.services.billing.ErrorFileLogger">
+    <property name="printMode" value="${mode}"/>
+    <property name="billingDirectory" value="${path}"/>
+  </bean>
+
+  <bean id="pool-status" class="org.dcache.services.billing.PoolStatus">
+    <property name="billingDirectory" value="${path}"/>
+  </bean>
+
+  <bean id="pool-statistics" class="org.dcache.services.billing.PoolStatistics">
+    <property name="billingDirectory" value="${path}"/>
+  </bean>
+
+</beans>
