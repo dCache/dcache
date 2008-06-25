@@ -22,7 +22,8 @@ import dmg.util.Args;
 
 import org.dcache.services.AbstractCell;
 import org.dcache.cell.CellEndpoint;
-import org.dcache.cell.CellCommunicationAware;
+import org.dcache.cell.CellMessageReceiver;
+import org.dcache.cell.CellMessageSender;
 import org.dcache.cell.ThreadFactoryAware;
 import org.dcache.cell.CellInfoProvider;
 import org.dcache.cell.CellSetupProvider;
@@ -63,20 +64,10 @@ public class UniversalSpringCell
                BeanPostProcessor
 {
     /**
-     * True when bean construction has finished.
-     */
-    private boolean _initialised = false;
-
-    /**
      * Spring application context. All beans are created through this
      * context.
      */
     private ConfigurableApplicationContext _context;
-
-    /**
-     * Location of Spring configuration file.
-     */
-    private String _configLocation;
 
     /**
      * List of registered info providers. Sorted to maintain
@@ -100,8 +91,6 @@ public class UniversalSpringCell
         Args args = getArgs();
         if (args.argc() == 0)
             throw new IllegalArgumentException("Configuration location missing");
-        _configLocation = args.argv(0);
-
         /* Execute initialisation in a different thread allocated from
          * the correct thread group.
          */
@@ -110,7 +99,7 @@ public class UniversalSpringCell
                 {
                     UniversalSpringCell.this.init();
                 }
-            });
+            }, "init");
 
         thread.start();
 
@@ -121,13 +110,8 @@ public class UniversalSpringCell
     private void init()
     {
         try {
-            info("Loading " + _configLocation);
-
             _context =
-                new UniversalSpringCellApplicationContext(_configLocation);
-            _initialised = true;
-
-            info("Successfully initialised cell");
+                new UniversalSpringCellApplicationContext(getArgs());
         } catch (Throwable t) {
             fatal("Failed to initalise cell: " + t.getMessage());
             kill();
@@ -139,7 +123,10 @@ public class UniversalSpringCell
      */
     public void cleanUp()
     {
-        _context.close();
+        if (_context != null) {
+            _context.close();
+            _context = null;
+        }
         _infoProviders.clear();
         _setupProviders.clear();
     }
@@ -256,15 +243,21 @@ public class UniversalSpringCell
     }
 
     /**
-     * Add a communication aware bean. A communication aware bean
-     * receives messages via message handlers (see
-     * CellMessageDispatcher) and can send messages via a
-     * CellEndpoint.
+     * Add a message receiver. Message receiver receive messages via
+     * message handlers (see CellMessageDispatcher).
      */
-    public void addCommunicationAwareBean(CellCommunicationAware bean)
+    public void addMessageReceiver(CellMessageReceiver bean)
+    {
+        addMessageListener(bean);
+    }
+
+    /**
+     * Add a message sender. Message senders can send cell messages
+     * via a cell endpoint.
+     */
+    public void addMessageSender(CellMessageSender bean)
     {
         bean.setCellEndpoint(this);
-        addMessageListener(bean);
     }
 
     /**
@@ -305,8 +298,12 @@ public class UniversalSpringCell
             addInfoProviderBean((CellInfoProvider)bean);
         }
 
-        if (CellCommunicationAware.class.isInstance(bean)) {
-            addCommunicationAwareBean((CellCommunicationAware)bean);
+        if (CellMessageReceiver.class.isInstance(bean)) {
+            addMessageReceiver((CellMessageReceiver)bean);
+        }
+
+        if (CellMessageSender.class.isInstance(bean)) {
+            addMessageSender((CellMessageSender)bean);
         }
 
         if (CellSetupProvider.class.isInstance(bean)) {
@@ -329,31 +326,9 @@ public class UniversalSpringCell
     class UniversalSpringCellApplicationContext
         extends ClassPathXmlApplicationContext
     {
-        /**
-         * Serialized domain context. Used for the 'domaincontext:'
-         * resource.
-         */
-        private final byte[] _domainContext;
-
-        UniversalSpringCellApplicationContext(String configLocation)
+        UniversalSpringCellApplicationContext(Args args)
         {
-            super(configLocation);
-
-            Properties properties = new Properties();
-            mergeDictionary(properties, getDomainContext());
-
-            /* Convert to byte array form such that we can make it
-             * available as a Spring resource.
-             */
-            ByteArrayOutputStream out = new ByteArrayOutputStream();
-            try {
-                properties.store(out, "");
-            } catch (IOException e) {
-                /* This should never happen with a ByteArrayOutputStream.
-                 */
-                throw new RuntimeException("Unexpected exception", e);
-            }
-            _domainContext = out.toByteArray();
+            super(args.argv(0));
         }
 
         private void mergeDictionary(Properties properties,
@@ -367,19 +342,44 @@ public class UniversalSpringCell
             }
         }
 
+        private ByteArrayResource getDomainContextResource()
+        {
+            Args args = (Args)getArgs().clone();
+            args.shift();
+
+            Properties properties = new Properties();
+            mergeDictionary(properties, getDomainContext());
+            mergeDictionary(properties, args.options());
+
+            /* Convert to byte array form such that we can make it
+             * available as a Spring resource.
+             */
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            try {
+                properties.store(out, "");
+            } catch (IOException e) {
+                /* This should never happen with a ByteArrayOutputStream.
+                 */
+                throw new RuntimeException("Unexpected exception", e);
+            }
+            final byte[] _domainContext = out.toByteArray();
+
+            return new ByteArrayResource(_domainContext) {
+                /**
+                 * Fake file name to make
+                 * PropertyPlaceholderConfigurer happy.
+                 */
+                public String getFilename()
+                {
+                    return "domaincontext.properties";
+                }
+            };
+        }
+
         public Resource getResource(String location)
         {
             if (location.startsWith("domaincontext:")) {
-                return new ByteArrayResource(_domainContext) {
-                    /**
-                     * Fake file name to make
-                     * PropertyPlaceholderConfigurer happy.
-                     */
-                    public String getFilename()
-                    {
-                        return "domaincontext.properties";
-                    }
-                };
+                return getDomainContextResource();
             } else {
                 return super.getResource(location);
             }
