@@ -289,7 +289,7 @@ public class BillingDB {
     }
 
 
-    private void logStorageInfoMessage( StorageInfoMessage info) throws SQLException {
+    public void logStorageInfoMessage( StorageInfoMessage info) throws SQLException {
 
         try {
             psSI.setTimestamp( 1, new Timestamp(info.getTimestamp()));
@@ -318,7 +318,7 @@ public class BillingDB {
         }
     }
 
-    private void logDoorInfoMessage( DoorRequestInfoMessage info) throws SQLException {
+    public void logDoorInfoMessage( DoorRequestInfoMessage info) throws SQLException {
 
         try {
             psDI.setTimestamp( 1, new Timestamp(info.getTimestamp()));
@@ -351,7 +351,7 @@ public class BillingDB {
     }
 
 
-    private void logMoverInfoMessage( MoverInfoMessage info) throws SQLException  {
+    public void logMoverInfoMessage( MoverInfoMessage info) throws SQLException  {
 
         try {
             String[] clients = { "<unknown>",null};
@@ -393,7 +393,7 @@ public class BillingDB {
     }
 
 
-    private void logPoolHitInfoMessage( PoolHitInfoMessage info) throws SQLException {
+    public void logPoolHitInfoMessage( PoolHitInfoMessage info) throws SQLException {
 
         try {
             psHI.setTimestamp( 1, new Timestamp(info.getTimestamp()));
@@ -420,7 +420,7 @@ public class BillingDB {
     }
 
 
-    private void logPoolCostInfoMessage( PoolCostInfoMessage info) throws SQLException {
+    public void logPoolCostInfoMessage( PoolCostInfoMessage info) throws SQLException {
 
         try {
             psCI.setTimestamp( 1, new Timestamp(info.getTimestamp()));
