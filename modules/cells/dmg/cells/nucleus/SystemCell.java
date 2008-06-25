@@ -92,7 +92,7 @@ public class      SystemCell
              break ;
           }
        }
-       say( "Interrupt loop stopped (shuting down system now)" ) ;
+       say( "Interrupt loop stopped (shutting down system now)" ) ;
        kill() ;
    }
     private void shutdownSystem()
@@ -123,7 +123,7 @@ public class      SystemCell
 
     /**
      * Shuts downs named cells. The method will block until the cells
-     * are dead or until a timeout has occured.
+     * are dead or until a timeout has occurred.
      *
      * @param cells List of names of cells to kill.
      * @param timeout Time in milliseconds to wait for a cell to die.
