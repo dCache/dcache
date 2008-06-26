@@ -2,23 +2,27 @@
 # based on dCacheSetup.template $Revision: 1.33 $
 #
 
+
 #  -----------------------------------------------------------------------
 #          config/dCacheSetup
 #  -----------------------------------------------------------------------
-#   This is the central configuration file for a dCache instance. In most
-#   cases it should be possible to keep it identical across the nodes of
-#   one dCache instance.
 #
-#   This template contains all options that can possibly be used. Most
-#   may be left at the default value. If the option is commented out below
-#   is indicates the default value. If it is not commented out it is set
-#   to a reasonable value.
+#   This is the central configuration file for a dCache instance. In
+#   most cases it should be possible to keep it identical across the
+#   nodes of one dCache instance.
 #
-#   To get a dCache instance running it suffices to change the options:
-#    - java		 	The java binary
-#    - serviceLocatorHost	The hostname of the admin node
-#   The other values should only be changed when advised to do so by the
-#   documentation.
+#   This template contains all options that can possibly be used.
+#   Most may be left at the default value. If the option is commented
+#   out below is indicates the default value. If it is not commented
+#   out it is set to a reasonable value.
+#
+#   To get a dCache instance running it is sufficient to set the
+#   two options:
+#      java             	The absolute location of the java binary
+#      serviceLocatorHost	The hostname of the admin node
+#
+#   The other values should only be changed when advised to do so by
+#   the documentation.
 #
 
 #  -----------------------------------------------------------------------
@@ -26,8 +30,10 @@
 #  -----------------------------------------------------------------------
 
 #  ---- Service Locater Host and Port
-#   Adjust this to point to one unique server for one and only one
-#   dCache instance (usually the admin node)
+#
+#   Adjust this to point to one unique Service Location service.
+#   This service must support precisely one dCache instance.  This is
+#   usually the admin node.
 #
 serviceLocatorHost=SERVER
 serviceLocatorPort=11111
@@ -36,51 +42,57 @@ serviceLocatorPort=11111
 #          Components
 #  -----------------------------------------------------------------------
 
-#  To activate Replica Manager you need make changes in all 3 places:
-#   1) etc/node_config on ALL ADMIN NODES in this dcache instance.
-#   2) replicaSetup file on node where replica manager is runnig
-#   3) define Resilient pool group(s) in PoolManager.conf
+#   To activate Replica Manager you need make changes in all 3 places:
+#    1) etc/node_config on ALL ADMIN NODES in this dcache instance.
+#    2) replicaSetup file on node where replica manager is runnig
+#    3) define Resilient pool group(s) in PoolManager.conf
 
 #  ---- Will Replica Manager be started?
+#
 #   Values:  no, yes
 #   Default: no
 #
 #   This has to be set to 'yes' on every node, if there is a replica
-#   manager in this dCache instance. Where the replica manager is started
-#   is controlled in 'etc/node_config'. If it is not started and this is
-#   set to 'yes' there will be error messages in log/dCacheDomain.log. If
-#   this is set to 'no' and a replica manager is started somewhere, it will
-#   not work properly.
-#
+#   manager in this dCache instance. Where the replica manager is
+#   started is controlled in 'etc/node_config'. If it is not started
+#   and this is set to 'yes' there will be error messages in
+#   log/dCacheDomain.log. If this is set to 'no' and a replica
+#   manager is started somewhere, it will not work properly.
 #
 #replicaManager=no
 
 #  ---- Which pool-group will be the group of resilient pools?
+#
 #   Values:  <pool-Group-Name>, a pool-group name existing in the PoolManager.conf
 #   Default: ResilientPools
 #
-#   Only pools defined in pool group ResilientPools in config/PoolManager.conf
-#   will be managed by ReplicaManager. You shall edit config/PoolManager.conf
-#   to make replica manager work. To use another pool group defined
-#   in PoolManager.conf for replication, please specify group name by changing setting :
+#   Only pools defined in pool group ResilientPools in
+#   config/PoolManager.conf will be managed by ReplicaManager. You
+#   must edit config/PoolManager.conf to make the replica manager
+#   work. To use another pool group defined in PoolManager.conf for
+#   replication, please specify group name by changing the setting:
 #       #resilientGroupName=ResilientPools
-#   Please scroll down "replica manager tuning" make this and other changes.
+#   Please scroll down "replica manager tuning" make this and other
+#   changes.
 
 #  -----------------------------------------------------------------------
 #          Java Configuration
 #  -----------------------------------------------------------------------
 
 #  ---- The binary of the Java VM
-#   Adjust to the correct location.
 #
-# shold point to <JDK>/bin/java
+#   Adjust to the absolute location of the JVM binary: java.  This
+#   should be <JDK>/bin/java
+#
 java="/usr/bin/java"
 
 #
 #  ---- Options for the Java VM
-#   Do not change unless yoy know what you are doing.
-#   If the globus.tcp.port.range is changed, the
-#   variable 'clientDataPortRange' below has to be changed accordingly.
+#
+#   Do not change unless you know what you are doing.
+#
+#   If the globus.tcp.port.range is changed, the clientDataPortRange
+#   variable below MUST be changed accordingly.
 #
 java_options="-server -Xmx512m -XX:MaxDirectMemorySize=512m \
               -Dsun.net.inetaddr.ttl=1800 \
@@ -90,93 +102,117 @@ java_options="-server -Xmx512m -XX:MaxDirectMemorySize=512m \
               -Dorg.dcache.net.tcp.portrange=33115:33145 \
               -Dlog4j.configuration=file:${ourHomeDir}/config/log4j.properties \
              "
-#   Option for Kerberos5 authentication:
+#
+#   Additional option for Kerberos5 authentication:
 #              -Djava.security.krb5.realm=FNAL.GOV \
 #              -Djava.security.krb5.kdc=krb-fnal-1.fnal.gov \
-#   Other options that might be useful:
-#              -Dlog4j.configuration=/opt/d-cache/config/log4j.properties \
+#
+#   Other additional options that might be useful:
 #              -Djavax.security.auth.useSubjectCredsOnly=false \
 #              -Djava.security.auth.login.config=/opt/d-cache/config/jgss.conf \
 #              -Xms400m \
 
 #  ---- Classpath
-#   Do not change unless yoy know what you are doing.
+#
+#   Do not change unless you know what you are doing.
 #
 classesDir=${ourHomeDir}/classes
 classpath=
 
-#  ---- Librarypath
+#  ---- The Library path
+#
 #   Do not change unless yoy know what you are doing.
-#   Currently not used. Might contain .so librarys for JNI
+#
+#   This is currently not used. It might contain .so libraries for JNI.
 #
 librarypath=${ourHomeDir}/lib
+
+
 
 #  -----------------------------------------------------------------------
 #          Filesystem Locations
 #  -----------------------------------------------------------------------
 
 #  ---- Location of the configuration files
-#   Do not change unless yoy know what you are doing.
+#
+#   Do not change unless you know what you are doing.
 #
 config=${ourHomeDir}/config
 
 #  ---- Location of the ssh
-#   Do not change unless yoy know what you are doing.
+#
+#   Do not change unless you know what you are doing.
 #
 keyBase=${ourHomeDir}/config
 
 #  ---- SRM/GridFTP authentication file
-#   Do not change unless yoy know what you are doing.
+#
+#   Do not change unless you know what you are doing.
 #
 kpwdFile=${ourHomeDir}/etc/dcache.kpwd
+
 
 
 #  -----------------------------------------------------------------------
 #         pool tuning
 #  -----------------------------------------------------------------------
-#   Do not change unless yoy know what you are doing.
+
+#  ---- General settings
 #
-# poolIoQueue=
-# checkRepository=true
-# waitForRepositoryReady=false
+#   Do not change unless you know what you are doing.
 #
+#poolIoQueue=
+#checkRepository=true
+#waitForRepositoryReady=false
+
 # ---- Allow pool to remove precious files on request from cleaner.
-#    this option respected only when pool connected to HSM ( lfs=none ).
-#    If lfs=precious, then removal of precious files is always allowed.
 #
-# allowCleaningPreciousFiles=false
+#   This option is respected only when a pool is connected to an HSM
+#   ( lfs=none ).   If lfs=precious then removal of precious files is
+#   always allowed.
 #
+#allowCleaningPreciousFiles=false
+
 #  ---- Which meta data repository implementation to use.
-#    Values: org.dcache.pool.repository.meta.file.FileMetaDataRepository
-#            org.dcache.pool.repository.meta.db.BerkeleyDBMetaDataRepository
-#    Default: org.dcache.pool.repository.meta.file.FileMetaDataRepository
 #
-#   Selects which meta data repository implementation to use. This is
-#   essentially a choice between storing meta data in a large number
-#   of small files in the control/ directory, or to use the embedded
-#   Berkeley database stored in the meta/ directory (both directories
-#   placed in the pool directory).
+#   Valid values are:
+#         org.dcache.pool.repository.meta.file.FileMetaDataRepository
+#         org.dcache.pool.repository.meta.db.BerkeleyDBMetaDataRepository
+#   The default is:
+#         org.dcache.pool.repository.meta.file.FileMetaDataRepository
 #
-# metaDataRepository=org.dcache.pool.repository.meta.file.FileMetaDataRepository
+#   This selects which meta data repository implementation to use.
+#   This is essentially a choice between storing meta data in a large
+#   number of small files in the control/ directory, or to use the
+#   embedded Berkeley database stored in the meta/ directory.  Both
+#   directories are within the pool directory.
 #
+#metaDataRepository=org.dcache.pool.repository.meta.file.FileMetaDataRepository
+
 #  ---- Which meta data repository to import from.
-#    Values: org.dcache.pool.repository.meta.file.FileMetaDataRepository
-#            org.dcache.pool.repository.meta.db.BerkeleyDBMetaDataRepository
-#            ""
-#    Default: ""
 #
-#   Selects which meta data repository to import data from if the
-#   information is missing from the main repository. This is useful
-#   for converting from one repository implementation to another,
-#   without having to fetch all the information from the central PNFS
-#   manager.
+#   Valid values are:
+#         org.dcache.pool.repository.meta.file.FileMetaDataRepository
+#         org.dcache.pool.repository.meta.db.BerkeleyDBMetaDataRepository
+#         ""
+#   The default is:
+#         ""
 #
-# metaDataRepositoryImport=""
+#   This variable selects which meta data repository to import data
+#   from if the information is missing from the main repository. This
+#   is useful for converting from one repository implementation to
+#   another, without having to fetch all the information from the
+#   central PNFS manager.
 #
+#metaDataRepositoryImport=""
+
+
+
 #  -----------------------------------------------------------------------
 #         gPlazma tuning
 #  -----------------------------------------------------------------------
-#   Do not change unless yoy know what you are doing.
+#
+#   Do not change unless you know what you are doing.
 #
 gplazmaPolicy=${ourHomeDir}/etc/dcachesrm-gplazma.policy
 #
@@ -186,85 +222,121 @@ gplazmaPolicy=${ourHomeDir}/etc/dcachesrm-gplazma.policy
 #useGPlazmaAuthorizationModule=false
 #useGPlazmaAuthorizationCell=true
 #delegateToGPlazma=false
-#
-#
+
+
+
 #  -----------------------------------------------------------------------
 #         dcap tuning
 #  -----------------------------------------------------------------------
 #
-# gsidcapIoQueue=
-# gsidcapIoQueueOverwrite=denied
-# gsidcapMaxLogin=1500
-# dcapIoQueue=
-# dcapIoQueueOverwrite=denied
-# dcapMaxLogin=1500
-#
+#gsidcapIoQueue=
+#gsidcapIoQueueOverwrite=denied
+#gsidcapMaxLogin=1500
+#dcapIoQueue=
+#dcapIoQueueOverwrite=denied
+#dcapMaxLogin=1500
+
+
+
 #  -----------------------------------------------------------------------
 #         gsiftp tuning
 #  -----------------------------------------------------------------------
+
+#  ---- Period between successive GridFTP performance markers
 #
-#  ---- Seconds between GridFTP performance markers
-#   Set  performanceMarkerPeriod to 180 to get performanceMarkers
-#   every 3 minutes.
-#   Set to 0 to disable performance markers.
+#   This variable controls how often performance markers are written.
+#   The value is in seconds: set performanceMarkerPeriod to 180 to
+#   get performanceMarkers every 3 minutes.  A value of 0 will
+#   disable performance markers.
+#
 #   Default: 180
 #
-# performanceMarkerPeriod=180
+#performanceMarkerPeriod=180
+
+#gsiftpPoolManagerTimeout=5400
+#gsiftpPoolTimeout=600
+#gsiftpPnfsTimeout=300
+#gsiftpMaxRetries=80
+#gsiftpMaxStreamsPerClient=10
+#gsiftpDefaultStreamsPerClient=5
+#gsiftpDeleteOnConnectionClosed=true
+#gsiftpMaxLogin=100
+#clientDataPortRange=20000:25000
+#gsiftpIoQueue=
+#gsiftpAdapterInternalInterface=
+#remoteGsiftpIoQueue=
+#FtpTLogDir=
+
+#  ---- Whether passive GridFTP transfers are allowed.
 #
-# gsiftpPoolManagerTimeout=5400
-# gsiftpPoolTimeout=600
-# gsiftpPnfsTimeout=300
-# gsiftpMaxRetries=80
-# gsiftpMaxStreamsPerClient=10
-# gsiftpDefaultStreamsPerClient=5
-# gsiftpDeleteOnConnectionClosed=true
-# gsiftpMaxLogin=100
-# clientDataPortRange=20000:25000
-# gsiftpIoQueue=
-# gsiftpAdapterInternalInterface=
-# remoteGsiftpIoQueue=
-# FtpTLogDir=
+#   This option defines whether a pool should accept incoming
+#   connections for GridFTP transfers.
 #
-#  ---- May pools accept incomming connection for GridFTP transfers?
-#    Values: 'true', 'false'
-#    Default: 'false' for FTP doors, 'true' for pools
+#   Valid values are:
+#       'true'
+#       'false'
+#   The default is:
+#       'false' for FTP doors
+#       'true' for pools
 #
-#    If set to true, pools are allowed accept incomming connections for
-#    for FTP transfers. This only affects passive transfers. Only passive
-#    transfers using GFD.47 GETPUT (aka GridFTP 2) can be redirected to
-#    the pool. Other passive transfers will be channelled through a
-#    proxy component at the FTP door. If set to false, all passive
-#    transfers to through a proxy.
+#   If this variable is set to true, pools are allowed accept
+#   incoming connections for GridFTP transfers.  This only affects
+#   passive transfers.  Only passive transfers using GFD.47 GETPUT
+#   (aka GridFTP 2) can be redirected to the pool.  Other passive
+#   transfers will be channelled through a proxy component at the FTP
+#   door. If this variable is set to false, all passive transfers to
+#   through a proxy.
 #
-#    This setting is interpreted by both FTP doors and pools, with
-#    different defaults. If set to true at the door, then the setting
-#    at the individual pool will be used.
+#   This setting is interpreted by both FTP doors and pools, with
+#   different defaults. If set to true at the door, then the setting
+#   at the individual pool will be used.
 #
-# gsiftpAllowPassivePool=false
-#
-#
+#gsiftpAllowPassivePool=false
+
+
+
 #  -----------------------------------------------------------------------
 #         common to gsiftp and srm
 #  -----------------------------------------------------------------------
+
+#  ---- Whether the SRM Space Manager should be enabled.
 #
-# srmSpaceManagerEnabled=no
+#srmSpaceManagerEnabled=no
+
+#  ---- Whether implicit space reservations should be enabled.
 #
-# will have no effect if srmSpaceManagerEnabled is "no"
-# srmImplicitSpaceManagerEnabled=yes
-# overwriteEnabled=no
+#   The following variable will have no effect unless the SRM Space
+#   Manager is enabled.
 #
-#  ---- Image and style directories for the dCache-internal web server
-#   Do not change unless yoy know what you are doing.
+#srmImplicitSpaceManagerEnabled=yes
+
+#overwriteEnabled=no
+
+
+
+#  -----------------------------------------------------------------------
+#          Web Interface Configuration
+#  -----------------------------------------------------------------------
+
+#  ---- Directory locations for dCache web interface
+#
+#   The following two variables specify the absolute location of the
+#   image and style directories for the dCache-internal web server.
+#
+#   Do not change them unless you know what you are doing.
 #
 images=${ourHomeDir}/docs/images
 styles=${ourHomeDir}/docs/styles
+
+
 
 #  -----------------------------------------------------------------------
 #          Network Configuration
 #  -----------------------------------------------------------------------
 
 #  ---- Port Numbers for the various services
-#   Do not change unless yoy know what you are doing.
+#
+#   Do not change these variables unless you know what you are doing.
 #
 portBase=22
 dCapPort=${portBase}125
@@ -276,221 +348,274 @@ srmPort=8443
 xrootdPort=1094
 
 #  ---- GridFTP port range
-#   Do not change unless yoy know what you are doing.
+#
+#   Do not change unless you know what you are doing.
 #
 clientDataPortRange=20000:25000
 
 #  ---- Port Numbers for the monitoring and administration
-#   Do not change unless yoy know what you are doing.
+#
+#   Do not change unless you know what you are doing.
 #
 adminPort=${portBase}223
 httpdPort=${portBase}88
 sshPort=${portBase}124
 #   Telnet is only started if the telnetPort line is uncommented.
-#   Debug only.
+#   This should be for debug use only.
 #telnetPort=${portBase}123
-#
-#  -----------------------------------------------------------------------
-#        Maintenance Module Setup
-#  -----------------------------------------------------------------------
-#
-# maintenanceLibPath=${ourHomeDir}/var/lib/dCache/maintenance
-# maintenanceLibAutogeneratePaths=true
-# maintenanceLogoutTime=18000
-#
-
-#  -----------------------------------------------------------------------
-#          Database Configuration
-#  -----------------------------------------------------------------------
-#   The variable 'srmDbHost' is obsolete. For compatibility reasons,
-#   it is still used if it is set and if the following variables are
-#   not set
-
-#   The current setup assumes that one or more PostgreSQL servers are
-#   used by the various dCache components. Currently the database user
-#   'srmdcache' with password 'srmdcache' is used by all components.
-#   They use the databases 'dcache', 'replicas', 'companion',
-#   'billing'.  However, these might be located on separate hosts.
-
-#   The best idea is to have the database server running on the same
-#   host as the dCache component which accesses it. Therefore, the
-#   default value for the following variables is 'localhost'.
-#   Uncomment and change these variables only if you have a reason to
-#   deviate from this scheme.
-
-#   (One possibility would be, to put the 'billing' DB on another host than
-#   the pnfs server DB and companion, but keep the httpDomain on the admin
-#   host.)
-
-#  ---- pnfs Companion Database Host
-#   Do not change unless yoy know what you are doing.
-#   - Database name: companion
-#
-#companionDatabaseHost=localhost
-
-#  ---- SRM Database Host
-#   Do not change unless yoy know what you are doing.
-#   - Database name: dcache
-#   - If srmDbHost is set and this is not set, srmDbHost is used.
-#
-#srmDatabaseHost=localhost
-
-#  ---- Space Manager Database Host
-#   Do not change unless yoy know what you are doing.
-#   - Database name: dcache
-#   - If srmDbHost is set and this is not set, srmDbHost is used.
-#
-#spaceManagerDatabaseHost=localhost
-
-# ----------------------------------------------------------------
-#   pin manager tuning
-# ----------------------------------------------------------------
-#  ---- Pin Manager Database Host
-#   Do not change unless you know what you are doing.
-#   - If srmDbHost is set and this is not set, srmDbHost is used.
-#
-#pinManagerDbHost=localhost
-#
-#  ---- Pin Manager Database Name
-#   Do not change unless you know what you are doing.
-#   - If srmDbName is set and this is not set, srmDbName is used.
-#
-#pinManagerDbName=dcache
-#
-#  ---- Pin Manager Database User
-#   Do not change unless you know what you are doing.
-#   - If srmDbUser is set and this is not set, srmDbUser is used.
-#
-#pinManagerDbUser="srmdcache"
-#
-#  ---- Pin Manager Database Host
-#   Do not change unless yoy know what you are doing.
-#   - If srmDbPassword is set and this is not set, srmDbPassword is used.
-#
-#pinManagerDbPassword=
-#
-#  ---- Pin Manager Database Host
-#   Do not change unless yoy know what you are doing.
-#   - Database name: dcache
-#   - If srmPasswordFile is set and this is not set, srmPasswordFile is used.
-#
-#pinManagerPasswordFile=""
-
-#  ---- Replica Manager Database Host
-#   Do not change unless yoy know what you are doing.
-#   - Database name: replicas
-#
-# ----------------------------------------------------------------
-#   replica manager tuning
-# ----------------------------------------------------------------
-#
-# replicaManagerDatabaseHost=localhost
-# replicaDbName=replicas
-# replicaDbUser=srmdcache
-# replicaDbPassword=srmdcache
-# replicaPasswordFile=""
-# resilientGroupName=ResilientPools
-# replicaPoolWatchDogPeriod=600
-# replicaWaitDBUpdateTimeout=600
-# replicaExcludedFilesExpirationTimeout=43200
-# replicaDelayDBStartTimeout=1200
-# replicaAdjustStartTimeout=1200
-# replicaWaitReplicateTimeout=43200
-# replicaWaitReduceTimeout=43200
-# replicaDebug=false
-# replicaMaxWorkers=6
-# replicaMin=2
-# replicaMax=3
-#
-
 
 #  ---- Transfer / TCP Buffer Size
-#   Do not change unless yoy know what you are doing.
+#
+#   Do not change unless you know what you are doing.
 #
 bufferSize=1048576
 tcpBufferSize=1048576
 
+
+
+#  -----------------------------------------------------------------------
+#        Maintenance Module Setup
+#  -----------------------------------------------------------------------
+#
+#maintenanceLibPath=${ourHomeDir}/var/lib/dCache/maintenance
+#maintenanceLibAutogeneratePaths=true
+#maintenanceLogoutTime=18000
+
+
+
+#  -----------------------------------------------------------------------
+#          Database Configuration
+#  -----------------------------------------------------------------------
+#
+#   The srmDbHost variable is obsolete.  For compatibility reasons,
+#   it is still used if set and the following variables are not.
+#
+#   The current setup assumes that one or more PostgreSQL servers are
+#   used by the various dCache components.  Currently the database user
+#   'srmdcache' with password 'srmdcache' is used by all components.
+#   They use the databases 'dcache', 'replicas', 'companion' and
+#   'billing'.  However, these might be located on separate hosts.
+#
+#   The most performant configuration is to have the database server
+#   running on the same host as the dCache component that will
+#   access it.  Therefore, the default value for all the following
+#   variables is 'localhost'.  Uncomment and change these variables
+#   only if you have a reason to deviate from this scheme.
+#
+#   For example, one valid deployment would be to put the 'billing'
+#   database on different host than the pnfs server database and
+#   companion, but keep the httpDomain on the admin host.
+
+#  ---- pnfs Companion Database Host
+#
+#   Do not change unless you know what you are doing.
+#
+#   Database name: companion
+#
+#companionDatabaseHost=localhost
+
+#  ---- SRM Database Host
+#
+#   NB. If the srmDbHost variable is set and the following variable
+#   is not then the value of srmDbHost is used.
+#
+#   Do not change unless you know what you are doing.
+#
+#   Database name: dcache
+#
+#srmDatabaseHost=localhost
+
+#  ---- Space Manager Database Host
+#
+#   NB. If the srmDbHost variable is set and the following variable
+#   is not then the value of srmDbHost is used.
+#
+#   Do not change unless you know what you are doing.
+#
+#   Database name: dcache
+#
+#spaceManagerDatabaseHost=localhost
+
+#  ---- Pin Manager Database Host
+#
+#   NB. If the srmDbHost variable is set and the following variable
+#   is not then the value of srmDbHost is used.
+#
+#   Do not change unless you know what you are doing.
+#
+#pinManagerDbHost=localhost
+
+#  ---- Pin Manager Database Name
+#
+#   NB. If the srmDbName variable is set and the following variable
+#   is not then the value of srmDbName is used.
+#
+#   Do not change unless you know what you are doing.
+#
+#pinManagerDbName=dcache
+
+#  ---- Pin Manager Database User
+#
+#   NB. If the srmDbUser variable is set and the following variable
+#   is not then the value of srmDbUser is used.
+#
+#   Do not change unless you know what you are doing.
+#
+#pinManagerDbUser="srmdcache"
+
+#  ---- Pin Manager Database Host
+#
+#   NB. If the srmDbPassword variable is set and the following
+#   variable is not then the value of srmDbPassword is used.
+#
+#   Do not change unless you know what you are doing.
+#
+#pinManagerDbPassword=
+
+#  ---- Pin Manager Database Host
+#
+#   NB. If the srmDbPasswordFile variable is set and the following
+#   variable is not then the value of srmDbPasswordFile is used.
+#
+#   Do not change unless you know what you are doing.
+#
+#   - Database name: dcache
+#
+#pinManagerPasswordFile=""
+
+#  ---- Replica Manager database settings
+#
+#   Do not change unless you know what you are doing.
+#
+#   Database name: replicas
+#
+#replicaManagerDatabaseHost=localhost
+#replicaDbName=replicas
+#replicaDbUser=srmdcache
+#replicaDbPassword=srmdcache
+#replicaPasswordFile=""
+#resilientGroupName=ResilientPools
+#replicaPoolWatchDogPeriod=600
+#replicaWaitDBUpdateTimeout=600
+#replicaExcludedFilesExpirationTimeout=43200
+#replicaDelayDBStartTimeout=1200
+#replicaAdjustStartTimeout=1200
+#replicaWaitReplicateTimeout=43200
+#replicaWaitReduceTimeout=43200
+#replicaDebug=false
+#replicaMaxWorkers=6
+#replicaMin=2
+#replicaMax=3
+
+
 #  ---- Allow overwrite of existing files via GSIdCap
+#
 #   allow=true, disallow=false
 #
 truncate=false
 
 #  ---- pnfs Mount Point for (Grid-)FTP
+#
 #   The current FTP door needs pnfs to be mounted for some file exist
-#   checks and for the directory listing. Therefore it needs to know
-#   where pnfs is mounted. In future the Ftp and dCap deamons will
+#   checks and for the directory listing.  Therefore it needs to know
+#   where pnfs is mounted.  In future the Ftp and dCap deamons will
 #   ask the pnfsManager cell for help and the directory listing is
 #   done by a DirListPool.
+#
 ftpBase=/pnfs/ftpBase
+
+
 
 #  -----------------------------------------------------------------------
 #          pnfs Manager Configuration
 #  -----------------------------------------------------------------------
-#
+
 #  ---- pnfs Mount Point
-#   The mount point of pnfs on the admin node. Default: /pnfs/fs
+#
+#   The mount point of pnfs on the admin node.  The default value is:
+#       /pnfs/fs
 #
 pnfs=/pnfs/fs
 
+#  ---- Default pnfs server
+#
 #   An older version of the pnfsManager actually autodetects the
-#   possible pnfs filesystems. The ${defaultPnfsServer} is choosen
-#   from the list and used as primary pnfs filesystem. (currently the
-#   others are ignored).  The ${pnfs} variable can be used to override
-#   this mechanism.
+#   possible pnfs filesystems. The defaultPnfsServer variable is
+#   choosen from the list and used as primary pnfs filesystem.
+#   Currently the others are ignored.  The pnfs variable can be used
+#   to override this mechanism.
 #
-# defaultPnfsServer=localhost
-#
+#defaultPnfsServer=localhost
+
 #   -- leave this unless you are running an enstore HSM backend.
 #
-# pnfsInfoExtractor=diskCacheV111.util.OsmInfoExtractor
+#pnfsInfoExtractor=diskCacheV111.util.OsmInfoExtractor
+
+#  ---- Number of threads
 #
-#   -- depending on the power of your pnfs server host you may
-#      set this to up to 50.
+#   Depending on how powerful is your pnfs server host you may set
+#   this to up to 50.
 #
-# pnfsNumberOfThreads=4
-#
+#pnfsNumberOfThreads=4
+
 #   -- don't change this
 #
-# namespaceProvider=diskCacheV111.namespace.provider.BasicNameSpaceProviderFactory
+#namespaceProvider=diskCacheV111.namespace.provider.BasicNameSpaceProviderFactory
+
+#  ---- Database configuration
 #
-#   --- change this if you configured you postgres instance
-#       other then described in the Book.
+#   Only change these variables if you have configured you PostGreSQL
+#   instance other than as recommended in the dCache Book.
 #
-# pnfsDbUser=srmdcache
-# pnfsDbPassword=srmdcache
-# pnfsPasswordFile=
+#pnfsDbUser=srmdcache
+#pnfsDbPassword=srmdcache
+#pnfsPasswordFile=
+
+#  ---- Storage for cacheinfo
 #
-#  ---- Storage Method for cacheinfo: companion or pnfs
-#   Values:  'comanion' -- cacheinfo will be stored in separate DB
-#            other or missing -- cacheinfo will be stored in pnfs
-#   Default: 'pnfs' -- for backward compatibility of old dCacheSetup files
+#   This variable defines where cacheinfo is to be stored.
 #
-#   'companion' is the default for new installs. Old installations have
-#   to use 'pnfs register' in every pool after switching from 'pnfs' to
-#   'companion'. See the documentation.
+#   Valid values are:
+#       companion
+#       pnfs
+#
+#   The default value is:
+#       pnfs
+#
+#   If 'companion' is specified then the cacheinfo will be stored in a
+#   separate database.  If 'pnfs' is specified, then cacheinfo will
+#   be stored in pnfs.
+#
+#   For new installations, 'companion' is recommended.
+#
+#   For existing installations that store cacheinfo in pnfs must use
+#   'pnfs register' on every pool after switching from 'pnfs' to
+#   'companion'.  See the documentation for more details.
 #
 cacheInfo=companion
-#
-#
-#
 
+#  ---- Default Access Latency and Retention Policy 
 #
-# defualt Access Latency and Retention Policy for newly created files
+#   These variables affect only newly created files.
 #
-# possible values:
-#    AccessLatency  : NEARLINE, ONLINE
-#    RetentionPolicy: CUSTODIAL, REPLICA, OUTPUT (don't use it)
+#   The valid values are:
+#       AccessLatency  : NEARLINE, ONLINE
+#       RetentionPolicy: CUSTODIAL, REPLICA, OUTPUT
+#   However, do not use OUTPUT.
 #
-# DefaultRetentionPolicy=CUSTODIAL
-# DefaultAccessLatency=NEARLINE
+#DefaultRetentionPolicy=CUSTODIAL
+#DefaultAccessLatency=NEARLINE
 
 #  ---- Location of the trash directory
-#   The cleaner (which can only run on the pnfs server machine itself)
-#   autodetects the 'trash' directory.  Non-empty 'trash' overwrites the
-#   autodetect.
+#
+#   The cleaner, which can only run on the pnfs server machine
+#   itself, autodetects the 'trash' directory.  Non-empty 'trash'
+#   overwrites this autodetected value.
 #
 #trash=
 
+#  ---- Cleaner settings
+#
 #   The cleaner stores persistency information in subdirectories of
 #   the following directory.
 #
@@ -500,11 +625,15 @@ cacheInfo=companion
 # cleanerPoolTimeout=100
 # cleanerProcessFilesPerRun=500
 # cleanerArchive=none
-#
 
 #  ---- Whether to enable the HSM cleaner
-#   Values:  'disabled', 'enabled'
-#   Default: 'disabled'
+#
+#   Valid values are:
+#           disabled
+#           enabled
+#
+#   The default value is:
+#           disabled
 #
 #   The HSM cleaner scans the PNFS trash directory for deleted
 #   files stored on an HSM and sends a request to an attached
@@ -515,219 +644,266 @@ cacheInfo=companion
 #   at the PNFS domain *and* at all pools that are supposed
 #   to delete files from an HSM.
 #
-# hsmCleaner=disabled
-#
-#
+#hsmCleaner=disabled
+
 #  ---- Location of trash directory for files on tape
+#
 #   The HSM cleaner periodically scans this directory to
 #   detect deleted files.
 #
-# hsmCleanerTrash=/opt/pnfsdb/pnfs/1
-#
+#hsmCleanerTrash=/opt/pnfsdb/pnfs/1
+
 #  ---- Location of repository directory of the HSM cleaner
+#
 #   The HSM cleaner uses this directory to store information
 #   about files in could not clean right away. The cleaner
 #   will reattempt to clean the files later.
 #
-# hsmCleanerRepository=/opt/pnfsdb/pnfs/1/repository
-#
+#hsmCleanerRepository=/opt/pnfsdb/pnfs/1/repository
+
 #  ---- Interval between scans of the trash directory
-#   Specifies the time in seconds between two scans of the
+#
+#   Specifies the time in seconds between successive scans of the
 #   trash directory.
 #
-# hsmCleanerScan=90
-#
+#hsmCleanerScan=90
+
 #  ---- Interval between retries
-#   Specifies the time in seconds between two attempts to
+#
+#   Specifies the time in seconds between successive attempts to
 #   clean files stored in the cleaner repository.
 #
-# hsmCleanerRecover=3600
-#
+#hsmCleanerRecover=3600
+
 #  ---- Interval between flushing failures to the repository
-#   When the cleaner failes to clean a file, information about this
-#   file is added to the repository. This setting specifies the time
-#   in seconds between flushes to the repository. Until the
-#   information is kept in memory and in the trash directory.
 #
-#   Each flush will create a new file. A lower value will cause the
-#   repository to be split into more files. A higher value will cause
-#   a higher memory usage and a larger number of files in the trash
-#   directory.
+#   When the cleaner fails to clean a file, information about this
+#   file is added to the repository.  This setting specifies the time
+#   in seconds between successive flushes to the repository.  Until
+#   the information is kept in memory and in the trash directory.
 #
-# hsmCleanerFlush=60
+#   Each flush will create a new file.  A lower value will cause the
+#   repository to be split into more files.  A higher value will
+#   cause a higher memory usage and a larger number of files in the
+#   trash directory.
 #
+#hsmCleanerFlush=60
+
 #  ---- Max. length of in memory queue of files to clean
+#
 #   When the trash directory is scanned, information about deleted
-#   files is queued in memory. This setting specifies the maximum
-#   length of this queue. When the queue length is reached, scanning
+#   files is queued in memory.  This variable specifies the maximum
+#   length of this queue.  When the queue length is reached, scanning
 #   is suspended until files have been cleaned or flushed to the
 #   repository.
 #
-# hsmCleanerCleanerQueue=10000
-#
+#hsmCleanerCleanerQueue=10000
+
 #  ---- Timeout for pool communication
+#
 #   Files are cleaned from an HSM by sending a message to a pool to
-#   do so. This specifies the timeout in seconds after which the
-#   operation is considered failed.
+#   do so.  This variable specifies the timeout in seconds after
+#   which the operation is considered to have failed.
 #
-# hsmCleanerTimeout=120
-#
+#hsmCleanerTimeout=120
+
 #  ---- Maximum concurrent requests to a single HSM
-#   Files are cleaned in batches. This specified the largest number
-#   of files to include in a batch per HSM.
 #
-# hsmCleanerRequest=100
+#   Files are cleaned in batches.  This variable specified the
+#   largest number of files to include in a batch per HSM.
 #
+#hsmCleanerRequest=100
+
+
+
 #  -----------------------------------------------------------------------
 #         Directory Pools
 #  -----------------------------------------------------------------------
 #
 #directoryPoolPnfsBase=/pnfs/fs
-#
+
+
 
 #  -----------------------------------------------------------------------
 #          Srm Settings for experts
 #  -----------------------------------------------------------------------
 #
-# srmVersion=version1
-# pnfsSrmPath=/
-# parallelStreams=10
+#srmVersion=version1
+#pnfsSrmPath=/
+#parallelStreams=10
 
 #srmAuthzCacheLifetime=60
 
-# srmGetLifeTime=14400000
-# srmPutLifeTime=14400000
-# srmCopyLifeTime=14400000
+#srmGetLifeTime=14400000
+#srmPutLifeTime=14400000
+#srmCopyLifeTime=14400000
 
 
-# srmTimeout=3600
-# srmVacuum=true
-# srmVacuumPeriod=21600
-# srmProxiesDirectory=/tmp
-# srmBufferSize=1048576
-# srmTcpBufferSize=1048576
-# srmDebug=true
+#srmTimeout=3600
+#srmVacuum=true
+#srmVacuumPeriod=21600
+#srmProxiesDirectory=/tmp
+#srmBufferSize=1048576
+#srmTcpBufferSize=1048576
+#srmDebug=true
 
-# srmGetReqThreadQueueSize=10000
-# srmGetReqThreadPoolSize=250
-# srmGetReqMaxWaitingRequests=1000
-# srmGetReqReadyQueueSize=10000
-# srmGetReqMaxReadyRequests=2000
-# srmGetReqMaxNumberOfRetries=10
-# srmGetReqRetryTimeout=60000
-# srmGetReqMaxNumOfRunningBySameOwner=100
+#srmGetReqThreadQueueSize=10000
+#srmGetReqThreadPoolSize=250
+#srmGetReqMaxWaitingRequests=1000
+#srmGetReqReadyQueueSize=10000
+#srmGetReqMaxReadyRequests=2000
+#srmGetReqMaxNumberOfRetries=10
+#srmGetReqRetryTimeout=60000
+#srmGetReqMaxNumOfRunningBySameOwner=100
 
-# srmPutReqThreadQueueSize=10000
-# srmPutReqThreadPoolSize=250
-# srmPutReqMaxWaitingRequests=1000
-# srmPutReqReadyQueueSize=10000
-# srmPutReqMaxReadyRequests=1000
-# srmPutReqMaxNumberOfRetries=10
-# srmPutReqRetryTimeout=60000
-# srmPutReqMaxNumOfRunningBySameOwner=100
+#srmPutReqThreadQueueSize=10000
+#srmPutReqThreadPoolSize=250
+#srmPutReqMaxWaitingRequests=1000
+#srmPutReqReadyQueueSize=10000
+#srmPutReqMaxReadyRequests=1000
+#srmPutReqMaxNumberOfRetries=10
+#srmPutReqRetryTimeout=60000
+#srmPutReqMaxNumOfRunningBySameOwner=100
 
-# srmCopyReqThreadQueueSize=10000
-# srmCopyReqThreadPoolSize=250
-# srmCopyReqMaxWaitingRequests=1000
-# srmCopyReqMaxNumberOfRetries=10
-# srmCopyReqRetryTimeout=60000
-# srmCopyReqMaxNumOfRunningBySameOwner=100
+#srmCopyReqThreadQueueSize=10000
+#srmCopyReqThreadPoolSize=250
+#srmCopyReqMaxWaitingRequests=1000
+#srmCopyReqMaxNumberOfRetries=10
+#srmCopyReqRetryTimeout=60000
+#srmCopyReqMaxNumOfRunningBySameOwner=100
 
-# srmPoolManagerTimeout=300
-# srmPoolTimeout=300
-# srmPnfsTimeout=300
-# srmMoverTimeout=7200
-# remoteCopyMaxTransfers=150
-# remoteHttpMaxTransfers=30
-# remoteGsiftpMaxTransfers=${srmCopyReqThreadPoolSize}
-
+#srmPoolManagerTimeout=300
+#srmPoolTimeout=300
+#srmPnfsTimeout=300
+#srmMoverTimeout=7200
+#remoteCopyMaxTransfers=150
+#remoteHttpMaxTransfers=30
+#remoteGsiftpMaxTransfers=${srmCopyReqThreadPoolSize}
 #
-# srmDbName=dcache
-# srmDbUser=srmdcache
-# srmDbPassword=srmdcache
-# srmDbLogEnabled=false
+#srmDbName=dcache
+#srmDbUser=srmdcache
+#srmDbPassword=srmdcache
+#srmDbLogEnabled=false
 #
-# This variable enables logging of the history
-# of the srm request transitions in the database
-# so that it can be examined though the srmWatch
-# monitoring tool
-# srmJdbcMonitoringLogEnabled=false
+#   The following variable enables logging of the history of the SRM
+#   request transitions in the database so that it can be examined
+#   though the srmWatch monitoring tool.
+#srmJdbcMonitoringLogEnabled=false
 #
-# turning this on turns off the latest changes that made service
-# to honor the srm client's prococol list order for
-# get/put commands
-# this is needed temprorarily to support old srmcp clients
-# srmIgnoreClientProtocolOrder=false
+#   Enabling the following option turns off the latest changes that
+#   made service to honor the SRM client's protocol list order for
+#   GET/PUT commands.  This is needed temporarily to support old
+#   srmcp clients.
+#srmIgnoreClientProtocolOrder=false
 
+#  ---- SRM Password file.
 #
-#  -- Set this to /root/.pgpass in case
-#     you need to have better security.
+#  Set the following variable to /root/.pgpass for improved security.
 #
 # srmPasswordFile=
+
+#  -- Enable overwrite for SRM v1.1.
 #
-#  -- Set this to true if you want overwrite to be enabled for
-#     srm v1.1 interface as well as for srm v2.2 interface when
-#     client does not specify desired overwrite mode.
-#     This option will be considered only if overwriteEnabled is
-#     set to yes (or true)
+#   Set the following variable to true if you want overwrite to be
+#   enabled for the SRM v1.1 interface as well as for SRM v2.2
+#   interface when client does not specify desired overwrite mode.
+#   This option will be considered only if the overwriteEnabled
+#   variable is set to yes (or true).
 #
 # srmOverwriteByDefault=false
 
-# ----srmCustomGetHostByAddr enables using the BNL developed
-#  procedure for host by ip resolution if standard
-# InetAddress method failed
+# ----  Enable custom address resolution.
+#
+#   The srmCustomGetHostByAddr option enables a custom IP resolution,
+#   if the standard InetAddress method fails.
+#
 # srmCustomGetHostByAddr=false
 
-#  ---- Allow automatic creation of directories via SRM
-#   allow=true, disallow=false
+#  ---- Enable automatic creation of directories.
+#
+#  Allow automatic creation of directories via SRM
+#
+#  allow=true, disallow=false
 #
 RecursiveDirectoryCreation=true
 
 #  ---- Allow delete via SRM
-#   allow=true, disallow=false
+#
+#  Allow deletion of files via the SRM interface.
+#
+#  allow=true, disallow=false
 #
 AdvisoryDelete=true
-#
-# pinManagerDatabaseHost=${srmDbHost}
-# spaceManagerDatabaseHost=${srmDbHost}
-#
-# ----if the transfer request come from the door, and there was not prior
-#     space reservation made for this file, should we try to reserve
-#     space before satisfying the request
-# SpaceManagerReserveSpaceForNonSRMTransfers=false
 
-# LinkGroupAuthorizationFile contains the list of FQANs that are allowed to
-# make space reservations in a given link group
+#pinManagerDatabaseHost=${srmDbHost}
+#spaceManagerDatabaseHost=${srmDbHost}
+
+
+# ---- Reserve space for non SRM transfers.
+#
+#   If the transfer request comes from the door and there was no
+#   prior space reservation made for this file, should we try to
+#   reserve space before satisfying the request?
+#
+#SpaceManagerReserveSpaceForNonSRMTransfers=false
+
+
+# ---- Location of LinkGroupAuthorizationFile
+#
+#   The LinkGroupAuthorizationFileName file contains the list of VOMS
+#   FQANs that are allowed to make space reservations within a given
+#   link group.
+#
 #SpaceManagerLinkGroupAuthorizationFileName=/opt/d-cache/etc/LinkGroupAuthorization.conf
 
-#
+
 
 #  -----------------------------------------------------------------------
 #          Logging Configuration
 #  -----------------------------------------------------------------------
 
 #  ---- Directory for the Log Files
-#   Default: ${ourHomeDir}/log/  (if unset or empty)
+#
+#   If no value is set, the default value is:
+#           ${ourHomeDir}/log/
 #
 logArea=/var/log
 
-#  ---- Restart Behaviour
-#   Values:  'new' -- logfiles will be moved to LOG.old at restart.
-#            other or missing -- logfiles will be appended at restart.
-#   Default: 'keep'
+#  ---- Restart behaviour
+#
+#   This variable describes what should be done with an existing log
+#   file when a domain is restarted.  The options are either to rename
+#   LOGFILE to LOGFILE.old so allowing a new log file to be created,
+#   or to retain the log file and subsequent logging information will
+#   be appended.
+#
+#   The valid values are:
+#           new
+#           keep
+
+#   The default value is:
+#           keep
 #
 #logMode=keep
+
+
 
 #  -----------------------------------------------------------------------
 #       Billing / Accounting
 #  -----------------------------------------------------------------------
 
-#   The directory the billing logs are written to
+#  ---- Directory for billing logs
+#
+#   The directory within which the billing logs are to be written.
+#
 billingDb=${ourHomeDir}/billing
 
-#   If billing information should be written to a
-#   PostgreSQL database set to 'yes'.
-#   A database called 'billing' has to be created there.
+#  ---- Store billing data in database
+#
+#   This variable describes whether the billing information should be
+#   written to a PostgreSQL database.  A database called 'billing' must
+#   be created.
+#
 #billingToDb=no
 
 #   The PostgreSQL database host:
@@ -739,37 +915,48 @@ billingDb=${ourHomeDir}/billing
 #billingDbName=billing
 
 
+
 #  -----------------------------------------------------------------------
 #       Info Provider
 #  -----------------------------------------------------------------------
 #
-#   The following variables are used by the dynamic info provider, which
-#   is used for integration of dCache as a storage element in the LCG
-#   information system. All variables are used by the client side of the
-#   dynamic info provider which is called regularly by the LCG GIP (generic
-#   info provider). It consists of the two scripts
+#   The following variables are used by the (old) dynamic info
+#   provider, which is used for integration of dCache as a storage
+#   element in the WLCG information system.  All variables are used by
+#   the client side of the dynamic info provider which is called
+#   at regular intervals by the gLite GIP (generic info provider)
+#   framework. It consists of the two scripts:
+#
 #     jobs/infoDynamicSE-plugin-dcache
 #     jobs/infoDynamicSE-provider-dcache
-#
 
-#  ---- Seconds between information retrievals
+#  ---- Time between retrievals
+#
+#   The time, in seconds, between successive information retrievals.
 #   Default: 180
+#
 #infoCollectorInterval=180
 
-#  ---- The static file used by the GIP
-#   This is also used by the plugin to determine the info it should
-#   output.
+#  ---- Location of static LDIF
+#
+#   The static LDIF file used by GIP.  This is also used by the
+#   plugin to determine the info it should output.
 #   Default: /opt/lcg/var/gip/ldif/lcg-info-static-se.ldif
+#
 #infoProviderStaticFile=/opt/lcg/var/gip/ldif/lcg-info-static-se.ldif
 
-#  ---- The host where the InfoCollector cell runs
-#   Default: localhost
+#  ---- Where infoCollector service is running
+#
+#   This is the hostname of the node that runs the infoCollector
+#   service.  The default value is localhost.
+#
 #infoCollectorHost=localhost
 
-#  ---- The port where the InfoCollector cell will listen
-#   This will be used by the InfoCollector cell as well as the dynamic
-#   info provider scripts
-#   Default: 22111
+#  ---- The port on which the InfoCollector cell will listen
+#
+#   This variable is used by the InfoCollector cell as well as the
+#   dynamic info provider scripts.  The default value is 22111.
+#
 #infoCollectorPort=22111
 
 
@@ -778,33 +965,65 @@ billingDb=${ourHomeDir}/billing
 #    Statistics module
 # ------------------------------------------------------------------------
 
-#  - point to place where statistic will be store
+#  ---- Directory for storing statistics.
+#
+#   This is the directory under which the statistics module will
+#   store historic data.
+#
 statisticsLocation=${ourHomeDir}/statistics
 
-# ------------------------------------------------------------------------
-# xrootd section
-# ------------------------------------------------------------------------
-#
-#   forbids write access in general (to avoid unauthenticated writes). Overrides all other authorization settings.
-# xrootdIsReadOnly=true
-#
-#   allow write access only to selected paths (and its subdirectories). Overrides any remote authorization settings (like from the filecatalogue)
-# xrootdAllowedPaths=/path1:/path2:/path3
-#
-# 	This will allow to enable authorization in the xrootd door by specifying a valid
-# 	authorization plugin. There is only one plugin in the moment, implementing token based
-#	authorization controlled by a remote filecatalogue. This requires an additional parameter
-#   'keystore', holding keypairs needed to do the authorization plugin. A template keystore
-#   can be found in ${ourHomeDir}/etc/keystore.temp.
 
-# xrootdAuthzPlugin=org.dcache.xrootd.security.plugins.tokenauthz.TokenAuthorizationFactory
-# xrootdAuthzKeystore=${ourHomeDir}/etc/keystore
 
-# 	the mover queue on the pool where this request gets scheduled to
-# xrootdIoQueue=
+# ------------------------------------------------------------------------
+#    xrootd Configuration
+# ------------------------------------------------------------------------
+
+#  ---- Global read-only
 #
-# the number of simultaneous physical connections (aka Logins)
-# xrootdMaxLogin=50
+#   This variable controls whether any write access is permitted.
+#   This is to avoid any unauthenticated writes.  The variable
+#   overrides all other authorization settings.
 #
-# the number of simultaneous open files per physical connection (e.g. a single ROOT client instance)
-# xrootdMaxOpenFilesPerConnection=5000
+#xrootdIsReadOnly=true
+
+#  ---- Writable paths
+#
+#   This variable describes which directories have write access.
+#   Xrootd clients may only write into these directories and their
+#   subdirectories.  This variable overrides any remote authorization
+#   settings; for example, from the filecatalogue.
+#
+#xrootdAllowedPaths=/path1:/path2:/path3
+
+#  ---- Authorization options
+#
+# 	The following two variables enable authorization in the xrootd
+#   door.  Currently, dCache supports only one plugin, which
+#   implements token based authorization controlled by a remote
+#   filecatalogue.  This requires an additional keystore file that
+#   holds the keypairs needed to do the authorisation.  A template
+#   keystore file can be found in ${ourHomeDir}/etc/keystore.temp.
+#
+#xrootdAuthzPlugin=org.dcache.xrootd.security.plugins.tokenauthz.TokenAuthorizationFactory
+#xrootdAuthzKeystore=${ourHomeDir}/etc/keystore
+
+#  ---- Mover queue
+#
+#   The mover queue on the pool to which this request will be scheduled.
+#
+#xrootdIoQueue=
+
+#  ---- Max concurrent connections.
+#
+#   The maximum number of simultaneous physical connections (aka
+#   Logins) to permit.
+#
+#xrootdMaxLogin=50
+
+#  ---- Max concurrent open files per connection.
+#
+#   This variable describes the maximum number of simultaneous open
+#   files per physical connection (e.g., a single ROOT client
+#   instance).
+#
+#xrootdMaxOpenFilesPerConnection=5000
