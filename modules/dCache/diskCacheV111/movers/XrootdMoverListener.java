@@ -22,6 +22,7 @@ import org.dcache.xrootd.protocol.messages.ReadResponse;
 import org.dcache.xrootd.protocol.messages.ReadVRequest;
 import org.dcache.xrootd.protocol.messages.StatRequest;
 import org.dcache.xrootd.protocol.messages.StatResponse;
+import org.dcache.xrootd.protocol.messages.StatxRequest;
 import org.dcache.xrootd.protocol.messages.SyncRequest;
 import org.dcache.xrootd.protocol.messages.WriteRequest;
 import org.dcache.xrootd.protocol.messages.GenericReadRequestMessage.EmbeddedReadRequest;
@@ -475,4 +476,11 @@ public class XrootdMoverListener implements StreamListener {
 
 		mover.getCell().say("closing logical stream (streamID="+streamId+")");
 	}
+
+
+
+    public void doOnStatusX(StatxRequest request) {
+        physicalXrootdConnection.getResponseEngine().sendResponseMessage(new ErrorResponse(request.getStreamID(), XrootdProtocol.kXR_ServerError, "statx not implemented on data server"));
+        
+    }
 }

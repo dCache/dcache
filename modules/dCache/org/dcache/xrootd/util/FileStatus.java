@@ -38,10 +38,22 @@ public class FileStatus {
 	 * Set the flags for this file. 0 is regular file, bit 0 set executable,
      * bit 1 set directory, bit 2 set special file  (socket, fifo, pipe, etc.)
 	 * 
+	 * Deprecated. Use addToFlags() instead.
+	 * 
 	 * @param flags the flags to set to this file
 	 */
+	@Deprecated
 	public void setFlags(int flags) {
 		this.flags = flags;
+	}
+	
+	/**
+	 * Add a flag to the flags field by using bitwise OR.
+	 *  
+	 * @param flag
+	 */
+	public void addToFlags(int flag) {
+	    this.flags |= flag;
 	}
 	
 	public void setModtime(long modtime) {
@@ -98,4 +110,8 @@ public class FileStatus {
 	public long getFileHandle() {
 		return getID();
 	}
+
+    public int getFlags() {
+        return this.flags;
+    }
 }

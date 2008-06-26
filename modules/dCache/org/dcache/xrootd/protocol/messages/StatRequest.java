@@ -27,5 +27,12 @@ public class StatRequest extends AbstractRequestMessage {
 
 		return sb.toString();
 	}
+	
+	public boolean isVfsSet() {
+	    
+	    readFromHeader(true);
+	    
+	    return (getUnsignedChar(4) & XrootdProtocol.kXR_vfs) == XrootdProtocol.kXR_vfs;
+	}
 
 }

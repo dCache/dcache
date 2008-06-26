@@ -3,16 +3,17 @@ package org.dcache.doors;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.security.GeneralSecurityException;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
 import org.dcache.vehicles.XrootdProtocolInfo;
 import org.dcache.xrootd.core.connection.PhysicalXrootdConnection;
-import org.dcache.xrootd.core.stream.LogicalStream;
 import org.dcache.xrootd.core.stream.StreamListener;
-import org.dcache.xrootd.core.stream.TooMuchLogicalStreamsException;
 import org.dcache.xrootd.protocol.XrootdProtocol;
+import static org.dcache.xrootd.protocol.XrootdProtocol.*;
+import org.dcache.xrootd.protocol.messages.AbstractResponseMessage;
 import org.dcache.xrootd.protocol.messages.CloseRequest;
 import org.dcache.xrootd.protocol.messages.ErrorResponse;
 import org.dcache.xrootd.protocol.messages.OpenRequest;
@@ -21,6 +22,8 @@ import org.dcache.xrootd.protocol.messages.ReadVRequest;
 import org.dcache.xrootd.protocol.messages.RedirectResponse;
 import org.dcache.xrootd.protocol.messages.StatRequest;
 import org.dcache.xrootd.protocol.messages.StatResponse;
+import org.dcache.xrootd.protocol.messages.StatxRequest;
+import org.dcache.xrootd.protocol.messages.StatxResponse;
 import org.dcache.xrootd.protocol.messages.SyncRequest;
 import org.dcache.xrootd.protocol.messages.WriteRequest;
 import org.dcache.xrootd.security.AuthorizationHandler;
@@ -30,7 +33,6 @@ import org.dcache.xrootd.util.ParseException;
 
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileMetaData;
-import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.FileMetaData.Permissions;
 import diskCacheV111.vehicles.PnfsGetStorageInfoMessage;
@@ -47,29 +49,29 @@ public class XrootdDoorListener implements StreamListener {
 			super();
 			pnfsId = id;
 		}
-		
+
 		public PnfsId getPnfsId() {
 			return pnfsId;
 		}
-		
-	}	
-	
+
+	}
+
 	private XrootdDoor door;
 	private PhysicalXrootdConnection physicalXrootdConnection;
-	private PnfsFileStatus fileStatus;
+	private PnfsFileStatus fileStatus = null;
 	private DoorRequestMsgWrapper info = new DoorRequestMsgWrapper();
-	
+
 	private InetSocketAddress redirectAdress = null;
 	private int streamId;
 
 	public XrootdDoorListener(XrootdDoorController controller, int streamID) {
 		this.door = controller.getDoor();
 		this.physicalXrootdConnection = controller.getXrootdConnection();
-		
+
 		this.streamId = streamID;
 	}
 
-	
+
 	/**
 	 * The Open method is the only request we need to deal with (login and authentication is done
 	 * on a per-connection-basis, not for every single file) besides the stat request.
@@ -77,15 +79,15 @@ public class XrootdDoorListener implements StreamListener {
 	 * no subsequent requests like sync, read, write or close are expected at the door.
 	 */
 	public void doOnOpen(OpenRequest req) {
-		
+
 ///////////////////////////////////////////////////////////////
 //		debug section: print open flags and mode
-///////////////////////////////////////////////////////////////		
+///////////////////////////////////////////////////////////////
 		door.say("data size of open request: "
 				+ req.getDataLength() + " bytes");
 
 		door.say("request path to open: " + req.getPath());
-		
+
 		int options =req.getOptions();
 		String openFlags = "options to apply for open path (raw="+options+" ):";
 
@@ -111,10 +113,10 @@ public class XrootdDoorListener implements StreamListener {
 			openFlags += " kXR_open_apnd";
 		if ((options & XrootdProtocol.kXR_retstat) == XrootdProtocol.kXR_retstat)
 			openFlags += " kXR_retstat";
-		
+
 
 		door.say("open flags: "+openFlags);
-		
+
 		door.say("mode to apply to open path: ");
 
 		int mode = req.getUMask();
@@ -164,54 +166,54 @@ public class XrootdDoorListener implements StreamListener {
 			s += "-";
 
 		door.say(s);
-		
+
 ///////////////////////////////////////////////////////////////
 //		end of debug section
-///////////////////////////////////////////////////////////////	
-		
+///////////////////////////////////////////////////////////////
+
 		String pathToOpen = req.getPath();
-		
+
 		this.info.setpath( pathToOpen );
-		
-		
+
+
 		boolean isWrite = false;
-		
+
 //		write access requested ?
 		if (req.isNew() || req.isReadWrite()) {
-			
+
 			if (door.isReadOnly()) {
 				door.esay("Permission denied. Access is read only.");
-				
+
 				respondWithError( req.getStreamID(), XrootdProtocol.kXR_FileLockedr, "Permission denied. Access is read only." );
-				
+
 				return;
 			}
-				
+
 				isWrite = true;
-				
+
 			}
 
 //		do authorization check if required by configuration
 		if (door.authzRequired()) {
-			
+
 			if (door.getAuthzFactory() == null) {
 				String msg = "Authorization required but appropriate handler is not initialised. Server probably misconfigured.";
 				door.esay( msg );
 				respondWithError( req.getStreamID(), XrootdProtocol.kXR_ServerError, msg);
 				return;
 			}
-			
-			
-			
+
+
+
 			door.say("checking authorization for "+pathToOpen);
-			
-			
-//			all information neccessary for checking authorization is found in opaque  
+
+
+//			all information neccessary for checking authorization is found in opaque
 			Map opaque = null;
 			try {
-				
+
 				opaque = req.getOpaque();
-			
+
 			} catch (ParseException e) {
 				StringBuffer msg = new StringBuffer( "invalid opaque data: " );
 				msg.append(e);
@@ -223,11 +225,11 @@ public class XrootdDoorListener implements StreamListener {
 				respondWithError( req.getStreamID(), XrootdProtocol.kXR_NotAuthorized, msg.toString() );
 				return;
 			}
-		
+
 			AuthorizationHandler authzHandler = door.getAuthzFactory().getAuthzHandler();
-			
+
 			boolean isAuthorized = false;
-			
+
 			try {
 				isAuthorized = authzHandler.checkAuthz(pathToOpen, opaque, isWrite, door);
 			} catch (GeneralSecurityException e) {
@@ -238,58 +240,58 @@ public class XrootdDoorListener implements StreamListener {
 					this.info.setUser( authzHandler.getUser() );
 			}
 			}
-			
+
 			if (!isAuthorized) {
 				respondWithError( req.getStreamID(), XrootdProtocol.kXR_NotAuthorized, "not authorized" );
 				return;
 			}
-			
-			
+
+
 //			In case of enabled authorization, the path in the open request can refer to the lfn.
 //			In this case the real path is delivered by the authz plugin
 			if (authzHandler.providesPFN()) {
 				door.say("access granted for LFN="+pathToOpen+" PFN="+authzHandler.getPFN());
-				
-//				get the real path (pfn) which we will open 
+
+//				get the real path (pfn) which we will open
 				pathToOpen = authzHandler.getPFN();
 				this.info.setpath( pathToOpen );
 			}
-			
+
 		}
-		
-		
+
+
 //		check if write access is restricted in general and whether the path to open
-//		matches the whitelist 
-		if (isWrite 
+//		matches the whitelist
+		if (isWrite
 				&& door.getAuthorizedWritePaths() != null
 				&& !matchWritePath(pathToOpen, door.getAuthorizedWritePaths())) {
 			respondWithError( req.getStreamID(), XrootdProtocol.kXR_FileLockedr, "Write permission denied" );
 			return;
 		}
-		
-//////////////////////////////////////////////////////////////////////		
+
+//////////////////////////////////////////////////////////////////////
 //		interact with core dCache to open the requested file
-		
+
 		PnfsGetStorageInfoMessage storageInfoMsg = null;
 		try {
-			
+
 			storageInfoMsg = door.getStorageInfo(pathToOpen);
-						
+
 		} catch (IOException e) {
 			door.say("No PnfsId found for path: " + pathToOpen);
 		}
-		
+
 		if (storageInfoMsg == null) {
-			
+
 //			we couldn't find a PNFS id for requested path
-			
+
 			if (isWrite) {
 //				This is required for write access, because we want to create a new file from scratch
-			
+
 //				get parent directory path by truncating filename
 				String parentDir = pathToOpen.substring(0, pathToOpen.lastIndexOf("/"));
 				FileMetaData parentMD = null;
-								
+
 				try {
 
 					// parent directory exists?
@@ -297,7 +299,7 @@ public class XrootdDoorListener implements StreamListener {
 
 				} catch (CacheException e) {
 					// parent directory does not exist
-					
+
 					if (e.getRc() != CacheException.FILE_NOT_FOUND) {
 						door.esay("unknown PNFS error: "+ e.getMessage());
 						respondWithError( req.getStreamID(),
@@ -305,7 +307,7 @@ public class XrootdDoorListener implements StreamListener {
 						    "Cannot create Pnfs entry : unknown PNFS error with code " + e.getRc() );
 						return;
 					}
-					
+
 					// check for kXR_mkpath-flag (create missing directories along the path)
 					if ((options & XrootdProtocol.kXR_mkpath) == XrootdProtocol.kXR_mkpath) {
 
@@ -320,7 +322,7 @@ public class XrootdDoorListener implements StreamListener {
 						}
 
 					} else {
-//						no automatic directory creation -> error 
+//						no automatic directory creation -> error
 						respondWithError( req.getStreamID(),
 												XrootdProtocol.kXR_NoSpace,
 							"Error creating pnfs entry: parent directory does not exist");
@@ -340,113 +342,114 @@ public class XrootdDoorListener implements StreamListener {
 
 
 //				create the actual PNFS entry with parent uid:gid
-				
+
 				door.esay("open request (write mode): trying to create new PNFS entry");
 				try {
-					
+
 					storageInfoMsg = door.createNewPnfsEntry(pathToOpen, parentMD.getUid(), parentMD.getGid());
-				
+
 				} catch (CacheException e) {
 					respondWithError( req.getStreamID(),
 											XrootdProtocol.kXR_NoSpace,
 						"Cannot create Pnfs entry for path" );
 					return;
 				}
-					
-							
+
+
 			} else {
-				
+
 //				no PnfsID found, file not in dCache namespace -> read request failed
-				
-				respondWithError( req.getStreamID(), 
-						XrootdProtocol.kXR_NotFound, 
+
+				respondWithError( req.getStreamID(),
+						XrootdProtocol.kXR_NotFound,
 						"No PnfsId (File not found)" );
 				return;
 			}
-			
+
 		} else {
-			
+
 //			ok, we found a PnfsId for the requested path
-			
+
 			if (isWrite) {
 //				we don't allow altering existing files (update)
 				this.info.setPnfsId( storageInfoMsg.getPnfsId() );
-				respondWithError( req.getStreamID(), 
-						XrootdProtocol.kXR_Unsupported, 
+				respondWithError( req.getStreamID(),
+						XrootdProtocol.kXR_Unsupported,
 						"File already exits. Altering exisiting files not supported" );
 				return;
 			}
-			
+
 		}
-		
+
 		this.info.setPnfsId( storageInfoMsg.getPnfsId() );
-		
+
 		StorageInfo storageInfo = storageInfoMsg.getStorageInfo();
-		
-//		storageinfo must be available for the newly created PNFS entry 
+
+//		storageinfo must be available for the newly created PNFS entry
 		if (storageInfo == null) {
 			try {
 				door.esay("Cannot create file, deleting PNFS entry");
 				door.deletePnfsEntry(storageInfoMsg.getPnfsId());
 			} catch (CacheException e1) {
 				door.esay(e1);
-			} 
-			
-			respondWithError( req.getStreamID(), 
-					XrootdProtocol.kXR_NotFound, 
+			}
+
+			respondWithError( req.getStreamID(),
+					XrootdProtocol.kXR_NotFound,
 					"Cannot create file entry (no parent storage this.info available)");
 			return;
 		}
-		
 
-//		get unique fileHandle (PnfsId is not unique in case the same file is opened more than once in this door-instance)		
+
+//		get unique fileHandle (PnfsId is not unique in case the same file is opened more than once in this door-instance)
 		int fileHandle = door.getNewFileHandle();
-		
+
 		this.info.setFileHandle( fileHandle );
-		
+
 		long checksum = req.calcChecksum();
 		door.say("checksum of openrequest: "+checksum);
-		
+
 		ProtocolInfo protocolInfo = door.createProtocolInfo(storageInfoMsg.getPnfsId(), fileHandle, checksum, physicalXrootdConnection.getNetworkConnection().getClientSocketAddress());
+
 		
-		fileStatus = new PnfsFileStatus(storageInfoMsg.getPnfsId());
-		fileStatus.setSize(storageInfo.getFileSize());
+		fileStatus = 
+		    (PnfsFileStatus) convertToFileStatus(storageInfoMsg.getMetaData(), storageInfoMsg.getPnfsId());
+        
 		fileStatus.setWrite(isWrite);
-		fileStatus.setID(fileHandle);
-		
-		
+        fileStatus.setID(fileHandle);
+        
 //		at this point we have the storageinfo and can ask the PoolManager for a pool to handle this transfer
-		
+
 		String pool = null;
-		
+
 		try {
-						
+
 			boolean requestDone = false;
 			while (!requestDone) {
-			
+
 //				ask the Poolmanager for a pool
 				pool = door.askForPool(fileStatus.getPnfsId(), storageInfo, protocolInfo, fileStatus.isWrite());
 				try {
 //					ask the Pool to prepare the transfer
 					redirectAdress  = door.askForFile(pool, fileStatus.getPnfsId(), storageInfo, (XrootdProtocolInfo) protocolInfo, fileStatus.isWrite());
 					requestDone = true;
-					
+
 				} catch (CacheException e) {
 					if  (e.getRc() != CacheException.FILE_NOT_IN_REPOSITORY) {
 						throw e;
 					}
-//					FILE_NOT_IN_REPOSITORY means file not in that pool, 
-//					but pnfs is still pointing to this pool. the pool will delete cacheentry in pnfs by 
-//					itself, so this	exception return code can be used to recover, because PoolManager 
+//					FILE_NOT_IN_REPOSITORY means file not in that pool,
+//					but pnfs is still pointing to this pool. the pool will delete cacheentry in pnfs by
+//					itself, so this	exception return code can be used to recover, because PoolManager
 //					will return another pool when asked again.
 					requestDone = false;
 					door.say("pool says FILE_NOT_IN_REPOSITORY, will ask PoolManager for another pool");
-				}			
+				}
 			}
 		} catch (Exception e) {
-			
+
 			door.esay(e.getMessage());
-			
+
 //			remove created pnfs entry
 			if (isWrite) {
 				try {
@@ -455,46 +458,100 @@ public class XrootdDoorListener implements StreamListener {
 					door.esay(e1);
 				}
 			}
-			respondWithError( req.getStreamID(), 
-					XrootdProtocol.kXR_ServerError, 
+			respondWithError( req.getStreamID(),
+					XrootdProtocol.kXR_ServerError,
 					" Cannot find " + (fileStatus.isWrite() ? "write" : "read") + " pool : "+e.getMessage());
 			return;
 
 		}
-		
-//		
+
+//
 //		ok, open was successful
-//		
+//
 		physicalXrootdConnection.getResponseEngine().sendResponseMessage(new RedirectResponse(req.getStreamID(), redirectAdress.getHostName(), redirectAdress.getPort()));
 		door.sendBillingInfo( this.info );
 		door.newFileOpen(fileHandle, req.getStreamID());
 	}
-		
+
 	private void respondWithError(int streamID, int errorCode, String errMsg) {
 		physicalXrootdConnection.getResponseEngine().sendResponseMessage(
 				new ErrorResponse(
-						streamID, 
-						errorCode, 
+						streamID,
+						errorCode,
 						errMsg ));
-	
+
 		// for billing purposes
 		this.info.fileOpenFailed( errorCode, errMsg );
-		door.sendBillingInfo( this.info );				
+		door.sendBillingInfo( this.info );
 		}
-	
-		
+
+
 	public void doOnStatus(StatRequest req) {
-		physicalXrootdConnection.getResponseEngine().sendResponseMessage(new StatResponse(req.getStreamID(), fileStatus));
+		AbstractResponseMessage response = null;
+	    
+	    if (fileStatus == null) {
+		        
+	            // no OPEN occured before, so we need to ask the for the metadata
+		        FileMetaData meta = null;
+		        try {
+
+		            meta = door.getFileMetaData(req.getPath());		            
+		            
+		        } catch (CacheException e) {
+		            door.say("No PnfsId found for path: " + req.getPath());
+		            response = new StatResponse(req.getStreamID(), null);
+		        }
+		    
+		        if (meta != null) {
+		            
+		            FileStatus fs = convertToFileStatus(meta, null);
+		            
+		            // we finally got the stat result
+		            response = new StatResponse(req.getStreamID(), fs);
+		            
+		        } else {
+		            response = new ErrorResponse(req.getStreamID(), XrootdProtocol.kXR_FSError, "Internal server error: no metadata");
+		        }
+		        
+		} else {
+		    
+		    // there was an OPEN happening before, so we already have the status info
+		    response = new StatResponse(req.getStreamID(), fileStatus);
+		}
+	    
+	    physicalXrootdConnection.getResponseEngine().sendResponseMessage(response);
 	}
-	
+
+    public void doOnStatusX(StatxRequest req) {
+        
+        if (req.getPaths().length == 0) {
+            physicalXrootdConnection.getResponseEngine().sendResponseMessage(new ErrorResponse(req.getStreamID(), XrootdProtocol.kXR_ArgMissing, "no paths specified"));
+        }
+        
+        FileMetaData[] allMetas = door.getMultipleFileMetaData(req.getPaths());
+        
+        int[] flags = new int[allMetas.length];
+        Arrays.fill(flags, -1);
+        
+        for (int i =0; i < allMetas.length; i++) {
+            if (allMetas[i] == null) {
+                continue;
+            }
+            
+            flags[i] = convertToFileStatus(allMetas[i], null).getFlags();
+        }
+        
+        physicalXrootdConnection.getResponseEngine().sendResponseMessage(new StatxResponse(req.getStreamID(), flags));
+        
+    }
 	public void doOnRead(ReadRequest req) {
 		physicalXrootdConnection.getResponseEngine().sendResponseMessage(new ErrorResponse(req.getStreamID(), XrootdProtocol.kXR_FileNotOpen, " File not open, send a kXR_open Request first."));
 	}
-	
+
 	public void doOnReadV(ReadVRequest req) {
 		physicalXrootdConnection.getResponseEngine().sendResponseMessage(new ErrorResponse(req.getStreamID(), XrootdProtocol.kXR_FileNotOpen, " File not open, send a kXR_open Request first."));
 	}
-	
+
 	public void doOnWrite(WriteRequest req) {
 		physicalXrootdConnection.getResponseEngine().sendResponseMessage(new ErrorResponse(req.getStreamID(), XrootdProtocol.kXR_FileNotOpen, " File not open, send a kXR_open Request first."));
 	}
@@ -508,7 +565,7 @@ public class XrootdDoorListener implements StreamListener {
 	}
 
 	public void handleStreamClose() {
-		
+
 //		clean up something?
 
 		door.say("closing logical stream (streamID="+streamId+")");
@@ -521,7 +578,7 @@ public class XrootdDoorListener implements StreamListener {
 	 * @return
 	 */
 	private boolean matchWritePath(String pathToOpen, List authorizedWritePathList) {
-		
+
 		for (Iterator it = authorizedWritePathList.iterator(); it.hasNext();) {
 			if (pathToOpen.startsWith((String) it.next())) {
 				return true;
@@ -530,5 +587,27 @@ public class XrootdDoorListener implements StreamListener {
 		return false;
 	}
 
+	private FileStatus convertToFileStatus(FileMetaData meta, PnfsId pnfsid) {
+        
+	    if (meta == null) {
+	        return null;
+	    }
+	    
+	    FileStatus fs = 
+	           pnfsid == null ? new FileStatus() : new PnfsFileStatus(pnfsid);
+        
+        fs.setSize(meta.getFileSize());
+        fs.setModtime(meta.getLastModifiedTime());
+        
+        // set flags
+        if (meta.isDirectory()) fs.addToFlags(kXR_isDir);
+        if (!meta.isRegularFile() && !meta.isDirectory()) fs.addToFlags(kXR_other);
+        Permissions pm = meta.getWorldPermissions();
+        if (pm.canExecute()) fs.addToFlags(kXR_xset);
+        if (pm.canRead()) fs.addToFlags(kXR_readable);
+        if (pm.canWrite()) fs.addToFlags(kXR_writable);
+        
+        return fs;
+	}
 
 }

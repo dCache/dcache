@@ -493,7 +493,8 @@ public class XrootdDoor extends CellAdapter {
 	
 	public void forgetFile(int fileHandle) {
 		int streamID = _logicalStreamTable.remove(fileHandle);
-		_physicalXrootdConnection.getStreamManager().destroyStream(streamID);
+		_physicalXrootdConnection.getStreamManager().
+		    getStreamByID(streamID).removeFile(fileHandle);
 	}
 
 	public synchronized ProtocolInfo createProtocolInfo(PnfsId pnfsId, int fileHandle, long checksum, InetSocketAddress client) {
@@ -702,6 +703,21 @@ public class XrootdDoor extends CellAdapter {
 	public FileMetaData getFileMetaData(String path) throws CacheException {
 		return _pnfs_handler.getFileMetaDataByPath(path).getMetaData();
 		
+	}
+	
+	public FileMetaData[] getMultipleFileMetaData (String[] allPaths) {
+	    
+	    FileMetaData[] allMetas = new FileMetaData[allPaths.length];
+	    
+	    for (int i = 0; i < allPaths.length; i++) {
+	        try {
+                allMetas[i] = getFileMetaData(allPaths[i]);
+            } catch (CacheException e) {
+                //we just move on in case a single path was not found
+                say("statx: path "+allPaths[i]+" no found");
+            }
+	    }
+	    return allMetas;
 	}
 	
 	public String noStrongAuthorization() {

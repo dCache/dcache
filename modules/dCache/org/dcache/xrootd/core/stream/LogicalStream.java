@@ -15,6 +15,7 @@ import org.dcache.xrootd.protocol.messages.ProtocolResponse;
 import org.dcache.xrootd.protocol.messages.ReadRequest;
 import org.dcache.xrootd.protocol.messages.ReadVRequest;
 import org.dcache.xrootd.protocol.messages.StatRequest;
+import org.dcache.xrootd.protocol.messages.StatxRequest;
 import org.dcache.xrootd.protocol.messages.SyncRequest;
 import org.dcache.xrootd.protocol.messages.WriteRequest;
 import org.dcache.xrootd.protocol.messages.GenericReadRequestMessage.EmbeddedReadRequest;
@@ -22,7 +23,6 @@ import org.dcache.xrootd.util.Queue;
 
 public class LogicalStream extends Thread {
 
-	
 	private PhysicalXrootdConnection physicalConnection;
 	
 //	path -> filehandle
@@ -40,7 +40,11 @@ public class LogicalStream extends Thread {
 	
 	Queue requests = new Queue();
 	
-	private StreamListener listener; 
+	private StreamListener listener;
+
+    private Object someLock = new Object();
+
+    private boolean processingRequest = false; 
 
 	public LogicalStream(PhysicalXrootdConnection physicalConnection, int streamID) {
 		this.physicalConnection = physicalConnection;
@@ -77,8 +81,6 @@ public class LogicalStream extends Thread {
 				isInterrupted = true;
 				return;
 		}
-		
-		
 	}
 	
 	public void run() {
@@ -94,11 +96,18 @@ public class LogicalStream extends Thread {
 				isInterrupted = true;
 				continue;
 			}
-						
+			
+			synchronized (someLock) {
+                processingRequest  = true;
+            }
+                
+            
 			if (request instanceof OpenRequest) {
 				doOnOpen((OpenRequest) request);
 			} else if (request instanceof StatRequest) {
 				doOnStatus((StatRequest) request);
+			} else if (request instanceof StatxRequest) {
+			    doOnStatus((StatxRequest) request);
 			} else if (request instanceof ReadRequest) {
 				doOnRead((ReadRequest) request);
 			} else if (request instanceof ReadVRequest) { 
@@ -113,6 +122,9 @@ public class LogicalStream extends Thread {
 				doOnProtocolRequest((ProtocolRequest) request);
 			}
 			
+	       synchronized (someLock ) {
+	           processingRequest = false;
+	       }
 			
 		}
 		
@@ -120,7 +132,7 @@ public class LogicalStream extends Thread {
 		
 	}
 
-	private void doOnClose(CloseRequest request) {
+    private void doOnClose(CloseRequest request) {
 		
 		Integer fileHandle = Integer.valueOf (request.getFileHandle());
 		
@@ -217,17 +229,13 @@ public class LogicalStream extends Thread {
 	}
 	
 	private void doOnStatus(StatRequest request) {
-		
-//		file already open?	
-		if (openPaths.containsKey(request.getPath())) {
-			
+
 			listener.doOnStatus(request);
-			
-		} else {
-			sendResponse(new ErrorResponse(request.getStreamID(), XrootdProtocol.kXR_FileNotOpen, "Stat request requires open file."));
-		}
-		
-		
+
+	}
+	
+	private void doOnStatus(StatxRequest request) {
+	    listener.doOnStatusX(request) ;    
 	}
 
 	private void doOnOpen(OpenRequest request) {
@@ -280,16 +288,29 @@ public class LogicalStream extends Thread {
 		openFileHandles.remove(fileHandle);
 		openPaths.remove(path);
 		
-		if (checkOpenFileListConsistency() && openPaths.isEmpty()) {
+		
+        System.out.println("event in stream:"+streamID+" removeFile:"+path);
+        System.out.println("debug: checkOpenFileListConsistency: "+checkOpenFileListConsistency()+" openpath.size:"+openPaths.size()+" requests.size: "+requests.size());
+        System.out.println("isProcessing:"+processingRequest);
+		
+		if (checkOpenFileListConsistency() && openPaths.isEmpty() && (requests.size() == 0) ) {
 			
+			synchronized (someLock) {
+                    
+			    if (! processingRequest) {
+			        System.out.println("removing file from "+streamID+" list");
+			        physicalConnection.getStreamManager().destroyStream(streamID);
+			        System.out.println("number of open files for stream"+streamID+": "+openFlags.size());
+			        System.out.println("number of active streams: "+physicalConnection.getStreamManager().getNumberOfStreams());
+			    }
+			}
 			
-			System.out.println("removing file from "+streamID+" list");
-			physicalConnection.getStreamManager().destroyStream(streamID);
-			System.out.println("number of open files for stream"+streamID+": "+openFlags.size());
-			System.out.println("number of active streams: "+physicalConnection.getStreamManager().getNumberOfStreams());
-						
 		} else {
-			System.err.println("Error: open file list inconsistent");
+			if (requests.size() == 0) {
+			    System.err.println("Error: open file list inconsistent");
+			} else {
+			    System.err.println("Error: still requests in the queue");
+			}
 		}
 			
 	}
