@@ -34,6 +34,10 @@ public class LogicalStreamManager {
 		return newStream;
 	}
 	
+	public LogicalStream getStreamByID(int streamID) {
+	    return (LogicalStream) streams.get(streamID);
+	}
+	
 	public int getNumberOfStreams() {
 		return streams.size();
 	}

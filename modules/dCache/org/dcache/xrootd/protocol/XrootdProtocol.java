@@ -54,6 +54,7 @@ public interface XrootdProtocol {
     public final static int   kXR_sync  = 3016;
     public final static int   kXR_write = 3019;
     public final static int   kXR_stat  = 3017;
+    public final static int   kXR_statx = 3022;
     public final static int   kXR_readv = 3025;
     public final static int   kXR_protocol = 3006;
     
@@ -79,6 +80,17 @@ public interface XrootdProtocol {
     public final static short kXR_open_apnd	= 512;
     public final static short kXR_retstat  	= 1024;
     
+    // stat response flags
+    public final static int kXR_file    =  0;
+    public final static int kXR_xset    =  1;
+    public final static int kXR_isDir   =  2;
+    public final static int kXR_other   =  4;
+    public final static int kXR_offline =  8;
+    public final static int kXR_readable= 16;
+    public final static int kXR_writable= 32;
+    
+    // stat options
+    public final static int kXR_vfs = 1;
     
     public final static byte kXR_useruser = 0;
     public final static byte kXR_useradmin = 1;

@@ -19,6 +19,7 @@ import org.dcache.xrootd.protocol.messages.ProtocolRequest;
 import org.dcache.xrootd.protocol.messages.ReadRequest;
 import org.dcache.xrootd.protocol.messages.ReadVRequest;
 import org.dcache.xrootd.protocol.messages.StatRequest;
+import org.dcache.xrootd.protocol.messages.StatxRequest;
 import org.dcache.xrootd.protocol.messages.SyncRequest;
 import org.dcache.xrootd.protocol.messages.WriteRequest;
 
@@ -130,8 +131,11 @@ public class ProtocolHandler {
 			result = new OpenRequest(header, data);
 			break;
 		case XrootdProtocol.kXR_stat:
-			result = new StatRequest(header, data);
-			break;
+            result = new StatRequest(header, data);
+            break;
+		case XrootdProtocol.kXR_statx:
+            result = new StatxRequest(header, data);
+            break;
 		case XrootdProtocol.kXR_read:
 			result = new ReadRequest(header, data);
 			break;
