@@ -382,7 +382,7 @@ public class RepositorySubsystemTest
         throws Throwable
     {
         new CellStubHelper() {
-            @Message(required=true,step=1,cell="pnfs")
+            @Message(required=true,step=0,cell="pnfs")
             public Object message(PnfsClearCacheLocationMessage msg)
             {
                 msg.setSucceeded();
@@ -396,10 +396,9 @@ public class RepositorySubsystemTest
                 repository.setState(id1, REMOVED);
                 expectStateChangeEvent(id1, PRECIOUS, REMOVED);
                 assertNoStateChangeEvent();
-                assertStep("No messages received yet", 0);
+                assertStep("Cache location cleared", 1);
                 handle1.close();
                 expectStateChangeEvent(id1, REMOVED, DESTROYED);
-                assertStep("Cache location cleared", 2);
             }
         };
     }
