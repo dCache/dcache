@@ -36,8 +36,8 @@ public class CacheRepositoryEntryImpl implements CacheRepositoryEntry {
 
     private final CacheRepositoryEntryState _state;
     private final PnfsId _pnfsId;
-    private final AtomicInteger _linkCount = new AtomicInteger(0);
-    private final AtomicBoolean _isLocked = new AtomicBoolean(false);
+    private int _linkCount = 0;
+    private boolean _isLocked = false;
     private long _lockUntil = 0;
     private StorageInfo _storageInfo = null;
     private long _creationTime = System.currentTimeMillis();
@@ -90,13 +90,13 @@ public class CacheRepositoryEntryImpl implements CacheRepositoryEntry {
 
     }
 
-    public void decrementLinkCount() throws CacheException {
+    public synchronized void decrementLinkCount() throws CacheException {
 
-        assert _linkCount.get() > 0;
+        assert _linkCount > 0;
 
-        _linkCount.decrementAndGet();
+        _linkCount--;
 
-        if (_linkCount.get() == 0 && isRemoved()) {
+        if (_linkCount == 0 && isRemoved()) {
             _controlFile.delete();
             _siFile.delete();
 
@@ -122,8 +122,8 @@ public class CacheRepositoryEntryImpl implements CacheRepositoryEntry {
         return _lastAccess;
     }
 
-    public int getLinkCount() throws CacheException {
-        return _linkCount.get();
+    public synchronized int getLinkCount() throws CacheException {
+        return _linkCount;
     }
 
     public PnfsId getPnfsId() {
@@ -152,8 +152,8 @@ public class CacheRepositoryEntryImpl implements CacheRepositoryEntry {
         return _storageInfo;
     }
 
-    public void incrementLinkCount() throws CacheException {
-        _linkCount.incrementAndGet();
+    public synchronized void incrementLinkCount() throws CacheException {
+        _linkCount++;
     }
 
     public boolean isBad() {
@@ -173,8 +173,8 @@ public class CacheRepositoryEntryImpl implements CacheRepositoryEntry {
         return false;
     }
 
-    public boolean isLocked() {
-        return _isLocked.get() || _lockUntil > System.currentTimeMillis();
+    public synchronized boolean isLocked() {
+        return _isLocked || _lockUntil > System.currentTimeMillis();
     }
 
     public boolean isPrecious() throws CacheException {
@@ -197,11 +197,11 @@ public class CacheRepositoryEntryImpl implements CacheRepositoryEntry {
         return _state.isSticky();
     }
 
-    public void lock(boolean locked) {
-        _isLocked.set(locked);
+    public synchronized void lock(boolean locked) {
+        _isLocked = locked;
     }
 
-    public void lock(long millisSeconds) {
+    public synchronized void lock(long millisSeconds) {
 
         long now = System.currentTimeMillis();
 
@@ -386,14 +386,14 @@ public class CacheRepositoryEntryImpl implements CacheRepositoryEntry {
         _storageInfo = storageInfo;
     }
 
-    public void setRemoved() throws CacheException {
+    public synchronized void setRemoved() throws CacheException {
         try {
             _state.setRemoved();
 
             CacheRepositoryEvent createEvent = new CacheRepositoryEvent(_eventProcessor, clone() );
             _eventProcessor.processEvent(EventType.REMOVE, createEvent);
 
-            if (_linkCount.get() == 0) {
+            if (_linkCount == 0) {
                 _controlFile.delete();
                 _siFile.delete();
 
@@ -467,10 +467,10 @@ public class CacheRepositoryEntryImpl implements CacheRepositoryEntry {
         return this;
     }
 
-    public String toString(){
+    public synchronized String toString(){
 
         return _pnfsId.toString()+
-            " <"+_state.toString()+(_isLocked.get() ? "L":"-")+
+            " <"+_state.toString()+(_isLocked ? "L":"-")+
             "(" + _lockUntil +")"+
             "["+_linkCount+"]> "+
             getSize()+
