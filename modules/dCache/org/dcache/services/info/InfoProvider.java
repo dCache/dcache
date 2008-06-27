@@ -667,8 +667,8 @@ public class InfoProvider extends CellAdapter {
 	/**
 	 *  W A T C H E R    A D M I N    C O M M A N D S
 	 */
-	public String fh_watcher_ls = "list all registered dCache state watchers";
-	public String ac_watcher_ls_$_0( Args args) {
+	public String fh_watchers_ls = "list all registered dCache state watchers";
+	public String ac_watchers_ls_$_0( Args args) {
 		StringBuilder sb = new StringBuilder();
 		sb.append( "State Watchers:\n");
 		String watcherNames[] = State.getInstance().listStateWatcher();
@@ -687,7 +687,40 @@ public class InfoProvider extends CellAdapter {
 			
 		return sb.toString();
 	}
+	
+	public String fh_watchers_enable = "enable a registered dCache state watcher";
+	public String ac_watchers_enable_$_1( Args args) {
+		int count;
+		
+		count = State.getInstance().enableStateWatcher(args.argv(0));
+		
+		switch( count) {
+		case 0:
+			return "No matching watcher: " + args.argv(0);
+		case 1:
+			return "Done.";
+		default:
+			return "Name matching multiple Watchers, all now enabled.";
+		}
+	}
 
+	public String fh_watchers_disable = "disable a registered dCache state watcher";
+	public String ac_watchers_disable_$_1( Args args) {
+		int count;
+		
+		count = State.getInstance().disableStateWatcher(args.argv(0));
+		
+		switch( count) {
+		case 0:
+			return "No matching watcher: " + args.argv(0);
+		case 1:
+			return "Done.";
+		default:
+			return "Name matching multiple Watchers, all now disabled.";
+		}
+	}
+
+	
 	/**
 	 * Satisfy an incoming request for serialised dCache state.
 	 * 
