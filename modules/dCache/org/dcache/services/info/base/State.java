@@ -72,7 +72,8 @@ public class State {
 	private final StateComposite _state;
 	
 	/** All registered StateWatchers */
-	private final Collection<StateWatcher> _watchers = new CopyOnWriteArrayList<StateWatcher>();
+	private final Collection<StateWatcherInfo> _watchers = new CopyOnWriteArrayList<StateWatcherInfo>();
+	//private final Collection<StateWatcher> _watchers = new CopyOnWriteArrayList<StateWatcher>();
 
 	/** Our read/write lock */
 	private final ReadWriteLock _stateRWLock = new ReentrantReadWriteLock();
@@ -226,7 +227,16 @@ public class State {
 	 */
 	private void checkWatchers( StateTransition transition) {
 		
-		for( StateWatcher thisWatcher : _watchers) {
+		for( StateWatcherInfo thisWatcherInfo : _watchers) {
+			
+			StateWatcher thisWatcher = thisWatcherInfo.getWatcher();
+			
+			if( !thisWatcherInfo.isEnabled()) {
+				if( _log.isDebugEnabled())
+					_log.debug( "skipping disabled watcher " + thisWatcher);
+				continue;
+			}
+			
 			if( _log.isDebugEnabled())
 				_log.debug( "checking watcher " + thisWatcher);
 			
@@ -250,6 +260,7 @@ public class State {
 			if( hasBeenTriggered) {
 				if( _log.isInfoEnabled())
 					_log.info("triggering watcher " + thisWatcher);
+				thisWatcherInfo.incrementCounter();
 				thisWatcher.trigger( transition);
 			}
 		}		
@@ -261,7 +272,7 @@ public class State {
 	 * @param watcher: the StateWatcher to add.
 	 */
 	public void addStateWatcher( StateWatcher watcher) {
-		_watchers.add(watcher);
+		_watchers.add( new StateWatcherInfo( watcher));
 	}
 	
 	/**
@@ -281,12 +292,46 @@ public class State {
 		String[] watchers = new String[_watchers.size()];
 			
 		int i=0;
-		for( StateWatcher thisWatcher : _watchers)
-			watchers [i++] = thisWatcher.toString();
+		for( StateWatcherInfo thisWatcherInfo : _watchers)
+			watchers [i++] = thisWatcherInfo.toString();
 		
 		return watchers;
 	}
 	
+	
+	/**
+	 * Enable all registered StateWatchers that match a given name
+	 * @param name the StateWatcher name to enable.
+	 * @return the number of matching entries.
+	 */
+	public int enableStateWatcher( String name) {
+		int count=0;
+		
+		for( StateWatcherInfo thisWatcherInfo : _watchers)
+			if( name.equals( thisWatcherInfo.getWatcher().toString())) {
+				thisWatcherInfo.enable();
+				count++;
+			}
+		
+		return count;
+	}
+	
+	/**
+	 * Disable all registered StateWatchers that match a given name
+	 * @param name the StateWatcher name to disable.
+	 * @return the number of matching entries.
+	 */
+	public int disableStateWatcher( String name) {
+		int count = 0;
+		
+		for( StateWatcherInfo thisWatcherInfo : _watchers)
+			if( name.equals( thisWatcherInfo.getWatcher().toString())) {
+				thisWatcherInfo.disable();
+				count++;
+			}
+		
+		return count;
+	}
 	
 	/**
 	 *  Check for, and remove, expired (mortal) StateComponents.  This will also remove all
@@ -369,6 +414,54 @@ public class State {
 		} finally {
 			_stateReadLock.unlock();
 		}		
+	}
+	
+	
+	/**
+	 * Small, simple class to hold information about our registered StateWatchers,
+	 * whether they are enabled and how many times they've been triggered.
+	 * @author Paul Millar <paul.millar@desy.de>
+	 */
+	static private class StateWatcherInfo {
+		StateWatcher _watcher;
+		boolean _isEnabled = true;
+		long _counter;
+		
+		StateWatcherInfo( StateWatcher watcher) {
+			_watcher = watcher;
+		}
+		
+		boolean isEnabled() {
+			return _isEnabled;
+		}
+		
+		void enable() {
+			_isEnabled = true;
+		}
+		
+		void disable() {
+			_isEnabled = false;
+		}
+		
+		void incrementCounter() {
+			_counter++;
+		}
+		
+		StateWatcher getWatcher() {
+			return _watcher;
+		}
+		
+		public String toString() {
+			StringBuilder sb = new StringBuilder();
+			
+			sb.append( _watcher.toString()).append( " ");
+			sb.append( "(");
+			sb.append( _isEnabled ? "enabled" : "disabled");
+			sb.append( ", triggered: " + _counter);
+			sb.append(")");
+			
+			return sb.toString();
+		}
 	}
 
 }
