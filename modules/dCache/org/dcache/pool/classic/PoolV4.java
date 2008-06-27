@@ -330,8 +330,7 @@ public class PoolV4 extends AbstractCell
 
     public void setReplicateOnArrival(String replicate)
     {
-        _replicationHandler =
-            new ReplicationHandler(replicate.equals("") ? "on" : replicate);
+        _replicationHandler.init(replicate.equals("") ? "on" : replicate);
     }
 
     public void setAllowCleaningPreciousFiles(boolean allow)
@@ -407,13 +406,15 @@ public class PoolV4 extends AbstractCell
 
     public void setRepository(CacheRepositoryV5 repository)
     {
-        if (_repository != null)
+        if (_repository != null) {
             _repository.removeFaultListener(this);
+        }
         _repository = repository;
         _repository.addFaultListener(this);
         _repository.addListener(new RepositoryLoader());
         _repository.addListener(new NotifyBillingOnRemoveListener());
         _repository.addListener(new HFlagMaintainer());
+        _repository.addListener(_replicationHandler);
         _repository.setVolatile(_lfsMode == LFS_VOLATILE);
     }
 
@@ -1430,14 +1431,6 @@ public class PoolV4 extends AbstractCell
                 msg = "Unexpected exception: " + e.getMessage();
             }
 
-            /* REVISIT: Temporary hack for replication. This should be
-             * handled somewhere else, e.g., in a state change
-             * listener.
-             */
-            if (_transfer instanceof PoolIOWriteTransfer) {
-                _replicationHandler.initiateReplication(getPnfsId(), "write");
-            }
-
             sendFinished(rc, msg);
             sendBillingMessage(rc, msg);
         }
@@ -1454,7 +1447,7 @@ public class PoolV4 extends AbstractCell
     //
     // replication on data arrived
     //
-    private class ReplicationHandler
+    private class ReplicationHandler implements StateChangeListener
     {
         private boolean _enabled = false;
         private String _replicationManager = "PoolManager";
@@ -1467,12 +1460,23 @@ public class PoolV4 extends AbstractCell
         //
         private ReplicationHandler()
         {
-            init(null);
         }
 
-        private ReplicationHandler(String vars)
+        public void stateChanged(StateChangeEvent event)
         {
-            init(vars);
+            EntryState from = event.getOldState();
+            EntryState to = event.getNewState();
+
+            if (to == EntryState.CACHED || to == EntryState.PRECIOUS) {
+                switch (from) {
+                case FROM_CLIENT:
+                    initiateReplication(event.getPnfsId(), "write");
+                    break;
+                case FROM_STORE:
+                    initiateReplication(event.getPnfsId(), "restore");
+                    break;
+                }
+            }
         }
 
         public void init(String vars)
@@ -1510,18 +1514,6 @@ public class PoolV4 extends AbstractCell
                     _destinationHostName = "localhost";
                 }
             }
-        }
-
-        public String getParameterString()
-        {
-            StringBuilder sb = new StringBuilder();
-            if (_enabled) {
-                sb.append(_replicationManager).append(_destinationHostName)
-                    .append(_destinationMode);
-            } else {
-                sb.append("off");
-            }
-            return sb.toString();
         }
 
         @Override
@@ -1647,7 +1639,6 @@ public class PoolV4 extends AbstractCell
             PnfsId id = new PnfsId(pnfsId);
             try {
                 if (ee == null) {
-                    _replicationHandler.initiateReplication(id, "restore");
                     msg.setSucceeded();
                 } else if (ee instanceof CacheException) {
                     CacheException ce = (CacheException) ee;
@@ -2458,8 +2449,7 @@ public class PoolV4 extends AbstractCell
     public String hh_set_replication = "off|on|<mgr>,<host>,<destMode>";
     public String ac_set_replication_$_1(Args args)
     {
-        String mode = args.argv(0);
-        _replicationHandler.init(mode);
+        setReplicateOnArrival(args.argv(0));
         return _replicationHandler.toString();
     }
 
