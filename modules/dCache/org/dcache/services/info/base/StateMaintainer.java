@@ -98,10 +98,10 @@ public class StateMaintainer implements Runnable {
 			try {
 				this.wait( sleepTime);
 			} catch( InterruptedException e) {
-				Thread.currentThread().interrupt();
+				_log.info( "StateMaintainer thread was interrupted.");
 			}
 			_isAwake = true;
-			_log.debug( "StateMaintainer awoke.");
+			_log.info( "StateMaintainer awoke.");
 		}
 		
 	}
