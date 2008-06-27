@@ -491,20 +491,19 @@ public class CacheRepositoryV5// extends CellCompanion
     synchronized void setState(CacheRepositoryEntry entry, EntryState state)
     {
         try {
-            if (entry.isBad()) {
-                entry.setBad(false);
-            }
-
             switch (state) {
             case NEW:
                 throw new IllegalArgumentException("Cannot mark entry new");
             case FROM_CLIENT:
+                entry.setBad(false);
                 entry.setReceivingFromClient();
                 break;
             case FROM_STORE:
+                entry.setBad(false);
                 entry.setReceivingFromStore();
                 break;
             case FROM_POOL:
+                entry.setBad(false);
                 entry.setReceivingFromStore();
                 break;
             case BROKEN:
@@ -512,9 +511,11 @@ public class CacheRepositoryV5// extends CellCompanion
                 updateState(entry.getPnfsId(), BROKEN);
                 break;
             case CACHED:
+                entry.setBad(false);
                 entry.setCached();
                 break;
             case PRECIOUS:
+                entry.setBad(false);
                 entry.setPrecious(true);
                 break;
             case REMOVED:
@@ -729,7 +730,7 @@ public class CacheRepositoryV5// extends CellCompanion
     {
         PnfsId id = event.getRepositoryEntry().getPnfsId();
         updateState(id, REMOVED);
-        _pnfs.clearCacheLocation(id, _volatile);
+        _pnfs.clearCacheLocation(id, getVolatile());
     }
 
     /** Callback. */
@@ -790,7 +791,7 @@ public class CacheRepositoryV5// extends CellCompanion
 
     }
 
-    public void getInfo(PrintWriter pw)
+    public synchronized void getInfo(PrintWriter pw)
     {
         pw.println("Storage Mode      : "
                    + (DUMMY_SWEEPER.isInstance(_sweeper) ? "Static" : "Dynamic"));
