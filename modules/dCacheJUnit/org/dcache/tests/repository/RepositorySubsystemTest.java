@@ -399,7 +399,7 @@ public class RepositorySubsystemTest
                 assertStep("No messages received yet", 0);
                 handle1.close();
                 expectStateChangeEvent(id1, REMOVED, DESTROYED);
-                assertStep("Cache location cleared", 1);
+                assertStep("Cache location cleared", 2);
             }
         };
     }

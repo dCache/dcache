@@ -118,7 +118,7 @@ public abstract class CellStubHelper
              * to earlier steps have not been called.
              */
             _used = true;
-            assertStep("Required messages missing", getStep());
+            assertStep("Required messages missing", getStep(), 0);
 
             /* Deliver message.
              */
@@ -240,12 +240,17 @@ public abstract class CellStubHelper
 
     protected void assertStep(String message, int step)
     {
+        assertStep(message, step, 100);
+    }
+
+    protected void assertStep(String message, int step, long timeout)
+    {
         /* We need to make sure that messages have actually been
-         * delivered. Currently I cannot find a better way that to
+         * delivered. Currently I cannot find a better way than to
          * sleep for a moment... (REVISIT).
          */
         try {
-            Thread.currentThread().sleep(50);
+            Thread.currentThread().sleep(timeout);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
