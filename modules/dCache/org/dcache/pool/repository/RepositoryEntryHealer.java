@@ -138,6 +138,8 @@ public class RepositoryEntryHealer
                 entry.setBad(true);
             }
 
+            _pnfsHandler.addCacheLocation(id);
+
             _log.warn("Meta data recovered: " + entry.toString());
 
             return entry;
