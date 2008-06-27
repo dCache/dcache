@@ -128,7 +128,7 @@ public class State {
 	 * Discover whether there are pending StateUpdates on the pending update stack.
 	 * @return the number of StateUpdates on the pending updates Stack.
 	 */
-	protected int countPendingUpdates() {
+	public int countPendingUpdates() {
 		synchronized( _pendingUpdates) {
 			return _pendingUpdates.size();
 		}

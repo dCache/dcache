@@ -80,7 +80,7 @@ public class InfoProvider extends CellAdapter {
      */
     public void getInfo(PrintWriter pw)
     {
-        pw.println("    Information about the info cell:\n");
+        pw.println("    Overview of the info cell:\n");
 
         pw.print( _conduits.size());
         pw.print( " conduit"+ (_conduits.size()==1?"":"s") + " (");
@@ -98,6 +98,9 @@ public class InfoProvider extends CellAdapter {
         
         pw.print( _availableSerialisers.size());
         pw.println( " available serialisers.");
+        
+        pw.print( State.getInstance().countPendingUpdates());
+        pw.println( " pending updates to state.");
     }
 
 
