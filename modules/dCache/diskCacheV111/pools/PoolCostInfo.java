@@ -63,6 +63,9 @@ public class PoolCostInfo implements java.io.Serializable {
     public PoolSpaceInfo getSpaceInfo(){ return _space ; }
 
     public static class PoolSpaceInfo implements java.io.Serializable {
+
+    	static final long serialVersionUID = -8966065301943351970L;
+
         private long _total = 0 , _free = 0 , _precious = 0 , _removable = 0 , _lru = 0 ;
         private long _gap   = 0 ;
         private double _breakEven = 0;
