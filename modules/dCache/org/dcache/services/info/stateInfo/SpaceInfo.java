@@ -15,16 +15,23 @@ public class SpaceInfo {
 	private long _free;
 	private long _precious;
 	private long _removable;
+	private long _used;
 	
 	public SpaceInfo( long totalSpace, long freeSpace, long preciousSpace, long removableSpace) {
 		_total = totalSpace;
 		_free = freeSpace;
 		_precious = preciousSpace;
 		_removable = removableSpace;
+
+		// Derived data.
+		_used = totalSpace - freeSpace;
 	}
 	
+	/**
+	 * Create a zero-sized Space.
+	 */
 	public SpaceInfo() {
-		_total = _free = _precious = _removable = 0;
+		_total = _free = _precious = _removable = _used = 0;
 	}
 	
 	
@@ -34,7 +41,7 @@ public class SpaceInfo {
 	 */
 	public SpaceInfo( long capacity) {
 		_free = _total = capacity; 
-		_precious = _removable = 0;
+		_used = _precious = _removable = 0;
 	}
 	
 	public SpaceInfo( PoolCostInfo.PoolSpaceInfo spaceInfo) {
@@ -42,13 +49,15 @@ public class SpaceInfo {
 		_free = spaceInfo.getFreeSpace();
 		_precious = spaceInfo.getPreciousSpace();
 		_removable = spaceInfo.getRemovableSpace();
+		//_used = spaceInfo.getUsedSpace();
+		_used = _total-_free;
 	}
 	
 	public boolean equals( Object o) {
 		if( !( o instanceof SpaceInfo))
 			return false;
 		SpaceInfo info = (SpaceInfo) o;
-		return info._total == _total && info._free == _free && info._precious == _precious && info._removable == _removable;
+		return info._total == _total && info._free == _free && info._precious == _precious && info._removable == _removable && info._used == _used;
 	}
 	
 	public int hashCode() {
@@ -67,6 +76,7 @@ public class SpaceInfo {
 		_free += otherSpace._free;
 		_precious += otherSpace._precious;
 		_removable += otherSpace._removable;
+		_used += otherSpace._used;
 	}
 	
 	public void setTotal( long totalSpace) {
@@ -85,7 +95,10 @@ public class SpaceInfo {
 		_removable = removableSpace;
 	}
 	
-
+	public void setUsed( long usedSpace) {
+		_used = usedSpace;
+	}
+	
 	/**
 	 * Add additional space unconditionally to the recorded total space.
 	 * @param extraTotalSpace amount to add
@@ -117,20 +130,24 @@ public class SpaceInfo {
 	public void addToPrecious( long extraPreciousSpace) {
 		_precious += extraPreciousSpace;
 	}
-	
-	
+
+	/**
+	 * Add additional space unconditionally to the recorded used space
+	 * @param extraUsedSpace amount to add
+	 */
+	public void addToUsed( long extraUsedSpace) {
+		_used += extraUsedSpace;
+	}
 	
 	/**
 	 * Update the precious space, applying a delta.
 	 * If the delta would be impossible, it is capped.
 	 * The free space is also adjusted. 
-	 * @param change the change to precious space: +ve number increases space usage.
+	 * @param change the change to precious space: positive number increases space usage.
 	 */
 	public void updatePrecious( long change) {
-		long maxInc = _total - (_precious + _removable);
-		
-		if( change > maxInc)
-			change = maxInc;
+		if( change > _free)
+			change = _free;
 		
 		if( change < -_precious)
 			change = -_precious;
@@ -143,13 +160,11 @@ public class SpaceInfo {
 	 * Update the space used to store removable data.  The
 	 * value is updated by applying a delta.  If the delta would
 	 * be impossible, it is capped.  The free space is also adjusted
-	 * @param change the change to removable space: +ve number increases space usage.
+	 * @param change the change to removable space: positive number increases space usage.
 	 */
 	public void updateRemovable( long change) {
-		long maxInc = _total - (_precious + _removable);
-		
-		if( change > maxInc)
-			change = maxInc;
+		if( change > _free)
+			change = _free;
 		
 		if( change < -_removable)
 			change = -_removable;
@@ -159,14 +174,14 @@ public class SpaceInfo {
 	}
 	
 	/**
-	 * Recalculate the free space based on total capacity
-	 * and precious and removable.  If the free-space would
+	 * Recalculate the free space based on total capacity, precious
+	 * removable and pinned.  If the free-space would
 	 * be negative (due to inconsistent information), it is
 	 * capped at 0.
 	 */
 	public void recalcFree() {
-		long used = _precious + _removable;
-		_free = used < _total ? _total - used : 0; 
+		_used = _precious + _removable;
+		_free = _used < _total ? _total - _used : 0;
 	}
 	
 	public long getTotal() {
@@ -184,7 +199,11 @@ public class SpaceInfo {
 	public long getRemovable() {
 		return _removable;
 	}
-		
+	
+	public long getUsed() {
+		return _used;
+	}
+	
 	/**
 	 * Add StateUpdate entries to update dCache state that add or update the standard metrics
 	 * values.  All metrics are added under a common StatePath.  StateValues will be Mortal and
@@ -198,6 +217,7 @@ public class SpaceInfo {
 		update.appendUpdate(path.newChild("free"), new IntegerStateValue( _free, duration));
 		update.appendUpdate(path.newChild("precious"), new IntegerStateValue( _precious, duration));
 		update.appendUpdate(path.newChild("removable"), new IntegerStateValue( _removable, duration));
+		update.appendUpdate(path.newChild("used"), new IntegerStateValue( _used, duration));
 	}
 	
 	/**
@@ -212,7 +232,8 @@ public class SpaceInfo {
 		update.appendUpdate(path.newChild("total"), new IntegerStateValue( _total, isImmortal));
 		update.appendUpdate(path.newChild("free"), new IntegerStateValue( _free, isImmortal));
 		update.appendUpdate(path.newChild("precious"), new IntegerStateValue( _precious, isImmortal));
-		update.appendUpdate(path.newChild("removable"), new IntegerStateValue( _removable, isImmortal));		
+		update.appendUpdate(path.newChild("removable"), new IntegerStateValue( _removable, isImmortal));
+		update.appendUpdate(path.newChild("used"), new IntegerStateValue( _used, isImmortal));		
 	}
 	
 	
@@ -220,6 +241,6 @@ public class SpaceInfo {
 	 * A string describing this SpaceInfo object.
 	 */
 	public String toString() {
-		return "[SpaceInfo: total="+_total+", precious=" + _precious + ", removable="+ _removable + ", free="+_free+"]";
+		return "[SpaceInfo: total="+_total + ", precious="+_precious + ", removable="+_removable + ", used="+_used + ", free="+_free +"]";
 	}
 }
