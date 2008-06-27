@@ -50,7 +50,7 @@ public class PinManagerTest {
     private static  final CellAdapterHelper SYSTEM_CELL_HOLDER = new CellAdapterHelper("PinManagerTest", "");
 
     private  static PinManager pinManager;
-    private static EchoCell echoCell;
+    private static EchoCellHelper echoCell;
 
     private static String driver="org.postgresql.Driver";
     private static String dburl = "jdbc:postgresql://localhost/dcache";
@@ -67,7 +67,7 @@ public class PinManagerTest {
          */
         System.out.println("setting up");
 
-       echoCell = new EchoCell("EchoCell", "");
+       echoCell = new EchoCellHelper("EchoCell", "");
 
         Class.forName(driver);
 

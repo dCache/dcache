@@ -37,12 +37,12 @@ import diskCacheV111.vehicles.PoolMgrSelectReadPoolMsg;
 
 /**
  *   <pre>
- *   This cell performs "pinning and unpining service on behalf of other 
+ *   This cell performs "pinning and unpining service on behalf of other
  *   services cenralized pin management supports:
  *    pining/unpinning of the same resources by multiple requestors,
  *     synchronization of pinning and unpinning
  *     lifetimes for pins
- * 
+ *
  * PINNING
  * 1) when pin for a file exists and another request arrives
  *  no action is taken, the database pinrequest record is created
@@ -50,8 +50,8 @@ import diskCacheV111.vehicles.PoolMgrSelectReadPoolMsg;
  *       Pnfs flag is not set anymore
  *       the file is staged if nessesary and pinned in a read pool
  *       with EchoCell, as an owner, and lifetime
- *       
- * 
+ *
+ *
  * UNPINNING
  *  1)if pin request expires / canseled and other pin requests
  *  for the same file exist, no action is taken, other then removal
@@ -61,30 +61,30 @@ import diskCacheV111.vehicles.PoolMgrSelectReadPoolMsg;
  * locations,
  * the pnfs flag is removed
  * database  pin request record is removed
- * 
- * 
+ *
+ *
  * @author timur
  */
-public class EchoCell extends AbstractCell  {
-    
+public class EchoCellHelper extends AbstractCell  {
+
     /*
      * Creates a new instance of EchoCell
      */
-    public EchoCell(String name , String argString) throws Exception {
+    public EchoCellHelper(String name , String argString) throws Exception {
         super(name, argString, false);
-         
+
         start();
-        
+
     }
-    
-    
+
+
     public void stop() {
         kill();
     }
-    
-    
-  
-    
+
+
+
+
     public void messageArrived( final CellMessage cellMessage ) {
         Object o = cellMessage.getMessageObject();
         if(!(o instanceof Message )) {
@@ -96,21 +96,21 @@ public class EchoCell extends AbstractCell  {
             info("processMessage: Message  arrived:"+o.getClass().getName()+" : "+o +" from "+
                    cellMessage.getSourcePath());
             if(message instanceof PnfsGetStorageInfoMessage) {
-                PnfsGetStorageInfoMessage pnfsGetStorageInfo = 
+                PnfsGetStorageInfoMessage pnfsGetStorageInfo =
                     (PnfsGetStorageInfoMessage) message;
                 pnfsGetStorageInfo.setStorageInfo(new GenericStorageInfo());
-            
+
             } else if (message instanceof PnfsGetCacheLocationsMessage) {
-                PnfsGetCacheLocationsMessage pnfsGetCacheLocations = 
+                PnfsGetCacheLocationsMessage pnfsGetCacheLocations =
                     (PnfsGetCacheLocationsMessage) message;
                 List locations = new ArrayList(1);
                 locations.add(getCellName());
                 pnfsGetCacheLocations.setCacheLocations(locations);
             } else if (message instanceof PoolMgrSelectReadPoolMsg) {
-                PoolMgrSelectReadPoolMsg selectReadPool = 
+                PoolMgrSelectReadPoolMsg selectReadPool =
                     (PoolMgrSelectReadPoolMsg) message;
                 selectReadPool.setPoolName(getCellName());
-                
+
             }
             else {
                 super.messageArrived(cellMessage);
@@ -134,16 +134,16 @@ public class EchoCell extends AbstractCell  {
             info("reply is not required, finished processing");
         }
    }
-    
-    
+
+
     public void exceptionArrived(ExceptionEvent ee) {
         error("Exception Arrived: "+ee);
         error(ee.getException().toString());
         super.exceptionArrived(ee);
     }
-    
 
-   
-    
- 
+
+
+
+
 }
