@@ -1,7 +1,6 @@
  package  dmg.cells.services ;
 
 import   dmg.cells.nucleus.* ;
-import   dmg.cells.network.* ;
 import   dmg.util.* ;
 import   dmg.protocols.kerberos.Base64 ;
 import java.util.* ;
@@ -20,7 +19,7 @@ public class      HttpServiceCell
    private int          _listenPort ; 
    private Thread       _listenThread ;
    private int          _serial    = 0 ; 
-   private HashMap      _aliasHash = new HashMap() ;
+   private Map<String, AliasEntry>      _aliasHash = new HashMap<String, AliasEntry>() ;
    private Dictionary   _context   = null ;
    private SimpleDateFormat _dateFormat = 
                 new SimpleDateFormat( "EEE, dd MMM yyyy hh:mm:ss z");
@@ -55,7 +54,7 @@ public class      HttpServiceCell
        
     
    }  
-   private class AliasEntry {
+   private static class AliasEntry {
 	  private String _intFailureMsg = null;
       private String _type ;
       private Object _obj  ;
@@ -112,7 +111,7 @@ public class      HttpServiceCell
       for( ; e.hasNext() ; ){
           alias = e.next().toString() ;
           pw.println("<<<<< "+alias+" >>>>>>>>>");
-          entry = (AliasEntry)_aliasHash.get( alias ) ;
+          entry = _aliasHash.get( alias ) ;
           entry.getInfo(pw);
       }
       return ;
@@ -121,18 +120,14 @@ public class      HttpServiceCell
    public String ac_ls_alias_$_0_1( Args args )throws Exception{
       AliasEntry entry = null ;
       if( args.argc() == 0 ){      
-          Iterator     e      = _aliasHash.keySet().iterator() ;
           StringBuffer sb     = new StringBuffer() ;
-          String       alias  = null ;
-          for( ; e.hasNext() ; ){
-              alias = e.next().toString() ;
-              entry = (AliasEntry)_aliasHash.get( alias ) ;
-              sb.append( alias ).append( " -> " ).
-                 append( entry.toString() ).append( "\n" ) ;
+          for( Map.Entry<String, AliasEntry> aliasEntry : _aliasHash.entrySet()  ){
+              sb.append( aliasEntry.getKey() ).append( " -> " ).
+                 append( aliasEntry.getValue() ).append( "\n" ) ;
           }
           return sb.toString() ;
       }else{
-          entry = (AliasEntry)_aliasHash.get( args.argv(0) ) ;
+          entry = _aliasHash.get( args.argv(0) ) ;
           if( entry == null )
              throw new Exception( "Alias not found : "+args.argv(0) ) ;
           return args.argv(0)+" -> "+entry ;
@@ -407,7 +402,7 @@ public class      HttpServiceCell
              alias = _tokens.length == 0 ? "<home>" : _tokens[0] ;
              _tokenOffset = 1 ;
              try{
-                entry = (AliasEntry)_aliasHash.get( alias ) ;
+                entry = _aliasHash.get( alias ) ;
                 if( entry == null )
                     throw new 
                     HttpException( 404 , "Alias not found : "+alias ) ;
@@ -416,7 +411,7 @@ public class      HttpServiceCell
                 
              }catch(HttpException ee){
                 if( ee.getErrorCode() != 404 )throw ee ;
-                entry = (AliasEntry)_aliasHash.get( "<default>" ) ;
+                entry = _aliasHash.get( "<default>" ) ;
                 if( entry == null )throw ee ;
                 switchHttpType( entry ) ;
              }
@@ -462,7 +457,7 @@ public class      HttpServiceCell
              //  are we overwritten ?
              //
              if( ( ( aliasString = entry.getOverwrite() ) != null ) &&
-                 ( ( aliasEntry = (AliasEntry)_aliasHash.get( aliasString ) ) != null )){
+                 ( ( aliasEntry = _aliasHash.get( aliasString ) ) != null )){
                  
                  switchHttpType( aliasEntry ) ;
                  return ;
@@ -486,7 +481,7 @@ public class      HttpServiceCell
              }
              if( html == null ){
                 if( ( ( aliasString = entry.getOnError() ) == null ) ||
-                    ( ( aliasEntry = (AliasEntry)_aliasHash.get( aliasString ) ) == null ) )
+                    ( ( aliasEntry = _aliasHash.get( aliasString ) ) == null ) )
                  throw new 
                  HttpException(  404 , "Not found : "+specificName);
                  
