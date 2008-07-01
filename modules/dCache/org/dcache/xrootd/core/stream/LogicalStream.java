@@ -289,19 +289,12 @@ public class LogicalStream extends Thread {
 		openPaths.remove(path);
 		
 		
-        System.out.println("event in stream:"+streamID+" removeFile:"+path);
-        System.out.println("debug: checkOpenFileListConsistency: "+checkOpenFileListConsistency()+" openpath.size:"+openPaths.size()+" requests.size: "+requests.size());
-        System.out.println("isProcessing:"+processingRequest);
-		
 		if (checkOpenFileListConsistency() && openPaths.isEmpty() && (requests.size() == 0) ) {
 			
 			synchronized (someLock) {
                     
 			    if (! processingRequest) {
-			        System.out.println("removing file from "+streamID+" list");
 			        physicalConnection.getStreamManager().destroyStream(streamID);
-			        System.out.println("number of open files for stream"+streamID+": "+openFlags.size());
-			        System.out.println("number of active streams: "+physicalConnection.getStreamManager().getNumberOfStreams());
 			    }
 			}
 			
