@@ -306,7 +306,7 @@ users_VoGetsUid()
     yaimlog ERROR "Could not find Uid's For Name as mapping file unavailable"
     return 1
   fi
-  RET=`awk --posix -F: '$4==vo {print $1}' vo=${Name} "${UserFile}" | sort | uniq | head -n 1`
+  RET=`awk --posix -F: '$5==vo {print $1}' vo=${Name} "${UserFile}" | sort | uniq | head -n 1`
   if [ -z "${RET}" ] ; then
     yaimlog WARNING "found no data users_VoGetsUid \"${Name}\""
     return 1
@@ -331,7 +331,7 @@ users_VoGetsGid()
     yaimlog ERROR "Could not find Gid's For Name as mapping file unavailable"
     return 1
   fi
-  RET=`awk --posix -F: '$4==vo {print $3}' vo=${Name} "${UserFile}" | sort | uniq | head -n 1`
+  RET=`awk --posix -F: '$5==vo {print $3}' vo=${Name} "${UserFile}" | sort | uniq | head -n 1`
   if [ -z "${RET}" ] ; then
     yaimlog WARNING "found no data users_VoGetsGid \"${Name}\""
     return 1
