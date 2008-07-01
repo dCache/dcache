@@ -48,7 +48,7 @@ create dmg.cells.services.login.LoginManager Xrootd-${thisHostname} \
              -maxLogin=${xrootdMaxLogin} \
              -clientVersion=0.0          \
              -brokerUpdateTime=30        \
-             -protocolFamily=Xrootd      \
+             -protocolFamily=root        \
              -protocolVersion=2.4	     \
              -loginBroker=LoginBroker    \
              -isReadOnly=${xrootdIsReadOnly}	\
