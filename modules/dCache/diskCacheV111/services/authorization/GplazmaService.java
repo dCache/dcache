@@ -4,7 +4,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.log4j.Logger;
 
-import diskCacheV111.util.UserAuthRecord;
+import org.dcache.auth.UserAuthRecord;
 import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellPath;
 import dmg.util.Args;

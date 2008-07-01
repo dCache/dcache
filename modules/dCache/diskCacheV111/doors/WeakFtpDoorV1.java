@@ -51,6 +51,7 @@ import java.util.*;
 import java.io.*;
 import java.net.*;
 import java.lang.reflect.*;
+import org.dcache.auth.UserPwdRecord;
 import org.ietf.jgss.*;
 import java.lang.Thread;
 import java.util.regex.*;

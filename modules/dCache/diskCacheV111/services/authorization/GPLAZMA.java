@@ -159,8 +159,8 @@ COPYRIGHT STATUS:
 
 package diskCacheV111.services.authorization;
 
-import diskCacheV111.util.UserAuthBase;
-import diskCacheV111.util.UserAuthRecord;
+import org.dcache.auth.UserAuthBase;
+import org.dcache.auth.UserAuthRecord;
 import diskCacheV111.vehicles.*;
 import diskCacheV111.vehicles.transferManager.RemoteGsiftpDelegateUserCredentialsMessage;
 import diskCacheV111.vehicles.transferManager.RemoteGsiftpTransferProtocolInfo;

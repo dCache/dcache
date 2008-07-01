@@ -147,7 +147,7 @@ import diskCacheV111.util.ChecksumPersistence;
 import diskCacheV111.util.ChecksumFactory;
 import diskCacheV111.util.Checksum;
 import diskCacheV111.util.PnfsHandler;
-import diskCacheV111.util.UserAuthBase;
+import org.dcache.auth.UserAuthBase;
 import diskCacheV111.services.acl.PermissionHandlerInterface;
 
 import org.dcache.services.AbstractCell;

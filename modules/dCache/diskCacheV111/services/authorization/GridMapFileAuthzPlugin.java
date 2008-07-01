@@ -63,6 +63,7 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 
 import diskCacheV111.util.*;
+import org.dcache.auth.UserAuthRecord;
 
 import org.ietf.jgss.GSSException;
 import org.ietf.jgss.GSSContext;

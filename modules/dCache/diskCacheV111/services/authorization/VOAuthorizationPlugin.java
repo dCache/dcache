@@ -97,6 +97,7 @@ import java.net.Socket;
 import java.net.URL;
 
 import diskCacheV111.util.*;
+import org.dcache.auth.UserAuthRecord;
 
 import org.ietf.jgss.GSSException;
 import org.ietf.jgss.GSSContext;

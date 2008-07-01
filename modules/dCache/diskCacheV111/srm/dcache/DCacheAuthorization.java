@@ -140,7 +140,7 @@ COPYRIGHT STATUS:
 package diskCacheV111.srm.dcache;
 
 import diskCacheV111.util.KAuthFile;
-import diskCacheV111.util.UserAuthRecord;
+import org.dcache.auth.UserAuthRecord;
 import org.dcache.srm.SRMAuthorization;
 import org.dcache.srm.SRMAuthorizationException;
 import java.util.Iterator;

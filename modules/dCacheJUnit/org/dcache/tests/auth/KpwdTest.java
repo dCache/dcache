@@ -4,7 +4,7 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 import diskCacheV111.services.authorization.KPWDAuthorizationPlugin;
-import diskCacheV111.util.UserAuthBase;
+import org.dcache.auth.UserAuthBase;
 
 public class KpwdTest {
 

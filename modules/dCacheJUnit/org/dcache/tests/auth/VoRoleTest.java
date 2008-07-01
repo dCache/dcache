@@ -7,7 +7,7 @@ import org.junit.Test;
 
 import diskCacheV111.services.authorization.AuthorizationServiceException;
 import diskCacheV111.services.authorization.GPLAZMALiteVORoleAuthzPlugin;
-import diskCacheV111.util.UserAuthBase;
+import org.dcache.auth.UserAuthBase;
 
 public class VoRoleTest {
 

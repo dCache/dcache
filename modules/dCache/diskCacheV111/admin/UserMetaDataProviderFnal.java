@@ -7,6 +7,8 @@ import dmg.cells.nucleus.* ;
 import dmg.util.* ;
 
 import diskCacheV111.util.*;
+import org.dcache.auth.UserAuthBase;
+import org.dcache.auth.UserAuthRecord;
 /**
  * Author : Patrick Fuhrmann, Vladimir Podstavkov
  * Based on the UserMetaDataProviderExample

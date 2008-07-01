@@ -13,7 +13,7 @@ import dmg.util.Args;
 
 import diskCacheV111.services.authorization.AuthorizationService;
 import diskCacheV111.services.authorization.AuthorizationServiceException;
-import diskCacheV111.util.UserAuthBase;
+import org.dcache.auth.UserAuthBase;
 
 /**
  * Author : Patrick Fuhrmann, Vladimir Podstavkov

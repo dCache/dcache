@@ -55,6 +55,7 @@ import java.text.SimpleDateFormat;
 
 import diskCacheV111.util.*;
 import diskCacheV111.util.KAuthFile;
+import org.dcache.auth.UserAuthRecord;
 
 import org.ietf.jgss.GSSException;
 import org.ietf.jgss.GSSContext;

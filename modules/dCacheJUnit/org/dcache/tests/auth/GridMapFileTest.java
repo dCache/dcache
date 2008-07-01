@@ -7,7 +7,7 @@ import org.junit.Test;
 
 import diskCacheV111.services.authorization.AuthorizationServicePlugin;
 import diskCacheV111.services.authorization.GridMapFileAuthzPlugin;
-import diskCacheV111.util.UserAuthBase;
+import org.dcache.auth.UserAuthBase;
 
 
 

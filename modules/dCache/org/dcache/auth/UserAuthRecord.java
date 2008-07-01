@@ -1,5 +1,6 @@
-package diskCacheV111.util;
+package org.dcache.auth;
 
+import diskCacheV111.util.*;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.TreeSet;

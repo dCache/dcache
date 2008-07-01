@@ -74,6 +74,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.net.Socket;
 
 import diskCacheV111.util.*;
+import org.dcache.auth.UserAuthRecord;
 
 import org.ietf.jgss.GSSException;
 import org.ietf.jgss.GSSContext;

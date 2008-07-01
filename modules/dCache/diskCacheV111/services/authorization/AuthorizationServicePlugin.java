@@ -20,6 +20,7 @@ import java.net.Socket;
 
 //dcache
 import diskCacheV111.util.*;
+import org.dcache.auth.UserAuthRecord;
 
 //jgss
 import org.ietf.jgss.GSSException;

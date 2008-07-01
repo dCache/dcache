@@ -23,7 +23,7 @@ import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileMetaData;
 import diskCacheV111.util.RetentionPolicy;
-import diskCacheV111.util.UserAuthRecord;
+import org.dcache.auth.UserAuthRecord;
 
 
 /**

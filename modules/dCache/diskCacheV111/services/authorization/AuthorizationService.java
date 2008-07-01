@@ -124,6 +124,7 @@ import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.DNInfo;
 import diskCacheV111.vehicles.AuthenticationMessage;
 import diskCacheV111.vehicles.X509Info;
+import org.dcache.auth.UserAuthRecord;
 
 //import org.apache.log4j.Logger;
 //import org.apache.log4j.Level;

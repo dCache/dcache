@@ -1,7 +1,8 @@
-package diskCacheV111.util;
+package org.dcache.auth;
 
 //import org.glite.security.voms.FQAN;
 
+import diskCacheV111.util.*;
 import java.util.*;
 
 public abstract class UserAuthBase extends Object implements java.io.Serializable {

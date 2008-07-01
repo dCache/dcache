@@ -1,6 +1,6 @@
 package diskCacheV111.services.authorization;
 
-import diskCacheV111.util.UserAuthRecord;
+import org.dcache.auth.UserAuthRecord;
 import org.apache.log4j.*;
 
 import java.net.Socket;

@@ -1,7 +1,7 @@
 package diskCacheV111.vehicles;
 
-import diskCacheV111.util.UserAuthBase;
-import diskCacheV111.util.UserAuthRecord;
+import org.dcache.auth.UserAuthBase;
+import org.dcache.auth.UserAuthRecord;
 
 import java.util.Collection;
 import java.util.LinkedList;

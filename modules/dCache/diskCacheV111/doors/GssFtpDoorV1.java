@@ -76,7 +76,7 @@ import dmg.util.Args;
 //dcache
 import diskCacheV111.util.Base64;
 import diskCacheV111.util.KAuthFile;
-import diskCacheV111.util.UserAuthRecord;
+import org.dcache.auth.UserAuthRecord;
 
 //java
 import java.net.InetAddress;
