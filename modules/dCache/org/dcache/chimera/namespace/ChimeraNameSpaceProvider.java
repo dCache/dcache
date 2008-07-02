@@ -274,7 +274,7 @@ public class ChimeraNameSpaceProvider implements NameSpaceProvider, StorageInfoP
 
     	FsInode inode = null;
         try {
-			inode = _fs.path2inode(path)
+			inode = _fs.path2inode(path);
 		} catch (FileNotFoundHimeraFsException e) {
 			throw new FileNotFoundCacheException("no such file or directory " + path);
 		}
