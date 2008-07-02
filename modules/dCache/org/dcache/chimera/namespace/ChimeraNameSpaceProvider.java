@@ -41,6 +41,7 @@ public class ChimeraNameSpaceProvider implements NameSpaceProvider, StorageInfoP
     private final JdbcFs       _fs;
     private final Args         _args;
     private final ChimeraStorageInfoExtractable _extractor;
+    private final RequestCache _cache;
 
     private static final Logger _logNameSpace =  Logger.getLogger("logger.org.dcache.namespace");
 
@@ -50,6 +51,7 @@ public class ChimeraNameSpaceProvider implements NameSpaceProvider, StorageInfoP
 	    _fs = new JdbcFs(  config );
 	    _args = args;
 
+	    _cache = new RequestCache(_fs, 4096);
 	    Class<ChimeraStorageInfoExtractable> exClass = (Class<ChimeraStorageInfoExtractable>) Class.forName( _args.argv(0)) ;
         _extractor = exClass.newInstance() ;
 
@@ -182,6 +184,9 @@ public class ChimeraNameSpaceProvider implements NameSpaceProvider, StorageInfoP
         _fs.remove(inode);
     }
 
+    public void deleteEntry(String path) throws Exception {
+        _fs.remove(path);
+    }
     public void renameEntry(PnfsId pnfsId, String newName) throws Exception {
 
         FsInode inode = new FsInode(_fs, pnfsId.toIdString());
@@ -274,7 +279,7 @@ public class ChimeraNameSpaceProvider implements NameSpaceProvider, StorageInfoP
 
     	FsInode inode = null;
         try {
-			inode = _fs.path2inode(path);
+			inode = _cache.idByPath(path);
 		} catch (FileNotFoundHimeraFsException e) {
 			throw new FileNotFoundCacheException("no such file or directory " + path);
 		}

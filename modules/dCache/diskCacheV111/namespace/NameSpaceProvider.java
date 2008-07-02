@@ -36,7 +36,21 @@ public interface NameSpaceProvider extends DcacheNameSpaceProvider {
      * @throws Exception
      */
     PnfsId createEntry(String path, FileMetaData metaData, boolean isDirectory) throws Exception ;
+    
+    /**
+     * remove file or directory associated with given pnfsid
+     * @param pnfsId
+     * @throws Exception
+     */
     void deleteEntry( PnfsId pnfsId) throws Exception;
+    
+    /**
+     * remove file or directory
+     * @param path
+     * @throws Exception
+     */
+    void deleteEntry( String path ) throws Exception;
+    
     void renameEntry( PnfsId pnfsId, String newName) throws Exception;
 
     String pnfsidToPath( PnfsId pnfsId) throws Exception ;

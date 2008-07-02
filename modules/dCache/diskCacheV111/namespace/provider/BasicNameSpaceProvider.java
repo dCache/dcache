@@ -270,14 +270,22 @@ public class BasicNameSpaceProvider implements NameSpaceProvider, StorageInfoPro
 
     public void deleteEntry(PnfsId pnfsId) throws Exception {
 
-        boolean rc;
         String  pnfsIdPath = this.pnfsidToPath(pnfsId) ;
-        _logNameSpace.debug("delete PNFS entry for " + pnfsId + " path " + pnfsIdPath);
+        _logNameSpace.debug("delete PNFS entry for " + pnfsId );
 
-        PnfsFile pf =  new PnfsFile(pnfsIdPath);
+        deleteEntry(pnfsIdPath);
+    }
+
+    public void deleteEntry(String path) throws Exception {
+
+        boolean rc;
+        
+        _logNameSpace.debug("delete PNFS entry for  path " + path);
+
+        PnfsFile pf =  new PnfsFile(path);
 
         if (! pf.exists()){
-            _logNameSpace.debug(pnfsId+": no such file");
+            _logNameSpace.debug(path+": no such file");
             throw new FileNotFoundCacheException( "No such file or directory");
         }
 
@@ -285,21 +293,21 @@ public class BasicNameSpaceProvider implements NameSpaceProvider, StorageInfoPro
             rc = pf.delete();
         } catch (Exception e) {
             _logNameSpace.error("delete failed "+e);
-            throw new IllegalArgumentException( "Failed to remove entry " + pnfsId + " : " + e);
+            throw new IllegalArgumentException( "Failed to remove entry " + path + " : " + e);
         }
 
 
         if( ! rc ) {
             if( pf.isDirectory() && ( pf.list().length != 0 ) ) {
-                _logNameSpace.error(pnfsId + ": is not empty");
-                throw new IllegalArgumentException( "Directory  " + pnfsId + " not empty");
+                _logNameSpace.error(path + ": is not empty");
+                throw new IllegalArgumentException( "Directory  " + path + " not empty");
             } else{
-                _logNameSpace.error(pnfsId+ ": unknown reason");
-                throw new IllegalArgumentException( "Failed to remove entry " + pnfsId + " : Unknown reason.");
+                _logNameSpace.error(path+ ": unknown reason");
+                throw new IllegalArgumentException( "Failed to remove entry " + path + " : Unknown reason.");
             }
         }
     }
-
+    
     public List<String> getCacheLocation(PnfsId pnfsId) throws Exception{
 
         PnfsFile pf = _pathManager.getFileByPnfsId( pnfsId );
@@ -395,9 +403,6 @@ public class BasicNameSpaceProvider implements NameSpaceProvider, StorageInfoPro
         	throw new FileNotFoundCacheException("path " +path+" not found");
         }
 
-        if( !pnfsFile.exists() ) {
-            throw new FileNotFoundCacheException("path " +path+" not found");
-        }
         return pnfsFile.getPnfsId();
     }
 
@@ -948,8 +953,14 @@ public class BasicNameSpaceProvider implements NameSpaceProvider, StorageInfoPro
        }
        return sb.toString() ;
     }
+   
     private String nameOf( File mp , String pnfsId ) throws Exception {
        File file = new File( mp , ".(nameof)("+pnfsId+")" ) ;
+       
+       if (_logNameSpace.isInfoEnabled() ) { 
+           _logNameSpace.info("nameof for pnfsid " + pnfsId);
+       }
+       
        BufferedReader br = null;
        try{
     	   br = new BufferedReader(new FileReader( file ) ) ;
@@ -959,6 +970,11 @@ public class BasicNameSpaceProvider implements NameSpaceProvider, StorageInfoPro
        }
     }
     private String parentOf( File mp , String pnfsId ) throws Exception {
+        
+        if (_logNameSpace.isInfoEnabled() ) { 
+            _logNameSpace.info("parent for pnfsid " + pnfsId);
+        }
+        
        File file = new File( mp , ".(parent)("+pnfsId+")" ) ;
        BufferedReader br = null;
        try{
