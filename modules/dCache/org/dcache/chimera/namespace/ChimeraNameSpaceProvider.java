@@ -182,6 +182,10 @@ public class ChimeraNameSpaceProvider implements NameSpaceProvider, StorageInfoP
         _fs.remove(inode);
     }
 
+    public void deleteEntry(String path) throws Exception {
+        _fs.remove(path);
+    }
+
     public void renameEntry(PnfsId pnfsId, String newName) throws Exception {
 
         FsInode inode = new FsInode(_fs, pnfsId.toIdString());
