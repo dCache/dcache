@@ -178,10 +178,13 @@ import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
 import java.net.UnknownHostException;
 import java.util.concurrent.*;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Iterator;
 import java.util.Collection;
 import java.util.Arrays;
+import java.util.List;
+
 import org.bouncycastle.jce.provider.X509CertificateObject;
 import java.security.cert.X509Certificate;
 
@@ -467,6 +470,34 @@ public class GPLAZMA extends CellAdapter implements Runnable {
     return "LogLevel set to " + logLevelToString(loglevel);
   }
 
+  
+  public final String hh_get_mapping = "\"<DN>\" [\"FQAN1\",...,\"FQANn\"]";
+  public String ac_get_mapping_$_1_2 (Args args) throws AuthorizationServiceException {
+      
+      
+      String principal = args.argv(0);
+      /*
+       * returns null if argv(1) does not exist
+       */
+      String roleArg = args.argv(1);
+      Collection<String> roles ;
+      if( roleArg != null ) {          
+          String[] roleList = roleArg.split(",");
+          roles = Arrays.asList(roleList) ;                   
+      }else{
+          roles = new ArrayList<String>(0);
+      }
+      
+      List<UserAuthRecord> mappedRecords =  authorize(principal, roles, null, 0);
+      StringBuilder sb = new StringBuilder();
+      for( UserAuthRecord record : mappedRecords) {
+          sb.append("mapped as: ").append(record.Username).append(" ").
+          append(record.UID).append(" ").append(record.GID).append(" ").append(record.Root);
+      }
+      
+      return sb.toString();
+  }
+  
   /**
    * is called if user types 'info'
    */
