@@ -1137,6 +1137,7 @@ public class PnfsManagerV3 extends CellAdapter {
                 if( pnfsId != null ) {
                     PnfsId currentId = _nameSpaceProvider.pathToPnfsid(path, false);
                     if( !currentId.equals(pnfsId) ) {
+                         esay("request to remove a file by path providing wrong pnfsid: " + path + "  " + pnfsId + "("+ currentId +")" );
                         throw new FileNotFoundCacheException("pnfsid do not corresopnds to provided file");
                     }
                 }
