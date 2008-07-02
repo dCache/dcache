@@ -46,11 +46,6 @@ public class PnfsFileMetaDataSource implements FileMetaDataSource {
 
 	      PnfsId     pnfsId       = pnfsFile.getPnfsId() ;
 
-	      if( pnfsId == null ) {
-	          throw new CacheException
-	          ( "can't get pnfsId (not a pnfsfile)" ) ;
-	      }
-
 	      return this.getMetaData(pnfsId);
 	}
 

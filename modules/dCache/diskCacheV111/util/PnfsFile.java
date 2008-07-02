@@ -3,11 +3,15 @@ package diskCacheV111.util;
 import java.util.* ;
 import java.io.* ;
 
+import org.apache.log4j.Logger;
+
 public class PnfsFile extends File  {
 
    private String  _absolute   = null ;
    private PnfsId  _pnfsId     = null ;
    private FileMetaData  _meta = null ;
+   
+   private static final Logger _logNameSpace =  Logger.getLogger("logger.dev.org.dcache.namespace." + PnfsFile.class.getName());
 
    public PnfsFile( String path ){
       super( path ) ;
@@ -106,7 +110,8 @@ public class PnfsFile extends File  {
      if( _pnfsId == null )return super.delete() ;
      return false ;
    }
-   public boolean setLength( long length ){
+
+    public boolean setLength( long length ){
 
 	   File setSizeCommand = null;
 
@@ -168,25 +173,30 @@ public class PnfsFile extends File  {
          return new File( dirString , ".(use)("+level+")("+getName()+")" ) ;
       }
    }
-   public PnfsId getPnfsId() {
+   public PnfsId getPnfsId() throws FileNotFoundCacheException  {
         if (_pnfsId != null)
             return _pnfsId;
+        
         String dirString = new File(_absolute).getParent();
-        if (dirString == null)
-            return null;
+        if (dirString == null) {
+            throw new FileNotFoundCacheException("path " +_absolute+" not found");
+        }
+        
         File f = new File(dirString, ".(id)(" + getName() + ")");
-        if (!f.exists())
-            return null;
+
         BufferedReader r = null;
         try {
             r = new BufferedReader(new FileReader(f), 32);
             String idString = r.readLine();
-            if (idString == null)
-                return null;
+            if (idString == null) {
+                throw new FileNotFoundCacheException("path " +_absolute+" not found ( empty id file )");
+            }
             return new PnfsId(idString);
+        } catch( FileNotFoundException fnf) {
+            throw new FileNotFoundCacheException("path " +_absolute+" not found ( "+ f.getName() +" )");
         } catch (Exception e) {
             e.printStackTrace();
-            return null;
+            throw new FileNotFoundCacheException("path " +_absolute+" not found ( " + e.getMessage() + " )");
         } finally {
             if (r != null) {
                 try {
@@ -329,7 +339,7 @@ public class PnfsFile extends File  {
    public static String pathfinder( File mountpoint , String pnfsId )
           throws IOException{
 
-      List<String> v = new Vector<String>() ;
+      List<String> v = new ArrayList<String>() ;
       while(true){
          try{
             v.add( _getNameOf( mountpoint , pnfsId ) ) ;
@@ -344,8 +354,9 @@ public class PnfsFile extends File  {
 
       StringBuilder sb = new StringBuilder() ;
 
-      for( int i = v.size() - 1 ; i >= 0 ; i-- )
-         sb.append( "/" ).append( v.get(i) ) ;
+      for( int i = v.size() - 1 ; i >= 0 ; i-- ){
+          sb.append("/").append(v.get(i)) ;
+      }
 
       return sb.toString() ;
    }
@@ -364,6 +375,11 @@ public class PnfsFile extends File  {
    }
    public static String _getNameOf( File mountpoint , String  pnfsId )
           throws IOException{
+       
+       if (_logNameSpace.isInfoEnabled() ) { 
+           _logNameSpace.info("nameof for pnfsid " + pnfsId);
+       }
+       
        BufferedReader br =
           new BufferedReader(
              new FileReader(
@@ -376,6 +392,11 @@ public class PnfsFile extends File  {
    }
    public PnfsId getParentId(){
       if( _pnfsId != null ){
+          
+          if (_logNameSpace.isInfoEnabled() ) { 
+              _logNameSpace.info("parent for pnfsid " + _pnfsId);
+          }
+          
          File   f    = new File( getParent() , ".(parent)("+_pnfsId+")" ) ;
          String line = null ;
          BufferedReader br = null ;
@@ -519,29 +540,31 @@ public class PnfsFile extends File  {
       return super.getCanonicalPath() ;
    }
    */
-   public static PnfsFile getFileByPnfsId( String mountpoint , PnfsId id ) throws FileNotFoundCacheException{
-       PnfsFile mp = new PnfsFile( mountpoint ) ;
-       if( ( ! mp.isDirectory() ) || ( ! mp.isPnfs() ) ) {
-    	   throw new IllegalArgumentException("mountpoing [" +mountpoint+ "] does not exist or not in the pnfs");
+   public static PnfsFile getFileByPnfsId(String mountpoint, PnfsId id) throws FileNotFoundCacheException {
+       PnfsFile mp = new PnfsFile(mountpoint);
+       if ((!mp.isDirectory()) || (!mp.isPnfs())) {
+           throw new IllegalArgumentException("mountpoint [" + mountpoint + "] does not exist or not in the pnfs");
        }
-       PnfsFile f = new PnfsFile( mountpoint , ".(access)("+id+")" , id ) ;
-       if( ! f.exists() ) {
-    	   throw new FileNotFoundCacheException( id.toString() );
+       PnfsFile f = new PnfsFile(mountpoint, ".(access)(" + id + ")", id);
+       if (!f.exists()) {
+           throw new FileNotFoundCacheException(id.toString());
        }
-       return f ;
+       return f;
    }
-   public static PnfsFile getFileByPnfsId( File mountpoint , PnfsId id ) throws FileNotFoundCacheException{
-       PnfsFile mp = new PnfsFile( mountpoint.getAbsolutePath() ) ;
-       if( ( ! mp.isDirectory() ) || ( ! mp.isPnfs() ) ){
-    	   throw new IllegalArgumentException("mountpoing [" +mountpoint+ "] does not exist or not in the pnfs");
-       }
-       PnfsFile f = new PnfsFile( mountpoint.getAbsolutePath() , ".(access)("+id+")" , id ) ;
-       if( ! f.exists() ){
-    	   throw new FileNotFoundCacheException( id.toString() );
-       }
-       return f ;
-   }
-   /**
+
+    public static PnfsFile getFileByPnfsId(File mountpoint, PnfsId id) throws FileNotFoundCacheException {
+        PnfsFile mp = new PnfsFile(mountpoint.getAbsolutePath());
+        if ((!mp.isDirectory()) || (!mp.isPnfs())) {
+            throw new IllegalArgumentException("mountpoint [" + mountpoint + "] does not exist or not in the pnfs");
+        }
+        PnfsFile f = new PnfsFile(mountpoint.getAbsolutePath(), ".(access)(" + id + ")", id);
+        if (!f.exists()) {
+            throw new FileNotFoundCacheException(id.toString());
+        }
+        return f;
+    }
+
+    /**
      */
    protected static List<String> getServerAttributes( File mountpoint , String key )throws IOException {
       if( ( ! mountpoint.exists()      ) ||

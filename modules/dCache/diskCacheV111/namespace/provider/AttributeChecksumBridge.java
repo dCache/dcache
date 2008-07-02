@@ -25,6 +25,7 @@ class MyFakeNameSpaceProvider implements NameSpaceProvider {
 
     public PnfsId createEntry(String name, FileMetaData metaData, boolean checksumType) throws Exception { return null; }
     public void deleteEntry( PnfsId pnfsId) throws Exception {}
+    public void deleteEntry( String path) throws Exception {}
     public void renameEntry( PnfsId pnfsId, String newName) throws Exception {}
 
     public String pnfsidToPath( PnfsId pnfsId) throws Exception { return null; }

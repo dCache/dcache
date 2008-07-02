@@ -1,9 +1,6 @@
 package org.dcache.tests.namespace;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -20,6 +17,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import org.dcache.chimera.ChimeraFsException;
+import org.dcache.chimera.FileNotFoundHimeraFsException;
 import org.dcache.chimera.FsInode;
 import org.dcache.chimera.JdbcFs;
 import org.dcache.chimera.XMLconfig;
@@ -33,9 +31,11 @@ import diskCacheV111.vehicles.PnfsAddCacheLocationMessage;
 import diskCacheV111.vehicles.PnfsClearCacheLocationMessage;
 import diskCacheV111.vehicles.PnfsCreateDirectoryMessage;
 import diskCacheV111.vehicles.PnfsCreateEntryMessage;
+import diskCacheV111.vehicles.PnfsDeleteEntryMessage;
 import diskCacheV111.vehicles.PnfsGetCacheLocationsMessage;
 import diskCacheV111.vehicles.PnfsGetFileMetaDataMessage;
 import diskCacheV111.vehicles.PnfsGetStorageInfoMessage;
+import diskCacheV111.vehicles.PnfsRenameMessage;
 import diskCacheV111.vehicles.StorageInfo;
 
 public class PnfsManagerTest {
@@ -231,6 +231,29 @@ public class PnfsManagerTest {
         assertEquals("Invalid entry in storageInfo map", writeToken, storageInfo.getMap().get("writeToken") );
 
     }
+    
+    
+    @Test
+    public void testRemoveByPath() throws ChimeraFsException {
+        
+     
+        PnfsCreateEntryMessage pnfsCreateEntryMessage = new PnfsCreateEntryMessage("/pnfs/testRoot/testRemoveByPath");
+
+        _pnfsManager.createEntry(pnfsCreateEntryMessage);
+        
+        
+        PnfsDeleteEntryMessage deleteEntryMessage = new PnfsDeleteEntryMessage("/pnfs/testRoot/testRemoveByPath");
+        _pnfsManager.deleteEntry(deleteEntryMessage);
+        
+        try {
+            
+            _fs.path2inode("/pnfs/testRoot/testRemoveByPath");
+            fail("remove by path did not removed file from filesystem");            
+        }catch(FileNotFoundHimeraFsException fnf) {
+            // OK
+        }
+    }
+
 
     @Test
     @Ignore

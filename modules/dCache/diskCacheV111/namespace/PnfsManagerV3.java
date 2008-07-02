@@ -1114,21 +1114,40 @@ public class PnfsManagerV3 extends CellAdapter {
     }
 
     public void deleteEntry(PnfsDeleteEntryMessage pnfsMessage){
+
         String path = pnfsMessage.getPath();
-        PnfsId pnfsId = null;
-        if( path != null ) {
-            say("delete PNFS entry for "+ path );
-        }
-        else {
-            say("delete PNFS entry for "+ pnfsMessage.getPnfsId() );
-        }
+        PnfsId pnfsId = pnfsMessage.getPnfsId();
 
         try {
-            pnfsId = pnfsMessage.getPnfsId();
-            if( pnfsId == null ) {
-                pnfsId = _nameSpaceProvider.pathToPnfsid( path, false);
+            
+            if( path == null && pnfsId == null) {
+                throw new CacheException(CacheException.INVALID_ARGS, "pnfsid or path have to be defined for PnfsDeleteEntryMessage");
             }
-            _nameSpaceProvider.deleteEntry( pnfsId );
+            
+            if( path != null ) {
+                
+                /*
+                 * raice condition check:
+                 * 
+                 * in some cases ( srm overwrite ) one failed transfer may remove a file
+                 * which belongs to an other transfer.
+                 * 
+                 * If both path and id defined check that path points to defined id
+                 */
+                if( pnfsId != null ) {
+                    PnfsId currentId = _nameSpaceProvider.pathToPnfsid(path, false);
+                    if( !currentId.equals(pnfsId) ) {
+                        throw new FileNotFoundCacheException("pnfsid do not corresopnds to provided file");
+                    }
+                }
+                
+                say("delete PNFS entry for "+ path );
+                _nameSpaceProvider.deleteEntry(path);
+            } else {
+                say("delete PNFS entry for "+ pnfsId );
+                _nameSpaceProvider.deleteEntry( pnfsId );
+            }
+
             pnfsMessage.setSucceeded();
 
         }catch(FileNotFoundCacheException fnf) {
