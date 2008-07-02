@@ -66,10 +66,18 @@
     </xsl:call-template>
   </xsl:variable>
 
-  <xsl:apply-templates select="document($xml-src-uri)/*[name()=$childname]" mode="eval-path">
-    <xsl:with-param name="path" select="substring-after($path, '/')"/>
-    <xsl:with-param name="default" select="$default"/>
-  </xsl:apply-templates>
+  <xsl:choose>
+    <xsl:when test="count(document($xml-src-uri)/*[name()=$childname]) > 0">
+      <xsl:apply-templates select="document($xml-src-uri)/*[name()=$childname]" mode="eval-path">
+        <xsl:with-param name="path" select="substring-after($path, '/')"/>
+        <xsl:with-param name="default" select="$default"/>
+      </xsl:apply-templates>
+    </xsl:when>
+
+    <xsl:otherwise>
+      <xsl:value-of select="$default"/>
+    </xsl:otherwise>
+  </xsl:choose>
 </xsl:template>
 
 
@@ -104,17 +112,30 @@
 
 
   <xsl:choose>
+
+    <!-- Not found yet -->
     <xsl:when test="$next-matched &lt; $desired-posn">
-      <!-- Try next sibling element -->
-      <xsl:apply-templates select="following-sibling::*[1]" mode="eval-path">
-	<xsl:with-param name="path"      select="$path"/>
-	<xsl:with-param name="attr-name" select="$attr-name"/>
-	<xsl:with-param name="attr-value" select="$attr-value"/>
-	<xsl:with-param name="matched"   select="$next-matched"/>
-	<xsl:with-param name="desired-posn" select="$desired-posn"/>
-	<xsl:with-param name="name"      select="$name"/>
-	<xsl:with-param name="default"   select="$default"/>
-      </xsl:apply-templates>
+
+      <xsl:choose>
+        <!-- If we have more siblings to try ... -->
+        <xsl:when test="count(following-sibling::*[1]) > 0">
+          <!-- Try next sibling element -->
+          <xsl:apply-templates select="following-sibling::*[1]" mode="eval-path">
+	    <xsl:with-param name="path"      select="$path"/>
+	    <xsl:with-param name="attr-name" select="$attr-name"/>
+	    <xsl:with-param name="attr-value" select="$attr-value"/>
+	    <xsl:with-param name="matched"   select="$next-matched"/>
+	    <xsl:with-param name="desired-posn" select="$desired-posn"/>
+	    <xsl:with-param name="name"      select="$name"/>
+	    <xsl:with-param name="default"   select="$default"/>
+          </xsl:apply-templates>
+        </xsl:when>
+
+        <!-- Otherwise, we've just run out ... -->
+        <xsl:otherwise>
+          <xsl:value-of select="$default"/>
+        </xsl:otherwise>
+      </xsl:choose>
     </xsl:when>
 
     <xsl:when test="$node-ok = 'true'">
@@ -210,6 +231,7 @@
 
     <xsl:otherwise>
       <!-- do nothing: shouldn't get here -->
+      <xsl:message>Reached somewhere we shouldn't</xsl:message>
     </xsl:otherwise>
   </xsl:choose>
 
