@@ -11,10 +11,10 @@
  *
  * Copyright (c) 1997 - 2002 Kungliga Tekniska H�gskolan (Royal Institute of
  * Technology, Stockholm, Sweden). All rights reserved.
- * 
- * 
+ *
+ *
  */
-  
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/socket.h>
@@ -26,6 +26,7 @@
 #include "base64.h"
 #include "util.h"
 #include <gssapi.h>
+#include "tunnelQueue.h"
 #if defined(GSIGSS) &&  defined(GLOBUS_BUG)
 #include <globus_module.h>
 #endif /* GLOBUS_BUG */
@@ -34,13 +35,11 @@
 #include <gssapi_generic.h>
 #endif				/* MIT_KRB5 */
 
-static int      gssAuth(int sock, const char *hostname, const char *service);
+static int      gssAuth(int sock,tunnel_ctx_t* ctx, const char *hostname, const char *service);
 
-static int      isAuthentificated;
-static	gss_ctx_id_t    context_hdl = GSS_C_NO_CONTEXT;
 #define MAXBUF 16384
 
-int 
+int
 eInit(int fd)
 {
 
@@ -60,9 +59,9 @@ eInit(int fd)
 	addrlen = sizeof(remote);
 	if (getpeername(fd, (struct sockaddr *) & remote, &addrlen) < 0
 	    || addrlen != sizeof(remote)) {
-#ifdef SHOW_ERROR			
+#ifdef SHOW_ERROR
 		perror("getpeername");
-#endif		
+#endif
 		return -1;
 	}
 	addr = (struct in_addr *) & (remote.sin_addr);
@@ -70,24 +69,28 @@ eInit(int fd)
 
 	if (hostEnt == NULL) {
 		/* Can't resolve address. */
-#ifdef SHOW_ERROR					
+#ifdef SHOW_ERROR
 		perror("can't resolv address\n");
-#endif		
+#endif
 		return -1;
 	}
-	isAuthentificated = 0;
 
-	ret =  gssAuth(fd,  (const char *)hostEnt->h_name, "host");
-	
+	tunnel_ctx_t* tunnel_ctx = createGssContext(fd);
+	if( tunnel_ctx == NULL ) {
+		return -1;
+	}
+
+	ret =  gssAuth(fd, tunnel_ctx, (const char *)hostEnt->h_name, "host");
+
 	if( ret == 1) {
-		isAuthentificated = 1;
+		tunnel_ctx->isAuthentificated = 1;
 	} /* else -> talking plain...(base64) */
-	
+
 	return 1;
 
 }
 
-ssize_t 
+ssize_t
 eRead(int fd, void *buf, size_t size)
 {
 	char            line[MAXBUF];
@@ -99,6 +102,10 @@ eRead(int fd, void *buf, size_t size)
 	static int             pos = 0;
 	static int             used = 0;
 
+	tunnel_ctx_t* tunnel_ctx = getGssContext(fd);
+	if( tunnel_ctx == NULL ) {
+		return -1;
+	}
 
 	gss_buffer_desc enc_buff, data_buf;
 	OM_uint32 maj_stat, min_stat;
@@ -130,20 +137,20 @@ eRead(int fd, void *buf, size_t size)
 
 		if (i > 0) {
 
-			if(isAuthentificated) {
+			if(tunnel_ctx->isAuthentificated) {
 
 				enc_buff.value = malloc(i);
 				enc_buff.length = base64_decode(line + 4, enc_buff.value);
 
-				maj_stat = gss_unwrap(&min_stat, context_hdl,
+				maj_stat = gss_unwrap(&min_stat, tunnel_ctx->context_hdl,
 								&enc_buff, &data_buf, NULL, NULL);
 
 
 				if (GSS_ERROR(maj_stat)) {
 					gss_print_errors(maj_stat);
 				}
-				
-				
+
+
 				memcpy(data, data_buf.value, data_buf.length);
 				gss_release_buffer(&min_stat, &enc_buff);
 			}else{
@@ -153,7 +160,7 @@ eRead(int fd, void *buf, size_t size)
 
 			used = data_buf.length;
 			pos = 0;
-			if(isAuthentificated){
+			if(tunnel_ctx->isAuthentificated){
 				gss_release_buffer(&min_stat, &data_buf);
 			}
 
@@ -161,51 +168,55 @@ eRead(int fd, void *buf, size_t size)
 
 			return -1;
 		}
-	
-	
+
+
 	}
-	
-	
+
+
 	if( size > used - pos) {
-		len = used - pos ;		
+		len = used - pos ;
 	}else{
 		len = size;
-	}	
+	}
 
 	memcpy(buf, data+pos, len);
 	pos +=len;
 	return len;
-	
+
 }
 
 
-ssize_t 
+ssize_t
 eWrite(int fd, const void *buf, size_t size)
 {
 	ssize_t         ret = 0;
-	
+
 	gss_buffer_desc enc_buff, data_buf;
 	OM_uint32 maj_stat, min_stat;
 
-	
 	int             len;
 	char           *str = NULL;
 	static const char prefix[] = "enc ";
 	static const char nl = '\n';
 
-	if(isAuthentificated) {
-		
+	tunnel_ctx_t* tunnel_ctx = getGssContext(fd);
+	if( tunnel_ctx == NULL ) {
+		return -1;
+	}
+
+	if(tunnel_ctx->isAuthentificated) {
+
 		data_buf.value = (void *)buf;
 		data_buf.length = size;
-	
-		maj_stat = gss_wrap(&min_stat, context_hdl, 1, GSS_C_QOP_DEFAULT, 
+
+		maj_stat = gss_wrap(&min_stat, tunnel_ctx->context_hdl, 1, GSS_C_QOP_DEFAULT,
 						&data_buf, NULL, &enc_buff);
-						
+
 
 		if (GSS_ERROR(maj_stat)) {
 			gss_print_errors(maj_stat);
-		}						
-		
+		}
+
 	}else{
 		enc_buff.value = (void *)buf;
 		enc_buff.length = size;
@@ -214,7 +225,7 @@ eWrite(int fd, const void *buf, size_t size)
 
 	len = base64_encode(enc_buff.value, enc_buff.length, &str);
 
-	if(isAuthentificated){
+	if(tunnel_ctx->isAuthentificated){
 		gss_release_buffer(&min_stat, &enc_buff);
 	}
 
@@ -226,20 +237,22 @@ eWrite(int fd, const void *buf, size_t size)
 }
 
 
-int 
+int
 eDestroy(int fd)
 {
 
 	OM_uint32       maj_stat, min_stat;
+	tunnel_ctx_t* tunnel_ctx = getGssContext(fd);
 
-	maj_stat = gss_delete_sec_context(&min_stat,  &context_hdl, GSS_C_NO_BUFFER);
+	maj_stat = gss_delete_sec_context(&min_stat,  &tunnel_ctx->context_hdl, GSS_C_NO_BUFFER);
+	destroyGssContext(fd);
 
 #if defined(GSIGSS) &&  defined(GLOBUS_BUG)
 	/* work arount globus bug */
 	(void) globus_module_deactivate(GLOBUS_GSI_GSSAPI_MODULE);
 #endif /* GLOBUS_BUG */
 
-	
+
 	if( maj_stat != GSS_S_COMPLETE ) {
 		gss_print_errors(maj_stat);
 		return -1;
@@ -278,17 +291,17 @@ import_name(const char *kname, const char *host, gss_name_t * target_name)
 
 
 int
-gssAuth(int sock, const char *hostname, const char *service)
+gssAuth(int sock, tunnel_ctx_t* tunnel_ctx, const char *hostname, const char *service)
 {
 	struct sockaddr_in remote, local;
 	socklen_t       addrlen;
 
-	int             context_established = 0;
 	gss_buffer_desc real_input_token, real_output_token;
 	gss_buffer_t    input_token = &real_input_token, output_token = &real_output_token;
 	OM_uint32       maj_stat, min_stat;
 	gss_name_t      server = GSS_C_NO_NAME;
 	gss_channel_bindings_t input_chan_bindings;
+
 
 
 	if (import_name(service, hostname, &server) < 0) {
@@ -297,17 +310,17 @@ gssAuth(int sock, const char *hostname, const char *service)
 	addrlen = sizeof(local);
 	if (getsockname(sock, (struct sockaddr *) & local, &addrlen) < 0
 	    || addrlen != sizeof(local)) {
-#ifdef SHOW_ERROR			
+#ifdef SHOW_ERROR
 		perror("sockname");
-#endif		
+#endif
 		return -1;
 	}
 	addrlen = sizeof(remote);
 	if (getpeername(sock, (struct sockaddr *) & remote, &addrlen) < 0
 	    || addrlen != sizeof(remote)) {
-#ifdef SHOW_ERROR			
+#ifdef SHOW_ERROR
 		perror("getpeer");
-#endif		
+#endif
 		return -1;
 	}
 	input_token->length = 0;
@@ -331,11 +344,11 @@ gssAuth(int sock, const char *hostname, const char *service)
 	input_chan_bindings->application_data.length = 0;
 	input_chan_bindings->application_data.value = NULL;
 #endif
-	while (!context_established) {
+	while (!tunnel_ctx->isAuthentificated) {
 		maj_stat =
 			gss_init_sec_context(&min_stat,
 					     GSS_C_NO_CREDENTIAL,
-					     &context_hdl,
+					     &tunnel_ctx->context_hdl,
 					     server,
 					     GSS_C_NO_OID,
 				     	 GSS_C_MUTUAL_FLAG | GSS_C_SEQUENCE_FLAG
@@ -348,7 +361,7 @@ gssAuth(int sock, const char *hostname, const char *service)
 					     NULL,
 					     NULL);
 
-		if (context_hdl == NULL) {
+		if (tunnel_ctx->context_hdl == NULL) {
 			/* send a waste to the server */
 			eWrite(sock, "123", 3);
 			return -1;
@@ -380,7 +393,7 @@ gssAuth(int sock, const char *hostname, const char *service)
 				return -1;
 			}
 		} else {
-			context_established = 1;
+			tunnel_ctx->isAuthentificated = 1;
 		}
 
 	}
@@ -403,6 +416,11 @@ gss_check(int sock)
 	gss_buffer_desc export_name;
 	gss_channel_bindings_t input_chan_bindings;
 
+	tunnel_ctx_t* tunnel_ctx = createGssContext(sock);
+	if( tunnel_ctx == NULL ) {
+		return -1;
+	}
+
 #ifndef MIT_KRB5
 # if 0 /*VP This does not work neither with GT4 nor Heimdal */
 	delegated_cred_handle = malloc(sizeof(*delegated_cred_handle));
@@ -415,15 +433,15 @@ gss_check(int sock)
 	addrlen = sizeof(local);
 	if (getsockname(sock, (struct sockaddr *) & local, &addrlen) < 0
 	    || addrlen != sizeof(local)) {
-#ifdef SHOW_ERROR			
+#ifdef SHOW_ERROR
 		perror("getsockname");
-#endif		
+#endif
 		return -1;
 	}
 	addrlen = sizeof(remote);
 	if (getpeername(sock, (struct sockaddr *) & remote, &addrlen) < 0
 	    || addrlen != sizeof(remote)) {
-#ifdef SHOW_ERROR			
+#ifdef SHOW_ERROR
 		perror("getpeername");
 #endif
 		return -1;
@@ -439,14 +457,14 @@ gss_check(int sock)
 
 	input_chan_bindings->application_data.length = 0;
 	input_chan_bindings->application_data.value = NULL;
-	
+
 	do {
 
 		input_token.value = malloc(MAXBUF);
 		input_token.length = eRead(sock, input_token.value, MAXBUF);
 
 		maj_stat = gss_accept_sec_context(&min_stat,
-						  &context_hdl,
+						  &tunnel_ctx->context_hdl,
 						  GSS_C_NO_CREDENTIAL,
 						  &input_token,
 						  input_chan_bindings,
@@ -483,13 +501,13 @@ gss_check(int sock)
 			name[export_name.length] = '\0';
 #if 0
 			printf("name = %s\n", name); fflush(stdout);
-#endif			
-		} 
+#endif
+		}
 
-		
+
 
 
 	} while( maj_stat == GSS_S_CONTINUE_NEEDED ) ;
-	
+
 	return 0;
 }
