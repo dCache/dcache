@@ -54,7 +54,7 @@ LIBS = -static -L$(GSI)/lib  \
 
 PLUGIN = libgsiTunnel.so
 		
-OBJS = base64.o gssIoTunnel.o util.o
+OBJS = base64.o gssIoTunnel.o util.o tunnelQueue.o
 
 
 all: $(PLUGIN)
