@@ -4176,7 +4176,7 @@ public class ManagerV2
 	public void markFileDeleted(PnfsDeleteEntryNotificationMessage msg) throws Exception {
 		if (msg.getReturnCode()!=0) return;
 		if( msg.getPnfsId() == null ) {
-		    esay("BUG: PnfsDeleteEntryNotificationMessage dos not contain pnfsid");
+		    esay("BUG: PnfsDeleteEntryNotificationMessage does not contain pnfsid");
 		    return;		    
 		}
 		File file=null;
