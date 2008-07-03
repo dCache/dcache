@@ -9,8 +9,12 @@ import org.dcache.pool.repository.CacheEntry;
 
 import java.util.*;
 
+import org.apache.log4j.Logger;
+
 public class StorageClassInfo implements CacheFileAvailable
 {
+    private static Logger _log = Logger.getLogger(StorageClassInfo.class);
+
     static class Entry
     {
         final PnfsId pnfsId;
@@ -145,7 +149,7 @@ public class StorageClassInfo implements CacheFileAvailable
             try {
                 _callback.storageClassInfoFlushed(getHsm(), getStorageClass(), _flushId, _requests, _flushErrorCounter);
             } catch (Throwable t) {
-                System.err.println("Problem in running storageClassInfoFlushed callback : "+t);
+                _log.error("Problem in running storageClassInfoFlushed callback : "+t);
             }
         }
     }
@@ -190,7 +194,7 @@ public class StorageClassInfo implements CacheFileAvailable
 
             } catch (Throwable e) {
                 _errorCounter++;
-                System.err.println("Problem submitting : " + entry + " : " + e);
+                _log.error("Problem submitting : " + entry + " : " + e);
             }
         }
 
