@@ -8,7 +8,12 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.lang.reflect.InvocationTargetException;
 
-public class SimpleJobScheduler implements JobScheduler, Runnable {
+import org.apache.log4j.Logger;
+
+public class SimpleJobScheduler implements JobScheduler, Runnable
+{
+    private final static Logger _log =
+        Logger.getLogger(SimpleJobScheduler.class);
 
     public static final int LOW = 0;
     public static final int REGULAR = 1;
@@ -209,6 +214,10 @@ public class SimpleJobScheduler implements JobScheduler, Runnable {
                 }
             } catch (Throwable ee) {
                 throw new InvocationTargetException(ee, "reported by queued");
+            }
+
+            if (_maxActiveJobs <= 0) {
+                _log.warn("A task was added to queue '" + _name + "', however the queue is not configured to execute any tasks.");
             }
 
             SJob job = new SJob(runnable, id, priority);
