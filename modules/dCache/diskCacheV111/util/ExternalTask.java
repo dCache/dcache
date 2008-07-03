@@ -29,14 +29,17 @@ public class ExternalTask implements Callable<Integer>
     public Integer call()
     {
         try {
-            _log.debug("Executing '" + _command + "'");
-
             RunSystem run = new RunSystem(_command, 1, _timeout);
             run.go();
 
             String error = run.getErrorString().trim();
-            if (error.length() > 0)
-                _log.error(error);
+            if (error.length() > 0) {
+                _log.info(String.format("Command '%s' returned %d, and emitted the following on stderr: %s",
+                                        _command, run.getExitValue(), error));
+            } else if (run.getExitValue() != 0) {
+                _log.info(String.format("Command '%s' returned %d",
+                                        _command, run.getExitValue()));
+            }
 
             return run.getExitValue();
         } catch (InterruptedException e) {
