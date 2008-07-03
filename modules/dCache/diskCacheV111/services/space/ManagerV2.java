@@ -95,15 +95,14 @@ import org.apache.log4j.Logger;
 public class ManagerV2
         extends CellAdapter
         implements Runnable {
-	private long spaceReservationCleanupPeriodInSeconds = 60*60; // one hour in seconds
+	private long spaceReservationCleanupPeriodInSeconds = 60*60;
 	private String jdbcUrl;
 	private String jdbcClass;
 	private String user;
 	private String pass;
 	private String pwdfile;
-	private long updateLinkGroupsPeriod = 3*60*1000;  //1 minutes default
-//	private long updateLinkGroupsPeriod = 30*1000;  //3 minutes default
-	private long expireSpaceReservationsPeriod     = 3*60*1000;  //3 minutes default
+	private long updateLinkGroupsPeriod = 3*60*1000; 
+	private long expireSpaceReservationsPeriod     = 3*60*1000; 
 
 	private boolean deleteStoredFileRecord = false;
 	private String pnfsManager = "PnfsManager";
@@ -2206,25 +2205,68 @@ public class ManagerV2
 	}
 
        	public void getValidSpaceTokens(GetSpaceTokensMessage msg) { 
-		say("executing statement: "+SpaceReservationIO.SELECT_CURRENT_SPACE_RESERVATIONS);
 		HashSet<Space> spaces = null;
+		if(msg.getSpaceTokenId()!=null) {
+			try { 
+				spaces = new HashSet<Space>();
+				Space space = getSpace(msg.getSpaceTokenId().longValue());
+				spaces.add(space);
+			}
+			catch (Exception e){ 
+			}
+		}
+		else { 
+			say("executing statement: "+SpaceReservationIO.SELECT_CURRENT_SPACE_RESERVATIONS);
+			try { 
+				spaces=manager.selectPrepared(new SpaceReservationIO(),
+							      SpaceReservationIO.SELECT_CURRENT_SPACE_RESERVATIONS);
+			}
+			catch (Exception e) { 
+			}
+		}
+		msg.setSpaceTokenSet(spaces);
+	}
+
+
+       	public void getValidSpaceTokenIds(GetSpaceTokenIdsMessage msg) { 
+		HashSet<Space> spaces = null;
+		say("executing statement: "+SpaceReservationIO.SELECT_CURRENT_SPACE_RESERVATIONS);
 		try { 
 			spaces=manager.selectPrepared(new SpaceReservationIO(),
 						      SpaceReservationIO.SELECT_CURRENT_SPACE_RESERVATIONS);
 		}
 		catch (Exception e) { 
 		}
-		msg.setSpaceTokenSet(spaces);
+		if (spaces != null) { 
+			long[] ids = new long[spaces.size()];
+			int j=0;
+			for (Iterator i=spaces.iterator(); i.hasNext();) {
+				Space s = (Space)i.next();
+				ids[j++]=s.getId();
+			}
+			msg.setSpaceTokenIds(ids);
+		}
 	}
 
 	public void getLinkGroups(GetLinkGroupsMessage msg) { 
 		HashSet<LinkGroup> groups = null;
-		say("executing statement: "+LinkGroupIO.SELECT_ALL_LINKGROUPS);
-		try {
-			groups=manager.selectPrepared(new LinkGroupIO(),
-						      LinkGroupIO.SELECT_ALL_LINKGROUPS);		
+		if (msg.getLinkgroupidId()!=null) { 
+			try { 
+				groups = new HashSet<LinkGroup>();
+				LinkGroup lg = getLinkGroup(msg.getLinkgroupidId().longValue());
+				groups.add(lg);
+			}
+			catch (Exception e){
+			}
 		}
-		catch (Exception e) { 
+		else { 
+			say("executing statement: "+LinkGroupIO.SELECT_ALL_LINKGROUPS);
+			try {
+				groups=manager.selectPrepared(new LinkGroupIO(),
+							      LinkGroupIO.SELECT_ALL_LINKGROUPS);		
+			}
+			catch (Exception e) { 
+			}
 		}
 		msg.setLinkGroupSet(groups);
 	}
@@ -2246,6 +2288,27 @@ public class ManagerV2
 				names[j++]=g.getName();
 			}
 			msg.setLinkGroupNames(names);
+		}
+	}
+
+
+	public void getLinkGroupIds(GetLinkGroupIdsMessage msg) { 
+		HashSet<LinkGroup> groups = null;
+		say("executing statement: "+LinkGroupIO.SELECT_ALL_LINKGROUPS);
+		try {
+			groups=manager.selectPrepared(new LinkGroupIO(),
+						      LinkGroupIO.SELECT_ALL_LINKGROUPS);		
+		}
+		catch (Exception e) { 
+		}
+		if (groups!=null) { 
+			long[] ids = new long[groups.size()];
+			int j=0;
+			for (Iterator i=groups.iterator(); i.hasNext();) {
+				LinkGroup g = (LinkGroup)i.next();
+				ids[j++]=g.getId();
+			}
+			msg.setLinkGroupIds(ids);
 		}
 	}
 
@@ -2918,49 +2981,6 @@ public class ManagerV2
 			System.exit(1);
 		}
 
-/*
-		Cell system = new SystemCell( "firstDomain" ) ;
-		Class.forName("org.apache.derby.jdbc.EmbeddedDriver");
-		Manager m = new ManagerV2("m",
-					" -jdbcUrl=jdbc:derby:testdb;create=true "+
-
-					"-jdbcDriver=org.apache.derby.jdbc.EmbeddedDriver "+
-					"-dbUser=user -dbPass=pass");
-		long currentTime = System.currentTimeMillis();
-		long linkGroupId =
-			m.updateLinkGroup("linkGroup1",56,currentTime,true,true,true,true,true,
-					      new VOInfo[] {new VOInfo("cms","cmsprod")});
-		linkGroupId = m.updateLinkGroup("linkGroup1",
-						    156,currentTime,true,true,true,true,true,new VOInfo[] {new VOInfo("cms","cmsprod")});
-		LinkGroup linkGroup = m.getLinkGroup(linkGroupId);
-		m.say("LinkGroup = "+linkGroup);
-		long spaceId = m.insertSpaceReservation("/cms/uscms","owner1",RetentionPolicy.CUSTODIAL,AccessLatency.NEARLINE,linkGroupId,10,3600,"something",0,0,0);
-		Reserve reserve = new Reserve("/cms/uscms","user",10,
-
-					      RetentionPolicy.CUSTODIAL,
-					      AccessLatency.NEARLINE,
-					      10000,
-					      "aaa");
-		m.reserveSpace(reserve);
-		m.updateSpaceReservation(spaceId,
-					 "/cms/uscms",
-					 "owner1",
-					 null,
-					 null,
-					 new Long(linkGroupId),
-					 new Long(10),
-					 new Long(3600),
-					 "something",
-					 new Integer(0));
-		Space space = m.getSpace(spaceId);
-		m.say("Space = "+space);
-		long fileId = m.insertFileInSpace("/cms/uscms","owner",spaceId,5,1234,"/home/f1",null,0);
-		m.updateSpaceFile(fileId,"/cms/uscms","owner1",null,new Long(5),new Long(1234),new Integer(0));
-		File file = m.getFile(fileId);
-		m.say("File = "+file);
-		m.removeFileFromSpace(fileId);
-		m.deleteSpaceReservation(spaceId);
-*/
 	}
 
 	public void messageArrived( final CellMessage cellMessage ) {
@@ -2989,6 +3009,10 @@ public class ManagerV2
 				GetSpaceTokensMessage message = (GetSpaceTokensMessage) spaceMessage;
 				getValidSpaceTokens(message);
 			}
+			else if(spaceMessage instanceof GetSpaceTokenIdsMessage) { 
+				GetSpaceTokenIdsMessage message = (GetSpaceTokenIdsMessage) spaceMessage;
+				getValidSpaceTokenIds(message);
+			}
 			else if(spaceMessage instanceof GetLinkGroupsMessage) { 
 				GetLinkGroupsMessage message = (GetLinkGroupsMessage) spaceMessage;
 				getLinkGroups(message);
@@ -2996,6 +3020,10 @@ public class ManagerV2
 			else if(spaceMessage instanceof GetLinkGroupNamesMessage) { 
 				GetLinkGroupNamesMessage message = (GetLinkGroupNamesMessage) spaceMessage;
 				getLinkGroupNames(message);
+			}
+			else if(spaceMessage instanceof GetLinkGroupIdsMessage) { 
+				GetLinkGroupIdsMessage message = (GetLinkGroupIdsMessage) spaceMessage;
+				getLinkGroupIds(message);
 			}
 			else if(spaceMessage instanceof Release) {
 				Release release = (Release) spaceMessage;
@@ -3315,24 +3343,11 @@ public class ManagerV2
 		boolean custodialAllowed,
 		VOInfo[] linkGroupVOs
 		) throws SQLException {
-		//say("UpdateLinkGroupInfo( linkGroup="+linkGroupName+
-		//     ", onlineAllowed ="+ onlineAllowed+
-		//     ", nearlineAllowed ="+ nearlineAllowed+
-		//     ", replicaAllowed ="+ replicaAllowed+
-		//     ", outputAllowed ="+ outputAllowed+
-		//    ", custodialAllowed ="+ custodialAllowed+
-		//     ", freeSpace="+freeSpace);
-		if(linkGroupVOs != null) {
-			for(int i=0; i<linkGroupVOs.length; ++i) {
-		//		say("UpdateLinkGroupInfo( VO["+i+"]="+linkGroupVOs[i]);
-			}
-		}
 		long id;
 		Connection connection = null;
 		try {
 			connection = connection_pool.getConnection();
 			connection.setAutoCommit(false);
-			//say("Executing "+LinkGroupIO.SELECT_LINKGROUP_FOR_UPDATE_BY_NAME+" ?="+linkGroupName);
 			try {
 				LinkGroup group = (LinkGroup) manager.selectForUpdate(connection,
 										      new LinkGroupIO(),
@@ -3367,7 +3382,6 @@ public class ManagerV2
 					}
 					throw e1;
 				}
-
 			}
 			manager.update(connection,
 				       LinkGroupIO.UPDATE,
@@ -3379,11 +3393,9 @@ public class ManagerV2
 				       (outputAllowed==true?1:0),
 				       (custodialAllowed==true?1:0),
 				       id);
-
 			PreparedStatement sqlStatement2 =
 				connection.prepareStatement(selectLinkGroupVOs);
 			sqlStatement2.setLong(1,id);
-			// say("executing statement: "+selectLinkGroupVOs+" ?="+id);
 			ResultSet VOsSet = sqlStatement2.executeQuery();
 			Set<VOInfo> insertVOs = new HashSet<VOInfo>();
 			if(linkGroupVOs != null) {
@@ -3409,7 +3421,6 @@ public class ManagerV2
 					"','"+nextVo.getVoRole()+
 					"',"+id+")";
 				Statement sqlStatement3 = connection.createStatement();
-				// say("executing statement: "+insertLinkGroupVO);
 				sqlStatement3.executeUpdate(insertLinkGroupVO);
 				sqlStatement3.close();
 
@@ -3421,7 +3432,6 @@ public class ManagerV2
 					"' AND VORole ='"+nextVo.getVoRole()+
 					"' AND linkGroupId="+id;
 				Statement sqlStatement4 = connection.createStatement();
-				// say("executing statement: "+insertLinkGroupVO);
 				sqlStatement4.executeUpdate(insertLinkGroupVO);
 				sqlStatement4.close();
 			}
@@ -3462,7 +3472,6 @@ public class ManagerV2
 			throw new SQLException("partial release is not supported yet");
 		}
 	}
-
 
 	//
 	// working on the core stuff:
@@ -4167,7 +4176,7 @@ public class ManagerV2
 	public void markFileDeleted(PnfsDeleteEntryNotificationMessage msg) throws Exception {
 		if (msg.getReturnCode()!=0) return;
 		if( msg.getPnfsId() == null ) {
-		    esay("BUG: PnfsDeleteEntryNotificationMessage do not contain pnfsid");
+		    esay("BUG: PnfsDeleteEntryNotificationMessage dos not contain pnfsid");
 		    return;		    
 		}
 		File file=null;
