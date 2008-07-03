@@ -39,10 +39,14 @@ public class RunSystem implements Runnable {
     private static int __counter = 100 ;
     private static synchronized int nextId(){ return __counter++ ; }
 
-    public RunSystem( String exec , int maxLines , long timeout ){
-       this( exec , maxLines , timeout , null ) ;
+    @Deprecated
+    public RunSystem(String exec, int maxLines, long timeout, Logable log)
+    {
+        this(exec, maxLines, timeout);
     }
-    public RunSystem( String exec , int maxLines , long timeout , Logable log ){
+
+    public RunSystem(String exec, int maxLines, long timeout)
+    {
         _exec     = exec ;
         _maxLines = maxLines ;
         _timeout  = timeout ;
