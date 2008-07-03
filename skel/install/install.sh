@@ -1004,9 +1004,7 @@ dcacheInstallChimeraMountPoints()
   dcacheInstallGetIsPnfsManager
   isPnfsManager=$?
   if [ "${isAdmin}" == "1" -o "${isPnfsManager}" == "1" ] ; then
-    /etc/init.d/portmap restart
-    ${ourHomeDir}/bin/dCacheConfigure.sh stop
-    ${ourHomeDir}/bin/dCacheConfigure.sh start     
+    /etc/init.d/portmap restart    
     dcacheInstallChimeraMountPointServer
   else
     if [ "${isPnfsManager}${isGridFtp}" == "01" -o "${isPnfsManager}${isSrm}" == "01" ] ; then   
