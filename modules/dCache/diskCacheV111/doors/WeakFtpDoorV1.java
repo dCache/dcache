@@ -159,4 +159,9 @@ public class WeakFtpDoorV1 extends AbstractFtpDoorV1 {
 
     public void echoStr1(String str) {
     }
+    
+    public void resetPwdRecord()
+    {
+    }
+
 }
