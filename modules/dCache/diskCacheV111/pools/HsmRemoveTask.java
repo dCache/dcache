@@ -51,6 +51,7 @@ public class HsmRemoveTask implements Runnable
      */
     private final long        _timeout;
 
+    @Deprecated
     public HsmRemoveTask(CellAdapter cell, Logable log,
                          Executor executor, HsmSet hsmSet,
                          long timeout, CellMessage message)
