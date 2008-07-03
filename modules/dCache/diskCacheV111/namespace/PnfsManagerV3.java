@@ -1117,7 +1117,8 @@ public class PnfsManagerV3 extends CellAdapter {
 
         String path = pnfsMessage.getPath();
         PnfsId pnfsId = pnfsMessage.getPnfsId();
-
+        PnfsId currentId = null;
+        
         try {
             
             if( path == null && pnfsId == null) {
@@ -1125,7 +1126,7 @@ public class PnfsManagerV3 extends CellAdapter {
             }
             
             if( path != null ) {
-                
+                currentId = _nameSpaceProvider.pathToPnfsid(path, false);
                 /*
                  * raice condition check:
                  * 
@@ -1134,8 +1135,7 @@ public class PnfsManagerV3 extends CellAdapter {
                  * 
                  * If both path and id defined check that path points to defined id
                  */
-                if( pnfsId != null ) {
-                    PnfsId currentId = _nameSpaceProvider.pathToPnfsid(path, false);
+                if( pnfsId != null ) {                    
                     if( !currentId.equals(pnfsId) ) {
                          esay("request to remove a file by path providing wrong pnfsid: " + path + "  " + pnfsId + "("+ currentId +")" );
                         throw new FileNotFoundCacheException("pnfsid do not corresopnds to provided file");
@@ -1145,6 +1145,7 @@ public class PnfsManagerV3 extends CellAdapter {
                 say("delete PNFS entry for "+ path );
                 _nameSpaceProvider.deleteEntry(path);
             } else {
+                currentId = pnfsId;
                 say("delete PNFS entry for "+ pnfsId );
                 _nameSpaceProvider.deleteEntry( pnfsId );
             }
@@ -1166,7 +1167,7 @@ public class PnfsManagerV3 extends CellAdapter {
             _xdeleteEntry.failed() ;
         } else if( _pnfsDeleteNotificationRelay != null ) {
             PnfsDeleteEntryNotificationMessage deleteNotification =
-                new PnfsDeleteEntryNotificationMessage(pnfsId,path);
+                new PnfsDeleteEntryNotificationMessage(currentId,path);
             try{
 
                 sendMessage( new CellMessage( _pnfsDeleteNotificationRelay,
