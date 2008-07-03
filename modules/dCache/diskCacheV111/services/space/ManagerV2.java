@@ -3308,11 +3308,6 @@ public class ManagerV2
 					}
 				}
 			}
-			if(vos != null) {
-				for(int j =0; j<vos.length ; ++j ) {
-					//say("updateLinkGroups: VOInfo["+j+"]="+vos[j]);
-				}
-			}
 			try {
 				updateLinkGroup(linkGroupName,
 						    avalSpaceInBytes,
