@@ -16,19 +16,20 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Map;
 import java.net.URI;
+import org.apache.log4j.Logger;
 
 /**
- * Encapsulates the task to process a PoolRemoveFilesFromHSMMessage. 
+ * Encapsulates the task to process a PoolRemoveFilesFromHSMMessage.
  */
 public class HsmRemoveTask implements Runnable
 {
+    /** Logging target.
+     */
+    private final static Logger _log = Logger.getLogger(HsmRemoveTask.class);
+
     /** The cell used to send back a reply to the requester.
      */
     private final CellAdapter _cell;
-
-    /** Logging target.
-     */
-    private final Logable     _log;
 
     /**
      * HSM configuration component.
@@ -37,12 +38,12 @@ public class HsmRemoveTask implements Runnable
 
     /**
      * The message being processed.
-     */ 
+     */
     private final CellMessage _message;
 
     /**
      * Executor used to process each individual delete.
-     */ 
+     */
     private final Executor    _executor;
 
     /**
@@ -50,13 +51,19 @@ public class HsmRemoveTask implements Runnable
      */
     private final long        _timeout;
 
-    public HsmRemoveTask(CellAdapter cell, Logable log, 
+    public HsmRemoveTask(CellAdapter cell, Logable log,
+                         Executor executor, HsmSet hsmSet,
+                         long timeout, CellMessage message)
+    {
+        this(cell, executor, hsmSet, timeout, message);
+    }
+
+    public HsmRemoveTask(CellAdapter cell,
                          Executor executor, HsmSet hsmSet,
                          long timeout, CellMessage message)
     {
         assert message.getMessageObject() instanceof PoolRemoveFilesFromHSMMessage;
         _cell = cell;
-        _log = log;
         _executor = executor;
         _hsmSet = hsmSet;
         _timeout = timeout;
@@ -97,21 +104,21 @@ public class HsmRemoveTask implements Runnable
         try {
             PoolRemoveFilesFromHSMMessage msg =
                 (PoolRemoveFilesFromHSMMessage)_message.getMessageObject();
-            
+
             Collection<URI> files = msg.getFiles();
-            Collection<FutureTask<Integer>> tasks = 
+            Collection<FutureTask<Integer>> tasks =
                 new ArrayList<FutureTask<Integer>>(files.size());
-        
+
             /* Submit tasks.
              */
             for (URI uri : files) {
                 String command = getCommand(uri);
-                ExternalTask task = new ExternalTask(_log, _timeout, command);
+                ExternalTask task = new ExternalTask(_timeout, command);
                 FutureTask<Integer> future = new FutureTask<Integer>(task);
                 tasks.add(future);
                 _executor.execute(future);
             }
-            
+
             /* Wait for completion.
              */
             Collection<URI> succeeded = new ArrayList<URI>(files.size());
@@ -121,11 +128,11 @@ public class HsmRemoveTask implements Runnable
                 if (i.next().get() == 0) {
                     succeeded.add(uri);
                 } else {
-                    _log.elog("Failed to delete " + uri + " from HSM");
+                    _log.error("Failed to delete " + uri + " from HSM");
                     failed.add(uri);
                 }
             }
-            
+
             /* Generate reply.
              */
             try {
@@ -133,21 +140,21 @@ public class HsmRemoveTask implements Runnable
                 _message.revertDirection();
                 _cell.sendMessage(_message);
             } catch (Exception e) {
-                _log.elog("Cannot send reply: " + e);
+                _log.error("Cannot send reply: " + e);
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         } catch (CancellationException e) {
             /* Somebody cancelled the future, even though we are the
-             * only once holding a reference to it. Must be a bug.
+             * only one holding a reference to it. Must be a bug.
              */
-            _log.elog(e.toString());
+            _log.error(e.toString());
             throw new RuntimeException(e);
         } catch (ExecutionException e) {
             /* This means the ExternalTask threw an exception. This
              * smells like a bug, so we better log it.
              */
-            _log.elog(e.toString());
+            _log.error(e.toString());
             throw new RuntimeException(e);
         }
     }
