@@ -3,7 +3,7 @@
 package diskCacheV111.util ;
 
 import java.util.List;
-import java.util.Vector;
+import java.util.Collections;
 
 import org.apache.log4j.Logger;
 
@@ -132,8 +132,11 @@ public class PnfsHandler {
       pnfsMessage = (PnfsGetCacheLocationsMessage)pnfsRequest(pnfsMessage) ;
       List<String> assumedLocations = pnfsMessage.getCacheLocations() ;
 
-      return assumedLocations == null ? new Vector<String>() : assumedLocations ;
-
+      if (assumedLocations == null) {
+          return Collections.emptyList();
+      } else {
+          return assumedLocations;
+      }
    }
 
    public List<String> getCacheLocationsByPath( String fileName )throws CacheException {
@@ -142,8 +145,11 @@ public class PnfsHandler {
       pnfsMessage = (PnfsGetCacheLocationsMessage)pnfsRequest(pnfsMessage) ;
       List<String> assumedLocations = pnfsMessage.getCacheLocations() ;
 
-      return assumedLocations == null ? new Vector<String>() : assumedLocations ;
-
+      if (assumedLocations == null) {
+          return Collections.emptyList();
+      } else {
+          return assumedLocations;
+      }
    }
 
    private PnfsMessage pnfsRequest( PnfsMessage msg )
