@@ -2204,39 +2204,32 @@ public class ManagerV2
 		incrementReservedSpaceInLinkGroup(connection,linkGroupId,sizeInBytes);
 	}
 
-       	public void getValidSpaceTokens(GetSpaceTokensMessage msg) { 
+	//
+	// functions for infoProvider 
+	//
+
+       	public void getValidSpaceTokens(GetSpaceTokensMessage msg) throws SQLException { 
 		HashSet<Space> spaces = null;
 		if(msg.getSpaceTokenId()!=null) {
-			try { 
-				spaces = new HashSet<Space>();
-				Space space = getSpace(msg.getSpaceTokenId().longValue());
-				spaces.add(space);
-			}
-			catch (Exception e){ 
-			}
+			spaces = new HashSet<Space>();
+			Space space = getSpace(msg.getSpaceTokenId().longValue());
+			spaces.add(space);
 		}
 		else { 
 			say("executing statement: "+SpaceReservationIO.SELECT_CURRENT_SPACE_RESERVATIONS);
-			try { 
-				spaces=manager.selectPrepared(new SpaceReservationIO(),
+			spaces=manager.selectPrepared(new SpaceReservationIO(),
 							      SpaceReservationIO.SELECT_CURRENT_SPACE_RESERVATIONS);
-			}
-			catch (Exception e) { 
-			}
+
 		}
 		msg.setSpaceTokenSet(spaces);
 	}
 
 
-       	public void getValidSpaceTokenIds(GetSpaceTokenIdsMessage msg) { 
+       	public void getValidSpaceTokenIds(GetSpaceTokenIdsMessage msg) throws SQLException { 
 		HashSet<Space> spaces = null;
 		say("executing statement: "+SpaceReservationIO.SELECT_CURRENT_SPACE_RESERVATIONS);
-		try { 
-			spaces=manager.selectPrepared(new SpaceReservationIO(),
-						      SpaceReservationIO.SELECT_CURRENT_SPACE_RESERVATIONS);
-		}
-		catch (Exception e) { 
-		}
+		spaces=manager.selectPrepared(new SpaceReservationIO(),
+					      SpaceReservationIO.SELECT_CURRENT_SPACE_RESERVATIONS);
 		if (spaces != null) { 
 			long[] ids = new long[spaces.size()];
 			int j=0;
@@ -2248,38 +2241,26 @@ public class ManagerV2
 		}
 	}
 
-	public void getLinkGroups(GetLinkGroupsMessage msg) { 
+	public void getLinkGroups(GetLinkGroupsMessage msg) throws SQLException { 
 		HashSet<LinkGroup> groups = null;
 		if (msg.getLinkgroupidId()!=null) { 
-			try { 
-				groups = new HashSet<LinkGroup>();
-				LinkGroup lg = getLinkGroup(msg.getLinkgroupidId().longValue());
-				groups.add(lg);
-			}
-			catch (Exception e){
-			}
+			groups = new HashSet<LinkGroup>();
+			LinkGroup lg = getLinkGroup(msg.getLinkgroupidId().longValue());
+			groups.add(lg);
 		}
 		else { 
 			say("executing statement: "+LinkGroupIO.SELECT_ALL_LINKGROUPS);
-			try {
-				groups=manager.selectPrepared(new LinkGroupIO(),
+			groups=manager.selectPrepared(new LinkGroupIO(),
 							      LinkGroupIO.SELECT_ALL_LINKGROUPS);		
-			}
-			catch (Exception e) { 
-			}
 		}
 		msg.setLinkGroupSet(groups);
 	}
 
-	public void getLinkGroupNames(GetLinkGroupNamesMessage msg) { 
+	public void getLinkGroupNames(GetLinkGroupNamesMessage msg) throws SQLException { 
 		HashSet<LinkGroup> groups = null;
 		say("executing statement: "+LinkGroupIO.SELECT_ALL_LINKGROUPS);
-		try {
-			groups=manager.selectPrepared(new LinkGroupIO(),
-						      LinkGroupIO.SELECT_ALL_LINKGROUPS);		
-		}
-		catch (Exception e) { 
-		}
+		groups=manager.selectPrepared(new LinkGroupIO(),
+					      LinkGroupIO.SELECT_ALL_LINKGROUPS);
 		if (groups!=null) { 
 			String[] names = new String[groups.size()];
 			int j=0;
@@ -2292,15 +2273,11 @@ public class ManagerV2
 	}
 
 
-	public void getLinkGroupIds(GetLinkGroupIdsMessage msg) { 
+	public void getLinkGroupIds(GetLinkGroupIdsMessage msg) throws SQLException { 
 		HashSet<LinkGroup> groups = null;
 		say("executing statement: "+LinkGroupIO.SELECT_ALL_LINKGROUPS);
-		try {
-			groups=manager.selectPrepared(new LinkGroupIO(),
-						      LinkGroupIO.SELECT_ALL_LINKGROUPS);		
-		}
-		catch (Exception e) { 
-		}
+		groups=manager.selectPrepared(new LinkGroupIO(),
+					      LinkGroupIO.SELECT_ALL_LINKGROUPS);		
 		if (groups!=null) { 
 			long[] ids = new long[groups.size()];
 			int j=0;
