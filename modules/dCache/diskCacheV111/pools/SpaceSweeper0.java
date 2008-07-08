@@ -18,31 +18,31 @@ public class SpaceSweeper0 implements SpaceSweeper , Runnable  {
     private CellAdapter     _cell       = null ;
     private PnfsHandler     _pnfs       = null ;
     private HsmStorageHandler2 _storage  = null ;
-    
+
     private ArrayList       _list       = new ArrayList() ;
-    
+
     private long            _spaceNeeded = 0 ;
-    
+
     private long            _removableSpace = 0 ;
-    
-    private static SimpleDateFormat __format = 
+
+    private static SimpleDateFormat __format =
                new SimpleDateFormat( "HH:mm-MM/dd" ) ;
-    
+
     public SpaceSweeper0( CellAdapter cell ,
                           PnfsHandler pnfs ,
                           CacheRepository repository ,
                           HsmStorageHandler2 storage     ){
-                          
+
        _repository = repository ;
        _cell       = cell ;
        _pnfs       = pnfs ;
        _storage    = storage ;
-       
+
        _repository.addCacheRepositoryListener(this);
        _cell.getNucleus().newThread( this , "sweeper" ).start() ;
     }
     public long getRemovableSpace(){ return _removableSpace ; }
-    public synchronized long getLRUSeconds(){ 
+    public synchronized long getLRUSeconds(){
         if( _list.size() == 0 )return 0L ;
         CacheRepositoryEntry e = (CacheRepositoryEntry)_list.get(0) ;
         try{
@@ -55,7 +55,7 @@ public class SpaceSweeper0 implements SpaceSweeper , Runnable  {
     public void precious( CacheRepositoryEvent event ){
        CacheRepositoryEntry entry = event.getRepositoryEntry() ;
        say("precious event : "+entry) ;
-       try{ 
+       try{
 
          if( _list.contains( entry ) )_removableSpace -= entry.getSize() ;
 
@@ -70,7 +70,7 @@ public class SpaceSweeper0 implements SpaceSweeper , Runnable  {
        // the definition of the sticky callback garanties that
        // we are only called if something really changed.
        //
-       boolean isSticky, isPrecious ; 
+       boolean isSticky, isPrecious ;
        long    size ;
        CacheRepositoryEntry entry = event.getRepositoryEntry() ;
        try{
@@ -86,7 +86,7 @@ public class SpaceSweeper0 implements SpaceSweeper , Runnable  {
        }
        if( isSticky  ){
           say( "STICKY : received sticky event : "+entry) ;
-          if( _list.contains( entry ) ){ 
+          if( _list.contains( entry ) ){
              _list.remove( entry ) ;
              _removableSpace -= size ;
              say("STICKY : removed from list "+entry);
@@ -115,7 +115,7 @@ public class SpaceSweeper0 implements SpaceSweeper , Runnable  {
 
        boolean found =_list.remove( entry ) ;
 
-       try{ 
+       try{
            if( found && ! entry.isSticky() )_list.add( entry ) ;
        }catch(CacheException ce ){
           esay( "can't determine stickyness : "+entry ) ;
@@ -125,7 +125,7 @@ public class SpaceSweeper0 implements SpaceSweeper , Runnable  {
     }
     public synchronized void removed( CacheRepositoryEvent event ){
        CacheRepositoryEntry entry = event.getRepositoryEntry() ;
-       try{ 
+       try{
 
          if( _list.contains( entry ) )_removableSpace -= entry.getSize() ;
 
@@ -140,11 +140,11 @@ public class SpaceSweeper0 implements SpaceSweeper , Runnable  {
        long space = event.getRequiredSpace() ;
        _spaceNeeded += space ;
        say("needSpace event "+space+" -> "+_spaceNeeded ) ;
-    }   
+    }
     public synchronized void scanned( CacheRepositoryEvent event ){
        CacheRepositoryEntry entry = event.getRepositoryEntry() ;
        try{
-          
+
           synchronized( entry ){
              if( entry.isCached() && ! entry.isSticky()){
                 _list.add( entry ) ;
@@ -226,14 +226,14 @@ public class SpaceSweeper0 implements SpaceSweeper , Runnable  {
     public String ac_sweeper_get_lru( Args args ){
        long lru = getLRUSeconds() ;
        boolean f = args.getOpt("f") != null ;
-       return f ? getTimeString(lru) : ( ""+lru ) ;      
+       return f ? getTimeString(lru) : ( ""+lru ) ;
     }
     public void run(){
        say( "started");
        long spaceNeeded = 0  ;
        CacheRepositoryEntry entry = null ;
        ArrayList  tmpList = new ArrayList() ;
-       
+
        while( ! Thread.currentThread().interrupted() ){
            try{
                Thread.currentThread().sleep(10000) ;
@@ -244,12 +244,12 @@ public class SpaceSweeper0 implements SpaceSweeper , Runnable  {
            // take the needed space out of the 'queue' and
            // added to the managed space.
            //
-           synchronized( this ){ 
-               spaceNeeded += _spaceNeeded ; 
-              _spaceNeeded = 0 ; 
+           synchronized( this ){
+               spaceNeeded += _spaceNeeded ;
+              _spaceNeeded = 0 ;
            }
            if( spaceNeeded <= 0 )continue ;
-           
+
            say("SS0 request to remove : "+spaceNeeded ) ;
            //
            // we copy the entries into a tmp list to avoid
@@ -257,20 +257,20 @@ public class SpaceSweeper0 implements SpaceSweeper , Runnable  {
            //
            Iterator i = _list.iterator() ;
            try{
-           
+
               long minSpaceNeeded = spaceNeeded ;
-              
+
               while( i.hasNext() && ( minSpaceNeeded > 0 ) ){
 
                  entry = (CacheRepositoryEntry)i.next() ;
                  //
                  //  we are not allowed to remove the
-                 //  file is 
+                 //  file is
                  //    a) it is locked
                  //    b) it is still in use.
                  //
                  try{
-                    if( entry.isLocked() || 
+                    if( entry.isLocked() ||
                         ( entry.getLinkCount() > 0 ) ||
                         entry.isSticky()                  ){
                        esay( "SS0 : file skipped by remove (locked,in use,sticky) : "+entry);
@@ -284,9 +284,9 @@ public class SpaceSweeper0 implements SpaceSweeper , Runnable  {
                     tmpList.add( entry ) ;
                     minSpaceNeeded -= size ;
                     say( "SS0 adds to remove list : "+entry.getPnfsId()+
-                         " "+size+" -> "+spaceNeeded ) ;                 
+                         " "+size+" -> "+spaceNeeded ) ;
                     //
-                    // the _list space will be substracted with the 
+                    // the _list space will be substracted with the
                     // remove event.
                     //
                  }catch(FileNotInCacheException fce ){
@@ -302,7 +302,7 @@ public class SpaceSweeper0 implements SpaceSweeper , Runnable  {
            //
            // we are not supposed to do exact space allocation.
            //
-           
+
            //
            // now do it
            //
@@ -313,7 +313,7 @@ public class SpaceSweeper0 implements SpaceSweeper , Runnable  {
                  entry = (CacheRepositoryEntry)i.next() ;
                  try{
                     long size = entry.getSize() ;
-                    say( "SS0 : trying to remove "+entry.getPnfsId()) ;                 
+                    say( "SS0 : trying to remove "+entry.getPnfsId()) ;
                     if( _repository.removeEntry( entry ) ){
                         spaceNeeded -= size ;
                     }else{
@@ -321,7 +321,7 @@ public class SpaceSweeper0 implements SpaceSweeper , Runnable  {
                         continue ;
                     }
                     //
-                    // the _list space will be substracted with the 
+                    // the _list space will be substracted with the
                     // remove event.
                     //
                  }catch(FileNotInCacheException fce ){
@@ -344,7 +344,7 @@ public class SpaceSweeper0 implements SpaceSweeper , Runnable  {
     public void printSetup( PrintWriter pw ){
        pw.println( "#\n# Nothing from the "+this.getClass().getName()+"#" ) ;
     }
-    private void say( String msg ){ 
+    private void say( String msg ){
        _cell.say( "SWEEPER : "+msg ) ;
     }
     private void esay( String msg ){
