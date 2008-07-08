@@ -101,7 +101,7 @@ public class AbstractCell extends CellAdapter
     {
         super(cellName, args, startNow);
 
-        _logger = Logger.getLogger(getClass().getName());
+        _logger = Logger.getLogger(getClass());
 
         PinboardAppender.addCell(this);
 
