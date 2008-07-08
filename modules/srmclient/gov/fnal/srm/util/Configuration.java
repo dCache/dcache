@@ -441,7 +441,7 @@ public class Configuration {
 
 	private String rmdir_options =
 		" rmdir options :\n"+
-		"\t-recursive[=<boolean>] recursive empty directory deletion (any number not euqal to 0).\n"+
+		"\t-recursive[=<boolean>] recursive empty directory deletion.\n"+
 		"\t\t -rmdir is defined in SRM specification as :\n"+
 		"\t\t \"applies to dir doRecursiveRemove is false by edefault. To distinguish from \n"+
 		"\t\t srmRm(), this function is for directories only. \"\n"+
@@ -1633,88 +1633,150 @@ public class Configuration {
 		}
 		if (name.equals("debug")) {
 			debug = Boolean.valueOf(value).booleanValue();
-		} else if (name.equals("srmcphome")) {
+		} 
+                else if (name.equals("srmcphome")) {
 			srmcphome = value;
-		} else if (name.equals("gsissl")) {
+		} 
+                else if (name.equals("gsissl")) {
 			gsissl = Boolean.valueOf(value).booleanValue();
-		} else if (name.equals("gsiftpclient")) {
+		} 
+                else if (name.equals("gsiftpclient")) {
 			gsiftpclinet = value;
-		} else if (name.equals("mapfile")) {
+		} 
+                else if (name.equals("mapfile")) {
 			glue_mapfile = value;
-		} else if (name.equals("webservice_protocol")) {
+		} 
+                else if (name.equals("webservice_protocol")) {
 			webservice_protocol = value;
-		} else if (name.equals("urlcopy")) {
+		} 
+                else if (name.equals("urlcopy")) {
 			urlcopy = value;
-		} else if (name.equals("buffer_size")) {
+		} 
+                else if (name.equals("buffer_size")) {
 			buffer_size = Integer.parseInt(value);
-		} else if (name.equals("tcp_buffer_size")) {
+		} 
+                else if (name.equals("tcp_buffer_size")) {
 			tcp_buffer_size = Integer.parseInt(value);
-		} else if (name.equals("streams_num")) {
+		} 
+                else if (name.equals("streams_num")) {
 			streams_num = Integer.parseInt(value);
-		} else if (name.equals("protocols")) {
+		} 
+                else if (name.equals("protocols")) {
 			protocols_list = value;
-		} else if (name.equals("pushmode")) {
+		} 
+                else if (name.equals("pushmode")) {
 			pushmode = Boolean.valueOf(value).booleanValue();
-		} else if (name.equals("useproxy")) {
+		} 
+                else if (name.equals("useproxy")) {
 			useproxy = Boolean.valueOf(value).booleanValue();
-		} else if (name.equals("x509_user_proxy")) {
+		} 
+                else if (name.equals("x509_user_proxy")) {
 			x509_user_proxy = value;
-		} else if (name.equals("x509_user_key")) {
+		} 
+                else if (name.equals("x509_user_key")) {
 			x509_user_key = value;
-		} else if (name.equals("x509_user_cert")) {
+		} 
+                else if (name.equals("x509_user_cert")) {
 			x509_user_cert = value;
-		} else if (name.equals("x509_user_trusted_certificates")) {
+		} 
+                else if (name.equals("x509_user_trusted_certificates")) {
 			x509_user_trusted_certificates = value;
-		} else if (name.equals("globus_tcp_port_range")) {
+		} 
+                else if (name.equals("globus_tcp_port_range")) {
 			globus_tcp_port_range = value;
-		} else if (name.equals("gss_expected_name")) {
+		} 
+                else if (name.equals("gss_expected_name")) {
 			gss_expected_name = value;
-		} else if (name.equals("storagetype")) {
+		} 
+                else if (name.equals("storagetype")) {
 			storagetype = value;
-		} else if (name.equals("use_urlcopy_script")) {
+		} 
+                else if (name.equals("use_urlcopy_script")) {
 			use_urlcopy_script = Boolean.valueOf(value).booleanValue();
-		} else if (name.equals("retry_num")) {
+		}  
+                else if (name.equals("retry_num")) {
 			retry_num = Integer.parseInt(value);
-		} else if (name.equals("retry_timeout")) {
+		} 
+                else if (name.equals("retry_timeout")) {
 			retry_timeout = Long.parseLong(value);
-		} else if (name.equals("connect_to_wsdl")) {
+		} 
+                else if (name.equals("connect_to_wsdl")) {
 			connect_to_wsdl = Boolean.valueOf(value).booleanValue();
-		} else if (name.equals("delegate")) {
+		} 
+                else if (name.equals("delegate")) {
 			delegate = Boolean.valueOf(value).booleanValue();
-		} else if (name.equals("full_delegation")) {
+		} 
+                else if (name.equals("full_delegation")) {
 			full_delegation = Boolean.valueOf(value).booleanValue();
-		} else if(name.equals("server_mode")) {
+		} 
+                else if(name.equals("server_mode")) {
 			passive_server_mode = value.equalsIgnoreCase("passive");
-		} else if(name.equals("long_ls_format")) {
+		} 
+                else if(name.equals("long_ls_format")) {
 			longLsFormat =  Boolean.valueOf(value).booleanValue();
-		} else if(name.equals("recursion_depth")) {
+		} 
+                else if(name.equals("recursion_depth")) {
 			recursionDepth =  Integer.parseInt(value);
-		} else if(name.equals("recursive")) {
+		} 
+                else if(name.equals("recursive")) {
 			recursive =  Boolean.valueOf(value).booleanValue();
-		} else if(name.equals("offset")) {
+		} 
+                else if(name.equals("offset")) {
 			lsOffset =  Integer.parseInt(value);
-		} else if(name.equals("count")) {
+		} 
+                else if(name.equals("count")) {
 			lsCount =  Integer.parseInt(value);
-		} else if(name.equals("srm_protocol_version")) {
+		} 
+                else if(name.equals("srm_protocol_version")) {
 			srm_protocol_version =  Integer.parseInt(value);
-		} else if(name.equals("request_lifetime")) {
+		} 
+                else if(name.equals("request_lifetime")) {
 			request_lifetime =  Long.parseLong(value);
-		} else if(name.equals("priority")) {
+		} 
+                else if(name.equals("priority")) {
 			int jobPriority =  Integer.parseInt(value);
 			extraParameters.put("priority",Integer.toString(jobPriority));
-		} else if(name.equals("type")) {
+		} 
+                else if(name.equals("type")) {
 			setPermissionType = value;
-		} else if(name.equals("owner")) {
+		} 
+                else if(name.equals("owner")) {
 			setOwnerPermissionMode = value;
-		} else if(name.equals("group")) {
+		} 
+                else if(name.equals("group")) {
 			setGroupPermissionMode = value;
-		} else if(name.equals("other")) {
+		} 
+                else if(name.equals("other")) {
 			setOtherPermissionMode = value;
-		} else if(name.equals("file_lifetime")) {
+		} 
+                else if(name.equals("file_lifetime")) {
 			newFileLifetime = Integer.parseInt(value);
-		} else if(name.equals("pin_lifetime")) {
+		} 
+                else if(name.equals("pin_lifetime")) {
 			newPinLifetime = Integer.parseInt(value);
-		} else {
+		} 
+                else if(name.equals("access_latency")) {
+			accessLatency = value;
+		} 
+                else if(name.equals("retention_policy")) {
+			retentionPolicy = value;
+		} 
+                else if(name.equals("do_remove")) {
+			doRemove = Boolean.valueOf(value).booleanValue();
+		} 
+                else if(name.equals("overwrite_mode")) {
+			overwriteMode = value;
+		} 
+                else if(name.equals("recursive")) {
+                        recursive = Boolean.valueOf(value).booleanValue();
+		} 
+                else if(name.equals("access_pattern")) {
+                        accessPattern = value;
+		} 
+                else if(name.equals("connection_type")) {
+                        connectionType = value;
+		} 
+                else { 
 		}
 	}
     
@@ -1831,6 +1893,20 @@ public class Configuration {
 		    " 1 for srm 1.1 or 2 for srm 2.1.1, no other protocols are supported ");
 		put(document,root,"request_lifetime", Long.toString(request_lifetime),
 		    " request lifetime in seconds ");
+		put(document,root,"access_latency", accessLatency, 
+		    " access latency ");
+		put(document,root,"retention_policy", retentionPolicy, 
+		    " retention policy ");
+		put(document,root,"access_pattern", accessPattern, 
+		    " access pattern,  TRANSFER_MODE|PROCESSING_MODE  ");
+		put(document,root,"connection_type", connectionType, 
+		    " connection type: WAN|LAN ");
+		put(document,root,"do_remove",  new Boolean(doRemove).toString(),
+		    " true or false ");
+		put(document,root,"overwrite_mode",  overwriteMode, 
+		    " ALWAYS|NEVER|WHEN_FILES_ARE_DIFFERENT ");
+		put(document,root,"recursive",  new Boolean(recursive).toString(),
+		    " true or false ");
 		for (Iterator i = extraParameters.keySet().iterator(); i.hasNext();) {
 			Object key = i.next();
 			put(document,root,(String)key,(String)extraParameters.get(key),(String)key);
