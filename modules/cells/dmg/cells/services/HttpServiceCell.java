@@ -24,6 +24,8 @@ public class      HttpServiceCell
    private SimpleDateFormat _dateFormat = 
                 new SimpleDateFormat( "EEE, dd MMM yyyy hh:mm:ss z");
                 
+   private static final FileNameMap __mimeTypeMap = URLConnection.getFileNameMap();
+   
    public HttpServiceCell( String name , String args ) throws Exception {
        super( name , args , false ) ;
     
@@ -94,6 +96,8 @@ public class      HttpServiceCell
       public String getType(){ return _type ; }
       public Object getSpecific(){ return _obj ; }
       public String getSpecificString(){ return _spec ; }
+      
+      @Override
       public String toString(){ 
          StringBuffer sb = new StringBuffer() ;
          sb.append( _type ).append("(").append(_spec).append(")") ;
@@ -104,17 +108,15 @@ public class      HttpServiceCell
          return sb.toString();
       }
    }
+   
+   @Override
    public void getInfo( PrintWriter pw ){
-      Iterator     e      = _aliasHash.keySet().iterator() ;
-      String       alias  = null ;
-      AliasEntry    entry = null ;
-      for( ; e.hasNext() ; ){
-          alias = e.next().toString() ;
-          pw.println("<<<<< "+alias+" >>>>>>>>>");
-          entry = _aliasHash.get( alias ) ;
-          entry.getInfo(pw);
+
+      for( Map.Entry<String, AliasEntry> aliasEntry : _aliasHash.entrySet() ){
+
+          pw.println("<<<<< "+aliasEntry.getKey()+" >>>>>>>>>");
+          aliasEntry.getValue().getInfo(pw);
       }
-      return ;
    }
    public String hh_ls_alias = "[<alias>]" ;
    public String ac_ls_alias_$_0_1( Args args )throws Exception{
@@ -292,16 +294,21 @@ public class      HttpServiceCell
        }
        say("Listener Done" );
    }
+   
+   @Override
    public void say( String msg ){
       String s = "("+_serial+") "+msg ;
       _nucleus.say( s ) ;
       pin( s ) ;
    }
+   
+   @Override
    public void esay( String msg ){
       String s = "("+_serial+") "+msg ;
       _nucleus.esay( s ) ;
       pin( s ) ;
    }
+   
    private class HtmlService 
            implements Runnable, HttpRequest {
        
@@ -390,7 +397,7 @@ public class      HttpServiceCell
              
              if( ! direction.equals( "GET" ) )
                   throw new 
-                  HttpException( 501, "Not Implemented : "+direction ) ;
+                  HttpException( HttpStatus.NOT_IMPLEMENTED, "Not Implemented : "+direction ) ;
              
              String destination = st.nextToken() ;
              
@@ -405,12 +412,12 @@ public class      HttpServiceCell
                 entry = _aliasHash.get( alias ) ;
                 if( entry == null )
                     throw new 
-                    HttpException( 404 , "Alias not found : "+alias ) ;
+                    HttpException( HttpStatus.NOT_FOUND , "Alias not found : "+alias ) ;
                 
                 switchHttpType( entry ) ;
                 
              }catch(HttpException ee){
-                if( ee.getErrorCode() != 404 )throw ee ;
+                if( ee.getErrorCode() != HttpStatus.NOT_FOUND )throw ee ;
                 entry = _aliasHash.get( "<default>" ) ;
                 if( entry == null )throw ee ;
                 switchHttpType( entry ) ;
@@ -421,10 +428,10 @@ public class      HttpServiceCell
              printHttpException( e ) ;
              esay( "Problem in HtmlService : "+e ) ;
           }catch( Exception ee ){
-             printHttpException( new HttpException( 400 , "Bad Request : "+ee ) ) ;
+             printHttpException( new HttpException( HttpStatus.BAD_REQUEST , "Bad Request : "+ee ) ) ;
              esay( "Problem in HtmlService : "+ee ) ;
           }finally{
-            try{ _out.close() ; }catch( Exception eeee ){}             
+            try{ _out.close() ; }catch( IOException eeee ){}             
           }
           say( "Finished" ) ;
        
@@ -443,7 +450,7 @@ public class      HttpServiceCell
         	  }
         	  sb.append( ".");
         	  
-        	  throw new HttpException(  500 , sb.toString());
+        	  throw new HttpException(  HttpStatus.INTERNAL_SERVER_ERROR , sb.toString());
 
           } else if( type.equals( "directory" ) ){
 
@@ -473,7 +480,7 @@ public class      HttpServiceCell
                     String contextName = _tokens[1] ;
                     if( ! contextName.startsWith( specificName ) )
                        throw new 
-                       HttpException( 403 , "Forbidden" ) ;
+                       HttpException( HttpStatus.FORBIDDEN , "Forbidden" ) ;
 
                     specificName = contextName ;
                  }
@@ -483,7 +490,7 @@ public class      HttpServiceCell
                 if( ( ( aliasString = entry.getOnError() ) == null ) ||
                     ( ( aliasEntry = _aliasHash.get( aliasString ) ) == null ) )
                  throw new 
-                 HttpException(  404 , "Not found : "+specificName);
+                 HttpException( HttpStatus.NOT_FOUND , "Not found : "+specificName);
                  
                 switchHttpType( aliasEntry ) ;
                 return ;
@@ -501,7 +508,7 @@ public class      HttpServiceCell
              } catch( HttpException e) {
             	 throw e;
              } catch( Exception e) {
-            	 throw new HttpException( 500, "HttpResponseEngine ("+engine.getClass().getCanonicalName()+") is broken, please report this to sysadmin.");
+            	 throw new HttpException( HttpStatus.INTERNAL_SERVER_ERROR, "HttpResponseEngine ("+engine.getClass().getCanonicalName()+") is broken, please report this to sysadmin.");
              }
   
           }
@@ -584,12 +591,12 @@ public class      HttpServiceCell
               while( ( line = br.readLine() ) != null )
                   _pw.println( line ) ;
                   
-              try{ br.close() ; }catch(Exception iii){}
-           }else if( filename.endsWith( ".gif" ) ){
+              try{ br.close() ; }catch(IOException iii){}
+           } else {
               FileInputStream binary = new FileInputStream( f ) ;
               int rc = 0 ;
               byte [] buffer = new byte[4*1024] ;
-              printHttpHeader( (int)f.length() , "image/gif" ) ;
+              printHttpHeader( (int)f.length() , __mimeTypeMap.getContentTypeFor(filename) ) ;
               try{
 
                  while( ( rc = binary.read( buffer , 0 , buffer.length ) ) > 0 ){
@@ -597,40 +604,10 @@ public class      HttpServiceCell
                  }
               }finally{
                  _out.flush() ;
-                 try{ binary.close() ;  }catch(Exception ee){} ;
-
-              }
-           }else if( filename.endsWith( ".jpg" ) || filename.endsWith(".jpeg") ){
-              FileInputStream binary = new FileInputStream( f ) ;
-              int rc = 0 ;
-              byte [] buffer = new byte[4*1024] ;
-              printHttpHeader( (int)f.length() , "image/jpeg" ) ;
-              try{
-
-                 while( ( rc = binary.read( buffer , 0 , buffer.length ) ) > 0 ){
-                    _out.write( buffer , 0 , rc ) ;              
-                 }
-              }finally{
-                 _out.flush() ;
-                 try{ binary.close() ;  }catch(Exception ee){} ;
-
-              }
-           }else{
-              FileInputStream binary = new FileInputStream( f ) ;
-              int rc = 0 ;
-              byte [] buffer = new byte[4*1024] ;
-              try{
-
-                 while( ( rc = binary.read( buffer , 0 , buffer.length ) ) > 0 ){
-                    _out.write( buffer , 0 , rc ) ;              
-                 }
-              }finally{
-                 _out.flush() ;
-                 try{ binary.close() ;  }catch(Exception ee){} ;
+                 try{ binary.close() ;  }catch(IOException ee){} ;
 
               }
            }
-       
        
        }
        public void printHttpHeader( int size ){
@@ -686,7 +663,7 @@ public class      HttpServiceCell
          int hex_count   = 0 ;
          StringBuffer sb = new StringBuffer() ;
          StringBuffer hexsb = new StringBuffer() ;
-         Vector       v  = new Vector() ;
+         List<String>       v  = new ArrayList<String>() ;
          char c ;
          boolean isDirectory = false ;
 
@@ -711,7 +688,7 @@ public class      HttpServiceCell
                case S_COPY : 
                   if( c == '/' ){
                     if( sb.length() > 0 ){
-                       v.addElement( sb.toString() ) ;
+                       v.add( sb.toString() ) ;
                     }
                     sb.setLength(0) ;
                     state = S_IDLE ;                          
@@ -720,7 +697,7 @@ public class      HttpServiceCell
                     hex_count = 0 ;
                   }else if( c == '\0' ){
                     if( sb.length() > 0 ){
-                       v.addElement( sb.toString() ) ;
+                       v.add( sb.toString() ) ;
                     }
                     sb.setLength(0) ;
                     state = S_IDLE ;                          
@@ -735,7 +712,7 @@ public class      HttpServiceCell
                      try{
                         value = Integer.parseInt( hexsb.toString() , 16 ) ;
                      }catch( NumberFormatException nfe ){
-                        value = (int)' ' ;
+                        value = ' ' ;
                      }
                      sb.append( (char)value ) ;
                      hexsb.setLength(0) ;
@@ -746,10 +723,8 @@ public class      HttpServiceCell
             }
 
          }
-         String [] res = new String[v.size()] ;
-         v.copyInto(res) ;
 
-         _tokens      = res ;
+         _tokens      = v.toArray( new String[v.size()]) ;
          _isDirectory = isDirectory ;
 
          return  ;
