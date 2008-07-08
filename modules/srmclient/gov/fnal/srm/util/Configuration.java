@@ -1663,6 +1663,12 @@ public class Configuration {
 		} 
                 else if (name.equals("protocols")) {
 			protocols_list = value;
+                        java.util.StringTokenizer st = new java.util.StringTokenizer(
+				protocols_list,",");
+			protocols = new String[st.countTokens()];
+			for (int i = 0;st.hasMoreTokens();++i) {
+				protocols[i] = st.nextToken();
+			}
 		} 
                 else if (name.equals("pushmode")) {
 			pushmode = Boolean.valueOf(value).booleanValue();
