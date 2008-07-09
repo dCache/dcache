@@ -126,10 +126,11 @@ public class HsmRemoveTask implements Runnable
             Collection<URI> failed = new ArrayList<URI>();
             Iterator<FutureTask<Integer>> i = tasks.iterator();
             for (URI uri : files) {
-                if (i.next().get() == 0) {
+                int rc = i.next().get();
+                if (rc == 0) {
                     succeeded.add(uri);
                 } else {
-                    _log.error("Failed to delete " + uri + " from HSM");
+                    _log.error(String.format("Failed to delete %s: HSM script terminated with non-zero return code %d.", uri, rc));
                     failed.add(uri);
                 }
             }
