@@ -13,10 +13,13 @@ import java.util.* ;
 import java.text.SimpleDateFormat ;
 import java.io.PrintWriter ;
 
-public class SpaceSweeper1 implements SpaceSweeper , Runnable  {
+import org.apache.log4j.Logger;
+
+public class SpaceSweeper1 implements SpaceSweeper, Runnable
+{
+    private final static Logger _log = Logger.getLogger(SpaceSweeper1.class);
 
     private final CacheRepository _repository ;
-    private final CellAdapter     _cell       ;
     private final PnfsHandler     _pnfs       ;
 
     private final List<CacheRepositoryEntry>       _list       = new ArrayList<CacheRepositoryEntry>() ;
@@ -28,17 +31,15 @@ public class SpaceSweeper1 implements SpaceSweeper , Runnable  {
     private static SimpleDateFormat __format =
                new SimpleDateFormat( "HH:mm-MM/dd" ) ;
 
-    public SpaceSweeper1( CellAdapter cell ,
-                          PnfsHandler pnfs ,
-                          CacheRepository repository){
-
+    public SpaceSweeper1(PnfsHandler pnfs, CacheRepository repository)
+    {
        _repository = repository ;
-       _cell       = cell ;
        _pnfs       = pnfs ;
 
        _repository.addCacheRepositoryListener(this);
-       _cell.getNucleus().newThread( this , "sweeper" ).start() ;
+       new Thread(this, "sweeper").start();
     }
+
     public long getRemovableSpace(){ return _removableSpace ; }
     public long getLRUSeconds(){
         CacheRepositoryEntry e;
@@ -368,12 +369,14 @@ public class SpaceSweeper1 implements SpaceSweeper , Runnable  {
     public void printSetup( PrintWriter pw ){
        pw.println( "#\n# Nothing from the "+this.getClass().getName()+"#" ) ;
     }
-    private void say( String msg ){
-       _cell.say( "SWEEPER : "+msg ) ;
-    }
-    private void esay( String msg ){
-       _cell.esay( "SWEEPER ERROR : "+msg ) ;
+
+    private void say(String msg)
+    {
+        _log.info(msg);
     }
 
-
+    private void esay(String msg)
+    {
+        _log.error(msg);
+}
 }

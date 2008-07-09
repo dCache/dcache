@@ -796,12 +796,11 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
                InvocationTargetException,
                NoSuchMethodException
     {
-        Class<?>[] argClass = { dmg.cells.nucleus.CellAdapter.class,
-				diskCacheV111.util.PnfsHandler.class,
+        Class<?>[] argClass = { diskCacheV111.util.PnfsHandler.class,
 				diskCacheV111.repository.CacheRepository.class };
         Class<?> sweeperClass = Class.forName(_sweeperClass);
         Constructor<?> sweeperCon = sweeperClass.getConstructor(argClass);
-        Object[] args = { this, _pnfs, _repository };
+        Object[] args = { _pnfs, _repository };
 
         return (SpaceSweeper) sweeperCon.newInstance(args);
     }

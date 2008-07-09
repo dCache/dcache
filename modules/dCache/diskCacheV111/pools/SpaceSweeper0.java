@@ -13,11 +13,14 @@ import java.util.* ;
 import java.text.SimpleDateFormat ;
 import java.io.PrintWriter ;
 
-public class SpaceSweeper0 implements SpaceSweeper , Runnable  {
+import org.apache.log4j.Logger;
+
+public class SpaceSweeper0 implements SpaceSweeper , Runnable
+{
+    private final static Logger _log = Logger.getLogger(SpaceSweeper0.class);
+
     private CacheRepository _repository = null ;
-    private CellAdapter     _cell       = null ;
     private PnfsHandler     _pnfs       = null ;
-    private HsmStorageHandler2 _storage  = null ;
 
     private ArrayList       _list       = new ArrayList() ;
 
@@ -28,18 +31,13 @@ public class SpaceSweeper0 implements SpaceSweeper , Runnable  {
     private static SimpleDateFormat __format =
                new SimpleDateFormat( "HH:mm-MM/dd" ) ;
 
-    public SpaceSweeper0( CellAdapter cell ,
-                          PnfsHandler pnfs ,
-                          CacheRepository repository ,
-                          HsmStorageHandler2 storage     ){
-
+    public SpaceSweeper0(PnfsHandler pnfs, CacheRepository repository)
+    {
        _repository = repository ;
-       _cell       = cell ;
        _pnfs       = pnfs ;
-       _storage    = storage ;
 
        _repository.addCacheRepositoryListener(this);
-       _cell.getNucleus().newThread( this , "sweeper" ).start() ;
+       new Thread(this, "sweeper").start();
     }
     public long getRemovableSpace(){ return _removableSpace ; }
     public synchronized long getLRUSeconds(){
@@ -344,12 +342,14 @@ public class SpaceSweeper0 implements SpaceSweeper , Runnable  {
     public void printSetup( PrintWriter pw ){
        pw.println( "#\n# Nothing from the "+this.getClass().getName()+"#" ) ;
     }
-    private void say( String msg ){
-       _cell.say( "SWEEPER : "+msg ) ;
-    }
-    private void esay( String msg ){
-       _cell.esay( "SWEEPER ERROR : "+msg ) ;
+
+    private void say(String msg)
+    {
+        _log.info(msg);
     }
 
-
+    private void esay(String msg)
+    {
+        _log.error(msg);
+    }
 }

@@ -13,10 +13,13 @@ import java.util.*;
 import java.text.SimpleDateFormat;
 import java.io.PrintWriter;
 
+import org.apache.log4j.Logger;
+
 public class SpaceSweeper2 implements SpaceSweeper, Runnable
 {
+    private final static Logger _log = Logger.getLogger(SpaceSweeper2.class);
+
     private final CacheRepository _repository;
-    private final CellAdapter     _cell;
 
     private final Set<PnfsId> _list  = new LinkedHashSet<PnfsId>();
 
@@ -27,15 +30,12 @@ public class SpaceSweeper2 implements SpaceSweeper, Runnable
     private static SimpleDateFormat __format =
         new SimpleDateFormat("HH:mm-MM/dd");
 
-    public SpaceSweeper2(CellAdapter cell,
-                         PnfsHandler pnfs,
-                         CacheRepository repository)
+    public SpaceSweeper2(PnfsHandler pnfs, CacheRepository repository)
     {
         _repository = repository;
-        _cell       = cell;
 
         _repository.addCacheRepositoryListener(this);
-        _cell.getNucleus().newThread(this, "sweeper").start();
+        new Thread(this, "sweeper").start();
     }
 
     public synchronized long getRemovableSpace()
@@ -414,11 +414,11 @@ public class SpaceSweeper2 implements SpaceSweeper, Runnable
 
     private void say(String msg)
     {
-        _cell.say("SWEEPER : " + msg);
+        _log.info(msg);
     }
 
     private void esay(String msg)
     {
-        _cell.esay("SWEEPER ERROR : " + msg);
+        _log.error(msg);
     }
 }

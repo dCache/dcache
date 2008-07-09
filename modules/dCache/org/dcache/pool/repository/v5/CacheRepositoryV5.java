@@ -108,11 +108,10 @@ public class CacheRepositoryV5// extends CellCompanion
         Class c = _isPermanent ? DUMMY_SWEEPER : _sweeperClass;
 
         try {
-            Class<?>[] argClass = { dmg.cells.nucleus.CellAdapter.class,
-                                    diskCacheV111.util.PnfsHandler.class,
+            Class<?>[] argClass = { diskCacheV111.util.PnfsHandler.class,
                                     diskCacheV111.repository.CacheRepository.class };
             Constructor<?> con = c.getConstructor(argClass);
-            return (SpaceSweeper)con.newInstance(_cell, _pnfs, _repository);
+            return (SpaceSweeper)con.newInstance(_pnfs, _repository);
         } catch (Exception e) {
             throw new IllegalArgumentException("Could not instantiate "
                                                + c + ": " + e.getMessage());
