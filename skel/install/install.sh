@@ -1434,16 +1434,7 @@ fi
 
 dcacheInstallSshKeys
 dcacheInstallCreateWrappers
-
-
-nameServerFormat=`printConfig NAMESPACE`
-if [ "${nameServerFormat}" != "pnfs" -a "${nameServerFormat}" != "chimera" ]
-then
-  logmessage WARNING "node_config does not have NAMESPACE set to chimera or pnfs. Skipping setup of mount points."
-else
-  dcacheInstallMountPoints
-fi
-
+dcacheInstallMountPoints
 dcacheInstallSrm
 dcacheInstallPool
 
