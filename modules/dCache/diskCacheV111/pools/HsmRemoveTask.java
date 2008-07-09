@@ -1,12 +1,14 @@
 package diskCacheV111.pools;
 
-import dmg.cells.nucleus.CellAdapter;
+import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellMessage;
+import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.Logable;
 import diskCacheV111.util.HsmSet;
 import diskCacheV111.util.ExternalTask;
 import diskCacheV111.vehicles.PoolRemoveFilesFromHSMMessage;
 
+import java.io.NotSerializableException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.CancellationException;
@@ -29,7 +31,7 @@ public class HsmRemoveTask implements Runnable
 
     /** The cell used to send back a reply to the requester.
      */
-    private final CellAdapter _cell;
+    private final CellEndpoint _endpoint;
 
     /**
      * HSM configuration component.
@@ -52,19 +54,19 @@ public class HsmRemoveTask implements Runnable
     private final long        _timeout;
 
     @Deprecated
-    public HsmRemoveTask(CellAdapter cell, Logable log,
+    public HsmRemoveTask(CellEndpoint endpoint, Logable log,
                          Executor executor, HsmSet hsmSet,
                          long timeout, CellMessage message)
     {
-        this(cell, executor, hsmSet, timeout, message);
+        this(endpoint, executor, hsmSet, timeout, message);
     }
 
-    public HsmRemoveTask(CellAdapter cell,
+    public HsmRemoveTask(CellEndpoint endpoint,
                          Executor executor, HsmSet hsmSet,
                          long timeout, CellMessage message)
     {
         assert message.getMessageObject() instanceof PoolRemoveFilesFromHSMMessage;
-        _cell = cell;
+        _endpoint = endpoint;
         _executor = executor;
         _hsmSet = hsmSet;
         _timeout = timeout;
@@ -135,29 +137,31 @@ public class HsmRemoveTask implements Runnable
                 }
             }
 
-            /* Generate reply.
+            /* Send reply.
              */
-            try {
-                msg.setResult(succeeded, failed);
-                _message.revertDirection();
-                _cell.sendMessage(_message);
-            } catch (Exception e) {
-                _log.error("Cannot send reply: " + e);
-            }
+            msg.setResult(succeeded, failed);
+            _message.revertDirection();
+            _endpoint.sendMessage(_message);
+        } catch (NoRouteToCellException e) {
+            /* We probably succeeded deleting the files, but failed to
+             * reply to the cleaner. Since deletion is idempotent, we
+             * just let the cleaner retry later and do nothing now.
+             */
+            _log.warn("Cannot send reply: " + e);
+        } catch (NotSerializableException e) {
+            throw new RuntimeException("Unserializable vehicle detected", e);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         } catch (CancellationException e) {
             /* Somebody cancelled the future, even though we are the
              * only one holding a reference to it. Must be a bug.
              */
-            _log.error(e.toString());
-            throw new RuntimeException(e);
+            throw new RuntimeException("Bug: ExternalTask was unexpectedly cancelled", e);
         } catch (ExecutionException e) {
             /* This means the ExternalTask threw an exception. This
              * smells like a bug, so we better log it.
              */
-            _log.error(e.toString());
-            throw new RuntimeException(e);
+            throw new RuntimeException("Likely bug: ExternalTask threw an unexpected exception", e);
         }
     }
 }
