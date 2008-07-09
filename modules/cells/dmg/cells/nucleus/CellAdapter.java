@@ -912,26 +912,32 @@ public class   CellAdapter
                  ( obj instanceof AuthorizedString   ) ||
                  ( obj instanceof CommandRequestable )    ) ){
 
-              Object o = null ;
-              _currentMessage = msg ;
-              try{
-                 if( ( o =  executeLocalCommand( obj ) ) == null )return ;
-              }catch( CommandException ce ){
-                 o = ce ;
-              }catch( Throwable te ){
-                 o = te ;
-              }
-//              _nucleus.say( "Answering with class : "+o.getClass().getName());
-              _currentMessage = null ;
-              msg.revertDirection() ;
-              msg.setMessageObject( o ) ;
-
-              try{
-                 _nucleus.sendMessage( msg ) ;
-              }catch( Exception e ){
-                 _nucleus.esay( "PANIC : Problem returning answer : "+e ) ;
+              Object o;
+              try {
+                  _currentMessage = msg;
+                  o =  executeLocalCommand(obj);
+                  if (o == null)
+                      return;
+              } catch (CommandException ce) {
+                 o = ce;
+              } catch (Throwable te) {
+                 o = te;
+              } finally {
+                  _currentMessage = null;
               }
 
+              try {
+                  msg.revertDirection();
+                  if (o instanceof Reply) {
+                      Reply reply = (Reply)o;
+                      reply.deliver(this, msg);
+                  } else {
+                      msg.setMessageObject(o);
+                      _nucleus.sendMessage(msg);
+                  }
+              } catch (Exception e) {
+                  _nucleus.esay("PANIC : Problem returning answer : " + e);
+              }
            }else if( ( obj instanceof PingMessage ) && _answerPing ) {
               PingMessage ping = (PingMessage)obj ;
               if( ping.isWayBack() ){
