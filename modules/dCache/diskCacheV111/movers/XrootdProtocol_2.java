@@ -32,7 +32,7 @@ public class XrootdProtocol_2 implements MoverProtocol {
 
 	private static final int[] DEFAULT_PORTRANGE = {20000, 25000};
 	private static final int LISTEN_TIMEOUT = 10 * 60 * 1000;
-		
+
 	private CellAdapter cell;
 	private RandomAccessFile diskFile;
 	private ProtocolInfo protocolInfo;
@@ -47,36 +47,36 @@ public class XrootdProtocol_2 implements MoverProtocol {
 	private PhysicalXrootdConnection physicalXrootdConnection;
 	private XrootdMoverController controller;
 	private int xrootdFileHandle;
-	
+
 //	this checksum comes from the door and is compared to the calculated one when the reopen is received
 //	to make sure that the OpenRequest has not changed meanwhile
 	private long openChecksum;
-	
+
 	private static Object portSyncer = new Object();
 	private static int lastMoverPort = -1;
-	
-	
+
+
 	public XrootdProtocol_2(CellAdapter cell) {
 		this.cell = cell;
 		cell.say("Xrootd mover is started.");
 	}
-	
-	
+
+
 	public void runIO(RandomAccessFile diskFile, ProtocolInfo protocol, StorageInfo storage, PnfsId pnfsId, SpaceMonitor spaceMonitor, int access) throws Exception {
-				
+
 		this.diskFile = diskFile;
 		this.protocolInfo = protocol;
 		this.storageInfo = storage;
 		this.pnfsId = pnfsId;
 		this.spaceMonitor = spaceMonitor;
-				
-		
-//		
+
+
+//
 //		scan for and try to bind an unused server port
-//		
+//
 		String portRange = System.getProperty("org.dcache.net.tcp.portrange");
 		int firstPort, lastPort;
-		
+
 		if (portRange != null) {
             String[] range = portRange.split(":");
             try {
@@ -85,34 +85,34 @@ public class XrootdProtocol_2 implements MoverProtocol {
             }catch(NumberFormatException nfe) {
                 firstPort = lastPort = 0;
             }
-            
+
 		} else {
 			firstPort = DEFAULT_PORTRANGE[0];
 			lastPort = DEFAULT_PORTRANGE[1];
 		}
-		
+
         if( firstPort >= lastPort ) {
             throw new SocketException("xrootd portrange not large enough");
         }
-        
+
 //      find free port or raise execption if no unused port can be found (end of mover)
         ServerSocket xrootdServer = createServerSocket(firstPort, lastPort);
         int serverPort = xrootdServer.getLocalPort();
-		
-		
-//		
+
+
+//
 //		look for all network interfaces
-//		
+//
 		XrootdProtocolInfo xrootdProtocol = (XrootdProtocolInfo) protocol;
 		this.xrootdFileHandle = xrootdProtocol.getXrootdFileHandle();
 		this.openChecksum = xrootdProtocol.getChecksum();
-		
-		
+
+
 		Collection netifsCol = new ArrayList();
-		
+
 //		try to pick the ip address with corresponds to the hostname (which is hopefully visible to the world)
 		InetAddress localIP = InetAddress.getLocalHost();
-		
+
 		if (localIP != null && !localIP.isLoopbackAddress() && localIP instanceof Inet4Address) {
 //			the ip we got from the hostname is at least not 127.0.01 and from the IP4-family
 			Collection col = new ArrayList(1);
@@ -134,7 +134,7 @@ public class XrootdProtocol_2 implements MoverProtocol {
 					InetAddress addr = (InetAddress) ips.nextElement();
 
 //					check again each ip from each interface.
-//					WARNING: multiple ip addresses in case of multiple ifs could be selected, 
+//					WARNING: multiple ip addresses in case of multiple ifs could be selected,
 //					we can't determine the "correct" one
 					if (addr instanceof Inet4Address
 							&& !addr.isLoopbackAddress()) {
@@ -150,22 +150,22 @@ public class XrootdProtocol_2 implements MoverProtocol {
 				}
 			}
 		}
-				
-//		
+
+//
 // 		send message back to the door, containing the new serverport and ip
-//		
+//
 		CellPath cellpath = xrootdProtocol.getXrootdDoorCellPath();
 		XrootdDoorAdressInfoMessage doorMsg = new XrootdDoorAdressInfoMessage(getXrootdFileHandle(), serverPort, netifsCol);
 		cell.sendMessage (new CellMessage(cellpath, doorMsg), true, true);
-	    	    
+
 	    cell.say("sending redirect message to Xrootd-door "+ cellpath);
 		cell.say("Xrootd mover listening on port: " + serverPort);
-	    
-//		
+
+//
 //	    awaiting connection from client
-//		
+//
 		xrootdServer.setSoTimeout(LISTEN_TIMEOUT);
-		
+
 		Socket socket = null;
 		try {
 			socket = xrootdServer.accept();
@@ -176,29 +176,29 @@ public class XrootdProtocol_2 implements MoverProtocol {
 		}
 
 	    cell.say("got connection attempt");
-		
+
 //	    pass connection handling over to the xrootd subsystem
 	    initXrootd(socket);
-	    
-	    	    
+
+
 //	    initialise counter
 	    setLastTransferred();
-	    
-//	    gets notfied on transfer finished by xrootd subsystem 
+
+//	    gets notfied on transfer finished by xrootd subsystem
 	    synchronized (transferFinishedSync) {
 	    	transferFinishedSync.wait();
 	    }
 
 //	    end of transfer
 	    physicalXrootdConnection.closeConnection();
-	    
+
 	    if (!isTransferSuccessful()) {
 	    	cell.esay("xrootd transfer failed");
-	    	throw new CacheException("xrootd transfer failed"); 
+	    	throw new CacheException("xrootd transfer failed");
 	    }
-	    	    	    
+
 	    cell.esay("normal end of xrootd mover process, transfer successful");
-    
+
 	}
 
 	public void setAttribute(String name, Object attribute) {}
@@ -215,7 +215,7 @@ public class XrootdProtocol_2 implements MoverProtocol {
 	public void setBytesTransferred(long bytesTransferred) {
 		this.bytesTransferred = bytesTransferred;
 	}
-		
+
 	public long getTransferTime() {
 		return transferTime;
 	}
@@ -223,11 +223,11 @@ public class XrootdProtocol_2 implements MoverProtocol {
 	public void setTransferTime(long transferTime) {
 		this.transferTime = transferTime;
 	}
-	
+
 	public long getLastTransferred() {
 		return lastTransferred;
 	}
-	
+
 	public void setLastTransferred() {
 		this.lastTransferred = System.currentTimeMillis();
 	}
@@ -269,17 +269,17 @@ public class XrootdProtocol_2 implements MoverProtocol {
 
 
 	public void setTransferFinished() {
-		
+
 		synchronized (transferFinishedSync) {
 			transferFinishedSync.notify();
 		}
 	}
-	
+
 	private void initXrootd(Socket socket) throws IOException{
-		
+
 //		create new XrootdConnection based on existing socket
 		physicalXrootdConnection = new PhysicalXrootdConnection(socket, XrootdProtocol.DATA_SERVER);
-		
+
 //		set controller for this connection to handle login, auth and connection-specific settings
 		controller = new XrootdMoverController(this, physicalXrootdConnection);
 		physicalXrootdConnection.setConnectionListener(controller);
@@ -295,18 +295,18 @@ public class XrootdProtocol_2 implements MoverProtocol {
 	public void setTransferSuccessful() {
 		this.transferSuccessful = true;
 	}
-	
+
 	public boolean isTransferSuccessful() {
 		return this.transferSuccessful;
 	}
-	
+
 	private ServerSocket createServerSocket(int minPort, int maxPort) throws IOException {
         InetSocketAddress socketAddress;
         ServerSocket socket = new ServerSocket();
-        		
+
 //        synchronize access to lastMoverPort among all xrootd mover
         synchronized (portSyncer) {
-        	        	
+
             int currentPort;
         	if (lastMoverPort == -1) {
 //            	initial situation, this is the first xrootd mover instance
@@ -320,7 +320,7 @@ public class XrootdProtocol_2 implements MoverProtocol {
         			currentPort = minPort;
         		}
         	}
-        
+
 //        	loop through all ports in portrange and try binding
         	while (true) {
         		socketAddress =  new InetSocketAddress( currentPort ) ;
@@ -330,22 +330,22 @@ public class XrootdProtocol_2 implements MoverProtocol {
         		}catch(IOException e) {
         			// port is busy, bind failed
         		}
-        		
+
         		if (++currentPort > maxPort) {
 //        			start again from the beginning
         			currentPort = minPort;
         		}
-        		
+
         		if (currentPort == lastMoverPort) {
 //        			at this point we've looped through all ports in the portrange without
-//        			finding a bindable port => abort mover 
+//        			finding a bindable port => abort mover
         			throw new IOException("no unused port found in specified portrange, exiting");
         		}
         	}
-        	
+
         	lastMoverPort = currentPort;
         }
-		
+
         return socket;
 	}
 

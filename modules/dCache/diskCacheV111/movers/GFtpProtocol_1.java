@@ -189,7 +189,7 @@ public class GFtpProtocol_1 implements MoverProtocol, ChecksumMover, DataBlocksR
             recvStream( ftp, storage, pnfsId, spaceMonitor);
         }
         else if ( mode.equalsIgnoreCase("E") ) {
-            if (!recvEBlock( ftp, storage, pnfsId, spaceMonitor)) { 
+            if (!recvEBlock( ftp, storage, pnfsId, spaceMonitor)) {
                 throw new CacheException("runRemoteToDisk: recvEBlock failed");
             }
         }
@@ -617,18 +617,18 @@ public class GFtpProtocol_1 implements MoverProtocol, ChecksumMover, DataBlocksR
                 dataSocket.setReceiveBufferSize(ftp.getBufferSize());
                 dataSocket.setSendBufferSize(ftp.getBufferSize());
             }
-        } 
+        }
         catch( IOException ex ) {
             esay("recvEBlock: failed to make proxy mode connection: " +
                  ex.getMessage());
         }
         try {
             _eBlockReceiver.start();
-            while( _eBlockReceiver.isAlive() ) { 
+            while( _eBlockReceiver.isAlive() ) {
                 _eBlockReceiver.join();
             }
             say("recvEBlock: number of offset ranges = " + _offsetRanges.getRanges().size());
-            if (!_offsetRanges.isContiguous()) { 
+            if (!_offsetRanges.isContiguous()) {
                 ftpErrorMsg = "451 Transmission error: lost EOD blocks";
                 esay("recvEBlock: offset ranges are not contiguous");
                 _offsetRanges.clear();
@@ -637,16 +637,16 @@ public class GFtpProtocol_1 implements MoverProtocol, ChecksumMover, DataBlocksR
             }
             _offsetRanges.clear();
             _offsetRanges=null;
-        } 
+        }
         catch ( Exception e ) {
             ftpErrorMsg = "451 Transmission error: " + e;
             esay("recvEBlock: " + ftpErrorMsg);
             return false;
         }
         finally {
-            try  {   
-                dataSocket.close(); 
-            } 
+            try  {
+                dataSocket.close();
+            }
             catch(IOException ignored) {
                 // ignore
             }
@@ -701,7 +701,7 @@ public class GFtpProtocol_1 implements MoverProtocol, ChecksumMover, DataBlocksR
         _transferMessageDigest =
             checksum != null ? checksum.getMessageDigest() : null;
     }
-   
+
     public ChecksumFactory getChecksumFactory(ProtocolInfo protocol) {
         if(protocol instanceof GFtpProtocolInfo) {
            GFtpProtocolInfo ftpp = (GFtpProtocolInfo)protocol;

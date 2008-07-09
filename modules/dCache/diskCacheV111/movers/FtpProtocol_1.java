@@ -11,13 +11,13 @@ import org.apache.log4j.Logger;
 
 import  diskCacheV111.repository.SpaceMonitor ;
 
-public class FtpProtocol_1 
+public class FtpProtocol_1
        implements MoverProtocol           {
 
-	
+
 	private final static Logger _logSpaceAllocation = Logger.getLogger("logger.dev.org.dcache.poolspacemonitor." + FtpProtocol_1.class.getName());
-	
-   //  
+
+   //
    // <init>( CellAdapter cell ) ;
    //
    private CellAdapter  _cell = null ;
@@ -52,11 +52,11 @@ public class FtpProtocol_1
                   ProtocolInfo protocol ,
                   StorageInfo  storage ,
                   PnfsId       pnfsId  ,
-                  SpaceMonitor spaceMonitor , 
-                  int          access ) 
-                  
+                  SpaceMonitor spaceMonitor ,
+                  int          access )
+
           throws Exception {
-          
+
       _lastTransferred = System.currentTimeMillis() ;
       if( ( access & MoverProtocol.WRITE ) != 0 ){
          _wasChanged = true ;
@@ -64,8 +64,8 @@ public class FtpProtocol_1
       }else{
          runDiskToRemote( diskFile , protocol , storage , pnfsId.toString()  ) ;
       }
-          
-          
+
+
    }
 
    public void runRemoteToDisk(
@@ -73,14 +73,14 @@ public class FtpProtocol_1
                   ProtocolInfo protocol ,
                   StorageInfo  storage ,
                   String       pnfsId  ,
-                  SpaceMonitor spaceMonitor  ) 
-                  
+                  SpaceMonitor spaceMonitor  )
+
           throws Exception {
 
         if( ! ( protocol instanceof FtpProtocolInfo ) ){
            throw new
            CacheException( 44 , "protocol info not FtpProtocolInfo" ) ;
-           
+
         }
         FtpProtocolInfo ftp = (FtpProtocolInfo)protocol ;
 	int    port = ftp.getPort() ;
@@ -113,7 +113,7 @@ public class FtpProtocol_1
         }finally{
            try{ dataSocket.close() ; }catch(Exception xe){}
            ftp.setBytesTransferred( _bytesTransferred ) ;
-           _transferTime = System.currentTimeMillis() - 
+           _transferTime = System.currentTimeMillis() -
                            _transferStarted ;
            ftp.setTransferTime( _transferTime ) ;
            say( "Transfer finished : "+
@@ -131,22 +131,22 @@ public class FtpProtocol_1
         	   spaceMonitor.freeSpace( freeIt) ;
            }
         }
-          
-          
+
+
    }
-   
+
    public void runDiskToRemote(
                   RandomAccessFile  diskFile ,
                   ProtocolInfo protocol ,
                   StorageInfo  storage ,
-                  String       pnfsId    ) 
-                  
+                  String       pnfsId    )
+
           throws Exception {
-          
+
         if( ! ( protocol instanceof FtpProtocolInfo ) ){
            throw new
            CacheException( 44 , "protocol info not FtpProtocolInfo" ) ;
-           
+
         }
         FtpProtocolInfo ftp = (FtpProtocolInfo)protocol ;
 	int    port = ftp.getPort() ;
@@ -158,17 +158,17 @@ public class FtpProtocol_1
         long    fileSize        = storage.getFileSize() ;
         byte [] data            = new byte[128*1024] ;
         say( "Expected filesize is "+fileSize+" bytes" ) ;
-        
+
         String  x = storage.getKey("dummyRead") ;
         boolean dummyRead  = ( fileSize > 0 ) &&
                              ( x != null ) &&
                              ( x.equals( "yes" ) || x.equals( "on" ) )  ;
-                             
+
         say( "Using "+(dummyRead?"DummyRead":"RealRead"));
-        
+
         x = storage.getKey("dummySize") ;
         if(  x != null  ){
-        
+
            try{
               fileSize = Long.parseLong( x ) ;
               say( "Dummy Size set to "+fileSize ) ;
@@ -196,7 +196,7 @@ public class FtpProtocol_1
               long rest = fileSize ;
               while( ! Thread.currentThread().isInterrupted() ){
                  if( Thread.currentThread().isInterrupted() )
-                    throw new 
+                    throw new
                     InterruptedException( "Transfer interrupted" ) ;
 	         nbytes = rest > data.length ? data.length : ((int)rest) ;
 	         if( nbytes <= 0 ) break;
@@ -210,7 +210,7 @@ public class FtpProtocol_1
            }else{
               while( ! Thread.currentThread().isInterrupted() ){
                  if( Thread.currentThread().isInterrupted() )
-                    throw new 
+                    throw new
                     InterruptedException( "Transfer interrupted" ) ;
 	          nbytes = diskFile.read( data );
    //	       say("Transferring "+nbytes+" bytes");
@@ -223,10 +223,10 @@ public class FtpProtocol_1
         }finally{
            try{ dataSocket.close() ; }catch(Exception xe){}
            ftp.setBytesTransferred( _bytesTransferred ) ;
-           _transferTime = System.currentTimeMillis() - 
+           _transferTime = System.currentTimeMillis() -
                            _transferStarted ;
            ftp.setTransferTime( _transferTime ) ;
-           
+
            say( "Transfer finished : "+
                      _bytesTransferred+" bytes in "+
                      ( _transferTime/1000 ) +" seconds " ) ;
@@ -237,16 +237,16 @@ public class FtpProtocol_1
            }
            say( "SysTimer : "+sysTimer.getDifference().toString() ) ;
         }
-          
-          
+
+
    }
-   
+
    public long getLastTransferred() { return System.currentTimeMillis() ; }
    public long getBytesTransferred(){ return _bytesTransferred  ; }
-   public long getTransferTime(){ 
-       return _transferTime < 0 ?  
+   public long getTransferTime(){
+       return _transferTime < 0 ?
               System.currentTimeMillis() - _transferStarted :
-              _transferTime  ; 
+              _transferTime  ;
    }
    public boolean wasChanged(){ return _wasChanged ; }
 }

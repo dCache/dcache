@@ -27,7 +27,7 @@ import java.util.Hashtable;
 import java.util.StringTokenizer;
 
 
-public class DCapClientProtocol_1 implements MoverProtocol 
+public class DCapClientProtocol_1 implements MoverProtocol
 {
    public static final int READ   =  1 ;
    public static final int WRITE  =  2 ;
@@ -43,9 +43,9 @@ public class DCapClientProtocol_1 implements MoverProtocol
    private String remoteURL;
    private volatile long transfered  = 0;
    private boolean changed;
-   
-   
-   //  
+
+
+   //
    // <init>( CellAdapter cell ) ;
    //
 
@@ -62,7 +62,7 @@ public class DCapClientProtocol_1 implements MoverProtocol
    private void esay( String str ){
       cell.esay( "(DCapClientProtocol_1) "+str ) ;
    }
-   
+
    private void esay( Throwable t )
    {
        cell.esay(t);
@@ -72,28 +72,28 @@ public class DCapClientProtocol_1 implements MoverProtocol
                       ProtocolInfo protocol ,
                       StorageInfo  storage ,
                       PnfsId       pnfsId  ,
-                      SpaceMonitor spaceMonitor , 
-                      int          access ) 
-       throws Exception 
+                      SpaceMonitor spaceMonitor ,
+                      int          access )
+       throws Exception
    {
      say("runIO()\n\tprotocol="+
      protocol+",\n\tStorageInfo="+storage+",\n\tPnfsId="+pnfsId+
      ",\n\taccess ="+((( access & MoverProtocol.WRITE ) != 0)?"WRITE":"READ"));
      if( ! ( protocol instanceof DCapClientProtocolInfo ) )
      {
-       throw new  CacheException( 
+       throw new  CacheException(
        "protocol info is not RemoteGsiftpransferProtocolInfo" ) ;
      }
      this.diskFile = diskFile;
      starttime = System.currentTimeMillis();
-     
+
      dcapClient = (DCapClientProtocolInfo) protocol;
-     
-     
+
+
      CellPath cellpath = new CellPath(dcapClient.getInitiatorCellName(),
                                         dcapClient.getInitiatorCellDomain());
      say(" runIO() RemoteGsiftpTranferManager cellpath="+cellpath);
-     
+
      ServerSocket ss= null;
      try
      {
@@ -106,10 +106,10 @@ public class DCapClientProtocol_1 implements MoverProtocol
      }
      int port = ss.getLocalPort();
      String host = InetAddress.getLocalHost().getHostName();
-     DCapClientPortAvailableMessage cred_request = 
+     DCapClientPortAvailableMessage cred_request =
       new DCapClientPortAvailableMessage(host,port,dcapClient.getId());
-     
-      
+
+
       say(" runIO() created message");
      cell.sendMessage (new CellMessage(cellpath,cred_request));
      say("waiting for dcap server connection");
@@ -125,9 +125,9 @@ public class DCapClientProtocol_1 implements MoverProtocol
          esay(ioe);
          // we still can continue, this is non-fatal
      }
-     
-     
-     
+
+
+
      if( ( access & MoverProtocol.WRITE ) != 0 )
      {
          dcapReadFile(dcap_socket,diskFile,spaceMonitor);
@@ -135,15 +135,15 @@ public class DCapClientProtocol_1 implements MoverProtocol
      else
      {
          throw new IOException("read is not implemented");
-     }         
+     }
      say(" runIO() done");
    }
-   
-   public long getLastTransferred() 
-   { 
-      return last_transfer_time ; 
+
+   public long getLastTransferred()
+   {
+      return last_transfer_time ;
    }
-   
+
    private synchronized void setTimeoutTime(long t)
    {
      timeout_time = t;
@@ -152,44 +152,44 @@ public class DCapClientProtocol_1 implements MoverProtocol
    {
      return timeout_time;
    }
-   public void setAttribute( String name , Object attribute ) 
+   public void setAttribute( String name , Object attribute )
    {
    }
-   public Object getAttribute( String name ) 
+   public Object getAttribute( String name )
    {
      return null;
    }
-   public long getBytesTransferred() 
+   public long getBytesTransferred()
    {
      return  transfered;
    }
-   
-   public long getTransferTime() 
+
+   public long getTransferTime()
    {
       return System.currentTimeMillis() -starttime;
    }
- 
-   public boolean wasChanged() 
+
+   public boolean wasChanged()
    {
        return changed;
    }
-   
+
       private void dcapReadFile(Socket _socket,
         RandomAccessFile _dataFile,
-        SpaceMonitor _repository) throws Exception 
+        SpaceMonitor _repository) throws Exception
       {
          last_transfer_time    = System.currentTimeMillis() ;
          DataInputStream in   = new DataInputStream(_socket.getInputStream()) ;
          DataOutputStream out = new DataOutputStream(_socket.getOutputStream()) ;
-         
+
          say("<init>") ;
          int _sessionId = in.readInt() ;
-         
-         
+
+
          int challengeSize = in.readInt() ;
          in.skipBytes(challengeSize) ;
-         
-         
+
+
          say("<gettingFilesize>") ;
          out.writeInt(4) ; // bytes following
          out.writeInt(9) ;  // locate command
@@ -200,17 +200,17 @@ public class DCapClientProtocol_1 implements MoverProtocol
          if( following < 28 )
            throw new
            IOException( "Protocol Violation : ack too small : "+following);
-         
+
          int type = in.readInt() ;
          if( type != 6 )   // REQUEST_ACK
            throw new
            IOException( "Protocol Violation : NOT REQUEST_ACK : "+type ) ;
-         
+
          int mode = in.readInt() ;
          if( mode != 9 ) // SEEK
            throw new
            IOException( "Protocol Violation : NOT SEEK : "+mode ) ;
-         
+
          int returnCode = in.readInt() ;
          if( returnCode != 0 ){
            String error = in.readUTF() ;
@@ -221,10 +221,10 @@ public class DCapClientProtocol_1 implements MoverProtocol
          long filesize = in.readLong() ;
          say("<WaitingForSpace-"+filesize+">");
          _repository.allocateSpace(filesize) ;
-         //  
+         //
          in.readLong() ;   // file position
-         
-         
+
+
          say("<StartingIO>") ;
          //
          // request the full file
@@ -239,17 +239,17 @@ public class DCapClientProtocol_1 implements MoverProtocol
          if( following < 12 )
            throw new
            IOException( "Protocol Violation : ack too small : "+following);
-         
+
          type = in.readInt() ;
          if( type != 6 )   // REQUEST_ACK
            throw new
            IOException( "Protocol Violation : NOT REQUEST_ACK : "+type ) ;
-         
+
          mode = in.readInt() ;
          if( mode != 2 ) // READ
            throw new
            IOException( "Protocol Violation : NOT SEEK : "+mode ) ;
-         
+
          returnCode = in.readInt() ;
          if( returnCode != 0 ){
            String error = in.readUTF() ;
@@ -273,15 +273,15 @@ public class DCapClientProtocol_1 implements MoverProtocol
          if( type != 8 )   // DATA
            throw new
            IOException( "Protocol Violation : NOT DATA : "+type ) ;
-         
+
          byte [] data = new byte[256*1024] ;
          int nextPacket = 0 ;
          long total     = 0L ;
          while( true ){
             if( ( nextPacket = in.readInt() ) < 0 )break ;
-            
+
             int restPacket = nextPacket ;
-            
+
             while( restPacket > 0 ){
                int block = Math.min( restPacket , data.length ) ;
                //
@@ -316,17 +316,17 @@ public class DCapClientProtocol_1 implements MoverProtocol
          if( following < 12 )
            throw new
            IOException( "Protocol Violation : ack too small : "+following);
-         
+
          type = in.readInt() ;
          if( type != 7 )   // REQUEST_FIN
            throw new
            IOException( "Protocol Violation : NOT REQUEST_ACK : "+type ) ;
-         
+
          mode = in.readInt() ;
          if( mode != 2 ) // READ
            throw new
            IOException( "Protocol Violation : NOT SEEK : "+mode ) ;
-         
+
          returnCode = in.readInt() ;
          if( returnCode != 0 ){
            String error = in.readUTF() ;
@@ -336,7 +336,7 @@ public class DCapClientProtocol_1 implements MoverProtocol
          }
          say("<WaitingForCloseAck>") ;
          //
-         out.writeInt(4) ;  // bytes following 
+         out.writeInt(4) ;  // bytes following
          out.writeInt(4) ;  // close request
          //
          // waiting for reply
@@ -345,17 +345,17 @@ public class DCapClientProtocol_1 implements MoverProtocol
          if( following < 12 )
            throw new
            IOException( "Protocol Violation : ack too small : "+following);
-         
+
          type = in.readInt() ;
          if( type != 6 )   // REQUEST_FIN
            throw new
            IOException( "Protocol Violation : NOT REQUEST_ACK : "+type ) ;
-         
+
          mode = in.readInt() ;
          if( mode != 4 ) // READ
            throw new
            IOException( "Protocol Violation : NOT SEEK : "+mode ) ;
-         
+
          returnCode = in.readInt() ;
          if( returnCode != 0 ){
            String error = in.readUTF() ;
@@ -364,9 +364,9 @@ public class DCapClientProtocol_1 implements MoverProtocol
                         returnCode+") "+error ) ;
          }
          say("<Done>");
-         
+
       }
-   
+
 }
 
 

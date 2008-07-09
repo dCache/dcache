@@ -15,26 +15,26 @@ public class XrootdMoverController implements PhysicalConnectionListener {
 	public XrootdMoverController(XrootdProtocol_2 mover, PhysicalXrootdConnection physicalXrootdConnection) {
 		this.mover = mover;
 		this.physicalXrootdConnection = physicalXrootdConnection;
-		
+
 		physicalXrootdConnection.setMaxStreams(1);
-		
-		
+
+
 		physicalXrootdConnection.setResponseEngine(new SimpleResponseEngine(physicalXrootdConnection));
 		physicalXrootdConnection.getRequestEngine().startEngine();
-		
+
 		physicalXrootdConnection.getStatus().setConnected(true);
 	}
-	
+
 	public void handshakeRequest() {
 		mover.getCell().say("handshake attempt coming from "+physicalXrootdConnection.getNetworkConnection().getSocket().getRemoteSocketAddress().toString());
 	}
 
 	public boolean loginRequest(LoginRequest login) {
-		
+
 //		plug login module here
-		
+
 		mover.getCell().say("login attempt, access granted");
-				
+
 		return true;
 	}
 
@@ -43,7 +43,7 @@ public class XrootdMoverController implements PhysicalConnectionListener {
 //		plug authentitication module here
 
 		mover.getCell().say("authentitication passed");
-		
+
 		return true;
 	}
 
@@ -55,14 +55,14 @@ public class XrootdMoverController implements PhysicalConnectionListener {
 		if (mover != null)
 			mover.setTransferFinished();
 	}
-	
+
 	public XrootdProtocol_2 getMover() {
 		return mover;
 	}
-	
+
 	public PhysicalXrootdConnection getXrootdConnection() {
 		return physicalXrootdConnection;
 	}
 
-		
+
 }

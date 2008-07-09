@@ -90,7 +90,7 @@ import diskCacheV111.util.ChecksumFactory;
 public class GFtpProtocol_1_nio implements MoverProtocol, ChecksumMover,
         NioDataBlocksRecipient {
 
-	
+
 	private final static Logger _logSpaceAllocation = Logger.getLogger("logger.dev.org.dcache.poolspacemonitor." + GFtpProtocol_1_nio.class.getName());
     //
     // <init>( CellAdapter cell ) ;
@@ -199,9 +199,9 @@ public class GFtpProtocol_1_nio implements MoverProtocol, ChecksumMover,
 
         if (mode.equalsIgnoreCase("S")) {
             recvStream(ftp, storage, pnfsId, spaceMonitor);
-        } 
+        }
 	else if (mode.equalsIgnoreCase("E")) {
-	    if (!recvEBlock(ftp, storage, pnfsId, spaceMonitor)) { 
+	    if (!recvEBlock(ftp, storage, pnfsId, spaceMonitor)) {
 		throw new CacheException("failed in recvEBlock");
 	    }
         }
@@ -428,9 +428,9 @@ public class GFtpProtocol_1_nio implements MoverProtocol, ChecksumMover,
                 } else {
                     bigBuffer.limit( (int)(prm_size - _bytesTransferred) + 17);
                 }
-                
+
                 nbytes = _fileChannel.read(bigBuffer);
-                
+
                 if (nbytes <= 0) {
                     break;
                 }
@@ -638,11 +638,11 @@ public class GFtpProtocol_1_nio implements MoverProtocol, ChecksumMover,
         }
         try {
             _eBlockReceiver.start();
-            while (_eBlockReceiver.isAlive()) { 
+            while (_eBlockReceiver.isAlive()) {
                 _eBlockReceiver.join();
 	    }
 	    say("Number of offset ranges = "+_offsetRanges.getRanges().size());
-	    if (!_offsetRanges.isContiguous()) { 
+	    if (!_offsetRanges.isContiguous()) {
 		ftpErrorMsg = "451 Transmission error: " + "lost EB blocks";
 		say(ftpErrorMsg);
 		_offsetRanges.clear();
@@ -743,7 +743,7 @@ public class GFtpProtocol_1_nio implements MoverProtocol, ChecksumMover,
 
         buffer.rewind();
         buffer.position(skipBytes);
-        buffer.limit(length + skipBytes);        
+        buffer.limit(length + skipBytes);
         _fileChannel.write(buffer, fileOffset);
 	_offsetRanges.addRange(new Range(fileOffset,fileOffset+(long)length));
 

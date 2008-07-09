@@ -16,18 +16,18 @@ import  java.lang.reflect.* ;
 public class DCapProtocol_3 implements MoverProtocol {
 
    private static final int INC_SPACE  =  (50*1024*1024) ;
-   //  
+   //
    // <init>( CellAdapter cell ) ;
    //
    private Args          _args      = null ;
    private Dictionary    _context   = null ;
    private CellAdapter      _cell   = null ;
-   
+
    private long _bytesTransferred   = -1 ;
    private long _transferStarted    = 0 ;
    private long _transferTime       = -1 ;
    private long _lastTransferred    = System.currentTimeMillis() ;
-   
+
    private byte [] _bigBuffer       = null ;
    private boolean _debug           = false ;
    private long    _spaceUsed       = 0 ;
@@ -39,10 +39,10 @@ public class DCapProtocol_3 implements MoverProtocol {
    private boolean _io_ok           = true ;
    private long    _ioError         = -1 ;
    private boolean _wasChanged      = false ;
-   
+
    private MoverIoBuffer _defaultBufferSize = new MoverIoBuffer( 256 * 1024 , 256 * 1024 , 256 * 1024 ) ;
    private MoverIoBuffer _maxBufferSize     = new MoverIoBuffer( 1024 * 1024 , 1024 * 1024 , 1024 * 1024 ) ;
-   
+
    public DCapProtocol_3( CellAdapter cell ){
        _cell    = cell ;
        _args    = _cell.getArgs() ;
@@ -53,19 +53,19 @@ public class DCapProtocol_3 implements MoverProtocol {
        // we are created for each request. So our data
        // is not shared.
        //
-       _defaultBufferSize.setBufferSize( 
+       _defaultBufferSize.setBufferSize(
           getParameterInt( "defaultSendBufferSize" , _defaultBufferSize.getSendBufferSize() ) ,
           getParameterInt( "defaultRecvBufferSize" , _defaultBufferSize.getRecvBufferSize() ) ,
-          getParameterInt( "defaultIoBufferSize"   , _defaultBufferSize.getIoBufferSize() ) 
+          getParameterInt( "defaultIoBufferSize"   , _defaultBufferSize.getIoBufferSize() )
                                         ) ;
-       _maxBufferSize.setBufferSize( 
+       _maxBufferSize.setBufferSize(
           getParameterInt( "maxSendBufferSize" , _maxBufferSize.getSendBufferSize() ) ,
           getParameterInt( "maxRecvBufferSize" , _maxBufferSize.getRecvBufferSize() ) ,
-          getParameterInt( "maxIoBufferSize"   , _maxBufferSize.getIoBufferSize() ) 
+          getParameterInt( "maxIoBufferSize"   , _maxBufferSize.getIoBufferSize() )
                                         ) ;
        say("Setup : Defaults Buffer Sizes  : "+_defaultBufferSize ) ;
        say("Setup : Max Buffer Sizes       : "+_maxBufferSize ) ;
-        
+
    }
    private Socket getSocket( InetAddress host , int port ) throws Exception {
       return new Socket( host , port ) ;
@@ -77,7 +77,7 @@ public class DCapProtocol_3 implements MoverProtocol {
           return stringValue == null ? defaultValue : Integer.parseInt(stringValue);
        }catch(Exception ee ){
           return defaultValue ;
-       } 
+       }
    }
    private void debug( String str ){
       if(_debug)_cell.say( "(DCap_3) "+str ) ;
@@ -101,17 +101,17 @@ public class DCapProtocol_3 implements MoverProtocol {
                   StorageInfo  storage ,
                   PnfsId       pnfsId ,
                   SpaceMonitor spaceMonitor ,
-                  int          access   ) 
-                  
+                  int          access   )
+
           throws Exception {
-          
+
         if( ! ( protocol instanceof DCapProtocolInfo ) ){
            throw new
            CacheException( 44 , "protocol info not DCapProtocolInfo" ) ;
-           
+
         }
         Exception ioException = null ;
-        
+
         try{
           String crash = storage.getKey("crash") ;
           if( crash != null ){
@@ -120,7 +120,7 @@ public class DCapProtocol_3 implements MoverProtocol {
               say( "Options : crash = "+crash+" ; type = "+ _crashType ) ;
           }
         }catch(Exception e){}
-        
+
         try{
           String allocation = storage.getKey("alloc-space") ;
           if( allocation != null ){
@@ -131,7 +131,7 @@ public class DCapProtocol_3 implements MoverProtocol {
         say("crash       = "+_crash ) ;
         say("crashType   = "+_crashType ) ;
         say("alloc-space = "+_allocationSpace ) ;
-        
+
         try{
           String debug = storage.getKey("debug") ;
           if( debug != null )say( "Options : debug = "+debug ) ;
@@ -150,13 +150,13 @@ public class DCapProtocol_3 implements MoverProtocol {
         }catch(Exception e){}
         say("ioError = "+_ioError ) ;
 
-        
+
         MoverIoBuffer bufferSize = new MoverIoBuffer( _defaultBufferSize ) ;
-        
+
         {
            String tmp     = null ;
            int    tmpSize = 0 ;
-           
+
            try{
               tmp = storage.getKey("send") ;
               if( tmp != null )
@@ -178,7 +178,7 @@ public class DCapProtocol_3 implements MoverProtocol {
                        Math.min(Integer.parseInt(tmp),_maxBufferSize.getIoBufferSize())
                                              );
            }catch(Exception e){}
-           
+
         }
 
         say("Client : Buffer Sizes : "+bufferSize) ;
@@ -188,8 +188,8 @@ public class DCapProtocol_3 implements MoverProtocol {
         }catch(OutOfMemoryError om){
             _bigBuffer = new byte[32*1024] ;
         }
-        
-        
+
+
         DCapProtocolInfo dcap = (DCapProtocolInfo)protocol ;
         int        sessionId  = dcap.getSessionId() ;
 	int        port       = dcap.getPort() ;
@@ -212,28 +212,28 @@ public class DCapProtocol_3 implements MoverProtocol {
            break ;
         }
         if( dataSocket == null )throw se ;
-         
+
         dataSocket.setReceiveBufferSize( bufferSize.getRecvBufferSize() ) ;
         dataSocket.setSendBufferSize( bufferSize.getSendBufferSize() ) ;
-        
+
         say("Using : Buffer Sizes (send/recv/io) : "+
                dataSocket.getSendBufferSize()+"/"+
                dataSocket.getReceiveBufferSize()+"/"+
                _bigBuffer.length ) ;
-               
+
         String  x = null ;
-        boolean dummyRead  = 
+        boolean dummyRead  =
               ( ( x = storage.getKey("dummyRead") ) != null ) &&
               (   x.equals( "yes" ) ||  x.equals( "on" )       )  ;
-        
-	DCapDataOutputStream ostream   = 
+
+	DCapDataOutputStream ostream   =
                 new DCapDataOutputStream( dataSocket.getOutputStream() ) ;
-        DataInputStream  istream = 
+        DataInputStream  istream =
                 new DataInputStream( dataSocket.getInputStream() ) ;
-                
+
         DCapDataOutputStream cntOut = ostream ;
         DataInputStream      cntIn  = istream ;
-                
+
         say( "Connected to "+host+"("+port+")" ) ;
         //
         // send the sessionId and our (for now) 0 byte security challenge.
@@ -250,8 +250,8 @@ public class DCapProtocol_3 implements MoverProtocol {
         // GO into the command loop
         //
         int     commandSize , commandCode ;
-        boolean notDone  = true ; 
-        int     minSize  = 0 ;               
+        boolean notDone  = true ;
+        int     minSize  = 0 ;
         try{
            while( notDone ){
 //              say( "PostPosition : "+diskFile.getFilePointer() ) ;
@@ -265,46 +265,46 @@ public class DCapProtocol_3 implements MoverProtocol {
                  // this is not an error
                  //
                  esay( "Dataconnection closed by peer : "+eofe ) ;
-                 throw eofe; 
+                 throw eofe;
               }
               if( commandSize < 4 )
                 throw new
                 CacheException(44,"Protocol Violation (cl<4)");
-                
+
               _lastTransferred    = System.currentTimeMillis() ;
-              
+
 //              say( "PrePosition : "+diskFile.getFilePointer() ) ;
-              
+
               commandCode = cntIn.readInt() ;
               switch( commandCode ){
                  //-------------------------------------------------------------
                  //
-                 //                     The Write 
+                 //                     The Write
                  //
                  case DCapConstants.IOCMD_WRITE :
                     //
                     // no further arguments (yet)
-                    // 
-                    minSize = 4 ;   
+                    //
+                    minSize = 4 ;
                     if( commandSize > minSize )
                         cntIn.skipBytes(commandSize-minSize);
-                        
+
                     if( ! _io_ok ){
-                    
+
                        String errmsg = "WRITE denied (IO not ok)" ;
-                       esay(errmsg ) ;            
+                       esay(errmsg ) ;
                        cntOut.writeACK(DCapConstants.IOCMD_WRITE,CacheRepository.ERROR_IO_DISK,errmsg) ;
-                       
+
                     }else if( dcap.isWriteAllowed() ){
-                    
+
                        //
                        //   The 'REQUEST ACK'
                        //
                        cntOut.writeACK(DCapConstants.IOCMD_WRITE) ;
                        //
-                       doTheWrite( diskFile , 
-                                   cntOut , 
-                                   istream , 
+                       doTheWrite( diskFile ,
+                                   cntOut ,
+                                   istream ,
                                    spaceMonitor ) ;
                        //
                        //
@@ -314,18 +314,18 @@ public class DCapProtocol_3 implements MoverProtocol {
                           esay( "Reporting IO problem to client" ) ;
                           cntOut.writeFIN(DCapConstants.IOCMD_WRITE,CacheRepository.ERROR_IO_DISK,"[2]Problem in writing") ;
                        }
-                                   
+
                     }else{
-                    
+
                        String errmsg = "WRITE denied (not allowed)" ;
-                       esay(errmsg ) ;            
+                       esay(errmsg ) ;
                        cntOut.writeACK(DCapConstants.IOCMD_WRITE,CacheRepository.ERROR_IO_DISK,errmsg) ;
-                    
+
                     }
                  break ;
                  //-------------------------------------------------------------
                  //
-                 //                     The Read 
+                 //                     The Read
                  //
                  case DCapConstants.IOCMD_READ :
                     //
@@ -336,104 +336,104 @@ public class DCapProtocol_3 implements MoverProtocol {
                        CacheException(45,"Protocol Violation (clREAD<8)");
 
                     long blockSize = cntIn.readLong() ;
-                    
+
                     if( commandSize > minSize )
-                        cntIn.skipBytes(commandSize-minSize);     
-                    
+                        cntIn.skipBytes(commandSize-minSize);
+
                     debug( "READ byte="+blockSize+(dummyRead?" (dummy)":" (read)") ) ;
 
                     if( _io_ok ){
-                    
+
                        cntOut.writeACK(DCapConstants.IOCMD_READ) ;
                        if( dummyRead ){
                           doDummyRead( diskFile , cntOut , ostream , blockSize ) ;
                        }else{
                           doTheRead( diskFile , cntOut , ostream , blockSize ) ;
-                       }  
+                       }
 
                        if( _io_ok ){
                           cntOut.writeFIN(DCapConstants.IOCMD_READ) ;
                        }else{
                           String errmsg = "FIN : READ failed (IO not ok)" ;
-                          esay(errmsg ) ;            
+                          esay(errmsg ) ;
                           cntOut.writeFIN(DCapConstants.IOCMD_READ,CacheRepository.ERROR_IO_DISK,errmsg) ;
                        }
                     }else{
-                    
+
                        String errmsg = "ACK : READ denied (IO not ok)" ;
-                       esay(errmsg ) ;            
+                       esay(errmsg ) ;
                        cntOut.writeACK(DCapConstants.IOCMD_READ,CacheRepository.ERROR_IO_DISK,errmsg) ;
-                       
+
                     }
 
                  break ;
                  //-------------------------------------------------------------
                  //
-                 //                     The Seek 
+                 //                     The Seek
                  //
                  case DCapConstants.IOCMD_SEEK :
-                 
+
                     minSize = 16 ;
                     if( commandSize < minSize )
                        throw new
                        CacheException(46,"Protocol Violation (clSEEK<16)");
-                       
+
                     long offset = cntIn.readLong() ;
                     int  whence = cntIn.readInt() ;
-                    
+
                     if( commandSize > minSize )
-                        cntIn.skipBytes(commandSize-minSize); 
-                        
+                        cntIn.skipBytes(commandSize-minSize);
+
                     doTheSeek( diskFile , whence , offset , spaceMonitor , dcap.isWriteAllowed()) ;
-                    
+
                     if( _io_ok ){
-                    
+
                       cntOut.writeACK( diskFile.getFilePointer() ) ;
-                    
+
                     }else{
-                    
+
                        String errmsg = "SEEK failed : IOError ";
                        esay(errmsg);
                        cntOut.writeACK(DCapConstants.IOCMD_SEEK,6,errmsg) ;
-                       
+
                     }
-                    
+
                  break ;
                  //-------------------------------------------------------------
                  //
-                 //                     The IOCMD_SEEK_AND_READ 
+                 //                     The IOCMD_SEEK_AND_READ
                  //
                  case DCapConstants.IOCMD_SEEK_AND_READ :
-                 
+
                     minSize = 24 ;
-                    
+
                     if( commandSize < minSize )
                        throw new
                        CacheException(46,"Protocol Violation (DCapConstants.IOCMD_SEEK_AND_READ<16)");
-                       
+
                     offset    = cntIn.readLong() ;
                     whence    = cntIn.readInt() ;
                     blockSize = cntIn.readLong() ;
-                    
+
                     if( commandSize > minSize )
-                        cntIn.skipBytes(commandSize-minSize); 
-                            
+                        cntIn.skipBytes(commandSize-minSize);
+
                     if( _io_ok){
-                    
+
                        cntOut.writeACK(DCapConstants.IOCMD_SEEK_AND_READ) ;
-                       
+
                        doTheSeek( diskFile , whence , offset , spaceMonitor , dcap.isWriteAllowed()) ;
-                       
+
                        if( _io_ok )doTheRead( diskFile , cntOut , ostream , blockSize ) ;
-                       
+
                        if( _io_ok ){
                           cntOut.writeFIN(DCapConstants.IOCMD_SEEK_AND_READ) ;
                        }else{
                           String errmsg = "FIN : SEEK_READ failed (IO not ok)" ;
-                          esay(errmsg ) ;            
+                          esay(errmsg ) ;
                           cntOut.writeFIN(DCapConstants.IOCMD_SEEK_AND_READ,CacheRepository.ERROR_IO_DISK,errmsg) ;
                        }
-                       
+
                     }else{
                        String errmsg = "SEEK_AND_READ denied : IOError "  ;
                        esay(errmsg);
@@ -442,31 +442,31 @@ public class DCapProtocol_3 implements MoverProtocol {
                  break ;
                  //-------------------------------------------------------------
                  //
-                 //                     The IOCMD_SEEK_AND_WRITE 
+                 //                     The IOCMD_SEEK_AND_WRITE
                  //
                  case DCapConstants.IOCMD_SEEK_AND_WRITE :
-                                 
+
                     minSize = 16 ;
                     if( commandSize < minSize )
                        throw new
                        CacheException(46,"Protocol Violation (SEEK_AND_WRITE<16)");
-                       
+
                     offset    = cntIn.readLong() ;
                     whence    = cntIn.readInt() ;
-                    
+
                     if( commandSize > minSize )
-                        cntIn.skipBytes(commandSize-minSize); 
-                            
+                        cntIn.skipBytes(commandSize-minSize);
+
                     if( _io_ok ){
-                    
+
                        cntOut.writeACK(DCapConstants.IOCMD_SEEK_AND_WRITE) ;
-                       
+
                        doTheSeek( diskFile , whence , offset , spaceMonitor , dcap.isWriteAllowed()) ;
-                    
+
                        if( _io_ok )
-                       doTheWrite( diskFile , 
-                                   cntOut , 
-                                   istream , 
+                       doTheWrite( diskFile ,
+                                   cntOut ,
+                                   istream ,
                                    spaceMonitor ) ;
 
                        if( _io_ok ){
@@ -476,7 +476,7 @@ public class DCapProtocol_3 implements MoverProtocol {
                           esay( errmsg ) ;
                           cntOut.writeFIN(DCapConstants.IOCMD_SEEK_AND_WRITE,CacheRepository.ERROR_IO_DISK,errmsg) ;
                        }
-                       
+
                     }else{
                        String errmsg = "SEEK_AND_WRITE denied : IOError" ;
                        esay(errmsg);
@@ -485,13 +485,13 @@ public class DCapProtocol_3 implements MoverProtocol {
                  break ;
                  //-------------------------------------------------------------
                  //
-                 //                     The IOCMD_CLOSE 
+                 //                     The IOCMD_CLOSE
                  //
                  case DCapConstants.IOCMD_CLOSE :
-                    minSize = 4 ;   
+                    minSize = 4 ;
                     if( commandSize > minSize )
                         cntIn.skipBytes(commandSize-minSize);
-                        
+
                     if( _io_ok ){
                        cntOut.writeACK(DCapConstants.IOCMD_CLOSE) ;
                     }else{
@@ -501,10 +501,10 @@ public class DCapProtocol_3 implements MoverProtocol {
                  break ;
                  //-------------------------------------------------------------
                  //
-                 //                     The IOCMD_LOCATE 
+                 //                     The IOCMD_LOCATE
                  //
                  case DCapConstants.IOCMD_LOCATE :
-                    minSize = 4 ;   
+                    minSize = 4 ;
                     if( commandSize > minSize )
                         cntIn.skipBytes(commandSize-minSize);
                     try{
@@ -518,11 +518,11 @@ public class DCapProtocol_3 implements MoverProtocol {
                  break ;
                  default :
                     cntOut.writeACK(666, 9,"Invalid mover command : "+commandCode) ;
-                    
-              
+
+
               }
-               
-          }         
+
+          }
        }catch(Exception e ){
           //
           // this is an error
@@ -531,19 +531,19 @@ public class DCapProtocol_3 implements MoverProtocol {
           esay(e);
           ioException = e ;
        }finally{
-       
+
           try{ dataSocket.close() ; }catch(Exception xe){}
-          
+
           dcap.setBytesTransferred( _bytesTransferred ) ;
-          
-          _transferTime = System.currentTimeMillis() - 
+
+          _transferTime = System.currentTimeMillis() -
                           _transferStarted ;
           dcap.setTransferTime( _transferTime ) ;
-          
+
           say( "(Transfer finished : "+
                     _bytesTransferred+" bytes in "+
                     ( _transferTime/1000 ) +" seconds) " ) ;
-                    
+
           long diskFileSize = diskFile.length() ;
           if( spaceMonitor != null ){
              long freeIt = _spaceAllocated - _spaceUsed ;
@@ -553,16 +553,16 @@ public class DCapProtocol_3 implements MoverProtocol {
           //
           // final check
           //
-          if( ( spaceMonitor != null ) && 
-              (_spaceAllocated > 0   ) && 
+          if( ( spaceMonitor != null ) &&
+              (_spaceAllocated > 0   ) &&
               ( diskFileSize != _spaceUsed   ) ){
-              
+
              esay( "Seems to be an IO error : diskFileSize ("+diskFileSize+") != _spaceUsed("+_spaceUsed+")" ) ;
              //
-             // we have to correct the _spaceUsed here although we will remove 
+             // we have to correct the _spaceUsed here although we will remove
              // the file later because when remove the file, the system
              // return the filesize and not _spaceUsed.
-             // 
+             //
              long freeIt = _spaceUsed - diskFileSize  ;
              if( freeIt > 0 ){
                 esay("Releasing "+freeIt+" bytes" ) ;
@@ -573,7 +573,7 @@ public class DCapProtocol_3 implements MoverProtocol {
              }
              _io_ok = false ;
           }
-          
+
           //
           // if we got an EOF from the inputstream
           // we cancel the request but we don't want to
@@ -581,22 +581,22 @@ public class DCapProtocol_3 implements MoverProtocol {
           //
           if( ( ioException != null ) &&
               ( ioException instanceof EOFException ) )throw ioException ;
-              
+
           if( ! _io_ok )
              throw new
-             CacheException( 
-                  CacheRepository.ERROR_IO_DISK , 
+             CacheException(
+                  CacheRepository.ERROR_IO_DISK ,
                   "Disk I/O Error"      ) ;
-               
-          
+
+
        }
-          
+
    }
-   private void doTheSeek( RandomAccessFile diskFile , int whence , long offset , 
+   private void doTheSeek( RandomAccessFile diskFile , int whence , long offset ,
                            SpaceMonitor spaceMonitor , boolean writeAllowed )
            throws Exception {
-      
-       try{  
+
+       try{
          long eofSize   = diskFile.length() ;
          long position  = diskFile.getFilePointer() ;
 	 long newOffset = 0L ;
@@ -624,7 +624,7 @@ public class DCapProtocol_3 implements MoverProtocol {
 	 if( ( newOffset > eofSize ) && ! writeAllowed )
 	       throw new
 	       IOException("Seek beyond EOF not allowed (write not allowed)") ;
-	       
+
          //
          // if there is a space monitor, we use it
          //
@@ -639,7 +639,7 @@ public class DCapProtocol_3 implements MoverProtocol {
                }
          }
          diskFile.seek( newOffset) ;
-	 _spaceUsed = Math.max(newOffset,_spaceUsed) ;	 
+	 _spaceUsed = Math.max(newOffset,_spaceUsed) ;
       }catch(Exception ee ){
 //
 //          don't disable pools because of this.
@@ -647,8 +647,8 @@ public class DCapProtocol_3 implements MoverProtocol {
 //         _io_ok = false ;
          esay( "Problem in seek : "+ee ) ;
       }
-           
-           
+
+
    }
    private void doTheWrite( RandomAccessFile     diskFile ,
                             DCapDataOutputStream cntOut ,
@@ -662,11 +662,11 @@ public class DCapProtocol_3 implements MoverProtocol {
         int len = istream.readInt() ;
         int com = istream.readInt() ;
         if( com != DCapConstants.IOCMD_DATA )
-          throw new 
+          throw new
           IOException( "Expecting : "+DCapConstants.IOCMD_DATA+" ; got : "+com ) ;
 
         while( ! Thread.currentThread().isInterrupted()){
-        
+
            _status = "WaitingForSize" ;
            int nextBlockSize = rest = istream.readInt() ;
            debug( "Next data block : "+rest+" bytes" ) ;
@@ -695,7 +695,7 @@ public class DCapProtocol_3 implements MoverProtocol {
            while( rest > 0  ){
               size = data.length > rest ?
                      rest : data.length ;
-              _status = "WaitingForInput" ; 
+              _status = "WaitingForInput" ;
               rc = istream.read( data , 0 , size ) ;
               if( rc <= 0 )break ;
               if( _io_ok ){
@@ -704,27 +704,27 @@ public class DCapProtocol_3 implements MoverProtocol {
                      diskFile.write( data , 0 , rc ) ;
                  }catch(IOException ioe){
                      esay( "IOException in writing data to disk : "+ioe ) ;
-                     _io_ok = false ; 
+                     _io_ok = false ;
                  }
               }
               rest -= rc ;
               _bytesTransferred += rc ;
-              if( ( _ioError > 0L ) && 
+              if( ( _ioError > 0L ) &&
                   ( _bytesTransferred > _ioError ) ){ _io_ok = false ; }
            }
            _spaceUsed = Math.max( position + nextBlockSize , _spaceUsed ) ;
            debug( "Block Done" ) ;
-        } 
+        }
         _status = "Done" ;
-        
+
         return ;
-                           
+
    }
    private void doTheRead( RandomAccessFile  diskFile ,
                            DCapDataOutputStream  cntOut ,
                            DCapDataOutputStream  ostream ,
                            long              blockSize ) throws Exception{
-                           
+
         //
         // REQUEST WRITE
         //
@@ -734,7 +734,7 @@ public class DCapProtocol_3 implements MoverProtocol {
         if( blockSize == 0 ){
            cntOut.writeInt(0) ;
            cntOut.writeInt(-1) ;
-           return ;        
+           return ;
         }
         long    rest = blockSize ;
         byte [] data = _bigBuffer ;
@@ -754,24 +754,24 @@ public class DCapProtocol_3 implements MoverProtocol {
            ostream.writeDATA_BLOCK( data , 0 , rc  ) ;
            rest -= rc ;
            _bytesTransferred += rc ;
-           if( ( _ioError > 0L ) && ( _bytesTransferred > _ioError ) ){ 
-              _io_ok = false ; 
+           if( ( _ioError > 0L ) && ( _bytesTransferred > _ioError ) ){
+              _io_ok = false ;
               break ;
            }
            if( rest <= 0 )break ;
-        } 
+        }
         //
         // data chain delimiter
-        //          
+        //
         ostream.writeDATA_TRAILER() ;
-        
+
         return ;
    }
    private void doDummyRead( RandomAccessFile     diskFile ,
                              DCapDataOutputStream cntOut ,
                              DCapDataOutputStream ostream ,
                              long                 blockSize ) throws Exception{
-                           
+
         //
         // REQUEST ACK
         //
@@ -785,11 +785,11 @@ public class DCapProtocol_3 implements MoverProtocol {
         long fileLength = diskFile.length() ;
         long position   = diskFile.getFilePointer() ;
         long fileRest   = Math.max( fileLength - position , 0 ) ;
-        
+
         if( blockSize == 0 ){
            cntOut.writeInt(0) ;
            cntOut.writeInt(-1) ;
-           return ;        
+           return ;
         }
         long    rest = blockSize ;
         byte [] data = _bigBuffer ;
@@ -808,26 +808,26 @@ public class DCapProtocol_3 implements MoverProtocol {
               transferred       += (long)rc ;
               fileRest          -= (long)rc ;
               if( rest <= 0 )break ;
-           } 
+           }
         }catch(Exception  e ){
            esay("Exception in doTheRead : "+e ) ;
            throw e ;
-        } 
+        }
         diskFile.seek( position + transferred ) ;
         //
         // data chain delimiter
-        //          
+        //
         ostream.writeDATA_TRAILER() ;
-        
-        
+
+
         return ;
    }
    public long getLastTransferred() { return _lastTransferred ; }
    public long getBytesTransferred(){ return _bytesTransferred  ; }
-   public long getTransferTime(){ 
-       return _transferTime < 0 ?  
+   public long getTransferTime(){
+       return _transferTime < 0 ?
               System.currentTimeMillis() - _transferStarted :
-              _transferTime  ; 
+              _transferTime  ;
    }
    //
    //   attributes
@@ -835,7 +835,7 @@ public class DCapProtocol_3 implements MoverProtocol {
    public synchronized void setAttribute( String name , Object attribute ){
       if( name.equals( "allocationSpace" ) ){
          if( attribute instanceof Integer )_allocationSpace = ((Integer)attribute).intValue() ;
-         else{         
+         else{
             _allocationSpace = Integer.parseInt( attribute.toString() ) ;
          }
       }

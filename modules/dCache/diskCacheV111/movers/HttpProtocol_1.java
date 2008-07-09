@@ -22,12 +22,12 @@ import java.net.InetAddress;
 import java.util.Hashtable;
 import java.util.StringTokenizer;
 
-public class HttpProtocol_1 implements MoverProtocol 
+public class HttpProtocol_1 implements MoverProtocol
 {
    public static final int READ   =  1 ;
    public static final int WRITE  =  2 ;
-   public static final long SERVER_LIFE_SPAN= 60 * 5 * 1000; /* 5 minutes */ 
-  
+   public static final long SERVER_LIFE_SPAN= 60 * 5 * 1000; /* 5 minutes */
+
    private CellAdapter      _cell;
    private HttpProtocolInfo httpProtocolInfo;
    private ServerSocket httpserver;
@@ -36,7 +36,7 @@ public class HttpProtocol_1 implements MoverProtocol
    private long timeout_time;
    private long start_transfer_time    = System.currentTimeMillis() ;
 
-   //  
+   //
    // <init>( CellAdapter cell ) ;
    //
 
@@ -59,9 +59,9 @@ public class HttpProtocol_1 implements MoverProtocol
                       ProtocolInfo protocol ,
                       StorageInfo  storage ,
                       PnfsId       pnfsId  ,
-                      SpaceMonitor spaceMonitor , 
-                      int          access ) 
-       throws Exception 
+                      SpaceMonitor spaceMonitor ,
+                      int          access )
+       throws Exception
    {
      say("runIO("+diskFile+",\n"+
      protocol+",\n"+storage+",\n"+pnfsId+",\n"+spaceMonitor+",\n"+access+")");
@@ -82,7 +82,7 @@ public class HttpProtocol_1 implements MoverProtocol
      }
      starttime = System.currentTimeMillis();
      this.httpserver = ss;
-     
+
      httpProtocolInfo = (HttpProtocolInfo) protocol;
      StringBuffer url_sb = new StringBuffer("http://");
      url_sb.append(InetAddress.getLocalHost ().getHostName ());
@@ -95,14 +95,14 @@ public class HttpProtocol_1 implements MoverProtocol
       say(" redirecting to  "+
           url_sb.toString());
 
-     CellPath cellpath = new CellPath(httpProtocolInfo.getHttpDoorCellName (), 
+     CellPath cellpath = new CellPath(httpProtocolInfo.getHttpDoorCellName (),
                                         httpProtocolInfo.getHttpDoorDomainName ());
       say(" runIO() cellpath="+cellpath);
-     HttpDoorUrlInfoMessage httpDoorMessage = 
+     HttpDoorUrlInfoMessage httpDoorMessage =
        new HttpDoorUrlInfoMessage(pnfsId.getId (),url_sb.toString());
       say(" runIO() created message");
      _cell.sendMessage (new CellMessage(cellpath,httpDoorMessage));
-     
+
      try
      {
          httpserver.setSoTimeout((int) SERVER_LIFE_SPAN);
@@ -125,14 +125,14 @@ public class HttpProtocol_1 implements MoverProtocol
           String header =httpconnection.getHeaderValue(headers[i]);
           say("header["+i+"]="+headers[i]+":"+header);
         }
-        
+
         URL url = httpconnection.getUrl();
         String path = url.getPath();
         say("url returned path : "+path);
 
         PnfsFile transferfile = new PnfsFile(url.getPath());
         PnfsFile requestedfile = new PnfsFile(httpProtocolInfo.getPath());
-        
+
         if(!transferfile.equals (requestedfile))
         {
           say("incorrect file requested : "+url.getPath());
@@ -147,7 +147,7 @@ public class HttpProtocol_1 implements MoverProtocol
      catch(java.net.SocketTimeoutException ste)
      {
        say("(HttpProtocol_1) http servet timeout ");
-       
+
      }
      catch(Exception e)
      {
@@ -167,15 +167,15 @@ public class HttpProtocol_1 implements MoverProtocol
      }
      say(" runIO() done");
    }
-   public long getLastTransferred() 
-   { 
+   public long getLastTransferred()
+   {
        if(httpconnection == null)
        {
             return  start_transfer_time;
        }
        return httpconnection.getLast_transfer_time();
    }
-   
+
    private synchronized void setTimeoutTime(long t)
    {
      timeout_time = t;
@@ -184,30 +184,30 @@ public class HttpProtocol_1 implements MoverProtocol
    {
      return timeout_time;
    }
-   public void setAttribute( String name , Object attribute ) 
+   public void setAttribute( String name , Object attribute )
    {
    }
-   public Object getAttribute( String name ) 
+   public Object getAttribute( String name )
    {
      return null;
    }
-   public long getBytesTransferred() 
+   public long getBytesTransferred()
    {
        if(httpconnection == null)
        {
             return  0;
        }
        return httpconnection.transfered();
-           
+
    }
-   
-   public long getTransferTime() 
+
+   public long getTransferTime()
    {
       return System.currentTimeMillis() - start_transfer_time;
    }
    public boolean wasChanged(){ return false ; }
 
-  
+
 }
 
 
