@@ -1188,7 +1188,6 @@ public class PnfsManagerV3 extends CellAdapter {
 
         String path = pnfsMessage.getPath();
         PnfsId pnfsId = pnfsMessage.getPnfsId();
-        PnfsId currentId = null;
         
         try {
             
@@ -1197,7 +1196,9 @@ public class PnfsManagerV3 extends CellAdapter {
             }
             
             if( path != null ) {
-                currentId = _nameSpaceProvider.pathToPnfsid(path, false);
+            	
+                PnfsId pnfsIdFromPath = _nameSpaceProvider.pathToPnfsid(path, false);
+                
                 /*
                  * raice condition check:
                  * 
@@ -1207,15 +1208,16 @@ public class PnfsManagerV3 extends CellAdapter {
                  * If both path and id defined check that path points to defined id
                  */
                 if( pnfsId != null ) {                    
-                    if( !currentId.equals(pnfsId) ) {
+                    if( !pnfsIdFromPath.equals(pnfsId) ) {
                         throw new FileNotFoundCacheException("pnfsid do not corresopnds to provided file");
                     }
+                } else {
+                	pnfsId = pnfsIdFromPath;
                 }
                 
                 say("delete PNFS entry for "+ path );
                 _nameSpaceProvider.deleteEntry(path);
             } else {
-                currentId = pnfsId;
                 say("delete PNFS entry for "+ pnfsId );
                 _nameSpaceProvider.deleteEntry( pnfsId );
             }
@@ -1237,7 +1239,7 @@ public class PnfsManagerV3 extends CellAdapter {
             _xdeleteEntry.failed() ;
         } else if( _pnfsDeleteNotificationRelay != null ) {
             PnfsDeleteEntryNotificationMessage deleteNotification =
-                new PnfsDeleteEntryNotificationMessage(currentId,path);
+                new PnfsDeleteEntryNotificationMessage(pnfsId,path);
             try{
 
                 sendMessage( new CellMessage( _pnfsDeleteNotificationRelay,
