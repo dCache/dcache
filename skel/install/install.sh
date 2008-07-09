@@ -888,8 +888,8 @@ dcacheInstallPnfsMountPointServer()
     exit 1
   fi
   dcacheNameServerIs
-  dcacheNameServerIs=$?
-  if [ "${dcacheNameServerIs}" == "1" ]
+  dcacheNameServerIsRc=$?
+  if [ "${dcacheNameServerIsRc}" == "1" ]
   then
     dcacheInstallPnfsConfigCheck
   fi
@@ -912,10 +912,11 @@ dcacheInstallPnfsMountPoints()
   isGridFtp=$?
   dcacheInstallGetUseSrm
   isSrm=$?
-  
+  dcacheNameServerIs
+  dcacheNameServerIsRc=$?
   dcacheInstallGetIsPnfsManager
   isPnfsManager=$?
-  if [ "${isAdmin}" == "1" -o "${isPnfsManager}" == "1" ] ; then
+  if [ "${dcacheNameServerIsRc}" == "1" -o "${isPnfsManager}" == "1" ] ; then
     dcacheInstallPnfsMountPointServer
   else 
     if [ "${isPnfsManager}${isGridFtp}" == "01" -o "${isPnfsManager}${isSrm}" == "01" ] ; then
@@ -1416,14 +1417,14 @@ fi
 
 
 dcacheNameServerIs
-dcacheNameServerIs=$?
+dcacheNameServerIsRc=$?
 dcacheInstallGetIsAdmin
 isAdmin=$?
 dcacheInstallGetUseGridFtp
 isGridFtp=$?
 dcacheInstallGetUseSrm
 isSrm=$?
-nodetype=$(echo "${dcacheNameServerIs}${isAdmin}${isGridFtp}${isSrm}" | grep 1)
+nodetype=$(echo "${dcacheNameServerIsRc}${isAdmin}${isGridFtp}${isSrm}" | grep 1)
 
 if [ "X${nodetype}" != "X" ]
 then
