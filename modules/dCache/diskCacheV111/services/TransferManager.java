@@ -347,6 +347,7 @@ public abstract class TransferManager extends CellAdapter {
 				pm = pmf.getPersistenceManager();
 				sb.append("Success...\n");
 			} catch (Exception e) {
+                                esay(e);
 				sb.append("Failure...\n");
 				sb.append("setting doDbLog back to false. \n");
 				sb.append("Try to set correct Jdbc driver, username or password for DB connection.\n");

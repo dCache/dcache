@@ -185,7 +185,7 @@
 			<filename name="tomcat/apache-tomcat-5.5.20/common/lib/*.jar" />
 			<filename name="tomcat/apache-tomcat-5.5.20/server/lib/*.jar" />
 			<filename name="jpox/jdo2-api-2.0.jar" />
-			<filename name="jpox/jpox-SNAPSHOT.jar" />
+			<filename name="jpox/jpox-core-1.2.2.jar" />
 		</or>
 	</selector>
 
@@ -209,8 +209,9 @@
 			<filename name="jpox/bcel-5.1.jar" />
 			<filename name="jpox/log4j-1.2.13.jar" />
 			<filename name="jpox/jdo2-api-2.0.jar" />
-			<filename name="jpox/jpox-enhancer-SNAPSHOT.jar" />
-			<filename name="jpox/jpox-SNAPSHOT.jar" />
+			<filename name="jpox/jpox-enhancer-1.2.2.jar" />
+			<filename name="jpox/jpox-core-1.2.2.jar" />
+			<filename name="asm/asm-3.1.jar" />
 		</or>
 	</selector>
 
@@ -848,7 +849,8 @@
 		<!-- jpox -->
 		<mkdir dir="${binDir}/classes/jpox" />
 		<copy file="${libDir}/jpox/jdo2-api-2.0.jar" todir="${binDir}/classes/jpox" />
-		<copy file="${libDir}/jpox/jpox-SNAPSHOT.jar" todir="${binDir}/classes/jpox" />
+		<copy file="${libDir}/jpox/jpox-core-1.2.2.jar" todir="${binDir}/classes/jpox" />
+		<copy file="${libDir}/jpox/jpox-rdbms-1.2.2.jar" todir="${binDir}/classes/jpox" />
 
 		<!-- bouncy castle -->
 		<mkdir dir="${binDir}/classes/security" />
