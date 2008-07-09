@@ -85,13 +85,13 @@
        give it a name and we cannot reference it from anywhere else.
   -->
   <bean id="pnfs" class="diskCacheV111.util.PnfsHandler">
-    <constructor-arg ref="cell"/>
     <constructor-arg>
       <bean class="dmg.cells.nucleus.CellPath">
         <constructor-arg value="${pnfsmanager}"/>
       </bean>
     </constructor-arg>
     <constructor-arg value="${poolname}"/>
+    <property name="cellEndpoint" ref="cell"/>    
   </bean>
 
   <bean id="repository" class="org.dcache.pool.repository.v5.CacheRepositoryV5">
