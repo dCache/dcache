@@ -2134,7 +2134,7 @@ public class PoolV4 extends AbstractCell
         _poolMode.setMode(mode);
 
         _pingThread.sendPoolManagerMessage(true);
-        esay("New Pool Mode : " + _poolMode);
+        esay("Pool mode changed to " + _poolMode);
     }
 
     /**
@@ -2148,7 +2148,7 @@ public class PoolV4 extends AbstractCell
         _poolStatusMessage = "OK";
 
         _pingThread.sendPoolManagerMessage(true);
-        esay("New Pool Mode : " + _poolMode);
+        esay("Pool mode changed to " + _poolMode);
     }
 
     private class PoolManagerPingThread implements Runnable
