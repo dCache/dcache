@@ -833,7 +833,7 @@ dcacheInstallPnfsMountPointServer()
     logmessage INFO "[INFO]  Creating link ${PNFS_ROOT}/ftpBase --> ${pnfsMountPoint} which is used by the GridFTP door."
     ln -s ${pnfsMountPoint} ${PNFS_ROOT}/ftpBase
   else
-    ftpBaseLinkedTo=`find ${PNFS_ROOT}/ftpBase -type l | xargs readlink `
+    ftpBaseLinkedTo=`ls -l ${PNFS_ROOT}/ftpBase | awk '{print $NF}'`
     if [ "${ftpBaseLinkedTo}" = "${pnfsMountPoint}" ] ; then
       logmessage INFO "Link ${PNFS_ROOT}/ftpBase --> ${pnfsMountPoint} already there."
     else
@@ -1435,9 +1435,13 @@ dcacheInstallSshKeys
 dcacheInstallCreateWrappers
 
 
-
-
-dcacheInstallMountPoints
+nameServerFormat=`printConfig NAMESPACE`
+if [ "${nameServerFormat}" != "pnfs" -a "${nameServerFormat}" != "chimera" ]
+then
+  logmessage WARNING "node_config does not have NAMESPACE set to chimera or pnfs. Skipping setup of mount points."
+else
+  dcacheInstallMountPoints
+fi
 
 dcacheInstallSrm
 dcacheInstallPool
