@@ -21,7 +21,6 @@ import dmg.cells.nucleus.CellAdapter;
 import dmg.util.Args;
 
 import org.dcache.services.AbstractCell;
-import org.dcache.cell.CellEndpoint;
 import org.dcache.cell.CellMessageReceiver;
 import org.dcache.cell.CellMessageSender;
 import org.dcache.cell.ThreadFactoryAware;
@@ -60,8 +59,7 @@ import org.springframework.beans.BeanWrapperImpl;
  */
 public class UniversalSpringCell
     extends AbstractCell
-    implements CellEndpoint,
-               BeanPostProcessor
+    implements BeanPostProcessor
 {
     /**
      * Spring application context. All beans are created through this

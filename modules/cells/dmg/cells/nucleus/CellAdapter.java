@@ -34,8 +34,9 @@ import org.apache.log4j.Logger;
   */
 
 public class   CellAdapter
-       extends CommandInterpreter
-       implements Cell, CellEventListener  {
+    extends CommandInterpreter
+    implements Cell, CellEventListener, CellEndpoint
+{
 
    private final CellNucleus _nucleus   ;
    private final Gate        _readyGate = new Gate(false) ;

@@ -1,5 +1,6 @@
 package org.dcache.cell;
 
+import dmg.cells.nucleus.CellEndpoint;
 
 /**
  * Classes implementing this interface can send Cell messages through

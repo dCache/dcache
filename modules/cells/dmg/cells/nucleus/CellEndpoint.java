@@ -1,10 +1,6 @@
-package org.dcache.cell;
+package dmg.cells.nucleus;
 
 import java.io.NotSerializableException;
-
-import dmg.cells.nucleus.CellMessage;
-import dmg.cells.nucleus.CellMessageAnswerable;
-import dmg.cells.nucleus.NoRouteToCellException;
 
 /**
  * Interface for sending messages.

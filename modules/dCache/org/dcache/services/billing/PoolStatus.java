@@ -12,8 +12,8 @@ import dmg.util.Args;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
+import dmg.cells.nucleus.CellEndpoint;
 
-import org.dcache.cell.CellEndpoint;
 import org.dcache.cell.CellMessageSender;
 import org.dcache.cell.CellCommandListener;
 
