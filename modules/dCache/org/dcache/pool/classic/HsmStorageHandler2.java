@@ -32,7 +32,6 @@ import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
-import dmg.util.Logable;
 
 import diskCacheV111.pools.HsmRemoveTask;
 import diskCacheV111.util.Batchable;
@@ -84,7 +83,6 @@ public class HsmStorageHandler2
         new ThreadPoolExecutor(1, 1, Long.MAX_VALUE, TimeUnit.NANOSECONDS,
                                new LinkedBlockingQueue());
 
-    private Logable _log;
     private long _maxRuntime = 4 * 3600 * 1000; // 4 hours
     private long _maxStoreRun = _maxRuntime;
     private long _maxRestoreRun = _maxRuntime;
@@ -175,9 +173,6 @@ public class HsmStorageHandler2
         _pnfs = pnfs;
         _cell = cell;
         _checksumModule = checksumModule;
-
-        if (cell instanceof Logable)
-            setLogable((Logable)cell);
 
         _fetchQueue = new SimpleJobScheduler(cell.getNucleus(), "F");
         _storeQueue = new SimpleJobScheduler(cell.getNucleus(), "S");
@@ -278,14 +273,6 @@ public class HsmStorageHandler2
         String completeCommand = sb.toString();
         say("HSM_COMMAND : "+completeCommand);
         return completeCommand;
-    }
-
-    //
-    //   utils for the printout
-    //
-    public synchronized void setLogable(Logable log)
-    {
-        _log = log;
     }
 
     private void say(String msg)
@@ -558,7 +545,7 @@ public class HsmStorageHandler2
                 say("Got Space (" + fileSize + " bytes)");
 
                 RunSystem run =
-                    new RunSystem(fetchCommand, _maxLines, _maxRestoreRun, _log);
+                    new RunSystem(fetchCommand, _maxLines, _maxRestoreRun);
                 run.go();
                 returnCode = run.getExitValue();
                 if (returnCode != 0) {
@@ -754,7 +741,7 @@ public class HsmStorageHandler2
         assert message.getMessageObject() instanceof PoolRemoveFilesFromHSMMessage;
 
         HsmRemoveTask task =
-            new HsmRemoveTask(_cell, _log,
+            new HsmRemoveTask(_cell,
                               _hsmRemoveTaskExecutor,
                               _hsmSet, _maxRemoveRun, message);
         _hsmRemoveExecutor.execute(task);
@@ -963,7 +950,7 @@ public class HsmStorageHandler2
                         getStoreCommand(handle.getFile(), pnfsId, storageInfo);
 
                     RunSystem run =
-                        new RunSystem(storeCommand, _maxLines, _maxStoreRun, _log);
+                        new RunSystem(storeCommand, _maxLines, _maxStoreRun);
                     run.go();
                     returnCode = run.getExitValue();
                     if (returnCode != 0) {
