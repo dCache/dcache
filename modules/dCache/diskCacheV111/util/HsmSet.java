@@ -11,7 +11,7 @@ import dmg.util.*;
  * Each HSM has a case sensitive instance name which uniquely
  * identifies this particular tape system throughout dCache. Notice
  * that multiple pools can be attached to the same HSM. In that case
- * the instance name must be the same at each pool. 
+ * the instance name must be the same at each pool.
  *
  * An HSM also has a type, e.g. OSM or Enstore. The type is not case
  * sensitive.  Traditionally, the type was called the HSM name. It is
@@ -20,21 +20,21 @@ import dmg.util.*;
  * Earlier versions of dCache did not specify an instance name. For
  * compatibility, the type may serve as an instance name.
  */
-public class HsmSet 
+public class HsmSet
 {
     private final Map<String,HsmInfo> _hsm = new HashMap<String,HsmInfo>();
 
-    /** 
+    /**
      * Information about a particular HSM instance.
      */
-    public class HsmInfo 
+    public class HsmInfo
     {
         private final String    _type;
         private final String    _instance;
         private final Map<String,String> _attr = new HashMap<String,String>();
 
         /**
-         * Constructs an HsmInfo object. 
+         * Constructs an HsmInfo object.
          *
          * @param instance A unique instance name.
          * @param type     The HSM type, e.g. OSM or enstore.
@@ -58,7 +58,7 @@ public class HsmSet
          */
         public String getType()
         {
-            return _type; 
+            return _type;
         }
 
         /**
@@ -98,7 +98,7 @@ public class HsmSet
          */
         public Set<Map.Entry<String, String>> attributes()
         {
-            return _attr.entrySet(); 
+            return _attr.entrySet();
         }
     }
 
@@ -109,7 +109,7 @@ public class HsmSet
      */
     public Set<String> getHsmInstances()
     {
-        return _hsm.keySet(); 
+        return _hsm.keySet();
     }
 
     /**
@@ -118,7 +118,7 @@ public class HsmSet
      *
      * @param instance An HSM instance name.
      */
-    public HsmInfo getHsmInfoByName(String instance) 
+    public HsmInfo getHsmInfoByName(String instance)
     {
        return _hsm.get(instance);
     }
@@ -129,7 +129,7 @@ public class HsmSet
      *
      * @param type An HSM type name.
      */
-    public List<HsmInfo> getHsmInfoByType(String type) 
+    public List<HsmInfo> getHsmInfoByType(String type)
     {
         List<HsmInfo> result = new ArrayList<HsmInfo>(_hsm.size());
         for (HsmInfo hsm : _hsm.values()) {
@@ -141,7 +141,7 @@ public class HsmSet
     }
 
     /**
-     * Removes any information about the named HSM. 
+     * Removes any information about the named HSM.
      *
      * @param instance An HSM instance name.
      */
@@ -169,13 +169,13 @@ public class HsmSet
      * Scans an argument set for options and applies those as
      * attributes to an HsmInfo object.
      */
-    private void _scanOptions(HsmInfo info, Args args) 
+    private void _scanOptions(HsmInfo info, Args args)
     {
        Enumeration<String> e = args.options().keys();
        while (e.hasMoreElements()) {
           String optName  = e.nextElement();
           String optValue = args.getOpt(optName);
-          
+
           info.setAttribute(optName, optValue == null ? "" : optValue);
        }
     }
@@ -188,7 +188,7 @@ public class HsmSet
     {
        Enumeration<String> e = args.options().keys();
        while (e.hasMoreElements()) {
-          String optName  = e.nextElement();          
+          String optName  = e.nextElement();
           info.unsetAttribute(optName);
        }
     }
@@ -234,7 +234,7 @@ public class HsmSet
     public String hh_hsm_remove = "<hsmName>";
     public String ac_hsm_remove_$_1(Args args)
     {
-       removeInfo(args.argv(0)); 
+       removeInfo(args.argv(0));
        return "";
     }
 
@@ -258,7 +258,7 @@ public class HsmSet
     {
         assert instance != null;
 
-        HsmInfo info = getHsmInfoByName(instance);        
+        HsmInfo info = getHsmInfoByName(instance);
         if (info == null) {
             sb.append(instance + " not found\n");
         } else {
