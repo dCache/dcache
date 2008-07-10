@@ -11,6 +11,7 @@ import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.event.CacheEvent;
 import diskCacheV111.util.event.CacheNeedSpaceEvent;
 import diskCacheV111.util.event.CacheRepositoryEvent;
+import dmg.cells.nucleus.CellAdapter;
 
 /**
  *
