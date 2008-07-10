@@ -28,12 +28,14 @@ import org.dcache.chimera.namespace.ChimeraOsmStorageInfoExtractor;
 import org.dcache.chimera.namespace.ChimeraStorageInfoExtractable;
 import org.dcache.chimera.nfs.v4.DeviceID;
 import org.dcache.chimera.nfs.v4.DeviceManager;
+import org.dcache.chimera.nfs.v4.HimeraNFS4Exception;
 import org.dcache.chimera.nfs.v4.HimeraNFS4Server;
 import org.dcache.chimera.nfs.v4.NFS4IoDevice;
 import org.dcache.chimera.nfs.v4.NFSv41DeviceManager;
 import org.dcache.chimera.nfs.v4.device_addr4;
 import org.dcache.chimera.nfs.v4.layoutiomode4;
 import org.dcache.chimera.nfs.v4.nfs4_prot;
+import org.dcache.chimera.nfs.v4.nfsstat4;
 import org.dcache.chimera.nfs.v4.stateid4;
 import org.dcache.chimera.nfs.v4.uint32_t;
 import org.dcache.chimera.nfsv41.mover.NFS4ProtocolInfo;
@@ -87,7 +89,7 @@ public class NFSv41Door extends CellAdapter implements NFSv41DeviceManager {
     private final String _poolManagerName = "PoolManager";
 
     /** request/reply mapping */
-    private final Map<Long, NFS4IoDevice> _requestReplayMap = new HashMap<Long, NFS4IoDevice>();
+    private final Map<Long, RequestReply> _requestReplyMap = new HashMap<Long, RequestReply>();
     private final AtomicLong _requestCounter = new AtomicLong(0);
 
     public NFSv41Door(String cellName, String args) throws Exception {
@@ -197,6 +199,10 @@ public class NFSv41Door extends CellAdapter implements NFSv41DeviceManager {
             } else {
                 _log.error("pool error: " + selectPoolMsg.getReturnCode() + " "
                         + selectPoolMsg.getErrorObject());
+                synchronized (_requestReplyMap) {
+                    _requestReplyMap.put(selectPoolMsg.getId(), new RequestReply(selectPoolMsg.getReturnCode(), selectPoolMsg.getErrorObject()) );
+                    _requestReplyMap.notifyAll();
+                }
             }
 
         }
@@ -250,9 +256,9 @@ public class NFSv41Door extends CellAdapter implements NFSv41DeviceManager {
                     " inet: " + poolAddress);
         }
 
-        synchronized (_requestReplayMap) {
-            _requestReplayMap.put(message.getId(), device );
-            _requestReplayMap.notifyAll();
+        synchronized (_requestReplyMap) {
+            _requestReplyMap.put(message.getId(), new RequestReply(device) );
+            _requestReplyMap.notifyAll();
         }
 
     }
@@ -339,19 +345,23 @@ public class NFSv41Door extends CellAdapter implements NFSv41DeviceManager {
             throw new IOException(ce.getMessage());
         }
 
-        synchronized (_requestReplayMap) {
+        synchronized (_requestReplyMap) {
 
-            while (_requestReplayMap.isEmpty()
-                    || !_requestReplayMap.containsKey(myRequstId)) {
+            while (_requestReplyMap.isEmpty()
+                    || !_requestReplyMap.containsKey(myRequstId)) {
 
                 try {
-                    _requestReplayMap.wait();
+                    _requestReplyMap.wait();
                 } catch (InterruptedException e) {
                     throw new IOException(e.getMessage());
                 }
             }
 
-            device = _requestReplayMap.remove(myRequstId);
+            RequestReply reply = _requestReplyMap.remove(myRequstId);
+            if( reply.getStatus() != 0 ) {
+                throw new HimeraNFS4Exception(nfsstat4.NFS4ERR_LAYOUTTRYLATER, "failed to get layout: " + reply.getError());
+            }
+            device = reply.getDevice();
             _log.debug("request: " + myRequstId + " : recieved device: " + Arrays.toString(device.getDeviceId()));
 
         }
@@ -409,5 +419,40 @@ public class NFSv41Door extends CellAdapter implements NFSv41DeviceManager {
         /*
          * here we have to connect find pool+mover by stateid and kill it
          */
+    }
+
+
+    /*
+     * just a dummy class to pass to requester reply or error code
+     */
+    private static class RequestReply {
+
+        private final int _status;
+        private final NFS4IoDevice _device;
+        private final Object _error;
+
+        RequestReply(NFS4IoDevice device) {
+            _status = 0;
+            _device = device;
+            _error = null;
+        }
+
+        RequestReply(int status, Object error) {
+            _status = status;
+            _device = null;
+            _error = error;
+        }
+
+        NFS4IoDevice getDevice() {
+            return _device;
+        }
+
+        Object getError() {
+            return _error;
+        }
+
+        int getStatus() {
+            return _status;
+        }
     }
 }
