@@ -3696,7 +3696,7 @@ public class Storage
     public String getFromRemoteTURL(SRMUser user,
             String remoteTURL,
             String actualFilePath,
-            String remoteUser,
+            SRMUser remoteUser,
             Long remoteCredentialId,
             String spaceReservationId,
             long size,
@@ -3715,7 +3715,7 @@ public class Storage
     public String getFromRemoteTURL(SRMUser user,
             String remoteTURL,
             String actualFilePath,
-            String remoteUser,
+            SRMUser remoteUser,
             Long remoteCredentialId,
             CopyCallbacks callbacks) throws SRMException{
         actualFilePath = srm_root+"/"+actualFilePath;
@@ -3742,7 +3742,7 @@ public class Storage
     public String putToRemoteTURL(SRMUser user,
             String filePath,
             String remoteTURL,
-            String remoteUser,
+            SRMUser remoteUser,
             Long remoteCredentialId,
             CopyCallbacks callbacks)
             throws SRMException{
@@ -3787,7 +3787,7 @@ public class Storage
             String remoteTURL,
             String actualFilePath,
             boolean store,
-            String remoteUser,
+            SRMUser remoteUser,
             Long remoteCredentialId,
             String spaceReservationId,
             Long size,
@@ -4704,10 +4704,10 @@ public class Storage
      */
     public String[] srmGetSpaceTokens(SRMUser user, String description)
         throws SRMException {
-        
+        DCacheUser duser = (DCacheUser) user;
         say("srmGetSpaceTokens ("+description+")");
-       GetSpaceTokens getTokens = new GetSpaceTokens(user.getVoGroup(), 
-           user.getVoRole(),description);
+       GetSpaceTokens getTokens = new GetSpaceTokens(duser.getVoGroup(), 
+           duser.getVoRole(),description);
         CellMessage cellMessage = new CellMessage(
                 new CellPath("SrmSpaceManager"),
                 getTokens);

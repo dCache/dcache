@@ -10,7 +10,7 @@ package org.dcache.srm;
  *
  * @author  timur
  */
-public class FileMetaData extends diskCacheV111.srm.FileMetaData{
+public abstract class FileMetaData extends diskCacheV111.srm.FileMetaData{
     public boolean isRegular = true;
     public boolean isDirectory =false ;
     public boolean isLink = false;
@@ -38,4 +38,8 @@ public class FileMetaData extends diskCacheV111.srm.FileMetaData{
             this.fileId = fileId;
         }
     }
+    
+    public abstract boolean isOwner(SRMUser user);
+    public abstract boolean isGroupMember(SRMUser user);
+    
 }

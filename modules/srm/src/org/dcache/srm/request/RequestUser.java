@@ -98,7 +98,7 @@ import org.dcache.srm.scheduler.JobCreatorStorage;
  *
  * @author  timur
  */
-public abstract class RequestUser extends org.dcache.srm.scheduler.JobCreator implements org.dcache.srm.SRMUser {
+public abstract class RequestUser extends org.dcache.srm.scheduler.JobCreator  {
     
     private static final long serialVersionUID = 2546516643342847536L;
     

@@ -380,7 +380,7 @@ public interface AbstractStorageElement extends Logger{
             SRMUser user,
             String remoteTURL,
             String actualFilePath,
-            String remoteUser,
+            SRMUser remoteUser,
             Long requestCredentialId,
             CopyCallbacks callbacks)
             throws SRMException;
@@ -407,7 +407,7 @@ public interface AbstractStorageElement extends Logger{
             SRMUser user,
             String remoteTURL,
             String actualFilePath,
-            String remoteUser,
+            SRMUser remoteUser,
             Long requestCredentialId,
             String spaceReservationId,
             long size,
@@ -432,7 +432,7 @@ public interface AbstractStorageElement extends Logger{
     public String putToRemoteTURL(SRMUser user,
             String actualFilePath,
             String remoteTURL,
-            String remoteUser,
+            SRMUser remoteUser,
             Long requestCredentialId,
             CopyCallbacks callbacks)
             throws SRMException;

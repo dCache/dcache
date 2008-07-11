@@ -610,7 +610,7 @@ public class CopyFileRequest extends FileRequest {
 				transferId = storage.getFromRemoteTURL(getUser(),
 								       from_turl.getURL(),
 								       local_to_path, 
-								       getUser().getName(),
+								       getUser(),
 								       credential.getId(), 
 								       spaceReservationId.toString(),
 								       size,
@@ -621,7 +621,7 @@ public class CopyFileRequest extends FileRequest {
 				transferId = storage.getFromRemoteTURL(getUser(),
 								       from_turl.getURL(),
 								       local_to_path, 
-								       getUser().getName(),
+								       getUser(),
 								       credential.getId(),
 								       copycallbacks);
 			}
@@ -681,7 +681,7 @@ public class CopyFileRequest extends FileRequest {
 			transferId = storage.putToRemoteTURL(getUser(),
 							     local_from_path,
 							     to_turl.getURL(),
-							     getUser().getName(),
+							     getUser(),
 							     credential.getId(),
 							     copycallbacks);
 			long remaining_lifetime = this.getCreationTime() + this.getLifetime() -System.currentTimeMillis() ;

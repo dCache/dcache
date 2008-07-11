@@ -7,12 +7,15 @@
 package org.dcache.srm.unixfs;
 import org.dcache.srm.FileMetaData;
 import java.util.StringTokenizer;
+import org.dcache.srm.SRMUser;
+import org.apache.log4j.Logger;
 
 /**
  *
  * @author  timur
  */
 public class UnixfsFileMetaData extends FileMetaData{
+    private Logger logger =  Logger.getLogger(UnixfsFileMetaData.class.getName());
     public boolean filo ;
     public boolean character_device ;
     public boolean directory ;
@@ -82,6 +85,30 @@ srm-stat 1984 8 81a4 10401 1530 303 1173015 1 2b 14 1091050797 1091050795 109105
             this.checksumValue = addler32;
         }
 
+    }
+    
+    public  boolean isOwner(SRMUser user) {
+        try {
+            return Integer.parseInt(owner) == ((UnixfsUser) user).getUid();
+        } catch (NumberFormatException nfe) {
+            logger.debug("owner is not a number: "+owner,nfe);
+            throw nfe;
+        } catch (ClassCastException  cce) {
+            logger.error("user is not a UnixfsUser: "+user,cce);
+            throw cce;
+        } 
+    }
+    
+    public boolean isGroupMember(SRMUser user) {
+        try {
+            return Integer.parseInt(group) == ((UnixfsUser) user).getUid();
+        } catch (NumberFormatException nfe) {
+            logger.debug("group is not a number: "+group,nfe);
+            throw nfe;
+        } catch (ClassCastException  cce) {
+            logger.error("user is not a UnixfsUser: "+user,cce);
+            throw cce;
+        } 
     }
     
 }

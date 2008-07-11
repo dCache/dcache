@@ -122,10 +122,9 @@ public class SrmSetPermission {
 			FileMetaData fmd= storage.getFileMetaData(user,path);
 			String owner    = fmd.owner;
 			int permissions = fmd.permMode;
-			int ownerid = Integer.parseInt(fmd.owner);
 			int groupid = Integer.parseInt(fmd.group);
-			if (ownerid != user.getUid()) { 
-				return getFailedResponse("user "+user.getUid()+" does not own file "+request.getSURL()+" Can't delete",TStatusCode.SRM_FAILURE);
+			if (!fmd.isOwner(user)) { 
+				return getFailedResponse("user "+user+" does not own file "+request.getSURL()+" Can't set permission",TStatusCode.SRM_AUTHORIZATION_FAILURE);
 			}
 			TPermissionType permissionType = request.getPermissionType();
 			TPermissionMode ownerPermission = request.getOwnerPermission();

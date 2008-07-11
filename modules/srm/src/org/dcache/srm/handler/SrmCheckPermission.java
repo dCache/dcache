@@ -156,13 +156,11 @@ public class SrmCheckPermission {
 			try { 
 				FileMetaData fmd=storage.getFileMetaData(user,path[i]);
 				int permissions = fmd.permMode;
-				int ownerid = Integer.parseInt(fmd.owner);
-				int groupid = Integer.parseInt(fmd.group);
 				TPermissionMode pm  = TPermissionMode.NONE;
-				if (ownerid == user.getUid()) { 
+				if (fmd.isOwner(user)) { 
 					pm = PermissionMaskToTPermissionMode.maskToTPermissionMode(((permissions>>6)&0x7));
 				}
-				else if (groupid == user.getGid()) { 
+				else if (fmd.isGroupMember(user)) { 
 					pm = PermissionMaskToTPermissionMode.maskToTPermissionMode(((permissions>>3)&0x7));
 				}
 				else { 

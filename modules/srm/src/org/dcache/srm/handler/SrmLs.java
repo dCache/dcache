@@ -521,11 +521,11 @@ public class SrmLs {
             return false;
         }
         
-        if(user.getGid() == gid && Permissions.groupCanRead(permissions)) {
+        if(fmd.isGroupMember(user) && Permissions.groupCanRead(permissions)) {
             return true;
         }
         
-        if(user.getUid() == uid && Permissions.userCanRead(permissions)) {
+        if(fmd.isOwner(user) && Permissions.userCanRead(permissions)) {
             return true;
         }
         

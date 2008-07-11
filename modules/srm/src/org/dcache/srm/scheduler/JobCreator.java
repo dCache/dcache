@@ -100,12 +100,13 @@ import java.lang.ref.WeakReference;
 import java.util.Map;
 import java.util.Iterator;
 import java.util.Collections;
+import org.dcache.srm.SRMUser;
 
 /**
  *
  * @author  timur
  */
-public  class JobCreator  {
+public  class JobCreator implements SRMUser {
     private static final JobCreatorStorage defaultstorage = new HashtableJobCreatorStorage();
     
     

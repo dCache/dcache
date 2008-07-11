@@ -92,21 +92,5 @@ package org.dcache.srm;
  */
 public interface SRMUser{
     
-    /** Creates a new instance of SRMUser */
-    public boolean equals(Object obj);
-    
-    public int hashCode();
-    
-    public String toString();
-    
-    public String getName();
-    
-    public String getVoGroup();
-    
-    public String getVoRole();
-    
-    public int getUid();
-    
-    public int getGid();
     
 }

@@ -255,7 +255,7 @@ public class Storage
   }
 
   /** */
-  public void getFromRemoteTURL(SRMUser user, String remoteTURL, String actualFilePath, String remoteUser,
+  public void getFromRemoteTURL(SRMUser user, String remoteTURL, String actualFilePath, SRMUser remoteUser,
     Long remoteCredentialId) throws SRMException {
           if(!(user instanceof UnixfsUser) ){
               throw new SRMException("user is not instance of UnixfsUser");
@@ -305,7 +305,7 @@ public class Storage
   }
 
   /** */
-  public void putToRemoteTURL(SRMUser user, String actualFilePath, String remoteTURL, String remoteUser, Long remoteCredentialId) throws SRMException {
+  public void putToRemoteTURL(SRMUser user, String actualFilePath, String remoteTURL, SRMUser remoteUser, Long remoteCredentialId) throws SRMException {
           try
           {
               GlobusURL url = new GlobusURL(remoteTURL);
@@ -801,7 +801,7 @@ public class Storage
 
   private boolean _installPath(SRMUser user, String path) {
     boolean exist;
-    log("_installPath("+user.getName()+","+path+")");
+    log("_installPath("+user+","+path+")");
     File file   = new File(path);
 
     if ( file.exists() ) {
@@ -979,7 +979,7 @@ public class Storage
   }
   private Map copyThreads = new HashMap();
   
-  public String getFromRemoteTURL(SRMUser user, String remoteTURL, String actualFilePath, String remoteUser, Long remoteCredentialId,  CopyCallbacks callbacks) throws SRMException{
+  public String getFromRemoteTURL(SRMUser user, String remoteTURL, String actualFilePath, SRMUser remoteUser, Long remoteCredentialId,  CopyCallbacks callbacks) throws SRMException{
    return this.getFromRemoteTURL( user,  remoteTURL,  actualFilePath,  remoteUser,  remoteCredentialId,  null,0, callbacks);
   
   }
@@ -998,7 +998,7 @@ public class Storage
         final SRMUser user, 
         final String remoteTURL, 
         final String actualFilePath, 
-        final String remoteUser, 
+        final SRMUser remoteUser, 
         final Long remoteCredentialId, 
         String spaceReservationId, 
         long size, 
@@ -1035,7 +1035,7 @@ public class Storage
      * @throws SRMException
      * @return transfer id
      */
-    public String putToRemoteTURL(final SRMUser user, final String actualFilePath,final String remoteTURL, final String remoteUser, final Long remoteCredentialId, final CopyCallbacks callbacks)
+    public String putToRemoteTURL(final SRMUser user, final String actualFilePath,final String remoteTURL, final SRMUser remoteUser, final Long remoteCredentialId, final CopyCallbacks callbacks)
     throws SRMException {
         
        Thread t = new Thread(){
@@ -1103,7 +1103,7 @@ public class Storage
             throw new SRMException ("permission denied");
          }
          
-         if(Permissions.worldCanRead(permissions)) {
+         if(!Permissions.worldCanRead(permissions)) {
             throw new SRMException ("permission denied");
          }
          
@@ -1115,11 +1115,11 @@ public class Storage
             throw new SRMException ("permission denied");
          }
          
-         if(user.getGid() == gid && Permissions.groupCanRead(permissions)) {
+         if(!fmd.isGroupMember(user)  || ! Permissions.groupCanRead(permissions)) {
             throw new SRMException ("permission denied");
          }
          
-         if(user.getUid() == uid && Permissions.userCanRead(permissions)) {
+         if(!fmd.isOwner(user)  || ! Permissions.userCanRead(permissions)) {
             throw new SRMException ("permission denied");
          }
          File f = new File(directoryName);
@@ -1145,7 +1145,7 @@ public class Storage
             throw new SRMException ("permission denied");
          }
          
-         if(Permissions.worldCanRead(permissions)) {
+         if(!Permissions.worldCanRead(permissions)) {
             throw new SRMException ("permission denied");
          }
          
@@ -1157,11 +1157,11 @@ public class Storage
             throw new SRMException ("permission denied");
          }
          
-         if(user.getGid() == gid && Permissions.groupCanRead(permissions)) {
+         if(!fmd.isGroupMember(user) || !Permissions.groupCanRead(permissions)) {
             throw new SRMException ("permission denied");
          }
          
-         if(user.getUid() == uid && Permissions.userCanRead(permissions)) {
+         if(!fmd.isOwner(user) || !Permissions.userCanRead(permissions)) {
             throw new SRMException ("permission denied");
          }
          File f = new File(directoryName);
@@ -1194,11 +1194,11 @@ public class Storage
             throw new SRMException ("permission denied");
          }
          
-         if(user.getGid() == gid && Permissions.groupCanRead(permissions)) {
+         if(fmd.isGroupMember(user) && Permissions.groupCanRead(permissions)) {
             throw new SRMException ("permission denied");
          }
          
-         if(user.getUid() == uid && Permissions.userCanRead(permissions)) {
+         if(fmd.isOwner(user) && Permissions.userCanRead(permissions)) {
             throw new SRMException ("permission denied");
          }
          File f = new File(directoryName);
