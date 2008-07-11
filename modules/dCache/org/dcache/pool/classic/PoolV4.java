@@ -1130,7 +1130,7 @@ public class PoolV4 extends AbstractCell
             String initiator = message.getInitiator();
             String pool = message.getPoolName();
             String queueName = message.getIoQueueName();
-            CellPath source = envelope.getSourcePath();
+            CellPath source = (CellPath)envelope.getSourcePath().clone();
             String door =
                 source.getCellName() + "@" + source.getCellDomainName();
 
@@ -1180,9 +1180,10 @@ public class PoolV4 extends AbstractCell
                     new PoolIOReadTransfer(pnfsId, pi, si, mover, _repository);
             }
             try {
+                source.revert();
                 PoolIORequest request =
                     new PoolIORequest(transfer, id, initiator,
-                                      door, pool, queueName);
+                                      source, pool, queueName);
                 message.setMoverId(queueIoRequest(message, request));
                 transfer = null;
             } catch (InvocationTargetException e) {
@@ -1250,14 +1251,24 @@ public class PoolV4 extends AbstractCell
         private final long _id;
         private final String _queue;
         private final String _pool;
-        private final String _door;
+        private final CellPath _door;
         private final String _initiator;
 
         private Thread _thread;
 
+        /**
+         * @param transfer the read or write transfer to execute
+         * @param id the client id of the request
+         * @param initiator the initiator string identifying who
+         * requested the transfer
+         * @param door the cell path to the cell requesting the
+         * transfer
+         * @param pool the name of the pool
+         * @param queue the name of the queue used for the request
+         */
         public PoolIORequest(PoolIOTransfer transfer,
                              long id, String initiator,
-                             String door, String pool, String queue)
+                             CellPath door, String pool, String queue)
         {
             _transfer = transfer;
             _id = id;
@@ -1306,7 +1317,7 @@ public class PoolV4 extends AbstractCell
             }
 
             try {
-                sendMessage(new CellMessage(new CellPath(_door), finished));
+                sendMessage(new CellMessage(_door, finished));
             } catch (NotSerializableException e) {
                 throw new RuntimeException("Bug: Unserializable vehicle detected", e);
             } catch (NoRouteToCellException e) {
@@ -1378,7 +1389,7 @@ public class PoolV4 extends AbstractCell
 
         public String getClient()
         {
-            return _door;
+            return _door.getDestinationAddress().toString();
         }
 
         public long getClientId()
