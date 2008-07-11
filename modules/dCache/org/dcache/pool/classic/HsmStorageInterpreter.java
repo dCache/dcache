@@ -3,6 +3,7 @@
 package org.dcache.pool.classic;
 
 import java.util.* ;
+import java.io.NotSerializableException;
 
 import dmg.cells.nucleus.* ;
 import dmg.util.* ;
@@ -162,40 +163,40 @@ public class HsmStorageInterpreter {
     //
     //   ??? needs to be adated
     //
-    public String hh_rh_restore = "<pnfsId>" ;
-    public String ac_rh_restore_$_1(Args args)throws Exception {
+    public String hh_rh_restore = "[-block] <pnfsId>";
+    public Object ac_rh_restore_$_1(Args args)
+    {
         final String pnfsId = args.argv(0);
-        final CellMessage msgx = _cell.getThisMessage();
-        final CellPath path = (CellPath)msgx.getSourceAddress().clone() ;
+        final boolean block = args.getOpt("block") != null;
+        final DelayedReply reply = new DelayedReply();
 
-        path.revert() ;
-        final CacheFileAvailable cfa = new CacheFileAvailable(){
-                public void cacheFileAvailable( String pnfsId , Throwable ee ){
-                    _cell.say( "Callback called for "+pnfsId) ;
-                    CellMessage msg = new CellMessage( path , "" ) ;
-                    if( ee == null ){
-                        msg.setMessageObject("Done : "+pnfsId ) ;
-                    }else{
-                        msg.setMessageObject("Problem with "+pnfsId+" : "+ee ) ;
-                    }
-                    try{
-                        _cell.say("Sending message to "+path ) ;
-                        _cell.sendMessage( msg ) ;
-                    }catch(Exception eee ){
-                        _cell.say("Callback : "+eee ) ;
-                        eee.printStackTrace() ;
+        final CacheFileAvailable cfa = new CacheFileAvailable() {
+                public void cacheFileAvailable(String pnfsId, Throwable ee) {
+                    try {
+                        if (ee == null) {
+                            reply.send("Fetched " + pnfsId);
+                        } else {
+                            reply.send("Failed to fetch " + pnfsId + ": " + ee);
+                        }
+                    } catch (NotSerializableException e) {
+                        throw new RuntimeException(e);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                    } catch (NoRouteToCellException e) {
+                        _cell.say("Failed to deliver reply: " + e);
                     }
                 }
             };
 
-        /* We need to fetch the storage info and we don't
-         * want to block the message thread while waiting for the reply.
+        /* We need to fetch the storage info and we don't want to
+         * block the message thread while waiting for the reply.
          */
         Thread t = new Thread() {
                 public void run() {
                     try {
                         StorageInfo si = _pnfs.getStorageInfo(pnfsId);
-                        _storageHandler.fetch(new PnfsId(pnfsId), si, cfa);
+                        _storageHandler.fetch(new PnfsId(pnfsId), si,
+                                              block ? cfa : null);
                     } catch (CacheException e) {
                         cfa.cacheFileAvailable(pnfsId, e);
                     }
@@ -203,6 +204,6 @@ public class HsmStorageInterpreter {
             };
         t.start();
 
-        return "Fetch request queued";
+        return block ? reply : "Fetch request queued";
     }
 }
