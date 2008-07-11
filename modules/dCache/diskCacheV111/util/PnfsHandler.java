@@ -25,6 +25,7 @@ import diskCacheV111.vehicles.PnfsGetCacheLocationsMessage;
 import diskCacheV111.vehicles.PnfsGetCacheStatisticsMessage;
 import diskCacheV111.vehicles.PnfsGetFileMetaDataMessage;
 import diskCacheV111.vehicles.PnfsGetStorageInfoMessage;
+import diskCacheV111.vehicles.PnfsMapPathMessage;
 import diskCacheV111.vehicles.PnfsMessage;
 import diskCacheV111.vehicles.PnfsRenameMessage;
 import diskCacheV111.vehicles.PnfsSetFileMetaDataMessage;
@@ -513,5 +514,26 @@ public class PnfsHandler
 
    }
 
+	/**
+	 * Get path corresponding to given pnfsid.
+	 *
+	 * @param pnfsID
+	 * @return path
+	 * @throws CacheException
+	 */
+	public String getPathByPnfsId(PnfsId pnfsID) throws CacheException {
+		return pnfsRequest(new PnfsMapPathMessage(pnfsID)).getPnfsPath();
+	}
+
+	/**
+	 * Get pnfsid corresponding to given path.
+	 *
+	 * @param path
+	 * @return pnfsid
+	 * @throws CacheException
+	 */
+	public PnfsId getPnfsIdByPath(String path) throws CacheException {
+		return pnfsRequest(new PnfsMapPathMessage(path)).getPnfsId();
+	}
 
 }
