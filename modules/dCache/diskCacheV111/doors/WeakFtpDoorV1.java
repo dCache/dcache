@@ -123,6 +123,13 @@ public class WeakFtpDoorV1 extends AbstractFtpDoorV1 {
     public void ac_pass(String arg) {
         if( _pwdRecord == null || ((UserPwdRecord)_pwdRecord).isDisabled() ||
         !((UserPwdRecord)_pwdRecord).isAnonymous() && ! ((UserPwdRecord)_pwdRecord).passwordIsValid(arg) ) {
+            if( _pwdRecord == null) { 
+                error("530 Login incorrect: pwd record is null");
+            } else if (((UserPwdRecord)_pwdRecord).isDisabled()) {
+                warn ("530 Login incorrect:pwd record is disabled");
+            } else if ( ! ((UserPwdRecord)_pwdRecord).passwordIsValid(arg)) {
+                warn ("530 Login incorrect: password is incorrect");
+            } 
             println("530 Login incorrect");
             _user = null;
             _pwdRecord = null;
@@ -161,4 +168,15 @@ public class WeakFtpDoorV1 extends AbstractFtpDoorV1 {
 
     public void echoStr1(String str) {
     }
+    
+    protected void resetPwdRecord()
+    {
+    }
+    
+    protected boolean setNextPwdRecord()
+    {
+        return false;
+    }
+    
+
 }

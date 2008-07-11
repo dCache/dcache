@@ -380,18 +380,29 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
         }
     }
 
-    public void setNextPwdRecord()
+    protected boolean setNextPwdRecord()
     {
         if (_userAuthRecords == null || !_userAuthRecords.hasNext()) {
             _pwdRecord = null;
-        } else {
-            _pwdRecord = _userAuthRecords.next();
-            _user = _pwdRecord.Username;
+            return false;
+        } 
+        
+        _pwdRecord = _userAuthRecords.next();
+        _user = _pwdRecord.Username;
+
+        if(_pathRoot == null) {
             _curDirV = _pwdRecord.Home;
             _pathRoot = _pwdRecord.Root;
-            if (_pathRoot == null || _pathRoot.length() == 0)
+
+            if (_curDirV == null || _curDirV.length() == 0 ) {
+                _curDirV ="/";
+            }
+
+            if (_pathRoot == null || _pathRoot.length() == 0) {
                 _pathRoot = "/";
+            }
         }
+        return true;
     }
 
     // Some clients, even though the user is already logged in via GSS and ADAT,

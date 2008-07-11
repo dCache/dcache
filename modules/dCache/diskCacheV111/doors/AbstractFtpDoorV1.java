@@ -1636,8 +1636,7 @@ public abstract class AbstractFtpDoorV1
         }
 
         if (_pwdRecord.isWeak() || _pwdRecord.isReadOnly()) {
-            setNextPwdRecord();
-            if (_pwdRecord == null) {
+            if(!setNextPwdRecord()) {
                 println("500 Command disabled");
                 return;
             } else {
@@ -1684,8 +1683,7 @@ public abstract class AbstractFtpDoorV1
                 if (_permissionHandler.canDeleteFile(pathInPnfs, subject,   _origin)) {
                     _pnfs.deletePnfsEntry(pathInPnfs);
                 } else {
-                    setNextPwdRecord();
-                    if (_pwdRecord == null) {
+                    if(!setNextPwdRecord()) {
                         reply("553 Permission denied");
                         return;
                     } else {
@@ -1699,8 +1697,7 @@ public abstract class AbstractFtpDoorV1
                 return;
             } catch (CacheException e) {
                 error("FTP Door: DELE got CacheException: " + e.getMessage());
-                setNextPwdRecord();
-                if (_pwdRecord == null) {
+                if(!setNextPwdRecord()) {
                     reply("553 Permission denied, reason: " + e);
                 } else {
                     ac_dele(arg);
@@ -1814,8 +1811,7 @@ public abstract class AbstractFtpDoorV1
         }
 
         if (_pwdRecord.isWeak() || _pwdRecord.isReadOnly()) {
-            setNextPwdRecord();
-            if (_pwdRecord == null) {
+            if(!setNextPwdRecord()) {
                 println("500 Command disabled");
                 return;
             } else {
@@ -1825,8 +1821,7 @@ public abstract class AbstractFtpDoorV1
         }
 
         if (_pwdRecord.isAnonymous()) {
-            setNextPwdRecord();
-            if (_pwdRecord == null) {
+            if(!setNextPwdRecord()) {
                 println("554 Anonymous write access not permitted");
                 return;
             } else {
@@ -1837,8 +1832,7 @@ public abstract class AbstractFtpDoorV1
 
         String pathInPnfs = absolutePath(arg);
         if (pathInPnfs == null) {
-            setNextPwdRecord();
-            if (_pwdRecord == null) {
+            if(!setNextPwdRecord()) {
                 reply("553 Cannot determine full directory pathname in PNFS: " + arg);
                 return;
             } else {
@@ -1855,8 +1849,7 @@ public abstract class AbstractFtpDoorV1
                 if (theDirToDelete.list().length == 0) { // Only delete empty directories
                     _pnfs.deletePnfsEntry(pathInPnfs);
                 } else {
-                    setNextPwdRecord();
-                    if (_pwdRecord == null) {
+                    if(!setNextPwdRecord()) {
                         reply("553 Directory not empty. Cannot delete.");
                         return;
                     } else {
@@ -1865,8 +1858,7 @@ public abstract class AbstractFtpDoorV1
                     }
                 }
             } else {
-                setNextPwdRecord();
-                if (_pwdRecord == null) {
+                if(!setNextPwdRecord()) {
                     reply("553 Permission denied");
                     return;
                 } else {
@@ -1879,8 +1871,7 @@ public abstract class AbstractFtpDoorV1
             error("FTP Door: ACL module failed: " + e);
             return;
         } catch (CacheException ce) {
-            setNextPwdRecord();
-            if (_pwdRecord == null) {
+            if(!setNextPwdRecord()) {
                 reply("553 Permission denied, reason: " + ce);
                 return;
             } else {
@@ -1911,8 +1902,7 @@ public abstract class AbstractFtpDoorV1
         }
 
         if (_pwdRecord.isWeak() || _pwdRecord.isReadOnly()) {
-            setNextPwdRecord();
-            if (_pwdRecord == null) {
+            if(!setNextPwdRecord()) {
                 println("500 Command disabled");
                 return;
             } else {
@@ -1922,8 +1912,7 @@ public abstract class AbstractFtpDoorV1
         }
 
         if (_pwdRecord.isAnonymous()) {
-            setNextPwdRecord();
-            if (_pwdRecord == null) {
+            if(!setNextPwdRecord()) {
                 println("554 Anonymous write access not permitted");
                 return;
             } else {
@@ -1934,8 +1923,7 @@ public abstract class AbstractFtpDoorV1
 
         String pathInPnfs = absolutePath(arg);
         if (pathInPnfs == null) {
-            setNextPwdRecord();
-            if (_pwdRecord == null) {
+            if(!setNextPwdRecord()) {
                 reply("553 Cannot create directory in PNFS: " + arg);
                 return;
             } else {
@@ -1974,8 +1962,7 @@ public abstract class AbstractFtpDoorV1
                 if (_permissionHandler.canCreateDir(pathInPnfs, subject, _origin)) {
                     _pnfs.createPnfsDirectory(pathInPnfs,_pwdRecord.UID,_pwdRecord.GID, 0755);
                 } else {
-                    setNextPwdRecord();
-                    if (_pwdRecord == null) {
+                    if(!setNextPwdRecord()) {
                         reply("553 Permission denied");
                         return;
                     } else {
@@ -1988,8 +1975,7 @@ public abstract class AbstractFtpDoorV1
                 error("FTP Door: ACL module failed: " + e);
                 return;
             } catch(CacheException ce) {
-                setNextPwdRecord();
-                if (_pwdRecord == null) {
+                if(!setNextPwdRecord()) {
                     reply("553 Permission denied, reason: "+ce);
                     return;
                 } else {
@@ -2269,8 +2255,7 @@ public abstract class AbstractFtpDoorV1
         }
 
         if (_pwdRecord.isWeak() || _pwdRecord.isReadOnly()) {
-            setNextPwdRecord();
-            if (_pwdRecord == null) {
+            if(!setNextPwdRecord()) {
                 println("500 Command disabled");
                 return;
             } else {
@@ -2286,8 +2271,7 @@ public abstract class AbstractFtpDoorV1
 
         String pathInPnfs = absolutePath(path);
         if (pathInPnfs == null) {
-            setNextPwdRecord();
-            if (_pwdRecord == null) {
+            if(!setNextPwdRecord()) {
                 reply("553 Cannot determine full directory pathname in PNFS: " + path);
                 return;
             } else {
@@ -2309,8 +2293,7 @@ public abstract class AbstractFtpDoorV1
         try {
             fileMetaDataMsg = _pnfs.getFileMetaDataByPath(pathInPnfs);
         } catch (CacheException ce) {
-            setNextPwdRecord();
-            if (_pwdRecord == null) {
+            if(!setNextPwdRecord()) {
                 reply("553 Permission denied, reason: " + ce);
             } else {
                 doChmod(permstring, path);
@@ -2328,8 +2311,7 @@ public abstract class AbstractFtpDoorV1
 
         // Only file/directory owner can change permissions on that file/directory
         if (myUid != _pwdRecord.UID) {
-            setNextPwdRecord();
-            if (_pwdRecord == null) {
+            if(!setNextPwdRecord()) {
                 reply("553 Permission denied. Only owner can change permissions.");
             } else {
                 doChmod(permstring, path);
@@ -2339,8 +2321,7 @@ public abstract class AbstractFtpDoorV1
 
         // Chmod on symbolic links not yet supported (should change perms on file/dir pointed to)
         if (isASymLink) {
-            setNextPwdRecord();
-            if (_pwdRecord == null) {
+            if(!setNextPwdRecord()) {
                 reply("502 chmod of symbolic links is not yet supported.");
             } else {
                 doChmod(permstring, path);
@@ -2693,8 +2674,7 @@ public abstract class AbstractFtpDoorV1
                 Subject subject = new Subject(_pwdRecord.UID, _pwdRecord.GID);
                 try {
                     if (!_permissionHandler.canReadFile(_transfer.path, subject, _origin)) {
-                        setNextPwdRecord();
-                        if (_pwdRecord != null) {
+                        if(!setNextPwdRecord()) {
                             retrieve(file, offset, size,
                                      mode, xferMode,
                                      parallelStart, parallelMin, parallelMax,
@@ -2905,8 +2885,7 @@ public abstract class AbstractFtpDoorV1
             }
 
             if (_pwdRecord.isWeak() || _pwdRecord.isReadOnly()) {
-                setNextPwdRecord();
-                if (_pwdRecord == null) {
+                if(!setNextPwdRecord()) {
                     throw new FTPCommandException(500, "Command disabled");
                 } else {
                     store(file, mode, xferMode,
@@ -2917,8 +2896,7 @@ public abstract class AbstractFtpDoorV1
             }
 
             if (_pwdRecord.isAnonymous()) {
-                setNextPwdRecord();
-                if (_pwdRecord == null) {
+                if(!setNextPwdRecord()) {
                     throw new FTPCommandException(554, "Anonymous write access not permitted");
                 } else {
                     store(file, mode, xferMode,
@@ -3008,8 +2986,7 @@ public abstract class AbstractFtpDoorV1
                 Subject subject = new Subject(_pwdRecord.UID, _pwdRecord.GID);
                 try{
                     if (!_permissionHandler.canCreateFile(_transfer.path, subject, _origin)) {
-                        setNextPwdRecord();
-                        if(_pwdRecord==null) {
+                        if(!setNextPwdRecord()) {
                             throw new FTPCommandException
                                 (550,
                                  "Permission denied",
@@ -3635,8 +3612,7 @@ public abstract class AbstractFtpDoorV1
                 if (_permissionHandler.canGetAttributes(path, subject, _origin, FileAttribute.FATTR4_ACL)) {
                     filelength = info.getMetaData().getFileSize();
                 } else {
-                    setNextPwdRecord();
-                    if (_pwdRecord == null) {
+                    if(!setNextPwdRecord()) {
                         reply("553 Permission denied");
                     } else {
                         ac_size(arg);
@@ -3693,8 +3669,7 @@ public abstract class AbstractFtpDoorV1
                 if (_permissionHandler.canReadFile(path, subject, _origin)) {
                     modification_time = info.getMetaData().getLastModifiedTime();
                 } else {
-                    setNextPwdRecord();
-                    if (_pwdRecord == null) {
+                    if(!setNextPwdRecord()) {
                         reply("553 Permission denied");
                     } else {
                         ac_mdtm(arg);
@@ -4074,18 +4049,9 @@ public abstract class AbstractFtpDoorV1
             + (isWrite ? ": receiving" : ": sending");
     }
 
-    public void setNextPwdRecord()
-    {
-        if (_pwdRecord != null) {
-            _originalPwdRecord = _pwdRecord;
-            _pwdRecord = null;
-        }
-    }
+    abstract protected boolean setNextPwdRecord();
 
-    public void resetPwdRecord()
-    {
-        _pwdRecord = _originalPwdRecord;
-    }
+    abstract protected void resetPwdRecord();
 
     private class PerfMarkerTask
         extends TimerTask implements CellMessageAnswerable
