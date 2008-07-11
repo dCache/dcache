@@ -268,7 +268,7 @@ public class CacheRepositoryV5// extends CellCompanion
             _repository.addCacheRepositoryListener(this);
 
             _sweeper = createSweeper();
-            _interpreter = new RepositoryInterpreter(_cell, _repository);
+            _interpreter = new RepositoryInterpreter(_repository);
             _cell.addCommandListener(_interpreter);
             _cell.addCommandListener(_sweeper);
 

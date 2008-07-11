@@ -537,7 +537,7 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
 
             addCommandListener(_sweeper);
             addCommandListener(_hsmSet);
-            addCommandListener(new RepositoryInterpreter(this, _repository));
+            addCommandListener(new RepositoryInterpreter(_repository));
             addCommandListener(_storageQueue);
             addCommandListener(new HsmStorageInterpreter(this, _storageHandler));
             addCommandListener(_flushingThread);

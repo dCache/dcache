@@ -6,18 +6,25 @@ import diskCacheV111.vehicles.* ;
 import diskCacheV111.util.* ;
 import dmg.util.*;
 import java.util.* ;
-import dmg.cells.nucleus.CellAdapter;
+import java.io.NotSerializableException;
 import dmg.cells.nucleus.CellMessage;
+import dmg.cells.nucleus.DelayedReply;
+import dmg.cells.nucleus.NoRouteToCellException;
 import org.dcache.pool.repository.StickyRecord;
 
-public class RepositoryInterpreter {
-    private CellAdapter _cell;
+import org.apache.log4j.Logger;
+
+public class RepositoryInterpreter
+{
+    private final static Logger _log =
+        Logger.getLogger(RepositoryInterpreter.class);
     private CacheRepository _repository;
-    public RepositoryInterpreter(CellAdapter cell, CacheRepository repository)
+
+    public RepositoryInterpreter(CacheRepository repository)
     {
-        _cell = cell;
         _repository = repository;
     }
+
     private void displayEntry( CacheRepositoryEntry entry , StringBuffer sb )throws CacheException {
        String status =
            entry.isPrecious()?"precious":
@@ -129,16 +136,19 @@ public class RepositoryInterpreter {
             return sb.toString();
         }
 
-        final CellMessage msg = _cell.getThisMessage();
+        final DelayedReply reply = new DelayedReply();
         Thread task = new Thread() {
                 void reply(Object o)
                 {
                     try {
-                        msg.revertDirection();
-                        msg.setMessageObject(o);
-                        _cell.sendMessage(msg);
-                    } catch (Exception e) {
-                        _cell.esay("PANIC : Problem returning answer : " + e);
+                        reply.send(o);
+                    } catch (NoRouteToCellException e) {
+                        _log.error("Failed to send reply for 'rep ls': " + e);
+                    } catch (NotSerializableException e) {
+                        throw new RuntimeException("BUG: Unserializable vehicle", e);
+                    } catch (InterruptedException e) {
+                        _log.warn("Interrupted while sending reply: " + e);
+                        Thread.currentThread().interrupt();
                     }
                 }
 
@@ -281,7 +291,7 @@ public class RepositoryInterpreter {
                 }
             };
         task.start();
-        return null;
+        return reply;
     }
 
     public String hh_rep_rmclass = "<storageClass> # removes the from the cache";
