@@ -26,19 +26,20 @@ import java.util.StringTokenizer;
 
 import org.apache.log4j.Logger;
 
-public class RemoteHttpDataTransferProtocol_1 implements MoverProtocol 
+public class RemoteHttpDataTransferProtocol_1 implements MoverProtocol
 {
-	
-	private final static Logger _logSpaceAllocation = Logger.getLogger("logger.dev.org.dcache.poolspacemonitor." + RemoteHttpDataTransferProtocol_1.class.getName());
-	
+   private final static Logger _log =
+       Logger.getLogger(RemoteHttpDataTransferProtocol_1.class);
+   private final static Logger _logSpaceAllocation = Logger.getLogger("logger.dev.org.dcache.poolspacemonitor." + RemoteHttpDataTransferProtocol_1.class.getName());
+
    public static final int READ   =  1 ;
    public static final int WRITE  =  2 ;
-   public static final long SERVER_LIFE_SPAN= 60 * 5 * 1000; /* 5 minutes */ 
+   public static final long SERVER_LIFE_SPAN= 60 * 5 * 1000; /* 5 minutes */
    private static final int INC_SPACE  =  (50*1024*1024) ;
    private long    allocated_space  = 0 ;
-  
+
    private long last_transfer_time    = System.currentTimeMillis() ;
-   private CellAdapter   cell;
+   private final CellEndpoint   cell;
    private RemoteHttpDataTransferProtocolInfo remoteHttpProtocolInfo;
    private CellPath pathToSource;
    private ServerSocket httpserver;
@@ -48,60 +49,57 @@ public class RemoteHttpDataTransferProtocol_1 implements MoverProtocol
    private URL remoteURL;
    private volatile long transfered  = 0;
    private boolean changed;
-   //  
-   // <init>( CellAdapter cell ) ;
-   //
 
-   public RemoteHttpDataTransferProtocol_1(CellAdapter cell)
+    public RemoteHttpDataTransferProtocol_1(CellEndpoint cell)
   {
     this.cell = cell ;
-    cell.say( "RemoteHTTPDataTransferAgent_1 created" ) ;
+    say( "RemoteHTTPDataTransferAgent_1 created" ) ;
   }
 
    private void say( String str ){
-      cell.say( "(RemoteHTTPDataTransferAgent_1) "+str ) ;
+      _log.info(str);
    }
 
    private void esay( String str ){
-      cell.esay( "(RemoteHTTPDataTransferAgent_1) "+str ) ;
+      _log.error(str);
    }
 
    public void runIO( RandomAccessFile diskFile ,
                       ProtocolInfo protocol ,
                       StorageInfo  storage ,
                       PnfsId       pnfsId  ,
-                      SpaceMonitor spaceMonitor , 
-                      int          access ) 
-       throws Exception 
+                      SpaceMonitor spaceMonitor ,
+                      int          access )
+       throws Exception
    {
      say("runIO()\n\tprotocol="+
      protocol+",\n\tStorageInfo="+storage+",\n\tPnfsId="+pnfsId+
      ",\n\taccess ="+((( access & MoverProtocol.WRITE ) != 0)?"WRITE":"READ"));
      if( ! ( protocol instanceof RemoteHttpDataTransferProtocolInfo ) )
      {
-       throw new  CacheException( 
+       throw new  CacheException(
        "protocol info is not RemoteHttpDataTransferProtocolInfo" ) ;
      }
      this.diskFile = diskFile;
      starttime = System.currentTimeMillis();
-     
+
      remoteHttpProtocolInfo = (RemoteHttpDataTransferProtocolInfo) protocol;
-     
+
      remoteURL = new URL(remoteHttpProtocolInfo.getSourceHttpUrl());
      URLConnection connection = remoteURL.openConnection();
      if(! (connection instanceof HttpURLConnection) )
      {
          throw new CacheException("wrong URL connection type");
-         
+
      }
      HttpURLConnection httpconnection = (HttpURLConnection) connection;
-     
+
      String userInfo = remoteURL.getUserInfo();
-      if (userInfo != null) 
+      if (userInfo != null)
       {
 		// set the authentication
 		    String userPassEncoding = new sun.misc.BASE64Encoder().encode(userInfo.getBytes());
-    		httpconnection.setRequestProperty("Authorization", "Basic " + 
+    		httpconnection.setRequestProperty("Authorization", "Basic " +
             userPassEncoding);
       }
 
@@ -115,7 +113,7 @@ public class RemoteHttpDataTransferProtocol_1 implements MoverProtocol
          _logSpaceAllocation.debug("ALLOC: " + pnfsId + " : " + INC_SPACE );
          spaceMonitor.allocateSpace(INC_SPACE);
          allocated_space+=INC_SPACE;
-         
+
          while((read = httpinput.read(buffer)) != -1)
          {
               last_transfer_time    = System.currentTimeMillis() ;
@@ -124,13 +122,13 @@ public class RemoteHttpDataTransferProtocol_1 implements MoverProtocol
             	 _logSpaceAllocation.debug("ALLOC: " + pnfsId + " : " + INC_SPACE );
                   spaceMonitor.allocateSpace(INC_SPACE);
                   allocated_space+=INC_SPACE;
-                 
+
              }
              diskFile.write(buffer,0,read);
              changed = true;
              transfered +=read;
          }
-         
+
          if(allocated_space - transfered >0)
          {
         	 _logSpaceAllocation.debug("FREE: " + pnfsId + " : " + (allocated_space - transfered) );
@@ -143,14 +141,14 @@ public class RemoteHttpDataTransferProtocol_1 implements MoverProtocol
          httpconnection.setDoInput(false);
          httpconnection.setDoOutput(true);
          OutputStream httpoutput = httpconnection.getOutputStream();
-     }         
+     }
      say(" runIO() done");
    }
-   public long getLastTransferred() 
-   { 
-      return last_transfer_time ; 
+   public long getLastTransferred()
+   {
+      return last_transfer_time ;
    }
-   
+
    private synchronized void setTimeoutTime(long t)
    {
      timeout_time = t;
@@ -159,28 +157,28 @@ public class RemoteHttpDataTransferProtocol_1 implements MoverProtocol
    {
      return timeout_time;
    }
-   public void setAttribute( String name , Object attribute ) 
+   public void setAttribute( String name , Object attribute )
    {
    }
-   public Object getAttribute( String name ) 
+   public Object getAttribute( String name )
    {
      return null;
    }
-   public long getBytesTransferred() 
+   public long getBytesTransferred()
    {
      return  transfered;
    }
-   
-   public long getTransferTime() 
+
+   public long getTransferTime()
    {
       return System.currentTimeMillis() -starttime;
    }
- 
-   public boolean wasChanged() 
+
+   public boolean wasChanged()
    {
        return changed;
    }
-  
+
 }
 
 

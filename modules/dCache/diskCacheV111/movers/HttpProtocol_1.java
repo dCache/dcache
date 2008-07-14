@@ -22,13 +22,17 @@ import java.net.InetAddress;
 import java.util.Hashtable;
 import java.util.StringTokenizer;
 
+import org.apache.log4j.Logger;
+
 public class HttpProtocol_1 implements MoverProtocol
 {
+   public static final Logger _log = Logger.getLogger(HttpProtocol_1.class);
+
    public static final int READ   =  1 ;
    public static final int WRITE  =  2 ;
    public static final long SERVER_LIFE_SPAN= 60 * 5 * 1000; /* 5 minutes */
 
-   private CellAdapter      _cell;
+   private final CellEndpoint      _cell;
    private HttpProtocolInfo httpProtocolInfo;
    private ServerSocket httpserver;
    private long starttime;
@@ -36,22 +40,17 @@ public class HttpProtocol_1 implements MoverProtocol
    private long timeout_time;
    private long start_transfer_time    = System.currentTimeMillis() ;
 
-   //
-   // <init>( CellAdapter cell ) ;
-   //
-
-  public HttpProtocol_1( CellAdapter cell )
-  {
-    _cell = cell ;
-    _cell.say( "HttpProtocol_1 created" ) ;
-  }
-
-   private void say( String str ){
-      _cell.say( "(HttpProtocol_1) "+str ) ;
+   public HttpProtocol_1(CellEndpoint cell) {
+       _cell = cell;
+       say("HttpProtocol_1 created");
    }
 
-   private void esay( String str ){
-      _cell.esay( "(HttpProtocol_1) "+str ) ;
+   private void say(String str) {
+      _log.info(str);
+   }
+
+   private void esay(String str) {
+      _log.error(str);
    }
 
    private HttpConnectionHandler httpconnection = null;

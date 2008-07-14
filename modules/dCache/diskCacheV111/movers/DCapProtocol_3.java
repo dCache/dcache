@@ -12,16 +12,16 @@ import  java.io.* ;
 import  java.net.* ;
 import  java.util.* ;
 import  java.lang.reflect.* ;
+import org.apache.log4j.Logger;
 
 public class DCapProtocol_3 implements MoverProtocol {
 
+   private static final Logger _log = Logger.getLogger(DCapProtocol_3.class);
    private static final int INC_SPACE  =  (50*1024*1024) ;
-   //
-   // <init>( CellAdapter cell ) ;
-   //
+
    private Args          _args      = null ;
    private Dictionary    _context   = null ;
-   private CellAdapter      _cell   = null ;
+   private final CellEndpoint _cell;
 
    private long _bytesTransferred   = -1 ;
    private long _transferStarted    = 0 ;
@@ -43,12 +43,12 @@ public class DCapProtocol_3 implements MoverProtocol {
    private MoverIoBuffer _defaultBufferSize = new MoverIoBuffer( 256 * 1024 , 256 * 1024 , 256 * 1024 ) ;
    private MoverIoBuffer _maxBufferSize     = new MoverIoBuffer( 1024 * 1024 , 1024 * 1024 , 1024 * 1024 ) ;
 
-   public DCapProtocol_3( CellAdapter cell ){
+   public DCapProtocol_3( CellEndpoint cell ){
        _cell    = cell ;
        _args    = _cell.getArgs() ;
        _context = _cell.getDomainContext() ;
        //
-       _cell.say( "DCapProtocol_3 created" ) ;
+       say( "DCapProtocol_3 created" ) ;
        //
        // we are created for each request. So our data
        // is not shared.
@@ -80,17 +80,16 @@ public class DCapProtocol_3 implements MoverProtocol {
        }
    }
    private void debug( String str ){
-      if(_debug)_cell.say( "(DCap_3) "+str ) ;
-      _cell.pin(str);
+       _log.debug(str);
    }
    private void say( String str ){
-      _cell.say( "(DCap_3) "+str ) ;
+       _log.info(str);
    }
    private void esay( String str ){
-      _cell.esay( "(DCap_3) "+str ) ;
+       _log.error(str);
    }
    private void esay( Exception e ){
-      _cell.esay( e ) ;
+       _log.error(e);
    }
    public String toString(){
       return "SU="+_spaceUsed+";SA="+_spaceAllocated+";S="+_status ;

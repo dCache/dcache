@@ -16,6 +16,8 @@ import diskCacheV111.repository.SpaceMonitor ;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.movers.MoverProtocol;
 
+import org.apache.log4j.Logger;
+
 import dmg.cells.nucleus.* ;
 import java.io.* ;
 import java.net.URL;
@@ -29,12 +31,14 @@ import java.util.StringTokenizer;
 
 public class DCapClientProtocol_1 implements MoverProtocol
 {
+   private static final Logger _log =
+       Logger.getLogger(DCapClientProtocol_1.class);
    public static final int READ   =  1 ;
    public static final int WRITE  =  2 ;
    private static final int INC_SPACE  =  (50*1024*1024) ;
    private long    allocated_space  = 0 ;
    private long last_transfer_time    = System.currentTimeMillis() ;
-   private CellAdapter   cell;
+   private final CellEndpoint   cell;
    private DCapClientProtocolInfo dcapClient;
    private CellPath pathToSource;
    private long starttime;
@@ -49,23 +53,23 @@ public class DCapClientProtocol_1 implements MoverProtocol
    // <init>( CellAdapter cell ) ;
    //
 
-   public DCapClientProtocol_1(CellAdapter cell)
+   public DCapClientProtocol_1(CellEndpoint cell)
   {
     this.cell = cell ;
-    cell.say( "DCapClientProtocol_1 created" ) ;
+    say( "DCapClientProtocol_1 created" ) ;
   }
 
    private void say( String str ){
-      cell.say( "(DCapClientProtocol_1) "+str ) ;
+       _log.info(str);
    }
 
    private void esay( String str ){
-      cell.esay( "(DCapClientProtocol_1) "+str ) ;
+       _log.error(str);
    }
 
    private void esay( Throwable t )
    {
-       cell.esay(t);
+       _log.error(t);
    }
 
    public void runIO( RandomAccessFile diskFile ,

@@ -7,7 +7,12 @@ import org.dcache.xrootd.core.stream.StreamListener;
 import org.dcache.xrootd.protocol.messages.AuthentiticationRequest;
 import org.dcache.xrootd.protocol.messages.LoginRequest;
 
+import org.apache.log4j.Logger;
+
 public class XrootdMoverController implements PhysicalConnectionListener {
+
+    private static final Logger _log =
+        Logger.getLogger(XrootdMoverController.class);
 
 	private XrootdProtocol_2 mover;
 	private PhysicalXrootdConnection physicalXrootdConnection;
@@ -26,14 +31,14 @@ public class XrootdMoverController implements PhysicalConnectionListener {
 	}
 
 	public void handshakeRequest() {
-		mover.getCell().say("handshake attempt coming from "+physicalXrootdConnection.getNetworkConnection().getSocket().getRemoteSocketAddress().toString());
+		_log.info("handshake attempt coming from "+physicalXrootdConnection.getNetworkConnection().getSocket().getRemoteSocketAddress().toString());
 	}
 
 	public boolean loginRequest(LoginRequest login) {
 
 //		plug login module here
 
-		mover.getCell().say("login attempt, access granted");
+		_log.info("login attempt, access granted");
 
 		return true;
 	}
@@ -42,7 +47,7 @@ public class XrootdMoverController implements PhysicalConnectionListener {
 
 //		plug authentitication module here
 
-		mover.getCell().say("authentitication passed");
+		_log.info("authentitication passed");
 
 		return true;
 	}

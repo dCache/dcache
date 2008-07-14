@@ -14,13 +14,10 @@ import  diskCacheV111.repository.SpaceMonitor ;
 public class FtpProtocol_1
        implements MoverProtocol           {
 
+   private final static Logger _log = Logger.getLogger(FtpProtocol_1.class);
+   private final static Logger _logSpaceAllocation = Logger.getLogger("logger.dev.org.dcache.poolspacemonitor." + FtpProtocol_1.class.getName());
 
-	private final static Logger _logSpaceAllocation = Logger.getLogger("logger.dev.org.dcache.poolspacemonitor." + FtpProtocol_1.class.getName());
-
-   //
-   // <init>( CellAdapter cell ) ;
-   //
-   private CellAdapter  _cell = null ;
+   private final CellEndpoint  _cell;
    private long _bytesTransferred = -1 ;
    private long _transferStarted  = 0 ;
    private long _transferTime     = 0 ;
@@ -32,15 +29,15 @@ public class FtpProtocol_1
    private long    _lastTransferred = System.currentTimeMillis() ;
    private boolean _wasChanged      = false ;
 
-   public FtpProtocol_1( CellAdapter cell ){
+   public FtpProtocol_1( CellEndpoint cell ){
        _cell = cell ;
-       _cell.say( "FtpProtocol_1 created" ) ;
+       say( "FtpProtocol_1 created" ) ;
    }
    private void say( String str ){
-      _cell.say( "(Ftp_1) "+str ) ;
+      _log.info(str);
    }
    private void esay( String str ){
-      _cell.esay( "(Ftp_1) "+str ) ;
+      _log.error(str);
    }
    public String toString(){
       return "SU="+_spaceUsed+";SA="+_spaceAllocated+";S="+_status ;

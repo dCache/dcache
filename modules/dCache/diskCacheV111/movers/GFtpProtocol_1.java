@@ -80,16 +80,13 @@ import  java.security.MessageDigest ;
 import diskCacheV111.util.Checksum ;
 import  java.security.NoSuchAlgorithmException ;
 import diskCacheV111.util.ChecksumFactory;
-
-
+import org.apache.log4j.Logger;
 
 
 public class GFtpProtocol_1 implements MoverProtocol, ChecksumMover, DataBlocksRecipient{
 
-    //
-    // <init>( CellAdapter cell ) ;
-    //
-    private CellAdapter  _cell = null ;
+    private final static Logger _log = Logger.getLogger(GFtpProtocol_1.class);
+    private final CellEndpoint  _cell;
     private long _bytesTransferred = 0;
     private long _lastTransferred = System.currentTimeMillis() ;
     private long _transferStarted  = 0 ;
@@ -112,14 +109,14 @@ public class GFtpProtocol_1 implements MoverProtocol, ChecksumMover, DataBlocksR
     private  MessageDigest _transferMessageDigest = null ;
     private  Checksum  _transferChecksum      = null ;
 
-    public GFtpProtocol_1( CellAdapter cell, int bufferSize ) {
+    public GFtpProtocol_1( CellEndpoint cell, int bufferSize ) {
         this(cell);
         _bufferSize = bufferSize;
     }
 
-    public GFtpProtocol_1( CellAdapter cell ) {
+    public GFtpProtocol_1( CellEndpoint cell  ) {
         _cell = cell ;
-        _cell.say( "GFtpProtocol_1 created" ) ;
+        say( "GFtpProtocol_1 created" ) ;
         _offsetRanges = new Ranges();
     }
 
@@ -131,15 +128,15 @@ public class GFtpProtocol_1 implements MoverProtocol, ChecksumMover, DataBlocksR
     }
 
     private void say( String str ) {
-        _cell.say( "(GFtp_1) "+str ) ;
+        _log.info(str);
     }
 
     private void esay( String str ) {
-        _cell.esay( "(GFtp_1) "+str ) ;
+        _log.error(str);
     }
 
     private void esay( Throwable t) {
-        _cell.esay( t ) ;
+        _log.error(t);
     }
 
     public String toString() {

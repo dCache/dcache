@@ -90,12 +90,12 @@ import diskCacheV111.util.ChecksumFactory;
 public class GFtpProtocol_1_nio implements MoverProtocol, ChecksumMover,
         NioDataBlocksRecipient {
 
+    private final static Logger _log =
+        Logger.getLogger(GFtpProtocol_1_nio.class);
+    private final static Logger _logSpaceAllocation =
+        Logger.getLogger("logger.dev.org.dcache.poolspacemonitor." + GFtpProtocol_1_nio.class.getName());
 
-	private final static Logger _logSpaceAllocation = Logger.getLogger("logger.dev.org.dcache.poolspacemonitor." + GFtpProtocol_1_nio.class.getName());
-    //
-    // <init>( CellAdapter cell ) ;
-    //
-    private CellAdapter _cell = null;
+    private final CellEndpoint _cell;
 
     private long _bytesTransferred = 0;
 
@@ -131,15 +131,15 @@ public class GFtpProtocol_1_nio implements MoverProtocol, ChecksumMover,
 
     private Checksum _transferChecksum = null;
 
-    public GFtpProtocol_1_nio(CellAdapter cell, int bufferSize) {
+    public GFtpProtocol_1_nio(CellEndpoint cell, int bufferSize) {
         this(cell);
         _bufferSize = bufferSize;
     }
 
-    public GFtpProtocol_1_nio(CellAdapter cell) {
+    public GFtpProtocol_1_nio(CellEndpoint cell) {
 	_offsetRanges = new Ranges();
 	_cell = cell;
-        _cell.say("GFtpProtocol_1_nio created");
+        say("GFtpProtocol_1_nio created");
     }
 
     public void setAttribute(String name, Object attribute) {}
@@ -149,15 +149,15 @@ public class GFtpProtocol_1_nio implements MoverProtocol, ChecksumMover,
     }
 
     private void say(String str) {
-        _cell.say("(GFtp_1_nio) " + str);
+        _log.info(str);
     }
 
     private void esay(String str) {
-        _cell.esay("(GFtp_1_nio) " + str);
+        _log.error(str);
     }
 
     private void esay(Throwable t) {
-        _cell.esay(t);
+        _log.error(t);
     }
 
     public String toString() {

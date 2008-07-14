@@ -17,7 +17,7 @@ import java.util.regex.Matcher;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.ClosedByInterruptException;
 
-import dmg.cells.nucleus.CellAdapter;
+import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 import dmg.util.Args;
@@ -43,7 +43,8 @@ import org.dcache.ftp.*;
 public class GFtpProtocol_2_nio
     implements ConnectionMonitor, MoverProtocol, ChecksumMover, ErrorListener
 {
-
+    private final static Logger _log =
+        Logger.getLogger(GFtpProtocol_2_nio.class);
     private final static Logger _logSpaceAllocation =
         Logger.getLogger("logger.dev.org.dcache.poolspacemonitor." +
                          GFtpProtocol_2_nio.class.getName());
@@ -55,7 +56,7 @@ public class GFtpProtocol_2_nio
     public final static String READ_AHEAD_KEY = "gsiftpReadAhead";
 
     /** The cell owning this mover. Log messages are sent to it. */
-    protected CellAdapter  _cell;
+    protected CellEndpoint  _cell;
 
     /** A channel to the file we read from or write to. */
     protected FileChannel  _fileChannel;
@@ -64,7 +65,7 @@ public class GFtpProtocol_2_nio
      * A BlockLog keeping tracks of which parts of a file we have
      * received.
      */
-    protected BlockLog     _log;
+    protected BlockLog     _blockLog;
 
     /**
      * If a checksum is requested, this points to the checksum object
@@ -171,7 +172,7 @@ public class GFtpProtocol_2_nio
      */
     private static Random  _random = new Random();
 
-    public GFtpProtocol_2_nio(CellAdapter cell)
+    public GFtpProtocol_2_nio(CellEndpoint cell)
     {
 	_cell = cell;
 
@@ -229,39 +230,27 @@ public class GFtpProtocol_2_nio
         if (_checksum == null) {
             return null;
         } else if (_mappedDigest) {
-            return new MappedDigestThread(_fileChannel, _log,
+            return new MappedDigestThread(_fileChannel, _blockLog,
                                           _checksum.getMessageDigest());
         } else {
-            return new DirectDigestThread(_fileChannel, _log,
+            return new DirectDigestThread(_fileChannel, _blockLog,
                                           _checksum.getMessageDigest());
         }
     }
 
     /** Utility method for logging. */
     public void say(String str) {
-	if (_cell == null) {
-	    System.out.println(str);
-	} else {
-	    _cell.say(String.format("(GFtp_2_nio/%s) %s", id, str));
-	}
+        _log.info(String.format("(%s) %s", id, str));
     }
 
     /** Utility method for reporting errors. */
     public void esay(String str) {
-	if (_cell == null) {
-	    System.err.println(str);
-	} else {
-	    _cell.esay(String.format("(GFtp_2_nio/%s) %s", id, str));
-	}
+        _log.error(String.format("(GFtp_2_nio/%s) %s", id, str));
     }
 
     /** Utility method for reporting errors. */
     public void esay(Throwable t) {
-        if (_cell == null) {
-	    t.printStackTrace();
-	} else {
-	    _cell.esay(t);
-	}
+        _log.error(t);
     }
 
     public String toString() {
@@ -279,7 +268,7 @@ public class GFtpProtocol_2_nio
 	 */
 	_role             = role;
 	_bytesTransferred = 0;
-	_log              = new BlockLog(this);
+	_blockLog         = new BlockLog(this);
 	_fileChannel      = file.getChannel();
 	_spaceMonitor     = spaceMonitor;
 	_reservedSpace    = 0;
@@ -347,7 +336,7 @@ public class GFtpProtocol_2_nio
 	     * digest thread, since otherwise the digest thread would
 	     * not terminate.
 	     */
-	    _log.setEof();
+	    _blockLog.setEof();
 
 	    /* Close all open channels.
 	     */
@@ -405,7 +394,7 @@ public class GFtpProtocol_2_nio
 
 	/* Check that we receive the whole file.
 	 */
-        if (!_log.isComplete()) {
+        if (!_blockLog.isComplete()) {
             throw new CacheException(44, "Incomplete file detected");
         }
     }
@@ -742,7 +731,7 @@ public class GFtpProtocol_2_nio
             say("received " + position + " " + size);
         }
 
-	_log.addBlock(position, size);
+	_blockLog.addBlock(position, size);
 	_bytesTransferred += size;
 	_lastTransferred = System.currentTimeMillis();
     }
@@ -759,7 +748,7 @@ public class GFtpProtocol_2_nio
             say("send " + position + " " + size);
         }
 
-        _log.addBlock(position, size);
+        _blockLog.addBlock(position, size);
 	_bytesTransferred += size;
 	_lastTransferred = System.currentTimeMillis();
     }
@@ -844,7 +833,8 @@ public class GFtpProtocol_2_nio
 		help();
 	    }
 
-	    GFtpProtocol_2_nio mover = new GFtpProtocol_2_nio(null);
+	    GFtpProtocol_2_nio mover =
+                new GFtpProtocol_2_nio(null);
 
 	    RandomAccessFile file =
 		new RandomAccessFile(args.argv(0),

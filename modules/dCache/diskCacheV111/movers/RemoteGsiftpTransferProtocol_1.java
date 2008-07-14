@@ -78,7 +78,7 @@ import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.transferManager.RemoteGsiftpDelegateUserCredentialsMessage;
 import diskCacheV111.vehicles.transferManager.RemoteGsiftpTransferProtocolInfo;
-import dmg.cells.nucleus.CellAdapter;
+import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
@@ -109,9 +109,11 @@ import org.ietf.jgss.GSSException;
 public class RemoteGsiftpTransferProtocol_1
     implements MoverProtocol,ChecksumMover,DataBlocksRecipient
 {
-	private final static org.apache.log4j.Logger _logSpaceAllocation = org.apache.log4j.Logger.getLogger("logger.dev.org.dcache.poolspacemonitor." + DCapProtocol_3_nio.class.getName());
+    private final static org.apache.log4j.Logger _log =
+        org.apache.log4j.Logger.getLogger(RemoteGsiftpTransferProtocol_1.class);
+    private final static org.apache.log4j.Logger _logSpaceAllocation = org.apache.log4j.Logger.getLogger("logger.dev.org.dcache.poolspacemonitor." + DCapProtocol_3_nio.class.getName());
 
-    private final CellAdapter _cell;
+    private final CellEndpoint _cell;
     private long _starttime;
     private long _timeout_time;
     private PnfsId _pnfsId;
@@ -148,7 +150,7 @@ public class RemoteGsiftpTransferProtocol_1
             }
         };
 
-    public RemoteGsiftpTransferProtocol_1(CellAdapter cell)
+    public RemoteGsiftpTransferProtocol_1(CellEndpoint cell)
     {
         _cell = cell;
     }
@@ -156,24 +158,22 @@ public class RemoteGsiftpTransferProtocol_1
     private void say(String str)
     {
         if (_pnfsId != null) {
-            str = "(RemoteGsiftpTransferProtocol_1 for "+
-                _pnfsId.toIdString()+") "+str;
+            str = "("+_pnfsId.toIdString()+") "+str;
         }
-        _cell.say(str);
+        _log.info(str);
     }
 
     private void esay(String str)
     {
         if (_pnfsId != null) {
-            str = "(RemoteGsiftpTransferProtocol_1 for "+
-                _pnfsId.toIdString()+") "+str;
+            str = "("+_pnfsId.toIdString()+") "+str;
         }
-        _cell.esay(str);
+        _log.error(str);
     }
 
     private void esay(Throwable t)
     {
-        _cell.esay(t);
+        _log.error(t);
     }
 
     private void createFtpClient(RemoteGsiftpTransferProtocolInfo remoteGsiftpProtocolInfo ) throws CacheException,ServerException, ClientException,

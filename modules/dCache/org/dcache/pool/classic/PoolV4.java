@@ -1590,7 +1590,7 @@ public class PoolV4 extends AbstractCell
 
     private MoverProtocol getProtocolHandler(ProtocolInfo info)
     {
-        Class<?>[] argsClass = { dmg.cells.nucleus.CellAdapter.class };
+        Class<?>[] argsClass = { dmg.cells.nucleus.CellEndpoint.class };
         String moverClassName = info.getProtocol() + "-"
             + info.getMajorVersion();
         Class<?> mover = _moverHash.get(moverClassName);

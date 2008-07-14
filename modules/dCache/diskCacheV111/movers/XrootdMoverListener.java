@@ -30,6 +30,8 @@ import org.dcache.xrootd.util.FileStatus;
 
 public class XrootdMoverListener implements StreamListener {
 
+    private final static Logger _log =
+        Logger.getLogger(XrootdMoverListener.class);
 
 	private final static Logger _logSpaceAllocation = Logger.getLogger("logger.dev.org.dcache.poolspacemonitor." + XrootdMoverListener.class.getName());
 	private XrootdProtocol_2 mover;
@@ -69,7 +71,7 @@ public class XrootdMoverListener implements StreamListener {
 		long checksum = mover.getOpenChecksum();
 		if (checksum > 0) {
 			if (checksum != request.calcChecksum()) {
-				mover.getCell().esay("OpenRequest checksums do not match");
+				_log.error("OpenRequest checksums do not match");
 				physicalXrootdConnection.getResponseEngine().sendResponseMessage(new ErrorResponse(request.getStreamID(), XrootdProtocol.kXR_ArgInvalid," OpenRequest not identical compared to the one the redirector got"));
 				return;
 			}
@@ -91,7 +93,7 @@ public class XrootdMoverListener implements StreamListener {
 		transferBegin = System.currentTimeMillis();
 
 
-		mover.getCell().esay("open successful, returned filehandle: " + mover.getXrootdFileHandle());
+		_log.error("open successful, returned filehandle: " + mover.getXrootdFileHandle());
 		logicalStream.addFile(request.getPath(), mover.getXrootdFileHandle(), openFlags);
 		physicalXrootdConnection.getResponseEngine().sendResponseMessage(new OpenResponse(request.getStreamID(), mover.getXrootdFileHandle(), "", "", ""));
 
@@ -108,7 +110,7 @@ public class XrootdMoverListener implements StreamListener {
 		try {
 			fileStatus.setSize(mover.getDiskFile().length());
 		} catch (IOException e) {
-			mover.getCell().esay("couln't determine file size for "+mover.getPnfsId());
+			_log.error("couln't determine file size for "+mover.getPnfsId());
 		}
 
 		fileStatus.setWrite(!isReadOnly);
@@ -118,7 +120,7 @@ public class XrootdMoverListener implements StreamListener {
 
 		fileStatus.setFlags(0);
 
-		mover.getCell().esay("got Status request. fileinfo="+fileStatus);
+		_log.error("got Status request. fileinfo="+fileStatus);
 
 		physicalXrootdConnection.getResponseEngine().sendResponseMessage(new StatResponse(request.getStreamID(), fileStatus));
 	}
@@ -151,7 +153,7 @@ public class XrootdMoverListener implements StreamListener {
 		if (buffSize > readBuffer.length) {
 
 			readBuffer = new byte[buffSize];
-			mover.getCell().say("allocating new readBuffer, new size="+readBuffer.length);
+			_log.info("allocating new readBuffer, new size="+readBuffer.length);
 
 		}
 
@@ -175,7 +177,7 @@ public class XrootdMoverListener implements StreamListener {
 
 				file.seek(readOffset);
 
-				mover.getCell().say("requested read offset: "+readOffset + " filepointer set to :"+file.getFilePointer());
+				_log.info("requested read offset: "+readOffset + " filepointer set to :"+file.getFilePointer());
 
 				file.readFully(readBuffer, buffPos, bytesToRead);
 				buffPos += bytesToRead;
@@ -190,7 +192,7 @@ public class XrootdMoverListener implements StreamListener {
 //		calc the sum of raw bytes read from disk
 		int bytesReadInTotal = buffPos - list.length * 16;
 
-		mover.getCell().say("vector read completed: vector elements="+ list.length+ " totalBytesRequested=" + totalBytesToRead + " totalBytesReadFromDisk=" + bytesReadInTotal);
+		_log.info("vector read completed: vector elements="+ list.length+ " totalBytesRequested=" + totalBytesToRead + " totalBytesReadFromDisk=" + bytesReadInTotal);
 
 		mover.setLastTransferred();
 		mover.setBytesTransferred(mover.getBytesTransferred() + bytesReadInTotal);
@@ -260,13 +262,13 @@ public class XrootdMoverListener implements StreamListener {
 		if (bytesToRead > readBuffer.length) {
 
 			readBuffer = new byte[bytesToRead];
-			mover.getCell().say("allocating new readBuffer, new size="+readBuffer.length);
+			_log.info("allocating new readBuffer, new size="+readBuffer.length);
 
 		}
 
 		long readOffset = req.getReadOffset();
 
-		mover.getCell().esay(" max bytes to read: "+bytesToRead+" offset: "+readOffset);
+		_log.error(" max bytes to read: "+bytesToRead+" offset: "+readOffset);
 
 //		byte[] readBuffer  = new byte[req.bytesToRead()];
 
@@ -277,7 +279,7 @@ public class XrootdMoverListener implements StreamListener {
 
 			file.seek(readOffset);
 
-			mover.getCell().esay("requested read offset: "+readOffset + " filepointer set to :"+file.getFilePointer());
+			_log.error("requested read offset: "+readOffset + " filepointer set to :"+file.getFilePointer());
 
 			bytesRead = file.read(readBuffer, 0, bytesToRead);
 			if (bytesRead < 0) {
@@ -292,7 +294,7 @@ public class XrootdMoverListener implements StreamListener {
 		}
 
 
-		mover.getCell().say("bytes read from pool: "+ bytesRead );
+		_log.info("bytes read from pool: "+ bytesRead );
 
 		mover.setLastTransferred();
 		mover.setBytesTransferred(mover.getBytesTransferred() + bytesRead);
@@ -317,10 +319,10 @@ public class XrootdMoverListener implements StreamListener {
 
 			long newFilePointer = request.getWriteOffset() + request.getDataLength();
 
-			mover.getCell().say(
+			_log.info(
 					"write request: old file pointer: " + file.getFilePointer()
 							+ " current file size: " + currentFileSize);
-			mover.getCell().say(
+			_log.info(
 					"write offset: " + request.getWriteOffset()
 							+ " bytes to write: " + request.getDataLength());
 
@@ -338,7 +340,7 @@ public class XrootdMoverListener implements StreamListener {
 					expectedBlocks++;
 				}
 
-				mover.getCell().esay(
+				_log.error(
 						"used blocks: " + usedBlocks + " expected blocks: "
 								+ expectedBlocks + " ,allocating "
 								+ (expectedBlocks - usedBlocks) + " blocks");
@@ -364,7 +366,7 @@ public class XrootdMoverListener implements StreamListener {
 				currentFileSize = file.getFilePointer();
 			}
 
-			mover.getCell().say(
+			_log.info(
 					"wrote " + bytesWritten + " bytes to pool. new filesize: "
 							+ currentFileSize + ". new filepointer: "
 							+ file.getFilePointer());
@@ -385,7 +387,7 @@ public class XrootdMoverListener implements StreamListener {
 
 
 	public void doOnSync(SyncRequest request) {
-		mover.getCell().esay("got sync request");
+		_log.error("got sync request");
 
 //		no need to sync open file manually, just answering ok
 
@@ -398,7 +400,7 @@ public class XrootdMoverListener implements StreamListener {
 
 		mover.setTransferTime(System.currentTimeMillis() - transferBegin);
 
-		mover.getCell().say(
+		_log.info(
 				"Closing file (" + (isReadOnly ? "read " : "wrote ")
 						+ mover.getBytesTransferred() + " bytes in "+ (mover.getTransferTime() )+"ms)");
 
@@ -424,7 +426,7 @@ public class XrootdMoverListener implements StreamListener {
 
 		++ioErrorCounter;
 
-		mover.getCell().esay("IO-Error No. "+ ioErrorCounter+": "+e.getMessage());
+		_log.error("IO-Error No. "+ ioErrorCounter+": "+e.getMessage());
 
 		closeFile();
 
@@ -449,15 +451,15 @@ public class XrootdMoverListener implements StreamListener {
 						- (int) (currentFileSize % BLOCK_SIZE);
 				_logSpaceAllocation.debug("FREE: " + mover.getPnfsId() + " : " + spaceToFree );
 				mover.getSpaceMonitor().freeSpace(spaceToFree);
-				mover.getCell().say("freeing " + spaceToFree + " bytes");
+				_log.info("freeing " + spaceToFree + " bytes");
 
 			}
 
 			try {
 				mover.getDiskFile().close();
-				mover.getCell().esay("File closed on Disk");
+				_log.error("File closed on Disk");
 			} catch (IOException e) {
-				mover.getCell().esay(e.getMessage());
+				_log.error(e.getMessage());
 			} finally {
 				fileIsClosed = true;
 			}
@@ -474,7 +476,7 @@ public class XrootdMoverListener implements StreamListener {
 //		clean up open file if not already closed
 		closeFile();
 
-		mover.getCell().say("closing logical stream (streamID="+streamId+")");
+		_log.info("closing logical stream (streamID="+streamId+")");
 	}
 
 

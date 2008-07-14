@@ -16,7 +16,7 @@ import java.util.Dictionary;
 
 import org.apache.log4j.Logger;
 
-import dmg.cells.nucleus.CellAdapter;
+import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 import dmg.util.Args;
@@ -40,16 +40,14 @@ import diskCacheV111.util.ChecksumFactory;
 
 public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
 
-
-	private static Logger _logSocketIO = Logger.getLogger("logger.dev.org.dcache.io.socket");
-	private final static Logger _logSpaceAllocation = Logger.getLogger("logger.dev.org.dcache.poolspacemonitor." + DCapProtocol_3_nio.class.getName());
+   private static Logger _log = Logger.getLogger(DCapProtocol_3_nio.class);
+   private static Logger _logSocketIO = Logger.getLogger("logger.dev.org.dcache.io.socket");
+   private final static Logger _logSpaceAllocation = Logger.getLogger("logger.dev.org.dcache.poolspacemonitor." + DCapProtocol_3_nio.class.getName());
    private static final int INC_SPACE  =  (50*1024*1024) ;
-   //
-   // <init>( CellAdapter cell ) ;
-   //
+
    private final Args          _args    ;
    private final Dictionary    _context ;
-   private final CellAdapter      _cell ;
+   private final CellEndpoint     _cell ;
 
    private long _bytesTransferred   = -1 ;
    private long _transferStarted    = 0 ;
@@ -235,13 +233,13 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
                 " Buffer="+_buffer;
       }
    }
-   public DCapProtocol_3_nio( CellAdapter cell ){
+    public DCapProtocol_3_nio( CellEndpoint cell ){
 
        _cell    = cell ;
        _args    = _cell.getArgs() ;
        _context = _cell.getDomainContext() ;
        //
-       _cell.say( "DCapProtocol_3 (nio) created $Id: DCapProtocol_3_nio.java,v 1.17 2007-10-02 13:35:52 tigran Exp $" ) ;
+       say( "DCapProtocol_3 (nio) created $Id: DCapProtocol_3_nio.java,v 1.17 2007-10-02 13:35:52 tigran Exp $" ) ;
        //
        // we are created for each request. So our data
        // is not shared.
@@ -282,21 +280,31 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
               stringValue.equals("yes")  ? true  : false ;
    }
    private void debug( String str ){
-      if(_debug)_cell.say( "(DCap_3_nio) ["+_pnfsId+":"+_sessionId+"] "+str ) ;
-      _cell.pin(str);
+      _log.debug("["+_pnfsId+":"+_sessionId+"] "+str ) ;
    }
    private void say( String str ){
-      _cell.say( "(DCap_3_nio) "+str ) ;
+      _log.info(str);
    }
    private void esay( String str ){
-      _cell.esay( "(DCap_3_nio) "+str ) ;
+      _log.error(str);
    }
    private void esay( Exception e ){
-      _cell.esay( e ) ;
+      _log.error(e);
    }
    public String toString(){
       return "SM="+_spaceMonitorHandler+";S="+_status ;
    }
+
+    protected String getCellName()
+    {
+        return _cell.getCellInfo().getCellName();
+    }
+
+    protected String getCellDomainName()
+    {
+        return _cell.getCellInfo().getDomainName();
+    }
+
    public void runIO(
                   RandomAccessFile  diskFile ,
                   ProtocolInfo protocol ,
@@ -482,7 +490,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
                  new  InetSocketAddress(InetAddress.getLocalHost() ,
                                         pcp.getLocalPort() );
 
-            byte[] challenge = (_cell.getCellName() + "@" + _cell.getCellDomainName() + ":" +_lastTransferred).getBytes();
+            byte[] challenge = (getCellName() + "@" + getCellDomainName() + ":" +_lastTransferred).getBytes();
             PoolPassiveIoFileMessage msg = new PoolPassiveIoFileMessage("pool", socketAddress, challenge);
             msg.setId(dcap.getSessionId());
             say( "waiting for client to connect ("+
@@ -491,7 +499,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
                         ")" ) ;
 
             CellPath cellpath = dcap.door();
-            _cell.sendMessage (new CellMessage(cellpath, msg), true, true);
+            _cell.sendMessage (new CellMessage(cellpath, msg));
             DCapProrocolChallenge dcapChallenge = new DCapProrocolChallenge(_sessionId, challenge);
             socketChannel = pcp.getSocket(dcapChallenge);
 

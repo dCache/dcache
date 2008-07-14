@@ -2134,7 +2134,7 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
 
     private MoverProtocol getProtocolHandler(ProtocolInfo info) {
 
-        Class<?>[] argsClass = { dmg.cells.nucleus.CellAdapter.class };
+        Class<?>[] argsClass = { dmg.cells.nucleus.CellEndpoint.class };
         String moverClassName = info.getProtocol() + "-"
             + info.getMajorVersion();
         Class<?> mover = _moverHash.get(moverClassName);

@@ -14,6 +14,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Enumeration;
 
+import org.apache.log4j.Logger;
+
 import org.dcache.vehicles.XrootdDoorAdressInfoMessage;
 import org.dcache.vehicles.XrootdProtocolInfo;
 import org.dcache.xrootd.core.connection.PhysicalXrootdConnection;
@@ -24,16 +26,18 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.StorageInfo;
-import dmg.cells.nucleus.CellAdapter;
+import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 
 public class XrootdProtocol_2 implements MoverProtocol {
 
+    private static final Logger _log = Logger.getLogger(XrootdProtocol_2.class);
+
 	private static final int[] DEFAULT_PORTRANGE = {20000, 25000};
 	private static final int LISTEN_TIMEOUT = 10 * 60 * 1000;
 
-	private CellAdapter cell;
+	private final CellEndpoint cell;
 	private RandomAccessFile diskFile;
 	private ProtocolInfo protocolInfo;
 	private StorageInfo storageInfo;
@@ -56,9 +60,9 @@ public class XrootdProtocol_2 implements MoverProtocol {
 	private static int lastMoverPort = -1;
 
 
-	public XrootdProtocol_2(CellAdapter cell) {
+	public XrootdProtocol_2(CellEndpoint cell) {
 		this.cell = cell;
-		cell.say("Xrootd mover is started.");
+		_log.info("Xrootd mover is started.");
 	}
 
 
@@ -118,7 +122,7 @@ public class XrootdProtocol_2 implements MoverProtocol {
 			Collection col = new ArrayList(1);
 			col.add(localIP);
 			netifsCol.add(new NetIFContainer("", col));
-			cell.esay("sending ip-address derived from hostname to Xrootd-door: "+localIP+" port: "+serverPort);
+			_log.error("sending ip-address derived from hostname to Xrootd-door: "+localIP+" port: "+serverPort);
 		} else {
 //			the ip we got from the hostname seems to be bad, let's loop through the network interfaces
 			Enumeration ifList = NetworkInterface.getNetworkInterfaces();
@@ -139,7 +143,7 @@ public class XrootdProtocol_2 implements MoverProtocol {
 					if (addr instanceof Inet4Address
 							&& !addr.isLoopbackAddress()) {
 						ipsCol.add(addr);
-						cell.esay("sending ip-address derived from network-if to Xrootd-door: "+addr+" port: "+serverPort);
+						_log.error("sending ip-address derived from network-if to Xrootd-door: "+addr+" port: "+serverPort);
 					}
 				}
 
@@ -156,10 +160,10 @@ public class XrootdProtocol_2 implements MoverProtocol {
 //
 		CellPath cellpath = xrootdProtocol.getXrootdDoorCellPath();
 		XrootdDoorAdressInfoMessage doorMsg = new XrootdDoorAdressInfoMessage(getXrootdFileHandle(), serverPort, netifsCol);
-		cell.sendMessage (new CellMessage(cellpath, doorMsg), true, true);
+		cell.sendMessage (new CellMessage(cellpath, doorMsg));
 
-	    cell.say("sending redirect message to Xrootd-door "+ cellpath);
-		cell.say("Xrootd mover listening on port: " + serverPort);
+	    _log.info("sending redirect message to Xrootd-door "+ cellpath);
+		_log.info("Xrootd mover listening on port: " + serverPort);
 
 //
 //	    awaiting connection from client
@@ -175,7 +179,7 @@ public class XrootdProtocol_2 implements MoverProtocol {
 			xrootdServer.close();
 		}
 
-	    cell.say("got connection attempt");
+	    _log.info("got connection attempt");
 
 //	    pass connection handling over to the xrootd subsystem
 	    initXrootd(socket);
@@ -193,11 +197,11 @@ public class XrootdProtocol_2 implements MoverProtocol {
 	    physicalXrootdConnection.closeConnection();
 
 	    if (!isTransferSuccessful()) {
-	    	cell.esay("xrootd transfer failed");
+	    	_log.error("xrootd transfer failed");
 	    	throw new CacheException("xrootd transfer failed");
 	    }
 
-	    cell.esay("normal end of xrootd mover process, transfer successful");
+	    _log.error("normal end of xrootd mover process, transfer successful");
 
 	}
 
@@ -235,13 +239,6 @@ public class XrootdProtocol_2 implements MoverProtocol {
 	public boolean wasChanged() {
 		return false;
 	}
-
-
-	public CellAdapter getCell() {
-		return cell;
-	}
-
-
 
 	public RandomAccessFile getDiskFile() {
 		return diskFile;
