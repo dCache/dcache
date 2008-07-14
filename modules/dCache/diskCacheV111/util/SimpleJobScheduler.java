@@ -152,6 +152,28 @@ public class SimpleJobScheduler implements JobScheduler, Runnable
         }
     }
 
+    /**
+     * Simple utility thread factory that creates threads in the
+     * calling thread's ThreadGroup.
+     */
+    static class SimpleThreadFactory implements ThreadFactory {
+        public Thread newThread(Runnable r) {
+            return new Thread(r);
+        }
+    }
+
+    public SimpleJobScheduler() {
+        this(new SimpleThreadFactory(), "x");
+    }
+
+    public SimpleJobScheduler(String prefix) {
+        this(new SimpleThreadFactory(), prefix);
+    }
+
+    public SimpleJobScheduler(String prefix, boolean fifo) {
+        this(new SimpleThreadFactory(), prefix, fifo);
+    }
+
     public SimpleJobScheduler(ThreadFactory factory) {
         this(factory, "x");
     }
