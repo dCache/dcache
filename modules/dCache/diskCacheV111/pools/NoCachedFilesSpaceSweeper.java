@@ -27,7 +27,7 @@ public class NoCachedFilesSpaceSweeper implements SpaceSweeper
     private final CacheRepository _repository;
 
     public NoCachedFilesSpaceSweeper( CellAdapter cell, PnfsHandler pnfs,
-                         CacheRepository repository)
+                         CacheRepository repository, HsmStorageHandler2 storage)
     {
         _repository = repository;
         _repository.addCacheRepositoryListener(this);
