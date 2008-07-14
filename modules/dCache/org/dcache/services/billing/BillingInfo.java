@@ -5,6 +5,7 @@ import java.util.HashMap;
 
 import java.io.PrintWriter;
 
+import dmg.cells.nucleus.CellInfo;
 import dmg.util.Formats;
 import dmg.util.Args;
 
@@ -42,6 +43,11 @@ public class BillingInfo
             pw.print(" / ");
             pw.println(Formats.field("" + values[1], 6, Formats.LEFT));
         }
+    }
+
+    public CellInfo getCellInfo(CellInfo info)
+    {
+        return info;
     }
 
     public synchronized Object ac_get_billing_info(Args args)

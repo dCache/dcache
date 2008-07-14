@@ -18,6 +18,7 @@ import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageAnswerable;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.CellAdapter;
+import dmg.cells.nucleus.CellInfo;
 import dmg.util.Args;
 
 import org.dcache.services.AbstractCell;
@@ -136,6 +137,19 @@ public class UniversalSpringCell
     {
         for (CellInfoProvider provider : _infoProviders)
             provider.getInfo(pw);
+    }
+
+    /**
+     * Collects information about the cell and returns these in a
+     * CellInfo object. Information is collected from the CellAdapter
+     * base class and from all beans implementing CellInfoProvider.
+     */
+    public CellInfo getCellInfo()
+    {
+        CellInfo info = super.getCellInfo();
+        for (CellInfoProvider provider : _infoProviders)
+            info = provider.getCellInfo(info);
+        return info;
     }
 
     public final String hh_save = "[filename] # saves setup to disk";
