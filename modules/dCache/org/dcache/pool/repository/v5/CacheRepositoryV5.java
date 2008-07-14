@@ -75,7 +75,7 @@ public class CacheRepositoryV5// extends CellCompanion
     private RepositoryInterpreter _interpreter;
 
     /** Executor for periodic tasks. */
-    private ScheduledExecutorService _executor;
+    private final ScheduledExecutorService _executor;
 
     /**
      * True if inventory has been build, otherwise false.
@@ -120,6 +120,7 @@ public class CacheRepositoryV5// extends CellCompanion
 
     public CacheRepositoryV5()
     {
+        _executor = Executors.newSingleThreadScheduledExecutor();
     }
 
     /**
@@ -274,8 +275,6 @@ public class CacheRepositoryV5// extends CellCompanion
 
             _repository.runInventory(null, _pnfs, flags);
 
-            _executor =
-                Executors.newSingleThreadScheduledExecutor(_cell.getNucleus());
             if (_checkRepository) {
                 _executor.scheduleWithFixedDelay(new CheckHealthTask(this),
                                                  30, 30, TimeUnit.SECONDS);
