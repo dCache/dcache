@@ -6,6 +6,7 @@ import diskCacheV111.repository.* ;
 import diskCacheV111.util.* ;
 import diskCacheV111.util.event.* ;
 import diskCacheV111.vehicles.StorageInfo ;
+import org.dcache.cell.CellCommandListener;
 
 import dmg.util.* ;
 import dmg.cells.nucleus.* ;
@@ -15,7 +16,8 @@ import java.io.PrintWriter ;
 
 import org.apache.log4j.Logger;
 
-public class SpaceSweeper1 implements SpaceSweeper, Runnable
+public class SpaceSweeper1
+    implements SpaceSweeper, Runnable, CellCommandListener
 {
     private final static Logger _log = Logger.getLogger(SpaceSweeper1.class);
 
@@ -378,5 +380,5 @@ public class SpaceSweeper1 implements SpaceSweeper, Runnable
     private void esay(String msg)
     {
         _log.error(msg);
-}
+    }
 }

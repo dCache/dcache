@@ -11,10 +11,12 @@ import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.DelayedReply;
 import dmg.cells.nucleus.NoRouteToCellException;
 import org.dcache.pool.repository.StickyRecord;
+import org.dcache.cell.CellCommandListener;
 
 import org.apache.log4j.Logger;
 
 public class RepositoryInterpreter
+    implements CellCommandListener
 {
     private final static Logger _log =
         Logger.getLogger(RepositoryInterpreter.class);
