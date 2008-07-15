@@ -137,6 +137,8 @@ public class PoolV4 extends AbstractCell
     private final static int P2P_CACHED = 1;
     private final static int P2P_PRECIOUS = 2;
 
+    private final static Logger _log = Logger.getLogger(PoolV4.class);
+
     private final String _poolName;
     private final Args _args;
 
@@ -237,7 +239,7 @@ public class PoolV4 extends AbstractCell
         getNucleus().export();
 
         int argc = _args.argc();
-        say("Pool " + poolName + " starting");
+        _log.info("Pool " + poolName + " starting");
 
         try {
             //
@@ -252,18 +254,18 @@ public class PoolV4 extends AbstractCell
             String recover = _args.getOpt("recover-control");
             if ((recover != null) && (!recover.equals("no"))) {
                 _recoveryFlags |= CacheRepository.ALLOW_CONTROL_RECOVERY;
-                say("Enabled : recover-control");
+                _log.info("Enabled : recover-control");
             }
             recover = _args.getOpt("recover-space");
             if ((recover != null) && (!recover.equals("no"))) {
                 _recoveryFlags |= CacheRepository.ALLOW_SPACE_RECOVERY;
-                say("Enabled : recover-space");
+                _log.info("Enabled : recover-space");
             }
 
             recover = _args.getOpt("recover-anyway");
             if ((recover != null) && (!recover.equals("no"))) {
                 _recoveryFlags |= CacheRepository.ALLOW_RECOVER_ANYWAY;
-                say("Enabled : recover-anyway");
+                _log.info("Enabled : recover-anyway");
             }
 
             //
@@ -273,17 +275,17 @@ public class PoolV4 extends AbstractCell
                      .hasMoreElements();) {
 
                 String key = options.nextElement();
-                say("Tag scanning : " + key);
+                _log.info("Tag scanning : " + key);
                 if ((key.length() > 4) && key.startsWith("tag.")) {
                     _tags.put(key.substring(4), _args.getOpt(key));
                 }
             }
             for (Map.Entry<String, String> e: _tags.entrySet() ) {
 
-                say(" Extra Tag Option : " + e.getKey() + " -> "+ e.getValue());
+                _log.info(" Extra Tag Option : " + e.getKey() + " -> "+ e.getValue());
             }
         } catch (Exception e) {
-            say("Exception occurred on startup: " + e);
+            _log.info("Exception occurred on startup: " + e);
             start();
             kill();
             throw e;
@@ -480,12 +482,12 @@ public class PoolV4 extends AbstractCell
         try {
             while (!_setup.canRead()) {
                 disablePool(PoolV2Mode.DISABLED_STRICT,1,"Initializing : Repository seems not to be ready - setup file does not exist or not readable");
-                esay("Can't read setup file: exists? " +
+                _log.error("Can't read setup file: exists? " +
                      Boolean.toString(_setup.exists()) + " can read? " + Boolean.toString(_setup.canRead()) );
                 try {
                     Thread.sleep(30000);
                 } catch (InterruptedException ie) {
-                    esay("Waiting for repository was interrupted");
+                    _log.error("Waiting for repository was interrupted");
                     throw new InterruptedException("Waiting for repository was interrupted");
                 }
             }
@@ -536,9 +538,9 @@ public class PoolV4 extends AbstractCell
      */
     public void faultOccurred(FaultEvent event)
     {
-        esay("Fault occured in " + event.getSource() + ": " + event.getMessage());
+        _log.error("Fault occured in " + event.getSource() + ": " + event.getMessage());
         if (event.getCause() != null)
-            esay(event.getCause());
+            _log.error(event.getCause());
 
         switch (event.getAction()) {
         case READONLY:
@@ -585,7 +587,7 @@ public class PoolV4 extends AbstractCell
                 }
 
                 if (_hash.get(queueName) != null) {
-                    esay("Duplicated queue name (ignored) : " + queueName);
+                    _log.error("Duplicated queue name (ignored) : " + queueName);
                     continue;
                 }
                 int id = _list.size();
@@ -596,9 +598,9 @@ public class PoolV4 extends AbstractCell
                 _timeoutManager.addScheduler(queueName, job);
             }
             if (!_isConfigured) {
-                say("IoQueueManager : not configured");
+                _log.info("IoQueueManager : not configured");
             } else {
-                say("IoQueueManager : " + _hash.toString());
+                _log.info("IoQueueManager : " + _hash.toString());
             }
         }
 
@@ -765,18 +767,18 @@ public class PoolV4 extends AbstractCell
 
         public void run()
         {
-            info("Running Repository (Cell is locked)");
-            info("Repository seems to be ok");
+            _log.info("Running Repository (Cell is locked)");
+            _log.info("Repository seems to be ok");
             try {
                 _repository.init(_recoveryFlags);
                 enablePool();
             } catch (Throwable e) {
-                error("Repository reported a problem : " + e.getMessage());
-                warn("Pool not enabled " + _poolName);
+                _log.error("Repository reported a problem : " + e.getMessage());
+                _log.warn("Pool not enabled " + _poolName);
                 disablePool(PoolV2Mode.DISABLED_DEAD | PoolV2Mode.DISABLED_STRICT,
                             666, "Init failed: " + e.getMessage());
             }
-            info("Repository finished");
+            _log.info("Repository finished");
             if (_notifyMe != null) {
                 synchronized (_notifyMe) {
                     _notifyMe.notifyAll();
@@ -827,7 +829,7 @@ public class PoolV4 extends AbstractCell
                 return;
 
             if (to == EntryState.PRECIOUS) {
-                say("Adding " + id + " to flush queue");
+                _log.info("Adding " + id + " to flush queue");
 
                 if (_lfsMode == LFS_NONE) {
                     try {
@@ -837,19 +839,19 @@ public class PoolV4 extends AbstractCell
                          * anything with it. We don't care about deleted
                          * files so we ignore this.
                          */
-                        say("Failed to flush " + id + ": Replica is no longer in the pool");
+                        _log.info("Failed to flush " + id + ": Replica is no longer in the pool");
                     } catch (CacheException e) {
-                        esay("Error adding " + id + " to flush queue: "
+                        _log.error("Error adding " + id + " to flush queue: "
                              + e.getMessage());
                     }
                 }
             } else if (from == EntryState.PRECIOUS) {
-                say("Removing " + id + " from flush queue");
+                _log.info("Removing " + id + " from flush queue");
                 try {
                     if (!_storageQueue.removeCacheEntry(id))
-                        say("File " + id + " not found in flush queue");
+                        _log.info("File " + id + " not found in flush queue");
                 } catch (CacheException e) {
-                    esay("Error removing " + id + " from flush queue: " + e);
+                    _log.error("Error removing " + id + " from flush queue: " + e);
                 }
             }
         }
@@ -869,7 +871,7 @@ public class PoolV4 extends AbstractCell
                 } catch (NotSerializableException e) {
                     throw new RuntimeException("Bug detected: Unserializable vehicle", e);
                 } catch (NoRouteToCellException e) {
-                    esay("Failed to send message to " + _billingCell + ": "
+                    _log.error("Failed to send message to " + _billingCell + ": "
                          + e.getMessage());
                 }
             }
@@ -891,11 +893,11 @@ public class PoolV4 extends AbstractCell
                     continue;
                 if (line.charAt(0) == '#')
                     continue;
-                say("Execute setup : " + line);
+                _log.info("Execute setup : " + line);
                 try {
                     command(new Args(line));
                 } catch (CommandException ce) {
-                    esay("Error executing line " + lineCount + " : " + ce);
+                    _log.error("Error executing line " + lineCount + " : " + ce);
                     throw ce;
                 }
             }
@@ -1119,14 +1121,14 @@ public class PoolV4 extends AbstractCell
                 if (job != null) {
                     switch (_dupRequest) {
                     case DUP_REQ_NONE:
-                        say("Dup Request : none <" + door + ":" + id + ">");
+                        _log.info("Dup Request : none <" + door + ":" + id + ">");
                         break;
                     case DUP_REQ_IGNORE:
-                        say("Dup Request : ignoring <" + door + ":" + id + ">");
+                        _log.info("Dup Request : ignoring <" + door + ":" + id + ">");
                         return;
                     case DUP_REQ_REFRESH:
                         long jobId = job.getJobId();
-                        say("Dup Request : refresing <" + door + ":"
+                        _log.info("Dup Request : refresing <" + door + ":"
                             + id + "> old = " + jobId);
                         queue.kill((int)jobId, true);
                         break;
@@ -1172,30 +1174,29 @@ public class PoolV4 extends AbstractCell
                     try {
                         transfer.close();
                     } catch (NoRouteToCellException e) {
-                        esay("Communication failure while closing " + pnfsId
+                        _log.error("Communication failure while closing " + pnfsId
                              + ": " + e.getMessage());
                     } catch (IOException e) {
-                        esay("IO error while closing " + pnfsId
+                        _log.error("IO error while closing " + pnfsId
                              + ": " + e.getMessage());
                     } catch (InterruptedException e) {
-                        esay("Interrupted while closing " + pnfsId
+                        _log.error("Interrupted while closing " + pnfsId
                              + ": " + e.getMessage());
                     }
                 }
             }
             message.setSucceeded();
         } catch (FileInCacheException e) {
-            warn("Attempted to create existing replica " + pnfsId);
+            _log.warn("Attempted to create existing replica " + pnfsId);
             message.setFailed(e.getRc(), "Pool already contains " + pnfsId);
         } catch (FileNotInCacheException e) {
-            warn("Attempted to open non-existing replica " + pnfsId);
+            _log.warn("Attempted to open non-existing replica " + pnfsId);
             message.setFailed(e.getRc(), "Pool does not contain " + pnfsId);
         } catch (CacheException e) {
-            error(e.getMessage());
+            _log.error(e.getMessage());
             message.setFailed(e.getRc(), e.getMessage());
         } catch (Throwable e) {
-            fatal("Possible bug found: " + e.getMessage());
-            debug(e);
+            _log.fatal("Possible bug found: " + e.getMessage(), e);
             message.setFailed(CacheException.DEFAULT_ERROR_CODE,
                               "Failed to enqueue mover: " + e.getMessage());
         }
@@ -1206,7 +1207,7 @@ public class PoolV4 extends AbstractCell
         } catch (NotSerializableException e) {
             throw new RuntimeException("Bug detected: Unserializable vehicle", e);
         } catch (NoRouteToCellException e) {
-            esay(e);
+            _log.error(e);
         }
     }
 
@@ -1272,7 +1273,7 @@ public class PoolV4 extends AbstractCell
             } catch (NotSerializableException e) {
                 throw new RuntimeException("Bug: Unserializable vehicle detected", e);
             } catch (NoRouteToCellException e) {
-                esay("Cannot send message to " + _billingCell + ": No route to cell");
+                _log.error("Cannot send message to " + _billingCell + ": No route to cell");
             }
         }
 
@@ -1296,7 +1297,7 @@ public class PoolV4 extends AbstractCell
             } catch (NotSerializableException e) {
                 throw new RuntimeException("Bug: Unserializable vehicle detected", e);
             } catch (NoRouteToCellException e) {
-                esay("Cannot send message to " + _door + ": No route to cell");
+                _log.error("Cannot send message to " + _door + ": No route to cell");
             }
         }
 
@@ -1349,13 +1350,13 @@ public class PoolV4 extends AbstractCell
             try {
                 _transfer.close();
             } catch (NoRouteToCellException e) {
-                esay("Failed to cancel transfer: " + e);
+                _log.error("Failed to cancel transfer: " + e);
             } catch (CacheException e) {
-                esay("Failed to cancel transfer: " + e);
+                _log.error("Failed to cancel transfer: " + e);
             } catch (IOException e) {
-                esay("Failed to cancel transfer: " + e);
+                _log.error("Failed to cancel transfer: " + e);
             } catch (InterruptedException e) {
-                esay("Failed to cancel transfer: " + e);
+                _log.error("Failed to cancel transfer: " + e);
             }
 
             sendFinished(CacheException.DEFAULT_ERROR_CODE,
@@ -1525,9 +1526,9 @@ public class PoolV4 extends AbstractCell
             try {
                 _initiateReplication(_repository.getEntry(id), source);
             } catch (CacheException e) {
-                esay("Problem in sending replication request : " + e);
+                _log.error("Problem in sending replication request : " + e);
             } catch (NoRouteToCellException e) {
-                esay("Problem in sending replication request : " + e.getMessage());
+                _log.error("Problem in sending replication request : " + e.getMessage());
             }
         }
 
@@ -1593,14 +1594,13 @@ public class PoolV4 extends AbstractCell
                     Object value = attribute.getValue();
                     instance.setAttribute(key.toString(), value);
                 } catch (IllegalArgumentException e) {
-                    esay("setAttribute : " + e.getMessage());
+                    _log.error("setAttribute : " + e.getMessage());
                 }
             }
 
             return instance;
         } catch (Exception e) {
-            esay("Couldn't get Handler Class" + moverClassName);
-            esay(e);
+            _log.error("Could not get handler class " + moverClassName, e);
             return null;
         }
     }
@@ -1643,7 +1643,7 @@ public class PoolV4 extends AbstractCell
                 }
             } finally {
                 if (msg.getReturnCode() != 0) {
-                    esay("Fetch of " + id + " failed: " + msg.getErrorObject().toString());
+                    _log.error("Fetch of " + id + " failed: " + msg.getErrorObject().toString());
 
                     /* Something went wrong. We delete the file to be
                      * on the safe side (better waste tape bandwidth
@@ -1656,7 +1656,7 @@ public class PoolV4 extends AbstractCell
                          * before we could do it. Log the problem, but
                          * otherwise ignore it.
                          */
-                        esay("Failed to remove " + pnfsId +  ": "
+                        _log.error("Failed to remove " + pnfsId +  ": "
                              + e.getMessage());
                     }
                 }
@@ -1667,7 +1667,7 @@ public class PoolV4 extends AbstractCell
                 } catch (NotSerializableException e) {
                     throw new RuntimeException("Bug detected: Unserializable vehicle", e);
                 } catch (NoRouteToCellException e) {
-                    esay("Failed to send reply to " + _cellMessage.getDestinationAddress() + ": " + e.getMessage());
+                    _log.error("Failed to send reply to " + _cellMessage.getDestinationAddress() + ": " + e.getMessage());
                 }
             }
         }
@@ -1678,7 +1678,7 @@ public class PoolV4 extends AbstractCell
     {
         PnfsId pnfsId = poolMessage.getPnfsId();
         StorageInfo storageInfo = poolMessage.getStorageInfo();
-        say("Pool " + _poolName + " asked to fetch file " + pnfsId + " (hsm="
+        _log.info("Pool " + _poolName + " asked to fetch file " + pnfsId + " (hsm="
             + storageInfo.getHsm() + ")");
 
         try {
@@ -1686,18 +1686,18 @@ public class PoolV4 extends AbstractCell
             _storageHandler.fetch(pnfsId, storageInfo, reply);
             return false;
         } catch (FileInCacheException ce) {
-            esay("Fetch failed: Repository already contains " + pnfsId);
+            _log.error("Fetch failed: Repository already contains " + pnfsId);
             poolMessage.setSucceeded();
             return true;
         } catch (CacheException ce) {
-            esay(ce);
+            _log.error(ce);
             poolMessage.setFailed(ce.getRc(), ce);
             if (ce.getRc() == CacheRepository.ERROR_IO_DISK)
                 disablePool(PoolV2Mode.DISABLED_STRICT, ce.getRc(), ce
                             .getMessage());
             return true;
         } catch (Exception ui) {
-            esay(ui);
+            _log.error(ui);
             poolMessage.setFailed(100, ui);
             return true;
         }
@@ -1805,7 +1805,7 @@ public class PoolV4 extends AbstractCell
     {
         // long freeSpace = _repository.getFreeSpace() ;
         long freeSpace = 1024L * 1024L * 1024L * 100L;
-        say("XChecking free space [ result = " + freeSpace + " ] ");
+        _log.info("XChecking free space [ result = " + freeSpace + " ] ");
         poolMessage.setFreeSpace(freeSpace);
         poolMessage.setSucceeded();
     }
@@ -1840,14 +1840,14 @@ public class PoolV4 extends AbstractCell
                     }
                 }
 
-                say("Sending p2p reply " + _message);
+                _log.info("Sending p2p reply " + _message);
                 try {
                     _envelope.revertDirection();
                     sendMessage(_envelope);
                 } catch (NotSerializableException e) {
                     throw new RuntimeException("Bug detected: Unserializable vehicle", e);
                 } catch (NoRouteToCellException e) {
-                    esay("Cannot reply p2p message : " + e.getMessage());
+                    _log.error("Cannot reply p2p message : " + e.getMessage());
                 }
             }
         }
@@ -1880,7 +1880,7 @@ public class PoolV4 extends AbstractCell
         Object messageObject = cellMessage.getMessageObject();
 
         if (!(messageObject instanceof Message)) {
-            say("Unexpected message class 1 " + messageObject.getClass());
+            _log.info("Unexpected message class 1 " + messageObject.getClass());
             return;
         }
 
@@ -1889,11 +1889,11 @@ public class PoolV4 extends AbstractCell
         boolean replyRequired = poolMessage.getReplyRequired();
         if (poolMessage instanceof PoolMoverKillMessage) {
             PoolMoverKillMessage kill = (PoolMoverKillMessage) poolMessage;
-            say("PoolMoverKillMessage for mover id " + kill.getMoverId());
+            _log.info("PoolMoverKillMessage for mover id " + kill.getMoverId());
             try {
                 mover_kill(kill.getMoverId(), false);
             } catch (NoSuchElementException e) {
-                esay(e);
+                _log.error(e);
                 kill.setReply(1, e);
             }
         } else if (poolMessage instanceof PoolFlushControlMessage) {
@@ -1916,7 +1916,7 @@ public class PoolV4 extends AbstractCell
                 || ((poolMessage instanceof PoolDeliverFileMessage)
                     && _poolMode.isDisabled(PoolV2Mode.DISABLED_FETCH))) {
 
-                esay("PoolIoFileMessage Request rejected due to "
+                _log.error("PoolIoFileMessage Request rejected due to "
                      + _poolMode);
                 sentNotEnabledException(poolMessage, cellMessage);
                 return;
@@ -1931,7 +1931,7 @@ public class PoolV4 extends AbstractCell
 
             if (_poolMode.isDisabled(PoolV2Mode.DISABLED_P2P_CLIENT)) {
 
-                esay("Pool2PoolTransferMsg Request rejected due to "
+                _log.error("Pool2PoolTransferMsg Request rejected due to "
                      + _poolMode);
                 sentNotEnabledException( poolMessage, cellMessage);
                 return;
@@ -1949,7 +1949,7 @@ public class PoolV4 extends AbstractCell
             if (_poolMode.isDisabled(PoolV2Mode.DISABLED_STAGE )
                 || (_lfsMode != LFS_NONE)) {
 
-                esay("PoolFetchFileMessage  Request rejected due to "
+                _log.error("PoolFetchFileMessage  Request rejected due to "
                      + _poolMode);
                 sentNotEnabledException(poolMessage, cellMessage);
                 return;
@@ -1964,7 +1964,7 @@ public class PoolV4 extends AbstractCell
             if (_poolMode.isDisabled(PoolV2Mode.DISABLED_STAGE) ||
                 (_lfsMode != LFS_NONE)) {
 
-                esay("PoolRemoveFilesFromHsmMessage request rejected due to "
+                _log.error("PoolRemoveFilesFromHsmMessage request rejected due to "
                      + _poolMode);
                 sentNotEnabledException(poolMessage, cellMessage);
                 return;
@@ -1977,7 +1977,7 @@ public class PoolV4 extends AbstractCell
 
             if (_poolMode.isDisabled(PoolV2Mode.DISABLED)) {
 
-                esay("PoolCheckFreeSpaceMessage Request rejected due to "
+                _log.error("PoolCheckFreeSpaceMessage Request rejected due to "
                      + _poolMode);
                 sentNotEnabledException(poolMessage, cellMessage);
                 return;
@@ -1991,7 +1991,7 @@ public class PoolV4 extends AbstractCell
                 if (_poolMode.isDisabled(PoolV2Mode.DISABLED) ||
                     _poolMode.isDisabled(PoolV2Mode.DISABLED_FETCH)) {
 
-                    esay("PoolCheckable Request rejected due to " + _poolMode);
+                    _log.error("PoolCheckable Request rejected due to " + _poolMode);
                     sentNotEnabledException(poolMessage, cellMessage);
                     return;
                 }
@@ -2011,7 +2011,7 @@ public class PoolV4 extends AbstractCell
 
             if (_poolMode.isDisabled(PoolV2Mode.DISABLED)) {
 
-                esay("PoolRemoveFilesMessage Request rejected due to "
+                _log.error("PoolRemoveFilesMessage Request rejected due to "
                      + _poolMode);
                 sentNotEnabledException(poolMessage, cellMessage);
                 return;
@@ -2037,9 +2037,9 @@ public class PoolV4 extends AbstractCell
             replyRequired = true;
 
         } else {
-            say("Unexpected message class 2" + poolMessage.getClass());
-            say(" isReply = " + ( poolMessage).isReply()); // REMOVE
-            say(" source = " + cellMessage.getSourceAddress());
+            _log.info("Unexpected message class 2" + poolMessage.getClass());
+            _log.info(" isReply = " + ( poolMessage).isReply()); // REMOVE
+            _log.info(" source = " + cellMessage.getSourceAddress());
             return;
         }
         if (!replyRequired)
@@ -2050,7 +2050,7 @@ public class PoolV4 extends AbstractCell
         } catch (NotSerializableException e) {
             throw new RuntimeException("Bug detected: Unserializable vehicle", e);
         } catch (NoRouteToCellException e) {
-            esay("Cannot reply message : " + e.getMessage());
+            _log.error("Cannot reply message : " + e.getMessage());
         }
     }
 
@@ -2089,7 +2089,7 @@ public class PoolV4 extends AbstractCell
         } catch (NotSerializableException e) {
             throw new RuntimeException("Bug detected: Unserializable vehicle", e);
         } catch (NoRouteToCellException e) {
-            esay("Cannot reply message : " + e.getMessage());
+            _log.error("Cannot reply message : " + e.getMessage());
         }
     }
 
@@ -2120,7 +2120,7 @@ public class PoolV4 extends AbstractCell
         _poolMode.setMode(mode);
 
         _pingThread.sendPoolManagerMessage(true);
-        esay("Pool mode changed to " + _poolMode);
+        _log.error("Pool mode changed to " + _poolMode);
     }
 
     /**
@@ -2134,7 +2134,7 @@ public class PoolV4 extends AbstractCell
         _poolStatusMessage = "OK";
 
         _pingThread.sendPoolManagerMessage(true);
-        esay("Pool mode changed to " + _poolMode);
+        _log.error("Pool mode changed to " + _poolMode);
     }
 
     private class PoolManagerPingThread implements Runnable
@@ -2154,20 +2154,20 @@ public class PoolV4 extends AbstractCell
 
         public void run()
         {
-            say("Ping Thread started");
+            _log.info("Ping Thread started");
             try {
                 while (!Thread.interrupted()) {
                     sendPoolManagerMessage(true);
                     Thread.sleep(_heartbeat * 1000);
                 }
             } catch (InterruptedException e) {
-                esay("Ping Thread was interrupted");
+                _log.error("Ping Thread was interrupted");
             }
 
-            esay("Ping Thread sending Pool Down message");
+            _log.error("Ping Thread sending Pool Down message");
             disablePool(PoolV2Mode.DISABLED_DEAD | PoolV2Mode.DISABLED_STRICT,
                         666, "PingThread terminated");
-            esay("Ping Thread finished");
+            _log.error("Ping Thread finished");
         }
 
         public void setHeartbeat(int seconds)
@@ -2214,7 +2214,7 @@ public class PoolV4 extends AbstractCell
             } catch (NotSerializableException e) {
                 throw new RuntimeException("Bug detected: Unserializable vehicle", e);
             } catch (NoRouteToCellException e){
-                esay("Failed to send ping message: " + e.getMessage());
+                _log.error("Failed to send ping message: " + e.getMessage());
             }
         }
     }
@@ -2286,17 +2286,17 @@ public class PoolV4 extends AbstractCell
                 if (!_cleanPreciousFiles && _lfsMode == LFS_NONE
                     && _repository.getState(pnfsId) == EntryState.PRECIOUS) {
                     counter++;
-                    esay("removeFiles : File " + fileList[i] + " kept. (precious)");
+                    _log.error("removeFiles : File " + fileList[i] + " kept. (precious)");
                 } else {
                     _repository.setState(pnfsId, EntryState.REMOVED);
                     fileList[i] = null;
                 }
             } catch (IllegalTransitionException e) {
-                esay("removeFiles : File " + fileList[i] + " delete CE : "
+                _log.error("removeFiles : File " + fileList[i] + " delete CE : "
                      + e.getMessage());
                 counter++;
             } catch (IllegalArgumentException e) {
-                esay("removeFiles : invalid syntax in remove filespec ("
+                _log.error("removeFiles : invalid syntax in remove filespec ("
                      + fileList[i] + ")");
                 counter++;
             }
@@ -2331,7 +2331,7 @@ public class PoolV4 extends AbstractCell
             _hybridCurrent = 0;
 
             long startTime, stopTime;
-            say("HybridInventory started. _activate="+_activate);
+            _log.info("HybridInventory started. _activate="+_activate);
             startTime = System.currentTimeMillis();
 
             for (PnfsId pnfsid : _repository) {
@@ -2356,7 +2356,7 @@ public class PoolV4 extends AbstractCell
                 _hybridInventoryActive = false;
             }
 
-            say("HybridInventory finished. Number of pnfsids " +
+            _log.info("HybridInventory finished. Number of pnfsids " +
                 ((_activate) ? "" : "un" )
                 +"registered="
                 +_hybridCurrent +" in " + (stopTime-startTime) +" msec");
@@ -2415,9 +2415,9 @@ public class PoolV4 extends AbstractCell
         PnfsId pnfsId = new PnfsId(args.argv(0));
         PnfsMapPathMessage info = new PnfsMapPathMessage(pnfsId);
         CellPath path = new CellPath("PnfsManager");
-        say("Sending : " + info);
+        _log.info("Sending : " + info);
         CellMessage m = sendAndWait(new CellMessage(path, info), 10000);
-        say("Reply arrived : " + m);
+        _log.info("Reply arrived : " + m);
         if (m == null)
             throw new Exception("No reply from PnfsManager");
 
@@ -2645,7 +2645,7 @@ public class PoolV4 extends AbstractCell
     {
         long maxDisk = UnitInteger.parseUnitLong(args.argv(0));
         _repository.setSize(maxDisk);
-        say("set maximum diskspace =" + UnitInteger.toUnitString(maxDisk));
+        _log.info("set maximum diskspace =" + UnitInteger.toUnitString(maxDisk));
         return "";
     }
 
@@ -2653,7 +2653,7 @@ public class PoolV4 extends AbstractCell
     public String ac_set_cleaning_interval_$_1(Args args)
     {
         _cleaningInterval = Integer.parseInt(args.argv(0));
-        say("_cleaningInterval=" + _cleaningInterval);
+        _log.info("_cleaningInterval=" + _cleaningInterval);
         return "";
     }
 
@@ -2826,7 +2826,7 @@ public class PoolV4 extends AbstractCell
                 return js.printJobQueue(null).toString();
             }
         } catch (NumberFormatException ee) {
-            esay(ee);
+            _log.error(ee);
             throw ee;
         }
     }
@@ -2949,7 +2949,7 @@ public class PoolV4 extends AbstractCell
             } catch (NotSerializableException e) {
                 throw new RuntimeException("Bug detected: Unserializable vehicle", e);
             } catch (NoRouteToCellException e) {
-                esay("Problem sending setup to >" + setupManager + "< : " + e.getMessage());
+                _log.error("Problem sending setup to >" + setupManager + "< : " + e.getMessage());
                 throw e;
             }
         }
