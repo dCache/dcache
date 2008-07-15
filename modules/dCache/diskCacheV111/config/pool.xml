@@ -105,9 +105,9 @@
   </bean>
 
   <bean id="checksum" class="org.dcache.pool.classic.ChecksumModuleV1">
-    <constructor-arg ref="cell"/>
     <constructor-arg ref="repository"/>
     <constructor-arg ref="pnfs"/>
+    <property name="cellEndpoint" ref="cell"/>    
   </bean>
 
   <bean id="storagequeue" class="org.dcache.pool.classic.StorageClassContainer">

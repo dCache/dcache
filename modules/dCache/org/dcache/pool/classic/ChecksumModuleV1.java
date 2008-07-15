@@ -6,6 +6,7 @@ import diskCacheV111.util.*;
 import diskCacheV111.vehicles.*;
 import org.dcache.pool.repository.ReadHandle;
 import org.dcache.pool.repository.v5.CacheRepositoryV5;
+import org.dcache.cell.CellMessageSender;
 
 import dmg.util.*;
 import dmg.cells.nucleus.*;
@@ -16,10 +17,15 @@ import java.io.*;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
+import org.apache.log4j.Logger;
+
 public class ChecksumModuleV1
+    implements CellMessageSender
 {
-    private final CellAdapter _cell;
+    private final static Logger _log = Logger.getLogger(ChecksumModuleV1.class);
+
     private final CacheRepositoryV5 _repository;
+    private CellEndpoint _endpoint;
 
     private boolean _frequently = false;
     private boolean _onRead     = false;
@@ -47,19 +53,22 @@ public class ChecksumModuleV1
     private final Map<PnfsId,Checksum> _bad =
         new ConcurrentHashMap<PnfsId,Checksum>();
 
-    public ChecksumModuleV1(CellAdapter cell,
-                            CacheRepositoryV5 repository,
+    public ChecksumModuleV1(CacheRepositoryV5 repository,
                             PnfsHandler pnfs)
     {
         _repository = repository;
-        _cell       = cell;
         _pnfs       = pnfs;
         try {
             _defaultChecksumFactory = ChecksumFactory.getFactory("adler32");
         } catch (Throwable ex) {
-            _cell.esay("Exception building checksum factory for adler32");
+            _log.error("Exception building checksum factory for adler32");
             assert(false);
         }
+    }
+
+    public void setCellEndpoint(CellEndpoint endpoint)
+    {
+        _endpoint = endpoint;
     }
 
     public void setMoverChecksums(PnfsId id,
@@ -78,12 +87,12 @@ public class ChecksumModuleV1
         if (_fake_checksum_ftp)
             clientChecksum = null;
 
-        _cell.say(id+" client = "+clientChecksum+" transfer "+transferChecksum);
+        _log.info(id+" client = "+clientChecksum+" transfer "+transferChecksum);
 
         Checksum pnfsChecksum = null;
 
         if (clientChecksum == null) {
-            pnfsChecksum = factory.createFromPersistentState(_cell, id);
+            pnfsChecksum = factory.createFromPersistentState(_endpoint, id);
             clientChecksum = pnfsChecksum;
         }
 
@@ -96,7 +105,7 @@ public class ChecksumModuleV1
             throw new
                 CacheException("Checksum error client="+clientChecksum+";transfer="+transferChecksum);
 
-        _cell.say(id+" client = "+clientChecksum+" transfer "+transferChecksum);
+        _log.info(id+" client = "+clientChecksum+" transfer "+transferChecksum);
 
         Checksum  checksum     = clientChecksum == null ? transferChecksum : clientChecksum;
 
@@ -106,7 +115,7 @@ public class ChecksumModuleV1
             calculateFileChecksum(file, factory.create()) :
             null;
 
-        _cell.say(id+" filechecksum = "+fileChecksum);
+        _log.info(id+" filechecksum = "+fileChecksum);
 
         if ((checksum     != null) &&
             (fileChecksum != null) &&
@@ -122,7 +131,7 @@ public class ChecksumModuleV1
             checksum = calculateFileChecksum(file, factory.create());
         }
         if ((checksum != null) && (pnfsChecksum == null)) {
-            _cell.say(id+" sending checksum = "+checksum);
+            _log.debug(id+" sending checksum = "+checksum);
             storeChecksumInPnfs(id, checksum);
         }
 
@@ -132,7 +141,7 @@ public class ChecksumModuleV1
         throws IOException, CacheException, InterruptedException,
                FileNotInCacheException
     {
-        _cell.say("Calculating checksum on " + file);
+        _log.debug("Calculating checksum on " + file);
         MessageDigest digest = checksum.getMessageDigest();
 
         byte [] buffer = new byte[64 * 1024];
@@ -153,8 +162,8 @@ public class ChecksumModuleV1
             } catch (IOException e) {
             }
         }
-        _cell.say("Calculating checksum on " + file
-                  + " done, length " + sum + " chsm " + checksum);
+        _log.info("Calculated checksum on " + file
+                  + ", length " + sum + " chsm " + checksum);
         checksum.getDigest();
         return checksum;
     }
@@ -163,7 +172,7 @@ public class ChecksumModuleV1
         throws CacheException, NoRouteToCellException, InterruptedException
     {
         try {
-            ChecksumPersistence.getPersistenceMgr().store(_cell, pnfsId, checksum);
+            ChecksumPersistence.getPersistenceMgr().store(_endpoint, pnfsId, checksum);
         } catch (CacheException e) {
             throw e;
         } catch (NoRouteToCellException e) {
@@ -171,7 +180,7 @@ public class ChecksumModuleV1
         } catch (InterruptedException e) {
             throw e;
         } catch (Exception e) {
-           _cell.esay("Failed to set checksum: " + e);
+           _log.error("Failed to set checksum: " + e);
            throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
                                     "Failed to set checksum: " + e.getMessage());
         }
@@ -180,7 +189,7 @@ public class ChecksumModuleV1
     public Checksum getChecksumFromPnfs(PnfsId pnfsId)
     {
         try {
-            return _defaultChecksumFactory.createFromPersistentState(_cell,pnfsId);
+            return _defaultChecksumFactory.createFromPersistentState(_endpoint,pnfsId);
         } catch(Exception ee) {
             ee.printStackTrace();
         }
@@ -402,7 +411,7 @@ public class ChecksumModuleV1
                 } catch (Exception e) {
                     /* Whatever it is, log it and continue with the task.
                      */
-                    _cell.esay(e);
+                    _log.error(e);
                 }
             }
         }
@@ -553,24 +562,20 @@ public class ChecksumModuleV1
                 _lastException = null;
 
                 _currentThread =
-                    _cell.getNucleus().newThread(
-                                                 new Runnable() {
-                                                     public void run() {
-                                                         try {
-                                                             runIt();
-                                                         } catch(Exception ee) {
-                                                             _lastException = ee;
-                                                         } finally {
-                                                             synchronized(_lock) {
-                                                                 _isActive = false;
-                                                                 _currentThread = null;
-                                                             }
-                                                         }
-                                                     }
-                                                 }
-                                                ,
-                                                 _name
-                                                );
+                    new Thread(_name) {
+                        public void run() {
+                            try {
+                                runIt();
+                            } catch(Exception ee) {
+                                _lastException = ee;
+                            } finally {
+                                synchronized(_lock) {
+                                    _isActive = false;
+                                    _currentThread = null;
+                                }
+                            }
+                        }
+                    };
             }
             _currentThread.start();
         }
