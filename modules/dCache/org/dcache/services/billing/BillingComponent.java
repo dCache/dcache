@@ -1,7 +1,8 @@
 package org.dcache.services.billing;
 
-import java.text.SimpleDateFormat;
 import java.io.File;
+import java.util.Date;
+import java.text.SimpleDateFormat;
 
 /**
  * Common base class for billing cell components containing shared
@@ -9,30 +10,30 @@ import java.io.File;
  */
 public class BillingComponent
 {
-    protected final static SimpleDateFormat formatter
-         = new SimpleDateFormat ("MM.dd HH:mm:ss");
     protected final static SimpleDateFormat fileNameFormat
-         = new SimpleDateFormat( "yyyy.MM.dd" ) ;
-    protected final static SimpleDateFormat directoryNameFormat
-        = new SimpleDateFormat( "yyyy"+File.separator+"MM" ) ;
-
-    protected File _billingDb;
+         = new SimpleDateFormat("yyyy.MM.dd");
+    protected BillingDirectory _directory;
 
     public BillingComponent()
     {
     }
 
-    public File getBillingDirectory()
+    /**
+     * Sets the base directory for all logging output.
+     */
+    public void setBillingDirectory(BillingDirectory directory)
     {
-        return _billingDb;
+        _directory = directory;
     }
 
-    public void setBillingDirectory(File dir)
+    protected File getDirectory()
     {
-        if (!dir.isDirectory()) {
-            throw new IllegalArgumentException("No such directory: " + dir);
-        }
-        _billingDb = dir;
+        return _directory.getDirectory();
+    }
+
+    protected File getDirectory(Date date)
+    {
+        return _directory.getDirectory(date);
     }
 
     public void info(String s)

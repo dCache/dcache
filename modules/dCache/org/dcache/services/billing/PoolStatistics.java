@@ -105,7 +105,7 @@ public class PoolStatistics
             ( "poolFlow-" + fileNameFormat.format(new Date())):
             name;
 
-        File report = new File(_billingDb, name);
+        File report = new File(getDirectory(), name);
         PrintWriter pw =
             new PrintWriter(new BufferedWriter(new FileWriter(report)));
         try {

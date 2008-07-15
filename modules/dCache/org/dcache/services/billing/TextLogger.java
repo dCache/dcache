@@ -1,6 +1,7 @@
 package org.dcache.services.billing;
 
 import java.util.Date;
+import java.text.SimpleDateFormat;
 import diskCacheV111.vehicles.InfoMessage;
 import org.dcache.cell.CellMessageReceiver;
 
@@ -8,6 +9,9 @@ public abstract class TextLogger
     extends BillingComponent
     implements CellMessageReceiver
 {
+    protected final static SimpleDateFormat formatter
+         = new SimpleDateFormat ("MM.dd HH:mm:ss");
+
     public void messageArrived(InfoMessage message)
     {
         if (message.getMessageType().equals("check"))

@@ -8,31 +8,6 @@ import java.util.Date;
 
 public class FileLogger extends TextLogger
 {
-    protected int _printMode = 0;
-
-    public int getPrintMode()
-    {
-        return _printMode;
-    }
-
-    public void setPrintMode(int mode)
-    {
-        _printMode = mode;
-    }
-
-    protected File getDirectory(Date date)
-    {
-        File dir;
-        if (_printMode == 0) {
-            dir = _billingDb;
-        } else {
-            dir = new File(_billingDb, directoryNameFormat.format(date));
-            if (!dir.exists())
-                dir.mkdirs();
-        }
-        return dir;
-    }
-
     protected File getFile(Date date)
     {
         return new File(getDirectory(date),

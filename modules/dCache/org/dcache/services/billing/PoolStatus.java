@@ -61,7 +61,7 @@ public class PoolStatus
             name = (name == null
                     ? "poolStatus-" + fileNameFormat.format(new Date())
                     : name);
-            _report = new File(_billingDb, name);
+            _report = new File(getDirectory(), name);
             Thread t = new Thread(this, "poolStatus-" + name);
             t.start();
         }
