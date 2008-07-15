@@ -31,7 +31,6 @@ import java.util.MissingResourceException;
 import java.util.NoSuchElementException;
 import java.util.StringTokenizer;
 import java.util.TreeSet;
-import java.util.concurrent.ThreadFactory;
 
 import org.apache.log4j.Logger;
 
@@ -110,7 +109,6 @@ import diskCacheV111.vehicles.StorageInfo;
 import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.CellMessage;
-import dmg.cells.nucleus.CellNucleus;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.CellVersion;
 import dmg.cells.nucleus.NoRouteToCellException;
@@ -141,7 +139,6 @@ public class PoolV4 extends AbstractCell
 
     private final String _poolName;
     private final Args _args;
-    private final CellNucleus _nucleus;
 
     private final Map<?,?> _moverAttributes = new HashMap();
     private final Map<String, Class<?>> _moverHash = new HashMap<String, Class<?>>();
@@ -232,7 +229,6 @@ public class PoolV4 extends AbstractCell
 
         _poolName = poolName;
         _args = getArgs();
-        _nucleus = getNucleus();
 
         //
         // the export is convenient but not really necessary, because
@@ -494,9 +490,9 @@ public class PoolV4 extends AbstractCell
                 }
             }
 
-            _ioQueue = new IoQueueManager(getNucleus(), _args.getOpt("io-queues"));
+            _ioQueue = new IoQueueManager(_args.getOpt("io-queues"));
 
-            _p2pQueue = new SimpleJobScheduler(getNucleus(), "P2P");
+            _p2pQueue = new SimpleJobScheduler("P2P");
 
             _timeoutManager.addScheduler("p2p", _p2pQueue);
             _timeoutManager.start();
@@ -524,8 +520,7 @@ public class PoolV4 extends AbstractCell
 
         Object weAreDone = new Object();
         synchronized (weAreDone) {
-            _nucleus.newThread(new InventoryScanner(weAreDone), "inventory")
-                .start();
+            new Thread(new InventoryScanner(weAreDone), "inventory").start();
             try {
                 weAreDone.wait();
             } catch (InterruptedException e) {
@@ -576,7 +571,7 @@ public class PoolV4 extends AbstractCell
         private HashMap<String, JobScheduler> _hash = new HashMap<String, JobScheduler>();
         private boolean _isConfigured = false;
 
-        private IoQueueManager(ThreadFactory factory, String ioQueueList)
+        private IoQueueManager(String ioQueueList)
         {
             _isConfigured = (ioQueueList != null) && (ioQueueList.length() > 0);
             if (!_isConfigured) {
@@ -594,8 +589,7 @@ public class PoolV4 extends AbstractCell
                     continue;
                 }
                 int id = _list.size();
-                JobScheduler job =
-                    new SimpleJobScheduler(factory, "IO-" + id, fifo);
+                JobScheduler job = new SimpleJobScheduler("IO-" + id, fifo);
                 _list.add(job);
                 _hash.put(queueName, job);
                 job.setSchedulerId(queueName, id);
@@ -2150,7 +2144,7 @@ public class PoolV4 extends AbstractCell
 
         private PoolManagerPingThread()
         {
-            _worker = _nucleus.newThread(this, "ping");
+            _worker = new Thread(this, "ping");
         }
 
         private void start()
@@ -2329,7 +2323,7 @@ public class PoolV4 extends AbstractCell
         public HybridInventory(boolean activate)
         {
             _activate = activate;
-            _nucleus.newThread(this, "HybridInventory").start();
+            new Thread(this, "HybridInventory").start();
         }
 
         public void run()
