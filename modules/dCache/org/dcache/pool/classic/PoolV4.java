@@ -118,11 +118,9 @@ import dmg.cells.services.SetupInfoMessage;
 import dmg.util.Args;
 import dmg.util.CommandException;
 import dmg.util.CommandSyntaxException;
-import dmg.util.Logable;
 
 public class PoolV4 extends AbstractCell
-    implements Logable,
-               FaultListener
+    implements FaultListener
 {
     private static final String MAX_SPACE = "use-max-space";
     private static final String PREALLOCATED_SPACE = "use-preallocated-space";
@@ -183,7 +181,6 @@ public class PoolV4 extends AbstractCell
     private JobTimeoutManager _timeoutManager;
     private HsmSet _hsmSet;
     private HsmStorageHandler2 _storageHandler;
-    private Logable _logClass = this;
     private boolean _crashEnabled = false;
     private String _crashType = "exception";
     private boolean _allowSticky = false;
@@ -774,19 +771,18 @@ public class PoolV4 extends AbstractCell
 
         public void run()
         {
-            _logClass.log("Running Repository (Cell is locked)");
-            _logClass.log("Repository seems to be ok");
+            info("Running Repository (Cell is locked)");
+            info("Repository seems to be ok");
             try {
                 _repository.init(_recoveryFlags);
                 enablePool();
             } catch (Throwable e) {
-                _logClass.elog("Repository reported a problem : "
-                               + e.getMessage());
-                _logClass.elog("Pool not enabled " + _poolName);
+                error("Repository reported a problem : " + e.getMessage());
+                warn("Pool not enabled " + _poolName);
                 disablePool(PoolV2Mode.DISABLED_DEAD | PoolV2Mode.DISABLED_STRICT,
                             666, "Init failed: " + e.getMessage());
             }
-            _logClass.elog("Repository finished");
+            info("Repository finished");
             if (_notifyMe != null) {
                 synchronized (_notifyMe) {
                     _notifyMe.notifyAll();
@@ -991,21 +987,6 @@ public class PoolV4 extends AbstractCell
         info.setTagMap(_tags);
         info.setErrorStatus(_poolStatusCode, _poolStatusMessage);
         return info;
-    }
-
-    public void log(String str)
-    {
-        say(str);
-    }
-
-    public void elog(String str)
-    {
-        esay(str);
-    }
-
-    public void plog(String str)
-    {
-        esay("PANIC : " + str);
     }
 
     @Override
