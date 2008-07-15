@@ -5,26 +5,29 @@ package org.dcache.pool.classic;
 import java.util.* ;
 import java.io.NotSerializableException;
 
-import dmg.cells.nucleus.* ;
-import dmg.util.* ;
+import dmg.cells.nucleus.DelayedReply;
+import dmg.cells.nucleus.NoRouteToCellException;
+import dmg.util.Args;
 
 import diskCacheV111.util.* ;
 import diskCacheV111.vehicles.StorageInfo;
 
+import org.apache.log4j.Logger;
+
 public class HsmStorageInterpreter {
 
-   private final CellAdapter        _cell     ;
+   private static final Logger _log =
+       Logger.getLogger(HsmStorageInterpreter.class);
+
    private final HsmStorageHandler2 _storageHandler ;
    private final JobScheduler       _fetchQueue     ;
    private final JobScheduler       _storeQueue     ;
    private final PnfsHandler        _pnfs;
 
-   public HsmStorageInterpreter( CellAdapter cell ,
-                                 HsmStorageHandler2 handler,
+   public HsmStorageInterpreter( HsmStorageHandler2 handler,
                                  PnfsHandler pnfs){
 
 
-      _cell           = cell ;
       _storageHandler = handler ;
       _pnfs           = pnfs;
       _fetchQueue     = _storageHandler.getFetchScheduler() ;
@@ -122,9 +125,9 @@ public class HsmStorageInterpreter {
     public String ac_st_ls( Args args )throws Exception {
         StringBuffer sb = new StringBuffer() ;
         for (PnfsId pnfsId : _storageHandler.getStorePnfsIds()) {
-           _cell.say("ok "+pnfsId);
+           _log.debug("ok "+pnfsId);
            HsmStorageHandler2.Info info = _storageHandler.getStoreInfoByPnfsId(pnfsId) ;
-           _cell.say("done "+info);
+           _log.debug("done "+info);
            if( info == null ){
               sb.append(pnfsId).append("  <zombie>\n") ;
            }else{
@@ -183,7 +186,7 @@ public class HsmStorageInterpreter {
                     } catch (InterruptedException e) {
                         Thread.currentThread().interrupt();
                     } catch (NoRouteToCellException e) {
-                        _cell.say("Failed to deliver reply: " + e);
+                        _log.error("Failed to deliver reply: " + e);
                     }
                 }
             };

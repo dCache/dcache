@@ -508,7 +508,7 @@ public class PoolV4 extends AbstractCell
             // add the command listeners before we execute the setupFile.
             //
 
-            addCommandListener(new HsmStorageInterpreter(this, _storageHandler, _pnfs));
+            addCommandListener(new HsmStorageInterpreter(_storageHandler, _pnfs));
 
             execFile(_setup);
 
