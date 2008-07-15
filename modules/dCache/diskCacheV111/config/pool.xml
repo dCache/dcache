@@ -134,9 +134,9 @@
   </bean>
 
   <bean id="p2p" class="org.dcache.pool.classic.P2PClient">
-    <constructor-arg ref="cell"/>
     <constructor-arg ref="repository"/>
     <constructor-arg ref="checksum"/>
+    <property name="cellEndpoint" ref="cell"/>
   </bean>
 
 </beans>

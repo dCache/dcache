@@ -19,11 +19,16 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.apache.log4j.Logger;
 import org.dcache.pool.repository.v5.CacheRepositoryV5;
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.pool.repository.EntryState;
 import org.dcache.pool.repository.WriteHandle;
 import org.dcache.pool.repository.CacheEntry;
+import org.dcache.cell.CellMessageSender;
+import org.dcache.cell.CellMessageReceiver;
+import org.dcache.cell.CellInfoProvider;
+import org.dcache.cell.CellCommandListener;
 import diskCacheV111.movers.DCapConstants;
 import diskCacheV111.movers.DCapProtocol_3_nio;
 import diskCacheV111.util.Adler32;
@@ -38,24 +43,31 @@ import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.PnfsGetStorageInfoMessage;
 import diskCacheV111.vehicles.PoolDeliverFileMessage;
 import diskCacheV111.vehicles.StorageInfo;
-import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageAnswerable;
 import dmg.cells.nucleus.CellPath;
+import dmg.cells.nucleus.CellInfo;
+import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.Args;
 import dmg.util.CommandSyntaxException;
 
 public class P2PClient
+    implements CellMessageReceiver,
+               CellMessageSender,
+               CellInfoProvider,
+               CellCommandListener
 {
+    private final static Logger _log = Logger.getLogger(P2PClient.class);
+
     private final CacheRepositoryV5 _repository;
-    private final CellAdapter _cell;
     private final Acceptor _acceptor = new Acceptor();
     private final Map<Integer, P2PClient.Companion> _sessions =
         new HashMap<Integer, P2PClient.Companion>();
     private final AtomicInteger _nextId = new AtomicInteger(100);
     private final ChecksumModuleV1 _checksumModule;
 
+    private CellEndpoint _endpoint;
     private int _maxActive = 0;
 
     private String _pnfsManager = "PnfsManager";
@@ -101,11 +113,11 @@ public class P2PClient
                 _listenPort = _serverSocket.getLocalPort();
             } catch (IOException ioe) {
                 _error = ioe.getMessage();
-                esay("Problem in opening Server Socket : " + ioe);
+                _log.error("Problem in opening Server Socket : " + ioe);
                 return;
             }
             _error = null;
-            _worker = _cell.getNucleus().newThread(this, "Acceptor");
+            _worker = new Thread(this, "Acceptor");
             _worker.start();
         }
 
@@ -116,10 +128,10 @@ public class P2PClient
                     new IOHandler(_serverSocket.accept());
                 }
             } catch (IOException ioe) {
-                esay("Problem in accepting connection : " + ioe);
+                _log.error("Problem in accepting connection : " + ioe);
             } catch (Exception ioe) {
-                esay("Bug detected : " + ioe);
-                esay(ioe);
+                _log.error("Bug detected : " + ioe);
+                _log.error(ioe);
             }
         }
 
@@ -131,21 +143,6 @@ public class P2PClient
                     + (_error != null ? ("Error : " + _error)
                             : _listenPort < 0 ? "Inactive" : "" + _listenPort);
         }
-    }
-
-    private void say(String message)
-    {
-        _cell.say("PP : " + message);
-    }
-
-    private void esay(String message)
-    {
-        _cell.esay("PP : " + message);
-    }
-
-    private void esay(Exception e)
-    {
-        _cell.esay(e);
     }
 
     public int getActiveJobs()
@@ -185,7 +182,7 @@ public class P2PClient
                 _digest = null;
             }
 
-            _cell.getNucleus().newThread(this, "IOHandler").start();
+            new Thread(this, "IOHandler").start();
         }
 
         private void setStatus(String status)
@@ -345,7 +342,7 @@ public class P2PClient
 
                 Companion companion = _sessions.get(in.readInt());
                 if (companion == null) {
-                    esay("Unsolicited connection from " +
+                    _log.error("Unsolicited connection from " +
                          _socket.getRemoteSocketAddress());
                     return;
                 }
@@ -378,7 +375,7 @@ public class P2PClient
                 /* This happens if we fail to read the session ID. Not
                  * much we can do about this except log the failure.
                  */
-                esay("Failed to read from " +
+                _log.error("Failed to read from " +
                      _socket.getRemoteSocketAddress().toString() +
                      ": " + e.getMessage());
             } finally {
@@ -455,8 +452,8 @@ public class P2PClient
         synchronized private void sendMessage(String destination, Message message, long timeout)
         {
             try {
-                _cell.sendMessage(new CellMessage(new CellPath(destination), message),
-                                  this, timeout);
+                _endpoint.sendMessage(new CellMessage(new CellPath(destination), message),
+                                      this, timeout);
             } catch (NotSerializableException e) {
                 throw new RuntimeException("Bug: Unserializable vehicle found", e);
             }
@@ -631,7 +628,7 @@ public class P2PClient
                     throw new IllegalStateException("Cannot fail a finished transfer");
                 _failed = true;
                 _status = cause.toString();
-                esay(String.format("%d -> %s", _id, cause));
+                _log.error(String.format("%d -> %s", _id, cause));
 
                 /* If we fail before creating an entry, e.g. because
                  * the entry already exists, then we cannot cancel the
@@ -666,24 +663,24 @@ public class P2PClient
         }
     }
 
-    public P2PClient(CellAdapter cell, CacheRepositoryV5 repository,
-                     ChecksumModuleV1 csModule)
+    public P2PClient(CacheRepositoryV5 repository, ChecksumModuleV1 csModule)
     {
         _repository = repository;
-        _cell = cell;
         _checksumModule = csModule;
     }
 
-    public void messageArrived(Message message, CellMessage envelope)
+    public void setCellEndpoint(CellEndpoint endpoint)
     {
-        if (message instanceof DoorTransferFinishedMessage) {
-            DoorTransferFinishedMessage msg = (DoorTransferFinishedMessage) message;
-            DCapProtocolInfo pinfo = (DCapProtocolInfo)msg.getProtocolInfo();
-            int sessionId = pinfo.getSessionId();
-            Companion companion = _sessions.get(sessionId);
-            if (companion != null) {
-                companion.messageArrived(msg);
-            }
+        _endpoint = endpoint;
+    }
+
+    public void messageArrived(DoorTransferFinishedMessage message, CellMessage envelope)
+    {
+        DCapProtocolInfo pinfo = (DCapProtocolInfo)message.getProtocolInfo();
+        int sessionId = pinfo.getSessionId();
+        Companion companion = _sessions.get(sessionId);
+        if (companion != null) {
+            companion.messageArrived(message);
         }
     }
 
@@ -693,6 +690,9 @@ public class P2PClient
                              EntryState targetState,
                              CacheFileAvailable callback)
     {
+        if (_endpoint == null)
+            throw new IllegalStateException("Endpoint must be set");
+
         //
         // start the listener (if not yet done)
         //
@@ -710,6 +710,11 @@ public class P2PClient
         pw.println("  Listener   : " + _acceptor);
         pw.println("  Max Active : " + _maxActive);
         pw.println("Pnfs Timeout : " + (_pnfsTimeout / 1000L) + " seconds ");
+    }
+
+    public CellInfo getCellInfo(CellInfo info)
+    {
+        return info;
     }
 
     public void printSetup(PrintWriter pw)

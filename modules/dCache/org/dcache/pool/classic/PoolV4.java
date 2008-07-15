@@ -1903,7 +1903,7 @@ public class PoolV4 extends AbstractCell
 
         } else if (poolMessage instanceof DoorTransferFinishedMessage) {
 
-            _p2pClient.messageArrived(poolMessage, cellMessage);
+            _p2pClient.messageArrived((DoorTransferFinishedMessage)poolMessage, cellMessage);
 
             return;
 
