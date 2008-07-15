@@ -51,6 +51,8 @@ JAVA_TARGET =ArgParser.class \
              SRMAbortRequestClientV2.class \
              SRMAbortFilesClientV2.class \
              SRMReleaseFilesClientV2.class \
+             OptionParser.class \
+             Option.class \
              SRMGetRequestTokensClientV2.class 
               
 
