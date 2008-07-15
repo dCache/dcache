@@ -125,9 +125,7 @@
     <constructor-arg ref="checksum"/>
   </bean>
 
-  <bean id="timeout" class="diskCacheV111.pools.JobTimeoutManager">
-    <constructor-arg ref="cell"/>
-  </bean>
+  <bean id="timeout" class="diskCacheV111.pools.JobTimeoutManager"/>
 
   <bean id="flush" class="org.dcache.pool.classic.HsmFlushController">
     <constructor-arg ref="cell"/>

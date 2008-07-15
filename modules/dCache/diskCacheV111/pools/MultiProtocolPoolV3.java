@@ -504,7 +504,7 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
             //
             // transfer queue management
             //
-            _timeoutManager = new JobTimeoutManager(this);
+            _timeoutManager = new JobTimeoutManager();
             //
             // _ioQueue = new SimpleJobScheduler( getNucleus().getThreadGroup()
             // , "IO" ) ;

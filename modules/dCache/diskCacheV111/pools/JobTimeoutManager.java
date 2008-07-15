@@ -12,8 +12,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import diskCacheV111.util.JobScheduler;
 import diskCacheV111.vehicles.IoJobInfo;
 import diskCacheV111.vehicles.JobInfo;
-import dmg.cells.nucleus.CellAdapter;
 import dmg.util.Args;
+import org.apache.log4j.Logger;
 
 class SchedulerEntry
 {
@@ -81,15 +81,16 @@ class SchedulerEntry
 
 public class JobTimeoutManager implements Runnable
 {
-    private final CellAdapter _cell;
+    private final static Logger _log =
+        Logger.getLogger(JobTimeoutManager.class);
+
     private final List<SchedulerEntry> _schedulers
         = new CopyOnWriteArrayList<SchedulerEntry>();
     private final Thread _worker;
 
-    public JobTimeoutManager(CellAdapter cell)
+    public JobTimeoutManager()
     {
-        _cell = cell;
-        _worker = _cell.getNucleus().newThread(this , "JobTimeoutManager");
+        _worker = new Thread(this , "JobTimeoutManager");
     }
 
     public synchronized void start()
@@ -196,12 +197,12 @@ public class JobTimeoutManager implements Runnable
 
     private void say(String str)
     {
-        _cell.say("JTM : " + str);
+        _log.info(str);
     }
 
     private void esay(String str)
     {
-        _cell.esay("JTM : " + str);
+        _log.error(str);
     }
 
     public void run()
@@ -229,7 +230,6 @@ public class JobTimeoutManager implements Runnable
                 }
             }
         } catch (InterruptedException e) {
-            say("interrupted ...");
             Thread.currentThread().interrupt();
         }
     }
