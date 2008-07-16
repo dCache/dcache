@@ -6,15 +6,30 @@ package org.dcache.pool.classic;
 import diskCacheV111.pools.PoolCellInfo;
 import diskCacheV111.pools.StorageClassFlushInfo;
 import diskCacheV111.pools.StorageClassInfoFlushable;
-import  diskCacheV111.vehicles.*;
+import diskCacheV111.vehicles.*;
+import org.dcache.cell.CellMessageSender;
+import org.dcache.cell.CellMessageReceiver;
 
-import  dmg.cells.nucleus.*;
-import  dmg.util.*;
+import dmg.cells.nucleus.CellEndpoint;
+import dmg.cells.nucleus.CellMessage;
+import dmg.cells.nucleus.NoRouteToCellException;
+import dmg.util.Args;
+import dmg.util.Formats;
 
-import  java.util.*;
-import  java.io.*;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.Iterator;
+import java.io.PrintWriter;
+import java.io.NotSerializableException;
 
-public class HsmFlushController implements Runnable {
+import org.apache.log4j.Logger;
+
+public class HsmFlushController
+    implements Runnable, CellMessageSender, CellMessageReceiver
+{
+    private final static Logger _log =
+        Logger.getLogger(HsmFlushController.class);
 
     private final Thread _worker  ;
     private int    _maxActive         = 1000 ;
@@ -26,25 +41,26 @@ public class HsmFlushController implements Runnable {
     private long   _holdUntil         = System.currentTimeMillis() + 5L * 60L * 1000L ;
     //
     private final StorageClassContainer  _storageQueue ;
-    private final CellAdapter            _cell ;
     private final HsmStorageHandler2     _storageHandler;
+    private CellEndpoint _endpoint;
 
     public HsmFlushController(
-              CellAdapter cellAdapter ,
-              StorageClassContainer  storageQueue ,
-              HsmStorageHandler2 storageHandler  ){
-
-        _worker         = cellAdapter.getNucleus().newThread( this , "flushing" ) ;
-        _cell           = cellAdapter ;
+              StorageClassContainer storageQueue,
+              HsmStorageHandler2 storageHandler)
+    {
+        _worker         = new Thread(this, "flushing");
         _storageQueue   = storageQueue ;
         _storageHandler = storageHandler ;
-        say("HsmFlushController : $Id: HsmFlushController.java,v 1.6 2007-05-24 13:51:10 tigran Exp $");
+    }
 
+    public void setCellEndpoint(CellEndpoint endpoint)
+    {
+        _endpoint = endpoint;
     }
 
     private void setFlushInfos(PoolFlushControlInfoMessage flushInfo)
     {
-       flushInfo.setCellInfo((PoolCellInfo)_cell.getCellInfo());
+       flushInfo.setCellInfo((PoolCellInfo)_endpoint.getCellInfo());
        List<StorageClassFlushInfo> list =
            new ArrayList<StorageClassFlushInfo>() ;
 
@@ -71,12 +87,14 @@ public class HsmFlushController implements Runnable {
            flushControl.setFailed(354,"Message type not supported : "+flushControl.getClass().getName());
        }
 
-       if( flushControl.getReplyRequired() ){
-           message.revertDirection() ;
-           try{
-              _cell.sendMessage(message);
-           }catch(Exception e){
-              esay("Problem replying : "+message+" "+e);
+       if (flushControl.getReplyRequired()) {
+           message.revertDirection();
+           try {
+               _endpoint.sendMessage(message);
+           } catch (NoRouteToCellException e) {
+               esay("Problem replying : " + message + " " + e);
+           } catch (NotSerializableException e) {
+               throw new RuntimeException("Unserializable vehicle", e);
            }
        }
     }
@@ -89,7 +107,7 @@ public class HsmFlushController implements Runnable {
            _message = message ;
            _message.revertDirection() ;
 
-           _cell.getNucleus().newThread( this , "Worker" ).start() ;
+           new Thread(this, "Worker").start();
         }
         public void run(){
 
@@ -107,10 +125,12 @@ public class HsmFlushController implements Runnable {
                _flush.setFailed(576,ee);
             }
             if( _flush.getReplyRequired() ){
-                try{
-                   _cell.sendMessage(_message);
-                }catch(Exception e){
-                   esay("Problem replying : "+_message+" "+e);
+                try {
+                   _endpoint.sendMessage(_message);
+                } catch (NoRouteToCellException e) {
+                   esay("Problem replying : " + _message + " " + e);
+                } catch (NotSerializableException e) {
+                    throw new RuntimeException("Unserializable vehicle", e);
                 }
             }
         }
@@ -120,10 +140,12 @@ public class HsmFlushController implements Runnable {
             if( _flush.getReplyRequired() ){
                  setFlushInfos( _flush ) ;
                 _flush.setResult( requests , failed ) ;
-                try{
-                   _cell.sendMessage(_message);
-                }catch(Exception e){
-                   esay("Problem replying : "+_message+" "+e);
+                try {
+                    _endpoint.sendMessage(_message);
+                } catch (NoRouteToCellException e) {
+                    esay("Problem replying : " + _message + " " + e);
+                } catch (NotSerializableException e) {
+                    throw new RuntimeException("Unserializable vehicle", e);
                 }
             }
         }
@@ -138,9 +160,21 @@ public class HsmFlushController implements Runnable {
         say( "Flushing storageClass : "+storageClass+" Done" ) ;
         return id ;
     }
-    public void say( String message ){ _cell.say(message);}
-    public void esay( String message ){ _cell.esay(message);}
-    public void esay( Throwable t ){ _cell.esay(t);}
+    public void say(String message)
+    {
+        _log.info(message);
+    }
+
+    public void esay(String message)
+    {
+        _log.error(message);
+    }
+
+    public void esay(Throwable t)
+    {
+        _log.error(t);
+    }
+
     public void start(){ _worker.start() ; }
     public String ac_flush_exception( Args args )throws Exception {
         Exception e = new Exception("Dummy Exception");

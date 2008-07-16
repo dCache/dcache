@@ -128,9 +128,9 @@
   <bean id="timeout" class="diskCacheV111.pools.JobTimeoutManager"/>
 
   <bean id="flush" class="org.dcache.pool.classic.HsmFlushController">
-    <constructor-arg ref="cell"/>
     <constructor-arg ref="storagequeue"/>
     <constructor-arg ref="storagehandler"/>
+    <property name="cellEndpoint" ref="cell"/>
   </bean>
 
   <bean id="p2p" class="org.dcache.pool.classic.P2PClient">
