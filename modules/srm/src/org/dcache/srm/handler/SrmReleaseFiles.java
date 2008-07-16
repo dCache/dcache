@@ -11,7 +11,7 @@ import org.dcache.srm.v2_2.TStatusCode;
 import org.dcache.srm.v2_2.TSURLReturnStatus;
 import org.dcache.srm.v2_2.SrmReleaseFilesRequest;
 import org.dcache.srm.v2_2.SrmReleaseFilesResponse;
-import org.dcache.srm.request.RequestUser;
+import org.dcache.srm.SRMUser;
 import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRMException;
@@ -44,14 +44,14 @@ public class SrmReleaseFiles {
     SrmReleaseFilesRequest srmReleaseFilesRequest;
     SrmReleaseFilesResponse response;
     Scheduler getScheduler;
-    RequestUser user;
+    SRMUser user;
     RequestCredential credential;
     Configuration configuration;
     private int results_num;
     private int max_results_num;
     int numOfLevels =0;
     /** Creates a new instance of SrmLs */
-    public SrmReleaseFiles(RequestUser user,
+    public SrmReleaseFiles(SRMUser user,
             RequestCredential credential,
             SrmReleaseFilesRequest srmReleaseFilesRequest,
             AbstractStorageElement storage,

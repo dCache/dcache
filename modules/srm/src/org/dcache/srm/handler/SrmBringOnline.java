@@ -13,7 +13,7 @@ import org.dcache.srm.v2_2.SrmBringOnlineResponse;
 import org.dcache.srm.v2_2.TBringOnlineRequestFileStatus;
 import org.dcache.srm.v2_2.TGetFileRequest;
 import org.dcache.srm.v2_2.TExtraInfo;
-import org.dcache.srm.request.RequestUser;
+import org.dcache.srm.SRMUser;
 import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRMException;
@@ -35,7 +35,7 @@ public class SrmBringOnline {
     SrmBringOnlineRequest request;
     SrmBringOnlineResponse response;
     Scheduler bringOnlineScheduler;
-    RequestUser user;
+    SRMUser user;
     RequestCredential credential;
     BringOnlineRequestStorage bringOnlineStorage;
     BringOnlineFileRequestStorage bringOnlineFileRequestStorage;
@@ -45,7 +45,7 @@ public class SrmBringOnline {
     int numOfLevels =0;
     String client_host;
     /** Creates a new instance of SrmLs */
-    public SrmBringOnline(RequestUser user,
+    public SrmBringOnline(SRMUser user,
             RequestCredential credential,
             SrmBringOnlineRequest request,
             AbstractStorageElement storage,
@@ -220,7 +220,7 @@ public class SrmBringOnline {
         try {
             say("BringOnlineStorage ="+bringOnlineStorage);
             BringOnlineRequest r =
-                    new  BringOnlineRequest(user.getId(),
+                    new  BringOnlineRequest(user,
                     credential.getId(),
                     bringOnlineStorage,
                     surls,

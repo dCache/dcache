@@ -13,6 +13,7 @@ import org.dcache.srm.util.Configuration;
 import java.sql.*;
 import org.dcache.srm.scheduler.State;
 import org.dcache.srm.scheduler.Job;
+import org.dcache.srm.SRMUser;
 
 /**
  *
@@ -139,7 +140,7 @@ public class GetRequestStorage extends DatabaseContainerRequestStorage{
             long LIFETIME,
             int STATE,
             String ERRORMESSAGE,
-            String CREATORID,
+            SRMUser user,
             String SCHEDULERID,
             long SCHEDULER_TIMESTAMP,
             int NUMOFRETR,
@@ -176,7 +177,7 @@ public class GetRequestStorage extends DatabaseContainerRequestStorage{
                 LIFETIME,
                 STATE,
                 ERRORMESSAGE,
-                CREATORID,
+                user,
                 SCHEDULERID,
                 SCHEDULER_TIMESTAMP,
                 NUMOFRETR,

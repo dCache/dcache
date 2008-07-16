@@ -16,7 +16,7 @@
 package org.dcache.srm.handler;
 
 import org.dcache.srm.v2_2.*;
-import org.dcache.srm.request.RequestUser;
+import org.dcache.srm.SRMUser;
 import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRMException;
@@ -39,7 +39,7 @@ public class SrmCopy {
     AbstractStorageElement storage;
     SrmCopyRequest         request;
     SrmCopyResponse        response;
-    RequestUser            user;
+    SRMUser            user;
     Scheduler              scheduler;
     RequestCredential      credential;
     CopyRequestStorage     copyRequestStorage;
@@ -47,7 +47,7 @@ public class SrmCopy {
     Configuration          configuration;
     private String client_host;
     
-    public SrmCopy(RequestUser user,
+    public SrmCopy(SRMUser user,
             RequestCredential credential,
             SrmCopyRequest request,
             AbstractStorageElement storage,
@@ -193,7 +193,7 @@ public class SrmCopy {
         try {
             say("calling Request.createCopyRequest()");
             ContainerRequest r = new CopyRequest(
-                    user.getId(),
+                    user,
                     credential.getId(),
                     copyRequestStorage,
                     from_urls,

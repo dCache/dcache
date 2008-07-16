@@ -216,6 +216,7 @@ import org.dcache.srm.scheduler.Scheduler;
 import org.dcache.srm.util.Configuration;
 import org.dcache.srm.request.sql.RequestsPropertyStorage;
 import org.dcache.srm.v2_2.TStatusCode;
+import org.dcache.srm.SRMUser;
 
 /**
  *
@@ -223,7 +224,8 @@ import org.dcache.srm.v2_2.TStatusCode;
  */
 public abstract class Request extends Job {
     private String client_host;
-    public Request(String userId,
+    private SRMUser user;
+    public Request(SRMUser user,
     Long requestCredentalId,
     JobStorage requestJobsStorage,
     Configuration configuration,
@@ -244,7 +246,7 @@ public abstract class Request extends Job {
         );
         }
         */
-        super(lifetime,userId,requestJobsStorage,max_number_of_retries,
+        super(lifetime,requestJobsStorage,max_number_of_retries,
         requestsproperties == null
         ?
             requestsproperties =
@@ -264,6 +266,7 @@ public abstract class Request extends Job {
         this.max_update_period = max_update_period;
         this.description = description;
         this.client_host = client_host;
+        this.user = user;
     }
     
    /**
@@ -279,7 +282,7 @@ public abstract class Request extends Job {
     long lifetime,
     int stateId,
     String errorMessage,
-    String creatorId,
+    SRMUser user,
     String scheduelerId,
     long schedulerTimeStamp,
     int numberOfRetries,
@@ -294,7 +297,13 @@ public abstract class Request extends Job {
     String statusCodeString,
     Configuration configuration
     ) {
-        super(id,nextJobId,jobStorage, creationTime,  lifetime, stateId, errorMessage, creatorId,
+        super(id,
+        nextJobId,
+        jobStorage, 
+        creationTime,  
+        lifetime, 
+        stateId, 
+        errorMessage, 
         scheduelerId,
         schedulerTimeStamp,
         numberOfRetries,maxNumberOfRetries, 
@@ -325,6 +334,7 @@ public abstract class Request extends Job {
         this.statusCode = statusCodeString==null
                 ?null
                 :TStatusCode.fromString(statusCodeString);
+        this.user = user;
         say("restored");
     }
     
@@ -430,8 +440,8 @@ public abstract class Request extends Job {
     }
 
     
-    public RequestUser getRequestUser() {
-        return (RequestUser) getCreator();
+    public SRMUser getSRMUser() {
+        return user;
     }
 
    
@@ -449,13 +459,8 @@ public abstract class Request extends Job {
      * @return
      * srm user
      */
-    public RequestUser getUser() {
-        RequestUser user =  (RequestUser) this.getCreator();
-        if(user != null)
-        {
-            return user;
-        }
-        return null;
+    public SRMUser getUser() {
+    return user;
     }
 
     
@@ -533,5 +538,10 @@ public abstract class Request extends Job {
     public String getClient_host() {
         return client_host;
     }
+    
+    public String getSubmitterId() {
+         return Long.toString(user.getId());
+    }
+
     
 }

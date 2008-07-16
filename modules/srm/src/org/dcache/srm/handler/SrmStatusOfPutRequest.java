@@ -10,7 +10,7 @@ import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 import org.dcache.srm.v2_2.SrmStatusOfPutRequestRequest;
 import org.dcache.srm.v2_2.SrmStatusOfPutRequestResponse;
-import org.dcache.srm.request.RequestUser;
+import org.dcache.srm.SRMUser;
 import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRMException;
@@ -33,7 +33,7 @@ public class SrmStatusOfPutRequest {
     SrmStatusOfPutRequestRequest statusOfPutRequestRequest;
     SrmStatusOfPutRequestResponse response;
     Scheduler putScheduler;
-    RequestUser user;
+    SRMUser user;
     RequestCredential credential;
     PutRequestStorage putStorage;
     PutFileRequestStorage putFileRequestStorage;
@@ -43,7 +43,7 @@ public class SrmStatusOfPutRequest {
     int numOfLevels =0;
     /** Creates a new instance of SrmLs */
     public SrmStatusOfPutRequest(
-            RequestUser user,
+            SRMUser user,
             RequestCredential credential,
             SrmStatusOfPutRequestRequest statusOfPutRequestRequest,
             AbstractStorageElement storage,

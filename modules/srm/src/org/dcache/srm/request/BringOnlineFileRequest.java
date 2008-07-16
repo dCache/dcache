@@ -232,7 +232,6 @@ import org.globus.util.GlobusURL;
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.SRMException;
 import org.dcache.srm.scheduler.Job;
-import org.dcache.srm.scheduler.JobCreator;
 import org.dcache.srm.scheduler.JobStorage;
 import org.dcache.srm.scheduler.State;
 import org.dcache.srm.util.Configuration;
@@ -276,7 +275,6 @@ public class BringOnlineFileRequest extends FileRequest {
     /** Creates new FileRequest */
     public BringOnlineFileRequest(Long requestId,
     Long  requestCredentalId,
-    String requestUserId,
     Configuration configuration,
     String url,
     long lifetime,
@@ -287,7 +285,6 @@ public class BringOnlineFileRequest extends FileRequest {
     ) throws Exception {
         super(requestId,
                 requestCredentalId, 
-                requestUserId,  
                 configuration, 
                 lifetime, 
                 jobStorage,
@@ -315,7 +312,6 @@ public class BringOnlineFileRequest extends FileRequest {
     long lifetime,
     int stateId,
     String errorMessage,
-    String creatorId,
     String scheduelerId,
     long schedulerTimeStamp,
     int numberOfRetries,
@@ -337,7 +333,6 @@ public class BringOnlineFileRequest extends FileRequest {
         lifetime,
         stateId,
         errorMessage,
-        creatorId,
         scheduelerId,
         schedulerTimeStamp,
         numberOfRetries,

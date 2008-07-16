@@ -11,8 +11,8 @@ import java.util.HashMap;
  */
 public class CountByCreator
 {
-    private final Map<JobCreator,Integer> _counters =
-        new HashMap<JobCreator,Integer>();
+    private final Map<String,Integer> _counters =
+        new HashMap<String,Integer>();
     private int _total;
 
     public CountByCreator()
@@ -21,14 +21,14 @@ public class CountByCreator
     }
 
     /** Increment the counter for <code>creator</code>. */
-    public synchronized void increment(JobCreator creator)
+    public synchronized void increment(String creatorId)
     {
         _total++;
-        Integer value = _counters.get(creator);
+        Integer value = _counters.get(creatorId);
         if (value == null) {
-            _counters.put(creator, 1);
+            _counters.put(creatorId, 1);
         } else {
-            _counters.put(creator, value + 1);
+            _counters.put(creatorId, value + 1);
         }
     }
 
@@ -36,22 +36,22 @@ public class CountByCreator
      * Decrement the counter for <code>creator</code>. If the counter
      * is zero, then the counter is left unmodified.
      */
-    public synchronized void decrement(JobCreator creator)
+    public synchronized void decrement(String creatorId)
     {
-        Integer value = _counters.get(creator);
+        Integer value = _counters.get(creatorId);
         if (value != null) {
             _total--;
             if (value > 1)
-                _counters.put(creator, value - 1);
+                _counters.put(creatorId, value - 1);
             else
-                _counters.remove(creator);
+                _counters.remove(creatorId);
         }
     }
 
     /**
      * Returns the value of the counter for <code>creator</code>.
      */
-    public synchronized int getValue(JobCreator creator)
+    public synchronized int getValue(String creator)
     {
         Integer value = _counters.get(creator);
         return value == null ? 0 : value;

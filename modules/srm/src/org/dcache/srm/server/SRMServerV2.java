@@ -159,7 +159,7 @@ import org.apache.log4j.xml.DOMConfigurator;
 import java.lang.reflect.Method;
 import java.lang.reflect.Constructor;
 import org.dcache.srm.SRMAuthorizationException;
-import org.dcache.srm.request.RequestUser;
+import org.dcache.srm.SRMUser;
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.request.RequestCredential;
 import java.util.Collection;
@@ -235,7 +235,7 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM {
             
             
             
-            RequestUser user = null;
+            SRMUser user = null;
             UserCredential userCred  = null;
             RequestCredential requestCredential = null;
             try {
@@ -263,7 +263,7 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM {
                 handlerClass = Class.forName("org.dcache.srm.handler."+
                         capitalizedRequestName);
                 handlerConstructor =
-                        handlerClass.getConstructor(new Class[]{RequestUser.class,
+                        handlerClass.getConstructor(new Class[]{SRMUser.class,
                         RequestCredential.class,
                         requestClass,
                         AbstractStorageElement.class,

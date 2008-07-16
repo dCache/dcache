@@ -12,7 +12,7 @@ import org.dcache.srm.v2_2.SrmAbortFilesRequest;
 import org.dcache.srm.v2_2.SrmAbortFilesResponse;
 import org.dcache.srm.v2_2.ArrayOfTSURLReturnStatus;
 import org.dcache.srm.v2_2.TSURLReturnStatus;
-import org.dcache.srm.request.RequestUser;
+import org.dcache.srm.SRMUser;
 import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRMException;
@@ -36,7 +36,7 @@ public class SrmAbortFiles {
     SrmAbortFilesRequest srmAbortFilesRequest;
     SrmAbortFilesResponse response;
     Scheduler getScheduler;
-    RequestUser user;
+    SRMUser user;
     RequestCredential credential;
     Configuration configuration;
     private int results_num;
@@ -44,7 +44,7 @@ public class SrmAbortFiles {
     int numOfLevels =0;
     /** Creates a new instance of SrmLs */
     public SrmAbortFiles(
-            RequestUser user,
+            SRMUser user,
             RequestCredential credential,
             SrmAbortFilesRequest srmAbortFilesRequest,
             AbstractStorageElement storage,

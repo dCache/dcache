@@ -111,6 +111,7 @@
 			<filename name="smc/statemap.jar" />
                         <filename name="dbcp/commons-pool.jar" />
                         <filename name="dbcp/commons-dbcp.jar" />
+                        <filename name="persistence/persistence-api-1.0.jar" />
 		</or>
 	</selector>
 
@@ -211,6 +212,7 @@
 			<filename name="jpox/jdo2-api-2.0.jar" />
 			<filename name="jpox/jpox-enhancer-1.2.2.jar" />
 			<filename name="jpox/jpox-core-1.2.2.jar" />
+			<filename name="jpox/jpox-java5-1.2.2.jar" />
 			<filename name="asm/asm-3.1.jar" />
 		</or>
 	</selector>

@@ -17,7 +17,7 @@ package org.dcache.srm.handler;
 
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
-import org.dcache.srm.request.RequestUser;
+import org.dcache.srm.SRMUser;
 import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.v2_2.SrmMkdirRequest;
 import org.dcache.srm.v2_2.SrmMkdirResponse;
@@ -37,9 +37,9 @@ public class SrmMkdir {
 	AbstractStorageElement storage;
 	SrmMkdirRequest        request;
 	SrmMkdirResponse       response;
-	RequestUser            user;
+	SRMUser            user;
 	
-	public SrmMkdir(RequestUser user,
+	public SrmMkdir(SRMUser user,
 			RequestCredential credential,
 			SrmMkdirRequest request,
 			AbstractStorageElement storage,

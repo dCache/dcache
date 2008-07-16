@@ -77,6 +77,7 @@ package org.dcache.srm.util;
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRMAuthorization;
 import org.dcache.srm.SRM;
+import org.dcache.srm.SRMUserPersistenceManager;
 
 //import org.xml.sax.*;
 //import org.xml.sax.helpers.DefaultHandler;
@@ -236,6 +237,7 @@ public class Configuration {
     private boolean overwrite = false;
     private boolean overwrite_by_default = false;
 	private int sizeOfSingleRemoveBatch = 100;
+    private SRMUserPersistenceManager srmUserPersistenceManager;
     
     /** Creates a new instance of Configuration */
     public Configuration() {
@@ -2312,6 +2314,14 @@ public class Configuration {
    
     public void setLambda_station_script(String lambda_station_script) {
         this.lambda_station_script = lambda_station_script;
+    }
+
+    public SRMUserPersistenceManager getSrmUserPersistenceManager() {
+        return srmUserPersistenceManager;
+    }
+
+    public void setSrmUserPersistenceManager(SRMUserPersistenceManager srmUserPersistenceManager) {
+        this.srmUserPersistenceManager = srmUserPersistenceManager;
     }
     
 }

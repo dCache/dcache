@@ -251,18 +251,15 @@ import org.dcache.srm.scheduler.Scheduler;
 import org.dcache.srm.scheduler.Job;
 import org.dcache.srm.scheduler.JobStorage;
 import org.dcache.srm.scheduler.HashtableJobStorage;
-import org.dcache.srm.scheduler.JobCreator;
-import org.dcache.srm.scheduler.JobCreatorStorage;
-import org.dcache.srm.scheduler.HashtableJobCreatorStorage;
 import org.dcache.srm.scheduler.IllegalStateTransition;
 import org.dcache.srm.scheduler.State;
 import org.dcache.srm.util.RequestStatusTool;
 import diskCacheV111.srm.RequestStatus;
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRM;
+import org.dcache.srm.SRMUser;
 import diskCacheV111.srm.RequestFileStatus;
 import org.dcache.srm.SRMAuthorization;
-import org.dcache.srm.SRMUser;
 import java.util.WeakHashMap;
 import java.util.Set;
 import java.util.SortedSet;
@@ -311,7 +308,7 @@ public abstract class ContainerRequest extends Request {
      * @param numberOfRetries
      * max number of retries
      */
-    public ContainerRequest(String userId,
+    public ContainerRequest(SRMUser user,
     Long requestCredentalId,
     JobStorage requestJobsStorage,
     Configuration configuration,
@@ -331,7 +328,7 @@ public abstract class ContainerRequest extends Request {
         );
         }
         */
-            super( userId,
+         super(user ,
          requestCredentalId,
          requestJobsStorage,
          configuration,
@@ -358,7 +355,8 @@ public abstract class ContainerRequest extends Request {
     long lifetime,
     int stateId,
     String errorMessage,
-    String creatorId,String scheduelerId,
+    SRMUser user,
+    String scheduelerId,
     long schedulerTimeStamp,
     int numberOfRetries,
     int maxNumberOfRetries,
@@ -373,14 +371,14 @@ public abstract class ContainerRequest extends Request {
     String statusCodeString,
     Configuration configuration
     ) {
-        super(     id,
+     super(     id,
      nextJobId,
      jobStorage,
      creationTime,
      lifetime,
      stateId,
      errorMessage,
-     creatorId,
+     user,
      scheduelerId,
      schedulerTimeStamp,
      numberOfRetries,
@@ -936,7 +934,7 @@ public abstract class ContainerRequest extends Request {
     
     public String toString(boolean longformat) {
         try {
-            String s = getMethod()+"Request #"+getId()+" created by "+getCreatorId()+
+            String s = getMethod()+"Request #"+getId()+" created by "+getUser()+
             " with credentials : "+getCredential()+
             " state = "+getState();
             

@@ -1,16 +1,26 @@
 package org.dcache.auth;
 
 import diskCacheV111.util.*;
+import javax.persistence.Entity;
+import javax.persistence.Inheritance;
+import javax.persistence.InheritanceType;
+import javax.persistence.Basic;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.TreeSet;
 
+
+@Entity
+@Inheritance(strategy=InheritanceType.SINGLE_TABLE)
 public class UserAuthRecord extends UserAuthBase
 {
     private static final long serialVersionUID = 2212212275053022221L;
 
+    @Basic
     public TreeSet<String> principals;
+    @Basic
     public int[] GIDs;
+    @Basic
     public int currentGIDindex=0;
 
     public UserAuthRecord(String user,
@@ -74,10 +84,12 @@ public class UserAuthRecord extends UserAuthBase
         this.principals = new TreeSet<String>(principals);
     }
 
-    public UserAuthRecord()
-    {
-        super(null, null, true, -1, -1, "", "", "");
+    /**
+     * nonprivate default constructor to sutisfy the JPA requirements
+     */
+    public UserAuthRecord() {
     }
+    
 
     public void appendToStringBuffer(StringBuffer sb)
     {

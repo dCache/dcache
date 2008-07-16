@@ -90,7 +90,6 @@ import org.dcache.srm.scheduler.State;
 import org.dcache.srm.scheduler.Scheduler;
 import org.dcache.srm.scheduler.IllegalStateTransition;
 import org.dcache.srm.scheduler.Job;
-import org.dcache.srm.scheduler.JobCreator;
 import org.dcache.srm.PrepareToPutCallbacks;
 import org.dcache.srm.scheduler.JobStorage;
 import org.dcache.srm.SrmReserveSpaceCallbacks;
@@ -143,7 +142,6 @@ public class PutFileRequest extends FileRequest {
     /** Creates new FileRequest */
     public PutFileRequest(Long requestId,
             Long requestCredentalId,
-            String requestUserId,
             Configuration configuration,
             String url,
             long size,
@@ -157,7 +155,6 @@ public class PutFileRequest extends FileRequest {
             ) throws Exception {
         super(requestId,
                 requestCredentalId,
-                requestUserId,
                 configuration,
                 lifetime,
                 jobStorage,
@@ -190,7 +187,6 @@ public class PutFileRequest extends FileRequest {
             long lifetime,
             int stateId,
             String errorMessage,
-            String creatorId,
             String scheduelerId,
             long schedulerTimeStamp,
             int numberOfRetries,
@@ -217,7 +213,6 @@ public class PutFileRequest extends FileRequest {
                 lifetime,
                 stateId,
                 errorMessage,
-                creatorId,
                 scheduelerId,
                 schedulerTimeStamp,
                 numberOfRetries,

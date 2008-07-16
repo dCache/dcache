@@ -10,7 +10,7 @@ import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 import org.dcache.srm.v2_2.SrmStatusOfGetRequestRequest;
 import org.dcache.srm.v2_2.SrmStatusOfGetRequestResponse;
-import org.dcache.srm.request.RequestUser;
+import org.dcache.srm.SRMUser;
 import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRMException;
@@ -33,7 +33,7 @@ public class SrmStatusOfGetRequest {
     SrmStatusOfGetRequestRequest statusOfGetRequestRequest;
     SrmStatusOfGetRequestResponse response;
     Scheduler getScheduler;
-    RequestUser user;
+    SRMUser user;
     RequestCredential credential;
     GetRequestStorage getStorage;
     GetFileRequestStorage getFileRequestStorage;
@@ -43,7 +43,7 @@ public class SrmStatusOfGetRequest {
     int numOfLevels =0;
     /** Creates a new instance of SrmLs */
     public SrmStatusOfGetRequest(
-            RequestUser user,
+            SRMUser user,
             RequestCredential credential,
             SrmStatusOfGetRequestRequest statusOfGetRequestRequest,
             AbstractStorageElement storage,

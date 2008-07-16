@@ -183,6 +183,7 @@ import java.net.MalformedURLException;
 import diskCacheV111.srm.RequestFileStatus;
 import diskCacheV111.srm.FileMetaData;
 import org.dcache.srm.AbstractStorageElement;
+import org.dcache.srm.SRMUser;
 import org.dcache.srm.scheduler.FatalJobFailure;
 import org.dcache.srm.scheduler.NonFatalJobFailure;
 import org.globus.util.GlobusURL;
@@ -192,7 +193,6 @@ import org.dcache.srm.scheduler.JobStorage;
 import org.dcache.srm.scheduler.State;
 import org.dcache.srm.scheduler.Scheduler;
 import org.dcache.srm.SRMException;
-import org.dcache.srm.scheduler.JobCreator;
 import org.dcache.srm.scheduler.IllegalStateTransition;
 import org.dcache.srm.request.sql.RequestsPropertyStorage;
 import org.dcache.srm.v2_2.TAccessLatency;
@@ -228,7 +228,7 @@ public class ReserveSpaceRequest extends Request {
     /** Creates new ReserveSpaceRequest */
     public ReserveSpaceRequest(
             Long  requestCredentalId,
-            String userId,
+            SRMUser user,
             Configuration configuration,
             long lifetime,
             JobStorage jobStorage,
@@ -247,7 +247,7 @@ public class ReserveSpaceRequest extends Request {
     long max_update_period,
     long lifetime,
     String description)*/
-              super(userId,
+              super(user,
               requestCredentalId,
               jobStorage,
               configuration,
@@ -284,7 +284,7 @@ public class ReserveSpaceRequest extends Request {
             long lifetime,
             int stateId,
             String errorMessage,
-            String creatorId,
+            SRMUser user,
             String scheduelerId,
             long schedulerTimeStamp,
             int numberOfRetries,
@@ -318,7 +318,7 @@ public class ReserveSpaceRequest extends Request {
                 lifetime,
                 stateId, 
                 errorMessage, 
-                creatorId,
+                user,
                 scheduelerId,
                 schedulerTimeStamp,
                 numberOfRetries, 
@@ -383,15 +383,6 @@ public class ReserveSpaceRequest extends Request {
             sb.append(getHistory());
         }
         return sb.toString();
-    }
-    
-    public RequestUser getUser() {
-        RequestUser user =  (RequestUser) this.getCreator();
-        if(user != null) {
-            return user;
-        }
-
-        return null;
     }
     
     

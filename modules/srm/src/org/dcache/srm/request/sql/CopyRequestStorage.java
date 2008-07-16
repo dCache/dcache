@@ -45,6 +45,7 @@ import org.dcache.srm.scheduler.Job;
 import org.dcache.srm.v2_2.TAccessLatency;
 import org.dcache.srm.v2_2.TRetentionPolicy;
 import org.dcache.srm.v2_2.TFileStorageType;
+import org.dcache.srm.SRMUser;
 /**
  *
  * @author  timur
@@ -112,7 +113,7 @@ public class CopyRequestStorage extends DatabaseContainerRequestStorage{
             long LIFETIME, 
             int STATE, 
             String ERRORMESSAGE, 
-            String CREATORID, 
+            SRMUser user, 
             String SCHEDULERID, 
             long SCHEDULER_TIMESTAMP, 
             int NUMOFRETR, 
@@ -152,7 +153,7 @@ public class CopyRequestStorage extends DatabaseContainerRequestStorage{
                         LIFETIME,
                         STATE,
                         ERRORMESSAGE,
-                        CREATORID,
+                        user,
                         SCHEDULERID,
                         SCHEDULER_TIMESTAMP, 
                         NUMOFRETR, 

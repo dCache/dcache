@@ -14,7 +14,7 @@ import org.dcache.srm.v2_2.TGetFileRequest;
 import org.dcache.srm.v2_2.TExtraInfo;
 import org.dcache.srm.v2_2.ArrayOfTGetRequestFileStatus;
 import org.dcache.srm.v2_2.TGetRequestFileStatus;
-import org.dcache.srm.request.RequestUser;
+import org.dcache.srm.SRMUser;
 import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRMException;
@@ -36,7 +36,7 @@ public class SrmPrepareToGet {
     SrmPrepareToGetRequest request;
     SrmPrepareToGetResponse response;
     Scheduler getScheduler;
-    RequestUser user;
+    SRMUser user;
     RequestCredential credential;
     GetRequestStorage getStorage;
     GetFileRequestStorage getFileRequestStorage;
@@ -46,7 +46,7 @@ public class SrmPrepareToGet {
     int numOfLevels =0;
     private String client_host;
     /** Creates a new instance of SrmLs */
-    public SrmPrepareToGet(RequestUser user,
+    public SrmPrepareToGet(SRMUser user,
             RequestCredential credential,
             SrmPrepareToGetRequest request,
             AbstractStorageElement storage,
@@ -254,7 +254,7 @@ public class SrmPrepareToGet {
         try {
             say("getStorage ="+getStorage);
             GetRequest r =
-                    new  GetRequest(user.getId(),credential.getId(),
+                    new  GetRequest(user,credential.getId(),
                     getStorage,
                     surls,
                     protocols,

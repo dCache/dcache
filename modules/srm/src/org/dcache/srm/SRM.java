@@ -287,7 +287,7 @@ import electric.util.Context;
 import electric.net.http.HTTPContext;
 import org.dcache.srm.SRMAuthorization;
 import org.globus.util.GlobusURL;
-import org.dcache.srm.request.RequestUser;
+import org.dcache.srm.SRMUser;
 import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.request.ContainerRequest;
 import org.dcache.srm.request.FileRequest;
@@ -307,7 +307,6 @@ import org.dcache.srm.request.sql.PutRequestStorage;
 import org.dcache.srm.request.sql.ReserveSpaceRequestStorage;
 import org.dcache.srm.request.sql.CopyFileRequestStorage;
 import org.dcache.srm.request.sql.CopyRequestStorage;
-import org.dcache.srm.scheduler.HashtableJobCreatorStorage;
 import org.dcache.srm.request.sql.DatabaseRequestCredentialStorage;
 import org.dcache.srm.util.Tools;
 import java.util.Set;
@@ -320,8 +319,6 @@ import org.dcache.srm.scheduler.State;
 import org.dcache.srm.scheduler.IllegalStateTransition;
 import org.dcache.srm.scheduler.Job;
 import org.dcache.srm.scheduler.JobStorage;
-import org.dcache.srm.scheduler.JobCreator;
-import org.dcache.srm.scheduler.JobCreatorStorage;
 import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.request.RequestCredentialStorage;
 import diskCacheV111.srm.server.SRMServerV1;
@@ -591,8 +588,6 @@ public class SRM {
         copyStorage.schedulePendingJobs(copyRequestScheduler);
         reserveSpaceScheduler.jobStorageAdded(reserveSpaceRequestStorage);
         reserveSpaceRequestStorage.schedulePendingJobs(reserveSpaceScheduler);
-        JobCreatorStorage jobCreatorStorage = new HashtableJobCreatorStorage();
-        JobCreator.registerJobCreatorStorage(jobCreatorStorage);
         reserveSpaceScheduler.jobStorageAdded(reserveSpaceRequestStorage);
         if(configuration.isVacuum()) {
            say("starting vacuum thread");
@@ -666,10 +661,10 @@ public class SRM {
 
         private boolean done = false;
         private boolean success  = true;
-        RequestUser user;
+        SRMUser user;
         String path;
         String error;
-        public TheAdvisoryDeleteCallbacks(RequestUser user,
+        public TheAdvisoryDeleteCallbacks(SRMUser user,
         String path) {
             this.user = user;
             this.path = path;
@@ -743,7 +738,7 @@ public class SRM {
     /**
      * this srm method is not implemented
      */
-    public void advisoryDelete(final RequestUser user,RequestCredential credential,String[] SURLS)  {
+    public void advisoryDelete(final SRMUser user,RequestCredential credential,String[] SURLS)  {
         say("SRM.advisoryDelete");
         if(user == null) {
             String error ="advisoryDelete: user is unknown,"+
@@ -823,19 +818,19 @@ public class SRM {
     
     /**
      * The implementation of SRM Copy method.
-     *
-     * @param  user
-     *         an instance of the RequestUser or null if unknown
-     * @param  srcSURLS
+     * 
+     * @param user
+     *         an instance of the ReSRMUserr null if unknown
+     * @param srcSURLS
      *         array of source SURL (Site specific URL) strings
-     * @param  destSURLS
+     * @param destSURLS
      *         array of destination SURL (Site specific URL) strings
-     * @param  wantPerm
+     * @param wantPerm
      *         array of boolean values indicating if permonent copies are
      *         desired
-     * @return  request status assosiated with this request
+     * @return request status assosiated with this request
      */
-    public RequestStatus copy(RequestUser user,
+    public RequestStatus copy(SRMUser user,
     RequestCredential credential,
     String[] srcSURLS,
     String[] destSURLS,
@@ -900,7 +895,7 @@ public class SRM {
             // create a request object
             say("calling Request.createCopyRequest()");
             ContainerRequest r = new CopyRequest(
-            user.getId(),
+            user,
             credential.getId(),
             copyStorage,
             from_urls,
@@ -938,18 +933,18 @@ public class SRM {
      * Checks the protocols, if it contains at least one supported then it
      * creates the request and places it in a request repository
      * and starts request handler
-     *
-     * @param  user
-     *         an instance of the RequestUser or null if unknown
-     * @param  surls
+     * 
+     * @param user
+     *         an instance of the ReSRMUserr null if unknown
+     * @param surls
      *         array of SURL (Site specific URL) strings
-     * @param  protocols
+     * @param protocols
      *         array of protocols understood by SRM client
-     * @return  request status assosiated with this request
+     * @return request status assosiated with this request
      */
     
     
-    public RequestStatus get(RequestUser user,
+    public RequestStatus get(SRMUser user,
     RequestCredential credential,
     String[] surls,
     String[] protocols,
@@ -979,7 +974,7 @@ public class SRM {
                 return  createFailedRequestStatus(errorsb.toString());
             }
             ContainerRequest r =
-            new  GetRequest(user.getId(),credential.getId(),
+            new  GetRequest(user,credential.getId(),
             getStorage,
             surls,protocols,configuration,
             configuration.getGetLifetime(),
@@ -1009,14 +1004,14 @@ public class SRM {
     /**
      * this srm method is not implemented
      */
-    public RequestStatus getEstGetTime(RequestUser user,RequestCredential credential,String[] SURLS, String[] protocols) {
+    public RequestStatus getEstGetTime(SRMUser user,RequestCredential credential,String[] SURLS, String[] protocols) {
         return createFailedRequestStatus("time is unknown");
     }
     
     /**
      * this srm method is not implemented
      */
-    public RequestStatus getEstPutTime(RequestUser user,RequestCredential credential,
+    public RequestStatus getEstPutTime(SRMUser user,RequestCredential credential,
     String[] src_names,
     String[] dest_names,
     long[] sizes,
@@ -1028,16 +1023,15 @@ public class SRM {
     /**
      * The implementation of SRM getFileMetaData method.
      * Not really used by anyone.
-     *
-     * @param  user
-     *         an instance of the RequestUser or null if unknown
-     * @param  SURLS
+     * 
+     * @param user
+     *         an instance of the ReSRMUserr null if unknown
+     * @param SURLS
      *         the array of SURLs of files of interest
-     *
-     * @return  FileMetaData array assosiated with these SURLs
+     * @return FileMetaData array assosiated with these SURLs
      */
     private final static String SFN_STRING="?SFN=";
-    public FileMetaData[] getFileMetaData(RequestUser user,RequestCredential credential,String[] SURLS) {
+    public FileMetaData[] getFileMetaData(SRMUser user,RequestCredential credential,String[] SURLS) {
         StringBuffer sb = new StringBuffer();
         sb.append("getFileMetaData(");
         if(SURLS == null) {
@@ -1091,7 +1085,7 @@ public class SRM {
     /**
      * not implemented
      */
-    public String[] getProtocols(RequestUser user,RequestCredential credential) {
+    public String[] getProtocols(SRMUser user,RequestCredential credential) {
         try {
             return storage.supportedGetProtocols();
         }
@@ -1103,16 +1097,15 @@ public class SRM {
     
     /**
      * The implementation of SRM getRequestStatus method.
-     *
-     * @param  user
-     *         an instance of the RequestUser or null if unknown
-     * @param  requestId
+     * 
+     * @param user
+     *         an instance of the ReSRMUserr null if unknown
+     * @param requestId
      *         the id of the previously issued request
-     *
-     * @return  request status assosiated with this request
+     * @return request status assosiated with this request
      */
     
-    public RequestStatus getRequestStatus(RequestUser user,RequestCredential credential,int requestId) {
+    public RequestStatus getRequestStatus(SRMUser user,RequestCredential credential,int requestId) {
         say(" getRequestStatus("+user+","+requestId+")");
         try {
             // Try to get the request with such id
@@ -1121,7 +1114,7 @@ public class SRM {
             say("getRequestStatus() received Request  ");
             if(r != null) {
                 // we found one make sure it is the same  user
-                RequestUser req_user = r.getRequestUser();
+                SRMUser req_user = r.getSRMUser();
                 if(req_user == null || req_user.equals(user)) {
                     // say(" getRequestStatus() request found, returns request file status");
                     // and return the request status
@@ -1144,7 +1137,7 @@ public class SRM {
         }
     }
     
-    public RequestStatus mkPermanent(RequestUser user,RequestCredential credential,String[] SURLS) {
+    public RequestStatus mkPermanent(SRMUser user,RequestCredential credential,String[] SURLS) {
         return  createFailedRequestStatus("not supported, all files are already permanent");
     }
     
@@ -1152,43 +1145,42 @@ public class SRM {
     /**
      * The implementation of SRM pin method.
      * Currenly Not Implemented
-     *
-     * @param  user
-     *         an instance of the RequestUser or null if unknown
-     * @param  turls
+     * 
+     * @param user
+     *         an instance of the ReSRMUserr null if unknown
+     * @param turls
      *         array of TURL (Transfer URL) strings
-     *
-     * @return  request status assosiated with this request
+     * @return request status assosiated with this request
      */
     
-    public RequestStatus pin(RequestUser user,RequestCredential credential, String[] TURLS) {
+    public RequestStatus pin(SRMUser user,RequestCredential credential, String[] TURLS) {
         return createFailedRequestStatus("pins by users are not supported, use get instead");
     }
     /**
      * used for testing only
-     * @param  user
-     *         an instance of the RequestUser or null if unknown
+     * 
+     * @param user
+     *         an instance of the RSRMUseror null if unknown
      */
-    public boolean ping(RequestUser user,RequestCredential credential) {
+    public boolean ping(SRMUser user,RequestCredential credential) {
         return true;
     }
     
     /**
      * The implementation of SRM put method.
-     *
-     * @param  user
-     *         an instance of the RequestUser or null if unknown
-     * @param  requestId
+     * 
+     * @param user
+     *         an instance of the ReSRMUserr null if unknown
+     * @param requestId
      *         the id of the previously issued pin request
-     * @param  fileId
+     * @param fileId
      *         the id of the file within pin request
-     * @param  state
+     * @param state
      *         the new state of the request
-     *
-     * @return  request status assosiated with this request
+     * @return request status assosiated with this request
      */
     
-    public RequestStatus put(RequestUser user,
+    public RequestStatus put(SRMUser user,
     RequestCredential credential,
     String[] sources,
     String[] dests,
@@ -1251,7 +1243,7 @@ public class SRM {
                 return  createFailedRequestStatus(errorsb.toString());
             }
             // create a new put request
-            ContainerRequest r = new PutRequest(user.getId(),
+            ContainerRequest r = new PutRequest(user,
             credential.getId(),
             putStorage,
             sources, dests_urls, sizes,
@@ -1282,20 +1274,19 @@ public class SRM {
      * The implementation of SRM setFileStatus method.
      *  the only status that user can set file request into
      *  is "Done" status
-     *
-     * @param  user
-     *         an instance of the RequestUser or null if unknown
-     * @param  requestId
+     * 
+     * @param user
+     *         an instance of the ReSRMUserr null if unknown
+     * @param requestId
      *         the id of the previously issued pin request
-     * @param  fileId
+     * @param fileId
      *         the id of the file within pin request
-     * @param  state
+     * @param state
      *         the new state of the request
-     *
-     * @return  request status assosiated with this request
+     * @return request status assosiated with this request
      */
     
-    public RequestStatus setFileStatus(RequestUser user,RequestCredential credential,
+    public RequestStatus setFileStatus(SRMUser user,RequestCredential credential,
     int requestId, int fileRequestId, String state) {
         try {
             say(" setFileStatus("+requestId+","+fileRequestId+","+state+");");
@@ -1309,7 +1300,7 @@ public class SRM {
                 return createFailedRequestStatus("setFileStatus(): request #"+requestId+" was not found");
             }
             // check that user is the same
-            RequestUser req_user = r.getUser();
+            SRMUser req_user = r.getUser();
             if(req_user != null && !req_user.equals(user)) {
                 return createFailedRequestStatus(
                 "request #"+requestId+" does not belong to user "+user);
@@ -1367,18 +1358,17 @@ public class SRM {
     /**
      * The implementation of SRM unPin method.
      * Currently unimplemented
-     *
-     * @param  user
-     *         an instance of the RequestUser or null if unknown
-     * @param  turls
+     * 
+     * @param user
+     *         an instance of the ReSRMUserr null if unknown
+     * @param turls
      *         array of TURL (Transfer URL) strings
-     * @param  requestId
+     * @param requestId
      *         the id of the previously issued pin request
-     *
-     * @return  request status assosiated with this request
+     * @return request status assosiated with this request
      */
     
-    public RequestStatus unPin(RequestUser user,RequestCredential credential,
+    public RequestStatus unPin(SRMUser user,RequestCredential credential,
     String[] TURLS, int requestId) {
         return createFailedRequestStatus("pins by users are not supported, use get instead");
     }
@@ -1423,7 +1413,7 @@ public class SRM {
     
     
     public StorageElementInfo getStorageElementInfo(
-    RequestUser user,
+    SRMUser user,
     RequestCredential credential) throws SRMException {
         return storage.getStorageElementInfo(user);
     }
@@ -1438,9 +1428,9 @@ public class SRM {
         }
     }
     
-    public Set getGetRequestIds(RequestUser user, String description)  throws java.sql.SQLException {
+    public Set getGetRequestIds(SRMUser user, String description)  throws java.sql.SQLException {
         return 
-            getStorage.getActiveRequestIds(getRequestScheduler.getId(),user.getId(),description);
+            getStorage.getActiveRequestIds(getRequestScheduler.getId(),user,description);
     }
     
     public void listLatestCompletedGetRequests(StringBuffer sb,int maxCount)  throws java.sql.SQLException {
@@ -1508,9 +1498,9 @@ public class SRM {
         }
     }
     
-    public Set getPutRequestIds(RequestUser user, String description)  throws java.sql.SQLException {
+    public Set getPutRequestIds(SRMUser user, String description)  throws java.sql.SQLException {
         return 
-            putStorage.getActiveRequestIds(putRequestScheduler.getId(),user.getId(),description);
+            putStorage.getActiveRequestIds(putRequestScheduler.getId(),user,description);
     }
      
    public void listLatestCompletedPutRequests(StringBuffer sb,int maxCount)  throws java.sql.SQLException {
@@ -1574,9 +1564,9 @@ public class SRM {
         }
     }
 
-    public Set getCopyRequestIds(RequestUser user, String description)  throws java.sql.SQLException {
+    public Set getCopyRequestIds(SRMUser user, String description)  throws java.sql.SQLException {
         return 
-            copyStorage.getActiveRequestIds(copyRequestScheduler.getId(),user.getId(),description);
+            copyStorage.getActiveRequestIds(copyRequestScheduler.getId(),user,description);
     }
     
     public void listLatestCompletedCopyRequests(StringBuffer sb,int maxCount)  throws java.sql.SQLException {
@@ -1639,9 +1629,9 @@ public class SRM {
         }
     }
     
-    public Set getBringOnlineRequestIds(RequestUser user, String description)  throws java.sql.SQLException {
+    public Set getBringOnlineRequestIds(SRMUser user, String description)  throws java.sql.SQLException {
         return 
-            bringOnlineStorage.getActiveRequestIds(bringOnlineRequestScheduler.getId(),user.getId(),description);
+            bringOnlineStorage.getActiveRequestIds(bringOnlineRequestScheduler.getId(),user,description);
     }
     
     public void listLatestCompletedBringOnlineRequests(StringBuffer sb,int maxCount)  throws java.sql.SQLException {

@@ -217,12 +217,12 @@ public class SrmAuthorizer {
    }
    
    
-   public org.dcache.srm.request.RequestUser getRequestUser(
+   public org.dcache.srm.SRMUser getRequestUser(
        RequestCredential requestCredential,
        String role,
        GSSContext context) throws SRMAuthorizationException {
 
-      org.dcache.srm.request.RequestUser requestUser =
+      org.dcache.srm.SRMUser requestUser =
          authorization.authorize(requestCredential.getId(),
          requestCredential.getCredentialName(),
          role,

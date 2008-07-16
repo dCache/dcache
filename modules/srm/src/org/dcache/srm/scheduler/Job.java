@@ -245,7 +245,6 @@ public abstract class Job  {
     private volatile State state = State.PENDING;
     private StringBuffer errorMessage=new StringBuffer();
     
-    protected final String creatorId ;
     protected int priority =0;
     protected String schedulerId;
     protected long schedulerTimeStamp;
@@ -281,7 +280,6 @@ public abstract class Job  {
     // leading to the exhaust of the pool of database connections
     protected Job(Long id, Long nextJobId,JobStorage jobStorage, long creationTime,
     long lifetime,int stateId,String errorMessage,
-    String creatorId,
     String schedulerId,
     long schedulerTimestamp,
     int numberOfRetries, 
@@ -307,7 +305,6 @@ public abstract class Job  {
         }
         this.state = State.getState(stateId);
         this.errorMessage.append(errorMessage);
-        this.creatorId = creatorId;
         this.schedulerId = schedulerId;
         this.schedulerTimeStamp = schedulerTimestamp;
         this.numberOfRetries = numberOfRetries;
@@ -357,7 +354,7 @@ public abstract class Job  {
     
     /** Creates a new instance of Job */
     
-    public Job(long lifetime, String creatorId,
+    public Job(long lifetime, 
               JobStorage jobStorage,
               int maxNumberOfRetries,
               JobIdGenerator generator,
@@ -370,10 +367,6 @@ public abstract class Job  {
         this.jobStorage = jobStorage;
         this.generator = generator;
         id = generator.getNextId();
-        if(creatorId == null) {
-            throw new NullPointerException("creatorId should be nonnull");
-        }
-        this.creatorId = creatorId;
         
         this.lifetime = lifetime;
         this.maxNumberOfRetries = maxNumberOfRetries;
@@ -387,15 +380,6 @@ public abstract class Job  {
     }
     
     
-    public Job(long lifetime,
-        JobStorage jobStorage,
-        int maxNumberOfRetries,
-        JobIdGenerator generator,
-        Logger logger) {
-        this(lifetime,(String)null,
-        jobStorage,maxNumberOfRetries,generator,
-        logger);
-    }
     
     private  JobStorage jobStorage;
     
@@ -829,9 +813,7 @@ public abstract class Job  {
      * @return Value of property creator.
      *
      */
-    public org.dcache.srm.scheduler.JobCreator getCreator() {
-        return JobCreator.getJobCreator(creatorId);
-    }
+    public abstract String getSubmitterId();
     
     /** Getter for property priority.
      * @return Value of property priority.
@@ -850,12 +832,6 @@ public abstract class Job  {
             throw new IllegalArgumentException(
             "priority should be greater than or equal to zero");
         }
-        JobCreator creator = getCreator();
-        if(priority > creator.getPriority()) {
-            throw new IllegalArgumentException(
-            "priority should be less than or equal to creator priority");
-            
-        }
         this.priority = priority;
     }
     
@@ -863,7 +839,7 @@ public abstract class Job  {
         return "Job ID="+id+" state="+state+
         " created on "+
         (new java.util.Date(creationTime)).toString()+
-        " by ["+creatorId+"]";
+        " by ["+getSubmitterId()+"]";
     }
     
     /** Getter for property id.
@@ -1050,14 +1026,7 @@ public abstract class Job  {
                 lifetime - System.currentTimeMillis();
         return remianingLifetime >0?remianingLifetime:0;
     }
-    /**
-     * Getter for property creatorId.
-     * @return Value of property creatorId.
-     */
-    public java.lang.String getCreatorId() {
-        return creatorId;
-    }
-    
+     
     /**
      * if the job that has been scheduled for execution at some point in the past\
      * and then was restored and put in the restored state

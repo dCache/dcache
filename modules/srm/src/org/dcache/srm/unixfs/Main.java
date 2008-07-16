@@ -27,9 +27,6 @@ import org.dcache.srm.PinCallbacks;
 import org.dcache.srm.UnpinCallbacks;
 import org.dcache.srm.util.Permissions;
 import org.dcache.srm.scheduler.Scheduler;
-import org.dcache.srm.scheduler.HashtableJobCreatorStorage;
-import org.dcache.srm.scheduler.JobCreatorStorage;
-import org.dcache.srm.scheduler.JobCreator;
 import org.dcache.srm.SRM;
 import java.io.File;
 

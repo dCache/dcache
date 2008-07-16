@@ -16,7 +16,7 @@
 package org.dcache.srm.handler;
 
 import org.dcache.srm.v2_2.*;
-import org.dcache.srm.request.RequestUser;
+import org.dcache.srm.SRMUser;
 import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRMException;
@@ -34,7 +34,7 @@ import org.dcache.srm.SRMProtocol;
 public class SrmGetTransferProtocols {
     private final static String SFN_STRING="?SFN=";
     AbstractStorageElement storage;
-    RequestUser            user;
+    SRMUser            user;
     Scheduler              scheduler;
     RequestCredential      credential;
     Configuration          configuration;
@@ -42,7 +42,7 @@ public class SrmGetTransferProtocols {
     SrmGetTransferProtocolsResponse        response;
     org.dcache.srm.SRM srm;
     
-    public SrmGetTransferProtocols(RequestUser user,
+    public SrmGetTransferProtocols(SRMUser user,
             RequestCredential credential,
             SrmGetTransferProtocolsRequest request,
             AbstractStorageElement storage,

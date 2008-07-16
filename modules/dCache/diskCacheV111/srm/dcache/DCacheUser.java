@@ -96,13 +96,16 @@ package diskCacheV111.srm.dcache;
 import org.ietf.jgss.GSSCredential;
 
 import org.dcache.srm.SRMUser;
-import org.dcache.srm.request.RequestUser;
 /**
  *
  * @author  timur
  */
-public class DCacheUser extends RequestUser {
+
+
+public class DCacheUser implements SRMUser {
+    private static long nextid=0;
     
+    private long id;
     private String name;
     private String voGroup;
     private String voRole;
@@ -110,12 +113,16 @@ public class DCacheUser extends RequestUser {
     
     private int uid=-1;
     private int gid=-1;
+    private int priority;
     
     private static final long serialVersionUID = 9164781252174549638L;    
     
     /** Creates a new instance of User */
     public DCacheUser(String name, String voGroup, String voRole, String root, int uid, int gid) {
-        super(name);
+        synchronized(DCacheUser.class) {
+            id = nextid++;
+        }
+        
         if(name == null || root == null) {
             throw new IllegalArgumentException("name == null || root == null");
         }
@@ -171,4 +178,17 @@ public class DCacheUser extends RequestUser {
     public String getVoGroup() {
         return voGroup;
     }
+    
+    public long getId() {
+        return id;
+    }
+    
+    public int getPriority() {
+        return priority;
+    }
+    
+    public void setPriority(int priority) {
+        this.priority = priority;
+    }
+    
 }

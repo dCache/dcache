@@ -415,15 +415,15 @@ public final class Scheduler implements Runnable, PropertyChangeListener {
 	}
 
 	private void increaseNumberOfRunningState(Job job) {
-            runningStateJobsNum.increment(job.getCreator());
+            runningStateJobsNum.increment(job.getSubmitterId());
 	}
 
 	private void decreaseNumberOfRunningState(Job job) {
-            runningStateJobsNum.decrement(job.getCreator());
+            runningStateJobsNum.decrement(job.getSubmitterId());
 	}
 
 	public int getRunningStateByCreator(Job job) {
-            return runningStateJobsNum.getValue(job.getCreator());
+            return runningStateJobsNum.getValue(job.getSubmitterId());
 	}
 
 	public int getTotalRunningState(){
@@ -431,15 +431,15 @@ public final class Scheduler implements Runnable, PropertyChangeListener {
 	}
 
 	private void increaseNumberOfRunningWithoutThreadState(Job job) {
-            runningWithoutThreadStateJobsNum.increment(job.getCreator());
+            runningWithoutThreadStateJobsNum.increment(job.getSubmitterId());
 	}
 
 	private void decreaseNumberOfRunningWithoutThreadState(Job job) {
-            runningWithoutThreadStateJobsNum.decrement(job.getCreator());
+            runningWithoutThreadStateJobsNum.decrement(job.getSubmitterId());
 	}
 
 	public int getRunningWithoutThreadStateByCreator(Job job) {
-            return runningWithoutThreadStateJobsNum.getValue(job.getCreator());
+            return runningWithoutThreadStateJobsNum.getValue(job.getSubmitterId());
         }
 
 	public int getTotalRunningWithoutThreadState(){
@@ -447,15 +447,15 @@ public final class Scheduler implements Runnable, PropertyChangeListener {
 	}
 
 	private void increaseNumberOfRunningThreads(Job job) {
-            runningThreadsNum.increment(job.getCreator());
+            runningThreadsNum.increment(job.getSubmitterId());
 	}
 
 	private void decreaseNumberOfRunningThreads(Job job) {
-            runningThreadsNum.decrement(job.getCreator());
+            runningThreadsNum.decrement(job.getSubmitterId());
         }
 
 	public int getRunningThreadsByCreator(Job job) {
-            return runningThreadsNum.getValue(job.getCreator());
+            return runningThreadsNum.getValue(job.getSubmitterId());
 	}
 
 	public int getTotalRunningThreads(){
@@ -463,15 +463,15 @@ public final class Scheduler implements Runnable, PropertyChangeListener {
 	}
 
 	private void increaseNumberOfTQueued(Job job) {
-            threadQueuedJobsNum.increment(job.getCreator());
+            threadQueuedJobsNum.increment(job.getSubmitterId());
 	}
 
 	private void decreaseNumberOfTQueued(Job job) {
-            threadQueuedJobsNum.decrement(job.getCreator());
+            threadQueuedJobsNum.decrement(job.getSubmitterId());
 	}
 
 	public int getTQueuedByCreator(Job job) {
-            return threadQueuedJobsNum.getValue(job.getCreator());
+            return threadQueuedJobsNum.getValue(job.getSubmitterId());
 	}
 
 	public int getTotalTQueued(){
@@ -479,15 +479,15 @@ public final class Scheduler implements Runnable, PropertyChangeListener {
 	}
 
 	private void increaseNumberOfPriorityTQueued(Job job) {
-            priorityThreadQueuedJobsNum.increment(job.getCreator());
+            priorityThreadQueuedJobsNum.increment(job.getSubmitterId());
 	}
 
 	private void decreaseNumberOfPriorityTQueued(Job job) {
-            priorityThreadQueuedJobsNum.decrement(job.getCreator());
+            priorityThreadQueuedJobsNum.decrement(job.getSubmitterId());
 	}
 
 	public int getPriorityTQueuedByCreator(Job job) {
-            return priorityThreadQueuedJobsNum.getValue(job.getCreator());
+            return priorityThreadQueuedJobsNum.getValue(job.getSubmitterId());
 	}
 
 	public int getTotalPriorityTQueued(){
@@ -495,15 +495,15 @@ public final class Scheduler implements Runnable, PropertyChangeListener {
 	}
 
 	private void increaseNumberOfReadyQueued(Job job) {
-            readyQueuedJobsNum.increment(job.getCreator());
+            readyQueuedJobsNum.increment(job.getSubmitterId());
 	}
 
 	private void decreaseNumberOfReadyQueued(Job job) {
-            readyQueuedJobsNum.decrement(job.getCreator());
+            readyQueuedJobsNum.decrement(job.getSubmitterId());
 	}
 
 	public int getRQueuedByCreator(Job job) {
-            return readyQueuedJobsNum.getValue(job.getCreator());
+            return readyQueuedJobsNum.getValue(job.getSubmitterId());
 	}
 
 	public int getTotalRQueued(){
@@ -511,15 +511,15 @@ public final class Scheduler implements Runnable, PropertyChangeListener {
 	}
 
 	private void increaseNumberOfReady(Job job) {
-            readyJobsNum.increment(job.getCreator());
+            readyJobsNum.increment(job.getSubmitterId());
 	}
 
 	private void decreaseNumberOfReady(Job job) {
-            readyJobsNum.decrement(job.getCreator());
+            readyJobsNum.decrement(job.getSubmitterId());
         }
 
 	public int getReadyByCreator(Job job) {
-            return readyJobsNum.getValue(job.getCreator());
+            return readyJobsNum.getValue(job.getSubmitterId());
 	}
 
         public int getTotalReady(){
@@ -527,15 +527,15 @@ public final class Scheduler implements Runnable, PropertyChangeListener {
 	}
 
 	private void increaseNumberOfRestored(Job job) {
-            restoredJobsNum.increment(job.getCreator());
+            restoredJobsNum.increment(job.getSubmitterId());
 	}
 
 	private void decreaseNumberOfRestored(Job job) {
-            restoredJobsNum.decrement(job.getCreator());
+            restoredJobsNum.decrement(job.getSubmitterId());
 	}
 
 	public int getRestoredByCreator(Job job) {
-            return restoredJobsNum.getValue(job.getCreator());
+            return restoredJobsNum.getValue(job.getSubmitterId());
 	}
 
 	public int getTotalRestored(){
@@ -543,15 +543,15 @@ public final class Scheduler implements Runnable, PropertyChangeListener {
 	}
 
 	private void increaseNumberOfAsyncWait(Job job) {
-            asyncWaitJobsNum.increment(job.getCreator());
+            asyncWaitJobsNum.increment(job.getSubmitterId());
         }
 
 	private void decreaseNumberOfAsyncWait(Job job) {
-            asyncWaitJobsNum.decrement(job.getCreator());
+            asyncWaitJobsNum.decrement(job.getSubmitterId());
 	}
 
 	public int getAsyncWaitByCreator(Job job) {
-            return asyncWaitJobsNum.getValue(job.getCreator());
+            return asyncWaitJobsNum.getValue(job.getSubmitterId());
 	}
 
 	public int getTotalAsyncWait(){
@@ -559,15 +559,15 @@ public final class Scheduler implements Runnable, PropertyChangeListener {
 	}
 
 	private void increaseNumberOfRetryWait(Job job) {
-            retryWaitJobsNum.increment(job.getCreator());
+            retryWaitJobsNum.increment(job.getSubmitterId());
         }
 
 	private void decreaseNumberOfRetryWait(Job job) {
-            retryWaitJobsNum.decrement(job.getCreator());
+            retryWaitJobsNum.decrement(job.getSubmitterId());
         }
 
 	public int getRetryWaitByCreator(Job job) {
-            return retryWaitJobsNum.getValue(job.getCreator());
+            return retryWaitJobsNum.getValue(job.getSubmitterId());
 	}
 
 	public int getTotalRetryWait(){
@@ -613,8 +613,8 @@ public final class Scheduler implements Runnable, PropertyChangeListener {
 // 							    ") returns value="+
 // 							    value+
 // 							    " id "+
-// 							    job.getCreator()+" priority "+
-// 							    job.getCreator().getPriority());
+// 							    job.getSubmitterId()+" priority "+
+// 							    job.getSubmitterId().getPriority());
 							return value;
 						}
 					};

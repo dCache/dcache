@@ -14,6 +14,7 @@ import org.dcache.srm.scheduler.State;
 import org.dcache.srm.util.Configuration;
 import java.sql.*;
 import java.util.Set;
+import org.dcache.srm.SRMUser;
 
 /**
  *
@@ -75,7 +76,7 @@ public class ReserveSpaceRequestStorage extends DatabaseRequestStorage {
     long LIFETIME,
     int STATE,
     String ERRORMESSAGE,
-    String CREATORID,
+    SRMUser user,
     String SCHEDULERID,
     long SCHEDULER_TIMESTAMP,
     int NUMOFRETR,
@@ -106,7 +107,7 @@ public class ReserveSpaceRequestStorage extends DatabaseRequestStorage {
             LIFETIME,
             STATE,
             ERRORMESSAGE,
-            CREATORID,
+            user,
             SCHEDULERID,
             SCHEDULER_TIMESTAMP,
             NUMOFRETR,

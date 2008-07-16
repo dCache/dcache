@@ -16,6 +16,8 @@ import org.dcache.srm.scheduler.State;
 import org.dcache.srm.util.Configuration;
 import java.sql.*;
 import java.util.Set;
+import org.dcache.srm.SRMUser;
+import org.dcache.srm.SRMUserPersistenceManager;
 
 
 /**
@@ -23,10 +25,14 @@ import java.util.Set;
  * @author timur
  */
 public abstract class DatabaseRequestStorage extends DatabaseJobStorage implements RequestStorage{
-    
+    SRMUserPersistenceManager srmUserPersistenceManager;
     /** Creates a new instance of DatabaseRequestStorage */
     public DatabaseRequestStorage(Configuration configuration) throws SQLException {
         super(configuration);
+        srmUserPersistenceManager = configuration.getSrmUserPersistenceManager();
+        if(srmUserPersistenceManager == null) {
+            throw new IllegalArgumentException("srmUserPersistenceManager == null");
+        }
     }
     public void say(String s){
         if(logger != null) {
@@ -61,6 +67,9 @@ public abstract class DatabaseRequestStorage extends DatabaseJobStorage implemen
         "CLIENTHOST "+ stringType+
         ", "+
         "STATUSCODE "+ stringType+
+        ", "+
+        "USERID "+ longType+
+         
         getRequestCreateTableFields();
     }
     
@@ -72,7 +81,7 @@ public abstract class DatabaseRequestStorage extends DatabaseJobStorage implemen
     long LIFETIME,
     int STATE,
     String ERRORMESSAGE,
-    String CREATORID,
+    SRMUser user,
     String SCHEDULERID,
     long SCHEDULER_TIMESTAMP,
     int NUMOFRETR,
@@ -96,7 +105,6 @@ public abstract class DatabaseRequestStorage extends DatabaseJobStorage implemen
     long LIFETIME,
     int STATE,
     String ERRORMESSAGE,
-    String CREATORID,
     String SCHEDULERID,
     long SCHEDULER_TIMESTAMP,
     int NUMOFRETR,
@@ -111,6 +119,8 @@ public abstract class DatabaseRequestStorage extends DatabaseJobStorage implemen
         String DESCRIPTION = set.getString(next_index++);
         String CLIENTHOST = set.getString(next_index++);
         String STATUSCODE= set.getString(next_index++);
+        SRMUser user = 
+            srmUserPersistenceManager.retrieve(set.getLong(next_index++));
         return getRequest(
         _con,
         ID,
@@ -119,7 +129,7 @@ public abstract class DatabaseRequestStorage extends DatabaseJobStorage implemen
         LIFETIME,
         STATE,
         ERRORMESSAGE,
-        CREATORID,
+        user,
         SCHEDULERID,
         SCHEDULER_TIMESTAMP,
         NUMOFRETR,
@@ -168,10 +178,15 @@ public abstract class DatabaseRequestStorage extends DatabaseJobStorage implemen
         else {
             sb.append('\'').append(STATUSCODE).append('\'');
         }
+        
+        sb.append(", USERID = ").append( 
+            srmUserPersistenceManager.persist(r.getUser())
+        ).append(" ");
+        
         getUpdateAssignements(r,sb);
         
     }
-    private static int ADDITIONAL_FIELDS_NUM=6;
+    private static int ADDITIONAL_FIELDS_NUM=7;
     
     public abstract  void getCreateList(Request r,StringBuffer sb);
     
@@ -206,6 +221,9 @@ public abstract class DatabaseRequestStorage extends DatabaseJobStorage implemen
         else {
             sb.append(", '").append(STATUSCODE).append('\'');
         }
+        sb.append(", ").append( 
+            srmUserPersistenceManager.persist(r.getUser())
+        ).append(" ");
         getCreateList(r,sb);
         
     }
@@ -227,13 +245,13 @@ public abstract class DatabaseRequestStorage extends DatabaseJobStorage implemen
     }
 
     public Set getActiveRequestIds(String schedulerid, 
-            String userId,
+            SRMUser user,
             String description )  throws java.sql.SQLException {
         String condition = " SCHEDULERID='"+schedulerid+
         "' AND STATE !="+State.DONE.getStateId()+
         " AND STATE !="+State.CANCELED.getStateId()+
         " AND STATE !="+State.FAILED.getStateId()+
-        " AND CREATORID = '"+userId+'\'';
+        " AND USERID = '"+user.getId()+'\'';
         if(description != null) {
             condition += " AND DESCRIPTION = '"+
                     description+'\'';
@@ -310,9 +328,13 @@ public abstract class DatabaseRequestStorage extends DatabaseJobStorage implemen
         {
             verifyStringType("STATUSCODE",columnIndex,tableName, columnName, columnType);
         }
+        else if(columnIndex == nextIndex+6)
+        {
+            verifyStringType("USERID",columnIndex,tableName, columnName, columnType);
+        }
         else
         {
-            __verify(nextIndex+5,columnIndex,tableName, columnName, columnType);
+            __verify(nextIndex+6,columnIndex,tableName, columnName, columnType);
         }
    }
        

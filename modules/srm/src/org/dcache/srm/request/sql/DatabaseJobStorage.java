@@ -160,8 +160,6 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
     +","+
     "ERRORMESSAGE "+        stringType+
     ","+
-    "CREATORID "+           stringType+
-    ","+
     "SCHEDULERID "+         stringType+
     ","+
     "SCHEDULERTIMESTAMP "+  longType+
@@ -194,7 +192,7 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
     
     //this should always reflect the number of field definde in the 
     // prefix above
-    private static int COLLUMNS_NUM= 12;
+    private static int COLLUMNS_NUM= 11;
     public abstract String getTableName();
     
     public abstract String getCreateTableFields();
@@ -244,7 +242,6 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
 		    "NEXTJOBID",
 		    "CREATIONTIME",
 		    "STATE",
-		    "CREATORID",
 		    "SCHEDULERID"};
 	    createIndex(columns, getTableName().toLowerCase());
 	    
@@ -311,13 +308,12 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
     
     protected abstract Job getJob(
     Connection _con,
-    Long id,
+    Long ID,
     Long NEXTJOBID ,
     long CREATIONTIME,
     long LIFETIME,
     int STATE,
     String ERRORMESSAGE,
-    String CREATORID,
     String SCHEDULERID,
     long SCHEDULER_TIMESTAMP,
     int NUMOFRETR,
@@ -378,12 +374,11 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
         long LIFETIME = set.getLong(4);
         int STATE = set.getInt(5);
         String ERRORMESSAGE = set.getString(6);
-        String CREATORID = set.getString(7);
-        String SCHEDULERID=set.getString(8);
-        long SCHEDULER_TIMESTAMP=set.getLong(9);
-        int NUMOFRETR = set.getInt(10);
-        int MAXNUMOFRETR = set.getInt(11);
-        long LASTSTATETRANSITIONTIME = set.getLong(12);
+        String SCHEDULERID=set.getString(7);
+        long SCHEDULER_TIMESTAMP=set.getLong(8);
+        int NUMOFRETR = set.getInt(9);
+        int MAXNUMOFRETR = set.getInt(10);
+        long LASTSTATETRANSITIONTIME = set.getLong(11);
         Job job = getJob(_con,
         ID,
         NEXTJOBID ,
@@ -391,7 +386,6 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
         LIFETIME,
         STATE,
         ERRORMESSAGE,
-        CREATORID,
         SCHEDULERID,
         SCHEDULER_TIMESTAMP,
         NUMOFRETR,
@@ -448,7 +442,6 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
         else {
             sb.append("ERRORMESSAGE = '").append(tmp).append("', ");
         }
-        sb.append(" CREATORID = '").append(job.getCreatorId()).append("',");
         tmp =job.getSchedulerId();
         if(tmp == null) {
             sb.append(" SCHEDULERID =NULL, ");
@@ -639,12 +632,11 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
             sb.append(job.getState().getStateId()).append(", ");
             String tmp =fixStringForSQL(job.getErrorMessage());
             if(tmp == null) {
-                sb.append("NULL, '");
+                sb.append("NULL, ");
             }
             else {
-                sb.append('\'').append(tmp).append("', '");
+                sb.append('\'').append(tmp).append("', ");
             }
-            sb.append(job.getCreatorId()).append("', ");
             tmp =job.getSchedulerId();
             if(tmp == null) {
                 sb.append("NULL, ");
@@ -692,12 +684,11 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
                 long LIFETIME = set.getLong(4);
                 int STATE = set.getInt(5);
                 String ERRORMESSAGE = set.getString(6);
-                String CREATORID = set.getString(7);
-                String SCHEDULERID=set.getString(8);
-                long SCHEDULER_TIMESTAMP=set.getLong(9);
-                int NUMOFRETR = set.getInt(10);
-                int MAXNUMOFRETR = set.getInt(11);
-                long LASTSTATETRANSITIONTIME = set.getLong(12);
+                String SCHEDULERID=set.getString(7);
+                long SCHEDULER_TIMESTAMP=set.getLong(8);
+                int NUMOFRETR = set.getInt(9);
+                int MAXNUMOFRETR = set.getInt(10);
+                long LASTSTATETRANSITIONTIME = set.getLong(11);
                 State state = State.getState(STATE);
                 Job job = getJob(
                 _con,
@@ -707,7 +698,6 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
                 LIFETIME,
                 STATE,
                 ERRORMESSAGE,
-                CREATORID,
                 SCHEDULERID,
                 SCHEDULER_TIMESTAMP,
                 NUMOFRETR,
@@ -717,7 +707,7 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
                 13 );
                 
                 say("==========> deserialization from database of job id"+job.getId());
-                say("==========> jobs creator is "+job.getCreator());
+                say("==========> jobs submitter id is "+job.getSubmitterId());
                 jobs.add(job);
             }
             
@@ -926,12 +916,11 @@ public void updatePendingJobs() throws SQLException, InterruptedException,org.dc
                 long LIFETIME = set.getLong(4);
                 int STATE = set.getInt(5);
                 String ERRORMESSAGE = set.getString(6);
-                String CREATORID = set.getString(7);
-                String SCHEDULERID=set.getString(8);
-                long SCHEDULER_TIMESTAMP=set.getLong(9);
-                int NUMOFRETR = set.getInt(10);
-                int MAXNUMOFRETR = set.getInt(11);
-                long LASTSTATETRANSITIONTIME = set.getLong(12);
+                String SCHEDULERID=set.getString(7);
+                long SCHEDULER_TIMESTAMP=set.getLong(8);
+                int NUMOFRETR = set.getInt(9);
+                int MAXNUMOFRETR = set.getInt(10);
+                long LASTSTATETRANSITIONTIME = set.getLong(11);
                 State jobstate = State.getState(STATE);
                 Job job = getJob(
                 _con,
@@ -941,7 +930,6 @@ public void updatePendingJobs() throws SQLException, InterruptedException,org.dc
                 LIFETIME,
                 STATE,
                 ERRORMESSAGE,
-                CREATORID,
                 SCHEDULERID,
                 SCHEDULER_TIMESTAMP,
                 NUMOFRETR,
@@ -950,7 +938,7 @@ public void updatePendingJobs() throws SQLException, InterruptedException,org.dc
                 set,
                 13 );
                 say("==========> deserialization from database of "+job);
-                say("==========> jobs creator is "+job.getCreator());
+                say("==========> jobs creator is "+job.getSubmitterId());
                 jobs.add(job);
             }
             
@@ -1403,26 +1391,23 @@ public void updatePendingJobs() throws SQLException, InterruptedException,org.dc
                 verifyStringType("ERRORMESSAGE",columnIndex,tableName, columnName, columnType);
                 break;
             case 7:
-                verifyStringType("CREATORID",columnIndex,tableName, columnName, columnType);
-                break;
-            case 8:
                 verifyStringType("SCHEDULERID",columnIndex,tableName, columnName, columnType);
                 break;
-            case 9:
+            case 8:
                 verifyLongType("SCHEDULERTIMESTAMP",columnIndex,tableName, columnName, columnType);
                 break;
-            case 10:
+            case 9:
                 verifyLongType("NUMOFRETR",columnIndex,tableName, columnName, columnType);
                 break;
-            case 11:
+            case 10:
                 verifyLongType("MAXNUMOFRETR",columnIndex,tableName, columnName, columnType);
                 break;
-            case 12: 
+            case 11: 
                 verifyLongType("LASTSTATETRANSITIONTIME",columnIndex,tableName, columnName, columnType);
                 break;
                 
             default:
-                _verify(13,columnIndex,tableName, columnName, columnType);
+                _verify(12,columnIndex,tableName, columnName, columnType);
         }
     }
     

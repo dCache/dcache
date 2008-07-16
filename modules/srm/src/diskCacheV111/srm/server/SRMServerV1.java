@@ -153,7 +153,7 @@ import electric.util.Context;
 import electric.net.http.HTTPContext;
 import org.dcache.srm.SRMAuthorization;
 import org.dcache.srm.SRMAuthorizationException;
-import org.dcache.srm.request.RequestUser;
+import org.dcache.srm.SRMUser;
 import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.request.RequestCredentialStorage;
 import org.dcache.srm.util.Configuration;
@@ -287,7 +287,7 @@ public class SRMServerV1 implements ISRM, IInformationProvider {
         }
         say(sb.toString());
         UserCredential userCredential;
-        RequestUser user ;
+        SRMUser user ;
         try {
             userCredential = getUserCredentials();
             user = getRequestUser(userCredential, null);
@@ -321,7 +321,7 @@ public class SRMServerV1 implements ISRM, IInformationProvider {
             }
             say(sb.toString());
             UserCredential userCredential;
-            RequestUser user ;
+            SRMUser user ;
             try {
                 userCredential = getUserCredentials();
                 user = getRequestUser(userCredential, null);
@@ -344,7 +344,7 @@ public class SRMServerV1 implements ISRM, IInformationProvider {
     String[] destSURLS,
     boolean[] wantPerm ) {
         UserCredential userCredential ;
-        RequestUser user = null;
+        SRMUser user = null;
         try {
             userCredential = getUserCredentials();
             user = getRequestUser(userCredential, null);
@@ -359,7 +359,7 @@ public class SRMServerV1 implements ISRM, IInformationProvider {
     
     public RequestStatus getRequestStatus( int requestId ) {
         UserCredential userCredential;
-        RequestUser user = null;
+        SRMUser user = null;
         try {
             userCredential = getUserCredentials();
             user = getRequestUser(userCredential, null);
@@ -380,7 +380,7 @@ public class SRMServerV1 implements ISRM, IInformationProvider {
     
     public RequestStatus mkPermanent( String[] SURLS ) {
         UserCredential userCredential;
-        RequestUser user = null;
+        SRMUser user = null;
         try {
             userCredential = getUserCredentials();
             user = getRequestUser(userCredential, null);
@@ -394,7 +394,7 @@ public class SRMServerV1 implements ISRM, IInformationProvider {
     
     public RequestStatus pin( String[] TURLS ) {
         UserCredential userCredential;
-        RequestUser user = null;
+        SRMUser user = null;
         try {
             userCredential = getUserCredentials();
             user = getRequestUser(userCredential, null);
@@ -408,7 +408,7 @@ public class SRMServerV1 implements ISRM, IInformationProvider {
     
     public RequestStatus unPin( String[] TURLS ,int requestID) {
         UserCredential userCredential;
-        RequestUser user = null;
+        SRMUser user = null;
         try {
             userCredential = getUserCredentials();
             user = getRequestUser(userCredential, null);
@@ -422,7 +422,7 @@ public class SRMServerV1 implements ISRM, IInformationProvider {
     
     public RequestStatus getEstGetTime( String[] SURLS ,String[] protocols) {
         UserCredential userCredential;
-        RequestUser user = null;
+        SRMUser user = null;
         try {
             userCredential = getUserCredentials();
             user = getRequestUser(userCredential, null);
@@ -440,7 +440,7 @@ public class SRMServerV1 implements ISRM, IInformationProvider {
     boolean[] wantPermanent,
     String[] protocols) {
         UserCredential userCredential;
-        RequestUser user = null;
+        SRMUser user = null;
         try {
             userCredential = getUserCredentials();
             user = getRequestUser(userCredential, null);
@@ -455,7 +455,7 @@ public class SRMServerV1 implements ISRM, IInformationProvider {
     public FileMetaData[] getFileMetaData( String[] SURLS ) {
         
         UserCredential userCredential;
-        RequestUser user = null;
+        SRMUser user = null;
         try {
             userCredential = getUserCredentials();
             user = getRequestUser(userCredential, null);
@@ -471,7 +471,7 @@ public class SRMServerV1 implements ISRM, IInformationProvider {
     int fileId,
     String state ) {
         UserCredential userCredential;
-        RequestUser user = null;
+        SRMUser user = null;
         try {
             userCredential = getUserCredentials();
             user = getRequestUser(userCredential, null);
@@ -489,7 +489,7 @@ public class SRMServerV1 implements ISRM, IInformationProvider {
         }
         
         UserCredential userCredential;
-        RequestUser user = null;
+        SRMUser user = null;
         try {
             userCredential = getUserCredentials();
             user = getRequestUser(userCredential, null);
@@ -503,7 +503,7 @@ public class SRMServerV1 implements ISRM, IInformationProvider {
     
     public String[] getProtocols() {
         UserCredential userCredential;
-        RequestUser user = null;
+        SRMUser user = null;
         try {
             userCredential = getUserCredentials();
             user = getRequestUser(userCredential, null);
@@ -587,10 +587,10 @@ public class SRMServerV1 implements ISRM, IInformationProvider {
         return userCredential;
     }
     
-    public RequestUser getRequestUser(UserCredential userCredential,String role)
+    public SRMUser getRequestUser(UserCredential userCredential,String role)
     throws SRMAuthorizationException {
         
-        RequestUser requestUser = authorization.authorize(null, userCredential.secureId, role,userCredential.context);
+        SRMUser requestUser = authorization.authorize(null, userCredential.secureId, role,userCredential.context);
         
         return requestUser;
     }
@@ -624,7 +624,7 @@ public class SRMServerV1 implements ISRM, IInformationProvider {
     public diskCacheV111.srm.StorageElementInfo getStorageElementInfo() {
         
         UserCredential userCredential;
-        RequestUser user = null;
+        SRMUser user = null;
         try {
             userCredential = getUserCredentials();
             user = getRequestUser(userCredential, null);

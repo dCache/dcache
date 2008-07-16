@@ -196,20 +196,21 @@ package org.dcache.srm;
 
 import org.dcache.srm.FileMetaData;
 import diskCacheV111.srm.StorageElementInfo;
-import org.dcache.srm.request.RequestUser;
+import org.dcache.srm.SRMUser;
 import org.dcache.srm.request.RequestCredential;
 import java.util.Vector;
 import org.dcache.srm.v2_2.TMetaDataSpace;
 
 
-/** This interface has to be implemented for each Storage Element the user wants
+/**
+ * This interface has to be implemented for each Storage Element the user wants
  * to work with. The Storage Element can support a different set of protocols for
  * put and get operations. Before any get/put operations user has to get the list of
  * supported get/put protocols.
  * THe sequence of actions to process get request:
- *
+ * 
  * 1) call supportedGetProtocols() to get the list of supported protocols
- *
+ * 
  * 2) call getFileInfo(SRMUser user, String filePath, GetFileInfoCallbacks callbacks)
  * The result will be returned thru callbacks
  * GetFileInfoCallbacks is one of the interfaces to be implemented for Storage Element
@@ -218,9 +219,9 @@ import org.dcache.srm.v2_2.TMetaDataSpace;
  *      FileId is unique ID for the file inside Storage Element
  *      fileId is persistent in SRM
  *      fileMetaData -- is not guaranteed to be persistent
- *
+ * 
  *  To be continued...
- *
+ * 
  * @author timur
  */
 public interface AbstractStorageElement extends Logger{

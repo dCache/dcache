@@ -10,10 +10,13 @@
 
 package org.dcache.srm.unixfs;
 
-import org.dcache.srm.request.RequestUser;
+import org.dcache.srm.SRMUser;
 
-public class UnixfsUser extends RequestUser
+
+public class UnixfsUser implements SRMUser
 {
+  public long id ;
+  public static long nextId = 0;
   private String name;
   private String root;
 
@@ -24,8 +27,10 @@ public class UnixfsUser extends RequestUser
   
   /** Creates a new instance of User. */
   public UnixfsUser(String name, String root, int uid, int gid) {
+      synchronized(UnixfsUser.class) {
+              id = nextId++;
+      }
 
-    super(name);
 
     if (name == null || root == null)
       throw new IllegalArgumentException("Null reference value for the string argument 'name' or 'root'");
@@ -35,7 +40,12 @@ public class UnixfsUser extends RequestUser
     this.uid  = uid;
     this.gid  = gid;
   }
-
+  
+  
+ public long getId() { return id; }
+ 
+ public int getPriority() { return 0; }
+  
   /** */
   public String getName() {  return name; }
   /** */

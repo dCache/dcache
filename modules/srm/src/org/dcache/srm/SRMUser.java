@@ -1,16 +1,19 @@
 // $Id$
 // $Log: not supported by cvs2svn $
-// Revision 1.2  2005/10/07 22:57:15  timur
-// work for srm v2
+// Revision 1.3  2004/11/09 08:04:47  tigran
+// added SerialVersion ID
 //
-// Revision 1.1  2005/01/14 23:07:13  timur
-// moving general srm code in a separate repository
-//
-// Revision 1.6  2004/08/06 19:35:22  timur
+// Revision 1.2  2004/08/06 19:35:24  timur
 // merging branch srm-branch-12_May_2004 into the trunk
 //
-// Revision 1.5.2.2  2004/06/15 22:15:41  timur
-// added cvs logging tags and fermi copyright headers at the top
+// Revision 1.1.2.4  2004/06/18 22:20:52  timur
+// adding sql database storage for requests
+//
+// Revision 1.1.2.3  2004/06/16 22:14:31  timur
+// copy works for mulfile request
+//
+// Revision 1.1.2.2  2004/06/16 19:44:33  timur
+// added cvs logging tags and fermi copyright headers at the top, removed Copier.java and CopyJob.java
 //
 
 /*
@@ -82,15 +85,18 @@ COPYRIGHT STATUS:
 /*
  * SRMUser.java
  *
- * Created on February 18, 2003, 3:11 PM
+ * Created on April 27, 2004, 4:36 PM
  */
 
 package org.dcache.srm;
+
+
+
 /**
  *
  * @author  timur
  */
 public interface SRMUser{
-    
-    
+    public int getPriority();
+    public long getId();
 }

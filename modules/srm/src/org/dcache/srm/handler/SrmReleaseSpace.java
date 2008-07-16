@@ -16,7 +16,7 @@
 package org.dcache.srm.handler;
 
 import org.dcache.srm.v2_2.*;
-import org.dcache.srm.request.RequestUser;
+import org.dcache.srm.SRMUser;
 import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRMException;
@@ -39,12 +39,12 @@ public class SrmReleaseSpace {
     AbstractStorageElement  storage;
     SrmReleaseSpaceRequest  request;
     SrmReleaseSpaceResponse response;
-    RequestUser             user;
+    SRMUser             user;
     Scheduler               scheduler;
     RequestCredential       credential;
     Configuration           configuration;
     
-    public SrmReleaseSpace(RequestUser user,
+    public SrmReleaseSpace(SRMUser user,
             RequestCredential credential,
             SrmReleaseSpaceRequest request,
             AbstractStorageElement storage,

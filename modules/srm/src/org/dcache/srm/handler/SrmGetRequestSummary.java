@@ -12,7 +12,7 @@ import org.dcache.srm.v2_2.SrmGetRequestSummaryRequest;
 import org.dcache.srm.v2_2.SrmGetRequestSummaryResponse;
 import org.dcache.srm.v2_2.ArrayOfTRequestSummary;
 import org.dcache.srm.v2_2.TRequestSummary;
-import org.dcache.srm.request.RequestUser;
+import org.dcache.srm.SRMUser;
 import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.scheduler.Job;
 import org.dcache.srm.AbstractStorageElement;
@@ -34,7 +34,7 @@ public class SrmGetRequestSummary {
     AbstractStorageElement storage;
     SrmGetRequestSummaryRequest srmGetRequestSummaryRequest;
     SrmGetRequestSummaryResponse response;
-    RequestUser user;
+    SRMUser user;
     RequestCredential credential;
     Configuration configuration;
     private int results_num;
@@ -42,7 +42,7 @@ public class SrmGetRequestSummary {
     int numOfLevels =0;
     /** Creates a new instance of SrmLs */
     public SrmGetRequestSummary(
-            RequestUser user,
+            SRMUser user,
             RequestCredential credential,
             SrmGetRequestSummaryRequest srmGetRequestSummaryRequest,
             AbstractStorageElement storage,

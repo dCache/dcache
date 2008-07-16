@@ -222,7 +222,6 @@ import org.dcache.srm.SRMUser;
 import org.dcache.srm.SRMException;
 import org.dcache.srm.SRMAuthorizationException;
 import org.dcache.srm.scheduler.Job;
-import org.dcache.srm.scheduler.JobCreator;
 import org.dcache.srm.scheduler.JobStorage;
 import org.dcache.srm.scheduler.State;
 import org.dcache.srm.util.Configuration;
@@ -271,7 +270,6 @@ public class GetFileRequest extends FileRequest {
     /** Creates new FileRequest */
     public GetFileRequest(Long requestId,
     Long  requestCredentalId,
-    String requestUserId,
     Configuration configuration,
     String url,
     long lifetime,
@@ -280,7 +278,12 @@ public class GetFileRequest extends FileRequest {
     int maxNumberOfRetries
     
     ) throws Exception {
-        super(requestId,requestCredentalId, requestUserId,  configuration, lifetime, jobStorage,maxNumberOfRetries);
+        super(requestId,
+            requestCredentalId, 
+            configuration, 
+            lifetime, 
+            jobStorage,
+            maxNumberOfRetries);
         say("GetFileRequest, requestId="+requestId+" fileRequestId = "+getId());
         try {
             surl = new GlobusURL(url);
@@ -304,7 +307,6 @@ public class GetFileRequest extends FileRequest {
     long lifetime,
     int stateId,
     String errorMessage,
-    String creatorId,
     String scheduelerId,
     long schedulerTimeStamp,
     int numberOfRetries,
@@ -327,7 +329,6 @@ public class GetFileRequest extends FileRequest {
         lifetime,
         stateId,
         errorMessage,
-        creatorId,
         scheduelerId,
         schedulerTimeStamp,
         numberOfRetries,

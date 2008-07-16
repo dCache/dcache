@@ -4,7 +4,7 @@ import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 import org.dcache.srm.v2_2.SrmPutDoneRequest;
 import org.dcache.srm.v2_2.SrmPutDoneResponse;
-import org.dcache.srm.request.RequestUser;
+import org.dcache.srm.SRMUser;
 import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRMException;
@@ -30,7 +30,7 @@ public class SrmPutDone {
     SrmPutDoneRequest srmPutDoneRequest;
     SrmPutDoneResponse response;
     Scheduler putScheduler;
-    RequestUser user;
+    SRMUser user;
     RequestCredential credential;
     PutRequestStorage putStorage;
     PutFileRequestStorage putFileRequestStorage;
@@ -39,7 +39,7 @@ public class SrmPutDone {
     private int max_results_num;
     int numOfLevels =0;
 
-    public SrmPutDone(RequestUser user,
+    public SrmPutDone(SRMUser user,
             RequestCredential credential,
             SrmPutDoneRequest srmPutDoneRequest,
             AbstractStorageElement storage,

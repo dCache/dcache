@@ -180,11 +180,11 @@ import org.dcache.srm.scheduler.Job;
 import org.dcache.srm.scheduler.JobStorage;
 import org.dcache.srm.scheduler.State;
 import org.dcache.srm.SRMException;
-import org.dcache.srm.scheduler.JobCreator;
 import org.dcache.srm.scheduler.IllegalStateTransition;
 import org.dcache.srm.request.sql.RequestsPropertyStorage;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
+import org.dcache.srm.SRMUser;
 
 import org.dcache.srm.lambdastation.*;
 /**
@@ -233,10 +233,9 @@ public abstract class FileRequest extends Job {
    /** Creates new FileRequest */
     protected FileRequest(Long requestId,
     Long  requestCredentalId,
-    String userId,
     Configuration configuration,long lifetime,
     JobStorage jobStorage,int maxNumberOfRetries) throws Exception {
-        super(lifetime,userId, jobStorage,maxNumberOfRetries,
+        super(lifetime, jobStorage,maxNumberOfRetries,
         requestsproperties == null
         ?
             requestsproperties =
@@ -255,7 +254,6 @@ public abstract class FileRequest extends Job {
         this.configuration = configuration;
         this.storage = configuration.getStorage();
         this.requestId = requestId;
-        
         say("created");
         
     }
@@ -271,7 +269,7 @@ public abstract class FileRequest extends Job {
     JobStorage jobStorage,
     long creationTime,long lifetime,
     int stateId,String errorMessage,
-    String creatorId,String scheduelerId,
+    String scheduelerId,
     long schedulerTimeStamp,
     int numberOfRetries,
     int maxNumberOfRetries,
@@ -282,9 +280,11 @@ public abstract class FileRequest extends Job {
     String statusCodeString,
     Configuration configuration
     ) {
-        super(id,nextJobId,jobStorage, 
+        super(id,
+        nextJobId,
+        jobStorage, 
         creationTime,  lifetime, 
-        stateId, errorMessage, creatorId,
+        stateId, errorMessage, 
         scheduelerId,
         schedulerTimeStamp,
         numberOfRetries,maxNumberOfRetries, 
@@ -311,6 +311,7 @@ public abstract class FileRequest extends Job {
                 ?null
                 :TStatusCode.fromString(statusCodeString);
         say("restored");
+        
     }
     
     public void addDebugHistoryEvent(String description) {
@@ -366,7 +367,7 @@ public abstract class FileRequest extends Job {
         sb.append(" FileRequest ");
         sb.append(" id =").append(getId());
         sb.append(" job priority  =").append(getPriority());
-        sb.append(" crteator priority  =").append(getCreator().getPriority());
+        sb.append(" crteator priority  =").append(getUser().getPriority());
         sb.append(" state=").append(getState());
         if(longformat) {
             sb.append('\n').append(getRequestFileStatus());
@@ -430,14 +431,8 @@ public abstract class FileRequest extends Job {
         
     }
     
-    public RequestUser getUser() {
-        RequestUser user =  (RequestUser) this.getCreator();
-        if(user != null)
-        {
-            return user;
-        }
-
-        return null;
+    public SRMUser getUser() {
+        return getRequest().getUser();
     }
 
     public Request getRequest()   {
@@ -505,5 +500,9 @@ public abstract class FileRequest extends Job {
         }
         return path;
     }
+    
+     public String getSubmitterId() {
+         return Long.toString(getUser().getId());
+     }
 
 }

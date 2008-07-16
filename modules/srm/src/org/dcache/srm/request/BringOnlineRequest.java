@@ -250,7 +250,7 @@ public class BringOnlineRequest extends ContainerRequest {
     private long desiredOnlineLifetimeInSeconds;
     
     
-    public BringOnlineRequest(String userId,
+    public BringOnlineRequest(SRMUser user,
     Long requestCredentialId,
     JobStorage jobStorage,
     String[] surls,
@@ -264,7 +264,7 @@ public class BringOnlineRequest extends ContainerRequest {
     String description,
     String client_host
     ) throws Exception {
-        super(userId,requestCredentialId,
+        super(user,requestCredentialId,
             jobStorage,
             configuration, 
             max_number_of_retries,
@@ -273,7 +273,7 @@ public class BringOnlineRequest extends ContainerRequest {
             description,
             client_host);
         say("constructor");
-        say("userId = "+userId);
+        say("user = "+user);
         say("requestCredetialId="+requestCredentialId);
         int len;
         if(protocols != null) {
@@ -284,12 +284,10 @@ public class BringOnlineRequest extends ContainerRequest {
         this.desiredOnlineLifetimeInSeconds = desiredOnlineLifetimeInSeconds;
         len = surls.length;
         fileRequests = new FileRequest[len];
-        String creatorId = userId;
         for(int i = 0; i<len; ++i) {
             BringOnlineFileRequest fileRequest =
             new BringOnlineFileRequest(getId(),
                     requestCredentialId,
-                    userId,
                     configuration, 
                     surls[i],  
                     lifetime, 
@@ -312,7 +310,7 @@ public class BringOnlineRequest extends ContainerRequest {
     long lifetime,
     int stateId,
     String errorMessage,
-    String creatorId,
+    SRMUser user,
     String scheduelerId,
     long schedulerTimeStamp,
     int numberOfRetries,
@@ -336,7 +334,7 @@ public class BringOnlineRequest extends ContainerRequest {
         lifetime,
         stateId,
         errorMessage,
-        creatorId,
+        user,
         scheduelerId,
         schedulerTimeStamp,
         numberOfRetries,

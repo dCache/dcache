@@ -17,7 +17,7 @@ package org.dcache.srm.handler;
 
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
-import org.dcache.srm.request.RequestUser;
+import org.dcache.srm.SRMUser;
 import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.v2_2.SrmExtendFileLifeTimeRequest;
 import org.dcache.srm.v2_2.SrmExtendFileLifeTimeResponse;
@@ -48,10 +48,10 @@ public class SrmExtendFileLifeTime {
     AbstractStorageElement storage;
     SrmExtendFileLifeTimeRequest           request;
     SrmExtendFileLifeTimeResponse          response;
-    RequestUser            user;
+    SRMUser            user;
     Configuration configuration;
     
-    public SrmExtendFileLifeTime(RequestUser user,
+    public SrmExtendFileLifeTime(SRMUser user,
             RequestCredential credential,
             SrmExtendFileLifeTimeRequest request,
             AbstractStorageElement storage,

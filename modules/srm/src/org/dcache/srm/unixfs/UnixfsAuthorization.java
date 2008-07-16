@@ -20,10 +20,9 @@ import org.dcache.srm.unixfs.UserAuthRecord;
 
 import org.dcache.srm.SRMAuthorization;
 import org.dcache.srm.SRMAuthorizationException;
-import org.dcache.srm.request.RequestUser;
+import org.dcache.srm.SRMUser;
 
 import org.dcache.srm.SRMUser;
-import org.dcache.srm.scheduler.JobCreator;
 import org.ietf.jgss.GSSContext;
 
 public final class UnixfsAuthorization implements SRMAuthorization {
@@ -46,7 +45,7 @@ public final class UnixfsAuthorization implements SRMAuthorization {
      * @exception <code>SRMAuthorizationException</code> if the peer is
      *            not authorized to access/use the resource.
      */
-    public RequestUser authorize(Long requestCredentialId, String secureId,String name, GSSContext context)
+    public SRMUser authorize(Long requestCredentialId, String secureId,String name, GSSContext context)
     throws SRMAuthorizationException {
   /** @todo -- javadoc, there is no such arg 'chain' */
         UserAuthRecord user_rec = authorize(secureId,name);
@@ -54,7 +53,7 @@ public final class UnixfsAuthorization implements SRMAuthorization {
         String root = user_rec.Root;
         int uid = user_rec.UID;
         int gid = user_rec.GID;
-        JobCreator creator = JobCreator.getJobCreator(username);
+/*        JobCreator creator = JobCreator.getJobCreator(username);
         if(creator != null) {
             if( ! (creator instanceof UnixfsUser) ) {
                 throw new SRMAuthorizationException(" job creator with name "+username+
@@ -69,8 +68,9 @@ public final class UnixfsAuthorization implements SRMAuthorization {
             }
             System.err.println(" Warning: user parameters for user "+ user+ " have changed ");
         }
+ */
         UnixfsUser user = new UnixfsUser(username,root,uid,gid);
-        user.saveCreator();
+       // user.saveCreator();
         return user;
 
     }

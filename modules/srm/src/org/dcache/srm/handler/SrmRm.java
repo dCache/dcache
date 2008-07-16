@@ -18,7 +18,7 @@ package org.dcache.srm.handler;
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 import org.dcache.srm.v2_2.TSURLReturnStatus;
-import org.dcache.srm.request.RequestUser;
+import org.dcache.srm.SRMUser;
 import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.v2_2.SrmRmRequest;
 import org.dcache.srm.v2_2.SrmRmResponse;
@@ -40,10 +40,10 @@ public class SrmRm {
 	AbstractStorageElement storage;
 	SrmRmRequest           request;
 	SrmRmResponse          response;
-	RequestUser            user;
+	SRMUser            user;
 	Configuration configuration;
 	
-	public SrmRm(RequestUser user,
+	public SrmRm(SRMUser user,
 		     RequestCredential credential,
 		     SrmRmRequest request,
 		     AbstractStorageElement storage,

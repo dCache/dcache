@@ -238,7 +238,7 @@ public class GetRequest extends ContainerRequest {
     protected String[] protocols;
     
     
-    public GetRequest(String userId,
+    public GetRequest(SRMUser user,
     Long requestCredentialId,
     JobStorage jobStorage,
     String[] surls,
@@ -251,7 +251,7 @@ public class GetRequest extends ContainerRequest {
     String description,
     String client_host
     ) throws Exception {
-        super(userId,
+        super(user,
                 requestCredentialId,
                 jobStorage,
                 configuration, 
@@ -261,17 +261,16 @@ public class GetRequest extends ContainerRequest {
                 description,
                 client_host);
         say("constructor");
-        say("userId = "+userId);
+        say("user = "+user);
         say("requestCredetialId="+requestCredentialId);
         int len = protocols.length;
         this.protocols = new String[len];
         System.arraycopy(protocols,0,this.protocols,0,len);
         len = surls.length;
         fileRequests = new FileRequest[len];
-        String creatorId = userId;
         for(int i = 0; i<len; ++i) {
             GetFileRequest fileRequest =
-            new GetFileRequest(getId(),requestCredentialId,userId,
+            new GetFileRequest(getId(),requestCredentialId,
             configuration, surls[i],  lifetime, jobFileRequestStorage  , storage,max_number_of_retries);
             
             fileRequests[i] = fileRequest;
@@ -289,7 +288,7 @@ public class GetRequest extends ContainerRequest {
     long lifetime,
     int stateId,
     String errorMessage,
-    String creatorId,
+    SRMUser user,
     String scheduelerId,
     long schedulerTimeStamp,
     int numberOfRetries,
@@ -313,7 +312,7 @@ public class GetRequest extends ContainerRequest {
         lifetime,
         stateId,
         errorMessage,
-        creatorId,
+        user,
         scheduelerId,
         schedulerTimeStamp,
         numberOfRetries,

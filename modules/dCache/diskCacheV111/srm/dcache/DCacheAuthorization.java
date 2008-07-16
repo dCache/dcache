@@ -144,8 +144,7 @@ import org.dcache.auth.UserAuthRecord;
 import org.dcache.srm.SRMAuthorization;
 import org.dcache.srm.SRMAuthorizationException;
 import java.util.Iterator;
-import org.dcache.srm.request.RequestUser;
-import org.dcache.srm.scheduler.JobCreator;
+import org.dcache.srm.SRMUser;
 import org.ietf.jgss.GSSContext;
 import diskCacheV111.services.authorization.AuthorizationService;
 import diskCacheV111.services.authorization.AuthorizationServiceException;
@@ -196,7 +195,7 @@ public final class DCacheAuthorization implements SRMAuthorization {
      * @exception <code>SRMAuthorizationException</code> if the peer is
      *            not authorized to access/use the resource.
      */
-    public RequestUser authorize(Long requestCredentialId,
+    public SRMUser authorize(Long requestCredentialId,
         String secureId,String name, GSSContext gsscontext)
     throws SRMAuthorizationException {
 
@@ -266,7 +265,7 @@ public final class DCacheAuthorization implements SRMAuthorization {
         if(voGroup == null) {
             voGroup = username;
         }
-        JobCreator creator = JobCreator.getJobCreator(username);
+ /*       JobCreator creator = JobCreator.getJobCreator(username);
         if(creator != null) {
             if( ! (creator instanceof DCacheUser) ) {
                 throw new SRMAuthorizationException(" job creator with name "+username+
@@ -283,8 +282,9 @@ public final class DCacheAuthorization implements SRMAuthorization {
             }
            _logAuth.error(" Warning: user parameters for user "+ user+ " have changed ");
         }
+  */
         DCacheUser user = new DCacheUser(username,voGroup,voRole,root,uid,gid);
-        user.saveCreator();
+        //user.saveCreator();
         return user;
         
     }

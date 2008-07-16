@@ -35,7 +35,7 @@ import org.dcache.srm.CopyCallbacks;
 import org.dcache.srm.ReserveSpaceCallbacks;
 import org.dcache.srm.ReleaseSpaceCallbacks;
 import org.dcache.srm.request.RequestCredential;
-import org.dcache.srm.request.RequestUser;
+import org.dcache.srm.SRMUser;
 import org.dcache.srm.util.GridftpClient;
 import org.dcache.srm.util.Configuration;
 import org.dcache.srm.util.Permissions;

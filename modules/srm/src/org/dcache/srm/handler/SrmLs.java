@@ -8,7 +8,7 @@ package org.dcache.srm.handler;
 
 import org.dcache.srm.FileMetaData;
 import org.dcache.srm.v2_2.*;
-import org.dcache.srm.request.RequestUser;
+import org.dcache.srm.SRMUser;
 import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.util.Permissions;
@@ -31,13 +31,13 @@ public class SrmLs {
     AbstractStorageElement storage;
     SrmLsRequest request;
     SrmLsResponse response;
-    RequestUser user;
+    SRMUser user;
     private int results_num;
     private int max_results_num;
     int numOfLevels =1;
 
     /** Creates a new instance of SrmLs */
-    public SrmLs(RequestUser user,
+    public SrmLs(SRMUser user,
 		 RequestCredential credential,
 		 SrmLsRequest request,
 		 AbstractStorageElement storage,
@@ -46,14 +46,14 @@ public class SrmLs {
         this(user,request,storage,1000);
     }
 
-    public SrmLs(RequestUser user,
+    public SrmLs(SRMUser user,
 		 SrmLsRequest request, 
 		 AbstractStorageElement storage,
 		 int max_results_num) {
         this(user,request,storage,max_results_num,100);
     }
     
-    public SrmLs(RequestUser user,SrmLsRequest request, 
+    public SrmLs(SRMUser user,SrmLsRequest request, 
 		 AbstractStorageElement storage,
 		 int max_results_num,int maxNumOfLevels) {
         this.request = request;
@@ -500,7 +500,7 @@ public class SrmLs {
         return metaDataPathDetail;
     }
     
-    public boolean canRead(RequestUser user, FileMetaData fmd) {
+    public boolean canRead(SRMUser user, FileMetaData fmd) {
         int uid = Integer.parseInt(fmd.owner);
         int gid = Integer.parseInt(fmd.group);
         int permissions = fmd.permMode;

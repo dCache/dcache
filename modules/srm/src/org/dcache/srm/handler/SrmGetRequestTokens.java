@@ -16,7 +16,7 @@
 package org.dcache.srm.handler;
 
 import org.dcache.srm.v2_2.*;
-import org.dcache.srm.request.RequestUser;
+import org.dcache.srm.SRMUser;
 import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRMException;
@@ -35,11 +35,11 @@ public class SrmGetRequestTokens {
     AbstractStorageElement  storage;
     SrmGetRequestTokensRequest  request;
     SrmGetRequestTokensResponse response;
-    RequestUser             user;
+    SRMUser             user;
     RequestCredential       credential;
     Configuration           configuration;
     
-    public SrmGetRequestTokens(RequestUser user,
+    public SrmGetRequestTokens(SRMUser user,
             RequestCredential credential,
             SrmGetRequestTokensRequest request,
             AbstractStorageElement storage,

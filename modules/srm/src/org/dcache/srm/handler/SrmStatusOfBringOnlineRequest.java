@@ -10,7 +10,7 @@ import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 import org.dcache.srm.v2_2.SrmStatusOfBringOnlineRequestRequest;
 import org.dcache.srm.v2_2.SrmStatusOfBringOnlineRequestResponse;
-import org.dcache.srm.request.RequestUser;
+import org.dcache.srm.SRMUser;
 import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRMException;
@@ -33,7 +33,7 @@ public class SrmStatusOfBringOnlineRequest {
     SrmStatusOfBringOnlineRequestRequest statusOfBringOnlineRequest;
     SrmStatusOfBringOnlineRequestResponse response;
     Scheduler srmBringOnlineScheduler;
-    RequestUser user;
+    SRMUser user;
     RequestCredential credential;
     BringOnlineRequestStorage getStorage;
     BringOnlineFileRequestStorage getFileRequestStorage;
@@ -43,7 +43,7 @@ public class SrmStatusOfBringOnlineRequest {
     int numOfLevels =0;
     /** Creates a new instance of SrmLs */
     public SrmStatusOfBringOnlineRequest(
-            RequestUser user,
+            SRMUser user,
             RequestCredential credential,
             SrmStatusOfBringOnlineRequestRequest statusOfBringOnlineRequest,
             AbstractStorageElement storage,

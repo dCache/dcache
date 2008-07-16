@@ -14,7 +14,7 @@ import org.apache.log4j.xml.DOMConfigurator;
 import java.util.*;
 
 import org.dcache.srm.SRMAuthorizationException;
-import org.dcache.srm.request.RequestUser;
+import org.dcache.srm.SRMUser;
 import org.dcache.srm.server.*;
 import org.dcache.srm.client.ConvertUtil;
 import org.dcache.srm.client.axis.*;
@@ -73,7 +73,7 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
             java.lang.String[] arg1, long[] arg2, boolean[] arg3, java.lang.String[] arg4)
             throws java.rmi.RemoteException {
       org.dcache.srm.server.UserCredential userCred = null;
-      RequestUser user = null;
+      SRMUser user = null;
       org.dcache.srm.request.RequestCredential requestCredential = null;
       
       try {
@@ -105,7 +105,7 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
 
     public org.dcache.srm.client.axis.RequestStatus get(java.lang.String[] arg0, java.lang.String[] arg1) throws java.rmi.RemoteException {
       org.dcache.srm.server.UserCredential userCred = null;
-      RequestUser user = null;
+      SRMUser user = null;
       org.dcache.srm.request.RequestCredential requestCredential = null;
       
       try {
@@ -141,7 +141,7 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
 
     public org.dcache.srm.client.axis.RequestStatus copy(java.lang.String[] arg0, java.lang.String[] arg1, boolean[] arg2) throws java.rmi.RemoteException {
       org.dcache.srm.server.UserCredential userCred = null;
-      RequestUser user = null;
+      SRMUser user = null;
       org.dcache.srm.request.RequestCredential requestCredential = null;
       
       try {
@@ -178,7 +178,7 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
 
     public boolean ping() throws java.rmi.RemoteException {
       org.dcache.srm.server.UserCredential userCred = null;
-      RequestUser user = null;
+      SRMUser user = null;
       org.dcache.srm.request.RequestCredential requestCredential = null;
       
       try {
@@ -199,7 +199,7 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
 
     public org.dcache.srm.client.axis.RequestStatus pin(java.lang.String[] arg0) throws java.rmi.RemoteException {
       org.dcache.srm.server.UserCredential userCred = null;
-      RequestUser user = null;
+      SRMUser user = null;
       org.dcache.srm.request.RequestCredential requestCredential = null;
       
       try {
@@ -221,7 +221,7 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
 
     public org.dcache.srm.client.axis.RequestStatus unPin(java.lang.String[] arg0, int arg1) throws java.rmi.RemoteException {
       org.dcache.srm.server.UserCredential userCred = null;
-      RequestUser user = null;
+      SRMUser user = null;
       org.dcache.srm.request.RequestCredential requestCredential = null;
       
       try {
@@ -243,7 +243,7 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
 
     public org.dcache.srm.client.axis.RequestStatus setFileStatus(int arg0, int arg1, java.lang.String arg2) throws java.rmi.RemoteException {
       org.dcache.srm.server.UserCredential userCred = null;
-      RequestUser user = null;
+      SRMUser user = null;
       org.dcache.srm.request.RequestCredential requestCredential = null;
       
       try {
@@ -275,7 +275,7 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
 
     public org.dcache.srm.client.axis.RequestStatus getRequestStatus(int arg0) throws java.rmi.RemoteException {
       org.dcache.srm.server.UserCredential userCred = null;
-      RequestUser user = null;
+      SRMUser user = null;
       org.dcache.srm.request.RequestCredential requestCredential = null;
       
       try {
@@ -310,7 +310,7 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
               log.debug("Entering ISRMImpl.getFileMetaData");
       
       org.dcache.srm.server.UserCredential userCred = null;
-      RequestUser user = null;
+      SRMUser user = null;
       org.dcache.srm.request.RequestCredential requestCredential = null;
       
       try {
@@ -345,7 +345,7 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
 
     public org.dcache.srm.client.axis.RequestStatus mkPermanent(java.lang.String[] arg0) throws java.rmi.RemoteException {
       org.dcache.srm.server.UserCredential userCred = null;
-      RequestUser user = null;
+      SRMUser user = null;
       org.dcache.srm.request.RequestCredential requestCredential = null;
       
       try {
@@ -377,7 +377,7 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
 
     public org.dcache.srm.client.axis.RequestStatus getEstGetTime(java.lang.String[] arg0, java.lang.String[] arg1) throws java.rmi.RemoteException {
       org.dcache.srm.server.UserCredential userCred = null;
-      RequestUser user = null;
+      SRMUser user = null;
       org.dcache.srm.request.RequestCredential requestCredential = null;
       
       try {
@@ -409,7 +409,7 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
 
     public org.dcache.srm.client.axis.RequestStatus getEstPutTime(java.lang.String[] arg0, java.lang.String[] arg1, long[] arg2, boolean[] arg3, java.lang.String[] arg4) throws java.rmi.RemoteException {
       org.dcache.srm.server.UserCredential userCred = null;
-      RequestUser user = null;
+      SRMUser user = null;
       org.dcache.srm.request.RequestCredential requestCredential = null;
       
       try {
@@ -441,7 +441,7 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
 
     public void advisoryDelete(java.lang.String[] arg0) throws java.rmi.RemoteException {
       org.dcache.srm.server.UserCredential userCred = null;
-      RequestUser user = null;
+      SRMUser user = null;
       org.dcache.srm.request.RequestCredential requestCredential = null;
       
       try {
@@ -469,7 +469,7 @@ public class SRMServerV1 implements org.dcache.srm.client.axis.ISRM_PortType{
 
     public java.lang.String[] getProtocols() throws java.rmi.RemoteException {
       org.dcache.srm.server.UserCredential userCred = null;
-      RequestUser user = null;
+      SRMUser user = null;
       org.dcache.srm.request.RequestCredential requestCredential = null;
       
       try {

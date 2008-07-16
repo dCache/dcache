@@ -17,7 +17,7 @@ package org.dcache.srm.handler;
 
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
-import org.dcache.srm.request.RequestUser;
+import org.dcache.srm.SRMUser;
 import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.v2_2.SrmRmdirRequest;
 import org.dcache.srm.v2_2.SrmRmdirResponse;
@@ -40,9 +40,9 @@ public class SrmRmdir {
 	AbstractStorageElement storage;
 	SrmRmdirRequest           request;
 	SrmRmdirResponse          response;
-	RequestUser            user;
+	SRMUser            user;
 	
-	public SrmRmdir(RequestUser user,
+	public SrmRmdir(SRMUser user,
 			RequestCredential credential,
 			SrmRmdirRequest request,
 			AbstractStorageElement storage,
@@ -83,7 +83,7 @@ public class SrmRmdir {
 		return response;
 	}
 	
-	private void getDirectoryTree(RequestUser user,
+	private void getDirectoryTree(SRMUser user,
 				      String directory,
 				      Vector tree,
 				      SrmRmdirRequest request,

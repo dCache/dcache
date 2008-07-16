@@ -183,7 +183,7 @@ import diskCacheV111.services.space.message.GetSpaceTokens;
 import org.ietf.jgss.GSSCredential;
 
 
-import org.dcache.srm.request.RequestUser;
+import org.dcache.srm.SRMUser;
 import org.dcache.srm.request.RequestCredential;
 // End of imports to pull out once we pull out srmLs stuff
 
@@ -692,6 +692,8 @@ public class Storage
         } else {
             config.setWebservice_protocol("http");
         }
+        
+        config.setSrmUserPersistenceManager(new DCacheUserPersistanceManager());
         config.setStorage(this);
         
         //getNucleus().newThread( new Runnable(){
@@ -1219,7 +1221,7 @@ public class Storage
                 sb.append("request with reqiest id "+requestId+" is not found\n");
                 return sb.toString();
             }
-            job.getCreator().setPriority(priority);
+            job.setPriority(priority);
             job.setPriority(priority);
             srm.listRequest(sb, requestId, true);
             return sb.toString();
@@ -4748,13 +4750,13 @@ public class Storage
     public String[] srmGetRequestTokens(SRMUser user,String description)
         throws SRMException {
         try {
-            Set tokens = srm.getBringOnlineRequestIds((RequestUser) user,
+            Set tokens = srm.getBringOnlineRequestIds((SRMUser) user,
                     description);
-            tokens.addAll(srm.getGetRequestIds((RequestUser) user,
+            tokens.addAll(srm.getGetRequestIds((SRMUser) user,
                     description));
-            tokens.addAll(srm.getPutRequestIds((RequestUser) user,
+            tokens.addAll(srm.getPutRequestIds((SRMUser) user,
                     description));
-            tokens.addAll(srm.getCopyRequestIds((RequestUser) user,
+            tokens.addAll(srm.getCopyRequestIds((SRMUser) user,
                     description));
             Long[] tokenLongs = (Long[]) tokens.toArray(new Long[0]);
             String[] tokenStrings = new String[tokenLongs.length];

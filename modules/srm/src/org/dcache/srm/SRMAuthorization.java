@@ -91,7 +91,7 @@ COPYRIGHT STATUS:
 package org.dcache.srm;
 
 import java.net.Socket;
-import org.dcache.srm.request.RequestUser;
+import org.dcache.srm.SRMUser;
 import org.ietf.jgss.GSSContext;
 
 
@@ -100,10 +100,10 @@ import org.ietf.jgss.GSSContext;
  * @author  timur
  */
 public interface SRMAuthorization {
-    public RequestUser authorize(Long requestCredentialId, String SecureId,String usename, GSSContext context)
+    public SRMUser authorize(Long requestCredentialId, String SecureId,String usename, GSSContext context)
     throws SRMAuthorizationException;
     
-    // public RequestUser authorize(String SecureId, GSSContext context)
+    // public SRMUser authorize(String SecureId, GSSContext context)
     // throws SRMAuthorizationException;
     
 }

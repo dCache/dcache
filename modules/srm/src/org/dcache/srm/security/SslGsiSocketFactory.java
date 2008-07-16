@@ -165,7 +165,6 @@ import org.ietf.jgss.GSSContext;
 import org.ietf.jgss.GSSCredential;
 import org.ietf.jgss.GSSManager;
 
-import org.dcache.srm.SRMUser;
 //import org.dcache.srm.AbstractStorageElement;
 import electric.util.Context;
 import org.dcache.srm.Logger;

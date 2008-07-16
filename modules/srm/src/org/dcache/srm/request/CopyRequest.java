@@ -87,7 +87,6 @@ import java.io.IOException;
 //import java.io.InputStream;
 //import java.io.InputStreamReader;
 //import java.io.BufferedReader;
-import org.dcache.srm.SRMUser;
 //import java.util.Hashtable;
 import java.util.Set;
 import java.util.HashSet;
@@ -96,7 +95,7 @@ import java.util.Date;
 //import java.util.Map;
 import org.dcache.srm.util.OneToManyMap;
 //import java.util.Iterator;
-//import org.dcache.srm.SRMUser;
+import org.dcache.srm.SRMUser;
 import org.dcache.srm.SRMException;
 import org.dcache.srm.util.Configuration;
 import org.dcache.srm.util.Tools;
@@ -169,7 +168,7 @@ public class CopyRequest extends ContainerRequest implements PropertyChangeListe
     private TOverwriteMode overwriteMode;
     private String targetSpaceToken;
     
-    public CopyRequest( String userId,
+    public CopyRequest( SRMUser user,
     Long requestCredentialId,
     JobStorage jobStorage,
     String[] from_urls,
@@ -188,7 +187,7 @@ public class CopyRequest extends ContainerRequest implements PropertyChangeListe
     String client_host,
     TOverwriteMode overwriteMode 
     ) throws Exception{
-        super(userId,
+        super(user,
             requestCredentialId,
                 jobStorage,
                 configuration,
@@ -225,7 +224,6 @@ public class CopyRequest extends ContainerRequest implements PropertyChangeListe
             CopyFileRequest fileRequest = 
                 new CopyFileRequest(getId(),
                 requestCredentialId,
-                userId,
                 configuration,from_urls[i],to_urls[i],
                 spaceToken,
                 lifetime, fileRequestJobStorage  , 
@@ -264,7 +262,7 @@ public class CopyRequest extends ContainerRequest implements PropertyChangeListe
     long lifetime,
     int stateId,
     String errorMessage,
-    String creatorId,
+    SRMUser user,
     String scheduelerId,
     long schedulerTimeStamp,
     int numberOfRetries,
@@ -290,7 +288,7 @@ public class CopyRequest extends ContainerRequest implements PropertyChangeListe
         lifetime,
         stateId,
         errorMessage,
-        creatorId,
+        user,
         scheduelerId,
         schedulerTimeStamp,
         numberOfRetries,
@@ -714,7 +712,7 @@ public class CopyRequest extends ContainerRequest implements PropertyChangeListe
         for(int i =0 ; i<length;++i) {
             Long fileRequestId = (Long) remoteSurlToFileReqIds.get(remoteSurlsUniqueArray[i]);
             CopyFileRequest cfr = (CopyFileRequest)getFileRequest(fileRequestId);
-            sizes[i] = (storage.getFileMetaData((SRMUser)getCreator(),cfr.getFromPath())).size;
+            sizes[i] = (storage.getFileMetaData(getUser(),cfr.getFromPath())).size;
             say("getTURLs: local size  returned by storage.getFileMetaData is "+sizes[i]);
             cfr.setSize(sizes[i]);
             dests[i] = cfr.getToURL();

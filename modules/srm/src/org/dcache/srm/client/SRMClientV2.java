@@ -16,7 +16,6 @@
 package org.dcache.srm.client;
 
 import org.dcache.srm.security.SslGsiSocketFactory;
-import org.dcache.srm.SRMUser;
 
 
 import java.io.IOException;

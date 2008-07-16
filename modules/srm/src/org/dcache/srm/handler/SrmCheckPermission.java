@@ -28,7 +28,7 @@ import org.dcache.srm.v2_2.TPermissionReturn;
 
 import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
-import org.dcache.srm.request.RequestUser;
+import org.dcache.srm.SRMUser;
 import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.v2_2.SrmGetPermissionRequest;
 import org.dcache.srm.v2_2.SrmGetPermissionResponse;
@@ -55,9 +55,9 @@ public class SrmCheckPermission {
 	AbstractStorageElement storage;
 	SrmCheckPermissionRequest request;
 	SrmCheckPermissionResponse response;
-	RequestUser user;
+	SRMUser user;
 	
-	public SrmCheckPermission(RequestUser user,
+	public SrmCheckPermission(SRMUser user,
 				  RequestCredential credential,
 				  SrmCheckPermissionRequest request, 
 				  AbstractStorageElement storage,

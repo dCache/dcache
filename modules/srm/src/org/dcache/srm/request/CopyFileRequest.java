@@ -147,7 +147,6 @@ public class CopyFileRequest extends FileRequest {
     
 	public CopyFileRequest(Long requestId,
 			       Long  requestCredentalId,
-			       String requestUserId,
 			       Configuration configuration,
 			       String from_url,
 			       String to_url,
@@ -158,7 +157,7 @@ public class CopyFileRequest extends FileRequest {
 			       int max_number_of_retries) throws Exception {
 		super(requestId, 
 		      requestCredentalId,
-		      requestUserId, configuration, lifetime, jobStorage,max_number_of_retries);
+                    configuration, lifetime, jobStorage,max_number_of_retries);
 		say("CopyFileRequest");
 		this.from_url = from_url;
 		this.to_url = to_url;
@@ -179,7 +178,6 @@ public class CopyFileRequest extends FileRequest {
 		long lifetime,
 		int stateId,
 		String errorMessage,
-		String creatorId,
 		String scheduelerId,
 		long schedulerTimeStamp,
 		int numberOfRetries,
@@ -211,7 +209,6 @@ public class CopyFileRequest extends FileRequest {
 		      lifetime,
 		      stateId,
 		      errorMessage,
-		      creatorId,
 		      scheduelerId,
 		      schedulerTimeStamp, 
 		      numberOfRetries,

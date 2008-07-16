@@ -16,7 +16,7 @@
 package org.dcache.srm.handler;
 
 import org.dcache.srm.v2_2.*;
-import org.dcache.srm.request.RequestUser;
+import org.dcache.srm.SRMUser;
 import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRMException;
@@ -32,12 +32,12 @@ import org.dcache.srm.SRMProtocol;
 public class SrmPing {
 	private final static String SFN_STRING="?SFN=";
 	AbstractStorageElement storage;
-	RequestUser            user;
+	SRMUser            user;
 	RequestCredential      credential;
 	SrmPingRequest request;
 	SrmPingResponse        response;
 	
-	public SrmPing(RequestUser user,
+	public SrmPing(SRMUser user,
 		       RequestCredential credential,
 		       SrmPingRequest request,
 		       AbstractStorageElement storage,

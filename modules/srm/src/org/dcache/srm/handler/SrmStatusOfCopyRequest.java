@@ -9,7 +9,7 @@
 
 package org.dcache.srm.handler;
 import org.dcache.srm.v2_2.*;
-import org.dcache.srm.request.RequestUser;
+import org.dcache.srm.SRMUser;
 import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRMException;
@@ -31,7 +31,7 @@ public class SrmStatusOfCopyRequest {
     SrmStatusOfCopyRequestRequest  request;
     SrmStatusOfCopyRequestResponse response;
     Scheduler                      scheduler;
-    RequestUser                    user;
+    SRMUser                    user;
     RequestCredential              credential;
     CopyRequestStorage     copyRequestStorage;
     CopyFileRequestStorage copyFileRequestStorage;
@@ -41,7 +41,7 @@ public class SrmStatusOfCopyRequest {
     int numOfLevels =0;
     
     
-    public SrmStatusOfCopyRequest(RequestUser user,
+    public SrmStatusOfCopyRequest(SRMUser user,
             RequestCredential credential,
             SrmStatusOfCopyRequestRequest request,
             AbstractStorageElement storage,

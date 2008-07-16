@@ -17,7 +17,7 @@ package org.dcache.srm.handler;
 
 import org.dcache.srm.FileMetaData;
 import org.dcache.srm.v2_2.*;
-import org.dcache.srm.request.RequestUser;
+import org.dcache.srm.SRMUser;
 import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRMException;
@@ -33,9 +33,9 @@ public class SrmGetPermission {
 	AbstractStorageElement storage;
 	SrmGetPermissionRequest request;
 	SrmGetPermissionResponse response;
-	RequestUser user;
+	SRMUser user;
 	
-	public SrmGetPermission(RequestUser user,
+	public SrmGetPermission(SRMUser user,
 				RequestCredential credential,
 				SrmGetPermissionRequest request,
 				AbstractStorageElement storage,

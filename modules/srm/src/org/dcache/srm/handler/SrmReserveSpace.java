@@ -16,7 +16,7 @@
 package org.dcache.srm.handler;
 
 import org.dcache.srm.v2_2.*;
-import org.dcache.srm.request.RequestUser;
+import org.dcache.srm.SRMUser;
 import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRMException;
@@ -37,14 +37,14 @@ public class SrmReserveSpace {
     AbstractStorageElement  storage;
     SrmReserveSpaceRequest  request;
     SrmReserveSpaceResponse response;
-    RequestUser             user;
+    SRMUser             user;
     Scheduler               scheduler;
     RequestCredential       credential;
     Configuration           configuration;
     ReserveSpaceRequestStorage reserverSpaceRequestStorage;
     private String client_host;
     
-    public SrmReserveSpace(RequestUser user,
+    public SrmReserveSpace(SRMUser user,
             RequestCredential credential,
             SrmReserveSpaceRequest request,
             AbstractStorageElement storage,
@@ -173,7 +173,7 @@ public class SrmReserveSpace {
            ReserveSpaceRequest reserveRequest  = 
                new ReserveSpaceRequest(
                 credential.getId(),
-                user.getId(),
+                user,
                 configuration,
                 requestLifetime*1000L,
                 reserverSpaceRequestStorage,

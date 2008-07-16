@@ -19,7 +19,7 @@ import org.dcache.srm.v2_2.TOverwriteMode;
 import org.dcache.srm.v2_2.TPutRequestFileStatus;
 import org.dcache.srm.v2_2.ArrayOfTPutRequestFileStatus;
 import org.dcache.srm.v2_2.TFileStorageType;
-import org.dcache.srm.request.RequestUser;
+import org.dcache.srm.SRMUser;
 import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.SRMException;
@@ -41,7 +41,7 @@ public class SrmPrepareToPut {
     SrmPrepareToPutRequest request;
     SrmPrepareToPutResponse response;
     Scheduler putScheduler;
-    RequestUser user;
+    SRMUser user;
     RequestCredential credential;
     PutRequestStorage putStorage;
     PutFileRequestStorage putFileRequestStorage;
@@ -49,7 +49,7 @@ public class SrmPrepareToPut {
     String client_host;
     
     /** Creates a new instance of SrmLs */
-    public SrmPrepareToPut(RequestUser user,
+    public SrmPrepareToPut(SRMUser user,
             RequestCredential credential,
             SrmPrepareToPutRequest request,
             AbstractStorageElement storage,
@@ -298,7 +298,7 @@ public class SrmPrepareToPut {
              */
             PutRequest r =
                     new  PutRequest(
-                    user.getId(),
+                    user,
                     credential.getId(),
                     putStorage,
                     srcFileNames,

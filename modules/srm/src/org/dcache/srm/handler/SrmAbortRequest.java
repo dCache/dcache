@@ -10,7 +10,7 @@ import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 import org.dcache.srm.v2_2.SrmAbortRequestRequest;
 import org.dcache.srm.v2_2.SrmAbortRequestResponse;
-import org.dcache.srm.request.RequestUser;
+import org.dcache.srm.SRMUser;
 import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.scheduler.Job;
 import org.dcache.srm.AbstractStorageElement;
@@ -32,7 +32,7 @@ public class SrmAbortRequest {
     AbstractStorageElement storage;
     SrmAbortRequestRequest srmAbortRequestRequest;
     SrmAbortRequestResponse response;
-    RequestUser user;
+    SRMUser user;
     RequestCredential credential;
     Configuration configuration;
     private int results_num;
@@ -40,7 +40,7 @@ public class SrmAbortRequest {
     int numOfLevels =0;
     /** Creates a new instance of SrmLs */
     public SrmAbortRequest(
-            RequestUser user,
+            SRMUser user,
             RequestCredential credential,
             SrmAbortRequestRequest srmAbortRequestRequest,
             AbstractStorageElement storage,

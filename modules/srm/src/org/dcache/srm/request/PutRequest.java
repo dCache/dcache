@@ -130,7 +130,7 @@ public class PutRequest extends ContainerRequest{
     // private PutFileRequest fileRequests[];
     protected String[] protocols;
     private TOverwriteMode overwriteMode;
-    public PutRequest(String userId,
+    public PutRequest(SRMUser user,
     Long requestCredentialId,
     JobStorage requestJobsStorage,
     String[] srcFileNames,
@@ -150,7 +150,7 @@ public class PutRequest extends ContainerRequest{
     String description
     ) throws Exception {
         
-        super(userId,
+        super(user,
                 requestCredentialId,
                 requestJobsStorage,
                 configuration, 
@@ -171,12 +171,10 @@ public class PutRequest extends ContainerRequest{
             " wantPermanent arrays dimensions mismatch");
         }
         fileRequests = new FileRequest[len];
-        String creatorId = userId;
         for(int i = 0; i < len; ++i) {
             
             PutFileRequest fileRequest = new PutFileRequest(getId(),
             requestCredentialId,
-            userId,
             configuration,
             destUrls[i],sizes[i],
             lifetime,
@@ -200,7 +198,7 @@ public class PutRequest extends ContainerRequest{
     long lifetime,
     int stateId,
     String errorMessage,
-    String creatorId,
+    SRMUser user,
     String scheduelerId,
     long schedulerTimeStamp,
     int numberOfRetries,
@@ -224,7 +222,7 @@ public class PutRequest extends ContainerRequest{
         lifetime,
         stateId,
         errorMessage,
-        creatorId,
+        user,
         scheduelerId,
         schedulerTimeStamp,
         numberOfRetries,
