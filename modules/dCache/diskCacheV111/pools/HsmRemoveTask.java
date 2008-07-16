@@ -3,7 +3,6 @@ package diskCacheV111.pools;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.NoRouteToCellException;
-import dmg.util.Logable;
 import diskCacheV111.util.HsmSet;
 import diskCacheV111.util.ExternalTask;
 import diskCacheV111.vehicles.PoolRemoveFilesFromHSMMessage;
@@ -52,14 +51,6 @@ public class HsmRemoveTask implements Runnable
      * Timeout for an individual remove operation.
      */
     private final long        _timeout;
-
-    @Deprecated
-    public HsmRemoveTask(CellEndpoint endpoint, Logable log,
-                         Executor executor, HsmSet hsmSet,
-                         long timeout, CellMessage message)
-    {
-        this(endpoint, executor, hsmSet, timeout, message);
-    }
 
     public HsmRemoveTask(CellEndpoint endpoint,
                          Executor executor, HsmSet hsmSet,

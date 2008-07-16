@@ -28,17 +28,17 @@ import diskCacheV111.util.* ;
         private Args _local  = null ;
         private String _command = null ;
         private Logable _log    = null ;
-        
+
         public HsmDriverOSM( Args global , Args local , Logable log ) throws Exception {
             _global = global ;
             _local  = local ;
             _log    = log ;
             _command = local.getOpt("command");
-            
+
             if( ( _command == null ) || ( _command.equals("") ))
                 throw new
                 IllegalArgumentException("command  option not found");
-                        
+
         }
         public void getBfDetails( StorageInfo storageInfo ) throws Exception {
             setBfDetails( storageInfo ) ;
@@ -47,44 +47,44 @@ import diskCacheV111.util.* ;
             }catch(Exception ee){
                 _log.elog("Can't get volume details "+ee);
             }
-            
+
         }
         public String toString(){
-            
+
             return "HSM control driver for OSM ("+_command+")";
         }
         private void setVolumeDetails( StorageInfo storageInfo )throws Exception {
             if( ! ( storageInfo instanceof OSMStorageInfo ) )
                  throw new
                  IllegalArgumentException( "not an OSM storage info "+storageInfo.getClass().getName());
-        
+
              OSMStorageInfo osm = (OSMStorageInfo)storageInfo ;
-             
+
              String tape  = osm.getKey( "hsm.osm.volumeName" ) ;
              String store = osm.getStore() ;
-             
+
              if( ( tape == null )  || ( tape.equals("")  ) ||
                  ( store == null ) || ( store.equals("") )    )
                  throw new
                  IllegalArgumentException("Not enough info in storageInfo (volumeName)");
-             
+
              String command = _command+" -S "+store+" lsvol -l "+tape ;
-             
-             RunSystem system = new RunSystem( command , 1000, 10000L , _log );
+
+             RunSystem system = new RunSystem( command , 1000, 10000L );
              system.go();
-             
+
              int    rc     = system.getExitValue() ;
              String error  = system.getErrorString() ;
              String output = system.getOutputString() ;
-             
+
              if( ( rc != 0 ) || ( error.length() != 0 )  || ( output.length() == 0 ) )
                  throw new
-                 IllegalArgumentException( error == null ? 
+                 IllegalArgumentException( error == null ?
                                            "Unknow error in responds to >"+command+"<":
                                            error);
-             
+
              _log.log("Output : "+output);
-             
+
              String volNbf   = null ;
              String volStat  = null ;
              String volCap   = null ;
@@ -98,7 +98,7 @@ import diskCacheV111.util.* ;
                  for( int i = 0 ; i < 3 ; i++ )st.nextToken() ;
                  volCap  = st.nextToken() ;
                  volStat = st.nextToken() ;
-             }catch(Exception ee ){ 
+             }catch(Exception ee ){
                 throw new
                 IllegalArgumentException("Format error in output of >"+command+"< : "+output);
              }
@@ -113,7 +113,7 @@ import diskCacheV111.util.* ;
             if( ! ( storageInfo instanceof OSMStorageInfo ) )
                  throw new
                  IllegalArgumentException( "not an OSM storage info "+storageInfo.getClass().getName());
-        
+
              OSMStorageInfo osm = (OSMStorageInfo)storageInfo ;
              String store = osm.getStore() ;
              String bfid  = osm.getBitfileId() ;
@@ -121,22 +121,22 @@ import diskCacheV111.util.* ;
                  ( bfid  == null ) || ( bfid.equals("")  )    )
                  throw new
                  IllegalArgumentException("Not enough info in storageInfo");
-             
+
              String command = _command+" -S "+store+" lsbf -a "+bfid ;
-             
-             RunSystem system = new RunSystem( command , 1000, 10000L , _log );
+
+             RunSystem system = new RunSystem( command , 1000, 10000L );
              system.go();
-             
+
              int    rc     = system.getExitValue() ;
              String error  = system.getErrorString() ;
              String output = system.getOutputString() ;
-             
+
              if( ( rc != 0 ) || ( error.length() != 0 )  || ( output.length() == 0 ) )
                  throw new
-                 IllegalArgumentException( error == null ? 
+                 IllegalArgumentException( error == null ?
                                            "Unknow error in responds to >"+command+"<":
                                            error);
-             
+
              _log.log("Output : "+output);
 
              String tape   = null ;
@@ -150,7 +150,7 @@ import diskCacheV111.util.* ;
                  tape = st.nextToken() ;
                  for( int i = 0 ; i < 6 ; i++ )st.nextToken() ;
                  status = st.nextToken() ;
-             }catch(Exception ee ){ 
+             }catch(Exception ee ){
                 throw new
                 IllegalArgumentException("Format error in output of >"+command+"< : "+output);
              }

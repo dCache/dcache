@@ -8,7 +8,6 @@ import diskCacheV111.util.CacheException ;
 import diskCacheV111.util.PnfsId ;
 import diskCacheV111.util.PnfsHandler ;
 import diskCacheV111.util.event.CacheRepositoryListener ;
-import dmg.util.Logable ;
 
 public interface CacheRepository extends SpaceMonitor {
    public static final int ERROR_IO_DISK = 204 ;
@@ -53,12 +52,11 @@ public interface CacheRepository extends SpaceMonitor {
    public void removeCacheRepositoryListener(
                   CacheRepositoryListener listener ) ;
 
-   public void runInventory(Logable log) throws CacheException ;
-   public void runInventory(Logable log, PnfsHandler pnfs , int flags )
+   public void runInventory() throws CacheException ;
+   public void runInventory(PnfsHandler pnfs , int flags )
           throws CacheException ;
 
    public long getPreciousSpace() ;
-   public void setLogable( Logable logable ) ;
    public boolean contains(PnfsId pnfsId );
 
    public boolean isRepositoryOk() ;

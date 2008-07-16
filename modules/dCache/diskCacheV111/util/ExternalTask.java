@@ -1,6 +1,5 @@
 package diskCacheV111.util;
 
-import dmg.util.Logable;
 import java.util.concurrent.Callable;
 import java.io.IOException;
 import org.apache.log4j.Logger;
@@ -14,11 +13,6 @@ public class ExternalTask implements Callable<Integer>
     private final static Logger _log = Logger.getLogger(ExternalTask.class);
     private final long        _timeout;
     private final String      _command;
-
-    public ExternalTask(Logable log, long timeout, String command)
-    {
-        this(timeout, command);
-    }
 
     public ExternalTask(long timeout, String command)
     {

@@ -273,7 +273,7 @@ public class CacheRepositoryV5// extends CellCompanion
             _cell.addCommandListener(_interpreter);
             _cell.addCommandListener(_sweeper);
 
-            _repository.runInventory(null, _pnfs, flags);
+            _repository.runInventory(_pnfs, flags);
 
             if (_checkRepository) {
                 _executor.scheduleWithFixedDelay(new CheckHealthTask(this),

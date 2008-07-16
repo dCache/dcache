@@ -28,7 +28,6 @@ import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
-import dmg.util.Logable;
 
 import diskCacheV111.repository.CacheRepository;
 import diskCacheV111.repository.CacheRepositoryEntry;
@@ -55,7 +54,6 @@ public class HsmStorageHandler2  {
 	private final static Logger _logSpaceAllocation = Logger.getLogger("logger.dev.org.dcache.poolspacemonitor." + HsmStorageHandler2.class.getName());
 
     private final CacheRepository _repository  ;
-    private Logable         _log         = null ;
     private final HsmSet          _hsmSet     ;
     private final PnfsHandler     _pnfs ;
     private final CellAdapter     _cell ;
@@ -113,7 +111,6 @@ public class HsmStorageHandler2  {
        _pnfs       = pnfs ;
        _cell       = cell ;
        _storageHandler = this ;
-       if( cell instanceof Logable )setLogable( (Logable)cell ) ;
 
        _fetchQueue = new SimpleJobScheduler( cell.getNucleus(), "F" ) ;
        _storeQueue = new SimpleJobScheduler( cell.getNucleus(), "S" ) ;
@@ -231,13 +228,16 @@ public class HsmStorageHandler2  {
     //
     //   utils for the printout
     //
-    public synchronized void setLogable( Logable log ){ _log = log ; }
-    private void say( String msg ){
-    	_logRepository.debug( "RSH : "+msg ) ;
+    private void say(String msg)
+    {
+    	_logRepository.debug(msg);
     }
-    private void esay( String msg ){
-    	_logRepository.error( "RSH ERROR : "+msg ) ;
+
+    private void esay(String msg)
+    {
+    	_logRepository.error(msg);
     }
+
     //////////////////////////////////////////////////////////////////////
     //
     //   the fetch part
@@ -525,7 +525,7 @@ public class HsmStorageHandler2  {
                say("Got Space ("+fileSize+" Bytes)" ) ;
 
 
-               run = new RunSystem( fetchCommand , _maxLines , _maxRestoreRun , _log ) ;
+               run = new RunSystem( fetchCommand , _maxLines , _maxRestoreRun ) ;
                run.go() ;
                returnCode = run.getExitValue() ;
                if( returnCode != 0 ){
@@ -691,7 +691,7 @@ public class HsmStorageHandler2  {
         assert message.getMessageObject() instanceof PoolRemoveFilesFromHSMMessage;
 
         HsmRemoveTask task =
-            new HsmRemoveTask(_cell, _log,
+            new HsmRemoveTask(_cell,
                               _hsmRemoveTaskExecutor,
                               _hsmSet, _maxRemoveRun, message);
         _hsmRemoveExecutor.execute(task);
@@ -907,7 +907,7 @@ public class HsmStorageHandler2  {
 
                 String storeCommand = getStoreCommand(_pnfsId, storageInfo);
 
-                run = new RunSystem(storeCommand, _maxLines, _maxStoreRun, _log);
+                run = new RunSystem(storeCommand, _maxLines, _maxStoreRun);
                 run.go();
                 returnCode = run.getExitValue();
                 if (returnCode != 0) {

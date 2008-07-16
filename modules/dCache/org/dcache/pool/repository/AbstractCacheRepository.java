@@ -8,8 +8,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.apache.log4j.Logger;
 
-import dmg.util.Logable;
-
 import diskCacheV111.repository.SpaceMonitor;
 import diskCacheV111.repository.SpaceRequestable;
 import diskCacheV111.repository.CacheRepository;
@@ -109,14 +107,6 @@ public abstract class AbstractCacheRepository
         }
 
         _repositoryListners.remove(listener);
-    }
-
-    /**
-     * @deprecated
-     */
-    public void setLogable(Logable logable)
-    {
-
     }
 
     public void addSpaceRequestListener(SpaceRequestable listener)

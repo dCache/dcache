@@ -24,7 +24,7 @@ public class HsmControlOsm extends CellAdapter implements Runnable, Logable {
     private SyncFifo2   _fifo = new SyncFifo2() ;
     private SimpleDateFormat formatter
          = new SimpleDateFormat ("MM.dd hh:mm:ss");
-         
+
     public HsmControlOsm( String name , String  args ) throws Exception {
        super( name , args , false ) ;
        _nucleus = getNucleus() ;
@@ -33,7 +33,7 @@ public class HsmControlOsm extends CellAdapter implements Runnable, Logable {
           if( _args.argc() < 1 )
             throw new
             IllegalArgumentException("Usage : ... <database>") ;
-            
+
           _database = new File( _args.argv(0) ) ;
           if( ! _database.isDirectory() )
              throw new
@@ -43,12 +43,12 @@ public class HsmControlOsm extends CellAdapter implements Runnable, Logable {
           kill() ;
           throw e ;
        }
-       useInterpreter( true ); 
+       useInterpreter( true );
        _nucleus.newThread( this , "queueWatch").start() ;
        start();
        export();
     }
-    
+
     public void getInfo( PrintWriter pw ){
        pw.println("HsmControlOsm : [$Id: HsmControlOsm.java,v 1.4 2005-01-17 16:21:33 patrick Exp $]" ) ;
        pw.println("Requests    : "+_requests ) ;
@@ -90,7 +90,7 @@ public class HsmControlOsm extends CellAdapter implements Runnable, Logable {
                 }
                 Message request = (Message)msg.getMessageObject() ;
                 try{
-                    
+
                     if( request instanceof HsmControlGetBfDetailsMsg ){
                         getBfDetails( ((HsmControlGetBfDetailsMsg)request).getStorageInfo() );
                     }else{
@@ -128,22 +128,22 @@ public class HsmControlOsm extends CellAdapter implements Runnable, Logable {
        String store = args.argv(0);
        String bfid  = args.argv(1);
        StorageInfo si = new OSMStorageInfo( store , "" , bfid ) ;
-    
+
        getBfDetails( si ) ;
-       
+
        String result = si.getKey("hsm.details");
-       
+
        return result == null ? "No Details" : result ;
     }
     public String hh_define_driver = "<hsm> <driverClass> [<options>]";
     public String ac_define_driver_$_2( Args args ) throws Exception {
-        
+
         String hsm    = args.argv(0);
         String driver = args.argv(1);
         Class  c = Class.forName(driver);
         Class  [] classArgs  = { dmg.util.Args.class,dmg.util.Args.class , dmg.util.Logable.class } ;
         Object [] objectArgs = { getArgs() , args ,  this } ;
-        
+
         Constructor con = c.getConstructor( classArgs ) ;
         Object [] values = new Object[3];
         try{
@@ -156,9 +156,9 @@ public class HsmControlOsm extends CellAdapter implements Runnable, Logable {
         if( ! ( values[1] instanceof HsmControllable ) )
           throw new
           IllegalArgumentException("Not a HsmControllable : ("+hsm+") "+driver);
-        
+
         _driverMap.put( hsm , values ) ;
-        return hsm+" "+driver+" "+values[1].toString(); 
+        return hsm+" "+driver+" "+values[1].toString();
     }
     public String hh_ls_driver = "";
     public String ac_ls_driver( Args args ){
@@ -168,11 +168,11 @@ public class HsmControlOsm extends CellAdapter implements Runnable, Logable {
             Map.Entry e = (Map.Entry)i.next() ;
             String hsm = (String)e.getKey() ;
             Object [] obj = (Object [])e.getValue() ;
-            
+
             sb.append(hsm).append(" ").
                append(obj[0].toString()).append(" ").
                append(obj[1].toString()).append("\n");
-         
+
          }
          return sb.toString();
     }
@@ -181,28 +181,28 @@ public class HsmControlOsm extends CellAdapter implements Runnable, Logable {
         if( ( hsm == null ) || ( hsm.equals("") ) )
            throw new
            IllegalArgumentException("Hsm not specified");
-        
+
         Object [] values = (Object [])_driverMap.get( hsm ) ;
         if( values == null )
             throw new
             IllegalArgumentException("Driver not found for hsm="+hsm);
-        
+
         HsmControllable hc = (HsmControllable)values[1] ;
         say("Controller found for "+hsm+" -> "+values[0]);
         hc.getBfDetails( storageInfo );
-        
+
     }
-    
+
     public void elog(String message) {
         esay(message);
-    }    
-    
+    }
+
     public void log(String message) {
         say(message);
     }
-    
+
     public void plog(String message) {
         esay(message);
     }
-    
+
 }

@@ -107,10 +107,9 @@ import dmg.cells.services.SetupInfoMessage;
 import dmg.util.Args;
 import dmg.util.CommandException;
 import dmg.util.CommandSyntaxException;
-import dmg.util.Logable;
 
-public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
-
+public class MultiProtocolPoolV3 extends CellAdapter
+{
     private final static Logger _logPoolMonitor = Logger.getLogger("logger.org.dcache.poolmonitor." + MultiProtocolPoolV3.class.getName());
 
     private static final String MAX_SPACE = "use-max-space";
@@ -177,7 +176,6 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
     private final JobTimeoutManager _timeoutManager;
     private final HsmSet _hsmSet = new HsmSet();
     private final HsmStorageHandler2 _storageHandler;
-    private Logable _logClass = this;
     private boolean _crashEnabled = false;
     private String _crashType = "exception";
     private boolean _isPermanent = false;
@@ -491,7 +489,6 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
 
             _storageQueue = new StorageClassContainer(poolName);
             _repository = new CacheRepositoryV4(_base, _args);
-            _repository.setLogable(this);
 
             _pnfs = new PnfsHandler(this, new CellPath(_pnfsManagerName), _poolName);
 
@@ -569,7 +566,7 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
                 kill();
                 throw ee;
             }
-            _logClass.elog("Starting Flushing Thread");
+            esay("Starting Flushing Thread");
             _flushingThread.start();
         }
         esay("Constructor done (still waiting for 'inventory')");
@@ -752,22 +749,22 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
 
         public void run() {
 
-            _logClass.log("Running Repository (Cell is locked)");
-            _logClass.log("Repository seems to be ok");
+            say("Running Repository (Cell is locked)");
+            say("Repository seems to be ok");
             try {
 
-                _repository.runInventory(_logClass, _pnfs, _recoveryFlags);
+                _repository.runInventory(_pnfs, _recoveryFlags);
                 enablePool();
-                _logClass.elog("Pool enabled " + _poolName);
+                esay("Pool enabled " + _poolName);
 
             } catch (Throwable e) {
-                _logClass.elog("Repository reported a problem : "
+                esay("Repository reported a problem : "
                                + e.getMessage());
-                _logClass.elog("Pool not enabled " + _poolName);
+                esay("Pool not enabled " + _poolName);
                 disablePool(PoolV2Mode.DISABLED_DEAD | PoolV2Mode.DISABLED_STRICT,
                             666, "Init failed: " + e.getMessage());
             }
-            _logClass.elog("Repository finished");
+            esay("Repository finished");
             if (_notifyMe != null) {
                 synchronized (_notifyMe) {
                     _notifyMe.notifyAll();
@@ -3348,32 +3345,6 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
         String mode = args.argv(0);
         _replicationHandler.init(mode);
         return _replicationHandler.toString();
-    }
-
-    public String hh_pool_inventory = "DEBUG ONLY";
-
-    public String ac_pool_inventory(Args args)
-        throws CacheException
-    {
-        final StringBuffer sb = new StringBuffer();
-        Logable l = new Logable() {
-                public void log(String msg) {
-                    _logClass.log(msg);
-                };
-
-                public void elog(String msg) {
-                    sb.append(msg).append("\n");
-                    _logClass.elog(msg);
-                }
-
-                public void plog(String msg) {
-                    sb.append(msg).append("\n");
-                    _logClass.plog(msg);
-                }
-            };
-        _repository.runInventory(l, _pnfs, _recoveryFlags);
-        return sb.toString();
-
     }
 
     public String hh_pool_suppress_hsmload = "on|off";

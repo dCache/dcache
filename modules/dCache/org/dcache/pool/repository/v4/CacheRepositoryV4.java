@@ -21,7 +21,6 @@ import java.util.Collections;
 
 import com.sleepycat.je.DatabaseException;
 
-import dmg.util.Logable;
 import dmg.util.Args;
 
 import org.dcache.pool.repository.StickyRecord;
@@ -351,9 +350,9 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
         return true;
     }
 
-    public void runInventory(Logable log) throws CacheException
+    public void runInventory() throws CacheException
     {
-        runInventory(null, null, 0);
+        runInventory(null, 0);
     }
 
     /**
@@ -380,7 +379,7 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
 
     /* Must not be executed more than once!
      */
-    public synchronized void runInventory(Logable log, PnfsHandler pnfs, int flags)
+    public synchronized void runInventory(PnfsHandler pnfs, int flags)
         throws CacheException
     {
         if (!_allEntries.isEmpty())

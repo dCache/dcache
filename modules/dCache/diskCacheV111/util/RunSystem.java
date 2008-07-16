@@ -1,20 +1,11 @@
 // $Id: RunSystem.java,v 1.7 2007-09-04 15:55:38 tigran Exp $
 
 package diskCacheV111.util ;
-import dmg.util.* ;
 import java.io.* ;
 
 import org.apache.log4j.Logger;
 
 public class RunSystem implements Runnable {
-    private static class myLog implements Logable {
-
-        public void log(String str){System.out.println(str);}
-        public void elog(String str){System.out.println(str);}
-        public void plog(String str){System.out.println(str);}
-
-    }
-
     private final static Logger _log = Logger.getLogger(RunSystem.class);
     private final static Runtime __runtime = Runtime.getRuntime() ;
     private final String _exec ;
@@ -38,12 +29,6 @@ public class RunSystem implements Runnable {
 
     private static int __counter = 100 ;
     private static synchronized int nextId(){ return __counter++ ; }
-
-    @Deprecated
-    public RunSystem(String exec, int maxLines, long timeout, Logable log)
-    {
-        this(exec, maxLines, timeout);
-    }
 
     public RunSystem(String exec, int maxLines, long timeout)
     {
