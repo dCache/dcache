@@ -25,6 +25,8 @@
 	        <pathelement location="${libDir}/log4j/log4j-1.2.8.jar"/>
 	        <pathelement location="${libDir}/berkeleyDB/je-3.2.76.jar" />
 	    	<pathelement location="${libDir}/cog/cog-srmlib/cog-jglobus.jar" />
+                <pathelement location="${libDir}/persistence/persistence-api-1.0.jar" />
+
 	        <pathelement location="${buildDir}/junit"/>
             <pathelement location="${buildTop}/modules/dCache/diskCacheV111/config" />
 	    </path>
