@@ -7,27 +7,33 @@ import org.apache.log4j.Logger;
 
 public class PnfsFile extends File  {
 
-   private String  _absolute   = null ;
    private PnfsId  _pnfsId     = null ;
    private FileMetaData  _meta = null ;
    private static String _trash       = null;
-   
+
    private static final Logger _logNameSpace =  Logger.getLogger("logger.dev.org.dcache.namespace." + PnfsFile.class.getName());
 
-   public PnfsFile( String path ){
-      super( path ) ;
-      _absolute = getAbsolutePath() ;
-      _pnfsId   = null ;
+    static private String getCanonicalPath(File f)
+        throws CacheException
+    {
+       try {
+           return f.getCanonicalPath();
+       } catch (IOException e) {
+           throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                                    "Failed to resolve " + f + ": " + e.getMessage());
+       }
+    }
+
+   public PnfsFile( String path ) throws CacheException {
+       super(getCanonicalPath(new File(path)));
    }
-   public PnfsFile( File path , String file ){
-      super( path , file ) ;
-      _absolute = getAbsolutePath() ;
-      _pnfsId   = null ;
+   public PnfsFile( File path , String file ) throws CacheException {
+       super(getCanonicalPath(new File(path , file)));
    }
-   private PnfsFile( String mp , String file , PnfsId id ){
-      super( mp , file ) ;
-      _absolute = getAbsolutePath() ;
-      _pnfsId   = id ;
+
+   private PnfsFile( String mp , String file , PnfsId id ) throws CacheException {
+       super(getCanonicalPath(new File(mp, file)));
+       _pnfsId   = id ;
    }
    public boolean exists(){
       if( _pnfsId == null )return super.exists() ;
@@ -101,7 +107,7 @@ public class PnfsFile extends File  {
          File f = new File( this , ".(const)(x)" ) ;
          return f.exists() ;
       }else if( isFile() ){
-         String dirString = new File( _absolute ).getParent() ;
+         String dirString = getParent() ;
          if( dirString == null )return false ;
          File f = new File( dirString , ".(const)(x)" ) ;
          return f.exists() ;
@@ -115,7 +121,7 @@ public class PnfsFile extends File  {
     /*
      * This method checks if the file with a name as given pnfsid exists in the trash directory
      * The result can be 'true/false' or IllegalArgumentException exception if the trash is not configured,
-     * in latter case the behaviour should be as it was before  
+     * in latter case the behaviour should be as it was before
      */
     public static boolean isDeleted(PnfsId pnfsId) {
         // Check if trash location is defined
@@ -135,7 +141,7 @@ public class PnfsFile extends File  {
     }
 
     public static void setTrashLocation(String trash) {
-        _trash = trash;    
+        _trash = trash;
     }
 
     public boolean setLength( long length ){
@@ -144,7 +150,7 @@ public class PnfsFile extends File  {
 
       if( _pnfsId == null ){
          if( ! isFile() )return false ;
-         String dirString = new File( _absolute ).getParent() ;
+         String dirString = getParent() ;
          if( dirString == null )return false  ;
          setSizeCommand =
          new File( dirString ,
@@ -195,7 +201,7 @@ public class PnfsFile extends File  {
 	  return new File( getParent()+"/.(puse)("+_pnfsId+")("+level+")" ) ;
 	  //         return new File( _absolute+"("+level+")" ) ;
       }else{
-         String dirString = new File( _absolute ).getParent() ;
+         String dirString = getParent() ;
          if( dirString == null )return null ;
          return new File( dirString , ".(use)("+level+")("+getName()+")" ) ;
       }
@@ -203,12 +209,11 @@ public class PnfsFile extends File  {
    public PnfsId getPnfsId() throws FileNotFoundCacheException  {
         if (_pnfsId != null)
             return _pnfsId;
-        
-        String dirString = new File(_absolute).getParent();
+        String dirString = getParent();
         if (dirString == null) {
-            throw new FileNotFoundCacheException("path " +_absolute+" not found");
+            throw new FileNotFoundCacheException("path " +this+" not found");
         }
-        
+
         File f = new File(dirString, ".(id)(" + getName() + ")");
 
         BufferedReader r = null;
@@ -216,14 +221,14 @@ public class PnfsFile extends File  {
             r = new BufferedReader(new FileReader(f), 32);
             String idString = r.readLine();
             if (idString == null) {
-                throw new FileNotFoundCacheException("path " +_absolute+" not found ( empty id file )");
+                throw new FileNotFoundCacheException("path " +this+" not found ( empty id file )");
             }
             return new PnfsId(idString);
         } catch( FileNotFoundException fnf) {
-            throw new FileNotFoundCacheException("path " +_absolute+" not found ( "+ f.getName() +" )");
+            throw new FileNotFoundCacheException("path " +this+" not found ( "+ f.getName() +" )");
         } catch (Exception e) {
             e.printStackTrace();
-            throw new FileNotFoundCacheException("path " +_absolute+" not found ( " + e.getMessage() + " )");
+            throw new FileNotFoundCacheException("path " +this+" not found ( " + e.getMessage() + " )");
         } finally {
             if (r != null) {
                 try {
@@ -402,11 +407,11 @@ public class PnfsFile extends File  {
    }
    public static String _getNameOf( File mountpoint , String  pnfsId )
           throws IOException{
-       
-       if (_logNameSpace.isInfoEnabled() ) { 
+
+       if (_logNameSpace.isInfoEnabled() ) {
            _logNameSpace.info("nameof for pnfsid " + pnfsId);
        }
-       
+
        BufferedReader br =
           new BufferedReader(
              new FileReader(
@@ -419,11 +424,11 @@ public class PnfsFile extends File  {
    }
    public PnfsId getParentId(){
       if( _pnfsId != null ){
-          
-          if (_logNameSpace.isInfoEnabled() ) { 
+
+          if (_logNameSpace.isInfoEnabled() ) {
               _logNameSpace.info("parent for pnfsid " + _pnfsId);
           }
-          
+
          File   f    = new File( getParent() , ".(parent)("+_pnfsId+")" ) ;
          String line = null ;
          BufferedReader br = null ;
@@ -567,7 +572,7 @@ public class PnfsFile extends File  {
       return super.getCanonicalPath() ;
    }
    */
-   public static PnfsFile getFileByPnfsId(String mountpoint, PnfsId id) throws CacheException {
+    public static PnfsFile getFileByPnfsId(String mountpoint, PnfsId id) throws CacheException {
        PnfsFile mp = new PnfsFile(mountpoint);
        if ((!mp.isDirectory()) || (!mp.isPnfs())) {
            throw new IllegalArgumentException("mountpoint [" + mountpoint + "] does not exist or not in the pnfs");

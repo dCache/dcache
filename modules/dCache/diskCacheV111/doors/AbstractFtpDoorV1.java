@@ -3041,8 +3041,9 @@ public abstract class AbstractFtpDoorV1
                                                   + fnfe.getMessage());
                 }
             } catch (CacheException ce) {
-                // Unfortunately if file exists the regular file exeption is
-                // still being thown
+                // Unfortunately if file exists the regular file
+                // exeption is still being thown. FIXME: we have to
+                // distinguish between transient and permanent errors!
                 if(_overwrite) {
                     warn("FTP Door: Overwrite is enabled. File \"" +
                          _transfer.path + "\" exists, and will be overwritten");
@@ -3763,45 +3764,50 @@ public abstract class AbstractFtpDoorV1
             (arg.indexOf('[') != -1 && arg.indexOf(']') != -1);
         PnfsFile f = null;
 
-        if (isPattern) {
-            // Convert relative paths to full paths relative to base path
-            if (!arg.startsWith("/")) {
-                arg = _curDirV + "/" + arg;
-            }
-            FsPath parent_path = new FsPath(arg);
-            List<String> l = parent_path.getPathItemsList();
-            String pattern = l.get(l.size() - 1);
-            parent_path.add("..");
-            String parent = parent_path.toString();
-            if (parent.indexOf('*') != -1 || parent.indexOf('?') != -1 ||
-               (parent.indexOf('[') != -1 && parent.indexOf(']') != -1)) {
-                reply("504 Parent Path Pattern Matching is not supported");
-                return;
-            }
-            String absolute_parent_path = absolutePath(parent_path.toString());
-            if (absolute_parent_path == null) {
-                FsPath relativeToRootPath = new FsPath(_curDirV);
-                relativeToRootPath.add(parent_path.toString());
-                reply("550 " + relativeToRootPath + " not found.");
-                return;
-            }
-            f = new PnfsFile(absolute_parent_path);
-            if (!f.isDirectory()) {
-                reply("550 Not a directory");
-                return;
-            }
+        try {
+            if (isPattern) {
+                // Convert relative paths to full paths relative to base path
+                if (!arg.startsWith("/")) {
+                    arg = _curDirV + "/" + arg;
+                }
+                FsPath parent_path = new FsPath(arg);
+                List<String> l = parent_path.getPathItemsList();
+                String pattern = l.get(l.size() - 1);
+                parent_path.add("..");
+                String parent = parent_path.toString();
+                if (parent.indexOf('*') != -1 || parent.indexOf('?') != -1 ||
+                    (parent.indexOf('[') != -1 && parent.indexOf(']') != -1)) {
+                    reply("504 Parent Path Pattern Matching is not supported");
+                    return;
+                }
+                String absolute_parent_path = absolutePath(parent_path.toString());
+                if (absolute_parent_path == null) {
+                    FsPath relativeToRootPath = new FsPath(_curDirV);
+                    relativeToRootPath.add(parent_path.toString());
+                    reply("550 " + relativeToRootPath + " not found.");
+                    return;
+                }
+                f = new PnfsFile(absolute_parent_path);
+                if (!f.isDirectory()) {
+                    reply("550 Not a directory");
+                    return;
+                }
 
-            filenameMatcher = new FilenameMatcher(pattern);
+                filenameMatcher = new FilenameMatcher(pattern);
 
-        } else {
-            String absolutepath = absolutePath(arg);
-            if (absolutepath == null) {
-                FsPath relativeToRootPath = new FsPath(_curDirV);
-                relativeToRootPath.add(arg);
-                reply("550 " + relativeToRootPath + " not found.");
-                return;
+            } else {
+                String absolutepath = absolutePath(arg);
+                if (absolutepath == null) {
+                    FsPath relativeToRootPath = new FsPath(_curDirV);
+                    relativeToRootPath.add(arg);
+                    reply("550 " + relativeToRootPath + " not found.");
+                    return;
+                }
+                f = new PnfsFile(absolutepath);
             }
-            f = new PnfsFile(absolutepath);
+        } catch (CacheException e) {
+            reply("451 Cannot resolve name");
+            return;
         }
 
         if (!f.exists()) {
