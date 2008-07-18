@@ -67,7 +67,7 @@
 # Start of yaim query functions
 
 
-yaim_query_conf_info_system_door()
+yaim_query_conf_infoprovider_system()
 {
   # Returns 0 when node is not LCG info system node
   # Returns 1 when node is LCG info system node
@@ -87,6 +87,59 @@ yaim_query_conf_info_system_door()
   fi
   return ${result}
 }
+
+yaim_query_conf_info_system()
+{
+  # Returns 0 when node is not LCG info system node
+  # Returns 1 when node is LCG info system node
+  local result
+  local thishost
+  local hostspec
+  result=0
+  if [ -z "$DCACHE_PROVIDER_INFO" ] ; then
+    yaim_query_conf_node_dcache_admin
+    result=$?
+  else
+    thishost=`hostname -f`
+    hostspec=$(echo "$DCACHE_PROVIDER_INFO" | grep -o "$thishost[^ ]*")
+    if [ "x$hostspec" != "x" ]; then
+      result=1
+    fi
+  fi
+  return ${result}
+}
+
+
+yaim_query_conf_web_system()
+{
+  # Returns 0 when node is not LCG info system node
+  # Returns 1 when node is LCG info system node
+  local result
+  local thishost
+  local hostspec
+  result=0
+  if [ -z "$DCACHE_PROVIDER_WEB" ] ; then
+    if [ -n "$DCACHE_PROVIDER_INFO" ] ; then
+    fi
+      yaim_query_conf_info_system
+      result=$?    
+    else
+      yaim_query_conf_node_dcache_admin
+      result=$?
+    fi
+  else
+    thishost=`hostname -f`
+    hostspec=$(echo "$DCACHE_PROVIDER_WEB" | grep -o "$thishost[^ ]*")
+    if [ "x$hostspec" != "x" ]; then
+      result=1
+    fi
+  fi
+  return ${result}
+}
+
+
+
+
 
 yaim_query_conf_bdii_port()
 {
@@ -798,7 +851,7 @@ config_gip_dcache_check()
 config_gip_dcache_run()
 {
   yaimlog DEBUG "function yaim_config_info_system start"
-  yaim_query_conf_info_system_door
+  yaim_query_conf_infoprovider_system
   rcisvd=$?  
   if [ "${rcisvd}" == "1" ] ; then
     # Use new info system and disable the old info system

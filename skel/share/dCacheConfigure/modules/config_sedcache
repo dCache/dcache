@@ -772,9 +772,10 @@ yaim_query_conf_node_dcache_door()
     resultset=${resultset}$?
     yaim_query_conf_node_xrootd_door
     resultset=${resultset}$?
-    yaim_query_conf_info_system_door
+    yaim_query_conf_infoprovider_system
     resultset=${resultset}$?
-    
+    yaim_query_conf_info_system
+    resultset=${resultset}$?
     if [ -n "$(echo $resultset | grep 1)" ] ; then
         result=1
     fi
@@ -2077,13 +2078,29 @@ yaim_config_dcache_files_key_value_node_config()
     else
         yaim_config_file_set_value "${file2update}" "XROOTD" "no"
     fi
-    yaim_query_conf_info_system_door
+    yaim_query_conf_infoprovider_system
     tmptrue=$?
     if [ "x${tmptrue}" == "x1" ] ;then
         yaim_config_file_set_value "${file2update}" "infoProvider" "yes"
     else
         yaim_config_file_set_value "${file2update}" "infoProvider" "no"
     fi
+    yaim_query_conf_info_system
+    tmptrue=$?
+    if [ "x${tmptrue}" == "x1" ] ;then
+        yaim_config_file_set_value "${file2update}" "info" "yes"
+    else
+        yaim_config_file_set_value "${file2update}" "info" "no"
+    fi
+    yaim_query_conf_web_system
+    tmptrue=$?
+    if [ "x${tmptrue}" == "x1" ] ;then
+        yaim_config_file_set_value "${file2update}" "httpDomain" "yes"
+    else
+        yaim_config_file_set_value "${file2update}" "httpDomain" "no"
+    fi
+    
+    
         
     yaim_query_conf_node_dcache_admin
     admintrue=$?
