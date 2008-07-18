@@ -58,6 +58,17 @@ onerror continue
    set context -c kpwdFile          ${ourHomeDir}/etc/dcache.kpwd
 
 onerror shutdown
+
+#
+#
+#
+#
+create diskCacheV111.util.ThreadManager ThreadManager \
+       "default \
+       -num-threads=100 \
+       -thread-timeout=15 \
+"
+
 # ----------------------------------------------------------------------
 #           Pin Manager Cell
 # ----------------------------------------------------------------------
