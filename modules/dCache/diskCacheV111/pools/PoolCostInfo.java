@@ -29,7 +29,7 @@ public class PoolCostInfo implements java.io.Serializable {
            return _name+"={"+super.toString()+"}" ;
         }
     }
-    public static class PoolQueueInfo implements java.io.Serializable {
+    public class PoolQueueInfo implements java.io.Serializable {
 
         private int _active    = 0;
         private int _maxActive =0 ;
