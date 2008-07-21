@@ -60,6 +60,18 @@ public class StickyInspector implements CacheRepositoryListener
                 schedule(entry);
     }
 
+    /**
+     * Shut down sticky inspector.
+     */
+    public void close()
+    {
+        _timer.schedule(new TimerTask() {
+                public void run() {
+                    _timer.cancel();
+                }
+            }, 0);
+    }
+
     private void schedule(CacheRepositoryEntry entry)
     {
         long expire = 0;

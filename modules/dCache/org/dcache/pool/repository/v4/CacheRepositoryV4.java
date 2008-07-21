@@ -106,6 +106,11 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
     private final MetaDataRepository _importRepository;
 
     /**
+     * The sticky inspector expires running
+     */
+    private StickyInspector _stickyInspector;
+
+    /**
      * True while an inventory is build. During this period we block
      * event processing.
      */
@@ -486,7 +491,9 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
              * which would screw up the accounting.
              */
             _runningInventory = false;
-            addCacheRepositoryListener(new StickyInspector(_allEntries.values()));
+
+            _stickyInspector = new StickyInspector(_allEntries.values());
+            addCacheRepositoryListener(_stickyInspector);
         } catch (IOException e) {
             throw new CacheException(ERROR_IO_DISK , "Failed to load repository: " + e);
         } finally {
@@ -586,6 +593,7 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
 
     public void close()
     {
+        _stickyInspector.close();
         _metaRepository.close();
     }
 }
