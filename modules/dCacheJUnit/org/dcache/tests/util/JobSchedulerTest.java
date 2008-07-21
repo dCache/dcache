@@ -60,11 +60,7 @@ public class JobSchedulerTest {
 
     @Before
     public void setUp() throws Exception {
-        _jobScheduler = new SimpleJobScheduler(new ThreadFactory() {
-                public Thread newThread(Runnable r) {
-                    return new Thread(r);
-                }
-            });
+        _jobScheduler = new SimpleJobScheduler("scheduler");
         Thread.sleep(5000);
     }
 
