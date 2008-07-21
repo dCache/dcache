@@ -29,7 +29,7 @@ public interface JobScheduler {
     public void setMaxActiveJobs( int maxJobs ) ;
     public List<JobInfo> getJobInfos() ;
     public JobInfo getJobInfo( int id ) ;
-    public void setSchedulerId( String name , int id ) ;
+    public void setSchedulerId( int id ) ;
     public String getSchedulerName() ;
     public int    getSchedulerId() ;
 

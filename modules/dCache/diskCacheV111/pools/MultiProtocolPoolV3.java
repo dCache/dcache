@@ -604,10 +604,10 @@ public class MultiProtocolPoolV3 extends CellAdapter
                 }
                 int id = _list.size();
                 JobScheduler job =
-                    new SimpleJobScheduler(factory, "IO-" + id, fifo);
+                    new SimpleJobScheduler(factory, queueName, fifo);
                 _list.add(job);
                 _hash.put(queueName, job);
-                job.setSchedulerId(queueName, id);
+                job.setSchedulerId(id);
                 _timeoutManager.addScheduler(queueName, job);
             }
             if (!_isConfigured) {
@@ -719,9 +719,7 @@ public class MultiProtocolPoolV3 extends CellAdapter
             return list;
         }
 
-        public void setSchedulerId(String name, int id) {
-            return;
-        }
+        public void setSchedulerId(int id) { }
 
         public String getSchedulerName() {
             return "Manager";

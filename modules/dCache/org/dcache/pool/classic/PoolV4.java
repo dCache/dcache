@@ -591,10 +591,10 @@ public class PoolV4 extends AbstractCell
                     continue;
                 }
                 int id = _list.size();
-                JobScheduler job = new SimpleJobScheduler("IO-" + id, fifo);
+                JobScheduler job = new SimpleJobScheduler(queueName, fifo);
                 _list.add(job);
                 _hash.put(queueName, job);
-                job.setSchedulerId(queueName, id);
+                job.setSchedulerId(id);
                 _timeoutManager.addScheduler(queueName, job);
             }
             if (!_isConfigured) {
@@ -722,7 +722,7 @@ public class PoolV4 extends AbstractCell
             return list;
         }
 
-        public void setSchedulerId(String name, int id)
+        public void setSchedulerId(int id)
         {
         }
 

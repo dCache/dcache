@@ -31,7 +31,6 @@ public class SimpleJobScheduler implements JobScheduler, Runnable
     private final Thread _worker;
     private final LinkedList<SJob>[] _queues = new LinkedList[3];
     private final Map<Integer, SJob> _jobs = new HashMap<Integer, SJob>();
-    private final String _prefix;
     private int _batch = -1;
     private String _name = "regular";
     private int _id = -1;
@@ -162,28 +161,20 @@ public class SimpleJobScheduler implements JobScheduler, Runnable
         }
     }
 
-    public SimpleJobScheduler() {
-        this(new SimpleThreadFactory(), "x");
+    public SimpleJobScheduler(String name) {
+        this(new SimpleThreadFactory(), name);
     }
 
-    public SimpleJobScheduler(String prefix) {
-        this(new SimpleThreadFactory(), prefix);
+    public SimpleJobScheduler(String name, boolean fifo) {
+        this(new SimpleThreadFactory(), name, fifo);
     }
 
-    public SimpleJobScheduler(String prefix, boolean fifo) {
-        this(new SimpleThreadFactory(), prefix, fifo);
+    public SimpleJobScheduler(ThreadFactory factory, String name) {
+        this(factory, name, true);
     }
 
-    public SimpleJobScheduler(ThreadFactory factory) {
-        this(factory, "x");
-    }
-
-    public SimpleJobScheduler(ThreadFactory factory, String prefix) {
-        this(factory, prefix, true);
-    }
-
-    public SimpleJobScheduler(final ThreadFactory factory, String prefix, boolean fifo) {
-        _prefix = prefix;
+    public SimpleJobScheduler(final ThreadFactory factory, String name, boolean fifo) {
+        _name = name;
         _fifo = fifo;
         for (int i = 0; i < _queues.length; i++) {
             _queues[i] = new LinkedList<SJob>();
@@ -193,18 +184,17 @@ public class SimpleJobScheduler implements JobScheduler, Runnable
 
             public Thread newThread(Runnable r) {
                 Thread t = factory.newThread(r);
-                t.setName("Scheduler-" + _prefix + "-worker");
+                t.setName(_name + "-worker");
                 return t;
             }
         });
 
         _worker = factory.newThread(this);
-        _worker.setName("Scheduler-" + _prefix);
+        _worker.setName(_name);
         _worker.start();
     }
 
-    public void setSchedulerId(String name, int id) {
-        if (name != null) _name = name;
+    public void setSchedulerId(int id) {
         _id = id;
     }
 

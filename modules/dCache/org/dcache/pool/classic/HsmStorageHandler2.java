@@ -175,8 +175,8 @@ public class HsmStorageHandler2
         _pnfs = pnfs;
         _checksumModule = checksumModule;
 
-        _fetchQueue = new SimpleJobScheduler("F");
-        _storeQueue = new SimpleJobScheduler("S");
+        _fetchQueue = new SimpleJobScheduler("fetch");
+        _storeQueue = new SimpleJobScheduler("store");
     }
 
     public void setCellEndpoint(CellEndpoint endpoint)
