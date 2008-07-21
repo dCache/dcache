@@ -1,7 +1,5 @@
 package org.dcache.pool.repository.v5;
 
-import dmg.cells.nucleus.CellAdapter;
-import dmg.util.Args;
 import diskCacheV111.pools.SpaceSweeper;
 import diskCacheV111.repository.RepositoryInterpreter;
 import diskCacheV111.repository.CacheRepositoryEntry;
@@ -32,8 +30,6 @@ import org.dcache.pool.FaultEvent;
 import org.dcache.pool.FaultListener;
 import org.dcache.pool.FaultAction;
 import static org.dcache.pool.repository.EntryState.*;
-
-import com.sleepycat.je.DatabaseException;
 
 import java.io.PrintWriter;
 import java.io.IOException;
@@ -71,9 +67,6 @@ public class CacheRepositoryV5// extends CellCompanion
     /** Classic repository used for tracking entries. */
     private CacheRepositoryV4 _repository;
 
-    /** Cell command interpreter for the repository. */
-    private RepositoryInterpreter _interpreter;
-
     /** Executor for periodic tasks. */
     private final ScheduledExecutorService _executor;
 
@@ -84,39 +77,10 @@ public class CacheRepositoryV5// extends CellCompanion
 
     private long _size = Long.MAX_VALUE;
     private SpaceSweeper _sweeper;
-    private CellAdapter _cell;
     private PnfsHandler _pnfs;
     private boolean _checkRepository = true;
     private boolean _volatile = false;
-    private boolean _isPermanent = false;
     private File _baseDir;
-    private Class _sweeperClass =
-        diskCacheV111.pools.SpaceSweeper2.class;
-    private Class _metaDataClass =
-        org.dcache.pool.repository.meta.file.FileMetaDataRepository.class;
-    private Class _metaDataImportClass = null;
-
-    private static final Class DUMMY_SWEEPER =
-        diskCacheV111.pools.DummySpaceSweeper.class;
-
-    /**
-     * Instantiates a new sweeper.
-     */
-    protected SpaceSweeper createSweeper()
-        throws IllegalArgumentException
-    {
-        Class c = _isPermanent ? DUMMY_SWEEPER : _sweeperClass;
-
-        try {
-            Class<?>[] argClass = { diskCacheV111.util.PnfsHandler.class,
-                                    diskCacheV111.repository.CacheRepository.class };
-            Constructor<?> con = c.getConstructor(argClass);
-            return (SpaceSweeper)con.newInstance(_pnfs, _repository);
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Could not instantiate "
-                                               + c + ": " + e.getMessage());
-        }
-    }
 
     public CacheRepositoryV5()
     {
@@ -130,15 +94,6 @@ public class CacheRepositoryV5// extends CellCompanion
     {
         if (_initialised)
             throw new IllegalStateException("Cannot be changed after initialisation");
-    }
-
-    /**
-     * Sets the cell used for communication, etc.
-     */
-    public synchronized void setCell(CellAdapter cell)
-    {
-        assertNotInitialised();
-        _cell = cell;
     }
 
     /**
@@ -159,42 +114,10 @@ public class CacheRepositoryV5// extends CellCompanion
         _checkRepository = enable;
     }
 
-    /**
-     * Sets whether the pool is permanent. A permanent pool does not
-     * garbage collect files.
-     */
-    public synchronized void setPermanent(boolean permanent)
+    public synchronized void setSweeper(SpaceSweeper sweeper)
     {
         assertNotInitialised();
-        _isPermanent = permanent;
-    }
-
-    public synchronized void setSweeper(Class sweeper)
-    {
-        if (sweeper == null)
-            throw new IllegalArgumentException("Sweeper must not be null");
-        if (!SpaceSweeper.class.isAssignableFrom(sweeper))
-            throw new IllegalArgumentException("Class does not implement MetaDataRepository: " + sweeper);
-        assertNotInitialised();
-        _sweeperClass = sweeper;
-    }
-
-    public synchronized void setMetaDataRepository(Class c)
-    {
-        if (c == null)
-            throw new IllegalArgumentException("Meta data repository must not be null");
-        if (!MetaDataRepository.class.isAssignableFrom(c))
-            throw new IllegalArgumentException("Class does not implement MetaDataRepository: " + c);
-        assertNotInitialised();
-        _metaDataClass = c;
-    }
-
-    public synchronized void setMetaDataImportRepository(Class c)
-    {
-        if (c != null && !MetaDataRepository.class.isAssignableFrom(c))
-            throw new IllegalArgumentException("Class does not implement MetaDataRepository: " + c);
-        assertNotInitialised();
-        _metaDataImportClass = c;
+        _sweeper = sweeper;
     }
 
     public synchronized void setBaseDir(File baseDir)
@@ -237,6 +160,17 @@ public class CacheRepositoryV5// extends CellCompanion
     }
 
     /**
+     * Sets the cache repository used internally to track repository
+     * entries.
+     */
+    public synchronized void setLegacyRepository(CacheRepositoryV4 repository)
+    {
+        _repository = repository;
+        _repository.setTotalSpace(_size);
+        _repository.addCacheRepositoryListener(this);
+    }
+
+    /**
      * Loads the repository from the on disk state. Must be done
      * exactly once before any other operation can be performed.
      *
@@ -248,30 +182,13 @@ public class CacheRepositoryV5// extends CellCompanion
         throws IOException, RepositoryException, IllegalStateException
     {
         assert _baseDir != null : "Base directory must be set";
-        assert _cell != null : "Cell must be set";
         assert _pnfs != null : "Pnfs handler must be set";
+        assert _repository != null : "Repository must be set";
 
         try {
             if (_initialised)
                 throw new IllegalStateException("Can only load repository once.");
             _initialised = true;
-
-            /* CacheRepositoryV4 still relies on an argument string.
-             */
-            String args = "-metaDataRepository=" + _metaDataClass.getName();
-            if (_metaDataImportClass != null) {
-                args = args + " -metaDataRepositoryImport"
-                    + _metaDataImportClass.getName();
-            }
-
-            _repository = new CacheRepositoryV4(_baseDir, new Args(args));
-            _repository.setTotalSpace(_size);
-            _repository.addCacheRepositoryListener(this);
-
-            _sweeper = createSweeper();
-            _interpreter = new RepositoryInterpreter(_repository);
-            _cell.addCommandListener(_interpreter);
-            _cell.addCommandListener(_sweeper);
 
             _repository.runInventory(_pnfs, flags);
 
@@ -279,8 +196,6 @@ public class CacheRepositoryV5// extends CellCompanion
                 _executor.scheduleWithFixedDelay(new CheckHealthTask(this),
                                                  30, 30, TimeUnit.SECONDS);
             }
-        } catch (DatabaseException e) {
-            throw new RepositoryException("Failed to initialise repository: " + e.getMessage());
         } catch (CacheException e) {
             throw new RepositoryException("Failed to initialise repository: " + e.getMessage());
         }
@@ -791,8 +706,8 @@ public class CacheRepositoryV5// extends CellCompanion
 
     public synchronized void getInfo(PrintWriter pw)
     {
-        pw.println("Storage Mode      : "
-                   + (DUMMY_SWEEPER.isInstance(_sweeper) ? "Static" : "Dynamic"));
+//         pw.println("Storage Mode      : "
+//                    + (DUMMY_SWEEPER.isInstance(_sweeper) ? "Static" : "Dynamic"));
         pw.println("Check Repository  : " + _checkRepository);
 
         SpaceRecord space = getSpaceRecord();

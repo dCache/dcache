@@ -152,15 +152,15 @@ public class RepositorySubsystemTest
         entry.setSticky(true);
         rep.close();
 
+        rep = new CacheRepositoryV4(root, new Args(args));
         cell = new CellAdapterHelper("pool", args);
         pnfs = new PnfsHandler(cell, new CellPath("pnfs"), "pool");
         repository = new CacheRepositoryV5();
         repository.setBaseDir(root);
-        repository.setCell(cell);
         repository.setPnfsHandler(pnfs);
         repository.setSize(5120);
-        repository.setSweeper(diskCacheV111.pools.SpaceSweeper2.class);
-        repository.setMetaDataRepository(org.dcache.pool.repository.meta.db.BerkeleyDBMetaDataRepository.class);
+        repository.setLegacyRepository(rep);
+        repository.setSweeper(new diskCacheV111.pools.SpaceSweeper2(pnfs, rep));
         repository.init(0);
         repository.addListener(this);
 

@@ -95,14 +95,36 @@
     <property name="cellEndpoint" ref="cell"/>    
   </bean>
 
-  <bean id="repository" class="org.dcache.pool.repository.v5.CacheRepositoryV5">
+  <bean id="legacy-repository" class="org.dcache.pool.repository.v4.CacheRepositoryV4">
+    <constructor-arg value="${pooldir}"/>
+    <constructor-arg>
+      <bean class="dmg.util.Args">
+        <constructor-arg value="
+          -metaDataRepository=${metaDataRepository}
+          -metaDataRepositoryImport=${metaDataRepositoryImport}"/> 
+      </bean>
+    </constructor-arg>
+  </bean>
+
+  <!-- TODO: When isPermanent is true, we should use 
+       diskCacheV111.pools.DummySpaceSweeper instead! -->
+  <bean id="sweeper" class="diskCacheV111.pools.SpaceSweeper2">
+    <constructor-arg ref="pnfs"/>
+    <constructor-arg ref="legacy-repository"/>
+  </bean>
+
+  <bean id="repository" 
+        class="org.dcache.pool.repository.v5.CacheRepositoryV5"
+        destroy-method="shutdown">
     <property name="baseDir" value="${pooldir}"/>
-    <property name="cell" ref="cell"/>
     <property name="pnfsHandler" ref="pnfs"/>
-    <property name="sweeper" value="diskCacheV111.pools.SpaceSweeper2"/>
+    <property name="sweeper" ref="sweeper"/>
     <property name="periodicChecks" value="${checkRepository}"/>
-    <property name="metaDataRepository" value="${metaDataRepository}"/>
-    <property name="metaDataImportRepository" value="${metaDataRepositoryImport}"/>
+    <property name="legacyRepository" ref="legacy-repository"/>
+  </bean>
+  
+  <bean id="repository-interpreter" class="diskCacheV111.repository.RepositoryInterpreter">
+    <constructor-arg ref="legacy-repository"/>
   </bean>
 
   <bean id="checksum" class="org.dcache.pool.classic.ChecksumModuleV1">
