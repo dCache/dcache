@@ -91,7 +91,7 @@ public class CacheRepositoryV5// extends CellCompanion
     private boolean _isPermanent = false;
     private File _baseDir;
     private Class _sweeperClass =
-        diskCacheV111.pools.SpaceSweeper0.class;
+        diskCacheV111.pools.SpaceSweeper2.class;
     private Class _metaDataClass =
         org.dcache.pool.repository.meta.file.FileMetaDataRepository.class;
     private Class _metaDataImportClass = null;

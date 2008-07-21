@@ -22,7 +22,6 @@ import org.dcache.pool.repository.EventType;
 import org.dcache.pool.repository.v4.CacheRepositoryV4;
 
 import diskCacheV111.pools.SpaceSweeper;
-import diskCacheV111.pools.SpaceSweeper1;
 import diskCacheV111.pools.SpaceSweeper2;
 import diskCacheV111.repository.CacheRepositoryEntry;
 import diskCacheV111.util.CacheException;
@@ -435,32 +434,6 @@ public class PoolRepository {
         assertEquals("file in non ready state can return size defined in storage info",
                 storageInfo.getFileSize(), entry.getSize() );
 
-    }
-
-
-    @Test
-    public void testDoubleAccountingOnCachedSpaceSweeper1()throws Exception {
-
-        String id = generateNewID();
-        PnfsId pnfsId = new PnfsId(id);
-
-        SpaceSweeper sweeper1 = new SpaceSweeper1(null, _repository);
-
-        CacheRepositoryEntry entry = _repository.createEntry(pnfsId);
-
-        StorageInfo storageInfo = new GenericStorageInfo();
-        storageInfo.setFileSize(17);
-
-        entry.setStorageInfo(storageInfo);
-
-        entry.setCached();
-
-        long cachedSize1 = sweeper1.getRemovableSpace();
-
-        entry.setCached();
-
-        assertEquals("SpaceSweeper1 on set cached two times calculates file size twice",
-                cachedSize1,  sweeper1.getRemovableSpace() );
     }
 
     @Test
