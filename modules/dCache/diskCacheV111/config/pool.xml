@@ -27,6 +27,7 @@
         lfs=none
         sticky=allowed
         pnfsmanager=PnfsManager
+        flushMessageTarget=broadcast
       </value>
     </property>
   </bean>
@@ -118,11 +119,12 @@
   <bean id="hsmset" class="diskCacheV111.util.HsmSet"/>
 
   <bean id="storagehandler" class="org.dcache.pool.classic.HsmStorageHandler2">
-    <constructor-arg ref="cell"/>
     <constructor-arg ref="repository"/>
     <constructor-arg ref="pnfs"/>
     <constructor-arg ref="hsmset"/>
     <constructor-arg ref="checksum"/>
+    <property name="cellEndpoint" ref="cell"/>
+    <property name="flushMessageTarget" value="${flushMessageTarget}"/>
   </bean>
 
   <bean id="timeout" class="diskCacheV111.pools.JobTimeoutManager"/>

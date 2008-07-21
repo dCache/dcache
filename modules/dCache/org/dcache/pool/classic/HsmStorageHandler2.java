@@ -28,7 +28,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.log4j.Logger;
 
-import dmg.cells.nucleus.CellAdapter;
+import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
@@ -59,9 +59,11 @@ import org.dcache.pool.repository.ReadHandle;
 import org.dcache.pool.repository.CacheEntry;
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.pool.repository.EntryState;
+import org.dcache.cell.CellMessageSender;
 
 
 public class HsmStorageHandler2
+    implements CellMessageSender
 {
     private static Logger _logRepository =
         Logger.getLogger("logger.org.dcache.repository");
@@ -69,19 +71,18 @@ public class HsmStorageHandler2
     private final CacheRepositoryV5 _repository;
     private final HsmSet _hsmSet;
     private final PnfsHandler _pnfs;
-    private final CellAdapter _cell;
     private final ChecksumModuleV1 _checksumModule;
     private final Map<PnfsId, StoreThread> _storePnfsidList   = new HashMap();
     private final Map<PnfsId, FetchThread> _restorePnfsidList = new HashMap();
     private final JobScheduler _fetchQueue;
     private final JobScheduler _storeQueue;
     private final boolean _checkPnfs = true;
-    private final boolean _removeUnexistingEntries;
     private final Executor _hsmRemoveExecutor =
         Executors.newSingleThreadExecutor();
     private final ThreadPoolExecutor _hsmRemoveTaskExecutor =
         new ThreadPoolExecutor(1, 1, Long.MAX_VALUE, TimeUnit.NANOSECONDS,
                                new LinkedBlockingQueue());
+    private CellEndpoint _endpoint;
 
     private long _maxRuntime = 4 * 3600 * 1000; // 4 hours
     private long _maxStoreRun = _maxRuntime;
@@ -89,6 +90,8 @@ public class HsmStorageHandler2
     private long _maxRemoveRun = _maxRuntime;
     private int _maxLines = 200;
     private boolean _stickyAllowed  = false;
+
+    private String _flushMessageTarget;
 
     ////////////////////////////////////////////////////////////////////////////////
     //
@@ -162,8 +165,7 @@ public class HsmStorageHandler2
         }
     }
 
-    public HsmStorageHandler2(CellAdapter cell,
-                              CacheRepositoryV5 repository,
+    public HsmStorageHandler2(CacheRepositoryV5 repository,
                               HsmSet hsmSet,
                               PnfsHandler pnfs,
                               ChecksumModuleV1 checksumModule)
@@ -171,13 +173,28 @@ public class HsmStorageHandler2
         _repository = repository;
         _hsmSet = hsmSet;
         _pnfs = pnfs;
-        _cell = cell;
         _checksumModule = checksumModule;
 
-        _fetchQueue = new SimpleJobScheduler(cell.getNucleus(), "F");
-        _storeQueue = new SimpleJobScheduler(cell.getNucleus(), "S");
+        _fetchQueue = new SimpleJobScheduler("F");
+        _storeQueue = new SimpleJobScheduler("S");
+    }
 
-        _removeUnexistingEntries = Boolean.valueOf(_cell.getArgs().getOpt("remove-unexisting-entries-on-flush")).booleanValue();
+    public void setCellEndpoint(CellEndpoint endpoint)
+    {
+        _endpoint = endpoint;
+    }
+
+    public void setFlushMessageTarget(String flushMessageTarget)
+    {
+        _flushMessageTarget = flushMessageTarget;
+    }
+
+    private void assertInitialized()
+    {
+        if (_endpoint == null)
+            throw new IllegalStateException("Cell endpoint must be set");
+        if (_flushMessageTarget == null)
+            throw new IllegalStateException("Flush message target must be set");
     }
 
     synchronized void setTimeout(long storeTimeout, long restoreTimeout, long removeTimeout)
@@ -299,6 +316,8 @@ public class HsmStorageHandler2
                                    CacheFileAvailable callback)
         throws FileInCacheException, CacheException
     {
+        assertInitialized();
+
         FetchThread info = _restorePnfsidList.get(pnfsId);
 
         if (info != null) {
@@ -395,6 +414,16 @@ public class HsmStorageHandler2
         return getSystemCommand(file, pnfsId, storageInfo, hsm, "get");
     }
 
+    private String getCellName()
+    {
+        return _endpoint.getCellInfo().getCellName();
+    }
+
+    private String getCellDomainName()
+    {
+        return _endpoint.getCellInfo().getDomainName();
+    }
+
     private class FetchThread extends Info implements Batchable
     {
         private final WriteHandle _handle;
@@ -407,9 +436,8 @@ public class HsmStorageHandler2
             throws CacheException, FileInCacheException
         {
             super(pnfsId);
-            _infoMsg =
-                new StorageInfoMessage(_cell.getCellName()+"@"+_cell.getCellDomainName(),
-                                       pnfsId, true);
+            String address = getCellName() + "@" + getCellDomainName();
+            _infoMsg = new StorageInfoMessage(address, pnfsId, true);
 
             _infoMsg.setStorageInfo(storageInfo);
 
@@ -485,7 +513,7 @@ public class HsmStorageHandler2
         private void sendBillingInfo()
         {
             try {
-                _cell.sendMessage(new CellMessage(new CellPath("billing"), _infoMsg));
+                _endpoint.sendMessage(new CellMessage(new CellPath("billing"), _infoMsg));
             } catch (NotSerializableException e) {
                 throw new RuntimeException("Bug: Unserializable vehicle.", e);
             } catch (NoRouteToCellException e) {
@@ -738,10 +766,12 @@ public class HsmStorageHandler2
 
     public synchronized void remove(CellMessage message)
     {
+        assertInitialized();
+
         assert message.getMessageObject() instanceof PoolRemoveFilesFromHSMMessage;
 
         HsmRemoveTask task =
-            new HsmRemoveTask(_cell,
+            new HsmRemoveTask(_endpoint,
                               _hsmRemoveTaskExecutor,
                               _hsmSet, _maxRemoveRun, message);
         _hsmRemoveExecutor.execute(task);
@@ -785,6 +815,8 @@ public class HsmStorageHandler2
     public synchronized boolean store(PnfsId pnfsId, CacheFileAvailable callback)
         throws CacheException
     {
+        assertInitialized();
+
         say("DEBUGFLUSH : store : requested for " + pnfsId +
             (callback == null ? " w/o " : " with ") + "callback");
 
@@ -843,9 +875,8 @@ public class HsmStorageHandler2
             throws FileNotInCacheException
         {
 	    super(pnfsId);
-            String myName =
-                _cell.getCellName() + "@" + _cell.getCellDomainName();
-            _infoMsg = new StorageInfoMessage(myName, pnfsId, false);
+            String address = getCellName() + "@" + getCellDomainName();
+            _infoMsg = new StorageInfoMessage(address, pnfsId, false);
 	}
 
         @Override
@@ -893,7 +924,7 @@ public class HsmStorageHandler2
         private void sendBillingInfo()
         {
             try {
-                _cell.sendMessage(new CellMessage(new CellPath("billing"), _infoMsg));
+                _endpoint.sendMessage(new CellMessage(new CellPath("billing"), _infoMsg));
             } catch (NotSerializableException e) {
                 throw new RuntimeException("Bug: Unserializable vehicle.", e);
             } catch (NoRouteToCellException e) {
@@ -1085,27 +1116,21 @@ public class HsmStorageHandler2
 
         private void notifyFlushMessageTarget(StorageInfo info)
         {
-            String flushMessageTarget = _cell.getArgs().getOpt("flushMessageTarget");
-            if (flushMessageTarget == null || flushMessageTarget.length() == 0) {
-                flushMessageTarget = "broadcast";
-            }
-
             try {
                 PoolFileFlushedMessage poolFileFlushedMessage =
-                    new PoolFileFlushedMessage(_cell.getCellName(),
-                                               getPnfsId(), info);
+                    new PoolFileFlushedMessage(getCellName(), getPnfsId(), info);
                 /*
                  * no replays from secondary message targets
                  */
                 poolFileFlushedMessage.setReplyRequired(false);
                 CellMessage msg =
-                    new CellMessage(new CellPath(flushMessageTarget),
+                    new CellMessage(new CellPath(_flushMessageTarget),
                                     poolFileFlushedMessage);
-                _cell.sendMessage(msg);
+                _endpoint.sendMessage(msg);
             } catch (NotSerializableException e) {
                 throw new RuntimeException("Bug: Unserializable vehicle." , e);
             } catch (NoRouteToCellException e) {
-                _logRepository.info("failed to send message to flushMessageTarget (" + flushMessageTarget + ") : " + e.getMessage());
+                _logRepository.info("failed to send message to flushMessageTarget (" + _flushMessageTarget + ") : " + e.getMessage());
             }
         }
     }
