@@ -144,6 +144,7 @@ public class RepositorySubsystemTest
         args = "-metaDataRepository=org.dcache.pool.repository.meta.db.BerkeleyDBMetaDataRepository";
 
         CacheRepositoryV4 rep = new CacheRepositoryV4(root, new Args(args));
+        rep.runInventory();
         createEntry(rep, id1, info1).setPrecious(true);
         createEntry(rep, id2, info2).setCached();
         CacheRepositoryEntry entry = createEntry(rep, id3, info3);

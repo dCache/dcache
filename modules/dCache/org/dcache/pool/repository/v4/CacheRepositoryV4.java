@@ -593,7 +593,9 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
 
     public void close()
     {
-        _stickyInspector.close();
+        if (_stickyInspector != null) {
+            _stickyInspector.close();
+        }
         _metaRepository.close();
     }
 }
