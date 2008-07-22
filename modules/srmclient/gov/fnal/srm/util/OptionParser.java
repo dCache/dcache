@@ -1,7 +1,7 @@
 //______________________________________________________________________________
 //
 // This code is stolen from org.dcache.services.AbstractCell
-//
+// 
 //  $Id$ 
 //  $Author$
 //______________________________________________________________________________
@@ -14,17 +14,27 @@ import java.math.BigInteger;
 import java.io.PrintWriter;
 
 public class OptionParser { 
-        
-        private Args _args;
-        public Args getArgs() { return _args;} 
 
-        public OptionParser(Args args) { 
-                this._args = args;
+        /**
+         * Returns string value of option argument 
+         * or default.
+         */
+        public static String getOption(Option option, 
+                                        Args args) 
+                throws IllegalArgumentException { 
+                return getOption(option,args,true);
         }
-
-        public  String getOption(Option option) throws IllegalArgumentException { 
-                String s;
-                s = getArgs().getOpt(option.name());
+        
+        /**
+         * Returns string value of option argument 
+         * or default or null 
+         */
+        public static String getOption(Option option, 
+                                       Args args, 
+                                       boolean setDefault) 
+                throws IllegalArgumentException { 
+                String s=null;
+                s = args.getOpt(option.name());
 //                if (s != null && (s.length() > 0 || !option.required()))
 //                        return s;
                 if (s != null ) { 
@@ -34,60 +44,208 @@ public class OptionParser {
                                 return s;
                 }
                 if (option.required())
-                        throw new IllegalArgumentException(option.name()
-                                                           + " is a required argument");
-                
-                return option.defaultValue();
+                        throw new 
+                                IllegalArgumentException(option.name()+
+                                                         " is a required argument");
+                if (setDefault) {
+                        return option.defaultValue();
+                }
+                return s;
+        }
+
+        /**
+         * Checks if list of options contains option names that do not 
+         * match class field names. 
+         */
+        public static void checkOptions(Object o, Args args) {
+                for (int i=0;i<args.optc();i++) { 
+                        String optionName=args.optv(i);
+                        Boolean exists=false;
+                        Class c = o.getClass();
+                        while(c!=null) { 
+                                for (Field field : c.getDeclaredFields()) {
+                                        Option option = field.getAnnotation(Option.class);
+                                        if (option==null) continue;
+                                        if (option.name().equals(optionName)) {
+                                                exists = true;
+                                                break;
+                                        }
+                                }
+                                c = c.getSuperclass();
+                        }
+                        if (!exists) { 
+                                throw new 
+                                        IllegalArgumentException("Unknown option specified : -"+optionName);
+                        }
+                }
+        }
+        
+
+        /**
+         * Sets class fields to their default values 
+         */
+        public static <T>  void setDefaults(T t) { 
+                Class c = t.getClass();
+                while(c!=null) { 
+                        for (Field field : c.getDeclaredFields()) {
+                                Option option = field.getAnnotation(Option.class);
+                                if (option==null) continue;
+                                try {
+                                        field.setAccessible(true);
+                                        String s = option.defaultValue();
+                                        Object value;
+                                        if (s != null && s.length() > 0) {
+                                                try {
+                                                        value=toType(s,field.getType());
+                                                        field.set(t,value);
+                                                } 
+                                                catch (ClassCastException e) {
+                                                        throw new 
+                                                                IllegalArgumentException("Cannot convert '"+ 
+                                                                                         s + "' to " + field.getType(), e);
+                                                }
+                                        } 
+                                } 
+                                catch (SecurityException e) {
+                                        throw new RuntimeException("Bug detected while processing option "+ 
+                                                                   option.name(), e);
+                                } 
+                                catch (IllegalAccessException e) {
+                                        throw new RuntimeException("Bug detected while processing option "+ 
+                                                                   option.name(), e);
+                                }
+                        }
+                        c = c.getSuperclass();
+                }
+        }
+
+        /**
+         * Sets class fields to the option values specified in args
+         * or default values
+         */
+        public static <T>  void parseOptions(T t, 
+                                             Args args) {
+                checkOptions(t,args);
+                Class c = t.getClass();
+                while(c!=null) { 
+                        for (Field field : c.getDeclaredFields()) {
+                                Option option = field.getAnnotation(Option.class);
+                                if (option==null) continue;
+                                try {
+                                        field.setAccessible(true);
+                                        String s = getOption(option,args);
+                                        Object value;
+                                        if (s != null && s.length() > 0) {
+                                                try {
+                                                        value=toType(s,field.getType());
+                                                        field.set(t,value);
+//                                                         if (option.log()) { 
+//                                                                 System.out.println("-"+option.name()+"="+value);
+//                                                         }
+                                                } 
+                                                catch (ClassCastException e) {
+                                                        throw new 
+                                                                IllegalArgumentException("Cannot convert '"+ 
+                                                                                         s + "' to " + field.getType(), e);
+                                                }
+                                        } 
+                                } 
+                                catch (SecurityException e) {
+                                        throw new RuntimeException("Bug detected while processing option "+ 
+                                                                   option.name(), e);
+                                } 
+                                catch (IllegalAccessException e) {
+                                        throw new RuntimeException("Bug detected while processing option "+ 
+                                                                   option.name(), e);
+                                }
+                        }
+                        c = c.getSuperclass();
+                }
         }
 
 
-        public <T>  void parseOptions(T t) {
-                for (Class c = t.getClass(); c != null; c = c.getSuperclass()) {
+        /**
+         * Sets class fields to the option values specified in args.
+         * 
+         */
+        public static <T>  void parseSpecifiedOptions(T t, 
+                                                      Args args) {
+                checkOptions(t,args);
+                Class c = t.getClass();
+                while(c!=null) { 
                         for (Field field : c.getDeclaredFields()) {
                                 Option option = field.getAnnotation(Option.class);
+                                if (option==null) continue;
                                 try {
-                                        if (option != null) {
-                                                field.setAccessible(true);
-                                                String s = getOption(option);
-                                                Object value;
-                                                if (s != null && s.length() > 0) {
-                                                        try {
-                                                                value = toType(s, field.getType());
-                                                                field.set(t, value);
-                                                        } 
-                                                        catch (ClassCastException e) {
-                                                                throw new IllegalArgumentException("Cannot convert '" + s + "' to " + field.getType(), e);
-                                                        }
+                                        field.setAccessible(true);
+                                        String s = getOption(option,args,false);
+                                        Object value;
+                                        if (s != null && s.length() > 0) {
+                                                try {
+                                                        value=toType(s,field.getType());
+                                                        field.set(t,value);
                                                 } 
-                                                else {
-                                                        value = field.get(t);
+                                                catch (ClassCastException e) {
+                                                        throw new 
+                                                                IllegalArgumentException("Cannot convert '"+ 
+                                                                                         s + "' to " + field.getType(), e);
                                                 }
-                                                
-                                                if (option.log()) {
-                                                        String description = option.description();
-                                                        String unit = option.unit();
-                                                        if (description.length() == 0)
-                                                                description = option.name();
-                                                        if (unit.length() > 0) {
-                                                                System.out.println("-"+option.name()+" "+ description + " set to " + value + " " + unit);
-                                                        } 
-                                                        else {
-                                                                System.out.println("-"+option.name()+" " +description + " set to " + value);
-                                                        }
-                                                }
-                                        }
+                                        } 
                                 } 
                                 catch (SecurityException e) {
-                                        throw new RuntimeException("Bug detected while processing option " + option.name(), e);
+                                        throw new RuntimeException("Bug detected while processing option "+ 
+                                                                   option.name(), e);
                                 } 
                                 catch (IllegalAccessException e) {
-                                        throw new RuntimeException("Bug detected while processing option " + option.name(), e);
+                                        throw new RuntimeException("Bug detected while processing option "+ 
+                                                                   option.name(), e);
                                 }
-                                catch (Exception e) { 
-                                        e.printStackTrace();
-                                }
-
                         }
+                        c = c.getSuperclass();
+                }
+        }
+
+        public static <T>  void parseOption(T t, 
+                                            String optionName,
+                                            Args args) {
+                Class c = t.getClass();
+                boolean exists = false;
+                while(c!=null) { 
+                        for (Field field : c.getDeclaredFields()) {
+                                Option option = field.getAnnotation(Option.class);
+                                if (option==null) continue;
+                                if (!option.name().equals(optionName)) continue;
+                                exists=true;
+                                try {
+                                        field.setAccessible(true);
+                                        String s = getOption(option,args);
+                                        Object value;
+                                        if (s != null && s.length() > 0) {
+                                                try {
+                                                        value=toType(s,field.getType());
+                                                        field.set(t,value);
+                                                } 
+                                                catch (ClassCastException e) {
+                                                        throw new 
+                                                                IllegalArgumentException("Cannot convert '"+ 
+                                                                                         s + "' to " + field.getType(), e);
+                                                }
+                                        } 
+                                } 
+                                catch (SecurityException e) {
+                                        throw new RuntimeException("Bug detected while processing option "+ 
+                                                                   option.name(), e);
+                                } 
+                                catch (IllegalAccessException e) {
+                                        throw new RuntimeException("Bug detected while processing option "+ 
+                                                                   option.name(), e);
+                                }
+                        }
+                        c = c.getSuperclass();
+                }
+                if (!exists) { 
+                        throw new 
+                                IllegalArgumentException("Unknown option specified : -"+optionName);
                 }
         }
         
@@ -96,39 +254,41 @@ public class OptionParser {
          * to a writer.
          */
 
-        protected <T> void writeOptions(T t, PrintWriter out) {
-                for (Class c = t.getClass(); c != null; c = c.getSuperclass()) {
+        protected <T> void writeOptions(T t, 
+                                        PrintWriter out) {
+                Class c = t.getClass(); 
+                while (c!=null) { 
                         for (Field field : c.getDeclaredFields()) {
                                 Option option = field.getAnnotation(Option.class);
+                                if (option==null) continue;
                                 try {
-                                        if (option != null) {
-                                                if (option.log()) {
-                                                        field.setAccessible(true);
-                                                        Object value = field.get(t);
-                                                        String description = option.description();
-                                                        String unit = option.unit();
-                                                        if (description.length() == 0)
-                                                                description = option.name();
-                                                        out.println(description + " is " + value + " " + unit);
-                                                }
+                                        if (option.log()) {
+                                                field.setAccessible(true);
+                                                Object value = field.get(t);
+                                                String description = option.description();
+                                                String unit = option.unit();
+                                                if (description.length() == 0)
+                                                        description = option.name();
+                                                out.println(description + " is " + value + " " + unit);
                                         }
                                 } 
                                 catch (SecurityException e) {
-                                        throw new RuntimeException("Bug detected while processing option " + option.name(), e);
+                                        throw new RuntimeException("Bug detected while processing option " + 
+                                                                   option.name(), e);
                                 } 
                                 catch (IllegalAccessException e) {
-                                        throw new RuntimeException("Bug detected while processing option " + option.name(), e);
+                                        throw new RuntimeException("Bug detected while processing option " + 
+                                                                   option.name(), e);
                                 }
                         }
+                        c = c.getSuperclass();
                 }
         }
-        
-        
         
         @SuppressWarnings("unchecked")
                 static public <T> T toType(final Object object, final Class<T> type) {
                 T result = null;
-                if (object == null) {
+                if (object == null || "null".equalsIgnoreCase(object.toString()) ) {
                         //initalize primitive types:
                         if (type == Boolean.TYPE) {
                                 result = ((Class<T>) Boolean.class).cast(false);
@@ -179,7 +339,7 @@ public class OptionParser {
                                 }
                         } 
                         else if (type == Byte.class || type == Byte.TYPE) {
-                                Byte i = Byte.valueOf(so);
+                                Byte i=Byte.valueOf(so);
                                 if (type == Byte.TYPE) {
                                         result = ((Class<T>) Byte.class).cast(i); //avoid ClassCastException through autoboxing
                                 } 
@@ -215,10 +375,7 @@ public class OptionParser {
                                 }
                         } 
                         else if (type == Integer.class || type == Integer.TYPE) {
-                                Integer i = null;
-                                if (!"null".equals(so)) { 
-                                        i = Integer.valueOf(so);
-                                }
+                                Integer i = Integer.valueOf(so);
                                 if (type == Integer.TYPE) {
                                         result = ((Class<T>) Integer.class).cast(i); //avoid ClassCastException through autoboxing
                                 } 
@@ -273,5 +430,4 @@ public class OptionParser {
                 }
                 return result;
         }
-        
 }
