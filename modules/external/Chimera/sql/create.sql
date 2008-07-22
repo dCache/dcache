@@ -254,7 +254,7 @@ CREATE TABLE t_storageinfo (
    istorageSubGroup VARCHAR(64) NOT NULL,   
    iaccessLatency INT NOT NULL,
    iretentionPolicy INT NOT NULL,
-   FOREIGN KEY (ipnfsid) REFERENCES t_inodes( ipnfsid )
+   FOREIGN KEY (ipnfsid) REFERENCES t_inodes( ipnfsid ) ON DELETE CASCADE
 );
 
 
@@ -278,7 +278,7 @@ CREATE TABLE t_locationinfo (
 	ictime timestamp NOT NULL,
 	iatime timestamp NOT NULL,
 	istate INT NOT NULL,
-	FOREIGN KEY (ipnfsid) REFERENCES t_inodes( ipnfsid ),
+	FOREIGN KEY (ipnfsid) REFERENCES t_inodes( ipnfsid ) ON DELETE CASCADE,
 	PRIMARY KEY (ipnfsid,itype,ilocation)
 );
 
