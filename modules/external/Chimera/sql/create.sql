@@ -2,7 +2,7 @@
 -- Chimera table layout
 -- for postgreSQL
 --
--- $Id: create.sql 296 2007-10-30 21:09:30Z tigran $
+-- $Id: create.sql 780 2008-07-21 17:48:42Z tigran $
 
 --
 --  Inodes
@@ -252,26 +252,27 @@ CREATE TABLE t_storageinfo (
    ihsmName VARCHAR(64) NOT NULL,
    istorageGroup VARCHAR(64) NOT NULL,
    istorageSubGroup VARCHAR(64) NOT NULL,
-   FOREIGN KEY (ipnfsid) REFERENCES t_inodes( ipnfsid )
+   FOREIGN KEY (ipnfsid) REFERENCES t_inodes( ipnfsid ) ON DELETE CASCADE
 );
+
 
 CREATE TABLE t_access_latency (
    ipnfsid CHAR(36) PRIMARY KEY,
    iaccessLatency INT NOT NULL,
-   FOREIGN KEY (ipnfsid) REFERENCES t_inodes( ipnfsid )
+   FOREIGN KEY (ipnfsid) REFERENCES t_inodes( ipnfsid ) ON DELETE CASCADE
 );
 
 
 CREATE TABLE t_retention_policy (
    ipnfsid CHAR(36) PRIMARY KEY,
    iretentionPolicy INT NOT NULL,
-   FOREIGN KEY (ipnfsid) REFERENCES t_inodes( ipnfsid )
+   FOREIGN KEY (ipnfsid) REFERENCES t_inodes( ipnfsid ) ON DELETE CASCADE
 );
 
 
 -- LOCATION INFO
 --
--- Generic storage information 
+-- Generic storage information
 -- ipnfsid   : pnfsid of the inode
 -- itype     : type of storage, e.g. tape, disk
 -- ilocation : type specific information like pool name for disk and HSM connetion for tape
@@ -289,12 +290,12 @@ CREATE TABLE t_locationinfo (
 	ictime timestamp NOT NULL,
 	iatime timestamp NOT NULL,
 	istate INT NOT NULL,
-	FOREIGN KEY (ipnfsid) REFERENCES t_inodes( ipnfsid ),
+	FOREIGN KEY (ipnfsid) REFERENCES t_inodes( ipnfsid ) ON DELETE CASCADE,
 	PRIMARY KEY (ipnfsid,itype,ilocation)
 );
 
 --
--- removed locations 
+-- removed locations
 -- required for HSM and pools cleanup
 --
 
