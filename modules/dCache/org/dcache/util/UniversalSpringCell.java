@@ -1,5 +1,6 @@
 package org.dcache.util;
 
+import java.util.Date;
 import java.util.Dictionary;
 import java.util.Properties;
 import java.util.Enumeration;
@@ -8,9 +9,13 @@ import java.util.TreeSet;
 import java.util.Formatter;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.StringWriter;
 import java.io.PrintWriter;
 import java.io.IOException;
+import java.io.NotSerializableException;
+import java.io.FileReader;
+import java.io.BufferedReader;
 import java.lang.reflect.InvocationTargetException;
 import java.beans.PropertyDescriptor;
 
@@ -19,7 +24,10 @@ import dmg.cells.nucleus.CellMessageAnswerable;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellInfo;
+import dmg.cells.nucleus.CellPath;
+import dmg.cells.services.SetupInfoMessage;
 import dmg.util.Args;
+import dmg.util.CommandException;
 
 import org.dcache.services.AbstractCell;
 import org.dcache.cell.CellMessageReceiver;
@@ -82,14 +90,40 @@ public class UniversalSpringCell
     private final Set<CellSetupProvider> _setupProviders =
         new TreeSet<CellSetupProvider>(new ClassNameComparator());
 
+    /**
+     * Cell name of the setup controller.
+     */
+    private String _setupController;
+
+    /**
+     * Setup class used for sending a setup to the setup controller.
+     */
+    private String _setupClass;
+
+    /**
+     * Setup to execute during start and to which to save the setup.
+     */
+    private String _setupFile;
+
     public UniversalSpringCell(String cellName, String arguments)
         throws InterruptedException
     {
         super(cellName, arguments, true);
 
+        /* Process command line arguments.
+         */
         Args args = getArgs();
         if (args.argc() == 0)
             throw new IllegalArgumentException("Configuration location missing");
+        _setupController = args.getOpt("setupController");
+        info("Setup controller set to "
+             + (_setupController == null ? "none" : _setupController));
+        _setupFile = args.getOpt("setupFile");
+        _setupClass = args.getOpt("setupClass");
+
+        if (_setupController != null && _setupClass == null)
+            throw new IllegalArgumentException("Setup class must be specified when a setup controller is used");
+
         /* Execute initialisation in a different thread allocated from
          * the correct thread group.
          */
@@ -111,6 +145,19 @@ public class UniversalSpringCell
         try {
             _context =
                 new UniversalSpringCellApplicationContext(getArgs());
+            if (_setupFile != null) {
+                File file = new File(_setupFile);
+                while (!file.exists()) {
+                    error("Setup does not exists; waiting");
+                    Thread.sleep(30000);
+                }
+
+                execFile(file);
+            }
+
+            for (CellSetupProvider provider: _setupProviders) {
+                provider.afterSetupExecuted();
+            }
         } catch (Throwable t) {
             fatal("Failed to initalise cell: " + t.getMessage());
             kill();
@@ -152,10 +199,131 @@ public class UniversalSpringCell
         return info;
     }
 
-    public final String hh_save = "[filename] # saves setup to disk";
-    public String ac_save_$_0_1(Args args)
+    /**
+     * Collects setup information from all registered setup providers.
+     */
+    protected void printSetup(PrintWriter pw)
     {
+        pw.println("#\n# Created by " + getCellName() + "("
+                   + getClass().getName() + ") at " + (new Date()).toString()
+                   + "\n#");
+        for (CellSetupProvider provider: _setupProviders)
+            provider.printSetup(pw);
+    }
+
+    public final String hh_save = "[-sc=<setupController>|none] [-file=<filename>] # saves setup to disk or setup controller";
+    public String ac_save(Args args)
+        throws IOException, IllegalArgumentException, NoRouteToCellException
+    {
+        String controller = args.getOpt("sc");
+        String file = args.getOpt("file");
+
+        if ("none".equals(controller)) {
+            controller = null;
+            file = _setupFile;
+        } else if (file == null && controller == null) {
+            controller = _setupController;
+            file = _setupFile;
+        }
+
+        if (file == null && controller == null) {
+            throw new IllegalArgumentException("Either a setup controller or setup file must be specified");
+        }
+
+        if (controller != null) {
+            if (_setupClass == null || _setupClass.equals(""))
+                throw new IllegalStateException("Cannot save to a setup controller since the cell has no setup class");
+
+            try {
+                StringWriter sw = new StringWriter();
+                printSetup(new PrintWriter(sw));
+
+                SetupInfoMessage info =
+                    new SetupInfoMessage("put", getCellName(),
+                                         _setupClass, sw.toString());
+
+                sendMessage(new CellMessage(new CellPath(controller), info));
+            } catch (NotSerializableException e) {
+                throw new RuntimeException("Bug detected: Unserializable vehicle", e);
+            } catch (NoRouteToCellException e) {
+                throw new NoRouteToCellException("Failed to send setup to " + controller + ": " + e.getMessage());
+            }
+        }
+
+        if (file != null) {
+            File path = new File(file).getAbsoluteFile();
+            File directory = path.getParentFile();
+            File temp = File.createTempFile(path.getName(), null, directory);
+            temp.deleteOnExit();
+
+            PrintWriter pw = new PrintWriter(new FileWriter(temp));
+            try {
+                printSetup(pw);
+            } finally {
+                pw.close();
+            }
+
+            renameWithBackup(temp, path);
+        }
+
         return "";
+    }
+
+    private static void renameWithBackup(File source, File dest)
+        throws IOException
+    {
+        File backup = new File(dest.getPath() + ".bak");
+
+        if (dest.exists()) {
+            if (!dest.isFile()) {
+                throw new IOException("Cannot rename " + dest + ": Not a file");
+            }
+            if (backup.exists()) {
+                if (!backup.isFile()) {
+                    throw new IOException("Cannot delete " + backup + ": Not a file");
+                }
+                if (!backup.delete()) {
+                    throw new IOException("Failed to delete " + backup);
+                }
+            }
+            if (!dest.renameTo(backup)) {
+                throw new IOException("Failed to rename " + dest);
+            }
+        }
+        if (!source.renameTo(dest)) {
+            throw new IOException("Failed to rename" + source);
+        }
+    }
+
+    private void execFile(File setup)
+        throws IOException, CommandException
+    {
+        BufferedReader br = new BufferedReader(new FileReader(setup));
+        String line;
+        try {
+            int lineCount = 0;
+            while ((line = br.readLine()) != null) {
+                ++lineCount;
+
+                line = line.trim();
+                if (line.length() == 0)
+                    continue;
+                if (line.charAt(0) == '#')
+                    continue;
+                try {
+                    command(new Args(line));
+                } catch (CommandException e) {
+                    throw new CommandException("Error at line " + lineCount
+                                               + ": " + e.getMessage());
+                }
+            }
+        } finally {
+            try {
+                br.close();
+            } catch (IOException e) {
+                // ignored
+            }
+        }
     }
 
     /**
@@ -241,9 +409,9 @@ public class UniversalSpringCell
         return "No such bean: " + name;
     }
 
-    public void ac_bean_restart(Args args)
+    public String ac_bean_restart(Args args)
     {
-
+        return "";
     }
 
     /**
