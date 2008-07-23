@@ -170,7 +170,6 @@ public class PoolV4 extends AbstractCell
     private CellPath _billingCell = new CellPath("billing");
     private final Map<String, String> _tags = new HashMap<String, String>();
     private String _baseDir;
-    private File _base;
     private File _setup;
 
     private final PoolManagerPingThread _pingThread ;
@@ -191,9 +190,6 @@ public class PoolV4 extends AbstractCell
     private P2PClient _p2pClient = null;
 
     private int _cleaningInterval = 60;
-
-    private double _simCpuCost = -1.;
-    private double _simSpaceCost = -1.;
 
     private Object _hybridInventoryLock = new Object();
     private boolean _hybridInventoryActive = false;
@@ -302,8 +298,8 @@ public class PoolV4 extends AbstractCell
     {
         assertNotRunning("Cannot change base dir after initialisation");
         _baseDir = baseDir;
-        _base = new File(_baseDir);
-        _setup = new File(_base, "setup");
+        File dir = new File(_baseDir);
+        _setup = new File(dir, "setup");
     }
 
     public void setVersion(int version)
@@ -2093,22 +2089,6 @@ public class PoolV4 extends AbstractCell
         }
     }
 
-    public String hh_simulate_cost = "[-cpu=<cpuCost>] [-space=<space>]";
-
-    public String ac_simulate_cost(Args args)
-        throws NumberFormatException
-    {
-        String tmp = args.getOpt("cpu");
-        if (tmp != null)
-            _simCpuCost = Double.parseDouble(tmp);
-        tmp = args.getOpt("space");
-        if (tmp != null)
-            _simSpaceCost = Double.parseDouble(tmp);
-
-        return "Costs : cpu = " + _simCpuCost + " , space = " + _simSpaceCost;
-    }
-
-
     /**
      * Partially or fully disables normal operation of this pool.
      */
@@ -2263,10 +2243,6 @@ public class PoolV4 extends AbstractCell
         return info;
     }
 
-    // //////////////////////////////////////////////////////////
-    //
-    // Check cost
-    //
     public String hh_set_breakeven = "<breakEven> # free and recovable space";
 
     public String ac_set_breakeven_$_0_1(Args args)
@@ -2404,10 +2380,6 @@ public class PoolV4 extends AbstractCell
         return "";
     }
 
-    // //////////////////////////////////////////////////////////////////////////////////
-    //
-    // the interpreter set/get functions
-    //
     public String hh_pf = "<pnfsId>";
 
     public String ac_pf_$_1(Args args) throws Exception
@@ -2517,12 +2489,6 @@ public class PoolV4 extends AbstractCell
                                              "Usage : set p2p ntegrated|separated");
         }
         return "";
-    }
-
-    public String hh_pool_disablemode = "strict|fuzzy # DEPRICATED, use pool disable [options]";
-    public String ac_pool_disablemode_$_1(Args args)
-    {
-        return "# DEPRICATED, use pool disable [options]";
     }
 
     public String fh_pool_disable = "   pool disable [options] [ <errorCode> [<errorMessage>]]\n"
@@ -2657,12 +2623,6 @@ public class PoolV4 extends AbstractCell
         return "";
     }
 
-    public String hh_set_flushing_interval = "DEPRECATED (use flush set interval <time/sec>)";
-    public String ac_set_flushing_interval_$_1(Args args)
-    {
-        return "DEPRECATED (use flush set interval <time/sec>)";
-    }
-
     public String hh_flush_class = "<hsm> <storageClass> [-count=<count>]";
     public String ac_flush_class_$_2(Args args)
     {
@@ -2682,24 +2642,6 @@ public class PoolV4 extends AbstractCell
         return "Flush Initiated";
     }
 
-    /*
-     * public String hh_mover_set_attr = "default|*|<moverId> <attrKey>
-     * <attrValue>" ; public String ac_mover_set_attr_$_3( Args args )throws
-     * Exception { String moverId = args.argv(0) ; String key = args.argv(1) ;
-     * String value = args.argv(2) ;
-     *
-     * if( moverId.equals("default") ){ _moverAttributes.put( key , value ) ;
-     * return "" ; }else if( moverId.equals("*") ){ StringBuffer sb = new
-     * StringBuffer() ; synchronized( _ioMovers ){ Iterator i =
-     * _ioMovers.values().iterator() ; while( i.hasNext() ){ RepositoryIoHandler
-     * h = (RepositoryIoHandler)i.next() ; try{ h.setAttribute( key , value ) ;
-     * sb.append( ""+h.getId()+" OK\n" ) ; }catch(Exception ee ){ sb.append(
-     * ""+h.getId()+" ERROR : "+ee.getMessage()+"\n" ) ; } } } return
-     * sb.toString() ; }else{ Integer id = new Integer(moverId) ; synchronized(
-     * _ioMovers ){ RepositoryIoHandler h =
-     * (RepositoryIoHandler)_ioMovers.get(id) ; h.setAttribute( key , value ) ; }
-     * return "" ; } }
-     */
     public String hh_mover_set_max_active = "<maxActiveIoMovers> -queue=<queueName>";
     public String hh_mover_queue_ls = "";
     public String hh_mover_ls = "[-binary [jobId] ]";
@@ -2798,18 +2740,6 @@ public class PoolV4 extends AbstractCell
         return mover_ls(_p2pQueue, args);
     }
 
-    /*
-     * private Object mover_ls( IoQueueManager queueManager , int id , boolean
-     * binary ){ Iterator queues = queueManager.scheduler() ;
-     *
-     * if( binary ){ if( id > 0 ){ ArrayList list = new ArrayList() ; while(
-     * queues.hasNext() ){ list.addAll(
-     * ((JobScheduler)queues.next()).getJobInfos() ) ; } return list.toArray(
-     * new IoJobInfo[0] ) ; }else{ return queueManager.getJobInfo(id) ; } }else{
-     * StringBuffer sb = new StringBuffer() ; while( queues.hasNext() ){
-     * JobScheduler js = (JobScheduler)queues.next() ; js.printJobQueue(sb); }
-     * return sb.toString() ; } }
-     */
     private Object mover_ls(JobScheduler js, Args args)
         throws NumberFormatException
     {
@@ -2884,10 +2814,6 @@ public class PoolV4 extends AbstractCell
         js.kill(id, force);
     }
 
-    // ////////////////////////////////////////////////////
-    //
-    // queue stuff
-    //
     public String hh_set_heartbeat = "<heartbeatInterval/sec>";
 
     public String ac_set_heartbeat_$_0_1(Args args)
@@ -2897,25 +2823,6 @@ public class PoolV4 extends AbstractCell
             _pingThread.setHeartbeat(Integer.parseInt(args.argv(0)));
         }
         return "Heartbeat at " + (_pingThread.getHeartbeat());
-    }
-
-    public String fh_update = "  update [-force] [-perm] !!! DEPRECATED  \n"
-        + "     sends relevant data to the PoolManager if this information has been\n"
-        + "     changed recently.\n\n"
-        + "    -force : forces the cell to send the information regardless whether it\n"
-        + "             changed or not.\n"
-        + "    -perm  : writes the current parameter setup back to the setupFile\n";
-    public String hh_update = "[-force] [-perm] !!! DEPRECATED";
-
-    public String ac_update(Args args)
-        throws IOException
-    {
-        boolean forced = args.getOpt("force") != null;
-        _pingThread.sendPoolManagerMessage(forced);
-        if (args.getOpt("perm") != null) {
-            dumpSetup();
-        }
-        return "";
     }
 
     public String hh_save = "[-sc=<setupController>|none] # saves setup to disk or SC";
