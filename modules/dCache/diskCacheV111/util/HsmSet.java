@@ -3,6 +3,9 @@ import java.util.* ;
 import java.io.PrintWriter ;
 import dmg.util.*;
 
+import org.dcache.cell.CellCommandListener;
+import org.dcache.cell.CellSetupProvider;
+
 /**
  * An HsmSet encapsulates information about attached HSMs. The HsmSet
  * also acts as a cell command interpreter, allowing the user to
@@ -21,6 +24,8 @@ import dmg.util.*;
  * compatibility, the type may serve as an instance name.
  */
 public class HsmSet
+    implements CellCommandListener,
+               CellSetupProvider
 {
     private final Map<String,HsmInfo> _hsm = new HashMap<String,HsmInfo>();
 
@@ -253,6 +258,8 @@ public class HsmSet
             }
         }
     }
+
+    public void afterSetupExecuted() {}
 
     private void _printInfos(StringBuilder sb, String instance)
     {

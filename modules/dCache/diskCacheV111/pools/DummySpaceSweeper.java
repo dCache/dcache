@@ -75,6 +75,9 @@ public class DummySpaceSweeper implements SpaceSweeper , Runnable  {
     public void printSetup( PrintWriter pw ){
        pw.println( "#\n# Nothing from the "+this.getClass().getName()+"#" ) ;
     }
+
+    public void afterSetupExecuted() {}
+
     private void say( String msg ){
        _cell.say( "D-SWEEPER : "+msg ) ;
     }

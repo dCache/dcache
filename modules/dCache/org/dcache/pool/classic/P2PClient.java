@@ -29,6 +29,7 @@ import org.dcache.cell.CellMessageSender;
 import org.dcache.cell.CellMessageReceiver;
 import org.dcache.cell.CellInfoProvider;
 import org.dcache.cell.CellCommandListener;
+import org.dcache.cell.CellSetupProvider;
 import diskCacheV111.movers.DCapConstants;
 import diskCacheV111.movers.DCapProtocol_3_nio;
 import diskCacheV111.util.Adler32;
@@ -56,6 +57,7 @@ public class P2PClient
     implements CellMessageReceiver,
                CellMessageSender,
                CellInfoProvider,
+               CellSetupProvider,
                CellCommandListener
 {
     private final static Logger _log = Logger.getLogger(P2PClient.class);
@@ -724,6 +726,8 @@ public class P2PClient
         pw.println("pp set max active " + _maxActive);
         pw.println("pp set pnfs timeout " + (_pnfsTimeout / 1000L));
     }
+
+    public void afterSetupExecuted() {}
 
     public String hh_pp_set_pnfs_timeout = "<Timeout/sec>";
     public String ac_pp_set_pnfs_timeout_$_1(Args args)

@@ -414,6 +414,8 @@ public class SpaceSweeper2
                    + this.getClass().getName() + "#");
     }
 
+    public void afterSetupExecuted() {}
+
     private void say(String msg)
     {
         _log.info(msg);

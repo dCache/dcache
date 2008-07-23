@@ -32,6 +32,7 @@ import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
+import dmg.cells.nucleus.CellInfo;
 
 import diskCacheV111.pools.HsmRemoveTask;
 import diskCacheV111.util.Batchable;
@@ -60,10 +61,13 @@ import org.dcache.pool.repository.CacheEntry;
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.pool.repository.EntryState;
 import org.dcache.cell.CellMessageSender;
-
+import org.dcache.cell.CellInfoProvider;
+import org.dcache.cell.CellSetupProvider;
 
 public class HsmStorageHandler2
-    implements CellMessageSender
+    implements CellMessageSender,
+               CellInfoProvider,
+               CellSetupProvider
 {
     private static Logger _logRepository =
         Logger.getLogger("logger.org.dcache.repository");
@@ -225,6 +229,8 @@ public class HsmStorageHandler2
         pw.println("rm set timeout "+(_maxRemoveRun/1000L));
     }
 
+    public void afterSetupExecuted() {}
+
     public synchronized void getInfo(PrintWriter pw)
     {
         pw.println("StorageHandler ["+this.getClass().getName()+"]");
@@ -243,6 +249,11 @@ public class HsmStorageHandler2
         pw.println("    delete     "+ "" +
                     "(" + getMaxRemoveJobs() +
                     ")/"+"");
+    }
+
+    public CellInfo getCellInfo(CellInfo info)
+    {
+        return info;
     }
 
     private synchronized String

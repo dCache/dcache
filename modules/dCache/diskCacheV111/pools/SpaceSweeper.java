@@ -4,11 +4,13 @@ package diskCacheV111.pools ;
 
 import java.io.PrintWriter ;
 import diskCacheV111.util.event.CacheRepositoryListener ;
+import org.dcache.cell.CellSetupProvider;
 
-public interface SpaceSweeper extends CacheRepositoryListener {
-
+public interface SpaceSweeper
+    extends CacheRepositoryListener, CellSetupProvider
+{
    public void printSetup( PrintWriter pw ) ;
    public long getRemovableSpace() ;
    public long getLRUSeconds() ;
-   
+
 }

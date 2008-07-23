@@ -7,6 +7,9 @@ import diskCacheV111.vehicles.*;
 import org.dcache.pool.repository.ReadHandle;
 import org.dcache.pool.repository.v5.CacheRepositoryV5;
 import org.dcache.cell.CellMessageSender;
+import org.dcache.cell.CellCommandListener;
+import org.dcache.cell.CellInfoProvider;
+import org.dcache.cell.CellSetupProvider;
 
 import dmg.util.*;
 import dmg.cells.nucleus.*;
@@ -20,7 +23,10 @@ import java.security.NoSuchAlgorithmException;
 import org.apache.log4j.Logger;
 
 public class ChecksumModuleV1
-    implements CellMessageSender
+    implements CellMessageSender,
+               CellInfoProvider,
+               CellCommandListener,
+               CellSetupProvider
 {
     private final static Logger _log = Logger.getLogger(ChecksumModuleV1.class);
 
@@ -212,7 +218,7 @@ public class ChecksumModuleV1
         return ChecksumFactory.getFactory(type).create();
     }
 
-    public void dumpSetup(PrintWriter pw)
+    public void printSetup(PrintWriter pw)
     {
         pw.println("csm set checksumtype "+_defaultChecksumFactory.getType());
         if (_frequently) {
@@ -231,6 +237,8 @@ public class ChecksumModuleV1
         pw.print(" -getcrcfromhsm="); pw.print(_updatepnfs?"on":"off");
         pw.println("");
     }
+
+    public void afterSetupExecuted() {}
 
     public boolean checkOnRead()
     {
@@ -285,6 +293,11 @@ public class ChecksumModuleV1
         pw.println("");
 
         pw.println("  "+_fullScan.toString());
+    }
+
+    public CellInfo getCellInfo(CellInfo info)
+    {
+        return info;
     }
 
     public String hh_csm_info = "";

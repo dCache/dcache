@@ -47,6 +47,11 @@ public class NoCachedFilesSpaceSweeper implements SpaceSweeper
 
     }
 
+    public void afterSetupExecuted() {
+        // forced by interface
+
+    }
+
     public void available(CacheRepositoryEvent event) {
         // forced by interface
 

@@ -1,5 +1,6 @@
 package org.dcache.pool.repository.v5;
 
+import dmg.cells.nucleus.CellInfo;
 import diskCacheV111.pools.SpaceSweeper;
 import diskCacheV111.repository.RepositoryInterpreter;
 import diskCacheV111.repository.CacheRepositoryEntry;
@@ -29,6 +30,7 @@ import org.dcache.pool.repository.MetaDataRepository;
 import org.dcache.pool.FaultEvent;
 import org.dcache.pool.FaultListener;
 import org.dcache.pool.FaultAction;
+import org.dcache.cell.CellInfoProvider;
 import static org.dcache.pool.repository.EntryState.*;
 
 import java.io.PrintWriter;
@@ -49,7 +51,9 @@ import java.util.Timer;
 import java.lang.reflect.Constructor;
 
 public class CacheRepositoryV5// extends CellCompanion
-    implements CacheRepositoryListener, Iterable<PnfsId>
+    implements CacheRepositoryListener,
+               CellInfoProvider,
+               Iterable<PnfsId>
 {
     private final List<StateChangeListener> _stateChangeListeners =
         new CopyOnWriteArrayList<StateChangeListener>();
@@ -732,6 +736,11 @@ public class CacheRepositoryV5// extends CellCompanion
     public void printSetup(PrintWriter pw)
     {
         _sweeper.printSetup(pw);
+    }
+
+    public CellInfo getCellInfo(CellInfo info)
+    {
+        return info;
     }
 
     public void shutdown()

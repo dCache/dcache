@@ -9,7 +9,10 @@ import diskCacheV111.pools.StorageClassInfoFlushable;
 import diskCacheV111.vehicles.*;
 import org.dcache.cell.CellMessageSender;
 import org.dcache.cell.CellMessageReceiver;
+import org.dcache.cell.CellCommandListener;
+import org.dcache.cell.CellInfoProvider;
 
+import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.NoRouteToCellException;
@@ -26,7 +29,11 @@ import java.io.NotSerializableException;
 import org.apache.log4j.Logger;
 
 public class HsmFlushController
-    implements Runnable, CellMessageSender, CellMessageReceiver
+    implements Runnable,
+               CellMessageSender,
+               CellMessageReceiver,
+               CellCommandListener,
+               CellInfoProvider
 {
     private final static Logger _log =
         Logger.getLogger(HsmFlushController.class);
@@ -213,6 +220,12 @@ public class HsmFlushController
         pw.println("  Remote controlled (hold until) : "+
             (  ( _holdUntil > System.currentTimeMillis() ) ? new Date(_holdUntil).toString(): "Locally Controlled" ) );
     }
+
+    public CellInfo getCellInfo(CellInfo info)
+    {
+        return info;
+    }
+
     public Object ac_flush_ls( Args args ){
         long now = System.currentTimeMillis() ;
         if( args.getOpt("binary" ) == null ){

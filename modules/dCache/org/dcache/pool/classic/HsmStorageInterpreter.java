@@ -11,11 +11,13 @@ import dmg.util.Args;
 
 import diskCacheV111.util.* ;
 import diskCacheV111.vehicles.StorageInfo;
+import org.dcache.cell.CellCommandListener;
 
 import org.apache.log4j.Logger;
 
-public class HsmStorageInterpreter {
-
+public class HsmStorageInterpreter
+    implements CellCommandListener
+{
    private static final Logger _log =
        Logger.getLogger(HsmStorageInterpreter.class);
 

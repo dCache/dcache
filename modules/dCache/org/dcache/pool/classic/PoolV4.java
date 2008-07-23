@@ -745,7 +745,7 @@ public class PoolV4 extends AbstractCell
             return -1;
         }
 
-        public void dumpSetup(PrintWriter pw)
+        public void printSetup(PrintWriter pw)
         {
             for (JobScheduler s : _list) {
                 pw.println("mover set max active -queue="
@@ -951,7 +951,7 @@ public class PoolV4 extends AbstractCell
         if (_repository != null)
             _repository.printSetup(pw);
         if (_ioQueue != null)
-            ((IoQueueManager) _ioQueue).dumpSetup(pw);
+            ((IoQueueManager) _ioQueue).printSetup(pw);
         if (_p2pQueue != null) {
             pw.println("p2p set max active " + _p2pQueue.getMaxActiveJobs());
         }
@@ -959,7 +959,7 @@ public class PoolV4 extends AbstractCell
             _p2pClient.printSetup(pw);
         if (_timeoutManager != null)
             _timeoutManager.printSetup(pw);
-        _checksumModule.dumpSetup(pw);
+        _checksumModule.printSetup(pw);
     }
 
     private void dumpSetup()

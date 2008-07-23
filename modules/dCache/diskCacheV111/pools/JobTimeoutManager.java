@@ -12,7 +12,11 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import diskCacheV111.util.JobScheduler;
 import diskCacheV111.vehicles.IoJobInfo;
 import diskCacheV111.vehicles.JobInfo;
+import org.dcache.cell.CellCommandListener;
+import org.dcache.cell.CellInfoProvider;
+import org.dcache.cell.CellSetupProvider;
 import dmg.util.Args;
+import dmg.cells.nucleus.CellInfo;
 import org.apache.log4j.Logger;
 
 class SchedulerEntry
@@ -79,7 +83,11 @@ class SchedulerEntry
     }
 }
 
-public class JobTimeoutManager implements Runnable
+public class JobTimeoutManager
+    implements Runnable,
+               CellCommandListener,
+               CellInfoProvider,
+               CellSetupProvider
 {
     private final static Logger _log =
         Logger.getLogger(JobTimeoutManager.class);
@@ -116,6 +124,8 @@ public class JobTimeoutManager implements Runnable
         }
     }
 
+    public void afterSetupExecuted() {}
+
     public void getInfo(PrintWriter pw)
     {
         pw.println("Job Timeout Manager");
@@ -125,6 +135,11 @@ public class JobTimeoutManager implements Runnable
                        " (lastAccess=" + (entry.getLastAccessed() / 1000L) +
                        ";total=" + (entry.getTotal() / 1000L) + ")");
         }
+    }
+
+    public CellInfo getCellInfo(CellInfo info)
+    {
+        return info;
     }
 
     public String hh_jtm_go = "trigger the worker thread";
