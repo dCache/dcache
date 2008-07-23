@@ -63,7 +63,30 @@ public class Args implements java.io.Serializable {
 
    public Object clone(){ return new Args( this ) ; }
 
-   public String toString(){ return _line ; }
+    public String toString()
+    {
+        StringBuilder s = new StringBuilder();
+
+        Dictionary options = options();
+        Enumeration e = options.keys();
+        while (e.hasMoreElements()) {
+            String key = e.nextElement().toString();
+            String value = options.get(key).toString();
+            if (value.length() > 0) {
+                s.append('-').append(key).append('=').append(value);
+            } else {
+                s.append('-').append(key);
+            }
+            s.append(' ');
+        }
+
+        for (int i = 0; i < argc(); i++) {
+            s.append(argv(i)).append(' ');
+        }
+
+        return s.toString();
+    }
+
    public String getInfo(){
       StringBuilder sb = new StringBuilder() ;
 

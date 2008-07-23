@@ -58,38 +58,6 @@ public class SpringCell extends CellAdapter
         }
     }
 
-    /**
-     * Converts a cell Args object into string form. All options
-     * containing a ${...} placeholder are filtered away, since they
-     * usually are artefacts from unresolved variables in the batch
-     * file and we don't want Spring to resolve them.
-     */
-    public String argsToString(Args args)
-    {
-        StringBuilder s = new StringBuilder();
-
-        for (int i = 0; i < args.argc(); i++) {
-            s.append(args.argv(i)).append(' ');
-        }
-
-        Dictionary options = args.options();
-        Enumeration e = options.keys();
-        while (e.hasMoreElements()) {
-            String key = e.nextElement().toString();
-            String value = options.get(key).toString();
-            if (!key.matches("\\$\\{.*\\}") && !value.matches("\\$\\{.*\\}")) {
-                if (value.length() > 0) {
-                    s.append('-').append(key).append('=').append(value);
-                } else {
-                    s.append('-').append(key);
-                }
-                s.append(' ');
-            }
-        }
-
-        return s.toString();
-    }
-
     public SpringCell(String name, String arg) throws Exception
     {
 	super(name, arg, true);
@@ -103,7 +71,10 @@ public class SpringCell extends CellAdapter
              */
             Properties properties = new Properties();
 
-            properties.setProperty("arguments", argsToString(args));
+            String arguments =
+                args.toString().replaceAll("-?\\$\\{.*\\}", "");
+
+            properties.setProperty("arguments", arguments);
             mergeDictionary(properties, getDomainContext());
             mergeDictionary(properties, args.options());
 

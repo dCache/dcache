@@ -529,6 +529,9 @@ public class UniversalSpringCell
             args.shift();
 
             Properties properties = new Properties();
+            String arguments =
+                args.toString().replaceAll("-?\\$\\{.*\\}", "");
+            properties.setProperty("arguments", arguments);
             mergeDictionary(properties, getDomainContext());
             mergeDictionary(properties, args.options());
 
