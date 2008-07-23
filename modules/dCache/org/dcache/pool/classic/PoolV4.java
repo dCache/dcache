@@ -1451,7 +1451,7 @@ public class PoolV4 extends AbstractCell
     private class ReplicationHandler implements StateChangeListener
     {
         private boolean _enabled = false;
-        private String _replicationManager = "PoolManager";
+        private CellPath _replicationManager = new CellPath("PoolManager");
         private String _destinationHostName = null;
         private String _destinationMode = "keep";
         private boolean _replicateOnRestore = false;
@@ -1500,8 +1500,9 @@ public class PoolV4 extends AbstractCell
             _enabled = true;
 
             String[] args = vars.split(",");
-            _replicationManager = (args.length > 0) && (!args[0].equals("")) ? args[0]
-                : _replicationManager;
+            if (args.length > 0 && !args[0].equals("")) {
+                _replicationManager = new CellPath(args[0]);
+            }
             _destinationHostName = (args.length > 1) && (!args[1].equals("")) ? args[1]
                 : _destinationHostName;
             _destinationMode = (args.length > 2) && (!args[2].equals("")) ? args[2]
@@ -1562,7 +1563,7 @@ public class PoolV4 extends AbstractCell
                                             storageInfo.getFileSize());
             req.setReplyRequired(false);
             try {
-                _endpoint.sendMessage(new CellMessage(new CellPath(_replicationManager), req));
+                _endpoint.sendMessage(new CellMessage(_replicationManager, req));
             } catch (NotSerializableException e) {
                 throw new RuntimeException("Bug detected: Unserializable vehicle", e);
             }
