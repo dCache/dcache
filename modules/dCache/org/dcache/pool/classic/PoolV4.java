@@ -47,6 +47,8 @@ import org.dcache.pool.repository.ReadHandle;
 import org.dcache.pool.repository.CacheEntry;
 import org.dcache.pool.repository.StateChangeListener;
 import org.dcache.pool.repository.StateChangeEvent;
+import org.dcache.cell.CellMessageSender;
+import org.dcache.cell.CellInfoProvider;
 import diskCacheV111.pools.PoolV2Mode;
 import diskCacheV111.pools.SpaceSweeper;
 import diskCacheV111.pools.JobTimeoutManager;
@@ -107,6 +109,7 @@ import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.RemoveFileInfoMessage;
 import diskCacheV111.vehicles.StorageInfo;
 import dmg.cells.nucleus.CellAdapter;
+import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
@@ -118,7 +121,9 @@ import dmg.util.CommandException;
 import dmg.util.CommandSyntaxException;
 
 public class PoolV4 extends AbstractCell
-    implements FaultListener
+    implements FaultListener,
+               CellMessageSender,
+               CellInfoProvider
 {
     private static final String MAX_SPACE = "use-max-space";
     private static final String PREALLOCATED_SPACE = "use-preallocated-space";
@@ -201,6 +206,8 @@ public class PoolV4 extends AbstractCell
     private boolean _running = false;
     private double _breakEven = 250.0;
 
+    private CellEndpoint _endpoint;
+
     //
     // arguments :
     // MPP2 <poolBasePath> no default
@@ -227,6 +234,7 @@ public class PoolV4 extends AbstractCell
 
         _poolName = poolName;
         _args = getArgs();
+        _endpoint = this;
 
         //
         // the export is convenient but not really necessary, because
@@ -292,6 +300,11 @@ public class PoolV4 extends AbstractCell
     {
         if (_running)
             throw new IllegalStateException(error);
+    }
+
+    public void setCellEndpoint(CellEndpoint endpoint)
+    {
+        _endpoint = endpoint;
     }
 
     public void setBaseDir(String baseDir)
@@ -863,7 +876,7 @@ public class PoolV4 extends AbstractCell
                     String source = getCellName() + "@" + getCellDomainName();
                     InfoMessage msg =
                         new RemoveFileInfoMessage(source, id);
-                    sendMessage(new CellMessage(_billingCell, msg));
+                    _endpoint.sendMessage(new CellMessage(_billingCell, msg));
                 } catch (NotSerializableException e) {
                     throw new RuntimeException("Bug detected: Unserializable vehicle", e);
                 } catch (NoRouteToCellException e) {
@@ -906,7 +919,7 @@ public class PoolV4 extends AbstractCell
         }
     }
 
-    private void dumpSetup(PrintWriter pw)
+    public void printSetup(PrintWriter pw)
     {
         SpaceRecord space = _repository.getSpaceRecord();
 
@@ -961,7 +974,7 @@ public class PoolV4 extends AbstractCell
 
         PrintWriter pw = new PrintWriter(new FileWriter(tempFile));
         try {
-            dumpSetup(pw);
+            printSetup(pw);
         } finally {
             pw.close();
         }
@@ -970,14 +983,19 @@ public class PoolV4 extends AbstractCell
                                   + _setup + ")");
     }
 
-
     @Override
     public CellInfo getCellInfo()
     {
-        PoolCellInfo info = new PoolCellInfo(super.getCellInfo());
-        info.setPoolCostInfo(getPoolCostInfo());
-        info.setTagMap(_tags);
-        info.setErrorStatus(_poolStatusCode, _poolStatusMessage);
+        PoolCellInfo poolinfo = new PoolCellInfo(super.getCellInfo());
+        poolinfo.setPoolCostInfo(getPoolCostInfo());
+        poolinfo.setTagMap(_tags);
+        poolinfo.setErrorStatus(_poolStatusCode, _poolStatusMessage);
+        poolinfo.setCellVersion(getCellVersion());
+        return poolinfo;
+    }
+
+    public CellInfo getCellInfo(CellInfo info)
+    {
         return info;
     }
 
@@ -1199,7 +1217,7 @@ public class PoolV4 extends AbstractCell
 
         try {
             envelope.revertDirection();
-            sendMessage(envelope);
+            _endpoint.sendMessage(envelope);
         } catch (NotSerializableException e) {
             throw new RuntimeException("Bug detected: Unserializable vehicle", e);
         } catch (NoRouteToCellException e) {
@@ -1265,7 +1283,7 @@ public class PoolV4 extends AbstractCell
                                        getProtocolInfo());
 
             try {
-                sendMessage(new CellMessage(_billingCell, info));
+                _endpoint.sendMessage(new CellMessage(_billingCell, info));
             } catch (NotSerializableException e) {
                 throw new RuntimeException("Bug: Unserializable vehicle detected", e);
             } catch (NoRouteToCellException e) {
@@ -1289,7 +1307,7 @@ public class PoolV4 extends AbstractCell
             }
 
             try {
-                sendMessage(new CellMessage(_door, finished));
+                _endpoint.sendMessage(new CellMessage(_door, finished));
             } catch (NotSerializableException e) {
                 throw new RuntimeException("Bug: Unserializable vehicle detected", e);
             } catch (NoRouteToCellException e) {
@@ -1544,7 +1562,7 @@ public class PoolV4 extends AbstractCell
                                             storageInfo.getFileSize());
             req.setReplyRequired(false);
             try {
-                sendMessage(new CellMessage(new CellPath(_replicationManager), req));
+                _endpoint.sendMessage(new CellMessage(new CellPath(_replicationManager), req));
             } catch (NotSerializableException e) {
                 throw new RuntimeException("Bug detected: Unserializable vehicle", e);
             }
@@ -1581,7 +1599,7 @@ public class PoolV4 extends AbstractCell
 
             }
             Constructor<?> moverCon = mover.getConstructor(argsClass);
-            Object[] args = { this };
+            Object[] args = { _endpoint };
             MoverProtocol instance = (MoverProtocol) moverCon.newInstance(args);
 
             for (Map.Entry<?,?> attribute : _moverAttributes.entrySet()) {
@@ -1659,7 +1677,7 @@ public class PoolV4 extends AbstractCell
 
                 try {
                     _cellMessage.revertDirection();
-                    sendMessage(_cellMessage);
+                    _endpoint.sendMessage(_cellMessage);
                 } catch (NotSerializableException e) {
                     throw new RuntimeException("Bug detected: Unserializable vehicle", e);
                 } catch (NoRouteToCellException e) {
@@ -1839,7 +1857,7 @@ public class PoolV4 extends AbstractCell
                 _log.info("Sending p2p reply " + _message);
                 try {
                     _envelope.revertDirection();
-                    sendMessage(_envelope);
+                    _endpoint.sendMessage(_envelope);
                 } catch (NotSerializableException e) {
                     throw new RuntimeException("Bug detected: Unserializable vehicle", e);
                 } catch (NoRouteToCellException e) {
@@ -2042,7 +2060,7 @@ public class PoolV4 extends AbstractCell
             return;
         try {
             cellMessage.revertDirection();
-            sendMessage(cellMessage);
+            _endpoint.sendMessage(cellMessage);
         } catch (NotSerializableException e) {
             throw new RuntimeException("Bug detected: Unserializable vehicle", e);
         } catch (NoRouteToCellException e) {
@@ -2081,7 +2099,7 @@ public class PoolV4 extends AbstractCell
         try {
             poolMessage.setFailed(104, "Pool is disabled");
             cellMessage.revertDirection();
-            sendMessage(cellMessage);
+            _endpoint.sendMessage(cellMessage);
         } catch (NotSerializableException e) {
             throw new RuntimeException("Bug detected: Unserializable vehicle", e);
         } catch (NoRouteToCellException e) {
@@ -2190,7 +2208,7 @@ public class PoolV4 extends AbstractCell
         private void send(CellMessage msg)
         {
             try {
-                sendMessage(msg);
+                _endpoint.sendMessage(msg);
             } catch (NotSerializableException e) {
                 throw new RuntimeException("Bug detected: Unserializable vehicle", e);
             } catch (NoRouteToCellException e){
@@ -2388,7 +2406,7 @@ public class PoolV4 extends AbstractCell
         PnfsMapPathMessage info = new PnfsMapPathMessage(pnfsId);
         CellPath path = new CellPath("PnfsManager");
         _log.info("Sending : " + info);
-        CellMessage m = sendAndWait(new CellMessage(path, info), 10000);
+        CellMessage m = _endpoint.sendAndWait(new CellMessage(path, info), 10000);
         _log.info("Reply arrived : " + m);
         if (m == null)
             throw new Exception("No reply from PnfsManager");
@@ -2848,11 +2866,11 @@ public class PoolV4 extends AbstractCell
             try {
                 StringWriter sw = new StringWriter();
                 PrintWriter pw = new PrintWriter(sw);
-                dumpSetup(pw);
+                printSetup(pw);
                 SetupInfoMessage info = new SetupInfoMessage("put", this
                                                              .getCellName(), "pool", sw.toString());
 
-                sendMessage(new CellMessage(new CellPath(setupManager), info));
+                _endpoint.sendMessage(new CellMessage(new CellPath(setupManager), info));
             } catch (NotSerializableException e) {
                 throw new RuntimeException("Bug detected: Unserializable vehicle", e);
             } catch (NoRouteToCellException e) {
