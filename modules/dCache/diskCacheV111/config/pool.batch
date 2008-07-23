@@ -90,9 +90,11 @@ endDefine
 # This defines how to instantiate the new pool code
 #####################################################
 define context startNewPools endDefine
-  create org.dcache.util.SpringCell spring* \
-    "file:${ourHomeDir}/config/pool.xml \
-    -poolname=${0} -pooldir=${1} -${2} -${3} -${4} -${5} -${6} -${7} -${8}"
+  create org.dcache.util.UniversalSpringCell ${0} \
+    "!MoverMap file:${ourHomeDir}/config/pool.xml \
+    -export -poolname=${0} -pooldir=${1} \
+    -setupClass=pool -setupFile=${1}/setup \
+    -${2} -${3} -${4} -${5} -${6} -${7} -${8}"
 endDefine
 
 #

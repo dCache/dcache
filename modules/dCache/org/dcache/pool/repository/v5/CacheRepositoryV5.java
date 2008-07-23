@@ -733,11 +733,6 @@ public class CacheRepositoryV5// extends CellCompanion
                    + "]");
     }
 
-    public void printSetup(PrintWriter pw)
-    {
-        _sweeper.printSetup(pw);
-    }
-
     public CellInfo getCellInfo(CellInfo info)
     {
         return info;

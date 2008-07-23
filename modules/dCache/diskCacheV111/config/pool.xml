@@ -5,13 +5,7 @@
            http://www.springframework.org/schema/beans/spring-beans-2.5.xsd">
 
   
-  <!-- This bean makes configuration data available as shell like
-       ${...}  placeholders. domaincontext: is a resource provided by
-       my Cell/Spring glue code and contains the domain context. Those
-       values override the properties defined below, which thus become
-       default values in case the domain context doesn't define them.
-  -->
-  <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+  <bean id="properties" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
     <property name="location" value="domaincontext:"/>
     <property name="properties">
       <value>
@@ -32,24 +26,11 @@
     </property>
   </bean>
 
-  <!-- The pool cell. Since some legacy components rely on getting
-       configuration settings via the cell arguments, I still need to
-       specify those. This can be changed once they are also managed
-       by the Spring IoC container.
-       
-       Properties are mapped to setters in normal JavaBean
-       fashion. Notice that most of these properties are reference to
-       other beans.
-
-       We also use Spring's support for initialisation methods. Once
-       the cell has been instantiated and all properties set, Spring
-       calls the init method. In the init method I start the cell
-       message delivery and initiate the inventory construction.
-  -->
-  <bean id="cell" class="org.dcache.pool.classic.PoolV4" init-method="init">
+  <bean id="pool" class="org.dcache.pool.classic.PoolV4" 
+        init-method="init"
+        destroy-method="cleanUp">
     <constructor-arg index="0" value="${poolname}"/>
     <constructor-arg index="1" value="
-        !MoverMap 
         -recover-control=yes 
         -io-queues=${poolIoQueue} 
         -allowPassivePool=${gsiftpAllowPassivePool} 
@@ -92,7 +73,6 @@
       </bean>
     </constructor-arg>
     <constructor-arg value="${poolname}"/>
-    <property name="cellEndpoint" ref="cell"/>    
   </bean>
 
   <bean id="legacy-repository" class="org.dcache.pool.repository.v4.CacheRepositoryV4">
@@ -130,7 +110,6 @@
   <bean id="checksum" class="org.dcache.pool.classic.ChecksumModuleV1">
     <constructor-arg ref="repository"/>
     <constructor-arg ref="pnfs"/>
-    <property name="cellEndpoint" ref="cell"/>    
   </bean>
 
   <bean id="storagequeue" class="org.dcache.pool.classic.StorageClassContainer">
@@ -145,8 +124,12 @@
     <constructor-arg ref="pnfs"/>
     <constructor-arg ref="hsmset"/>
     <constructor-arg ref="checksum"/>
-    <property name="cellEndpoint" ref="cell"/>
     <property name="flushMessageTarget" value="${flushMessageTarget}"/>
+  </bean>
+  
+  <bean id="storage-interpreter" class="org.dcache.pool.classic.HsmStorageInterpreter">
+    <constructor-arg ref="storagehandler"/>
+    <constructor-arg ref="pnfs"/>
   </bean>
 
   <bean id="timeout" class="diskCacheV111.pools.JobTimeoutManager"/>
@@ -154,13 +137,11 @@
   <bean id="flush" class="org.dcache.pool.classic.HsmFlushController">
     <constructor-arg ref="storagequeue"/>
     <constructor-arg ref="storagehandler"/>
-    <property name="cellEndpoint" ref="cell"/>
   </bean>
 
   <bean id="p2p" class="org.dcache.pool.classic.P2PClient">
     <constructor-arg ref="repository"/>
     <constructor-arg ref="checksum"/>
-    <property name="cellEndpoint" ref="cell"/>
   </bean>
 
 </beans>

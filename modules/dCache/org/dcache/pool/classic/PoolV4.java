@@ -20,7 +20,6 @@ import java.net.UnknownHostException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Hashtable;
@@ -34,7 +33,6 @@ import java.util.TreeSet;
 
 import org.apache.log4j.Logger;
 
-import org.dcache.services.AbstractCell;
 import org.dcache.pool.FaultListener;
 import org.dcache.pool.FaultEvent;
 import org.dcache.pool.repository.v3.RepositoryException;
@@ -49,6 +47,9 @@ import org.dcache.pool.repository.StateChangeListener;
 import org.dcache.pool.repository.StateChangeEvent;
 import org.dcache.cell.CellMessageSender;
 import org.dcache.cell.CellInfoProvider;
+import org.dcache.cell.CellCommandListener;
+import org.dcache.cell.CellMessageReceiver;
+import org.dcache.cell.CellSetupProvider;
 import diskCacheV111.pools.PoolV2Mode;
 import diskCacheV111.pools.SpaceSweeper;
 import diskCacheV111.pools.JobTimeoutManager;
@@ -108,7 +109,6 @@ import diskCacheV111.vehicles.PoolUpdateCacheStatisticsMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.RemoveFileInfoMessage;
 import diskCacheV111.vehicles.StorageInfo;
-import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.CellMessage;
@@ -120,10 +120,13 @@ import dmg.util.Args;
 import dmg.util.CommandException;
 import dmg.util.CommandSyntaxException;
 
-public class PoolV4 extends AbstractCell
+public class PoolV4
     implements FaultListener,
                CellMessageSender,
-               CellInfoProvider
+               CellInfoProvider,
+               CellCommandListener,
+               CellMessageReceiver,
+               CellSetupProvider
 {
     private static final String MAX_SPACE = "use-max-space";
     private static final String PREALLOCATED_SPACE = "use-preallocated-space";
@@ -166,7 +169,6 @@ public class PoolV4 extends AbstractCell
     private StorageClassContainer _storageQueue;
     private CacheRepositoryV5 _repository;
 
-    private String _setupManager;
     private String _pnfsManagerName = "PnfsManager";
     private String _poolManagerName = "PoolManager";
     private String _poolupDestination = "PoolManager";
@@ -175,7 +177,6 @@ public class PoolV4 extends AbstractCell
     private CellPath _billingCell = new CellPath("billing");
     private final Map<String, String> _tags = new HashMap<String, String>();
     private String _baseDir;
-    private File _setup;
 
     private final PoolManagerPingThread _pingThread ;
     private HsmFlushController _flushingThread;
@@ -228,71 +229,50 @@ public class PoolV4 extends AbstractCell
     // PoolManager,thisHost,keep
     //
     public PoolV4(String poolName, String args)
-        throws Exception
     {
-        super(poolName, args, false);
-
         _poolName = poolName;
-        _args = getArgs();
-        _endpoint = this;
+        _args = new Args(args);
 
-        //
-        // the export is convenient but not really necessary, because
-        // we send our path along with the 'alive' message.
-        //
-        getNucleus().export();
-
-        int argc = _args.argc();
         _log.info("Pool " + poolName + " starting");
 
-        try {
-            //
-            // repository and ping thread must exist BEFORE the setup
-            // file is scanned. PingThread will be started after all
-            // the setup is done.
-            //
-            _pingThread = new PoolManagerPingThread();
+        //
+        // repository and ping thread must exist BEFORE the setup
+        // file is scanned. PingThread will be started after all
+        // the setup is done.
+        //
+        _pingThread = new PoolManagerPingThread();
 
-            disablePool(PoolV2Mode.DISABLED_STRICT, 1, "Initializing");
+        String recover = _args.getOpt("recover-control");
+        if ((recover != null) && (!recover.equals("no"))) {
+            _recoveryFlags |= CacheRepository.ALLOW_CONTROL_RECOVERY;
+            _log.info("Enabled : recover-control");
+        }
+        recover = _args.getOpt("recover-space");
+        if ((recover != null) && (!recover.equals("no"))) {
+            _recoveryFlags |= CacheRepository.ALLOW_SPACE_RECOVERY;
+            _log.info("Enabled : recover-space");
+        }
 
-            String recover = _args.getOpt("recover-control");
-            if ((recover != null) && (!recover.equals("no"))) {
-                _recoveryFlags |= CacheRepository.ALLOW_CONTROL_RECOVERY;
-                _log.info("Enabled : recover-control");
+        recover = _args.getOpt("recover-anyway");
+        if ((recover != null) && (!recover.equals("no"))) {
+            _recoveryFlags |= CacheRepository.ALLOW_RECOVER_ANYWAY;
+            _log.info("Enabled : recover-anyway");
+        }
+
+        //
+        // get additional tags
+        //
+        for (Enumeration<String> options = _args.options().keys(); options
+                 .hasMoreElements();) {
+            String key = options.nextElement();
+            _log.info("Tag scanning : " + key);
+            if ((key.length() > 4) && key.startsWith("tag.")) {
+                _tags.put(key.substring(4), _args.getOpt(key));
             }
-            recover = _args.getOpt("recover-space");
-            if ((recover != null) && (!recover.equals("no"))) {
-                _recoveryFlags |= CacheRepository.ALLOW_SPACE_RECOVERY;
-                _log.info("Enabled : recover-space");
-            }
+        }
 
-            recover = _args.getOpt("recover-anyway");
-            if ((recover != null) && (!recover.equals("no"))) {
-                _recoveryFlags |= CacheRepository.ALLOW_RECOVER_ANYWAY;
-                _log.info("Enabled : recover-anyway");
-            }
-
-            //
-            // get additional tags
-            //
-            for (Enumeration<String> options = _args.options().keys(); options
-                     .hasMoreElements();) {
-
-                String key = options.nextElement();
-                _log.info("Tag scanning : " + key);
-                if ((key.length() > 4) && key.startsWith("tag.")) {
-                    _tags.put(key.substring(4), _args.getOpt(key));
-                }
-            }
-            for (Map.Entry<String, String> e: _tags.entrySet() ) {
-
-                _log.info(" Extra Tag Option : " + e.getKey() + " -> "+ e.getValue());
-            }
-        } catch (Exception e) {
-            _log.info("Exception occurred on startup: " + e);
-            start();
-            kill();
-            throw e;
+        for (Map.Entry<String, String> e: _tags.entrySet() ) {
+            _log.info(" Extra Tag Option : " + e.getKey() + " -> "+ e.getValue());
         }
     }
 
@@ -311,8 +291,6 @@ public class PoolV4 extends AbstractCell
     {
         assertNotRunning("Cannot change base dir after initialisation");
         _baseDir = baseDir;
-        File dir = new File(_baseDir);
-        _setup = new File(dir, "setup");
     }
 
     public void setVersion(int version)
@@ -398,11 +376,6 @@ public class PoolV4 extends AbstractCell
         _billingCell = new CellPath(name);
     }
 
-    public void setSetupMananger(String name)
-    {
-        _setupManager = name;
-    }
-
     public void setPnfsHandler(PnfsHandler pnfs)
     {
         _pnfs = pnfs;
@@ -426,14 +399,12 @@ public class PoolV4 extends AbstractCell
     {
         assertNotRunning("Cannot set checksum module after initialization");
         _checksumModule = module;
-        addCommandListener(_checksumModule);
     }
 
     public void setStorageQueue(StorageClassContainer queue)
     {
         assertNotRunning("Cannot set storage queue after initialization");
         _storageQueue = queue;
-        addCommandListener(_storageQueue);
     }
 
     public void setStorageHandler(HsmStorageHandler2 handler)
@@ -446,37 +417,36 @@ public class PoolV4 extends AbstractCell
     {
         assertNotRunning("Cannot set HSM set after initialization");
         _hsmSet = set;
-        addCommandListener(_hsmSet);
     }
 
     public void setTimeoutManager(JobTimeoutManager manager)
     {
         assertNotRunning("Cannot set timeout manager after initialization");
         _timeoutManager = manager;
-        addCommandListener(_timeoutManager);
+        _timeoutManager.addScheduler("p2p", _p2pQueue);
+        _timeoutManager.start();
     }
 
     public void setFlushController(HsmFlushController controller)
     {
         assertNotRunning("Cannot set flushing controller after initialization");
         _flushingThread = controller;
-        addCommandListener(_flushingThread);
     }
 
     public void setPPClient(P2PClient client)
     {
         assertNotRunning("Cannot set P2P client after initialization");
         _p2pClient = client;
-        addCommandListener(_p2pClient);
     }
 
-
+    /**
+     * Initialize remaining pieces.
+     *
+     * We cannot do these things in the constructor as they rely on
+     * various properties being set first.
+     */
     public void init()
-        throws InterruptedException, IOException,
-               RepositoryException, CommandException
     {
-        assertNotRunning("Cannot initialize several times");
-
         assert _baseDir != null : "Base directory must be set";
         assert _pnfs != null : "PNFS handler must be set";
         assert _repository != null : "Repository must be set";
@@ -488,58 +458,31 @@ public class PoolV4 extends AbstractCell
         assert _flushingThread != null : "Flush controller must be set";
         assert _p2pClient != null : "P2P client must be set";
 
-        try {
-            while (!_setup.canRead()) {
-                disablePool(PoolV2Mode.DISABLED_STRICT,1,"Initializing : Repository seems not to be ready - setup file does not exist or not readable");
-                _log.error("Can't read setup file: exists? " +
-                     Boolean.toString(_setup.exists()) + " can read? " + Boolean.toString(_setup.canRead()) );
-                try {
-                    Thread.sleep(30000);
-                } catch (InterruptedException ie) {
-                    _log.error("Waiting for repository was interrupted");
-                    throw new InterruptedException("Waiting for repository was interrupted");
-                }
-            }
+        _p2pQueue = new SimpleJobScheduler("P2P");
+        _ioQueue = new IoQueueManager(_args.getOpt("io-queues"));
 
-            _ioQueue = new IoQueueManager(_args.getOpt("io-queues"));
-
-            _p2pQueue = new SimpleJobScheduler("P2P");
-
-            _timeoutManager.addScheduler("p2p", _p2pQueue);
-            _timeoutManager.start();
-
-            //
-            // add the command listeners before we execute the setupFile.
-            //
-
-            addCommandListener(new HsmStorageInterpreter(_storageHandler, _pnfs));
-
-            execFile(_setup);
-
-            _running = true;
-
-        } finally {
-            if (!_running) {
-                start();
-                kill();
-            }
-        }
-
+        disablePool(PoolV2Mode.DISABLED_STRICT, 1, "Initializing");
         _pingThread.start();
+    }
 
-        start();
+    public void afterSetupExecuted()
+    {
+        assertNotRunning("Cannot initialize several times");
 
-        Object weAreDone = new Object();
-        synchronized (weAreDone) {
-            new Thread(new InventoryScanner(weAreDone), "inventory").start();
-            try {
-                weAreDone.wait();
-            } catch (InterruptedException e) {
-                kill();
-                throw e;
-            }
+        _running = true;
+
+        _log.info("Running repository");
+        try {
+            _repository.init(_recoveryFlags);
+            enablePool();
             _flushingThread.start();
+        } catch (Throwable e) {
+            _log.error("Repository reported a problem : " + e.getMessage());
+            _log.warn("Pool not enabled " + _poolName);
+            disablePool(PoolV2Mode.DISABLED_DEAD | PoolV2Mode.DISABLED_STRICT,
+                        666, "Init failed: " + e.getMessage());
         }
+        _log.info("Repository finished");
     }
 
     /**
@@ -569,7 +512,6 @@ public class PoolV4 extends AbstractCell
         }
     }
 
-    @Override
     public CellVersion getCellVersion()
     {
         return new CellVersion(diskCacheV111.util.Version.getVersion(),
@@ -765,44 +707,10 @@ public class PoolV4 extends AbstractCell
         }
     }
 
-    private class InventoryScanner implements Runnable
-    {
-        private final Object _notifyMe;
-
-        private InventoryScanner(Object notifyMe)
-        {
-            _notifyMe = notifyMe;
-        }
-
-        public void run()
-        {
-            _log.info("Running Repository (Cell is locked)");
-            _log.info("Repository seems to be ok");
-            try {
-                _repository.init(_recoveryFlags);
-                enablePool();
-            } catch (Throwable e) {
-                _log.error("Repository reported a problem : " + e.getMessage());
-                _log.warn("Pool not enabled " + _poolName);
-                disablePool(PoolV2Mode.DISABLED_DEAD | PoolV2Mode.DISABLED_STRICT,
-                            666, "Init failed: " + e.getMessage());
-            }
-            _log.info("Repository finished");
-            if (_notifyMe != null) {
-                synchronized (_notifyMe) {
-                    _notifyMe.notifyAll();
-                }
-            }
-        }
-    }
-
-    @Override
     public void cleanUp()
     {
         disablePool(PoolV2Mode.DISABLED_DEAD | PoolV2Mode.DISABLED_STRICT,
                     666, "Shutdown");
-        if (_repository != null)
-            _repository.shutdown();
     }
 
     /**
@@ -887,45 +795,10 @@ public class PoolV4 extends AbstractCell
         }
     }
 
-    private void execFile(File setup)
-        throws IOException, CommandException
-    {
-        BufferedReader br = new BufferedReader(new FileReader(setup));
-        String line;
-        try {
-            int lineCount = 0;
-            while ((line = br.readLine()) != null) {
-                ++lineCount;
-
-                line = line.trim();
-                if (line.length() == 0)
-                    continue;
-                if (line.charAt(0) == '#')
-                    continue;
-                _log.info("Execute setup : " + line);
-                try {
-                    command(new Args(line));
-                } catch (CommandException ce) {
-                    _log.error("Error executing line " + lineCount + " : " + ce);
-                    throw ce;
-                }
-            }
-        } finally {
-            try {
-                br.close();
-            } catch (IOException dummy) {
-                // ignored
-            }
-        }
-    }
-
     public void printSetup(PrintWriter pw)
     {
         SpaceRecord space = _repository.getSpaceRecord();
 
-        pw.println("#\n# Created by " + getCellName() + "("
-                   + this.getClass().getName() + ") at " + (new Date()).toString()
-                   + "\n#");
         pw.println("set max diskspace " + space.getTotalSpace());
         pw.println("set heartbeat " + _pingThread.getHeartbeat());
         pw.println("set sticky " + (_allowSticky ? "allowed" : "denied"));
@@ -942,51 +815,26 @@ public class PoolV4 extends AbstractCell
         pw.println("set p2p "
                    + (_p2pMode == P2P_INTEGRATED ? "integrated" : "separated"));
         _flushingThread.printSetup(pw);
-        if (_storageQueue != null)
-            _storageQueue.printSetup(pw);
-        if (_storageHandler != null)
-            _storageHandler.printSetup(pw);
-        if (_hsmSet != null)
-            _hsmSet.printSetup(pw);
-        if (_repository != null)
-            _repository.printSetup(pw);
         if (_ioQueue != null)
             ((IoQueueManager) _ioQueue).printSetup(pw);
         if (_p2pQueue != null) {
             pw.println("p2p set max active " + _p2pQueue.getMaxActiveJobs());
         }
-        if (_p2pClient != null)
-            _p2pClient.printSetup(pw);
-        if (_timeoutManager != null)
-            _timeoutManager.printSetup(pw);
-        _checksumModule.printSetup(pw);
     }
 
-    private void dumpSetup()
-        throws IOException
+    protected String getCellName()
     {
-        String name = _setup.getName();
-        String parent = _setup.getParent();
-        File tempFile =
-            parent == null
-            ? new File("." + name)
-            : new File(parent, "." + name);
-
-        PrintWriter pw = new PrintWriter(new FileWriter(tempFile));
-        try {
-            printSetup(pw);
-        } finally {
-            pw.close();
-        }
-        if (!tempFile.renameTo(_setup))
-            throw new IOException("Rename failed (" + tempFile + " -> "
-                                  + _setup + ")");
+        return _endpoint.getCellInfo().getCellName();
     }
 
-    @Override
-    public CellInfo getCellInfo()
+    protected String getCellDomainName()
     {
-        PoolCellInfo poolinfo = new PoolCellInfo(super.getCellInfo());
+        return _endpoint.getCellInfo().getDomainName();
+    }
+
+    public CellInfo getCellInfo(CellInfo info)
+    {
+        PoolCellInfo poolinfo = new PoolCellInfo(info);
         poolinfo.setPoolCostInfo(getPoolCostInfo());
         poolinfo.setTagMap(_tags);
         poolinfo.setErrorStatus(_poolStatusCode, _poolStatusMessage);
@@ -994,12 +842,6 @@ public class PoolV4 extends AbstractCell
         return poolinfo;
     }
 
-    public CellInfo getCellInfo(CellInfo info)
-    {
-        return info;
-    }
-
-    @Override
     public void getInfo(PrintWriter pw)
     {
         pw.println("Base directory    : " + _baseDir);
@@ -1052,18 +894,6 @@ public class PoolV4 extends AbstractCell
             pw.println("Inventory         : " + _hybridCurrent);
         }
 
-        _repository.getInfo(pw);
-
-        if (_flushingThread != null)
-            _flushingThread.getInfo(pw);
-
-        pw.println("Storage Queue     : ");
-        if (_storageQueue != null) {
-            pw.println("   Classes  : " + _storageQueue.getStorageClassCount());
-            pw.println("   Requests : " + _storageQueue.getRequestCount());
-        } else {
-            pw.println("   Not Yet known");
-        }
         if (_ioQueue != null) {
             IoQueueManager manager = (IoQueueManager) _ioQueue;
             pw.println("Mover Queue Manager : "
@@ -1078,12 +908,6 @@ public class PoolV4 extends AbstractCell
             pw.println("P2P   Queue " + _p2pQueue.getActiveJobs() + "("
                        + _p2pQueue.getMaxActiveJobs() + ")/"
                        + _p2pQueue.getQueueSize());
-        if (_storageHandler != null)
-            _storageHandler.getInfo(pw);
-
-        _p2pClient.getInfo(pw);
-        _timeoutManager.getInfo(pw);
-        _checksumModule.getInfo(pw);
     }
 
     // //////////////////////////////////////////////////////////////
@@ -1889,18 +1713,8 @@ public class PoolV4 extends AbstractCell
         _p2pClient.newCompanion(pnfsId, poolName, storageInfo, targetState, callback);
     }
 
-    @Override
-    public void messageArrived(CellMessage cellMessage)
+    public void messageArrived(CellMessage cellMessage, Message poolMessage)
     {
-        Object messageObject = cellMessage.getMessageObject();
-
-        if (!(messageObject instanceof Message)) {
-            _log.info("Unexpected message class 1 " + messageObject.getClass());
-            return;
-        }
-
-        Message poolMessage = (Message) messageObject;
-
         boolean replyRequired = poolMessage.getReplyRequired();
         if (poolMessage instanceof PoolMoverKillMessage) {
             PoolMoverKillMessage kill = (PoolMoverKillMessage) poolMessage;
@@ -2834,7 +2648,6 @@ public class PoolV4 extends AbstractCell
     }
 
     public String hh_set_heartbeat = "<heartbeatInterval/sec>";
-
     public String ac_set_heartbeat_$_0_1(Args args)
         throws NumberFormatException
     {
@@ -2842,44 +2655,5 @@ public class PoolV4 extends AbstractCell
             _pingThread.setHeartbeat(Integer.parseInt(args.argv(0)));
         }
         return "Heartbeat at " + (_pingThread.getHeartbeat());
-    }
-
-    public String hh_save = "[-sc=<setupController>|none] # saves setup to disk or SC";
-
-    public String ac_save(Args args)
-        throws IOException, IllegalArgumentException, NoRouteToCellException
-    {
-        String setupManager = args.getOpt("sc");
-
-        if (_setupManager == null) {
-
-            if ((setupManager != null) && setupManager.equals(""))
-                throw new IllegalArgumentException("setupManager needs to be specified");
-
-        } else {
-
-            if ((setupManager == null) || setupManager.equals("")) {
-
-                setupManager = _setupManager;
-            }
-        }
-        if ((setupManager != null) && !setupManager.equals("none")) {
-            try {
-                StringWriter sw = new StringWriter();
-                PrintWriter pw = new PrintWriter(sw);
-                printSetup(pw);
-                SetupInfoMessage info = new SetupInfoMessage("put", this
-                                                             .getCellName(), "pool", sw.toString());
-
-                _endpoint.sendMessage(new CellMessage(new CellPath(setupManager), info));
-            } catch (NotSerializableException e) {
-                throw new RuntimeException("Bug detected: Unserializable vehicle", e);
-            } catch (NoRouteToCellException e) {
-                _log.error("Problem sending setup to >" + setupManager + "< : " + e.getMessage());
-                throw e;
-            }
-        }
-        dumpSetup();
-        return "";
     }
 }
