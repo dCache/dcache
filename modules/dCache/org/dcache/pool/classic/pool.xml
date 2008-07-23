@@ -75,7 +75,9 @@
     <constructor-arg value="${poolname}"/>
   </bean>
 
-  <bean id="legacy-repository" class="org.dcache.pool.repository.v4.CacheRepositoryV4">
+  <bean id="legacy-repository" 
+        class="org.dcache.pool.repository.v4.CacheRepositoryV4"
+        destroy-method="close">
     <constructor-arg value="${pooldir}"/>
     <constructor-arg>
       <bean class="dmg.util.Args">
@@ -126,7 +128,7 @@
     <constructor-arg ref="checksum"/>
     <property name="flushMessageTarget" value="${flushMessageTarget}"/>
   </bean>
-  
+
   <bean id="storage-interpreter" class="org.dcache.pool.classic.HsmStorageInterpreter">
     <constructor-arg ref="storagehandler"/>
     <constructor-arg ref="pnfs"/>

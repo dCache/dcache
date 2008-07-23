@@ -375,6 +375,7 @@
 	<target name="dcache.jar" depends="isUptodate.dcache.jar,dcache.compile" unless="dcache.jar.upToDate" description="Create dcache.jar">
 
 		<jar jarfile="${dcache.jar}">
+                        <fileset dir="${sourceDir}" includes="**/*.xml" excludes="diskCacheV111/config/*,**/WEB-INF/*.xml" />
 			<fileset dir="${buildDir}/core" includes="**/*.class" />
 			<manifest>
 				<section name="Shared">
@@ -680,9 +681,6 @@
 
 		<!-- pool setup template  -->
 		<copy file="${sourceDir}/${dcache.packagePrefix}/config/setup.temp" todir="${binDir}/config" />
-
-                <!-- spring files -->
-		<copy file="${sourceDir}/${dcache.packagePrefix}/config/pool.xml" todir="${binDir}/config" />
 
 		<!-- httpd images, etc -->
 		<copy todir="${binDir}/docs/images">

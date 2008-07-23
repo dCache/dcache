@@ -91,7 +91,7 @@ endDefine
 #####################################################
 define context startNewPools endDefine
   create org.dcache.util.UniversalSpringCell ${0} \
-    "!MoverMap file:${ourHomeDir}/config/pool.xml \
+    "!MoverMap classpath:org/dcache/pool/classic/pool.xml \
     -export -poolname=${0} -pooldir=${1} \
     -setupClass=pool -setupFile=${1}/setup \
     -${2} -${3} -${4} -${5} -${6} -${7} -${8}"
