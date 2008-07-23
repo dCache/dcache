@@ -2164,7 +2164,7 @@ public class PoolSelectionUnitV2 implements PoolSelectionUnit {
 
     public Object ac_psux_match_$_5(Args args) throws Exception {
 
-        PoolPreferenceLevel[] list = match(DirectionType.valueOf(args.argv(0)), args.argv(1).equals(
+        PoolPreferenceLevel[] list = match(DirectionType.valueOf(args.argv(0).toUpperCase()), args.argv(1).equals(
                 "*") ? null : args.argv(1), args.argv(2).equals("*") ? null
                 : args.argv(2), args.argv(3).equals("*") ? null : args.argv(3),
                 args.argv(4).equals("*") ? null : args.argv(4), null, args.getOpt("linkGroup"));
