@@ -105,16 +105,55 @@ public class UniversalSpringCell
      */
     private String _setupFile;
 
+    /**
+     * Name of context variable to execute during setup, or null.
+     */
+    private String _definedSetup;
+
+    /**
+     * Strips the first argument if it starts with an exclamation
+     * mark.
+     */
+    private static String stripDefinedSetup(String s)
+    {
+        String args[] = s.split("\\s");
+        if (args.length > 0 && args[0].startsWith("!")) {
+            return s.substring(args[0].length());
+        } else {
+            return s;
+        }
+    }
+
+    /**
+     * Returns the defined setup declaration, or null if there is no
+     * defined setup.
+     *
+     * The defined setup is declared as the first argument and starts
+     * with an exclamation mark.
+     */
+    private static String getDefinedSetup(String s)
+    {
+        String args[] = s.split("\\s");
+        if (args.length > 0 && args[0].startsWith("!")) {
+            return args[0].substring(1);
+        } else {
+            return null;
+        }
+    }
+
     public UniversalSpringCell(String cellName, String arguments)
         throws InterruptedException
     {
-        super(cellName, arguments, true);
+        super(cellName, stripDefinedSetup(arguments), true);
+
 
         /* Process command line arguments.
          */
         Args args = getArgs();
         if (args.argc() == 0)
             throw new IllegalArgumentException("Configuration location missing");
+
+        _definedSetup = getDefinedSetup(arguments);
         _setupController = args.getOpt("setupController");
         info("Setup controller set to "
              + (_setupController == null ? "none" : _setupController));
@@ -145,6 +184,11 @@ public class UniversalSpringCell
         try {
             _context =
                 new UniversalSpringCellApplicationContext(getArgs());
+
+            if (_definedSetup != null) {
+                executeDomainContext(_definedSetup);
+            }
+
             if (_setupFile != null) {
                 File file = new File(_setupFile);
                 while (!file.exists()) {
@@ -159,7 +203,7 @@ public class UniversalSpringCell
                 provider.afterSetupExecuted();
             }
         } catch (Throwable t) {
-            fatal("Failed to initalise cell: " + t.getMessage());
+            _logger.fatal("Failed to initialise cell: " + t.getMessage(), t);
             kill();
         }
     }
@@ -357,7 +401,7 @@ public class UniversalSpringCell
 
         StringBuilder s = new StringBuilder(a[0].toString());
         for (int i = 1; i < a.length; i++) {
-            s.append(',').append(a);
+            s.append(',').append(a[i]);
         }
         return s.toString();
     }
