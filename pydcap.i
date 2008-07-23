@@ -5,7 +5,7 @@
 //    swig -Wall -python pydcap.i
 //    gcc pydcap_wrap.c -I/usr/include/python2.5 -L/opt/d-cache/dcap/lib -ldcap -lpython2.5 \
 //                    -Xlinker -expoert-dynamic -shared -o _pydcap.so
-%module dcap
+%module pydcap
 
 %{
 #include <dirent.h>
