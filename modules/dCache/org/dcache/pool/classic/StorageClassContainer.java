@@ -9,8 +9,7 @@ import diskCacheV111.util.event.*;
 import org.dcache.pool.repository.CacheEntry;
 import org.dcache.pool.repository.v5.CacheRepositoryV5;
 import org.dcache.cell.CellCommandListener;
-import org.dcache.cell.CellInfoProvider;
-import org.dcache.cell.CellSetupProvider;
+import org.dcache.cell.AbstractCellComponent;
 
 import dmg.util.*;
 import dmg.cells.nucleus.CellInfo;
@@ -19,9 +18,8 @@ import java.io.*;
 import java.util.*;
 
 public class StorageClassContainer
-    implements CellCommandListener,
-               CellInfoProvider,
-               CellSetupProvider
+    extends AbstractCellComponent
+    implements CellCommandListener
 {
     private CacheRepositoryV5 _repository;
     private final Object _storageClassLock = new Object();
@@ -206,8 +204,6 @@ public class StorageClassContainer
                            " -expire="+classInfo.getExpiration());
         }
     }
-
-    public void afterSetupExecuted() {}
 
     //////////////////////////////////////////////////////////////////////////////////
     //
@@ -460,10 +456,5 @@ public class StorageClassContainer
         pw.println("Storage Queue     : ");
         pw.println("   Classes  : " + getStorageClassCount());
         pw.println("   Requests : " + getRequestCount());
-    }
-
-    public CellInfo getCellInfo(CellInfo info)
-    {
-        return info;
     }
 }

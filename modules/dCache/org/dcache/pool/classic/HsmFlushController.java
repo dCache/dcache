@@ -7,10 +7,9 @@ import diskCacheV111.pools.PoolCellInfo;
 import diskCacheV111.pools.StorageClassFlushInfo;
 import diskCacheV111.pools.StorageClassInfoFlushable;
 import diskCacheV111.vehicles.*;
-import org.dcache.cell.CellMessageSender;
 import org.dcache.cell.CellMessageReceiver;
 import org.dcache.cell.CellCommandListener;
-import org.dcache.cell.CellInfoProvider;
+import org.dcache.cell.AbstractCellComponent;
 
 import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.CellEndpoint;
@@ -29,11 +28,10 @@ import java.io.NotSerializableException;
 import org.apache.log4j.Logger;
 
 public class HsmFlushController
+    extends AbstractCellComponent
     implements Runnable,
-               CellMessageSender,
                CellMessageReceiver,
-               CellCommandListener,
-               CellInfoProvider
+               CellCommandListener
 {
     private final static Logger _log =
         Logger.getLogger(HsmFlushController.class);
@@ -49,7 +47,6 @@ public class HsmFlushController
     //
     private final StorageClassContainer  _storageQueue ;
     private final HsmStorageHandler2     _storageHandler;
-    private CellEndpoint _endpoint;
 
     public HsmFlushController(
               StorageClassContainer storageQueue,
@@ -60,14 +57,9 @@ public class HsmFlushController
         _storageHandler = storageHandler ;
     }
 
-    public void setCellEndpoint(CellEndpoint endpoint)
-    {
-        _endpoint = endpoint;
-    }
-
     private void setFlushInfos(PoolFlushControlInfoMessage flushInfo)
     {
-       flushInfo.setCellInfo((PoolCellInfo)_endpoint.getCellInfo());
+       flushInfo.setCellInfo((PoolCellInfo)getCellInfo());
        List<StorageClassFlushInfo> list =
            new ArrayList<StorageClassFlushInfo>() ;
 
@@ -97,7 +89,7 @@ public class HsmFlushController
        if (flushControl.getReplyRequired()) {
            message.revertDirection();
            try {
-               _endpoint.sendMessage(message);
+               sendMessage(message);
            } catch (NoRouteToCellException e) {
                esay("Problem replying : " + message + " " + e);
            } catch (NotSerializableException e) {
@@ -133,7 +125,7 @@ public class HsmFlushController
             }
             if( _flush.getReplyRequired() ){
                 try {
-                   _endpoint.sendMessage(_message);
+                   sendMessage(_message);
                 } catch (NoRouteToCellException e) {
                    esay("Problem replying : " + _message + " " + e);
                 } catch (NotSerializableException e) {
@@ -148,7 +140,7 @@ public class HsmFlushController
                  setFlushInfos( _flush ) ;
                 _flush.setResult( requests , failed ) ;
                 try {
-                    _endpoint.sendMessage(_message);
+                    sendMessage(_message);
                 } catch (NoRouteToCellException e) {
                     esay("Problem replying : " + _message + " " + e);
                 } catch (NotSerializableException e) {
@@ -219,11 +211,6 @@ public class HsmFlushController
         pw.println( "   Minimum flush delay on error : "+_retryDelayOnError ) ;
         pw.println("  Remote controlled (hold until) : "+
             (  ( _holdUntil > System.currentTimeMillis() ) ? new Date(_holdUntil).toString(): "Locally Controlled" ) );
-    }
-
-    public CellInfo getCellInfo(CellInfo info)
-    {
-        return info;
     }
 
     public Object ac_flush_ls( Args args ){

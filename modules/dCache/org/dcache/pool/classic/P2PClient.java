@@ -25,11 +25,9 @@ import org.dcache.pool.repository.StickyRecord;
 import org.dcache.pool.repository.EntryState;
 import org.dcache.pool.repository.WriteHandle;
 import org.dcache.pool.repository.CacheEntry;
-import org.dcache.cell.CellMessageSender;
+import org.dcache.cell.AbstractCellComponent;
 import org.dcache.cell.CellMessageReceiver;
-import org.dcache.cell.CellInfoProvider;
 import org.dcache.cell.CellCommandListener;
-import org.dcache.cell.CellSetupProvider;
 import diskCacheV111.movers.DCapConstants;
 import diskCacheV111.movers.DCapProtocol_3_nio;
 import diskCacheV111.util.Adler32;
@@ -54,10 +52,8 @@ import dmg.util.Args;
 import dmg.util.CommandSyntaxException;
 
 public class P2PClient
+    extends AbstractCellComponent
     implements CellMessageReceiver,
-               CellMessageSender,
-               CellInfoProvider,
-               CellSetupProvider,
                CellCommandListener
 {
     private final static Logger _log = Logger.getLogger(P2PClient.class);
@@ -69,7 +65,6 @@ public class P2PClient
     private final AtomicInteger _nextId = new AtomicInteger(100);
     private final ChecksumModuleV1 _checksumModule;
 
-    private CellEndpoint _endpoint;
     private int _maxActive = 0;
 
     private String _pnfsManager = "PnfsManager";
@@ -454,8 +449,8 @@ public class P2PClient
         synchronized private void sendMessage(String destination, Message message, long timeout)
         {
             try {
-                _endpoint.sendMessage(new CellMessage(new CellPath(destination), message),
-                                      this, timeout);
+                P2PClient.this.sendMessage(new CellMessage(new CellPath(destination), message),
+                                           this, timeout);
             } catch (NotSerializableException e) {
                 throw new RuntimeException("Bug: Unserializable vehicle found", e);
             }
@@ -671,11 +666,6 @@ public class P2PClient
         _checksumModule = csModule;
     }
 
-    public void setCellEndpoint(CellEndpoint endpoint)
-    {
-        _endpoint = endpoint;
-    }
-
     public void messageArrived(DoorTransferFinishedMessage message, CellMessage envelope)
     {
         DCapProtocolInfo pinfo = (DCapProtocolInfo)message.getProtocolInfo();
@@ -692,7 +682,7 @@ public class P2PClient
                              EntryState targetState,
                              CacheFileAvailable callback)
     {
-        if (_endpoint == null)
+        if (getCellEndpoint() == null)
             throw new IllegalStateException("Endpoint must be set");
 
         //
@@ -714,11 +704,6 @@ public class P2PClient
         pw.println("Pnfs Timeout : " + (_pnfsTimeout / 1000L) + " seconds ");
     }
 
-    public CellInfo getCellInfo(CellInfo info)
-    {
-        return info;
-    }
-
     public void printSetup(PrintWriter pw)
     {
         pw.println("#\n#  Pool to Pool (P2P) [$Id: P2PClient.java,v 1.21 2007-10-31 17:27:11 radicke Exp $]\n#");
@@ -726,8 +711,6 @@ public class P2PClient
         pw.println("pp set max active " + _maxActive);
         pw.println("pp set pnfs timeout " + (_pnfsTimeout / 1000L));
     }
-
-    public void afterSetupExecuted() {}
 
     public String hh_pp_set_pnfs_timeout = "<Timeout/sec>";
     public String ac_pp_set_pnfs_timeout_$_1(Args args)

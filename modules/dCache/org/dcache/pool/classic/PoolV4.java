@@ -45,11 +45,9 @@ import org.dcache.pool.repository.ReadHandle;
 import org.dcache.pool.repository.CacheEntry;
 import org.dcache.pool.repository.StateChangeListener;
 import org.dcache.pool.repository.StateChangeEvent;
-import org.dcache.cell.CellMessageSender;
-import org.dcache.cell.CellInfoProvider;
 import org.dcache.cell.CellCommandListener;
 import org.dcache.cell.CellMessageReceiver;
-import org.dcache.cell.CellSetupProvider;
+import org.dcache.cell.AbstractCellComponent;
 import diskCacheV111.pools.PoolV2Mode;
 import diskCacheV111.pools.SpaceSweeper;
 import diskCacheV111.pools.JobTimeoutManager;
@@ -121,12 +119,10 @@ import dmg.util.CommandException;
 import dmg.util.CommandSyntaxException;
 
 public class PoolV4
+    extends AbstractCellComponent
     implements FaultListener,
-               CellMessageSender,
-               CellInfoProvider,
                CellCommandListener,
-               CellMessageReceiver,
-               CellSetupProvider
+               CellMessageReceiver
 {
     private static final String MAX_SPACE = "use-max-space";
     private static final String PREALLOCATED_SPACE = "use-preallocated-space";
@@ -207,8 +203,6 @@ public class PoolV4
     private boolean _running = false;
     private double _breakEven = 250.0;
 
-    private CellEndpoint _endpoint;
-
     //
     // arguments :
     // MPP2 <poolBasePath> no default
@@ -280,11 +274,6 @@ public class PoolV4
     {
         if (_running)
             throw new IllegalStateException(error);
-    }
-
-    public void setCellEndpoint(CellEndpoint endpoint)
-    {
-        _endpoint = endpoint;
     }
 
     public void setBaseDir(String baseDir)
@@ -784,7 +773,7 @@ public class PoolV4
                     String source = getCellName() + "@" + getCellDomainName();
                     InfoMessage msg =
                         new RemoveFileInfoMessage(source, id);
-                    _endpoint.sendMessage(new CellMessage(_billingCell, msg));
+                    sendMessage(new CellMessage(_billingCell, msg));
                 } catch (NotSerializableException e) {
                     throw new RuntimeException("Bug detected: Unserializable vehicle", e);
                 } catch (NoRouteToCellException e) {
@@ -820,16 +809,6 @@ public class PoolV4
         if (_p2pQueue != null) {
             pw.println("p2p set max active " + _p2pQueue.getMaxActiveJobs());
         }
-    }
-
-    protected String getCellName()
-    {
-        return _endpoint.getCellInfo().getCellName();
-    }
-
-    protected String getCellDomainName()
-    {
-        return _endpoint.getCellInfo().getDomainName();
     }
 
     public CellInfo getCellInfo(CellInfo info)
@@ -1041,7 +1020,7 @@ public class PoolV4
 
         try {
             envelope.revertDirection();
-            _endpoint.sendMessage(envelope);
+            sendMessage(envelope);
         } catch (NotSerializableException e) {
             throw new RuntimeException("Bug detected: Unserializable vehicle", e);
         } catch (NoRouteToCellException e) {
@@ -1107,7 +1086,7 @@ public class PoolV4
                                        getProtocolInfo());
 
             try {
-                _endpoint.sendMessage(new CellMessage(_billingCell, info));
+                sendMessage(new CellMessage(_billingCell, info));
             } catch (NotSerializableException e) {
                 throw new RuntimeException("Bug: Unserializable vehicle detected", e);
             } catch (NoRouteToCellException e) {
@@ -1131,7 +1110,7 @@ public class PoolV4
             }
 
             try {
-                _endpoint.sendMessage(new CellMessage(_door, finished));
+                sendMessage(new CellMessage(_door, finished));
             } catch (NotSerializableException e) {
                 throw new RuntimeException("Bug: Unserializable vehicle detected", e);
             } catch (NoRouteToCellException e) {
@@ -1386,12 +1365,11 @@ public class PoolV4
                                                                  _destinationHostName, 2222),
                                             storageInfo.getFileSize());
             req.setReplyRequired(false);
-            try {
-                _endpoint.sendMessage(new CellMessage(_replicationManager, req));
-            } catch (NotSerializableException e) {
-                throw new RuntimeException("Bug detected: Unserializable vehicle", e);
-            }
-
+             try {
+                 sendMessage(new CellMessage(_replicationManager, req));
+             } catch (NotSerializableException e) {
+                 throw new RuntimeException("Bug detected: Unserializable vehicle", e);
+             }
         }
     }
 
@@ -1424,7 +1402,7 @@ public class PoolV4
 
             }
             Constructor<?> moverCon = mover.getConstructor(argsClass);
-            Object[] args = { _endpoint };
+            Object[] args = { getCellEndpoint() };
             MoverProtocol instance = (MoverProtocol) moverCon.newInstance(args);
 
             for (Map.Entry<?,?> attribute : _moverAttributes.entrySet()) {
@@ -1502,7 +1480,7 @@ public class PoolV4
 
                 try {
                     _cellMessage.revertDirection();
-                    _endpoint.sendMessage(_cellMessage);
+                    sendMessage(_cellMessage);
                 } catch (NotSerializableException e) {
                     throw new RuntimeException("Bug detected: Unserializable vehicle", e);
                 } catch (NoRouteToCellException e) {
@@ -1682,7 +1660,7 @@ public class PoolV4
                 _log.info("Sending p2p reply " + _message);
                 try {
                     _envelope.revertDirection();
-                    _endpoint.sendMessage(_envelope);
+                    sendMessage(_envelope);
                 } catch (NotSerializableException e) {
                     throw new RuntimeException("Bug detected: Unserializable vehicle", e);
                 } catch (NoRouteToCellException e) {
@@ -1875,7 +1853,7 @@ public class PoolV4
             return;
         try {
             cellMessage.revertDirection();
-            _endpoint.sendMessage(cellMessage);
+            sendMessage(cellMessage);
         } catch (NotSerializableException e) {
             throw new RuntimeException("Bug detected: Unserializable vehicle", e);
         } catch (NoRouteToCellException e) {
@@ -1914,7 +1892,7 @@ public class PoolV4
         try {
             poolMessage.setFailed(104, "Pool is disabled");
             cellMessage.revertDirection();
-            _endpoint.sendMessage(cellMessage);
+            sendMessage(cellMessage);
         } catch (NotSerializableException e) {
             throw new RuntimeException("Bug detected: Unserializable vehicle", e);
         } catch (NoRouteToCellException e) {
@@ -2023,7 +2001,7 @@ public class PoolV4
         private void send(CellMessage msg)
         {
             try {
-                _endpoint.sendMessage(msg);
+                sendMessage(msg);
             } catch (NotSerializableException e) {
                 throw new RuntimeException("Bug detected: Unserializable vehicle", e);
             } catch (NoRouteToCellException e){
@@ -2221,7 +2199,7 @@ public class PoolV4
         PnfsMapPathMessage info = new PnfsMapPathMessage(pnfsId);
         CellPath path = new CellPath("PnfsManager");
         _log.info("Sending : " + info);
-        CellMessage m = _endpoint.sendAndWait(new CellMessage(path, info), 10000);
+        CellMessage m = sendAndWait(new CellMessage(path, info), 10000);
         _log.info("Reply arrived : " + m);
         if (m == null)
             throw new Exception("No reply from PnfsManager");

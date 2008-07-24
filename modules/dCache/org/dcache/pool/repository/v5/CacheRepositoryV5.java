@@ -31,6 +31,7 @@ import org.dcache.pool.FaultEvent;
 import org.dcache.pool.FaultListener;
 import org.dcache.pool.FaultAction;
 import org.dcache.cell.CellInfoProvider;
+import org.dcache.cell.AbstractCellComponent;
 import static org.dcache.pool.repository.EntryState.*;
 
 import java.io.PrintWriter;
@@ -50,9 +51,9 @@ import java.util.Iterator;
 import java.util.Timer;
 import java.lang.reflect.Constructor;
 
-public class CacheRepositoryV5// extends CellCompanion
+public class CacheRepositoryV5
+    extends AbstractCellComponent
     implements CacheRepositoryListener,
-               CellInfoProvider,
                Iterable<PnfsId>
 {
     private final List<StateChangeListener> _stateChangeListeners =
@@ -731,11 +732,6 @@ public class CacheRepositoryV5// extends CellCompanion
                    + "    ["
                    + (((float) space.getRemovableSpace()) / ((float) total))
                    + "]");
-    }
-
-    public CellInfo getCellInfo(CellInfo info)
-    {
-        return info;
     }
 
     public void shutdown()

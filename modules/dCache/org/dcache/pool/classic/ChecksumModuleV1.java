@@ -6,10 +6,8 @@ import diskCacheV111.util.*;
 import diskCacheV111.vehicles.*;
 import org.dcache.pool.repository.ReadHandle;
 import org.dcache.pool.repository.v5.CacheRepositoryV5;
-import org.dcache.cell.CellMessageSender;
 import org.dcache.cell.CellCommandListener;
-import org.dcache.cell.CellInfoProvider;
-import org.dcache.cell.CellSetupProvider;
+import org.dcache.cell.AbstractCellComponent;
 
 import dmg.util.*;
 import dmg.cells.nucleus.*;
@@ -23,15 +21,12 @@ import java.security.NoSuchAlgorithmException;
 import org.apache.log4j.Logger;
 
 public class ChecksumModuleV1
-    implements CellMessageSender,
-               CellInfoProvider,
-               CellCommandListener,
-               CellSetupProvider
+    extends AbstractCellComponent
+    implements CellCommandListener
 {
     private final static Logger _log = Logger.getLogger(ChecksumModuleV1.class);
 
     private final CacheRepositoryV5 _repository;
-    private CellEndpoint _endpoint;
 
     private boolean _frequently = false;
     private boolean _onRead     = false;
@@ -72,11 +67,6 @@ public class ChecksumModuleV1
         }
     }
 
-    public void setCellEndpoint(CellEndpoint endpoint)
-    {
-        _endpoint = endpoint;
-    }
-
     public void setMoverChecksums(PnfsId id,
                                   File file,
                                   ChecksumFactory factory,
@@ -98,7 +88,7 @@ public class ChecksumModuleV1
         Checksum pnfsChecksum = null;
 
         if (clientChecksum == null) {
-            pnfsChecksum = factory.createFromPersistentState(_endpoint, id);
+            pnfsChecksum = factory.createFromPersistentState(getCellEndpoint(), id);
             clientChecksum = pnfsChecksum;
         }
 
@@ -178,7 +168,7 @@ public class ChecksumModuleV1
         throws CacheException, NoRouteToCellException, InterruptedException
     {
         try {
-            ChecksumPersistence.getPersistenceMgr().store(_endpoint, pnfsId, checksum);
+            ChecksumPersistence.getPersistenceMgr().store(getCellEndpoint(), pnfsId, checksum);
         } catch (CacheException e) {
             throw e;
         } catch (NoRouteToCellException e) {
@@ -195,7 +185,7 @@ public class ChecksumModuleV1
     public Checksum getChecksumFromPnfs(PnfsId pnfsId)
     {
         try {
-            return _defaultChecksumFactory.createFromPersistentState(_endpoint,pnfsId);
+            return _defaultChecksumFactory.createFromPersistentState(getCellEndpoint(),pnfsId);
         } catch(Exception ee) {
             ee.printStackTrace();
         }
@@ -237,8 +227,6 @@ public class ChecksumModuleV1
         pw.print(" -getcrcfromhsm="); pw.print(_updatepnfs?"on":"off");
         pw.println("");
     }
-
-    public void afterSetupExecuted() {}
 
     public boolean checkOnRead()
     {
@@ -293,11 +281,6 @@ public class ChecksumModuleV1
         pw.println("");
 
         pw.println("  "+_fullScan.toString());
-    }
-
-    public CellInfo getCellInfo(CellInfo info)
-    {
-        return info;
     }
 
     public String hh_csm_info = "";
