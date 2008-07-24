@@ -98,7 +98,6 @@
   <bean id="repository" 
         class="org.dcache.pool.repository.v5.CacheRepositoryV5"
         destroy-method="shutdown">
-    <property name="baseDir" value="${pooldir}"/>
     <property name="pnfsHandler" ref="pnfs"/>
     <property name="sweeper" ref="sweeper"/>
     <property name="periodicChecks" value="${checkRepository}"/>

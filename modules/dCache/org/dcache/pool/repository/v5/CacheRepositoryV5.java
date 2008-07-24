@@ -1,6 +1,5 @@
 package org.dcache.pool.repository.v5;
 
-import dmg.cells.nucleus.CellInfo;
 import diskCacheV111.pools.SpaceSweeper;
 import diskCacheV111.repository.RepositoryInterpreter;
 import diskCacheV111.repository.CacheRepositoryEntry;
@@ -26,7 +25,6 @@ import org.dcache.pool.repository.WriteHandle;
 import org.dcache.pool.repository.CacheEntry;
 import org.dcache.pool.repository.EntryState;
 import org.dcache.pool.repository.SpaceRecord;
-import org.dcache.pool.repository.MetaDataRepository;
 import org.dcache.pool.FaultEvent;
 import org.dcache.pool.FaultListener;
 import org.dcache.pool.FaultAction;
@@ -36,10 +34,6 @@ import static org.dcache.pool.repository.EntryState.*;
 
 import java.io.PrintWriter;
 import java.io.IOException;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.Executors;
@@ -48,8 +42,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Timer;
-import java.lang.reflect.Constructor;
 
 public class CacheRepositoryV5
     extends AbstractCellComponent
@@ -85,7 +77,6 @@ public class CacheRepositoryV5
     private PnfsHandler _pnfs;
     private boolean _checkRepository = true;
     private boolean _volatile = false;
-    private File _baseDir;
 
     public CacheRepositoryV5()
     {
@@ -123,13 +114,6 @@ public class CacheRepositoryV5
     {
         assertNotInitialised();
         _sweeper = sweeper;
-    }
-
-    public synchronized void setBaseDir(File baseDir)
-    {
-        if (!baseDir.isDirectory())
-            throw new IllegalArgumentException("No such directory: " + baseDir);
-        _baseDir = baseDir;
     }
 
     public synchronized boolean getVolatile()
@@ -186,7 +170,6 @@ public class CacheRepositoryV5
     public synchronized void init(int flags)
         throws IOException, RepositoryException, IllegalStateException
     {
-        assert _baseDir != null : "Base directory must be set";
         assert _pnfs != null : "Pnfs handler must be set";
         assert _repository != null : "Repository must be set";
 
