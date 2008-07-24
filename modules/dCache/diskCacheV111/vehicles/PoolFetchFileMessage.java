@@ -20,7 +20,7 @@ public class PoolFetchFileMessage extends PoolMessage {
         super(poolName);
         _pnfsId = pnfsId;
         _storageInfo = storageInfo;
-        setReplyRequired(false);// fetch completion is notified asyncronously
+        setReplyRequired(true);
     }
 
     public PoolFetchFileMessage(String poolName, StorageInfo storageInfo,
@@ -28,7 +28,7 @@ public class PoolFetchFileMessage extends PoolMessage {
         super(poolName);
         _pnfsId = new PnfsId(pnfsId);
         _storageInfo = storageInfo;
-        setReplyRequired(false);// fetch completion is notified asyncronously
+        setReplyRequired(true);
     }
 
     public void setPnfsId(String pnfsId) {
