@@ -6,7 +6,6 @@ import diskCacheV111.vehicles.* ;
 import diskCacheV111.util.* ;
 import dmg.util.*;
 import java.util.* ;
-import java.io.NotSerializableException;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.DelayedReply;
 import dmg.cells.nucleus.NoRouteToCellException;
@@ -146,8 +145,6 @@ public class RepositoryInterpreter
                         reply.send(o);
                     } catch (NoRouteToCellException e) {
                         _log.error("Failed to send reply for 'rep ls': " + e);
-                    } catch (NotSerializableException e) {
-                        throw new RuntimeException("BUG: Unserializable vehicle", e);
                     } catch (InterruptedException e) {
                         _log.warn("Interrupted while sending reply: " + e);
                         Thread.currentThread().interrupt();

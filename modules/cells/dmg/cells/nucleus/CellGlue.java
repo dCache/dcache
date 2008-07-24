@@ -497,7 +497,7 @@ class CellGlue {
    private static final int MAX_ROUTE_LEVELS  =  16 ;
 
    void   sendMessage( CellNucleus nucleus , CellMessage msg )
-          throws NotSerializableException,
+          throws SerializationException,
                  NoRouteToCellException    {
 
           sendMessage( nucleus , msg , true , true ) ;
@@ -507,8 +507,8 @@ class CellGlue {
                        CellMessage msg ,
                        boolean     resolveLocally ,
                        boolean     resolveRemotely )
-          throws NotSerializableException,
-                 NoRouteToCellException    {
+       throws SerializationException,
+              NoRouteToCellException    {
 
       boolean firstSend = ! msg.isStreamMode() ;
 
@@ -702,7 +702,7 @@ class CellGlue {
                                CellMessage msg ,
                                CellPath    destination ,
                                String      routeTarget )
-          throws NotSerializableException,
+          throws SerializationException,
                  NoRouteToCellException    {
             //
             // here we try to inform the last sender that we are

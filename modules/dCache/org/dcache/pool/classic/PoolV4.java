@@ -9,7 +9,6 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.FileNotFoundException;
-import java.io.NotSerializableException;
 import java.io.PrintWriter;
 import java.io.RandomAccessFile;
 import java.io.StringWriter;
@@ -774,8 +773,6 @@ public class PoolV4
                     InfoMessage msg =
                         new RemoveFileInfoMessage(source, id);
                     sendMessage(new CellMessage(_billingCell, msg));
-                } catch (NotSerializableException e) {
-                    throw new RuntimeException("Bug detected: Unserializable vehicle", e);
                 } catch (NoRouteToCellException e) {
                     _log.error("Failed to send message to " + _billingCell + ": "
                          + e.getMessage());
@@ -1021,8 +1018,6 @@ public class PoolV4
         try {
             envelope.revertDirection();
             sendMessage(envelope);
-        } catch (NotSerializableException e) {
-            throw new RuntimeException("Bug detected: Unserializable vehicle", e);
         } catch (NoRouteToCellException e) {
             _log.error(e);
         }
@@ -1087,8 +1082,6 @@ public class PoolV4
 
             try {
                 sendMessage(new CellMessage(_billingCell, info));
-            } catch (NotSerializableException e) {
-                throw new RuntimeException("Bug: Unserializable vehicle detected", e);
             } catch (NoRouteToCellException e) {
                 _log.error("Cannot send message to " + _billingCell + ": No route to cell");
             }
@@ -1111,8 +1104,6 @@ public class PoolV4
 
             try {
                 sendMessage(new CellMessage(_door, finished));
-            } catch (NotSerializableException e) {
-                throw new RuntimeException("Bug: Unserializable vehicle detected", e);
             } catch (NoRouteToCellException e) {
                 _log.error("Cannot send message to " + _door + ": No route to cell");
             }
@@ -1365,11 +1356,7 @@ public class PoolV4
                                                                  _destinationHostName, 2222),
                                             storageInfo.getFileSize());
             req.setReplyRequired(false);
-             try {
-                 sendMessage(new CellMessage(_replicationManager, req));
-             } catch (NotSerializableException e) {
-                 throw new RuntimeException("Bug detected: Unserializable vehicle", e);
-             }
+            sendMessage(new CellMessage(_replicationManager, req));
         }
     }
 
@@ -1481,8 +1468,6 @@ public class PoolV4
                 try {
                     _cellMessage.revertDirection();
                     sendMessage(_cellMessage);
-                } catch (NotSerializableException e) {
-                    throw new RuntimeException("Bug detected: Unserializable vehicle", e);
                 } catch (NoRouteToCellException e) {
                     _log.error("Failed to send reply to " + _cellMessage.getDestinationAddress() + ": " + e.getMessage());
                 }
@@ -1661,8 +1646,6 @@ public class PoolV4
                 try {
                     _envelope.revertDirection();
                     sendMessage(_envelope);
-                } catch (NotSerializableException e) {
-                    throw new RuntimeException("Bug detected: Unserializable vehicle", e);
                 } catch (NoRouteToCellException e) {
                     _log.error("Cannot reply p2p message : " + e.getMessage());
                 }
@@ -1854,8 +1837,6 @@ public class PoolV4
         try {
             cellMessage.revertDirection();
             sendMessage(cellMessage);
-        } catch (NotSerializableException e) {
-            throw new RuntimeException("Bug detected: Unserializable vehicle", e);
         } catch (NoRouteToCellException e) {
             _log.error("Cannot reply message : " + e.getMessage());
         }
@@ -1893,8 +1874,6 @@ public class PoolV4
             poolMessage.setFailed(104, "Pool is disabled");
             cellMessage.revertDirection();
             sendMessage(cellMessage);
-        } catch (NotSerializableException e) {
-            throw new RuntimeException("Bug detected: Unserializable vehicle", e);
         } catch (NoRouteToCellException e) {
             _log.error("Cannot reply message : " + e.getMessage());
         }
@@ -2002,8 +1981,6 @@ public class PoolV4
         {
             try {
                 sendMessage(msg);
-            } catch (NotSerializableException e) {
-                throw new RuntimeException("Bug detected: Unserializable vehicle", e);
             } catch (NoRouteToCellException e){
                 _log.error("Failed to send ping message: " + e.getMessage());
             }

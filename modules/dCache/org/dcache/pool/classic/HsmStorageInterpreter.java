@@ -3,7 +3,6 @@
 package org.dcache.pool.classic;
 
 import java.util.* ;
-import java.io.NotSerializableException;
 
 import dmg.cells.nucleus.DelayedReply;
 import dmg.cells.nucleus.NoRouteToCellException;
@@ -183,8 +182,6 @@ public class HsmStorageInterpreter
                         } else {
                             reply.send("Failed to fetch " + pnfsId + ": " + ee);
                         }
-                    } catch (NotSerializableException e) {
-                        throw new RuntimeException(e);
                     } catch (InterruptedException e) {
                         Thread.currentThread().interrupt();
                     } catch (NoRouteToCellException e) {

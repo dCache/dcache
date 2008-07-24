@@ -4,7 +4,6 @@ package diskCacheV111.util ;
 
 import java.util.List;
 import java.util.Collections;
-import java.io.NotSerializableException;
 
 import org.apache.log4j.Logger;
 
@@ -90,8 +89,6 @@ public class PnfsHandler
             _endpoint.sendMessage(new CellMessage(_pnfs, msg));
         } catch (NoRouteToCellException e) {
             _logNameSpace.error("Cannot send message to " + _pnfs + ": " + e);
-        } catch (NotSerializableException e){
-            throw new RuntimeException("BUG: Unserializable vehicle", e);
         }
     }
 
@@ -204,8 +201,6 @@ public class PnfsHandler
            String problem  = "Failed to send pnfs request: " + e;
            _logNameSpace.warn(problem);
 	   throw new CacheException(CacheException.PANIC, problem);
-       } catch (NotSerializableException e) {
-           throw new RuntimeException("BUG: Unserializable vehicle", e);
        }
 
        if (pnfsCellReply == null) {

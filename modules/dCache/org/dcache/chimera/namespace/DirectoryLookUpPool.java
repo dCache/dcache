@@ -6,7 +6,6 @@ package org.dcache.chimera.namespace;
 import java.io.DataInputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.NotSerializableException;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.Collections;
@@ -120,8 +119,6 @@ public class DirectoryLookUpPool extends CellAdapter {
     		cellMessage.revertDirection();
     		try {
 				sendMessage(cellMessage);
-			} catch (NotSerializableException e) {
-				// should never happen. we just got it!
 			} catch (NoRouteToCellException e) {
 				// caller cell died.
 				_logNameSpace.info("Cant send reply to " + cellMessage.getDestinationPath() + " : " + e.getMessage());

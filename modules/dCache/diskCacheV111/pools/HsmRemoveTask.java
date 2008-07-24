@@ -7,7 +7,6 @@ import diskCacheV111.util.HsmSet;
 import diskCacheV111.util.ExternalTask;
 import diskCacheV111.vehicles.PoolRemoveFilesFromHSMMessage;
 
-import java.io.NotSerializableException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.CancellationException;
@@ -139,8 +138,6 @@ public class HsmRemoveTask implements Runnable
              * just let the cleaner retry later and do nothing now.
              */
             _log.warn("Cannot send reply: " + e);
-        } catch (NotSerializableException e) {
-            throw new RuntimeException("Unserializable vehicle detected", e);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         } catch (CancellationException e) {

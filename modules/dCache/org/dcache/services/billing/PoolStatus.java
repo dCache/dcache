@@ -5,7 +5,6 @@ import java.io.PrintWriter;
 import java.io.FileWriter;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.NotSerializableException;
 import java.io.IOException;
 
 import dmg.util.Args;
@@ -76,39 +75,31 @@ public class PoolStatus
                    InterruptedException
         {
             CellMessage m = new CellMessage(new CellPath(pool), "rep ls -s");
-            try {
-                m = _endpoint.sendAndWait(m, _timeout);
-                if (m == null) {
-                    error("CollectPoolStatus : pool status (rep ls -s) of " + pool + " didn't arrive in time (skipped)");
-                    return new String[0];
-                }
-
-                return m.getMessageObject().toString().split("\n");
-            } catch (NotSerializableException e) {
-                throw new RuntimeException("Bug: Unserializable vehicle", e);
+            m = _endpoint.sendAndWait(m, _timeout);
+            if (m == null) {
+                error("CollectPoolStatus : pool status (rep ls -s) of " + pool + " didn't arrive in time (skipped)");
+                return new String[0];
             }
+
+            return m.getMessageObject().toString().split("\n");
         }
 
         private String[] getPoolList()
             throws NoRouteToCellException,
                    InterruptedException
         {
-            try {
-                CellMessage m = new CellMessage(new CellPath("PoolManager"),
-                                                "xgetcellinfo");
-                m = _endpoint.sendAndWait(m, _timeout);
-                if (m == null)
-                    return new String[0];
+            CellMessage m = new CellMessage(new CellPath("PoolManager"),
+                                            "xgetcellinfo");
+            m = _endpoint.sendAndWait(m, _timeout);
+            if (m == null)
+                return new String[0];
 
-                Object o = m.getMessageObject();
-                if (!(o instanceof PoolManagerCellInfo))
-                    throw new RuntimeException("Illegal reply from PoolManager: "
-                                               + o.getClass().getName());
+            Object o = m.getMessageObject();
+            if (!(o instanceof PoolManagerCellInfo))
+                throw new RuntimeException("Illegal reply from PoolManager: "
+                                           + o.getClass().getName());
 
-                return ((PoolManagerCellInfo)o).getPoolList();
-            } catch (NotSerializableException e) {
-                throw new RuntimeException("Bug: Unserializable vehicle", e);
-            }
+            return ((PoolManagerCellInfo)o).getPoolList();
         }
 
         public void run()

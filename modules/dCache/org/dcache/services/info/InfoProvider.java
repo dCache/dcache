@@ -1,6 +1,5 @@
 package org.dcache.services.info;
 
-import java.io.NotSerializableException;
 import java.io.PrintWriter;
 import java.util.Iterator;
 import java.util.List;
@@ -279,9 +278,6 @@ public class InfoProvider extends CellAdapter {
 	    	msg.revertDirection();
     		try {
 				super.sendMessage(msg);
-			} catch (NotSerializableException e) {
-				// This should never happen.
-				_log.error( "unable to serialise reply message");
 			} catch (NoRouteToCellException e) {
 				// This can happen if the querying cell dies whilst we are preparing the serialised output.
 				_log.warn("can't send reply message to "+ msg.getDestinationPath() + " : " + e.getMessage());
@@ -301,9 +297,6 @@ public class InfoProvider extends CellAdapter {
 	public void sendMessage( CellMessage msg) {
 		try {
 			super.sendMessage(msg);
-		} catch( NotSerializableException e) {
-			_log.warn( "Message could not be serialised (this should never happen) ", e);
-			throw( new RuntimeException(e));
 		} catch( NoRouteToCellException e) {
 			_log.info( "Cannot route message to cell, refraining from delivering msg.", e);
 		}

@@ -5,7 +5,6 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.regex.Pattern;
 import java.text.SimpleDateFormat;
-import java.io.NotSerializableException;
 import java.io.IOException;
 import java.io.FileNotFoundException;
 import java.io.BufferedReader;
@@ -194,57 +193,53 @@ public class PoolInfoObserverV2 extends CellAdapter implements Runnable
         throws PoolInfoObserverException, NoRouteToCellException,
                InterruptedException
     {
-        try {
-            CellPath path = new CellPath(poolManager);
-            CellMessage message =
-                new CellMessage(path, "psux ls pgroup");
+        CellPath path = new CellPath(poolManager);
+        CellMessage message =
+            new CellMessage(path, "psux ls pgroup");
+        message = sendAndWait(message, _poolManagerTimeout);
+        if (message == null)
+            throw new PoolInfoObserverException("Request to "
+                                                + poolManager
+                                                + " timed out");
+
+        Object result = message.getMessageObject();
+        if (result instanceof Exception)
+            throw new PoolInfoObserverException("Pool manager returned: " + result);
+
+        if (! (result instanceof Object []))
+            throw new
+                PoolInfoObserverException("Illegal Reply on 'psux ls pgroup");
+
+        for (Object o : (Object[])result) {
+            if (o == null)
+                continue;
+            String pgroupName = o.toString();
+            String request = "psux ls pgroup " +pgroupName;
+            message = new CellMessage(path, request);
             message = sendAndWait(message, _poolManagerTimeout);
-            if (message == null)
-                throw new PoolInfoObserverException("Request to "
-                                                    + poolManager
-                                                    + " timed out");
-
-            Object result = message.getMessageObject();
-            if (result instanceof Exception)
-                throw new PoolInfoObserverException("Pool manager returned: " + result);
-
-            if (! (result instanceof Object []))
-                throw new
-                    PoolInfoObserverException("Illegal Reply on 'psux ls pgroup");
-
-            for (Object o : (Object[])result) {
-                if (o == null)
-                    continue;
-                String pgroupName = o.toString();
-                String request = "psux ls pgroup " +pgroupName;
-                message = new CellMessage(path, request);
-                message = sendAndWait(message, _poolManagerTimeout);
-                if (message == null) {
-                    esay("Request to " +poolManager+ " timed out");
-                    continue;
-                }
-                result = message.getMessageObject();
-                if (! (result instanceof Object[])) {
-                    esay("Illegal reply (1) on " + request + " "
-                         + result.getClass().getName());
-                    continue;
-                }
-                Object [] props = (Object [])result;
-                if ((props.length < 3) ||
-                    (! (props[0] instanceof String)) ||
-                    (! (props[1] instanceof Object []))) {
-                    esay("Illegal reply (2) on " +request);
-                    continue;
-                }
-                synchronized(_container) {
-                    for (Object p : (Object [])props[1]) {
-                        _container.addPool("PoolManager", pgroupName,
-                                           p.toString());
-                    }
+            if (message == null) {
+                esay("Request to " +poolManager+ " timed out");
+                continue;
+            }
+            result = message.getMessageObject();
+            if (! (result instanceof Object[])) {
+                esay("Illegal reply (1) on " + request + " "
+                     + result.getClass().getName());
+                continue;
+            }
+            Object [] props = (Object [])result;
+            if ((props.length < 3) ||
+                (! (props[0] instanceof String)) ||
+                (! (props[1] instanceof Object []))) {
+                esay("Illegal reply (2) on " +request);
+                continue;
+            }
+            synchronized(_container) {
+                for (Object p : (Object [])props[1]) {
+                    _container.addPool("PoolManager", pgroupName,
+                                       p.toString());
                 }
             }
-        } catch (NotSerializableException e) {
-            throw new RuntimeException("Bug detected: Unserializable vehicle", e);
         }
     }
 
@@ -521,8 +516,6 @@ public class PoolInfoObserverV2 extends CellAdapter implements Runnable
                         CellMessage cellMessage = info.getCellMessage();
                         dsay("Sending message to " +cellMessage.getDestinationPath());
                         sendMessage(info.getCellMessage());
-                    } catch (NotSerializableException e) {
-                        throw new RuntimeException("Bug detected: Unserializable vehicle", e);
                     } catch (NoRouteToCellException e) {
                         esay("Problem in sending message : " + e);
                     }

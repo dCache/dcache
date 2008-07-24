@@ -3,7 +3,6 @@
 package diskCacheV111.pools ;
 
 import java.io.IOException;
-import java.io.NotSerializableException;
 import java.io.PrintWriter;
 import java.io.RandomAccessFile;
 import java.io.BufferedReader;
@@ -1097,8 +1096,6 @@ public class HsmStorageHandler2  {
                     new CellMessage(new CellPath(flushMessageTarget),
                                     poolFileFlushedMessage);
                 _cell.sendMessage(msg);
-            } catch (NotSerializableException e) {
-                // never happens
             } catch (NoRouteToCellException e) {
                 _logRepository.info("failed to send message to flushMessageTarget (" + flushMessageTarget + ") : " + e.getMessage());
             }

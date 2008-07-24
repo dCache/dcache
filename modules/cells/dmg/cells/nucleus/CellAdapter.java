@@ -438,14 +438,14 @@ public class   CellAdapter
      *  sends a <code>CellMessage</code> along the specified path.
      *
      * @param msg the message to be sent.
-     * @exception NotSerializableException if the payload object of this
+     * @exception SerializationException if the payload object of this
      *            message is not Serializable.
      * @exception NoRouteToCellException if the destination <code>CellPath</code>
      *            couldn't be reached.
      *
      */
     public void sendMessage(CellMessage msg)
-        throws NotSerializableException,
+        throws SerializationException,
                NoRouteToCellException    {
         _nucleus.sendMessage(msg);
     }
@@ -466,7 +466,7 @@ public class   CellAdapter
      *                 soon as the message arrives.
      * @param timeout  is the timeout interval in msec.
      *
-     * @exception NotSerializableException if the payload object of this
+     * @exception SerializationException if the payload object of this
      *            message is not Serializable.
      *
      */
@@ -475,13 +475,13 @@ public class   CellAdapter
                             boolean remotely,
                             CellMessageAnswerable callback,
                             long    timeout)
-        throws NotSerializableException {
+        throws SerializationException {
         _nucleus.sendMessage(msg, locally, remotely, callback, timeout);
     }
     public void sendMessage(CellMessage msg,
                             CellMessageAnswerable callback,
                             long    timeout)
-        throws NotSerializableException {
+        throws SerializationException {
         _nucleus.sendMessage(msg, true, true, callback, timeout);
     }
     /**
@@ -495,7 +495,7 @@ public class   CellAdapter
      *                locally.
      * @param remotely if set to 'false' the message is not delivered
      *                 remotely.
-     * @exception NotSerializableException if the payload object of this
+     * @exception SerializationException if the payload object of this
      *            message is not Serializable.
      * @exception NoRouteToCellException if the destination <code>CellPath</code>
      *            couldn't be reached.
@@ -503,7 +503,7 @@ public class   CellAdapter
      */
     public void sendMessage(CellMessage msg, boolean locally,
                             boolean remotely)
-        throws NotSerializableException,
+        throws SerializationException,
                NoRouteToCellException    {
         _nucleus.sendMessage(msg, locally, remotely);
     }
@@ -523,7 +523,7 @@ public class   CellAdapter
      * @param remote if 'false' the destination is not looked up remotely.
      * @param millisecs milliseconds to wait for an answer.
      * @return the answer CellMessage or 'null' if intervall timed out.
-     * @exception NotSerializableException if the payload object of this
+     * @exception SerializationException if the payload object of this
      *            message is not Serializable.
      * @exception NoRouteToCellException if the destination <code>CellPath</code>
      *            couldn't be reached.
@@ -533,7 +533,7 @@ public class   CellAdapter
                                    boolean local,
                                    boolean remote,
                                    long millisecs)
-        throws NotSerializableException,
+        throws SerializationException,
                NoRouteToCellException,
                InterruptedException        {
         return _nucleus.sendAndWait(msg, local, remote, millisecs);
@@ -546,7 +546,7 @@ public class   CellAdapter
      * @param msg the message to be sent.
      * @param millisecs milliseconds to wait.
      * @return the answer CellMessage or 'null' if intervall timed out.
-     * @exception NotSerializableException if the payload object of this
+     * @exception SerializationException if the payload object of this
      *            message is not Serializable.
      * @exception NoRouteToCellException if the destination <code>CellPath</code>
      *            couldn't be reached.
@@ -555,7 +555,7 @@ public class   CellAdapter
      */
     public CellMessage sendAndWait(CellMessage msg,
                                    long millisecs)
-        throws NotSerializableException,
+        throws SerializationException,
                NoRouteToCellException,
                InterruptedException        {
         return _nucleus.sendAndWait(msg, true, true, millisecs);
@@ -567,14 +567,14 @@ public class   CellAdapter
      *
      *
      * @param msg the message to be sent.
-     * @exception NotSerializableException if the payload object of this
+     * @exception SerializationException if the payload object of this
      *            message is not Serializable.
      * @exception NoRouteToCellException if the destination <code>CellPath</code>
      *            couldn't be reached.
      *
      */
     public void resendMessage(CellMessage msg)
-        throws NotSerializableException,
+        throws SerializationException,
                NoRouteToCellException    {
         _nucleus.resendMessage(msg);
     }

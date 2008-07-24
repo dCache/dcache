@@ -5,7 +5,6 @@ package org.dcache.chimera.nfsv41.door;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.NotSerializableException;
 import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -189,9 +188,6 @@ public class NFSv41Door extends CellAdapter implements NFSv41DeviceManager {
                 try {
                     sendMessage(new CellMessage(new CellPath(selectPoolMsg
                             .getPoolName()), poolMessage));
-                } catch (NotSerializableException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
                 } catch (NoRouteToCellException e) {
                     // TODO Auto-generated catch block
                     e.printStackTrace();

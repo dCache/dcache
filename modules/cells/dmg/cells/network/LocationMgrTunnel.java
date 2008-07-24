@@ -9,7 +9,6 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
-import java.io.NotSerializableException;
 import java.net.Socket;
 import java.net.SocketException;
 import java.util.Map;
@@ -30,6 +29,7 @@ import dmg.cells.nucleus.CellTunnelInfo;
 import dmg.cells.nucleus.MessageEvent;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.RoutedMessageEvent;
+import dmg.cells.nucleus.SerializationException;
 import dmg.util.Args;
 import dmg.util.Gate;
 import dmg.util.StreamEngine;
@@ -228,6 +228,7 @@ public class LocationMgrTunnel
     }
 
     private void returnToSender(CellMessage msg, NoRouteToCellException e)
+        throws SerializationException
     {
         try {
             if (!(msg instanceof CellExceptionMessage)) {
@@ -237,8 +238,6 @@ public class LocationMgrTunnel
                 ret.setLastUOID(msg.getUOID());
                 _nucleus.sendMessage(ret);
             }
-        } catch (NotSerializableException f) {
-            throw new RuntimeException("Bug: Unserializable vehicle detected.", f);
         } catch (NoRouteToCellException f) {
             esay("Unable to deliver message and unable to return it to sender: " + msg);
         }
@@ -256,12 +255,6 @@ public class LocationMgrTunnel
                 _messagesToSystem++;
             } catch (NoRouteToCellException e) {
                 returnToSender(msg, e);
-            } catch (NotSerializableException e) {
-                /* Ouch, the object we just deserialized could not
-                 * be serialized. This should not happen, so if it
-                 * does this is clearly a bug.
-                 */
-                throw new RuntimeException("Bug: Unserializable vehicle detected", e);
             }
         }
     }
@@ -310,7 +303,7 @@ public class LocationMgrTunnel
                 send(msg);
             } catch (IOException e) {
                 esay("Error while sending message: " + e.getMessage());
-                returnToSender(msg, 
+                returnToSender(msg,
                                new NoRouteToCellException("Communication failure. Message could not be delivered."));
                 kill();
             }

@@ -122,7 +122,7 @@ public boolean equals( Object obj ){
      _mode = DUMMY_MODE ;
      return ;
   }
-  public CellMessage( CellMessage cm ) throws NotSerializableException {
+  public CellMessage( CellMessage cm ) throws SerializationException {
      if( cm._mode == ORIGINAL_MODE ){
         _originalToStream( cm ) ;
      }else{
@@ -152,7 +152,8 @@ public boolean equals( Object obj ){
      _isPersistent  = cm._isPersistent ;
      _isAcknowledge = cm._isAcknowledge ;
   }
-  private void _originalToStream( CellMessage cm ) throws NotSerializableException {
+  private void _originalToStream( CellMessage cm )
+      throws SerializationException {
      _copyInternalStuff( cm ) ;
      _mode          = STREAM_MODE ;
      //
@@ -164,15 +165,19 @@ public boolean equals( Object obj ){
          array = new ByteArrayOutputStream() ;
          out   = new ObjectOutputStream( array ) ;
          out.writeObject( cm._message ) ;
-     }catch( InvalidClassException ice ){
-        throw new NotSerializableException( "IO Error on writeObject(InvalidClassException)" ) ;
-     }catch( IOException ioe ){
-        throw new NotSerializableException( "IO Error on writeObject(IOException)" ) ;
+     } catch (InvalidClassException e) {
+         throw new SerializationException("Failed to serialize object: "
+                                          + e + "(this is usually a bug)", e);
+     } catch (NotSerializableException e) {
+         throw new SerializationException("Failed to serialize object because the object is not serializable (this is usually a bug)", e);
+     } catch (IOException e) {
+         throw new SerializationException("Failed to serialize object: " + e, e);
      }
      _messageStream = array.toByteArray() ;
 
   }
-  private void _streamToOriginal( CellMessage cm ) throws NotSerializableException {
+  private void _streamToOriginal( CellMessage cm )
+      throws SerializationException {
      _copyInternalStuff( cm ) ;
      _mode         = ORIGINAL_MODE ;
      ByteArrayInputStream in     = null ;
@@ -181,10 +186,10 @@ public boolean equals( Object obj ){
         in       = new ByteArrayInputStream( cm._messageStream ) ;
         stream   = new ObjectInputStream( in ) ;
         _message = stream.readObject() ;
-     }catch( ClassNotFoundException ioe ){
-        throw new NotSerializableException( "IO Error on readObject(InvalidClassException)" ) ;
-     }catch( IOException ioe ){
-        throw new NotSerializableException( "IO Error on readObject(IOException)" ) ;
+     } catch (ClassNotFoundException e) {
+         throw new SerializationException("Failed to deserialize object: The class could not be found. Is there a software version mismatch in your installation?", e);
+     } catch (IOException e) {
+         throw new SerializationException("Failed to deserialize object: " + e, e);
      }
 
   }

@@ -120,8 +120,6 @@ public class RoutingManager
             CellPath path = new CellPath(destinationManager);
             String[] arr = all.toArray(new String[0]);
             _nucleus.resendMessage(new CellMessage(path, arr));
-        } catch (NotSerializableException e) {
-            throw new RuntimeException("Bug: Unserializable vehicle detected.", e);
         } catch (NoRouteToCellException e) {
             /* This normally happens when there is no default route.
              */

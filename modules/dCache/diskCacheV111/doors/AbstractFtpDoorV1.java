@@ -89,7 +89,6 @@ import java.io.PrintWriter;
 import java.io.BufferedReader;
 import java.io.FilenameFilter;
 import java.io.OutputStream;
-import java.io.NotSerializableException;
 import java.net.Socket;
 import java.net.InetSocketAddress;
 import java.lang.reflect.InvocationTargetException;
@@ -790,9 +789,6 @@ public abstract class AbstractFtpDoorV1
             } catch (NoRouteToCellException e) {
                 error("FTP Door: couldn't send door request data to " +
                       "billing database: " + e.getMessage());
-            } catch (NotSerializableException e) {
-                reportBug("sendDoorRequestInfo", "unserializable vehicle " +
-                          "detected sending to billing cell: ", e);
             }
         }
     }
@@ -1451,10 +1447,6 @@ public abstract class AbstractFtpDoorV1
                     } catch (NoRouteToCellException e) {
                         error("FTP Door: can't send message to Space " +
                               "Manager: " + e.getMessage());
-                    } catch (NotSerializableException e) {
-                        reportBug("messageArrived",
-                                  " Can't send to SpaceManager. " +
-                                  " Unserializable vehicle detected", e);
                     }
                 }
                 StorageInfo storageInfo = reply.getStorageInfo();
@@ -2546,10 +2538,6 @@ public abstract class AbstractFtpDoorV1
                             ". Got error: " + e.getMessage();
             error(errmsg);
             throw new SendAndWaitException(errmsg, e);
-        } catch (NotSerializableException e) {
-            reportBug("sendAndWait",
-                      "got NotSerializableException for path '" + path + "'",
-                      e);
         }
 
         if (replyMessage == null) {
@@ -2825,8 +2813,6 @@ public abstract class AbstractFtpDoorV1
             sendMessage(pnfsCellMessage);
         } catch (NoRouteToCellException e) {
             error("FTP Door: setLength cannot send message " + e.getMessage());
-        } catch (NotSerializableException e) {
-            reportBug("setLength", "unserializable vehicle detected", e);
         }
     }
 
@@ -3114,8 +3100,6 @@ public abstract class AbstractFtpDoorV1
                                           _perfMarkerConf.period,
                                           _perfMarkerConf.period);
             }
-        } catch (NotSerializableException e) {
-            transfer_error(451, "Operation failed due to internal error ", e);
         } catch (FTPCommandException e) {
             transfer_error(e.getCode(), e.getReply());
         } catch (InterruptedException e) {
@@ -3511,10 +3495,6 @@ public abstract class AbstractFtpDoorV1
                      * hurry (most likely domain shutdown). We are
                      * shutting down anyway, so continue doing that...
                      */
-                } catch (NotSerializableException e) {
-                    reportBug("transfer_error",
-                              "got NotSerializableException sending message " +
-                              "to SpaceManager", e);
                 } catch (NoRouteToCellException e) {
                     error("FTP Door: Transfer error. Can't send message to " +
                           _transfer.pool + ": " + e.getMessage());
@@ -3529,10 +3509,6 @@ public abstract class AbstractFtpDoorV1
                          _transfer.spaceReservationInfo.getAvailableLockedSize());
                     sendMessage(new CellMessage(new CellPath("SpaceManager"),
                                                 unlockSpace ));
-                } catch (NotSerializableException e) {
-                    reportBug("transfer_error",
-                              "got NotSerializableException sending message " +
-                              "to SpaceManager", e);
                 } catch (NoRouteToCellException e) {
                     error("FTP Door: transfer_error: cannot send " +
                           "message to SpaceManager: no route to cell.");
@@ -4139,15 +4115,10 @@ public abstract class AbstractFtpDoorV1
         {
             initLoggingContext();
 
-            try {
-                CellMessage msg =
-                    new CellMessage(new CellPath(_pool),
-                                    "mover ls -binary " + _moverId);
-                sendMessage(msg, this, _timeout);
-            } catch (NotSerializableException e) {
-                reportBug("run", "got NotSerializableException sending " +
-                          "mover ls message to pool'" + _pool + "'", e);
-            }
+            CellMessage msg =
+                new CellMessage(new CellPath(_pool),
+                                "mover ls -binary " + _moverId);
+            sendMessage(msg, this, _timeout);
         }
 
         public synchronized void exceptionArrived(CellMessage request, Exception exception)

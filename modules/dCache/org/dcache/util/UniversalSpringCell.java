@@ -13,7 +13,6 @@ import java.io.FileWriter;
 import java.io.StringWriter;
 import java.io.PrintWriter;
 import java.io.IOException;
-import java.io.NotSerializableException;
 import java.io.FileReader;
 import java.io.BufferedReader;
 import java.lang.reflect.InvocationTargetException;
@@ -287,8 +286,6 @@ public class UniversalSpringCell
                                          _setupClass, sw.toString());
 
                 sendMessage(new CellMessage(new CellPath(controller), info));
-            } catch (NotSerializableException e) {
-                throw new RuntimeException("Bug detected: Unserializable vehicle", e);
             } catch (NoRouteToCellException e) {
                 throw new NoRouteToCellException("Failed to send setup to " + controller + ": " + e.getMessage());
             }

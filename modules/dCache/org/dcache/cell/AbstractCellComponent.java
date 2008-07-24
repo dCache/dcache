@@ -1,7 +1,6 @@
 package org.dcache.cell;
 
 import java.io.PrintWriter;
-import java.io.NotSerializableException;
 import java.util.Dictionary;
 
 import dmg.util.Args;
@@ -10,6 +9,7 @@ import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.CellMessageAnswerable;
+import dmg.cells.nucleus.SerializationException;
 
 public class AbstractCellComponent
     implements CellInfoProvider,
@@ -61,13 +61,13 @@ public class AbstractCellComponent
      * Sends <code>envelope</code>.
      *
      * @param envelope the cell message to be sent.
-     * @throws NotSerializableException if the payload object of this
+     * @throws SerializationException if the payload object of this
      *         message is not serializable.
      * @throws NoRouteToCellException if the destination could not be
      *         reached.
      */
     protected void sendMessage(CellMessage envelope)
-        throws NotSerializableException,
+        throws SerializationException,
                NoRouteToCellException
     {
         _endpoint.sendMessage(envelope);
@@ -83,13 +83,13 @@ public class AbstractCellComponent
      * @param callback specifies an object class which will be informed
      *                 as soon as the message arrives.
      * @param timeout  is the timeout in msec.
-     * @exception NotSerializableException if the payload object of this
+     * @exception SerializationException if the payload object of this
      *            message is not serializable.
      */
     protected void sendMessage(CellMessage envelope,
                                CellMessageAnswerable callback,
                                long timeout)
-        throws NotSerializableException
+        throws SerializationException
     {
         _endpoint.sendMessage(envelope, callback, timeout);
     }
@@ -108,13 +108,13 @@ public class AbstractCellComponent
      * @param envelope the cell message to be sent.
      * @param timeout milliseconds to wait for an answer.
      * @return the answer or null if the timeout was reached.
-     * @throws NotSerializableException if the payload object of this
+     * @throws SerializationException if the payload object of this
      *         message is not serializable.
      * @throws NoRouteToCellException if the destination
      *         couldnot be reached.
      */
     protected CellMessage sendAndWait(CellMessage envelope, long timeout)
-        throws NotSerializableException,
+        throws SerializationException,
                NoRouteToCellException,
                InterruptedException
     {

@@ -2,7 +2,6 @@ package org.dcache.services.pinmanager1;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.InvocationTargetException;
-import java.io.NotSerializableException;
 
 import diskCacheV111.vehicles.Message;
 
@@ -80,22 +79,14 @@ class SMCTask implements CellMessageAnswerable
 
     public void sendMessage(CellPath path, Message message, long timeout)
     {
-        try {
-            _cell.sendMessage(new CellMessage(path, message),
-                              true, true, this, timeout);
-        } catch (NotSerializableException e) {
-            throw new RuntimeException("Bug detected", e);
-        }
+        _cell.sendMessage(new CellMessage(path, message),
+                          true, true, this, timeout);
     }
 
     public void sendMessage(CellPath path, Message message)
         throws NoRouteToCellException
     {
-        try {
-            _cell.sendMessage(new CellMessage(path, message));
-        } catch (NotSerializableException e) {
-            throw new RuntimeException("Bug detected", e);
-        }
+        _cell.sendMessage(new CellMessage(path, message));
     }
 
     public String getCellName() {

@@ -23,7 +23,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
 import java.io.PrintWriter;
-import java.io.NotSerializableException;
 
 import org.apache.log4j.Logger;
 
@@ -92,8 +91,6 @@ public class HsmFlushController
                sendMessage(message);
            } catch (NoRouteToCellException e) {
                esay("Problem replying : " + message + " " + e);
-           } catch (NotSerializableException e) {
-               throw new RuntimeException("Unserializable vehicle", e);
            }
        }
     }
@@ -128,8 +125,6 @@ public class HsmFlushController
                    sendMessage(_message);
                 } catch (NoRouteToCellException e) {
                    esay("Problem replying : " + _message + " " + e);
-                } catch (NotSerializableException e) {
-                    throw new RuntimeException("Unserializable vehicle", e);
                 }
             }
         }
@@ -143,8 +138,6 @@ public class HsmFlushController
                     sendMessage(_message);
                 } catch (NoRouteToCellException e) {
                     esay("Problem replying : " + _message + " " + e);
-                } catch (NotSerializableException e) {
-                    throw new RuntimeException("Unserializable vehicle", e);
                 }
             }
         }

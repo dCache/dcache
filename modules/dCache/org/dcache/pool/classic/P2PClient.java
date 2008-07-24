@@ -8,7 +8,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.RandomAccessFile;
-import java.io.NotSerializableException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -448,12 +447,8 @@ public class P2PClient
 
         synchronized private void sendMessage(String destination, Message message, long timeout)
         {
-            try {
-                P2PClient.this.sendMessage(new CellMessage(new CellPath(destination), message),
+            P2PClient.this.sendMessage(new CellMessage(new CellPath(destination), message),
                                            this, timeout);
-            } catch (NotSerializableException e) {
-                throw new RuntimeException("Bug: Unserializable vehicle found", e);
-            }
         }
 
         synchronized private void sendStorageInfoRequest()

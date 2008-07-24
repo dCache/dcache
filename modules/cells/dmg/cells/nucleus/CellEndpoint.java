@@ -1,6 +1,5 @@
 package dmg.cells.nucleus;
 
-import java.io.NotSerializableException;
 import java.util.Dictionary;
 import dmg.util.Args;
 
@@ -24,13 +23,13 @@ public interface CellEndpoint
     * Sends <code>envelope</code>.
     *
     * @param envelope the cell message to be sent.
-    * @throws NotSerializableException if the payload object of this
+    * @throws SerializationException if the payload object of this
     *         message is not serializable.
     * @throws NoRouteToCellException if the destination could not be
     *         reached.
     */
     void sendMessage(CellMessage envelope)
-        throws NotSerializableException,
+        throws SerializationException,
                NoRouteToCellException;
 
    /**
@@ -43,13 +42,13 @@ public interface CellEndpoint
     * @param callback specifies an object class which will be informed
     *                 as soon as the message arrives.
     * @param timeout  is the timeout in msec.
-    * @exception NotSerializableException if the payload object of this
+    * @exception SerializationException if the payload object of this
     *            message is not serializable.
     */
     void sendMessage(CellMessage envelope,
                      CellMessageAnswerable callback,
                      long timeout)
-        throws NotSerializableException;
+        throws SerializationException;
 
    /**
     * Sends <code>envelope</code> and waits <code>timeout</code>
@@ -65,13 +64,13 @@ public interface CellEndpoint
     * @param envelope the cell message to be sent.
     * @param timeout milliseconds to wait for an answer.
     * @return the answer or null if the timeout was reached.
-    * @throws NotSerializableException if the payload object of this
+    * @throws SerializationException if the payload object of this
     *         message is not serializable.
     * @throws NoRouteToCellException if the destination
     *         couldnot be reached.
     */
     CellMessage sendAndWait(CellMessage envelope, long timeout)
-        throws NotSerializableException,
+        throws SerializationException,
                NoRouteToCellException,
                InterruptedException;
 

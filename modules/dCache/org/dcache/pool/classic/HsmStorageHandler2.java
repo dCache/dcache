@@ -4,7 +4,6 @@ package org.dcache.pool.classic;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.NotSerializableException;
 import java.io.PrintWriter;
 import java.io.RandomAccessFile;
 import java.io.BufferedReader;
@@ -498,8 +497,6 @@ public class HsmStorageHandler2
         {
             try {
                 sendMessage(new CellMessage(new CellPath("billing"), _infoMsg));
-            } catch (NotSerializableException e) {
-                throw new RuntimeException("Bug: Unserializable vehicle.", e);
             } catch (NoRouteToCellException e) {
                 esay("Failed to send message to billing: " + e.getMessage());
             }
@@ -909,8 +906,6 @@ public class HsmStorageHandler2
         {
             try {
                 sendMessage(new CellMessage(new CellPath("billing"), _infoMsg));
-            } catch (NotSerializableException e) {
-                throw new RuntimeException("Bug: Unserializable vehicle.", e);
             } catch (NoRouteToCellException e) {
                 esay("Failed to send message to billing: " + e.getMessage());
             }
@@ -1111,8 +1106,6 @@ public class HsmStorageHandler2
                     new CellMessage(new CellPath(_flushMessageTarget),
                                     poolFileFlushedMessage);
                 sendMessage(msg);
-            } catch (NotSerializableException e) {
-                throw new RuntimeException("Bug: Unserializable vehicle." , e);
             } catch (NoRouteToCellException e) {
                 _logRepository.info("failed to send message to flushMessageTarget (" + _flushMessageTarget + ") : " + e.getMessage());
             }

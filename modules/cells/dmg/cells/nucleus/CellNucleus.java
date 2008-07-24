@@ -224,14 +224,14 @@ public class CellNucleus implements Runnable, ThreadFactory {
     }
 
     public void   sendMessage(CellMessage msg)
-        throws NotSerializableException,
+        throws SerializationException,
                NoRouteToCellException    {
 
         sendMessage(msg, true, true);
 
     }
     public void   resendMessage(CellMessage msg)
-        throws NotSerializableException,
+        throws SerializationException,
                NoRouteToCellException    {
 
         sendMessage(msg, false, true);
@@ -240,7 +240,7 @@ public class CellNucleus implements Runnable, ThreadFactory {
     public void   sendMessage(CellMessage msg,
                               boolean locally,
                               boolean remotely)
-        throws NotSerializableException,
+        throws SerializationException,
                NoRouteToCellException    {
 
         if (!msg.isStreamMode()) {
@@ -250,7 +250,7 @@ public class CellNucleus implements Runnable, ThreadFactory {
 
     }
     public CellMessage   sendAndWait(CellMessage msg, long timeout)
-        throws NotSerializableException,
+        throws SerializationException,
                NoRouteToCellException,
                InterruptedException      {
         return sendAndWait(msg, true, true, timeout);
@@ -260,7 +260,7 @@ public class CellNucleus implements Runnable, ThreadFactory {
                                    boolean local,
                                    boolean remote,
                                    long    timeout)
-        throws NotSerializableException,
+        throws SerializationException,
                NoRouteToCellException,
                InterruptedException
     {
@@ -342,7 +342,7 @@ public class CellNucleus implements Runnable, ThreadFactory {
                             boolean remote,
                             CellMessageAnswerable callback,
                             long timeout)
-        throws NotSerializableException
+        throws SerializationException
     {
         if (!msg.isStreamMode()) {
             msg.touch();
@@ -610,7 +610,7 @@ public class CellNucleus implements Runnable, ThreadFactory {
                         try {
                             answer = new CellMessage(msg);
                             obj    = answer.getMessageObject();
-                        } catch(NotSerializableException nse) {
+                        } catch(SerializationException nse) {
                             obj = nse;
                         }
                         if (_runAsyncCallback) {
