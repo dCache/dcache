@@ -10,7 +10,7 @@ import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.services.multicaster.BroadcastRegisterMessage;
 import dmg.cells.services.multicaster.BroadcastUnregisterMessage;
 
-/** 
+/**
  * TimerTask to periodically register a broadcast subscription.
  */
 public class BroadcastRegistrationTask extends TimerTask
@@ -34,19 +34,19 @@ public class BroadcastRegistrationTask extends TimerTask
     }
 
     public void run()
-    {   
+    {
         register();
     }
-    
+
     /**
      * Sends a registration message to the broadcast cell.
-     * 
+     *
      * Communication failures are logged and then ignored.
      */
     public void register()
     {
         try {
-            BroadcastRegisterMessage message = 
+            BroadcastRegisterMessage message =
                 new BroadcastRegisterMessage(_eventClass, _target);
             _cell.sendMessage(new CellMessage(_broadcast, message));
         } catch (NotSerializableException e) {
@@ -58,13 +58,13 @@ public class BroadcastRegistrationTask extends TimerTask
 
     /**
      * Sends an unregistration message to the broadcast cell.
-     *     
+     *
      * Communication failures are logged and then ignored.
      */
     public void unregister()
     {
         try {
-            BroadcastUnregisterMessage message = 
+            BroadcastUnregisterMessage message =
                 new BroadcastUnregisterMessage(_eventClass, _target);
             _cell.sendMessage(new CellMessage(_broadcast, message));
         } catch (NotSerializableException e) {

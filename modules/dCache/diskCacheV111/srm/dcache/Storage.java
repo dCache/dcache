@@ -9,28 +9,28 @@ COPYRIGHT STATUS:
   and software for U.S. Government purposes.  All documents and software
   available from this server are protected under the U.S. and Foreign
   Copyright Laws, and FNAL reserves all rights.
- 
- 
+
+
  Distribution of the software available from this server is free of
  charge subject to the user following the terms of the Fermitools
  Software Legal Information.
- 
+
  Redistribution and/or modification of the software shall be accompanied
  by the Fermitools Software Legal Information  (including the copyright
  notice).
- 
+
  The user is asked to feed back problems, benefits, and/or suggestions
  about the software to the Fermilab Software Providers.
- 
- 
+
+
  Neither the name of Fermilab, the  URA, nor the names of the contributors
  may be used to endorse or promote products derived from this software
  without specific prior written permission.
- 
- 
- 
+
+
+
   DISCLAIMER OF LIABILITY (BSD):
- 
+
   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
   "AS IS" AND ANY EXPRESS OR IMPLIED  WARRANTIES, INCLUDING, BUT NOT
   LIMITED TO, THE IMPLIED  WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -43,10 +43,10 @@ COPYRIGHT STATUS:
   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT  OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE  POSSIBILITY OF SUCH DAMAGE.
- 
- 
+
+
   Liabilities of the Government:
- 
+
   This software is provided by URA, independent from its Prime Contract
   with the U.S. Department of Energy. URA is acting independently from
   the Government and in its own private capacity and is not acting on
@@ -56,10 +56,10 @@ COPYRIGHT STATUS:
   be liable for nor assume any responsibility or obligation for any claim,
   cost, or damages arising out of or resulting from the use of the software
   available from this server.
- 
- 
+
+
   Export Control:
- 
+
   All documents and software available from this server are subject to U.S.
   export control laws.  Anyone downloading information from this server is
   obligated to secure any necessary Government licenses before exporting
@@ -215,18 +215,18 @@ public class Storage
     public static String srm_root = "";
     public static String kAuthFileName="dcache.kpwd";
     private static boolean kludgeDomainMainWasRun = false;
-    
+
     /* these are the  protocols
      * that are not sutable for either put or get */
     public static final String[] SRM_PUT_NOT_SUPPORTED_PROTOCOLS = {
         "http"};
-    
+
     public static final String[] SRM_GET_NOT_SUPPORTED_PROTOCOLS = {
     };
-    
+
     public static final String[] SRM_PREFERED_PROTOCOLS =
     { "gsiftp","gsidcap"};
-    
+
     private Args           _args;
     //    private ManagerImpl srm_manager;
     //    private SRMServerV1 srm_manager_v1;
@@ -242,7 +242,7 @@ public class Storage
     private CellPath loginBrokerPath;
     private SRM srm;
     private int __poolManagerTimeout = 60;
-    private String remoteGridftpTransferManagerName = 
+    private String remoteGridftpTransferManagerName =
         "RemoteGsiftpTransferManager";
     private final Configuration config = new Configuration();
     private Thread storageInfoUpdateThread;
@@ -250,19 +250,19 @@ public class Storage
     private static final Object syncObj = new Object();
     private boolean ignoreClientProtocolOrder; //falseByDefault
     private boolean customGetHostByAddr; //falseByDefault
-      
-    
+
+
     private LoginBrokerHandler _loginBrokerHandler = null ;
-    
+
     // public static SRM getSRMInstance(String xmlConfigPath)
     public static SRM getSRMInstance(final String[] dCacheParams,
             long timeout)
             throws BadSRMObjectException {
-        
+
         System.out.println("Here are the params/args to go to dCache:\n");
         for(int i = 0 ; i < dCacheParams.length; ++i)
             System.out.println(dCacheParams[i]);
-        
+
         System.out.println(new java.util.Date() +
                 ":  entering Storage.getSRMInstance");
         if (srmInstance != null) {
@@ -270,21 +270,21 @@ public class Storage
                     ":  in Storage.getSRMInstance(), about to " +
                     "return existing srmInstance");
             return srmInstance;
-        } 
+        }
 	else {
             // TODO:  Here is the kludge to keep from calling Domain.main
             //        twice, and therefore trying to create 2 instances
             //        of SRM.  We need a better solution than this...
-            
+
             if (!kludgeDomainMainWasRun) {
-		
+
                 System.out.println(new java.util.Date() +
                         ":  in Storage.getSRMInstance(),  " +
                         "srmInstance is null, " +
                         "about to call Domain.main()");
                 new Thread() {
                     public void run() {
-                        
+
                         // Calling the main method and passing some
                         // arguments is kludgey.  But, we have no other
                         // way of calling Domain; we
@@ -295,7 +295,7 @@ public class Storage
                         dmg.cells.services.Domain.main(dCacheParams);
                     }
                 }.start();
-                
+
                 System.out.println(new java.util.Date() +
                     ":  in Storage.getSRMInstance(), " +
                     "started thread that will call " +
@@ -329,9 +329,9 @@ public class Storage
                 " about to return the instance of srm");
         return srmInstance;
     }
-    
-    
-    
+
+
+
     /**
      * Creates the instance of the CRMCell
      *
@@ -340,23 +340,23 @@ public class Storage
      * @param  argString
      *         arguments
      */
-    
+
     public Storage(final String name, String argString) throws Exception {
-        
+
         super(name , Storage.class.getName(), argString , false );
-        
+
         String tmsg = "";
-        
+
         tmsg = "In Storage constructor, back from super constructor.";
         System.out.println(new java.util.Date() + " " + tmsg);
-        
+
         say(tmsg);
         tmsg = "Starting SRM cell named " + name;
         System.out.println(new java.util.Date() + " " + tmsg);
         say(tmsg);
-        
+
         _args      = getArgs() ;
-        
+
         _poolManagerName = getOption("poolManager", "PoolManager" );
         _pnfsManagerName = getOption("pnfsManager" , "PnfsManager") ;
         _poolMgrPath     = new CellPath( _poolManagerName ) ;
@@ -383,57 +383,57 @@ public class Storage
         _pnfs.setPnfsTimeout(__pnfsTimeout*1000);
         __poolManagerTimeout =getIntOption("pool-manager-timeout",
             __poolManagerTimeout);
-        
+
         config.setPort(getIntOption("srmport",config.getPort()));
         config.setSizeOfSingleRemoveBatch(getIntOption("size-of-single-remove-batch",config.getSizeOfSingleRemoveBatch()));
 	config.setGlue_mapfile(getOption("srmmap",config.getGlue_mapfile()));
-        
+
         config.setKpwdfile( getOption("kpwd-file",config.getKpwdfile()) );
         config.setUseGplazmaAuthzCellFlag(isOptionSetToTrueOrYes(
             "use-gplazma-authorization-cell",
             config.getUseGplazmaAuthzCellFlag()));
-        
+
         config.setDelegateToGplazmaFlag(isOptionSetToTrueOrYes(
             "delegate-to-gplazma",
             config.getDelegateToGplazmaFlag()));
-        
+
         config.setUseGplazmaAuthzModuleFlag(isOptionSetToTrueOrYes(
             "use-gplazma-authorization-module",
             config.getUseGplazmaAuthzModuleFlag()));
-        
+
         config.setAuthzCacheLifetime( getOption("srm-authz-cache-lifetime",
             config.getAuthzCacheLifetime()) );
-        config.setGplazmaPolicy(getOption("gplazma-authorization-module-policy", 
+        config.setGplazmaPolicy(getOption("gplazma-authorization-module-policy",
             config.getGplazmaPolicy()) );
 
         srm_root = getOption("pnfs-srm-path",srm_root);
         config.setSrm_root(srm_root);
-        
-        config.setProxies_directory(getOption("proxies-directory", 
+
+        config.setProxies_directory(getOption("proxies-directory",
             config.getProxies_directory()) );
-        
+
         config.setUrlcopy(getOption("url-copy-command",
             config.getUrlcopy()));
-        
+
         config.setTimeout_script(getOption("timeout-command",
             config.getTimeout_script()));
-        
+
         config.setTimeout(getIntOption("timout",config.getTimeout()));
-        
+
         config.setBuffer_size(getIntOption("buffer_size",
             config.getBuffer_size()));
-        
+
         config.setTcp_buffer_size(getIntOption("tcp_buffer_size",
             config.getTcp_buffer_size()));
-        
+
         config.setParallel_streams(getIntOption("parallel_streams",
             config.getParallel_streams()));
-        
+
         config.setSrmhost(getOption("srmhost",config.getSrmhost()));
-        
+
         config.setStart_server(isOptionSetToTrueOrYes("start_server",
             config.isStart_server()) );
-        
+
         config.setDebug(isOptionSetToTrueOrYes("debug", config.isDebug()));
         tmpstr =  _args.getOpt("usekftp");
         if(tmpstr != null && tmpstr.equalsIgnoreCase("true")) {
@@ -441,64 +441,64 @@ public class Storage
         } else {
             config.setGsiftpclinet("globus-url-copy");
         }
-        
+
         config.setUseUrlcopyScript(isOptionSetToTrueOrYes("use-urlcopy-script",
             config.isUseUrlcopyScript()));
-        
+
         config.setUseDcapForSrmCopy(
             isOptionSetToTrueOrYes("use-dcap-for-srm-copy",
             config.isUseDcapForSrmCopy()));
-        
+
         config.setUseGsiftpForSrmCopy(
             isOptionSetToTrueOrYes("use-gsiftp-for-srm-copy",
             config.isUseGsiftpForSrmCopy()));
-        
+
         config.setUseHttpForSrmCopy(isOptionSetToTrueOrYes("use-http-for-srm-copy",
             config.isUseHttpForSrmCopy()));
-        
+
         config.setUseFtpForSrmCopy(isOptionSetToTrueOrYes("use-ftp-for-srm-copy",
             config.isUseFtpForSrmCopy()));
-        
+
         config.setGetLifetime(getLongOption(
             "get-lifetime",config.getGetLifetime()));
         config.setPutLifetime(getLongOption(
             "put-lifetime",config.getPutLifetime()));
         config.setCopyLifetime(getLongOption("copy-lifetime",
             config.getCopyLifetime()));
-        
+
         config.setRecursiveDirectoryCreation(isOptionSetToTrueOrYes(
             "recursive-dirs-creation",config.isRecursiveDirectoryCreation()));
-        
+
         config.setAdvisoryDelete(isOptionSetToTrueOrYes("advisory-delete",
             config.isAdvisoryDelete()));
-        
+
         config.setRemoveFile(isOptionSetToTrueOrYes("rm",config.isRemoveFile()));
-        
+
         config.setRemoveDirectory(isOptionSetToTrueOrYes("rmdir",
             config.isRemoveDirectory()));
-        
+
         config.setCreateDirectory(isOptionSetToTrueOrYes("mkdir",
             config.isCreateDirectory()));
-        
+
         config.setMoveEntry(isOptionSetToTrueOrYes("mv",config.isMoveEntry()));
-        
+
         config.setSaveMemory(isOptionSetToTrueOrYes("save-memory",
             config.isSaveMemory()));
-        
+
         config.setReserve_space_implicitely(isOptionSetToTrueOrYes(
             "reserve-space-implicitly",config.isReserve_space_implicitely()));
-        
+
         config.setSpace_reservation_strict(isOptionSetToTrueOrYes(
             "space-reservation-strict",config.isSpace_reservation_strict()));
-        
-        
+
+
         config.setGetPriorityPolicyPlugin(getOption("get-priority-policy",
             config.getGetPriorityPolicyPlugin()));
         config.setPutPriorityPolicyPlugin(getOption("put-priority-policy",
             config.getPutPriorityPolicyPlugin()));
         config.setCopyPriorityPolicyPlugin(getOption("copy-priority-policy",
             config.getCopyPriorityPolicyPlugin()));
-        
+
         String jdbcPass = _args.getOpt("dbPass");
         String jdbcPwdfile = _args.getOpt("pgPass");
         if((jdbcPass==null && jdbcPwdfile==null)) {
@@ -515,9 +515,9 @@ public class Storage
             config.setJdbcPwdfile(jdbcPwdfile);
              say("jdbc info : JDBC Password file:"+jdbcPwdfile);
         }
-        
+
         // scheduler parameters
-        
+
         config.setGetReqTQueueSize( getIntOption("get-req-thread-queue-size",
             config.getGetReqTQueueSize()));
         config.setGetThreadPoolSize(getIntOption("get-req-thread-pool-size",
@@ -565,37 +565,37 @@ public class Storage
         config.setCopyMaxRunningBySameOwner(
             getIntOption("copy-req-max-num-of-running-by-same-owner",
             config.getCopyMaxRunningBySameOwner()));
-        
+
         config.setConnect_to_wsdl(isOptionSetToTrueOrYes("connect-to-wsdl",
             config.isConnect_to_wsdl()));
         config.setStorage_info_update_period( getLongOption(
             "storage-info-update-period",
             config.getStorage_info_update_period()));
-        
+
         config.setVacuum(isOptionSetToTrueOrYes( "vacuum",
-            config.isVacuum()));        
+            config.isVacuum()));
         config.setVacuum_period_sec( getLongOption("vacuum-period",
             config.getVacuum_period_sec()));
-        
+
         config.setGetRequestRestorePolicy(getOption("get-request-restore-policy",
             config.getGetRequestRestorePolicy()));
         config.setPutRequestRestorePolicy(getOption("put-request-restore-policy",
             config.getPutRequestRestorePolicy()));
         config.setCopyRequestRestorePolicy(getOption("copy-request-restore-policy",
             config.getCopyRequestRestorePolicy()));
-        
+
         LOGINBROKERINFO_VALIDITYSPAN = getLongOption("login-broker-update-period",
             LOGINBROKERINFO_VALIDITYSPAN);
-        
+
         numDoorInRanSelection = getIntOption("num-doors-in-rand-selection",
             numDoorInRanSelection);
-        
+
         config.setNumDaysHistory(getIntOption("num-days-history",
             config.getNumDaysHistory()));
         config.setOldRequestRemovePeriodSecs(
             getLongOption("old-request-remove-period-secs",
             config.getOldRequestRemovePeriodSecs()));
-        
+
         if( _args.getOpt("max-queued-jdbc-tasks-num") != null) {
             config.setMaxQueuedJdbcTasksNum(new Integer(getIntOption(
                 "max-queued-jdbc-tasks-num")));
@@ -608,18 +608,18 @@ public class Storage
 
         config.setCredentialsDirectory(getOption("credentials-dir",
             config.getCredentialsDirectory()));
-        
+
         config.setJdbcMonitoringEnabled(isOptionSetToTrueOrYes("jdbc-monitoring-log",
             config.isJdbcMonitoringEnabled())); // false by default
         config.setJdbcMonitoringDebugLevel(isOptionSetToTrueOrYes("jdbc-monitoring-debug",
             config.isJdbcMonitoringDebugLevel())); // false by default
-        
+
         config.setOverwrite(isOptionSetToTrueOrYes("overwrite",
             config.isOverwrite())); //false by default
-        
+
         config.setOverwrite_by_default(isOptionSetToTrueOrYes("overwrite_by_default",
             config.isOverwrite_by_default())); //false by default
-        
+
         customGetHostByAddr = isOptionSetToTrueOrYes("custom-get-host-by-addr",
             customGetHostByAddr);
 
@@ -630,7 +630,7 @@ public class Storage
         config.setCredentialsDirectory(getOption("credentials-dir",
             config.getCredentialsDirectory()));
 
-        
+
         tmpstr = _args.getOpt("use_lambdastation");
 	if(tmpstr != null) {
 	    if (tmpstr.equalsIgnoreCase("true")) {
@@ -648,7 +648,7 @@ public class Storage
 	else {
 	    config.setLambdaStationEnabled(false);
 	}
-	    
+
 	tmpstr = _args.getOpt("lambdastation_script");
 	if(tmpstr != null) {
 	    config.setLambda_station_script(tmpstr);
@@ -660,42 +660,42 @@ public class Storage
         say("scheduler parameter read, starting");
         this.useInterpreter(true);
         this.getNucleus().export();
-        
+
         _loginBrokerHandler = new LoginBrokerHandler() ;
         addCommandListener( _loginBrokerHandler ) ;
-        
+
         this.start();
         try {
             Thread.sleep(5000);
         } catch(InterruptedException ie) {
         }
-        
+
         tmpstr = _args.getOpt("gsissl");
         if(tmpstr !=null) {
             config.setGsissl(tmpstr.equalsIgnoreCase("true"));
             if(config.isGsissl()) {
                 config.setWebservice_protocol("https");
-                
+
                 config.setAuthorization(
                     DCacheAuthorization.getDCacheAuthorization(
-                    config.getUseGplazmaAuthzCellFlag(), 
-                    config.getDelegateToGplazmaFlag(), 
-                    config.getUseGplazmaAuthzModuleFlag(), 
-                    config.getGplazmaPolicy(), 
-                    config.getAuthzCacheLifetime(), 
-                    config.getKpwdfile(), 
+                    config.getUseGplazmaAuthzCellFlag(),
+                    config.getDelegateToGplazmaFlag(),
+                    config.getUseGplazmaAuthzModuleFlag(),
+                    config.getGplazmaPolicy(),
+                    config.getAuthzCacheLifetime(),
+                    config.getKpwdfile(),
                     this));
             } else {
                 config.setWebservice_protocol("http");
             }
-            
+
         } else {
             config.setWebservice_protocol("http");
         }
-        
+
         config.setSrmUserPersistenceManager(new DCacheUserPersistanceManager());
         config.setStorage(this);
-        
+
         //getNucleus().newThread( new Runnable(){
         //   public void run() {
         String ttmsg;
@@ -705,7 +705,7 @@ public class Storage
             say(ttmsg);
             System.out.println(
                     new java.util.Date() + " " + ttmsg);
-            
+
             srm = new SRM(config,name);
             ttmsg = "In anonymous inner class, srm instantiated.";
             say(ttmsg);
@@ -728,33 +728,33 @@ public class Storage
         tmsg = "starting storage info update  thread ...";
         say(tmsg);
         System.out.println(new java.util.Date() + " " + tmsg);
-        
+
         storageInfoUpdateThread = getNucleus().newThread(this);
         storageInfoUpdateThread.start();
-        
+
         tmsg = "In Storage constructor, about to get/set srmInstance.";
         say(tmsg);
         System.out.println(new java.util.Date() + " " + tmsg);
-        
+
         synchronized(syncObj) {
             srmInstance = srm;
             System.out.println("srmInstance is not null, srmInstance="+srmInstance);
             syncObj.notifyAll();
         }
-        
+
         tmsg =
                 "srmInstance was set, about to exit Storage constructor.";
         say(tmsg);
         System.out.println(new java.util.Date() + " " + tmsg);
     }
-    
+
     private String getOption(String value) {
         String tmpstr = _args.getOpt(value);
         if(tmpstr == null || tmpstr.length() == 0)  {
             throw new IllegalArgumentException("option "+value+" is not set");
         }
         return tmpstr;
-        
+
     }
 
     private String getOption(String value, String default_value) {
@@ -764,21 +764,21 @@ public class Storage
         }
        return tmpstr;
     }
-    
+
     private boolean isOptionSetToTrueOrYes(String value) {
         String tmpstr = _args.getOpt(value);
         return tmpstr != null &&
-            (tmpstr.equalsIgnoreCase("true") || 
+            (tmpstr.equalsIgnoreCase("true") ||
              tmpstr.equalsIgnoreCase("on")   ||
              tmpstr.equalsIgnoreCase("yes")  ||
              tmpstr.equalsIgnoreCase("enabled") ) ;
     }
-    
+
     private boolean isOptionSetToTrueOrYes(String value, boolean default_value) {
         String tmpstr = _args.getOpt(value);
        if( tmpstr != null && tmpstr.length() > 0) {
             return
-             tmpstr.equalsIgnoreCase("true") || 
+             tmpstr.equalsIgnoreCase("true") ||
              tmpstr.equalsIgnoreCase("on")   ||
              tmpstr.equalsIgnoreCase("yes")  ||
              tmpstr.equalsIgnoreCase("enabled") ;
@@ -786,7 +786,7 @@ public class Storage
             return default_value;
        }
     }
-    
+
     private long getLongOption(String value) throws IllegalArgumentException {
         String tmpstr = _args.getOpt(value);
         if(tmpstr == null || tmpstr.length() == 0)  {
@@ -818,7 +818,7 @@ public class Storage
         }
        return Integer.parseInt(tmpstr);
     }
-    
+
     public void getInfo( java.io.PrintWriter printWriter ) {
         StringBuffer sb = new StringBuffer();
         sb.append("SRM Cell");
@@ -849,12 +849,12 @@ public class Storage
             _loginBrokerHandler.getInfo( printWriter ) ;
         }
     }
-    
-    public CellVersion getCellVersion(){ 
+
+    public CellVersion getCellVersion(){
         return new CellVersion(
-        diskCacheV111.util.Version.getVersion(),"$Revision$" ); 
+        diskCacheV111.util.Version.getVersion(),"$Revision$" );
     }
-    
+
     public String fh_db_history_log= " Syntax: db history log [on|off] "+
         "# show status or enable db history log ";
     public String hh_db_history_log= " [on|off] " +
@@ -867,18 +867,18 @@ public class Storage
                     " disabled");
         }
         String on_off= args.argv(0);
-        if(!on_off.equals("on") && 
+        if(!on_off.equals("on") &&
             !on_off.equals("off")) {
             return "syntax error";
         }
-        
+
         config.setJdbcMonitoringEnabled(on_off.equals("on"));
         return "db history logging is " +(
                 config.isJdbcMonitoringEnabled()?
                     " enabled":
                     " disabled");
     }
-    
+
     public String fh_db_debug_history_log= " Syntax: db debug history log [on|off] "+
         "# show status or enable db history log ";
     public String hh_db_debug_history_log= " [on|off] " +
@@ -891,11 +891,11 @@ public class Storage
                     " disabled");
         }
         String on_off= args.argv(0);
-        if(!on_off.equals("on") && 
+        if(!on_off.equals("on") &&
             !on_off.equals("off")) {
             return "syntax error";
         }
-        
+
         config.setJdbcMonitoringDebugLevel(on_off.equals("on"));
         return "db debug history logging is " +(
                 config.isJdbcMonitoringDebugLevel()?
@@ -916,7 +916,7 @@ public class Storage
             return e.toString();
         }
     }
-    
+
     public String fh_cancelall= " Syntax: cancel [-get] [-put] [-copy] <pattern> ";
     public String hh_cancelall= " [-get] [-put] [-copy] <pattern> ";
     public String ac_cancelall_$_1(Args args) {
@@ -928,7 +928,7 @@ public class Storage
                 get=true;
                 put=true;
                 copy=true;
-                
+
             }
             String pattern = args.argv(0);
             StringBuffer sb = new StringBuffer();
@@ -974,7 +974,7 @@ public class Storage
                     put=true;
                     copy=true;
                     bring=true;
-                    
+
                 }
                 if(get) {
                     sb.append("Get Requests:\n");
@@ -1015,13 +1015,13 @@ public class Storage
             boolean bring=args.getOpt("bring") != null;
             boolean longformat = args.getOpt("l") != null;
             StringBuffer sb = new StringBuffer();
-            
+
             if( !get && !put && !copy && !bring ) {
                 get=true;
                 put=true;
                 copy=true;
                 bring=true;
-                
+
             }
             if(get) {
                 sb.append("Get Request Scheduler:\n");
@@ -1057,7 +1057,7 @@ public class Storage
             return t.toString();
         }
     }
-    
+
 
     public String fh_lambdastation= " Syntax: labmdastation [<on|off>] ";
     public String hh_lambdastation= " on|off";
@@ -1079,7 +1079,7 @@ public class Storage
 	    else {
 		return "off";
 	    }
-	    
+
 	}catch(Throwable t) {
             t.printStackTrace();
             return t.toString();
@@ -1103,12 +1103,12 @@ public class Storage
         if(args.argc() == 1) {
             max_count = Integer.parseInt(args.argv(0));
         }
-        
+
         if( !get && !put && !copy ) {
             get=true;
             put=true;
             copy=true;
-            
+
         }
         StringBuffer sb = new StringBuffer();
         if(get) {
@@ -1128,7 +1128,7 @@ public class Storage
         }
         return sb.toString();
     }
-    
+
     public String fh_reserve= " This is a function for testing space reservation\n"+
             " it will be removed when space reservation client becomes available"+
             " Syntax: reserve <voGroup> <voRole> <size> <lifetime> <accessLatency>" +
@@ -1159,12 +1159,12 @@ public class Storage
                 esay("admin command SrmReserveSpace failed: "+reason);
                 pin("admin command SrmReserveSpace failed: "+reason);
             }
-            
+
             public void NoFreeSpace(String reason){
                 esay("admin command SrmReserveSpace failed: NoFreeSpace: "+reason);
                 pin("admin command SrmReserveSpace failed: NoFreeSpace:"+reason);
             }
-            
+
             public void SpaceReserved(String spaceReservationToken,
                 long reservedSpaceSize){
                 esay("admin command SrmReserveSpace succeded:");
@@ -1173,24 +1173,24 @@ public class Storage
                 pin("admin command SrmReserveSpace succeded:");
                 pin("token ="+spaceReservationToken+" reservationSize="+
                     reservedSpaceSize);
-                
+
             }
-            
+
             public void ReserveSpaceFailed(Exception e){
                 esay("admin command SrmReserveSpace failed: ");
                 esay(e);
                 pin("admin command SrmReserveSpace failed: ");
                 pin(e.toString());
             }
-            
+
         });
         return " request submitted, watch logs and pins";
     }
-    
+
     public String fh_set_job_priority= " Syntax: set priority <requestId> <priority>"+
             "will set priority for the requestid";
     public String hh_set_job_priority=" <requestId> <priority>";
-    
+
     public String ac_set_job_priority_$_2(Args args) {
         StringBuffer sb = new StringBuffer();
         String s1 = args.argv(0);
@@ -1230,8 +1230,8 @@ public class Storage
             return t.toString();
         }
     }
-    
-    
+
+
     public String fh_set_max_ready_put= " Syntax: set max ready put <count>"+
             " #will set a maximum number of put requests in the ready state";
     public String hh_set_max_ready_put= " <count>";
@@ -1245,7 +1245,7 @@ public class Storage
         say("put-req-max-ready-requests="+value);
         return "put-req-max-ready-requests="+value;
     }
-    
+
     public String fh_set_max_ready_get= " Syntax: set max ready get <count>"+
             " #will set a maximum number of get requests in the ready state";
     public String hh_set_max_ready_get= " <count>";
@@ -1259,14 +1259,14 @@ public class Storage
         say("get-req-max-ready-requests="+value);
         return "get-req-max-ready-requests="+value;
     }
-    
+
       public String fh_dir_creators_ls= " Syntax: dir creators ls [-l]  "+
          "#will list all put companion waiting for the dir creation ";
       public String hh_dir_creators_ls= " [-l] ";
       public String ac_dir_creators_ls_$_0(Args args) {
         try {
-            boolean longformat = args.getOpt("l") != null;         
-            StringBuffer sb = new StringBuffer();   
+            boolean longformat = args.getOpt("l") != null;
+            StringBuffer sb = new StringBuffer();
             PutCompanion.listDirectoriesWaitingForCreation(sb,longformat);
             return sb.toString();
          } catch(Throwable t) {
@@ -1280,7 +1280,7 @@ public class Storage
       public String ac_cancel_dir_creation_$_1(Args args) {
         try {
             String pnfsPath = args.argv(0);
-            StringBuffer sb = new StringBuffer();   
+            StringBuffer sb = new StringBuffer();
             PutCompanion.failCreatorsForPath(pnfsPath,sb);
             return sb.toString();
          } catch(Throwable t) {
@@ -1320,7 +1320,7 @@ public class Storage
             }
             return sb.toString();
         }
-         
+
         public String fh_rc_queued_ls= " Syntax: rc queued ls "+
          "[-get] [-put] [-copy] [-l]"+
         "#will list queued requests";
@@ -1352,7 +1352,7 @@ public class Storage
             }
             return sb.toString();
         }
-         
+
         public String fh_rc_pending_ls= " Syntax: rc pending ls "+
          "[-get] [-put] [-copy] [-l]"+
         "#will list pending requests";
@@ -1384,7 +1384,7 @@ public class Storage
             }
             return sb.toString();
         }
-         
+
         public String fh_rc_ready_ls= " Syntax: rc ready ls "+
          "[-get] [-put] [-copy] [-l]"+
         " #will list ready requests";
@@ -1416,7 +1416,7 @@ public class Storage
             }
             return sb.toString();
         }
-         
+
         public String fh_rc_failed_ls= " Syntax: rc failed ls "+
          "[-get] [-put] [-copy] [-l]"+
         "#will list failed requests";
@@ -1448,7 +1448,7 @@ public class Storage
             }
             return sb.toString();
         }
-         
+
         public String fh_rc_done_ls= " Syntax: rc done ls "+
          "[-get] [-put] [-copy] [-l]"+
         " #will list done requests";
@@ -1480,7 +1480,7 @@ public class Storage
             }
             return sb.toString();
         }
-         
+
         public String hh_set_max_running_get_requests = "<max-get-requests>";
         public String ac_set_max_running_get_requests_$_1(Args args) {
             int req_num = Integer.parseInt(args.argv(0)) ;
@@ -1493,7 +1493,7 @@ public class Storage
         //config.setMaxActiveGet(req_num);
             return "set max number of active get requests to "+req_num;
         }
-         
+
         public String hh_set_max_running_put_requests = "<max-put-requests>";
         public String ac_set_max_running_put_requests_$_1(Args args) {
             int req_num = Integer.parseInt(args.argv(0)) ;
@@ -1506,7 +1506,7 @@ public class Storage
            // config.setMaxActivePut(req_num);
             return "set max number of active put requests to "+req_num;
         }
-         
+
         public String hh_set_max_running_copy_requests = "<max-copy-requests>";
         public String ac_set_max_running_copy_requests_$_1(Args args) {
             int req_num = Integer.parseInt(args.argv(0)) ;
@@ -1519,7 +1519,7 @@ public class Storage
             //config.setMaxActiveCopy(req_num);
             return "set max number of active copy requests to "+req_num;
         }
-         
+
         public String hh_set_max_done_get_requests =
         "<max-done-get-requests> #set the maximum number "+
         "of completed request to be stored for reference purposes";
@@ -1534,7 +1534,7 @@ public class Storage
         //config.setMaxDoneGet(req_num);
             return "set max number of done get requests to "+req_num;
         }
-         
+
         public String hh_set_max_done_put_requests =
         "<max-done-put-requests> #set the maximum number "+
         "of completed request to be stored for reference purposes";
@@ -1549,7 +1549,7 @@ public class Storage
             //config.setMaxDonePut(req_num);
             return "set max number of done put requests to "+req_num;
         }
-         
+
         public String hh_set_max_done_copy_requests =
         "<max-done-copy-requests> #set the maximum number "+
         "of completed request to be stored for reference purposes";
@@ -1564,7 +1564,7 @@ public class Storage
             //config.setMaxDoneCopy(req_num);
             return "set max number of done copy requests to "+req_num;
         }
-         
+
         public String hh_set_get_lifetime =
         "<get-request-lifetime (sec)> #set the lifetime "+
         "of get request";
@@ -1578,7 +1578,7 @@ public class Storage
         //config.setGetLifetime(lifetime);
             return "set lifetime of future get requests to "+lifetime+" seconds";
         }
-         
+
         public String hh_set_put_lifetime =
         "<put-request-lifetime (sec)> #set the lifetime "+
         "of put request";
@@ -1592,7 +1592,7 @@ public class Storage
             config.setPutLifetime(lifetime);
             return "set lifetime of future put requests to "+lifetime+" seconds";
         }
-         
+
         public String hh_set_copy_lifetime =
         "<copy-request-lifetime (sec)> #set the lifetime "+
         "of copy request";
@@ -1606,7 +1606,7 @@ public class Storage
             config.setCopyLifetime(lifetime);
             return "set lifetime of future copy requests to "+lifetime+" seconds";
         }
-         
+
         public String hh_set_gsiftp_streams = "<num-of-gsiftp-parallel-streams>";
         public String ac_set_gsiftp_streams_$_1(Args args) {
             int streams = Integer.parseInt(args.argv(0)) ;
@@ -1619,8 +1619,8 @@ public class Storage
         }
          *
          */
-    
-    
+
+
     /**
      * Receives the Cell Messages
      * we currently process messages received as the
@@ -1631,7 +1631,7 @@ public class Storage
      *         cellMessage Object containing the actual message
      *
      */
-    
+
     public void messageArrived( CellMessage cellMessage ) {
         final Object o = cellMessage.getMessageObject();
             /*if(o instanceof RemoteGsiftpDelegateUserCredentialsMessage ) {
@@ -1647,7 +1647,7 @@ public class Storage
                  {
                      delegate(remoteCredential,host,port);
                  }}).start();
-             
+
                 return;
             }
             else*/
@@ -1658,21 +1658,21 @@ public class Storage
                 }
             });
         }
-        
+
         super.messageArrived(cellMessage);
     }
-    
+
     public void exceptionArrived(ExceptionEvent ee) {
         say("Exception Arrived: "+ee);
         super.exceptionArrived(ee);
     }
 
-    
+
 //     private boolean isCached(StorageInfo storage_info, PnfsId _pnfsId) {
 // 	    PnfsGetCacheLocationsMessage msg = new PnfsGetCacheLocationsMessage(_pnfsId);
 // 	    CellMessage checkMessage = new CellMessage( _pnfsPath, msg );
 // 	    say("isCached: Waiting for PnfsGetCacheLocationsMessage reply from PnfsManager");
-// 	    try { 
+// 	    try {
 // 		    checkMessage = sendAndWait(checkMessage,
 // 					       __pnfsTimeout*1000 ) ;
 // 		    if(checkMessage == null) {
@@ -1680,12 +1680,12 @@ public class Storage
 // 			    return false;
 // 		    }
 // 		    msg = (PnfsGetCacheLocationsMessage) checkMessage.getMessageObject() ;
-// 	    } 
+// 	    }
 // 	    catch(Exception ee ) {
 // 		    esay("isCached(): error receiving message back from PnfsManager : "+ee);
 // 		    return false;
 // 	    }
-// 	    if (msg.getReturnCode()!=0) { 
+// 	    if (msg.getReturnCode()!=0) {
 // 		    esay("isCached(): Failed to get PnfsGetCacheLocationsMessage");
 // 		    return false;
 // 	    }
@@ -1697,8 +1697,8 @@ public class Storage
 // 	    say(sb.toString());
 // 	    return (msg.getCacheLocations().isEmpty()==false);
 //     }
-	    
-	    
+
+
 
     private boolean isCached(StorageInfo storage_info, PnfsId _pnfsId) {
          PoolMgrQueryPoolsMsg query =
@@ -1708,7 +1708,7 @@ public class Storage
                        "*/*",
                        config.getSrmhost(),
                        null);
-	
+
          CellMessage checkMessage = new CellMessage( _poolMgrPath , query ) ;
          say("isCached: Waiting for PoolMgrQueryPoolsMsg reply from PoolManager");
          try {
@@ -1718,12 +1718,12 @@ public class Storage
                  return false;
              }
              query = (PoolMgrQueryPoolsMsg) checkMessage.getMessageObject() ;
-         } 
+         }
  	catch(Exception ee ) {
              esay("isCached(): error receiving message back from PoolManager : "+ee);
              return false;
          }
-      
+
          if( query.getReturnCode() != 0 ) {
              say( "storageInfo Available") ;
          }
@@ -1731,72 +1731,72 @@ public class Storage
              List assumedLocations = _pnfs.getCacheLocations(_pnfsId) ;
              List<String> [] lists = query.getPools() ;
              HashMap hash = new HashMap() ;
-          
+
              for( int i = 0 ; i < lists.length ; i++ ) {
                  Iterator nn = lists[i].iterator() ;
                  while( nn.hasNext() ) {
                      hash.put( nn.next() , "" ) ;
                  }
              }
-          
+
              Iterator nn = assumedLocations.iterator() ;
-          
+
              while( nn.hasNext() ) {
                  if( hash.get( nn.next() ) != null ) {
                      return true;
                  }
              }
-         } 
+         }
  	catch(Exception e) {
              say("isCached exception : "+ e);
  	    e.printStackTrace();
          }
          return false;
      }
-    
-    
-    
-    
+
+
+
+
     public void log(String s) {
         say(s);
     }
-    
+
     public void elog(String s) {
         esay(s);
     }
-    
+
     public void elog(Throwable t) {
         esay(t);
     }
-    
+
     public void pinFile(SRMUser user,
-        String fileId, 
+        String fileId,
         String clientHost,
-        FileMetaData fmd, 
+        FileMetaData fmd,
         long pinLifetime,
-        long requestId, 
+        long requestId,
         PinCallbacks callbacks) {
         DcacheFileMetaData dfmd = (DcacheFileMetaData) fmd;
-        PinCompanion.pinFile((DCacheUser)user, 
-            fileId, 
+        PinCompanion.pinFile((DCacheUser)user,
+            fileId,
             clientHost,
-            callbacks, dfmd, pinLifetime, requestId, this);        
+            callbacks, dfmd, pinLifetime, requestId, this);
     }
-    
+
     public void unPinFile(SRMUser user,String fileId,
             UnpinCallbacks callbacks,
             String pinId) {
         UnpinCompanion.unpinFile((DCacheUser)user, fileId, pinId, callbacks,this);
     }
-    
-    
+
+
     public void unPinFileBySrmRequestId(SRMUser user,String fileId,
             UnpinCallbacks callbacks,
             long srmRequestId) {
         UnpinCompanion.unpinFileBySrmRequestId((DCacheUser)user, fileId, srmRequestId, callbacks,this);
     }
-    
-    
+
+
     public String selectGetProtocol(String[] protocols)
     throws SRMException {
         //say("selectGetProtocol("+protocols+")");
@@ -1807,10 +1807,10 @@ public class Storage
             esay("can not find sutable get protocol");
             throw new SRMException("can not find sutable get protocol");
         }
-        
+
          /*
           * this is incorrect, need to select on basis of client's preferences
-          * But we need to continue doing this while old srmcp clients 
+          * But we need to continue doing this while old srmcp clients
           * are out there in the wild
           */
          if(ignoreClientProtocolOrder) {
@@ -1820,17 +1820,17 @@ public class Storage
                 }
              }
          }
-        
+
          for(int i = 0; i<protocols.length; ++i) {
             if(available_protocols.contains(protocols[i])) {
                 return protocols[i];
             }
         }
-        
+
         // we should never get here
         throw new SRMException("can not find sutable get protocol");
     }
-    
+
     public String selectPutProtocol(String[] protocols)
     throws SRMException {
         //say("selectPutProtocol("+protocols+")");
@@ -1841,10 +1841,10 @@ public class Storage
             esay("can not find sutable put protocol");
             throw new SRMException("can not find sutable put protocol");
         }
-        
+
          /*
           *this is incorrect, need to select on basis of client's preferences
-          * But we need to continue doing this while old srmcp clients 
+          * But we need to continue doing this while old srmcp clients
           * are out there in the wild
           */
          if(ignoreClientProtocolOrder) {
@@ -1854,24 +1854,24 @@ public class Storage
                 }
              }
          }
-         
-        
+
+
         for(int i = 0; i<protocols.length; ++i) {
             if(available_protocols.contains(protocols[i])) {
                 return protocols[i];
             }
         }
-        
+
         // we should never get here
         throw new SRMException("can not find sutable put protocol");
     }
-    
+
     public String[] supportedGetProtocols()
     throws SRMException {
         HashSet protocols = this.listAvailableProtocols();
         return (String[]) protocols.toArray(new String[0]);
     }
-    
+
     public String[] supportedPutProtocols()
     throws SRMException {
         HashSet protocols = this.listAvailableProtocols();
@@ -1881,25 +1881,25 @@ public class Storage
         }
         return (String[]) protocols.toArray(new String[0]);
     }
-    
+
     public String selectGetHost(String protocol,String fileId)
     throws SRMException {
         return this.selectHost(protocol);
     }
-    
+
     public String selectPutHost(String protocol)
     throws SRMException {
         return this.selectHost(protocol);
     }
-    
-    
+
+
     public String getGetTurl(SRMUser user,String path,String[] protocols)
     throws SRMException {
         path = srm_root+"/"+path;
         String protocol = selectGetProtocol(protocols);
         return getTurl(path,protocol,user);
     }
-    
+
     public String getGetTurl(SRMUser user,String filePath,
             String previous_turl)
             throws SRMException {
@@ -1911,7 +1911,7 @@ public class Storage
             esay(mue);
             throw new SRMException("illegal previous turl :"+mue);
         }
-        
+
         String host = prev_turl.getHost();
         int port = prev_turl.getPort();
         if(port > 0) {
@@ -1919,16 +1919,16 @@ public class Storage
         }
         return getTurl(actualFilePath, prev_turl.getProtocol(),host, user);
     }
-    
+
     public String getPutTurl(SRMUser user,String path,String[] protocols)
     throws SRMException {
         path=srm_root+"/"+path;
         String protocol = this.selectPutProtocol(protocols);
         return getTurl(path,protocol,user);
     }
-    
-    
-    public String getPutTurl(SRMUser user, String filePath, String previous_turl) 
+
+
+    public String getPutTurl(SRMUser user, String filePath, String previous_turl)
     throws SRMException {
         String actualFilePath = srm_root+"/"+filePath;
         if(actualFilePath == null) {
@@ -1948,9 +1948,9 @@ public class Storage
         }
         return getTurl(actualFilePath, prev_turl.getProtocol(),host, user);
     }
-    
-    
-    
+
+
+
     private String getTurl(String path,String protocol,SRMUser user)
     throws SRMException {
         if(path == null) {
@@ -1974,9 +1974,9 @@ public class Storage
         String turl = protocol+"://"+host+"/"+transfer_path;
         log("getTurl() returns turl="+turl);
         return turl;
-        
+
     }
-    
+
     private String getTurl(String path,String protocol,String host,SRMUser user)
     throws SRMException {
         if(path == null) {
@@ -2000,9 +2000,9 @@ public class Storage
         log("getTurl() returns turl="+turl);
         return turl;
     }
-    
+
     private boolean verifyUserPathIsRootSubpath(String absolutePath, SRMUser user) {
-        
+
         if(absolutePath == null) {
             return false;
         }
@@ -2014,8 +2014,8 @@ public class Storage
                 user_root =new FsPath(user_root).toString();
             }
         }
-        
-        
+
+
         absolutePath = new FsPath(absolutePath).toString();
         if(user_root!= null) {
             log("getTurl() user root is "+user_root);
@@ -2026,14 +2026,14 @@ public class Storage
                 elog(error);
                 return false;
             }
-            
+
         }
         return true;
     }
-    
+
     private String getTurlPath(String path,String protocol,SRMUser user)
     throws SRMException {
-        
+
         say("getTurlPath(path="+path+",protocol="+protocol+",user="+user);
         if(!verifyUserPathIsRootSubpath(path,user)) {
             throw new SRMAuthorizationException("user's path "+path+
@@ -2047,29 +2047,29 @@ public class Storage
                 user_root =new FsPath(user_root).toString();
             }
         }
-        
+
         String transfer_path = new FsPath(path).toString();
         if(protocol.equals("gsiftp") && user_root != null) {
             transfer_path = "/".concat(
                     transfer_path.substring(user_root.length()));
         }
-        
+
         log("getTurl()  transfer_path = "+transfer_path);
         return transfer_path;
     }
-    
+
     public LoginBrokerInfo[] getLoginBrokerInfos()
     throws SRMException {
         return getLoginBrokerInfos((String)null);
     }
-    
+
     public static final int MAX_LOGIN_BROKER_RETRIES=5;
-    
+
     private class LoginBrokerCompanion implements CellMessageAnswerable {
         public boolean answered = false;
         public LoginBrokerInfo[] loginBrokerInfos ; //null by default
         public String error; //null by default, error is indicated by error being nonnull
-        
+
         public void answerArrived( CellMessage request ,
                 CellMessage answer    ) {
             int i = 0;
@@ -2082,40 +2082,40 @@ public class Storage
                 failedNotify("getLoginBrokerInfos: loginBroker answer is null");
                 return;
             }
-            
+
             if(!(o instanceof  dmg.cells.services.login.LoginBrokerInfo[]) ) {
                 failedNotify("getLoginBrokerInfos: login broker returned o ="+o);
                 return;
             }
             LoginBrokerInfo[] _loginBrokerInfos = (LoginBrokerInfo[]) o;
-            
+
             successNotify(_loginBrokerInfos);
         }
-        
+
         public void exceptionArrived( CellMessage request ,
                 Exception   exception ) {
             esay(exception);
             failedNotify("request failed"+exception);
         }
-        
+
         public void answerTimedOut( CellMessage request ) {
             esay("LoginBrokerCompanion.answerTimedOut()");
             failedNotify("request timed out");
         }
-        
+
         public synchronized void successNotify(LoginBrokerInfo[] loginBrokerInfos ) {
             this.loginBrokerInfos =loginBrokerInfos ;
             answered = true;
             notifyAll();
         }
-        
+
         public synchronized void failedNotify(String error) {
             say("LoginBrokerCompanion.failedNotify("+error+")");
             this.error =error ;
             answered = true;
             notifyAll();
         }
-        
+
         public void waitForAnswer() throws InterruptedException {
             while(true) {
                 synchronized(this) {
@@ -2138,7 +2138,7 @@ public class Storage
             new java.util.Hashtable();
     // 30 secs in millisecond
     private long LOGINBROKERINFO_VALIDITYSPAN =30*1000;
-    
+
     public LoginBrokerInfo[] getLoginBrokerInfos(String protocol)
     throws SRMException {
         String key = protocol == null ? "null" : protocol;
@@ -2153,11 +2153,11 @@ public class Storage
                 }
             }
         }
-        
+
         if(loginBrokerPath == null) {
             loginBrokerPath = new CellPath(loginBrokerName);
         }
-        
+
         String brokerMessage = "ls -binary";
         if(protocol != null) {
             brokerMessage = brokerMessage+" -protocol="+protocol;
@@ -2191,7 +2191,7 @@ public class Storage
             }
             break;
         }
-        
+
         if(companion.error != null) {
             throw new SRMException(" communication with Login Broker failed with"+
                 companion.error);
@@ -2200,7 +2200,7 @@ public class Storage
         latestLoginBrokerInfos.put(key,  companion.loginBrokerInfos);
         return companion.loginBrokerInfos;
     }
-    
+
     public HashSet listAvailableProtocols()
     throws SRMException {
         HashSet protocols = new HashSet();
@@ -2211,15 +2211,15 @@ public class Storage
             if(!protocols.contains(protocol)) {
                 protocols.add(protocol);
             }
-            
+
         }
-        
+
         return protocols;
     }
-    
+
     public boolean isLocalTransferUrl(String url)
     throws SRMException {
-        
+
         GlobusURL gurl;
         try {
             gurl = new GlobusURL(url);
@@ -2233,18 +2233,18 @@ public class Storage
         }
         String host = gurl.getHost();
         int port = gurl.getPort();
-        
+
         for(int i=0;i<loginBrokerInfos.length;++i) {
             if(loginBrokerInfos[i].getHost().equals(host)  &&
                     loginBrokerInfos[i].getPort() == port) {
                 return true;
             }
         }
-        
+
         return false;
     }
-    
-    
+
+
     public String selectHost(String protocol)
     throws SRMException {
         say("selectHost("+protocol+")");
@@ -2252,11 +2252,11 @@ public class Storage
         LoginBrokerInfo[]loginBrokerInfos = getLoginBrokerInfos(protocol);
         return selectHost(loginBrokerInfos);
     }
-    
+
     private Random rand = new Random();
-    
+
     int numDoorInRanSelection=3;
-    
+
     public String selectHost(LoginBrokerInfo[]loginBrokerInfos)
     throws SRMException {
         java.util.Arrays.sort(loginBrokerInfos,new java.util.Comparator(){
@@ -2270,11 +2270,11 @@ public class Storage
                 return 1;
             } });
             int len = loginBrokerInfos.length;
-            
+
             if(len <=0){
                 return null;
             }
-            
+
             int selected_indx = rand.nextInt(java.lang.Math.min(len,
                 numDoorInRanSelection));
             LoginBrokerInfo selectedDoor = loginBrokerInfos[selected_indx];
@@ -2282,33 +2282,33 @@ public class Storage
             try {
                 InetAddress address = InetAddress.getByName(thehost);
                 thehost = address.getHostName();
-                if ( customGetHostByAddr && thehost.toUpperCase().equals( 
+                if ( customGetHostByAddr && thehost.toUpperCase().equals(
                     thehost.toLowerCase() )  ) {// must be an IP address
                         thehost = getHostByAddr( address.getAddress() );
                 }
-                
+
             } catch(IOException ioe) {
                 esay("selectHost "+ioe);
                 throw new SRMException("selectHost "+ioe);
             }
-            
+
             say("selectHost returns "+
                     thehost+":"+ selectedDoor.getPort());
             return thehost+":"+ selectedDoor.getPort();
     }
-    
-    
+
+
     /**
-     * Next two functions are 
-     * BNL's contribution 
+     * Next two functions are
+     * BNL's contribution
      */
-    
+
         private static Map resolve(String name, String[] attrIds)
             throws NamingException {
 
             Map map = new HashMap();
             DirContext ctx = new InitialDirContext();
-            javax.naming.directory.Attributes attrs = 
+            javax.naming.directory.Attributes attrs =
                     ctx.getAttributes(name, attrIds);
 
             if (attrs == null) {
@@ -2317,7 +2317,7 @@ public class Storage
                 /* get each attribute */
                 for (NamingEnumeration ae = attrs.getAll();
                      ae != null && ae.hasMoreElements();) {
-                    javax.naming.directory.Attribute attr = 
+                    javax.naming.directory.Attribute attr =
                             (javax.naming.directory.Attribute)ae.next();
                     String attrID = attr.getID();
                     java.util.List l = new java.util.ArrayList();
@@ -2332,7 +2332,7 @@ public class Storage
             return map;
         }
 
-        private static String getHostByAddr(byte[] addr) 
+        private static String getHostByAddr(byte[] addr)
         throws java.net.UnknownHostException {
             try {
                 String literalip = "";
@@ -2365,19 +2365,19 @@ public class Storage
                 throw new java.net.UnknownHostException(e.getMessage());
             }
         }
-      
+
 
     //
     // create a RequestStatus with state set to "Failed"
     //
-    
-    
-    
-    
-    
-    
-    
-    public void getFileInfo(SRMUser user, String filePath, 
+
+
+
+
+
+
+
+    public void getFileInfo(SRMUser user, String filePath,
         GetFileInfoCallbacks callbacks) {
         String actualPnfsPath= srm_root+"/"+filePath;
         if(!verifyUserPathIsRootSubpath(actualPnfsPath,user)) {
@@ -2390,13 +2390,13 @@ public class Storage
                 callbacks,
                 this);
     }
-    
+
     public void unPin(String pnfsPath, String pinId) {
-        
+
     }
-    
-    public void prepareToPut(SRMUser user, 
-            String filePath, 
+
+    public void prepareToPut(SRMUser user,
+            String filePath,
             PrepareToPutCallbacks callbacks,
             boolean overwrite) {
         String actualPnfsPath = srm_root+"/"+filePath;
@@ -2408,10 +2408,10 @@ public class Storage
                 config.isRecursiveDirectoryCreation(),
                 overwrite);
     }
-    
-	
-	
-    public void setFileMetaData(SRMUser user, FileMetaData fmd) 
+
+
+
+    public void setFileMetaData(SRMUser user, FileMetaData fmd)
         throws SRMException {
         DcacheFileMetaData dfmd=null;
         if(!(fmd instanceof DcacheFileMetaData)) {
@@ -2423,14 +2423,14 @@ public class Storage
                 " , size="+dfmd.getFmd().getFileSize()+")");
 
 
-        dfmd.getFmd().setUserPermissions( 
-                new diskCacheV111.util.FileMetaData.Permissions ( 
+        dfmd.getFmd().setUserPermissions(
+                new diskCacheV111.util.FileMetaData.Permissions (
                 (dfmd.permMode >> 6 ) & 0x7 ) ) ;
         dfmd.getFmd().setGroupPermissions(
-                new diskCacheV111.util.FileMetaData.Permissions ( 
+                new diskCacheV111.util.FileMetaData.Permissions (
                 (dfmd.permMode >> 3 ) & 0x7 )) ;
-        dfmd.getFmd().setWorldPermissions( 
-                new diskCacheV111.util.FileMetaData.Permissions( 
+        dfmd.getFmd().setWorldPermissions(
+                new diskCacheV111.util.FileMetaData.Permissions(
                 dfmd.permMode  & 0x7 ) ) ;
 
 
@@ -2445,7 +2445,7 @@ public class Storage
 
 // 		_pnfs.pnfsSetFileMetaData(dfmd.getPnfsId(),dfmd.getFmd());
 
-        PnfsSetFileMetaDataMessage msg = 
+        PnfsSetFileMetaDataMessage msg =
             new PnfsSetFileMetaDataMessage(dfmd.getPnfsId());
         msg.setMetaData(dfmd.getFmd());
         msg.setReplyRequired(true);
@@ -2456,7 +2456,7 @@ public class Storage
                                              new CellPath("PnfsManager") ,
                                              msg) ,
                                      __pnfsTimeout*1000);
-        } 
+        }
         catch (Exception e) {
                 String problem  = "Exception sending pnfs request : "+ e;
                 esay(problem);
@@ -2469,9 +2469,9 @@ public class Storage
             !(o instanceof PnfsSetFileMetaDataMessage)) {
                 esay("sent PnfsSetFileMetaDataMessage, received "+o+" back");
                 throw new SRMException("can set metadata "+fmd.SURL);
-        } 
+        }
         else {
-            PnfsSetFileMetaDataMessage reply  = 
+            PnfsSetFileMetaDataMessage reply  =
                 (PnfsSetFileMetaDataMessage) answer.getMessageObject();
             if (reply.getReturnCode() != 0) {
                     esay("SetFileMetaData  failed : "+fmd.SURL+
@@ -2485,18 +2485,18 @@ public class Storage
             }
         }
     }
-	
 
-    public FileMetaData getFileMetaData(SRMUser user, 
+
+    public FileMetaData getFileMetaData(SRMUser user,
 					String path)
         throws SRMException  {
         return getFileMetaData(user, path, null);
     }
-    
-    public FileMetaData getFileMetaData(SRMUser user, 
-					String path, 
-                                        FileMetaData parentFMD) 
-        throws SRMException {        
+
+    public FileMetaData getFileMetaData(SRMUser user,
+					String path,
+                                        FileMetaData parentFMD)
+        throws SRMException {
         say("getFileMetaData(" + path + ")");
         String absolute_path = srm_root + "/" + path;
         diskCacheV111.util.FileMetaData parent_util_fmd = null;
@@ -2518,13 +2518,13 @@ public class Storage
             PnfsGetStorageInfoMessage storage_info_msg = null;
             PnfsGetFileMetaDataMessage filemetadata_msg = null;
             if (parent_util_fmd == null) {
-                PnfsGetFileMetaDataMessage parent_filemetadata_msg = 
+                PnfsGetFileMetaDataMessage parent_filemetadata_msg =
                     _pnfs.getFileMetaDataByPath(parent);
                 parent_util_fmd = parent_filemetadata_msg.getMetaData();
             }
             try {
                 storage_info_msg = _pnfs.getStorageInfoByPath(absolute_path);
-            } 
+            }
 	    catch (CacheException e) {
                 filemetadata_msg = _pnfs.getFileMetaDataByPath(absolute_path);
             }
@@ -2532,16 +2532,16 @@ public class Storage
                 storage_info = storage_info_msg.getStorageInfo();
                 util_fmd = storage_info_msg.getMetaData();
                 pnfsId = storage_info_msg.getPnfsId();
-            } 
+            }
 	    else if(filemetadata_msg != null) {
                 util_fmd = filemetadata_msg.getMetaData();
                 pnfsId = filemetadata_msg.getPnfsId();
-            } 
+            }
 	    else {
                 esay("could not get storage info or file metadata by path ");
                 throw new SRMException(
                     "could not get storage info or file metadata by path ");
-                
+
             }
             if (duser == null) {
                 if (!permissionHandler.worldCanRead(
@@ -2551,44 +2551,44 @@ public class Storage
                     throw new SRMException("getFileMetaData have no read " +
                         "permission (or file does not exists) ");
                 }
-            } 
-        } 
+            }
+        }
 	catch (CacheException e) {
             say("could not get storage info by path : " +e.getMessage() +" rc="+e.getRc());
             throw new SRMException("could not get storage info by path : "+e);
         }
-	
+
         PnfsFlagMessage flag =
             new PnfsFlagMessage(pnfsId, "c", PnfsFlagMessage.FlagOperation.GET);
         try {
             flag.setReplyRequired(true);
-            CellMessage answer = 
-                sendAndWait(new CellMessage(new CellPath("PnfsManager"),flag), 
+            CellMessage answer =
+                sendAndWait(new CellMessage(new CellPath("PnfsManager"),flag),
 			    __pnfsTimeout * 1000);
             Object o = null;
             if (answer == null ||
-                (o = answer.getMessageObject()) == null|| 
+                (o = answer.getMessageObject()) == null||
                 !(o instanceof PnfsFlagMessage)) {
                 esay("sent PnfsFlagMessage to pnfs, received "+o+" back");
                 flag = null;
-            } 
+            }
 	    else {
                 flag = (PnfsFlagMessage)o;
             }
-        } 
+        }
 	catch (Exception e) {
             esay("Failed to get crc from PnfsManager : " + e);
             flag = null;
         }
         FileMetaData fmd =
-            getFileMetaData(user, absolute_path, pnfsId, 
+            getFileMetaData(user, absolute_path, pnfsId,
                             storage_info, util_fmd, flag);
         if (storage_info != null) {
 		fmd.isCached = isCached(storage_info, pnfsId);
         }
-	
-	try { 
-	    GetFileSpaceTokensMessage getSpaceTokensMessage = 
+
+	try {
+	    GetFileSpaceTokensMessage getSpaceTokensMessage =
                 new GetFileSpaceTokensMessage(pnfsId);
 	    CellMessage answer =  sendAndWait(
                 new CellMessage(
@@ -2598,44 +2598,44 @@ public class Storage
                 say("Failed to retrieve space reservation tokens for file "+
                     absolute_path+"("+pnfsId+")");
             }
-	    else { 
+	    else {
                 Object messageObject =answer.getMessageObject();
                 if(messageObject instanceof GetFileSpaceTokensMessage) {
-                    getSpaceTokensMessage = 
+                    getSpaceTokensMessage =
                         (GetFileSpaceTokensMessage)answer.getMessageObject();
                     if (getSpaceTokensMessage.getReturnCode() != 0) {
                         say("Failed to retrieve space reservation tokens for file "+
                             absolute_path+"("+pnfsId+")");
                     }
                     else {
-                        if (getSpaceTokensMessage.getSpaceTokens()!=null) { 
-                            fmd.spaceTokens = 
+                        if (getSpaceTokensMessage.getSpaceTokens()!=null) {
+                            fmd.spaceTokens =
                                 new long[getSpaceTokensMessage.getSpaceTokens().length];
                             System.arraycopy(getSpaceTokensMessage.getSpaceTokens(),0,
                                  fmd.spaceTokens,0,
                                 getSpaceTokensMessage.getSpaceTokens().length);
                         }
                     }
-                } 
+                }
                 else {
                    say("Failed to retrieve space reservation tokens for file "+
                     absolute_path+"("+pnfsId+") : "+messageObject);
                 }
 	    }
 	}
-	catch (Exception ee) { 
+	catch (Exception ee) {
 	    esay(ee);
 	}
         return fmd;
     }
-    
-    public static FileMetaData 
-        getFileMetaData(SRMUser user, 
+
+    public static FileMetaData
+        getFileMetaData(SRMUser user,
                         String absolute_path,
-                        PnfsId pnfsId, 
+                        PnfsId pnfsId,
                         StorageInfo storage_info,
                         diskCacheV111.util.FileMetaData util_fmd,
-                        PnfsFlagMessage flag) 
+                        PnfsFlagMessage flag)
     {
         boolean isRegular = false;
         boolean isLink = false;
@@ -2647,7 +2647,7 @@ public class Storage
         long lastAccessTime = 0;
         long size = 0;
         String group = null;
-        String owner = null;        
+        String owner = null;
         String checksum_type = null;
         String checksum_value = null;
         int permissions = 0;
@@ -2662,7 +2662,7 @@ public class Storage
             }
         }
 
-        if (util_fmd != null) {        
+        if (util_fmd != null) {
             owner=Integer.toString(util_fmd.getUid());
             group=Integer.toString(util_fmd.getGid());
             diskCacheV111.util.FileMetaData.Permissions perms =
@@ -2679,14 +2679,14 @@ public class Storage
             perms = util_fmd.getWorldPermissions();
             permissions |=    (perms.canRead()    ? 4 : 0) |
                 (perms.canWrite()   ? 2 : 0) |
-                (perms.canExecute() ? 1 : 0) ;        
+                (perms.canExecute() ? 1 : 0) ;
             isRegular = util_fmd.isRegularFile();
             isDirectory = util_fmd.isDirectory();
             isLink = util_fmd.isSymbolicLink();
             creationTime=util_fmd.getCreationTime();
             lastModificationTime=util_fmd.getLastModifiedTime();
             lastAccessTime=util_fmd.getLastAccessedTime();
-            size = util_fmd.getFileSize();            
+            size = util_fmd.getFileSize();
             fmd.setFmd(util_fmd);
         }
         if (storage_info != null) {
@@ -2694,40 +2694,40 @@ public class Storage
 	    TRetentionPolicy retention = null;
 	    TAccessLatency latency = null;
 	    if (storage_info.isSetRetentionPolicy()  && storage_info.getRetentionPolicy() != null) {
-		    if(storage_info.getRetentionPolicy().equals(RetentionPolicy.CUSTODIAL)) { 
+		    if(storage_info.getRetentionPolicy().equals(RetentionPolicy.CUSTODIAL)) {
 			    retention = TRetentionPolicy.CUSTODIAL;
-		    } 
-		    else if (storage_info.getRetentionPolicy().equals(RetentionPolicy.REPLICA)) { 
+		    }
+		    else if (storage_info.getRetentionPolicy().equals(RetentionPolicy.REPLICA)) {
 			    retention = TRetentionPolicy.REPLICA;
-		    } 
-		    else if (storage_info.getRetentionPolicy().equals(RetentionPolicy.OUTPUT)) { 
+		    }
+		    else if (storage_info.getRetentionPolicy().equals(RetentionPolicy.OUTPUT)) {
 			    retention = TRetentionPolicy.OUTPUT;
-		    } 
+		    }
             }
             if (storage_info.isSetAccessLatency() &&  storage_info.getAccessLatency() != null) {
-		    if(storage_info.getAccessLatency().equals(AccessLatency.ONLINE)) { 
+		    if(storage_info.getAccessLatency().equals(AccessLatency.ONLINE)) {
 			    latency = TAccessLatency.ONLINE;
-		    } 
-		    else if (storage_info.getAccessLatency().equals(AccessLatency.NEARLINE)) { 
+		    }
+		    else if (storage_info.getAccessLatency().equals(AccessLatency.NEARLINE)) {
 			    latency = TAccessLatency.NEARLINE;
 		    }
             }
-            // RetentionPolicy is non-nillable element of the 
+            // RetentionPolicy is non-nillable element of the
             // TRetentionPolicyInfo, if retetion is null, we shold leave
             // the whole retentionPolicyInfo null
             if(retention != null) {
-                fmd.retentionPolicyInfo = 
+                fmd.retentionPolicyInfo =
                     new TRetentionPolicyInfo(retention, latency);
             }
             fmd.setStorageInfo(storage_info);
 	    isStored=storage_info.isStored();
-	    if(storage_info.getMap()!=null) { 
-		    if (storage_info.getMap().get("writeToken")!=null) { 
+	    if(storage_info.getMap()!=null) {
+		    if (storage_info.getMap().get("writeToken")!=null) {
 			    fmd.spaceTokens = new long[1];
-			    try { 
+			    try {
 				    fmd.spaceTokens[0] = Long.parseLong(storage_info.getMap().get("writeToken"));
 			    }
-			    catch (Exception e) {} 
+			    catch (Exception e) {}
 		    }
 	    }
         }
@@ -2749,39 +2749,39 @@ public class Storage
 	fmd.isStored=isStored;
         return fmd;
     }
-    
-    
+
+
     private HashMap idToUserMap = new HashMap();
     private HashMap idToCredentialMap = new HashMap();
-    
+
     private String getUserById(long id) {
         say("getDcacheUserById("+id+")");
         synchronized(idToUserMap) {
             return (String) idToUserMap.get(new Long(id));
-            
+
         }
     }
-    
+
     private GSSCredential getCredentialById(long id) {
         say("getDcacheUserById("+id+")");
         synchronized(idToUserMap) {
             return (GSSCredential) idToCredentialMap.get(new Long(id));
-            
+
         }
     }
-    
+
     protected static long   nextMessageID = 20000 ;
-    
+
     private static synchronized long getNextMessageID() {
         if(nextMessageID == Long.MAX_VALUE) {
             nextMessageID = 20000;
             return Long.MAX_VALUE;
         }
         return nextMessageID++;
-        
+
     }
-    
-    
+
+
     public void localCopy(SRMUser user,String fromFilePath, String toFilePath)
     throws SRMException {
         String actualFromFilePath = srm_root+"/"+fromFilePath;
@@ -2798,7 +2798,7 @@ public class Storage
                 id,
                 config.getBuffer_size(),
                 config.getTcp_buffer_size());
-        
+
         CellMessage answer;
         try {
             answer = sendAndWait(new CellMessage(
@@ -2810,7 +2810,7 @@ public class Storage
             esay(emsg);
             throw new SRMException(emsg);
         }
-        
+
         if(answer == null) {
             String emsg = "timeout expired while waiting for answer from CopyManager";
             esay(emsg);
@@ -2835,18 +2835,18 @@ public class Storage
         }
         return;
     }
-    
-    
-    public void prepareToPutInReservedSpace(SRMUser user, String path, long size, 
+
+
+    public void prepareToPutInReservedSpace(SRMUser user, String path, long size,
         long spaceReservationToken, PrepareToPutInSpaceCallbacks callbacks) {
         throw new java.lang.UnsupportedOperationException("NotImplementedException");
     }
-    
-    
-    
+
+
+
     public HashMap poolInfos = new HashMap();
     public HashMap poolInfosTimestamps = new HashMap();
-    
+
     public StorageElementInfo getPoolInfo(String pool) throws SRMException {
         synchronized(poolInfosTimestamps) {
             if(poolInfosTimestamps.containsKey(pool)) {
@@ -2857,7 +2857,7 @@ public class Storage
                 }
             }
         }
-        
+
         CellMessage poolInfoMessage = new CellMessage(
                 new CellPath((String)( pool)) ,
                 "xgetcellinfo" ) ;
@@ -2871,15 +2871,15 @@ public class Storage
                     "with "+e;
             say(error);
             throw new SRMException(error);
-            
+
         }
-        
+
         if(poolInfoMessage == null) {
             String error = "pool timeout expired" ;
             esay(error);
             throw new SRMException(error);
         }
-        
+
         Object o = poolInfoMessage.getMessageObject();
         if(o == null || !(o instanceof  PoolCellInfo)) {
             String error = "pool returned o="+o ;
@@ -2901,39 +2901,39 @@ public class Storage
             poolInfosTimestamps.put(pool, new Long(System.currentTimeMillis()));
         }
         return poolInfo;
-        
+
     }
-    
-    public void advisoryDelete(final SRMUser user, final String path, 
+
+    public void advisoryDelete(final SRMUser user, final String path,
         AdvisoryDeleteCallbacks callbacks) {
         say("Storage.advisoryDelete");
-        
+
         if(callbacks == null) {
             callbacks =
                     new AdvisoryDeleteCallbacks() {
                 public void AdvisoryDeleteFailed(String reason) {
                     esay(" advisoryDelete("+user+","+path+") GetStorageInfoFailed: "+reason);
                 }
-                
-                
+
+
                 public void AdvisoryDeleteSuccesseded(){
                     say(" advisoryDelete("+user+","+path+") AdvisoryDeleteSuccesseded");
                 }
-                
+
                 public void Exception(Exception e){
                     esay(" advisoryDelete("+user+","+path+") Exception :"+e);
                 }
-                
+
                 public void Timeout(){
                     esay(" advisoryDelete("+user+","+path+") timeout");
                 }
-                
+
                 public void Error(String error){
                     esay(" advisoryDelete("+user+","+path+") Error:" + error);
                 }
             };
         }
-        
+
         String actualPnfsPath= srm_root+"/"+path;
         AdvisoryDeleteCompanion.advisoryDelete(
                 (DCacheUser)user,
@@ -2941,9 +2941,9 @@ public class Storage
                 callbacks,
                 this,
                 config.isAdvisoryDelete());
-        
+
     }
-    
+
     public void removeFile(final SRMUser user,
             final String path,
             RemoveFileCallbacks callbacks) {
@@ -2956,8 +2956,8 @@ public class Storage
                 this,
                 config.isRemoveFile());
     }
-    
-    
+
+
     public void removeDirectory(final SRMUser user,
             final Vector tree)  throws SRMException {
         say("Storage.removeDirectory");
@@ -2967,7 +2967,7 @@ public class Storage
             String actualPnfsPath= srm_root+"/"+path;
             PnfsGetStorageInfoMessage storage_info_msg =null;
             PnfsGetStorageInfoMessage filemetadata_msg =null;
-            
+
             PnfsId pnfsId;
             try {
                 storage_info_msg = _pnfs.getStorageInfoByPath(actualPnfsPath);
@@ -2988,13 +2988,13 @@ public class Storage
                 throw new SRMException("could not get storage info or file " +
                     "metadata by path "+actualPnfsPath);
             }
-            
+
             PnfsDeleteEntryMessage delete_request =
                     new PnfsDeleteEntryMessage(actualPnfsPath);
             delete_request.setReplyRequired(true);
             CellMessage answer=null;
             Object o=null;
-            
+
             try {
                 answer = sendAndWait( new CellMessage(
                         new CellPath("PnfsManager") ,
@@ -3013,7 +3013,7 @@ public class Storage
                 esay("sent PnfsDeleteEntryMessage pnfs, received "+o+" back");
                 throw new SRMException("can not delete "+actualPnfsPath);
             } else {
-                PnfsDeleteEntryMessage delete_reply = 
+                PnfsDeleteEntryMessage delete_reply =
                     (PnfsDeleteEntryMessage) answer.getMessageObject();
                 if (delete_reply.getReturnCode() != 0) {
                     esay("Delete failed : "+actualPnfsPath+
@@ -3028,7 +3028,7 @@ public class Storage
             }
         }
     }
-    
+
     public void createDirectory(final SRMUser user,
             final String directory)  throws SRMException {
         say("Storage.createDirectory");
@@ -3065,7 +3065,7 @@ public class Storage
         FsPath parentFsPath = new FsPath(actualPnfsPath);
         parentFsPath.add("..");
         String parent = parentFsPath.toString();
-        
+
         try {
             fileMetadataMessage = _pnfs.getFileMetaDataByPath(parent);
         } catch( CacheException ce) {
@@ -3083,7 +3083,7 @@ public class Storage
             throw new SRMInvalidPathException("parent path or a component " +
                 "of the parent path does not exist");
         }
-        
+
         int uid = parentFmd.getUid();
         int gid = parentFmd.getGid();
         diskCacheV111.util.FileMetaData.Permissions perms =
@@ -3101,38 +3101,38 @@ public class Storage
         permissions |=    (perms.canRead()    ? 4 : 0) |
                 (perms.canWrite()   ? 2 : 0) |
                 (perms.canExecute() ? 1 : 0);
-        
+
         if (permissions == 0 ) {
             esay("createDirectory: cannot create directory \""+actualPnfsPath+
                 "\": Permission denied");
             throw new SRMAuthorizationException(" can't write into parent path," +
                 " permission denied");
         }
-        
+
         if (duser.getUid() == uid ) {
-            if (!Permissions.userCanWrite(permissions) || 
+            if (!Permissions.userCanWrite(permissions) ||
                 !Permissions.userCanExecute(permissions)) {
                 esay("createDirectory: cannot create directory \""+
                     actualPnfsPath+"\": Permission denied");
                 throw new SRMAuthorizationException(" Permission denied");
             }
         } else if ( duser.getGid() == gid ) {
-            if (!Permissions.groupCanWrite(permissions) || 
+            if (!Permissions.groupCanWrite(permissions) ||
                 !Permissions.groupCanExecute(permissions)) {
                 esay("createDirectory: cannot create directory \""+
                     actualPnfsPath+"\": Permission denied");
                 throw new SRMAuthorizationException(" Permission denied");
             }
         } else {
-            if (!Permissions.worldCanWrite(permissions) || 
+            if (!Permissions.worldCanWrite(permissions) ||
                 !Permissions.worldCanExecute(permissions)) {
                 esay("createDirectory: cannot create directory \""+
                     actualPnfsPath+"\": Permission denied");
                 throw new SRMAuthorizationException(" Permission denied");
             }
         }
-        
-        PnfsGetStorageInfoMessage createRequest = 
+
+        PnfsGetStorageInfoMessage createRequest =
             new PnfsCreateDirectoryMessage(actualPnfsPath,duser.getUid(),
             duser.getGid(),permissions); // was 0755
         CellMessage answer=null;
@@ -3154,21 +3154,21 @@ public class Storage
             esay("sent PnfsCreateDirectoryMessage to pnfs, received "+o+" back");
             throw new SRMException("Can't create, communication with pnfs failure");
         } else {
-            PnfsCreateDirectoryMessage createReply = 
+            PnfsCreateDirectoryMessage createReply =
                 (PnfsCreateDirectoryMessage) answer.getMessageObject();
             if (createReply.getReturnCode() != 0) {
 		    esay("createDirectory: directory creation failed, got error return code from pnfs");
-		    if (createReply.getReturnCode() == CacheException.FILE_EXISTS) { 
+		    if (createReply.getReturnCode() == CacheException.FILE_EXISTS) {
 			    throw new SRMDuplicationException("already exists");
 		    }
                 Object error = createReply.getErrorObject();
-                
+
                 if(error instanceof Throwable) {
 		    esay((Throwable)error);
                    throw new SRMException("Failed to create, got error return " +
                        "code from pnfs",(Throwable)error);
                 }
-                else 
+                else
 		{
                     throw new SRMException("Failed to create, got error return " +
                         "code from pnfs: "+error);
@@ -3176,8 +3176,8 @@ public class Storage
             }
         }
     }
-    
-    
+
+
     public void moveEntry(final SRMUser user,
 			  final String from,
 			  final String to)  throws SRMException {
@@ -3199,11 +3199,11 @@ public class Storage
 
 	try {
             storageInfoMessage = _pnfs.getStorageInfoByPath(actualFromPnfsPath);
-        } 
+        }
 	catch(CacheException ce1 ) {
             try {
                 fileMetadataMessage = _pnfs.getFileMetaDataByPath(actualFromPnfsPath);
-            } 
+            }
 	    catch(CacheException e2) {
                 esay("moveEntry: \"from\" path does not exist");
                 esay(e2);
@@ -3214,11 +3214,11 @@ public class Storage
             storageInfo = storageInfoMessage.getStorageInfo();
             fromFmd     = storageInfoMessage.getMetaData();
             pnfsId      = storageInfoMessage.getPnfsId();
-        } 
+        }
 	else if ( fileMetadataMessage != null) {
             fromFmd = fileMetadataMessage.getMetaData();
             pnfsId  = fileMetadataMessage.getPnfsId();
-        } 
+        }
 	else {
             esay("moveEntry: \"from\" path, failed to get metadata - file does not exist");
             throw new SRMInvalidPathException(actualFromPnfsPath+
@@ -3241,13 +3241,13 @@ public class Storage
         permissions |=    (perms.canRead()    ? 4 : 0) |
 	    (perms.canWrite()   ? 2 : 0) |
 	    (perms.canExecute() ? 1 : 0);
-        
+
         if (permissions == 0 ) {
             esay("moveEntry: cannot move source \""+
                 actualFromPnfsPath+"\": Permission denied ");
             throw new SRMException(" don't have write access to source ");
         }
-        
+
         if (duser.getUid() == uid ) {
             if (!Permissions.userCanWrite(permissions)) {
                 esay("moveEntry: cannot move source  \""+actualFromPnfsPath+
@@ -3267,7 +3267,7 @@ public class Storage
                 throw new SRMException(" don't have world write access to source");
             }
         }
-        
+
         if ( fromPnfsPath.equals(toPnfsPath) ) {
             say("moveEntry: \"to\" is identical to \"from\", return success");
             return;
@@ -3279,15 +3279,15 @@ public class Storage
         PnfsId toPnfsId;
         PnfsId parentPnfsId;
         boolean toExists=true;
-        
-       
+
+
         try {
             storageInfoMessage = _pnfs.getStorageInfoByPath(actualToPnfsPath);
-        } 
+        }
 	catch(CacheException ce1 ) {
             try {
                 fileMetadataMessage = _pnfs.getFileMetaDataByPath(actualToPnfsPath);
-            } 
+            }
 	    catch(CacheException e2) {
             }
         }
@@ -3295,21 +3295,21 @@ public class Storage
             storageInfo = storageInfoMessage.getStorageInfo();
             toFmd       = storageInfoMessage.getMetaData();
             toPnfsId    = storageInfoMessage.getPnfsId();
-        } 
+        }
 	else if ( fileMetadataMessage != null) {
             toFmd   = fileMetadataMessage.getMetaData();
             toPnfsId = fileMetadataMessage.getPnfsId();
-        } 
+        }
 	else {
             toExists=false;
         }
-        
+
         //
         // Logic is this :
         //                 destination may be non-existing file with valid path
         //                 destination may be existing directory
         //
-        
+
         if (toExists) {
             if (toFmd.isRegularFile()) {
                 esay("moveEntry: cannot move to existing file \""+
@@ -3317,7 +3317,7 @@ public class Storage
                 throw new SRMDuplicationException(" cannot move to existing file \""+
                     actualToPnfsPath+"\"");
             }
-        } 
+        }
 	else {
             //
             // check parent
@@ -3327,14 +3327,14 @@ public class Storage
             String toParent = toParentFsPath.toString();
             fileMetadataMessage=null;
             storageInfoMessage=null;
-            try 
+            try
 	    {
                 storageInfoMessage = _pnfs.getStorageInfoByPath(toParent);
-            } 
+            }
 	    catch(CacheException ce1 ) {
                 try {
                     fileMetadataMessage = _pnfs.getFileMetaDataByPath(toParent);
-                } 
+                }
 		catch(CacheException e2) {
                     esay("moveEntry: neither destination no its parent path exist "+
                         actualToPnfsPath);
@@ -3347,11 +3347,11 @@ public class Storage
                 storageInfo  = storageInfoMessage.getStorageInfo();
                 toFmd        = storageInfoMessage.getMetaData();
                 toPnfsId     = storageInfoMessage.getPnfsId();
-            } 
+            }
 	    else if (fileMetadataMessage != null) {
                 toFmd    = fileMetadataMessage.getMetaData();
                 toPnfsId = fileMetadataMessage.getPnfsId();
-            } 
+            }
 	    else {
                 esay("moveEntry: "+actualToPnfsPath+" does not exist and its path " +
                     "does not exist");
@@ -3363,12 +3363,12 @@ public class Storage
                 throw new SRMException(" cannot move to existing file \""+
                     actualToPnfsPath+"\"");
             }
-            
+
         }
         //
         // check we can write into destination
         //
-        
+
         int to_uid = fromFmd.getUid();
         int to_gid = fromFmd.getGid();
         diskCacheV111.util.FileMetaData.Permissions to_perms =
@@ -3386,27 +3386,27 @@ public class Storage
         permissions |=    (to_perms.canRead()    ? 4 : 0) |
                 (to_perms.canWrite()   ? 2 : 0) |
                 (to_perms.canExecute() ? 1 : 0);
-        
+
         if (permissions == 0 ) {
             esay("moveEntry: cannot move to directory \""+actualToPnfsPath+
                 "\": Permission denied");
             throw new SRMException(" don't have write access to destination");
         }
-        
+
         if (duser.getUid() == uid ) {
             if (!Permissions.userCanWrite(permissions)) {
                 esay("moveEntry: cannot move directory to  \""+actualToPnfsPath+
                     "\": Permission denied");
                 throw new SRMException(" don't have write access to destination");
             }
-        } 
+        }
 	else if ( duser.getGid() == gid ) {
             if (!Permissions.groupCanWrite(permissions)) {
                 esay("moveEntry: cannot move to directory \""+actualToPnfsPath+
                     "\": Permission denied");
                 throw new SRMException(" don't have group write access to destination");
             }
-        } 
+        }
 	else {
             if (!Permissions.worldCanWrite(permissions)) {
                 esay("moveEntry: cannot move to directory \""+actualToPnfsPath+
@@ -3443,7 +3443,7 @@ public class Storage
 				      new CellPath("PnfsManager") ,
 				      renameRequest) ,
 				  __pnfsTimeout*1000);
-        } 
+        }
 	catch (Exception e) {
             String problem  = "createDirectory: Exception sending rename " +
                 "pnfs request: "+e;
@@ -3458,7 +3458,7 @@ public class Storage
                 " back");
             throw new SRMInternalErrorException(
                 "Can't create, communication with pnfs failure");
-        } 
+        }
 	else {
             PnfsRenameMessage reply = (PnfsRenameMessage) answer.getMessageObject();
             if (reply.getReturnCode() != 0) {
@@ -3471,99 +3471,99 @@ public class Storage
             }
         }
     }
-    
-    
+
+
     public boolean canRead(SRMUser user, String fileId, FileMetaData fmd) {
         return _canRead(user,fileId,fmd);
     }
-    
+
     public static boolean _canRead(SRMUser user, String fileId, FileMetaData fmd) {
         PnfsId pnfsId = new PnfsId(fileId);
         int uid = Integer.parseInt(fmd.owner);
         int gid = Integer.parseInt(fmd.group);
         int permissions = fmd.permMode;
-        
+
         if(pnfsId == null) {
             return false;
         }
-        
+
         if(permissions == 0 ) {
             return false;
         }
-        
+
         if(Permissions.worldCanRead(permissions)) {
             return true;
         }
-        
+
         if(uid == -1 || gid == -1) {
             return false;
         }
-        
+
         if(user == null || (!(user instanceof DCacheUser))) {
             return false;
         }
         DCacheUser duser = (DCacheUser) user;
-        
+
         if(duser.getGid() == gid && Permissions.groupCanRead(permissions)) {
             return true;
         }
-        
+
         if(duser.getUid() == uid && Permissions.userCanRead(permissions)) {
             return true;
         }
-        
+
         return false;
-        
-        
+
+
     }
-    
+
     // To do:  extract common functionality from this and _canRead
     //         into another method.
     public boolean canRead(SRMUser user, FileMetaData fmd) {
         int uid = Integer.parseInt(fmd.owner);
         int gid = Integer.parseInt(fmd.group);
         int permissions = fmd.permMode;
-        
+
         if(permissions == 0 ) {
             return false;
         }
-        
+
         if(Permissions.worldCanRead(permissions)) {
             return true;
         }
-        
+
         if(uid == -1 || gid == -1) {
             return false;
         }
-        
+
         if(user == null || (!(user instanceof DCacheUser))) {
             return false;
         }
         DCacheUser duser = (DCacheUser) user;
-        
+
         if(duser.getGid() == gid && Permissions.groupCanRead(permissions)) {
             return true;
         }
-        
+
         if(duser.getUid() == uid && Permissions.userCanRead(permissions)) {
             return true;
         }
-        
+
         return false;
     }
-    
-    
-    
-    public boolean canWrite(SRMUser user, String fileId, FileMetaData fmd, 
+
+
+
+    public boolean canWrite(SRMUser user, String fileId, FileMetaData fmd,
         String parentFileId, FileMetaData parentFmd, boolean overwrite) {
         return _canWrite(user,fileId,fmd,parentFileId,parentFmd,overwrite);
     }
-    
-    public static boolean _canWrite(SRMUser user, 
+
+    public static boolean _canWrite(SRMUser user,
             String fileId,
             FileMetaData fmd,
-            String parentFileId, 
-            FileMetaData parentFmd, 
+            String parentFileId,
+            FileMetaData parentFmd,
             boolean overwrite) {
         // we can not overwrite file in dcache (at least for now)
         //System.out.println("_canWrite user="+user+
@@ -3578,11 +3578,11 @@ public class Storage
                 return false;
             }
         }
-        
+
         if( parentFileId == null) {
             return false;
         }
-        
+
         DCacheUser duser = (DCacheUser) user;
         boolean canWrite;
         if(fileId == null) {
@@ -3610,11 +3610,11 @@ public class Storage
                 canWrite = false;
             }
         }
-        
+
         int parentUid = Integer.parseInt(parentFmd.owner);
         int parentGid = Integer.parseInt(parentFmd.group);
         int parentPermissions = parentFmd.permMode;
-        
+
         boolean parentCanWrite;
         if(parentPermissions == 0 ) {
            parentCanWrite = false;
@@ -3637,54 +3637,54 @@ public class Storage
             parentCanWrite = false;
         }
         return canWrite && parentCanWrite;
-        
+
     }
-    
+
     public static boolean _canDelete(SRMUser user, String fileId,
         FileMetaData fmd) {
         // we can not overwrite file in dcache (at least for now)
         if(fileId == null ) {
             return false;
         }
-        
+
         PnfsId pnfsId = new PnfsId(fileId);
         int uid = Integer.parseInt(fmd.owner);
         int gid = Integer.parseInt(fmd.group);
         int permissions = fmd.permMode;
-        
+
         if(permissions == 0 ) {
             return false;
         }
-        
+
         if(Permissions.worldCanWrite(permissions)) {
             return true;
         }
-        
+
         if(uid == -1 || gid == -1) {
             return false;
         }
-        
+
         if(user == null || (!(user instanceof DCacheUser))) {
             return false;
         }
         DCacheUser duser = (DCacheUser) user;
-        
-        
+
+
         if(duser.getGid() == gid &&
                 Permissions.groupCanWrite(permissions) ) {
             return true;
         }
-        
+
         if(duser.getUid() == uid &&
                 Permissions.userCanWrite(permissions) ) {
             return true;
         }
-        
+
         return false;
-        
-        
+
+
     }
-    
+
     /**
      * @param user User ID
      * @param remoteTURL
@@ -3711,9 +3711,9 @@ public class Storage
                 spaceReservationId,
                 new Long(size),
                 callbacks);
-        
+
     }
-    
+
     public String getFromRemoteTURL(SRMUser user,
             String remoteTURL,
             String actualFilePath,
@@ -3728,9 +3728,9 @@ public class Storage
                 null,
                 null,
                 callbacks);
-        
+
     }
-    
+
     /**
      * @param user User ID
      * @param actualFilePath
@@ -3756,12 +3756,12 @@ public class Storage
                 null,
                 null,
                 callbacks);
-        
-        
+
+
     }
-    
+
     public void killRemoteTransfer(String transferId) {
-        
+
         try {
             long callerId = Long.parseLong(transferId);
             Long longCallerId = new Long(callerId);
@@ -3780,10 +3780,10 @@ public class Storage
         } catch(Exception e) {
             esay(e);
         }
-        
+
     }
-    
-    
+
+
     private String performRemoteTransfer(
             SRMUser user,
             String remoteTURL,
@@ -3801,10 +3801,10 @@ public class Storage
             throw new SRMAuthorizationException("user's path "+actualFilePath+
                     " is not subpath of the user's root");
         }
-        
+
         if(remoteTURL.startsWith("gsiftp://")) {
             DCacheUser duser = (DCacheUser)user;
-            
+
             //call this for the sake of checking that user is reading
             // from the "root" of the user
             String path = getTurlPath(actualFilePath,"gsiftp",user);
@@ -3812,12 +3812,12 @@ public class Storage
                 throw new SRMException("user is not authorized to access path: "+
                         actualFilePath);
             }
-            
-            
+
+
             RemoteGsiftpTransferManagerMessage gsiftpTransferRequest;
-            
+
             // if space reservation was performed for a file of known size
-            
+
             RequestCredential remoteCredential =
                 RequestCredential.getRequestCredential(remoteCredentialId);
             String credentialName = "Unknown";
@@ -3872,7 +3872,7 @@ public class Storage
                                 answer_message.getErrorObject().toString());
                     } else {
                         throw new SRMException("TransferManager error");
-                        
+
                     }
                 }
                 long id = answer_message.getId();
@@ -3897,14 +3897,14 @@ public class Storage
         }
         throw new SRMException("not implemented");
     }
-    
+
     private Map callerIdToHandler = new HashMap();
-    
+
     private class TransferInfo {
         private long transferId;
         private CopyCallbacks callbacks;
         private CellPath cellPath;
-        
+
         public TransferInfo(long transferId,CopyCallbacks callbacks,
             CellPath cellPath ) {
             this.transferId = transferId;
@@ -3912,21 +3912,21 @@ public class Storage
             this.cellPath = cellPath;
         }
     }
-    
+
     private class GridftpTransferInfo extends TransferInfo {
         private Long remoteCredentialId;
-        
+
         public GridftpTransferInfo(long transferId,Long remoteCredentialId,
             CopyCallbacks callbacks,CellPath cellPath) {
             super( transferId,callbacks,cellPath);
             this.remoteCredentialId = remoteCredentialId;
         }
     }
-    
+
     private void handleTransferManagerMessage(TransferManagerMessage message) {
         Long callerId = new Long(message.getId());
         say("handleTransferManagerMessage for callerId="+callerId);
-        
+
         if(message instanceof RemoteGsiftpDelegateUserCredentialsMessage) {
             RemoteGsiftpDelegateUserCredentialsMessage delegate =
                     (RemoteGsiftpDelegateUserCredentialsMessage)message;
@@ -3936,7 +3936,7 @@ public class Storage
             RequestCredential remoteCredential =
                     RequestCredential.getRequestCredential(remoteCredentialId);
             if(remoteCredential != null) {
-                final  GSSCredential gssRemoteCredential = 
+                final  GSSCredential gssRemoteCredential =
                     remoteCredential.getDelegatedCredential();
                 getNucleus().newThread(new Runnable() {public void run() {
                     delegate(gssRemoteCredential,host,port);
@@ -3947,9 +3947,9 @@ public class Storage
                 }}, "credentialDelegator" ).start() ;
             }
             return;
-            
+
         }
-        
+
         Object o;
         synchronized(callerIdToHandler) {
             o = callerIdToHandler.get(callerId);
@@ -3959,7 +3959,7 @@ public class Storage
             }
         }
         TransferInfo info = (TransferInfo)o;
-        
+
         if (message instanceof TransferCompleteMessage ) {
             TransferCompleteMessage complete =
                     (TransferCompleteMessage)message;
@@ -3976,21 +3976,21 @@ public class Storage
                 } else {
                     info.callbacks.copyFailed(new CacheException(error.toString()));
                 }
-                
+
             } else {
                 info.callbacks.copyFailed(new CacheException("transfer failed: "+
                     message.toString()));
             }
-            
+
             esay("removing TransferInfo for callerId="+callerId);
             synchronized(callerIdToHandler) {
                 callerIdToHandler.remove(callerId);
             }
-            
+
         }
-        
+
     }
-    
+
     private void delegate(GSSCredential credential, String host, int port) {
         if(credential == null) {
             esay("cannot delegate,  user credential is null");
@@ -4010,7 +4010,7 @@ public class Storage
                 say("SRMCell.Delegator, delegating credentials :"+
                         credential+   " to mover at "+host+
                         " listening on port "+port);
-                
+
             }catch(org.ietf.jgss.GSSException gsse) {
                 esay("invalid credentials :");
                 esay(gsse);
@@ -4025,7 +4025,7 @@ public class Storage
                 }
                 return;
             }
-            
+
             try {
                 SslGsiSocketFactory.delegateCredential(
                         InetAddress.getByName(host),
@@ -4038,9 +4038,9 @@ public class Storage
             }
         }
     }
-    
+
     /**
-     * Reserves spaceSize bytes of the space for 
+     * Reserves spaceSize bytes of the space for
      * storage of file with the path filename
      * for future transfer from the host. <br>
      * The storage will invoke methods of the callback interface
@@ -4049,11 +4049,11 @@ public class Storage
      * @param spaceSize size of the space to be released
      * @see org.dcache.srm.ReserveSpaceCallbacks
      */
-    public void reserveSpace(SRMUser user, 
-            long spaceSize, 
-            long reservationLifetime, 
-            String filename, 
-            String host, 
+    public void reserveSpace(SRMUser user,
+            long spaceSize,
+            long reservationLifetime,
+            String filename,
+            String host,
             ReserveSpaceCallbacks callbacks){
         DCacheUser duser = (DCacheUser) user;
         String absolute_path = srm_root+"/"+filename;
@@ -4064,10 +4064,10 @@ public class Storage
                 spaceSize,
                 reservationLifetime,
                 this);
-        
+
     }
-    
-    
+
+
     /**
      * Release spaceSize bytes of the reserved space identified with the token
      * This method returns via callbacks the size of the
@@ -4077,7 +4077,7 @@ public class Storage
      * @param user User ID
      * @param spaceSize size of the space to be released
      * @param reservationToken identifier of the space
-     * @param callbacks This interface is used for 
+     * @param callbacks This interface is used for
      * asyncronous notification of SRM of the
      * various actions performed to release space in the storage
      */
@@ -4085,9 +4085,9 @@ public class Storage
         ReleaseSpaceCallbacks callbacks){
         DCacheUser duser = (DCacheUser) user;
         ReleaseSpaceCompanion.releaseSpace(spaceToken,spaceSize,callbacks,this);
-        
+
     }
-    
+
     /**
      * Release all of the space identified with the token
      * This method returns via callbacks the size of the
@@ -4099,16 +4099,16 @@ public class Storage
      * @param callbacks This interface is used for asyncronous notification of SRM of the
      * various actions performed to release space in the storage
      */
-    public void releaseSpace( SRMUser user,  String spaceToken, 
+    public void releaseSpace( SRMUser user,  String spaceToken,
         ReleaseSpaceCallbacks callbacks){
         DCacheUser duser = (DCacheUser) user;
         ReleaseSpaceCompanion.releaseSpace(spaceToken,callbacks,this);
-        
+
     }
-    
-    
+
+
     private StorageElementInfo storageElementInfo= new StorageElementInfo();
-    
+
     public StorageElementInfo getStorageElementInfo(SRMUser user) throws SRMException {
         synchronized (storageElementInfo) {
             return storageElementInfo;
@@ -4120,8 +4120,8 @@ public class Storage
             return storageElementInfo;
         }
     }
-    
-    
+
+
     private void updateStorageElementInfo() throws SRMException      {
         try{
             PoolManagerGetPoolListMessage getPoolsQuery = new
@@ -4130,12 +4130,12 @@ public class Storage
             CellMessage getPoolMessage = new CellMessage( _poolMgrPath , getPoolsQuery ) ;
             getPoolMessage = sendAndWait(  getPoolMessage ,
                     __poolManagerTimeout*1000 ) ;
-            
+
             if(getPoolMessage != null) {
                 Object o = getPoolMessage.getMessageObject();
                 if(o != null && o instanceof  PoolManagerGetPoolListMessage) {
                     getPoolsQuery = (PoolManagerGetPoolListMessage)o;
-                    
+
                     StorageElementInfo info = new StorageElementInfo();
                     List newPools = getPoolsQuery.getPoolList();
                     if(!newPools.isEmpty() ) {
@@ -4155,7 +4155,7 @@ public class Storage
             esay(e);
             esay( "poolManager error, using previosly saved pool list") ;
         }
-        
+
         StorageElementInfo info = new StorageElementInfo();
         for( Iterator i = pools.iterator(); i.hasNext();) {
             try {
@@ -4169,14 +4169,14 @@ public class Storage
                     " , contunue with the rest of the pools");
             }
         }
-        
+
         synchronized (storageElementInfo) {
             storageElementInfo = info;
         }
     }
-    
-    
-    
+
+
+
     /**
      * we use run method to update the storage info structure periodically
      */
@@ -4196,11 +4196,11 @@ public class Storage
             }
         }
     }
-    
-    
+
+
     public String[] listNonLinkedDirectory(SRMUser user,
             String directoryName) throws SRMException {
-        
+
         String actualPath       = srm_root+"/"+directoryName;
         FsPath fsPath           = new FsPath(actualPath);
         String pnfsPath         = fsPath.toString();
@@ -4210,7 +4210,7 @@ public class Storage
         PnfsGetFileMetaDataMessage metadataMessage = null;
         PnfsId pnfsId;
         DCacheUser duser = (DCacheUser) user;
-        
+
         try {
             storageInfoMessage = _pnfs.getStorageInfoByPath(actualPath);
         } catch ( CacheException ce1 ) {
@@ -4224,7 +4224,7 @@ public class Storage
                 throw new SRMInvalidPathException(pnfsPath+" : "+e.toString());
             }
         }
-        
+
         if ( storageInfoMessage != null ) {
             storageInfo = storageInfoMessage.getStorageInfo();
             pathFmd     = storageInfoMessage.getMetaData();
@@ -4237,20 +4237,20 @@ public class Storage
             throw new SRMInvalidPathException(
                     "could not get storage info or file metadata by path ");
         }
-        
+
         if(!pathFmd.isDirectory())  {
             throw new SRMInvalidPathException("pnfsPath is not a directory!");
         }
-        
+
         boolean canDelete=false;
         try {
-            canDelete=permissionHandler.canDeleteDir(duser.getUid(), 
+            canDelete=permissionHandler.canDeleteDir(duser.getUid(),
                 duser.getGid(), pnfsPath);
         } catch( CacheException ce) {
             esay(ce);
             throw new SRMAuthorizationException("can't delete :"+ce.getMessage());
         }
-        
+
         if ( !canDelete ) {
             esay("can't delete directory "+pnfsPath);
             throw new SRMAuthorizationException("can't delete");
@@ -4263,12 +4263,12 @@ public class Storage
         } else {
             return null;
         }
-        
+
     }
-    
+
     public java.io.File[] listDirectoryFiles(SRMUser user, String directoryName,
             FileMetaData fileMetaData) throws SRMException {
-        
+
         String actualFilePath = srm_root+"/"+directoryName;
         FsPath pnfsPathFile = new FsPath(actualFilePath);
         String pnfsPath = pnfsPathFile.toString();
@@ -4276,7 +4276,7 @@ public class Storage
         if(fileMetaData != null && fileMetaData instanceof DcacheFileMetaData) {
             util_fmd =  ((DcacheFileMetaData)fileMetaData).getFmd();
         }
-        
+
         if(util_fmd == null) {
             diskCacheV111.vehicles.PnfsGetFileMetaDataMessage metadataMessage;
             try {
@@ -4285,7 +4285,7 @@ public class Storage
             }catch(CacheException ce) {
                 throw new SRMException(ce);
             }
-            
+
             if(metadataMessage.getReturnCode() != 0) {
                 throw new SRMException(
                         "listDirectory("+pnfsPath+
@@ -4318,10 +4318,10 @@ public class Storage
 	}
         return dirFile.listFiles();
     }
-    
+
     public String[] listDirectory(SRMUser user, String directoryName,
             FileMetaData fileMetaData) throws SRMException {
-        
+
         String actualFilePath = srm_root+"/"+directoryName;
         FsPath pnfsPathFile = new FsPath(actualFilePath);
         String pnfsPath = pnfsPathFile.toString();
@@ -4329,7 +4329,7 @@ public class Storage
         if(fileMetaData != null && fileMetaData instanceof DcacheFileMetaData) {
             util_fmd =  ((DcacheFileMetaData)fileMetaData).getFmd();
         }
-        
+
         if(util_fmd == null) {
             diskCacheV111.vehicles.PnfsGetFileMetaDataMessage metadataMessage;
             try {
@@ -4338,7 +4338,7 @@ public class Storage
             }catch(CacheException ce) {
                 throw new SRMException(ce);
             }
-            
+
             if(metadataMessage.getReturnCode() != 0) {
                 throw new SRMException(
                         "listDirectory("+pnfsPath+"): can't get pnfs metadata: " +
@@ -4370,7 +4370,7 @@ public class Storage
 	}
         return dirFile.list();
     }
-    
+
     public void srmReserveSpace(SRMUser user,
             long sizeInBytes,
             long spaceReservationLifetime,
@@ -4379,7 +4379,7 @@ public class Storage
             String description,
             SrmReserveSpaceCallbacks callbacks) {
         DCacheUser duser = (DCacheUser) user;
-        
+
         SrmReserveSpaceCompanion.reserveSpace(
                 duser,
                 sizeInBytes,
@@ -4390,8 +4390,8 @@ public class Storage
                 callbacks,
                 this);
     }
-    
-    
+
+
     public void srmReleaseSpace(SRMUser user,
             String spaceToken,
             Long releaseSizeInBytes, // everything is null
@@ -4403,7 +4403,7 @@ public class Storage
             callbacks.ReleaseSpaceFailed("invalid space token="+spaceToken);
             return;
         }
-        
+
         DCacheUser duser = (DCacheUser) user;
         SrmReleaseSpaceCompanion.releaseSpace(duser,
                 longSpaceToken,
@@ -4411,7 +4411,7 @@ public class Storage
                 callbacks,
                 this);
     }
-    
+
     public void srmMarkSpaceAsBeingUsed(SRMUser user,
             String spaceToken,
             String fileName,
@@ -4426,7 +4426,7 @@ public class Storage
             callbacks.SrmUseSpaceFailed("invalid space token="+spaceToken);
             return;
         }
-        
+
         DCacheUser duser = (DCacheUser) user;
         String actualFilePath = srm_root+"/"+fileName;
         SrmMarkSpaceAsBeingUsedCompanion.markSpace(
@@ -4439,7 +4439,7 @@ public class Storage
                 callbacks,
                 this);
     }
-    
+
     public void srmUnmarkSpaceAsBeingUsed(
             SRMUser user,
             String spaceToken,
@@ -4461,7 +4461,7 @@ public class Storage
                 callbacks,
                 this);
     }
-    
+
     public class LoginBrokerHandler implements Runnable {
         private String _srmLoginBroker        = null ;
         private String _protocolFamily     = null ;
@@ -4471,10 +4471,10 @@ public class Storage
         private LoginBrokerInfo _info      = null ;
         private double _currentLoad        = 0.0 ;
         private LoginBrokerHandler(){
-            
+
             _srmLoginBroker = _args.getOpt( "srmLoginBroker" ) ;
             if( _srmLoginBroker == null )return;
-            
+
             _protocolFamily    = _args.getOpt("protocolFamily" ) ;
             if( _protocolFamily == null )_protocolFamily = "SRM" ;
             _protocolVersion = _args.getOpt("protocolVersion") ;
@@ -4484,7 +4484,7 @@ public class Storage
                 try{
                     _brokerUpdateTime = Long.parseLong(tmp) * 1000 ;
                 }catch(Exception e )
-                { 
+                {
                     esay(e);
                 }
             }
@@ -4492,22 +4492,22 @@ public class Storage
             if(tmp != null) {
                 try{
                     _brokerUpdateOffset = Double.parseDouble(tmp) ;
-                }catch(Exception e ){ 
-                     esay(e);   
+                }catch(Exception e ){
+                     esay(e);
                 }
             }
-            
+
             _info = new LoginBrokerInfo(
                     getNucleus().getCellName() ,
                     getNucleus().getCellDomainName() ,
                     _protocolFamily ,
                     _protocolVersion ,
                     Storage.this.getClass().getName() ) ;
-            
+
             _info.setUpdateTime( _brokerUpdateTime ) ;
-            
+
             getNucleus().newThread( this , "loginBrokerHandler" ).start() ;
-            
+
         }
         public void run(){
             try{
@@ -4526,14 +4526,14 @@ public class Storage
                 say( "Login Broker Thread terminated due to "+io ) ;
             }
         }
-        
+
         public String hh_lb_set_update = "<updateTime/sec>" ;
         public String ac_lb_set_update_$_1( Args args ){
             long update = Long.parseLong( args.argv(0) )*1000 ;
             if( update < 2000 )
                 throw new
                         IllegalArgumentException("Update time out of range") ;
-            
+
             synchronized(this){
                 _brokerUpdateTime = update ;
                 _info.setUpdateTime(update) ;
@@ -4542,7 +4542,7 @@ public class Storage
             return "" ;
         }
         private synchronized void runUpdate(){
-            
+
             _info.setHosts(_hosts);
             _info.setPort(config.getPort());
             if(srm != null) {
@@ -4556,7 +4556,7 @@ public class Storage
                 esay(ee);
             }
         }
-        
+
         public void getInfo( PrintWriter pw ){
             if( _srmLoginBroker == null ){
                 pw.println( "    Login Broker : DISABLED" ) ;
@@ -4569,18 +4569,18 @@ public class Storage
                 (_brokerUpdateTime/1000)+" seconds" ) ;
             pw.println( "    Update Offset    : "+
                     ((int)(_brokerUpdateOffset*100.))+" %" ) ;
-            
+
         }
         private boolean isActive(){ return _srmLoginBroker != null ; }
     }
-    
+
     /**
      *
      * @param spaceTokens
      * @throws org.dcache.srm.SRMException
      * @return
      */
-    public TMetaDataSpace[] srmGetSpaceMetaData(SRMUser user, 
+    public TMetaDataSpace[] srmGetSpaceMetaData(SRMUser user,
         String[] spaceTokens)
     throws SRMException {
         say("srmGetSpaceMetaData");
@@ -4608,7 +4608,7 @@ public class Storage
             esay(e);
             throw new SRMException(e.getMessage());
         }
-        
+
         if(cellMessage == null ||
                     cellMessage.getMessageObject() ==null ||
                     !(cellMessage.getMessageObject()  instanceof GetSpaceMetaData)) {
@@ -4617,15 +4617,15 @@ public class Storage
                     +" back";
                 esay(error );
                 throw new SRMException(error);
-        } 
+        }
         getSpaces = (GetSpaceMetaData)cellMessage.getMessageObject() ;
         if(getSpaces.getReturnCode() != 0) {
-            esay("GetSpaceMetaData failed with rc="+getSpaces.getReturnCode()+ 
+            esay("GetSpaceMetaData failed with rc="+getSpaces.getReturnCode()+
                 " error="+getSpaces.getErrorObject());
             throw new SRMException("GetSpaceMetaData failed with rc="+
                 getSpaces.getReturnCode()+ " error="+getSpaces.getErrorObject());
         }
-        
+
         diskCacheV111.services.space.Space[] spaces = getSpaces.getSpaces();
         tokens =  getSpaces.getSpaceTokens();
         TMetaDataSpace[] spaceMetaDatas = new TMetaDataSpace[spaces.length];
@@ -4647,23 +4647,23 @@ public class Storage
                     spaceMetaDatas[i].setLifetimeLeft(new Integer
                             (lifetimeleft));
                 }
-                TRetentionPolicy policy = 
+                TRetentionPolicy policy =
                     space.getRetentionPolicy().equals( RetentionPolicy.CUSTODIAL)?
                       TRetentionPolicy.CUSTODIAL :
                         space.getRetentionPolicy().equals(RetentionPolicy.OUTPUT)?
                             TRetentionPolicy.OUTPUT:TRetentionPolicy.REPLICA;
-                TAccessLatency latency = 
+                TAccessLatency latency =
                     space.getAccessLatency().equals(AccessLatency.ONLINE) ?
                             TAccessLatency.ONLINE: TAccessLatency.NEARLINE;
                 spaceMetaDatas[i].setRetentionPolicyInfo(
                     new TRetentionPolicyInfo(policy,latency));
                 spaceMetaDatas[i].setTotalSize(
-                    new org.apache.axis.types.UnsignedLong( 
+                    new org.apache.axis.types.UnsignedLong(
                         space.getSizeInBytes()));
                 spaceMetaDatas[i].setGuaranteedSize(
                     spaceMetaDatas[i].getTotalSize());
                 spaceMetaDatas[i].setUnusedSize(
-                    new org.apache.axis.types.UnsignedLong( 
+                    new org.apache.axis.types.UnsignedLong(
                         space.getSizeInBytes() - space.getUsedSizeInBytes()));
                 diskCacheV111.services.space.SpaceState spaceState =space.getState();
                 if(diskCacheV111.services.space.SpaceState.RESERVED.equals(spaceState)) {
@@ -4697,18 +4697,18 @@ public class Storage
         }
         return spaceMetaDatas;
     }
-    
+
     /**
-     * 
-     * @param description 
-     * @throws org.dcache.srm.SRMException 
-     * @return 
+     *
+     * @param description
+     * @throws org.dcache.srm.SRMException
+     * @return
      */
     public String[] srmGetSpaceTokens(SRMUser user, String description)
         throws SRMException {
         DCacheUser duser = (DCacheUser) user;
         say("srmGetSpaceTokens ("+description+")");
-       GetSpaceTokens getTokens = new GetSpaceTokens(duser.getVoGroup(), 
+       GetSpaceTokens getTokens = new GetSpaceTokens(duser.getVoGroup(),
            duser.getVoRole(),description);
         CellMessage cellMessage = new CellMessage(
                 new CellPath("SrmSpaceManager"),
@@ -4729,10 +4729,10 @@ public class Storage
                     cellMessage==null?"null":cellMessage.getMessageObject() +" back";
                 esay(error);
                 throw new SRMException(error);
-        } 
+        }
         getTokens = (GetSpaceTokens)cellMessage.getMessageObject() ;
         if(getTokens.getReturnCode() != 0) {
-            esay("GetSpaceTokens failed with rc="+getTokens.getReturnCode()+ 
+            esay("GetSpaceTokens failed with rc="+getTokens.getReturnCode()+
                 " error="+getTokens.getErrorObject());
             throw new SRMException("GetSpaceTokens failed with rc="+
                 getTokens.getReturnCode()+ " error="+getTokens.getErrorObject());
@@ -4743,10 +4743,10 @@ public class Storage
            tokenStrings[i] = Long.toString(tokens[i]);
            say("srmGetSpaceTokens returns token#"+i+" : "+tokenStrings[i]);
        }
-        
+
        return tokenStrings;
     }
-    
+
     public String[] srmGetRequestTokens(SRMUser user,String description)
         throws SRMException {
         try {
@@ -4763,69 +4763,69 @@ public class Storage
             for(int i=0;i<tokenLongs.length;++i) {
                 tokenStrings[i] = tokenLongs[i].toString();
             }
-            return tokenStrings;    
+            return tokenStrings;
         } catch (Exception e) {
             esay("srmGetRequestTokens failed:");
             esay(e);
             throw new SRMException(e);
         }
-    
+
     }
 
     /**
-     * 
+     *
      * we support only permanent file, lifetime is always -1
      * @param newLifetime SURL lifetime in seconds
      *   -1 stands for infinite lifetime
      * @return long lifetime left in seconds
      *   -1 stands for infinite lifetime
-     *   
+     *
      */
-    public int srmExtendSurlLifetime(SRMUser user, 
+    public int srmExtendSurlLifetime(SRMUser user,
         String fileName, int newLifetime) throws SRMException {
         FileMetaData fmd = getFileMetaData(user,fileName);
         int uid = Integer.parseInt(fmd.owner);
         int gid = Integer.parseInt(fmd.group);
         int permissions = fmd.permMode;
-        
+
         if(Permissions.worldCanWrite(permissions)) {
             return -1;
         }
-        
+
         if(uid == -1 || gid == -1) {
             throw new SRMAuthorizationException(
                 "User is not authorized to modify this file");
         }
-        
+
         if(user == null || (!(user instanceof DCacheUser))) {
             throw new SRMAuthorizationException(
                 "User is not authorized to modify this file");
         }
         DCacheUser duser = (DCacheUser) user;
-        
+
         if(duser.getGid() == gid && Permissions.groupCanWrite(permissions)) {
             return -1;
         }
-        
+
         if(duser.getUid() == uid && Permissions.userCanWrite(permissions)) {
             return -1;
         }
-        
+
         throw new SRMAuthorizationException(
             "User is not authorized to modify this file");
 
     }
 
     /**
-     * 
-     * 
+     *
+     *
      * @param user User ID
      * @param spaceToken of a valid space reservation
-     * @param newReservationLifetime new lifetime 
+     * @param newReservationLifetime new lifetime
      * in millis to assign to space reservation
      * @return long lifetime of spacereservation left in milliseconds
      */
-    public long srmExtendReservationLifetime(SRMUser user, 
+    public long srmExtendReservationLifetime(SRMUser user,
         String spaceToken, long newReservationLifetime) throws SRMException {
         long longSpaceToken;
         try {
@@ -4835,7 +4835,7 @@ public class Storage
         }
         ExtendLifetime extendLifetime =
                 new ExtendLifetime( longSpaceToken, newReservationLifetime);
-        
+
         try {
             CellMessage response =  sendAndWait( new CellMessage(
                     new CellPath( "SrmSpaceManager") ,
@@ -4853,7 +4853,7 @@ public class Storage
             esay(ee);
             throw new SRMException("srmExtendReservationLifetime failed",ee);
         }
-        
+
         if(extendLifetime.getReturnCode() != 0) {
             throw new SRMException("srmExtendReservationLifetime failed, " +
                 "ExtendLifetime.returnCode="+
@@ -4864,14 +4864,14 @@ public class Storage
     }
 
     /**
-     * 
-     * 
+     *
+     *
      * @param user User ID
      * @param pinId Id of a valid pin
      * @param newPinLifetime new lifetime in millis to assign to pin
      * @return long lifetime left for pin in millis
      */
-    public long extendPinLifetime(SRMUser user, 
+    public long extendPinLifetime(SRMUser user,
         String fileId, String pinId, long newPinLifetime) throws SRMException {
         PnfsId pnfsId = null;
         try {
@@ -4881,11 +4881,11 @@ public class Storage
             throw new SRMException("extendPinLifetime failed",e);
         }
 
-        
+
         PinManagerExtendLifetimeMessage extendLifetime =
-            new PinManagerExtendLifetimeMessage( 
+            new PinManagerExtendLifetimeMessage(
             pnfsId, pinId,newPinLifetime);
-        
+
         try {
             CellMessage response =  sendAndWait( new CellMessage(
                     new CellPath( "PinManager") ,
@@ -4896,7 +4896,7 @@ public class Storage
                 throw new SRMException(
                     "PinManagerExtendLifetimeMessage response lifetime expired");
             }
-            extendLifetime = 
+            extendLifetime =
                 (PinManagerExtendLifetimeMessage) response.getMessageObject();
             //say("StageAndPinCompanion: recordAsPinned");
             //rr.recordAsPinned (_fr,true);
@@ -4904,7 +4904,7 @@ public class Storage
             esay(ee);
             throw new SRMException("extendPinLifetime failed",ee);
         }
-        
+
         if(extendLifetime.getReturnCode() != 0) {
             throw new SRMException(
                 "extendPinLifetime failed, PinManagerExtendLifetimeMessage.returnCode="+
@@ -4914,9 +4914,9 @@ public class Storage
         return extendLifetime.getNewLifetime();
     }
 
-    public String getStorageBackendVersion() { 
-        return diskCacheV111.util.Version.getVersion(); 
-    } 
+    public String getStorageBackendVersion() {
+        return diskCacheV111.util.Version.getVersion();
+    }
 }
 
 // $Log: not supported by cvs2svn $
@@ -4942,23 +4942,23 @@ public class Storage
 //
 // Revision 1.144  2007/09/14 21:12:47  timur
 // rename srmSpaceManager option into srmImplicitSpaceManagerEnabled, make its
-// value set to yes by default is srmSpaceManagerEnabled=yes and always set to 
+// value set to yes by default is srmSpaceManagerEnabled=yes and always set to
 // no if srmImplicitSpaceManagerEnabled=no
 //
 // Revision 1.143  2007/09/13 19:48:02  timur
-// return SRM AUTHORIZATION or INVALID PATH errors instead of generic 
+// return SRM AUTHORIZATION or INVALID PATH errors instead of generic
 // SRM_FAILURE in several instances
 //
 // Revision 1.142  2007/08/28 17:00:14  timur
 // commiting Gerd's patch that unifies and simplifies getFileMetaData code
 //
 // Revision 1.141  2007/08/22 23:06:15  timur
-// make srmMkDir and SRMRmDir return SRM_AUTHORIZATION_FAILURE, 
+// make srmMkDir and SRMRmDir return SRM_AUTHORIZATION_FAILURE,
 // SRM_DUPLICATION_ERROR and SRM_INVALID_PATH when appropriate
 //
 // Revision 1.140  2007/08/22 20:29:53  timur
-// space manager understand lifetime=-1 as infinite, get-space-tokens 
-// does not check ownership, reserve space admin command takes lifetime 
+// space manager understand lifetime=-1 as infinite, get-space-tokens
+// does not check ownership, reserve space admin command takes lifetime
 // in seconds, or -1 for infinite
 //
 // Revision 1.139  2007/08/16 14:19:14  tigran
@@ -4971,12 +4971,12 @@ public class Storage
 // better parameter handling
 //
 // Revision 1.136  2007/08/03 20:20:02  timur
-// implementing some of the findbug bugs and recommendations, 
-// avoid selfassignment, possible nullpointer exceptions, 
+// implementing some of the findbug bugs and recommendations,
+// avoid selfassignment, possible nullpointer exceptions,
 // syncronization issues, etc
 //
 // Revision 1.135  2007/08/03 15:46:03  timur
-// closing sql statement, implementing hashCode functions, not 
+// closing sql statement, implementing hashCode functions, not
 // passing null args, resing classes etc, per findbug recommendations
 //
 // Revision 1.134  2007/07/16 21:56:02  timur
@@ -4989,27 +4989,27 @@ public class Storage
 // merge of 1.7.1 and the head
 //
 // Revision 1.131  2007/05/22 21:24:03  timur
-// commiting the BNL workaround for the multihomed machine reverse DNS 
-// lookup that standard INetAddress does not always handle. 
-// The new procedure is not used if the flag srmCustomGetHostByAddr 
+// commiting the BNL workaround for the multihomed machine reverse DNS
+// lookup that standard INetAddress does not always handle.
+// The new procedure is not used if the flag srmCustomGetHostByAddr
 // is disabled (default). Also it is used only if standard procedure has failed
 //
 // Revision 1.130  2007/05/15 01:53:50  timur
-// return 0 instead of negative number, in case of expired space reservation, 
+// return 0 instead of negative number, in case of expired space reservation,
 // more debug info for getSpaceTokens
 //
 // Revision 1.129  2007/04/13 17:02:58  litvinse
 // *** empty log message ***
 //
 // Revision 1.128  2007/04/09 22:48:28  timur
-// added a flag that controls default overwrite behaviour, ouside of srmV2 
+// added a flag that controls default overwrite behaviour, ouside of srmV2
 // specific reaction to the overwrite mode
 //
 // Revision 1.127  2007/04/06 22:07:30  timur
 // options to enable srm v2.2 type space reservations and overwrites
 //
 // Revision 1.126  2007/04/03 21:42:57  timur
-// select transfer url protocol on basis of the order of the protocols 
+// select transfer url protocol on basis of the order of the protocols
 // supplied by the clients
 //
 // Revision 1.125  2007/04/02 21:53:57  litvinse
@@ -5029,11 +5029,11 @@ public class Storage
 // started work on adding support for optional overwrite
 //
 // Revision 1.120  2007/03/08 23:37:17  timur
-// merging changes from the 1-7 branch related to database performance and 
+// merging changes from the 1-7 branch related to database performance and
 // reduced usage of database when monitoring is not used
 //
 // Revision 1.119  2007/03/07 01:22:03  timur
-// adding options to control maximum length of jdbs tasks queue and number 
+// adding options to control maximum length of jdbs tasks queue and number
 // of threads for execution of these tasksdiskCacheV111/srm/dcache/Storage.java
 //
 // Revision 1.118  2007/03/03 00:44:17  timur
@@ -5043,8 +5043,8 @@ public class Storage
 // make mv of file into itself  always successful
 //
 // Revision 1.116  2007/02/23 17:05:23  timur
-// changes to comply with the spec and appear green on various tests, 
-// mostly propogating the errors as correct SRM Status Codes, filling in correct 
+// changes to comply with the spec and appear green on various tests,
+// mostly propogating the errors as correct SRM Status Codes, filling in correct
 // fields in srm ls, etc
 //
 // Revision 1.115  2007/02/20 01:47:00  timur
@@ -5063,18 +5063,18 @@ public class Storage
 // eliminate NullPointerException on startup
 //
 // Revision 1.109  2007/01/10 23:05:53  timur
-// implemented srmGetRequestTokens, store request description in database, 
+// implemented srmGetRequestTokens, store request description in database,
 // fixed several srmv2 issues
 //
 // Revision 1.108  2007/01/06 00:25:02  timur
-// merging production branch changes to database layer to improve performance 
+// merging production branch changes to database layer to improve performance
 // and reduce number of updates
 //
 // Revision 1.107  2006/12/27 21:41:07  litvinse
 // add stacktrace to log file if pnfs operation fails
 //
 // Revision 1.106  2006/12/15 16:08:44  tdh
-// Added code to make delegation from cell to gPlazma optional, through the 
+// Added code to make delegation from cell to gPlazma optional, through the
 // batch file parameter "delegate-to-gplazma". Default is to not delegate.
 //
 // Revision 1.105  2006/11/16 16:52:45  litvinse
@@ -5109,11 +5109,11 @@ public class Storage
 // modify srm companions and srm cell to use ThreadManager
 //
 // Revision 1.95  2006/09/12 16:03:06  timur
-// make the maximum number of get/put request in ready state configurable 
+// make the maximum number of get/put request in ready state configurable
 // during the runtime
 //
 // Revision 1.94  2006/08/25 00:16:56  timur
-// first complete version of space reservation working with srmPrepareToPut 
+// first complete version of space reservation working with srmPrepareToPut
 // and gridftp door
 //
 // Revision 1.93  2006/08/22 23:21:55  timur
@@ -5132,11 +5132,11 @@ public class Storage
 // more space reservation code
 //
 // Revision 1.88  2006/07/04 22:23:37  timur
-// Use Credential Id to reffer to the remote credential in delegation step, 
+// Use Credential Id to reffer to the remote credential in delegation step,
 // reformated some classes
 //
 // Revision 1.87  2006/06/23 21:16:03  timur
-// use correct transfer request ids in srm copy file request, use request 
+// use correct transfer request ids in srm copy file request, use request
 // credential id  to refernce delegated credential
 //
 // Revision 1.86  2006/06/21 20:42:33  timur
@@ -5184,8 +5184,8 @@ public class Storage
 // do not throw nullPointerException in getInfo if storageInfo is not available
 //
 // Revision 1.73  2005/12/01 00:38:12  timur
-// do not allow execution of the blocking SendAndWait from inside 
-// getStorageElementInfo, which in its turn is called in getInfo which is 
+// do not allow execution of the blocking SendAndWait from inside
+// getStorageElementInfo, which in its turn is called in getInfo which is
 // ultinately called by CellAdapter.messageArrived
 //
 // Revision 1.72  2005/11/22 11:02:19  patrick
@@ -5289,7 +5289,7 @@ public class Storage
 // more work on space reservation
 //
 // Revision 1.30  2005/03/01 23:12:09  timur
-// Modified the database scema to increase database operations performance and to 
+// Modified the database scema to increase database operations performance and to
 // account for reserved space"and to account for reserved space
 //
 // Revision 1.29  2005/01/25 16:52:39  timur
@@ -5314,15 +5314,15 @@ public class Storage
 // new GsiftpTransferManager
 //
 // Revision 1.22  2004/11/17 21:56:48  timur
-// adding the option which allows to store the pending or running requests in memory, 
+// adding the option which allows to store the pending or running requests in memory,
 // fixed a restore from database bug
 //
 // Revision 1.21  2004/11/08 23:02:40  timur
-// remote gridftp manager kills the mover when the mover thread is killed,  
+// remote gridftp manager kills the mover when the mover thread is killed,
 // further modified the srm database handling
 //
 // Revision 1.20  2004/11/01 22:40:34  timur
-// prevent the remoteGsiftp mover to block indefinetely if the delegation is 
+// prevent the remoteGsiftp mover to block indefinetely if the delegation is
 // not performed
 //
 // Revision 1.19  2004/09/15 16:49:27  timur
@@ -5350,14 +5350,14 @@ public class Storage
 // fixed the leak of sql connections, added propogation of srm errors
 //
 // Revision 1.13.2.10  2004/06/30 20:37:23  timur
-// added more monitoring functions, added retries to the srm client part, 
+// added more monitoring functions, added retries to the srm client part,
 // adapted the srmclientv1 for usage in srmcp
 //
 // Revision 1.13.2.9  2004/06/28 21:54:10  timur
 // added configuration options for the schedulers
 //
 // Revision 1.13.2.8  2004/06/25 21:39:58  timur
-// first version where everything works, need much more thorough testing and 
+// first version where everything works, need much more thorough testing and
 // ability to configure scheduler better
 //
 // Revision 1.13.2.7  2004/06/18 22:20:51  timur

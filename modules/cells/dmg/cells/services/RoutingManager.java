@@ -23,10 +23,10 @@ import dmg.util.*;
   * @author Patrick Fuhrmann
   * @version 0.1, 15 Feb 1998
   */
-public class RoutingManager 
-    extends CellAdapter 
-    implements CellEventListener 
-{       
+public class RoutingManager
+    extends CellAdapter
+    implements CellEventListener
+{
     private final CellNucleus _nucleus;
     private final Args _args;
     private final Set<String> _localExports = new HashSet();
@@ -39,10 +39,10 @@ public class RoutingManager
         super(name,"System", args, false);
         _nucleus = getNucleus();
         _args = getArgs();
-       
+
         _nucleus.addCellEventListener(this);
         _watchCell = _args.argc() == 0 ? null : _args.argv(0);
-       
+
         start();
     }
 
@@ -53,7 +53,7 @@ public class RoutingManager
 
         for (Map.Entry<String,Set<String>> e : _domainHash.entrySet()) {
             pw.append(" ").append(e.getKey()).append(" : ").println(e.getValue());
-        }      
+        }
     }
 
     private synchronized void setDefaultInstalled(boolean value)
@@ -66,7 +66,7 @@ public class RoutingManager
         return _defaultInstalled;
     }
 
-    private void addWellknown(String cell, String domain) 
+    private void addWellknown(String cell, String domain)
     {
         if (cell.startsWith("@"))
             return;
@@ -79,7 +79,7 @@ public class RoutingManager
         }
     }
 
-    private void removeWellknown(String cell, String domain) 
+    private void removeWellknown(String cell, String domain)
     {
         if (cell.startsWith("@"))
             return;
@@ -129,20 +129,20 @@ public class RoutingManager
         }
     }
 
-    private synchronized void addRoutingInfo(String[] info) 
+    private synchronized void addRoutingInfo(String[] info)
     {
         String domain = info[0];
         Set<String> oldCells = _domainHash.get(domain);
-        Set<String> newCells = new HashSet<String>();        
+        Set<String> newCells = new HashSet<String>();
         for (int i = 1; i < info.length; i++){
             newCells.add(info[i]);
-        }  
+        }
 
         if (oldCells == null) {
             say("Adding new domain : " + domain);
             for (String cell : newCells) {
                 addWellknown(cell, domain);
-            }  
+            }
         } else {
             say("Updating domain : " + domain);
             for (String cell : newCells) {
@@ -160,10 +160,10 @@ public class RoutingManager
         }
         _domainHash.put(domain, newCells);
         if (isDefaultInstalled())
-            updateUpstream();   
+            updateUpstream();
     }
 
-    private synchronized void removeRoutingInfo(String domain) 
+    private synchronized void removeRoutingInfo(String domain)
     {
         say("Removing all routes to domain : " + domain);
         Set<String> cells = _domainHash.remove(domain);
@@ -172,7 +172,7 @@ public class RoutingManager
             return;
         }
         for (String cell : cells)
-            removeWellknown(cell, domain);               
+            removeWellknown(cell, domain);
     }
 
     public void messageArrived(CellMessage msg)
@@ -202,7 +202,7 @@ public class RoutingManager
         String name = (String) ce.getSource();
         say("cellDied : "+name);
         _localExports.remove(name);
-        updateUpstream(); 
+        updateUpstream();
     }
 
     public synchronized void cellExported(CellEvent ce)
@@ -210,7 +210,7 @@ public class RoutingManager
         String name = (String)ce.getSource();
         say("cellExported : " + name);
         _localExports.add(name);
-        updateUpstream(); 
+        updateUpstream();
     }
 
     public void routeAdded(CellEvent ce)
@@ -224,9 +224,9 @@ public class RoutingManager
                 // the upstream route (we only support one)
                 //
                 try {
-                    CellRoute defRoute = 
-                        new CellRoute("", 
-                                       "*@"+cr.getDomainName(), 
+                    CellRoute defRoute =
+                        new CellRoute("",
+                                       "*@"+cr.getDomainName(),
                                        CellRoute.DEFAULT);
                     _nucleus.routeAdd(defRoute);
                 } catch (IllegalArgumentException e) {
@@ -258,9 +258,9 @@ public class RoutingManager
         CellAddressCore gate = new CellAddressCore(cr.getTargetName());
         if (cr.getRouteType() == CellRoute.DOMAIN) {
             if ((_watchCell != null) && gate.getCellName().equals(_watchCell)) {
-                CellRoute defRoute = 
-                    new CellRoute("", 
-                                   "*@"+cr.getDomainName(), 
+                CellRoute defRoute =
+                    new CellRoute("",
+                                   "*@"+cr.getDomainName(),
                                    CellRoute.DEFAULT);
                 _nucleus.routeDelete(defRoute);
             } else {
@@ -274,9 +274,9 @@ public class RoutingManager
     public String ac_update(Args args) throws Exception
     {
         updateUpstream();
-        return "Done";      
+        return "Done";
     }
-    
+
     /**
      * This method returns the current state of the RoutingMgr cell as a (binary) Object.
      * <p>
@@ -285,18 +285,18 @@ public class RoutingManager
      * does not have the concept of Vehicles) this cannot be (easily) done.  Instead, we
      * use the existing mechanism of obtaining a binary object via the admin interface and
      * flag this functionality as something that should be improved later.
-     * 
+     *
      * @return a representation of the RoutingManager's little brain.
      */
     @Deprecated
     public Object ac_ls_$_0( Args args) {
-    	
+
     	Object info;
-    	
+
     	if (args.getOpt("x") == null) {
     		// Throw together some meaningful output.
     		ByteArrayOutputStream os = new ByteArrayOutputStream();
-    		PrintWriter pw = new PrintWriter( os); 
+    		PrintWriter pw = new PrintWriter( os);
         	getInfo( pw);
         	pw.flush();
         	info = os.toString();
@@ -309,10 +309,10 @@ public class RoutingManager
 
         	info = infoArray;
         }
-    	
+
     	return info;
     }
-    
+
     public String hh_ls = "[-x]";
 
 }
