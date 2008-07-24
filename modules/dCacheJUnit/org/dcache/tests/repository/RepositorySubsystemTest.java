@@ -156,7 +156,6 @@ public class RepositorySubsystemTest
         cell = new CellAdapterHelper("pool", args);
         pnfs = new PnfsHandler(cell, new CellPath("pnfs"), "pool");
         repository = new CacheRepositoryV5();
-        repository.setBaseDir(root);
         repository.setPnfsHandler(pnfs);
         repository.setSize(5120);
         repository.setLegacyRepository(rep);

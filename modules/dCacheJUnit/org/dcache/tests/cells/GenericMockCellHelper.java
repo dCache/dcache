@@ -1,6 +1,5 @@
 package org.dcache.tests.cells;
 
-import java.io.NotSerializableException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -50,7 +49,7 @@ public class GenericMockCellHelper extends CellAdapterHelper {
     }
 
     @Override
-    public CellMessage sendAndWait(CellMessage msg, long millisecs) throws NotSerializableException, NoRouteToCellException, InterruptedException {
+    public CellMessage sendAndWait(CellMessage msg, long millisecs) throws NoRouteToCellException, InterruptedException {
 
         Object messageObject = msg.getMessageObject();
 
@@ -87,7 +86,7 @@ public class GenericMockCellHelper extends CellAdapterHelper {
     }
 
     @Override
-    public void sendMessage(CellMessage msg) throws NotSerializableException, NoRouteToCellException {
+    public void sendMessage(CellMessage msg) throws NoRouteToCellException {
 
         String destinations = msg.getDestinationPath().getCellName();
 
@@ -162,7 +161,7 @@ public class GenericMockCellHelper extends CellAdapterHelper {
 
         @Override
         public void sendMessage(CellMessage msg, boolean local, boolean remote,
-                CellMessageAnswerable callback, long timeout) throws NotSerializableException {
+                CellMessageAnswerable callback, long timeout) {
 
             CellMessage reply;
             try {
