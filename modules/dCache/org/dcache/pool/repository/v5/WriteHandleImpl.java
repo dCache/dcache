@@ -246,9 +246,12 @@ class WriteHandleImpl implements WriteHandle
             }
 
             if (_targetState != EntryState.REMOVED) {
-                _pnfs.addCacheLocation(_entry.getPnfsId());
-                _repository.setState(_entry, _targetState);
-                _entry.lock(false);
+                try {
+                    _pnfs.addCacheLocation(_entry.getPnfsId());
+                } finally {
+                    _repository.setState(_entry, _targetState);
+                    _entry.lock(false);
+                }
             } else {
                 /* A locked entry cannot be removed, thus we need to
                  * unlock it before setting the state.
