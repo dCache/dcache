@@ -373,8 +373,8 @@ dcacheInstallGetNameSpaceServer()
   if [ -z "${namespaceServer}" ] ; then
     namespaceServer="`printConfig ADMIN_NODE`"
     if [ -z "${namespaceServer}" ] ; then
-      logmessage WARNING "No 'NAMESPACE_NODE' or 'ADMIN_NODE' set in 'node_config' using 'localhost'"
-      namespaceServer='localhost'
+      namespaceServer='invalid.host.example.org'
+      logmessage WARNING "No 'NAMESPACE_NODE' or 'ADMIN_NODE' set in 'node_config' using '${namespaceServer}'"
     else
       logmessage WARNING "No 'NAMESPACE_NODE' set in 'node_config' using depricated 'ADMIN_NODE' value '${namespaceServer}'"
     fi
@@ -901,13 +901,11 @@ dcacheInstallPnfsMountPoints()
   logmessage DEBUG "dcacheInstallPnfsMountPoints.start"
   # Creating /pnfs/fs and Symbolic Link /pnfs/fs/usr to /pnfs/<domain> 
   # (e.g. /pnfs/fnal.gov) for GridFTP
-  local isAdmin
+  local dcacheNameServerIsRc
   local isGridFtp
   local isSrm
   local isPnfsManager
 
-  dcacheInstallGetIsAdmin
-  isAdmin=$?
   dcacheInstallGetUseGridFtp
   isGridFtp=$?
   dcacheInstallGetUseSrm
@@ -990,13 +988,12 @@ dcacheInstallChimeraMountPoints()
   logmessage DEBUG "dcacheInstallChimeraMountPoints.start"
   # Creating /pnfs/fs and Symbolic Link /pnfs/fs/usr to /pnfs/<domain> 
   # (e.g. /pnfs/fnal.gov) for GridFTP
-  local isAdmin
+  local isNameServer
   local isGridFtp
   local isSrm
   local isPnfsManager
-  
-  dcacheInstallGetIsAdmin
-  isAdmin=$?
+  dcacheNameServerIs
+  isNameServer=$?
   dcacheInstallGetUseGridFtp
   isGridFtp=$?
   dcacheInstallGetUseSrm
@@ -1004,7 +1001,7 @@ dcacheInstallChimeraMountPoints()
   
   dcacheInstallGetIsPnfsManager
   isPnfsManager=$?
-  if [ "${isAdmin}" == "1" -o "${isPnfsManager}" == "1" ] ; then
+  if [ "${isNameServer}" == "1" -o "${isPnfsManager}" == "1" ] ; then
     /etc/init.d/portmap restart    
     dcacheInstallChimeraMountPointServer
   else
