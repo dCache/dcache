@@ -6,6 +6,7 @@
 %class Unpinner
 %package org.dcache.services.pinmanager1
 %access package
+%import diskCacheV111.util.CacheException
 %import diskCacheV111.vehicles.Message
 %import diskCacheV111.vehicles.PnfsFlagMessage
 %import diskCacheV111.vehicles.PnfsGetCacheLocationsMessage
@@ -133,7 +134,8 @@ Entry
                 }
 
         answerArrived(message: PoolSetStickyMessage)
-                [ message.getReturnCode() == 0 ]
+                [ message.getReturnCode() == 0 ||
+                  message.getReturnCode() == CacheException.FILE_NOT_IN_REPOSITORY ]
                 Done
                 {
                         succeed();
