@@ -106,6 +106,8 @@ import diskCacheV111.vehicles.PoolUpdateCacheStatisticsMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.RemoveFileInfoMessage;
 import diskCacheV111.vehicles.StorageInfo;
+import dmg.cells.nucleus.Reply;
+import dmg.cells.nucleus.DelayedReply;
 import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.CellMessage;
@@ -581,11 +583,11 @@ public class PoolV4
         public int add(String queueName, Runnable runnable, int priority)
             throws InvocationTargetException
         {
-            JobScheduler js = queueName == null ? null : (JobScheduler) _hash
-                .get(queueName);
+            JobScheduler js =
+                (queueName == null) ? null : (JobScheduler) _hash.get(queueName);
 
-            return js == null ? add(runnable, priority) : js.add(runnable,
-                                                                 priority);
+            return (js == null)
+                ? add(runnable, priority) : js.add(runnable, priority);
         }
 
         public int add(Runnable runnable) throws InvocationTargetException
@@ -795,11 +797,13 @@ public class PoolV4
         pw.println("set gap " + _gap);
         pw
             .println("set duplicate request "
-                     + (_dupRequest == DUP_REQ_NONE ? "none"
-                        : _dupRequest == DUP_REQ_IGNORE ? "ignore"
+                     + ((_dupRequest == DUP_REQ_NONE)
+                        ? "none"
+                        : (_dupRequest == DUP_REQ_IGNORE)
+                        ? "ignore"
                         : "refresh"));
         pw.println("set p2p "
-                   + (_p2pMode == P2P_INTEGRATED ? "integrated" : "separated"));
+                   + ((_p2pMode == P2P_INTEGRATED) ? "integrated" : "separated"));
         _flushingThread.printSetup(pw);
         if (_ioQueue != null)
             ((IoQueueManager) _ioQueue).printSetup(pw);
@@ -858,13 +862,15 @@ public class PoolV4
             break;
         }
         pw.println("DuplicateRequests : "
-                   + (_dupRequest == DUP_REQ_NONE ? "None"
-                      : _dupRequest == DUP_REQ_IGNORE ? "Ignored"
+                   + ((_dupRequest == DUP_REQ_NONE)
+                      ? "None"
+                      : (_dupRequest == DUP_REQ_IGNORE)
+                      ? "Ignored"
                       : "Refreshed"));
         pw.println("P2P Mode          : "
-                   + (_p2pMode == P2P_INTEGRATED ? "Integrated" : "Separated"));
+                   + ((_p2pMode == P2P_INTEGRATED) ? "Integrated" : "Separated"));
         pw.println("P2P File Mode     : "
-                   + (_p2pFileMode == P2P_PRECIOUS ? "Precious" : "Cached"));
+                   + ((_p2pFileMode == P2P_PRECIOUS) ? "Precious" : "Cached"));
 
         if (_hybridInventoryActive) {
             pw.println("Inventory         : " + _hybridCurrent);
@@ -1297,9 +1303,9 @@ public class PoolV4
             if (args.length > 0 && !args[0].equals("")) {
                 _replicationManager = new CellPath(args[0]);
             }
-            _destinationHostName = (args.length > 1) && (!args[1].equals("")) ? args[1]
+            _destinationHostName = ((args.length > 1) && !args[1].equals("")) ? args[1]
                 : _destinationHostName;
-            _destinationMode = (args.length > 2) && (!args[2].equals("")) ? args[2]
+            _destinationMode = ((args.length > 2) && !args[2].equals("")) ? args[2]
                 : _destinationMode;
 
             if (_destinationHostName.equals("*")) {
@@ -1414,40 +1420,42 @@ public class PoolV4
     //
     // interface to the HsmRestoreHandler
     //
-    private class ReplyToPoolFetch implements CacheFileAvailable
+    private class ReplyToPoolFetch
+        extends DelayedReply
+        implements CacheFileAvailable
     {
-        private CellMessage _cellMessage = null;
+        private final PoolFetchFileMessage _message;
 
-        private ReplyToPoolFetch(CellMessage cellMessage)
+        private ReplyToPoolFetch(PoolFetchFileMessage message)
         {
-            _cellMessage = cellMessage;
+            _message = message;
         }
 
         public void cacheFileAvailable(String pnfsId, Throwable ee)
         {
-            Message msg = (Message) _cellMessage.getMessageObject();
             PnfsId id = new PnfsId(pnfsId);
             try {
                 if (ee == null) {
-                    msg.setSucceeded();
+                    _message.setSucceeded();
                 } else if (ee instanceof CacheException) {
                     CacheException ce = (CacheException) ee;
                     int errorCode = ce.getRc();
-                    msg.setFailed(errorCode, ce.getMessage());
+                    _message.setFailed(errorCode, ce.getMessage());
 
                     switch (errorCode) {
                     case 41:
                     case 42:
                     case 43:
-                        disablePool(PoolV2Mode.DISABLED_STRICT, errorCode, ce
-                                    .getMessage());
+                        disablePool(PoolV2Mode.DISABLED_STRICT, errorCode,
+                                    ce.getMessage());
                     }
                 } else {
-                    msg.setFailed(1000, ee);
+                    _message.setFailed(1000, ee);
                 }
             } finally {
-                if (msg.getReturnCode() != 0) {
-                    _log.error("Fetch of " + id + " failed: " + msg.getErrorObject().toString());
+                if (_message.getReturnCode() != 0) {
+                    _log.error("Fetch of " + id + " failed: " +
+                               _message.getErrorObject());
 
                     /* Something went wrong. We delete the file to be
                      * on the safe side (better waste tape bandwidth
@@ -1466,42 +1474,14 @@ public class PoolV4
                 }
 
                 try {
-                    _cellMessage.revertDirection();
-                    sendMessage(_cellMessage);
+                    send(_message);
                 } catch (NoRouteToCellException e) {
-                    _log.error("Failed to send reply to " + _cellMessage.getDestinationAddress() + ": " + e.getMessage());
+                    _log.error("Failed to send reply: " + e.getMessage());
+                } catch (InterruptedException e) {
+                    _log.error("Failed to send reply: " + e.getMessage());
+                    Thread.currentThread().interrupt();
                 }
             }
-        }
-    }
-
-    private boolean fetchFile(PoolFetchFileMessage poolMessage,
-                              CellMessage cellMessage)
-    {
-        PnfsId pnfsId = poolMessage.getPnfsId();
-        StorageInfo storageInfo = poolMessage.getStorageInfo();
-        _log.info("Pool " + _poolName + " asked to fetch file " + pnfsId + " (hsm="
-            + storageInfo.getHsm() + ")");
-
-        try {
-            ReplyToPoolFetch reply = new ReplyToPoolFetch(cellMessage);
-            _storageHandler.fetch(pnfsId, storageInfo, reply);
-            return false;
-        } catch (FileInCacheException ce) {
-            _log.error("Fetch failed: Repository already contains " + pnfsId);
-            poolMessage.setSucceeded();
-            return true;
-        } catch (CacheException ce) {
-            _log.error(ce);
-            poolMessage.setFailed(ce.getRc(), ce);
-            if (ce.getRc() == CacheRepository.ERROR_IO_DISK)
-                disablePool(PoolV2Mode.DISABLED_STRICT, ce.getRc(), ce
-                            .getMessage());
-            return true;
-        } catch (Exception ui) {
-            _log.error(ui);
-            poolMessage.setFailed(100, ui);
-            return true;
         }
     }
 
@@ -1531,318 +1511,324 @@ public class PoolV4
         }
     }
 
-    private void setSticky(PoolSetStickyMessage stickyMessage)
+    private class CompanionFileAvailableCallback
+        extends DelayedReply
+        implements CacheFileAvailable
     {
-        if (stickyMessage.isSticky() && !_allowSticky) {
-            stickyMessage.setFailed(101, "making sticky denied by pool : "
-                                    + _poolName);
-            return;
-        }
-
-        try {
-            _repository.setSticky(stickyMessage.getPnfsId(),
-                                  stickyMessage.getOwner(),
-                                  stickyMessage.isSticky()
-                                  ? stickyMessage.getLifeTime()
-                                  : 0);
-        } catch (FileNotInCacheException e) {
-            stickyMessage.setFailed(e.getRc(), e);
-        }
-    }
-
-    private void modifyPersistency(PoolModifyPersistencyMessage persistencyMessage)
-    {
-        try {
-            PnfsId pnfsId = persistencyMessage.getPnfsId();
-            switch (_repository.getState(pnfsId)) {
-            case PRECIOUS:
-                if (persistencyMessage.isCached())
-                    _repository.setState(pnfsId, EntryState.CACHED);
-                break;
-
-            case CACHED:
-                if (persistencyMessage.isPrecious())
-                    _repository.setState(pnfsId, EntryState.PRECIOUS);
-                break;
-
-            case FROM_CLIENT:
-            case FROM_POOL:
-            case FROM_STORE:
-                persistencyMessage.setFailed(101, "File still transient: "
-                                             + pnfsId);
-                break;
-
-            case BROKEN:
-                persistencyMessage.setFailed(101, "File is broken: "
-                                             + pnfsId);
-                break;
-
-            case NEW:
-            case REMOVED:
-            case DESTROYED:
-                persistencyMessage.setFailed(101, "File does not exist: "
-                                             + pnfsId);
-                break;
-            }
-        } catch (Exception ee) {
-            persistencyMessage.setFailed(100, ee);
-        }
-    }
-
-    private void modifyPoolMode(PoolModifyModeMessage modeMessage)
-    {
-        PoolV2Mode mode = modeMessage.getPoolMode();
-        if (mode == null)
-            return;
-
-        if (mode.isEnabled()) {
-            enablePool();
-        } else {
-            disablePool(mode.getMode(), modeMessage.getStatusCode(),
-                        modeMessage.getStatusMessage());
-        }
-    }
-
-    private void checkFreeSpace(PoolCheckFreeSpaceMessage poolMessage)
-    {
-        // long freeSpace = _repository.getFreeSpace() ;
-        long freeSpace = 1024L * 1024L * 1024L * 100L;
-        _log.info("XChecking free space [ result = " + freeSpace + " ] ");
-        poolMessage.setFreeSpace(freeSpace);
-        poolMessage.setSucceeded();
-    }
-
-    private void updateCacheStatistics(PoolUpdateCacheStatisticsMessage poolMessage)
-    {
-        // /
-    }
-
-    private class CompanionFileAvailableCallback implements CacheFileAvailable
-    {
-        private final CellMessage _envelope;
         private final Pool2PoolTransferMsg _message;
 
-        private CompanionFileAvailableCallback(CellMessage envelope,
-                                               Pool2PoolTransferMsg message)
+        private CompanionFileAvailableCallback(Pool2PoolTransferMsg message)
         {
-            _envelope = envelope;
             _message = message;
         }
 
         public void cacheFileAvailable(String pnfsIdString, Throwable error)
         {
             if (_message.getReplyRequired()) {
-                if (error != null) {
-                    if (error instanceof FileInCacheException) {
-                        _message.setReply(0, null);
-                    } else if (error instanceof CacheException) {
-                        _message.setReply(((CacheException) error).getRc(), error);
-                    } else {
-                        _message.setReply(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, error);
-                    }
+                if (error == null) {
+                    _message.setSucceeded();
+                } else if (error instanceof FileInCacheException) {
+                    _message.setReply(0, null);
+                } else if (error instanceof CacheException) {
+                    _message.setReply(((CacheException) error).getRc(), error);
+                } else {
+                    _message.setReply(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, error);
                 }
 
-                _log.info("Sending p2p reply " + _message);
                 try {
-                    _envelope.revertDirection();
-                    sendMessage(_envelope);
+                    send(_message);
                 } catch (NoRouteToCellException e) {
-                    _log.error("Cannot reply p2p message : " + e.getMessage());
+                    _log.error("Cannot send P2P reply: " + e.getMessage());
+                } catch (InterruptedException e) {
+                    _log.error("Cannot send P2P reply: " + e.getMessage());
+                    Thread.currentThread().interrupt();
                 }
             }
         }
     }
 
-    private void runPool2PoolClient(final CellMessage cellMessage,
-                                    final Pool2PoolTransferMsg poolMessage)
+    public PoolMoverKillMessage messageArrived(PoolMoverKillMessage kill)
     {
-        String poolName = poolMessage.getPoolName();
-        PnfsId pnfsId = poolMessage.getPnfsId();
-        StorageInfo storageInfo = poolMessage.getStorageInfo();
-        CacheFileAvailable callback =
-            new CompanionFileAvailableCallback(cellMessage, poolMessage);
+        _log.info("PoolMoverKillMessage for mover id " + kill.getMoverId());
+        try {
+            mover_kill(kill.getMoverId(), false);
+            kill.setSucceeded();
+        } catch (NoSuchElementException e) {
+            _log.error(e);
+            kill.setReply(1, e);
+        }
+        return kill;
+    }
+
+    public void messageArrived(CellMessage envelope, PoolIoFileMessage msg)
+        throws CacheException
+    {
+        if ((msg instanceof PoolAcceptFileMessage
+             && _poolMode.isDisabled(PoolV2Mode.DISABLED_STORE))
+            || (msg instanceof PoolDeliverFileMessage
+                && _poolMode.isDisabled(PoolV2Mode.DISABLED_FETCH))) {
+
+            _log.error("PoolIoFileMessage Request rejected due to "
+                       + _poolMode);
+            throw new CacheException(104, "Pool is disabled");
+        }
+
+        msg.setReply();
+        ioFile(envelope, msg);
+    }
+
+    public DelayedReply messageArrived(Pool2PoolTransferMsg msg)
+        throws CacheException
+    {
+        if (_poolMode.isDisabled(PoolV2Mode.DISABLED_P2P_CLIENT)) {
+            _log.error("Pool2PoolTransferMsg Request rejected due to "
+                       + _poolMode);
+            throw new CacheException(104, "Pool is disabled");
+        }
+
+        String poolName = msg.getPoolName();
+        PnfsId pnfsId = msg.getPnfsId();
+        StorageInfo storageInfo = msg.getStorageInfo();
+        CompanionFileAvailableCallback callback =
+            new CompanionFileAvailableCallback(msg);
 
         EntryState targetState = EntryState.CACHED;
-        int fileMode = poolMessage.getDestinationFileStatus();
+        int fileMode = msg.getDestinationFileStatus();
         if (fileMode != Pool2PoolTransferMsg.UNDETERMINED) {
             if (fileMode == Pool2PoolTransferMsg.PRECIOUS)
                 targetState = EntryState.PRECIOUS;
-        } else if (_lfsMode == LFS_PRECIOUS && _p2pFileMode == P2P_PRECIOUS) {
+        } else if ((_lfsMode == LFS_PRECIOUS)
+                   && (_p2pFileMode == P2P_PRECIOUS)) {
             targetState = EntryState.PRECIOUS;
         }
 
-        _p2pClient.newCompanion(pnfsId, poolName, storageInfo, targetState, callback);
+        _p2pClient.newCompanion(pnfsId, poolName, storageInfo,
+                                targetState, callback);
+        return callback;
     }
 
-    public void messageArrived(CellMessage cellMessage, Message poolMessage)
+    public Object messageArrived(PoolFetchFileMessage msg)
+        throws CacheException
     {
-        boolean replyRequired = poolMessage.getReplyRequired();
-        if (poolMessage instanceof PoolMoverKillMessage) {
-            PoolMoverKillMessage kill = (PoolMoverKillMessage) poolMessage;
-            _log.info("PoolMoverKillMessage for mover id " + kill.getMoverId());
-            try {
-                mover_kill(kill.getMoverId(), false);
-            } catch (NoSuchElementException e) {
-                _log.error(e);
-                kill.setReply(1, e);
-            }
-        } else if (poolMessage instanceof PoolFlushControlMessage) {
-
-            _flushingThread.messageArrived((PoolFlushControlMessage)poolMessage, cellMessage);
-            return;
-
-        } else if (poolMessage instanceof DoorTransferFinishedMessage) {
-
-            _p2pClient.messageArrived((DoorTransferFinishedMessage)poolMessage, cellMessage);
-
-            return;
-
-        } else if (poolMessage instanceof PoolIoFileMessage) {
-
-            PoolIoFileMessage msg = (PoolIoFileMessage) poolMessage;
-
-            if (((poolMessage instanceof PoolAcceptFileMessage)
-                 && _poolMode.isDisabled(PoolV2Mode.DISABLED_STORE))
-                || ((poolMessage instanceof PoolDeliverFileMessage)
-                    && _poolMode.isDisabled(PoolV2Mode.DISABLED_FETCH))) {
-
-                _log.error("PoolIoFileMessage Request rejected due to "
-                     + _poolMode);
-                sentNotEnabledException(poolMessage, cellMessage);
-                return;
-
-            }
-
-            msg.setReply();
-            ioFile(cellMessage, (PoolIoFileMessage) poolMessage);
-            return;
-
-        } else if (poolMessage instanceof Pool2PoolTransferMsg) {
-
-            if (_poolMode.isDisabled(PoolV2Mode.DISABLED_P2P_CLIENT)) {
-
-                _log.error("Pool2PoolTransferMsg Request rejected due to "
-                     + _poolMode);
-                sentNotEnabledException( poolMessage, cellMessage);
-                return;
-
-            }
-
-            runPool2PoolClient(cellMessage, (Pool2PoolTransferMsg) poolMessage);
-
-            poolMessage.setReply();
-
-            return;
-
-        } else if (poolMessage instanceof PoolFetchFileMessage) {
-
-            if (_poolMode.isDisabled(PoolV2Mode.DISABLED_STAGE )
-                || (_lfsMode != LFS_NONE)) {
-
-                _log.error("PoolFetchFileMessage  Request rejected due to "
-                     + _poolMode);
-                sentNotEnabledException(poolMessage, cellMessage);
-                return;
-
-            }
-
-            replyRequired = fetchFile((PoolFetchFileMessage) poolMessage,
-                                      cellMessage);
-
-        } else if (poolMessage instanceof PoolRemoveFilesFromHSMMessage) {
-
-            if (_poolMode.isDisabled(PoolV2Mode.DISABLED_STAGE) ||
-                (_lfsMode != LFS_NONE)) {
-
-                _log.error("PoolRemoveFilesFromHsmMessage request rejected due to "
-                     + _poolMode);
-                sentNotEnabledException(poolMessage, cellMessage);
-                return;
-            }
-
-            _storageHandler.remove(cellMessage);
-            replyRequired = false;
-
-        } else if (poolMessage instanceof PoolCheckFreeSpaceMessage) {
-
-            if (_poolMode.isDisabled(PoolV2Mode.DISABLED)) {
-
-                _log.error("PoolCheckFreeSpaceMessage Request rejected due to "
-                     + _poolMode);
-                sentNotEnabledException(poolMessage, cellMessage);
-                return;
-
-            }
-
-            checkFreeSpace((PoolCheckFreeSpaceMessage) poolMessage);
-
-        } else if (poolMessage instanceof PoolCheckable) {
-            try {
-                if (_poolMode.isDisabled(PoolV2Mode.DISABLED) ||
-                    _poolMode.isDisabled(PoolV2Mode.DISABLED_FETCH)) {
-
-                    _log.error("PoolCheckable Request rejected due to " + _poolMode);
-                    sentNotEnabledException(poolMessage, cellMessage);
-                    return;
-                }
-
-                if (poolMessage instanceof PoolFileCheckable) {
-                    checkFile((PoolFileCheckable) poolMessage);
-                }
-                poolMessage.setSucceeded();
-            } catch (CacheException e) {
-                poolMessage.setFailed(e.getRc(), e.getMessage());
-            }
-        } else if (poolMessage instanceof PoolUpdateCacheStatisticsMessage) {
-
-            updateCacheStatistics((PoolUpdateCacheStatisticsMessage) poolMessage);
-
-        } else if (poolMessage instanceof PoolRemoveFilesMessage) {
-
-            if (_poolMode.isDisabled(PoolV2Mode.DISABLED)) {
-
-                _log.error("PoolRemoveFilesMessage Request rejected due to "
-                     + _poolMode);
-                sentNotEnabledException(poolMessage, cellMessage);
-                return;
-
-            }
-            removeFiles((PoolRemoveFilesMessage) poolMessage);
-
-        } else if (poolMessage instanceof PoolModifyPersistencyMessage) {
-
-            modifyPersistency((PoolModifyPersistencyMessage) poolMessage);
-
-        } else if (poolMessage instanceof PoolModifyModeMessage) {
-
-            modifyPoolMode((PoolModifyModeMessage) poolMessage);
-
-        } else if (poolMessage instanceof PoolSetStickyMessage) {
-
-            setSticky((PoolSetStickyMessage) poolMessage);
-
-        } else if (poolMessage instanceof PoolQueryRepositoryMsg) {
-
-            getRepositoryListing((PoolQueryRepositoryMsg) poolMessage);
-            replyRequired = true;
-
-        } else {
-            _log.info("Unexpected message class 2" + poolMessage.getClass());
-            _log.info(" isReply = " + ( poolMessage).isReply()); // REMOVE
-            _log.info(" source = " + cellMessage.getSourceAddress());
-            return;
+        if (_poolMode.isDisabled(PoolV2Mode.DISABLED_STAGE)
+            || (_lfsMode != LFS_NONE)) {
+            _log.error("PoolFetchFileMessage  Request rejected due to "
+                       + _poolMode);
+            throw new CacheException(104, "Pool is disabled");
         }
-        if (!replyRequired)
-            return;
+
+        PnfsId pnfsId = msg.getPnfsId();
+        StorageInfo storageInfo = msg.getStorageInfo();
+        _log.info("Pool " + _poolName + " asked to fetch file " + pnfsId + " (hsm="
+            + storageInfo.getHsm() + ")");
+
         try {
-            cellMessage.revertDirection();
-            sendMessage(cellMessage);
-        } catch (NoRouteToCellException e) {
-            _log.error("Cannot reply message : " + e.getMessage());
+            ReplyToPoolFetch reply = new ReplyToPoolFetch(msg);
+            _storageHandler.fetch(pnfsId, storageInfo, reply);
+            return reply;
+        } catch (FileInCacheException e) {
+            _log.warn("Fetch failed: Repository already contains " + pnfsId);
+            msg.setSucceeded();
+            return msg;
+        } catch (CacheException e) {
+            _log.error(e);
+            if (e.getRc() == CacheRepository.ERROR_IO_DISK)
+                disablePool(PoolV2Mode.DISABLED_STRICT,
+                            e.getRc(), e.getMessage());
+            throw e;
         }
     }
 
-    private void getRepositoryListing(PoolQueryRepositoryMsg queryMessage)
+    public void messageArrived(CellMessage envelope,
+                               PoolRemoveFilesFromHSMMessage msg)
+        throws CacheException
+    {
+        if (_poolMode.isDisabled(PoolV2Mode.DISABLED_STAGE) ||
+            (_lfsMode != LFS_NONE)) {
+            _log.error("PoolRemoveFilesFromHsmMessage request rejected due to "
+                       + _poolMode);
+            throw new CacheException(104, "Pool is disabled");
+        }
+
+        _storageHandler.remove(envelope);
+    }
+
+    public PoolCheckFreeSpaceMessage
+        messageArrived(PoolCheckFreeSpaceMessage msg)
+        throws CacheException
+    {
+        if (_poolMode.isDisabled(PoolV2Mode.DISABLED)) {
+
+            _log.error("PoolCheckFreeSpaceMessage Request rejected due to "
+                       + _poolMode);
+            throw new CacheException(104, "Pool is disabled");
+        }
+
+        // long freeSpace = _repository.getFreeSpace() ;
+        long freeSpace = 1024L * 1024L * 1024L * 100L;
+        msg.setFreeSpace(freeSpace);
+        msg.setSucceeded();
+
+        return msg;
+    }
+
+    public Message messageArrived(Message msg)
+        throws CacheException
+    {
+        if (msg instanceof PoolCheckable) {
+            if (_poolMode.isDisabled(PoolV2Mode.DISABLED) ||
+                _poolMode.isDisabled(PoolV2Mode.DISABLED_FETCH)) {
+
+                _log.error("PoolCheckable Request rejected due to " + _poolMode);
+                throw new CacheException(104, "Pool is disabled");
+            }
+
+            if (msg instanceof PoolFileCheckable) {
+                checkFile((PoolFileCheckable) msg);
+            }
+
+            msg.setSucceeded();
+            return msg;
+        }
+
+        return null;
+    }
+
+    public PoolUpdateCacheStatisticsMessage
+        messageArrived(PoolUpdateCacheStatisticsMessage msg)
+    {
+        msg.setSucceeded();
+        return msg;
+    }
+
+    public PoolRemoveFilesMessage messageArrived(PoolRemoveFilesMessage msg)
+        throws CacheException
+    {
+        if (_poolMode.isDisabled(PoolV2Mode.DISABLED)) {
+            _log.error("PoolRemoveFilesMessage Request rejected due to "
+                       + _poolMode);
+            throw new CacheException(104, "Pool is disabled");
+        }
+
+        String[] fileList = msg.getFiles();
+        int counter = 0;
+        for (int i = 0; i < fileList.length; i++) {
+            try {
+                PnfsId pnfsId = new PnfsId(fileList[i]);
+                if (!_cleanPreciousFiles && (_lfsMode == LFS_NONE)
+                    && (_repository.getState(pnfsId) == EntryState.PRECIOUS)) {
+                    counter++;
+                    _log.error("removeFiles : File " + fileList[i] + " kept. (precious)");
+                } else {
+                    _repository.setState(pnfsId, EntryState.REMOVED);
+                    fileList[i] = null;
+                }
+            } catch (IllegalTransitionException e) {
+                _log.error("removeFiles : File " + fileList[i] + " delete CE : "
+                     + e.getMessage());
+                counter++;
+            } catch (IllegalArgumentException e) {
+                _log.error("removeFiles : invalid syntax in remove filespec ("
+                     + fileList[i] + ")");
+                counter++;
+            }
+        }
+        if (counter > 0) {
+            String[] replyList = new String[counter];
+            for (int i = 0, j = 0; i < fileList.length; i++)
+                if (fileList[i] != null)
+                    replyList[j++] = fileList[i];
+            msg.setFailed(1, replyList);
+        } else {
+            msg.setSucceeded();
+        }
+
+        return msg;
+    }
+
+    public PoolModifyPersistencyMessage
+        messageArrived(PoolModifyPersistencyMessage msg)
+    {
+        try {
+            PnfsId pnfsId = msg.getPnfsId();
+            switch (_repository.getState(pnfsId)) {
+            case PRECIOUS:
+                if (msg.isCached())
+                    _repository.setState(pnfsId, EntryState.CACHED);
+                msg.setSucceeded();
+                break;
+
+            case CACHED:
+                if (msg.isPrecious())
+                    _repository.setState(pnfsId, EntryState.PRECIOUS);
+                msg.setSucceeded();
+                break;
+
+            case FROM_CLIENT:
+            case FROM_POOL:
+            case FROM_STORE:
+                msg.setFailed(101, "File still transient: " + pnfsId);
+                break;
+
+            case BROKEN:
+                msg.setFailed(101, "File is broken: " + pnfsId);
+                break;
+
+            case NEW:
+            case REMOVED:
+            case DESTROYED:
+                msg.setFailed(101, "File does not exist: " + pnfsId);
+                break;
+            }
+        } catch (Exception e) { //FIXME
+            msg.setFailed(100, e);
+        }
+        return msg;
+    }
+
+    public PoolModifyModeMessage messageArrived(PoolModifyModeMessage msg)
+    {
+        PoolV2Mode mode = msg.getPoolMode();
+        if (mode != null) {
+            if (mode.isEnabled()) {
+                enablePool();
+            } else {
+                disablePool(mode.getMode(),
+                            msg.getStatusCode(), msg.getStatusMessage());
+            }
+        }
+        msg.setSucceeded();
+        return msg;
+    }
+
+    public PoolSetStickyMessage messageArrived(PoolSetStickyMessage msg)
+        throws CacheException
+    {
+        if (msg.isSticky() && !_allowSticky) {
+            throw new CacheException(101,
+                                     "making sticky denied by pool " + _poolName);
+        }
+
+        try {
+            _repository.setSticky(msg.getPnfsId(),
+                                  msg.getOwner(),
+                                  msg.isSticky()
+                                  ? msg.getLifeTime()
+                                  : 0);
+            msg.setSucceeded();
+        } catch (FileNotInCacheException e) {
+            msg.setFailed(e.getRc(), e);
+        }
+        return msg;
+    }
+
+    public PoolQueryRepositoryMsg messageArrived(PoolQueryRepositoryMsg msg)
+    {
+        msg.setReply(new RepositoryCookie(), getRepositoryListing());
+        return msg;
+    }
+
+    private List<CacheRepositoryEntryInfo> getRepositoryListing()
     {
         List<CacheRepositoryEntryInfo> listing = new ArrayList();
         for (PnfsId pnfsid : _repository) {
@@ -1864,19 +1850,7 @@ public class PoolV4
                  */
             }
         }
-        queryMessage.setReply(new RepositoryCookie(), listing);
-    }
-
-    private void sentNotEnabledException(Message poolMessage,
-                                         CellMessage cellMessage)
-    {
-        try {
-            poolMessage.setFailed(104, "Pool is disabled");
-            cellMessage.revertDirection();
-            sendMessage(cellMessage);
-        } catch (NoRouteToCellException e) {
-            _log.error("Cannot reply message : " + e.getMessage());
-        }
+        return listing;
     }
 
     /**
@@ -1886,7 +1860,7 @@ public class PoolV4
     {
         _poolStatusCode = errorCode;
         _poolStatusMessage =
-            (errorString == null ? "Requested By Operator" : errorString);
+            (errorString == null) ? "Requested By Operator" : errorString;
         _poolMode.setMode(mode);
 
         _pingThread.sendPoolManagerMessage(true);
@@ -2040,42 +2014,6 @@ public class PoolV4
         return "BreakEven = " + _breakEven;
     }
 
-    private synchronized void removeFiles(PoolRemoveFilesMessage poolMessage)
-    {
-        String[] fileList = poolMessage.getFiles();
-        int counter = 0;
-        for (int i = 0; i < fileList.length; i++) {
-            try {
-                PnfsId pnfsId = new PnfsId(fileList[i]);
-                if (!_cleanPreciousFiles && _lfsMode == LFS_NONE
-                    && _repository.getState(pnfsId) == EntryState.PRECIOUS) {
-                    counter++;
-                    _log.error("removeFiles : File " + fileList[i] + " kept. (precious)");
-                } else {
-                    _repository.setState(pnfsId, EntryState.REMOVED);
-                    fileList[i] = null;
-                }
-            } catch (IllegalTransitionException e) {
-                _log.error("removeFiles : File " + fileList[i] + " delete CE : "
-                     + e.getMessage());
-                counter++;
-            } catch (IllegalArgumentException e) {
-                _log.error("removeFiles : invalid syntax in remove filespec ("
-                     + fileList[i] + ")");
-                counter++;
-            }
-        }
-        if (counter > 0) {
-            String[] replyList = new String[counter];
-            for (int i = 0, j = 0; i < fileList.length; i++)
-                if (fileList[i] != null)
-                    replyList[j++] = fileList[i];
-            poolMessage.setFailed(1, replyList);
-        } else {
-            poolMessage.setSucceeded();
-        }
-    }
-
     // /////////////////////////////////////////////////
     //
     // the hybrid inventory part
@@ -2121,7 +2059,7 @@ public class PoolV4
             }
 
             _log.info("HybridInventory finished. Number of pnfsids " +
-                ((_activate) ? "" : "un" )
+                (_activate ? "" : "un" )
                 +"registered="
                 +_hybridCurrent +" in " + (stopTime-startTime) +" msec");
         }
@@ -2293,8 +2231,8 @@ public class PoolV4
         if (_poolMode.isDisabled(PoolV2Mode.DISABLED_DEAD))
             return "The pool is dead and a restart is required to enable it";
 
-        int rc = args.argc() > 0 ? Integer.parseInt(args.argv(0)) : 1;
-        String rm = args.argc() > 1 ? args.argv(1) : "Operator intervention";
+        int rc = (args.argc() > 0) ? Integer.parseInt(args.argv(0)) : 1;
+        String rm = (args.argc() > 1) ? args.argv(1) : "Operator intervention";
 
         int modeBits = PoolV2Mode.DISABLED;
         if (args.getOpt("strict") != null)
@@ -2415,7 +2353,7 @@ public class PoolV4
     public String ac_flush_class_$_2(Args args)
     {
         String tmp = args.getOpt("count");
-        int count = (tmp == null) || (tmp.equals("")) ? 0 : Integer
+        int count = ((tmp == null) || tmp.equals("")) ? 0 : Integer
             .parseInt(tmp);
         long id = _flushingThread.flushStorageClass(args.argv(0), args.argv(1),
                                                     count);

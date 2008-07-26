@@ -68,32 +68,36 @@ public class HsmFlushController
        flushInfo.setFlushInfos(list.toArray(new StorageClassFlushInfo[list.size()]));
     }
 
-    public synchronized void  messageArrived( PoolFlushControlMessage flushControl , CellMessage message ){
-       if( flushControl instanceof PoolFlushGainControlMessage ){
+    public synchronized PoolFlushGainControlMessage
+        messageArrived(PoolFlushGainControlMessage gain)
+    {
+        long holdTimer = gain.getHoldTimer();
 
-          PoolFlushGainControlMessage gain = (PoolFlushGainControlMessage)flushControl;
-          long holdTimer = gain.getHoldTimer() ;
+        if (holdTimer > 0) {
+            synchronized (_parameterLock) {
+                _holdUntil = System.currentTimeMillis() + holdTimer;
+            }
+        }
 
-          if( holdTimer > 0 )synchronized( _parameterLock ){ _holdUntil = System.currentTimeMillis() + holdTimer; }
-
-          if( flushControl.getReplyRequired() )setFlushInfos( gain ) ;
-
-       }else if( flushControl instanceof PoolFlushDoFlushMessage ){
-          new PrivateFlush( (PoolFlushDoFlushMessage)flushControl , message ) ;
-          return ; /* reply from async run method */
-       }else{
-           flushControl.setFailed(354,"Message type not supported : "+flushControl.getClass().getName());
-       }
-
-       if (flushControl.getReplyRequired()) {
-           message.revertDirection();
-           try {
-               sendMessage(message);
-           } catch (NoRouteToCellException e) {
-               esay("Problem replying : " + message + " " + e);
-           }
-       }
+        if (gain.getReplyRequired())
+            setFlushInfos(gain);
+        return gain;
     }
+
+    public synchronized void
+        messageArrived(CellMessage envelope, PoolFlushDoFlushMessage msg)
+    {
+        new PrivateFlush(msg, envelope);
+    }
+
+    public synchronized PoolFlushControlMessage
+        messageArrived(PoolFlushControlMessage msg)
+    {
+        msg.setFailed(354, "Message type not supported : "
+                      + msg.getClass().getName());
+        return msg;
+    }
+
     private class PrivateFlush implements Runnable, StorageClassInfoFlushable {
         private final PoolFlushDoFlushMessage _flush;
         private final CellMessage _message ;

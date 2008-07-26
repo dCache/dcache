@@ -661,7 +661,7 @@ public class P2PClient
         _checksumModule = csModule;
     }
 
-    public void messageArrived(DoorTransferFinishedMessage message, CellMessage envelope)
+    public void messageArrived(DoorTransferFinishedMessage message)
     {
         DCapProtocolInfo pinfo = (DCapProtocolInfo)message.getProtocolInfo();
         int sessionId = pinfo.getSessionId();
