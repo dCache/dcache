@@ -2,7 +2,7 @@ package org.dcache.pool.classic;
 
 import diskCacheV111.repository.SpaceMonitor;
 import diskCacheV111.repository.SpaceRequestable;
-import org.dcache.pool.repository.v5.CacheRepositoryV5;
+import org.dcache.pool.repository.Repository;
 import java.util.MissingResourceException;
 
 /**
@@ -14,9 +14,9 @@ import java.util.MissingResourceException;
  */
 class RepositorySpaceMonitorAdapter implements SpaceMonitor
 {
-    private final CacheRepositoryV5 _repository;
+    private final Repository _repository;
 
-    public RepositorySpaceMonitorAdapter(CacheRepositoryV5 repository)
+    public RepositorySpaceMonitorAdapter(Repository repository)
     {
         _repository = repository;
     }

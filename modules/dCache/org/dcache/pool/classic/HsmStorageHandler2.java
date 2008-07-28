@@ -52,8 +52,8 @@ import diskCacheV111.vehicles.PoolRemoveFilesFromHSMMessage;
 import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.StorageInfoMessage;
 
-import org.dcache.pool.repository.v5.CacheRepositoryV5;
-import org.dcache.pool.repository.v5.IllegalTransitionException;
+import org.dcache.pool.repository.Repository;
+import org.dcache.pool.repository.IllegalTransitionException;
 import org.dcache.pool.repository.WriteHandle;
 import org.dcache.pool.repository.ReadHandle;
 import org.dcache.pool.repository.CacheEntry;
@@ -67,7 +67,7 @@ public class HsmStorageHandler2
     private static Logger _logRepository =
         Logger.getLogger("logger.org.dcache.repository");
 
-    private final CacheRepositoryV5 _repository;
+    private final Repository _repository;
     private final HsmSet _hsmSet;
     private final PnfsHandler _pnfs;
     private final ChecksumModuleV1 _checksumModule;
@@ -163,7 +163,7 @@ public class HsmStorageHandler2
         }
     }
 
-    public HsmStorageHandler2(CacheRepositoryV5 repository,
+    public HsmStorageHandler2(Repository repository,
                               HsmSet hsmSet,
                               PnfsHandler pnfs,
                               ChecksumModuleV1 checksumModule)

@@ -25,6 +25,8 @@ import org.dcache.pool.repository.WriteHandle;
 import org.dcache.pool.repository.CacheEntry;
 import org.dcache.pool.repository.EntryState;
 import org.dcache.pool.repository.SpaceRecord;
+import org.dcache.pool.repository.IllegalTransitionException;
+import org.dcache.pool.repository.Repository;
 import org.dcache.pool.FaultEvent;
 import org.dcache.pool.FaultListener;
 import org.dcache.pool.FaultAction;
@@ -46,7 +48,7 @@ import java.util.Iterator;
 public class CacheRepositoryV5
     extends AbstractCellComponent
     implements CacheRepositoryListener,
-               Iterable<PnfsId>
+               Repository
 {
     private final List<StateChangeListener> _stateChangeListeners =
         new CopyOnWriteArrayList<StateChangeListener>();

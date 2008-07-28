@@ -7,7 +7,7 @@ import diskCacheV111.util.*;
 import diskCacheV111.util.event.*;
 
 import org.dcache.pool.repository.CacheEntry;
-import org.dcache.pool.repository.v5.CacheRepositoryV5;
+import org.dcache.pool.repository.Repository;
 import org.dcache.cell.CellCommandListener;
 import org.dcache.cell.AbstractCellComponent;
 
@@ -21,7 +21,7 @@ public class StorageClassContainer
     extends AbstractCellComponent
     implements CellCommandListener
 {
-    private CacheRepositoryV5 _repository;
+    private Repository _repository;
     private final Object _storageClassLock = new Object();
     private final String   _poolName;
     private final Map<String, StorageClassInfo> _storageClasses =
@@ -30,7 +30,7 @@ public class StorageClassContainer
         new HashMap();
     private boolean  _poolStatusInfoChanged = true;
 
-    public StorageClassContainer(CacheRepositoryV5 repository, String poolName)
+    public StorageClassContainer(Repository repository, String poolName)
     {
         _repository = repository;
         _poolName = poolName;

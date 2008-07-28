@@ -1,7 +1,7 @@
 package org.dcache.pool.classic;
 
 import org.dcache.pool.repository.ReadHandle;
-import org.dcache.pool.repository.v5.CacheRepositoryV5;
+import org.dcache.pool.repository.Repository;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.FileNotInCacheException;
 import diskCacheV111.util.CacheException;
@@ -30,7 +30,7 @@ class PoolIOReadTransfer
                               ProtocolInfo protocolInfo,
                               StorageInfo storageInfo,
                               MoverProtocol mover,
-                              CacheRepositoryV5 repository)
+                              Repository repository)
         throws FileNotInCacheException
     {
         super(pnfsId, protocolInfo, storageInfo, mover);

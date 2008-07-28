@@ -36,7 +36,7 @@ import org.dcache.pool.FaultListener;
 import org.dcache.pool.FaultEvent;
 import org.dcache.pool.repository.v3.RepositoryException;
 import org.dcache.pool.repository.v5.CacheRepositoryV5;
-import org.dcache.pool.repository.v5.IllegalTransitionException;
+import org.dcache.pool.repository.IllegalTransitionException;
 import org.dcache.pool.repository.SpaceRecord;
 import org.dcache.pool.repository.EntryState;
 import org.dcache.pool.repository.WriteHandle;

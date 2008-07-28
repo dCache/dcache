@@ -19,7 +19,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.log4j.Logger;
-import org.dcache.pool.repository.v5.CacheRepositoryV5;
+import org.dcache.pool.repository.Repository;
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.pool.repository.EntryState;
 import org.dcache.pool.repository.WriteHandle;
@@ -57,7 +57,7 @@ public class P2PClient
 {
     private final static Logger _log = Logger.getLogger(P2PClient.class);
 
-    private final CacheRepositoryV5 _repository;
+    private final Repository _repository;
     private final Acceptor _acceptor = new Acceptor();
     private final Map<Integer, P2PClient.Companion> _sessions =
         new HashMap<Integer, P2PClient.Companion>();
@@ -655,7 +655,7 @@ public class P2PClient
         }
     }
 
-    public P2PClient(CacheRepositoryV5 repository, ChecksumModuleV1 csModule)
+    public P2PClient(Repository repository, ChecksumModuleV1 csModule)
     {
         _repository = repository;
         _checksumModule = csModule;

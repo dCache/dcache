@@ -5,7 +5,7 @@ package org.dcache.pool.classic;
 import diskCacheV111.util.*;
 import diskCacheV111.vehicles.*;
 import org.dcache.pool.repository.ReadHandle;
-import org.dcache.pool.repository.v5.CacheRepositoryV5;
+import org.dcache.pool.repository.Repository;
 import org.dcache.cell.CellCommandListener;
 import org.dcache.cell.AbstractCellComponent;
 
@@ -26,7 +26,7 @@ public class ChecksumModuleV1
 {
     private final static Logger _log = Logger.getLogger(ChecksumModuleV1.class);
 
-    private final CacheRepositoryV5 _repository;
+    private final Repository _repository;
 
     private boolean _frequently = false;
     private boolean _onRead     = false;
@@ -54,8 +54,7 @@ public class ChecksumModuleV1
     private final Map<PnfsId,Checksum> _bad =
         new ConcurrentHashMap<PnfsId,Checksum>();
 
-    public ChecksumModuleV1(CacheRepositoryV5 repository,
-                            PnfsHandler pnfs)
+    public ChecksumModuleV1(Repository repository, PnfsHandler pnfs)
     {
         _repository = repository;
         _pnfs       = pnfs;

@@ -1,6 +1,6 @@
 package org.dcache.pool.classic;
 
-import org.dcache.pool.repository.v5.CacheRepositoryV5;
+import org.dcache.pool.repository.Repository;
 import org.dcache.pool.repository.WriteHandle;
 import java.util.MissingResourceException;
 import java.util.concurrent.TimeoutException;
@@ -17,7 +17,7 @@ class WriteHandleSpaceMonitorAdapter
 {
     private final WriteHandle _handle;
 
-    public WriteHandleSpaceMonitorAdapter(CacheRepositoryV5 repository,
+    public WriteHandleSpaceMonitorAdapter(Repository repository,
                                           WriteHandle handle)
     {
         super(repository);

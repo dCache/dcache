@@ -3,7 +3,7 @@ package org.dcache.pool.classic;
 import org.dcache.pool.repository.WriteHandle;
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.pool.repository.EntryState;
-import org.dcache.pool.repository.v5.CacheRepositoryV5;
+import org.dcache.pool.repository.Repository;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.FileNotInCacheException;
 import diskCacheV111.util.Checksum;
@@ -87,7 +87,7 @@ class PoolIOWriteTransfer
                                ProtocolInfo protocolInfo,
                                StorageInfo storageInfo,
                                MoverProtocol mover,
-                               CacheRepositoryV5 repository,
+                               Repository repository,
                                ChecksumModuleV1 checksumModule)
         throws FileInCacheException
     {
