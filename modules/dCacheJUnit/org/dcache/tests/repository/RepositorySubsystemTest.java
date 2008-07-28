@@ -24,7 +24,7 @@ import org.dcache.tests.cells.Message;
 
 import org.dcache.pool.repository.v4.CacheRepositoryV4;
 import org.dcache.pool.repository.v5.CacheRepositoryV5;
-import org.dcache.pool.repository.v5.IllegalTransitionException;
+import org.dcache.pool.repository.IllegalTransitionException;
 
 import org.dcache.pool.repository.SpaceRecord;
 import org.dcache.pool.repository.EntryState;
