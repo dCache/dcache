@@ -18,7 +18,10 @@ import dmg.util.Args;
  * Can be enabled on pools to protect then from cleaning CACHED files
  *
  */
-public class DummySpaceSweeper implements SpaceSweeper , Runnable  {
+public class DummySpaceSweeper
+    extends AbstractSpaceSweeper
+    implements Runnable
+{
     private final CacheRepository _repository ;
     private final CellAdapter     _cell;
     private final PnfsHandler     _pnfs ;
@@ -36,18 +39,6 @@ public class DummySpaceSweeper implements SpaceSweeper , Runnable  {
        _cell.getNucleus().newThread( this , "d-sweeper" ).start() ;
     }
     public long getRemovableSpace(){ return 0L ; }
-    public void actionPerformed( CacheEvent event ){/* forced by interface definition */}
-    public void precious( CacheRepositoryEvent event ){/* forced by interface definition */}
-    public void available( CacheRepositoryEvent event ){/* forced by interface definition */}
-    public void created( CacheRepositoryEvent event ){/* forced by interface definition */}
-    public void destroyed( CacheRepositoryEvent event ){/* forced by interface definition */}
-    public void touched( CacheRepositoryEvent event ){/* forced by interface definition */}
-    public void removed( CacheRepositoryEvent event ){/* forced by interface definition */}
-    public void needSpace( CacheNeedSpaceEvent event ){/* forced by interface definition */}
-
-    public void scanned( CacheRepositoryEvent event ){/* forced by interface definition */}
-    public void cached( CacheRepositoryEvent event ){/* forced by interface definition */}
-    public void sticky( CacheRepositoryEvent event ){/* forced by interface definition */}
 
     public String hh_sweeper_free = "<bytesToFree>" ;
     public String ac_sweeper_free_$_1( Args args )throws Exception {
@@ -71,12 +62,6 @@ public class DummySpaceSweeper implements SpaceSweeper , Runnable  {
        say("D-SS : finished");
     }
     public long getLRUSeconds(){ return  3600L ; }
-
-    public void printSetup( PrintWriter pw ){
-       pw.println( "#\n# Nothing from the "+this.getClass().getName()+"#" ) ;
-    }
-
-    public void afterSetupExecuted() {}
 
     private void say( String msg ){
        _cell.say( "D-SWEEPER : "+msg ) ;

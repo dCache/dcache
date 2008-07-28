@@ -19,7 +19,8 @@ import diskCacheV111.util.event.CacheRepositoryEvent;
  * @since 1.8.0-16
  *
  */
-public class NoCachedFilesSpaceSweeper implements SpaceSweeper
+public class NoCachedFilesSpaceSweeper
+    extends AbstractSpaceSweeper
 {
     private final static Logger _log = Logger.getLogger(NoCachedFilesSpaceSweeper.class);
 
@@ -42,21 +43,6 @@ public class NoCachedFilesSpaceSweeper implements SpaceSweeper
         return 0;
     }
 
-    public void printSetup(PrintWriter pw) {
-        // forced by interface
-
-    }
-
-    public void afterSetupExecuted() {
-        // forced by interface
-
-    }
-
-    public void available(CacheRepositoryEvent event) {
-        // forced by interface
-
-    }
-
     public void cached(CacheRepositoryEvent event) {
 
         CacheRepositoryEntry entry = event.getRepositoryEntry() ;
@@ -66,50 +52,5 @@ public class NoCachedFilesSpaceSweeper implements SpaceSweeper
         } catch (CacheException e) {
             _log.error("Failed to remove entry from repository: " + e.getMessage() );
         }
-    }
-
-    public void created(CacheRepositoryEvent event) {
-        // forced by interface
-
-    }
-
-    public void destroyed(CacheRepositoryEvent event) {
-        // forced by interface
-
-    }
-
-    public void needSpace(CacheNeedSpaceEvent event) {
-        // forced by interface
-
-    }
-
-    public void precious(CacheRepositoryEvent event) {
-        // forced by interface
-
-    }
-
-    public void removed(CacheRepositoryEvent event) {
-        // forced by interface
-
-    }
-
-    public void scanned(CacheRepositoryEvent event) {
-        // forced by interface
-
-    }
-
-    public void sticky(CacheRepositoryEvent event) {
-        // forced by interface
-
-    }
-
-    public void touched(CacheRepositoryEvent event) {
-        // forced by interface
-
-    }
-
-    public void actionPerformed(CacheEvent event) {
-        // forced by interface
-
     }
 }

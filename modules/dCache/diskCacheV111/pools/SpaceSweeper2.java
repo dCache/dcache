@@ -17,7 +17,8 @@ import java.io.PrintWriter;
 import org.apache.log4j.Logger;
 
 public class SpaceSweeper2
-    implements SpaceSweeper, Runnable, CellCommandListener
+    extends AbstractSpaceSweeper
+    implements Runnable, CellCommandListener
 {
     private final static Logger _log = Logger.getLogger(SpaceSweeper2.class);
 
@@ -136,11 +137,6 @@ public class SpaceSweeper2
         }
     }
 
-    public void actionPerformed(CacheEvent event)
-    {
-        /* forced by CacheRepositoryListener interface */
-    }
-
     public synchronized void precious(CacheRepositoryEvent event)
     {
         CacheRepositoryEntry entry = event.getRepositoryEntry();
@@ -157,21 +153,6 @@ public class SpaceSweeper2
         } else {
             remove(entry);
         }
-    }
-
-    public void available(CacheRepositoryEvent event)
-    {
-        /* forced by CacheRepositoryListener interface */
-    }
-
-    public void created(CacheRepositoryEvent event)
-    {
-        /* forced by CacheRepositoryListener interface */
-    }
-
-    public void destroyed(CacheRepositoryEvent event)
-    {
-        /* forced by CacheRepositoryListener interface */
     }
 
     public synchronized void touched(CacheRepositoryEvent event)
@@ -407,14 +388,6 @@ public class SpaceSweeper2
             say("finished");
         }
     }
-
-    public void printSetup(PrintWriter pw)
-    {
-        pw.println("#\n# Nothing from the "
-                   + this.getClass().getName() + "#");
-    }
-
-    public void afterSetupExecuted() {}
 
     private void say(String msg)
     {
