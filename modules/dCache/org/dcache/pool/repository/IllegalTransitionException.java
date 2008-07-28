@@ -1,7 +1,6 @@
-package org.dcache.pool.repository.v5;
+package org.dcache.pool.repository;
 
 import diskCacheV111.util.PnfsId;
-import org.dcache.pool.repository.EntryState;
 
 public class IllegalTransitionException
     extends Exception
