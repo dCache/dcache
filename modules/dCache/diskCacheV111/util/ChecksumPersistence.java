@@ -18,7 +18,6 @@ package diskCacheV111.util;
 */
 
 import  java.util.*;
-import  java.io.NotSerializableException;
 
 import  dmg.cells.nucleus.CellEndpoint;
 import  dmg.cells.nucleus.CellPath;

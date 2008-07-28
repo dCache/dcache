@@ -23,7 +23,7 @@ public interface CellMessageAnswerable {
    /**
      * exceptionArrived is called whenever an exception is related
      * to the request message. Currently this can only be
-     * a NoRouteToCellException and NotSerializableException.
+     * a NoRouteToCellException and SerializationException.
      *
      * @param request the request message which belong to the 
      *                answer received with this callback.

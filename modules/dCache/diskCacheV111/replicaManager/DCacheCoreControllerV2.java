@@ -1079,8 +1079,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
 
    private void getCostTable(CellAdapter cell)
            throws InterruptedException,
-           NoRouteToCellException,
-           NotSerializableException {
+           NoRouteToCellException {
 
        synchronized (_costTableLock) {
 
@@ -1496,14 +1495,12 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
      *
      *  @throws MissingResourceException if the PoolManager is not available, times out or
      *          returns an illegal Object.
-     *  @throws java.io.NotSerializableException in case of an assertion.
      *  @throws NoRouteToCellException if the cell environment couldn't find the PnfsManager.
      *  @throws InterruptedException if the method was interrupted.
      *
      */
    protected StorageInfo getStorageInfo( PnfsId pnfsId )
            throws MissingResourceException,
-                  java.io.NotSerializableException ,
                   NoRouteToCellException,
                   InterruptedException
      {
@@ -1569,14 +1566,12 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
      *         valid. May take significatly more time.
      *  @throws MissingResourceException if the PoolManager is not available, times out or
      *          returns an illegal Object.
-     *  @throws java.io.NotSerializableException in case of an assertion.
      *  @throws NoRouteToCellException if the cell environment couldn't find the PoolManager.
      *  @throws InterruptedException if the method was interrupted.
      *
      */
    protected List getCacheLocationList( PnfsId pnfsId , boolean checked )
            throws MissingResourceException,
-                  java.io.NotSerializableException ,
                   NoRouteToCellException,
                   InterruptedException                {
 
@@ -1715,13 +1710,11 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
      *  @return list of pool names (Strings)
      *  @throws MissingResourceException if the PoolManager is not available, times out or
      *          returns an illegal Object.
-     *  @throws java.io.NotSerializableException in case of an assertion.
      *  @throws NoRouteToCellException if the cell environment couldn't find the PoolManager.
      *  @throws InterruptedException if the method was interrupted.
      */
    protected List getPoolList()
            throws MissingResourceException,
-                  java.io.NotSerializableException ,
                   NoRouteToCellException,
                   InterruptedException                {
 
@@ -1753,8 +1746,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
 
    protected List getPoolGroup ( String pGroup )
        throws InterruptedException,
-       NoRouteToCellException,
-       NotSerializableException {
+       NoRouteToCellException {
 
      String command = new String( "psux ls pgroup " + pGroup );
      CellMessage cellMessage = new CellMessage(
@@ -1812,8 +1804,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
    }
 
    protected String getPoolHost( String poolName )
-           throws InterruptedException, NoRouteToCellException,
-           NotSerializableException {
+           throws InterruptedException, NoRouteToCellException {
 
        PoolCheckMessage msg = new PoolCheckMessage(poolName);
 
@@ -1868,14 +1859,12 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
      *          returns an illegal Object.
      *  @throws ConcurrentModificationException if the repository changes while
                 this list is produced.
-     *  @throws java.io.NotSerializableException in case of an assertion.
      *  @throws NoRouteToCellException if the cell environment couldn't find the PoolManager.
      *  @throws InterruptedException if the method was interrupted.
      */
    protected List<CacheRepositoryEntryInfo> getPoolRepository( String poolName )
           throws MissingResourceException ,
                  ConcurrentModificationException ,
-                 java.io.NotSerializableException ,
                  NoRouteToCellException ,
                  InterruptedException                {
 

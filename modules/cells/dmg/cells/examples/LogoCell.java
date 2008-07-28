@@ -4,7 +4,6 @@ import  java.awt.* ;
 import  java.awt.event.* ;
 import  dmg.cells.nucleus.* ;
 import  java.util.Date ;
-import  java.io.NotSerializableException ;
 import  dmg.util.* ;
 
 /**

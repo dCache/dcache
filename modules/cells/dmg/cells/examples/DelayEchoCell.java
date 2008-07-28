@@ -2,7 +2,6 @@ package dmg.cells.examples ;
 
 import  dmg.cells.nucleus.* ;
 import  java.util.Date ;
-import  java.io.NotSerializableException ;
 
 import  dmg.util.Args ;
 

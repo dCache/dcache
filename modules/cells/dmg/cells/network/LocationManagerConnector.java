@@ -3,7 +3,6 @@ package dmg.cells.network;
 import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.io.PrintWriter;
-import java.io.NotSerializableException;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.InetSocketAddress;
@@ -79,8 +78,6 @@ public class LocationManagerConnector
             return obj.toString();
         } catch (NoRouteToCellException e) {
             throw new IOException("No route to location manager");
-        } catch (NotSerializableException e) {
-            throw new RuntimeException("Bug: Unserializable vehicle detected", e);
         }
     }
 

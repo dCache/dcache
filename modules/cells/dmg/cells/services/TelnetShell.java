@@ -6,7 +6,6 @@ import  dmg.cells.network.* ;
 import  dmg.util.* ;
 
 import  java.util.Date ;
-import  java.io.NotSerializableException ;
 import  java.net.Socket ;
 
 /**
