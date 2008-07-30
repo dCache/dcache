@@ -21,6 +21,7 @@ import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.OSMStorageInfo;
 import diskCacheV111.vehicles.PnfsGetStorageInfoMessage;
+import diskCacheV111.vehicles.PnfsAddCacheLocationMessage;
 import diskCacheV111.vehicles.StorageInfo;
 
 public class RepositoryEntryHealerTest {
@@ -69,9 +70,11 @@ public class RepositoryEntryHealerTest {
 
        PnfsGetStorageInfoMessage getStorageInfoMessage = new PnfsGetStorageInfoMessage(pnfsId);
        getStorageInfoMessage.setStorageInfo(info);
+       PnfsAddCacheLocationMessage addCacheLocationMessage = new PnfsAddCacheLocationMessage(pnfsId, "RepositoryEntryHealerTestCell");
 
 
        GenericMockCellHelper.prepareMessage(new CellPath("PnfsManager"), getStorageInfoMessage);
+       GenericMockCellHelper.prepareMessage(new CellPath("PnfsManager"), addCacheLocationMessage);
 
        /*
         * CacheException(TIMEOUT) will indicate that we tried to modify file size in Pnfs
@@ -99,8 +102,10 @@ public class RepositoryEntryHealerTest {
        PnfsGetStorageInfoMessage getStorageInfoMessage = new PnfsGetStorageInfoMessage(pnfsId);
        getStorageInfoMessage.setStorageInfo(info);
 
+       PnfsAddCacheLocationMessage addCacheLocationMessage = new PnfsAddCacheLocationMessage(pnfsId, "RepositoryEntryHealerTestCell");
 
        GenericMockCellHelper.prepareMessage(new CellPath("PnfsManager"), getStorageInfoMessage);
+       GenericMockCellHelper.prepareMessage(new CellPath("PnfsManager"), addCacheLocationMessage);
 
        /*
         * CacheException(TIMEOUT) will indicate that we tried to modify file size in Pnfs

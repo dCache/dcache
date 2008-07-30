@@ -2044,10 +2044,15 @@ public class PoolV4
                 case CACHED:
                 case BROKEN:
                     _hybridCurrent++;
-                    if (_activate)
-                        _pnfs.addCacheLocation(pnfsid.toString());
-                    else
-                        _pnfs.clearCacheLocation(pnfsid.toString());
+                    try {
+                        if (_activate)
+                            _pnfs.addCacheLocation(pnfsid);
+                        else
+                            _pnfs.clearCacheLocation(pnfsid);
+                    } catch (CacheException e) {
+                        _log.error("Cache location was not updated for "
+                                   + pnfsid + ": " + e.getMessage());
+                    }
                     break;
                 default:
                     break;

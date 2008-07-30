@@ -123,17 +123,20 @@ public class PnfsHandler
 
    }
 
-   public void addCacheLocation( String pnfsId ){
-
-       send( new PnfsAddCacheLocationMessage(
+   public void addCacheLocation( String pnfsId )
+       throws CacheException
+   {
+       pnfsRequest( new PnfsAddCacheLocationMessage(
                            pnfsId,
                            _poolName)
            ) ;
 
    }
-   public void addCacheLocation( PnfsId pnfsId ){
 
-       send( new PnfsAddCacheLocationMessage(
+   public void addCacheLocation( PnfsId pnfsId )
+       throws CacheException
+   {
+       pnfsRequest( new PnfsAddCacheLocationMessage(
                            pnfsId,
                            _poolName)
            ) ;
@@ -190,6 +193,7 @@ public class PnfsHandler
        Object      pnfsReplyObject;
        CellMessage pnfsCellReply;
        try {
+           msg.setReplyRequired(true);
            pnfsCellReply
                = _endpoint.sendAndWait(new CellMessage(_pnfs, msg),
                                        __pnfsTimeout);

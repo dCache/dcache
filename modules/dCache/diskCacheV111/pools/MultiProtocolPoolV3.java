@@ -886,7 +886,13 @@ public class MultiProtocolPoolV3 extends CellAdapter
 
         public void available(CacheRepositoryEvent event) {
             say("RepositoryLoader : available : " + event);
-            _pnfs.addCacheLocation(event.getRepositoryEntry().getPnfsId());
+            PnfsId id = event.getRepositoryEntry().getPnfsId();
+            try {
+                _pnfs.addCacheLocation(id);
+            } catch (CacheException e) {
+                esay("[ERROR] Cache location was not set for " + id + ": "
+                     + e.getMessage());
+            }
             event.getRepositoryEntry().lock(false);
         }
 
@@ -3232,10 +3238,15 @@ public class MultiProtocolPoolV3 extends CellAdapter
                 if (Thread.interrupted())
                     break;
                 _hybridCurrent++;
-                if (_activate)
-                    _pnfs.addCacheLocation(pnfsid.toString());
-                else
-                    _pnfs.clearCacheLocation(pnfsid.toString());
+                try {
+                    if (_activate)
+                        _pnfs.addCacheLocation(pnfsid);
+                    else
+                        _pnfs.clearCacheLocation(pnfsid);
+                } catch (CacheException e) {
+                    esay("[ERROR] Cache location was not updated for "
+                         + pnfsid + ": " + e.getMessage());
+                }
             }
             stopTime = System.currentTimeMillis();
             synchronized (_hybridInventoryLock) {
