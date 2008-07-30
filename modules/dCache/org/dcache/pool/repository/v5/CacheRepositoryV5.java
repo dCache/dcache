@@ -45,11 +45,16 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.Iterator;
 
+import org.apache.log4j.Logger;
+
 public class CacheRepositoryV5
     extends AbstractCellComponent
     implements CacheRepositoryListener,
                Repository
 {
+    private final static Logger _log =
+        Logger.getLogger(CacheRepositoryV5.class);
+
     private final List<StateChangeListener> _stateChangeListeners =
         new CopyOnWriteArrayList<StateChangeListener>();
 
@@ -503,8 +508,19 @@ public class CacheRepositoryV5
     protected void notify(PnfsId id, EntryState oldState, EntryState newState)
     {
         StateChangeEvent event = new StateChangeEvent(id, oldState, newState);
-        for (StateChangeListener listener : _stateChangeListeners)
-            listener.stateChanged(event);
+        for (StateChangeListener listener : _stateChangeListeners) {
+            try {
+                listener.stateChanged(event);
+            } catch (RuntimeException e) {
+                /* State change notifications are important for proper
+                 * functioning of the pool and we cannot risk a
+                 * problem in an event handler causing other event
+                 * handlers not to be called. We therefore catch, log
+                 * and ignore these problems.
+                 */
+                _log.error("Unexpected failure during state change notification", e);
+            }
+        }
     }
 
     /**
