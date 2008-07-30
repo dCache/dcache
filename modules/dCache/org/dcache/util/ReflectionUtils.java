@@ -1,10 +1,16 @@
 package org.dcache.util;
 
 import java.lang.reflect.Method;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Modifier;
 
 import java.util.Arrays;
 import java.util.Map;
 import java.util.HashMap;
+
+import diskCacheV111.util.PnfsId;
+
+import org.apache.log4j.Logger;
 
 /**
  * This class contains useful static methods for working with Java
@@ -12,6 +18,8 @@ import java.util.HashMap;
  */
 public class ReflectionUtils
 {
+    private static final Logger _log = Logger.getLogger(ReflectionUtils.class);
+
     private static final Map<String,Method> methodCache =
         new HashMap<String,Method>();
 
@@ -71,5 +79,34 @@ public class ReflectionUtils
              */
             return null;
         }
+    }
+
+    /**
+     * If <code>o</code> has a public getPnfsId method with an empty
+     * parameter list and a PnfsId return type, then the return value
+     * of that method is returned. Otherwise null is returned.
+     */
+    public static PnfsId getPnfsId(Object o)
+    {
+        try {
+            Class c = o.getClass();
+            Method m = c.getMethod("getPnfsId");
+            if (PnfsId.class.isAssignableFrom(m.getReturnType()) &&
+                Modifier.isPublic(m.getModifiers())) {
+                m.setAccessible(true);
+                return (PnfsId)m.invoke(o);
+            }
+        } catch (NoSuchMethodException e) {
+            // Not having a getPnfsId method is quite valid
+        } catch (IllegalAccessException e) {
+            // Having a non-public getPnfsId is unfortunate, but quite
+            // valid. Still we log it to better track the issue.
+            _log.debug("Failed to extract PNFS ID from object: "
+                       + e.getMessage(), e);
+        } catch (InvocationTargetException e) {
+            _log.error("Failed to extract PNFS ID from message: "
+                       + e.getMessage(), e);
+        }
+        return null;
     }
 }

@@ -1,6 +1,7 @@
 package org.dcache.services;
 
 import org.apache.log4j.Logger;
+import org.apache.log4j.NDC;
 import java.math.BigInteger;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -8,6 +9,7 @@ import java.io.StringWriter;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 
 import dmg.util.Args;
 import dmg.cells.nucleus.CellAdapter;
@@ -19,8 +21,10 @@ import dmg.cells.nucleus.Reply;
 
 import org.dcache.util.PinboardAppender;
 import org.dcache.util.CellMessageDispatcher;
+import org.dcache.util.ReflectionUtils;
 import diskCacheV111.vehicles.Message;
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.PnfsId;
 
 /**
  * Abstract cell implementation providing features needed by many
@@ -482,6 +486,23 @@ public class AbstractCell extends CellAdapter
         _messageDispatcher.removeMessageListener(o);
     }
 
+    public void messageArrived(CellMessage envelope)
+    {
+        super.messageArrived(envelope);
+
+        PnfsId id = ReflectionUtils.getPnfsId(envelope.getMessageObject());
+        if (id == null) {
+            dispatchArrived(envelope);
+        } else {
+            NDC.push(id.toString());
+            try {
+                dispatchArrived(envelope);
+            } finally {
+                NDC.pop();
+            }
+        }
+    }
+
     /**
      * Delivers messages to registered message listeners.
      *
@@ -504,10 +525,8 @@ public class AbstractCell extends CellAdapter
      * Return values implementing Reply are recognized and the reply
      * is delivered by calling the deliver method on the Reply object.
      */
-    public void messageArrived(CellMessage envelope)
+    public void dispatchArrived(CellMessage envelope)
     {
-        super.messageArrived(envelope);
-
         UOID uoid = envelope.getUOID();
         Object result = _messageDispatcher.messageArrived(envelope);
 

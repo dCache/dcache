@@ -1,6 +1,6 @@
 package diskCacheV111.util;
 
-import diskCacheV111.vehicles.*;
+import diskCacheV111.vehicles.JobInfo;
 
 import java.util.*;
 import java.util.concurrent.Executor;
@@ -8,7 +8,10 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.lang.reflect.InvocationTargetException;
 
+import org.dcache.util.ReflectionUtils;
+
 import org.apache.log4j.Logger;
+import org.apache.log4j.NDC;
 
 public class SimpleJobScheduler implements JobScheduler, Runnable
 {
@@ -110,8 +113,14 @@ public class SimpleJobScheduler implements JobScheduler, Runnable
             _startTime = System.currentTimeMillis();
             _thread = Thread.currentThread();
             try {
+                NDC.push("job=" + _id);
+                PnfsId id = ReflectionUtils.getPnfsId(_runnable);
+                if (id != null) {
+                    NDC.push(id.toString());
+                }
                 _runnable.run();
             } finally {
+                NDC.remove();
                 synchronized (_lock) {
                     _status = REMOVED;
                     _jobs.remove(_id);

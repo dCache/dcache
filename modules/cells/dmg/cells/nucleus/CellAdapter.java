@@ -7,6 +7,8 @@ import java.lang.reflect.*;
 
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+import org.apache.log4j.NDC;
+
 /**
  *
  *
@@ -952,7 +954,12 @@ public class   CellAdapter
                         _nucleus.esay("Couldn't revert PingMessage : "+ee);
                     }
                 } else {
-                    messageArrived(msg);
+                    NDC.push(getMessageName(obj));
+                    try {
+                        messageArrived(msg);
+                    } finally {
+                        NDC.pop();
+                    }
                 }
             } else {
                 //
@@ -1119,5 +1126,15 @@ public class   CellAdapter
 
         return;
 
+    }
+
+    protected String getMessageName(Object msg)
+    {
+        Class c = msg.getClass();
+        String cmd = msg.getClass().getSimpleName();
+        if (cmd.endsWith("Message"))
+            cmd = cmd.substring(0, cmd.length() - 7);
+
+        return cmd;
     }
 }

@@ -11,7 +11,7 @@ import java.net.Socket;
 
 import org.apache.log4j.Logger;
 import org.apache.log4j.MDC;
-
+import org.apache.log4j.NDC;
 
 /**
  *
@@ -465,10 +465,14 @@ public class CellNucleus implements Runnable, ThreadFactory {
                         //
                         // and deliver it
                         //
-                        nsay("messageThread : delivering message : "+msg);
-                        _cell.messageArrived(new MessageEvent(msg));
-                        nsay("messageThread : delivering message done : "+msg);
-                        //
+                        NDC.push(getDiagnosticContext(msg));
+                        try {
+                            nsay("messageThread : delivering message : "+msg);
+                            _cell.messageArrived(new MessageEvent(msg));
+                            nsay("messageThread : delivering message done : "+msg);
+                        } finally {
+                            NDC.pop();
+                        }
                     } catch(Throwable nse) {
                         nesay("messageThread : "+
                               "Exception in cell.messageArrived(MessageEvent)");
@@ -477,6 +481,7 @@ public class CellNucleus implements Runnable, ThreadFactory {
                 }
             }
             nsay("messageThread : stopped");
+            NDC.remove();
         } else if (Thread.currentThread() == _killThread) {
             nsay("killerThread : started");
             KillEvent  event = _killEvent;
@@ -865,4 +870,9 @@ public class CellNucleus implements Runnable, ThreadFactory {
         }
     }
 
+    protected String getDiagnosticContext(CellMessage envelope)
+    {
+        return envelope.getSourceAddress().getCellName() + " "
+            + envelope.getUOID();
+    }
 }
