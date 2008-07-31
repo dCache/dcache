@@ -22,16 +22,26 @@ import org.apache.commons.dbcp.DriverManagerConnectionFactory;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Proxy;
+
 /**
  *
  * @author  timur
  */
 public class JdbcConnectionPool {
+    /**
+     * keep on increasing number of connections if needed
+     */
+    public static final byte WHEN_EXHAUSTED_GROW = GenericObjectPool.WHEN_EXHAUSTED_GROW;
+    /**
+     * block in the getConnection, if maxActive number of connections is given
+     */
+    public static final byte WHEN_EXHAUSTED_BLOCK = GenericObjectPool.WHEN_EXHAUSTED_BLOCK;
     
     private final String jdbcUrl;
     private final String jdbcClass;
     private final String user;
     private final String pass;
+    private final GenericObjectPool connectionPool;
     private final DataSource dataSource;
     private static Logger _logSql = 
             Logger.getLogger(
@@ -43,20 +53,114 @@ public class JdbcConnectionPool {
     
     /**
      * DataSource should not be closed
+     * @param jdbcUrl URL of the Database
+     * @param jdbcClass JDBC Driver class name
+     * @param user Database user
+     * @param pass Database password
+     * @throws java.sql.SQLException if the underlying jdbc code throws exception
+     * @return DataSource
      */
     public synchronized static final DataSource getDataSource(
     String jdbcUrl,
     String jdbcClass,
     String user,
     String pass) throws SQLException {
-        JdbcConnectionPool pool = getPool(jdbcUrl,jdbcClass, user, pass);
-        return pool.dataSource;
+        return getDataSource(jdbcUrl,
+            jdbcClass, 
+            user, 
+            pass,
+            10,
+            GenericObjectPool.WHEN_EXHAUSTED_GROW,
+            0, 
+            8);
     }
     
+    /**
+     * 
+     * @param jdbcUrl URL of the Database
+     * @param jdbcClass JDBC Driver class name
+     * @param user Database user
+     * @param pass Database password
+     * @param maxActive sets the cap on the total number of active instances 
+     *                  from the pool.
+     *                  Use a negative value for no limit.
+     * @param whenExhaustedAction <code>WHEN_EXHAUSTED_GROW</code> or
+     *                            <code>WHEN_EXHAUSTED_BLOCK</code>
+     * @param maxWait see <code> setMaxWait </code> method 
+     * @param maxIdle max number of Idle connections, Use a negative value to 
+     *                indicate an unlimited number of idle instances.
+     * @throws java.sql.SQLException if the underlying jdbc code throws exception
+     * @return DataSource for the connection pool with indicated parameters
+     */
+    public synchronized static final DataSource getDataSource(
+    String jdbcUrl,
+    String jdbcClass,
+    String user,
+    String pass,
+    int maxActive,
+    byte whenExhaustedAction,
+    long maxWait,
+    int maxIdle) throws SQLException {
+        JdbcConnectionPool pool = 
+            getPool(jdbcUrl,
+            jdbcClass, 
+            user, 
+            pass,
+            maxActive,
+            whenExhaustedAction,
+            maxWait, 
+            maxIdle);
+        return pool.dataSource;
+    }
+
+    /**
+     * gets existing or creates a new JdbcConnectionPool
+     * @param jdbcUrl URL of the Database
+     * @param jdbcClass JDBC Driver class name
+     * @param user Database user
+     * @param pass Database password
+     * @throws java.sql.SQLException if the underlying jdbc code throws exception
+     * @return JdbcConnectionPool  with indicated parameters
+     */
     public synchronized static final JdbcConnectionPool getPool(String jdbcUrl,
     String jdbcClass,
     String user,
     String pass) throws SQLException {
+        return getPool(jdbcUrl,
+            jdbcClass,
+            user,
+            pass,            
+            10,
+            GenericObjectPool.WHEN_EXHAUSTED_GROW,
+            0, 
+            8);
+    }
+
+    /**
+     * gets existing or creates a new JdbcConnectionPool
+     * @param jdbcUrl URL of the Database
+     * @param jdbcClass JDBC Driver class name
+     * @param user Database user
+     * @param pass Database password
+     * @param maxActive sets the cap on the total number of active instances 
+     *                  from the pool.
+     *                  Use a negative value for no limit.
+     * @param whenExhaustedAction <code>WHEN_EXHAUSTED_GROW</code> or
+     *                            <code>WHEN_EXHAUSTED_BLOCK</code>
+     * @param maxWait see <code> setMaxWait </code> method 
+     * @param maxIdle max number of Idle connections, Use a negative value to 
+     *                indicate an unlimited number of idle instances.
+     * @throws java.sql.SQLException if the underlying jdbc code throws exception
+     * @return JdbcConnectionPool with indicated parameters
+     */
+    public synchronized static final JdbcConnectionPool getPool(String jdbcUrl,
+    String jdbcClass,
+    String user,
+    String pass,
+    int maxActive,
+    byte whenExhaustedAction,
+    long maxWait,
+    int maxIdle) throws SQLException {
         if(pass == null) pass="";
         long starttimestamp = System.currentTimeMillis();
         for (Iterator i = pools.iterator();
@@ -73,7 +177,17 @@ public class JdbcConnectionPool {
                 return pool;
             }
         }
-        JdbcConnectionPool pool = new JdbcConnectionPool(jdbcUrl,jdbcClass,user,pass);
+        JdbcConnectionPool pool = 
+            new JdbcConnectionPool(
+            jdbcUrl,
+            jdbcClass,
+            user,
+            pass,
+            maxActive,
+            whenExhaustedAction,
+            maxWait, 
+            maxIdle);
+
         pools.add(pool);
         long elapsed = System.currentTimeMillis()-starttimestamp;
         if( _logSql.isDebugEnabled() ) {
@@ -84,11 +198,31 @@ public class JdbcConnectionPool {
         
     }
     
-    /** Creates a new instance of ResuestsPropertyStorage */
+    /**
+     * Creates a new instance of ResuestsPropertyStorage
+     * @param jdbcUrl URL of the Database
+     * @param jdbcClass JDBC Driver class name
+     * @param user Database user
+     * @param pass Database password
+     * @param maxActive sets the cap on the total number of active instances 
+     *                  from the pool.
+     *                  Use a negative value for no limit.
+     * @param whenExhaustedAction <code>WHEN_EXHAUSTED_GROW</code> or
+     *                            <code>WHEN_EXHAUSTED_BLOCK</code>
+     * @param maxWait see <code> setMaxWait </code> method 
+     * @param maxIdle max number of Idle connections, Use a negative value to 
+     *                indicate an unlimited number of idle instances.
+     * @throws java.sql.SQLException 
+     */
     protected JdbcConnectionPool(  String jdbcUrl,
     String jdbcClass,
     String user,
-    String pass) throws SQLException {
+    String pass,
+    int maxActive,
+    byte whenExhaustedAction,
+    long maxWait,
+    int maxIdle
+    ) throws SQLException {
         if( jdbcUrl == null )
         {
             throw new NullPointerException("JdbcConnectionPool, jdbc url is null");
@@ -104,6 +238,10 @@ public class JdbcConnectionPool {
         if( pass == null )
         {
             throw new NullPointerException("JdbcConnectionPool, jdbc pass is null (check jdbcPass or pgPass options)");
+        }
+        if(whenExhaustedAction != WHEN_EXHAUSTED_GROW && whenExhaustedAction != WHEN_EXHAUSTED_BLOCK) {
+            throw new IllegalArgumentException("Illegal whenExhaustedAction value = "+whenExhaustedAction+
+                "; should be either JdbcConnectionPool.WHEN_EXHAUSTED_GROW or JdbcConnectionPool.WHEN_EXHAUSTED_BLOCK");
         }
         try {
             Class.forName(jdbcClass);
@@ -140,11 +278,11 @@ public class JdbcConnectionPool {
 //                         long minEvictableIdleTimeMillis,
 //                         boolean testWhileIdle,
 //                         long softMinEvictableIdleTimeMillis)
-        final ObjectPool connectionPool = new GenericObjectPool(null,
-                         10,
-                         GenericObjectPool.WHEN_EXHAUSTED_GROW,
-                         0, // Ignored because GenericObjectPool.WHEN_EXHAUSTED_GROW
-                         8,
+        connectionPool = new GenericObjectPool(null,
+                         maxActive,
+                         whenExhaustedAction,
+                         maxWait, // Ignored because GenericObjectPool.WHEN_EXHAUSTED_GROW
+                         maxIdle,
                          4,
                          true,
                          false,
@@ -203,6 +341,8 @@ public class JdbcConnectionPool {
     /**
      * we use getConnection and return connection to assure
      * that the same connection is not used to do more then one thing at a time
+     * @throws java.sql.SQLException 
+     * @return 
      */
     public  Connection getConnection() throws SQLException {
         Connection con = dataSource.getConnection();
@@ -210,6 +350,10 @@ public class JdbcConnectionPool {
         return con;
     }
     
+    /**
+     * 
+     * @param _con 
+     */
     public void returnFailedConnection(Connection _con) {
         long starttimestamp = System.currentTimeMillis();
         try {
@@ -236,6 +380,10 @@ public class JdbcConnectionPool {
         
     }
     
+    /**
+     * should be called every time the connection is not in use anymore
+     * @param _con Connection that is not in use anymore
+     */
     public void returnConnection(Connection _con) {
         long starttimestamp = System.currentTimeMillis();
         try {
@@ -260,6 +408,11 @@ public class JdbcConnectionPool {
         }
     }
     
+    /**
+     * 
+     * @param o 
+     * @return 
+     */
     public boolean equals(Object o) {
         if( this == o) {
             return true;
@@ -272,14 +425,100 @@ public class JdbcConnectionPool {
         return pool.jdbcClass.equals(jdbcClass) &&
         pool.jdbcUrl.equals(jdbcUrl) &&
         pool.pass.equals(pass) &&
-        pool.user.equals(user) ;
+        pool.user.equals(user) &&
+        pool.getMaxActive() == getMaxActive() &&
+        pool.getWhenExhaustedAction() == getWhenExhaustedAction() &&
+        pool.getMaxIdle() == getMaxIdle() &&
+        pool.getMaxWait() == getMaxWait();
     }
     
+    /**
+     * 
+     * @return 
+     */
     public int hashCode() {
         return jdbcClass.hashCode() ^
-        jdbcUrl.hashCode() ^
-        pass.hashCode() ^
-        user.hashCode() ;
+            jdbcUrl.hashCode()      ^
+            pass.hashCode()         ^
+            user.hashCode()         ^
+            getMaxActive()          ^
+            getMaxIdle()            ^
+            (int)getMaxWait()       ^
+            (int)getWhenExhaustedAction();
+    }
+    
+    /**
+     * Gets the cap on the total number of active instances from the pool.
+     * @return the cap on the total number of active instances from the pool.
+     */
+    public int getMaxActive() {
+        return connectionPool.getMaxActive();
+    }
+    
+    /**
+     * Sets the cap on the total number of active instances from the pool.
+     * Use a negative value for no limit.
+     * @param maxActive  
+     */
+    public void setMaxActive(int maxActive) {
+        connectionPool.setMaxActive(maxActive);
     }
         
+    /**
+     * 
+     * @return WhenExhaustedAction 
+     * (<code>WHEN_EXHAUSTED_GROW</code> or <code>WHEN_EXHAUSTED_BLOCK</code>)
+     */
+    public byte  getWhenExhaustedAction() {
+        return connectionPool.getWhenExhaustedAction();
+    }
+     /**
+      * sets WhenExhaustedAction.
+      * @param whenExhaustedAction new action
+      * @throws IllegalArgumentException is  argument is not 
+      * <code>WHEN_EXHAUSTED_GROW</code> or <code>WHEN_EXHAUSTED_BLOCK</code>
+      */
+   public void setWhenExhaustedAction(byte whenExhaustedAction) {
+        if(whenExhaustedAction != WHEN_EXHAUSTED_GROW && whenExhaustedAction != WHEN_EXHAUSTED_BLOCK) {
+            throw new IllegalArgumentException("Illegal whenExhaustedAction value = "+whenExhaustedAction+
+                "; should be either JdbcConnectionPool.WHEN_EXHAUSTED_GROW or JdbcConnectionPool.WHEN_EXHAUSTED_BLOCK");
+        }
+        connectionPool.setWhenExhaustedAction(whenExhaustedAction);
+    }
+   
+    /**
+     * gets max number of idle connections
+     * @return Max number of Idle connections
+     */
+    public int  getMaxIdle() {
+        return connectionPool.getMaxIdle();
+    }
+    
+    /**
+     * Sets max number of Idle connections, Use a negative value to indicate an unlimited number of idle instances.
+     * @param maxIdle 
+     */
+    public void setMaxIdle(int maxIdle) {
+        connectionPool.setMaxIdle(maxIdle);
+    }
+    
+    /**
+     * gets Max Wait Time
+     * @return Max Wait Time (in milliseconds) 
+     */
+    public long  getMaxWait() {
+        return connectionPool.getMaxWait();
+    }
+    
+    /**
+     * Set Max Wait Time (in milliseconds)the <code> getConnection </code> 
+     * method should block before throwing an exception when the pool is 
+     * exhausted and the "when exhausted" action is <code> WHEN_EXHAUSTED_BLOCK</code>. 
+     *  When less than or equal to 0, the  <code> getConnection </code>  method
+     * may block indefinitely.
+     * @param maxWait 
+     */
+    public void setMaxWait(Long maxWait) {
+        connectionPool.setMaxWait(maxWait);
+    }
 }
