@@ -25,6 +25,7 @@ import org.dcache.chimera.JdbcFs;
 import org.dcache.chimera.XMLconfig;
 import org.dcache.chimera.namespace.ChimeraOsmStorageInfoExtractor;
 import org.dcache.chimera.namespace.ChimeraStorageInfoExtractable;
+import org.dcache.chimera.nfs.ExportFile;
 import org.dcache.chimera.nfs.v4.DeviceID;
 import org.dcache.chimera.nfs.v4.DeviceManager;
 import org.dcache.chimera.nfs.v4.HimeraNFS4Exception;
@@ -115,7 +116,7 @@ public class NFSv41Door extends CellAdapter implements NFSv41DeviceManager {
                 @Override
                 public void run() {
                     try {
-                        _nfsServer = new HimeraNFS4Server(2049, _dm, _fs);
+                        _nfsServer = new HimeraNFS4Server(2049, _dm, _fs, new ExportFile( new File("/etc/exports")) );
                         _nfsServer.run();
 
                     } catch (OncRpcException e) {

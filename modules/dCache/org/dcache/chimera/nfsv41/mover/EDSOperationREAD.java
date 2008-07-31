@@ -11,6 +11,7 @@ import org.dcache.chimera.FsInode;
 import org.dcache.chimera.ChimeraFsException;
 import org.dcache.chimera.IOHimeraFsException;
 import org.dcache.chimera.JdbcFs;
+import org.dcache.chimera.nfs.ExportFile;
 import org.dcache.chimera.nfs.v4.AbstractNFSv4Operation;
 import org.dcache.chimera.nfs.v4.CompoundArgs;
 import org.dcache.chimera.nfs.v4.HimeraNFS4Exception;
@@ -28,8 +29,8 @@ public class EDSOperationREAD extends AbstractNFSv4Operation {
 
 	 private final Map<FsInode, FileChannel> _activeIO;
 
-	public EDSOperationREAD(JdbcFs fs, OncRpcCallInformation call$, CompoundArgs fh, nfs_argop4 args,  Map<FsInode, FileChannel> activeIO) {
-		super(fs, call$, fh, args, nfs_opnum4.OP_READ);
+	public EDSOperationREAD(JdbcFs fs, OncRpcCallInformation call$, CompoundArgs fh, nfs_argop4 args,  Map<FsInode, FileChannel> activeIO, ExportFile exports) {
+		super(fs, exports, call$, fh, args, nfs_opnum4.OP_READ);
 		_activeIO = activeIO;
 		if(_log.isDebugEnabled() ) {
 			_log.debug("NFS Request  READ from: " + _callInfo.peerAddress.getHostAddress() );

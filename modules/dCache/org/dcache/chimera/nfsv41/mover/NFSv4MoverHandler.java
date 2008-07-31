@@ -180,31 +180,31 @@ public class NFSv4MoverHandler implements OncRpcDispatchable {
 
                switch ( op.argop ) {
                    case nfs_opnum4.OP_COMMIT:
-                       return new OperationCOMMIT(fs, call$, fh, op);
+                       return new OperationCOMMIT(fs, call$, fh, op, null);
                    case nfs_opnum4.OP_GETATTR:
-                       return new OperationGETATTR(fs, call$, fh, op);
+                       return new OperationGETATTR(fs, call$, fh, op, null);
                    case nfs_opnum4.OP_PUTFH:
-                       return new OperationPUTFH(fs, call$, fh, op);
+                       return new OperationPUTFH(fs, call$, fh, op, null);
                    case nfs_opnum4.OP_PUTROOTFH:
-                       return new OperationPUTROOTFH(fs, call$, fh, op);
+                       return new OperationPUTROOTFH(fs, call$, fh, op, null);
                    case nfs_opnum4.OP_READ:
-                       return new EDSOperationREAD(fs, call$, fh, op, _activeIO );
+                       return new EDSOperationREAD(fs, call$, fh, op, _activeIO , null);
                    case nfs_opnum4.OP_WRITE:
-                       return new EDSOperationWRITE(fs, call$, fh, op, _activeIO );
+                       return new EDSOperationWRITE(fs, call$, fh, op, _activeIO , null);
                    case nfs_opnum4.OP_EXCHANGE_ID:
-                       return new OperationEXCHANGE_ID(fs, call$, fh, op, nfs4_prot.EXCHGID4_FLAG_USE_PNFS_DS);
+                       return new OperationEXCHANGE_ID(fs, call$, fh, op, nfs4_prot.EXCHGID4_FLAG_USE_PNFS_DS, null);
                    case nfs_opnum4.OP_CREATE_SESSION:
-                       return new OperationCREATE_SESSION(fs, call$, fh, op);
+                       return new OperationCREATE_SESSION(fs, call$, fh, op, null);
                    case nfs_opnum4.OP_DESTROY_SESSION:
-                       return new OperationDESTROY_SESSION(fs, call$, fh, op);
+                       return new OperationDESTROY_SESSION(fs, call$, fh, op, null);
                    case nfs_opnum4.OP_SEQUENCE:
-                       return new OperationSEQUENCE(fs, call$, fh, op, false);
+                       return new OperationSEQUENCE(fs, call$, fh, op, false, null);
                    case nfs_opnum4.OP_ILLEGAL:
 
                    }
 
 
-               return new OperationILLEGAL(fs, call$, fh, op);
+               return new OperationILLEGAL(fs, call$, fh, op, null);
            }
 
 
