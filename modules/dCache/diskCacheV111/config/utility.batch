@@ -56,6 +56,9 @@ onerror continue
    set context -c pinManagerMaxPinDuration "-1"
 
    set context -c kpwdFile          ${ourHomeDir}/etc/dcache.kpwd
+   set context -c pinManagerMaxActiveJdbcConnections    50
+   set context -c pinManagerMaxJdbcConnectionsWaitSec   180
+   set context -c pinManagerMaxIdleJdbcConnections      10
 
 onerror shutdown
 #
@@ -96,6 +99,9 @@ create org.dcache.services.pinmanager1.PinManager PinManager \
         -dbPass=${pinManagerDbPassword} \
         -pgPass=${pinManagerPasswordFile} \
         -maxPinDuration=${pinManagerMaxPinDuration} \
+        -maxActiveJdbcConnections=${pinManagerMaxActiveJdbcConnections} \
+        -maxJdbcConnectionsWaitSec=${pinManagerMaxJdbcConnectionsWaitSec} \
+        -maxIdleJdbcConnections=${pinManagerMaxIdleJdbcConnections} \
        "
 #
 #

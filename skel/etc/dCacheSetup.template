@@ -375,6 +375,23 @@ sshPort=${portBase}124
 #   - If srmPasswordFile is set and this is not set, srmPasswordFile is used.
 #
 #pinManagerPasswordFile=""
+#
+#  ---- Pin Manager Maximum Number of Database connections
+#   Do not change unless yoy know what you are doing.
+#
+#pinManagerMaxActiveJdbcConnections=50
+#
+#  ---- Pin Manager Maximum Number of seconds to wait for the connections
+#           before returning an error
+#   Do not change unless yoy know what you are doing.
+#
+#pinManagerMaxJdbcConnectionsWaitSec=180
+#
+#  ---- Pin Manager Maximum Number of Idle Database connections
+#   Do not change unless yoy know what you are doing.
+#
+#pinManagerMaxIdleJdbcConnections=10
+
 
 #  ---- Replica Manager Database Host
 #   Do not change unless yoy know what you are doing.
