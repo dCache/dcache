@@ -158,7 +158,11 @@ class PinManagerDatabase
     public PinManagerDatabase(PinManager manager,
                               String url, String driver,
                               String user, String password,
-                              String passwordfile)
+                              String passwordfile,
+                              int maxActive,
+                              long maxWaitSeconds,
+                              int maxIdle
+        )
         throws SQLException
     {
         if (passwordfile != null && passwordfile.trim().length() > 0) {
@@ -179,7 +183,16 @@ class PinManagerDatabase
             throw new IllegalArgumentException("Could not find JDBC driver", e);
         }
 
-        jdbc_pool = JdbcConnectionPool.getPool(_jdbcUrl, _jdbcClass, _user, _pass);
+        jdbc_pool = JdbcConnectionPool.getPool(
+            _jdbcUrl, 
+            _jdbcClass, 
+            _user, 
+            _pass,
+            maxActive,
+            JdbcConnectionPool.WHEN_EXHAUSTED_BLOCK,
+            maxWaitSeconds*1000L,
+            maxIdle
+            );
 
         prepareTables();
        // readRequests();
@@ -1493,7 +1506,10 @@ class PinManagerDatabase
                 args[1],
                 args[2],
                 args[3],
-                null);
+                null,
+                10,
+                10L,
+                10);
         long id = db.nextLong(db.jdbc_pool.getConnection());
         db.insertPin(id,
             new PnfsId("0001000000000000000010B8"),

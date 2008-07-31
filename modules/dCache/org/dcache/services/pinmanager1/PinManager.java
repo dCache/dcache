@@ -208,6 +208,29 @@ public class PinManager extends AbstractCell implements Runnable  {
     protected String pgPass;
 
     
+    @Option(
+        name = "maxActiveJdbcConnections",
+        defaultValue = "50", // half of default postgres max of 100
+        description = "max number of active jdbc connections"
+    )
+    protected int maxActiveJdbcConnections;
+    
+
+    @Option(
+        name = "maxJdbcConnectionsWaitSec",
+        defaultValue = "180", // 3 min
+        description = "max number of idle jdbc connections",
+        unit = "sec"    
+    )
+    protected long maxJdbcConnectionsWaitSec;
+    
+    @Option(
+        name = "maxIdleJdbcConnections",
+        defaultValue = "10",
+        description = "max number of idle jdbc connections"
+    )
+    protected int maxIdleJdbcConnections;
+    
     // all database oprations will be done in the lazy 
     // fassion in a low priority thread
     private Thread expireRequests;
@@ -230,7 +253,15 @@ public class PinManager extends AbstractCell implements Runnable  {
          
         try {
             db = new PinManagerDatabase(this,
-                    jdbcUrl,jdbcDriver,dbUser,dbPass,pgPass);
+                    jdbcUrl,
+                   jdbcDriver,
+                  dbUser,
+                  dbPass,
+                  pgPass,
+                 maxActiveJdbcConnections,
+                 maxJdbcConnectionsWaitSec,
+                 maxIdleJdbcConnections
+                 );
             expireRequests = 
                     getNucleus().newThread(this,"ExpireRequestsThread");
             updateWaitQueueThread =
