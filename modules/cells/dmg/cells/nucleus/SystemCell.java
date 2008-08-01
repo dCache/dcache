@@ -41,6 +41,7 @@ public class      SystemCell
 
        _nucleus   = getNucleus() ;
        _cellShell = new CellShell( getNucleus() ) ;
+       _cellShell.addCommandListener(new Log4jShell());
        useInterpreter( false ) ;
 
        _runtime.addShutdownHook( new TheKiller() ) ;
