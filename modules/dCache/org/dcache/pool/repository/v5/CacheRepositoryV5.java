@@ -729,6 +729,7 @@ public class CacheRepositoryV5
     }
 
     public void shutdown()
+        throws InterruptedException
     {
         _executor.shutdown();
         _stateChangeListeners.stop();

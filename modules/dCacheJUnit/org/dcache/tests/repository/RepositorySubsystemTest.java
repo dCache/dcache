@@ -4,6 +4,7 @@ package org.dcache.tests.repository;
 import static org.junit.Assert.*;
 
 import java.util.*;
+import java.util.concurrent.*;
 import java.io.*;
 
 import org.junit.*;
@@ -62,7 +63,7 @@ public class RepositorySubsystemTest
     private File metaDir;
     private File dataDir;
 
-    private Queue<StateChangeEvent> stateChangeEvents;
+    private BlockingQueue<StateChangeEvent> stateChangeEvents;
 
     private String args;
     private CellAdapterHelper cell;
@@ -116,7 +117,8 @@ public class RepositorySubsystemTest
 
     @Before
     public void setUp()
-        throws IOException, CacheException, DatabaseException
+        throws IOException, CacheException,
+               DatabaseException, InterruptedException
     {
         id1 = new PnfsId("000000000001");
         id2 = new PnfsId("000000000002");
@@ -152,18 +154,24 @@ public class RepositorySubsystemTest
         entry.setSticky(true);
         rep.close();
 
+        stateChangeEvents = new LinkedBlockingQueue<StateChangeEvent>();
         rep = new CacheRepositoryV4(root, new Args(args));
         cell = new CellAdapterHelper("pool", args);
-        pnfs = new PnfsHandler(cell, new CellPath("pnfs"), "pool");
+        pnfs = new PnfsHandler(new CellPath("pnfs"), "pool");
+        pnfs.setCellEndpoint(cell);
         repository = new CacheRepositoryV5();
         repository.setPnfsHandler(pnfs);
         repository.setSize(5120);
         repository.setLegacyRepository(rep);
         repository.setSweeper(new diskCacheV111.pools.SpaceSweeper2(pnfs, rep));
-        repository.init(0);
         repository.addListener(this);
+        repository.init(0);
 
-        stateChangeEvents = new LinkedList<StateChangeEvent>();
+        /* Remove scan notifications from queue.
+         */
+        stateChangeEvents.take();
+        stateChangeEvents.take();
+        stateChangeEvents.take();
     }
 
     @After
@@ -182,8 +190,10 @@ public class RepositorySubsystemTest
     }
 
     public void expectStateChangeEvent(PnfsId id, EntryState oldState, EntryState newState)
+        throws InterruptedException
     {
-        StateChangeEvent event = stateChangeEvents.remove();
+        StateChangeEvent event = stateChangeEvents.poll(1, TimeUnit.SECONDS);
+        assertNotNull(event);
         assertEquals(id, event.getPnfsId());
         assertEquals(oldState, event.getOldState());
         assertEquals(newState, event.getNewState());
@@ -274,7 +284,8 @@ public class RepositorySubsystemTest
 
     @Test
     public void testSetState()
-        throws IllegalTransitionException
+        throws IllegalTransitionException,
+               InterruptedException
     {
         assertCanOpen(id1, size1, PRECIOUS);
         repository.setState(id1, CACHED);
@@ -366,7 +377,8 @@ public class RepositorySubsystemTest
             }
 
             protected void run()
-                throws IllegalTransitionException
+                throws IllegalTransitionException,
+                       InterruptedException
             {
                 repository.setState(id1, REMOVED);
                 expectStateChangeEvent(id1, PRECIOUS, REMOVED);
@@ -390,7 +402,8 @@ public class RepositorySubsystemTest
             }
 
             protected void run()
-                throws FileNotInCacheException, IllegalTransitionException
+                throws FileNotInCacheException, IllegalTransitionException,
+                       InterruptedException
             {
                 ReadHandle handle1 = repository.openEntry(id1);
                 repository.setState(id1, REMOVED);

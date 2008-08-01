@@ -43,8 +43,10 @@ class StateChangeListeners
     }
 
     public void stop()
+        throws InterruptedException
     {
         _workerThread.interrupt();
+        _workerThread.join();
     }
 
     private class WorkerThread extends Thread
