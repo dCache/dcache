@@ -785,9 +785,6 @@ public class PoolV4
 
     public void printSetup(PrintWriter pw)
     {
-        SpaceRecord space = _repository.getSpaceRecord();
-
-        pw.println("set max diskspace " + space.getTotalSpace());
         pw.println("set heartbeat " + _pingThread.getHeartbeat());
         pw.println("set sticky " + (_allowSticky ? "allowed" : "denied"));
         pw.println("set report remove " + (_reportOnRemovals ? "on" : "off"));
@@ -795,13 +792,12 @@ public class PoolV4
         if (_suppressHsmLoad)
             pw.println("pool suppress hsmload on");
         pw.println("set gap " + _gap);
-        pw
-            .println("set duplicate request "
-                     + ((_dupRequest == DUP_REQ_NONE)
-                        ? "none"
-                        : (_dupRequest == DUP_REQ_IGNORE)
-                        ? "ignore"
-                        : "refresh"));
+        pw.println("set duplicate request "
+                   + ((_dupRequest == DUP_REQ_NONE)
+                      ? "none"
+                      : (_dupRequest == DUP_REQ_IGNORE)
+                      ? "ignore"
+                      : "refresh"));
         pw.println("set p2p "
                    + ((_p2pMode == P2P_INTEGRATED) ? "integrated" : "separated"));
         _flushingThread.printSetup(pw);

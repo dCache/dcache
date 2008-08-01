@@ -735,6 +735,11 @@ public class CacheRepositoryV5
                    + "]");
     }
 
+    public synchronized void printSetup(PrintWriter pw)
+    {
+        pw.println("set max diskspace " + _repository.getTotalSpace());
+    }
+
     public void shutdown()
     {
         _executor.shutdown();
