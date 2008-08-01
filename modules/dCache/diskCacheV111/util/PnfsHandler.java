@@ -195,14 +195,10 @@ public class PnfsHandler
        try {
            msg.setReplyRequired(true);
            pnfsCellReply
-               = _endpoint.sendAndWait(new CellMessage(_pnfs, msg),
-                                       __pnfsTimeout);
+               = _endpoint.sendAndWaitToPermanent(new CellMessage(_pnfs, msg),
+                                                  __pnfsTimeout);
        } catch (InterruptedException e) {
            String problem  = "PNFS handler was interrupted while waiting for a reply";
-           _logNameSpace.warn(problem);
-	   throw new CacheException(CacheException.PANIC, problem);
-       } catch (NoRouteToCellException e) {
-           String problem  = "Failed to send pnfs request: " + e;
            _logNameSpace.warn(problem);
 	   throw new CacheException(CacheException.PANIC, problem);
        }

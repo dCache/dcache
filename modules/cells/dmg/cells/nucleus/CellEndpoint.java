@@ -74,6 +74,27 @@ public interface CellEndpoint
                NoRouteToCellException,
                InterruptedException;
 
+   /**
+    * Sends <code>envelope</code> and waits for an answer to arrive.
+    *
+    * Similar to the sendAndWait method, but does not throw
+    * NoRouteToCellException. Instead message delivery is retried
+    * until the timeout has been reached. At that point null is
+    * returned like for any other timeout.
+    *
+    * This method is useful when sending messages to cells for which
+    * communication failures are known to be temporary.
+    *
+    * @param envelope the cell message to be sent.
+    * @param timeout milliseconds to wait for an answer.
+    * @return the answer or null if the timeout was reached.
+    * @throws SerializationException if the payload object of this
+    *         message is not serializable.
+    */
+    CellMessage sendAndWaitToPermanent(CellMessage envelope, long timeout)
+        throws SerializationException,
+               InterruptedException;
+
     /**
      * Provides information about the host cell.
      *

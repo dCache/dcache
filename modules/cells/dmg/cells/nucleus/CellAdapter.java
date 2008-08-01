@@ -39,6 +39,10 @@ public class   CellAdapter
     extends CommandInterpreter
     implements Cell, CellEventListener, CellEndpoint
 {
+    /**
+     * Retry period for cell communication failures.
+     */
+    private final static long RETRY_PERIOD = 30000; // 30 seconds
 
     private final CellNucleus _nucleus;
     private final Gate        _readyGate = new Gate(false);
@@ -562,6 +566,31 @@ public class   CellAdapter
                InterruptedException        {
         return _nucleus.sendAndWait(msg, true, true, millisecs);
     }
+
+    private long timeUntil(long time)
+    {
+        return time - System.currentTimeMillis();
+    }
+
+    /**
+     * @see CellEndpoint.sendAndWaitToPermanent
+     */
+    public CellMessage sendAndWaitToPermanent(CellMessage envelope,
+                                              long timeout)
+        throws SerializationException,
+               InterruptedException
+    {
+        long deadline = System.currentTimeMillis() + timeout;
+        while (true) {
+            try {
+                return sendAndWait(envelope, timeUntil(deadline));
+            } catch (NoRouteToCellException e) {
+                esay(e);
+                Thread.sleep(Math.min(timeUntil(deadline), RETRY_PERIOD));
+            }
+        }
+    }
+
     /**
      *  sends a <code>CellMessage</code> along the specified path.
      *  <strong>resendMessage does not resolve the local cell
