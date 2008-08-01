@@ -87,7 +87,7 @@ class WriteHandleImpl implements WriteHandle
         _open = true;
         _allocated = 0;
 
-        if (!getFile().createNewFile())
+        if (getFile().exists())
             throw new CacheException(CacheException.PANIC,
                                      "File exists, although we didn't expect it to");
 
