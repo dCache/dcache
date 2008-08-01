@@ -24,9 +24,6 @@ create dmg.cells.services.RoutingManager  RoutingMgr
 create dmg.cells.services.LocationManager lm \
      "${serviceLocatorHost} ${serviceLocatorPort}"
 #
-say -level=2 "Sleeping 60 seconds"
-sleep 60
-#
 onerror continue
 
   set context -c poolIoQueue ""

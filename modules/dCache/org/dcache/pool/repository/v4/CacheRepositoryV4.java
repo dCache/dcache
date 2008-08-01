@@ -382,6 +382,29 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
         }
     }
 
+    /**
+     * Reads an entry from a RepositoryEntryHealer. Retries
+     * indefinitely in case of timeouts.
+     */
+    private CacheRepositoryEntry readEntry(RepositoryEntryHealer healer,
+                                           PnfsId id)
+        throws CacheException, IOException
+    {
+        /* In case of communication problems with the pool, there is
+         * no point in failing - the pool would be dead if we did. It
+         * is reasonable to expect that the PNFS manager is started at
+         * some point and hence we just keep trying.
+         */
+        while (true) {
+            try {
+                return healer.entryOf(id);
+            } catch (CacheException e) {
+                if (e.getRc() != CacheException.TIMEOUT)
+                    throw e;
+            }
+        }
+    }
+
     /* Must not be executed more than once!
      */
     public synchronized void runInventory(PnfsHandler pnfs, int flags)
@@ -417,7 +440,7 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
             /* Collect all entries.
              */
             for (PnfsId id: ids) {
-                CacheRepositoryEntry entry = healer.entryOf(id);
+                CacheRepositoryEntry entry = readEntry(healer, id);
                 if (entry == null)  {
                     continue;
                 }
