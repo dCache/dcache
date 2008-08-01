@@ -462,6 +462,9 @@ getServices()
             ;;
     esac    
     
+    if [ -n "`getDomains pool`" ]; then
+	printf "pool "
+    fi
     if [ "`printConfig replicaManager`" = "yes" ]; then
         printf "replica "
     fi
@@ -479,9 +482,6 @@ getServices()
     fi
     if [ "`printConfig SRM`" = "yes" ]; then
         printf "srm "
-    fi
-    if [ -n "`getDomains pool`" ]; then
-	printf "pool "
     fi
 }
 
