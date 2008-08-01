@@ -88,6 +88,8 @@ public class HsmStorageHandler2
     private long _maxRemoveRun = _maxRuntime;
     private int _maxLines = 200;
     private boolean _stickyAllowed  = false;
+    private String _cellName;
+    private String _domainName;
 
     private String _flushMessageTarget;
 
@@ -176,6 +178,14 @@ public class HsmStorageHandler2
         _fetchQueue = new SimpleJobScheduler("fetch");
         _storeQueue = new SimpleJobScheduler("store");
     }
+
+    public void setCellEndpoint(CellEndpoint endpoint)
+    {
+        super.setCellEndpoint(endpoint);
+        _cellName = getCellName();
+        _domainName = getCellDomainName();
+    }
+
 
     public void setFlushMessageTarget(String flushMessageTarget)
     {
@@ -419,7 +429,7 @@ public class HsmStorageHandler2
             throws CacheException, FileInCacheException
         {
             super(pnfsId);
-            String address = getCellName() + "@" + getCellDomainName();
+            String address = _cellName + "@" + _domainName;
             _infoMsg = new StorageInfoMessage(address, pnfsId, true);
 
             _infoMsg.setStorageInfo(storageInfo);
@@ -856,7 +866,7 @@ public class HsmStorageHandler2
             throws FileNotInCacheException
         {
 	    super(pnfsId);
-            String address = getCellName() + "@" + getCellDomainName();
+            String address = _cellName + "@" + _domainName;
             _infoMsg = new StorageInfoMessage(address, pnfsId, false);
 	}
 
@@ -1097,7 +1107,7 @@ public class HsmStorageHandler2
         {
             try {
                 PoolFileFlushedMessage poolFileFlushedMessage =
-                    new PoolFileFlushedMessage(getCellName(), getPnfsId(), info);
+                    new PoolFileFlushedMessage(_cellName, getPnfsId(), info);
                 /*
                  * no replays from secondary message targets
                  */

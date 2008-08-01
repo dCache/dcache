@@ -55,11 +55,11 @@ public class CacheRepositoryV5
     private final static Logger _log =
         Logger.getLogger(CacheRepositoryV5.class);
 
-    private final List<StateChangeListener> _stateChangeListeners =
-        new CopyOnWriteArrayList<StateChangeListener>();
-
     private final List<FaultListener> _faultListeners =
         new CopyOnWriteArrayList<FaultListener>();
+
+    private final StateChangeListeners _stateChangeListeners =
+        new StateChangeListeners();
 
     /**
      * Map to keep track of states. Temporary hack because we do not
@@ -503,24 +503,12 @@ public class CacheRepositoryV5
     }
 
     /**
-     * Notify listeners about a state change.
+     * Asynchronously notify listeners about a state change.
      */
     protected void notify(PnfsId id, EntryState oldState, EntryState newState)
     {
         StateChangeEvent event = new StateChangeEvent(id, oldState, newState);
-        for (StateChangeListener listener : _stateChangeListeners) {
-            try {
-                listener.stateChanged(event);
-            } catch (RuntimeException e) {
-                /* State change notifications are important for proper
-                 * functioning of the pool and we cannot risk a
-                 * problem in an event handler causing other event
-                 * handlers not to be called. We therefore catch, log
-                 * and ignore these problems.
-                 */
-                _log.error("Unexpected failure during state change notification", e);
-            }
-        }
+        _stateChangeListeners.notify(event);
     }
 
     /**
@@ -743,6 +731,7 @@ public class CacheRepositoryV5
     public void shutdown()
     {
         _executor.shutdown();
+        _stateChangeListeners.stop();
     }
 
     /**
