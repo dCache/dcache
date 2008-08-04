@@ -717,7 +717,6 @@ class PinManagerDatabase
            throw new PinDBException(1,"DB is not initialized in this thread!!!");
         }
         try {
-             _con =jdbc_pool.getConnection();
             deletePinRequest(_con,id);
             _con.commit();
         } catch (SQLException sqle) {
