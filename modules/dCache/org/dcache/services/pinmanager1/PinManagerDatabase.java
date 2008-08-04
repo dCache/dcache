@@ -191,7 +191,8 @@ class PinManagerDatabase
             maxActive,
             JdbcConnectionPool.WHEN_EXHAUSTED_BLOCK,
             maxWaitSeconds*1000L,
-            maxIdle
+            maxIdle,
+            true
             );
 
         prepareTables();
@@ -492,11 +493,11 @@ class PinManagerDatabase
    }
 
    private void prepareTables() throws SQLException {
+        Connection _con = jdbc_pool.getConnection();
         try {
 
 
             //connect
-            Connection _con = jdbc_pool.getConnection();
             _con.setAutoCommit(true);
             //get database info
             DatabaseMetaData md = _con.getMetaData();
@@ -558,15 +559,18 @@ class PinManagerDatabase
             }
             s.close();
 
-            // to support our transactions
-            _con.setAutoCommit(false);
-            jdbc_pool.returnConnection(_con);
         } catch (SQLException sqe) {
             error(sqe.toString());
             throw sqe;
         } catch (Exception ex) {
-            error(ex.toString());
+            error(ex);
             throw new SQLException(ex.toString());
+        }
+        finally {
+            // to support our transactions
+            _con.setAutoCommit(false);
+            jdbc_pool.returnConnection(_con);
+            
         }
         createIndecies();
    }
@@ -637,34 +641,6 @@ class PinManagerDatabase
         }
     }
 
-    public void insertPin(
-        long id,
-        PnfsId pnfsId,
-        long expirationTime,
-        String pool,
-        PinManagerPinState state) throws SQLException {
-        Connection _con = null;
-        try {
-             _con =jdbc_pool.getConnection();
-            insertPin(_con,id,pnfsId,expirationTime,pool,state);
-            _con.commit();
-            jdbc_pool.returnConnection(_con);
-            _con = null;
-        } catch(SQLException sqle) {
-            error("insert failed with ");
-            error(sqle.toString());
-            error("ROLLBACK TRANSACTION");
-            _con.rollback();
-            jdbc_pool.returnFailedConnection(_con);
-            _con = null;
-            throw sqle;
-        } finally {
-            if(_con != null) {
-                jdbc_pool.returnConnection(_con);
-            }
-        }
-
-    }
 
     private void deletePin( Connection _con,
         long id) throws SQLException {
@@ -1510,9 +1486,6 @@ class PinManagerDatabase
                 10L,
                 10);
         long id = db.nextLong(db.jdbc_pool.getConnection());
-        db.insertPin(id,
-            new PnfsId("0001000000000000000010B8"),
-            System.currentTimeMillis()+1000L,null,PinManagerPinState.INITIAL);
         Pin pin = db.getPin(id);
         System.out.println(pin.toString());
         db.updatePin(id,null,"pool1",PinManagerPinState.PINNING);

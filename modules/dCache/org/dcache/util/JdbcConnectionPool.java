@@ -15,6 +15,7 @@ import org.apache.log4j.Logger;
 import org.apache.commons.pool.ObjectPool;
 import org.apache.commons.pool.impl.GenericObjectPool;
 import org.apache.commons.pool.impl.StackKeyedObjectPoolFactory;
+import org.apache.commons.pool.KeyedObjectPoolFactory;
 import org.apache.commons.dbcp.ConnectionFactory;
 import org.apache.commons.dbcp.PoolingDataSource;
 import org.apache.commons.dbcp.PoolableConnectionFactory;
@@ -45,7 +46,7 @@ public class JdbcConnectionPool {
     private final DataSource dataSource;
     private static Logger _logSql = 
             Logger.getLogger(
-            "logger.org.dcache.db.sql"+
+            "logger.org.dcache.db.sql."+
             JdbcConnectionPool.class.getName());
 
     
@@ -70,9 +71,10 @@ public class JdbcConnectionPool {
             user, 
             pass,
             10,
-            GenericObjectPool.WHEN_EXHAUSTED_GROW,
+            WHEN_EXHAUSTED_GROW,
             0, 
-            8);
+            8,
+            true);
     }
     
     /**
@@ -100,7 +102,8 @@ public class JdbcConnectionPool {
     int maxActive,
     byte whenExhaustedAction,
     long maxWait,
-    int maxIdle) throws SQLException {
+    int maxIdle,
+    boolean poolPreparedStatements ) throws SQLException {
         JdbcConnectionPool pool = 
             getPool(jdbcUrl,
             jdbcClass, 
@@ -109,7 +112,8 @@ public class JdbcConnectionPool {
             maxActive,
             whenExhaustedAction,
             maxWait, 
-            maxIdle);
+            maxIdle,
+            poolPreparedStatements);
         return pool.dataSource;
     }
 
@@ -131,9 +135,10 @@ public class JdbcConnectionPool {
             user,
             pass,            
             10,
-            GenericObjectPool.WHEN_EXHAUSTED_GROW,
+            WHEN_EXHAUSTED_GROW,
             0, 
-            8);
+            8,
+            true);
     }
 
     /**
@@ -150,6 +155,8 @@ public class JdbcConnectionPool {
      * @param maxWait see <code> setMaxWait </code> method 
      * @param maxIdle max number of Idle connections, Use a negative value to 
      *                indicate an unlimited number of idle instances.
+     * @param poolPreparedStatements if true, prepared statement pooling will 
+     * be enabled
      * @throws java.sql.SQLException if the underlying jdbc code throws exception
      * @return JdbcConnectionPool with indicated parameters
      */
@@ -160,7 +167,8 @@ public class JdbcConnectionPool {
     int maxActive,
     byte whenExhaustedAction,
     long maxWait,
-    int maxIdle) throws SQLException {
+    int maxIdle,
+    boolean poolPreparedStatements ) throws SQLException {
         if(pass == null) pass="";
         long starttimestamp = System.currentTimeMillis();
         for (Iterator i = pools.iterator();
@@ -186,7 +194,8 @@ public class JdbcConnectionPool {
             maxActive,
             whenExhaustedAction,
             maxWait, 
-            maxIdle);
+            maxIdle,
+            poolPreparedStatements);
 
         pools.add(pool);
         long elapsed = System.currentTimeMillis()-starttimestamp;
@@ -221,7 +230,8 @@ public class JdbcConnectionPool {
     int maxActive,
     byte whenExhaustedAction,
     long maxWait,
-    int maxIdle
+    int maxIdle,
+    boolean poolPreparedStatements
     ) throws SQLException {
         if( jdbcUrl == null )
         {
@@ -281,7 +291,7 @@ public class JdbcConnectionPool {
         connectionPool = new GenericObjectPool(null,
                          maxActive,
                          whenExhaustedAction,
-                         maxWait, // Ignored because GenericObjectPool.WHEN_EXHAUSTED_GROW
+                         maxWait, // Ignored if GenericObjectPool.WHEN_EXHAUSTED_GROW
                          maxIdle,
                          4,
                          true,
@@ -311,10 +321,15 @@ public class JdbcConnectionPool {
         //                                String validationQuery,
         //                                boolean defaultReadOnly,
         //                                boolean defaultAutoCommit)
+        KeyedObjectPoolFactory stmtPoolFactory =
+            poolPreparedStatements? 
+                new StackKeyedObjectPoolFactory():
+                null;
+            
         final PoolableConnectionFactory poolableConnectionFactory = 
             new PoolableConnectionFactory(proxyConnectionFactory, 
                                           connectionPool,
-                                          new StackKeyedObjectPoolFactory(), // null,
+                                          stmtPoolFactory, 
                                           "select current_date", 
                                           false, 
                                           true);
@@ -345,6 +360,7 @@ public class JdbcConnectionPool {
      * @return 
      */
     public  Connection getConnection() throws SQLException {
+        
         Connection con = dataSource.getConnection();
         con.setAutoCommit(false);
         return con;
@@ -355,6 +371,9 @@ public class JdbcConnectionPool {
      * @param _con 
      */
     public void returnFailedConnection(Connection _con) {
+        if( _logSql.isDebugEnabled()) {
+            _logSql.debug("returnConnection() : "+_con);
+        }
         long starttimestamp = System.currentTimeMillis();
         try {
             _con.rollback();
@@ -385,6 +404,9 @@ public class JdbcConnectionPool {
      * @param _con Connection that is not in use anymore
      */
     public void returnConnection(Connection _con) {
+        if( _logSql.isDebugEnabled()) {
+            _logSql.debug("returnConnection() :"+_con);
+        }
         long starttimestamp = System.currentTimeMillis();
         try {
             _con.commit();
