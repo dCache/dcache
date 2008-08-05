@@ -53,6 +53,7 @@ JAVA_TARGET =ArgParser.class \
              SRMReleaseFilesClientV2.class \
              OptionParser.class \
              Option.class \
+             SrmUrl.class \
              SRMGetRequestTokensClientV2.class 
               
 
