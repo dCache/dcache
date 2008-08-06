@@ -187,7 +187,13 @@ check_os()
   fi
 }
 
-os_absolutePathOf() {
+os_absolutePathOf() 
+{
+    if [ "$1" == "" ]
+    then
+      logmessage ERROR "coding error os_absolutePathOf called with no parameter"  
+      exit 1
+    fi
     case `uname` in
         Linux)
             readlink -f $1
@@ -292,7 +298,7 @@ fqdn_os() {
 dcacheInstallGetPnfsRoot()
 {
   # To make shure to use the right dCache dir
-  RET=`printConfig PNFS_ROOT` 
+  yaim_config_file_get_value ${ourHomeDir}/etc/node_config PNFS_ROOT 
 }
 
 
@@ -300,7 +306,8 @@ dcacheInstallGetPnfsRoot()
 dcacheInstallGetServerId()
 {
   local SERVER_ID
-  SERVER_ID=`printConfig SERVER_ID`
+  yaim_config_file_get_value ${ourHomeDir}/etc/node_config SERVER_ID
+  SERVER_ID=${RET}
   if [ -z "${SERVER_ID}" ] ; then
     SERVER_ID=`domainname_os`
     if [ $? -ne 0 -o -z "${SERVER_ID}" ] ; then
@@ -354,7 +361,8 @@ absfpath () {
 dcacheInstallGetNameSpaceType()
 {
   local nameServerFormat
-  nameServerFormat=`printConfig NAMESPACE`
+  yaim_config_file_get_value ${ourHomeDir}/etc/node_config NAMESPACE
+  nameServerFormat="${RET}"
   if [ "${nameServerFormat}" != "pnfs" -a "${nameServerFormat}" != "chimera" ]
   then
     logmessage WARNING "node_config does not have NAMESPACE set to chimera or pnfs."
@@ -369,9 +377,11 @@ dcacheInstallGetNameSpaceType()
 dcacheInstallGetNameSpaceServer()
 {
   local namespaceServer
-  namespaceServer="`printConfig NAMESPACE_NODE`"
+  yaim_config_file_get_value "${ourHomeDir}/etc/node_config" NAMESPACE_NODE
+  namespaceServer="${RET}"
   if [ -z "${namespaceServer}" ] ; then
-    namespaceServer="`printConfig ADMIN_NODE`"
+    yaim_config_file_get_value "${ourHomeDir}/etc/node_config" ADMIN_NODE
+    namespaceServer="${RET}"
     if [ -z "${namespaceServer}" ] ; then
       namespaceServer='invalid.host.example.org'
       logmessage WARNING "No 'NAMESPACE_NODE' or 'ADMIN_NODE' set in 'node_config' using '${namespaceServer}'"
@@ -385,7 +395,7 @@ dcacheInstallGetNameSpaceServer()
 dcacheNameServerIs()
 {
   dcacheInstallGetNameSpaceServer
-  pnfsHost=$RET
+  pnfsHost="${RET}"
   if [ "${pnfsHost}" == "localhost" ]
   then
     return 1
@@ -404,9 +414,11 @@ dcacheInstallGetHome()
   local DCACHE_HOME_Tmp
   RET=""
   # To make shure to use the right dCache dir
-  DCACHE_HOME_Tmp=`printConfig DCACHE_HOME`
+  yaim_config_file_get_value "${ourHomeDir}/etc/node_config" DCACHE_HOME
+  DCACHE_HOME_Tmp="${RET}"
   if [ "x${DCACHE_HOME_Tmp}" == "x" ] ; then
-    DCACHE_HOME_Tmp=`printConfig DCACHE_BASE_DIR`
+    yaim_config_file_get_value "${ourHomeDir}/etc/node_config" DCACHE_BASE_DIR
+    DCACHE_HOME_Tmp="${RET}"
     echo "WARNING: the variable DCACHE_HOME is not set."
     if [ "x${DCACHE_HOME_Tmp}" != "x" ] ; then
       echo "WARNING: Using deprecated value of DCACHE_BASE_DIR as DCACHE_HOME"
@@ -423,7 +435,8 @@ dcacheInstallGetUseGridFtp()
 {
   # returns 1 if gridFTP is used 0 otherwise
   local UseGridFtp
-  UseGridFtp=`printConfig GRIDFTP |  tr '[A-Z]' '[a-z]'`
+  yaim_config_file_get_value "${ourHomeDir}/etc/node_config" DCACHE_HOME
+  UseGridFtp=`echo "${RET}" | tr '[A-Z]' '[a-z]'`
   if [ "${UseGridFtp}" == "yes" ] ; then
     return 1
   fi
@@ -437,7 +450,8 @@ dcacheInstallGetUseSrm()
 {
   # returns 1 if gridFTP is used 0 otherwise
   local UseSRM
-  UseSRM=`printConfig SRM |  tr '[A-Z]' '[a-z]'`
+  yaim_config_file_get_value "${ourHomeDir}/etc/node_config" SRM
+  UseSRM=`echo "${RET}" | tr '[A-Z]' '[a-z]'` 
   if [ "${UseSRM}" == "yes" ] ; then
     return 1
   fi
@@ -452,7 +466,8 @@ dcacheInstallGetIsAdminDoor()
   # returns 1 if is an adminDoor is used 0 otherwise
   local NodeType
   local adminDoor
-  NodeType=`printConfig NODE_TYPE |  tr '[A-Z]' '[a-z]'`
+  yaim_config_file_get_value "${ourHomeDir}/etc/node_config" NODE_TYPE
+  NodeType=`echo "${RET}" | tr '[A-Z]' '[a-z]'` 
   if [ "${NodeType}" == "admin" ] ; then
     logmessage DEBUG "node is admin so returns true"
     return 1
@@ -466,7 +481,8 @@ dcacheInstallGetIsAdminDoor()
     return 0
   fi
   if [ "${NodeType}" == "custom" ] ; then
-    adminDoor=`printConfig adminDoor |  tr '[A-Z]' '[a-z]'`
+    yaim_config_file_get_value "${ourHomeDir}/etc/node_config" adminDoor
+    adminDoor=`echo "${RET}" | tr '[A-Z]' '[a-z]'`
     if [ "${adminDoor}" == "yes" ] ; then
       return 1
     fi
@@ -483,7 +499,8 @@ dcacheInstallGetIsHttpDomain()
   # returns 1 if is an httpDomain is used 0 otherwise
   local NodeType
   local httpDomain
-  NodeType=`printConfig NODE_TYPE |  tr '[A-Z]' '[a-z]'`
+  yaim_config_file_get_value "${ourHomeDir}/etc/node_config" NODE_TYPE
+  NodeType=`echo "${RET}" | tr '[A-Z]' '[a-z]'`
   if [ "${NodeType}" == "admin" ] ; then
     logmessage DEBUG "node is admin so returns true"
     return 1
@@ -497,7 +514,8 @@ dcacheInstallGetIsHttpDomain()
     return 0
   fi
   if [ "${NodeType}" == "custom" ] ; then
-    httpDomain=`printConfig httpDomain |  tr '[A-Z]' '[a-z]'`
+    yaim_config_file_get_value "${ourHomeDir}/etc/node_config" httpDomain
+    httpDomain=`echo "${RET}" | tr '[A-Z]' '[a-z]'`
     if [ "${httpDomain}" == "yes" ] ; then
       return 1
     fi
@@ -514,7 +532,8 @@ dcacheInstallGetIsLmDomain()
   # returns 1 if is an lmDomain is used 0 otherwise
   local NodeType
   local lmDomain
-  NodeType=`printConfig NODE_TYPE |  tr '[A-Z]' '[a-z]'`
+  yaim_config_file_get_value "${ourHomeDir}/etc/node_config" NODE_TYPE
+  NodeType=`echo "${RET}" | tr '[A-Z]' '[a-z]'`
   if [ "${NodeType}" == "admin" ] ; then
     logmessage DEBUG "node is admin so returns true"
     return 1
@@ -528,7 +547,8 @@ dcacheInstallGetIsLmDomain()
     return 0
   fi  
   if [ "${NodeType}" == "custom" ] ; then
-    lmDomain=`printConfig lmDomain |  tr '[A-Z]' '[a-z]'`
+    yaim_config_file_get_value "${ourHomeDir}/etc/node_config" lmDomain
+    lmDomain=`echo "${RET}" | tr '[A-Z]' '[a-z]'`
     if [ "${lmDomain}" == "yes" ] ; then
       return 1
     fi
@@ -544,7 +564,8 @@ dcacheInstallGetIsPoolManager()
   # returns 1 if is an poolManager is used 0 otherwise
   local NodeType
   local poolManager
-  NodeType=`printConfig NODE_TYPE |  tr '[A-Z]' '[a-z]'`
+  yaim_config_file_get_value "${ourHomeDir}/etc/node_config" NODE_TYPE
+  NodeType=`echo "${RET}" | tr '[A-Z]' '[a-z]'`
   if [ "${NodeType}" == "admin" ] ; then
     logmessage DEBUG "node is admin so returns true"
     return 1
@@ -558,7 +579,8 @@ dcacheInstallGetIsPoolManager()
     return 0
   fi
   if [ "${NodeType}" == "custom" ] ; then
-    poolManager=`printConfig poolManager |  tr '[A-Z]' '[a-z]'`
+    yaim_config_file_get_value "${ourHomeDir}/etc/node_config" poolManager
+    poolManager=`echo "${RET}" | tr '[A-Z]' '[a-z]'`
     if [ "${poolManager}" == "yes" ] ; then
       return 1
     fi
@@ -574,7 +596,8 @@ dcacheInstallGetIsUtilityDomain()
   # returns 1 if is an utilityDomain is used 0 otherwise
   local NodeType
   local utilityDomain
-  NodeType=`printConfig NODE_TYPE |  tr '[A-Z]' '[a-z]'`
+  yaim_config_file_get_value "${ourHomeDir}/etc/node_config" NODE_TYPE
+  NodeType=`echo "${RET}" | tr '[A-Z]' '[a-z]'`  
   if [ "${NodeType}" == "admin" ] ; then
     logmessage DEBUG "node is admin so returns true"
     return 1
@@ -588,7 +611,8 @@ dcacheInstallGetIsUtilityDomain()
     return 0
   fi
   if [ "${NodeType}" == "custom" ] ; then
-    utilityDomain=`printConfig utilityDomain |  tr '[A-Z]' '[a-z]'`
+    yaim_config_file_get_value "${ourHomeDir}/etc/node_config" utilityDomain
+    utilityDomain=`echo "${RET}" | tr '[A-Z]' '[a-z]'`    
     if [ "${utilityDomain}" == "yes" ] ; then
       return 1
     fi
@@ -604,7 +628,8 @@ dcacheInstallGetIsPnfsManager()
   # returns 1 if is an pnfsManager is used 0 otherwise
   local NodeType
   local pnfsManager
-  NodeType=`printConfig NODE_TYPE |  tr '[A-Z]' '[a-z]'`
+  yaim_config_file_get_value "${ourHomeDir}/etc/node_config" NODE_TYPE
+  NodeType=`echo "${RET}" | tr '[A-Z]' '[a-z]'`
   if [ "${NodeType}" == "admin" ] ; then
     logmessage DEBUG "node is admin so returns true"
     return 1
@@ -618,7 +643,8 @@ dcacheInstallGetIsPnfsManager()
     return 0
   fi
   if [ "${NodeType}" == "custom" ] ; then
-    pnfsManager=`printConfig pnfsManager |  tr '[A-Z]' '[a-z]'`
+    yaim_config_file_get_value "${ourHomeDir}/etc/node_config" pnfsManager
+    pnfsManager=`echo "${RET}" | tr '[A-Z]' '[a-z]'`     
     if [ "${pnfsManager}" == "yes" ] ; then
       return 1
     fi
@@ -635,7 +661,8 @@ dcacheInstallGetIsAdmin()
   logmessage DEBUG "dcacheInstallGetIsAdmin.start"
   # returns 1 if is an admin node is used 0 otherwise
   local NodeType
-  NodeType=`printConfig NODE_TYPE |  tr '[A-Z]' '[a-z]'`
+  yaim_config_file_get_value "${ourHomeDir}/etc/node_config" NODE_TYPE
+  NodeType=`echo "${RET}" | tr '[A-Z]' '[a-z]'`
   if [ "${NodeType}" == "admin" ] ; then
     logmessage DEBUG "dcacheInstallGetIsAdmin.stop"
     return 1
@@ -777,9 +804,9 @@ dcacheInstallPnfsMountPointServer()
   dcacheInstallGetPnfsRoot
   PNFS_ROOT=$RET
   dcacheInstallGetHome
-  DCACHE_HOME=$RET 
-  PNFS_INSTALL_DIR=`printConfig PNFS_INSTALL_DIR`
-  
+  DCACHE_HOME=${RET}
+  yaim_config_file_get_value "${ourHomeDir}/etc/node_config" PNFS_INSTALL_DIR
+  PNFS_INSTALL_DIR="${RET}"
   #    Checking and creating mountpoint and link
   #
   pnfsMountPoint=${PNFS_ROOT}/fs
@@ -865,7 +892,8 @@ dcacheInstallPnfsMountPointServer()
       exit 1
     fi
     logmessage INFO "PNFS is not running. It is needed to prepare dCache. ... "
-    yesno=`printConfig PNFS_START`
+    yaim_config_file_get_value ${ourHomeDir}/etc/node_config PNFS_START
+    yesno="${RET}"
     if [ \( "${yesno}" = "n" \) -o \( "${yesno}" = "no" \) ] ; then
       logmessage ERROR "Not allowed to start it. Set PNFS_START in etc/node_config to 'yes' or start by hand. Exiting."
       exit 1
@@ -1056,7 +1084,8 @@ dcacheInstallPnfsConfigCheck()
     WRITING_PNFS=yes
   fi
   logmessage DEBUG "WRITING_PNFS=$WRITING_PNFS"
-  yesno=`printConfig PNFS_OVERWRITE`
+  yaim_config_file_get_value ${ourHomeDir}/etc/node_config PNFS_OVERWRITE
+  yesno="${RET}"
   if [ \( "${yesno}" = "n" -o "${yesno}" = "no" \) -a "${WRITING_PNFS}" = "no" ] ; then
     logmessage INFO "Found an existing dCache/PNFS configuration!"
     logmessage INFO "Not allowed to overwrite existing PNFS configuration."
@@ -1215,7 +1244,8 @@ dcacheInstallCheckPool()
     mkdir -p ${rt}/pool/control
     cp ${DCACHE_HOME}/config/setup.temp  ${rt}/pool/setup.orig
     cd ${rt}/pool
-    NUMBER_OF_MOVERS=`printConfig NUMBER_OF_MOVERS`
+    yaim_config_file_get_value ${ourHomeDir}/etc/node_config NUMBER_OF_MOVERS
+    NUMBER_OF_MOVERS="${RET}"
     sed -e "s:set max diskspace 100:set max diskspace ${size}:g" setup.orig > setup.temp
     sed -e "s:mover set max active 10:mover set max active ${NUMBER_OF_MOVERS}:g" setup.temp > setup        
   fi
@@ -1280,6 +1310,7 @@ dcacheInstallSrm()
   logmessage DEBUG "dcacheInstallSrm.start"  
   local DCACHE_HOME
   local java
+  local useSrm
   dcacheInstallGetHome
   DCACHE_HOME=$RET
   yaim_config_file_get_value ${DCACHE_HOME}/config/dCacheSetup java
@@ -1326,8 +1357,9 @@ dcacheInstallSrm()
     echo "JAVA_HOME=${JAVA_HOME}"
   ) > ${DCACHE_HOME}/etc/srm_setup.env.$$
   mv ${DCACHE_HOME}/etc/srm_setup.env.$$ ${DCACHE_HOME}/etc/srm_setup.env
-  
-  if [ "`printConfig SRM`" = yes ] ; then
+  yaim_config_file_get_value "${ourHomeDir}/etc/node_config" SRM
+  useSrm=`echo "${RET}" | tr '[A-Z]' '[a-z]'`
+  if [ "${useSrm}" = yes ] ; then
     export loglevel logfile
     logmessage DEBUG "Running ${DCACHE_HOME}/install/deploy_srmv2.sh ${DCACHE_HOME}/etc/srm_setup.env"
     ${DCACHE_HOME}/install/deploy_srmv2.sh ${DCACHE_HOME}/etc/srm_setup.env 
