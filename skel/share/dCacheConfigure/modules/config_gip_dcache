@@ -846,6 +846,36 @@ config_gip_dcache_check()
   return 0
 }
 
+config_gip_check_users_exist()
+{
+  yaimlog DEBUG "function config_gip_check_users_exist start"
+  local allisGood
+  local foundUid
+  allisGood=0
+  foundUid=$(id -u edguser 2> /dev/null)
+  if [ "X" == "X${foundUid}" ] ; then
+    yaimlog ERROR "User edguser not found."
+    allisGood=1
+  fi
+  foundGid=$(id -g edguser 2> /dev/null)
+  if [ "X" == "X${foundGid}" ] ; then
+    yaimlog ERROR "Group edguser not found."
+    allisGood=1
+  fi
+  foundGid=$(id -u edginfo 2> /dev/null)
+  if [ "X" == "X${foundGid}" ] ; then
+    yaimlog ERROR "User edginfo not found."
+    allisGood=1
+  fi
+  
+  if [ "${allisGood}" != "0" ] ; then
+    yaimlog ERROR "Exiting due to required users and groups missing."
+    exit 4
+  fi
+  yaimlog DEBUG "function config_gip_check_users_exist stop"
+}
+
+
 config_gip_dcache_run()
 {
   yaimlog DEBUG "function yaim_config_info_system start"
@@ -853,6 +883,7 @@ config_gip_dcache_run()
   rcisvd=$?  
   if [ "${rcisvd}" == "1" ] ; then
     # Use new info system and disable the old info system
+    config_gip_check_users_exist
     config_bdii_only
     config_gip_only
     yaim_config_info_system
