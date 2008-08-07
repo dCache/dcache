@@ -9,7 +9,6 @@
 
 # This script is based upon earlier work by LHC
 
-
 # Used variables
 # Obligatory: DCACHE_ADMIN=admin_host
 #             DCACHE_POOLS="pool_node1:[size:]/pool_path1 pool_node2:[size:]/pool_path2"
@@ -110,7 +109,7 @@ yaim_query_conf_info_system()
 }
 
 
-yaim_query_conf_web_system()
+yaim_quert_conf_web_system()
 {
   # Returns 0 when node is not LCG info system node
   # Returns 1 when node is LCG info system node
@@ -120,7 +119,6 @@ yaim_query_conf_web_system()
   result=0
   if [ -z "$DCACHE_PROVIDER_WEB" ] ; then
     if [ -n "$DCACHE_PROVIDER_INFO" ] ; then
-    fi
       yaim_query_conf_info_system
       result=$?    
     else
