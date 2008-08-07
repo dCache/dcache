@@ -220,22 +220,31 @@ config_pnfs_install()
 
 config_pnfs_start() {
   yaimlog DEBUG "function config_pnfs_start start"
-  yaim_query_conf_node_dcache_pnfsserver
-  tmptrue=$?
-  if [ "x${tmptrue}" == "x1" ] ;then
-    /etc/init.d/pnfs stop
-    /etc/init.d/pnfs start
+  if [ -f /etc/init.d/pnfs ] ; then
+    yaim_query_conf_node_dcache_pnfsserver
+    tmptrue=$?
+    if [ "x${tmptrue}" == "x1" ] ;then
+      /etc/init.d/pnfs stop
+      /etc/init.d/pnfs start
+    fi
+  else
+    yaimlog WARNING "file /etc/init.d/pnfs does not exist"
   fi
+  
   yaimlog DEBUG "function config_pnfs_start stop"
 }
 
 config_pnfs_stop() {
   yaimlog DEBUG "function config_pnfs_stop start"
-  yaim_query_conf_node_dcache_pnfsserver
-  tmptrue=$?
-  if [ "x${tmptrue}" == "x1" ] ;then
-    /etc/init.d/pnfs stop
-  fi
+  if [ -f /etc/init.d/pnfs ] ; then  
+    yaim_query_conf_node_dcache_pnfsserver
+    tmptrue=$?
+    if [ "x${tmptrue}" == "x1" ] ;then
+      /etc/init.d/pnfs stop
+    fi
+  else
+    yaimlog WARNING "file /etc/init.d/pnfs does not exist"
+  fi    
   yaimlog DEBUG "function config_pnfs_stop stop"
 }
 
