@@ -109,7 +109,7 @@ yaim_query_conf_info_system()
 }
 
 
-yaim_quert_conf_web_system()
+yaim_query_conf_web_system()
 {
   # Returns 0 when node is not LCG info system node
   # Returns 1 when node is LCG info system node
