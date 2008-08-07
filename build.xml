@@ -669,11 +669,15 @@
         <echo message="new test build : ${release.id}-b${current.revision}" />
 
         <!-- STEP 1 snd 2 : set rpm name to release id and build -->
-        <antcall target="server.rpm">
+
+	<antcall target="srmclient.rpm">
              <param name="build.minor.number" value="b${current.revision}" />
              <param name="release.name" value="b${current.revision}" />
         </antcall>
-
+	<antcall target="server.rpm">
+             <param name="build.minor.number" value="b${current.revision}" />
+             <param name="release.name" value="b${current.revision}" />
+        </antcall>
     </target>
 
     <!-- pick up jar files located at antlib -->
