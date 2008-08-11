@@ -22,18 +22,44 @@ public class Release extends Message{
     private long spaceToken;
     private Long releaseSizeInBytes; // all if null
     private long remainingSizeInBytes;
+    private String voGroup=null;
+    private String voRole=null;
+
     /** Creates a new instance of Reserve */
     public Release() {
     }
     
     public Release(
             long spaceToken,
-            Long releaseSizeInBytes
-){
+            Long releaseSizeInBytes){
         this.spaceToken = spaceToken;
         this.releaseSizeInBytes = releaseSizeInBytes;
         setReplyRequired(true);
     }
+    
+    public Release(
+            long spaceToken,
+            Long releaseSizeInBytes, 
+            String group,
+            String role) {
+        this.spaceToken = spaceToken;
+        this.releaseSizeInBytes = releaseSizeInBytes;
+        this.voGroup=group;
+        this.voRole=role;
+        setReplyRequired(true);
+    }
+
+    public void setVoGroup(String group) { 
+        voGroup=group;
+    }
+
+    public void setVoRole(String role) { 
+        voRole=role;
+    }
+
+    public String getVoGroup() { return voGroup; }
+
+    public String getVoRole() { return voRole; }
 
     public long getSpaceToken() {
         return spaceToken;
