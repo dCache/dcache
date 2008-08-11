@@ -121,11 +121,11 @@ public class Configuration {
                 )
                 private int srmDefaultPortNumber;
 
-	public int getSrmDefaultPortNumber() {
+	public int getDefaultSrmPortNumber() {
 		return srmDefaultPortNumber;
 	}
 
- 	public void setSrmDefaultPortNumber(int port) {
+ 	public void setDefaultSrmPortNumber(int port) {
 		this.srmDefaultPortNumber=port;
 	}
 
