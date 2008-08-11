@@ -1,5 +1,4 @@
 #!/bin/bash
-
 # Set up the preset values before we get to the command line
 # Note these values can be changed with the command line
 
@@ -36,9 +35,6 @@ usage()
 }
 
 
-
-
-
 yaim_config_file_get_value()
 {
 # Returns 0 on success
@@ -55,23 +51,24 @@ if [ ! -f ${FILE} ] ; then
     exit 1
 fi
 
-cursor=`grep -n "^[\t ]*${Key}[\t ]*=" $FILE | cut -d: -f1 | sed '$!d'`
+cursor=`grep -n "^[ 	]*${Key}[ 	]*=" $FILE | cut -d: -f1 | sed '$!d'`
 if [ "${cursor}X" == "X" ] ; then
   RET=""
   return 2
 fi
-CursorLine=`sed "${cursor}q;d" $FILE | cut -s -d= -f2-`
+CursorLine=`sed "${cursor}q;d" $FILE | cut -s -d= -f2- | sed 's/#.*$//g; s/[ 	]*$//'`
 MatchLine="${CursorLine%%"\\"}\\"
 RET="${CursorLine%%"\\"}"
 while [ "${CursorLine}" == "${MatchLine}" ] 
 do
     let cursor+=1
-    CursorLine=`sed "${cursor}q;d" $FILE`
+    CursorLine=`sed "${cursor}q;d" $FILE | sed 's/#.*$//g; s/[ 	]*$//'`
     MatchLine="${CursorLine%%"\\"}\\"
     RET="$RET ${CursorLine%%"\\"}"
 done
-RET=`echo $RET | sed 's/^[ \t]*\"\([^"]*\)\"[ \t]*$/\1/'`
+RET=`echo $RET | sed 's/^[ 	]*\"\([^"]*\)\"[ 	]*$/\1/'`
 }
+
 dcaches_config_file_get_value()
 {
 # Returns 0 on success
@@ -1184,7 +1181,7 @@ dcacheInstallSshKeys()
   local nodeType
   dcacheInstallGetHome
   DCACHE_HOME=$RET
-  dcacheInstallGetIsAdminDoor
+  dcacheInstallGetIsAdmin
   nodeType=$?
   if [ "${nodeType}" = "1" ] ; then
     cd ${DCACHE_HOME}/config
@@ -1195,8 +1192,6 @@ dcacheInstallSshKeys()
       ssh-keygen -b 768 -t rsa1 -f ./server_key -N "" 2>&1 | logmessage INFO
       ln -s /etc/ssh/ssh_host_key ./host_key
     fi
-  else
-    logmessage INFO "Not an admin door inteface node"
   fi
   logmessage DEBUG "dcacheInstallSshKeys.stop"
 }
