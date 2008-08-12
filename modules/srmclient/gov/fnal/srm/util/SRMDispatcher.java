@@ -414,8 +414,9 @@ public class SRMDispatcher {
 	    int number_of_surls   = surl_strings.length;
 	    GlobusURL[] surls     = new GlobusURL[number_of_surls];
 	    for(int i=0;i<number_of_surls;++i) {
-		surls[i] = new GlobusURL(surl_strings[i]);
-	    }
+                surls[i] = new SrmUrl(surl_strings[i],
+                                      configuration.getDefaultSrmPortNumber());
+            }
 	    checkURLSUniformity(SRM_URL, surls, false);
 	    srmclient = new SRMGetFileMetaDataClientV1(configuration, surls, surl_strings);
 	}
@@ -424,7 +425,8 @@ public class SRMDispatcher {
 	    int number_of_surls   = surl_strings.length;
 	    GlobusURL[] surls     = new GlobusURL[number_of_surls];
 	    for(int i=0;i<number_of_surls;++i) {
-		surls[i] = new GlobusURL(surl_strings[i]);
+                surls[i] = new SrmUrl(surl_strings[i],
+                                      configuration.getDefaultSrmPortNumber());
 	    }
 	    checkURLSUniformity(SRM_URL, surls, false);
 	    srmclient = new SRMGetPermissionClientV2(configuration, surls,surl_strings);
@@ -434,7 +436,8 @@ public class SRMDispatcher {
 	    int number_of_surls   = surl_strings.length;
 	    GlobusURL[] surls     = new GlobusURL[number_of_surls];
 	    for(int i=0;i<number_of_surls;++i) {
-		surls[i] = new GlobusURL(surl_strings[i]);
+		surls[i] = new SrmUrl(surl_strings[i],
+                                      configuration.getDefaultSrmPortNumber());                                         
 	    }
 	    checkURLSUniformity(SRM_URL, surls, false);
 	    srmclient = new SRMCheckPermissionClientV2(configuration, surls,surl_strings);
@@ -444,14 +447,16 @@ public class SRMDispatcher {
 	    int number_of_surls   = surl_strings.length;
 	    GlobusURL[] surls     = new GlobusURL[number_of_surls];
 	    for(int i=0;i<number_of_surls;++i) {
-		surls[i] = new GlobusURL(surl_strings[i]);
+		surls[i] = new SrmUrl(surl_strings[i],
+                                      configuration.getDefaultSrmPortNumber());
 	    }
 	    checkURLSUniformity(SRM_URL, surls, false);
 	    srmclient = new SRMExtendFileLifeTimeClientV2(configuration, surls,surl_strings);
 	}	
 	else if (configuration.isSetPermission()) {
 	    String surl_string = configuration.getSetPermissionSurl();
-	    GlobusURL surl     = new GlobusURL(surl_string);
+	    GlobusURL surl     = new SrmUrl(surl_string,
+                                            configuration.getDefaultSrmPortNumber());  
 	    srmclient = new SRMSetPermissionClientV2(configuration, surl,surl_string);
 	}	
 	else if (configuration.isls()) {
@@ -459,7 +464,8 @@ public class SRMDispatcher {
 	    int number_of_surls   = surl_strings.length;
 	    GlobusURL[] surls      = new GlobusURL[number_of_surls];
 	    for(int i=0;i<number_of_surls;++i) {
-		surls[i] = new GlobusURL(surl_strings[i]);
+		surls[i] = new SrmUrl(surl_strings[i],
+                                      configuration.getDefaultSrmPortNumber());  
 	    }
 	    checkURLSUniformity(SRM_URL, surls, false);
 	    srmclient              = new SRMLsClientV2(configuration, surls, surl_strings);
@@ -478,7 +484,8 @@ public class SRMDispatcher {
 	    }
 	    GlobusURL[] surls      = new GlobusURL[number_of_surls];
 	    for (int i=0;i<number_of_surls;++i) {
-		surls[i] = new GlobusURL(surl_strings[i]);
+		surls[i] = new SrmUrl(surl_strings[i],
+                                      configuration.getDefaultSrmPortNumber());  
 	    }
 	    checkURLSUniformity(SRM_URL, surls, false);
 	    srmclient              = new SRMReserveSpaceClientV2(configuration, surls[0]);
@@ -497,7 +504,8 @@ public class SRMDispatcher {
 	    }
 	    GlobusURL[] surls      = new GlobusURL[number_of_surls];
 	    for (int i=0;i<number_of_surls;++i) {
-		surls[i] = new GlobusURL(surl_strings[i]);
+		surls[i] = new SrmUrl(surl_strings[i],
+                                      configuration.getDefaultSrmPortNumber());  
 	    }
 	    checkURLSUniformity(SRM_URL, surls, false);
 	    srmclient              = new SRMReleaseSpaceClientV2(configuration, surls[0]);
@@ -507,7 +515,8 @@ public class SRMDispatcher {
 	    if (  surl_string == null ) { 
 		throw new IllegalArgumentException("Must specify SRM URL" ) ;
 	    }
-	    GlobusURL surl      = new GlobusURL(surl_string);
+	    GlobusURL surl      = new SrmUrl(surl_string,
+                                             configuration.getDefaultSrmPortNumber());  
 	    srmclient              = new SRMGetSpaceMetaDataClientV2(configuration, surl);
 	}
 	else if (configuration.isGetSpaceTokens()) {
@@ -515,7 +524,8 @@ public class SRMDispatcher {
 	    if (  surl_string == null ) { 
 		throw new IllegalArgumentException("Must specify SRM URL" ) ;
 	    }
-	    GlobusURL surl      = new GlobusURL(surl_string);
+	    GlobusURL surl      = new SrmUrl(surl_string,
+                                             configuration.getDefaultSrmPortNumber());  
 	    srmclient              = new SRMGetSpaceTokensClientV2(configuration, surl);
 	}
 	else if (configuration.isStage()) {
@@ -523,7 +533,8 @@ public class SRMDispatcher {
 	    int number_of_surls   = surl_strings.length;
 	    GlobusURL[] surls      = new GlobusURL[number_of_surls];
 	    for(int i=0;i<number_of_surls;++i) {
-		surls[i] = new GlobusURL(surl_strings[i]);
+		surls[i] = new SrmUrl(surl_strings[i],
+                                      configuration.getDefaultSrmPortNumber());  
 	    }
 	    checkURLSUniformity(SRM_URL, surls, false);
 	    srmclient              = new SRMStageClientV1(configuration, surls);
@@ -539,7 +550,8 @@ public class SRMDispatcher {
 	    }
 	    GlobusURL[] surls      = new GlobusURL[number_of_surls];
 	    for (int i=0;i<number_of_surls;++i) {
-		surls[i] = new GlobusURL(surl_strings[i]);
+		surls[i] = new SrmUrl(surl_strings[i],
+                                         configuration.getDefaultSrmPortNumber());  
 	    }
 	    checkURLSUniformity(SRM_URL, surls, false);
 	    srmclient = new SRMRmdirClientV2(configuration, surls[0], surl_strings[0]);
@@ -555,7 +567,8 @@ public class SRMDispatcher {
 	    }
 	    GlobusURL[] surls      = new GlobusURL[number_of_surls];
 	    for (int i=0;i<number_of_surls;++i) {
-		surls[i] = new GlobusURL(surl_strings[i]);
+		surls[i] = new SrmUrl(surl_strings[i],
+                                      configuration.getDefaultSrmPortNumber());  
 	    }
 	    checkURLSUniformity(SRM_URL, surls, false);
 	    srmclient = new SRMMkDirClientV2(configuration, surls[0], surl_strings[0]);
@@ -565,7 +578,8 @@ public class SRMDispatcher {
 	    int number_of_surls    = surl_strings.length;
 	    GlobusURL[] surls      = new GlobusURL[number_of_surls];
 	    for (int i=0;i<number_of_surls;++i) {
-		surls[i] = new GlobusURL(surl_strings[i]);
+		surls[i] = new SrmUrl(surl_strings[i],
+                                      configuration.getDefaultSrmPortNumber());  
 	    }
 	    checkURLSUniformity(SRM_URL, surls, false);
 	    srmclient = new SRMRmClientV2(configuration, surls, surl_strings);
@@ -575,7 +589,8 @@ public class SRMDispatcher {
 	    int number_of_surls   = surl_strings.length;
 	    GlobusURL[] surls     = new GlobusURL[number_of_surls];
 	    for (int i=0;i<number_of_surls;++i) {
-		surls[i] = new GlobusURL(surl_strings[i]);
+		surls[i] = new SrmUrl(surl_strings[i],
+                                      configuration.getDefaultSrmPortNumber());  
 	    }
 	    checkURLSUniformity(SRM_URL, surls, false);
 	    srmclient = new SRMAdvisoryDeleteClientV1(configuration, surls, surl_strings);
@@ -583,17 +598,21 @@ public class SRMDispatcher {
 	else if(configuration.isGetRequestStatus()) {
 	    String surl_string = configuration.getGetRequestStatusSurl();
 	    int requestId      = configuration.getGetRequestStatusId();
-	    GlobusURL surl     = new GlobusURL(surl_string);
+	    GlobusURL surl     = new SrmUrl(surl_string,
+                                            configuration.getDefaultSrmPortNumber());  
+                                               
 	    srmclient          = new SRMGetRequestStatusClientV1(configuration, surl,requestId);
 	} 
 	else if(configuration.isGetRequestSummary()) {
 	    String surl_string = configuration.getGetRequestStatusSurl();
-	    GlobusURL surl     = new GlobusURL(surl_string);
+	    GlobusURL surl     = new SrmUrl(surl_string,
+                                            configuration.getDefaultSrmPortNumber());  
 	    srmclient          = new SRMGetRequestSummaryClientV2(configuration, surl);
 	} 
 	else if(configuration.isGetRequestTokens()) {
 	    String surl_string = configuration.getGetRequestStatusSurl();
-	    GlobusURL surl     = new GlobusURL(surl_string);
+	    GlobusURL surl     = new SrmUrl(surl_string,
+                                               configuration.getDefaultSrmPortNumber());  
 	    srmclient          = new SRMGetRequestTokensClientV2(configuration, surl);
 	} 
 	else if (configuration.isMove()) {
@@ -616,8 +635,10 @@ public class SRMDispatcher {
 		from           = configuration.getFrom()[0];
 		to             = configuration.getTo();
 	    }
-	    GlobusURL from_url = new GlobusURL(from);
-	    GlobusURL to_url   = new GlobusURL(to);
+	    GlobusURL from_url = new SrmUrl(from,
+                                            configuration.getDefaultSrmPortNumber());  
+	    GlobusURL to_url   = new SrmUrl(to,
+                                            configuration.getDefaultSrmPortNumber());  
 	    GlobusURL[] surls  = new GlobusURL[2];
 	    surls[0] = from_url;
 	    surls[1] = to_url;
@@ -645,8 +666,10 @@ public class SRMDispatcher {
 		from_urls                = new GlobusURL[number_of_sources];
 		to_urls                  = new GlobusURL[number_of_sources];
 		for(int i=0;i<number_of_sources;++i) {
-		    from_urls[i] = new GlobusURL(from[i]);
-		    to_urls[i]   = new GlobusURL(to[i]);
+		    from_urls[i] = new SrmUrl(from[i],
+                                              configuration.getDefaultSrmPortNumber());
+		    to_urls[i]   = new SrmUrl(to[i],
+                                              configuration.getDefaultSrmPortNumber());
 		}
 	    } 
 	    else {
@@ -655,7 +678,8 @@ public class SRMDispatcher {
 		String to             = configuration.getTo();
 		from_urls             = new GlobusURL[number_of_sources];
 		for (int i=0;i<number_of_sources;++i) {
-		    from_urls[i] = new GlobusURL(from[i]);
+                        from_urls[i] = new SrmUrl(from[i],
+                                                  configuration.getDefaultSrmPortNumber());
 		}
 		to_urls = new GlobusURL[number_of_sources];
 		if (number_of_sources >1) {
@@ -665,11 +689,13 @@ public class SRMDispatcher {
 			if(lastSlash != -1) {
 			    file = file.substring(lastSlash);
 			}
-			to_urls[i] = new GlobusURL(to+"/"+file);
+			to_urls[i] = new SrmUrl(to+"/"+file,
+                                                configuration.getDefaultSrmPortNumber());
 		    }
 		} 
 		else {
-		    to_urls[0] =  new GlobusURL(to);
+		    to_urls[0] =  new  SrmUrl(to,
+                                              configuration.getDefaultSrmPortNumber());
 		}
 	    }
 	    int fromType = getUrlType(from_urls[0]);
@@ -715,7 +741,6 @@ public class SRMDispatcher {
 	    } 
 	    else if(toType == SRM_URL) {
 		if ((fromType & FILE_URL) == FILE_URL) {
-		    dsay("starting SRMPutClient");
 		    if(configuration.getSrmProtocolVersion() == 1) {
 			srmclient = new SRMPutClientV1(configuration,from_urls,to_urls);
 		    } else if(configuration.getSrmProtocolVersion() == 2) {
@@ -758,27 +783,30 @@ public class SRMDispatcher {
 	    int number_of_surls   = surl_strings.length;
 	    GlobusURL[] surls      = new GlobusURL[number_of_surls];
 	    for(int i=0;i<number_of_surls;++i) {
-		surls[i] = new GlobusURL(surl_strings[i]);
+		surls[i] = new SrmUrl(surl_strings[i],
+                                      configuration.getDefaultSrmPortNumber());  
 	    }
 	    checkURLSUniformity(SRM_URL, surls, false);
 	    srmclient              = new SRMBringOnlineClientV2(configuration, surls);
 	} 
 	else if(configuration.isPing()) {
-		String surl_string = configuration.getSrmUrl();
-		GlobusURL surl = new GlobusURL(surl_string);
-		if(configuration.getSrmProtocolVersion() == 1) {
-			srmclient  = new SRMPingClientV1(configuration,surl);
-	    }
-	    if(configuration.getSrmProtocolVersion() == 2) {
-		srmclient  = new SRMPingClientV2(configuration,surl);
-	    }
+            String surl_string = configuration.getSrmUrl();
+            GlobusURL surl = new SrmUrl(surl_string,
+                                        configuration.getDefaultSrmPortNumber());  
+            if(configuration.getSrmProtocolVersion() == 1) {
+                srmclient  = new SRMPingClientV1(configuration,surl);
+            }
+            if(configuration.getSrmProtocolVersion() == 2) {
+                srmclient  = new SRMPingClientV2(configuration,surl);
+            }
 	}
 	else if (configuration.isAbortRequest()) { 
 		String surl_string  = configuration.getSrmUrl();
 		if (  surl_string == null ) { 
 			throw new IllegalArgumentException("Must specify SRM URL" ) ;
 		}
-		GlobusURL surl      = new GlobusURL(surl_string);
+		GlobusURL surl      = new SrmUrl(surl_string,
+                                                  configuration.getDefaultSrmPortNumber());  
 		srmclient           = new SRMAbortRequestClientV2(configuration, surl);
 	}
 	else if (configuration.isAbortFiles()) { 
