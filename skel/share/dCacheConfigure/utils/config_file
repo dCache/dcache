@@ -83,9 +83,9 @@ fi
 
 
 
-yaim_config_file_get_value()
+yaim_config_file_get_value_old()
 {
-yaimlog DEBUG "function yaim_config_file_get_value start"
+yaimlog DEBUG "function yaim_config_file_get_value_old start"
 local FILE
 local Key
 local cursor
@@ -93,8 +93,8 @@ local CursorLine
 local MatchLine
 FILE=$1
 Key=$2
-if [ ! -f ${FILE} ] ; then
-    echo yaim_config_file_get_value called with no file
+if [ ! -f "${FILE}" ] ; then
+    yaimlog ERROR "yaim_config_file_get_value_old called with no valid file"
     exit 1
 fi
 cursor=$(grep -n "^[\t ]*$Key[\t ]*=" $FILE | cut -d: -f1 | tail -n 1)
@@ -114,8 +114,46 @@ if [ -n "$cursor" ] ; then
 else
   RET=""
 fi
-yaimlog DEBUG "function yaim_config_file_get_value stop"
+yaimlog DEBUG "function yaim_config_file_get_value_old stop"
 }
+
+
+yaim_config_file_get_value()
+{
+  yaimlog DEBUG "function yaim_config_file_get_value start"
+  # Returns 0 on success
+  # Returns 1 if file not found
+  # Returns 2 if key not found
+  local FILE
+  local Key
+  local RC
+  local FoundLine
+  FILE=$1
+  Key=$2
+  RET=""
+  RC=0
+  if [ -z "${FILE}" ] ; then
+    yaimlog ERROR "yaim_config_file_get_value_old called with no file parameter"
+    exit 1
+  fi
+  if [ -f ${FILE} ] ; then
+    COMMAND=". ${FILE} ;  if [ -z \"\$${Key}\" ] ; then echo notFound; else echo Found; fi ; echo \"\$${Key}\""
+    CmdOut=`echo ${COMMAND} | sh`
+    FoundLine=`echo "${CmdOut}" | sed "1q;d"`
+    if [ "${FoundLine}" == "Found" ] ; then
+      RET=`echo "${CmdOut}" | sed '1d'`
+      RC=0
+    else
+      RC=2  
+    fi
+  else
+    echo yaim_config_file_get_value called with no valid file, file=$FILE
+    RC=1
+  fi
+  yaimlog DEBUG "function yaim_config_file_get_value stop"
+  return ${RC}
+}
+
 
 
 yaim_config_file_set_value()
