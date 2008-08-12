@@ -137,7 +137,7 @@ yaim_config_file_get_value()
     exit 1
   fi
   if [ -f ${FILE} ] ; then
-    COMMAND=". ${FILE} ;  if [ -z \"\$${Key}\" ] ; then echo notFound; else echo Found; fi ; echo \"\$${Key}\""
+    COMMAND="unset \"${Key}\" ; . ${FILE} ;  if [ -z \"\$${Key}\" ] ; then echo notFound; else echo Found; fi ; echo \"\$${Key}\""
     CmdOut=`echo ${COMMAND} | sh`
     FoundLine=`echo "${CmdOut}" | sed "1q;d"`
     if [ "${FoundLine}" == "Found" ] ; then
@@ -147,8 +147,8 @@ yaim_config_file_get_value()
       RC=2  
     fi
   else
-    echo yaim_config_file_get_value called with no valid file, file=$FILE
-    RC=1
+    yaimlog ERROR "yaim_config_file_get_value called with no valid file, file=$FILE"
+    exit 1
   fi
   yaimlog DEBUG "function yaim_config_file_get_value stop"
   return ${RC}

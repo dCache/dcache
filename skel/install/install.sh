@@ -121,7 +121,7 @@ RET=`echo $RET | sed 's/^[ 	]*\"\([^"]*\)\"[ 	]*$/\1/'`
 
 yaim_config_file_get_value()
 {
-  yaimlog DEBUG "function yaim_config_file_get_value start"
+  logmessage DEBUG "function yaim_config_file_get_value start"
   # Returns 0 on success
   # Returns 1 if file not found
   # Returns 2 if key not found
@@ -134,11 +134,11 @@ yaim_config_file_get_value()
   RET=""
   RC=0
   if [ -z "${FILE}" ] ; then
-    yaimlog ERROR "yaim_config_file_get_value_old called with no file parameter"
+    logmessage ERROR "yaim_config_file_get_value_old called with no file parameter"
     exit 1
   fi
   if [ -f ${FILE} ] ; then
-    COMMAND=". ${FILE} ;  if [ -z \"\$${Key}\" ] ; then echo notFound; else echo Found; fi ; echo \"\$${Key}\""
+    COMMAND="unset \"${Key}\" ; . ${FILE} ;  if [ -z \"\$${Key}\" ] ; then echo notFound; else echo Found; fi ; echo \"\$${Key}\""
     CmdOut=`echo ${COMMAND} | sh`
     FoundLine=`echo "${CmdOut}" | sed "1q;d"`
     if [ "${FoundLine}" == "Found" ] ; then
@@ -148,12 +148,13 @@ yaim_config_file_get_value()
       RC=2  
     fi
   else
-    echo yaim_config_file_get_value called with no valid file, file=$FILE
-    RC=1
+    logmessage ERROR "yaim_config_file_get_value called with no valid file, file=$FILE"
+    exit 1
   fi
-  yaimlog DEBUG "function yaim_config_file_get_value stop"
+  logmessage DEBUG "function yaim_config_file_get_value stop"
   return ${RC}
 }
+
 
 
 logmessage()
