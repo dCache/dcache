@@ -155,10 +155,8 @@ yaim_config_file_get_value()
 }
 
 
-
 yaim_config_file_set_value()
 {
-yaimlog DEBUG "function yaim_config_file_set_value start"
 local FILE
 local Key
 local Value
@@ -171,26 +169,53 @@ local cursor
 local MatchCursorLine
 local lastline
 # File to edit
-FILE=$1
+FILE="$1"
 # Key to set 
-Key=$2
+Key="$2"
 # Value to Set
-Value=$3
+Value="$3"
 # Use as Flag for adding value
 # 0 Not yet added
 # 1 Should add as soon as posible
 # 2 Already Added
+
+yaim_config_file_get_value "${FILE}" "${Key}"
+if [ "${RET}" == "${Value}" ] ; then
+  return 0
+fi
+yaimlog DEBUG "function yaim_config_file_set_value start"
 AddedValue=0
-tmpfile=$FILE.bakup
+tmpfile=$FILE.backup.$$
 rm -f $tmpfile
-linesWithKeys=`grep -n "^[\t ]*$Key=" $FILE | cut -d: -f1`
-if [ "" == "$linesWithKeys" ] ; then
+AllCursors=`grep -n  "^[	 ]*${Key}[	 ]*=" $FILE | cut -d: -f1 `
+if [ "${AllCursors}X" == "X" ] ; then
+  RET=""
+fi
+# Now iterate through all our matches 
+# check the line before is not terminated with \
+foundPotentialCursors=""
+for acursor in $AllCursors
+do
+  let lineNumBefore="${acursor}-1"
+  if [ "${lineNumBefore}" == "0" ] ; then
+    foundPotentialCursors="${acursor} ${foundPotentialCursors}"
+  else
+    # Following bash convention ignore all content after "#"
+    # including lines terminating in "\"
+    PreviousLine=`sed "${lineNumBefore}q;d" $FILE | sed 's/#.*$//'`
+    MatchLine="${PreviousLine%%"\\"}"
+    if [ "${PreviousLine}" == "${MatchLine}" ] ; then
+      foundPotentialCursors="${acursor} ${foundPotentialCursors}"
+    fi
+  fi
+done
+if [ "${foundPotentialCursors}X" == "X" ] ; then
     # No Value already exists.
-    lastLineCommented=`grep -n "^[\t# ]*$Key=" $FILE | cut -d: -f1 | tail -n 1`
+    lastLineCommented=`grep -n "^[\t# 	]*$Key=" $FILE | cut -d: -f1 `
     if [ "" == "$lastLineCommented" ] ; then
         # No commented out line exists
         cp $FILE $tmpfile
-        echo "$Key=$Value" >> $tmpfile
+        echo "$Key=\"$Value\"" >> $tmpfile
     else
         # Commented out line = $lastLineCommented        
         let cursor=$lastLineCommented
@@ -203,53 +228,85 @@ if [ "" == "$linesWithKeys" ] ; then
             MatchCursorLine="${CursorLine%%"\\"}\\"
         done
         sed "${cursor}q" $FILE >> $tmpfile
-        echo "$Key=$Value" >> $tmpfile
+        echo "$Key=\"$Value\"" >> $tmpfile
         line=`cat  $FILE | wc -l |  sed -e "s/ *//g"`
         let cursor+=1
         sed -n "${cursor},${line}p" $FILE >> $tmpfile
     fi
 else
-    
     #linesCommented=`grep -n "^[\t# ]*$Key=" $FILE | cut -d: -f1`
-    linesContinued=`grep -n '\\\\$' $FILE | cut -d: -f1`
+    linesContinued=`grep -n "^[#	 ]*${Key}[	 ]*=" $FILE | cut -d: -f1 `
     #echo linesWithKeys=$linesWithKeys
     #echo linesContinued=$linesContinued
-    #echo linesCommented=$linesCommented
-    previousLine=1
-    cursor=1
-    commentcursor=0
-    supercommentcursor=0
-    for keyLine in $linesWithKeys
-    do
-        cursor=$keyLine
-        if [ "${previousLine}" != "${cursor}" ] ; then
-            #echo previousLine != cursor
-            #echo previousLine=${previousLine} cursor=${cursor}
-            let before_cursor=${cursor}-1
-            sed -n "${previousLine},${before_cursor}p" $FILE >> $tmpfile
+    #echo linesContinued=${linesContinued}
+    let before_cursor='1'
+    let Cursor='-1'
+    linesProcessed="${linesContinued}"
+    while [ -n "${linesProcessed}" ] ; do
+      let Head=`echo "${linesProcessed}" | sed q`
+      linesProcessed=`echo "${linesProcessed}" | sed '1,1d'`
+      if [ ${Head} -ge ${Cursor} ] ; then
+        let Cursor=${Head}
+        let lineNumBeforeHead="${Cursor}-1"
+	# check this line is not a continuation of the last line
+	if [ ${lineNumBeforeHead} -ge 1 ] ; then
+	  RawBeforeCursorLine=`sed "${lineNumBeforeHead}q;d" $FILE | sed 's/#.*//'`
+	  MatchLine="${RawBeforeCursorLine%%"\\"}\\"
+	  if [ "${MatchLine}" == "${RawBeforeCursorLine}" ] ; then
+	    continue
+	  fi
+	fi
+        let gap=${lineNumBeforeHead}-$before_cursor
+        # assuming that this line is valid.
+        # add preseading contnet 
+        # echo gap=$gap
+        if [ ${gap} -gt -1 ] ; then
+          sed -n "${before_cursor},${lineNumBeforeHead}p" $FILE >> $tmpfile
         fi
-        CursorLine=$(sed "${cursor}q;d" $FILE)
-        if [ "${CursorLine}" == "${Key}=${Value}" ] ; then
-            echo "$Key=$Value" >> $tmpfile
-            AddedValue=2
-        else
-            commentcursor=${cursor}
-            for lineCont in $linesContinued
-            do
-                if [ "${cursor}" == "${lineCont}" ] ;then 
-                   let cursor+=1
-                fi
-            done
-            sed -n "${commentcursor},${cursor}p" $FILE | sed -e "s/^/#/" >> $tmpfile
+        let before_cursor=${Cursor}
+        # find the end of this block
+        CursorLine=$(sed "${Cursor}q;d" $FILE)
+        MatchLine="${CursorLine%%"\\"}\\"
+        while [ "${CursorLine}" == "${MatchLine}" ] 
+        do
+          # While last line character is "\"
+          let Cursor+=1
+          RawCursorLine=`sed "${Cursor}q;d" $FILE`
+          CursorLine=`echo "${RawCursorLine}" | sed 's/#.*//'`
+          if [ "${RawCursorLine}" != "${CursorLine}" ] ; then
+            # No comments on this line
+            RET="${RET} ${CursorLine}"
+            break
+          fi
+          MatchLine="${CursorLine%%"\\"}\\"
+          RET="$RET ${CursorLine%%"\\"}"
+        done
+        # add commented block
+        let gap=${Cursor}-${before_cursor}
+        #echo CommentGap=$gap
+        if [ ${gap} -gt -1 ] ; then
+          sed -n "${before_cursor},${Cursor}p" $FILE | sed -e 's/^# *//' | sed -e 's/^/# /' >> $tmpfile
         fi
-        let previousLine=$cursor+1
+        let Cursor=${Cursor}+1
+        let before_cursor=${Cursor}
+        
+      else
+        echo Head=${Head} Cursor=${Cursor}
+      fi
+      if [ -z "${linesProcessed}" ] ; then
+        echo "$Key=\"${Value}\"" >> $tmpfile
+	AddedValue=1
+      fi
     done
-    if [ "$AddedValue" == "0" ] ; then
-        echo "$Key=$Value" >> $tmpfile
-        AddedValue=2
+    let lastline=$(cat $FILE | wc -l |  sed -e "s/ *//g")
+    let gap=${lastline}-${Cursor}
+    #echo finalGap=$gap
+    if [ ${gap} -ge 0 ] ; then
+      sed -n "${before_cursor},${lastline}p" $FILE >> $tmpfile
     fi
-    lastline=$(cat $FILE | wc -l |  sed -e "s/ *//g")
-    sed -n "${previousLine},${lastline}p" $FILE >> $tmpfile
+    if [ "$AddedValue" == "0" ] ; then
+      echo "$Key=\"${Value}\"" >> $tmpfile
+    fi    
 fi
 mv $tmpfile $FILE
 yaimlog DEBUG "function yaim_config_file_set_value stop"
