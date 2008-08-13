@@ -82,114 +82,31 @@ fi
 }
 
 
-
-yaim_config_file_get_value_old()
+yaim_config_file_get_value()
 {
-yaimlog DEBUG "function yaim_config_file_get_value_old start"
+# Returns 0 on success
+# Returns 2 if key not found
 local FILE
 local Key
 local cursor
 local CursorLine
 local MatchLine
+local AllCursors
+local foundPotentialCursors
+local lineNumBefore
+local PreviousLine
+local MatchLine
+local RawCursorLine
 FILE=$1
 Key=$2
-if [ ! -f "${FILE}" ] ; then
-    yaimlog ERROR "yaim_config_file_get_value_old called with no valid file"
+if [ ! -f ${FILE} ] ; then
+    echo yaim_config_file_get_value called with no file, file=$FILE
     exit 1
 fi
-cursor=$(grep -n "^[\t ]*$Key[\t ]*=" $FILE | cut -d: -f1 | tail -n 1)
-#yaimlog DEBUG "cursor=$cursor"
-if [ -n "$cursor" ] ; then
-  CursorLine=$(sed "${cursor}q;d" $FILE | cut -s -d= -f2-)
-  #yaimlog DEBUG "CursorLine=$CursorLine"
-  MatchLine="${CursorLine%%"\\"}\\"
-  RET="${CursorLine%%"\\"}"
-  while [ "${CursorLine}" == "${MatchLine}" ]
-  do
-    let cursor+=1
-    CursorLine=$(sed "${cursor}q;d" $FILE)
-    MatchLine="${CursorLine%%"\\"}\\"
-    RET="$RET ${CursorLine%%"\\"}"
-  done
-else
-  RET=""
-fi
-yaimlog DEBUG "function yaim_config_file_get_value_old stop"
-}
-
-
-yaim_config_file_get_value()
-{
-  yaimlog DEBUG "function yaim_config_file_get_value start"
-  # Returns 0 on success
-  # Returns 1 if file not found
-  # Returns 2 if key not found
-  local FILE
-  local Key
-  local RC
-  local FoundLine
-  FILE=$1
-  Key=$2
-  RET=""
-  RC=0
-  if [ -z "${FILE}" ] ; then
-    yaimlog ERROR "yaim_config_file_get_value_old called with no file parameter"
-    exit 1
-  fi
-  if [ -f ${FILE} ] ; then
-    COMMAND="unset \"${Key}\" ; . ${FILE} ;  if [ -z \"\$${Key}\" ] ; then echo notFound; else echo Found; fi ; echo \"\$${Key}\""
-    CmdOut=`echo ${COMMAND} | sh`
-    FoundLine=`echo "${CmdOut}" | sed "1q;d"`
-    if [ "${FoundLine}" == "Found" ] ; then
-      RET=`echo "${CmdOut}" | sed '1d'`
-      RC=0
-    else
-      RC=2  
-    fi
-  else
-    yaimlog ERROR "yaim_config_file_get_value called with no valid file, file=$FILE"
-    exit 1
-  fi
-  yaimlog DEBUG "function yaim_config_file_get_value stop"
-  return ${RC}
-}
-
-
-yaim_config_file_set_value()
-{
-local FILE
-local Key
-local Value
-local tmpfile
-local AddedValue
-local line
-local CursorLine
-local linesWithKeys
-local cursor
-local MatchCursorLine
-local lastline
-# File to edit
-FILE="$1"
-# Key to set 
-Key="$2"
-# Value to Set
-Value="$3"
-# Use as Flag for adding value
-# 0 Not yet added
-# 1 Should add as soon as posible
-# 2 Already Added
-
-yaim_config_file_get_value "${FILE}" "${Key}"
-if [ "${RET}" == "${Value}" ] ; then
-  return 0
-fi
-yaimlog DEBUG "function yaim_config_file_set_value start"
-AddedValue=0
-tmpfile=$FILE.backup.$$
-rm -f $tmpfile
-AllCursors=`grep -n  "^[	 ]*${Key}[	 ]*=" $FILE | cut -d: -f1 `
+AllCursors=`grep -n "^[	 ]*${Key}[	 ]*=" $FILE | cut -d: -f1 `
 if [ "${AllCursors}X" == "X" ] ; then
   RET=""
+  return 2
 fi
 # Now iterate through all our matches 
 # check the line before is not terminated with \
@@ -210,30 +127,122 @@ do
   fi
 done
 if [ "${foundPotentialCursors}X" == "X" ] ; then
+  RET=""
+  return 2
+fi
+# Since we reversed the order of the cursors while validating them
+# We can process only first valid cursor
+cursor=`echo ${foundPotentialCursors} | sed 's/ .*//'`
+
+RawCursorLine=`sed "${cursor}q;d" $FILE | cut -s -d= -f2- `
+CursorLine=`echo "${RawCursorLine}" | sed 's/#.*//'`
+if [ "${RawCursorLine}" == "${CursorLine}" ] ; then
+  # No comments on this line so check for terminating '\'
+  MatchLine="${CursorLine%%"\\"}\\"
+  RET="${CursorLine%%"\\"}"
+  while [ "${CursorLine}" == "${MatchLine}" ] 
+  do
+    # While last line character is "\"
+    let cursor+=1
+    RawCursorLine=`sed "${cursor}q;d" $FILE`
+    CursorLine=`echo "${RawCursorLine}" | sed 's/#.*//'`
+    if [ "${RawCursorLine}" != "${CursorLine}" ] ; then
+      # No comments on this line
+      RET="${RET} ${CursorLine}"
+      break
+    fi
+    MatchLine="${CursorLine%%"\\"}\\"
+    RET="$RET ${CursorLine%%"\\"}"
+  done
+else
+  # Comments on this line so no need to process "\"
+  RET=${CursorLine}
+fi
+# Now after all the processing remove starting and termianting white space
+RET=`echo $RET | sed 's/^[ 	]*\"\([^"]*\)\"[ 	]*$/\1/'`
+}
+
+
+
+yaim_config_file_set_value()
+{
+  local FILE
+  local Key
+  local Value
+  local tmpfile 
+  local AddedValue
+  local line
+  local CursorLine
+  local linesWithKeys
+  local cursor
+  local MatchCursorLine
+  local lastline
+  # File to edit
+  FILE="$1"
+  # Key to set 
+  Key="$2"
+  # Value to Set
+  Value="$3"
+  # Use as Flag for adding value
+  # 0 Not yet added
+  # 1 Should add as soon as posible
+  # 2 Already Added
+
+  yaim_config_file_get_value "${FILE}" "${Key}"
+  if [ "${RET}" == "${Value}" ] ; then
+    return 0
+  fi
+  yaimlog DEBUG "function yaim_config_file_set_value start"
+  AddedValue=0
+  tmpfile=$FILE.backup.$$
+  rm -f $tmpfile
+  AllCursors=`grep -n  "^[	 ]*${Key}[	 ]*=" $FILE | cut -d: -f1 `
+  if [ "${AllCursors}X" == "X" ] ; then
+    RET=""
+  fi
+  # Now iterate through all our matches 
+  # check the line before is not terminated with \
+  foundPotentialCursors=""
+  for acursor in $AllCursors
+  do
+    let lineNumBefore="${acursor}-1"
+    if [ "${lineNumBefore}" == "0" ] ; then
+      foundPotentialCursors="${acursor} ${foundPotentialCursors}"
+    else
+      # Following bash convention ignore all content after "#"
+      # including lines terminating in "\"
+      PreviousLine=`sed "${lineNumBefore}q;d" $FILE | sed 's/#.*$//'`
+      MatchLine="${PreviousLine%%"\\"}"
+      if [ "${PreviousLine}" == "${MatchLine}" ] ; then
+        foundPotentialCursors="${acursor} ${foundPotentialCursors}"
+      fi
+    fi
+  done
+  if [ "${foundPotentialCursors}X" == "X" ] ; then
     # No Value already exists.
     lastLineCommented=`grep -n "^[\t# 	]*$Key=" $FILE | cut -d: -f1 `
     if [ "" == "$lastLineCommented" ] ; then
-        # No commented out line exists
-        cp $FILE $tmpfile
-        echo "$Key=\"$Value\"" >> $tmpfile
+      # No commented out line exists
+      cp $FILE $tmpfile
+      echo "$Key=\"$Value\"" >> $tmpfile
     else
-        # Commented out line = $lastLineCommented        
-        let cursor=$lastLineCommented
+      # Commented out line = $lastLineCommented        
+      let cursor=$lastLineCommented
+      CursorLine=$(sed "${cursor}q;d" $FILE)
+      MatchCursorLine="${CursorLine%%"\\"}\\"
+      while [ "${CursorLine}" == "${MatchCursorLine}" ]
+      do
+        let cursor+=1
         CursorLine=$(sed "${cursor}q;d" $FILE)
         MatchCursorLine="${CursorLine%%"\\"}\\"
-        while [ "${CursorLine}" == "${MatchCursorLine}" ]
-        do
-            let cursor+=1
-            CursorLine=$(sed "${cursor}q;d" $FILE)
-            MatchCursorLine="${CursorLine%%"\\"}\\"
-        done
-        sed "${cursor}q" $FILE >> $tmpfile
-        echo "$Key=\"$Value\"" >> $tmpfile
-        line=`cat  $FILE | wc -l |  sed -e "s/ *//g"`
-        let cursor+=1
-        sed -n "${cursor},${line}p" $FILE >> $tmpfile
+      done
+      sed "${cursor}q" $FILE >> $tmpfile
+      echo "$Key=\"$Value\"" >> $tmpfile
+      line=`cat  $FILE | wc -l |  sed -e "s/ *//g"`
+      let cursor+=1
+      sed -n "${cursor},${line}p" $FILE >> $tmpfile
     fi
-else
+  else
     #linesCommented=`grep -n "^[\t# ]*$Key=" $FILE | cut -d: -f1`
     linesContinued=`grep -n "^[#	 ]*${Key}[	 ]*=" $FILE | cut -d: -f1 `
     #echo linesWithKeys=$linesWithKeys
@@ -248,14 +257,14 @@ else
       if [ ${Head} -ge ${Cursor} ] ; then
         let Cursor=${Head}
         let lineNumBeforeHead="${Cursor}-1"
-	# check this line is not a continuation of the last line
-	if [ ${lineNumBeforeHead} -ge 1 ] ; then
-	  RawBeforeCursorLine=`sed "${lineNumBeforeHead}q;d" $FILE | sed 's/#.*//'`
-	  MatchLine="${RawBeforeCursorLine%%"\\"}\\"
-	  if [ "${MatchLine}" == "${RawBeforeCursorLine}" ] ; then
-	    continue
-	  fi
-	fi
+        # check this line is not a continuation of the last line
+        if [ ${lineNumBeforeHead} -ge 1 ] ; then
+          RawBeforeCursorLine=`sed "${lineNumBeforeHead}q;d" $FILE | sed 's/#.*//'`
+          MatchLine="${RawBeforeCursorLine%%"\\"}\\"
+          if [ "${MatchLine}" == "${RawBeforeCursorLine}" ] ; then
+            continue
+          fi
+        fi
         let gap=${lineNumBeforeHead}-$before_cursor
         # assuming that this line is valid.
         # add preseading contnet 
@@ -288,14 +297,11 @@ else
           sed -n "${before_cursor},${Cursor}p" $FILE | sed -e 's/^# *//' | sed -e 's/^/# /' >> $tmpfile
         fi
         let Cursor=${Cursor}+1
-        let before_cursor=${Cursor}
-        
-      else
-        echo Head=${Head} Cursor=${Cursor}
+	      let before_cursor=${Cursor}  
       fi
       if [ -z "${linesProcessed}" ] ; then
         echo "$Key=\"${Value}\"" >> $tmpfile
-	AddedValue=1
+        AddedValue=1
       fi
     done
     let lastline=$(cat $FILE | wc -l |  sed -e "s/ *//g")
@@ -311,7 +317,6 @@ fi
 mv $tmpfile $FILE
 yaimlog DEBUG "function yaim_config_file_set_value stop"
 }
-
 
 
 # Comments out the key and value if already set
