@@ -443,7 +443,7 @@ GlueSETotalOnlineSize: 0
 GlueSEUsedOnlineSize: 0
 GlueSEUsedNearlineSize: 0
 GlueInformationServiceURL: ldap://${GlueInformationServiceHost}:${GlueInformationServicePort}/mds-vo-name=local,o=grid
-glueforeignkey: GlueSiteUniqueID=${SITE_NAME}
+GlueForeignKey: GlueSiteUniqueID=${SITE_NAME}
 EOF
 
 
