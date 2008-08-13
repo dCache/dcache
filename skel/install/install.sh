@@ -37,7 +37,8 @@ usage()
 
 
 
-yaim_config_file_get_value_old()
+
+yaim_config_file_get_value()
 {
 # Returns 0 on success
 # Returns 2 if key not found
@@ -116,45 +117,6 @@ fi
 # Now after all the processing remove starting and termianting white space
 RET=`echo $RET | sed 's/^[ 	]*\"\([^"]*\)\"[ 	]*$/\1/'`
 }
-
-
-
-yaim_config_file_get_value()
-{
-  logmessage DEBUG "function yaim_config_file_get_value start"
-  # Returns 0 on success
-  # Returns 1 if file not found
-  # Returns 2 if key not found
-  local FILE
-  local Key
-  local RC
-  local FoundLine
-  FILE=$1
-  Key=$2
-  RET=""
-  RC=0
-  if [ -z "${FILE}" ] ; then
-    logmessage ERROR "yaim_config_file_get_value_old called with no file parameter"
-    exit 1
-  fi
-  if [ -f ${FILE} ] ; then
-    COMMAND="unset \"${Key}\" ; . ${FILE} ;  if [ -z \"\$${Key}\" ] ; then echo notFound; else echo Found; fi ; echo \"\$${Key}\""
-    CmdOut=`echo ${COMMAND} | sh`
-    FoundLine=`echo "${CmdOut}" | sed "1q;d"`
-    if [ "${FoundLine}" == "Found" ] ; then
-      RET=`echo "${CmdOut}" | sed '1d'`
-      RC=0
-    else
-      RC=2  
-    fi
-  else
-    logmessage ERROR "yaim_config_file_get_value called with no valid file, file=$FILE"
-    exit 1
-  fi
-  logmessage DEBUG "function yaim_config_file_get_value stop"
-  return ${RC}
-}
-
 
 
 logmessage()
