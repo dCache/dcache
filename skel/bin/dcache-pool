@@ -18,24 +18,102 @@ fi
 #      Checking node_config (and door_config)
 #  -----------------------------------------------------------------
 
-# Prints setting from configuration file, $1 = parameter name
-printConfig() 
+yaim_config_file_get_value()
 {
-    #         Comments      Trailing space         Print value
-    #         vvvvvvvv      vvvvvvvvvvvvvvvv       vvvvvvvvvvvvvvvvvvvvvvvvvv
-    sed -n -e 's/#.*$//' -e 's/[ 	]*$//' -e "s/^[ 	]*$1[ 	]*=['\" 	]*\(.*\)['\" 	]*$/\1/p" \
-      ${ourHomeDir}/etc/node_config ${ourHomeDir}/etc/door_config 2> /dev/null
+# Returns 0 on success
+# Returns 2 if key not found
+local FILE
+local Key
+local cursor
+local CursorLine
+local MatchLine
+local AllCursors
+local foundPotentialCursors
+local lineNumBefore
+local PreviousLine
+local MatchLine
+local RawCursorLine
+FILE=$1
+Key=$2
+if [ ! -f ${FILE} ] ; then
+    echo yaim_config_file_get_value called with no file, file=$FILE
+    exit 1
+fi
+AllCursors=`grep -n "^[	 ]*${Key}[	 ]*=" $FILE | cut -d: -f1 `
+if [ "${AllCursors}X" == "X" ] ; then
+  RET=""
+  return 2
+fi
+# Now iterate through all our matches 
+# check the line before is not terminated with \
+foundPotentialCursors=""
+for acursor in $AllCursors
+do
+  let lineNumBefore="${acursor}-1"
+  if [ "${lineNumBefore}" == "0" ] ; then
+    foundPotentialCursors="${acursor} ${foundPotentialCursors}"
+  else
+    # Following bash convention ignore all content after "#"
+    # including lines terminating in "\"
+    PreviousLine=`sed "${lineNumBefore}q;d" $FILE | sed 's/#.*$//'`
+    MatchLine="${PreviousLine%%"\\"}"
+    if [ "${PreviousLine}" == "${MatchLine}" ] ; then
+      foundPotentialCursors="${acursor} ${foundPotentialCursors}"
+    fi
+  fi
+done
+if [ "${foundPotentialCursors}X" == "X" ] ; then
+  RET=""
+  return 2
+fi
+# Since we reversed the order of the cursors while validating them
+# We can process only first valid cursor
+cursor=`echo ${foundPotentialCursors} | sed 's/ .*//'`
+
+RawCursorLine=`sed "${cursor}q;d" $FILE | cut -s -d= -f2- `
+CursorLine=`echo "${RawCursorLine}" | sed 's/#.*//'`
+if [ "${RawCursorLine}" == "${CursorLine}" ] ; then
+  # No comments on this line so check for terminating '\'
+  MatchLine="${CursorLine%%"\\"}\\"
+  RET="${CursorLine%%"\\"}"
+  while [ "${CursorLine}" == "${MatchLine}" ] 
+  do
+    # While last line character is "\"
+    let cursor+=1
+    RawCursorLine=`sed "${cursor}q;d" $FILE`
+    CursorLine=`echo "${RawCursorLine}" | sed 's/#.*//'`
+    if [ "${RawCursorLine}" != "${CursorLine}" ] ; then
+      # No comments on this line
+      RET="${RET} ${CursorLine}"
+      break
+    fi
+    MatchLine="${CursorLine%%"\\"}\\"
+    RET="$RET ${CursorLine%%"\\"}"
+  done
+else
+  # Comments on this line so no need to process "\"
+  RET=${CursorLine}
+fi
+# Now after all the processing remove starting and termianting white space
+RET=`echo $RET | sed 's/^[ 	]*\"\([^"]*\)\"[ 	]*$/\1/'`
 }
 
-if ! printConfig NODE_TYPE | grep '' 2>/dev/null >/dev/null || printConfig NODE_TYPE | grep -i 'dummy' 2>/dev/null >/dev/null ; then
+
+yaim_config_file_get_value ${ourHome}/etc/node_config NODE_TYPE
+NodeTypeVal=$RET
+
+
+if ! echo "${NodeTypeVal}" | grep '' 2>/dev/null >/dev/null || echo "${NodeTypeVal}" | grep -i 'dummy' 2>/dev/null >/dev/null ; then
     echo "[ERROR] ${ourHome}/etc/node_config missing or not useful. Exiting."
     exit 1
 fi
 
 # To make shure to use the right dCache dir
-ourHomeTmp=`printConfig DCACHE_HOME`
+yaim_config_file_get_value ${ourHome}/etc/node_config DCACHE_HOME
+ourHomeTmp=${RET}
 if [ "x${ourHomeTmp}" = "x" ] ; then
-  ourHomeTmp=`printConfig DCACHE_BASE_DIR`
+  yaim_config_file_get_value ${ourHome}/etc/node_config DCACHE_BASE_DIR
+  ourHomeTmp=$RET
   echo "WARNING: the variable DCACHE_HOME is not set."
   if [ "x${ourHomeTmp}" != "x" ] ; then
      echo "WARNING: Using deprecated value of DCACHE_BASE_DIR as DCACHE_HOME"
@@ -47,7 +125,8 @@ else
   ourHome=${ourHomeTmp}
 fi
 
-PNFS_ROOT=`printConfig PNFS_ROOT`
+yaim_config_file_get_value ${ourHome}/etc/node_config NODE_TYPE
+PNFS_ROOT=$RET
 
 #  -----------------------------------------------------------------
 #      Checking dCacheSetup

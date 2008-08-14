@@ -282,7 +282,7 @@ printConfig()
 {
     #         Comments      Trailing space         Print value
     #         vvvvvvvv      vvvvvvvvvvvvvvvv       vvvvvvvvvvvvvvvvvvvvvvvvvv
-    sed -n -e 's/#.*$//' -e 's/[ 	]*$//' -e "s/^[ 	]*$1[ 	]*=['\" 	]*\(.*\)['\" 	]*$/\1/p" \
+    sed -n -e 's/#.*$//' -e 's/[       ]*$//' -e "s/^[         ]*$1[   ]*=[    ]*\(.*\)$/\1/p" \
       ${ourHomeDir}/etc/node_config ${ourHomeDir}/etc/door_config 2> /dev/null
 }
 
