@@ -4059,25 +4059,48 @@ public class ManagerV2
 					say("protocol info is GridProtocolInfo");
 					say(" voinfo="+voinfo);
 				}
-				say("selectPool: file is not found, no prior reservations for this file, calling reserveAndUseSpace()");
 				StorageInfo storageInfo = selectPool.getStorageInfo();
 				AccessLatency al = defaultLatency;
 				RetentionPolicy rp = defaultPolicy;
-				if(storageInfo != null) {
-					if(storageInfo.isSetAccessLatency()){
-						al  = storageInfo.getAccessLatency();
-					}
-					if(storageInfo.isSetRetentionPolicy()){
-						rp  = storageInfo.getRetentionPolicy();
-					}
-				}
-				file = reserveAndUseSpace(pnfsPath,
-							  selectPool.getPnfsId(),
-							  selectPool.getFileSize(),
-							  al, 
-							  rp,
-							  voinfo);
-			} 
+                                String defaultSpaceToken=null;
+                                if(storageInfo != null) {
+                                        if(storageInfo.isSetAccessLatency()){
+                                                al  = storageInfo.getAccessLatency();
+                                        }
+                                        if(storageInfo.isSetRetentionPolicy()){
+                                                rp  = storageInfo.getRetentionPolicy();
+                                        }
+                                        defaultSpaceToken=storageInfo.getMap().get("writeToken");
+                                }
+                                if (defaultSpaceToken==null) { 
+                                        say("selectPool: file is not found, no prior reservations for this file, calling reserveAndUseSpace()");
+                                        file = reserveAndUseSpace(pnfsPath,
+                                                                  selectPool.getPnfsId(),
+                                                                  selectPool.getFileSize(),
+                                                                  al,
+                                                                  rp,
+                                                                  voinfo);
+                                }
+                                else { 
+                                        say("selectPool: file is not found, found default space token, calling useSpace()");
+                                        String voGroup   = null;
+                                        String voRole    = null;
+                                        long lifetime    = 1000*60*60;
+                                        if(voinfo != null){
+                                                voGroup = voinfo.getVoGroup();
+                                                voRole = voinfo.getVoRole();
+                                        }
+                                        long spaceToken = Long.parseLong(defaultSpaceToken);
+                                        long fileId     = useSpace(spaceToken,
+                                                                   voGroup,
+                                                                   voRole,
+                                                                   selectPool.getFileSize(),
+                                                                   lifetime,
+                                                                   pnfsPath,
+                                                                   selectPool.getPnfsId());
+                                        file = getFile(fileId);
+                                } 
+                        }
 			else {
 				say("selectPool: file is not found, no prior reservations for this file");
 				if(!willBeForwarded) {
