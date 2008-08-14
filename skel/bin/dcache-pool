@@ -18,20 +18,13 @@ fi
 #      Checking node_config (and door_config)
 #  -----------------------------------------------------------------
 
-printConfig() {
-    key=$1
-    cat ${ourHome}/etc/node_config \
-        ${ourHome}/etc/door_config 2>/dev/null |
-    perl -e "
-      while (<STDIN>) {
-         s/\#.*$// ;                        # Remove comments
-         s/\s*$// ;                         # Remove trailing space
-         if ( s/^\s*${key}\s*=*\s*//i ) {   # Remove key and equals
-            print;                          # Print if key found
-            last;                           # Only use first appearance
-         }
-      }
-    "
+# Prints setting from configuration file, $1 = parameter name
+printConfig() 
+{
+    #         Comments      Trailing space         Print value
+    #         vvvvvvvv      vvvvvvvvvvvvvvvv       vvvvvvvvvvvvvvvvvvvvvvvvvv
+    sed -n -e 's/#.*$//' -e 's/[ 	]*$//' -e "s/^[ 	]*$1[ 	]*=['\" 	]*\(.*\)['\" 	]*$/\1/p" \
+      ${ourHomeDir}/etc/node_config ${ourHomeDir}/etc/door_config 2> /dev/null
 }
 
 if ! printConfig NODE_TYPE | grep '' 2>/dev/null >/dev/null || printConfig NODE_TYPE | grep -i 'dummy' 2>/dev/null >/dev/null ; then
