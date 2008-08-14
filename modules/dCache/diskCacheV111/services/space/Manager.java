@@ -4094,28 +4094,28 @@ public class Manager
 			esay(e);
 		}
 		if(file==null) {
-			if(reserveSpaceForNonSRMTransfers) {
-				ProtocolInfo protocolInfo = selectPool.getProtocolInfo();
-				VOInfo voinfo = null;
-				if(protocolInfo instanceof GridProtocolInfo) {
-					voinfo = ((GridProtocolInfo)protocolInfo).getVOInfo();
-					say("protocol info is GridProtocolInfo");
-					say(" voinfo="+voinfo);
-				}
-				StorageInfo storageInfo = selectPool.getStorageInfo();
-				AccessLatency al = defaultLatency;
-				RetentionPolicy rp = defaultPolicy;
-                                String defaultSpaceToken=null;
-				if(storageInfo != null) {
-					if(storageInfo.isSetAccessLatency()){
-						al  = storageInfo.getAccessLatency();
-					}
-					if(storageInfo.isSetRetentionPolicy()){
-						rp  = storageInfo.getRetentionPolicy();
-					}
-                                        defaultSpaceToken=storageInfo.getMap().get("writeToken");
-				}
-                                if (defaultSpaceToken==null) { 
+                        StorageInfo storageInfo = selectPool.getStorageInfo();
+                        AccessLatency al = defaultLatency;
+                        RetentionPolicy rp = defaultPolicy;
+                        String defaultSpaceToken=null;
+                        if(storageInfo != null) {
+                                if(storageInfo.isSetAccessLatency()){
+                                        al  = storageInfo.getAccessLatency();
+                                }
+                                if(storageInfo.isSetRetentionPolicy()){
+                                        rp  = storageInfo.getRetentionPolicy();
+                                }
+                                defaultSpaceToken=storageInfo.getMap().get("writeToken");
+                        }
+                        ProtocolInfo protocolInfo = selectPool.getProtocolInfo();
+                        VOInfo voinfo = null;
+                        if(protocolInfo instanceof GridProtocolInfo) {
+                                voinfo = ((GridProtocolInfo)protocolInfo).getVOInfo();
+                                say("protocol info is GridProtocolInfo");
+                                say(" voinfo="+voinfo);
+                        }
+                        if (defaultSpaceToken==null) { 
+                                if(reserveSpaceForNonSRMTransfers) {
                                         say("selectPool: file is not found, no prior reservations for this file, calling reserveAndUseSpace()");
                                         file = reserveAndUseSpace(pnfsPath,
                                                                   selectPool.getPnfsId(),
@@ -4125,36 +4125,35 @@ public class Manager
                                                                   voinfo);
                                 }
                                 else { 
-                                        say("selectPool: file is not found, found default space token, calling useSpace()");
-                                        String voGroup   = null;
-                                        String voRole    = null;
-                                        long lifetime    = 1000*60*60;
-                                        if(voinfo != null){
-                                                voGroup = voinfo.getVoGroup();
-                                                voRole = voinfo.getVoRole();
+                                        say("selectPool: file is not found, no prior reservations for this file");
+                                        if(!willBeForwarded) {
+                                                say("just forwarding the message to "+ poolManager);
+                                                cellMessage.getDestinationPath().add( new CellPath(poolManager) ) ;
+                                                cellMessage.nextDestination() ;
+                                                sendMessage(cellMessage) ;
                                         }
-                                        long spaceToken = Long.parseLong(defaultSpaceToken);
-                                        long fileId     = useSpace(spaceToken,
-                                                                   voGroup,
-                                                                   voRole,
-                                                                   selectPool.getFileSize(),
-                                                                   lifetime,
-                                                                   pnfsPath,
-                                                                   selectPool.getPnfsId());
-                                        file = getFile(fileId);
+                                        return;
                                 }
-			}
-			else {
-				say("selectPool: file is not found, no prior reservations for this file");
-				if(!willBeForwarded) {
-					say("just forwarding the message to "+ poolManager);
-					cellMessage.getDestinationPath().add( new CellPath(poolManager) ) ;
-					cellMessage.nextDestination() ;
-					sendMessage(cellMessage) ;
-				}
-				return;
-
-			}
+                        }
+                        else { 
+                                say("selectPool: file is not found, found default space token, calling useSpace()");
+                                String voGroup   = null;
+                                String voRole    = null;
+                                long lifetime    = 1000*60*60;
+                                if(voinfo != null){
+                                        voGroup = voinfo.getVoGroup();
+                                        voRole = voinfo.getVoRole();
+                                }
+                                long spaceToken = Long.parseLong(defaultSpaceToken);
+                                long fileId     = useSpace(spaceToken,
+                                                           voGroup,
+                                                           voRole,
+                                                           selectPool.getFileSize(),
+                                                           lifetime,
+                                                           pnfsPath,
+                                                           selectPool.getPnfsId());
+                                file = getFile(fileId);
+                        }
 		}
 		else {
 			say("selectPool: file is not null, calling updateSpaceFile()");
