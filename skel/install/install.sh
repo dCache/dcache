@@ -1013,6 +1013,10 @@ dcacheInstallChimeraMountPointServer()
   pnfsServer=$RET
   localhostName=`fqdn_os`
   tryToMount=1
+  if [ -z "${pnfsServer}" ] ; then
+    logmessage ERROR "Unable to determine Name Server node exiting as an error."
+    exit 1
+  fi
   if [ "$pnfsServer" == "$localhostName" ] ; then
     pnfsServer="localhost"
   fi
