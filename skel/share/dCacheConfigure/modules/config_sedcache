@@ -1944,7 +1944,7 @@ yaim_config_dcache_files_key_value_dCacheSetup()
     javaOptions=$(echo ${javaOptions} | sed -e $SED )
     SED="s/Dorg\.dcache\.net\.tcp\.portrange=[0-9]*:[0-9]*/Dorg\.dcache\.net\.tcp\.portrange=$portrangeNativeMin:$portrangeNativeMax/"
     javaOptions=$(echo ${javaOptions} | sed -e $SED )
-    yaim_config_file_set_value "${file2update}" "java_options" "$javaOptions"
+    yaim_config_file_set_value "${file2update}" "java_options" "\"${javaOptions}\""
     
     yaim_query_conf_dcache_portrange_gsiftp_client
     if [ "$errorcode" != "0" ] ; then
