@@ -379,6 +379,8 @@ public class ChimeraCleaner extends CellAdapter implements Runnable {
 
     void removeFiles(Connection dbConnection, String poolname, String[] filelist) throws SQLException {
 
+        informBroadcaster(filelist);
+
         String filename = null;
         PreparedStatement stRemoveFiles = null;
 
@@ -686,6 +688,7 @@ public class ChimeraCleaner extends CellAdapter implements Runnable {
 
         try{
             sendMessage( new CellMessage( new CellPath(broadcast) , msg )  ) ;
+            _logNamespace.debug("have broadcasted 'remove files' message to "+broadcast);
         }catch(NoRouteToCellException ee ){
             _logNamespace.error("Problems sending 'remove files' message to "+broadcast+" : "+ee.getMessage());
         } catch (NotSerializableException e) {
