@@ -785,9 +785,7 @@ dcacheInstallPnfsMountPointClient()
         mkdir -p ${pnfsMountPoint}
       fi
     fi
-    dcacheInstallGetNameSpaceServer
-    pnfsServer=$RET
-    logmessage INFO "Will be mounted to ${pnfsServer}:/pnfsdoors by dcache-core start-up script."
+    logmessage INFO "Will be mounted to ${NAMESPACE_NODE}:/pnfsdoors by dcache-core start-up script."
   fi
   if [ ! -L "${PNFS_ROOT}/ftpBase" -a ! -e "${PNFS_ROOT}/ftpBase" ] ; then
     logmessage INFO "Creating link ${PNFS_ROOT}/ftpBase --> ${pnfsMountPoint} which is used by the GridFTP door."
