@@ -379,57 +379,6 @@ absfpath () {
   echo ${ABSPATH}
 }
 
-dcacheInstallGetNameSpaceType()
-{
-  local nameServerFormat
-  yaim_config_file_get_value ${ourHomeDir}/etc/node_config NAMESPACE
-  nameServerFormat="${RET}"
-  if [ "${nameServerFormat}" != "pnfs" -a "${nameServerFormat}" != "chimera" ]
-  then
-    logmessage WARNING "node_config does not have NAMESPACE set to chimera or pnfs."
-    logmessage INFO "NAMESPACE=${nameServerFormat}"
-    nameServerFormat="pnfs"
-    logmessage WARNING "Defaulting node_config to pnfs. This behaviour will change in future dCache releases."
-  fi
-  RET=$nameServerFormat
-}
-
-
-dcacheInstallGetNameSpaceServer()
-{
-  local namespaceServer
-  
-  yaim_config_file_get_value "${ourHomeDir}/etc/node_config" NAMESPACE_NODE
-  namespaceServer="${RET}"
-  if [ -z "${namespaceServer}" ] ; then
-    yaim_config_file_get_value "${ourHomeDir}/etc/node_config" ADMIN_NODE
-    namespaceServer="${RET}"
-    if [ -z "${namespaceServer}" ] ; then
-      namespaceServer='invalid.host.example.org'
-      logmessage WARNING "No 'NAMESPACE_NODE' or 'ADMIN_NODE' set in 'node_config' using '${namespaceServer}'"
-    else
-      logmessage WARNING "No 'NAMESPACE_NODE' set in 'node_config' using depricated 'ADMIN_NODE' value '${namespaceServer}'"
-    fi
-  fi
-  RET=${namespaceServer}
-}
-
-dcacheNameServerIs()
-{
-  dcacheInstallGetNameSpaceServer
-  pnfsHost="${RET}"
-  if [ "${pnfsHost}" == "localhost" ]
-  then
-    return 1
-  fi
-  if [ "${pnfsHost}" == `fqdn_os` ]
-  then
-    return 1
-  fi
-  return 0
-}
-
-
 
 dcacheInstallGetHome()
 {
@@ -722,6 +671,67 @@ dcacheInstallGetdCapPort()
   DCACHE_HOME=$RET
   yaim_config_file_get_value ${DCACHE_HOME}/config/dCacheSetup dCapPort
 }
+
+
+
+dcacheInstallGetNameSpaceType()
+{
+  local nameServerFormat
+  yaim_config_file_get_value ${ourHomeDir}/etc/node_config NAMESPACE
+  nameServerFormat="${RET}"
+  if [ "${nameServerFormat}" != "pnfs" -a "${nameServerFormat}" != "chimera" ]
+  then
+    logmessage WARNING "node_config does not have NAMESPACE set to chimera or pnfs."
+    logmessage INFO "NAMESPACE=${nameServerFormat}"
+    nameServerFormat="pnfs"
+    logmessage WARNING "Defaulting node_config to pnfs. This behaviour will change in future dCache releases."
+  fi
+  RET=$nameServerFormat
+}
+
+
+dcacheInstallGetNameSpaceServer()
+{
+  local namespaceServer
+  local pnfsManagerIs
+  dcacheInstallGetIsPnfsManager
+  pnfsManagerIs=$?
+  if [ "${pnfsManagerIs}" == "1" ] then
+    namespaceServer="localhost"
+  else
+    yaim_config_file_get_value "${ourHomeDir}/etc/node_config" NAMESPACE_NODE
+    namespaceServer="${RET}"
+    if [ -z "${namespaceServer}" ] ; then
+      yaim_config_file_get_value "${ourHomeDir}/etc/node_config" ADMIN_NODE
+      namespaceServer="${RET}"
+      if [ -z "${namespaceServer}" ] ; then
+        namespaceServer='invalid.host.example.org'
+        logmessage WARNING "No 'NAMESPACE_NODE' or 'ADMIN_NODE' set in 'node_config' using '${namespaceServer}'"
+      else
+        logmessage WARNING "No 'NAMESPACE_NODE' set in 'node_config' using depricated 'ADMIN_NODE' value '${namespaceServer}'"
+      fi
+    fi
+  fi
+  RET=${namespaceServer}
+}
+
+dcacheNameServerIs()
+{
+  dcacheInstallGetNameSpaceServer
+  pnfsHost="${RET}"
+  if [ "${pnfsHost}" == "localhost" ]
+  then
+    return 1
+  fi
+  if [ "${pnfsHost}" == `fqdn_os` ]
+  then
+    return 1
+  fi
+  return 0
+}
+
+
+
 
 dcacheInstallPnfsMountPointClient()
 { 
