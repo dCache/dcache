@@ -4,8 +4,10 @@ import org.dcache.xrootd.core.connection.PhysicalConnectionListener;
 import org.dcache.xrootd.core.connection.PhysicalXrootdConnection;
 import org.dcache.xrootd.core.response.ThreadedResponseEngine;
 import org.dcache.xrootd.core.stream.StreamListener;
+import org.dcache.xrootd.protocol.messages.AbstractResponseMessage;
 import org.dcache.xrootd.protocol.messages.AuthentiticationRequest;
 import org.dcache.xrootd.protocol.messages.LoginRequest;
+import org.dcache.xrootd.protocol.messages.OKResponse;
 
 
 public class XrootdDoorController implements PhysicalConnectionListener {
@@ -30,20 +32,21 @@ public class XrootdDoorController implements PhysicalConnectionListener {
 		door.say("handshake attempt coming from "+physicalXrootdConnection.getNetworkConnection().getSocket().getRemoteSocketAddress().toString());
 	}
 
-	public boolean loginRequest(LoginRequest login) {
+	public AbstractResponseMessage loginRequest(LoginRequest login) {
 		
 //		plug login module method here
 		door.say("login attempt, access granted");
 				
-		return true;
+		return new OKResponse(login.getStreamID());
 	}
 
-	public boolean authRequest(AuthentiticationRequest auth) {
+	public AbstractResponseMessage authRequest(AuthentiticationRequest auth) {
 
 //		plug authentitication module here
 
 		door.say("authentitication passed");
-		return true;
+		
+		return new OKResponse(auth.getStreamID());
 	}
 
 	public StreamListener newStreamForked(int streamID) {
