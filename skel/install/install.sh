@@ -752,6 +752,10 @@ dcacheInstallPnfsMountPointClient()
   pnfsMountPoint=${RET}
   dcacheInstallGetNameSpaceServer
   NAMESPACE_NODE=$RET
+  if [ -z "${NAMESPACE_NODE}" ] ; then
+    logmessage ERROR "Unable to determine Name Server node exiting as an error."
+    exit 1
+  fi
   logmessage INFO "Checking if ${pnfsMountPoint} mounted to the right export. ..."
   dcacheInstallGetExportPoint
   exportPoint=$RET
@@ -829,6 +833,8 @@ dcacheInstallPnfsMountPointServer()
   local pnfsMountPoint
   local serverIdLinkedTo
   local ftpBaseLinkedTo
+  dcacheInstallGetNameSpaceServer
+  pnfsServer=$RET
   dcacheInstallGetServerId
   SERVER_ID=$RET
   dcacheInstallGetPnfsRoot
@@ -839,6 +845,10 @@ dcacheInstallPnfsMountPointServer()
   PNFS_INSTALL_DIR="${RET}"
   #    Checking and creating mountpoint and link
   #
+  if [ -z "${pnfsServer}" ] ; then
+    logmessage ERROR "Unable to determine Name Server node exiting as an error."
+    exit 1
+  fi
   pnfsMountPoint=${PNFS_ROOT}/fs
   # if not a directory
   if [ ! -d "${pnfsMountPoint}" ]; then
@@ -852,8 +862,7 @@ dcacheInstallPnfsMountPointServer()
 	mkdir -p ${pnfsMountPoint}
     fi
   fi
-  dcacheInstallGetNameSpaceServer
-  pnfsServer=$RET
+
   logmessage INFO "Will be mounted to ${pnfsServer}:/fs by dcache-core start-up script."
 
   cd ${PNFS_ROOT}
@@ -950,6 +959,8 @@ dcacheInstallPnfsMountPointServer()
   if [ "${dcacheNameServerIsRc}" == "1" ]
   then
     dcacheInstallPnfsConfigCheck
+  else
+    logmessage DEBUG "This node is not an NameServer."
   fi
   logmessage DEBUG "dcacheInstallPnfsMountPointServer.stop"
 }
