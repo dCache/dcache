@@ -457,7 +457,7 @@ dcacheInstallGetUseGridFtp()
 {
   # returns 1 if gridFTP is used 0 otherwise
   local UseGridFtp
-  yaim_config_file_get_value "${ourHomeDir}/etc/node_config" DCACHE_HOME
+  yaim_config_file_get_value "${ourHomeDir}/etc/node_config" GRIDFTP
   UseGridFtp=`echo "${RET}" | tr '[A-Z]' '[a-z]'`
   if [ "${UseGridFtp}" == "yes" ] ; then
     return 1
