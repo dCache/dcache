@@ -11,6 +11,8 @@ import org.dcache.xrootd.core.stream.LogicalStreamManager2;
 import org.dcache.xrootd.core.stream.StreamListener;
 import org.dcache.xrootd.network.NetworkConnection;
 import org.dcache.xrootd.protocol.XrootdProtocol;
+import static org.dcache.xrootd.protocol.XrootdProtocol.kXR_ok;
+import org.dcache.xrootd.protocol.messages.AbstractResponseMessage;
 import org.dcache.xrootd.protocol.messages.AuthentiticationRequest;
 import org.dcache.xrootd.protocol.messages.LoginRequest;
 
@@ -130,32 +132,27 @@ public class PhysicalXrootdConnection {
 		getConnectionListener().handshakeRequest();
 	}
 	
-	public boolean handleLoginRequest(LoginRequest login) {
+	public AbstractResponseMessage handleLoginRequest(LoginRequest login) {
 		
-		boolean result = false;
+		AbstractResponseMessage response = 
+			getConnectionListener().loginRequest(login);
 		
-		if (getConnectionListener().loginRequest(login)) {
+		if (response.getStatus() == kXR_ok) {
 			getStatus().setLoggedIn(true);
-			result = true;
-		} else {
-			getStatus().setLoggedIn(false);
 		}
 		
-		return result;
+		return response;
 	}
 	
-	public boolean  handleAuthRequest(AuthentiticationRequest auth) {
+	public AbstractResponseMessage  handleAuthRequest(AuthentiticationRequest auth) {
 		
-		boolean result = false;
+		AbstractResponseMessage response = getConnectionListener().authRequest(auth);
 		
-		if (getConnectionListener().authRequest(auth)) {
+		if (response.getStatus() == kXR_ok) {
 			getStatus().setAuthenticated(true);
-			result = true;
-		} else {
-			getStatus().setAuthenticated(false);
 		}
 		
-		return result;
+		return response;
 	}
 
 	public void setRequestEngine(RequestEngine request) {

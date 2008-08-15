@@ -49,14 +49,12 @@ public class ProtocolHandler {
 		if (requestMsg instanceof LoginRequest) {
 			
 //			handle login request synchronously
-			if (physicalConnection.handleLoginRequest((LoginRequest) requestMsg)) {
-//				send back positive response immediately
-				physicalConnection.getResponseEngine().sendResponseMessage(new LoginResponse(requestMsg.getStreamID(), null, null));
-			} else {
-//				send back negative response in case of login failure
-				physicalConnection.getResponseEngine().sendResponseMessage(new ErrorResponse(requestMsg.getStreamID(), XrootdProtocol.kXR_NotAuthorized, "login failed"));
-			}
-			
+			AbstractResponseMessage response =
+				physicalConnection.handleLoginRequest((LoginRequest) requestMsg);
+				
+			physicalConnection.getResponseEngine().
+				sendResponseMessage(response);
+
 			return;
 		}
 		
@@ -64,13 +62,11 @@ public class ProtocolHandler {
 		if (requestMsg instanceof AuthentiticationRequest) {
 			
 //			handle auth request synchronously
-			if (physicalConnection.handleAuthRequest((AuthentiticationRequest) requestMsg)) {
-//				send back positive response immediately
-				physicalConnection.getResponseEngine().sendResponseMessage(new AuthentiticationResponse(requestMsg.getStreamID(), 0, 0));
-			} else {
-//				send back negative response in case of auth failure
-				physicalConnection.getResponseEngine().sendResponseMessage(new ErrorResponse(requestMsg.getStreamID(), XrootdProtocol.kXR_NotAuthorized, "authentitication failed"));
-			}
+			AbstractResponseMessage response = 
+				physicalConnection.handleAuthRequest((AuthentiticationRequest) requestMsg);
+
+			physicalConnection.getResponseEngine().
+				sendResponseMessage(response);
 						
 			return;
 		}
