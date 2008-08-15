@@ -696,7 +696,7 @@ dcacheInstallGetNameSpaceServer()
   local pnfsManagerIs
   dcacheInstallGetIsPnfsManager
   pnfsManagerIs=$?
-  if [ "${pnfsManagerIs}" == "1" ] then
+  if [ "${pnfsManagerIs}" == "1" ] ; then
     namespaceServer="localhost"
   else
     yaim_config_file_get_value "${ourHomeDir}/etc/node_config" NAMESPACE_NODE
