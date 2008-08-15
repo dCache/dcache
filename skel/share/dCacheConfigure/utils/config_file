@@ -224,7 +224,8 @@ yaim_config_file_set_value()
     if [ "" == "$lastLineCommented" ] ; then
       # No commented out line exists
       cp $FILE $tmpfile
-      echo "$Key=\"$Value\"" >> $tmpfile
+      echo "$Key=$Value" >> $tmpfile
+      AddedValue=1
     else
       # Commented out line = $lastLineCommented        
       let cursor=$lastLineCommented
@@ -237,7 +238,8 @@ yaim_config_file_set_value()
         MatchCursorLine="${CursorLine%%"\\"}\\"
       done
       sed "${cursor}q" $FILE >> $tmpfile
-      echo "$Key=\"$Value\"" >> $tmpfile
+      echo "$Key=$Value" >> $tmpfile
+      AddedValue=1
       line=`cat  $FILE | wc -l |  sed -e "s/ *//g"`
       let cursor+=1
       sed -n "${cursor},${line}p" $FILE >> $tmpfile
@@ -300,7 +302,7 @@ yaim_config_file_set_value()
 	      let before_cursor=${Cursor}  
       fi
       if [ -z "${linesProcessed}" ] ; then
-        echo "$Key=\"${Value}\"" >> $tmpfile
+        echo "$Key=${Value}" >> $tmpfile
         AddedValue=1
       fi
     done
@@ -311,7 +313,7 @@ yaim_config_file_set_value()
       sed -n "${before_cursor},${lastline}p" $FILE >> $tmpfile
     fi
     if [ "$AddedValue" == "0" ] ; then
-      echo "$Key=\"${Value}\"" >> $tmpfile
+      echo "$Key=${Value}" >> $tmpfile
     fi    
 fi
 mv $tmpfile $FILE
