@@ -753,7 +753,7 @@ dcacheInstallPnfsMountPointClient()
   dcacheInstallGetNameSpaceServer
   NAMESPACE_NODE=$RET
   if [ -z "${NAMESPACE_NODE}" ] ; then
-    logmessage ERROR "Unable to determine Name Server node exiting as an error."
+    logmessage ERROR "Unable to determine name space server. Install failed."
     exit 1
   fi
   logmessage INFO "Checking if ${pnfsMountPoint} mounted to the right export. ..."
@@ -789,7 +789,7 @@ dcacheInstallPnfsMountPointClient()
         mkdir -p ${pnfsMountPoint}
       fi
     fi
-    logmessage INFO "Will be mounted to ${NAMESPACE_NODE}:/pnfsdoors by dcache-core start-up script."
+    logmessage INFO "Will be mounted to ${NAMESPACE_NODE}:/pnfsdoors by dcache start-up script."
   fi
   if [ ! -L "${PNFS_ROOT}/ftpBase" -a ! -e "${PNFS_ROOT}/ftpBase" ] ; then
     logmessage INFO "Creating link ${PNFS_ROOT}/ftpBase --> ${pnfsMountPoint} which is used by the GridFTP door."
@@ -846,7 +846,7 @@ dcacheInstallPnfsMountPointServer()
   #    Checking and creating mountpoint and link
   #
   if [ -z "${pnfsServer}" ] ; then
-    logmessage ERROR "Unable to determine Name Server node exiting as an error."
+    logmessage ERROR "Unable to determine name space server. Install has failed."
     exit 1
   fi
   pnfsMountPoint=${PNFS_ROOT}/fs
@@ -863,7 +863,7 @@ dcacheInstallPnfsMountPointServer()
     fi
   fi
 
-  logmessage INFO "Will be mounted to ${pnfsServer}:/fs by dcache-core start-up script."
+  logmessage INFO "Will be mounted to ${pnfsServer}:/fs by dcache start-up script."
 
   cd ${PNFS_ROOT}
   # if file is not a symbolic link
@@ -960,7 +960,7 @@ dcacheInstallPnfsMountPointServer()
   then
     dcacheInstallPnfsConfigCheck
   else
-    logmessage DEBUG "This node is not an NameServer."
+    logmessage DEBUG "This node is not a name space server."
   fi
   logmessage DEBUG "dcacheInstallPnfsMountPointServer.stop"
 }
