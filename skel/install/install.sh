@@ -1228,7 +1228,7 @@ dcacheInstallSshKeys()
   local nodeType
   dcacheInstallGetHome
   DCACHE_HOME=$RET
-  dcacheInstallGetIsAdmin
+  dcacheInstallGetIsAdminDoor
   nodeType=$?
   if [ "${nodeType}" = "1" ] ; then
     cd ${DCACHE_HOME}/config
@@ -1239,9 +1239,13 @@ dcacheInstallSshKeys()
       ssh-keygen -b 768 -t rsa1 -f ./server_key -N "" 2>&1 | logmessage INFO
       ln -s /etc/ssh/ssh_host_key ./host_key
     fi
+  else
+    logmessage INFO "Not an admin door inteface node"
   fi
   logmessage DEBUG "dcacheInstallSshKeys.stop"
 }
+
+
 
 #    Pool configuration
 #
