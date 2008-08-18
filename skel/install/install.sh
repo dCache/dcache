@@ -38,7 +38,6 @@ usage()
 
 
 
-
 yaim_config_file_get_value()
 {
 # Returns 0 on success
@@ -48,54 +47,76 @@ local Key
 local cursor
 local CursorLine
 local MatchLine
+local AllCursors
+local foundPotentialCursors
+local lineNumBefore
+local PreviousLine
+local MatchLine
+local RawCursorLine
 FILE=$1
 Key=$2
 if [ ! -f ${FILE} ] ; then
     echo yaim_config_file_get_value called with no file, file=$FILE
     exit 1
 fi
-
-cursor=`grep -n "^[\t ]*${Key}[\t ]*=" $FILE | cut -d: -f1 | sed '$!d'`
-if [ "${cursor}X" == "X" ] ; then
+AllCursors=`grep -n "^[	 ]*${Key}[	 ]*=" $FILE | cut -d: -f1 `
+if [ "${AllCursors}X" = "X" ] ; then
   RET=""
   return 2
 fi
-CursorLine=`sed "${cursor}q;d" $FILE | cut -s -d= -f2-`
-MatchLine="${CursorLine%%"\\"}\\"
-RET="${CursorLine%%"\\"}"
-while [ "${CursorLine}" == "${MatchLine}" ] 
+# Now iterate through all our matches 
+# check the line before is not terminated with \
+foundPotentialCursors=""
+for acursor in $AllCursors
 do
+  let lineNumBefore="${acursor}-1"
+  if [ "${lineNumBefore}" = "0" ] ; then
+    foundPotentialCursors="${acursor} ${foundPotentialCursors}"
+  else
+    # Following bash convention ignore all content after "#"
+    # including lines terminating in "\"
+    PreviousLine=`sed "${lineNumBefore}q;d" $FILE | sed 's/#.*$//'`
+    MatchLine="${PreviousLine%%"\\"}"
+    if [ "${PreviousLine}" = "${MatchLine}" ] ; then
+      foundPotentialCursors="${acursor} ${foundPotentialCursors}"
+    fi
+  fi
+done
+if [ "${foundPotentialCursors}X" = "X" ] ; then
+  RET=""
+  return 2
+fi
+# Since we reversed the order of the cursors while validating them
+# We can process only first valid cursor
+cursor=`echo ${foundPotentialCursors} | sed 's/ .*//'`
+
+RawCursorLine=`sed "${cursor}q;d" $FILE | cut -s -d= -f2- `
+CursorLine=`echo "${RawCursorLine}" | sed 's/#.*//'`
+if [ "${RawCursorLine}" = "${CursorLine}" ] ; then
+  # No comments on this line so check for terminating '\'
+  MatchLine="${CursorLine%%"\\"}\\"
+  RET="${CursorLine%%"\\"}"
+  while [ "${CursorLine}" = "${MatchLine}" ] 
+  do
+    # While last line character is "\"
     let cursor+=1
-    CursorLine=`sed "${cursor}q;d" $FILE`
+    RawCursorLine=`sed "${cursor}q;d" $FILE`
+    CursorLine=`echo "${RawCursorLine}" | sed 's/#.*//'`
+    if [ "${RawCursorLine}" != "${CursorLine}" ] ; then
+      # No comments on this line
+      RET="${RET}${CursorLine}"
+      break
+    fi
     MatchLine="${CursorLine%%"\\"}\\"
     RET="$RET ${CursorLine%%"\\"}"
-done
-RET=`echo $RET | sed 's/^[ \t]*\"\([^"]*\)\"[ \t]*$/\1/'`
-}
-dcaches_config_file_get_value()
-{
-# Returns 0 on success
-local FILE
-local Key
-local cursor
-local CursorLine
-local MatchLine
-FILE=$1
-Key=$2
-if [ ! -f ${FILE} ] ; then
-    echo dcaches_config_file_get_value called with no file, file=$FILE
-    exit 1
+  done
+else
+  # Comments on this line so no need to process "\"
+  RET=${CursorLine}
 fi
-# First find matching lines
-# Pipoe to next sed
-# Delete all lines before first line 
-# remove all text after '#'
-# Remove all trailing white space
-
-RET=`sed -n "s/^[\t ]*${Key}*=//p;" ${FILE} | sed '$!d; s/#.*$//g;  s/[ \t]*//g;'`
+# Now after all the processing remove starting and termianting white space
+RET=`echo $RET | sed  -e 's/^[   ]*//' -e 's/[   ]*\$//'| sed -e 's/^\"\(.*\)\"$/\1/' `
 }
-
-
 
 
 logmessage()
@@ -358,56 +379,6 @@ absfpath () {
   echo ${ABSPATH}
 }
 
-dcacheInstallGetNameSpaceType()
-{
-  local nameServerFormat
-  yaim_config_file_get_value ${ourHomeDir}/etc/node_config NAMESPACE
-  nameServerFormat="${RET}"
-  if [ "${nameServerFormat}" != "pnfs" -a "${nameServerFormat}" != "chimera" ]
-  then
-    logmessage WARNING "node_config does not have NAMESPACE set to chimera or pnfs."
-    logmessage INFO "NAMESPACE=${nameServerFormat}"
-    nameServerFormat="pnfs"
-    logmessage WARNING "Defaulting node_config to pnfs. This behaviour will change in future dCache releases."
-  fi
-  RET=$nameServerFormat
-}
-
-
-dcacheInstallGetNameSpaceServer()
-{
-  local namespaceServer
-  yaim_config_file_get_value "${ourHomeDir}/etc/node_config" NAMESPACE_NODE
-  namespaceServer="${RET}"
-  if [ -z "${namespaceServer}" ] ; then
-    yaim_config_file_get_value "${ourHomeDir}/etc/node_config" ADMIN_NODE
-    namespaceServer="${RET}"
-    if [ -z "${namespaceServer}" ] ; then
-      namespaceServer='invalid.host.example.org'
-      logmessage WARNING "No 'NAMESPACE_NODE' or 'ADMIN_NODE' set in 'node_config' using '${namespaceServer}'"
-    else
-      logmessage WARNING "No 'NAMESPACE_NODE' set in 'node_config' using depricated 'ADMIN_NODE' value '${namespaceServer}'"
-    fi
-  fi
-  RET=${namespaceServer}
-}
-
-dcacheNameServerIs()
-{
-  dcacheInstallGetNameSpaceServer
-  pnfsHost="${RET}"
-  if [ "${pnfsHost}" == "localhost" ]
-  then
-    return 1
-  fi
-  if [ "${pnfsHost}" == `fqdn_os` ]
-  then
-    return 1
-  fi
-  return 0
-}
-
-
 
 dcacheInstallGetHome()
 {
@@ -435,7 +406,7 @@ dcacheInstallGetUseGridFtp()
 {
   # returns 1 if gridFTP is used 0 otherwise
   local UseGridFtp
-  yaim_config_file_get_value "${ourHomeDir}/etc/node_config" DCACHE_HOME
+  yaim_config_file_get_value "${ourHomeDir}/etc/node_config" GRIDFTP
   UseGridFtp=`echo "${RET}" | tr '[A-Z]' '[a-z]'`
   if [ "${UseGridFtp}" == "yes" ] ; then
     return 1
@@ -701,6 +672,67 @@ dcacheInstallGetdCapPort()
   yaim_config_file_get_value ${DCACHE_HOME}/config/dCacheSetup dCapPort
 }
 
+
+
+dcacheInstallGetNameSpaceType()
+{
+  local nameServerFormat
+  yaim_config_file_get_value ${ourHomeDir}/etc/node_config NAMESPACE
+  nameServerFormat="${RET}"
+  if [ "${nameServerFormat}" != "pnfs" -a "${nameServerFormat}" != "chimera" ]
+  then
+    logmessage WARNING "node_config does not have NAMESPACE set to chimera or pnfs."
+    logmessage INFO "NAMESPACE=${nameServerFormat}"
+    nameServerFormat="pnfs"
+    logmessage WARNING "Defaulting node_config to pnfs. This behaviour will change in future dCache releases."
+  fi
+  RET=$nameServerFormat
+}
+
+
+dcacheInstallGetNameSpaceServer()
+{
+  local namespaceServer
+  local pnfsManagerIs
+  dcacheInstallGetIsPnfsManager
+  pnfsManagerIs=$?
+  if [ "${pnfsManagerIs}" == "1" ] ; then
+    namespaceServer="localhost"
+  else
+    yaim_config_file_get_value "${ourHomeDir}/etc/node_config" NAMESPACE_NODE
+    namespaceServer="${RET}"
+    if [ -z "${namespaceServer}" ] ; then
+      yaim_config_file_get_value "${ourHomeDir}/etc/node_config" ADMIN_NODE
+      namespaceServer="${RET}"
+      if [ -z "${namespaceServer}" ] ; then
+        namespaceServer='invalid.host.example.org'
+        logmessage WARNING "No 'NAMESPACE_NODE' or 'ADMIN_NODE' set in 'node_config' using '${namespaceServer}'"
+      else
+        logmessage WARNING "No 'NAMESPACE_NODE' set in 'node_config' using depricated 'ADMIN_NODE' value '${namespaceServer}'"
+      fi
+    fi
+  fi
+  RET=${namespaceServer}
+}
+
+dcacheNameServerIs()
+{
+  dcacheInstallGetNameSpaceServer
+  pnfsHost="${RET}"
+  if [ "${pnfsHost}" == "localhost" ]
+  then
+    return 1
+  fi
+  if [ "${pnfsHost}" == `fqdn_os` ]
+  then
+    return 1
+  fi
+  return 0
+}
+
+
+
+
 dcacheInstallPnfsMountPointClient()
 { 
   logmessage DEBUG "dcacheInstallPnfsMountPointClient.start"
@@ -720,6 +752,10 @@ dcacheInstallPnfsMountPointClient()
   pnfsMountPoint=${RET}
   dcacheInstallGetNameSpaceServer
   NAMESPACE_NODE=$RET
+  if [ -z "${NAMESPACE_NODE}" ] ; then
+    logmessage ERROR "Unable to determine name space server. Install failed."
+    exit 1
+  fi
   logmessage INFO "Checking if ${pnfsMountPoint} mounted to the right export. ..."
   dcacheInstallGetExportPoint
   exportPoint=$RET
@@ -753,9 +789,7 @@ dcacheInstallPnfsMountPointClient()
         mkdir -p ${pnfsMountPoint}
       fi
     fi
-    dcacheInstallGetNameSpaceServer
-    pnfsServer=$RET
-    logmessage INFO "Will be mounted to ${pnfsServer}:/pnfsdoors by dcache-core start-up script."
+    logmessage INFO "Will be mounted to ${NAMESPACE_NODE}:/pnfsdoors by dcache start-up script."
   fi
   if [ ! -L "${PNFS_ROOT}/ftpBase" -a ! -e "${PNFS_ROOT}/ftpBase" ] ; then
     logmessage INFO "Creating link ${PNFS_ROOT}/ftpBase --> ${pnfsMountPoint} which is used by the GridFTP door."
@@ -799,6 +833,8 @@ dcacheInstallPnfsMountPointServer()
   local pnfsMountPoint
   local serverIdLinkedTo
   local ftpBaseLinkedTo
+  dcacheInstallGetNameSpaceServer
+  pnfsServer=$RET
   dcacheInstallGetServerId
   SERVER_ID=$RET
   dcacheInstallGetPnfsRoot
@@ -809,6 +845,10 @@ dcacheInstallPnfsMountPointServer()
   PNFS_INSTALL_DIR="${RET}"
   #    Checking and creating mountpoint and link
   #
+  if [ -z "${pnfsServer}" ] ; then
+    logmessage ERROR "Unable to determine name space server. Install has failed."
+    exit 1
+  fi
   pnfsMountPoint=${PNFS_ROOT}/fs
   # if not a directory
   if [ ! -d "${pnfsMountPoint}" ]; then
@@ -822,9 +862,8 @@ dcacheInstallPnfsMountPointServer()
 	mkdir -p ${pnfsMountPoint}
     fi
   fi
-  dcacheInstallGetNameSpaceServer
-  pnfsServer=$RET
-  logmessage INFO "Will be mounted to ${pnfsServer}:/fs by dcache-core start-up script."
+
+  logmessage INFO "Will be mounted to ${pnfsServer}:/fs by dcache start-up script."
 
   cd ${PNFS_ROOT}
   # if file is not a symbolic link
@@ -920,6 +959,8 @@ dcacheInstallPnfsMountPointServer()
   if [ "${dcacheNameServerIsRc}" == "1" ]
   then
     dcacheInstallPnfsConfigCheck
+  else
+    logmessage DEBUG "This node is not a name space server."
   fi
   logmessage DEBUG "dcacheInstallPnfsMountPointServer.stop"
 }
@@ -947,7 +988,6 @@ dcacheInstallPnfsMountPoints()
   else 
     if [ "${isPnfsManager}${isGridFtp}" == "01" -o "${isPnfsManager}${isSrm}" == "01" ] ; then
       dcacheInstallPnfsMountPointClient
-    
     fi
   fi  
   logmessage DEBUG "dcacheInstallPnfsMountPoints.stop"
@@ -973,6 +1013,10 @@ dcacheInstallChimeraMountPointServer()
   pnfsServer=$RET
   localhostName=`fqdn_os`
   tryToMount=1
+  if [ -z "${pnfsServer}" ] ; then
+    logmessage ERROR "Unable to determine Name Server node exiting as an error."
+    exit 1
+  fi
   if [ "$pnfsServer" == "$localhostName" ] ; then
     pnfsServer="localhost"
   fi
@@ -1200,6 +1244,8 @@ dcacheInstallSshKeys()
   fi
   logmessage DEBUG "dcacheInstallSshKeys.stop"
 }
+
+
 
 #    Pool configuration
 #
