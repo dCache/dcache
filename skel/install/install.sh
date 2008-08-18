@@ -60,7 +60,7 @@ if [ ! -f ${FILE} ] ; then
     exit 1
 fi
 AllCursors=`grep -n "^[	 ]*${Key}[	 ]*=" $FILE | cut -d: -f1 `
-if [ "${AllCursors}X" == "X" ] ; then
+if [ "${AllCursors}X" = "X" ] ; then
   RET=""
   return 2
 fi
@@ -70,19 +70,19 @@ foundPotentialCursors=""
 for acursor in $AllCursors
 do
   let lineNumBefore="${acursor}-1"
-  if [ "${lineNumBefore}" == "0" ] ; then
+  if [ "${lineNumBefore}" = "0" ] ; then
     foundPotentialCursors="${acursor} ${foundPotentialCursors}"
   else
     # Following bash convention ignore all content after "#"
     # including lines terminating in "\"
     PreviousLine=`sed "${lineNumBefore}q;d" $FILE | sed 's/#.*$//'`
     MatchLine="${PreviousLine%%"\\"}"
-    if [ "${PreviousLine}" == "${MatchLine}" ] ; then
+    if [ "${PreviousLine}" = "${MatchLine}" ] ; then
       foundPotentialCursors="${acursor} ${foundPotentialCursors}"
     fi
   fi
 done
-if [ "${foundPotentialCursors}X" == "X" ] ; then
+if [ "${foundPotentialCursors}X" = "X" ] ; then
   RET=""
   return 2
 fi
@@ -92,11 +92,11 @@ cursor=`echo ${foundPotentialCursors} | sed 's/ .*//'`
 
 RawCursorLine=`sed "${cursor}q;d" $FILE | cut -s -d= -f2- `
 CursorLine=`echo "${RawCursorLine}" | sed 's/#.*//'`
-if [ "${RawCursorLine}" == "${CursorLine}" ] ; then
+if [ "${RawCursorLine}" = "${CursorLine}" ] ; then
   # No comments on this line so check for terminating '\'
   MatchLine="${CursorLine%%"\\"}\\"
   RET="${CursorLine%%"\\"}"
-  while [ "${CursorLine}" == "${MatchLine}" ] 
+  while [ "${CursorLine}" = "${MatchLine}" ] 
   do
     # While last line character is "\"
     let cursor+=1
@@ -104,7 +104,7 @@ if [ "${RawCursorLine}" == "${CursorLine}" ] ; then
     CursorLine=`echo "${RawCursorLine}" | sed 's/#.*//'`
     if [ "${RawCursorLine}" != "${CursorLine}" ] ; then
       # No comments on this line
-      RET="${RET} ${CursorLine}"
+      RET="${RET}${CursorLine}"
       break
     fi
     MatchLine="${CursorLine%%"\\"}\\"
@@ -115,7 +115,7 @@ else
   RET=${CursorLine}
 fi
 # Now after all the processing remove starting and termianting white space
-RET=`echo $RET | sed 's/^[ 	]*\"\([^"]*\)\"[ 	]*$/\1/'`
+RET=`echo $RET | sed  -e 's/^[   ]*//' -e 's/[   ]*\$//'| sed -e 's/^\"\(.*\)\"$/\1/' `
 }
 
 
