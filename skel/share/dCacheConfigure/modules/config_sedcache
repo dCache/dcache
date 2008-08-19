@@ -2249,7 +2249,7 @@ yaim_config_dcache_validate_hosts()
         yaim_config_dcache_validate_host_name $ahost
         retcode=$?
         if [ "$retcode" == "0" ] ; then
-            echo "Error: Hostname '${ahost}' does not apear to be a FQDN"
+            echo "Error: Hostname '${ahost}' does not appear to be a FQDN"
             echo "Error: Please check your site-info.def file"
             exit 1
         fi
