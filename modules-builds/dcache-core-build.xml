@@ -372,11 +372,66 @@
 
 	</target>
 
+
+	<selector id="dcache-auth-enhance.classpath.selector">
+		<or>
+			<filename name="**/cells.jar" />
+			<filename name="jpox/bcel-5.1.jar" />
+			<filename name="jpox/log4j-1.2.8.jar" />
+			<filename name="jpox/jdo2-api-2.0.jar" />
+			<filename name="jpox/jpox-enhancer-1.2.2.jar" />
+			<filename name="jpox/jpox-core-1.2.2.jar" />
+			<filename name="jpox/jpox-java5-1.2.2.jar" />
+			<filename name="jpox/jpox-rdbms-1.2.2.jar" />
+                        <filename name="asm/asm-3.1.jar" />
+			<filename name="persistence/persistence-api-1.0.jar" />
+			<filename name="asm/asm-3.1.jar" />
+		</or>
+        </selector>
+	<path id="dcache-auth-enhance.classpath">
+		<fileset dir="${classesDir}">
+			<selector refid="dcache-auth-enhance.classpath.selector" />
+		</fileset>
+		<fileset dir="${libDir}">
+			<selector refid="dcache-auth-enhance.classpath.selector" />
+		</fileset>
+            <pathelement path="${buildDir}/core"/>
+	</path>
+
+
+	<target name="dcache-auth.check.enhanced">
+		<condition property="dcache-auth.is.enhanced">
+			<and>
+				<available file="${buildDir}/core/META-INF/persistence.xml" type="file" />
+			</and>
+		</condition>
+	</target>
+
+        <!-- Enhance auth record -->
+    <target name="dcache-auth.enhance" depends="dcache.compile,dcache-auth.check.enhanced" unless="dcache-auth.is.enhanced" description="Generate JPA Persistency code" >
+
+        <mkdir dir="${buildDir}/core/META-INF" />
+	<copy file="${sourceDir}/${dcache.packagePrefix}/config/persistence.xml" todir="${buildDir}/core/META-INF" />
+	<copy file="${sourceDir}/org/dcache/auth/AuthRecordORM.xml" todir="${buildDir}/core/org/dcache/auth/" />
+        <!-- define the task enhancer -->
+        <taskdef name="enhancer" classname="org.jpox.enhancer.tools.EnhancerTask">
+            <classpath refid="dcache-auth-enhance.classpath"/>
+        </taskdef>
+
+        <!-- enhance -->
+        <enhancer classpathref="dcache-auth-enhance.classpath" dir="${buildDir}/core" verbose="true" api="JPA" persistenceUnit="AuthRecordPersistenceUnit">
+            <sysproperty key="log4j.configuration" value="file:/home/timur/cvs/dCacheBuild/log4j.properties"/>
+        </enhancer>
+    </target>
+
 	<target name="dcache.jar" depends="isUptodate.dcache.jar,dcache.compile" unless="dcache.jar.upToDate" description="Create dcache.jar">
 
+        <mkdir dir="${buildDir}/core/META-INF" />
+	<copy file="${sourceDir}/${dcache.packagePrefix}/config/persistence.xml" todir="${buildDir}/core/META-INF" />
+	<copy file="${sourceDir}/org/dcache/auth/AuthRecordORM.xml" todir="${buildDir}/core/org/dcache/auth/" />
 		<jar jarfile="${dcache.jar}">
                         <fileset dir="${sourceDir}" includes="**/*.xml" excludes="diskCacheV111/config/*,**/WEB-INF/*.xml" />
-			<fileset dir="${buildDir}/core" includes="**/*.class" />
+			<fileset dir="${buildDir}/core" includes="**/*.class,META-INF/*.xml" />
 			<manifest>
 				<section name="Shared">
 					<attribute name="Title" value="dCache Core" />
@@ -591,6 +646,9 @@
              <sysproperty key="log4j.configuration" value="file:${sourceDir}/diskCacheV111/services/log4j.properties"/>
            </java>
         </target>
+
+
+
 
 
 	<target name="dcache-srm.jar" depends="isUptodate.dcache-srm.jar,dcache-srm.enhance" unless="dcache-srm.jar.upToDate" description="Create dcache-srm.jar">
