@@ -743,8 +743,8 @@ getPoolSetting() # #1 = pool path, #2+ = setting
 getFreeSpace() # $1 = path
 {
     local parent
-    parent=`dirname ${1}`
-    RET=$( df -k "${parent}" | awk 'NR == 2 { printf "%d", $4 / 1024 }' )
+    parent=$(dirname ${1})
+    RET=$(df -k "${parent}" | awk 'NR == 2 { if (NF < 4) { getline; x = $3 } else { x = $4 }; printf "%d", x / (1024 * 1024)}')
 }
 
 # Converts a string describing some amount of disk space (using an
@@ -1196,7 +1196,10 @@ case "$1" in
                     done
                 done
                 
-                printf "Disk space is measured in GiB.\n"
+                echo
+                printp "Disk space is measured in GiB. Free space is 
+                        reported for the partition containing the pool, 
+                        not for the pool itself."
                 ;;
 
 	    create)
