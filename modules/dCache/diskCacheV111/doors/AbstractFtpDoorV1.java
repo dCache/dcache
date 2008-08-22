@@ -1343,6 +1343,15 @@ public abstract class AbstractFtpDoorV1
         synchronized (this) {
             debug("FTP Door received 'Door Transfer Finished' message");
 
+            /* Receiving DoorTransferFinishedMessage indicates that
+             * the mover is done. To avoid that the transfer_error
+             * method tries to kill the mover, we set moverId to null.
+             */
+            if (_transfer != null) {
+                _transfer.moverId = null;
+                notifyAll();
+            }
+
             /* It may happen the transfer has been cancelled and
              * cleaned up after already. This is not a failure.
              */
@@ -1409,12 +1418,6 @@ public abstract class AbstractFtpDoorV1
                 return;
             }
             _transferInProgress = false;
-
-            /* Receiving DoorTransferFinishedMessage indicates that
-             * the mover is done. To avoid that the transfer_error
-             * method tries to kill the mover, we set moverId to null.
-             */
-            _transfer.moverId = null;
 
             if (reply.getReturnCode() == 0 && adapterError == null) {
                 if (_perfMarkerTask != null) {
@@ -3433,6 +3436,22 @@ public abstract class AbstractFtpDoorV1
         _transferInProgress = true;
     }
 
+    /**
+     * Returns the number of milliseconds until a specified point in
+     * time. May be negative if the point in time is in the past.
+     *
+     * TODO: Move to a utility class.
+     *
+     * @param time a point in time measured in milliseconds since
+     *             midnight, January 1, 1970 UTC.
+     * @return the difference, measured in milliseconds, between
+     *         <code>time</code> and midnight, January 1, 1970 UTC.
+     */
+    private long timeUntil(long time)
+    {
+        return time - System.currentTimeMillis();
+    }
+
     private void transfer_error(int replyCode, String msg)
     {
         transfer_error(replyCode, msg, null);
@@ -3467,6 +3486,8 @@ public abstract class AbstractFtpDoorV1
                                              Exception exception)
     {
         if (_transfer != null) {
+            _transferInProgress = false;
+
             if (_transfer.adapter != null && _transfer.adapter != _adapter) {
                 _transfer.adapter.close();
             }
@@ -3489,7 +3510,12 @@ public abstract class AbstractFtpDoorV1
                      * no upper bound on how long it could take to
                      * kill the mover.
                      */
-                    Thread.sleep(_sleepAfterMoverKill * 1000);
+                    long timeToWait = _sleepAfterMoverKill * 1000;
+                    long deadline = System.currentTimeMillis() + timeToWait;
+                    while (_transfer.moverId != null && timeToWait > 0) {
+                        wait(timeToWait);
+                        timeToWait = timeUntil(deadline);
+                    }
                 } catch (InterruptedException e) {
                     /* Bugger, something decided that we are in a
                      * hurry (most likely domain shutdown). We are
@@ -3547,7 +3573,6 @@ public abstract class AbstractFtpDoorV1
                 debug(exception);
             }
             _transfer = null;
-            _transferInProgress = false;
         }
     }
 
