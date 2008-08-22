@@ -72,19 +72,22 @@ public class PoolInformationBase
     }
 
     /**
-     * Removes information about a pool. The pool will be readded next
-     * time a pool up message is received.
+     * Removes information about a pool. The pool will be added again
+     * next time a pool up message is received.
      *
      * @param name A pool name.
      */
     synchronized public void remove(String name)
     {
-        PoolInformation pool = _pools.get(name);
+        PoolInformation pool = _pools.remove(name);
         if (pool != null) {
             for (String hsm : pool.getHsmInstances()) {
-                _hsmToPool.remove(hsm);
+                Collect<PoolInformationBase> pools = _hsmToPool.get(hsm);
+                pools.remove(pool);
+                if (pools.isEmpty()) {
+                    _hsmToPool.remove(hsm);
+                }
             }
-            _pools.remove(name);
         }
     }
 
