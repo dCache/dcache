@@ -567,6 +567,11 @@ public class HsmStorageHandler2  {
                esay(errmsg = "FetchThread : ("+_pnfsId+") " + e);
                returnCode = 5;
                excep = e;
+           } finally {
+               /* Surpress thread interruptions after this point.
+                */
+               setThread(null);
+               Thread.interrupted();
            }
            //
            // we can't use the entry as lock because within this
@@ -950,6 +955,11 @@ public class HsmStorageHandler2  {
                 returnCode = 666;
                 excep = t;
             } finally {
+                /* Surpress thread interruptions after this point.
+                 */
+                setThread(null);
+                Thread.interrupted();
+
                 try {
                     _entry.lock(false);
                     _entry.setSendingToStore(false);

@@ -613,6 +613,11 @@ public class HsmStorageHandler2
                 returnCode = 5;
                 excep = e;
             } finally {
+                /* Surpress thread interruptions after this point.
+                 */
+                setThread(null);
+                Thread.interrupted();
+
                 try {
                     if (excep != null) {
                         _handle.cancel(false);
@@ -1006,6 +1011,11 @@ public class HsmStorageHandler2
                         }
                     }
                 } finally {
+                    /* Surpress thread interruptions after this point.
+                     */
+                    setThread(null);
+                    Thread.interrupted();
+
                     handle.close();
                 }
 
