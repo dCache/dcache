@@ -291,7 +291,18 @@ public class CellNucleus implements Runnable, ThreadFactory {
                 }
             }
             CellMessage answer = (CellMessage)lock.getObject();
-            return answer == null ? null : new CellMessage(answer);
+            if (answer == null) {
+                return null;
+            }
+            answer = new CellMessage(answer);
+
+            Object obj = answer.getMessageObject();
+            if (obj instanceof NoRouteToCellException) {
+                throw (NoRouteToCellException) obj;
+            } else if (obj instanceof SerializationException) {
+                throw (SerializationException) obj;
+            }
+            return answer;
         } finally {
             synchronized (_waitHash) {
                 _waitHash.remove(uoid);
