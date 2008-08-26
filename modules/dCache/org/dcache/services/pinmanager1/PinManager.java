@@ -652,7 +652,7 @@ public class PinManager extends AbstractCell implements Runnable  {
                 // (a race condition )
                 
                 new Pinner(this, pnfsId,clientHost, storageInfo, pin,
-                    pinRequest.getExpirationTime());
+                   lifetime, pinRequest.getId());
             } else {
                 info("pin returned is in the wrong state");
                 if(pinRequestMessage != null) {
@@ -677,7 +677,10 @@ public class PinManager extends AbstractCell implements Runnable  {
     }
     
     
-    public void pinSucceeded ( Pin pin ,String pool) throws PinException {
+    public void pinSucceeded ( Pin pin ,
+        String pool,
+        long expiration,
+        long originalPinRequestId) throws PinException {
         boolean success = true;
         String error =null;
         Set<PinRequest> pinRequests ;
@@ -687,14 +690,15 @@ public class PinManager extends AbstractCell implements Runnable  {
             pinRequests = pin.getRequests();
             if(pin.getState().equals(PinManagerPinState.PINNING)) {
                
-                db.updatePin(pin.getId(),null,pool,PinManagerPinState.PINNED);
+                db.updatePin(pin.getId(),expiration,pool,PinManagerPinState.PINNED);
             } else if(pin.getState().equals(PinManagerPinState.INITIAL)){
                  //weird but ok, we probably will not get here,
                 // but let us still change state to Pinned and notify of success
-                db.updatePin(pin.getId(),null,pool,PinManagerPinState.PINNED);
+                db.updatePin(pin.getId(),expiration,pool,PinManagerPinState.PINNED);
             } else if(pin.getState().equals(PinManagerPinState.PINNED)){
                 //weird but ok, we probably will not get here,
                 // but let us still notify of success
+                db.updatePin(pin.getId(),expiration,pool,PinManagerPinState.PINNED);
             } else if(pin.getState().equals(PinManagerPinState.EXPIRED)) {
                 success = false;
                 error = "expired before we could finish pinning";
@@ -707,7 +711,11 @@ public class PinManager extends AbstractCell implements Runnable  {
             }
             
             for(PinRequest pinRequest:pinRequests) {
-                
+                if(pinRequest.getId() ==originalPinRequestId ) {
+                    if(pinRequest.getExpirationTime() < expiration) {
+                        db.updatePinRequest(pinRequest.getId(), expiration);
+                    }
+                }
                 CellMessage envelope = 
                         pinToRequestsMap.remove(pinRequest.getId());
                 info("pinSucceeded, pin request: "+pinRequest+
