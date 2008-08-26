@@ -1,15 +1,28 @@
 // $Id: PoolSelectionUnitV2wgap.java,v 1.0 2008-08-05 14:03:54 catalind Exp $
 package diskCacheV111.poolManager;
 
-import java.net.*; 
-import java.io.* ;
-import java.util.*;
-import diskCacheV111.repository.CacheRepositoryEntryInfo;
-import java.util.concurrent.atomic.*;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
 
-import java.util.concurrent.locks.*; 
+import java.io.NotSerializableException; 
+import java.io.PrintWriter ;
+
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.regex.Pattern;
 
 import org.apache.log4j.Logger;
@@ -17,15 +30,15 @@ import org.apache.log4j.Logger;
 import dmg.util.Args;
 import dmg.util.CommandSyntaxException;
 
-import diskCacheV111.vehicles.* ;
-import diskCacheV111.util.* ;
+import diskCacheV111.vehicles.StorageInfo;
+import diskCacheV111.pools.PoolV2Mode;
+
 
 import dmg.cells.nucleus.* ;
 import dmg.util.* ;
-
-import diskCacheV111.vehicles.StorageInfo;
-import diskCacheV111.pools.PoolV2Mode;
-import diskCacheV111.pools.PoolCostInfo; 
+import diskCacheV111.vehicles.* ;
+import diskCacheV111.pools.* ;
+import diskCacheV111.pools.PoolCostInfo.NamedPoolQueueInfo;
 
 
 public class PoolSelectionUnitV2wgap extends PoolSelectionUnitV2 {
@@ -33,16 +46,9 @@ public class PoolSelectionUnitV2wgap extends PoolSelectionUnitV2 {
     private static final String __version = "$Id: PoolSelectionUnitV2wgap.java,v 1.0 2008-08-05 14:03:54 catalind Exp $";
     private static final Logger _logPoolSelection = Logger.getLogger("logger.org.dcache.poolselection."+PoolSelectionUnitV2wgap.class.getName());
 
-    private static final long _timeout                 = 2 * 60 * 1000L ;
-    private static final long _TO_GetPoolRepository    = 2 * 60 * 1000L;
-    private static final long _TO_GetPoolTags          = 2 * 60 * 1000L;
-    private static final long _TO_MessageQueueUpdate   =     15 * 1000L; // 15 seconds
-    private static final long _TO_GetStorageInfo       = _timeout;
-    private static final long _TO_GetCacheLocationList = _timeout;
-    private static final long _TO_GetPoolGroup         = 2*60 * 1000L;
-    private static final long _TO_GetPoolList          = 2*60 * 1000L;
     private static final long _TO_GetFreeSpace         = 2*60 * 1000L;
-    private static final long _TO_SendObject           = 2*60 * 1000L;
+    private static final long _TO_GetGapSpace          = 3600 * 1000L;
+
 
     private  static CostModulePoolInfoTable _costTable = null;
     private  static Object _costTableLock = new Object();
@@ -65,17 +71,18 @@ public class PoolSelectionUnitV2wgap extends PoolSelectionUnitV2 {
               super.match (type, storeUnitName, dCacheUnitName, netUnitName, 
 			   protocolUnitName, storageInfo, linkGroupName); 
 
-          synchronized (_costTableLock) { 
-	      try { 
+          if (type == DirectionType.WRITE) { 
+          
+            synchronized (_costTableLock) { 
+	       try { 
                   getCostTable(_cell4SelectionWithGap);
-              } catch (Exception e) { 
+               } catch (Exception e) { 
                   // throw new IllegalArgumentException( "CostTable is not defined (null pointer)"); 
 		  // don't throw anything - do default 
 		  dsay (_cell4SelectionWithGap, "failed getting a cost table"); 
-                  //System.out.println ("failed getting a cost table"); 
-              } 
-
-              if ( _costTable != null ) {
+               } 
+ 
+               if ( _costTable != null ) {
 	          for( int prio = 0 ; prio < result.length ; prio++ ) { 
 	              List<String> resultList = new ArrayList<String>(); 
                       List<String> poolList = result[prio].getPoolList() ;
@@ -85,27 +92,22 @@ public class PoolSelectionUnitV2wgap extends PoolSelectionUnitV2 {
 		            PoolCostInfo.PoolSpaceInfo plSpace = _costTable.getPoolCostInfoByName(poolName).getSpaceInfo (); 
 		  
 			    dsay (_cell4SelectionWithGap, poolName + "> checking: " + plSpace.getGap () + " " + plSpace.getFreeSpace ()); 
-			    //System.out.println (poolName + "> checking: " + plSpace.getGap () + " " + plSpace.getFreeSpace ());
 	                    if (plSpace.getGap () < plSpace.getFreeSpace ()) { 
 			      dsay (_cell4SelectionWithGap, poolName + "> included on level " + prio); 
-			      //System.out.println (poolName + "> included on level " + prio);
 	                      resultList.add (poolName); 
 	                    } 
                          } else { 
 			   dsay (_cell4SelectionWithGap, "missing data for " + poolName);
-                           //System.out.println ("missing data for " + poolName);
                          } 
 	             } 
-		     // We don't want to return empty lists
+		     // the result can be even empty 
                      result[prio] = new PoolPreferenceLevel(resultList, result[prio].getTag());
-                     if (resultList.size () < 1) {
-			 dsay (_cell4SelectionWithGap, "list empty, returning original"); 
-                         //System.out.println ("list empty, returning original"); 
-		     } 
 	          } 
-              } else { 
+               } else { 
                   throw new IllegalArgumentException( "CostTable is not defined (null pointer)");
-              }
+               }
+            } 
+          
           } 
           return result;
     }
@@ -121,8 +123,12 @@ public class PoolSelectionUnitV2wgap extends PoolSelectionUnitV2 {
 
        synchronized (_costTableLock) {
 
+	   /* 
+            * The gap parameter is not supossed to change so often 
+            *    - this check was changed to 1 hours = 3600 * 1000 
+            */ 
            if (_costTable == null ||
-               System.currentTimeMillis() > _costTable.getTimestamp() + 240 * 1000) {
+               System.currentTimeMillis() > _costTable.getTimestamp() + _TO_GetGapSpace) {
 
                String command = new String("xcm ls");
 
