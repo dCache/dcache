@@ -22,13 +22,21 @@ class Pinner extends SMCTask
     private final CellPath _poolManager;
     private StorageInfo _storageInfo;
     private String _readPoolName;
+    private long _lifetime;
     private long _expiration;
+    // We record this now in Pinner, since upon success
+    // we need to change the original pin expiration time
+    // which will be calcuated only after the file was
+    // succesfully staged or otherwise made available and
+    // the read pool is given to us
+    private long _orginalPinRequestId;
 
     public Pinner(PinManager manager,
         PnfsId pnfsId,
         String clientHost,
         StorageInfo storageInfo, Pin pin,
-        long expiration)
+        long lifetime,
+        long orginalPinRequestId)
     {
         super(manager);
 
@@ -38,7 +46,8 @@ class Pinner extends SMCTask
         _clientHost = clientHost;
         _storageInfo = storageInfo;
         _pin = pin;
-        _expiration = expiration;
+        _lifetime = lifetime;
+        _orginalPinRequestId = orginalPinRequestId;
         _fsm = new PinnerContext(this);
         setContext(_fsm);
         _fsm.go();
@@ -111,6 +120,11 @@ class Pinner extends SMCTask
     void markSticky()
     {
         info("markSticky");
+        if(_lifetime == -1) {
+            _expiration = -1;
+        } else {
+            _expiration = System.currentTimeMillis() +_lifetime;
+        }
         long stickyBitExpiration = _expiration;
         if(stickyBitExpiration > 0) {
             stickyBitExpiration += PinManager.POOL_LIFETIME_MARGIN;
@@ -133,7 +147,10 @@ class Pinner extends SMCTask
     {
         info("succeed");
         try {
-            getManager().pinSucceeded(_pin,_readPoolName);
+            getManager().pinSucceeded(_pin,
+                _readPoolName,
+                _expiration,
+                _orginalPinRequestId);
         } catch (PinException pe) {
             error(pe.toString());
         }
