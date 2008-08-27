@@ -14,8 +14,8 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.log4j.Logger;
@@ -45,12 +45,15 @@ import dmg.util.CommandSyntaxException;
 
 public class P2PClient {
 
-	private final static Logger _logSpaceAllocation = Logger.getLogger("logger.dev.org.dcache.poolspacemonitor." + P2PClient.class.getName());
+    private final static Logger _logSpaceAllocation =
+        Logger.getLogger("logger.dev.org.dcache.poolspacemonitor." +
+                         P2PClient.class.getName());
 
     private final CacheRepository _repository;
     private final CellAdapter _cell;
     private final Acceptor _acceptor = new Acceptor();
-    private final Map<Integer, P2PClient.Companion> _sessions = new HashMap<Integer, P2PClient.Companion>();
+    private final Map<Integer, P2PClient.Companion> _sessions =
+        new ConcurrentHashMap<Integer, P2PClient.Companion>();
     private final AtomicInteger _nextId = new AtomicInteger(100);
     private boolean _removeOnExit = true;
     private int _maxActive = 0;
