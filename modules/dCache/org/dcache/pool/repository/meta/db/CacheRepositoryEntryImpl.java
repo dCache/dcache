@@ -75,6 +75,12 @@ public class CacheRepositoryEntryImpl implements CacheRepositoryEntry
         _lastAccess = getDataFile().lastModified();
     }
 
+    private void destroy()
+    {
+        generateEvent(EventType.DESTROY);
+        _repository.remove(_pnfsId);
+    }
+
     public CacheRepositoryStatistics getCacheRepositoryStatistics()
         throws CacheException
     {
@@ -82,20 +88,46 @@ public class CacheRepositoryEntryImpl implements CacheRepositoryEntry
         return null;
     }
 
-    public synchronized void decrementLinkCount() throws CacheException
+    /**
+     * Atomically decrements link count by one. Returns true if and
+     * only if the link count has reached zero and the entry is marked
+     * REMOVED.
+     *
+     * @see internalRemove
+     */
+    private synchronized boolean internalDecrementLinkCount()
     {
-        assert _linkCount > 0;
+        if (_linkCount <= 0)
+            throw new IllegalStateException("Link count is already zero");
         _linkCount--;
-        if (_linkCount == 0 && isRemoved()) {
-            generateEvent(EventType.DESTROY);
-            _repository.remove(_pnfsId);
+        return (_linkCount == 0 && isRemoved());
+    }
+
+    /**
+     * Atomically marks the entry as REMOVED. Returns true if and only
+     * if the link count has reached zero. The method does not
+     * generate a removal event.
+     *
+     * @see internalDecrementLinkCount
+     */
+    private synchronized boolean internalRemove()
+    {
+        _state.setRemoved();
+        storeStateIfDirty();
+        return (getLinkCount() == 0);
+    }
+
+    public void decrementLinkCount()
+    {
+        if (internalDecrementLinkCount()) {
+            destroy();
         }
     }
 
-
     public synchronized void incrementLinkCount()
     {
-        assert !isRemoved();
+        if (isRemoved())
+            throw new IllegalStateException("Entry is marked as removed");
         _linkCount++;
     }
 
@@ -371,17 +403,13 @@ public class CacheRepositoryEntryImpl implements CacheRepositoryEntry
         }
     }
 
-    public synchronized void setRemoved() throws CacheException
+    public void setRemoved() throws CacheException
     {
         try {
-            _state.setRemoved();
-            storeStateIfDirty();
-
+            boolean isDead = internalRemove();
             generateEvent(EventType.REMOVE);
-
-            if (_linkCount == 0) {
-                generateEvent(EventType.DESTROY);
-                _repository.remove(_pnfsId);
+            if (isDead) {
+                destroy();
             }
         } catch (IllegalStateException e) {
             throw new CacheException(e.getMessage());
