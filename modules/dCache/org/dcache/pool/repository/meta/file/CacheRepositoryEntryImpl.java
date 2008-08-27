@@ -90,18 +90,27 @@ public class CacheRepositoryEntryImpl implements CacheRepositoryEntry {
 
     }
 
-    public synchronized void decrementLinkCount() throws CacheException {
+    private void destroy()
+    {
+        _controlFile.delete();
+        _siFile.delete();
+        CacheRepositoryEvent event =
+            new CacheRepositoryEvent(_eventProcessor, clone());
+        _eventProcessor.processEvent(EventType.DESTROY, event);
+    }
 
-        assert _linkCount > 0;
+    public void decrementLinkCount() throws CacheException {
 
-        _linkCount--;
+        boolean isDead;
+        synchronized (this) {
+            if (_linkCount <= 0)
+                throw new IllegalStateException("Link count is already  zero");
+            _linkCount--;
+            isDead = (_linkCount == 0 && isRemoved());
+        }
 
-        if (_linkCount == 0 && isRemoved()) {
-            _controlFile.delete();
-            _siFile.delete();
-
-            CacheRepositoryEvent createEvent = new CacheRepositoryEvent(_eventProcessor, clone() );
-            _eventProcessor.processEvent(EventType.DESTROY, createEvent);
+        if (isDead) {
+            destroy();
         }
     }
 
@@ -386,26 +395,26 @@ public class CacheRepositoryEntryImpl implements CacheRepositoryEntry {
         _storageInfo = storageInfo;
     }
 
-    public synchronized void setRemoved() throws CacheException {
+    public void setRemoved() throws CacheException {
         try {
-            _state.setRemoved();
+            boolean isDead;
+            synchronized (this) {
+                _state.setRemoved();
+                isDead = (getLinkCount() == 0);
+            }
 
-            CacheRepositoryEvent createEvent = new CacheRepositoryEvent(_eventProcessor, clone() );
+            CacheRepositoryEvent createEvent =
+                new CacheRepositoryEvent(_eventProcessor, clone());
             _eventProcessor.processEvent(EventType.REMOVE, createEvent);
 
-            if (_linkCount == 0) {
-                _controlFile.delete();
-                _siFile.delete();
-
-                createEvent = new CacheRepositoryEvent(_eventProcessor, clone() );
-                _eventProcessor.processEvent(EventType.DESTROY, createEvent);
+            if (isDead) {
+                destroy();
             }
         }catch(IOException ignored) {
             // if's only a mask, exception is never thrown
         }
 
     }
-
 
     public void touch() throws CacheException {
 
