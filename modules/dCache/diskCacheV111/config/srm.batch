@@ -108,9 +108,13 @@ set context -c AdvisoryDelete              true
 
 set context -c kpwdFile          ${ourHomeDir}/etc/dcache.kpwd
 
-set context -c useLambdaStation  false
-set context -c lsMapFile          ${ourHomeDir}/lambdastation/config/l_station_map.xml
-set context -c lsScript          ${ourHomeDir}/lambdastation/scripts/open_ls_ticket
+# to enable terapath plugin uncomment:
+#set context -c qosPluginClass   org.dcache.srm.qos.terapaths.TerapathsPlugin
+#set context -c qosConfigFile    ${ourHomeDir}/config/terapaths.properties
+# to enable lambda station plugin, uncomment:
+#set context -c qosPluginClass   org.dcache.srm.qos.terapaths.LambdaStation
+#set context -c qosConfigFile    ${ourHomeDir}/config/lambdastation.properties
+
 
 set context -c overwriteEnabled false
 set context -c srmOverwriteByDefault false
@@ -383,9 +387,8 @@ create diskCacheV111.srm.dcache.Storage  SRM-${thisHostname} \
 #        -loginBroker=LoginBroker \
 #        -brokerUpdateTime=300 \
         -start_server=false \
-        -use_lambdastation=${useLambdaStation} \
-        -lambdastation_map_file=${lsMapFile} \
-        -lambdastation_script=${lsScript} \
+#        -qosPluginClass=${qosPluginClass} \
+#        -qosConfigFile=${qosConfigFile} \
         -login-broker-update-period=${srmLoginBrokerUpdatePeriod} \
         -num-doors-in-rand-selection=${srmNumberOfDoorsInRandomSelection} \
         -overwrite=${overwriteEnabled} \

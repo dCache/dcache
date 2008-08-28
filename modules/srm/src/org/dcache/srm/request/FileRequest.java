@@ -186,7 +186,7 @@ import org.dcache.srm.v2_2.TReturnStatus;
 import org.dcache.srm.v2_2.TStatusCode;
 import org.dcache.srm.SRMUser;
 
-import org.dcache.srm.lambdastation.*;
+import org.dcache.srm.qos.QOSTicket;
 /**
  * File request is an abstract "SRM file request"
  * its concrete subclasses are GetFileRequest,PutFileRequest and CopyFileRequest
@@ -217,8 +217,7 @@ public abstract class FileRequest extends Job {
     private String errorMsg;
     
     private static RequestsPropertyStorage requestsproperties = null;
-    private LambdaStationMap LsMap;
-    private LambdaStationTicket LsTicket;
+    private QOSTicket qosTicket;
 
     private static final long serialVersionUID = -5737484917461810463L;
     
@@ -445,22 +444,14 @@ public abstract class FileRequest extends Job {
      */
     public Long getRequestId() {
         return requestId;
-    }
+    } 
     
-    public void setLSMap(LambdaStationMap LsMap) {
-        this.LsMap = LsMap;
+    public void setQOSTicket(QOSTicket qosTicket) {
+        this.qosTicket = qosTicket;
     }
 
-    public LambdaStationMap getLSMap() {
-        return LsMap;
-    }
-
-    public void setLSTicket(LambdaStationTicket LsTicket) {
-        this.LsTicket = LsTicket;
-    }
-
-    public LambdaStationTicket getLSTicket() {
-        return LsTicket;
+    public QOSTicket getQOSTicket() {
+        return qosTicket;
     }
     
    /**

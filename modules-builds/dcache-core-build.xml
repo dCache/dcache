@@ -918,6 +918,14 @@
 			</fileset>
 		</copy>
 
+		<!-- terapaths -->
+		<mkdir dir="${binDir}/classes/terapaths" />
+		<copy todir="${binDir}/classes/terapaths">
+			<fileset dir="${libDir}/terapaths">
+				<include name="*.jar" />
+			</fileset>
+		</copy>
+
 	</target>
 	<target name="xrootd-tokenauthz-bin" depends="xrootd-tokenauthz.jar">
 

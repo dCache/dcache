@@ -340,7 +340,7 @@ add_java_opt()
 }
 
 logmessage INFO "modifying java options in ${CATALINA_SH} ..."
-add_java_opt "-Djava.protocol.handler.pkgs=org.globus.net.protocol"
+add_java_opt "-Djava.protocol.handler.pkgs=sun.net.www.protocol||org.globus.net.protocol"
 
 add_classpath()
 {
@@ -375,7 +375,7 @@ mkdir ${SRM_WEBAPP_DIR}/WEB-INF/lib
 #
 # copy jar files to srm webapp dir
 #
-for i in ${AXIS_WEBAPP_DIR}/WEB-INF/lib/*jar ${SRM_JARS_DIR}/glue/*jar ${SRM_JARS_DIR}/srm.jar ${SRM_JARS_DIR}/jdbc-drivers/*.jar ${SRM_JARS_DIR}/jdom/jdom.jar ${DCACHE_JARS_DIR}/dcache.jar ${DCACHE_JARS_DIR}/dcache-srm.jar ${SRM_JARS_DIR}/gplazma-libs/*.jar ${DCACHE_JARS_DIR}/cells.jar ${DCACHE_JARS_DIR}/jpox/*.jar ${DCACHE_JARS_DIR}/smc/*.jar
+for i in ${AXIS_WEBAPP_DIR}/WEB-INF/lib/*jar ${SRM_JARS_DIR}/glue/*jar ${SRM_JARS_DIR}/srm.jar ${SRM_JARS_DIR}/jdbc-drivers/*.jar ${SRM_JARS_DIR}/jdom/jdom.jar ${DCACHE_JARS_DIR}/dcache.jar ${DCACHE_JARS_DIR}/dcache-srm.jar ${SRM_JARS_DIR}/gplazma-libs/*.jar ${DCACHE_JARS_DIR}/cells.jar ${DCACHE_JARS_DIR}/jpox/*.jar ${DCACHE_JARS_DIR}/smc/*.jar ${DCACHE_JARS_DIR}/terapaths/*.jar
 do
    cmd="cp ${i} ${SRM_WEBAPP_DIR}/WEB-INF/lib"
 #   echo $cmd

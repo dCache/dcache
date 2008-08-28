@@ -104,7 +104,7 @@ import javax.xml.transform.stream.StreamResult;
 //import java.io.File;
 import java.io.IOException;
 import java.io.FileWriter;
-import org.dcache.srm.lambdastation.LambdaStationMap;
+import org.dcache.srm.qos.*;
 
 //
 // just testing cvs
@@ -220,10 +220,8 @@ public class Configuration {
     private long vacuum_period_sec=60*60;
     private boolean vacuum = true;
     private boolean start_server=true;
-    private String lambda_station_map_file=null;
-    private LambdaStationMap LSMap=null;
-    private String lambda_station_script=null;
-    private boolean lambda_station_enabled=false;
+    private String qosPluginClass = null; 
+    private String qosConfigFile = null;
     private String getPriorityPolicyPlugin="DefaultJobAppraiser";
     private String putPriorityPolicyPlugin="DefaultJobAppraiser";
     private String copyPriorityPolicyPlugin="DefaultJobAppraiser";
@@ -716,11 +714,11 @@ public class Configuration {
             vacuum= Boolean.valueOf(value).booleanValue();
         } else if(name.equals("vacuum_period_sec")) {
             vacuum_period_sec = Long.parseLong(value);
-        } else if(name.equals("LambdaStationMapFile")) {
-            lambda_station_map_file = value;
-        } else if(name.equals("LambdaStationScript")) {
-            lambda_station_script = value;
-        }
+        } else if(name.equals("qosPluginClass")) { 
+        	qosPluginClass = value;
+        } else if(name.equals("qosConfigFile")) { 
+        	qosConfigFile = value;
+        }  
         
         
     }
@@ -1197,9 +1195,8 @@ public class Configuration {
         sb.append("\n\tstorage_info_update_period=").append(this.storage_info_update_period);
         sb.append("\n\tvacuum=").append(this.vacuum);
         sb.append("\n\tvacuum_period_sec=").append(this.vacuum_period_sec);
-        sb.append("\n\tlambda_station_enabled=").append(this.lambda_station_enabled);
-        sb.append("\n\tlambda_station_map_file=").append(this.lambda_station_map_file);
-        sb.append("\n\tlambda_station_script=").append(this.lambda_station_script);
+        sb.append("\n\tqosPluginClass=").append(this.qosPluginClass);
+        sb.append("\n\tqosConfigFile=").append(this.qosConfigFile);
         sb.append("\n\tjdbcMonitoringEnabled=").append(this.jdbcMonitoringEnabled);
         sb.append("\n\tjdbcMonitoringDebugLevel=").append(this.jdbcMonitoringDebugLevel);
         
@@ -2170,30 +2167,17 @@ public class Configuration {
     }
     
 
-    public LambdaStationMap setLambdaStationMap() {
-        if (lambda_station_enabled && lambda_station_map_file != null) {
-            LSMap = new LambdaStationMap(lambda_station_map_file);
-        }
-	else {
-	    LSMap = null;
-	}
-        return LSMap;
+    public String getQosPluginClass() {
+    	return qosPluginClass;
     }
-
-    public LambdaStationMap getLambdaStationMap() {
-        return LSMap;
+    public void setQosPluginClass(String qosPluginClass) {
+    	this.qosPluginClass = qosPluginClass;
     }
-    
-    public String getLambdaStationScript() {
-        return lambda_station_script;
+    public String getQosConfigFile() {
+    	return qosConfigFile;
     }
-
-    public void setLambdaStationEnabled(boolean ls_en) {
-	lambda_station_enabled = ls_en;
-    }
-
-    public boolean getLambdaStationEnabled() {
-	return lambda_station_enabled;
+    public void setQosConfigFile(String qosConfigFile) {
+    	this.qosConfigFile = qosConfigFile;
     }
 
     public int getNumDaysHistory() {
@@ -2307,13 +2291,6 @@ public class Configuration {
 
     public void setJdbcMonitoringDebugLevel(boolean jdbcMonitoringDebugLevel) {
         this.jdbcMonitoringDebugLevel = jdbcMonitoringDebugLevel;
-    }
-    public void setLambda_station_map_file(String lambda_station_map_file) {
-        this.lambda_station_map_file = lambda_station_map_file;
-    }
-   
-    public void setLambda_station_script(String lambda_station_script) {
-        this.lambda_station_script = lambda_station_script;
     }
 
     public SRMUserPersistenceManager getSrmUserPersistenceManager() {

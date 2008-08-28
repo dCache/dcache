@@ -119,7 +119,7 @@ import org.dcache.srm.client.TURLsArrivedEvent;
 //import org.dcache.srm.util
 import org.dcache.srm.v2_2.*;
 import org.dcache.srm.SRMProtocol;
-import org.dcache.srm.lambdastation.*;
+import org.dcache.srm.qos.*;
 import org.dcache.srm.SRMInvalidRequestException;
 import org.dcache.srm.SRMReleasedException;
 
@@ -159,9 +159,7 @@ public class CopyRequest extends ContainerRequest implements PropertyChangeListe
     private SRMProtocol callerSrmProtocol;
     private SRMProtocol remoteSrmProtocol;
     private boolean remoteSrmGet;
-    private LambdaStationMap LSMap;
-    private boolean use_lambda_station = false; // false by default
-    private String lambda_station_script = null;
+    private QOSPlugin qosPlugin = null; 
     private TFileStorageType storageType;
     private TRetentionPolicy targetRetentionPolicy;
     private TAccessLatency targetAccessLatency;
@@ -231,18 +229,8 @@ public class CopyRequest extends ContainerRequest implements PropertyChangeListe
             fileRequests[i] = fileRequest;
         }
         this.callerSrmProtocol = callerSrmProtocol;
-        LSMap = configuration.setLambdaStationMap();
-	System.out.println("LSMAP"+LSMap);
-        if (configuration.getLambdaStationEnabled()) {
-            LSMap = configuration.setLambdaStationMap();
-            if(LSMap != null) {
-                lambda_station_script = configuration.getLambdaStationScript();
-                if(lambda_station_script != null) {
-                    use_lambda_station = true;
-
-                }
-            }
-        } 
+        if (configuration.getQosPluginClass()!=null)
+        	this.qosPlugin = QOSPluginFactory.createInstance(configuration);
         this.storageType = storageType;
         this.targetAccessLatency = targetAccessLatency;
         this.targetRetentionPolicy = targetRetentionPolicy;
@@ -320,13 +308,8 @@ public class CopyRequest extends ContainerRequest implements PropertyChangeListe
         }
         
         protocols = (String[]) prot_list.toArray(new String[0]);
-        LSMap = configuration.setLambdaStationMap();
-        if ((LSMap != null) && (configuration.getLambdaStationEnabled())) {
-            // can be more conditions
-            use_lambda_station = true;
-            lambda_station_script = configuration.getLambdaStationScript();
-            
-        } 
+        if (configuration.getQosPluginClass()!=null)
+        	this.qosPlugin = QOSPluginFactory.createInstance(configuration);
         this.storageType = storageType;
         this.targetAccessLatency = targetAccessLatency;
         this.targetRetentionPolicy = targetRetentionPolicy;
@@ -484,6 +467,31 @@ public class CopyRequest extends ContainerRequest implements PropertyChangeListe
             throw new IOException("both from and to url are not local srm");
         }
     }
+
+    private void makeQosReservation(int i) throws MalformedURLException, SRMException {
+    	try {
+    		CopyFileRequest cfr = (CopyFileRequest) fileRequests[i];
+        	RequestCredential credential = RequestCredential.getRequestCredential(credentialId);
+        	QOSTicket qosTicket = qosPlugin.createTicket(
+                    credential.getCredentialName(),
+                    (storage.getFileMetaData((SRMUser)getUser(),cfr.getFromPath())).size,
+		    from_urls[i].getURL(),
+                    from_urls[i].getPort(),
+                    from_urls[i].getPort(),
+                    from_urls[i].getProtocol(),
+		    to_urls[i].getURL(),
+                    to_urls[i].getPort(),
+                    to_urls[i].getPort(),
+                    to_urls[i].getProtocol());
+            qosPlugin.addTicket(qosTicket);
+            if (qosPlugin.submit()) {
+            	cfr.setQOSTicket(qosTicket);
+                say("QOS Ticket Received "+qosPlugin.toString());
+            }
+		} catch(Exception e) {
+			esay("Could not create QOS reservation: "+e.getMessage());
+		}
+    } 
     
     private void getTURLs() throws SRMException,
     IOException,InterruptedException,IllegalStateTransition ,java.sql.SQLException,
@@ -512,31 +520,7 @@ public class CopyRequest extends ContainerRequest implements PropertyChangeListe
                     Scheduler.getScheduler(schedulerId).schedule(cfr);
                     continue;
                 }
-                // AM: now talk to Lambda Station, open ticket
-		say("use_lambda_station "+use_lambda_station);
-                if (use_lambda_station) {
-                    String cn=credential.getCredentialName();
-                    //say("LS_MAP:"+LSMap.toString());
-                    LambdaStationTicket ls_ticket = new LambdaStationTicket(credential.getCredentialName(),
-									    to_urls[i].getURL(),
-									    ls_client,
-									    from_urls[i].getURL(),
-									    ls_client,
-									    600, // hardcoded travel \time so far
-									    LSMap);
-                    ls_ticket.OpenTicket(lambda_station_script);
-                    say("LSTICKET="+ls_ticket.toString());
-		    boolean sEnabled = ls_ticket.srcEnabled();
-		    boolean dEnabled = ls_ticket.dstEnabled();
-		    say("src enabled="+sEnabled+" dst enabled="+dEnabled);
-
-		    if (sEnabled && dEnabled && ls_ticket.getLocalTicketID() != 0) {
-			// ticket received
-			cfr.setLSTicket(ls_ticket);
-			say("Lambda Station Ticket Received "+ls_ticket.toString());
-                    }
-                    
-                }
+ 
                 //Since "to" url has to be local srm, we can just set the local to path
                 remoteSurlToFileReqIds.put(from_urls[i].getURL(),fileRequests[i].getId());
                 say("getTurlsArrived, setting local \"to\" path to "+
@@ -716,6 +700,8 @@ public class CopyRequest extends ContainerRequest implements PropertyChangeListe
             say("getTURLs: local size  returned by storage.getFileMetaData is "+sizes[i]);
             cfr.setSize(sizes[i]);
             dests[i] = cfr.getToURL();
+            if (qosPlugin != null)
+            	makeQosReservation(i);
         }
         
         remoteSrmGet = false;
@@ -792,38 +778,9 @@ public class CopyRequest extends ContainerRequest implements PropertyChangeListe
             for(int i = 0 ;i< cfr_ids.length;i++) {
                 
                 CopyFileRequest cfr  = (CopyFileRequest)getFileRequest(cfr_ids[i]);
-                if (use_lambda_station) {
-                    LambdaStationTicket ls_ticket = cfr.getLSTicket();
-                    say("LS TICKET:="+ls_ticket);
-                    if (ls_ticket != null) {
-                        boolean sEnabled = ls_ticket.srcEnabled();
-                        boolean dEnabled = ls_ticket.dstEnabled();
-                        say("src enabled="+sEnabled+" dst enabled="+dEnabled);
-
-                        if ( sEnabled && dEnabled && ls_ticket.getLocalTicketID() != 0) {
-                            // check ticket
-                            // so far do nothing
-                            long time_left = ls_ticket.getActualEndTime() - t/1000;
-                            say("End time="+ls_ticket.getActualEndTime()+" Travel Time="+ls_ticket.TravelTime+" now="+t+" expires in "+time_left);
-                            // try to calculate transfer time assuming 1Gb local connection
-                            long transfer_time = 0l;
-                            long rate_MB = 100000000l; // 1Gb means 100MB
-                            if (size != null) {
-                                transfer_time = size.longValue()/rate_MB;
-                            }
-                            else if(cfr.getSize() != 0) {
-                                 transfer_time =cfr.getSize()/rate_MB;
-                            }
-                            long extend_time = Math.max(transfer_time, 600l);
-                            if (time_left - extend_time < 0) {
-                                say("AM: will extend end time by "+extend_time);
-                            }
-                            else {
-                                say("AM: no need to extend end time");
-                            }
-                        }
-                    }
-                }
+                if (qosPlugin!=null && cfr.getQOSTicket()!=null) {
+					qosPlugin.sayStatus(cfr.getQOSTicket());
+				}
                 
                 try {
                     if( from_url_is_srm && ! from_url_is_local) {

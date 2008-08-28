@@ -630,33 +630,9 @@ public class Storage
         config.setCredentialsDirectory(getOption("credentials-dir",
             config.getCredentialsDirectory()));
 
-
-        tmpstr = _args.getOpt("use_lambdastation");
-	if(tmpstr != null) {
-	    if (tmpstr.equalsIgnoreCase("true")) {
-		config.setLambdaStationEnabled(true);
-	    }
-	    else {
-		config.setLambdaStationEnabled(false);
-	    }
-	}
-
-	tmpstr = _args.getOpt("lambdastation_map_file");
-	if(tmpstr != null) {
-	    config.setLambda_station_map_file(tmpstr);
-	}
-	else {
-	    config.setLambdaStationEnabled(false);
-	}
-
-	tmpstr = _args.getOpt("lambdastation_script");
-	if(tmpstr != null) {
-	    config.setLambda_station_script(tmpstr);
-	}
-	else {
-	    config.setLambdaStationEnabled(false);
-	 }
-
+		config.setQosPluginClass(getOption("qosPluginClass",config.getQosPluginClass()));
+		config.setQosConfigFile(getOption("qosConfigFile",config.getQosConfigFile()));
+	
         say("scheduler parameter read, starting");
         this.useInterpreter(true);
         this.getNucleus().export();
@@ -1059,7 +1035,7 @@ public class Storage
     }
 
 
-    public String fh_lambdastation= " Syntax: labmdastation [<on|off>] ";
+/*    public String fh_lambdastation= " Syntax: labmdastation [<on|off>] ";
     public String hh_lambdastation= " on|off";
     public String ac_lambdastation_$_0_1(Args args) {
 	boolean ls;
@@ -1084,7 +1060,7 @@ public class Storage
             t.printStackTrace();
             return t.toString();
 	}
-    }
+    }*/
 
 
 
