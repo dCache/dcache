@@ -65,19 +65,17 @@ contains() # $1 = word, $2 = list
 # Reverses a list of words
 reverse() # $1 = space delimited list of words
 {
-    local r
-    r=''
+    RET=''
     for s in $*; do
-        r="${s} ${r}"
+        RET="${s} ${RET}"
     done
-    printf "%s" "$r"
 }
 
 # Normalises a path such that it does not contain double or trailing
 # slashes.
 sanitisePath() # $1 = path
 {
-    echo $1 | sed -e 's_//*_/_g' -e 's_/$__'
+    RET=$(echo $1 | sed -e 's_//*_/_g' -e 's_/$__')
 }
 
 # Returns the maximum width of any word in a given list.
@@ -94,7 +92,7 @@ max_width() # $* = list of words
         fi
     done
 
-    printf "%d" $max
+    RET=$max
 }
 
 # Utility function for printing to stdout with a line width 
@@ -226,13 +224,27 @@ parseOptions() # $1 = list of valid options
     return $count
 }
 
-# Prints setting from configuration file, $1 = parameter name
-printConfig() 
+# Retrieves setting from configuration file, $1 = parameter name
+getConfig() 
 {
-    #         Comments      Trailing space         Print value
-    #         vvvvvvvv      vvvvvvvvvvvvvvvv       vvvvvvvvvvvvvvvvvvvvvvvvvv
-    sed -n -e 's/#.*$//' -e 's/[       ]*$//' -e "s/^[         ]*$1[   ]*=[    ]*\(.*\)$/\1/p" \
-      ${ourHomeDir}/etc/node_config ${ourHomeDir}/etc/door_config 2> /dev/null
+    #               Comments      Trailing space       Print value
+    #               vvvvvvvv      vvvvvvvvvvvvvvvv     vvvvvvvvvvvvvvvvvvvvvvvvv
+    RET=$(sed -n -e 's/#.*$//' -e 's/[       ]*$//' -e "s/^[         ]*$1[   ]*=[    ]*\(.*\)$/\1/p" ${ourHomeDir}/etc/node_config ${ourHomeDir}/etc/door_config 2> /dev/null)
+}
+
+# Returns 0 if feature is enabled in node_config or door_config, 1
+# otherwise
+isEnabled() # $1 = option name
+{
+    getConfig $1; 
+    case "$(echo $RET | tr '[A-Z]' '[a-z]')" in
+        yes|y)
+            return 0;
+            ;;
+        *)
+            return 1;
+            ;;
+    esac
 }
 
 # Auto mount PNFS on FTP doors and check that PNFS in mounted on admin
@@ -245,9 +257,9 @@ autoMountNameSpace()
     local NAMESPACE
     local SERVER_ID
 
-    NAMESPACE=$(printConfig NAMESPACE)
+    getConfig NAMESPACE; NAMESPACE=$RET
     if [ -z "$NAMESPACE" ] || [ "$NAMESPACE" = pnfs ]; then
-        SERVER_ID=$(printConfig SERVER_ID)
+        getConfig SERVER_ID; SERVER_ID=$RET
         if [ -z "${SERVER_ID}" ]; then
             SERVER_ID=$domainname
             if [ -z "${SERVER_ID}" ]; then
@@ -258,8 +270,8 @@ autoMountNameSpace()
             fi
         fi
 
-        PNFS_ROOT=$(printConfig PNFS_ROOT)
-        NODE_TYPE=$(printConfig NODE_TYPE)
+        getConfig PNFS_ROOT; PNFS_ROOT=$RET
+        getConfig NODE_TYPE; NODE_TYPE=$RET
 	if [ "$NODE_TYPE" = admin ]; then
 	    if ! df ${PNFS_ROOT}/fs 2>/dev/null | grep -v "$PNFS_ROOT" > /dev/null; then
 		printp "[ERROR] ${PNFS_ROOT}/fs mount point exists, but is
@@ -267,9 +279,9 @@ autoMountNameSpace()
                         admin node. Exiting."
 		exit 1
 	    fi
-	elif [ "$(printConfig GRIDFTP)" = yes ] || [ "$(printConfig SRM)" = yes ]; then
+	elif isEnabled GRIDFTP || isEnabled SRM ; then
 	    if ! df ${PNFS_ROOT}/${SERVER_ID} 2>/dev/null | grep "$PNFS_ROOT" > /dev/null; then
-		ADMIN_NODE=$(printConfig ADMIN_NODE)
+		getConfig ADMIN_NODE; ADMIN_NODE=$RET
 		if [ -z "$ADMIN_NODE" ] || [ "$ADMIN_NODE" = myAdminNode ]; then
 		    printp "[ERROR] pnfs not mounted on 
                             ${PNFS_ROOT}/${SERVER_ID}/ and ADMIN_NODE in 
@@ -346,66 +358,73 @@ getService() # $1 = domain name
 # Prints list of configured services.
 getServices()
 {
-    local nodeType
-    nodeType=$(printConfig NODE_TYPE)
-    case ${nodeType} in 
+    getConfig NODE_TYPE
+    case "${RET}" in 
         admin)
             printf "lm dCache "
 
-	    if [ "$(printConfig NAMESPACE)" = "chimera" ] ; then
-		printf "chimera "
-	    else
-		printf "pnfs "
-	    fi		    
+            getConfig NAMESPACE
+            case "$RET" in
+                chimera)
+                    printf "chimera "
+                    ;;
+                *)
+                    printf "pnfs "
+                    ;;
+            esac
 
             printf "dir admin httpd utility gPlazma "
 
-            if [ "$(printConfig infoProvider)" = "yes" ]; then
+            if isEnabled infoProvider; then
                 printf "infoProvider "
             fi
-            if [ "$(printConfig info)" = "yes" ]; then
+            if isEnabled info; then
                 printf "info "
             fi
-            if [ "$(printConfig statistics)" = "yes" ]; then
+            if isEnabled statistics; then
                 printf "statistics "
             fi
             ;;
         custom)
-            if [ "$(printConfig lmDomain)" = "yes" ]; then
+            if isEnabled lmDomain; then
                 printf "lm "
             fi
-            if [ "$(printConfig poolManager)" = "yes" ]; then
+            if isEnabled poolManager; then
                 printf "dCache "
             fi
-            if [ "$(printConfig pnfsManager)" = "yes" ]; then
-	        if [ "$(printConfig NAMESPACE)" = "chimera" ] ; then
-		    printf "chimera "
-	        else
-		    printf "pnfs "
-	        fi
+            if isEnabled pnfsManager; then
+                getConfig NAMESPACE
+                case "$RET" in
+                    chimera)
+                        printf "chimera "
+                        ;;
+                    *)
+                        printf "pnfs "
+                        ;;
+                esac
             fi
-            if [ "$(printConfig dirDomain)" = "yes" ]; then
+            if isEnabled dirDomain; then
                 printf "dir "
             fi
-            if [ "$(printConfig adminDoor)" = "yes" ]; then
+            if isEnabled adminDoor; then
                 printf "admin "
             fi
-            if [ "$(printConfig httpDomain)" = "yes" ]; then
+            if isEnabled httpDomain; then
                 printf "httpd "
             fi
-            if [ "$(printConfig utilityDomain)" = "yes" ]; then
+            if isEnabled utilityDomain; then
                 printf "utility "
             fi
-            if [ "$(printConfig InfoProvider)" = "yes" ]; then
+            if isEnabled InfoProvider; then
                 printf "infoProvider "
             fi
-            if [ "$(printConfig info)" = "yes" ]; then
+            if isEnabled info; then
                 printf "info "
             fi
-            if [ "$(printConfig statistics)" = "yes" ]; then
+            if isEnabled statistics; then
                 printf "statistics "
             fi
-            if [ "$(printConfig gPlazmaService)" = "yes" ]; then
+            if isEnabled gPlazmaService; then
                 printf "gPlazma "
             fi
             ;;
@@ -414,22 +433,22 @@ getServices()
     if [ -n "$(getDomains pool)" ]; then
 	printf "pool "
     fi
-    if [ "$(printConfig replicaManager)" = "yes" ]; then
+    if isEnabled replicaManager; then
         printf "replica "
     fi
-    if [ "$(printConfig DCAP)" = "yes" ]; then
+    if isEnabled DCAP; then
         printf "dcap "
     fi
-    if [ "$(printConfig XROOTD)" = "yes" ]; then
+    if isEnabled XROOTD; then
         printf "xrootd "
     fi	
-    if [ "$(printConfig GRIDFTP)" = "yes" ]; then
+    if isEnabled GRIDFTP; then
         printf "gridftp "
     fi
-    if [ "$(printConfig GSIDCAP)" = "yes" ]; then
+    if isEnabled GSIDCAP; then
         printf "gsidcap "
     fi
-    if [ "$(printConfig SRM)" = "yes" ]; then
+    if isEnabled SRM; then
         printf "srm "
     fi
 }
@@ -579,8 +598,8 @@ isRunning()# $1 = pid
     ps -p $1 1>/dev/null 2>/dev/null
 }
 
-# Returns the PID of a running domain, or 0 if the domain does not
-# run. 
+# If domain runs, RET is set to its PID.  Returns 0 if domain is
+# running, 1 otherwise.
 pidOfDomain() # $1 = Domain name
 {
     local pidFile
@@ -596,7 +615,7 @@ pidOfDomain() # $1 = Domain name
         return 1
     fi
 
-    echo ${pid}
+    RET=${pid}
     return 0
 }
 
@@ -690,8 +709,7 @@ getPoolSetting() # #1 = pool path, #2+ = setting
 
     #          Comments      Trailing space       Print value
     #          vvvvvvvv      vvvvvvv              vvvvvvvvvvvvvvvvvvvvvvvvvv
-    sed -n -e 's/#.*$//' -e 's/[ 	]*$//' -e "s/^[ 	]*${key}[ 	]*\(.*\)/\1/p" \
-      ${path}/setup
+    RET=$(sed -n -e 's/#.*$//' -e 's/[ 	]*$//' -e "s/^[ 	]*${key}[ 	]*\(.*\)/\1/p" ${path}/setup)
 }
 
 # Extracts the amount of free space in GiB.
@@ -704,44 +722,44 @@ getFreeSpace() # $1 = path
 
 # Converts a string describing some amount of disk space (using an
 # optional suffix of k, K, m, M, g, G, t, T, for powers of 1024) to an
-# integer number of GiB.
+# integer number of GiB. 
 stringToGiB() # $1 = size
 {
     case $1 in
         *k)
-            printf "%d" $((${1%?}/(1024*1024)))
+            RET=$((${1%?}/(1024*1024)))
             ;;
 
         *K)
-            printf "%d" $((${1%?}/(1024*1024)))
+            RET=$((${1%?}/(1024*1024)))
             ;;
 
         *m)
-            printf "%d" $((${1%?}/1024))
+            RET=$((${1%?}/1024))
             ;;
 
         *M)
-            printf "%d" $((${1%?}/1024))
+            RET=$((${1%?}/1024))
             ;;
 
         *g)
-            printf "%d" $((${1%?}))
+            RET=$((${1%?}))
             ;;
 
         *G)
-            printf "%d" $((${1%?}))
+            RET=$((${1%?}))
             ;;
 
         *t)
-            printf "%d" $((${1%?}*1024))
+            RET=$((${1%?}*1024))
             ;;
 
         *T)
-            printf "%d" $((${1%?}*1024))
+            RET=$((${1%?}*1024))
             ;;
 
         *)
-            printf "%d" $(($1/(1024*1024*1024)))
+            RET=$(($1/(1024*1024*1024)))
             ;;
     esac
 }
@@ -749,7 +767,8 @@ stringToGiB() # $1 = size
 # Extracts the size of a pool in GiB.
 getSizeOfPool() # $1 = pool path
 {
-    stringToGiB $(getPoolSetting ${path} set max diskspace)
+    getPoolSetting ${path} "set max diskspace"
+    stringToGiB $RET
 }
 
 createPool() # $1 = size in GiB, $2 = path
@@ -760,7 +779,8 @@ createPool() # $1 = size in GiB, $2 = path
     local NUMBER_OF_MOVERS
     local set_size
     local set_movers
-    size=$(stringToGiB $1)
+
+    stringToGiB $1; size=$RET
     path=$2
 
     # Path must not exist
@@ -779,7 +799,11 @@ createPool() # $1 = size in GiB, $2 = path
 	exit 1
     fi 
 
-    NUMBER_OF_MOVERS=$(printConfig NUMBER_OF_MOVERS)
+    # Why does node_config contain default values for new pools? That
+    # will for sure confuse our users, since they are made to believe
+    # they can adjust the number of movers by changing node_config;
+    # which is not the case! 
+    getConfig NUMBER_OF_MOVERS; NUMBER_OF_MOVERS=$RET
 
     mkdir -p ${path} ${path}/data ${path}/control || exit 2
 
@@ -804,10 +828,12 @@ addPool() # $1 = pool, $2 = path, $3 = domain, $4 = use fqdn, £5 = lfs
     local param
 
     pool=$1
-    path=$(sanitisePath $2)
+    path=$2
     domain=$3
     use_fqdn=$4
     lfs=$5
+
+    sanitisePath $path; path=$RET
 
     # Check that LFS mode is valid
     if ! contains $lfs none precious hsm volatile transient; then
@@ -906,7 +932,7 @@ removePool() # $1 = pool name
 	getPoolsInDomain $domain | while read _pool _path _param; do
 	    if [ "$pool" = "$_pool" ]; then
                 # Check if domain is still running
-		if pidOfDomain ${domain} > /dev/null; then
+		if pidOfDomain ${domain}; then
 		    printp "A pool named $pool was found in the domain 
                             $domain. $domain is still running. Shut it 
                             down before removing the pool from the 
@@ -1020,7 +1046,8 @@ readSetup()
 #
 checkNodeType()
 {
-    case $(printConfig NODE_TYPE) in	
+    getConfig NODE_TYPE
+    case $RET in	
 	admin|door|custom|pool)
             # OK
 	    ;;
@@ -1101,7 +1128,8 @@ case "$1" in
         shift
         domains=$(expandServiceAndDomainList $*)
 
-        for domain in $(reverse $domains); do
+        reverse $domains; domains_backward=$RET
+        for domain in $domains_backward; do
             run $domain stop
         done
 
@@ -1112,7 +1140,8 @@ case "$1" in
         shift
         domains=$(expandServiceAndDomainList $*)
 
-        for domain in $(reverse $domains); do
+        reverse $domains; domains_backward=$RET
+        for domain in $domains_backward; do
             run $domain stop
         done
 
@@ -1123,10 +1152,12 @@ case "$1" in
 
     status)
         domains=$(getAllDomains)
-        format="%-$(max_width $domains)s %-10s%5s %s\n"
+        max_width $domains; width=$RET
+        format="%-${width}s %-10s%5s %s\n"
         printf "$format" "Domain" "Status" "Pid" "Log file"
         for domain in $domains; do
-            if pid=$(pidOfDomain ${domain}); then
+            if pidOfDomain ${domain}; then
+                pid=$RET
                 status="running"
             else
                 pid=""
@@ -1165,15 +1196,16 @@ case "$1" in
 
                 domains=$(getAllPoolDomains)
                 pools=$(getAllPools $domains)
-                format="%-$(max_width $pools)s %-$(max_width $domains)s %-9s %7s%7s %s\n"
+                max_width $pools; width_1=$RET
+                max_width $domains; width_2=$RET
+                format="%-${width_1}s %-${width_2}s %-9s %7s%7s %s\n"
                 printf "$format" "Pool" "Domain" "LFS" "Size" "Free" "Path"
                 for domain in $domains; do
                     getPoolsInDomain $domain | while read pool path param; do
                         lfs=$(echo $param | sed -n -e 's/.*lfs=\([^ ]*\).*/\1/p')
 			if [ -f "${path}/setup" ]; then
-                            size=$(getSizeOfPool ${path})
-			    getFreeSpace ${path}
-                            free=$RET
+                            getSizeOfPool $path; size=$RET
+			    getFreeSpace $path; free=$RET
                             printf "$format" "$pool" "$domain" "$lfs" "$size" "$free" "$path"
 			else
                             printf "$format" "$pool" "$domain" "$lfs" "-" "-" "$path (missing)"
@@ -1244,10 +1276,11 @@ case "$1" in
                     exit 1
                 fi
 
-                if ! pid=$(pidOfDomain ${domain}); then
+                if ! pidOfDomain ${domain}; then
                     printp "Domain ${domain} is not running."
                     exit 1
                 fi
+                pid=$RET
                 
                 if ! $jmap -dump:live,format=b,file=${file} ${pid}; then
                     printp "Failed to dump the heap; please consult
@@ -1269,8 +1302,8 @@ case "$1" in
             threads)
                 domains=$(expandServiceAndDomainList $*)
                 for domain in $domains; do
-                    if pid=$(pidOfDomain ${domain}); then
-                        if ! kill -s QUIT ${pid}; then
+                    if pidOfDomain ${domain}; then
+                        if ! kill -s QUIT ${RET}; then
                             printp "Failed to dump stack traces. Likely
                                     the current user does not have the
                                     proper permissions." 1>&2
