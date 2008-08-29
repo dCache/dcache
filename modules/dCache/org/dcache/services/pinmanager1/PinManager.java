@@ -249,7 +249,7 @@ public class PinManager extends AbstractCell implements Runnable  {
 
     /** Creates a new instance of PinManager */
     public PinManager(String name , String argString) throws Throwable {
-        super(name, argString, false);
+        super(name, argString);
          
         try {
             db = new PinManagerDatabase(this,
@@ -279,7 +279,7 @@ public class PinManager extends AbstractCell implements Runnable  {
         }
         
         runInventoryBeforeStartPart();
-        start();
+        doInit();
         runInventoryAfterStartPart();
         
     }

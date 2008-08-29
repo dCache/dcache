@@ -143,7 +143,7 @@ public class HSMCleaner extends AbstractCell
 
     public HSMCleaner(String cellName, String args) throws Exception
     {
-	super(cellName, args, false);
+	super(cellName, args);
 
 	useInterpreter(true);
 
@@ -184,7 +184,7 @@ public class HSMCleaner extends AbstractCell
         _executor.scheduleWithFixedDelay(_flushTask, _flushInterval,
                                          _flushInterval, TimeUnit.SECONDS);
 
-	start();
+	doInit();
     }
 
     public void cleanUp()

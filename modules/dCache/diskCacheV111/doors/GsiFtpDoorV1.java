@@ -153,7 +153,7 @@ public class GsiFtpDoorV1 extends GssFtpDoorV1 {
         _workerThread = getNucleus().newThread(this);
         _workerThread.start();
         useInterpreter(true);
-        start() ;
+        doInit() ;
 
     }
 

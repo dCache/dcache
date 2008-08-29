@@ -105,7 +105,7 @@ public class KerberosFtpDoorV1 extends GssFtpDoorV1 {
         _workerThread = getNucleus().newThread(this);
         _workerThread.start();
         useInterpreter(true);
-        start();
+        doInit();
     }
 
     public void startTlog(String path, String action) {

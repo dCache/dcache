@@ -7,6 +7,7 @@ import java.util.Enumeration;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.Formatter;
+import java.util.concurrent.ExecutionException;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileWriter;
@@ -104,55 +105,23 @@ public class UniversalSpringCell
      */
     private String _setupFile;
 
-    /**
-     * Name of context variable to execute during setup, or null.
-     */
-    private String _definedSetup;
-
-    /**
-     * Strips the first argument if it starts with an exclamation
-     * mark.
-     */
-    private static String stripDefinedSetup(String s)
-    {
-        String args[] = s.split("\\s");
-        if (args.length > 0 && args[0].startsWith("!")) {
-            return s.substring(args[0].length());
-        } else {
-            return s;
-        }
-    }
-
-    /**
-     * Returns the defined setup declaration, or null if there is no
-     * defined setup.
-     *
-     * The defined setup is declared as the first argument and starts
-     * with an exclamation mark.
-     */
-    private static String getDefinedSetup(String s)
-    {
-        String args[] = s.split("\\s");
-        if (args.length > 0 && args[0].startsWith("!")) {
-            return args[0].substring(1);
-        } else {
-            return null;
-        }
-    }
-
     public UniversalSpringCell(String cellName, String arguments)
-        throws InterruptedException
+        throws InterruptedException, ExecutionException
     {
-        super(cellName, stripDefinedSetup(arguments), true);
+        super(cellName, arguments);
+        doInit();
+    }
 
-
+    @Override
+    protected void init()
+        throws InterruptedException, IOException, CommandException
+    {
         /* Process command line arguments.
          */
         Args args = getArgs();
         if (args.argc() == 0)
             throw new IllegalArgumentException("Configuration location missing");
 
-        _definedSetup = getDefinedSetup(arguments);
         _setupController = args.getOpt("setupController");
         info("Setup controller set to "
              + (_setupController == null ? "none" : _setupController));
@@ -162,48 +131,34 @@ public class UniversalSpringCell
         if (_setupController != null && _setupClass == null)
             throw new IllegalArgumentException("Setup class must be specified when a setup controller is used");
 
-        /* Execute initialisation in a different thread allocated from
-         * the correct thread group.
+        /* Instantiate Spring application context. This will
+         * eagerly instantiate all beans.
          */
-        Thread thread = getNucleus().newThread(new Runnable() {
-                public void run()
-                {
-                    UniversalSpringCell.this.init();
-                }
-            }, "init");
+        _context =
+            new UniversalSpringCellApplicationContext(getArgs());
 
-        thread.start();
+        /* Execute both the defined setup and the setup file.
+         */
+        if (_definedSetup != null) {
+            executeDomainContext(_definedSetup);
+        }
 
-        if (args.getOpt("wait") != null)
-            thread.join();
-    }
-
-    private void init()
-    {
-        try {
-            _context =
-                new UniversalSpringCellApplicationContext(getArgs());
-
-            if (_definedSetup != null) {
-                executeDomainContext(_definedSetup);
+        if (_setupFile != null) {
+            File file = new File(_setupFile);
+            while (!file.exists()) {
+                error("Setup does not exists; waiting");
+                Thread.sleep(30000);
             }
 
-            if (_setupFile != null) {
-                File file = new File(_setupFile);
-                while (!file.exists()) {
-                    error("Setup does not exists; waiting");
-                    Thread.sleep(30000);
-                }
+            execFile(file);
+        }
 
-                execFile(file);
-            }
-
-            for (CellSetupProvider provider: _setupProviders) {
-                provider.afterSetupExecuted();
-            }
-        } catch (Throwable t) {
-            _logger.fatal("Failed to initialise cell: " + t.getMessage(), t);
-            kill();
+        /* Now that everything is instantiated and configured, we can
+         * start the cell and run the final initialisation hooks.
+         */
+        start();
+        for (CellSetupProvider provider: _setupProviders) {
+            provider.afterSetupExecuted();
         }
     }
 

@@ -71,10 +71,9 @@ public class EchoCellHelper extends AbstractCell  {
      * Creates a new instance of EchoCell
      */
     public EchoCellHelper(String name , String argString) throws Exception {
-        super(name, argString, false);
+        super(name, argString);
 
-        start();
-
+        doInit();
     }
 
 

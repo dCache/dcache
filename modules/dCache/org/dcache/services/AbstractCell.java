@@ -10,6 +10,9 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.concurrent.FutureTask;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 
 import dmg.util.Args;
 import dmg.cells.nucleus.CellAdapter;
@@ -31,6 +34,40 @@ import diskCacheV111.util.PnfsId;
  * dCache cells.
  *
  * <h2>Automatic dispatch of dCache messages to message handler</h2>
+ *
+ * See org.dcache.util.CellMessageDispatcher for details.
+ *
+ * <h2>Logging</h2>
+ *
+ * A logger exposed via the protected field _logger. The logger is
+ * given the name of the instantiated class (i.e. if you name the
+ * subclass org.dcache.A, then the logger is named org.dcache.A).
+ *
+ * The cells say and esay methods are redirected to the logger using
+ * info and error levels, respectively.
+ *
+ * The cell is registered as a target for the PinboardAppender.
+ *
+ * <h2>Initialisation</h2>
+ *
+ * AbstractCell provides the <code>init</code> method for performing
+ * cell initilisation. This method is executed in a thread allocated
+ * from the cells thread, and thus the thread group and log4j context
+ * are automatically inherited for any threads created during
+ * initialisation. Any log messages generated from within the
+ * <code>init</code> method are correctly attributed to the
+ * cell. Subclasses should override <code>init</code> rather than
+ * performing initilisation steps in the constructor.
+ *
+ * The <code>init</code> method is called by <code>doInit</code>,
+ * which makes sure <code>init</code> is executed in the correct
+ * thread. <code>doInit</code> also enables cells message delivery by
+ * calling <code>CellAdapter.start</code>. Should <code>init</code>
+ * throw an exception, then <code>doInit</code> immediately kills the
+ * cell and logs an error message.
+ *
+ * Subclasses must call doInit (preferably from their constructor) for
+ * any of this to work.
  *
  * <h2>Option parsing</h2>
  *
@@ -88,6 +125,7 @@ import diskCacheV111.util.PnfsId;
  *   )
  *   protected long _maxPinDuration;
  *
+ * @see org.dcache.util.CellMessageDispatcher
  */
 public class AbstractCell extends CellAdapter
 {
@@ -98,25 +136,138 @@ public class AbstractCell extends CellAdapter
      */
     protected Logger _logger;
 
+    /**
+     * Helper object used to dispatch message to message listeners.
+     */
     private final CellMessageDispatcher _messageDispatcher =
         new CellMessageDispatcher();
 
-    public AbstractCell(String cellName, String args, boolean startNow)
+    /**
+     * Name of context variable to execute during setup, or null.
+     */
+    protected String _definedSetup;
+
+    /**
+     * Strips the first argument if it starts with an exclamation
+     * mark.
+     */
+    private static Args stripDefinedSetup(Args args)
     {
-        this(cellName, new Args(args), startNow);
+        args = (Args) args.clone();
+        if ((args.argc() > 0) && args.argv(0).startsWith("!")) {
+            args.shift();
+        }
+        return args;
     }
 
-    public AbstractCell(String cellName, Args args, boolean startNow)
+    /**
+     * Returns the defined setup declaration, or null if there is no
+     * defined setup.
+     *
+     * The defined setup is declared as the first argument and starts
+     * with an exclamation mark.
+     */
+    private static String getDefinedSetup(Args args)
     {
-        super(cellName, args, startNow);
+        if ((args.argc() > 0) && args.argv(0).startsWith("!")) {
+            return args.argv(0).substring(1);
+        } else {
+            return null;
+        }
+    }
+
+    public AbstractCell(String cellName, String arguments)
+        throws InterruptedException, ExecutionException
+    {
+        this(cellName, new Args(arguments));
+    }
+
+    /**
+     * Constructs an AbstractCell.
+     *
+     * @param cellName the name of the cell
+     * @param arguments the cell arguments
+     */
+    public AbstractCell(String cellName, Args arguments)
+    {
+        super(cellName, stripDefinedSetup(arguments), false);
 
         _logger = Logger.getLogger(getClass());
+        _definedSetup = getDefinedSetup(arguments);
 
         PinboardAppender.addCell(this);
 
         parseOptions();
-
         addMessageListener(this);
+    }
+
+    /**
+     * Performs cell initialisation and starts cell message delivery.
+     *
+     * Initialisation is delegated to the <code>init</code> method,
+     * and subclasses should perform initilisation by overriding
+     * <code>init</code>. If the <code>init</code> method throws an
+     * exception, then the cell is immediately killed.
+     *
+     * @throws InterruptedException if the thread was interrupted
+     * @throws ExecutionException if init threw an exception
+     */
+    final protected void doInit()
+        throws InterruptedException, ExecutionException
+    {
+        /* Execute initialisation in a different thread allocated from
+         * the correct thread group.
+         */
+        try {
+            FutureTask task = new FutureTask(new Callable() {
+                    public Object call() throws Exception {
+                        AbstractCell.this.init();
+                        return null;
+                    }
+                });
+            getNucleus().newThread(task, "init").start();
+            task.get();
+
+            start();
+        } catch (InterruptedException e) {
+            _logger.info("Cell initialisation was interrupted.");
+            start();
+            kill();
+            throw e;
+        } catch (ExecutionException e) {
+            Throwable t = e.getCause();
+            _logger.fatal("Failed to initialise cell: " + t.getMessage(), t);
+            start();
+            kill();
+            throw e;
+        }
+    }
+
+    /**
+     * Initialize cell. This method should be overridden in subclasses
+     * to perform cell initialization.
+     *
+     * The method is called from the <code>doInit</code> method, but
+     * using a thread belonging to the thread group of the associated
+     * cell nucleus. This ensure correct logging and correct thread
+     * group inheritance.
+     *
+     * The default implementation executes the defined setup
+     * (specified with !variable in the argument string) and does
+     * nothing else. If the method is overriden, then care must be
+     * taken that the superclass implementation is called or that the
+     * defined setup is executed by other means.
+     *
+     * It is valid for the method to call
+     * <code>CellAdapter.start</code> if early start of message
+     * delivery is needed.
+     */
+    protected void init()
+        throws Exception
+    {
+        if (_definedSetup != null) {
+            executeDomainContext(_definedSetup);
+        }
     }
 
     /**

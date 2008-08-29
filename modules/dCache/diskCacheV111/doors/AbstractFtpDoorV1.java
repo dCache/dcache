@@ -76,6 +76,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ExecutionException;
 import java.util.Queue;
 import java.util.List;
 import java.util.LinkedList;
@@ -863,9 +864,11 @@ public abstract class AbstractFtpDoorV1
                ClassNotFoundException,
                NoSuchMethodException,
                InstantiationException,
-               InvocationTargetException
+               InvocationTargetException,
+               InterruptedException,
+               ExecutionException
     {
-        super(name, args, false);
+        super(name, args);
 
         boolean success = false;
         try {

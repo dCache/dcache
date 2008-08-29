@@ -70,7 +70,7 @@ public class WeakFtpDoorV1 extends AbstractFtpDoorV1 {
         _workerThread = new Thread( this );
         _workerThread.start();
         useInterpreter(true);
-        start() ;
+        doInit() ;
     }
 
     protected void secure_reply(String answer, String code) {
