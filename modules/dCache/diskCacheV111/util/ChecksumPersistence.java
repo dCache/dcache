@@ -110,7 +110,7 @@ class ChecksumPersistencePnfsImpl extends ChecksumPersistence {
                 return flags.getValue() ; // assume this is the right type
             }
 
-            throw new Exception("Got message of unrecognized type. Expected PnfsGetChecksumMessage");
+            throw new Exception("Got message of unrecognized type. Expected PnfsGetChecksumMessage, but got: " + obj);
   }
 
   public int[] listChecksumTypes(CellEndpoint endpoint, PnfsId pnfsId) throws Exception
@@ -131,6 +131,6 @@ class ChecksumPersistencePnfsImpl extends ChecksumPersistence {
                 return flags.getValue() ; // assume this is the right type
             }
 
-            throw new Exception("Got message of unrecognized type. Expected PnfsGetChecksumAllMessage");
+            throw new Exception("Got message of unrecognized type. Expected PnfsGetChecksumAllMessage, but got: " + obj);
   }
 }
