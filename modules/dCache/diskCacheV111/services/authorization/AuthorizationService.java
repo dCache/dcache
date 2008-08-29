@@ -147,7 +147,6 @@ import org.globus.gsi.GSIConstants;
 import org.globus.gsi.bc.BouncyCastleUtil;
 import org.globus.gsi.bc.X509NameHelper;
 import org.dcache.srm.security.SslGsiSocketFactory;
-import org.dcache.vehicles.AuthorizationMessage;
 import org.gridforum.jgss.ExtendedGSSManager;
 import org.gridforum.jgss.ExtendedGSSContext;
 import org.glite.security.voms.VOMSValidator;
@@ -630,27 +629,6 @@ public class AuthorizationService {
         
         return  authenticate(serviceContext, protocolInfo, cellpath, caller);
     }
-
-    public AuthorizationMessage getAuthorization(GSSContext serviceContext, CellPath cellpath, CellAdapter caller) throws AuthorizationServiceException {
-
-        RemoteGsiftpTransferProtocolInfo protocolInfo =
-                new RemoteGsiftpTransferProtocolInfo(
-                "RemoteGsiftpTransfer",
-                1,1,null,0,
-                null,
-                caller.getNucleus().getCellName(),
-                caller.getNucleus().getCellDomainName(),
-                authRequestID,
-                0,
-                0,
-                0,
-                new Long(0));
-        //long authRequestID = protocolInfo.getId();
-
-        AuthenticationMessage authmessage = authenticate(serviceContext, protocolInfo, cellpath, caller);
-
-        return new AuthorizationMessage(authmessage);
-    }
     
     public AuthenticationMessage authenticate(GSSContext serviceContext, RemoteGsiftpTransferProtocolInfo protocolInfo, CellPath cellpath, CellAdapter caller) throws AuthorizationServiceException {
         
@@ -686,7 +664,7 @@ public class AuthorizationService {
         try {
             GSSName GSSIdentity = serviceContext.getSrcName();
             CellMessage m = new CellMessage(cellpath, protocolInfo);
-            m = caller.getNucleus().sendAndWait(m, 3600000L) ;
+            m = caller.getNucleus().sendAndWait(m, 40000L) ;
             if(m==null) {
                 throw new AuthorizationServiceException("authRequestID " + authRequestID + " Message to " + authcellname + " timed out for authentification of " + GSSIdentity);
             }
@@ -795,7 +773,7 @@ public class AuthorizationService {
         String authcellname = cellpath.getCellName();
         try {
             CellMessage m = new CellMessage(cellpath, dnInfo);
-            m = caller.getNucleus().sendAndWait(m, 3600000L) ;
+            m = caller.getNucleus().sendAndWait(m, 40000L) ;
             if(m==null) {
                 throw new AuthorizationServiceException("authRequestID " + authRequestID + " Message to " + authcellname + " timed out for authentification of " + dnInfo.getDN() + " and roles " + dnInfo.getFQANs());
             }
