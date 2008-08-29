@@ -9,7 +9,7 @@ LOCK_FILE=/var/lock/subsys/dcache
 # try to find one and execute it.
 if [ "$1" = "%" ]; then
     shift
-elif [ "`uname`" = "SunOS" ]; then
+elif [ "$(uname)" = "SunOS" ]; then
     if [ -x /usr/xpg4/bin/sh ]; then
 	exec /usr/xpg4/bin/sh $0 % $*
     elif [ -x /bin/bash ]; then
@@ -130,7 +130,7 @@ printp() # $* = list of paragraphs
 # exist.
 isFileEmpty() # $1 = file
 {
-    if [ `wc -l < $1` -eq 0 ]; then
+    if [ $(wc -l < $1) -eq 0 ]; then
         return 0;
     else
         return 1;
@@ -245,21 +245,21 @@ autoMountNameSpace()
     local NAMESPACE
     local SERVER_ID
 
-    NAMESPACE=`printConfig NAMESPACE`
+    NAMESPACE=$(printConfig NAMESPACE)
     if [ -z "$NAMESPACE" ] || [ "$NAMESPACE" = pnfs ]; then
-        SERVER_ID=`printConfig SERVER_ID`
+        SERVER_ID=$(printConfig SERVER_ID)
         if [ -z "${SERVER_ID}" ]; then
             SERVER_ID=$domainname
             if [ -z "${SERVER_ID}" ]; then
-                SERVER_ID=`sed -e 's/#.*$//' /etc/resolv.conf | awk '/^[ \t]*search/ { print $2 }'`
+                SERVER_ID=$(sed -e 's/#.*$//' /etc/resolv.conf | awk '/^[ \t]*search/ { print $2 }')
                 if [ -z "${SERVER_ID}" ]; then
-                    SERVER_ID=`sed -e 's/#.*$//' /etc/resolv.conf | awk '/^[ \t]*domain/ { print $2 }'`
+                    SERVER_ID=$(sed -e 's/#.*$//' /etc/resolv.conf | awk '/^[ \t]*domain/ { print $2 }')
                 fi
             fi
         fi
 
-        PNFS_ROOT=`printConfig PNFS_ROOT`
-        NODE_TYPE=`printConfig NODE_TYPE`
+        PNFS_ROOT=$(printConfig PNFS_ROOT)
+        NODE_TYPE=$(printConfig NODE_TYPE)
 	if [ "$NODE_TYPE" = admin ]; then
 	    if ! df ${PNFS_ROOT}/fs 2>/dev/null | grep -v "$PNFS_ROOT" > /dev/null; then
 		printp "[ERROR] ${PNFS_ROOT}/fs mount point exists, but is
@@ -267,9 +267,9 @@ autoMountNameSpace()
                         admin node. Exiting."
 		exit 1
 	    fi
-	elif [ "`printConfig GRIDFTP`" = yes ] || [ "`printConfig SRM`" = yes ]; then
+	elif [ "$(printConfig GRIDFTP)" = yes ] || [ "$(printConfig SRM)" = yes ]; then
 	    if ! df ${PNFS_ROOT}/${SERVER_ID} 2>/dev/null | grep "$PNFS_ROOT" > /dev/null; then
-		ADMIN_NODE=`printConfig ADMIN_NODE`
+		ADMIN_NODE=$(printConfig ADMIN_NODE)
 		if [ -z "$ADMIN_NODE" ] || [ "$ADMIN_NODE" = myAdminNode ]; then
 		    printp "[ERROR] pnfs not mounted on 
                             ${PNFS_ROOT}/${SERVER_ID}/ and ADMIN_NODE in 
@@ -279,7 +279,7 @@ autoMountNameSpace()
 		fi
 
                 # Solaris specific fix
-                case `uname` in
+                case $(uname) in
                     SunOS)
                         NFSVERS=vers
                         ;;
@@ -305,7 +305,7 @@ autoMountNameSpace()
 # suffix. 
 getService() # $1 = domain name
 {
-    if contains $1 `getAllPoolDomains`; then
+    if contains $1 $(getAllPoolDomains); then
 	printf "pool"
     else
 	case "$1" in
@@ -347,12 +347,12 @@ getService() # $1 = domain name
 getServices()
 {
     local nodeType
-    nodeType=`printConfig NODE_TYPE`
+    nodeType=$(printConfig NODE_TYPE)
     case ${nodeType} in 
         admin)
             printf "lm dCache "
 
-	    if [ "`printConfig NAMESPACE`" = "chimera" ] ; then
+	    if [ "$(printConfig NAMESPACE)" = "chimera" ] ; then
 		printf "chimera "
 	    else
 		printf "pnfs "
@@ -360,76 +360,76 @@ getServices()
 
             printf "dir admin httpd utility gPlazma "
 
-            if [ "`printConfig infoProvider`" = "yes" ]; then
+            if [ "$(printConfig infoProvider)" = "yes" ]; then
                 printf "infoProvider "
             fi
-            if [ "`printConfig info`" = "yes" ]; then
+            if [ "$(printConfig info)" = "yes" ]; then
                 printf "info "
             fi
-            if [ "`printConfig statistics`" = "yes" ]; then
+            if [ "$(printConfig statistics)" = "yes" ]; then
                 printf "statistics "
             fi
             ;;
         custom)
-            if [ "`printConfig lmDomain`" = "yes" ]; then
+            if [ "$(printConfig lmDomain)" = "yes" ]; then
                 printf "lm "
             fi
-            if [ "`printConfig poolManager`" = "yes" ]; then
+            if [ "$(printConfig poolManager)" = "yes" ]; then
                 printf "dCache "
             fi
-            if [ "`printConfig pnfsManager`" = "yes" ]; then
-	        if [ "`printConfig NAMESPACE`" = "chimera" ] ; then
+            if [ "$(printConfig pnfsManager)" = "yes" ]; then
+	        if [ "$(printConfig NAMESPACE)" = "chimera" ] ; then
 		    printf "chimera "
 	        else
 		    printf "pnfs "
 	        fi
             fi
-            if [ "`printConfig dirDomain`" = "yes" ]; then
+            if [ "$(printConfig dirDomain)" = "yes" ]; then
                 printf "dir "
             fi
-            if [ "`printConfig adminDoor`" = "yes" ]; then
+            if [ "$(printConfig adminDoor)" = "yes" ]; then
                 printf "admin "
             fi
-            if [ "`printConfig httpDomain`" = "yes" ]; then
+            if [ "$(printConfig httpDomain)" = "yes" ]; then
                 printf "httpd "
             fi
-            if [ "`printConfig utilityDomain`" = "yes" ]; then
+            if [ "$(printConfig utilityDomain)" = "yes" ]; then
                 printf "utility "
             fi
-            if [ "`printConfig InfoProvider`" = "yes" ]; then
+            if [ "$(printConfig InfoProvider)" = "yes" ]; then
                 printf "infoProvider "
             fi
-            if [ "`printConfig info`" = "yes" ]; then
+            if [ "$(printConfig info)" = "yes" ]; then
                 printf "info "
             fi
-            if [ "`printConfig statistics`" = "yes" ]; then
+            if [ "$(printConfig statistics)" = "yes" ]; then
                 printf "statistics "
             fi
-            if [ "`printConfig gPlazmaService`" = "yes" ]; then
+            if [ "$(printConfig gPlazmaService)" = "yes" ]; then
                 printf "gPlazma "
             fi
             ;;
     esac    
     
-    if [ -n "`getDomains pool`" ]; then
+    if [ -n "$(getDomains pool)" ]; then
 	printf "pool "
     fi
-    if [ "`printConfig replicaManager`" = "yes" ]; then
+    if [ "$(printConfig replicaManager)" = "yes" ]; then
         printf "replica "
     fi
-    if [ "`printConfig DCAP`" = "yes" ]; then
+    if [ "$(printConfig DCAP)" = "yes" ]; then
         printf "dcap "
     fi
-    if [ "`printConfig XROOTD`" = "yes" ]; then
+    if [ "$(printConfig XROOTD)" = "yes" ]; then
         printf "xrootd "
     fi	
-    if [ "`printConfig GRIDFTP`" = "yes" ]; then
+    if [ "$(printConfig GRIDFTP)" = "yes" ]; then
         printf "gridftp "
     fi
-    if [ "`printConfig GSIDCAP`" = "yes" ]; then
+    if [ "$(printConfig GSIDCAP)" = "yes" ]; then
         printf "gsidcap "
     fi
-    if [ "`printConfig SRM`" = "yes" ]; then
+    if [ "$(printConfig SRM)" = "yes" ]; then
         printf "srm "
     fi
 }
@@ -444,7 +444,7 @@ getDomains() # $1 = service
     case "$1" in
         dcap)
             for i in ${config}/door*Setup; do
-                door=`echo $i | sed -e "s#.*door\(.*\)Setup#\1#"`
+                door=$(echo $i | sed -e "s#.*door\(.*\)Setup#\1#")
                 printf "%s" "dcap${door}-${hostname}Domain "
             done 
             ;;
@@ -470,8 +470,8 @@ getDomains() # $1 = service
 	    ;;
 
 	pool)
-	    for i in `getAllPoolDomains`; do 
-                if ! isFileEmpty `getPoolListFile $i`; then
+	    for i in $(getAllPoolDomains); do 
+                if ! isFileEmpty $(getPoolListFile $i); then
                     printf "%s" "$i "
                 fi
             done
@@ -490,7 +490,7 @@ getDomains() # $1 = service
 # Prints all configured domains
 getAllDomains()
 {
-    for service in `getServices`; do
+    for service in $(getServices); do
         getDomains $service
     done
 }
@@ -522,7 +522,7 @@ run() # $1 = domain, $2 = action
 
     domain=$1
     action=$2
-    service=`getService $1`
+    service=$(getService $1)
 
     # Translate service name to name of control script
     case ${service} in
@@ -591,7 +591,7 @@ pidOfDomain() # $1 = Domain name
         return 1
     fi
       
-    pid=`cat ${pidFile}`
+    pid=$(cat ${pidFile})
     if ! isRunning ${pid}; then
         return 1
     fi
@@ -606,13 +606,13 @@ logOfDomain() # $1 = Domain name
     local domain
     
     domain=$1
-    case `getService ${domain}` in
+    case $(getService ${domain}) in
 	srm)
 	    # Getting the location of the SRM stuff is unfortunately 
             # somewhat messy...
 	    if [ -r ${ourHomeDir}/etc/srm_setup.env ] && [ -r ${ourHomeDir}/bin/dcache-srm ]; then
 		. ${ourHomeDir}/etc/srm_setup.env
-		eval `grep "export CATALINA_HOME" ${ourHomeDir}/bin/dcache-srm`
+		eval $(grep "export CATALINA_HOME" ${ourHomeDir}/bin/dcache-srm)
 		printf "%s" "${CATALINA_HOME}/logs/catalina.out"
 	    fi
 	    ;;
@@ -666,7 +666,7 @@ getPoolsInDomain() # $1 = Pool domain
 {
     local poolFile
 
-    poolFile=`getPoolListFile $1`
+    poolFile=$(getPoolListFile $1)
     if [ ! -f ${poolFile} ]; then
         printp "Pool file not found: ${poolFile}" 1>&2
         exit 4
@@ -749,7 +749,7 @@ stringToGiB() # $1 = size
 # Extracts the size of a pool in GiB.
 getSizeOfPool() # $1 = pool path
 {
-    stringToGiB `getPoolSetting ${path} set max diskspace`
+    stringToGiB $(getPoolSetting ${path} set max diskspace)
 }
 
 createPool() # $1 = size in GiB, $2 = path
@@ -760,7 +760,7 @@ createPool() # $1 = size in GiB, $2 = path
     local NUMBER_OF_MOVERS
     local set_size
     local set_movers
-    size=`stringToGiB $1`
+    size=$(stringToGiB $1)
     path=$2
 
     # Path must not exist
@@ -779,7 +779,7 @@ createPool() # $1 = size in GiB, $2 = path
 	exit 1
     fi 
 
-    NUMBER_OF_MOVERS=`printConfig NUMBER_OF_MOVERS`
+    NUMBER_OF_MOVERS=$(printConfig NUMBER_OF_MOVERS)
 
     mkdir -p ${path} ${path}/data ${path}/control || exit 2
 
@@ -804,7 +804,7 @@ addPool() # $1 = pool, $2 = path, $3 = domain, $4 = use fqdn, £5 = lfs
     local param
 
     pool=$1
-    path=`sanitisePath $2`
+    path=$(sanitisePath $2)
     domain=$3
     use_fqdn=$4
     lfs=$5
@@ -829,9 +829,9 @@ addPool() # $1 = pool, $2 = path, $3 = domain, $4 = use fqdn, £5 = lfs
     fi
 
     # Check that pool is not already a member of a domain
-    for d in `getAllPoolDomains`; do
+    for d in $(getAllPoolDomains); do
 	getPoolsInDomain $d | while read _pool _path _param; do
-	    if [ "$path" = "`sanitisePath $_path`" ]; then
+	    if [ "$path" = "$(sanitisePath $_path)" ]; then
 		printp "Pool ${path} already present in ${d}. 
                         Operation aborted." 1>&2
 		exit 1
@@ -857,8 +857,8 @@ addPool() # $1 = pool, $2 = path, $3 = domain, $4 = use fqdn, £5 = lfs
     fi
 
     # It must not be used for any other service
-    if ! contains $domain `getAllPoolDomains` ; then
-	if contains $domain `getAllDomains`; then
+    if ! contains $domain $(getAllPoolDomains) ; then
+	if contains $domain $(getAllDomains); then
 	    printp "${domain} is not a valid pool domain name, because 
                     the domain is already used for other purposes." 1>&2
 	    exit 1
@@ -885,7 +885,7 @@ addPool() # $1 = pool, $2 = path, $3 = domain, $4 = use fqdn, £5 = lfs
     fi
 
     # Add pool to domain
-    echo "$pool  $path  $param" >> `getPoolListFile $domain` || exit 2
+    echo "$pool  $path  $param" >> $(getPoolListFile $domain) || exit 2
 
     # Tell the user what we did
     printp "Added pool ${pool} in ${path} to ${domain}."\
@@ -902,7 +902,7 @@ removePool() # $1 = pool name
     pool=$1
 
     # Find the domain containing pool and remove the pool from it
-    for domain in `getAllPoolDomains`; do
+    for domain in $(getAllPoolDomains); do
 	getPoolsInDomain $domain | while read _pool _path _param; do
 	    if [ "$pool" = "$_pool" ]; then
                 # Check if domain is still running
@@ -915,7 +915,7 @@ removePool() # $1 = pool name
 		fi
 		
 	        # Remove pool from pool list file
-		pl=`getPoolListFile $domain`
+		pl=$(getPoolListFile $domain)
 		sed -i -e "/^${pool}.*/ d" ${pl} || exit 2
 		
 	        # Disable domain if empty
@@ -1020,7 +1020,7 @@ readSetup()
 #
 checkNodeType()
 {
-    case `printConfig NODE_TYPE` in	
+    case $(printConfig NODE_TYPE) in	
 	admin|door|custom|pool)
             # OK
 	    ;;
@@ -1040,12 +1040,12 @@ checkNodeType()
 # Sets the fqdn, hostname, and domainname variables
 determineHostName()
 {
-    case `uname` in
+    case $(uname) in
         SunOS)
-            fqdn=`/usr/lib/mail/sh/check-hostname |cut -d" " -f7`
+            fqdn=$(/usr/lib/mail/sh/check-hostname |cut -d" " -f7)
             ;;
         *)
-            fqdn=`hostname --fqdn`
+            fqdn=$(hostname --fqdn)
             ;;
     esac
 
@@ -1086,7 +1086,7 @@ fi
 case "$1" in
     start)
         shift
-        domains=`expandServiceAndDomainList $*`
+        domains=$(expandServiceAndDomainList $*)
 
         autoMountNameSpace
 
@@ -1099,9 +1099,9 @@ case "$1" in
 
     stop)
         shift
-        domains=`expandServiceAndDomainList $*`
+        domains=$(expandServiceAndDomainList $*)
 
-        for domain in `reverse $domains`; do
+        for domain in $(reverse $domains); do
             run $domain stop
         done
 
@@ -1110,9 +1110,9 @@ case "$1" in
 
     restart)
         shift
-        domains=`expandServiceAndDomainList $*`
+        domains=$(expandServiceAndDomainList $*)
 
-        for domain in `reverse $domains`; do
+        for domain in $(reverse $domains); do
             run $domain stop
         done
 
@@ -1122,18 +1122,18 @@ case "$1" in
         ;;
 
     status)
-        domains=`getAllDomains`
-        format="%-`max_width $domains`s %-10s%5s %s\n"
+        domains=$(getAllDomains)
+        format="%-$(max_width $domains)s %-10s%5s %s\n"
         printf "$format" "Domain" "Status" "Pid" "Log file"
         for domain in $domains; do
-            if pid=`pidOfDomain ${domain}`; then
+            if pid=$(pidOfDomain ${domain}); then
                 status="running"
             else
                 pid=""
                 status="stopped"
             fi
 
-            logFile=`logOfDomain ${domain}`
+            logFile=$(logOfDomain ${domain})
 	    if [ ! -f "${logFile}" ]; then
 		logFile=""
 	    fi
@@ -1144,8 +1144,8 @@ case "$1" in
 
     services)
 	printf "Service      Domains\n"
-	for service in `getServices`; do
-	    printf "%-13s%s\n" "${service}" "`getDomains ${service}`"
+	for service in $(getServices); do
+	    printf "%-13s%s\n" "${service}" "$(getDomains ${service})"
 	done
 	;;
 
@@ -1163,15 +1163,15 @@ case "$1" in
             ls)
                 [ $# -gt 0 ] && usage 1
 
-                domains=`getAllPoolDomains`
-                pools=`getAllPools $domains`
-                format="%-`max_width $pools`s %-`max_width $domains`s %-9s %7s%7s %s\n"
+                domains=$(getAllPoolDomains)
+                pools=$(getAllPools $domains)
+                format="%-$(max_width $pools)s %-$(max_width $domains)s %-9s %7s%7s %s\n"
                 printf "$format" "Pool" "Domain" "LFS" "Size" "Free" "Path"
                 for domain in $domains; do
                     getPoolsInDomain $domain | while read pool path param; do
-                        lfs=`echo $param | sed -n -e 's/.*lfs=\([^ ]*\).*/\1/p'`
+                        lfs=$(echo $param | sed -n -e 's/.*lfs=\([^ ]*\).*/\1/p')
 			if [ -f "${path}/setup" ]; then
-                            size=`getSizeOfPool ${path}`
+                            size=$(getSizeOfPool ${path})
 			    getFreeSpace ${path}
                             free=$RET
                             printf "$format" "$pool" "$domain" "$lfs" "$size" "$free" "$path"
@@ -1244,7 +1244,7 @@ case "$1" in
                     exit 1
                 fi
 
-                if ! pid=`pidOfDomain ${domain}`; then
+                if ! pid=$(pidOfDomain ${domain}); then
                     printp "Domain ${domain} is not running."
                     exit 1
                 fi
@@ -1267,9 +1267,9 @@ case "$1" in
                 ;;
 
             threads)
-                domains=`expandServiceAndDomainList $*`
+                domains=$(expandServiceAndDomainList $*)
                 for domain in $domains; do
-                    if pid=`pidOfDomain ${domain}`; then
+                    if pid=$(pidOfDomain ${domain}); then
                         if ! kill -s QUIT ${pid}; then
                             printp "Failed to dump stack traces. Likely
                                     the current user does not have the
