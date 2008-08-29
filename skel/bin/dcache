@@ -3,59 +3,6 @@
 # chkconfig: 2345 92 8
 # description: dCache init script
 
-# dcache start [DOMAIN] ...
-#
-#    Start specified or all domains (core + pools).
-#
-# dcache stop [DOMAIN] ...
-#
-#    Stop specified or all domains (core + pools).
-#
-# dcache restart [DOMAIN] ...
-#
-#    Restart specified or all domains (core + pools).
-#
-# dcache pool ls
-#  
-#    List all pools.
-#
-#    Pool            Domain               Size      Used    Path            
-#    westmalle_1     westmalleDomain      10000GiB  3121GiB /q/grid/dcache/pool/
-#
-# dcache pool add --domain=westmalleDomain westmalle_2 /q/grid/dcache/pool2/
-#
-#    Adding westmalle_2 to westmalleDomain. 
-#
-# dcache pool create 10000 /q/grid/dcache/pool2/
-#
-#    Creating new pool in /q/grid/dcache/pool2/
-#    Remember to add the pool to a domain using the 'pool add' command.
-#
-# dcache pool remove westmalle_2
-#
-#    Shutting down westmalle_2...done
-#    Pool westmalle_2 removed from dCache configuration. Files remain in
-#    /q/grid/dcache/pool2/
-#
-# dcache status
-#
-#    List all domains defined on this system and their current status.
-#    If possible even the cells inside, but that may be problematic
-#    without changes to the code. 
-#
-#    Domain          Status       Pid     Log file
-#    dCacheDomain    running      8312    /var/log/dCacheDomain.log
-#    statistics      running      8353    /var/log/statisticsDomain.log
-#
-# dcache services
-#
-#    List all services defined on this system.
-#
-#    Domain                     Service
-#    dCacheDomain               dcache
-#    GFTP-dcache-vm             gridftp
-#
-
 LOCK_FILE=/var/lock/subsys/dcache
 
 # Solaris doesn't have a POSIX compliant shell as /bin/sh. We
@@ -82,6 +29,8 @@ usage() # $1 = exit status
     echo "   -d=<path to dcache installation>   default is /opt/d-cache"
     echo    
     echo "Valid commands are:"
+    echo "   dump heap <domain> <file>"
+    echo "   dump threads [ <domain or service> ... ]"
     echo "   pool create <size> <directory>"
     echo "   pool add [ --fqdn ] [ --domain=<domain> ] <pool name> <directory>"
     echo "   pool ls"
@@ -1004,6 +953,36 @@ require() # $1 = executable
     done
 }
 
+# Sets the jmap variable such that it contains the command to invoke
+# the jmap utility. Exits if jmap could not be found.
+requireJmap()
+{
+    if [ -n "$jmap" ]; then
+        if [ ! -x "$jmap" ]; then
+            return 0
+        fi
+    else
+        jmap="$(dirname ${java})/jmap"
+        if [ -x "$jmap" ]; then
+            return 0
+        fi
+
+        if [ -n "$JAVA_HOME" ]; then
+            jmap="$JAVA_HOME/bin/jmap"
+            if [ -x "$jmap" ]; then
+                return 0
+            fi
+        fi
+    fi
+    
+    printp "Could not find the jmap command, part of the Java 6 JDK.
+            This command is required for producing a heap dump. Please
+            ensure that either jmap is in the path or update
+            dCacheSetup to point to its location." 1>&2 
+
+    exit 1
+}
+
 # Read dCacheSetup into variables. Terminates with exit value 1 if the
 # file cannot be read or fails basic sanity checks.
 readSetup()
@@ -1239,6 +1218,74 @@ case "$1" in
 		;;
         esac
 
+        ;;
+
+    dump)
+        shift
+
+        if [ $# -eq 0 ]; then
+            usage 1
+        fi
+
+	command=$1
+	shift
+
+        case "$command" in
+            heap)
+                [ $# -ne 2 ] && usage 1
+
+		domain=$1
+		file=$2
+
+                requireJmap
+
+                if [ -f ${file} ]; then
+                    printp "${file} already exists. Heap not dumped."
+                    exit 1
+                fi
+
+                if ! pid=`pidOfDomain ${domain}`; then
+                    printp "Domain ${domain} is not running."
+                    exit 1
+                fi
+                
+                if ! $jmap -dump:live,format=b,file=${file} ${pid}; then
+                    printp "Failed to dump the heap; please consult
+                            the previous error message for possible
+                            reasons." 1>&2
+                    exit 1
+                fi
+
+                if [ ! -f ${file} ]; then
+                    printp "Failed to dump the heap." 1>&2
+                    exit 1
+                fi
+
+                printp "The heap of domain ${domain} has been written to 
+                        ${file}. Notice that the file might contain 
+                        confidential information."
+                ;;
+
+            threads)
+                domains=`expandServiceAndDomainList $*`
+                for domain in $domains; do
+                    if pid=`pidOfDomain ${domain}`; then
+                        if ! kill -s QUIT ${pid}; then
+                            printp "Failed to dump stack traces. Likely
+                                    the current user does not have the
+                                    proper permissions." 1>&2
+                            exit 1
+                        fi
+                    fi
+                done
+
+                printp "Stack traces have been written to the log files."
+                ;;
+
+	    *)
+		usage 1
+		;;
+        esac
         ;;
 
     *)
