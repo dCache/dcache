@@ -111,6 +111,7 @@ import dmg.cells.nucleus.CellMessageAnswerable;
 
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PnfsId;
+import org.dcache.auth.AuthorizationRecord;
 import org.dcache.srm.ReserveSpaceCallbacks;
 
 import diskCacheV111.vehicles.PnfsCreateEntryMessage;
@@ -133,7 +134,7 @@ import java.net.InetAddress;
  * the process to continue
  */
 public class ReserveSpaceCompanion implements CellMessageAnswerable {
-    private DCacheUser user;
+    private AuthorizationRecord user;
     private  static final int NOT_WAITING_STATE=0;
     private  static final int WAITING_SPACE_MANAGER_RESPONSE_STATE=1;
     private  static final int RECEIVED_SPACE_MANAGER_RESPONSE_STATE=2;
@@ -181,7 +182,7 @@ public class ReserveSpaceCompanion implements CellMessageAnswerable {
     /** Creates a new instance of StageAndPinCompanion */
     
     private ReserveSpaceCompanion(
-    DCacheUser user,
+    AuthorizationRecord user,
     String path,
     ReserveSpaceCallbacks callbacks,
     long spaceSize,
@@ -287,7 +288,7 @@ public class ReserveSpaceCompanion implements CellMessageAnswerable {
     }
     
     public static void reserveSpace(
-    DCacheUser user,
+    AuthorizationRecord user,
     String path,
     ReserveSpaceCallbacks callbacks,
     String clientHost,

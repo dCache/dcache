@@ -134,6 +134,7 @@ import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageAnswerable;
 
 import diskCacheV111.util.PnfsId;
+import org.dcache.auth.AuthorizationRecord;
 import org.dcache.srm.SrmUseSpaceCallbacks;
 import diskCacheV111.services.space.message.Use;
 import diskCacheV111.services.space.SpaceException;
@@ -161,7 +162,7 @@ public class SrmMarkSpaceAsBeingUsedCompanion implements CellMessageAnswerable {
     private  static final int WAITING_SPACE_MANAGER_RESPONSE_STATE=1;
     private  static final int RECEIVED_SPACE_MANAGER_RESPONSE_STATE=2;
     private volatile int state = NOT_WAITING_STATE;
-    private DCacheUser user;
+    private AuthorizationRecord user;
     private long spaceToken;
     private String pnfPath;
     private long sizeInBytes;
@@ -206,7 +207,7 @@ public class SrmMarkSpaceAsBeingUsedCompanion implements CellMessageAnswerable {
     /** Creates a new instance of StageAndPinCompanion */
 
     private SrmMarkSpaceAsBeingUsedCompanion(
-    DCacheUser user,
+    AuthorizationRecord user,
     long spaceToken,
     String pnfPath,
     long sizeInBytes,
@@ -349,7 +350,7 @@ public class SrmMarkSpaceAsBeingUsedCompanion implements CellMessageAnswerable {
     }
 
     public static void markSpace(
-    DCacheUser user,
+    AuthorizationRecord user,
     long spaceToken,
     String pnfPath,
     long sizeInBytes,

@@ -9,8 +9,7 @@
 
 package org.dcache.auth;
 
-import java.util.Collection;
-import java.util.Collection;
+import java.util.List;
 import java.io.Serializable;
 import javax.persistence.Entity;
 import javax.persistence.Table;
@@ -26,6 +25,8 @@ import javax.persistence.OrderBy;
 //import static javax.persistence.FetchType.LAZY;
 import static javax.persistence.CascadeType.ALL;
 import static javax.persistence.FetchType.EAGER;
+import org.dcache.srm.SRMUser;
+import diskCacheV111.util.FQAN;
 /**
  *
  * @author Timur, Ted
@@ -33,7 +34,7 @@ import static javax.persistence.FetchType.EAGER;
 
 @Entity
 @Table(name="authrecord")
-public class AuthorizationRecord implements Serializable{
+public class AuthorizationRecord implements Serializable, SRMUser{
     /**
      *this is the id of the authorization record that is used as 
      * a primary key in the database
@@ -44,7 +45,7 @@ public class AuthorizationRecord implements Serializable{
     private String identity;
     private String name;
     private int uid;
-    private Collection<GroupList> groupLists;
+    private List<GroupList> groupLists;
     private int priority = 0;
     private String home = null;
     private String root = null;
@@ -104,11 +105,11 @@ public class AuthorizationRecord implements Serializable{
         targetEntity=GroupList.class,
         cascade = {ALL})
     @OrderBy //PK is assumed
-    public Collection<GroupList> getGroupLists() {
+    public List<GroupList> getGroupLists() {
         return groupLists;
     }
 
-    public void setGroupLists(Collection<GroupList> groupLists) {
+    public void setGroupLists(List<GroupList> groupLists) {
         this.groupLists = groupLists;
     }
     
@@ -208,4 +209,50 @@ public class AuthorizationRecord implements Serializable{
         return Integer.toHexString(hashCode());
     }
 
+    @Transient
+    public String getVoRole() {
+        
+        String primaryAttribute = getPrimaryAttribute();
+        if(primaryAttribute != null) {
+            return new FQAN(primaryAttribute).getRole();
+        }
+        return null;
+    }
+
+    public String getVoGroup() {
+        String primaryAttribute = getPrimaryAttribute();
+        if(primaryAttribute != null) {
+            return new FQAN(primaryAttribute).getGroup();
+        }
+        return null;
+    }
+
+    @Transient
+    protected String getPrimaryAttribute() {
+        GroupList primaryGroupList = getPrimaryGroupList();
+        if(primaryGroupList != null) {
+             return primaryGroupList.getAttribute();
+        }
+        return null;
+    }
+    
+    @Transient
+    protected GroupList getPrimaryGroupList() {
+        if(groupLists != null && !groupLists.isEmpty() ) {
+             return groupLists.get(0);
+        }
+        return null;
+    }
+    
+    @Transient
+    public int getGid() {
+        GroupList primaryGroupList = getPrimaryGroupList();
+        if(primaryGroupList != null) {
+             Group primaryGroup =  primaryGroupList.getPrimaryGroup();
+             if(primaryGroup != null) {
+                 return primaryGroup.getGid();
+             }
+        }
+        return -1;
+    }    
 }

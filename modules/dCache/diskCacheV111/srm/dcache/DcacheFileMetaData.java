@@ -89,6 +89,7 @@ COPYRIGHT STATUS:
 package diskCacheV111.srm.dcache;
 import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.util.PnfsId;
+import org.dcache.auth.AuthorizationRecord;
 import org.dcache.srm.SRMUser;
 import org.apache.log4j.Logger;
 /**
@@ -156,7 +157,7 @@ public class DcacheFileMetaData extends org.dcache.srm.FileMetaData {
     
     public  boolean isOwner(SRMUser user) {
         try {
-            return Integer.parseInt(owner) == ((DCacheUser) user).getUid();
+            return Integer.parseInt(owner) == ((AuthorizationRecord) user).getUid();
         } catch (NumberFormatException nfe) {
             logger.error("owner is not a number: "+owner,nfe);
             throw nfe;
@@ -168,7 +169,7 @@ public class DcacheFileMetaData extends org.dcache.srm.FileMetaData {
     
     public boolean isGroupMember(SRMUser user) {
         try {
-            return Integer.parseInt(group) == ((DCacheUser) user).getUid();
+            return Integer.parseInt(group) == ((AuthorizationRecord) user).getUid();
         } catch (NumberFormatException nfe) {
             logger.error("group is not a number: "+group,nfe);
             throw nfe;

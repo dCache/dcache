@@ -1,22 +1,5 @@
-// $Id$
+// $Id: AuthorizationMessage.java 1.25 2008-08-20 tdh Exp $
 // $Log: not supported by cvs2svn $
-// Revision 1.4  2005/01/25 05:17:31  timur
-// moving general srm stuff into srm repository
-//
-// Revision 1.3  2004/11/09 08:04:47  tigran
-// added SerialVersion ID
-//
-// Revision 1.2  2004/08/06 19:35:22  timur
-// merging branch srm-branch-12_May_2004 into the trunk
-//
-// Revision 1.1.2.4  2004/06/18 22:20:51  timur
-// adding sql database storage for requests
-//
-// Revision 1.1.2.3  2004/06/16 22:14:31  timur
-// copy works for mulfile request
-//
-// Revision 1.1.2.2  2004/06/15 22:15:42  timur
-// added cvs logging tags and fermi copyright headers at the top
 //
 
 /*
@@ -28,28 +11,28 @@ COPYRIGHT STATUS:
   and software for U.S. Government purposes.  All documents and software
   available from this server are protected under the U.S. and Foreign
   Copyright Laws, and FNAL reserves all rights.
- 
- 
+
+
  Distribution of the software available from this server is free of
  charge subject to the user following the terms of the Fermitools
  Software Legal Information.
- 
+
  Redistribution and/or modification of the software shall be accompanied
  by the Fermitools Software Legal Information  (including the copyright
  notice).
- 
+
  The user is asked to feed back problems, benefits, and/or suggestions
  about the software to the Fermilab Software Providers.
- 
- 
+
+
  Neither the name of Fermilab, the  URA, nor the names of the contributors
  may be used to endorse or promote products derived from this software
  without specific prior written permission.
- 
- 
- 
+
+
+
   DISCLAIMER OF LIABILITY (BSD):
- 
+
   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
   "AS IS" AND ANY EXPRESS OR IMPLIED  WARRANTIES, INCLUDING, BUT NOT
   LIMITED TO, THE IMPLIED  WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -62,10 +45,10 @@ COPYRIGHT STATUS:
   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT  OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE  POSSIBILITY OF SUCH DAMAGE.
- 
- 
+
+
   Liabilities of the Government:
- 
+
   This software is provided by URA, independent from its Prime Contract
   with the U.S. Department of Energy. URA is acting independently from
   the Government and in its own private capacity and is not acting on
@@ -75,120 +58,87 @@ COPYRIGHT STATUS:
   be liable for nor assume any responsibility or obligation for any claim,
   cost, or damages arising out of or resulting from the use of the software
   available from this server.
- 
- 
+
+
   Export Control:
- 
+
   All documents and software available from this server are subject to U.S.
   export control laws.  Anyone downloading information from this server is
   obligated to secure any necessary Government licenses before exporting
   documents or software obtained from this server.
  */
 
-/*
- * DCacheUser.java
- *
- * Created on December 26, 2002, 11:32 AM
- */
+package org.dcache.vehicles;
 
-package diskCacheV111.srm.dcache;
+import diskCacheV111.vehicles.AuthenticationMessage;
+import org.dcache.auth.AuthorizationRecord;
+import org.dcache.auth.GroupList;
+import org.dcache.auth.UserAuthBase;
+import org.dcache.auth.UserAuthRecord;
+import org.dcache.auth.Group;
 
-import org.ietf.jgss.GSSCredential;
+import java.util.List;
+import java.util.Random;
+import java.util.LinkedList;
 
-import org.dcache.srm.SRMUser;
-/**
- *
- * @author  timur
- */
+public class AuthorizationMessage {
 
+  AuthorizationRecord authrec;
+  static Random random;
+  static {
+    random = new Random();
+  }
+  long authRequestID;
 
-public class DCacheUser implements SRMUser {
-    private static long nextid=0;
-    
-    private long id;
-    private String name;
-    private String voGroup;
-    private String voRole;
-    private String root;
-    
-    private int uid=-1;
-    private int gid=-1;
-    private int priority;
-    
-    private static final long serialVersionUID = 9164781252174549638L;    
-    
-    /** Creates a new instance of User */
-    public DCacheUser(String name, String voGroup, String voRole, String root, int uid, int gid) {
-        synchronized(DCacheUser.class) {
-            id = nextid++;
-        }
-        
-        if(name == null || root == null) {
-            throw new IllegalArgumentException("name == null || root == null");
-        }
-        this.name = name;
-        this.voGroup = voGroup;
-        this.voRole = voRole;
-        this.root = root;
-        this.uid = uid;
-        this.gid = gid;
-        
-    }
-    
-    public String getName() {
-        return name;
-    }
-    
-    
-    
-    public String getRoot() {
-        return root;
-    }
-    
-    public String toString() {
-        return "User [name="+name+", uid="+ uid+", gid="+gid +", root="+root+"]";
-    }
-    
-    
-    public int getUid() {
-        return uid;
-    }
-    
-    public int getGid() {
-        return gid;
-    }
-    
-    public boolean equals(Object o) {
-        if(o == null || !(o instanceof DCacheUser)) {
-            return false;
-        }
-        DCacheUser u = (DCacheUser) o;
-        return uid == u.uid && gid == u.gid && name.equals(u.name) &&
-        root.equals(u.root);
-        
-    }
-    public int hashCode() {
-        return name.hashCode()^root.hashCode()^uid^gid;
-    }
+    public AuthorizationMessage(AuthenticationMessage authmsg) {
+    this.authrec = getAuthorizationRecord(authmsg);
+  }
 
-    public String getVoRole() {
-        return voRole;
-    }
+  /** Extract values from AuthenticationMessage and write in AuthorizationRecord
+  * @return A filled-in AuthorizationRecord.
+  */
+  private AuthorizationRecord  getAuthorizationRecord(AuthenticationMessage authmsg) {
+    AuthorizationRecord authrec = new AuthorizationRecord();
+    UserAuthBase legacyauthrec =  authmsg.getNextUserAuthRecord();
 
-    public String getVoGroup() {
-        return voGroup;
+    authrec.setId(random.nextLong());
+    authrec.setIdentity(legacyauthrec.Username);
+    authrec.setName(legacyauthrec.DN);
+    authrec.setUid(legacyauthrec.UID);
+    authrec.setPriority(legacyauthrec.priority);
+    authrec.setHome(legacyauthrec.Home);
+    authrec.setRoot(legacyauthrec.Root);
+    authrec.setReadOnly(legacyauthrec.ReadOnly);
+
+    List grplistcoll = new LinkedList<GroupList>();
+    while(legacyauthrec!=null) {
+      GroupList grplist = new GroupList();
+      List grpcoll = new LinkedList<Group>();
+      int[] GIDs = ((UserAuthRecord)legacyauthrec).GIDs;
+      for (int gid : GIDs) {
+        Group grp = new Group();
+        grp.setGroupList(grplist);
+        grp.setGid(gid);
+        grpcoll.add(grp);
+      }
+      grplist.setGroups(grpcoll);
+      grplist.setAttribute(legacyauthrec.getFqan().toString());
+      grplist.setAuthRecord(authrec);
+      grplistcoll.add(grplist);
+      authmsg.getUserAuthRecords().removeFirst();
+      legacyauthrec =  authmsg.getNextUserAuthRecord();
     }
-    
-    public long getId() {
-        return id;
-    }
-    
-    public int getPriority() {
-        return priority;
-    }
-    
-    public void setPriority(int priority) {
-        this.priority = priority;
-    }
-    
+    authrec.setGroupLists(grplistcoll);
+
+    this.authRequestID = authmsg.getAuthRequestID();
+    return authrec;
+  }
+
+  /** Return the value of the AuthorizationRecord.
+  * @return authrec.
+  */
+  public AuthorizationRecord  getAuthorizationRecord() {
+    return authrec;
+  }
+
 }

@@ -117,6 +117,7 @@ import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageAnswerable;
+import org.dcache.auth.AuthorizationRecord;
 import org.dcache.srm.SrmReleaseSpaceCallbacks;
 import diskCacheV111.services.space.message.Release;
 import diskCacheV111.vehicles.Message;
@@ -137,7 +138,7 @@ public class SrmReleaseSpaceCompanion implements CellMessageAnswerable {
     private  static final int WAITING_SPACE_MANAGER_RESPONSE_STATE=1;
     private  static final int RECEIVED_SPACE_MANAGER_RESPONSE_STATE=2;
     private volatile int state = NOT_WAITING_STATE;
-    private DCacheUser user;
+    private AuthorizationRecord user;
     private long spaceToken; 
     private Long spaceToReleaseInBytes;
     private SrmReleaseSpaceCallbacks callbacks;
@@ -179,7 +180,7 @@ public class SrmReleaseSpaceCompanion implements CellMessageAnswerable {
     /** Creates a new instance of StageAndPinCompanion */
     
     private SrmReleaseSpaceCompanion(
-    DCacheUser user,
+    AuthorizationRecord user,
     long spaceToken, 
     Long spaceToReleaseInBytes, 
     SrmReleaseSpaceCallbacks callbacks,
@@ -275,7 +276,7 @@ public class SrmReleaseSpaceCompanion implements CellMessageAnswerable {
     }
     
     public static void releaseSpace(
-    DCacheUser user,
+    AuthorizationRecord user,
     long spaceToken, 
     Long spaceToReleaseInBytes,
     SrmReleaseSpaceCallbacks callbacks,

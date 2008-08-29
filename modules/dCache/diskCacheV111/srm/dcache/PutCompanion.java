@@ -81,6 +81,7 @@ import dmg.cells.nucleus.CellMessageAnswerable;
 
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PnfsId;
+import org.dcache.auth.AuthorizationRecord;
 import org.dcache.srm.util.OneToManyMap;
 import org.dcache.srm.PrepareToPutCallbacks;
 import org.dcache.srm.FileMetaData;
@@ -136,7 +137,7 @@ public class PutCompanion implements CellMessageAnswerable {
     private boolean recursive_directory_creation;
     private java.util.List pathItems=null;
     private int current_dir_depth = -1;
-    private DCacheUser user;
+    private AuthorizationRecord user;
     private boolean overwrite;
     private String fileId;
     private FileMetaData fileFMD;
@@ -162,7 +163,7 @@ public class PutCompanion implements CellMessageAnswerable {
     }
     /** Creates a new instance of StageAndPinCompanion */
     
-    private PutCompanion(DCacheUser user,
+    private PutCompanion(AuthorizationRecord user,
     String path,
     PrepareToPutCallbacks callbacks,
     CellAdapter cell,
@@ -567,7 +568,7 @@ public class PutCompanion implements CellMessageAnswerable {
         }
     }
     
-    public static void PrepareToPutFile(DCacheUser user,
+    public static void PrepareToPutFile(AuthorizationRecord user,
     String path,
     PrepareToPutCallbacks callbacks,
     CellAdapter cell,

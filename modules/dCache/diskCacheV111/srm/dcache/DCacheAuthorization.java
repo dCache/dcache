@@ -140,7 +140,10 @@ COPYRIGHT STATUS:
 package diskCacheV111.srm.dcache;
 
 import diskCacheV111.util.KAuthFile;
+import org.dcache.auth.AuthorizationRecord;
 import org.dcache.auth.UserAuthRecord;
+import org.dcache.auth.GroupList;
+import org.dcache.auth.Group;
 import org.dcache.srm.SRMAuthorization;
 import org.dcache.srm.SRMAuthorizationException;
 import java.util.Iterator;
@@ -153,12 +156,20 @@ import dmg.cells.nucleus.CellAdapter;
 import org.apache.log4j.Logger;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.Random;
+import java.util.List;
+import java.util.LinkedList;
 
 /**
  *
  * @author  timur
  */
 public final class DCacheAuthorization implements SRMAuthorization {
+    
+      static Random random;
+      static {
+        random = new Random();
+      }
     
     private static  org.apache.log4j.Logger _logAuth =
              org.apache.log4j.Logger.getLogger(
@@ -199,7 +210,7 @@ public final class DCacheAuthorization implements SRMAuthorization {
         String secureId,String name, GSSContext gsscontext)
     throws SRMAuthorizationException {
 
-        UserAuthRecord user_rec = null;
+        AuthorizationRecord user_rec = null;
         if( _logAuth.isDebugEnabled() ) {
                 _logAuth.debug("authorize " + requestCredentialId + ":"+
                     secureId+":"+
@@ -212,10 +223,10 @@ public final class DCacheAuthorization implements SRMAuthorization {
             }
 
 
-          TimedUserAuthRecord tUserRec = getUsernameMapping(requestCredentialId);
+          TimedAuthorizationRecord tUserRec = getUsernameMapping(requestCredentialId);
             if( _logAuth.isDebugEnabled() ) {
               if(tUserRec != null ) {
-                  UserAuthRecord userRec = tUserRec.user_rec;
+                  AuthorizationRecord userRec = tUserRec.user_rec;
                   if(userRec != null ) {
                      _logAuth.debug("cached tUserRec = "+userRec);
                   } else {
@@ -228,7 +239,7 @@ public final class DCacheAuthorization implements SRMAuthorization {
 
           if( tUserRec!=null && tUserRec.age() < cache_lifetime &&
             tUserRec.sameDesiredUserName(name)) {
-              user_rec = tUserRec.getUserAuthRecord();
+              user_rec = tUserRec.getAuthorizationRecord();
           }
         }
 
@@ -241,7 +252,7 @@ public final class DCacheAuthorization implements SRMAuthorization {
         }
 
           if(cache_lifetime>0) {
-              putUsernameMapping(requestCredentialId, new TimedUserAuthRecord(user_rec, name));
+              putUsernameMapping(requestCredentialId, new TimedAuthorizationRecord(user_rec, name));
           }
         }
 
@@ -249,60 +260,25 @@ public final class DCacheAuthorization implements SRMAuthorization {
         if(user_rec==null) {
           throw new SRMAuthorizationException("username is null");
         }
-        String username = user_rec.Username;
-        String root = user_rec.Root;
-        int uid = user_rec.UID;
-        int gid = user_rec.GID;
-        String voGroup=null;
-        String voRole=null;
-        try {
-            voGroup = user_rec.getGroup();
-            voRole = user_rec.getRole();
-        }
-        catch (Exception e){
-            
-        }
-        if(voGroup == null) {
-            voGroup = username;
-        }
- /*       JobCreator creator = JobCreator.getJobCreator(username);
-        if(creator != null) {
-            if( ! (creator instanceof DCacheUser) ) {
-                throw new SRMAuthorizationException(" job creator with name "+username+
-                " exists and is not an instance of dcache user!!!");
-            }
-            DCacheUser user = (DCacheUser) creator;
-            if ( username.equals( user.getName()) &&
-                 root.equals(user.getRoot()) &&
-                 uid == user.getUid() &&
-                 gid == user.getGid() &&
-                 voGroup.equals(user.getVoGroup()) &&
-                 (voRole==null || voRole.equals(user.getVoRole()))){
-                return user;
-            }
-           _logAuth.error(" Warning: user parameters for user "+ user+ " have changed ");
-        }
-  */
-        DCacheUser user = new DCacheUser(username,voGroup,voRole,root,uid,gid);
-        //user.saveCreator();
-        return user;
+        return user_rec;
         
     }
     
-    private UserAuthRecord authorize(String secureId,String name)
+    private AuthorizationRecord authorize(String secureId,String name)
     throws SRMAuthorizationException {
         
         if(name==null) {
             name = getUserNameByGlobusId(secureId);
         }
-        UserAuthRecord userRecord = getUserRecord(name,secureId);
-        return userRecord;
+        UserAuthRecord legacyauthrec = getUserRecord(name,secureId);
+        AuthorizationRecord authrec = convertLegacyToNewAuthRec(legacyauthrec);
+        return authrec;
     }
 	
-    private UserAuthRecord authorize(GSSContext serviceContext,String name)
+    private AuthorizationRecord authorize(GSSContext serviceContext,String name)
     throws SRMAuthorizationException {
         AuthorizationService authServ = null;
-        UserAuthRecord authRecord = null;
+        AuthorizationRecord authRecord = null;
         try {
              authServ = new AuthorizationService(gplazmaPolicyFilePath, parentcell);
         }
@@ -314,7 +290,8 @@ public final class DCacheAuthorization implements SRMAuthorization {
         if (use_gplazmaAuthzCell) {
           authServ.setDelegateToGplazma(delegate_to_gplazma);
           try {
-            authRecord = (UserAuthRecord) authServ.authenticate(serviceContext, new CellPath("gPlazma"), parentcell).getUserAuthBase();
+            authRecord =  (AuthorizationRecord) authServ.getAuthorization(serviceContext, new CellPath("gPlazma"), parentcell).getAuthorizationRecord(); 
+            //    (UserAuthRecord) authServ.authenticate(serviceContext, new CellPath("gPlazma"), parentcell).getUserAuthBase();
           } catch (AuthorizationServiceException ase) {
             if(!use_gplazmaAuthzModule) {
               throw new SRMAuthorizationException(ase.getMessage());
@@ -327,7 +304,10 @@ public final class DCacheAuthorization implements SRMAuthorization {
         if (authRecord==null && use_gplazmaAuthzModule) {
           try {
              Iterator<UserAuthRecord> recordsIter = authServ.authorize(serviceContext, name, null, null).iterator();
-             authRecord = recordsIter.hasNext() ? recordsIter.next() : null;
+             UserAuthRecord oldAuthRecord = recordsIter.hasNext() ? recordsIter.next() : null;
+             if(oldAuthRecord != null ) {
+                 authRecord = convertLegacyToNewAuthRec(oldAuthRecord);
+             }
           }
           catch(Exception ee) {
              ee.printStackTrace();
@@ -414,30 +394,30 @@ public final class DCacheAuthorization implements SRMAuthorization {
     cache_lifetime = lifetime;
   }
 
-  private synchronized void putUsernameMapping(Object key, TimedUserAuthRecord tUserRec) {
+  private synchronized void putUsernameMapping(Object key, TimedAuthorizationRecord tUserRec) {
     UsernameMap.put(key, tUserRec);
 }
 
-  private synchronized TimedUserAuthRecord getUsernameMapping(Object key) {
-    return (TimedUserAuthRecord) UsernameMap.get(key);
+  private synchronized TimedAuthorizationRecord getUsernameMapping(Object key) {
+    return (TimedAuthorizationRecord) UsernameMap.get(key);
   }
 
-  private class TimedUserAuthRecord  {
-    UserAuthRecord user_rec;
+  private class TimedAuthorizationRecord  {
+    AuthorizationRecord user_rec;
     long timestamp;
     String desiredUserName=null;
 
-    TimedUserAuthRecord(UserAuthRecord user_rec) {
+    TimedAuthorizationRecord(AuthorizationRecord user_rec) {
       this.user_rec=user_rec;
       this.timestamp=System.currentTimeMillis();
     }
 
-    TimedUserAuthRecord(UserAuthRecord user_rec, String desiredUserName) {
+    TimedAuthorizationRecord(AuthorizationRecord user_rec, String desiredUserName) {
       this(user_rec);
       this.desiredUserName=desiredUserName;
     }
 
-    private UserAuthRecord getUserAuthRecord() {
+    private AuthorizationRecord getAuthorizationRecord() {
       return user_rec;
     }
 
@@ -449,5 +429,39 @@ public final class DCacheAuthorization implements SRMAuthorization {
       if(desiredUserName==null && requestDesiredUserName==null) return true;
       return (desiredUserName.equals(requestDesiredUserName));
     }
+  }
+  
+  
+  public static AuthorizationRecord convertLegacyToNewAuthRec(
+      UserAuthRecord legacyAuthRec) {
+        AuthorizationRecord authRec = new AuthorizationRecord();
+
+        authRec.setId(random.nextLong());
+        authRec.setIdentity(legacyAuthRec.Username);
+        authRec.setName(legacyAuthRec.DN);
+        authRec.setUid(legacyAuthRec.UID);
+        authRec.setPriority(legacyAuthRec.priority);
+        authRec.setHome(legacyAuthRec.Home);
+        authRec.setRoot(legacyAuthRec.Root);
+        authRec.setReadOnly(legacyAuthRec.ReadOnly);
+
+        List grplistcoll = new LinkedList<GroupList>();
+        GroupList grplist = new GroupList();
+        List grpcoll = new LinkedList<Group>();
+        int[] GIDs = ((UserAuthRecord) legacyAuthRec).GIDs;
+        for (int gid : GIDs) {
+            Group grp = new Group();
+            grp.setGroupList(grplist);
+            grp.setGid(gid);
+            grpcoll.add(grp);
+        }
+        grplist.setGroups(grpcoll);
+        grplist.setAttribute(legacyAuthRec.getFqan().toString());
+        grplist.setAuthRecord(authRec);
+        grplistcoll.add(grplist);
+        authRec.setGroupLists(grplistcoll);
+
+        return authRec;
+
   }
 }

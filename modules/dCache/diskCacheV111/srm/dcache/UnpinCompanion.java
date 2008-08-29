@@ -104,6 +104,7 @@ import diskCacheV111.util.PnfsId;
 //import diskCacheV111.vehicles.PoolSetStickyMessage;
 import diskCacheV111.vehicles.PinManagerUnpinMessage;
 import diskCacheV111.vehicles.Message;
+import org.dcache.auth.AuthorizationRecord;
 import org.dcache.srm.UnpinCallbacks;
 
 /**
@@ -127,7 +128,7 @@ public class UnpinCompanion implements CellMessageAnswerable {
     private UnpinCallbacks callbacks;
     private CellMessage request = null;
     private String fileId;
-    private DCacheUser user;
+    private AuthorizationRecord user;
     
     private void say(String words_of_wisdom) {
         if(cell!=null) {
@@ -142,7 +143,7 @@ public class UnpinCompanion implements CellMessageAnswerable {
     }
     /** Creates a new instance of StageAndPinCompanion */
     
-    private UnpinCompanion(DCacheUser user, String fileId, UnpinCallbacks callbacks, CellAdapter cell) {
+    private UnpinCompanion(AuthorizationRecord user, String fileId, UnpinCallbacks callbacks, CellAdapter cell) {
         this.user = user;
         this.fileId = fileId;
         this.cell = cell;
@@ -216,7 +217,7 @@ public class UnpinCompanion implements CellMessageAnswerable {
     }
     
     public static void unpinFile(
-            DCacheUser user,
+            AuthorizationRecord user,
             String fileId,
             String pinId,
             UnpinCallbacks callbacks,
@@ -259,7 +260,7 @@ public class UnpinCompanion implements CellMessageAnswerable {
     }
     
     public static void unpinFileBySrmRequestId(
-            DCacheUser user,
+            AuthorizationRecord user,
             String fileId,
             long  srmRequestId,
             UnpinCallbacks callbacks,

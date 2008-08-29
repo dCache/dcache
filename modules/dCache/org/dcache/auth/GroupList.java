@@ -8,7 +8,7 @@
  */
 
 package org.dcache.auth;
-import java.util.Collection;
+import java.util.List;
 import java.io.Serializable;
 import javax.persistence.Entity;
 import javax.persistence.Inheritance;
@@ -36,7 +36,7 @@ import static javax.persistence.CascadeType.ALL;
 public class GroupList implements Serializable{
     private long id;
     private String attribute;
-    private Collection<Group> groups;
+    private List<Group> groups;
     
     
     /**
@@ -77,11 +77,11 @@ public class GroupList implements Serializable{
         targetEntity=Group.class,
         cascade = {ALL})
     @OrderBy //PK is assumed
-    public Collection<Group> getGroups() {
+    public List<Group> getGroups() {
         return groups;
     }
 
-    public void setGroups(Collection<Group> groups) {
+    public void setGroups(List<Group> groups) {
         this.groups = groups;
     }
 
@@ -122,7 +122,15 @@ public class GroupList implements Serializable{
         return sb.toString();       
     }
     
- public String hashCodeString() {
+    public String hashCodeString() {
          return Integer.toHexString(hashCode());
+    }
+    
+    @Transient
+    public Group getPrimaryGroup() {
+        if(groups != null && ! groups.isEmpty()  ) {
+            return groups.get(0);
+        }
+        return null;
     }
 }

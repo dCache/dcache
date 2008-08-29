@@ -91,6 +91,7 @@ import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.PnfsGetFileMetaDataMessage;
 import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.PnfsDeleteEntryMessage;
+import org.dcache.auth.AuthorizationRecord;
 import org.dcache.srm.RemoveFileCallbacks;
 import org.dcache.srm.FileMetaData;
 import diskCacheV111.util.CacheException;
@@ -113,7 +114,7 @@ public class RemoveFileCompanion implements CellMessageAnswerable {
 	private String path;
 	private PnfsId pnfsId;
 	private String      poolName = null ;
-	private DCacheUser user;
+	private AuthorizationRecord user;
 	
 	private void say(String words_of_wisdom) {
 		if (cell!=null) {
@@ -138,7 +139,7 @@ public class RemoveFileCompanion implements CellMessageAnswerable {
 		return tmp.substring(tmp.lastIndexOf('.'),tmp.length()-1);
 	}
     
-	private RemoveFileCompanion(DCacheUser user,
+	private RemoveFileCompanion(AuthorizationRecord user,
 				    String path,
 				    RemoveFileCallbacks callbacks,
 				    CellAdapter cell) { 
@@ -148,7 +149,7 @@ public class RemoveFileCompanion implements CellMessageAnswerable {
 		this.callbacks = callbacks;
 	}
 	
-	public static void removeFile(DCacheUser user,
+	public static void removeFile(AuthorizationRecord user,
 				      String path,
 				      RemoveFileCallbacks callbacks,
 				      CellAdapter cell, 

@@ -93,6 +93,7 @@ import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.PoolMgrQueryPoolsMsg;
 import diskCacheV111.vehicles.PnfsSetFileMetaDataMessage;
 import diskCacheV111.vehicles.PnfsGetCacheLocationsMessage;
+import org.dcache.auth.AuthorizationRecord;
 import org.dcache.srm.SrmCancelUseOfSpaceCallbacks;
 import org.dcache.srm.SrmReleaseSpaceCallbacks;
 import org.dcache.srm.SrmUseSpaceCallbacks;
@@ -100,7 +101,7 @@ import org.dcache.srm.SrmUseSpaceCallbacks;
 import org.dcache.srm.util.Configuration;
 //import org.dcache.srm.util.PnfsFileId;
 //import org.dcache.srm.security.DCacheAuthorization;
-//import org.dcache.srm.security.DCacheUser;
+//import org.dcache.srm.security.AuthorizationRecord;
 import org.dcache.srm.security.SslGsiSocketFactory;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.vehicles.PnfsDeleteEntryMessage;
@@ -1105,64 +1106,6 @@ public class Storage
         return sb.toString();
     }
 
-    public String fh_reserve= " This is a function for testing space reservation\n"+
-            " it will be removed when space reservation client becomes available"+
-            " Syntax: reserve <voGroup> <voRole> <size> <lifetime> <accessLatency>" +
-            " <retentionPolicy> <description> ";
-    public String hh_reserve= " <voGroup> <voRole> <size> <lifetime> <accessLatency>" +
-            " <retentionPolicy> <description> ";
-    public String ac_reserve_$_7(Args args) {
-        String voGroup=args.argv(0);
-        String voRole = args.argv(1);
-        DCacheUser duser = new DCacheUser("timur",voGroup,
-                voRole,
-                "/pnfs/fnal.gov/usr/cms/WAX",
-                10401,
-                1530);
-        long sizeInBytes = Long.parseLong(args.argv(2));
-        long reservationLifetime = Long.parseLong(args.argv(3));
-        String accessLatency = args.argv(4);
-        String retentionPolicy = args.argv(5);
-        String description = args.argv(6);
-        srmReserveSpace(duser,
-                sizeInBytes,
-                reservationLifetime,
-                retentionPolicy,
-                accessLatency,
-                description,
-                new org.dcache.srm.SrmReserveSpaceCallbacks(){
-            public void ReserveSpaceFailed(String reason){
-                esay("admin command SrmReserveSpace failed: "+reason);
-                pin("admin command SrmReserveSpace failed: "+reason);
-            }
-
-            public void NoFreeSpace(String reason){
-                esay("admin command SrmReserveSpace failed: NoFreeSpace: "+reason);
-                pin("admin command SrmReserveSpace failed: NoFreeSpace:"+reason);
-            }
-
-            public void SpaceReserved(String spaceReservationToken,
-                long reservedSpaceSize){
-                esay("admin command SrmReserveSpace succeded:");
-                esay("token ="+spaceReservationToken+" reservationSize="+
-                    reservedSpaceSize);
-                pin("admin command SrmReserveSpace succeded:");
-                pin("token ="+spaceReservationToken+" reservationSize="+
-                    reservedSpaceSize);
-
-            }
-
-            public void ReserveSpaceFailed(Exception e){
-                esay("admin command SrmReserveSpace failed: ");
-                esay(e);
-                pin("admin command SrmReserveSpace failed: ");
-                pin(e.toString());
-            }
-
-        });
-        return " request submitted, watch logs and pins";
-    }
-
     public String fh_set_job_priority= " Syntax: set priority <requestId> <priority>"+
             "will set priority for the requestid";
     public String hh_set_job_priority=" <requestId> <priority>";
@@ -1753,7 +1696,7 @@ public class Storage
         long requestId,
         PinCallbacks callbacks) {
         DcacheFileMetaData dfmd = (DcacheFileMetaData) fmd;
-        PinCompanion.pinFile((DCacheUser)user,
+        PinCompanion.pinFile((AuthorizationRecord)user,
             fileId,
             clientHost,
             callbacks, dfmd, pinLifetime, requestId, this);
@@ -1762,14 +1705,14 @@ public class Storage
     public void unPinFile(SRMUser user,String fileId,
             UnpinCallbacks callbacks,
             String pinId) {
-        UnpinCompanion.unpinFile((DCacheUser)user, fileId, pinId, callbacks,this);
+        UnpinCompanion.unpinFile((AuthorizationRecord)user, fileId, pinId, callbacks,this);
     }
 
 
     public void unPinFileBySrmRequestId(SRMUser user,String fileId,
             UnpinCallbacks callbacks,
             long srmRequestId) {
-        UnpinCompanion.unpinFileBySrmRequestId((DCacheUser)user, fileId, srmRequestId, callbacks,this);
+        UnpinCompanion.unpinFileBySrmRequestId((AuthorizationRecord)user, fileId, srmRequestId, callbacks,this);
     }
 
 
@@ -1984,7 +1927,7 @@ public class Storage
         }
         String user_root = null;
         if(user != null) {
-            DCacheUser duser = (DCacheUser) user;
+            AuthorizationRecord duser = (AuthorizationRecord) user;
             user_root = duser.getRoot();
             if(user_root != null) {
                 user_root =new FsPath(user_root).toString();
@@ -2017,7 +1960,7 @@ public class Storage
         }
         String user_root = null;
         if(user != null) {
-            DCacheUser duser = (DCacheUser) user;
+            AuthorizationRecord duser = (AuthorizationRecord) user;
             user_root = duser.getRoot();
             if(user_root != null) {
                 user_root =new FsPath(user_root).toString();
@@ -2355,7 +2298,7 @@ public class Storage
                     "] is not a subpath of user's root ");
         }
         GetFileInfoCompanion.getFileInfo(
-                (DCacheUser)user,
+                (AuthorizationRecord)user,
                 actualPnfsPath,
                 callbacks,
                 this);
@@ -2371,7 +2314,7 @@ public class Storage
             boolean overwrite) {
         String actualPnfsPath = srm_root+"/"+filePath;
         PutCompanion.PrepareToPutFile(
-                (DCacheUser)user,
+                (AuthorizationRecord)user,
                 actualPnfsPath,
                 callbacks,
                 this,
@@ -2408,9 +2351,9 @@ public class Storage
         dfmd.getFmd().setLastAccessedTime(time);
         dfmd.getFmd().setLastModifiedTime(time);
 
-        DCacheUser duser = null;
-        if (user != null && user instanceof DCacheUser) {
-                duser = (DCacheUser) user;
+        AuthorizationRecord duser = null;
+        if (user != null && user instanceof AuthorizationRecord) {
+                duser = (AuthorizationRecord) user;
         }
 
 // 		_pnfs.pnfsSetFileMetaData(dfmd.getPnfsId(),dfmd.getFmd());
@@ -2474,9 +2417,9 @@ public class Storage
             DcacheFileMetaData dfmd = (DcacheFileMetaData)parentFMD;
             parent_util_fmd = dfmd.getFmd();
         }
-        DCacheUser duser = null;
-        if (user != null && user instanceof DCacheUser) {
-            duser = (DCacheUser) user;
+        AuthorizationRecord duser = null;
+        if (user != null && user instanceof AuthorizationRecord) {
+            duser = (AuthorizationRecord) user;
         }
         FsPath parent_path = new FsPath(absolute_path);
         parent_path.add("..");
@@ -2758,7 +2701,7 @@ public class Storage
         String actualToFilePath = srm_root+"/"+toFilePath;
         long id = getNextMessageID();
         say("localCopy for user "+ user+"from actualFromFilePath to actualToFilePath");
-        DCacheUser duser = (DCacheUser)user;
+        AuthorizationRecord duser = (AuthorizationRecord)user;
         CopyManagerMessage copyRequest =
                 new CopyManagerMessage(
                 duser.getUid(),
@@ -2906,7 +2849,7 @@ public class Storage
 
         String actualPnfsPath= srm_root+"/"+path;
         AdvisoryDeleteCompanion.advisoryDelete(
-                (DCacheUser)user,
+                (AuthorizationRecord)user,
                 actualPnfsPath,
                 callbacks,
                 this,
@@ -2920,7 +2863,7 @@ public class Storage
         say("Storage.removeFile");
         String actualPnfsPath= srm_root+"/"+path;
         RemoveFileCompanion.removeFile(
-                (DCacheUser)user,
+                (AuthorizationRecord)user,
                 actualPnfsPath,
                 callbacks,
                 this,
@@ -2931,7 +2874,7 @@ public class Storage
     public void removeDirectory(final SRMUser user,
             final Vector tree)  throws SRMException {
         say("Storage.removeDirectory");
-        DCacheUser duser = (DCacheUser) user;
+        AuthorizationRecord duser = (AuthorizationRecord) user;
         for (Iterator i = tree.iterator(); i.hasNext();) {
             String path= (String)i.next();
             String actualPnfsPath= srm_root+"/"+path;
@@ -3011,7 +2954,7 @@ public class Storage
         //                                          +-- can write YES : NO
         //                                                         |     +-- exception
         //                                                         +-- create PnfsEntry
-        DCacheUser duser = (DCacheUser) user;
+        AuthorizationRecord duser = (AuthorizationRecord) user;
         String actualPnfsPath= srm_root+"/"+directory;
         PnfsGetStorageInfoMessage  storageInfoMessage  =null;
         PnfsGetFileMetaDataMessage fileMetadataMessage =null;
@@ -3152,7 +3095,7 @@ public class Storage
 			  final String from,
 			  final String to)  throws SRMException {
         say("Storage.moveEntry");
-        DCacheUser duser = (DCacheUser) user;
+        AuthorizationRecord duser = (AuthorizationRecord) user;
         String actualFromPnfsPath= srm_root+"/"+from;
         String actualToPnfsPath= srm_root+"/"+to;
         FsPath fromFsPath           = new FsPath(actualFromPnfsPath);
@@ -3469,10 +3412,10 @@ public class Storage
             return false;
         }
 
-        if(user == null || (!(user instanceof DCacheUser))) {
+        if(user == null || (!(user instanceof AuthorizationRecord))) {
             return false;
         }
-        DCacheUser duser = (DCacheUser) user;
+        AuthorizationRecord duser = (AuthorizationRecord) user;
 
         if(duser.getGid() == gid && Permissions.groupCanRead(permissions)) {
             return true;
@@ -3506,10 +3449,10 @@ public class Storage
             return false;
         }
 
-        if(user == null || (!(user instanceof DCacheUser))) {
+        if(user == null || (!(user instanceof AuthorizationRecord))) {
             return false;
         }
-        DCacheUser duser = (DCacheUser) user;
+        AuthorizationRecord duser = (AuthorizationRecord) user;
 
         if(duser.getGid() == gid && Permissions.groupCanRead(permissions)) {
             return true;
@@ -3553,7 +3496,7 @@ public class Storage
             return false;
         }
 
-        DCacheUser duser = (DCacheUser) user;
+        AuthorizationRecord duser = (AuthorizationRecord) user;
         boolean canWrite;
         if(fileId == null) {
             canWrite = true;
@@ -3568,7 +3511,7 @@ public class Storage
                canWrite = true;
             } else if(uid == -1 || gid == -1) {
                canWrite = false;
-            } else  if(user == null || (!(user instanceof DCacheUser))) {
+            } else  if(user == null || (!(user instanceof AuthorizationRecord))) {
                canWrite = false;
             } else  if(duser.getGid() == gid &&
                     Permissions.groupCanWrite(permissions) ) {
@@ -3593,7 +3536,7 @@ public class Storage
            parentCanWrite = true;
         } else if(parentUid == -1 || parentGid == -1) {
            parentCanWrite = false;
-        } else  if(user == null || (!(user instanceof DCacheUser))) {
+        } else  if(user == null || (!(user instanceof AuthorizationRecord))) {
            parentCanWrite = false;
         } else  if(duser.getGid() == parentGid &&
                 Permissions.groupCanWrite(parentPermissions) &&
@@ -3634,10 +3577,10 @@ public class Storage
             return false;
         }
 
-        if(user == null || (!(user instanceof DCacheUser))) {
+        if(user == null || (!(user instanceof AuthorizationRecord))) {
             return false;
         }
-        DCacheUser duser = (DCacheUser) user;
+        AuthorizationRecord duser = (AuthorizationRecord) user;
 
 
         if(duser.getGid() == gid &&
@@ -3773,7 +3716,7 @@ public class Storage
         }
 
         if(remoteTURL.startsWith("gsiftp://")) {
-            DCacheUser duser = (DCacheUser)user;
+            AuthorizationRecord duser = (AuthorizationRecord)user;
 
             //call this for the sake of checking that user is reading
             // from the "root" of the user
@@ -4025,7 +3968,7 @@ public class Storage
             String filename,
             String host,
             ReserveSpaceCallbacks callbacks){
-        DCacheUser duser = (DCacheUser) user;
+        AuthorizationRecord duser = (AuthorizationRecord) user;
         String absolute_path = srm_root+"/"+filename;
         ReserveSpaceCompanion.reserveSpace(duser,
                 absolute_path,
@@ -4053,7 +3996,7 @@ public class Storage
      */
     public void releaseSpace( SRMUser user, long spaceSize, String spaceToken,
         ReleaseSpaceCallbacks callbacks){
-        DCacheUser duser = (DCacheUser) user;
+        AuthorizationRecord duser = (AuthorizationRecord) user;
         ReleaseSpaceCompanion.releaseSpace(spaceToken,spaceSize,callbacks,this);
 
     }
@@ -4071,7 +4014,7 @@ public class Storage
      */
     public void releaseSpace( SRMUser user,  String spaceToken,
         ReleaseSpaceCallbacks callbacks){
-        DCacheUser duser = (DCacheUser) user;
+        AuthorizationRecord duser = (AuthorizationRecord) user;
         ReleaseSpaceCompanion.releaseSpace(spaceToken,callbacks,this);
 
     }
@@ -4179,7 +4122,7 @@ public class Storage
         PnfsGetStorageInfoMessage storageInfoMessage =null;
         PnfsGetFileMetaDataMessage metadataMessage = null;
         PnfsId pnfsId;
-        DCacheUser duser = (DCacheUser) user;
+        AuthorizationRecord duser = (AuthorizationRecord) user;
 
         try {
             storageInfoMessage = _pnfs.getStorageInfoByPath(actualPath);
@@ -4268,7 +4211,7 @@ public class Storage
         if(!util_fmd.isDirectory())  {
             throw new SRMException("pnfsPath is not a directory!");
         }
-        DCacheUser duser = (DCacheUser) user;
+        AuthorizationRecord duser = (AuthorizationRecord) user;
         try {
             if(!permissionHandler.dirCanRead(
                     duser.getUid(),
@@ -4320,7 +4263,7 @@ public class Storage
         if(!util_fmd.isDirectory())  {
             throw new SRMException("pnfsPath is not a directory!");
         }
-        DCacheUser duser = (DCacheUser) user;
+        AuthorizationRecord duser = (AuthorizationRecord) user;
         try {
             if(!permissionHandler.dirCanRead(
                     duser.getUid(),
@@ -4348,7 +4291,7 @@ public class Storage
             String accessLatency,
             String description,
             SrmReserveSpaceCallbacks callbacks) {
-        DCacheUser duser = (DCacheUser) user;
+        AuthorizationRecord duser = (AuthorizationRecord) user;
 
         SrmReserveSpaceCompanion.reserveSpace(
                 duser,
@@ -4374,7 +4317,7 @@ public class Storage
             return;
         }
 
-        DCacheUser duser = (DCacheUser) user;
+        AuthorizationRecord duser = (AuthorizationRecord) user;
         SrmReleaseSpaceCompanion.releaseSpace(duser,
                 longSpaceToken,
                 releaseSizeInBytes,
@@ -4397,7 +4340,7 @@ public class Storage
             return;
         }
 
-        DCacheUser duser = (DCacheUser) user;
+        AuthorizationRecord duser = (AuthorizationRecord) user;
         String actualFilePath = srm_root+"/"+fileName;
         SrmMarkSpaceAsBeingUsedCompanion.markSpace(
                 duser,
@@ -4422,7 +4365,7 @@ public class Storage
             callbacks.CancelUseOfSpaceFailed("invalid space token="+spaceToken);
             return;
         }
-        DCacheUser duser = (DCacheUser) user;
+        AuthorizationRecord duser = (AuthorizationRecord) user;
         String actualFilePath = srm_root+"/"+fileName;
         SrmUnmarkSpaceAsBeingUsedCompanion.unmarkSpace(
                 duser,
@@ -4676,7 +4619,7 @@ public class Storage
      */
     public String[] srmGetSpaceTokens(SRMUser user, String description)
         throws SRMException {
-        DCacheUser duser = (DCacheUser) user;
+        AuthorizationRecord duser = (AuthorizationRecord) user;
         say("srmGetSpaceTokens ("+description+")");
        GetSpaceTokens getTokens = new GetSpaceTokens(duser.getVoGroup(),
            duser.getVoRole(),description);
@@ -4767,11 +4710,11 @@ public class Storage
                 "User is not authorized to modify this file");
         }
 
-        if(user == null || (!(user instanceof DCacheUser))) {
+        if(user == null || (!(user instanceof AuthorizationRecord))) {
             throw new SRMAuthorizationException(
                 "User is not authorized to modify this file");
         }
-        DCacheUser duser = (DCacheUser) user;
+        AuthorizationRecord duser = (AuthorizationRecord) user;
 
         if(duser.getGid() == gid && Permissions.groupCanWrite(permissions)) {
             return -1;
