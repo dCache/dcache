@@ -20,8 +20,8 @@ elif [ "$(uname)" = "SunOS" ]; then
     fi
 fi
 
-# Prints help screen
-usage() # $1 = exit status
+# Prints help screen and exits with error status 2
+usage() 
 {
     echo "Usage: $(basename $0) [OPTION]... COMMAND"
     echo 
@@ -45,8 +45,8 @@ usage() # $1 = exit status
     echo "for powers of 1024. Size is rounded down to the nearest integer "
     echo "number of GiB."
 #    echo "   version"
-    exit $1
-}
+    exit 2
+} 1>&2
 
 # Returns true if $1 is contained as a word in $2.
 contains() # $1 = word, $2 = list
@@ -124,6 +124,16 @@ printp() # $* = list of paragraphs
     done
 }
 
+# Prints an error message to stderr and exist with status $1
+fail() # $1 = exit status, $2- = list of paragraphs, see printp
+{
+    local n
+    n=$1
+    shift
+    printp "$@"
+    exit $n
+} 1>&2
+
 # Returns 0 if the given file is empty, 1 otherwise. The file must
 # exist.
 isFileEmpty() # $1 = file
@@ -194,7 +204,7 @@ parseOptions() # $1 = list of valid options
 		    rest=${option#?}       # Strip leading character
 		    name=${option%${rest}} # Strip the rest to get name
 		    if ! contains $name $valid; then
-			usage 1
+			usage
 		    fi
 
 		    option=${rest}
@@ -212,7 +222,7 @@ parseOptions() # $1 = list of valid options
 	esac
 
 	if ! contains $name $valid; then
-	    usage 1
+	    usage
 	fi
 
 	eval "opt_${name}=${value}"
@@ -274,20 +284,18 @@ autoMountNameSpace()
         getConfig NODE_TYPE; NODE_TYPE=$RET
 	if [ "$NODE_TYPE" = admin ]; then
 	    if ! df ${PNFS_ROOT}/fs 2>/dev/null | grep -v "$PNFS_ROOT" > /dev/null; then
-		printp "[ERROR] ${PNFS_ROOT}/fs mount point exists, but is
+		fail 1 "${PNFS_ROOT}/fs mount point exists, but is
                         not mounted. Make sure pnfs is running on this 
-                        admin node. Exiting."
-		exit 1
+                        admin node."
 	    fi
 	elif isEnabled GRIDFTP || isEnabled SRM ; then
 	    if ! df ${PNFS_ROOT}/${SERVER_ID} 2>/dev/null | grep "$PNFS_ROOT" > /dev/null; then
 		getConfig ADMIN_NODE; ADMIN_NODE=$RET
 		if [ -z "$ADMIN_NODE" ] || [ "$ADMIN_NODE" = myAdminNode ]; then
-		    printp "[ERROR] pnfs not mounted on 
+		    fail 1 "PNFS not mounted on 
                             ${PNFS_ROOT}/${SERVER_ID}/ and ADMIN_NODE in 
                             etc/node_config or etc/door_config not set
-                            properly. Exiting."
-		    exit 1
+                            properly."
 		fi
 
                 # Solaris specific fix
@@ -303,9 +311,8 @@ autoMountNameSpace()
 		printp "${PNFS_ROOT}/${SERVER_ID}/ not mounted - going to mount it now."
 		mount -o intr,rw,noac,hard,${NFSVERS}=2 $ADMIN_NODE:/pnfsdoors ${PNFS_ROOT}/${SERVER_ID}
 		if ! df ${PNFS_ROOT}/${SERVER_ID} 2>/dev/null | grep "$PNFS_ROOT"; then
-		    printp "[ERROR] Still not mounted. Apparently no pnfs 
-                            server running on admin node $ADMIN_NODE. Exiting."
-		    exit 1
+		    fail 1 "Still not mounted. Apparently no PNFS
+                            server running on admin node $ADMIN_NODE."
 		fi
 	    fi
 	fi	
@@ -572,11 +579,10 @@ run() # $1 = domain, $2 = action
     esac
 
     if [ ! -x $program ]; then
-	printp "$program not found. The dCache domain $domain is 
+	fail 1 "$program not found. The dCache domain $domain is 
                 probably not configured on this host. If you recently
                 configured it, then you may need to rerun the 
-                install.sh script to enable it." 1>&2
-	exit 1
+                install.sh script to enable it."
     fi
 
     case ${service} in
@@ -785,8 +791,7 @@ createPool() # $1 = size in GiB, $2 = path
 
     # Path must not exist
     if [ -e ${path} ]; then
-	printp "${path} already exists. Operation aborted." 1>&2
-	exit 1
+	fail 1 "${path} already exists. Operation aborted."
     fi
 
     # We need to have enough free space
@@ -794,9 +799,8 @@ createPool() # $1 = size in GiB, $2 = path
     ds=$RET
 
     if [ "${ds}" -lt "${size}" ]; then
-	printp "Pool size exceeds available space. ${path} only 
-                has ${ds} GiB of free space. Operation aborted." 1>&2
-	exit 1
+	fail 1 "Pool size exceeds available space. ${path} only 
+                has ${ds} GiB of free space. Operation aborted."
     fi 
 
     # Why does node_config contain default values for new pools? That
@@ -805,11 +809,11 @@ createPool() # $1 = size in GiB, $2 = path
     # which is not the case! 
     getConfig NUMBER_OF_MOVERS; NUMBER_OF_MOVERS=$RET
 
-    mkdir -p ${path} ${path}/data ${path}/control || exit 2
+    mkdir -p ${path} ${path}/data ${path}/control || exit 1
 
     set_size="s:set max diskspace 100g:set max diskspace ${size}g:g"
     set_movers="s:mover set max active 10:mover set max active ${NUMBER_OF_MOVERS}:g"
-    sed -e "$set_size" -e "$set_movers" ${config}/setup.temp > ${path}/setup || exit 2
+    sed -e "$set_size" -e "$set_movers" ${config}/setup.temp > ${path}/setup || exit 1
 
     printp "Created a $size GiB pool in $path. The pool cannot be used
             until it has been added to a domain. Use 'pool add' to do so."\
@@ -837,36 +841,31 @@ addPool() # $1 = pool, $2 = path, $3 = domain, $4 = use fqdn, £5 = lfs
 
     # Check that LFS mode is valid
     if ! contains $lfs none precious hsm volatile transient; then
-        printp "Invalid LFS mode." 1>&2
-        exit 1
+        fail 2 "Invalid LFS mode." 
     fi
 
     # Check that path is absolute
     if [ "${path#/}" = "${path}" ]; then
-	printp "$path does not appear to be an absolute path. In order
-                to add the pool, the absolute path is needed." 1>&2
-	exit 1
+	fail 2 "$path does not appear to be an absolute path. In order
+                to add the pool, the absolute path is needed." 
     fi
 
     # Check that pool exists
     if [ ! -f ${path}/setup ]; then
-	printp "No pool found in ${path}. Operation aborted." 1>&2
-	exit 1
+	fail 1 "No pool found in ${path}. Operation aborted." 
     fi
 
     # Check that pool is not already a member of a domain
     for d in $(getAllPoolDomains); do
 	getPoolsInDomain $d | while read _pool _path _param; do
 	    if [ "$path" = "$(sanitisePath $_path)" ]; then
-		printp "Pool ${path} already present in ${d}. 
-                        Operation aborted." 1>&2
-		exit 1
+		fail 1 "Pool ${path} already present in ${d}. 
+                        Operation aborted." 
 	    fi
 
 	    if [ "$pool" = "$_pool" ]; then
-		printp "Pool name already used in ${d}. Operation 
-                        aborted." 1>&2
-		exit 1
+		fail 1 "Pool name already used in ${d}. Operation 
+                        aborted."
 	    fi
 	done
 	if [ $? -eq 1 ]; then 
@@ -876,27 +875,25 @@ addPool() # $1 = pool, $2 = path, $3 = domain, $4 = use fqdn, £5 = lfs
 
     # A pool domain must have an ending of 'Domain'
     if [ "${domain%Domain}Domain" != "${domain}" ]; then
-	printp "${domain} is not a valid pool domain name, because 
+	fail 2 "${domain} is not a valid pool domain name, because 
                 it does not end with 'Domain'. You may try to use 
-                ${domain}Domain." 1>&2
-	exit 1
+                ${domain}Domain."
     fi
 
     # It must not be used for any other service
     if ! contains $domain $(getAllPoolDomains) ; then
 	if contains $domain $(getAllDomains); then
-	    printp "${domain} is not a valid pool domain name, because 
-                    the domain is already used for other purposes." 1>&2
-	    exit 1
+	    fail 1 "${domain} is not a valid pool domain name, because 
+                    the domain is already used for other purposes." 
 	fi
     fi
 
     # Create the domain if it doesn't already exist
     file=${config}/${hostname}.domains
     if [ ! -f $file ]; then
-	echo "${domain%Domain}" >> $file || exit 2
+	echo "${domain%Domain}" >> $file || exit 1
     elif ! grep "${domain%Domain}" $file > /dev/null; then
-	echo "${domain%Domain}" >> $file || exit 2
+	echo "${domain%Domain}" >> $file || exit 1
     fi
 
     # Determine pool parameters
@@ -911,7 +908,7 @@ addPool() # $1 = pool, $2 = path, $3 = domain, $4 = use fqdn, £5 = lfs
     fi
 
     # Add pool to domain
-    echo "$pool  $path  $param" >> $(getPoolListFile $domain) || exit 2
+    echo "$pool  $path  $param" >> $(getPoolListFile $domain) || exit 1
 
     # Tell the user what we did
     printp "Added pool ${pool} in ${path} to ${domain}."\
@@ -933,28 +930,27 @@ removePool() # $1 = pool name
 	    if [ "$pool" = "$_pool" ]; then
                 # Check if domain is still running
 		if pidOfDomain ${domain}; then
-		    printp "A pool named $pool was found in the domain 
+		    fail 1 "A pool named $pool was found in the domain 
                             $domain. $domain is still running. Shut it 
                             down before removing the pool from the 
-                            configuration. Operation aborted." 1>&2
-		    exit 1
+                            configuration. Operation aborted."
 		fi
 		
 	        # Remove pool from pool list file
 		pl=$(getPoolListFile $domain)
-		sed -i -e "/^${pool}.*/ d" ${pl} || exit 2
+		sed -i -e "/^${pool}.*/ d" ${pl} || exit 1
 		
 	        # Disable domain if empty
 		if isFileEmpty $pl; then
-		    rm $pl || exit 2
-		    sed -i -e "/^${domain%Domain}\$/ d" ${config}/${hostname}.domains || exit 2
+		    rm $pl || exit 1
+		    sed -i -e "/^${domain%Domain}\$/ d" ${config}/${hostname}.domains || exit 1
 		    printp "Removed pool ${pool} from ${domain}. ${domain}
                             is now empty and has been removed."
 		else
 		    printp "Removed pool ${pool} from ${domain}."
 		fi
 
-		exit 1
+		exit 0
 	    fi
 	done	
 	if [ $? -eq 1 ]; then 
@@ -962,8 +958,7 @@ removePool() # $1 = pool name
 	fi
     done
 
-    printp "No pool named ${pool} could be found. Operation aborted." 1>&2
-    exit 1
+    fail 1 "No pool named ${pool} could be found. Operation aborted." 
 }
 
 # Searches for executables and exists with an error message if any of
@@ -973,8 +968,7 @@ require() # $1 = executable
     local tool
     for tool in $*; do 
 	if ! type ${tool} > /dev/null 2>&1; then
-	    printp "Could not find ${tool}. ${tool} is a required tool." 1>&2
-	    exit 1
+	    fail 1 "Could not find ${tool}. ${tool} is a required tool."
 	fi 
     done
 }
@@ -1001,12 +995,10 @@ requireJmap()
         fi
     fi
     
-    printp "Could not find the jmap command, part of the Java 6 JDK.
+    fail 1 "Could not find the jmap command, part of the Java 6 JDK.
             This command is required for producing a heap dump. Please
             ensure that either jmap is in the path or update
-            dCacheSetup to point to its location." 1>&2 
-
-    exit 1
+            dCacheSetup to point to its location."
 }
 
 # Read dCacheSetup into variables. Terminates with exit value 1 if the
@@ -1016,24 +1008,21 @@ readSetup()
     if [ -r ${ourHomeDir}/config/dCacheSetup ]; then
         . ${ourHomeDir}/config/dCacheSetup
     else
-        printp "${ourHomeDir}/config/dCacheSetup does not exist. You have
-            to install and setup dCache before you can use this
-            script." 1>&2
-        exit 1
+        fail 1 "${ourHomeDir}/config/dCacheSetup does not exist. You have
+                to install and setup dCache before you can use this
+                script."
     fi
 
     # Sanitycheck for serviceLocatorHost
     if [ -z "${serviceLocatorHost}" ] || [ "${serviceLocatorHost}" = "SERVER" ]; then
-        printp "[ERROR] The variable 'serviceLocatorHost' in 
-            ${ourHomeDir}/config/dCacheSetup has to be set properly. Exiting."
-        exit 1
+        fail 1 "The variable 'serviceLocatorHost' in 
+                ${ourHomeDir}/config/dCacheSetup has to be set properly."
     fi
     
     # Sanitycheck for java
     if [ -z "${java}" ] || [ ! -x "${java}" ] || ! ${java} -version 2>&1 | egrep -e 'version "1\.[56]' >/dev/null ; then
-        printp "[ERROR] The variable 'java' in ${ourHomeDir}/config/dCacheSetup
-            has to be set to a Java VM version 1.5 or 1.6. Exiting."
-        exit 1
+        fail 1 "The variable 'java' in ${ourHomeDir}/config/dCacheSetup
+                has to be set to a Java VM version 5 or 6."
     fi
 }
 
@@ -1053,13 +1042,11 @@ checkNodeType()
 	    ;;
 	dummy)
 	    # not specified
-	    echo "[ERROR] ${ourHomeDir}/etc/node_config not configured. Exiting."
-	    exit 1		
+	    fail 1 "${ourHomeDir}/etc/node_config not configured."
 	    ;;
 	*)
 	    # bad value
-	    echo "[ERROR] ${ourHomeDir}/etc/node_config missing or not useful. Exiting."
-	    exit 2
+	    fail 1 "${ourHomeDir}/etc/node_config missing or not useful."
 	    ;;
     esac
 }
@@ -1091,7 +1078,7 @@ shift $?
 ourHomeDir=${opt_d:-/opt/d-cache}
 
 if [ $# -eq 0 ]; then
-    usage 1
+    usage
 fi
 
 # Check prerequisites
@@ -1184,7 +1171,7 @@ case "$1" in
         shift
 
         if [ $# -eq 0 ]; then
-            usage 1
+            usage
         fi
 
 	command=$1
@@ -1192,7 +1179,7 @@ case "$1" in
 
         case "$command" in
             ls)
-                [ $# -gt 0 ] && usage 1
+                [ $# -gt 0 ] && usage
 
                 domains=$(getAllPoolDomains)
                 pools=$(getAllPools $domains)
@@ -1220,7 +1207,7 @@ case "$1" in
                 ;;
 
 	    create)
-                [ $# -ne 2 ] && usage 1
+                [ $# -ne 2 ] && usage
 
 		size=$1
 		path=$2
@@ -1232,7 +1219,7 @@ case "$1" in
 		parseOptions "domain fqdn lfs" $*
 		shift $?
 
-                [ $# -ne 2 ] && usage 1
+                [ $# -ne 2 ] && usage
 		pool=$1
 		path=$2
 
@@ -1240,13 +1227,13 @@ case "$1" in
 		;;
 
             remove)
-                [ $# -ne 1 ] && usage 1
+                [ $# -ne 1 ] && usage
 		pool=$1
 		removePool ${pool}
                 ;;
 
 	    *)
-		usage 1
+		usage
 		;;
         esac
 
@@ -1256,7 +1243,7 @@ case "$1" in
         shift
 
         if [ $# -eq 0 ]; then
-            usage 1
+            usage 
         fi
 
 	command=$1
@@ -1264,7 +1251,7 @@ case "$1" in
 
         case "$command" in
             heap)
-                [ $# -ne 2 ] && usage 1
+                [ $# -ne 2 ] && usage
 
 		domain=$1
 		file=$2
@@ -1272,26 +1259,24 @@ case "$1" in
                 requireJmap
 
                 if [ -f ${file} ]; then
-                    printp "${file} already exists. Heap not dumped."
-                    exit 1
+                    fail 1 "${file} already exists. Heap not dumped."
                 fi
 
                 if ! pidOfDomain ${domain}; then
-                    printp "Domain ${domain} is not running."
-                    exit 1
+                    fail 1 "Domain ${domain} is not running."
                 fi
                 pid=$RET
                 
                 if ! $jmap -dump:live,format=b,file=${file} ${pid}; then
-                    printp "Failed to dump the heap; please consult
+                    fail 1 "Failed to dump the heap; please consult
                             the previous error message for possible
-                            reasons." 1>&2
-                    exit 1
+                            reasons."
                 fi
 
                 if [ ! -f ${file} ]; then
-                    printp "Failed to dump the heap." 1>&2
-                    exit 1
+                    fail 1 "Failed to dump the heap; please consult
+                            the previous error message for possible
+                            reasons."
                 fi
 
                 printp "The heap of domain ${domain} has been written to 
@@ -1304,10 +1289,9 @@ case "$1" in
                 for domain in $domains; do
                     if pidOfDomain ${domain}; then
                         if ! kill -s QUIT ${RET}; then
-                            printp "Failed to dump stack traces. Likely
+                            fail 1 "Failed to dump stack traces. Likely
                                     the current user does not have the
-                                    proper permissions." 1>&2
-                            exit 1
+                                    proper permissions."
                         fi
                     fi
                 done
@@ -1316,13 +1300,13 @@ case "$1" in
                 ;;
 
 	    *)
-		usage 1
+		usage
 		;;
         esac
         ;;
 
     *)
-        usage 1
+        usage
         ;;
 esac
 
