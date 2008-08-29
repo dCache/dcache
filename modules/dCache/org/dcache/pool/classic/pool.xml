@@ -19,7 +19,6 @@
         allowCleaningPreciousFiles=false
         poolupDestination=PoolManager
         lfs=none
-        sticky=allowed
         pnfsmanager=PnfsManager
         flushMessageTarget=broadcast
       </value>
@@ -43,8 +42,6 @@
               value="4"/>
     <property name="poolUpDestination" 
               value="${poolupDestination}"/>
-    <property name="stickyAllowed" 
-              value="${sticky}"/>
     <property name="allowCleaningPreciousFiles" 
               value="${allowCleaningPreciousFiles}"/>
     <property name="LFSMode" 
@@ -88,8 +85,6 @@
     </constructor-arg>
   </bean>
 
-  <!-- TODO: When isPermanent is true, we should use 
-       diskCacheV111.pools.DummySpaceSweeper instead! -->
   <bean id="sweeper" class="diskCacheV111.pools.SpaceSweeper2">
     <constructor-arg ref="pnfs"/>
     <constructor-arg ref="legacy-repository"/>

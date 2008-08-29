@@ -87,7 +87,6 @@ public class HsmStorageHandler2
     private long _maxRestoreRun = _maxRuntime;
     private long _maxRemoveRun = _maxRuntime;
     private int _maxLines = 200;
-    private boolean _stickyAllowed  = false;
     private String _cellName;
     private String _domainName;
 
@@ -207,11 +206,6 @@ public class HsmStorageHandler2
         if (removeTimeout > 0) _maxRemoveRun = removeTimeout;
     }
 
-    public synchronized void setStickyAllowed(boolean sticky)
-    {
-        _stickyAllowed = sticky;
-    }
-
     public synchronized void setMaxActiveRestores(int restores)
     {
         _fetchQueue.setMaxActiveJobs(restores);
@@ -232,7 +226,6 @@ public class HsmStorageHandler2
     {
         pw.println("StorageHandler ["+this.getClass().getName()+"]");
         pw.println("  Version         : [$Id: HsmStorageHandler2.java,v 1.47 2007-10-26 11:17:06 behrmann Exp $]");
-        pw.println(" Sticky allowed   : "+_stickyAllowed);
         pw.println(" Restore Timeout  : "+(_maxRestoreRun/1000L));
         pw.println("   Store Timeout  : "+(_maxStoreRun/1000L));
         pw.println("  Remove Timeout  : "+(_maxRemoveRun/1000L));
@@ -431,7 +424,6 @@ public class HsmStorageHandler2
             super(pnfsId);
             String address = _cellName + "@" + _domainName;
             _infoMsg = new StorageInfoMessage(address, pnfsId, true);
-
             _infoMsg.setStorageInfo(storageInfo);
 
             long fileSize = storageInfo.getFileSize();
@@ -443,22 +435,18 @@ public class HsmStorageHandler2
 
             _infoMsg.setFileSize(fileSize);
 
-            StickyRecord sticky = null;
-            String value = storageInfo.getKey("flag-s");
-            if (value != null && value.length() > 0) {
-                if (_stickyAllowed) {
-                    say("setting sticky bit of " + pnfsId);
-                    sticky = new StickyRecord("system", -1);
-                } else {
-                    say(pnfsId.toString() + " : setting sticky denied");
-                }
-            }
+//             StickyRecord sticky = null;
+//             String value = storageInfo.getKey("flag-s");
+//             if (value != null && value.length() > 0) {
+//                 say("setting sticky bit of " + pnfsId);
+//                 sticky = new StickyRecord("system", -1);
+//             }
 
             _handle = _repository.createEntry(pnfsId,
                                               storageInfo,
                                               EntryState.FROM_STORE,
                                               EntryState.CACHED,
-                                              sticky);
+                                              null);
         }
 
         @Override

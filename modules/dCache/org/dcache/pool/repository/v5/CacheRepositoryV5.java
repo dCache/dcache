@@ -700,8 +700,6 @@ public class CacheRepositoryV5
 
     public synchronized void getInfo(PrintWriter pw)
     {
-//         pw.println("Storage Mode      : "
-//                    + (DUMMY_SWEEPER.isInstance(_sweeper) ? "Static" : "Dynamic"));
         pw.println("Check Repository  : " + _checkRepository);
 
         SpaceRecord space = getSpaceRecord();

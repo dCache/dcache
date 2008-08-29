@@ -184,7 +184,6 @@ public class PoolV4
     private HsmStorageHandler2 _storageHandler;
     private boolean _crashEnabled = false;
     private String _crashType = "exception";
-    private boolean _allowSticky = false;
     private long _gap = 4L * 1024L * 1024L * 1024L;
     private int _lfsMode = LFS_NONE;
     private int _p2pFileMode = P2P_CACHED;
@@ -206,22 +205,9 @@ public class PoolV4
 
     //
     // arguments :
-    // MPP2 <poolBasePath> no default
-    // [-version=<version>] : default : 4
-    // [-sticky=allowed|denied] ; default : denied
     // [-recover-space[=no]] : default : no
     // [-recover-control[=no]] : default : no
-    // [-lfs=none|precious|volatile] : default : none
-    // [-p2p=<p2pFileMode>] : default : cached
-    // [-poolManager=<name>] : default : PoolManager
-    // [-poolupDestination=<name>] : default : PoolManager
-    // [-billing=<name>] : default : billing
-    // [-setupManager=<name>] : default : none
-    // [-dupRequest=none|ignore|refresh]: default : ignore
-    // [-allowCleaningPreciousFiles] : default : false
-    // [-checkRepository] : default : true
-    // [-replicateOnArrival[=[Manager],[host],[mode]]] : default :
-    // PoolManager,thisHost,keep
+    // [-recover-anyway[=no]] : default : no
     //
     public PoolV4(String poolName, String args)
     {
@@ -286,18 +272,6 @@ public class PoolV4
     public void setVersion(int version)
     {
         _version = version;
-    }
-
-    public void setStickyAllowed(boolean sticky)
-    {
-        _allowSticky = sticky;
-        if (_storageHandler != null)
-            _storageHandler.setStickyAllowed(sticky);
-    }
-
-    public void setStickyAllowed(String sticky)
-    {
-        setStickyAllowed("allowed".equals(sticky));
     }
 
     public void setReplicateOnArrival(String replicate)
@@ -400,7 +374,6 @@ public class PoolV4
     public void setStorageHandler(HsmStorageHandler2 handler)
     {
         _storageHandler = handler;
-        _storageHandler.setStickyAllowed(_allowSticky);
     }
 
     public void setHSMSet(HsmSet set)
@@ -786,7 +759,6 @@ public class PoolV4
     public void printSetup(PrintWriter pw)
     {
         pw.println("set heartbeat " + _pingThread.getHeartbeat());
-        pw.println("set sticky " + (_allowSticky ? "allowed" : "denied"));
         pw.println("set report remove " + (_reportOnRemovals ? "on" : "off"));
         pw.println("set breakeven " + _breakEven);
         if (_suppressHsmLoad)
@@ -824,8 +796,6 @@ public class PoolV4
         pw.println("Revision          : [$Revision$]");
         pw.println("Version           : " + getCellVersion() + " (Sub="
                    + _version + ")");
-        pw.println("StickyFiles       : "
-                   + (_allowSticky ? "allowed" : "denied"));
         pw.println("Gap               : " + _gap);
         pw.println("Report remove     : " + (_reportOnRemovals ? "on" : "off"));
         pw.println("Recovery          : "
@@ -1800,11 +1770,6 @@ public class PoolV4
     public PoolSetStickyMessage messageArrived(PoolSetStickyMessage msg)
         throws CacheException
     {
-        if (msg.isSticky() && !_allowSticky) {
-            throw new CacheException(101,
-                                     "making sticky denied by pool " + _poolName);
-        }
-
         try {
             _repository.setSticky(msg.getPnfsId(),
                                   msg.getOwner(),
@@ -2318,19 +2283,10 @@ public class PoolV4
 
     }
 
-    public String hh_set_sticky = "allowed|denied";
+    public String hh_set_sticky = "# Deprecated";
     public String ac_set_sticky_$_0_1(Args args)
     {
-        if (args.argc() > 0) {
-            String mode = args.argv(0);
-            if (mode.equals("allowed")) {
-                setStickyAllowed(true);
-            } else if (mode.equals("denied")) {
-                setStickyAllowed(false);
-            } else
-                throw new IllegalArgumentException("set sticky allowed|denied");
-        }
-        return "Sticky Bit " + (_allowSticky ? "allowed" : "denied");
+        return "The command is deprecated and has no effect";
     }
 
     public String hh_set_max_diskspace = "<space>[<unit>] # unit = k|m|g";
