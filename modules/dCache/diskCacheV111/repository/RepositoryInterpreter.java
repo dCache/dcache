@@ -9,10 +9,14 @@ import java.util.* ;
 import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellMessage;
 import org.dcache.pool.repository.StickyRecord;
+import org.apache.log4j.Logger;
 
 public class RepositoryInterpreter {
     private CellAdapter _cell;
     private CacheRepository _repository;
+    private static Logger _log =
+    Logger.getLogger("logger.org.dcache.repository");
+
     public RepositoryInterpreter(CellAdapter cell, CacheRepository repository)
     {
         _cell = cell;
@@ -341,6 +345,7 @@ public class RepositoryInterpreter {
        CacheRepositoryEntry entry = _repository.getEntry( pnfsId ) ;
        int client = 0 ;
        if( forced || entry.isCached() ){
+           _log.error("Repository Interpreter: removing "+pnfsId+" by admin request");
            boolean rc = _repository.removeEntry( _repository.getEntry(pnfsId) ) ;
            return rc ? ( "Removed "+pnfsId ) : ( "Failed to remove "+pnfsId) ;
        }else if( entry.isPrecious() ){

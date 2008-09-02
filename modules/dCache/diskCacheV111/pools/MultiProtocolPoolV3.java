@@ -1499,6 +1499,7 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
             if (failed) {
                 try {
                     if (_create) {
+                        esay("prepare job failed, removing created entry "+_pnfsId);
                         _entry.lock(false);
                         _repository.removeEntry(_entry);
                     }
@@ -2267,7 +2268,7 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
                 if (!infoChecksum.equals(fileChecksum)) {
 
                     esay("Checksum of " + pnfsId + " differs info="
-                         + infoChecksum + ";file=" + fileChecksum);
+                         + infoChecksum + ";file=" + fileChecksum+", removing entry");
                     try {
                         _repository.removeEntry(entry);
                     } catch (CacheException ee2) {

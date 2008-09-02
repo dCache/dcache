@@ -383,7 +383,7 @@ public class SpaceSweeper2 implements SpaceSweeper, Runnable
                 for (CacheRepositoryEntry entry : tmpList) {
                     try {
                         long size = entry.getSize();
-                        say("trying to remove " + entry.getPnfsId());
+                        esay("SS2: trying to remove " + entry.getPnfsId());
                         if (_repository.removeEntry(entry)) {
                             spaceNeeded -= size;
                         } else {

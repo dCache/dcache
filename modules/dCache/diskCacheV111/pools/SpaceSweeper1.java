@@ -340,11 +340,11 @@ public class SpaceSweeper1 implements SpaceSweeper , Runnable  {
                  entry = i.next() ;
                  try{
                     long size = entry.getSize() ;
-                    say( "SS0 : trying to remove "+entry.getPnfsId()) ;
+                    esay( "SS1 : trying to remove "+entry.getPnfsId()) ;
                     if( _repository.removeEntry( entry ) ){
                         spaceNeeded -= size ;
                     }else{
-                        say("SS0 : looked (not removed) : "+entry.getPnfsId() ) ;
+                        say("SS1 : looked (not removed) : "+entry.getPnfsId() ) ;
                         continue ;
                     }
                     //

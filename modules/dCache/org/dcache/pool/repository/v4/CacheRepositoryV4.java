@@ -434,7 +434,7 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
                              new CacheRepositoryEvent(this, entry));
                 if (!entry.isPrecious() && !entry.isSticky()
                     && usedDataSpace > total) {
-                    _log.warn("Pool overbooked: " + entry.getPnfsId()
+                    _log.error("Pool overbooked: " + entry.getPnfsId()
                               + " removed");
                     usedDataSpace -= entry.getSize();
                     removeEntry(entry);

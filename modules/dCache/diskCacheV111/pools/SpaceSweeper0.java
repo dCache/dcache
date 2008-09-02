@@ -313,7 +313,7 @@ public class SpaceSweeper0 implements SpaceSweeper , Runnable  {
                  entry = (CacheRepositoryEntry)i.next() ;
                  try{
                     long size = entry.getSize() ;
-                    say( "SS0 : trying to remove "+entry.getPnfsId()) ;                 
+                    esay( "SS0 : trying to remove "+entry.getPnfsId()) ;                 
                     if( _repository.removeEntry( entry ) ){
                         spaceNeeded -= size ;
                     }else{

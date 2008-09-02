@@ -571,6 +571,7 @@ public class P2PClient {
          */
         private synchronized void removeEntry()
         {
+            esay("P2PClient remove entry: "+_entry.getPnfsId());
             try {
                 _entry.lock(false);
                 _repository.removeEntry(_entry);

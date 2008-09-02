@@ -1293,6 +1293,7 @@ public class       MultiProtocolPool2
             if( failed ){
                 try{
                     if( _create ){
+                        esay(" prepare job failed, removing created entry "+_pnfsId);
                         _entry.lock(false) ;
                         _repository.removeEntry( _entry ) ;
                     }
@@ -1861,6 +1862,7 @@ public class       MultiProtocolPool2
 
     private boolean deleteCacheFile(String pnfsId) throws CacheException {
         _pnfs.clearCacheLocation(pnfsId);
+        esay("MultiProtocolPool.deleteCacheFile: Removing entry "+pnfsId);
         _repository.removeEntry(_repository.getEntry(new PnfsId(pnfsId)));
         return true ;
     }
@@ -1967,7 +1969,9 @@ public class       MultiProtocolPool2
 
                 if( ! infoChecksum.equals( fileChecksum ) ){
 
-                    esay("Checksum of "+pnfsId+" differs info="+infoChecksum+";file="+fileChecksum);
+                    esay("Checksum of "+pnfsId+" differs info="+infoChecksum+
+                        ";file="+fileChecksum+", removing entry");
+                    
                     try{
                         _repository.removeEntry( entry ) ;
                     }catch(Exception ee2 ){
@@ -2782,7 +2786,7 @@ public class       MultiProtocolPool2
                         counter++ ;
                         say("removeFiles : File " + fileList[i] + " kept. (locked)" );
                     }else{
-                        say("removeFiles : File " + fileList[i] + " deleted." );
+                        esay("removeFiles : File " + fileList[i] + " deleted." );
                         fileList[i] = null ;
                     }
                 }catch( FileNotInCacheException fce ){
