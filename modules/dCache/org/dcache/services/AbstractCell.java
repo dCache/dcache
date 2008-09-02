@@ -5,6 +5,7 @@ import org.apache.log4j.NDC;
 import java.math.BigInteger;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.io.IOException;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -221,7 +222,7 @@ public class AbstractCell extends CellAdapter
         try {
             FutureTask task = new FutureTask(new Callable() {
                     public Object call() throws Exception {
-                        AbstractCell.this.init();
+                        AbstractCell.this.executeInit();
                         return null;
                     }
                 });
@@ -244,31 +245,48 @@ public class AbstractCell extends CellAdapter
     }
 
     /**
-     * Initialize cell. This method should be overridden in subclasses
-     * to perform cell initialization.
-     *
-     * The method is called from the <code>doInit</code> method, but
-     * using a thread belonging to the thread group of the associated
-     * cell nucleus. This ensure correct logging and correct thread
-     * group inheritance.
-     *
-     * The default implementation executes the defined setup
-     * (specified with !variable in the argument string) and does
-     * nothing else. If the method is overriden, then care must be
-     * taken that the superclass implementation is called or that the
-     * defined setup is executed by other means.
-     *
-     * It is valid for the method to call
-     * <code>CellAdapter.start</code> if early start of message
-     * delivery is needed.
+     * Called from the initialization thread. By default the method
+     * first calls the <code>executeDefinedSetup</code> method,
+     * followed by the <code>init</code> method. Subclasses may
+     * override this behaviour if they wish to modify when the defined
+     * setup is executed.
      */
-    protected void init()
+    protected void executeInit()
         throws Exception
+    {
+        executeDefinedSetup();
+        init();
+    }
+
+    /**
+     * Executes the defined setup (specified with !variable in the
+     * argument string).
+     *
+     * By default, this method is called from
+     * <code>executeInit</code>.
+     */
+    protected void executeDefinedSetup()
+        throws IOException
     {
         if (_definedSetup != null) {
             executeDomainContext(_definedSetup);
         }
     }
+
+    /**
+     * Initialize cell. This method should be overridden in subclasses
+     * to perform cell initialization.
+     *
+     * The method is called from the <code>executeInit</code> method,
+     * but using a thread belonging to the thread group of the
+     * associated cell nucleus. This ensure correct logging and
+     * correct thread group inheritance.
+     *
+     * It is valid for the method to call
+     * <code>CellAdapter.start</code> if early start of message
+     * delivery is needed.
+     */
+    protected void init() throws Exception {}
 
     /**
      * Returns the friendly cell name used for logging. It defaults to

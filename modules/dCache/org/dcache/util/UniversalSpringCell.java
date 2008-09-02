@@ -113,8 +113,8 @@ public class UniversalSpringCell
     }
 
     @Override
-    protected void init()
-        throws InterruptedException, IOException, CommandException
+    protected void executeInit()
+        throws Exception
     {
         /* Process command line arguments.
          */
@@ -137,12 +137,14 @@ public class UniversalSpringCell
         _context =
             new UniversalSpringCellApplicationContext(getArgs());
 
+        /* This is a NOP except if somebody subclassed
+         * UniversalSpringCell.
+         */
+        init();
+
         /* Execute both the defined setup and the setup file.
          */
-        if (_definedSetup != null) {
-            executeDomainContext(_definedSetup);
-        }
-
+        executeDefinedSetup();
         if (_setupFile != null) {
             File file = new File(_setupFile);
             while (!file.exists()) {
