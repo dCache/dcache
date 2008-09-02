@@ -107,9 +107,9 @@ public class P2PClient
             try {
                 _serverSocket = new ServerSocket(_recommendedPort);
                 _listenPort = _serverSocket.getLocalPort();
-            } catch (IOException ioe) {
-                _error = ioe.getMessage();
-                _log.error("Problem in opening Server Socket : " + ioe);
+            } catch (IOException e) {
+                _error = e.getMessage();
+                _log.error("Problem in opening server socket: " + e);
                 return;
             }
             _error = null;
@@ -123,11 +123,12 @@ public class P2PClient
                 while (true) {
                     new IOHandler(_serverSocket.accept());
                 }
-            } catch (IOException ioe) {
-                _log.error("Problem in accepting connection : " + ioe);
-            } catch (Exception ioe) {
-                _log.error("Bug detected : " + ioe);
-                _log.error(ioe);
+            } catch (IOException e) {
+                _error = e.getMessage();
+                _log.error("Problem in accepting connection : " + e);
+            } catch (Exception e) {
+                _error = e.getMessage();
+                _log.fatal("Bug detected: " + e, e);
             }
         }
 
@@ -338,8 +339,8 @@ public class P2PClient
 
                 Companion companion = _sessions.get(in.readInt());
                 if (companion == null) {
-                    _log.error("Unsolicited connection from " +
-                         _socket.getRemoteSocketAddress());
+                    _log.warn("Unsolicited connection from " +
+                              _socket.getRemoteSocketAddress());
                     return;
                 }
 
