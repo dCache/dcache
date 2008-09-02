@@ -55,6 +55,7 @@ import org.dcache.auth.UserPwdRecord;
 import org.ietf.jgss.*;
 import java.lang.Thread;
 import java.util.regex.*;
+import java.util.concurrent.ExecutionException;
 
 /**
  *
@@ -63,14 +64,18 @@ import java.util.regex.*;
 public class WeakFtpDoorV1 extends AbstractFtpDoorV1 {
 
     /** Creates a new instance of WeakFtpDoorV1 */
-    public WeakFtpDoorV1(String name, StreamEngine engine, Args args) throws Exception {
+    public WeakFtpDoorV1(String name, StreamEngine engine, Args args)
+        throws InterruptedException, ExecutionException
+    {
         super(name,engine,args);
-        ftpDoorName="Weak FTP";
+    }
 
-        _workerThread = new Thread( this );
-        _workerThread.start();
-        useInterpreter(true);
-        doInit() ;
+    @Override
+    protected void init()
+        throws Exception
+    {
+        super.init();
+        ftpDoorName = "Weak FTP";
     }
 
     protected void secure_reply(String answer, String code) {

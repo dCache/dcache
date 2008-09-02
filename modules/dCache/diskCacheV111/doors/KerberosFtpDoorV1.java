@@ -44,6 +44,7 @@ package diskCacheV111.doors;
 //java util
 import java.util.StringTokenizer;
 import java.util.Properties;
+import java.util.concurrent.ExecutionException;
 
 //java net
 import java.net.InetAddress;
@@ -76,13 +77,21 @@ public class KerberosFtpDoorV1 extends GssFtpDoorV1 {
     private String[] KDCList;
 
     /** Creates a new instance of KerberosFtpDoorV1 */
-    public KerberosFtpDoorV1(String name, StreamEngine engine, Args args) throws Exception{
+    public KerberosFtpDoorV1(String name, StreamEngine engine, Args args)
+        throws InterruptedException, ExecutionException
+    {
         super(name,engine,args);
+    }
+
+    @Override
+    protected void init()
+        throws Exception
+    {
+        super.init();
+
+        Args args = getArgs();
         if( ( MyPrincipalStr = args.getOpt("svc-principal") ) == null ){
             String problem = "KerberosFTPDoorV1: -svc-principal not specified";
-            error(problem);
-            start();
-            kill();
             throw new IllegalArgumentException(problem);
         }
         info("KerberosFTPDoorV1: initializing kerberos ftp door service. " +
@@ -102,10 +111,6 @@ public class KerberosFtpDoorV1 extends GssFtpDoorV1 {
             }
         }
         ftpDoorName="Kerberos FTP";
-        _workerThread = getNucleus().newThread(this);
-        _workerThread.start();
-        useInterpreter(true);
-        doInit();
     }
 
     public void startTlog(String path, String action) {

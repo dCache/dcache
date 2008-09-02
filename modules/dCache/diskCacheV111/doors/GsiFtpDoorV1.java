@@ -59,6 +59,8 @@
 
 package diskCacheV111.doors;
 
+import java.util.concurrent.ExecutionException;
+
 //cells
 import dmg.util.StreamEngine;
 import dmg.util.Args;
@@ -80,39 +82,50 @@ import org.gridforum.jgss.ExtendedGSSContext;
 import org.globus.gsi.GSIConstants;
 import org.globus.gsi.gssapi.GSSConstants;
 
+import org.dcache.services.Option;
+
 /**
  *
  * @author  timur
  */
-public class GsiFtpDoorV1 extends GssFtpDoorV1 {
+public class GsiFtpDoorV1 extends GssFtpDoorV1
+{
+    @Option(
+        name="service-key",
+        defaultValue="/etc/grid-security/hostkey.pem"
+    )
+    protected String service_key;
 
-    private String service_key           = "/etc/grid-security/hostkey.pem";
-    private String service_cert          = "/etc/grid-security/hostcert.pem";
-    private String service_trusted_certs = "/etc/grid-security/certificates";
+    @Option(
+        name="service-cert",
+        defaultValue="/etc/grid-security/hostcert.pem"
+    )
+    protected String service_cert;
 
+    @Option(
+        name="service-trusted-certs",
+        defaultValue="/etc/grid-security/certificates"
+    )
+    protected String service_trusted_certs;
 
     /** Creates a new instance of GsiFtpDoorV1 */
-    public GsiFtpDoorV1(String name, StreamEngine engine, Args args)  throws Exception{
+    public GsiFtpDoorV1(String name, StreamEngine engine, Args args)
+        throws InterruptedException, ExecutionException
+    {
         super(name,engine,args);
+    }
+
+    @Override
+    protected void init()
+        throws Exception
+    {
+        super.init();
+
+        Args args = getArgs();
         _GSSFlavor = "gsi";
 
-        String arg_string = args.getOpt("service-key");
-        if (arg_string != null) {
-            service_key = arg_string;
-        }
-
-        arg_string = args.getOpt("service-cert");
-        if (arg_string != null) {
-            service_cert = arg_string;
-        }
-
-        arg_string = args.getOpt("service-trusted-certs");
-        if (arg_string != null) {
-            service_trusted_certs = arg_string;
-        }
-
         // Grid FTP Performance Markers options:
-        arg_string = args.getOpt("usePerfMarkers");
+        String arg_string = args.getOpt("usePerfMarkers");
         if (arg_string != null) {
             if ( arg_string.equalsIgnoreCase("true") )
                 _perfMarkerConf.use = true;
@@ -150,11 +163,6 @@ public class GsiFtpDoorV1 extends GssFtpDoorV1 {
              " Period : " + _perfMarkerConf.period ) ;
 
         ftpDoorName="GSI FTP";
-        _workerThread = getNucleus().newThread(this);
-        _workerThread.start();
-        useInterpreter(true);
-        doInit() ;
-
     }
 
     public static CellVersion getStaticCellVersion() {

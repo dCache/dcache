@@ -309,27 +309,27 @@ public abstract class AbstractFtpDoorV1
      * stream engine passed to us from the LoginManager upon
      * instantiation.
      */
-    protected final StreamEngine        _engine;
+    protected StreamEngine _engine;
 
     /**
      * Writer for control channel.
      */
-    protected final PrintWriter         _out;
+    protected PrintWriter _out;
 
     /**
      * Stub object for talking to the PNFS manager.
      */
-    protected final PnfsHandler         _pnfs;
+    protected PnfsHandler _pnfs;
 
     /**
      * User's Origin
      */
-    protected final Origin        _origin;
+    protected Origin _origin;
 
     /**
      * Permission Handler
      */
-    protected final PermissionHandlerInterface _permissionHandler;
+    protected PermissionHandlerInterface _permissionHandler;
 
     @Option(
         name = "permission-handler",
@@ -577,19 +577,19 @@ public abstract class AbstractFtpDoorV1
 
     protected final int _spaceManagerTimeout = 5 * 60;
 
-    protected final boolean _useEncpScripts;
+    protected boolean _useEncpScripts;
 
     /**
      * Lowest allowable port to use for the data channel when using an
      * adapter.
      */
-    protected final int _lowDataListenPort;
+    protected int _lowDataListenPort;
 
     /**
      * Highest allowable port to use for the data channel when using
      * an adapter.
      */
-    protected final int _highDataListenPort;
+    protected int _highDataListenPort;
 
     private final CommandQueue        _commandQueue =
         new CommandQueue();
@@ -609,7 +609,7 @@ public abstract class AbstractFtpDoorV1
         Executors.newCachedThreadPool();
 
     protected String         _dnUser;
-    protected Thread         _workerThread;
+    private   Thread         _workerThread;
     protected int            _commandCounter = 0;
     protected String         _lastCommand    = "<init>";
 
@@ -841,137 +841,123 @@ public abstract class AbstractFtpDoorV1
 
     }
 
-    //
-    // ftp flavor specific initialization is done in initFtpDoor
-    // initFtpDoor is called from the constractor
-    //
-    /**
-     * @param name
-     * @param engine
-     * @param args
-     * @throws IllegalArgumentException
-     * @throws IllegalStateException
-     * @throws IllegalAccessException
-     * @throws ClassNotFoundException
-     * @throws NoSuchMethodException
-     * @throws InstantiationException
-     * @throws InvocationTargetException
-     */
     public AbstractFtpDoorV1(String name, StreamEngine engine, Args args)
-        throws IllegalArgumentException,
-               IllegalStateException,
-               IllegalAccessException,
-               ClassNotFoundException,
-               NoSuchMethodException,
-               InstantiationException,
-               InvocationTargetException,
-               InterruptedException,
-               ExecutionException
+        throws InterruptedException, ExecutionException
     {
         super(name, args);
 
-        boolean success = false;
         try {
-            _engine   = engine;
-            _out      = new PrintWriter(engine.getWriter());
-            _client_data_host = engine.getInetAddress().getHostName();
+            _engine = engine;
+            doInit();
+            _workerThread.start();
+        } catch (InterruptedException e) {
+            reply("421 " + ftpDoorName + " door not ready");
+            _shutdownGate.countDown();
+        } catch (ExecutionException e) {
+            reply("421 " + ftpDoorName + " door not ready");
+            _shutdownGate.countDown();
+        }
+    }
 
-            debug("FTP Door: client hostname = " + _client_data_host);
+    @Override
+    protected void init()
+        throws Exception
+    {
+        super.init();
 
-            if (!_space_reservation_enabled)
-                _space_reservation_strict = false;
+        Args args = getArgs();
+        _out      = new PrintWriter(_engine.getWriter());
+        _client_data_host = _engine.getInetAddress().getHostName();
 
-            if (_local_host == null)
-                _local_host = engine.getLocalAddress().getHostName();
+        debug("FTP Door: client hostname = " + _client_data_host);
 
-            if (_encpPutCmd != null) {
-                warn("FTP Door: The -encp-put option was specified. " +
-                     "This is DEPRECATED.");
-                _useEncpScripts = true;
-            } else {
-                _useEncpScripts = false;
-            }
+        if (!_space_reservation_enabled)
+            _space_reservation_strict = false;
 
-            if (!_use_gplazmaAuthzModule) {
-                _gplazmaPolicyFilePath = null;
-            } else if (_gplazmaPolicyFilePath == null) {
-                String s = "FTP Door: -gplazma-authorization-module-policy " +
-                           "file argument wasn't specified";
+        if (_local_host == null)
+            _local_host = _engine.getLocalAddress().getHostName();
+
+        if (_encpPutCmd != null) {
+            warn("FTP Door: The -encp-put option was specified. " +
+                 "This is DEPRECATED.");
+            _useEncpScripts = true;
+        } else {
+            _useEncpScripts = false;
+        }
+
+        if (!_use_gplazmaAuthzModule) {
+            _gplazmaPolicyFilePath = null;
+        } else if (_gplazmaPolicyFilePath == null) {
+            String s = "FTP Door: -gplazma-authorization-module-policy " +
+                "file argument wasn't specified";
+            error(s);
+            throw new IllegalArgumentException(s);
+        }
+
+        /* Use kpwd file if gPlazma is not enabled.
+         */
+        if (!(_use_gplazmaAuthzModule || _use_gplazmaAuthzCell)) {
+            _kpwdFilePath = args.getOpt("kpwd-file");
+            if ((_kpwdFilePath == null) ||
+                (_kpwdFilePath.length() == 0) ||
+                (!new File(_kpwdFilePath).exists())) {
+                String s = "FTP Door: -kpwd-file file argument wasn't specified";
                 error(s);
                 throw new IllegalArgumentException(s);
             }
+        }
 
-            /* Use kpwd file if gPlazma is not enabled.
-             */
-            if (!(_use_gplazmaAuthzModule || _use_gplazmaAuthzCell)) {
-                _kpwdFilePath = args.getOpt("kpwd-file");
-                if ((_kpwdFilePath == null) ||
-                    (_kpwdFilePath.length() == 0) ||
-                    (!new File(_kpwdFilePath).exists())) {
-                    String s = "FTP Door: -kpwd-file file argument wasn't specified";
-                    error(s);
-                    throw new IllegalArgumentException(s);
-                }
-            }
+        /* Data channel port range used when client issues PASV
+         * command.
+         */
+        int low = 0;
+        int high = 0;
+        if (_portRange != null) {
+            try {
+                int ind = _portRange.indexOf(":");
+                if ((ind <= 0) || (ind == (_portRange.length() - 1)))
+                    throw new IllegalArgumentException("Not a port range");
 
-            /* Data channel port range used when client issues PASV
-             * command.
-             */
-            int low = 0;
-            int high = 0;
-            if (_portRange != null) {
-                try {
-                    int ind = _portRange.indexOf(":");
-                    if ((ind <= 0) || (ind == (_portRange.length() - 1)))
-                        throw new IllegalArgumentException("Not a port range");
-
-                    low  = Integer.parseInt(_portRange.substring(0, ind));
-                    high = Integer.parseInt(_portRange.substring(ind + 1));
-                    debug("Ftp Door: client data port range [" +
-                          low + ":" + high + "]");
-                } catch (NumberFormatException ee) {
-                    error("FTP Door: invalid port range string: " +
-                          _portRange + ". Command ignored." );
-                    low = 0;
-                }
-            }
-            _lowDataListenPort = low;
-            _highDataListenPort = high;
-
-            /* Parallelism for mode E transfers.
-             */
-            _parallelStart = _parallelMin = _parallelMax =
-                _defaultStreamsPerClient;
-
-            /* Permission handler.
-             */
-            Class<?> [] argClass = { dmg.cells.nucleus.CellAdapter.class };
-            Class<?> permissionHandlerClass =
-                Class.forName(_permissionHandlerName);
-            Constructor<?> permissionHandlerCon = permissionHandlerClass.getConstructor( argClass ) ;
-            Object[] initargs = { this };
-            _permissionHandler =
-                (PermissionHandlerInterface)permissionHandlerCon.newInstance(initargs);
-            _origin =
-                new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG,
-                           _engine.getInetAddress());
-
-            _pnfs = new PnfsHandler(this, new CellPath(_pnfsManager));
-            _pnfs.setPnfsTimeout(_pnfsTimeout * 1000L);
-
-            adminCommandListener = new AdminCommandListener();
-            addCommandListener(adminCommandListener);
-
-            success = true;
-        } finally {
-            if (!success) {
-                reply("421 " + ftpDoorName + " door not ready");
-
-                _shutdownGate.countDown();
-                start();
-                kill();
+                low  = Integer.parseInt(_portRange.substring(0, ind));
+                high = Integer.parseInt(_portRange.substring(ind + 1));
+                debug("Ftp Door: client data port range [" +
+                      low + ":" + high + "]");
+            } catch (NumberFormatException ee) {
+                error("FTP Door: invalid port range string: " +
+                      _portRange + ". Command ignored." );
+                low = 0;
             }
         }
+        _lowDataListenPort = low;
+        _highDataListenPort = high;
+
+        /* Parallelism for mode E transfers.
+         */
+        _parallelStart = _parallelMin = _parallelMax =
+            _defaultStreamsPerClient;
+
+        /* Permission handler.
+         */
+        Class<?> [] argClass = { dmg.cells.nucleus.CellAdapter.class };
+        Class<?> permissionHandlerClass =
+            Class.forName(_permissionHandlerName);
+        Constructor<?> permissionHandlerCon = permissionHandlerClass.getConstructor( argClass ) ;
+        Object[] initargs = { this };
+        _permissionHandler =
+            (PermissionHandlerInterface)permissionHandlerCon.newInstance(initargs);
+        _origin =
+            new Origin(AuthType.ORIGIN_AUTHTYPE_STRONG,
+                       _engine.getInetAddress());
+
+        _pnfs = new PnfsHandler(this, new CellPath(_pnfsManager));
+        _pnfs.setPnfsTimeout(_pnfsTimeout * 1000L);
+
+        adminCommandListener = new AdminCommandListener();
+        addCommandListener(adminCommandListener);
+
+        useInterpreter(true);
+
+        _workerThread = new Thread(this);
     }
 
 /*
