@@ -62,7 +62,7 @@ public class SpaceSweeper2
                     && entry.isCached();
             }
         } catch (CacheException e) {
-            esay("Failed to query state of entry: " + e.getMessage());
+            _log.error("Failed to query state of entry: " + e.getMessage());
 
             /* Returning false is the safe option.
              */
@@ -84,7 +84,7 @@ public class SpaceSweeper2
         PnfsId id = entry.getPnfsId();
         try {
             if (_list.add(id)) {
-                say("added " + id + " to list");
+                _log.debug("Added " + id + " to sweeper");
                 entry.touch();
                 _removableSpace += entry.getSize();
 
@@ -94,7 +94,7 @@ public class SpaceSweeper2
                 notifyAll();
             }
         } catch (CacheException e) {
-            esay("failed to add " + id.toString() + " to list: " + e);
+            _log.error("Failed to add " + id.toString() + " to sweeper: " + e);
         }
     }
 
@@ -106,12 +106,12 @@ public class SpaceSweeper2
         try {
             long size = entry.getSize();
             if (_list.remove(id)) {
-                say("removed " + id + " from list");
+                _log.debug("Removed " + id + " from sweeper");
                 _removableSpace -= size;
                 return true;
             }
         } catch (CacheException e) {
-            esay("failed to remove " + id.toString() + " from list: " + e);
+            _log.error("Failed to remove " + id.toString() + " from sweeper: " + e);
         }
         return false;
     }
@@ -140,13 +140,13 @@ public class SpaceSweeper2
     public synchronized void precious(CacheRepositoryEvent event)
     {
         CacheRepositoryEntry entry = event.getRepositoryEntry();
-        say("precious: " + entry);
+        _log.debug("precious: " + entry);
         remove(entry);
     }
 
     public synchronized void sticky(CacheRepositoryEvent event)
     {
-        say("sticky: " + event);
+        _log.debug("sticky: " + event);
         CacheRepositoryEntry entry = event.getRepositoryEntry();
         if (isRemovable(entry)) {
             add(entry);
@@ -161,11 +161,11 @@ public class SpaceSweeper2
         PnfsId id = entry.getPnfsId();
 
         if (_list.remove(id)) {
-            say("touched : " + entry);
+            _log.debug("touched : " + entry);
             try {
                 entry.touch();
             } catch (CacheException e) {
-                say("failed to touch data file: " + e.getMessage());
+                _log.warn("Failed to touch data file: " + e.getMessage());
             }
             _list.add(id);
         }
@@ -181,14 +181,14 @@ public class SpaceSweeper2
     {
         long space = event.getRequiredSpace();
         _spaceNeeded += space;
-        say("needSpace event " + space + " -> " + _spaceNeeded);
+        _log.info("Added " + space + " bytes to reclamation queue");
         notifyAll();
     }
 
     public synchronized void scanned(CacheRepositoryEvent event)
     {
         CacheRepositoryEntry entry = event.getRepositoryEntry();
-        say("scanned event : " + entry);
+        _log.debug("scanned event: " + entry);
         if (isRemovable(entry)) {
             add(entry);
         }
@@ -198,7 +198,7 @@ public class SpaceSweeper2
     {
         CacheRepositoryEntry entry = event.getRepositoryEntry();
         PnfsId id = entry.getPnfsId();
-        say("cached event : " + entry);
+        _log.debug("cached event: " + entry);
         if (isRemovable(entry)) {
             add(entry);
         }
@@ -210,7 +210,8 @@ public class SpaceSweeper2
         long toFree = getRemovableSpace();
         _spaceNeeded += toFree;
         notifyAll();
-        return "" + toFree + " bytes added to reallocation queue";
+        _log.info("Added " + toFree + " bytes to reclamation queue");
+        return String.format("%d bytes added to reclamation queue", toFree);
     }
 
     public String hh_sweeper_free = "<bytesToFree>";
@@ -220,7 +221,8 @@ public class SpaceSweeper2
         long toFree = Long.parseLong(args.argv(0));
         _spaceNeeded += toFree;
         notifyAll();
-        return "" + toFree + " bytes added to reallocation queue";
+        _log.info("Added " + toFree + " bytes to reclamation queue");
+        return String.format("%d bytes added to reclamation queue", toFree);
     }
 
     public String hh_sweeper_ls = " [-l] [-s]";
@@ -287,7 +289,6 @@ public class SpaceSweeper2
     public void run()
     {
         long spaceNeeded = 0;
-        say("started");
         List<CacheRepositoryEntry> tmpList =
             new ArrayList<CacheRepositoryEntry>();
 
@@ -303,7 +304,7 @@ public class SpaceSweeper2
                     _spaceNeeded = 0;
                 }
 
-                say("request to remove : " + spaceNeeded);
+                _log.info(String.format("Sweeper trying to reclaim %d bytes", spaceNeeded));
 
                 /* We copy the entries into a tmp list to avoid the
                  * ConcurrentModificationException.
@@ -324,24 +325,24 @@ public class SpaceSweeper2
                             //    b) it is still in use.
                             //
                             if (entry.isLocked()) {
-                                esay("file skipped by remove (locked) : " + entry);
+                                _log.warn("File skipped by sweeper (locked): " + entry);
                                 continue;
                             }
                             if (entry.getLinkCount() > 0) {
-                                esay("file skipped by remove (in use) : " + entry);
+                                _log.warn("file skipped by sweeeper (in use): " + entry);
                                 continue;
                             }
                             if (!isRemovable(entry)) {
-                                esay("FATAL: file skipped by remove (not removable) : " + entry);
+                                _log.fatal("file skipped by sweeper (not removable): " + entry);
                                 continue;
                             }
                             long size = entry.getSize();
                             tmpList.add(entry);
                             minSpaceNeeded -= size;
-                            say("adds to remove list : " + entry.getPnfsId()
-                                + " " + size + " -> " + spaceNeeded);
+                            _log.debug("adds to remove list : " + entry.getPnfsId()
+                                       + " " + size + " -> " + spaceNeeded);
                         } catch (CacheException e) {
-                            esay(e.getMessage());
+                            _log.error(e.getMessage());
                         }
                     }
                 } catch (ConcurrentModificationException e) {
@@ -367,15 +368,14 @@ public class SpaceSweeper2
                 for (CacheRepositoryEntry entry : tmpList) {
                     try {
                         long size = entry.getSize();
-                        say("trying to remove " + entry.getPnfsId());
+                        _log.debug("trying to remove " + entry.getPnfsId());
                         if (_repository.removeEntry(entry)) {
                             spaceNeeded -= size;
                         } else {
-                            say("locked (not removed) : "
-                                + entry.getPnfsId());
+                            _log.info("locked (not removed): " + entry.getPnfsId());
                         }
                     } catch (CacheException e) {
-                        esay(e.toString());
+                        _log.error(e.toString());
                     }
                 }
                 spaceNeeded = Math.max(spaceNeeded, 0);
@@ -385,17 +385,6 @@ public class SpaceSweeper2
             Thread.currentThread().interrupt();
         } finally {
             _repository.removeCacheRepositoryListener(this);
-            say("finished");
         }
-    }
-
-    private void say(String msg)
-    {
-        _log.info(msg);
-    }
-
-    private void esay(String msg)
-    {
-        _log.error(msg);
     }
 }
