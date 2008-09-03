@@ -9,19 +9,19 @@ public class StoragePasswordRecord extends StorageAuthorizationBase
 
 	public StoragePasswordRecord(String user,
 					     String passwd, boolean readOnly,
-                         int priority, int uid,int gid,
+                         int priority, int uid,int[] gids,
                          String home,String root,String fsroot)
 	{
-        this(user, passwd, readOnly, priority, uid, gid, home, root, fsroot,false);
+        this(user, passwd, readOnly, priority, uid, gids, home, root, fsroot,false);
 	}
     
     public StoragePasswordRecord(String user,
                          String passwd, boolean readOnly, 
-                         int priority, int uid,int gid,
+                         int priority, int uid,int[] gids,
                          String home,String root,String fsroot,
                          boolean isPlain)
     {
-        super(user, readOnly, priority, uid, gid, home, root, fsroot);
+        super(user, readOnly, priority, uid, gids, home, root, fsroot);
         
         if(isPlain)
         {
@@ -42,7 +42,7 @@ public class StoragePasswordRecord extends StorageAuthorizationBase
  		  readOnlyStr() + " " +
  			priority + " " +
       UID + " " +
- 			GID + " " +
+ 			GIDs + " " +
  			Home + " " +
  			Root;
  		if ( ! Root.equals(FsRoot) )
@@ -63,7 +63,7 @@ public class StoragePasswordRecord extends StorageAuthorizationBase
 		    stringbuffer.append("      read-only = " + readOnlyStr() + "\n");
         stringbuffer.append("       priority = ").append(priority).append('\n');
         stringbuffer.append("            UID = ").append(UID).append('\n');
-        stringbuffer.append("            GID = ").append(GID).append('\n');
+        stringbuffer.append("            GID = ").append(GIDs).append('\n');
         stringbuffer.append("           Home = ").append(Home).append('\n');
         stringbuffer.append("           Root = ").append(Root).append('\n');
         stringbuffer.append("         FsRoot = ").append(FsRoot).append('\n');

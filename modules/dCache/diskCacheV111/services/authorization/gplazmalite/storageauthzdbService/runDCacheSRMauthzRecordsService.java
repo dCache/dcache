@@ -38,7 +38,7 @@ public class runDCacheSRMauthzRecordsService {
            boolean readonly = authRecord.ReadOnly;
            int priority = authRecord.priority;
            int uid = authRecord.UID;
-           int gid = authRecord.GID;
+           int[] gids = authRecord.GIDs;
            String home = authRecord.Home;
            String root = authRecord.Root;
            String fsroot = authRecord.FsRoot;
@@ -46,9 +46,9 @@ public class runDCacheSRMauthzRecordsService {
            System.out.println("Records retrieved for Username - " + user_name + " - follow...");
            System.out.println(" Username:        " + username_got);
            System.out.println(" Flag (readonly): " + readonly);
-           System.out.println(" priority:        " + uid);
+           System.out.println(" priority:        " + priority);
            System.out.println(" UID:             " + uid);
-           System.out.println(" GID:             " + gid);
+           System.out.println(" GIDs:            " + gids);
            System.out.println(" Home Path:       " + home);
            System.out.println(" Root Path:       " + root);
            System.out.println(" FS Root Path:    " + fsroot);

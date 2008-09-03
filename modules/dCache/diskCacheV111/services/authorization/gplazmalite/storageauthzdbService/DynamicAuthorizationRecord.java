@@ -2,6 +2,7 @@ package gplazma.gplazmalite.storageauthzdbService;
 
 import java.util.LinkedHashMap;
 import java.util.Iterator;
+import java.util.StringTokenizer;
 
 public class DynamicAuthorizationRecord extends StorageAuthorizationRecord
 {
@@ -39,7 +40,7 @@ public class DynamicAuthorizationRecord extends StorageAuthorizationRecord
              (readonly_str.equals("read-only")) ? true : false,
              tryParse(priority_str, 0),
              tryParse(uid_str, -1),
-             tryParse(gid_str, -1),
+             tryParseCSV(gid_str, new int[]{-1}),
              home,
              root,
              fsroot);
@@ -88,7 +89,20 @@ public class DynamicAuthorizationRecord extends StorageAuthorizationRecord
     public static int tryParse(String int_str, int excepval) {
       try {
         return Integer.parseInt(int_str);
-      } catch (Exception e) {
+      } catch (NumberFormatException e) {
+        return excepval;
+      }
+    }
+
+    public static int[] tryParseCSV(String int_str, int[] excepval) {
+      try {
+        StringTokenizer st1 = new StringTokenizer(int_str,",");
+        int[] gids = new int[st1.countTokens()];
+        for(int i =0; st1.hasMoreTokens(); ++i) {
+           gids[i]= Integer.parseInt(st1.nextToken());
+        }
+        return gids;
+      } catch (NumberFormatException e) {
         return excepval;
       }
     }
