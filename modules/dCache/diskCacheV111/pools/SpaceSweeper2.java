@@ -368,7 +368,7 @@ public class SpaceSweeper2
                 for (CacheRepositoryEntry entry : tmpList) {
                     try {
                         long size = entry.getSize();
-                        _log.debug("trying to remove " + entry.getPnfsId());
+                        _log.error("trying to remove " + entry.getPnfsId());
                         if (_repository.removeEntry(entry)) {
                             spaceNeeded -= size;
                         } else {

@@ -492,7 +492,7 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
                              new CacheRepositoryEvent(this, entry));
                 if (isRemovable(entry) && usedDataSpace > total) {
                     long size = entry.getSize();
-                    _log.warn("Pool overbooked: " + entry.getPnfsId()
+                    _log.error("Pool overbooked: " + entry.getPnfsId()
                               + " removed");
                     usedDataSpace -= size;
                     removableSpace -= size;

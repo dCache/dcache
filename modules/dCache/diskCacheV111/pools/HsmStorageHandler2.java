@@ -288,7 +288,7 @@ public class HsmStorageHandler2  {
                     entry.setReceivingFromStore() ;
                     if( storageInfo != null )entry.setStorageInfo(storageInfo);
                  }catch(Exception ce){
-                    esay("fetchFile (1) : "+ce ) ;
+                    esay("fetchFile (1) error: "+ce +" removing entry "+entry.getPnfsId() ) ;
                     try{_repository.removeEntry(entry) ;}catch(Exception ee){}
                     throw ce;
                  }
@@ -465,7 +465,7 @@ public class HsmStorageHandler2  {
           executeCallbacks( getCallbackList( _restorePnfsidList , _pnfsId )  , _pnfsId , cex ) ;
 
           synchronized( _repository ){
-
+            esay("Dequeuing, remove entry: "+_entry.getPnfsId());
              try{
 
                 _entry.lock(false) ;

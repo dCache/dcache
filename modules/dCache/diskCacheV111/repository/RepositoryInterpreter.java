@@ -350,6 +350,7 @@ public class RepositoryInterpreter
        CacheRepositoryEntry entry = _repository.getEntry( pnfsId ) ;
        int client = 0 ;
        if( forced || entry.isCached() ){
+           _log.error("Repository Interpreter: removing "+pnfsId+" by admin request");
            boolean rc = _repository.removeEntry( _repository.getEntry(pnfsId) ) ;
            return rc ? ( "Removed "+pnfsId ) : ( "Failed to remove "+pnfsId) ;
        }else if( entry.isPrecious() ){
