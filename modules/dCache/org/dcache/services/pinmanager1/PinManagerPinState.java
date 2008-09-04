@@ -144,7 +144,7 @@ public final class PinManagerPinState implements java.io.Serializable {
     public static final PinManagerPinState UNPINNING    
             = new PinManagerPinState("UNPINNING", 6);
     public static final PinManagerPinState UNPINNINGFAILED
-            = new PinManagerPinState("UNPINNING", 7);
+            = new PinManagerPinState("UNPINNINGFAILED", 7);
     
     private PinManagerPinState(String name,int stateId) {
         this.name = name;
