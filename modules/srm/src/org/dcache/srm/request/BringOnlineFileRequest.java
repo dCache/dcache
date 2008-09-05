@@ -603,19 +603,28 @@ public class BringOnlineFileRequest extends FileRequest {
                 Job.getJob(requestId);
             say("this file request's request is  "+request);
             //this will fail if the protocols are not supported
-            String[] supported_prots = storage.supportedGetProtocols();
-            boolean found_supp_prot=false;
-            mark1:
-            for(int i=0; i< supported_prots.length;++i) {
-                for(int j=0; j<request.protocols.length; ++j) {
-                    if(supported_prots[i].equals(request.protocols[j])) {
-                        found_supp_prot = true;
-                        break mark1;
+            if(request.protocols != null && request.protocols.length > 0) {
+                String[] supported_prots = storage.supportedGetProtocols();
+                boolean found_supp_prot=false;
+                mark1:
+                for(String supported_protocol: supported_prots) {
+                    for(String request_protocol: request.protocols) {
+                        if(supported_protocol.equals(request_protocol)) {
+                            found_supp_prot = true;
+                            break mark1;
+                        }
                     }
                 }
-            }
-            if(!found_supp_prot) {
-                throw new FatalJobFailure("transfer protocols not supported");
+                if(!found_supp_prot) {
+                    StringBuilder request_protocols = new StringBuilder("transfer protocols not supported: [");
+                    for(String request_protocol: request.protocols ) {
+                        request_protocols.append(request_protocol);
+                        request_protocols.append(',');
+                    }
+                    int len = request_protocols.length();
+                    request_protocols.replace(len-1, len,"]");
+                    throw new FatalJobFailure(request_protocols.toString());
+                }
             }
             //storage.getGetTurl(getUser(),path,request.protocols);
             say("storage.prepareToGet("+path+",...)");
