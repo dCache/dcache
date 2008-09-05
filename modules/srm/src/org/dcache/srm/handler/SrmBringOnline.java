@@ -22,6 +22,7 @@ import org.dcache.srm.request.BringOnlineRequest;
 import org.dcache.srm.request.sql.BringOnlineRequestStorage;
 import org.dcache.srm.request.sql.BringOnlineFileRequestStorage;
 import org.dcache.srm.util.Configuration;
+import org.dcache.srm.util.Tools;
 
 /**
  *
@@ -148,6 +149,8 @@ public class SrmBringOnline {
             protocols =
                     request.getTransferParameters().getArrayOfTransferProtocols().getStringArray();
         }
+        protocols = Tools.trimStringArray(protocols);
+        
         if(protocols == null || protocols.length <1) {
             esay("request contains no transfer protocols");
            // not for bring online

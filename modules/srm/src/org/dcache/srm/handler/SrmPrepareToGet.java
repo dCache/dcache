@@ -23,6 +23,7 @@ import org.dcache.srm.request.GetRequest;
 import org.dcache.srm.request.sql.GetRequestStorage;
 import org.dcache.srm.request.sql.GetFileRequestStorage;
 import org.dcache.srm.util.Configuration;
+import org.dcache.srm.util.Tools;
 
 /**
  *
@@ -133,6 +134,9 @@ public class SrmPrepareToGet {
         srmPrepareToGetResponse.setReturnStatus(status);
         return srmPrepareToGetResponse;
     }
+    
+    private static final String[] emptyArr = new String[0];
+    
     /**
      * implementation of srm ls
      */
@@ -148,6 +152,9 @@ public class SrmPrepareToGet {
             protocols =
                     request.getTransferParameters().getArrayOfTransferProtocols().getStringArray();
         }
+        
+        protocols = Tools.trimStringArray(protocols);
+
         if(protocols == null || protocols.length <1) {
             return getFailedResponse("request contains no transfer protocols");
         }

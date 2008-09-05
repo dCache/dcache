@@ -6,6 +6,8 @@
 
 package org.dcache.srm.util;
 import java.net.InetAddress;
+import java.util.List;
+import java.util.ArrayList;
 /**
  *
  * @author  timur
@@ -35,6 +37,25 @@ public class Tools {
         }
         //System.out.println("sameHost("+host1+","+ host2+") returns false");
         return false;
+    }
+    
+    private static final String[] emptyArr = new String[0];
+    
+    public static final String[] trimStringArray(String[] sarray) {
+        
+        if(sarray ==null) {
+            return null;
+        }
+        List<String> protList = new ArrayList<String>();
+        for(String protocol:sarray) {
+            if(protocol != null ) {
+                protocol = protocol.trim();
+                if(protocol.length() >0) {
+                    protList.add(protocol);
+                }
+            }
+        }
+        return protList.toArray(emptyArr);
     }
     
 }
