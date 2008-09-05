@@ -28,6 +28,7 @@ import org.dcache.srm.request.PutRequest;
 import org.dcache.srm.request.sql.PutRequestStorage;
 import org.dcache.srm.request.sql.PutFileRequestStorage;
 import org.dcache.srm.util.Configuration;
+import org.dcache.srm.util.Tools;
 
 /**
  *
@@ -148,6 +149,8 @@ public class SrmPrepareToPut {
         srmPrepareToPutResponce.setReturnStatus(status);
         return srmPrepareToPutResponce;
     }
+    
+    private static final String[] emptyArr = new String[0];
 
     public SrmPrepareToPutResponse srmPrepareToPut()
     throws SRMException,org.apache.axis.types.URI.MalformedURIException {
@@ -165,6 +168,8 @@ public class SrmPrepareToPut {
             protocols =
                     request.getTransferParameters().getArrayOfTransferProtocols().getStringArray();
         }
+        protocols = Tools.trimStringArray(protocols);
+        
         if(protocols == null || protocols.length <1) {
             return getFailedResponse("request contains no transfer protocols");
         }
