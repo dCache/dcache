@@ -11,6 +11,7 @@ import org.dcache.chimera.acl.Subject;
 import org.dcache.chimera.acl.enums.FileAttribute;
 
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.ConfigurationException;
 import diskCacheV111.util.FileMetaData;
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.NotFileCacheException;
@@ -30,35 +31,37 @@ public class UnixPermissionHandler implements PermissionHandlerInterface {
      *
      * @see diskCacheV111.services.PermissionHandlerInterface#say(java.lang.String)
      */
-    public UnixPermissionHandler(CellAdapter cell) throws 
-            IllegalArgumentException, 
-            InstantiationException, 
-            IllegalAccessException, 
-            InvocationTargetException 
-            {
-    	
+    public UnixPermissionHandler(CellAdapter cell) 
+        throws ConfigurationException
+    {
         _cell = cell;
-
         
-    	try {
         String metaDataProvider =
             parseOption("meta-data-provider",
-                      "diskCacheV111.services.PnfsManagerFileMetaDataSource");
-        _logPermisions.debug("Loading metaDataProvider :" + metaDataProvider);
-        Class<?> [] argClass = { dmg.cells.nucleus.CellAdapter.class };
-        Class<?> fileMetaDataSourceClass;
-	
-			fileMetaDataSourceClass = Class.forName(metaDataProvider);
-			Constructor<?> fileMetaDataSourceCon = fileMetaDataSourceClass.getConstructor( argClass ) ;
-			
-			Object[] initargs = { _cell };
-			_fileMetaDataSource = (FileMetaDataSource)fileMetaDataSourceCon.newInstance(initargs);
-			
-			
-		} catch (Exception e) {
-			e.printStackTrace();
-		} 
-        
+                        "diskCacheV111.services.PnfsManagerFileMetaDataSource");
+    	try {
+            _logPermisions.debug("Loading metaDataProvider :" + metaDataProvider);
+            Class<?> [] argClass = { dmg.cells.nucleus.CellAdapter.class };
+            Class<?> fileMetaDataSourceClass;
+            
+            fileMetaDataSourceClass = Class.forName(metaDataProvider);
+            Constructor<?> fileMetaDataSourceCon = fileMetaDataSourceClass.getConstructor( argClass ) ;
+            
+            Object[] initargs = { _cell };
+            _fileMetaDataSource = (FileMetaDataSource)fileMetaDataSourceCon.newInstance(initargs);
+        } catch (IllegalArgumentException e) {
+            throw new ConfigurationException("Cannot instantiate " + metaDataProvider + ": " + e.getMessage(), e);
+        } catch (InstantiationException e) {
+            throw new ConfigurationException("Cannot instantiate " + metaDataProvider + ": " + e.getMessage(), e);
+        } catch (IllegalAccessException e) {
+            throw new ConfigurationException("Cannot instantiate " + metaDataProvider + ": " + e.getMessage(), e);
+        } catch (ClassNotFoundException e) {
+            throw new ConfigurationException("Cannot instantiate " + metaDataProvider + ": " + e.getMessage(), e);
+        } catch (InvocationTargetException e) {
+            throw new ConfigurationException("Cannot instantiate " + metaDataProvider + ": " + e.getTargetException().getMessage(), e);
+        } catch (NoSuchMethodException e) {
+            throw new ConfigurationException("Cannot instantiate " + metaDataProvider + ": " + e.getMessage(), e);
+        }
     }
 
  
