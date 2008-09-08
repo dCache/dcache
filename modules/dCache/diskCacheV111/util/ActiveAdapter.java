@@ -612,9 +612,11 @@ public class ActiveAdapter implements Runnable, ProxyAdapter {
                 // Process pending accepted sockets and add them to the selector
                 processPending();
             }
-            _close();
+//            _close();
         } catch (IOException ie) {
             esay(ie);
+        } finally {
+            _close();
         }
     }
 
