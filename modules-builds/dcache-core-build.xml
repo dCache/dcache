@@ -120,7 +120,7 @@
 			<filename name="**/cells.jar" />
 			<filename name="log4j/log4j-1.2.8.jar" />
 			<filename name="dbcp/c3p0-0.9.1.2.jar" />
-			<filename name="berkeleyDB/je-3.2.74.jar" />
+			<filename name="berkeleyDB/je-3.2.76.jar" />
 		        <filename name="Chimera/chimera-acl.jar" />
 			<filename name="smc/statemap.jar" />
                         <filename name="dbcp/commons-pool.jar" />
@@ -799,7 +799,7 @@
 
 		<!-- BerkeleyDB -->
 		<mkdir dir="${binDir}/classes/berkeleyDB/" />
-		<copy file="${libDir}/berkeleyDB/je-3.2.74.jar" todir="${binDir}/classes/berkeleyDB/" />
+		<copy file="${libDir}/berkeleyDB/je-3.2.76.jar" todir="${binDir}/classes/berkeleyDB/" />
 
 		<!-- SMC -->
 		<mkdir dir="${binDir}/classes/smc/" />
