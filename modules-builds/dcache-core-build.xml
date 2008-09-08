@@ -318,19 +318,19 @@
         <target name="dcache.smc"
                 description="Compile state machines using SMC">
           <property name="fsmDir" location="${buildTop}/fsm"/>
-          <mkdir dir="${fsmDir}"/>
+          <mkdir dir="${buildDir}/core/org/dcache/services/pinmanager1"/>
 
           <smc target="java"
                smfile="${sourceDir}/org/dcache/services/pinmanager1/Extender.sm"
-               destdir="${sourceDir}/org/dcache/services/pinmanager1/"
+               destdir="${buildDir}/core/org/dcache/services/pinmanager1/"
                smcjar="${smc.jar}"/>
           <smc target="java"
                smfile="${sourceDir}/org/dcache/services/pinmanager1/Unpinner.sm"
-               destdir="${sourceDir}/org/dcache/services/pinmanager1/"
+               destdir="${buildDir}/core/org/dcache/services/pinmanager1/"
                smcjar="${smc.jar}"/>
           <smc target="java"
                smfile="${sourceDir}/org/dcache/services/pinmanager1/Pinner.sm"
-               destdir="${sourceDir}/org/dcache/services/pinmanager1/"
+               destdir="${buildDir}/core/org/dcache/services/pinmanager1/"
                smcjar="${smc.jar}"/>
         </target>
 
@@ -346,6 +346,7 @@
 		<javac destdir="${buildDir}/core" classpathref="dcache.classpath" source="${javac.source}" target="${javac.target}" debug="${javac.debug}" verbose="${javac.verbose}"  encoding="${javac.encoding}">
 
 			<src path="${sourceDir}" />
+			<src path="${buildDir}/core" />
 			<include name="${dcache.packagePrefix}/**" />
 			<include name="org/**" />
 			<exclude name="${dcache.packagePrefix}/srm/**" />
