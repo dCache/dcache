@@ -15,8 +15,6 @@ import java.util.HashMap;
 import java.util.ArrayList;
 import java.util.Collections;
 
-import java.io.NotSerializableException;
-
 import java.lang.reflect.Method;
 import java.lang.reflect.InvocationTargetException;
 
@@ -231,8 +229,6 @@ public abstract class CellStubHelper
     {
         try {
             _cells.get(sender).sendMessage(msg);
-        } catch (NotSerializableException e) {
-            fail("Unserializable vehicle found");
         } catch (NoRouteToCellException e) {
             fail("No route to cell: " + e.getMessage());
         }

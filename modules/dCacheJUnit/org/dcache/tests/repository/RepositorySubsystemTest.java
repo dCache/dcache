@@ -1,4 +1,3 @@
-
 package org.dcache.tests.repository;
 
 import static org.junit.Assert.*;
