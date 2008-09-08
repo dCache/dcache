@@ -723,6 +723,7 @@
 		<copy file="${sourceDir}/${dcache.packagePrefix}/config/statistics.batch" todir="${binDir}/config" />
 		<copy file="${sourceDir}/${dcache.packagePrefix}/config/xrootdDoor.batch" todir="${binDir}/config" />
 		<copy file="${sourceDir}/${dcache.packagePrefix}/config/chimera.batch" todir="${binDir}/config" />
+		<copy file="${sourceDir}/${dcache.packagePrefix}/config/info.batch" todir="${binDir}/config" />
 		<copy file="${sourceDir}/${dcache.packagePrefix}/config/PoolManager.conf" todir="${binDir}/config" />
 		<copy file="${sourceDir}/${dcache.packagePrefix}/config/lm.config" todir="${binDir}/config" />
 

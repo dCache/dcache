@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--+
+    |    This is a "Hello world" example file.  To generate the output
+    |    using xsltproc, you should do:
+    |
+    |       xsltproc xylophone.xsl hello-world.xml
+    |
+    |    The file README.txt contains more information, including a
+    |    description of this file's format and how to use some of the
+    |    other XSLT processors available.
+    +-->
+
+<xylophone>
+  <publish>
+    <object rdn="item">
+      <attr name="item">test</attr>
+      <attr name="message">Hello world!</attr>
+    </object>
+  </publish>
+</xylophone>

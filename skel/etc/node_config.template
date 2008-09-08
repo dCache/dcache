@@ -1,16 +1,21 @@
 #
 # $Id: node_config.template,v 1.6 2007-06-19 10:04:10 tigran Exp $
 #
+
+#  ----  Overall configuration
+#
 NODE_TYPE=dummy                 #admin, pool, door or custom
 DCACHE_HOME=/opt/d-cache
 POOL_PATH=/opt/d-cache/etc
 NUMBER_OF_MOVERS=100
 
+
+#  ----  Name Space configuration
 #
-# which namespace in installed?
+#  The supported name space implementations are Chimera and PNFS.
 #
-# Possible values is chimera or pnfs
-# if nothing is defined or none of above, then pnfs is used
+#  Possible values for the NAMESPACE variable are chimera or pnfs.
+#  If nothing is specified or the value is invalid then pnfs is used.
 #
 NAMESPACE=pnfs
 PNFS_ROOT=/pnfs
@@ -18,14 +23,28 @@ PNFS_INSTALL_DIR=/opt/pnfs
 PNFS_START=yes
 PNFS_OVERWRITE=no
 
-# SERVER_ID=domain.name         # defaults to `hostname -d`
-ADMIN_NODE=myAdminNode          # only needed for GridFTP door which is not on the admin node
+# SERVER_ID defaults to `hostname -d`
+#SERVER_ID=domain.name 
+
+
+#  ----  Name Space Node
+#
+#  The name space node is the node that runs the name space
+#  implementation: either Chimera or PNFS.
+#    
+#  This node was formally known as the "ADMIN_NODE" and now has been
+#  renamed.
+#
+#NAMESPACE_NODE=myNameSpaceNode
+
 
 #  ----  Services to be started on this node 
-#    The following services are only started on this node 
-#    if the corresponding parameter is set to 'yes'.
-#    Exeption: The PnfsManager is started on the admin node
-#              if the parameter is not specified.
+#
+#  The following services are only started on this node if the
+#  corresponding parameter is set to 'yes'.
+#
+#  Exception: The PnfsManager is started on the admin node if
+#             the parameter is not specified.
 #
 GSIDCAP=no
 DCAP=no
@@ -34,91 +53,110 @@ SRM=no
 XROOTD=no
 
 
+##
+## The following variables affect admin or custom NODE_TYPE only.
+##
 
+#  ----  Whether to start the info provider on this node.
 #
-# Following variables is for admin node only
+#  The infoProvider variable allows the installation of the info
+#  provider on a different node to the admin node.
 #
-
-#  ----  Start the Replica Manager on this node.
-#    The variable 'replicaManager' in config/dCacheSetup has to be set 
-#    to 'yes' on every node of the dCache instance, if the replica manager
-#    is started with the following variable
-#    Make sure that there is only one replica manager running in a dCache
-#    instance.
-#
-#replicaManager=no              # default: no
+#infoProvider=yes          # default: no
 
 
-#  ----  Start the info provider on this node.
-#    With this variable, it is possible to install the info provider
-#    on a separate node and not on the admin node.
+#  ----  Whether to start the info service on this node.
 #
-#infoProvider=yes                # default: no
+#  The info variable allows the installation of the info service on a
+#  different node to the admin node.
+#
+#info=yes                  # default: no
 
 
-#  ----  Start the statistics module
+#  ----  Whether to start the statistics module on this node.
 #
-# Make sure that statisticsLocation variable in dCacheSetup file points to
-# an existing directory.
+#  When enabling the statistics module, make sure that the
+#  statisticsLocation variable in the dCacheSetup file points to an
+#  existing directory.
 #
-#statistics=no                # default: 'no'
+#statistics=no             # default: no
+
+
+
+##
+## The following variable is for all node types.
+##
+
+#  ----  Whether to start the Replica Manager on this node.
+#
+#  If the replicaManager is started (using the following variable)
+#  then ensure that the replicaManager variable in dCacheSetup file
+#  has to be set to 'yes' on every node of the dCache instance.
+#
+#  Also, ensure that there is, at most, one replica manager running
+#  within a dCache instance.
+#
+#replicaManager=no         # default: no
+
+
 
 ################################################################################
 #                                                                              #
 #                                                                              #
-#         DO NOT MODIFY THIS PART UNLESS YOU KNOW WHAT YOU ARE DOING           #
+#    DO NOT MODIFY BELOW THIS POINT UNLESS YOU KNOW WHAT YOU ARE DOING         #
 #                                                                              #
 #                  USED ONLY IF NODE_TYPE=custom                               #
 #                                                                              #
 ################################################################################
 
 #
-#  default components of a admin node
+#  The default values below are equivalent to NODE_TYPE=admin.
 #
 
 #
-# Location manager. Single instace per dCache installation
-# Required.
+#  Location manager.  A single instance per dCache installation is
+#  required.
 #
 lmDomain=yes
 
 #
-# httpd service. Single instace per dCache installation
-# optional, recomented
+#  httpd service. At most one instace per dCache installation.
+#  This is optional but recommended.
 #
 httpDomain=yes
 
 #
-# pnfs manager. Single instace per dCache installation
-# Required.
+#  pnfs manager. A single instace per dCache installation is
+#  required.
 #
 pnfsManager=yes
 
 #
-# PoolManager manager (AKA dCacheDomain). Single instace per dCache installation
-# Required.
+#  PoolManager manager (AKA dCacheDomain). A single instace per
+#  dCache installation is required.
 #
 poolManager=yes
 
 #
-# admin door. Single instace per dCache installation
-# optional, recomented
+#  admin door.  At most one per dCache installation.  This is
+#  optional but recommended.
 #
 adminDoor=yes
 
 #
-# utilities ( pinManager and Co.). Single instace per dCache installation
-# Required.
+#  utilities ( pinManager and Co.).  A single instance per dCache
+#  installation is required.
 #
 utilityDomain=yes
 
 #
-# directory lookup service. Single instace per dCache installation
-# required if at least one dcapDoor is running
+#  directory lookup service.  A single instace per dCache installation
+#  is required if at least one dcapDoor is running.
 #
 dirDomain=yes
 
-# gPlazma authentification serive. Single instace per dCache installation
 #
+#  gPlazma authentification service.  A single instance per dCache
+#  installation is recommended.
 # 
-gPlazmaService=no                # default: 'no'
+gPlazmaService=no          # default: 'no'
