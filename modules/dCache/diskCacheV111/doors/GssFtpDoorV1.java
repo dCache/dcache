@@ -84,6 +84,7 @@ import java.net.UnknownHostException;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.concurrent.ExecutionException;
 
 //jgss
 import org.ietf.jgss.GSSException;
@@ -107,7 +108,7 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
 
     protected GSSName GSSIdentity;
     // GSS general
-    protected String _GSSFlavor = "unknown";
+    protected String _GSSFlavor;
 
     // GSS GSI context and others
     protected GSSContext serviceContext;
@@ -118,8 +119,18 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
     protected Iterator<UserAuthRecord> _userAuthRecords;
 
     /** Creates a new instance of GsiFtpDoorV1 */
-    public GssFtpDoorV1(String name, StreamEngine engine, Args args) throws Exception{
+    public GssFtpDoorV1(String name, StreamEngine engine, Args args)
+        throws InterruptedException, ExecutionException
+    {
         super(name,engine,args);
+    }
+
+    @Override
+    protected void init()
+        throws Exception
+    {
+        super.init();
+        _GSSFlavor = "unknown";
     }
 
     protected void secure_reply(String answer, String code) {
@@ -380,20 +391,29 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
         }
     }
 
-    public void setNextPwdRecord()
+    protected boolean setNextPwdRecord()
     {
         if (_userAuthRecords == null || !_userAuthRecords.hasNext()) {
             _pwdRecord = null;
-        } else {
-            _pwdRecord = _userAuthRecords.next();
-            _user = _pwdRecord.Username;
-            if (_curDirV == null) {
-                _curDirV = _pwdRecord.Home;
-                _pathRoot = _pwdRecord.Root;
-                if (_pathRoot == null || _pathRoot.length() == 0)
-                    _pathRoot = "/";
+            return false;
+        }
+
+        _pwdRecord = _userAuthRecords.next();
+        _user = _pwdRecord.Username;
+
+        if(_pathRoot == null) {
+            _curDirV = _pwdRecord.Home;
+            _pathRoot = _pwdRecord.Root;
+
+            if (_curDirV == null || _curDirV.length() == 0 ) {
+                _curDirV ="/";
+            }
+
+            if (_pathRoot == null || _pathRoot.length() == 0) {
+                _pathRoot = "/";
             }
         }
+        return true;
     }
 
     // Some clients, even though the user is already logged in via GSS and ADAT,

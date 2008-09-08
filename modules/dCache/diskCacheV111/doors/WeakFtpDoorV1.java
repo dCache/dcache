@@ -54,6 +54,7 @@ import java.lang.reflect.*;
 import org.ietf.jgss.*;
 import java.lang.Thread;
 import java.util.regex.*;
+import java.util.concurrent.ExecutionException;
 
 /**
  *
@@ -62,14 +63,18 @@ import java.util.regex.*;
 public class WeakFtpDoorV1 extends AbstractFtpDoorV1 {
 
     /** Creates a new instance of WeakFtpDoorV1 */
-    public WeakFtpDoorV1(String name, StreamEngine engine, Args args) throws Exception {
+    public WeakFtpDoorV1(String name, StreamEngine engine, Args args)
+        throws InterruptedException, ExecutionException
+    {
         super(name,engine,args);
-        ftpDoorName="Weak FTP";
+    }
 
-        _workerThread = new Thread( this );
-        _workerThread.start();
-        useInterpreter(true);
-        start() ;
+    @Override
+    protected void init()
+        throws Exception
+    {
+        super.init();
+        ftpDoorName = "Weak FTP";
     }
 
     protected void secure_reply(String answer, String code) {
@@ -106,13 +111,14 @@ public class WeakFtpDoorV1 extends AbstractFtpDoorV1 {
             return;
         }
 
-        _pwdRecord = authf.getUserPwdRecord(_user);
+        _originalPwdRecord = _pwdRecord = authf.getUserPwdRecord(_user);
 
         if( _pwdRecord == null || ((UserPwdRecord)_pwdRecord).isDisabled() ) {
             _pwdRecord = null;
             println("530 User " + _user + " not found.");
             return;
         }
+
         _needPass = true;
         if( _needPass )
             println("331 Password required for "+_user+".");
@@ -121,6 +127,13 @@ public class WeakFtpDoorV1 extends AbstractFtpDoorV1 {
     public void ac_pass(String arg) {
         if( _pwdRecord == null || ((UserPwdRecord)_pwdRecord).isDisabled() ||
         !((UserPwdRecord)_pwdRecord).isAnonymous() && ! ((UserPwdRecord)_pwdRecord).passwordIsValid(arg) ) {
+            if( _pwdRecord == null) { 
+                error("530 Login incorrect: pwd record is null");
+            } else if (((UserPwdRecord)_pwdRecord).isDisabled()) {
+                warn ("530 Login incorrect:pwd record is disabled");
+            } else if ( ! ((UserPwdRecord)_pwdRecord).passwordIsValid(arg)) {
+                warn ("530 Login incorrect: password is incorrect");
+            } 
             println("530 Login incorrect");
             _user = null;
             _pwdRecord = null;
@@ -160,8 +173,14 @@ public class WeakFtpDoorV1 extends AbstractFtpDoorV1 {
     public void echoStr1(String str) {
     }
     
-    public void resetPwdRecord()
+    protected void resetPwdRecord()
     {
     }
+    
+    protected boolean setNextPwdRecord()
+    {
+        return false;
+    }
+    
 
 }

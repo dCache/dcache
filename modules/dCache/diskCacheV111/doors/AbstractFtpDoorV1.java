@@ -94,17 +94,81 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ExecutionException;
+import java.util.Queue;
+import java.util.List;
+import java.util.LinkedList;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.Map;
+import java.util.HashMap;
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.BufferedReader;
+import java.io.FilenameFilter;
+import java.io.OutputStream;
+import java.net.Socket;
+import java.net.InetSocketAddress;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Constructor;
+import java.security.NoSuchAlgorithmException;
+
+import dmg.cells.nucleus.CellMessage;
+import dmg.cells.nucleus.CellMessageAnswerable;
+import dmg.cells.nucleus.CellAdapter;
+import dmg.cells.nucleus.NoRouteToCellException;
+import dmg.cells.nucleus.CellPath;
+import dmg.cells.nucleus.CellVersion;
+import dmg.util.CommandExitException;
+import dmg.util.Args;
+import dmg.util.StreamEngine;
+
 import diskCacheV111.vehicles.spaceManager.SpaceManagerGetInfoAndLockReservationByPathMessage;
 import diskCacheV111.vehicles.spaceManager.SpaceManagerUtilizedSpaceMessage;
 import diskCacheV111.vehicles.spaceManager.SpaceManagerUnlockSpaceMessage;
 import diskCacheV111.vehicles.DoorRequestInfoMessage;
 import diskCacheV111.vehicles.IoDoorInfo;
 import diskCacheV111.vehicles.IoDoorEntry;
+import diskCacheV111.vehicles.GFtpTransferStartedMessage;
+import diskCacheV111.vehicles.DoorTransferFinishedMessage;
+import diskCacheV111.vehicles.Message;
+import diskCacheV111.vehicles.StorageInfo;
+import diskCacheV111.vehicles.ProtocolInfo;
+import diskCacheV111.vehicles.GFtpProtocolInfo;
+import diskCacheV111.vehicles.PnfsGetStorageInfoMessage;
+import diskCacheV111.vehicles.PnfsSetLengthMessage;
+import diskCacheV111.vehicles.PnfsGetFileMetaDataMessage;
+import diskCacheV111.vehicles.PoolMgrSelectPoolMsg;
+import diskCacheV111.vehicles.PoolMgrSelectWritePoolMsg;
+import diskCacheV111.vehicles.PoolMgrSelectReadPoolMsg;
+import diskCacheV111.vehicles.PoolMoverKillMessage;
+import diskCacheV111.vehicles.PoolIoFileMessage;
+import diskCacheV111.vehicles.PoolDeliverFileMessage;
+import diskCacheV111.vehicles.PoolAcceptFileMessage;
+import diskCacheV111.vehicles.IoJobInfo;
 import diskCacheV111.movers.GFtpPerfMarkersBlock;
 import diskCacheV111.movers.GFtpPerfMarker;
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.FileExistsCacheException;
+import diskCacheV111.util.NotFileCacheException;
+import diskCacheV111.util.PnfsId;
+import diskCacheV111.util.FileMetaData;
+import diskCacheV111.util.PnfsFile;
+import diskCacheV111.util.FsPath;
+import diskCacheV111.util.VOInfo;
+import diskCacheV111.util.ProxyAdapter;
+import diskCacheV111.util.SocketAdapter;
+import diskCacheV111.util.ActiveAdapter;
+import diskCacheV111.util.ChecksumPersistence;
+import diskCacheV111.util.ChecksumFactory;
+import diskCacheV111.util.Checksum;
+import diskCacheV111.util.PnfsHandler;
+import diskCacheV111.util.UserAuthBase;
 
-import org.dcache.services.AbstractCell;
-import org.dcache.services.Option;
+import org.dcache.cells.AbstractCell;
+import org.dcache.cells.Option;
 
 /**
  * Exception indicating an error during processing of an FTP command.
@@ -256,27 +320,27 @@ public abstract class AbstractFtpDoorV1
      * stream engine passed to us from the LoginManager upon
      * instantiation.
      */
-    protected final StreamEngine        _engine;
+    protected StreamEngine _engine;
 
     /**
      * Writer for control channel.
      */
-    protected final PrintWriter         _out;
+    protected PrintWriter _out;
 
     /**
      * Stub object for talking to the PNFS manager.
      */
-    protected final PnfsHandler         _pnfs;
+    protected PnfsHandler _pnfs;
 
     /**
      * User's Origin
      */
-    protected final Origin        _origin;
+    protected Origin _origin;
 
     /**
      * Permission Handler
      */
-    protected final PermissionHandlerInterface _permissionHandler;
+    protected PermissionHandlerInterface _permissionHandler;
 
     @Option(
         name = "permission-handler",
@@ -524,35 +588,39 @@ public abstract class AbstractFtpDoorV1
 
     protected final int _spaceManagerTimeout = 5 * 60;
 
-    protected final boolean _useEncpScripts;
+    protected boolean _useEncpScripts;
 
     /**
      * Lowest allowable port to use for the data channel when using an
      * adapter.
      */
-    protected final int _lowDataListenPort;
+    protected int _lowDataListenPort;
 
     /**
      * Highest allowable port to use for the data channel when using
      * an adapter.
      */
-    protected final int _highDataListenPort;
+    protected int _highDataListenPort;
 
     private final CommandQueue        _commandQueue =
         new CommandQueue();
     private final CountDownLatch      _shutdownGate =
         new CountDownLatch(1);
     private final Map<String,Method>  _methodDict =
-        new Hashtable();
+        new HashMap();
 
     /**
      * Shared executor for processing FTP commands.
+     *
+     * FIXME: This will be created within the thread group creating
+     * the first FTP door. This will usually be the login manager and
+     * works fine, but it isn't clean.
      */
     private final static ExecutorService _executor =
         Executors.newCachedThreadPool();
 
     protected String         _dnUser;
-    protected Thread         _workerThread;
+    private   Thread         _workerThread;
     protected int            _commandCounter = 0;
     protected String         _lastCommand    = "<init>";
 
@@ -784,105 +852,100 @@ public abstract class AbstractFtpDoorV1
 
     }
 
-    //
-    // ftp flavor specific initialization is done in initFtpDoor
-    // initFtpDoor is called from the constractor
-    //
-    /**
-     * @param name
-     * @param engine
-     * @param args
-     * @throws IllegalArgumentException
-     * @throws IllegalStateException
-     * @throws IllegalAccessException
-     * @throws ClassNotFoundException
-     * @throws NoSuchMethodException
-     * @throws InstantiationException
-     * @throws InvocationTargetException
-     */
     public AbstractFtpDoorV1(String name, StreamEngine engine, Args args)
-        throws IllegalArgumentException,
-               IllegalStateException,
-               IllegalAccessException,
-               ClassNotFoundException,
-               NoSuchMethodException,
-               InstantiationException,
-               InvocationTargetException
+        throws InterruptedException, ExecutionException
     {
-        super(name, args, false);
+        super(name, args);
 
-        boolean success = false;
         try {
-            _engine   = engine;
-            _out      = new PrintWriter(engine.getWriter());
-            _client_data_host = engine.getInetAddress().getHostName();
+            _engine = engine;
+            doInit();
+            _workerThread.start();
+        } catch (InterruptedException e) {
+            reply("421 " + ftpDoorName + " door not ready");
+            _shutdownGate.countDown();
+        } catch (ExecutionException e) {
+            reply("421 " + ftpDoorName + " door not ready");
+            _shutdownGate.countDown();
+        }
+    }
 
-            debug("FTP Door: client hostname = " + _client_data_host);
+    @Override
+    protected void init()
+        throws Exception
+    {
+        super.init();
 
-            if (!_space_reservation_enabled)
-                _space_reservation_strict = false;
+        Args args = getArgs();
+        _out      = new PrintWriter(_engine.getWriter());
+        _client_data_host = _engine.getInetAddress().getHostName();
 
-            if (_local_host == null)
-                _local_host = engine.getLocalAddress().getHostName();
+        debug("FTP Door: client hostname = " + _client_data_host);
 
-            if (_encpPutCmd != null) {
-                warn("FTP Door: The -encp-put option was specified. " +
-                     "This is DEPRECATED.");
-                _useEncpScripts = true;
-            } else {
-                _useEncpScripts = false;
-            }
+        if (!_space_reservation_enabled)
+            _space_reservation_strict = false;
 
-            if (!_use_gplazmaAuthzModule) {
-                _gplazmaPolicyFilePath = null;
-            } else if (_gplazmaPolicyFilePath == null) {
-                String s = "FTP Door: -gplazma-authorization-module-policy " +
-                           "file argument wasn't specified";
+        if (_local_host == null)
+            _local_host = _engine.getLocalAddress().getHostName();
+
+        if (_encpPutCmd != null) {
+            warn("FTP Door: The -encp-put option was specified. " +
+                 "This is DEPRECATED.");
+            _useEncpScripts = true;
+        } else {
+            _useEncpScripts = false;
+        }
+
+        if (!_use_gplazmaAuthzModule) {
+            _gplazmaPolicyFilePath = null;
+        } else if (_gplazmaPolicyFilePath == null) {
+            String s = "FTP Door: -gplazma-authorization-module-policy " +
+                "file argument wasn't specified";
+            error(s);
+            throw new IllegalArgumentException(s);
+        }
+
+        /* Use kpwd file if gPlazma is not enabled.
+         */
+        if (!(_use_gplazmaAuthzModule || _use_gplazmaAuthzCell)) {
+            _kpwdFilePath = args.getOpt("kpwd-file");
+            if ((_kpwdFilePath == null) ||
+                (_kpwdFilePath.length() == 0) ||
+                (!new File(_kpwdFilePath).exists())) {
+                String s = "FTP Door: -kpwd-file file argument wasn't specified";
                 error(s);
                 throw new IllegalArgumentException(s);
             }
+        }
 
-            /* Use kpwd file if gPlazma is not enabled.
-             */
-            if (!(_use_gplazmaAuthzModule || _use_gplazmaAuthzCell)) {
-                _kpwdFilePath = args.getOpt("kpwd-file");
-                if ((_kpwdFilePath == null) ||
-                    (_kpwdFilePath.length() == 0) ||
-                    (!new File(_kpwdFilePath).exists())) {
-                    String s = "FTP Door: -kpwd-file file argument wasn't specified";
-                    error(s);
-                    throw new IllegalArgumentException(s);
-                }
+        /* Data channel port range used when client issues PASV
+         * command.
+         */
+        int low = 0;
+        int high = 0;
+        if (_portRange != null) {
+            try {
+                int ind = _portRange.indexOf(":");
+                if ((ind <= 0) || (ind == (_portRange.length() - 1)))
+                    throw new IllegalArgumentException("Not a port range");
+
+                low  = Integer.parseInt(_portRange.substring(0, ind));
+                high = Integer.parseInt(_portRange.substring(ind + 1));
+                debug("Ftp Door: client data port range [" +
+                      low + ":" + high + "]");
+            } catch (NumberFormatException ee) {
+                error("FTP Door: invalid port range string: " +
+                      _portRange + ". Command ignored." );
+                low = 0;
             }
+        }
+        _lowDataListenPort = low;
+        _highDataListenPort = high;
 
-            /* Data channel port range used when client issues PASV
-             * command.
-             */
-            int low = 0;
-            int high = 0;
-            if (_portRange != null) {
-                try {
-                    int ind = _portRange.indexOf(":");
-                    if ((ind <= 0) || (ind == (_portRange.length() - 1)))
-                        throw new IllegalArgumentException("Not a port range");
-
-                    low  = Integer.parseInt(_portRange.substring(0, ind));
-                    high = Integer.parseInt(_portRange.substring(ind + 1));
-                    debug("Ftp Door: client data port range [" +
-                          low + ":" + high + "]");
-                } catch (NumberFormatException ee) {
-                    error("FTP Door: invalid port range string: " +
-                          _portRange + ". Command ignored." );
-                    low = 0;
-                }
-            }
-            _lowDataListenPort = low;
-            _highDataListenPort = high;
-
-            /* Parallelism for mode E transfers.
-             */
-            _parallelStart = _parallelMin = _parallelMax =
-                _defaultStreamsPerClient;
+        /* Parallelism for mode E transfers.
+         */
+        _parallelStart = _parallelMin = _parallelMax =
+            _defaultStreamsPerClient;
 
             /* Permission handler.
              */
@@ -898,20 +961,15 @@ public abstract class AbstractFtpDoorV1
                            InetAddressType.IPv4,
                            _engine.getInetAddress());
 
-            _pnfs = new PnfsHandler(this, new CellPath(_pnfsManager));
-            _pnfs.setPnfsTimeout(_pnfsTimeout * 1000L);
+        _pnfs = new PnfsHandler(this, new CellPath(_pnfsManager));
+        _pnfs.setPnfsTimeout(_pnfsTimeout * 1000L);
 
-            adminCommandListener = new AdminCommandListener();
-            addCommandListener(adminCommandListener);
+        adminCommandListener = new AdminCommandListener();
+        addCommandListener(adminCommandListener);
 
-            success = true;
-        } finally {
-            if (!success) {
-                _shutdownGate.countDown();
-                start();
-                kill();
-            }
-        }
+        useInterpreter(true);
+
+        _workerThread = new Thread(this);
     }
 
 /*
@@ -1013,7 +1071,7 @@ public abstract class AbstractFtpDoorV1
             if (_transferInProgress &&
                 !(cmd.equals("abor") || cmd.equals("mic")
                   || cmd.equals("conf") || cmd.equals("enc"))) {
-                reply("503  Transfer in progress", false);
+                reply("503 Transfer in progress", false);
                 return;
             }
         }
@@ -1043,9 +1101,17 @@ public abstract class AbstractFtpDoorV1
             if (te instanceof CommandExitException) {
                 throw (dmg.util.CommandExitException)te;
             }
-            reply("500 " + ite.toString() + ": <" + cmd + ">");
-            error("FTP door: ftp command '" + cmd +
-                  "' got exception: " + te.getCause());
+            reply("500 Operation failed due to internal error: " +
+                  te.getMessage());
+
+            /* We don't want to call reportBug, since throwing a
+             * RuntimeException at this point will lead to other error
+             * messages being generated. Just log the exception as
+             * fatal and continue.
+             */
+            fatal("FTP door: ftp command '" + cmd +
+                  "' got exception: " + te.getMessage());
+            fatal(te);
             _skipBytes = 0;
         } catch (IllegalAccessException e) {
             reportBug("ftpcommand", "got illegal access exception", e);
@@ -1056,7 +1122,7 @@ public abstract class AbstractFtpDoorV1
     {
         try {
             Socket socket = _engine.getSocket();
-            if (!socket.isInputShutdown())
+            if (!socket.isClosed() && !socket.isInputShutdown())
                 socket.shutdownInput();
         } catch (IOException e) {
             warn("FTP Door failed to shut down input stream of the " +
@@ -1566,8 +1632,7 @@ public abstract class AbstractFtpDoorV1
         }
 
         if (_pwdRecord.isWeak() || _pwdRecord.isReadOnly()) {
-            setNextPwdRecord();
-            if (_pwdRecord == null) {
+            if(!setNextPwdRecord()) {
                 println("500 Command disabled");
                 return;
             } else {
@@ -1614,8 +1679,7 @@ public abstract class AbstractFtpDoorV1
                 if (_permissionHandler.canDeleteFile(subject, pathInPnfs,  _origin)) {
                     _pnfs.deletePnfsEntry(pathInPnfs);
                 } else {
-                    setNextPwdRecord();
-                    if (_pwdRecord == null) {
+                    if(!setNextPwdRecord()) {
                         reply("553 Permission denied");
                         return;
                     } else {
@@ -1625,8 +1689,7 @@ public abstract class AbstractFtpDoorV1
                 }
             } catch (CacheException e) {
                 error("FTP Door: DELE got CacheException: " + e.getMessage());
-                setNextPwdRecord();
-                if (_pwdRecord == null) {
+                if(!setNextPwdRecord()) {
                     reply("553 Permission denied, reason: " + e);
                 } else {
                     ac_dele(arg);
@@ -1740,8 +1803,7 @@ public abstract class AbstractFtpDoorV1
         }
 
         if (_pwdRecord.isWeak() || _pwdRecord.isReadOnly()) {
-            setNextPwdRecord();
-            if (_pwdRecord == null) {
+            if(!setNextPwdRecord()) {
                 println("500 Command disabled");
                 return;
             } else {
@@ -1751,8 +1813,7 @@ public abstract class AbstractFtpDoorV1
         }
 
         if (_pwdRecord.isAnonymous()) {
-            setNextPwdRecord();
-            if (_pwdRecord == null) {
+            if(!setNextPwdRecord()) {
                 println("554 Anonymous write access not permitted");
                 return;
             } else {
@@ -1763,8 +1824,7 @@ public abstract class AbstractFtpDoorV1
 
         String pathInPnfs = absolutePath(arg);
         if (pathInPnfs == null) {
-            setNextPwdRecord();
-            if (_pwdRecord == null) {
+            if(!setNextPwdRecord()) {
                 reply("553 Cannot determine full directory pathname in PNFS: " + arg);
                 return;
             } else {
@@ -1781,8 +1841,7 @@ public abstract class AbstractFtpDoorV1
                 if (theDirToDelete.list().length == 0) { // Only delete empty directories
                     _pnfs.deletePnfsEntry(pathInPnfs);
                 } else {
-                    setNextPwdRecord();
-                    if (_pwdRecord == null) {
+                    if(!setNextPwdRecord()) {
                         reply("553 Directory not empty. Cannot delete.");
                         return;
                     } else {
@@ -1791,8 +1850,7 @@ public abstract class AbstractFtpDoorV1
                     }
                 }
             } else {
-                setNextPwdRecord();
-                if (_pwdRecord == null) {
+                if(!setNextPwdRecord()) {
                     reply("553 Permission denied");
                     return;
                 } else {
@@ -1801,8 +1859,7 @@ public abstract class AbstractFtpDoorV1
                 }
             }
         } catch (CacheException ce) {
-            setNextPwdRecord();
-            if (_pwdRecord == null) {
+            if(!setNextPwdRecord()) {
                 reply("553 Permission denied, reason: " + ce);
                 return;
             } else {
@@ -1833,8 +1890,7 @@ public abstract class AbstractFtpDoorV1
         }
 
         if (_pwdRecord.isWeak() || _pwdRecord.isReadOnly()) {
-            setNextPwdRecord();
-            if (_pwdRecord == null) {
+            if(!setNextPwdRecord()) {
                 println("500 Command disabled");
                 return;
             } else {
@@ -1844,8 +1900,7 @@ public abstract class AbstractFtpDoorV1
         }
 
         if (_pwdRecord.isAnonymous()) {
-            setNextPwdRecord();
-            if (_pwdRecord == null) {
+            if(!setNextPwdRecord()) {
                 println("554 Anonymous write access not permitted");
                 return;
             } else {
@@ -1856,8 +1911,7 @@ public abstract class AbstractFtpDoorV1
 
         String pathInPnfs = absolutePath(arg);
         if (pathInPnfs == null) {
-            setNextPwdRecord();
-            if (_pwdRecord == null) {
+            if(!setNextPwdRecord()) {
                 reply("553 Cannot create directory in PNFS: " + arg);
                 return;
             } else {
@@ -1896,8 +1950,7 @@ public abstract class AbstractFtpDoorV1
                 if (_permissionHandler.canCreateDir(subject, pathInPnfs, _origin)) {
                     _pnfs.createPnfsDirectory(pathInPnfs,_pwdRecord.UID,_pwdRecord.GID, 0755);
                 } else {
-                    setNextPwdRecord();
-                    if (_pwdRecord == null) {
+                    if(!setNextPwdRecord()) {
                         reply("553 Permission denied");
                         return;
                     } else {
@@ -1906,8 +1959,7 @@ public abstract class AbstractFtpDoorV1
                     }
                 }
             } catch(CacheException ce) {
-                setNextPwdRecord();
-                if (_pwdRecord == null) {
+                if(!setNextPwdRecord()) {
                     reply("553 Permission denied, reason: "+ce);
                     return;
                 } else {
@@ -2187,8 +2239,7 @@ public abstract class AbstractFtpDoorV1
         }
 
         if (_pwdRecord.isWeak() || _pwdRecord.isReadOnly()) {
-            setNextPwdRecord();
-            if (_pwdRecord == null) {
+            if(!setNextPwdRecord()) {
                 println("500 Command disabled");
                 return;
             } else {
@@ -2204,8 +2255,7 @@ public abstract class AbstractFtpDoorV1
 
         String pathInPnfs = absolutePath(path);
         if (pathInPnfs == null) {
-            setNextPwdRecord();
-            if (_pwdRecord == null) {
+            if(!setNextPwdRecord()) {
                 reply("553 Cannot determine full directory pathname in PNFS: " + path);
                 return;
             } else {
@@ -2227,8 +2277,7 @@ public abstract class AbstractFtpDoorV1
         try {
             fileMetaDataMsg = _pnfs.getFileMetaDataByPath(pathInPnfs);
         } catch (CacheException ce) {
-            setNextPwdRecord();
-            if (_pwdRecord == null) {
+            if(!setNextPwdRecord()) {
                 reply("553 Permission denied, reason: " + ce);
             } else {
                 doChmod(permstring, path);
@@ -2246,8 +2295,7 @@ public abstract class AbstractFtpDoorV1
 
         // Only file/directory owner can change permissions on that file/directory
         if (myUid != _pwdRecord.UID) {
-            setNextPwdRecord();
-            if (_pwdRecord == null) {
+            if(!setNextPwdRecord()) {
                 reply("553 Permission denied. Only owner can change permissions.");
             } else {
                 doChmod(permstring, path);
@@ -2257,8 +2305,7 @@ public abstract class AbstractFtpDoorV1
 
         // Chmod on symbolic links not yet supported (should change perms on file/dir pointed to)
         if (isASymLink) {
-            setNextPwdRecord();
-            if (_pwdRecord == null) {
+            if(!setNextPwdRecord()) {
                 reply("502 chmod of symbolic links is not yet supported.");
             } else {
                 doChmod(permstring, path);
@@ -2607,8 +2654,7 @@ public abstract class AbstractFtpDoorV1
                 Subject subject = new Subject(_pwdRecord.UID, _pwdRecord.GID);
                 try {
                     if (!_permissionHandler.canReadFile(subject, _transfer.path, _origin)) {
-                        setNextPwdRecord();
-                        if (_pwdRecord != null) {
+                        if(!setNextPwdRecord()) {
                             retrieve(file, offset, size,
                                      mode, xferMode,
                                      parallelStart, parallelMin, parallelMax,
@@ -2722,6 +2768,9 @@ public abstract class AbstractFtpDoorV1
             case CacheException.TIMEOUT:
                 transfer_error(451, "Internal timeout", e);
                 break;
+            case CacheException.NOT_DIR:
+                transfer_error(550, "Not a directory");
+                break;
             default:
                 transfer_error(451, "Operation failed: " + e.getMessage(), e);
                 break;
@@ -2810,8 +2859,7 @@ public abstract class AbstractFtpDoorV1
             }
 
             if (_pwdRecord.isWeak() || _pwdRecord.isReadOnly()) {
-                setNextPwdRecord();
-                if (_pwdRecord == null) {
+                if(!setNextPwdRecord()) {
                     throw new FTPCommandException(500, "Command disabled");
                 } else {
                     store(file, mode, xferMode,
@@ -2822,8 +2870,7 @@ public abstract class AbstractFtpDoorV1
             }
 
             if (_pwdRecord.isAnonymous()) {
-                setNextPwdRecord();
-                if (_pwdRecord == null) {
+                if(!setNextPwdRecord()) {
                     throw new FTPCommandException(554, "Anonymous write access not permitted");
                 } else {
                     store(file, mode, xferMode,
@@ -3011,7 +3058,7 @@ public abstract class AbstractFtpDoorV1
                     ChecksumPersistence.getPersistenceMgr().store(this, _transfer.pnfsId, _checkSum, true);
                 } catch (Exception e) {
                     throw new FTPCommandException(451,
-                                                  "Failed to send crc to PnfsManager : "
+                                                  "Failed to store checksum: "
                                                   + e.getMessage());
                 }
             }
@@ -3055,6 +3102,9 @@ public abstract class AbstractFtpDoorV1
                 break;
             case CacheException.TIMEOUT:
                 transfer_error(451, "Internal timeout", e);
+                break;
+            case CacheException.NOT_DIR:
+                transfer_error(550, "Not a directory");
                 break;
             default:
                 transfer_error(451, "Operation failed: " + e.getMessage(), e);
@@ -3387,6 +3437,31 @@ public abstract class AbstractFtpDoorV1
         transfer_error(replyCode, msg, null);
     }
 
+    /**
+     * Aborts a transfer and performs all necessary cleanup steps,
+     * including killing movers and removing incomplete files. A
+     * failure message is send to the client. Both the reply code and
+     * reply message are logged as errors.
+     *
+     * If an exception is specified, then the error message in the
+     * exception is logged too and the exception itself is logged at a
+     * debug level. The intention is that an exception is only
+     * specified for exceptional cases, i.e. errors we would not
+     * expect to appear in normal use (potential bugs). Communication
+     * errors and the like should not be logged with an exception.
+     *
+     * In case the caller knows that an exception is certainly a bug,
+     * <code>reportBug</code> should be called. That method logs the
+     * exception as fatal, meaning it will always be added to the
+     * log. In most cases <code>reportBug</code> should be called
+     * instead of <code>transfer_error</code>, since the former will
+     * throw a <code>RuntimeException</code>, which in turn causes
+     * <code>transfer_error</code> to be called.
+     *
+     * @param replyCode reply code to send the the client
+     * @param replyMsg error message to send back to the client
+     * @param exception exception to log or null
+     */
     private synchronized void transfer_error(int replyCode, String replyMsg,
                                              Exception exception)
     {
@@ -3475,6 +3550,7 @@ public abstract class AbstractFtpDoorV1
             } else {
                 error("FTP Door: Transfer error: " + msg
                       + " (" + exception.getMessage() + ")");
+                debug(exception);
             }
             _transfer = null;
         }
@@ -3518,8 +3594,7 @@ public abstract class AbstractFtpDoorV1
                 if (_permissionHandler.canGetAttributes(subject, path, _origin, FileAttribute.FATTR4_ACL)) {
                     filelength = info.getMetaData().getFileSize();
                 } else {
-                    setNextPwdRecord();
-                    if (_pwdRecord == null) {
+                    if(!setNextPwdRecord()) {
                         reply("553 Permission denied");
                     } else {
                         ac_size(arg);
@@ -3572,8 +3647,7 @@ public abstract class AbstractFtpDoorV1
                 if (_permissionHandler.canReadFile(subject, path, _origin)) {
                     modification_time = info.getMetaData().getLastModifiedTime();
                 } else {
-                    setNextPwdRecord();
-                    if (_pwdRecord == null) {
+                    if(!setNextPwdRecord()) {
                         reply("553 Permission denied");
                     } else {
                         ac_mdtm(arg);
@@ -3675,20 +3749,19 @@ public abstract class AbstractFtpDoorV1
             String parent = parent_path.toString();
             if (parent.indexOf('*') != -1 || parent.indexOf('?') != -1 ||
                (parent.indexOf('[') != -1 && parent.indexOf(']') != -1)) {
-                reply(" 451 Parent Path Pattern Matching is not supported");
+                reply("504 Parent Path Pattern Matching is not supported");
                 return;
             }
             String absolute_parent_path = absolutePath(parent_path.toString());
             if (absolute_parent_path == null) {
                 FsPath relativeToRootPath = new FsPath(_curDirV);
                 relativeToRootPath.add(parent_path.toString());
-                reply("451 " + relativeToRootPath + " not found.");
+                reply("550 " + relativeToRootPath + " not found.");
                 return;
             }
             f = new PnfsFile(absolute_parent_path);
             if (!f.isDirectory()) {
-                reply("451 Cannot list file according to pattern \"" + pattern +
-                      "\" in " + parent + " which not a directory");
+                reply("550 Not a directory");
                 return;
             }
 
@@ -3699,19 +3772,19 @@ public abstract class AbstractFtpDoorV1
             if (absolutepath == null) {
                 FsPath relativeToRootPath = new FsPath(_curDirV);
                 relativeToRootPath.add(arg);
-                reply("451 "+relativeToRootPath+" not found.");
+                reply("550 " + relativeToRootPath + " not found.");
                 return;
             }
             f = new PnfsFile(absolutepath);
         }
 
         if (!f.exists()) {
-            reply("451 " + arg + "  not found");
+            reply("550 " + arg + " not found");
             return;
         }
 
         if (!f.isPnfs()) {
-            reply("451 non pnfs file. Access deny.");
+            reply("550 Not in PNFS. Access denied.");
             return;
         }
 
@@ -3884,8 +3957,8 @@ public abstract class AbstractFtpDoorV1
      * Asks a pool to perform a transfer.
      *
      * Information about which pool to ask and the file to ask for is
-     * taken from the <tt>transfer<\tt> parameter. On success, the
-     * moverId field of <tt>transfer<\tt> will be filled in. On
+     * taken from the <tt>transfer</tt> parameter. On success, the
+     * moverId field of <tt>transfer</tt> will be filled in. On
      * failure, Exception is thrown.
      *
      * @param transfer     The transfer to perform.
@@ -3946,18 +4019,9 @@ public abstract class AbstractFtpDoorV1
             + (isWrite ? ": receiving" : ": sending");
     }
 
-    public void setNextPwdRecord()
-    {
-        if (_pwdRecord != null) {
-            _originalPwdRecord = _pwdRecord;
-            _pwdRecord = null;
-        }
-    }
+    abstract protected boolean setNextPwdRecord();
 
-    public void resetPwdRecord()
-    {
-        _pwdRecord = _originalPwdRecord;
-    }
+    abstract protected void resetPwdRecord();
 
     private class PerfMarkerTask
         extends TimerTask implements CellMessageAnswerable
@@ -4037,6 +4101,8 @@ public abstract class AbstractFtpDoorV1
         @Override
         public synchronized void run()
         {
+            initLoggingContext();
+
             CellMessage msg =
                 new CellMessage(new CellPath(_pool),
                                 "mover ls -binary " + _moverId);
@@ -4136,6 +4202,7 @@ public abstract class AbstractFtpDoorV1
                     _running = true;
                     _executor.submit(new Runnable() {
                             public void run() {
+                                initLoggingContext();
                                 String command = get();
                                 while (command != null) {
                                     execute(command);
