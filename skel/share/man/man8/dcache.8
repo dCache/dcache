@@ -123,6 +123,26 @@ configuration. The pool is \fBnot\fR physically deleted from the file
 system. If a the domain hosting the pool becomes empty, that domain is
 removed from the configuration.
 
+.SH DEBUGGING COMMANDS
+
+.TP
+\fBdump heap DOMAIN FILE\fR
+
+Dumps the Java heap of DOMAIN to FILE. The file will contain
+information about all objects and can be analysed with the Java
+\fBjhat(1)\fR utility. Notice that the file might contain confidential
+information, such as host keys.
+
+This feature requires that the Java 6 JDK is installed.
+
+.TP
+\fBdump threads [SERVICE|DOMAIN] ...\fR
+
+Dumps the Java stack traces of all running threads in DOMAIN or
+SERVICE. If no services or domains are specified, stack traces of all
+running domains will be dumped. The information is written to the log
+files of the respective domains.
+
 .SH WHAT IS DCACHE
 
 The core part of the dCache has proven to combine heterogenous disk
