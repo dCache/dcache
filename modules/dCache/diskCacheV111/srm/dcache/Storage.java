@@ -179,6 +179,7 @@ import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.services.space.message.GetSpaceMetaData;
 import diskCacheV111.services.space.message.GetSpaceTokens;
+import org.dcache.auth.persistence.AuthRecordPersistenceManager;
 
 
 import org.ietf.jgss.GSSCredential;
@@ -612,9 +613,13 @@ public class Storage
 
         config.setJdbcMonitoringEnabled(isOptionSetToTrueOrYes("jdbc-monitoring-log",
             config.isJdbcMonitoringEnabled())); // false by default
+        
         config.setJdbcMonitoringDebugLevel(isOptionSetToTrueOrYes("jdbc-monitoring-debug",
             config.isJdbcMonitoringDebugLevel())); // false by default
 
+        config.setCleanPendingRequestsOnRestart(isOptionSetToTrueOrYes("clean-pending-requests-on-restart",
+            config.isCleanPendingRequestsOnRestart())); // false by default
+        
         config.setOverwrite(isOptionSetToTrueOrYes("overwrite",
             config.isOverwrite())); //false by default
 
@@ -670,7 +675,11 @@ public class Storage
             config.setWebservice_protocol("http");
         }
 
-        config.setSrmUserPersistenceManager(new DCacheUserPersistanceManager());
+        config.setSrmUserPersistenceManager(
+            new AuthRecordPersistenceManager(config.getJdbcUrl(),
+                config.getJdbcClass(),
+                config.getJdbcUser(), 
+                config.getJdbcPass()));
         config.setStorage(this);
 
         //getNucleus().newThread( new Runnable(){
@@ -3645,12 +3654,12 @@ public class Storage
     }
 
     /**
-     * @param user User ID
-     * @param actualFilePath
+     * @param user 
+     * @param filePath
      * @param remoteTURL
      * @param remoteUser
-     * @param callbacks
      * @param remoteCredetial
+     * @param callbacks
      * @throws SRMException
      * @return copy handler id
      */
@@ -3989,12 +3998,14 @@ public class Storage
      * dcache pool) and the name (unique string  id) of the pool.
      * @param user User ID
      * @param spaceSize size of the space to be released
-     * @param reservationToken identifier of the space
+     * @param spaceToken identifier of the space
      * @param callbacks This interface is used for
      * asyncronous notification of SRM of the
      * various actions performed to release space in the storage
      */
-    public void releaseSpace( SRMUser user, long spaceSize, String spaceToken,
+    public void releaseSpace( SRMUser user,
+        long spaceSize, 
+        String spaceToken,
         ReleaseSpaceCallbacks callbacks){
         AuthorizationRecord duser = (AuthorizationRecord) user;
         ReleaseSpaceCompanion.releaseSpace(spaceToken,spaceSize,callbacks,this);

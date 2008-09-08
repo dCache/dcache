@@ -123,7 +123,8 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
         this.pass = configuration.getJdbcPass();
         this.logger = configuration.getStorage();
         this.logHistory = configuration.isJdbcMonitoringEnabled();
-        dbInit();
+        
+        dbInit(configuration.isCleanPendingRequestsOnRestart());
         //updatePendingJobs();
         new Thread(this,"update"+getTableName()).start();
     }
@@ -208,7 +209,7 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
         return getTableName().toLowerCase()+"history";
     }
     
-    private void dbInit()
+    private void dbInit(boolean clean)
     throws SQLException {
         createTable(srmStateTableName, createStateTable);
         insertStates();
@@ -218,7 +219,7 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
        " CONSTRAINT fk_"+tableName+"_ST FOREIGN KEY (STATE) REFERENCES "+
         srmStateTableName +" (ID) "+
         " )";
-        createTable(tableName,createStatement,true,true);
+        createTable(tableName,createStatement,true,clean);
         String historyTableName = getHistoryTableName();
         if(reanamed_old_table) {
             try{
@@ -392,7 +393,7 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
         MAXNUMOFRETR,
         LASTSTATETRANSITIONTIME,
         set,
-        13 );
+        12 );
         sqlStatement.close();
         updateJobsSet(job);
         return job;
@@ -909,8 +910,8 @@ public void updatePendingJobs() throws SQLException, InterruptedException,org.dc
             say("executing statement: "+sqlStatementString);
             ResultSet set = sqlStatement.executeQuery(sqlStatementString);
             while(set.next()) {
-                Long ID = new Long(set.getLong(1));
-                Long NEXTJOBID = new Long(set.getLong(2));
+                Long ID = set.getLong(1);
+                Long NEXTJOBID = set.getLong(2);
                 //Date CREATIONDATE = set.getDate(3);
                 long CREATIONTIME = set.getLong(3);
                 long LIFETIME = set.getLong(4);
@@ -971,11 +972,14 @@ public void updatePendingJobs() throws SQLException, InterruptedException,org.dc
     }
     
     /**
-     * Setter for property useJobsSet.
-     * @param useJobsSet New value of property useJobsSet.
+     * Setter for parameter controlling the 
+     * caching of requests in memory
+     * @param value If false, the incomplete requests will be cached 
+     *   memory , if true, they might be Garbage collected and
+     *  be reread from DB, when accessed
      */
-    public void storeUncompleteRequestsInMemory(boolean b) {
-        this.useJobsSet = !b;
+    public void saveMemory(boolean value) {
+        this.useJobsSet = !value;
         if(useJobsSet == false && !jobsSet.isEmpty()) {
             try
             {

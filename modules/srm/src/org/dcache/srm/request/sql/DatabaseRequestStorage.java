@@ -120,7 +120,7 @@ public abstract class DatabaseRequestStorage extends DatabaseJobStorage implemen
         String CLIENTHOST = set.getString(next_index++);
         String STATUSCODE= set.getString(next_index++);
         SRMUser user = 
-            srmUserPersistenceManager.retrieve(set.getLong(next_index++));
+            srmUserPersistenceManager.find(set.getLong(next_index++));
         return getRequest(
         _con,
         ID,
@@ -330,11 +330,11 @@ public abstract class DatabaseRequestStorage extends DatabaseJobStorage implemen
         }
         else if(columnIndex == nextIndex+6)
         {
-            verifyStringType("USERID",columnIndex,tableName, columnName, columnType);
+            verifyLongType("USERID",columnIndex,tableName, columnName, columnType);
         }
         else
         {
-            __verify(nextIndex+6,columnIndex,tableName, columnName, columnType);
+            __verify(nextIndex+7,columnIndex,tableName, columnName, columnType);
         }
    }
        

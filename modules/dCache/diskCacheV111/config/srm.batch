@@ -178,6 +178,11 @@ set context -c SpaceManagerDefaultAccessLatency NEARLINE
 # space before satisfying the request
 set context -c SpaceManagerReserveSpaceForNonSRMTransfers false
 
+# if the srm is restarted and there are pending requests
+# their state will change to Failed or Done
+# if srmCleanPendingRequestsOnRestart is true
+set context -c srmCleanPendingRequestsOnRestart false
+
 #
 #  ----  Usage of Srm Space Manager
 #
@@ -396,4 +401,5 @@ create diskCacheV111.srm.dcache.Storage  SRM-${thisHostname} \
         -custom-get-host-by-addr=${srmCustomGetHostByAddr} \
         -ignore-client-protocol-order=${srmIgnoreClientProtocolOrder}\
         -size-of-single-remove-batch=${srmSizeOfSingleRemoveBatch}\
+        -clean-pending-requests-on-restart=${srmCleanPendingRequestsOnRestart}\
        "

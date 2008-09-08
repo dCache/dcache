@@ -2,6 +2,7 @@
 
 package diskCacheV111.vehicles;
 import  diskCacheV111.util.PnfsId ;
+import org.dcache.auth.AuthorizationRecord;
 
 //Base class for messages to PinManager
 
@@ -9,6 +10,7 @@ import  diskCacheV111.util.PnfsId ;
 public class PinManagerMessage extends Message {
     private StorageInfo  storageInfo;
     private PnfsId pnfsId = null;
+    private AuthorizationRecord authorizationRecord;
 
     private static final long serialVersionUID = 8985723922810987125L;
     
@@ -57,6 +59,14 @@ public class PinManagerMessage extends Message {
      */
     public void setStorageInfo(StorageInfo storageInfo) {
         this.storageInfo = storageInfo;
+    }
+
+    public AuthorizationRecord getAuthorizationRecord() {
+        return authorizationRecord;
+    }
+
+    public void setAuthorizationRecord(AuthorizationRecord authorizationRecord) {
+        this.authorizationRecord = authorizationRecord;
     }
     
 }

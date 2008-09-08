@@ -16,6 +16,6 @@ package org.dcache.srm;
 public interface SRMUserPersistenceManager {
     public long persist(SRMUser srmUser) ;
     
-    public SRMUser retrieve(long persistenceId) ;
+    public SRMUser find(long persistenceId) ;
     
 }

@@ -831,7 +831,10 @@
 	    <!-- DBCP for Replica Manager -->
 	    <copy file="${libDir}/dbcp/commons-dbcp.jar" todir="${binDir}/classes/jdbc-drivers" />
 	    <copy file="${libDir}/dbcp/commons-pool.jar" todir="${binDir}/classes/jdbc-drivers" />
-
+           
+            <!-- TopLink files -->
+	    <mkdir dir="${binDir}/classes/toplink" />
+	    <copy file="${libDir}/toplink/toplink-essentials.jar"  todir="${binDir}/classes/toplink" />
 	</target>
 
 

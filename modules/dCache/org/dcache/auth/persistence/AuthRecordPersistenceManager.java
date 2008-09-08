@@ -22,13 +22,19 @@ import java.util.LinkedList;
 import java.util.Properties;
 import java.io.FileInputStream;
 import java.io.IOException;
-
+import org.dcache.srm.SRMUserPersistenceManager;
+import org.dcache.srm.SRMUser;
+import org.apache.log4j.Logger;
 /**
  *
  * @author timur
  */
-public class  AuthRecordPersistenceManager {
+public class  AuthRecordPersistenceManager implements SRMUserPersistenceManager{
     
+    private static Logger _logJpa = 
+            Logger.getLogger(
+            "logger.org.dcache.db.jpa."+
+            AuthRecordPersistenceManager.class.getName());
     EntityManager em ;
     public AuthRecordPersistenceManager(String propertiesFile) throws IOException {
         Properties p = new Properties();
@@ -54,8 +60,16 @@ public class  AuthRecordPersistenceManager {
         p.put("toplink.jdbc.url",jdbcUrl);
         p.put("toplink.jdbc.user",user);
         p.put("toplink.jdbc.password",pass);
+        p.put( "toplink.weaving","false");
         EntityManagerFactory emf = Persistence.createEntityManagerFactory("AuthRecordPersistenceUnit",p );
         em = emf.createEntityManager();
+    }
+    
+    public long persist(SRMUser user) {
+        if(user instanceof AuthorizationRecord ) {
+            return persist((AuthorizationRecord) user);
+        }
+        throw new IllegalArgumentException("illegal user type: "+user.getClass());
     }
     
     public long persist(AuthorizationRecord rec) {
@@ -70,10 +84,9 @@ public class  AuthRecordPersistenceManager {
             {
                 t.rollback();
             }
-
-            em.close();
+            //em.close();
         }
-        return 0;   
+        return rec.getId();   
     }
     
     public AuthorizationRecord find(long id) {
@@ -81,8 +94,10 @@ public class  AuthRecordPersistenceManager {
         EntityTransaction t = em.getTransaction();
         try{
             t.begin();
+            _logJpa.debug(" searching for AuthorizationRecord with id="+id);
             ar = em.find(AuthorizationRecord.class, id);
-            ar.getGroupLists();
+            _logJpa.debug("found AuthorizationRecord="+ar);
+            
             t.commit();
         }finally
         {
@@ -91,7 +106,7 @@ public class  AuthRecordPersistenceManager {
                 t.rollback();
             }
 
-            em.close();
+            //em.close();
         }
         return ar;   
         

@@ -232,6 +232,7 @@ public class Configuration {
     private String credentialsDirectory="/opt/d-cache/credentials";
     private boolean jdbcMonitoringEnabled=false;
     private boolean jdbcMonitoringDebugLevel = false;
+    private boolean cleanPendingRequestsOnRestart = false;
     private boolean overwrite = false;
     private boolean overwrite_by_default = false;
 	private int sizeOfSingleRemoveBatch = 100;
@@ -903,9 +904,9 @@ public class Configuration {
     }
     
     /** Setter for property kpwdFile.
-     * @param kpwdFile New value of property kpwdFile.
+     * @param kpwdfile New value of property kpwdFile.
      */
-    public void setKpwdfile(java.lang.String kpwdfile) {
+    public void setKpwdfile(String kpwdfile) {
         this.kpwdfile = kpwdfile;
     }
     
@@ -988,9 +989,9 @@ public class Configuration {
     }
     
     /** Setter for property srm_url_path_prefix.
-     * @param srm_url_path_prefix New value of property srm_url_path_prefix.
+     * @param srm_root New value of property srm_root.
      */
-    public void setSrm_root(java.lang.String srm_root) {
+    public void setSrm_root(String srm_root) {
         this.srm_root = srm_root;
     }
     
@@ -1199,6 +1200,7 @@ public class Configuration {
         sb.append("\n\tqosConfigFile=").append(this.qosConfigFile);
         sb.append("\n\tjdbcMonitoringEnabled=").append(this.jdbcMonitoringEnabled);
         sb.append("\n\tjdbcMonitoringDebugLevel=").append(this.jdbcMonitoringDebugLevel);
+        sb.append("\n\tcleanPendingRequestsOnRestart=").append(this.cleanPendingRequestsOnRestart);
         
         return sb.toString();
     }
@@ -2299,6 +2301,14 @@ public class Configuration {
 
     public void setSrmUserPersistenceManager(SRMUserPersistenceManager srmUserPersistenceManager) {
         this.srmUserPersistenceManager = srmUserPersistenceManager;
+    }
+
+    public boolean isCleanPendingRequestsOnRestart() {
+        return cleanPendingRequestsOnRestart;
+    }
+
+    public void setCleanPendingRequestsOnRestart(boolean cleanPendingRequestsOnRestart) {
+        this.cleanPendingRequestsOnRestart = cleanPendingRequestsOnRestart;
     }
     
 }
