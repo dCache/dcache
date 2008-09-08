@@ -615,7 +615,7 @@ public class BasicNameSpaceProvider implements NameSpaceProvider, StorageInfoPro
 
             return vmp.getRealMountPoint() ;
         }
-        public PnfsFile getFileByPnfsId( PnfsId pnfsId ) throws FileNotFoundCacheException{
+        public PnfsFile getFileByPnfsId( PnfsId pnfsId ) throws CacheException {
             return PnfsFile.getFileByPnfsId(
             getMountPointByPnfsId(pnfsId) ,
             pnfsId ) ;
