@@ -4,7 +4,6 @@ package diskCacheV111.poolManager ;
 
 import diskCacheV111.poolManager.PoolSelectionUnit.DirectionType;
 import java.io.PrintWriter;
-import java.io.NotSerializableException;
 import java.lang.reflect.Constructor;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -943,7 +942,7 @@ public class RequestContainerV5 implements Runnable {
            _currentRm = errorMessage ;
         }
 	private boolean sendFetchRequest( String poolName , StorageInfo storageInfo )
-            throws NoRouteToCellException, NotSerializableException
+            throws NoRouteToCellException
         {
 
 	    CellMessage cellMessage = new CellMessage(
@@ -964,7 +963,7 @@ public class RequestContainerV5 implements Runnable {
             return true ;
 	}
 	private void sendPool2PoolRequest( String sourcePool , String destPool )
-            throws NoRouteToCellException, NotSerializableException
+            throws NoRouteToCellException
         {
 
             Pool2PoolTransferMsg pool2pool =

@@ -52,7 +52,6 @@ import diskCacheV111.vehicles.spaceManager.SpaceManagerGetInfoAndLockReservation
 import diskCacheV111.vehicles.spaceManager.SpaceManagerUtilizedSpaceMessage;
 import diskCacheV111.vehicles.spaceManager.SpaceManagerUnlockSpaceMessage;
 
-import java.io.NotSerializableException;
 import java.io.PrintWriter;
 import java.io.IOException;
 import java.net.InetAddress;
@@ -1017,8 +1016,6 @@ public class TransferManagerHandler implements CellMessageAnswerable {
 		manager.sendMessage(new CellMessage(new CellPath("billing") , info));
 	    } catch (NoRouteToCellException e) {
 		esay("Couldn't send billing info : " + e);
-	    } catch (NotSerializableException e) {
-                throw new RuntimeException("Bug: Unserializable vehicle detected", e);
             }
 	}
 	

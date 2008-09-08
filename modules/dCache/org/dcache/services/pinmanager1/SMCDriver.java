@@ -2,7 +2,6 @@ package org.dcache.services.pinmanager1;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.InvocationTargetException;
-import java.io.NotSerializableException;
 
 import diskCacheV111.vehicles.Message;
 

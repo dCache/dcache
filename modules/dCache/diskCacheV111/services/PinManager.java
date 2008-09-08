@@ -1633,7 +1633,7 @@ public class PinManager extends CellAdapter implements Runnable  {
             complete();
         }
 
-        private void getStorageInfo(boolean pinning) throws java.io.NotSerializableException {
+        private void getStorageInfo(boolean pinning) {
             PnfsGetStorageInfoMessage storageInfoRequest =
                 new PnfsGetStorageInfoMessage(pnfsId);
             if(pinning) {

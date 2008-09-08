@@ -8,7 +8,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.RandomAccessFile;
-import java.io.NotSerializableException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -502,9 +501,6 @@ public class P2PClient {
                     say("setting sticky bit of " + entry);
                     entry.setSticky(true);
                 }
-            } catch (NotSerializableException e) {
-                esay("Bug detected: Unserializable vehicle: " + e.getMessage());
-                esay(e);
             } catch (CacheException e) {
                 esay("Failed to set storageinfo : " + e.getMessage());
             } catch (Exception e) {
@@ -782,8 +778,6 @@ public class P2PClient {
 
             _cell.sendMessage(new CellMessage(new CellPath(poolName), request));
             success = true;
-        } catch (NotSerializableException e) {
-            throw new RuntimeException("Bug detected: Unserializable vehicle", e);
         } catch (NoRouteToCellException e) {
             esay("Problem in sending request to " + poolName + " : "
                  + e.getMessage());

@@ -2129,17 +2129,11 @@ public class Storage
         LoginBrokerCompanion companion = null;
         for(int retry=0;retry<MAX_LOGIN_BROKER_RETRIES;++retry) {
             companion = new LoginBrokerCompanion();
-            try {
-                say("getLoginBrokerInfos sending \""+brokerMessage+
-                        "\"  to LoginBroker");
-                sendMessage(
-                        new CellMessage(loginBrokerPath,brokerMessage) ,
+            say("getLoginBrokerInfos sending \""+brokerMessage+
+                "\"  to LoginBroker");
+            sendMessage(new CellMessage(loginBrokerPath,brokerMessage) ,
                         companion,
                         __pnfsTimeout*1000) ;
-            } catch(java.io.NotSerializableException nse) {
-                esay("getLoginBrokerInfos error" + nse);
-                throw new SRMException("getLoginBrokerInfos error" + nse);
-            }
             try {
                 companion.waitForAnswer();
             } catch (InterruptedException ie) {

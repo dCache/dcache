@@ -1,6 +1,5 @@
 package org.dcache.services.info;
 
-import java.io.NotSerializableException;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -239,9 +238,6 @@ public class InfoProvider extends CellAdapter {
 	public void sendMessage( CellMessage msg) {
 		try { 
 			super.sendMessage(msg);
-		} catch( NotSerializableException e) {
-			_log.warn( "Message could not be serialised (this should never happen) ", e);
-			throw( new RuntimeException(e));
 		} catch( NoRouteToCellException e) {
 			_log.info( "Cannot route message to cell, refraining from delivering msg.", e);
 		}

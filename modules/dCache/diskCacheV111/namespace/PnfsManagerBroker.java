@@ -11,10 +11,10 @@ import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellNucleus;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.SyncFifo2;
+import dmg.cells.nucleus.SerializationException;
 import dmg.util.Args;
 import dmg.cells.nucleus.CellPath;
 
-import java.io.NotSerializableException;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Collection;
@@ -218,7 +218,7 @@ public class PnfsManagerBroker extends CellAdapter {
                 
             }catch(NoRouteToCellException  nr) {
                 
-            }catch(NotSerializableException nse){
+            }catch(SerializationException nse){
                 // should never happen: we only resend, we got it serelialized                
             }catch (InterruptedException ie) {
  

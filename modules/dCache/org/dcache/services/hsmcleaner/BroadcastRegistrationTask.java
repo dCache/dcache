@@ -1,7 +1,6 @@
 package org.dcache.services.hsmcleaner;
 
 import java.util.TimerTask;
-import java.io.NotSerializableException;
 
 import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellPath;
@@ -49,8 +48,6 @@ public class BroadcastRegistrationTask extends TimerTask
             BroadcastRegisterMessage message = 
                 new BroadcastRegisterMessage(_eventClass, _target);
             _cell.sendMessage(new CellMessage(_broadcast, message));
-        } catch (NotSerializableException e) {
-            throw new RuntimeException("Failed to register with broadcast cell", e);
         } catch (NoRouteToCellException e) {
             _cell.esay("Failed to register with broadcast cell: No route to cell");
         }
@@ -67,8 +64,6 @@ public class BroadcastRegistrationTask extends TimerTask
             BroadcastUnregisterMessage message = 
                 new BroadcastUnregisterMessage(_eventClass, _target);
             _cell.sendMessage(new CellMessage(_broadcast, message));
-        } catch (NotSerializableException e) {
-            throw new RuntimeException("Failed to register with broadcast cell", e);
         } catch (NoRouteToCellException e) {
             _cell.esay("Failed to register with broadcast cell: No route to cell");
         }

@@ -1277,7 +1277,6 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
    //
    private Map getPoolRepositoryStatistics()
            throws InterruptedException ,
-                  NotSerializableException,
                   NoRouteToCellException,
                   IOException {
 
@@ -1375,7 +1374,6 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
    //
    private Map getBillingStatistics()
            throws InterruptedException ,
-                  NotSerializableException,
                   NoRouteToCellException,
                   IOException {
 

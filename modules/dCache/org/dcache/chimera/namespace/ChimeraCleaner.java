@@ -1,7 +1,6 @@
 package org.dcache.chimera.namespace;
 
 import java.io.File;
-import java.io.NotSerializableException;
 import java.io.PrintWriter;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -408,10 +407,9 @@ public class ChimeraCleaner extends CellAdapter implements Runnable {
      *
      * @param poolList list of pools
      * @throws java.sql.SQLException
-     * @throws java.io.NotSerializableException
      * @throws java.lang.InterruptedException
      */
-    private void runDelete(String[] poolList) throws SQLException, NotSerializableException, InterruptedException {
+    private void runDelete(String[] poolList) throws SQLException, InterruptedException {
 
         for (int i = 0; (i < poolList.length) && !Thread.interrupted(); i++) {
 
@@ -432,12 +430,11 @@ public class ChimeraCleaner extends CellAdapter implements Runnable {
      * @param removeList list of files to be removed from this pool
      * @return list of successfully REMOVED files or 'null' in case NO ONE FILE has been removed.
      * (If the returned list is empty, then NO ONE FILE has been removed.)
-     * @throws java.io.NotSerializableException
      * @throws java.lang.InterruptedException
      */
 
     private String[] sendRemoveToPoolCleaner(String poolName,
-            List<String> removeList) throws NotSerializableException, InterruptedException {
+            List<String> removeList) throws InterruptedException {
 
         if (_logNamespace.isDebugEnabled()) {
             _logNamespace.debug("sendRemoveToPoolCleaner: poolName="+ poolName);
@@ -582,10 +579,9 @@ public class ChimeraCleaner extends CellAdapter implements Runnable {
      * @param dbConnection
      * @param poolName name of the pool
      * @throws java.sql.SQLException
-     * @throws java.io.NotSerializableException
      * @throws java.lang.InterruptedException
      */
-    void cleanPoolComplete(Connection dbConnection, String poolName) throws SQLException, NotSerializableException, InterruptedException {
+    void cleanPoolComplete(Connection dbConnection, String poolName) throws SQLException, InterruptedException {
 
         List<String> filePartList = new ArrayList<String>();
 
@@ -691,9 +687,6 @@ public class ChimeraCleaner extends CellAdapter implements Runnable {
             _logNamespace.debug("have broadcasted 'remove files' message to "+broadcast);
         }catch(NoRouteToCellException ee ){
             _logNamespace.error("Problems sending 'remove files' message to "+broadcast+" : "+ee.getMessage());
-        } catch (NotSerializableException e) {
-            // never happens
-            _logNamespace.error("Problems sending 'remove files' message to "+broadcast+" : "+e.getMessage());
         }
      }
 

@@ -724,8 +724,6 @@ public class AuthorizationService {
             throw ase;
         } catch ( GSSException gsse ) {
             throw new AuthorizationServiceException("authRequestID " + authRequestID + " error getting source from context " + gsse);
-        } catch ( NotSerializableException nse ) {
-            throw new AuthorizationServiceException("authRequestID " + authRequestID + " message to " + authcellname + " not serializable " + nse);
         } catch ( NoRouteToCellException nre ) {
             throw new AuthorizationServiceException("authRequestID " + authRequestID + nre);
         } catch ( InterruptedException ie ) {
@@ -802,8 +800,6 @@ public class AuthorizationService {
             throw ase;
         } catch ( GSSException gsse ) {
             throw new AuthorizationServiceException("authRequestID " + authRequestID + " error getting source from context " + gsse);
-        } catch ( NotSerializableException nse ) {
-            throw new AuthorizationServiceException("authRequestID " + authRequestID + " message to " + authcellname + " not serializable " + nse);
         } catch ( NoRouteToCellException nre ) {
             throw new AuthorizationServiceException("authRequestID " + authRequestID + nre);
         } catch ( InterruptedException ie ) {
@@ -855,8 +851,6 @@ public class AuthorizationService {
             throw ase;
         } catch ( GSSException gsse ) {
             throw new AuthorizationServiceException("authRequestID " + authRequestID + " error getting source from context " + gsse);
-        } catch ( NotSerializableException nse ) {
-            throw new AuthorizationServiceException("authRequestID " + authRequestID + " message to " + authcellname + " not serializable " + nse);
         } catch ( NoRouteToCellException nre ) {
             throw new AuthorizationServiceException("authRequestID " + authRequestID + nre);
         } catch ( InterruptedException ie ) {

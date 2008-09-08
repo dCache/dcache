@@ -8,7 +8,6 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.NotSerializableException;
 import java.io.PrintWriter;
 import java.io.RandomAccessFile;
 import java.io.StringWriter;
@@ -923,8 +922,6 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
                     sendMessage(new CellMessage(_billingCell,
                                                 new RemoveFileInfoMessage(getCellName() + "@"
                                                                           + getCellDomainName(), entry.getPnfsId())));
-                } catch (NotSerializableException e) {
-                    throw new RuntimeException("Bug detected: Unserializable vehicle", e);
                 } catch (NoRouteToCellException e) {
                     esay("Could not report removal of : " + entry.getPnfsId()
                          + " : " + e.getMessage());
@@ -1208,8 +1205,6 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
             esay(ce.getMessage());
             try {
                 sendMessage(cellMessage);
-            } catch (NotSerializableException e) {
-                throw new RuntimeException("Bug detected: Unserializable vehicle", e);
             } catch (NoRouteToCellException e) {
                 esay(e);
             }
@@ -1489,8 +1484,6 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
             //
             try {
                 sendMessage(_message);
-            } catch (NotSerializableException e) {
-                throw new RuntimeException("Bug detected: Unserializable vehicle", e);
             } catch (NoRouteToCellException e) {
                 esay("Can't send message back to door : " + e.getMessage());
                 esay(e);
@@ -2113,11 +2106,7 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
                                                                  _destinationHostName, 2222),
                                             storageInfo.getFileSize());
             req.setReplyRequired(false);
-            try {
-                sendMessage(new CellMessage(new CellPath(_replicationManager), req));
-            } catch (NotSerializableException e) {
-                throw new RuntimeException("Bug detected: Unserializable vehicle", e);
-            }
+            sendMessage(new CellMessage(new CellPath(_replicationManager), req));
 
         }
     }
@@ -2226,8 +2215,6 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
                  + _cellMessage.getMessageObject());
             try {
                 sendMessage(_cellMessage);
-            } catch (NotSerializableException e) {
-                throw new RuntimeException("Bug detected: Unserializable vehicle", e);
             } catch (NoRouteToCellException e) {
                 esay("Couldn't send ack to poolManager : " + e.getMessage());
             }
@@ -2547,8 +2534,6 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
                     _cellMessage.revertDirection();
                     say("CellMessage after revert : " + _cellMessage);
                     sendMessage(_cellMessage);
-                } catch (NotSerializableException ee) {
-                    throw new RuntimeException("Bug detected: Unserializable vehicle", ee);
                 } catch (NoRouteToCellException ee) {
                     esay("Cannot reply p2p message : " + ee.getMessage());
                 }
@@ -2779,8 +2764,6 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
             say("Sending reply " + poolMessage);
             cellMessage.revertDirection();
             sendMessage(cellMessage);
-        } catch (NotSerializableException e) {
-            throw new RuntimeException("Bug detected: Unserializable vehicle", e);
         } catch (NoRouteToCellException e) {
             esay("Cannot reply message : " + e.getMessage());
         }
@@ -2842,8 +2825,6 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
             say("Sending reply " + spaceReservationMessage);
             cellMessage.revertDirection();
             sendMessage(cellMessage);
-        } catch (NotSerializableException e) {
-            throw new RuntimeException("Bug detected: Unserializable vehicle", e);
         } catch (NoRouteToCellException e) {
             esay("Cannot reply message : " + e.getMessage());
         }
@@ -2862,8 +2843,6 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
             poolMessage.setFailed(104, "Pool is disabled");
             cellMessage.revertDirection();
             sendMessage(cellMessage);
-        } catch (NotSerializableException e) {
-            throw new RuntimeException("Bug detected: Unserializable vehicle", e);
         } catch (NoRouteToCellException e) {
             esay("Cannot reply message : " + e.getMessage());
         }
@@ -3057,8 +3036,6 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
         {
             try {
                 sendMessage(msg);
-            } catch (NotSerializableException e) {
-                throw new RuntimeException("Bug detected: Unserializable vehicle", e);
             } catch (NoRouteToCellException e){
                 esay("Failed to send ping message: " + e.getMessage());
             }
@@ -3900,8 +3877,6 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
                                                              .getCellName(), "pool", sw.toString());
 
                 sendMessage(new CellMessage(new CellPath(setupManager), info));
-            } catch (NotSerializableException e) {
-                throw new RuntimeException("Bug detected: Unserializable vehicle", e);
             } catch (NoRouteToCellException e) {
                 esay("Problem sending setup to >" + setupManager + "< : " + e.getMessage());
                 throw e;
