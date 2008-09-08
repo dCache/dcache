@@ -82,7 +82,11 @@ public class PoolInformationBase
         PoolInformation pool = _pools.remove(name);
         if (pool != null) {
             for (String hsm : pool.getHsmInstances()) {
-                _hsmToPool.get(hsm).remove(pool);
+                Collection<PoolInformation> pools = _hsmToPool.get(hsm);
+                pools.remove(pool);
+                if (pools.isEmpty()) {
+                    _hsmToPool.remove(hsm);
+                }
             }
         }
     }

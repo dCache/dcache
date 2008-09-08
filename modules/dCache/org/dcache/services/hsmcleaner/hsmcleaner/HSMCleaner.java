@@ -14,9 +14,10 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ExecutionException;
 
-import org.dcache.services.AbstractCell;
-import org.dcache.services.Option;
+import org.dcache.cells.AbstractCell;
+import org.dcache.cells.Option;
 
 import dmg.util.Args;
 
@@ -50,13 +51,13 @@ import dmg.util.Args;
  */
 public class HSMCleaner extends AbstractCell
 {
-    private final FailureRepository _failures;
-    private final Trash _trash;
-    private final RequestTracker _requests;
-    private final ScheduledExecutorService _executor =
-        new ScheduledThreadPoolExecutor(1);
     private final EventHistogram _histogram =
         new EventHistogram(12, 60 * 60 * 1000);
+
+    private FailureRepository _failures;
+    private Trash _trash;
+    private RequestTracker _requests;
+    private ScheduledExecutorService _executor;
 
     private final Runnable _scanTask = new Runnable() {
             public void run() {
@@ -79,7 +80,7 @@ public class HSMCleaner extends AbstractCell
      * that is, how many outstanding deletion requests we have handed
      * over to the request tracker.
      */
-    private final Semaphore _limit;
+    private Semaphore _limit;
 
     @Option(
         name = "hsmCleanerScan",
@@ -142,9 +143,18 @@ public class HSMCleaner extends AbstractCell
     )
     protected int _maxRequests;
 
-    public HSMCleaner(String cellName, String args) throws Exception
+    public HSMCleaner(String cellName, String args)
+        throws InterruptedException, ExecutionException
     {
-	super(cellName, args, false);
+	super(cellName, args);
+        doInit();
+    }
+
+    @Override
+    protected void init()
+        throws Exception
+    {
+        super.init();
 
 	useInterpreter(true);
 
@@ -176,14 +186,14 @@ public class HSMCleaner extends AbstractCell
                 }
             });
 
+        _executor = new ScheduledThreadPoolExecutor(1);
+
         _executor.scheduleWithFixedDelay(_scanTask, _scanInterval,
                                          _scanInterval, TimeUnit.SECONDS);
         _executor.scheduleWithFixedDelay(_recoverTask, _recoverInterval,
                                          _recoverInterval, TimeUnit.SECONDS);
         _executor.scheduleWithFixedDelay(_flushTask, _flushInterval,
                                          _flushInterval, TimeUnit.SECONDS);
-
-	start();
     }
 
     public void cleanUp()
