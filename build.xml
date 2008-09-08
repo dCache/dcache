@@ -27,7 +27,7 @@
     </tstamp>
 
 	<!-- defalut minor version is next official RC -->
-    <property name="build.minor.number" value="15p${build.number}rc" />
+    <property name="build.minor.number" value="${build.number}rc" />
 
 
     <loadproperties srcFile="release.properties" />
@@ -142,8 +142,8 @@
                 <filter token="rpmSrpmDir" value="${rpmSrpmDir}" />
                 <filter token="rpmTopDir" value="${server.rpmTopDir}" />
 
-                <filter token="Version" value="${server.version}" />
-                <filter token="Release" value="${build.minor.number}" />
+                <filter token="Version" value="${server.version}.${build.minor.number}" />
+                <filter token="Release" value="1" />
             </filterset>
         </copy>
 
@@ -169,7 +169,7 @@
         <!-- Create config files for RPM from Templates -->
 
 
-        <tar destfile="${distDir}/dcache-server-${server.version}-${build.minor.number}.tgz"
+        <tar destfile="${distDir}/dcache-server-${server.version}.${build.minor.number}.tgz"
              basedir="${server.rpmBuildrootDir}"
              compression="gzip" />
     </target>
@@ -597,9 +597,9 @@
     -->
 
     <target name="server.deb" depends="server.rpm" description="Build dcache-server_xxx.deb">
-        <!--echo message="${rpmRpmDir}/noarch/dcache-server-${server.version}-${build.minor.number}.noarch.rpm"/-->
+        <!--echo message="${rpmRpmDir}/noarch/dcache-server-${server.version}.${build.minor.number}-1.noarch.rpm"/-->
         <exec dir="${rpmRpmDir}/noarch" executable="fakeroot" failonerror="true">
-            <arg line="alien -k dcache-server-${server.version}-${build.minor.number}.noarch.rpm"/>
+            <arg line="alien -k dcache-server-${server.version}.${build.minor.number}-1.noarch.rpm"/>
         </exec>
     </target>
 
@@ -615,16 +615,16 @@
     -->
     <target name="release" description="Make new release">
 
-        <echo message="building new release : ${release.id}-15p${build.number}" />
+        <echo message="building new release : ${release.id}-${build.number}" />
 
         <!-- STEP 1 snd 2 : set rpm/tar name to release id -->
         <antcall target="server.rpm">
-             <param name="build.minor.number" value="15p${build.number}" />
-             <param name="release.name" value="${release.id}-15p${build.number}" />
+             <param name="build.minor.number" value="${build.number}" />
+             <param name="release.name" value="${release.id}-${build.number}" />
         </antcall>
         <antcall target="server.tgz">
-             <param name="build.minor.number" value="15p${build.number}" />
-             <param name="release.name" value="${release.id}-15p${build.number}" />
+             <param name="build.minor.number" value="${build.number}" />
+             <param name="release.name" value="${release.id}-${build.number}" />
         </antcall>
 
 
@@ -636,16 +636,16 @@
         <!-- STEP 3 : copy current revision to a tag -->
         <svn>
             <copy revision="${current.revision}"
-                message="New Version ${release.id}-15p${build.number}"
+                message="New Version ${release.id}-${build.number}"
                 srcUrl="svn+ssh://svn.dcache.org/data/svn/dCache/${svn.branch}"
-                destUrl="svn+ssh://svn.dcache.org/data/svn/dCache/tags/b15-official-CCRC08-release-p${build.number}" />
+                destUrl="svn+ssh://svn.dcache.org/data/svn/dCache/tags/1.9.${build.number}" />
         </svn>
 
         <!-- STEP 4 : bump up version number and commit -->
         <!-- this will increase build number -->
         <buildnumber file="${build.id.store}" />
         <svn>
-            <commit message="New Version ${release.id}-15p${build.number}" file="${build.id.store}"  />
+            <commit message="New Version ${release.id}-${build.number}" file="${build.id.store}"  />
         </svn>
     </target>
 
@@ -670,12 +670,12 @@
             <status path="." revisionProperty="current.revision" />
         </svn>
 
-        <echo message="new test build : ${release.id}-15pb${current.revision}" />
+        <echo message="new test build : ${release.id}-b${current.revision}" />
 
         <!-- STEP 1 snd 2 : set rpm name to release id and build -->
         <antcall target="server.rpm">
-             <param name="build.minor.number" value="15pb${current.revision}" />
-             <param name="release.name" value="15pb${current.revision}" />
+             <param name="build.minor.number" value="${current.revision}" />
+             <param name="release.name" value="b${current.revision}" />
         </antcall>
 
     </target>
