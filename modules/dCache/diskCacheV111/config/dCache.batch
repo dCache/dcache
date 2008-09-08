@@ -13,7 +13,7 @@ import context -c setupContext
 #
 #   Make sure we got what we need.
 #
-check -strong serviceLocatorPort serviceLocatorHost 
+check -strong serviceLocatorPort serviceLocatorHost
 
 #
 create dmg.cells.services.RoutingManager  RoutingMgr
@@ -68,7 +68,6 @@ define context broadcastSetup endDefine
 
    register diskCacheV111.vehicles.PoolRemoveFilesMessage         billing
 
-#   register diskCacheV111.vehicles.PoolStatusChangedMessage       SpaceManager
    register diskCacheV111.vehicles.PoolFileFlushedMessage         SrmSpaceManager
    register diskCacheV111.vehicles.PoolRemoveFilesMessage         SrmSpaceManager
    register diskCacheV111.vehicles.PoolRemoveFilesMessage         PinManager
@@ -80,4 +79,9 @@ endDefine
 #
 create dmg.cells.services.multicaster.BroadcastCell broadcast  \
           "default -export"
-
+#
+#  --- LoginBroker startup. It is used by SRM for discovery of 
+#      available doors and their loads
+#
+create dmg.cells.services.login.LoginBroker LoginBroker "default -export"
+#

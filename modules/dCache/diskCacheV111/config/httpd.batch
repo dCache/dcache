@@ -35,12 +35,16 @@ set context -c billingDb ${ourHomeDir}/billing
 #     Additional params, if 'billingToDb' is 'yes'
 define env billingToDb.exe endExe
   set context -c billingDatabaseHost localhost
+  set context -c billingDbUer srmdcache
+  set context -c billingDbPass srmdcache
+  set context -c billingDbName billing
+  
   set env -c billingDbParams "\
         -useSQL \
-        -jdbcUrl=jdbc:postgresql://${billingDatabaseHost}/billing \
+        -jdbcUrl=jdbc:postgresql://${billingDatabaseHost}/${billingDbName} \
         -jdbcDriver=org.postgresql.Driver \
-        -dbUser=srmdcache \
-        -dbPass=srmdcache \
+        -dbUser=${billingDbUer} \
+        -dbPass=${billingDbPass} \
        "
 endExe
 eval ${billingToDb} yes ==
@@ -64,7 +68,6 @@ create dmg.cells.network.TopoCell topo "none -update=100 -export"
 #       "22222 dmg.cells.services.ObjectLoginCell  -prot=raw"
 #
 #
-create dmg.cells.services.login.LoginBroker LoginBroker "default -export"
 create dmg.cells.services.login.LoginBroker srm-LoginBroker "default -export"
 #
 define context TransferObserverSetup endDefine
@@ -100,20 +103,10 @@ define context httpdSetup endDefine
    set alias poolInfo class diskCacheV111.poolManager.HttpPoolMgrEngineV3
    set alias billing  class diskCacheV111.cells.HttpBillingEngine
    set alias flushManager class diskCacheV111.hsmControl.flush.HttpHsmFlushMgrEngineV1 mgr=hfc css=default
-   set alias pools class diskCacheV111.services.web.PoolInfoObserverEngineV2 -showPoolGroupUsage=true
+   set alias pools class diskCacheV111.services.web.PoolInfoObserverEngineV2 showPoolGroupUsage=true
    set alias statistics directory ${statisticsLocation}
+   set alias info class org.dcache.services.info.InfoHttpEngine
    set update 60
-endDefine
-
-#
-#  Our /robots.txt file.  This advertises which parts of the HTTP service indexing robots
-#  (web-crawlers) should index.  The particular configuration below disallows all indexing.
-#  Details on how to configure robot.txt files are available from:
-#      http://www.robotstxt.org/robotstxt.html
-#
-define context robots.txt endDefine
-User-agent: *
-Disallow: /
 endDefine
 
 #  set alias system   class dmg.cells.services.HttpSystemService
@@ -176,6 +169,18 @@ define context offline.html endDefine
 </body>
 </html>
 endDefine
+
+#
+#  Our /robots.txt file.  This advertises which parts of the HTTP service indexing robots
+#  (web-crawlers) should index.  The particular configuration below disallows all indexing.
+#  Details on how to configure robot.txt files are available from:
+#      http://www.robotstxt.org/robotstxt.html
+#
+define context robots.txt endDefine
+User-agent: *
+Disallow: /
+endDefine
+
 
 define context online.html endDefine
 <html>
