@@ -294,7 +294,7 @@ create diskCacheV111.doors.CopyManager CopyManager \
 #
 # SRM Space Manager
 #
-create diskCacheV111.services.space.ManagerV2 SrmSpaceManager \
+create diskCacheV111.services.space.Manager SrmSpaceManager \
        "default \
         -export \
         -jdbcUrl=jdbc:postgresql://${srmDatabaseHost}/${srmDbName} \
