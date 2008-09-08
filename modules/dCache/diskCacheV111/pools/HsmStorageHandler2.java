@@ -114,8 +114,8 @@ public class HsmStorageHandler2  {
        _storageHandler = this ;
        if( cell instanceof Logable )setLogable( (Logable)cell ) ;
 
-       _fetchQueue = new SimpleJobScheduler( cell.getNucleus().getThreadGroup() , "F" ) ;
-       _storeQueue = new SimpleJobScheduler( cell.getNucleus().getThreadGroup() , "S" ) ;
+       _fetchQueue = new SimpleJobScheduler( cell.getNucleus(), "F" ) ;
+       _storeQueue = new SimpleJobScheduler( cell.getNucleus(), "S" ) ;
 
        _removeUnexistingEntries = Boolean.valueOf( _cell.getArgs().getOpt("remove-unexisting-entries-on-flush") ).booleanValue();
     }

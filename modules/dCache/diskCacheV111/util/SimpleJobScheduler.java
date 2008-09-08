@@ -1,6 +1,6 @@
 package diskCacheV111.util;
 
-import diskCacheV111.vehicles.*;
+import diskCacheV111.vehicles.JobInfo;
 
 import java.util.*;
 import java.util.concurrent.Executor;
@@ -8,7 +8,15 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.lang.reflect.InvocationTargetException;
 
-public class SimpleJobScheduler implements JobScheduler, Runnable {
+import org.dcache.util.ReflectionUtils;
+
+import org.apache.log4j.Logger;
+import org.apache.log4j.NDC;
+
+public class SimpleJobScheduler implements JobScheduler, Runnable
+{
+    private final static Logger _log =
+        Logger.getLogger(SimpleJobScheduler.class);
 
     public static final int LOW = 0;
     public static final int REGULAR = 1;
@@ -24,13 +32,12 @@ public class SimpleJobScheduler implements JobScheduler, Runnable {
     private int _nextId = 1000;
     private final Object _lock = new Object();
     private final Thread _worker;
-    private final ThreadGroup _group;
-    private final List<Job>[] _queues = new LinkedList[3];
+    private final LinkedList<SJob>[] _queues = new LinkedList[3];
     private final Map<Integer, SJob> _jobs = new HashMap<Integer, SJob>();
-    private final String _prefix;
     private int _batch = -1;
     private String _name = "regular";
     private int _id = -1;
+    private boolean _fifo;
 
     private String[] _st_string = { "W", "A", "K", "R" };
 
@@ -106,8 +113,14 @@ public class SimpleJobScheduler implements JobScheduler, Runnable {
             _startTime = System.currentTimeMillis();
             _thread = Thread.currentThread();
             try {
+                NDC.push("job=" + _id);
+                PnfsId id = ReflectionUtils.getPnfsId(_runnable);
+                if (id != null) {
+                    NDC.push(id.toString());
+                }
                 _runnable.run();
             } finally {
+                NDC.remove();
                 synchronized (_lock) {
                     _status = REMOVED;
                     _jobs.remove(_id);
@@ -147,29 +160,50 @@ public class SimpleJobScheduler implements JobScheduler, Runnable {
         }
     }
 
-    public SimpleJobScheduler(ThreadGroup group) {
-        this(group, "x");
+    /**
+     * Simple utility thread factory that creates threads in the
+     * calling thread's ThreadGroup.
+     */
+    static class SimpleThreadFactory implements ThreadFactory {
+        public Thread newThread(Runnable r) {
+            return new Thread(r);
+        }
     }
 
-    public SimpleJobScheduler(ThreadGroup group, String prefix) {
-        _prefix = prefix;
+    public SimpleJobScheduler(String name) {
+        this(new SimpleThreadFactory(), name);
+    }
+
+    public SimpleJobScheduler(String name, boolean fifo) {
+        this(new SimpleThreadFactory(), name, fifo);
+    }
+
+    public SimpleJobScheduler(ThreadFactory factory, String name) {
+        this(factory, name, true);
+    }
+
+    public SimpleJobScheduler(final ThreadFactory factory, String name, boolean fifo) {
+        _name = name;
+        _fifo = fifo;
         for (int i = 0; i < _queues.length; i++) {
-            _queues[i] = new LinkedList<Job>();
+            _queues[i] = new LinkedList<SJob>();
         }
 
         _jobExecutor = Executors.newCachedThreadPool(new ThreadFactory() {
 
             public Thread newThread(Runnable r) {
-                return new Thread(_group, r, "Scheduler-" + _prefix + "-worker");
+                Thread t = factory.newThread(r);
+                t.setName(_name + "-worker");
+                return t;
             }
         });
 
-        _worker = new Thread(_group = group, this, "Scheduler-" + _prefix);
+        _worker = factory.newThread(this);
+        _worker.setName(_name);
         _worker.start();
     }
 
-    public void setSchedulerId(String name, int id) {
-        if (name != null) _name = name;
+    public void setSchedulerId(int id) {
         _id = id;
     }
 
@@ -201,6 +235,10 @@ public class SimpleJobScheduler implements JobScheduler, Runnable {
                 }
             } catch (Throwable ee) {
                 throw new InvocationTargetException(ee, "reported by queued");
+            }
+
+            if (_maxActiveJobs <= 0) {
+                _log.warn("A task was added to queue '" + _name + "', however the queue is not configured to execute any tasks.");
             }
 
             SJob job = new SJob(runnable, id, priority);
@@ -371,7 +409,12 @@ public class SimpleJobScheduler implements JobScheduler, Runnable {
                 for (int i = HIGH; i >= 0; i--) {
                     while (_activeJobs < _maxActiveJobs) {
                         if (_queues[i].isEmpty()) break;
-                        SJob job = (SJob) _queues[i].remove(0);
+                        SJob job;
+                        if (_fifo) {
+                            job = _queues[i].removeFirst();
+                        } else {
+                            job = _queues[i].removeLast();
+                        }
                         // System.out.println("Starting : "+job ) ;
                         _activeJobs++;
                         _batch = _batch > 0 ? _batch - 1 : _batch;

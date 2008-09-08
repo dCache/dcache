@@ -100,7 +100,7 @@ public class JobSchedulerTestCell extends CellAdapter {
    public JobSchedulerTestCell( String name , String argstring ){
       super( name , argstring , false ) ;
 
-      _scheduler = new SimpleJobScheduler( getNucleus().getThreadGroup() , "S" ) ;
+      _scheduler = new SimpleJobScheduler( getNucleus(), "S" ) ;
       start() ;
    }
    public String hh_start = "[-prio=high|regular|low] <name> \"<args>\"" ;

@@ -27,6 +27,7 @@ import java.util.MissingResourceException;
 import java.util.NoSuchElementException;
 import java.util.StringTokenizer;
 import java.util.TreeSet;
+import java.util.concurrent.ThreadFactory;
 
 import org.apache.log4j.Logger;
 import org.dcache.pool.repository.v4.CacheRepositoryV4;
@@ -514,11 +515,9 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
             // _args.getOpt("io-queues" ) ) ;
             // _ioQueue = _ioQueueManager.getDefaultScheduler() ;
 
-            _ioQueue = new IoQueueManager(getNucleus().getThreadGroup(), _args
-                                          .getOpt("io-queues"));
+            _ioQueue = new IoQueueManager(getNucleus(), _args.getOpt("io-queues"));
 
-            _p2pQueue = new SimpleJobScheduler(getNucleus().getThreadGroup(),
-                                               "P2P");
+            _p2pQueue = new SimpleJobScheduler(getNucleus(), "P2P");
 
             _flushingThread = new HsmFlushController(this, _storageQueue,
                                                      _storageHandler);
@@ -586,7 +585,7 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
         private HashMap<String, JobScheduler> _hash = new HashMap<String, JobScheduler>();
         private boolean _isConfigured = false;
 
-        private IoQueueManager(ThreadGroup group, String ioQueueList) {
+        private IoQueueManager(ThreadFactory factory, String ioQueueList) {
             _isConfigured = (ioQueueList != null) && (ioQueueList.length() > 0);
             if( !_isConfigured ) {
                 ioQueueList = "regular";
@@ -594,16 +593,23 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
 
             StringTokenizer st = new StringTokenizer(ioQueueList, ",");
             while (st.hasMoreTokens()) {
+                boolean fifo = true;
                 String queueName = st.nextToken();
+                if (queueName.startsWith("-")) {
+                    queueName = queueName.substring(1);
+                    fifo = false;
+                }
+
                 if (_hash.get(queueName) != null) {
                     esay("Duplicated queue name (ignored) : " + queueName);
                     continue;
                 }
                 int id = _list.size();
-                JobScheduler job = new SimpleJobScheduler(group, "IO-" + id);
+                JobScheduler job =
+                    new SimpleJobScheduler(factory, queueName, fifo);
                 _list.add(job);
                 _hash.put(queueName, job);
-                job.setSchedulerId(queueName, id);
+                job.setSchedulerId(id);
                 _timeoutManager.addScheduler(queueName, job);
             }
             if (!_isConfigured) {
@@ -715,9 +721,7 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
             return list;
         }
 
-        public void setSchedulerId(String name, int id) {
-            return;
-        }
+        public void setSchedulerId(int id) { }
 
         public String getSchedulerName() {
             return "Manager";
@@ -792,7 +796,7 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
         Class<?>[] argClass = { dmg.cells.nucleus.CellAdapter.class,
 				diskCacheV111.util.PnfsHandler.class,
 				diskCacheV111.repository.CacheRepository.class,
-				diskCacheV111.pools.HsmStorageHandler2.class };
+                                diskCacheV111.pools.HsmStorageHandler2.class };
         Class<?> sweeperClass = Class.forName(_sweeperClass);
         Constructor<?> sweeperCon = sweeperClass.getConstructor(argClass);
         Object[] args = { this, _pnfs, _repository, _storageHandler };

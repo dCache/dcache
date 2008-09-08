@@ -26,7 +26,6 @@ public class FJobScheduler implements JobScheduler, Runnable {
     private final ThreadGroup _group;
     private LinkedList<Job>[] _queues = new LinkedList[3];
     private final Map<Integer, SJob> _jobs = new HashMap<Integer, SJob>();
-    private final String _prefix;
     private int _batch = -1;
     private double _transferRateEquivalent = 10.00;
     private String _name = "regular";
@@ -155,12 +154,9 @@ public class FJobScheduler implements JobScheduler, Runnable {
         }
     }
 
-    public FJobScheduler(ThreadGroup group) {
-        this(group, "x");
-    }
-
-    public FJobScheduler(ThreadGroup group, String prefix) {
-        _prefix = prefix;
+    public FJobScheduler(ThreadGroup group, String name) {
+        _name = name;
+        _group = group;
         for (int i = 0; i < _queues.length; i++) {
             _queues[i] = new LinkedList<Job>();
         }
@@ -168,16 +164,15 @@ public class FJobScheduler implements JobScheduler, Runnable {
         _jobExecutor = Executors.newCachedThreadPool(new ThreadFactory() {
 
             public Thread newThread(Runnable r) {
-                return new Thread(_group, r, "Scheduler-" + _prefix + "-worker");
+                return new Thread(_group, r, _name + "-worker");
             }
         });
 
-        _worker = new Thread(_group = group, this, "Scheduler-" + _prefix);
+        _worker = new Thread(_group, this, _name);
         _worker.start();
     }
 
-    public void setSchedulerId(String name, int id) {
-        if (name != null) _name = name;
+    public void setSchedulerId(int id) {
         _id = id;
     }
 
