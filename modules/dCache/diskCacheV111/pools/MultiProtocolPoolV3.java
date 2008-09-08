@@ -158,7 +158,7 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
     private String _poolManagerName = "PoolManager";
     private String _poolupDestination = "PoolManager";
     private String _hsmPoolManagerName = "HsmPoolManager";
-    private String _sweeperClass = "diskCacheV111.pools.SpaceSweeper0";
+    private String _sweeperClass = "diskCacheV111.pools.SpaceSweeper2";
     private static final String _dummySweeperClass = "diskCacheV111.pools.DummySpaceSweeper";
 
     private int _version = 4;
