@@ -106,4 +106,16 @@ public class Group implements Serializable{
         return Integer.toHexString(hashCode());
     }
 
+    public boolean equals (Object grp) {
+        if ( this == grp ) return true;
+        if ( !(grp instanceof Group) ) return false;
+        Group g =  (Group) grp;
+        return
+            gid==g.getGid();
+    }
+
+    public int hashCode(){
+        return getGid();
+    }
+
 }

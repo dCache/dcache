@@ -121,6 +121,23 @@ public class GroupList implements Serializable{
         }
         return sb.toString();       
     }
+
+    public String toShortString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(attribute).append(' ');
+        if(groups != null) {
+           sb.append('[');
+            for(Group group : groups) {
+                sb.append(group.getGid()).append(',');
+            }
+            sb.deleteCharAt(sb.length() - 1);
+            sb.append(']');
+        } else {
+            sb.append("null");
+        }
+
+        return sb.toString();
+    }
     
     public String hashCodeString() {
          return Integer.toHexString(hashCode());
@@ -132,5 +149,18 @@ public class GroupList implements Serializable{
             return groups.get(0);
         }
         return null;
+    }
+
+    public boolean equals (Object glist) {
+        if ( this == glist ) return true;
+        if ( !(glist instanceof GroupList) ) return false;
+        GroupList gl =  (GroupList) glist;
+        return
+            attribute.equals(gl.getAttribute()) &&
+            groups.equals(gl.getGroups());
+    }
+
+    public int hashCode(){
+        return toShortString().hashCode();
     }
 }

@@ -13,14 +13,11 @@ import java.util.List;
 import java.io.Serializable;
 import javax.persistence.Entity;
 import javax.persistence.Table;
-import javax.persistence.Inheritance;
-import javax.persistence.InheritanceType;
 import javax.persistence.Basic;
 import javax.persistence.Column;
 import javax.persistence.Transient;
 import javax.persistence.Id;
 import javax.persistence.OneToMany;
-import javax.persistence.GeneratedValue;
 import javax.persistence.OrderBy;
 //import static javax.persistence.FetchType.LAZY;
 import static javax.persistence.CascadeType.ALL;
@@ -51,6 +48,8 @@ public class AuthorizationRecord implements Serializable, SRMUser{
     private String root = null;
     private boolean readOnly = false;
     private int currentGIDindex=0;
+    private String authn = null;
+    private String authz = null;
     
     /** Creates a new instance of AuthorizationRecord */
     public AuthorizationRecord() {
@@ -79,7 +78,15 @@ public class AuthorizationRecord implements Serializable, SRMUser{
     public void setId(long id) {
         this.id = id;
     }
-    
+
+    /**
+     * Set the id to a value computed from getId().
+     */
+    public void setId() {
+        if (id != 0) return;
+        id = getId(this);
+    }
+
     @Basic
     @Column( name="identity")
     public String getIdentity() {
@@ -254,5 +261,72 @@ public class AuthorizationRecord implements Serializable, SRMUser{
              }
         }
         return -1;
-    }    
+    }
+
+    @Transient
+    public static long getId(AuthorizationRecord authrec) {
+        long id = authrec.getId();
+        if (id != 0) return id;
+
+        StringBuilder authn = new StringBuilder();
+        StringBuilder authz = new StringBuilder();
+        authn.append(authrec.name);
+        authz.append(authrec.uid);
+        if(authrec.groupLists != null) {
+            authn.append(',');
+            authz.append(' ');
+            for(GroupList groupList : authrec.groupLists) {
+                if (groupList != null) {
+                    authn.append(groupList.getAttribute()).append('|');
+                    authz.append(groupList.toShortString()).append('|');
+                } else {
+                    authn.append("null|");
+                    authz.append("null|");
+                }
+            }
+            authn.deleteCharAt(authn.length() - 1);
+            authz.deleteCharAt(authz.length() - 1);
+        }
+
+        if(authrec.readOnly) {
+            authz.append(" read-only");
+        } else {
+            authz.append(" read-write");
+        }
+        authz.append(' ').append( authrec.priority );
+        authz.append(' ').append( authrec.home );
+        authz.append(' ').append( authrec.root );
+
+        authrec.authn = authn.toString();
+        authrec.authz = authz.toString();
+
+        int authn_hash = authrec.authn.hashCode();
+        int authz_hash = authrec.authz.hashCode();
+
+        id = (((long)authn_hash) <<32) | (authz_hash & 0x0FFFFFFFFL);
+
+        return id;
+    }
+
+    public boolean equals(Object rec) {
+       if ( this == rec ) return true;
+       if ( !(rec instanceof AuthorizationRecord) ) return false;
+       AuthorizationRecord r =  (AuthorizationRecord) rec;
+
+       return
+           identity.equals(r.getIdentity()) &&
+           name.equals(r.getName()) &&
+           uid==r.getUid() &&
+           readOnly==r.isReadOnly() &&
+           groupLists.equals(r.getGroupLists()) &&
+           priority==r.getPriority() &&
+           home.equals(r.getHome()) &&
+           root.equals(r.getRoot());
+    }
+
+    public int hashCode(){
+        getId(this);
+        return Math.abs(authn.hashCode())^Math.abs(authz.hashCode());
+    }
+
 }
