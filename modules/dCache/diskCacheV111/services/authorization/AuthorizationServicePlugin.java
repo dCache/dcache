@@ -1,8 +1,5 @@
-/*
- * AuthorizationServicePlugin.java
- *
- * Created on January 29, 2005
- */
+// $Id: AuthorizationServicePlugin.java,v 1.28 2007-10-23 17:11:24 tdh Exp $
+// $Log: not supported by cvs2svn $
 
 package diskCacheV111.services.authorization;
 
@@ -30,6 +27,7 @@ import org.ietf.jgss.GSSManager;
 import org.ietf.jgss.ChannelBinding;
 import org.ietf.jgss.GSSName;
 import org.ietf.jgss.MessageProp;
+import org.apache.log4j.Logger;
 import gplazma.gplazmalite.storageauthzdbService.DynamicAuthorizationRecord;
 import gplazma.gplazmalite.storageauthzdbService.StorageAuthorizationRecord;
 import gplazma.gplazmalite.storageauthzdbService.DCacheSRMauthzRecordsService;
@@ -46,6 +44,12 @@ public abstract class AuthorizationServicePlugin {
   public static final String REVOCATION_MESSAGE=DENIED_MESSAGE+" - revocation.";
   public static final Class STR_CLASS = "z".getClass();
   public static final Class INT_CLASS = Integer.TYPE;
+  public String storageAuthzPath;
+
+  private void debug(String s){}
+  private void say(String s){}
+  private void warn(String s){}
+  private void esay(String s){}
 
   public UserAuthRecord authorize(GSSContext context, String desiredUserName, String serviceUrl, Socket socket)
 	throws AuthorizationServiceException {
@@ -59,6 +63,84 @@ public abstract class AuthorizationServicePlugin {
 
   public void setLogLevel	(String level) {
   }
+
+  public UserAuthRecord getAuthRecord(String username, String subjectDN, String role) throws AuthorizationServiceException {
+
+    DCacheSRMauthzRecordsService storageRecordsServ;
+
+    try {
+      storageRecordsServ = new DCacheSRMauthzRecordsService(storageAuthzPath);
+    } catch(Exception ase) {
+      esay("Exception in reading storage-authzdb configuration file: ");
+      esay(storageAuthzPath + " " + ase);
+      throw new AuthorizationServiceException(ase.toString());
+    }
+
+    StorageAuthorizationRecord authRecord = storageRecordsServ.getStorageUserRecord(username);
+
+    if (authRecord == null) {
+      esay("A null record was received from the storage authorization service.");
+      return null;
+    }
+
+    if(authRecord instanceof DynamicAuthorizationRecord) {
+      DynamicAuthorizationRecord dynrecord = (DynamicAuthorizationRecord) authRecord;
+      dynrecord.subjectDN = subjectDN;
+      dynrecord.role = role;
+      authRecord = getDynamicRecord(username, dynrecord);
+    }
+
+    String  user=authRecord.Username; if(user==null) {
+      String denied = DENIED_MESSAGE + ": received null username " + user;
+      warn(denied);
+      throw new AuthorizationServiceException(denied);
+    }
+
+    //Integer uid = localId.getUID(); if(uid==null) {
+    int uid = authRecord.UID; if(uid==-1) {
+      String denied = DENIED_MESSAGE + ": uid not found for " + user;
+      warn(denied);
+      throw new AuthorizationServiceException(denied);
+    }
+
+    //Integer gid = localId.getGID(); if(gid==null) {
+    int[] gids = authRecord.GIDs; if(gids[0]==-1) {
+      String denied = DENIED_MESSAGE + ": gids not found for " + user;
+      warn(denied);
+      throw new AuthorizationServiceException(denied);
+    }
+
+		//String home = localId.getRelativeHomePath(); if(home==null) {
+    String home = authRecord.Home; if(home==null) {
+      String denied = DENIED_MESSAGE + ": relative home path not found for " + user;
+      warn(denied);
+      throw new AuthorizationServiceException(denied);
+    }
+
+		//String root = localId.getRootPath(); if(root==null) {
+    String root = authRecord.Root; if(root==null) {
+      String denied = DENIED_MESSAGE + ": root path not found for " + user;
+      warn(denied);
+      throw new AuthorizationServiceException(denied);
+    }
+
+    String fsroot = authRecord.FsRoot; //if(root==null) {
+    int priority = authRecord.priority;
+
+    boolean readonlyflag = authRecord.ReadOnly;
+
+    debug("Plugin now forming user authorization records...");
+    HashSet principals = new HashSet();
+
+    UserAuthRecord authRecordtoReturn = new UserAuthRecord(user, subjectDN, role, readonlyflag, priority, uid, gids, home, root, fsroot, principals);
+    if (authRecordtoReturn.isValid()) {
+      debug("User authorization record has been formed and is valid.");
+    }
+
+    return authRecordtoReturn;
+  }
+
+
 
   public String getDynamicString(String dynamic_mapper, String id_method, String subjectDN, String role) throws AuthorizationServiceException {
     try {
@@ -147,7 +229,7 @@ public abstract class AuthorizationServicePlugin {
   }
 
 
-  public String getRegExInput(String method, DynamicAuthorizationRecord dynrecord) {
+  public static String getRegExInput(String method, DynamicAuthorizationRecord dynrecord) {
 
     if(method.startsWith("$")) {
       StringTokenizer t = new StringTokenizer(method, "/");
