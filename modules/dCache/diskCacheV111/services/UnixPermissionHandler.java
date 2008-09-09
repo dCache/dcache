@@ -384,18 +384,19 @@ public class UnixPermissionHandler implements PermissionHandlerInterface {
         FileMetaData.Permissions group = meta.getGroupPermissions();
         FileMetaData.Permissions world = meta.getWorldPermissions();
 
-        boolean writeAllowed = false;
-
         if (meta.getUid() == subject.getUid()) {
-            writeAllowed = user.canWrite();
-        } else if (meta.getGid() == subject.getGids()[0]) {
-            writeAllowed = group.canWrite();
-        } else {
-            // world = all except user and group
-            writeAllowed = world.canWrite();
+            return user.canWrite();
         }
 
-        return writeAllowed;
+
+        for( int gid : subject.getGids() ) {
+            if (meta.getGid() ==  gid) {
+                return  group.canWrite();
+            }
+        }
+
+        // world = all except user and group
+        return world.canWrite();
     }
 
     private static boolean fileCanExecute(Subject subject, FileMetaData meta) {
@@ -404,18 +405,18 @@ public class UnixPermissionHandler implements PermissionHandlerInterface {
         FileMetaData.Permissions group = meta.getGroupPermissions();
         FileMetaData.Permissions world = meta.getWorldPermissions();
 
-        boolean writeAllowed = false;
-
         if (meta.getUid() == subject.getUid()) {
-            writeAllowed = user.canExecute();
-        } else if (meta.getGid() == subject.getGids()[0]) {
-            writeAllowed = group.canExecute();
-        } else {
-            // world = all except user and group
-            writeAllowed = world.canExecute();
+           return user.canExecute();
         }
 
-        return writeAllowed;
+        for( int gid : subject.getGids() ) {
+            if (meta.getGid() ==  gid) {
+                return  group.canExecute();
+            }
+        }
+
+        // world = all except user and group
+        return world.canExecute();
     }
 
     private static boolean fileCanRead(Subject subject, FileMetaData meta) {
@@ -424,18 +425,17 @@ public class UnixPermissionHandler implements PermissionHandlerInterface {
         FileMetaData.Permissions group = meta.getGroupPermissions();
         FileMetaData.Permissions world = meta.getWorldPermissions();
 
-        boolean readAllowed = false;
-
         if (meta.getUid() == subject.getUid()) {
-            readAllowed = user.canRead();
-        } else if (meta.getGid() == subject.getGids()[0]) {
-            readAllowed = group.canRead();
-        } else {
-            // world = all except user and group
-            readAllowed = world.canRead();
+            return  user.canRead();
         }
 
-        return readAllowed;
+        for( int gid : subject.getGids() ) {
+            if (meta.getGid() ==  gid) {
+                return  group.canRead();
+            }
+        }
+
+        return world.canRead();
     }
 
     /**
