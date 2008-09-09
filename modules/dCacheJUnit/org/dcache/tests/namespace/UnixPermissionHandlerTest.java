@@ -13,7 +13,6 @@ import org.dcache.chimera.acl.enums.AuthType;
 import org.dcache.chimera.acl.enums.InetAddressType;
 import org.dcache.tests.cells.CellAdapterHelper;
 
-import diskCacheV111.services.FsPermissionHandler;
 import diskCacheV111.services.UnixPermissionHandler;
 import diskCacheV111.util.FileMetaData;
 
@@ -265,6 +264,29 @@ public class UnixPermissionHandlerTest {
 
         isAllowed =  _permissionHandler.canWriteFile(anonymouos, "/pnfs/desy.de/data/newFile", origin);
         assertFalse("Anonymous not allowed to create a new files or directories", isAllowed);
+
+    }
+
+
+    @Test
+    public void testSecondaryGroup() throws Exception {
+        Origin origin = new Origin(authTypeCONST, inetAddressTypeCONST, hostCONST);
+        boolean isAllowed = false;
+
+        FileMetaData parentMetaData =  new FileMetaData(true, 0, 0, 0755);
+        FileMetaData fileMetaData =  new FileMetaData(true, 3750, 1000, 0660);
+
+        _metaDataSource.setMetaData("/pnfs/desy.de/data", parentMetaData);
+        _metaDataSource.setMetaData("/pnfs/desy.de/data/privateFile", fileMetaData);
+
+        int[] groups = new int[] {17, 16, 1000};
+        Subject groupMember = new Subject(3752, groups);
+
+        isAllowed =  _permissionHandler.canReadFile(groupMember, "/pnfs/desy.de/data/privateFile", origin);
+        assertTrue("Group member is allowed to read a file with mode 0640", isAllowed);
+
+        isAllowed =  _permissionHandler.canWriteFile(groupMember, "/pnfs/desy.de/data/privateFile", origin);
+        assertTrue("Group member is allowed to write into a file with mode 0660", isAllowed);
 
     }
 }
