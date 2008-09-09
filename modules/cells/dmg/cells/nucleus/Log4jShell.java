@@ -51,6 +51,13 @@ public class Log4jShell
 
     }
 
+    private Logger getLogger(String name)
+    {
+        return name.equals("root")
+            ? LogManager.getRootLogger()
+            : LogManager.exists(name);
+    }
+
     private List<Logger> getLoggers()
     {
         Enumeration loggers = LogManager.getCurrentLoggers();
@@ -124,7 +131,7 @@ public class Log4jShell
     public final static String hh_log4j_logger_ls = "[-a]";
     public String ac_log4j_logger_ls(Args args)
     {
-        final String format = "%-5s %-20s %s\n";
+        final String format = "%-5s %-30s %s\n";
 
         boolean all = (args.getOpt("a") != null);
         Formatter f = new Formatter();
@@ -150,13 +157,46 @@ public class Log4jShell
     {
         String name = args.argv(0);
         String level = args.argv(1).toUpperCase();
-        Logger logger =
-            name.equals("root") ? LogManager.getRootLogger() : LogManager.exists(name);
+        Logger logger = getLogger(name);
         if (logger == null)
             return "Logger not found: " + name;
 
         logger.setLevel(toLevel(level));
         return "Log level of " + name + " set to " + level;
+    }
+
+    public final static String hh_log4j_logger_attach =
+        "<logger> <appender>";
+    public String ac_log4j_logger_attach_$_2(Args args)
+    {
+        String name = args.argv(0);
+        String appender = args.argv(1);
+        Logger logger = getLogger(name);
+        if (logger == null)
+            return "Logger not found: " + name;
+
+        Appender app = getAppenders().get(appender);
+        if (app == null)
+            return "Appender not found: " + app;
+
+        logger.addAppender(app);
+
+        return name + " attached to " + appender;
+    }
+
+    public final static String hh_log4j_logger_detach =
+        "<logger> <appender>";
+    public String ac_log4j_logger_detach_$_2(Args args)
+    {
+        String name = args.argv(0);
+        String appender = args.argv(1);
+        Logger logger = getLogger(name);
+        if (logger == null)
+            return "Logger not found: " + name;
+
+        logger.removeAppender(appender);
+
+        return name + " detached from " + appender;
     }
 
     public String ac_log4j_appender_ls(Args args)
