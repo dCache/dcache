@@ -91,6 +91,8 @@ define context startNewPools endDefine
     "!MoverMap classpath:org/dcache/pool/classic/pool.xml \
     -export -poolname=${0} -pooldir=${1} \
     -setupClass=pool -setupFile=${1}/setup \
+    -allowPassivePool=${gsiftpAllowPassivePool} \
+    -allowMmap=false \
     -${2} -${3} -${4} -${5} -${6} -${7} -${8}"
 endDefine
 
