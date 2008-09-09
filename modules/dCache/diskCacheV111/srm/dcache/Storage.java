@@ -4590,7 +4590,7 @@ public class Storage
                     cellMessage.getMessageObject() ==null ||
                     !(cellMessage.getMessageObject()  instanceof GetSpaceMetaData)) {
             String error = "sent GetSpaceMetaData to SrmSpaceManager, received "+
-                    cellMessage == null?"null":cellMessage.getMessageObject()
+                    (cellMessage == null?"timeout":cellMessage.getMessageObject())
                     +" back";
                 esay(error );
                 throw new SRMException(error);
@@ -4704,7 +4704,7 @@ public class Storage
             cellMessage.getMessageObject() ==null ||
             !(cellMessage.getMessageObject()  instanceof GetSpaceTokens)) {
             String error = "sent GetSpaceTokens to SrmSpaceManager, received "+
-                    cellMessage==null?"null":cellMessage.getMessageObject() +" back";
+                    (cellMessage==null?"timeout":cellMessage.getMessageObject()) +" back";
                 esay(error);
                 throw new SRMException(error);
         } 
