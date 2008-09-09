@@ -5,21 +5,22 @@
 package javatunnel;
 
 
-import java.io.*;
-import java.net.*;
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.SocketAddress;
 
-import javax.net.ssl.*;
-import javax.net.*;
-import javax.net.ssl.*;
-
+import javax.net.ServerSocketFactory;
+import javax.net.ssl.SSLServerSocketFactory;
 
 import dmg.util.UserValidatable;
 
 public class SSLTunnelServerSocket extends ServerSocket {
 
 
-	private ServerSocket sock = null;
-	private UserValidatable uv = null;
+	private final ServerSocket sock ;
+	private final UserValidatable uv ;
 
 	public SSLTunnelServerSocket(int port, ServerSocketFactory ssf, UserValidatable v) throws java.io.IOException {
 	
@@ -29,12 +30,34 @@ public class SSLTunnelServerSocket extends ServerSocket {
 	}
 
 
+    public SSLTunnelServerSocket( ServerSocketFactory ssf, UserValidatable v) throws java.io.IOException {
+
+        sock = ssf.createServerSocket();
+        uv = v;
+    }
+
+	public SSLTunnelServerSocket(int port, int backlog, InetAddress ifAddress, SSLServerSocketFactory ssf, UserValidatable v) throws IOException {
+        sock = ssf.createServerSocket(port, backlog, ifAddress);
+        uv = v;
+    }
 
 
+    public SSLTunnelServerSocket(int port, int backlog, SSLServerSocketFactory ssf, UserValidatable v) throws IOException {
+        sock = ssf.createServerSocket(port, backlog);
+        uv = v;
+    }
+
+
+    @Override
 	public Socket accept() throws java.io.IOException {
 		Socket s = new SSLTunnelSocket( sock.accept(), uv );
 		return s;
 	}
 
+
+	@Override
+	public void bind(SocketAddress endpoint) throws IOException {
+	    sock.bind(endpoint);
+}
 
 }

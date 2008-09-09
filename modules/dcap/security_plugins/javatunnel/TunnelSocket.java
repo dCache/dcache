@@ -21,7 +21,7 @@ public class TunnelSocket extends Socket implements UserBindible {
         _tunnel = tunnel;
         if ( isConnected()) {
             try{
-                _tunnel.auth( this.getRawInputStream(),  this.getRawOutputStream() , (Object)this );
+                _tunnel.auth( this.getRawInputStream(),  this.getRawOutputStream() , this );
             } catch  ( IOException e) {}
         }
         
@@ -32,7 +32,7 @@ public class TunnelSocket extends Socket implements UserBindible {
         _tunnel = tunnel;
         if ( isConnected()) {
             try{
-                _tunnel.auth( this.getRawInputStream(),  this.getRawOutputStream()  , (Object)this);
+                _tunnel.auth( this.getRawInputStream(),  this.getRawOutputStream()  , this);
             } catch  ( IOException e) {}
         }
         
@@ -44,7 +44,7 @@ public class TunnelSocket extends Socket implements UserBindible {
         _tunnel = tunnel;
         if ( isConnected()) {
             try{
-                _tunnel.auth( this.getRawInputStream(),  this.getRawOutputStream() , (Object)this );
+                _tunnel.auth( this.getRawInputStream(),  this.getRawOutputStream() , this );
             } catch  ( IOException e) {}
         }
     }
@@ -56,7 +56,7 @@ public class TunnelSocket extends Socket implements UserBindible {
         _tunnel = tunnel;
         if ( isConnected()) {
             try{
-                _tunnel.auth( this.getRawInputStream(),  this.getRawOutputStream() , (Object)this );
+                _tunnel.auth( this.getRawInputStream(),  this.getRawOutputStream() , this );
             } catch  ( IOException e) {}
         }
         
@@ -68,7 +68,7 @@ public class TunnelSocket extends Socket implements UserBindible {
         _tunnel = tunnel;
         if ( isConnected()) {
             try{
-                _tunnel.auth( this.getRawInputStream(),  this.getRawOutputStream() , (Object)this );
+                _tunnel.auth( this.getRawInputStream(),  this.getRawOutputStream() , this );
             } catch  ( IOException e) {}
         }
         
@@ -80,12 +80,13 @@ public class TunnelSocket extends Socket implements UserBindible {
         _tunnel = tunnel;
         if ( isConnected()) {
             try{
-                _tunnel.auth( this.getRawInputStream(),  this.getRawOutputStream() , (Object)this );
+                _tunnel.auth( this.getRawInputStream(),  this.getRawOutputStream() , this );
             } catch  ( IOException e) {}
         }
         
     }
     
+    @Override
     public OutputStream getOutputStream() throws java.io.IOException {
         
         if(_out == null) {
@@ -96,6 +97,7 @@ public class TunnelSocket extends Socket implements UserBindible {
         
     }
     
+    @Override
     public InputStream getInputStream() throws java.io.IOException {
         
         if(_in == null) {
@@ -118,18 +120,20 @@ public class TunnelSocket extends Socket implements UserBindible {
     }
 
     
+    @Override
     public void connect(SocketAddress endpoint) throws IOException {
         this.connect(endpoint, 0);
     }
     
     
+    @Override
     public void connect(SocketAddress endpoint, int timeout) throws IOException {
         super.connect(endpoint, timeout);
         
         if( _tunnel != null ) {
                                     
             try {
-                _tunnel.auth(this.getRawInputStream(),  this.getRawOutputStream() , (Object) this);
+                _tunnel.auth(this.getRawInputStream(),  this.getRawOutputStream() , this);
             } catch( Exception e) {
                 e.printStackTrace();
             }
@@ -167,7 +171,7 @@ public class TunnelSocket extends Socket implements UserBindible {
 
     public boolean verify() throws IOException {
     	if (_tunnel != null) {
-    		if (_tunnel.verify(this.getRawInputStream(), this.getRawOutputStream(), (Object)this)) {
+    		if (_tunnel.verify(this.getRawInputStream(), this.getRawOutputStream(), this)) {
     			this.setUserPrincipal(_tunnel.getUserPrincipal());
     			this.setRole (((UserBindible)_tunnel).getRole());
     			this.setGroup(((UserBindible)_tunnel).getGroup());

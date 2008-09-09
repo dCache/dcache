@@ -33,6 +33,7 @@ class TunnelServerSocket extends ServerSocket {
         _tunnel = tunnel;
     }
         
+    @Override
     public Socket accept() throws IOException {
 //      while (true) {
             Convertable tunnelCopy = _tunnel.makeCopy();
@@ -42,7 +43,8 @@ class TunnelServerSocket extends ServerSocket {
                 throw new SocketException("Socket is closed");
             if (!isBound())
                 throw new SocketException("Socket is not bound yet");
-            Socket s = new TunnelSocket((SocketImpl) null, tunnelCopy);
+
+            Socket s = new TunnelSocket(tunnelCopy);
             implAccept(s);
 	    return s;
 /*            

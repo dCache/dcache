@@ -13,6 +13,10 @@ import java.util.List;
 import org.ietf.jgss.*;
 
 // globus gsi
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+import org.glite.security.util.DirectoryList;
+import org.glite.security.voms.BasicVOMSTrustStore;
 import org.glite.security.voms.VOMSAttribute;
 import org.glite.security.voms.VOMSValidator;
 import org.glite.security.voms.FQAN;
@@ -31,9 +35,20 @@ class GsiTunnel extends GssTunnel  {
 
     MessageProp _prop =  new MessageProp(true);
 
-    private String service_key           = "/etc/grid-security/hostkey.pem";
-    private String service_cert          = "/etc/grid-security/hostcert.pem";
-    private String service_trusted_certs = "/etc/grid-security/certificates";
+    private static final String service_key           = "/etc/grid-security/hostkey.pem";
+    private static final String service_cert          = "/etc/grid-security/hostcert.pem";
+    private static final String service_trusted_certs = "/etc/grid-security/certificates";
+    private static String vomsdir = "/etc/grid-security/vomsdir";
+
+
+    static {
+        try {
+            new DirectoryList(vomsdir).getListing();
+        } catch (IOException e) {
+            vomsdir = service_trusted_certs;
+        }
+        VOMSValidator.setTrustStore(new BasicVOMSTrustStore(vomsdir, 12*3600*1000));
+    }
 
     // Creates a new instance of GssTunnel
     public GsiTunnel(String dummy) {
@@ -92,11 +107,6 @@ class GsiTunnel extends GssTunnel  {
 
 			X509Certificate[] chain = (X509Certificate[]) gssContext
 					.inquireByOid(GSSConstants.X509_CERT_CHAIN);
-
-			if(chain == null ) {
-				// some thing is wrong here
-				return;
-			}
 
 			VOMSValidator validator = new VOMSValidator(chain);
 			validator.parse();

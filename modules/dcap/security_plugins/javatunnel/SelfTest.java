@@ -7,6 +7,8 @@ package javatunnel;
 import          java.net.*;
 import          java.io.*;
 
+import javax.net.ServerSocketFactory;
+
 class SelfTest {
     
     public SelfTest(boolean isServer, int port, boolean isClient, String serverHost) {
@@ -66,6 +68,7 @@ class SelfTest {
             _host = host;
         }
         
+        @Override
         public void     run() {
             OutputStream out  = null;
             InputStream in = null;
@@ -74,7 +77,7 @@ class SelfTest {
             DataInputStream is = null;
             
             try {
-                s = new TunnelSocket( _host, _port, (Convertable)new GssTunnel("tigran@DESY.DE", "ftp/dcache0.desy.de@DESY.DE"));
+                s = new TunnelSocket( _host, _port, new GssTunnel("tigran@DESY.DE", "ftp/dcache0.desy.de@DESY.DE"));
                 Thread.sleep(20000);
                 out  = s.getOutputStream();
                 in  =  s.getInputStream();
@@ -114,6 +117,7 @@ class SelfTest {
         }
         
         
+        @Override
         public void     run() {
             
             ServerSocket server = null;
@@ -123,10 +127,24 @@ class SelfTest {
             PrintStream os = null;
             DataInputStream is = null;           
             try {
-                server = new TunnelServerSocket(_port, new GsiTunnel("dummy"));               
+
+                String[] initArgs = {"javatunnel.GsiTunnel", "dummy"};
+
+                ServerSocketFactory factory = new TunnelServerSocketCreator(initArgs);
+
+                server = factory.createServerSocket();
+
+//                server = new TunnelServerSocket(new GsiTunnel("dummy"));
+                server.bind(new InetSocketAddress( _port ) );
                 s = server.accept();
                 
+
                // Convertable tunnel = new TunnelConverter();
+                TunnelSocket ts = (TunnelSocket)s;
+                ts.verify();
+                System.out.println( ts.getUserPrincipal() );
+                System.out.println( ts.getGroup() );
+                System.out.println( ts.getRole() );
                 
                    out  = s.getOutputStream();
                    in  =  s.getInputStream();
@@ -135,6 +153,7 @@ class SelfTest {
                 
             } catch(Exception e) {
                 System.out.println(e);
+                e.printStackTrace();
                 return;
             }
             while (!Thread.interrupted()) {

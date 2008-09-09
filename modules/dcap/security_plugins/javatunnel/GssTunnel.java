@@ -93,6 +93,7 @@ class GssTunnel extends TunnelConverter {
     	_useChannelBinding = use;
     }
 
+    @Override
     public byte[] decode(InputStream in) throws java.io.IOException {
         byte[] retValue;
 
@@ -109,6 +110,7 @@ class GssTunnel extends TunnelConverter {
         return retValue;
     }
 
+    @Override
     public void encode(byte[] buf, int len, OutputStream out) throws java.io.IOException {
         byte[] nb = null;
         int nlen =0;
@@ -128,6 +130,7 @@ class GssTunnel extends TunnelConverter {
         super.encode(nb, nlen, out);
     }
 
+    @Override
     public boolean auth( InputStream in, OutputStream out, Object addon) {
 
         boolean established = false;
@@ -169,6 +172,7 @@ class GssTunnel extends TunnelConverter {
     }
 
 
+    @Override
     public boolean verify( InputStream in, OutputStream out, Object addon) {
 
         try {
@@ -210,10 +214,12 @@ class GssTunnel extends TunnelConverter {
     }
 
 
+    @Override
     public String getUserPrincipal() {
         return _userPrincipal == null ? "nobody@SOME.WHERE" : _userPrincipal.toString();
     }
 
+    @Override
     public Convertable makeCopy() {
         return new GssTunnel( _principalStr, true);
     }
@@ -222,10 +228,12 @@ class GssTunnel extends TunnelConverter {
         return _myPrincipal.toString();
     }
 
+	@Override
 	public String getGroup() {
 		return _group;
 	}
 
+	@Override
 	public String getRole() {
 		return _role;
 	}

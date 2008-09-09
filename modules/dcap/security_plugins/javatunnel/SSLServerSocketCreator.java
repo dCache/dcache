@@ -5,19 +5,21 @@
 
 package javatunnel;
 
-import java.io.*;
-import java.net.*;
-import java.util.*;
-
-import javax.net.ssl.*;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.ServerSocket;
 import java.security.KeyStore;
-import javax.net.*;
-import javax.net.ssl.*;
-import javax.security.cert.X509Certificate;
+import java.util.Map;
+
+import javax.net.ServerSocketFactory;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLServerSocketFactory;
 
 import dmg.util.UserValidatable;
 
-public class SSLServerSocketCreator {
+public class SSLServerSocketCreator extends ServerSocketFactory {
 
 
 	private SSLServerSocketFactory ssf = null;
@@ -65,8 +67,28 @@ public class SSLServerSocketCreator {
 	}
 
 
+    @Override
     public ServerSocket createServerSocket( int port ) throws java.io.IOException {
         return new SSLTunnelServerSocket(port, ssf, uv );
+    }
+
+    @Override
+    public ServerSocket createServerSocket() throws java.io.IOException {
+        return new SSLTunnelServerSocket(ssf, uv );
+    }
+
+    @Override
+    public ServerSocket createServerSocket(int port, int backlog)
+            throws IOException {
+
+        return new SSLTunnelServerSocket(port, backlog, ssf, uv);
+    }
+
+    @Override
+    public ServerSocket createServerSocket(int port, int backlog,
+            InetAddress ifAddress) throws IOException {
+
+        return new SSLTunnelServerSocket(port, backlog, ifAddress, ssf, uv);
     }
 
 
@@ -79,6 +101,5 @@ public class SSLServerSocketCreator {
 			e.printStackTrace();
 		}
 	}
-
 
 }
