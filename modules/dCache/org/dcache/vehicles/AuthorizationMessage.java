@@ -71,15 +71,16 @@ COPYRIGHT STATUS:
 package org.dcache.vehicles;
 
 import diskCacheV111.vehicles.AuthenticationMessage;
+import diskCacheV111.util.FQAN;
 import org.dcache.auth.AuthorizationRecord;
 import org.dcache.auth.GroupList;
-import org.dcache.auth.UserAuthBase;
 import org.dcache.auth.UserAuthRecord;
 import org.dcache.auth.Group;
 
 import java.util.List;
 import java.util.Random;
 import java.util.LinkedList;
+import java.util.Iterator;
 
 public class AuthorizationMessage {
 
@@ -99,9 +100,11 @@ public class AuthorizationMessage {
   */
   private AuthorizationRecord  getAuthorizationRecord(AuthenticationMessage authmsg) {
     AuthorizationRecord authrec = new AuthorizationRecord();
-    UserAuthBase legacyauthrec =  authmsg.getNextUserAuthRecord();
+    LinkedList <UserAuthRecord> authreclist =  authmsg.getUserAuthRecords();
+    Iterator<UserAuthRecord> authreciter = authreclist.iterator();
+    UserAuthRecord legacyauthrec = authreciter.hasNext() ? authreciter.next() : null;
+    if (legacyauthrec == null) return authrec;
 
-    authrec.setId(random.nextLong());
     authrec.setIdentity(legacyauthrec.Username);
     authrec.setName(legacyauthrec.DN);
     authrec.setUid(legacyauthrec.UID);
@@ -114,7 +117,7 @@ public class AuthorizationMessage {
     while(legacyauthrec!=null) {
       GroupList grplist = new GroupList();
       List grpcoll = new LinkedList<Group>();
-      int[] GIDs = ((UserAuthRecord)legacyauthrec).GIDs;
+      int[] GIDs = legacyauthrec.GIDs;
       for (int gid : GIDs) {
         Group grp = new Group();
         grp.setGroupList(grplist);
@@ -122,13 +125,15 @@ public class AuthorizationMessage {
         grpcoll.add(grp);
       }
       grplist.setGroups(grpcoll);
-      grplist.setAttribute(legacyauthrec.getFqan().toString());
+      FQAN fqan = legacyauthrec.getFqan();
+      String attribute = (fqan != null) ? fqan.toString() :  null;
+      grplist.setAttribute(attribute);
       grplist.setAuthRecord(authrec);
       grplistcoll.add(grplist);
-      authmsg.getUserAuthRecords().removeFirst();
-      legacyauthrec =  authmsg.getNextUserAuthRecord();
+      legacyauthrec = authreciter.hasNext() ? authreciter.next() : null;
     }
     authrec.setGroupLists(grplistcoll);
+    authrec.setId();
 
     this.authRequestID = authmsg.getAuthRequestID();
     return authrec;
