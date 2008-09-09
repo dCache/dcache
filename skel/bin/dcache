@@ -422,7 +422,7 @@ getServices()
             if isEnabled utilityDomain; then
                 printf "utility "
             fi
-            if isEnabled InfoProvider; then
+            if isEnabled infoProvider; then
                 printf "infoProvider "
             fi
             if isEnabled info; then
