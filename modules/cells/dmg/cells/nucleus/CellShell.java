@@ -1447,30 +1447,36 @@ public String command( String c ) throws CommandExitException {
 
       String var = null ;
       if( ( var = args.getOpt("ifok") ) != null ){
-         //
-         // no variable specified, so take the ${rc}.
-         //
-         if( var.equals("") && ( _errorCode != 0 ) )return "" ;
-         //
-         // but now
-         //
-         Object x = getDictionaryEntry(var) ;
-         if( ( x == null ) ||
-             ( ! x.toString().equals("0") ) )return "" ;
+          if( var.equals("") ) {
+              //
+              // no variable specified, so take the ${rc}.
+              //
+              if( _errorCode != 0 ) return "" ;
+          } else {
+              //
+              // but now
+              //
+              Object x = getDictionaryEntry(var) ;
+              if( ( x == null ) ||
+                  ( ! x.toString().equals("0") ) )return "" ;
+          }
       }
       if( ( var = args.getOpt("ifnotok") ) != null ){
-         //
-         // no variable specified, so take the ${rc}.
-         //
-         if( var.equals("") && ( _errorCode == 0 ) )return "" ;
-         //
-         // but now ( the none existence of the
-         //           specified variable is an error, so
-         //           the context is executed :-) )
-         //
-         Object x = getDictionaryEntry(var) ;
-         if( ( x != null ) &&
-             ( x.toString().equals("0") ) )return "" ;
+          if( var.equals("") ) {
+              //
+              // no variable specified, so take the ${rc}.
+              //
+              if ( _errorCode == 0 ) return "" ;
+          } else {
+              //
+              // but now ( the none existence of the
+              //           specified variable is an error, so
+              //           the context is executed :-) )
+              //
+              Object x = getDictionaryEntry(var) ;
+              if( ( x != null ) &&
+                  ( x.toString().equals("0") ) )return "" ;
+          }
       }
       //
       // shall we execute a new shell
