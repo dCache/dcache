@@ -144,6 +144,7 @@ import org.dcache.auth.AuthorizationRecord;
 import org.dcache.auth.UserAuthRecord;
 import org.dcache.auth.GroupList;
 import org.dcache.auth.Group;
+import org.dcache.auth.persistence.AuthRecordPersistenceManager;
 import org.dcache.srm.SRMAuthorization;
 import org.dcache.srm.SRMAuthorizationException;
 import java.util.Iterator;
@@ -184,15 +185,24 @@ public final class DCacheAuthorization implements SRMAuthorization {
     private CellAdapter parentcell=null;
     private static Map UsernameMap = new HashMap();
     private static long cache_lifetime=0L;
+    private AuthRecordPersistenceManager authRecordPersistenceManager;
+
 
     //constructor being used
-    private DCacheAuthorization(boolean use_gplazmaAuthzCell, boolean delegate_to_gplazma, boolean use_gplazmaAuthzModule, String kAuthFileName, String gplazmaPolicyFilePath, CellAdapter parentcell) {
+    private DCacheAuthorization(boolean use_gplazmaAuthzCell, 
+            boolean delegate_to_gplazma, 
+            boolean use_gplazmaAuthzModule, 
+            String kAuthFileName, 
+            String gplazmaPolicyFilePath, 
+            CellAdapter parentcell,
+            AuthRecordPersistenceManager authRecordPersistenceManager) {
        this.use_gplazmaAuthzCell=use_gplazmaAuthzCell;
        this.delegate_to_gplazma=delegate_to_gplazma;
        this.use_gplazmaAuthzModule=use_gplazmaAuthzModule;
        this.kAuthFileName = kAuthFileName;
        this.gplazmaPolicyFilePath = gplazmaPolicyFilePath;
        this.parentcell = parentcell;
+       this.authRecordPersistenceManager = authRecordPersistenceManager;
     }
 	
     /** Performs authorization checks. Throws
@@ -244,16 +254,18 @@ public final class DCacheAuthorization implements SRMAuthorization {
         }
 
         if(user_rec  == null){
-        if (!use_gplazmaAuthzCell && !use_gplazmaAuthzModule) {
-           user_rec = authorize(secureId,name);
-        }
-        else {
-           user_rec = authorize(gsscontext,name);
-        }
+            if (!use_gplazmaAuthzCell && !use_gplazmaAuthzModule) {
+               user_rec = authorize(secureId,name);
+            }
+            else {
+               user_rec = authorize(gsscontext,name);
+            }
 
-          if(cache_lifetime>0) {
-              putUsernameMapping(requestCredentialId, new TimedAuthorizationRecord(user_rec, name));
-          }
+            user_rec = authRecordPersistenceManager.persist(user_rec);
+            
+            if(cache_lifetime>0) {
+                putUsernameMapping(requestCredentialId, new TimedAuthorizationRecord(user_rec, name));
+            }
         }
 
 
@@ -363,18 +375,47 @@ public final class DCacheAuthorization implements SRMAuthorization {
         return userRecord;
     }
 	
-    public static SRMAuthorization getDCacheAuthorization(boolean use_gplazmaAuthzCell, boolean delegate_to_gplazma, boolean use_gplazmaAuthzModule, String gplazmaPolicyFilePath, String cache_lifetime_str, String kAuthFileName, CellAdapter parentcell) {
+    public static SRMAuthorization getDCacheAuthorization(
+            boolean use_gplazmaAuthzCell, 
+            boolean delegate_to_gplazma, 
+            boolean use_gplazmaAuthzModule, 
+            String gplazmaPolicyFilePath, 
+            String cache_lifetime_str, 
+            String kAuthFileName, 
+            CellAdapter parentcell,
+            AuthRecordPersistenceManager authRecordPersistenceManager) {
         if(srmauthorization == null) {
-            srmauthorization = new DCacheAuthorization(use_gplazmaAuthzCell, delegate_to_gplazma, use_gplazmaAuthzModule, kAuthFileName, gplazmaPolicyFilePath, parentcell);
+            srmauthorization = new DCacheAuthorization(
+                    use_gplazmaAuthzCell, 
+                    delegate_to_gplazma, 
+                    use_gplazmaAuthzModule, 
+                    kAuthFileName, 
+                    gplazmaPolicyFilePath, 
+                    parentcell,
+                    authRecordPersistenceManager);
         }
         if(!use_gplazmaAuthzModule) {
             if(!srmauthorization.kAuthFileName.equals(kAuthFileName)) {
-                srmauthorization = new DCacheAuthorization(use_gplazmaAuthzCell, delegate_to_gplazma, use_gplazmaAuthzModule, kAuthFileName, gplazmaPolicyFilePath, parentcell);
+                srmauthorization = new DCacheAuthorization(
+                        use_gplazmaAuthzCell, 
+                        delegate_to_gplazma, 
+                        use_gplazmaAuthzModule, 
+                        kAuthFileName, 
+                        gplazmaPolicyFilePath, 
+                        parentcell,
+                        authRecordPersistenceManager);
             } 
         }
         else {
             if(!srmauthorization.gplazmaPolicyFilePath.equals(gplazmaPolicyFilePath)) {
-                srmauthorization = new DCacheAuthorization(use_gplazmaAuthzCell, delegate_to_gplazma, use_gplazmaAuthzModule, kAuthFileName, gplazmaPolicyFilePath, parentcell);
+                srmauthorization = new DCacheAuthorization(
+                        use_gplazmaAuthzCell, 
+                        delegate_to_gplazma, 
+                        use_gplazmaAuthzModule, 
+                        kAuthFileName, 
+                        gplazmaPolicyFilePath, 
+                        parentcell,
+                        authRecordPersistenceManager);
             }
         }
         if(srmauthorization!=null) srmauthorization.setCacheLifetime(cache_lifetime_str);

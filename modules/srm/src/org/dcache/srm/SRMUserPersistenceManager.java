@@ -14,7 +14,14 @@ package org.dcache.srm;
  * @author timur
  */
 public interface SRMUserPersistenceManager {
-    public long persist(SRMUser srmUser) ;
+    /**
+     * @ 
+     * @returns a persisted instance of the user
+     * which may or may not be the same java object instance
+     * It is recommended to use the returned instance
+     * after the persist is called
+     */
+    public SRMUser persist(SRMUser srmUser) ;
     
     public SRMUser find(long persistenceId) ;
     

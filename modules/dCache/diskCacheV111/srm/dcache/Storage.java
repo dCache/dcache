@@ -651,6 +651,13 @@ public class Storage
             Thread.sleep(5000);
         } catch(InterruptedException ie) {
         }
+        AuthRecordPersistenceManager authRecordPersistenceManager =
+            new AuthRecordPersistenceManager(
+                config.getJdbcUrl(),
+                config.getJdbcClass(),
+                config.getJdbcUser(), 
+                config.getJdbcPass());
+        config.setSrmUserPersistenceManager(authRecordPersistenceManager);
 
         tmpstr = _args.getOpt("gsissl");
         if(tmpstr !=null) {
@@ -666,7 +673,8 @@ public class Storage
                     config.getGplazmaPolicy(),
                     config.getAuthzCacheLifetime(),
                     config.getKpwdfile(),
-                    this));
+                    this,
+                    authRecordPersistenceManager));
             } else {
                 config.setWebservice_protocol("http");
             }
@@ -675,11 +683,6 @@ public class Storage
             config.setWebservice_protocol("http");
         }
 
-        config.setSrmUserPersistenceManager(
-            new AuthRecordPersistenceManager(config.getJdbcUrl(),
-                config.getJdbcClass(),
-                config.getJdbcUser(), 
-                config.getJdbcPass()));
         config.setStorage(this);
 
         //getNucleus().newThread( new Runnable(){

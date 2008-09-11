@@ -179,8 +179,7 @@ public abstract class DatabaseRequestStorage extends DatabaseJobStorage implemen
             sb.append('\'').append(STATUSCODE).append('\'');
         }
         
-        sb.append(", USERID = ").append( 
-            srmUserPersistenceManager.persist(r.getUser())
+        sb.append(", USERID = ").append( r.getUser().getId()
         ).append(" ");
         
         getUpdateAssignements(r,sb);
@@ -222,7 +221,7 @@ public abstract class DatabaseRequestStorage extends DatabaseJobStorage implemen
             sb.append(", '").append(STATUSCODE).append('\'');
         }
         sb.append(", ").append( 
-            srmUserPersistenceManager.persist(r.getUser())
+            r.getUser().getId()
         ).append(" ");
         getCreateList(r,sb);
         

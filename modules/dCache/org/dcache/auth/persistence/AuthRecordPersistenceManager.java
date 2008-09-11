@@ -65,18 +65,32 @@ public class  AuthRecordPersistenceManager implements SRMUserPersistenceManager{
         em = emf.createEntityManager();
     }
     
-    public long persist(SRMUser user) {
+    public SRMUser persist(SRMUser user) {
         if(user instanceof AuthorizationRecord ) {
             return persist((AuthorizationRecord) user);
         }
         throw new IllegalArgumentException("illegal user type: "+user.getClass());
     }
     
-    public long persist(AuthorizationRecord rec) {
+    public AuthorizationRecord persist(AuthorizationRecord rec) {
         EntityTransaction t = em.getTransaction();
         try{
             t.begin();
-            em.persist(rec);
+            // We assume that gPlazma guaranties that the records with the 
+            // same id will be always the same and unchanged, so 
+            // if rec is contained in the given entity manager, 
+            // no merge is needed
+            if(!em.contains(rec)) {
+                _logJpa.debug("em.contains() returned false");
+                AuthorizationRecord rec1 =
+                        em.find(AuthorizationRecord.class, rec.getId());
+                if(rec1 == null) {
+                    _logJpa.debug("em.find() returned null, persisting");
+                    em.persist(rec);
+                } else {
+                    rec = rec1;
+                }
+            }
             t.commit();
         }finally
         {
@@ -86,7 +100,7 @@ public class  AuthRecordPersistenceManager implements SRMUserPersistenceManager{
             }
             //em.close();
         }
-        return rec.getId();   
+        return rec;   
     }
     
     public AuthorizationRecord find(long id) {

@@ -161,6 +161,18 @@ public class AuthorizationRecord implements Serializable, SRMUser{
     }
 
     @Transient
+    public String  getAuthn() {
+        if (authn == null) initHashStrings();
+        return authn;
+    }
+
+    @Transient
+    public String  getAuthz() {
+        if (authz == null) initHashStrings();
+        return authz;
+    }
+
+    @Transient
     public int getCurrentGIDindex() {
         return currentGIDindex;
     }
@@ -264,18 +276,28 @@ public class AuthorizationRecord implements Serializable, SRMUser{
     }
 
     @Transient
-    public static long getId(AuthorizationRecord authrec) {
+    public long getId(AuthorizationRecord authrec) {
         long id = authrec.getId();
-        if (id != 0) return id;
+        
+        if(id != 0 ) return id;
+        
+        int authn_hash = getAuthn().hashCode();
+        int authz_hash = getAuthz().hashCode();
 
+        id = (((long)authn_hash) <<32) | (authz_hash & 0x0FFFFFFFFL);
+        return id;
+    }
+
+    private  void initHashStrings() {
+        if(this.authn != null && this.authz !=null) return;
         StringBuilder authn = new StringBuilder();
         StringBuilder authz = new StringBuilder();
-        authn.append(authrec.name);
-        authz.append(authrec.uid);
-        if(authrec.groupLists != null) {
+        authn.append(name);
+        authz.append(uid);
+        if(groupLists != null) {
             authn.append(',');
             authz.append(' ');
-            for(GroupList groupList : authrec.groupLists) {
+            for(GroupList groupList : groupLists) {
                 if (groupList != null) {
                     authn.append(groupList.getAttribute()).append('|');
                     authz.append(groupList.toShortString()).append('|');
@@ -288,24 +310,17 @@ public class AuthorizationRecord implements Serializable, SRMUser{
             authz.deleteCharAt(authz.length() - 1);
         }
 
-        if(authrec.readOnly) {
+        if(readOnly) {
             authz.append(" read-only");
         } else {
             authz.append(" read-write");
         }
-        authz.append(' ').append( authrec.priority );
-        authz.append(' ').append( authrec.home );
-        authz.append(' ').append( authrec.root );
+        authz.append(' ').append( priority );
+        authz.append(' ').append( home );
+        authz.append(' ').append( root );
 
-        authrec.authn = authn.toString();
-        authrec.authz = authz.toString();
-
-        int authn_hash = authrec.authn.hashCode();
-        int authz_hash = authrec.authz.hashCode();
-
-        id = (((long)authn_hash) <<32) | (authz_hash & 0x0FFFFFFFFL);
-
-        return id;
+        this.authn = authn.toString();
+        this.authz = authz.toString();
     }
 
     public boolean equals(Object rec) {
@@ -325,8 +340,7 @@ public class AuthorizationRecord implements Serializable, SRMUser{
     }
 
     public int hashCode(){
-        getId(this);
-        return Math.abs(authn.hashCode())^Math.abs(authz.hashCode());
+        return getAuthn().hashCode()^getAuthz().hashCode();
     }
 
 }
