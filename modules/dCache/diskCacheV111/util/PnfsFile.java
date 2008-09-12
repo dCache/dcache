@@ -4,12 +4,14 @@ import java.util.* ;
 import java.io.* ;
 
 import org.apache.log4j.Logger;
+import diskCacheV111.namespace.provider.Trash;
+import diskCacheV111.namespace.provider.EmptyTrash;
 
 public class PnfsFile extends File  {
 
    private PnfsId  _pnfsId     = null ;
    private FileMetaData  _meta = null ;
-   private static String _trash       = null;
+   private static Trash _trash = new EmptyTrash("empty trash");
 
    private static final Logger _logNameSpace =  Logger.getLogger("logger.dev.org.dcache.namespace." + PnfsFile.class.getName());
 
@@ -120,28 +122,18 @@ public class PnfsFile extends File  {
 
     /*
      * This method checks if the file with a name as given pnfsid exists in the trash directory
-     * The result can be 'true/false' or IllegalArgumentException exception if the trash is not configured,
-     * in latter case the behaviour should be as it was before
+     * The result can be 'true/false' 
      */
     public static boolean isDeleted(PnfsId pnfsId) {
-        // Check if trash location is defined
-        if (_trash == null) {
-            throw new IllegalArgumentException("'trash' not defined.");
-        }
-/* Do we need to do it every time?
-        // Check if this location exists and is a directory
-        File tl = new File(_trash);
-        if ((!tl.exists()) || (!tl.isDirectory())) {
-            throw new IllegalArgumentException("Directory '" + _trash + "' does not exist");
-        }
-*/
-        // Check if such entry exists in the trash and return the result
-        File inTrash = new File(_trash, pnfsId.getId());
-        return inTrash.exists();
+        return _trash.isFound(pnfsId.getId());
     }
 
-    public static void setTrashLocation(String trash) {
-        _trash = trash;
+    public static void setTrash(Trash trash) {
+        if (trash != null) {
+            _trash = trash;
+        } else {
+            throw new IllegalArgumentException("'trash' is not defined.");
+        }
     }
 
     public boolean setLength( long length ){

@@ -1,5 +1,5 @@
 /*
- * $Id: BasicNameSpaceProvider.java,v 1.24 2007-09-24 07:01:38 tigran Exp $
+ * $Id$
  */
 
 package diskCacheV111.namespace.provider;
@@ -118,22 +118,37 @@ public class BasicNameSpaceProvider implements NameSpaceProvider, StorageInfoPro
         if (_logNameSpace.isDebugEnabled()) {
             _logNameSpace.debug("Using default pnfs server : "+_pathManager.getDefaultServerName());
         }
-        // Process 'delete-registration' argument
-        String dirName;
-        if (((dirName = _args.getOpt("delete-registration")) == null) || (dirName.equals(""))) {
+        // Process 'delete-registration' arguments
+        String location, driverName, userName, passwd;
+        if (((location = _args.getOpt("delete-registration")) == null) || (location.equals(""))) {
             _logNameSpace.warn("'delete-registration' is not defined.");
-            dirName = null;
-        } else {
-            File trashLocation = new File(dirName);
-            if ((!trashLocation.exists()) || (!trashLocation.isDirectory())) {
-                _logNameSpace.error("Directory '" + dirName + "' does not exist");
-                dirName = null;
-            }
+            location = null;
+        }
+        if (((driverName = _args.getOpt("delete-registration-jdbcDrv")) == null) || (driverName.equals(""))) {
+            _logNameSpace.warn("'delete-registration-jdbcDrv' is not defined.");
+            driverName = null;
+        }
+        if (((userName = _args.getOpt("delete-registration-dbUser")) == null) || (userName.equals(""))) {
+            _logNameSpace.warn("'delete-registration-dbUser' is not defined.");
+            userName = null;
+        }
+        if (((passwd = _args.getOpt("delete-registration-dbPass")) == null) || (passwd.equals(""))) {
+            _logNameSpace.warn("'delete-registration-dbPass' is not defined.");
+            passwd = null;
         }
         if (_logNameSpace.isDebugEnabled()) {
-            _logNameSpace.debug("'delete-registration' set to " + dirName);
+            _logNameSpace.debug("'delete-registration' set to " + location);
         }
-        PnfsFile.setTrashLocation(dirName);
+        if ((location != null) && location.startsWith("/")) {
+            FsTrash trash = new FsTrash(location);
+            PnfsFile.setTrash(trash);
+        } else if ((location != null) && location.startsWith("jdbc:")) {
+            DbTrash trash = new DbTrash(location, driverName, userName, passwd);
+            PnfsFile.setTrash(trash);
+        }
+        else {
+            _logNameSpace.info("Empty trash is selected");
+        }
     }
 
     public void addCacheLocation(PnfsId pnfsId, String cacheLocation) {
