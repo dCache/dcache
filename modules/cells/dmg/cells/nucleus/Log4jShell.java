@@ -211,7 +211,7 @@ public class Log4jShell
                     ((AppenderSkeleton) appender).getThreshold();
                 f.format(format, appender.getName(), toString(priority));
             } else {
-                f.format(format, appender.getName());
+                f.format(format, appender.getName(), "-");
             }
         }
         return f.toString();
