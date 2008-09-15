@@ -92,11 +92,6 @@ public class CacheException extends Exception {
     public final static int NOT_IN_TRASH = 10016;
 
     /**
-     * There is no trash directory
-     */
-    public final static int NO_TRASH = 10017;
-
-    /**
      * default error code.
      * <b>It's recommended to use more specific error codes</b>
      */

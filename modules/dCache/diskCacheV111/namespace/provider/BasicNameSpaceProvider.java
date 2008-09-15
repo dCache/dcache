@@ -777,12 +777,7 @@ public class BasicNameSpaceProvider implements NameSpaceProvider, StorageInfoPro
             }
         }catch(FileNotFoundException fnf ) {
 //        	throw new FileNotFoundCacheException("no such file or directory " + pnfsId.getId() );
-            boolean deleted;
-            try {
-                deleted = PnfsFile.isDeleted(pnfsId);
-            } catch (IllegalArgumentException ee) {
-                throw new CacheException(CacheException.NO_TRASH, "No 'trash' defined");
-            }
+            boolean deleted = PnfsFile.isDeleted(pnfsId);
             if (deleted)
                 throw new FileNotFoundCacheException("no such file or directory " + pnfsId.getId() );
             else

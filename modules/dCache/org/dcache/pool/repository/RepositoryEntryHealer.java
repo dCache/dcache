@@ -169,8 +169,6 @@ public class RepositoryEntryHealer
                  return repositoryEntry;
                  }
                 */
-            } else if (e.getRc() == CacheException.NO_TRASH) {
-                _log.info(id + ": trash is not configured. Keep replica...");
             } else if (e.getRc() == CacheException.NOT_IN_TRASH) {
                 _log.info(id + " is not in trash. Keep replica...");
             } else
@@ -239,8 +237,6 @@ public class RepositoryEntryHealer
                     _log.info(id + " was deleted. Removing replica.");
                     _metaRepository.remove(id);
                     file.delete();
-                } else if (e.getRc() == CacheException.NO_TRASH) {
-                    _log.info(id + ": trash is not configured. Keep replica...");
                 } else if (e.getRc() == CacheException.NOT_IN_TRASH) {
                     _log.info(id + " is not in trash. Keep replica...");
                 } else

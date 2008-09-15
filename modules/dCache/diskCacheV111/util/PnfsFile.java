@@ -571,12 +571,7 @@ public class PnfsFile extends File  {
        }
        PnfsFile f = new PnfsFile(mountpoint, ".(access)(" + id + ")", id);
        if (!f.exists()) {
-           boolean deleted;
-           try {
-               deleted = isDeleted(id);
-           } catch (IllegalArgumentException ee) {
-               throw new CacheException(CacheException.NO_TRASH, "No 'trash' defined");
-           }
+           boolean deleted = isDeleted(id);
            if (deleted)
                throw new FileNotFoundCacheException(id.toString());    // Old code
            else
@@ -592,12 +587,7 @@ public class PnfsFile extends File  {
         }
         PnfsFile f = new PnfsFile(mountpoint.getAbsolutePath(), ".(access)(" + id + ")", id);
         if (!f.exists()) {
-            boolean deleted;
-            try {
-                deleted = isDeleted(id);
-            } catch (IllegalArgumentException ee) {
-                throw new CacheException(CacheException.NO_TRASH, "No 'trash' defined");
-            }
+            boolean deleted = isDeleted(id);
             if (deleted)
                 throw new FileNotFoundCacheException(id.toString());    // Old code
             else
