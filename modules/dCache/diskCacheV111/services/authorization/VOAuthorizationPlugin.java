@@ -133,9 +133,10 @@ public class VOAuthorizationPlugin extends AuthorizationServicePlugin {
   private static HashMap<String, TimedLocalId> UsernameMap = new HashMap();
   long cache_lifetime=0;
 
-  public VOAuthorizationPlugin(String mappingServiceURL, long authRequestID)
+  public VOAuthorizationPlugin(String mappingServiceURL, String storageAuthzPath, long authRequestID)
 	throws AuthorizationServiceException {
-		this.mappingServiceURL = mappingServiceURL;
+	this.mappingServiceURL = mappingServiceURL;
+    this.storageAuthzPath = storageAuthzPath;
     this.authRequestID=authRequestID;
     if(((Logger)log).getAppender("VOAuthorizationPlugin")==null) {
       Enumeration appenders = log.getParent().getAllAppenders();
@@ -301,88 +302,19 @@ public class VOAuthorizationPlugin extends AuthorizationServicePlugin {
     return authorize(gssIdentity, fqanValue, desiredUserName, serviceUrl, socket);
 	}
 
+    private UserAuthRecord getUserAuthRecord(LocalId localId, String subjectDN, String role) throws AuthorizationServiceException {
 
-  private UserAuthRecord getUserAuthRecord(LocalId localId, String subjectDN, String role) throws AuthorizationServiceException {
+    String username = localId.getUserName();
 
-    UserAuthRecord VORecord = null;
-    String user;
-
-    user=localId.getUserName();
-    if(user==null) {
+    if(username==null) {
       String denied = DENIED_MESSAGE + ": non-null user record received, but with a null username";
       warn(denied);
       throw new AuthorizationServiceException(denied);
     } else {
-      say("VO mapping service returned Username: " + user);
+      say("VO mapping service returned Username: " + username);
     }
 
-    Integer uid = localId.getUID();
-    if(uid==null) {
-      String denied = DENIED_MESSAGE + ": uid not found for " + user;
-      warn(denied);
-      throw new AuthorizationServiceException(denied);
-    }
-
-    Integer gid = localId.getGID();
-    if(gid==null) {
-      String denied = DENIED_MESSAGE + ": gid not found for " + user;
-      warn(denied);
-      throw new AuthorizationServiceException(denied);
-    }
-
-		String home = localId.getRelativeHomePath();
-    if(home==null) {
-      String denied = DENIED_MESSAGE + ": relative home path not found for " + user;
-      warn(denied);
-      throw new AuthorizationServiceException(denied);
-    }
-
-		String root = localId.getRootPath();
-    if(root==null) {
-      String denied = DENIED_MESSAGE + ": root path not found for " + user;
-      warn(denied);
-      throw new AuthorizationServiceException(denied);
-    }
-
-		String fsroot = localId.getFSRootPath();
-    if(fsroot==null) {
-      String denied = DENIED_MESSAGE + ": fsroot path not found for " + user;
-      warn(denied);
-      throw new AuthorizationServiceException(denied);
-    }
-
-    //int priority = VORecord.priority;
-    int priority=0;
-    String priority_str = localId.getPriority();
-    if(priority_str==null) {
-      String denied = DENIED_MESSAGE + ": priority not found for " + user;
-      warn(denied);
-      throw new AuthorizationServiceException(denied);
-    } else {
-      try {
-        priority = Integer.valueOf(priority_str).intValue();
-      } catch (Exception e) {
-        if(!priority_str.equals("default")) {
-        String denied = DENIED_MESSAGE + ": priority for user " + user + " could not be parsed to an integer";
-        warn(denied);
-        throw new AuthorizationServiceException(denied);
-        }
-      }
-    }
-
-    boolean readonlyflag = localId.getReadOnlyFlag();
-		//todo Following to be used later, currently String type "default" is returned from VO mapping
-		//int priority = Integer.parseInt(localId.getPriority());
-
-    debug("Plugin now forming user authorization records...");
-    HashSet<String> principals = new HashSet<String>();
-
-    VORecord = new UserAuthRecord(user, subjectDN, role, readonlyflag, priority, uid.intValue(), gid.intValue(), home, root, fsroot, principals);
-    if (VORecord.isValid()) {
-		  debug("User authorization record has been formed and is valid.");
-		}
-
-    return VORecord;
+    return getAuthRecord(username, subjectDN, role);
   }
 
   public void setCacheLifetime(String lifetime_str) {

@@ -188,6 +188,10 @@ public class AuthorizationService {
     private AuthorizationConfig authConfig=null;
     private Vector pluginPriorityConfig;
     private DateFormat _df   = new SimpleDateFormat("MM/dd HH:mm:ss" );
+    public static final String capnull = "/Capability=NULL";
+    public static final int capnulllen = capnull.length();
+    public static final String rolenull ="/Role=NULL";
+    public static final int rolenulllen = rolenull.length();
     
     static {
         Logger.getLogger(org.glite.security.trustmanager.CRLFileTrustManager.class.getName()).setLevel(Level.ERROR);
@@ -335,8 +339,9 @@ public class AuthorizationService {
                             esay("Exception getting VO Map Url from configuration : " +e);
                             throw new AuthorizationServiceException(e.toString());
                         }
-                        if (VOMapUrl != null && !VOMapUrl.equals("")) {
-                            AuthorizationServicePlugin VOPlug = new VOAuthorizationPlugin(VOMapUrl, authRequestID);
+                        if (VOMapUrl != null && !VOMapUrl.equals("")) {                            
+                            gPLAZMALiteStorageAuthzDbPath = authConfig.getGridVORoleStorageAuthzPath();
+                            AuthorizationServicePlugin VOPlug = new VOAuthorizationPlugin(VOMapUrl, gPLAZMALiteStorageAuthzDbPath, authRequestID);
                             ((VOAuthorizationPlugin) VOPlug).setCacheLifetime(authConfig.getMappingServiceCacheLifetime());
                             addPlugin(VOPlug);
                         } else {
@@ -1104,11 +1109,23 @@ public class AuthorizationService {
             VOMSAttribute vomsAttribute = (VOMSAttribute) i.next();
             List listOfFqans = vomsAttribute.getFullyQualifiedAttributes();
             Iterator j = listOfFqans.iterator();
-            if (j.hasNext()) {
-                fqans.add((String) j.next());
+            while (j.hasNext()) {
+                String attr = (String) j.next();
+                String attrtmp=attr;
+                if(attrtmp.endsWith(capnull))
+                attrtmp = attrtmp.substring(0, attrtmp.length() - capnulllen);
+                if(attrtmp.endsWith(rolenull))
+                attrtmp = attrtmp.substring(0, attrtmp.length() - rolenulllen);
+                Iterator k = fqans.iterator();
+                boolean issubrole=false;
+                while (k.hasNext()) {
+                  String fqanattr=(String) k.next();
+                  if (fqanattr.startsWith(attrtmp)) {issubrole=true; break;}
+                }
+                if(!issubrole) fqans.add(attr);
             }
         }
-        
+
         return fqans;
     }
     
