@@ -298,7 +298,7 @@ public class GPLAZMALiteVORoleAuthzPlugin extends AuthorizationServicePlugin {
     debug("Plugin now forming user authorization records...");
     HashSet principals = new HashSet();
 
-    authRecordtoReturn = new UserAuthRecord(user, subjectDN, role, readonlyflag, priority, uid, gid, home, root, fsroot, principals);
+    authRecordtoReturn = new UserAuthRecord(user, subjectDN, role, readonlyflag, priority, uid, authRecord.GIDs, home, root, fsroot, principals);
     if (authRecordtoReturn.isValid()) {
 		  debug("User authorization record has been formed and is valid.");
 		}

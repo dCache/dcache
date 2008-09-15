@@ -143,12 +143,16 @@ public class DCacheSRMauthzRecordsService {
         int priority = (fileVersion >= 2.2 && ntokens > 7) ? Integer.parseInt(t.nextToken()) : 0;
         String uid_str = t.nextToken();
         int uid = Integer.parseInt(uid_str);
-        String gid_str = t.nextToken();
-        int gid = Integer.parseInt(gid_str);
+        //allow gids to be coma separated list
+        StringTokenizer st1 = new StringTokenizer(t.nextToken(),",");
+        int[] gids = new int[st1.countTokens()];
+        for(int i =0; st1.hasMoreTokens(); ++i) {
+           gids[i]= Integer.parseInt(st1.nextToken());
+        }
         String home = t.nextToken();
         String root = t.nextToken();
         String fsroot = t.nextToken();
-        StorageAuthorizationRecord rec =  new StorageAuthorizationRecord(user,readOnly,priority,uid,gid,home,root,fsroot);
+        StorageAuthorizationRecord rec =  new StorageAuthorizationRecord(user,readOnly,priority,uid,gids,home,root,fsroot);
         if (rec.isValid()) {
             return rec;
         }
@@ -189,13 +193,17 @@ public class DCacheSRMauthzRecordsService {
         String passwd = t.nextToken();
         boolean readOnly = (t.nextToken().equals("read-only")) ? true : false;
         int priority = (fileVersion >= 2.2  && ntokens > 7) ? Integer.parseInt(t.nextToken()) : 0;
-        String uid_str = t.nextToken();
         int uid = Integer.parseInt(t.nextToken());
-        int gid = Integer.parseInt(t.nextToken());
+        //allow gids to be coma separated list
+        StringTokenizer st1 = new StringTokenizer(t.nextToken(),",");
+        int[] gids = new int[st1.countTokens()];
+        for(int i =0; st1.hasMoreTokens(); ++i) {
+           gids[i]= Integer.parseInt(st1.nextToken());
+        }
         String home = t.nextToken();
         String root = t.nextToken();
         String fsroot = t.nextToken();
-        StoragePasswordRecord rec =  new StoragePasswordRecord(username,passwd,readOnly,priority,uid,gid,home,root,fsroot);
+        StoragePasswordRecord rec =  new StoragePasswordRecord(username,passwd,readOnly,priority,uid,gids,home,root,fsroot);
         if (rec.isValid()) {
             return rec;
         }
