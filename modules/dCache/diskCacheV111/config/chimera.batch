@@ -63,6 +63,7 @@ create diskCacheV111.namespace.PnfsManagerV3 PnfsManager \
         "org.dcache.chimera.namespace.ChimeraOsmStorageInfoExtractor \
         -cmRelay=broadcast \
         -threads=${pnfsNumberOfThreads} \
+        -pnfsDeleteRelay=SrmSpaceManager \
         -default=${defaultPnfsServer} \
         -pnfs=${pnfs} \
 	-chimeraConfig=${config}/chimera-config.xml \
