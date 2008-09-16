@@ -115,13 +115,16 @@ public class SQLNameSpaceProvider implements  CacheLocationProvider {
     }
     
     
-    public void addCacheLocation(PnfsId pnfsId, String cacheLocation) {
+    public void addCacheLocation(PnfsId pnfsId, String cacheLocation) throws FileNotFoundCacheException {
         
     	Connection dbConnection = null;
     	PreparedStatement ps = null;
     	
         try {
-            
+            boolean deleted = PnfsFile.isDeleted(pnfsId);
+            if (deleted)
+                throw new FileNotFoundCacheException("no such file or directory " + pnfsId.getId() );
+
             dbConnection = _dbConnectionsPool.getConnection();
                         
             ps = dbConnection.prepareStatement(_addCacheLocationSQL);
