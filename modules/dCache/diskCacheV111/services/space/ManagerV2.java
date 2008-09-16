@@ -2538,7 +2538,8 @@ public class ManagerV2
 		else { 
 			manager.update(connection,
 				       FileIO.REMOVE_PNFSID_AND_CHANGE_STATE_SPACEFILE,
-				       id);
+				       id,
+                                       state.intValue());
 		}
 	}
 	
@@ -4017,11 +4018,10 @@ public class ManagerV2
 		}
 	}
 	
-
-	public void selectPool(CellMessage cellMessage, boolean willBeForwarded ) throws Exception{
+	public void selectPool(CellMessage cellMessage, boolean isReply ) throws Exception{
 		PoolMgrSelectPoolMsg selectPool = (PoolMgrSelectPoolMsg)cellMessage.getMessageObject();
 		if(!spaceManagerEnabled ) {
-			if(!willBeForwarded) {
+			if(!isReply) {
 				say("just forwarding the message to "+ poolManager);
 				cellMessage.getDestinationPath().add( new CellPath(poolManager) ) ;
 				cellMessage.nextDestination() ;
@@ -4034,7 +4034,7 @@ public class ManagerV2
 		PnfsId pnfsId = selectPool.getPnfsId();
 		if( !(selectPool instanceof PoolMgrSelectWritePoolMsg)||pnfsPath == null) {
 			say("selectPool: pnfsPath is null");
-			if(!willBeForwarded) {
+			if(!isReply) {
 				say("just forwarding the message to "+ poolManager);
 				cellMessage.getDestinationPath().add( new CellPath(poolManager) ) ;
 				cellMessage.nextDestination() ;
@@ -4046,7 +4046,7 @@ public class ManagerV2
 		try {
 			say("selectPool: getFile("+pnfsPath+")");
 			file = getFile(pnfsPath);
-		} 
+		}
 		catch (Exception e) {
 			esay(e);
 		}
@@ -4083,7 +4083,7 @@ public class ManagerV2
                                 }
                                 else { 
                                         say("selectPool: file is not found, no prior reservations for this file");
-                                        if(!willBeForwarded) {
+                                        if(!isReply) {
                                                 say("just forwarding the message to "+ poolManager);
                                                 cellMessage.getDestinationPath().add( new CellPath(poolManager) ) ;
                                                 cellMessage.nextDestination() ;
@@ -4111,26 +4111,55 @@ public class ManagerV2
                                                            selectPool.getPnfsId());
                                 file = getFile(fileId);
                         }
-		}
+                }
 		else {
-			say("selectPool: file is not null, calling updateSpaceFile()");
-			updateSpaceFile(file.getId(),null,null,pnfsId,null,null,null);
+                        if (isReply&&selectPool.getReturnCode()==0) { 
+                                say("selectPool: file is not null, calling updateSpaceFile()");
+                                updateSpaceFile(file.getId(),null,null,pnfsId,null,null,null);
+                        }
 		}
-		long spaceId     = file.getSpaceId();
-		Space space      = getSpace(spaceId);
-		long linkGroupid = space.getLinkGroupId();
-		LinkGroup linkGroup  = getLinkGroup(linkGroupid);
-		String linkGroupName = linkGroup.getName();
-		selectPool.setLinkGroup(linkGroupName);
-		StorageInfo storageInfo = selectPool.getStorageInfo();
-		storageInfo.setKey("SpaceToken",Long.toString(spaceId));
-		//
-		// add Space Token description
-		//
-		if (space.getDescription()!=null) { 
-			storageInfo.setKey("SpaceTokenDescription",space.getDescription());
-		}
-		if(!willBeForwarded) {
+                if (isReply&&selectPool.getReturnCode()!=0) { 
+                        Connection connection = null;
+                        try {
+                                connection = connection_pool.getConnection();
+                                connection.setAutoCommit(false);
+                                removePnfsIdOfFileInSpace(connection,file.getId(),null);
+                                connection.commit();
+                                connection_pool.returnConnection(connection);
+                                connection = null;
+                        } 
+                        catch(SQLException sqle) {
+                                esay(sqle);
+                                if (connection!=null) { 
+                                        try { 
+                                                connection.rollback();
+                                        }
+                                        catch (SQLException e) {}
+                                        connection_pool.returnFailedConnection(connection);
+                                        connection = null;
+                                }
+                        } 
+                        finally {
+                                if(connection != null) {
+                                        connection_pool.returnConnection(connection);
+                                }
+                        }
+                }
+		if(!isReply) {
+                        long spaceId     = file.getSpaceId();
+                        Space space      = getSpace(spaceId);
+                        long linkGroupid = space.getLinkGroupId();
+                        LinkGroup linkGroup  = getLinkGroup(linkGroupid);
+                        String linkGroupName = linkGroup.getName();
+                        selectPool.setLinkGroup(linkGroupName);
+                        StorageInfo storageInfo = selectPool.getStorageInfo();
+                        storageInfo.setKey("SpaceToken",Long.toString(spaceId));
+                        //
+                        // add Space Token description
+                        //
+                        if (space.getDescription()!=null) {
+                                storageInfo.setKey("SpaceTokenDescription",space.getDescription());
+                        }
 			cellMessage.getDestinationPath().add( new CellPath(poolManager) ) ;
 			cellMessage.nextDestination() ;
 			say("selectPool: found linkGroup = "+linkGroupName+", forwarding message");
