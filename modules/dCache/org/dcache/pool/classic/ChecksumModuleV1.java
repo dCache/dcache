@@ -65,6 +65,19 @@ public class ChecksumModuleV1
         }
     }
 
+    /**
+     * Returns the first non-null argument.
+     */
+    private <T> T getFirstNonNull(T ... objects)
+    {
+        for (T t : objects) {
+            if (t != null) {
+                return t;
+            }
+        }
+        return null;
+    }
+
     public void setMoverChecksums(PnfsId id,
                                   File file,
                                   ChecksumFactory factory,
@@ -75,57 +88,37 @@ public class ChecksumModuleV1
                IOException,
                NoRouteToCellException
     {
-        if (_fake_checksum_error)
-            throw new CacheException("Checksum error");
-
         if (_fake_checksum_ftp)
             clientChecksum = null;
 
-        _log.info(id+" client = "+clientChecksum+" transfer "+transferChecksum);
-
-        Checksum pnfsChecksum = null;
-
-        if (clientChecksum == null) {
-            pnfsChecksum = factory.createFromPersistentState(getCellEndpoint(), id);
-            clientChecksum = pnfsChecksum;
-        }
-
-        //
-        // only if client and transfer is available, do the check.
-        //
-        if ((clientChecksum   != null) &&
-            (transferChecksum != null) &&
-            (! clientChecksum.equals(transferChecksum)))
-            throw new
-                CacheException("Checksum error client="+clientChecksum+";transfer="+transferChecksum);
-
-        _log.info(id+" client = "+clientChecksum+" transfer "+transferChecksum);
-
-        Checksum  checksum     = clientChecksum == null ? transferChecksum : clientChecksum;
-
-        Checksum  fileChecksum = factory.create();
-
-        fileChecksum = _onWrite ?
-            calculateFileChecksum(file, factory.create()) :
-            null;
-
-        _log.info(id+" filechecksum = "+fileChecksum);
-
-        if ((checksum     != null) &&
-            (fileChecksum != null) &&
-            (! checksum.equals(fileChecksum)))
-            throw new
-                CacheException("Checksum error client="+checksum+";file="+fileChecksum);
-
-        checksum = checksum == null ? fileChecksum : checksum;
+        Checksum pnfsChecksum =
+            (clientChecksum == null)
+            ? factory.createFromPersistentState(getCellEndpoint(), id)
+            : null;
+        Checksum fileChecksum =
+            _onWrite
+            ? calculateFileChecksum(file, factory.create())
+            : null;
+        Checksum checksum =
+            getFirstNonNull(clientChecksum, pnfsChecksum, transferChecksum, fileChecksum);
 
         if (checksum == null) {
-            if (! _enforceCRC)
+            if (!_enforceCRC)
                 return;
             checksum = calculateFileChecksum(file, factory.create());
         }
-        if ((checksum != null) && (pnfsChecksum == null)) {
-            _log.debug(id+" sending checksum = "+checksum);
+
+        if (_fake_checksum_error
+            || (((transferChecksum != null) && !transferChecksum.equals(checksum)))
+            || (((fileChecksum != null) && !fileChecksum.equals(checksum)))) {
+            throw new CacheException(String.format("Checksum error: client=%s,pnfs=%s,transfer=%s,file=%s",
+                                                   clientChecksum,
+                                                   pnfsChecksum,
+                                                   transferChecksum,
+                                                   fileChecksum));
+        }
+
+        if ((pnfsChecksum == null) && (checksum != null)) {
             storeChecksumInPnfs(id, checksum);
         }
 
