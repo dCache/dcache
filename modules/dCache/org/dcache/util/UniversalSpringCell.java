@@ -7,7 +7,13 @@ import java.util.Enumeration;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.Formatter;
+import java.util.ArrayList;
 import java.util.Map;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Arrays;
 import java.util.concurrent.ExecutionException;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -198,6 +204,45 @@ public class UniversalSpringCell
     }
 
     /**
+     * Returns the singleton bean with a given name. Returns null if
+     * such a bean does not exist.
+     */
+    private Object getBean(String name)
+    {
+        try {
+            if (_context != null && _context.isSingleton(name)) {
+                return _context.getBean(name);
+            }
+        } catch (NoSuchBeanDefinitionException e) {
+        }
+        return null;
+    }
+
+    /**
+     * Returns the names of beans that depend of a given bean.
+     */
+    private List<String> getDependentBeans(String name)
+    {
+        if (_context == null) {
+            return Collections.emptyList();
+        } else {
+            return Arrays.asList(_context.getBeanFactory().getDependentBeans(name));
+        }
+    }
+
+    /**
+     * Returns the collection of singleton bean names.
+     */
+    private List<String> getBeanNames()
+    {
+        if (_context == null) {
+            return Collections.emptyList();
+        } else {
+            return Arrays.asList(_context.getBeanFactory().getSingletonNames());
+        }
+    }
+
+    /**
      * Collects information from all registered info providers.
      */
     public void getInfo(PrintWriter pw)
@@ -368,53 +413,33 @@ public class UniversalSpringCell
     public String ac_infox_$_1(Args args)
     {
         String name = args.argv(0);
-        try {
-            if (_context != null && _context.isSingleton(name)) {
-                Object bean = _context.getBean(name);
-                if (CellInfoProvider.class.isInstance(bean)) {
-                    StringWriter s = new StringWriter();
-                    PrintWriter pw = new PrintWriter(s);
-                    ((CellInfoProvider)bean).getInfo(pw);
-                    return s.toString();
-                }
-                return "No information available";
-            }
-        } catch (NoSuchBeanDefinitionException e) {
+        Object bean = getBean(name);
+        if (CellInfoProvider.class.isInstance(bean)) {
+            StringWriter s = new StringWriter();
+            PrintWriter pw = new PrintWriter(s);
+            ((CellInfoProvider)bean).getInfo(pw);
+            return s.toString();
         }
         return "No such bean: " + name;
-    }
-
-    private String arrayToString(Object[] a)
-    {
-        if (a.length == 0)
-            return "";
-
-        StringBuilder s = new StringBuilder(a[0].toString());
-        for (int i = 1; i < a.length; i++) {
-            s.append(',').append(a[i]);
-        }
-        return s.toString();
     }
 
     public static final String hh_bean_ls = "# lists running beans";
     public String ac_bean_ls(Args args)
     {
+        final String format = "%-30s %s\n";
         Formatter s = new Formatter(new StringBuilder());
-        if (_context != null) {
-            final String format = "%-30s %s\n";
-            ConfigurableListableBeanFactory factory =
-                _context.getBeanFactory();
-            s.format(format, "Bean", "Description");
-            s.format(format, "----", "-----------");
-            for (String name : factory.getSingletonNames()) {
-                try {
-                    BeanDefinition definition = factory.getBeanDefinition(name);
-                    String description = definition.getDescription();
-                    s.format(format, name,
-                             (description != null ? description : "-"));
-                } catch (NoSuchBeanDefinitionException e) {
-                    error("Failed to query bean definition for " + name);
-                }
+        ConfigurableListableBeanFactory factory = _context.getBeanFactory();
+
+        s.format(format, "Bean", "Description");
+        s.format(format, "----", "-----------");
+        for (String name : getBeanNames()) {
+            try {
+                BeanDefinition definition = factory.getBeanDefinition(name);
+                String description = definition.getDescription();
+                s.format(format, name,
+                         (description != null ? description : "-"));
+            } catch (NoSuchBeanDefinitionException e) {
+                error("Failed to query bean definition for " + name);
             }
         }
         return s.toString();
@@ -423,18 +448,14 @@ public class UniversalSpringCell
     public static final String hh_bean_dep = "# shows bean dependencies";
     public String ac_bean_dep(Args args)
     {
+        final String format = "%-30s %s\n";
         Formatter s = new Formatter(new StringBuilder());
-        if (_context != null) {
-            final String format = "%-30s %s\n";
-            ConfigurableListableBeanFactory factory = _context.getBeanFactory();
+        ConfigurableListableBeanFactory factory = _context.getBeanFactory();
 
-            s.format(format, "Bean", "Used by");
-            s.format(format, "----", "-------");
-            for (String name : factory.getSingletonNames()) {
-                Object bean = factory.getBean(name);
-                String[] usedby = factory.getDependentBeans(name);
-                s.format(format, name, arrayToString(usedby));
-            }
+        s.format(format, "Bean", "Used by");
+        s.format(format, "----", "-------");
+        for (String name : getBeanNames()) {
+            s.format(format, name, collectionToString(getDependentBeans(name)));
         }
         return s.toString();
     }
@@ -444,26 +465,24 @@ public class UniversalSpringCell
     public String ac_bean_properties_$_1(Args args)
     {
         String name = args.argv(0);
-        try {
-            if (_context != null && _context.isSingleton(name)) {
-                StringBuilder s = new StringBuilder();
-                BeanWrapper bean = new BeanWrapperImpl(_context.getBean(name));
-                for (PropertyDescriptor p : bean.getPropertyDescriptors()) {
-                    if (!p.isHidden()) {
-                        String property = p.getName();
-                        if (bean.isReadableProperty(property)) {
-                            Object value = bean.getPropertyValue(property);
-                            s.append(property).append('=').append(value);
-                            if (!bean.isWritableProperty(property)) {
-                                s.append(" [read-only]");
-                            }
-                            s.append('\n');
+        Object o = _context.getBean(name);
+        if (o != null) {
+            StringBuilder s = new StringBuilder();
+            BeanWrapper bean = new BeanWrapperImpl(o);
+            for (PropertyDescriptor p : bean.getPropertyDescriptors()) {
+                if (!p.isHidden()) {
+                    String property = p.getName();
+                    if (bean.isReadableProperty(property)) {
+                        Object value = bean.getPropertyValue(property);
+                        s.append(property).append('=').append(value);
+                        if (!bean.isWritableProperty(property)) {
+                            s.append(" [read-only]");
                         }
+                        s.append('\n');
                     }
                 }
-                return s.toString();
             }
-        } catch (NoSuchBeanDefinitionException e) {
+            return s.toString();
         }
         return "No such bean: " + name;
     }
@@ -471,6 +490,53 @@ public class UniversalSpringCell
     public String ac_bean_restart(Args args)
     {
         return "";
+    }
+
+    public static final String hh_bean_messages =
+        "[<bean>] # shows message types handled by beans";
+    public String ac_bean_messages_$_0_1(Args args)
+    {
+        switch (args.argc()) {
+        case 0:
+            Map<String,Collection<Class>> map = new HashMap();
+            for (String name: getBeanNames()) {
+                Object bean = getBean(name);
+                if (CellMessageReceiver.class.isInstance(bean)) {
+                    Collection<Class> types =
+                        CellMessageDispatcher.getMessageTypes(bean.getClass());
+                    map.put(name, types);
+                }
+            }
+
+            final String format = "%-40s %s\n";
+            Formatter f = new Formatter(new StringBuilder());
+            f.format(format, "Message", "Receivers");
+            f.format(format, "-------", "---------");
+            for (Map.Entry<Class,Collection<String>> e: invert(map).entrySet()) {
+                f.format(format,
+                         getMessageName(e.getKey()),
+                         collectionToString(e.getValue()));
+            }
+
+            return f.toString();
+
+        case 1:
+            String name = args.argv(0);
+            Object bean = getBean(name);
+            if (CellMessageReceiver.class.isInstance(bean)) {
+                StringBuilder s = new StringBuilder();
+                Collection<Class> types =
+                    CellMessageDispatcher.getMessageTypes(bean.getClass());
+                for (Class t : types) {
+                    s.append(getMessageName(t)).append('\n');
+                }
+                return s.toString();
+            }
+            return "No such bean: " + name;
+
+        default:
+            return "";
+        }
     }
 
     /**
@@ -632,5 +698,48 @@ public class UniversalSpringCell
         {
             beanFactory.addBeanPostProcessor(UniversalSpringCell.this);
         }
+    }
+
+    /**
+     * Utility method for converting a collection of objects to a
+     * string. The string is formed by concatenating the string form
+     * of the objects, separated by a comma.
+     */
+    private <T> String collectionToString(Collection<T> collection)
+    {
+        StringBuilder s = new StringBuilder();
+        for (T o: collection) {
+            if (s.length() > 0) {
+                s.append(',');
+            }
+            s.append(o);
+        }
+        return s.toString();
+    }
+
+    /**
+     * Utility method for inverting a map.
+     *
+     * Given a map { "a" => { 1, 2, 3}, "b" => {2, 3, 4}, c => {3, 4,
+     * 5} }, this method returns a new map { 1 => { "a" }, 2 => { "a",
+     * "b" }, 3 => { "a", "b", "c" }, 4 => { "b", "c" }, 5 => { "c"
+     * }}.
+     *
+     * TODO: Should be moved to a utility library.
+     */
+    private <T1,T2> Map<T1,Collection<T2>> invert(Map<T2,Collection<T1>> map)
+    {
+        Map<T1,Collection<T2>> result = new HashMap();
+        for (Map.Entry<T2,Collection<T1>> e : map.entrySet()) {
+            for (T1 value : e.getValue()) {
+                Collection<T2> collection = result.get(value);
+                if (collection == null) {
+                    collection = new ArrayList<T2>();
+                    result.put(value, collection);
+                }
+                collection.add(e.getKey());
+            }
+        }
+        return result;
     }
 }
