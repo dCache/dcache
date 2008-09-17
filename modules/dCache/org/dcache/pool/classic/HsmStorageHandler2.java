@@ -1,4 +1,4 @@
-// $Id: HsmStorageHandler2.java,v 1.47 2007-10-26 11:17:06 behrmann Exp $
+// $Id$
 
 package org.dcache.pool.classic;
 
@@ -224,8 +224,7 @@ public class HsmStorageHandler2
 
     public synchronized void getInfo(PrintWriter pw)
     {
-        pw.println("StorageHandler ["+this.getClass().getName()+"]");
-        pw.println("  Version         : [$Id: HsmStorageHandler2.java,v 1.47 2007-10-26 11:17:06 behrmann Exp $]");
+        pw.println("         Version  : $Id$");
         pw.println(" Restore Timeout  : "+(_maxRestoreRun/1000L));
         pw.println("   Store Timeout  : "+(_maxStoreRun/1000L));
         pw.println("  Remove Timeout  : "+(_maxRemoveRun/1000L));

@@ -1,4 +1,4 @@
-// $Id: HsmFlushController.java,v 1.6 2007-05-24 13:51:10 tigran Exp $
+// $Id$
 
 
 package org.dcache.pool.classic;
@@ -188,10 +188,9 @@ public class HsmFlushController
         pw.println( "flush set retry delay "+_retryDelayOnError ) ;
     }
     public void getInfo( PrintWriter pw ){
-        pw.println( "Flushing Thread" ) ;
-        pw.println( "   Flushing Interval /seconds   : "+_flushingInterval ) ;
-        pw.println( "   Maximum classes flushing     : "+_maxActive ) ;
-        pw.println( "   Minimum flush delay on error : "+_retryDelayOnError ) ;
+        pw.println("   Flushing Interval /seconds    : "+_flushingInterval ) ;
+        pw.println("   Maximum classes flushing      : "+_maxActive ) ;
+        pw.println("   Minimum flush delay on error  : "+_retryDelayOnError ) ;
         pw.println("  Remote controlled (hold until) : "+
             (  ( _holdUntil > System.currentTimeMillis() ) ? new Date(_holdUntil).toString(): "Locally Controlled" ) );
     }

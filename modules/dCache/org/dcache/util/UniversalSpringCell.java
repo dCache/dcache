@@ -7,6 +7,7 @@ import java.util.Enumeration;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.Formatter;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -43,8 +44,9 @@ import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanPostProcessor;
-import org.springframework.beans.factory.support.DefaultListableBeanFactory;
+import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
+import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.BeanWrapperImpl;
@@ -178,12 +180,46 @@ public class UniversalSpringCell
     }
 
     /**
+     * Returns the name of a given bean, or null if no such bean is
+     * defined.
+     *
+     * This method is relatively expensive and should not be used for
+     * time critical purposes.
+     */
+    private String getNameOfBean(Object bean)
+    {
+        ConfigurableListableBeanFactory factory = _context.getBeanFactory();
+        Map<String,Object> map = factory.getBeansOfType(bean.getClass());
+        for (Map.Entry<String, Object> e: map.entrySet()) {
+            if (e.getValue() == bean)
+                return e.getKey();
+        }
+        return null;
+    }
+
+    /**
      * Collects information from all registered info providers.
      */
     public void getInfo(PrintWriter pw)
     {
-        for (CellInfoProvider provider : _infoProviders)
-            provider.getInfo(pw);
+        ConfigurableListableBeanFactory factory = _context.getBeanFactory();
+        for (CellInfoProvider provider : _infoProviders) {
+            String name = getNameOfBean(provider);
+            try {
+                BeanDefinition definition = factory.getBeanDefinition(name);
+                String description = definition.getDescription();
+                if (description != null) {
+                    pw.println(String.format("--- %s (%s) ---",
+                                             name, description));
+                } else {
+                    pw.println(String.format("--- %s ---", name));
+                }
+                provider.getInfo(pw);
+                pw.println();
+            } catch (NoSuchBeanDefinitionException e) {
+                error("Failed to query bean definition for " + name);
+            }
+        }
     }
 
     /**
@@ -333,7 +369,7 @@ public class UniversalSpringCell
     {
         String name = args.argv(0);
         try {
-            if (_context == null && _context.isSingleton(name)) {
+            if (_context != null && _context.isSingleton(name)) {
                 Object bean = _context.getBean(name);
                 if (CellInfoProvider.class.isInstance(bean)) {
                     StringWriter s = new StringWriter();
@@ -366,9 +402,34 @@ public class UniversalSpringCell
         Formatter s = new Formatter(new StringBuilder());
         if (_context != null) {
             final String format = "%-30s %s\n";
+            ConfigurableListableBeanFactory factory =
+                _context.getBeanFactory();
+            s.format(format, "Bean", "Description");
+            s.format(format, "----", "-----------");
+            for (String name : factory.getSingletonNames()) {
+                try {
+                    BeanDefinition definition = factory.getBeanDefinition(name);
+                    String description = definition.getDescription();
+                    s.format(format, name,
+                             (description != null ? description : "-"));
+                } catch (NoSuchBeanDefinitionException e) {
+                    error("Failed to query bean definition for " + name);
+                }
+            }
+        }
+        return s.toString();
+    }
+
+    public static final String hh_bean_dep = "# shows bean dependencies";
+    public String ac_bean_dep(Args args)
+    {
+        Formatter s = new Formatter(new StringBuilder());
+        if (_context != null) {
+            final String format = "%-30s %s\n";
             ConfigurableListableBeanFactory factory = _context.getBeanFactory();
 
             s.format(format, "Bean", "Used by");
+            s.format(format, "----", "-------");
             for (String name : factory.getSingletonNames()) {
                 Object bean = factory.getBean(name);
                 String[] usedby = factory.getDependentBeans(name);

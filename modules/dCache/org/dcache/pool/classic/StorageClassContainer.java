@@ -1,4 +1,4 @@
-// $Id: StorageClassContainer.java,v 1.16 2007-05-24 13:51:10 tigran Exp $
+// $Id$
 
 package org.dcache.pool.classic;
 
@@ -453,7 +453,7 @@ public class StorageClassContainer
 
     public void getInfo(PrintWriter pw)
     {
-        pw.println("Storage Queue     : ");
+        pw.println("    Version : $Id$");
         pw.println("   Classes  : " + getStorageClassCount());
         pw.println("   Requests : " + getRequestCount());
     }

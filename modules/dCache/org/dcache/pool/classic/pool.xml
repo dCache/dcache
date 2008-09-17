@@ -6,6 +6,7 @@
 
   
   <bean id="properties" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+    <description>Imported configuration data</description>
     <property name="location" value="domaincontext:"/>
     <property name="properties">
       <value>
@@ -28,6 +29,7 @@
   <bean id="pool" class="org.dcache.pool.classic.PoolV4" 
         init-method="init"
         destroy-method="cleanUp">
+    <description>Main pool component</description>
     <constructor-arg index="0" value="${poolname}"/>
     <constructor-arg index="1" value="
         -recover-control=yes 
@@ -46,14 +48,14 @@
               value="${lfs}"/>
 
     <property name="pnfsHandler" ref="pnfs"/>
-    <property name="repository" ref="repository"/>
-    <property name="checksumModule" ref="checksum"/>
-    <property name="storageQueue" ref="storagequeue"/>
+    <property name="repository" ref="rep"/>
+    <property name="checksumModule" ref="csm"/>
+    <property name="storageQueue" ref="queue"/>
     <property name="storageHandler" ref="storagehandler"/>
     <property name="HSMSet" ref="hsmset"/>
-    <property name="timeoutManager" ref="timeout"/>
+    <property name="timeoutManager" ref="jtm"/>
     <property name="flushController" ref="flush"/>
-    <property name="PPClient" ref="p2p"/>
+    <property name="PPClient" ref="pp"/>
   </bean>
 
   <!-- The PnfsHandler class takes a CellPath constructor
@@ -62,6 +64,7 @@
        give it a name and we cannot reference it from anywhere else.
   -->
   <bean id="pnfs" class="diskCacheV111.util.PnfsHandler">
+    <description>PNFS manager client module</description>
     <constructor-arg>
       <bean class="dmg.cells.nucleus.CellPath">
         <constructor-arg value="${pnfsmanager}"/>
@@ -73,6 +76,7 @@
   <bean id="legacy-repository" 
         class="org.dcache.pool.repository.v4.CacheRepositoryV4"
         destroy-method="close">
+    <description>Legacy repository manager</description>
     <constructor-arg value="${pooldir}"/>
     <constructor-arg>
       <bean class="dmg.util.Args">
@@ -84,13 +88,15 @@
   </bean>
 
   <bean id="sweeper" class="diskCacheV111.pools.SpaceSweeper2">
+    <description>Pool garbage collector</description>
     <constructor-arg ref="pnfs"/>
     <constructor-arg ref="legacy-repository"/>
   </bean>
 
-  <bean id="repository" 
+  <bean id="rep" 
         class="org.dcache.pool.repository.v5.CacheRepositoryV5"
         destroy-method="shutdown">
+    <description>Repository manager</description>
     <property name="pnfsHandler" ref="pnfs"/>
     <property name="sweeper" ref="sweeper"/>
     <property name="periodicChecks" value="${checkRepository}"/>
@@ -98,44 +104,55 @@
   </bean>
   
   <bean id="repository-interpreter" class="diskCacheV111.repository.RepositoryInterpreter">
+    <description>Repository user interface</description>
     <constructor-arg ref="legacy-repository"/>
   </bean>
 
-  <bean id="checksum" class="org.dcache.pool.classic.ChecksumModuleV1">
-    <constructor-arg ref="repository"/>
+  <bean id="csm" class="org.dcache.pool.classic.ChecksumModuleV1">
+    <description>Checksum module</description>
+    <constructor-arg ref="rep"/>
     <constructor-arg ref="pnfs"/>
   </bean>
 
-  <bean id="storagequeue" class="org.dcache.pool.classic.StorageClassContainer">
-    <constructor-arg ref="repository"/>
+  <bean id="queue" class="org.dcache.pool.classic.StorageClassContainer">
+    <description>HSM flush queue manager</description>
+    <constructor-arg ref="rep"/>
     <constructor-arg value="${poolname}"/>
   </bean>
 
-  <bean id="hsmset" class="diskCacheV111.util.HsmSet"/>
+  <bean id="hsmset" class="diskCacheV111.util.HsmSet">
+    <description>HSM backend manager</description>
+  </bean>
 
   <bean id="storagehandler" class="org.dcache.pool.classic.HsmStorageHandler2">
-    <constructor-arg ref="repository"/>
+    <description>HSM integration module</description>
+    <constructor-arg ref="rep"/>
     <constructor-arg ref="pnfs"/>
     <constructor-arg ref="hsmset"/>
-    <constructor-arg ref="checksum"/>
+    <constructor-arg ref="csm"/>
     <property name="flushMessageTarget" value="${flushMessageTarget}"/>
   </bean>
 
   <bean id="storage-interpreter" class="org.dcache.pool.classic.HsmStorageInterpreter">
+    <description>HSM module user interface</description>
     <constructor-arg ref="storagehandler"/>
     <constructor-arg ref="pnfs"/>
   </bean>
 
-  <bean id="timeout" class="diskCacheV111.pools.JobTimeoutManager"/>
+  <bean id="jtm" class="diskCacheV111.pools.JobTimeoutManager">
+    <description>Job timeout manager</description>
+  </bean>
 
   <bean id="flush" class="org.dcache.pool.classic.HsmFlushController">
-    <constructor-arg ref="storagequeue"/>
+    <description>Controller for centralising flushing</description>
+    <constructor-arg ref="queue"/>
     <constructor-arg ref="storagehandler"/>
   </bean>
 
-  <bean id="p2p" class="org.dcache.pool.classic.P2PClient">
-    <constructor-arg ref="repository"/>
-    <constructor-arg ref="checksum"/>
+  <bean id="pp" class="org.dcache.pool.classic.P2PClient">
+    <description>Pool to pool transfer manager</description>
+    <constructor-arg ref="rep"/>
+    <constructor-arg ref="csm"/>
   </bean>
 
 </beans>

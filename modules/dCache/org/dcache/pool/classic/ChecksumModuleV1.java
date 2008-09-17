@@ -1,4 +1,4 @@
-// $Id: ChecksumModuleV1.java,v 1.11 2007-08-30 21:11:02 abaranov Exp $
+// $Id$
 
 package org.dcache.pool.classic;
 
@@ -246,7 +246,7 @@ public class ChecksumModuleV1
 
     public void getInfo(PrintWriter pw)
     {
-        pw.println("ChecksumModuleV1 : $Id: ChecksumModuleV1.java,v 1.11 2007-08-30 21:11:02 abaranov Exp $");
+        pw.println("                Version : $Id$");
         pw.println("          Checksum type : "+_defaultChecksumFactory.getType());
         pw.println("                   Fake : ftp="+_fake_checksum_ftp+" error="+_fake_checksum_error);
         pw.print(" Checkum calculation on : ");

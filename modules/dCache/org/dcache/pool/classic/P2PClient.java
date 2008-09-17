@@ -1,4 +1,4 @@
-// $Id: P2PClient.java,v 1.21 2007-10-31 17:27:11 radicke Exp $
+// $Id$
 
 package org.dcache.pool.classic;
 
@@ -694,7 +694,7 @@ public class P2PClient
 
     public void getInfo(PrintWriter pw)
     {
-        pw.println(" Pool to Pool (P2P) [$Id: P2PClient.java,v 1.21 2007-10-31 17:27:11 radicke Exp $]");
+        pw.println("     Version : $Id$");
         pw.println("  Listener   : " + _acceptor);
         pw.println("  Max Active : " + _maxActive);
         pw.println("Pnfs Timeout : " + (_pnfsTimeout / 1000L) + " seconds ");
@@ -702,7 +702,7 @@ public class P2PClient
 
     public void printSetup(PrintWriter pw)
     {
-        pw.println("#\n#  Pool to Pool (P2P) [$Id: P2PClient.java,v 1.21 2007-10-31 17:27:11 radicke Exp $]\n#");
+        pw.println("#\n#  Pool to Pool (P2P) [$Id$]\n#");
         pw.println("pp set port " + _acceptor._recommendedPort);
         pw.println("pp set max active " + _maxActive);
         pw.println("pp set pnfs timeout " + (_pnfsTimeout / 1000L));
