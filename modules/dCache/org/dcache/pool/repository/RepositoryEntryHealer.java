@@ -23,7 +23,7 @@ import diskCacheV111.vehicles.StorageInfo;
 public class RepositoryEntryHealer
 {
     private final static Logger _log =
-        Logger.getLogger("logger.org.dcache.repository");
+        Logger.getLogger("logger.org.dcache.repository."+RepositoryEntryHealer.class.getName());
 
     private final static String REPLICA_BAD_SIZE_MSG =
         "Replica %1$s has an incorrect size. It is %2$d and should " +
@@ -142,34 +142,14 @@ public class RepositoryEntryHealer
 
             return entry;
         } catch (CacheException e) {
-            if (e.getRc() != CacheException.FILE_NOT_FOUND) {
+            if (e.getRc() == CacheException.FILE_NOT_FOUND) {
+                _log.info(id + " was deleted. Removing replica...");
+                _metaRepository.remove(id);
+                file.delete();
+            } else if (e.getRc() == CacheException.NOT_IN_TRASH) {
+                _log.info(id + " is not in trash. Keep replica...");
+            } else
                 throw e;
-            }
-
-            _log.info(id + " was deleted. Removing replica...");
-            _metaRepository.remove(id);
-            file.delete();
-
-            /*
-             * TODO: this part should take care that we do not
-             * remove files is pnfs manager in trouble
-             *
-             CacheRepositoryEntryState entryState = new CacheRepositoryEntryState(controlFile);
-             if( entryState.canRemove() ) {
-             _log.warn("removing missing removable entry : " + entryName );
-             _repositoryTree.destroy(entryName);
-
-             // everybody is happy
-
-             return null;
-             }else{
-             _log.warn("mark as bad non removable missing entry : " + entryName );
-             entryState.setSticky("system",-1);
-             entryState.setError();
-
-             return repositoryEntry;
-             }
-            */
             return null;
         }
     }
@@ -228,15 +208,16 @@ public class RepositoryEntryHealer
 
                 _pnfsHandler.addCacheLocation(id);
             } catch (CacheException e) {
-                if (e.getRc() != CacheException.FILE_NOT_FOUND) {
+                if (e.getRc() == CacheException.FILE_NOT_FOUND) {
+                    /* The file is already gone
+                     */
+                    _log.info(id + " was deleted. Removing replica.");
+                    _metaRepository.remove(id);
+                    file.delete();
+                } else if (e.getRc() == CacheException.NOT_IN_TRASH) {
+                    _log.info(id + " is not in trash. Keep replica...");
+                } else
                     throw e;
-                }
-
-                /* The file is already gone
-                 */
-                _log.info(id + " was deleted. Removing replica.");
-                _metaRepository.remove(id);
-                file.delete();
             }
         } else if (entry.isReceivingFromStore()) {
             // it's safe to remove partialyFromStore file, we have a

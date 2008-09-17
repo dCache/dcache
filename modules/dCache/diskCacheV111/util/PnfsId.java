@@ -1,4 +1,4 @@
-// $Id: PnfsId.java,v 1.10 2007-07-25 12:45:15 tigran Exp $
+// $Id$
 
 package diskCacheV111.util;
 
@@ -209,7 +209,24 @@ public class PnfsId implements Serializable, Comparable<PnfsId> {
 		return a;
 	}
 
-	public static void main(String[] args) {
+    /**
+     * Converts string representation of pnfsid into its internal binary form
+     *
+     * @return pnfsid as byte array
+     */
+    public byte[] toBinPnfsId() {
+        int len = _idString.length();
+        switch (len) {
+            case OLD_ID_SIZE * 2: // old pnfsid
+                return PnfsIdUtil.toBinPnfsId(_idString);
+            case NEW_ID_SIZE * 2: // himera
+                return getBytes();
+            default:
+                return null;
+        }
+    }
+
+        public static void main(String[] args) {
 		if (args.length < 1) {
 			System.out.println("USAGE : ... <pnfsId>");
 			System.exit(4);
@@ -220,7 +237,10 @@ public class PnfsId implements Serializable, Comparable<PnfsId> {
 			System.out.println("id.getId()         " + id.getId());
 			System.out.println("db.getDatabaseId() " + id.getDatabaseId());
 			System.out.println("db.getDomain()     " + id.getDomain());
-			System.exit(0);
+                        System.out.println("id.getBytes()      " + java.util.Arrays.toString(id.getBytes()));
+                        System.out.println("id.toBinPnfsId()   " + java.util.Arrays.toString(id.toBinPnfsId()));
+                        System.out.println("toStringPnfsId(id.toBinPnfsId()) " + PnfsIdUtil.toStringPnfsId(id.toBinPnfsId()));
+                        System.exit(0);
 		} catch (Exception e) {
 			e.printStackTrace();
 			System.exit(4);

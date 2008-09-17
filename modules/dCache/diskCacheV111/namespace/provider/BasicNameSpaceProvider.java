@@ -1,5 +1,5 @@
 /*
- * $Id: BasicNameSpaceProvider.java,v 1.24 2007-09-24 07:01:38 tigran Exp $
+ * $Id$
  */
 
 package diskCacheV111.namespace.provider;
@@ -116,7 +116,40 @@ public class BasicNameSpaceProvider implements NameSpaceProvider, StorageInfoPro
         ( ! defaultServerName.equals("*") ) )
             _pathManager.setDefaultServerName( defaultServerName ) ;
 
-        _logNameSpace.debug("Using default pnfs server : "+_pathManager.getDefaultServerName());
+        if (_logNameSpace.isDebugEnabled()) {
+            _logNameSpace.debug("Using default pnfs server : "+_pathManager.getDefaultServerName());
+        }
+        // Process 'delete-registration' arguments
+        String location, driverName, userName, passwd;
+        if (((location = _args.getOpt("delete-registration")) == null) || (location.equals(""))) {
+            _logNameSpace.warn("'delete-registration' is not defined.");
+            location = null;
+        }
+        if (((driverName = _args.getOpt("delete-registration-jdbcDrv")) == null) || (driverName.equals(""))) {
+            _logNameSpace.warn("'delete-registration-jdbcDrv' is not defined.");
+            driverName = null;
+        }
+        if (((userName = _args.getOpt("delete-registration-dbUser")) == null) || (userName.equals(""))) {
+            _logNameSpace.warn("'delete-registration-dbUser' is not defined.");
+            userName = null;
+        }
+        if (((passwd = _args.getOpt("delete-registration-dbPass")) == null) || (passwd.equals(""))) {
+            _logNameSpace.warn("'delete-registration-dbPass' is not defined.");
+            passwd = null;
+        }
+        if (_logNameSpace.isDebugEnabled()) {
+            _logNameSpace.debug("'delete-registration' set to " + location);
+        }
+        if ((location != null) && location.startsWith("/")) {
+            FsTrash trash = new FsTrash(location);
+            PnfsFile.setTrash(trash);
+        } else if ((location != null) && location.startsWith("jdbc:")) {
+            DbTrash trash = new DbTrash(location, driverName, userName, passwd);
+            PnfsFile.setTrash(trash);
+        }
+        else {
+            _logNameSpace.info("Empty trash is selected");
+        }
     }
 
     public void addCacheLocation(PnfsId pnfsId, String cacheLocation) {
@@ -262,7 +295,7 @@ public class BasicNameSpaceProvider implements NameSpaceProvider, StorageInfoPro
     public void deleteEntry(String path) throws Exception {
 
         boolean rc;
-        
+
         _logNameSpace.debug("delete PNFS entry for  path " + path);
 
         PnfsFile pf =  new PnfsFile(path);
@@ -747,7 +780,12 @@ public class BasicNameSpaceProvider implements NameSpaceProvider, StorageInfoPro
                 IOException("Illegal meta data format : "+pnfsId+" ("+line+")" ) ;
             }
         }catch(FileNotFoundException fnf ) {
-        	throw new FileNotFoundCacheException("no such file or directory " + pnfsId.getId() );
+//        	throw new FileNotFoundCacheException("no such file or directory " + pnfsId.getId() );
+            boolean deleted = PnfsFile.isDeleted(pnfsId);
+            if (deleted)
+                throw new FileNotFoundCacheException("no such file or directory " + pnfsId.getId() );
+            else
+                throw new CacheException(CacheException.NOT_IN_TRASH, "Not in trash: " + pnfsId.toString());
         }finally{
             if(br != null)try{ br.close() ; }catch(IOException ee){/* too late to react */}
         }

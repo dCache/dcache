@@ -4,12 +4,15 @@ import java.util.* ;
 import java.io.* ;
 
 import org.apache.log4j.Logger;
+import diskCacheV111.namespace.provider.Trash;
+import diskCacheV111.namespace.provider.EmptyTrash;
 
 public class PnfsFile extends File  {
 
    private PnfsId  _pnfsId     = null ;
    private FileMetaData  _meta = null ;
-   
+   private static Trash _trash = new EmptyTrash("empty trash");
+
    private static final Logger _logNameSpace =  Logger.getLogger("logger.dev.org.dcache.namespace." + PnfsFile.class.getName());
 
     static private String getCanonicalPath(File f)
@@ -124,6 +127,22 @@ public class PnfsFile extends File  {
      return false ;
    }
 
+    /*
+     * This method checks if the file with a name as given pnfsid exists in the trash directory
+     * The result can be 'true/false'
+     */
+    public static boolean isDeleted(PnfsId pnfsId) {
+        return _trash.isFound(pnfsId.getId());
+    }
+
+    public static void setTrash(Trash trash) {
+        if (trash != null) {
+            _trash = trash;
+        } else {
+            throw new IllegalArgumentException("'trash' is not defined.");
+        }
+    }
+
     public boolean setLength( long length ){
 
 	   File setSizeCommand = null;
@@ -193,7 +212,7 @@ public class PnfsFile extends File  {
         if (dirString == null) {
             throw new FileNotFoundCacheException("path " +this+" not found");
         }
-        
+
         File f = new File(dirString, ".(id)(" + getName() + ")");
 
         BufferedReader r = null;
@@ -387,11 +406,11 @@ public class PnfsFile extends File  {
    }
    public static String _getNameOf( File mountpoint , String  pnfsId )
           throws IOException{
-       
-       if (_logNameSpace.isInfoEnabled() ) { 
+
+       if (_logNameSpace.isInfoEnabled() ) {
            _logNameSpace.info("nameof for pnfsid " + pnfsId);
        }
-       
+
        BufferedReader br =
           new BufferedReader(
              new FileReader(
@@ -404,11 +423,11 @@ public class PnfsFile extends File  {
    }
    public PnfsId getParentId(){
       if( _pnfsId != null ){
-          
-          if (_logNameSpace.isInfoEnabled() ) { 
+
+          if (_logNameSpace.isInfoEnabled() ) {
               _logNameSpace.info("parent for pnfsid " + _pnfsId);
           }
-          
+
          File   f    = new File( getParent() , ".(parent)("+_pnfsId+")" ) ;
          String line = null ;
          BufferedReader br = null ;
@@ -559,7 +578,11 @@ public class PnfsFile extends File  {
        }
        PnfsFile f = new PnfsFile(mountpoint, ".(access)(" + id + ")", id);
        if (!f.exists()) {
-           throw new FileNotFoundCacheException(id.toString());
+           boolean deleted = isDeleted(id);
+           if (deleted)
+               throw new FileNotFoundCacheException(id.toString());    // Old code
+           else
+               throw new CacheException(CacheException.NOT_IN_TRASH, "Not in trash: " + id.toString());
        }
        return f;
    }
@@ -571,7 +594,11 @@ public class PnfsFile extends File  {
         }
         PnfsFile f = new PnfsFile(mountpoint.getAbsolutePath(), ".(access)(" + id + ")", id);
         if (!f.exists()) {
-            throw new FileNotFoundCacheException(id.toString());
+            boolean deleted = isDeleted(id);
+            if (deleted)
+                throw new FileNotFoundCacheException(id.toString());    // Old code
+            else
+                throw new CacheException(CacheException.NOT_IN_TRASH, "Not in trash: " + id.toString());
         }
         return f;
     }
