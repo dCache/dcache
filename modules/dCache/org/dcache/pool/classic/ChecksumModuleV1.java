@@ -60,9 +60,8 @@ public class ChecksumModuleV1
         _pnfs       = pnfs;
         try {
             _defaultChecksumFactory = ChecksumFactory.getFactory("adler32");
-        } catch (Throwable ex) {
-            _log.error("Exception building checksum factory for adler32");
-            assert(false);
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException("adler32 is not supported", e);
         }
     }
 
@@ -136,7 +135,6 @@ public class ChecksumModuleV1
         throws IOException, CacheException, InterruptedException,
                FileNotInCacheException
     {
-        _log.debug("Calculating checksum on " + file);
         MessageDigest digest = checksum.getMessageDigest();
 
         byte [] buffer = new byte[64 * 1024];
@@ -157,8 +155,8 @@ public class ChecksumModuleV1
             } catch (IOException e) {
             }
         }
-        _log.info("Calculated checksum on " + file
-                  + ", length " + sum + " chsm " + checksum);
+        _log.debug(String.format("Computed checksum on %s, length %d, checksum %s",
+                                 file, sum, checksum));
         checksum.getDigest();
         return checksum;
     }
@@ -166,7 +164,8 @@ public class ChecksumModuleV1
     public void storeChecksumInPnfs(PnfsId pnfsId, Checksum checksum)
         throws CacheException, NoRouteToCellException, InterruptedException
     {
-        try {
+        _log.info("Storing checksum " + checksum + " for " + pnfsId);
+       try {
             ChecksumPersistence.getPersistenceMgr().store(getCellEndpoint(), pnfsId, checksum);
         } catch (CacheException e) {
             throw e;
@@ -175,20 +174,20 @@ public class ChecksumModuleV1
         } catch (InterruptedException e) {
             throw e;
         } catch (Exception e) {
-           _log.error("Failed to set checksum: " + e);
            throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
                                     "Failed to set checksum: " + e.getMessage());
         }
     }
 
     public Checksum getChecksumFromPnfs(PnfsId pnfsId)
+        throws CacheException
     {
         try {
             return _defaultChecksumFactory.createFromPersistentState(getCellEndpoint(),pnfsId);
-        } catch(Exception ee) {
-            ee.printStackTrace();
+        } catch (Exception e) {
+            throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                                    "Failed to get checksum: " + e.getMessage());
         }
-        return null;
     }
 
     public ChecksumFactory getDefaultChecksumFactory()
