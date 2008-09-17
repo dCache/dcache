@@ -983,7 +983,7 @@ public class   CellAdapter
                         _nucleus.esay("Couldn't revert PingMessage : "+ee);
                     }
                 } else {
-                    NDC.push(getMessageName(obj));
+                    NDC.push(getMessageName(obj.getClass()));
                     try {
                         messageArrived(msg);
                     } finally {
@@ -1157,11 +1157,10 @@ public class   CellAdapter
 
     }
 
-    protected String getMessageName(Object msg)
+    protected String getMessageName(Class c)
     {
-        Class c = msg.getClass();
-        String cmd = msg.getClass().getSimpleName();
-        if (cmd.endsWith("Message"))
+        String cmd = c.getSimpleName();
+        if ((cmd.length() > 7) && cmd.endsWith("Message"))
             cmd = cmd.substring(0, cmd.length() - 7);
 
         return cmd;
