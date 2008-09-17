@@ -115,25 +115,25 @@ public class HsmFlushController
             String storageClass = _flush.getStorageClassName() ;
             String composed     = storageClass+"@"+hsm ;
 
-            say("Starting flush for "+composed) ;
+            _log.debug("Starting flush for "+composed) ;
             try{
                long flushId = flushStorageClass( hsm , storageClass , _flush.getMaxFlushCount() , this ) ;
                _flush.setFlushId( flushId ) ;
-               say("Finished flush for "+composed) ;
+               _log.debug("Finished flush for "+composed) ;
             }catch(Exception ee ){
-               esay("Private flush failed for "+composed+" : "+ee);
+               _log.error("Private flush failed for "+composed+" : "+ee);
                _flush.setFailed(576,ee);
             }
             if( _flush.getReplyRequired() ){
                 try {
                    sendMessage(_message);
                 } catch (NoRouteToCellException e) {
-                   esay("Problem replying : " + _message + " " + e);
+                   _log.error("Problem replying : " + _message + " " + e);
                 }
             }
         }
         public void storageClassInfoFlushed( String hsm , String storageClass , long flushId , int requests , int failed ){
-            say("Flush finished : "+hsm+"  "+storageClass+" , id="+flushId+";R="+requests+";f="+failed);
+            _log.info("Flushed : "+hsm+"  "+storageClass+" , id="+flushId+";R="+requests+";f="+failed);
 
             if( _flush.getReplyRequired() ){
                  setFlushInfos( _flush ) ;
@@ -141,7 +141,7 @@ public class HsmFlushController
                 try {
                     sendMessage(_message);
                 } catch (NoRouteToCellException e) {
-                    esay("Problem replying : " + _message + " " + e);
+                    _log.error("Problem replying : " + _message + " " + e);
                 }
             }
         }
@@ -151,24 +151,10 @@ public class HsmFlushController
     }
     long flushStorageClass( String hsm , String storageClass , int maxCount , StorageClassInfoFlushable callback ){
         StorageClassInfo info  = _storageQueue.getStorageClassInfoByName( hsm , storageClass );
-        say( "Flushing storageClass : "+info ) ;
+        _log.debug( "Flushing storageClass : "+info ) ;
         long id = info.submit( _storageHandler , maxCount , callback ) ;
-        say( "Flushing storageClass : "+storageClass+" Done" ) ;
+        _log.debug( "Flushing storageClass : "+storageClass+" Done" ) ;
         return id ;
-    }
-    public void say(String message)
-    {
-        _log.info(message);
-    }
-
-    public void esay(String message)
-    {
-        _log.error(message);
-    }
-
-    public void esay(Throwable t)
-    {
-        _log.error(t);
     }
 
     public void start(){ _worker.start() ; }
@@ -253,7 +239,7 @@ public class HsmFlushController
     }
     private Object  _parameterLock = new Object() ;
     public synchronized void run() {
-        say("Flush Thread starting");
+        _log.debug("Flush thread started");
         long holdUntil = 0L;
 
         while (!Thread.interrupted()) {
@@ -274,17 +260,17 @@ public class HsmFlushController
                         }else if( info.isTriggered() &&
                                   ( ( now - info.getLastSubmitted() ) > (_retryDelayOnError*1000) ) ){
 
-                            say( "Flushing : "+info ) ;
+                            _log.info( "Flushing : "+info ) ;
                             flushStorageClass( info.getHsm()  , info.getStorageClass() , 0 ) ;
                             active ++ ;
                         }
                     }
                 }
-            } catch (Exception me) {
+            } catch (Exception e) {
                 /* Catch all - we should not see any exceptions at this
                  * point so better dump the stack trace.
                  */
-                esay(me);
+                _log.error(e, e);
             }
             try {
                 wait(_flushingInterval * 1000);
@@ -292,7 +278,7 @@ public class HsmFlushController
                 Thread.currentThread().interrupt();
             }
         }
-        say("Flushing Thread finished");
+        _log.debug("Flush thread finished");
     }
     public synchronized void trigger(){
         notifyAll() ;
