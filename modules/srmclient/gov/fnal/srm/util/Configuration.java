@@ -311,7 +311,7 @@ public class Configuration {
     
         
         @Option(
-                name = "useproxy",
+                name = "use_proxy",
                 description = "true to use user proxy or false to use certificates directly",
                 defaultValue = "true",
                 required=false,
