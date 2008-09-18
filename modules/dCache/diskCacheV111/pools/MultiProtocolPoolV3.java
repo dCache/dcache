@@ -886,14 +886,26 @@ public class MultiProtocolPoolV3 extends CellAdapter
 
         public void available(CacheRepositoryEvent event) {
             say("RepositoryLoader : available : " + event);
-            PnfsId id = event.getRepositoryEntry().getPnfsId();
+
+            CacheRepositoryEntry entry = event.getRepositoryEntry();
+            PnfsId id = entry.getPnfsId();
+            entry.lock(false);
+
             try {
                 _pnfs.addCacheLocation(id);
             } catch (CacheException e) {
-                esay("[ERROR] Cache location was not set for " + id + ": "
-                     + e.getMessage());
+                if (e.getRc() == CacheException.FILE_NOT_FOUND) {
+                    try {
+                        _repository.removeEntry(entry);
+                        esay("File not found in PNFS; removed " + id);
+                    } catch (CacheException f) {
+                        esay("File not found in PNFS, but failed to remove " + id + ": " + f);
+                    }
+                } else {
+                    esay("[ERROR] Cache location was not set for " + id + ": "
+                         + e.getMessage());
+                }
             }
-            event.getRepositoryEntry().lock(false);
         }
 
         public void created(CacheRepositoryEvent event) {
