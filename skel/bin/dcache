@@ -1108,7 +1108,7 @@ case "$1" in
             run $domain start
         done
 
-        touch $LOCK_FILE 2> /dev/null
+        touch $LOCK_FILE 2> /dev/null || :
         ;;
 
     stop)
@@ -1309,5 +1309,3 @@ case "$1" in
         usage
         ;;
 esac
-
-    
