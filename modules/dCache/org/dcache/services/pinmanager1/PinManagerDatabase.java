@@ -20,12 +20,16 @@ import java.sql.Statement;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.DatabaseMetaData;
+import java.sql.Types;
 
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.Pgpass;
 
 import org.dcache.util.SqlHelper;
 import org.dcache.util.JdbcConnectionPool;
+import org.dcache.auth.AuthorizationRecord;
+import org.dcache.auth.persistence.AuthRecordPersistenceManager;
+
 
 class PinManagerDatabase
 {
@@ -41,7 +45,7 @@ class PinManagerDatabase
             " ( version numeric )";
 
 
-    private static final int currentSchemaVersion = 3;
+    private static final int currentSchemaVersion = 4;
     private int previousSchemaVersion;
 
     private static final String TABLE_PINREQUEST_V2 = "pinrequestsv2";
@@ -83,6 +87,7 @@ class PinManagerDatabase
         " SRMId numeric, "+
         " Creation numeric, " +
         " Expiration numeric ," +
+        " AuthRecId numeric ," +
         " CONSTRAINT fk_"+PinManagerRequestsTableName+
         "_L FOREIGN KEY (PinId) REFERENCES "+
         PinManagerPinsTableName +" (Id) "+
@@ -123,7 +128,7 @@ class PinManagerDatabase
 
     private static final String InsertIntoPinRequestsTable =
         "INSERT INTO " + PinManagerRequestsTableName
-        + " (Id, SRMId, PinId,Creation, Expiration ) VALUES (?,?,?,?,?)";
+        + " (Id, SRMId, PinId,Creation, Expiration, AuthRecId ) VALUES (?,?,?,?,?,?)";
 
     private static final String deletePin =
                 "DELETE FROM "+ PinManagerPinsTableName +
@@ -132,6 +137,10 @@ class PinManagerDatabase
                 "DELETE FROM "+ PinManagerRequestsTableName +
                 " WHERE  id =?";
 
+    private static final String AddAuthRecIdToPinRequestsTable =
+        "ALTER TABLE " + PinManagerRequestsTableName
+        + " ADD COLUMN AuthRecId numeric";
+    
     private final String _jdbcUrl;
     private final String _jdbcClass;
     private final String _user;
@@ -154,6 +163,8 @@ class PinManagerDatabase
 
     private long nextRequestId;
     long _nextLongBase = 0;
+    
+    private AuthRecordPersistenceManager authRecordPM;
 
     public PinManagerDatabase(PinManager manager,
                               String url, String driver,
@@ -163,7 +174,7 @@ class PinManagerDatabase
                               long maxWaitSeconds,
                               int maxIdle
         )
-        throws SQLException
+        throws SQLException, java.io.IOException
     {
         if (passwordfile != null && passwordfile.trim().length() > 0) {
             Pgpass pgpass = new Pgpass(passwordfile);
@@ -197,6 +208,11 @@ class PinManagerDatabase
 
         prepareTables();
        // readRequests();
+        authRecordPM = new AuthRecordPersistenceManager(
+            _jdbcUrl, 
+            _jdbcClass, 
+            _user, 
+            _pass);
     }
 
 
@@ -284,6 +300,17 @@ class PinManagerDatabase
                 error(sqle);
             }
             previousSchemaVersion = 3;
+        }
+        if(previousSchemaVersion == 3) {
+            try {
+                updateSchemaToVersion4from3(con);
+            }
+            catch (SQLException sqle) {
+                error("updateSchemaToVersion3 failed, schema might have been updated already:");
+                error(sqle);
+            }
+            previousSchemaVersion = 3;
+            
         }
     }
 
@@ -382,6 +409,7 @@ class PinManagerDatabase
                 pinReqsInsertStmt.setLong(3,pinRequestId);
                 pinReqsInsertStmt.setLong(4,0);
                 pinReqsInsertStmt.setLong(5,expiration);
+                pinReqsInsertStmt.setNull(6,Types.NUMERIC);
                 pinReqsInsertStmt.executeUpdate();
 
             }
@@ -443,6 +471,7 @@ class PinManagerDatabase
                     pinReqsInsertStmt.setLong(3,pinId);
                     pinReqsInsertStmt.setLong(4,0);
                     pinReqsInsertStmt.setLong(5,expiration);
+                    pinReqsInsertStmt.setNull(6,Types.NUMERIC);
                     pinReqsInsertStmt.executeUpdate();
                     }
                 catch (SQLException sqle) {
@@ -472,6 +501,14 @@ class PinManagerDatabase
             }
 
     }
+        
+    private void updateSchemaToVersion4from3(Connection con) throws SQLException {
+            PreparedStatement alterPinRequests =
+                con.prepareStatement(AddAuthRecIdToPinRequestsTable);
+            alterPinRequests.execute(); 
+     
+    }
+           
 
    private void createIndecies() {
     try {
@@ -704,11 +741,14 @@ class PinManagerDatabase
         long id,
         long srmRequestId,
         long pinId,
-        long expirationTime
+        long expirationTime,
+        Long authRecId
         ) throws SQLException {
         long creationTime=System.currentTimeMillis();
-        info("insertPinRequest()  executing statement:"+InsertIntoPinRequestsTable);
-        info("?="+id+" ?="+pinId+" ?="+creationTime+" ?="+expirationTime);
+        info("insertPinRequest()  executing statement:"+
+            InsertIntoPinRequestsTable);
+        info("?="+id+" ?="+pinId+" ?="+creationTime+" ?="+
+            expirationTime+" ?="+authRecId);
 
         PreparedStatement pinReqsInsertStmt = con.prepareStatement(InsertIntoPinRequestsTable);
         try {
@@ -717,6 +757,12 @@ class PinManagerDatabase
             pinReqsInsertStmt.setLong(3,pinId);
             pinReqsInsertStmt.setLong(4,creationTime);
             pinReqsInsertStmt.setLong(5,expirationTime);
+            if(authRecId == null) {
+                pinReqsInsertStmt.setNull(6,Types.NUMERIC);
+            }
+            else {
+                pinReqsInsertStmt.setLong(6,authRecId);
+            }
             info("running insert=");
             int inserRowCount = pinReqsInsertStmt.executeUpdate();
             info("inserRowCount="+inserRowCount);
@@ -1359,19 +1405,35 @@ class PinManagerDatabase
      private PinRequest extractPinRequestFromResultSet( ResultSet set )
         throws java.sql.SQLException
     {
+         AuthorizationRecord ar = null;
+         long authRecId = set.getLong("AuthRecId");
+         if(authRecId == 0 && set.wasNull() ) {
+             info("authRecId is NULL");
+         } else {
+             ar = authRecordPM.find(authRecId);
+         }
+             
          return new PinRequest(
                         set.getLong( "id" ),
                         set.getLong("SRMId"),
                         set.getLong("PinId"),
                         set.getLong("Creation"),
-                        set.getLong("Expiration"));
+                        set.getLong("Expiration"),
+                        ar
+                        );
     }
 
     public PinRequest insertPinRequestIntoNewOrExistingPin(
-        PnfsId pnfsId,long lifetime,long srmRequestId) throws PinDBException {
+        PnfsId pnfsId,
+        long lifetime,
+        long srmRequestId,
+        AuthorizationRecord authRec) throws PinDBException {
         long expirationTime = lifetime == -1?
             -1:
             System.currentTimeMillis() + lifetime;
+        if(authRec != null) {
+            authRecordPM.persist(authRec);
+        }
         Connection _con = getThreadLocalConnection();
         if(_con == null) {
            throw new PinDBException(1,"DB is not initialized in this thread!!!");
@@ -1397,7 +1459,8 @@ class PinManagerDatabase
 
             long requestId =  nextLong(_con);
             insertPinRequest(_con,requestId,srmRequestId,pin.getId(),
-                    expirationTime);
+                    expirationTime,
+                    authRec==null?null:authRec.getId());
             pin.setRequests(getPinRequestsByPin(_con,pin));
             PinRequest pinRequest = null;
             for(PinRequest aPinRequest : pin.getRequests()) {

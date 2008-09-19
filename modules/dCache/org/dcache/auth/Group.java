@@ -89,17 +89,26 @@ public class Group implements Serializable{
     }
     
     public String toString() {
-        StringBuilder sb = new java.lang.StringBuilder("G:");
-        sb.append(name).append(' ');
-        sb.append(Integer.toHexString(hashCode())).append(' ');
+        StringBuilder sb = new java.lang.StringBuilder();
+        toStringBuilder(sb);
+        return  sb.toString();
+    }
+    
+   public void toStringBuilder (StringBuilder sb) {
+        if(name != null) {
+            sb.append(name).append(' ');
+        }
         sb.append(gid);
+        /*
+         * this was and may be again needed for debug of JPA
+        sb.append(Integer.toHexString(hashCode())).append(' ');
         sb.append(" gl=");
         if(groupList == null) {
             sb.append("null");
         } else {
             sb.append(groupList.hashCodeString());
         }
-        return  sb.toString();
+         */
     }
     
     public String hashCodeSting() {

@@ -323,8 +323,8 @@ public class BringOnlineFileRequest extends FileRequest {
     String statusCodeString,            
     Configuration configuration,
     String SURL,
-    String pinId,
-    String fileId
+    String fileId,
+    String pinId
     ) throws java.sql.SQLException {
         super(id,
         nextJobId,
@@ -352,12 +352,12 @@ public class BringOnlineFileRequest extends FileRequest {
             throw new IllegalArgumentException(murle.toString());
         }
         
-        if(pinId != null && (!pinId.equalsIgnoreCase("null"))) {
-            this.pinId = pinId;
-        }
-        
         if(fileId != null && (!fileId.equalsIgnoreCase("null"))) {
             this.fileId = fileId;
+        }
+        
+        if(pinId != null && (!pinId.equalsIgnoreCase("null"))) {
+            this.pinId = pinId;
         }
     }
     

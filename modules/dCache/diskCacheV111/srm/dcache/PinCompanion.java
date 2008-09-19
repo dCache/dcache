@@ -248,6 +248,7 @@ public class PinCompanion implements CellMessageAnswerable {
         new PinManagerPinMessage( pnfsId ,
             clientHost,
             pinLifetime,requestId) ;
+        pinRequest.setAuthorizationRecord(user);
         pinRequest.setStorageInfo(dfmd.getStorageInfo());
         pinRequest.setReplyRequired(true);
         companion.state = SENT_PIN_MGR_PIN_MSG;

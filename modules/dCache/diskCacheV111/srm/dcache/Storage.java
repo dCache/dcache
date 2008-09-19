@@ -4812,6 +4812,7 @@ public class Storage
         PinManagerExtendLifetimeMessage extendLifetime =
             new PinManagerExtendLifetimeMessage(
             pnfsId, pinId,newPinLifetime);
+        extendLifetime.setAuthorizationRecord((AuthorizationRecord) user);
 
         try {
             CellMessage response =  sendAndWait( new CellMessage(

@@ -227,7 +227,7 @@ public class UnpinCompanion implements CellMessageAnswerable {
         try {
             pnfsId = new PnfsId(fileId);
         } catch(Exception e) {
-            //just ciletly fail, if the fileId is not pnfs id
+            //just quietly fail, if the fileId is not pnfs id
             // it must be created by a disk srm during testing
             //just allow the request to get expired
             callbacks.Unpinned(fileId);
@@ -239,6 +239,7 @@ public class UnpinCompanion implements CellMessageAnswerable {
         
         PinManagerUnpinMessage unpinRequest =
                 new PinManagerUnpinMessage( pnfsId, pinId);
+        unpinRequest.setAuthorizationRecord(user);
         
         companion.state = SENT_PIN_MGR_PIN_MSG;
         try {
@@ -282,7 +283,7 @@ public class UnpinCompanion implements CellMessageAnswerable {
         
         PinManagerUnpinMessage unpinRequest =
                 new PinManagerUnpinMessage( pnfsId, srmRequestId);
-        
+        unpinRequest.setAuthorizationRecord(user);
         companion.state = SENT_PIN_MGR_PIN_MSG;
         try {
             cell.sendMessage(

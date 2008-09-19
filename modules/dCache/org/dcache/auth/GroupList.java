@@ -99,27 +99,39 @@ public class GroupList implements Serializable{
     }
     
     public String toString() {
-        StringBuilder sb = new java.lang.StringBuilder("GL:");
-        sb.append(Integer.toHexString(hashCode())).append(' ');
+        StringBuilder sb = new StringBuilder();
+        toStringBuilder(sb);
+        return sb.toString();       
+    }
+    
+    public void toStringBuilder(StringBuilder sb) {
+        
+        sb.append("GL:");
         sb.append(attribute).append(' ');
         if(groups != null)
         {
            sb.append(groups.size()).append(" groups : [");
             for(Group group : groups)
             {
-                sb.append(group).append(',');
+                group.toStringBuilder(sb);
+                sb.append(',');
             }
             sb.append(']');
         } else {
             sb.append(" [empty]");
         }
+        /*
+         * this was and may be again needed for debug of JPA
+        
+        sb.append(Integer.toHexString(hashCode())).append(' ');
         sb.append(" ar=");
         if(authRecord == null) {
             sb.append("null");
         } else {
             sb.append(authRecord.hashCodeString());
         }
-        return sb.toString();       
+         */
+       
     }
 
     public String toShortString() {

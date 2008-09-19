@@ -10,6 +10,7 @@
 package org.dcache.services.pinmanager1;
 
 import java.util.Date;
+import org.dcache.auth.AuthorizationRecord;
 /**
  *
  * @author timur
@@ -21,18 +22,21 @@ public class PinRequest {
     private long creationTime;
     private long expirationTime;
     private transient Pin pin;
+    private AuthorizationRecord authorizationRecord;
     
     /** Creates a new instance of PinRequest */
     public PinRequest(   long id,
         long srmRequestId,
         long pinId,
         long creationTime,
-        long expirationTime) {
+        long expirationTime,
+        AuthorizationRecord authorizationRecord) {
         this.id = id;
         this.srmRequestId = srmRequestId;
         this.pinId = pinId;
         this.creationTime = creationTime;
         this.expirationTime = expirationTime;
+        this.authorizationRecord = authorizationRecord;
     }
 
     public long getId() {
@@ -72,7 +76,12 @@ public class PinRequest {
             " pinId:"+pinId+
             " srmId:"+srmRequestId+
             " created:"+ new Date(creationTime).toString()+
-            " expires:"+ (expirationTime==-1?"Never":new Date(expirationTime).toString());
+            " expires:"+ (expirationTime==-1?"Never":new Date(expirationTime).toString())+
+            " authRec:"+authorizationRecord;
+    }
+    
+    public AuthorizationRecord getAuthorizationRecord() {
+        return authorizationRecord;
     }
     
 }
