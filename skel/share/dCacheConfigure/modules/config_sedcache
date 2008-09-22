@@ -963,11 +963,11 @@ yaim_state_service_restart_needed_do()
     if [ "$has_pnfs" == "1" -a "${pnfs_restart}" == "1" ] ; then
         config_pnfs_stop
     fi
-    
+
     if [ "$has_chimera" == "1" -a "${chimera_restart}" == "1" ] ; then
         chimera_create_nfs_stop
     fi
-    
+
     if [ "$has_rdbms" == "1" -a "${rdbms_restart}" == "1" ] ; then
         /sbin/service postgresql stop
         /sbin/service postgresql start
@@ -1386,7 +1386,7 @@ config_dcache_config_system_files_init()
   yaim_query_conf_node_dcache_pnfs_root
   pnfs=${RET}
   yaim_query_conf_node_dcache_chimera
-  rcchimera=${RET}
+  rcchimera=$?
   yaim_query_conf_node_dcache_pnfsserver
   rcpnfs=$?
   yaim_query_conf_node_dcache_door
