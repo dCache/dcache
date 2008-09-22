@@ -454,7 +454,7 @@ yaim_config_sechimera()
     chimera_create_link
     chimera_create_mount_points_api
     chimera_create_nfs_start
-  
+    yaim_state_service_restart_needed chimera
   else
     yaimlog INFO "This node does not need chimera configured"
   fi 

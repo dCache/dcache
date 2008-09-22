@@ -863,7 +863,7 @@ yaim_query_conf_modifed_today()
 ## Start of yaim state functions
 
 # Takes parameters of which components need restarting
-# Recongnised parameters are "core" "pool" "pnfs" "rdbms"
+# Recongnised parameters are "core" "pool" "pnfs" "rdbms" "chimera"
 yaim_state_service_restart_needed()
 {
     local param
@@ -892,13 +892,16 @@ yaim_state_service_restart_needed_do()
     local shouldruncore
     local rdbms_restart
     local pnfs_restart
+    local chimera_restart
     local core_restart
     local pool_restart
     local ysdrn
     rdbms_restart=0
     pnfs_restart=0
+    chimera_restart=0
     core_restart=0
     pool_restart=0
+    
     # Added postgresql in order to solve problems with
     # postmaster not listening after initial install
     yaim_query_conf_node_dcache_pnfsserver
@@ -907,6 +910,8 @@ yaim_state_service_restart_needed_do()
     has_rdbms=$?
     yaim_query_conf_node_dcache_nameserver_user
     has_pnfs=$?
+    yaim_query_conf_node_dcache_chimera
+    has_chimera=$?
     yaim_query_conf_node_dcache_door
     has_door=$?
     yaim_query_conf_node_dcache_admin
@@ -927,7 +932,12 @@ yaim_state_service_restart_needed_do()
             pnfs_restart=1
             core_restart=1
             pool_restart=1
-        ;;  
+        ;;
+        "chimera" )
+            chimera_restart=1
+            core_restart=1
+            pool_restart=1
+        ;;
         "core" )
             core_restart=1
             pool_restart=1
@@ -945,27 +955,32 @@ yaim_state_service_restart_needed_do()
         /sbin/service dcache-pool stop
     fi
 
-    shouldruncore=${has_door}${has_admin}${has_pnfsserver}
+    shouldruncore=${has_door}${has_admin}${has_pnfsserver}${has_chimera}
     if [ -n "$(echo $shouldruncore | grep 1)" -a "${core_restart}" == "1" ] ; then
         /sbin/service dcache-core stop
     fi
 
     if [ "$has_pnfs" == "1" -a "${pnfs_restart}" == "1" ] ; then
         config_pnfs_stop
+    fi
+    
+    if [ "$has_chimera" == "1" -a "${chimera_restart}" == "1" ] ; then
         chimera_create_nfs_stop
     fi
-
+    
     if [ "$has_rdbms" == "1" -a "${rdbms_restart}" == "1" ] ; then
         /sbin/service postgresql stop
         /sbin/service postgresql start
     fi
 
-
     if [ "$has_pnfs" == "1" -a "${pnfs_restart}" == "1" ] ; then
         config_pnfs_start
+    fi
+    
+    if [ "$has_chimera" == "1" -a "${chimera_restart}" == "1" ] ; then
         chimera_create_nfs_start
     fi
-
+    
     if [ -n "$(echo $shouldruncore | grep 1)" -a "${core_restart}" == "1" ] ; then
         /sbin/service dcache-core start
     fi
