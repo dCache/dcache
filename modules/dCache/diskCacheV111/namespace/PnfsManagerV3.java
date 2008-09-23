@@ -20,7 +20,8 @@ public class PnfsManagerV3 extends CellAdapter {
 
 
     private static final Logger _logDeveloper = Logger.getLogger(PnfsManagerV3.class.getName());
-
+    private static final int THRESHOLD_DISABLED = 0;
+    
     private final String      _cellName  ;
     private final Args        _args      ;
     private final CellNucleus _nucleus   ;
@@ -83,6 +84,8 @@ public class PnfsManagerV3 extends CellAdapter {
     private final StatItem _xgetChecksum           = new StatItem("getChecksum");
     private final StatItem _xsetChecksum           = new StatItem("setChecksum");
     private final StatItem _xlistChecksumTypes     = new StatItem("listChecksumTypes");
+    
+    private int _logSlowThreshold;
 
     private final StatItem [] _requestSet = {
             _xaddCacheLocation ,
@@ -127,6 +130,7 @@ public class PnfsManagerV3 extends CellAdapter {
                         "-defaultPnfsServer=<serverName> "+
                         "-cmRelay=<cellPathOfCacheModificationRelay> "+
                         "-enableLargeFileSimulation "+
+                        "-logSlowThreshold=<min. time in milliseconds> " +
                         "-storeFilesize "+
                 "<StorageInfoExctractorClass>");
 
@@ -150,6 +154,12 @@ public class PnfsManagerV3 extends CellAdapter {
             if( tmp != null )_pnfsDeleteNotificationRelay = new CellPath(tmp) ;
             say("pnfsDeleteRelay = "+
                     ( _pnfsDeleteNotificationRelay == null ? "NONE" : _pnfsDeleteNotificationRelay.toString() ) );
+
+            tmp = _args.getOpt("logSlowThreshold") ;
+           	_logSlowThreshold = (tmp != null) ? Integer.parseInt(tmp) : THRESHOLD_DISABLED;
+            say("logSlowThreshold = "+
+                    ( _logSlowThreshold == THRESHOLD_DISABLED ? "NONE" : Integer.toString(_logSlowThreshold) ) );
+
             //
             //
             _simulateLargeFiles = _args.getOpt("enableLargeFileSimulation") != null ;
@@ -630,7 +640,42 @@ public class PnfsManagerV3 extends CellAdapter {
 
     	return checkSum == null ? "" : checkSum;
     }
-
+    
+    public String hh_set_log_slow_threshold = "<timeout in ms>";
+    public String fh_set_log_slow_threshold = "Set the threshold for reporting slow PNFS interactions.";
+    public String ac_set_log_slow_threshold_$_1(Args args) {
+    	
+    	int newTimeout;
+    	
+    	try {
+    		newTimeout = Integer.parseInt( args.argv(0));
+    	} catch ( NumberFormatException e) {
+    		return "Badly formatted number " + args.argv(0);
+    	}
+    	
+    	if( newTimeout <= 0) {
+    		return "Timeout must be greater than zero"; 
+    	}
+    	
+    	_logSlowThreshold = newTimeout;
+    	
+    	return "";
+    }
+    
+    public String fh_get_log_slow_threshold = "Return the current threshold for reporting slow PNFS interactions.";
+    public String ac_get_log_slow_threshold_$_0( Args args) {
+    	if( _logSlowThreshold == THRESHOLD_DISABLED)
+    		return "disabled";
+    	
+    	return Integer.toString( _logSlowThreshold) + " ms";
+    }
+    
+    
+    public String fh_set_log_slow_threshold_disabled = "Disable reporting of slow PNFS interactions.";
+    public String ac_set_log_slow_threshold_disabled_$_0( Args args) {
+    	_logSlowThreshold = THRESHOLD_DISABLED;
+    	return "";
+    }
 
     private void dumpThreadQueue(int queueId) {
         if (queueId < 0 || queueId >= _fifos.length) {
@@ -1475,7 +1520,14 @@ public class PnfsManagerV3 extends CellAdapter {
         if( pnfsMessage.getReturnCode() == CacheException.INVALID_ARGS ) {
             _logDeveloper.error("Inconsistent message " + pnfsMessage.getClass() + " received form " + message.getSourceAddress() );
         }
-        say (pnfsMessage.getClass() +" processed in " + (System.currentTimeMillis() - ctime) + " millis");
+        
+        long duration = System.currentTimeMillis() - ctime;
+        String logMsg = pnfsMessage.getClass() + " processed in " + duration + " ms";
+        if( _logSlowThreshold != THRESHOLD_DISABLED && duration > _logSlowThreshold)
+        	esay( logMsg);
+        else
+        	say( logMsg);
+        
 
         if (! ((Message)pnfsMessage).getReplyRequired() ){
             return;
