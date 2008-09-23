@@ -373,7 +373,12 @@ public class SrmLs {
 	    }
 	}
 	else { 
-	    fileLocality = TFileLocality.NEARLINE;
+	    if (fmd.isStored) { 
+                fileLocality = TFileLocality.NEARLINE;
+            }
+            else {
+                fileLocality = TFileLocality.UNAVAILABLE;
+           }
 	}
 	if (fmd.isDirectory) {
 		fileLocality = TFileLocality.NONE;	
