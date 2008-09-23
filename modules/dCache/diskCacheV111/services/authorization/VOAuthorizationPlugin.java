@@ -133,9 +133,10 @@ public class VOAuthorizationPlugin extends AuthorizationServicePlugin {
   private static HashMap<String, TimedLocalId> UsernameMap = new HashMap();
   long cache_lifetime=0;
 
-  public VOAuthorizationPlugin(String mappingServiceURL, long authRequestID)
+  public VOAuthorizationPlugin(String mappingServiceURL, String storageAuthzPath, long authRequestID)
 	throws AuthorizationServiceException {
-		this.mappingServiceURL = mappingServiceURL;
+	this.mappingServiceURL = mappingServiceURL;
+    this.storageAuthzPath = storageAuthzPath;
     this.authRequestID=authRequestID;
     if(((Logger)log).getAppender("VOAuthorizationPlugin")==null) {
       Enumeration appenders = log.getParent().getAllAppenders();
@@ -301,7 +302,22 @@ public class VOAuthorizationPlugin extends AuthorizationServicePlugin {
     return authorize(gssIdentity, fqanValue, desiredUserName, serviceUrl, socket);
 	}
 
+    private UserAuthRecord getUserAuthRecord(LocalId localId, String subjectDN, String role) throws AuthorizationServiceException {
 
+    String username = localId.getUserName();
+
+    if(username==null) {
+      String denied = DENIED_MESSAGE + ": non-null user record received, but with a null username";
+      warn(denied);
+      throw new AuthorizationServiceException(denied);
+    } else {
+      say("VO mapping service returned Username: " + username);
+    }
+
+    return getAuthRecord(username, subjectDN, role);
+  }
+
+/*
   private UserAuthRecord getUserAuthRecord(LocalId localId, String subjectDN, String role) throws AuthorizationServiceException {
 
     UserAuthRecord VORecord = null;
@@ -384,7 +400,7 @@ public class VOAuthorizationPlugin extends AuthorizationServicePlugin {
 
     return VORecord;
   }
-
+*/
   public void setCacheLifetime(String lifetime_str) {
     if(lifetime_str==null || lifetime_str.length()==0) return;
     try {

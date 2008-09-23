@@ -14,7 +14,6 @@ public class AuthenticationMessage extends Message {
   long authRequestID;
   UserAuthBase user_auth;
   LinkedList<UserAuthRecord> user_auths;
-  boolean checked_uniformity=false;
 
   {
     user_auths = null;
@@ -80,85 +79,7 @@ public class AuthenticationMessage extends Message {
                           new HashSet()));
     }
 
-    if(!checked_uniformity) {
-      int[] GIDs = checkUniformity(user_auths);
-      checked_uniformity=true;
-
-      if(GIDs!=null && GIDs.length > 1) {
-        UserAuthRecord rec = user_auths.getFirst();
-        user_auths = new LinkedList <UserAuthRecord> ();
-        user_auths.add
-        (new UserAuthRecord(rec.Username,
-			                    rec.ReadOnly,
-                          rec.UID,
-                          GIDs,
-                          rec.Home,
-                          rec.Root,
-                          rec.FsRoot,
-                          new HashSet()));
-      }
-    }
-
     return user_auths;
-  }
-
-  public UserAuthBase getNextUserAuthRecord() {
-
-    user_auth = getUserAuthRecords().isEmpty() ? null : getUserAuthRecords().getFirst();
-
-    if(user_auth==null) return null;
-
-    UserAuthRecord rec = (UserAuthRecord) user_auth;
-
-    if(rec.GIDs != null && rec.currentGIDindex < rec.GIDs.length) {
-      rec.GID = rec.GIDs[rec.currentGIDindex++];
-    } else {
-      getUserAuthRecords().removeFirst();
-      return getNextUserAuthRecord();
-    }
-
-    return user_auth;
-  }
-
-  public int[] checkUniformity(LinkedList <UserAuthRecord> user_auths) {
-    int[] GIDs;
-    UserAuthRecord rec;
-    int last_uid;
-    String last_root;
-
-    if(user_auths==null) return null;
-
-    Iterator <UserAuthRecord> authsIter = user_auths.iterator();
-
-    if(!authsIter.hasNext()) return null;
-
-    rec = authsIter.next();
-    last_uid = rec.UID;
-    last_root = rec.Root;
-
-    int i=0;
-    while (authsIter.hasNext()) {
-      rec = authsIter.next();
-      if(rec.UID != last_uid || !rec.Root.equals(last_root)) return null;
-      i++;
-    }
-
-    // Write into array
-    GIDs = new int[i+1];
-    authsIter = user_auths.iterator();
-    i=0;
-    while (authsIter.hasNext()) {
-      rec = authsIter.next();
-      for(int j=0; j<rec.GIDs.length; j++) {
-        GIDs[i++] = rec.GIDs[j];
-      }
-    }
-
-    return GIDs;
-  }
-
-  public void setCheckedUniformity(boolean boolval) {
-    checked_uniformity = boolval;
   }
 
 }

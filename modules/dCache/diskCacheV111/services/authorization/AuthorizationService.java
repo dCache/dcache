@@ -335,8 +335,9 @@ public class AuthorizationService {
                             esay("Exception getting VO Map Url from configuration : " +e);
                             throw new AuthorizationServiceException(e.toString());
                         }
-                        if (VOMapUrl != null && !VOMapUrl.equals("")) {
-                            AuthorizationServicePlugin VOPlug = new VOAuthorizationPlugin(VOMapUrl, authRequestID);
+                        if (VOMapUrl != null && !VOMapUrl.equals("")) {                            
+                            gPLAZMALiteStorageAuthzDbPath = authConfig.getGridVORoleStorageAuthzPath();
+                            AuthorizationServicePlugin VOPlug = new VOAuthorizationPlugin(VOMapUrl, gPLAZMALiteStorageAuthzDbPath, authRequestID);
                             ((VOAuthorizationPlugin) VOPlug).setCacheLifetime(authConfig.getMappingServiceCacheLifetime());
                             addPlugin(VOPlug);
                         } else {
