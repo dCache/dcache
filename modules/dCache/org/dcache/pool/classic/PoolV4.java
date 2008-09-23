@@ -1989,6 +1989,31 @@ public class PoolV4
             new Thread(this, "HybridInventory").start();
         }
 
+        private void addCacheLocation(PnfsId id)
+        {
+            try {
+                _pnfs.addCacheLocation(id);
+            } catch (CacheException e) {
+                if (e.getRc() == CacheException.FILE_NOT_FOUND) {
+                    try {
+                        _repository.setState(id, EntryState.REMOVED);
+                        _log.info("File not found in PNFS; removed " + id);
+                    } catch (IllegalTransitionException f) {
+                        _log.error("File not found in PNFS, but failed to remove "
+                                   + id + ": " + f);
+                    }
+                } else {
+                    _log.error("Cache location was not registered for "
+                               + id + ": " + e.getMessage());
+                }
+            }
+        }
+
+        private void clearCacheLocation(PnfsId id)
+        {
+            _pnfs.clearCacheLocation(id);
+        }
+
         public void run()
         {
             _hybridCurrent = 0;
@@ -2005,14 +2030,10 @@ public class PoolV4
                 case CACHED:
                 case BROKEN:
                     _hybridCurrent++;
-                    try {
-                        if (_activate)
-                            _pnfs.addCacheLocation(pnfsid);
-                        else
-                            _pnfs.clearCacheLocation(pnfsid);
-                    } catch (CacheException e) {
-                        _log.error("Cache location was not updated for "
-                                   + pnfsid + ": " + e.getMessage());
+                    if (_activate) {
+                        addCacheLocation(pnfsid);
+                    } else {
+                        clearCacheLocation(pnfsid);
                     }
                     break;
                 default:
