@@ -1004,7 +1004,8 @@ public class HsmStorageHandler2  {
                             _pnfs.fileFlushed(_pnfsId, storageInfo);
                             break;
                         } catch(CacheException e) {
-                            if (e.getRc() == CacheException.FILE_NOT_FOUND) {
+                            if (e.getRc() == CacheException.FILE_NOT_FOUND ||
+                                e.getRc() == CacheException.NOT_IN_TRASH) {
                                 /* In case the file was deleted, we are
                                  * presented with the problem that the
                                  * file is now on tape, however the

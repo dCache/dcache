@@ -3246,6 +3246,31 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
             _nucleus.newThread(this, "HybridInventory").start();
         }
 
+        private void addCacheLocation(PnfsId id)
+        {
+            try {
+                _pnfs.addCacheLocation(id);
+            } catch (CacheException e) {
+                if (e.getRc() == CacheException.FILE_NOT_FOUND) {
+                    try {
+                        _repository.removeEntry(_repository.getEntry(id));
+                        esay("File not found in PNFS; removed " + id);
+                    } catch (CacheException f) {
+                        esay("File not found in PNFS, but failed to remove "
+                             + id + ": " + f);
+                    }
+                } else {
+                    esay("Cache location was not registered for "
+                         + id + ": " + e.getMessage());
+                }
+            }
+        }
+
+        private void clearCacheLocation(PnfsId id)
+        {
+            _pnfs.clearCacheLocation(id);
+        }
+
         public void run() {
             _hybridCurrent = 0;
 
@@ -3253,18 +3278,14 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
             say("HybridInventory started. _activate="+_activate);
             startTime = System.currentTimeMillis();
 
-            for (PnfsId pnfsid : _repository.getValidPnfsidList()) {
+            for (PnfsId pnfsid: _repository.getValidPnfsidList()) {
                 if (Thread.interrupted())
                     break;
                 _hybridCurrent++;
-                try {
-                    if (_activate)
-                        _pnfs.addCacheLocation(pnfsid);
-                    else
-                        _pnfs.clearCacheLocation(pnfsid);
-                } catch (CacheException e) {
-                    esay("[ERROR] Cache location was not updated for "
-                         + pnfsid + ": " + e.getMessage());
+                if (_activate) {
+                    addCacheLocation(pnfsid);
+                } else {
+                    clearCacheLocation(pnfsid);
                 }
             }
             stopTime = System.currentTimeMillis();
