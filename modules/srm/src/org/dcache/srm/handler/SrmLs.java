@@ -369,11 +369,16 @@ public class SrmLs {
 		fileLocality = TFileLocality.ONLINE_AND_NEARLINE;
 	    }
 	    else { 
-		fileLocality = TFileLocality.ONLINE;
+                fileLocality = TFileLocality.ONLINE;
 	    }
 	}
 	else { 
-	    fileLocality = TFileLocality.NEARLINE;
+            if (fmd.isStored) {  
+                fileLocality = TFileLocality.NEARLINE;
+            }
+            else { 
+                fileLocality = TFileLocality.UNAVAILABLE;
+            }
 	}
 	if (fmd.isDirectory) {
 		fileLocality = TFileLocality.NONE;	
