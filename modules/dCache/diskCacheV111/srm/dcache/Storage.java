@@ -363,10 +363,27 @@ public class Storage
         permissionHandler = new PermissionHandler(this,_pnfsPath);
         InetAddress[] addresses = InetAddress.getAllByName(
                 InetAddress.getLocalHost().getHostName());
+        
         _hosts = new String[addresses.length];
-        for(int i = 0; i<addresses.length; ++i) {
-            _hosts[i] = addresses[i].getHostName();
+
+        /**
+         *  Add addresses ensuring preferred ordering: external addresses are before any
+         *  internal interface addresses.
+         */
+        int nextExternalIfIndex = 0;
+        int nextInternalIfIndex = addresses.length-1;
+        
+        for( int i = 0; i < addresses.length; i++) {
+    		InetAddress addr = addresses[i];
+        	
+        	if( !addr.isLinkLocalAddress() && !addr.isLoopbackAddress() && 
+        			!addr.isSiteLocalAddress() && !addr.isMulticastAddress()) {
+        		_hosts [nextExternalIfIndex++] = addr.getHostName();
+        	} else {
+        		_hosts [nextInternalIfIndex--] = addr.getHostName();
+        	}
         }
+        
         String tmpstr = _args.getOpt("config");
         if(tmpstr != null) {
             try {

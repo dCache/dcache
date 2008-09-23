@@ -364,10 +364,25 @@ public CellVersion getCellVersion(){
         if( (addresses == null) || ( addresses.length == 0 ) ) return;
 
         String[] hosts = new String[addresses.length];
-        for( int i = 0; i < addresses.length; i++ ) {
-            hosts[i] = addresses[i].getHostAddress();
+        
+        /**
+         *  Add addresses ensuring preferred ordering: external addresses are before any
+         *  internal interface addresses.
+         */
+        int nextExternalIfIndex = 0;
+        int nextInternalIfIndex = addresses.length-1;
+        
+        for( int i = 0; i < addresses.length; i++) {
+    		InetAddress addr = addresses[i];
+        	
+        	if( !addr.isLinkLocalAddress() && !addr.isLoopbackAddress() && 
+        			!addr.isSiteLocalAddress() && !addr.isMulticastAddress()) {
+        		hosts [nextExternalIfIndex++] = addr.getHostName();
+        	} else {
+        		hosts [nextInternalIfIndex--] = addr.getHostName();
+        	}
         }
-
+                
         _info.setHosts(hosts);
         _info.setPort(_listenThread.getListenPort());
         _info.setLoad(_currentLoad);
