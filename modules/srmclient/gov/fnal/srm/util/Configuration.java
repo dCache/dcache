@@ -547,7 +547,7 @@ public class Configuration {
                 private String config_file;
 
         @Option(
-                name = "save_config_file",
+                name = "save_conf",
                 description = "path to the file in which the new configuration will be saved",
                 required=false,
                 log=true
