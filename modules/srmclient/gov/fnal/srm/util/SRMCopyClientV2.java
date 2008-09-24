@@ -1,7 +1,7 @@
 //______________________________________________________________________________
 //
-// $Id: SRMCopyClientV2.java,v 1.26 2007/03/15 17:43:33 timur Exp $
-// $Author: timur $
+// $Id$
+// $Author$
 //
 // Pull mode: copy from remote location to SRM. (e.g. from
 // remote to MSS.)              Push mode: copy from SRM

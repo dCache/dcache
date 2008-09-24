@@ -78,9 +78,9 @@ package gov.fnal.srm.util;
  * @author  timur
  */
 public class Version {
-	private static String revision = "$Revision$";
+	private static String revision = "$Revision: 9567 $";
 	private static String tagName ="$Name: not supported by cvs2svn $";
-	private static String date ="$Date$";
+	private static String date ="$Date: 2008-06-21 09:28:04 -0500 (Sat, 21 Jun 2008) $";
 
 	private static String specVersion= "2.0";
 	private static String specVendor = "SRM Working Group http://sdm.lbl.gov/srm-wg";

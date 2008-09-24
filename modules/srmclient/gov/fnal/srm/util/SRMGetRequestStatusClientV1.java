@@ -1,4 +1,4 @@
-// $Id: SRMGetRequestStatusClientV1.java,v 1.1 2005-12-13 23:07:52 timur Exp $
+// $Id$
 // $Log: not supported by cvs2svn $
 // Revision 1.3  2005/03/11 21:18:36  timur
 // making srm compatible with cern tools again

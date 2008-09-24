@@ -1,4 +1,4 @@
-// $Id: SRMSimpleCopyClient.java,v 1.1 2007-04-17 22:45:57 timur Exp $
+// $Id$
 // $Log: not supported by cvs2svn $
 // Revision 1.4  2006/01/26 04:44:19  timur
 // improved error messages

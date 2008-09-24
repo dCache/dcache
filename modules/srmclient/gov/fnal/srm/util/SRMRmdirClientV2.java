@@ -1,7 +1,7 @@
 //______________________________________________________________________________
 //
-// $Id: SRMRmdirClientV2.java,v 1.7 2007-08-22 23:10:26 timur Exp $
-// $Author: timur $
+// $Id$
+// $Author$
 //
 // created 10/05 by Dmitry Litvintsev (litvinse@fnal.gov)
 //

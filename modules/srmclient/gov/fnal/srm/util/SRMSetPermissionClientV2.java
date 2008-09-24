@@ -1,7 +1,7 @@
 //______________________________________________________________________________
 //
-// $Id: SRMSetPermissionClientV2.java,v 1.2 2006-11-16 17:04:11 litvinse Exp $
-// $Author: litvinse $
+// $Id$
+// $Author$
 //
 // created 10/06 by Dmitry Litvintsev (litvinse@fnal.gov)
 //

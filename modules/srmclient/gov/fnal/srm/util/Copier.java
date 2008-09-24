@@ -1,4 +1,4 @@
-// $Id: Copier.java,v 1.24 2007-10-08 20:49:28 abaranov Exp $
+// $Id$
 // $Log: not supported by cvs2svn $
 // Revision 1.23  2006/09/06 15:28:41  timur
 //  throw exception if the script based copy failed

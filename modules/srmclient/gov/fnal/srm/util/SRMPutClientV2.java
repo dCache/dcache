@@ -1,4 +1,4 @@
-// $Id: SRMPutClientV2.java,v 1.25 2007/09/20 16:59:13 litvinse Exp $
+// $Id$
 // $Log: SRMPutClientV2.java,v $
 
 /*

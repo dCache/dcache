@@ -1,4 +1,4 @@
-// $Id: SRMStageClientV1.java,v 1.2 2006-01-25 19:38:53 timur Exp $
+// $Id$
 // $Log: not supported by cvs2svn $
 // Revision 1.1  2006/01/17 17:13:09  neha
 // New class by Neha- to enable user to only stage files on disk cache and

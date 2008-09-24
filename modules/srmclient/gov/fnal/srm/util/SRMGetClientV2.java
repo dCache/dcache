@@ -1,4 +1,4 @@
-// $Id: SRMGetClientV2.java,v 1.20 2006-12-14 22:45:07 timur Exp $
+// $Id$
 // $Log: not supported by cvs2svn $
 
 /*

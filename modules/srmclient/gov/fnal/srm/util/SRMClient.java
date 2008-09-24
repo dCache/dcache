@@ -1,4 +1,4 @@
-// $Id: SRMClient.java,v 1.27 2006-02-23 21:46:39 neha Exp $
+// $Id$
 // $Log: not supported by cvs2svn $
 // Revision 1.26  2005/11/10 00:02:10  litvinse
 // implementation of srmrm client

@@ -1,7 +1,7 @@
 //______________________________________________________________________________
 //
-// $Id: SRMAbortFilesClientV2.java 8964 2008-04-29 22:52:34Z litvinse $
-// $Author: litvinse $ 
+// $Id$
+// $Author$ 
 // 
 // 
 // created 04/08 by Dmitry Litvintsev (litvinse@fnal.gov)

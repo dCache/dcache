@@ -1,4 +1,4 @@
-// $Id: DccpArgsConverter.java,v 1.2 2004-06-30 21:57:04 timur Exp $
+// $Id$
 // $Log: not supported by cvs2svn $
 
 /*

@@ -1,4 +1,4 @@
-// $Id: SRMAdvisoryDeleteClientV1.java,v 1.1 2005-12-13 23:12:05 timur Exp $
+// $Id$
 // $Log: not supported by cvs2svn $
 // Revision 1.5  2005/03/11 21:18:36  timur
 // making srm compatible with cern tools again

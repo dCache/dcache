@@ -1,4 +1,4 @@
-// $Id: SRMPingClientV2.java,v 1.2 2007-10-23 19:45:55 litvinse Exp $
+// $Id$
 // $Log: not supported by cvs2svn $
 /*
 COPYRIGHT STATUS:

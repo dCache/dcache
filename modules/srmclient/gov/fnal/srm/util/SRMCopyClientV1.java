@@ -1,7 +1,7 @@
 //______________________________________________________________________________
 //
-// $Id: SRMCopyClientV1.java,v 1.3 2006-01-26 04:44:19 timur Exp $
-// $Author: timur $
+// $Id$
+// $Author$
 //
 // created 12/05 by Dmitry Litvintsev (litvinse@fnal.gov)
 //

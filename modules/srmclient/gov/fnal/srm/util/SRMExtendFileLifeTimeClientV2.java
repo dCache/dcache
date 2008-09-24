@@ -1,7 +1,7 @@
 //______________________________________________________________________________
 //
-// $Id: SRMExtendFileLifeTimeClientV2.java,v 1.3 2007-02-14 01:44:54 timur Exp $
-// $Author: timur $
+// $Id$
+// $Author$
 //
 // created 02/07 by Dmitry Litvintsev (litvinse@fnal.gov)
 //

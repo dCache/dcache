@@ -1,7 +1,7 @@
 //______________________________________________________________________________
 //
-// $Id: SRMReleaseSpaceClientV2.java,v 1.2 2006-09-27 20:07:33 timur Exp $
-// $Author: timur $
+// $Id$
+// $Author$
 //
 // 
 // created 08/06 by Dmitry Litvintsev (litvinse@fnal.gov)

@@ -1,7 +1,7 @@
 //______________________________________________________________________________
 //
-// $Id: SRMMvClientV2.java,v 1.5 2006-06-21 20:31:56 timur Exp $
-// $Author: timur $
+// $Id$
+// $Author$
 //
 // created 10/05 by Dmitry Litvintsev (litvinse@fnal.gov)
 //

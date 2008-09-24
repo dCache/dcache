@@ -1,4 +1,4 @@
-// $Id: CopyJob.java,v 1.9 2005-12-07 02:05:22 timur Exp $
+// $Id$
 // $Log: not supported by cvs2svn $
 // Revision 1.8  2005/04/27 16:39:59  timur
 // more work on report added gridftpcopy and adler32 binaries

@@ -1,4 +1,4 @@
-// $Id: SRMGetFileMetaDataClientV1.java,v 1.1 2005-12-13 23:07:52 timur Exp $
+// $Id$
 // $Log: not supported by cvs2svn $
 // Revision 1.5  2005/06/29 22:30:18  leoheska
 // updates to support new srm functionality

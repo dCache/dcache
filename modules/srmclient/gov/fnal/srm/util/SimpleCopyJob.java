@@ -1,4 +1,4 @@
-// $Id: SimpleCopyJob.java,v 1.1 2007-04-17 22:45:57 timur Exp $
+// $Id$
 // $Log: not supported by cvs2svn $
 // Revision 1.1  2005/12/07 02:05:22  timur
 // working towards srm v2 get client

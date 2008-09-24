@@ -1,7 +1,7 @@
 //______________________________________________________________________________
 //
-// $Id: SRMReserveSpaceClientV2.java,v 1.6 2007/08/22 23:08:59 timur Exp $
-// $Author: timur $
+// $Id$
+// $Author$
 //
 //
 // created 08/06 by Dmitry Litvintsev (litvinse@fnal.gov)

@@ -1,4 +1,4 @@
-// $Id: SRMBringOnlineClientV2.java,v 1.3 2006-12-14 22:46:29 timur Exp $
+// $Id$
 // $Log: not supported by cvs2svn $
 // Revision 1.2  2006/10/24 22:58:14  litvinse
 // added handling of Extra Info parameters in kind of generic

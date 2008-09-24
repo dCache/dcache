@@ -1,5 +1,5 @@
-// $Id: Configuration.java,v 1.79 2007/10/25 01:37:22 litvinse Exp $
-// $Author: litvinse $
+// $Id$
+// $Author$
 /*
 COPYRIGHT STATUS:
   Dec 1st 2001, Fermi National Accelerator Laboratory (FNAL) documents and
