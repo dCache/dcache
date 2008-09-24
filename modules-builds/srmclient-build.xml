@@ -134,14 +134,14 @@
 				<section name="Shared">
 					<attribute name="Title" value="Storage Resource Manager (SRM) Client" />
 					<attribute name="Vendor" value="Fermi National Accelerator Laboratory" />
-					<attribute name="Version" value="2.0.${srm.minor.version}" />
+					<attribute name="Version" value="2.1.${srm.minor.version}" />
 					<attribute name="Date" value="${jar.timestamp}" />
 				</section>
 				<section name="Copyright">
 					<attribute name="Copy" value="Copyright (c) 2002-2008 Fermi National Accelerator Laboratory" />
 				</section>
 				<attribute name="Main-Class" value="gov.fnal.srm.util.Version" />
-				<attribute name="Specification-Version" value="2.0.${srm.minor.version}" />
+				<attribute name="Specification-Version" value="2.1.${srm.minor.version}" />
 				<attribute name="Specification-Vendor" value="Fermi National Accelerator Laboratory" />
 				<attribute name="Specification-Title" value="Storage Resource Manager (SRM)" />
 			</manifest>
