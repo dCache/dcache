@@ -64,8 +64,8 @@ import org.dcache.cell.AbstractCellComponent;
 public class HsmStorageHandler2
     extends AbstractCellComponent
 {
-    private static Logger _logRepository =
-        Logger.getLogger("logger.org.dcache.repository");
+    private static Logger _log =
+        Logger.getLogger(HsmStorageHandler2.class);
 
     private final Repository _repository;
     private final HsmSet _hsmSet;
@@ -146,14 +146,14 @@ public class HsmStorageHandler2
 
         synchronized void executeCallbacks(Throwable exc)
         {
-            say("DEBUGFLUSH : executeCallbacks : excecuting callbacks  "
-                + _pnfsId + " (callback=" + _callbacks + ") " + exc);
+            _log.debug("excecuting callbacks  "
+                       + _pnfsId + " (callback=" + _callbacks + ") " + exc);
             for (CacheFileAvailable callback : _callbacks) {
                 try {
                     callback.cacheFileAvailable(_pnfsId.toString(), exc);
-                } catch (Throwable t) {
-                    esay("Throwable in callback to " +
-                         callback.getClass().getName() + " : " + t);
+                } catch (Exception e) {
+                    _log.fatal("Exception in callback to " +
+                               callback.getClass().getName(), e);
                 }
             }
         }
@@ -283,18 +283,8 @@ public class HsmStorageHandler2
         }
 
         String completeCommand = sb.toString();
-        say("HSM_COMMAND : "+completeCommand);
+        _log.debug("HSM_COMMAND: " + completeCommand);
         return completeCommand;
-    }
-
-    private void say(String msg)
-    {
-    	_logRepository.debug("RSH : "+msg);
-    }
-
-    private void esay(String msg)
-    {
-    	_logRepository.error("RSH ERROR : "+msg);
     }
 
     //////////////////////////////////////////////////////////////////////
@@ -334,7 +324,8 @@ public class HsmStorageHandler2
              * throw any exceptions, so if this happens it must be a
              * bug.
              */
-            throw new RuntimeException("Failed to queue fetch request", e);
+            throw new RuntimeException("Failed to queue fetch request",
+                                       e.getCause());
         }
     }
 
@@ -403,8 +394,8 @@ public class HsmStorageHandler2
         }
         HsmSet.HsmInfo hsm = _hsmSet.getHsmInfoByName(instance);
 
-        say("getFetchCommand for pnfsid=" + pnfsId +
-            ";hsm=" + instance + ";si=" + storageInfo);
+        _log.debug("getFetchCommand for pnfsid=" + pnfsId +
+                   ";hsm=" + instance + ";si=" + storageInfo);
 
         return getSystemCommand(file, pnfsId, storageInfo, hsm, "get");
     }
@@ -495,7 +486,7 @@ public class HsmStorageHandler2
             try {
                 sendMessage(new CellMessage(new CellPath("billing"), _infoMsg));
             } catch (NoRouteToCellException e) {
-                esay("Failed to send message to billing: " + e.getMessage());
+                _log.error("Failed to send message to billing: " + e.getMessage());
             }
         }
 
@@ -504,13 +495,13 @@ public class HsmStorageHandler2
             PnfsId pnfsId = getPnfsId();
 
             try {
-                say("Dequeuing " + pnfsId);
+                _log.info("Dequeuing " + pnfsId);
                 _handle.cancel(false);
                 _handle.close();
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             } catch (CacheException e) {
-                esay("Error while removing replica: " + e.getMessage());
+                _log.error("Error while removing replica: " + e.getMessage());
             } finally {
                 removeFetchEntry(pnfsId);
 
@@ -536,7 +527,7 @@ public class HsmStorageHandler2
             try {
                 setThread(Thread.currentThread());
 
-                say("FetchThread started");
+                _log.debug("FetchThread started");
 
                 long now = System.currentTimeMillis();
                 _infoMsg.setTimeQueued(now - _timestamp);
@@ -546,9 +537,9 @@ public class HsmStorageHandler2
                     getFetchCommand(_handle.getFile(), pnfsId, storageInfo);
                 long fileSize = storageInfo.getFileSize();
 
-                say("Waiting for space (" + fileSize + " bytes)");
+                _log.debug("Waiting for space (" + fileSize + " bytes)");
                 _handle.allocate(fileSize);
-                say("Got Space (" + fileSize + " bytes)");
+                _log.debug("Got Space (" + fileSize + " bytes)");
 
                 RunSystem run =
                     new RunSystem(fetchCommand, _maxLines, _maxRestoreRun);
@@ -564,39 +555,37 @@ public class HsmStorageHandler2
                     }
                     excep  =
                         new CacheException(returnCode, run.getErrorString());
-                    esay("RunSystem. -> "+returnCode+" : "+run.getErrorString());
-                } else {
-                    say("RunSystem. -> "+returnCode+" : "+run.getErrorString());
+                    _log.error("HSM script returned " + returnCode
+                               + ": " + run.getErrorString());
                 }
 
                 doChecksum(_handle);
             } catch (CacheException e) {
-                esay("FetchThread : ("+pnfsId+") CacheException : "+e);
+                _log.error(e);
                 returnCode = 1;
                 excep = e;
             } catch (InterruptedException e) {
-                esay("FetchThread : ("+pnfsId+") Process interrupted (timed out)");
+                _log.error("Process interrupted (timed out)");
                 returnCode = 1;
                 excep = e;
-            } catch (IOException  e) {
-                esay("FetchThread : ("+pnfsId+") Process got an IOException : "+e);
+            } catch (IOException e) {
+                _log.error("Process got an IOException: " + e);
                 returnCode = 2;
                 excep = e;
             } catch (IllegalThreadStateException  e) {
-                esay("FetchThread : ("+pnfsId+") Can't stop process : "+e);
+                _log.error("Cannot stop process: " + e);
                 returnCode = 3;
                 excep = e;
             } catch (IllegalArgumentException e) {
-                esay("FetchThread : ("+pnfsId+") Can't determine 'hsmInfo' for "+
-                     storageInfo+" {"+e+"}");
+                _log.error("Cannot determine 'hsmInfo': " + e.getMessage());
                 returnCode = 4;
                 excep = e;
             } catch (NoRouteToCellException e) {
-                esay("FetchThread : ("+pnfsId+") Cell communication error: " + e.getMessage());
+                _log.error("Cell communication error: " + e.getMessage());
                 returnCode = 6;
                 excep = e;
             } catch (Exception e) {
-                esay("FetchThread : ("+pnfsId+") " + e);
+                _log.fatal(e, e);
                 returnCode = 5;
                 excep = e;
             } finally {
@@ -611,10 +600,10 @@ public class HsmStorageHandler2
                     }
                     _handle.close();
                 } catch (InterruptedException e) {
-                    esay("FetchThread : (" + pnfsId + ") Interrupted");
+                    _log.error("Interrupted");
                     excep = e;
                 } catch (CacheException e) {
-                    esay("FetchThread : ("+pnfsId+") CacheException : "+e);
+                    _log.error("CacheException: " + e);
                     excep = e;
                 }
 
@@ -633,7 +622,7 @@ public class HsmStorageHandler2
                 _infoMsg.setTransferTime(System.currentTimeMillis() - _timestamp);
                 sendBillingInfo();
 
-                say(pnfsId.toString()+" : FetchThread Done");
+                _log.info("File successfully restored from tape");
             }
         }
 
@@ -657,7 +646,7 @@ public class HsmStorageHandler2
                 if (_checksumModule.getCrcFromHsm()) {
                     infoChecksum = getChecksumFromHsm(handle.getFile());
                     if (infoChecksum != null) {
-                        say("Got checksum for " + pnfsId + " from HSM: " + infoChecksum);
+                        _log.info("Imported checksum from HSM: " + infoChecksum);
                         _checksumModule.storeChecksumInPnfs(pnfsId, infoChecksum);
                     }
                 } else {
@@ -670,7 +659,7 @@ public class HsmStorageHandler2
                 if (infoChecksum == null) {
                     infoChecksum = _checksumModule.getChecksumFromPnfs(pnfsId);
                     if (infoChecksum == null) {
-                        esay(pnfsId.toString() + " has no checksum; checksum not verified after restore.");
+                        _log.error("No checksum found; checksum not verified after restore.");
                         return;
                     }
                 }
@@ -681,9 +670,9 @@ public class HsmStorageHandler2
                     _checksumModule.calculateFileChecksum(handle.getFile(),
                                                           _checksumModule.getDefaultChecksum());
 
-                say("Checksum for " + pnfsId + " info=" + infoChecksum
-                    + ";file=" + fileChecksum + " in "
-                    + (System.currentTimeMillis() - start));
+                _log.debug("Checksum for " + pnfsId + " info=" + infoChecksum
+                           + ";file=" + fileChecksum + " in "
+                           + (System.currentTimeMillis() - start));
             } catch (IOException e) {
                 throw new CacheException(1010, "Checksum calculation failed due to I/O error: " + e.getMessage());
             } catch (CacheException e) {
@@ -693,11 +682,11 @@ public class HsmStorageHandler2
             /* Report failure in case of mismatch.
              */
             if (!infoChecksum.equals(fileChecksum)) {
-                esay("Checksum of " + pnfsId + " differs info="
-                     + infoChecksum + ";file=" + fileChecksum);
+                _log.debug("Checksum error; expected="
+                           + infoChecksum + ";file=" + fileChecksum);
                 throw new CacheException(1009,
-                                         "Checksum error : info=" + infoChecksum
-                                         + ";file=" + fileChecksum);
+                                         "Checksum error: expected=" + infoChecksum
+                                         + ";actual=" + fileChecksum);
             }
         }
 
@@ -769,8 +758,8 @@ public class HsmStorageHandler2
             throws CacheException
     {
         String hsmType = storageInfo.getHsm();
-        say("getStoreCommand for pnfsid=" + pnfsId +
-            ";hsm=" + hsmType + ";si=" + storageInfo);
+        _log.debug("getStoreCommand for pnfsid=" + pnfsId +
+                   ";hsm=" + hsmType + ";si=" + storageInfo);
         List<HsmSet.HsmInfo> hsms = _hsmSet.getHsmInfoByType(hsmType);
         if (hsms.isEmpty()) {
             throw new
@@ -800,11 +789,11 @@ public class HsmStorageHandler2
     {
         assertInitialized();
 
-        say("DEBUGFLUSH : store : requested for " + pnfsId +
-            (callback == null ? " w/o " : " with ") + "callback");
+        _log.debug("store requested for " + pnfsId +
+                   (callback == null ? " w/o " : " with ") + "callback");
 
         if (_repository.getState(pnfsId) == EntryState.CACHED) {
-            say("DEBUGFLUSH : store : isAlreadyCached " + pnfsId);
+            _log.debug("is already cached " + pnfsId);
             return true;
         }
 
@@ -812,34 +801,25 @@ public class HsmStorageHandler2
         if (info != null) {
             if (callback != null)
                 info.addCallback(callback);
-            say("DEBUGFLUSH : store : flush already in progress "
-                + pnfsId + " (callback=" + callback + ")");
+            _log.debug("flush already in progress "
+                       + pnfsId + " (callback=" + callback + ")");
             return false;
         }
 
         info = new StoreThread(pnfsId);
+        if (callback != null)
+            info.addCallback(callback);
 
         try {
-            if (callback != null)
-                info.addCallback(callback);
-
             _storeQueue.add(info);
-            _storePnfsidList.put(pnfsId, info);
-
-            say("DEBUGFLUSH : store : added to flush queue " + pnfsId + " (callback="+callback+")");
-            return false;
-        } catch (Throwable excep) {
-
-            Throwable t = excep instanceof InvocationTargetException ?
-                ((InvocationTargetException)excep).getTargetException() :
-                excep;
-
-            esay(pnfsId.toString()+" REMOVEING ENTRY from _storePnfsidList due to "+excep);
-
-            _storePnfsidList.remove(pnfsId);
-
-            throw new CacheException(44, "Problem detected : "+excep);
+        } catch (InvocationTargetException  e) {
+            throw new RuntimeException("Failed to queue store request",
+                                       e.getCause());
         }
+
+        _storePnfsidList.put(pnfsId, info);
+        _log.debug("added to flush queue " + pnfsId + " (callback="+callback+")");
+        return false;
     }
 
     protected synchronized void removeStoreEntry(PnfsId id)
@@ -909,7 +889,7 @@ public class HsmStorageHandler2
             try {
                 sendMessage(new CellMessage(new CellPath("billing"), _infoMsg));
             } catch (NoRouteToCellException e) {
-                esay("Failed to send message to billing: " + e.getMessage());
+                _log.error("Failed to send message to billing: " + e.getMessage());
             }
         }
 
@@ -936,10 +916,10 @@ public class HsmStorageHandler2
             try {
                 setThread(Thread.currentThread());
 
-                say(pnfsId.toString() + " : StoreThread Started " + _thread);
+                _log.debug("Store thread started " + _thread);
 
                 if (_checkPnfs) {
-                    say(pnfsId.toString() + " getting storageinfo");
+                    _log.debug("Getting storageinfo");
                     try {
                         _pnfs.getStorageInfo(pnfsId.toString());
                     } catch (CacheException e) {
@@ -966,12 +946,9 @@ public class HsmStorageHandler2
                     run.go();
                     returnCode = run.getExitValue();
                     if (returnCode != 0) {
-                        esay("RunSystem. -> " + returnCode + " : "
-                             + run.getErrorString());
+                        _log.error("HSM script returned " + returnCode
+                                   + ": " + run.getErrorString());
                         throw new CacheException(returnCode, run.getErrorString());
-                    } else {
-                        say("RunSystem. -> " + returnCode + " : "
-                            + run.getErrorString());
                     }
 
                     String outputData = run.getOutputString();
@@ -984,13 +961,12 @@ public class HsmStorageHandler2
                                 URI location = new URI(line);
                                 storageInfo.addLocation(location);
                                 storageInfo.isSetAddLocation(true);
-                                _logRepository.debug(pnfsId.toString()
-                                                     + ": added HSM location "
-                                                     + location);
+                                _log.debug(pnfsId.toString()
+                                           + ": added HSM location "
+                                           + location);
                             }
                         } catch (URISyntaxException use) {
-                            esay(pnfsId.toString() +
-                                 " :  flush script produces BAD URI : " + line);
+                            _log.error("HSM script produced BAD URI: " + line);
                             throw new CacheException(2, use.getMessage());
                         } catch (IOException ie) {
                             // never happens on strings
@@ -1048,7 +1024,7 @@ public class HsmStorageHandler2
                          * can live with a little bit of wasted
                          * tape).
                          */
-                        esay("Error notifying PNFS about a flushed file: "
+                        _log.error("Error notifying PNFS about a flushed file: "
                              + e.getMessage() + "(" + e.getRc() + ")");
                     }
                     Thread.sleep(120000); // 2 minutes
@@ -1064,40 +1040,37 @@ public class HsmStorageHandler2
                  */
             } catch (CacheException e) {
                 excep = e;
-                esay("StoreThread : (" + pnfsId + ") CacheException : " + e);
+                _log.error("CacheException : " + e);
                 _infoMsg.setResult(e.getRc(), e.getMessage());
             } catch (InterruptedException e) {
                 excep = e;
-                esay("StoreThread : (" + pnfsId + ") Process interrupted (timed out)");
+                _log.error("Process interrupted (timed out)");
                 _infoMsg.setResult(1, "Flush timed out");
             } catch (IOException e) {
                 excep = e;
-                esay("StoreThread : (" + pnfsId
-                     + ") Process got an IOException : " + e);
+                _log.error("Process got an IOException : " + e);
                 _infoMsg.setResult(2, "IO Error: " + e.getMessage());
             } catch (IllegalThreadStateException e) {
                 excep = e;
-                esay("StoreThread : (" + pnfsId + ") Cannot stop process : " + e);
+                _log.error("Cannot stop process : " + e);
                 _infoMsg.setResult(3, e.getMessage());
             } catch (IllegalArgumentException e) {
                 excep = e;
-                esay("StoreThread : cannot determine 'hsmInfo' for "
-                     + pnfsId + " {" + e + "}");
+                _log.error("Cannot determine 'hsmInfo': " + e.getMessage());
                 _infoMsg.setResult(4, e.getMessage());
             } catch (Throwable t) {
                 excep = t;
-                esay("StoreThread : unexpected throwable " +
-                     pnfsId + " {" + t + "}");
+                _log.fatal("Unexpected exception", t);
                 _infoMsg.setResult(666, t.getMessage());
             } finally {
-                say(pnfsId.toString() + " : StoreThread Done " + Thread.currentThread());
-
                 removeStoreEntry(pnfsId);
                 _infoMsg.setTransferTime(System.currentTimeMillis() - _timestamp);
 
                 sendBillingInfo();
 
                 executeCallbacks(excep);
+
+                _log.info("File successfully stored to tape");
             }
         }
 
@@ -1115,7 +1088,8 @@ public class HsmStorageHandler2
                                     poolFileFlushedMessage);
                 sendMessage(msg);
             } catch (NoRouteToCellException e) {
-                _logRepository.info("failed to send message to flushMessageTarget (" + _flushMessageTarget + ") : " + e.getMessage());
+                _log.info("Failed to send message to " + _flushMessageTarget + ": "
+                          + e.getMessage());
             }
         }
     }
