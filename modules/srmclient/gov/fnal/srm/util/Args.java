@@ -172,6 +172,9 @@ public class Args implements java.io.Serializable {
                                         value = new StringBuilder() ;
                                         state = OPT_VALUE ;
                                 }
+                                else if( c == '-' ){
+                                        state = OPT_KEY ;
+                                }
                                 else{
                                         key.append(c) ;
                }
