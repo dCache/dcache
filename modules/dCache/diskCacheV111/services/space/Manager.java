@@ -217,7 +217,6 @@ public class Manager
 			kill();
 		}
 		start();
-		getNucleus().setPrintoutLevel(3);
 		(updateLinkGroups = getNucleus().newThread(this,"UpdateLinkGroups")).start();
 		(expireSpaceReservations = getNucleus().newThread(this,"ExpireThreadReservations")).start();
 
