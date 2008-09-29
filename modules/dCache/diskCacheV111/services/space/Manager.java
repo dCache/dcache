@@ -217,7 +217,6 @@ public class Manager
 			kill();
 		}
 		start();
-		getNucleus().setPrintoutLevel(3);
 		(updateLinkGroups = getNucleus().newThread(this,"UpdateLinkGroups")).start();
 		(expireSpaceReservations = getNucleus().newThread(this,"ExpireThreadReservations")).start();
 
@@ -3438,20 +3437,21 @@ public class Manager
 		long spaceToken = release.getSpaceToken();
 		Long spaceToReleaseInBytes = release.getReleaseSizeInBytes();
                 Space space = getSpace(spaceToken);
-                if((space.getVoGroup()!=null&&!space.getVoGroup().equals(release.getVoGroup()))||
-                   (space.getVoRole()!=null&&!space.getVoRole().equals(release.getVoRole()))) {
-                        throw new SpaceAuthorizationException(
-                                "User is not authorized to release this space reservation: "+
-                                "User vogroup/vorole="+release.getVoGroup()+"/"+release.getVoRole()+". "+
-                                "Space reservation vogroup/vorole="+space.getVoGroup()+"/"+space.getVoRole()+".");
-                }
-                if  ((space.getVoGroup()==null&&space.getVoGroup()!=release.getVoGroup())||
-                     (space.getVoRole()==null&&space.getVoRole()!=release.getVoRole())) { 
-                        throw new SpaceAuthorizationException(
-                                "User is not authorized to release this space reservation: "+
-                                "User vogroup/vorole="+release.getVoGroup()+"/"+release.getVoRole()+". "+
-                                "Space reservation vogroup/vorole="+space.getVoGroup()+"/"+space.getVoRole()+".");
-                }
+
+//                 if((space.getVoGroup()!=null&&!space.getVoGroup().equals(release.getVoGroup()))||
+//                    (space.getVoRole()!=null&&!space.getVoRole().equals(release.getVoRole()))) {
+//                         throw new SpaceAuthorizationException(
+//                                 "User is not authorized to release this space reservation: "+
+//                                 "User vogroup/vorole="+release.getVoGroup()+"/"+release.getVoRole()+". "+
+//                                 "Space reservation vogroup/vorole="+space.getVoGroup()+"/"+space.getVoRole()+".");
+//                 }
+//                 if  ((space.getVoGroup()==null&&space.getVoGroup()!=release.getVoGroup())||
+//                      (space.getVoRole()==null&&space.getVoRole()!=release.getVoRole())) { 
+//                         throw new SpaceAuthorizationException(
+//                                 "User is not authorized to release this space reservation: "+
+//                                 "User vogroup/vorole="+release.getVoGroup()+"/"+release.getVoRole()+". "+
+//                                 "Space reservation vogroup/vorole="+space.getVoGroup()+"/"+space.getVoRole()+".");
+//                 }
 		if(spaceToReleaseInBytes == null) {
 			updateSpaceState(spaceToken,SpaceState.RELEASED);
 			return;
