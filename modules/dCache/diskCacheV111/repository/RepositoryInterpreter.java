@@ -116,7 +116,25 @@ public class RepositoryInterpreter
        "                 k  : data amount in KBytes\n"+
        "                 m  : data amount in MBytes\n"+
        "                 g  : data amount in GBytes\n"+
-       "                 t  : data amount in TBytes\n";
+       "                 t  : data amount in TBytes\n"+
+       " Output is a list of repository entries, one per line\n" +
+       " each line has the followin syntax:\n" +
+       "<pnfsid> <state> <size> <storageinfo>\n"+
+       " state is a sequence of state bits inclosed in angular \"<>\" brackets \n"+
+       " bit 1 is \"C\" if entry is cached or \"-\" if not \n"+
+       " bit 2 is \"P\" if entry is precious or \"-\" if not \n"+
+       " bit 3 is \"C\" if entry is being transfered \"from client\" or \"-\" if not \n"+
+       " bit 4 is \"S\" if entry is being transfered \"from store\" or \"-\" if not \n"+
+       " bit 5 is \"c\" if entry is being transfered \"to client\" or \"-\" if not \n"+
+       " bit 6 is \"s\" if entry is being transfered \"to store\" or \"-\" if not \n"+
+       " bit 7 is \"R\" if entry is removed or \"-\" if not \n"+
+       " bit 8 is is always \"-\" \n"+
+       " bit 9 is \"X\" if entry is sticky or \"-\" if not \n"+
+       " bit 10 is \"E\" if entry is in error state or \"-\" if not \n"+
+       " bit 11 is \"L(x)(y)\" if entry is in locked or \"-\" if not \n"+
+       "        x is epoch until which the entry is locked, 0 for non expiring lock \n"+
+       "        y is the link count";
+        
     public String hh_rep_ls = "[-l[=s,l,u,nc,p]] [-s[=kmgt]] | [<pnfsId> [...] ]" ;
     public Object ac_rep_ls_$_0_99(final Args args) throws Exception
     {
