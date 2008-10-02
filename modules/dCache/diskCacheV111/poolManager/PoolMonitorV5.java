@@ -493,7 +493,13 @@ public class PoolMonitorV5 {
 
          double lowestCost = calculateCost( check , true , parameter ) ;
 
-         if( lowestCost  > _maxWriteCost )
+         /* Notice that
+          *
+          *    !(lowestCost  <= _maxWriteCost)  != (lowerCost > _maxWriteCost)
+          *
+          * when using floating point calculations!
+          */
+         if( !(lowestCost  <= _maxWriteCost) )
              throw new
              CacheException( 21 , "Best pool <"+check.getPoolName()+
                                   "> too high : "+lowestCost ) ;
@@ -516,13 +522,8 @@ public class PoolMonitorV5 {
     public void ssortByCost(List<PoolCostCheckable> list, boolean cpuAndSize,
                             PoolManagerParameter parameter)
     {
-        if( ( parameter._performanceCostFactor == 0.0 ) &&
-            ( parameter._spaceCostFactor == 0.0       )     ){
-
-            Collections.shuffle( list ) ;
-        }else{
-            Collections.sort( list , new CostComparator( cpuAndSize , parameter ) ) ;
-        }
+        Collections.shuffle(list);
+        Collections.sort(list, new CostComparator(cpuAndSize, parameter));
     }
 
     public Comparator<PoolCostCheckable>
@@ -533,19 +534,16 @@ public class PoolMonitorV5 {
 
    public class CostComparator implements Comparator<PoolCostCheckable> {
 
-       private boolean              _useBoth = true ;
-       private PoolManagerParameter _para    = null ;
+       private final boolean              _useBoth;
+       private final PoolManagerParameter _para;
        private CostComparator( boolean useBoth , PoolManagerParameter para ){
          _useBoth = useBoth ;
          _para    = para ;
        }
        public int compare(PoolCostCheckable check1, PoolCostCheckable check2)
        {
-          Double d1 = new Double( calculateCost( check1 , _useBoth , _para ) ) ;
-          Double d2 = new Double( calculateCost( check2 , _useBoth , _para ) ) ;
-          int c = d1.compareTo( d2 ) ;
-          if( c != 0 )return c ;
-          return check1.getPoolName().compareTo( check2.getPoolName() ) ;
+           return Double.compare(calculateCost(check1, _useBoth, _para),
+                                 calculateCost(check2, _useBoth, _para));
        }
     }
     public double calculateCost( PoolCostCheckable checkable , boolean useBoth , PoolManagerParameter para ){

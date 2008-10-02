@@ -34,9 +34,9 @@ public class      CostCalculationV5
                            _space.getBreakEven()  ;
                            
        }else if( _space.getRemovableSpace() < _space.getGap() ){
-       
-          return (double)200000000.0 ;
-          
+
+          return Double.POSITIVE_INFINITY;
+
        }else{
        
 	  return  ((double)filesize) / 
@@ -59,9 +59,9 @@ public class      CostCalculationV5
 
 
        }else if( _space.getRemovableSpace() < _space.getGap() ){
-       
-          return (double)200000000.0 ;
-          
+
+           return Double.POSITIVE_INFINITY;
+
        }else{
 
           return 1.0 +  
