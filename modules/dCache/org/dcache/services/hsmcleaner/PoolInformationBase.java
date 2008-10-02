@@ -8,6 +8,8 @@ import java.util.ArrayList;
 import diskCacheV111.vehicles.PoolManagerPoolUpMessage;
 import diskCacheV111.pools.PoolV2Mode;
 
+import dmg.util.Args;
+
 /**
  * Maintains an index of available pools.
  *
@@ -115,5 +117,18 @@ public class PoolInformationBase
             }
             pools.add(pool);
         }
+    }
+
+    public final static String hh_pools_ls = "# Lists known pools";
+    synchronized public String ac_pools_ls(Args args)
+    {
+        StringBuilder sb = new StringBuilder();
+        sb.append(String.format("%-20s %s\n", "Pool", "HSM Instances"));
+        for (PoolInformation pool: getPools()) {
+            sb.append(String.format("%-20s %s\n",
+                                    pool.getName(),
+                                    pool.getHsmInstances()));
+        }
+        return sb.toString();
     }
 }
