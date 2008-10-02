@@ -34,6 +34,7 @@ public class MetaDataRepositoryDatabase
     private final Database storageInfoDatabase;
     private final Database stateDatabase;
     private boolean _failed = false;
+    private boolean _closed = false;
 
     public MetaDataRepositoryDatabase(File homeDirectory, boolean readonly)
         throws DatabaseException, FileNotFoundException
@@ -92,10 +93,13 @@ public class MetaDataRepositoryDatabase
     public void close()
         throws DatabaseException
     {
-        stateDatabase.close();
-        storageInfoDatabase.close();
-        javaCatalog.close();
-        env.close();
+        if (!_closed) {
+            stateDatabase.close();
+            storageInfoDatabase.close();
+            javaCatalog.close();
+            env.close();
+            _closed = true;
+        }
     }
 
     public final Environment getEnvironment()
