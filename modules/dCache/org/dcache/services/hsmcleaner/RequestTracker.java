@@ -15,6 +15,7 @@ import java.net.URI;
 import diskCacheV111.pools.PoolV2Mode;
 import diskCacheV111.vehicles.PoolRemoveFilesFromHSMMessage;
 
+import dmg.util.Args;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.CellNucleus;
@@ -134,6 +135,8 @@ public class RequestTracker
         _timer.schedule(_broadcastRegistration, 0, 300000); // 5 minutes
         _cell.addMessageListener(this);
         _cell.addMessageListener(_pools);
+        _cell.addCommandListener(this);
+        _cell.addCommandListener(_pools);
     }
 
     /**
@@ -341,5 +344,39 @@ public class RequestTracker
         }
 
         flush(hsm);
+    }
+
+    public final static String hh_requests_ls = "[hsm] # Lists delete requests";
+    synchronized public String ac_requests_ls_$_0_1(Args args)
+    {
+        StringBuilder sb = new StringBuilder();
+        if (args.argc() == 0) {
+            sb.append(String.format("%-15s %s %s\n",
+                                    "HSM Instance", "Files", "Pool"));
+            for (Map.Entry<String,Set<URI>> e: _locationsToDelete.entrySet()) {
+                Timeout timeout = _poolRequests.get(e.getKey());
+
+                if (timeout == null) {
+                    sb.append(String.format("%-15s %5d\n",
+                                            e.getKey(),
+                                            e.getValue().size()));
+                } else {
+                    sb.append(String.format("%-15s %5d %s\n",
+                                            e.getKey(),
+                                            e.getValue().size(),
+                                            timeout.getPool()));
+                }
+            }
+        } else {
+            String hsm = args.argv(0);
+            Collection<URI> locations = _locationsToDelete.get(hsm);
+            if (locations != null) {
+                for (URI location: locations) {
+                    sb.append(location).append('\n');
+                }
+            }
+        }
+
+        return sb.toString();
     }
 }
