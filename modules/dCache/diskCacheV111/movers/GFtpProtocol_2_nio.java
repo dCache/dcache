@@ -158,11 +158,6 @@ public class GFtpProtocol_2_nio
      */
     protected boolean      _mappedDigest = false;
 
-    /**
-     * PNFS ID of file to be transferred.
-     */
-    protected String id = "";
-
     /** True if we use a pre JDK 6 version of Java. */
     protected static final boolean jdk5 =
         (System.getProperty("java.version").compareTo("1.6") < 0);
@@ -240,12 +235,12 @@ public class GFtpProtocol_2_nio
 
     /** Utility method for logging. */
     public void say(String str) {
-        _log.info(String.format("(%s) %s", id, str));
+        _log.info(str);
     }
 
     /** Utility method for reporting errors. */
     public void esay(String str) {
-        _log.error(String.format("(GFtp_2_nio/%s) %s", id, str));
+        _log.error(str);
     }
 
     /** Utility method for reporting errors. */
@@ -442,7 +437,6 @@ public class GFtpProtocol_2_nio
 	long   offset      = ftp.getOffset();
 	long   size        = ftp.getSize();
         boolean passive    = ftp.getPassive() && _allowPassivePool;
-        id = pnfsId.getId();
 
 	say(MessageFormat.format
 	    ("version={0}, role={1}, mode={2}, host={3}:{4,number,#}, buffer={5}, passive={6}, parallelism={7}",
@@ -606,7 +600,7 @@ public class GFtpProtocol_2_nio
             if (spaceMonitor != null && role == Role.Receiver) {
                 long overAllocation = _reservedSpace - file.length();
                 if (overAllocation > 0) {
-                    _logSpaceAllocation.debug("FREE: " + id + " : " + overAllocation );
+                    _logSpaceAllocation.debug("FREE: " + overAllocation);
                     spaceMonitor.freeSpace(overAllocation);
                 } else if (overAllocation < 0) {
                     /* This can only happen as a consequence of a bug
@@ -614,7 +608,7 @@ public class GFtpProtocol_2_nio
                      * recover from it by allocating some extra space.
                      */
                     esay("File is larger than expected (this is a bug - please report it");
-                    _logSpaceAllocation.debug("ALLOC: " + id + " : " + (-overAllocation) );
+                    _logSpaceAllocation.debug("ALLOC: " + (-overAllocation));
                     spaceMonitor.allocateSpace(-overAllocation);
                 }
             }
@@ -772,7 +766,7 @@ public class GFtpProtocol_2_nio
 	    long additional = Math.max(position - _reservedSpace, SPACE_INC);
 	    if (_spaceMonitor != null) {
 		_status = "WaitingForSpace(" + additional + ")";
-		_logSpaceAllocation.debug("ALLOC: " + id + " : " + additional );
+		_logSpaceAllocation.debug("ALLOC: " + additional );
 		_spaceMonitor.allocateSpace(additional);
 		_status = "None";
 	    }

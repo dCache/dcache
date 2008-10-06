@@ -157,17 +157,11 @@ public class RemoteGsiftpTransferProtocol_1
 
     private void say(String str)
     {
-        if (_pnfsId != null) {
-            str = "("+_pnfsId.toIdString()+") "+str;
-        }
         _log.info(str);
     }
 
     private void esay(String str)
     {
-        if (_pnfsId != null) {
-            str = "("+_pnfsId.toIdString()+") "+str;
-        }
         _log.error(str);
     }
 
