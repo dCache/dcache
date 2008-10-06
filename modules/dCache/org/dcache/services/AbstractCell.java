@@ -194,25 +194,21 @@ public class AbstractCell extends CellAdapter
 
     public void info(String str)
     {
-        pin(str);
         _logger.info("(" + getFriendlyName() + ") " + str);
     }
 
     public void warn(String str)
     {
-        pin(str);
         _logger.warn("(" + getFriendlyName() + ") " + str);
     }
 
     public void error(String str)
     {
-        pin(str);
         _logger.error("(" + getFriendlyName() + ") " + str);
     }
 
     public void error(Throwable t)
     {
-        pin(t.toString());
         StringWriter sw = new StringWriter();
         t.printStackTrace(new PrintWriter(sw));
         for (String s : sw.toString().split("\n")) {
@@ -222,13 +218,11 @@ public class AbstractCell extends CellAdapter
 
     public void fatal(String str)
     {
-        pin(str);
         _logger.fatal("(" + getFriendlyName() + ") " + str);
     }
 
     public void fatal(Throwable t)
     {
-        pin(t.toString());
         StringWriter sw = new StringWriter();
         t.printStackTrace(new PrintWriter(sw));
         for (String s : sw.toString().split("\n")) {

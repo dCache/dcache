@@ -406,8 +406,6 @@ public class GPLAZMA extends CellAdapter implements Runnable {
 
    /** Print to System.err if debug requested **/
    public void debug( String message ){
-      pin(message);
-
       if( loglevel >= DEBUG_DEBUG ) {
         super.esay(message);
       }
@@ -415,7 +413,6 @@ public class GPLAZMA extends CellAdapter implements Runnable {
 
    /** Print to System.err if info requested **/
    public void say( String message ){
-      pin(message);
       if( loglevel  >=  DEBUG_INFO ) {
         super.esay(message);
       }
@@ -423,7 +420,6 @@ public class GPLAZMA extends CellAdapter implements Runnable {
 
    /** Print to System.err if warning requested **/
    public void warn( String message ){
-      pin(message);
       if(  loglevel >=  DEBUG_WARN ) {
         super.esay(message);
       }
@@ -432,7 +428,6 @@ public class GPLAZMA extends CellAdapter implements Runnable {
    /** Print to System.err **/
    public void esay( String message ){
 
-      pin(message);
       if( loglevel >=  DEBUG_ERROR) {
     	  super.esay(message);
       }
@@ -441,7 +436,6 @@ public class GPLAZMA extends CellAdapter implements Runnable {
    /** Print to System.err **/
    public void esay( Throwable t ){
 
-     pin(t.toString());
 	 if( loglevel >=  DEBUG_ERROR) {
 		 super.esay(t);
 	 }

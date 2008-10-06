@@ -464,22 +464,21 @@ public String command( String c ) throws CommandExitException {
    //
    public String hh_set_printout = "<cellname>|CellGlue <level>" ;
    public String fh_set_printout =
-          " Syntax : set printout <cellname> <level(hex)>\n"+
-          "          Sets the outputlevel to the specified value.\n"+
-          "  <cellname> \n"+
-          "          Name of the target cell or\n"+
-          "          'CellGlue' for the kernel or\n"+
-          "          'default' for the printoutlevel of new cells.\n"+
-          "  <level> Shortcuts\n"+
-          "            none   -> no printout\n"+
-          "            errors -> cell and nuclues errors\n"+
-          "            all    -> whatever comes\n"+
-          "          or Different values must be or'ed\n"+
-          "            0 -> no printout\n"+
-          "            1 -> info printout cell\n"+
-          "            2 -> error printout cell\n"+
-          "            4 -> info printout nucleus\n"+
-          "            8 -> error printout nucleus\n";
+       "Syntax: set printout <cellname> <level(hex)>\n\n"+
+       "Obsolete: Replaced by the log4j command set, see help in the\n" +
+       "          System cell. The printout level now only controls the\n" +
+       "          log level at which messages generated through the old\n" +
+       "          logging system are logged to log4j.\n\n" +
+       "  <cellname> \n"+
+       "          Name of the target cell or 'CellGlue' for the kernel or\n"+
+       "          'default' for the printout level of new cells.\n"+
+       "  <level> Bitmask of the following fields:\n"+
+       "            1 -> log cell messages at WARN when set\n"+
+       "            2 -> log cell errors at ERROR when set\n"+
+       "            4 -> log nucleus messages at WARN when set\n"+
+       "            8 -> log nucleus error at ERROR when set\n"+
+       "          If a field is not set, then the corresponding messages\n"+
+       "          are logged at INFO level.\n";
    public String ac_set_printout_$_2( Args args ){
        String cellName = args.argv(0) ;
        String ls = args.argv(1) ;
@@ -494,7 +493,7 @@ public String command( String c ) throws CommandExitException {
           level = Integer.parseInt( args.argv(1) , 16 ) ;
        }
        _nucleus.setPrintoutLevel( cellName , level ) ;
-       return "Done\n" ;
+       return "Obsolete, see help for details\n" ;
    }
    ////////////////////////////////////////////////////////////
    //
@@ -753,12 +752,9 @@ public String command( String c ) throws CommandExitException {
    //
    //   private class loader routines
    //
-   public String hh_load_cellprinter = "<cellprinterClassName>" ;
+   public String hh_load_cellprinter = "<cellprinterClassName> # Obsolete" ;
    public String ac_load_cellprinter_$_1( Args args ) throws Exception {
-       String className = args.argv(0) ;
-       args.shift() ;
-       _nucleus.loadCellPrinter( className , args ) ;
-       return "" ;
+       return "Obsolete; use log4j instead." ;
    }
    public String hh_load_interpreter = "<interpreterClassName>" ;
    public String ac_load_interpreter_$_1( Args args ) throws CommandException {

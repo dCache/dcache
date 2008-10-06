@@ -14,7 +14,6 @@ public class MemoryWatch extends CellAdapter implements Runnable {
    private Thread      _queryThread = null ;
    private Runtime     _runtime     = Runtime.getRuntime() ;
    private boolean _output      = false ;
-   private boolean _pin         = true ;
    private String  _outputFile  = null ;
    private int     _generations = 2 ;
    private int     _current     = 0 ;
@@ -54,11 +53,6 @@ public class MemoryWatch extends CellAdapter implements Runnable {
                esay( "New 'generations' not accepted : "+var ) ;
             }
          }
-         //   -nopin   -output[=<filename>]
-         //
-         //  shell we pin it (default is yes) ( and/or output def=no )
-         //
-         _pin = _args.getOpt("nopin") == null ;
          if( ( var = _args.getOpt("output" ) ) != null ){
             _output = true ;
             if( ! var.equals("") )_outputFile = var ;        
@@ -103,7 +97,6 @@ public class MemoryWatch extends CellAdapter implements Runnable {
             super.say(str) ;
          }
       }
-      if( _pin )pin(str) ;
    }
    public void run(){
       while( ! Thread.interrupted() ){
@@ -131,21 +124,11 @@ public class MemoryWatch extends CellAdapter implements Runnable {
    }
    public void getInfo( PrintWriter pw ){
       super.getInfo(pw);
-      pw.println("Pinning : "+(_pin?"enabled":"disabled")) ;
       pw.println("Output  : "+
                  (_output?
                     ""+(_outputFile==null?"<stdout>":_outputFile):
                     "disabled" ) ) ;
       pw.println("Update  : "+_update+" seconds" ) ;
-   }
-   public String hh_set_pin = "on|off" ;
-   public String ac_set_pin_$_1( Args args )throws CommandSyntaxException{
-       String what = args.argv(0) ;
-       if( what.equals( "on" ) )_pin = true ;
-       else if( what.equals( "off" ) )_pin = false ;
-       else throw new
-            CommandSyntaxException( "arg must be on/off" ) ;
-       return "Pinning "+(_pin?"enabled":"disabled") ;
    }
    public String hh_set_generations = "<outputfileGenerations(1...10)>" ;
    public String ac_set_generations_$_1( Args args )throws CommandSyntaxException{

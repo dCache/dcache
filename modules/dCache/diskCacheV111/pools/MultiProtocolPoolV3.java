@@ -1198,18 +1198,6 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
         _checksumModule.getInfo(pw);
     }
 
-    @Override
-    public void say(String str) {
-        pin(str);
-        super.say(str);
-    }
-
-    @Override
-    public void esay(String str) {
-        pin(str);
-        super.esay(str);
-    }
-
     // //////////////////////////////////////////////////////////////
     //
     // The io File Part

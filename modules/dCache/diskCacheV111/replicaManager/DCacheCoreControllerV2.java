@@ -1137,11 +1137,6 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
    }
 
 
-   public void say( String str ){
-      pin( str ) ;
-      super.say( str ) ;
-   }
-
    // methods from the cellEventListener Interface
    //   public void cleanUp() {}
    /*

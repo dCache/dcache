@@ -32,10 +32,11 @@ class CellGlue {
    private CellRoutingTable     _routingTable      = new CellRoutingTable() ;
    private ThreadGroup          _masterThreadGroup = null ;
    private ThreadGroup          _killerThreadGroup = null ;
-   private CellPrinter          _defaultCellPrinter = new SystemCellPrinter() ;
-   private CellPrinter          _cellPrinter        = _defaultCellPrinter ;
 
-   private final static Logger _logMessages = Logger.getLogger("logger.org.dcache.cells.messages");
+   private final static Logger _logMessages =
+       Logger.getLogger("logger.org.dcache.cells.messages");
+   private final static Logger _logGlue =
+       Logger.getLogger(CellGlue.class);
 
    CellGlue( String cellDomainName ){
 
@@ -302,58 +303,7 @@ class CellGlue {
       }
 
    }
-   private class SystemCellPrinter implements CellPrinter {
-      private final DateFormat   _df  = new SimpleDateFormat("MM/dd HH:mm:ss" ) ;
 
-      public void say( String  cellName ,
-                        String domainName ,
-                        String cellType ,
-                        int    level ,
-                        String msg ){
-
-           PrintStream print = ( level & CellNucleus.PRINT_ERRORS ) != 0 ?
-                               System.err : System.out  ;
-
-           String type = ( level & ( CellNucleus.PRINT_NUCLEUS | CellNucleus.PRINT_ERROR_NUCLEUS ) ) == 0 ?
-                         "Cell" : "CellNucleus" ;
-
-           print.print( _df.format(new Date()) ) ;
-           print.print(" ");
-           print.print(type) ;
-           print.print("(") ;
-           print.print(cellName) ;
-           print.print("@") ;
-           print.print(_cellDomainName) ;
-           print.print(") : ") ;
-           print.println(msg) ;
-      }
-
-   }
-   void loadCellPrinter( String cellPrinterName , Args args  ) throws Exception {
-       if( ( cellPrinterName == null ) ||
-            cellPrinterName.equals("") ||
-            cellPrinterName.equals("default") ){
-
-          _cellPrinter = _defaultCellPrinter ;
-          return ;
-       }
-       Class []  argumentClasses = { dmg.util.Args.class , java.util.Dictionary.class  } ;
-       Object [] arguments       = { args , _cellContext } ;
-
-       Class cl = Class.forName( cellPrinterName ) ;
-
-       Constructor constructor = cl.getConstructor( argumentClasses ) ;
-       synchronized( this ){
-          _cellPrinter = (CellPrinter)constructor.newInstance( arguments ) ;
-       }
-   }
-   void say( String cellName , String cellType , int level ,  String msg ){
-	   if( _cellPrinter != null ){
-	    	  synchronized(_cellPrinter) {
-	          _cellPrinter.say( cellName , _cellDomainName , cellType , level , msg ) ;
-	      }
-	   }
-   }
    void setPrintoutLevel( int level ){ _printoutLevel = level ; }
    int  getPrintoutLevel(){ return _printoutLevel ; }
    int  getDefaultPrintoutLevel(){ return _defPrintoutLevel ; }
@@ -380,22 +330,21 @@ class CellGlue {
 
       return -1 ;
    }
-   void say( String str ){
-      if( ( _printoutLevel & CellNucleus.PRINT_NUCLEUS ) != 0 )
-      say( "Gluon" , "Gluon" , CellNucleus.PRINT_NUCLEUS , str ) ;
-      /*
-         System.out.println( "Gluon@"+_cellDomainName+" : "+str ) ;
-      */
-      return ;
+
+   void say(String str){
+       if( ( _printoutLevel & CellNucleus.PRINT_NUCLEUS ) != 0 ) {
+           _logGlue.warn(str);
+       } else {
+           _logGlue.info(str);
+       }
    }
 
    void esay( String str ){
-      if( ( _printoutLevel & CellNucleus.PRINT_NUCLEUS ) != 0 )
-      say( "Gluon" , "Gluon" , CellNucleus.PRINT_NUCLEUS , str ) ;
-      /*
-         System.out.println( "Gluon@"+_cellDomainName+" : "+str ) ;
-      */
-      return ;
+       if( ( _printoutLevel & CellNucleus.PRINT_NUCLEUS ) != 0 ) {
+           _logGlue.error(str);
+       } else {
+           _logGlue.info(str);
+       }
    }
    String getCellDomainName(){  return _cellDomainName ; }
    void   kill( CellNucleus nucleus ){

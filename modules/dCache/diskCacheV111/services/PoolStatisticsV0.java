@@ -204,9 +204,6 @@ public class PoolStatisticsV0 extends CellAdapter implements CellCron.TaskRunnab
 
 
    }
-   public void say( String message ){ super.say(message) ; pin(message) ; }
-   public void esay(String message ){ super.esay(message) ; pin(message ) ; }
-   public void esay(Exception ee ){ super.esay(ee) ; pin(ee.toString() ) ; }
    private String getNiceDayOfCalendar( Calendar calendar ){
       return _dayOfCalendar.format(calendar.getTime()) ;
    }

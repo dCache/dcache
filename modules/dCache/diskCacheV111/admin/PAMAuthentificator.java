@@ -670,14 +670,5 @@ public class PAMAuthentificator  extends CellAdapter {
       _map.clear() ;
       return "" ;
    }
-   public void esay( String str ){
-      pin( str ) ;
-      super.esay( str ) ;
-   }
-
-   public void say( String str ){
-      pin( str ) ;
-      super.say( str ) ;
-   }
 	
 } // End of PAMAuthentificator

@@ -612,10 +612,6 @@ public void cleanUp(){
      if( _listenThread != null )_listenThread.shutdown() ;
      say( "Bye Bye" ) ;
   }
-  @Override
-public void say( String str ){ pin( str ) ; super.say( str ) ; }
-  @Override
-public void esay( String str ){ pin( str ) ; super.esay( str ) ; }
 
   private class ListenThread implements Runnable {
      private int          _listenPort   = 0 ;

@@ -180,8 +180,6 @@ public class ForwardStagerV1 extends CellAdapter {
        pw.println("      Max Rate ["+(_statistics._interval/1000L)+" sec av.] : "+_statistics.getMaxRate()+" requests/second") ;
        pw.println("  Average Rate : "+_statistics.getAverageRate()+" requests/second") ;
     }
-    public void say( String txt ){ super.say(txt) ; pin(txt) ; }
-    public void esay(String txt ){ super.esay(txt) ; pin("ERROR : "+txt ) ; }
     public String toString(){
        return _statistics.toString() ;
     }

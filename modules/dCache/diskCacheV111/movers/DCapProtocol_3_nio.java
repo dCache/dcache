@@ -283,7 +283,6 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
    }
    private void debug( String str ){
       if(_debug)_cell.say( "(DCap_3_nio) ["+_pnfsId+":"+_sessionId+"] "+str ) ;
-      _cell.pin(str);
    }
    private void say( String str ){
       _cell.say( "(DCap_3_nio) "+str ) ;
@@ -355,7 +354,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
               }
           }
         }catch(NumberFormatException e){ /* bad values are ignored */}
-        
+
         say("debug = "+_debug ) ;
 
         try{
@@ -773,11 +772,11 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
                  //-------------------------------------------------------------
                  //
                  //                     The IOCMD_READV ( vector read )
-                 //                 
+                 //
                  case DCapConstants.IOCMD_READV :
 
                      try{
-                    	 
+
                          if( _io_ok ){
 
                             cntOut.writeACK(DCapConstants.IOCMD_READV) ;
@@ -802,12 +801,12 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
                             socketChannel.write(cntOut.buffer());
 
                          }
-                         
+
                      }catch(Exception e){
                         cntOut.writeACK(DCapConstants.IOCMD_READV,-1,e.toString()) ;
                         socketChannel.write(cntOut.buffer());
                      }
-                  break ;                 
+                  break ;
                  default :
                     cntOut.writeACK(666, 9,"Invalid mover command : "+requestBlock) ;
                     socketChannel.write(cntOut.buffer());
@@ -881,24 +880,24 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
    private void doTheReadv(FileChannel fileChannel, DCapOutputByteBuffer cntOut,
 		SocketChannel socketChannel, RequestBlock requestBLock) throws Exception {
 
-	   
+
        cntOut.writeDATA_HEADER() ;
        socketChannel.write(cntOut.buffer());
-       
+
        int blocks = requestBLock.nextInt();
        say("READV: " + blocks + " to read");
        final int maxBuffer = _bigBuffer.capacity() - 4 ;
        for( int i = 0; i < blocks; i++) {
-    	   
-    	   
+
+
     	   long offset = requestBLock.nextLong();
     	   int count = requestBLock.nextInt();
     	   int len = count;
-    	   
+
     	   say("READV: offset/len: " + offset +"/" + count);
-    	   
+
     	   while( count > 0 ) {
-    		   
+
     		   int bytesToRead = maxBuffer > count ? count : maxBuffer;
     		   int rc;
                try{
@@ -910,22 +909,22 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
                    _io_ok = false ;
                    break ;
                 }
-                
+
                 _bigBuffer.limit(_bigBuffer.position()).rewind() ;
                 _bigBuffer.putInt(rc).rewind() ;
                 say("READV: sending: " + _bigBuffer.limit() +" bytes");
                 socketChannel.write( _bigBuffer ) ;
-                
+
                 count -= rc ;
                 _bytesTransferred += rc ;
-    		   
+
     	   }
-    	   
-    	   
+
+
        }
-	   
+
        return ;
-	
+
    }
 private void scanCloseBlock( RequestBlock requestBlock , StorageInfo storage ) {
 
@@ -1229,7 +1228,7 @@ private void scanCloseBlock( RequestBlock requestBlock , StorageInfo storage ) {
      IllegalArgumentException( "Couldn't find "+name ) ;
    }
    public boolean wasChanged(){ return _wasChanged ; }
-   
+
    public ChecksumFactory getChecksumFactory(ProtocolInfo protocolInfo) { return null; }
 
    public void  setDigest( Checksum checksum ){

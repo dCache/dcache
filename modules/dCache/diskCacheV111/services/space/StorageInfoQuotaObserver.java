@@ -930,16 +930,4 @@ public class StorageInfoQuotaObserver extends CellAdapter {
         _poolQuerySteps = Integer.parseInt(args.argv(0));
         return "" ;
    }
-   //---------------------------------------------------------------------------------
-   //
-   //   Helper
-   //
-   public void say( String message ){
-       pin(message);
-       super.say(message);
-   }   
-   public void esay( String message ){
-       pin(message);
-       super.esay(message);
-   }   
 }

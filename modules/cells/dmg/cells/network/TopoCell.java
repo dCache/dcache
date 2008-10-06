@@ -52,18 +52,6 @@ public class TopoCell extends CellAdapter implements Runnable  {
      }
    }
 
-   @Override
-    public void say(String msg) {
-        super.say(msg);
-        pin(msg);
-    }
-
-    @Override
-    public void esay(String msg) {
-        super.esay(msg);
-        pin(msg);
-    }
-
     CellDomainNode[] getInfoMap() {
         CellDomainNode[] info;
         synchronized (_infoLock) {
@@ -184,7 +172,7 @@ public class TopoCell extends CellAdapter implements Runnable  {
     }
 
     private void setStatus(String st) {
-        pin(st);
+        say(st);
     }
 
 }

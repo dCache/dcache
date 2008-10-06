@@ -78,16 +78,6 @@ public class DirectoryLookUpPool extends CellAdapter {
 				.println("Revision          : [$Id: DirectoryLookUpPool.java,v 1.7 2007-07-26 14:34:12 tigran Exp $]");
 	}
 
-	public void say(String str) {
-		pin(str);
-		super.say(str);
-	}
-
-	public void esay(String str) {
-		pin(str);
-		super.esay(str);
-	}
-
 	public void messageToForward(CellMessage cellMessage) {
 		messageArrived(cellMessage);
 	}

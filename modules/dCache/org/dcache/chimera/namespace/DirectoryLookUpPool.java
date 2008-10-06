@@ -93,15 +93,6 @@ public class DirectoryLookUpPool extends CellAdapter {
     }
 
     @Override
-    public void say( String str ){
-        pin( str );
-    }
-    @Override
-    public void esay( String str ){
-        pin( str ) ;
-    }
-
-    @Override
     public void messageArrived( CellMessage cellMessage ){
 
 

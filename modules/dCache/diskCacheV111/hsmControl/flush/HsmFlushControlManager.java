@@ -514,9 +514,6 @@ public class HsmFlushControlManager  extends CellAdapter {
        }                 
     
     }
-    public void say( String txt ){ super.say(txt) ; pin(txt) ; }
-    public void esay(String txt ){ super.esay(txt) ; pin("ERROR : "+txt ) ; }
-    public void esay(Throwable t ){ super.esay( t ) ; pin("Trace in log : "+t); }
     public String hh_pgroup_add = "<pGroup0> [<pgroup1> [...]]" ;
     public String ac_pgroup_add_$_1_99( Args args ){
         for( int i = 0 ; i < args.argc() ; i++ ){
