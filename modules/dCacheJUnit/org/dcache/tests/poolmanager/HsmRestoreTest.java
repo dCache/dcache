@@ -161,6 +161,7 @@ public class HsmRestoreTest {
         MessageAction messageAction = new StageMessageAction(stageRequests);
 
         GenericMockCellHelper.registerAction("pool1", PoolFetchFileMessage.class,messageAction );
+        GenericMockCellHelper.registerAction("pool2", PoolFetchFileMessage.class,messageAction );
 
         PoolMgrSelectReadPoolMsg selectReadPool = new PoolMgrSelectReadPoolMsg(pnfsId, _storageInfo, _protocolInfo, _storageInfo.getFileSize());
         CellMessage cellMessage = new CellMessage( new CellPath("PoolManager"), selectReadPool);
@@ -436,9 +437,12 @@ public class HsmRestoreTest {
         ff.setFailed(17, "pech");
         _rc.messageArrived(m);
 
-        assertEquals("Second shot have to go to first pool", 2, stageRequests1.get());
-        assertEquals("No stage request sent to pools2", 1, stageRequests2.get());
-
+        assertEquals("Three stage requests where expected", 3,
+                     stageRequests1.get() + stageRequests2.get());
+        assertTrue("No stage requests sent to pool1",
+                   stageRequests1.get() != 0);
+        assertTrue("No stage requests sent to pool2",
+                   stageRequests2.get() != 0);
     }
 
 
