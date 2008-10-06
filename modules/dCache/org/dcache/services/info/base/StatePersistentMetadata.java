@@ -116,6 +116,7 @@ public class StatePersistentMetadata {
 		this.add( StatePath.parsePath("domains.*.routing.remote.*.*"), branchMetadata( "cellref", "name"));
 
 		this.add( StatePath.parsePath("pools.*"), branchMetadata( "pool", "name"));
+		this.add( StatePath.parsePath("pools.*.links.*"), branchMetadata( "linkref", "name"));
 		this.add( StatePath.parsePath("pools.*.poolgroups.*"), branchMetadata( "poolgroupref", "name"));
 		this.add( StatePath.parsePath("pools.*.queues.*"), branchMetadata( "queue", "type"));
 		this.add( StatePath.parsePath("pools.*.queues.named-queues.*"), branchMetadata( "queue", "name"));
