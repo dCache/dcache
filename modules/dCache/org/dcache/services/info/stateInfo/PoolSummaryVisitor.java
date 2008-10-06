@@ -28,6 +28,7 @@ public class PoolSummaryVisitor implements StateVisitor {
 	private static final String METRIC_NAME_PRECIOUS  = "precious";
 	private static final String METRIC_NAME_TOTAL     = "total";
 	private static final String METRIC_NAME_REMOVABLE = "removable";
+	private static final String METRIC_NAME_USED      = "used";
 	
 	/**
 	 * Obtain some summary statistics about all available pools.
@@ -95,6 +96,8 @@ public class PoolSummaryVisitor implements StateVisitor {
 			_info.addToTotal( value.getValue());
 		} else if( path.getLastElement().equals(METRIC_NAME_PRECIOUS)) {
 			_info.addToPrecious( value.getValue());
+		} else if( path.getLastElement().equals(METRIC_NAME_USED)) {
+			_info.addToUsed( value.getValue());
 		}
 	}
 	

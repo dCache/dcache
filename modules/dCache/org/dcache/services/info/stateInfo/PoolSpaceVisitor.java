@@ -80,7 +80,6 @@ public class PoolSpaceVisitor extends SkeletonListVisitor {
 		if( _log.isDebugEnabled())
 			_log.debug( "Found metric " + path.getLastElement() + " = " + value.getValue());
 
-		// The following only works since we intern() all strings
 		if( metricName.equals("removable"))
 			_thisPoolSpaceInfo.setRemovable( value.getValue());
 		else if( metricName.equals("free"))
@@ -89,6 +88,8 @@ public class PoolSpaceVisitor extends SkeletonListVisitor {
 			_thisPoolSpaceInfo.setTotal( value.getValue());
 		else if( metricName.equals("precious"))
 			_thisPoolSpaceInfo.setPrecious( value.getValue());			
+		else if( metricName.equals("used"))
+			_thisPoolSpaceInfo.setUsed( value.getValue());			
 	}
 	
 }
