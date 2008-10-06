@@ -266,7 +266,7 @@ public class BillingCell extends CellAdapter {
           thisDate = new Date() ;
           output   = formatter.format(new Date())+" "+obj.toString() ;
        }
-       pin( output ) ;
+       say( output ) ;
        if( _sqlLog != null ) {
           try {
              _sqlLog.log(info);

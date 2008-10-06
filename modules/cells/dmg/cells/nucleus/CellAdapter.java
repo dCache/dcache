@@ -99,6 +99,7 @@ public class   CellAdapter
         _nucleus   = new CellNucleus(this, cellName, cellType);
         _autoSetup = cellName + "Setup";
 
+        createPinboard(0);
 
         if ((_args.argc() > 0) &&
             ((_definedSetup = _args.argv(0)).length() > 1) &&
@@ -372,21 +373,8 @@ public class   CellAdapter
     public void createPinboard(int size) {
         synchronized (_pinBoardLock) {
             _pinboard = new Pinboard(size <= 0 ? 200 : size);
+            PinboardAppender.addPinboard(getCellName(), _pinboard);
         }
-    }
-    /**
-     *  Adds a line to the pinboard.
-     *
-     * @param size maximum number of lines kept by the pinboard.
-     *
-     */
-    public void pin(String note) {
-        synchronized (_pinBoardLock) {
-            if (_pinboard == null) {
-                _pinboard = new Pinboard(200);
-            }
-        }
-        _pinboard.pin(note);
     }
 
     /**
@@ -700,9 +688,6 @@ public class   CellAdapter
     public Class loadClass(String className) throws ClassNotFoundException {
         return _nucleus.loadClass(className);
     }
-    public void loadCellPrinter(String cellPrinterName, Args args) throws Exception {
-        _nucleus.loadCellPrinter(cellPrinterName, args);
-    }
 
     /**
      *
@@ -765,20 +750,23 @@ public class   CellAdapter
     // methods which are automatically scanned by
     // the CommandInterpreterFacility
     //
+   public String fh_set_printout =
+       "Syntax: set printout <level>\n\n"+
+       "Obsolete: Replaced by the log4j command set, see help in the\n" +
+       "          System cell. The printout level now only controls the\n" +
+       "          log level at which messages generated through the old\n" +
+       "          logging system are logged to log4j.\n\n" +
+       "  <level> Bitmask of the following fields:\n" +
+       "            1 -> log cell messages at WARN when set\n"+
+       "            2 -> log cell errors at ERROR when set\n"+
+       "            4 -> log nucleus messages at WARN when set\n"+
+       "            8 -> log nucleus error at ERROR when set\n"+
+       "          If a field is not set, then the corresponding messages\n"+
+       "          are logged at INFO level.\n";
     public String ac_set_printout_$_1(Args args) {
         int printout  = Integer.parseInt(args.argv(0));
         _nucleus.setPrintoutLevel(printout);
-        return "";
-    }
-
-    public String hh_set_logging = " <logger> <ALL | DEBUG | ERROR | FATAL | INFO | OFF | WARN>";
-    public String ac_set_logging_$_2(Args args) {
-
-        Logger logger = Logger.getLogger(args.argv(0));
-
-        logger.setLevel(Level.toLevel(args.argv(1)));
-
-        return "current level : " + logger.getLevel().toString();
+        return "Obsolete, see help for details";
     }
 
     public String ac_say_$_1(Args args) {
@@ -847,11 +835,9 @@ public class   CellAdapter
         return "Pinboard dumped to "+args.argv(0);
 
     }
-    public String hh_pin = "<comment> # adds the <comment> to the pinboard";
+    public String hh_pin = "<comment> # obsolete";
     public String ac_pin_$_1(Args args) {
-
-        pin(args.argv(0));
-        return "";
+        return "The pin command is obsolete";
     }
     /**
      *   belongs to the Cell Interface.

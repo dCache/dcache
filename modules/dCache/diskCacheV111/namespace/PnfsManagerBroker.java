@@ -267,18 +267,4 @@ public class PnfsManagerBroker extends CellAdapter {
 
         return sb.toString();
     }
-
-    // cells & Co.
-    public void say( String str ){
-        pin( str ) ;
-        super.say( str ) ;
-    }
-    public void esay( String str ){
-        pin( str ) ;
-        super.esay( str ) ;
-    }
-    public void esay( Exception e ){
-        pin( e.toString() ) ;
-        super.esay( e ) ;
-    }
 }

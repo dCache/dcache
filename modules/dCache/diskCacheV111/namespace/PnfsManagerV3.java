@@ -276,20 +276,6 @@ public class PnfsManagerV3 extends CellAdapter {
         return ;
     }
 
-    @Override
-    public void say( String str ){
-        pin( str ) ;
-        super.say( str ) ;
-    }
-    @Override
-    public void esay( String str ){
-        pin( str ) ;
-        super.esay( str ) ;
-    }
-    public void esay( Exception e ){
-        pin( e.toString() ) ;
-        super.esay( e ) ;
-    }
     public String hh_flags_set    = "<pnfsId> <key=value> [...]" ;
     public String hh_flags_remove = "<pnfsId> <key> [...]" ;
     public String hh_flags_ls     = "<pnfsId>" ;

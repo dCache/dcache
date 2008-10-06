@@ -119,10 +119,6 @@ public class MessageEventTestCell extends CellAdapter {
      _replies = Integer.parseInt( args.argv(0) ) ;
      return "Set number of replies to : "+_replies  ;
    }
-   public void say( String str ){
-      pin( str ) ;
-      super.say( str ) ;
-   }
    public void messageToForward( CellMessage msg ){
       say("Got message to forward : "+msg ) ;
    }

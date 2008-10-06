@@ -264,14 +264,6 @@ public class CopyManager extends CellAdapter {
            _status = newStatus ;
        }
    }
-   public void say( String message ){
-       pin(message);
-       super.say(message);
-   }
-   public void esay( String message ){
-       pin(message);
-       super.esay(message);
-   }
    private class CopyWorker implements Runnable {
        public void run() {
            try{

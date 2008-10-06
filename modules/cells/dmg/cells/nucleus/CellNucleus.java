@@ -10,6 +10,7 @@ import java.lang.reflect.*;
 import java.net.Socket;
 
 import org.apache.log4j.Logger;
+import org.apache.log4j.Level;
 import org.apache.log4j.MDC;
 import org.apache.log4j.NDC;
 
@@ -39,7 +40,11 @@ public class CellNucleus implements Runnable, ThreadFactory {
     private        int       _state          = INITIAL;
     private        int       _printoutLevel  = 0;
 
-    private final static Logger _logMessages = Logger.getLogger("logger.org.dcache.cells.messages");
+    private final static Logger _logMessages =
+        Logger.getLogger("logger.org.dcache.cells.messages");
+    private final static Logger _logNucleus =
+        Logger.getLogger(CellNucleus.class);
+    private final Logger _logCell;
 
     //  have to be synchronized map
     private final  Map<UOID, CellLock> _waitHash = new HashMap<UOID, CellLock>();
@@ -50,6 +55,8 @@ public class CellNucleus implements Runnable, ThreadFactory {
         this(cell, name, "Generic");
     }
     public CellNucleus(Cell cell, String name, String type) {
+
+        _logCell = Logger.getLogger(cell.getClass());
 
         if (__cellGlue == null) {
             //
@@ -445,9 +452,7 @@ public class CellNucleus implements Runnable, ThreadFactory {
                     try {
                         _cell.messageArrived((MessageEvent)event);
                     } catch(Throwable nse) {
-                        nesay("messageThread : "+
-                              "Exception in cell.messageArrived(LastMessageEvent) ");
-                        nesay(nse);
+                        esay(nse);
                     }
                     break;
                 } else if (event instanceof RoutedMessageEvent) {
@@ -455,9 +460,7 @@ public class CellNucleus implements Runnable, ThreadFactory {
                     try {
                         _cell.messageArrived((RoutedMessageEvent)event);
                     } catch(Throwable nse) {
-                        nesay("messageThread : "+
-                              "Exception in cell.messageArrived(RoutedMessageEvent)");
-                        nse.printStackTrace();
+                        esay(nse);
                     }
                 } else if (event instanceof MessageEvent) {
                     MessageEvent msgEvent = (MessageEvent) event;
@@ -485,9 +488,7 @@ public class CellNucleus implements Runnable, ThreadFactory {
                             NDC.pop();
                         }
                     } catch(Throwable nse) {
-                        nesay("messageThread : "+
-                              "Exception in cell.messageArrived(MessageEvent)");
-                        nse.printStackTrace();
+                        esay(nse);
                     }
                 }
             }
@@ -501,9 +502,7 @@ public class CellNucleus implements Runnable, ThreadFactory {
             try {
                 _cell.prepareRemoval(event);
             } catch(Throwable nse) {
-                nesay("killerThread : "+
-                      "Exception in cell.prepareRemoval(LastMessageEvent)");
-                nesay(nse);
+                esay(nse);
             }
 
             nsay("killerThread : waiting for all threads in "+_threads+" to finish");
@@ -649,8 +648,7 @@ public class CellNucleus implements Runnable, ThreadFactory {
                                                                          asyncAnswer);
                                                    }
                                                } catch(Throwable t) {
-                                                   nesay("addToEventQueue : throwable in callback : "+t);
-                                                   nesay(t);
+                                                   esay(t);
                                                }
                                                nsay("Async Callback done");
                                            }
@@ -667,8 +665,7 @@ public class CellNucleus implements Runnable, ThreadFactory {
                                                            answer);
                                 }
                             } catch(Throwable t) {
-                                nesay("addToEventQueue : throwable in callback : "+t);
-                                nesay(t);
+                                esay(t);
                             }
                         }
                         nsay("addToEventQueue : callback done for : "+msg);
@@ -831,53 +828,129 @@ public class CellNucleus implements Runnable, ThreadFactory {
     public static final int  PRINT_EVERYTHING    =
         PRINT_CELL|PRINT_ERROR_CELL|PRINT_NUCLEUS|PRINT_ERROR_NUCLEUS|PRINT_FATAL;
 
-
-    void loadCellPrinter(String cellPrinterName, Args args) throws Exception {
-
-        __cellGlue.loadCellPrinter(cellPrinterName,args);
-    }
-    public void say(int level, String str) {
-        if (((_printoutLevel & level) > 0) || ((level & PRINT_FATAL) != 0))
-            __cellGlue.say(_cellName, _cellType, level, str);
-    }
-    public void say(String str) {
-        if ((_printoutLevel & PRINT_CELL) > 0)
-            __cellGlue.say(_cellName, _cellType, PRINT_CELL, str);
-        return;
-    }
-    public void esay(String str) {
-        if ((_printoutLevel & PRINT_ERROR_CELL) > 0)
-            __cellGlue.say(_cellName, _cellType, PRINT_ERROR_CELL, str);
-        return;
-    }
-    public void fsay(String str) {
-        __cellGlue.say(_cellName, _cellType, PRINT_FATAL, str);
-        return;
-    }
-    private void nsay(String str) {
-        if ((_printoutLevel & PRINT_NUCLEUS) > 0)
-            __cellGlue.say(_cellName, _cellType, PRINT_NUCLEUS, str);
-        return;
-    }
-    private void nesay(String str) {
-        if ((_printoutLevel & PRINT_ERROR_NUCLEUS) > 0)
-            __cellGlue.say(_cellName, _cellType, PRINT_ERROR_NUCLEUS, str);
-        return;
-    }
-    public void esay(Throwable t) {
-        StringWriter sw = new StringWriter();
-        t.printStackTrace(new PrintWriter(sw));
-        StringTokenizer st = new StringTokenizer(sw.toString(), "\n");
-        while (st.hasMoreTokens()) {
-            esay(st.nextToken());
+    /* Log a message to a logger. Calls the initLoggingContext method
+     * to ensure that the 'cell' and 'domain' MDCs are set. These
+     * should have been set for the calling thread already, but many
+     * cells don't create the thread in the proper context.
+     */
+    private void log(Logger logger, Level level, String message)
+    {
+        Object cell = MDC.get("cell");
+        Object domain = MDC.get("domain");
+        initLoggingContext();
+        try {
+            logger.log(level, message);
+        } finally {
+            if (cell == null) {
+                MDC.remove("cell");
+            } else {
+                MDC.put("cell", cell);
+            }
+            if (domain == null) {
+                MDC.remove("domain");
+            } else {
+                MDC.put("domain", domain);
+            }
         }
     }
-    private void nesay(Throwable t) {
-        StringWriter sw = new StringWriter();
-        t.printStackTrace(new PrintWriter(sw));
-        StringTokenizer st = new StringTokenizer(sw.toString(), "\n");
-        while (st.hasMoreTokens()) {
-            nesay(st.nextToken());
+
+    /* Log exception to a logger. Calls the initLoggingContext method
+     * to ensure that the 'cell' and 'domain' MDCs are set. These
+     * should have been set for the calling thread already, but many
+     * cells don't create the thread in the proper context.
+     */
+    private void log(Logger logger, Level level, Throwable t)
+    {
+        Object cell = MDC.get("cell");
+        Object domain = MDC.get("domain");
+        initLoggingContext();
+        try {
+            logger.log(level, t, t);
+        } finally {
+            if (cell == null) {
+                MDC.remove("cell");
+            } else {
+                MDC.put("cell", cell);
+            }
+            if (domain == null) {
+                MDC.remove("domain");
+            } else {
+                MDC.put("domain", domain);
+            }
+        }
+    }
+
+    public void say(int level, String str)
+    {
+        if ((level & PRINT_FATAL) > 0) {
+            fsay(str);
+        } else if ((level & PRINT_ERROR_CELL) > 0) {
+            esay(str);
+        } else if ((level & PRINT_ERROR_NUCLEUS) > 0) {
+            nesay(str);
+        } else if ((level & PRINT_CELL) > 0 ) {
+            say(str);
+        } else if ((level & PRINT_NUCLEUS) > 0) {
+            nsay(str);
+        }
+    }
+
+    public void say(String str)
+    {
+        if ((_printoutLevel & PRINT_CELL) > 0) {
+            log(_logCell, Level.WARN, str);
+        } else {
+            log(_logCell, Level.INFO, str);
+        }
+    }
+
+    public void esay(String str)
+    {
+        if ((_printoutLevel & PRINT_ERROR_CELL) > 0) {
+            log(_logCell, Level.ERROR, str);
+        } else {
+            log(_logCell, Level.INFO, str);
+        }
+    }
+
+    public void fsay(String str)
+    {
+        log(_logCell, Level.FATAL, str);
+    }
+
+    private void nsay(String str)
+    {
+        if ((_printoutLevel & PRINT_NUCLEUS) > 0) {
+            log(_logNucleus, Level.WARN, str);
+        } else {
+            log(_logNucleus, Level.INFO, str);
+        }
+    }
+
+    private void nesay(String str)
+    {
+        if ((_printoutLevel & PRINT_ERROR_NUCLEUS) > 0) {
+            log(_logNucleus, Level.ERROR, str);
+        } else {
+            log(_logNucleus, Level.INFO, str);
+        }
+    }
+
+    public void esay(Throwable t)
+    {
+        if ((_printoutLevel & PRINT_ERROR_CELL) > 0) {
+            log(_logCell, Level.ERROR, t);
+        } else {
+            log(_logCell, Level.INFO, t);
+        }
+    }
+
+    private void nesay(Throwable t)
+    {
+        if ((_printoutLevel & PRINT_ERROR_NUCLEUS) > 0) {
+            log(_logNucleus, Level.ERROR, t);
+        } else {
+            log(_logNucleus, Level.INFO, t);
         }
     }
 

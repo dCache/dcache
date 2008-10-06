@@ -428,7 +428,6 @@ public class TransferObserverV1
                     collectDataSequentially();
                     _timeUsed = System.currentTimeMillis() - start;
                 } catch (Exception ee) {
-                    pin("Exception in 'dataCollector()' : " + ee);
                     esay(ee);
                 }
 
@@ -525,7 +524,7 @@ public class TransferObserverV1
             List<LoginBrokerInfo> infoList = new ArrayList<LoginBrokerInfo>();
 
             for (String loginBroker : _loginBroker.split(",")) {
-                pin("Requesting doorInfo from LoginBroker " + loginBroker);
+                say("Requesting doorInfo from LoginBroker " + loginBroker);
                 try {
                     LoginBrokerInfo [] infos =
                         (LoginBrokerInfo [])request(loginBroker, "ls -binary");
@@ -538,10 +537,10 @@ public class TransferObserverV1
                         _doors.addDoor(doorName);
                         sb.append(doorName).append(",");
                     }
-                    pin(sb.toString());
+                    say(sb.toString());
                     infoList.addAll(Arrays.asList(infos));
                 } catch (Exception e) {
-                    pin("Error from sendAndWait : " + e);
+                    say("Error from sendAndWait : " + e);
                 }
             }
             updateDoorPage(infoList.toArray(new LoginBrokerInfo[infoList.size()])) ;
@@ -554,20 +553,20 @@ public class TransferObserverV1
 
         getBrokerInfo();
 
-        pin("Asking doors for 'doorClientList' (one by one)");
+        say("Asking doors for 'doorClientList' (one by one)");
         for (String doorName : _doors.doors()) {
-            pin("Requesting client list from : " + doorName);
+            say("Requesting client list from : " + doorName);
             try {
                 LoginManagerChildrenInfo info = (LoginManagerChildrenInfo)
                     request(doorName, "get children -binary");
 
-                pin(doorName + " reported about " + info.getChildrenCount() +
+                say(doorName + " reported about " + info.getChildrenCount() +
                     " children");
 
                 _doors.setDoorInfo(info);
             } catch (Exception e) {
                 _doors.undefineDoor(doorName);
-                pin("Exception : " + e);
+                say("Exception : " + e);
             }
         }
         //
@@ -581,12 +580,12 @@ public class TransferObserverV1
             for ( String child: info.getChildren()) {
                 String childDoor = child+"@"+info.getCellDomainName() ;
 
-                pin("Requesting client info from : " + childDoor);
+                say("Requesting client info from : " + childDoor);
                 try {
                     IoDoorInfo ioDoorInfo = (IoDoorInfo)
                         request(childDoor,"get door info -binary");
 
-                    pin(childDoor + " reply ok");
+                    say(childDoor + " reply ok");
 
                     List ioDoorEntries = ioDoorInfo.getIoDoorEntries();
                     if (ioDoorEntries.size() == 0)
@@ -595,7 +594,7 @@ public class TransferObserverV1
                     Iterator ios = ioDoorEntries.iterator() ;
                     while (ios.hasNext()) {
                         IoDoorEntry ioDoorEntry = (IoDoorEntry)ios.next() ;
-                        pin( "Adding ioEntry : "+ioDoorEntry ) ;
+                        say( "Adding ioEntry : "+ioDoorEntry ) ;
                         ioList.put(childDoor+"#"+ioDoorEntry.getSerialId(),
                                    new IoEntry(ioDoorInfo, ioDoorEntry));
                         String pool = ioDoorEntry.getPool();
@@ -605,18 +604,18 @@ public class TransferObserverV1
                     }
 
                 } catch (Exception e) {
-                    pin("Exception : " + e);
+                    say("Exception : " + e);
                 }
             }
         }
-        pin("Asking pools for io info");
+        say("Asking pools for io info");
         for (String poolName : poolHash) {
-            pin("Asking pool : " + poolName);
+            say("Asking pool : " + poolName);
             try {
                 IoJobInfo [] infos = (IoJobInfo [] )
                     request(poolName, "mover ls -binary");
 
-                pin(poolName + " reply ok");
+                say(poolName + " reply ok");
 
                 //
                 // where is our client
@@ -626,13 +625,13 @@ public class TransferObserverV1
                         info.getClientId() ;
                     IoEntry ioEntry = ioList.get(client);
                     if (ioEntry == null) {
-                        pin("No entry found for : " + client);
+                        say("No entry found for : " + client);
                     } else {
                         ioEntry._ioJobInfo = info;
                     }
                 }
             } catch (Exception e) {
-                pin("Exception : " + e);
+                say("Exception : " + e);
             }
         }
         List<IoEntry> resultList = null;

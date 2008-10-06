@@ -497,12 +497,6 @@ public class PoolManagerV5 extends CellAdapter {
        }
        return sb.toString() ;
     }
-    @Override
-    public void say( String str ){ pin( str ) ; super.say( str ) ; }
-    @Override
-    public void esay( String str ){ pin( str ) ; super.esay( str ) ; }
-    @Override
-    public void esay( Throwable t ){ super.esay( t ) ; }
 
     private synchronized
        void poolUp(PoolManagerPoolUpMessage poolMessage, CellPath poolPath)

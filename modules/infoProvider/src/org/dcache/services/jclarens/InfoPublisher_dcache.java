@@ -171,21 +171,6 @@ import org.dcache.services.infoCollector.GlueSchemaV1_2;
 	  say(" Constructor finished" ) ;
    }
 
-   public void say( String message ){
-      pin(message);
-      super.say(message);
-   }
-
-   public void esay( String message ){
-      pin(message);
-      super.esay(message);
-   }
-
-   public void esay( Throwable t ){
-     pin(t.toString());
-     super.esay(t);
-   }
-
    /**
      * is called if user types 'info'
      */

@@ -579,16 +579,7 @@ public class PoolInfoObserverV1 extends CellAdapter implements Runnable {
       start() ;
    }
    public void dsay( String message ){
-      pin(message);
-      if( _debug )super.say(message);
-   }
-   public void say( String message ){
-      pin(message);
-      super.say(message);
-   }
-   public void esay( String message ){
-      pin(message);
-      super.say(message);
+      if( _debug )say(message);
    }
    private synchronized void addQuery( String destination ){
       if( _infoMap.get( destination ) != null )return ;

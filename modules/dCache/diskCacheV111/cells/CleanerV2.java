@@ -318,20 +318,6 @@ public class CleanerV2 extends CellAdapter implements Runnable {
     public String toString(){
        return "Removed="+_removeCounter+";X="+_exceptionCounter ;
     }
-    @Override
-    public void say( String str ){
-	pin( str ) ;
-	super.say( str ) ;
-    }
-    @Override
-    public void esay( String str ){
-	pin( str ) ;
-	super.esay( str ) ;
-    }
-    public void esay( Exception e ){
-	pin( e.toString() ) ;
-	super.esay( e ) ;
-    }
     private String autodetectTrash() throws Exception {
        File pnfsSetup = new File( "/usr/etc/pnfsSetup" ) ;
        if( ! pnfsSetup.exists() )

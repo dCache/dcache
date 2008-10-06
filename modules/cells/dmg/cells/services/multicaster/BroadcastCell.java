@@ -119,8 +119,6 @@ public class BroadcastCell extends CellAdapter {
         export() ;
         start() ;
     }
-    public void say( String message ){ pin(message) ; super.say(message) ; }
-    public void esay(String message ){ pin(message) ; super.esay(message); }
     public String hh_ls = "" ;
     public String ac_ls( Args args ){
         synchronized( this ){

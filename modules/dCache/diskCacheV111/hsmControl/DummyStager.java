@@ -59,8 +59,6 @@ public class DummyStager extends CellAdapter {
           say( "QueueWatch stopped" ) ;
        }
     }
-    public void say( String txt ){ super.say(txt) ; pin(txt) ; }
-    public void esay(String txt ){ super.esay(txt) ; pin("ERROR : "+txt ) ; }
     public String toString(){
        return "Req="+_requests+";Err="+_failed+";" ;
     }

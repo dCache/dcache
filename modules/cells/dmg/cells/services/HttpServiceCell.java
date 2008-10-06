@@ -297,16 +297,12 @@ public class      HttpServiceCell
    
    @Override
    public void say( String msg ){
-      String s = "("+_serial+") "+msg ;
-      _nucleus.say( s ) ;
-      pin( s ) ;
+      super.say("(" + _serial + ") " + msg);
    }
    
    @Override
    public void esay( String msg ){
-      String s = "("+_serial+") "+msg ;
-      _nucleus.esay( s ) ;
-      pin( s ) ;
+      super.esay("(" + _serial + ") " + msg);
    }
    
    private class HtmlService 

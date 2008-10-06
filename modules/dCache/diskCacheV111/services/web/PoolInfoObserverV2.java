@@ -443,21 +443,8 @@ public class PoolInfoObserverV2 extends CellAdapter implements Runnable
 
     public void dsay(String message)
     {
-        pin(message);
         if (_debug)
-            super.say(message);
-    }
-
-    public void say(String message)
-    {
-        pin(message);
-        super.say(message);
-    }
-
-    public void esay(String message)
-    {
-        pin(message);
-        super.say(message);
+            say(message);
     }
 
     private synchronized void addQuery(String destination)

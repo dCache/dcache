@@ -438,10 +438,6 @@ private void prepareClass( String className )
 
       }
   }
-  public void say( String str ){
-     super.say( str ) ;
-     pin( str ) ;
-  }
   public void cleanUp(){
      _workerThread.interrupt() ;
 

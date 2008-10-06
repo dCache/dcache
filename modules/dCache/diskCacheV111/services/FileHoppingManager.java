@@ -478,8 +478,4 @@ public class FileHoppingManager extends CellAdapter {
       }
       return sb.toString();
    }
-   public void say( String message ){ super.say(message) ; pin(message) ; }
-   public void esay(String message ){ super.esay(message) ; pin(message ) ; }
-   public void esay(Exception ee ){ super.esay(ee) ; pin(ee.toString() ) ; }
-
 }

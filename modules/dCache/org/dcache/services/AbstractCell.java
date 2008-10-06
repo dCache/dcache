@@ -23,7 +23,6 @@ import dmg.cells.nucleus.UOID;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.Reply;
 
-import org.dcache.util.PinboardAppender;
 import org.dcache.util.CellMessageDispatcher;
 import org.dcache.util.ReflectionUtils;
 import diskCacheV111.vehicles.Message;
@@ -46,8 +45,6 @@ import diskCacheV111.util.PnfsId;
  *
  * The cells say and esay methods are redirected to the logger using
  * info and error levels, respectively.
- *
- * The cell is registered as a target for the PinboardAppender.
  *
  * <h2>Initialisation</h2>
  *
@@ -195,8 +192,6 @@ public class AbstractCell extends CellAdapter
 
         _logger = Logger.getLogger(getClass());
         _definedSetup = getDefinedSetup(arguments);
-
-        PinboardAppender.addCell(this);
 
         parseOptions();
         addMessageListener(this);

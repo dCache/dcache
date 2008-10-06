@@ -238,24 +238,6 @@ import java.util.concurrent.*;
    return target;
   }
 
-   /** Print to System.out **/
-   public void say( String message ){
-      pin(message);
-      super.say(message);
-   }
-
-   /** Print to System.err **/
-   public void esay( String message ){
-      pin(message);
-      super.esay(message);
-   }
-
-   /** Print to System.err **/
-   public void esay( Throwable t ){
-     pin(t.toString());
-     super.esay(t);
-   }
-
   /**
    * Composes output for "help" command
    */

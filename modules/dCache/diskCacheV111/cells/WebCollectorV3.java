@@ -225,21 +225,8 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
 
     public void dsay(String message) 
     {
-        pin(message);
         if (_debug)
-            super.say(message);
-    }
-
-    public void say(String message) 
-    {
-        pin(message);
-        super.say(message);
-    }
-
-    public void esay(String message) 
-    {
-        pin(message);
-        super.say(message);
+            say(message);
     }
 
     private synchronized boolean addQuery(String destination) 
@@ -648,7 +635,7 @@ public class WebCollectorV3 extends CellAdapter implements Runnable
             double yellow  = round(100 * freespace / (float)total);
             double blue    = Math.max(0, 100 - red - green - yellow);
 
-            pin(cellInfo.getCellName() + " : " +
+            say(cellInfo.getCellName() + " : " +
                 ";total=" + total + ";free=" + freespace + 
                 ";precious=" + precious + ";removable=" + removable);
 

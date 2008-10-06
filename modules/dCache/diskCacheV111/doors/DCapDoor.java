@@ -218,16 +218,6 @@ public class      DCapDoor
        if( _interpreter instanceof KeepAliveListener )
           ((KeepAliveListener)_interpreter).keepAlive();
     }
-    @Override
-    public void say( String str ){
-       super.say(str) ;
-       pin(str) ;
-    }
-    @Override
-    public void esay( String str ){
-       super.esay(str) ;
-       pin("ERROR : "+str) ;
-    }
     private boolean checkUser( String userName , String password ){
        String [] request = new String[5] ;
 
