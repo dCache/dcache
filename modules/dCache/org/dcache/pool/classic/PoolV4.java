@@ -49,7 +49,6 @@ import org.dcache.cell.CellMessageReceiver;
 import org.dcache.cell.AbstractCellComponent;
 import diskCacheV111.pools.PoolV2Mode;
 import diskCacheV111.pools.SpaceSweeper;
-import diskCacheV111.pools.JobTimeoutManager;
 import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.pools.PoolCellInfo;
 import diskCacheV111.movers.ChecksumMover;
