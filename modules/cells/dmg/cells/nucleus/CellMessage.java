@@ -22,9 +22,9 @@ public class CellMessage implements Cloneable , Serializable {
   private int         _hopCount      = 0 ;
   private boolean     _isAcknowledge = false ;
   private boolean     _isPersistent  = false ;
-  private final int   ORIGINAL_MODE  = 0 ;
-  private final int   STREAM_MODE    = 1 ;
-  private final int   DUMMY_MODE     = 2 ;
+  private static final int   ORIGINAL_MODE  = 0 ;
+  private static final int   STREAM_MODE    = 1 ;
+  private static final int   DUMMY_MODE     = 2 ;
 
   public CellMessage( CellPath addr , Object msg ){
 
