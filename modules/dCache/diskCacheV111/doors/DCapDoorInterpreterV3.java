@@ -10,8 +10,8 @@ import dmg.cells.nucleus.*;
 import dmg.util.*;
 import dmg.security.CellUser;
 import diskCacheV111.services.PermissionHandler;
-import diskCacheV111.services.authorization.AuthorizationServiceException;
-import diskCacheV111.services.authorization.GplazmaService;
+import gplazma.authz.AuthorizationException;
+//import diskCacheV111.services.authorization.GplazmaService;
 import diskCacheV111.poolManager.PoolSelectionUnit.DirectionType;
 
 import java.util.*;
@@ -69,7 +69,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
      * gPlaza door connector
      */
     @SuppressWarnings("deprecation")
-    private GplazmaService _authService = null;
+    //private GplazmaService _authService = null;
 
     private boolean _strictSize            = false ;
     private String  _poolProxy        = null ;
@@ -113,17 +113,17 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
 
         if( _authorizationStrong || _authorizationRequired ) {
 
-            try {
-                _authService = GplazmaService.getInstance(_cell.getArgs());
-            } catch (AuthorizationServiceException e) {
+            //try {
+            //    _authService = null;//GplazmaService.getInstance(_cell.getArgs());
+            //} catch (AuthorizationException e) {
                 /*
                  * for not policy is unclear for me:
                  *    do we need to fail
                  *     or
                  *    nobody account is used
                  */
-                _cell.esay(e);
-            }
+            //    _cell.esay(e);
+            //}
 
         }
 
@@ -2727,16 +2727,16 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
 
         UserAuthRecord user = null ;
 
-        if( _authService != null ) {
-            try {
-                user = _authService.getUserRecord(_cell, name, role, _cell.getArgs());
-                _voInfo = new VOInfo(user.getGroup(), user.getRole() );
-            } catch (AuthorizationServiceException e) {
+        //if( _authService != null ) {
+            //try {
+            //    user = _authService.getUserRecord(_cell, name, role, _cell.getArgs());
+            //    _voInfo = new VOInfo(user.getGroup(), user.getRole() );
+            //} catch (AuthorizationException e) {
+            //    user = new UserAuthRecord("nobody", name, role, true, 0, -1, -1, "/", "/", "/", new HashSet<String>(0)) ;
+            //}
+        //}else{
                 user = new UserAuthRecord("nobody", name, role, true, 0, -1, -1, "/", "/", "/", new HashSet<String>(0)) ;
-            }
-        }else{
-            user = new UserAuthRecord("nobody", name, role, true, 0, -1, -1, "/", "/", "/", new HashSet<String>(0)) ;
-        }
+        //}
 
         _cell.say("Door authenticated for "+
                 _user.getName()+"("+_user.getRole()+","+user.UID+","+

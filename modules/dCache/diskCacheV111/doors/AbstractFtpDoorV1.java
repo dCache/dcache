@@ -148,6 +148,7 @@ import diskCacheV111.util.ChecksumFactory;
 import diskCacheV111.util.Checksum;
 import diskCacheV111.util.PnfsHandler;
 import org.dcache.auth.UserAuthBase;
+import org.dcache.auth.AuthorizationRecord;
 import diskCacheV111.services.acl.PermissionHandlerInterface;
 
 import org.dcache.services.AbstractCell;
@@ -633,6 +634,7 @@ public abstract class AbstractFtpDoorV1
     protected boolean _confirmEOFs = false;
 
     protected UserAuthBase _pwdRecord;
+    AuthorizationRecord authRecord=null;
     protected UserAuthBase _originalPwdRecord;
     protected String _pathRoot;
     protected String _curDirV;

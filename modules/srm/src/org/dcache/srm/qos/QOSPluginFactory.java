@@ -3,7 +3,6 @@ package org.dcache.srm.qos;
 import org.dcache.srm.AbstractStorageElement;
 import org.dcache.srm.util.Configuration;
 import java.lang.Thread;
-import org.dcache.srm.qos.terapaths.TerapathsPlugin;
 
 public class QOSPluginFactory {
 

@@ -72,15 +72,14 @@ package org.dcache.vehicles;
 
 import diskCacheV111.vehicles.AuthenticationMessage;
 import diskCacheV111.util.FQAN;
-import org.dcache.auth.AuthorizationRecord;
-import org.dcache.auth.GroupList;
-import org.dcache.auth.UserAuthRecord;
-import org.dcache.auth.Group;
+import org.dcache.auth.*;
 
 import java.util.List;
 import java.util.Random;
 import java.util.LinkedList;
 import java.util.Iterator;
+
+import gplazma.authz.records.gPlazmaAuthorizationRecord;
 
 public class AuthorizationMessage {
 
@@ -93,31 +92,35 @@ public class AuthorizationMessage {
 
     public AuthorizationMessage(AuthenticationMessage authmsg) {
     this.authrec = getAuthorizationRecord(authmsg);
+    this.authRequestID = authmsg.getAuthRequestID();
   }
 
   /** Extract values from AuthenticationMessage and write in AuthorizationRecord
   * @return A filled-in AuthorizationRecord.
   */
   private AuthorizationRecord  getAuthorizationRecord(AuthenticationMessage authmsg) {
-    AuthorizationRecord authrec = new AuthorizationRecord();
-    LinkedList <UserAuthRecord> authreclist =  authmsg.getUserAuthRecords();
-    Iterator<UserAuthRecord> authreciter = authreclist.iterator();
-    UserAuthRecord legacyauthrec = authreciter.hasNext() ? authreciter.next() : null;
-    if (legacyauthrec == null) return authrec;
 
-    authrec.setIdentity(legacyauthrec.Username);
-    authrec.setName(legacyauthrec.DN);
-    authrec.setUid(legacyauthrec.UID);
-    authrec.setPriority(legacyauthrec.priority);
-    authrec.setHome(legacyauthrec.Home);
-    authrec.setRoot(legacyauthrec.Root);
-    authrec.setReadOnly(legacyauthrec.ReadOnly);
+    LinkedList <gPlazmaAuthorizationRecord> gauthreclist =  authmsg.getgPlazmaAuthRecords();
+    return RecordConvert.gPlazmaToAuthorizationRecord(gauthreclist);
 
-    List grplistcoll = new LinkedList<GroupList>();
-    while(legacyauthrec!=null) {
+    /*
+    Iterator<gPlazmaAuthorizationRecord> authreciter = authreclist.iterator();
+    gPlazmaAuthorizationRecord gauthrec = authreciter.hasNext() ? authreciter.next() : null;
+    if (gauthrec == null) return authrec;
+
+    authrec.setIdentity(gauthrec.getUsername());
+    authrec.setName(gauthrec.getSubjectDN());
+    authrec.setUid(gauthrec.getUID());
+    authrec.setPriority(gauthrec.getPriority());
+    authrec.setHome(gauthrec.getHome());
+    authrec.setRoot(gauthrec.getRoot());
+    authrec.setReadOnly(gauthrec.isReadOnly());
+
+    List<GroupList> grplistcoll = new LinkedList<GroupList>();
+    while(gauthrec!=null) {
       GroupList grplist = new GroupList();
-      List grpcoll = new LinkedList<Group>();
-      int[] GIDs = legacyauthrec.GIDs;
+      List<Group> grpcoll = new LinkedList<Group>();
+      int[] GIDs = gauthrec.getGIDs();
       for (int gid : GIDs) {
         Group grp = new Group();
         grp.setGroupList(grplist);
@@ -125,18 +128,16 @@ public class AuthorizationMessage {
         grpcoll.add(grp);
       }
       grplist.setGroups(grpcoll);
-      FQAN fqan = legacyauthrec.getFqan();
-      String attribute = (fqan != null) ? fqan.toString() :  null;
-      grplist.setAttribute(attribute);
+      grplist.setAttribute(gauthrec.getFqan());
       grplist.setAuthRecord(authrec);
       grplistcoll.add(grplist);
-      legacyauthrec = authreciter.hasNext() ? authreciter.next() : null;
+      gauthrec = authreciter.hasNext() ? authreciter.next() : null;
     }
     authrec.setGroupLists(grplistcoll);
     authrec.setId();
 
-    this.authRequestID = authmsg.getAuthRequestID();
     return authrec;
+      */
   }
 
   /** Return the value of the AuthorizationRecord.

@@ -197,12 +197,8 @@ public class AuthorizationRecord implements Serializable, SRMUser{
     
     public String toString()
     {
-        StringBuilder sb = new java.lang.StringBuilder("AuthRec#");
-        sb.append(getId());
-        /*
-         * this was and may be again needed for debug of JPA
+        StringBuilder sb = new java.lang.StringBuilder("AR:");
            sb.append(Integer.toHexString(hashCode()));
-         */
         sb.append(' ').append(identity);
         sb.append(' ').append( name);
         sb.append(' ').append( uid);
@@ -213,13 +209,13 @@ public class AuthorizationRecord implements Serializable, SRMUser{
           }
         sb.append( priority ).append(' ');
         sb.append( home ).append(' ');
-        sb.append( root ).append(" < ");
+        sb.append( root ).append("\n< ");
         if(groupLists != null)
         {
+            sb.append(groupLists.size()).append(" groupLists :\n");
             for(GroupList groupList : groupLists)
             {
-               groupList.toStringBuilder(sb);
-               sb.append(",");
+                sb.append("  ").append(groupList).append('\n');
             }
         } else {
             sb.append("empty");
@@ -242,6 +238,7 @@ public class AuthorizationRecord implements Serializable, SRMUser{
         return null;
     }
 
+    @Transient
     public String getVoGroup() {
         String primaryAttribute = getPrimaryAttribute();
         if(primaryAttribute != null) {
@@ -344,6 +341,7 @@ public class AuthorizationRecord implements Serializable, SRMUser{
     }
 
     public int hashCode(){
+        initHashStrings();
         return getAuthn().hashCode()^getAuthz().hashCode();
     }
 

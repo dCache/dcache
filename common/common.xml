@@ -112,6 +112,7 @@
 
   </target>
 
+
   <target name="cells-protocols.bin" depends="prepare" description="Compile cells package and create cells.jar and cells-protocols.jar in 'binDir'">
 
     <ant dir="modules-builds" antfile="cells-build.xml" target="cells-protocols-bin" inheritAll="false">
@@ -143,10 +144,41 @@
 
 
   <!--
+          gPlazma
+  -->
+
+  <target name="gplazma" depends="prepare" description="Compile gPlazma package and create gplazma.jar">
+
+    <ant dir="modules-builds" antfile="gplazma-build.xml" target="gplazma.jar" inheritAll="false">
+      <property name="libDir" location="${libDir}" />
+      <property name="buildDir" value="${buildDir}/gplazma/" />
+      <property name="classesDir" value="${classesDir}" />
+	  <property name="sourceDir" location="${dCacheBox-module}/gPlazma/src" />
+	  <property name="buildTop" location="${buildTop}" />
+	  <property name="release.name" value="${release.name}" />
+    </ant>
+    
+  </target>
+      
+ <target name="gplazma.bin" depends="prepare" description="Compile gPlazma package and create gplazma.jar">
+
+    <ant dir="modules-builds" antfile="gplazma-build.xml" target="gplazma-bin" inheritAll="false">
+      <property name="libDir" location="${libDir}" />
+      <property name="buildDir" value="${buildDir}/gplazma/" />
+      <property name="classesDir" value="${classesDir}" />
+	  <property name="sourceDir" location="${dCacheBox-module}/gPlazma/src" />
+	  <property name="buildTop" location="${buildTop}" />
+   	  <property name="binDir" location="${binDir}" />
+	  <property name="release.name" value="${release.name}" />
+    </ant>
+
+  </target>
+    
+  <!--
           Core
   -->
 
-  <target name="dcache-core" depends="prepare,cells" description="Compile dcache package and create dcache.jar">
+  <target name="dcache-core" depends="prepare,cells,gplazma" description="Compile dcache package and create dcache.jar">
 
     <ant dir="modules-builds" antfile="dcache-core-build.xml" target="dcache.jar" inheritAll="false">
       <property name="libDir" location="${libDir}" />
@@ -170,7 +202,7 @@
     </ant>
   </target>
 
-  <target name="dcache.bin" depends="cells.bin" description="Compile dcache package and create dcache-srm.jar in 'binDir'">
+  <target name="dcache.bin" depends="cells.bin,gplazma.bin" description="Compile dcache package and create dcache-srm.jar in 'binDir'">
     <ant dir="modules-builds" antfile="dcache-core-build.xml" target="dcache-bin" inheritAll="false">
       <property name="libDir" location="${libDir}" />
       <property name="buildDir" value="${buildDir}/dcache/" />
@@ -200,7 +232,7 @@
           SRM
   -->
 
-  <target name="srm" depends="prepare,cells" description="Compile srm package and create srm.jar and srm-tomcat.jar">
+  <target name="srm" depends="prepare,cells,gplazma" description="Compile srm package and create srm.jar and srm-tomcat.jar">
 
     <ant dir="modules-builds" antfile="srm-build.xml" target="srm.jar" inheritAll="false">
       <property name="libDir" location="${libDir}" />
@@ -514,9 +546,9 @@
 
   <property name="cog.libDir" value="${libDir}/cog" />
 
-	  <property name="gplazma-libs.libDir" value="${libDir}/gplazma-libs" />
-	  <property name="gplazma-libs.tarName" value="${gplazma-libs.libDir}/gplazma-libs.tgz" />                               <!-- A pattern uniquely identifying one tar file -->
-	  <property name="gplazma-libs.untaredTo" value="${gplazma-libs.libDir}/gplazma-libs" />                   <!-- This is the dir the tar will create -->
+	  <property name="gplazma.libDir" value="${libDir}/gplazma" />
+	  <property name="gplazma.tarName" value="${gplazma.libDir}/gplazma.tgz" />                               <!-- A pattern uniquely identifying one tar file -->
+	  <property name="gplazma.untaredTo" value="${gplazma.libDir}/gplazma" />                   <!-- This is the dir the tar will create -->
 
 
   <property name="glue.libDir" value="${libDir}/glue" />

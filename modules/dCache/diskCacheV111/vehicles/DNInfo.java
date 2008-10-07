@@ -18,6 +18,7 @@ package diskCacheV111.vehicles;
 import java.io.Serializable;
 import java.util.LinkedList;
 import java.util.Collection;
+import java.util.List;
 
 public class DNInfo implements Serializable {
 
@@ -32,7 +33,7 @@ public class DNInfo implements Serializable {
     //private String[] fqan = {""};
     private String fqan;
     private String user = null;
-    private Collection<String> FQANs;
+    private List<String> FQANs;
 
   public DNInfo(String dn)
     {
@@ -51,7 +52,7 @@ public class DNInfo implements Serializable {
       this.fqan = fqan;
     }
 
-    public DNInfo(String dn, Collection<String> FQANs, String user)
+    public DNInfo(String dn, List<String> FQANs, String user)
     {
       this(dn, user);
       this.FQANs = FQANs;
@@ -64,7 +65,7 @@ public class DNInfo implements Serializable {
       this.id = id;
     }
 
-    public DNInfo(String dn, Collection<String> FQANs, long id)
+    public DNInfo(String dn, List<String> FQANs, long id)
     {
       this(dn);
       this.FQANs = FQANs;
@@ -77,7 +78,7 @@ public class DNInfo implements Serializable {
       this.id = id;
     }
 
-    public DNInfo(String dn, Collection<String> FQANs, String user, long id)
+    public DNInfo(String dn, List<String> FQANs, String user, long id)
     {
       this(dn, FQANs, user);
       this.id = id;
@@ -89,7 +90,7 @@ public class DNInfo implements Serializable {
       this.sourceId = sourceId;
     }
 
-    public DNInfo(String dn, Collection<String> FQANs, String user, long id, long sourceId)
+    public DNInfo(String dn, List<String> FQANs, String user, long id, long sourceId)
     {
       this(dn, FQANs, user, id);
       this.sourceId = sourceId;
@@ -101,7 +102,7 @@ public class DNInfo implements Serializable {
       this.name  = name ;
     }
 
-    public DNInfo(String dn, Collection<String> FQANs, String user, String name, long id, long sourceId)
+    public DNInfo(String dn, List<String> FQANs, String user, String name, long id, long sourceId)
     {
       this(dn, FQANs, user, id, sourceId);
       this.name  = name ;
@@ -122,7 +123,7 @@ public class DNInfo implements Serializable {
     }
 
     public DNInfo(String dn,
-      Collection<String> FQANs,
+      List<String> FQANs,
       String user,
       String name,
       long id,
@@ -190,7 +191,7 @@ public class DNInfo implements Serializable {
   /** Getter for property fqan.
      * @return Value of property fqan.
      */
-    public Collection<String> getFQANs() {
+    public List<String> getFQANs() {
       if (FQANs==null) {
         FQANs = new LinkedList<String> ();
         if(fqan!=null) FQANs.add(fqan);

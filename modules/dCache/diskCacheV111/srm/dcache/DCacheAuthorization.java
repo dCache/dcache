@@ -140,21 +140,17 @@ COPYRIGHT STATUS:
 package diskCacheV111.srm.dcache;
 
 import diskCacheV111.util.KAuthFile;
-import org.dcache.auth.AuthorizationRecord;
-import org.dcache.auth.UserAuthRecord;
-import org.dcache.auth.GroupList;
-import org.dcache.auth.Group;
+import org.dcache.auth.*;
 import org.dcache.auth.persistence.AuthRecordPersistenceManager;
 import org.dcache.srm.SRMAuthorization;
 import org.dcache.srm.SRMAuthorizationException;
-import java.util.Iterator;
 import org.dcache.srm.SRMUser;
 import org.ietf.jgss.GSSContext;
-import diskCacheV111.services.authorization.AuthorizationService;
-import diskCacheV111.services.authorization.AuthorizationServiceException;
+import gplazma.authz.AuthorizationController;
+import gplazma.authz.AuthorizationException;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.CellAdapter;
-import org.apache.log4j.Logger;
+
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Random;
@@ -289,22 +285,15 @@ public final class DCacheAuthorization implements SRMAuthorization {
 	
     private AuthorizationRecord authorize(GSSContext serviceContext,String name)
     throws SRMAuthorizationException {
-        AuthorizationService authServ = null;
+        AuthzQueryHelper authHelper;
         AuthorizationRecord authRecord = null;
-        try {
-             authServ = new AuthorizationService(gplazmaPolicyFilePath, parentcell);
-        }
-        catch(Exception e) {
-             e.printStackTrace();
-             throw new SRMAuthorizationException(e.toString());
-        }
 
         if (use_gplazmaAuthzCell) {
-          authServ.setDelegateToGplazma(delegate_to_gplazma);
           try {
-            authRecord =  (AuthorizationRecord) authServ.getAuthorization(serviceContext, new CellPath("gPlazma"), parentcell).getAuthorizationRecord(); 
-            //    (UserAuthRecord) authServ.authenticate(serviceContext, new CellPath("gPlazma"), parentcell).getUserAuthBase();
-          } catch (AuthorizationServiceException ase) {
+            authHelper = new AuthzQueryHelper(parentcell);
+            authHelper.setDelegateToGplazma(delegate_to_gplazma);
+            authRecord =  authHelper.getAuthorization(serviceContext, new CellPath("gPlazma"), parentcell).getAuthorizationRecord();
+          } catch (AuthorizationException ase) {
             if(!use_gplazmaAuthzModule) {
               throw new SRMAuthorizationException(ase.getMessage());
             }
@@ -315,11 +304,9 @@ public final class DCacheAuthorization implements SRMAuthorization {
 
         if (authRecord==null && use_gplazmaAuthzModule) {
           try {
-             Iterator<UserAuthRecord> recordsIter = authServ.authorize(serviceContext, name, null, null).iterator();
-             UserAuthRecord oldAuthRecord = recordsIter.hasNext() ? recordsIter.next() : null;
-             if(oldAuthRecord != null ) {
-                 authRecord = convertLegacyToNewAuthRec(oldAuthRecord);
-             }
+             AuthorizationController authCrtl = new AuthorizationController(gplazmaPolicyFilePath);
+             //authCrtl.setLoglevel();
+             authRecord = RecordConvert.gPlazmaToAuthorizationRecord(authCrtl.authorize(serviceContext, name, null, null));
           }
           catch(Exception ee) {
              ee.printStackTrace();

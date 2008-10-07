@@ -10,17 +10,12 @@ import java.util.HashSet;
 import java.util.TreeSet;
 
 
-@Entity
-@Inheritance(strategy=InheritanceType.SINGLE_TABLE)
 public class UserAuthRecord extends UserAuthBase
 {
     private static final long serialVersionUID = 2212212275053022221L;
 
-    @Basic
     public TreeSet<String> principals;
-    @Basic
     public int[] GIDs;
-    @Basic
     public int currentGIDindex=0;
 
     public UserAuthRecord(String user,

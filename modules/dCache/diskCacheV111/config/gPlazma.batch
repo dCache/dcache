@@ -29,16 +29,24 @@ create dmg.cells.services.LocationManager lm \
 # 
 #
 onerror continue
+set context -c srmDatabaseHost    localhost
+set context -c srmDbName          dcache
+set context -c srmDbUser          srmdcache
+set context -c srmDbPassword      srmdcache
 set context -c gPlazmaNumberOfSimutaneousRequests  30
 set context -c gPlazmaRequestTimeout               30
 set context -c gplazmaPolicy     ${ourHomeDir}/etc/dcachesrm-gplazma.policy
 
 onerror shutdown
 
-create diskCacheV111.services.authorization.GPLAZMA gPlazma \
+create org.dcache.auth.gplazma.GPLAZMA gPlazma \
           "default  \
            -export  \
            -gplazma-authorization-module-policy=${gplazmaPolicy} \
+	   -jdbcUrl=jdbc:postgresql://${srmDatabaseHost}/${srmDbName} \
+           -jdbcDriver=org.postgresql.Driver \
+           -dbUser=${srmDbUser} \
+           -dbPass=${srmDbPassword} \
            -num-simultaneous-requests=${gPlazmaNumberOfSimutaneousRequests} \
            -request-timeout=${gPlazmaRequestTimeout} \
 "

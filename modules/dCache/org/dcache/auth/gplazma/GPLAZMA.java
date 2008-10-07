@@ -1,7 +1,7 @@
 // $Id: GPLAZMA.java,v 1.25 2007-08-03 15:46:02 timur Exp $
 // $Log: not supported by cvs2svn $
 // Revision 1.24  2007/04/17 21:47:33  tdh
-// Fixed forwarding of log level to AuthorizationService.
+// Fixed forwarding of log level to AuthorizationController.
 //
 // Revision 1.23  2007/03/27 19:20:28  tdh
 // Merge of support for multiple attributes from 1.7.1.
@@ -21,13 +21,13 @@
 // Convert bouncycastle DN to globus form.
 // Improved error reporting, exception handling.
 // Setting DN in results.
-// Moved some functions from GPLAZMA to AuthorizationService.
+// Moved some functions from GPLAZMA to AuthorizationController.
 //
 // Revision 1.18  2006/12/15 15:54:43  tdh
 // Redid indentations.
 //
 // Revision 1.17  2006/11/29 19:10:46  tdh
-// Added debug, warn log levels and ac command to set loglevel. Added lines to set loglevel in AuthorizationService.
+// Added debug, warn log levels and ac command to set loglevel. Added lines to set loglevel in AuthorizationController.
 //
 // Revision 1.16  2006/11/28 21:11:18  tdh
 // Removed hard-code of logging level. Added log-level flag and warn output function.
@@ -157,42 +157,44 @@ COPYRIGHT STATUS:
   documents or software obtained from this server.
  */
 
-package diskCacheV111.services.authorization;
+package org.dcache.auth.gplazma;
 
-import org.dcache.auth.UserAuthBase;
-import org.dcache.auth.UserAuthRecord;
+import org.dcache.auth.AuthorizationRecord;
 import diskCacheV111.vehicles.*;
+import org.dcache.auth.persistence.AuthRecordPersistenceManager;
 import diskCacheV111.vehicles.transferManager.RemoteGsiftpDelegateUserCredentialsMessage;
-import diskCacheV111.vehicles.transferManager.RemoteGsiftpTransferProtocolInfo;
+import gplazma.authz.AuthorizationException;
+import gplazma.authz.AuthorizationController;
+import gplazma.authz.util.X509CertUtil;
+import gplazma.authz.records.gPlazmaAuthorizationRecord;
 import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellNucleus;
-import dmg.cells.nucleus.CellPath;
 import dmg.util.Args;
 import org.dcache.srm.security.SslGsiSocketFactory;
+import org.dcache.vehicles.AuthorizationMessage;
+import org.dcache.vehicles.gPlazmaDelegationInfo;
 import org.globus.gsi.gssapi.net.impl.GSIGssSocket;
 import org.ietf.jgss.*;
+import org.apache.log4j.*;
 
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
 import java.net.UnknownHostException;
 import java.util.concurrent.*;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.Iterator;
-import java.util.Collection;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
-import org.bouncycastle.jce.provider.X509CertificateObject;
 import java.security.cert.X509Certificate;
 
 /**GPLAZMA Cell.<br/>
  * This Cell make callouts on behalf of other cells to a GUMS server for authenfication and Storage Element information.
- * @see diskCacheV111.services.authorization.AuthorizationService
+ * @see gplazma.authz.AuthorizationController
  **/
-public class GPLAZMA extends CellAdapter implements Runnable {
+public class GPLAZMA extends CellAdapter {
+
+  static Logger log = Logger.getLogger(GPLAZMA.class.getSimpleName());
+  private static String logpattern = "%d{MM/dd HH:mm:ss,SSS} %C{1} ";
 
   /** Location of gss files **/
   private String service_key           = "/etc/grid-security/hostkey.pem";
@@ -202,25 +204,20 @@ public class GPLAZMA extends CellAdapter implements Runnable {
   /** Policy file to specify the behavior of GPLAZMA **/
   protected String gplazmaPolicyFilePath = "/opt/d-cache/config/dcachesrm-gplazma.policy";
 
+  /** Class for persisting and retrieving AuthorizationRecords **/
+  AuthRecordPersistenceManager authzPersistenceManager= null;
+
   /** Arguments specified in .batch file **/
   private Args _opt;
 
   /** Specifies logging level **/
-  private int loglevel = DEBUG_ERROR;
-
-
-  /**
-   *  debug levels, bit mask
-   */
-
-  static private final int DEBUG_NONE    = 0;
-  static private final int DEBUG_ERROR   = 1;
-  static private final int DEBUG_WARN    = 2;
-  static private final int DEBUG_INFO    = 4;
-  static private final int DEBUG_DEBUG   = 8;
+  private Level loglevel = Level.ERROR;
 
   /** Username returned by GUMS will be used **/
   public static final String GLOBUS_URL_COPY_DEFAULT_USER = ":globus-mapping:";
+
+  /** Whether to drop the email attribute from the subject DN extracted from the user's certificate chain **/
+  private boolean omitEmail=false;
 
   /** Thread pool to handle multiple simultaneous authentication requests. **/
   //private final ExecutorService authpool;
@@ -239,36 +236,10 @@ public class GPLAZMA extends CellAdapter implements Runnable {
   /** Cancel time in milliseconds **/
   private static long toolong = 1000*DELAY_CANCEL_TIME;
 
-  /** Number of authorizations tested **/
-  private long numtests=0;
-
-  /** Average time needed for a test authorization **/
-  private float AveTime=0;
-
-  /** Context for testing. If "-proxy-certificate" is set in batch file, will use proxy.
-   *  Otherwise, will use host certificates.
-   * **/
-  GSSContext test_context=null;
-
-  /**
-   * Distinguished name to use for testing. If set, will ignore test_context.
-   */
-  String test_dn=null;
-
-  /**
-   * Fully-qualified attribute name to use for testing. If set, will ignore test_context.
-   */
-  String test_role=null;
-
-  private boolean did_reset=false;
-
   /** Reads input parametes from batch file and initializes thread pools. **/
   public GPLAZMA( String name , String args )  throws Exception {
 
     super( name, GPLAZMA.class.getSimpleName(), args , false ) ;
-
-    //useInterpreter( true ) ;
-    //addCommandListener(this);
 
     _opt = getArgs() ;
 
@@ -291,12 +262,21 @@ public class GPLAZMA extends CellAdapter implements Runnable {
       } else {
         ac_set_LogLevel_$_1(new Args(new String[]{level}));
       }
+
+      setLogLayout(0);
+
+      authzPersistenceManager =
+          new AuthRecordPersistenceManager(
+              _opt.getOpt("jdbcUrl"),
+              _opt.getOpt("jdbcDriver"),
+              _opt.getOpt("dbUser"),
+              _opt.getOpt("dbPass"));
+
       THREAD_COUNT = setParam("num-simultaneous-requests", THREAD_COUNT);
       DELAY_CANCEL_TIME = setParam("request-timeout", DELAY_CANCEL_TIME);
 
       say(this.toString() + " starting with policy file " + gplazmaPolicyFilePath);
 
-      //authpool = Executors.newFixedThreadPool(THREAD_COUNT);
       authpool =
         new ThreadPoolTimedExecutor(  THREAD_COUNT,
               THREAD_COUNT,
@@ -308,11 +288,8 @@ public class GPLAZMA extends CellAdapter implements Runnable {
 
       say(this.toString() + " started");
 
-      if(setParam("run-gplazma-tests", "false").equals("true")) run_test_authorizations();
-
     } catch( Exception iae ){
-      esay(this.toString() + " couldn't start due to " + iae);
-      esay(iae);
+      log.error(this.toString() + " couldn't start due to " + iae);
       start() ;
       kill() ;
       throw iae ;
@@ -324,124 +301,6 @@ public class GPLAZMA extends CellAdapter implements Runnable {
 
     say(" Constructor finished" ) ;
   }
-
-
-  /**
-   * valid values NONE, ERROR, INFO, WARN, DEBUG
-   * default ERROR
-   * @param levelString
-   * @return bitmask of log level or default if string not in valid values of NULL
-   */
-  private static int stringToLogLevel(String levelString) {
-
-	  int debugMask = DEBUG_ERROR;
-
-
-	  if( levelString != null ) {
-		  String level = levelString.toUpperCase();
-
-		  if( level.equals("DEBUG") ) {
-			  debugMask = DEBUG_DEBUG | DEBUG_INFO | DEBUG_WARN |  DEBUG_ERROR;
-		  } else if (level.equals("INFO") ) {
-			  debugMask = DEBUG_INFO | DEBUG_WARN |  DEBUG_ERROR;
-		  } else if (level.equals("WARN") ) {
-			  debugMask = DEBUG_WARN |  DEBUG_ERROR;
-		  } else if (level.equals("ERROR") ) {
-			  debugMask = DEBUG_ERROR;
-		  } else if (level.equals("NONE") ) {
-			  debugMask = DEBUG_NONE;
-		  }
-	  }
-
-	  return debugMask;
-
-  }
-
-  /**
-   *
-   * @param levelMask
-   * @return NULL if no valid mask
-   */
-  private static String logLevelToString( int levelMask ) {
-
-	  String levelString = null;
-
-	  if( (levelMask & DEBUG_DEBUG) > 0 ) {
-		  levelString = "ERROR | WARN | INFO | DEBUG";
-	  }else if ( (levelMask & DEBUG_INFO) > 0 ) {
-		  levelString = "ERROR | WARN | INFO";
-	  }else if ( (levelMask & DEBUG_WARN) > 0 ) {
-		  levelString = "ERROR | WARN";
-	  }else if ( (levelMask & DEBUG_ERROR) > 0 ) {
-		  levelString = "ERROR";
-	  }else if ( levelMask == DEBUG_NONE  ) {
-		  levelString = "NONE";
-	  }
-
-	  return levelString;
-  }
-
-  /**
-   *
-   * @param levelMask
-   * @return NULL if no valid mask
-   */
-  private static String logLevelToShortString( int levelMask ) {
-
-	  String levelString = null;
-
-	  if( (levelMask & DEBUG_DEBUG) > 0 ) {
-		  levelString = "DEBUG";
-	  }else if ( (levelMask & DEBUG_INFO) > 0 ) {
-		  levelString = "INFO";
-	  }else if ( (levelMask & DEBUG_WARN) > 0 ) {
-		  levelString = "WARN";
-	  }else if ( (levelMask & DEBUG_ERROR) > 0 ) {
-		  levelString = "ERROR";
-	  }else if ( levelMask == DEBUG_NONE  ) {
-		  levelString = "NONE";
-	  }
-
-	  return levelString;
-  }
-
-
-   /** Print to System.err if debug requested **/
-   public void debug( String message ){
-      if( loglevel >= DEBUG_DEBUG ) {
-        super.esay(message);
-      }
-   }
-
-   /** Print to System.err if info requested **/
-   public void say( String message ){
-      if( loglevel  >=  DEBUG_INFO ) {
-        super.esay(message);
-      }
-   }
-
-   /** Print to System.err if warning requested **/
-   public void warn( String message ){
-      if(  loglevel >=  DEBUG_WARN ) {
-        super.esay(message);
-      }
-   }
-
-   /** Print to System.err **/
-   public void esay( String message ){
-
-      if( loglevel >=  DEBUG_ERROR) {
-    	  super.esay(message);
-      }
-   }
-
-   /** Print to System.err **/
-   public void esay( Throwable t ){
-
-	 if( loglevel >=  DEBUG_ERROR) {
-		 super.esay(t);
-	 }
-   }
 
   /**
    * Sets the logging level.
@@ -456,17 +315,18 @@ public class GPLAZMA extends CellAdapter implements Runnable {
       if( newlevel.equals("DEBUG") ||
           newlevel.equals("INFO")  ||
           newlevel.equals("WARN")  ||
-          newlevel.equals("ERROR")  )
-        loglevel = stringToLogLevel(newlevel);
+          newlevel.equals("ERROR") ||
+          newlevel.equals("FATAL")  )
+        log.setLevel(Level.toLevel(newlevel.toUpperCase()));
       else
         return "Log level not set. Allowed values are DEBUG, INFO, WARN, ERROR.";
 
-    return "LogLevel set to " + logLevelToString(loglevel);
+    return "Log level set to " + log.getLevel();
   }
 
   
   public final String hh_get_mapping = "\"<DN>\" [\"FQAN1\",...,\"FQANn\"]";
-  public String ac_get_mapping_$_1_2 (Args args) throws AuthorizationServiceException {
+  public String ac_get_mapping_$_1_2 (Args args) throws AuthorizationException {
       
       
       String principal = args.argv(0);
@@ -474,7 +334,7 @@ public class GPLAZMA extends CellAdapter implements Runnable {
        * returns null if argv(1) does not exist
        */
       String roleArg = args.argv(1);
-      Collection<String> roles ;
+      List<String> roles ;
       if( roleArg != null ) {          
           String[] roleList = roleArg.split(",");
           roles = Arrays.asList(roleList) ;                   
@@ -482,15 +342,63 @@ public class GPLAZMA extends CellAdapter implements Runnable {
           roles = new ArrayList<String>(0);
       }
       
-      List<UserAuthRecord> mappedRecords =  authorize(principal, roles, null, 0);
+      List<gPlazmaAuthorizationRecord> mappedRecords =  authorize(principal, roles, null, 0);
       StringBuilder sb = new StringBuilder();
-      for( UserAuthRecord record : mappedRecords) {
-          sb.append("mapped as: ").append(record.Username).append(" ").
-          append(record.UID).append(" ").append(record.GID).append(" ").append(record.Root);
+      for( gPlazmaAuthorizationRecord record : mappedRecords) {
+          sb.append("mapped as: ").append(record.getUsername()).append(" ").
+          append(record.getUID()).append(" ").append(record.getGIDs()).append(" ").append(record.getRoot());
       }
       
       return sb.toString();
   }
+
+
+    private void setLogLayout(long authRequestID) {
+        /*
+        Appender gplazma_apnd = log.getAppender("GPLAZMA");
+        if(gplazma_apnd==null) {
+            Enumeration appenders = log.getParent().getAllAppenders();
+            while(appenders.hasMoreElements()) {
+                Appender apnd = (Appender) appenders.nextElement();
+                if(apnd instanceof ConsoleAppender) {
+                    if (authRequestID != 0) {
+                        String authRequestID_str = AuthorizationController.getFormattedAuthRequestID(authRequestID);
+                        apnd.setLayout(new PatternLayout(logpattern + "authRequestID " + authRequestID_str + " %m%n"));
+                    } else {
+                        apnd.setLayout(new PatternLayout(logpattern + "%m%n"));
+                    }
+                }
+            }
+        } else {
+            if(gplazma_apnd instanceof ConsoleAppender) {
+                if (authRequestID != 0) {
+                    String authRequestID_str = AuthorizationController.getFormattedAuthRequestID(authRequestID);
+                    gplazma_apnd.setLayout(new PatternLayout(logpattern + "authRequestID " + authRequestID_str + "%m%n"));
+                } else {
+                    gplazma_apnd.setLayout(new PatternLayout(logpattern + "%m%n"));
+                }
+            }
+        }
+        */
+        String authRequestID_str = AuthorizationController.getFormattedAuthRequestID(authRequestID);
+        PatternLayout loglayout = new PatternLayout(logpattern + authRequestID_str + " %m%n");
+        boolean found_console_appender=false;
+        Enumeration appenders = log.getParent().getAllAppenders();
+        while(appenders.hasMoreElements()) {
+            Appender apnd = (Appender) appenders.nextElement();
+            if(apnd instanceof ConsoleAppender) {
+                found_console_appender = true;
+                apnd.setLayout(loglayout);
+                ((ConsoleAppender)apnd).setThreshold(Level.DEBUG);
+            }
+        }
+        if(!found_console_appender) {
+            ConsoleAppender apnd = new ConsoleAppender(loglayout);
+            apnd.setThreshold(Level.DEBUG);
+            log.getParent().addAppender(apnd);
+        }
+    }
+
   
   /**
    * is called if user types 'info'
@@ -507,7 +415,7 @@ public class GPLAZMA extends CellAdapter implements Runnable {
    */
   public void cleanUp(){
 
-    debug(" Clean up called ... " ) ;
+    log.debug(" Clean up called ... " ) ;
     synchronized( this ){
       notifyAll() ;
     }
@@ -515,7 +423,7 @@ public class GPLAZMA extends CellAdapter implements Runnable {
     authpool.shutdownNow();
     delaychecker.shutdownNow();
 
-    debug( " Done" ) ;
+    log.debug( "Cleanup done" ) ;
   }
 
   /**
@@ -532,13 +440,13 @@ public class GPLAZMA extends CellAdapter implements Runnable {
       authpool.execute(authtask);
     }
 
-    if(msg.getMessageObject() instanceof X509Info) {
+    if(msg.getMessageObject() instanceof diskCacheV111.vehicles.X509Info) {
       AuthX509Runner arunner = new AuthX509Runner(msg);
       FutureTimedTask authtask = new FutureTimedTask(arunner, null, System.currentTimeMillis());
       authpool.execute(authtask);
     }
 
-    if(msg.getMessageObject() instanceof RemoteGsiftpTransferProtocolInfo) {
+    if(msg.getMessageObject() instanceof gPlazmaDelegationInfo) {
       AuthRunner arunner = new AuthRunner(msg);
       FutureTimedTask authtask = new FutureTimedTask(arunner, null, System.currentTimeMillis());
       authpool.execute(authtask);
@@ -573,21 +481,18 @@ public class GPLAZMA extends CellAdapter implements Runnable {
      * to the calling cell over the delegation socket.
      */
     public void run() {
-      //try{Thread.sleep(500);} catch(Exception e){}
-      //skip_processing=true;
       if(skip_processing) {
         returnNullMessage();
         return;
       }
 
-      ProtocolInfo protocol = (ProtocolInfo) msg.getMessageObject();
-      //say("delegation protocol= " + protocol.getProtocol());
-      if( ! ( protocol instanceof RemoteGsiftpTransferProtocolInfo ) ) {
-        esay("delegation protocol info is not RemoteGsiftpransferProtocolInfo" );
+      Object msg_obj =  msg.getMessageObject();
+      if( ! ( msg_obj instanceof gPlazmaDelegationInfo ) ) {
+        log.error("Delegation info is not gPlazmaDelegationInfo" );
         return;
       }
 
-      RemoteGsiftpTransferProtocolInfo remoteGsi = (RemoteGsiftpTransferProtocolInfo) protocol;
+      gPlazmaDelegationInfo deleginfo = (gPlazmaDelegationInfo) msg_obj;
 
       java.net.ServerSocket ss= null;
       try {
@@ -595,7 +500,7 @@ public class GPLAZMA extends CellAdapter implements Runnable {
         ss.setSoTimeout(DELAY_CANCEL_TIME*1000);
       }
       catch(IOException ioe) {
-        esay("exception while trying to create a server socket for delegation: " + ioe);
+        log.error("exception while trying to create a server socket for delegation: " + ioe);
         if(ss!=null) {try {ss.close();} catch(IOException e1) {}}
         return;
       }
@@ -603,36 +508,36 @@ public class GPLAZMA extends CellAdapter implements Runnable {
       RemoteGsiftpDelegateUserCredentialsMessage cred_request;
       try {
         cred_request =
-            new RemoteGsiftpDelegateUserCredentialsMessage(remoteGsi.getId(),
-                remoteGsi.getId(),
+            new RemoteGsiftpDelegateUserCredentialsMessage(deleginfo.getId(),
+                deleginfo.getId(),
                 java.net.InetAddress.getLocalHost().getHostName(),
                 ss.getLocalPort(),
-                remoteGsi.getRequestCredentialId());
+                deleginfo.getRequestCredentialId());
       } catch(UnknownHostException uhe) {
-        esay("could not find localhost name : " + uhe);
+        log.error("could not find localhost name : " + uhe);
         if(ss!=null) {try {ss.close();} catch(IOException e1) {}}
         return;
       }
 
-      long authRequestID = remoteGsi.getId();
-      debug("authRequestID " + authRequestID + " sending message requesting delegation " + msg.getUOID());
+      long authRequestID = deleginfo.getId();
+      setLogLayout(authRequestID);
+      log.debug("sending message requesting delegation " + msg.getUOID());
       msg.revertDirection() ;
       msg.setMessageObject(cred_request) ;
       try{
         sendMessage(msg) ;
       } catch ( Exception ioe ){
-        esay("authRequestID " + authRequestID + " Can't send acl_response for : " + ioe) ;
-        esay(ioe) ;
+        log.error("Can't send acl_response for : " + ioe) ;
       }
 
       java.net.Socket deleg_socket=null;
       try{
-        debug("authRequestID " + authRequestID + " waiting for delegation connection");
+        log.debug("waiting for delegation connection");
         //timeout after DELAY_CANCEL_TIME seconds if credentials not delegated
         deleg_socket = ss.accept();
-        debug("authRequestID " + authRequestID + " connected");
+        log.debug("connected");
       } catch ( IOException ioe ){
-        esay("authRequestID " + authRequestID + " failed to receive delegated server socket");
+        log.error("failed to receive delegated server socket");
         if(ss!=null) {try {ss.close();} catch(IOException e1) {}}
         return;
       }
@@ -656,10 +561,10 @@ public class GPLAZMA extends CellAdapter implements Runnable {
         gsiSocket.setWrapMode(org.globus.gsi.gssapi.net.GssSocket.SSL_MODE);
         if(deleg_socket!=null) {
           gsiSocket.startHandshake();
-          debug("authRequestID " + authRequestID + " delegation succeeded");
+          log.debug("delegation succeeded");
         }
       } catch (Throwable t) {
-        esay(t);
+        log.error(t);
         // we do not propogate this exception since some exceptions
         // we catch are not serializable!!!
         //throw new Exception(t.toString());
@@ -669,39 +574,39 @@ public class GPLAZMA extends CellAdapter implements Runnable {
 
 
        Object writethis;
-       debug("authRequestID " + authRequestID + " trying authentication");
+       log.debug("trying authentication");
        try {
-         LinkedList<UserAuthRecord> user_auths = authorize(context, remoteGsi.getUser(), authRequestID);
-         if(user_auths==null) {
-           String errorMsg = "authRequestID " + authRequestID + " authentication denied";
-           warn(errorMsg);
-           writethis = new AuthorizationServiceException(errorMsg);
+         LinkedList<gPlazmaAuthorizationRecord> gauthlist = authorize(context, deleginfo.getUser(), authRequestID);
+         if(gauthlist==null) {
+           String errorMsg = "authentication denied";
+           log.warn(errorMsg);
+           writethis = new AuthorizationException("authRequestID " + authRequestID + errorMsg);
          } else {
-           Iterator<UserAuthRecord> recordsIter = user_auths.iterator();
+           Iterator<gPlazmaAuthorizationRecord> recordsIter = gauthlist.iterator();
            while (recordsIter.hasNext()) {
-           UserAuthRecord rec = recordsIter.next();
-           debug("authRequestID " + authRequestID + " mapped to " + rec.Username);
+           gPlazmaAuthorizationRecord rec = recordsIter.next();
+           log.debug("mapped to " + rec.getUsername());
            }
-           writethis = new AuthenticationMessage(user_auths, remoteGsi.getId());
+           writethis = new AuthenticationMessage(gauthlist, deleginfo.getId());
          }
        } catch (Exception ae) {
-         warn("authRequestID " + authRequestID + " Exception: " + ae.getMessage());
+         log.warn("Exception: " + ae.getMessage());
          writethis = ae;
        }
 
-      debug("authRequestID " + authRequestID + " sending authentication object");
+      log.debug("sending authentication object");
       if(gsiSocket!=null) {
         try {
           ObjectOutputStream authstrm = new ObjectOutputStream(gsiSocket.getOutputStream());
           authstrm.flush();
           authstrm.writeObject(writethis);
           authstrm.flush();
-          debug("authRequestID " + authRequestID + " sent authentication object");
+          log.debug("sent authentication object");
         } catch (IOException ioe) {
-          esay("530 authRequestID " + authRequestID + " could not send authorization object");
+          log.error("could not send authorization object");
         }
       } else {
-        esay("530 authRequestID " + authRequestID + " context stream not established");
+        log.error("context stream not established");
       }
 
       try {
@@ -718,20 +623,19 @@ public class GPLAZMA extends CellAdapter implements Runnable {
      */
     public void returnNullMessage() {
       long authRequestID = 0;
-      ProtocolInfo protocol = (ProtocolInfo) msg.getMessageObject();
-      if(protocol instanceof RemoteGsiftpTransferProtocolInfo) {
-        RemoteGsiftpTransferProtocolInfo remoteGsi = (RemoteGsiftpTransferProtocolInfo) protocol;
-        authRequestID = remoteGsi.getId();
+      Object msg_obj =  msg.getMessageObject();
+      if(msg_obj instanceof gPlazmaDelegationInfo) {
+        gPlazmaDelegationInfo deleginfo = (gPlazmaDelegationInfo) msg_obj;
+        authRequestID = deleginfo.getId();
       }
 
       msg.revertDirection() ;
       msg.setMessageObject(null);
       try {
-        esay("authRequestID " + authRequestID + " Timed out, returning null message") ;
+        log.error("Timed out, returning null message") ;
         sendMessage(msg);
       } catch ( Exception ioe ){
-        esay("authRequestID " + authRequestID + " Can't send null message for : " + ioe) ;
-        esay(ioe) ;
+        log.error("Can't send null message for : " + ioe) ;
       }
     }
 
@@ -754,46 +658,44 @@ public class GPLAZMA extends CellAdapter implements Runnable {
       }
 
       Object msgobj = msg.getMessageObject();
-      debug("message object = " + msgobj.getClass());
+      log.debug("message object = " + msgobj.getClass());
       if( ! ( msgobj instanceof DNInfo ) ) {
-        esay("message object is not DNInfo" );
+        log.error("message object is not DNInfo");
         return;
       }
 
       DNInfo dnInfo = (DNInfo) msgobj;
       String subjectDN = dnInfo.getDN();
-      Collection<String> roles = dnInfo.getFQANs();
+      List<String> roles = dnInfo.getFQANs();
       long authRequestID = dnInfo.getId();
-      String authRequestID_str = AuthorizationService.getFormattedAuthRequestID(authRequestID);
+      setLogLayout(authRequestID);
 
-      debug("authRequestID " + authRequestID_str + " trying authentication");
+      log.debug("trying authentication");
       Object writethis;
       try {
-         LinkedList <UserAuthRecord> user_auths = authorize(subjectDN, roles, dnInfo.getUser(), authRequestID);
-         //LinkedList <UserAuthRecord> user_auths = authorize(subjectDN, role, dnInfo.getUser(), authRequestID);
+         LinkedList <gPlazmaAuthorizationRecord> user_auths = authorize(subjectDN, roles, dnInfo.getUser(), authRequestID);
          if(user_auths==null) {
-           warn("authRequestID " + authRequestID_str + " authentication denied");
+           log.warn("authentication denied");
          } else {
-           Iterator <UserAuthRecord> recordsIter = user_auths.iterator();
+           Iterator <gPlazmaAuthorizationRecord> recordsIter = user_auths.iterator();
            while (recordsIter.hasNext()) {
-             UserAuthRecord rec = recordsIter.next();
-             debug("authRequestID " + authRequestID_str + " mapped to " + rec.Username);
+             gPlazmaAuthorizationRecord rec = recordsIter.next();
+             log.debug("mapped to " + rec.getUsername());
            }
          }
          writethis = new DNAuthenticationMessage(user_auths, dnInfo);
        } catch (Exception ae) {
-         esay("authRequestID " + authRequestID_str + " Caught exception in authentication. Forwarding as authentication object");
-         writethis = new AuthorizationServiceException("authRequestID " + authRequestID_str + " " + ae.getMessage());
+         log.error("Caught exception in authentication. Forwarding as authentication object");
+         writethis = new AuthorizationException(ae.getMessage());
        }
 
-      debug("authRequestID " + authRequestID_str + " sending message containing authentication");
+      log.debug("sending message containing authentication");
       msg.revertDirection() ;
       msg.setMessageObject(writethis) ;
       try{
         sendMessage(msg) ;
       } catch ( Exception ioe ){
-        esay("authRequestID " + authRequestID_str + " Can't send acl_response for : " + ioe) ;
-        esay(ioe) ;
+        log.error("Can't send acl_response for : " + ioe) ;
       }
 
     }
@@ -806,9 +708,9 @@ public class GPLAZMA extends CellAdapter implements Runnable {
       long authRequestID = 0;
 
       Object msgobj = msg.getMessageObject();
-      debug("message object = " + msgobj.getClass());
+      log.debug("message object = " + msgobj.getClass());
       if( ! ( msgobj instanceof DNInfo ) ) {
-        esay("message object is not DNInfo" );
+        log.error("message object is not DNInfo" );
       } else {
         DNInfo dnInfo = (DNInfo) msgobj;
         authRequestID = dnInfo.getId();
@@ -817,11 +719,10 @@ public class GPLAZMA extends CellAdapter implements Runnable {
       msg.revertDirection() ;
       msg.setMessageObject(null);
       try {
-        esay("authRequestID " + authRequestID + " Timed out, returning null message") ;
+        log.error("Timed out, returning null message") ;
         sendMessage(msg);
       } catch ( Exception ioe ){
-        esay("authRequestID " + authRequestID + " Can't send null message for : " + ioe) ;
-        esay(ioe) ;
+        log.error("Can't send null message for : " + ioe) ;
       }
     }
   }
@@ -842,45 +743,61 @@ public class GPLAZMA extends CellAdapter implements Runnable {
       }
 
       Object msgobj = msg.getMessageObject();
-      debug("message object = " + msgobj.getClass());
-      if( ! ( msgobj instanceof X509Info ) ) {
-        esay("message object is not X509Info" );
+      log.debug("message object = " + msgobj.getClass());
+      if( ! ( msgobj instanceof diskCacheV111.vehicles.X509Info ) ) {
+        log.error("message object is not X509Info" );
         return;
       }
 
-      X509Info x509info = (X509Info) msgobj;
+      diskCacheV111.vehicles.X509Info x509info = (diskCacheV111.vehicles.X509Info) msgobj;
       X509Certificate[] chain = x509info.getChain();
       long authRequestID = x509info.getId();
-      String authRequestID_str = AuthorizationService.getFormattedAuthRequestID(authRequestID);
+      setLogLayout(authRequestID);
 
-      debug("authRequestID " + authRequestID_str + " trying authentication");
+      log.debug("trying authentication");
       Object writethis;
       try {
-        LinkedList <UserAuthRecord> user_auths = authorize(chain, x509info.getUser(), authRequestID);
-        if(user_auths==null) {
-          warn("authRequestID " + authRequestID_str + " authorization denied");
-          writethis = new AuthorizationServiceException("authRequestID " + authRequestID_str + " authorization denied");
+        LinkedList <gPlazmaAuthorizationRecord> gauthlist = authorize(chain, x509info.getUser(), authRequestID);
+        if(gauthlist==null) {
+          log.warn("authorization denied");
+          writethis = new AuthorizationException("authorization denied");
         } else {
-          Iterator <UserAuthRecord> recordsIter = user_auths.iterator();
-          while (recordsIter.hasNext()) {
-            UserAuthRecord rec = recordsIter.next();
-            debug("authRequestID " + authRequestID_str + " mapped to " + rec.Username);
+          Iterator <gPlazmaAuthorizationRecord> recordsIter = gauthlist.iterator();
+          //while (recordsIter.hasNext()) {
+          //  gPlazmaAuthorizationRecord rec = recordsIter.next();
+          //  log.debug("mapped to " + rec.getUsername());
+          //}
+          writethis = new X509AuthenticationMessage(gauthlist, x509info);
+          AuthenticationMessage authnm = new AuthenticationMessage(gauthlist, authRequestID);
+          AuthorizationMessage authzm = new AuthorizationMessage(authnm);
+          AuthorizationRecord authrec = authzm.getAuthorizationRecord();
+          long id = authrec.getId();
+
+          AuthorizationRecord r=null;
+          try {
+              do {
+                  authrec.setId(id++); // Effectively, a delayed incrementation.
+                  r = authzPersistenceManager.find(authrec.getId());
+              } while (r!=null && !r.equals(authrec));
+          } catch (Exception e) {
+              log.error(e.getMessage() + " " + e.getCause());
           }
-          writethis = new X509AuthenticationMessage(user_auths, x509info);
+          if (r==null) {
+            authzPersistenceManager.persist(authrec);
+          }
         }
       } catch (Exception ae) {
-        esay("authRequestID " + authRequestID_str + " " + ae.getMessage());
+        log.error(ae.getMessage());
         writethis = ae;
       }
 
-      debug("authRequestID " + authRequestID_str + " sending authentication message");
+      log.debug("sending authentication message");
       msg.revertDirection() ;
       msg.setMessageObject(writethis) ;
       try{
         sendMessage(msg) ;
       } catch ( Exception ioe ){
-        esay("authRequestID " + authRequestID_str + " Can't send acl_response for : " + ioe) ;
-        esay(ioe) ;
+        log.error("Can't send acl_response for : " + ioe) ;
       }
 
     }
@@ -893,22 +810,21 @@ public class GPLAZMA extends CellAdapter implements Runnable {
       long authRequestID = 0;
 
       Object msgobj = msg.getMessageObject();
-      debug("message object = " + msgobj.getClass());
-      if( ! ( msgobj instanceof X509Info ) ) {
-        esay("message object is not X509Info" );
+      log.debug("message object = " + msgobj.getClass());
+      if( ! ( msgobj instanceof diskCacheV111.vehicles.X509Info ) ) {
+        log.error("message object is not X509Info" );
       } else {
-        X509Info X509Info_obj = (X509Info) msgobj;
+        diskCacheV111.vehicles.X509Info X509Info_obj = (diskCacheV111.vehicles.X509Info) msgobj;
         authRequestID = X509Info_obj.getId();
       }
 
       msg.revertDirection() ;
       msg.setMessageObject(null);
       try {
-        esay("authRequestID " + authRequestID + " Timed out, returning null message") ;
+        log.error("Timed out, returning null message") ;
         sendMessage(msg);
       } catch ( Exception ioe ){
-        esay("authRequestID " + authRequestID + " Can't send null message for : " + ioe) ;
-        esay(ioe) ;
+        log.error("Can't send null message for : " + ioe) ;
       }
     }
   }
@@ -1087,52 +1003,53 @@ public class GPLAZMA extends CellAdapter implements Runnable {
    * @param authRequestID
    * @return
    */
-  public  LinkedList <UserAuthRecord>  authorize(String subjectDN, Collection<String> roles, String desiredUserName, long authRequestID) throws AuthorizationServiceException {
+  public  LinkedList <gPlazmaAuthorizationRecord>  authorize(String subjectDN, List<String> roles, String desiredUserName, long authRequestID) throws AuthorizationException {
 
-      AuthorizationService authServ;
+      AuthorizationController authServ;
 
-      LinkedList <UserAuthRecord> _user_auths;
+      LinkedList <gPlazmaAuthorizationRecord> _user_auths;
       String _user = (desiredUserName==null) ? GLOBUS_URL_COPY_DEFAULT_USER : desiredUserName;
-      debug("authRequestID " + authRequestID + " to authorize");
+      log.debug("to authorize");
 
       try {
-        authServ = new AuthorizationService(gplazmaPolicyFilePath, authRequestID, this);
-        authServ.setLogLevel(logLevelToShortString(loglevel));
+        authServ = new AuthorizationController(gplazmaPolicyFilePath, authRequestID);
+        authServ.setLogLevel(log.getLevel());
       }
       catch( Exception e ) {
-        throw new AuthorizationServiceException("authRequestID " + authRequestID + " Authorization service failed to initialize: " + e);
+        throw new AuthorizationException("authRequestID " + authRequestID + " Authorization service failed to initialize: " + e);
       }
 
       if(_user.equals(GLOBUS_URL_COPY_DEFAULT_USER)) {
-        debug("authRequestID " + authRequestID + " special case , user is " + _user);
+        log.debug("special case , user is " + _user);
         try {
           _user_auths = authServ.authorize(subjectDN, roles, null, null, null);
-        } catch ( AuthorizationServiceException ase ) {
+        } catch ( AuthorizationException ase ) {
           throw ase;
         } catch ( Exception e ) {
-          throw new AuthorizationServiceException("authRequestID " + authRequestID + " exception: " + e);
+          throw new AuthorizationException("exception: " + e);
         }
 
         if(_user_auths == null) {
-          esay("530 authRequestID " + authRequestID + " could not authorize: Permission denied");
+          log.error("could not authorize: Permission denied");
           return null;
         }
       } else {
         try {
           _user_auths = authServ.authorize(subjectDN, roles, _user, null, null);
-        } catch ( AuthorizationServiceException ase ) {
+        } catch ( AuthorizationException ase ) {
           throw ase;
         }
         if(_user_auths == null) {
-          esay("530 authRequestID " + authRequestID + " could not authorize: Permission denied");
+          log.error("could not authorize: Permission denied");
           return null;
         }
       }
 
-    Iterator <UserAuthRecord> recordsIter = _user_auths.iterator();
+    Iterator <gPlazmaAuthorizationRecord> recordsIter = _user_auths.iterator();
     while (recordsIter.hasNext()) {
-      UserAuthRecord rec = recordsIter.next();
-      warn("authRequestID " + authRequestID + " authorized " +  rec.Username + " " + rec.UID + " " + rec.GID + " " + rec.Root + " for " + subjectDN);
+      gPlazmaAuthorizationRecord rec = recordsIter.next();
+      String GIDS_str = Arrays.toString(rec.getGIDs());
+      log.warn("authorized " +  rec.getUsername() + " " + rec.getUID() + " " + GIDS_str + " " + rec.getRoot() + " for " + subjectDN);
     }
 
     return _user_auths;
@@ -1145,59 +1062,60 @@ public class GPLAZMA extends CellAdapter implements Runnable {
    * @param authRequestID
    * @return
    */
-  public LinkedList <UserAuthRecord> authorize(X509Certificate[] chain, String desiredUserName, long authRequestID) throws AuthorizationServiceException {
+  public LinkedList <gPlazmaAuthorizationRecord> authorize(X509Certificate[] chain, String desiredUserName, long authRequestID) throws AuthorizationException {
 
-    AuthorizationService authServ;
+    AuthorizationController authServ;
 
-    LinkedList <UserAuthRecord>  _user_auths;
+    LinkedList <gPlazmaAuthorizationRecord>  _user_auths;
     String _user = (desiredUserName==null) ? GLOBUS_URL_COPY_DEFAULT_USER : desiredUserName;
-    debug("authRequestID " + authRequestID + " to authorize using X509Certificate chain");
+    log.debug("to authorize using X509Certificate chain");
 
     try {
-      authServ = new AuthorizationService(gplazmaPolicyFilePath, authRequestID, this);
-      authServ.setLogLevel(logLevelToShortString(loglevel));
+      authServ = new AuthorizationController(gplazmaPolicyFilePath, authRequestID);
+      authServ.setLogLevel(log.getLevel());
     }
     catch( Exception e ) {
-      throw new AuthorizationServiceException("authRequestID " + authRequestID + " Authorization service failed to initialize: " + e);
+      throw new AuthorizationException("authRequestID " + authRequestID + " Authorization service failed to initialize: " + e);
     }
 
     if(_user.equals(GLOBUS_URL_COPY_DEFAULT_USER)) {
-      debug("authRequestID " + authRequestID + " special case , user is " + _user);
+      log.debug("special case , user is " + _user);
       try {
         _user_auths = authServ.authorize(chain, null, null, null);
-      } catch ( AuthorizationServiceException ase ) {
-        throw new AuthorizationServiceException("authRequestID " + authRequestID + " caught exception " + ase.getMessage());
+      } catch ( AuthorizationException ase ) {
+        throw new AuthorizationException("caught exception " + ase.getMessage());
       } catch ( Exception e ) {
-        throw new AuthorizationServiceException("authRequestID " + authRequestID + " caught exception " + e.getMessage());
+        throw new AuthorizationException("caught exception " + e.getMessage());
       }
 
       if(_user_auths.isEmpty()) {
-        esay("530 authRequestID " + authRequestID + " could not authorize: Permission denied");
+        log.error("could not authorize: Permission denied");
         return null;
       }
     } else {
       try {
         _user_auths = authServ.authorize(chain, _user, null, null);
-      } catch ( AuthorizationServiceException ase ) {
+      } catch ( AuthorizationException ase ) {
         throw ase;
       }
       if(_user_auths.isEmpty()) {
-        esay("530 authRequestID " + authRequestID + " could not authorize: Permission denied");
+        log.error("could not authorize: Permission denied");
         return null;
       }
     }
 
     String subjectDN;
     try {
-      subjectDN = authServ.getSubjectFromX509Chain(chain);
+      subjectDN = X509CertUtil.getSubjectFromX509Chain(chain, omitEmail);
+      if(omitEmail) log.warn("Removed email field from DN: " + subjectDN);
     } catch (Exception e) {
-      throw new  AuthorizationServiceException("\nException thrown by " + this.getClass().getName() + ": " + e.getMessage());
+      throw new AuthorizationException("\nException thrown by " + this.getClass().getName() + ": " + e.getMessage());
     }
-    Iterator <UserAuthRecord> recordsIter = _user_auths.iterator();
+    Iterator <gPlazmaAuthorizationRecord> recordsIter = _user_auths.iterator();
     while (recordsIter.hasNext()) {
-      UserAuthRecord rec = recordsIter.next();
-      String GIDS_str = Arrays.toString(rec.GIDs);
-      warn("authRequestID " + authRequestID + " authorized " +  rec.Username + " " + rec.UID + " " + GIDS_str + " " + rec.Root + " for " + subjectDN);
+      gPlazmaAuthorizationRecord rec = recordsIter.next();
+      String GIDS_str = Arrays.toString(rec.getGIDs());
+      log.warn("authorized " +  rec.getUsername() + " " + rec.getUID() + " " + GIDS_str + " " + rec.getRoot() + " for " + subjectDN);
     }
     return _user_auths;
   }
@@ -1209,71 +1127,72 @@ public class GPLAZMA extends CellAdapter implements Runnable {
    * @param authRequestID
    * @return
    */
-  public LinkedList <UserAuthRecord> authorize(GSSContext serviceContext, String desiredUserName, long authRequestID) throws AuthorizationServiceException {
+  public LinkedList <gPlazmaAuthorizationRecord> authorize(GSSContext serviceContext, String desiredUserName, long authRequestID) throws AuthorizationException {
 
       GSSName GSSIdentity = null;
-      AuthorizationService authServ;
+      AuthorizationController authServ;
 
-      LinkedList <UserAuthRecord> _user_auths;
+      LinkedList <gPlazmaAuthorizationRecord> _user_auths;
       String _user = (desiredUserName==null) ? GLOBUS_URL_COPY_DEFAULT_USER : desiredUserName;
-      debug("authRequestID " + authRequestID + " to authorize");
+      log.debug("to authorize");
 
       try {
         GSSIdentity = serviceContext.getSrcName();
       } catch( Exception e ) {
-        throw new AuthorizationServiceException("authRequestID " + authRequestID + " Authorization service context name not defined: " + e);
+        throw new AuthorizationException("Authorization service context name not defined: " + e);
       }
 
       try {
-        authServ = new AuthorizationService(gplazmaPolicyFilePath, authRequestID, this);
-        authServ.setLogLevel(logLevelToShortString(loglevel));
+        authServ = new AuthorizationController(gplazmaPolicyFilePath, authRequestID);
+        authServ.setLogLevel(log.getLevel());
       }
       catch( Exception e ) {
-        throw new AuthorizationServiceException("authRequestID " + authRequestID + " Authorization service failed to initialize: " + e);
+        throw new AuthorizationException("Authorization service failed to initialize: " + e);
       }
 
       if(_user.equals(GLOBUS_URL_COPY_DEFAULT_USER)) {
-        debug("authRequestID " + authRequestID + " special case , user is " + _user);
+        log.debug("special case , user is " + _user);
         try {
           _user_auths = authServ.authorize(serviceContext, null, null, null);
         } //catch ( GSSException gsse ) {
-          //throw new AuthorizationServiceException("authRequestID " + authRequestID + " could not determine dn: " + gsse);
+          //throw new AuthorizationException("authRequestID " + authRequestID + " could not determine dn: " + gsse);
         //}
-          catch ( AuthorizationServiceException ase ) {
+          catch ( AuthorizationException ase ) {
           throw ase;
         } catch ( Exception e ) {
-          throw new AuthorizationServiceException("authRequestID " + authRequestID + " exception: " + e);
+          throw new AuthorizationException("exception: " + e);
         }
 
         if(_user_auths == null) {
-          esay("530 authRequestID " + authRequestID + " could not authorize: Permission denied");
+          log.error("could not authorize: Permission denied");
           return null;
         }
       } else {
         try {
           _user_auths = authServ.authorize(serviceContext, _user, null, null);
-        } catch ( AuthorizationServiceException ase ) {
+        } catch ( AuthorizationException ase ) {
           throw ase;
         }
         if(_user_auths == null) {
-          esay("530 authRequestID " + authRequestID + " could not authorize: Permission denied");
+          log.error("could not authorize: Permission denied");
           return null;
         }
       }
 
 
 
-    Iterator <UserAuthRecord> recordsIter = _user_auths.iterator();
+    Iterator <gPlazmaAuthorizationRecord> recordsIter = _user_auths.iterator();
     while (recordsIter.hasNext()) {
-      UserAuthRecord rec = recordsIter.next();
-      warn("authRequestID " + authRequestID + " authorized " +  rec.Username + " " + rec.UID + " " + rec.GID + " " + rec.Root + " for " + GSSIdentity);
+      gPlazmaAuthorizationRecord rec = recordsIter.next();
+      String GIDS_str = Arrays.toString(rec.getGIDs());
+      log.warn("authorized " +  rec.getUsername() + " " + rec.getUID() + " " + GIDS_str + " " + rec.getRoot() + " for " + GSSIdentity);
     }
 
     return _user_auths;
   }
 
   public synchronized void Message( String msg1, String msg2 ){
-    debug("Message received");
+    log.debug("Message received");
   }
 
   /** Set a parameter according to option specified in .batch config file **/
@@ -1305,148 +1224,5 @@ public class GPLAZMA extends CellAdapter implements Runnable {
     return target;
   }
 
-  /**
-   * For testing, run several threads which make repeated authorization requests to another GPLAZMA cell.
-   **/
-  public void run_test_authorizations(){
 
-    say("Start testing");
-
-    test_dn = setParam("test-fqan", "").replace('*', ' ');
-    test_role = setParam("test-role", "").replace('*', ' ');
-
-    if(test_dn.equals("")) {
-      String test_cert = setParam("proxy-certificate", "host-proxy");
-      try {
-        if(test_cert.equals("host-proxy"))
-          test_context = AuthorizationService.getServiceContext();
-        else
-          test_context = AuthorizationService.getUserContext(test_cert);
-      } catch (GSSException gce) {
-        esay(gce);
-        esay("could not load host globus credentials " + gce.toString());
-      }
-    }
-
-    int TEST_THREADS = setParam("max-simultaneous-tests", 10);
-    //ExecutorService testerpool = Executors.newFixedThreadPool(TEST_THREADS);
-    ArrayBlockingQueue testqueue = new ArrayBlockingQueue(TEST_THREADS+1);
-    ExecutorService testerpool =
-        new ThreadPoolExecutor(  TEST_THREADS,
-            TEST_THREADS,
-            60,
-            TimeUnit.MILLISECONDS,
-            testqueue);
-
-    int MAXTRIES=setParam("max-total-tests", 1100);
-    int delay=setParam("delay", 0);
-    int numtries=0;
-    //while(numtries<Integer.MAX_VALUE) {
-    while(numtries<MAXTRIES) {
-      AuthTester testrunner = new AuthTester();
-      // Block on the testqueue to throttle the requests
-      try {
-        //say("testqueue size is " + testqueue.size());
-        testqueue.put(testrunner);
-        testqueue.remove(testrunner);
-      } catch (Exception e) {
-        e.printStackTrace();
-      }
-      testerpool.execute(testrunner);
-      if(delay>0) try{Thread.sleep(delay);} catch(Exception e){}
-      //FutureTask testtack = new FutureTask(testrunner, null);
-      //try {
-      //  testerpool.submit(testtack).get();
-      //} catch (Exception e) {
-      //  e.printStackTrace();
-      //}
-      numtries++;
-    }
-  }
-
-  /**
-   * Allows several test threads to make authentication requests.
-   */
-  public class AuthTester implements Runnable {
-
-    public void run() {
-      UserAuthBase PwdRecord;
-
-      long starttime = System.currentTimeMillis();
-      if(test_dn.equals(""))
-        PwdRecord = authenticate(test_context);
-      else
-        PwdRecord = authenticate(test_dn, test_role);
-      long finishtime = System.currentTimeMillis();
-
-      if(PwdRecord!=null) averageTime(finishtime-starttime);
-    }
-  }
-
-
-  public synchronized float averageTime(long thistime) {
-    if(!did_reset && numtests==100) {
-      numtests=0;
-      AveTime=0;
-      did_reset=true;
-    }
-    AveTime = ((AveTime*numtests) + thistime)/++numtests;
-    say("Average authentication time after "  + numtests + " tests is " +  (int) AveTime);
-    return AveTime;
-  }
-
-  /**
-   * For testing, makes authentication requests to another instance of the GPLAZMA cell.
-   */
-  public UserAuthBase authenticate(GSSContext test_context) {
-    AuthorizationService authServ = null;
-    UserAuthRecord authRecord = null;
-    //say("Running test");
-    try {
-      authServ = new AuthorizationService(gplazmaPolicyFilePath);
-      authServ.setLogLevel(logLevelToShortString(loglevel));
-      //boolean delegate_to_gplazma = setParam("delegate-to-gplazma", "false").equalsIgnoreCase("true");
-      authServ.setDelegateToGplazma(false);
-      authRecord =
-          (UserAuthRecord) authServ.authenticate(
-              test_context,
-              new CellPath("gPlazma"),
-        this).getUserAuthBase();
-
-    }  catch(Exception e) {
-      e.printStackTrace();
-    }
-
-    return authRecord;
-  }
-
-  /**
-   * For testing, makes authentication requests to another instance of the GPLAZMA cell.
-   */
-  public UserAuthBase authenticate(String test_dn, String test_role) {
-    AuthorizationService authServ = null;
-    UserAuthRecord authRecord = null;
-    //say("Running test");
-    try {
-      authServ = new AuthorizationService(gplazmaPolicyFilePath);
-      authServ.setLogLevel(logLevelToShortString(loglevel));
-      authRecord =
-          (UserAuthRecord) authServ.authenticate(
-              test_dn, test_role,
-              new CellPath("gPlazma"),
-        this).getUserAuthBase();
-
-    }  catch(Exception e) {
-      e.printStackTrace();
-    }
-
-    return authRecord;
-  }
-
-  /**
-   * Not implemented.
-   **/
-  public void run(){
-
-  }
 }
