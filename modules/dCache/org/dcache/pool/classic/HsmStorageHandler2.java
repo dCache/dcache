@@ -33,7 +33,6 @@ import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.CellInfo;
 
-import diskCacheV111.pools.HsmRemoveTask;
 import diskCacheV111.util.Batchable;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.CacheFileAvailable;
