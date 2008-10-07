@@ -3,7 +3,6 @@
 package org.dcache.pool.classic;
 
 import diskCacheV111.pools.StorageClassFlushInfo;
-import diskCacheV111.pools.StorageClassInfoFlushable;
 import diskCacheV111.util.*;
 import org.dcache.pool.repository.CacheEntry;
 
