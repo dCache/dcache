@@ -45,35 +45,11 @@ This package contains the server components.
 
 
 %pre
-if [ -f ${RPM_INSTALL_PREFIX}/config/lastPid.`/bin/hostname|awk -F"." '{print  $1}'` ]; then
-   if [ -f ${RPM_INSTALL_PREFIX}/bin/dcache-pool ]; then
-      if [ -f ${RPM_INSTALL_PREFIX}/jobs/needFulThings.sh ]; then
-         ${RPM_INSTALL_PREFIX}/bin/dcache-pool stop
-      fi
+if [ -f ${RPM_INSTALL_PREFIX}/bin/dcache ] && [ -f ${RPM_INSTALL_PREFIX}/jobs/needFulThings.sh ]; then
+      ${RPM_INSTALL_PREFIX}/bin/dcache stop
    fi
 fi
-if [ -f ${RPM_INSTALL_PREFIX}/config/lastPid.srm ]; then
-   if [ -f ${RPM_INSTALL_PREFIX}/bin/dcache-opt ]; then
-      if [ -f ${RPM_INSTALL_PREFIX}/jobs/needFulThings.sh ]; then
-         ${RPM_INSTALL_PREFIX}/bin/dcache-opt stop
-      fi
-   fi
-fi
-if [ -f ${RPM_INSTALL_PREFIX}/config/lastPid.dCache ]; then
-   if [ -f ${RPM_INSTALL_PREFIX}/bin/dcache-core ]; then
-      if [ -f ${RPM_INSTALL_PREFIX}/jobs/needFulThings.sh ]; then
-      ${RPM_INSTALL_PREFIX}/bin/dcache-core stop
-      fi
-   fi
-fi
-if [ -f ${RPM_INSTALL_PREFIX}/config/lastPid.dCache ]; then
-   if [ -f ${RPM_INSTALL_PREFIX}/bin/dcache-server ]; then
-      if [ -f ${RPM_INSTALL_PREFIX}/jobs/needFulThings.sh ]; then
-      ${RPM_INSTALL_PREFIX}/bin/dcache-server stop
-      fi
-   fi
 
-fi
 if [ -f ${RPM_INSTALL_PREFIX}/classes/gplazma.jar ]; then
    rm -f ${RPM_INSTALL_PREFIX}/classes/gplazma.jar
 fi
@@ -89,14 +65,10 @@ fi
 # stop dCache
 #
 if [ $1 = 0 ]; then
-    if [ -x ${RPM_INSTALL_PREFIX}/bin/dcache-core ]
+    if [ -x ${RPM_INSTALL_PREFIX}/bin/dcache ]
     then
-        ${RPM_INSTALL_PREFIX}/bin/dcache-core stop > /dev/null 2>&1
+        ${RPM_INSTALL_PREFIX}/bin/dcache stop > /dev/null 2>&1
     fi
-     if [ -x ${RPM_INSTALL_PREFIX}/bin/dcache-pool ]
-     then
-        ${RPM_INSTALL_PREFIX}/bin/dcache-pool stop > /dev/null 2>&1
-     fi
 fi
 
 #%postun
