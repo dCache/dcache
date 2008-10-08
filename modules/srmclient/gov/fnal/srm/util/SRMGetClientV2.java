@@ -1,4 +1,4 @@
-// $Id: SRMGetClientV2.java 10230 2008-09-24 19:04:23Z litvinse $
+// $Id: SRMGetClientV2.java 10300 2008-10-08 20:16:12Z litvinse $
 // $Log: not supported by cvs2svn $
 
 /*
@@ -152,15 +152,21 @@ public class SRMGetClientV2 extends SRMClient implements Runnable {
             SrmPrepareToGetRequest srmPrepareToGetRequest = new SrmPrepareToGetRequest();
             srmPrepareToGetRequest.setDesiredTotalRequestTime(
                     new Integer((int)configuration.getRequestLifetime()));
-	    TRetentionPolicy rp   =  TRetentionPolicy.CUSTODIAL;
-	    TAccessLatency   al   =  TAccessLatency.NEARLINE;
+	    TRetentionPolicy rp   =  null;
+	    TAccessLatency   al   =  null;
 	    if(configuration.getRetentionPolicy() != null ) {
 		    rp = TRetentionPolicy.fromString(configuration.getRetentionPolicy());
             }
             if(configuration.getAccessLatency() != null ) {
                 al = TAccessLatency.fromString(configuration.getAccessLatency());
             }
-            srmPrepareToGetRequest.setTargetFileRetentionPolicyInfo(new TRetentionPolicyInfo(rp,al));
+            if ( (al!=null) && (rp==null)) { 
+                    throw new IllegalArgumentException("if access latency is specified, "+
+                                                       "then retention policy have to be specified as well");
+            }
+            else if ( rp!=null ) {
+                    srmPrepareToGetRequest.setTargetFileRetentionPolicyInfo(new TRetentionPolicyInfo(rp,al));
+            }
             srmPrepareToGetRequest.setArrayOfFileRequests(
                     new ArrayOfTGetFileRequest(fileRequests));
 	    TAccessPattern  ap = TAccessPattern.TRANSFER_MODE;
