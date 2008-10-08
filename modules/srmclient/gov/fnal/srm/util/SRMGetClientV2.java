@@ -164,7 +164,7 @@ public class SRMGetClientV2 extends SRMClient implements Runnable {
                     throw new IllegalArgumentException("if access latency is specified, "+
                                                        "then retention policy have to be specified as well");
             }
-            else if ( rp!=null )
+            else if ( rp!=null ) {
                     srmPrepareToGetRequest.setTargetFileRetentionPolicyInfo(new TRetentionPolicyInfo(rp,al));
             }
             srmPrepareToGetRequest.setArrayOfFileRequests(
