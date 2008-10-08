@@ -2351,9 +2351,12 @@ public class Configuration {
                         throw new IllegalArgumentException("illegal number of retries : "+
                                                            retry_num);
                 }
-                boolean versionIsSpecified = isSrmv1|isSrmv2;
-                if ((versionIsSpecified && srm_protocol_version!=0) || (isSrmv1&&isSrmv2)) { 
-			throw new IllegalArgumentException(
+                if (isSrmv1&&isSrmv2) { 
+                        throw new IllegalArgumentException(
+                                "only one option of -srm_protocol_version, -1 or -2 should be specified");
+                }
+                if ((isSrmv1||isSrmv2) && _args.getOpt("srm_protocol_version")!=null) {
+                        throw new IllegalArgumentException(
 				"only one option of -srm_protocol_version, -1 or -2 should be specified");
                 }
                 if (isSrmv1) { 
