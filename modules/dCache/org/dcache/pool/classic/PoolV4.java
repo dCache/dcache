@@ -44,6 +44,7 @@ import org.dcache.pool.repository.ReadHandle;
 import org.dcache.pool.repository.CacheEntry;
 import org.dcache.pool.repository.StateChangeListener;
 import org.dcache.pool.repository.StateChangeEvent;
+import org.dcache.pool.movers.MoverProtocol;
 import org.dcache.cell.CellCommandListener;
 import org.dcache.cell.CellMessageReceiver;
 import org.dcache.cell.AbstractCellComponent;
@@ -51,8 +52,6 @@ import diskCacheV111.pools.PoolV2Mode;
 import diskCacheV111.pools.SpaceSweeper;
 import diskCacheV111.pools.PoolCostInfo;
 import diskCacheV111.pools.PoolCellInfo;
-import diskCacheV111.movers.ChecksumMover;
-import diskCacheV111.movers.MoverProtocol;
 import diskCacheV111.repository.CacheRepository;
 import diskCacheV111.repository.CacheRepositoryEntryInfo;
 import diskCacheV111.repository.RepositoryCookie;
@@ -1348,7 +1347,7 @@ public class PoolV4
 
         try {
             if (mover == null) {
-                moverClassName = "diskCacheV111.movers." + info.getProtocol()
+                moverClassName = "org.dcache.pool.movers." + info.getProtocol()
                     + "Protocol_" + info.getMajorVersion();
 
                 mover = _handlerClasses.get(moverClassName);

@@ -28,7 +28,6 @@ import org.dcache.cell.AbstractCellComponent;
 import org.dcache.cell.CellMessageReceiver;
 import org.dcache.cell.CellCommandListener;
 import diskCacheV111.movers.DCapConstants;
-import diskCacheV111.movers.DCapProtocol_3_nio;
 import diskCacheV111.util.Adler32;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileInCacheException;

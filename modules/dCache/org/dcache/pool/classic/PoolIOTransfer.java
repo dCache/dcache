@@ -4,7 +4,7 @@ import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.StorageInfo;
-import diskCacheV111.movers.MoverProtocol;
+import org.dcache.pool.movers.MoverProtocol;
 
 import dmg.cells.nucleus.NoRouteToCellException;
 

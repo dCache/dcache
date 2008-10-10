@@ -14,8 +14,8 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileInCacheException;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.StorageInfo;
-import diskCacheV111.movers.MoverProtocol;
-import diskCacheV111.movers.ChecksumMover;
+import org.dcache.pool.movers.MoverProtocol;
+import org.dcache.pool.movers.ChecksumMover;
 import diskCacheV111.repository.SpaceMonitor;
 import diskCacheV111.repository.CacheRepository;
 
