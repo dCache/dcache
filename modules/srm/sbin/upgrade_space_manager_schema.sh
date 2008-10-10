@@ -10,6 +10,6 @@ fi
 export JAVA_HOME
 for jar in `find ${ourHomeDir}/classes/ -name '*jar'`; do  CLASSPATH=${CLASSPATH}:${jar}; done
 export CLASSPATH
-$JAVA_HOME/bin/java diskCacheV111.services.space.ManagerV2 $*
+$JAVA_HOME/bin/java diskCacheV111.services.space.Manager $*
 rc=$?
 exit $rc
