@@ -139,7 +139,7 @@
     <constructor-arg ref="pnfs"/>
   </bean>
 
-  <bean id="jtm" class="diskCacheV111.pools.JobTimeoutManager">
+  <bean id="jtm" class="org.dcache.pool.classic.JobTimeoutManager">
     <description>Job timeout manager</description>
   </bean>
 
