@@ -87,7 +87,7 @@
     </constructor-arg>
   </bean>
 
-  <bean id="sweeper" class="diskCacheV111.pools.SpaceSweeper2">
+  <bean id="sweeper" class="org.dcache.pool.classic.SpaceSweeper2">
     <description>Pool garbage collector</description>
     <constructor-arg ref="pnfs"/>
     <constructor-arg ref="legacy-repository"/>
