@@ -103,7 +103,7 @@
     <property name="legacyRepository" ref="legacy-repository"/>
   </bean>
   
-  <bean id="repository-interpreter" class="diskCacheV111.repository.RepositoryInterpreter">
+  <bean id="repository-interpreter" class="org.dcache.pool.repository.RepositoryInterpreter">
     <description>Repository user interface</description>
     <constructor-arg ref="legacy-repository"/>
   </bean>
