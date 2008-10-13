@@ -181,6 +181,18 @@ public class P2PClient
         return id;
     }
 
+    /**
+     * Cancels a transfer. Returns true unless the transfer is already
+     * completed.
+     */
+    public boolean cancel(int id)
+    {
+        Companion companion = _sessions.get(id);
+        return (companion == null)
+                ? false
+                : companion.cancel("Transfer cancelled");
+    }
+
     public void getInfo(PrintWriter pw)
     {
         pw.println("  Listener   : " + _acceptor);

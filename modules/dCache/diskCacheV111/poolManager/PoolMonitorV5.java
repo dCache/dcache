@@ -12,6 +12,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Collection;
 
 import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellMessage;
@@ -28,6 +29,7 @@ import diskCacheV111.vehicles.PoolCheckable;
 import diskCacheV111.vehicles.PoolCostCheckable;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.StorageInfo;
+import diskCacheV111.vehicles.PoolManagerPoolInformation;
 
 public class PoolMonitorV5 {
 
@@ -760,4 +762,49 @@ public class PoolMonitorV5 {
         return list ;
     }
 
+    private List<String>
+        getPoolNames(Iterator<PoolSelectionUnit.SelectionPool> pools)
+    {
+       List<String> names = new ArrayList();
+       while (pools.hasNext()) {
+           PoolSelectionUnit.SelectionPool pool = pools.next();
+           if (pool.isActive()) {
+               names.add(pool.getName());
+           }
+       }
+       return names;
+    }
+
+    private Collection<PoolManagerPoolInformation>
+        getPoolInformation(Collection<String> pools)
+        throws InterruptedException
+    {
+        List<PoolManagerPoolInformation> result = new ArrayList(pools.size());
+        for (PoolCostCheckable pool: queryPoolsForCost(pools.iterator(), 0)) {
+            PoolManagerPoolInformation info =
+                new PoolManagerPoolInformation(pool.getPoolName());
+            info.setSpaceCost(pool.getSpaceCost());
+            info.setCpuCost(pool.getPerformanceCost());
+            result.add(info);
+        }
+        return result;
+    }
+
+    public Collection<PoolManagerPoolInformation>
+        getPoolsByLink(String linkName)
+        throws InterruptedException
+    {
+        PoolSelectionUnit.SelectionLink link =
+            _selectionUnit.getLinkByName(linkName);
+        return getPoolInformation(getPoolNames(link.pools()));
+    }
+
+    public Collection<PoolManagerPoolInformation>
+        getPoolsByPoolGroup(String poolGroup)
+        throws InterruptedException
+    {
+        Collection<PoolSelectionUnit.SelectionPool> pools =
+            _selectionUnit.getPoolsByPoolGroup(poolGroup);
+        return getPoolInformation(getPoolNames(pools.iterator()));
+    }
 }

@@ -35,6 +35,8 @@ import diskCacheV111.vehicles.PoolLinkGroupInfo;
 import diskCacheV111.vehicles.PoolManagerGetPoolListMessage;
 import diskCacheV111.vehicles.PoolManagerPoolModeMessage;
 import diskCacheV111.vehicles.PoolManagerPoolUpMessage;
+import diskCacheV111.vehicles.PoolManagerGetPoolsByLinkMessage;
+import diskCacheV111.vehicles.PoolManagerGetPoolsByPoolGroupMessage;
 import diskCacheV111.vehicles.PoolMgrGetPoolByLink;
 import diskCacheV111.vehicles.PoolMgrGetPoolLinkGroups;
 import diskCacheV111.vehicles.PoolMgrQueryPoolsMsg;
@@ -51,6 +53,7 @@ import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellNucleus;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.CellVersion;
+import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.Args;
 import dmg.util.CommandException;
 
@@ -649,7 +652,13 @@ public class PoolManagerV5 extends CellAdapter {
                   getPoolByLink( (PoolMgrGetPoolByLink)message ,
                                   cellMessage ) ;
 
-           }else{
+           } else if (message instanceof PoolManagerGetPoolsByLinkMessage) {
+               getPoolsByLink((PoolManagerGetPoolsByLinkMessage) message,
+                              cellMessage);
+           } else if (message instanceof PoolManagerGetPoolsByPoolGroupMessage) {
+               getPoolsByPoolGroup((PoolManagerGetPoolsByPoolGroupMessage) message,
+                                   cellMessage);
+           } else {
                _requestContainer.messageArrived( cellMessage ) ;
 	   }
 
@@ -715,6 +724,47 @@ public class PoolManagerV5 extends CellAdapter {
           esay( "Problem replying to getPoolByLink Request : "+ee ) ;
        }
     }
+
+    private void getPoolsByLink(PoolManagerGetPoolsByLinkMessage msg,
+                                CellMessage envelope)
+    {
+        try {
+            msg.setPools(_poolMonitor.getPoolsByLink(msg.getLink()));
+            msg.setReply();
+        } catch (InterruptedException e) {
+            msg.setFailed(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                          "Pool manager is shutting down");
+        }
+
+        try {
+            envelope.revertDirection();
+            sendMessage(envelope);
+        } catch (NoRouteToCellException e) {
+            esay("Problem replying to getPoolsByLink request: " + e);
+        }
+    }
+
+    private void getPoolsByPoolGroup(PoolManagerGetPoolsByPoolGroupMessage msg,
+                                     CellMessage envelope)
+    {
+        try {
+            msg.setPools(_poolMonitor.getPoolsByPoolGroup(msg.getPoolGroup()));
+            msg.setReply();
+        } catch (InterruptedException e) {
+            msg.setFailed(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                          "Pool manager is shutting down");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        envelope.revertDirection();
+        try {
+            sendMessage(envelope);
+        } catch (NoRouteToCellException e) {
+            esay("Problem replying to getPoolsByPoolGroup request: " + e);
+        }
+    }
+
     private void queryPools( PoolMgrQueryPoolsMsg poolQueryMessage ,
                              CellMessage cellMessage ){
        DirectionType accessType = poolQueryMessage.getAccessType() ;

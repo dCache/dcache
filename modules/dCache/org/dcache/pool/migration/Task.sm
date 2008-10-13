@@ -1,0 +1,246 @@
+%{
+// 
+%}
+
+
+%class Task
+%package org.dcache.pool.migration
+%access package
+%import diskCacheV111.vehicles.*
+
+%start TaskFSM::Queued
+%map TaskFSM
+%%
+Queued
+{
+        run
+                GettingLocations
+                {
+                }
+}
+
+GettingLocations
+Entry
+{       
+        queryLocations();
+}
+{
+        timeout
+                Failed
+                {
+                }
+        noroute
+                Failed
+                {
+                }
+        failure(rc: int)
+                Failed
+                {
+                }
+        cancel
+                Cancelled
+                {
+                }
+        success
+                [ ctxt.hasMoreLocations() ]
+                UpdatingExistingFile
+                {
+                        updateExistingReplica();
+                }
+        success
+                InitiatingCopy
+                {
+                }
+}
+
+UpdatingExistingFile
+{
+        timeout
+                [ ctxt.hasMoreLocations() ]
+                nil
+                {
+                        updateExistingReplica();
+                }
+        timeout
+                InitiatingCopy
+                {
+                }
+        noroute
+                [ ctxt.hasMoreLocations() ]
+                nil
+                {
+                        updateExistingReplica();
+                }
+        noroute
+                InitiatingCopy
+                {
+                }
+        failure(rc: int)
+                [ ctxt.hasMoreLocations() ]
+                nil
+                {
+                        updateExistingReplica();
+                }
+        failure(rc: int)
+                InitiatingCopy
+                {
+                }
+        success
+                Done
+                {
+                }
+        cancel
+                Cancelled
+                {
+                }
+}
+
+InitiatingCopy
+Entry
+{
+        initiateCopy();
+}
+{
+        nopools
+                Failed
+                {
+                }
+        timeout
+                Failed
+                {
+                }
+        noroute
+                Failed
+                {
+                }
+        failure(rc: int)
+                Failed
+                {
+                }
+        success
+                Copying
+                {
+                }
+        cancel
+                Cancelling
+                {
+                }
+}
+
+Copying
+Entry
+{
+        startPing();
+}
+Exit
+{       
+        stopPing();
+}
+{
+        failure(rc: int)
+                Failed
+                {
+                }
+        timeout
+                Failed
+                {
+                }
+        noroute
+                Failed
+                {
+                }
+        success
+                nil
+                {
+                }
+        messageArrived(message: PoolMigrationCopyFinishedMessage)
+                [ message.getReturnCode() != 0 ]
+                Failed
+                {
+                }
+        messageArrived(message: PoolMigrationCopyFinishedMessage)
+                [ message.getReturnCode() == 0 ]
+                Done
+                {
+                }
+        cancel
+                Cancelling
+                {
+                }
+}
+
+Cancelling
+Entry
+{
+        cancelCopy();
+}
+{
+        noroute
+                Cancelled
+                {
+                }
+        timeout 
+                Cancelled
+                {
+                }
+        failure(rc: int)
+                Cancelled
+                {
+                }
+        success
+                nil
+                {
+                }
+        messageArrived(message: PoolMigrationCopyFinishedMessage)
+                [ message.getReturnCode() != 0 ]
+                Cancelled
+                {
+                }
+        messageArrived(message: PoolMigrationCopyFinishedMessage)
+                [ message.getReturnCode() == 0 ]
+                Done
+                {
+                }
+        cancel
+                nil
+                {
+                }
+}
+
+Cancelled
+Entry
+{
+        notifyCancelled();
+}
+{
+        Default
+                nil
+                {
+                }
+}
+
+Failed
+Entry
+{
+        notifyFailed();
+}
+{
+        Default
+                nil
+                {
+                }   
+}
+
+Done
+Entry
+{
+        notifyCompleted();
+}
+{    
+        Default
+                nil
+                {
+                }   
+}
+
+%%

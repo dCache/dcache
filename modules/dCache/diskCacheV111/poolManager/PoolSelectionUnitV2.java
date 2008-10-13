@@ -3299,4 +3299,19 @@ public class PoolSelectionUnitV2 implements PoolSelectionUnit {
         }
         return rc;
     }
+
+    public Collection<SelectionPool> getPoolsByPoolGroup(String poolGroup)
+        throws NoSuchElementException
+    {
+        PGroup group = _pGroups.get(poolGroup);
+        if (group == null)
+            throw new NoSuchElementException("No such pool group: " + poolGroup);
+
+        List<SelectionPool> pools = new ArrayList(group._poolList.size());
+        for (Pool pool: group._poolList.values()) {
+            pools.add(pool);
+        }
+
+        return pools;
+    }
 }
