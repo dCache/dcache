@@ -278,9 +278,9 @@ public class MetaDataRepositoryHelper implements MetaDataRepository {
         {
             try {
                 if (sticky) {
-                    _state.setSticky("system", -1);
+                    _state.setSticky("system", -1, true);
                 } else {
-                    _state.cleanSticky("system");
+                    _state.setSticky("system", 0, true);
                 }
 
             } catch (IllegalStateException e) {
@@ -288,15 +288,11 @@ public class MetaDataRepositoryHelper implements MetaDataRepository {
             }
         }
 
-        public void setSticky(boolean sticky, String owner, long lifetime) throws CacheException
+        public void setSticky(String owner, long lifetime, boolean overwrite)
+            throws CacheException
         {
             try {
-                if (sticky) {
-                    _state.setSticky(owner, lifetime);
-                }else{
-                    _state.cleanSticky(owner);
-                }
-
+                _state.setSticky(owner, lifetime, overwrite);
             } catch (IllegalStateException e) {
                 throw new CacheException(e.getMessage());
             }

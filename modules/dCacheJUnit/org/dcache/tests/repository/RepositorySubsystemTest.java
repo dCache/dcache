@@ -588,7 +588,7 @@ public class RepositorySubsystemTest
     {
         long now = System.currentTimeMillis();
         assertFalse(repository.getEntry(id2).isSticky());
-        repository.setSticky(id2, "system", now + 500);
+        repository.setSticky(id2, "system", now + 500, true);
         assertTrue(repository.getEntry(id2).isSticky());
         Thread.currentThread().sleep(700);
         assertFalse(repository.getEntry(id2).isSticky());
@@ -601,9 +601,9 @@ public class RepositorySubsystemTest
         long now = System.currentTimeMillis();
 
         assertFalse(repository.getEntry(id2).isSticky());
-        repository.setSticky(id2, "system", now + 500);
+        repository.setSticky(id2, "system", now + 500, true);
         assertTrue(repository.getEntry(id2).isSticky());
-        repository.setSticky(id2, "system", 0);
+        repository.setSticky(id2, "system", 0, true);
         assertFalse(repository.getEntry(id2).isSticky());
     }
 }

@@ -19,43 +19,54 @@ public class Sticky {
 	private final Map<String,StickyRecord> _records = new HashMap<String,StickyRecord>();
 
 
-	public boolean isSticky() {
+    synchronized public boolean isSticky() {
 
-		boolean isSticky = false;
+        if( !_records.isEmpty() ) {
+            long now = System.currentTimeMillis();
 
-		if( !_records.isEmpty() ) {
-			long now = System.currentTimeMillis();
-
-			for( StickyRecord stickyRecord: _records.values() ) {
-				if( stickyRecord.isValidAt(now) ) {
-					// even if only one is valid it's STICKY
-					isSticky = true;
-					break;
-				}
-			}
-		}
-		return isSticky;
-	}
+            for( StickyRecord stickyRecord: _records.values() ) {
+                if( stickyRecord.isValidAt(now) ) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
 
 	public boolean isSet() {
 		return isSticky();
 	}
 
-	public boolean addRecord(String owner, long expire) {
-		boolean isAdded = false;
-		if( expire == -1 || expire > System.currentTimeMillis() ) {
-			_records.put(owner, new StickyRecord(owner, expire) );
-			isAdded = true;
-		}
+    synchronized public boolean addRecord(String owner, long expire, boolean overwrite)
+    {
+        if (!removeRecord(owner, overwrite ? -1 : expire)) {
+            return false;
+        }
 
-		return isAdded;
-	}
+        if ((expire == -1) || (expire > System.currentTimeMillis())) {
+            _records.put(owner, new StickyRecord(owner, expire));
+        }
+        return true;
+    }
 
-	public boolean removeRecord(String owner) {
-		return _records.remove(owner) != null ;
-	}
+    /**
+     * Removes all sticky flags owned by <code>owner</code> and not
+     * valid at <code>time</code>. No flag is valid at time point -1.
+     *
+     * Returns true if all flags owned by <code>owner</code> have been
+     * removed, false otherwise.
+     */
+    synchronized private boolean removeRecord(String owner, long time)
+    {
+        StickyRecord record = _records.get(owner);
+        if ((record != null) && (time > -1) && record.isValidAt(time))
+            return false;
 
-	public String stringValue() {
+        _records.remove(owner);
+        return true;
+    }
+
+	synchronized public String stringValue() {
 
 		StringBuilder sb = new StringBuilder();
 
@@ -70,7 +81,7 @@ public class Sticky {
 		return sb.toString();
 	}
 
-	public List<StickyRecord> records() {
+	synchronized public List<StickyRecord> records() {
 		return new ArrayList<StickyRecord>(_records.values());
 	}
 }

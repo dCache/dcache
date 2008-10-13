@@ -106,7 +106,7 @@ public class PoolRepository {
 		CacheRepositoryEntry entry = _repository.getEntry(pnfsId);
 
 		entry.setCached();
-		entry.setSticky(true, "repository test", System.currentTimeMillis() + 5000);
+		entry.setSticky("repository test", System.currentTimeMillis() + 5000, true);
 
 		assertEquals("setSticky makes file sticky",true, entry.isSticky());
 		Thread.sleep(5100);

@@ -262,7 +262,7 @@ class WriteHandleImpl implements WriteHandle
 
             if (_targetState != EntryState.REMOVED) {
                 if (_sticky != null) {
-                    _entry.setSticky(true, _sticky.owner(), _sticky.expire());
+                    _entry.setSticky(_sticky.owner(), _sticky.expire(), true);
                 }
 
                 _repository.setState(_entry, _targetState);

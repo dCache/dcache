@@ -172,7 +172,7 @@ public class CacheRepositoryEntryState implements Serializable
      *  State transitions
      *
      */
-    public synchronized void setSticky(String owner, long expire)
+    public synchronized void setSticky(String owner, long expire, boolean overwrite)
         throws IllegalStateException
     {
         if (_error) {
@@ -184,29 +184,35 @@ public class CacheRepositoryEntryState implements Serializable
             throw new IllegalStateException("Entry in removed state");
         }
 
-        // if sticky flag modified, make changes persistent
-        if (expire == -1 || expire > System.currentTimeMillis()) {
-            cleanSticky(owner);
-            _sticky.add(new StickyRecord(owner, expire));
-            markDirty();
+        if (cleanSticky(owner, overwrite ? -1 : expire)) {
+            if (expire == -1 || expire > System.currentTimeMillis()) {
+                _sticky.add(new StickyRecord(owner, expire));
+                markDirty();
+            }
         }
     }
 
-    public synchronized void cleanSticky(String owner)
+    /**
+     * Removes all sticky flags owned by <code>owner</code> and not
+     * valid at <code>time</code>. No flag is valid at time point -1.
+     *
+     * Returns true if all flags owned by <code>owner</code> have been
+     * removed, false otherwise.
+     */
+    private synchronized boolean cleanSticky(String owner, long time)
         throws IllegalStateException
     {
-        // too late
-        if (_removed) {
-            throw new IllegalStateException("Entry in removed state");
-        }
-
         Iterator<StickyRecord> i = _sticky.iterator();
         while (i.hasNext()) {
-            if (i.next().owner().equals(owner)) {
+            StickyRecord record = i.next();
+            if (record.owner().equals(owner)) {
+                if ((time > -1) && record.isValidAt(time))
+                    return false;
                 i.remove();
                 markDirty();
             }
         }
+        return true;
     }
 
     public synchronized void cleanBad()

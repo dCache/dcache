@@ -114,7 +114,7 @@ public class CacheRepositoryEntryState {
 	 *
 	 */
 
-	public void setSticky(String owner, long expire) throws IllegalStateException, IOException {
+    public void setSticky(String owner, long expire, boolean overwrite) throws IllegalStateException, IOException {
 
 
 		_stateLock.writeLock().lock();
@@ -129,27 +129,7 @@ public class CacheRepositoryEntryState {
 			}
 
 			// if sticky flag modified, make changes persistent
-			if( _sticky.addRecord(owner, expire) ) {
-				makeStatePercistent();
-			}
-		}finally{
-			_stateLock.writeLock().unlock();
-		}
-	}
-
-
-	public void cleanSticky(String owner) throws IllegalStateException, IOException {
-
-		_stateLock.writeLock().lock();
-		try {
-
-			// too late
-			if( _removed.isSet() ) {
-				throw new IllegalStateException("Entry in removed state");
-			}
-
-			// if sticky flag modified, make changes persistent
-			if( _sticky.removeRecord(owner)) {
+			if( _sticky.addRecord(owner, expire, overwrite) ) {
 				makeStatePercistent();
 			}
 		}finally{
@@ -670,7 +650,7 @@ public class CacheRepositoryEntryState {
 					_error.set(true);
 				}
 
-				_sticky.addRecord(owner, expire);
+				_sticky.addRecord(owner, expire, true);
 
 				continue;
 			}

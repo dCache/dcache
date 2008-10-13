@@ -2395,9 +2395,11 @@ public class MultiProtocolPoolV3 extends CellAdapter
              * add sticky owner and lifetime if repository supports it
              */
             CacheRepositoryEntry entry = _repository.getEntry(pnfsId);
-            entry.setSticky(stickyMessage
-                            .isSticky(), stickyMessage.getOwner(), stickyMessage
-                            .getLifeTime());
+            entry.setSticky(stickyMessage.getOwner(),
+                            stickyMessage.isSticky()
+                            ? stickyMessage.getLifeTime()
+                            : 0,
+                            true);
 
         } catch (CacheException ce) {
             stickyMessage.setFailed(ce.getRc(), ce);

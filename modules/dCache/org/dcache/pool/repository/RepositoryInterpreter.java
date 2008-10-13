@@ -62,10 +62,9 @@ public class RepositoryInterpreter
 
         CacheRepositoryEntry entry = _repository.getEntry(pnfsId);
         if (state.equals("on")) {
-            entry.setSticky(true,owner,lifetime);
-
+            entry.setSticky(owner, lifetime, true);
         } else if (state.equals("off")) {
-            entry.setSticky(false,owner,lifetime);
+            entry.setSticky(owner, 0, true);
         } else
             throw new
                 IllegalArgumentException("invalid sticky state : "+state);

@@ -85,17 +85,25 @@ public interface CacheRepositoryEntry {
    public void lock( long millisSeconds );
    public boolean isLocked();
 
-	/**
-	 *
-	 * set/clean sticky flag
-	 *
-	 * @param sticky
-	 * @param owner flag owner
-	 * @param validTill time milliseconds since 00:00:00 1 Jan. 1970.
-	 * @throws CacheException
-	 */
 
-	public void setSticky(boolean sticky, String owner, long validTill) throws CacheException ;
+    /**
+     * Set sticky flag for a given owner and time. There is at most
+     * one flag per owner. If <code>overwrite</code> is true, then an
+     * existing record for <code>owner</code> will be replaced. If it
+     * is false, then the lifetime of an existing record will be
+     * extended if and only if the new lifetime is longer.
+     *
+     * A lifetime of -1 indicates that the flag never expires. A
+     * lifetime set in the past, for instance 0, expires immediately.
+     *
+     * @param owner flag owner
+     * @param validTill time milliseconds since 00:00:00 1 Jan. 1970.
+     * @param overwrite replace existing flag when true.
+     * @throws CacheException
+     */
+    public void setSticky(String owner, long validTill, boolean overwrite)
+        throws CacheException ;
+
 
 	/**
 	 *

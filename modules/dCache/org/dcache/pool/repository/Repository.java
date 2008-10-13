@@ -95,13 +95,15 @@ public interface Repository
      * @param id the PNFS ID of the entry for which to change the flag
      * @param owner the owner of the sticky flag
      * @param expire expiration time in milliseconds since the epoch
+     * @param overwrite replace existing flag when true, extend
+     *                  lifetime if false
      * @throws FileNotInCacheException when an entry with the given id
      * is not found in the repository
      * @throws IllegalArgumentException when <code>id</code> or
      * <code>owner</code> are null or when <code>lifetime</code> is
      * smaller than -1.
      */
-    void setSticky(PnfsId id, String owner, long expire)
+    void setSticky(PnfsId id, String owner, long expire, boolean overwrite)
         throws IllegalArgumentException,
                FileNotInCacheException;
 

@@ -40,7 +40,7 @@ public class StickyInspector implements CacheRepositoryListener
             try {
                 for (StickyRecord record : _entry.stickyRecords()) {
                     if (!record.isValid()) {
-                        _entry.setSticky(false, record.owner(), record.expire());
+                        _entry.setSticky(record.owner(), 0, true);
                     }
                 }
             } catch (CacheException e) {

@@ -1773,7 +1773,8 @@ public class PoolV4
                                   msg.getOwner(),
                                   msg.isSticky()
                                   ? msg.getLifeTime()
-                                  : 0);
+                                  : 0,
+                                  true);
             msg.setSucceeded();
         } catch (FileNotInCacheException e) {
             msg.setFailed(e.getRc(), e);

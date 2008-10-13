@@ -125,7 +125,7 @@ public class RepositoryEntryHealer
             entry.setStorageInfo(storageInfo);
 
             if (sticky) {
-                entry.setSticky(true, "system", -1);
+                entry.setSticky("system", -1, true);
             }
 
             if (precious) {
@@ -240,7 +240,7 @@ public class RepositoryEntryHealer
                 storageInfo.setFileSize(length);
 
                 entry.setStorageInfo(storageInfo);
-                entry.setSticky(true, "system", -1);
+                entry.setSticky("system", -1, true);
                 entry.setCached();
                 entry.setBad(true);
 

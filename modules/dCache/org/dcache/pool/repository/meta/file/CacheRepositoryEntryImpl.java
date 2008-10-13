@@ -327,9 +327,9 @@ public class CacheRepositoryEntryImpl implements CacheRepositoryEntry {
     public void setSticky(boolean sticky) throws CacheException {
         try {
             if( sticky ) {
-                _state.setSticky("system", -1);
+                _state.setSticky("system", -1, false);
             }else{
-                _state.cleanSticky("system");
+                _state.setSticky("system", 0, true);
             }
 
             CacheRepositoryEvent sickyEvent = new CacheRepositoryEvent(_eventProcessor, clone() );
@@ -342,13 +342,9 @@ public class CacheRepositoryEntryImpl implements CacheRepositoryEntry {
         }
     }
 
-    public void setSticky(boolean sticky, String owner, long expire) throws CacheException {
+    public void setSticky(String owner, long expire, boolean overwrite) throws CacheException {
         try {
-            if( sticky ) {
-                _state.setSticky(owner, expire);
-            }else{
-                _state.cleanSticky(owner);
-            }
+            _state.setSticky(owner, expire, overwrite);
 
             CacheRepositoryEvent sickyEvent = new CacheRepositoryEvent(_eventProcessor, clone() );
             _eventProcessor.processEvent(EventType.STICKY, sickyEvent);
