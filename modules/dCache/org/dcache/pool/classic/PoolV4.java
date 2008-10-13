@@ -44,6 +44,8 @@ import org.dcache.pool.repository.ReadHandle;
 import org.dcache.pool.repository.CacheEntry;
 import org.dcache.pool.repository.StateChangeListener;
 import org.dcache.pool.repository.StateChangeEvent;
+import org.dcache.pool.repository.StickyRecord;
+import org.dcache.pool.p2p.P2PClient;
 import org.dcache.pool.movers.MoverProtocol;
 import org.dcache.cell.CellCommandListener;
 import org.dcache.cell.CellMessageReceiver;
@@ -1542,7 +1544,7 @@ public class PoolV4
     }
 
     public DelayedReply messageArrived(Pool2PoolTransferMsg msg)
-        throws CacheException
+        throws CacheException, UnknownHostException
     {
         if (_poolMode.isDisabled(PoolV2Mode.DISABLED_P2P_CLIENT)) {
             _log.error("Pool2PoolTransferMsg Request rejected due to "
@@ -1566,8 +1568,9 @@ public class PoolV4
             targetState = EntryState.PRECIOUS;
         }
 
+        List<StickyRecord> stickyRecords = Collections.emptyList();
         _p2pClient.newCompanion(pnfsId, poolName, storageInfo,
-                                targetState, callback);
+                                targetState, stickyRecords, callback);
         return callback;
     }
 

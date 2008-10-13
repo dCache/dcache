@@ -148,11 +148,23 @@
     <constructor-arg ref="queue"/>
     <constructor-arg ref="storagehandler"/>
   </bean>
-
-  <bean id="pp" class="org.dcache.pool.classic.P2PClient">
+  
+  <bean id="pp" class="org.dcache.pool.p2p.P2PClient"
+        destroy-method="shutdown">
     <description>Pool to pool transfer manager</description>
-    <constructor-arg ref="rep"/>
-    <constructor-arg ref="csm"/>
+    <property name="repository" ref="rep"/>
+    <property name="checksumModule" ref="csm"/>
+    <property name="pnfs">
+      <bean class="org.dcache.cell.CellStub">
+        <property name="timeout" value="300000"/>
+        <property name="destination" value="PnfsManager"/>
+      </bean>
+    </property>
+    <property name="pool">
+      <bean class="org.dcache.cell.CellStub">
+        <property name="timeout" value="300000"/>
+      </bean>
+    </property>
   </bean>
 
 </beans>

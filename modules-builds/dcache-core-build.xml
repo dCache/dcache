@@ -326,6 +326,12 @@
                smfile="${sourceDir}/org/dcache/services/pinmanager1/Pinner.sm"
                destdir="${buildDir}/core/org/dcache/services/pinmanager1/"
                smcjar="${smc.jar}"/>
+
+          <mkdir dir="${buildDir}/core/org/dcache/pool/p2p"/>
+          <smc target="java"
+               smfile="${sourceDir}/org/dcache/pool/p2p/Companion.sm"
+               destdir="${buildDir}/core/org/dcache/pool/p2p/"
+               smcjar="${smc.jar}"/>
         </target>
 
 	<!-- Compile -->

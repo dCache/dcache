@@ -35,7 +35,8 @@ public class ReflectionUtils
      * Notice that we return the first method found in a depth-first
      * left-to-right search. This is different from what Java does at
      * compile time. We do not support auto-boxing or methods with a
-     * variable number of arguments.
+     * variable number of arguments. Lack of auto-boxing means the
+     * methods with parameters of primitive types are never returned.
      *
      * To improve performance, a cache of resolved methods is
      * maintained.
