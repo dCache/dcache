@@ -34,16 +34,16 @@ public interface CacheRepositoryEntry {
    /**
      *  Set the storage info for this entry.
      */
-   public void setStorageInfo( StorageInfo storageInfo ) 
+   public void setStorageInfo( StorageInfo storageInfo )
           throws CacheException ;
    /**
      *  get the storage info of the related entry.
      *  Throws CacheException if the storage info is not
      *  (yet) available.
      */
-   public StorageInfo getStorageInfo() 
+   public StorageInfo getStorageInfo()
           throws CacheException ;
-   
+
    public void setCached() throws CacheException ;
    public void setPrecious() throws CacheException ;
    public void setPrecious(boolean force) throws CacheException ;
@@ -58,25 +58,25 @@ public interface CacheRepositoryEntry {
    public boolean isReceivingFromClient() throws CacheException;
    public boolean isReceivingFromStore() throws CacheException;
    public boolean isSendingToStore() throws CacheException;
-   
+
    public boolean isBad() ;
    public void setBad( boolean bad ) ;
-   
+
    public boolean isRemoved() throws CacheException;
    public boolean isDestroyed() throws CacheException;
-   
+
    public File getDataFile() throws CacheException  ;
    public String getState() ;
    public long getCreationTime() throws CacheException;
    public long getLastAccessTime() throws CacheException;
    public void touch() throws CacheException;
-   
+
    public CacheRepositoryStatistics getCacheRepositoryStatistics() throws CacheException;
 
    public  void decrementLinkCount() throws CacheException ;
    public  void incrementLinkCount() throws CacheException ;
    public  int getLinkCount() throws CacheException ;
-  /* 
+  /*
    public void addRestoreClientMessage( CellMessage message ) throws CacheException;
    public Iterator  getRestoreClientMesssages() throws CacheException;
   */
@@ -84,7 +84,7 @@ public interface CacheRepositoryEntry {
    public void lock( boolean locked ) ;
    public void lock( long millisSeconds );
    public boolean isLocked();
-   
+
 	/**
 	 *
 	 * set/clean sticky flag
@@ -96,9 +96,9 @@ public interface CacheRepositoryEntry {
 	 */
 
 	public void setSticky(boolean sticky, String owner, long validTill) throws CacheException ;
-	
+
 	/**
-	 * 
+	 *
 	 * @return list of StickyRecords held by the file
 	 */
 	public List<StickyRecord> stickyRecords() ;
