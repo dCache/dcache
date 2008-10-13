@@ -1196,7 +1196,7 @@ public abstract class AbstractFtpDoorV1
                  * around.
                  */
                 if (_transfer != null) {
-                    transfer_error(451, "Aborting transfer due to session termination");
+                    abortTransfer(451, "Aborting transfer due to session termination");
                 }
 
                 closeAdapter();
@@ -1348,7 +1348,7 @@ public abstract class AbstractFtpDoorV1
                 return;
             }
 
-            /* The transfer_error method may wait for moverId to be
+            /* The abortTransfer method may wait for moverId to be
              * reset.
              */
             _transfer.moverId = null;
@@ -1487,7 +1487,7 @@ public abstract class AbstractFtpDoorV1
                 }
                 errMsg.append(")");
 
-                transfer_error(426, errMsg.toString());
+                abortTransfer(426, errMsg.toString());
             }
         }
     }
@@ -2759,24 +2759,24 @@ public abstract class AbstractFtpDoorV1
             switch (e.getRc()) {
             case CacheException.FILE_NOT_FOUND:
             case CacheException.DIR_NOT_EXISTS:
-                transfer_error(550, "File not found");
+                abortTransfer(550, "File not found");
                 break;
             case CacheException.TIMEOUT:
-                transfer_error(451, "Internal timeout", e);
+                abortTransfer(451, "Internal timeout", e);
                 break;
             case CacheException.NOT_DIR:
-                transfer_error(550, "Not a directory");
+                abortTransfer(550, "Not a directory");
                 break;
             default:
-                transfer_error(451, "Operation failed: " + e.getMessage(), e);
+                abortTransfer(451, "Operation failed: " + e.getMessage(), e);
                 break;
             }
         } catch (FTPCommandException e) {
-            transfer_error(e.getCode(), e.getReply());
+            abortTransfer(e.getCode(), e.getReply());
         } catch (InterruptedException e) {
-            transfer_error(451, "Operation cancelled");
+            abortTransfer(451, "Operation cancelled");
         } catch (IOException e) {
-            transfer_error(451, "Operation failed: " + e.getMessage());
+            abortTransfer(451, "Operation failed: " + e.getMessage());
         }
     }
 
@@ -3082,36 +3082,36 @@ public abstract class AbstractFtpDoorV1
                                           _perfMarkerConf.period);
             }
         } catch (FTPCommandException e) {
-            transfer_error(e.getCode(), e.getReply());
+            abortTransfer(e.getCode(), e.getReply());
         } catch (InterruptedException e) {
-            transfer_error(451, "Operation cancelled");
+            abortTransfer(451, "Operation cancelled");
         } catch (IOException e) {
-            transfer_error(451, "Operation failed: " + e.getMessage());
+            abortTransfer(451, "Operation failed: " + e.getMessage());
         } catch (CacheException e) {
             switch (e.getRc()) {
             case CacheException.FILE_NOT_FOUND:
-                transfer_error(550, "File not found");
+                abortTransfer(550, "File not found");
                 break;
             case CacheException.DIR_NOT_EXISTS:
-                transfer_error(550, "Directory not found");
+                abortTransfer(550, "Directory not found");
                 break;
             case CacheException.FILE_EXISTS:
-                transfer_error(553, "File exists");
+                abortTransfer(553, "File exists");
                 break;
             case CacheException.TIMEOUT:
-                transfer_error(451, "Internal timeout", e);
+                abortTransfer(451, "Internal timeout", e);
                 break;
             case CacheException.NOT_DIR:
-                transfer_error(550, "Not a directory");
+                abortTransfer(550, "Not a directory");
                 break;
             default:
-                transfer_error(451, "Operation failed: " + e.getMessage(), e);
+                abortTransfer(451, "Operation failed: " + e.getMessage(), e);
                 break;
             }
         } catch (TimeoutException e) {
-            transfer_error(451, "Internal timeout", e);
+            abortTransfer(451, "Internal timeout", e);
         } catch (SendAndWaitException e) {
-            transfer_error(451, "Operation failed: " + e.getMessage(), e);
+            abortTransfer(451, "Operation failed: " + e.getMessage(), e);
         } finally {
             _checkSumFactory = null;
             _checkSum = null;
@@ -3424,9 +3424,9 @@ public abstract class AbstractFtpDoorV1
         return time - System.currentTimeMillis();
     }
 
-    private void transfer_error(int replyCode, String msg)
+    private void abortTransfer(int replyCode, String msg)
     {
-        transfer_error(replyCode, msg, null);
+        abortTransfer(replyCode, msg, null);
     }
 
     /**
@@ -3446,15 +3446,15 @@ public abstract class AbstractFtpDoorV1
      * <code>reportBug</code> should be called. That method logs the
      * exception as fatal, meaning it will always be added to the
      * log. In most cases <code>reportBug</code> should be called
-     * instead of <code>transfer_error</code>, since the former will
+     * instead of <code>abortTransfer</code>, since the former will
      * throw a <code>RuntimeException</code>, which in turn causes
-     * <code>transfer_error</code> to be called.
+     * <code>abortTransfer</code> to be called.
      *
      * @param replyCode reply code to send the the client
      * @param replyMsg error message to send back to the client
      * @param exception exception to log or null
      */
-    private synchronized void transfer_error(int replyCode, String replyMsg,
+    private synchronized void abortTransfer(int replyCode, String replyMsg,
                                              Exception exception)
     {
         if (_transfer != null) {
@@ -3514,7 +3514,7 @@ public abstract class AbstractFtpDoorV1
                     sendMessage(new CellMessage(new CellPath("SpaceManager"),
                                                 unlockSpace ));
                 } catch (NoRouteToCellException e) {
-                    error("FTP Door: transfer_error: cannot send " +
+                    error("FTP Door: abortTransfer: cannot send " +
                           "message to SpaceManager: no route to cell.");
                 }
             }
@@ -3925,7 +3925,7 @@ public abstract class AbstractFtpDoorV1
     // ---------------------------------------------
     public synchronized void ac_abor(String arg)
     {
-        transfer_error(426, "Transfer aborted");
+        abortTransfer(426, "Transfer aborted");
 
         // In any case, close data socket and send response 226 to client
         if (_dataSocket != null) {
