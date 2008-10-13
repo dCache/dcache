@@ -34,22 +34,21 @@ onerror continue
   set context -c metaDataRepositoryImport ""
   set context -c gsiftpReadAhead        16777216
   set context -c allowCleaningPreciousFiles false
-onerror shutdown
 
+onerror shutdown
 
 #
 # Set poolupDestination to broadcast if hsmCleaner is enabled
 #
 onerror continue
-
-set env poolupDestination PoolManager
-define context hsmcleaner.exe endDefine
-  set env poolupDestination broadcast
+define env hsmCleanerEnabled endDefine
+  set context -c poolupDestination broadcast
 endDefine
 eval ${hsmCleaner} enabled ==
-exec context hsmcleaner.exe -run -ifok=rc
-
+exec env hsmCleanerEnabled -run -ifok
+set context -c poolupDestination PoolManager
 onerror shutdown
+
 
 #
 # NIO ftp mover
