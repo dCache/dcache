@@ -147,6 +147,32 @@ public class CellMessageDispatcher
     }
 
     /**
+     * Returns the message types that can be reveived by an object of
+     * the given class.
+     */
+    public static Collection<Class> getMessageTypes(Class c)
+    {
+        Collection<Class> types = new ArrayList();
+
+        for (Method method : c.getMethods()) {
+            if (method.getName().equals("messageArrived")) {
+                Class[] parameterTypes = method.getParameterTypes();
+                switch (parameterTypes.length) {
+                case 1:
+                    types.add(parameterTypes[0]);
+                    break;
+                case 2:
+                    if (CellMessage.class.isAssignableFrom(parameterTypes[0])) {
+                        types.add(parameterTypes[1]);
+                    }
+                    break;
+                }
+            }
+        }
+        return types;
+    }
+
+    /**
      * Finds the objects and methods, in other words the receivers, of
      * messages of a given type.
      *
