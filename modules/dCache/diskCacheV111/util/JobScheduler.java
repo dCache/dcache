@@ -32,5 +32,5 @@ public interface JobScheduler {
     public void setSchedulerId( int id ) ;
     public String getSchedulerName() ;
     public int    getSchedulerId() ;
-
+    public void shutdown();
 }

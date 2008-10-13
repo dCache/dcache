@@ -3,8 +3,9 @@ package diskCacheV111.util;
 import diskCacheV111.vehicles.*;
 
 import java.util.*;
-import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.ThreadFactory;
 import java.lang.reflect.InvocationTargetException;
 
@@ -34,20 +35,20 @@ public class FJobScheduler implements JobScheduler, Runnable {
     /**
      * thread pool used for job execution
      */
-    private final Executor _jobExecutor;
+    private final ExecutorService _jobExecutor;
 
     private String[] _st_string = { "W", "A", "K", "R" };
 
-    public class SJob implements Job, Runnable {
+    private class SJob implements Job, Runnable {
 
         private final long _submitTime;
         private long _startTime = 0;
         private int _status = WAITING;
-        private Thread _thread = null;
         private final Runnable _runnable;
         private final int _id;
         private final int _priority;
         private double _transferRate = 0.00;
+        private Future _future;
 
         private SJob(Runnable runnable, int id, int priority) {
             _submitTime = System.currentTimeMillis();
@@ -57,10 +58,14 @@ public class FJobScheduler implements JobScheduler, Runnable {
         }
 
         public void updateWeight() {
-            synchronized (_lock) {
-                double transferRate = (_runnable instanceof IoBatchable) ? ((IoBatchable) _runnable)
+            double transferRate;
+            synchronized (this) {
+                transferRate = (_runnable instanceof IoBatchable) ? ((IoBatchable) _runnable)
                         .getTransferRate()
                         : (double) 10.00;
+            }
+
+            synchronized (_lock) {
 
                 _activeJobs -= _transferRate / _transferRateEquivalent;
 
@@ -74,7 +79,7 @@ public class FJobScheduler implements JobScheduler, Runnable {
             return _id;
         }
 
-        public String getStatusString() {
+        public synchronized String getStatusString() {
             return _st_string[_status - WAITING];
         }
 
@@ -86,22 +91,22 @@ public class FJobScheduler implements JobScheduler, Runnable {
             return _id;
         }
 
-        public long getStartTime() {
+        public synchronized long getStartTime() {
             return _startTime;
         }
 
-        public long getSubmitTime() {
+        public synchronized long getSubmitTime() {
             return _submitTime;
         }
 
-        private void start() {
-            _jobExecutor.execute(_runnable);
+        public synchronized void start() {
+            _future = _jobExecutor.submit(_runnable);
             _status = ACTIVE;
         }
 
         public synchronized boolean kill(boolean force)
         {
-            if (_status != ACTIVE)
+            if (_future == null)
                 throw new IllegalStateException("Not running");
 
             if (_runnable instanceof Batchable) {
@@ -113,18 +118,22 @@ public class FJobScheduler implements JobScheduler, Runnable {
                 }
             }
 
-            _thread.interrupt();
+            _future.cancel(true);
             return true;
         }
 
         public void run() {
-            _startTime = System.currentTimeMillis();
+            synchronized (this) {
+                _startTime = System.currentTimeMillis();
+            }
+
             try {
-                _thread = Thread.currentThread();
                 _runnable.run();
             } finally {
-                synchronized (_lock) {
+                synchronized (this) {
                     _status = REMOVED;
+                }
+                synchronized (_lock) {
                     _jobs.remove(_id);
                     _activeJobs -= _transferRate / _transferRateEquivalent;
                     _lock.notifyAll();
@@ -355,54 +364,59 @@ public class FJobScheduler implements JobScheduler, Runnable {
         return _batch;
     }
 
+    public void shutdown() {
+        _worker.interrupt();
+    }
+
     public void run() {
         synchronized (_lock) {
-
-            while (!Thread.interrupted()) {
+            try {
                 try {
-                    _lock.wait();
+                    while (true) {
+                        if (_batch != 0) {
+                            for (int i = HIGH; i >= 0; i--) {
+                                while (_activeJobs < _maxActiveJobs) {
+                                    if (_queues[i].isEmpty()) break;
+                                    SJob job = (SJob) _queues[i].removeFirst();
+                                    // System.out.println("Starting : "+job ) ;
+                                    _activeJobs++;
+                                    _batch = _batch > 0 ? _batch - 1 : _batch;
+                                    job.start();
+                                }
+                            }
+                        }
+                        _lock.wait();
+                    }
                 } catch (InterruptedException ie) {
-                    break;
                 }
+                //
+                // shutdown
+                //
+                Iterator i = _jobs.values().iterator();
+                while (i.hasNext()) {
 
-                if (_batch == 0) continue;
+                    SJob job = (SJob) i.next();
 
-                for (int i = HIGH; i >= 0; i--) {
-                    while (_activeJobs < _maxActiveJobs) {
-                        if (_queues[i].isEmpty()) break;
-                        SJob job = (SJob) _queues[i].removeFirst();
-                        // System.out.println("Starting : "+job ) ;
-                        _activeJobs++;
-                        _batch = _batch > 0 ? _batch - 1 : _batch;
-                        job.start();
+                    if (job._status == WAITING) {
+                        if (job._runnable instanceof Batchable)
+                            ((Batchable) job._runnable).unqueued();
+                    } else if (job._status == ACTIVE) {
+                        job.kill(true);
+                    }
+                    long start = System.currentTimeMillis();
+                    while ((_activeJobs > 0)
+                           && ((System.currentTimeMillis() - start) > 10000)) {
+                        try {
+                            _lock.wait(1000);
+                        } catch (InterruptedException ee) {
+                            // for 10 seconds we simply ignore the interruptions
+                            // after that we quit anyway
+
+                        }
                     }
                 }
-            }
-            //
-            // shutdown
-            //
-            Iterator i = _jobs.values().iterator();
-            while (i.hasNext()) {
-
-                SJob job = (SJob) i.next();
-
-                if (job._status == WAITING) {
-                    if (job._runnable instanceof Batchable)
-                        ((Batchable) job._runnable).unqueued();
-                } else if (job._status == ACTIVE) {
-                    job.kill(true);
-                }
-                long start = System.currentTimeMillis();
-                while ((_activeJobs > 0)
-                        && ((System.currentTimeMillis() - start) > 10000)) {
-                    try {
-                        _lock.wait(1000);
-                    } catch (InterruptedException ee) {
-                        // for 10 seconds we simply ignore the interruptions
-                        // after that we quit anyway
-
-                    }
-                }
+            } finally {
+                _jobExecutor.shutdownNow();
             }
         }
     }

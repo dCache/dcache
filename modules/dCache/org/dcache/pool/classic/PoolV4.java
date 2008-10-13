@@ -668,12 +668,21 @@ public class PoolV4
             }
             return null;
         }
+
+        public void shutdown()
+        {
+            for (JobScheduler s: _list) {
+                s.shutdown();
+            }
+        }
     }
 
     public void cleanUp()
     {
         disablePool(PoolV2Mode.DISABLED_DEAD | PoolV2Mode.DISABLED_STRICT,
                     666, "Shutdown");
+        _ioQueue.shutdown();
+        _p2pQueue.shutdown();
     }
 
     /**

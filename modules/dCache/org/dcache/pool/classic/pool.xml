@@ -124,7 +124,8 @@
     <description>HSM backend manager</description>
   </bean>
 
-  <bean id="storagehandler" class="org.dcache.pool.classic.HsmStorageHandler2">
+  <bean id="storagehandler" class="org.dcache.pool.classic.HsmStorageHandler2"
+        destroy-method="shutdown">
     <description>HSM integration module</description>
     <constructor-arg ref="rep"/>
     <constructor-arg ref="pnfs"/>

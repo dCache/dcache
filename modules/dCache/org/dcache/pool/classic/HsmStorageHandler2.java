@@ -178,6 +178,12 @@ public class HsmStorageHandler2
         _storeQueue = new SimpleJobScheduler("store");
     }
 
+    public void shutdown()
+    {
+        _fetchQueue.shutdown();
+        _storeQueue.shutdown();
+    }
+
     public void setCellEndpoint(CellEndpoint endpoint)
     {
         super.setCellEndpoint(endpoint);
