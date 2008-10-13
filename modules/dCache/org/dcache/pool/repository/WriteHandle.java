@@ -1,16 +1,19 @@
 package org.dcache.pool.repository;
 
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.Checksum;
 import java.util.concurrent.TimeoutException;
 import java.io.File;
+
+
 
 /**
  * Repository handle providing write access to an entry.
  *
  * The only way to create a new entry is through a write handle.  A
- * handle must be explicitly closed after the write has
- * completed. Failure to create the file can be signaled through the
- * <code>cancel</code> method.
+ * handle must be explicitly committed and closed after the write has
+ * completed. Failure to create the file is signaled by closing the
+ * handle without committing it first.
  *
  * The write handle provides methods for allocating space for the
  * entry. Space must be allocated before it is consumed on the
@@ -24,9 +27,9 @@ public interface WriteHandle
      *
      * @param size in bytes
      * @throws InterruptedException
-     * @throws IllegalStateException if handler has been closed
-     * @throws IllegalArgumentException
-     *             if <i>size</i> < 0
+     * @throws IllegalStateException if handle has been closed.
+     * @throws IllegalArgumentException if <code>size</code> is less
+     * than 0.
      */
     void allocate(long size)
         throws IllegalStateException, IllegalArgumentException, InterruptedException;
@@ -38,8 +41,8 @@ public interface WriteHandle
      * @param size in bytes
      * @param time to block in milliseconds
      * @throws InterruptedException
-     * @throws IllegalStateException if handler has been closed
-     * @throws TimeoutException if request timed out
+     * @throws IllegalStateException if handle has been closed.
+     * @throws TimeoutException if request timed out.
      * @throws IllegalArgumentException if either<code>size</code> or
      *             <code>time</code> is negative.
      */
@@ -48,44 +51,53 @@ public interface WriteHandle
                InterruptedException, TimeoutException;
 
     /**
-     * Cancels the process of creating a replica.
+     * Signal successful creation of the replica.
      *
-     * If the replica is kept, its entry is flagged as bad. Otherwise
-     * the replica is deleted, allocated space is released and the
-     * entry will be removed.
+     * The file must not be modified after the handle has been
+     * committed.
      *
-     * The handle will not be closed and the close method must still
-     * be called.
+     * Committing adjusts space reservation to match the actual file
+     * size. It may cause the file size in the storage info and in
+     * PNFS to be updated. Committing sets the repository entry to its
+     * target state.
+     *
+     * The checksum provided is compared to a known checksum, if
+     * possible. If a mismatch is detetected CacheException is
+     * thrown. If no checksum was known, the checksum is stored in the
+     * storage info and in PNFS.
+     *
+     * In case of problems, the handle is not closed and an exception
+     * is thrown.
+     *
+     * Committing a handle multiple times causes an
+     * IllegalStateException.
+     *
+     * @param checksum Checksum of the replica. May be null.
+     * @throws IllegalStateException if the handle is already
+     * committed or closed.
+     * @throws FileSizeMismatchException if file size does not match
+     * the expected size.
+     * @throws CacheException if the repository or PNFS state could
+     * not be updated.
      */
-    void cancel(boolean keep) throws IllegalStateException;
+    void commit(Checksum checksum)
+        throws IllegalStateException, InterruptedException, CacheException;
 
     /**
      * Closes the write handle. The file must not be modified after
      * the handle has been closed and the handle itself must be
      * discarded.
      *
-     * Closing the handle adjust space reservation to match the actual
-     * file size. It may cause the file size in the storage info and
-     * in PNFS to be updated.
-     *
-     * Closing the handle sets the repository entry to its target
-     * state.
-     *
-     * In case of problems, the entry is marked bad and an exception
-     * is thrown.
+     * If the handle was not committed, closing the handle will mark
+     * the replica broken or delete it. The action taken depends on
+     * the handle state and possibly configuration settings.
      *
      * Closing a handle multiple times causes an
      * IllegalStateException.
      *
-     * @throws IllegalStateException if EntryIODescriptor is closed.
-     * @throws FileSizeMismatchException if file size does not match
-     * the expected size.
-     * @throws CacheException if the repository or PNFS state could
-     * not be updated.
+     * @throws IllegalStateException if the handle is closed.
      */
-    void close()
-        throws IllegalStateException, InterruptedException, CacheException;
-
+    void close() throws IllegalStateException;
 
     /**
      * @return disk file

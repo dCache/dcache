@@ -1185,7 +1185,10 @@ public class PoolV4
                 try {
                     _transfer.transfer();
                 } finally {
+                    /* Surpress thread interruptions after this point.
+                     */
                     setThread(null);
+                    Thread.interrupted();
                     _transfer.close();
                 }
 

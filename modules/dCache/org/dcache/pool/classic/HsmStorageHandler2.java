@@ -503,12 +503,7 @@ public class HsmStorageHandler2
 
             try {
                 _log.info("Dequeuing " + pnfsId);
-                _handle.cancel(false);
                 _handle.close();
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            } catch (CacheException e) {
-                _log.error("Error while removing replica: " + e.getMessage());
             } finally {
                 removeFetchEntry(pnfsId);
 
@@ -567,6 +562,7 @@ public class HsmStorageHandler2
                 }
 
                 doChecksum(_handle);
+                _handle.commit(null);
             } catch (CacheException e) {
                 _log.error(e);
                 returnCode = 1;
@@ -601,21 +597,8 @@ public class HsmStorageHandler2
                 setThread(null);
                 Thread.interrupted();
 
-                try {
-                    if (excep != null) {
-                        _handle.cancel(false);
-                    }
-                    _handle.close();
-                } catch (InterruptedException e) {
-                    _log.error("Interrupted");
-                    excep = e;
-                } catch (CacheException e) {
-                    _log.error("CacheException: " + e);
-                    excep = e;
-                }
-
+                _handle.close();
                 removeFetchEntry(pnfsId);
-
                 executeCallbacks(excep);
 
                 if (excep != null) {

@@ -218,23 +218,17 @@ class Companion
             File file = handle.getFile();
             CacheEntry entry = handle.getEntry();
             long size = entry.getStorageInfo().getFileSize();
-            handle.allocate(size);
 
+            handle.allocate(size);
             runIO(in, out, file, size);
+            handle.commit(null);
         } catch (Throwable e) {
-            handle.cancel(false);
             error = e;
         } finally {
             setThread(null);
             Thread.interrupted();
 
-            try {
-                handle.close();
-            } catch (InterruptedException e) {
-                error = e;
-            } catch (CacheException e) {
-                error = e;
-            }
+            handle.close();
         }
 
         synchronized (this) {

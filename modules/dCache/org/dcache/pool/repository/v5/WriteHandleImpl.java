@@ -4,9 +4,10 @@ import org.apache.log4j.Logger;
 
 import diskCacheV111.repository.CacheRepositoryEntry;
 import diskCacheV111.repository.SpaceMonitor;
-import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.vehicles.StorageInfo;
+import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.Checksum;
 
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.pool.repository.FileSizeMismatchException;
@@ -21,6 +22,11 @@ import java.io.IOException;
 
 class WriteHandleImpl implements WriteHandle
 {
+    enum HandleState
+    {
+        OPEN, COMMITTED, CLOSED
+    }
+
     private static Logger _log =
         Logger.getLogger("logger.org.dcache.repository");
 
@@ -41,15 +47,14 @@ class WriteHandleImpl implements WriteHandle
     /** The entry state used during transfer. */
     private final EntryState _initialState;
 
-    /** The entry state used when the handle is closed. */
+    /** The entry state used when the handle is committed. */
     private EntryState _targetState;
 
-    /** True while the handle is open. */
-    private boolean _open;
+    /** The state of the write handle. */
+    private HandleState _state;
 
     /** Amount of space allocated for this handle. */
     private long _allocated;
-
 
     WriteHandleImpl(CacheRepositoryV5 repository,
                     SpaceMonitor monitor,
@@ -85,7 +90,7 @@ class WriteHandleImpl implements WriteHandle
         _initialState = initialState;
         _targetState = targetState;
         _stickyRecords = stickyRecords;
-        _open = true;
+        _state = HandleState.OPEN;
         _allocated = 0;
 
         if (getFile().exists())
@@ -112,7 +117,7 @@ class WriteHandleImpl implements WriteHandle
     public void allocate(long size)
         throws IllegalStateException, IllegalArgumentException, InterruptedException
     {
-        if (!_open)
+        if (_state != HandleState.OPEN)
             throw new IllegalStateException("Handle is closed");
 
         _monitor.allocateSpace(size);
@@ -134,7 +139,7 @@ class WriteHandleImpl implements WriteHandle
         throws IllegalStateException, IllegalArgumentException,
                InterruptedException, TimeoutException
     {
-        if (!_open)
+        if (_state != HandleState.OPEN)
             throw new IllegalStateException("Handle is closed");
 
         _monitor.allocateSpace(size, time);
@@ -161,34 +166,10 @@ class WriteHandleImpl implements WriteHandle
         }
     }
 
-    /**
-     * Closes the write handle. The file must not be modified after
-     * the handle has been closed and the handle itself must be
-     * discarded.
-     *
-     * Closing the handle adjusts space reservation to match the
-     * actual file size. It may cause the file size in the storage
-     * info and in PNFS to be updated.
-     *
-     * Closing the handle sets the repository entry to its target
-     * state.
-     *
-     * In case of problems, the entry is marked broken and an
-     * exception is thrown.
-     *
-     * Closing a handle multiple times causes an
-     * IllegalStateException.
-     *
-     * @throws IllegalStateException if EntryIODescriptor is closed.
-     * @throws FileSizeMismatchException if file size does not match
-     * the expected size.
-     * @throws CacheException if the repository or PNFS state could
-     * not be updated.
-     */
-    public void close()
+    public void commit(Checksum checksum)
         throws IllegalStateException, InterruptedException, CacheException
     {
-        if (!_open)
+        if (_state != HandleState.OPEN)
             throw new IllegalStateException("Handle is closed");
 
         try {
@@ -207,74 +188,112 @@ class WriteHandleImpl implements WriteHandle
                 throw e;
             }
 
-
             StorageInfo info = _entry.getStorageInfo();
 
             /* If this is a new file, i.e. we did not get it from tape
              * or another pool, then update the size in the storage
-             * info and in PNFS.
+             * info and in PNFS.  Otherwise fail the operation if the
+             * file size is wrong.
              */
-            if (_targetState != EntryState.REMOVED &&
-                _targetState != EntryState.BROKEN &&
-                _initialState == EntryState.FROM_CLIENT &&
+            if (_initialState == EntryState.FROM_CLIENT &&
                 info.getFileSize() == 0) {
                 info.setFileSize(length);
                 _entry.setStorageInfo(info);
                 _pnfs.setFileSize(_entry.getPnfsId(), length);
-            }
-
-            /* Register cache location unless replica is to be
-             * removed. Should this fail due to FILE_NOT_FOUND, then
-             * the catch below will cause the replica to be
-             * removed. Should if fail for any other reason, the the
-             * file will be marked broken and the pool will repeat the
-             * registration step at the next start.
-             */
-            if (_targetState != EntryState.REMOVED) {
-                _pnfs.addCacheLocation(_entry.getPnfsId());
-            }
-
-            /* Fail the operation if the file size is wrong. It is
-             * import we do this after setting the cache location,
-             * since we otherwise risk not registering the replica.
-             */
-            if (_targetState != EntryState.REMOVED &&
-                _targetState != EntryState.BROKEN &&
-                info.getFileSize() != length) {
+            } else if (info.getFileSize() != length) {
                 throw new CacheException("File does not have expected length. Marking it bad.");
             }
 
-            _open = false;
+            /* Compare and update checksum. For now we only store the
+             * checksum locally. TODO: Compare and update in PNFS.
+             */
+            if (checksum != null) {
+                String flags = info.getKey("flag-c");
+                if (flags == null) {
+                    info.setKey("flag-c", checksum.toString());
+                    _entry.setStorageInfo(info);
+                } else if (!checksum.equals(new Checksum(flags))) {
+                    throw new CacheException(String.format("Checksum error: file=%s, expected=%s",
+                                                           checksum, flags));
+                }
+            }
+
+            /* Register cache location. Should this fail due to
+             * FILE_NOT_FOUND, then the catch below will cause the
+             * replica to be removed. Should it fail for any other
+             * reason, then the file will be marked broken and the
+             * pool will repeat the registration step at the next
+             * start.
+             */
+            _pnfs.addCacheLocation(_entry.getPnfsId());
+
+            /* Move entry to target state.
+             */
+            for (StickyRecord record: _stickyRecords) {
+                _entry.setSticky(record.owner(), record.expire(), false);
+            }
+            _repository.setState(_entry, _targetState);
+
+            _state = HandleState.COMMITTED;
         } catch (CacheException e) {
+            /* If any of the PNFS operations return FILE_NOT_FOUND,
+             * then we change the target state and the close method
+             * will take care of removing the file.
+             */
             if (e.getRc() == CacheException.FILE_NOT_FOUND) {
                 _targetState = EntryState.REMOVED;
             }
             throw e;
-        } finally {
-            /* In case of failures, _open is still true at this
-             * point. Should that happen, we mark the replica as
-             * broken.
+        }
+    }
+
+    public void close()
+        throws IllegalStateException
+    {
+        switch (_state) {
+        case CLOSED:
+            throw new IllegalStateException("Handle is closed");
+
+        case OPEN:
+            /* File was not committed. Decide if we should mark it
+             * broken or removed.
              */
-            if (_open) {
-                _open = false;
-                if (_targetState != EntryState.REMOVED)
-                    _targetState = EntryState.BROKEN;
+            if (_initialState != EntryState.FROM_CLIENT ||
+                getFile().length() == 0) {
+                _targetState = EntryState.REMOVED;
             }
 
+            /* Register cache location unless replica is to be
+             * removed.
+             */
             if (_targetState != EntryState.REMOVED) {
-                for (StickyRecord record: _stickyRecords) {
-                    _entry.setSticky(record.owner(), record.expire(), false);
+                try {
+                    _pnfs.addCacheLocation(_entry.getPnfsId());
+                } catch (CacheException e) {
+                    if (e.getRc() == CacheException.FILE_NOT_FOUND) {
+                        _targetState = EntryState.REMOVED;
+                    }
                 }
+            }
 
-                _repository.setState(_entry, _targetState);
-                _entry.lock(false);
-            } else {
+            if (_targetState == EntryState.REMOVED) {
                 /* A locked entry cannot be removed, thus we need to
                  * unlock it before setting the state.
                  */
                 _entry.lock(false);
                 _repository.setState(_entry, EntryState.REMOVED);
+            } else {
+                _repository.setState(_entry, EntryState.BROKEN);
+                _entry.lock(false);
             }
+
+            _state = HandleState.CLOSED;
+            break;
+
+        case COMMITTED:
+            _state = HandleState.CLOSED;
+            _entry.lock(false);
+            break;
         }
     }
 
@@ -284,7 +303,7 @@ class WriteHandleImpl implements WriteHandle
      */
     public File getFile() throws IllegalStateException
     {
-        if (!_open)
+        if (_state == HandleState.CLOSED)
             throw new IllegalStateException("Handle is closed");
 
         try {
@@ -302,7 +321,7 @@ class WriteHandleImpl implements WriteHandle
      */
     public CacheEntry getEntry()  throws IllegalStateException
     {
-        if (!_open)
+        if (_state == HandleState.CLOSED)
             throw new IllegalStateException("Handle is closed");
 
         try {

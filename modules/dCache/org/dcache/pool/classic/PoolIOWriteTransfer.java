@@ -173,8 +173,6 @@ class PoolIOWriteTransfer
         throws CacheException, InterruptedException,
                IOException, NoRouteToCellException
     {
-        _size = _file.length();
-        boolean exists = _size > 0;
         try {
             if (_success) {
                 _checksumModule.setMoverChecksums(_pnfsId,
@@ -182,11 +180,9 @@ class PoolIOWriteTransfer
                                                   _checksumFactory,
                                                   _clientChecksum,
                                                   _transferChecksum);
+                _handle.commit(null);
             }
         } finally {
-            if (!_success) {
-                _handle.cancel(exists);
-            }
             _handle.close();
         }
     }
