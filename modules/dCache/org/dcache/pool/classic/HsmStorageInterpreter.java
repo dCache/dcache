@@ -193,7 +193,7 @@ public class HsmStorageInterpreter
         /* We need to fetch the storage info and we don't want to
          * block the message thread while waiting for the reply.
          */
-        Thread t = new Thread() {
+        Thread t = new Thread("rh restore") {
                 public void run() {
                     try {
                         StorageInfo si = _pnfs.getStorageInfo(pnfsId);
