@@ -25,6 +25,8 @@ import java.io.File;
 import java.io.RandomAccessFile;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.List;
+import java.util.Collections;
 
 /**
  * Encapsulates a write transfer, that is, receiving a file. It acts
@@ -44,13 +46,13 @@ class PoolIOWriteTransfer
     private boolean _success = false;
     private long _size;
 
-    private static StickyRecord getStickyRecord(StorageInfo info)
+    private static List<StickyRecord> getStickyRecords(StorageInfo info)
     {
         AccessLatency al = info.getAccessLatency();
         if (al != null && al.equals( AccessLatency.ONLINE)) {
-            return new StickyRecord("system", -1);
+            return Collections.singletonList(new StickyRecord("system", -1));
         } else {
-            return null;
+            return Collections.emptyList();
         }
     }
 
@@ -110,14 +112,14 @@ class PoolIOWriteTransfer
          *     Custodial+NEARLINE (T1D0) : precious         => cached
          *     Output+ONLINE      (T0D1) : cached+sticky    => cached+sticky
          */
-        StickyRecord sticky = getStickyRecord(storageInfo);
+        List<StickyRecord> stickyRecords = getStickyRecords(storageInfo);
         EntryState target = getTargetState(storageInfo);
 
         _handle = repository.createEntry(pnfsId,
                                          _storageInfo,
                                          EntryState.FROM_CLIENT,
                                          target,
-                                         sticky);
+                                         stickyRecords);
         _file = _handle.getFile();
         _monitor = new WriteHandleSpaceMonitorAdapter(repository, _handle);
     }

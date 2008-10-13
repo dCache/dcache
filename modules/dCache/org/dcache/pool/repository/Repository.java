@@ -12,6 +12,7 @@ import org.dcache.pool.FaultListener;
 import java.io.IOException;
 import java.io.FileNotFoundException;
 import java.util.Iterator;
+import java.util.List;
 
 public interface Repository
     extends Iterable<PnfsId>
@@ -51,7 +52,7 @@ public interface Repository
                             StorageInfo info,
                             EntryState transferState,
                             EntryState targetState,
-                            StickyRecord sticky)
+                            List<StickyRecord> sticky)
         throws FileInCacheException;
 
     /**

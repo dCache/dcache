@@ -14,6 +14,7 @@ import org.dcache.pool.repository.CacheEntry;
 import org.dcache.pool.repository.WriteHandle;
 import org.dcache.pool.repository.EntryState;
 
+import java.util.List;
 import java.util.concurrent.TimeoutException;
 import java.io.File;
 import java.io.IOException;
@@ -34,8 +35,8 @@ class WriteHandleImpl implements WriteHandle
     /** Stub for talking to the PNFS manager. */
     private final PnfsHandler _pnfs;
 
-    /** If non-null the file is marked sticky after transfer. */
-    private final StickyRecord _sticky;
+    /** Sticky flags to be applied after the transfer. */
+    private final List<StickyRecord> _stickyRecords;
 
     /** The entry state used during transfer. */
     private final EntryState _initialState;
@@ -57,7 +58,7 @@ class WriteHandleImpl implements WriteHandle
                     StorageInfo info,
                     EntryState initialState,
                     EntryState targetState,
-                    StickyRecord sticky)
+                    List<StickyRecord> stickyRecords)
         throws CacheException, IOException
     {
         switch (initialState) {
@@ -83,7 +84,7 @@ class WriteHandleImpl implements WriteHandle
         _entry = entry;
         _initialState = initialState;
         _targetState = targetState;
-        _sticky = sticky;
+        _stickyRecords = stickyRecords;
         _open = true;
         _allocated = 0;
 
@@ -261,8 +262,8 @@ class WriteHandleImpl implements WriteHandle
             }
 
             if (_targetState != EntryState.REMOVED) {
-                if (_sticky != null) {
-                    _entry.setSticky(_sticky.owner(), _sticky.expire(), true);
+                for (StickyRecord record: _stickyRecords) {
+                    _entry.setSticky(record.owner(), record.expire(), false);
                 }
 
                 _repository.setState(_entry, _targetState);

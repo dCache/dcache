@@ -19,6 +19,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -431,11 +432,12 @@ public class HsmStorageHandler2
 //                 sticky = new StickyRecord("system", -1);
 //             }
 
+            List<StickyRecord> stickyRecords = Collections.emptyList();
             _handle = _repository.createEntry(pnfsId,
                                               storageInfo,
                                               EntryState.FROM_STORE,
                                               EntryState.CACHED,
-                                              null);
+                                              stickyRecords);
         }
 
         @Override

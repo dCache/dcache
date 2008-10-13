@@ -221,7 +221,7 @@ public class CacheRepositoryV5
      * @param info the storage info of the new entry
      * @param transferState the transfer state
      * @param targetState the target state
-     * @param sticky sticky record to apply to entry; can be null
+     * @param sticky sticky records to apply to entry
      * @return A write handle for the entry.
      * @throws FileInCacheException if an entry with the same ID
      * already exists.
@@ -230,9 +230,12 @@ public class CacheRepositoryV5
                                                 StorageInfo info,
                                                 EntryState transferState,
                                                 EntryState targetState,
-                                                StickyRecord sticky)
+                                                List<StickyRecord> stickyRecords)
         throws FileInCacheException
     {
+        if (stickyRecords == null)
+            throw new IllegalArgumentException("List of sticky records may not be null");
+
         if (!_initialised)
             throw new IllegalStateException("Repository has not been initialized");
         try {
@@ -249,7 +252,7 @@ public class CacheRepositoryV5
                                                          info,
                                                          transferState,
                                                          targetState,
-                                                         sticky);
+                                                         stickyRecords);
                 entry = null;
                 return handle;
             } finally {

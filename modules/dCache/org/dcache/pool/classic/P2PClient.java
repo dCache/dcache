@@ -16,6 +16,8 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.List;
+import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.log4j.Logger;
@@ -430,19 +432,17 @@ public class P2PClient
         synchronized private void createEntry()
             throws FileInCacheException
         {
-            StickyRecord sticky;
+            List<StickyRecord> stickyRecords = new ArrayList();
             String value = _storageInfo.getKey("flag-s");
             if (value != null && value.length() > 0) {
-                sticky = new StickyRecord("system", -1);
-            } else {
-                sticky = null;
+                stickyRecords.add(new StickyRecord("system", -1));
             }
 
             _handle = _repository.createEntry(_pnfsId,
                                               _storageInfo,
                                               EntryState.FROM_POOL,
                                               _targetState,
-                                              sticky);
+                                              stickyRecords);
         }
 
         synchronized private void sendMessage(String destination, Message message, long timeout)

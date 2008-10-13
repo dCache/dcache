@@ -35,6 +35,7 @@ import org.dcache.pool.repository.WriteHandle;
 import org.dcache.pool.repository.CacheEntry;
 import org.dcache.pool.repository.StateChangeListener;
 import org.dcache.pool.repository.StateChangeEvent;
+import org.dcache.pool.repository.StickyRecord;
 import org.dcache.pool.repository.v3.RepositoryException;
 
 public class RepositorySubsystemTest
@@ -452,7 +453,8 @@ public class RepositorySubsystemTest
     public void testCreateEntryFileExists()
         throws FileInCacheException
     {
-        repository.createEntry(id1, info1, FROM_CLIENT, PRECIOUS, null);
+        List<StickyRecord> stickyRecords = Collections.emptyList();
+        repository.createEntry(id1, info1, FROM_CLIENT, PRECIOUS, stickyRecords);
     }
 
     /* Helper method for creating a fourth entry in the repository.
@@ -503,9 +505,10 @@ public class RepositorySubsystemTest
                        InterruptedException,
                        IOException
             {
+                List<StickyRecord> stickyRecords = Collections.emptyList();
                 WriteHandle handle =
                     repository.createEntry(id4, info4, transferState,
-                                           finalState, null);
+                                           finalState, stickyRecords);
                 try {
                     handle.allocate(size4 + overallocation);
                     createFile(handle.getFile(), size4);
