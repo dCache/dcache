@@ -198,7 +198,7 @@ class Companion
         synchronized (this) {
             try {
                 if (_fsm.getState() != CompanionContext.FSM.WaitingForConnection)
-                    throw new IllegalStateException("Connect denied");
+                    throw new IllegalStateException("Connection denied");
 
                 handle = _repository.createEntry(_pnfsId,
                                                  _storageInfo,

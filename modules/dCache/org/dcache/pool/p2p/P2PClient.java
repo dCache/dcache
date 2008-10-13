@@ -190,7 +190,7 @@ public class P2PClient
         Companion companion = _sessions.get(id);
         return (companion == null)
                 ? false
-                : companion.cancel("Transfer cancelled");
+                : companion.cancel("Transfer was cancelled");
     }
 
     public void getInfo(PrintWriter pw)

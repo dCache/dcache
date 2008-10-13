@@ -1,6 +1,7 @@
 package org.dcache.pool.p2p;
 
-import java.net.ServerSocket;
+import java.nio.channels.AsynchronousCloseException;
+import java.nio.channels.ServerSocketChannel;
 import java.net.Socket;
 import java.net.InetSocketAddress;
 import java.net.InetAddress;
@@ -28,7 +29,7 @@ class Acceptor implements Runnable
     private final AtomicInteger _nextId = new AtomicInteger(100);
     private Thread _worker;
 
-    private ServerSocket _serverSocket;
+    private ServerSocketChannel _serverChannel;
     private int _port = 0;
     private String _error;
 
@@ -70,7 +71,7 @@ class Acceptor implements Runnable
      */
     synchronized void setPort(int port)
     {
-        if (_serverSocket != null)
+        if (_serverChannel != null)
             throw new IllegalStateException("Acceptor already running");
         _port = port;
     }
@@ -90,11 +91,11 @@ class Acceptor implements Runnable
     synchronized InetSocketAddress getSocketAddress()
         throws UnknownHostException
     {
-        if (_serverSocket == null)
+        if (_serverChannel == null)
             throw new IllegalStateException("Acceptor not running");
 
         return new InetSocketAddress(InetAddress.getLocalHost(),
-                                     _serverSocket.getLocalPort());
+                                     _serverChannel.socket().getLocalPort());
     }
 
     /**
@@ -104,7 +105,9 @@ class Acceptor implements Runnable
     {
         if (_worker == null) {
             try {
-                _serverSocket = new ServerSocket(_port);
+                _serverChannel = ServerSocketChannel.open();
+                _serverChannel.socket().bind(new InetSocketAddress(_port));
+
                 _worker = new Thread(this, "Acceptor");
                 _worker.start();
             } catch (IOException e) {
@@ -122,12 +125,12 @@ class Acceptor implements Runnable
     {
         if (_worker != null) {
             try {
-                _serverSocket.close();
+                _serverChannel.close();
                 _worker.join();
             } catch (IOException e) {
                 _log.warn("Failure closing socket: " + e);
             } finally {
-                _serverSocket = null;
+                _serverChannel = null;
                 _worker = null;
             }
         }
@@ -137,7 +140,7 @@ class Acceptor implements Runnable
     {
         try {
             while (true) {
-                final Socket socket = _serverSocket.accept();
+                final Socket socket = _serverChannel.accept().socket();
                 socket.setKeepAlive(true);
 
                 new Thread("P2P Transfer") {
@@ -156,7 +159,12 @@ class Acceptor implements Runnable
                                 companion.transfer(in, out);
                             }
                         } catch (IllegalStateException e) {
-                            _log.error("Transfer aborted: " + e);
+                            /* We only log this at debug level since
+                             * the companion most likely already
+                             * logged an error message.
+                             */
+                            _log.debug("Companion refused transfer: "
+                                       + e.getMessage());
                         } catch (IOException e) {
                             /* This happens if we fail to read the
                              * session ID. Not much we can do about
@@ -175,7 +183,7 @@ class Acceptor implements Runnable
                     }
                 }.start();
             }
-        } catch (SocketException e) {
+        } catch (AsynchronousCloseException e) {
             /* This is expected when the socket is closed.
              */
         } catch (IOException e) {
@@ -191,8 +199,8 @@ class Acceptor implements Runnable
     {
         if (_error != null)
             return "Error: " + _error;
-        if (_serverSocket == null)
+        if (_serverChannel == null)
             return "Port: " + _port;
-        return "Port: " + _serverSocket.getLocalPort();
+        return "Port: " + _serverChannel.socket().getLocalPort();
     }
 }
