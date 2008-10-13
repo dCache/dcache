@@ -682,12 +682,6 @@ public abstract class AbstractFtpDoorV1
     private static final Timer _perfMarkerTimer = new Timer();
 
     /**
-     * Task that periodically generates performance markers. May be
-     * null.
-     */
-    private PerfMarkerTask _perfMarkerTask;
-
-    /**
      * Configuration parameters related to performance markers.
      */
     protected PerfMarkerConf _perfMarkerConf = new PerfMarkerConf();
@@ -773,6 +767,12 @@ public abstract class AbstractFtpDoorV1
          * current store operation.
          */
         SpaceManagerGetInfoAndLockReservationByPathMessage spaceReservationInfo;
+
+        /**
+         * Task that periodically generates performance markers. May
+         * be null.
+         */
+        PerfMarkerTask perfMarkerTask;
 
         Transfer(String aPath)
         {
@@ -1189,14 +1189,8 @@ public abstract class AbstractFtpDoorV1
                           + e.getMessage());
                 }
 
-                /* In case of failure, the performance marker task
-                 * may still be running.
-                 */
-                if (_perfMarkerTask != null) {
-                    _perfMarkerTask.stop();
-                }
-
-                /* In case of failure, we may have a transfer hanging around.
+                /* In case of failure, we may have a transfer hanging
+                 * around.
                  */
                 if (_transfer != null) {
                     transfer_error(451, "Aborting transfer due to session termination");
@@ -1421,12 +1415,12 @@ public abstract class AbstractFtpDoorV1
             _transferInProgress = false;
 
             if (reply.getReturnCode() == 0 && adapterError == null) {
-                if (_perfMarkerTask != null) {
+                if (_transfer.perfMarkerTask != null) {
                     ProtocolInfo pinfo = reply.getProtocolInfo();
-                    if(pinfo != null && pinfo instanceof GFtpProtocolInfo ) {
-                        _perfMarkerTask.stop((GFtpProtocolInfo)reply.getProtocolInfo());
+                    if (pinfo != null && pinfo instanceof GFtpProtocolInfo) {
+                        _transfer.perfMarkerTask.stop((GFtpProtocolInfo)reply.getProtocolInfo());
                     } else {
-                        _perfMarkerTask.stop();
+                        _transfer.perfMarkerTask.stop();
                         reportBug("messageArrived",
 			          "DoorTransferFinishedMessage arrived and " +
                                   "ProtocolInfo is null or is not of type " +
@@ -1470,10 +1464,6 @@ public abstract class AbstractFtpDoorV1
                 _transfer = null;
                 reply("226 Transfer complete.");
             } else {
-                if (_perfMarkerTask != null) {
-                    _perfMarkerTask.stop();
-                }
-
                 StringBuffer errMsg = new StringBuffer("Transfer aborted (");
 
                 if (reply.getReturnCode() != 0) {
@@ -3077,10 +3067,11 @@ public abstract class AbstractFtpDoorV1
             if (_perfMarkerConf.use && xferMode.equals("E")) {
                 /** @todo: done ### ac_stor - breadcrumb - performance markers
                  */
-                _perfMarkerTask = new PerfMarkerTask(_transfer.pool,
-                                                     _transfer.moverId,
-                                                     _perfMarkerConf.period / 2);
-                _perfMarkerTimer.schedule(_perfMarkerTask,
+                _transfer.perfMarkerTask =
+                    new PerfMarkerTask(_transfer.pool,
+                                       _transfer.moverId,
+                                       _perfMarkerConf.period / 2);
+                _perfMarkerTimer.schedule(_transfer.perfMarkerTask,
                                           _perfMarkerConf.period,
                                           _perfMarkerConf.period);
             }
@@ -3468,6 +3459,10 @@ public abstract class AbstractFtpDoorV1
     {
         if (_transfer != null) {
             _transferInProgress = false;
+
+            if (_transfer.perfMarkerTask != null) {
+                _transfer.perfMarkerTask.stop();
+            }
 
             if (_transfer.adapter != null && _transfer.adapter != _adapter) {
                 _transfer.adapter.close();
