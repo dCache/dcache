@@ -512,9 +512,9 @@ public class RepositorySubsystemTest
                 try {
                     handle.allocate(size4 + overallocation);
                     createFile(handle.getFile(), size4);
-                    if (cancel)
-                        handle.cancel(keep);
                     assertStep("No messages received yet", 0);
+                    if (!cancel)
+                        handle.commit(null);
                 } finally {
                     handle.close();
                 }
