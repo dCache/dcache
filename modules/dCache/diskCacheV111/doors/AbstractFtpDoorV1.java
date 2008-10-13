@@ -689,8 +689,6 @@ public abstract class AbstractFtpDoorV1
         }
     }
 
-    protected volatile boolean _transferInProgress = false;
-
     /**
      * Queue used to pass the address on which a pool listens when in
      * passive mode between threads. Under normal circumstances, this
@@ -764,6 +762,11 @@ public abstract class AbstractFtpDoorV1
          * be null.
          */
         PerfMarkerTask perfMarkerTask;
+
+        /**
+         * True if the transfer was aborted.
+         */
+        boolean aborted = false;
 
         Transfer(String aPath)
         {
@@ -1058,7 +1061,7 @@ public abstract class AbstractFtpDoorV1
         // If a transfer is in progress, only permit ABORT and a few
         // other commands to be processed
         synchronized(this) {
-            if (_transferInProgress &&
+            if (_transfer != null &&
                 !(cmd.equals("abor") || cmd.equals("mic")
                   || cmd.equals("conf") || cmd.equals("enc"))) {
                 reply("503 Transfer in progress", false);
@@ -1328,19 +1331,23 @@ public abstract class AbstractFtpDoorV1
         synchronized (this) {
             debug("FTP Door received 'Door Transfer Finished' message");
 
-            /* Receiving DoorTransferFinishedMessage indicates that
-             * the mover is done. To avoid that the transfer_error
-             * method tries to kill the mover, we set moverId to null.
-             */
-            if (_transfer != null) {
-                _transfer.moverId = null;
-                notifyAll();
-            }
-
             /* It may happen the transfer has been cancelled and
              * cleaned up after already. This is not a failure.
              */
-            if (!_transferInProgress) {
+            if (_transfer == null) {
+                return;
+            }
+
+            /* The transfer_error method may wait for moverId to be
+             * reset.
+             */
+            _transfer.moverId = null;
+            notifyAll();
+
+            /* It may happen the transfer has been aborted
+             * already. This is not a failure.
+             */
+            if (_transfer.aborted) {
                 return;
             }
 
@@ -1396,13 +1403,12 @@ public abstract class AbstractFtpDoorV1
         }
 
         synchronized (this) {
-            /* It may happen the transfer has been cancelled and
-             * cleaned up already. This is not a failure.
+            /* It may happen that the transfer was aborted while we
+             * killed the adapter. This is not a failure.
              */
-            if (!_transferInProgress) {
+            if (_transfer == null || _transfer.aborted) {
                 return;
             }
-            _transferInProgress = false;
 
             if (reply.getReturnCode() == 0 && adapterError == null) {
                 if (_transfer.perfMarkerTask != null) {
@@ -3139,11 +3145,6 @@ public abstract class AbstractFtpDoorV1
      * field will become non-null. The pool may decline to be passive
      * and force the door to use an adapter.
      *
-     * If successful, _transferInProgress will be set to
-     * true. Otherwise, an appropriate exception is thrown. In either
-     * case, this method will have side-effects on the _transfer
-     * object.
-     *
      * The method is synchronized to ensure that it completes before
      * any DoorTransferFinishedMessage is received from the pool (see
      * @link messageArrived).
@@ -3415,7 +3416,6 @@ public abstract class AbstractFtpDoorV1
         }
 
         reply("150 Opening BINARY data connection for " + _transfer.path, false);
-        _transferInProgress = true;
     }
 
     /**
@@ -3468,7 +3468,7 @@ public abstract class AbstractFtpDoorV1
                                              Exception exception)
     {
         if (_transfer != null) {
-            _transferInProgress = false;
+            _transfer.aborted = true;
 
             if (_transfer.perfMarkerTask != null) {
                 _transfer.perfMarkerTask.stop();
@@ -3478,7 +3478,9 @@ public abstract class AbstractFtpDoorV1
                 _transfer.adapter.close();
             }
 
-            if (_transfer.pool != null && _transfer.moverId != null) {
+            if (_transfer.moverId != null) {
+                assert _transfer.pool != null;
+
                 warn("FTP Door: Transfer error. Sending kill to pool " +
                      _transfer.pool + " for mover " + _transfer.moverId);
                 try {
