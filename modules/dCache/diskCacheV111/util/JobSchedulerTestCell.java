@@ -8,7 +8,7 @@ import dmg.util.* ;
 
 public class JobSchedulerTestCell extends CellAdapter {
    private SimpleJobScheduler _scheduler = null ;
-   public class BJob implements Batchable, Logable {
+   public class BJob implements Batchable {
       private Args _args = null ;
       private String _name = null ;
       public BJob( String name , String args ){
@@ -29,7 +29,7 @@ public class JobSchedulerTestCell extends CellAdapter {
       public void unqueued(){ say("Unqueued : "+_name ) ; }
       public double getTransferRate(){ return 10.00 ; }
       public void run(){
-         RunSystem r = new RunSystem( "/tmp/test" , 1000 , 1000000 , this ) ;
+         RunSystem r = new RunSystem( "/tmp/test" , 1000 , 1000000 ) ;
          try{
             say("Starting process" ) ;
             r.go() ;
@@ -41,10 +41,6 @@ public class JobSchedulerTestCell extends CellAdapter {
          }
 
       }
-      public void log(String log){ say("BJob: "+log ) ; }
-      public void elog(String log){ esay("BJob: "+log ) ; }
-      public void plog(String log){ say("BJob: "+log ) ; }
-
    }
    public class AJob implements Batchable {
       private String _name ;

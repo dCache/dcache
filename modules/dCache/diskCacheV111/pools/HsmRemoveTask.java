@@ -18,7 +18,7 @@ import java.util.Map;
 import java.net.URI;
 
 /**
- * Encapsulates the task to process a PoolRemoveFilesFromHSMMessage. 
+ * Encapsulates the task to process a PoolRemoveFilesFromHSMMessage.
  */
 class HsmRemoveTask implements Runnable
 {
@@ -37,12 +37,12 @@ class HsmRemoveTask implements Runnable
 
     /**
      * The message being processed.
-     */ 
+     */
     private final CellMessage _message;
 
     /**
      * Executor used to process each individual delete.
-     */ 
+     */
     private final Executor    _executor;
 
     /**
@@ -50,7 +50,7 @@ class HsmRemoveTask implements Runnable
      */
     private final long        _timeout;
 
-    public HsmRemoveTask(CellAdapter cell, Logable log, 
+    public HsmRemoveTask(CellAdapter cell, Logable log,
                          Executor executor, HsmSet hsmSet,
                          long timeout, CellMessage message)
     {
@@ -97,21 +97,21 @@ class HsmRemoveTask implements Runnable
         try {
             PoolRemoveFilesFromHSMMessage msg =
                 (PoolRemoveFilesFromHSMMessage)_message.getMessageObject();
-            
+
             Collection<URI> files = msg.getFiles();
-            Collection<FutureTask<Integer>> tasks = 
+            Collection<FutureTask<Integer>> tasks =
                 new ArrayList<FutureTask<Integer>>(files.size());
-        
+
             /* Submit tasks.
              */
             for (URI uri : files) {
                 String command = getCommand(uri);
-                ExternalTask task = new ExternalTask(_log, _timeout, command);
+                ExternalTask task = new ExternalTask(_timeout, command);
                 FutureTask<Integer> future = new FutureTask<Integer>(task);
                 tasks.add(future);
                 _executor.execute(future);
             }
-            
+
             /* Wait for completion.
              */
             Collection<URI> succeeded = new ArrayList<URI>(files.size());
@@ -125,7 +125,7 @@ class HsmRemoveTask implements Runnable
                     failed.add(uri);
                 }
             }
-            
+
             /* Generate reply.
              */
             try {

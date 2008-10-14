@@ -524,7 +524,7 @@ public class HsmStorageHandler2  {
                say("Got Space ("+fileSize+" Bytes)" ) ;
 
 
-               run = new RunSystem( fetchCommand , _maxLines , _maxRestoreRun , _log ) ;
+               run = new RunSystem( fetchCommand , _maxLines , _maxRestoreRun ) ;
                run.go() ;
                returnCode = run.getExitValue() ;
                if( returnCode != 0 ){
@@ -911,7 +911,7 @@ public class HsmStorageHandler2  {
 
                 String storeCommand = getStoreCommand(_pnfsId, storageInfo);
 
-                run = new RunSystem(storeCommand, _maxLines, _maxStoreRun, _log);
+                run = new RunSystem(storeCommand, _maxLines, _maxStoreRun);
                 run.go();
                 returnCode = run.getExitValue();
                 if (returnCode != 0) {

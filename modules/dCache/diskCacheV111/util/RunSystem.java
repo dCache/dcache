@@ -1,19 +1,12 @@
 // $Id: RunSystem.java,v 1.7 2007-09-04 15:55:38 tigran Exp $
 
 package diskCacheV111.util ;
-import dmg.util.* ;
 import java.io.* ;
 
+import org.apache.log4j.Logger;
+
 public class RunSystem implements Runnable {
-    private static class myLog implements Logable {
-
-        public void log(String str){System.out.println(str);}
-        public void elog(String str){System.out.println(str);}
-        public void plog(String str){System.out.println(str);}
-
-    }
-    private static Logable __log = new myLog() ;
-
+    private final static Logger _log = Logger.getLogger(RunSystem.class);
     private final static Runtime __runtime = Runtime.getRuntime() ;
     private final String _exec ;
     private final int    _maxLines ;
@@ -27,7 +20,6 @@ public class RunSystem implements Runnable {
     private boolean _processDone   = false ;
     private boolean _linesExceeded = false ;
     private boolean _interrupted   = false ;
-    private final Logable _log           ;
     private BufferedReader _stdout =  null ;
     private BufferedReader _stderr  = null ;
     private final PrintWriter _errorPrintWriter   ;
@@ -38,11 +30,8 @@ public class RunSystem implements Runnable {
     private static int __counter = 100 ;
     private static synchronized int nextId(){ return __counter++ ; }
 
-    public RunSystem( String exec , int maxLines , long timeout ){
-       this( exec , maxLines , timeout , null ) ;
-    }
-    public RunSystem( String exec , int maxLines , long timeout , Logable log ){
-        _log      = log ;
+    public RunSystem(String exec, int maxLines, long timeout)
+    {
         _exec     = exec ;
         _maxLines = maxLines ;
         _timeout  = timeout ;
@@ -56,9 +45,13 @@ public class RunSystem implements Runnable {
         _errorPrintWriter   = new PrintWriter( _errorStringWriter ) ;
 
     }
-    private void say( String str ){
-       if( _log != null )_log.log( "["+_id+":"+Thread.currentThread().getName()+"] "+str) ;
+
+    private void say(String str) {
+        if (_log.isDebugEnabled()) {
+            _log.debug("[" + _id + "] " + str);
+        }
     }
+
     private void interruptReaders(){
        _readOutputThread.interrupt() ;
        _readErrorThread.interrupt() ;
@@ -208,7 +201,7 @@ public class RunSystem implements Runnable {
         long timeout = Long.parseLong( args[2] ) * 1000 ;
         int  maxLines = Integer.parseInt( args[1] ) ;
 
-        RunSystem run = new RunSystem( args[0] , maxLines , timeout , __log ) ;
+        RunSystem run = new RunSystem( args[0] , maxLines , timeout) ;
         run.go() ;
 
         int rc = run.getExitValue() ;
