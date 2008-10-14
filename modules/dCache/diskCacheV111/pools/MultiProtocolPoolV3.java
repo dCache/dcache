@@ -738,6 +738,13 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
                            + js.getSchedulerName() + " " + js.getMaxActiveJobs());
             }
         }
+
+        public void shutdown() {
+            for (Iterator<JobScheduler> it = scheduler(); it.hasNext();) {
+                JobScheduler js = it.next();
+                js.shutdown();
+            }
+        }
     }
 
     private class InventoryScanner implements Runnable {

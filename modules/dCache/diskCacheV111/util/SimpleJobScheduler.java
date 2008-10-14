@@ -3,9 +3,10 @@ package diskCacheV111.util;
 import diskCacheV111.vehicles.JobInfo;
 
 import java.util.*;
-import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.Future;
 import java.lang.reflect.InvocationTargetException;
 
 import org.dcache.util.ReflectionUtils;
@@ -44,17 +45,17 @@ public class SimpleJobScheduler implements JobScheduler, Runnable
     /**
      * thread pool used for job execution
      */
-    private final Executor _jobExecutor;
+    private final ExecutorService _jobExecutor;
 
-    public class SJob implements Job, Runnable {
+    private class SJob implements Job, Runnable {
 
         private final long _submitTime = System.currentTimeMillis();
         private long _startTime = 0;
         private int _status = WAITING;
-        private Thread _thread = null;
         private final Runnable _runnable;
         private final int _id;
         private final int _priority;
+        private Future _future;
 
         private SJob(Runnable runnable, int id, int priority) {
             _runnable = runnable;
@@ -78,22 +79,22 @@ public class SimpleJobScheduler implements JobScheduler, Runnable
             return _id;
         }
 
-        public long getStartTime() {
+        public synchronized long getStartTime() {
             return _startTime;
         }
 
-        public long getSubmitTime() {
+        public synchronized long getSubmitTime() {
             return _submitTime;
         }
 
-        private void start() {
-            _jobExecutor.execute(this);
+        public synchronized void start() {
+            _future = _jobExecutor.submit(this);
             _status = ACTIVE;
         }
 
         public synchronized boolean kill(boolean force)
         {
-            if (_status != ACTIVE)
+            if (_future == null)
                 throw new IllegalStateException("Not running");
 
             if (_runnable instanceof Batchable) {
@@ -105,13 +106,15 @@ public class SimpleJobScheduler implements JobScheduler, Runnable
                 }
             }
 
-            _thread.interrupt();
+            _future.cancel(true);
             return true;
         }
 
         public void run() {
-            _startTime = System.currentTimeMillis();
-            _thread = Thread.currentThread();
+            synchronized (this) {
+                _startTime = System.currentTimeMillis();
+            }
+
             try {
                 NDC.push("job=" + _id);
                 PnfsId id = ReflectionUtils.getPnfsId(_runnable);
@@ -121,8 +124,10 @@ public class SimpleJobScheduler implements JobScheduler, Runnable
                 _runnable.run();
             } finally {
                 NDC.remove();
-                synchronized (_lock) {
+                synchronized (this) {
                     _status = REMOVED;
+                }
+                synchronized (_lock) {
                     _jobs.remove(_id);
                     _activeJobs--;
                     _lock.notifyAll();
@@ -190,13 +195,12 @@ public class SimpleJobScheduler implements JobScheduler, Runnable
         }
 
         _jobExecutor = Executors.newCachedThreadPool(new ThreadFactory() {
-
-            public Thread newThread(Runnable r) {
-                Thread t = factory.newThread(r);
-                t.setName(_name + "-worker");
-                return t;
-            }
-        });
+                public Thread newThread(Runnable r) {
+                    Thread t = factory.newThread(r);
+                    t.setName(_name + "-worker");
+                    return t;
+                }
+            });
 
         _worker = factory.newThread(this);
         _worker.setName(_name);
@@ -394,56 +398,62 @@ public class SimpleJobScheduler implements JobScheduler, Runnable
         return _batch;
     }
 
+    public void shutdown() {
+        _worker.interrupt();
+    }
+
     public void run() {
         synchronized (_lock) {
-
-            while (!Thread.interrupted()) {
+            try {
                 try {
-                    _lock.wait();
-                } catch (InterruptedException ie) {
-                    break;
-                }
-
-                if (_batch == 0) continue;
-
-                for (int i = HIGH; i >= 0; i--) {
-                    while (_activeJobs < _maxActiveJobs) {
-                        if (_queues[i].isEmpty()) break;
-                        SJob job;
-                        if (_fifo) {
-                            job = _queues[i].removeFirst();
-                        } else {
-                            job = _queues[i].removeLast();
+                    while (true) {
+                        if (_batch != 0) {
+                            for (int i = HIGH; i >= 0; i--) {
+                                while (_activeJobs < _maxActiveJobs) {
+                                    if (_queues[i].isEmpty()) break;
+                                    SJob job;
+                                    if (_fifo) {
+                                        job = _queues[i].removeFirst();
+                                    } else {
+                                        job = _queues[i].removeLast();
+                                    }
+                                    // System.out.println("Starting : "+job ) ;
+                                    _activeJobs++;
+                                    _batch = _batch > 0 ? _batch - 1 : _batch;
+                                    job.start();
+                                }
+                            }
                         }
-                        // System.out.println("Starting : "+job ) ;
-                        _activeJobs++;
-                        _batch = _batch > 0 ? _batch - 1 : _batch;
-                        job.start();
+                        _lock.wait();
+                    }
+                } catch (InterruptedException e) {
+                }
+
+                //
+                // shutdown
+                //
+
+                for (SJob job : _jobs.values()) {
+                    if (job._status == WAITING) {
+                        if (job._runnable instanceof Batchable)
+                            ((Batchable) job._runnable).unqueued();
+                    } else if (job._status == ACTIVE) {
+                        job.kill(true);
+                    }
+                    long start = System.currentTimeMillis();
+                    while ((_activeJobs > 0)
+                           && ((System.currentTimeMillis() - start) > 10000)) {
+                        try {
+                            _lock.wait(1000);
+                        } catch (InterruptedException ee) {
+                            // for 10 seconds we simply ignore the interruptions
+                            // after that we quit anyway
+
+                        }
                     }
                 }
-            }
-            //
-            // shutdown
-            //
-
-            for (SJob job : _jobs.values()) {
-                if (job._status == WAITING) {
-                    if (job._runnable instanceof Batchable)
-                        ((Batchable) job._runnable).unqueued();
-                } else if (job._status == ACTIVE) {
-                    job.kill(true);
-                }
-                long start = System.currentTimeMillis();
-                while ((_activeJobs > 0)
-                        && ((System.currentTimeMillis() - start) > 10000)) {
-                    try {
-                        _lock.wait(1000);
-                    } catch (InterruptedException ee) {
-                        // for 10 seconds we simply ignore the interruptions
-                        // after that we quit anyway
-
-                    }
-                }
+            } finally {
+                _jobExecutor.shutdownNow();
             }
         }
     }
