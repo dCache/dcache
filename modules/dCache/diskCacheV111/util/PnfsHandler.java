@@ -3,13 +3,14 @@
 package diskCacheV111.util ;
 
 import java.util.List;
-import java.util.Vector;
+import java.util.Collections;
 
 import org.apache.log4j.Logger;
 
-import dmg.cells.nucleus.CellAdapter;
+import dmg.cells.nucleus.CellEndpoint;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
+import dmg.cells.nucleus.NoRouteToCellException;
 
 import diskCacheV111.vehicles.CacheStatistics;
 import diskCacheV111.vehicles.Message;
@@ -23,6 +24,7 @@ import diskCacheV111.vehicles.PnfsGetCacheLocationsMessage;
 import diskCacheV111.vehicles.PnfsGetCacheStatisticsMessage;
 import diskCacheV111.vehicles.PnfsGetFileMetaDataMessage;
 import diskCacheV111.vehicles.PnfsGetStorageInfoMessage;
+import diskCacheV111.vehicles.PnfsMapPathMessage;
 import diskCacheV111.vehicles.PnfsMessage;
 import diskCacheV111.vehicles.PnfsRenameMessage;
 import diskCacheV111.vehicles.PnfsSetFileMetaDataMessage;
@@ -31,39 +33,63 @@ import diskCacheV111.vehicles.PnfsSetStorageInfoMessage;
 import diskCacheV111.vehicles.PoolFileFlushedMessage;
 import diskCacheV111.vehicles.StorageInfo;
 
-public class PnfsHandler {
+import org.dcache.cells.CellMessageSender;
 
-   private final CellPath    _pnfs ;
-   private final CellAdapter _cell ;
-   private final String      _poolName ;
-   private long __pnfsTimeout = 30 * 60 * 1000L ;
+public class PnfsHandler
+    implements CellMessageSender
+{
+    private final CellPath _pnfs;
+    private final String _poolName;
+    private long __pnfsTimeout = 30 * 60 * 1000L;
+    private CellEndpoint _endpoint;
 
-   private static final Logger _logNameSpace =  Logger.getLogger("logger.org.dcache.namespace." + PnfsHandler.class.getName());
+    private static final Logger _logNameSpace =
+        Logger.getLogger("logger.org.dcache.namespace." + PnfsHandler.class.getName());
 
+    public PnfsHandler(CellEndpoint endpoint,
+                       CellPath pnfsManagerPath,
+                       String poolName)
+    {
+        this(pnfsManagerPath, poolName);
+        setCellEndpoint(endpoint);
+    }
 
-   public PnfsHandler( CellAdapter parent ,
-                       CellPath    pnfsManagerPath ,
-                       String      poolName  ){
+    public PnfsHandler(CellEndpoint endpoint,
+                       CellPath pnfsManagerPath)
+    {
+        this(pnfsManagerPath);
+        setCellEndpoint(endpoint);
+    }
 
-       _cell     = parent ;
-       _pnfs     = pnfsManagerPath ;
-       _poolName = poolName ;
+    public PnfsHandler(CellPath pnfsManagerPath)
+    {
+        this(pnfsManagerPath, "<client>");
+    }
 
-   }
-   public PnfsHandler( CellAdapter parent ,
-                       CellPath    pnfsManagerPath  ){
+    public PnfsHandler(CellPath pnfsManagerPath,
+                       String poolName)
+    {
+        _pnfs = pnfsManagerPath;
+        _poolName = poolName;
+    }
 
-       this(parent, pnfsManagerPath, "<client>");
+    public void setCellEndpoint(CellEndpoint endpoint)
+    {
+        _endpoint = endpoint;
+    }
 
-   }
-   private void send( PnfsMessage msg ){
-       try {
-	   _cell.sendMessage(new CellMessage( _pnfs , msg ) );
-       } catch (Exception e){
-	   esay("Cannot send messge to pnfs manager "+e);
-           esay(e);
-       }
-   }
+    private void send(PnfsMessage msg)
+    {
+        if (_endpoint == null)
+            throw new IllegalStateException("Missing endpoint");
+
+        try {
+            _endpoint.sendMessage(new CellMessage(_pnfs, msg));
+        } catch (NoRouteToCellException e) {
+            _logNameSpace.error("Cannot send message to " + _pnfs + ": " + e);
+        }
+    }
+
    //
    //
    public void clearCacheLocation( String pnfsId ){
@@ -135,8 +161,11 @@ public class PnfsHandler {
       pnfsMessage = (PnfsGetCacheLocationsMessage)pnfsRequest(pnfsMessage) ;
       List<String> assumedLocations = pnfsMessage.getCacheLocations() ;
 
-      return assumedLocations == null ? new Vector<String>() : assumedLocations ;
-
+      if (assumedLocations == null) {
+          return Collections.emptyList();
+      } else {
+          return assumedLocations;
+      }
    }
 
    public List<String> getCacheLocationsByPath( String fileName )throws CacheException {
@@ -145,30 +174,31 @@ public class PnfsHandler {
       pnfsMessage = (PnfsGetCacheLocationsMessage)pnfsRequest(pnfsMessage) ;
       List<String> assumedLocations = pnfsMessage.getCacheLocations() ;
 
-      return assumedLocations == null ? new Vector<String>() : assumedLocations ;
-
+      if (assumedLocations == null) {
+          return Collections.emptyList();
+      } else {
+          return assumedLocations;
+      }
    }
 
    private PnfsMessage pnfsRequest( PnfsMessage msg )
            throws CacheException {
 
-       PnfsMessage pnfsReply = null ;
+       if (_endpoint == null)
+           throw new IllegalStateException("Missing endpoint");
+
+       PnfsMessage pnfsReply;
        Object      pnfsReplyObject;
-       CellMessage pnfsCellReply ;
+       CellMessage pnfsCellReply;
        try {
            msg.setReplyRequired(true);
            pnfsCellReply
-	         = _cell.sendAndWait(
-                      new CellMessage( _pnfs , msg) ,
-                      __pnfsTimeout
-                                    ) ;
-
-       }catch (Exception e){
-           String problem  = "Exception sending pnfs request : "+ e ;
-           esay( problem ) ;
-           esay(e) ;
-	   throw new
-           CacheException( 115 , problem ) ;
+               = _endpoint.sendAndWaitToPermanent(new CellMessage(_pnfs, msg),
+                                                  __pnfsTimeout);
+       } catch (InterruptedException e) {
+           String problem  = "PNFS handler was interrupted while waiting for a reply";
+           _logNameSpace.warn(problem);
+	   throw new CacheException(CacheException.PANIC, problem);
        }
 
        if (pnfsCellReply == null) {
@@ -179,7 +209,7 @@ public class PnfsHandler {
        pnfsReplyObject = pnfsCellReply.getMessageObject();
 
        if (!msg.getClass().equals(pnfsReplyObject.getClass())) {
-    	   _logNameSpace.warn("PANIC : Unexpected message arrived " + pnfsReplyObject.getClass() );
+    	   _logNameSpace.warn("Unexpected message arrived " + pnfsReplyObject.getClass() );
     	   throw new CacheException(CacheException.PANIC,"PANIC : Unexpected message arrived " + pnfsReplyObject.getClass());
        }
 
@@ -191,15 +221,19 @@ public class PnfsHandler {
                                        + pnfsReply.getReturnCode());
     	   }
 
-           if (pnfsReply.getErrorObject() instanceof CacheException)
+           if (pnfsReply.getErrorObject() instanceof FileNotFoundCacheException)
+               throw (FileNotFoundCacheException)pnfsReply.getErrorObject();
+           else if (pnfsReply.getErrorObject() instanceof CacheException)
                throw (CacheException)pnfsReply.getErrorObject();
-
-    	   throw new CacheException(pnfsReply.getReturnCode(),
+           else
+    	       throw new CacheException(pnfsReply.getReturnCode(),
                                     String.valueOf(pnfsReply.getErrorObject()));
        }
 
        return pnfsReply;
    }
+
+/*
    public Message messageRequest( CellPath path , Message msg )
            throws CacheException {
 
@@ -247,6 +281,7 @@ public class PnfsHandler {
        }
        return reply ;
    }
+*/
 
    public PnfsCreateEntryMessage createPnfsDirectory( String path )
           throws CacheException                {
@@ -426,9 +461,6 @@ public class PnfsHandler {
                   new PnfsGetCacheStatisticsMessage( pnfsId )
                           )               )).getCacheStatistics();
    }
-   private void say( String str ){ _cell.say( "PnfsHandler : "+str ) ; }
-   private void esay( String str ){ _cell.esay( "PnfsHandler : "+str ) ; }
-   private void esay(Throwable t ){ _cell.esay(t) ; }
 
    /**
     * Getter for property __pnfsTimeout.
@@ -458,7 +490,6 @@ public class PnfsHandler {
    }
 
    public void putPnfsFlag(PnfsId pnfsId, String flag, String value)
-   throws CacheException
    {
        PnfsFlagMessage flagMessage =
                 new PnfsFlagMessage( pnfsId ,flag , PnfsFlagMessage.FlagOperation.SET ) ;
@@ -476,5 +507,26 @@ public class PnfsHandler {
 
    }
 
+	/**
+	 * Get path corresponding to given pnfsid.
+	 *
+	 * @param pnfsID
+	 * @return path
+	 * @throws CacheException
+	 */
+	public String getPathByPnfsId(PnfsId pnfsID) throws CacheException {
+		return pnfsRequest(new PnfsMapPathMessage(pnfsID)).getPnfsPath();
+	}
+
+	/**
+	 * Get pnfsid corresponding to given path.
+	 *
+	 * @param path
+	 * @return pnfsid
+	 * @throws CacheException
+	 */
+	public PnfsId getPnfsIdByPath(String path) throws CacheException {
+		return pnfsRequest(new PnfsMapPathMessage(path)).getPnfsId();
+	}
 
 }
