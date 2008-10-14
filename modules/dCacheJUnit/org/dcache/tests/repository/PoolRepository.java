@@ -21,6 +21,8 @@ import dmg.util.Args;
 import org.dcache.pool.repository.EventType;
 import org.dcache.pool.repository.v4.CacheRepositoryV4;
 
+import diskCacheV111.pools.SpaceSweeper;
+import org.dcache.pool.classic.SpaceSweeper2;
 import diskCacheV111.repository.CacheRepositoryEntry;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileNotInCacheException;
@@ -104,7 +106,7 @@ public class PoolRepository {
 		CacheRepositoryEntry entry = _repository.getEntry(pnfsId);
 
 		entry.setCached();
-		entry.setSticky(true, "repository test", System.currentTimeMillis() + 5000);
+		entry.setSticky("repository test", System.currentTimeMillis() + 5000, true);
 
 		assertEquals("setSticky makes file sticky",true, entry.isSticky());
 		Thread.sleep(5100);
@@ -431,6 +433,55 @@ public class PoolRepository {
         entry.setCached();
         assertEquals("file in non ready state can return size defined in storage info",
                 storageInfo.getFileSize(), entry.getSize() );
+
+    }
+
+    @Test
+    public void testDoubleAccountingOnCachedSpaceSweeper2()throws Exception {
+
+        String id = generateNewID();
+        PnfsId pnfsId = new PnfsId(id);
+
+        SpaceSweeper sweeper2 = new SpaceSweeper2(null, _repository);
+
+        CacheRepositoryEntry entry = _repository.createEntry(pnfsId);
+
+        StorageInfo storageInfo = new GenericStorageInfo();
+        storageInfo.setFileSize(17);
+
+        entry.setStorageInfo(storageInfo);
+
+        entry.setCached();
+
+        long cachedSize2 = sweeper2.getRemovableSpace();
+
+        entry.setCached();
+
+        assertEquals("SpaceSweeper2 on set cached two times calculates file size twice",
+                cachedSize2,  sweeper2.getRemovableSpace() );
+    }
+
+    @Test
+    public void testDoubleAccountingOnPrecious()throws Exception {
+
+        String id = generateNewID();
+        PnfsId pnfsId = new PnfsId(id);
+
+
+        CacheRepositoryEntry entry = _repository.createEntry(pnfsId);
+
+        StorageInfo storageInfo = new GenericStorageInfo();
+        storageInfo.setFileSize(17);
+
+        entry.setStorageInfo(storageInfo);
+
+        entry.setPrecious(true);
+
+        long preciousSize = _repository.getPreciousSpace();
+        entry.setPrecious(true);
+
+        assertEquals("set precious two times calculates file size twice",
+                preciousSize,  _repository.getPreciousSpace() );
 
     }
 

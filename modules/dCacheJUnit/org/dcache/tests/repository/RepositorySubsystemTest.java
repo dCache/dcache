@@ -1,8 +1,10 @@
+
 package org.dcache.tests.repository;
 
 import static org.junit.Assert.*;
 
 import java.util.*;
+import java.util.concurrent.*;
 import java.io.*;
 
 import org.junit.*;
@@ -23,6 +25,7 @@ import org.dcache.tests.cells.Message;
 
 import org.dcache.pool.repository.v4.CacheRepositoryV4;
 import org.dcache.pool.repository.v5.CacheRepositoryV5;
+import org.dcache.pool.repository.IllegalTransitionException;
 
 import org.dcache.pool.repository.SpaceRecord;
 import org.dcache.pool.repository.EntryState;
@@ -32,6 +35,7 @@ import org.dcache.pool.repository.WriteHandle;
 import org.dcache.pool.repository.CacheEntry;
 import org.dcache.pool.repository.StateChangeListener;
 import org.dcache.pool.repository.StateChangeEvent;
+import org.dcache.pool.repository.StickyRecord;
 import org.dcache.pool.repository.v3.RepositoryException;
 
 public class RepositorySubsystemTest
@@ -60,7 +64,7 @@ public class RepositorySubsystemTest
     private File metaDir;
     private File dataDir;
 
-    private Queue<StateChangeEvent> stateChangeEvents;
+    private BlockingQueue<StateChangeEvent> stateChangeEvents;
 
     private String args;
     private CellAdapterHelper cell;
@@ -114,7 +118,8 @@ public class RepositorySubsystemTest
 
     @Before
     public void setUp()
-        throws IOException, CacheException, DatabaseException
+        throws IOException, CacheException,
+               DatabaseException, InterruptedException
     {
         id1 = new PnfsId("000000000001");
         id2 = new PnfsId("000000000002");
@@ -139,11 +144,10 @@ public class RepositorySubsystemTest
         if (!metaDir.mkdir())
             throw new IOException("Could not create meta dir");
 
-        args = root.toString()
-            + " -metaDataRepository=org.dcache.pool.repository.meta.db.BerkeleyDBMetaDataRepository"
-            + " -sweeper=diskCacheV111.pools.SpaceSweeper2";
+        args = "-metaDataRepository=org.dcache.pool.repository.meta.db.BerkeleyDBMetaDataRepository";
 
         CacheRepositoryV4 rep = new CacheRepositoryV4(root, new Args(args));
+        rep.runInventory();
         createEntry(rep, id1, info1).setPrecious(true);
         createEntry(rep, id2, info2).setCached();
         CacheRepositoryEntry entry = createEntry(rep, id3, info3);
@@ -151,23 +155,34 @@ public class RepositorySubsystemTest
         entry.setSticky(true);
         rep.close();
 
+        stateChangeEvents = new LinkedBlockingQueue<StateChangeEvent>();
+        rep = new CacheRepositoryV4(root, new Args(args));
         cell = new CellAdapterHelper("pool", args);
-        pnfs = new PnfsHandler(cell, new CellPath("pnfs"), "pool");
-        repository = new CacheRepositoryV5(cell, pnfs);
+        pnfs = new PnfsHandler(new CellPath("pnfs"), "pool");
+        pnfs.setCellEndpoint(cell);
+        repository = new CacheRepositoryV5();
+        repository.setPnfsHandler(pnfs);
         repository.setSize(5120);
-        repository.runInventory();
+        repository.setLegacyRepository(rep);
+        repository.setSweeper(new org.dcache.pool.classic.SpaceSweeper2(pnfs, rep));
         repository.addListener(this);
+        repository.init(0);
 
-        stateChangeEvents = new LinkedList<StateChangeEvent>();
+        /* Remove scan notifications from queue.
+         */
+        stateChangeEvents.take();
+        stateChangeEvents.take();
+        stateChangeEvents.take();
     }
 
     @After
     public void tearDown()
         throws InterruptedException
     {
+        repository.shutdown();
+        cell.die();
         if (root != null)
             deleteDirectory(root);
-        cell.die();
     }
 
     public void stateChanged(StateChangeEvent event)
@@ -176,8 +191,10 @@ public class RepositorySubsystemTest
     }
 
     public void expectStateChangeEvent(PnfsId id, EntryState oldState, EntryState newState)
+        throws InterruptedException
     {
-        StateChangeEvent event = stateChangeEvents.remove();
+        StateChangeEvent event = stateChangeEvents.poll(1, TimeUnit.SECONDS);
+        assertNotNull(event);
         assertEquals(id, event.getPnfsId());
         assertEquals(oldState, event.getOldState());
         assertEquals(newState, event.getNewState());
@@ -223,10 +240,10 @@ public class RepositorySubsystemTest
     }
 
     @Test(expected=IllegalStateException.class)
-    public void testRunInventoryTwiceFails()
+    public void testInitTwiceFails()
         throws IOException, RepositoryException
     {
-        repository.runInventory();
+        repository.init(0);
     }
 
     @Test
@@ -245,14 +262,31 @@ public class RepositorySubsystemTest
 
     @Test(expected=FileNotInCacheException.class)
     public void testOpenEntryFileNotFound()
-        throws FileNotInCacheException
+        throws Throwable
     {
-        repository.openEntry(id4);
+        new CellStubHelper() {
+            /* Attempting to open a non-existing entry triggers a
+             * clear cache location message.
+             */
+            @Message(required=true,step=1,cell="pnfs")
+            public Object message(PnfsClearCacheLocationMessage msg)
+            {
+                msg.setSucceeded();
+                return msg;
+            }
+
+            protected void run()
+                throws FileNotInCacheException
+            {
+                repository.openEntry(id4);
+            }
+        };
     }
 
     @Test
     public void testSetState()
-        throws FileNotInCacheException
+        throws IllegalTransitionException,
+               InterruptedException
     {
         assertCanOpen(id1, size1, PRECIOUS);
         repository.setState(id1, CACHED);
@@ -264,23 +298,23 @@ public class RepositorySubsystemTest
         assertCanOpen(id1, size1, PRECIOUS);
     }
 
-    @Test(expected=FileNotInCacheException.class)
+    @Test(expected=IllegalTransitionException.class)
     public void testSetStateFileNotFound()
-        throws FileNotInCacheException
+        throws IllegalTransitionException
     {
         repository.setState(id4, CACHED);
     }
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test(expected=IllegalTransitionException.class)
     public void testSetStateToNew()
-        throws FileNotInCacheException
+        throws IllegalTransitionException
     {
         repository.setState(id1, NEW);
     }
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test(expected=IllegalTransitionException.class)
     public void testSetStateToDestroyed()
-        throws FileNotInCacheException
+        throws IllegalTransitionException
     {
         repository.setState(id1, DESTROYED);
     }
@@ -331,43 +365,96 @@ public class RepositorySubsystemTest
         repository.setSize(-1);
     }
 
-    @Test(expected=FileNotInCacheException.class)
+    @Test
     public void testRemoval()
-        throws FileNotInCacheException
+        throws Throwable
     {
-        repository.setState(id1, REMOVED);
-        expectStateChangeEvent(id1, PRECIOUS, REMOVED);
-        expectStateChangeEvent(id1, REMOVED, DESTROYED);
-        repository.openEntry(id1);
+        new CellStubHelper() {
+            @Message(required=true,step=1,cell="pnfs")
+            public Object message(PnfsClearCacheLocationMessage msg)
+            {
+                msg.setSucceeded();
+                return msg;
+            }
+
+            protected void run()
+                throws IllegalTransitionException,
+                       InterruptedException
+            {
+                repository.setState(id1, REMOVED);
+                expectStateChangeEvent(id1, PRECIOUS, REMOVED);
+                expectStateChangeEvent(id1, REMOVED, DESTROYED);
+                assertStep("Cache location cleared", 1);
+                assertEquals(repository.getState(id1), NEW);
+            }
+        };
     }
 
     @Test
     public void testRemoveWhileReading()
-        throws FileNotInCacheException
+        throws Throwable
     {
-        ReadHandle handle1 = repository.openEntry(id1);
-        repository.setState(id1, REMOVED);
-        expectStateChangeEvent(id1, PRECIOUS, REMOVED);
-        assertNoStateChangeEvent();
+        new CellStubHelper() {
+            @Message(required=true,step=0,cell="pnfs")
+            public Object message(PnfsClearCacheLocationMessage msg)
+            {
+                msg.setSucceeded();
+                return msg;
+            }
 
-        handle1.close();
-        expectStateChangeEvent(id1, REMOVED, DESTROYED);
+            protected void run()
+                throws FileNotInCacheException, IllegalTransitionException,
+                       InterruptedException
+            {
+                ReadHandle handle1 = repository.openEntry(id1);
+                repository.setState(id1, REMOVED);
+                expectStateChangeEvent(id1, PRECIOUS, REMOVED);
+                assertNoStateChangeEvent();
+                assertStep("Cache location cleared", 1);
+                handle1.close();
+                expectStateChangeEvent(id1, REMOVED, DESTROYED);
+            }
+        };
     }
 
     @Test(expected=FileNotInCacheException.class)
     public void testRemoveOpenAgainFails()
-        throws FileNotInCacheException
+        throws Throwable
     {
-        repository.openEntry(id1);
-        repository.setState(id1, REMOVED);
-        repository.openEntry(id1);
+        new CellStubHelper() {
+            @Message(required=true,step=1,cell="pnfs")
+            public Object message(PnfsClearCacheLocationMessage msg)
+            {
+                msg.setSucceeded();
+                return msg;
+            }
+
+            /* The second attempt to open the file will cause a second
+             * clear cache location to be send.
+             */
+            @Message(required=true,step=2,cell="pnfs")
+            public Object message2(PnfsClearCacheLocationMessage msg)
+            {
+                msg.setSucceeded();
+                return msg;
+            }
+
+            protected void run()
+                throws FileNotInCacheException, IllegalTransitionException
+            {
+                repository.openEntry(id1);
+                repository.setState(id1, REMOVED);
+                repository.openEntry(id1);
+            }
+        };
     }
 
     @Test(expected=FileInCacheException.class)
     public void testCreateEntryFileExists()
         throws FileInCacheException
     {
-        repository.createEntry(id1, info1, FROM_CLIENT, PRECIOUS, null);
+        List<StickyRecord> stickyRecords = Collections.emptyList();
+        repository.createEntry(id1, info1, FROM_CLIENT, PRECIOUS, stickyRecords);
     }
 
     /* Helper method for creating a fourth entry in the repository.
@@ -405,21 +492,29 @@ public class RepositorySubsystemTest
                 return msg;
             }
 
+            @Message(required=false,step=0,cell="pnfs")
+            public Object message(PnfsClearCacheLocationMessage msg)
+            {
+                msg.setSucceeded();
+                return msg;
+            }
+
             protected void run()
                 throws FileInCacheException,
                        CacheException,
                        InterruptedException,
                        IOException
             {
+                List<StickyRecord> stickyRecords = Collections.emptyList();
                 WriteHandle handle =
                     repository.createEntry(id4, info4, transferState,
-                                           finalState, null);
+                                           finalState, stickyRecords);
                 try {
                     handle.allocate(size4 + overallocation);
                     createFile(handle.getFile(), size4);
-                    if (cancel)
-                        handle.cancel(keep);
                     assertStep("No messages received yet", 0);
+                    if (!cancel)
+                        handle.commit(null);
                 } finally {
                     handle.close();
                 }
@@ -444,7 +539,7 @@ public class RepositorySubsystemTest
         try {
             createEntry4(0, true, false, false, false, FROM_CLIENT, PRECIOUS);
         } finally {
-            assertCanOpen(id4, size4, BROKEN);
+            assertCacheEntry(repository.getEntry(id4), id4, size4, BROKEN);
             assertSpaceRecord(5120, 1024, 1024, 1024);
         }
         // TODO: Check notification
@@ -488,6 +583,31 @@ public class RepositorySubsystemTest
         assertCanOpen(id4, size4, PRECIOUS);
         assertSpaceRecord(3072, 0, 2048, 0);
         // TODO: Check notification
+    }
+
+    @Test
+    public void testStickyExpiration()
+        throws FileNotInCacheException, InterruptedException
+    {
+        long now = System.currentTimeMillis();
+        assertFalse(repository.getEntry(id2).isSticky());
+        repository.setSticky(id2, "system", now + 500, true);
+        assertTrue(repository.getEntry(id2).isSticky());
+        Thread.currentThread().sleep(700);
+        assertFalse(repository.getEntry(id2).isSticky());
+    }
+
+    @Test
+    public void testStickyClear()
+        throws FileNotInCacheException
+    {
+        long now = System.currentTimeMillis();
+
+        assertFalse(repository.getEntry(id2).isSticky());
+        repository.setSticky(id2, "system", now + 500, true);
+        assertTrue(repository.getEntry(id2).isSticky());
+        repository.setSticky(id2, "system", 0, true);
+        assertFalse(repository.getEntry(id2).isSticky());
     }
 }
 
