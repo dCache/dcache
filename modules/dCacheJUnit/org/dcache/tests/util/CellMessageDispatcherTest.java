@@ -6,7 +6,7 @@ import org.junit.*;
 
 
 import diskCacheV111.util.CacheException;
-import org.dcache.util.CellMessageDispatcher;
+import org.dcache.cells.CellMessageDispatcher;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 
