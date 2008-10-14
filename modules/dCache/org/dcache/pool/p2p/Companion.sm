@@ -1,0 +1,216 @@
+%{
+// 
+%}
+
+
+%class Companion
+%package org.dcache.pool.p2p
+%access package
+%import diskCacheV111.vehicles.Message
+%import diskCacheV111.vehicles.DoorTransferFinishedMessage
+
+%start FSM::Init
+%map FSM
+%%
+Init
+{
+        start
+                [ !ctxt.hasStorageInfo() ]
+                GettingStorageInfo
+                {
+                }
+        start
+                [ ctxt.hasStorageInfo() ]
+                WaitingForConnection
+                {
+                }
+}
+
+GettingStorageInfo
+Entry
+{
+        getStorageInfo();
+}
+{
+        timeout
+                Failed
+                {
+                        setError("Failed to get storage info (timeout)");
+                }
+        noroute
+                Failed
+                {
+                        setError("Failed to get storage info (no route to cell)");
+                }
+        failure(rc: Integer, cause: Object)
+                Failed
+                {
+                        setError("Failed to get storage info (" + cause + ")");
+                }
+        success()
+                WaitingForConnection
+                {
+                }
+}
+
+WaitingForConnection
+Entry
+{
+        sendDeliveryRequest();
+}
+{
+        createEntryFailed
+                Failed
+                {
+                        setError("Replica already exists");
+                }
+        failure(rc: Integer, cause: Object)
+                Failed
+                {
+                        setError("Source pool failed (" + cause + ")");
+                }
+        timeout
+                Failed
+                {
+                        setError("Source pool failed (no respons)");
+                }
+        noroute
+                Failed
+                {
+                        setError("Source pool failed (no route to cell)");
+                }
+        messageArrived(message: DoorTransferFinishedMessage)
+                [ message.getReturnCode() != 0]
+                Failed
+                {
+                        setError(message.getErrorObject());
+                }
+        messageArrived(message: DoorTransferFinishedMessage)
+                [ message.getReturnCode() == 0]
+                Failed
+                {
+                        setError("Source pool claims transfer completion, but no transfer happened");
+                }
+        connected
+                Connected
+                {
+                }
+}
+
+Connected
+{
+        failure(rc: Integer, cause: Object)
+                Failing
+                {
+                        setError("Source pool failed (" + cause + ")");
+                }
+        messageArrived(message: DoorTransferFinishedMessage)
+                [ message.getReturnCode() != 0]
+                Failing
+                {
+                }
+        messageArrived(message: DoorTransferFinishedMessage)
+                [ message.getReturnCode() == 0]
+                DoorFinished
+                {
+                }
+        disconnected(error: Object)
+                [ error == null ]
+                Disconnected
+                {
+                }
+        disconnected(error: Object)
+                [ error != null ]
+                Failed
+                {
+                        setError(error);
+                }
+        cancel(error: Object)
+                Failing
+                { 
+                        setError(error);
+                }
+}
+
+// Remote end of the transfer is closed
+DoorFinished
+{
+        disconnected(error: Object)
+                [ error == null ]
+                Done
+                {
+                }
+        disconnected(error: Object)
+                [ error != null ]
+                Failed
+                {
+                        setError(error);
+                }
+        cancel(error: Object)
+                Failing
+                {
+                        setError(error);
+                }
+}
+
+Failing
+Entry
+{
+        interrupt();
+}
+{
+        disconnected(error: Object)
+                Failed
+                {
+                }
+}
+
+Disconnected
+{
+        messageArrived(message: DoorTransferFinishedMessage)
+                [ message.getReturnCode() != 0]
+                Failed
+                {
+                        setError(message.getErrorObject());
+                }
+        messageArrived(message: DoorTransferFinishedMessage)
+                [ message.getReturnCode() == 0]
+                Done
+                {
+                }
+}
+
+Failed
+Entry
+{
+        done();
+}
+{
+}
+
+Done
+Entry
+{
+        done();
+}
+{
+}
+
+Default
+{
+        cancel(error: Object)
+                Failed
+                {
+                        setError(error);
+                }
+        Default
+                nil
+                {
+                        // A number of events are irrelevant
+                        // at various points. To keep the rest
+                        // of the state machine simple we simply 
+                        // ignore them here.
+                }
+}
+
+%%

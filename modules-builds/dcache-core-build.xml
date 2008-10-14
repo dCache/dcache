@@ -320,7 +320,7 @@
                 description="Compile state machines using SMC">
           <property name="fsmDir" location="${buildTop}/fsm"/>
           <mkdir dir="${buildDir}/core/org/dcache/services/pinmanager1"/>
-
+          <mkdir dir="${buildDir}/core/org/dcache/pool/migration"/>
           <smc target="java"
                smfile="${sourceDir}/org/dcache/services/pinmanager1/Extender.sm"
                destdir="${buildDir}/core/org/dcache/services/pinmanager1/"
@@ -330,8 +330,18 @@
                destdir="${buildDir}/core/org/dcache/services/pinmanager1/"
                smcjar="${smc.jar}"/>
           <smc target="java"
+               smfile="${sourceDir}/org/dcache/pool/migration/Task.sm"
+               destdir="${buildDir}/core/org/dcache/pool/migration/"
+               smcjar="${smc.jar}"/>
+          <smc target="java"
                smfile="${sourceDir}/org/dcache/services/pinmanager1/Pinner.sm"
                destdir="${buildDir}/core/org/dcache/services/pinmanager1/"
+               smcjar="${smc.jar}"/>
+
+          <mkdir dir="${buildDir}/core/org/dcache/pool/p2p"/>
+          <smc target="java"
+               smfile="${sourceDir}/org/dcache/pool/p2p/Companion.sm"
+               destdir="${buildDir}/core/org/dcache/pool/p2p/"
                smcjar="${smc.jar}"/>
         </target>
 
@@ -356,6 +366,7 @@
 			<exclude name="${dcache.packagePrefix}/tomcat/**" />
 			<exclude name="${dcache.packagePrefix}/services/authorization/**" />
 			<exclude name="${dcache.packagePrefix}/movers/RemoteGsiftpTransferProtocol_1.java" />
+			<exclude name="org/dcache/pool/movers/RemoteGsiftpTransferProtocol_1.java" />
 			<exclude name="${dcache.packagePrefix}/doors/GsiFtpDoorV1.java" />
 			<exclude name="${dcache.packagePrefix}/doors/GssFtpDoorV1.java" />
 			<exclude name="${dcache.packagePrefix}/doors/KerberosFtpDoorV1.java" />
@@ -387,6 +398,7 @@
 	<target name="dcache.jar" depends="isUptodate.dcache.jar,dcache.compile" unless="dcache.jar.upToDate" description="Create dcache.jar">
 
 		<jar jarfile="${dcache.jar}">
+                        <fileset dir="${sourceDir}" includes="**/*.xml" excludes="diskCacheV111/config/*,**/WEB-INF/*.xml" />
 			<fileset dir="${buildDir}/core" includes="**/*.class" />
 			<manifest>
 				<section name="Shared">
@@ -616,6 +628,8 @@
 
 			<include name="${dcache.packagePrefix}/doors/GsiFtpDoorV1.java" />
 			<include name="${dcache.packagePrefix}/movers/RemoteGsiftpTransferProtocol_1.java" />
+			<include name="${dcache.packagePrefix}/movers/RemoteGsiftpTransferProtocol_1.java" />
+			<include name="org/dcache/pool/movers/RemoteGsiftpTransferProtocol_1.java" />
 			<include name="${dcache.packagePrefix}/services/TransferManager.java" />
 			<include name="${dcache.packagePrefix}/services/TransferManagerHandler.java" />
 			<include name="${dcache.packagePrefix}/services/TransferManagerHandlerBackup.java" />
