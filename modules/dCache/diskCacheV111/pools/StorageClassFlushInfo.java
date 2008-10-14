@@ -31,24 +31,125 @@ public class StorageClassFlushInfo implements java.io.Serializable {
 	_hsmName      = hsmName ;
         _storageClass = storageClass ;
     }
-    public String getHsm(){ return _hsmName ; }
+
+    public String getHsm(){ return _hsmName ; }    
     public String getStorageClass(){ return _storageClass ; }
-    public long getOldestFileTimestamp(){ return _time ; }
-    public int  getRequestCount(){ return _requestCount ; }
-    public int  getFailedRequestCount(){ return _failedRequestCount ; }
-    public long getExpirationTime(){ return _expiration ; }
-    public int  getMaximumPendingFileCount(){ return _pending ; }
-    public long getTotalPendingFileSize(){ return _totalSize ; }
-    public long getMaximumAllowedPendingFileSize(){ return _maxTotalSize ; }
-    public int  getActiveCount(){ return _activeCounter ; }
-    public long getFlushId(){ return _recentFlushId ; }
-    public long getLastSubmittedTime(){ return _lastSubmittedAt ; }
-    public String toString(){
-         StringBuffer sb = new StringBuffer() ;
-         sb.append(_storageClass).append("@").append(_hsmName).append("=").
-            append("{r=").append(_requestCount).append("/").append(_failedRequestCount).append("}");
-         return sb.toString();
-     }
+
+    public void setOldestFileTimestamp(long time)
+    {
+        _time = time;
+    }
+
+    public long getOldestFileTimestamp()
+    {
+        return _time;
+    }
+
+    public void setRequestCount(int count)
+    {
+        _requestCount = count;
+    }
+
+    public int  getRequestCount()
+    {
+        return _requestCount; 
+    }
+
+    public void setFailedRequestCount(int count)
+    {
+        _failedRequestCount = count;
+    }
+
+    public int  getFailedRequestCount()
+    {
+        return _failedRequestCount;
+    }
+
+    public void setExpirationTime(long time)
+    {
+        _expiration = time;
+    }
+
+    public long getExpirationTime()
+    {
+        return _expiration; 
+    }
+
+    public void setMaximumPendingFileCount(int count)
+    {
+        _pending = count;
+    }
+
+    public int  getMaximumPendingFileCount()
+    {
+        return _pending;
+    }
+
+    public void setTotalPendingFileSize(long size)
+    {
+        _totalSize = size;
+    }
+
+    public long getTotalPendingFileSize()
+    {
+        return _totalSize; 
+    }
+
+    public void setMaximumAllowedPendingFileSize(long size)
+    {
+        _maxTotalSize = size;
+    }
+
+    public long getMaximumAllowedPendingFileSize()
+    {
+        return _maxTotalSize;
+    }
+
+    public void setActiveCount(int count)
+    {
+        _activeCounter = count;
+    }
+
+    public int  getActiveCount()
+    {
+        return _activeCounter;
+    }
+
+    public void setSuspended(boolean suspended)
+    {
+        _suspended = suspended;
+    }
+
+    public void setErrorCounter(int count)
+    {
+        _errorCounter = count;
+    }
+
+    public void setFlushId(long id)
+    {
+        _recentFlushId = id;
+    }
+
+    public long getFlushId()
+    {
+        return _recentFlushId;
+    }
+    
+    public void setLastSubmittedTime(long time)
+    {
+        _lastSubmittedAt = time;
+    }
+
+    public long getLastSubmittedTime()
+    {
+        return _lastSubmittedAt; 
+    }
+
+    public String toString()
+    {
+        return _storageClass + "@" + _hsmName + "=" +
+            "{r=" + _requestCount + "/" + _failedRequestCount + "}";
+    }
 }
 
 
