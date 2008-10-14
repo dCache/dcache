@@ -14,12 +14,15 @@ import java.net.URI;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.OsmLocationExtractor;
 
+import org.apache.log4j.Logger;
 
 /**
  * Encapsulation of the PNFS trash directory for OSM.
  */
 public class OSMTrash implements Trash, FilenameFilter
 {
+    private final static Logger _log = Logger.getLogger(OSMTrash.class);
+
     /**
      * This is an index of known locations in the trash directory. The
      * index is not complete, as there may be files in the trash, that
@@ -101,8 +104,11 @@ public class OSMTrash implements Trash, FilenameFilter
         throws InterruptedException
     {
         waitAndSetSink(sink);
-        _directory.list(this);
-        clearSink();
+        try {
+            _directory.list(this);
+        } finally {
+            clearSink();
+        }
     }
 
     private synchronized void waitAndSetSink(Sink<URI> sink)
@@ -120,14 +126,28 @@ public class OSMTrash implements Trash, FilenameFilter
         notifyAll();
     }
 
-    private synchronized void add(PnfsId id, List<URI> locations)
+    /**
+     * Adds a location to in-memory list of locations. Returns true if
+     * the location is new, false otherwise.
+     */
+    private synchronized boolean add(PnfsId id, URI location)
     {
-        assert !_ids.containsKey(id);
+        assert location != null;
 
-        for (URI location : locations) {
-            _locations.put(location, id);
+        PnfsId old = _locations.put(location, id);
+        if (old == null) {
+            Integer count = _ids.get(id);
+            if (count == null) {
+                _ids.put(id, 1);
+            } else {
+                _ids.put(id, count + 1);
+            }
+            return true;
+        } else if (!old.equals(id)) {
+            _log.error("Same location used for multible files: " +
+                       location + " is used by both " + id + " and " + old);
         }
-        _ids.put(id, locations.size());
+        return false;
     }
 
     /**
@@ -158,9 +178,9 @@ public class OSMTrash implements Trash, FilenameFilter
      */
     public boolean accept(File dir, String name)
     {
+        File file = new File(dir, name);
         try {
             PnfsId id = new PnfsId(name);
-            File file = new File(dir, name);
 
             /* Traversing the directory is unsynchronised. Thus there
              * is a risk that the file does not exist anymore. Here we
@@ -180,17 +200,17 @@ public class OSMTrash implements Trash, FilenameFilter
                 if (age >= _minAge) {
                     List<URI> locations = readLevel1File(file);
 
-                    add(id, locations);
-
                     for (URI location : locations) {
-                        _sink.push(location);
+                        if (add(id, location)) {
+                            _sink.push(location);
+                        }
                     }
                 }
             }
         } catch (IOException e) {
-            // elog("Failed to read trash file '" + file.getName() + "': "
-            // + e.getMessage());
-        } catch (IllegalArgumentException e) {
+            _log.error("Failed to read trash file " + file.getName() + ": "
+                       + e.getMessage());
+        } catch (NumberFormatException e) {
             // Bad file name - ignore
         }
         return false;
