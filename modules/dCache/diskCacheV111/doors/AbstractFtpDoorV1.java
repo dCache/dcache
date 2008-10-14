@@ -3052,7 +3052,7 @@ public abstract class AbstractFtpDoorV1
                 _transfer.state = "setting checksum in pnfs";
 
                 try{
-                    ChecksumPersistence.getPersistenceMgr().store(this, _transfer.pnfsId, _checkSum, true);
+                    ChecksumPersistence.getPersistenceMgr().store(this, _transfer.pnfsId, _checkSum);
                 } catch (Exception e) {
                     throw new FTPCommandException(451,
                                                   "Failed to store checksum: "

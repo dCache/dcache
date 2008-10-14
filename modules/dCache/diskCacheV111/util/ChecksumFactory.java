@@ -2,8 +2,8 @@
  * @(#)Checksum.java	1.2 03/11/10
  *
  * Copyright 1996-2006 dcache.org All Rights Reserved.
- * 
- * This software is the proprietary information of dCache.org  
+ *
+ * This software is the proprietary information of dCache.org
  * Use is subject to license terms.
  */
 
@@ -19,7 +19,7 @@ package diskCacheV111.util;
 
 import  java.util.*;
 
-import  dmg.cells.nucleus.CellAdapter;
+import  dmg.cells.nucleus.CellEndpoint;
 import  dmg.cells.nucleus.CellPath;
 import  dmg.cells.nucleus.CellMessage;
 import  dmg.cells.nucleus.NoRouteToCellException;
@@ -28,8 +28,12 @@ import  diskCacheV111.vehicles.PnfsFlagMessage;
 import  java.security.MessageDigest ;
 import  java.security.NoSuchAlgorithmException ;
 
+import org.apache.log4j.Logger;
+
 public abstract class ChecksumFactory {
-    
+
+    private final static Logger _log = Logger.getLogger(ChecksumFactory.class);
+
     protected static String[] _types = { "ADLER32","MD5","MD4" };
 
     protected String _stringType;
@@ -41,7 +45,7 @@ public abstract class ChecksumFactory {
     public abstract Checksum  create(String stringDigest);
 
     // these 2 methods should be p_impled for the storeChecksum
-    public abstract Checksum  createFromPersistentState( CellAdapter cell, PnfsId pnfsId );
+    public abstract Checksum  createFromPersistentState( CellEndpoint endpoint, PnfsId pnfsId );
 
     public static ChecksumFactory getFactory(String type)  throws NoSuchAlgorithmException {
 	return new GenericIdChecksumFactory(type.toUpperCase());
@@ -51,9 +55,9 @@ public abstract class ChecksumFactory {
        return _types;
     }
 
-    public static final String [] getTypes( CellAdapter cell,PnfsId pnfsId ){
+    public static final String [] getTypes( CellEndpoint endpoint,PnfsId pnfsId ){
        try {
-           int []intTypes = ChecksumPersistence.getPersistenceMgr().listChecksumTypes(cell,pnfsId);
+           int []intTypes = ChecksumPersistence.getPersistenceMgr().listChecksumTypes(endpoint,pnfsId);
 
            if ( intTypes == null )
               return null;
@@ -66,8 +70,8 @@ public abstract class ChecksumFactory {
            if ( stringTypes.size() > 0 ){
               return stringTypes.toArray(new String[1]);
            }
-          
-       } catch ( Exception ex){ cell.esay(ex); }
+
+       } catch ( Exception ex){ _log.error(ex); }
 
        return null;
     }
@@ -93,6 +97,9 @@ public abstract class ChecksumFactory {
 
 class GenericIdChecksumFactory extends ChecksumFactory
 {
+    private final static Logger _log =
+        Logger.getLogger(GenericIdChecksumFactory.class);
+
     private int _type;
 
     public GenericIdChecksumFactory(String type) throws NoSuchAlgorithmException {
@@ -108,7 +115,7 @@ class GenericIdChecksumFactory extends ChecksumFactory
 	try {
             if ( _type == Checksum.ADLER32 )
               return new Checksum( new Adler32() );
-  
+
             MessageDigest md = (MessageDigest)MessageDigest.getInstance(_stringType);
 
 	    return new Checksum(md);
@@ -125,25 +132,25 @@ class GenericIdChecksumFactory extends ChecksumFactory
         return new Checksum(Integer.toString(_type)+":"+stringDigest);
     }
 
-    public Checksum  createFromPersistentState( CellAdapter cell,  PnfsId pnfsId )
+    public Checksum  createFromPersistentState( CellEndpoint endpoint,  PnfsId pnfsId )
     {
-  
+
         try {
-           String checksumValue = ChecksumPersistence.getPersistenceMgr().retrieve(cell,pnfsId,_type);
+           String checksumValue = ChecksumPersistence.getPersistenceMgr().retrieve(endpoint,pnfsId,_type);
            if ( checksumValue != null )
               return create(checksumValue);
         } catch ( Exception e){
-          cell.esay(e);
+          _log.error(e);
         }
-        
+
 /*
-	try{	    
+	try{
 	    PnfsFlagMessage flag =
 		new PnfsFlagMessage(pnfsId,"c","get") ;
 	    flag.setReplyRequired(true) ;
 	    CellMessage msg = new CellMessage( new CellPath("PnfsManager") , flag ) ;
 	    if( ( msg = cell.sendAndWait( msg , 60000L ) ) == null )return null ;
-         
+
 	    Object obj = msg.getMessageObject() ;
 	    if( obj instanceof PnfsFlagMessage ){
 		PnfsFlagMessage flags = (PnfsFlagMessage)obj ;
@@ -157,7 +164,7 @@ class GenericIdChecksumFactory extends ChecksumFactory
 	    ee.printStackTrace();
 	}
 */
-	return null ;	
+	return null ;
     }
 
 }

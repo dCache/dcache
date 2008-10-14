@@ -2308,8 +2308,7 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
                         f.delete();
                     }
                     say(pnfsId + " : sending adler32 to pnfs : " + line);
-                    _checksumModule
-                        .storeChecksumInPnfs(pnfsId, checksum, false);
+                    _checksumModule.storeChecksumInPnfs(pnfsId, checksum);
                 }
             } catch (Exception waste) {
                 esay("Couldn't send checksum (" + line + ") to pnfs : " + waste);
