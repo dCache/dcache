@@ -10,6 +10,7 @@ package diskCacheV111.repository;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.util.CacheException;
+import org.dcache.pool.repository.CacheEntry;
 
 /**
  *
@@ -17,7 +18,7 @@ import diskCacheV111.util.CacheException;
  */
 public class CacheRepositoryEntryInfo implements java.io.Serializable {
     static final long serialVersionUID = -4494188511917602601L;
-    
+
     private static final int PRECIOUS_BIT=0;
     private static final int CACHED_BIT=1;
     private static final int RECEIVINGFROMCLIENT_BIT=2;
@@ -28,7 +29,7 @@ public class CacheRepositoryEntryInfo implements java.io.Serializable {
     private static final int DESTROYED_BIT=7;
     private static final int STICKY_BIT=8;
 
-    
+
     private PnfsId pnfsId;
     private  int bitmask;
     private long lastAccessTime;
@@ -36,13 +37,13 @@ public class CacheRepositoryEntryInfo implements java.io.Serializable {
     private StorageInfo storageInfo;
     private long size;
 
-    
+
     /**
      * Creates a new instance of CacheRepositoryEntryInfo
      */
     public CacheRepositoryEntryInfo() {
     }
-    
+
     public CacheRepositoryEntryInfo(CacheRepositoryEntry cacheRepositoryEntry)
     throws CacheException {
         pnfsId = cacheRepositoryEntry.getPnfsId();
@@ -60,24 +61,58 @@ public class CacheRepositoryEntryInfo implements java.io.Serializable {
         setBit(DESTROYED_BIT,cacheRepositoryEntry.isDestroyed());
         setBit(STICKY_BIT,cacheRepositoryEntry.isSticky());
     }
-    
+
+    public CacheRepositoryEntryInfo(CacheEntry entry)
+    {
+        pnfsId = entry.getPnfsId();
+        lastAccessTime = entry.getLastAccessTime();
+        creationTime = entry.getCreationTime();
+        storageInfo = entry.getStorageInfo();
+        size = entry.getReplicaSize();
+        switch (entry.getState()) {
+        case PRECIOUS:
+            setBit(PRECIOUS_BIT, true);
+            break;
+        case CACHED:
+            setBit(CACHED_BIT, true);
+            break;
+        case FROM_CLIENT:
+            setBit(RECEIVINGFROMCLIENT_BIT, true);
+            break;
+        case FROM_POOL:
+        case FROM_STORE:
+            setBit(RECEIVINGFROMSTORE_BIT, true);
+            break;
+        case BROKEN:
+            setBit(BAD_BIT, true);
+            break;
+        case REMOVED:
+            setBit(REMOVED_BIT, true);
+            break;
+        case NEW:
+        case DESTROYED:
+            throw new RuntimeException("Bug. An entry should never be in NEW or DESTROYED.");
+        }
+        setBit(STICKY_BIT, entry.isSticky());
+    }
+
     private final void setBit(int bitnum, boolean val) {
         if (val) {
-            bitmask |= 1<<bitnum ; 
+            bitmask |= 1<<bitnum ;
         } else {
             bitmask &= ~(1 << bitnum);
         }
     }
-    
+
     private final boolean getBit(int bitnum) {
         return (bitmask & ( 1 <<bitnum)) != 0;
     }
-    
+
     private String getBitMaskString() {
         StringBuffer sb = new StringBuffer();
-              
+
         for(int i=31; i>=0; i--) {
-            sb.append(getBit(i) ? '1':'0');            
+            sb.append(getBit(i) ? '1':'0');
         }
         return sb.toString();
     }
@@ -85,11 +120,11 @@ public class CacheRepositoryEntryInfo implements java.io.Serializable {
     public int getBitMask() {
         return bitmask;
     }
-    
+
     public boolean isPrecious()  {
         return getBit(PRECIOUS_BIT);
     }
-    
+
     public boolean isCached() {
         return getBit(CACHED_BIT);
     }
@@ -135,9 +170,9 @@ public class CacheRepositoryEntryInfo implements java.io.Serializable {
 
     public StorageInfo getStorageInfo()  {
         return storageInfo;
-        
+
     }
-    
+
     public PnfsId getPnfsId() {
         return pnfsId;
     }
@@ -159,8 +194,8 @@ public class CacheRepositoryEntryInfo implements java.io.Serializable {
         System.out.printf(" bit 14 = %1$b",info.getBit(14));
         System.out.printf(" bit 15 = %1$b",info.getBit(15));
         System.out.printf(" bit 16 = %1$b",info.getBit(16));
-        
+
     }
 
-    
+
 }

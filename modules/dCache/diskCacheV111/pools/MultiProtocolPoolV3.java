@@ -490,7 +490,6 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
 
             _storageQueue = new StorageClassContainer(poolName);
             _repository = new CacheRepositoryV4(_base, _args);
-            _repository.setLogable(this);
 
             _pnfs = new PnfsHandler(this, new CellPath(_pnfsManagerName), _poolName);
 
@@ -760,7 +759,7 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
             _logClass.log("Repository seems to be ok");
             try {
 
-                _repository.runInventory(_logClass, _pnfs, _recoveryFlags);
+                _repository.runInventory(_pnfs, _recoveryFlags);
                 enablePool();
                 _logClass.elog("Pool enabled " + _poolName);
 
@@ -2407,9 +2406,11 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
              * add sticky owner and lifetime if repository supports it
              */
             CacheRepositoryEntry entry = _repository.getEntry(pnfsId);
-            entry.setSticky(stickyMessage
-                            .isSticky(), stickyMessage.getOwner(), stickyMessage
-                            .getLifeTime());
+            entry.setSticky(stickyMessage.getOwner(),
+                            stickyMessage.isSticky()
+                            ? stickyMessage.getLifeTime()
+                            : 0,
+                            true);
 
         } catch (CacheException ce) {
             stickyMessage.setFailed(ce.getRc(), ce);
@@ -3388,7 +3389,7 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
                     _logClass.plog(msg);
                 }
             };
-        _repository.runInventory(l, _pnfs, _recoveryFlags);
+        _repository.runInventory(_pnfs, _recoveryFlags);
         return sb.toString();
 
     }
