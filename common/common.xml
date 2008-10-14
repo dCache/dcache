@@ -510,7 +510,7 @@
   </target>
 
   <!--
-          Untar axis, tomcat, cog, glue
+          Untar axis, glite, tomcat, cog, glue
   -->
 
 
@@ -527,6 +527,26 @@
     <echo>Unpacking to ${axis.untaredTo}</echo>
   	<untar src="${axis.tarName}" dest="${axis.libDir}" compression="gzip" />
 
+  </target>
+  
+  <property name="glite.libDir" value="${libDir}/glite" />                           
+  <property name="glite.untarredTo" value="${glite.libDir}" />               
+
+  <uptodate property="lib.glite.uptodate" >
+    <srcfiles dir="${glite.libDir}" includes="**/*.tar.gz" />
+    <mapper type="merge" to="${glite.untarredTo}/share"/>
+  </uptodate>
+  
+  <target name="lib.glite.untar" unless="lib.glite.uptodate" >
+    <echo>Unpacking to ${glite.untarredTo}</echo>
+    <untar dest="${glite.untarredTo}" compression="gzip">
+      <patternset>
+        <include name="**/glite*.jar"/>
+      </patternset>
+      <fileset dir="${glite.libDir}">
+        <include name="**/*.tar.gz"/>
+      </fileset>
+    </untar>
   </target>
 
   <property name="tomcat.libDir" value="${libDir}/tomcat" />

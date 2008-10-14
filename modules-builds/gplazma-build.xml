@@ -23,8 +23,7 @@
     <delete file="${gplazma.jar}" />
   </target>
   
-  <!-- Java sources
-       These have been derived from packageSets/core.pl and packageSets/protocols.pl -->
+  <!-- Java sources -->
 
     <target name="isUptodate.gplazma.jar">
         <condition property="gplazma.jar.upToDate">
@@ -54,6 +53,8 @@
 	    <filename name="axis/**/*.jar" />
             <filename name="cog/**/*.jar" />
 	    <filename name="gplazma/**/*.jar" />
+	    <filename name="glite/**/glite*.jar" />
+	    <filename name="opensaml/**/*.jar" />
 	    <filename name="security/bcprov-jdk15-133.jar" />
 	</or>
     </selector>
@@ -73,7 +74,7 @@
 
   <!-- Compile -->
 
-  <target name="gplazma.compile" depends="prepare" unless="gplazma.jar.upToDate" description="Compile Java code for gplazma.jar" >
+  <target name="gplazma.compile" depends="prepare,lib.glite.untar" unless="gplazma.jar.upToDate" description="Compile Java code for gplazma.jar" >
 
     <javac destdir="${buildDir}"
            source="${javac.source}"

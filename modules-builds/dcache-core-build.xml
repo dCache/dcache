@@ -618,7 +618,7 @@
 
 	<!-- Depend -->
 
-	<target name="dcache-srm.depend" depends="prepare,lib.tomcat.untar,lib.axis.untar,lib.glue.untar">
+	<target name="dcache-srm.depend" depends="prepare,lib.tomcat.untar,lib.axis.untar,lib.glite.untar,lib.glue.untar">
 
 
 	</target>
@@ -814,7 +814,15 @@
 
 	   <!-- ACL -->
 	   <!--<copy file="${buildTop}/common/acl.properties" todir="${binDir}/config" /> -->
-
+	   
+	    <!-- glite -->
+	    <mkdir dir="${binDir}/classes/glite" />
+	    <copy todir="${binDir}/classes/glite" flatten="true">
+              <fileset dir="${libDir}/glite">
+                <include name="**/glite*.jar" />
+              </fileset>
+            </copy>	
+	    
        <!-- log4j -->
        <mkdir dir="${binDir}/classes/log4j" />
        <property name="log4jVersion" value="1.2.8" />
@@ -850,6 +858,26 @@
             <!-- TopLink files -->
 	    <mkdir dir="${binDir}/classes/toplink" />
 	    <copy file="${libDir}/toplink/toplink-essentials.jar"  todir="${binDir}/classes/toplink" />
+	    
+            <!-- opensaml -->
+	    <mkdir dir="${binDir}/classes/opensaml" />
+	    <copy file="${libDir}/opensaml/commons-collections-3.1.jar" todir="${binDir}/classes/opensaml" />
+	    <copy file="${libDir}/opensaml/commons-lang-2.1.jar" todir="${binDir}/classes/opensaml" />
+	    <copy file="${libDir}/opensaml/joda-time-1.5.2.jar" todir="${binDir}/classes/opensaml" />
+	    <copy file="${libDir}/opensaml/opensaml-1.0.1.jar" todir="${binDir}/classes/opensaml" />
+	    <copy file="${libDir}/opensaml/opensaml-2.2.0.jar" todir="${binDir}/classes/opensaml" />
+	    <copy file="${libDir}/opensaml/openws-1.1.0.jar" todir="${binDir}/classes/opensaml" />
+	    <copy file="${libDir}/opensaml/slf4j-api-1.5.0.jar" todir="${binDir}/classes/opensaml" />
+	    <copy file="${libDir}/opensaml/slf4j-simple-1.5.0.jar" todir="${binDir}/classes/opensaml" />
+	    <copy file="${libDir}/opensaml/velocity-1.5.jar" todir="${binDir}/classes/opensaml" />
+	    <copy file="${libDir}/opensaml/xalan-2.6.0.jar" todir="${binDir}/classes/opensaml" />
+	    <copy file="${libDir}/opensaml/xercesImpl-2.9.1.jar" todir="${binDir}/classes/opensaml" />
+	    <copy file="${libDir}/opensaml/xml-security-1.4.1.jar" todir="${binDir}/classes/opensaml" />
+	    <copy file="${libDir}/opensaml/xmltooling-1.0.1.jar" todir="${binDir}/classes/opensaml" />
+
+	    <!-- endorsed -->
+	    <mkdir dir="${binDir}/classes/endorsed" />
+	    <copy file="${libDir}/endorsed/xml-apis-2.9.1.jar" todir="${binDir}/classes/endorsed" />
 	</target>
 
 
