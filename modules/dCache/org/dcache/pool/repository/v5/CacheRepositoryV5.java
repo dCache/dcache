@@ -30,8 +30,8 @@ import org.dcache.pool.repository.Repository;
 import org.dcache.pool.FaultEvent;
 import org.dcache.pool.FaultListener;
 import org.dcache.pool.FaultAction;
-import org.dcache.cell.CellInfoProvider;
-import org.dcache.cell.AbstractCellComponent;
+import org.dcache.cells.CellInfoProvider;
+import org.dcache.cells.AbstractCellComponent;
 import static org.dcache.pool.repository.EntryState.*;
 
 import java.io.PrintWriter;

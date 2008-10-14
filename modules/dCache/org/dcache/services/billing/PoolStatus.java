@@ -13,8 +13,8 @@ import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.CellEndpoint;
 
-import org.dcache.cell.CellMessageSender;
-import org.dcache.cell.CellCommandListener;
+import org.dcache.cells.CellMessageSender;
+import org.dcache.cells.CellCommandListener;
 
 import diskCacheV111.poolManager.PoolManagerCellInfo;
 

@@ -9,9 +9,9 @@ import dmg.cells.nucleus.CellInfo;
 import dmg.util.Formats;
 import dmg.util.Args;
 
-import org.dcache.cell.CellInfoProvider;
-import org.dcache.cell.CellCommandListener;
-import org.dcache.cell.CellMessageReceiver;
+import org.dcache.cells.CellInfoProvider;
+import org.dcache.cells.CellCommandListener;
+import org.dcache.cells.CellMessageReceiver;
 
 import diskCacheV111.vehicles.InfoMessage;
 

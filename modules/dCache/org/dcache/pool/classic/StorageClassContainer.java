@@ -8,8 +8,8 @@ import diskCacheV111.util.event.*;
 
 import org.dcache.pool.repository.CacheEntry;
 import org.dcache.pool.repository.Repository;
-import org.dcache.cell.CellCommandListener;
-import org.dcache.cell.AbstractCellComponent;
+import org.dcache.cells.CellCommandListener;
+import org.dcache.cells.AbstractCellComponent;
 
 import dmg.util.*;
 import dmg.cells.nucleus.CellInfo;

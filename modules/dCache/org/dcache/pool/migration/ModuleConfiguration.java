@@ -4,7 +4,7 @@ import java.util.concurrent.ScheduledExecutorService;
 
 import dmg.cells.nucleus.CellEndpoint;
 
-import org.dcache.cell.CellStub;
+import org.dcache.cells.CellStub;
 import org.dcache.pool.repository.Repository;
 
 /**

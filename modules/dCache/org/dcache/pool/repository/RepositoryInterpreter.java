@@ -11,7 +11,7 @@ import java.util.*;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.DelayedReply;
 import dmg.cells.nucleus.NoRouteToCellException;
-import org.dcache.cell.CellCommandListener;
+import org.dcache.cells.CellCommandListener;
 
 import org.apache.log4j.Logger;
 

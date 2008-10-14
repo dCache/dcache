@@ -62,7 +62,7 @@ endDefine
 # This defines how to instantiate the pool code
 ###############################################
 define context startPools endDefine
-  create org.dcache.util.UniversalSpringCell ${0} \
+  create org.dcache.cells.UniversalSpringCell ${0} \
     "!MoverMap classpath:org/dcache/pool/classic/pool.xml \
     -export -poolname=${0} -pooldir=${1} \
     -setupClass=pool -setupFile=${1}/setup \

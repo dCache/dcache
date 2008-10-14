@@ -11,8 +11,8 @@ import diskCacheV111.util.CacheFileAvailable;
 import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.StorageInfo;
 
-import org.dcache.cell.AbstractCellComponent;
-import org.dcache.cell.CellMessageReceiver;
+import org.dcache.cells.AbstractCellComponent;
+import org.dcache.cells.CellMessageReceiver;
 import org.dcache.pool.p2p.P2PClient;
 import org.dcache.pool.repository.Repository;
 import org.dcache.pool.repository.EntryState;

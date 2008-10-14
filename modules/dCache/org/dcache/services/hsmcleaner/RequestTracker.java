@@ -21,7 +21,7 @@ import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.CellNucleus;
 import dmg.cells.nucleus.NoRouteToCellException;
 
-import org.dcache.services.AbstractCell;
+import org.dcache.cells.AbstractCell;
 
 /**
  * This class encapsulates the interaction with pools.

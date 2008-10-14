@@ -1,4 +1,4 @@
-package org.dcache.cell;
+package org.dcache.cells;
 
 
 /**

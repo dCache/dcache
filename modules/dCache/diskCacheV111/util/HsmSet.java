@@ -3,8 +3,8 @@ import java.util.* ;
 import java.io.PrintWriter ;
 import dmg.util.*;
 
-import org.dcache.cell.CellCommandListener;
-import org.dcache.cell.CellSetupProvider;
+import org.dcache.cells.CellCommandListener;
+import org.dcache.cells.CellSetupProvider;
 
 /**
  * An HsmSet encapsulates information about attached HSMs. The HsmSet

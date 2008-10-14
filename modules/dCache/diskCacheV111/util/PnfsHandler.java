@@ -33,7 +33,7 @@ import diskCacheV111.vehicles.PnfsSetStorageInfoMessage;
 import diskCacheV111.vehicles.PoolFileFlushedMessage;
 import diskCacheV111.vehicles.StorageInfo;
 
-import org.dcache.cell.CellMessageSender;
+import org.dcache.cells.CellMessageSender;
 
 public class PnfsHandler
     implements CellMessageSender

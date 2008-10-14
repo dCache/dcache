@@ -3,7 +3,7 @@ package org.dcache.services.billing;
 import java.util.Date;
 import java.text.SimpleDateFormat;
 import diskCacheV111.vehicles.InfoMessage;
-import org.dcache.cell.CellMessageReceiver;
+import org.dcache.cells.CellMessageReceiver;
 
 public abstract class TextLogger
     extends BillingComponent

@@ -6,7 +6,7 @@ import diskCacheV111.repository.*;
 import diskCacheV111.util.*;
 import diskCacheV111.util.event.*;
 import diskCacheV111.vehicles.StorageInfo;
-import org.dcache.cell.CellCommandListener;
+import org.dcache.cells.CellCommandListener;
 
 import dmg.util.*;
 import dmg.cells.nucleus.*;

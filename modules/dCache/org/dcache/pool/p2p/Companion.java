@@ -14,8 +14,8 @@ import java.net.UnknownHostException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
-import org.dcache.cell.CellStub;
-import org.dcache.cell.MessageCallback;
+import org.dcache.cells.CellStub;
+import org.dcache.cells.MessageCallback;
 import org.dcache.pool.repository.EntryState;
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.pool.repository.WriteHandle;

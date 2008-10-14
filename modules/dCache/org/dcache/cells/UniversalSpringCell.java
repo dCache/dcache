@@ -1,4 +1,4 @@
-package org.dcache.util;
+package org.dcache.cells;
 
 import java.util.Date;
 import java.util.Dictionary;
@@ -36,13 +36,7 @@ import dmg.cells.services.SetupInfoMessage;
 import dmg.util.Args;
 import dmg.util.CommandException;
 
-import org.dcache.services.AbstractCell;
-import org.dcache.cell.CellMessageReceiver;
-import org.dcache.cell.CellMessageSender;
-import org.dcache.cell.ThreadFactoryAware;
-import org.dcache.cell.CellInfoProvider;
-import org.dcache.cell.CellSetupProvider;
-import org.dcache.cell.CellCommandListener;
+import org.dcache.util.ClassNameComparator;
 
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;

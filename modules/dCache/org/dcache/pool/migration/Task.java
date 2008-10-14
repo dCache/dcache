@@ -21,8 +21,8 @@ import diskCacheV111.vehicles.StorageInfo;
 import org.dcache.pool.repository.EntryState;
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.pool.repository.CacheEntry;
-import org.dcache.cell.CellStub;
-import org.dcache.cell.MessageCallback;
+import org.dcache.cells.CellStub;
+import org.dcache.cells.MessageCallback;
 
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.CellMessage;

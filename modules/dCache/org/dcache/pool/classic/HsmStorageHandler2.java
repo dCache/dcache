@@ -59,7 +59,7 @@ import org.dcache.pool.repository.ReadHandle;
 import org.dcache.pool.repository.CacheEntry;
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.pool.repository.EntryState;
-import org.dcache.cell.AbstractCellComponent;
+import org.dcache.cells.AbstractCellComponent;
 
 public class HsmStorageHandler2
     extends AbstractCellComponent

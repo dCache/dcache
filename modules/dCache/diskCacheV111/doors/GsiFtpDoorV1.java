@@ -82,7 +82,7 @@ import org.gridforum.jgss.ExtendedGSSContext;
 import org.globus.gsi.GSIConstants;
 import org.globus.gsi.gssapi.GSSConstants;
 
-import org.dcache.services.Option;
+import org.dcache.cells.Option;
 
 /**
  *

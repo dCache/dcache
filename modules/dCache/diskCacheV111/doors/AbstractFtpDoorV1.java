@@ -151,8 +151,8 @@ import org.dcache.auth.UserAuthBase;
 import org.dcache.auth.AuthorizationRecord;
 import diskCacheV111.services.acl.PermissionHandlerInterface;
 
-import org.dcache.services.AbstractCell;
-import org.dcache.services.Option;
+import org.dcache.cells.AbstractCell;
+import org.dcache.cells.Option;
 import org.dcache.chimera.acl.ACLException;
 import org.dcache.chimera.acl.Origin;
 import org.dcache.chimera.acl.Subject;

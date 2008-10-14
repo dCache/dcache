@@ -1,7 +1,7 @@
 package diskCacheV111.pools;
 
 import java.io.PrintWriter;
-import org.dcache.cell.CellSetupProvider;
+import org.dcache.cells.CellSetupProvider;
 import diskCacheV111.util.event.AbstractCacheRepositoryListener;
 
 /**

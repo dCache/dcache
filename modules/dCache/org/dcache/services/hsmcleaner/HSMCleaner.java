@@ -16,8 +16,8 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.ExecutionException;
 
-import org.dcache.services.AbstractCell;
-import org.dcache.services.Option;
+import org.dcache.cells.AbstractCell;
+import org.dcache.cells.Option;
 
 import dmg.util.Args;
 

@@ -19,8 +19,8 @@ import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.WarningPnfsFileInfoMessage;
 import diskCacheV111.vehicles.InfoMessage;
 
-import org.dcache.cell.CellCommandListener;
-import org.dcache.cell.CellMessageReceiver;
+import org.dcache.cells.CellCommandListener;
+import org.dcache.cells.CellMessageReceiver;
 
 import dmg.util.Args;
 

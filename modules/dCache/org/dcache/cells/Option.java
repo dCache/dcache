@@ -1,4 +1,4 @@
-package org.dcache.services;
+package org.dcache.cells;
 
 import java.lang.annotation.*;
 

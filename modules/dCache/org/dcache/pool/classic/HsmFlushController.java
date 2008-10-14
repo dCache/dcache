@@ -6,9 +6,9 @@ package org.dcache.pool.classic;
 import diskCacheV111.pools.PoolCellInfo;
 import diskCacheV111.pools.StorageClassFlushInfo;
 import diskCacheV111.vehicles.*;
-import org.dcache.cell.CellMessageReceiver;
-import org.dcache.cell.CellCommandListener;
-import org.dcache.cell.AbstractCellComponent;
+import org.dcache.cells.CellMessageReceiver;
+import org.dcache.cells.CellCommandListener;
+import org.dcache.cells.AbstractCellComponent;
 
 import dmg.cells.nucleus.CellInfo;
 import dmg.cells.nucleus.CellEndpoint;

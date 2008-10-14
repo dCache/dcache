@@ -10,7 +10,7 @@ import dmg.util.Args;
 
 import diskCacheV111.util.* ;
 import diskCacheV111.vehicles.StorageInfo;
-import org.dcache.cell.CellCommandListener;
+import org.dcache.cells.CellCommandListener;
 
 import org.apache.log4j.Logger;
 

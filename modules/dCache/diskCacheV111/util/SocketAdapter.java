@@ -82,7 +82,7 @@ import java.nio.channels.Selector;
 import java.nio.channels.SelectionKey;
 
 import diskCacheV111.doors.EDataBlockNio;
-import org.dcache.services.AbstractCell;
+import org.dcache.cells.AbstractCell;
 
 /**
  * Data channel proxy for FTP door. The proxy will run at the GridFTP

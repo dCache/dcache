@@ -10,7 +10,7 @@ import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.DelayedReply;
 import dmg.cells.nucleus.NoRouteToCellException;
 import org.dcache.pool.repository.StickyRecord;
-import org.dcache.cell.CellCommandListener;
+import org.dcache.cells.CellCommandListener;
 
 import org.apache.log4j.Logger;
 
@@ -134,7 +134,7 @@ public class RepositoryInterpreter
        " bit 11 is \"L(x)(y)\" if entry is in locked or \"-\" if not \n"+
        "        x is epoch until which the entry is locked, 0 for non expiring lock \n"+
        "        y is the link count";
-        
+
     public String hh_rep_ls = "[-l[=s,l,u,nc,p]] [-s[=kmgt]] | [<pnfsId> [...] ]" ;
     public Object ac_rep_ls_$_0_99(final Args args) throws Exception
     {

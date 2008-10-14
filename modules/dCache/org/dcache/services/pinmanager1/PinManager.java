@@ -112,8 +112,8 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
-import org.dcache.services.Option;
-import org.dcache.services.AbstractCell;
+import org.dcache.cells.Option;
+import org.dcache.cells.AbstractCell;
 import org.dcache.auth.AuthorizationRecord;
 
 
@@ -239,7 +239,7 @@ public class PinManager extends AbstractCell implements Runnable  {
         defaultValue="org.dcache.services.pinmanager1.SimplePinManagerPolicyImpl"
     )
     protected String pinManagerPolicyClass;
-    
+
     // all database oprations will be done in the lazy
     // fassion in a low priority thread
     private Thread expireRequests;
@@ -255,7 +255,7 @@ public class PinManager extends AbstractCell implements Runnable  {
     // pin exiration / removal could not unpin the file in the pool
     // (due to the pool down situation)
     protected static final long  POOL_LIFETIME_MARGIN=60*60*1000L;
-    
+
     private PinManagerPolicy pinManagerPolicy;
 
     /** Creates a new instance of PinManager */
@@ -271,8 +271,8 @@ public class PinManager extends AbstractCell implements Runnable  {
         throws Exception
     {
         super.init();
-        
-        
+
+
         pinManagerPolicy = (PinManagerPolicy)
             Class.forName(pinManagerPolicyClass).getConstructor().newInstance();
         db = new PinManagerDatabase(this,
@@ -701,8 +701,8 @@ public class PinManager extends AbstractCell implements Runnable  {
            db.commitDBOperations();
         }
     }
-    
-    
+
+
     public void pinSucceeded ( Pin pin ,
         String pool,
         long expiration,
@@ -715,7 +715,7 @@ public class PinManager extends AbstractCell implements Runnable  {
             pin = db.getPinForUpdate(pin.getId());
             pinRequests = pin.getRequests();
             if(pin.getState().equals(PinManagerPinState.PINNING)) {
-               
+
                 db.updatePin(pin.getId(),expiration,pool,PinManagerPinState.PINNED);
             } else if(pin.getState().equals(PinManagerPinState.INITIAL)){
                  //weird but ok, we probably will not get here,
@@ -735,19 +735,19 @@ public class PinManager extends AbstractCell implements Runnable  {
                 success = false;
                 error = "unknown";
             }
-            
+
             for(PinRequest pinRequest:pinRequests) {
                 if(pinRequest.getId() ==originalPinRequestId ) {
                     if(pinRequest.getExpirationTime() < expiration) {
                         db.updatePinRequest(pinRequest.getId(), expiration);
                     }
                 }
-                CellMessage envelope = 
+                CellMessage envelope =
                         pinToRequestsMap.remove(pinRequest.getId());
                 info("pinSucceeded, pin request: "+pinRequest+
                         " its cellmessage: "+envelope);
                 if(envelope != null) {
-                    PinManagerPinMessage pinMessage = 
+                    PinManagerPinMessage pinMessage =
                         (PinManagerPinMessage)envelope.getMessageObject();
                     pinMessage.setPinId(Long.toString(pinRequest.getId()));
                     if(success) {
@@ -1176,7 +1176,7 @@ public class PinManager extends AbstractCell implements Runnable  {
                         4,unpinRequest);
                 }
                 return;
-                
+
             }
             if(pinRequests.size() > 1) {
                info("unpin: more than one requests in this pin, " +

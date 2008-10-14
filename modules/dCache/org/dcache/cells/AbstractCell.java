@@ -1,4 +1,4 @@
-package org.dcache.services;
+package org.dcache.cells;
 
 import org.apache.log4j.Logger;
 import org.apache.log4j.NDC;
@@ -23,7 +23,6 @@ import dmg.cells.nucleus.UOID;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.Reply;
 
-import org.dcache.util.CellMessageDispatcher;
 import org.dcache.util.ReflectionUtils;
 import diskCacheV111.vehicles.Message;
 import diskCacheV111.util.CacheException;

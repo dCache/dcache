@@ -20,10 +20,10 @@ import diskCacheV111.util.CacheFileAvailable;
 import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.StorageInfo;
 
-import org.dcache.cell.AbstractCellComponent;
-import org.dcache.cell.CellCommandListener;
-import org.dcache.cell.CellMessageReceiver;
-import org.dcache.cell.CellStub;
+import org.dcache.cells.AbstractCellComponent;
+import org.dcache.cells.CellCommandListener;
+import org.dcache.cells.CellMessageReceiver;
+import org.dcache.cells.CellStub;
 import org.dcache.pool.repository.Repository;
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.pool.repository.EntryState;

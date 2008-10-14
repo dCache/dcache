@@ -1,4 +1,4 @@
-package org.dcache.util;
+package org.dcache.cells;
 
 import java.util.Collection;
 import java.util.Map;

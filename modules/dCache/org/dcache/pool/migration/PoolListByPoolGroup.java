@@ -2,7 +2,7 @@ package org.dcache.pool.migration;
 
 import java.util.Collection;
 
-import org.dcache.cell.CellStub;
+import org.dcache.cells.CellStub;
 import diskCacheV111.vehicles.PoolManagerGetPoolsByPoolGroupMessage;
 import diskCacheV111.vehicles.PoolManagerGetPoolsMessage;
 

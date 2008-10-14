@@ -1,8 +1,8 @@
 package org.dcache.pool.migration;
 
 
-import org.dcache.cell.CellStub;
-import org.dcache.cell.MessageCallback;
+import org.dcache.cells.CellStub;
+import org.dcache.cells.MessageCallback;
 import diskCacheV111.vehicles.PoolManagerGetPoolsMessage;
 import diskCacheV111.vehicles.PoolManagerPoolInformation;
 
