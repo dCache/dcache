@@ -31,9 +31,13 @@ import gplazma.authz.plugins.RecordMappingPlugin;
 public abstract class SAMLAuthorizationPlugin extends RecordMappingPlugin {
 
     private String mappingServiceURL;
+    private GlobusCredential serviceCredential;
     private String targetServiceName;
+    private String targetServiceIssuer;
     private static final String service_key  = "/etc/grid-security/hostkey.pem";
     private static final String service_cert = "/etc/grid-security/hostcert.pem";
+    private static final String service_CAFiles="/etc/grid-security/certificates/*.0";
+    private static final String service_keyPasswd=null;
     GSSContext context;
     String desiredUserName;
     String serviceUrl;
@@ -42,6 +46,7 @@ public abstract class SAMLAuthorizationPlugin extends RecordMappingPlugin {
   public SAMLAuthorizationPlugin(String mappingServiceURL, String storageAuthzPath, long authRequestID) {
         super(storageAuthzPath, authRequestID);
         this.mappingServiceURL = mappingServiceURL;
+        setSslProperties();
     }
 
   public String getMappingServiceURL() {
@@ -51,21 +56,43 @@ public abstract class SAMLAuthorizationPlugin extends RecordMappingPlugin {
     public String getTargetServiceName() throws GSSException {
 
         if(targetServiceName==null) {
-            GlobusCredential serviceCredential;
-            try {
-                serviceCredential =new GlobusCredential(
-                        service_cert,
-                        service_key
-                );
-            } catch(GlobusCredentialException gce) {
-                throw new GSSException(GSSException.NO_CRED , 0,
-                        "could not load host globus credentials " + gce.toString());
+            if(serviceCredential==null) {
+                try {
+                    serviceCredential =new GlobusCredential(
+                            service_cert,
+                            service_key
+                    );
+                } catch(GlobusCredentialException gce) {
+                    throw new GSSException(GSSException.NO_CRED , 0,
+                            "could not load host globus credentials " + gce.toString());
+                }
             }
 
             targetServiceName = serviceCredential.getIdentity();
         }
 
         return targetServiceName;
+    }
+
+    public String getTargetServiceIssuer() throws GSSException {
+
+        if(targetServiceIssuer==null) {
+            if(serviceCredential==null) {
+                try {
+                    serviceCredential =new GlobusCredential(
+                            service_cert,
+                            service_key
+                    );
+                } catch(GlobusCredentialException gce) {
+                    throw new GSSException(GSSException.NO_CRED , 0,
+                            "could not load host globus credentials " + gce.toString());
+                }
+            }
+
+            targetServiceIssuer = X509CertUtil.toGlobusDN(serviceCredential.getIssuer());
+        }
+
+        return targetServiceIssuer;
     }
 
     public gPlazmaAuthorizationRecord authorize(GSSContext context, String desiredUserName, String serviceUrl, Socket socket)
@@ -108,109 +135,20 @@ public abstract class SAMLAuthorizationPlugin extends RecordMappingPlugin {
 
     public abstract gPlazmaAuthorizationRecord authorize(String subjectDN, String role, String desiredUserName, String serviceUrl, Socket socket) throws AuthorizationException;
 
-    /*
-    private gPlazmaAuthorizationRecord getgPlazmaAuthorizationRecord(LocalId localId, String subjectDN, String role) throws AuthorizationException {
+     private void setSslProperties() {
 
-    String username = localId.getUserName();
-
-    if(username==null) {
-      String denied = DENIED_MESSAGE + ": non-null user record received, but with a null username";
-      warn(denied);
-      throw new AuthorizationException(denied);
-    } else {
-      say("VO mapping service returned Username: " + username);
+        if (service_CAFiles != null) {
+            System.setProperty("sslCAFiles", service_CAFiles);
+        }
+        if (service_cert!= null) {
+            System.setProperty("sslCertfile", service_cert);
+        }
+        if (service_key != null) {
+            System.setProperty("sslKey", service_key);
+        }
+        if (service_keyPasswd != null) {
+             System.setProperty("sslKeyPasswd", service_keyPasswd);
+        }
     }
 
-    return getAuthRecord(username, subjectDN, role);
-  }
-    */
-/*
-    private gPlazmaAuthorizationRecord getgPlazmaAuthorizationRecordx(LocalId localId, String subjectDN, String role) throws AuthorizationException {
-
-        gPlazmaAuthorizationRecord authRecord = null;
-        String user;
-
-        user=localId.getUserName();
-        if(user==null) {
-            String denied = DENIED_MESSAGE + ": non-null user record received, but with a null username";
-            warn(denied);
-            throw new AuthorizationException(denied);
-        } else {
-            say("VO mapping service returned Username: " + user);
-        }
-
-        authRecord = storageRecordsServ.getStorageUserRecord(user_name);
-
-        Integer uid = localId.getUID();
-        if(uid==null) {
-            String denied = DENIED_MESSAGE + ": uid not found for " + user;
-            warn(denied);
-            throw new AuthorizationException(denied);
-        }
-
-        Integer gid = localId.getGID();
-        if(gid==null) {
-            String denied = DENIED_MESSAGE + ": gid not found for " + user;
-            warn(denied);
-            throw new AuthorizationException(denied);
-        }
-
-        String home = localId.getRelativeHomePath();
-        if(home==null) {
-            String denied = DENIED_MESSAGE + ": relative home path not found for " + user;
-            warn(denied);
-            throw new AuthorizationException(denied);
-        }
-
-        String root = localId.getRootPath();
-        if(root==null) {
-            String denied = DENIED_MESSAGE + ": root path not found for " + user;
-            warn(denied);
-            throw new AuthorizationException(denied);
-        }
-
-        String fsroot = localId.getFSRootPath();
-        if(fsroot==null) {
-            String denied = DENIED_MESSAGE + ": fsroot path not found for " + user;
-            warn(denied);
-            throw new AuthorizationException(denied);
-        }
-
-        //int priority = VORecord.priority;
-        int priority=0;
-        String priority_str = localId.getPriority();
-        if(priority_str==null) {
-            String denied = DENIED_MESSAGE + ": priority not found for " + user;
-            warn(denied);
-            throw new AuthorizationException(denied);
-        } else {
-            try {
-                priority = Integer.valueOf(priority_str).intValue();
-            } catch (Exception e) {
-                if(!priority_str.equals("default")) {
-                    String denied = DENIED_MESSAGE + ": priority for user " + user + " could not be parsed to an integer";
-                    warn(denied);
-                    throw new AuthorizationException(denied);
-                }
-            }
-        }
-
-        boolean readonlyflag = localId.getReadOnlyFlag();
-        //todo Following to be used later, currently String type "default" is returned from VO mapping
-        //int priority = Integer.parseInt(localId.getPriority());
-
-        debug("Plugin now forming user authorization records...");
-        HashSet<String> principals = new HashSet<String>();
-
-        gauthrec = new gPlazmaAuthorizationRecord(user,
-                                      readonlyflag,
-                                      priority,
-                                      uid.intValue(), new int[]{gid.intValue()}, home, root, fsroot,
-                                      subjectDN,
-                                      role,
-                                      getAuthRequestID());
-        return gauthrec;
-    }
-
-*/
-} //end of class SAML1AuthorizationPlugin
+} //end of class SAMLAuthorizationPlugin
