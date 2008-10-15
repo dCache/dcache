@@ -15,7 +15,7 @@ public class KpwdTest {
     @Test
     public void testKpwd() throws Exception {
 
-        _authServ = new KPWDAuthorizationPlugin("modules/dCacheJUnit/org/dcache/tests/auth/dcache.kpwd", 1);
+        _authServ = new KPWDAuthorizationPlugin("modules/dCacheJUnit/org/dcache/tests/auth/dcachesrm-gplazma.policy", 1);
 
         gPlazmaAuthorizationRecord pwdRecord =  _authServ.authorize(MY_DN, "", null, null, null);
 
