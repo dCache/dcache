@@ -36,7 +36,6 @@
 	        <mkdir dir="${buildDir}/junit" />
 	        <javac classpathref="junit.classpath" destdir="${buildDir}/junit" source="${javac.source}" target="${javac.target}" debug="${javac.debug}" verbose="${javac.verbose}"  encoding="${javac.encoding}" deprecation="on">
 	            <src path="${sourceDir}" />
-		    <exclude name="**/auth/*.java"/>
 	        </javac>
 
 
