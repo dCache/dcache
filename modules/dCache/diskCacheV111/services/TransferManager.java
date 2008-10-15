@@ -16,7 +16,6 @@ import dmg.util.*;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.PnfsFile;
-import diskCacheV111.util.FsPath;
 
 import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.PnfsGetStorageInfoMessage;
@@ -81,15 +80,15 @@ import javax.jdo.Transaction;
  * @author  timur
  */
 public abstract class TransferManager extends CellAdapter {
-	
+
 	private String jdbcUrl="jdbc:postgresql://localhost/srmdcache";
 	private String jdbcDriver="org.postgresql.Driver";
 	private String user="srmdcache";
 	private String pass=null;
 	private String pwdfile;
-	
+
 	private PersistenceManager pm;
-	
+
 	public HashSet activeTransfersIDs = new HashSet();
 	private HashMap activeTransfersIDsToHandlerMap = new HashMap();
 	private int max_transfers = 30;
@@ -109,27 +108,27 @@ public abstract class TransferManager extends CellAdapter {
 	private boolean overwrite=false;
 	private boolean do_database_logging=false;
 	private int maxNumberOfDeleteRetries=1;
-	
-	
+
+
 	// this is the timer which will timeout the
 	// transfer requests
 	private Timer moverTimeoutTimer = new Timer(true);
 	private Map moverTimeoutTimerTasks = new Hashtable();
 	private String _ioQueueName = null; // multi io queue option
 	RequestsPropertyStorage requestsPropertyStorage;
-	
+
 	public HashSet justRequestedIDs =  new HashSet();
         private String poolProxy ;
-	
-	
+
+
 	/** Creates a new instance of Class */
-	
+
 	/**      */
 	public TransferManager(String cellName, String argString) throws Exception {
 		super(cellName,TransferManager.class.getName(), argString,false);
 		say("Calling constructor(TransferManager) : "+cellName);
 		Args _args = new Args(argString);
-		
+
 		jdbcUrl    = _args.getOpt("jdbcUrl");
 		jdbcDriver = _args.getOpt("jdbcDriver");
 		user       = _args.getOpt("dbUser");
@@ -140,8 +139,8 @@ public abstract class TransferManager extends CellAdapter {
 			Pgpass pgpass = new Pgpass(pwdfile);      //VP
 			pass = pgpass.getPgpass(jdbcUrl, user);   //VP
 		}
-		
-		
+
+
 		if ( db_log != null) {
 			if (db_log.equalsIgnoreCase("true") || db_log.equalsIgnoreCase("t")) {
 				setDbLogging(true);
@@ -151,7 +150,7 @@ public abstract class TransferManager extends CellAdapter {
 				esay("Unrecognized value of \"doDbLog\" option : "+db_log+" , ignored");
 			}
 		}
-		
+
 		try {
 			if ( jdbcUrl != null && jdbcDriver != null && user != null && pass != null ) {
 				requestsPropertyStorage = RequestsPropertyStorage.getPropertyStorage(jdbcUrl, jdbcDriver, user, pass, "nextTransferId",null);
@@ -164,7 +163,7 @@ public abstract class TransferManager extends CellAdapter {
 			requestsPropertyStorage=null;
 			//esay(e);
 		}
-		
+
 		if ( doDbLogging() == true ) {
 			try {
 				Properties properties = new Properties();
@@ -193,7 +192,7 @@ public abstract class TransferManager extends CellAdapter {
 				properties.setProperty("org.jpox.autoCreateColumns","true");
 
 // below is default, supported are "LowerCase", "PreserveCase"
-//                properties.setProperty("org.jpox.identifier.case","UpperCase"); 
+//                properties.setProperty("org.jpox.identifier.case","UpperCase");
 
 				PersistenceManagerFactory pmf =
 					JDOHelper.getPersistenceManagerFactory(properties);
@@ -206,17 +205,17 @@ public abstract class TransferManager extends CellAdapter {
 				setDbLogging(false);
 			}
 		}
-		
+
 		String tmpstr = _args.getOpt("tlog");
 		if(tmpstr != null) {
 			_TLogRoot = tmpstr;
 		}
 		tmpstr = _args.getOpt("maxNumberOfDeleteRetries");
-		if (tmpstr !=null) { 
-			try { 
+		if (tmpstr !=null) {
+			try {
 				maxNumberOfDeleteRetries =Integer.parseInt(tmpstr);
 			}
-			catch (Exception e) { 
+			catch (Exception e) {
 				esay("Failed to initialize maxNumberOfDeleteRetriesm, using default value "+maxNumberOfDeleteRetries);
 				esay(e);
 			}
@@ -254,7 +253,7 @@ public abstract class TransferManager extends CellAdapter {
 			_ioQueueName = _args.getOpt("io-queue");
 		}
 		_ioQueueName = ( _ioQueueName == null ) || ( _ioQueueName.length() == 0 ) ? null : _ioQueueName ;
-                
+
                 poolProxy = _args.getOpt("poolProxy");
                 say("Pool Proxy "+( poolProxy == null ? "not set" : ( "set to "+poolProxy ) ) );
 		poolMgrPath     = new CellPath( poolManager ) ;
@@ -265,7 +264,7 @@ public abstract class TransferManager extends CellAdapter {
 	}
 	/**      */
 	public  CellVersion getCellVersion(){ return new CellVersion(diskCacheV111.util.Version.getVersion(),"$Revision: 1.38 $" ); }
-	
+
 	public void getInfo( PrintWriter printWriter ) {
 		StringBuffer sb = new StringBuffer();
 		sb.append("    "+getClass().getName()+"\n");
@@ -342,7 +341,7 @@ public abstract class TransferManager extends CellAdapter {
 				properties.setProperty("org.jpox.validateConstraints","false");
 				properties.setProperty("org.jpox.autoCreateColumns","true");
 // below is default, supported are "LowerCase", "PreserveCase"
-//                properties.setProperty("org.jpox.identifier.case","UpperCase"); 
+//                properties.setProperty("org.jpox.identifier.case","UpperCase");
 				PersistenceManagerFactory pmf =
 					JDOHelper.getPersistenceManagerFactory(properties);
 				pm = pmf.getPersistenceManager();
@@ -354,7 +353,7 @@ public abstract class TransferManager extends CellAdapter {
 				pm = null;
 				setDbLogging(false);
 			}
-			
+
 		}
 		return sb.toString();
 	}
@@ -368,10 +367,10 @@ public abstract class TransferManager extends CellAdapter {
 	public String ac_set_maxNumberOfDeleteRetries_$_1( Args args )throws CommandException {
 		StringBuffer sb = new StringBuffer();
 		String tmpstr = args.argv(0) ;
-		try { 
+		try {
 			maxNumberOfDeleteRetries =Integer.parseInt(tmpstr);
 		}
-		catch (Exception e) { 
+		catch (Exception e) {
 			esay("Failed to initialize maxNumberOfDeleteRetries, using default value "+maxNumberOfDeleteRetries);
 			esay(e);
 			sb.append("Failed to initialize maxNumberOfDeleteRetries, using default value "+maxNumberOfDeleteRetries+"\n");
@@ -397,7 +396,7 @@ public abstract class TransferManager extends CellAdapter {
 		pass  = args.argv(0) ;
 		return "OK";
 	}
-	
+
 	public String ac_dbinit_$_0( Args args ) throws CommandException {
 		if ( requestsPropertyStorage != null ) {
 			return "database connection is already initialized\n";
@@ -497,7 +496,7 @@ public abstract class TransferManager extends CellAdapter {
 				sb.append("\n#").append(id);
 				sb.append(" ").append( transferHandler.toString(long_format));
 			}
-			
+
 		}
 		return sb.toString();
 	}
@@ -649,7 +648,7 @@ public abstract class TransferManager extends CellAdapter {
 		say("askForFile(TransferManager) "+pool+" "+pnfsId.toString());
 		say("Trying pool "+pool+" for "+(isWrite?"Write":"Read"));
 		say("Trying pool "+pool+" for "+(isWrite?"Write":"Read"));
-		
+
 		PoolIoFileMessage poolMessage ;
 		if( isWrite ) {
 			poolMessage =         new PoolAcceptFileMessage(
@@ -669,7 +668,7 @@ public abstract class TransferManager extends CellAdapter {
 		}
 		poolMessage.setId( id ) ;
 		CellMessage reply;
-                
+
                 CellPath poolCellPath;
                 if( poolProxy == null ){
 			poolCellPath = new CellPath(pool);
@@ -767,7 +766,7 @@ public abstract class TransferManager extends CellAdapter {
 			return (TransferManagerHandler) activeTransfersIDsToHandlerMap.get(longId);
 		}
 	}
-	
+
 	/**      */
 	public void startTimer(long id) {
 		final Long lid = new Long(id);
@@ -787,16 +786,16 @@ public abstract class TransferManager extends CellAdapter {
 					handler.timeout();
 				}
 			};
-		
+
 		moverTimeoutTimerTasks.put(lid, tt);
-		
+
 		// this is very approximate
 		// but we do not need hard real time
 		// note that the movertimeout is in seconds,
 		// so we need to multiply by 1000
 		moverTimeoutTimer.schedule(tt,moverTimeout*1000L);
 	}
-	
+
 	public void stopTimer(long id) {
 		final Long lid = new Long(id);
 		Object o = moverTimeoutTimerTasks.remove(lid);
@@ -808,8 +807,8 @@ public abstract class TransferManager extends CellAdapter {
 		TimerTask tt = (TimerTask)o;
 		tt.cancel();
 	}
-	
-	
+
+
 	public void addActiveTransfer(Long id,
 				      TransferManagerHandler handler) {
 		activeTransfersIDs.add(id);
@@ -832,7 +831,7 @@ public abstract class TransferManager extends CellAdapter {
 			}
 		}
 	}
-	
+
 	public void removeActiveTransfer(Long id) {
 		activeTransfersIDs.remove(id);
 		TransferManagerHandler handler =
@@ -858,67 +857,67 @@ public abstract class TransferManager extends CellAdapter {
 			}
 		}
 	}
-	
+
 	public int getMaxTransfers() {
 		return  max_transfers;
 	}
-	
+
 	public int getNumberOfTranfers() {
 		return num_transfers;
 	}
-	
+
 	public long getPoolTimeout() {
 		return poolTimeout;
 	}
-	
+
 	public long getPoolManagerTimeout() {
 		return poolManagerTimeout;
 	}
-	
+
 	public long getPnfsManagerTimeout() {
 		return pnfsManagerTimeout;
 	}
-	
+
 	public long getSpaceManagerTimeout() {
 		return spaceManagerTimeout;
 	}
-	
+
 	public long getMoverTimeout() {
 		return moverTimeout;
 	}
-    
+
 	public String getLogRootName() {
 		return _TLogRoot;
 	}
-	
+
 	public boolean isOverwrite() {
 		return overwrite;
 	}
-	
+
 	public CellPath getPoolManagerPath() {
 		return poolMgrPath;
 	}
-	
+
 	public String getPoolManagerName() {
 		return poolManager;
 	}
-	
+
 	public String getPnfsManagerName() {
 		return pnfsManager;
 	}
-	
+
 	public String getSpaceManagerName() {
 		return spaceManager;
 	}
-	
+
 	public String getIoQueueName() {
 		return _ioQueueName;
 	}
-	
+
 	public synchronized PersistenceManager getPersistenceManager() {
 		return pm;
 	}
-	
+
 	public static void rollbackIfActive(Transaction tx) {
 		if (tx != null && tx.isActive()) {
 			tx.rollback();
@@ -930,13 +929,13 @@ public abstract class TransferManager extends CellAdapter {
 	public void  setDbLogging(boolean yes) {
 		do_database_logging=yes;
 	}
-	public void setMaxNumberOfDeleteRetries(int nretries) { 
+	public void setMaxNumberOfDeleteRetries(int nretries) {
 		maxNumberOfDeleteRetries=nretries;
 	}
-	public int getMaxNumberOfDeleteRetries() { 
+	public int getMaxNumberOfDeleteRetries() {
 		return maxNumberOfDeleteRetries;
 	}
-	
+
 	public void persist(Object o) {
 		if (doDbLogging() && pm!=null) {
 			synchronized(pm) {

@@ -63,28 +63,28 @@ COPYRIGHT STATUS:
   and software for U.S. Government purposes.  All documents and software
   available from this server are protected under the U.S. and Foreign
   Copyright Laws, and FNAL reserves all rights.
- 
- 
+
+
  Distribution of the software available from this server is free of
  charge subject to the user following the terms of the Fermitools
  Software Legal Information.
- 
+
  Redistribution and/or modification of the software shall be accompanied
  by the Fermitools Software Legal Information  (including the copyright
  notice).
- 
+
  The user is asked to feed back problems, benefits, and/or suggestions
  about the software to the Fermilab Software Providers.
- 
- 
+
+
  Neither the name of Fermilab, the  URA, nor the names of the contributors
  may be used to endorse or promote products derived from this software
  without specific prior written permission.
- 
- 
- 
+
+
+
   DISCLAIMER OF LIABILITY (BSD):
- 
+
   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
   "AS IS" AND ANY EXPRESS OR IMPLIED  WARRANTIES, INCLUDING, BUT NOT
   LIMITED TO, THE IMPLIED  WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -97,10 +97,10 @@ COPYRIGHT STATUS:
   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT  OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE  POSSIBILITY OF SUCH DAMAGE.
- 
- 
+
+
   Liabilities of the Government:
- 
+
   This software is provided by URA, independent from its Prime Contract
   with the U.S. Department of Energy. URA is acting independently from
   the Government and in its own private capacity and is not acting on
@@ -110,10 +110,10 @@ COPYRIGHT STATUS:
   be liable for nor assume any responsibility or obligation for any claim,
   cost, or damages arising out of or resulting from the use of the software
   available from this server.
- 
- 
+
+
   Export Control:
- 
+
   All documents and software available from this server are subject to U.S.
   export control laws.  Anyone downloading information from this server is
   obligated to secure any necessary Government licenses before exporting
@@ -133,7 +133,6 @@ import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageAnswerable;
 
-import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PnfsId;
 import org.dcache.srm.SrmUseSpaceCallbacks;
 import diskCacheV111.services.space.message.Use;
@@ -165,10 +164,10 @@ public class SrmMarkSpaceAsBeingUsedCompanion implements CellMessageAnswerable {
     private DCacheUser user;
     private long spaceToken;
     private String pnfPath;
-    private long sizeInBytes; 
+    private long sizeInBytes;
     private long markLifetime;
     private SrmUseSpaceCallbacks callbacks;
-    private CellAdapter cell;   
+    private CellAdapter cell;
     private CellMessage request = null;
     private String spaceManagerPath = "SrmSpaceManager";
     private boolean overwrite;
@@ -177,7 +176,7 @@ public class SrmMarkSpaceAsBeingUsedCompanion implements CellMessageAnswerable {
             cell.say(" SrmMarkSpaceAsBeingUsedCompanion : "+words_of_wisdom);
         }
     }
-    
+
     private void esay(String words_of_despare) {
         if(cell!=null) {
             cell.esay(" SrmMarkSpaceAsBeingUsedCompanion : "+words_of_despare);
@@ -189,7 +188,7 @@ public class SrmMarkSpaceAsBeingUsedCompanion implements CellMessageAnswerable {
             cell.esay(t);
         }
     }
-    
+
     public static final String getStateString(int state) {
         switch(state) {
             case NOT_WAITING_STATE:
@@ -202,16 +201,16 @@ public class SrmMarkSpaceAsBeingUsedCompanion implements CellMessageAnswerable {
                 return "UNKNOWN";
         }
     }
-    
-    
+
+
     /** Creates a new instance of StageAndPinCompanion */
-    
+
     private SrmMarkSpaceAsBeingUsedCompanion(
     DCacheUser user,
     long spaceToken,
     String pnfPath,
-    long sizeInBytes, 
-    long markLifetime, 
+    long sizeInBytes,
+    long markLifetime,
     boolean overwrite,
     SrmUseSpaceCallbacks callbacks,
     CellAdapter cell) {
@@ -224,7 +223,7 @@ public class SrmMarkSpaceAsBeingUsedCompanion implements CellMessageAnswerable {
         this.cell = cell;
         this.overwrite = overwrite;
     }
-    
+
     public void answerArrived( final CellMessage req , final CellMessage answer ) {
         say("answerArrived");
         diskCacheV111.util.ThreadManager.execute(new Runnable() {
@@ -233,7 +232,7 @@ public class SrmMarkSpaceAsBeingUsedCompanion implements CellMessageAnswerable {
             }
         });
     }
-    
+
     private void processMessage( CellMessage req , CellMessage answer ) {
         int current_state = state;
         say("answerArrived, state="+getStateString(current_state));
@@ -252,24 +251,24 @@ public class SrmMarkSpaceAsBeingUsedCompanion implements CellMessageAnswerable {
                         if(eo instanceof NoFreeSpaceException) {
                             callbacks.SrmNoFreeSpace(
                                     ((NoFreeSpaceException)eo).getMessage());
-                        } 
+                        }
 			else if(eo instanceof SpaceExpiredException) {
                             callbacks.SrmExpired(
                                     ((SpaceExpiredException)eo).getMessage());
-                        } 
+                        }
 			else if(eo instanceof SpaceAuthorizationException) {
                             callbacks.SrmNotAuthorized(
                                     ((SpaceAuthorizationException)eo).getMessage());
-                        } 
+                        }
 			else if(eo instanceof SpaceReleasedException) {
                             callbacks.SrmReleased(
                                     ((SpaceReleasedException)eo).getMessage());
-                        } 
+                        }
 			else if(eo instanceof Exception) {
                             callbacks.SrmUseSpaceFailed(
                             "Marking Space as Being Used failed =>"+
                                     ((Exception)eo).getMessage());
-                        } 
+                        }
 			else  {
                          callbacks.SrmUseSpaceFailed(
                           "Marking Space as Being Used failed =>"+eo);
@@ -277,7 +276,7 @@ public class SrmMarkSpaceAsBeingUsedCompanion implements CellMessageAnswerable {
                     } else {
                          callbacks.SrmUseSpaceFailed(
                           "Marking Space as Being Used failed");
-                        
+
                     }
                     return ;
                 }
@@ -299,7 +298,7 @@ public class SrmMarkSpaceAsBeingUsedCompanion implements CellMessageAnswerable {
             //" : "+o) ;
         }
     }
-    
+
     public void exceptionArrived( CellMessage request , Exception exception ) {
         esay("exceptionArrived "+exception+" for request "+request);
         callbacks.SrmUseSpaceFailed(exception);
@@ -309,20 +308,20 @@ public class SrmMarkSpaceAsBeingUsedCompanion implements CellMessageAnswerable {
         callbacks.SrmUseSpaceFailed("answerTimedOut for request "+request);
     }
     public String toString() {
-        
+
         return this.getClass().getName()+sizeInBytes;
     }
-    
+
     private void markSpace() {
         /* Use constructor argumens:
             long spaceToken,
-            String voGroup, 
-            String voRole, 
+            String voGroup,
+            String voRole,
             String pnfsName,
             PnfsId pnfsId,
             long sizeInBytes,
             long lifetime*/
-           Use use = 
+           Use use =
             new Use(
                     spaceToken,
                     user.getVoGroup(),
@@ -346,15 +345,15 @@ public class SrmMarkSpaceAsBeingUsedCompanion implements CellMessageAnswerable {
                 callbacks.SrmUseSpaceFailed("can not contact space manager: " +
                 ee.toString());
             }
-        
+
     }
-    
+
     public static void markSpace(
     DCacheUser user,
     long spaceToken,
     String pnfPath,
-    long sizeInBytes, 
-    long markLifetime, 
+    long sizeInBytes,
+    long markLifetime,
     boolean overwrite,
     SrmUseSpaceCallbacks callbacks,
     CellAdapter cell) {
@@ -362,8 +361,8 @@ public class SrmMarkSpaceAsBeingUsedCompanion implements CellMessageAnswerable {
                 " pnfsPath="+pnfPath+" of "+sizeInBytes+
                 " bytes, makr lifetime="+markLifetime+
                 ")");
-                
-        
+
+
 
         SrmMarkSpaceAsBeingUsedCompanion companion = new SrmMarkSpaceAsBeingUsedCompanion(
                   user,
@@ -372,10 +371,10 @@ public class SrmMarkSpaceAsBeingUsedCompanion implements CellMessageAnswerable {
                   sizeInBytes,
                   markLifetime,
                   overwrite,
-                  callbacks,            
+                  callbacks,
                   cell);
         companion.markSpace();
     }
-    
+
 }
 

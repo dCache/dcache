@@ -13,7 +13,6 @@ import dmg.util.*;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.PnfsFile;
-import diskCacheV111.util.FsPath;
 import org.globus.util.GlobusURL;
 
 import diskCacheV111.vehicles.Message;
@@ -53,17 +52,17 @@ import java.util.Iterator;
  * @author  timur
  */
 public class GsiftpTransferManager extends TransferManager{
-    
+
     public boolean _messageArrived(CellMessage cellMessage ) {
        Object object = cellMessage.getMessageObject();
-        
+
        	if (! (object instanceof Message) ){
 	    say("Unexpected message class "+object.getClass());
 	    return false;
 	}
-        
+
         Message transferMessage = (Message)object ;
-       
+
         if(object instanceof RemoteGsiftpDelegateUserCredentialsMessage)
         {
             try
@@ -79,16 +78,16 @@ public class GsiftpTransferManager extends TransferManager{
         }
         return false;
     }
-    
+
     protected IpProtocolInfo getProtocolInfo(long callerId,
-        diskCacheV111.vehicles.transferManager.TransferManagerMessage transferRequest) 
+        diskCacheV111.vehicles.transferManager.TransferManagerMessage transferRequest)
         throws java.io.IOException
     {
-        RemoteGsiftpTransferManagerMessage remGsiftpTransferRequest = 
+        RemoteGsiftpTransferManagerMessage remGsiftpTransferRequest =
             (RemoteGsiftpTransferManagerMessage) transferRequest;
-         
-        
-        
+
+
+
         String  gridftpurlString = transferRequest.getRemoteURL();
         GlobusURL gsiftpurl = new GlobusURL(transferRequest.getRemoteURL());
         String path = gsiftpurl.getPath();
@@ -96,7 +95,7 @@ public class GsiftpTransferManager extends TransferManager{
             int indx =gridftpurlString.length() -path.length();
             gridftpurlString = gridftpurlString.substring(0,indx-1);
             gridftpurlString = gridftpurlString+"//"+path;
-            
+
         }
         String remoteHost =  gsiftpurl.getHost();
         InetAddress[] addresses = InetAddress.getAllByName( remoteHost );
@@ -106,7 +105,7 @@ public class GsiftpTransferManager extends TransferManager{
              hosts[i] = addresses[i].getHostName();
          }
 
-        RemoteGsiftpTransferProtocolInfo protocolInfo = 
+        RemoteGsiftpTransferProtocolInfo protocolInfo =
         new RemoteGsiftpTransferProtocolInfo(
             "RemoteGsiftpTransfer",
             1,1,hosts,0,
@@ -114,22 +113,22 @@ public class GsiftpTransferManager extends TransferManager{
             _nucleus.getCellName(),
             _nucleus.getCellDomainName(),
             transferRequest.getId(),
-            callerId, 
+            callerId,
             remGsiftpTransferRequest.getBufferSize(),
             remGsiftpTransferRequest.getTcpBufferSize(),
             remGsiftpTransferRequest.getCredentialId());
         protocolInfo.setEmode(remGsiftpTransferRequest.isEmode());
         protocolInfo.setStreams_num(remGsiftpTransferRequest.getStreams_num());
-        return   protocolInfo;                  
-                    
+        return   protocolInfo;
+
     }
-    
-    
+
+
     /** Creates a new instance of ConcreteTransferManager */
     public GsiftpTransferManager(String cellName, String argString) throws Exception {
         super(cellName,argString);
     }
-    
+
     private void hanldeDelegateMessage(RemoteGsiftpDelegateUserCredentialsMessage deleg_req) throws Exception {
         long id = deleg_req.getId();
         TransferManagerHandler h = getHandler(id);

@@ -13,7 +13,6 @@ import dmg.util.*;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.PnfsFile;
-import diskCacheV111.util.FsPath;
 
 import diskCacheV111.vehicles.PnfsGetStorageInfoMessage;
 import diskCacheV111.vehicles.StorageInfo;
@@ -56,30 +55,30 @@ public class RemoteHttpTransferManager extends CellAdapter {
     private CellNucleus  _nucleus ;
     private Args _args;
     private int moverTimeout = 24*60*60;
-                                                    
+
     /** Creates a new instance of RemoteHttpTransferManager */
     public RemoteHttpTransferManager(String cellName, String argString) throws Exception
-    {  
+    {
         super(cellName,argString,false);
        _nucleus  = getNucleus() ;
         _args = new Args(argString);
        _pnfsPath = new CellPath ( "PnfsManager" );
         _poolMgrPath     = new CellPath ( "PoolManager" ) ;
-        InetAddress[] addresses = InetAddress.getAllByName( 
+        InetAddress[] addresses = InetAddress.getAllByName(
             InetAddress.getLocalHost().getHostName());
         _hosts = new String[addresses.length];
          for(int i = 0; i<addresses.length; ++i)
          {
              _hosts[i] = addresses[i].getHostName();
          }
-        
+
          String tmpstr = _args.getOpt ("pool_manager_timeout");
          if(tmpstr != null)
          {
             __poolManagerTimeout =Integer.parseInt (tmpstr);
          }
 
-         
+
          tmpstr = _args.getOpt ("pool_timeout");
          if(tmpstr != null)
          {
@@ -102,16 +101,16 @@ public class RemoteHttpTransferManager extends CellAdapter {
         getNucleus ().export ();
         start() ;
 
-        
+
     }
-    
+
     // transfers ls
     // queue ls
     // kill active
     // remove queued
-    
-    
-    
+
+
+
     public String hh_set_max_transfers = "<#max transfers>" ;
     public String ac_set_max_transfers_$_1( Args args )throws CommandException
     {
@@ -147,7 +146,7 @@ public class RemoteHttpTransferManager extends CellAdapter {
        poolTimeout = timeout;
        return "set pool timeout to "+timeout+ " seconds";
     }
-    
+
     public String hh_set_pool_manager_timeout = "<#seconds>" ;
     public String ac_set_pool_manager_timeout_$_1( Args args )throws CommandException
     {
@@ -159,7 +158,7 @@ public class RemoteHttpTransferManager extends CellAdapter {
        __poolManagerTimeout = timeout;
        return "set pool manager timeout to "+timeout+ " seconds";
     }
-    
+
     public String hh_ls = "[-l] [<#transferId>]" ;
     public String ac_ls_$_0_1( Args args )throws CommandException
     {
@@ -177,10 +176,10 @@ public class RemoteHttpTransferManager extends CellAdapter {
                {
                    return "ID not found : "+id;
                }
-               RemoteHttpTransferHandler transferHandler = 
+               RemoteHttpTransferHandler transferHandler =
                 (RemoteHttpTransferHandler)
                     activeTransfersIDsToHandlerMap.get(id);
-               return " transfer id="+id+" : "+ 
+               return " transfer id="+id+" : "+
                     transferHandler.toString(long_format);
            }
        }
@@ -196,15 +195,15 @@ public class RemoteHttpTransferManager extends CellAdapter {
            while(iter.hasNext())
            {
                id = (Long) iter.next();
-               RemoteHttpTransferHandler transferHandler = 
+               RemoteHttpTransferHandler transferHandler =
                 (RemoteHttpTransferHandler)
                     activeTransfersIDsToHandlerMap.get(id);
                sb.append("\n#").append(id);
                sb.append(" ").append( transferHandler.toString(long_format));
            }
-               
+
        }
-       return sb.toString();           
+       return sb.toString();
     }
 
     public String hh_queue = "[-l]" ;
@@ -224,7 +223,7 @@ public class RemoteHttpTransferManager extends CellAdapter {
               sb.append("\n#").append(i);
               CellMessage cellMessage = (CellMessage) queue.get(i);
               RemoteHttpTransferManagerMessage transfer_request =
-                (RemoteHttpTransferManagerMessage) 
+                (RemoteHttpTransferManagerMessage)
                 cellMessage.getMessageObject();
                if(transfer_request.isStore())
                {
@@ -240,7 +239,7 @@ public class RemoteHttpTransferManager extends CellAdapter {
                    sb.append(" dest=");
                    sb.append(transfer_request.getHttpUrl());
                }
-              
+
                if(!long_format)
                {
                    continue;
@@ -248,7 +247,7 @@ public class RemoteHttpTransferManager extends CellAdapter {
                sb.append("\n    uid=").append(transfer_request.getUid());
                sb.append(" gid=").append(transfer_request.getGid());
                sb.append(" try#").append(transfer_request.getNumberOfPerformedRetries());
-              
+
            }
            return sb.toString();
        }
@@ -278,12 +277,12 @@ public class RemoteHttpTransferManager extends CellAdapter {
         append(moverTimeout).append(" seconds");
        sb.append("\nnext id  : ").
         append(nextMessageID);
-       
+
 
        printWriter.println( sb.toString()) ;
    }
 
-    
+
     public void messageArrived( CellMessage cellMessage )
     {
         Object object = cellMessage.getMessageObject();
@@ -291,7 +290,7 @@ public class RemoteHttpTransferManager extends CellAdapter {
         say("Message messageArrived source = "+cellMessage.getSourceAddress());
         if (object instanceof DoorTransferFinishedMessage)
         {
-            
+
             DoorTransferFinishedMessage reply =
             (DoorTransferFinishedMessage)object ;
             long id = reply.getId();
@@ -305,12 +304,12 @@ public class RemoteHttpTransferManager extends CellAdapter {
                 }
                 else
                 {
-                    esay("DoorTransferFinishedMessage with unknown id ="+id+ 
+                    esay("DoorTransferFinishedMessage with unknown id ="+id+
                         " or unknown sync object in longIdToMessageMap " +o);
                     return;
                 }
             }
-            
+
             synchronized(o)
             {
                 o.notify();
@@ -332,8 +331,8 @@ public class RemoteHttpTransferManager extends CellAdapter {
             return;
         }
         super.messageArrived (cellMessage);
-        
-        
+
+
     }
     public void returnError(CellMessage cellMessage,String errormsg)
     {
@@ -352,11 +351,11 @@ public class RemoteHttpTransferManager extends CellAdapter {
             esay(e);
         }
     }
-    
+
     private class RemoteHttpTransferHandler implements Runnable
     {
-        
-        
+
+
         private CellMessage cellMessage;
         private RemoteHttpTransferManagerMessage transfer_request;
         private boolean requeue;
@@ -365,7 +364,7 @@ public class RemoteHttpTransferManager extends CellAdapter {
         private StorageInfo     storageInfo;
         private String pool;
         private boolean store;
-        public RemoteHttpTransferHandler(CellMessage cellMessage) 
+        public RemoteHttpTransferHandler(CellMessage cellMessage)
         {
              this.cellMessage = cellMessage;
         }
@@ -376,7 +375,7 @@ public class RemoteHttpTransferManager extends CellAdapter {
             {
                 return state;
             }
-            
+
            StringBuffer sb = new StringBuffer();
            if(store)
            {
@@ -413,19 +412,19 @@ public class RemoteHttpTransferManager extends CellAdapter {
                sb.append("\n   pool=").append(pool);
            }
            return sb.toString();
-          
+
         }
 
         public synchronized String getState()
         {
             return state;
         }
-        
+
         public synchronized void setState(String state)
         {
             this.state = state;
         }
-        
+
         public String getHttpUrl()
         {
             RemoteHttpTransferManagerMessage req =
@@ -436,7 +435,7 @@ public class RemoteHttpTransferManager extends CellAdapter {
             }
             return "unknown";
         }
-        
+
         public String getPnfsPath()
         {
             RemoteHttpTransferManagerMessage req =
@@ -447,7 +446,7 @@ public class RemoteHttpTransferManager extends CellAdapter {
             }
             return "unknown";
         }
-        
+
         public boolean isStore()
         {
             RemoteHttpTransferManagerMessage req =
@@ -458,7 +457,7 @@ public class RemoteHttpTransferManager extends CellAdapter {
             }
             return false;
         }
-        
+
         public  PnfsId  getPnfsId()
         {
             return pnfsId;
@@ -467,13 +466,13 @@ public class RemoteHttpTransferManager extends CellAdapter {
         {
             return storageInfo;
         }
-        
+
         public String getPool()
         {
             return pool;
         }
-        
-        public void run() 
+
+        public void run()
         {
             while(cellMessage != null)
             {
@@ -482,14 +481,14 @@ public class RemoteHttpTransferManager extends CellAdapter {
                 {
                      synchronized(this)
                      {
-                       this.transfer_request=(RemoteHttpTransferManagerMessage) 
+                       this.transfer_request=(RemoteHttpTransferManagerMessage)
                             cellMessage.getMessageObject();
                             state ="Pending";
                             pnfsId = null;
                             storageInfo = null;
                             pool = null;
                             store = transfer_request.isStore();
-                       
+
                      }
 
                     if(store)
@@ -549,12 +548,12 @@ public class RemoteHttpTransferManager extends CellAdapter {
                         }
                     }
                 }
-                
+
                 cellMessage = nextFromQueue();
             }
-        }        
-        
-    
+        }
+
+
            private void getFromRemoteHttpUrl(int uid, int gid,int buffer_size,
             String remoteTURL,
             String pnfsFilePath)
@@ -567,7 +566,7 @@ public class RemoteHttpTransferManager extends CellAdapter {
                     activeTransfersIDs.add(longId);
                     activeTransfersIDsToHandlerMap.put(longId,this);
                 }
-                setState("checking user permissions");   
+                setState("checking user permissions");
                 PnfsHandler pnfs_handler = new PnfsHandler( RemoteHttpTransferManager.this, _pnfsPath );
                 int last_slash_pos = pnfsFilePath.lastIndexOf('/');
 
@@ -583,7 +582,7 @@ public class RemoteHttpTransferManager extends CellAdapter {
                 {
                     PnfsGetStorageInfoMessage parent_info =
                         pnfs_handler.getStorageInfoByPath(parentDir);
-                    diskCacheV111.util.FileMetaData parent_data = 
+                    diskCacheV111.util.FileMetaData parent_data =
                         parent_info.getMetaData();
                     boolean can_write = (parent_data.getUid() == uid) &&
                     parent_data.getUserPermissions().canWrite() &&
@@ -604,8 +603,8 @@ public class RemoteHttpTransferManager extends CellAdapter {
                     }
 
 
-                    setState("creating pnfs error");   
-                    pnfsEntry = 
+                    setState("creating pnfs error");
+                    pnfsEntry =
                         pnfs_handler.createPnfsEntry(pnfsFilePath, uid,
                         gid,0644);
                     pnfsId       = pnfsEntry.getPnfsId() ;
@@ -614,7 +613,7 @@ public class RemoteHttpTransferManager extends CellAdapter {
                     new RemoteHttpDataTransferProtocolInfo("RemoteHttpDataTransfer",1,1,_hosts,0,
                        buffer_size,remoteTURL);
                     Thread current = Thread.currentThread();
-                    setState("waiting for a read pool");   
+                    setState("waiting for a read pool");
                     pool = askForReadWritePool(pnfsId,storageInfo,protocol_info,true);
 
                     Object sync = Long.valueOf(id);
@@ -626,7 +625,7 @@ public class RemoteHttpTransferManager extends CellAdapter {
                         longIdToMessageMap.put(sync,sync);
                     }
 
-                    setState("wating for a mover to complete a transfer");   
+                    setState("wating for a mover to complete a transfer");
                     askForFile(pool,pnfsId,storageInfo,protocol_info,true,id);
                     Object o;
                     synchronized(sync)
@@ -717,18 +716,18 @@ public class RemoteHttpTransferManager extends CellAdapter {
         {
             throw new java.io.IOException("not implemented");
         }
-        
+
         public String toString()
         {
             return toString(false);
         }
     }
-    
+
     private String askForReadWritePool( PnfsId       pnfsId ,
     StorageInfo  storageInfo ,
     ProtocolInfo protocolInfo ,
     boolean      isWrite       ) throws CacheException {
-        
+
         //
         // ask for a pool
         //
@@ -747,7 +746,7 @@ public class RemoteHttpTransferManager extends CellAdapter {
             storageInfo,
             protocolInfo ,
             0L                 );
-            
+
             say("PoolMgrSelectPoolMsg: " + request );
             CellMessage reply;
             try
@@ -763,44 +762,44 @@ public class RemoteHttpTransferManager extends CellAdapter {
                 esay(e);
                 throw new CacheException(e.toString());
             }
-            
+
             say("CellMessage (reply): " + reply );
             if( reply == null )
                 throw new
                 CacheException("PoolMgrSelectReadPoolMsg timed out") ;
-            
+
             Object replyObject = reply.getMessageObject();
-            
+
             if( ! ( replyObject instanceof  PoolMgrSelectPoolMsg ) )
                 throw new
                 CacheException( "Not a PoolMgrSelectPoolMsg : "+
                 replyObject.getClass().getName() ) ;
-            
+
             request =  (PoolMgrSelectPoolMsg)replyObject;
-            
+
             say("poolManagerReply = "+request);
-            
+
             if( request.getReturnCode() != 0 )
                 throw new
                 CacheException( "Pool manager error: "+
                 request.getErrorObject() ) ;
-            
+
             String pool = request.getPoolName();
             say("Positive reply from pool "+pool);
-            
+
             return pool ;
-            
+
     }
-    
+
     private void askForFile( String       pool ,
     PnfsId       pnfsId ,
     StorageInfo  storageInfo ,
     ProtocolInfo protocolInfo ,
     boolean      isWrite,
     long id) throws CacheException {
-        
+
         say("Trying pool "+pool+" for "+(isWrite?"Write":"Read"));
-        
+
         PoolIoFileMessage poolMessage ;
         if( isWrite )
         {
@@ -819,7 +818,7 @@ public class RemoteHttpTransferManager extends CellAdapter {
                 storageInfo     );
         }
             poolMessage.setId( id ) ;
-            
+
             CellMessage reply;
             try
             {
@@ -835,30 +834,30 @@ public class RemoteHttpTransferManager extends CellAdapter {
                 esay(e);
                 throw new CacheException(e.toString());
             }
-            
+
             if( reply == null)
                 throw new
                 CacheException( "Pool request timed out : "+pool ) ;
-            
+
             Object replyObject = reply.getMessageObject();
-            
+
             if( ! ( replyObject instanceof PoolIoFileMessage ) )
                 throw new
                 CacheException( "Illegal Object received : "+
                 replyObject.getClass().getName());
-            
+
             PoolIoFileMessage poolReply = (PoolIoFileMessage)replyObject;
-            
+
             if (poolReply.getReturnCode() != 0)
                 throw new
                 CacheException( "Pool error: "+poolReply.getErrorObject() ) ;
-            
+
             say("Pool "+pool+" will deliver file "+pnfsId);
-            
+
     }
-    
+
     protected static long   nextMessageID = 10000 ;
-    
+
     private static synchronized long getNextMessageID()
     {
         if(nextMessageID == Long.MAX_VALUE)
@@ -871,18 +870,18 @@ public class RemoteHttpTransferManager extends CellAdapter {
 
     private int max_transfers = 30;
     private int num_transfers = 0;
-    
+
     /** Getter for property max_transfers.
      * @return Value of property max_transfers.
      */
     public int getMax_transfers() {
         return max_transfers;
     }
-    
+
     /** Setter for property max_transfers.
      * @param max_transfers New value of property max_transfers.
      */
-    public void setMax_transfers(int max_transfers) 
+    public void setMax_transfers(int max_transfers)
     {
         this.max_transfers = max_transfers;
         synchronized(queue)
@@ -893,7 +892,7 @@ public class RemoteHttpTransferManager extends CellAdapter {
                 {
                     break;
                 }
-                CellMessage nextMessage = 
+                CellMessage nextMessage =
                 (CellMessage) queue.remove(0);
                  _nucleus.newThread(
                     new RemoteHttpTransferManager.RemoteHttpTransferHandler(
@@ -901,7 +900,7 @@ public class RemoteHttpTransferManager extends CellAdapter {
             }
         }
     }
-    
+
     private synchronized boolean new_transfer()
     {
         say("new_transfer() num_transfers = "+num_transfers+
@@ -915,7 +914,7 @@ public class RemoteHttpTransferManager extends CellAdapter {
         num_transfers++;
         return true;
     }
-        
+
     private synchronized int active_transfers()
     {
         return num_transfers;
@@ -925,17 +924,17 @@ public class RemoteHttpTransferManager extends CellAdapter {
         say("finish_transfer() num_transfers = "+num_transfers+" DECREMENT");
         num_transfers--;
     }
-    
+
     private ArrayList queue = new ArrayList();
 
     private synchronized void putOnQueue(CellMessage request)
     {
         queue.add(request);
     }
-    
+
     private synchronized CellMessage nextFromQueue()
     {
-            
+
         if(queue.size() >0)
         {
             if(new_transfer())
@@ -945,8 +944,8 @@ public class RemoteHttpTransferManager extends CellAdapter {
         }
         return null;
     }
-  
-    
+
+
 }
 
 
