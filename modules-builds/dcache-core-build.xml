@@ -379,7 +379,7 @@
 			<exclude name="org/dcache/chimera/**"/>
 			<exclude name="org/dcache/xrootd/security/plugins/**" />
 			<exclude name="org/dcache/xrootd/tests/**" />
-			<exclude name="org/dcache/services/info/**" />
+                        <exclude name="org/dcache/services/info/**" />
 			<exclude name="${dcache.packagePrefix}/replicaManager/Semaphore.java" />
 			<exclude name="${dcache.packagePrefix}/replicaManager/ReplicaManagerV2.java" />
 			<exclude name="${dcache.packagePrefix}/replicaManager/ReplicaManager.java" />
@@ -768,6 +768,7 @@
 		<copy file="${sourceDir}/${dcache.packagePrefix}/jobs/encp.sh" todir="${binDir}/jobs" />
 		<copy file="${sourceDir}/${dcache.packagePrefix}/jobs/hsmcp.sh" todir="${binDir}/jobs" />
 		<copy file="${sourceDir}/${dcache.packagePrefix}/jobs/hsmcpV4.sh" todir="${binDir}/jobs" />
+		<copy file="${sourceDir}/${dcache.packagePrefix}/jobs/hsmcp.rb" todir="${binDir}/jobs" />
 
 	    <chmod dir="${binDir}/jobs"  includes="**/*" perm="ugo+rx" />
 
