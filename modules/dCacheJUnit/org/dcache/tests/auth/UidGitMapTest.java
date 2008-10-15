@@ -6,8 +6,9 @@ import org.junit.Before;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
-import gplazma.gplazmalite.gridmapfileService.GIDMapFileAuthzService;
-import gplazma.gplazmalite.gridmapfileService.UIDMapFileAuthzService;
+import gplazma.authz.plugins.dynamic.UIDMapFileHandler;
+import gplazma.authz.plugins.dynamic.GIDMapFileHandler;
+
 
 public class UidGitMapTest {
 
@@ -15,13 +16,13 @@ public class UidGitMapTest {
     private final static String MY_GROUP1 = "/dteam/Role=NULL/Capability=NULL";
     private final static String MY_GROUP2 = "/dteam/Role=production/Capability=NULL";
 
-    private UIDMapFileAuthzService uidMap;
-    private GIDMapFileAuthzService gidMap;
+    private UIDMapFileHandler uidMap;
+    private GIDMapFileHandler gidMap;
 
     @Before
     public void setUp() throws IOException {
-        uidMap = new UIDMapFileAuthzService("modules/dCacheJUnit/org/dcache/tests/auth/uid-map");
-        gidMap = new GIDMapFileAuthzService("modules/dCacheJUnit/org/dcache/tests/auth/gid-map");
+        uidMap = new UIDMapFileHandler("modules/dCacheJUnit/org/dcache/tests/auth/uid-map");
+        gidMap = new GIDMapFileHandler("modules/dCacheJUnit/org/dcache/tests/auth/gid-map");
     }
 
 
