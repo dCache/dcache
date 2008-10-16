@@ -25,12 +25,16 @@ import java.io.IOException;
 import org.dcache.srm.SRMUserPersistenceManager;
 import org.dcache.srm.SRMUser;
 import org.apache.log4j.Logger;
+import java.util.Map;
+import java.util.HashMap;
 /**
  *
  * @author timur
  */
 public class  AuthRecordPersistenceManager implements SRMUserPersistenceManager{
     
+    private Map<Long,AuthorizationRecord> authRecCache  = 
+        new HashMap<Long,AuthorizationRecord>();
     private static Logger _logJpa = 
             Logger.getLogger(
             "logger.org.dcache.db.jpa."+
@@ -73,6 +77,11 @@ public class  AuthRecordPersistenceManager implements SRMUserPersistenceManager{
     }
     
     public AuthorizationRecord persist(AuthorizationRecord rec) {
+        synchronized(authRecCache) {
+            if(authRecCache.containsKey(rec.getId())) {
+                return authRecCache.get(rec.getId());
+            }
+        }
         EntityTransaction t = em.getTransaction();
         try{
             t.begin();
@@ -100,10 +109,23 @@ public class  AuthRecordPersistenceManager implements SRMUserPersistenceManager{
             }
             //em.close();
         }
-        return rec;   
+        synchronized(authRecCache) {
+            if(authRecCache.containsKey(rec.getId())) {
+                return authRecCache.get(rec.getId());
+            } else {
+                authRecCache.put(rec.getId(),rec);
+                return rec;   
+            }
+            
+        }
     }
     
     public AuthorizationRecord find(long id) {
+        synchronized(authRecCache) {
+            if(authRecCache.containsKey(id)) {
+                return authRecCache.get(id);
+            }
+        }
         AuthorizationRecord ar = null;
         EntityTransaction t = em.getTransaction();
         try{
@@ -122,8 +144,16 @@ public class  AuthRecordPersistenceManager implements SRMUserPersistenceManager{
 
             //em.close();
         }
-        return ar;   
-        
+        if( ar == null) return null;
+        synchronized(authRecCache) {
+            if(authRecCache.containsKey(id)) {
+                return authRecCache.get(id);
+            } else {
+                authRecCache.put(id,ar);
+                return ar;   
+            }
+            
+        }
     }
     
     
