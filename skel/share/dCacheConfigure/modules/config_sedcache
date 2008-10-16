@@ -1684,7 +1684,7 @@ fi
 
 for thisvo in $(echo $VOS)
 do
-  voupper=$(echo $thisvo | tr '[:lower:]' '[:upper:]')
+  voupper=$(echo $thisvo | tr '[:lower:].\-' '[:upper:]__')
   thisvoserversel="VO_${voupper}_VOMS_SERVERS"
   #echo thisvoserversel=$thisvoserversel
   thisvoserverlist=$(eval echo '$'`echo $thisvoserversel`)
