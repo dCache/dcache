@@ -1,4 +1,4 @@
-// $Id: SRMPutClientV2.java 10382 2008-10-16 15:33:29Z litvinse $
+// $Id: SRMPutClientV2.java 10392 2008-10-16 20:33:23Z litvinse $
 // $Log: SRMPutClientV2.java,v $
 
 /*
@@ -164,12 +164,17 @@ public class SRMPutClientV2 extends SRMClient implements Runnable {
             
             SrmPrepareToPutRequest srmPrepareToPutRequest =
                     new SrmPrepareToPutRequest();
-            if(storagetype.equals("volatile")){
-                srmPrepareToPutRequest.setDesiredFileStorageType(TFileStorageType.VOLATILE);
-            }else if(storagetype.equals("durable")){
-                srmPrepareToPutRequest.setDesiredFileStorageType(TFileStorageType.DURABLE);
-            }else if (storagetype.equals("permanent")) {
-                srmPrepareToPutRequest.setDesiredFileStorageType(TFileStorageType.PERMANENT);
+            if (storagetype!=null) { 
+                    if(storagetype.equals("volatile")){
+                            srmPrepareToPutRequest.setDesiredFileStorageType(TFileStorageType.VOLATILE);
+                    }else if(storagetype.equals("durable")){
+                            srmPrepareToPutRequest.setDesiredFileStorageType(TFileStorageType.DURABLE);
+                    }else if (storagetype.equals("permanent")) {
+                            srmPrepareToPutRequest.setDesiredFileStorageType(TFileStorageType.PERMANENT);
+                    }
+                    else { 
+                            throw new IllegalArgumentException("Unknown storage type \"" +storagetype+"\"");
+                    }
             }
             srmPrepareToPutRequest.setDesiredTotalRequestTime(new Integer((int)configuration.getRequestLifetime()));
             

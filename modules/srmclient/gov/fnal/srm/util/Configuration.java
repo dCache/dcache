@@ -1,4 +1,4 @@
-// $Id: Configuration.java 10382 2008-10-16 15:33:29Z litvinse $
+// $Id: Configuration.java 10392 2008-10-16 20:33:23Z litvinse $
 // $Author: litvinse $
 /*
 COPYRIGHT STATUS:
@@ -1534,9 +1534,6 @@ public class Configuration {
                 private String storagetype;
         
       	public String getStorageType() {
-		if (storagetype == null){
-			storagetype = "permanent";
-		}
 		return storagetype;
 	}
         
@@ -1746,6 +1743,24 @@ public class Configuration {
 	// checksum options
         //
         @Option(
+                name = "send_cksm",
+                description = "send check sum to gridftp server",
+                required=false, 
+                log=true, 
+                defaultValue="true",
+                save=true
+                )
+                private boolean doSendCheckSum;
+        
+        public boolean getDoSendCheckSum() { 
+                return doSendCheckSum;
+        }
+        
+        public void setDoSendCheckSum(boolean sendCheckSum ) { 
+                doSendCheckSum = sendCheckSum;
+        }
+                
+        @Option(
                 name = "cksm_type",
                 description = "<type|negotiate> calculate and verify server and client checksum values using this type (adler32|MD4|MD5| .... ). If checksum value has been omitted, missing value will be computed over the local file. If negotiate is set - client will attempt to negotiate cksm type for the file checksum value avilable at the server. For gridftp transfers to/from servers that support checksumming features",
                 required=false,
@@ -1911,6 +1926,7 @@ public class Configuration {
                                                           "buffer_size",
                                                           "tcp_buffer_size",
                                                           "streams_num",
+                                                          "send_cksm",
                                                           "server_mode",
                                                           "storagetype",
                                                           "array_of_client_networks",

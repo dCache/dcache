@@ -1,4 +1,4 @@
-// $Id: SRMGetClientV2.java 10382 2008-10-16 15:33:29Z litvinse $
+// $Id: SRMGetClientV2.java 10392 2008-10-16 20:33:23Z litvinse $
 // $Log: not supported by cvs2svn $
 
 /*
@@ -136,15 +136,12 @@ public class SRMGetClientV2 extends SRMClient implements Runnable {
             int len = from.length;
             String SURLS[] = new String[len];
             TGetFileRequest fileRequests[] = new TGetFileRequest[len];
-            String storagetype=configuration.getStorageType();
             for(int i = 0; i < len; ++i) {
                 SURLS[i] = from[i].getURL();
                 org.apache.axis.types.URI uri =
                         new org.apache.axis.types.URI(SURLS[i]);
                 fileRequests[i] = new TGetFileRequest();
                 fileRequests[i].setSourceSURL(uri);
-                
-                //fileRequests[i].setFileStorageType(TFileStorageType.Permanent);
                 pendingSurlsToIndex.put(SURLS[i],new Integer(i));
             }
             hook = new Thread(this);
