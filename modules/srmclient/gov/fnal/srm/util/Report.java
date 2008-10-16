@@ -93,12 +93,13 @@ public class Report {
     }
     
     public void setStatusBySourceUrl(GlobusURL srcURL,int returnCode,String errorDscr){
-        //System.out.println("setStatusBySourceUrl "+srcURL.getURL()+" rc="+returnCode);
         if(!isValidRC(returnCode)) {
             throw new IllegalArgumentException("illegal return code value : "+returnCode);
         }
         for(int i = 0; i <length; ++i) {
-            if(srcURL.equals(from[i])){
+            if(srcURL.getURL().equals(from[i].getURL())&&
+               srcURL.getHost().equals(from[i].getHost()) &&
+               srcURL.getProtocol().equals(from[i].getProtocol())){
                 rc[i] = returnCode;
                 if(returnCode != 0) {
                     error[i] = errorDscr;
@@ -108,12 +109,13 @@ public class Report {
     }
     
     public void setStatusByDestinationUrl(GlobusURL dstURL,int returnCode,String errorDscr){
-        //System.out.println("setStatusByDestinationUrl "+dstURL.getURL()+" rc="+returnCode);
         if(!isValidRC(returnCode)) {
             throw new IllegalArgumentException("illegal return code value : "+returnCode);
         }
         for(int i = 0; i <length; ++i) {
-            if(dstURL.equals(to[i])){
+            if(dstURL.getURL().equals(to[i].getURL())&&
+               dstURL.getHost().equals(to[i].getHost())&&
+               dstURL.getProtocol().equals(to[i].getProtocol())){
                 rc[i] = returnCode;
                 if(returnCode != 0) {
                     error[i] = errorDscr;
@@ -126,12 +128,16 @@ public class Report {
     }
     
     public void setStatusBySourceDestinationUrl(GlobusURL srcURL,GlobusURL dstURL,int returnCode,String errorDscr){
-        //System.out.println("setStatusBySourceDestinationUrl "+srcURL.getURL()+" "+dstURL.getURL()+" rc="+returnCode);
         if(!isValidRC(returnCode)) {
             throw new IllegalArgumentException("illegal return code value : "+returnCode);
         }
         for(int i = 0; i <length; ++i) {
-            if(srcURL.equals(from[i]) && dstURL.equals(to[i])){
+            if((dstURL.getURL().equals(to[i].getURL())&&
+                dstURL.getHost().equals(to[i].getHost())&&
+                dstURL.getProtocol()==to[i].getProtocol())&&
+               (srcURL.getURL().equals(from[i].getURL())&&
+                srcURL.getHost().equals(from[i].getHost())&&
+                srcURL.getProtocol().equals(from[i].getProtocol()))) {
                 rc[i] = returnCode;
                 if(returnCode != 0) {
                     error[i] = errorDscr;

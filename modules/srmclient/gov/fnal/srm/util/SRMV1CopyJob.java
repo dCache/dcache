@@ -1,4 +1,4 @@
-// $Id: SRMV1CopyJob.java 10230 2008-09-24 19:04:23Z litvinse $
+// $Id: SRMV1CopyJob.java 10382 2008-10-16 15:33:29Z litvinse $
 // $Log: not supported by cvs2svn $
 // Revision 1.8  2005/04/27 16:39:59  timur
 // more work on report added gridftpcopy and adler32 binaries
@@ -170,7 +170,6 @@ public class SRMV1CopyJob implements CopyJob {
             else {
                 client.setReportSucceeded(null,surl);
             }
-                
         }
         else
         {   

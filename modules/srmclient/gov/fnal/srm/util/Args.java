@@ -1,7 +1,7 @@
 //______________________________________________________________________________
 // 
 // This is class stolen from dmg.util and modified to handle "--" option
-// $Id: Args.java 10158 2008-09-10 16:58:53Z litvinse $
+// $Id: Args.java 10249 2008-09-29 14:45:18Z litvinse $
 // $Author: litvinse $
 //   
 //   I modified it slightly to ignore padding spaces  (litvinse@fnal.gov)
@@ -171,6 +171,9 @@ public class Args implements java.io.Serializable {
                                 else if( c == '=' ){
                                         value = new StringBuilder() ;
                                         state = OPT_VALUE ;
+                                }
+                                else if( c == '-' ){
+                                        state = OPT_KEY ;
                                 }
                                 else{
                                         key.append(c) ;
