@@ -9,6 +9,7 @@ import org.globus.util.GlobusURL;
 
 public class SrmUrl  extends GlobusURL { 
 
+        private int defaultPort=8443;
         public SrmUrl(String url) 
                 throws MalformedURLException { 
                 super(url);
@@ -16,11 +17,13 @@ public class SrmUrl  extends GlobusURL {
         }
         
         public  SrmUrl(String url,
-                       int portNumber) 
+                       int defaultPortNumber) 
                 throws MalformedURLException { 
                 super(url);
                 if (!getProtocol().equals("file")) {
-                        port=portNumber;
+                        if (super.getPort()==-1) { 
+                                defaultPort=defaultPortNumber;
+                        }
                 }
 //                massagePath();
         }
@@ -36,7 +39,7 @@ public class SrmUrl  extends GlobusURL {
                         }
                 }
         }
-
+        
         public void setPort(int portNumber) { 
                 port=portNumber;
         }
@@ -44,7 +47,7 @@ public class SrmUrl  extends GlobusURL {
         public int getPort() { 
                 int p= super.getPort();
                 if (p==-1&&super.getProtocol().equals("srm")) {
-                        return 8443;
+                        return defaultPort;
                 }
                 return p;
         }
