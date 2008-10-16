@@ -1,4 +1,4 @@
-// $Id: SRMGetClientV2.java 10230 2008-09-24 19:04:23Z litvinse $
+// $Id: SRMGetClientV2.java 10382 2008-10-16 15:33:29Z litvinse $
 // $Log: not supported by cvs2svn $
 
 /*
@@ -152,27 +152,46 @@ public class SRMGetClientV2 extends SRMClient implements Runnable {
             SrmPrepareToGetRequest srmPrepareToGetRequest = new SrmPrepareToGetRequest();
             srmPrepareToGetRequest.setDesiredTotalRequestTime(
                     new Integer((int)configuration.getRequestLifetime()));
-	    TRetentionPolicy rp   =  TRetentionPolicy.CUSTODIAL;
-	    TAccessLatency   al   =  TAccessLatency.NEARLINE;
+	    TRetentionPolicy rp   =  null;
+	    TAccessLatency   al   =  null;
 	    if(configuration.getRetentionPolicy() != null ) {
 		    rp = TRetentionPolicy.fromString(configuration.getRetentionPolicy());
             }
             if(configuration.getAccessLatency() != null ) {
                 al = TAccessLatency.fromString(configuration.getAccessLatency());
             }
-            srmPrepareToGetRequest.setTargetFileRetentionPolicyInfo(new TRetentionPolicyInfo(rp,al));
+            if ( (al!=null) && (rp==null)) { 
+                    throw new IllegalArgumentException("if access latency is specified, "+
+                                                       "then retention policy have to be specified as well");
+            }
+            else if ( rp!=null ) {
+                    srmPrepareToGetRequest.setTargetFileRetentionPolicyInfo(new TRetentionPolicyInfo(rp,al));
+            }
             srmPrepareToGetRequest.setArrayOfFileRequests(
                     new ArrayOfTGetFileRequest(fileRequests));
-	    TAccessPattern  ap = TAccessPattern.TRANSFER_MODE;
+	    TAccessPattern  ap = null;
 	    if(configuration.getAccessPattern() != null ) {
 		    ap = TAccessPattern.fromString(configuration.getAccessPattern());
             }
-	    TConnectionType ct = TConnectionType.WAN;
+	    TConnectionType ct = null;
 	    if(configuration.getConnectionType() != null ) {
 		    ct = TConnectionType.fromString(configuration.getConnectionType());
             }
-            srmPrepareToGetRequest.setTransferParameters(new TTransferParameters(ap,ct,null,new ArrayOfString(protocols)));
-	    if (configuration.getExtraParameters().size()>0) { 
+            ArrayOfString protocolArray = null;
+            if (protocols != null) { 
+                    protocolArray = new ArrayOfString(protocols);
+            }
+            ArrayOfString arrayOfClientNetworks = null;
+            if (configuration.getArrayOfClientNetworks()!=null) { 
+                    arrayOfClientNetworks = new ArrayOfString(configuration.getArrayOfClientNetworks());
+            }
+            if (ap!=null || ct!=null || arrayOfClientNetworks !=null || protocolArray != null) { 
+                    srmPrepareToGetRequest.setTransferParameters(new TTransferParameters(ap,
+                                                                                         ct,
+                                                                                         arrayOfClientNetworks,
+                                                                                         protocolArray));
+            }
+            if (configuration.getExtraParameters().size()>0) { 
 		    TExtraInfo[] extraInfoArray = new TExtraInfo[configuration.getExtraParameters().size()];
 		    int counter=0;
                     Map extraParameters = configuration.getExtraParameters();

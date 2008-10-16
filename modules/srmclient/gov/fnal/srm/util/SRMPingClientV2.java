@@ -1,4 +1,4 @@
-// $Id: SRMPingClientV2.java 10230 2008-09-24 19:04:23Z litvinse $
+// $Id: SRMPingClientV2.java 10382 2008-10-16 15:33:29Z litvinse $
 // $Log: not supported by cvs2svn $
 /*
 COPYRIGHT STATUS:
@@ -131,7 +131,7 @@ public class SRMPingClientV2 extends SRMClient  {
 					}
 				}
 			}
-			say(sb.toString());
+			System.out.println(sb.toString());
 		}
 		catch (Exception e){
 			throw e;

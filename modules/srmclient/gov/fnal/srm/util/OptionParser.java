@@ -2,7 +2,7 @@
 //
 // This code is stolen from org.dcache.services.AbstractCell
 // 
-//  $Id: OptionParser.java 10158 2008-09-10 16:58:53Z litvinse $ 
+//  $Id: OptionParser.java 10382 2008-10-16 15:33:29Z litvinse $ 
 //  $Author: litvinse $
 //______________________________________________________________________________
 package gov.fnal.srm.util;
@@ -78,6 +78,98 @@ public class OptionParser {
                                         IllegalArgumentException("Unknown option specified : -"+optionName);
                         }
                 }
+        }
+
+        /**
+         * Checks if there are options set to nulls 
+         */
+
+        public static void checkNullOptions(Object o, String ... names) throws IllegalArgumentException  { 
+                boolean haveNullOptions=false;
+                StringBuilder sb = new StringBuilder();
+                Class c = o.getClass();
+                while(c!=null) { 
+                        for (Field field : c.getDeclaredFields()) {
+                                Option option = field.getAnnotation(Option.class);
+                                if (option != null) { 
+                                        for (String s: names) {
+                                                if (option.name().equals(s)) { 
+                                                        try { 
+                                                                field.setAccessible(true);
+                                                                Object value = field.get(o); 
+                                                                if (value==null) { 
+                                                                        sb.append("   "+option.name() +" option must be set \n");
+                                                                        haveNullOptions=true;
+                                                                }
+                                                                break;
+                                                        }
+                                                        catch (IllegalAccessException e) {
+                                                                throw new RuntimeException("Bug detected while processing option "+ 
+                                                                                           option.name(), e);
+                                                        }
+                                                }
+                                        }
+                                }
+                        }
+                        c = c.getSuperclass();
+                }
+                if (haveNullOptions) {
+                        throw new IllegalArgumentException(sb.toString());
+                }
+        }
+
+        /**
+         * Checks if there are options set to nulls 
+         */
+
+        public static String printOptions(Object o, String ... names) throws IllegalArgumentException  { 
+                StringBuilder sb = new StringBuilder();
+                Class c = o.getClass();
+                int maxlength=0;
+                int nblanks=3;
+                for (String s:names) { 
+                        if(s.length()>maxlength)maxlength=s.length();
+                }
+                while(c!=null) { 
+                        for (Field field : c.getDeclaredFields()) {
+                                Option option = field.getAnnotation(Option.class);
+                                if (option != null) { 
+                                        for (String s: names) {
+                                                if (option.name().equals(s)) { 
+                                                        try { 
+                                                                field.setAccessible(true);
+                                                                Object value = field.get(o); 
+                                                                for(int i=0;i<nblanks;i++)sb.append(' ');
+                                                                sb.append("-"+option.name());
+                                                                if (field.getType()!= Boolean.TYPE) {
+                                                                        sb.append('=');
+                                                                }
+                                                                else { 
+                                                                        sb.append(' ');
+                                                                }
+                                                                for (int i=option.name().length();i<maxlength;i++) sb.append(' ');
+                                                                if (field.getType()!= Boolean.TYPE) {
+                                                                        sb.append(option.description()+"\n");
+                                                                        for (int i=0;i<maxlength+nblanks+2;i++) sb.append(' ');
+                                                                        sb.append("current value is "+(value!=null?value:"null(not set) ")+" "+option.unit()+"\n");
+                                                                }
+                                                                else { 
+                                                                        sb.append(option.description()+"(switch)\n");
+                                                                        for (int i=0;i<maxlength+nblanks+2;i++) sb.append(' ');
+                                                                        sb.append("current value is "+value+"\n");
+                                                                }
+                                                        }
+                                                        catch (IllegalAccessException e) {
+                                                                throw new RuntimeException("Bug detected while processing option "+ 
+                                                                                           option.name(), e);
+                                                        }
+                                                }
+                                        }
+                                }
+                        }
+                        c = c.getSuperclass();
+                }
+                return sb.toString();
         }
         
 

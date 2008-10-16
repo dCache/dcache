@@ -1,4 +1,4 @@
-// $Id: SRMLsClientV2.java 10230 2008-09-24 19:04:23Z litvinse $
+// $Id: SRMLsClientV2.java 10382 2008-10-16 15:33:29Z litvinse $
 
 /*
 COPYRIGHT STATUS:
@@ -127,7 +127,9 @@ public class SRMLsClientV2 extends SRMClient {
      req.setFullDetailedList(Boolean.valueOf(configuration.isLongLsFormat()));
      req.setNumOfLevels(new Integer(configuration.getRecursionDepth()));
      req.setOffset(new Integer(configuration.getLsOffset()));
-     req.setCount(new Integer(configuration.getLsCount()));
+     if (configuration.getLsCount()!=null) { 
+             req.setCount(configuration.getLsCount());
+     }
      org.apache.axis.types.URI[] turlia = new org.apache.axis.types.URI[surls.length];
      for(int i =0; i<surls.length; ++i) {
          turlia[i] = new org.apache.axis.types.URI(surl_strings[i]);

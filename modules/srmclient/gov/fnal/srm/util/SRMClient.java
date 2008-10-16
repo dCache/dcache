@@ -1,4 +1,4 @@
-// $Id: SRMClient.java 10230 2008-09-24 19:04:23Z litvinse $
+// $Id: SRMClient.java 10382 2008-10-16 15:33:29Z litvinse $
 // $Log: not supported by cvs2svn $
 // Revision 1.26  2005/11/10 00:02:10  litvinse
 // implementation of srmrm client
@@ -289,14 +289,12 @@ public abstract class SRMClient {
    
    private void setReportSuccessStatusBySource(GlobusURL url){
       if(report == null) return;
-      
       report.setStatusBySourceUrl(url, Report.OK_RC, null);
       
    }
    
    private void setReportSuccessStatusByDest(GlobusURL url){
       if(report == null) return;
-      
       report.setStatusByDestinationUrl(url, Report.OK_RC, null);
       
    }
@@ -334,7 +332,6 @@ public abstract class SRMClient {
          report.setStatusBySourceUrl(url, Report.PERMISSION_RC, error);
          return;
       }
-      
       report.setStatusBySourceUrl(url, Report.ERROR_RC, error);
       return;
    }
@@ -409,11 +406,9 @@ public abstract class SRMClient {
       try {
          setReportSuccessStatusBySrcAndDest(srcurl,dsturl);
       } catch(Exception e) {
-         //e.printStackTrace();
          try {
             setReportSuccessStatusByDest(dsturl);
          } catch(Exception e1){
-            //e1.printStackTrace();
             setReportSuccessStatusBySource(srcurl);
          }
       }
