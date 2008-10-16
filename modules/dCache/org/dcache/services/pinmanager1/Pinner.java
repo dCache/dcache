@@ -114,7 +114,7 @@ class Pinner extends SMCTask
                                          pinfo,
                                          0);
 
-        sendMessage(_poolManager, request, 1*24*60*60*1000);
+        sendMessage(_poolManager, request, 60*60*1000);
     }
 
     void markSticky()
@@ -140,7 +140,7 @@ class Pinner extends SMCTask
             getCellName()+_pin.getId(), 
             stikyBitExpiration);
         sendMessage(new CellPath(_readPoolName), setStickyRequest,
-                    1 * 24 * 60 * 60 * 1000);
+                    60 * 60 * 1000);
     }
 
     void succeed()
