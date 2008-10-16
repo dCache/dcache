@@ -78,7 +78,7 @@ if [[ "${skip}" -eq 0 ]]
     then
     if [ ${length} -lt 2 ]
 	then
-	echo "Please specify source and destination"
+	$SRM_PATH/sbin/srm -copy $*
 	exit 1
     else
 	i=0
