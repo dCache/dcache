@@ -164,12 +164,17 @@ public class SRMPutClientV2 extends SRMClient implements Runnable {
             
             SrmPrepareToPutRequest srmPrepareToPutRequest =
                     new SrmPrepareToPutRequest();
-            if(storagetype.equals("volatile")){
-                srmPrepareToPutRequest.setDesiredFileStorageType(TFileStorageType.VOLATILE);
-            }else if(storagetype.equals("durable")){
-                srmPrepareToPutRequest.setDesiredFileStorageType(TFileStorageType.DURABLE);
-            }else if (storagetype.equals("permanent")) {
-                srmPrepareToPutRequest.setDesiredFileStorageType(TFileStorageType.PERMANENT);
+            if (storagetype!=null) { 
+                    if(storagetype.equals("volatile")){
+                            srmPrepareToPutRequest.setDesiredFileStorageType(TFileStorageType.VOLATILE);
+                    }else if(storagetype.equals("durable")){
+                            srmPrepareToPutRequest.setDesiredFileStorageType(TFileStorageType.DURABLE);
+                    }else if (storagetype.equals("permanent")) {
+                            srmPrepareToPutRequest.setDesiredFileStorageType(TFileStorageType.PERMANENT);
+                    }
+                    else { 
+                            throw new IllegalArgumentException("Unknown storage type \"" +storagetype+"\"");
+                    }
             }
             srmPrepareToPutRequest.setDesiredTotalRequestTime(new Integer((int)configuration.getRequestLifetime()));
             

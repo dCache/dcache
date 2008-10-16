@@ -136,15 +136,12 @@ public class SRMGetClientV2 extends SRMClient implements Runnable {
             int len = from.length;
             String SURLS[] = new String[len];
             TGetFileRequest fileRequests[] = new TGetFileRequest[len];
-            String storagetype=configuration.getStorageType();
             for(int i = 0; i < len; ++i) {
                 SURLS[i] = from[i].getURL();
                 org.apache.axis.types.URI uri =
                         new org.apache.axis.types.URI(SURLS[i]);
                 fileRequests[i] = new TGetFileRequest();
                 fileRequests[i].setSourceSURL(uri);
-                
-                //fileRequests[i].setFileStorageType(TFileStorageType.Permanent);
                 pendingSurlsToIndex.put(SURLS[i],new Integer(i));
             }
             hook = new Thread(this);
