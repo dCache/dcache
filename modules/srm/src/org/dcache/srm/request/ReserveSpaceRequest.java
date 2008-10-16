@@ -447,6 +447,8 @@ public class ReserveSpaceRequest extends Request {
         response.setRetentionPolicyInfo(new TRetentionPolicyInfo(retentionPolicy, accessLatency));
         response.setSpaceToken(getSpaceToken());
         response.setSizeOfTotalReservedSpace(new UnsignedLong(sizeInBytes) );
+        response.setSizeOfGuaranteedReservedSpace(new UnsignedLong(sizeInBytes));
+        response.setLifetimeOfReservedSpace(new Integer((int)(spaceReservationLifetime/1000L)));
         return response;
         
     }
@@ -458,6 +460,8 @@ public class ReserveSpaceRequest extends Request {
         response.setRequestToken(String.valueOf(getId()));
         response.setSpaceToken(getSpaceToken());
         response.setSizeOfTotalReservedSpace(new UnsignedLong(sizeInBytes) );
+        response.setSizeOfGuaranteedReservedSpace(new UnsignedLong(sizeInBytes));
+        response.setLifetimeOfReservedSpace(new Integer((int)(spaceReservationLifetime/1000L)));
         return response;
     }
     
