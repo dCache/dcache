@@ -149,16 +149,35 @@ public class SRMReserveSpaceClientV2 extends SRMClient implements Runnable {
             }
             TRetentionPolicyInfo rpi = new TRetentionPolicyInfo(rp,al);
             request.setRetentionPolicyInfo(rpi);
-            request.setDesiredSizeOfTotalSpace(new org.apache.axis.types.UnsignedLong(configuration.getDesiredReserveSpaceSize()));
-            request.setDesiredSizeOfGuaranteedSpace(new org.apache.axis.types.UnsignedLong(configuration.getGuaranteedReserveSpaceSize()));
+            if (configuration.getDesiredReserveSpaceSize()!=null) { 
+                    request.setDesiredSizeOfTotalSpace(new org.apache.axis.types.UnsignedLong(configuration.getDesiredReserveSpaceSize().longValue()));
+            }
+            if (configuration.getGuaranteedReserveSpaceSize()!=null){ 
+                    request.setDesiredSizeOfGuaranteedSpace(new org.apache.axis.types.UnsignedLong(configuration.getGuaranteedReserveSpaceSize().longValue()));
+            }
             request.setUserSpaceTokenDescription(configuration.getSpaceTokenDescription());
-            request.setDesiredLifetimeOfReservedSpace(new Integer((int)configuration.getDesiredLifetime()));
-            TTransferParameters tp = new TTransferParameters();
-            tp.setArrayOfClientNetworks(new ArrayOfString(configuration.getArrayOfClientNetworks()));
-            tp.setConnectionType(TConnectionType.fromString(configuration.getConnectionType()));
-            tp.setAccessPattern(TAccessPattern.fromString(configuration.getAccessPattern()));
-            tp.setArrayOfTransferProtocols(new ArrayOfString(configuration.getProtocols()));
-            request.setTransferParameters(tp);
+            if (configuration.getDesiredLifetime()!=null) { 
+                    request.setDesiredLifetimeOfReservedSpace(new Integer((int)(configuration.getDesiredLifetime().longValue())));
+            }
+            if (configuration.getArrayOfClientNetworks()!=null ||
+                configuration.getConnectionType()!=null ||
+                configuration.getAccessPattern()!=null ||
+                configuration.getProtocols()!=null) {
+                    TTransferParameters tp = new TTransferParameters();
+                    if (configuration.getArrayOfClientNetworks()!=null) { 
+                            tp.setArrayOfClientNetworks(new ArrayOfString(configuration.getArrayOfClientNetworks()));
+                    }
+                    if (configuration.getConnectionType()!=null) { 
+                            tp.setConnectionType(TConnectionType.fromString(configuration.getConnectionType()));
+                    }
+                    if (configuration.getAccessPattern()!=null) {
+                            tp.setAccessPattern(TAccessPattern.fromString(configuration.getAccessPattern()));
+                    }
+                    if (configuration.getProtocols()!=null) { 
+                            tp.setArrayOfTransferProtocols(new ArrayOfString(configuration.getProtocols()));
+                    }
+                    request.setTransferParameters(tp);
+            }
             hook = new Thread(this);
             Runtime.getRuntime().addShutdownHook(hook);
             

@@ -168,7 +168,7 @@ public class SRMPutClientV2 extends SRMClient implements Runnable {
                 srmPrepareToPutRequest.setDesiredFileStorageType(TFileStorageType.VOLATILE);
             }else if(storagetype.equals("durable")){
                 srmPrepareToPutRequest.setDesiredFileStorageType(TFileStorageType.DURABLE);
-            }else{
+            }else if (storagetype.equals("permanent")) {
                 srmPrepareToPutRequest.setDesiredFileStorageType(TFileStorageType.PERMANENT);
             }
             srmPrepareToPutRequest.setDesiredTotalRequestTime(new Integer((int)configuration.getRequestLifetime()));
@@ -176,41 +176,49 @@ public class SRMPutClientV2 extends SRMClient implements Runnable {
             srmPrepareToPutRequest.setArrayOfFileRequests(
                     new ArrayOfTPutFileRequest(fileRequests));
 
-	    TAccessPattern  ap = TAccessPattern.TRANSFER_MODE;
+	    TAccessPattern  ap = null;
 	    if(configuration.getAccessPattern() != null ) {
 		    ap = TAccessPattern.fromString(configuration.getAccessPattern());
             }
-	    TConnectionType ct = TConnectionType.WAN;
+	    TConnectionType ct = null;
 	    if(configuration.getConnectionType() != null ) {
 		    ct = TConnectionType.fromString(configuration.getConnectionType());
             }
-	    srmPrepareToPutRequest.setTransferParameters(new TTransferParameters(ap,ct,null,new ArrayOfString(protocols)));
-            TTransferParameters transferParams = new
-                    TTransferParameters();
-            TRetentionPolicy retentionPolicy = null;
-            TAccessLatency accessLatency = null;
+            ArrayOfString protocolArray = null;
+            if (protocols != null) {
+                    protocolArray = new ArrayOfString(protocols);
+            }
+            ArrayOfString arrayOfClientNetworks = null;
+            if (configuration.getArrayOfClientNetworks()!=null) {
+                    arrayOfClientNetworks = new ArrayOfString(configuration.getArrayOfClientNetworks());
+            }
+            if (ap!=null || ct!=null || arrayOfClientNetworks !=null || protocolArray != null) {
+                    srmPrepareToPutRequest.setTransferParameters(new TTransferParameters(ap,
+                                                                                         ct,
+                                                                                         arrayOfClientNetworks,
+                                                                                         protocolArray));
+            }
+            TRetentionPolicy rp = null;
+            TAccessLatency al = null;
             if(configuration.getRetentionPolicy() != null ){
-                  retentionPolicy = TRetentionPolicy.fromString(configuration.getRetentionPolicy());
-                
+                  rp = TRetentionPolicy.fromString(configuration.getRetentionPolicy());
             }
-            
             if(  configuration.getAccessLatency() != null){
-                accessLatency = TAccessLatency.fromString(configuration.getAccessLatency());
-                
+                al = TAccessLatency.fromString(configuration.getAccessLatency());
             }
-            if(retentionPolicy != null) {
-                TRetentionPolicyInfo retentionPolicyInfo =
-                        new TRetentionPolicyInfo(retentionPolicy,accessLatency);
-                srmPrepareToPutRequest.setTargetFileRetentionPolicyInfo(retentionPolicyInfo);
+            if ( (al!=null) && (rp==null)) {
+                    throw new IllegalArgumentException("if access latency is specified, "+
+                                                       "then retention policy have to be specified as well");
             }
-
+            else if ( rp!=null ) {
+                    srmPrepareToPutRequest.setTargetFileRetentionPolicyInfo(new TRetentionPolicyInfo(rp,al));
+            }
             if(configuration.getOverwriteMode() != null) {
                 srmPrepareToPutRequest.setOverwriteOption(TOverwriteMode.fromString(configuration.getOverwriteMode()));
             }
             if(configuration.getSpaceToken() != null) {
                 srmPrepareToPutRequest.setTargetSpaceToken(configuration.getSpaceToken());
             }
-            
 	    if (configuration.getExtraParameters().size()>0) { 
 		    TExtraInfo[] extraInfoArray = new TExtraInfo[configuration.getExtraParameters().size()];
 		    int counter=0;
@@ -223,26 +231,19 @@ public class SRMPutClientV2 extends SRMClient implements Runnable {
 		    ArrayOfTExtraInfo arrayOfExtraInfo = new ArrayOfTExtraInfo(extraInfoArray);
 		    srmPrepareToPutRequest.setStorageSystemInfo(arrayOfExtraInfo);
 	    }
-
-            //SrmPrepareToPutResponse response = srmv2.srmPrepareToPut(srmPrepareToPutRequest);
             response = srmv2.srmPrepareToPut(srmPrepareToPutRequest);
             if(response == null) {
                 throw new IOException(" null response");
             }
-            
             TReturnStatus status = response.getReturnStatus();
             if(status == null) {
                 throw new IOException(" null return status");
             }
-            
             TStatusCode statusCode = status.getStatusCode();
-            
             if(statusCode == null) {
                 throw new IOException(" null status code");
             }
-            
             String explanation = status.getExplanation();
-            
             if(RequestStatusTool.isFailedRequestStatus(status)){
                 if(explanation != null){
                     throw new IOException("srmPrepareToPut submission failed, unexpected or failed status : "+ statusCode+" explanation= "+explanation);
@@ -250,7 +251,6 @@ public class SRMPutClientV2 extends SRMClient implements Runnable {
                     throw new IOException("srmPrepareToPut submission failed, unexpected or failed status : "+ statusCode);
                 }
             }
-            
             requestToken = response.getRequestToken();
             dsay(" srm returned requestToken = "+requestToken);
             if(response.getArrayOfFileStatuses() == null  ) {

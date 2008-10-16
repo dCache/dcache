@@ -1,89 +1,5 @@
 // $Id$
 // $Log: not supported by cvs2svn $
-// Revision 1.2  2006/10/24 22:58:14  litvinse
-// added handling of Extra Info parameters in kind of generic
-// manner. Now is used to pass request priority to SRM server
-//
-// Revision 1.1  2006/10/03 18:41:45  timur
-// added srmBringOnline and srmPing clients, still untested
-//
-// Revision 1.18  2006/09/06 15:53:46  timur
-//  reformated code, improved error reporting
-//
-// Revision 1.17  2006/06/21 20:31:56  timur
-// Upgraded code to the latest srmv2.2 wsdl (final)" src wsdl sbin/srmv2.2-deploy.wsdd
-//
-// Revision 1.16  2006/06/21 03:40:27  timur
-// updated client to wsdl2.2, need to get latest wsdl next
-//
-// Revision 1.15  2006/04/21 22:54:29  timur
-// better debug info printout
-//
-// Revision 1.14  2006/03/24 00:29:03  timur
-// regenerated stubs with array wrappers for v2_1
-//
-// Revision 1.13  2006/03/22 01:03:11  timur
-// use abort files instead or release in case of interrupts or failures, better CTRL-C handling
-//
-// Revision 1.12  2006/03/18 00:41:34  timur
-// srm v2 bug fixes
-//
-// Revision 1.11  2006/03/14 18:10:04  timur
-// moving toward the axis 1_3
-//
-// Revision 1.10  2006/02/27 22:54:25  timur
-//  do not use Keep Space parameter in srmReleaseFiles, reduce default wait time
-//
-// Revision 1.9  2006/02/23 22:22:05  neha
-// Changes by Neha- For Version 2- allow user specified value of command line option 'webservice_path'
-// to override any default value.
-//
-// Revision 1.8  2006/02/08 23:21:58  neha
-// changes by Neha. Added new command line option -storagetype
-// Its values could be permanent,volatile or durable;permanent by default
-//
-// Revision 1.6  2006/01/24 21:14:47  timur
-// changes related to the return code
-//
-// Revision 1.5  2006/01/20 21:50:33  timur
-// remove unneeded connect
-//
-// Revision 1.4  2005/12/14 01:58:44  timur
-// srmPrepareToGet client is ready
-//
-// Revision 1.3  2005/12/09 00:24:51  timur
-// srmPrepareToGet works
-//
-// Revision 1.2  2005/12/08 01:02:07  timur
-// working on srmPrepereToGet
-//
-// Revision 1.1  2005/12/07 02:05:22  timur
-// working towards srm v2 get client
-//
-// Revision 1.21  2005/06/08 22:34:55  timur
-// fixed a bug, which led to recognition of some valid file ids as invalid
-//
-// Revision 1.20  2005/04/27 19:20:55  timur
-// make sure client works even if report option is not specified
-//                                        String error = "srmPrepareToPut update failed, status : "+ statusCode+
-// Revision 1.19  2005/04/27 16:40:00  timur
-// more work on report added gridftpcopy and adler32 binaries
-//
-// Revision 1.18  2005/04/26 02:06:08  timur
-// added the ability to create a report file
-//
-// Revision 1.17  2005/03/11 21:18:36  timur
-// making srm compatible with cern tools again
-//
-// Revision 1.16  2005/01/25 23:20:20  timur
-// srmclient now uses srm libraries
-//
-// Revision 1.15  2005/01/11 18:19:29  timur
-// fixed issues related to cern srm, make sure not to change file status for failed files
-//
-// Revision 1.14  2004/06/30 21:57:04  timur
-//  added retries on each step, added the ability to use srmclient used by srm copy in the server, added srm-get-request-status
-//
 
 /*
 COPYRIGHT STATUS:
@@ -232,18 +148,49 @@ public class SRMBringOnlineClientV2 extends SRMClient implements Runnable {
             srmBringOnlineRequest.setDesiredTotalRequestTime(
                     new Integer((int)configuration.getRequestLifetime()));
             //
-            srmBringOnlineRequest.setDesiredLifeTime(
-                new Integer((int)configuration.getDesiredLifetime()));
-            srmBringOnlineRequest.setTargetFileRetentionPolicyInfo(
-                    new TRetentionPolicyInfo(TRetentionPolicy.CUSTODIAL,
-                    TAccessLatency.NEARLINE));
-            
+            if (configuration.getDesiredLifetime()!=null) { 
+                    srmBringOnlineRequest.setDesiredLifeTime(
+                            new Integer((int)configuration.getDesiredLifetime().intValue()));
+            }
+            TRetentionPolicy rp = null;
+            TAccessLatency al = null;
+            if(configuration.getRetentionPolicy() != null ){
+                    rp = TRetentionPolicy.fromString(configuration.getRetentionPolicy());
+            }
+            if(  configuration.getAccessLatency() != null){
+                    al = TAccessLatency.fromString(configuration.getAccessLatency());
+            }
+            if ( (al!=null) && (rp==null)) {
+                    throw new IllegalArgumentException("if access latency is specified, "+
+                                                       "then retention policy have to be specified as well");
+            }
+            else if ( rp!=null ) {
+                    srmBringOnlineRequest.setTargetFileRetentionPolicyInfo(new TRetentionPolicyInfo(rp,al));
+            }
             srmBringOnlineRequest.setArrayOfFileRequests(
                     new ArrayOfTGetFileRequest(fileRequests));
-            srmBringOnlineRequest.setTransferParameters(new TTransferParameters(
-                    TAccessPattern.TRANSFER_MODE,TConnectionType.WAN,
-                    null,new ArrayOfString(protocols)));
-
+            TAccessPattern  ap = null;
+            if(configuration.getAccessPattern() != null ) {
+                    ap = TAccessPattern.fromString(configuration.getAccessPattern());
+            }
+            TConnectionType ct = null;
+            if(configuration.getConnectionType() != null ) {
+                    ct = TConnectionType.fromString(configuration.getConnectionType());
+            }
+            ArrayOfString protocolArray = null;
+            if (protocols != null) {
+                    protocolArray = new ArrayOfString(protocols);
+            }
+            ArrayOfString arrayOfClientNetworks = null;
+            if (configuration.getArrayOfClientNetworks()!=null) {
+                    arrayOfClientNetworks = new ArrayOfString(configuration.getArrayOfClientNetworks());
+            }
+            if (ap!=null || ct!=null || arrayOfClientNetworks !=null || protocolArray != null) {
+                    srmBringOnlineRequest.setTransferParameters(new TTransferParameters(ap,
+                                                                                        ct,
+                                                                                        arrayOfClientNetworks,
+                                                                                        protocolArray));
+            }
 	    if (configuration.getExtraParameters().size()>0) { 
 		    TExtraInfo[] extraInfoArray = new TExtraInfo[configuration.getExtraParameters().size()];
 		    int counter=0;

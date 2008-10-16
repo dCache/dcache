@@ -131,7 +131,7 @@ public class Configuration {
 
         @Option(
                 name = "debug",
-                description = "boolean flag enables debug information (including stack traces) to be printed, true or false",
+                description = "enable debug output (including stack traces)",
                 defaultValue = "false", 
                 required=false,
                 log=true,
@@ -149,7 +149,7 @@ public class Configuration {
 
         @Option(
                 name = "srmcphome",
-                description = "path to srmcp home directory",
+                description = "path to srmcp product directory",
                 defaultValue = "..", 
                 required=false,
                 log=true,
@@ -203,7 +203,7 @@ public class Configuration {
 
         @Option(
                 name = "help",
-                description = "help switch, true or false",
+                description = "displays usage",
                 defaultValue = "false", 
                 required=false,
                 log=true
@@ -221,7 +221,7 @@ public class Configuration {
 
         @Option(
                 name = "h",
-                description = "help switch, true or false",
+                description = "displays usage",
                 defaultValue = "false", 
                 required=false,
                 log=true
@@ -231,8 +231,7 @@ public class Configuration {
 
         @Option(
                 name = "gsissl",
-                description = "true if use http over gsi over ssl for SOAP invocations\n"+
-                "or false to use plain http (no authentication or encryption)",
+                description = "use http over gsi over ssl for SOAP invocations or plain http",
                 defaultValue = "true", 
                 required=false,
                 log=true,
@@ -250,7 +249,7 @@ public class Configuration {
 
         @Option(
                 name = "mapfile",
-                description = " path to the \"glue\" mapfile",
+                description = "path to the \"glue\" mapfile",
                 defaultValue = "conf/SRMServerV1.map", 
                 required=false,
                 log=true,
@@ -268,7 +267,7 @@ public class Configuration {
 
         @Option(
                 name = "webservice_path",
-                description = "the path to the wsdl in the web service url \"srm/managerv1.wsdl\" in case of srm in dcache",
+                description = "path to wsdl in web service url",
                 required=false,
                 log=true,
                 save=true
@@ -293,7 +292,7 @@ public class Configuration {
 
         @Option(
                 name = "webservice_protocol",
-                description = "the protocol on which srm web service is published (usually http, https or httpg)",
+                description = "srm webservice protocol",
                 defaultValue = "http",
                 required=false,
                 log=true,
@@ -312,7 +311,7 @@ public class Configuration {
         
         @Option(
                 name = "use_proxy",
-                description = "true to use user proxy or false to use certificates directly",
+                description = "use user proxy(true) or use certificates directly(false)",
                 defaultValue = "true",
                 required=false,
                 log=true,
@@ -548,7 +547,7 @@ public class Configuration {
 
         @Option(
                 name = "save_conf",
-                description = "path to the file in which the new configuration will be saved",
+                description = "path to the file where new configuration will be saved",
                 required=false,
                 log=true
                 )
@@ -716,7 +715,7 @@ public class Configuration {
         @Option(
                 name = "access_pattern",
                 description = "access pattern (\"TRANSFER_MODE\"|\"PROCESSING_MODE\")",
-                defaultValue = "TRANSFER_MODE",
+                defaultValue = "null",
                 required=false,
                 log=true,
                 save=true
@@ -734,7 +733,7 @@ public class Configuration {
         @Option(
                 name = "connection_type",
                 description = "connection type, (\"WAN\"|\"LAN\")",
-                defaultValue = "WAN",
+                defaultValue = "null",
                 required=false,
                 log=true,
                 save=true
@@ -752,37 +751,37 @@ public class Configuration {
         @Option(
                 name = "desired_size",
                 description = "desired space reservation size",
-                defaultValue = "0",
+                defaultValue = "null",
                 unit="bytes",
                 required=false,
                 log=true
                 )
-                private long desiredReserveSpaceSize;
+                private Long desiredReserveSpaceSize;
 
-     	public long getDesiredReserveSpaceSize() {
+     	public Long getDesiredReserveSpaceSize() {
 		return desiredReserveSpaceSize;
 	}
     
-	public void setDesiredReserveSpaceSize(long size) {
+	public void setDesiredReserveSpaceSize(Long size) {
 		desiredReserveSpaceSize=size;
 	}
 
         @Option(
                 name = "guaranteed_size",
                 description = "guaranteed space reservation size",
-                defaultValue = "0",
+                defaultValue = "null",
                 unit="bytes",
                 required=false,
                 log=true
                 )
-                private long guaranteedReserveSpaceSize;
+                private Long guaranteedReserveSpaceSize;
 
         
-    	public long getGuaranteedReserveSpaceSize() {
+    	public Long getGuaranteedReserveSpaceSize() {
 		return guaranteedReserveSpaceSize;
 	}
     
-	public void setGuaranteedReserveSpaceSize(long size) {
+	public void setGuaranteedReserveSpaceSize(Long size) {
 		guaranteedReserveSpaceSize=size;
 	}
  
@@ -790,14 +789,14 @@ public class Configuration {
         @Option(
                 name = "lifetime",
                 description = "desired lifetime in seconds",
-                defaultValue = "0",
+                defaultValue = "null",
                 unit="seconds",
                 required=false,
                 log=true
                 )
-                private long desiredLifetime;
+                private Long desiredLifetime;
 
-	public long getDesiredLifetime() {
+	public Long getDesiredLifetime() {
 		return desiredLifetime;
 	}
 	//
@@ -902,7 +901,7 @@ public class Configuration {
 
         @Option(
                 name = "wsdl_url",
-                description = "full url to web service wsd>, this options overrides \"-webservice_path\" and \"-webservice_protocol\" options",
+                description = "full URL to web service WSDL, overrides \"-webservice_path\" and \"-webservice_protocol\" options",
                 required=false,
                 log=true,
                 save=true
@@ -1391,7 +1390,7 @@ public class Configuration {
 
         @Option(
                 name = "retry_num",
-                description =  "<number of retries before client gives up>",
+                description =  "number of retries before client gives up",
                 defaultValue = "20",
                 required=false,
                 log=true,
@@ -1410,7 +1409,7 @@ public class Configuration {
 
         @Option(
                 name = "connect_to_wsdl",
-                description =  "connect to wsdl instead of  connecting to the server directly",
+                description =  "connect to WSDL instead of connecting to the server directly",
                 defaultValue = "false",
                 required=false,
                 log=true,
@@ -1428,7 +1427,7 @@ public class Configuration {
         
         @Option(
                 name = "delegate",
-                description =  "enables or disables the delegation of the user credenital to the server",
+                description =  "enables delegation of user credenital to the server",
                 defaultValue = "true",
                 required=false,
                 log=true,
@@ -1446,7 +1445,7 @@ public class Configuration {
 
         @Option(
                 name = "full_delegation",
-                description =  	"specifies type (full or limited) of delegation delegation",
+                description =  	"specifies type (full or limited) of delegation",
                 defaultValue = "true",
                 required=false,
                 log=true,
@@ -1526,8 +1525,8 @@ public class Configuration {
         
         @Option(
                 name = "storagetype",
-                description =  	"<permanent|volatile|durable> to specify kind of storage to use",
-                defaultValue = "permanent",
+                description =  	"<permanent|volatile|durable> to specify type of storage to use",
+                defaultValue = "null",
                 required=false,
                 log=true,
                 save=true
@@ -1564,7 +1563,7 @@ public class Configuration {
 
         @Option(
                 name = "l",
-                description = "changes srm ls to long format mode, may result in dramatic increase in execution time",
+                description = "long format mode",
                 defaultValue = "false",
                 required=false,
                 log=true,
@@ -1582,7 +1581,7 @@ public class Configuration {
         
         @Option(
                 name = "recursion_depth",
-                description = "<integer> controls how deep to descend into direcotory trees",
+                description = "directory tree depth level",
                 defaultValue = "1",
                 required=false,
                 log=false
@@ -1617,7 +1616,7 @@ public class Configuration {
 
         @Option(
                 name = "offset",
-                description = "<integer> offset to start number of elements to report",
+                description = "offset the number of elements to report",
                 defaultValue = "0",
                 required=false,
                 log=true,
@@ -1635,25 +1634,25 @@ public class Configuration {
 
         @Option(
                 name = "count",
-                description = "<integer> number of elements to report",
-                defaultValue = "0",
+                description = "number of elements to report",
+                defaultValue = "null",
                 required=false,
                 log=true,
                 save=true
                 )
-                private int lsCount;
+                private Integer lsCount;
 
-        public int getLsCount() {
+        public Integer getLsCount() {
 		return lsCount;
 	}
         
-        public void setLsCount(int x) { 
-                lsCount=x;
+        public void setLsCount(Integer count) { 
+                lsCount=count;
         }
 
         @Option(
                 name = "srm_protocol_version",
-                description = "<srm protocol version>",
+                description = "srm protocol version",
                 defaultValue = "0",
                 required=false,
                 log=true,
@@ -1671,7 +1670,7 @@ public class Configuration {
 
         @Option(
                 name = "1",
-                description = "<srm protocol version>",
+                description = "srm protocol version 1",
                 defaultValue = "false",
                 required=false,
                 log=false
@@ -1680,7 +1679,7 @@ public class Configuration {
 
         @Option(
                 name = "2",
-                description = "<srm protocol version>",
+                description = "srm protocol version 2",
                 defaultValue = "false",
                 required=false,
                 log=false
@@ -1808,246 +1807,28 @@ public class Configuration {
 		extraParameters = new HashMap<String,String>();
 	}
     
-	private String general_options =
-		" General Options :\n"+
-		"\t-version enables printing version number\n"+
-		"\t-debug=<true or false> true enables debug output, default is false \n"+
-		"\t-srmcphome=<path to srmcp product dir>\n"+
-		"\t-gsissl=<true or false> true uses gsi https, default is false\n"+
-		"\t-mapfile=<mapfile> to specify glue mapfile\n"+
-		"\t-wsdl_url=<full url to web service wsdl> this options overrides\n"+
-		"\t-webservice_path and -webservice_protocol options\n"+
-		"\t-webservice_path=<webservice_path> to specify web service path component\n"+
-		"\t\t of web service URL (for example \"srm/managerv1.wsdl\")\n"+
-		"\t-webservice_protocol=<webservice_protocol> to specify the\n"+
-		"\t\t webservice protocol ( for example \"http\",\"https\" or \"httpg\")\n"+
-		"\t-use_proxy=<true or false> true if srmcp should use grid proxy\n"+
-		"\t\t false if it should use certificate and key directly,\n"+
-		"\t\t defult value is true\n"+
-		"\t-x509_user_proxy=<path to user grid proxy>\n"+
-		"\t-x509_user_cert=<path to user grid certificate>\n"+
-		"\t-x509_user_key=<path to user private key>\n"+
-		"\t-x509_user_trusted_certificates=<path to the directory with cerificates\n"+
-		"\t\t of trusted Certificate Authorities (CAs)>\n"+
-		"\t-globus_tcp_port_range=<min value>:<max value>,\n"+"" +
-		"\t\t a range of ports open for tcp connections specified as\n"+
-		"\t\t a pair of positive integers separated by \":\",\n" +
-		"\t\t not set by default \n"+
-		"\t-gss_expected_name=<gss expected name in the srm server DN> default value is host\n"+
-		"\t-srm_protocol_version=<srm protocol version>\n"+
-		"\t\t or just specify -1  or -2 \n"+
-		"\t-conf=<path to the configuration file> default value is config.xml\n"+
-		"\t-save_conf=<path to the file in which the new configuration will be saved>\n"+
-		"\t\t no transfer will be performed if this option is specified\n"+
-		"\t-retry_timeout=<number of miliseconds to sleep after a failure\n"+
-		"\t\t before the client tries to retry>\n"+
-		"\t-retry_num=<number of retries before client gives up>\n"+
-		"\t-connect_to_wsdl=<true or false, false by default> \n"+
-		"\t\t srm client now connects directly to the service without reading\n" +
-		"\t\t the wsdl first but for the compatibility with the old implementation,\n"+
-		"\t\t especially if srm urls available point to the location of the wsdl,\n"+
-		"\t\t we make the old way of connecting to the wsdl location first available\n"+
-		"\t-delegate=<true or false, true by default> \n"+
-		"\t\t enables or disables the delegation of the user credenital to the server\n"+
-		"\t-full_delegation=<true or false, true by default> \n"+
-		"\t\t if delegation is enabled, it specifies the type of delegation\n"+
-		"\t\t if this option is set to true the delegation is full, otherwise limited\n"+
-		"\t-h or -help for this help \n";
-    
 	private String storage_info_options =
-		" Storage Info options :\n"+
+		" Storage Info options : None \n"+
 		"Example:\n" +
 		"      srm-storage-element-info  https://fndca.fnal.gov:8443/srm/infoProvider1_0.wsdl\n";
-    
-	private String reserveSpace_options =
-		"reserve space options: \n"+
-		"\t-space_desc=<Description> a description of space reservation, can be used for future reference\n"+
-		"\t-retention_policy=<REPLICA|CUSTODIAL|OUTPUT>\n"+
-		"\t-access_latency=<ONLINE|NEARLINE>\n"+
-		"\t-access_pattern=<TRANSFER_MODE|PROCESSING_MODE>\n"+
-		"\t-array_of_client_networks=netowrk1[,network2[...]]\n"+
-		"\t-protocols=protocol1[,protocol2[...]] \n"+
-		"\t-connection_type=<WAN|LAN>\n"+
-		"\t-desired_size in Bytes \n"+
-		"\t-guaranteed_size in Bytes \n"+
-		"\t-lifetime=<num of seconds> desired lifetime in seconds, -1 for infinite lifetime \n";
 
-	private String getSpaceTokensOptions =
-		" get-space-tokens-options :\n"+
-		"\t-space_desc=<Description> a description of space reservation\n";
-		
-    
-	private String releaseSpace_options =
-		" release options: \n"+
-		"\t-space_token=<Space Reservation Token to be released>\n"+
-		"\t-force=<true|false>\n";
-    
-	private String getSpaceMetaData_options=
-		" srm-get-space-metadata options:\n"+
-		"\t-space_tokens=<id>,<id1>,<id2>... (Space Reservation Token(s))\n";
-    
-	private String getRequestSummary_options=
-		" srm-get-request-summary options:\n"+
-		"\t-request_tokens=<id>,<id1>,<id2>... (Request Token(s))\n";
-
-	private String abortRequest_options=
-		" srm-abort-request options: \n"+
-		"\t-request_tokens=<id>,<id1>,<id2>... (Request Token(s))\n";
-
-	private String abortFiles_options=
-		" srm-abort-files options: \n"+
-		"\t-request_tokens=<id>,<id1>,<id2>... (Request Token(s))\n";
-
-	private String releaseFiles_options=
-		" srm-release-files options: \n"+
-		"\t-request_tokens=<id>,<id1>,<id2>... (Request Token(s))\n"+
-		"\t-do_remove=<true|false>\n";
-
-	private String getRequestTokens_options=
-		" srm-get-request-tokens options:\n"+
-		"\t-request_desc=<Description> (Request Token Description)\n";
-    
-    
-	private String copy_options =
-		" copy options :\n"+
-		"\t-urlopy=<urlcopy path> to specify the path to  universal url_copy script\n"+
-		"\t\t see $SRM_PATH/bin/url-copy.sh for example\n"+
-		"\t-buffer_size=<integer> to set the buffer size to a value \n"+
-		"\t\t different then default(2048)\n"+
-		"\t-tcp_buffer_size=<integer> to set the tcp buffer size to a value \n"+
-		"\t\t if option is not specified or set to 0,\n"+
-		"\t\t then the default tcp buffer size is used\n"+
-		"\t-streams_num=<integer> to set the number of streams used by gridftp \n"+
-		"\t\t if number of stream is set to 1, then stream mode is used, otherwise\"+" +
-		"\t\t extended block mode is used\n"+
-		"\t-server_mode=<active or passive> to set (gridftp) server mode for data transfer, passive by default\n"+
-		"\t\t this option will have affect only if transfer is performed in a stream mode (see -streams_num)\n"+
-		"\t-storagetype=<permanent|volatile|durable> to specify kind of storage to use,\"permanent\" by default\n"+
-		"\t-protocols=protocol1[,protocol2[...]] \n"+
-		"\t\t the comma separated list of supported TURL protocols\n"+
-		"\t-space_token=<Space Reservation Token> identifying space to put file in\n"+
-		"\t-retention_policy=<REPLICA|CUSTODIAL|OUTPUT>\n"+
-		"\t-access_latency=<ONLINE|NEARLINE>\n"+
-		"\t-overwrite_mode=<ALWAYS|NEVER|WHEN_FILES_ARE_DIFFERENT>\n"+
-		"\t\tserver default overwrite policy is used if this is not specified\n"+
-		"\t-pushmode=<true or false>  true to use the push mode in case\n"+
-		"\t\t of srm Mass Storage Systems (MSS) to MSS copy, \n"+
-		"\t\t false to use the pull mode, the default mode is pull mode (false)\n"+
-		"\t-srmstage=<true or false, false by default> \n"+
-		"\t\t if set to true - the source files are staged only onto disk cache\n"+
-		"\t\t and not transferred to client right away> \n"+
-		"\t\t if set to false - the source files are transferred to the client\n"+
-		"\t-use_urlcopy_script=<true or false> use java native copiers of use urcopy script\n"+
-		"\t-srm_protocol_version=<1 or 2> 1 for srm 1.1 or 2 for srm 2.2, no other protocols are supported\n"+
-		"\t\t or just specify -1  or -2 \n"+
-		"\t-priority=<int> specify job priority \n"+
-		"\t-request_lifetime=<num of seconds> request lifetime in seconds\n"+
-		"\t-cksm_type=<type|negotiate> calculate and verify server and client checksum values using this type (adler32|MD4|MD5| .... ).\n\tIf checksum value has been omitted, missing value will be computed over the local file.\n\t If negotiate is set - client will attempt to negotiate cksm type for the file checksum value avilable at the server.\n\tFor gridftp transfers to/from servers that support checksumming features\n"+
-		"\t-cksm_value=<checksum HEX value> override dynamic calucation of the local checksum with this value.\n\tIf cksm_type option has not been set, adler32 will be assumed.\n\tFor gridftp transfers to/from servers that support checksumming features\n"+
-		"\t-copyjobfile=<file> where <file> is the path to the text file containing \n"+
-		"\t\t the list of sources and destination\n"+
-		"\t\t each line has a format : <sorce-url> <destination-url>\n"+
-		"\t-report=<report_file> where <report_file> is the path to the report file\n"+
-		"\t\t if specified, it will contain the resutls of the execution srmcp \n"+
-		"\t\t the each line in the file will have the following format:\n"+
-		"\t\t<src url> <dst url> <return code> [<error>]\n"+
-		"the following return codes are supported:\n"+
-		"\t\t 0 - success\n"+
-		"\t\t 1 - general error\n"+
-		"\t\t 2 - file exists, can not overwrite\n"+
-		"\t\t 3 - user permission error\n" +
-		"Example of srm put:\n" +
-		"\t\t srmcp file:////bin/sh srm://myhost.mydomain.edu:8443//dir1/dir2/sh-copy\n"+
-		"Example of srm get:\n" +
-		"\t\t srmcp srm://myhost.mydomain.edu:8443//dir1/dir2/sh-copy file:///localdir/sh\n"+
-		"Example of srm copy (srm to srm):\n" +
-		"\t\t srmcp srm://myhost.mydomain.edu:8443//dir1/dir2/sh-copy srm://anotherhost.org:8443/newdir/sh-copy\n"+
-		"Example of srm copy (gsiftp to srm):\n" +
-		"\t\t srmcp gsiftp://ftphost.org//path/file srm://myhost.mydomain.edu:8443//dir1/dir2/file\n";
-    
-	private String bring_online_options =
-		" bring online options :\n"+
-		"\t-storagetype=<permanent|volatile|durable> to specify kind of storage to use,\"permanent\" by default\n"+
-		"\t-protocols=protocol1[,protocol2[...]] \n"+
-		"\t\t the comma separated list of supported TURL protocols\n"+
-		"\t-space_token=<Space Reservation Token> identifying space to put file in\n"+
-		"\t-retention_policy=<REPLICA|CUSTODIAL|OUTPUT>\n"+
-		"\t-access_latency=<ONLINE|NEARLINE>\n"+
-		"\t-srm_protocol_version=<1 or 2> 1 for srm 1.1 or 2 for srm 2.2, no other protocols are supported\n"+
-		"\t\t or just specify -1  or -2 \n"+
-		"\t-request_lifetime=<num of seconds> request lifetime in seconds\n"+
-		"\t-lifetime=<num of seconds> desired lifetime of online state in seconds, -1 for infinite \n"+
-		"\t-priority=<int> specify job priority \n"+
-		"\t-report=<report_file> where <report_file> is the path to the report file\n"+
-		"\t\t if specified, it will contain the resutls of the execution srm-bring-online \n";
-    
-    
-	private String move_options =
-		" mv options :\n"+
-		"\t-copyjobfile=<file> where <file> is the path to the text file containing \n"+
-		"\t\t the list of sources and destination\n"+
-		"\t\t each line has a format : <sorce-url> <destination-url>\n"+
-		"New directory can include path, as long as all sub directories exist.\n"+
-		"Moves within single storage system are allowed (you can't mv from one SRM to another SRM \n"+
-		" (or from/to remote/local filesystem, use copy and delete)).\n"+
-		"Examples: \n"+
-		"\t\t srm -mv srm://fledgling06.fnal.gov:8443/srm/managerv2?SFN=/from_path/ \n"+
-		" srm://fledgling06.fnal.gov:8443/srm/managerv2?SFN=/to_path/ \n";
-
-	private String rmdir_options =
-		" rmdir options :\n"+
-		"\t-recursive[=<boolean>] recursive empty directory deletion.\n"+
-		"\t\t -rmdir is defined in SRM specification as :\n"+
-		"\t\t \"applies to dir doRecursiveRemove is false by edefault. To distinguish from \n"+
-		"\t\t srmRm(), this function is for directories only. \"\n"+
-		"\t\t so it is unclear id the directories must be empty. \n"+
-		"\t\t We interpret \"rmdir\" as Unix \"rmdir\" which allows to remove only empty directories \n"+
-		"\t\t extending it to have an ability to remove trees of empty directories. \n"+
-		"\t\t Removal of multiple directories is not supported \n"+
-		"\t\t Removal of files is not supported (use -rm).\n"+
-		"Examples: \n"+
-		"\t\t srmrmdir srm://fledgling06.fnal.gov:8443/srm/managerv2?SFN=/dir \n"+
-		"\t\t srm -rmdir  srm://fledgling06.fnal.gov:8443/srm/managerv2?SFN=/dir \n"+
-		"\t\t srm -rmdir -recursive=true srm://fledgling06.fnal.gov:8443/srm/managerv2?SFN=/dir \n";
-    
 	private String mkdir_options =
-		" mkdir options :\n"+
-		"No options are defined for \"mkdir \". New directory  can include path,\n"+
-		"as long as all sub directories exist.\n"+
+		" srmmkdir options : None\n"+
 		"Examples: \n"+
 		"\t\t srm -mkmdir srm://fledgling06.fnal.gov:8443/srm/managerv2?SFN=/dir/path/ \n";
     
 	private String rm_options =
-		" rm options :\n"+
-		"\t\t no additional options are suported for srmrm. \n"+
-		"\t\t Applies to files only.\n"+
-		"Examples: \n"+
-		"\t\t srmrm srm://fledgling06.fnal.gov:8443/srm/managerv2?SFN=/dir/file  \n"+
-		"\t\t srm -rm  srm://fledling06.fnal.gov:8443/srm/managerv2?SFN=/dir/file  \n";
-    
-	private String ls_options =
-		" ls options :\n"+
-		"\t-l changes srm ls to long format mode, may result in dramatic increase in execution time\n"+
-		"\t-recursion_depth=<integer> controls how deep to descend into direcotory trees\n"+
-		"\t-count=<integer> number of elements to report \n"+
-		"\t-offset=<integer> offset to start number of elements to report \n"+
-		"\t\t 0 means do not descend at all, equivalent to unix ls -d option, 0 is the default value\n";
+		" srmrm options : None \n"+
+		"\t\t Applies to files only.\n";
     
 	private String stage_options =
-		" stage options:\n";
+		" stage options: None \n";
     
 	private String getPermission_options =
-		" getpermission options:\n";
+		" srm-get-permissions options: None \n";
 
 	private String checkPermission_options =
-		" checkpermission options:\n";
-
-	private String setPermission_options =
-		" setPermission options :\n"+
-		"\t-type=<ADD|REMOVE|CHANGE> \n"+
-		"\t-owner=<NONE,X,W,WR,R,RX,RW,RWX> \n"+
-		"\t-other=<NONE,X,W,WR,R,RX,RW,RWX> \n"+
-		"\t-group=<NONE,X,W,WR,R,RX,RW,RWX> \n";
+		" srm-check-permissions options : None \n";
 
 	private String extendFileLifetime_options =
 		" extendFileLifetime options :\n"+
@@ -2055,221 +1836,346 @@ public class Configuration {
 		"\t-file_lifetime=<int> \n"+
 		"\t-pin_lifetime=<int> \n";
 	
-	public final String usage() {
+        public final String usage() { 
+                String general_options=
+                        " General Options :\n"+
+                        OptionParser.printOptions(this,"version",
+                                                   "debug",
+                                                   "srmcphome",
+                                                   "gsissl",
+                                                   "mapfile",
+                                                   "wsdl_url",
+                                                   "webservice_path",
+                                                   "webservice_protocol",
+                                                   "use_proxy",
+                                                   "x509_user_proxy",
+                                                   "x509_user_cert",
+                                                   "x509_user_key",
+                                                   "x509_user_trusted_certificates",
+                                                   "globus_tcp_port_range",
+                                                   "gss_expected_name",
+                                                   "srm_protocol_version",
+                                                   "1",
+                                                   "2",
+                                                   "conf",
+                                                   "save_conf",
+                                                   "retry_timeout",
+                                                   "retry_num",
+                                                   "connect_to_wsdl",
+                                                   "delegate",
+                                                   "full_delegation",
+                                                   "h",
+                                                   "help");
 		if (getStorageElementInfo) {
 			return
-				"Usage: get-storage-element-info [command line options] endpoint-wsdl-url\n"+
-				" default options will be read from configuration file \n"+
-				" but can be overridden by the command line options\n"+
-				" the command line options are one or more of the following:\n"+
+				"\nUsage: get-storage-element-info [command line options] endpoint-wsdl-url\n\n"+
+				"       default options can be set in configuration file \n"+
+				"       or overriden by the command line options\n\n"+
 				(isHelp()==true?general_options+storage_info_options:storage_info_options);
 		}
 		if (getFileMetaData) {
 			return
-				"Usage:get-file-metadata [command line options]  srmurl\n"+
-				" default options will be read from configuration file \n"+
-				" but can be overridden by the command line options\n"+
-				" the command line options are one or more of the following:\n"+
+				"\nUsage:get-file-metadata [command line options]  srmurl\n\n"+
+				"       default options can be set in configuration file \n"+
+				"       or overriden by the command line options\n\n"+
 				general_options;
 		}
 		if(getSpaceTokens) {
+                        String getSpaceTokensOptions="get-space-tokens-options :\n"+
+                                OptionParser.printOptions(this,"space_desc");
 			return
-				"Usage:get-space-tokens [command line options]  srmurl\n"+
-				" default options will be read from configuration file \n"+
-				" but can be overridden by the command line options\n"+
-				" the command line options are one or more of the following:\n"+
+				"\nUsage:get-space-tokens [command line options]  srmurl\n\n"+
+				"       default options can be set in configuration file \n"+
+				"       or overriden by the command line options\n\n"+
 				(isHelp()==true?general_options+getSpaceTokensOptions:getSpaceTokensOptions);
 		}
 		if (advisoryDelete) {
 			return
 				"Usage:advisory-delete [command line options]  srmurl(s)\n"+
-				" default options will be read from configuration file \n"+
-				" but can be overridden by the command line options\n"+
-				" the command line options are one or more of the following:\n"+
+				"     default options can be set in configuration file \n"+
+				"     or overriden by the command line options\n\n"+
 				general_options;
 		}
 		if (getRequestStatus) {
 			return
-				"Usage:get-request-status  [command line options]  srmurl requestId\n"+
-				" where srmurl is one of the surl specified in the original request\n" +
-				" and is used for determening the srm endpoint location\n"+
-				" default options will be read from configuration file \n"+
-				" but can be overridden by the command line options\n"+
-				" the command line options are one or more of the following:\n"+
+				"\nUsage:get-request-status  [command line options]  srmurl requestId\n\n"+
+				"       where srmurl is one of the surl specified in the original request\n" +
+				"       and is used for determening the srm endpoint location\n"+
+				"       default options can be set in configuration file \n"+
+				"       or overriden by the command line options\n\n"+
 				general_options;
 		}
 		if (copy) {
-			return
-				"Usage: srmcp [command line options] source(s) destination\n"+
-				" or  : srmcp [command line options] -copyjobfile  <file>\n"+
+                        String copy_options=" srmcp options :\n"+
+                                OptionParser.printOptions(this,"urlopy",
+                                                          "buffer_size",
+                                                          "tcp_buffer_size",
+                                                          "streams_num",
+                                                          "server_mode",
+                                                          "storagetype",
+                                                          "array_of_client_networks",
+                                                          "protocols",
+                                                          "space_token",
+                                                          "retention_policy",
+                                                          "access_latency",
+                                                          "access_pattern",
+                                                          "connection_type",
+                                                          "overwrite_mode",
+                                                          "pushmode",
+                                                          "srmstage",
+                                                          "use_urlcopy_script",
+                                                          "srm_protocol_version",
+                                                          "2",
+                                                          "1",
+                                                          "priority",
+                                                          "request_lifetime",
+                                                          "copyjobfile",
+                                                          "report",
+                                                          "cksm_type",
+                                                          "cksm_value")+
+                                "the following return codes are supported:\n"+
+                                "\t\t 0 - success\n"+
+                                "\t\t 1 - general error\n"+
+                                "\t\t 2 - file exists, can not overwrite\n"+
+                                "\t\t 3 - user permission error\n" +
+                                "Example of srm put:\n" +
+                                "\t\t srmcp file:////bin/sh srm://myhost.mydomain.edu:8443//dir1/dir2/sh-copy\n"+
+                                "Example of srm get:\n" +
+                                "\t\t srmcp srm://myhost.mydomain.edu:8443//dir1/dir2/sh-copy file:///localdir/sh\n"+
+                                "Example of srm copy (srm to srm):\n" +
+                                "\t\t srmcp srm://myhost.mydomain.edu:8443//dir1/dir2/sh-copy srm://anotherhost.org:8443/newdir/sh-copy\n"+
+                                "Example of srm copy (gsiftp to srm):\n" +
+                                "\t\t srmcp gsiftp://ftphost.org//path/file srm://myhost.mydomain.edu:8443//dir1/dir2/file\n"+
+                                "port number is optional\n";
+			return                                                          
+				"\nUsage: srmcp [command line options] source(s) destination\n\n"+
+				" or  : srmcp [command line options] -copyjobfile=<file>\n"+
 				"       either source(s) or destination or both should be (an) srm url\n"+
-				"       default options will be read from configuration file \n"+
-				"       but can be overridden by the command line options\n"+
-				"       the command line options are one or more of the following:\n"+
+				"       default options can be set in configuration file \n"+
+				"       or overriden by the command line options\n\n"+
 				(isHelp()==true?general_options+copy_options:copy_options);
 		}
 		if (bringOnline) {
+                        String bring_online_options=" srm-abort-files options: \n"+
+                                OptionParser.printOptions(this,
+                                                          "storagetype",
+                                                          "protocols",
+                                                          "space_token",
+                                                          "access_pattern",
+                                                          "connection_type",
+                                                          "array_of_client_networks",
+                                                          "retention_policy",
+                                                          "access_latency",
+                                                          "srm_protocol_version",
+                                                          "2","1",
+                                                          "request_lifetime",
+                                                          "lifetime",
+                                                          "priority",
+                                                          "report");
+                                                          
 			return
-				"Usage: srm-bring-online [command line options] srmUrl(s)\n"+
-				"       default options will be read from configuration file \n"+
-				"       but can be overridden by the command line options\n"+
-				"       the command line options are one or more of the following:\n"+
+				"\nUsage: srm-bring-online [command line options] srmUrl(s)\n\n"+
+				"       default options can be set in configuration file \n"+
+				"       or overriden by the command line options\n\n"+
 				(isHelp()==true?general_options+bring_online_options:bring_online_options);
 		}
         
 		if (reserveSpace) {
+                        String reserveSpace_options=" srm-reserve-space options : \n"+
+                                OptionParser.printOptions(this,
+                                                          "space_desc",
+                                                          "retention_policy",
+                                                          "access_latency",
+                                                          "access_pattern",
+                                                          "array_of_client_networks",
+                                                          "protocols",
+                                                          "connection_type",
+                                                          "desired_size",
+                                                          "guaranteed_size",
+                                                          "lifetime")+
+                                printMandatoryOptions("retention_policy","guaranteed_size");
 			return
-				"Usage: srm-reserve-space [command line options]  srmUrl\n"+
+				"\nUsage: srm-reserve-space [command line options]  srmUrl\n\n"+
 				"       default options are read from configuration file\n"+
-				"       but can be overridden by the command line options\n"+
-				"       the command line options are one or more of the following:\n"+
+				"       or overriden by the command line options\n\n"+
 				(isHelp()==true?general_options+reserveSpace_options:reserveSpace_options);
 		}
 		if(getSpaceMetaData) {
+                        String getSpaceMetaData_options = " srm-get-space-metadata options:\n"+
+                                OptionParser.printOptions(this,"space_tokens")+
+                                printMandatoryOptions("space_tokens");
 			return
-				"Usage: srm-get-space-metadata [commnad line options] srmUrl "+
-				" default options will be read from configuration file \n"+
-				" but can be overridden by the command line options\n"+
-				" the command line options are one or more of the following:\n"+
+				"\nUsage: srm-get-space-metadata [commnad line options] srmUrl\n\n"+
+				"       default options can be set in configuration file \n"+
+				"       or overriden by the command line options\n\n"+
 				(isHelp()==true?general_options+getSpaceMetaData_options:getSpaceMetaData_options);
             
             
 		}
 		if (releaseSpace) {
+                        String releaseSpace_options = " srm-release-space options :\n"+
+                                OptionParser.printOptions(this,"space_token","force")+
+                                printMandatoryOptions("space_token");
+                                
 			return
-				"Usage: srm-release-space [command line options]  srmUrl\n"+
-				" default options will be read from configuration file \n"+
-				" but can be overridden by the command line options\n"+
-				" the command line options are one or more of the following:\n"+
+				"\nUsage: srm-release-space [command line options]  srmUrl\n\n"+
+				"     default options can be set in configuration file \n"+
+				"     or overriden by the command line options\n\n"+
 				(isHelp()==true?general_options+releaseSpace_options:releaseSpace_options);
 		}
 		if (ls) {
-			return
-				"Usage: srmls [command line options] srmUrl [[srmUrl]...]\n" +
-				" default options will be read from configuration file \n"+
-				" but can be overridden by the command line options\n"+
-				" the command line options are one or more of the following:\n"+
+                        String ls_options="srmls options :\n"+OptionParser.printOptions(this,"l","recursion_depth","count","offset");
+                        return
+				"\nUsage: srmls [command line options] srmUrl [[srmUrl]...]\n\n" +
 				(isHelp()==true?general_options+ls_options:ls_options);
 		}
 		if (is_rm) {
 			return
-				"Usage: srmrm [command line options] srmUrl [[srmUrl]...]\n" +
-				" default options will be read from configuration file \n"+
-				" but can be overridden by the command line options\n"+
-				" the command line options are one or more of the following:\n"+
+				"\nUsage: srmrm [command line options] srmUrl [[srmUrl]...]\n\n" +
+				"       default options can be set in configuration file \n"+
+				"       or overriden by the command line options\n\n"+
 				(isHelp()==true?general_options+rm_options:rm_options);
 		}
 		if (is_mv) {
-			return
-				"Usage: srmmv [command line options] sourceSrmUrl destinationSrmUrl \n"+
-				" default options will be read from configuration file \n"+
-				" but can be overridden by the command line options\n"+
-				" the command line options are one or more of the following:\n"+
+                        String move_options= "srmmv options :\n"+       
+                                "Only moves within single storage system are allowed \n"+
+                                "(you can't mv from one SRM to another SRM \n"+
+                                "(or from/to remote/local filesystem, use copy and delete)).\n";
+                        return
+				"\nUsage: srmmv [command line options] sourceSrmUrl destinationSrmUrl \n\n"+
 				(isHelp()==true?general_options+move_options:move_options);
 		}
 		if (is_getRequestSummary) {
+                        String getRequestSummary_options=" srm-get-request-summary options:\n"+
+                                OptionParser.printOptions(this,"request_tokens");
 			return
-				"Usage: srm-get-request-summary [command line options] srmUrl \n"+
-				" default options will be read from configuration file \n"+
-				" but can be overridden by the command line options\n"+
-				" the command line options are one or more of the following:\n"+
+				"\nUsage: srm-get-request-summary [command line options] srmUrl \n\n"+
+				"       default options can be set in configuration file \n"+
+				"       or overriden by the command line options\n\n"+
 				(isHelp()==true?general_options+getRequestSummary_options:getRequestSummary_options);
 		}
 		if (is_AbortRequest) {
+                        String abortRequest_options = " srm-abort-request options: \n"+
+                                OptionParser.printOptions(this,"request_tokens");
 			return
-				"Usage: srm-abort-request [command line options] srmUrl \n"+
-				" default options will be read from configuration file \n"+
-				" but can be overridden by the command line options\n"+
-				" the command line options are one or more of the following:\n"+
+				"\nUsage: srm-abort-request [command line options] srmUrl \n\n"+
+				"       default options can be set in configuration file \n"+
+				"       or overriden by the command line options\n"+
+				"       the command line options are one or more of the following:\n"+
 				(isHelp()==true?general_options+abortRequest_options:abortRequest_options);
 		}
 		if (is_AbortFiles) {
+                        String abortFiles_options=
+                                " srm-abort-files options : \n"+
+                                OptionParser.printOptions("request_tokens");
 			return
-				"Usage: srm-abort-files [command line options] srmUrl [[srmUrl]...] \n"+
-				" default options will be read from configuration file \n"+
-				" but can be overridden by the command line options\n"+
-				" the command line options are one or more of the following:\n"+
+				"\nUsage: srm-abort-files [command line options] srmUrl [[srmUrl]...] \n\n"+
+				"       default options can be set in configuration file \n"+
+				"       or overriden by the command line options\n\n"+
 				(isHelp()==true?general_options+abortFiles_options:abortFiles_options);
 		}
 		if (is_ReleaseFiles) {
+                        String releaseFiles_options=
+                                " srm-release-files options : \n"+
+                                OptionParser.printOptions(this,"request_tokens","do_remove");
 			return
-				"Usage: srm-relese-files [command line options] srmUrl [[srmUrl]...] \n"+
-				" default options will be read from configuration file \n"+
-				" but can be overridden by the command line options\n"+
-				" the command line options are one or more of the following:\n"+
+				"\nUsage: srm-relese-files [command line options] srmUrl [[srmUrl]...] \n\n"+
+				"       default options can be set in configuration file \n"+
+				"       or overriden by the command line options\n\n"+
 				(isHelp()==true?general_options+releaseFiles_options:releaseFiles_options);
 		}
 		if (is_getRequestTokens) {
+                        String getRequestTokens_options=
+                                " srm-get-request-tokens options :\n"+
+                                OptionParser.printOptions(this,"request_desc");
 			return
-				"Usage: srm-get-request-tokens [command line options] srmUrl  \n"+
-				" default options will be read from configuration file \n"+
-				" but can be overridden by the command line options\n"+
-				" the command line options are one or more of the following:\n"+
+				"\nUsage: srm-get-request-tokens [command line options] srmUrl  \n\n"+
+				"       default options can be set in configuration file \n"+
+				"       or overriden by the command line options\n\n"+
 				(isHelp()==true?general_options+getRequestTokens_options:getRequestTokens_options);
 		}
 		if (is_rmdir) {
+                        String rmdir_options =
+                                " srmrmdir options :\n"+
+                                OptionParser.printOptions(this,
+                                                          "recursive")+
+                                "\t\t -rmdir is defined in SRM specification as :\n"+
+                                "\t\t \"applies to dir doRecursiveRemove is false by edefault. To distinguish from \n"+
+                                "\t\t srmRm(), this function is for directories only. \"\n"+
+                                "\t\t so it is unclear id the directories must be empty. \n"+
+                                "\t\t We interpret \"rmdir\" as Unix \"rmdir\" which allows to remove only empty directories \n"+
+                                "\t\t extending it to have an ability to remove trees of empty directories. \n"+
+                                "\t\t Removal of multiple directories is not supported \n"+
+                                "\t\t Removal of files is not supported (use srmrm).\n";
 			return
-				"Usage: srmrmdir [command line options] srmUrl \n" +
-				" default options will be read from configuration file \n"+
-				" but can be overridden by the command line options\n"+
-				" the command line options are one or more of the following:\n"+
+				"\nUsage: srmrmdir [command line options] srmUrl \n\n" +
+				"       default options can be set in configuration file \n"+
+				"       or overriden by the command line options\n\n"+
 				(isHelp()==true?general_options+rmdir_options:rmdir_options);
 		}
 		if (is_mkdir) {
 			return
-				"Usage: srmmkdir [command line options] srmUrl \n" +
-				" default options will be read from configuration file \n"+
-				" but can be overridden by the command line options\n"+
-				" the command line options are one or more of the following:\n"+
+				"\nUsage: srmmkdir [command line options] srmUrl \n\n" +
+				"       default options can be set in configuration file \n"+
+				"       or overriden by the command line options\n"+
+				"       the command line options are one or more of the following:\n"+
 				(isHelp()==true?general_options+mkdir_options:mkdir_options);
 		}
 		if(stage) {
 			return
-				"Usage: srmstage [command line options] srmUrl [[srmUrl]...] \n" +
-				" default options will be read from configuration file \n"+
-				" but can be overridden by the command line options\n"+
-				" the command line options are one or more of the following:\n"+
+				"\nUsage: srmstage [command line options] srmUrl [[srmUrl]...] \n\n" +
+				"       default options can be set in configuration file \n"+
+				"       or overriden by the command line options\n\n"+
 				(isHelp()==true?general_options+stage_options:stage_options);
             
 		}
 		if(getPermission) {
 			return
-				"Usage: srmgetpermission [command line options] srmUrl [[srmUrl]...] \n" +
-				" default options will be read from configuration file \n"+
-				" but can be overridden by the command line options\n"+
-				" the command line options are one or more of the following:\n"+
+				"\nUsage: srmgetpermission [command line options] srmUrl [[srmUrl]...] \n\n" +
+				"       default options can be set in configuration file \n"+
+				"       or overriden by the command line options\n\n"+
 				(isHelp()==true?general_options+getPermission_options:getPermission_options);
 		}
 		if(checkPermission) {
 			return
-				"Usage: srmcheckpermission [command line options] srmUrl [[srmUrl]...] \n" +
-				" default options will be read from configuration file \n"+
-				" but can be overridden by the command line options\n"+
-				" the command line options are one or more of the following:\n"+
+				"\nUsage: srmcheckpermission [command line options] srmUrl [[srmUrl]...] \n\n" +
+				"       default options can be set in configuration file \n"+
+				"       or overriden by the command line options\n\n"+
 				(isHelp()==true?general_options+checkPermission_options:checkPermission_options);
 		}
 		if(setPermission) {
+                        String setPermission_options =
+                                " srm-set-permissions options : \n"+
+                                OptionParser.printOptions(this,
+                                                          "type",
+                                                          "owner",
+                                                          "other",
+                                                          "group")+
+                                printMandatoryOptions("type");
+
 			return
-				"Usage: srmsetpermission [command line options] srmUrl [[srmUrl]...] \n" +
-				" default options will be read from configuration file \n"+
-				" but can be overridden by the command line options\n"+
-				" the command line options are one or more of the following:\n"+
+				"\nUsage: srm-set-permissions [command line options] srmUrl [[srmUrl]...] \n\n" +
+				"       default options can be set in configuration file \n"+
+				"       or overriden by the command line options \n\n"+
 				(isHelp()==true?general_options+setPermission_options:setPermission_options);
 		}
 		if(extendFileLifetime) { 
+                        String extendFileLifetime_options =
+                                " srm-extend-file-lifetime options :\n"+
+                                OptionParser.printOptions(this,"request_token",
+                                                          "file_lifetime",
+                                                          "pin_lifetime");
 			return
-				"Usage: srm-extend-file-lifetime [command line options] srmUrl [[srmUrl]...] \n" +
-				" default options will be read from configuration file \n"+
-				" but can be overridden by the command line options\n"+
-				" the command line options are one or more of the following:\n"+
+				"\nUsage: srm-extend-file-lifetime [command line options] srmUrl [[srmUrl]...] \n\n" +
+				"       default options can be set in configuration file \n"+
+				"       or overriden by the command line options\n\n"+
 				(isHelp()==true?general_options+extendFileLifetime_options:extendFileLifetime_options);
 		}
 		if(ping) {
 			return
-				"Usage: srmping  [command line options] srmUrl \n" +
-				" default options will be read from configuration file \n"+
-				" but can be overridden by the command line options\n"+
-				" the command line options are one or more of the following:\n"+
+				"\nUsage: srmping  [command line options] srmUrl \n\n" +
+				"       default options can be set in configuration file \n"+
+				"       or overriden by the command line options\n\n"+
 				general_options;
 		}
 		return
@@ -2413,34 +2319,50 @@ public class Configuration {
 		       is_ReleaseFiles
 			    )) {
 			throw new IllegalArgumentException(
-				"one and only one of the following options must be " +
+				"\n only one of the following options must be " +
 				"specified:\n\n" + usage());
 		}
  
                 int numberOfArguments = _args.argc();
                 
 		if (numberOfArguments==0 && copyjobfile==null) { 
-			usage();
-			throw new IllegalArgumentException("Please specify command line arguments\n"+usage());
-			 
-		}
-		if (numberOfArguments==0 && copyjobfile==null) { 
-			usage();
 			throw new IllegalArgumentException("Please specify command line arguments\n"+usage());
 		}
 
-		if (getFileMetaData ||advisoryDelete  ) {
-                        surls = new String[numberOfArguments];
-                        for(int i=0;i<numberOfArguments;i++){surls[i]=_args.argv(i);}
-		}
-		else if (getRequestStatus) {
+                surls = new String[numberOfArguments];
+                for(int i=0;i<numberOfArguments;i++){surls[i]=_args.argv(i);}
+                srmUrl=_args.argv(0);
+
+                //
+                // take care of protocol version for srm v2.2 functions
+                // (override whatever user has specified)
+                // 
+                if (is_AbortRequest||
+                    reserveSpace || 
+                    checkPermission ||
+                    is_AbortFiles ||
+                    is_rm ||
+                    is_mv || 
+                    setPermission || 
+                    getSpaceTokens ||
+                    is_ReleaseFiles || 
+                    is_mkdir || 
+                    getSpaceMetaData || 
+                    ls || 
+                    bringOnline || 
+                    releaseSpace || 
+                    extendFileLifetime || 
+                    is_getRequestTokens || 
+                    getPermission || 
+                    is_getRequestSummary || 
+                    is_rmdir) { 
+                        srm_protocol_version=2;
+                }
+		if (getRequestStatus) {
 			if (numberOfArguments == 1) {
                                 getRequestStatusSurl = _args.argv(0);
 			} 
 			else {
-				if (version) {
-					System.exit(1);
-				}
 				throw new IllegalArgumentException(
 					"one and only one storage element info server " +
 					"wsdl url should be specified");
@@ -2454,65 +2376,37 @@ public class Configuration {
 			arrayOfRequestTokens=readListOfOptions(requestTokens,",");
 		}
 		else if (is_AbortRequest) {
-			srmUrl = _args.argv(0); 
 			arrayOfRequestTokens=readListOfOptions(requestTokens,",");
 		}
 		else if (is_AbortFiles || is_ReleaseFiles ) {
-			srmUrl= _args.argv(0); 
-			if(numberOfArguments>1) { 
-				surls = new String[numberOfArguments];
-                                for(int i=0;i<numberOfArguments;i++){surls[i]=_args.argv(i);}
-			}
-			else { 
-				srmUrl = _args.argv(0);
-			}
                         arrayOfRequestTokens=readListOfOptions(requestTokens,",");
-			if(arrayOfRequestTokens!=null&&surls!=null) { 
-				throw new IllegalArgumentException(
-					"specify request token or list of surls (exclusively)");
-			}
 		}
+                else if (releaseSpace) { 
+                        OptionParser.checkNullOptions(this,"space_token");
+                }
 		else if (getStorageElementInfo) {
 			if (numberOfArguments == 1) { 
 				storageElementInfoServerWSDL = _args.argv(0); 
 			} 
 			else {
-				if (version) {
-					System.exit(1);
-				}
 				throw new IllegalArgumentException(
 					"one and only one storage element info server " +
 					"wsdl url should be  specified");
 			}
 		} 
 		else if (reserveSpace) {
-			srm_protocol_version =2;
                         protocols = readListOfOptions(protocols_list,",");
                         arrayOfClientNetworks = readListOfOptions(array_of_client_networks,",");
-                        surls = new String[numberOfArguments];
-                        for(int i=0;i<numberOfArguments;i++){surls[i]=_args.argv(i);}
-		} 
-		else if (releaseSpace) {
-			srm_protocol_version =2;
-                        surls = new String[numberOfArguments];
-                        for(int i=0;i<numberOfArguments;i++){surls[i]=_args.argv(i);}
+                        OptionParser.checkNullOptions(this,"retention_policy","guaranteed_size");
 		} 
 		else if (getSpaceMetaData) {
-			srm_protocol_version =2;
 			spaceTokensList=readListOfOptions(space_tokens_list,",");
-			srmUrl = _args.argv(0); 
-		} 
-		else if(getSpaceTokens) {
-			srm_protocol_version =2;
-                        srmUrl = _args.argv(0);
+                        OptionParser.checkNullOptions(this,"space_tokens");
 		} 
 		else if (copy||is_mv) {
 			if (copy) {
 				readCopyOptions();
 			} 
-			else if (is_mv) {
-				srm_protocol_version =2;
-			}
 			if (copyjobfile == null) {
 				if (numberOfArguments >= 2) { 
 					if ( is_mv && numberOfArguments > 2 ) {
@@ -2526,9 +2420,6 @@ public class Configuration {
                                         to  = _args.argv(number_of_sources);
                                 }
 				else {
-					if (version) {
-						System.exit(1);
-					}
 					if (is_mv) {
 						throw new IllegalArgumentException(
 							"one source and one destination " +
@@ -2543,9 +2434,6 @@ public class Configuration {
 			} 
 			else {
 				if (numberOfArguments > 0 ) {
-					if(version) {
-						System.exit(1);
-					}
 					throw new IllegalArgumentException(
 						"no source or destination should be specified when " +
 						"using copyjobfile");
@@ -2553,33 +2441,22 @@ public class Configuration {
 			}
 		} 
 		else if(bringOnline){
-			srm_protocol_version =2;
                         protocols = readListOfOptions(protocols_list,",");
-                        surls = new String[numberOfArguments];
-                        for(int i=0;i<numberOfArguments;i++){surls[i]=_args.argv(i);}
 		} 
 		else if(ping) {
 			srmUrl = _args.argv(0);
 		} 
-		else if(ping || ls || is_rm || is_rmdir || is_mkdir || stage || getPermission || checkPermission || extendFileLifetime ) { 
-			srm_protocol_version =2;
-                        surls = new String[numberOfArguments];
-                        for(int i=0;i<numberOfArguments;i++){surls[i]=_args.argv(i);}
-		} 
 		else if (setPermission) {
-			srm_protocol_version =2;
 			setPermissionSurl = _args.argv(0);
+                        OptionParser.checkNullOptions(this,"type");
 		} 
-		else {
-			if (version) {
-				System.exit(1);
-			}
-			throw new IllegalArgumentException("should not be here");
-		}
+                else { 
+                }
 	}
     
 	private void readCopyOptions() throws Exception {
                 protocols = readListOfOptions(protocols_list,",");
+                arrayOfClientNetworks = readListOfOptions(array_of_client_networks,",");
                 if (spaceToken!=null) { 
                         srm_protocol_version = 2; 
                 }
@@ -2686,6 +2563,15 @@ public class Configuration {
 		element.appendChild(t);
 		root.appendChild(element);
 	}
+
+        private String printMandatoryOptions(String ... names) { 
+                StringBuilder sb = new StringBuilder();
+                sb.append("\nmandatory options : ");
+                for(String s:names) {
+                        sb.append("\""+s+"\" ");
+                }
+                return sb.toString();
+        }
     
 	public void write(String file) throws Exception {
 		DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();

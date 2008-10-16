@@ -127,7 +127,9 @@ public class SRMLsClientV2 extends SRMClient {
      req.setFullDetailedList(Boolean.valueOf(configuration.isLongLsFormat()));
      req.setNumOfLevels(new Integer(configuration.getRecursionDepth()));
      req.setOffset(new Integer(configuration.getLsOffset()));
-     req.setCount(new Integer(configuration.getLsCount()));
+     if (configuration.getLsCount()!=null) { 
+             req.setCount(configuration.getLsCount());
+     }
      org.apache.axis.types.URI[] turlia = new org.apache.axis.types.URI[surls.length];
      for(int i =0; i<surls.length; ++i) {
          turlia[i] = new org.apache.axis.types.URI(surl_strings[i]);

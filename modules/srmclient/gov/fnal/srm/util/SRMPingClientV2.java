@@ -131,7 +131,7 @@ public class SRMPingClientV2 extends SRMClient  {
 					}
 				}
 			}
-			say(sb.toString());
+			System.out.println(sb.toString());
 		}
 		catch (Exception e){
 			throw e;

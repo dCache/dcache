@@ -155,10 +155,10 @@ public class SRMDispatcher {
 		conf.write(conf.getSave_config_file());
 		System.exit(0);
 	    }
-	    if(conf.isHelp()) {
-		logger.elog(conf.usage());
-		System.exit(1);
-	    }
+ 	    if(conf.isHelp()) {
+ 		logger.elog(conf.usage());
+ 		System.exit(1);
+ 	    }
 	    if (conf.isGetFileMetaData()) {
 		if(conf.getGetFileMetaDataSurls() == null ||
 		   conf.getGetFileMetaDataSurls().length == 0 ) {
@@ -218,7 +218,7 @@ public class SRMDispatcher {
 		    sb.append("\n");
 		    System.err.println(sb.toString());
 		    System.exit(1);
-		    
+    
 		}
 		String modes[] = {"NONE","X","W","WR","R","RX","RW","RWX"};
 		ok=false;
@@ -334,19 +334,13 @@ public class SRMDispatcher {
 		    System.exit(1);
 		}
 	    } 
-	    else if (conf.isls()) {
-	    }
 	    else if (conf.isReserveSpace()) {
-		if(conf.getGuaranteedReserveSpaceSize()==0) { 
-//		    logger.elog("guaranteed size of space reservation must be greater than 0");
+		if(conf.getGuaranteedReserveSpaceSize()<=0) { 
+                        logger.elog("guaranteed size of space reservation must be greater than 0");
 			logger.elog(conf.usage());
 		    
 		    System.exit(1);
 		}
-                if(conf.getDesiredReserveSpaceSize() < conf.getGuaranteedReserveSpaceSize()) {
-                    logger.log("desired space size is less than guaranteed, adjusting ...");
-                    conf.setDesiredReserveSpaceSize(conf.getGuaranteedReserveSpaceSize());
-                }
 	    }
 	    else if (conf.isReleaseSpace()) {
 		if(conf.getSpaceToken()==null || conf.getSpaceToken().trim().equals("")) { 

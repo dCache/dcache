@@ -170,7 +170,6 @@ public class SRMV1CopyJob implements CopyJob {
             else {
                 client.setReportSucceeded(null,surl);
             }
-                
         }
         else
         {   

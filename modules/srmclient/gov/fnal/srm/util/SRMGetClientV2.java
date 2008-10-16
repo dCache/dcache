@@ -169,16 +169,29 @@ public class SRMGetClientV2 extends SRMClient implements Runnable {
             }
             srmPrepareToGetRequest.setArrayOfFileRequests(
                     new ArrayOfTGetFileRequest(fileRequests));
-	    TAccessPattern  ap = TAccessPattern.TRANSFER_MODE;
+	    TAccessPattern  ap = null;
 	    if(configuration.getAccessPattern() != null ) {
 		    ap = TAccessPattern.fromString(configuration.getAccessPattern());
             }
-	    TConnectionType ct = TConnectionType.WAN;
+	    TConnectionType ct = null;
 	    if(configuration.getConnectionType() != null ) {
 		    ct = TConnectionType.fromString(configuration.getConnectionType());
             }
-            srmPrepareToGetRequest.setTransferParameters(new TTransferParameters(ap,ct,null,new ArrayOfString(protocols)));
-	    if (configuration.getExtraParameters().size()>0) { 
+            ArrayOfString protocolArray = null;
+            if (protocols != null) { 
+                    protocolArray = new ArrayOfString(protocols);
+            }
+            ArrayOfString arrayOfClientNetworks = null;
+            if (configuration.getArrayOfClientNetworks()!=null) { 
+                    arrayOfClientNetworks = new ArrayOfString(configuration.getArrayOfClientNetworks());
+            }
+            if (ap!=null || ct!=null || arrayOfClientNetworks !=null || protocolArray != null) { 
+                    srmPrepareToGetRequest.setTransferParameters(new TTransferParameters(ap,
+                                                                                         ct,
+                                                                                         arrayOfClientNetworks,
+                                                                                         protocolArray));
+            }
+            if (configuration.getExtraParameters().size()>0) { 
 		    TExtraInfo[] extraInfoArray = new TExtraInfo[configuration.getExtraParameters().size()];
 		    int counter=0;
                     Map extraParameters = configuration.getExtraParameters();
