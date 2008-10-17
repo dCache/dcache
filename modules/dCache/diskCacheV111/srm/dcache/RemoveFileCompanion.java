@@ -93,19 +93,23 @@ import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.PnfsDeleteEntryMessage;
 import org.dcache.auth.AuthorizationRecord;
 import org.dcache.srm.RemoveFileCallbacks;
-import org.dcache.srm.FileMetaData;
+import diskCacheV111.util.FileMetaData;
 import diskCacheV111.util.CacheException;
+import org.apache.log4j.Logger;
+import java.util.Arrays;
 
 
 public class RemoveFileCompanion implements CellMessageAnswerable {
+        private static Logger _log = 
+            Logger.getLogger(RemoveFileCompanion.class);
+
 	private static final int INITIAL_STATE=0;
-	private static final int WAITING_FOR_FILE_INFO_MESSAGE=1;
-	private static final int RESEIVED_FILE_INFO_MESSAGE=2;
-	private static final int WAITING_FOR_CACHE_LOCATIONS_MESSAGE=3;
-	private static final int RESEIVED_CACHE_LOCATIONS_MESSAGE=4;
+	private static final int WAITING_FOR_PARENT_INFO_MESSAGE=1;
+	private static final int RECEIVED_PARENT_INFO_MESSAGE=2;
+	private static final int WAITING_FOR_INFO_MESSAGE=3;
+	private static final int RECEIVED_INFO_MESSAGE=4;
 	private static final int WAITING_FOR_PNFS_DELETE_MESSAGE=5;
-	private static final int RESEIVED_PNFS_DELETE_MESSAGE=6;
-	private static final int WAITING_FOR_PNFS_AND_POOL_REPLIES_MESSAGES=7;
+	private static final int RECEIVED_PNFS_DELETE_MESSAGE=6;
 	private static final int FINAL_STATE=8;
 	private volatile int state = INITIAL_STATE;
 	private dmg.cells.nucleus.CellAdapter cell;
@@ -116,23 +120,6 @@ public class RemoveFileCompanion implements CellMessageAnswerable {
 	private String      poolName = null ;
 	private AuthorizationRecord user;
 	
-	private void say(String words_of_wisdom) {
-		if (cell!=null) {
-			cell.say(toString()+words_of_wisdom);
-		}
-	}
-	private void esay(String words_of_despare) {
-		if (cell!=null) {
-			cell.esay(toString()+words_of_despare);
-			}
-	}
-	
-	private void esay(Throwable t) {
-		if(cell!=null) {
-			cell.esay(" RemoveFileCompanion exception : ");
-			cell.esay(t);
-		}
-	}
 	
 	private String name() { 
 		String tmp = this.getClass().getName();
@@ -155,15 +142,16 @@ public class RemoveFileCompanion implements CellMessageAnswerable {
 				      CellAdapter cell, 
 				      boolean do_remove) { 
 
-		FsPath pnfsPathFile = new FsPath(path);
-		String pnfsPath     = pnfsPathFile.toString();
+		FsPath pnfsParentPathFile = new FsPath(path);
+                pnfsParentPathFile.add("..");
+		String pnfsPath     = pnfsParentPathFile.toString();
 		PnfsGetFileMetaDataMessage getMetadataMsg = new PnfsGetFileMetaDataMessage();
 		getMetadataMsg.setPnfsPath(pnfsPath);
 		RemoveFileCompanion companion = new RemoveFileCompanion(user,
 									path,
 									callbacks,
 									cell);
-		companion.state = WAITING_FOR_FILE_INFO_MESSAGE;
+		companion.state = WAITING_FOR_PARENT_INFO_MESSAGE;
 		try {
 			cell.sendMessage(new CellMessage(
 						 new CellPath("PnfsManager") ,
@@ -173,13 +161,14 @@ public class RemoveFileCompanion implements CellMessageAnswerable {
 					 1*24*60*60*1000) ;
 		}
 		catch (Exception ee ) {
-			cell.esay(ee);
-			callbacks.RemoveFileFailed("Exception");
+			_log.error("send to PnfsManager failed",ee);
+			callbacks.RemoveFileFailed("Exception: "+ee);
 		}
 	}
 	
+        
     public void answerArrived( final CellMessage req , final CellMessage answer ) {
-        say("answerArrived");
+        _log.debug("answerArrived");
         diskCacheV111.util.ThreadManager.execute(new Runnable() {
             public void run() {
                 processMessage(req,answer);
@@ -190,10 +179,10 @@ public class RemoveFileCompanion implements CellMessageAnswerable {
     private void processMessage(CellMessage req, 
 				  CellMessage answer ) {
 		if (state == FINAL_STATE) {
-			say(name()+" answerArrived("+req+","+answer+"), state is final, ignore all messages");
+			_log.debug(name()+" answerArrived("+req+","+answer+"), state is final, ignore all messages");
 			return;
 		}
-		say(name()+" answerArrived("+req+","+answer+"), state ="+state);
+		_log.debug(name()+" answerArrived("+req+","+answer+"), state ="+state);
 		request  = req;
 		Object o = answer.getMessageObject();
 		if (o instanceof Message) {
@@ -201,32 +190,37 @@ public class RemoveFileCompanion implements CellMessageAnswerable {
 			if (message instanceof PnfsGetFileMetaDataMessage ) {
 				PnfsGetFileMetaDataMessage metadata_msg =
 					(PnfsGetFileMetaDataMessage)message;
-				if (state == WAITING_FOR_FILE_INFO_MESSAGE) {
-					state = RESEIVED_FILE_INFO_MESSAGE;
-					fileInfoArrived(metadata_msg);
+				if (state == WAITING_FOR_PARENT_INFO_MESSAGE) {
+					state = RECEIVED_PARENT_INFO_MESSAGE;
+					parentInfoArrived(metadata_msg);
 					return;
 				}
-				esay(this.toString()+" got unexpected PnfsGetStorageInfoMessage "+
+				if (state == WAITING_FOR_INFO_MESSAGE) {
+					state = RECEIVED_INFO_MESSAGE;
+					infoArrived(metadata_msg);
+					return;
+				}
+				_log.error(this.toString()+" got unexpected PnfsGetStorageInfoMessage "+
 				     " : "+metadata_msg+" ; Ignoring");
 			}
 			else if (message instanceof PnfsDeleteEntryMessage ) {
 				PnfsDeleteEntryMessage delete_reply =
 					(PnfsDeleteEntryMessage) message;
 				if(state == WAITING_FOR_PNFS_DELETE_MESSAGE) {
-					state = RESEIVED_PNFS_DELETE_MESSAGE;
+					state = RECEIVED_PNFS_DELETE_MESSAGE;
 					if(delete_reply.getReturnCode() == 0) {
 						callbacks.RemoveFileSucceeded();
 					}
 					else {
-						callbacks.RemoveFileFailed("Delete failed: "+delete_reply);
+						callbacks.RemoveFileFailed("Delete failed: "+delete_reply+" reason:"+delete_reply.getErrorObject());
 					}
 					return;
 				}
-				esay(this.toString()+" got unexpected PnfsDeleteEntryMessage "+
+				_log.error(this.toString()+" got unexpected PnfsDeleteEntryMessage "+
 				     " : "+delete_reply+" ; Ignoring");
 			}
 			else {
-				esay(this.toString()+" got unknown message "+
+				_log.error(this.toString()+" got unknown message "+
 				     " : "+message.getErrorObject());
 				
 				callbacks.RemoveFileFailed( this.toString()+" got unknown message "+
@@ -234,7 +228,7 @@ public class RemoveFileCompanion implements CellMessageAnswerable {
 			}
 		}
 		else {
-			esay(this.toString()+" got unknown object "+
+			_log.error(this.toString()+" got unknown object "+
 			     " : "+o);
 			callbacks.RemoveFileFailed(this.toString()+" got unknown object "+
 					" : "+o) ;
@@ -257,13 +251,34 @@ public class RemoveFileCompanion implements CellMessageAnswerable {
             }
             catch(Exception ee ) {
                     state = FINAL_STATE;
-                    esay(ee);
+                    _log.error(ee);
                     callbacks.RemoveFileFailed("Exception");
             }
 	}
 	
 	
-	public void fileInfoArrived(PnfsGetFileMetaDataMessage metadata_msg) {
+	public void parentInfoArrived(PnfsGetFileMetaDataMessage metadata_msg) {
+		if(metadata_msg.getReturnCode() != 0) {
+                    if(metadata_msg.getReturnCode() == CacheException.FILE_NOT_FOUND) {
+   			callbacks.FileNotFound("parent does not exist, cannot delete");
+			return;
+                    }
+                    callbacks.RemoveFileFailed("parent get metadata failed:"+metadata_msg.getErrorObject());
+                    return;
+
+		}
+		_log.debug("metadata_msg = "+metadata_msg );
+		diskCacheV111.util.FileMetaData fmd =
+			metadata_msg.getMetaData();
+                if(!canDeleteDir(user.getUid(), user.getGids(),fmd)) {
+                    callbacks.RemoveFileFailed("permission denied");
+                    return;
+                }
+                getFileMetadata();
+
+	}
+        
+	public void infoArrived(PnfsGetFileMetaDataMessage metadata_msg) {
 		if(metadata_msg.getReturnCode() != 0) {
                     if(metadata_msg.getReturnCode() == CacheException.FILE_NOT_FOUND) {
    			callbacks.FileNotFound("file does not exist, cannot delete");
@@ -273,47 +288,46 @@ public class RemoveFileCompanion implements CellMessageAnswerable {
                     return;
 
 		}
-		say("metadata_msg = "+metadata_msg );
+		_log.debug("metadata_msg = "+metadata_msg );
 		diskCacheV111.util.FileMetaData fmd =
 			metadata_msg.getMetaData();
-		if(fmd.isDirectory()) {
-			callbacks.RemoveFileFailed("file is a directory, can not delete");
-			return;
-		}
-		diskCacheV111.util.FileMetaData.Permissions perms =
-			fmd.getUserPermissions();
-		int permissions = (perms.canRead()    ? 4 : 0) |
-			(perms.canWrite()   ? 2 : 0) |
-			(perms.canExecute() ? 1 : 0) ;
-		permissions <<=3;
-		perms = fmd.getGroupPermissions();
-		permissions |=    (perms.canRead()    ? 4 : 0) |
-			(perms.canWrite()   ? 2 : 0) |
-			(perms.canExecute() ? 1 : 0) ;
-		permissions <<=3;
-		perms = fmd.getWorldPermissions();
-		permissions |=    (perms.canRead()    ? 4 : 0) |
-			(perms.canWrite()   ? 2 : 0) |
-			(perms.canExecute() ? 1 : 0) ;
-		pnfsId = metadata_msg.getPnfsId();
-		String fileId = pnfsId.toString();
-		FileMetaData srm_fmd = Storage.getFileMetaData(user,path,pnfsId,null,fmd,null);
-		if(!Storage._canDelete(user,fileId,srm_fmd)) {
-			callbacks.RemoveFileFailed("permission denied");
-			return;
-		}
+                if(fmd.isDirectory()) {
+                    callbacks.RemoveFileFailed("file is a directory, can not delete");
+                    return;
+                }
                 deleteEntry();
 
 	}
+        
+        public void getFileMetadata() { 
+
+                FsPath pnfsFile = new FsPath(path);
+                String pnfsPath     = pnfsFile.toString();
+                PnfsGetFileMetaDataMessage getMetadataMsg = new PnfsGetFileMetaDataMessage();
+                getMetadataMsg.setPnfsPath(pnfsPath);
+                state = WAITING_FOR_INFO_MESSAGE;
+                try {
+                        cell.sendMessage(new CellMessage(
+                                                 new CellPath("PnfsManager") ,
+                                                 getMetadataMsg ) ,
+                                         true , true ,
+                                         this ,
+                                         1*24*60*60*1000) ;
+                }
+                catch (Exception ee ) {
+			_log.error("send to PnfsManager failed",ee);
+                        callbacks.RemoveFileFailed("Exception :"+ee);
+                }
+        }
 	
 	public void exceptionArrived( CellMessage request , Exception exception ) {
 		state = FINAL_STATE;
-		esay("exceptionArrived "+exception+" for request "+request);
-		callbacks.RemoveFileFailed("Exception");
+		_log.error("exceptionArrived "+exception+" for request "+request);
+		callbacks.RemoveFileFailed("Exception : "+exception+" for request "+request);
 	}
 
 	public void answerTimedOut( CellMessage request ) {
-		esay("answerTimedOut for request "+request);
+		_log.error("answerTimedOut for request "+request);
 		callbacks.RemoveFileFailed("answerTimedOut for request "+request);
 	}
 
@@ -327,5 +341,46 @@ public class RemoveFileCompanion implements CellMessageAnswerable {
 				(pnfsId == null?path:pnfsId.toString());
 		}
 	}
+        
+        public static boolean canDeleteDir(int userUid,int[] userGids, FileMetaData parentMeta) {
+            
+             _log.debug("canDelete("+userUid+","+Arrays.toString(userGids) +", parentMeta="+parentMeta+")");
+            boolean parentCanWrite = writeAndExecuteAllowed(userUid, userGids,parentMeta);
+            _log.debug("canDelete() can write into parent:"+parentCanWrite);
+            return parentCanWrite;
+        }
+        
+        public static final boolean writeAndExecuteAllowed(int userUid,int[] userGids,FileMetaData meta ) {
+            return writeAllowed(userUid, userGids, meta) &&
+                executeAllowed(userUid, userGids, meta);
+        }
+        
+        public static final boolean writeAllowed(int userUid,int[] userGids,FileMetaData meta ) {
+            FileMetaData.Permissions world = meta.getWorldPermissions() ;
+            if( world.canWrite() ) return true;
+            FileMetaData.Permissions user  = meta.getUserPermissions() ;
+            if( meta.getUid() == userUid  && user.canWrite()  ) return true;
+            
+            FileMetaData.Permissions group = meta.getGroupPermissions();
+            for(int userGid:userGids) {
+                if( meta.getGid() == userGid  && group.canWrite() ) return true;
+            }
+            return false;
+        }
+        
+        public static final boolean executeAllowed(int userUid,int userGids[],FileMetaData meta ) {
+            FileMetaData.Permissions world = meta.getWorldPermissions() ;
+            if(world.canExecute()) return true;
+            
+            FileMetaData.Permissions user  = meta.getUserPermissions() ;
+            if( meta.getUid() == userUid  && user.canExecute()) return true;
+            
+            FileMetaData.Permissions group = meta.getGroupPermissions();
+            for(int userGid:userGids) {
+                if(  meta.getGid() == userGid  && group.canExecute() ) return true;
+            }
+            return false;
+        }
+ 
 }
 

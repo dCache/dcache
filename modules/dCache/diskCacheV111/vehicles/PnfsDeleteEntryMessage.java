@@ -11,6 +11,7 @@ public class PnfsDeleteEntryMessage extends PnfsMessage {
     
     public PnfsDeleteEntryMessage(String path){
 	_path = path;
+        setPnfsPath(path);
 	setReplyRequired(false);
     }
 

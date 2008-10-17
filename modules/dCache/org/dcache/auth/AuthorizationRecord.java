@@ -10,6 +10,7 @@
 package org.dcache.auth;
 
 import java.util.List;
+import java.util.ArrayList;
 import java.io.Serializable;
 import javax.persistence.Entity;
 import javax.persistence.Table;
@@ -344,5 +345,28 @@ public class AuthorizationRecord implements Serializable, SRMUser{
         initHashStrings();
         return getAuthn().hashCode()^getAuthz().hashCode();
     }
-
+    
+    @Transient
+    public int[] getGids() {
+        List<Integer> gids = new ArrayList<Integer>();
+        if(groupLists != null) {
+            for(GroupList groupList : groupLists) {
+                List<Group> groups = groupList.getGroups();
+                if(groups!=null) {
+                    for(Group group:groups) {
+                        gids.add(group.getGid());
+                    }
+                }
+            }
+        } 
+        if(gids.isEmpty()) {
+            return new int[] {-1};
+        }
+        
+        int [] gidIntArray = new int[gids.size()];
+        for(int i=0; i<gidIntArray.length; i++) {
+            gidIntArray[i] = gids.get(i);
+        }
+        return gidIntArray;
+    }
 }
