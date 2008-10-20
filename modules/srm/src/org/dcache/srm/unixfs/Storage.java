@@ -1306,6 +1306,23 @@ public class Storage
     public void unPinFileBySrmRequestId(SRMUser user,String fileId,
         UnpinCallbacks callbacks,
         long srmRequestId)   {
+        callbacks.Unpinned(fileId);
+    }
+    
+   /** This method allows to unpin file in the Storage Element,
+     * i.e. cancel the requests to have the file in "fast access state"
+     * This method will remove all pins on this file user has permission 
+     * to remove
+     * @param user User ID
+     * @param fileId Storage Element internal file ID
+     * @param callbacks This interface is used for asyncronous notification of SRM of the
+     * various actions performed to "unpin" file in the storage
+     * @param srmRequestId id given to the storage  during pinFile operation 
+     */
+    public void unPinFile(SRMUser user,String fileId,
+            UnpinCallbacks callbacks) {
+        callbacks.Unpinned(fileId);
+        
     }
 
 }

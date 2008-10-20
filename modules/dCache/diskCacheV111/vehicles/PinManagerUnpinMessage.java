@@ -18,6 +18,15 @@ public class PinManagerUnpinMessage extends PinManagerMessage {
     private static final long serialVersionUID = -2435476735204095804L;
     
     /** Creates a new instance of PinManagerPinMessage */
+    public PinManagerUnpinMessage(String pnfsId) {
+        super(pnfsId);
+    }
+    
+    public PinManagerUnpinMessage(PnfsId pnfsId) {
+        super(pnfsId);
+    }
+    
+    /** Creates a new instance of PinManagerPinMessage */
     public PinManagerUnpinMessage(String pnfsId, String pinId) {
         super(pnfsId);
         this.pinId = pinId;

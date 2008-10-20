@@ -108,6 +108,7 @@ import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.PoolRemoveFilesMessage;
 import diskCacheV111.util.PnfsId;
 import java.util.Set;
+import java.util.HashSet;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -337,16 +338,23 @@ public class PinManager extends AbstractCell implements Runnable  {
 
     }
 
-    public String hh_unpin = " [-force] <pinRequestId> <pnfsId> " +
-        "# unpin a a file by pinRequestId and by pnfsId" ;
-    public String ac_unpin_$_2( Args args ) throws Exception {
-        long pinRequestId = Long.parseLong(args.argv(0));
+    public String hh_unpin = " [-force] [<pinRequestId>] <pnfsId> " +
+        "# unpin a a file by pinRequestId and by pnfsId or just by pnfsId" ;
+    public String ac_unpin_$_1_2( Args args ) throws Exception {
         boolean force = args.getOpt("force") != null;
+        if(args.argc() == 1) {
+            PnfsId pnfsId = new PnfsId( args.argv(0) ) ;
+            unpin(pnfsId,null,null,null,force);
+            return "unpin started";
+            
+        }
+        long pinRequestId = Long.parseLong(args.argv(0));
         PnfsId pnfsId = new PnfsId( args.argv(1) ) ;
         unpin(pnfsId, pinRequestId,null,null,null,force);
         return "unpin started";
 
     }
+    
     public String hh_extend_lifetime = "<pinRequestId> <pnfsId> <seconds " +
         "# extendlifetime of a pin  by pinRequestId and by pnfsId" ;
     public String ac_extend_lifetime_$_3( Args args ) throws Exception {
@@ -1067,13 +1075,13 @@ public class PinManager extends AbstractCell implements Runnable  {
         }
         String pinIdStr = unpinRequest.getPinId();
         Long srmRequestId = unpinRequest.getSrmRequestId();
-        if(pinIdStr == null && srmRequestId == null ) {
-            failResponse("pinId is null and srmRequestId is null",1, unpinRequest);
-            return;
-        }
         AuthorizationRecord authRec = unpinRequest.getAuthorizationRecord();
-
-        unpin(pnfsId, pinIdStr,srmRequestId ,authRec, unpinRequest, cellMessage,false);
+        
+        if(pinIdStr == null && srmRequestId == null ) {
+            unpin(pnfsId,authRec, unpinRequest, cellMessage,false);
+        } else {
+            unpin(pnfsId, pinIdStr,srmRequestId ,authRec, unpinRequest, cellMessage,false);
+        }
     }
     private Map<Long, CellMessage> pinRequestToUnpinRequestsMap = new
         HashMap<Long, CellMessage> ();
@@ -1119,6 +1127,135 @@ public class PinManager extends AbstractCell implements Runnable  {
         unpin(pnfsId,pinRequestId,authRec,unpinRequest,cellMessage,force);
 
     }
+    
+
+    public void unpin(PnfsId pnfsId,
+        AuthorizationRecord authRec,
+        PinManagerUnpinMessage unpinRequest,
+        CellMessage cellMessage,
+        boolean force)
+    throws PinException {
+        info("unpin all requests for pnfsId="+pnfsId);
+        if(unpinRequest != null) {
+            assert unpinRequest.getPinId()==null &&
+                   unpinRequest.getSrmRequestId() ==null;
+        }
+        
+        db.initDBConnection();
+        Long pinRequestIdLong = null;
+       
+        
+        try {
+            Pin pin = db.getAndLockActivePinWithRequestsByPnfstId(pnfsId);
+            if(pin == null ) {
+                error("unpin: pin request for PnfsId = "+pnfsId+
+                        " is not found");
+                if(unpinRequest != null) {
+                    failResponse("pin requests for PnfsId = "+pnfsId+
+                        " is not found",
+                        4,unpinRequest);
+                }
+                return;
+            }
+            
+            if(!force &&  !pin.getState().equals(PinManagerPinState.PINNED)) {
+                if (pin.getState().equals(PinManagerPinState.INITIAL) ||
+                     pin.getState().equals(PinManagerPinState.PINNING)) {
+                    error("unpin: in request with PnfsId = "+pnfsId+
+                            " is not pinned yet");
+
+                    if(unpinRequest != null) {
+                        failResponse("pin request with PnfsId = "+pnfsId+
+                                " is not pinned yet",
+                            5,unpinRequest);
+                    }
+                    return;
+                } else  {
+                            error("unpin: in request with PnfsId = "+pnfsId+
+                            " is not pinned yet"+
+                            " or is already being upinnned");
+                    if(unpinRequest != null) {
+                        failResponse("pin request with PnfsId = "+pnfsId+
+                                " is not pinned, " +
+                            "or is already being upinnned",
+                            5,unpinRequest);
+                    }
+                    return;
+
+                }
+            }
+
+            
+            
+            Set<PinRequest> pinRequests = pin.getRequests();
+            int setSize = pinRequests.size();
+            boolean skippedPins = false;
+            boolean unpinedAtLeastOne = false;
+            int pinReqIndx = 0;
+            for(PinRequest pinRequest: pinRequests) {
+                long pinRequestId = pinRequest.getId();
+                if(!force && !pinManagerPolicy.canUnpin(authRec,pinRequest)) {
+                    skippedPins = true;
+                    continue;
+                }
+                unpinedAtLeastOne = true;
+                pinReqIndx++;
+                if( pinReqIndx < setSize || skippedPins ) {
+                   info("unpin: more  requests left in this pin, " +
+                           "just deleting the request");
+                    db.deletePinRequest(pinRequestId);
+                } else{
+                    if(unpinRequest != null &&
+                            unpinRequest.getReplyRequired() ) {
+                        pinRequestIdLong = new Long(pinRequestId);
+                        pinRequestToUnpinRequestsMap.put(
+                                pinRequestIdLong,cellMessage);
+                        unpinRequest.setReplyRequired(false);
+                    }
+                    db.updatePin(pin.getId(),null,null,
+                            PinManagerPinState.UNPINNING);
+                    info("starting unpinnerfor request with id = "+pinRequestId);
+                    db.commitDBOperations();
+                    // we need to commit the new state before we start
+                    // processing
+                    // otherwise we might not see the request in database
+                    // if processing succeeds before the commit is executed
+                    // (a race condition )
+
+                    new Unpinner(this,pin.getPnfsId(),pin,false);
+                    return;
+                    
+                }
+            }
+            
+            if(!unpinedAtLeastOne) {
+                error("unpin: pin request with  PnfsId = "+pnfsId+
+                        " can not be unpinned, authorization failure");
+                if(unpinRequest != null) {
+                    failResponse("pin request with  PnfsId = "+pnfsId+
+                        " can not be unpinned, authorization failure",
+                        4,unpinRequest);
+                }
+                return;
+            }
+            
+            
+        } catch (PinDBException pdbe ) {
+            error("unpin: "+pdbe.toString());
+            db.rollbackDBOperations();
+            if(unpinRequest != null) {
+                failResponse(pdbe,3,unpinRequest);
+                if(pinRequestIdLong != null) {
+                    unpinRequest.setReplyRequired(true);
+                    pinRequestToUnpinRequestsMap.remove(pinRequestIdLong);
+                }
+            }
+            return;
+        }
+        finally {
+            db.commitDBOperations();
+        }            
+    }            
 
 
     /**
@@ -1147,6 +1284,33 @@ public class PinManager extends AbstractCell implements Runnable  {
                         4,unpinRequest);
                 }
                 return;
+            }
+            
+            if(!force &&  ! pin.getState().equals(PinManagerPinState.PINNED)) {
+                if (pin.getState().equals(PinManagerPinState.INITIAL) ||
+                     pin.getState().equals(PinManagerPinState.PINNING)) {
+                    error("unpin: in request with id = "+pinRequestId+
+                            " is not pinned yet");
+
+                    if(unpinRequest != null) {
+                        failResponse("pin request with id = "+pinRequestId+
+                                " is not pinned yet",
+                            5,unpinRequest);
+                    }
+                    return;
+                } else {
+                            error("unpin: in request with id = "+pinRequestId+
+                            " is not pinned yet"+
+                            " or is already being upinnned");
+                    if(unpinRequest != null) {
+                        failResponse("pin request with id = "+pinRequestId+
+                                " is not pinned, " +
+                            "or is already being upinnned",
+                            5,unpinRequest);
+                    }
+                    return;
+
+                }
             }
 
             Set<PinRequest> pinRequests = pin.getRequests();
@@ -1186,49 +1350,26 @@ public class PinManager extends AbstractCell implements Runnable  {
                 // will be done by process message automatically
                 return;
             }
-            // we are the last request or force is enabled
-            if(force || pin.getState().equals(PinManagerPinState.PINNED)) {
-                    if(unpinRequest != null &&
-                            unpinRequest.getReplyRequired() ) {
-                        pinRequestIdLong = new Long(pinRequestId);
-                        pinRequestToUnpinRequestsMap.put(
-                                pinRequestIdLong,cellMessage);
-                        unpinRequest.setReplyRequired(false);
-                    }
-                    db.updatePin(pin.getId(),null,null,
-                            PinManagerPinState.UNPINNING);
-                   info("starting unpinnerfor request with id = "+pinRequestId);
-                   db.commitDBOperations();
-                    // we need to commit the new state before we start
-                    // processing
-                    //otherwise we might not see the request in database
-                    // if processing succeeds before the commit is executed
-                    // (a race condition )
-
-                    new Unpinner(this,pin.getPnfsId(),pin,false);
-            } else if (pin.getState().equals(PinManagerPinState.INITIAL) ||
-                 pin.getState().equals(PinManagerPinState.PINNING)) {
-                error("unpin: in request with id = "+pinRequestId+
-                        " is not pinned yet");
-
-                if(unpinRequest != null) {
-                    failResponse("pin request with id = "+pinRequestId+
-                            " is not pinned yet",
-                        5,unpinRequest);
-                }
-                return;
-            } else  {
-                error("unpin: in request with id = "+pinRequestId+
-                        " is not pinned yet"+
-                        " or is already being upinnned");
-                if(unpinRequest != null) {
-                    failResponse("pin request with id = "+pinRequestId+
-                            " is not pinned, " +
-                        "or is already being upinnned",
-                        5,unpinRequest);
-                }
-                return;
+            
+            if(unpinRequest != null &&
+                    unpinRequest.getReplyRequired() ) {
+                pinRequestIdLong = new Long(pinRequestId);
+                pinRequestToUnpinRequestsMap.put(
+                        pinRequestIdLong,cellMessage);
+                unpinRequest.setReplyRequired(false);
             }
+            db.updatePin(pin.getId(),null,null,
+                    PinManagerPinState.UNPINNING);
+            info("starting unpinnerfor request with id = "+pinRequestId);
+            db.commitDBOperations();
+            // we need to commit the new state before we start
+            // processing
+            // otherwise we might not see the request in database
+            // if processing succeeds before the commit is executed
+            // (a race condition )
+
+            new Unpinner(this,pin.getPnfsId(),pin,false);
+            return;
         } catch (PinDBException pdbe ) {
             error("unpin: "+pdbe.toString());
             db.rollbackDBOperations();
@@ -1244,6 +1385,7 @@ public class PinManager extends AbstractCell implements Runnable  {
             db.commitDBOperations();
         }
     }
+
 
     public void unpinSucceeded ( Pin pin ) throws PinException {
         info("unpinSucceeded for "+pin);
@@ -1353,6 +1495,7 @@ public class PinManager extends AbstractCell implements Runnable  {
         }
 
         for(PinRequest pinRequest:expiredPinRequests) {
+           debug("expiring pin request "+pinRequest);
            unpin(pinRequest.getPin().getPnfsId(),pinRequest.getId(),
                pinRequest.getAuthorizationRecord(),null,null,false);
         }

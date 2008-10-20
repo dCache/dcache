@@ -1311,7 +1311,11 @@ public class BringOnlineFileRequest extends FileRequest {
 
         public java.lang.String getError() {
             return error;
-        }        
+        }      
+        
+        public boolean isDone() {
+            return done;
+        }
 
         
     }
@@ -1333,15 +1337,58 @@ public class BringOnlineFileRequest extends FileRequest {
                 fileId,unpinCallbacks,id);
           try {   
                 unpinCallbacks.waitCompleteion(60000); //one minute
-                if(unpinCallbacks.isSuccess()) {
-                    return;
+                if(unpinCallbacks.isDone()) {
+                    
+                    if(unpinCallbacks.isSuccess()) {
+                        return;
+                    } else 
+                    throw new SRMException("unpinning of "+surl_string+" by SrmRequestId "+id+
+                        " failed :"+unpinCallbacks.getError());
                 } else {
                     throw new SRMException("unpinning of "+surl_string+" by SrmRequestId "+id+
-                        " failed or took too long");
+                        " took too long");
+                    
                 }
             } catch( InterruptedException ie) {
                 ie.printStackTrace();
                 throw new SRMException("unpinning of "+surl_string+" by SrmRequestId "+id+
+                        " got interrupted");
+            }
+         }
+    }
+
+    public static void unpinBySURL(
+        AbstractStorageElement storage,
+        final SRMUser user, 
+        final String surl_string) 
+        throws SRMException, 
+            MalformedURLException {
+        GlobusURL surl = new GlobusURL(surl_string);
+        String path = FileRequest.getPath(surl);        
+        FileMetaData fmd =
+            storage.getFileMetaData(user,path);
+        String fileId = fmd.fileId;
+        if(fileId != null) {
+            BringOnlineFileRequest.TheUnpinCallbacks unpinCallbacks = 
+                new BringOnlineFileRequest.TheUnpinCallbacks(null);
+            storage.unPinFile(user,
+                fileId,unpinCallbacks);
+          try {   
+                unpinCallbacks.waitCompleteion(60000); //one minute
+                if(unpinCallbacks.isDone()) {
+                    if(unpinCallbacks.isSuccess()) {
+                        return;
+                    } else {
+                        throw new SRMException("unpinning of "+surl_string+
+                            " failed :"+unpinCallbacks.getError());
+                    }
+                } else {
+                        throw new SRMException("unpinning of "+surl_string+
+                            " took too long");
+                }
+            } catch( InterruptedException ie) {
+                ie.printStackTrace();
+                throw new SRMException("unpinning of "+surl_string+
                         " got interrupted");
             }
          }

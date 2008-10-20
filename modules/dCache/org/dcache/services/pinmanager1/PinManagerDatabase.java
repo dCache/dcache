@@ -946,6 +946,37 @@ class PinManagerDatabase
 
     }
 
+       private static final String selectActivePinsByPnfsId =
+            "SELECT * FROM "+ PinManagerPinsTableName +
+            " WHERE  PnfsId = ?"+
+            " OR state = "+PinManagerPinState.INITIAL.getStateId()+
+            " OR state = "+PinManagerPinState.PINNING.getStateId()+
+            " FOR UPDATE";;
+
+    
+   private Pin getAndLockActivePinWithRequestsByPnfsId(Connection _con, PnfsId pnfsId) throws SQLException{
+            debug("executing statement: "+selectActivePinsByPnfsId+" ?="+pnfsId);
+            PreparedStatement sqlStatement =
+                    _con.prepareStatement(selectActivePinsByPnfsId);
+            ResultSet set = null;
+            try{
+                sqlStatement.setString(1,pnfsId.toIdString());
+                set = sqlStatement.executeQuery();
+                if(set.next()) {
+                    Pin pin = extractPinFromResultSet( set );
+                    pin.setRequests(getPinRequestsByPin(_con,pin));
+                    //our logic assumes that only one pin is active
+                    assert !set.next();
+                    return pin;
+                }
+                return null;
+            }finally{
+                SqlHelper.tryToClose(set);
+                SqlHelper.tryToClose(sqlStatement);
+            }
+
+    }
+
    private static final String selectPinRequestByPnfsIdandSrmRequestId =
                     "SELECT "+PinManagerRequestsTableName+".id " +
                     "FROM "+ PinManagerRequestsTableName +", "+
@@ -1280,7 +1311,7 @@ class PinManagerDatabase
 
    private Set<PinRequest> getExpiredPinRequests(Connection _con) throws SQLException{
         long currentTimeMissis = System.currentTimeMillis();
-        info("executing statement: "+selectExpiredPinRequest);
+        debug("executing statement: "+selectExpiredPinRequest+" ?="+currentTimeMissis);
         PreparedStatement sqlStatement =
                 _con.prepareStatement(selectExpiredPinRequest);
         ResultSet set = null;
@@ -1340,7 +1371,7 @@ class PinManagerDatabase
 
   private Set<Pin> getExpiredPinsWithoutRequests(Connection _con) throws SQLException{
         long currentTimeMissis = System.currentTimeMillis();
-        info("executing statement: "+selectIDsOfExpiredPinWithoutRequest);
+        debug("executing statement: "+selectIDsOfExpiredPinWithoutRequest+" ?="+currentTimeMissis);
         PreparedStatement sqlStatement =
                 _con.prepareStatement(selectIDsOfExpiredPinWithoutRequest);
         ResultSet set = null;
@@ -1495,6 +1526,19 @@ class PinManagerDatabase
         }
     }
 
+    public Pin getAndLockActivePinWithRequestsByPnfstId(PnfsId pnfsId)
+    throws PinDBException {
+        Connection _con = getThreadLocalConnection();
+        if(_con == null) {
+           throw new PinDBException(1,"DB is not initialized in this thread!!!");
+        }
+        try {
+            return getAndLockActivePinWithRequestsByPnfsId(_con,pnfsId);
+        } catch (SQLException sqle) {
+            throw new PinDBException(sqle.toString());
+        }
+    }
+    
     public long getPinRequestIdByByPnfsIdandSrmRequestId(PnfsId pnfsId, long srmrequestId)
     throws PinDBException {
         Connection _con = getThreadLocalConnection();

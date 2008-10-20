@@ -302,5 +302,46 @@ public class UnpinCompanion implements CellMessageAnswerable {
             return ;
         }
     }
+    public static void unpinFile(
+            AuthorizationRecord user,
+            String fileId,
+            UnpinCallbacks callbacks,
+            CellAdapter cell) {
+        cell.say("UnpinCompanion.unpinFile("+fileId+")");
+        PnfsId pnfsId = null;
+        try {
+            pnfsId = new PnfsId(fileId);
+        } catch(Exception e) {
+            //just ciletly fail, if the fileId is not pnfs id
+            // it must be created by a disk srm during testing
+            //just allow the request to get expired
+            callbacks.Unpinned(fileId);
+            return;
+        }
+        
+        UnpinCompanion companion = new UnpinCompanion(user,fileId,
+                callbacks,cell);
+        
+        PinManagerUnpinMessage unpinRequest =
+                new PinManagerUnpinMessage( pnfsId);
+        unpinRequest.setAuthorizationRecord(user);
+        companion.state = SENT_PIN_MGR_PIN_MSG;
+        try {
+            cell.sendMessage(
+                    new CellMessage(
+                    new CellPath( "PinManager") ,
+                    unpinRequest ) ,
+                    true , true,
+                    companion,
+                    60*60*1000
+                    );
+            //say("StageAndPinCompanion: recordAsPinned");
+            //rr.recordAsPinned (_fr,true);
+        }catch(Exception ee ) {
+            cell.esay(ee);
+            callbacks.UnpinningFailed(ee.toString());
+            return ;
+        }
+    }
 }
 
