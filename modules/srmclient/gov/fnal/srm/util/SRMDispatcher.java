@@ -1,4 +1,4 @@
-// $Id: SRMDispatcher.java 10382 2008-10-16 15:33:29Z litvinse $
+// $Id: SRMDispatcher.java 10405 2008-10-20 13:59:15Z litvinse $
 // $Author: litvinse $ 
 /*
 COPYRIGHT STATUS:
@@ -372,7 +372,7 @@ public class SRMDispatcher {
 		throw e;
 	    }
 	    else { 
-		    System.err.println("srm client error: \n" + e.getMessage());
+		    System.err.println("srm client error: \n" + e.toString());
 		    System.exit(1);
 	    }
 	}
