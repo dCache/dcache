@@ -223,6 +223,7 @@ public class CacheRepositoryEntryState implements Serializable
         }
 
         _error = false;
+        markDirty();
     }
 
     public synchronized void setPrecious(boolean force)
@@ -323,6 +324,7 @@ public class CacheRepositoryEntryState implements Serializable
         }
 
         _toClient = true;
+        markDirty();
     }
 
     public synchronized void setToStore() throws IllegalStateException
@@ -342,6 +344,7 @@ public class CacheRepositoryEntryState implements Serializable
         }
 
         _toStore = true;
+        markDirty();
     }
 
     public synchronized void cleanToStore() throws IllegalStateException
@@ -352,6 +355,7 @@ public class CacheRepositoryEntryState implements Serializable
         }
 
         _toStore = false;
+        markDirty();
     }
 
     public synchronized void setError() throws IllegalStateException
@@ -361,11 +365,13 @@ public class CacheRepositoryEntryState implements Serializable
         }
 
         _error = true;
+        markDirty();
     }
 
     public synchronized void setRemoved() throws IllegalStateException
     {
         _removed = true;
+        markDirty();
     }
 
     public synchronized String toString()
