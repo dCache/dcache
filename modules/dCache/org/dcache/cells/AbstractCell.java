@@ -1,7 +1,6 @@
 package org.dcache.cells;
 
 import org.apache.log4j.Logger;
-import org.apache.log4j.NDC;
 import java.math.BigInteger;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -23,7 +22,6 @@ import dmg.cells.nucleus.UOID;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.Reply;
 
-import org.dcache.util.ReflectionUtils;
 import diskCacheV111.vehicles.Message;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
@@ -651,19 +649,7 @@ public class AbstractCell extends CellAdapter
 
     public void messageArrived(CellMessage envelope)
     {
-        super.messageArrived(envelope);
-
-        PnfsId id = ReflectionUtils.getPnfsId(envelope.getMessageObject());
-        if (id == null) {
-            dispatchArrived(envelope);
-        } else {
-            NDC.push(id.toString());
-            try {
-                dispatchArrived(envelope);
-            } finally {
-                NDC.pop();
-            }
-        }
+        dispatchArrived(envelope);
     }
 
     /**

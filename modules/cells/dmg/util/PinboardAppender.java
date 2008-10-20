@@ -6,6 +6,7 @@ import java.util.Collections;
 import java.lang.ref.WeakReference;
 
 import dmg.cells.nucleus.CellAdapter;
+import dmg.cells.nucleus.CDC;
 
 import org.apache.log4j.spi.LoggingEvent;
 import org.apache.log4j.AppenderSkeleton;
@@ -33,7 +34,8 @@ public class PinboardAppender extends AppenderSkeleton
 
     protected void append(LoggingEvent event)
     {
-        WeakReference<Pinboard> ref = _pinboards.get(event.getMDC("cell"));
+        WeakReference<Pinboard> ref =
+            _pinboards.get(event.getMDC(CDC.MDC_CELL));
         if (ref != null) {
             Pinboard pinboard = ref.get();
             if (pinboard != null) {

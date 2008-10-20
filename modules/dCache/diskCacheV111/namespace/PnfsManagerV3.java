@@ -1358,21 +1358,24 @@ public class PnfsManagerV3 extends CellAdapter {
 
             boolean done = false;
             while( !done ){
-            	CellMessage message = null;
+            	CellMessage message;
             	try {
-					message = _fifo.take();
-				} catch (InterruptedException e) {
-					done = true;
-					continue;
-				}
+                    message = _fifo.take();
+                } catch (InterruptedException e) {
+                    done = true;
+                    continue;
+                }
 
                 PnfsMessage pnfsMessage = (PnfsMessage)message.getMessageObject() ;
+                CDC.setMessageContext(message);
                 try{
                     processPnfsMessage( message , pnfsMessage );
                 }catch(Throwable processException ){
                     esay( "processPnfsMessage : "+
                             Thread.currentThread().getName()+" : "+
                             processException );
+                } finally {
+                    CDC.clearMessageContext();
                 }
             }
             say("Thread <"+Thread.currentThread().getName()+"> finished");

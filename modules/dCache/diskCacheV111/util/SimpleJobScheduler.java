@@ -14,6 +14,8 @@ import org.dcache.util.ReflectionUtils;
 import org.apache.log4j.Logger;
 import org.apache.log4j.NDC;
 
+import dmg.cells.nucleus.CDC;
+
 public class SimpleJobScheduler implements JobScheduler, Runnable
 {
     private final static Logger _log =
@@ -56,11 +58,13 @@ public class SimpleJobScheduler implements JobScheduler, Runnable
         private final int _id;
         private final int _priority;
         private Future _future;
+        private CDC _cdc;
 
         private SJob(Runnable runnable, int id, int priority) {
             _runnable = runnable;
             _id = id;
             _priority = priority;
+            _cdc = new CDC();
         }
 
         public int getJobId() {
@@ -116,14 +120,11 @@ public class SimpleJobScheduler implements JobScheduler, Runnable
             }
 
             try {
+                _cdc.apply();
                 NDC.push("job=" + _id);
-                PnfsId id = ReflectionUtils.getPnfsId(_runnable);
-                if (id != null) {
-                    NDC.push(id.toString());
-                }
                 _runnable.run();
             } finally {
-                NDC.remove();
+                CDC.clear();
                 synchronized (this) {
                     _status = REMOVED;
                 }

@@ -170,6 +170,8 @@ import diskCacheV111.util.UserAuthBase;
 import org.dcache.cells.AbstractCell;
 import org.dcache.cells.Option;
 
+import dmg.cells.nucleus.CDC;
+
 /**
  * Exception indicating an error during processing of an FTP command.
  */
@@ -4034,6 +4036,7 @@ public abstract class AbstractFtpDoorV1
         private final long _timeout;
         private final String _pool;
         private final int _moverId;
+        private final CDC _cdc;
         private boolean _stopped = false;
 
         public PerfMarkerTask(String pool, int moverId, long timeout)
@@ -4041,6 +4044,7 @@ public abstract class AbstractFtpDoorV1
             _pool = pool;
             _moverId = moverId;
             _timeout = timeout;
+            _cdc = new CDC();
 
             /* For the first time, send markers with zero counts -
              * requirement of the standard
@@ -4104,7 +4108,7 @@ public abstract class AbstractFtpDoorV1
         @Override
         public synchronized void run()
         {
-            initLoggingContext();
+            _cdc.apply();
 
             CellMessage msg =
                 new CellMessage(new CellPath(_pool),
@@ -4202,10 +4206,11 @@ public abstract class AbstractFtpDoorV1
             if (!_stopped) {
                 _commands.add(command);
                 if (!_running) {
+                    final CDC cdc = new CDC();
                     _running = true;
                     _executor.submit(new Runnable() {
                             public void run() {
-                                initLoggingContext();
+                                cdc.apply();
                                 String command = get();
                                 while (command != null) {
                                     execute(command);

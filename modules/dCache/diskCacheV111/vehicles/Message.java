@@ -2,10 +2,16 @@
 
 package diskCacheV111.vehicles;
 
+import dmg.cells.nucleus.HasDiagnosticContext;
+import org.dcache.util.ReflectionUtils;
+import diskCacheV111.util.PnfsId;
+
 // Base class for all Messages
 
-public class Message  implements java.io.Serializable {
-
+public class Message
+    implements java.io.Serializable,
+               HasDiagnosticContext
+{
     private boolean _replyRequired = false;
     private boolean _isReply       = false;
     private int     _returnCode    = 0;
@@ -67,5 +73,30 @@ public class Message  implements java.io.Serializable {
     }
     public void setId( long id ){ _id = id ; }
     public long getId(){ return _id ; }
+
+    /**
+     * Returns a human readable name of the message class. By default
+     * this is the short class name with the "Message" or "Msg" suffix
+     * removed.
+     */
+    public String getMessageName()
+    {
+        String name = getClass().getSimpleName();
+        int length = name.length();
+        if ((length > 7) && name.endsWith("Message")) {
+            name = name.substring(0, name.length() - 7);
+        } else if ((length > 3) && name.endsWith("Msg")) {
+            name = name.substring(0, name.length() - 3);
+        }
+
+        return name;
+    }
+
+    public String getDiagnosticContext()
+    {
+        String name = getMessageName();
+        PnfsId id = ReflectionUtils.getPnfsId(this);
+        return (id == null) ? name : (name + " " + id);
+    }
 }
 

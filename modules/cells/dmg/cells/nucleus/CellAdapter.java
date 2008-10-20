@@ -7,7 +7,6 @@ import java.lang.reflect.*;
 
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.apache.log4j.NDC;
 
 /**
  *
@@ -334,7 +333,7 @@ public class   CellAdapter
      * created from the calling thread automatically inherit this
      * information.
      */
-    public void initLoggingContext() { _nucleus.initLoggingContext(); }
+    public void initLoggingContext() { CDC.setCellsContext(_nucleus); }
 
     /**
      *  informs the CellCore to remove this cell.
@@ -969,12 +968,7 @@ public class   CellAdapter
                         _nucleus.esay("Couldn't revert PingMessage : "+ee);
                     }
                 } else {
-                    NDC.push(getMessageName(obj.getClass()));
-                    try {
-                        messageArrived(msg);
-                    } finally {
-                        NDC.pop();
-                    }
+                    messageArrived(msg);
                 }
             } else {
                 //
@@ -1141,14 +1135,5 @@ public class   CellAdapter
 
         return;
 
-    }
-
-    protected String getMessageName(Class c)
-    {
-        String cmd = c.getSimpleName();
-        if ((cmd.length() > 7) && cmd.endsWith("Message"))
-            cmd = cmd.substring(0, cmd.length() - 7);
-
-        return cmd;
     }
 }
