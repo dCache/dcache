@@ -372,7 +372,7 @@ public class SRMDispatcher {
 		throw e;
 	    }
 	    else { 
-		    System.err.println("srm client error: \n" + e.getMessage());
+		    System.err.println("srm client error: \n" + e.toString());
 		    System.exit(1);
 	    }
 	}

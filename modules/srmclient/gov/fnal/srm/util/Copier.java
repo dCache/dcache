@@ -490,9 +490,9 @@ public class Copier implements Runnable {
 	    int streams_num=configuration.getStreams_num();	
 	    boolean passive_server_mode=configuration.isPassiveServerMode(); 
             if(streams_num == 1){
-	            javaGridFtpCopy(from, to, credential,logger, false, true, passive_server_mode);
+	            javaGridFtpCopy(from, to, credential,logger, false, configuration.getDoSendCheckSum(), passive_server_mode);
 	    }else{
-		    javaGridFtpCopy(from, to, credential,logger , true, true, passive_server_mode);
+		    javaGridFtpCopy(from, to, credential,logger , true, configuration.getDoSendCheckSum(), passive_server_mode);
             }
             return;
         }
