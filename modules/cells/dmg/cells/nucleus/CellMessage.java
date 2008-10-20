@@ -22,6 +22,7 @@ public class CellMessage implements Cloneable , Serializable {
   private int         _hopCount      = 0 ;
   private boolean     _isAcknowledge = false ;
   private boolean     _isPersistent  = false ;
+  private Object      _session;
   private static final int   ORIGINAL_MODE  = 0 ;
   private static final int   STREAM_MODE    = 1 ;
   private static final int   DUMMY_MODE     = 2 ;
@@ -35,9 +36,10 @@ public class CellMessage implements Cloneable , Serializable {
      _mode         = ORIGINAL_MODE ;
      _umid         = new UOID() ;
      _lastUmid     = _umid ;
+     _session      = CDC.getSession();
   }
   @Override
-public String toString(){
+  public String toString(){
     StringBuffer sb = new StringBuffer() ;
     sb.append( "<CM: S=" ).append( _source.toString() ).
        append( ";D=").append( _destination.toString() ) ;
@@ -51,7 +53,10 @@ public String toString(){
     else
        sb.append( ";C=Stream" ) ;
 
-    sb.append( ";O=" ).append( _umid ).append( ";LO=" ).append( _lastUmid ).append( ">" ) ;
+    sb.append( ";O=" ).append( _umid ).append( ";LO=" ).append( _lastUmid );
+    if (_session != null)
+        sb.append(";SID=").append(_session);
+    sb.append( ">" ) ;
     return sb.toString() ;
   }
   @Override
@@ -81,6 +86,8 @@ public boolean equals( Object obj ){
      _lastUmid = lastUOID ;
      return ;
   }
+  public Object      getSession() { return _session; }
+  public void        setSession(Object session) { _session = session; }
   public CellPath    getDestinationAddress(){ return _destination ; }
   public CellPath    getSourceAddress(){ return _source ; }
   public CellPath    getDestinationPath(){ return _destination ; }
@@ -151,6 +158,7 @@ public boolean equals( Object obj ){
      _hopCount      = cm._hopCount ;
      _isPersistent  = cm._isPersistent ;
      _isAcknowledge = cm._isAcknowledge ;
+     _session       = cm._session;
   }
   private void _originalToStream( CellMessage cm )
       throws SerializationException {
@@ -193,6 +201,4 @@ public boolean equals( Object obj ){
      }
 
   }
-
-
 }
