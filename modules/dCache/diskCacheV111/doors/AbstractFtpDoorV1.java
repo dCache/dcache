@@ -162,6 +162,8 @@ import org.dcache.chimera.acl.enums.InetAddressType;
 
 import dmg.cells.nucleus.CDC;
 
+import org.apache.log4j.NDC;
+
 /**
  * Exception indicating an error during processing of an FTP command.
  */
@@ -872,6 +874,8 @@ public abstract class AbstractFtpDoorV1
     {
         super.init();
 
+        CDC.createSession();
+
         Args args = getArgs();
         _out      = new PrintWriter(_engine.getWriter());
         _client_data_host = _engine.getInetAddress().getHostName();
@@ -1152,6 +1156,7 @@ public abstract class AbstractFtpDoorV1
      */
     public void run()
     {
+        NDC.push(CDC.getSession().toString());
         try {
             try {
                 /* Notice that we do not close the input stream, as
@@ -1204,6 +1209,8 @@ public abstract class AbstractFtpDoorV1
              * called (although from a different thread).
              */
             kill();
+
+            NDC.remove();
         }
     }
 

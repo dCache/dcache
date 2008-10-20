@@ -1,20 +1,23 @@
 package dmg.cells.nucleus;
 
 import java.util.Stack;
+import java.io.Serializable;
 
 import org.apache.log4j.MDC;
 import org.apache.log4j.NDC;
+
+import dmg.util.TimebasedCounter;
 
 /**
  * The Cell Diagnostic Context, a utility class for working with the
  * Log4j NDC and MDC.
  *
  * Notice that the MDC is automatically inherited by child threads
- * upon creation. Thus the domain and cell name is inherited. The same
- * is not true for the NDC, which needs to be explicitly
- * copied. Special care must be taken when using shared thread pools,
- * as this can span several cells. For those the MDC should be
- * initialised per task, not per thread.
+ * upon creation. Thus the domain, cell name, and session identifier
+ * is inherited. The same is not true for the NDC, which needs to be
+ * explicitly copied. Special care must be taken when using shared
+ * thread pools, as this can span several cells. For those the MDC
+ * should be initialised per task, not per thread.
  *
  * The class serves two purposes:
  *
@@ -31,8 +34,13 @@ public class CDC
 {
     public final static String MDC_DOMAIN = "cells.domain";
     public final static String MDC_CELL = "cells.cell";
+    public final static String MDC_SESSION = "cells.session";
+
+    private final static TimebasedCounter _sessionCounter =
+        new TimebasedCounter();
 
     private final Stack _ndc;
+    private final Object _session;
     private final Object _cell;
     private final Object _domain;
 
@@ -41,6 +49,7 @@ public class CDC
      */
     public CDC()
     {
+        _session = MDC.get(MDC_SESSION);
         _cell = MDC.get(MDC_CELL);
         _domain = MDC.get(MDC_DOMAIN);
         _ndc = NDC.cloneStack();
@@ -66,8 +75,66 @@ public class CDC
     {
         setMdc(MDC_DOMAIN, _domain);
         setMdc(MDC_CELL, _cell);
+        setMdc(MDC_SESSION, _session);
         NDC.clear();
         NDC.inherit(_ndc);
+    }
+
+    /**
+     * Returns the session identifier stored in the MDC of the calling
+     * thread.
+     */
+    static public Object getSession()
+    {
+        return MDC.get(MDC_SESSION);
+    }
+
+    /**
+     * Sets the session in the MDC for the calling thread.
+     *
+     * @param session Session identifier. Must implement Serializable
+     * @throws SerializationException if session is not Serializable
+     */
+    static public void setSession(Object session)
+    {
+        if (!(session instanceof Serializable)) {
+            throw new SerializationException("Session identifier is not serializable");
+        }
+
+        setMdc(MDC_SESSION, session);
+    }
+
+    /**
+     * Creates and sets a new session identifier. The session
+     * identifier is based on static TimedbasedCounter and is thus
+     * with a high probability unique in this JVM.
+     *
+     * As long as each JVM uses its own prefix, the identifier will be
+     * unique over multible JVMs.
+     *
+     * @see dmg.util.TimedbasedCounter
+     */
+    static public void createSession(String prefix)
+    {
+        setSession(prefix + "-" + _sessionCounter.next());
+    }
+
+    /**
+     * Creates and sets a new session identifier. Uses the domain name
+     * stored in he MDC of the calling thread as a prefix. This
+     * guarantees uniqueness among a cells system (but see
+     * documentation of TimebasedCounter for the limits).
+     *
+     * @throws IllegalStateException if domain name is not set in MDC
+     * @see dmg.util.TimedbasedCounter
+     */
+    static public void createSession()
+    {
+        Object domain = MDC.get(MDC_DOMAIN);
+        if (domain == null)
+            throw new IllegalStateException("Missing domain name in MDC");
+
+        setSession(domain.toString());
     }
 
     /**
@@ -88,6 +155,11 @@ public class CDC
     static protected String getMessageContext(CellMessage envelope)
     {
         StringBuilder s = new StringBuilder();
+
+        Object session = envelope.getSession();
+        if (session != null) {
+            s.append(session).append(' ');
+        }
 
         s.append(envelope.getSourceAddress().getCellName());
 
@@ -110,6 +182,7 @@ public class CDC
     static public void setMessageContext(CellMessage envelope)
     {
         NDC.push(getMessageContext(envelope));
+        setMdc(MDC_SESSION, envelope.getSession());
     }
 
     /**
@@ -122,6 +195,7 @@ public class CDC
      */
     static public void clearMessageContext()
     {
+        MDC.remove(MDC_SESSION);
         NDC.pop();
     }
 
@@ -132,6 +206,7 @@ public class CDC
     {
         MDC.remove(MDC_DOMAIN);
         MDC.remove(MDC_CELL);
+        MDC.remove(MDC_SESSION);
         NDC.clear();
     }
 }
