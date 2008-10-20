@@ -9,6 +9,7 @@ import org.dcache.pool.repository.CacheEntry;
 import java.util.*;
 
 import org.apache.log4j.Logger;
+import org.apache.log4j.NDC;
 
 public class StorageClassInfo implements CacheFileAvailable
 {
@@ -181,6 +182,7 @@ public class StorageClassInfo implements CacheFileAvailable
 
         for (Entry entry : entries.subList(0, maxCount)) {
             _requestsSubmitted ++;
+            NDC.push(entry.pnfsId.toString());
             try {
                 //
                 // if store returns true, it didn't register a
@@ -194,6 +196,8 @@ public class StorageClassInfo implements CacheFileAvailable
             } catch (Throwable e) {
                 _errorCounter++;
                 _log.error("Problem submitting : " + entry + " : " + e);
+            } finally {
+                NDC.pop();
             }
         }
 

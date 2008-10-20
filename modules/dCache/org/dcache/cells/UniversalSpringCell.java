@@ -486,6 +486,20 @@ public class UniversalSpringCell
         return "";
     }
 
+    /** Returns a formated name of a message class. */
+    protected String getMessageName(Class c)
+    {
+        String name = c.getSimpleName();
+        int length = name.length();
+        if ((length > 7) && name.endsWith("Message")) {
+            name = name.substring(0, name.length() - 7);
+        } else if ((length > 3) && name.endsWith("Msg")) {
+            name = name.substring(0, name.length() - 3);
+        }
+
+        return name;
+    }
+
     public static final String hh_bean_messages =
         "[<bean>] # shows message types handled by beans";
     public String ac_bean_messages_$_0_1(Args args)
