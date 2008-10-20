@@ -55,7 +55,7 @@ public class Log4jShell
     {
         return name.equals("root")
             ? LogManager.getRootLogger()
-            : LogManager.exists(name);
+            : LogManager.getLogger(name);
     }
 
     private List<Logger> getLoggers()
@@ -129,6 +129,9 @@ public class Log4jShell
     }
 
     public final static String hh_log4j_logger_ls = "[-a]";
+    public final static String fh_log4j_logger_ls =
+        "Lists logger instances. Loggers that inherit all properties are\n" +
+        "not listed unless the -a option is specified.";
     public String ac_log4j_logger_ls(Args args)
     {
         final String format = "%-5s %-30s %s\n";
@@ -141,10 +144,14 @@ public class Log4jShell
         Collections.sort(loggers, new HierarchySort());
         for (Logger logger: loggers) {
             List<Appender> appenders = getAppenders(logger);
-            if (all || !appenders.isEmpty()) {
+            boolean hasAppenders = !appenders.isEmpty();
+            boolean isEndOfRoad = !logger.getAdditivity();
+            boolean hasLevel = (logger.getLevel() != null);
+            boolean isRoot = (logger.getName().equals("root"));
+            if (all || hasAppenders || isEndOfRoad || hasLevel || isRoot) {
                 f.format(format,
                          toString(logger.getLevel()),
-                         getNames(getAppenders(logger)),
+                         getNames(appenders),
                          logger.getName());
             }
         }
@@ -153,6 +160,9 @@ public class Log4jShell
 
     public final static String hh_log4j_logger_set =
         "<logger> -|OFF|FATAL|ERROR|WARN|INFO|DEBUG|ALL";
+    public final static String fh_log4j_logger_set =
+        "Sets log level of <logger>. A hyphen indicates that the log level\n" +
+        "is inherited from the parent logger. Remember to quote the hyphen.";
     public String ac_log4j_logger_set_$_2(Args args)
     {
         String name = args.argv(0);
@@ -167,6 +177,8 @@ public class Log4jShell
 
     public final static String hh_log4j_logger_attach =
         "<logger> <appender>";
+    public final static String fh_log4j_logger_attach =
+        "Attach <logger> to output module <appender>.";
     public String ac_log4j_logger_attach_$_2(Args args)
     {
         String name = args.argv(0);
@@ -186,6 +198,8 @@ public class Log4jShell
 
     public final static String hh_log4j_logger_detach =
         "<logger> <appender>";
+    public final static String fh_log4j_logger_detach =
+        "Detach <logger> from output module <appender>.";
     public String ac_log4j_logger_detach_$_2(Args args)
     {
         String name = args.argv(0);
@@ -199,6 +213,8 @@ public class Log4jShell
         return name + " detached from " + appender;
     }
 
+    public final static String fh_log4j_appender_ls =
+        "Lists all output modules.";
     public String ac_log4j_appender_ls(Args args)
     {
         final String format = "%-15s %s\n";
@@ -218,7 +234,10 @@ public class Log4jShell
     }
 
     public final static String hh_log4j_appender_set =
-        "<logger> -|OFF|FATAL|ERROR|WARN|INFO|DEBUG|ALL";
+        "<appender> -|OFF|FATAL|ERROR|WARN|INFO|DEBUG|ALL";
+    public final static String fh_log4j_appender_set =
+        "Sets the threshold of <appender>. Each output module can have a\n" +
+        "filter threshold. Messages below the threshold are not logged.";
     public String ac_log4j_appender_set_$_2(Args args)
     {
         String name = args.argv(0);
