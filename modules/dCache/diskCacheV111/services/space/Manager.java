@@ -4095,18 +4095,12 @@ public class Manager
 		}
 		if(file==null) {
                         StorageInfo storageInfo = selectPool.getStorageInfo();
-                        AccessLatency al = defaultLatency;
-                        RetentionPolicy rp = defaultPolicy;
+                        AccessLatency al = null;
+                        RetentionPolicy rp = null;
                         String defaultSpaceToken=null;
-                        if(storageInfo != null) {
-                                if(storageInfo.isSetAccessLatency()){
-                                        al  = storageInfo.getAccessLatency();
-                                }
-                                if(storageInfo.isSetRetentionPolicy()){
-                                        rp  = storageInfo.getRetentionPolicy();
-                                }
-                                defaultSpaceToken=storageInfo.getMap().get("writeToken");
-                        }
+                        al  = storageInfo.getAccessLatency();
+                        rp  = storageInfo.getRetentionPolicy();
+                        defaultSpaceToken=storageInfo.getMap().get("writeToken");
                         ProtocolInfo protocolInfo = selectPool.getProtocolInfo();
                         VOInfo voinfo = null;
                         if(protocolInfo instanceof GridProtocolInfo) {
