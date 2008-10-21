@@ -127,6 +127,9 @@ then
 	java=${ourHomeDir}/jre/bin/java
 fi
 
+# Add a java option for an endorsed directory
+java_options="${java_options} -Djava.endorsed.dirs=${ourHomeDir}/classes/endorsed"
+
 #
 #  echo "(Using classpath : $CLASSPATH )"
 #  echo "(Using librarypath : $LD_LIBRARY_PATH )"
