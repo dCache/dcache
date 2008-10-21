@@ -375,7 +375,7 @@ mkdir ${SRM_WEBAPP_DIR}/WEB-INF/lib
 #
 # copy jar files to srm webapp dir
 #
-for i in ${AXIS_WEBAPP_DIR}/WEB-INF/lib/*jar ${SRM_JARS_DIR}/glue/*jar ${SRM_JARS_DIR}/srm.jar ${SRM_JARS_DIR}/jdbc-drivers/*.jar ${SRM_JARS_DIR}/jdom/jdom.jar ${DCACHE_JARS_DIR}/dcache.jar ${DCACHE_JARS_DIR}/dcache-srm.jar ${SRM_JARS_DIR}/gplazma/*.jar ${DCACHE_JARS_DIR}/cells.jar ${DCACHE_JARS_DIR}/jpox/*.jar ${DCACHE_JARS_DIR}/smc/*.jar ${DCACHE_JARS_DIR}/terapaths/*.jar  ${DCACHE_JARS_DIR}/toplink/*.jar
+for i in ${AXIS_WEBAPP_DIR}/WEB-INF/lib/*jar ${SRM_JARS_DIR}/glue/*jar ${SRM_JARS_DIR}/srm.jar ${SRM_JARS_DIR}/jdbc-drivers/*.jar ${SRM_JARS_DIR}/jdom/jdom.jar ${DCACHE_JARS_DIR}/dcache.jar ${DCACHE_JARS_DIR}/dcache-srm.jar ${SRM_JARS_DIR}/glite/*.jar ${SRM_JARS_DIR}/gplazma/*.jar ${DCACHE_JARS_DIR}/cells.jar ${DCACHE_JARS_DIR}/jpox/*.jar ${DCACHE_JARS_DIR}/smc/*.jar ${DCACHE_JARS_DIR}/terapaths/*.jar  ${DCACHE_JARS_DIR}/toplink/*.jar
 do
    cmd="cp ${i} ${SRM_WEBAPP_DIR}/WEB-INF/lib"
 #   echo $cmd
