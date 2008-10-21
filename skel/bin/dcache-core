@@ -17,31 +17,96 @@ fi
 #      Checking node_config (and door_config)
 #  -----------------------------------------------------------------
 
-printConfig() {
-    key=$1
-    cat ${ourHomeDir}/etc/node_config \
-        ${ourHomeDir}/etc/door_config 2>/dev/null |
-    perl -e "
-      while (<STDIN>) { 
-         s/\#.*$// ;                        # Remove comments
-         s/\s*$// ;                         # Remove trailing space
-         if ( s/^\s*${key}\s*=*\s*//i ) {   # Remove key and equals
-            print;                          # Print if key found
-            last;                           # Only use first appearance
-         }
-      }
-    "
+
+yaim_config_file_get_value()
+{
+# Returns 0 on success
+# Returns 2 if key not found
+local FILE
+local Key
+local cursor
+local CursorLine
+local MatchLine
+local AllCursors
+local foundPotentialCursors
+local lineNumBefore
+local PreviousLine
+local MatchLine
+local RawCursorLine
+FILE=$1
+Key=$2
+if [ ! -f ${FILE} ] ; then
+    echo yaim_config_file_get_value called with no file, file=$FILE
+    exit 1
+fi
+AllCursors=`grep -n "^[	 ]*${Key}[	 ]*=" $FILE | cut -d: -f1 `
+if [ "${AllCursors}X" == "X" ] ; then
+  RET=""
+  return 2
+fi
+# Now iterate through all our matches 
+# check the line before is not terminated with \
+foundPotentialCursors=""
+for acursor in $AllCursors
+do
+  let lineNumBefore="${acursor}-1"
+  if [ "${lineNumBefore}" == "0" ] ; then
+    foundPotentialCursors="${acursor} ${foundPotentialCursors}"
+  else
+    # Following bash convention ignore all content after "#"
+    # including lines terminating in "\"
+    PreviousLine=`sed "${lineNumBefore}q;d" $FILE | sed 's/#.*$//'`
+    MatchLine="${PreviousLine%%"\\"}"
+    if [ "${PreviousLine}" == "${MatchLine}" ] ; then
+      foundPotentialCursors="${acursor} ${foundPotentialCursors}"
+    fi
+  fi
+done
+if [ "${foundPotentialCursors}X" == "X" ] ; then
+  RET=""
+  return 2
+fi
+# Since we reversed the order of the cursors while validating them
+# We can process only first valid cursor
+cursor=`echo ${foundPotentialCursors} | sed 's/ .*//'`
+
+RawCursorLine=`sed "${cursor}q;d" $FILE | cut -s -d= -f2- `
+CursorLine=`echo "${RawCursorLine}" | sed 's/#.*//'`
+if [ "${RawCursorLine}" == "${CursorLine}" ] ; then
+  # No comments on this line so check for terminating '\'
+  MatchLine="${CursorLine%%"\\"}\\"
+  RET="${CursorLine%%"\\"}"
+  while [ "${CursorLine}" == "${MatchLine}" ] 
+  do
+    # While last line character is "\"
+    let cursor+=1
+    RawCursorLine=`sed "${cursor}q;d" $FILE`
+    CursorLine=`echo "${RawCursorLine}" | sed 's/#.*//'`
+    if [ "${RawCursorLine}" != "${CursorLine}" ] ; then
+      # No comments on this line
+      RET="${RET} ${CursorLine}"
+      break
+    fi
+    MatchLine="${CursorLine%%"\\"}\\"
+    RET="$RET ${CursorLine%%"\\"}"
+  done
+else
+  # Comments on this line so no need to process "\"
+  RET=${CursorLine}
+fi
+# Now after all the processing remove starting and termianting white space
+RET=`echo $RET | sed 's/^[ 	]*\"\([^"]*\)\"[ 	]*$/\1/'`
 }
-
-
 
 
 dcacheInstallGetNameSpaceServer()
 {
   local namespaceServer
-  namespaceServer="`printConfig NAMESPACE_NODE`"
+  yaim_config_file_get_value ${ourHomeDir}/etc/node_config NAMESPACE_NODE
+  namespaceServer=$RET
   if [ -z "${namespaceServer}" ] ; then
-    namespaceServer="`printConfig ADMIN_NODE`"
+    yaim_config_file_get_value ${ourHomeDir}/etc/node_config ADMIN_NODE
+    namespaceServer=$RET
     if [ -z "${namespaceServer}" ] ; then
       echo "[WARNING] No 'NAMESPACE_NODE' or 'ADMIN_NODE' set in 'node_config' using 'localhost'"
       namespaceServer='localhost'
@@ -59,7 +124,8 @@ dcacheInstallGetNameSpaceServer()
 #     door   : door only
 #     pool   : pool only
 #
-nodeType=`printConfig NODE_TYPE`
+yaim_config_file_get_value ${ourHomeDir}/etc/node_config NODE_TYPE
+nodeType=$RET
 case ${nodeType} in
 	
 	admin|door|custom|pool)
@@ -79,11 +145,13 @@ case ${nodeType} in
 esac
 
 # To make shure to use the right dCache dir
-PNFS_ROOT=`printConfig PNFS_ROOT`
+yaim_config_file_get_value ${ourHomeDir}/etc/node_config PNFS_ROOT
+PNFS_ROOT=$RET
 
 
 # pnfs or chimera?
-NAMESPACE=`printConfig NAMESPACE`
+yaim_config_file_get_value ${ourHomeDir}/etc/node_config NAMESPACE
+NAMESPACE=$RET
 
 #  -----------------------------------------------------------------
 #      Checking dCacheSetup
@@ -122,8 +190,8 @@ fi
 fqHostname=`hostname`
 
 shortHostname=`hostname | awk -F. '{print $1}'`
-
-SERVER_ID=`printConfig SERVER_ID`
+yaim_config_file_get_value ${ourHomeDir}/etc/node_config SERVER_ID
+SERVER_ID=$RET
 if [ -z "${SERVER_ID}" ] ; then
     SERVER_ID=`hostname -d 2>/dev/null`
     if [ $? -ne 0 -o -z "${SERVER_ID}" ] ; then
@@ -138,7 +206,10 @@ case "$1" in
     start)
     	if [ "x${NAMESPACE}" != "xchimera" ] ; then
 	# regular pnfs  
-	
+	        yaim_config_file_get_value ${ourHomeDir}/etc/node_config GRIDFTP
+	        gridFtpUsed=$RET
+		yaim_config_file_get_value ${ourHomeDir}/etc/node_config SRM
+		SrmUsed=$RET
 		if [ ${nodeType} = admin ] ; then
 		    cp=`df ${PNFS_ROOT}/fs 2>/dev/null |grep "${PNFS_ROOT}" | awk '{print $2}'`
 		    if [ -z $cp ]; then
@@ -146,7 +217,7 @@ case "$1" in
                 	echo "        Make sure pnfs is running on this admin node. Exiting."
 			exit 1
 		    fi
-		elif [ "`printConfig GRIDFTP`" = yes -o "`printConfig GRIDFTP`" = y -o "`printConfig SRM`" = yes -o "`printConfig SRM`" = y  ] ; then
+		elif [ "${gridFtpUsed}" = yes -o "${gridFtpUsed}" = y -o "${SrmUsed}" = yes -o "${SrmUsed}" = y  ] ; then
 
 		    cp=`df ${PNFS_ROOT}/${SERVER_ID} 2>/dev/null |grep "${PNFS_ROOT}" | awk '{print $2}'`
 		    if [ -z $cp ]; then
@@ -173,6 +244,10 @@ case "$1" in
 	
 		case ${nodeType} in 
 			admin)
+			    yaim_config_file_get_value ${ourHomeDir}/etc/node_config InfoProvider
+			    InfoProviderUsed=$RET
+			    yaim_config_file_get_value ${ourHomeDir}/etc/node_config statistics
+			    StatisticsUsed=$RET
 			    ${ourHomeDir}/jobs/lm ${logParam} start
 			    ${ourHomeDir}/jobs/dCache ${logParam} start
 	    	    	    if [ "x${NAMESPACE}" = "xchimera" ] ; then
@@ -185,73 +260,104 @@ case "$1" in
 			    ${ourHomeDir}/jobs/httpd ${logParam} start
 			    ${ourHomeDir}/jobs/utility ${logParam} start
 				${ourHomeDir}/jobs/gPlazma -domain=gPlazma-${shortHostname}Domain ${logParam} start
-
-			    if [ "`printConfig InfoProvider`" = yes ] ; then
+			    if [ "${InfoProviderUsed}" = yes ] ; then
 				    ${ourHomeDir}/jobs/infoProvider ${logParam} start
-	    		fi
-				if [ "`printConfig statistics`" = yes ] ; then
+	    		    fi
+				if [ "${StatisticsUsed}" = yes ] ; then
 				    ${ourHomeDir}/jobs/statistics ${logParam} start
-	    		fi
+                            fi
 			    ;;
 			 custom)
-				if [ "`printConfig lmDomain`" = yes ] ; then
+				yaim_config_file_get_value ${ourHomeDir}/etc/node_config lmDomain
+				lmDomainUsed=$RET
+				yaim_config_file_get_value ${ourHomeDir}/etc/node_config poolManager
+				poolManagerUsed=$RET
+				yaim_config_file_get_value ${ourHomeDir}/etc/node_config pnfsManager
+				pnfsManagerUsed=$RET
+				if [ "${lmDomainUsed}" = yes ] ; then
 					${ourHomeDir}/jobs/lm ${logParam} start
 				fi
-				if [ "`printConfig poolManager`" = yes ] ; then
+				if [ "${poolManagerUsed}" = yes ] ; then
 					${ourHomeDir}/jobs/dCache ${logParam} start
 				fi
-				if [ "`printConfig pnfsManager`" = yes ] ; then
+				if [ "${pnfsManagerUsed}" = yes ] ; then
 					if [ "x${NAMESPACE}" = "xchimera" ] ; then
 						${ourHomeDir}/jobs/chimera ${logParam} start
 					else
 						${ourHomeDir}/jobs/pnfs ${logParam} start
 					fi
 				fi
-				if [ "`printConfig dirDomain`" = yes ] ; then
+				yaim_config_file_get_value ${ourHomeDir}/etc/node_config dirDomain
+				dirDomainUsed=$RET
+				if [ "${dirDomainUsed}" = yes ] ; then
 					${ourHomeDir}/jobs/dir ${logParam} start
 				fi
-				if [ "`printConfig adminDoor`" = yes ] ; then
+				yaim_config_file_get_value ${ourHomeDir}/etc/node_config adminDoor
+				adminDoorUsed=$RET
+				if [ "${adminDoorUsed}" = yes ] ; then
 					${ourHomeDir}/jobs/adminDoor ${logParam} start
 				fi
-				if [ "`printConfig httpDomain`" = yes ] ; then
+				yaim_config_file_get_value ${ourHomeDir}/etc/node_config httpDomain
+				httpDomainUsed=$RET
+				if [ "${httpDomainUsed}" = yes ] ; then
 					${ourHomeDir}/jobs/httpd ${logParam} start
 				fi
-		   		if [ "`printConfig utilityDomain`" = yes ] ; then
+				yaim_config_file_get_value ${ourHomeDir}/etc/node_config utilityDomain
+				utilityDomainUsed=$RET
+		   		if [ "${utilityDomainUsed}" = yes ] ; then
 					${ourHomeDir}/jobs/utility ${logParam} start
 				fi
-			    if [ "`printConfig InfoProvider`" = yes ] ; then
+				yaim_config_file_get_value ${ourHomeDir}/etc/node_config InfoProvider
+				InfoProviderUsed=$RET
+                                if [ "${InfoProviderUsed}" = yes ] ; then
 				    ${ourHomeDir}/jobs/infoProvider ${logParam} start
-	    		fi
-				if [ "`printConfig statistics`" = yes ] ; then
+                                fi
+				yaim_config_file_get_value ${ourHomeDir}/etc/node_config statistics
+				statisticsUsed=$RET
+				if [ "${statisticsUsed}" = yes ] ; then
 				    ${ourHomeDir}/jobs/statistics ${logParam} start
-	    		fi
-				if [ "`printConfig gPlazmaService`" = yes ] ; then
+                                fi
+				yaim_config_file_get_value ${ourHomeDir}/etc/node_config gPlazmaService
+				gPlazmaServiceUsed=$RET
+				if [ "${gPlazmaServiceUsed}" = yes ] ; then
 					${ourHomeDir}/jobs/gPlazma -domain=gPlazma-${shortHostname}Domain ${logParam} start
 				fi
 			 	;;
 		esac
 
-
-		if [ "`printConfig ReplicaManager`" = yes ] ; then
+                yaim_config_file_get_value ${ourHomeDir}/etc/node_config ReplicaManager
+                ReplicaManagerUsed=$RET
+		
+		if [ "${ReplicaManagerUsed}" = yes ] ; then
 		    ${ourHomeDir}/jobs/replica ${logParam} start
 		fi
-		if [ "`printConfig DCAP`" = yes ] ; then
+		yaim_config_file_get_value ${ourHomeDir}/etc/node_config DCAP
+		DcapUsed=$RET
+		if [ "${DcapUsed}" = yes ] ; then
 		    for i in ${ourHomeDir}/config/door*Setup;
                     do
                       door=`echo $i | sed -e "s#.*door\(.*\)Setup#\1#"`;
                       ${ourHomeDir}/jobs/door$door -domain=dcap$door-${shortHostname}Domain ${logParam} start ;
                     done
 		fi
-		if [ "`printConfig XROOTD`" = yes ] ; then
+		yaim_config_file_get_value ${ourHomeDir}/etc/node_config XROOTD
+		XrootdUsed=$RET
+		if [ "${XrootdUsed}" = yes ] ; then
 		    ${ourHomeDir}/jobs/xrootdDoor -domain=xrootd-${shortHostname}Domain ${logParam} start
-		fi	
-		if [ "`printConfig GRIDFTP`" = yes ] ; then
+		fi
+		yaim_config_file_get_value ${ourHomeDir}/etc/node_config GRIDFTP
+		GridFtpUsed=$RET
+		if [ "${GridFtpUsed}" = yes ] ; then
 		    ${ourHomeDir}/jobs/gridftpdoor -domain=gridftp-${shortHostname}Domain ${logParam} start
 		fi
-		if [ "`printConfig GSIDCAP`" = yes ] ; then
+		yaim_config_file_get_value ${ourHomeDir}/etc/node_config GSIDCAP
+		GsiDcapUsed=$RET
+		if [ "${GsiDcapUsed}" = yes ] ; then
 		    ${ourHomeDir}/jobs/gsidcapdoor -domain=gsidcap-${shortHostname}Domain ${logParam} start
 		fi
-		if [ "`printConfig SRM`" = yes ] ; then
+		yaim_config_file_get_value ${ourHomeDir}/etc/node_config SRM
+		SrmUsed=$RET
+		if [ "${SrmUsed}" = yes ] ; then
 		    ${ourHomeDir}/bin/dcache-srm start
 		fi
 		;;
@@ -259,22 +365,34 @@ case "$1" in
     stop)
             
 		echo "Shutting down dcache services: "
-		if [ "`printConfig GRIDFTP`" = yes ] ; then
+		yaim_config_file_get_value ${ourHomeDir}/etc/node_config GRIDFTP
+		GridFtpUsed=$RET
+		if [ "${GridFtpUsed}" = yes ] ; then
 		    ${ourHomeDir}/jobs/gridftpdoor -domain=gridftp-${shortHostname}Domain ${logParam} stop
 		fi
-		if [ "`printConfig GSIDCAP`" = yes ] ; then
+		yaim_config_file_get_value ${ourHomeDir}/etc/node_config GSIDCAP
+		GsiDcapUsed=$RET
+		if [ "${GsiDcapUsed}" = yes ] ; then
 		    ${ourHomeDir}/jobs/gsidcapdoor -domain=gsidcap-${shortHostname}Domain ${logParam} stop
 		fi
-		if [ "`printConfig SRM`" = yes ] ; then
+		yaim_config_file_get_value ${ourHomeDir}/etc/node_config SRM
+		SrmUsed=$RET
+		if [ "${SrmUsed}" = yes ] ; then
 		    ${ourHomeDir}/bin/dcache-srm stop
 		fi
-		if [ "`printConfig XROOTD`" = yes ] ; then
+		yaim_config_file_get_value ${ourHomeDir}/etc/node_config XROOTD
+		XrootdUsed=$RET
+		if [ "${XrootdUsed}" = yes ] ; then
 		    ${ourHomeDir}/jobs/xrootdDoor -domain=xrootd-${shortHostname}Domain ${logParam} stop
-		fi		
-		if [ "`printConfig ReplicaManager`" = yes ] ; then
+		fi
+		yaim_config_file_get_value ${ourHomeDir}/etc/node_config ReplicaManager
+		ReplicaManagerUsed=$RET		
+		if [ "${ReplicaManagerUsed}" = yes ] ; then
 		    ${ourHomeDir}/jobs/replica stop
 		fi
-		if [ "`printConfig DCAP`" = yes ] ; then
+		yaim_config_file_get_value ${ourHomeDir}/etc/node_config DCAP
+		DcapUsed=$RET
+		if [ "${DcapUsed}" = yes ] ; then
 		    for i in ${ourHomeDir}/config/door*Setup;
                     do
                       door=`echo $i | sed -e "s#.*door\(.*\)Setup#\1#"`;
@@ -285,10 +403,14 @@ case "$1" in
 		case ${nodeType} in 
 		
 			admin)
-				if [ "`printConfig statistics`" = yes ] ; then
+			        yaim_config_file_get_value ${ourHomeDir}/etc/node_config statistics
+				statisticsUsed=$RET
+				if [ "${statisticsUsed}" = yes ] ; then
 				    ${ourHomeDir}/jobs/statistics ${logParam} stop
 	    		fi
-				if [ "`printConfig InfoProvider`" = yes ] ; then
+				yaim_config_file_get_value ${ourHomeDir}/etc/node_config InfoProvider
+				InfoProviderUsed=$RET
+				if [ "${InfoProviderUsed}" = yes ] ; then
 				    ${ourHomeDir}/jobs/infoProvider ${logParam} stop
 	    		fi
 				${ourHomeDir}/jobs/gPlazma -domain=gPlazma-${shortHostname}Domain ${logParam} stop	    		
@@ -305,38 +427,59 @@ case "$1" in
 				${ourHomeDir}/jobs/lm stop
 				;;
 		   custom)
-				if [ "`printConfig gPlazmaService`" = yes ] ; then
+				yaim_config_file_get_value ${ourHomeDir}/etc/node_config gPlazmaService
+				gPlazmaServiceUsed=$RET
+				if [ "${gPlazmaServiceUsed}" = yes ] ; then
 					${ourHomeDir}/jobs/gPlazma -domain=gPlazma-${shortHostname}Domain ${logParam} stop
-				fi		   
-				if [ "`printConfig statistics`" = yes ] ; then
+				fi
+				yaim_config_file_get_value ${ourHomeDir}/etc/node_config statistics
+				statisticsUsed=$RET		   
+				if [ "${statisticsUsed}" = yes ] ; then
 				    ${ourHomeDir}/jobs/statistics ${logParam} stop
 	    		fi
-				if [ "`printConfig InfoProvider`" = yes ] ; then
+				yaim_config_file_get_value ${ourHomeDir}/etc/node_config InfoProvider
+				InfoProviderUsed=$RET
+				if [ "${InfoProviderUsed}" = yes ] ; then
+				
 				    ${ourHomeDir}/jobs/infoProvider ${logParam} stop
 	    		fi
-		   		if [ "`printConfig utilityDomain`" = yes ] ; then
+		   		yaim_config_file_get_value ${ourHomeDir}/etc/node_config utilityDomain
+				utilityDomainUsed=$RET
+		   		if [ "${utilityDomainUsed}" = yes ] ; then
 					${ourHomeDir}/jobs/utility stop
 				fi
-				if [ "`printConfig httpDomain`" = yes ] ; then
+				yaim_config_file_get_value ${ourHomeDir}/etc/node_config httpDomain
+				httpDomainUsed=$RET
+				if [ "${httpDomainUsed}" = yes ] ; then
 					${ourHomeDir}/jobs/httpd stop
 				fi
-				if [ "`printConfig pnfsManager`" = yes ] ; then
+				yaim_config_file_get_value ${ourHomeDir}/etc/node_config pnfsManager
+				pnfsManagerUsed=$RET
+				if [ "${pnfsManagerUsed}" = yes ] ; then
 					if [ "x${NAMESPACE}" = "xchimera" ] ; then
 						${ourHomeDir}/jobs/chimera ${logParam} stop
 					else
 						${ourHomeDir}/jobs/pnfs ${logParam} stop
 					fi
 				fi
-				if [ "`printConfig adminDoor`" = yes ] ; then
+				yaim_config_file_get_value ${ourHomeDir}/etc/node_config adminDoor
+				adminDoorUsed=$RET
+				if [ "${adminDoorUsed}" = yes ] ; then
 					${ourHomeDir}/jobs/adminDoor stop
 				fi
-				if [ "`printConfig dirDomain`" = yes ] ; then
+				yaim_config_file_get_value ${ourHomeDir}/etc/node_config dirDomain
+				dirDomainUsed=$RET
+				if [ "${dirDomainUsed}" = yes ] ; then
 					${ourHomeDir}/jobs/dir stop
 				fi
-				if [ "`printConfig poolManager`" = yes ] ; then
+				yaim_config_file_get_value ${ourHomeDir}/etc/node_config poolManager
+				poolManagerUsed=$RET
+				if [ "${poolManagerUsed}" = yes ] ; then
 					${ourHomeDir}/jobs/dCache stop
 				fi
-				if [ "`printConfig lmDomain`" = yes ] ; then
+				yaim_config_file_get_value ${ourHomeDir}/etc/node_config lmDomain
+				lmDomainUsed=$RET
+				if [ "${lmDomainUsed}" = yes ] ; then
 					${ourHomeDir}/jobs/lm stop
 				fi
 		   		;;
