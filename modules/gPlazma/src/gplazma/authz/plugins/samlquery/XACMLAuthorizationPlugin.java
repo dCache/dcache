@@ -6,14 +6,18 @@ package gplazma.authz.plugins.samlquery;
 import java.util.*;
 import java.lang.*;
 import java.net.Socket;
+import java.security.cert.X509Certificate;
 
 import gplazma.authz.AuthorizationException;
 import gplazma.authz.util.HostUtil;
+import gplazma.authz.util.X509CertUtil;
 import gplazma.authz.records.gPlazmaAuthorizationRecord;
 import org.opensciencegrid.authz.xacml.common.LocalId;
 import org.opensciencegrid.authz.xacml.common.XACMLConstants;
 import org.opensciencegrid.authz.xacml.client.MapCredentialsClient;
 import org.apache.log4j.*;
+import org.glite.security.voms.ac.AttributeCertificate;
+import org.glite.security.voms.VOMSAttribute;
 
 /**
  *
@@ -38,18 +42,50 @@ public class XACMLAuthorizationPlugin extends SAMLAuthorizationPlugin {
         getLogger().debug("XACMLAuthorizationPlugin: authRequestID " + authRequestID + " Plugin now loaded: saml-vo-mapping");
     }
 
-    public gPlazmaAuthorizationRecord authorize(String X509Subject, String role, String desiredUserName, String serviceUrl, Socket socket)
+    public gPlazmaAuthorizationRecord authorize(String X509Subject, String fqan, X509Certificate[] chain, String desiredUserName, String serviceUrl, Socket socket)
             throws AuthorizationException {
 
+        String CondorCanonicalNameID=null;
+        String X509SubjectIssuer=null;
+        String VO;
+        String VOMSSigningSubject=null;
+        String VOMSSigningIssuer=null;
+
+        String CertificateSerialNumber=null; //todo make Integer
+        String CASerialNumber=null; //todo make Integer
+        String VOMS_DNS_Port=null;
+        String CertificatePoliciesOIDs=null;
+        String CertificateChain=null; //todo make byte[]
+        String resourceType=XACMLConstants.RESOURCE_SE;
+        String resourceDNSHostName;
+        String resourceX509ID;
+        String resourceX509Issuer;
+        String requestedaction=XACMLConstants.ACTION_ACCESS;
+        String RSL_string=null;
         MapCredentialsClient xacmlClient;
         LocalId localId;
-        String resourceDNSName;
-        String resourceX509Name;
-        String resourceX509Issuer;
         String key = X509Subject;
 
         try {
-            resourceX509Name = getTargetServiceName();
+            X509SubjectIssuer = X509CertUtil.getSubjectX509Issuer(chain);
+        } catch (Exception e) {
+            getLogger().warn("Could not determine subject-x509-issuer : " + e.getMessage());
+        }
+
+        VOMSAttribute vomsAttr=null;
+        try {
+            vomsAttr = X509CertUtil.getVOMSAttribute(chain, fqan);
+        } catch (Exception e) {
+            getLogger().warn("Could not attribute certificate for fqan : " + fqan + "\n" + e.getMessage());
+        }
+
+        VO = (vomsAttr==null) ? null : vomsAttr.getVO();
+
+        String X500IssuerName = vomsAttr.getAC().getIssuer().toString();
+        VOMSSigningSubject = X509CertUtil.toGlobusDN(X500IssuerName);
+
+        try {
+            resourceX509ID = getTargetServiceName();
         }
         catch (Exception e) {
             getLogger().error("Exception in finding targetServiceName : " + e);
@@ -57,21 +93,21 @@ public class XACMLAuthorizationPlugin extends SAMLAuthorizationPlugin {
         }
 
         if(getCacheLifetime()>0) {
-            key = (role==null) ? key : key.concat(role);
+            key = (fqan==null) ? key : key.concat(fqan);
             TimedLocalId tlocalId = getUsernameMapping(key);
             if( tlocalId!=null && tlocalId.age() < getCacheLifetime() &&
-                    tlocalId.sameServiceName(resourceX509Name) &&
+                    tlocalId.sameServiceName(resourceX509ID) &&
                     tlocalId.sameDesiredUserName(desiredUserName)) {
-                getLogger().info("Using cached mapping for User with DN: " + X509Subject + " and Role " + role);
+                getLogger().info("Using cached mapping for User with DN: " + X509Subject + " and Role " + fqan);
                 getLogger().debug("with Desired user name: " + desiredUserName);
 
-                return getgPlazmaAuthorizationRecord(tlocalId.getLocalId(), X509Subject, role);
+                return getgPlazmaAuthorizationRecord(tlocalId.getLocalId(), X509Subject, fqan);
             }
         }
 
         try {
             String[] hosts = HostUtil.getHosts();
-            resourceDNSName = hosts.length>0 ? hosts[0] : null;
+            resourceDNSHostName = hosts.length>0 ? hosts[0] : null;
         } catch (Exception e) {
             getLogger().error("Exception in finding targetServiceName : " + e);
             throw new AuthorizationException(e.toString());
@@ -85,30 +121,30 @@ public class XACMLAuthorizationPlugin extends SAMLAuthorizationPlugin {
             throw new AuthorizationException(e.toString());
         }
 
-        getLogger().info("Requesting mapping for User with DN: " + X509Subject + " and Role " + role);
+        getLogger().info("Requesting mapping for User with DN: " + X509Subject + " and Role " + fqan);
         getLogger().debug("with Desired user name: " + desiredUserName);
 
         getLogger().debug("Mapping Service URL configuration: " + getMappingServiceURL());
         try {
             xacmlClient = new MapCredentialsClient();
             xacmlClient.setX509Subject(X509Subject);
-            //xacmlClient.setCondorCanonicalNameID();
-            //xacmlClient.setX509SubjectIssuer();
-            //xacmlClient.setVO();
-            //xacmlClient.setVOMSSigningSubject();
-            //xacmlClient.setVOMSSigningIssuer();
-            xacmlClient.setFqan(role);
-            //xacmlClient.setCertificateSerialNumber(); //todo make Integer
-            //xacmlClient.setCASerialNumber(); //todo make Integer
-            //xacmlClient.setVOMS_DNS_Port();
-            //xacmlClient.setCertificatePoliciesOIDs();
-            //xacmlClient.setCertificateChain(); //todo make byte[]
-            xacmlClient.setResourceType(XACMLConstants.RESOURCE_SE);
-            xacmlClient.setResourceDNSHostName(resourceDNSName);
-            xacmlClient.setResourceX509ID(resourceX509Name);
+            xacmlClient.setCondorCanonicalNameID(CondorCanonicalNameID);
+            xacmlClient.setX509SubjectIssuer(X509SubjectIssuer);
+            xacmlClient.setVO(VO);
+            xacmlClient.setVOMSSigningSubject(VOMSSigningSubject);
+            xacmlClient.setVOMSSigningIssuer(VOMSSigningIssuer);
+            xacmlClient.setFqan(fqan);
+            xacmlClient.setCertificateSerialNumber(CertificateSerialNumber); //todo make Integer
+            xacmlClient.setCASerialNumber(CASerialNumber); //todo make Integer
+            xacmlClient.setVOMS_DNS_Port(VOMS_DNS_Port);
+            xacmlClient.setCertificatePoliciesOIDs(CertificatePoliciesOIDs);
+            xacmlClient.setCertificateChain(CertificateChain); //todo make byte[]
+            xacmlClient.setResourceType(resourceType);
+            xacmlClient.setResourceDNSHostName(resourceDNSHostName);
+            xacmlClient.setResourceX509ID(resourceX509ID);
             xacmlClient.setResourceX509Issuer(resourceX509Issuer);
-            xacmlClient.setRequestedaction(XACMLConstants.ACTION_ACCESS);
-            //xacmlClient.setRSL_string();
+            xacmlClient.setRequestedaction(requestedaction);
+            xacmlClient.setRSL_string(RSL_string);
         } catch (Exception e) {
             getLogger().error("Exception in XACML mapping client instantiation: " + e);
             throw new AuthorizationException(e.toString());
@@ -123,20 +159,20 @@ public class XACMLAuthorizationPlugin extends SAMLAuthorizationPlugin {
         }
 
         if (localId == null) {
-            String denied = DENIED_MESSAGE + ": No XACML mapping retrieved service for DN " + X509Subject + " and role " + role;
+            String denied = DENIED_MESSAGE + ": No XACML mapping retrieved service for DN " + X509Subject + " and role " + fqan;
             getLogger().warn(denied);
             throw new AuthorizationException(denied);
         }
 
-        gPlazmaAuthorizationRecord authRecord = getgPlazmaAuthorizationRecord(localId, X509Subject, role);
+        gPlazmaAuthorizationRecord authRecord = getgPlazmaAuthorizationRecord(localId, X509Subject, fqan);
 
         if(authRecord==null) {
-            String denied = DENIED_MESSAGE + ": No authorization record found for username " + localId.getUserName() + " mapped from " + X509Subject + " and role " + role;
+            String denied = DENIED_MESSAGE + ": No authorization record found for username " + localId.getUserName() + " mapped from " + X509Subject + " and role " + fqan;
             getLogger().warn(denied);
             throw new AuthorizationException(denied);
         }
 
-        if(getCacheLifetime()>0) putUsernameMapping(key, new TimedLocalId(localId, resourceX509Name, desiredUserName));
+        if(getCacheLifetime()>0) putUsernameMapping(key, new TimedLocalId(localId, resourceX509ID, desiredUserName));
 
         return authRecord;
     }
@@ -179,6 +215,38 @@ public class XACMLAuthorizationPlugin extends SAMLAuthorizationPlugin {
             String denied = DENIED_MESSAGE + ": uid or gid from mapping service did not match uid or gid of authorization record";
             getLogger().warn(denied);
             throw new AuthorizationException(denied);
+        }
+
+
+        // If the authorization service returned secondary GIDs, add them to the GIDs obtained from the local policy.
+        String[] secndgids = localId.getSecondaryGIDs();
+        if (secndgids !=null && secndgids.length > 0) {
+            int[] authzgids = authRecord.getGIDs();
+            LinkedHashSet<String> allGIDs = new LinkedHashSet<String>(authzgids.length + secndgids.length);
+            for (int gidl : authzgids) {
+                allGIDs.add(Integer.toString(gidl));
+            }
+            allGIDs.addAll(Arrays.asList(secndgids));
+            int numGIDs = allGIDs.size();
+            if(numGIDs != authzgids.length) {
+                int[] newGIDs = new int[numGIDs];
+                Iterator<String> GIDsIter = allGIDs.iterator();
+                int i=0;
+                while (GIDsIter.hasNext()) {
+                    newGIDs[i++] = Integer.decode(GIDsIter.next());
+                }
+                authRecord =  new gPlazmaAuthorizationRecord(authRecord.getUsername(),
+                        authRecord.isReadOnly(),
+                        authRecord.getPriority(),
+                        authRecord.getUID(),
+                        newGIDs,
+                        authRecord.getHome(),
+                        authRecord.getRoot(),
+                        authRecord.getFsRoot(),
+                        authRecord.getSubjectDN(),
+                        authRecord.getFqan(),
+                        authRecord.getRequestID());
+            }
         }
 
         return authRecord;

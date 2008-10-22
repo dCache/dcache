@@ -12,6 +12,7 @@ package gplazma.authz.plugins.gridmapfile;
 import java.util.*;
 import java.lang.*;
 import java.net.Socket;
+import java.security.cert.X509Certificate;
 
 import org.ietf.jgss.GSSContext;
 import org.ietf.jgss.GSSName;
@@ -59,10 +60,10 @@ public class GridMapFileAuthzPlugin extends RecordMappingPlugin {
             throw new AuthorizationException(gsse.toString());
         }
 
-        return authorize(subjectDN, null, desiredUserName, serviceUrl, socket);
+        return authorize(subjectDN, null, null, desiredUserName, serviceUrl, socket);
     }
 
-    public gPlazmaAuthorizationRecord authorize(String subjectDN, String role, String desiredUserName, String serviceUrl, Socket socket)
+    public gPlazmaAuthorizationRecord authorize(String subjectDN, String role, X509Certificate[] chain, String desiredUserName, String serviceUrl, Socket socket)
             throws AuthorizationException {
 
         GridMapFileHandler gridmapServ;

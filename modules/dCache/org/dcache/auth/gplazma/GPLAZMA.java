@@ -1022,7 +1022,7 @@ public class GPLAZMA extends CellAdapter {
       if(_user.equals(GLOBUS_URL_COPY_DEFAULT_USER)) {
         log.debug("special case , user is " + _user);
         try {
-          _user_auths = authServ.authorize(subjectDN, roles, null, null, null);
+          _user_auths = authServ.authorize(subjectDN, roles, null, null, null, null);
         } catch ( AuthorizationException ase ) {
           throw ase;
         } catch ( Exception e ) {
@@ -1035,7 +1035,7 @@ public class GPLAZMA extends CellAdapter {
         }
       } else {
         try {
-          _user_auths = authServ.authorize(subjectDN, roles, _user, null, null);
+          _user_auths = authServ.authorize(subjectDN, roles, null, _user, null, null);
         } catch ( AuthorizationException ase ) {
           throw ase;
         }
@@ -1049,7 +1049,7 @@ public class GPLAZMA extends CellAdapter {
     while (recordsIter.hasNext()) {
       gPlazmaAuthorizationRecord rec = recordsIter.next();
       String GIDS_str = Arrays.toString(rec.getGIDs());
-      log.warn("authorized " +  rec.getUsername() + " " + rec.getUID() + " " + GIDS_str + " " + rec.getRoot() + " for " + subjectDN);
+      log.warn("authorized " +  rec.getUsername() + " " + rec.getUID() + " " + GIDS_str + " " + rec.getRoot() + " for DN " + subjectDN + " and role " + rec.getFqan());
     }
 
     return _user_auths;
@@ -1083,9 +1083,9 @@ public class GPLAZMA extends CellAdapter {
       try {
         _user_auths = authServ.authorize(chain, null, null, null);
       } catch ( AuthorizationException ase ) {
-        throw new AuthorizationException("caught exception " + ase.getMessage());
+        throw new AuthorizationException("caught exception: " + ase.getMessage());
       } catch ( Exception e ) {
-        throw new AuthorizationException("caught exception " + e.getMessage());
+        throw new AuthorizationException("caught exception: " + e.getMessage());
       }
 
       if(_user_auths.isEmpty()) {
@@ -1115,7 +1115,7 @@ public class GPLAZMA extends CellAdapter {
     while (recordsIter.hasNext()) {
       gPlazmaAuthorizationRecord rec = recordsIter.next();
       String GIDS_str = Arrays.toString(rec.getGIDs());
-      log.warn("authorized " +  rec.getUsername() + " " + rec.getUID() + " " + GIDS_str + " " + rec.getRoot() + " for " + subjectDN);
+      log.warn("authorized " +  rec.getUsername() + " " + rec.getUID() + " " + GIDS_str + " " + rec.getRoot() + " for DN " + subjectDN + " and role " + rec.getFqan());
     }
     return _user_auths;
   }
@@ -1185,7 +1185,7 @@ public class GPLAZMA extends CellAdapter {
     while (recordsIter.hasNext()) {
       gPlazmaAuthorizationRecord rec = recordsIter.next();
       String GIDS_str = Arrays.toString(rec.getGIDs());
-      log.warn("authorized " +  rec.getUsername() + " " + rec.getUID() + " " + GIDS_str + " " + rec.getRoot() + " for " + GSSIdentity);
+      log.warn("authorized " +  rec.getUsername() + " " + rec.getUID() + " " + GIDS_str + " " + rec.getRoot() + " for DN " + GSSIdentity + " and role " + rec.getFqan());
     }
 
     return _user_auths;

@@ -9,6 +9,7 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.net.Socket;
 import java.net.URL;
+import java.security.cert.X509Certificate;
 
 import gplazma.authz.records.gPlazmaAuthorizationRecord;
 import gplazma.authz.AuthorizationException;
@@ -54,7 +55,7 @@ public class SAML1AuthorizationPlugin extends SAMLAuthorizationPlugin {
         getLogger().error("SAML1AuthorizationPlugin: authRequestID " + getAuthRequestID() + " " + s);
     }
 
-    public gPlazmaAuthorizationRecord authorize(String subjectDN, String role, String desiredUserName, String serviceUrl, Socket socket)
+    public gPlazmaAuthorizationRecord authorize(String subjectDN, String role, X509Certificate[] chain, String desiredUserName, String serviceUrl, Socket socket)
             throws AuthorizationException {
 
         PRIMAAuthzModule authVO;

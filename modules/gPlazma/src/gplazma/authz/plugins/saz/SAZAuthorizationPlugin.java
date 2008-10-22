@@ -102,7 +102,7 @@ public class SAZAuthorizationPlugin extends LoggingPlugin {
     return record;
   }
 
-  public gPlazmaAuthorizationRecord authorize(String subjectDN, String role, String desiredUserName, String serviceUrl, Socket socket)
+  public gPlazmaAuthorizationRecord authorize(String subjectDN, String role, X509Certificate[] chain, String desiredUserName, String serviceUrl, Socket socket)
 	throws AuthorizationException {
     return null;
   }

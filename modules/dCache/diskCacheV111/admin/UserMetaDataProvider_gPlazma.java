@@ -169,7 +169,7 @@ public class UserMetaDataProvider_gPlazma implements UserMetaDataProvider {
         	}else{
         		// module
                 LinkedList<gPlazmaAuthorizationRecord> gauthlist = new LinkedList <gPlazmaAuthorizationRecord>();
-                gauthlist.add(_authCtrl.authorize(userPrincipal, userRole, null, null, null));
+                gauthlist.add(_authCtrl.authorize(userPrincipal, userRole, null, null, null, null));
                 authRecord = RecordConvert.gPlazmaToAuthorizationRecord(gauthlist);
         	}
 

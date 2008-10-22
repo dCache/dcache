@@ -131,6 +131,7 @@ import gplazma.authz.plugins.AuthorizationPlugin;
 import gplazma.authz.plugins.saz.SAZAuthorizationPlugin;
 import gplazma.authz.records.gPlazmaAuthorizationRecord;
 import gplazma.authz.util.X509CertUtil;
+import gplazma.authz.util.HostUtil;
 
 /**
  *
@@ -279,7 +280,7 @@ public class AuthorizationController {
                 sazclient = new SAZAuthorizationPlugin(authRequestID);
                 //plugin_loader.forwardLogLevel(sazclient);
                 sazclient.setLogLevel(log.getLevel());
-                context= X509CertUtil.getServiceContext(service_cert, service_key, trusted_cacerts);
+                context= HostUtil.getServiceContext(service_cert, service_key, trusted_cacerts);
                 //context=getUserContext("/tmp/x509up_u500");
                 sazsocket = X509CertUtil.getGsiClientSocket(authConfig.getSazServerHost(),
                         Integer.parseInt(authConfig.getSazServerPort()), (ExtendedGSSContext) context);
@@ -337,11 +338,11 @@ public class AuthorizationController {
             else throw new AuthorizationException("for subject DN " + subjectDN + " " + msg);
         }
         
-        return authorize(subjectDN, roles, desiredUserName, serviceUrl, socket);
+        return authorize(subjectDN, roles, chain, desiredUserName, serviceUrl, socket);
         
     }
     
-    public LinkedList <gPlazmaAuthorizationRecord> authorize(String subjectDN, Iterable <String> roles, String desiredUserName, String serviceUrl, Socket socket)
+    public LinkedList <gPlazmaAuthorizationRecord> authorize(String subjectDN, Iterable <String> roles, X509Certificate[] chain, String desiredUserName, String serviceUrl, Socket socket)
     throws AuthorizationException {
         LinkedList <gPlazmaAuthorizationRecord> records = new LinkedList <gPlazmaAuthorizationRecord> ();
         
@@ -353,7 +354,7 @@ public class AuthorizationController {
             String role = roleIter.next();
             gPlazmaAuthorizationRecord r=null;
             try {
-                r = authorize(subjectDN, role, desiredUserName, serviceUrl, socket);
+                r = authorize(subjectDN, role, chain, desiredUserName, serviceUrl, socket);
             } catch (AuthorizationException ase) {
                 if(authexceptions==null)
                     authexceptions = ase;
@@ -371,7 +372,7 @@ public class AuthorizationController {
     }
     
     
-    public gPlazmaAuthorizationRecord authorize(String subjectDN, String role, String desiredUserName, String serviceUrl, Socket socket)
+    public gPlazmaAuthorizationRecord authorize(String subjectDN, String role, X509Certificate[] chain, String desiredUserName, String serviceUrl, Socket socket)
     throws AuthorizationException {
         gPlazmaAuthorizationRecord r = null;
         AuthorizationException authexceptions=null;
@@ -381,7 +382,7 @@ public class AuthorizationController {
         while (r==null && plugins.hasNext()) {
             p = (AuthorizationPlugin) plugins.next();
             try {
-                r = p.authorize(subjectDN, role, desiredUserName, serviceUrl, socket);
+                r = p.authorize(subjectDN, role, chain, desiredUserName, serviceUrl, socket);
             } catch(AuthorizationException ae) {
                 if(authexceptions==null)
                     authexceptions = new AuthorizationException("\nException thrown by " + p.getClass().getName() + ": " + ae.getMessage());
@@ -419,8 +420,8 @@ public class AuthorizationController {
     public static String getFormattedAuthRequestID(long id) {
         String idstr;
         idstr = String.valueOf(id);
-        while (idstr.length()<9) idstr = " " + idstr;
-        return idstr;
+        while (idstr.length()<10) idstr = " " + idstr;
+        return " " + idstr;
     }
 
     public void setLogLevel	(Level level) {

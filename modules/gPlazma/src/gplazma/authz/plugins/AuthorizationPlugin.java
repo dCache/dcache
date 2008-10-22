@@ -8,6 +8,7 @@ import java.lang.*;
 import java.lang.reflect.Method;
 import java.lang.reflect.InvocationTargetException;
 import java.net.Socket;
+import java.security.cert.X509Certificate;
 
 import gplazma.authz.records.DynamicAuthorizationRecord;
 import gplazma.authz.records.gPlazmaAuthorizationRecord;
@@ -41,7 +42,7 @@ public abstract class AuthorizationPlugin {
         return null;
     }*/
 
-    public abstract gPlazmaAuthorizationRecord authorize(String subjectDN, String role, String desiredUserName, String serviceUrl, Socket socket)
+    public abstract gPlazmaAuthorizationRecord authorize(String subjectDN, String role, X509Certificate[] chain, String desiredUserName, String serviceUrl, Socket socket)
             throws AuthorizationException;
 
 

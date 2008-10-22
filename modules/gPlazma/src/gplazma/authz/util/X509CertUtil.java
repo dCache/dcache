@@ -25,6 +25,8 @@ import org.bouncycastle.asn1.DERObjectIdentifier;
 import org.bouncycastle.asn1.DERString;
 import org.glite.security.voms.VOMSValidator;
 import org.glite.security.voms.VOMSAttribute;
+import org.glite.security.voms.ac.AttributeCertificate;
+import org.opensciencegrid.authz.xacml.common.FQAN;
 
 import java.net.Socket;
 import java.util.*;
@@ -42,9 +44,9 @@ import gplazma.authz.AuthorizationController;
  */
 public class X509CertUtil {
 
-    private static String default_service_cert          = "/etc/grid-security/hostcert.pem";
-    private static String default_service_key           = "/etc/grid-security/hostkey.pem";
-    private static String default_trusted_cacerts = "/etc/grid-security/certificates";
+    public static String default_service_cert          = "/etc/grid-security/hostcert.pem";
+    public static String default_service_key           = "/etc/grid-security/hostkey.pem";
+    public static String default_trusted_cacerts = "/etc/grid-security/certificates";
 
     public static GSSContext getUserContext(String proxy_cert) throws GSSException {
        return getUserContext(proxy_cert, default_trusted_cacerts);
@@ -71,41 +73,6 @@ public class X509CertUtil {
 
         context.setOption(GSSConstants.GSS_MODE, GSIConstants.MODE_GSI);
         context.setOption(GSSConstants.TRUSTED_CERTIFICATES, trusted_certs);
-
-        return context;
-    }
-
-    public static GSSContext getServiceContext() throws GSSException {
-        return getServiceContext(default_service_cert, default_service_key, default_trusted_cacerts);
-    }
-
-    public static GSSContext getServiceContext(String service_cert, String service_key, String service_trusted_certs) throws GSSException {
-
-        GlobusCredential serviceCredential;
-        try {
-            serviceCredential =new GlobusCredential(
-                    service_cert,
-                    service_key
-                    );
-        } catch(GlobusCredentialException gce) {
-            throw new GSSException(GSSException.NO_CRED ,
-                    0,
-                    "could not load host globus credentials "+gce.toString());
-        }
-
-
-        GSSCredential cred = new GlobusGSSCredentialImpl(serviceCredential,
-                GSSCredential.INITIATE_AND_ACCEPT);
-        TrustedCertificates trusted_certs =
-                TrustedCertificates.load(service_trusted_certs);
-        GSSManager manager = ExtendedGSSManager.getInstance();
-        ExtendedGSSContext context =
-                (ExtendedGSSContext) manager.createContext(cred);
-
-        context.setOption(GSSConstants.GSS_MODE,
-                GSIConstants.MODE_GSI);
-        context.setOption(GSSConstants.TRUSTED_CERTIFICATES,
-                trusted_certs);
 
         return context;
     }
@@ -162,24 +129,7 @@ public class X509CertUtil {
     public static String getSubjectFromX509Chain(X509Certificate[] chain, boolean omitEmail) throws Exception {
         String subjectDN;
 
-        TBSCertificateStructure tbsCert=null;
-        X509Certificate	clientcert=null;
-        //int clientcertindex = X509CertUtil.findClientCert(chain);
-        for (int i=0; i<chain.length; i++) {
-            X509Certificate	testcert = chain[i];
-    //DERObject obj = BouncyCastleUtil.toDERObject(testcert.getTBSCertificate());
-	//tbsCert  =  TBSCertificateStructure.getInstance(obj);
-            tbsCert  = BouncyCastleUtil.getTBSCertificateStructure(testcert);
-            int certType = BouncyCastleUtil.getCertificateType(tbsCert);
-            if (!org.globus.gsi.CertUtil.isImpersonationProxy(certType)) {
-                clientcert = chain[i];
-                break;
-            }
-        }
-
-        if(clientcert == null) {
-            throw new AuthorizationException("could not find clientcert");
-        }
+        TBSCertificateStructure tbsCert = getUserTBSCertFromX509Chain(chain);
         //subjectDN = clientcert.getSubjectX500Principal().toString();
         //subjectDN = clientcert.getSubjectDN().toString();
         //subjectDN = X509NameHelper.toString((X509Name)clientcert.getSubjectDN());
@@ -241,6 +191,61 @@ public class X509CertUtil {
      */
 
         return subjectDN;
+    }
+
+    public static TBSCertificateStructure getUserTBSCertFromX509Chain(X509Certificate[] chain) throws Exception {
+        TBSCertificateStructure tbsCert=null;
+        X509Certificate	clientcert=null;
+        //int clientcertindex = X509CertUtil.findClientCert(chain);
+        for (int i=0; i<chain.length; i++) {
+            X509Certificate	testcert = chain[i];
+    //DERObject obj = BouncyCastleUtil.toDERObject(testcert.getTBSCertificate());
+	//tbsCert  =  TBSCertificateStructure.getInstance(obj);
+            tbsCert  = BouncyCastleUtil.getTBSCertificateStructure(testcert);
+            int certType = BouncyCastleUtil.getCertificateType(tbsCert);
+            if (!org.globus.gsi.CertUtil.isImpersonationProxy(certType)) {
+                clientcert = chain[i];
+                break;
+            }
+        }
+
+        if(clientcert == null) {
+            throw new AuthorizationException("could not find clientcert");
+        }
+
+        return tbsCert;
+    }
+
+    public static X509Certificate getUserCertFromX509Chain(X509Certificate[] chain) throws Exception {
+        TBSCertificateStructure tbsCert=null;
+        X509Certificate	clientcert=null;
+        //int clientcertindex = X509CertUtil.findClientCert(chain);
+        for (int i=0; i<chain.length; i++) {
+            X509Certificate	testcert = chain[i];
+    //DERObject obj = BouncyCastleUtil.toDERObject(testcert.getTBSCertificate());
+	//tbsCert  =  TBSCertificateStructure.getInstance(obj);
+            tbsCert  = BouncyCastleUtil.getTBSCertificateStructure(testcert);
+            int certType = BouncyCastleUtil.getCertificateType(tbsCert);
+            if (!org.globus.gsi.CertUtil.isImpersonationProxy(certType)) {
+                clientcert = chain[i];
+                break;
+            }
+        }
+
+        if(clientcert == null) {
+            throw new AuthorizationException("could not find clientcert");
+        }
+
+        return clientcert;
+    }
+
+    public static String getSubjectX509Issuer(X509Certificate[] chain) throws Exception {
+       X509Certificate	clientcert = getUserCertFromX509Chain(chain);
+       return getSubjectX509Issuer(clientcert);
+    }
+
+    public static String getSubjectX509Issuer(X509Certificate cert) throws Exception {
+       return toGlobusDN(cert.getIssuerDN().toString());
     }
 
     public static Collection<String> getFQANsFromContext(ExtendedGSSContext gssContext, boolean validate) throws Exception {
@@ -357,6 +362,59 @@ attribute : /cms/uscms/Role=cmsprod/Capability=NULL
         }
 
         return fqans;
+    }
+
+    public static AttributeCertificate getAttributeCertificate(X509Certificate[] chain, String fqan) throws GSSException {
+        return getVOMSAttribute(chain, fqan).getAC();
+    }
+
+    public static VOMSAttribute getVOMSAttribute(X509Certificate[] chain, String fqan) throws GSSException {
+
+        if(fqan.endsWith(AuthorizationController.capnull))
+                fqan = fqan.substring(0, fqan.length() - AuthorizationController.capnulllen);
+        if(fqan.endsWith(AuthorizationController.rolenull))
+                fqan = fqan.substring(0, fqan.length() - AuthorizationController.rolenulllen);
+
+        LinkedHashSet<String> fqans = new LinkedHashSet <String> ();
+        VOMSValidator validator = new VOMSValidator(chain);
+        validator.parse();
+        List listOfAttributes = validator.getVOMSAttributes();
+
+        Iterator i = listOfAttributes.iterator();
+        while (i.hasNext()) {
+            VOMSAttribute vomsAttribute = (VOMSAttribute) i.next();
+            List listOfFqans = vomsAttribute.getFullyQualifiedAttributes();
+            Iterator j = listOfFqans.iterator();
+            while (j.hasNext()) {
+                String attr = (String) j.next();
+                String attrtmp=attr;
+                if(attrtmp.endsWith(AuthorizationController.capnull))
+                    attrtmp = attrtmp.substring(0, attrtmp.length() - AuthorizationController.capnulllen);
+                if(attrtmp.endsWith(AuthorizationController.rolenull))
+                    attrtmp = attrtmp.substring(0, attrtmp.length() - AuthorizationController.rolenulllen);
+                //Iterator k = fqans.iterator();
+                //boolean issubrole=false;
+                //while (k.hasNext()) {
+                  //String fqanattr=(String) k.next();
+                  //if (fqanattr.startsWith(attrtmp)) {issubrole=true; break;}
+                //}
+                if(attrtmp.equals(fqan)) return vomsAttribute;
+            }
+        }
+
+        return null;
+    }
+
+    public static String parseGroupFromFQAN(String fqan) {
+        String group=null;
+        if(fqan!=null) {
+            group = (new FQAN(fqan)).getGroup();
+            StringTokenizer st = new StringTokenizer(group, "/");
+            if (st.hasMoreTokens()) {
+                group = "/" + st.nextToken();
+            }
+        }
+        return group;
     }
 
     public static String toGlobusString(ASN1Sequence seq, boolean omitEmail) {

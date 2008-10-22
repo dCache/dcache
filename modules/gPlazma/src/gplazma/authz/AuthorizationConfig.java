@@ -24,7 +24,12 @@ public class AuthorizationConfig {
     private long authRequestID;
 
     private String authConfigFileName;
-    public static final int MAX_PLUGINS=4;
+    public static final int MAX_PLUGINS=5;
+
+    public static final String XACML_MAPPING_PLUGIN_SWITCH_MARK="xacml-vo-mapping=";
+    public static final String XACML_MAPPING_PLUGIN_PRIORITY_MARK="xacml-vo-mapping-priority=";
+    public static final String XACML_MAPPING_PLUGIN_CONF_1_MARK="XACMLmappingServiceUrl=";
+    public static final String XACML_MAPPING_PLUGIN_CONF_2_MARK="xacml-vo-mapping-cache-lifetime=";
 
     public static final String VO_MAPPING_PLUGIN_SWITCH_MARK="saml-vo-mapping=";
     public static final String VO_MAPPING_PLUGIN_PRIORITY_MARK="saml-vo-mapping-priority=";
@@ -46,6 +51,7 @@ public class AuthorizationConfig {
     public static final String GPLAZMA_LITE_VOROLE_MAPPING_CONF_2_MARK="gridVoRoleStorageAuthzPath=";
     public static final String GPLAZMA_LITE_VOROLE_MAPPING_CONF_3_MARK="vomsValidation=";
 
+    public static final String XACML_MAPPING_SIGNAL="XACML_MAPPING_green";
     public static final String VO_MAPPING_SIGNAL="VO_MAPPING_green";
     public static final String GRIDMAPFILE_SIGNAL="GRIDMAPFILE_green";
     public static final String KPWD_SIGNAL="KPWD_green";
@@ -120,6 +126,10 @@ public class AuthorizationConfig {
         String line;
         while((line = reader.readLine()) != null) {
             line = line.trim();
+            parseLine(XACML_MAPPING_PLUGIN_SWITCH_MARK, line);
+            parseLine(XACML_MAPPING_PLUGIN_PRIORITY_MARK, line);
+            parseLine(XACML_MAPPING_PLUGIN_CONF_1_MARK, line);
+            parseLine(XACML_MAPPING_PLUGIN_CONF_2_MARK, line);
             parseLine(VO_MAPPING_PLUGIN_SWITCH_MARK, line);
             parseLine(VO_MAPPING_PLUGIN_PRIORITY_MARK, line);
             parseLine(VO_MAPPING_PLUGIN_CONF_1_MARK, line);
@@ -157,6 +167,8 @@ public class AuthorizationConfig {
 
     private Vector buildPriorityConfig()
             throws Exception {
+        String switchOfXACMLMapping = getXACMLMappingSwitch();
+        switchOfXACMLMapping = removeQuotes(switchOfXACMLMapping);
         String switchOfVOMapping = getVOMappingSwitch();
         switchOfVOMapping = removeQuotes(switchOfVOMapping);
         String switchOfKpwd = getKpwdSwitch();
@@ -190,6 +202,13 @@ public class AuthorizationConfig {
                 pluginPriorityConfig.setElementAt(VO_MAPPING_SIGNAL, priorityOfVOMapping-1);
             }
         }
+        if (switchOfXACMLMapping != null && switchOfXACMLMapping != "" && switchOfXACMLMapping.equals("ON")) {
+            int priorityOfXACMLeMapping = getXACMLMappingPriority();
+            //log.trace("priorityOfXACMLeMapping is: " +priorityOfXACMLeMapping);
+            if (priorityOfXACMLeMapping > 0 && priorityOfXACMLeMapping < MAX_PLUGINS+1) {
+                pluginPriorityConfig.setElementAt(XACML_MAPPING_SIGNAL, priorityOfXACMLeMapping-1);
+            }
+        }
         if (switchOfKpwd != null && switchOfKpwd != "" && switchOfKpwd.equals("ON")) {
             int priorityOfKpwd = getKpwdPriority();
             //log.trace("priorityOfKpwd is: " +priorityOfKpwd);
@@ -206,6 +225,11 @@ public class AuthorizationConfig {
             quotedString = quotedString.replace('\"',' ').trim();
         }
         return quotedString;
+    }
+
+    private int getXACMLMappingPriority()
+            throws Exception {
+        return getPriority(XACML_MAPPING_PLUGIN_PRIORITY_MARK);
     }
 
     private int getVOMappingPriority()
@@ -249,6 +273,10 @@ public class AuthorizationConfig {
         }
     }
 
+    private String getXACMLMappingSwitch() {
+        return (String)authServConfig.get(XACML_MAPPING_PLUGIN_SWITCH_MARK);
+    }
+
     private String getVOMappingSwitch() {
         return (String)authServConfig.get(VO_MAPPING_PLUGIN_SWITCH_MARK);
     }
@@ -265,14 +293,24 @@ public class AuthorizationConfig {
         return (String)authServConfig.get(GPLAZMA_LITE_VOROLE_MAPPING_PLUGIN_SWITCH_MARK);
     }
 
-    public String getMappingServiceUrl()
+    public String getVOMappingServiceUrl()
             throws Exception {
         return removeQuotes((String)authServConfig.get(VO_MAPPING_PLUGIN_CONF_1_MARK));
     }
 
-    public String getMappingServiceCacheLifetime()
+    public String getVOMappingServiceCacheLifetime()
             throws Exception {
         return removeQuotes((String)authServConfig.get(VO_MAPPING_PLUGIN_CONF_2_MARK));
+    }
+
+    public String getXACMLMappingServiceUrl()
+            throws Exception {
+        return removeQuotes((String)authServConfig.get(XACML_MAPPING_PLUGIN_CONF_1_MARK));
+    }
+
+    public String getXACMLMappingServiceCacheLifetime()
+            throws Exception {
+        return removeQuotes((String)authServConfig.get(XACML_MAPPING_PLUGIN_CONF_2_MARK));
     }
 
     public String getKpwdPath()
@@ -320,6 +358,11 @@ public class AuthorizationConfig {
     public String getKpwdSignal()
             throws Exception {
         return KPWD_SIGNAL;
+    }
+
+    public String getXACMLMappingSignal()
+            throws Exception {
+        return XACML_MAPPING_SIGNAL;
     }
 
     public String getVOMappingSignal()

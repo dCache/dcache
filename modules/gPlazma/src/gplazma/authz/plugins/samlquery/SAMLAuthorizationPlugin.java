@@ -12,6 +12,7 @@ package gplazma.authz.plugins.samlquery;
 import java.util.*;
 import java.lang.*;
 import java.net.Socket;
+import java.security.cert.X509Certificate;
 
 import org.ietf.jgss.GSSException;
 import org.ietf.jgss.GSSContext;
@@ -130,10 +131,10 @@ public abstract class SAMLAuthorizationPlugin extends RecordMappingPlugin {
         }
 
 
-        return authorize(gssIdentity, fqanValue, desiredUserName, serviceUrl, socket);
+        return authorize(gssIdentity, fqanValue, null, desiredUserName, serviceUrl, socket);
     }
 
-    public abstract gPlazmaAuthorizationRecord authorize(String subjectDN, String role, String desiredUserName, String serviceUrl, Socket socket) throws AuthorizationException;
+    public abstract gPlazmaAuthorizationRecord authorize(String subjectDN, String role, X509Certificate[] chain, String desiredUserName, String serviceUrl, Socket socket) throws AuthorizationException;
 
      private void setSslProperties() {
 

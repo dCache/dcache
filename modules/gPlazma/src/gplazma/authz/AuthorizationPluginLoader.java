@@ -4,7 +4,7 @@ import gplazma.authz.plugins.AuthorizationPlugin;
 import gplazma.authz.plugins.LoggingPlugin;
 import gplazma.authz.plugins.vorolemap.VORoleMapAuthzPlugin;
 import gplazma.authz.plugins.gridmapfile.GridMapFileAuthzPlugin;
-//import gplazma.authz.plugins.samlquery.XACMLAuthorizationPlugin;
+import gplazma.authz.plugins.samlquery.XACMLAuthorizationPlugin;
 import gplazma.authz.plugins.samlquery.SAML1AuthorizationPlugin;
 
 import java.util.*;
@@ -64,6 +64,7 @@ public class AuthorizationPluginLoader {
             throws AuthorizationException {
 
         String kpwdPath;
+        String XACMLMapUrl;
         String VOMapUrl;
         String gridmapfilePath;
         String storageAuthzDbPath;
@@ -77,10 +78,30 @@ public class AuthorizationPluginLoader {
             ListIterator iter = pluginPriorityConfig.listIterator(0);
             while (iter.hasNext()) {
                 String thisSignal = (String)iter.next();
-                if ( (thisSignal != null) && (thisSignal.equals((String)authConfig.getVOMappingSignal())) ) {
+                if ( (thisSignal != null) && (thisSignal.equals((String)authConfig.getXACMLMappingSignal())) ) {
                     try {
                         try {
-                            VOMapUrl = authConfig.getMappingServiceUrl();
+                            XACMLMapUrl = authConfig.getXACMLMappingServiceUrl();
+                        } catch(Exception e) {
+                            log.error("Exception getting XACML Map Url from configuration : " +e);
+                            throw new AuthorizationException(e.toString());
+                        }
+                        if (XACMLMapUrl != null && !XACMLMapUrl.equals("")) {
+                            gPLAZMALiteStorageAuthzDbPath = authConfig.getGridVORoleStorageAuthzPath();
+                            AuthorizationPlugin XACMLPlug = new XACMLAuthorizationPlugin(XACMLMapUrl, gPLAZMALiteStorageAuthzDbPath, authRequestID);
+                            ((XACMLAuthorizationPlugin) XACMLPlug).setCacheLifetime(authConfig.getXACMLMappingServiceCacheLifetime());
+                            addPlugin(XACMLPlug);
+                        } else {
+                            log.error("VO Map Url not well-formed in configuration.");
+                        }
+                    } catch (AuthorizationException ae) {
+                        log.error("Exception : " +ae);
+                    }
+                }//end of xacml-based-vo-mapping-if
+                else if ( (thisSignal != null) && (thisSignal.equals((String)authConfig.getVOMappingSignal())) ) {
+                    try {
+                        try {
+                            VOMapUrl = authConfig.getVOMappingServiceUrl();
                         } catch(Exception e) {
                             log.error("Exception getting VO Map Url from configuration : " +e);
                             throw new AuthorizationException(e.toString());
@@ -88,11 +109,8 @@ public class AuthorizationPluginLoader {
                         if (VOMapUrl != null && !VOMapUrl.equals("")) {
                             gPLAZMALiteStorageAuthzDbPath = authConfig.getGridVORoleStorageAuthzPath();
                             AuthorizationPlugin VOPlug = new SAML1AuthorizationPlugin(VOMapUrl, gPLAZMALiteStorageAuthzDbPath, authRequestID);
-                            ((SAML1AuthorizationPlugin) VOPlug).setCacheLifetime(authConfig.getMappingServiceCacheLifetime());
+                            ((SAML1AuthorizationPlugin) VOPlug).setCacheLifetime(authConfig.getVOMappingServiceCacheLifetime());
                             addPlugin(VOPlug);
-                            //AuthorizationPlugin XACMLPlug = new XACMLAuthorizationPlugin(VOMapUrl, gPLAZMALiteStorageAuthzDbPath, authRequestID);
-                            //((XACMLAuthorizationPlugin) XACMLPlug).setCacheLifetime(authConfig.getMappingServiceCacheLifetime());
-                            //addPlugin(XACMLPlug);
                         } else {
                             log.error("VO Map Url not well-formed in configuration.");
                         }
