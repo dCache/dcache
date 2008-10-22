@@ -15,12 +15,10 @@ import org.dcache.services.info.base.StateTransition;
  * 
  * @author Paul Millar <paul.millar@desy.de>
  */
-public class PoolSpaceVisitor extends SkeletonListVisitor {
+public class PoolSpaceVisitor extends AbstractPoolSpaceVisitor {
 	
 	private static Logger _log = Logger.getLogger( PoolSpaceVisitor.class);
-	
-	private static StatePath POOLS_PATH = new StatePath( "pools");
-	
+		
 	/**
 	 * Obtain a Map between pools and their space information for current dCache state.
 	 * @return
@@ -52,44 +50,14 @@ public class PoolSpaceVisitor extends SkeletonListVisitor {
 	}
 
 	private Map <String,SpaceInfo> _poolgroups = new HashMap<String,SpaceInfo>();
-	private SpaceInfo _thisPoolSpaceInfo;
-	private StatePath _poolSpacePath = null;
-	
+
+	/*
 	public PoolSpaceVisitor() {
-		super( POOLS_PATH);
-	}
+		super();
+	}*/
 	
 	@Override
-	protected void newListItem( String itemName) {		
-		if( _log.isDebugEnabled())
-			_log.debug( "Found pool " + itemName);
-
-		_thisPoolSpaceInfo = new SpaceInfo();
-		_poolgroups.put( itemName, _thisPoolSpaceInfo);
-		
-		_poolSpacePath = getPathToList().newChild(itemName).newChild("space");
-	}
-
-	@Override
-	public void visitInteger( StatePath path, IntegerStateValue value) {
-		if( _poolSpacePath == null || ! _poolSpacePath.isParentOf( path))
-			return;
-		
-		String metricName = path.getLastElement();
-		
-		if( _log.isDebugEnabled())
-			_log.debug( "Found metric " + path.getLastElement() + " = " + value.getValue());
-
-		if( metricName.equals("removable"))
-			_thisPoolSpaceInfo.setRemovable( value.getValue());
-		else if( metricName.equals("free"))
-			_thisPoolSpaceInfo.setFree( value.getValue());
-		else if( metricName.equals("total"))
-			_thisPoolSpaceInfo.setTotal( value.getValue());
-		else if( metricName.equals("precious"))
-			_thisPoolSpaceInfo.setPrecious( value.getValue());			
-		else if( metricName.equals("used"))
-			_thisPoolSpaceInfo.setUsed( value.getValue());			
-	}
-	
+	protected void newPool( String poolName, SpaceInfo space) {		
+		_poolgroups.put( poolName, space);
+	}	
 }
