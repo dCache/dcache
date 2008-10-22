@@ -91,7 +91,7 @@ public class LoginBrokerLsMsgHandler extends CellMessageHandlerSkel {
 		if( interfaceNames != null) {
 			for( int i = 0; i < interfaceNames.length; i++) {
 				if( interfaceNames[i] != null)
-					addInterfaceInfo( update, pathToInterfaces, interfaceNames[i], lifetime);
+					addInterfaceInfo( update, pathToInterfaces, interfaceNames[i], i+1, lifetime);
 			}
 		}
 	}
@@ -122,6 +122,7 @@ public class LoginBrokerLsMsgHandler extends CellMessageHandlerSkel {
 	 *       +--[ name ] (branch)
 	 *       |   |
 	 *       |   +-- "name" (string metric: the host's name, as presented by the door)
+	 *       |   +-- "order"  (integer metric: 1 .. 2 ..)
 	 *       |   +-- "FQDN" (string metric: the host's FQDN)
 	 *       |   +-- "address" (string metric: the host's address; e.g., "127.0.0.1")
 	 *       |   +-- "address-type"    (string metric: "IPv4", "IPv6" or "unknown")
@@ -130,9 +131,10 @@ public class LoginBrokerLsMsgHandler extends CellMessageHandlerSkel {
 	 * @param update The StateUpdate to append the new metrics.
 	 * @param parentPath the path that the id branch will be added.  
 	 * @param name something that identifies the interface (e.g., IP address or simple name).
+	 * @param order the order in which the interfaces should be considered: 1 is the lowest number.
 	 * @param lifetime how long the created metrics should last.
 	 */
-	private void addInterfaceInfo( StateUpdate update, StatePath parentPath, String name, long lifetime) {
+	private void addInterfaceInfo( StateUpdate update, StatePath parentPath, String name, int order, long lifetime) {
 		
 		StatePath pathToInterfaceBranch = parentPath.newChild(name);
 		
@@ -148,6 +150,8 @@ public class LoginBrokerLsMsgHandler extends CellMessageHandlerSkel {
 			update.appendUpdate( pathToInterfaceBranch.newChild( "address"), new StringStateValue( address.getHostAddress(), lifetime));
 			update.appendUpdate( pathToInterfaceBranch.newChild( "address-type"),
 								new StringStateValue( (address instanceof Inet4Address) ? "IPv4" : (address instanceof Inet6Address) ? "IPv6" : "unknown", lifetime));
+			
+			update.appendUpdate( pathToInterfaceBranch.newChild( "order"), new IntegerStateValue( order, lifetime));
 			
 		} catch( UnknownHostException e) {
 			/**
