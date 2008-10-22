@@ -17,19 +17,10 @@ import org.dcache.services.info.base.StringStateValue;
  * 
  * @author Paul Millar <paul.millar@desy.de>
  */
-public class PoolSummaryVisitor implements StateVisitor {
+public class PoolSummaryVisitor extends AbstractPoolSpaceVisitor {
 
 	private static Logger _log = Logger.getLogger( PoolSummaryVisitor.class);
-	
-	private static final StatePath POOLS_PATH = new StatePath( "pools");
-	private static final String SPACE_BRANCH_NAME = "space";
-	
-	private static final String METRIC_NAME_FREE      = "free";
-	private static final String METRIC_NAME_PRECIOUS  = "precious";
-	private static final String METRIC_NAME_TOTAL     = "total";
-	private static final String METRIC_NAME_REMOVABLE = "removable";
-	private static final String METRIC_NAME_USED      = "used";
-	
+		
 	/**
 	 * Obtain some summary statistics about all available pools.
 	 * @return the aggregated information about the pools.
@@ -41,7 +32,7 @@ public class PoolSummaryVisitor implements StateVisitor {
 		PoolSummaryVisitor visitor = new PoolSummaryVisitor();
 		State.getInstance().visitState(visitor, POOLS_PATH);		
 
-		return visitor.getSpaceInfo();
+		return visitor._summaryInfo;
 	}
 	
 	
@@ -58,55 +49,14 @@ public class PoolSummaryVisitor implements StateVisitor {
 		PoolSummaryVisitor visitor = new PoolSummaryVisitor();
 		State.getInstance().visitState( transition, visitor, POOLS_PATH);
 		
-		return visitor.getSpaceInfo();		
+		return visitor._summaryInfo;		
 	}
-	
-	
-	private SpaceInfo _info = new SpaceInfo();
-	private boolean _inSpaceBranch;
 		
-	public void visitCompositePostSkipDescend(StatePath path, Map<String, String> metadata) {}
-	public void visitCompositePreSkipDescend(StatePath path, Map<String, String> metadata) {}
-	public void visitCompositePreLastDescend(StatePath path, Map<String, String> metadata) {}
-
-	public void visitCompositePreDescend(StatePath path,
-			Map<String, String> metadata) {		
-		_inSpaceBranch = path.getLastElement().equals( SPACE_BRANCH_NAME);
+	private SpaceInfo _summaryInfo = new SpaceInfo();
+		
+	@Override
+	protected void newPool( String poolName, SpaceInfo space) {		
+		_summaryInfo.add( space);
 	}
-
-	public void visitCompositePostDescend(StatePath path,
-			Map<String, String> metadata) {
-		_inSpaceBranch = false;
-	}
-
-
-	public void visitBoolean(StatePath path, BooleanStateValue value) {}
-	public void visitString(StatePath path, StringStateValue value) {}
-	public void visitFloatingPoint(StatePath path, FloatingPointStateValue value) {}
-
-	public void visitInteger(StatePath path, IntegerStateValue value) {
-		if( ! _inSpaceBranch)
-			return;
-
-		if( path.getLastElement().equals(METRIC_NAME_REMOVABLE)) {
-			_info.addToRemovable( value.getValue());
-		} else if( path.getLastElement().equals(METRIC_NAME_FREE)) {
-			_info.addToFree( value.getValue());
-		} else if( path.getLastElement().equals(METRIC_NAME_TOTAL)) {
-			_info.addToTotal( value.getValue());
-		} else if( path.getLastElement().equals(METRIC_NAME_PRECIOUS)) {
-			_info.addToPrecious( value.getValue());
-		} else if( path.getLastElement().equals(METRIC_NAME_USED)) {
-			_info.addToUsed( value.getValue());
-		}
-	}
-	
-	
-	/**
-	 * Obtain the summary information object.
-	 */
-	protected SpaceInfo getSpaceInfo() {
-		return _info;
-	}
-	
+		
 }
