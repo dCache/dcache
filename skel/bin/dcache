@@ -414,7 +414,7 @@ getServices()
                 printf "dir "
             fi
             if isEnabled adminDoor; then
-                printf "admin "
+                printf "adminDoor "
             fi
             if isEnabled httpDomain; then
                 printf "httpd "
@@ -570,7 +570,7 @@ run() # $1 = domain, $2 = action
 	gsidcap)
             program="${ourHomeDir}/jobs/gsidcapdoor"
             ;;	    
-	admin)
+	adminDoor)
             program="${ourHomeDir}/jobs/adminDoor"
             ;;
         *)
