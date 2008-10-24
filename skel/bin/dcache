@@ -242,6 +242,27 @@ getConfig()
     RET=$(sed -n -e 's/#.*$//' -e 's/[       ]*$//' -e "s/^[         ]*$1[   ]*=[    ]*\(.*\)$/\1/p" ${ourHomeDir}/etc/node_config ${ourHomeDir}/etc/door_config 2> /dev/null)
 }
 
+# Abstraction of Namespace to make the call able to return on 
+# NAMESPACE_NODE or ADMIN_NODE
+dcacheInstallGetNameSpaceServer()
+{
+  local namespaceServer
+  getConfig NAMESPACE_NODE
+  namespaceServer=$RET
+  if [ -z "${namespaceServer}" ] ; then
+    getConfig ADMIN_NODE
+    namespaceServer=$RET
+    if [ -z "${namespaceServer}" ] ; then
+      namespaceServer='myAdminNode'
+      echo "[WARNING] No 'NAMESPACE_NODE' or 'ADMIN_NODE' set in 'node_config' using '${namespaceServer}'"
+      
+    else
+      echo "[WARNING] No 'NAMESPACE_NODE' set in 'node_config' using depricated 'ADMIN_NODE' value '${namespaceServer}'"
+    fi
+  fi
+  RET=${namespaceServer}
+}
+
 # Returns 0 if feature is enabled in node_config or door_config, 1
 # otherwise
 isEnabled() # $1 = option name
@@ -290,10 +311,11 @@ autoMountNameSpace()
 	    fi
 	elif isEnabled GRIDFTP || isEnabled SRM ; then
 	    if ! df ${PNFS_ROOT}/${SERVER_ID} 2>/dev/null | grep "$PNFS_ROOT" > /dev/null; then
-		getConfig ADMIN_NODE; ADMIN_NODE=$RET
-		if [ -z "$ADMIN_NODE" ] || [ "$ADMIN_NODE" = myAdminNode ]; then
+		dcacheInstallGetNameSpaceServer
+		NAMESERVER_NODE=$RET
+		if [ -z "$NAMESERVER_NODE" ] || [ "$NAMESERVER_NODE" = myAdminNode ]; then
 		    fail 1 "PNFS not mounted on 
-                            ${PNFS_ROOT}/${SERVER_ID}/ and ADMIN_NODE in 
+                            ${PNFS_ROOT}/${SERVER_ID}/ and NAMESPACE_NODE in 
                             etc/node_config or etc/door_config not set
                             properly."
 		fi
@@ -309,10 +331,10 @@ autoMountNameSpace()
                 esac 
 
 		printp "${PNFS_ROOT}/${SERVER_ID}/ not mounted - going to mount it now."
-		mount -o intr,rw,noac,hard,${NFSVERS}=2 $ADMIN_NODE:/pnfsdoors ${PNFS_ROOT}/${SERVER_ID}
+		mount -o intr,rw,noac,hard,${NFSVERS}=2 $NAMESERVER_NODE:/pnfsdoors ${PNFS_ROOT}/${SERVER_ID}
 		if ! df ${PNFS_ROOT}/${SERVER_ID} 2>/dev/null | grep "$PNFS_ROOT"; then
 		    fail 1 "Still not mounted. Apparently no PNFS
-                            server running on admin node $ADMIN_NODE."
+                            server running on admin node $NAMESERVER_NODE."
 		fi
 	    fi
 	fi	
