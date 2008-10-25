@@ -120,7 +120,7 @@ public class MigrationModuleServer
         final StorageInfo storageInfo = message.getStorageInfo();
         final List<StickyRecord> stickyRecords = message.getStickyRecords();
         final EntryState state = message.getState();
-        final CellPath requestor = envelope.getSourcePath();
+        final CellPath requestor = (CellPath)envelope.getSourcePath().clone();
         final Request request = new Request(pool, taskId);
 
         CacheFileAvailable callback =
