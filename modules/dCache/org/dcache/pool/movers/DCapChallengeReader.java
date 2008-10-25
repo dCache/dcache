@@ -3,17 +3,17 @@
  */
 package org.dcache.pool.movers;
 
-import  java.io.* ;
-import  java.nio.* ;
-import  java.nio.channels.* ;
-import  java.net.* ;
+import  java.io.*;
+import  java.nio.*;
+import  java.nio.channels.*;
+import  java.net.*;
 
 import diskCacheV111.util.DCapProrocolChallenge;
 
-class DCapChallengeReader implements org.dcache.net.ChallengeReader {
-    
-    public Object getChallenge(SocketChannel socketChannel) {
-
+class DCapChallengeReader implements org.dcache.net.ChallengeReader 
+{    
+    public Object getChallenge(SocketChannel socketChannel) 
+    {
         DCapProrocolChallenge challenge = null;
         
         /*
@@ -52,7 +52,3 @@ class DCapChallengeReader implements org.dcache.net.ChallengeReader {
     }    
 }
 
-
-/*
- * $Log: not supported by cvs2svn $
- */

@@ -1,4 +1,4 @@
- /*
+/*
  * @(#)Checksum.java	1.2 03/11/10
  *
  * Copyright 1996-2003 dcache.org All Rights Reserved.
@@ -10,8 +10,8 @@
 package org.dcache.pool.movers;
 
 
-import diskCacheV111.util.Checksum ;
-import diskCacheV111.util.ChecksumFactory ;
+import diskCacheV111.util.Checksum;
+import diskCacheV111.util.ChecksumFactory;
 import diskCacheV111.vehicles.ProtocolInfo;
 
 /**
@@ -23,10 +23,10 @@ import diskCacheV111.vehicles.ProtocolInfo;
  */
 
 
-public interface ChecksumMover {
-   public ChecksumFactory getChecksumFactory(ProtocolInfo protocolInfo);
-   public void     setDigest( Checksum checksum ) ;
-   public Checksum getClientChecksum() ;
-   public Checksum getTransferChecksum() ;
-
+public interface ChecksumMover 
+{
+    public ChecksumFactory getChecksumFactory(ProtocolInfo protocolInfo);
+    public void setDigest(Checksum checksum);
+    public Checksum getClientChecksum();
+    public Checksum getTransferChecksum();
 }

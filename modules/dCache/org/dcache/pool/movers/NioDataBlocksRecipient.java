@@ -13,7 +13,8 @@ import java.nio.ByteBuffer;
  *
  * @author  timur
  */
-public interface NioDataBlocksRecipient {
-     public  void receiveEBlock( ByteBuffer buffer, int offset, int length,
-    long offsetOfArrayInFile ) throws IOException;
+public interface NioDataBlocksRecipient 
+{
+    public  void receiveEBlock(ByteBuffer buffer, int offset, int length,
+                               long offsetOfArrayInFile) throws IOException;
 }

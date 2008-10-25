@@ -660,7 +660,7 @@ public class GFtpProtocol_2_nio
     public long getTransferTime()
     {
         return (_inProgress ? System.currentTimeMillis() : _lastTransferred)
-                 - _transferStarted;
+            - _transferStarted;
     }
 
     /** Part of the MoverProtocol interface. */
@@ -880,5 +880,4 @@ public class GFtpProtocol_2_nio
 	    System.exit(1);
 	}
     }
-
 }

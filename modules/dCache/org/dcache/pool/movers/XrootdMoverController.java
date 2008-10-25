@@ -16,60 +16,60 @@ public class XrootdMoverController implements PhysicalConnectionListener {
     private static final Logger _log =
         Logger.getLogger(XrootdMoverController.class);
 
-	private XrootdProtocol_2 mover;
-	private PhysicalXrootdConnection physicalXrootdConnection;
+    private XrootdProtocol_2 mover;
+    private PhysicalXrootdConnection physicalXrootdConnection;
 
-	public XrootdMoverController(XrootdProtocol_2 mover, PhysicalXrootdConnection physicalXrootdConnection) {
-		this.mover = mover;
-		this.physicalXrootdConnection = physicalXrootdConnection;
+    public XrootdMoverController(XrootdProtocol_2 mover, PhysicalXrootdConnection physicalXrootdConnection) {
+        this.mover = mover;
+        this.physicalXrootdConnection = physicalXrootdConnection;
 
-		physicalXrootdConnection.setMaxStreams(1);
+        physicalXrootdConnection.setMaxStreams(1);
 
 
-		physicalXrootdConnection.setResponseEngine(new SimpleResponseEngine(physicalXrootdConnection));
-		physicalXrootdConnection.getRequestEngine().startEngine();
+        physicalXrootdConnection.setResponseEngine(new SimpleResponseEngine(physicalXrootdConnection));
+        physicalXrootdConnection.getRequestEngine().startEngine();
 
-		physicalXrootdConnection.getStatus().setConnected(true);
-	}
+        physicalXrootdConnection.getStatus().setConnected(true);
+    }
 
-	public void handshakeRequest() {
-		_log.info("handshake attempt coming from "+physicalXrootdConnection.getNetworkConnection().getSocket().getRemoteSocketAddress().toString());
-	}
+    public void handshakeRequest() {
+        _log.info("handshake attempt coming from "+physicalXrootdConnection.getNetworkConnection().getSocket().getRemoteSocketAddress().toString());
+    }
 
-	public AbstractResponseMessage loginRequest(LoginRequest login) {
+    public AbstractResponseMessage loginRequest(LoginRequest login) {
 
-//		plug login module here
+        //		plug login module here
 
-		_log.info("login attempt, access granted");
+        _log.info("login attempt, access granted");
 
-		return new OKResponse(login.getStreamID());
-	}
+        return new OKResponse(login.getStreamID());
+    }
 
-	public AbstractResponseMessage authRequest(AuthentiticationRequest auth) {
+    public AbstractResponseMessage authRequest(AuthentiticationRequest auth) {
 
-//		plug authentitication module here
+        //		plug authentitication module here
 
-		_log.info("authentitication passed");
+        _log.info("authentitication passed");
 
-		return new OKResponse(auth.getStreamID());
-	}
+        return new OKResponse(auth.getStreamID());
+    }
 
-	public StreamListener newStreamForked(int streamID) {
-		return new XrootdMoverListener(this, streamID);
-	}
+    public StreamListener newStreamForked(int streamID) {
+        return new XrootdMoverListener(this, streamID);
+    }
 
-	public void closeConnection() {
-		if (mover != null)
-			mover.setTransferFinished();
-	}
+    public void closeConnection() {
+        if (mover != null)
+            mover.setTransferFinished();
+    }
 
-	public XrootdProtocol_2 getMover() {
-		return mover;
-	}
+    public XrootdProtocol_2 getMover() {
+        return mover;
+    }
 
-	public PhysicalXrootdConnection getXrootdConnection() {
-		return physicalXrootdConnection;
-	}
+    public PhysicalXrootdConnection getXrootdConnection() {
+        return physicalXrootdConnection;
+    }
 
 
 }

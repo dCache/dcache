@@ -1,7 +1,7 @@
 // $Id: RemoteGsiftpTransferProtocol_1.java,v 1.12 2007-10-08 20:43:29 abaranov Exp $
 
 /*
-COPYRIGHT STATUS:
+  COPYRIGHT STATUS:
   Dec 1st 2001, Fermi National Accelerator Laboratory (FNAL) documents and
   software are sponsored by the U.S. Department of Energy under Contract No.
   DE-AC02-76CH03000. Therefore, the U.S. Government retains a  world-wide
@@ -11,21 +11,21 @@ COPYRIGHT STATUS:
   Copyright Laws, and FNAL reserves all rights.
 
 
- Distribution of the software available from this server is free of
- charge subject to the user following the terms of the Fermitools
- Software Legal Information.
+  Distribution of the software available from this server is free of
+  charge subject to the user following the terms of the Fermitools
+  Software Legal Information.
 
- Redistribution and/or modification of the software shall be accompanied
- by the Fermitools Software Legal Information  (including the copyright
- notice).
+  Redistribution and/or modification of the software shall be accompanied
+  by the Fermitools Software Legal Information  (including the copyright
+  notice).
 
- The user is asked to feed back problems, benefits, and/or suggestions
- about the software to the Fermilab Software Providers.
+  The user is asked to feed back problems, benefits, and/or suggestions
+  about the software to the Fermilab Software Providers.
 
 
- Neither the name of Fermilab, the  URA, nor the names of the contributors
- may be used to endorse or promote products derived from this software
- without specific prior written permission.
+  Neither the name of Fermilab, the  URA, nor the names of the contributors
+  may be used to endorse or promote products derived from this software
+  without specific prior written permission.
 
 
 
@@ -64,7 +64,7 @@ COPYRIGHT STATUS:
   export control laws.  Anyone downloading information from this server is
   obligated to secure any necessary Government licenses before exporting
   documents or software obtained from this server.
- */
+*/
 
 package org.dcache.pool.movers;
 
@@ -171,10 +171,10 @@ public class RemoteGsiftpTransferProtocol_1
     }
 
     private void createFtpClient(RemoteGsiftpTransferProtocolInfo remoteGsiftpProtocolInfo ) throws CacheException,ServerException, ClientException,
-               GlobusCredentialException, GSSException, IOException,NoRouteToCellException {
+                                                                                                    GlobusCredentialException, GSSException, IOException,NoRouteToCellException {
 
         if ( _client != null )
-             return ;
+            return ;
 
         CellPath cellpath =
             new CellPath(remoteGsiftpProtocolInfo.getGsiftpTranferManagerName(),
@@ -409,10 +409,10 @@ public class RemoteGsiftpTransferProtocol_1
         try {
             String checksumTypes [] = ChecksumFactory.getTypes(_cell,_pnfsId);
             if ( checksumTypes != null ){
-                   say("Will use "+checksumTypes[0]+" for transfer verification of "+_pnfsId);
-                   _client.setChecksum(checksumTypes[0],null);
+                say("Will use "+checksumTypes[0]+" for transfer verification of "+_pnfsId);
+                _client.setChecksum(checksumTypes[0],null);
             } else {
-                   say("PnfsId "+_pnfsId+" does not have checksums");
+                say("PnfsId "+_pnfsId+" does not have checksums");
             }
 
             GlobusURL dst_url =  new GlobusURL(protocolInfo.getGsiftpUrl());
@@ -435,10 +435,10 @@ public class RemoteGsiftpTransferProtocol_1
     // the following methods were adapted from DCapProtocol_3_nio mover
     public Checksum getClientChecksum()
     {
-       if ( _cksmFactory != null  && _ftpCksm != null ){
-          return _cksmFactory.create(_ftpCksm.value);
-       }
-       return null;
+        if ( _cksmFactory != null  && _ftpCksm != null ){
+            return _cksmFactory.create(_ftpCksm.value);
+        }
+        return null;
     }
 
     public Checksum getTransferChecksum()
@@ -467,7 +467,7 @@ public class RemoteGsiftpTransferProtocol_1
     public ChecksumFactory getChecksumFactory(ProtocolInfo protocol)
     {
         if ( _cksmFactory != null )
-           return _cksmFactory;
+            return _cksmFactory;
 
         if (protocol instanceof RemoteGsiftpTransferProtocolInfo) {
 
@@ -613,9 +613,9 @@ public class RemoteGsiftpTransferProtocol_1
             try {
                 diskCacheV111.util.Checksum pnfsChecksum = diskCacheV111.util.ChecksumFactory.getFactory(type).createFromPersistentState(_cell, _pnfsId);
                 if ( pnfsChecksum != null ){
-                  String hexValue = pnfsChecksum.toHexString();
-                  say(type+" read from pnfs for file "+_pnfsId+" is "+hexValue);
-                  return hexValue;
+                    String hexValue = pnfsChecksum.toHexString();
+                    say(type+" read from pnfs for file "+_pnfsId+" is "+hexValue);
+                    return hexValue;
                 }
             }
             catch(Exception e){
@@ -634,10 +634,10 @@ public class RemoteGsiftpTransferProtocol_1
         public long getAdler32() throws IOException
         {
             try {
-               String hexValue = getCksmValue("adler32");
-               return Long.parseLong(hexValue,16);
+                String hexValue = getCksmValue("adler32");
+                return Long.parseLong(hexValue,16);
             } catch ( java.security.NoSuchAlgorithmException ex){
-              throw new IOException("adler 32 is not supported:"+ ex.toString());
+                throw new IOException("adler 32 is not supported:"+ ex.toString());
             }
         }
 
