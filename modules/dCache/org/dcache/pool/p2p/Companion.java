@@ -467,21 +467,27 @@ class Companion
             _log.info(String.format("P2P for %s completed", _pnfsId));
         }
 
-        if (_callback != null) {
-            String pnfsId = _pnfsId.toString();
-            Throwable t;
-
-            if (_error == null) {
-                t = null;
-            } else if (_error instanceof Throwable) {
-                t = (Throwable)_error;
-            } else {
-                t = new CacheException(_error.toString());
-            }
-            _callback.cacheFileAvailable(pnfsId, t);
-        }
-
         _acceptor.unregister(_id);
+
+        if (_callback != null) {
+            final String pnfsId = _pnfsId.toString();
+            final Object error = _error;
+
+            _executor.execute(new Runnable() {
+                    public void run() {
+                        Throwable t;
+
+                        if (error == null) {
+                            t = null;
+                        } else if (error instanceof Throwable) {
+                            t = (Throwable)error;
+                        } else {
+                            t = new CacheException(error.toString());
+                        }
+                        _callback.cacheFileAvailable(pnfsId, t);
+                    }
+                });
+        }
     }
 
     /**
