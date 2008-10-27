@@ -27,6 +27,7 @@ public class Checksum {
 
     public static final int ADLER32 = 1;
     public static final int MD5 = 2;
+    public static final int MD4 = 3;
 
     private MessageDigest _messageDigest = null;
 

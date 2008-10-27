@@ -12,7 +12,8 @@ import  dmg.util.* ;
 
 import  java.io.* ;
 import  java.util.*;
-import  diskCacheV111.util.Checksum;
+import  diskCacheV111.util.ChecksumFactory;
+import java.security.NoSuchAlgorithmException;
 
 
 class MyFakeNameSpaceProvider implements NameSpaceProvider {
@@ -56,11 +57,21 @@ class MyFakeNameSpaceProvider implements NameSpaceProvider {
 }
 
 class ChecksumCollection {
-   public ChecksumCollection(String rep) throws Exception {
-      if ( rep == null )
-         return;
+    
+    private static  final String CHECKSUM_DELIMITER=",";
+    private boolean useStringKey ;
+    
+    public ChecksumCollection(String rep) throws Exception {
+        this(rep, false);
+    }
 
-      StringTokenizer st = new StringTokenizer(rep,";");
+    public ChecksumCollection(String rep, boolean useStringKey) throws Exception {
+      this.useStringKey = useStringKey;
+      if ( rep != null ) parseRep(rep);
+    }
+    
+    private void parseRep(String rep) throws CacheException {
+      StringTokenizer st = new StringTokenizer(rep,CHECKSUM_DELIMITER);
 
       while(st.hasMoreTokens() ){
           String currentValue = st.nextToken();
@@ -71,8 +82,15 @@ class ChecksumCollection {
 
           if ( checksumValuePos == currentValue.length() )
              throw new CacheException(CacheException.ATTRIBUTE_FORMAT_ERROR,"Checksum stored in the wrong format "+currentValue);
-
-         put(Integer.parseInt(currentValue.substring(0,checksumValuePos)),currentValue.substring(checksumValuePos+1));
+         String stringKey = currentValue.substring(0,checksumValuePos);
+         int key ;
+         if(useStringKey) {
+             key = typeStoN(stringKey);
+         } else {
+            key = Integer.parseInt(stringKey);
+         }
+         String value =currentValue.substring(checksumValuePos+1);
+         put(key,value);
       }
    }
 
@@ -107,18 +125,43 @@ class ChecksumCollection {
        Map.Entry<Integer,String> el = i.next();
        String value = el.getValue();
        if ( value != null ){
-          result.append(el.getKey()).append(":").append(el.getValue()).append(";");
-          mod = 1;
+          String key;
+          if(useStringKey) {
+              key = typeNtoS(el.getKey());
+          } else {
+              key = el.getKey().toString();
+          }
+          result.append(key).append(":").append(el.getValue()).append(CHECKSUM_DELIMITER);
+          mod = CHECKSUM_DELIMITER.length();
        }
      } 
      return result.substring(0,result.length()-mod);
    }
+
+   private static int typeStoN(String typeName) throws CacheException {
+      try {
+       return ChecksumFactory.mapStringTypeToId(typeName);
+      } catch ( NoSuchAlgorithmException ex ){
+        throw new CacheException(CacheException.ATTRIBUTE_FORMAT_ERROR,"Checksum type is not supported:"+typeName);
+      }
+   }
+
+   private static String typeNtoS(int type) {
+      try {
+       return ChecksumFactory.mapIdTypeToString(type);
+      } catch ( NoSuchAlgorithmException ex ){
+        throw new IllegalArgumentException("Checksum type is not supported:"+Integer.toString(type));
+      }
+   }
+
 
    private Map<Integer,String> _map = new HashMap<Integer,String>();
 
 };
 
 public class AttributeChecksumBridge {
+
+   private static  final String CHECKSUM_COLLECTION_FLAG="uc";
 
    private NameSpaceProvider _nameSpaceProvider;
 
@@ -143,13 +186,11 @@ public class AttributeChecksumBridge {
 
       print("Old MD5 checksum "+mgr.getChecksum(null,Checksum.MD5));
 
-      mgr.setChecksum(null,"Other checksum value",44);
+      mgr.setChecksum(null,"Other checksum value",3);
 
-      print("Newly set outher checksum "+mgr.getChecksum(null,44));
+      print("Newly set outher checksum "+mgr.getChecksum(null,3));
 
       print("Old Adler checksum "+mgr.getChecksum(null,Checksum.ADLER32));
-
-      print("Unset checksum value "+mgr.getChecksum(null,100)); 
 
       print("Clearing checksum value");
       mgr.removeChecksum(null,Checksum.MD5);
@@ -158,7 +199,7 @@ public class AttributeChecksumBridge {
      AttributeChecksumBridge mgr1 = new AttributeChecksumBridge(new MyFakeNameSpaceProvider());
 
      mgr1.setChecksum(null,"MD5 value",Checksum.MD5);
-     mgr1.setChecksum(null,"MD4 value",3);
+     mgr1.setChecksum(null,"MD4 value",Checksum.MD4);
      int tps[] = mgr1.types(null);
      for ( int i = 0; i < tps.length; ++i)
         print(Integer.toString(tps[i]));
@@ -180,37 +221,39 @@ public class AttributeChecksumBridge {
           return candidate;
       } 
 
-      return new ChecksumCollection((String)_nameSpaceProvider.getFileAttribute(pnfsId, "c1")).get(checksumType);
+      return new ChecksumCollection((String)_nameSpaceProvider.getFileAttribute(pnfsId, CHECKSUM_COLLECTION_FLAG),true).get(checksumType);
    }
 
    public void setChecksum(PnfsId pnfsId,String value,int checksumType) throws Exception {
 
-
-      if ( checksumType == Checksum.MD5 || checksumType == Checksum.ADLER32 ){
+      // alder32 is always stored where everyone is expecting it to - using c flag
+      // the other types are packed into list which serizalized value is managed under CHECKSUM_COLLECTION_FLAG
+      if ( checksumType == Checksum.ADLER32 ){
         // look into "c" flag
         String flagValue = (String)_nameSpaceProvider.getFileAttribute(pnfsId, "c");
         ChecksumCollection collection = new ChecksumCollection(flagValue);
 
         if ( flagValue != null ){
 
-          // if its a same checksumType - replace otherwise - fall back to using c1
+          // if its a same checksumType - replace. otherwise (i.e. legacy stored MD5) - fall back to using CHECKSUM_COLLECTION_FLAG
           if ( collection.get(checksumType) != null ){
              collection.put(checksumType,value);
-             _nameSpaceProvider.setFileAttribute(pnfsId, "c",collection.serialize());
+             setFileAttribute(pnfsId, "c",collection.serialize());
              return;
           }
         } else {
-          // set the value here
           collection.put(checksumType,value);
-          _nameSpaceProvider.setFileAttribute(pnfsId, "c",collection.serialize());
+          setFileAttribute(pnfsId, "c",collection.serialize());
           return;
         }
       }
 
-      ChecksumCollection collection = new ChecksumCollection((String)_nameSpaceProvider.getFileAttribute(pnfsId, "c1"));
+      ChecksumCollection collection = 
+          new ChecksumCollection((String)_nameSpaceProvider.getFileAttribute(pnfsId, CHECKSUM_COLLECTION_FLAG),true);
 
       collection.put(checksumType,value);
-      _nameSpaceProvider.setFileAttribute(pnfsId, "c1", collection.serialize());
+      String flagValue = collection.serialize();
+      setFileAttribute(pnfsId, CHECKSUM_COLLECTION_FLAG, flagValue);
    }
 
    public void removeChecksum(PnfsId pnfsId, int type) throws Exception {
@@ -221,13 +264,21 @@ public class AttributeChecksumBridge {
      String flagValue = (String)_nameSpaceProvider.getFileAttribute(pnfsId, "c");
      ChecksumCollection collectionA = new ChecksumCollection(flagValue);
 
-     flagValue = (String)_nameSpaceProvider.getFileAttribute(pnfsId, "c1");
-     ChecksumCollection collectionB = new ChecksumCollection(flagValue);
+     flagValue = (String)_nameSpaceProvider.getFileAttribute(pnfsId, CHECKSUM_COLLECTION_FLAG);
+     ChecksumCollection collectionB = new ChecksumCollection(flagValue,true);
 
      collectionA.add(collectionB);
 
      return collectionA.types();
    }
 
-};
+   private void setFileAttribute(PnfsId pnfsId, String attrName, String value ) {
+         if(value != null && value.length() >0) {
+            _nameSpaceProvider.setFileAttribute(pnfsId, attrName, value);
+         } else {
+             _nameSpaceProvider.removeFileAttribute(pnfsId,attrName);
+         }
+   }
+
+}
 
