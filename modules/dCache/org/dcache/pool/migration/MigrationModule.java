@@ -432,29 +432,29 @@ public class MigrationModule
         return "[" + id + "] " + command;
     }
 
-    public final static String hh_migration_migrate = "[options] <target> ...";
-    public final static String fh_migration_migrate =
-        "Migrates replicas to other pools. The source replica is deleted.\n" +
+    public final static String hh_migration_move = "[options] <target> ...";
+    public final static String fh_migration_move =
+        "Moves replicas to other pools. The source replica is deleted.\n" +
         "Accepts the same options as 'migration copy'. Corresponds to\n\n" +
         "     migration copy -smode=delete -tmode=same\n";
-    public String ac_migration_migrate_$_1_99(Args args)
+    public String ac_migration_move_$_1_99(Args args)
     {
         int id = copy(args, "proportional", "pool", "delete", "same", "300");
-        String command = "migration migrate " + args.toString();
+        String command = "migration move " + args.toString();
         _commands.put(_jobs.get(id), command);
         return "[" + id + "] " + command;
     }
 
-    public final static String hh_migration_replicate =
+    public final static String hh_migration_cache =
         "[options] <target> ...";
-    public final static String fh_migration_replicate =
+    public final static String fh_migration_cache =
         "Caches replicas on other pools. Accepts the same options as\n" +
         "'migration copy'. Corresponds to\n\n" +
         "     migration copy -smode=same -tmode=cached\n";
-    public String ac_migration_replicate_$_1_99(Args args)
+    public String ac_migration_cache_$_1_99(Args args)
     {
         int id = copy(args, "proportional", "pool", "same", "cached", "300");
-        String command = "migration replicate " + args.toString();
+        String command = "migration cache " + args.toString();
         _commands.put(_jobs.get(id), command);
         return "[" + id + "] " + command;
     }
