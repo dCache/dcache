@@ -149,6 +149,8 @@ public class MigrationModule
 
         List<CacheEntryFilter> filters = new ArrayList();
 
+        filters.add(new NotFilter(new StateFilter(EntryState.BROKEN)));
+
         if (sc != null) {
             filters.add(new StorageClassFilter(sc));
         }
