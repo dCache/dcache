@@ -535,12 +535,16 @@ public class MigrationModule
         "<job>";
     public final static String fh_migration_info =
         "Shows detailed information about a migration job.";
-    public String ac_migration_info_$_1(Args args)
+    public synchronized String ac_migration_info_$_1(Args args)
         throws NoSuchElementException
     {
         int id = Integer.valueOf(args.argv(0));
+        Job job = getJob(id);
+        String command = _commands.get(job);
         StringWriter sw = new StringWriter();
-        getJob(id).getInfo(new PrintWriter(sw));
+        PrintWriter pw = new PrintWriter(sw);
+        pw.println("Command    : " + command);
+        job.getInfo(pw);
         return sw.toString();
     }
 
