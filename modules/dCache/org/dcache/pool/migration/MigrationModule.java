@@ -453,7 +453,7 @@ public class MigrationModule
         "     migration copy -smode=same -tmode=cached\n";
     public String ac_migration_replicate_$_1_99(Args args)
     {
-        int id = copy(args, "proportional", "pool", "delete", "same", "300");
+        int id = copy(args, "proportional", "pool", "same", "cached", "300");
         String command = "migration replicate " + args.toString();
         _commands.put(_jobs.get(id), command);
         return "[" + id + "] " + command;
