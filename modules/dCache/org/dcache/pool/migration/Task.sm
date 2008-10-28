@@ -125,6 +125,16 @@ Entry
                 Cancelling
                 {
                 }
+        messageArrived(message: PoolMigrationCopyFinishedMessage)
+                [ message.getReturnCode() != 0 ]
+                Failed
+                {
+                }
+        messageArrived(message: PoolMigrationCopyFinishedMessage)
+                [ message.getReturnCode() == 0 ]
+                Done
+                {
+                }
 }
 
 Copying
