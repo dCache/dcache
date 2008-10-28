@@ -24,7 +24,7 @@ abstract class PoolListFromPoolManager
 
     private final double _spaceFactor;
     private final double _cpuFactor;
-    protected List<PoolCostPair> _pools;
+    protected List<PoolCostPair> _pools = Collections.emptyList();
     protected Collection<String> _exclude;
 
     public PoolListFromPoolManager(Collection<String> exclude,
