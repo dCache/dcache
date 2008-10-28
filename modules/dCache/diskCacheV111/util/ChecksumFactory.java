@@ -76,7 +76,7 @@ public abstract class ChecksumFactory {
        return null;
     }
 
-    static int mapStringTypeToId(String type) throws NoSuchAlgorithmException{
+    public static int mapStringTypeToId(String type) throws NoSuchAlgorithmException{
 
       int intType = 1;
 
@@ -85,6 +85,14 @@ public abstract class ChecksumFactory {
            return intType;
 
       throw new NoSuchAlgorithmException("type "+type+" is not supported");
+   }
+
+   public static String mapIdTypeToString(int type) throws NoSuchAlgorithmException{
+
+      if ( type > getTypes().length || type < 1 )
+          throw new NoSuchAlgorithmException("type "+Integer.toString(type)+" is not supported");
+
+      return getTypes()[type - 1];
    }
 
     public static void main( String [] args ) throws Exception {
