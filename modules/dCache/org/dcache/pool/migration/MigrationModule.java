@@ -526,7 +526,9 @@ public class MigrationModule
         StringWriter sw = new StringWriter();
         PrintWriter pw = new PrintWriter(sw);
         for (Map.Entry<Integer,Job> entry: _jobs.entrySet()) {
-            pw.println(String.format("[%d] %s", entry.getKey(), ""));
+            int id = entry.getKey();
+            Job job = entry.getValue();
+            pw.println(String.format("[%d] %s", id, _commands.get(job)));
         }
         return sw.toString();
     }
