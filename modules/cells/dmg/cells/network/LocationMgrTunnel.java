@@ -138,7 +138,7 @@ public class LocationMgrTunnel
 
     private final CellNucleus  _nucleus;
 
-    private final CellDomainInfo  _remoteDomainInfo;
+    private CellDomainInfo  _remoteDomainInfo;
     private final Socket _socket;
     private final ObjectInputStream  _input;
     private final ObjectOutputStream _output;
@@ -156,17 +156,17 @@ public class LocationMgrTunnel
     {
         super(cellName, "System", args, false);
 
-        _nucleus = getNucleus();
-        _socket = engine.getSocket();
-        _output = new ObjectOutputStream(engine.getOutputStream());
-        _input = new ObjectInputStream(new BufferedInputStream(engine.getInputStream()));
-        _remoteDomainInfo = negotiateDomainInfo(_output, _input);
-
-        getNucleus().newThread(this, "Tunnel").start();
-
-        say("Established tunnel to " + getRemoteDomainName());
-
-        start();
+        try {
+            _nucleus = getNucleus();
+            _socket = engine.getSocket();
+            _output = new ObjectOutputStream(engine.getOutputStream());
+            _input = new ObjectInputStream(new BufferedInputStream(engine.getInputStream()));
+        } catch (IOException e) {
+            start();
+            kill();
+            throw e;
+        }
+        getNucleus().newThread(this, "Tunnel").start();            
     }
 
     private CellDomainInfo negotiateDomainInfo(ObjectOutputStream out,
@@ -278,20 +278,26 @@ public class LocationMgrTunnel
             throw new IllegalStateException("Tunnel has already been closed");
 
         try {
+            _remoteDomainInfo = negotiateDomainInfo(_output, _input);
+            say("Established tunnel to " + getRemoteDomainName());
+
+            start();
+
             _tunnels.add(this);
             try {
                 receive();
-            } catch (EOFException e) {
-            } catch (IOException e) {
-                esay("Error while reading from tunnel: " + e.getMessage());
-            } catch (ClassNotFoundException e) {
-                esay("Cannot deserialize object. This is most likely due to a version mismatch.");
             } finally {
                 _tunnels.remove(this);
-                kill();
             }
+        } catch (EOFException e) {
+        } catch (ClassNotFoundException e) {
+            esay("Cannot deserialize object. This is most likely due to a version mismatch.");
         } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
+        } catch (IOException e) {
+            esay("Error while reading from tunnel: " + e.getMessage());
+        } finally {
+            start();
+            kill();
         }
     }
 
@@ -321,7 +327,9 @@ public class LocationMgrTunnel
 
     protected String getRemoteDomainName()
     {
-        return _remoteDomainInfo.getCellDomainName();
+        return (_remoteDomainInfo == null) 
+            ? ""
+            : _remoteDomainInfo.getCellDomainName();
     }
 
     public String toString()
