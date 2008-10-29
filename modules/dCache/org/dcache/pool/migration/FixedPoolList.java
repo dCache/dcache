@@ -34,6 +34,14 @@ public class FixedPoolList implements RefreshablePoolList
 
     public String toString()
     {
-        return _pools.toString();
+        if (_pools.isEmpty())
+            return "";
+
+        StringBuilder s = new StringBuilder();
+        s.append(_pools.get(0).path.getCellName());
+        for (int i = 1; i < _pools.size(); i++) {
+            s.append(',').append(_pools.get(i).path.getCellName());
+        }
+        return s.toString();
     }
 }
