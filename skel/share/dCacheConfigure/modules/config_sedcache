@@ -944,20 +944,16 @@ yaim_state_service_restart_needed_do()
         ;;
         "pool" )
             pool_restart=1
+            core_restart=1
         ;;
         * )
             ysdrn="${service} ${ysdrn}"
         ;;
         esac
     done
-    if  [ "$has_pool" == "1" -a "${pool_restart}" == "1" ] 
-    then
-        /sbin/service dcache-pool stop
-    fi
-
     shouldruncore=${has_door}${has_admin}${has_pnfsserver}${has_chimera}
-    if [ -n "$(echo $shouldruncore | grep 1)" -a "${core_restart}" == "1" ] ; then
-        /sbin/service dcache-core stop
+    if [ -n "$(echo "${shouldruncore}${has_pool}" | grep 1)" -a "${core_restart}" == "1" ] ; then
+        /sbin/service dcache stop
     fi
 
     if [ "$has_pnfs" == "1" -a "${pnfs_restart}" == "1" ] ; then
@@ -980,15 +976,10 @@ yaim_state_service_restart_needed_do()
     if [ "$has_chimera" == "1" -a "${chimera_restart}" == "1" ] ; then
         chimera_create_nfs_start
     fi
-    
-    if [ -n "$(echo $shouldruncore | grep 1)" -a "${core_restart}" == "1" ] ; then
-        /sbin/service dcache-core start
+    if [ -n "$(echo "${shouldruncore}${has_pool}" | grep 1)" -a "${core_restart}" == "1" ] ; then
+        /sbin/service dcache start
     fi
 
-    if [ "$has_pool" == "1" -a "${pool_restart}" == "1" ]
-    then
-        /sbin/service dcache-pool start
-    fi
     YAIM_STATE_DCACHE_RESTART=${ysdrn}
 }
 
@@ -1078,15 +1069,6 @@ config_sedcache_check_sanity ()
     yaimlog DEBUG "function config_sedcache_check_sanity stop"
 }
 
-config_sedcache_core_start() 
-{
-    /sbin/service dcache-core start
-}
-
-config_sedcache_core_stop() 
-{
-    /sbin/service dcache-core stop
-}
 
 
 config_sedcache_start() 
@@ -1116,12 +1098,12 @@ config_sedcache_start()
 
     if [ "$rcpool" == "1" ]
     then
-        /sbin/service dcache-pool stop
+        /sbin/service dcache stop
     fi
 
     shouldruncore=${rcdoor}${rcadmin}${rcpnfsserver}
     if [ -n "$(echo $shouldruncore | grep 1)" ] ; then
-        /sbin/service dcache-core stop
+        /sbin/service dcache stop
     fi
 
     if [ "$rcpnfs" == "1" ] ; then
@@ -1141,12 +1123,12 @@ config_sedcache_start()
     fi
 
     if [ -n "$(echo $shouldruncore | grep 1)" ] ; then
-        /sbin/service dcache-core start
+        /sbin/service dcache start
     fi
 
     if [ "$rcpool" == "1" ]
     then
-        /sbin/service dcache-pool start
+        /sbin/service dcache start
     fi
 }
 
@@ -1200,12 +1182,14 @@ config_dcache_config_file_pool_path()
   local SOURCE
   SOURCE=$1
   DESTINATION=$2
-  yaim_config_file_update_prepare ${DESTINATION}
-  file2update=$RET
-  rm -f ${file2update}
-  touch ${file2update}
+  #yaim_config_file_update_prepare ${DESTINATION}
+  #file2update=$RET
+  #rm -f ${file2update}
+  #touch ${file2update}
   yaim_query_conf_dcache_pool_node_size_path
   localpools=$RET
+  let alreadyexistingpools=`/opt/d-cache/bin/dcache pool ls | wc -l`
+  let alreadyexistingpools="$alreadyexistingpools-3"
   for poolspec in `echo $localpools`
   do
     yaimlog DEBUG "processing pool=$poolspec"
@@ -1221,28 +1205,43 @@ config_dcache_config_file_pool_path()
     if [ "$pool" == "$size" ] ; then
         size=0
     fi
-    #echo pool=$pool
-    #echo size=$size
-    mkdir -p $pool
-    (cd "$pool") || {
-        echo "[ERROR]: Could not 'cd' to \`$pool'"
-        return 1
-    }
-    
-    if test "x$size" = x || test $size -eq 0 ; then  
-        size=`df -k $pool | awk 'NR == 2 { print int($4 / 1024 / 1024) }'`
+    if [ ! -d "${pool}" ] ; then
+      mkdir -p $pool
+      if test "x$size" = x || test $size -eq 0 ; then  
+          size=`df -k $pool | awk 'NR == 2 { print int($4 / 1024 / 1024) }'`
+      fi
+      rmdir $pool
+      if [ $size -lt 4 ] ; then
+        yaimlog WARNING "pool size must be larger than 4Gb"
+      else
+        poolExists=$( /opt/d-cache/bin/dcache pool ls | grep ${pool} )
+	    if [ -z "$poolExists" ] ; then
+          /opt/d-cache/bin/dcache pool create ${size}G ${pool}
+          poolcreaterc=$?
+          if [ "$poolcreaterc" == "0" ] ; then
+            notnamed="0"
+            while [ ${notnamed} == "0" ]
+            do
+              poolname=`hostname`_${alreadyexistingpools}
+              poolExists=$( /opt/d-cache/bin/dcache pool ls | grep ${hostname} )
+              if [ -z "$poolExists" ] ; then
+                /opt/d-cache/bin/dcache pool add ${poolname} ${pool}
+                namedPoolrc=$?
+                if [ "${namedPoolrc}" == "0" ] ; then
+                  yaim_state_service_restart_needed pool
+                  notnamed="1"
+                fi
+              fi
+              # Now we add 1 to the number of the next pool cell name
+              let alreadyexistingpools="$alreadyexistingpools+1"
+            done
+          fi
+        else
+	      yaimlog ERROR "${poolExists}"
+	    fi
+      fi
     fi
-    if [ $size -lt 4 ] ; then
-        echo "[ERROR]: pool size must be larger than 4Gb"
-        return 1
-    fi
-    echo "$pool $size no" >> ${file2update}
   done
-  yaim_config_file_update_done ${DESTINATION}
-  if [ $? == 1 ] ; then 
-    yaimlog WARNING "Changed the file ${DESTINATION}"
-    yaim_state_service_restart_needed pool
-  fi
   yaimlog DEBUG "function config_dcache_config_file_pool_path stop"
 }
 
@@ -1297,9 +1296,9 @@ config_dcache_config_file()
         "etc/node_config")
             config_dcache_config_file_generate_node_config "${FILETOPROCESS}" "${DIRECTORY}/${DESTFILE}"
         ;;
-        "etc/pool_path")
-            config_dcache_config_file_pool_path "${FILETOPROCESS}" "${DIRECTORY}/${DESTFILE}"
-        ;;
+        #"etc/pool_path")
+        #    config_dcache_config_file_pool_path "${FILETOPROCESS}" "${DIRECTORY}/${DESTFILE}"
+        #;;
         "etc/dcache.kpwd")
             yaimlog DEBUG "Generated by cron so skipping '${FILETOPROCESS}'"
         ;;
@@ -1406,15 +1405,9 @@ config_dcache_config_system_files_init()
     chimera_create_link
   fi
   runcore=${rcdoor}${rcadmin}${rcpnfs}${rcchimera}
-  if [ -n "$(echo $runcore | grep 1)" ] ; then
-    ln -fs $dir/bin/dcache-core /etc/init.d
-    chkconfig dcache-core on
-  fi
-
-  if [ "$rcpool" == "1" ]
-  then
-    ln -fs $dir/bin/dcache-pool /etc/init.d
-    chkconfig dcache-pool on
+  if [ -n "$(echo "$runcore$rcpool" | grep 1)" ] ; then
+    ln -fs $dir/bin/dcache /etc/init.d
+    chkconfig dcache on
   fi
   yaimlog DEBUG "function config_dcache_config_system_files_init stop"
 }
@@ -2334,7 +2327,7 @@ config_sedcache_run()
     requires DCACHE_ADMIN DCACHE_POOLS
     config_dcache_config_files
     config_sedcache_check_sanity || exit $?
-    config_dcache_config_system_files    
+    config_dcache_config_system_files
   else
     echo "Skipping D-Cache config Reset"
   fi
@@ -2358,6 +2351,7 @@ config_sedcache_run()
   if [ "${rcadmin}" == "1" ]; then
     yaim_config_pool_manager_add_lines
   fi
+  config_dcache_config_file_pool_path
   yaim_state_service_restart_needed_do
   #Setup the Cron scripts
   config_sedcache_cron
