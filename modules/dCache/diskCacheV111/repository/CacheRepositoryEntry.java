@@ -85,6 +85,11 @@ public interface CacheRepositoryEntry {
    public void lock( long millisSeconds );
    public boolean isLocked();
 
+    /**
+     * Removes expired sticky from the entry. Triggers a notification
+     * if this causes the entry to become non-sticky.
+     */
+    public void removeExpiredStickyFlags();
 
     /**
      * Set sticky flag for a given owner and time. There is at most

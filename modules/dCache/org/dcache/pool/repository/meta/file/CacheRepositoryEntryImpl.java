@@ -324,6 +324,15 @@ public class CacheRepositoryEntryImpl implements CacheRepositoryEntry {
         }
     }
 
+    public void removeExpiredStickyFlags()
+    {
+        if (_state.removeExpiredStickyFlags() && !_state.isSticky()) {
+            CacheRepositoryEvent event = 
+                new CacheRepositoryEvent(_eventProcessor, clone());
+            _eventProcessor.processEvent(EventType.STICKY, event);
+        }
+    }
+
     public void setSticky(boolean sticky) throws CacheException {
         try {
             if( sticky ) {

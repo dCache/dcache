@@ -4,11 +4,15 @@ import java.util.Date;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Map;
+import java.util.HashMap;
 
 import org.dcache.pool.repository.StickyRecord;
 
 import diskCacheV111.repository.CacheRepositoryEntry;
 import diskCacheV111.util.CacheException;
+import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.event.CacheRepositoryListener;
 import diskCacheV111.util.event.CacheRepositoryEvent;
 import diskCacheV111.util.event.CacheNeedSpaceEvent;
@@ -26,6 +30,10 @@ import diskCacheV111.util.event.CacheEvent;
 
 public class StickyInspector implements CacheRepositoryListener
 {
+    final private Timer _timer = new Timer("StickyInspector", true);
+    final private Map<PnfsId,ExpirationTask> _tasks = 
+        Collections.synchronizedMap(new HashMap());
+
     class ExpirationTask extends TimerTask
     {
         private final CacheRepositoryEntry _entry;
@@ -37,21 +45,10 @@ public class StickyInspector implements CacheRepositoryListener
 
         public void run()
         {
-            try {
-                for (StickyRecord record : _entry.stickyRecords()) {
-                    if (!record.isValid()) {
-                        _entry.setSticky(record.owner(), 0, true);
-                    }
-                }
-            } catch (CacheException e) {
-                /* Happens if the entry no longer exists. Not a
-                 * problem.
-                 */
-            }
+            _tasks.remove(_entry.getPnfsId());
+            _entry.removeExpiredStickyFlags();
         }
     }
-
-    final private Timer _timer = new Timer("StickyInspector", true);
 
     public StickyInspector(Collection<CacheRepositoryEntry> entries)
     {
@@ -68,6 +65,7 @@ public class StickyInspector implements CacheRepositoryListener
         _timer.schedule(new TimerTask() {
                 public void run() {
                     _timer.cancel();
+                    _tasks.clear();
                 }
             }, 0);
     }
@@ -87,7 +85,13 @@ public class StickyInspector implements CacheRepositoryListener
          * is in the past. This guarantees that we also remove records
          * that already have expired.
          */
-        _timer.schedule(new ExpirationTask(entry), new Date(expire));
+        ExpirationTask task = new ExpirationTask(entry);
+        ExpirationTask oldTask = _tasks.put(entry.getPnfsId(), task);
+        if (oldTask != null) {
+            oldTask.cancel();
+        }
+
+        _timer.schedule(task, new Date(expire));
     }
 
     public void precious(CacheRepositoryEvent event)
@@ -108,6 +112,11 @@ public class StickyInspector implements CacheRepositoryListener
 
     public void removed(CacheRepositoryEvent event)
     {
+        ExpirationTask oldTask = 
+            _tasks.remove(event.getRepositoryEntry().getPnfsId());
+        if (oldTask != null) {
+            oldTask.cancel();
+        }
     }
 
     public void destroyed(CacheRepositoryEvent event)
