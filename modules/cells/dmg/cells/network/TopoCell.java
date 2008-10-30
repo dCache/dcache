@@ -113,7 +113,7 @@ public class TopoCell extends CellAdapter implements Runnable  {
              continue ;
           }
           setStatus( "Answer Ok : "+address ) ;
-          node.setLinks( info ) ;
+          Set<CellTunnelInfo> acceptedTunnels = new HashSet<CellTunnelInfo>();
           String domain ;
           for( int j = 0 ; j < info.length ; j++ ){
             try{
@@ -125,9 +125,11 @@ public class TopoCell extends CellAdapter implements Runnable  {
             }
             node = new CellDomainNode( domain , address+":System@"+domain) ;
             vec.add( node ) ;
+            acceptedTunnels.add( info[j]);
           }
-
-
+          
+          // Make sure we only add the links that haven't caused a problem.
+          node.setLinks( acceptedTunnels.toArray( new CellTunnelInfo [acceptedTunnels.size()]));
        }
        CellDomainNode [] nodes = hash.values().toArray(new CellDomainNode[hash.size()] ) ;
 
