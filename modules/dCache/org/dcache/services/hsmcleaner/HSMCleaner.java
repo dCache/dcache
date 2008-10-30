@@ -199,6 +199,7 @@ public class HSMCleaner extends AbstractCell
     public void cleanUp()
     {
         _executor.shutdownNow();
+        super.cleanUp();
     }
 
     public void getInfo(PrintWriter out)

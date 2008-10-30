@@ -245,10 +245,6 @@ public class PinManager extends AbstractCell implements Runnable  {
     // fassion in a low priority thread
     private Thread expireRequests;
 
-    // all database oprations will be done in the lazy
-    // fassion in a low priority thread
-    private Thread updateWaitQueueThread;
-
     private PinManagerDatabase db;
 
     // this is the difference between the expiration time of the pin and the
@@ -288,11 +284,8 @@ public class PinManager extends AbstractCell implements Runnable  {
                                     );
         expireRequests =
             getNucleus().newThread(this,"ExpireRequestsThread");
-        updateWaitQueueThread =
-            getNucleus().newThread(this,"UpdateWaitQueueThread");
         //databaseUpdateThread.setPriority(Thread.MIN_PRIORITY);
         expireRequests.start();
-        updateWaitQueueThread.start();
 
         runInventoryBeforeStartPart();
         start();
@@ -1547,18 +1540,6 @@ public class PinManager extends AbstractCell implements Runnable  {
                     return;
                 }
 
-            }
-        }
-        else if (Thread.currentThread() == this.updateWaitQueueThread) {
-            while(true) {
-                getNucleus().updateWaitQueue();
-                try {
-                    Thread.sleep(30000L);
-                }
-                catch(InterruptedException ie) {
-                    error("UpdateWaitQueueThread interrupted, quiting");
-                    return;
-                }
             }
         }
     }

@@ -13,6 +13,8 @@ import java.lang.reflect.Method;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import dmg.util.Args;
 import dmg.cells.nucleus.CellAdapter;
@@ -21,6 +23,7 @@ import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.UOID;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.Reply;
+import dmg.cells.nucleus.CDC;
 
 import diskCacheV111.vehicles.Message;
 import diskCacheV111.util.CacheException;
@@ -125,6 +128,19 @@ import diskCacheV111.util.PnfsId;
 public class AbstractCell extends CellAdapter
 {
     /**
+     * Timer for periodic low-priority maintenance tasks. Shared among
+     * all AbstractCell instances. Since a Timer is single-threaded,
+     * it is important that the timer is not used for long-running or
+     * blocking tasks, nor for time critical tasks.
+     */
+    protected final static Timer _timer = new Timer(true);
+
+    /**
+     * Task for calling the Cell nucleus message timeout mechanism.
+     */
+    private TimerTask _timeoutTask;
+    
+    /**
      * Logger for the package of the instantiated class. Notice that
      * this is not a static field, as the logger instance to use
      * depends on the particular instance of this class.
@@ -177,6 +193,15 @@ public class AbstractCell extends CellAdapter
         this(cellName, new Args(arguments));
     }
 
+    public void cleanUp()
+    {
+        super.cleanUp();
+
+        if (_timeoutTask != null) {
+            _timeoutTask.cancel();
+        }
+    }
+    
     /**
      * Constructs an AbstractCell.
      *
@@ -239,15 +264,45 @@ public class AbstractCell extends CellAdapter
     /**
      * Called from the initialization thread. By default the method
      * first calls the <code>executeDefinedSetup</code> method,
-     * followed by the <code>init</code> method. Subclasses may
-     * override this behaviour if they wish to modify when the defined
-     * setup is executed.
+     * followed by the <code>init</code> method and the
+     * <code>startTimeoutTask</code> method. Subclasses may override
+     * this behaviour if they wish to modify when the defined setup is
+     * executed.
      */
     protected void executeInit()
         throws Exception
     {
         executeDefinedSetup();
         init();
+        startTimeoutTask();
+    }
+
+    
+    /**
+     * Start the timeout task.
+     *
+     * Cells relies on periodic calls to updateWaitQueue to implement
+     * message timeouts. This method starts a task which calls
+     * updateWaitQueue every 30 seconds.
+     */
+    protected void startTimeoutTask()
+    {
+        if (_timeoutTask != null) 
+            throw new IllegalStateException("Timeout task is already running");
+        
+        final CDC cdc = new CDC();
+        _timeoutTask = new TimerTask() {
+                public void run() 
+                {
+                    cdc.apply();
+                    try {
+                        getNucleus().updateWaitQueue();
+                    } finally {
+                        cdc.clear();
+                    }
+                }
+            };
+        _timer.schedule(_timeoutTask, 30000, 30000);
     }
 
     /**

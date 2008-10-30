@@ -160,6 +160,7 @@ public class UniversalSpringCell
         /* Now that everything is instantiated and configured, we can
          * start the cell and run the final initialisation hooks.
          */
+        startTimeoutTask();
         start();
         for (CellSetupProvider provider: _setupProviders) {
             provider.afterSetupExecuted();
@@ -171,6 +172,7 @@ public class UniversalSpringCell
      */
     public void cleanUp()
     {
+        super.cleanUp();
         if (_context != null) {
             _context.close();
             _context = null;
