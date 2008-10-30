@@ -108,6 +108,25 @@ public class CacheRepositoryEntryState {
 		return ret;
 	}
 
+
+    public boolean removeExpiredStickyFlags()
+    {
+        _stateLock.writeLock().lock();
+        try {
+            if (_sticky.removeExpired()) {
+                makeStatePercistent();
+                return true;
+            }
+            return false;
+        } catch (IOException e) {
+            _logBussiness.error("Failed to store repository state: " + 
+                                e.getMessage());
+            return true;
+        } finally {
+            _stateLock.writeLock().unlock();
+        }
+    }
+
 	/*
 	 *
 	 *  State transitions

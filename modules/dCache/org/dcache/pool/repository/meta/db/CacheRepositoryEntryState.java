@@ -5,6 +5,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.Iterator;
 import java.io.Serializable;
 import java.io.ObjectInputStream;
 import java.io.IOException;
@@ -165,6 +166,22 @@ public class CacheRepositoryEntryState implements Serializable
     public synchronized List<StickyRecord> stickyRecords()
     {
         return new ArrayList<StickyRecord>(_sticky);
+    }
+
+    public synchronized boolean removeExpiredStickyFlags()
+    {
+        long now = System.currentTimeMillis();
+        boolean modified = false;
+        Iterator<StickyRecord> i = _sticky.iterator();
+        while (i.hasNext()) {
+            StickyRecord record = i.next();
+            if (!record.isValidAt(now)) {
+                i.remove();
+                modified = true;
+                markDirty();
+            }
+        }
+        return modified;
     }
 
     /*

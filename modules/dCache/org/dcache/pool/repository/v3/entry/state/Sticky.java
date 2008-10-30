@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Iterator;
 
 import org.dcache.pool.repository.StickyRecord;
 
@@ -84,4 +85,24 @@ public class Sticky {
 	synchronized public List<StickyRecord> records() {
 		return new ArrayList<StickyRecord>(_records.values());
 	}
+
+    /**
+     * Removes expired flags. Returns true when modified, false
+     * otherwise.
+     */
+    synchronized public boolean removeExpired()
+    {
+        long now = System.currentTimeMillis();
+        boolean modified = false;
+        Iterator<StickyRecord> i = _records.values().iterator();
+        while (i.hasNext()) {
+            StickyRecord record = i.next();
+            if (!record.isValidAt(now)) {
+                i.remove();
+                modified = true;
+            }
+        }
+        return modified;
+    }
+
 }
