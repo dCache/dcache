@@ -98,7 +98,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.Queue;
 import java.util.List;
 import java.util.LinkedList;
-import java.util.Timer;
 import java.util.TimerTask;
 import java.util.Map;
 import java.util.HashMap;
@@ -678,12 +677,6 @@ public abstract class AbstractFtpDoorV1
     protected Checksum _checkSum;
     protected ChecksumFactory _checkSumFactory;
     protected ChecksumFactory _optCheckSumFactory;
-
-    /**
-     * Timer used to trigger performance markers. The timer is shared
-     * by all instances of the door.
-     */
-    private static final Timer _perfMarkerTimer = new Timer();
 
     /**
      * Configuration parameters related to performance markers.
@@ -1270,6 +1263,8 @@ public abstract class AbstractFtpDoorV1
             error("FTP Door: got I/O exception closing socket: " +
                   e.getMessage());
         }
+
+        super.cleanUp();
     }
 
     public void println(String str)
@@ -3086,9 +3081,9 @@ public abstract class AbstractFtpDoorV1
                     new PerfMarkerTask(_transfer.pool,
                                        _transfer.moverId,
                                        _perfMarkerConf.period / 2);
-                _perfMarkerTimer.schedule(_transfer.perfMarkerTask,
-                                          _perfMarkerConf.period,
-                                          _perfMarkerConf.period);
+                _timer.schedule(_transfer.perfMarkerTask,
+                                _perfMarkerConf.period,
+                                _perfMarkerConf.period);
             }
         } catch (FTPCommandException e) {
             abortTransfer(e.getCode(), e.getReply());
