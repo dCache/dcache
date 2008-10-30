@@ -335,6 +335,10 @@ public class MetaDataRepositoryHelper implements MetaDataRepository {
             return _state.stickyRecords();
         }
 
+        public void removeExpiredStickyFlags()
+        {
+        }
+
         @Override
         public synchronized String toString()
         {
