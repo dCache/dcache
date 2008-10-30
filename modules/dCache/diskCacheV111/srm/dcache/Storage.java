@@ -2497,11 +2497,6 @@ public class Storage
         try {
             PnfsGetStorageInfoMessage storage_info_msg = null;
             PnfsGetFileMetaDataMessage filemetadata_msg = null;
-            if (parent_util_fmd == null) {
-                PnfsGetFileMetaDataMessage parent_filemetadata_msg = 
-                    _pnfs.getFileMetaDataByPath(parent);
-                parent_util_fmd = parent_filemetadata_msg.getMetaData();
-            }
             try {
                 storage_info_msg = _pnfs.getStorageInfoByPath(absolute_path);
             } 
@@ -2524,6 +2519,11 @@ public class Storage
                 
             }
             if (duser == null) {
+                if (parent_util_fmd == null) {
+                    PnfsGetFileMetaDataMessage parent_filemetadata_msg = 
+                        _pnfs.getFileMetaDataByPath(parent);
+                    parent_util_fmd = parent_filemetadata_msg.getMetaData();
+                }
                 if (!permissionHandler.worldCanRead(
                     absolute_path, parent_util_fmd, util_fmd)) {
                     esay("getFileMetaData have no read permission " +
