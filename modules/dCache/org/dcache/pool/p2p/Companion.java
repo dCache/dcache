@@ -205,29 +205,31 @@ class Companion
                                                  EntryState.FROM_POOL,
                                                  _targetState,
                                                  _stickyRecords);
-                setThread(Thread.currentThread());
-                _fsm.connected();
             } catch (FileInCacheException e) {
                 _fsm.createEntryFailed();
                 throw new IllegalStateException("File already exists", e);
             }
+            setThread(Thread.currentThread());
+            _fsm.connected();
         }
 
         Throwable error = null;
         try {
-            File file = handle.getFile();
-            CacheEntry entry = handle.getEntry();
-            long size = entry.getStorageInfo().getFileSize();
-
-            handle.allocate(size);
-            runIO(in, out, file, size);
+            try {
+                File file = handle.getFile();
+                CacheEntry entry = handle.getEntry();
+                long size = entry.getStorageInfo().getFileSize();
+                
+                handle.allocate(size);
+                runIO(in, out, file, size);
+            } finally {
+                setThread(null);
+                Thread.interrupted();
+            }
             handle.commit(null);
         } catch (Throwable e) {
             error = e;
         } finally {
-            setThread(null);
-            Thread.interrupted();
-
             handle.close();
         }
 

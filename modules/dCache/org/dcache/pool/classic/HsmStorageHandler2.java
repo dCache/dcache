@@ -528,40 +528,46 @@ public class HsmStorageHandler2
 
             try {
                 setThread(Thread.currentThread());
+                try {
+                    _log.debug("FetchThread started");
 
-                _log.debug("FetchThread started");
+                    long now = System.currentTimeMillis();
+                    _infoMsg.setTimeQueued(now - _timestamp);
+                    _timestamp = now;
 
-                long now = System.currentTimeMillis();
-                _infoMsg.setTimeQueued(now - _timestamp);
-                _timestamp = now;
+                    String fetchCommand =
+                        getFetchCommand(_handle.getFile(), pnfsId, storageInfo);
+                    long fileSize = storageInfo.getFileSize();
 
-                String fetchCommand =
-                    getFetchCommand(_handle.getFile(), pnfsId, storageInfo);
-                long fileSize = storageInfo.getFileSize();
+                    _log.debug("Waiting for space (" + fileSize + " bytes)");
+                    _handle.allocate(fileSize);
+                    _log.debug("Got Space (" + fileSize + " bytes)");
 
-                _log.debug("Waiting for space (" + fileSize + " bytes)");
-                _handle.allocate(fileSize);
-                _log.debug("Got Space (" + fileSize + " bytes)");
-
-                RunSystem run =
-                    new RunSystem(fetchCommand, _maxLines, _maxRestoreRun);
-                run.go();
-                returnCode = run.getExitValue();
-                if (returnCode != 0) {
-                    /*
-                     * while shell do not return error code bigger than 255,
-                     * do a trick here
-                     */
-                    if (returnCode == 71 ) {
-                        returnCode = CacheException.HSM_DELAY_ERROR;
+                    RunSystem run =
+                        new RunSystem(fetchCommand, _maxLines, _maxRestoreRun);
+                    run.go();
+                    returnCode = run.getExitValue();
+                    if (returnCode != 0) {
+                        /*
+                         * while shell do not return error code bigger than 255,
+                         * do a trick here
+                         */
+                        if (returnCode == 71 ) {
+                            returnCode = CacheException.HSM_DELAY_ERROR;
+                        }
+                        excep  =
+                            new CacheException(returnCode, run.getErrorString());
+                        _log.error("HSM script returned " + returnCode
+                                   + ": " + run.getErrorString());
                     }
-                    excep  =
-                        new CacheException(returnCode, run.getErrorString());
-                    _log.error("HSM script returned " + returnCode
-                               + ": " + run.getErrorString());
-                }
 
-                doChecksum(_handle);
+                    doChecksum(_handle);
+                } finally {
+                    /* Surpress thread interrupts after this point.
+                     */
+                    setThread(null);
+                    Thread.interrupted();
+                }
                 _handle.commit(null);
             } catch (CacheException e) {
                 _log.error(e);
@@ -592,11 +598,6 @@ public class HsmStorageHandler2
                 returnCode = 5;
                 excep = e;
             } finally {
-                /* Surpress thread interruptions after this point.
-                 */
-                setThread(null);
-                Thread.interrupted();
-
                 _handle.close();
                 removeFetchEntry(pnfsId);
                 executeCallbacks(excep);
