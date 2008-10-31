@@ -257,6 +257,9 @@ public class SrmReleaseSpaceCompanion implements CellMessageAnswerable {
             new Release(spaceToken,
                     spaceToReleaseInBytes
                     );
+            say("setting group="+user.getVoGroup()+", role="+user.getVoRole());
+            release.setVoGroup(user.getVoGroup());
+            release.setVoRole(user.getVoRole());
 
             state = WAITING_SPACE_MANAGER_RESPONCE_STATE;
             try {
@@ -280,7 +283,7 @@ public class SrmReleaseSpaceCompanion implements CellMessageAnswerable {
     Long spaceToReleaseInBytes,
     SrmReleaseSpaceCallbacks callbacks,
     CellAdapter cell) {
-        cell.say(" SrmReleaseSpaceCompanion.releaseSpace("+user+" token "+spaceToken+")");
+        cell.say("SrmReleaseSpaceCompanion.releaseSpace("+user+", token "+spaceToken+")");
 
         SrmReleaseSpaceCompanion companion = new SrmReleaseSpaceCompanion(
                   user,
