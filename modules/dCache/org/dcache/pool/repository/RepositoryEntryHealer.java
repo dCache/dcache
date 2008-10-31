@@ -14,6 +14,7 @@ import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.vehicles.StorageInfo;
+import diskCacheV111.vehicles.GenericStorageInfo;
 
 /**
  * The RepositoryEntryHealer encapsulates the logic for recovering
@@ -71,6 +72,12 @@ public class RepositoryEntryHealer
         /* Get new storage info from pnfs
          */
         try {
+            /* We add cache location first to make sure it is
+             * registered even if the following calls fail with
+             * NOT_IN_TRASH.
+             */
+            _pnfsHandler.addCacheLocation(id);
+
             StorageInfo storageInfo =
                 _pnfsHandler.getStorageInfo(id.toString());
 
@@ -124,33 +131,58 @@ public class RepositoryEntryHealer
              */
             entry.setStorageInfo(storageInfo);
 
-            if (sticky) {
-                entry.setSticky(true, "system", -1);
-            }
-
-            if (precious) {
-                entry.setPrecious(true);
-            } else {
-                entry.setCached();
-            }
-
             if (bad) {
                 entry.setBad(true);
+            } else {
+                if (sticky) {
+                    entry.setSticky(true, "system", -1);
+                }
+ 
+                if (precious) {
+                    entry.setPrecious(true);
+                } else {
+                    entry.setCached();
+                }
             }
 
             _log.warn("Meta data recovered: " + entry.toString());
 
             return entry;
         } catch (CacheException e) {
-            if (e.getRc() == CacheException.FILE_NOT_FOUND) {
-                _log.info(id + " was deleted. Removing replica...");
+            switch (e.getRc()) {
+            case CacheException.NOT_IN_TRASH:
+                long length = file.length();
+                if (length > 0) {
+                    _log.warn(id + " is not in trash. Keeping replica...");
+ 
+                    /* To avoid misacounting in the pool and complains
+                     * about the file not showing up in 'rep ls', we
+                     * create a meta data entry for the file.
+                     */
+                    CacheRepositoryEntry entry = _metaRepository.create(id);
+                    StorageInfo storageInfo = new GenericStorageInfo();
+                    storageInfo.setFileSize(length);
+                    entry.setStorageInfo(storageInfo);
+                    entry.setBad(true);
+ 
+                    return entry;
+                } else {
+                    _log.warn(id + " is not in trash, but is empty. Removing replica...");
+                    _metaRepository.remove(id);
+                    file.delete();
+                    _pnfsHandler.clearCacheLocation(id);
+                    return null;
+                }
+ 
+            case CacheException.FILE_NOT_FOUND:
+                _log.warn(id + " was deleted. Removing replica...");
                 _metaRepository.remove(id);
                 file.delete();
-            } else if (e.getRc() == CacheException.NOT_IN_TRASH) {
-                _log.info(id + " is not in trash. Keep replica...");
-            } else
+                return null;
+
+            default:
                 throw e;
-            return null;
+            }
         }
     }
 
@@ -187,30 +219,26 @@ public class RepositoryEntryHealer
         if (entry == null) {
             _log.warn("Missing meta data for " + id);
             entry = reconstruct(file, id);
-        } else if (entry.isBad()) {
+        } else if (entry.isBad() || !(entry.isCached() || entry.isPrecious())) {
             /* Make sure that the cache location is registered and
              * remove the replica if the file has been deleted, but
              * otherwise leave the entry as it is.
              */
+            entry.setBad(true);
             try {
                 _pnfsHandler.addCacheLocation(id);
             } catch (CacheException e) {
                 if (e.getRc() == CacheException.FILE_NOT_FOUND) {
-                    _log.info(id + " was deleted. Removing replica...");
+                    _log.warn(id + " was deleted. Removing replica...");
                     _metaRepository.remove(id);
                     file.delete();
+                    _pnfsHandler.clearCacheLocation(id);
                     return null;
                 }
             }
         } else if (entry.isReceivingFromClient()) {
-            _log.info(String.format(PARTIAL_FROM_CLIENT_MSG, id));
-            /*
-             * well, following steps have to be done:
-             *
-             *    1. get storageInfo from pnfs
-             *    2. mark file as CACHED + STICKY
-             *    3. add cache location
-             */
+            _log.warn(String.format(PARTIAL_FROM_CLIENT_MSG, id));
+
             try {
                 StorageInfo storageInfo =
                     _pnfsHandler.getStorageInfo(id.toString());
@@ -219,18 +247,17 @@ public class RepositoryEntryHealer
                 entry.setStorageInfo(storageInfo);
                 entry.setSticky(true, "system", -1);
                 entry.setCached();
-                entry.setBad(true);
 
                 _pnfsHandler.addCacheLocation(id);
             } catch (CacheException e) {
                 if (e.getRc() == CacheException.FILE_NOT_FOUND) {
                     /* The file is already gone
                      */
-                    _log.info(id + " was deleted. Removing replica.");
+                    _log.warn(id + " was deleted. Removing replica.");
                     _metaRepository.remove(id);
                     file.delete();
                 } else if (e.getRc() == CacheException.NOT_IN_TRASH) {
-                    _log.info(id + " is not in trash. Keep replica...");
+                    _log.warn(id + " is not in trash. Keep replica...");
                 } else
                     throw e;
             }
