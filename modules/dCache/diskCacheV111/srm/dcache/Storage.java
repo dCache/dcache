@@ -1155,7 +1155,7 @@ public class Storage
                 voRole,
                 "/pnfs/fnal.gov/usr/cms/WAX",
                 10401,
-                1530);
+                new int[]{1530});
         long sizeInBytes = Long.parseLong(args.argv(2));
         long reservationLifetime = Long.parseLong(args.argv(3));
         String accessLatency = args.argv(4);

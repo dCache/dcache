@@ -154,6 +154,7 @@ import dmg.cells.nucleus.CellAdapter;
 import org.apache.log4j.Logger;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.Arrays;
 
 /**
  *
@@ -254,7 +255,7 @@ public final class DCacheAuthorization implements SRMAuthorization {
         String username = user_rec.Username;
         String root = user_rec.Root;
         int uid = user_rec.UID;
-        int gid = user_rec.GID;
+        int[] gids = user_rec.GIDs;
         String voGroup=null;
         String voRole=null;
         try {
@@ -277,14 +278,14 @@ public final class DCacheAuthorization implements SRMAuthorization {
             if ( username.equals( user.getName()) &&
                  root.equals(user.getRoot()) &&
                  uid == user.getUid() &&
-                 gid == user.getGid() &&
+                 Arrays.equals(gids,user.getGids()) &&
                  voGroup.equals(user.getVoGroup()) &&
                  (voRole==null || voRole.equals(user.getVoRole()))){
                 return user;
             }
            _logAuth.error(" Warning: user parameters for user "+ user+ " have changed ");
         }
-        DCacheUser user = new DCacheUser(username,voGroup,voRole,root,uid,gid);
+        DCacheUser user = new DCacheUser(username,voGroup,voRole,root,uid,gids);
         user.saveCreator();
         return user;
         

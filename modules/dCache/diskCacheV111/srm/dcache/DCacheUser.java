@@ -97,6 +97,7 @@ import org.ietf.jgss.GSSCredential;
 
 import org.dcache.srm.SRMUser;
 import org.dcache.srm.request.RequestUser;
+import java.util.Arrays;
 /**
  *
  * @author  timur
@@ -109,12 +110,12 @@ public class DCacheUser extends RequestUser {
     private String root;
     
     private int uid=-1;
-    private int gid=-1;
+    private int[] gids;
     
     private static final long serialVersionUID = 9164781252174549638L;    
     
     /** Creates a new instance of User */
-    public DCacheUser(String name, String voGroup, String voRole, String root, int uid, int gid) {
+    public DCacheUser(String name, String voGroup, String voRole, String root, int uid, int[] gids) {
         super(name);
         if(name == null || root == null) {
             throw new IllegalArgumentException("name == null || root == null");
@@ -124,7 +125,7 @@ public class DCacheUser extends RequestUser {
         this.voRole = voRole;
         this.root = root;
         this.uid = uid;
-        this.gid = gid;
+        this.gids = gids;
         
     }
     
@@ -139,7 +140,7 @@ public class DCacheUser extends RequestUser {
     }
     
     public String toString() {
-        return "User [name="+name+", uid="+ uid+", gid="+gid +", root="+root+"]";
+        return "User [name="+name+", uid="+ uid+", gids="+Arrays.toString(gids) +", root="+root+"]";
     }
     
     
@@ -148,7 +149,14 @@ public class DCacheUser extends RequestUser {
     }
     
     public int getGid() {
-        return gid;
+        if(gids != null && gids.length>0) {
+            return gids[0];
+        }
+        return -1;
+    }
+    
+    public int[] getGids() {
+        return gids;
     }
     
     public boolean equals(Object o) {
@@ -156,12 +164,13 @@ public class DCacheUser extends RequestUser {
             return false;
         }
         DCacheUser u = (DCacheUser) o;
-        return uid == u.uid && gid == u.gid && name.equals(u.name) &&
+        
+        return uid == u.uid && Arrays.equals(gids, u.gids) && name.equals(u.name) &&
         root.equals(u.root);
         
     }
     public int hashCode() {
-        return name.hashCode()^root.hashCode()^uid^gid;
+        return name.hashCode()^root.hashCode()^uid;
     }
 
     public String getVoRole() {
