@@ -1,6 +1,5 @@
 package org.dcache.services.pinmanager1;
 
-import com.sun.corba.se.spi.orbutil.fsm.State;
 import java.util.Collection;
 import java.util.Set;
 import java.util.HashSet;
@@ -29,10 +28,12 @@ import org.dcache.util.SqlHelper;
 import org.dcache.util.JdbcConnectionPool;
 import org.dcache.auth.AuthorizationRecord;
 import org.dcache.auth.persistence.AuthRecordPersistenceManager;
+import org.apache.log4j.Logger;
 
 
 class PinManagerDatabase
 {
+    private static final Logger _logger = Logger.getLogger(PinManagerDatabase.class);
     // keep the names spelled in the lower case to make postgress
     // driver to work correctly
     private static final String PinManagerPinsTableName="pinsv3";
@@ -53,13 +54,6 @@ class PinManagerDatabase
     private static final String TABLE_OLDPINS = "pins";
 
     private static final long NEXT_LONG_STEP = 1000;
-
-    /**
-     * we are going to use the currentTimeMillis as the next
-     * PinRequestId so that it can be used as an identifier for the
-     * request and the creation time stamp if the PinRequestId already
-     * exists, we will increment by one until we get a unique one
-     */
 
         // Expiration is of type long,
         // its value is time in milliseconds since the midnight of 1970 GMT (i think)
@@ -97,12 +91,6 @@ class PinManagerDatabase
 	"CREATE TABLE " + PinManagerNextRequestIdTableName + "(NEXTLONG BIGINT)";
     private static final String insertNextPinRequestId =
         "INSERT INTO " + PinManagerNextRequestIdTableName + " VALUES (0)";
-
-    private static final String UpdatePinRequestTable =
-        "UPDATE " + PinManagerPinsTableName
-        + " SET Expiration=? WHERE Id=?";
-    private static final String DeleteFromPinRequests =
-        "DELETE FROM " + PinManagerPinsTableName + " WHERE Id=?";
 
     private static final String SelectNextPinRequestId =
         "SELECT NEXTLONG FROM " + PinManagerNextRequestIdTableName;
@@ -223,7 +211,7 @@ class PinManagerDatabase
             String select = "SELECT * FROM "+
                 PinManagerSchemaVersionTableName ;
             Statement s1 = con.createStatement();
-             info("updateSchemaVersion trying "+select);
+             _logger.debug("updateSchemaVersion trying "+select);
              ResultSet schema = s1.executeQuery(select);
              if(schema.next()) {
                  previousSchemaVersion  = schema.getInt("version");
@@ -231,10 +219,10 @@ class PinManagerDatabase
                      PinManagerSchemaVersionTableName +
                      " SET version = "+currentSchemaVersion ;
                 Statement s2 = con.createStatement();
-                 info("dbInit trying "+update);
+                 _logger.debug("dbInit trying "+update);
                 int result = s2.executeUpdate(update);
                 if(result != 1) {
-                    error ("update of schema version gave result="+result);
+                    _logger.error("update of schema version gave result="+result);
                 }
                 s2.close();
              } else {
@@ -269,12 +257,12 @@ class PinManagerDatabase
             String insert = "INSERT INTO "+PinManagerSchemaVersionTableName +
                 " VALUES ( "+currentSchemaVersion+" )";
                 Statement s1 = con.createStatement();
-             info("updateSchemaVersion trying "+insert);
+             _logger.debug("updateSchemaVersion trying "+insert);
             int result = s1.executeUpdate(insert);
             s1.close();
 
         }
-        info(" previouos schema version is "+ previousSchemaVersion+
+        _logger.debug(" previouos schema version is "+ previousSchemaVersion+
             " current schema version is "+currentSchemaVersion);
 
         if(previousSchemaVersion == currentSchemaVersion) {
@@ -286,8 +274,8 @@ class PinManagerDatabase
                 updateSchemaToVersion3From1(con);
             }
             catch (SQLException sqle) {
-                error("updateSchemaToVersion3From1 failed, schema might have been updated already:");
-                error(sqle.getMessage());
+                _logger.error("updateSchemaToVersion3From1 failed, schema might have been updated already:");
+                _logger.error(sqle.getMessage());
             }
             previousSchemaVersion = 3;
         }
@@ -296,8 +284,8 @@ class PinManagerDatabase
                 updateSchemaToVersion3from2(con);
             }
             catch (SQLException sqle) {
-                error("updateSchemaToVersion3 failed, schema might have been updated already:");
-                error(sqle);
+                _logger.error("updateSchemaToVersion3 failed, schema might have been updated already:");
+                _logger.error(sqle);
             }
             previousSchemaVersion = 3;
         }
@@ -306,71 +294,13 @@ class PinManagerDatabase
                 updateSchemaToVersion4from3(con);
             }
             catch (SQLException sqle) {
-                error("updateSchemaToVersion3 failed, schema might have been updated already:");
-                error(sqle);
+                _logger.error("updateSchemaToVersion3 failed, schema might have been updated already:");
+                _logger.error(sqle);
             }
             previousSchemaVersion = 3;
             
         }
     }
-
-    protected void debug(String s)
-    {
-        if(_manager != null)  _manager.debug(s);
-        else System.out.println(s);
-    }
-
-    protected void info(String s)
-    {
-        if(_manager != null) _manager.info(s);
-        else System.out.println(s);
-    }
-
-    protected void warn(String s)
-    {
-        if(_manager != null) _manager.warn(s);
-        else System.out.println(s);
-    }
-
-    protected void error(String s)
-    {
-        if(_manager != null) _manager.error(s);
-        else System.err.println(s);
-    }
-
-    protected void error(Throwable t)
-    {
-        if(_manager != null) _manager.error(t);
-        else t.printStackTrace();
-    }
-
-    protected void fatal(String s)
-    {
-        if(_manager != null) _manager.error(s);
-        else System.err.println(s);
-    }
-
-    private void createTable(Connection con, String name,
-                             String ... statements)
-        throws SQLException
-    {
-        DatabaseMetaData md = con.getMetaData();
-        ResultSet tableRs = md.getTables(null, null, name, null);
-        if (!tableRs.next()) {
-            try {
-                for (String statement : statements) {
-                    Statement s = con.createStatement();
-                    info(statement);
-                    int result = s.executeUpdate(statement);
-                    s.close();
-                }
-            } catch (SQLException e) {
-                warn("SQL Exception (relation could already exist): "
-                     + e.getMessage());
-            }
-        }
-    }
-
 
     private void updateSchemaToVersion3From1(Connection con)
         throws SQLException
@@ -379,7 +309,7 @@ class PinManagerDatabase
                 "SELECT PinRequestId, PnfsId, Expiration FROM "
                 + TABLE_OLDPINREQUEST;
             Statement stmt = con.createStatement();
-            info(SelectEverythingFromOldPinRewquestTable);
+            _logger.debug(SelectEverythingFromOldPinRewquestTable);
 
             PreparedStatement pinsInsertStmt =
                 con.prepareStatement(InsertIntoPinsTable);
@@ -417,7 +347,7 @@ class PinManagerDatabase
             pinReqsInsertStmt.close();
             stmt.close();
             stmt = con.createStatement();
-            info("DROP TABLE " + TABLE_OLDPINREQUEST);
+            _logger.debug("DROP TABLE " + TABLE_OLDPINREQUEST);
             stmt.executeUpdate("DROP TABLE " + TABLE_OLDPINREQUEST);
             stmt.close();
 
@@ -426,15 +356,15 @@ class PinManagerDatabase
         try {
             //check if old pins table is still there
             stmt = con.createStatement();
-            info("DROP TABLE " + TABLE_OLDPINS);
+            _logger.debug("DROP TABLE " + TABLE_OLDPINS);
             stmt.executeUpdate("DROP TABLE " + TABLE_OLDPINS);
             stmt.close();
             stmt = con.createStatement();
-            info("DROP TABLE " + TABLE_OLDPINREQUEST);
+            _logger.debug("DROP TABLE " + TABLE_OLDPINREQUEST);
             stmt.executeUpdate("DROP TABLE " + TABLE_OLDPINREQUEST);
             stmt.close();
         } catch (SQLException e) {
-            warn("Failed to drop old pinrequest table: "
+            _logger.warn("Failed to drop old pinrequest table: "
                  + e.getMessage());
         }
     }
@@ -445,7 +375,7 @@ class PinManagerDatabase
             PreparedStatement pinReqsInsertStmt =
                 con.prepareStatement(InsertIntoPinRequestsTable);
             Statement stmt = con.createStatement();
-            info(SelectAllV2Requests);
+            _logger.debug(SelectAllV2Requests);
             ResultSet rs = stmt.executeQuery(SelectAllV2Requests);
             while (rs.next()) {
                 long pinId = rs.getLong(1);
@@ -492,11 +422,11 @@ class PinManagerDatabase
             try {
                 //check if old pins table is still there
                 stmt = con.createStatement();
-                info("DROP TABLE " + TABLE_PINREQUEST_V2);
+                _logger.debug("DROP TABLE " + TABLE_PINREQUEST_V2);
                 stmt.executeUpdate("DROP TABLE " + TABLE_PINREQUEST_V2);
                 stmt.close();
             } catch (SQLException e) {
-                warn("Failed to drop PinRequests V2 table: "
+                _logger.warn("Failed to drop PinRequests V2 table: "
                      + e.getMessage());
             }
 
@@ -513,19 +443,19 @@ class PinManagerDatabase
    private void createIndecies() {
     try {
        PinManagerDatabase.createIndexes(jdbc_pool,PinManagerPinsTableName,"PnfsId");
-    } catch (SQLException sqle) { debug("index creation failed "+ sqle); }
+    } catch (SQLException sqle) { _logger.debug("index creation failed "+ sqle); }
     try {
        PinManagerDatabase.createIndexes(jdbc_pool,PinManagerPinsTableName,"State");
-    } catch (SQLException sqle) { debug("index creation failed "+ sqle); }
+    } catch (SQLException sqle) { _logger.debug("index creation failed "+ sqle); }
     try {
        PinManagerDatabase.createIndexes(jdbc_pool,PinManagerRequestsTableName,"PinId");
-    } catch (SQLException sqle) { debug("index creation failed "+ sqle); }
+    } catch (SQLException sqle) { _logger.debug("index creation failed "+ sqle); }
     try {
        PinManagerDatabase.createIndexes(jdbc_pool,PinManagerRequestsTableName,"Expiration");
-    } catch (SQLException sqle) { debug("index creation failed "+ sqle); }
+    } catch (SQLException sqle) { _logger.debug("index creation failed "+ sqle); }
     try {
        PinManagerDatabase.createIndexes(jdbc_pool,PinManagerRequestsTableName,"SRMId");
-    } catch (SQLException sqle) { debug("index creation failed "+ sqle); }
+    } catch (SQLException sqle) { _logger.debug("index creation failed "+ sqle); }
 
    }
 
@@ -567,14 +497,14 @@ class PinManagerDatabase
                 if(!tableRs.next()) {
                     try {
                         Statement s = _con.createStatement();
-                        info("dbinit trying "+createTables[i]);
+                        _logger.debug("dbinit trying "+createTables[i]);
                         int result = s.executeUpdate(createTables[i]);
                         s.close();
                        created.put(tables[i], Boolean.TRUE);
                     } catch(SQLException sqle) {
 
-                        error("SQL Exception (relation "+tables[i]+" could already exist)");
-                        error(sqle.toString());
+                        _logger.error("SQL Exception (relation "+tables[i]+" could already exist)");
+                        _logger.error(sqle.toString());
 
                     }
                 }
@@ -588,19 +518,19 @@ class PinManagerDatabase
             ResultSet set = s.executeQuery(select);
             if(!set.next()) {
                 Statement s1 = _con.createStatement();
-                info("dbInit trying "+insertNextPinRequestId);
+                _logger.debug("dbInit trying "+insertNextPinRequestId);
                 int result = s1.executeUpdate(insertNextPinRequestId);
                 s1.close();
             } else {
-                info("dbInit set.next() returned nonnull");
+                _logger.debug("dbInit set.next() returned nonnull");
             }
             s.close();
 
         } catch (SQLException sqe) {
-            error(sqe.toString());
+            _logger.error(sqe.toString());
             throw sqe;
         } catch (Exception ex) {
-            error(ex);
+            _logger.error(ex);
             throw new SQLException(ex.toString());
         }
         finally {
@@ -625,18 +555,18 @@ class PinManagerDatabase
             try {
                 stSelectNextPinRequestIdForUpdate =
                     _con.prepareStatement(SelectNextPinRequestIdForUpdate);
-                info(SelectNextPinRequestIdForUpdate);
+                _logger.debug(SelectNextPinRequestIdForUpdate);
                 rsSelectNextPinRequestIdForUpdate = stSelectNextPinRequestIdForUpdate.executeQuery();
                 if (!rsSelectNextPinRequestIdForUpdate.next()) {
                     throw new SQLException("Table " + PinManagerNextRequestIdTableName + " is empty.");
                 }
                 nextLongBase = rsSelectNextPinRequestIdForUpdate.getLong("NEXTLONG");
-                info("nextLongBase=" + nextLongBase);
+                _logger.debug("nextLongBase=" + nextLongBase);
                 stIncreasePinRequestId = _con.prepareStatement(IncreasePinRequestId);
-                info(IncreasePinRequestId);
+                _logger.debug(IncreasePinRequestId);
                 stIncreasePinRequestId.executeUpdate();
             } catch (SQLException e) {
-                error("Failed to obtain ID sequence: " + e.toString());
+                _logger.error("Failed to obtain ID sequence: " + e.toString());
                 nextLongBase = _nextLongBase;
             }finally{
                 SqlHelper.tryToClose(rsSelectNextPinRequestIdForUpdate);
@@ -647,7 +577,7 @@ class PinManagerDatabase
         }
 
         long nextLong = nextLongBase + (nextLongIncrement++);
-        info("nextLong=" + nextLong);
+        _logger.debug("nextLong=" + nextLong);
         return nextLong;
     }
 
@@ -681,7 +611,7 @@ class PinManagerDatabase
 
     private void deletePin( Connection _con,
         long id) throws SQLException {
-        info("executing statement: "+deletePin);
+        _logger.debug("executing statement: "+deletePin);
         PreparedStatement deletePinStmt = _con.prepareStatement(deletePin);
         try {
             deletePinStmt.setLong(1,id);
@@ -710,7 +640,7 @@ class PinManagerDatabase
 
     private void deletePinRequest( Connection _con,
         long id) throws SQLException {
-        info("executing statement: "+deletePinRequest);
+        _logger.debug("executing statement: "+deletePinRequest);
         PreparedStatement deletePinReqStmt = _con.prepareStatement(deletePinRequest);
         try {
             deletePinReqStmt.setLong(1,id);
@@ -745,9 +675,9 @@ class PinManagerDatabase
         Long authRecId
         ) throws SQLException {
         long creationTime=System.currentTimeMillis();
-        info("insertPinRequest()  executing statement:"+
+        _logger.debug("insertPinRequest()  executing statement:"+
             InsertIntoPinRequestsTable);
-        info("?="+id+" ?="+pinId+" ?="+creationTime+" ?="+
+        _logger.debug("?="+id+" ?="+pinId+" ?="+creationTime+" ?="+
             expirationTime+" ?="+authRecId);
 
         PreparedStatement pinReqsInsertStmt = con.prepareStatement(InsertIntoPinRequestsTable);
@@ -763,9 +693,9 @@ class PinManagerDatabase
             else {
                 pinReqsInsertStmt.setLong(6,authRecId);
             }
-            info("running insert=");
+            _logger.debug("running insert=");
             int inserRowCount = pinReqsInsertStmt.executeUpdate();
-            info("inserRowCount="+inserRowCount);
+            _logger.debug("inserRowCount="+inserRowCount);
             if(inserRowCount !=1 ){
                 throw new SQLException("insert returned row count ="+inserRowCount);
             }
@@ -830,7 +760,7 @@ class PinManagerDatabase
             updatePin += " State ="+state.getStateId()+" ";
         }
         updatePin += " WHERE id = "+id;
-        info("executing statement: "+updatePin);
+        _logger.debug("executing statement: "+updatePin);
         Statement sqlStatement =
                 _con.createStatement();
         try {
@@ -864,7 +794,7 @@ class PinManagerDatabase
                 " WHERE  id = ?";
     private void updatePinRequest(Connection _con,long id,long expiration)
     throws SQLException {
-        info("executing statement: "+updatePinRequest);
+        _logger.debug("executing statement: "+updatePinRequest);
         PreparedStatement sqlStatement =
                 _con.prepareStatement(updatePinRequest);
         try {
@@ -881,7 +811,7 @@ class PinManagerDatabase
             "SELECT * FROM "+ PinManagerPinsTableName +
             " WHERE  id = ?";
     private Pin getPin(Connection _con, long id) throws SQLException{
-            info("executing statement: "+selectPin);
+            _logger.debug("executing statement: "+selectPin);
             PreparedStatement sqlStatement =
                     _con.prepareStatement(selectPin);
             ResultSet set = null;
@@ -903,7 +833,7 @@ class PinManagerDatabase
         "SELECT * FROM "+ PinManagerPinsTableName +
         " WHERE  id = ? FOR UPDATE";
     private Pin getPinForUpdate(Connection _con, long id) throws SQLException{
-            info("executing statement: "+selectPinForUpdate+" ?="+id);
+            _logger.debug("executing statement: "+selectPinForUpdate+" ?="+id);
 
             PreparedStatement sqlStatement =
                     _con.prepareStatement(selectPinForUpdate);
@@ -927,7 +857,7 @@ class PinManagerDatabase
                     " WHERE  id = ?";
 
     private PinRequest getPinRequest(Connection _con, long id) throws SQLException{
-            info("executing statement: "+selectPinRequest+" ?="+id);
+            _logger.debug("executing statement: "+selectPinRequest+" ?="+id);
             PreparedStatement sqlStatement =
                     _con.prepareStatement(selectPinRequest);
             ResultSet set = null;
@@ -955,7 +885,7 @@ class PinManagerDatabase
 
     
    private Pin getAndLockActivePinWithRequestsByPnfsId(Connection _con, PnfsId pnfsId) throws SQLException{
-            debug("executing statement: "+selectActivePinsByPnfsId+" ?="+pnfsId);
+            _logger.debug("executing statement: "+selectActivePinsByPnfsId+" ?="+pnfsId);
             PreparedStatement sqlStatement =
                     _con.prepareStatement(selectActivePinsByPnfsId);
             ResultSet set = null;
@@ -989,7 +919,7 @@ class PinManagerDatabase
 
     private long getPinRequestIdByByPnfsIdandSrmRequestId(Connection _con,
         PnfsId pnfsId, long SrmId) throws SQLException{
-            info("executing statement: "+
+            _logger.debug("executing statement: "+
                 selectPinRequestByPnfsIdandSrmRequestId+" ?="+pnfsId+
                 " ?="+SrmId);
             PreparedStatement sqlStatement =
@@ -1016,7 +946,7 @@ class PinManagerDatabase
                 " WHERE  PinId = ?";
 
         public Set<PinRequest> getPinRequestsByPin(Connection _con, Pin pin) throws SQLException{
-            info("executing statement: "+selectPinRequestsByPin+" ? "+pin.getId());
+            _logger.debug("executing statement: "+selectPinRequestsByPin+" ? "+pin.getId());
             PreparedStatement sqlStatement =
                     _con.prepareStatement(selectPinRequestsByPin);
             ResultSet set = null;
@@ -1049,7 +979,7 @@ class PinManagerDatabase
                     " )"+ " FOR UPDATE " ;
 
     private Pin lockPinForInsertOfNewPinRequest(Connection _con, PnfsId pnfsId) throws SQLException{
-           info("executing statement: "+selectPinByPnfsIdForUpdate);
+           _logger.debug("executing statement: "+selectPinByPnfsIdForUpdate);
            PreparedStatement sqlStatement =
                     _con.prepareStatement(selectPinByPnfsIdForUpdate);
            ResultSet set = null;
@@ -1079,15 +1009,15 @@ class PinManagerDatabase
             return pin;
 
         } catch(SQLException sqle) {
-            error("getPin: "+sqle);
+            _logger.error("getPin: "+sqle);
             throw new PinDBException(sqle.toString());
         }
     }
- String selectAllPins =
+ private static final String selectAllPins =
             "SELECT * FROM "+ PinManagerPinsTableName;
    private void allPinsToStringBuilder(Connection _con, StringBuilder sb) throws SQLException
     {
-           info("executing statement: "+selectAllPins);
+           _logger.debug("executing statement: "+selectAllPins);
          PreparedStatement sqlStatement =
                 _con.prepareStatement(selectAllPins);
          ResultSet set = null;
@@ -1117,13 +1047,13 @@ class PinManagerDatabase
 
     }
 
-   private String selectAllPinsWithPnfsid =
+   private static final String selectAllPinsWithPnfsid =
             "SELECT * FROM "+ PinManagerPinsTableName+" WHERE PnfsId =?";
 
    private void allPinsByPnfsIdToStringBuilder(Connection _con, PnfsId pnfsId,
        StringBuilder sb) throws SQLException
     {
-        info("executing statement: "+selectAllPinsWithPnfsid);
+        _logger.debug("executing statement: "+selectAllPinsWithPnfsid);
         PreparedStatement sqlStatement =
                 _con.prepareStatement(selectAllPinsWithPnfsid);
         ResultSet set = null;
@@ -1163,7 +1093,7 @@ class PinManagerDatabase
             return pins;
 
         } catch(SQLException sqle) {
-            error("getPin: "+sqle);
+            _logger.error("getPin: "+sqle);
             throw new PinDBException(sqle.toString());
         }
     }
@@ -1172,7 +1102,7 @@ class PinManagerDatabase
         throws SQLException
     {
         Set<Pin> pins = new HashSet<Pin>();
-        info("executing statement: "+selectAllPinsWithPnfsid);
+        _logger.debug("executing statement: "+selectAllPinsWithPnfsid);
         PreparedStatement sqlStatement =
                 _con.prepareStatement(selectAllPinsWithPnfsid);
         ResultSet set = null;
@@ -1253,7 +1183,7 @@ class PinManagerDatabase
         try {
              allPinsToStringBuilder(_con,sb);
         } catch(SQLException sqle) {
-            error("getAllPinsThatAreNotPinned: "+sqle);
+            _logger.error("getAllPinsThatAreNotPinned: "+sqle);
             throw new PinDBException(sqle.toString());
         }
     }
@@ -1268,7 +1198,7 @@ class PinManagerDatabase
         try {
              allPinsByPnfsIdToStringBuilder(_con,pnfsId,sb);
         } catch(SQLException sqle) {
-            error("allPinsByPnfsIdToStringBuilder: "+sqle);
+            _logger.error("allPinsByPnfsIdToStringBuilder: "+sqle);
             throw new PinDBException(sqle.toString());
         }
     }
@@ -1284,7 +1214,7 @@ class PinManagerDatabase
         try {
             return getAllPinsThatAreNotPinned(_con);
         } catch(SQLException sqle) {
-            error("getAllPinsThatAreNotPinned: "+sqle);
+            _logger.error("getAllPinsThatAreNotPinned: "+sqle);
             throw new PinDBException(sqle.toString());
         }
     }
@@ -1299,7 +1229,7 @@ class PinManagerDatabase
         try {
             return getPinsByState(_con,state);
         } catch(SQLException sqle) {
-            error("getPinsByState: "+sqle);
+            _logger.error("getPinsByState: "+sqle);
             throw new PinDBException(sqle.toString());
         }
     }
@@ -1311,7 +1241,7 @@ class PinManagerDatabase
 
    private Set<PinRequest> getExpiredPinRequests(Connection _con) throws SQLException{
         long currentTimeMissis = System.currentTimeMillis();
-        debug("executing statement: "+selectExpiredPinRequest+" ?="+currentTimeMissis);
+        _logger.debug("executing statement: "+selectExpiredPinRequest+" ?="+currentTimeMissis);
         PreparedStatement sqlStatement =
                 _con.prepareStatement(selectExpiredPinRequest);
         ResultSet set = null;
@@ -1344,7 +1274,7 @@ class PinManagerDatabase
         try {
             return getExpiredPinRequests(_con);
         } catch(SQLException sqle) {
-            error("getExpiredPinRequests: "+sqle);
+            _logger.error("getExpiredPinRequests: "+sqle);
             throw new PinDBException(sqle.toString());
         }
     }
@@ -1371,7 +1301,7 @@ class PinManagerDatabase
 
   private Set<Pin> getExpiredPinsWithoutRequests(Connection _con) throws SQLException{
         long currentTimeMissis = System.currentTimeMillis();
-        debug("executing statement: "+selectIDsOfExpiredPinWithoutRequest+" ?="+currentTimeMissis);
+        _logger.debug("executing statement: "+selectIDsOfExpiredPinWithoutRequest+" ?="+currentTimeMissis);
         PreparedStatement sqlStatement =
                 _con.prepareStatement(selectIDsOfExpiredPinWithoutRequest);
         ResultSet set = null;
@@ -1403,21 +1333,10 @@ class PinManagerDatabase
         try {
             return getExpiredPinsWithoutRequests(_con);
         } catch(SQLException sqle) {
-            error("getExpiredPinRequests: "+sqle);
+            _logger.error("getExpiredPinRequests: "+sqle);
             throw new PinDBException(sqle.toString());
         }
     }
-
-    private static final String _CreatePinManagerPinsTable =
-        "CREATE TABLE " + PinManagerPinsTableName + " ( " +
-        " Id numeric PRIMARY KEY," +
-        " PnfsId VARCHAR," +
-        " Creation numeric, " +
-        " Expiration numeric, " +
-        " Pool VARCHAR, " +
-        " StateTranstionTime numeric, "+
-        " State numeric" +
-        ")";
 
 
     private Pin extractPinFromResultSet( ResultSet set )
@@ -1439,7 +1358,7 @@ class PinManagerDatabase
          AuthorizationRecord ar = null;
          long authRecId = set.getLong("AuthRecId");
          if(authRecId == 0 && set.wasNull() ) {
-             info("authRecId is NULL");
+             _logger.debug("authRecId is NULL");
          } else {
              ar = authRecordPM.find(authRecId);
          }
@@ -1645,9 +1564,9 @@ class PinManagerDatabase
             jdbc_pool.returnConnection(_con);
             _con = null;
        } catch(SQLException sqle) {
-            error("commitDBOperations failed with ");
-            error(sqle);
-            error("ROLLBACK TRANSACTION");
+            _logger.error("commitDBOperations failed with ");
+            _logger.error(sqle);
+            _logger.error("ROLLBACK TRANSACTION");
             _con = null;
             throw new PinDBException(2,"commitDBOperations failed with "+
                 sqle.toString()) ;
@@ -1670,9 +1589,9 @@ class PinManagerDatabase
             jdbc_pool.returnConnection(_con);
             _con = null;
        } catch(SQLException sqle) {
-            error("rollbackDBOperations failed with ");
-            error(sqle.toString());
-            error("ROLLBACK TRANSACTION");
+            _logger.error("rollbackDBOperations failed with ");
+            _logger.error(sqle.toString());
+            _logger.error("ROLLBACK TRANSACTION");
             jdbc_pool.returnFailedConnection(_con);
             _con = null;
             throw new PinDBException(2,"rollbackDBOperations failed with "+
@@ -1685,33 +1604,6 @@ class PinManagerDatabase
        }
    }
 
-   /**
-    * utility method for execution of the prepared updates
-    */
-
-    private int executePreparedUpdate( String statement, Object ... args) throws PinDBException
-    {
-        Connection con = getThreadLocalConnection();
-        if(con == null) {
-           throw new PinDBException(1,"DB is not initialized in this thread!!!");
-        }
-        debug("Executing '" + statement +
-                          "' with arguments " + Arrays.toString(args));
-        PreparedStatement s = null;
-        try {
-            s = con.prepareStatement(statement);
-            for (int i = 0; i < args.length; i++)
-                s.setObject(i + 1, args[i]);
-            int count = s.executeUpdate();
-            debug("Updated " + count + " records");
-            return count;
-        } catch (SQLException sqle) {
-            error(sqle);
-            throw new PinDBException(sqle.getMessage());
-        }finally{
-            SqlHelper.tryToClose(s);
-        }
-     }
 
      private static void  createIndexes(JdbcConnectionPool connectionPool,
             String name,
