@@ -54,6 +54,11 @@ public class Task
     private List<String> _locations = Collections.emptyList();
     private CellPath _target;
 
+    /**
+     * Used by ping mechanism to detect timeouts.
+     */
+    private boolean _alive;
+
     public Task(Job job,
                 CellStub pool,
                 CellStub pnfs,
@@ -267,6 +272,8 @@ public class Task
             throw new IllegalStateException("Ping task already running");
         }
 
+        pong();
+
         Runnable task =
             new LoggingTask(new Runnable()
                 {
@@ -291,13 +298,30 @@ public class Task
         }
     }
 
+    /** Confirms receiption of successful ping reply. */
+    synchronized private void pong()
+    {
+        _alive = true;
+    }
+
     /** Sends ping to target pool. */
     synchronized private void ping()
     {
-        _pool.send(_target,
-                   new PoolMigrationPingMessage(_source, getPnfsId(), _id),
-                   PoolMigrationPingMessage.class,
-                   new Callback());
+        Callback callback = new Callback() {
+                public void success() 
+                {
+                    pong();
+                }
+            };
+
+        if (!_alive) {
+            callback.timeout();
+        } else {
+            _alive = false;
+            _pool.send(_target,
+                       new PoolMigrationPingMessage(_source, getPnfsId(), _id),
+                       PoolMigrationPingMessage.class, callback);
+        }
     }
 
     /**
