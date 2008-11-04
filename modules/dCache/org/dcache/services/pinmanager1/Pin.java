@@ -12,6 +12,7 @@ import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.StorageInfo;
 import java.util.Set;
 import java.util.Date;
+import java.util.Collections;
 
 /**
  *
@@ -26,7 +27,7 @@ public class Pin {
     private  long stateTransitionTime;
     private String pool;
     private PinManagerPinState state;
-    private transient Set<PinRequest> requests;
+    private transient Set<PinRequest> requests = Collections.emptySet();
     
     /** Creates a new instance of Pin */
     public Pin(long id,
@@ -92,7 +93,7 @@ public class Pin {
             " PnfsId:"+pnfsId+
             " SI:"+storageInfo+
             " created:"+ new Date(creationTime).toString()+" "+
-            " expires:"+ (expirationTime==-1?"Never":new Date(expirationTime).toString())+" "+
+            " expires:"+ (expirationTime==-1?"Never":new Date(expirationTime).toString())+
             " pool:"+pool+
             " stateChangedAt:"+ new Date(stateTransitionTime).toString()+
             " state:"+ state+" ";
@@ -111,12 +112,15 @@ public class Pin {
         return requests;
     }
 
+    /**
+     * @param requests requests in this pin, could be empty, should never be null
+     */
     public void setRequests(Set<PinRequest> requests) {
+        assert requests != null;
         this.requests = requests;
     }
     
     public int getRequestsNum() {
-        if(requests == null) return 0;
         return requests.size();
     }
 
