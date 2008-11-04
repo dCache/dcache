@@ -148,16 +148,21 @@ Exit
 }
 {
         failure(rc: int)
-                Failed
+                nil
                 {
+                        // Negative reply to ping does not imply 
+                        // a failed transfer.
                 }
         timeout
                 Failed
                 {
                 }
         noroute
-                Failed
+                nil
                 {
+                        // We don't consider temporary cell 
+                        // communication failure a problem. If it
+                        // persists, the timeout will catch it.
                 }
         success
                 nil
