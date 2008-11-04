@@ -220,23 +220,6 @@ public class RepositoryEntryHealer
         if (entry == null) {
             _log.warn("Missing meta data for " + id);
             entry = reconstruct(file, id);
-        } else if (entry.isBad() || !(entry.isCached() || entry.isPrecious())) {
-            /* Make sure that the cache location is registered and
-             * remove the replica if the file has been deleted, but
-             * otherwise leave the entry as it is.
-             */
-            entry.setBad(true);
-            try {
-                _pnfsHandler.addCacheLocation(id);
-            } catch (CacheException e) {
-                if (e.getRc() == CacheException.FILE_NOT_FOUND) {
-                    _log.warn(id + " was deleted. Removing replica...");
-                    _metaRepository.remove(id);
-                    file.delete();
-                    _pnfsHandler.clearCacheLocation(id);
-                    return null;
-                }
-            }
         } else if (entry.isReceivingFromClient()) {
             _log.warn(String.format(PARTIAL_FROM_CLIENT_MSG, id));
 
@@ -269,6 +252,23 @@ public class RepositoryEntryHealer
             _metaRepository.remove(id);
             file.delete();
             return null;
+        } else if (entry.isBad() || !(entry.isCached() || entry.isPrecious())) {
+            /* Make sure that the cache location is registered and
+             * remove the replica if the file has been deleted, but
+             * otherwise leave the entry as it is.
+             */
+            entry.setBad(true);
+            try {
+                _pnfsHandler.addCacheLocation(id);
+            } catch (CacheException e) {
+                if (e.getRc() == CacheException.FILE_NOT_FOUND) {
+                    _log.warn(id + " was deleted. Removing replica...");
+                    _metaRepository.remove(id);
+                    file.delete();
+                    _pnfsHandler.clearCacheLocation(id);
+                    return null;
+                }
+            }
         } else if (entry.getStorageInfo() == null) {
             _log.warn(String.format(MISSING_SI_MSG, id));
             _metaRepository.remove(id);
