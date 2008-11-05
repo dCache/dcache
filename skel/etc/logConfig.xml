@@ -18,7 +18,7 @@
   </appender>
 
   <appender name="LessDetailed" class="org.apache.log4j.ConsoleAppender">
-    <param name="Threshold" value="INFO"/>
+    <param name="Threshold" value="WARN"/>
     <!-- param name="File" value="Indentify-Log.txt"/ -->
     <!-- param name="Append" value="false"/ -->
     <!-- param name="MaxFileSize" value="500KB"/ -->
@@ -63,17 +63,17 @@
 
   <!-- The below filters out too-detailed and too many messages from NSStack. -->
   <category name="org.apache.axis.utils.NSStack">
-    <priority value="INFO"/>
+    <priority value="WARN"/>
   </category> 
 
   <!-- The below filters out too-detailed and too many messages from all axis stuff. -->
   <category name="org.apache.axis">
-    <priority value="INFO"/>
+    <priority value="WARN"/>
   </category> 
 
   <!-- The below filters out too-detailed and too many messages from glite. -->
   <category name="org.glite.security">
-    <priority value="INFO"/>
+    <priority value="WARN"/>
   </category>
 
 
@@ -104,7 +104,7 @@
   </category>
 
   <root>
-    <priority value ="INFO" />
+    <priority value ="WARN" />
     <appender-ref ref="detailed"/>
   </root>
 
