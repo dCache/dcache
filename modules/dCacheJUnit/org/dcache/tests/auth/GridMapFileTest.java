@@ -26,7 +26,7 @@ public class GridMapFileTest {
     @Test
     public void testVoRole() throws Exception {
 
-        gPlazmaAuthorizationRecord gauthrec = _voAuth.authorize(MY_DN, ROLE1, null, null, null);
+        gPlazmaAuthorizationRecord gauthrec = _voAuth.authorize(MY_DN, ROLE1, null, null, null, null);
 
         assertNotNull("can't find user record", gauthrec);
 

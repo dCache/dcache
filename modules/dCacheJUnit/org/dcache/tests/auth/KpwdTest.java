@@ -17,7 +17,7 @@ public class KpwdTest {
 
         _authServ = new KPWDAuthorizationPlugin("modules/dCacheJUnit/org/dcache/tests/auth/dcachesrm-gplazma.policy", 1);
 
-        gPlazmaAuthorizationRecord pwdRecord =  _authServ.authorize(MY_DN, "", null, null, null);
+        gPlazmaAuthorizationRecord pwdRecord =  _authServ.authorize(MY_DN, "", null, null, null, null);
 
         assertNotNull("can't find user record", pwdRecord);
 
@@ -30,7 +30,7 @@ public class KpwdTest {
 
         _authServ = new KPWDAuthorizationPlugin("modules/dCacheJUnit/org/dcache/tests/auth/dcache.kpwd", 1);
 
-        gPlazmaAuthorizationRecord pwdRecord =  _authServ.authorize("/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=flavia/CN=388195/CN=Flavia Donno", "", null, null, null);
+        gPlazmaAuthorizationRecord pwdRecord =  _authServ.authorize("/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=flavia/CN=388195/CN=Flavia Donno", "", null, null, null, null);
 
         assertNotNull("can't find user record", pwdRecord);
 

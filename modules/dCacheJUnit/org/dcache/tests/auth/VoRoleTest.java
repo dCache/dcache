@@ -27,7 +27,7 @@ public class VoRoleTest {
     @Test
     public void testVoRole() throws Exception {
 
-        gPlazmaAuthorizationRecord pwdRecord = _voAuth.authorize(MY_DN, ROLE1, null, null, null);
+        gPlazmaAuthorizationRecord pwdRecord = _voAuth.authorize(MY_DN, ROLE1, null, null, null, null);
 
         assertNotNull("can't find user record", pwdRecord);
 
@@ -36,7 +36,7 @@ public class VoRoleTest {
 
     @Test
     public void testRegexp() throws Exception {
-        gPlazmaAuthorizationRecord pwdRecord = _voAuth.authorize(FLAVIA, ROLE1, null, null, null);
+        gPlazmaAuthorizationRecord pwdRecord = _voAuth.authorize(FLAVIA, ROLE1, null, null, null, null);
         assertNotNull("can't find user record", pwdRecord);
         assertEquals("Incorrect user record received", 1001, pwdRecord.getUID());
 
@@ -45,7 +45,7 @@ public class VoRoleTest {
     @Test
     public void testNonExisting() throws Exception {
         try {
-            gPlazmaAuthorizationRecord pwdRecord = _voAuth.authorize(MY_DN, BADROLE, null, null, null);
+            gPlazmaAuthorizationRecord pwdRecord = _voAuth.authorize(MY_DN, BADROLE, null, null, null, null);
             fail("Record for non existing role returned");
         }catch(AuthorizationException ae) {
             // OK

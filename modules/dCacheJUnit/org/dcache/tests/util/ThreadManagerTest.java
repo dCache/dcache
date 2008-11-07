@@ -33,7 +33,7 @@ public class ThreadManagerTest {
             ThreadManager.execute(
                     new Runnable() {
 
-                        @Override
+                        //@Override
                         public void run() {
                             runnedThreads.incrementAndGet();
                             try {
@@ -66,7 +66,7 @@ public class ThreadManagerTest {
             ThreadManager.execute(
                     new Runnable() {
 
-                        @Override
+                        //@Override
                         public void run() {
                             runnedThreads.incrementAndGet();
                             try {
@@ -99,7 +99,7 @@ public class ThreadManagerTest {
             ThreadManager.execute(
                     new Runnable() {
 
-                        @Override
+                        //@Override
                         public void run() {
                             runnedThreads.incrementAndGet();
                             try {
