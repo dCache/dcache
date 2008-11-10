@@ -247,6 +247,68 @@ class WriteHandleImpl implements WriteHandle
         }
     }
 
+    /** 
+     * Fails the operation. Called by close without a successfulc
+     * commit. The file is either removed or marked bad, depending on
+     * its state.
+     */
+    private void fail()
+    {
+        /* Need to adjust space allocation anyway.
+         */
+        long length = getFile().length();
+        try {
+            if (_allocated < length) {
+                _log.error("Underallocation");
+                allocate(length - _allocated);
+            } else if (_allocated > length) {
+                _monitor.freeSpace(_allocated - length);
+            }
+        } catch (InterruptedException e) {
+            // Really nothing we can do about it here. This will
+            // normally only happen during shutdown and in that case
+            // it is not a serious problem. And even then, it will
+            // only happen if we have buggy movers.
+        }            
+
+        /* Decide if we should mark the file broken or removed.
+         */
+        if (_initialState != EntryState.FROM_CLIENT || length == 0) {
+            _targetState = EntryState.REMOVED;
+        }
+
+        /* Register cache location unless replica is to be
+         * removed.
+         */
+        if (_targetState != EntryState.REMOVED) {
+            try {
+                /* Local storage info length must match local file
+                 * length.
+                 */
+                StorageInfo info = _entry.getStorageInfo();
+                info.setFileSize(length);
+                _entry.setStorageInfo(info);
+
+                _pnfs.addCacheLocation(_entry.getPnfsId());
+            } catch (CacheException e) {
+                if (e.getRc() == CacheException.FILE_NOT_FOUND) {
+                    _targetState = EntryState.REMOVED;
+                }
+            }
+        }
+
+        if (_targetState == EntryState.REMOVED) {
+            /* A locked entry cannot be removed, thus we need to
+             * unlock it before setting the state.
+             */
+            _entry.lock(false);
+            _repository.setState(_entry, EntryState.REMOVED);
+        } else {
+            _repository.setState(_entry, EntryState.BROKEN);
+            _entry.lock(false);
+        }
+    }
+
     public void close()
         throws IllegalStateException
     {
@@ -255,38 +317,7 @@ class WriteHandleImpl implements WriteHandle
             throw new IllegalStateException("Handle is closed");
 
         case OPEN:
-            /* File was not committed. Decide if we should mark it
-             * broken or removed.
-             */
-            if (_initialState != EntryState.FROM_CLIENT ||
-                getFile().length() == 0) {
-                _targetState = EntryState.REMOVED;
-            }
-
-            /* Register cache location unless replica is to be
-             * removed.
-             */
-            if (_targetState != EntryState.REMOVED) {
-                try {
-                    _pnfs.addCacheLocation(_entry.getPnfsId());
-                } catch (CacheException e) {
-                    if (e.getRc() == CacheException.FILE_NOT_FOUND) {
-                        _targetState = EntryState.REMOVED;
-                    }
-                }
-            }
-
-            if (_targetState == EntryState.REMOVED) {
-                /* A locked entry cannot be removed, thus we need to
-                 * unlock it before setting the state.
-                 */
-                _entry.lock(false);
-                _repository.setState(_entry, EntryState.REMOVED);
-            } else {
-                _repository.setState(_entry, EntryState.BROKEN);
-                _entry.lock(false);
-            }
-
+            fail();
             _state = HandleState.CLOSED;
             break;
 
