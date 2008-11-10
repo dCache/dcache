@@ -565,6 +565,16 @@ public class RepositorySubsystemTest
         // TODO: Check notification
     }
 
+    @Test
+    public void testCreateEntryOverallocationFail()
+        throws Throwable
+    {
+        createEntry4(100, false, false, true, true, FROM_CLIENT, PRECIOUS);
+        assertCacheEntry(repository.getEntry(id4), id4, size4, BROKEN);
+        assertSpaceRecord(5120, 1024, 1024, 1024);
+        // TODO: Check notification
+    }
+
     @Test(expected=IllegalArgumentException.class)
     public void testCreateEntryNegativeAllocation()
         throws Throwable
