@@ -108,10 +108,9 @@ import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.PoolRemoveFilesMessage;
 import diskCacheV111.util.PnfsId;
 import java.util.Set;
-import java.util.HashSet;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import org.dcache.cells.Option;
 import org.dcache.cells.AbstractCell;
@@ -254,6 +253,12 @@ public class PinManager extends AbstractCell implements Runnable  {
     protected static final long  POOL_LIFETIME_MARGIN=60*60*1000L;
 
     private PinManagerPolicy pinManagerPolicy;
+
+    private Map<Long, CellMessage> pinToRequestsMap =
+        new ConcurrentHashMap<Long, CellMessage>();
+
+    private Map<Long, CellMessage> pinRequestToUnpinRequestsMap = 
+        new ConcurrentHashMap<Long, CellMessage>();
 
     /** Creates a new instance of PinManager */
     public PinManager(String name , String argString)
@@ -577,8 +582,6 @@ public class PinManager extends AbstractCell implements Runnable  {
            cellMessage) ;
     }
 
-    private Map<Long, CellMessage> pinToRequestsMap = new
-        HashMap<Long, CellMessage> ();
     /**
      * this function should work with pinRequestMessage and
      * cellMessage set to null as it might be invoked by an admin command
@@ -1076,8 +1079,6 @@ public class PinManager extends AbstractCell implements Runnable  {
             unpin(pnfsId, pinIdStr,srmRequestId ,authRec, unpinRequest, cellMessage,false);
         }
     }
-    private Map<Long, CellMessage> pinRequestToUnpinRequestsMap = new
-        HashMap<Long, CellMessage> ();
 
        /**
      * this function should work with unpinRequest and
