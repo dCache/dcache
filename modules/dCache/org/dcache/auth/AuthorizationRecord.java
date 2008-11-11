@@ -199,7 +199,7 @@ public class AuthorizationRecord implements Serializable, SRMUser{
     public String toString()
     {
         StringBuilder sb = new java.lang.StringBuilder("AR:");
-           sb.append(Integer.toHexString(hashCode()));
+        sb.append(getId());
         sb.append(' ').append(identity);
         sb.append(' ').append( name);
         sb.append(' ').append( uid);
@@ -210,13 +210,13 @@ public class AuthorizationRecord implements Serializable, SRMUser{
           }
         sb.append( priority ).append(' ');
         sb.append( home ).append(' ');
-        sb.append( root ).append("\n< ");
+        sb.append( root ).append(" < ");
         if(groupLists != null)
         {
-            sb.append(groupLists.size()).append(" groupLists :\n");
+            sb.append(groupLists.size()).append(" groupLists : ");
             for(GroupList groupList : groupLists)
             {
-                sb.append("  ").append(groupList).append('\n');
+                sb.append("  ").append(groupList).append(';');
             }
         } else {
             sb.append("empty");
