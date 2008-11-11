@@ -225,6 +225,10 @@ import org.dcache.srm.SRMException;
  * @author  timur
  */
 public abstract class Job  {
+    
+    private static final org.apache.log4j.Logger _log = 
+        org.apache.log4j.Logger.getLogger(Job.class);
+
     // this is the map from jobIds to jobs
     // job ids are referenced from jobs
     // jobs are wrapped into WeakReferences to prevent
@@ -949,7 +953,7 @@ public abstract class Job  {
         
         private Long _id;
 
-        static public void schedule(Long id, long time) 
+        static synchronized public void schedule(Long id, long time) 
         {
             if (!_instances.containsKey(id)) {
                 LifetimeExpiration task = new LifetimeExpiration(id);
@@ -958,12 +962,12 @@ public abstract class Job  {
             }
         }
 
-        static public boolean contains(Long id)
+        static synchronized public boolean contains(Long id)
         {
             return _instances.containsKey(id);
         }
 
-        static public boolean cancel(Long id)
+        static synchronized public boolean cancel(Long id)
         {
             LifetimeExpiration task = _instances.remove(id);
             if (task == null) {
@@ -973,6 +977,11 @@ public abstract class Job  {
             }
         }
 
+        static synchronized private void remove(Long id) 
+        {
+            _instances.remove(id);            
+        }
+
         private LifetimeExpiration(Long id) 
         {
             _id = id;
@@ -980,11 +989,13 @@ public abstract class Job  {
         
         public void run() 
         {
-            _instances.remove(_id);
+            remove(_id);
             try {
                 expireJob(Job.getJob(_id));
             } catch (IllegalArgumentException e) {
                 // Job is already gone
+            } catch (Exception e) {
+                _log.error("Unexpected exception during job timeout", e);
             }
         }
     }
