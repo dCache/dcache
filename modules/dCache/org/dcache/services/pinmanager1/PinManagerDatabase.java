@@ -1561,20 +1561,20 @@ class PinManagerDatabase
 
        try {
            _con.commit();
-            jdbc_pool.returnConnection(_con);
-            _con = null;
        } catch(SQLException sqle) {
             _logger.error("commitDBOperations failed with ");
             _logger.error(sqle);
             _logger.error("ROLLBACK TRANSACTION");
-            _con = null;
+            try {
+                _con.rollback();
+            } catch (SQLException sqle1) {
+                _logger.error(sqle1);
+            }
             throw new PinDBException(2,"commitDBOperations failed with "+
                 sqle.toString()) ;
        } finally {
-            clearThreadLocalConnectionl();
-            if(_con != null) {
-                jdbc_pool.returnConnection(_con);
-            }
+           jdbc_pool.returnConnection(_con);
+           clearThreadLocalConnectionl();
        }
    }
 
