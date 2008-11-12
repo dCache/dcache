@@ -124,46 +124,23 @@ package org.dcache.services.pinmanager1;
  *
  * @author  timur
  */
-public final class PinManagerPinState implements java.io.Serializable {
+public enum PinManagerPinState {
+     INITIAL("INITIAL", 0),
+     PINNING("PINNING", 3),
+     PINNED("PINNED", 4),
+     EXPIRED("EXPIRED", 5),
+     UNPINNING("UNPINNING", 6),
+     UNPINNINGFAILED("UNPINNINGFAILED", 7);
     
     private final String name;
     private final int stateId;
     
-    public static final PinManagerPinState INITIAL   
-            = new PinManagerPinState("INITIAL", 0);
-    /*public static final PinManagerPinState PNFSINFOWAITING   
-            = new PinManagerPinState("PNFSINFOWAIT", 1);
-    public static final PinManagerPinState POOLWAIT   
-            = new PinManagerPinState("POOLWAIT", 2);*/
-    public static final PinManagerPinState PINNING    
-            = new PinManagerPinState("PINNING", 3);
-    public static final PinManagerPinState PINNED     
-            = new PinManagerPinState("PINNED", 4);
-    public static final PinManagerPinState EXPIRED    
-            = new PinManagerPinState("EXPIRED", 5);
-    public static final PinManagerPinState UNPINNING    
-            = new PinManagerPinState("UNPINNING", 6);
-    public static final PinManagerPinState UNPINNINGFAILED
-            = new PinManagerPinState("UNPINNINGFAILED", 7);
     
     private PinManagerPinState(String name,int stateId) {
         this.name = name;
         this.stateId = stateId;
     }
     
-    private static final PinManagerPinState[] allStates =
-        new PinManagerPinState[] {
-            INITIAL,
-           // PNFSINFOWAITING,
-           // POOLWAIT,
-            PINNING,
-            PINNED,
-            EXPIRED,
-            UNPINNING,
-            UNPINNINGFAILED};
-    public static PinManagerPinState[] getAllStates() {
-        return allStates;
-    }
     public String toString() {
         return name;
     }
@@ -182,7 +159,7 @@ public final class PinManagerPinState implements java.io.Serializable {
             throw new NullPointerException(" null state ");
         }
         
-        for(PinManagerPinState aState: allStates) {
+        for(PinManagerPinState aState: values()) {
             if(aState.name.equalsIgnoreCase(state)) {
                 return aState;
             }
@@ -194,7 +171,7 @@ public final class PinManagerPinState implements java.io.Serializable {
     
     public static PinManagerPinState getState(int stateId) 
         throws IllegalArgumentException {
-      for(PinManagerPinState aState: allStates) {
+      for(PinManagerPinState aState: values()) {
             if(aState.stateId == stateId) {
                 return aState;
             }
@@ -206,15 +183,4 @@ public final class PinManagerPinState implements java.io.Serializable {
         return  state == EXPIRED;
     }
     
-    // this is what we need to correctly implement 
-    // serialization of the singleton
-    public Object readResolve()
-    		throws java.io.ObjectStreamException {
-        return getState(stateId);
-    }
-    
-    public int hashCode() {
-        return name.hashCode();
-    }
-
 }
