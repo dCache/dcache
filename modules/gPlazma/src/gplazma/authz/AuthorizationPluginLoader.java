@@ -16,7 +16,6 @@ import org.apache.log4j.*;
 public class AuthorizationPluginLoader {
 
     static Logger log = Logger.getLogger(AuthorizationPluginLoader.class.getSimpleName());
-    private static String logpattern = "%d{MM/dd HH:mm:ss,SSS} %C{1} authRequestID ";
 
     private AuthorizationConfig authConfig;
     private Vector pluginPriorityConfig;
@@ -42,18 +41,8 @@ public class AuthorizationPluginLoader {
     }
 
     public AuthorizationPluginLoader(AuthorizationConfig authConfig, long authRequestID) {
-            this.authConfig = authConfig;
+        this.authConfig = authConfig;
         this.authRequestID=authRequestID;
-        String authRequestID_str = AuthorizationController.getFormattedAuthRequestID(authRequestID);
-                  if(log.getAppender("AuthorizationPluginLoader")==null) {
-            Enumeration appenders = log.getParent().getAllAppenders();
-            while(appenders.hasMoreElements()) {
-                Appender apnd = (Appender) appenders.nextElement();
-                if(apnd instanceof ConsoleAppender)
-                    apnd.setLayout(new PatternLayout(logpattern + authRequestID_str + "  %m%n"));
-          }
-        }
-        //log.trace("AuthorizationPluginLoader instantiated.");
     }
 
     public void setLogLevel	(Level level) {

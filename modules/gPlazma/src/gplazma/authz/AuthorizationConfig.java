@@ -20,7 +20,6 @@ import java.lang.*;
 public class AuthorizationConfig {
 
     static Logger log = Logger.getLogger(AuthorizationConfig.class.getSimpleName());
-    private static String logpattern = "%d{MM/dd HH:mm:ss,SSS} %C{1} authRequestID ";
     private long authRequestID;
 
     private String authConfigFileName;
@@ -69,32 +68,9 @@ public class AuthorizationConfig {
     public AuthorizationConfig(String filename, long authRequestID)
             throws IOException {
         this.authRequestID=authRequestID;
-        String authRequestID_str = AuthorizationController.getFormattedAuthRequestID(authRequestID);
-                  if(log.getAppender("AuthorizationConfig")==null) {
-            Enumeration appenders = log.getParent().getAllAppenders();
-            while(appenders.hasMoreElements()) {
-                Appender apnd = (Appender) appenders.nextElement();
-                if(apnd instanceof ConsoleAppender)
-                    apnd.setLayout(new PatternLayout(logpattern + authRequestID_str + "  %m%n"));
-          }
-        }
-        /*
-        try {
-            String fileSeparator = System.getProperty("file.separator");
-            String[] testFilenamePath = filename.split(fileSeparator);
-            String testFilename = testFilenamePath[testFilenamePath.length-1];
-            if (!testFilename.equals(CONFIG_FILENAME)) {
-                log.warn("Authorization Policy configuration filename " + testFilename + " is not as expected.");
-                log.warn("WARNING: Possible security violation.");
-            }
-        } catch(Exception se) {
-            log.error("Exception in testing file: " +se);
-        }
-       */
         authConfigFileName = filename;
-        //log.trace("Loading AuthorizationConfig.");
+        log.debug("AuthorizationConfig reading " + filename);
         read(filename);
-        //log.trace("AuthorizationConfig instantiated.");
     }
 
     public void setLogLevel	(Level level) {

@@ -46,7 +46,7 @@ public class VORoleMapAuthzPlugin extends RecordMappingPlugin {
             throws AuthorizationException {
         super(storageAuthzPath, authRequestID);
         this.gridVORoleMapPath = gridVORoleMapPath;
-        //getLogger().debug("Plugin now loaded.");
+        getLogger().info("grid-vorolemap plugin will use " + gridVORoleMapPath);
     }
 
     public gPlazmaAuthorizationRecord authorize(GSSContext context, String desiredUserName, String serviceUrl, Socket socket)
@@ -89,8 +89,6 @@ public class VORoleMapAuthzPlugin extends RecordMappingPlugin {
             role = "";
         }
         String identity = subjectDN.concat(role);
-        getLogger().debug("Using grid-vorolemap configuration: " + gridVORoleMapPath);
-        getLogger().debug("Using storage-authzdb configuration: " + storageAuthzPath);
 
         VORoleMapHandler voRoleMapHandler;
 
@@ -103,7 +101,7 @@ public class VORoleMapAuthzPlugin extends RecordMappingPlugin {
             throw new AuthorizationException(ase.toString());
         }
 
-        if (desiredUserName == null) getLogger().info("Desired Username not requested. Will attempt a mapping.");
+        if (desiredUserName == null) getLogger().debug("Desired Username not requested. Will attempt a mapping.");
         // Do even if username is requested, in order to check blacklist
         try {
             getLogger().info("Requesting mapping for User with DN and role: " + identity);
@@ -115,7 +113,7 @@ public class VORoleMapAuthzPlugin extends RecordMappingPlugin {
         } catch(Exception e) {
             throw new AuthorizationException(e.toString());
         }
-        if (desiredUserName != null) getLogger().info("Subject DN + Grid Vo Role are mapped to Username: " + user_name);
+        if (desiredUserName == null) getLogger().info("Subject DN + Grid Vo Role are mapped to Username: " + user_name);
 
         if (user_name == null) {
             String denied = DENIED_MESSAGE + ": Cannot determine Username from grid-vorolemap for DN " + subjectDN + " and role " + role;

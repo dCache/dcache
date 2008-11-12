@@ -1,5 +1,7 @@
 package gplazma.authz.plugins.dynamic;
 
+import org.apache.log4j.Logger;
+
 import java.util.*;
 import java.io.*;
 import java.lang.*;
@@ -7,6 +9,7 @@ import java.text.MessageFormat;
 
 public class GIDMapFileHandler {
 
+  static Logger log = Logger.getLogger(GIDMapFileHandler.class.getName());
   private static final String GIDMAP_FILENAME ="grid-gidmap";
   private HashMap gidMap = new HashMap();
   private static HashMap gidMap_static;
@@ -23,13 +26,14 @@ public class GIDMapFileHandler {
         	String[] testFilenamePath = filename.split(fileSeparator);
         	String testFilename = testFilenamePath[testFilenamePath.length-1];
          	if (!testFilename.equals(GIDMAP_FILENAME)) {
-           		System.out.println("The grid-gidmap filename " + testFilename + " is not as expected.");
-				System.out.println("WARNING: Possible security violation.");
+           		log.warn("The grid-gidmap filename " + testFilename + " is not as expected.");
+				log.warn("WARNING: Possible security violation.");
         	}
 		} catch(Exception se) {
-        	System.err.println("Exception in testing file: " +se);
+        	log.error("Exception in testing file: " +se);
      	}
-		read(filename);
+        log.debug("GIDMapFileHandler reading " + filename);
+        read(filename);
 
   }
 
@@ -37,7 +41,7 @@ public class GIDMapFileHandler {
       long current_time = System.currentTimeMillis();
       File config = new File(filename);
       boolean readable = config.canRead() || prev_refresh_time==0;
-      if(!readable) System.out.println(MessageFormat.format("WARNING: Could not read grid-gidmap. Will use cached copy.", filename));
+      if(!readable) log.warn(MessageFormat.format("WARNING: Could not read grid-gidmap. Will use cached copy.", filename));
       if(readable && config.lastModified() >= prev_refresh_time) {
         FileReader fr = new FileReader(config);
         BufferedReader reader = new BufferedReader(fr);

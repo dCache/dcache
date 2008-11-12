@@ -27,32 +27,7 @@ public class SAML1AuthorizationPlugin extends SAMLAuthorizationPlugin {
 
     public SAML1AuthorizationPlugin(String mappingServiceURL, String storageAuthzPath, long authRequestID) {
         super(mappingServiceURL, storageAuthzPath, authRequestID);
-
-        if(getLogger().getAppender("SAML1AuthorizationPlugin")==null) {
-            Enumeration appenders = getLogger().getParent().getAllAppenders();
-            while(appenders.hasMoreElements()) {
-                Appender apnd = (Appender) appenders.nextElement();
-                if(apnd instanceof ConsoleAppender)
-                    apnd.setLayout(getLogLayout());
-            }
-        }
-        getLogger().debug("SAML1AuthorizationPlugin: authRequestID " + authRequestID + " Plugin now loaded: saml-vo-mapping");
-    }
-
-    public void debug(String s) {
-        getLogger().debug("SAML1AuthorizationPlugin: authRequestID " + getAuthRequestID() + " " + s);
-    }
-
-    public void say(String s) {
-        getLogger().info("SAML1AuthorizationPlugin: authRequestID " + getAuthRequestID() + " " + s);
-    }
-
-    public void warn(String s) {
-        getLogger().warn("SAML1AuthorizationPlugin: authRequestID " + getAuthRequestID() + " " + s);
-    }
-
-    public void esay(String s) {
-        getLogger().error("SAML1AuthorizationPlugin: authRequestID " + getAuthRequestID() + " " + s);
+        getLogger().info("saml-vo-mapping plugin now loaded for URL " + mappingServiceURL);
     }
 
     public gPlazmaAuthorizationRecord authorize(String subjectDN, String role, X509Certificate[] chain, String desiredUserName, String serviceUrl, Socket socket)
@@ -67,7 +42,7 @@ public class SAML1AuthorizationPlugin extends SAMLAuthorizationPlugin {
             serviceName = getTargetServiceName();
         }
         catch (Exception e) {
-            esay("Exception in finding targetServiceName : " + e);
+            getLogger().error("Exception in finding targetServiceName : " + e);
             throw new AuthorizationException(e.toString());
         }
 
@@ -78,23 +53,21 @@ public class SAML1AuthorizationPlugin extends SAMLAuthorizationPlugin {
             if( tlocalId!=null && tlocalId.age() < getCacheLifetime() &&
                     tlocalId.sameServiceName(serviceName) &&
                     tlocalId.sameDesiredUserName(desiredUserName)) {
-                say("Using cached mapping for User with DN: " + subjectDN + " and Role " + role);
-                debug("with Desired user name: " + desiredUserName);
+                getLogger().info("Using cached mapping for User with DN: " + subjectDN + " and Role " + role + "with Desired user name: " + desiredUserName);
 
                 return getgPlazmaAuthorizationRecord(tlocalId.getLocalId(), subjectDN, role);
             }
         }
 
-        say("Requesting mapping for User with DN: " + subjectDN + " and Role " + role);
-        debug("with Desired user name: " + desiredUserName);
+        getLogger().info("Requesting mapping for User with DN: " + subjectDN + " and Role " + role + "with Desired user name: " + desiredUserName);
 
-        debug("Mapping Service URL configuration: " + getMappingServiceURL());
+        getLogger().debug("Mapping Service URL configuration: " + getMappingServiceURL());
         try {
             URL mappingServiceURLobject = new URL(getMappingServiceURL());
             authVO = new PRIMAAuthzModule(mappingServiceURLobject);
         }
         catch (Exception e) {
-            esay("Exception in VO mapping client instantiation: " + e);
+            getLogger().error("Exception in VO mapping client instantiation: " + e);
             throw new AuthorizationException(e.toString());
         }
 
@@ -102,14 +75,14 @@ public class SAML1AuthorizationPlugin extends SAMLAuthorizationPlugin {
             localId = authVO.mapCredentials(subjectDN, role, serviceName, desiredUserName);
         }
         catch (Exception e ) {
-            esay(" Exception occurred in mapCredentials: " + e);
+            getLogger().error(" Exception occurred in mapCredentials: " + e);
             //e.printStackTrace();
             throw new AuthorizationException(e.toString());
         }
 
         if (localId == null) {
             String denied = DENIED_MESSAGE + ": No mapping retrieved service for DN " + subjectDN + " and role " + role;
-            warn(denied);
+            getLogger().warn(denied);
             throw new AuthorizationException(denied);
         }
 
@@ -124,10 +97,10 @@ public class SAML1AuthorizationPlugin extends SAMLAuthorizationPlugin {
 
         if(username==null) {
             String denied = DENIED_MESSAGE + ": non-null user record received, but with a null username";
-            warn(denied);
+            getLogger().warn(denied);
             throw new AuthorizationException(denied);
         } else {
-            say("VO mapping service returned Username: " + username);
+            getLogger().info("saml-vo-mapping service returned Username: " + username);
         }
 
         return getgPlazmaAuthorizationRecord(username, subjectDN, role);

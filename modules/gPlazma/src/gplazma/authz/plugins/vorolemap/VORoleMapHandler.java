@@ -32,27 +32,18 @@ public class VORoleMapHandler {
 
   public VORoleMapHandler(String filename, long authRequestID)
   	throws IOException {
-      String authRequestID_str = AuthorizationController.getFormattedAuthRequestID(authRequestID);
-          if(log.getAppender("VORoleMapHandler")==null) {
-            Enumeration appenders = log.getParent().getAllAppenders();
-            while(appenders.hasMoreElements()) {
-                Appender apnd = (Appender) appenders.nextElement();
-                if(apnd instanceof ConsoleAppender)
-                    apnd.setLayout(new PatternLayout(logpattern + authRequestID_str + "  %m%n"));
-          }
-        }
          try {
         	String fileSeparator = System.getProperty("file.separator");
         	String[] testFilenamePath = filename.split(fileSeparator);
         	String testFilename = testFilenamePath[testFilenamePath.length-1];
          	if (!testFilename.equals(GRID_VOROLE_AUTHZ_DB)) {
-           	System.out.println("The Grid-VO-Role database name " + testFilename + " is not as expected.");
-				    System.out.println("WARNING: Possible security violation.");
+           	log.warn("The Grid-VO-Role database name " + testFilename + " is not as expected.");
+				    log.warn("WARNING: Possible security violation.");
         	}
 		} catch(Exception se) {
-        	System.err.println("Exception in testing file: " +se);
+        	log.error("Exception in testing file: " +se);
      	}
-
+    log.debug("VORoleMapHandler reading " + filename);
     read(filename);
   }
 
@@ -64,7 +55,7 @@ public class VORoleMapHandler {
       long current_time = System.currentTimeMillis();
       File config = new File(filename);
       boolean readable = config.canRead() || prev_refresh_time==0;
-      if(!readable) System.out.println("WARNING: Could not read grid-vorolemap file " + filename + ". Will use cached copy.");
+      if(!readable) log.warn("WARNING: Could not read grid-vorolemap file " + filename + ". Will use cached copy.");
       if(readable && config.lastModified() >= prev_refresh_time) {
         FileReader fr = new FileReader(config);
         BufferedReader reader = new BufferedReader(fr);

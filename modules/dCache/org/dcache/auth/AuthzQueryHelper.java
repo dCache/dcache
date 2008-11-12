@@ -31,14 +31,10 @@ import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.DNInfo;
 import diskCacheV111.vehicles.X509Info;
 import diskCacheV111.vehicles.transferManager.RemoteGsiftpDelegateUserCredentialsMessage;
-import dmg.cells.nucleus.CellAdapter;
-import dmg.cells.nucleus.CellPath;
-import dmg.cells.nucleus.CellMessage;
-import dmg.cells.nucleus.NoRouteToCellException;
+import dmg.cells.nucleus.*;
 
 public class AuthzQueryHelper {
     static Logger log = Logger.getLogger(AuthzQueryHelper.class.getSimpleName());
-    private static String logpattern = "%d{MM/dd HH:mm:ss,SSS} %C{1} authRequestID ";
 
     long authRequestID;
     private static final Random random = new Random();
@@ -54,16 +50,6 @@ public class AuthzQueryHelper {
     throws AuthorizationException {
         this.authRequestID=authRequestID;
         this.caller = caller;
-        String authRequestID_str = AuthorizationController.getFormattedAuthRequestID(authRequestID);
-                  if(log.getAppender("AuthzQueryHelper")==null) {
-            Enumeration appenders = log.getParent().getAllAppenders();
-            while(appenders.hasMoreElements()) {
-                Appender apnd = (Appender) appenders.nextElement();
-                if(apnd instanceof ConsoleAppender)
-                    apnd.setLayout(new PatternLayout(logpattern + authRequestID_str + "  %m%n"));
-          }
-        }
-        //log.trace("AuthorizationPluginLoader instantiated.");
     }
 
     public void setDelegateToGplazma(boolean boolarg) {
@@ -173,7 +159,7 @@ public class AuthzQueryHelper {
                             while (recordsIter.hasNext()) {
                                 gPlazmaAuthorizationRecord rec = recordsIter.next();
                                 String GIDS_str = Arrays.toString(rec.getGIDs());
-                                caller.say("authRequestID " + authRequestID + " received " + rec.getUsername() + " " + rec.getUID() + " " + GIDS_str + " " + rec.getRoot());
+                                log.info("received " + rec.getUsername() + " " + rec.getUID() + " " + GIDS_str + " " + rec.getRoot());
                             }
                         }
                     } catch (IOException ioe) {
@@ -259,7 +245,7 @@ public class AuthzQueryHelper {
                 while (recordsIter.hasNext()) {
                     gPlazmaAuthorizationRecord rec = recordsIter.next();
                     String GIDS_str = Arrays.toString(rec.getGIDs());
-                    caller.say("authRequestID " + authRequestID + " received " + rec.getUsername() + " " + rec.getUID() + " " + GIDS_str + " " + rec.getRoot());
+                    log.info("received " + rec.getUsername() + " " + rec.getUID() + " " + GIDS_str + " " + rec.getRoot());
                 }
             } else {
                 if( authobj instanceof NoRouteToCellException ) {
@@ -315,7 +301,7 @@ public class AuthzQueryHelper {
                 while (recordsIter.hasNext()) {
                     gPlazmaAuthorizationRecord rec = recordsIter.next();
                     String GIDS_str = Arrays.toString(rec.getGIDs());
-                    caller.say("authRequestID " + authRequestID + " received " + rec.getUsername() + " " + rec.getUID() + " " + GIDS_str + " " + rec.getRoot());
+                    log.info("received " + rec.getUsername() + " " + rec.getUID() + " " + GIDS_str + " " + rec.getRoot());
                 }
             } else {
                 if( authobj instanceof Throwable )

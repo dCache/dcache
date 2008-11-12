@@ -38,13 +38,11 @@ public class KPWDAuthorizationPlugin extends CachingPlugin {
 	GSSContext context;
 	String desiredUserName;
     AuthorizationConfig authConfig;
-    //static Logger log = Logger.	getLogger(KPWDAuthorizationPlugin.class.getSimpleName());
-    //private static String logpattern = "%d{MM/dd HH:mm:ss,SSS} %m%n";
-    //private static PatternLayout loglayout = new PatternLayout(logpattern);
 
     public KPWDAuthorizationPlugin(long authRequestID)
             throws AuthorizationException {
         super(authRequestID);
+        getLogger().debug("kpwd plugin now loaded");
   }
 
     public KPWDAuthorizationPlugin(String authConfigFilePath, long authRequestID)
@@ -62,16 +60,6 @@ public class KPWDAuthorizationPlugin extends CachingPlugin {
             getLogger().error("Exception getting Kpwd Path from configuration :" +e);
             throw new AuthorizationException(e.toString());
 	}
-
-        //if(log.getAppender("KPWDAuthorizationPlugin")==null) {
-        //    Enumeration appenders = log.getParent().getAllAppenders();
-        //    while(appenders.hasMoreElements()) {
-        //        Appender apnd = (Appender) appenders.nextElement();
-        //        if(apnd instanceof ConsoleAppender)
-        //            apnd.setLayout(loglayout);
-        //    }
-        //}
-        //log.debug("KPWDAuthorizationPlugin: authRequestID " + authRequestID + " Plugin now loaded: dcache.kpwd");
   }
 
     public gPlazmaAuthorizationRecord authorize(GSSContext context, String desiredUserName, String serviceUrl, Socket socket)

@@ -19,6 +19,7 @@ public abstract class RecordMappingPlugin extends CachingPlugin {
     public RecordMappingPlugin(String storageAuthzPath, long authRequestID) {
         super(authRequestID);
         this.storageAuthzPath = storageAuthzPath;
+        log.debug("RecordMappingPlugin will use " + storageAuthzPath);
     }
 
     public String getStorageAuthzPath() {

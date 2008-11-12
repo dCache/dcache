@@ -31,27 +31,19 @@ public class GridMapFileHandler {
 
   public GridMapFileHandler(String filename, long authRequestID)
   	throws IOException {
-      String authRequestID_str = AuthorizationController.getFormattedAuthRequestID(authRequestID);
-          if(log.getAppender("GridMapFileHandler")==null) {
-            Enumeration appenders = log.getParent().getAllAppenders();
-            while(appenders.hasMoreElements()) {
-                Appender apnd = (Appender) appenders.nextElement();
-                if(apnd instanceof ConsoleAppender)
-                    apnd.setLayout(new PatternLayout(logpattern + authRequestID_str + "  %m%n"));
-          }
-        }
       try {
         	String fileSeparator = System.getProperty("file.separator");
         	String[] testFilenamePath = filename.split(fileSeparator);
         	String testFilename = testFilenamePath[testFilenamePath.length-1];
          	if (!testFilename.equals(GRIDMAP_FILENAME)) {
-           		System.out.println("The grid-mapfile filename " + testFilename + " is not as expected.");
-				System.out.println("WARNING: Possible security violation.");
+           		log.warn("The grid-mapfile filename " + testFilename + " is not as expected.");
+				log.warn("WARNING: Possible security violation.");
         	}
 		} catch(Exception se) {
-        	System.err.println("Exception in testing file: " +se);
+        	log.error("Exception in testing file: " +se);
      	}
-		read(filename);
+        log.debug("GridMapFileHandler reading " + filename);
+        read(filename);
 
   }
 
@@ -63,7 +55,7 @@ public class GridMapFileHandler {
       long current_time = System.currentTimeMillis();
       File config = new File(filename);
       boolean readable = config.canRead() || prev_refresh_time==0;
-      if(!readable) System.out.println(MessageFormat.format("WARNING: Could not read grid-mapfile. Will use cached copy.", filename));
+      if(!readable) log.error(MessageFormat.format("WARNING: Could not read grid-mapfile. Will use cached copy.", filename));
       if(readable && config.lastModified() >= prev_refresh_time) {
         FileReader fr = new FileReader(config);
         BufferedReader reader = new BufferedReader(fr);

@@ -33,14 +33,11 @@ public class GridMapFileAuthzPlugin extends RecordMappingPlugin {
     gPlazmaAuthorizationRecord authRecord;
     GSSContext context;
     String desiredUserName;
-    //static Logger log = Logger.getLogger(GridMapFileAuthzPlugin.class.getSimpleName());
-    //private static String logpattern = "%d{MM/dd HH:mm:ss,SSS} %m%n";
-    //private static PatternLayout loglayout = new PatternLayout(logpattern);
 
     public GridMapFileAuthzPlugin(String gridMapFilePath, String storageAuthzPath, long authRequestID) {
         super(storageAuthzPath, authRequestID);
         this.gridMapFilePath = gridMapFilePath;
-        getLogger().debug("Plugin now loaded.");
+        getLogger().info("grid-mapfile plugin will use " + gridMapFilePath);
     }
 
     public gPlazmaAuthorizationRecord authorize(GSSContext context, String desiredUserName, String serviceUrl, Socket socket)
@@ -85,13 +82,15 @@ public class GridMapFileAuthzPlugin extends RecordMappingPlugin {
             getLogger().debug("Desired Username requested as: " +desiredUserName);
         }
 
+        getLogger().info("Requesting mapping for User with DN: " + subjectDN);
+
         try {
             user_name = gridmapServ.getMappedUsername(subjectDN);
         }
         catch(Exception e) {
             throw new AuthorizationException(e.toString());
         }
-        getLogger().warn("Subject DN is mapped to Username: " + user_name);
+        getLogger().info("Subject DN is mapped to Username: " + user_name);
 
         if (user_name == null) {
             String denied = DENIED_MESSAGE + ": Cannot determine Username from grid-mapfile for DN " + subjectDN;

@@ -18,6 +18,7 @@ import org.globus.gsi.gssapi.GSSConstants;
 import org.gridforum.jgss.ExtendedGSSContext;
 import org.bouncycastle.asn1.x509.X509Name;
 import org.globus.gsi.bc.X509NameHelper;
+import org.apache.log4j.Logger;
 
 
 /**
@@ -27,8 +28,9 @@ import org.globus.gsi.bc.X509NameHelper;
                                                                                                                                                                                                      
 public class VORoleMapModule {
 	
-	private static final boolean DEFAULT_VALIDATE_FLAG=false;
-  private static final String DEFAULT_VOMSDIR="/etc/grid-security/certificates";
+	static Logger log = Logger.getLogger(VORoleMapModule.class.getName());
+    private static final boolean DEFAULT_VALIDATE_FLAG=false;
+    private static final String DEFAULT_VOMSDIR="/etc/grid-security/certificates";
 	VORoleMapExtract fineGrainExtract;
 	private ExtendedGSSContext context;
 	private String subjectDn;
@@ -46,7 +48,7 @@ public class VORoleMapModule {
 
 	private boolean assertContext(ExtendedGSSContext contextToCheck) {
 		if (contextToCheck == null) {
-			System.out.println("Context received by VORoleMapModule is null");
+			log.error("Context received by VORoleMapModule is null");
 			return false;
         } 
 		else {
@@ -121,7 +123,7 @@ public class VORoleMapModule {
 			}
 		}
 		fineGrainExtract = new VORoleMapExtract(subjectDn, fqanToReturn);
-		System.out.println("- - -               Building fine-grain extract from ExtendedGSSContext               - - - ");
+		log.info("- - -               Building fine-grain extract from ExtendedGSSContext               - - - ");
 		return (fineGrainExtract);
         }
 

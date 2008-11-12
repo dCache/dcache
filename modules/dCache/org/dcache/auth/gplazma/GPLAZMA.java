@@ -167,9 +167,7 @@ import gplazma.authz.AuthorizationException;
 import gplazma.authz.AuthorizationController;
 import gplazma.authz.util.X509CertUtil;
 import gplazma.authz.records.gPlazmaAuthorizationRecord;
-import dmg.cells.nucleus.CellAdapter;
-import dmg.cells.nucleus.CellMessage;
-import dmg.cells.nucleus.CellNucleus;
+import dmg.cells.nucleus.*;
 import dmg.util.Args;
 import org.dcache.srm.security.SslGsiSocketFactory;
 import org.dcache.vehicles.AuthorizationMessage;
@@ -193,8 +191,7 @@ import java.security.cert.X509Certificate;
  **/
 public class GPLAZMA extends CellAdapter {
 
-  static Logger log = Logger.getLogger(GPLAZMA.class.getSimpleName());
-  private static String logpattern = "%d{MM/dd HH:mm:ss,SSS} %C{1} ";
+  static Logger log = Logger.getLogger(GPLAZMA.class.getName());
 
   /** Location of gss files **/
   private String service_key           = "/etc/grid-security/hostkey.pem";
@@ -255,15 +252,17 @@ public class GPLAZMA extends CellAdapter {
        */
 
       gplazmaPolicyFilePath = setParam("gplazma-authorization-module-policy", gplazmaPolicyFilePath); //todo: use Opts instead.
+
+      System.setProperty("dmg.cells.nucleus.send_session", "true");
       String level = _opt.getOpt("log-level") ;
       if(level==null || level.length()==0) {
-        if((getNucleus().getPrintoutLevel() & CellNucleus.PRINT_CELL ) > 0 )
-          ac_set_LogLevel_$_1(new Args(new String[]{"INFO"}));
+        if((getNucleus().getPrintoutLevel() & CellNucleus.PRINT_CELL) ==0)
+          ac_set_LogLevel_$_1(new Args(new String[]{"WARN"}));
+        else
+          ac_set_LogLevel_$_1(new Args(new String[]{"DEBUG"}));
       } else {
         ac_set_LogLevel_$_1(new Args(new String[]{level}));
       }
-
-      setLogLayout(0);
 
       authzPersistenceManager =
           new AuthRecordPersistenceManager(
@@ -316,8 +315,14 @@ public class GPLAZMA extends CellAdapter {
           newlevel.equals("INFO")  ||
           newlevel.equals("WARN")  ||
           newlevel.equals("ERROR") ||
-          newlevel.equals("FATAL")  )
+          newlevel.equals("FATAL")  ) {
         log.setLevel(Level.toLevel(newlevel.toUpperCase()));
+        try {
+            sendMessage(new CellMessage(new CellPath("System"), "log4j appender set stdout " + newlevel), true, false);
+        } catch (NoRouteToCellException nre) {
+            log.warn("Message to change appender log level failed: NoRouteToCell for " + "System@" + getCellDomainName());
+        }
+      }
       else
         return "Log level not set. Allowed values are DEBUG, INFO, WARN, ERROR.";
 
@@ -351,53 +356,6 @@ public class GPLAZMA extends CellAdapter {
       
       return sb.toString();
   }
-
-
-    private void setLogLayout(long authRequestID) {
-        /*
-        Appender gplazma_apnd = log.getAppender("GPLAZMA");
-        if(gplazma_apnd==null) {
-            Enumeration appenders = log.getParent().getAllAppenders();
-            while(appenders.hasMoreElements()) {
-                Appender apnd = (Appender) appenders.nextElement();
-                if(apnd instanceof ConsoleAppender) {
-                    if (authRequestID != 0) {
-                        String authRequestID_str = AuthorizationController.getFormattedAuthRequestID(authRequestID);
-                        apnd.setLayout(new PatternLayout(logpattern + "authRequestID " + authRequestID_str + " %m%n"));
-                    } else {
-                        apnd.setLayout(new PatternLayout(logpattern + "%m%n"));
-                    }
-                }
-            }
-        } else {
-            if(gplazma_apnd instanceof ConsoleAppender) {
-                if (authRequestID != 0) {
-                    String authRequestID_str = AuthorizationController.getFormattedAuthRequestID(authRequestID);
-                    gplazma_apnd.setLayout(new PatternLayout(logpattern + "authRequestID " + authRequestID_str + "%m%n"));
-                } else {
-                    gplazma_apnd.setLayout(new PatternLayout(logpattern + "%m%n"));
-                }
-            }
-        }
-        */
-        String authRequestID_str = AuthorizationController.getFormattedAuthRequestID(authRequestID);
-        PatternLayout loglayout = new PatternLayout(logpattern + authRequestID_str + " %m%n");
-        boolean found_console_appender=false;
-        Enumeration appenders = log.getParent().getAllAppenders();
-        while(appenders.hasMoreElements()) {
-            Appender apnd = (Appender) appenders.nextElement();
-            if(apnd instanceof ConsoleAppender) {
-                found_console_appender = true;
-                apnd.setLayout(loglayout);
-                ((ConsoleAppender)apnd).setThreshold(Level.DEBUG);
-            }
-        }
-        if(!found_console_appender) {
-            ConsoleAppender apnd = new ConsoleAppender(loglayout);
-            apnd.setThreshold(Level.DEBUG);
-            log.getParent().addAppender(apnd);
-        }
-    }
 
   
   /**
@@ -520,7 +478,6 @@ public class GPLAZMA extends CellAdapter {
       }
 
       long authRequestID = deleginfo.getId();
-      setLogLayout(authRequestID);
       log.debug("sending message requesting delegation " + msg.getUOID());
       msg.revertDirection() ;
       msg.setMessageObject(cred_request) ;
@@ -574,11 +531,11 @@ public class GPLAZMA extends CellAdapter {
 
 
        Object writethis;
-       log.debug("trying authentication");
+       log.debug("gPlazma trying authorization");
        try {
          LinkedList<gPlazmaAuthorizationRecord> gauthlist = authorize(context, deleginfo.getUser(), authRequestID);
          if(gauthlist==null) {
-           String errorMsg = "authentication denied";
+           String errorMsg = "authorization denied";
            log.warn(errorMsg);
            writethis = new AuthorizationException("authRequestID " + authRequestID + errorMsg);
          } else {
@@ -652,13 +609,15 @@ public class GPLAZMA extends CellAdapter {
     }
 
     public void run() {
+      CDC.clearMessageContext();
+      CDC.setMessageContext(msg);
+
       if(skip_processing) {
         returnNullMessage();
         return;
       }
 
       Object msgobj = msg.getMessageObject();
-      log.debug("message object = " + msgobj.getClass());
       if( ! ( msgobj instanceof DNInfo ) ) {
         log.error("message object is not DNInfo");
         return;
@@ -668,14 +627,13 @@ public class GPLAZMA extends CellAdapter {
       String subjectDN = dnInfo.getDN();
       List<String> roles = dnInfo.getFQANs();
       long authRequestID = dnInfo.getId();
-      setLogLayout(authRequestID);
 
-      log.debug("trying authentication");
+      log.debug("gPlazma trying authorization");
       Object writethis;
       try {
          LinkedList <gPlazmaAuthorizationRecord> user_auths = authorize(subjectDN, roles, dnInfo.getUser(), authRequestID);
          if(user_auths==null) {
-           log.warn("authentication denied");
+           log.warn("authorization denied");
          } else {
            Iterator <gPlazmaAuthorizationRecord> recordsIter = user_auths.iterator();
            while (recordsIter.hasNext()) {
@@ -708,7 +666,6 @@ public class GPLAZMA extends CellAdapter {
       long authRequestID = 0;
 
       Object msgobj = msg.getMessageObject();
-      log.debug("message object = " + msgobj.getClass());
       if( ! ( msgobj instanceof DNInfo ) ) {
         log.error("message object is not DNInfo" );
       } else {
@@ -716,6 +673,7 @@ public class GPLAZMA extends CellAdapter {
         authRequestID = dnInfo.getId();
       }
 
+      log.debug("sending authentication message to " + msg.getSourcePath());  
       msg.revertDirection() ;
       msg.setMessageObject(null);
       try {
@@ -737,13 +695,16 @@ public class GPLAZMA extends CellAdapter {
     }
 
     public void run() {
+      //NDC.inherit(parent_stack);
+      CDC.clearMessageContext();
+      CDC.setMessageContext(msg);
+
       if(skip_processing) {
         returnNullMessage();
         return;
       }
 
       Object msgobj = msg.getMessageObject();
-      log.debug("message object = " + msgobj.getClass());
       if( ! ( msgobj instanceof diskCacheV111.vehicles.X509Info ) ) {
         log.error("message object is not X509Info" );
         return;
@@ -752,9 +713,8 @@ public class GPLAZMA extends CellAdapter {
       diskCacheV111.vehicles.X509Info x509info = (diskCacheV111.vehicles.X509Info) msgobj;
       X509Certificate[] chain = x509info.getChain();
       long authRequestID = x509info.getId();
-      setLogLayout(authRequestID);
 
-      log.debug("trying authentication");
+      log.debug("gPlazma trying authorization");
       Object writethis;
       try {
         LinkedList <gPlazmaAuthorizationRecord> gauthlist = authorize(chain, x509info.getUser(), authRequestID);
@@ -791,7 +751,7 @@ public class GPLAZMA extends CellAdapter {
         writethis = ae;
       }
 
-      log.debug("sending authentication message");
+      log.debug("sending authentication message to " + msg.getSourcePath());
       msg.revertDirection() ;
       msg.setMessageObject(writethis) ;
       try{
@@ -810,7 +770,6 @@ public class GPLAZMA extends CellAdapter {
       long authRequestID = 0;
 
       Object msgobj = msg.getMessageObject();
-      log.debug("message object = " + msgobj.getClass());
       if( ! ( msgobj instanceof diskCacheV111.vehicles.X509Info ) ) {
         log.error("message object is not X509Info" );
       } else {
@@ -1009,7 +968,7 @@ public class GPLAZMA extends CellAdapter {
 
       LinkedList <gPlazmaAuthorizationRecord> _user_auths;
       String _user = (desiredUserName==null) ? GLOBUS_URL_COPY_DEFAULT_USER : desiredUserName;
-      log.debug("to authorize");
+      log.debug("gPlazma to authorize");
 
       try {
         authServ = new AuthorizationController(gplazmaPolicyFilePath, authRequestID);
@@ -1020,7 +979,7 @@ public class GPLAZMA extends CellAdapter {
       }
 
       if(_user.equals(GLOBUS_URL_COPY_DEFAULT_USER)) {
-        log.debug("special case , user is " + _user);
+        log.debug("gPlazma: special case , user is " + _user);
         try {
           _user_auths = authServ.authorize(subjectDN, roles, null, null, null, null);
         } catch ( AuthorizationException ase ) {
@@ -1068,7 +1027,7 @@ public class GPLAZMA extends CellAdapter {
 
     LinkedList <gPlazmaAuthorizationRecord>  _user_auths;
     String _user = (desiredUserName==null) ? GLOBUS_URL_COPY_DEFAULT_USER : desiredUserName;
-    log.debug("to authorize using X509Certificate chain");
+    log.debug("gPlazma to authorize using X509Certificate chain");
 
     try {
       authServ = new AuthorizationController(gplazmaPolicyFilePath, authRequestID);
@@ -1079,7 +1038,7 @@ public class GPLAZMA extends CellAdapter {
     }
 
     if(_user.equals(GLOBUS_URL_COPY_DEFAULT_USER)) {
-      log.debug("special case , user is " + _user);
+      log.debug("gPlazma: special case , user is " + _user);
       try {
         _user_auths = authServ.authorize(chain, null, null, null);
       } catch ( AuthorizationException ase ) {
@@ -1134,7 +1093,7 @@ public class GPLAZMA extends CellAdapter {
 
       LinkedList <gPlazmaAuthorizationRecord> _user_auths;
       String _user = (desiredUserName==null) ? GLOBUS_URL_COPY_DEFAULT_USER : desiredUserName;
-      log.debug("to authorize");
+      log.debug("gPlazma to authorize");
 
       try {
         GSSIdentity = serviceContext.getSrcName();
@@ -1151,7 +1110,7 @@ public class GPLAZMA extends CellAdapter {
       }
 
       if(_user.equals(GLOBUS_URL_COPY_DEFAULT_USER)) {
-        log.debug("special case , user is " + _user);
+        log.debug("gPlazma: special case , user is " + _user);
         try {
           _user_auths = authServ.authorize(serviceContext, null, null, null);
         } //catch ( GSSException gsse ) {

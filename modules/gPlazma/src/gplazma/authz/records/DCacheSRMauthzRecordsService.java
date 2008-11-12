@@ -1,6 +1,8 @@
 //package diskCacheV111.services.authorization.authz.records;
 package gplazma.authz.records;
 
+import org.apache.log4j.*;
+
 import java.util.*;
 import java.io.*;
 import java.lang.*;
@@ -12,6 +14,7 @@ import java.lang.reflect.Method;
  */
 
 public class DCacheSRMauthzRecordsService {
+    static Logger log = Logger.getLogger(DCacheSRMauthzRecordsService.class.getSimpleName());
 
     private static final String STORAGE_AUTHZ_FILENAME="storage-authzdb";
     private static final String PWD_RECORD_MARKER="passwd ";
@@ -39,7 +42,7 @@ public class DCacheSRMauthzRecordsService {
              dynamic_methods.put(meth.getName(), meth);
           }
         } catch (ClassNotFoundException cnfe) {
-          System.out.println("ClassNotFoundException for DynamicMapper " + dynamic_mapper);
+          log.error("ClassNotFoundException for DynamicMapper " + dynamic_mapper);
         }
     }
 
@@ -60,15 +63,14 @@ public class DCacheSRMauthzRecordsService {
         String fileSeparator = System.getProperty("file.separator"); 
         String[] testFilenamePath = filename.split(fileSeparator);
         String testFilename = testFilenamePath[testFilenamePath.length-1];
-        //System.out.println("testFilename after splitting from file separator is: " + testFilename);
          if (!testFilename.equals(STORAGE_AUTHZ_FILENAME)) {
-           System.out.println("Storage Authorization Db filename " + testFilename + " is not as expected.");
-		    System.out.println("WARNING: Possible security violation.");
+           log.warn("Storage Authorization Db filename " + testFilename + " is not as expected.");
+		   log.warn("WARNING: Possible security violation.");
          }
      } catch(SecurityException se) {
-        System.err.println("Exception in testing filename: " +se);
+        log.error("Exception in testing filename: " +se);
      }
-
+     log.debug("DCacheSRMauthzRecordsService reading " + filename);
      read(filename);
     }
 
@@ -76,7 +78,7 @@ public class DCacheSRMauthzRecordsService {
       long current_time = System.currentTimeMillis();
       File config = new File(filename);
       boolean readable = config.canRead() || prev_refresh_time==0;
-      if(!readable) System.out.println("WARNING: Could not read storage-authzdb file " + filename + ". Will use cached copy.");
+      if(!readable) log.error("WARNING: Could not read storage-authzdb file " + filename + ". Will use cached copy.");
       if(readable && config.lastModified() >= prev_refresh_time) {
         FileReader fr = new FileReader(config);
         BufferedReader reader = new BufferedReader(fr);
@@ -110,14 +112,8 @@ public class DCacheSRMauthzRecordsService {
                 if(rec != null) {
                   if(auth_records==null) auth_records = new LinkedHashMap();
                   auth_records.put(rec.getUsername(),rec);
-                }
-                else {
-                    while( (line = reader.readLine()) != null ) {
-                        line=line.trim();
-                        if(line.equals("")) {
-                            break;
-                        }
-                    }
+                } else {
+                   log.warn("WARNING: could not parse storage-authzdb line into authorization record: " + line);
                 }
             }
             else if(line.startsWith(DYNAMIC_RECORD_MARKER)) {
@@ -127,6 +123,8 @@ public class DCacheSRMauthzRecordsService {
                 if(rec != null) {
                   if(dynamic_records==null) dynamic_records = new LinkedHashMap();
                   dynamic_records.put(rec.getUsername(), rec);
+                } else {
+                   log.warn("WARNING: could not parse storage-authzdb line into dynamic record: " + line);
                 }
             }
             else if(line.startsWith(PWD_RECORD_MARKER)) {
@@ -135,6 +133,8 @@ public class DCacheSRMauthzRecordsService {
                 if(rec != null) {
                   if(pwd_records==null) pwd_records = new LinkedHashMap();
                   pwd_records.put(rec.getUsername(), rec);
+                } else {
+                   log.warn("WARNING: could not parse storage-authzdb line into password record: " + line);
                 }
             }
             else if(line.startsWith(FILE_VERSION_MARKER)) {

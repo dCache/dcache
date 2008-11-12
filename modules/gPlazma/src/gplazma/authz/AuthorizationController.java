@@ -141,10 +141,7 @@ import gplazma.authz.util.HostUtil;
 public class AuthorizationController {
     
     static Logger log = Logger.getLogger(AuthorizationController.class.getSimpleName());
-    private static String logpattern = "%d{MM/dd HH:mm:ss,SSS} %C{1} authRequestID ";
-    //private static PatternLayout loglayout = new PatternLayout(logpattern);
-            //private String authConfigFilePath;
-            private AuthorizationConfig authConfig=null;
+    private AuthorizationConfig authConfig=null;
     private AuthorizationPluginLoader plugin_loader;
 
     public static final String GPLAZMA_SRMDCACHE_RELEASE_VERSION="0.1-1";
@@ -206,15 +203,7 @@ public class AuthorizationController {
     throws AuthorizationException {
         this.authRequestID=authRequestID;
         authRequestID_str = getFormattedAuthRequestID(authRequestID);
-          if(log.getAppender("AuthorizationController")==null) {
-            Enumeration appenders = log.getParent().getAllAppenders();
-            while(appenders.hasMoreElements()) {
-                Appender apnd = (Appender) appenders.nextElement();
-                if(apnd instanceof ConsoleAppender)
-                    apnd.setLayout(new PatternLayout(logpattern + authRequestID_str + "  %m%n"));
-          }
-        }
-                try {
+        try {
             authConfig = new AuthorizationConfig(authConfigFilePath, authRequestID);
         } catch(java.io.IOException ioe) {
             log.error("Exception in AuthorizationConfig instantiation :" + ioe);

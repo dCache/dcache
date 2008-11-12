@@ -31,15 +31,7 @@ public class XACMLAuthorizationPlugin extends SAMLAuthorizationPlugin {
 
     public XACMLAuthorizationPlugin(String mappingServiceURL, String storageAuthzPath, long authRequestID) {
         super(mappingServiceURL, storageAuthzPath, authRequestID);
-        if(getLogger().getAppender("XACMLAuthorizationPlugin")==null) {
-            Enumeration appenders = getLogger().getParent().getAllAppenders();
-            while(appenders.hasMoreElements()) {
-                Appender apnd = (Appender) appenders.nextElement();
-                if(apnd instanceof ConsoleAppender)
-                    apnd.setLayout(getLogLayout());
-            }
-        }
-        getLogger().debug("XACMLAuthorizationPlugin: authRequestID " + authRequestID + " Plugin now loaded: saml-vo-mapping");
+        getLogger().info("xacml-vo-mapping plugin now loaded for URL " + mappingServiceURL);
     }
 
     public gPlazmaAuthorizationRecord authorize(String X509Subject, String fqan, X509Certificate[] chain, String desiredUserName, String serviceUrl, Socket socket)
@@ -98,8 +90,7 @@ public class XACMLAuthorizationPlugin extends SAMLAuthorizationPlugin {
             if( tlocalId!=null && tlocalId.age() < getCacheLifetime() &&
                     tlocalId.sameServiceName(resourceX509ID) &&
                     tlocalId.sameDesiredUserName(desiredUserName)) {
-                getLogger().info("Using cached mapping for User with DN: " + X509Subject + " and Role " + fqan);
-                getLogger().debug("with Desired user name: " + desiredUserName);
+                getLogger().info("Using cached mapping for User with DN: " + X509Subject + " and Role " + fqan + "with Desired user name: " + desiredUserName);
 
                 return getgPlazmaAuthorizationRecord(tlocalId.getLocalId(), X509Subject, fqan);
             }
@@ -121,8 +112,7 @@ public class XACMLAuthorizationPlugin extends SAMLAuthorizationPlugin {
             throw new AuthorizationException(e.toString());
         }
 
-        getLogger().info("Requesting mapping for User with DN: " + X509Subject + " and Role " + fqan);
-        getLogger().debug("with Desired user name: " + desiredUserName);
+        getLogger().info("Requesting mapping for User with DN: " + X509Subject + " and Role " + fqan + "with Desired user name: " + desiredUserName);
 
         getLogger().debug("Mapping Service URL configuration: " + getMappingServiceURL());
         try {
@@ -182,14 +172,16 @@ public class XACMLAuthorizationPlugin extends SAMLAuthorizationPlugin {
         String username = localId.getUserName();
 
         if(username!=null) {
-            getLogger().error("XACML mapping service returned Username: " + username);
+            getLogger().info("xacml-vo-mapping service returned Username: " + username);
             return getgPlazmaAuthorizationRecord(username, subjectDN, role);
-        }
-
-        if(localId.getUID() == null || localId.getGID() == null) {
-            String denied = DENIED_MESSAGE + ": XACML mapping returned a null username and no uid or gid for DN " + subjectDN + " amd role " + role;
-            getLogger().warn(denied);
-            throw new AuthorizationException(denied);
+        } else {
+            if(localId.getUID() == null || localId.getGID() == null) {
+                String denied = DENIED_MESSAGE + ": XACML mapping returned a null username and no uid or gid for DN " + subjectDN + " amd role " + role;
+                getLogger().warn(denied);
+                throw new AuthorizationException(denied);
+            } else {
+                getLogger().info("xacml-vo-mapping service returned uid:primarygid " + localId.getUID() + ":" + localId.getGID());
+            }
         }
 
         username = localId.getUID() + ":" + localId.getGID();
