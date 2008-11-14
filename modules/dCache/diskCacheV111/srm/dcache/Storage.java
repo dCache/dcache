@@ -87,10 +87,13 @@ import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.FsPath;
 
 import diskCacheV111.vehicles.PnfsGetStorageInfoMessage;
+
 import diskCacheV111.vehicles.PnfsGetFileMetaDataMessage;
 import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.PoolMgrQueryPoolsMsg;
 import diskCacheV111.vehicles.PnfsSetFileMetaDataMessage;
+import diskCacheV111.vehicles.PnfsGetCacheLocationsMessage;
+import org.dcache.auth.AuthorizationRecord;
 import org.dcache.srm.SrmCancelUseOfSpaceCallbacks;
 import org.dcache.srm.SrmReleaseSpaceCallbacks;
 import org.dcache.srm.SrmUseSpaceCallbacks;
@@ -98,7 +101,7 @@ import org.dcache.srm.SrmUseSpaceCallbacks;
 import org.dcache.srm.util.Configuration;
 //import org.dcache.srm.util.PnfsFileId;
 //import org.dcache.srm.security.DCacheAuthorization;
-//import org.dcache.srm.security.DCacheUser;
+//import org.dcache.srm.security.AuthorizationRecord;
 import org.dcache.srm.security.SslGsiSocketFactory;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.vehicles.PnfsDeleteEntryMessage;
@@ -176,12 +179,13 @@ import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.services.space.message.GetSpaceMetaData;
 import diskCacheV111.services.space.message.GetSpaceTokens;
+import org.dcache.auth.persistence.AuthRecordPersistenceManager;
 
 
 import org.ietf.jgss.GSSCredential;
 
 
-import org.dcache.srm.request.RequestUser;
+import org.dcache.srm.SRMUser;
 import org.dcache.srm.request.RequestCredential;
 // End of imports to pull out once we pull out srmLs stuff
 
@@ -363,7 +367,7 @@ public class Storage
         permissionHandler = new PermissionHandler(this,_pnfsPath);
         InetAddress[] addresses = InetAddress.getAllByName(
                 InetAddress.getLocalHost().getHostName());
-
+        
         _hosts = new String[addresses.length];
 
         /**
@@ -372,18 +376,18 @@ public class Storage
          */
         int nextExternalIfIndex = 0;
         int nextInternalIfIndex = addresses.length-1;
-
+        
         for( int i = 0; i < addresses.length; i++) {
     		InetAddress addr = addresses[i];
-
-        	if( !addr.isLinkLocalAddress() && !addr.isLoopbackAddress() &&
+        	
+        	if( !addr.isLinkLocalAddress() && !addr.isLoopbackAddress() && 
         			!addr.isSiteLocalAddress() && !addr.isMulticastAddress()) {
         		_hosts [nextExternalIfIndex++] = addr.getHostName();
         	} else {
         		_hosts [nextInternalIfIndex--] = addr.getHostName();
         	}
         }
-
+        
         String tmpstr = _args.getOpt("config");
         if(tmpstr != null) {
             try {
@@ -626,9 +630,13 @@ public class Storage
 
         config.setJdbcMonitoringEnabled(isOptionSetToTrueOrYes("jdbc-monitoring-log",
             config.isJdbcMonitoringEnabled())); // false by default
+        
         config.setJdbcMonitoringDebugLevel(isOptionSetToTrueOrYes("jdbc-monitoring-debug",
             config.isJdbcMonitoringDebugLevel())); // false by default
 
+        config.setCleanPendingRequestsOnRestart(isOptionSetToTrueOrYes("clean-pending-requests-on-restart",
+            config.isCleanPendingRequestsOnRestart())); // false by default
+        
         config.setOverwrite(isOptionSetToTrueOrYes("overwrite",
             config.isOverwrite())); //false by default
 
@@ -645,32 +653,8 @@ public class Storage
         config.setCredentialsDirectory(getOption("credentials-dir",
             config.getCredentialsDirectory()));
 
-
-        tmpstr = _args.getOpt("use_lambdastation");
-	if(tmpstr != null) {
-	    if (tmpstr.equalsIgnoreCase("true")) {
-		config.setLambdaStationEnabled(true);
-	    }
-	    else {
-		config.setLambdaStationEnabled(false);
-	    }
-	}
-
-	tmpstr = _args.getOpt("lambdastation_map_file");
-	if(tmpstr != null) {
-	    config.setLambda_station_map_file(tmpstr);
-	}
-	else {
-	    config.setLambdaStationEnabled(false);
-	}
-
-	tmpstr = _args.getOpt("lambdastation_script");
-	if(tmpstr != null) {
-	    config.setLambda_station_script(tmpstr);
-	}
-	else {
-	    config.setLambdaStationEnabled(false);
-	 }
+		config.setQosPluginClass(getOption("qosPluginClass",config.getQosPluginClass()));
+		config.setQosConfigFile(getOption("qosConfigFile",config.getQosConfigFile()));
 
         say("scheduler parameter read, starting");
         this.useInterpreter(true);
@@ -684,6 +668,13 @@ public class Storage
             Thread.sleep(5000);
         } catch(InterruptedException ie) {
         }
+        AuthRecordPersistenceManager authRecordPersistenceManager =
+            new AuthRecordPersistenceManager(
+                config.getJdbcUrl(),
+                config.getJdbcClass(),
+                config.getJdbcUser(), 
+                config.getJdbcPass());
+        config.setSrmUserPersistenceManager(authRecordPersistenceManager);
 
         tmpstr = _args.getOpt("gsissl");
         if(tmpstr !=null) {
@@ -699,7 +690,8 @@ public class Storage
                     config.getGplazmaPolicy(),
                     config.getAuthzCacheLifetime(),
                     config.getKpwdfile(),
-                    this));
+                    this,
+                    authRecordPersistenceManager));
             } else {
                 config.setWebservice_protocol("http");
             }
@@ -707,6 +699,7 @@ public class Storage
         } else {
             config.setWebservice_protocol("http");
         }
+
         config.setStorage(this);
 
         //getNucleus().newThread( new Runnable(){
@@ -1072,7 +1065,7 @@ public class Storage
     }
 
 
-    public String fh_lambdastation= " Syntax: labmdastation [<on|off>] ";
+/*    public String fh_lambdastation= " Syntax: labmdastation [<on|off>] ";
     public String hh_lambdastation= " on|off";
     public String ac_lambdastation_$_0_1(Args args) {
 	boolean ls;
@@ -1097,7 +1090,7 @@ public class Storage
             t.printStackTrace();
             return t.toString();
 	}
-    }
+    }*/
 
 
 
@@ -1142,57 +1135,6 @@ public class Storage
         return sb.toString();
     }
 
-    public String fh_reserve= " This is a function for testing space reservation\n"+
-            " it will be removed when space reservation client becomes available"+
-            " Syntax: reserve <voGroup> <voRole> <size> <lifetime> <accessLatency>" +
-            " <retentionPolicy> <description> ";
-    public String hh_reserve= " <voGroup> <voRole> <size> <lifetime> <accessLatency>" +
-            " <retentionPolicy> <description> ";
-    public String ac_reserve_$_7(Args args) {
-        String voGroup=args.argv(0);
-        String voRole = args.argv(1);
-        DCacheUser duser = new DCacheUser("timur",voGroup,
-                voRole,
-                "/pnfs/fnal.gov/usr/cms/WAX",
-                10401,
-                new int[]{1530});
-        long sizeInBytes = Long.parseLong(args.argv(2));
-        long reservationLifetime = Long.parseLong(args.argv(3));
-        String accessLatency = args.argv(4);
-        String retentionPolicy = args.argv(5);
-        String description = args.argv(6);
-        srmReserveSpace(duser,
-                sizeInBytes,
-                reservationLifetime,
-                retentionPolicy,
-                accessLatency,
-                description,
-                new org.dcache.srm.SrmReserveSpaceCallbacks(){
-            public void ReserveSpaceFailed(String reason){
-                esay("admin command SrmReserveSpace failed: "+reason);
-            }
-
-            public void NoFreeSpace(String reason){
-                esay("admin command SrmReserveSpace failed: NoFreeSpace: "+reason);
-            }
-
-            public void SpaceReserved(String spaceReservationToken,
-                long reservedSpaceSize){
-                esay("admin command SrmReserveSpace succeded:");
-                esay("token ="+spaceReservationToken+" reservationSize="+
-                    reservedSpaceSize);
-
-            }
-
-            public void ReserveSpaceFailed(Exception e){
-                esay("admin command SrmReserveSpace failed: ");
-                esay(e);
-            }
-
-        });
-        return " request submitted, watch logs and pins";
-    }
-
     public String fh_set_job_priority= " Syntax: set priority <requestId> <priority>"+
             "will set priority for the requestid";
     public String hh_set_job_priority=" <requestId> <priority>";
@@ -1227,7 +1169,7 @@ public class Storage
                 sb.append("request with reqiest id "+requestId+" is not found\n");
                 return sb.toString();
             }
-            job.getCreator().setPriority(priority);
+            job.setPriority(priority);
             job.setPriority(priority);
             srm.listRequest(sb, requestId, true);
             return sb.toString();
@@ -1630,7 +1572,7 @@ public class Storage
     /**
      * Receives the Cell Messages
      * we currently process messages received as the
-     * responce to something we sent
+     * response to something we sent
      * to other cells
      *
      * @param  cellMessage
@@ -1674,59 +1616,91 @@ public class Storage
     }
 
 
+//     private boolean isCached(StorageInfo storage_info, PnfsId _pnfsId) {
+// 	    PnfsGetCacheLocationsMessage msg = new PnfsGetCacheLocationsMessage(_pnfsId);
+// 	    CellMessage checkMessage = new CellMessage( _pnfsPath, msg );
+// 	    say("isCached: Waiting for PnfsGetCacheLocationsMessage reply from PnfsManager");
+// 	    try {
+// 		    checkMessage = sendAndWait(checkMessage,
+// 					       __pnfsTimeout*1000 ) ;
+// 		    if(checkMessage == null) {
+// 			    esay("isCached(): timeout expired");
+// 			    return false;
+// 		    }
+// 		    msg = (PnfsGetCacheLocationsMessage) checkMessage.getMessageObject() ;
+// 	    }
+// 	    catch(Exception ee ) {
+// 		    esay("isCached(): error receiving message back from PnfsManager : "+ee);
+// 		    return false;
+// 	    }
+// 	    if (msg.getReturnCode()!=0) {
+// 		    esay("isCached(): Failed to get PnfsGetCacheLocationsMessage");
+// 		    return false;
+// 	    }
+// 	    StringBuffer sb = new StringBuffer();
+// 	    sb.append("isCached(): cache locations for file "+_pnfsId+ ":");
+// 	    for(Iterator<String> i=msg.getCacheLocations().iterator();i.hasNext();) {
+// 		    sb.append(i.next()).append(" ");
+// 	    }
+// 	    say(sb.toString());
+// 	    return (msg.getCacheLocations().isEmpty()==false);
+//     }
+
+
+
     private boolean isCached(StorageInfo storage_info, PnfsId _pnfsId) {
-        PoolMgrQueryPoolsMsg query =
-                new PoolMgrQueryPoolsMsg( DirectionType.READ,
-                      storage_info.getStorageClass()+"@"+storage_info.getHsm() ,
-                      storage_info.getCacheClass(),
-                      "*/*",
-                      config.getSrmhost(),
-                      null);
+         PoolMgrQueryPoolsMsg query =
+                 new PoolMgrQueryPoolsMsg( DirectionType.READ ,
+                       storage_info.getStorageClass()+"@"+storage_info.getHsm() ,
+                       storage_info.getCacheClass(),
+                       "*/*",
+                       config.getSrmhost(),
+                       null);
 
-        CellMessage checkMessage = new CellMessage( _poolMgrPath , query ) ;
-        say("isCached: Waiting for PoolMgrQueryPoolsMsg reply from PoolManager");
-        try {
-            checkMessage = sendAndWait(  checkMessage , __poolManagerTimeout*1000 ) ;
-            if(checkMessage == null) {
-                esay("isCached(): timeout expired");
-                return false;
-            }
-            query = (PoolMgrQueryPoolsMsg) checkMessage.getMessageObject() ;
-        }
-	catch(Exception ee ) {
-            esay("isCached(): error receiving message back from PoolManager : "+ee);
-            return false;
-        }
+         CellMessage checkMessage = new CellMessage( _poolMgrPath , query ) ;
+         say("isCached: Waiting for PoolMgrQueryPoolsMsg reply from PoolManager");
+         try {
+             checkMessage = sendAndWait(  checkMessage , __poolManagerTimeout*1000 ) ;
+             if(checkMessage == null) {
+                 esay("isCached(): timeout expired");
+                 return false;
+             }
+             query = (PoolMgrQueryPoolsMsg) checkMessage.getMessageObject() ;
+         }
+ 	catch(Exception ee ) {
+             esay("isCached(): error receiving message back from PoolManager : "+ee);
+             return false;
+         }
 
-        if( query.getReturnCode() != 0 ) {
-            say( "storageInfo Available") ;
-        }
-        try {
-            List assumedLocations = _pnfs.getCacheLocations(_pnfsId) ;
-            List<String> [] lists = query.getPools() ;
-            HashMap hash = new HashMap() ;
+         if( query.getReturnCode() != 0 ) {
+             say( "storageInfo Available") ;
+         }
+         try {
+             List assumedLocations = _pnfs.getCacheLocations(_pnfsId) ;
+             List<String> [] lists = query.getPools() ;
+             HashMap hash = new HashMap() ;
 
-            for( int i = 0 ; i < lists.length ; i++ ) {
-                Iterator nn = lists[i].iterator() ;
-                while( nn.hasNext() ) {
-                    hash.put( nn.next() , "" ) ;
-                }
-            }
+             for( int i = 0 ; i < lists.length ; i++ ) {
+                 Iterator nn = lists[i].iterator() ;
+                 while( nn.hasNext() ) {
+                     hash.put( nn.next() , "" ) ;
+                 }
+             }
 
-            Iterator nn = assumedLocations.iterator() ;
+             Iterator nn = assumedLocations.iterator() ;
 
-            while( nn.hasNext() ) {
-                if( hash.get( nn.next() ) != null ) {
-                    return true;
-                }
-            }
-        }
-	catch(Exception e) {
-            say("isCached exception : "+ e);
-	    e.printStackTrace();
-        }
-        return false;
-    }
+             while( nn.hasNext() ) {
+                 if( hash.get( nn.next() ) != null ) {
+                     return true;
+                 }
+             }
+         }
+ 	catch(Exception e) {
+             say("isCached exception : "+ e);
+ 	    e.printStackTrace();
+         }
+         return false;
+     }
 
 
 
@@ -1751,7 +1725,7 @@ public class Storage
         long requestId,
         PinCallbacks callbacks) {
         DcacheFileMetaData dfmd = (DcacheFileMetaData) fmd;
-        PinCompanion.pinFile((DCacheUser)user,
+        PinCompanion.pinFile((AuthorizationRecord)user,
             fileId,
             clientHost,
             callbacks, dfmd, pinLifetime, requestId, this);
@@ -1760,14 +1734,19 @@ public class Storage
     public void unPinFile(SRMUser user,String fileId,
             UnpinCallbacks callbacks,
             String pinId) {
-        UnpinCompanion.unpinFile((DCacheUser)user, fileId, pinId, callbacks,this);
+        UnpinCompanion.unpinFile((AuthorizationRecord)user, fileId, pinId, callbacks,this);
     }
 
 
     public void unPinFileBySrmRequestId(SRMUser user,String fileId,
             UnpinCallbacks callbacks,
             long srmRequestId) {
-        UnpinCompanion.unpinFileBySrmRequestId((DCacheUser)user, fileId, srmRequestId, callbacks,this);
+        UnpinCompanion.unpinFileBySrmRequestId((AuthorizationRecord)user, fileId, srmRequestId, callbacks,this);
+    }
+
+    public void unPinFile(SRMUser user,String fileId,
+            UnpinCallbacks callbacks) {
+        UnpinCompanion.unpinFile((AuthorizationRecord)user, fileId, callbacks,this);
     }
 
 
@@ -1982,7 +1961,7 @@ public class Storage
         }
         String user_root = null;
         if(user != null) {
-            DCacheUser duser = (DCacheUser) user;
+            AuthorizationRecord duser = (AuthorizationRecord) user;
             user_root = duser.getRoot();
             if(user_root != null) {
                 user_root =new FsPath(user_root).toString();
@@ -2015,7 +1994,7 @@ public class Storage
         }
         String user_root = null;
         if(user != null) {
-            DCacheUser duser = (DCacheUser) user;
+            AuthorizationRecord duser = (AuthorizationRecord) user;
             user_root = duser.getRoot();
             if(user_root != null) {
                 user_root =new FsPath(user_root).toString();
@@ -2353,7 +2332,7 @@ public class Storage
                     "] is not a subpath of user's root ");
         }
         GetFileInfoCompanion.getFileInfo(
-                (DCacheUser)user,
+                (AuthorizationRecord)user,
                 actualPnfsPath,
                 callbacks,
                 this);
@@ -2369,7 +2348,7 @@ public class Storage
             boolean overwrite) {
         String actualPnfsPath = srm_root+"/"+filePath;
         PutCompanion.PrepareToPutFile(
-                (DCacheUser)user,
+                (AuthorizationRecord)user,
                 actualPnfsPath,
                 callbacks,
                 this,
@@ -2406,9 +2385,9 @@ public class Storage
         dfmd.getFmd().setLastAccessedTime(time);
         dfmd.getFmd().setLastModifiedTime(time);
 
-        DCacheUser duser = null;
-        if (user != null && user instanceof DCacheUser) {
-                duser = (DCacheUser) user;
+        AuthorizationRecord duser = null;
+        if (user != null && user instanceof AuthorizationRecord) {
+                duser = (AuthorizationRecord) user;
         }
 
 // 		_pnfs.pnfsSetFileMetaData(dfmd.getPnfsId(),dfmd.getFmd());
@@ -2463,23 +2442,18 @@ public class Storage
 
     public FileMetaData getFileMetaData(SRMUser user,
 					String path,
-                                        FileMetaData parentFMD,
-                                         boolean ... ignoreIsSetflags)
+                                        FileMetaData parentFMD)
         throws SRMException {
-        boolean ignoreIsSetFlag = false;
-        if(ignoreIsSetflags != null && ignoreIsSetflags.length >=1 ) {
-            ignoreIsSetFlag = ignoreIsSetflags[0];
-        }
-        say("getFileMetaData(" + path + ",ignoreIsSetFlag="+ignoreIsSetFlag+" )");
+        say("getFileMetaData(" + path + ")");
         String absolute_path = srm_root + "/" + path;
         diskCacheV111.util.FileMetaData parent_util_fmd = null;
         if (parentFMD != null && parentFMD instanceof DcacheFileMetaData) {
             DcacheFileMetaData dfmd = (DcacheFileMetaData)parentFMD;
             parent_util_fmd = dfmd.getFmd();
         }
-        DCacheUser duser = null;
-        if (user != null && user instanceof DCacheUser) {
-            duser = (DCacheUser) user;
+        AuthorizationRecord duser = null;
+        if (user != null && user instanceof AuthorizationRecord) {
+            duser = (AuthorizationRecord) user;
         }
         FsPath parent_path = new FsPath(absolute_path);
         parent_path.add("..");
@@ -2555,10 +2529,9 @@ public class Storage
         }
         FileMetaData fmd =
             getFileMetaData(user, absolute_path, pnfsId,
-                            storage_info, util_fmd, flag,
-                            ignoreIsSetFlag);
+                            storage_info, util_fmd, flag);
         if (storage_info != null) {
-            fmd.isCached = isCached(storage_info, pnfsId);
+		fmd.isCached = isCached(storage_info, pnfsId);
         }
 
 	try {
@@ -2609,13 +2582,8 @@ public class Storage
                         PnfsId pnfsId,
                         StorageInfo storage_info,
                         diskCacheV111.util.FileMetaData util_fmd,
-                        PnfsFlagMessage flag,
-                        boolean ... ignoreIsSetflags)
+                        PnfsFlagMessage flag)
     {
-        boolean ignoreIsSetFlag = false;
-        if(ignoreIsSetflags != null && ignoreIsSetflags.length >=1 ) {
-            ignoreIsSetFlag = ignoreIsSetflags[0];
-        }
         boolean isRegular = false;
         boolean isLink = false;
         boolean isDirectory = false;
@@ -2672,8 +2640,7 @@ public class Storage
             size = storage_info.getFileSize();
 	    TRetentionPolicy retention = null;
 	    TAccessLatency latency = null;
-	    if ( (storage_info.isSetRetentionPolicy() || ignoreIsSetFlag) &&
-                storage_info.getRetentionPolicy() != null) {
+	    if (storage_info.getRetentionPolicy() != null) {
 		    if(storage_info.getRetentionPolicy().equals(RetentionPolicy.CUSTODIAL)) {
 			    retention = TRetentionPolicy.CUSTODIAL;
 		    }
@@ -2684,8 +2651,7 @@ public class Storage
 			    retention = TRetentionPolicy.OUTPUT;
 		    }
             }
-            if ( (storage_info.isSetAccessLatency() || ignoreIsSetFlag) &&
-                storage_info.getAccessLatency() != null) {
+            if (storage_info.getAccessLatency() != null) {
 		    if(storage_info.getAccessLatency().equals(AccessLatency.ONLINE)) {
 			    latency = TAccessLatency.ONLINE;
 		    }
@@ -2769,7 +2735,7 @@ public class Storage
         String actualToFilePath = srm_root+"/"+toFilePath;
         long id = getNextMessageID();
         say("localCopy for user "+ user+"from actualFromFilePath to actualToFilePath");
-        DCacheUser duser = (DCacheUser)user;
+        AuthorizationRecord duser = (AuthorizationRecord)user;
         CopyManagerMessage copyRequest =
                 new CopyManagerMessage(
                 duser.getUid(),
@@ -2805,12 +2771,12 @@ public class Storage
             esay(emsg);
             throw new SRMException(emsg);
         }
-        CopyManagerMessage copyResponce =
+        CopyManagerMessage copyResponse =
                 (CopyManagerMessage) object;
-        int rc = copyResponce.getReturnCode();
+        int rc = copyResponse.getReturnCode();
         if( rc != 0) {
             String emsg =" local copy failed with code ="+ rc +
-                    " details: "+copyResponce.getDescription();
+                    " details: "+copyResponse.getDescription();
             esay(emsg);
             throw new SRMException(emsg);
         }
@@ -2917,7 +2883,7 @@ public class Storage
 
         String actualPnfsPath= srm_root+"/"+path;
         AdvisoryDeleteCompanion.advisoryDelete(
-                (DCacheUser)user,
+                (AuthorizationRecord)user,
                 actualPnfsPath,
                 callbacks,
                 this,
@@ -2931,7 +2897,7 @@ public class Storage
         say("Storage.removeFile");
         String actualPnfsPath= srm_root+"/"+path;
         RemoveFileCompanion.removeFile(
-                (DCacheUser)user,
+                (AuthorizationRecord)user,
                 actualPnfsPath,
                 callbacks,
                 this,
@@ -2942,7 +2908,7 @@ public class Storage
     public void removeDirectory(final SRMUser user,
             final Vector tree)  throws SRMException {
         say("Storage.removeDirectory");
-        DCacheUser duser = (DCacheUser) user;
+        AuthorizationRecord duser = (AuthorizationRecord) user;
         for (Iterator i = tree.iterator(); i.hasNext();) {
             String path= (String)i.next();
             String actualPnfsPath= srm_root+"/"+path;
@@ -3022,7 +2988,7 @@ public class Storage
         //                                          +-- can write YES : NO
         //                                                         |     +-- exception
         //                                                         +-- create PnfsEntry
-        DCacheUser duser = (DCacheUser) user;
+        AuthorizationRecord duser = (AuthorizationRecord) user;
         String actualPnfsPath= srm_root+"/"+directory;
         PnfsGetStorageInfoMessage  storageInfoMessage  =null;
         PnfsGetFileMetaDataMessage fileMetadataMessage =null;
@@ -3163,7 +3129,7 @@ public class Storage
 			  final String from,
 			  final String to)  throws SRMException {
         say("Storage.moveEntry");
-        DCacheUser duser = (DCacheUser) user;
+        AuthorizationRecord duser = (AuthorizationRecord) user;
         String actualFromPnfsPath= srm_root+"/"+from;
         String actualToPnfsPath= srm_root+"/"+to;
         FsPath fromFsPath           = new FsPath(actualFromPnfsPath);
@@ -3480,10 +3446,10 @@ public class Storage
             return false;
         }
 
-        if(user == null || (!(user instanceof DCacheUser))) {
+        if(user == null || (!(user instanceof AuthorizationRecord))) {
             return false;
         }
-        DCacheUser duser = (DCacheUser) user;
+        AuthorizationRecord duser = (AuthorizationRecord) user;
 
         if(duser.getGid() == gid && Permissions.groupCanRead(permissions)) {
             return true;
@@ -3517,10 +3483,10 @@ public class Storage
             return false;
         }
 
-        if(user == null || (!(user instanceof DCacheUser))) {
+        if(user == null || (!(user instanceof AuthorizationRecord))) {
             return false;
         }
-        DCacheUser duser = (DCacheUser) user;
+        AuthorizationRecord duser = (AuthorizationRecord) user;
 
         if(duser.getGid() == gid && Permissions.groupCanRead(permissions)) {
             return true;
@@ -3564,7 +3530,7 @@ public class Storage
             return false;
         }
 
-        DCacheUser duser = (DCacheUser) user;
+        AuthorizationRecord duser = (AuthorizationRecord) user;
         boolean canWrite;
         if(fileId == null) {
             canWrite = true;
@@ -3579,7 +3545,7 @@ public class Storage
                canWrite = true;
             } else if(uid == -1 || gid == -1) {
                canWrite = false;
-            } else  if(user == null || (!(user instanceof DCacheUser))) {
+            } else  if(user == null || (!(user instanceof AuthorizationRecord))) {
                canWrite = false;
             } else  if(duser.getGid() == gid &&
                     Permissions.groupCanWrite(permissions) ) {
@@ -3604,7 +3570,7 @@ public class Storage
            parentCanWrite = true;
         } else if(parentUid == -1 || parentGid == -1) {
            parentCanWrite = false;
-        } else  if(user == null || (!(user instanceof DCacheUser))) {
+        } else  if(user == null || (!(user instanceof AuthorizationRecord))) {
            parentCanWrite = false;
         } else  if(duser.getGid() == parentGid &&
                 Permissions.groupCanWrite(parentPermissions) &&
@@ -3645,10 +3611,10 @@ public class Storage
             return false;
         }
 
-        if(user == null || (!(user instanceof DCacheUser))) {
+        if(user == null || (!(user instanceof AuthorizationRecord))) {
             return false;
         }
-        DCacheUser duser = (DCacheUser) user;
+        AuthorizationRecord duser = (AuthorizationRecord) user;
 
 
         if(duser.getGid() == gid &&
@@ -3679,7 +3645,7 @@ public class Storage
     public String getFromRemoteTURL(SRMUser user,
             String remoteTURL,
             String actualFilePath,
-            String remoteUser,
+            SRMUser remoteUser,
             Long remoteCredentialId,
             String spaceReservationId,
             long size,
@@ -3698,7 +3664,7 @@ public class Storage
     public String getFromRemoteTURL(SRMUser user,
             String remoteTURL,
             String actualFilePath,
-            String remoteUser,
+            SRMUser remoteUser,
             Long remoteCredentialId,
             CopyCallbacks callbacks) throws SRMException{
         actualFilePath = srm_root+"/"+actualFilePath;
@@ -3713,19 +3679,19 @@ public class Storage
     }
 
     /**
-     * @param user User ID
-     * @param actualFilePath
+     * @param user 
+     * @param filePath
      * @param remoteTURL
      * @param remoteUser
-     * @param callbacks
      * @param remoteCredetial
+     * @param callbacks
      * @throws SRMException
      * @return copy handler id
      */
     public String putToRemoteTURL(SRMUser user,
             String filePath,
             String remoteTURL,
-            String remoteUser,
+            SRMUser remoteUser,
             Long remoteCredentialId,
             CopyCallbacks callbacks)
             throws SRMException{
@@ -3770,7 +3736,7 @@ public class Storage
             String remoteTURL,
             String actualFilePath,
             boolean store,
-            String remoteUser,
+            SRMUser remoteUser,
             Long remoteCredentialId,
             String spaceReservationId,
             Long size,
@@ -3784,7 +3750,7 @@ public class Storage
         }
 
         if(remoteTURL.startsWith("gsiftp://")) {
-            DCacheUser duser = (DCacheUser)user;
+            AuthorizationRecord duser = (AuthorizationRecord)user;
 
             //call this for the sake of checking that user is reading
             // from the "root" of the user
@@ -4036,7 +4002,7 @@ public class Storage
             String filename,
             String host,
             ReserveSpaceCallbacks callbacks){
-        DCacheUser duser = (DCacheUser) user;
+        AuthorizationRecord duser = (AuthorizationRecord) user;
         String absolute_path = srm_root+"/"+filename;
         ReserveSpaceCompanion.reserveSpace(duser,
                 absolute_path,
@@ -4057,14 +4023,16 @@ public class Storage
      * dcache pool) and the name (unique string  id) of the pool.
      * @param user User ID
      * @param spaceSize size of the space to be released
-     * @param reservationToken identifier of the space
+     * @param spaceToken identifier of the space
      * @param callbacks This interface is used for
      * asyncronous notification of SRM of the
      * various actions performed to release space in the storage
      */
-    public void releaseSpace( SRMUser user, long spaceSize, String spaceToken,
+    public void releaseSpace( SRMUser user,
+        long spaceSize, 
+        String spaceToken,
         ReleaseSpaceCallbacks callbacks){
-        DCacheUser duser = (DCacheUser) user;
+        AuthorizationRecord duser = (AuthorizationRecord) user;
         ReleaseSpaceCompanion.releaseSpace(spaceToken,spaceSize,callbacks,this);
 
     }
@@ -4082,7 +4050,7 @@ public class Storage
      */
     public void releaseSpace( SRMUser user,  String spaceToken,
         ReleaseSpaceCallbacks callbacks){
-        DCacheUser duser = (DCacheUser) user;
+        AuthorizationRecord duser = (AuthorizationRecord) user;
         ReleaseSpaceCompanion.releaseSpace(spaceToken,callbacks,this);
 
     }
@@ -4190,7 +4158,7 @@ public class Storage
         PnfsGetStorageInfoMessage storageInfoMessage =null;
         PnfsGetFileMetaDataMessage metadataMessage = null;
         PnfsId pnfsId;
-        DCacheUser duser = (DCacheUser) user;
+        AuthorizationRecord duser = (AuthorizationRecord) user;
 
         try {
             storageInfoMessage = _pnfs.getStorageInfoByPath(actualPath);
@@ -4279,7 +4247,7 @@ public class Storage
         if(!util_fmd.isDirectory())  {
             throw new SRMException("pnfsPath is not a directory!");
         }
-        DCacheUser duser = (DCacheUser) user;
+        AuthorizationRecord duser = (AuthorizationRecord) user;
         try {
             if(!permissionHandler.dirCanRead(
                     duser.getUid(),
@@ -4331,7 +4299,7 @@ public class Storage
         if(!util_fmd.isDirectory())  {
             throw new SRMException("pnfsPath is not a directory!");
         }
-        DCacheUser duser = (DCacheUser) user;
+        AuthorizationRecord duser = (AuthorizationRecord) user;
         try {
             if(!permissionHandler.dirCanRead(
                     duser.getUid(),
@@ -4359,7 +4327,7 @@ public class Storage
             String accessLatency,
             String description,
             SrmReserveSpaceCallbacks callbacks) {
-        DCacheUser duser = (DCacheUser) user;
+        AuthorizationRecord duser = (AuthorizationRecord) user;
 
         SrmReserveSpaceCompanion.reserveSpace(
                 duser,
@@ -4385,7 +4353,7 @@ public class Storage
             return;
         }
 
-        DCacheUser duser = (DCacheUser) user;
+        AuthorizationRecord duser = (AuthorizationRecord) user;
         SrmReleaseSpaceCompanion.releaseSpace(duser,
                 longSpaceToken,
                 releaseSizeInBytes,
@@ -4408,7 +4376,7 @@ public class Storage
             return;
         }
 
-        DCacheUser duser = (DCacheUser) user;
+        AuthorizationRecord duser = (AuthorizationRecord) user;
         String actualFilePath = srm_root+"/"+fileName;
         SrmMarkSpaceAsBeingUsedCompanion.markSpace(
                 duser,
@@ -4433,7 +4401,7 @@ public class Storage
             callbacks.CancelUseOfSpaceFailed("invalid space token="+spaceToken);
             return;
         }
-        DCacheUser duser = (DCacheUser) user;
+        AuthorizationRecord duser = (AuthorizationRecord) user;
         String actualFilePath = srm_root+"/"+fileName;
         SrmUnmarkSpaceAsBeingUsedCompanion.unmarkSpace(
                 duser,
@@ -4624,8 +4592,7 @@ public class Storage
                 } else {
 			lifetimeleft = (int)((space.getCreationTime()+lifetime - System.currentTimeMillis())/1000);
                     lifetimeleft= lifetimeleft < 0? 0: lifetimeleft;
-                    spaceMetaDatas[i].setLifetimeAssigned(new Integer((int)(
-                            lifetime/1000)));
+                    spaceMetaDatas[i].setLifetimeAssigned(new Integer((int)(lifetime/1000)));
                     spaceMetaDatas[i].setLifetimeLeft(new Integer
                             (lifetimeleft));
                 }
@@ -4688,10 +4655,10 @@ public class Storage
      */
     public String[] srmGetSpaceTokens(SRMUser user, String description)
         throws SRMException {
-
+        AuthorizationRecord duser = (AuthorizationRecord) user;
         say("srmGetSpaceTokens ("+description+")");
-       GetSpaceTokens getTokens = new GetSpaceTokens(user.getVoGroup(),
-           user.getVoRole(),description);
+       GetSpaceTokens getTokens = new GetSpaceTokens(duser.getVoGroup(),
+           duser.getVoRole(),description);
         CellMessage cellMessage = new CellMessage(
                 new CellPath("SrmSpaceManager"),
                 getTokens);
@@ -4732,13 +4699,13 @@ public class Storage
     public String[] srmGetRequestTokens(SRMUser user,String description)
         throws SRMException {
         try {
-            Set tokens = srm.getBringOnlineRequestIds((RequestUser) user,
+            Set tokens = srm.getBringOnlineRequestIds((SRMUser) user,
                     description);
-            tokens.addAll(srm.getGetRequestIds((RequestUser) user,
+            tokens.addAll(srm.getGetRequestIds((SRMUser) user,
                     description));
-            tokens.addAll(srm.getPutRequestIds((RequestUser) user,
+            tokens.addAll(srm.getPutRequestIds((SRMUser) user,
                     description));
-            tokens.addAll(srm.getCopyRequestIds((RequestUser) user,
+            tokens.addAll(srm.getCopyRequestIds((SRMUser) user,
                     description));
             Long[] tokenLongs = (Long[]) tokens.toArray(new Long[0]);
             String[] tokenStrings = new String[tokenLongs.length];
@@ -4779,11 +4746,11 @@ public class Storage
                 "User is not authorized to modify this file");
         }
 
-        if(user == null || (!(user instanceof DCacheUser))) {
+        if(user == null || (!(user instanceof AuthorizationRecord))) {
             throw new SRMAuthorizationException(
                 "User is not authorized to modify this file");
         }
-        DCacheUser duser = (DCacheUser) user;
+        AuthorizationRecord duser = (AuthorizationRecord) user;
 
         if(duser.getGid() == gid && Permissions.groupCanWrite(permissions)) {
             return -1;
@@ -4867,6 +4834,7 @@ public class Storage
         PinManagerExtendLifetimeMessage extendLifetime =
             new PinManagerExtendLifetimeMessage(
             pnfsId, pinId,newPinLifetime);
+        extendLifetime.setAuthorizationRecord((AuthorizationRecord) user);
 
         try {
             CellMessage response =  sendAndWait( new CellMessage(

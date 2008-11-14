@@ -111,8 +111,9 @@ import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.DCapProtocolInfo;
 
 //import org.dcache.srm.util.FileRequest;
-//import org.dcache.srm.security.DCacheUser;
+//import org.dcache.srm.security.AuthorizationRecord;
 import java.net.InetAddress;
+import org.dcache.auth.AuthorizationRecord;
 import org.dcache.srm.PinCallbacks;
 import diskCacheV111.srm.FileMetaData;
 
@@ -137,7 +138,7 @@ public class PinCompanion implements CellMessageAnswerable {
     private PinCallbacks callbacks;
     private CellMessage request = null;
     private String fileId;
-    private DCacheUser user;
+    private AuthorizationRecord user;
 
     private void say(String words_of_wisdom) {
         if(cell!=null) {
@@ -152,7 +153,7 @@ public class PinCompanion implements CellMessageAnswerable {
     }
     /** Creates a new instance of StageAndPinCompanion */
 
-    private PinCompanion(DCacheUser user,String fileId,  PinCallbacks callbacks,CellAdapter cell) {
+    private PinCompanion(AuthorizationRecord user,String fileId,  PinCallbacks callbacks,CellAdapter cell) {
         this.user = user;
         this.fileId = fileId;
         this.cell = cell;
@@ -181,9 +182,9 @@ public class PinCompanion implements CellMessageAnswerable {
                     return;
                 }
                 state = RECEIVED_PIN_MGR_PIN_MSG;
-                PinManagerPinMessage pinResponce =
+                PinManagerPinMessage pinResponse =
                 (PinManagerPinMessage)message;
-                pinManagerPinMessageArrived(pinResponce);
+                pinManagerPinMessageArrived(pinResponse);
             }
             else {
                 esay(this.toString()+" got unknown message "+
@@ -202,15 +203,15 @@ public class PinCompanion implements CellMessageAnswerable {
     }
 
 
-    private void pinManagerPinMessageArrived(PinManagerPinMessage pinResponce) {
+    private void pinManagerPinMessageArrived(PinManagerPinMessage pinResponse) {
         say(" message is PinManagerPinMessage");
-        if(pinResponce.getReturnCode() != 0) {
+        if(pinResponse.getReturnCode() != 0) {
             esay("PinRequest Failed");
-            callbacks.PinningFailed(pinResponce.getErrorObject().toString());
+            callbacks.PinningFailed(pinResponse.getErrorObject().toString());
             return ;
         }
         say("pinned");
-        callbacks.Pinned(pinResponce.getPinId());
+        callbacks.Pinned(pinResponse.getPinId());
     }
 
     public void exceptionArrived( CellMessage request , Exception exception ) {
@@ -228,7 +229,7 @@ public class PinCompanion implements CellMessageAnswerable {
     }
 
     public static void pinFile(
-    DCacheUser user,
+    AuthorizationRecord user,
     String fileId,
     String clientHost,
     PinCallbacks callbacks,
@@ -247,6 +248,7 @@ public class PinCompanion implements CellMessageAnswerable {
         new PinManagerPinMessage( pnfsId ,
             clientHost,
             pinLifetime,requestId) ;
+        pinRequest.setAuthorizationRecord(user);
         pinRequest.setStorageInfo(dfmd.getStorageInfo());
         pinRequest.setReplyRequired(true);
         companion.state = SENT_PIN_MGR_PIN_MSG;

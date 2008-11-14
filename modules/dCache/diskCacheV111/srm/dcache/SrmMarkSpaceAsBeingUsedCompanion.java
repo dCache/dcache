@@ -134,6 +134,7 @@ import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageAnswerable;
 
 import diskCacheV111.util.PnfsId;
+import org.dcache.auth.AuthorizationRecord;
 import org.dcache.srm.SrmUseSpaceCallbacks;
 import diskCacheV111.services.space.message.Use;
 import diskCacheV111.services.space.SpaceException;
@@ -158,10 +159,10 @@ import diskCacheV111.vehicles.Message;
  */
 public class SrmMarkSpaceAsBeingUsedCompanion implements CellMessageAnswerable {
     private  static final int NOT_WAITING_STATE=0;
-    private  static final int WAITING_SPACE_MANAGER_RESPONCE_STATE=1;
-    private  static final int RECEIVED_SPACE_MANAGER_RESPONCE_STATE=2;
+    private  static final int WAITING_SPACE_MANAGER_RESPONSE_STATE=1;
+    private  static final int RECEIVED_SPACE_MANAGER_RESPONSE_STATE=2;
     private volatile int state = NOT_WAITING_STATE;
-    private DCacheUser user;
+    private AuthorizationRecord user;
     private long spaceToken;
     private String pnfPath;
     private long sizeInBytes;
@@ -193,10 +194,10 @@ public class SrmMarkSpaceAsBeingUsedCompanion implements CellMessageAnswerable {
         switch(state) {
             case NOT_WAITING_STATE:
                 return "NOT_WAITING_STATE";
-            case WAITING_SPACE_MANAGER_RESPONCE_STATE:
-                return "WAITING_SPACE_MANAGER_RESPONCE_STATE";
-            case RECEIVED_SPACE_MANAGER_RESPONCE_STATE:
-                return "RECEIVED_SPACE_MANAGER_RESPONCE_STATE";
+            case WAITING_SPACE_MANAGER_RESPONSE_STATE:
+                return "WAITING_SPACE_MANAGER_RESPONSE_STATE";
+            case RECEIVED_SPACE_MANAGER_RESPONSE_STATE:
+                return "RECEIVED_SPACE_MANAGER_RESPONSE_STATE";
             default:
                 return "UNKNOWN";
         }
@@ -206,7 +207,7 @@ public class SrmMarkSpaceAsBeingUsedCompanion implements CellMessageAnswerable {
     /** Creates a new instance of StageAndPinCompanion */
 
     private SrmMarkSpaceAsBeingUsedCompanion(
-    DCacheUser user,
+    AuthorizationRecord user,
     long spaceToken,
     String pnfPath,
     long sizeInBytes,
@@ -241,8 +242,8 @@ public class SrmMarkSpaceAsBeingUsedCompanion implements CellMessageAnswerable {
         if(o instanceof Message) {
             Message message = (Message)answer.getMessageObject() ;
             if( message instanceof Use  &&
-            current_state == WAITING_SPACE_MANAGER_RESPONCE_STATE) {
-                state= RECEIVED_SPACE_MANAGER_RESPONCE_STATE;
+            current_state == WAITING_SPACE_MANAGER_RESPONSE_STATE) {
+                state= RECEIVED_SPACE_MANAGER_RESPONSE_STATE;
                 say("space.message.Reserve arrived");
                 if(message.getReturnCode() != 0) {
                     Object eo = message.getErrorObject();
@@ -280,7 +281,7 @@ public class SrmMarkSpaceAsBeingUsedCompanion implements CellMessageAnswerable {
                     }
                     return ;
                 }
-                Use useResponce =
+                Use useResponse =
                  (Use) message;
                 callbacks.SpaceUsed();
                 return;
@@ -332,7 +333,7 @@ public class SrmMarkSpaceAsBeingUsedCompanion implements CellMessageAnswerable {
                     markLifetime,
                     overwrite );
             use.setReplyRequired(true);
-            state = WAITING_SPACE_MANAGER_RESPONCE_STATE;
+            state = WAITING_SPACE_MANAGER_RESPONSE_STATE;
             try {
                 cell.sendMessage( new CellMessage(
                 new CellPath(spaceManagerPath) ,
@@ -349,7 +350,7 @@ public class SrmMarkSpaceAsBeingUsedCompanion implements CellMessageAnswerable {
     }
 
     public static void markSpace(
-    DCacheUser user,
+    AuthorizationRecord user,
     long spaceToken,
     String pnfPath,
     long sizeInBytes,

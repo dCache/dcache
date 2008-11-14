@@ -126,6 +126,7 @@ import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.DCapProtocolInfo;
 
 import java.net.InetAddress;
+import org.dcache.auth.AuthorizationRecord;
 import org.dcache.srm.PrepareToPutInSpaceCallbacks;
 import org.dcache.srm.FileMetaData;
 
@@ -141,7 +142,7 @@ import org.dcache.srm.FileMetaData;
  * the process to continue
  */
 public class PutInSpaceCompanion implements CellMessageAnswerable {
-    private DCacheUser user;
+    private AuthorizationRecord user;
     private dmg.cells.nucleus.CellAdapter cell;
     private PrepareToPutInSpaceCallbacks callbacks;
     private CellMessage request = null;
@@ -169,7 +170,7 @@ public class PutInSpaceCompanion implements CellMessageAnswerable {
     }
     /** Creates a new instance of StageAndPinCompanion */
     
-    private PutInSpaceCompanion(DCacheUser user,String path,long size, PrepareToPutInSpaceCallbacks callbacks, CellAdapter cell) {
+    private PutInSpaceCompanion(AuthorizationRecord user,String path,long size, PrepareToPutInSpaceCallbacks callbacks, CellAdapter cell) {
         this.user = user;
         this.path = path;
         this.size = size;
@@ -311,7 +312,7 @@ public class PutInSpaceCompanion implements CellMessageAnswerable {
     }
     
     public static void PrepareToPutFile(
-    DCacheUser user,
+    AuthorizationRecord user,
     String path,
     long size,
     PrepareToPutInSpaceCallbacks callbacks,

@@ -122,6 +122,7 @@ import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageAnswerable;
 
 import diskCacheV111.util.PnfsId;
+import org.dcache.auth.AuthorizationRecord;
 import org.dcache.srm.SrmCancelUseOfSpaceCallbacks;
 import diskCacheV111.services.space.message.CancelUse;
 import diskCacheV111.vehicles.Message;
@@ -139,10 +140,10 @@ import diskCacheV111.vehicles.Message;
  */
 public class SrmUnmarkSpaceAsBeingUsedCompanion implements CellMessageAnswerable {
     private  static final int NOT_WAITING_STATE=0;
-    private  static final int WAITING_SPACE_MANAGER_RESPONCE_STATE=1;
-    private  static final int RECEIVED_SPACE_MANAGER_RESPONCE_STATE=2;
+    private  static final int WAITING_SPACE_MANAGER_RESPONSE_STATE=1;
+    private  static final int RECEIVED_SPACE_MANAGER_RESPONSE_STATE=2;
     private volatile int state = NOT_WAITING_STATE;
-    private DCacheUser user;
+    private AuthorizationRecord user;
     private long spaceToken;
     private String pnfPath;
     private SrmCancelUseOfSpaceCallbacks callbacks;
@@ -171,10 +172,10 @@ public class SrmUnmarkSpaceAsBeingUsedCompanion implements CellMessageAnswerable
         switch(state) {
             case NOT_WAITING_STATE:
                 return "NOT_WAITING_STATE";
-            case WAITING_SPACE_MANAGER_RESPONCE_STATE:
-                return "WAITING_SPACE_MANAGER_RESPONCE_STATE";
-            case RECEIVED_SPACE_MANAGER_RESPONCE_STATE:
-                return "RECEIVED_SPACE_MANAGER_RESPONCE_STATE";
+            case WAITING_SPACE_MANAGER_RESPONSE_STATE:
+                return "WAITING_SPACE_MANAGER_RESPONSE_STATE";
+            case RECEIVED_SPACE_MANAGER_RESPONSE_STATE:
+                return "RECEIVED_SPACE_MANAGER_RESPONSE_STATE";
             default:
                 return "UNKNOWN";
         }
@@ -184,7 +185,7 @@ public class SrmUnmarkSpaceAsBeingUsedCompanion implements CellMessageAnswerable
     /** Creates a new instance of StageAndPinCompanion */
 
     private SrmUnmarkSpaceAsBeingUsedCompanion(
-    DCacheUser user,
+    AuthorizationRecord user,
     long spaceToken,
     String pnfPath,
     SrmCancelUseOfSpaceCallbacks callbacks,
@@ -213,8 +214,8 @@ public class SrmUnmarkSpaceAsBeingUsedCompanion implements CellMessageAnswerable
         if(o instanceof Message) {
             Message message = (Message)answer.getMessageObject() ;
             if( message instanceof CancelUse  &&
-            current_state == WAITING_SPACE_MANAGER_RESPONCE_STATE) {
-                state= RECEIVED_SPACE_MANAGER_RESPONCE_STATE;
+            current_state == WAITING_SPACE_MANAGER_RESPONSE_STATE) {
+                state= RECEIVED_SPACE_MANAGER_RESPONSE_STATE;
                 say("space.message.Reserve arrived");
                 if(message.getReturnCode() != 0) {
                     esay("Unmarking Space as Being Used Failed message.getReturnCode () != 0");
@@ -223,7 +224,7 @@ public class SrmUnmarkSpaceAsBeingUsedCompanion implements CellMessageAnswerable
                     "getReturnCode () != 0 =>"+message.getErrorObject());
                     return ;
                 }
-                CancelUse cancelUseResponce =
+                CancelUse cancelUseResponse =
                  (CancelUse) message;
                 callbacks.UseOfSpaceSpaceCanceled();
                 return;
@@ -271,7 +272,7 @@ public class SrmUnmarkSpaceAsBeingUsedCompanion implements CellMessageAnswerable
                     null
                     );
             cancelUse.setReplyRequired(true);
-            state = WAITING_SPACE_MANAGER_RESPONCE_STATE;
+            state = WAITING_SPACE_MANAGER_RESPONSE_STATE;
             try {
                 cell.sendMessage( new CellMessage(
                 new CellPath(spaceManagerPath) ,
@@ -288,7 +289,7 @@ public class SrmUnmarkSpaceAsBeingUsedCompanion implements CellMessageAnswerable
     }
 
     public static void unmarkSpace(
-    DCacheUser user,
+    AuthorizationRecord user,
     long spaceToken,
     String pnfPath,
     SrmCancelUseOfSpaceCallbacks callbacks,
