@@ -44,7 +44,7 @@
   <selector id="javatunnel.classpath.selector">
     <or>
       <filename name="**/cog-jglobus.jar"/>
-      <filename name="**/gplazma-libs/glite-*.jar"/>
+      <filename name="**/glite/**/glite*.jar" />
       <filename name="**/cells.jar"/>
     </or>
   </selector>

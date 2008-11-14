@@ -79,6 +79,7 @@
       <filename name="jdom/jdom.jar"/>
       <filename name="cog/**/*.jar"/>
       <filename name="axis/**/*.jar"/>
+      <filename name="glite/**/glite*.jar"/>
       <filename name="glue/**/GLUE-STD.jar"/>
       <filename name="glue/**/dom.jar"/>
       <filename name="glue/**/jnet.jar"/>
@@ -88,7 +89,7 @@
       <filename name="${tomcat.untared.dir}/bin/*.jar"/>
       <filename name="${tomcat.untared.dir}/common/lib/*.jar"/>
       <filename name="${tomcat.untared.dir}/server/lib/*.jar"/>
-      <filename name="gplazma-libs/**/*.jar" />
+      <filename name="gplazma/**/*.jar" />
     </or>
   </selector>
 
@@ -115,7 +116,7 @@
 
   <!-- Compile -->
 
-  <target name="srm.compile" unless="srm.jar.upToDate" depends="prepare,lib.tomcat.untar,lib.axis.untar,lib.glue.untar">
+  <target name="srm.compile" unless="srm.jar.upToDate" depends="prepare,lib.tomcat.untar,lib.axis.untar,lib.glite.untar,lib.glue.untar">
 
     <javac destdir="${buildDir}"
     	   classpathref="srm.classpath"

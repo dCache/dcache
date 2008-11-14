@@ -7,6 +7,7 @@ import dmg.cells.nucleus.* ;
 import dmg.util.* ;
 
 import diskCacheV111.util.*;
+import org.dcache.auth.UserAuthRecord;
 /**
  * Author : Patrick Fuhrmann, Vladimir Podstavkov
  * Based on the UserMetaDataProviderExample
@@ -109,7 +110,7 @@ public class UserMetaDataProviderFnal implements UserMetaDataProvider {
     private HashMap getUserMD(String userPrincipal, String userRole) 
     {
         KAuthFile authf;
-        UserAuthBase pwdRecord = null;
+        UserAuthRecord pwdRecord = null;
         HashMap<String, String> answer = new HashMap<String, String>() ;
         int uid, gid;
         String home;

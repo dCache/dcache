@@ -3,17 +3,18 @@
  */
 package diskCacheV111.admin ;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellPath;
 import dmg.util.Args;
 
-import diskCacheV111.services.authorization.AuthorizationService;
-import diskCacheV111.services.authorization.AuthorizationServiceException;
-import diskCacheV111.util.UserAuthBase;
+import gplazma.authz.AuthorizationController;
+import gplazma.authz.AuthorizationException;
+import gplazma.authz.records.gPlazmaAuthorizationRecord;
+import org.dcache.auth.*;
+import org.dcache.vehicles.AuthorizationMessage;
+import diskCacheV111.vehicles.AuthenticationMessage;
 
 /**
  * Author : Patrick Fuhrmann, Vladimir Podstavkov
@@ -30,7 +31,8 @@ public class UserMetaDataProvider_gPlazma implements UserMetaDataProvider {
     private Map<String, Integer> _userStatistics    = new HashMap<String, Integer>();
     protected boolean _use_gplazmaAuthzCell=false;
     protected boolean _use_gplazmaAuthzModule=false;
-    private AuthorizationService _authServ = null;
+    private AuthzQueryHelper _authHelper = null;
+    private AuthorizationController _authCtrl = null;
 
 
     /**
@@ -68,16 +70,16 @@ public class UserMetaDataProvider_gPlazma implements UserMetaDataProvider {
         try {
 
         	if( _use_gplazmaAuthzCell ) {
-        		_authServ = new AuthorizationService(_cell);
+        		_authHelper = new AuthzQueryHelper(_cell);
         	}else{
                 String gplazmaPolicyFilePath = _args.getOpt("gplazma-authorization-module-policy");
                 if (gplazmaPolicyFilePath == null) {
                     throw new IllegalArgumentException(_ourName+" : -gplazma-authorization-module-policy not specified");
                 }
-        		_authServ = new AuthorizationService(gplazmaPolicyFilePath);
+        		_authCtrl = new AuthorizationController(gplazmaPolicyFilePath);
         	}
 
-        }catch(AuthorizationServiceException ae) {
+        }catch(AuthorizationException ae) {
             _cell.esay(ae);
             _cell.esay(ae.getMessage());
         }
@@ -158,17 +160,43 @@ public class UserMetaDataProvider_gPlazma implements UserMetaDataProvider {
         	}
 
 
+            AuthorizationRecord authRecord;
         	if(_use_gplazmaAuthzCell ) {
         		// cell
-        		pwdRecord = _authServ.authenticate(userPrincipal, userRole, new CellPath("gPlazma"), _cell).getUserAuthBase();
+                AuthenticationMessage authnm = _authHelper.authorize(userPrincipal, userRole, new CellPath("gPlazma"), _cell);
+                AuthorizationMessage authzm = new AuthorizationMessage(authnm);
+                authRecord = authzm.getAuthorizationRecord();
         	}else{
         		// module
-        		pwdRecord = _authServ.authorize(userPrincipal, userRole, null, null, null);
+                LinkedList<gPlazmaAuthorizationRecord> gauthlist = new LinkedList <gPlazmaAuthorizationRecord>();
+                gauthlist.add(_authCtrl.authorize(userPrincipal, userRole, null, null, null, null));
+                authRecord = RecordConvert.gPlazmaToAuthorizationRecord(gauthlist);
         	}
 
-            if( pwdRecord == null ) {
-                throw new AuthorizationServiceException("User not found");
+            if( authRecord.getGroupLists() == null ) {
+                throw new AuthorizationException("User not found");
             }
+
+            Iterator<GroupList> _userAuthGroupLists = authRecord.getGroupLists().iterator();    
+            GroupList grplist  = _userAuthGroupLists.next();
+            String fqan = grplist.getAttribute();
+            int i=0, glsize = grplist.getGroups().size();
+            int GIDS[] = (glsize > 0) ? new int[glsize] : null;
+            for(Group group : grplist.getGroups()) {
+                 GIDS[i++] = group.getGid();
+            }
+            pwdRecord = new UserAuthRecord(
+                authRecord.getIdentity(),
+                authRecord.getName(),
+                fqan,
+                authRecord.isReadOnly(),
+                authRecord.getPriority(),
+                authRecord.getUid(),
+                GIDS,
+                authRecord.getHome(),
+                authRecord.getRoot(),
+                "/",
+                null);
 
             uid  = pwdRecord.UID;
             gid  = pwdRecord.GID;
@@ -180,7 +208,7 @@ public class UserMetaDataProvider_gPlazma implements UserMetaDataProvider {
 
             _cell.say("User "+userRole+" logged in");
 
-        }catch(AuthorizationServiceException ae) {
+        }catch(AuthorizationException ae) {
             _cell.esay("Authorization " + userPrincipal + ":"+ userRole+ " failed: " + ae.getMessage() );
         }
 
@@ -204,16 +232,16 @@ public class UserMetaDataProvider_gPlazma implements UserMetaDataProvider {
  * merge of 1.7.1 and the head
  *
  * Revision 1.1.2.4.2.1  2007/03/20 19:19:11  tdh
- * Modified AuthorizationService to return AuthorizationMessage instead of UserAuthBase.
+ * Modified AuthorizationController to return AuthorizationMessage instead of UserAuthBase.
  * Changed UserMetaDataProvider_gPlazma, DCacheAuthorization, and GssFtpDoorV1 to receive AuthorizationMessage.
  * Modified GPLAZMA to operate on LinkedLists and to take requested usernames.
- * Modified AuthorizationService to operate on LinkedLists.
+ * Modified AuthorizationController to operate on LinkedLists.
  * Changed methods in AbstractFtpDoorV1 to try again with the next UserAuthRecord in AuthorizationMessage if permission is denied.
  *
  * Revision 1.1.2.4  2006/11/13 19:39:59  tigran
  * changes from HEAD:
  * UserMetaDataProvider_gPlazma and GssFtpDoorV1 passing cell to gPlazma constructor to keep say and esay under control
- * AuthorizationService closes delegation socket (CLOSE_WAIT)
+ * AuthorizationController closes delegation socket (CLOSE_WAIT)
  * SocketAdapter code cleanup
  * EBlockReceiverNio fixed pool looping
  *

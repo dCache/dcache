@@ -34,12 +34,14 @@
 # Turning all switches OFF leads the running system to a secure quasi-firewall mode.
 
 # Switches
+xacml-vo-mapping="OFF"
 saml-vo-mapping="OFF"
 kpwd="ON"
 grid-mapfile="OFF"
 gplazmalite-vorole-mapping="OFF"
 
 # Priorities
+xacml-vo-mapping-priority="5"
 saml-vo-mapping-priority="1"
 kpwd-priority="3"
 grid-mapfile-priority="4"
@@ -56,6 +58,11 @@ kpwdPath="/opt/d-cache/etc/dcache.kpwd"
 # grid-mapfile
 gridMapFilePath="/etc/grid-security/grid-mapfile"
 storageAuthzPath="/etc/grid-security/storage-authzdb"
+
+# XACML-based grid VO role mapping 
+XACMLmappingServiceUrl="https://fledgling09.fnal.gov:8443/gums/services/GUMSXACMLAuthorizationServicePort"
+# Time in seconds to cache the mapping in memory
+#xacml-vo-mapping-cache-lifetime="0"
 
 # SAML-based grid VO role mapping 
 mappingServiceUrl="https://fledgling09.fnal.gov:8443/gums/services/GUMSAuthorizationServicePort"

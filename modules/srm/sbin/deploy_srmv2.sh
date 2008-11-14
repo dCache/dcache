@@ -18,7 +18,7 @@ logfile=""
 fi
 
 logmessage()
-{ 
+{
   local ThisLogLevel
   local ThisPrefix
   local ThisLogLevel
@@ -95,7 +95,7 @@ execute() {
   if [ $rc != 0 ]
   then
     logmessage ERROR "execution of command [ ${command} ] failed with return code $rc"
-    exit $rc 
+    exit $rc
   fi
 }
 #comment_multiline will comment multiline elements in xml documents
@@ -320,7 +320,7 @@ execute "$cmd"
 #mv ${AXIS_WEBAPP_DIR}/WEB-INF/lib/dom3*.jar ${TOMCAT_PATH}/common/endorsed/.
 #mkdir ${TOMCAT_PATH}/common/endorsed/notused
 #mv ${TOMCAT_PATH}/common/endorsed/xercesImpl.jar ${TOMCAT_PATH}/common/endorsed/notused/.
-#mv ${TOMCAT_PATH}/common/endorsed/xmlParserAPIs.jar ${TOMCAT_PATH}/common/endorsed/notused/. 
+#mv ${TOMCAT_PATH}/common/endorsed/xmlParserAPIs.jar ${TOMCAT_PATH}/common/endorsed/notused/.
 
 logmessage INFO "Done installing tomcat and axis"
 
@@ -340,7 +340,7 @@ add_java_opt()
 }
 
 logmessage INFO "modifying java options in ${CATALINA_SH} ..."
-add_java_opt "-Djava.protocol.handler.pkgs=org.globus.net.protocol"
+add_java_opt "-Djava.protocol.handler.pkgs=sun.net.www.protocol||org.globus.net.protocol"
 
 add_classpath()
 {
@@ -353,7 +353,7 @@ add_classpath()
     cp -p ${SETCLASS_SH} $tmp
     echo >> $tmp
     echo ${CATALINA_CP_ADD} | sed "s/\\\//g" >> $tmp
-    mv $tmp ${SETCLASS_SH} 
+    mv $tmp ${SETCLASS_SH}
   fi
 }
 
@@ -364,7 +364,7 @@ add_classpath "server/lib/cog-url.jar"
 
 if [ -d ${SRM_WEBAPP_DIR} ] ; then
 logmessage WARNING "Removing previous srm webapp directory"
-rm -rf ${SRM_WEBAPP_DIR}  
+rm -rf ${SRM_WEBAPP_DIR}
 fi
 
 logmessage INFO "Creating srm webapp directory"
@@ -375,7 +375,7 @@ mkdir ${SRM_WEBAPP_DIR}/WEB-INF/lib
 #
 # copy jar files to srm webapp dir
 #
-for i in ${AXIS_WEBAPP_DIR}/WEB-INF/lib/*jar ${SRM_JARS_DIR}/glue/*jar ${SRM_JARS_DIR}/srm.jar ${SRM_JARS_DIR}/jdbc-drivers/*.jar ${SRM_JARS_DIR}/jdom/jdom.jar ${DCACHE_JARS_DIR}/dcache.jar ${DCACHE_JARS_DIR}/dcache-srm.jar ${DCACHE_JARS_DIR}/gplazma.jar ${SRM_JARS_DIR}/gplazma-libs/*.jar ${DCACHE_JARS_DIR}/cells.jar ${DCACHE_JARS_DIR}/jpox/*.jar ${DCACHE_JARS_DIR}/smc/*.jar
+for i in ${AXIS_WEBAPP_DIR}/WEB-INF/lib/*jar ${SRM_JARS_DIR}/glue/*jar ${SRM_JARS_DIR}/srm.jar ${SRM_JARS_DIR}/jdbc-drivers/*.jar ${SRM_JARS_DIR}/jdom/jdom.jar ${DCACHE_JARS_DIR}/dcache.jar ${DCACHE_JARS_DIR}/dcache-srm.jar ${SRM_JARS_DIR}/glite/*.jar ${SRM_JARS_DIR}/gplazma/*.jar ${DCACHE_JARS_DIR}/cells.jar ${DCACHE_JARS_DIR}/jpox/*.jar ${DCACHE_JARS_DIR}/smc/*.jar ${DCACHE_JARS_DIR}/toplink/*.jar
 do
    cmd="cp ${i} ${SRM_WEBAPP_DIR}/WEB-INF/lib"
 #   echo $cmd
@@ -402,7 +402,7 @@ EOF
 logmessage INFO "Done creating srm webapp deployment file"
 TOMCAT_CONFIG="${TOMCAT_PATH}/conf/server.xml"
 
-if [ -z "${TOMCAT_PORT}" ] ; then 
+if [ -z "${TOMCAT_PORT}" ] ; then
   TOMCAT_PORT=8080
 fi
 
@@ -421,7 +421,7 @@ logmessage INFO "Starting up tomcat ..."
 #
 cmd="${TOMCAT_PATH}/bin/startup.sh"
 execute ${cmd}
-if [ "${DEBUG}" = "true" ] 
+if [ "${DEBUG}" = "true" ]
 then
 	logmessage WARNING "sleeping for 5 seconds to let tomcat complete its strartup"
 fi
@@ -527,20 +527,20 @@ n=$((${n}+1))
 sed -n "${n},\$p" ${TOMCAT_CONFIG} >${tmp3}
 #now fill the middle
 cat >${tmp2} <<EOF
-    <!-- Define a GSI HTTPS/1.1 Connector on port 8443 
+    <!-- Define a GSI HTTPS/1.1 Connector on port 8443
          Supported parameters include:
          proxy="/path/to/file" // proxy file for server to use
             - or -
-         cert="/path/to/file"  // server certificate file in PEM format 
+         cert="/path/to/file"  // server certificate file in PEM format
          key="/path/to/file"   // server key file in PEM format
 
          cacertdir="/path/to/dir" // directory containing trusted CA certs
 
          mode="ssl"            // use 'standard' SSL via "https://" - default
-            - or -     
-         mode="gsi"            // use 'GSI' SSL via "httpg://" to delegate 
+            - or -
+         mode="gsi"            // use 'GSI' SSL via "httpg://" to delegate
                                // a (proxy) credential over TLS
-              
+
     -->
     <Connector
                className="org.globus.tomcat.coyote.net.HTTPSConnector"
@@ -550,22 +550,22 @@ echo "               port=\"${SRM_V2_PORT}\""  >> ${tmp2}
 
 if [ "${TOMCAT_MAX_THREADS}" = "" ] ; then
 maxThreads=500
-else 
+else
 maxThreads=${TOMCAT_MAX_THREADS}
 fi
- 
+
 if [ "${TOMCAT_MIN_SPARE_THREADS}" = "" ] ; then
-minSpareThreads=25 
+minSpareThreads=25
 else
 minSpareThreads=${TOMCAT_MIN_SPARE_THREADS}
 fi
- 
+
 if [ "${TOMCAT_MAX_SPARE_THREADS}" = "" ] ; then
 maxSpareThreads=200
 else
 maxSpareThreads=${TOMCAT_MAX_SPARE_THREADS}
 fi
- 
+
 echo  "               maxThreads=\"${maxThreads}\" minSpareThreads=\"${minSpareThreads}\" maxSpareThreads=\"${maxSpareThreads}\" ">> ${tmp2}
 echo  "               maxProcessors=\"${maxThreads}\" minProcessors=\"${minSpareThreads}\" maxSpareProcessors=\"${maxSpareThreads}\" ">> ${tmp2}
 
@@ -627,5 +627,5 @@ logmessage INFO "installing config for startup/shutdown script"
 cmd="cp ${SETUP_FILE} /usr/etc/setupSrmTomcat"
 execute ${cmd}
 
-logmessage INFO "Installation complete" 
+logmessage INFO "Installation complete"
 logmessage INFO "please use ${DCACHE_HOME}/bin/dcache start|stop|restart srm to startup, shutdown or restart srm server"

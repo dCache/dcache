@@ -21,7 +21,6 @@
 	<property name="dcache.jar" location="${classesDir}/dcache.jar" />
 	<property name="dcache-replica.jar" location="${classesDir}/dcache-replica.jar" />
 	<property name="dcache-srm.jar" location="${classesDir}/dcache-srm.jar" />
-	<property name="gplazma.jar" location="${classesDir}/gplazma.jar" />
 	<property name="xrootd-tokenauthz.jar" location="${classesDir}/xrootd-tokenauthz.jar" />
 	<property name="chimera-provider.jar" location="${classesDir}/chimera-provider.jar" />
 	<property name="info.jar" location="${classesDir}/info.jar" />
@@ -30,7 +29,6 @@
 	<target name="cleanall" depends="clean" description="Remove everything produced by me.">
 		<delete file="${dcache.jar}" />
 		<delete file="${dcache-srm.jar}" />
-		<delete file="${gplazma.jar}" />
 		<delete file="${xrootd-tokenauthz.jar}" />
 		<delete file="${info.jar}" />
 	</target>
@@ -57,19 +55,6 @@
 	          	<srcfiles dir="${sourceDir}">
 	          		<include name="**/*.java" />
 	          		<include name="**/*.jdo" />
-	          	</srcfiles>
-	          </uptodate>
-		    </and>
-		  </condition>
-	</target>
-
-	<target name="isUptodate.gplazma.jar">
-		  <condition property="gplazma.jar.upToDate">
-		    <and>
-              <available file="${gplazma.jar}" type="file" />
-	          <uptodate targetfile="${gplazma.jar}">
-	          	<srcfiles dir="${sourceDir}">
-	          		<include name="**/*.java" />
 	          	</srcfiles>
 	          </uptodate>
 		    </and>
@@ -118,6 +103,8 @@
 	<selector id="dcache.classpath.selector">
 		<or>
 			<filename name="**/cells.jar" />
+			<filename name="**/srm.jar" />
+			<filename name="**/gplazma.jar" />
 			<filename name="log4j/log4j-1.2.8.jar" />
 			<filename name="dbcp/c3p0-0.9.1.2.jar" />
 			<filename name="berkeleyDB/je-3.2.76.jar" />
@@ -126,6 +113,7 @@
 			<filename name="smc/statemap.jar" />
                         <filename name="dbcp/commons-pool.jar" />
                         <filename name="dbcp/commons-dbcp.jar" />
+                        <filename name="persistence/persistence-api-1.0.jar" />
 		</or>
 	</selector>
 
@@ -143,6 +131,7 @@
     <selector id="replica.classpath.selector">
         <or>
             <filename name="**/cells.jar" />
+	    <filename name="**/gplazma.jar" />
             <filename name="**/dcache.jar" />
             <filename name="dbcp/commons-pool.jar" />
             <filename name="dbcp/commons-dbcp.jar" />
@@ -182,8 +171,8 @@
 
 	<selector id="dcache-srm.classpath.selector">
 		<or>
+			<filename name="**/dcache.jar" />
 			<filename name="**/srm.jar" />
-			<filename name="**/gplazma.jar" />
 			<filename name="jdom/jdom.jar" />
 			<filename name="cog/**/*.jar" />
 			<filename name="axis/**/*.jar" />
@@ -197,7 +186,7 @@
 			<filename name="tomcat/apache-tomcat-5.5.20/common/lib/*.jar" />
 			<filename name="tomcat/apache-tomcat-5.5.20/server/lib/*.jar" />
 			<filename name="jpox/jdo2-api-2.0.jar" />
-			<filename name="jpox/jpox-SNAPSHOT.jar" />
+			<filename name="jpox/jpox-core-1.2.2.jar" />
 		</or>
 	</selector>
 
@@ -218,11 +207,14 @@
 	<selector id="dcache-srm-enhance.classpath.selector">
 		<or>
 			<filename name="**/cells.jar" />
+			<filename name="**/gplazma.jar" />
 			<filename name="jpox/bcel-5.1.jar" />
 			<filename name="jpox/log4j-1.2.13.jar" />
 			<filename name="jpox/jdo2-api-2.0.jar" />
-			<filename name="jpox/jpox-enhancer-SNAPSHOT.jar" />
-			<filename name="jpox/jpox-SNAPSHOT.jar" />
+			<filename name="jpox/jpox-enhancer-1.2.2.jar" />
+			<filename name="jpox/jpox-core-1.2.2.jar" />
+			<filename name="jpox/jpox-java5-1.2.2.jar" />
+			<filename name="asm/asm-3.1.jar" />
 		</or>
 	</selector>
 
@@ -238,25 +230,22 @@
 	</path>
 
 
-	<!-- Classpath for gplzma.jar - This is the same as for srm.jar in the srm CVS module -->
+    <!-- Classpath for gplazma.jar. -->
 
-	<selector id="gplazma.classpath.selector">
+    <selector id="authz.classpath.selector">
 		<or>
-			<filename name="**/srm.jar" />
+	    <filename name="**/gplazma.jar" />
 			<filename name="cog/**/*.jar" />
-			<filename name="axis/**/*.jar" />
-			<filename name="gplazma-libs/**/*.jar" />
-			<filename name="security/bcprov-jdk15-133.jar" />
+	    <filename name="gplazma/**/*.jar" />
 		</or>
 	</selector>
 
-
-	<path id="gplazma.classpath">
+    <path id="authz.classpath">
 		<fileset dir="${classesDir}">
-			<selector refid="gplazma.classpath.selector" />
+	    <selector refid="authz.classpath.selector" />
 		</fileset>
 		<fileset dir="${libDir}">
-			<selector refid="gplazma.classpath.selector" />
+	    <selector refid="authz.classpath.selector" />
 		</fileset>
 	</path>
 
@@ -266,6 +255,7 @@
 		<or>
 			<filename name="**/dcache.jar" />
 			<filename name="**/cells.jar" />
+			<filename name="**/gplazma.jar" />
 			<filename name="security/bcprov-jdk15-133.jar" />
 		</or>
 	</selector>
@@ -286,6 +276,7 @@
 		<or>
 			<filename name="**/dcache.jar" />
 			<filename name="**/cells.jar" />
+			<filename name="**/gplazma.jar" />
 		</or>
 	</selector>
 
@@ -318,7 +309,7 @@
              need to add each .sm file one by one below. -->
         <target name="dcache.smc"
                 description="Compile state machines using SMC">
-          <property name="fsmDir" location="${buildTop}/fsm"/>
+	  <property name="fsmDir" location="${buildTop}/fsm"/>
           <mkdir dir="${buildDir}/core/org/dcache/services/pinmanager1"/>
           <mkdir dir="${buildDir}/core/org/dcache/pool/migration"/>
           <smc target="java"
@@ -358,13 +349,17 @@
 
 			<src path="${sourceDir}" />
 			<src path="${buildDir}/core" />
+
+                        <classpath refid="dcache.classpath" />
+			<classpath refid="authz.classpath" />
+
 			<include name="${dcache.packagePrefix}/**" />
+			<include name="${dcache.packagePrefix}/services/authorization/**" />
 			<include name="org/**" />
 			<exclude name="${dcache.packagePrefix}/srm/**" />
 			<exclude name="${dcache.packagePrefix}/vehicles/srm/**" />
 			<exclude name="${dcache.packagePrefix}/scripts/**" />
 			<exclude name="${dcache.packagePrefix}/tomcat/**" />
-			<exclude name="${dcache.packagePrefix}/services/authorization/**" />
 			<exclude name="${dcache.packagePrefix}/movers/RemoteGsiftpTransferProtocol_1.java" />
 			<exclude name="org/dcache/pool/movers/RemoteGsiftpTransferProtocol_1.java" />
 			<exclude name="${dcache.packagePrefix}/doors/GsiFtpDoorV1.java" />
@@ -379,7 +374,7 @@
 			<exclude name="org/dcache/chimera/**"/>
 			<exclude name="org/dcache/xrootd/security/plugins/**" />
 			<exclude name="org/dcache/xrootd/tests/**" />
-                        <exclude name="org/dcache/services/info/**" />
+			<exclude name="org/dcache/services/info/**" />
 			<exclude name="${dcache.packagePrefix}/replicaManager/Semaphore.java" />
 			<exclude name="${dcache.packagePrefix}/replicaManager/ReplicaManagerV2.java" />
 			<exclude name="${dcache.packagePrefix}/replicaManager/ReplicaManager.java" />
@@ -395,11 +390,67 @@
 
 	</target>
 
+
+	<selector id="dcache-auth-enhance.classpath.selector">
+		<or>
+			<filename name="**/cells.jar" />
+			<filename name="**/gplazma.jar" />
+			<filename name="jpox/bcel-5.1.jar" />
+			<filename name="jpox/log4j-1.2.8.jar" />
+			<filename name="jpox/jdo2-api-2.0.jar" />
+			<filename name="jpox/jpox-enhancer-1.2.2.jar" />
+			<filename name="jpox/jpox-core-1.2.2.jar" />
+			<filename name="jpox/jpox-java5-1.2.2.jar" />
+			<filename name="jpox/jpox-rdbms-1.2.2.jar" />
+                        <filename name="asm/asm-3.1.jar" />
+			<filename name="persistence/persistence-api-1.0.jar" />
+			<filename name="asm/asm-3.1.jar" />
+		</or>
+        </selector>
+	<path id="dcache-auth-enhance.classpath">
+		<fileset dir="${classesDir}">
+			<selector refid="dcache-auth-enhance.classpath.selector" />
+		</fileset>
+		<fileset dir="${libDir}">
+			<selector refid="dcache-auth-enhance.classpath.selector" />
+		</fileset>
+            <pathelement path="${buildDir}/core"/>
+	</path>
+
+
+	<target name="dcache-auth.check.enhanced">
+		<condition property="dcache-auth.is.enhanced">
+			<and>
+				<available file="${buildDir}/core/META-INF/persistence.xml" type="file" />
+			</and>
+		</condition>
+	</target>
+
+        <!-- Enhance auth record -->
+    <target name="dcache-auth.enhance" depends="dcache.compile,dcache-auth.check.enhanced" unless="dcache-auth.is.enhanced" description="Generate JPA Persistency code" >
+
+        <mkdir dir="${buildDir}/core/META-INF" />
+	<copy file="${sourceDir}/${dcache.packagePrefix}/config/persistence.xml" todir="${buildDir}/core/META-INF" />
+	<copy file="${sourceDir}/org/dcache/auth/AuthRecordORM.xml" todir="${buildDir}/core/org/dcache/auth/" />
+        <!-- define the task enhancer -->
+        <taskdef name="enhancer" classname="org.jpox.enhancer.tools.EnhancerTask">
+            <classpath refid="dcache-auth-enhance.classpath"/>
+        </taskdef>
+
+        <!-- enhance -->
+        <enhancer classpathref="dcache-auth-enhance.classpath" dir="${buildDir}/core" verbose="true" api="JPA" persistenceUnit="AuthRecordPersistenceUnit">
+            <sysproperty key="log4j.configuration" value="file:/home/timur/cvs/dCacheBuild/log4j.properties"/>
+        </enhancer>
+    </target>
+
 	<target name="dcache.jar" depends="isUptodate.dcache.jar,dcache.compile" unless="dcache.jar.upToDate" description="Create dcache.jar">
 
+        <mkdir dir="${buildDir}/core/META-INF" />
+	<copy file="${sourceDir}/${dcache.packagePrefix}/config/persistence.xml" todir="${buildDir}/core/META-INF" />
+	<copy file="${sourceDir}/org/dcache/auth/AuthRecordORM.xml" todir="${buildDir}/core/org/dcache/auth/" />
 		<jar jarfile="${dcache.jar}">
                         <fileset dir="${sourceDir}" includes="**/*.xml" excludes="diskCacheV111/config/*,**/WEB-INF/*.xml" />
-			<fileset dir="${buildDir}/core" includes="**/*.class" />
+			<fileset dir="${buildDir}/core" includes="**/*.class,META-INF/*.xml" />
 			<manifest>
 				<section name="Shared">
 					<attribute name="Title" value="dCache Core" />
@@ -496,44 +547,6 @@
 
 	</target>
 
-
-	<!-- gPlazma -->
-	<target name="gplazma.compile" unless="gplazma.jar.upToDate" depends="lib.axis.untar,dcache.jar">
-
-		<mkdir dir="${buildDir}/gplazma" />
-
-		<javac destdir="${buildDir}/gplazma" source="${javac.source}" target="${javac.target}" debug="${javac.debug}" verbose="${javac.verbose}">
-
-			<src path="${sourceDir}" />
-
-			<classpath refid="gplazma.classpath"/>
-			<classpath refid="dcache.classpath"/>
-
-			<include name="${dcache.packagePrefix}/services/authorization/**" />
-			<include name="${dcache.packagePrefix}/admin/UserMetaDataProvider_gPlazma.java" />
-		</javac>
-	</target>
-
-	<target name="gplazma.jar" depends="isUptodate.gplazma.jar,gplazma.compile" unless="gplazma.jar.upToDate" description="Create gplazma.jar">
-
-		<jar jarfile="${gplazma.jar}">
-			<fileset dir="${buildDir}/gplazma" />
-
-			<manifest>
-				<section name="Shared">
-					<attribute name="Title" value="dCache SRM" />
-					<attribute name="Vendor" value="dCache.ORG" />
-					<attribute name="Date" value="${jar.timestamp}" />
-				</section>
-				<section name="Copyright">
-					<attribute name="Copy" value="(C) dCache.ORG  2000 - 2008" />
-				</section>
-			</manifest>
-		</jar>
-
-	</target>
-
-
 	<!-- xrootd-tokenauthorization plugin -->
 	<target name="xrootd-tokenauthz.compile" unless="xrootd-tokenauthz.jar.upToDate" depends="dcache.jar">
 
@@ -608,14 +621,14 @@
 
 	<!-- Depend -->
 
-	<target name="dcache-srm.depend" depends="prepare,lib.tomcat.untar,lib.axis.untar,lib.glue.untar">
+	<target name="dcache-srm.depend" depends="prepare,lib.tomcat.untar,lib.axis.untar,lib.glite.untar,lib.glue.untar">
 
 
 	</target>
 
 	<!-- Compile -->
 
-	<target name="dcache-srm.compile" depends="prepare,gplazma.jar,dcache-srm.depend" unless="dcache-srm.jar.upToDate" description="Compile Java code for dcache-srm.jar">
+	<target name="dcache-srm.compile" depends="prepare,dcache-srm.depend" unless="dcache-srm.jar.upToDate" description="Compile Java code for dcache-srm.jar">
 
 		<mkdir dir="${buildDir}/dcache-srm" />
 
@@ -624,10 +637,8 @@
 
 			<classpath refid="dcache-srm.classpath"/>
 			<classpath refid="dcache.classpath"/>
-			<classpath refid="gplazma.classpath"/>
 
 			<include name="${dcache.packagePrefix}/doors/GsiFtpDoorV1.java" />
-			<include name="${dcache.packagePrefix}/movers/RemoteGsiftpTransferProtocol_1.java" />
 			<include name="${dcache.packagePrefix}/movers/RemoteGsiftpTransferProtocol_1.java" />
 			<include name="org/dcache/pool/movers/RemoteGsiftpTransferProtocol_1.java" />
 			<include name="${dcache.packagePrefix}/services/TransferManager.java" />
@@ -739,6 +750,8 @@
 		<copy file="${sourceDir}/${dcache.packagePrefix}/config/xrootdDoor.batch" todir="${binDir}/config" />
 		<copy file="${sourceDir}/${dcache.packagePrefix}/config/chimera.batch" todir="${binDir}/config" />
 		<copy file="${sourceDir}/${dcache.packagePrefix}/config/info.batch" todir="${binDir}/config" />
+
+		<!-- configs  -->
 		<copy file="${sourceDir}/${dcache.packagePrefix}/config/PoolManager.conf" todir="${binDir}/config" />
 		<copy file="${sourceDir}/${dcache.packagePrefix}/config/lm.config" todir="${binDir}/config" />
 
@@ -801,10 +814,18 @@
 	    <copy todir="${binDir}/libexec/chimera/sql">
 	        <fileset dir="${libDir}/Chimera/sql" />
 	    </copy>
-	   
+
 	   <!-- ACL -->
 	   <!--<copy file="${buildTop}/common/acl.properties" todir="${binDir}/config" /> -->
-       
+	   
+	    <!-- glite -->
+	    <mkdir dir="${binDir}/classes/glite" />
+	    <copy todir="${binDir}/classes/glite" flatten="true">
+              <fileset dir="${libDir}/glite">
+                <include name="**/glite*.jar" />
+              </fileset>
+            </copy>	
+	    
        <!-- log4j -->
        <mkdir dir="${binDir}/classes/log4j" />
        <property name="log4jVersion" value="1.2.8" />
@@ -836,7 +857,30 @@
 	    <!-- DBCP for Replica Manager -->
 	    <copy file="${libDir}/dbcp/commons-dbcp.jar" todir="${binDir}/classes/jdbc-drivers" />
 	    <copy file="${libDir}/dbcp/commons-pool.jar" todir="${binDir}/classes/jdbc-drivers" />
+           
+            <!-- TopLink files -->
+	    <mkdir dir="${binDir}/classes/toplink" />
+	    <copy file="${libDir}/toplink/toplink-essentials.jar"  todir="${binDir}/classes/toplink" />
+	    
+            <!-- opensaml -->
+	    <mkdir dir="${binDir}/classes/opensaml" />
+	    <copy file="${libDir}/opensaml/commons-collections-3.1.jar" todir="${binDir}/classes/opensaml" />
+	    <copy file="${libDir}/opensaml/commons-lang-2.1.jar" todir="${binDir}/classes/opensaml" />
+	    <copy file="${libDir}/opensaml/joda-time-1.5.2.jar" todir="${binDir}/classes/opensaml" />
+	    <copy file="${libDir}/opensaml/opensaml-1.0.1.jar" todir="${binDir}/classes/opensaml" />
+	    <copy file="${libDir}/opensaml/opensaml-2.2.0.jar" todir="${binDir}/classes/opensaml" />
+	    <copy file="${libDir}/opensaml/openws-1.1.0.jar" todir="${binDir}/classes/opensaml" />
+	    <copy file="${libDir}/opensaml/slf4j-api-1.5.0.jar" todir="${binDir}/classes/opensaml" />
+	    <copy file="${libDir}/opensaml/slf4j-simple-1.5.0.jar" todir="${binDir}/classes/opensaml" />
+	    <copy file="${libDir}/opensaml/velocity-1.5.jar" todir="${binDir}/classes/opensaml" />
+	    <copy file="${libDir}/opensaml/xalan-2.6.0.jar" todir="${binDir}/classes/opensaml" />
+	    <copy file="${libDir}/opensaml/xercesImpl-2.9.1.jar" todir="${binDir}/classes/opensaml" />
+	    <copy file="${libDir}/opensaml/xml-security-1.4.1.jar" todir="${binDir}/classes/opensaml" />
+	    <copy file="${libDir}/opensaml/xmltooling-1.0.1.jar" todir="${binDir}/classes/opensaml" />
 
+	    <!-- endorsed -->
+	    <mkdir dir="${binDir}/classes/endorsed" />
+	    <copy file="${libDir}/endorsed/xml-apis-2.9.1.jar" todir="${binDir}/classes/endorsed" />
 	</target>
 
 
@@ -848,7 +892,6 @@
 		<!-- jar file  -->
 		<copy file="${classesDir}/srm.jar" todir="${binDir}/classes" />
 		<copy file="${classesDir}/dcache-srm.jar" todir="${binDir}/classes" />
-		<copy file="${classesDir}/gplazma.jar" todir="${binDir}/classes" />
 		<copy file="${classesDir}/cells-protocols.jar" todir="${binDir}/classes" />
 
 		<!-- .batch file - e.g. domains  -->
@@ -900,11 +943,11 @@
 		<mkdir dir="${binDir}/classes/jdom" />
 		<copy file="${libDir}/jdom/jdom.jar" todir="${binDir}/classes/jdom" />
 
-		<!-- gplazma-libs -->
-		<mkdir dir="${binDir}/classes/gplazma-libs" />
+		<!-- gplazma -->
+		<mkdir dir="${binDir}/classes/gplazma" />
 		<property name="gplazmaLibsVersion" value="" />
-		<copy todir="${binDir}/classes/gplazma-libs">
-			<fileset dir="${libDir}/gplazma-libs/${gplazmaLibsVersion}">
+		<copy todir="${binDir}/classes/gplazma">
+			<fileset dir="${libDir}/gplazma/${gplazmaLibsVersion}">
 				<include name="*.jar" />
 			</fileset>
 		</copy>
@@ -913,8 +956,9 @@
 		<!-- jpox -->
 		<mkdir dir="${binDir}/classes/jpox" />
 		<copy file="${libDir}/jpox/jdo2-api-2.0.jar" todir="${binDir}/classes/jpox" />
-		<copy file="${libDir}/jpox/jpox-SNAPSHOT.jar" todir="${binDir}/classes/jpox" />
-
+                <copy file="${libDir}/jpox/jpox-core-1.2.2.jar" todir="${binDir}/classes/jpox" />
+                <copy file="${libDir}/jpox/jpox-rdbms-1.2.2.jar" todir="${binDir}/classes/jpox" />
+		
 		<!-- bouncy castle -->
 		<mkdir dir="${binDir}/classes/security" />
 		<copy todir="${binDir}/classes/security">

@@ -9,10 +9,8 @@
 
 package diskCacheV111.vehicles;
 
-import diskCacheV111.util.UserAuthBase;
-import diskCacheV111.util.UserAuthRecord;
+import gplazma.authz.records.gPlazmaAuthorizationRecord;
 
-import java.util.Collection;
 import java.util.LinkedList;
 
 public class DNAuthenticationMessage extends AuthenticationMessage {
@@ -23,18 +21,18 @@ public class DNAuthenticationMessage extends AuthenticationMessage {
     super();
   }
 
-  public DNAuthenticationMessage(DNInfo fqanInfo) {
-    super(fqanInfo.getId());
-    this.dnInfo = fqanInfo;
-  }
+  //public DNAuthenticationMessage(DNInfo fqanInfo) {
+  //  super(fqanInfo.getId());
+  //  this.dnInfo = fqanInfo;
+  //}
 
-  public DNAuthenticationMessage(UserAuthBase user_auth, DNInfo dnInfo) {
-    super(user_auth, dnInfo.getId());
-    this.dnInfo = dnInfo;
-  }
+  //public DNAuthenticationMessage(UserAuthBase user_auth, DNInfo dnInfo) {
+  //  super(user_auth, dnInfo.getId());
+  //  this.dnInfo = dnInfo;
+  //}
 
-  public DNAuthenticationMessage(LinkedList <UserAuthRecord> user_auths, DNInfo dnInfo) {
-    super(user_auths, dnInfo.getId());
+  public DNAuthenticationMessage(LinkedList <gPlazmaAuthorizationRecord> gauthlist, DNInfo dnInfo) {
+    super(gauthlist, dnInfo.getId());
     this.dnInfo = dnInfo;
   }
 }

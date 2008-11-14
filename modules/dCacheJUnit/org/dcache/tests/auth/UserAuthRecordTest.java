@@ -5,7 +5,7 @@ import java.util.HashSet;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
-import diskCacheV111.util.UserAuthRecord;
+import org.dcache.auth.UserAuthRecord;
 
 
 public class UserAuthRecordTest {

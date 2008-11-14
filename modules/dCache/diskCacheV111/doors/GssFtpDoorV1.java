@@ -76,14 +76,14 @@ import dmg.util.Args;
 //dcache
 import diskCacheV111.util.Base64;
 import diskCacheV111.util.KAuthFile;
-import diskCacheV111.util.UserAuthRecord;
+import diskCacheV111.util.FQAN;
+import org.dcache.auth.*;
 
 //java
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.Collection;
 import java.util.Iterator;
-import java.util.LinkedList;
+import java.util.HashSet;
 import java.util.concurrent.ExecutionException;
 
 //jgss
@@ -93,8 +93,7 @@ import org.ietf.jgss.ChannelBinding;
 import org.ietf.jgss.GSSName;
 import org.ietf.jgss.MessageProp;
 
-import diskCacheV111.services.authorization.AuthorizationService;
-import diskCacheV111.vehicles.AuthenticationMessage;
+import gplazma.authz.AuthorizationController;
 
 
 /**
@@ -114,9 +113,9 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
     protected GSSContext serviceContext;
 
     // For multiple attribute support
-    protected AuthenticationMessage authmessage;
+    //protected AuthenticationMessage authmessage;
 
-    protected Iterator<UserAuthRecord> _userAuthRecords;
+    protected Iterator<GroupList> _userAuthGroupLists;
 
     /** Creates a new instance of GsiFtpDoorV1 */
     public GssFtpDoorV1(String name, StreamEngine engine, Args args)
@@ -147,7 +146,7 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
     }
 
     public void ac_auth(String arg) {
-        info("GssFtpDoorV1::secure_reply: going to authenticate " + _GSSFlavor);
+        info("GssFtpDoorV1::secure_reply: going to authorize " + _GSSFlavor);
         if ( !arg.equals("GSSAPI") ) {
             reply("504 Authenticating method not supported");
             return;
@@ -274,9 +273,9 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
     public void ac_user(String arg) {
 
         KAuthFile authf;
-        AuthorizationService authServ = null;
 
         _pwdRecord = null;
+        authRecord = null;
         _user = null;
         info("GssFtpDoorV1::ac_user <" + arg + ">");
         if (arg.equals("")) {
@@ -310,8 +309,6 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
             }
 
             _pwdRecord = authf.getUserRecord(_user);
-            authmessage = new AuthenticationMessage(_pwdRecord);
-            //authRecords = new LinkedList<UserAuthRecord>();
 
             if ( _pwdRecord == null ) {
                 reply("530 User " + _user + " not found.");
@@ -328,26 +325,26 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
         }
 
         if (_use_gplazmaAuthzCell) {
+            AuthzQueryHelper authHelper;
             try {
-                authServ = new AuthorizationService(this);
-                authServ.setDelegateToGplazma(_delegate_to_gplazma);
-                authmessage = authServ.authenticate(serviceContext, _user,
-                                                    new CellPath("gPlazma"),
-                                                    this);
+                authHelper = new AuthzQueryHelper(this);
+                authHelper.setDelegateToGplazma(_delegate_to_gplazma);
+                authRecord =  authHelper.getAuthorization(serviceContext, new CellPath("gPlazma"), this).getAuthorizationRecord();
             } catch( Exception e ) {
                 if (!_use_gplazmaAuthzModule) {
                     reply("530 Authorization Service failed: " + e);
                 }
                 error("GssFtpDoorV1::ac_user: authorization through gPlazma " +
                       "cell failed: " + e.getMessage());
-                authmessage = null;
+                authRecord = null;
             }
         }
 
-
-        if (authmessage==null && _use_gplazmaAuthzModule) {
+        if (authRecord==null && _use_gplazmaAuthzModule) {
+            AuthorizationController authCtrl;
             try {
-                authServ = new AuthorizationService(_gplazmaPolicyFilePath, this);
+                authCtrl = new AuthorizationController(_gplazmaPolicyFilePath);
+                //authCrtl.setLoglevel();
             } catch (Exception e) {
                 reply("530 Authorization Service failed to initialize: " + e);
                 return;
@@ -355,16 +352,14 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
             if (_user.equals(GLOBUS_URL_COPY_DEFAULT_USER)) {
                 info("GssFtpDoorV1::ac_user: gplazma special case, user is " + _user);
                 try {
-                    authmessage = new AuthenticationMessage(
-                        authServ.authorize(serviceContext, null, null, null));
+                    authRecord = RecordConvert.gPlazmaToAuthorizationRecord(authCtrl.authorize(serviceContext, null, null, null));
                 } catch ( Exception e ) {
                     reply("530 User Authorization record failed to be retrieved: " + e);
                     return;
                 }
             } else {
                 try {
-                    authmessage = new AuthenticationMessage(
-                        authServ.authorize(serviceContext, _user, null, null));
+                    authRecord = RecordConvert.gPlazmaToAuthorizationRecord(authCtrl.authorize(serviceContext, _user, null, null));
                 } catch ( Exception e ) {
                     reply("530 User Authorization record failed to be retrieved: " + e);
                     return;
@@ -372,33 +367,55 @@ public abstract class GssFtpDoorV1 extends AbstractFtpDoorV1
             }
         }
 
-        resetPwdRecord();
-        if (_pwdRecord == null) {
+        if (_pwdRecord == null && authRecord == null) {
             reply("530 Permission denied");
             return;
         }
+
+        //if(_pwdRecord==null && authRecord != null) {}
+
+        resetPwdRecord();
 
         reply("200 User "+_user+" logged in");
     }
 
     public void resetPwdRecord()
     {
-        if (authmessage != null) {
-            _userAuthRecords = authmessage.getUserAuthRecords().iterator();
+        if (authRecord != null) {
+            _userAuthGroupLists = authRecord.getGroupLists().iterator();
             setNextPwdRecord();
         } else {
-            _userAuthRecords = null;
+            _userAuthGroupLists = null;
         }
     }
 
     protected boolean setNextPwdRecord()
     {
-        if (_userAuthRecords == null || !_userAuthRecords.hasNext()) {
+        if (_userAuthGroupLists == null || !_userAuthGroupLists.hasNext()) {
             _pwdRecord = null;
             return false;
         }
 
-        _pwdRecord = _userAuthRecords.next();
+        GroupList grplist  = _userAuthGroupLists.next();
+        String fqan = grplist.getAttribute();
+        int i=0, glsize = grplist.getGroups().size();
+        int GIDS[] = (glsize > 0) ? new int[glsize] : null;
+        for(Group group : grplist.getGroups()) {
+             GIDS[i++] = group.getGid();
+        }
+        _pwdRecord = new UserAuthRecord(
+                authRecord.getIdentity(),
+                authRecord.getName(),
+                fqan,
+                authRecord.isReadOnly(),
+                authRecord.getPriority(),
+                authRecord.getUid(),
+                GIDS,
+                authRecord.getHome(),
+                authRecord.getRoot(),
+                "/",
+                new HashSet<String>());
+
         _user = _pwdRecord.Username;
 
         if(_pathRoot == null) {

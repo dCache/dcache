@@ -25,6 +25,8 @@
 	        <pathelement location="${libDir}/log4j/log4j-1.2.8.jar"/>
 	        <pathelement location="${libDir}/berkeleyDB/je-3.2.76.jar" />
 	    	<pathelement location="${libDir}/cog/cog-srmlib/cog-jglobus.jar" />
+                <pathelement location="${libDir}/persistence/persistence-api-1.0.jar" />
+
 	        <pathelement location="${buildDir}/junit"/>
             <pathelement location="${buildTop}/modules/dCache/diskCacheV111/config" />
 	    </path>
@@ -32,7 +34,7 @@
 	    <target name="run_junit.core">
 
 	        <mkdir dir="${buildDir}/junit" />
-	        <javac classpathref="junit.classpath" destdir="${buildDir}/junit" source="${javac.source}" target="${javac.target}" debug="${javac.debug}" verbose="${javac.verbose}"  encoding="${javac.encoding}">
+	        <javac classpathref="junit.classpath" destdir="${buildDir}/junit" source="${javac.source}" target="${javac.target}" debug="${javac.debug}" verbose="${javac.verbose}"  encoding="${javac.encoding}" deprecation="on">
 	            <src path="${sourceDir}" />
 	        </javac>
 

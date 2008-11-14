@@ -65,9 +65,10 @@ COPYRIGHT STATUS:
  */
 
 package diskCacheV111.util;
-import diskCacheV111.util.UserPwdRecord ;
+import org.dcache.auth.UserPwdRecord ;
 import java.util.*;
 import java.io.*;
+import org.dcache.auth.UserAuthRecord;
 
 // WARINING THIS CLASS IS NOT THREAD SAFE
 // Format of : authentication file:

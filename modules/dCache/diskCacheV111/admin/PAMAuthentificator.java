@@ -275,7 +275,7 @@ public class PAMAuthentificator  extends CellAdapter {
       try{ 
          pamOk = authenticate( principal , password )  ;
       }catch(Exception ee ){
-         esay( "_pam.authenticate : "+ee ) ;
+         esay( "_pam.authorize : "+ee ) ;
       }
       if( ! pamOk ){
          say("pam says no to <"+principal+"> (switching to local)");

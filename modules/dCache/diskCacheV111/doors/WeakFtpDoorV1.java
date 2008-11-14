@@ -39,9 +39,9 @@
 package diskCacheV111.doors;
 
 import diskCacheV111.vehicles.*;
-import diskCacheV111.util.*;
 import diskCacheV111.cells.*;
-
+import diskCacheV111.util.KAuthFile;
+import org.dcache.auth.*;
 
 import dmg.cells.nucleus.*;
 import dmg.cells.network.*;
