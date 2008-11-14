@@ -58,7 +58,7 @@ public class FileIO extends IoPackage {
 		SRM_SPACEFILE_TABLE+" WHERE spacereservationid = ? AND state != ? "+FileState.FLUSHED.getStateId();
 	public static final String SELECT_TRANSFERRING_OR_RESERVED_BY_PNFSPATH =
 		"SELECT * FROM "+SRM_SPACEFILE_TABLE+" WHERE pnfspath=? AND (state= "+FileState.RESERVED.getStateId()+
-		" or state = "+ FileState.TRANSFERRING.getStateId() +")";
+		" or state = "+ FileState.TRANSFERRING.getStateId() +") and deleted!=1";
 
 	public static final String REMOVE_PNFSID_ON_SPACEFILE="UPDATE "+SRM_SPACEFILE_TABLE+
 		" SET pnfsid = NULL WHERE id=?";
