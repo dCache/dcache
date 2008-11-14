@@ -104,7 +104,6 @@ import diskCacheV111.util.PnfsId;
 //import diskCacheV111.vehicles.PoolSetStickyMessage;
 import diskCacheV111.vehicles.PinManagerUnpinMessage;
 import diskCacheV111.vehicles.Message;
-import org.dcache.auth.AuthorizationRecord;
 import org.dcache.srm.UnpinCallbacks;
 
 /**
@@ -128,7 +127,7 @@ public class UnpinCompanion implements CellMessageAnswerable {
     private UnpinCallbacks callbacks;
     private CellMessage request = null;
     private String fileId;
-    private AuthorizationRecord user;
+    private DCacheUser user;
     
     private void say(String words_of_wisdom) {
         if(cell!=null) {
@@ -143,7 +142,7 @@ public class UnpinCompanion implements CellMessageAnswerable {
     }
     /** Creates a new instance of StageAndPinCompanion */
     
-    private UnpinCompanion(AuthorizationRecord user, String fileId, UnpinCallbacks callbacks, CellAdapter cell) {
+    private UnpinCompanion(DCacheUser user, String fileId, UnpinCallbacks callbacks, CellAdapter cell) {
         this.user = user;
         this.fileId = fileId;
         this.cell = cell;
@@ -172,9 +171,9 @@ public class UnpinCompanion implements CellMessageAnswerable {
                     return;
                 }
                 state = RECEIVED_PIN_MGR_PIN_MSG;
-                PinManagerUnpinMessage unpinResponse =
+                PinManagerUnpinMessage unpinResponce =
                         (PinManagerUnpinMessage)message;
-                pinManagerUnpinMessageArrived(unpinResponse);
+                pinManagerUnpinMessageArrived(unpinResponce);
             } else {
                 esay(this.toString()+" got unknown message "+
                         " : "+message.getErrorObject());
@@ -191,15 +190,15 @@ public class UnpinCompanion implements CellMessageAnswerable {
     }
     
     
-    private void pinManagerUnpinMessageArrived(PinManagerUnpinMessage unpinResponse) {
+    private void pinManagerUnpinMessageArrived(PinManagerUnpinMessage unpinResponce) {
         say(" message is PinManagerUnpinMessage");
-        if(unpinResponse.getReturnCode() != 0) {
+        if(unpinResponce.getReturnCode() != 0) {
             esay("UnpinRequest Failed");
-            callbacks.UnpinningFailed(unpinResponse.getErrorObject().toString());
+            callbacks.UnpinningFailed(unpinResponce.getErrorObject().toString());
             return ;
         }
         say("unpinned");
-        callbacks.Unpinned(unpinResponse.getPinId());
+        callbacks.Unpinned(unpinResponce.getPinId());
     }
     
     public void exceptionArrived( CellMessage request , Exception exception ) {
@@ -217,7 +216,7 @@ public class UnpinCompanion implements CellMessageAnswerable {
     }
     
     public static void unpinFile(
-            AuthorizationRecord user,
+            DCacheUser user,
             String fileId,
             String pinId,
             UnpinCallbacks callbacks,
@@ -227,7 +226,7 @@ public class UnpinCompanion implements CellMessageAnswerable {
         try {
             pnfsId = new PnfsId(fileId);
         } catch(Exception e) {
-            //just quietly fail, if the fileId is not pnfs id
+            //just ciletly fail, if the fileId is not pnfs id
             // it must be created by a disk srm during testing
             //just allow the request to get expired
             callbacks.Unpinned(fileId);
@@ -239,7 +238,6 @@ public class UnpinCompanion implements CellMessageAnswerable {
         
         PinManagerUnpinMessage unpinRequest =
                 new PinManagerUnpinMessage( pnfsId, pinId);
-        unpinRequest.setAuthorizationRecord(user);
         
         companion.state = SENT_PIN_MGR_PIN_MSG;
         try {
@@ -261,7 +259,7 @@ public class UnpinCompanion implements CellMessageAnswerable {
     }
     
     public static void unpinFileBySrmRequestId(
-            AuthorizationRecord user,
+            DCacheUser user,
             String fileId,
             long  srmRequestId,
             UnpinCallbacks callbacks,
@@ -283,48 +281,7 @@ public class UnpinCompanion implements CellMessageAnswerable {
         
         PinManagerUnpinMessage unpinRequest =
                 new PinManagerUnpinMessage( pnfsId, srmRequestId);
-        unpinRequest.setAuthorizationRecord(user);
-        companion.state = SENT_PIN_MGR_PIN_MSG;
-        try {
-            cell.sendMessage(
-                    new CellMessage(
-                    new CellPath( "PinManager") ,
-                    unpinRequest ) ,
-                    true , true,
-                    companion,
-                    60*60*1000
-                    );
-            //say("StageAndPinCompanion: recordAsPinned");
-            //rr.recordAsPinned (_fr,true);
-        }catch(Exception ee ) {
-            cell.esay(ee);
-            callbacks.UnpinningFailed(ee.toString());
-            return ;
-        }
-    }
-    public static void unpinFile(
-            AuthorizationRecord user,
-            String fileId,
-            UnpinCallbacks callbacks,
-            CellAdapter cell) {
-        cell.say("UnpinCompanion.unpinFile("+fileId+")");
-        PnfsId pnfsId = null;
-        try {
-            pnfsId = new PnfsId(fileId);
-        } catch(Exception e) {
-            //just ciletly fail, if the fileId is not pnfs id
-            // it must be created by a disk srm during testing
-            //just allow the request to get expired
-            callbacks.Unpinned(fileId);
-            return;
-        }
         
-        UnpinCompanion companion = new UnpinCompanion(user,fileId,
-                callbacks,cell);
-        
-        PinManagerUnpinMessage unpinRequest =
-                new PinManagerUnpinMessage( pnfsId);
-        unpinRequest.setAuthorizationRecord(user);
         companion.state = SENT_PIN_MGR_PIN_MSG;
         try {
             cell.sendMessage(

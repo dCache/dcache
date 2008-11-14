@@ -119,9 +119,8 @@ import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.DCapProtocolInfo;
 
 //import org.dcache.srm.util.FileRequest;
-//import org.dcache.srm.security.AuthorizationRecord;
+//import org.dcache.srm.security.DCacheUser;
 import java.net.InetAddress;
-import org.dcache.auth.AuthorizationRecord;
 import org.dcache.srm.GetFileInfoCallbacks;
 import org.dcache.srm.FileMetaData;
 
@@ -149,7 +148,7 @@ public class GetFileInfoCompanion implements CellMessageAnswerable {
     private PnfsId pnfsId;
     private String host;
     private StorageInfo storageInfo;
-    private AuthorizationRecord user;
+    private DCacheUser user;
     
     private void say(String words_of_wisdom) {
         if(cell!=null) {
@@ -164,7 +163,7 @@ public class GetFileInfoCompanion implements CellMessageAnswerable {
     }
     /** Creates a new instance of StageAndPinCompanion */
     
-    private GetFileInfoCompanion(AuthorizationRecord user,
+    private GetFileInfoCompanion(DCacheUser user,
     String path,
     String host,
     GetFileInfoCallbacks callbacks,
@@ -272,7 +271,7 @@ public class GetFileInfoCompanion implements CellMessageAnswerable {
     }
     
     public static void getFileInfo(
-    AuthorizationRecord user,
+    DCacheUser user,
     String path,
     GetFileInfoCallbacks callbacks,
     CellAdapter cell) {

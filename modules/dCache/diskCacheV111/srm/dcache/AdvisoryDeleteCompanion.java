@@ -86,7 +86,6 @@ import diskCacheV111.vehicles.PnfsGetStorageInfoMessage;
 import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.PnfsDeleteEntryMessage;
-import org.dcache.auth.AuthorizationRecord;
 import org.dcache.srm.AdvisoryDeleteCallbacks;
 import org.dcache.srm.FileMetaData;
 
@@ -121,7 +120,7 @@ public class AdvisoryDeleteCompanion implements CellMessageAnswerable {
     private PnfsId pnfsId;
     private StorageInfo storageInfo;
     private String      poolName = null ;
-    private AuthorizationRecord user;
+    private DCacheUser user;
     private boolean advisoryDeleteEnabled;
     
     private void say(String words_of_wisdom) {
@@ -151,7 +150,7 @@ public class AdvisoryDeleteCompanion implements CellMessageAnswerable {
     
     /** Creates a new instance of StageAndPinCompanion */
     
-    private AdvisoryDeleteCompanion(AuthorizationRecord user, String path,  
+    private AdvisoryDeleteCompanion(DCacheUser user, String path,  
         AdvisoryDeleteCallbacks callbacks, 
         CellAdapter cell,
         boolean advisoryDeleteEnabled) {
@@ -331,7 +330,7 @@ public class AdvisoryDeleteCompanion implements CellMessageAnswerable {
     }
     
     public static void advisoryDelete(
-    AuthorizationRecord user,
+    DCacheUser user,
     String path,
     AdvisoryDeleteCallbacks callbacks,
     CellAdapter cell,

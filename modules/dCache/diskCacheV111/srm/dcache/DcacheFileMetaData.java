@@ -89,9 +89,6 @@ COPYRIGHT STATUS:
 package diskCacheV111.srm.dcache;
 import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.util.PnfsId;
-import org.dcache.auth.AuthorizationRecord;
-import org.dcache.srm.SRMUser;
-import org.apache.log4j.Logger;
 /**
  *
  * @author  timur
@@ -100,7 +97,6 @@ public class DcacheFileMetaData extends org.dcache.srm.FileMetaData {
     private PnfsId pnfsId;
     private StorageInfo storageInfo;
     private diskCacheV111.util.FileMetaData fmd;
-    private Logger logger =  Logger.getLogger(DcacheFileMetaData.class.getName());
     
     /** Creates a new instance of DcacheFileMetaData */
     public DcacheFileMetaData(PnfsId pnfsId) {
@@ -155,29 +151,4 @@ public class DcacheFileMetaData extends org.dcache.srm.FileMetaData {
         this.fmd = fmd;
     }
     
-    public  boolean isOwner(SRMUser user) {
-        try {
-            return Integer.parseInt(owner) == ((AuthorizationRecord) user).getUid();
-        } catch (NumberFormatException nfe) {
-            logger.error("owner is not a number: "+owner,nfe);
-            throw nfe;
-        } catch (ClassCastException  cce) {
-            logger.error("user is not a dCacheUser: "+user,cce);
-            throw cce;
-        } 
-    }
-    
-    public boolean isGroupMember(SRMUser user) {
-        try {
-            return Integer.parseInt(group) == ((AuthorizationRecord) user).getUid();
-        } catch (NumberFormatException nfe) {
-            logger.error("group is not a number: "+group,nfe);
-            throw nfe;
-        } catch (ClassCastException  cce) {
-            logger.error("user is not a dCacheUser: "+user,cce);
-            throw cce;
-        } 
-        
-    }
-
 }

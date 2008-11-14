@@ -81,7 +81,6 @@ import dmg.cells.nucleus.CellMessageAnswerable;
 
 import diskCacheV111.util.FsPath;
 import diskCacheV111.util.PnfsId;
-import org.dcache.auth.AuthorizationRecord;
 import org.dcache.srm.util.OneToManyMap;
 import org.dcache.srm.PrepareToPutCallbacks;
 import org.dcache.srm.FileMetaData;
@@ -137,7 +136,7 @@ public class PutCompanion implements CellMessageAnswerable {
     private boolean recursive_directory_creation;
     private java.util.List pathItems=null;
     private int current_dir_depth = -1;
-    private AuthorizationRecord user;
+    private DCacheUser user;
     private boolean overwrite;
     private String fileId;
     private FileMetaData fileFMD;
@@ -163,7 +162,7 @@ public class PutCompanion implements CellMessageAnswerable {
     }
     /** Creates a new instance of StageAndPinCompanion */
     
-    private PutCompanion(AuthorizationRecord user,
+    private PutCompanion(DCacheUser user,
     String path,
     PrepareToPutCallbacks callbacks,
     CellAdapter cell,
@@ -197,15 +196,15 @@ public class PutCompanion implements CellMessageAnswerable {
             // note that PnfsCreateDirectoryMessage is a subclass
             // of PnfsGetStorageInfoMessage
             if( message instanceof PnfsCreateDirectoryMessage) {
-                PnfsCreateDirectoryMessage create_directory_response =
+                PnfsCreateDirectoryMessage create_directory_responce =
                 (PnfsCreateDirectoryMessage)message;
                 if( state == WAITING_FOR_CREATE_DIRECTORY_RESPONSE_MESSAGE) {
                     state = RECEIVED_CREATE_DIRECTORY_RESPONSE_MESSAGE;
-                    directoryInfoArrived(create_directory_response);
+                    directoryInfoArrived(create_directory_responce);
                     return;
                 }
                 esay(this.toString()+" got unexpected PnfsCreateDirectoryMessage "+
-                " : "+create_directory_response+" ; Ignoring");
+                " : "+create_directory_responce+" ; Ignoring");
             }
             else if( message instanceof PnfsGetStorageInfoMessage ) {
                 PnfsGetStorageInfoMessage storage_info_msg =
@@ -568,7 +567,7 @@ public class PutCompanion implements CellMessageAnswerable {
         }
     }
     
-    public static void PrepareToPutFile(AuthorizationRecord user,
+    public static void PrepareToPutFile(DCacheUser user,
     String path,
     PrepareToPutCallbacks callbacks,
     CellAdapter cell,

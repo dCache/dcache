@@ -77,7 +77,6 @@ COPYRIGHT STATUS:
  *
  * Created on January 2, 2003, 2:08 PM
  */
-
 package diskCacheV111.srm.dcache;
 
 import dmg.cells.nucleus.CellAdapter;
@@ -91,7 +90,6 @@ import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.PnfsGetFileMetaDataMessage;
 import diskCacheV111.vehicles.Message;
 import diskCacheV111.vehicles.PnfsDeleteEntryMessage;
-import org.dcache.auth.AuthorizationRecord;
 import org.dcache.srm.RemoveFileCallbacks;
 import diskCacheV111.util.FileMetaData;
 import diskCacheV111.util.CacheException;
@@ -118,7 +116,7 @@ public class RemoveFileCompanion implements CellMessageAnswerable {
 	private String path;
 	private PnfsId pnfsId;
 	private String      poolName = null ;
-	private AuthorizationRecord user;
+	private DCacheUser user;
 	
 	
 	private String name() { 
@@ -126,7 +124,7 @@ public class RemoveFileCompanion implements CellMessageAnswerable {
 		return tmp.substring(tmp.lastIndexOf('.'),tmp.length()-1);
 	}
     
-	private RemoveFileCompanion(AuthorizationRecord user,
+	private RemoveFileCompanion(DCacheUser user,
 				    String path,
 				    RemoveFileCallbacks callbacks,
 				    CellAdapter cell) { 
@@ -136,7 +134,7 @@ public class RemoveFileCompanion implements CellMessageAnswerable {
 		this.callbacks = callbacks;
 	}
 	
-	public static void removeFile(AuthorizationRecord user,
+	public static void removeFile(DCacheUser user,
 				      String path,
 				      RemoveFileCallbacks callbacks,
 				      CellAdapter cell, 
@@ -383,4 +381,6 @@ public class RemoveFileCompanion implements CellMessageAnswerable {
         }
  
 }
+
+
 
