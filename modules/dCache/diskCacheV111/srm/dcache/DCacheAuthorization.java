@@ -140,21 +140,22 @@ COPYRIGHT STATUS:
 package diskCacheV111.srm.dcache;
 
 import diskCacheV111.util.KAuthFile;
-import diskCacheV111.util.UserAuthRecord;
 import org.dcache.srm.SRMAuthorization;
 import org.dcache.srm.SRMAuthorizationException;
 import java.util.Iterator;
 import org.dcache.srm.request.RequestUser;
 import org.dcache.srm.scheduler.JobCreator;
+import org.dcache.auth.*;
 import org.ietf.jgss.GSSContext;
-import diskCacheV111.services.authorization.AuthorizationService;
-import diskCacheV111.services.authorization.AuthorizationServiceException;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.CellAdapter;
 import org.apache.log4j.Logger;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Arrays;
+
+import gplazma.authz.AuthorizationException;
+import gplazma.authz.AuthorizationController;
 
 /**
  *
@@ -303,10 +304,10 @@ public final class DCacheAuthorization implements SRMAuthorization {
 	
     private UserAuthRecord authorize(GSSContext serviceContext,String name)
     throws SRMAuthorizationException {
-        AuthorizationService authServ = null;
+        AuthzQueryHelper authServ = null;
         UserAuthRecord authRecord = null;
         try {
-             authServ = new AuthorizationService(gplazmaPolicyFilePath, parentcell);
+             authServ = new AuthzQueryHelper(parentcell);
         }
         catch(Exception e) {
              e.printStackTrace();
@@ -316,8 +317,28 @@ public final class DCacheAuthorization implements SRMAuthorization {
         if (use_gplazmaAuthzCell) {
           authServ.setDelegateToGplazma(delegate_to_gplazma);
           try {
-            authRecord = (UserAuthRecord) authServ.authenticate(serviceContext, new CellPath("gPlazma"), parentcell).getUserAuthBase();
-          } catch (AuthorizationServiceException ase) {
+            AuthorizationRecord newauthRecord = authServ.getAuthorization(serviceContext, new CellPath("gPlazma"), parentcell).getAuthorizationRecord();
+            Iterator<GroupList> _userAuthGroupLists = newauthRecord.getGroupLists().iterator();
+            GroupList grplist  = _userAuthGroupLists.next();
+            String fqan = grplist.getAttribute();
+            int i=0, glsize = grplist.getGroups().size();
+            int GIDS[] = (glsize > 0) ? new int[glsize] : null;
+            for(Group group : grplist.getGroups()) {
+                 GIDS[i++] = group.getGid();
+            }
+              authRecord = new UserAuthRecord(
+                newauthRecord.getIdentity(),
+                newauthRecord.getName(),
+                fqan,
+                authRecord.isReadOnly(),
+                newauthRecord.getPriority(),
+                newauthRecord.getUid(),
+                GIDS,
+                newauthRecord.getHome(),
+                newauthRecord.getRoot(),
+                "/",
+                null);
+          } catch (AuthorizationException ase) {
             if(!use_gplazmaAuthzModule) {
               throw new SRMAuthorizationException(ase.getMessage());
             }
@@ -328,8 +349,29 @@ public final class DCacheAuthorization implements SRMAuthorization {
 
         if (authRecord==null && use_gplazmaAuthzModule) {
           try {
-             Iterator<UserAuthRecord> recordsIter = authServ.authorize(serviceContext, name, null, null).iterator();
-             authRecord = recordsIter.hasNext() ? recordsIter.next() : null;
+             AuthorizationController authCrtl = new AuthorizationController(gplazmaPolicyFilePath);
+             //authCrtl.setLoglevel();
+             AuthorizationRecord newauthRecord = RecordConvert.gPlazmaToAuthorizationRecord(authCrtl.authorize(serviceContext, name, null, null));
+              Iterator<GroupList> _userAuthGroupLists = newauthRecord.getGroupLists().iterator();
+            GroupList grplist  = _userAuthGroupLists.next();
+            String fqan = grplist.getAttribute();
+            int i=0, glsize = grplist.getGroups().size();
+            int GIDS[] = (glsize > 0) ? new int[glsize] : null;
+            for(Group group : grplist.getGroups()) {
+                 GIDS[i++] = group.getGid();
+            }
+              authRecord = new UserAuthRecord(
+                newauthRecord.getIdentity(),
+                newauthRecord.getName(),
+                fqan,
+                authRecord.isReadOnly(),
+                newauthRecord.getPriority(),
+                newauthRecord.getUid(),
+                GIDS,
+                newauthRecord.getHome(),
+                newauthRecord.getRoot(),
+                "/",
+                null);
           }
           catch(Exception ee) {
              ee.printStackTrace();
