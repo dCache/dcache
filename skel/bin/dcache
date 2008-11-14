@@ -9,7 +9,7 @@ LOCK_FILE=/var/lock/subsys/dcache
 # try to find one and execute it.
 if [ "$1" = "%" ]; then
     shift
-elif [ "$(uname)" = "SunOS" ]; then
+elif [ "`uname`" = "SunOS" ]; then
     if [ -x /usr/xpg4/bin/sh ]; then
 	exec /usr/xpg4/bin/sh $0 % $*
     elif [ -x /bin/bash ]; then
