@@ -64,7 +64,7 @@ public class HsmStorageInterpreter
        _fetchQueue.remove( id ) ;
        return "Removed" ;
     }
-    public String hh_rh_jobs_kill = "<jobId> [-force]" ;
+    public String hh_rh_jobs_kill = "[-force] <jobId>";
     public String ac_rh_jobs_kill_$_1( Args args )throws Exception {
        int id = Integer.parseInt( args.argv(0) ) ;
        _fetchQueue.kill( id, args.getOpt("force") != null ) ;
@@ -116,7 +116,7 @@ public class HsmStorageInterpreter
        _storeQueue.remove( id ) ;
        return "Removed" ;
     }
-    public String hh_st_jobs_kill = "<jobId>" ;
+    public String hh_st_jobs_kill = "[-force] <jobId>";
     public String ac_st_jobs_kill_$_1( Args args )throws Exception {
        int id = Integer.parseInt( args.argv(0) ) ;
        _storeQueue.kill( id, args.getOpt("force") != null ) ;
