@@ -13,6 +13,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.StringTokenizer;
 
+import org.dcache.chimera.FileNotFoundHimeraFsException;
 import org.dcache.chimera.FsInode;
 import org.dcache.chimera.FsInode_TAG;
 import org.dcache.chimera.ChimeraFsException;
@@ -235,7 +236,8 @@ public class ChimeraOsmStorageInfoExtractor implements
                 }
             }
 
-
+        }catch(FileNotFoundHimeraFsException e) {
+             throw new FileNotFoundCacheException(e.getMessage());
         }catch(ChimeraFsException he ) {
             throw new CacheException(he.getMessage() );
         }
