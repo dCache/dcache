@@ -27,6 +27,7 @@ import diskCacheV111.namespace.CacheLocationProvider;
 import diskCacheV111.namespace.NameSpaceProvider;
 import diskCacheV111.namespace.StorageInfoProvider;
 
+import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileExistsCacheException;
 import diskCacheV111.util.FileMetaData;
 import diskCacheV111.util.PnfsId;
