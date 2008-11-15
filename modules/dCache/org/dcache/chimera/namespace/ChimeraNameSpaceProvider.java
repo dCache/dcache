@@ -216,9 +216,11 @@ public class ChimeraNameSpaceProvider implements NameSpaceProvider, StorageInfoP
         try {
         	FsInode inode = new FsInode(_fs, pnfsId.toIdString());
         	_fs.addInodeLocation(inode, StorageGenericLocation.DISK, cacheLocation);
+        }catch(FileNotFoundHimeraFsException e) {
+               throw new FileNotFoundCacheException(e.getMessage()); 
         } catch (ChimeraFsException e){
             _logNameSpace.error("Exception in addCacheLocation "+e);
-            //no reply to this message
+            throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e.getMessage());
         }
     }
 
@@ -260,7 +262,7 @@ public class ChimeraNameSpaceProvider implements NameSpaceProvider, StorageInfoP
 
         } catch (ChimeraFsException e){
             _logNameSpace.error("Exception in clearCacheLocation for : "+pnfsId+" -> "+e);
-            //no reply to this message
+            throw new CacheException(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e.getMessage());
         }
     }
 
