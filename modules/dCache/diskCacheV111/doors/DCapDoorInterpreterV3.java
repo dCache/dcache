@@ -10,6 +10,8 @@ import dmg.cells.nucleus.*;
 import dmg.util.*;
 import dmg.security.CellUser;
 import diskCacheV111.services.PermissionHandler;
+import gplazma.authz.AuthorizationException;
+import diskCacheV111.services.authorization.GplazmaService;
 import diskCacheV111.poolManager.PoolSelectionUnit.DirectionType;
 
 import java.util.*;
@@ -18,8 +20,10 @@ import java.net.*;
 
 
 import diskCacheV111.util.AccessLatency;
+import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileMetaData;
 import diskCacheV111.util.RetentionPolicy;
+import org.dcache.auth.UserAuthRecord;
 
 
 /**
@@ -42,16 +46,12 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
     private final Map<Integer, SessionHandler>     _sessions    = new HashMap<Integer, SessionHandler>() ;
     private String  _poolManagerName = null ;
     private String  _pnfsManagerName = null ;
-    private String  _userMetaProvider        = null ;
-    private int _userMetaTimeout     = 60; // user metadata proveder timeout in seconds
-    private int _userMetaRetries     = 60; // user metadata proveder timeout in seconds
+
 
     private CellPath _poolMgrPath    = null ;
     private final Object  _messageLock     = new Object() ;
     private String  _pid             = null ;
     private String  _uid             = null ;
-    private int     _userUid         = -1 ;
-    private int     _userGid         = -1 ;
     private String  _userHome        = "?" ;
     private int     _majorVersion    = 0 ;
     private int     _minorVersion    = 0 ;
@@ -61,9 +61,16 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
     private boolean _authorizationStrong   = false ;
 
     /**
-     * a flag which is true if strong authentication succeeded
+     * user record to use.
      */
-    private boolean _isAuthorized = false;
+    private UserAuthRecord _userAuthRecord = null;
+
+    /**
+     * gPlaza door connector
+     */
+    @SuppressWarnings("deprecation")
+    private GplazmaService _authService = null;
+
     private boolean _strictSize            = false ;
     private String  _poolProxy        = null ;
     private Version _minClientVersion = null ;
@@ -95,26 +102,42 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
         _args = _cell.getArgs() ;
         _user = user;
 
-        if( _user.getName() != null && _user.getRole() != null ) {
-            _voInfo = new VOInfo(_user.getName(), _user.getRole() );
 
-            if( _userMetaProvider != null ){
-                _isAuthorized = getUserMetadata( _user.getName(), _user.getRole() , _userMetaProvider ) ;
+        String auth = _args.getOpt("authorization") ;
+        _authorizationStrong   = ( auth != null ) && auth.equals("strong") ;
+        _authorizationRequired = ( auth != null ) &&
+        ( auth.equals("strong") || auth.equals("required") ) ;
+
+        if( _authorizationRequired )_cell.say("Authorization required");
+        if( _authorizationStrong   )_cell.say("Authorization strong");
+
+        if( _authorizationStrong || _authorizationRequired ) {
+
+            try {
+                _authService = GplazmaService.getInstance(_cell);
+            } catch (AuthorizationException e) {
+                /*
+                 * for not policy is unclear for me:
+                 *    do we need to fail
+                 *     or
+                 *    nobody account is used
+                 */
+                _cell.esay(e);
             }
 
         }
 
-        _poolManagerName = _args.getOpt("poolManager" ) ;
-        _poolManagerName = _poolManagerName == null ?
-        "PoolManager" : _poolManagerName ;
         _pnfsManagerName = _args.getOpt("pnfsManager" ) ;
         _pnfsManagerName = _pnfsManagerName == null ?
         "PnfsManager" : _pnfsManagerName ;
 
+        _poolManagerName = _args.getOpt("poolManager" ) ;
+        _poolManagerName = _poolManagerName == null ?
+        "PoolManager" : _poolManagerName ;
+
+
         _poolProxy       = _args.getOpt("poolProxy");
         _cell.say("Pool Proxy "+( _poolProxy == null ? "not set" : ( "set to "+_poolProxy ) ) );
-
-        _userMetaProvider        = _args.getOpt("usermap") ;
 
 
         // allow file truncating
@@ -123,18 +146,11 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
 
         _isAccessLatencyOverwriteAllowed = _args.getOpt("allow-access-policy-overwrite") != null ;
         if(_isAccessLatencyOverwriteAllowed) {
-        	_cell.say("Allowes to overwrite AccessLatency");
+            _cell.say("Allowes to overwrite AccessLatency");
         }
         _isRetentionPolicyOverwriteAllowed = _args.getOpt("allow-retention-policy-overwrite") != null;
         if(_isRetentionPolicyOverwriteAllowed){
-        	_cell.say("Allowed to overwrite RetentionPolicy");
-        }
-
-        if(_args.getOpt("usermap-timeout") != null) {
-            _userMetaTimeout = Integer.parseInt(_args.getOpt("usermap-timeout"));
-        }
-        if(_args.getOpt("usermap-retries") != null) {
-            _userMetaRetries = Integer.parseInt(_args.getOpt("usermap-retries"));
+            _cell.say("Allowed to overwrite RetentionPolicy");
         }
 
         _poolMgrPath     = new CellPath( _poolManagerName ) ;
@@ -172,14 +188,6 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
             }
         _cell.say("PoolRetry timer set to "+(_poolRetry/1000L)+" seconds");
 
-        String auth = _args.getOpt("authorization") ;
-        _authorizationStrong   = ( auth != null ) && auth.equals("strong") ;
-        _authorizationRequired = ( auth != null ) &&
-        ( auth.equals("strong") || auth.equals("required") ) ;
-
-        if( _authorizationRequired )_cell.say("Authorization required");
-        if( _authorizationStrong   )_cell.say("Authorization strong");
-
         _ioQueueName = _args.getOpt("io-queue") ;
         _ioQueueName = ( _ioQueueName == null ) || ( _ioQueueName.length() == 0 ) ? null : _ioQueueName ;
         _cell.say( "IoQueueName = "+(_ioQueueName==null?"<undefined>":_ioQueueName));
@@ -190,17 +198,12 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
 
         String check = (String)_cell.getDomainContext().get("dCapDoor-check");
         if( check != null )_checkStrict = check.equals("strict") ;
-        /*VP
-        if( _userMeta != null )getUserMetadata( _user , _userMeta ) ;
-        _cell.say("Door authenticated for "+
-                  _user+"("+_userUid+","+
-                  _userGid+","+_userHome+")");
-         */
+
         _readOnly = _args.getOpt("readOnly") != null ;
         if (_readOnly)
-	    _cell.say("Door is configured as read-only");
+        _cell.say("Door is configured as read-only");
         else
-	    _cell.say("Door is configured as read/write");
+        _cell.say("Door is configured as read/write");
 
         _cell.say("Check : "+(_checkStrict?"Strict":"Fuzzy"));
         _cell.say("Constructor Done" ) ;
@@ -270,59 +273,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
         _out.print( str );
         _out.flush();
     }
-    //VPprivate boolean getUserMetadata( String userName , String provider ){
-    private boolean getUserMetadata( String userName , String userRole , String provider ){
-        String [] request = new String[5] ;
 
-        request[0] = "request" ;
-        request[1] = userName ;
-        request[2] = "get-metainfo" ;
-        //VP  request[3] = userName ;
-        request[3] = userRole==null ? "UNSPECIFIED" : userRole;
-        request[4] = "uid,gid,home" ;
-        _userUid = -1;
-        _userGid = -1;
-
-        try{
-            CellMessage msg = null;
-
-            for(int retry=0; retry<_userMetaRetries;++retry) {
-                msg  = new CellMessage( new CellPath(provider) , request ) ;
-                msg = _cell.sendAndWait( msg , _userMetaTimeout*1000 ) ;
-                if(msg != null) {
-                    break;
-                }
-                _cell.esay("get-metainfo to "+provider+" timed out for "+userName+
-                " on retry #"+retry);
-                try {
-                    Thread.sleep(_userMetaTimeout*1000);
-                }
-                catch(InterruptedException ie) {
-                    break;
-                }
-            }
-            if( msg == null ){
-                return false ;
-            }
-            Object result = msg.getMessageObject() ;
-            if( result instanceof Exception ){
-                _cell.esay( "Exception from "+provider+" : "+result );
-                return false ;
-            }
-            Object [] r = (Object [])result ;
-
-            String tmp = (String)r[5] ;
-            try{ _userUid = Integer.parseInt(tmp) ; }catch(NumberFormatException e){/* 'bad' strings silently ignored */}
-            tmp = (String)r[6] ;
-            try{ _userGid = Integer.parseInt(tmp) ; }catch(NumberFormatException e){/* 'bad' strings silently ignored */}
-            _userHome = (String)r[7] ;
-            return true ;
-        }catch(Exception ee){
-            _cell.esay(ee);
-            return false ;
-        }
-
-    }
     public void keepAlive(){
         List<SessionHandler> list = null ;
         synchronized( this ){
@@ -393,16 +344,10 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
             throw new
             CommandException( 5 , "Duplicated session id" ) ;
 
-        if( _userMetaProvider != null ){
-        	getUserMetadata( _user.getName(), _user.getRole() , _userMetaProvider ) ;
+        if( _userAuthRecord == null ){
+            _userAuthRecord = getUserMetadata( _user.getName(), _user.getRole() ) ;
         }
-        _cell.say("Door authenticated for "+
-        		_user.getName()+"("+_user.getRole()+","+_userUid+","+
-        _userGid+","+_userHome+")");
-        if( _authorizationStrong && ( _userUid < 0 ) ) {
-            throw new
-            CacheException( 2 , "User "+_user.getName()+" is not authorized") ;
-        }
+
         //VP
         try{
 
@@ -415,15 +360,15 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
             synchronized( _messageLock ){
                SessionHandler se =  new IoHandler(sessionId,commandId,args);
 
-               // if user authentificated tell it to Session Handler
-               if( _userMetaProvider != null ) {
+               // if user authenticated tell it to Session Handler
+               if( _userAuthRecord != null ) {
 
                    se.setOwner( _user.getName() ) ;
-                   if( _userUid >= 0 ) {
-                       se.setUid(_userUid );
+                   if( _userAuthRecord.UID >= 0 ) {
+                       se.setUid(_userAuthRecord.UID );
                    }
-                   if( _userGid >= 0 ) {
-                       se.setGid(_userGid );
+                   if( _userAuthRecord.GID >= 0 ) {
+                       se.setGid(_userAuthRecord.GID );
                    }
                }
                _sessions.put( Integer.valueOf(sessionId) , se ) ;
@@ -439,6 +384,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
 
         return null ;
     }
+
     public synchronized String com_stage( int sessionId , int commandId , VspArgs args )
     throws Exception {
 
@@ -452,16 +398,10 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
             throw new
             CommandException( 5 , "Duplicated session id" ) ;
 
-        if( _userMetaProvider != null ){
-        	getUserMetadata( _user.getName(), _user.getRole() , _userMetaProvider ) ;
+        if( _userAuthRecord == null ){
+            _userAuthRecord = getUserMetadata( _user.getName(), _user.getRole() ) ;
         }
-        _cell.say("Door authenticated for "+
-        		_user.getName()+"("+_user.getRole()+","+_userUid+","+
-        _userGid+","+_userHome+")");
-        if( _authorizationStrong && ( _userUid < 0 ) ) {
-            throw new
-            CacheException( 2 , "User "+_user.getName()+" is not authorized") ;
-        }
+
         //VP
         try{
             //
@@ -497,9 +437,9 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
     public synchronized String com_unlink( int sessionId , int commandId , VspArgs args )
     throws Exception {
 
-    	if (_readOnly) {
-	    throw new CacheException( 2 , "Cannot execute 'unlink': Permission denied") ;
-    	}
+        if (_readOnly) {
+        throw new CacheException( 2 , "Cannot execute 'unlink': Permission denied") ;
+        }
         return do_unlink( sessionId , commandId , args , true ) ;
 
     }
@@ -507,9 +447,9 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
     public synchronized String com_rename( int sessionId , int commandId , VspArgs args )
     throws Exception {
 
-    	if (_readOnly) {
-	    throw new CacheException( 2 , "Cannot execute 'rename': Permission denied") ;
-    	}
+        if (_readOnly) {
+        throw new CacheException( 2 , "Cannot execute 'rename': Permission denied") ;
+        }
         return do_rename( sessionId , commandId , args ) ;
 
     }
@@ -517,9 +457,9 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
     public synchronized String com_rmdir( int sessionId , int commandId , VspArgs args )
     throws Exception {
 
-    	if (_readOnly) {
-	    throw new CacheException( 2 , "Cannot execute 'rmdir': Permission denied") ;
-    	}
+        if (_readOnly) {
+        throw new CacheException( 2 , "Cannot execute 'rmdir': Permission denied") ;
+        }
         return do_rmdir( sessionId , commandId , args , true ) ;
 
     }
@@ -527,9 +467,9 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
     public synchronized String com_mkdir( int sessionId , int commandId , VspArgs args )
     throws Exception {
 
-    	if (_readOnly) {
-	    throw new CacheException( 2 , "Cannot execute 'mkdir': Permission denied") ;
-    	}
+        if (_readOnly) {
+        throw new CacheException( 2 , "Cannot execute 'mkdir': Permission denied") ;
+        }
         return do_mkdir( sessionId , commandId , args , true ) ;
 
     }
@@ -537,9 +477,9 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
     public synchronized String com_chmod( int sessionId , int commandId , VspArgs args )
     throws Exception {
 
-    	if (_readOnly) {
-	    throw new CacheException( 2 , "Cannot execute 'chmod': Permission denied") ;
-    	}
+        if (_readOnly) {
+        throw new CacheException( 2 , "Cannot execute 'chmod': Permission denied") ;
+        }
         return do_chmod( sessionId , commandId , args , true ) ;
 
     }
@@ -547,9 +487,9 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
     public synchronized String com_chown( int sessionId , int commandId , VspArgs args )
     throws Exception {
 
-    	if (_readOnly) {
-	    throw new CacheException( 2 , "Cannot execute 'chown': Permission denied") ;
-    	}
+        if (_readOnly) {
+        throw new CacheException( 2 , "Cannot execute 'chown': Permission denied") ;
+        }
         return do_chown( sessionId , commandId , args , true ) ;
 
     }
@@ -558,9 +498,9 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
     public synchronized String com_chgrp( int sessionId , int commandId , VspArgs args )
     throws Exception {
 
-    	if (_readOnly) {
-	    throw new CacheException( 2 , "Cannot execute 'chgrp': Permission denied") ;
-    	}
+        if (_readOnly) {
+        throw new CacheException( 2 , "Cannot execute 'chgrp': Permission denied") ;
+        }
         return do_chgrp( sessionId , commandId , args , true ) ;
 
     }
@@ -586,15 +526,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
             throw new
             CommandException( 5 , "Duplicated session id" ) ;
 
-        if( _userMetaProvider != null ){
-        	getUserMetadata( _user.getName(), _user.getRole() , _userMetaProvider ) ;
-        }
-        _cell.say("Door authenticated for "+
-        		_user.getName()+"("+_user.getRole()+","+_userUid+","+
-        _userGid+","+_userHome+")");
-        if( _authorizationStrong && ( _userUid < 0 ) ) {
-            throw new
-            CacheException( 2 , "User "+_user.getName()+" is not authorized") ;
+        if( _userAuthRecord == null ){
+            _userAuthRecord = getUserMetadata( _user.getName(), _user.getRole() ) ;
         }
 
         try{
@@ -629,15 +562,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
             throw new
             CommandException( 5 , "Duplicated session id" ) ;
 
-        if( _userMetaProvider != null ){
-        	getUserMetadata( _user.getName(), _user.getRole() , _userMetaProvider ) ;
-        }
-        _cell.say("Door authenticated for "+
-        		_user.getName()+"("+_user.getRole()+","+_userUid+","+
-        _userGid+","+_userHome+")");
-        if( _authorizationStrong && ( _userUid < 0 ) ) {
-            throw new
-            CacheException( 2 , "User "+_user.getName()+" is not authorized") ;
+        if( _userAuthRecord == null ){
+            _userAuthRecord = getUserMetadata( _user.getName(), _user.getRole() ) ;
         }
 
         try{
@@ -671,15 +597,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
             throw new
             CommandException( 5 , "Duplicated session id" ) ;
 
-        if( _userMetaProvider != null ){
-        	getUserMetadata( _user.getName(), _user.getRole() , _userMetaProvider ) ;
-        }
-        _cell.say("Door authenticated for "+
-        		_user.getName()+"("+_user.getRole()+","+_userUid+","+
-        _userGid+","+_userHome+")");
-        if( _authorizationStrong && ( _userUid < 0 ) ) {
-            throw new
-            CacheException( 2 , "User "+_user.getName()+" is not authorized") ;
+        if( _userAuthRecord == null ){
+            _userAuthRecord = getUserMetadata( _user.getName(), _user.getRole() ) ;
         }
 
         try{
@@ -712,15 +631,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
             throw new
             CommandException( 5 , "Duplicated session id" ) ;
 
-        if( _userMetaProvider != null ){
-        	getUserMetadata( _user.getName(), _user.getRole() , _userMetaProvider ) ;
-        }
-        _cell.say("Door authenticated for "+
-        		_user.getName()+"("+_user.getRole()+","+_userUid+","+
-        _userGid+","+_userHome+")");
-        if( _authorizationStrong && ( _userUid < 0 ) ) {
-            throw new
-            CacheException( 2 , "User "+_user.getName()+" is not authorized") ;
+        if( _userAuthRecord == null ){
+            _userAuthRecord = getUserMetadata( _user.getName(), _user.getRole() ) ;
         }
 
         try{
@@ -753,15 +665,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
             throw new
             CommandException( 5 , "Duplicated session id" ) ;
 
-        if( _userMetaProvider != null ){
-        	getUserMetadata( _user.getName(), _user.getRole() , _userMetaProvider ) ;
-        }
-        _cell.say("Door authenticated for "+
-        		_user.getName()+"("+_user.getRole()+","+_userUid+","+
-        _userGid+","+_userHome+")");
-        if( _authorizationStrong && ( _userUid < 0 ) ) {
-            throw new
-            CacheException( 2 , "User "+_user.getName()+" is not authorized") ;
+        if( _userAuthRecord == null ){
+            _userAuthRecord = getUserMetadata( _user.getName(), _user.getRole() ) ;
         }
 
         try{
@@ -794,15 +699,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
                     throw new
                     CommandException( 5 , "Duplicated session id" ) ;
 
-                if( _userMetaProvider != null ){
-                	getUserMetadata( _user.getName(), _user.getRole() , _userMetaProvider ) ;
-                }
-                _cell.say("Door authenticated for "+
-                		_user.getName()+"("+_user.getRole()+","+_userUid+","+
-                _userGid+","+_userHome+")");
-                if( _authorizationStrong && ( _userUid < 0 ) ) {
-                    throw new
-                    CacheException( 2 , "User "+_user.getName()+" is not authorized") ;
+                if( _userAuthRecord == null ){
+                    _userAuthRecord = getUserMetadata( _user.getName(), _user.getRole() ) ;
                 }
 
                 try{
@@ -835,15 +733,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
                     throw new
                     CommandException( 5 , "Duplicated session id" ) ;
 
-                if( _userMetaProvider != null ){
-                	getUserMetadata( _user.getName(), _user.getRole() , _userMetaProvider ) ;
-                }
-                _cell.say("Door authenticated for "+
-                		_user.getName()+"("+_user.getRole()+","+_userUid+","+
-                _userGid+","+_userHome+")");
-                if( _authorizationStrong && ( _userUid < 0 ) ) {
-                    throw new
-                    CacheException( 2 , "User "+_user.getName()+" is not authorized") ;
+                if( _userAuthRecord == null ){
+                    _userAuthRecord = getUserMetadata( _user.getName(), _user.getRole() ) ;
                 }
 
                 try{
@@ -875,30 +766,23 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
             throw new
             CommandException( 5 , "Duplicated session id" ) ;
 
-        if( _userMetaProvider != null ){
-        	getUserMetadata( _user.getName(), _user.getRole() , _userMetaProvider ) ;
-        }
-        _cell.say("Door authenticated for "+
-        		_user.getName()+"("+_user.getRole()+","+_userUid+","+
-        _userGid+","+_userHome+")");
-        if( _authorizationStrong && ( _userUid < 0 ) ) {
-            throw new
-            CacheException( 2 , "User "+_user.getName()+" is not authorized") ;
+        if( _userAuthRecord == null ){
+            _userAuthRecord = getUserMetadata( _user.getName(), _user.getRole() ) ;
         }
 
         try{
             //
             SessionHandler se =  new OpenDirHandler(sessionId,commandId,args);
 
-            // if user authentificated tell it to Session Handler
-            if( _userMetaProvider != null ) {
+            // if user authenticated tell it to Session Handler
+            if( _userAuthRecord != null ) {
 
                 se.setOwner( _user.getName() ) ;
-                if( _userUid >= 0 ) {
-                    se.setUid(_userUid );
+                if( _userAuthRecord.UID >= 0 ) {
+                    se.setUid(_userAuthRecord.UID );
                 }
-                if( _userGid >= 0 ) {
-                    se.setGid(_userGid );
+                if( _userAuthRecord.GID >= 0 ) {
+                    se.setGid(_userAuthRecord.GID );
                 }
             }
 
@@ -969,17 +853,9 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
             throw new
             CommandException( 5 , "Duplicated session id" ) ;
 
-        if( _userMetaProvider != null ){
-        	getUserMetadata( _user.getName(), _user.getRole() , _userMetaProvider ) ;
+        if( _userAuthRecord == null ){
+            _userAuthRecord = getUserMetadata( _user.getName(), _user.getRole() ) ;
         }
-        _cell.say("Door authenticated for "+
-        		_user.getName()+"("+_user.getRole()+","+_userUid+","+
-        _userGid+","+_userHome+")");
-        if( _authorizationStrong && ( _userUid < 0 ) ) {
-            throw new
-            CacheException( 2 , "User "+_user.getName()+" is not authorized") ;
-        }
-
 
         List<String> assumedLocations;
 
@@ -1309,7 +1185,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
                 _getStorageInfo.setPnfsPath( fileName ) ;
                 _info.setPath(fileName);
                 _isUrl     = true ;
-				_path = fileName;
+                _path = fileName;
             }
 
             say( "Requesting storageInfo for "+_getStorageInfo ) ;
@@ -1607,13 +1483,13 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
                     FileMetaData.Permissions world = meta.getWorldPermissions() ;
 
                     dirWriteAllowed =
-                    ( ( dirMeta.getUid() == _userUid ) && dirUser.canWrite()  ) ||
-                    ( ( dirMeta.getGid() == _userGid ) && dirGroup.canWrite() ) ||
+                    ( ( dirMeta.getUid() == _userAuthRecord.UID ) && dirUser.canWrite()  ) ||
+                    ( ( dirMeta.getGid() == _userAuthRecord.GID ) && dirGroup.canWrite() ) ||
                     dirWorld.canWrite() ;
 
                     fileWriteAllowed =
-                    ( ( meta.getUid() == _userUid ) && user.canWrite()  ) ||
-                    ( ( meta.getGid() == _userGid ) && group.canWrite() ) ||
+                    ( ( meta.getUid() == _userAuthRecord.UID ) && user.canWrite()  ) ||
+                    ( ( meta.getGid() == _userAuthRecord.GID ) && group.canWrite() ) ||
                     world.canWrite() ;
 
                 }catch(CacheException e) {
@@ -1623,7 +1499,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
 
                 if( ! (dirWriteAllowed  && fileWriteAllowed) || _readOnly) {
                     sb.append("failed 19 \"Permission denied\" EACCES");
-                    esay("Permission denied for user: " + _userUid +" grop: " + _userGid + "to unlink a file: "+path);
+                    esay("Permission denied for user: " + _userAuthRecord.UID +" grop: " + _userAuthRecord.GID + "to unlink a file: "+path);
                 }else{
 
                     try {
@@ -1671,7 +1547,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
 
             FileMetaData meta = _getFileMetaData.getMetaData() ;
 
-            if( _userUid == meta.getUid() ) {
+            if( _userAuthRecord.UID == meta.getUid() ) {
 
 
                 meta.setUserPermissions( new FileMetaData.Permissions ( (_permission >> 6 ) & 0x7 ) ) ;
@@ -1725,7 +1601,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
 
             FileMetaData meta = _getFileMetaData.getMetaData() ;
 
-            if( _userUid == meta.getUid() ) {
+            if( _userAuthRecord.UID == meta.getUid() ) {
 
                 if( _owner >= 0 ) {
                     meta.setUid( _owner );
@@ -1777,7 +1653,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
 
             FileMetaData meta = _getFileMetaData.getMetaData() ;
 
-            if( _userUid == meta.getUid() ) {
+            if( _userAuthRecord.UID == meta.getUid() ) {
 
                 if( _group >= 0 ) {
                     meta.setGid( _group );
@@ -1838,14 +1714,14 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
 
 
             fileWriteAllowed =
-            ( ( meta.getUid() == _userUid ) && user.canWrite()  ) ||
-            ( ( meta.getGid() == _userGid ) && group.canWrite() ) ||
+            ( ( meta.getUid() == _userAuthRecord.UID ) && user.canWrite()  ) ||
+            ( ( meta.getGid() == _userAuthRecord.GID ) && group.canWrite() ) ||
             world.canWrite() ;
 
 
             if( ! fileWriteAllowed || _readOnly) {
                 sb.append("failed 19 \"Permission denied\" EACCES");
-                esay("Permission denied for user: " + _userUid +" grop: " + _userGid + "to rename a file: "+ _pnfsId);
+                esay("Permission denied for user: " + _userAuthRecord.UID +" grop: " + _userAuthRecord.GID + "to rename a file: "+ _pnfsId);
             }else{
 
 
@@ -1897,9 +1773,9 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
 
             try {
 
-                if( ! _permissionHandler.canDeleteDir(_userUid, _userGid , path) ) {
+                if( ! _permissionHandler.canDeleteDir(_userAuthRecord.UID, _userAuthRecord.GID , path) ) {
                     sb.append("failed 19 \"Permission denied\" EACCES");
-                    esay("Permission denied for user: " + _userUid +" grop: " + _userGid + " to unlink a dir: "+path);
+                    esay("Permission denied for user: " + _userAuthRecord.UID +" grop: " + _userAuthRecord.GID + " to unlink a dir: "+path);
                 }else{
                     _pnfs.deletePnfsEntry( path );
                     sb.append("ok");
@@ -1956,8 +1832,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
                 String path = _getFileMetaData.getPnfsPath();
 
                 say("creating directory " + path + ", with mode=" + _perm);
-                if( _permissionHandler.canCreateDir(_userUid, _userGid , path) ) {
-                    _pnfs.createPnfsDirectory( path , _userUid, _userGid, _perm );
+                if( _permissionHandler.canCreateDir(_userAuthRecord.UID, _userAuthRecord.GID , path) ) {
+                    _pnfs.createPnfsDirectory( path , _userAuthRecord.UID, _userAuthRecord.GID, _perm );
                     sb.append("ok") ;
                 }else{
                     sb.append("failed 19 \"Permission denied\" EACCES");
@@ -2014,9 +1890,9 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
             _destination      = args.getOpt( "location" ) ;
             String protocolName = args.getOpt( "protocol" ) ;
             if( protocolName == null) {
-            	_protocolName     = "DCap/3" ;
+                _protocolName     = "DCap/3" ;
             }else{
-            	_protocolName     = protocolName ;
+                _protocolName     = protocolName ;
             }
             _assumedLocations = locations;
         }
@@ -2044,7 +1920,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
                 // we are not called if the pnfs request failed.
                 //
                 PoolMgrQueryPoolsMsg query =
-				  new PoolMgrQueryPoolsMsg( DirectionType.READ,
+                  new PoolMgrQueryPoolsMsg( DirectionType.READ,
                 _storageInfo.getStorageClass()+"@"+
                 _storageInfo.getHsm() ,
                 _storageInfo.getCacheClass() ,
@@ -2186,7 +2062,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
             //
             _protocolInfo = new DCapProtocolInfo( "DCap",3,0, _hosts , port  ) ;
             _protocolInfo.setSessionId( _sessionId ) ;
-            if( _isAuthorized ) {
+            if( _voInfo != null ) {
                 _protocolInfo.setVOInfo(_voInfo);
             }
 
@@ -2249,6 +2125,10 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
             if( _ioMode.equals("r") )
                 throw new
                 CacheException( 2 , "No such file or directory" );
+
+            if(_readOnly ) {
+                throw new CacheException( 2 , "Read only access allowed" );
+            }
             //
             // for now we regard each error as 'file not found'
             // (so we can create it);
@@ -2263,14 +2143,15 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
             FileMetaData.Permissions group = meta.getGroupPermissions();
             FileMetaData.Permissions world = meta.getWorldPermissions() ;
             boolean writeAllowed =
-            ( ( meta.getUid() == _userUid ) && user.canWrite()  ) ||
-            ( ( meta.getGid() == _userGid ) && group.canWrite() ) ||
+            ( ( meta.getUid() == _userAuthRecord.UID ) && user.canWrite()  ) ||
+            ( ( meta.getGid() == _userAuthRecord.GID ) && group.canWrite() ) ||
             world.canWrite() ;
             //
-            if( _authorizationStrong && ( _userUid < 0 ) )
+            if( _authorizationStrong && ( _userAuthRecord.UID < 0 ) )
                 throw new
                 CacheException( 2 , "No Meta data found for user : "+_user.getName() ) ;
-            if( ! writeAllowed || _readOnly)
+
+            if( ! writeAllowed )
                 throw new
                 CacheException( 2 , "Permission denied (Parent)" );
 
@@ -2283,8 +2164,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
             }
             PnfsCreateEntryMessage pnfsEntry =
             _pnfs.createPnfsEntry( _getStorageInfo.getPnfsPath() ,
-            _userUid < 0 ? uid : _userUid ,
-            _userGid < 0 ? 0 : _userGid ,
+            _userAuthRecord.UID < 0 ? uid : _userAuthRecord.UID ,
+            _userAuthRecord.GID < 0 ? 0 : _userAuthRecord.GID ,
             mode ) ;
 
             _cell.say("storageInfoNotAvailable : created pnfsid : "
@@ -2317,12 +2198,12 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
             FileMetaData.Permissions group = meta.getGroupPermissions();
             FileMetaData.Permissions world = meta.getWorldPermissions() ;
             boolean writeAllowed = _isUrl  ||
-            ( ( meta.getUid() == _userUid ) && user.canWrite()  ) ||
-            ( ( meta.getGid() == _userGid ) && group.canWrite() ) ||
+            ( ( meta.getUid() == _userAuthRecord.UID ) && user.canWrite()  ) ||
+            ( ( meta.getGid() == _userAuthRecord.GID ) && group.canWrite() ) ||
             world.canWrite() ;
             boolean readAllowed =
-            ( ( meta.getUid() == _userUid ) && user.canRead()  ) ||
-            ( ( meta.getGid() == _userGid ) && group.canRead() ) ||
+            ( ( meta.getUid() == _userAuthRecord.UID ) && user.canRead()  ) ||
+            ( ( meta.getGid() == _userAuthRecord.GID ) && group.canRead() ) ||
             world.canRead() ;
 
             if( _storageInfo.isCreatedOnly() || _overwrite || _truncate ||
@@ -2367,7 +2248,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
                             String path = _getStorageInfo.getPnfsPath() ;
                             _cell.say("truncating path " + path );
                             _pnfs.deletePnfsEntry( path );
-                            _getStorageInfo =   _pnfs.createPnfsEntry( path , _userUid, _userGid, 0644 ) ;
+                            _getStorageInfo =   _pnfs.createPnfsEntry( path , _userAuthRecord.UID, _userAuthRecord.GID, 0644 ) ;
                             _pnfsId = _getStorageInfo.getPnfsId() ;
                             _storageInfo = _getStorageInfo.getStorageInfo() ;
                         }else{
@@ -2400,21 +2281,21 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
                 // adjust accessLatency and retention policy if it' allowed and defined
 
                 if( _isAccessLatencyOverwriteAllowed && _accessLatency != null ) {
-                	try {
-                		AccessLatency accessLatency = AccessLatency.getAccessLatency(_accessLatency);
-                		_storageInfo.setAccessLatency(accessLatency);
-                		_storageInfo.isSetAccessLatency(true);
+                    try {
+                        AccessLatency accessLatency = AccessLatency.getAccessLatency(_accessLatency);
+                        _storageInfo.setAccessLatency(accessLatency);
+                        _storageInfo.isSetAccessLatency(true);
 
-                	}catch(IllegalArgumentException e) { /* bad AccessLatency ignored*/}
+                    }catch(IllegalArgumentException e) { /* bad AccessLatency ignored*/}
                 }
 
                 if( _isRetentionPolicyOverwriteAllowed && _retentionPolicy != null ) {
-                	try {
-                		RetentionPolicy retentionPolicy = RetentionPolicy.getRetentionPolicy(_retentionPolicy);
-                		_storageInfo.setRetentionPolicy(retentionPolicy);
-                		_storageInfo.isSetRetentionPolicy(true);
+                    try {
+                        RetentionPolicy retentionPolicy = RetentionPolicy.getRetentionPolicy(_retentionPolicy);
+                        _storageInfo.setRetentionPolicy(retentionPolicy);
+                        _storageInfo.isSetRetentionPolicy(true);
 
-                	}catch(IllegalArgumentException e) { /* bad RetentionPolicy ignored*/}
+                    }catch(IllegalArgumentException e) { /* bad RetentionPolicy ignored*/}
                 }
 
 
@@ -2519,10 +2400,10 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
                 removeUs() ;
                 return ;
             }
-            
+
             // use the updated StorageInfo from PoolManager/SpaceManager
             _storageInfo = reply.getStorageInfo();
-                        
+
             _pool = pool ;
             PoolIoFileMessage poolMessage  = null ;
 
@@ -2668,7 +2549,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
             append(" connect ").append(poolSocketAddress.getHostName() ).
             append(" ").append(poolSocketAddress.getPort() ).append(" ").
             append(diskCacheV111.util.Base64.byteArrayToBase64(reply.challange()) );
-            ;
+
             println( sb.toString() ) ;
             setStatus( "WaitingForDoorTransferOk" ) ;
 
@@ -2762,25 +2643,25 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
 
             PoolIoFileMessage poolIoFileMessage = new PoolIoFileMessage(_pool,_pnfsId, _protocolInfo);
 
-			poolIoFileMessage.setId(_sessionId);
-			if (_ioQueueName != null) {
-				poolIoFileMessage.setIoQueueName(_ioQueueName);
-			}
-			if (_ioQueueAllowOverwrite && (_ioHandlerQueue != null)
-					&& (_ioHandlerQueue.length() > 0)) {
-				poolIoFileMessage.setIoQueueName(_ioHandlerQueue);
-			}
+            poolIoFileMessage.setId(_sessionId);
+            if (_ioQueueName != null) {
+                poolIoFileMessage.setIoQueueName(_ioQueueName);
+            }
+            if (_ioQueueAllowOverwrite && (_ioHandlerQueue != null)
+                    && (_ioHandlerQueue.length() > 0)) {
+                poolIoFileMessage.setIoQueueName(_ioHandlerQueue);
+            }
 
-			synchronized (_messageLock) {
-				try {
-					_cell.sendMessage(new CellMessage(new CellPath(_pool),
-							poolIoFileMessage));
-				} catch (Exception ie) {
-					sendReply("poolMgrGetPoolArrived", 2, ie.toString());
-					removeUs();
-					return;
-				}
-			}
+            synchronized (_messageLock) {
+                try {
+                    _cell.sendMessage(new CellMessage(new CellPath(_pool),
+                            poolIoFileMessage));
+                } catch (Exception ie) {
+                    sendReply("poolMgrGetPoolArrived", 2, ie.toString());
+                    removeUs();
+                    return;
+                }
+            }
 
 
 
@@ -2826,8 +2707,8 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
         pw.println( " ----- DCapDoorInterpreterV3 ----------" ) ;
         pw.println( "      pid  = "+_pid ) ;
         pw.println( "      uid  = "+_uid ) ;
-        pw.println( "(auth)uid  = "+_userUid ) ;
-        pw.println( "(auth)gid  = "+_userGid ) ;
+        pw.println( "(auth)uid  = "+_userAuthRecord.UID ) ;
+        pw.println( "(auth)gid  = "+_userAuthRecord.GID ) ;
         pw.println( "     home  = "+(_userHome==null?"?":_userHome) ) ;
         pw.println( "  Version  = "+_majorVersion+"/"+_minorVersion ) ;
         pw.println( "  VLimits  = "+
@@ -2840,6 +2721,39 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
             pw.println( session.getKey().toString()+ " -> "+session.getValue().toString() );
         }
     }
+
+    @SuppressWarnings("deprecation")
+    private UserAuthRecord getUserMetadata(String name, String role) throws CacheException {
+
+        UserAuthRecord user = null ;
+
+        if( _authService != null ) {
+            try {
+                user = _authService.getUserRecord(_cell, name, role, _cell.getArgs());
+                _voInfo = new VOInfo(user.getGroup(), user.getRole() );
+            } catch (AuthorizationException e) {
+                user = new UserAuthRecord("nobody", name, role, true, 0, -1, -1, "/", "/", "/", new HashSet<String>(0)) ;
+            }
+        }else{
+            user = new UserAuthRecord("nobody", name, role, true, 0, -1, -1, "/", "/", "/", new HashSet<String>(0)) ;
+        }
+
+        _cell.say("Door authenticated for "+
+                _user.getName()+"("+_user.getRole()+","+user.UID+","+
+                user.GID+","+_userHome+")");
+
+        /*
+         * this block could be part of the catch {} , but
+         * in future, gPlazma can return nobody record. So let check it here
+         */
+        if( _authorizationStrong && ( user.UID < 0 ) ) {
+            throw new
+            CacheException( 2 , "User "+name+" role: "+  role +" is not authorized") ;
+        }
+
+        return user;
+    }
+
     public void   messageArrived( CellMessage msg ){
         Object         object  = msg.getMessageObject();
         SessionHandler handler = null ;
@@ -2891,6 +2805,5 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
 
         }
     }
-
 
 }
