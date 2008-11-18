@@ -934,6 +934,12 @@ billingDb=${ourHomeDir}/billing
 #billingDbUer=srmdcache
 #billingDbPass=srmdcache
 #billingDbName=billing
+#billingDbCommitRows=100
+#billingDbCommitIntervalInMilliseconds=30000
+# the following enables using pgfile, which is disabled by 
+#billingDbPgPassFileName=/root/.pgpass
+
+
 
 
 
