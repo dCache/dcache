@@ -54,11 +54,22 @@ import org.apache.log4j.Logger;
  * job does not terminate, even if its transfer queue becomes
  * empty. Permanent jobs are saved to the pool setup file and restored
  * on pool start. (PERMANENT JOBS HAVE NOT BEEN IMPLEMENTD YET!)
+ *
+ *
+ * Jobs can be in any of the following states:
+ *
+ * INITIALIZING   Initial scan of repository
+ * RUNNING        Job runs (schedules new tasks)
+ * SLEEPING       A task failed; no tasks are scheduled for 10 seconds
+ * SUSPENDED      Job suspended by user; no tasks are scheduled
+ * CANCELLING     Job cancelled by user; waiting for tasks to stop
+ * CANCELLED      Job cancelled by user; no tasks are running
+ * FINISHED       Job completed
  */
 public class Job
     implements StateChangeListener
 {
-    enum State { INITIALIZING, RUNNING, SUSPENDED,
+    enum State { INITIALIZING, RUNNING, SLEEPING, SUSPENDED, 
             CANCELLING, CANCELLED, FINISHED }
 
     private final static Logger _log = Logger.getLogger(Job.class);
@@ -196,7 +207,7 @@ public class Job
     public synchronized void cancel(boolean force)
     {
         if (_state != State.RUNNING && _state != State.SUSPENDED 
-            && _state != State.CANCELLING) {
+            && _state != State.CANCELLING && _state != State.SLEEPING) {
             throw new IllegalStateException("The job cannot be cancelled in its present state");
         }
         if (_running.size() == 0) {
@@ -216,7 +227,7 @@ public class Job
      */
     public synchronized void suspend()
     {
-        if (_state != State.RUNNING) {
+        if (_state != State.RUNNING && _state != State.SLEEPING) {
             throw new IllegalStateException("Cannot suspend a job that does not run");
         }
         setState(State.SUSPENDED);
@@ -248,19 +259,34 @@ public class Job
      */
     private synchronized void setState(State state)
     {
-        _state = state;
-        switch (_state) {
-        case RUNNING:
-            schedule();
-            break;
-
-        case FINISHED:
-        case CANCELLED:
-            _queued.clear();
-            _sizes.clear();
-            _configuration.getRepository().removeListener(this);
-            _refreshTask.cancel(false);
-            break;
+        if (_state != state) {
+            _state = state;
+            switch (_state) {
+            case RUNNING:
+                schedule();
+                break;
+                
+            case SLEEPING:
+                _configuration.getExecutor().schedule(new LoggingTask(new Runnable() {
+                        public void run() 
+                        {
+                            synchronized (Job.this) {
+                                if (getState() == State.SLEEPING) {
+                                    setState(State.RUNNING);
+                                }
+                            }
+                        }
+                    }), 10, TimeUnit.SECONDS);
+                break;
+                
+            case FINISHED:
+            case CANCELLED:
+                _queued.clear();
+                _sizes.clear();
+                _configuration.getRepository().removeListener(this);
+                _refreshTask.cancel(false);
+                break;
+            }
         }
     }
 
@@ -375,7 +401,8 @@ public class Job
         if (task == _running.remove(pnfsId)) {
             _queued.add(pnfsId);
         }
-        schedule();
+
+        setState(State.SLEEPING);
     }
 
     /** Callback from task: Task is done, remove it. */
