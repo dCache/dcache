@@ -127,6 +127,9 @@ public class ChimeraOsmStorageInfoExtractor implements
         try {
 
             String[] OSMTemplate = getTag(dirInode, "OSMTemplate");
+            if (OSMTemplate == null) {
+                throw new CacheException(37, "OSMTemplate tag not found");
+            }
             HashMap<String, String> hash = new HashMap<String, String>();
 
             for ( String line: OSMTemplate) {
