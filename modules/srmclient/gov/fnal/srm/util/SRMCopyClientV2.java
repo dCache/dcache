@@ -1,6 +1,6 @@
 //______________________________________________________________________________
 //
-// $Id: SRMCopyClientV2.java 10230 2008-09-24 19:04:23Z litvinse $
+// $Id: SRMCopyClientV2.java 10614 2008-11-20 20:56:09Z litvinse $
 // $Author: litvinse $
 //
 // Pull mode: copy from remote location to SRM. (e.g. from
@@ -185,12 +185,19 @@ public class SRMCopyClientV2 extends SRMClient implements Runnable {
             }
             hook = new Thread(this);
             Runtime.getRuntime().addShutdownHook(hook);
-            if(storagetype.equals("volatile")){
-                req.setTargetFileStorageType(TFileStorageType.VOLATILE);
-            }else if(storagetype.equals("durable")){
-                req.setTargetFileStorageType(TFileStorageType.DURABLE);
-            }else{
-                req.setTargetFileStorageType(TFileStorageType.PERMANENT);
+            if (storagetype!=null) { 
+                    if(storagetype.equals("volatile")){
+                            req.setTargetFileStorageType(TFileStorageType.VOLATILE);
+                    }
+                    else if(storagetype.equals("durable")){
+                            req.setTargetFileStorageType(TFileStorageType.DURABLE);
+                    }
+                    else if (storagetype.equals("permanent")) {
+                            req.setTargetFileStorageType(TFileStorageType.PERMANENT);
+                    }
+                    else { 
+                            throw new IllegalArgumentException("Unknown storage type \"" +storagetype+"\"");
+                    }
             }
             req.setDesiredTotalRequestTime(new Integer((int)configuration.getRequestLifetime()));
             TRetentionPolicy retentionPolicy = null;
@@ -235,7 +242,7 @@ public class SRMCopyClientV2 extends SRMClient implements Runnable {
                 throw new IOException(" null SrmCopyResponse");
             }
             TReturnStatus rs     = resp.getReturnStatus();
-            requestToken    = resp.getRequestToken();
+            requestToken         = resp.getRequestToken();
             dsay(" srm returned requestToken = "+requestToken);
             if ( rs == null) {
                 throw new IOException(" null TReturnStatus ");
@@ -249,7 +256,6 @@ public class SRMCopyClientV2 extends SRMClient implements Runnable {
                         rs.getStatusCode()+" explanation="+rs.getExplanation());
                 
             }
-
             TCopyRequestFileStatus[] arrayOfStatuses =
                     resp.getArrayOfFileStatuses().getStatusArray();
             if ( arrayOfStatuses.length != len ) {
@@ -383,10 +389,11 @@ public class SRMCopyClientV2 extends SRMClient implements Runnable {
                 }
             }
         } catch(Exception e) {
-            say(e.toString());
+            logger.elog(e);
             try {
                 abortAllPendingFiles();
-            }catch(Exception e1) {
+            }
+            catch(Exception e1) {
                 logger.elog(e1);
             }
         } finally {
@@ -412,6 +419,7 @@ public class SRMCopyClientV2 extends SRMClient implements Runnable {
         if (pendingSurlsMap.isEmpty()) {
             return;
         }
+        if (requestToken==null) return;
         String[] surl_strings = (String[])pendingSurlsMap.keySet().toArray(new String[0]);
         int len = surl_strings.length;
         say("Releasing all remaining file requests");
