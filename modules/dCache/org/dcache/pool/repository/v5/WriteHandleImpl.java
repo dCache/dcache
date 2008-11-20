@@ -30,6 +30,12 @@ class WriteHandleImpl implements WriteHandle
     private static Logger _log =
         Logger.getLogger("logger.org.dcache.repository");
 
+    /**
+     * Time that a new CACHED file with no sticky flags will be marked
+     * sticky.
+     */
+    private static long HOLD_TIME = 5 * 60 * 1000; // 5 minutes
+
     private final CacheRepositoryV5 _repository;
 
     /** Space allocation is delegated to this space monitor. */
@@ -226,6 +232,18 @@ class WriteHandleImpl implements WriteHandle
              * start.
              */
             _pnfs.addCacheLocation(_entry.getPnfsId());
+
+            /* In several situations, dCache requests a CACHED file
+             * without having any sticky flags on it. Such files are
+             * subject to immediate garbage collection if we are short
+             * on disk space. Thus to give other clients time to
+             * access the file, we mark it sticky for a short amount
+             * of time.
+             */
+            if (_targetState == EntryState.CACHED && _stickyRecords.isEmpty()) {
+                long now = System.currentTimeMillis();
+                _entry.setSticky("self", now + HOLD_TIME, false);
+            }
 
             /* Move entry to target state.
              */
