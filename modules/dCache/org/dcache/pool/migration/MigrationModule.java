@@ -540,7 +540,15 @@ public class MigrationModule
     public final static String hh_migration_info =
         "<job>";
     public final static String fh_migration_info =
-        "Shows detailed information about a migration job.";
+        "Shows detailed information about a migration job. Possible\n" +
+        "job states are:\n\n" +
+        "   INITIALIZING   Initial scan of repository\n" + 
+        "   RUNNING        Job runs (schedules new tasks)\n" +
+        "   SLEEPING       A task failed; no tasks are scheduled for 10 seconds\n" +
+        "   SUSPENDED      Job suspended by user; no tasks are scheduled\n" +
+        "   CANCELLING     Job cancelled by user; waiting for tasks to stop\n" +
+        "   CANCELLED      Job cancelled by user; no tasks are running\n" +
+        "   FINISHED       Job completed";
     public synchronized String ac_migration_info_$_1(Args args)
         throws NoSuchElementException
     {
