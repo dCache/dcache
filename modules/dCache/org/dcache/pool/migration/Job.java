@@ -193,17 +193,20 @@ public class Job
     /**
      * Cancels a job. All running tasks are cancelled.
      */
-    public synchronized void cancel()
+    public synchronized void cancel(boolean force)
     {
-        if (_state != State.RUNNING && _state != State.SUSPENDED) {
-            throw new IllegalStateException("Job must run or be suspended to be cancelled");
+        if (_state != State.RUNNING && _state != State.SUSPENDED 
+            && _state != State.CANCELLING) {
+            throw new IllegalStateException("The job cannot be cancelled in its present state");
         }
         if (_running.size() == 0) {
             setState(State.CANCELLED);
         } else {
             setState(State.CANCELLING);
-            for (Task task: _running.values()) {
-                task.cancel();
+            if (force) {
+                for (Task task: _running.values()) {
+                    task.cancel();
+                }
             }
         }
     }

@@ -485,14 +485,18 @@ public class MigrationModule
     }
 
     public final static String hh_migration_cancel =
-        "<job>";
+        "[-force] <job>";
     public final static String fh_migration_cancel =
-        "Cancels a migration job. Ongoing transfers are killed.";
+        "Cancels a migration job.\n\n" +
+        "Options:\n" +
+        "  -force\n" +
+        "     Kill ongoing transfers.\n";
     public String ac_migration_cancel_$_1(Args args)
     {
         int id = Integer.valueOf(args.argv(0));
+        boolean force = (args.getOpt("force") != null);
         Job job = getJob(id);
-        job.cancel();
+        job.cancel(force);
         return String.format("[%d] Cancelling    %s", id, _commands.get(job));
     }
 
