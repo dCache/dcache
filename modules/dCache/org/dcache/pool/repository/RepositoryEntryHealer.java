@@ -36,7 +36,7 @@ public class RepositoryEntryHealer
         "meta data, but %3$d in replica.";
     private final static String PARTIAL_FROM_CLIENT_MSG =
         "%1$s is incomplete. Recovering meta data from PNFS and " +
-        "marking replica as bad.";
+        "marking replica as CACHED and STICKY.";
     private final static String PARTIAL_FROM_TAPE_MSG =
         "%1$s is not fully staged. Deleting replica.";
     private final static String MISSING_SI_MSG =
@@ -220,6 +220,22 @@ public class RepositoryEntryHealer
         if (entry == null) {
             _log.warn("Missing meta data for " + id);
             entry = reconstruct(file, id);
+        } else if (entry.isBad()) {
+            /* Make sure that the cache location is registered and
+             * remove the replica if the file has been deleted, but
+             * otherwise leave the entry as it is.
+             */
+            try {
+                _pnfsHandler.addCacheLocation(id);
+            } catch (CacheException e) {
+                if (e.getRc() == CacheException.FILE_NOT_FOUND) {
+                    _log.warn(id + " was deleted. Removing replica...");
+                    _metaRepository.remove(id);
+                    file.delete();
+                    _pnfsHandler.clearCacheLocation(id);
+                    return null;
+                }
+            }
         } else if (entry.isReceivingFromClient()) {
             _log.warn(String.format(PARTIAL_FROM_CLIENT_MSG, id));
 
@@ -252,7 +268,7 @@ public class RepositoryEntryHealer
             _metaRepository.remove(id);
             file.delete();
             return null;
-        } else if (entry.isBad() || !(entry.isCached() || entry.isPrecious())) {
+        } else if (!entry.isCached() && !entry.isPrecious()) {
             /* Make sure that the cache location is registered and
              * remove the replica if the file has been deleted, but
              * otherwise leave the entry as it is.
