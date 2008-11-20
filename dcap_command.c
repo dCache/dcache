@@ -68,7 +68,7 @@ int do_command_welcome(char **argv, asciiMessage *result)
 int do_command_dummy(char **argv, asciiMessage *result)
 {
 	int i=0;
-	system_write(2, "Unknow replay from server: \"", 28);
+	system_write(2, "Unknown replay from server: \"", 28);
 
 	while(argv[i] != NULL ){
 		system_write(2, argv[i], strlen(argv[i]) );
@@ -153,7 +153,7 @@ int do_command_shutdown(char **argv, asciiMessage *result)
 int do_command_connect(char **argv, asciiMessage *result)
 {	
 	poolConnectInfo *pool;
-	dc_debug(DC_INFO, "'connect to %s:%s' recived for [%d]", argv[1], argv[2], result->destination);
+	dc_debug(DC_INFO, "'connect to %s:%s' received for [%d]", argv[1], argv[2], result->destination);
 	
 	pool = (poolConnectInfo *)malloc( sizeof(poolConnectInfo) );
 
