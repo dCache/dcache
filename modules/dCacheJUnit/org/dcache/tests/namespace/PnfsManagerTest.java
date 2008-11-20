@@ -231,29 +231,40 @@ public class PnfsManagerTest {
         assertEquals("Invalid entry in storageInfo map", writeToken, storageInfo.getMap().get("writeToken") );
 
     }
-    
-    
+
+
     @Test
     public void testRemoveByPath() throws ChimeraFsException {
-        
-     
+
+
         PnfsCreateEntryMessage pnfsCreateEntryMessage = new PnfsCreateEntryMessage("/pnfs/testRoot/testRemoveByPath");
 
         _pnfsManager.createEntry(pnfsCreateEntryMessage);
-        
-        
+
+
         PnfsDeleteEntryMessage deleteEntryMessage = new PnfsDeleteEntryMessage("/pnfs/testRoot/testRemoveByPath");
         _pnfsManager.deleteEntry(deleteEntryMessage);
-        
+
         try {
-            
+
             _fs.path2inode("/pnfs/testRoot/testRemoveByPath");
-            fail("remove by path did not removed file from filesystem");            
+            fail("remove by path did not removed file from filesystem");
         }catch(FileNotFoundHimeraFsException fnf) {
             // OK
         }
     }
 
+
+
+    @Test
+    public void testGetStorageInfoNoTags() throws ChimeraFsException {
+
+        FsInode rootInode = _fs.path2inode("/pnfs");
+        PnfsGetStorageInfoMessage pnfsGetStorageInfoMessage = new PnfsGetStorageInfoMessage(new PnfsId(rootInode.toString()));
+        _pnfsManager.getStorageInfo(pnfsGetStorageInfoMessage);
+
+        // I don't know yet what is expected reply, but not NPE !
+    }
 
     @Test
     @Ignore
