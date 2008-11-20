@@ -36,11 +36,11 @@ class PoolIOWriteTransfer
     extends PoolIOTransfer
 {
     private final WriteHandle _handle;
-    private final ChecksumFactory _checksumFactory;
     private final File _file;
     private final ChecksumModuleV1 _checksumModule;
     private final SpaceMonitor _monitor;
 
+    private ChecksumFactory _checksumFactory;
     private Checksum _clientChecksum;
     private Checksum _transferChecksum;
     private boolean _success = false;
@@ -70,21 +70,6 @@ class PoolIOWriteTransfer
         }
     }
 
-    private static ChecksumFactory getChecksumFactory(ChecksumModuleV1 cm,
-                                                      MoverProtocol mover,
-                                                      ProtocolInfo info)
-    {
-        ChecksumFactory factory = null;
-        if (mover instanceof ChecksumMover) {
-            factory =
-                ((ChecksumMover)mover).getChecksumFactory(info);
-        }
-        if (factory == null) {
-            factory = cm.getDefaultChecksumFactory();
-        }
-        return factory;
-    }
-
     public PoolIOWriteTransfer(PnfsId pnfsId,
                                ProtocolInfo protocolInfo,
                                StorageInfo storageInfo,
@@ -96,8 +81,6 @@ class PoolIOWriteTransfer
         super(pnfsId, protocolInfo, storageInfo, mover);
 
         _checksumModule = checksumModule;
-        _checksumFactory =
-            getChecksumFactory(checksumModule, mover, protocolInfo);
 
         /* Due to support of <AccessLatency> and <RetentionPolicy>
          * the file state in the pool has changed it's meaning:
@@ -145,6 +128,11 @@ class PoolIOWriteTransfer
                 if (_checksumModule.checkOnTransfer() &&
                     _mover instanceof ChecksumMover) {
                     ChecksumMover cm = (ChecksumMover)_mover;
+                    _checksumFactory = cm.getChecksumFactory(_protocolInfo);
+                    if (_checksumFactory == null) {
+                        _checksumFactory = 
+                            _checksumModule.getDefaultChecksumFactory();
+                    }
                     cm.setDigest(_checksumFactory.create());
                     runMover(raf);
                     _clientChecksum = cm.getClientChecksum();
@@ -175,6 +163,11 @@ class PoolIOWriteTransfer
     {
         try {
             if (_success) {
+                if (_checksumFactory == null) {
+                    _checksumFactory = 
+                        _checksumModule.getDefaultChecksumFactory();
+                }
+
                 _checksumModule.setMoverChecksums(_pnfsId,
                                                   _file,
                                                   _checksumFactory,
