@@ -1,12 +1,18 @@
 // $Id: PnfsGetFileMetaDataMessage.java,v 1.4 2004-11-05 12:07:19 tigran Exp $
 package diskCacheV111.vehicles ;
-import  diskCacheV111.util.* ;
 
-import diskCacheV111.util.* ;
+import diskCacheV111.util.FileMetaData;
+import diskCacheV111.util.PnfsId;
+import java.util.Set;
+import org.dcache.util.Checksum;
+
 public class PnfsGetFileMetaDataMessage extends PnfsMessage {
 
     private FileMetaData _metaData    = null ; 
     private boolean      _resolve     = true ;
+    private boolean _checksumsRequested = false ;
+
+    private Set<Checksum> _checksums = null;
     
     private static final long serialVersionUID = 1591894346369251468L;
     
@@ -30,4 +36,27 @@ public class PnfsGetFileMetaDataMessage extends PnfsMessage {
     }
     public void setResolve( boolean resolve ){ _resolve = resolve ; }
     public boolean resolve(){ return _resolve ; }
+
+    public void setChecksums(Set<Checksum> checksums)
+    {
+        _checksums = checksums;
+    }
+
+    public Set<Checksum> getChecksums()
+    {
+        return _checksums;
+    }
+
+    public boolean isChecksumsRequested() {
+        return _checksumsRequested;
+    }
+
+    public void setChecksumsRequested(boolean checksumsRequested) {
+        _checksumsRequested = checksumsRequested;
+    }
+    
+    public void requestChecksum() {
+        _checksumsRequested = true;
+    }
+
 }

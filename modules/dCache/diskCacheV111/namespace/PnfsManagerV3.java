@@ -723,6 +723,9 @@ public class PnfsManagerV3 extends CellAdapter {
         int    type      = msg.getType();
 
         try{
+            if(pnfsId == null ) {
+                throw new InvalidMessageCacheException("no pnfsid defined");
+            }
             String checksumValue = _nameSpaceProvider.getChecksum(pnfsId,type);
             msg.setValue(checksumValue);
         }catch( CacheException e ){
@@ -1132,6 +1135,9 @@ public class PnfsManagerV3 extends CellAdapter {
             pnfsMessage.setSucceeded() ;
             say( "Storage info "+info ) ;
             pnfsMessage.setMetaData( _nameSpaceProvider.getFileMetaData( pnfsId ) ) ;
+            if (pnfsMessage.isChecksumsRequested()) {
+                pnfsMessage.setChecksums(_nameSpaceProvider.getChecksums(pnfsId));
+            }
 
         }catch(FileNotFoundCacheException fnf) {
         	pnfsMessage.setFailed( CacheException.FILE_NOT_FOUND , fnf.getMessage() ) ;
@@ -1182,6 +1188,11 @@ public class PnfsManagerV3 extends CellAdapter {
             pnfsMessage.setPnfsId( pnfsId ) ;
             pnfsMessage.setSucceeded() ;
             pnfsMessage.setMetaData( _nameSpaceProvider.getFileMetaData( pnfsId ) ) ;
+
+            if (pnfsMessage.isChecksumsRequested()) {
+                pnfsMessage.setChecksums(_nameSpaceProvider.getChecksums(pnfsId));
+            }
+
 
         }catch(FileNotFoundCacheException fnf ) {
         	pnfsMessage.setFailed( CacheException.FILE_NOT_FOUND , fnf.getMessage() ) ;

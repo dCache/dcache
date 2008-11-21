@@ -7,6 +7,8 @@ package diskCacheV111.namespace;
 
 import diskCacheV111.util.FileMetaData;
 import diskCacheV111.util.PnfsId;
+import org.dcache.util.Checksum;
+import java.util.Set;
 
 public interface NameSpaceProvider extends DcacheNameSpaceProvider {
 
@@ -88,5 +90,7 @@ public interface NameSpaceProvider extends DcacheNameSpaceProvider {
 
 
     int[] listChecksumTypes(PnfsId pnfsId) throws Exception;
+    
+    Set<Checksum> getChecksums(PnfsId pnfsId) throws Exception;
 
 }

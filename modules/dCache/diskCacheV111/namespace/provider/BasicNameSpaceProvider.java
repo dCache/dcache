@@ -33,6 +33,7 @@ import diskCacheV111.util.StorageInfoExtractable;
 import diskCacheV111.util.PnfsFile.VirtualMountPoint;
 import diskCacheV111.vehicles.CacheInfo;
 import diskCacheV111.vehicles.StorageInfo;
+import org.dcache.util.Checksum;
 import dmg.cells.nucleus.CellNucleus;
 import dmg.util.Args;
 
@@ -583,6 +584,11 @@ public class BasicNameSpaceProvider implements NameSpaceProvider, StorageInfoPro
     {
         return _attChecksumImpl.getChecksum(pnfsId,type);
     }
+    
+    public Set<Checksum> getChecksums(PnfsId pnfsId) throws Exception {
+        return _attChecksumImpl.getChecksums(pnfsId);
+    }
+    
     public void removeChecksum(PnfsId pnfsId, int type) throws Exception
     {
         _attChecksumImpl.removeChecksum(pnfsId,type);
