@@ -8,6 +8,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.HashSet;
 import java.util.ArrayList;
 
 import org.apache.log4j.Logger;
@@ -35,6 +36,8 @@ import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.util.FileNotFoundCacheException;
 import dmg.cells.nucleus.CellNucleus;
 import dmg.util.Args;
+import org.dcache.util.Checksum;
+import org.dcache.util.ChecksumType;
 
 
 public class ChimeraNameSpaceProvider implements NameSpaceProvider, StorageInfoProvider, CacheLocationProvider {
@@ -390,7 +393,23 @@ public class ChimeraNameSpaceProvider implements NameSpaceProvider, StorageInfoP
     	_fs.removeInodeChecksum(new FsInode(_fs, pnfsId.toString()), type);
     }
 
-
+    public Set<Checksum> getChecksums(PnfsId pnfsId) throws Exception {
+        Set<Checksum> checksums = new HashSet<Checksum>();
+        for(ChecksumType type:ChecksumType.values()) {
+            int int_type = type.getType();
+            String value = null;
+            try {
+                value = getChecksum(pnfsId, int_type);
+            }
+            catch(Exception e) {}
+            if(value != null) {
+                checksums.add(new Checksum(type,value));
+            }
+            
+        }
+        return checksums;
+    }
+    
     public int[] listChecksumTypes(PnfsId pnfsId ) throws Exception
     {
         return null;
