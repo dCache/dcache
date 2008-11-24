@@ -198,7 +198,7 @@ public class RepositoryEntryHealer
     {
         File file = _dataRepository.get(id);
         if (!file.isFile()) {
-            throw new IllegalArgumentException("File not does exist: " + id);
+            throw new IllegalArgumentException("File does not exist: " + id);
         }
 
         long length = file.length();
@@ -234,6 +234,10 @@ public class RepositoryEntryHealer
                     file.delete();
                     _pnfsHandler.clearCacheLocation(id);
                     return null;
+                } else if (e.getRc() == CacheException.NOT_IN_TRASH) {
+                    _log.warn(id + " is not in trash. Keep replica...");
+                } else {
+                    throw e;
                 }
             }
         } else if (entry.isReceivingFromClient()) {
@@ -258,8 +262,9 @@ public class RepositoryEntryHealer
                     file.delete();
                 } else if (e.getRc() == CacheException.NOT_IN_TRASH) {
                     _log.warn(id + " is not in trash. Keep replica...");
-                } else
+                } else {
                     throw e;
+                }
             }
         } else if (entry.isReceivingFromStore()) {
             // it's safe to remove partialyFromStore file, we have a
@@ -283,9 +288,15 @@ public class RepositoryEntryHealer
                     file.delete();
                     _pnfsHandler.clearCacheLocation(id);
                     return null;
+                } else if (e.getRc() == CacheException.NOT_IN_TRASH) {
+                    _log.warn(id + " is not in trash. Keep replica...");
+                } else {
+                    throw e;
                 }
             }
-        } else if (entry.getStorageInfo() == null) {
+        } 
+
+        if (entry.getStorageInfo() == null) {
             _log.warn(String.format(MISSING_SI_MSG, id));
             _metaRepository.remove(id);
             entry = reconstruct(file, id);

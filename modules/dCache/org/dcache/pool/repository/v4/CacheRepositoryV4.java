@@ -440,6 +440,10 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
             /* Collect all entries.
              */
             for (PnfsId id: ids) {
+                if (_log.isDebugEnabled()) {
+                    _log.debug("Reading meta data of " + id);
+                }
+ 
                 CacheRepositoryEntry entry = readEntry(healer, id);
                 if (entry == null)  {
                     continue;
@@ -449,10 +453,6 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
                 usedDataSpace += size;
                 if (isRemovable(entry)) {
                     removableSpace += size;
-                }
-
-                if (_log.isDebugEnabled()) {
-                    _log.debug(id +" " + entry.getState());
                 }
 
                 _allEntries.put(id, entry);

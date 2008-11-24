@@ -764,6 +764,7 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
                 _logClass.elog("Pool enabled " + _poolName);
 
             } catch (Throwable e) {
+                esay(e);
                 _logClass.elog("Repository reported a problem : "
                                + e.getMessage());
                 _logClass.elog("Pool not enabled " + _poolName);
