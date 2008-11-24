@@ -389,6 +389,10 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
             /* Collect all entries.
              */
             for (PnfsId id: ids) {
+                if (_log.isDebugEnabled()) {
+                    _log.debug("Reading meta data of " + id);
+                }
+
                 CacheRepositoryEntry entry = healer.entryOf(id);
                 if (entry == null) continue;
 
