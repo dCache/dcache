@@ -351,6 +351,17 @@ public class MigrationModule
         return id;
     }
 
+    public final static String hh_migration_concurrency = "<job> <n>";
+    public final static String fh_migration_concurrency = 
+        "Adjusts the concurrency of a job.";
+    public String ac_migration_concurrency_$_2(Args args)
+    {
+        int id = Integer.valueOf(args.argv(0));
+        int concurrency = Integer.valueOf(args.argv(1));
+        Job job = getJob(id);
+        job.setConcurrency(concurrency);
+        return String.format("[%d] Concurrency set to %d", id, concurrency);
+    }
 
     public final static String hh_migration_copy = "[options] <target> ...";
     public final static String fh_migration_copy =
@@ -481,7 +492,7 @@ public class MigrationModule
         int id = Integer.valueOf(args.argv(0));
         Job job = getJob(id);
         job.resume();
-        return String.format("[%d] Resumes       %s", id, _commands.get(job));
+        return String.format("[%d] Resumed       %s", id, _commands.get(job));
     }
 
     public final static String hh_migration_cancel =

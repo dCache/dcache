@@ -122,6 +122,7 @@ public class Job
     public synchronized void setConcurrency(int concurrency)
     {
         _concurrency = concurrency;
+        schedule();
     }
 
     /** Returns the total amount of data covered by this job. */
