@@ -90,6 +90,7 @@
       <filename name="${tomcat.untared.dir}/common/lib/*.jar"/>
       <filename name="${tomcat.untared.dir}/server/lib/*.jar"/>
       <filename name="gplazma/**/*.jar" />
+      <filename name="terapaths/*.jar" />
     </or>
   </selector>
 
