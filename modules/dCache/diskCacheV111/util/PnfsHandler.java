@@ -374,13 +374,21 @@ public class PnfsHandler
 
    public PnfsGetStorageInfoMessage getStorageInfoByPath( String pnfsPath )
           throws CacheException                {
-
-      PnfsGetStorageInfoMessage sInfo = new PnfsGetStorageInfoMessage() ;
-      sInfo.setPnfsPath( pnfsPath ) ;
-      return (PnfsGetStorageInfoMessage)pnfsRequest( sInfo ) ;
+      return getStorageInfoByPath(pnfsPath, false) ;
 
    }
 
+   public PnfsGetStorageInfoMessage getStorageInfoByPath( String pnfsPath ,
+       boolean requestChecksum)
+          throws CacheException                {
+
+      PnfsGetStorageInfoMessage sInfo = new PnfsGetStorageInfoMessage() ;
+      sInfo.setPnfsPath( pnfsPath ) ;
+      sInfo.setChecksumsRequested(requestChecksum);
+      return (PnfsGetStorageInfoMessage)pnfsRequest( sInfo ) ;
+
+   }
+   
    public PnfsGetFileMetaDataMessage getFileMetaDataByPath( String pnfsPath )
           throws CacheException                {
 
@@ -392,9 +400,18 @@ public class PnfsHandler
    public PnfsGetFileMetaDataMessage getFileMetaDataByPath( String pnfsPath , boolean followLinks)
        throws CacheException                {
 
+        return getFileMetaDataByPath(pnfsPath, followLinks, false);
+    }
+
+      public PnfsGetFileMetaDataMessage getFileMetaDataByPath( String pnfsPath , 
+          boolean followLinks, 
+          boolean requestChecksum)
+       throws CacheException                {
+
         PnfsGetFileMetaDataMessage fileMetaData = new PnfsGetFileMetaDataMessage();
         fileMetaData.setPnfsPath(pnfsPath);
         fileMetaData.setResolve(followLinks);
+        fileMetaData.setChecksumsRequested(requestChecksum);
         return (PnfsGetFileMetaDataMessage)pnfsRequest( fileMetaData ) ;
 
     }

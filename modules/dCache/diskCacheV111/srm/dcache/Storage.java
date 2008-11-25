@@ -172,6 +172,8 @@ import org.dcache.srm.v2_2.TRetentionPolicy;
 import org.dcache.srm.v2_2.TAccessLatency;
 import org.dcache.srm.v2_2.TStatusCode;
 import org.dcache.srm.v2_2.TReturnStatus;
+import org.dcache.util.Checksum;
+import org.dcache.util.ChecksumType;
 import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.services.space.message.GetSpaceMetaData;
@@ -2487,23 +2489,29 @@ public class Storage
         diskCacheV111.util.FileMetaData util_fmd = null;
         StorageInfo storage_info = null;
         PnfsId pnfsId;
+        Set<Checksum> checksums;
         try {
             PnfsGetStorageInfoMessage storage_info_msg = null;
             PnfsGetFileMetaDataMessage filemetadata_msg = null;
             try {
-                storage_info_msg = _pnfs.getStorageInfoByPath(absolute_path);
+                storage_info_msg = _pnfs.getStorageInfoByPath(absolute_path,
+                    true);
             }
 	    catch (CacheException e) {
-                filemetadata_msg = _pnfs.getFileMetaDataByPath(absolute_path);
+                filemetadata_msg = _pnfs.getFileMetaDataByPath(absolute_path,
+                    true,
+                    true);
             }
             if (storage_info_msg != null) {
                 storage_info = storage_info_msg.getStorageInfo();
                 util_fmd = storage_info_msg.getMetaData();
                 pnfsId = storage_info_msg.getPnfsId();
+                checksums = storage_info_msg.getChecksums();
             }
 	    else if(filemetadata_msg != null) {
                 util_fmd = filemetadata_msg.getMetaData();
                 pnfsId = filemetadata_msg.getPnfsId();
+                checksums = filemetadata_msg.getChecksums();
             }
 	    else {
                 esay("could not get storage info or file metadata by path ");
@@ -2531,31 +2539,9 @@ public class Storage
             throw new SRMException("could not get storage info by path : "+e);
         }
 
-        PnfsFlagMessage flag =
-            new PnfsFlagMessage(pnfsId, "c", PnfsFlagMessage.FlagOperation.GET);
-        try {
-            flag.setReplyRequired(true);
-            CellMessage answer =
-                sendAndWait(new CellMessage(new CellPath("PnfsManager"),flag),
-			    __pnfsTimeout * 1000);
-            Object o = null;
-            if (answer == null ||
-                (o = answer.getMessageObject()) == null||
-                !(o instanceof PnfsFlagMessage)) {
-                esay("sent PnfsFlagMessage to pnfs, received "+o+" back");
-                flag = null;
-            }
-	    else {
-                flag = (PnfsFlagMessage)o;
-            }
-        }
-	catch (Exception e) {
-            esay("Failed to get crc from PnfsManager : " + e);
-            flag = null;
-        }
         FileMetaData fmd =
             getFileMetaData(user, absolute_path, pnfsId,
-                            storage_info, util_fmd, flag,
+                            storage_info, util_fmd, checksums,
                             ignoreIsSetFlag);
         if (storage_info != null) {
             fmd.isCached = isCached(storage_info, pnfsId);
@@ -2609,8 +2595,18 @@ public class Storage
                         PnfsId pnfsId,
                         StorageInfo storage_info,
                         diskCacheV111.util.FileMetaData util_fmd,
-                        PnfsFlagMessage flag,
-                        boolean ... ignoreIsSetflags)
+                        boolean ... ignoreIsSetflags) {
+          return getFileMetaData(user,absolute_path, pnfsId,storage_info, util_fmd, null, ignoreIsSetflags);
+    }
+
+    public static FileMetaData 
+        getFileMetaData(SRMUser user, 
+                        String absolute_path,
+                        PnfsId pnfsId, 
+                        StorageInfo storage_info,
+                        diskCacheV111.util.FileMetaData util_fmd,
+                        Set<Checksum> checksums,
+                        boolean ... ignoreIsSetflags) 
     {
         boolean ignoreIsSetFlag = false;
         if(ignoreIsSetflags != null && ignoreIsSetflags.length >=1 ) {
@@ -2633,14 +2629,23 @@ public class Storage
 	boolean isStored=false;
         DcacheFileMetaData fmd = new DcacheFileMetaData(pnfsId);
 
-        if (flag != null) {
-            String adler32 = flag.getValue();
-            if ((adler32 != null) && adler32.startsWith("1:")) {
-                checksum_type = "adler32";
-                checksum_value = adler32.substring(2);
+
+        if(checksums != null) {
+           //first try to find the adler32 checksum
+           for(Checksum checksum:checksums) {
+                if(checksum.getType() ==ChecksumType.ADLER32 ) {
+                    checksum_type = "adler32";
+                    checksum_value = checksum.getValue();
+                }
+            }
+            //if this failed, but there are other types 
+            // use the first one found
+            if(checksum_type == null && !checksums.isEmpty() ) {
+                 Checksum cksum = checksums.iterator().next();
+                 checksum_type = cksum.getType().getName().toLowerCase();
+                 checksum_value = cksum.getValue();
             }
         }
-
         if (util_fmd != null) {
             owner=Integer.toString(util_fmd.getUid());
             group=Integer.toString(util_fmd.getGid());
