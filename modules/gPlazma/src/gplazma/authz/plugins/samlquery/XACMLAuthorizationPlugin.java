@@ -67,7 +67,9 @@ public class XACMLAuthorizationPlugin extends SAMLAuthorizationPlugin {
 
         VOMSAttribute vomsAttr=null;
         try {
-            vomsAttr = X509CertUtil.getVOMSAttribute(chain, fqan);
+            if (chain !=null && fqan !=null) {
+                vomsAttr = X509CertUtil.getVOMSAttribute(chain, fqan);
+            }
             if (vomsAttr!=null) {
                 VO = vomsAttr.getVO();
                 String X500IssuerName = vomsAttr.getAC().getIssuer().toString();
