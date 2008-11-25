@@ -2485,7 +2485,7 @@ public class Storage
 	    else if(filemetadata_msg != null) {
                 util_fmd = filemetadata_msg.getMetaData();
                 pnfsId = filemetadata_msg.getPnfsId();
-                checksums = storage_info_msg.getChecksums();
+                checksums = filemetadata_msg.getChecksums();
             }
 	    else {
                 esay("could not get storage info or file metadata by path ");
@@ -2515,7 +2515,7 @@ public class Storage
 
         FileMetaData fmd =
             getFileMetaData(user, absolute_path, pnfsId,
-                            storage_info, util_fmd);
+                            storage_info, util_fmd,checksums);
         if (storage_info != null) {
 		fmd.isCached = isCached(storage_info, pnfsId);
         }
