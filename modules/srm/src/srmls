@@ -1,0 +1,17 @@
+# java -classpath $CLASSPATH:srm.jar:. SRMLsCaller leoheska 8080 /usr/local/dummy
+#java -classpath $CLASSPATH:srm.jar:. org.dcache.srm.client.SRMLsCaller httpg leoheska 8080 /pnfs/dhcp.fnal.gov/data/scratch/junk.c1.txt 3
+
+#Now for the version with the security stuff
+
+java -classpath $CLASSPATH:/opt/d-cache/classes/globus/puretls.jar:/opt/d-cache/classes/globus/jgss.jar:/opt/d-cache/classes/globus/jce-jdk13-125.jar:/opt/d-cache/classes/globus/cryptix.jar:/opt/d-cache/classes/globus/cryptix-asn1.jar:/opt/d-cache/classes/globus/cryptix32.jar:/opt/d-cache/classes/globus/cog-url.jar:/opt/d-cache/classes/globus/cog-tomcat.jar:/opt/d-cache/classes/globus/cog-jglobus.jar:/opt/d-cache/classes/globus/cog-axis.jar:srm.jar:. org.dcache.srm.client.SRMLsCaller httpg leoheska 8080 /pnfs/dhcp.fnal.gov/data/scratch/junk.c1.txt 3
+
+# /opt/d-cache/classes/globus/puretls.jar
+# /opt/d-cache/classes/globus/jgss.jar
+# /opt/d-cache/classes/globus/jce-jdk13-125.jar
+# /opt/d-cache/classes/globus/cryptix.jar
+# /opt/d-cache/classes/globus/cryptix-asn1.jar
+# /opt/d-cache/classes/globus/cryptix32.jar
+# /opt/d-cache/classes/globus/cog-url.jar
+# /opt/d-cache/classes/globus/cog-tomcat.jar
+# /opt/d-cache/classes/globus/cog-jglobus.jar
+# /opt/d-cache/classes/globus/cog-axis.jar
