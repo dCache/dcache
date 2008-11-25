@@ -104,7 +104,6 @@ import org.glite.security.voms.VOMSValidator;
 import org.glite.security.voms.VOMSAttribute;
 import org.glite.security.voms.BasicVOMSTrustStore;
 import org.glite.security.util.DirectoryList;
-import org.bouncycastle.asn1.x509.TBSCertificateStructure;
 import java.security.cert.X509Certificate;
 import org.dcache.srm.SRMAuthorizationException;
 
