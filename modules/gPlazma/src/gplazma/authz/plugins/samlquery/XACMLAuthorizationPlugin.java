@@ -18,6 +18,7 @@ import org.opensciencegrid.authz.xacml.client.MapCredentialsClient;
 import org.apache.log4j.*;
 import org.glite.security.voms.ac.AttributeCertificate;
 import org.glite.security.voms.VOMSAttribute;
+import org.ietf.jgss.GSSException;
 
 /**
  *
@@ -39,7 +40,7 @@ public class XACMLAuthorizationPlugin extends SAMLAuthorizationPlugin {
 
         String CondorCanonicalNameID=null;
         String X509SubjectIssuer=null;
-        String VO;
+        String VO=null;
         String VOMSSigningSubject=null;
         String VOMSSigningIssuer=null;
 
@@ -67,14 +68,15 @@ public class XACMLAuthorizationPlugin extends SAMLAuthorizationPlugin {
         VOMSAttribute vomsAttr=null;
         try {
             vomsAttr = X509CertUtil.getVOMSAttribute(chain, fqan);
-        } catch (Exception e) {
-            getLogger().warn("Could not attribute certificate for fqan : " + fqan + "\n" + e.getMessage());
+            if (vomsAttr!=null) {
+                VO = vomsAttr.getVO();
+                String X500IssuerName = vomsAttr.getAC().getIssuer().toString();
+                VOMSSigningSubject = X509CertUtil.toGlobusDN(X500IssuerName);
+            }
+        } catch (GSSException e) {
+            getLogger().warn("Could not find attribute certificate for fqan : " + fqan + "\n" + e.getMessage());
         }
 
-        VO = (vomsAttr==null) ? null : vomsAttr.getVO();
-
-        String X500IssuerName = vomsAttr.getAC().getIssuer().toString();
-        VOMSSigningSubject = X509CertUtil.toGlobusDN(X500IssuerName);
 
         try {
             resourceX509ID = getTargetServiceName();
