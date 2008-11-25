@@ -246,7 +246,7 @@ public class GetFileInfoCompanion implements CellMessageAnswerable {
         storage_info_msg.getMetaData();
         pnfsId = storage_info_msg.getPnfsId();
         String fileId = pnfsId.toString();
-        FileMetaData srm_fmd = Storage.getFileMetaData(user,path,pnfsId,storageInfo,fmd,null);
+        FileMetaData srm_fmd = Storage.getFileMetaData(user,path,pnfsId,storageInfo,fmd);
         if(!Storage._canRead(user,fileId,srm_fmd)) {
             callbacks.Error("user "+user+"cannot read "+fileId);
             return;

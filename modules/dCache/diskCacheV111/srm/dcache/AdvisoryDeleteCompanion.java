@@ -294,7 +294,7 @@ public class AdvisoryDeleteCompanion implements CellMessageAnswerable {
         (perms.canExecute() ? 1 : 0) ;
         pnfsId = storage_info_msg.getPnfsId();
         String fileId = pnfsId.toString();
-        FileMetaData srm_fmd = Storage.getFileMetaData(user,path,pnfsId,storageInfo,fmd,null);
+        FileMetaData srm_fmd = Storage.getFileMetaData(user,path,pnfsId,storageInfo,fmd);
         if(!Storage._canDelete(user,fileId,srm_fmd)) {
             callbacks.Error("user "+user+" has no permission to delete "+pnfsId);
             return;

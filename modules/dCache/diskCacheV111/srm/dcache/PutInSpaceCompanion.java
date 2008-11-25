@@ -278,7 +278,7 @@ public class PutInSpaceCompanion implements CellMessageAnswerable {
                     pnfsId = storage_info_msg.getPnfsId();
                     say("calling callbacks.ParentStorageInfoArrived() ");
                     String fileId = pnfsId.toString();
-                    FileMetaData srm_fmd = Storage.getFileMetaData(user,path,pnfsId,storageInfo,fmd,null);
+                    FileMetaData srm_fmd = Storage.getFileMetaData(user,path,pnfsId,storageInfo,fmd);
                     if(Storage._canWrite(user,null,null,fileId,srm_fmd,false)) {
                         callbacks.StorageInfoArrived(fileId);
                     }
