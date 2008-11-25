@@ -251,7 +251,7 @@ public class PutCompanion implements CellMessageAnswerable {
                 storage_info_msg.getMetaData();
                PnfsId pnfsId = storage_info_msg.getPnfsId();
                 fileId = pnfsId.toString();
-                fileFMD = Storage.getFileMetaData(user,path,pnfsId,null,fmd,null);
+                fileFMD = Storage.getFileMetaData(user,path,pnfsId,null,fmd);
             } else {
                 esay("GetStorageInfoFailed: file exists,"+
                 " cannot write ");
@@ -341,7 +341,7 @@ public class PutCompanion implements CellMessageAnswerable {
         PnfsId dirPnfsId = metadata_msg.getPnfsId();
         String dirFileId = dirPnfsId.toString();
         say(" calling Storage.getFileMetaData()");
-        FileMetaData srm_dirFmd = Storage.getFileMetaData(user,path,dirPnfsId,storageInfo,dirFmd,null);
+        FileMetaData srm_dirFmd = Storage.getFileMetaData(user,path,dirPnfsId,storageInfo,dirFmd);
         say(" got  srm_dirFmd.retentionPolicyInfo ="+srm_dirFmd.retentionPolicyInfo);
         if(srm_dirFmd.retentionPolicyInfo != null) {
             say(" got  srm_dirFmd.retentionPolicyInfo.AccessLatency ="+srm_dirFmd.retentionPolicyInfo.getAccessLatency());
