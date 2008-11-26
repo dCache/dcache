@@ -1135,20 +1135,34 @@ public class Manager
 	}
 
 	public String hh_remove_file = " <id> " +
-		"# remove file by file id";
+		"# remove file by file id or pnfsid";
 
 	public String ac_remove_file_$_1( Args args )
 		throws Exception {
-		long id = Long.parseLong(args.argv(0));
-		try {
-			removeFileFromSpace(id);
-		}
-		catch (SQLException e) {
-			esay(e);
-			return e.getMessage();
-		}
-		return "removed file with id="+id;
-	}
+                try { 
+                        long id = Long.parseLong(args.argv(0));
+                        try {
+                                removeFileFromSpace(id);
+                                return "removed file with id="+id;
+                        }
+                        catch (SQLException e) {
+                                esay(e);
+                                return e.toString();
+                        }
+                }
+                catch (NumberFormatException nfe) { 
+                        try { 
+                                PnfsId pnfsId = new PnfsId(args.argv(0));
+                                File f = getFile(pnfsId);
+                                removeFileFromSpace(f.getId());
+                                return "removed file with pnfsId="+pnfsId;
+                        }
+                        catch (Exception e) { 
+                                esay(e);
+                                return e.toString();
+                        }
+                }
+        }
 
 
 
