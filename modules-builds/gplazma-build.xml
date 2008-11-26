@@ -47,25 +47,14 @@
   </selector>
   
 	<!-- Classpath for gplazma.jar. -->
-
-    <selector id="gplazma.classpath.selector">
-        <or>
-	    <filename name="axis/**/*.jar" />
-            <filename name="cog/**/*.jar" />
-	    <filename name="gplazma/**/*.jar" />
-	    <filename name="glite/**/glite*.jar" />
-	    <filename name="opensaml/**/*.jar" />
-	    <filename name="security/bcprov-jdk15-133.jar" />
-	</or>
-    </selector>
     
     <path id="gplazma.classpath">
-	<fileset dir="${classesDir}" excludes="${gplazma.jar}">
-	    <selector refid="gplazma.classpath.selector" />
-	</fileset>
-	<fileset dir="${libDir}" excludes="${gplazma.jar}">
-	    <selector refid="gplazma.classpath.selector"/>
-	</fileset>
+      <fileset dir="${axis.untared}" includes="**/*.jar" />
+      <fileset dir="${libDir}/cog" includes="**/*.jar" />
+      <pathelement location="${libDir}/security/bcprov-jdk15-133.jar" />
+      <fileset dir="${glite.untarred}" includes="**/*.jar" />
+      <fileset dir="${libDir}/opensaml" includes="**/*.jar" />
+      <fileset dir="${libDir}/gplazma" includes="**/*.jar" />
     </path>
 	
   <!--

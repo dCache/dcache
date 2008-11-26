@@ -72,7 +72,7 @@
         <property name="bookDir" location="${server.rpmDcacheDir}" />
     </target>
 
-    <target name="server.rpminstall" depends="server.rpmprepare,cells-log4j.bin,srm.bin,dcache-srm.bin,info.bin,infoProvider.bin,xrootd-tokenauthz.bin,javatunnel.bin,dcache-classpath">
+    <target name="server.rpminstall" depends="server.rpmprepare,srm.bin,dcache-srm.bin,info.bin,infoProvider.bin,xrootd-tokenauthz.bin,javatunnel.bin,dcache-classpath">
 
         <!-- rpm directory structure with some defaults scripts -->
         <copy todir="${server.rpmDcacheDir}">
@@ -469,7 +469,7 @@
     -->
 
     <property name="findbugs.home" value="${libDir}/findbugs" />
-    <target name="findbugs" depends="cells-log4j.bin,srm.bin,dcache-srm.bin,infoProvider.bin,xrootd-tokenauthz.bin,javatunnel.bin" description="bug hunting">
+    <target name="findbugs" depends="srm.bin,dcache-srm.bin,infoProvider.bin,xrootd-tokenauthz.bin,javatunnel.bin" description="bug hunting">
         <taskdef name="findbugs" classname="edu.umd.cs.findbugs.anttask.FindBugsTask" classpath="${libDir}/findbugs/lib/findbugs-ant.jar"/>
         <findbugs home="${findbugs.home}"
                     output="html"
@@ -480,7 +480,6 @@
 
             <auxClasspath path="" />
             <class location="${classesDir}/cells.jar" />
-            <class location="${classesDir}/cells-log4j.jar" />
             <class location="${classesDir}/dcache.jar" />
             <class location="${classesDir}/dcache-srm.jar" />
             <class location="${classesDir}/srm.jar" />
@@ -491,7 +490,7 @@
         </findbugs>
     </target>
 
-    <target name="findbugs-testbuild" depends="cells-log4j.bin,srm.bin,dcache-srm.bin,infoProvider.bin,xrootd-tokenauthz.bin,javatunnel.bin" description="bug hunting">
+    <target name="findbugs-testbuild" depends="srm.bin,dcache-srm.bin,infoProvider.bin,xrootd-tokenauthz.bin,javatunnel.bin" description="bug hunting">
         <taskdef name="findbugs" classname="edu.umd.cs.findbugs.anttask.FindBugsTask" classpath="${libDir}/findbugs/lib/findbugs-ant.jar"/>
         <findbugs home="${findbugs.home}"
                     output="xml:withMessages"
@@ -502,7 +501,6 @@
 
             <auxClasspath path="" />
             <class location="${classesDir}/cells.jar" />
-            <class location="${classesDir}/cells-log4j.jar" />
             <class location="${classesDir}/dcache.jar" />
             <class location="${classesDir}/dcache-srm.jar" />
             <class location="${classesDir}/srm.jar" />
@@ -519,7 +517,7 @@
         </findbugs>
     </target>
 
-    <target name="findbugs.cells" depends="cells.bin,cells-log4j.bin" description="bug hunting">
+    <target name="findbugs.cells" depends="cells.bin" description="bug hunting">
         <taskdef name="findbugs" classname="edu.umd.cs.findbugs.anttask.FindBugsTask" classpath="${libDir}/findbugs/lib/findbugs-ant.jar"/>
         <findbugs home="${findbugs.home}"
                     output="html"
@@ -530,7 +528,6 @@
 
             <auxClasspath path="" />
             <class location="${classesDir}/cells.jar" />
-            <class location="${classesDir}/cells-log4j.jar" />
         </findbugs>
     </target>
 

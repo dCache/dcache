@@ -10,6 +10,7 @@
   <property name="buildDir" location="build" />    <!-- this is for temporary build -->
   <property name="distDir" location="dist" />      <!-- this dir will not be deleted -->
   <property name="classesDir" location="${distDir}/classes" />  <!-- this dir will not be deleted. Should contain the produced JARs -->
+  <property name="unpackTop" location="${buildDir}/unpack" />
   <property name="binDir" location="${distDir}/d-cache" />
 
   <!-- The temporary dir for storing external libs and the place to look for (non-temp) externals
@@ -67,7 +68,7 @@
           Cells
   -->
 
-  <target name="cells" depends="prepare" description="Compile cells package and create cells.jar,cells-protocols.jar,cells-log4j.jar">
+  <target name="cells" depends="prepare" description="Compile cells package and create cells.jar,cells-protocols.jar">
 
     <ant dir="modules-builds" antfile="cells-build.xml" target="cells.jar" inheritAll="false">
       <property name="libDir" location="${libDir}" />
@@ -76,6 +77,7 @@
 	  <property name="sourceDir" location="${dCacheBox-module}/cells" />
 	  <property name="buildTop" location="${buildTop}" />
 	  <property name="release.name" value="${release.name}" />
+      <property name="unpackTop" value="${unpackTop}" />
     </ant>
 
     <ant dir="modules-builds" antfile="cells-build.xml" target="cells-protocols.jar" inheritAll="false">
@@ -85,15 +87,7 @@
   	  <property name="sourceDir" location="${dCacheBox-module}/cells" />
   	  <property name="buildTop" location="${buildTop}" />
 	  <property name="release.name" value="${release.name}" />
-    </ant>
-
-    <ant dir="modules-builds" antfile="cells-build.xml" target="cells-log4j.jar" inheritAll="false">
-      <property name="libDir" location="${libDir}" />
-      <property name="buildDir" value="${buildDir}/cells/" />
-      <property name="classesDir" value="${classesDir}" />
-	  <property name="sourceDir" location="${dCacheBox-module}/cells" />
-  	  <property name="buildTop" location="${buildTop}" />
-	  <property name="release.name" value="${release.name}" />
+      <property name="unpackTop" value="${unpackTop}" />
     </ant>
 
   </target>
@@ -108,6 +102,7 @@
 	  <property name="buildTop" location="${buildTop}" />
    	  <property name="binDir" location="${binDir}" />
 	  <property name="release.name" value="${release.name}" />
+      <property name="unpackTop" value="${unpackTop}" />
     </ant>
 
   </target>
@@ -123,25 +118,10 @@
 	  <property name="buildTop" location="${buildTop}" />
    	  <property name="binDir" location="${binDir}" />
 	  <property name="release.name" value="${release.name}" />
+      <property name="unpackTop" value="${unpackTop}" />
     </ant>
 
   </target>
-
-
-  <target name="cells-log4j.bin" depends="prepare" description="Compile cells package and create cells.jar and cells-log4j.jar">
-
-    <ant dir="modules-builds" antfile="cells-build.xml" target="cells-log4j-bin" inheritAll="false">
-      <property name="libDir" location="${libDir}" />
-      <property name="buildDir" value="${buildDir}/cells/" />
-      <property name="classesDir" value="${classesDir}" />
-	  <property name="sourceDir" location="${dCacheBox-module}/cells" />
-	  <property name="buildTop" location="${buildTop}" />
-   	  <property name="binDir" location="${binDir}" />
-	  <property name="release.name" value="${release.name}" />
-    </ant>
-
-  </target>
-
 
   <!--
           gPlazma
@@ -156,6 +136,7 @@
 	  <property name="sourceDir" location="${dCacheBox-module}/gPlazma/src" />
 	  <property name="buildTop" location="${buildTop}" />
 	  <property name="release.name" value="${release.name}" />
+      <property name="unpackTop" value="${unpackTop}" />
     </ant>
     
   </target>
@@ -170,6 +151,7 @@
 	  <property name="buildTop" location="${buildTop}" />
    	  <property name="binDir" location="${binDir}" />
 	  <property name="release.name" value="${release.name}" />
+      <property name="unpackTop" value="${unpackTop}" />
     </ant>
 
   </target>
@@ -187,6 +169,7 @@
       <property name="sourceDir" location="${dCacheBox-module}/dCache" />
       <property name="buildTop" location="${buildTop}" />
 	  <property name="release.name" value="${release.name}" />
+      <property name="unpackTop" value="${unpackTop}" />
     </ant>
 
   </target>
@@ -199,6 +182,7 @@
 	  <property name="sourceDir" location="${dCacheBox-module}/dCache" />
   	  <property name="buildTop" location="${buildTop}" />
 	  <property name="release.name" value="${release.name}" />
+      <property name="unpackTop" value="${unpackTop}" />
     </ant>
   </target>
 
@@ -211,6 +195,7 @@
   	  <property name="buildTop" location="${buildTop}" />
    	  <property name="binDir" location="${binDir}" />
   	  <property name="release.name" value="${release.name}" />
+      <property name="unpackTop" value="${unpackTop}" />
     </ant>
   </target>
 
@@ -224,6 +209,7 @@
   	  <property name="buildTop" location="${buildTop}" />
    	  <property name="binDir" location="${binDir}" />
 	  <property name="release.name" value="${release.name}" />
+      <property name="unpackTop" value="${unpackTop}" />
     </ant>
   </target>
 
@@ -241,6 +227,7 @@
 	  <property name="sourceDir" location="${dCacheBox-module}/srm" />
   	  <property name="buildTop" location="${buildTop}" />
 	  <property name="release.name" value="${release.name}" />
+      <property name="unpackTop" value="${unpackTop}" />
     </ant>
 
     <ant dir="modules-builds" antfile="srm-build.xml" target="srm-tomcat.jar" inheritAll="false">
@@ -250,6 +237,7 @@
 	  <property name="sourceDir" location="${dCacheBox-module}/srm" />
   	  <property name="buildTop" location="${buildTop}" />
 	  <property name="release.name" value="${release.name}" />
+      <property name="unpackTop" value="${unpackTop}" />
     </ant>
 
   </target>
@@ -265,6 +253,7 @@
   	  <property name="buildTop" location="${buildTop}" />
    	  <property name="binDir" location="${binDir}" />
 	  <property name="release.name" value="${release.name}" />
+      <property name="unpackTop" value="${unpackTop}" />
     </ant>
 
   </target>
@@ -282,6 +271,7 @@
   	  <property name="sourceDir" location="${dCacheBox-module}/infoProvider/src" />
   	  <property name="buildTop" location="${buildTop}" />
 	  <property name="release.name" value="${release.name}" />
+      <property name="unpackTop" value="${unpackTop}" />
     </ant>
 
   </target>
@@ -297,6 +287,7 @@
   	  <property name="buildTop" location="${buildTop}" />
    	  <property name="binDir" location="${binDir}" />
 	  <property name="release.name" value="${release.name}" />
+      <property name="unpackTop" value="${unpackTop}" />
     </ant>
 
   </target>
@@ -313,6 +304,7 @@
 			<property name="sourceDir" location="${dCacheBox-module}/dCache" />
 			<property name="buildTop" location="${buildTop}" />
 			<property name="release.name" value="${release.name}" />
+            <property name="unpackTop" value="${unpackTop}" />
 		</ant>
 	</target>
 
@@ -325,6 +317,7 @@
 			<property name="buildTop" location="${buildTop}" />
 			<property name="binDir" location="${binDir}" />
 			<property name="release.name" value="${release.name}" />
+            <property name="unpackTop" value="${unpackTop}" />
 		</ant>
 	</target>
 
@@ -343,6 +336,7 @@
 	  	  <property name="sourceDir" location="${dCacheBox-module}/dCache/" />
 	  	  <property name="buildTop" location="${buildTop}" />
 		  <property name="release.name" value="${release.name}" />
+          <property name="unpackTop" value="${unpackTop}" />
 	    </ant>
 
 	  </target>
@@ -358,6 +352,7 @@
 	  	  <property name="buildTop" location="${buildTop}" />
 	   	  <property name="binDir" location="${binDir}" />
 	  	  <property name="release.name" value="${release.name}" />
+          <property name="unpackTop" value="${unpackTop}" />
 	    </ant>
 
 	  </target>
@@ -375,6 +370,7 @@
   	  <property name="sourceDir" location="${dCacheBox-module}/dcap" />
   	  <property name="buildTop" location="${buildTop}" />
 	  <property name="release.name" value="${release.name}" />
+      <property name="unpackTop" value="${unpackTop}" />
     </ant>
 
   </target>
@@ -388,6 +384,7 @@
   	  <property name="sourceDir" location="${dCacheBox-module}/dcap" />
   	  <property name="buildTop" location="${buildTop}" />
 	  <property name="release.name" value="${release.name}" />
+      <property name="unpackTop" value="${unpackTop}" />
     </ant>
 
   </target>
@@ -401,6 +398,7 @@
         <property name="sourceDir" location="${dCacheBox-module}/dcap" />
         <property name="buildTop" location="${buildTop}" />
         <property name="release.name" value="${release.name}" />
+        <property name="unpackTop" value="${unpackTop}" />
       </ant>
 
     </target>
@@ -418,6 +416,7 @@
   	  <property name="sourceDir" location="${dCacheBox-module}/dcap" />
   	  <property name="buildTop" location="${buildTop}" />
 	  <property name="release.name" value="${release.name}" />
+      <property name="unpackTop" value="${unpackTop}" />
     </ant>
 
   </target>
@@ -433,6 +432,7 @@
   	  <property name="buildTop" location="${buildTop}" />
    	  <property name="binDir" location="${binDir}" />
 	  <property name="release.name" value="${release.name}" />
+      <property name="unpackTop" value="${unpackTop}" />
     </ant>
 
   </target>
@@ -452,6 +452,7 @@
   	  <property name="buildTop" location="${buildTop}" />
 	  <property name="release.name" value="${release.name}" />
 	  <property name="srm.minor.version" value="${build.number}" />
+      <property name="unpackTop" value="${unpackTop}" />
     </ant>
 
   </target>
@@ -468,6 +469,7 @@
    	  <property name="binDir" location="${binDir}" />
 	  <property name="release.name" value="${release.name}" />
 	  <property name="srm.minor.version" value="${build.number}" />
+      <property name="unpackTop" value="${unpackTop}" />
     </ant>
 
   </target>
@@ -516,30 +518,30 @@
 
   <property name="axis.libDir" value="${libDir}/axis" />
   <property name="axis.tarName" value="${axis.libDir}/axis-bin-1_3.tar.gz" />                           <!-- A pattern uniquely identifying one tar file -->
-  <property name="axis.untaredTo" value="${axis.libDir}/axis-1_3" />                  <!-- This is the dir the tar will create -->
+  <property name="axis.untared" value="${unpackTop}/axis-1_3" />                  <!-- This is the dir the tar will create -->
 
-  <uptodate property="lib.axis.uptodate" targetfile="${axis.untaredTo}" >
+  <uptodate property="lib.axis.uptodate" targetfile="${axis.untared}" >
     <srcfiles dir="${axis.libDir}" includes="${axis.tarName}" />
   </uptodate>
 
   <target name="lib.axis.untar" unless="lib.axis.uptodate" >
 
-    <echo>Unpacking to ${axis.untaredTo}</echo>
-  	<untar src="${axis.tarName}" dest="${axis.libDir}" compression="gzip" />
+    <echo>Unpacking to ${axis.untared}</echo>
+  	<untar src="${axis.tarName}" dest="${unpackTop}" compression="gzip" />
 
   </target>
   
   <property name="glite.libDir" value="${libDir}/glite" />                           
-  <property name="glite.untarredTo" value="${glite.libDir}" />               
+  <property name="glite.untarred" value="${unpackTop}/share" />
 
   <uptodate property="lib.glite.uptodate" >
-    <srcfiles dir="${glite.libDir}" includes="**/*.tar.gz" />
-    <mapper type="merge" to="${glite.untarredTo}/share"/>
+    <srcfiles dir="${glite.libDir}" includes="**/*.tar.gz" />    
+    <mapper type="merge" to="${glite.untarred}"/>
   </uptodate>
   
   <target name="lib.glite.untar" unless="lib.glite.uptodate" >
-    <echo>Unpacking to ${glite.untarredTo}</echo>
-    <untar dest="${glite.untarredTo}" compression="gzip">
+    <echo>Unpacking to ${glite.untarred}</echo>
+    <untar dest="${unpackTop}" compression="gzip">
       <patternset>
         <include name="**/glite*.jar"/>
       </patternset>
@@ -551,16 +553,16 @@
 
   <property name="tomcat.libDir" value="${libDir}/tomcat" />
   <property name="tomcat.tarName" value="${tomcat.libDir}/apache-tomcat-5.5.20.tar.gz" />              <!-- A pattern uniquely identifying one tar file -->
-  <property name="tomcat.untaredTo" value="${tomcat.libDir}/apache-tomcat-5.5.20" />  <!-- This is the dir the tar will create -->
+  <property name="tomcat.untared" value="${unpackTop}/apache-tomcat-5.5.20" />  <!-- This is the dir the tar will create -->
 
-  <uptodate property="lib.tomcat.uptodate" targetfile="${tomcat.untaredTo}" >
+  <uptodate property="lib.tomcat.uptodate" targetfile="${tomcat.untared}" >
     <srcfiles dir="${tomcat.libDir}" includes="${tomcat.tarName}" />
   </uptodate>
 
   <target name="lib.tomcat.untar" unless="lib.tomcat.uptodate" >
 
-    <echo>Unpacking to ${tomcat.untaredTo}</echo>
-  	<untar src="${tomcat.tarName}" dest="${tomcat.libDir}" compression="gzip" />
+    <echo>Unpacking to ${tomcat.untared}</echo>
+  	<untar src="${tomcat.tarName}" dest="${unpackTop}" compression="gzip" />
 
   </target>
 
@@ -573,16 +575,16 @@
 
   <property name="glue.libDir" value="${libDir}/glue" />
   <property name="glue.tarName" value="${glue.libDir}/glue-srmlib.tgz" />                               <!-- A pattern uniquely identifying one tar file -->
-  <property name="glue.untaredTo" value="${glue.libDir}/glue-srmlib" />                   <!-- This is the dir the tar will create -->
+  <property name="glue.untared" value="${unpackTop}/glue-srmlib" />                   <!-- This is the dir the tar will create -->
 
-  <uptodate property="lib.glue.uptodate" targetfile="${glue.untaredTo}" >
+  <uptodate property="lib.glue.uptodate" targetfile="${glue.untared}" >
     <srcfiles dir="${glue.libDir}" includes="${glue.tarName}" />
   </uptodate>
 
   <target name="lib.glue.untar" unless="lib.glue.uptodate" >
 
-    <echo>Unpacking to ${glue.untaredTo}</echo>
-  	<untar src="${glue.tarName}" dest="${glue.libDir}" compression="gzip" />
+    <echo>Unpacking to ${glue.untared}</echo>
+  	<untar src="${glue.tarName}" dest="${unpackTop}" compression="gzip" />
 
   </target>
 

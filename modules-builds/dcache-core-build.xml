@@ -173,35 +173,26 @@
 
  	<!-- Classpath for dcache-srm.jar - This is the same as for srm.jar in the srm CVS module -->
 
-	<selector id="dcache-srm.classpath.selector">
-		<or>
-			<filename name="**/dcache.jar" />
-			<filename name="**/srm.jar" />
-			<filename name="jdom/jdom.jar" />
-			<filename name="cog/**/*.jar" />
-			<filename name="axis/**/*.jar" />
-			<filename name="glue/**/GLUE-STD.jar" />
-			<filename name="glue/**/dom.jar" />
-			<filename name="glue/**/jnet.jar" />
-			<filename name="glue/**/jsse.jar" />
-			<filename name="glue/**/jcert.jar" />
-			<filename name="glue/**/servlet.jar" />
-			<filename name="tomcat/apache-tomcat-5.5.20/bin/*.jar" />
-			<filename name="tomcat/apache-tomcat-5.5.20/common/lib/*.jar" />
-			<filename name="tomcat/apache-tomcat-5.5.20/server/lib/*.jar" />
-			<filename name="jpox/jdo2-api-2.0.jar" />
-			<filename name="jpox/jpox-core-1.2.2.jar" />
-		</or>
-	</selector>
-
-
 	<path id="dcache-srm.classpath">
-		<fileset dir="${classesDir}">
-			<selector refid="dcache-srm.classpath.selector" />
-		</fileset>
-		<fileset dir="${libDir}">
-			<selector refid="dcache-srm.classpath.selector" />
-		</fileset>
+      <fileset dir="${axis.untared}" includes="**/*.jar" />
+      <fileset dir="${tomcat.untared}/common/lib/" includes="*.jar" />
+      <fileset dir="${tomcat.untared}/server/lib/" includes="*.jar" />
+      <fileset dir="${libDir}/cog" includes="**/*.jar" />
+      <fileset dir="${libDir}/security" includes="**/*.jar" />
+      <fileset dir="${glite.untarred}" includes="**/*.jar" />
+      <fileset dir="${libDir}/terapaths" includes="*.jar" />
+      <pathelement location="${libDir}/jdom/jdom.jar" />
+      <pathelement location="${glue.untared}/GLUE-STD.jar" />
+      <pathelement location="${glue.untared}/dom.jar" />
+      <pathelement location="${glue.untared}/jnet.jar" />
+      <pathelement location="${glue.untared}/jsse.jar" />
+      <pathelement location="${glue.untared}/jcert.jar" />
+      <pathelement location="${glue.untared}/servlet.jar" />
+      <pathelement location="${classesDir}/cells.jar" />
+      <pathelement location="${classesDir}/dcache.jar" />
+      <pathelement location="${classesDir}/srm.jar" />
+      <pathelement location="${libDir}/jpox/jdo2-api-2.0.jar" />
+      <pathelement location="${libDir}/jpox/jpox-core-1.2.2.jar" />
 	</path>
 
 
@@ -909,9 +900,8 @@
 		<!-- external jars -->
 		<!-- axis -->
 		<mkdir dir="${binDir}/classes/axis" />
-		<property name="axisVersion" value="axis-1_3" />
 		<copy todir="${binDir}/classes/axis">
-			<fileset dir="${libDir}/axis/${axisVersion}/lib/">
+			<fileset dir="${axis.untared}/lib/">
 				<include name="*.jar" />
 			</fileset>
 		</copy>
@@ -928,9 +918,8 @@
 
 		<!-- glue -->
 		<mkdir dir="${binDir}/classes/glue" />
-		<property name="glueVersion" value="glue-srmlib" />
 		<copy todir="${binDir}/classes/glue">
-			<fileset dir="${libDir}/glue/${glueVersion}">
+			<fileset dir="${glue.untared}">
 				<include name="*.jar" />
 			</fileset>
 		</copy>

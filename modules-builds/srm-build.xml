@@ -69,43 +69,24 @@
     <filename name="**/*Tomcat*" />
   </selector>
 
-  <property name="tomcat.untared.dir" value="tomcat/apache-tomcat-5.5.20" />  <!-- This is the dir where tomcat is untarred into -->
-
   <!-- Classpath for srm.jar and srm-tomcat.jar -->
 
-  <selector id="srm.classpath.selector">
-    <or>
-      <filename name="**/cells.jar"/>
-      <filename name="jdom/jdom.jar"/>
-      <filename name="cog/**/*.jar"/>
-      <filename name="axis/**/*.jar"/>
-      <filename name="glite/**/glite*.jar"/>
-      <filename name="glue/**/GLUE-STD.jar"/>
-      <filename name="glue/**/dom.jar"/>
-      <filename name="glue/**/jnet.jar"/>
-      <filename name="glue/**/jsse.jar"/>
-      <filename name="glue/**/jcert.jar"/>
-      <filename name="glue/**/servlet.jar"/>
-      <filename name="${tomcat.untared.dir}/bin/*.jar"/>
-      <filename name="${tomcat.untared.dir}/common/lib/*.jar"/>
-      <filename name="${tomcat.untared.dir}/server/lib/*.jar"/>
-      <filename name="gplazma/**/*.jar" />
-      <filename name="security/**/*.jar" />
-      <filename name="terapaths/*.jar" />
-    </or>
-  </selector>
-
   <path id="srm.classpath">
-    <fileset dir="${classesDir}" >                  <!-- This way the produced classes have precedence over the external ones -->
-      <selector refid="srm.classpath.selector" />
-    </fileset>
-    <fileset dir="${libDir}" >
-      <selector refid="srm.classpath.selector" />
-    </fileset>
-    <!-- LIB_TRANSITION: This is the fallback for things not in the external module yet. -->
-    <!-- <fileset dir="lib" >
-      <selector refid="srm.classpath.selector" />
-    </fileset> -->
+      <fileset dir="${axis.untared}" includes="**/*.jar" />
+      <fileset dir="${tomcat.untared}/common/lib/" includes="*.jar" />
+      <fileset dir="${tomcat.untared}/server/lib/" includes="*.jar" />
+      <fileset dir="${libDir}/cog" includes="**/*.jar" />
+      <fileset dir="${libDir}/security" includes="**/*.jar" />
+      <fileset dir="${glite.untarred}" includes="**/*.jar" />
+      <fileset dir="${libDir}/terapaths" includes="*.jar" />
+      <pathelement location="${libDir}/jdom/jdom.jar" />
+      <pathelement location="${glue.untared}/GLUE-STD.jar" />
+      <pathelement location="${glue.untared}/dom.jar" />
+      <pathelement location="${glue.untared}/jnet.jar" />
+      <pathelement location="${glue.untared}/jsse.jar" />
+      <pathelement location="${glue.untared}/jcert.jar" />
+      <pathelement location="${glue.untared}/servlet.jar" />
+      <pathelement location="${classesDir}/cells.jar" />
   </path>
 
   <!--       =======

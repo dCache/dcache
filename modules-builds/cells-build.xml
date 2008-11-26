@@ -22,13 +22,11 @@
 
   <property name="cells.jar" location="${classesDir}/cells.jar" />
   <property name="cells-protocols.jar" location="${classesDir}/cells-protocols.jar" />
-  <property name="cells-log4j.jar" location="${classesDir}/cells-log4j.jar" />
 
   <!-- this should be in 'common.xml' but that didnt work -->
   <target name="cleanall" depends="clean" description="Remove everything produced by me." >
     <delete file="${cells.jar}" />
     <delete file="${cells-protocols.jar}" />
-  	<delete file="${cells-log4j.jar}" />
   </target>
 
   <!-- Java sources
@@ -42,19 +40,6 @@
               <available file="${cells.jar}" type="file" />
 	          <uptodate targetfile="${cells.jar}">
 	          	<srcfiles dir="${sourceDir}">
-	          		<include name="**/*.java" />
-	          	</srcfiles>
-	          </uptodate>
-		    </and>
-		  </condition>
-	</target>
-
-	<target name="isUptodate.cells-log4j.jar">
-		  <condition property="cells-log4j.jar.upToDate">
-		    <and>
-              <available file="${cells-log4j.jar}" type="file" />
-	          <uptodate targetfile="${cells-log4j.jar}">
-	          	<srcfiles dir="${sourceDir}/org">
 	          		<include name="**/*.java" />
 	          	</srcfiles>
 	          </uptodate>
@@ -131,13 +116,6 @@
     </or>
   </selector>
 
-  <!-- Packages for cells-log4j.jar -->
-
-  <selector id="cells-log4j.selector">
-    <or>
-        <filename name="org/dcache/cells/*" />
-    </or>
-  </selector>
 
   <!-- Classpath for cells.jar -->
 
@@ -234,40 +212,6 @@
 
   </target>
 
-	 <!--
-	          Target for cells-log4j.jar
-	  -->
-
-	 <target name="cells-log4j.compile" depends="prepare" unless="cells-log4j.jar.upToDate" description="Compile Java code for cells-log4j.jar" >
-
-	    <javac destdir="${buildDir}"
-				classpathref="cells-log4j.classpath"
-				source="${javac.source}"
-				target="${javac.target}"
-				debug="${javac.debug}"
-				verbose="${javac.verbose}">
-	      <src path="${sourceDir}" />
-	      <and>
-			<selector refid="cells-log4j.selector" />
-			<filename name="**/*.java" />
-	      </and>
-	    </javac>
-
-	  </target>
-
-  <target name="cells-log4j.jar" depends="isUptodate.cells.jar,cells-log4j.compile" unless="cells-log4j.jar.upToDate" description="Create cells-log4j.jar" >
-
-    <jar jarfile="${cells-log4j.jar}">
-      <fileset dir="${buildDir}" >
-	<and>
-	  <selector refid="cells-log4j.selector" />
-	  <filename name="**/*.class" />
-	</and>
-      </fileset>
-    </jar>
-
-  </target>
-
 
 	<target name="cells-bin" depends="cells.jar">
 
@@ -284,20 +228,6 @@
 				<include name="*.jar" />
 			</fileset>
 		</copy>
-	</target>
-
-
-	<target name="cells-log4j-bin" depends="cells.jar,cells-log4j.jar">
-
-	<!-- directory layout :
-
-	    <dCache home>-|
-					  |-classes
-	-->
-
-		<mkdir dir="${binDir}/classes" />
-		<copy file="${classesDir}/cells.jar" todir="${binDir}/classes" />
-		<copy file="${classesDir}/cells-log4j.jar" todir="${binDir}/classes" />
 	</target>
 
 	<target name="cells-protocols-bin" depends="cells.jar,cells-protocols.jar">
