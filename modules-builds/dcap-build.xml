@@ -33,12 +33,6 @@
 
   <!-- Packages for javatunnel.jar -->
 
-  <selector id="javatunnel.selector">
-    <or>
-      <filename name="javatunnel/**" />
-    </or>
-  </selector>
-
   <!-- Classpath for javatunnel.jar -->
 
   <path id="javatunnel.classpath">
@@ -108,21 +102,17 @@
   <!-- Compile -->
 
 
-  <target name="javatunnel.compile" depends="prepare" description="Compile Java code for javatunnel.jar" >
+  <target name="javatunnel.compile" depends="prepare" description="Compile Java code for javatunnel.jar" >  
 
-  	<property name="javatunnel.classpath.value" refid="javatunnel.classpath"/>
-
-    <javac destdir="${buildDir}"
-           classpath="${javatunnel.classpath.value}"
+    <javac destdir="${buildDir}"           
            source="${javac.source}"
            target="${javac.target}"
            debug="${javac.debug}"
            verbose="${javac.verbose}">
       <src path="${javatunnel.sourceDir}" />
-      <and>
-	<selector refid="javatunnel.selector" />
-	<filename name="**/*.java" />
-      </and>
+
+      <classpath refid="javatunnel.classpath" />
+
     </javac>
 
   </target>
@@ -130,12 +120,7 @@
   <target name="javatunnel.jar" depends="javatunnel.compile" description="Create javatunnel.jar" >
 
     <jar jarfile="${javatunnel.jar}">
-      <fileset dir="${buildDir}" >
-	<and>
-	  <selector refid="javatunnel.selector" />
-	  <filename name="**/*.class" />
-	</and>
-      </fileset>
+      <fileset dir="${buildDir}"  includes="**/*.class"/>
     </jar>
 
   </target>

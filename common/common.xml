@@ -51,10 +51,14 @@
           Directory creation
   -->
 
-  <target name="prepare">
+  <target name="init">
     <mkdir dir="${buildDir}" />
     <mkdir dir="${classesDir}" />
   </target>
+
+
+  <!-- init dirs, unpack external libraries -->
+  <target name="prepare" depends="init,lib.tomcat.untar,lib.axis.untar,lib.glite.untar,lib.glue.untar" />
 
   <!--
           Clean Targets

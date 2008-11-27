@@ -119,23 +119,10 @@
 
   <!-- Classpath for cells.jar -->
 
-  <selector id="cells-log4j.classpath.selector">
-    <filename name="log4j/log4j*.jar"/>
-  </selector>
-
-  <path id="cells-log4j.classpath">
-    <fileset dir="${classesDir}" >
-      <selector refid="cells-log4j.classpath.selector" />
-    </fileset>
-    <fileset dir="${libDir}" >
-      <selector refid="cells-log4j.classpath.selector" />
-    </fileset>
-  	<fileset dir="${libDir}">
-  		<filename name="jline/jline*.jar"/>
-  	</fileset>
-  </path>
-
-  <!-- no Classpath for cells-protocols.jar -->
+    <path id="cells.classpath">
+        <pathelement location="${libDir}/log4j/log4j-1.2.8.jar" />
+        <fileset dir="${libDir}/jline" includes="jline*.jar"/>
+    </path>
 
 
   <!--       =======
@@ -154,7 +141,7 @@
     <javac destdir="${buildDir}"
            source="${javac.source}"
            target="${javac.target}"
-           classpathref="cells-log4j.classpath"
+           classpathref="cells.classpath"
            debug="${javac.debug}"
            verbose="${javac.verbose}">
       <src path="${sourceDir}" />

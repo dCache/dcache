@@ -100,80 +100,53 @@
 
 	<!-- Classpath for dcache.jar -->
 
-	<selector id="dcache.classpath.selector">
-		<or>
-			<filename name="**/cells.jar" />
-			<filename name="**/srm.jar" />
-			<filename name="**/gplazma.jar" />
-			<filename name="log4j/log4j-1.2.8.jar" />
-			<filename name="dbcp/c3p0-0.9.1.2.jar" />
-			<filename name="berkeleyDB/je-3.2.76.jar" />
-			<filename name="spring/spring-*.jar" />
-		        <filename name="Chimera/chimera-acl.jar" />
-			<filename name="smc/statemap.jar" />
-                        <filename name="dbcp/commons-pool.jar" />
-                        <filename name="dbcp/commons-dbcp.jar" />
-                        <filename name="persistence/persistence-api-1.0.jar" />
-		</or>
-	</selector>
+    <path id="cells.classpath">
+        <pathelement location="${classesDir}/cells.jar" />
+        <pathelement location="${libDir}/log4j/log4j-1.2.8.jar" />
+    </path>
 
-	<selector id="chimera.classpath.selector">
-		<or>
-			<filename name="**/cells.jar" />
-			<filename name="**/gplazma.jar" />
-			<filename name="**/dcache.jar" />
-			<filename name="Chimera/chimera-core.jar" />
-			<filename name="Chimera/chimera-nfs.jar" />
-            <filename name="Chimera/oncrpc.jar" />
-            <filename name="Chimera/portmap.jar" />
-		    <filename name="Chimera/chimera-acl.jar" />
-			<filename name="log4j/log4j-1.2.8.jar" />
-		</or>
-	</selector>
-
-
-    <selector id="replica.classpath.selector">
-        <or>
-            <filename name="**/cells.jar" />
-	    <filename name="**/gplazma.jar" />
-            <filename name="**/dcache.jar" />
-            <filename name="dbcp/commons-pool.jar" />
-            <filename name="dbcp/commons-dbcp.jar" />
-            <filename name="log4j/log4j-1.2.8.jar" />
-        </or>
-    </selector>
-
-
-	<path id="dcache.classpath">
-		<fileset dir="${classesDir}">
-			<selector refid="dcache.classpath.selector" />
-		</fileset>
-		<fileset dir="${libDir}">
-			<selector refid="dcache.classpath.selector" />
-		</fileset>
-	</path>
-
-	<path id="chimera.classpath">
-		<fileset dir="${classesDir}">
-			<selector refid="chimera.classpath.selector" />
-		</fileset>
-		<fileset dir="${libDir}">
-			<selector refid="chimera.classpath.selector" />
-		</fileset>
-	</path>
+    <path id="chimera.classpath">
+        <pathelement location="${classesDir}/gplazma.jar" />
+        <pathelement location="${libDir}/Chimera/chimera-core.jar" />
+        <pathelement location="${libDir}/Chimera/chimera-nfs.jar" />
+        <pathelement location="${libDir}/Chimera/oncrpc.jar" />
+        <pathelement location="${libDir}/Chimera/portmap.jar" />
+        <pathelement location="${libDir}/Chimera/chimera-acl.jar" />
+    </path>
 
     <path id="replica.classpath">
-        <fileset dir="${classesDir}">
-           <selector refid="replica.classpath.selector" />
-        </fileset>
-        <fileset dir="${libDir}">
-            <selector refid="replica.classpath.selector" />
-        </fileset>
+       <pathelement location="${libDir}/dbcp/commons-pool.jar" />
+       <pathelement location="${libDir}/dbcp/commons-dbcp.jar" />
+    </path>
+
+	<path id="dcache.classpath">
+        <path refid="cells.classpath"/>
+        <path refid="chimera.classpath" />
+        <path refid="replica.classpath" />
+		<pathelement location="${classesDir}/srm.jar" />
+		<pathelement location="${classesDir}/gplazma.jar" />
+		<pathelement location="${libDir}/dbcp/c3p0-0.9.1.2.jar" />
+		<pathelement location="${libDir}/berkeleyDB/je-3.2.76.jar" />
+		<fileset dir="${libDir}/spring/" includes="spring-*.jar" />
+		<pathelement location="${libDir}/smc/statemap.jar" />
+        <pathelement location="${libDir}/persistence/persistence-api-1.0.jar" />
+	</path>
+
+
+
+    <!-- Classpath for gplazma.jar. -->
+
+    <path id="authz.classpath">
+        <pathelement location="${classesDir}/gplazma.jar" />
+        <fileset dir="${libDir}/gplazma" includes="**/*.jar" />
+        <pathelement location="${libDir}/security/bcprov-jdk15-133.jar" />
+        <fileset dir="${libDir}/cog" includes="**/*.jar" />
     </path>
 
  	<!-- Classpath for dcache-srm.jar - This is the same as for srm.jar in the srm CVS module -->
 
 	<path id="dcache-srm.classpath">
+      <path refid="authz.classpath" />
       <fileset dir="${axis.untared}" includes="**/*.jar" />
       <fileset dir="${tomcat.untared}/common/lib/" includes="*.jar" />
       <fileset dir="${tomcat.untared}/server/lib/" includes="*.jar" />
@@ -188,7 +161,6 @@
       <pathelement location="${glue.untared}/jsse.jar" />
       <pathelement location="${glue.untared}/jcert.jar" />
       <pathelement location="${glue.untared}/servlet.jar" />
-      <pathelement location="${classesDir}/cells.jar" />
       <pathelement location="${classesDir}/dcache.jar" />
       <pathelement location="${classesDir}/srm.jar" />
       <pathelement location="${libDir}/jpox/jdo2-api-2.0.jar" />
@@ -198,90 +170,29 @@
 
 	<!-- Classpath for enhancement -->
 
-
-	<selector id="dcache-srm-enhance.classpath.selector">
-		<or>
-			<filename name="**/cells.jar" />
-			<filename name="**/gplazma.jar" />
-			<filename name="jpox/bcel-5.1.jar" />
-			<filename name="jpox/log4j-1.2.13.jar" />
-			<filename name="jpox/jdo2-api-2.0.jar" />
-			<filename name="jpox/jpox-enhancer-1.2.2.jar" />
-			<filename name="jpox/jpox-core-1.2.2.jar" />
-			<filename name="jpox/jpox-java5-1.2.2.jar" />
-			<filename name="asm/asm-3.1.jar" />
-		</or>
-	</selector>
-
 	<path id="dcache-srm-enhance.classpath">
-		<fileset dir="${classesDir}">
-			<selector refid="dcache-srm-enhance.classpath.selector" />
-		</fileset>
-		<fileset dir="${libDir}">
-			<selector refid="dcache-srm-enhance.classpath.selector" />
-		</fileset>
+        <pathelement location="${classesDir}/gplazma.jar" />
+        <pathelement location="${libDir}/jpox/jdo2-api-2.0.jar" />
+        <pathelement location="${libDir}/jpox/jpox-core-1.2.2.jar" />
+        <pathelement location="${libDir}/jpox/jpox-enhancer-1.2.2.jar" />
+        <pathelement location="${libDir}/jpox/jpox-java5-1.2.2.jar" />
+        <pathelement location="${libDir}/jpox/bcel-5.1.jar" />
+        <pathelement location="${libDir}/asm/asm-3.1.jar" />
 	    <pathelement path="${buildDir}/dcache-srm"/>
         <pathelement path="${buildDir}/core"/>
 	</path>
 
-
-    <!-- Classpath for gplazma.jar. -->
-
-    <selector id="authz.classpath.selector">
-		<or>
-	    <filename name="**/gplazma.jar" />
-			<filename name="cog/**/*.jar" />
-	    <filename name="gplazma/**/*.jar" />
-		</or>
-	</selector>
-
-    <path id="authz.classpath">
-		<fileset dir="${classesDir}">
-	    <selector refid="authz.classpath.selector" />
-		</fileset>
-		<fileset dir="${libDir}">
-	    <selector refid="authz.classpath.selector" />
-		</fileset>
-	</path>
-
 	<!-- Classpath for xrootd-tokenauthz.jar -->
 
-	<selector id="xrootd-tokenauthz.classpath.selector">
-		<or>
-			<filename name="**/dcache.jar" />
-			<filename name="**/cells.jar" />
-			<filename name="**/gplazma.jar" />
-			<filename name="security/bcprov-jdk15-133.jar" />
-		</or>
-	</selector>
-
-
 	<path id="xrootd-tokenauthz.classpath">
-		<fileset dir="${classesDir}">
-			<selector refid="xrootd-tokenauthz.classpath.selector" />
-		</fileset>
-		<fileset dir="${libDir}">
-			<selector refid="xrootd-tokenauthz.classpath.selector" />
-		</fileset>
+        <pathelement location="${libDir}/security/bcprov-jdk15-133.jar" />
 	</path>
 
 	<!-- Classpath for info.jar -->
 
-	<selector id="info.classpath.selector">
-		<or>
-			<filename name="**/dcache.jar" />
-			<filename name="**/cells.jar" />
-			<filename name="**/gplazma.jar" />
-		</or>
-	</selector>
-
 	<path id="info.classpath">
-		<fileset dir="${classesDir}">
-			<selector refid="info.classpath.selector" />
-		</fileset>
-		<fileset dir="${libDir}">
-			<selector refid="info.classpath.selector" />
-		</fileset>
+        <pathelement location="${classesDir}/gplazma.jar" />
+        <pathelement location="${classesDir}/dcache.jar" />
 	</path>
 
 	<!--       =======
@@ -339,12 +250,12 @@
 
 		<mkdir dir="${buildDir}/core" />
 
-		<javac destdir="${buildDir}/core" classpathref="dcache.classpath" source="${javac.source}" target="${javac.target}" debug="${javac.debug}" verbose="${javac.verbose}"  encoding="${javac.encoding}">
+		<javac destdir="${buildDir}/core" source="${javac.source}" target="${javac.target}" debug="${javac.debug}" verbose="${javac.verbose}"  encoding="${javac.encoding}">
 
 			<src path="${sourceDir}" />
 			<src path="${buildDir}/core" />
 
-                        <classpath refid="dcache.classpath" />
+            <classpath refid="dcache.classpath" />
 			<classpath refid="authz.classpath" />
 
 			<include name="${dcache.packagePrefix}/**" />
@@ -378,33 +289,18 @@
 
 	</target>
 
-
-	<selector id="dcache-auth-enhance.classpath.selector">
-		<or>
-			<filename name="**/cells.jar" />
-			<filename name="**/gplazma.jar" />
-			<filename name="jpox/bcel-5.1.jar" />
-			<filename name="jpox/log4j-1.2.8.jar" />
-			<filename name="jpox/jdo2-api-2.0.jar" />
-			<filename name="jpox/jpox-enhancer-1.2.2.jar" />
-			<filename name="jpox/jpox-core-1.2.2.jar" />
-			<filename name="jpox/jpox-java5-1.2.2.jar" />
-			<filename name="jpox/jpox-rdbms-1.2.2.jar" />
-                        <filename name="asm/asm-3.1.jar" />
-			<filename name="persistence/persistence-api-1.0.jar" />
-			<filename name="asm/asm-3.1.jar" />
-		</or>
-        </selector>
-	<path id="dcache-auth-enhance.classpath">
-		<fileset dir="${classesDir}">
-			<selector refid="dcache-auth-enhance.classpath.selector" />
-		</fileset>
-		<fileset dir="${libDir}">
-			<selector refid="dcache-auth-enhance.classpath.selector" />
-		</fileset>
-            <pathelement path="${buildDir}/core"/>
-	</path>
-
+    <path id="dcache-auth-enhance.classpath">
+        <pathelement location="${classesDir}/gplazma.jar" />
+        <pathelement location="${libDir}/jpox/bcel-5.1.jar" />
+        <pathelement location="${libDir}/jpox/jdo2-api-2.0.jar" />
+        <pathelement location="${libDir}/jpox/jpox-enhancer-1.2.2.jar" />
+        <pathelement location="${libDir}/jpox/jpox-core-1.2.2.jar" />
+        <pathelement location="${libDir}/jpox/jpox-java5-1.2.2.jar" />
+        <pathelement location="${libDir}/jpox/jpox-rdbms-1.2.2.jar" />
+        <pathelement location="${libDir}/persistence/persistence-api-1.0.jar" />
+        <pathelement location="${libDir}/asm/asm-3.1.jar" />
+        <pathelement location="${buildDir}/core"/>
+    </path>
 
 	<target name="dcache-auth.check.enhanced">
 		<condition property="dcache-auth.is.enhanced">
@@ -464,9 +360,13 @@
 
              <mkdir dir="${buildDir}/replicaManager" />
 
-             <javac destdir="${buildDir}/replicaManager" classpathref="replica.classpath" source="${javac.source}" target="${javac.target}" debug="${javac.debug}" verbose="${javac.verbose}"  encoding="${javac.encoding}">
+             <javac destdir="${buildDir}/replicaManager" source="${javac.source}" target="${javac.target}" debug="${javac.debug}" verbose="${javac.verbose}"  encoding="${javac.encoding}">
 
                   <src path="${sourceDir}" />
+
+                  <classpath refid="cells.classpath" />
+                  <classpath refid="replica.classpath" />
+                  
                   <include name="${dcache.packagePrefix}/replicaManager/**" />
                   <exclude name="${dcache.packagePrefix}/replicaManager/ReplicaManagerExample.java" />
                   <exclude name="${dcache.packagePrefix}/replicaManager/CopyManager.java" />
@@ -504,9 +404,11 @@
 
 	<target name="chimera-provider.compile" depends="dcache.jar">
 		<mkdir dir="${buildDir}/chimera-provider" />
-		<javac destdir="${buildDir}/chimera-provider"  classpathref="chimera.classpath"  source="${javac.source}" target="${javac.target}" debug="${javac.debug}" verbose="${javac.verbose}">
+		<javac destdir="${buildDir}/chimera-provider"  source="${javac.source}" target="${javac.target}" debug="${javac.debug}" verbose="${javac.verbose}">
 			<src path="${sourceDir}" />
 			<include name="org/dcache/chimera/**" />
+            <classpath refid="cells.classpath"/>
+            <classpath refid="chimera.classpath" />
 		</javac>
 	</target>
 
@@ -543,6 +445,7 @@
 		<javac destdir="${buildDir}/xrootd-tokenauthz" source="${javac.source}" target="${javac.target}" debug="${javac.debug}" verbose="${javac.verbose}">
 			<src path="${sourceDir}" />
 
+            <classpath refid="cells.classpath" />
 			<classpath refid="dcache.classpath"/>
 			<classpath refid="xrootd-tokenauthz.classpath"/>
 
@@ -578,6 +481,7 @@
 
 		<javac destdir="${buildDir}/info" source="${javac.source}" target="${javac.target}" debug="${javac.debug}" verbose="${javac.verbose}">
 			<src path="${sourceDir}" />
+            <classpath refid="cells.classpath" />
 			<classpath refid="dcache.classpath"/>
 			<classpath refid="info.classpath"/>
 
@@ -607,16 +511,9 @@
              Targets for dcache-srm.jar
   -->
 
-	<!-- Depend -->
-
-	<target name="dcache-srm.depend" depends="prepare,lib.tomcat.untar,lib.axis.untar,lib.glite.untar,lib.glue.untar">
-
-
-	</target>
-
 	<!-- Compile -->
 
-	<target name="dcache-srm.compile" depends="prepare,dcache-srm.depend" unless="dcache-srm.jar.upToDate" description="Compile Java code for dcache-srm.jar">
+	<target name="dcache-srm.compile" depends="prepare" unless="dcache-srm.jar.upToDate" description="Compile Java code for dcache-srm.jar">
 
 		<mkdir dir="${buildDir}/dcache-srm" />
 
@@ -962,6 +859,7 @@
 		</copy>
 
 	</target>
+    
 	<target name="xrootd-tokenauthz-bin" depends="xrootd-tokenauthz.jar">
 
 		<mkdir dir="${binDir}/classes" />
