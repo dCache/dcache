@@ -1134,36 +1134,29 @@ public class Manager
 		return sb.toString();
 	}
 
-	public String hh_remove_file = " <id|pnfsId> " +
-		"# remove file by file id or pnfsid";
+	public String hh_remove_file = " -id=<file id> | -pnfsId=<pnfsId>  " +
+		"# remove file by spacefile id or pnfsid";
 
-	public String ac_remove_file_$_1( Args args )
+	public String ac_remove_file( Args args )
 		throws Exception {
-                try { 
-                        long id = Long.parseLong(args.argv(0));
-                        try {
-                                removeFileFromSpace(id);
-                                return "removed file with id="+id;
-                        }
-                        catch (SQLException e) {
-                                esay(e);
-                                return e.toString();
-                        }
+                String sid     = args.getOpt("id");
+                String sPnfsId = args.getOpt("pnfsId");
+                if (sid!=null&&sPnfsId!=null) { 
+                        return "do not handle \"-id\" and \"-pnfsId\" options simultaneously";
                 }
-                catch (NumberFormatException nfe) { 
-                        try { 
-                                PnfsId pnfsId = new PnfsId(args.argv(0));
-                                File f = getFile(pnfsId);
-                                removeFileFromSpace(f.getId());
-                                return "removed file with pnfsId="+pnfsId;
-                        }
-                        catch (Exception e) { 
-                                esay(e);
-                                return e.toString();
-                        }
+                if (sid!=null) {
+                        long id = Long.parseLong(sid);
+                        removeFileFromSpace(id);
+                        return "removed file with id="+id;
                 }
+                if (sPnfsId!=null) { 
+                        PnfsId pnfsId = new PnfsId(sPnfsId);
+                        File f = getFile(pnfsId);
+                        removeFileFromSpace(f.getId());
+                        return "removed file with pnfsId="+pnfsId;
+                }
+                return "please specify  \"-id=\" or \"-pnfsId=\" option";
         }
-
 
 
 	private static final String selectNextToken = "SELECT nexttoken  FROM "+ManagerSchemaConstants.SpaceManagerNextIdTableName;
