@@ -14,9 +14,7 @@
 	        <pathelement location="${classesDir}/cells.jar"/>
 	        <pathelement location="${classesDir}/dcache.jar"/>
 	        <pathelement location="${classesDir}/gplazma.jar"/>
-	        <pathelement location="${classesDir}/chimera-provider.jar"/>
 	    	<pathelement location="${classesDir}/xrootd-tokenauthz.jar"/>
-			<pathelement location="${classesDir}/info.jar"/>
 	        <pathelement location="${libDir}/Chimera/chimera-core.jar"/>
 	        <pathelement location="${libDir}/Chimera/chimera-acl.jar"/>
 	        <pathelement location="${libDir}/Chimera/hsqldb.jar"/>
@@ -31,16 +29,24 @@
             <pathelement location="${buildTop}/modules/dCache/diskCacheV111/config" />
 	    </path>
 
-	    <target name="run_junit.core">
-
+	
+	    <target name="compile_junit" description="compile junit tests">
+	    	
 	        <mkdir dir="${buildDir}/junit" />
 	        <javac classpathref="junit.classpath" destdir="${buildDir}/junit" source="${javac.source}" target="${javac.target}" debug="${javac.debug}" verbose="${javac.verbose}"  encoding="${javac.encoding}" deprecation="on">
 	            <src path="${sourceDir}" />
 	        </javac>
+	    	
+	    </target>
+	
+	    <target name="run_junit.core" depends="compile_junit">
 
-
+	        <property name="tests.report.home" location="${buildDir}/junit-reports"/>
+	        <mkdir dir="${tests.report.home}" />
+	    	
 	        <junit fork="true">
 	            <classpath refid="junit.classpath" />
+	            <formatter type="xml" usefile="true" />
 	            <formatter type="brief" usefile="false" />
 	            <batchtest todir="${tests.report.home}" haltonfailure="no" >
 	                <fileset dir="${buildDir}/junit" >
@@ -53,39 +59,8 @@
 	                	<exclude name="org/dcache/services/info/base/InfoBaseTest.class"/>
 	                </fileset>
 	            </batchtest>
-            </junit>
-
+                </junit>
 
 	    </target>
-
-    <target name="run_junit.core.hudson">
-
-        <property name="tests.report.home" location="${buildDir}/junit-reports"/>
-
-        <mkdir dir="${buildDir}/junit" />
-        <mkdir dir="${tests.report.home}" />
-        <javac classpathref="junit.classpath" destdir="${buildDir}/junit" source="${javac.source}" target="${javac.target}" debug="${javac.debug}" verbose="${javac.verbose}"  encoding="${javac.encoding}">
-            <src path="${sourceDir}" />
-        </javac>
-
-
-        <junit fork="true" printsummary="yes">
-            <classpath refid="junit.classpath" />
-            <formatter type="xml" usefile="true" />
-            <batchtest todir="${tests.report.home}" haltonfailure="no" >
-                <fileset dir="${buildDir}/junit" >
-                    <include name="**/*.class" />
-                	                	
-                	<!-- Ignore any classes that are not, by themselves, test-cases -->
-                    <exclude name="**/*$*.class" />
-                    <exclude name="**/*Helper.class" />
-                    <exclude name="org/dcache/tests/cells/Message.class"/>
-                	<exclude name="org/dcache/services/info/base/InfoBaseTest.class"/>
-                </fileset>
-            </batchtest>
-        </junit>
-
-
-    </target>
 
 </project>
