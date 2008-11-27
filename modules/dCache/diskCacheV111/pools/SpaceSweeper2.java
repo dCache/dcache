@@ -103,15 +103,11 @@ public class SpaceSweeper2
     private synchronized boolean remove(CacheRepositoryEntry entry)
     {
         PnfsId id = entry.getPnfsId();
-        try {
-            long size = entry.getSize();
-            if (_list.remove(id)) {
-                _log.debug("Removed " + id + " from sweeper");
-                _removableSpace -= size;
-                return true;
-            }
-        } catch (CacheException e) {
-            _log.error("Failed to remove " + id.toString() + " from sweeper: " + e);
+        long size = entry.getSize();
+        if (_list.remove(id)) {
+            _log.debug("Removed " + id + " from sweeper");
+            _removableSpace -= size;
+            return true;
         }
         return false;
     }

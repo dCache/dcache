@@ -839,16 +839,7 @@ public class MultiProtocolPoolV3 extends CellAdapter
         public void precious(CacheRepositoryEvent event) {
             say("RepositoryLoader : precious : " + event);
             CacheRepositoryEntry entry = event.getRepositoryEntry();
-            long size = 0L;
-            try {
-                size = entry.getSize();
-            } catch (CacheException ee) {
-                esay("RepositoryLoader : can't get filesize : " + ee);
-                //
-                // if we can't get the size, so to be on the save side.
-                //
-                size = 1;
-            }
+            long size = entry.getSize();
 
             try {
                 if ((size == 0) && !_flushZeroSizeFiles) {
@@ -896,9 +887,9 @@ public class MultiProtocolPoolV3 extends CellAdapter
 
             CacheRepositoryEntry entry = event.getRepositoryEntry();
             PnfsId id = entry.getPnfsId();
-            entry.lock(false);
-
+            
             try {
+                entry.setSize(entry.getDataFile().length());
                 _pnfs.addCacheLocation(id);
             } catch (CacheException e) {
                 if (e.getRc() == CacheException.FILE_NOT_FOUND) {
@@ -912,6 +903,8 @@ public class MultiProtocolPoolV3 extends CellAdapter
                     esay("[ERROR] Cache location was not set for " + id + ": "
                          + e.getMessage());
                 }
+            } finally {
+                entry.lock(false);
             }
         }
 

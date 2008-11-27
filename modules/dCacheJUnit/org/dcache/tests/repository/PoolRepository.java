@@ -421,19 +421,9 @@ public class PoolRepository {
 
         CacheRepositoryEntry entry = _repository.createEntry(pnfsId);
 
+        entry.setSize(17);
 
-        StorageInfo storageInfo = new GenericStorageInfo();
-        storageInfo.setFileSize(17);
-
-        entry.setStorageInfo(storageInfo);
-
-        assertEquals("file in non ready state should return size of real data file",
-                                entry.getDataFile().length(), entry.getSize() );
-
-        entry.setCached();
-        assertEquals("file in non ready state can return size defined in storage info",
-                storageInfo.getFileSize(), entry.getSize() );
-
+        assertEquals(17, entry.getSize());
     }
 
     @Test
@@ -446,11 +436,7 @@ public class PoolRepository {
 
         CacheRepositoryEntry entry = _repository.createEntry(pnfsId);
 
-        StorageInfo storageInfo = new GenericStorageInfo();
-        storageInfo.setFileSize(17);
-
-        entry.setStorageInfo(storageInfo);
-
+        entry.setSize(17);
         entry.setCached();
 
         long cachedSize2 = sweeper2.getRemovableSpace();
@@ -470,10 +456,7 @@ public class PoolRepository {
 
         CacheRepositoryEntry entry = _repository.createEntry(pnfsId);
 
-        StorageInfo storageInfo = new GenericStorageInfo();
-        storageInfo.setFileSize(17);
-
-        entry.setStorageInfo(storageInfo);
+        entry.setSize(17);
 
         entry.setPrecious(true);
 

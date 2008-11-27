@@ -128,6 +128,7 @@ class WriteHandleImpl implements WriteHandle
 
         _monitor.allocateSpace(size);
         _allocated += size;
+        _entry.setSize(_allocated);
     }
 
     /**
@@ -150,6 +151,7 @@ class WriteHandleImpl implements WriteHandle
 
         _monitor.allocateSpace(size, time);
         _allocated += size;
+        _entry.setSize(_allocated);
     }
 
 
@@ -189,26 +191,20 @@ class WriteHandleImpl implements WriteHandle
                 } else if (_allocated > length) {
                     _monitor.freeSpace(_allocated - length);
                 }
+                _entry.setSize(length);
             } catch (InterruptedException e) {
-                // FIXME: Space allocation is broken now.
+                /* Space allocation is broken now. The entry size
+                 * matches up with what was actually allocated,
+                 * however the file on disk is too large.
+                 *
+                 * Should only happen during shutdown, so no harm done.
+                 *
+                 * TODO: Maybe log a warning.
+                 */
                 throw e;
             }
 
             StorageInfo info = _entry.getStorageInfo();
-
-            /* If this is a new file, i.e. we did not get it from tape
-             * or another pool, then update the size in the storage
-             * info and in PNFS.  Otherwise fail the operation if the
-             * file size is wrong.
-             */
-            if (_initialState == EntryState.FROM_CLIENT &&
-                info.getFileSize() == 0) {
-                info.setFileSize(length);
-                _entry.setStorageInfo(info);
-                _pnfs.setFileSize(_entry.getPnfsId(), length);
-            } else if (info.getFileSize() != length) {
-                throw new CacheException("File does not have expected length. Marking it bad.");
-            }
 
             /* Compare and update checksum. For now we only store the
              * checksum locally. TODO: Compare and update in PNFS.
@@ -222,6 +218,20 @@ class WriteHandleImpl implements WriteHandle
                     throw new CacheException(String.format("Checksum error: file=%s, expected=%s",
                                                            checksum, flags));
                 }
+            }
+
+            /* If this is a new file, i.e. we did not get it from tape
+             * or another pool, then update the size in the storage
+             * info and in PNFS.  Otherwise fail the operation if the
+             * file size is wrong.
+             */
+            if (_initialState == EntryState.FROM_CLIENT &&
+                info.getFileSize() == 0) {
+                info.setFileSize(length);
+                _entry.setStorageInfo(info);
+                _pnfs.setFileSize(_entry.getPnfsId(), length);
+            } else if (info.getFileSize() != length) {
+                throw new CacheException("File does not have expected length. Marking it bad.");
             }
 
             /* Register cache location. Should this fail due to
@@ -282,6 +292,7 @@ class WriteHandleImpl implements WriteHandle
             } else if (_allocated > length) {
                 _monitor.freeSpace(_allocated - length);
             }
+            _entry.setSize(length);
         } catch (InterruptedException e) {
             // Really nothing we can do about it here. This will
             // normally only happen during shutdown and in that case
@@ -300,13 +311,6 @@ class WriteHandleImpl implements WriteHandle
          */
         if (_targetState != EntryState.REMOVED) {
             try {
-                /* Local storage info length must match local file
-                 * length.
-                 */
-                StorageInfo info = _entry.getStorageInfo();
-                info.setFileSize(length);
-                _entry.setStorageInfo(info);
-
                 _pnfs.addCacheLocation(_entry.getPnfsId());
             } catch (CacheException e) {
                 if (e.getRc() == CacheException.FILE_NOT_FOUND) {
