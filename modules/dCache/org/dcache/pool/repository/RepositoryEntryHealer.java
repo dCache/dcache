@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.IOException;
 
 import org.apache.log4j.Logger;
+import org.dcache.pool.classic.ChecksumModuleV1;
+import org.dcache.pool.classic.PoolIOWriteTransfer;
 import org.dcache.pool.repository.DataFileRepository;
 import org.dcache.pool.repository.MetaDataRepository;
 
@@ -13,8 +15,12 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.RetentionPolicy;
+import diskCacheV111.util.Checksum;
+import diskCacheV111.util.ChecksumFactory;
 import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.GenericStorageInfo;
+
+import dmg.cells.nucleus.NoRouteToCellException;
 
 /**
  * The RepositoryEntryHealer encapsulates the logic for recovering
@@ -24,169 +30,50 @@ import diskCacheV111.vehicles.GenericStorageInfo;
 public class RepositoryEntryHealer
 {
     private final static Logger _log =
-        Logger.getLogger("logger.org.dcache.repository."+RepositoryEntryHealer.class.getName());
+        Logger.getLogger(RepositoryEntryHealer.class);
 
-    private final static String REPLICA_BAD_SIZE_MSG =
-        "Replica %1$s has an incorrect size. It is %2$d and should " +
-        "have been %3$d. Marking replica as bad.";
-    private final static String PNFS_BAD_SIZE_MSG =
-        "File size missing in PNFS for %1$s. Setting it to %2$d.";
-    private final static String BAD_SIZE_MSG =
-        "File size mismatch for %1$s. %2$d according to cached " +
-        "meta data, but %3$d in replica.";
-    private final static String PARTIAL_FROM_CLIENT_MSG =
-        "%1$s is incomplete. Recovering meta data from PNFS and " +
-        "marking replica as bad.";
+    private final static String MISSING_MSG =
+        "Recovering: Missing meta data entry for %1$s.";
     private final static String PARTIAL_FROM_TAPE_MSG =
-        "%1$s is not fully staged. Deleting replica.";
+        "Recovering: Removing %1$s because it was not fully staged.";
     private final static String MISSING_SI_MSG =
-        "Storage info for %1$s was lost.";
+        "Recovering: Storage info for %1$s was lost.";
+    private final static String FILE_NOT_FOUND_MSG =
+        "Recovering: Removing %1$s because name space entry was deleted.";
+    private final static String UPDATE_SIZE_MSG =
+        "Recovering: Setting size of %1$s in PNFS to %2$d";
+
+    private final static String BAD_MSG =
+        "Marking %1$s as bad: %2$s"; 
+    private final static String BAD_SIZE_MSG =
+        "File size mismatch for %1$s. Expected %2$d bytes, but found %3$d bytes.";
 
     private final PnfsHandler _pnfsHandler;
     private final MetaDataRepository _metaRepository;
     private final DataFileRepository _dataRepository;
     private final MetaDataRepository _oldRepository;
-
+    private final ChecksumModuleV1 _checksumModule;
 
     public RepositoryEntryHealer(PnfsHandler pnfsHandler,
+                                 ChecksumModuleV1 checksumModule,
                                  DataFileRepository dataRepository,
                                  MetaDataRepository metaRepository)
     {
-        this(pnfsHandler,dataRepository, metaRepository, null );
+        this(pnfsHandler,checksumModule, dataRepository, metaRepository, null);
     }
 
     public RepositoryEntryHealer(PnfsHandler pnfsHandler,
+                                 ChecksumModuleV1 checksumModule,
                                  DataFileRepository dataRepository,
                                  MetaDataRepository metaRepository,
                                  MetaDataRepository oldRepository)
     {
         _pnfsHandler = pnfsHandler;
+        _checksumModule = checksumModule;
         _dataRepository = dataRepository;
         _metaRepository = metaRepository;
         _oldRepository = oldRepository;
     }
-
-    protected CacheRepositoryEntry reconstruct(File file, PnfsId id)
-        throws CacheException
-    {
-        /* Get new storage info from pnfs
-         */
-        try {
-            /* We add cache location first to make sure it is
-             * registered even if the following calls fail with
-             * NOT_IN_TRASH.
-             */
-            _pnfsHandler.addCacheLocation(id);
-
-            StorageInfo storageInfo =
-                _pnfsHandler.getStorageInfo(id.toString());
-
-            boolean precious =
-                storageInfo.getRetentionPolicy().equals(RetentionPolicy.CUSTODIAL) && !storageInfo.isStored();
-            boolean sticky =
-                storageInfo.getAccessLatency().equals(AccessLatency.ONLINE);
-            boolean bad = false;
-
-            CacheRepositoryEntry entry = _metaRepository.create(id);
-
-            /* If the file size does not match the one in PNFS, we
-             * have no way to know which is correct.
-             *
-             * We make the assumption that if the file is precious and
-             * has zero size in PNFS, then the replica's file size is
-             * the correct one. In this case we update the file size
-             * in PNFS.
-             *
-             * Otherwise the replica is corrupted and we mark it as
-             * bad.
-             *
-             * REVISIT: As of this writing, we are revising the
-             * semantics of size information stored at the pool, so
-             * the following code should be updated again.
-             */
-            long length = file.length();
-            if (storageInfo.getFileSize() != length) {
-                if (precious && storageInfo.getFileSize() == 0) {
-                    _log.warn(String.format(PNFS_BAD_SIZE_MSG, id, length));
-                    _pnfsHandler.setFileSize(id, length);
-                } else {
-                    _log.error(String.format(REPLICA_BAD_SIZE_MSG, id, length,
-                                             storageInfo.getFileSize()));
-                    bad = true;
-                }
-                storageInfo.setFileSize(length);
-            }
-
-            /* The order in which we update the entry is significant:
-             *
-             * - The storage information defines the file size and
-             *   must be set before the file is marked cached.
-             *
-             * - The sticky flag must be set before marking the file
-             *   cached to avoid that the file is prematurely garbage
-             *   collected.
-             *
-             * - Bad must be set last, as state transitions on bad
-             *   entries are not allowed.
-             */
-            entry.setStorageInfo(storageInfo);
-
-            if (bad) {
-                entry.setBad(true);
-            } else {
-                if (sticky) {
-                    entry.setSticky("system", -1, true);
-                }
-
-                if (precious) {
-                    entry.setPrecious(true);
-                } else {
-                    entry.setCached();
-                }
-            }
-
-            _log.warn("Meta data recovered: " + entry.toString());
-
-            return entry;
-        } catch (CacheException e) {
-            switch (e.getRc()) {
-            case CacheException.NOT_IN_TRASH:
-                long length = file.length();
-                if (length > 0) {
-                    _log.warn(id + " is not in trash. Keeping replica...");
-
-                    /* To avoid misacounting in the pool and complains
-                     * about the file not showing up in 'rep ls', we
-                     * create a meta data entry for the file.
-                     */
-                    CacheRepositoryEntry entry = _metaRepository.create(id);
-                    StorageInfo storageInfo = new GenericStorageInfo();
-                    storageInfo.setFileSize(length);
-                    entry.setStorageInfo(storageInfo);
-                    entry.setBad(true);
-
-                    return entry;
-                } else {
-                    _log.warn(id + " is not in trash, but is empty. Removing replica...");
-                    _metaRepository.remove(id);
-                    file.delete();
-                    _pnfsHandler.clearCacheLocation(id);
-                    return null;
-                }
-
-            case CacheException.FILE_NOT_FOUND:
-                _log.warn(id + " was deleted. Removing replica...");
-                _metaRepository.remove(id);
-                file.delete();
-                _pnfsHandler.clearCacheLocation(id);
-                return null;
-
-            default:
-                throw e;
-            }
-        }
-    }
-
 
     /**
      * Retrieves a CacheRepositoryEntry from a MetaDataRepository. If
@@ -194,7 +81,8 @@ public class RepositoryEntryHealer
      * reconstructed with information from PNFS.
      */
     public CacheRepositoryEntry entryOf(PnfsId id)
-        throws IOException, IllegalArgumentException, CacheException
+        throws IOException, IllegalArgumentException, CacheException,
+               InterruptedException
     {
         File file = _dataRepository.get(id);
         if (!file.isFile()) {
@@ -215,70 +103,126 @@ public class RepositoryEntryHealer
             }
         }
 
-        /* Check entry and heal it if necessary.
-         */
+        boolean isBroken =
+            (entry == null) ||
+            (entry.getStorageInfo() == null) ||
+            (entry.getStorageInfo().getFileSize() != entry.getSize()) ||
+            (!entry.isPrecious() && !entry.isCached()) || 
+            entry.isBad();
+        
         if (entry == null) {
-            _log.warn("Missing meta data for " + id);
-            entry = reconstruct(file, id);
-        } else if (entry.isReceivingFromClient()) {
-            _log.warn(String.format(PARTIAL_FROM_CLIENT_MSG, id));
+            _log.warn(String.format(MISSING_MSG, id));
+            entry = _metaRepository.create(id);
+        }
 
+        if (isBroken) {
             try {
-                StorageInfo storageInfo =
-                    _pnfsHandler.getStorageInfo(id.toString());
-                storageInfo.setFileSize(length);
-
-                entry.setStorageInfo(storageInfo);
-                entry.setSticky("system", -1, true);
-                entry.setCached();
-
-                _pnfsHandler.addCacheLocation(id);
-            } catch (CacheException e) {
-                if (e.getRc() == CacheException.FILE_NOT_FOUND) {
-                    /* The file is already gone
-                    */
-                    _log.warn(id + " was deleted. Removing replica.");
-                    _metaRepository.remove(id);
-                    file.delete();
-                } else if (e.getRc() == CacheException.NOT_IN_TRASH) {
-                    _log.warn(id + " is not in trash. Keep replica...");
-                } else
-                    throw e;
-            }
-        } else if (entry.isReceivingFromStore()) {
-            // it's safe to remove partialyFromStore file, we have a
-            // copy on HSM anyway
-            _log.info(String.format(PARTIAL_FROM_TAPE_MSG, id));
-            _metaRepository.remove(id);
-            file.delete();
-            return null;
-        } else if (entry.isBad() || !(entry.isCached() || entry.isPrecious())) {
-            /* Make sure that the cache location is registered and
-             * remove the replica if the file has been deleted, but
-             * otherwise leave the entry as it is.
-             */
-            entry.setBad(true);
-            try {
-                _pnfsHandler.addCacheLocation(id);
-            } catch (CacheException e) {
-                if (e.getRc() == CacheException.FILE_NOT_FOUND) {
-                    _log.warn(id + " was deleted. Removing replica...");
+                /* It is safe to remove FROM_STORE files: We have a copy
+                 * on HSM anyway.
+                 */
+                if (entry.isReceivingFromStore()) {
+                    _log.info(String.format(PARTIAL_FROM_TAPE_MSG, id));
                     _metaRepository.remove(id);
                     file.delete();
                     _pnfsHandler.clearCacheLocation(id);
                     return null;
                 }
+
+                /* Make sure that the copy is registered in PNFS. This
+                 * may fail with FILE_NOT_FOUND if the file was
+                 * already deleted.
+                 */
+                _pnfsHandler.addCacheLocation(id);
+
+                /* In particular with the file backend, it could
+                 * happen that the SI files was deleted outside of
+                 * dCache. If storage info is missing, we try to fetch
+                 * a new copy from PNFS.
+                 */
+                StorageInfo info = entry.getStorageInfo();
+                if (info == null) {
+                    _log.warn(String.format(MISSING_SI_MSG, id));
+                    info = _pnfsHandler.getStorageInfo(id.toString());
+                    entry.setStorageInfo(info);
+                }
+
+                /* If the intended file size is known, then compare it
+                 * to the actual file size on disk. Fail in case of a
+                 * mismatch. Notice we do this before the checksum
+                 * check: First of all it is a lot cheaper than the
+                 * checksum check and we may thus safe some time for
+                 * incomplete files. Second, if file size is known but
+                 * checksum is not, then we want to fail before the
+                 * checksum is updated in PNFS.
+                 */
+                if (info.getFileSize() > 0 && info.getFileSize() != length) {
+                    throw new CacheException(String.format(BAD_SIZE_MSG, id, info.getFileSize(), length));
+                }
+
+                /* Compute and update checksum. May fail if there is a
+                 * mismatch. 
+                 */
+                if (_checksumModule != null) {
+                    ChecksumFactory factory = 
+                        _checksumModule.getDefaultChecksumFactory();
+                    _checksumModule.setMoverChecksums(id, file, factory, 
+                                                      null, null);
+                }
+            
+                /* Update the size in the storage info and in PNFS if
+                 * file size is unknown. TODO: Check that we are not
+                 * precious or cached already - in that case we know
+                 * file size has been set.
+                 */
+                if (info.getFileSize() == 0 && length > 0) {
+                    _log.warn(String.format(UPDATE_SIZE_MSG, id, length));
+                    _pnfsHandler.setFileSize(id, length);
+                    info.setFileSize(length);
+                    entry.setStorageInfo(info);
+                }
+
+                /* If not already precious or cached, we move the entry to
+                 * the target state of a newly uploaded file.
+                 */
+                if (!entry.isCached() && !entry.isPrecious()) {
+                    for (StickyRecord record: PoolIOWriteTransfer.getStickyRecords(info)) {
+                        entry.setSticky(record.owner(), record.expire(), false);
+                    }
+            
+                    if (PoolIOWriteTransfer.getTargetState(info) == EntryState.PRECIOUS) {
+                        entry.setPrecious();
+                    } else {
+                        entry.setCached();
+                    }
+                }
+
+                entry.setBad(false);
+            } catch (CacheException e) {
+                switch (e.getRc()) {
+                case CacheException.FILE_NOT_FOUND:
+                    _log.warn(String.format(FILE_NOT_FOUND_MSG, id));
+                    _metaRepository.remove(id);
+                    file.delete();
+                    _pnfsHandler.clearCacheLocation(id);
+                    return null;
+
+                case CacheException.TIMEOUT:
+                    throw e;
+
+                default:
+                    _log.error(String.format(BAD_MSG, id, e.getMessage()));
+                    entry.setBad(true);
+                    break;
+                }
+            } catch (NoRouteToCellException e) {
+                /* As far as the caller of entryOf is concerned, there
+                 * is no difference between the PnfsManager being down
+                 * and it timing out. We therefore masquerade the
+                 * exception as a timeout.
+                 */ 
+                throw new CacheException(CacheException.TIMEOUT, 
+                                         "Timeout talking to PnfsManager");
             }
-        } else if (entry.getStorageInfo() == null) {
-            _log.warn(String.format(MISSING_SI_MSG, id));
-            _metaRepository.remove(id);
-            entry = reconstruct(file, id);
-        } else if (entry.getStorageInfo().getFileSize() != length) {
-            _log.warn(String.format(BAD_SIZE_MSG, id, 
-                                    entry.getStorageInfo().getFileSize(), 
-                                    length));
-            _metaRepository.remove(id);
-            entry = reconstruct(file, id);
         }
 
         return entry;

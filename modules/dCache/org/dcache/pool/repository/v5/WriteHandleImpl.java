@@ -154,24 +154,97 @@ class WriteHandleImpl implements WriteHandle
         _entry.setSize(_allocated);
     }
 
+    /**
+     * Adjust space reservation. Will log an error in case of under
+     * allocation.
+     */
+    private void adjustReservation(long length)
+        throws InterruptedException
+    {
+        try {
+            if (_allocated < length) {
+                _log.error("Under allocation detected. This is a bug. Please report it.");
+                allocate(length - _allocated);
+            } else if (_allocated > length) {
+                _monitor.freeSpace(_allocated - length);
+            }
+            _entry.setSize(length);
+        } catch (InterruptedException e) {
+            /* Space allocation is broken now. The entry size
+             * matches up with what was actually allocated,
+             * however the file on disk is too large.
+             *
+             * Should only happen during shutdown, so no harm done.
+             */
+            _log.warn("Failed to adjust space reservation because the operation was interrupted. The pool is now over allocated.");            
+            throw e;
+        }
+    }
 
     /**
-     * Cancels the process of creating a replica.
-     *
-     * If the replica is kept, its entry is flagged as bad. Otherwise
-     * the replica is deleted, allocated space is released and the
-     * entry will be removed.
-     *
-     * The handle will not be closed and the close method must still
-     * be called.
+     * Compare and update checksum. For now we only store the checksum
+     * locally. TODO: Compare and update in PNFS.
      */
-    public void cancel(boolean keep) throws IllegalStateException
+    private void setChecksum(StorageInfo info, Checksum checksum)
+        throws CacheException
     {
-        if (keep) {
-            _targetState = EntryState.BROKEN;
-        } else {
-            _targetState = EntryState.REMOVED;
+        String flags = info.getKey("flag-c");
+        if (flags == null) {
+            info.setKey("flag-c", checksum.toString());
+            _entry.setStorageInfo(info);
+        } else if (!checksum.equals(new Checksum(flags))) {
+            throw new CacheException(String.format("Checksum error: file=%s, expected=%s",
+                                                   checksum, flags));
         }
+    }
+
+    /**
+     * Set file size in PNFS.
+     *
+     * If this is a new file, i.e. we did not get it from tape or
+     * another pool, then update the size in the storage info and in
+     * PNFS.  Otherwise fail the operation if the file size is wrong.
+     */
+    private void setFileSize(StorageInfo info, long length)
+        throws CacheException
+    {
+        if (_initialState == EntryState.FROM_CLIENT &&
+            info.getFileSize() == 0) {
+            info.setFileSize(length);
+            _entry.setStorageInfo(info);
+            _pnfs.setFileSize(_entry.getPnfsId(), length);
+        } else if (info.getFileSize() != length) {
+            throw new CacheException("File does not have expected length");
+        }
+    }
+
+    private void registerCacheLocation()
+        throws CacheException
+    {
+        _pnfs.addCacheLocation(_entry.getPnfsId());
+    }
+
+
+    private void setToTargetState()
+        throws CacheException
+    {
+        /* In several situations, dCache requests a CACHED file
+         * without having any sticky flags on it. Such files are
+         * subject to immediate garbage collection if we are short on
+         * disk space. Thus to give other clients time to access the
+         * file, we mark it sticky for a short amount of time.
+         */
+        if (_targetState == EntryState.CACHED && _stickyRecords.isEmpty()) {
+            long now = System.currentTimeMillis();
+            _entry.setSticky("self", now + HOLD_TIME, false);
+        }
+        
+        /* Move entry to target state.
+         */
+        for (StickyRecord record: _stickyRecords) {
+            _entry.setSticky(record.owner(), record.expire(), false);
+        }
+        _repository.setState(_entry, _targetState);
     }
 
     public void commit(Checksum checksum)
@@ -181,58 +254,16 @@ class WriteHandleImpl implements WriteHandle
             throw new IllegalStateException("Handle is closed");
 
         try {
-            /* Adjust reservation.
-             */
             long length = getFile().length();
-            try {
-                if (_allocated < length) {
-                    _log.error("Underallocation");
-                    allocate(length - _allocated);
-                } else if (_allocated > length) {
-                    _monitor.freeSpace(_allocated - length);
-                }
-                _entry.setSize(length);
-            } catch (InterruptedException e) {
-                /* Space allocation is broken now. The entry size
-                 * matches up with what was actually allocated,
-                 * however the file on disk is too large.
-                 *
-                 * Should only happen during shutdown, so no harm done.
-                 *
-                 * TODO: Maybe log a warning.
-                 */
-                throw e;
-            }
+            adjustReservation(length);
 
             StorageInfo info = _entry.getStorageInfo();
 
-            /* Compare and update checksum. For now we only store the
-             * checksum locally. TODO: Compare and update in PNFS.
-             */
             if (checksum != null) {
-                String flags = info.getKey("flag-c");
-                if (flags == null) {
-                    info.setKey("flag-c", checksum.toString());
-                    _entry.setStorageInfo(info);
-                } else if (!checksum.equals(new Checksum(flags))) {
-                    throw new CacheException(String.format("Checksum error: file=%s, expected=%s",
-                                                           checksum, flags));
-                }
+                setChecksum(info, checksum);
             }
 
-            /* If this is a new file, i.e. we did not get it from tape
-             * or another pool, then update the size in the storage
-             * info and in PNFS.  Otherwise fail the operation if the
-             * file size is wrong.
-             */
-            if (_initialState == EntryState.FROM_CLIENT &&
-                info.getFileSize() == 0) {
-                info.setFileSize(length);
-                _entry.setStorageInfo(info);
-                _pnfs.setFileSize(_entry.getPnfsId(), length);
-            } else if (info.getFileSize() != length) {
-                throw new CacheException("File does not have expected length. Marking it bad.");
-            }
+            setFileSize(info, length);
 
             /* Register cache location. Should this fail due to
              * FILE_NOT_FOUND, then the catch below will cause the
@@ -241,26 +272,9 @@ class WriteHandleImpl implements WriteHandle
              * pool will repeat the registration step at the next
              * start.
              */
-            _pnfs.addCacheLocation(_entry.getPnfsId());
+            registerCacheLocation();
 
-            /* In several situations, dCache requests a CACHED file
-             * without having any sticky flags on it. Such files are
-             * subject to immediate garbage collection if we are short
-             * on disk space. Thus to give other clients time to
-             * access the file, we mark it sticky for a short amount
-             * of time.
-             */
-            if (_targetState == EntryState.CACHED && _stickyRecords.isEmpty()) {
-                long now = System.currentTimeMillis();
-                _entry.setSticky("self", now + HOLD_TIME, false);
-            }
-
-            /* Move entry to target state.
-             */
-            for (StickyRecord record: _stickyRecords) {
-                _entry.setSticky(record.owner(), record.expire(), false);
-            }
-            _repository.setState(_entry, _targetState);
+            setToTargetState();
 
             _state = HandleState.COMMITTED;
         } catch (CacheException e) {
@@ -282,27 +296,18 @@ class WriteHandleImpl implements WriteHandle
      */
     private void fail()
     {
-        /* Need to adjust space allocation anyway.
-         */
         long length = getFile().length();
         try {
-            if (_allocated < length) {
-                _log.error("Underallocation");
-                allocate(length - _allocated);
-            } else if (_allocated > length) {
-                _monitor.freeSpace(_allocated - length);
-            }
-            _entry.setSize(length);
+            adjustReservation(length);
         } catch (InterruptedException e) {
-            // Really nothing we can do about it here. This will
-            // normally only happen during shutdown and in that case
-            // it is not a serious problem. And even then, it will
-            // only happen if we have buggy movers.
-        }            
+            // Carry on
+        }
 
-        /* Decide if we should mark the file broken or removed.
+        /* Files from tape or from another pool are deleted in case of
+         * errors.
          */
-        if (_initialState != EntryState.FROM_CLIENT || length == 0) {
+        if (_initialState == EntryState.FROM_POOL ||
+            _initialState == EntryState.FROM_STORE) {
             _targetState = EntryState.REMOVED;
         }
 
@@ -311,7 +316,7 @@ class WriteHandleImpl implements WriteHandle
          */
         if (_targetState != EntryState.REMOVED) {
             try {
-                _pnfs.addCacheLocation(_entry.getPnfsId());
+                registerCacheLocation();
             } catch (CacheException e) {
                 if (e.getRc() == CacheException.FILE_NOT_FOUND) {
                     _targetState = EntryState.REMOVED;
@@ -326,6 +331,7 @@ class WriteHandleImpl implements WriteHandle
             _entry.lock(false);
             _repository.setState(_entry, EntryState.REMOVED);
         } else {
+            _log.warn("Marking pool entry as BROKEN");
             _repository.setState(_entry, EntryState.BROKEN);
             _entry.lock(false);
         }

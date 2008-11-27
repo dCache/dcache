@@ -32,7 +32,7 @@ import java.util.Collections;
  * Encapsulates a write transfer, that is, receiving a file. It acts
  * as a bridge between the repository and a mover.
  */
-class PoolIOWriteTransfer
+public class PoolIOWriteTransfer
     extends PoolIOTransfer
 {
     private final WriteHandle _handle;
@@ -43,20 +43,19 @@ class PoolIOWriteTransfer
     private ChecksumFactory _checksumFactory;
     private Checksum _clientChecksum;
     private Checksum _transferChecksum;
-    private boolean _success = false;
     private long _size;
 
-    private static List<StickyRecord> getStickyRecords(StorageInfo info)
+    public static List<StickyRecord> getStickyRecords(StorageInfo info)
     {
         AccessLatency al = info.getAccessLatency();
-        if (al != null && al.equals( AccessLatency.ONLINE)) {
+        if (al != null && al.equals(AccessLatency.ONLINE)) {
             return Collections.singletonList(new StickyRecord("system", -1));
         } else {
             return Collections.emptyList();
         }
     }
 
-    private static EntryState getTargetState(StorageInfo info)
+    public static EntryState getTargetState(StorageInfo info)
     {
         // flush to tape only if the file defined as a 'tape
         // file'( RP = Custodial) and the HSM is defined
@@ -76,7 +75,7 @@ class PoolIOWriteTransfer
                                MoverProtocol mover,
                                Repository repository,
                                ChecksumModuleV1 checksumModule)
-        throws FileInCacheException
+        throws FileInCacheException, IOException
     {
         super(pnfsId, protocolInfo, storageInfo, mover);
 
@@ -104,6 +103,7 @@ class PoolIOWriteTransfer
                                          target,
                                          stickyRecords);
         _file = _handle.getFile();
+        _file.createNewFile();
         _monitor = new WriteHandleSpaceMonitorAdapter(repository, _handle);
     }
 
@@ -140,8 +140,6 @@ class PoolIOWriteTransfer
                 } else {
                     runMover(raf);
                 }
-
-                _success = true;
             } finally {
                 /* This may throw an IOException, although it is not
                  * clear when this would happen. If it does, we are
@@ -162,19 +160,17 @@ class PoolIOWriteTransfer
                IOException, NoRouteToCellException
     {
         try {
-            if (_success) {
-                if (_checksumFactory == null) {
-                    _checksumFactory = 
-                        _checksumModule.getDefaultChecksumFactory();
-                }
-
-                _checksumModule.setMoverChecksums(_pnfsId,
-                                                  _file,
-                                                  _checksumFactory,
-                                                  _clientChecksum,
-                                                  _transferChecksum);
-                _handle.commit(null);
+            if (_checksumFactory == null) {
+                _checksumFactory = 
+                    _checksumModule.getDefaultChecksumFactory();
             }
+            
+            _checksumModule.setMoverChecksums(_pnfsId,
+                                              _file,
+                                              _checksumFactory,
+                                              _clientChecksum,
+                                              _transferChecksum);
+            _handle.commit(null);
         } finally {
             _handle.close();
         }
