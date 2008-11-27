@@ -297,37 +297,6 @@
   </target>
 
 	<!--
-			Info
-	-->
-
-	<target name="info" depends="prepare,cells,dcache-srm" description="Compile info package and create info.jar">
-		<ant dir="modules-builds" antfile="dcache-core-build.xml" target="info.jar" inheritAll="false">
-			<property name="libDir" location="${libDir}" />
-			<property name="buildDir" value="${buildDir}/info/" />
-			<property name="classesDir" value="${classesDir}" />
-			<property name="sourceDir" location="${dCacheBox-module}/dCache" />
-			<property name="buildTop" location="${buildTop}" />
-			<property name="release.name" value="${release.name}" />
-            <property name="unpackTop" value="${unpackTop}" />
-		</ant>
-	</target>
-
-	<target name="info.bin" depends="dcache-srm.bin" description="Compile info package and create info.jar in 'binDir'">
-		<ant  dir="modules-builds" antfile="dcache-core-build.xml" target="info-bin" inheritAll="false">
-			<property name="libDir" location="${libDir}" />
-			<property name="buildDir" value="${buildDir}/info/" />
-			<property name="classesDir" value="${classesDir}" />
-			<property name="sourceDir" location="${dCacheBox-module}/dCache" />
-			<property name="buildTop" location="${buildTop}" />
-			<property name="binDir" location="${binDir}" />
-			<property name="release.name" value="${release.name}" />
-            <property name="unpackTop" value="${unpackTop}" />
-		</ant>
-	</target>
-
-
-
-	<!--
 	          xrootd-token authorization plugin
 	  -->
 

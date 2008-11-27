@@ -22,8 +22,6 @@
 	<property name="dcache-replica.jar" location="${classesDir}/dcache-replica.jar" />
 	<property name="dcache-srm.jar" location="${classesDir}/dcache-srm.jar" />
 	<property name="xrootd-tokenauthz.jar" location="${classesDir}/xrootd-tokenauthz.jar" />
-	<property name="chimera-provider.jar" location="${classesDir}/chimera-provider.jar" />
-	<property name="info.jar" location="${classesDir}/info.jar" />
 
 	<!-- this should be in 'common.xml' but that didnt work -->
 	<target name="cleanall" depends="clean" description="Remove everything produced by me.">
@@ -188,13 +186,6 @@
         <pathelement location="${libDir}/security/bcprov-jdk15-133.jar" />
 	</path>
 
-	<!-- Classpath for info.jar -->
-
-	<path id="info.classpath">
-        <pathelement location="${classesDir}/gplazma.jar" />
-        <pathelement location="${classesDir}/dcache.jar" />
-	</path>
-
 	<!--       =======
              TARGETS
              =======          -->
@@ -270,10 +261,8 @@
 			<exclude name="${dcache.packagePrefix}/services/TransferManagerHandler.java" />
 			<exclude name="${dcache.packagePrefix}/services/TransferManagerHandlerBackup.java" />
 			<exclude name="${dcache.packagePrefix}/services/TransferManagerHandlerState.java" />
-			<exclude name="org/dcache/chimera/**"/>
 			<exclude name="org/dcache/xrootd/security/plugins/**" />
 			<exclude name="org/dcache/xrootd/tests/**" />
-			<exclude name="org/dcache/services/info/**" />
 			<exclude name="${dcache.packagePrefix}/replicaManager/Semaphore.java" />
 			<exclude name="${dcache.packagePrefix}/replicaManager/ReplicaManagerV2.java" />
 			<exclude name="${dcache.packagePrefix}/replicaManager/ReplicaManager.java" />
@@ -399,44 +388,6 @@
 
         </target>
 
-
-	<!-- Chimera namespace provider  -->
-
-	<target name="chimera-provider.compile" depends="dcache.jar">
-		<mkdir dir="${buildDir}/chimera-provider" />
-		<javac destdir="${buildDir}/chimera-provider"  source="${javac.source}" target="${javac.target}" debug="${javac.debug}" verbose="${javac.verbose}">
-			<src path="${sourceDir}" />
-			<include name="org/dcache/chimera/**" />
-            <classpath refid="cells.classpath"/>
-            <classpath refid="chimera.classpath" />
-		</javac>
-	</target>
-
-	<target name="chimera-provider.jar" depends="chimera-provider.compile">
-
-		<jar jarfile="${chimera-provider.jar}">
-			<fileset dir="${buildDir}/chimera-provider" includes="**/*.class" />
-			<manifest>
-				<section name="Shared">
-					<attribute name="Title" value="dCache Core" />
-					<attribute name="Vendor" value="dCache.ORG" />
-					<attribute name="Date" value="${jar.timestamp}" />
-				</section>
-				<section name="Copyright">
-					<attribute name="Copy" value="(C) dCache.ORG  2000 - 2008" />
-				</section>
-				<attribute name="Main-Class" value="diskCacheV111.util.Version" />
-				<attribute name="Class-Path" value="cells.jar" />
-				<attribute name="Specification-Version" value="${release.name}" />
-				<attribute name="Specification-Vendor" value="dCache.ORG (DESY,FERMI)" />
-				<attribute name="Package-Title" value="dmg.util" />
-				<attribute name="Package-Version" value="${release.name}" />
-				<attribute name="Package-Vendor" value="dCache.ORG (DESY,FERMI)"	/>
-			</manifest>
-		</jar>
-
-	</target>
-
 	<!-- xrootd-tokenauthorization plugin -->
 	<target name="xrootd-tokenauthz.compile" unless="xrootd-tokenauthz.jar.upToDate" depends="dcache.jar">
 
@@ -470,41 +421,6 @@
 			</manifest>
 		</jar>
 
-	</target>
-
-	<!--
-	     I N F O   S E R V I C E
-	-->
-
-	<target name="info.compile" unless="info.jar.upToDate" depends="dcache.jar">
-		<mkdir dir="${buildDir}/info"/>
-
-		<javac destdir="${buildDir}/info" source="${javac.source}" target="${javac.target}" debug="${javac.debug}" verbose="${javac.verbose}">
-			<src path="${sourceDir}" />
-            <classpath refid="cells.classpath" />
-			<classpath refid="dcache.classpath"/>
-			<classpath refid="info.classpath"/>
-
-			<include name="org/dcache/services/info/**" />
-		</javac>
-	</target>
-
-
-	<target name="info.jar" depends="isUptodate.info.jar,info.compile" unless="info.jar.upToDate" description="Create info.jar">
-		<jar jarfile="${info.jar}">
-			<fileset dir="${buildDir}/info" />
-
-			<manifest>
-				<section name="Shared">
-					<attribute name="Title" value="dCache info cell" />
-					<attribute name="Vendor" value="dCache.ORG" />
-					<attribute name="Date" value="${jar.timestamp}" />
-				</section>
-				<section name="Copyright">
-					<attribute name="Copy" value="(C) dCache.ORG  2000 - 2008" />
-				</section>
-			</manifest>
-		</jar>
 	</target>
 
 	<!--
@@ -598,7 +514,7 @@
 	-->
 
 
-	<target name="dcache-bin" depends="dcache.jar,dcache-replica.jar,chimera-provider.jar">
+	<target name="dcache-bin" depends="dcache.jar,dcache-replica.jar">
 
 		<mkdir dir="${binDir}/classes" />
 		<mkdir dir="${binDir}/jobs" />
@@ -675,7 +591,6 @@
 		<copy file="${libDir}/Chimera/chimera-core.jar" todir="${binDir}/classes/chimera" />
 	    <copy file="${libDir}/Chimera/chimera-acl.jar" todir="${binDir}/classes/chimera" />
 		<copy file="${libDir}/Chimera/chimera-config.xml" todir="${binDir}/config" />
-		<copy file="${classesDir}/chimera-provider.jar" todir="${binDir}/classes/chimera" />
 	    <copy file="${libDir}/Chimera/oncrpc.jar" todir="${binDir}/classes/chimera" />
 	    <copy file="${libDir}/Chimera/portmap.jar" todir="${binDir}/classes/chimera" />
 	    <copy file="${libDir}/Chimera/chimera-nfs.jar" todir="${binDir}/classes/chimera" />
@@ -875,12 +790,6 @@
 				<include name="bcprov-jdk15-133.jar" />
 			</fileset>
 		</copy>
-	</target>
-
-	<target name="info-bin" depends="info.jar">
-		<mkdir dir="${binDir}/classes" />
-
-		<copy file="${classesDir}/info.jar" todir="${binDir}/classes" />
 	</target>
 
 </project>

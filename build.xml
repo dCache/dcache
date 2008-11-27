@@ -72,7 +72,7 @@
         <property name="bookDir" location="${server.rpmDcacheDir}" />
     </target>
 
-    <target name="server.rpminstall" depends="server.rpmprepare,srm.bin,dcache-srm.bin,info.bin,infoProvider.bin,xrootd-tokenauthz.bin,javatunnel.bin,dcache-classpath">
+    <target name="server.rpminstall" depends="server.rpmprepare,srm.bin,dcache-srm.bin,infoProvider.bin,xrootd-tokenauthz.bin,javatunnel.bin,dcache-classpath">
 
         <!-- rpm directory structure with some defaults scripts -->
         <copy todir="${server.rpmDcacheDir}">
