@@ -273,8 +273,10 @@ public class RepositoryEntryHealer
             _log.warn(String.format(MISSING_SI_MSG, id));
             _metaRepository.remove(id);
             entry = reconstruct(file, id);
-        } else if (entry.getSize() != length) {
-            _log.warn(String.format(BAD_SIZE_MSG, id, entry.getSize(), length));
+        } else if (entry.getStorageInfo().getFileSize() != length) {
+            _log.warn(String.format(BAD_SIZE_MSG, id, 
+                                    entry.getStorageInfo().getFileSize(), 
+                                    length));
             _metaRepository.remove(id);
             entry = reconstruct(file, id);
         }

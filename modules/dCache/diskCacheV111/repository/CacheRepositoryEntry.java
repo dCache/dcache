@@ -27,10 +27,27 @@ public interface CacheRepositoryEntry {
      * Get the PnfsId of this entry.
      */
    public PnfsId getPnfsId() ;
-   /**
-     * Get the size of this entry (if available)
+
+    /**
+     * Set the size of the entry. An entry has a size which normally
+     * corresponds to the size of the file on disk. While the file is
+     * created there may be a mismatch between the entry size and the
+     * physical size.
+     *
+     * For a healthy entry and complete, the entry size will match the
+     * file size stored in PNFS. For broken entries or while the file
+     * is created, the two may not match.
+     *
+     * The size stored in the entries StorageInfo record is a cached
+     * copy of the size stored in PNFS.
      */
-   public long getSize() throws CacheException ;
+    public void setSize(long size);
+
+    /**
+     * Get the size of this entry
+     */
+    public long getSize();
+
    /**
      *  Set the storage info for this entry.
      */
