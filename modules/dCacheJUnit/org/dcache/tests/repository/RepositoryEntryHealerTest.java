@@ -42,7 +42,7 @@ public class RepositoryEntryHealerTest {
         _metaDataRepository = new MetaDataRepositoryHelper(_repositoryHealerTestChimeraHelper);
 
 
-        _repositoryEntryHealer = new RepositoryEntryHealer(_pnfsHandler, _repositoryHealerTestChimeraHelper, _metaDataRepository);
+        _repositoryEntryHealer = new RepositoryEntryHealer(_pnfsHandler, null, _repositoryHealerTestChimeraHelper, _metaDataRepository);
 
     }
 
@@ -160,10 +160,14 @@ public class RepositoryEntryHealerTest {
        e.setStorageInfo(info);
 
        PnfsGetStorageInfoMessage getStorageInfoMessage = new PnfsGetStorageInfoMessage(pnfsId);
+
        getStorageInfoMessage.setStorageInfo(info);
 
-
        GenericMockCellHelper.prepareMessage(new CellPath("PnfsManager"), getStorageInfoMessage);
+
+       PnfsAddCacheLocationMessage addCacheLocationMessage = new PnfsAddCacheLocationMessage(pnfsId, "RepositoryEntryHealerTestCell");
+       GenericMockCellHelper.prepareMessage(new CellPath("PnfsManager"), addCacheLocationMessage);
+
 
        /*
         * CacheException(TIMEOUT) will indicate that we tried to modify file size in Pnfs
