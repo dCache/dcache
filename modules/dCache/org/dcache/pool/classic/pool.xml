@@ -85,6 +85,7 @@
           -metaDataRepositoryImport=${metaDataRepositoryImport}"/> 
       </bean>
     </constructor-arg>
+    <property name="checksumModule" ref="csm"/>
   </bean>
 
   <bean id="sweeper" class="org.dcache.pool.classic.SpaceSweeper2">

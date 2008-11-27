@@ -96,7 +96,7 @@ public class ChecksumModuleV1
             ? factory.createFromPersistentState(getCellEndpoint(), id)
             : null;
         Checksum fileChecksum =
-            _onWrite
+            (_onWrite || (_onTransfer && transferChecksum == null))
             ? calculateFileChecksum(file, factory.create())
             : null;
         Checksum checksum =

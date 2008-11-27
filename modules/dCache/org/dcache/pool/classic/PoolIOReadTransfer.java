@@ -19,7 +19,7 @@ import java.io.FileNotFoundException;
  * Encapsulates a read transfer, that is, sending a file. It acts as a
  * bridge between the repository and a mover.
  */
-class PoolIOReadTransfer
+public class PoolIOReadTransfer
     extends PoolIOTransfer
 {
     private final ReadHandle _handle;
