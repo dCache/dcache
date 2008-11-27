@@ -23,6 +23,7 @@ import com.sleepycat.je.DatabaseException;
 
 import dmg.util.Args;
 
+import org.dcache.pool.classic.ChecksumModuleV1;
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.pool.repository.v3.StickyInspector;
 import org.dcache.pool.repository.EventType;
@@ -106,6 +107,11 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
     private final MetaDataRepository _importRepository;
 
     /**
+     * Used to verify checksums during startup.
+     */
+    private ChecksumModuleV1 _checksumModule;
+
+    /**
      * The sticky inspector expires running
      */
     private StickyInspector _stickyInspector;
@@ -181,6 +187,11 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
 
         _spaceReservation =
             new File(directory, SPACE_RESERVATION);
+    }
+
+    public void setChecksumModule(ChecksumModuleV1 checksumModule)
+    {
+        _checksumModule = checksumModule;
     }
 
     public boolean contains(PnfsId pnfsId)
@@ -388,21 +399,24 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
      */
     private CacheRepositoryEntry readEntry(RepositoryEntryHealer healer,
                                            PnfsId id)
-        throws CacheException, IOException
+        throws CacheException, IOException, InterruptedException
     {
         /* In case of communication problems with the pool, there is
          * no point in failing - the pool would be dead if we did. It
          * is reasonable to expect that the PNFS manager is started at
          * some point and hence we just keep trying.
          */
-        while (true) {
+        while (!Thread.interrupted()) {
             try {
                 return healer.entryOf(id);
             } catch (CacheException e) {
                 if (e.getRc() != CacheException.TIMEOUT)
                     throw e;
             }
+            Thread.sleep(1000);
         }
+
+        throw new InterruptedException();
     }
 
     /* Must not be executed more than once!
@@ -428,8 +442,11 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
         Collections.sort(ids);
 
         RepositoryEntryHealer healer =
-            new RepositoryEntryHealer(pnfs, _dataRepository,
-                                      _metaRepository, _importRepository);
+            new RepositoryEntryHealer(pnfs, 
+                                      _checksumModule,
+                                      _dataRepository,
+                                      _metaRepository,
+                                      _importRepository);
 
         _operationLock.writeLock().lock();
         try {
@@ -519,6 +536,8 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
             addCacheRepositoryListener(_stickyInspector);
         } catch (IOException e) {
             throw new CacheException(ERROR_IO_DISK , "Failed to load repository: " + e);
+        } catch (InterruptedException e) {
+            throw new CacheException("Inventory was interrupted");
         } finally {
             _runningInventory = false;
             _operationLock.writeLock().unlock();
