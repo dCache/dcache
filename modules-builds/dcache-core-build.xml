@@ -809,7 +809,7 @@
 	    <!-- glite -->
 	    <mkdir dir="${binDir}/classes/glite" />
 	    <copy todir="${binDir}/classes/glite" flatten="true">
-              <fileset dir="${libDir}/glite">
+              <fileset dir="${glite.untarred}">
                 <include name="**/glite*.jar" />
               </fileset>
             </copy>	
