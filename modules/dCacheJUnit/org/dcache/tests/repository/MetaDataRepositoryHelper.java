@@ -35,6 +35,8 @@ public class MetaDataRepositoryHelper implements MetaDataRepository {
 
         private boolean _isLocked = false;
 
+        private long _size;
+
         private long _lockUntil = 0;
         private StorageInfo _storageInfo;
         private final DataFileRepository _repository;
@@ -45,6 +47,7 @@ public class MetaDataRepositoryHelper implements MetaDataRepository {
             _pnfsId = pnfsId;
             _state = new CacheRepositoryEntryState();
             _lastAccess = getDataFile().lastModified();
+            _size = getDataFile().length();
         }
 
         public CacheRepositoryEntryImpl(DataFileRepository repository,
@@ -103,16 +106,14 @@ public class MetaDataRepositoryHelper implements MetaDataRepository {
             return _linkCount;
         }
 
+        public synchronized void setSize(long size)
+        {
+            size = _size;
+        }
+
         public synchronized long getSize()
         {
-            if (_state.isReady()) {
-                StorageInfo info = getStorageInfo();
-                if (info != null) {
-                    return info.getFileSize();
-                }
-            }
-
-            return getDataFile().length();
+            return _size;
         }
 
         public synchronized StorageInfo getStorageInfo()

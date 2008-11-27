@@ -42,13 +42,17 @@ public class CacheRepositoryEntryImpl implements CacheRepositoryEntry
 
     private long _lockUntil = 0;
 
+    private long _size;
+
     public CacheRepositoryEntryImpl(BerkeleyDBMetaDataRepository repository,
                                     PnfsId pnfsId)
     {
         _repository = repository;
         _pnfsId = pnfsId;
         _state = new CacheRepositoryEntryState();
-        _lastAccess = getDataFile().lastModified();
+        File file = getDataFile();
+        _lastAccess = file.lastModified();
+        _size = file.length();
     }
 
     public CacheRepositoryEntryImpl(BerkeleyDBMetaDataRepository repository,
@@ -60,6 +64,7 @@ public class CacheRepositoryEntryImpl implements CacheRepositoryEntry
         _lastAccess   = entry.getLastAccessTime();
         _linkCount    = entry.getLinkCount();
         _creationTime = entry.getCreationTime();
+        _size         = entry.getSize();
         _state        = new CacheRepositoryEntryState(entry);
         storeStateIfDirty();
         setStorageInfo(entry.getStorageInfo());
@@ -72,7 +77,9 @@ public class CacheRepositoryEntryImpl implements CacheRepositoryEntry
         _repository = repository;
         _pnfsId = pnfsId;
         _state = state;
-        _lastAccess = getDataFile().lastModified();
+        File file = getDataFile();
+        _lastAccess = file.lastModified();
+        _size = file.length();
     }
 
     private void destroy()
@@ -151,16 +158,17 @@ public class CacheRepositoryEntryImpl implements CacheRepositoryEntry
         return _linkCount;
     }
 
+    public synchronized void setSize(long size)
+    {
+        if (size < 0) {
+            throw new IllegalArgumentException("Negative entry size is not allowed");
+        }
+        _size = size;
+    }
+
     public synchronized long getSize()
     {
-        if (_state.isReady()) {
-            StorageInfo info = getStorageInfo();
-            if (info != null) {
-                return info.getFileSize();
-            }
-        }
-
-        return getDataFile().length();
+        return _size;
     }
 
     public synchronized StorageInfo getStorageInfo()

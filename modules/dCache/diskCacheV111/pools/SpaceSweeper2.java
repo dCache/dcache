@@ -101,15 +101,11 @@ public class SpaceSweeper2 implements SpaceSweeper, Runnable
     private synchronized boolean remove(CacheRepositoryEntry entry)
     {
         PnfsId id = entry.getPnfsId();
-        try {
-            long size = entry.getSize();
-            if (_list.remove(id)) {
-                say("removed " + id + " from list");
-                _removableSpace -= size;
-                return true;
-            }
-        } catch (CacheException e) {
-            esay("failed to remove " + id.toString() + " from list: " + e);
+        long size = entry.getSize();
+        if (_list.remove(id)) {
+            say("removed " + id + " from list");
+            _removableSpace -= size;
+            return true;
         }
         return false;
     }

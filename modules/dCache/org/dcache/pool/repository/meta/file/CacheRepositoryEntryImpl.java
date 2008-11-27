@@ -42,6 +42,7 @@ public class CacheRepositoryEntryImpl implements CacheRepositoryEntry {
     private StorageInfo _storageInfo = null;
     private long _creationTime = System.currentTimeMillis();
     private long _lastAccess = _creationTime;
+    private long _size;
 
     private final EventProcessor _eventProcessor;
 
@@ -87,7 +88,7 @@ public class CacheRepositoryEntryImpl implements CacheRepositoryEntry {
         }
 
         _lastAccess = _dataFile.lastModified();
-
+        _size = _dataFile.length();
     }
 
     private void destroy()
@@ -139,18 +140,15 @@ public class CacheRepositoryEntryImpl implements CacheRepositoryEntry {
         return _pnfsId;
     }
 
-    public long getSize() {
-
-        long size = 0;
-
-        // if file complete, take the size form storageInfo
-        if( _state.isReady() &&  _storageInfo != null ) {
-            size = _storageInfo.getFileSize();
-        }else{
-            size = _dataFile.length();
+    public void setSize(long size) {
+        if (size < 0) {
+            throw new IllegalArgumentException("Negative entry size is not allowed");
         }
+        _size = size;
+    }
 
-        return size;
+    public long getSize() {
+        return _size;
     }
 
     public String getState() {

@@ -120,15 +120,11 @@ public abstract class AbstractCacheRepository
      */
     private void addPrecious(CacheRepositoryEntry entry)
     {
-        try {
-            long size = entry.getSize();
-            synchronized (_precious) {
-                if (_precious.add(entry.getPnfsId())) {
-                    _preciousSpace += size;
-                }
+        long size = entry.getSize();
+        synchronized (_precious) {
+            if (_precious.add(entry.getPnfsId())) {
+                _preciousSpace += size;
             }
-        } catch (CacheException e) {
-            _log.error("failed to get entry size : " + e.getMessage());
         }
     }
 
@@ -138,15 +134,11 @@ public abstract class AbstractCacheRepository
      */
     private void removePrecious(CacheRepositoryEntry entry)
     {
-        try {
-            long size = entry.getSize();
-            synchronized (_precious) {
-                if (_precious.remove(entry.getPnfsId())) {
-                    _preciousSpace -= size;
-                }
+        long size = entry.getSize();
+        synchronized (_precious) {
+            if (_precious.remove(entry.getPnfsId())) {
+                _preciousSpace -= size;
             }
-        } catch (CacheException e) {
-            _log.error("failed to get entry size : " + e.getMessage());
         }
     }
 
@@ -155,6 +147,8 @@ public abstract class AbstractCacheRepository
      */
     public void processEvent(EventType type, CacheRepositoryEvent event)
     {
+        CacheRepositoryEntry entry;
+
         if (_log.isDebugEnabled()) {
             _log.debug("Broadcasting event: " + event + " type " + type);
         }
@@ -193,17 +187,11 @@ public abstract class AbstractCacheRepository
             break;
 
         case DESTROY:
-            try {
-                CacheRepositoryEntry entry = event.getRepositoryEntry();
-                if( entry.getSize() != entry.getDataFile().length() ) {
-                	_logSpaceAllocation.fatal(entry.getPnfsId() + " file size missmatch: entry.getSize()/entry.getDataFile().length()" +
-                			entry.getSize() +"/" + entry.getDataFile().length());
-                }
-                _logSpaceAllocation.debug("FREE: " + entry.getPnfsId() + " : " + entry.getSize() );
-                freeSpace(entry.getSize());
-                removePrecious(entry);
-            } catch (CacheException ignored) {
-            }
+            entry = event.getRepositoryEntry();
+            _logSpaceAllocation.debug("FREE: " + entry.getPnfsId() 
+                                      + " : " + entry.getSize() );
+            freeSpace(entry.getSize());
+            removePrecious(entry);
             for (CacheRepositoryListener listener : _repositoryListners) {
                 listener.destroyed(event);
             }
@@ -211,7 +199,7 @@ public abstract class AbstractCacheRepository
 
         case SCAN:
             try {
-                CacheRepositoryEntry entry = event.getRepositoryEntry();
+                entry = event.getRepositoryEntry();
                 allocateSpace(entry.getSize(), SpaceMonitor.NONBLOCKING);
                 if (entry.isPrecious()) {
                     addPrecious(entry);
