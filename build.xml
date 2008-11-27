@@ -508,7 +508,6 @@
             <class location="${classesDir}/javatunnel.jar" />
             <class location="${classesDir}/infoDynamicSE.jar" />
             <class location="${classesDir}/xrootd-tokenauthz.jar" />
-            <class location="${classesDir}/chimera-provider.jar" />
             <sourcePath path="modules/cells" />
             <sourcePath path="modules/dCache" />
             <sourcePath path="modules/srm/src" />
