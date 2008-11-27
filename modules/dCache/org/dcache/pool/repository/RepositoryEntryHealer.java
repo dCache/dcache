@@ -155,7 +155,8 @@ public class RepositoryEntryHealer
                  * checksum is not, then we want to fail before the
                  * checksum is updated in PNFS.
                  */
-                if (info.getFileSize() > 0 && info.getFileSize() != length) {
+                if (!(entry.isReceivingFromClient() && info.getFileSize() == 0)
+                    && info.getFileSize() != length) {
                     throw new CacheException(String.format(BAD_SIZE_MSG, id, info.getFileSize(), length));
                 }
 
@@ -170,11 +171,9 @@ public class RepositoryEntryHealer
                 }
             
                 /* Update the size in the storage info and in PNFS if
-                 * file size is unknown. TODO: Check that we are not
-                 * precious or cached already - in that case we know
-                 * file size has been set.
+                 * file size is unknown.
                  */
-                if (info.getFileSize() == 0 && length > 0) {
+                if (entry.isReceivingFromClient() && info.getFileSize() == 0) {
                     _log.warn(String.format(UPDATE_SIZE_MSG, id, length));
                     _pnfsHandler.setFileSize(id, length);
                     info.setFileSize(length);
