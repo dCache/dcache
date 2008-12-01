@@ -1617,7 +1617,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
        if ( assumed.size() <= 0 )            // nothing to do
          return new ArrayList( confirmed ) ; // return empty List
 
-       SpreadAndWait controller = new SpreadAndWait( getNucleus() , _TO_GetCacheLocationList ) ;
+       SpreadAndWait controller = new SpreadAndWait( this , _TO_GetCacheLocationList ) ;
 
 //       dsay("getCacheLocationList: SpreadAndWait to " + assumed.size() +" pools");
 
@@ -1667,7 +1667,7 @@ abstract public class DCacheCoreControllerV2 extends CellAdapter {
        if (assumed.size() <= 0)             // nothing to do
            return new ArrayList(confirmed); // return empty List
 
-       SpreadAndWait controller = new SpreadAndWait(getNucleus(), _TO_GetCacheLocationList);
+       SpreadAndWait controller = new SpreadAndWait(this, _TO_GetCacheLocationList);
 
        PoolCheckFileMessage query = null;
        for (Iterator i = assumed.iterator(); i.hasNext(); ) {

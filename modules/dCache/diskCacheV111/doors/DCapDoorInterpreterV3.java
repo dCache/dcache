@@ -1959,7 +1959,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
 
                         if( _checkStrict ){
 
-                            SpreadAndWait controller = new SpreadAndWait( _cell.getNucleus(), 10000 ) ;
+                            SpreadAndWait controller = new SpreadAndWait( _cell, 10000 ) ;
 
                             for( String pool: result ){
 
