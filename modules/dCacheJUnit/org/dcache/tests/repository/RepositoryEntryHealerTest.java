@@ -1,5 +1,6 @@
 package org.dcache.tests.repository;
 
+import dmg.cells.nucleus.CellMessage;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -22,7 +23,9 @@ import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.OSMStorageInfo;
 import diskCacheV111.vehicles.PnfsGetStorageInfoMessage;
 import diskCacheV111.vehicles.PnfsAddCacheLocationMessage;
+import diskCacheV111.vehicles.PnfsSetLengthMessage;
 import diskCacheV111.vehicles.StorageInfo;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class RepositoryEntryHealerTest {
 
@@ -103,16 +106,26 @@ public class RepositoryEntryHealerTest {
        getStorageInfoMessage.setStorageInfo(info);
 
        PnfsAddCacheLocationMessage addCacheLocationMessage = new PnfsAddCacheLocationMessage(pnfsId, "RepositoryEntryHealerTestCell");
+       PnfsSetLengthMessage setSize = new PnfsSetLengthMessage(pnfsId, inode.stat().getSize());
 
        GenericMockCellHelper.prepareMessage(new CellPath("PnfsManager"), getStorageInfoMessage);
        GenericMockCellHelper.prepareMessage(new CellPath("PnfsManager"), addCacheLocationMessage);
+       GenericMockCellHelper.prepareMessage(new CellPath("PnfsManager"), setSize);
 
-       /*
-        * CacheException(TIMEOUT) will indicate that we tried to modify file size in Pnfs
-        */
+       final AtomicBoolean messageSent = new AtomicBoolean(false);
+       GenericMockCellHelper.MessageAction action = new GenericMockCellHelper.MessageAction() {
+
+            @Override
+            public void messageArraved(CellMessage message) {
+                messageSent.set(true);
+            }
+        };
+
+       GenericMockCellHelper.registerAction("PnfsManager", PnfsSetLengthMessage.class,action );
        CacheRepositoryEntry repositoryEntry = _repositoryEntryHealer.entryOf(pnfsId);
 
        assertFalse("Entry not recovered", e.isReceivingFromClient() );
+       assertTrue("Size not set", messageSent.get() );
 
     }
 
