@@ -75,6 +75,8 @@ public class GenericMockCellHelper extends CellAdapterHelper {
                 messages.remove(0);
             }
 
+            sendMessage(msg);
+
             Message message = messageEnvelope.getMessage();
             message.setReply();
             msg.setMessageObject(message);
