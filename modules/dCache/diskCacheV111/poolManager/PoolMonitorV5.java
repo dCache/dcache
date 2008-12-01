@@ -584,7 +584,7 @@ public class PoolMonitorV5 {
 
         if (checkFileExistence) {
 
-            SpreadAndWait control = new SpreadAndWait(_cell.getNucleus(),
+            SpreadAndWait control = new SpreadAndWait(_cell,
                     _poolTimeout);
 
             while (pools.hasNext()) {
@@ -706,7 +706,7 @@ public class PoolMonitorV5 {
     {
         List<PoolCostCheckable> list = new ArrayList<PoolCostCheckable>();
         SpreadAndWait control =
-              new SpreadAndWait( _cell.getNucleus() , _poolTimeout ) ;
+              new SpreadAndWait( _cell , _poolTimeout ) ;
 
 	while( pools.hasNext() ){
 

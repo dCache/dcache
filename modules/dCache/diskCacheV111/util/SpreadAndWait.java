@@ -7,25 +7,25 @@ import java.util.List;
 
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellMessageAnswerable;
-import dmg.cells.nucleus.CellNucleus;
+import dmg.cells.nucleus.CellEndpoint;
 
 public class SpreadAndWait implements CellMessageAnswerable {
 
-	private final CellNucleus _nucleus;
+	private final CellEndpoint _endpoint;
 	private final long _timeout;
 	
 	private int _pending = 0;
 
 	private final List<CellMessage> _replies = new ArrayList<CellMessage>();
 
-	public SpreadAndWait(CellNucleus nucleus, long timeout) {
+	public SpreadAndWait(CellEndpoint endpoint, long timeout) {
 
-		_nucleus = nucleus;
+            _endpoint = endpoint;
 		_timeout = timeout;
 	}
 
 	public synchronized void send(CellMessage msg) throws Exception {
-		_nucleus.sendMessage(msg, true, true, this, _timeout);
+		_endpoint.sendMessage(msg, this, _timeout);
 		_pending++;
 	}
 
