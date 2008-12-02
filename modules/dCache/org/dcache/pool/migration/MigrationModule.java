@@ -140,6 +140,14 @@ public class MigrationModule
         return job;
     }
 
+    /** Returns a one line description of a job. */
+    private synchronized String getJobSummary(int id)
+    {
+        Job job = getJob(id);
+        return String.format("[%d] %-12s %s", id, job.getState(),
+                             _commands.get(job));
+    }
+
     private List<CacheEntryFilter> createFilters(Args args)
     {
         String state = args.getOpt("state");
@@ -440,7 +448,7 @@ public class MigrationModule
         int id = copy(args, "proportional", "pool", "same", "same", "300");
         String command = "migration copy " + args.toString();
         _commands.put(_jobs.get(id), command);
-        return "[" + id + "] " + command;
+        return getJobSummary(id);
     }
 
     public final static String hh_migration_move = "[options] <target> ...";
@@ -453,7 +461,7 @@ public class MigrationModule
         int id = copy(args, "proportional", "pool", "delete", "same", "300");
         String command = "migration move " + args.toString();
         _commands.put(_jobs.get(id), command);
-        return "[" + id + "] " + command;
+        return getJobSummary(id);
     }
 
     public final static String hh_migration_cache =
@@ -467,7 +475,7 @@ public class MigrationModule
         int id = copy(args, "proportional", "pool", "same", "cached", "300");
         String command = "migration cache " + args.toString();
         _commands.put(_jobs.get(id), command);
-        return "[" + id + "] " + command;
+        return getJobSummary(id);
     }
 
     public final static String hh_migration_suspend =
@@ -480,7 +488,7 @@ public class MigrationModule
         int id = Integer.valueOf(args.argv(0));
         Job job = getJob(id);
         job.suspend();
-        return String.format("[%d] Suspended     %s", id, _commands.get(job));
+        return getJobSummary(id);
     }
 
     public final static String hh_migration_resume =
@@ -492,7 +500,7 @@ public class MigrationModule
         int id = Integer.valueOf(args.argv(0));
         Job job = getJob(id);
         job.resume();
-        return String.format("[%d] Resumed       %s", id, _commands.get(job));
+        return getJobSummary(id);
     }
 
     public final static String hh_migration_cancel =
@@ -508,7 +516,7 @@ public class MigrationModule
         boolean force = (args.getOpt("force") != null);
         Job job = getJob(id);
         job.cancel(force);
-        return String.format("[%d] Cancelling    %s", id, _commands.get(job));
+        return getJobSummary(id);
     }
 
     public final static String hh_migration_clear =
@@ -538,14 +546,11 @@ public class MigrationModule
         "Lists all migration jobs.";
     public synchronized String ac_migration_ls(Args args)
     {
-        StringWriter sw = new StringWriter();
-        PrintWriter pw = new PrintWriter(sw);
-        for (Map.Entry<Integer,Job> entry: _jobs.entrySet()) {
-            int id = entry.getKey();
-            Job job = entry.getValue();
-            pw.println(String.format("[%d] %s", id, _commands.get(job)));
+        StringBuilder s = new StringBuilder();
+        for (int id: _jobs.keySet()) {
+            s.append(getJobSummary(id)).append('\n');
         }
-        return sw.toString();
+        return s.toString();
     }
 
     public final static String hh_migration_info =
