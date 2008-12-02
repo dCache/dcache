@@ -673,7 +673,7 @@ public class GPLAZMA extends CellAdapter {
         authRequestID = dnInfo.getId();
       }
 
-      log.debug("sending authentication message to " + msg.getSourcePath());  
+      log.debug("sending authorization message to " + msg.getSourcePath());
       msg.revertDirection() ;
       msg.setMessageObject(null);
       try {
@@ -751,13 +751,13 @@ public class GPLAZMA extends CellAdapter {
         writethis = ae;
       }
 
-      log.debug("sending authentication message to " + msg.getSourcePath());
+      log.debug("sending authorization message to " + msg.getSourcePath());
       msg.revertDirection() ;
       msg.setMessageObject(writethis) ;
       try{
         sendMessage(msg) ;
       } catch ( Exception ioe ){
-        log.error("Can't send acl_response for : " + ioe) ;
+        log.error("Can't authorization message to " + msg.getSourcePath() + ":  " + ioe.getMessage()) ;
       }
 
     }
