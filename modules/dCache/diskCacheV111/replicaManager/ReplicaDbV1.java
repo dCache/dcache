@@ -30,6 +30,7 @@ public class ReplicaDbV1 implements ReplicaDb1 {
     private Statement           _stmt      = null;
     private CellAdapter         _cell      = null;
     private static DataSource   DATASOURCE = null;
+    private final static String ERRCODE_UNIQUE_VIOLATION = "23505";                                                          
 
     /**
      * Class constructor opens connection to the database and creates a
@@ -106,12 +107,10 @@ public class ReplicaDbV1 implements ReplicaDb1 {
             pstmt.setBoolean(5, false);
             pstmt.setString (6, poolName);
             pstmt.executeUpdate();
-        } catch (Exception ex) {
-            String exMsg = ex.getMessage();
-            // This error string is system dependent or even version dependent:
-            if (exMsg.startsWith("ERROR:  Cannot insert a duplicate key into unique index replica")
-                    || exMsg.startsWith("ERROR: duplicate key violates unique constraint")) {
-                String s = exMsg.substring(5);
+        } catch (SQLException ex) {
+            String exState = ex.getSQLState();
+            if (exState.equals(ERRCODE_UNIQUE_VIOLATION) ) { // "ERROR: duplicate key value violates unique constraint" - or similar
+                String s = ex.getMessage().substring(5);
                 say("WARNING" + s + "; caused by duplicate message, ignore for now. pnfsid=" + pnfsId.toString() + " pool="
                         + poolName);
 //1             ignoredSQLException("addPool()", (SQLException) ex, sql);
@@ -178,15 +177,12 @@ public class ReplicaDbV1 implements ReplicaDb1 {
                     pstmt.setBoolean(3, countable);
                     pstmt.setBoolean(4, false);
                     pstmt.executeUpdate();
-                } catch (Exception ex) {
-                    String exMsg = ex.getMessage();
-                    // This error string is system dependent or even version
-                    // dependent:
-                    if (exMsg.startsWith("ERROR:  Cannot insert a duplicate key into unique index replica")
-                     || exMsg.startsWith("ERROR: duplicate key violates unique constraint")) {
-                      String s = exMsg.substring(5);
-                      say("WARNING" + s + "; caused by duplicate message, ignore for now. pnfsid=" + pnfsId + " pool=" + poolName);
-                      ignoredSQLException("addPool()", (SQLException) ex, sql);
+                } catch (SQLException ex) {
+                    String exState = ex.getSQLState();
+                    if (exState.equals(ERRCODE_UNIQUE_VIOLATION) ) { // "ERROR: duplicate key value violates unique constraint" - or similar
+                        String s = ex.getMessage().substring(5);
+                        say("WARNING" + s + "; caused by duplicate message, ignore for now. pnfsid=" + pnfsId + " pool=" + poolName);
+                        ignoredSQLException("addPool()", (SQLException) ex, sql);
 
                     } else {
                         ex.printStackTrace();
