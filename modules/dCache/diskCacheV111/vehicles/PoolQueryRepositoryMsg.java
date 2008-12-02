@@ -15,6 +15,7 @@ public class PoolQueryRepositoryMsg extends PoolMessage {
 
    public PoolQueryRepositoryMsg(String poolName ){
       super(poolName) ;
+      this.setReplyRequired(true);
    }
    public PoolQueryRepositoryMsg( String poolName , IteratorCookie cookie ){
       this(poolName);
