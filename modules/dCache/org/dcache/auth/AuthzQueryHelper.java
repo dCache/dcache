@@ -115,7 +115,7 @@ public class AuthzQueryHelper {
         try {
             GSSName GSSIdentity = serviceContext.getSrcName();
             CellMessage m = new CellMessage(cellpath, deleginfo);
-            m = caller.getNucleus().sendAndWait(m, 3600000L) ;
+            m = caller.getNucleus().sendAndWait(m, 60000L) ;
             if(m==null) {
                 throw new AuthorizationException("authRequestID " + authRequestID + " Message to " + authcellname + " timed out for authentification of " + GSSIdentity);
             }
@@ -224,7 +224,7 @@ public class AuthzQueryHelper {
         String authcellname = cellpath.getCellName();
         try {
             CellMessage m = new CellMessage(cellpath, dnInfo);
-            m = caller.getNucleus().sendAndWait(m, 3600000L) ;
+            m = caller.getNucleus().sendAndWait(m, 60000L) ;
             if(m==null) {
                 throw new AuthorizationException("authRequestID " + authRequestID + " Message to " + authcellname + " timed out for authentification of " + dnInfo.getDN() + " and roles " + dnInfo.getFQANs());
             }
@@ -281,7 +281,7 @@ public class AuthzQueryHelper {
         String authcellname = cellpath.getCellName();
         try {
             CellMessage m = new CellMessage(cellpath, x509info);
-            m = caller.getNucleus().sendAndWait(m, 3600000L);
+            m = caller.getNucleus().sendAndWait(m, 60000L);
             if(m==null) {
                 String subjectDN = X509CertUtil.getSubjectFromX509Chain(chain, false);
                 throw new AuthorizationException("authRequestID " + authRequestID + " Message to " + authcellname + " timed out for authorization of " + subjectDN);
