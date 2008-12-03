@@ -245,7 +245,7 @@ public class AuthorizationRecord implements Serializable, SRMUser{
         if(primaryAttribute != null) {
             return new FQAN(primaryAttribute).getGroup();
         }
-        return null;
+        return identity;
     }
 
     @Transient
