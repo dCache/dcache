@@ -67,6 +67,15 @@ set context -c srmGetReqMaxNumberOfRetries             10
 set context -c srmGetReqRetryTimeout                60000
 set context -c srmGetReqMaxNumOfRunningBySameOwner    100
 
+set context -c srmBringOnlineReqThreadQueueSize             ${srmGetReqThreadQueueSize}
+set context -c srmBringOnlineReqThreadPoolSize              ${srmGetReqThreadPoolSize}
+set context -c srmBringOnlineReqMaxWaitingRequests          ${srmGetReqMaxWaitingRequests}
+set context -c srmBringOnlineReqReadyQueueSize              ${srmGetReqReadyQueueSize}
+set context -c srmBringOnlineReqMaxReadyRequests            ${srmGetReqMaxReadyRequests}
+set context -c srmBringOnlineReqMaxNumberOfRetries          ${srmGetReqMaxNumberOfRetries}
+set context -c srmBringOnlineReqRetryTimeout                ${srmGetReqRetryTimeout}
+set context -c srmBringOnlineReqMaxNumOfRunningBySameOwner  ${srmGetReqMaxNumOfRunningBySameOwner}
+
 set context -c srmPutReqThreadQueueSize             10000
 set context -c srmPutReqThreadPoolSize                250
 set context -c srmPutReqMaxWaitingRequests           1000
@@ -84,6 +93,7 @@ set context -c srmCopyReqRetryTimeout                60000
 set context -c srmCopyReqMaxNumOfRunningBySameOwner    100
 
 set context -c srmGetLifeTime      14400000
+set context -c srmBringOnlineLifeTime      ${srmGetLifeTime}
 set context -c srmPutLifeTime      14400000
 set context -c srmCopyLifeTime     14400000
 
@@ -344,6 +354,7 @@ create diskCacheV111.srm.dcache.Storage  SRM-${thisHostname} \
         -debug=${srmDebug} \
         -usekftp=false \
         -get-lifetime=${srmGetLifeTime} \
+        -bring-online-lifetime=${srmBringOnlineLifeTime} \
         -put-lifetime=${srmPutLifeTime} \
         -copy-lifetime=${srmCopyLifeTime} \
         -get-req-thread-queue-size=${srmGetReqThreadQueueSize} \
@@ -354,6 +365,14 @@ create diskCacheV111.srm.dcache.Storage  SRM-${thisHostname} \
         -get-req-max-number-of-retries=${srmGetReqMaxNumberOfRetries} \
         -get-req-retry-timeout=${srmGetReqRetryTimeout} \
         -get-req-max-num-of-running-by-same-owner=${srmGetReqMaxNumOfRunningBySameOwner} \
+        -bring-online-req-thread-queue-size=${srmBringOnlineReqThreadQueueSize} \
+        -bring-online-req-thread-pool-size=${srmBringOnlineReqThreadPoolSize} \
+        -bring-online-req-max-waiting-requests=${srmBringOnlineReqMaxWaitingRequests} \
+        -bring-online-req-ready-queue-size=${srmBringOnlineReqReadyQueueSize} \
+        -bring-online-req-max-ready-requests=${srmBringOnlineReqMaxReadyRequests} \
+        -bring-online-req-max-number-of-retries=${srmBringOnlineReqMaxNumberOfRetries} \
+        -bring-online-req-retry-timeout=${srmBringOnlineReqRetryTimeout} \
+        -bring-online-req-max-num-of-running-by-same-owner=${srmBringOnlineReqMaxNumOfRunningBySameOwner} \
         -put-req-thread-queue-size=${srmPutReqThreadQueueSize} \
         -put-req-thread-pool-size=${srmPutReqThreadPoolSize} \
         -put-req-max-waiting-requests=${srmPutReqMaxWaitingRequests} \
