@@ -644,13 +644,15 @@ public class PoolMonitorV5 {
                 String poolName = poolMessage.getPoolName();
                 if (have) {
 
-                    PoolCheckAdapter check = new PoolCheckAdapter(_costModule
-                            .getPoolCost(poolName, filesize));
-                    check.setHave(have);
-                    check.setPnfsId(pnfsId);
-
-                    list.add(check);
-                    _cell.say("queryPoolsForPnfsId : returning : " + check);
+                    PoolCostCheckable cost = 
+                        _costModule.getPoolCost(poolName, filesize);
+                    if (cost != null) {
+                        PoolCheckAdapter check = new PoolCheckAdapter(cost);
+                        check.setHave(have);
+                        check.setPnfsId(pnfsId);
+                        list.add(check);
+                        _cell.say("queryPoolsForPnfsId : returning : " + check);
+                    }
                 } else if (poolMessage.getReturnCode() == 0) {
                     _cell
                             .esay("queryPoolsForPnfsId : clearingCacheLocation for pnfsId "
@@ -664,12 +666,14 @@ public class PoolMonitorV5 {
             while ( pools.hasNext() ) {
 
                 String poolName = pools.next();
-                PoolCheckAdapter check = new PoolCheckAdapter(_costModule
-                        .getPoolCost(poolName, filesize));
-                check.setHave(true);
-                check.setPnfsId(pnfsId);
-
-                list.add(check);
+                PoolCostCheckable cost =
+                    _costModule.getPoolCost(poolName, filesize);
+                if (cost != null) {
+                    PoolCheckAdapter check = new PoolCheckAdapter(cost);
+                    check.setHave(true);
+                    check.setPnfsId(pnfsId);
+                    list.add(check);
+                }
             }
 
         }
