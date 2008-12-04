@@ -1123,12 +1123,21 @@ public class RequestContainerV5 implements Runnable {
         }
 
         private void nextStep( int mode , int shouldContinue ){
-           _mode = mode ;
-           _forceContinue = shouldContinue == CONTINUE ;
-           if( _mode != ST_DONE ){
-              _currentRc = 0 ;
-              _currentRm = "" ;
-           }
+            if (_currentRc == CacheException.NOT_IN_TRASH ||
+                _currentRc == CacheException.FILE_NOT_FOUND) {
+                _mode = ST_DONE;
+                _forceContinue = true;
+                _state = "Failed";
+                sendInfoMessage(_pnfsId , _storageInfo ,
+                                _currentRc , "Failed "+_currentRm);
+            } else {
+                _mode = mode ;
+                _forceContinue = shouldContinue == CONTINUE ;
+                if( _mode != ST_DONE ){
+                    _currentRc = 0 ;
+                    _currentRm = "" ;
+                }
+            }
         }
         //
         //  askIfAvailable :
@@ -1632,9 +1641,20 @@ public class RequestContainerV5 implements Runnable {
                  Exception("Timeout : PnfsManager request for storageInfo of "+_pnfsId);
 
               getStorageInfo = (PnfsGetStorageInfoMessage)request.getMessageObject();
-
-              _storageInfo = getStorageInfo.getStorageInfo();
-
+              switch (getStorageInfo.getReturnCode()) {
+              case 0:
+                  _storageInfo = getStorageInfo.getStorageInfo();
+                  break;
+              case CacheException.FILE_NOT_FOUND:
+              case CacheException.NOT_IN_TRASH:
+                  setError(getStorageInfo.getReturnCode(),
+                           "File not found");
+                  break;
+              default:
+                  esay("Fetching storage info failed: " + 
+                       getStorageInfo.getErrorObject());
+                  break;
+              }
            }catch(Exception ee ){
               esay("Fetching storage info failed : "+ee);
            }
