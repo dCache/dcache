@@ -1688,7 +1688,7 @@ public class RequestContainerV5 implements Runnable {
                  sendInfoMessage( _pnfsId , _storageInfo ,
                                   _currentRc , "Suspended "+_currentRm );
               }else{
-                 nextStep( ST_DONE , WAIT ) ;
+                 nextStep( ST_DONE , CONTINUE ) ;
                  _state = "Failed" ;
                  sendInfoMessage( _pnfsId , _storageInfo ,
                                   _currentRc , "Failed "+_currentRm );
