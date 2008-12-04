@@ -751,6 +751,7 @@ cacheInfo=companion
 #srmAuthzCacheLifetime=60
 
 #srmGetLifeTime=14400000
+#srmBringOnlineLifeTime=14400000
 #srmPutLifeTime=14400000
 #srmCopyLifeTime=14400000
 
@@ -771,6 +772,15 @@ cacheInfo=companion
 #srmGetReqMaxNumberOfRetries=10
 #srmGetReqRetryTimeout=60000
 #srmGetReqMaxNumOfRunningBySameOwner=100
+
+#srmBringOnlineReqThreadQueueSize=10000
+#srmBringOnlineReqThreadPoolSize=250
+#srmBringOnlineReqMaxWaitingRequests=1000
+#srmBringOnlineReqReadyQueueSize=10000
+#srmBringOnlineReqMaxReadyRequests=2000
+#srmBringOnlineReqMaxNumberOfRetries=10
+#srmBringOnlineReqRetryTimeout=60000
+#srmBringOnlineReqMaxNumOfRunningBySameOwner=100
 
 #srmPutReqThreadQueueSize=10000
 #srmPutReqThreadPoolSize=250

@@ -199,6 +199,8 @@ public class SrmExtendFileLifeTime {
             configMaximumLifetime = configuration.getCopyLifetime();
         } else if (containerRequest instanceof PutRequest) {
             configMaximumLifetime = configuration.getPutLifetime();
+        } else if (containerRequest instanceof BringOnlineRequest) {
+            configMaximumLifetime = configuration.getBringOnlineLifetime();
         } else {
             configMaximumLifetime = configuration.getGetLifetime();            
         }
