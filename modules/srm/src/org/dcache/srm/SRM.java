@@ -292,12 +292,15 @@ import org.dcache.srm.request.RequestCredential;
 import org.dcache.srm.request.ContainerRequest;
 import org.dcache.srm.request.FileRequest;
 import org.dcache.srm.util.Configuration;
+import org.dcache.srm.request.Request;
 import org.dcache.srm.request.ContainerRequest;
 import org.dcache.srm.request.PutRequest;
 import org.dcache.srm.request.PutFileRequest;
 import org.dcache.srm.request.GetRequest;
 import org.dcache.srm.request.CopyRequest;
 import org.dcache.srm.request.BringOnlineRequest;
+import org.dcache.srm.request.sql.DatabaseRequestStorage;
+import org.dcache.srm.request.sql.DatabaseContainerRequestStorage;
 import org.dcache.srm.request.sql.GetFileRequestStorage;
 import org.dcache.srm.request.sql.GetRequestStorage;
 import org.dcache.srm.request.sql.BringOnlineFileRequestStorage;
@@ -497,15 +500,15 @@ public class SRM {
         
         bringOnlineRequestScheduler = new Scheduler("bring_online_"+name,storage);
         // scheduler parameters
-        bringOnlineRequestScheduler.setMaxThreadQueueSize(config.getGetReqTQueueSize());
-        bringOnlineRequestScheduler.setThreadPoolSize(config.getGetThreadPoolSize());
-        bringOnlineRequestScheduler.setMaxWaitingJobNum(config.getGetMaxWaitingRequests());
-        bringOnlineRequestScheduler.setMaxReadyQueueSize(config.getGetReadyQueueSize());
-        bringOnlineRequestScheduler.setMaxReadyJobs(config.getGetMaxReadyJobs());
-        bringOnlineRequestScheduler.setMaxNumberOfRetries(config.getGetMaxNumOfRetries());
-        bringOnlineRequestScheduler.setRetryTimeout(config.getGetRetryTimeout());
-        bringOnlineRequestScheduler.setMaxRunningByOwner(config.getGetMaxRunningBySameOwner());
-        bringOnlineRequestScheduler.setPriorityPolicyPlugin(config.getGetPriorityPolicyPlugin());
+        bringOnlineRequestScheduler.setMaxThreadQueueSize(config.getBringOnlineReqTQueueSize());
+        bringOnlineRequestScheduler.setThreadPoolSize(config.getBringOnlineThreadPoolSize());
+        bringOnlineRequestScheduler.setMaxWaitingJobNum(config.getBringOnlineMaxWaitingRequests());
+        bringOnlineRequestScheduler.setMaxReadyQueueSize(config.getBringOnlineReadyQueueSize());
+        bringOnlineRequestScheduler.setMaxReadyJobs(config.getBringOnlineMaxReadyJobs());
+        bringOnlineRequestScheduler.setMaxNumberOfRetries(config.getBringOnlineMaxNumOfRetries());
+        bringOnlineRequestScheduler.setRetryTimeout(config.getBringOnlineRetryTimeout());
+        bringOnlineRequestScheduler.setMaxRunningByOwner(config.getBringOnlineMaxRunningBySameOwner());
+        bringOnlineRequestScheduler.setPriorityPolicyPlugin(config.getBringOnlinePriorityPolicyPlugin());
         bringOnlineRequestScheduler.start();
         
         
@@ -1429,13 +1432,7 @@ public class SRM {
     }
     
     public void listGetRequests(StringBuffer sb)  throws java.sql.SQLException {
-        Set activeRequestIds = 
-        getStorage.getActiveRequestIds(getRequestScheduler.getId());
-        for(Iterator i = activeRequestIds.iterator(); i.hasNext();) {
-            Long requestId = (Long)i.next();
-            GetRequest gr = (GetRequest)ContainerRequest.getRequest(requestId);
-            sb.append(gr).append('\n');
-        }
+        listRequests(sb,getRequestScheduler,getStorage);
     }
     
     public Set getGetRequestIds(RequestUser user, String description)  throws java.sql.SQLException {
@@ -1499,13 +1496,7 @@ public class SRM {
     }
     
     public void listPutRequests(StringBuffer sb)  throws java.sql.SQLException {
-        Set activeRequestIds = 
-            putStorage.getActiveRequestIds(putRequestScheduler.getId());
-        for(Iterator i = activeRequestIds.iterator(); i.hasNext();) {
-            Long requestId = (Long)i.next();
-            PutRequest pr = (PutRequest)ContainerRequest.getRequest(requestId);
-            sb.append(pr).append('\n');
-        }
+        listRequests(sb,putRequestScheduler,putStorage);
     }
     
     public Set getPutRequestIds(RequestUser user, String description)  throws java.sql.SQLException {
@@ -1565,13 +1556,7 @@ public class SRM {
         
     }
     public void listCopyRequests(StringBuffer sb)  throws java.sql.SQLException {
-        Set activeRequestIds = 
-        copyStorage.getActiveRequestIds(copyRequestScheduler.getId());
-        for(Iterator i = activeRequestIds.iterator(); i.hasNext();) {
-             Long requestId = (Long)i.next();
-            CopyRequest cr = (CopyRequest)ContainerRequest.getRequest(requestId);
-            sb.append(cr).append('\n');
-        }
+        listRequests(sb,copyRequestScheduler,copyStorage);
     }
 
     public Set getCopyRequestIds(RequestUser user, String description)  throws java.sql.SQLException {
@@ -1630,13 +1615,7 @@ public class SRM {
     }
     
     public void listBringOnlineRequests(StringBuffer sb)  throws java.sql.SQLException {
-        Set activeRequestIds = 
-            bringOnlineStorage.getActiveRequestIds(bringOnlineRequestScheduler.getId());
-        for(Iterator i = activeRequestIds.iterator(); i.hasNext();) {
-            Long requestId = (Long)i.next();
-            BringOnlineRequest pr = (BringOnlineRequest)ContainerRequest.getRequest(requestId);
-            sb.append(pr).append('\n');
-        }
+        listRequests(sb,bringOnlineRequestScheduler,bringOnlineStorage);
     }
     
     public Set getBringOnlineRequestIds(RequestUser user, String description)  throws java.sql.SQLException {
@@ -1694,6 +1673,23 @@ public class SRM {
     public void printBringOnlineSchedulerReadyThreadQueue(StringBuffer sb) throws java.sql.SQLException {
         bringOnlineRequestScheduler.printReadyQueue(sb);
         
+    }
+    
+    public void listReserveSpaceRequests(StringBuffer sb)  throws java.sql.SQLException {
+        listRequests(sb,reserveSpaceScheduler,reserveSpaceRequestStorage);
+    }
+    
+            
+    private void listRequests(StringBuffer sb,
+            Scheduler scheduler,
+            DatabaseRequestStorage storage)  throws java.sql.SQLException {
+        Set activeRequestIds = 
+            storage.getActiveRequestIds(scheduler.getId());
+        for(Iterator i = activeRequestIds.iterator(); i.hasNext();) {
+            Long requestId = (Long)i.next();
+            Request r = (Request)Request.getRequest(requestId);
+            sb.append(r).append('\n');
+        }
     }
 
     public double getLoad() {
@@ -1763,129 +1759,58 @@ public class SRM {
 
     public void cancelAllGetRequest(StringBuffer sb,String pattern)  throws java.sql.SQLException {
         
-        java.util.Set jobsToKill = new java.util.HashSet();
-        java.util.regex.Pattern p = java.util.regex.Pattern.compile(pattern);
-        Set activeRequestIds = 
-        getStorage.getActiveRequestIds(getRequestScheduler.getId());
-        for(Iterator i = activeRequestIds.iterator(); i.hasNext();) {
-            Long requestId = (Long)i.next();
-            java.util.regex.Matcher m = p.matcher(requestId.toString());
-            if( m.matches()) {
-                say("cancelAllGetRequest: request Id #"+requestId+" matches pattern!");
-                jobsToKill.add(requestId);
-            }
-        }
-        if(jobsToKill.isEmpty()) {
-            sb.append("no get requests match the pattern=\""+pattern+"\n");
-            return;
-        }
-        for(java.util.Iterator i = jobsToKill.iterator(); i.hasNext();){
-            
-            Long requestId = (Long)i.next();
-            Job job = Job.getJob(requestId);
-            if(job == null || !(job instanceof ContainerRequest)) {
-                esay("cancelAllGetRequest: request with reqiest id "+requestId+" is not found\n");
-                continue;
-            }
-            final ContainerRequest r = (ContainerRequest)job;
-            sb.append("get request #"+requestId+" matches pattern=\""+pattern+"\"; canceling request \n");
-            new Thread (new Runnable() {
-                public void run() {
-                    synchronized(r)
-                    {
-                        try {
-                            State s = r.getState();
-                            if(!State.isFinalState(s ))
-                            {
-                                r.setState(State.CANCELED,"Canceled by admin through cancelall command");
-                            }
-                        }
-                        catch(IllegalStateTransition ist) {
-                            esay(ist);
-                        }
-                    }
-                }
-            }).start();
-        }
+        cancelAllRequest(sb,pattern,getRequestScheduler,getStorage);
     }
-    
+
+    public void cancelAllBringOnlineRequest(StringBuffer sb,String pattern)  throws java.sql.SQLException {
+        
+        cancelAllRequest(sb,pattern,bringOnlineRequestScheduler,bringOnlineStorage);
+    }
     public void cancelAllPutRequest(StringBuffer sb,String pattern)  throws java.sql.SQLException {
         
-        java.util.Set jobsToKill = new java.util.HashSet();
-        java.util.regex.Pattern p = java.util.regex.Pattern.compile(pattern);
-        Set activeRequestIds = 
-        putStorage.getActiveRequestIds(putRequestScheduler.getId());
-        for(Iterator i = activeRequestIds.iterator(); i.hasNext();) {
-            Long requestId = (Long)i.next();
-            java.util.regex.Matcher m = p.matcher(requestId.toString());
-            if( m.matches()) {
-                say("cancelAllPutRequest: request Id #"+requestId+" matches pattern!");
-                jobsToKill.add(requestId);
-            }
-        }
-        if(jobsToKill.isEmpty()) {
-            sb.append("no put requests match the pattern=\""+pattern+"\n");
-            return;
-        }
-        for(java.util.Iterator i = jobsToKill.iterator(); i.hasNext();){
-            
-            Long requestId = (Long)i.next();
-            Job job = Job.getJob(requestId);
-            if(job == null || !(job instanceof ContainerRequest)) {
-                esay("cancelAllPutRequest: request with reqiest id "+requestId+" is not found\n");
-                continue;
-            }
-            final ContainerRequest r = (ContainerRequest)job;
-            sb.append("put request #"+requestId+" matches pattern=\""+pattern+"\"; canceling request ");
-            new Thread (new Runnable() {
-                public void run() {
-                    synchronized(r)
-                    {
-                        try {
-                            State s = r.getState();
-                            if(!State.isFinalState(s ))
-                            {
-                                r.setState(State.CANCELED,"Canceled by admin through cancelall command");
-                            }
-                        }
-                        catch(IllegalStateTransition ist) {
-                            esay(ist);
-                        }
-                    }
-                }
-            }).start();
-        }
+        cancelAllRequest(sb,pattern,putRequestScheduler,putStorage);
     }
     
     public void cancelAllCopyRequest(StringBuffer sb,String pattern)  throws java.sql.SQLException {
         
-        java.util.Set jobsToKill = new java.util.HashSet();
+        cancelAllRequest(sb,pattern,copyRequestScheduler,copyStorage);
+    }
+    
+    public void cancelAllReserveSpaceRequest(StringBuffer sb,String pattern)  throws java.sql.SQLException {
+        
+        cancelAllRequest(sb,pattern,reserveSpaceScheduler,reserveSpaceRequestStorage);
+    }
+    
+    private void cancelAllRequest(StringBuffer sb,
+            String pattern,
+            Scheduler scheduler,
+            DatabaseRequestStorage storage)  throws java.sql.SQLException {
+        
+        java.util.Set<Long> jobsToKill = new java.util.HashSet<Long>();
         java.util.regex.Pattern p = java.util.regex.Pattern.compile(pattern);
-            say("cancelAllCopyRequest: calling copyStorage.getActiveRequestIds()");
         Set activeRequestIds = 
-        copyStorage.getActiveRequestIds(copyRequestScheduler.getId());
+        storage.getActiveRequestIds(scheduler.getId());
         for(Iterator i = activeRequestIds.iterator(); i.hasNext();) {
             Long requestId = (Long)i.next();
             java.util.regex.Matcher m = p.matcher(requestId.toString());
             if( m.matches()) {
-                say("cancelAllCopyRequest: request #"+requestId+" matches pattern!");
+                say("cancelAllRequest: request Id #"+requestId+" in "+scheduler+" matches pattern!");
                 jobsToKill.add(requestId);
             }
         }
         if(jobsToKill.isEmpty()) {
-            sb.append("no copy requests match the pattern=\""+pattern+"\n");
+            sb.append("no requests match the pattern=\""+pattern+" in scheduler "+
+                    scheduler+"\n");
             return;
         }
-        for(java.util.Iterator i = jobsToKill.iterator(); i.hasNext();){
-            
-            Long requestId = (Long)i.next();
+        for(Long requestId:jobsToKill){
             Job job = Job.getJob(requestId);
             if(job == null || !(job instanceof ContainerRequest)) {
-                esay("cancelAllCopyRequest: request with reqiest #"+requestId+" is not found\n");
+                esay(" request with reqiest id "+requestId+" is not found\n");
                 continue;
             }
             final ContainerRequest r = (ContainerRequest)job;
-            sb.append("copy request #"+requestId+" matches pattern=\""+pattern+"\"; canceling request\n");
+            sb.append("request #"+requestId+" matches pattern=\""+pattern+"\"; canceling request \n");
             new Thread (new Runnable() {
                 public void run() {
                     synchronized(r)
@@ -1894,8 +1819,7 @@ public class SRM {
                             State s = r.getState();
                             if(!State.isFinalState(s ))
                             {
-                                r.setState(State.CANCELED,
-                                "Canceled by admin through cancelall command");
+                                r.setState(State.CANCELED,"Canceled by admin through cancelall command");
                             }
                         }
                         catch(IllegalStateTransition ist) {

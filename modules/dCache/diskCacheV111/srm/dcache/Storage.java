@@ -478,6 +478,8 @@ public class Storage
 
         config.setGetLifetime(getLongOption(
             "get-lifetime",config.getGetLifetime()));
+        config.setBringOnlineLifetime(getLongOption(
+            "bring-online-lifetime",config.getBringOnlineLifetime()));
         config.setPutLifetime(getLongOption(
             "put-lifetime",config.getPutLifetime()));
         config.setCopyLifetime(getLongOption("copy-lifetime",
@@ -511,6 +513,8 @@ public class Storage
 
         config.setGetPriorityPolicyPlugin(getOption("get-priority-policy",
             config.getGetPriorityPolicyPlugin()));
+        config.setBringOnlinePriorityPolicyPlugin(getOption("bring-online-priority-policy",
+            config.getBringOnlinePriorityPolicyPlugin()));
         config.setPutPriorityPolicyPlugin(getOption("put-priority-policy",
             config.getPutPriorityPolicyPlugin()));
         config.setCopyPriorityPolicyPlugin(getOption("copy-priority-policy",
@@ -552,6 +556,26 @@ public class Storage
         config.setGetMaxRunningBySameOwner(
             getIntOption("get-req-max-num-of-running-by-same-owner",
             config.getGetMaxRunningBySameOwner()));
+
+        config.setBringOnlineReqTQueueSize( getIntOption("bring-online-req-thread-queue-size",
+            config.getBringOnlineReqTQueueSize()));
+        config.setBringOnlineThreadPoolSize(getIntOption("bring-online-req-thread-pool-size",
+            config.getBringOnlineThreadPoolSize()));
+        config.setBringOnlineMaxWaitingRequests(getIntOption("bring-online-req-max-waiting-requests",
+            config.getBringOnlineMaxWaitingRequests()));
+        config.setBringOnlineReadyQueueSize(getIntOption("bring-online-req-ready-queue-size",
+            config.getBringOnlineReadyQueueSize()));
+        config.setBringOnlineMaxReadyJobs(getIntOption("bring-online-req-max-ready-requests",
+            config.getBringOnlineMaxReadyJobs()));
+        config.setBringOnlineMaxNumOfRetries(getIntOption("bring-online-req-max-number-of-retries",
+            config.getBringOnlineMaxNumOfRetries()));
+        config.setBringOnlineRetryTimeout(getLongOption("bring-online-req-retry-timeout",
+            config.getBringOnlineRetryTimeout()));
+        config.setBringOnlineMaxRunningBySameOwner(
+            getIntOption("bring-online-req-max-num-of-running-by-same-owner",
+            config.getBringOnlineMaxRunningBySameOwner()));
+        
+        
         config.setPutReqTQueueSize(getIntOption("put-req-thread-queue-size",
             config.getPutReqTQueueSize()));
         config.setPutThreadPoolSize(getIntOption("put-req-thread-pool-size",
@@ -596,6 +620,8 @@ public class Storage
 
         config.setGetRequestRestorePolicy(getOption("get-request-restore-policy",
             config.getGetRequestRestorePolicy()));
+        config.setBringOnlineRequestRestorePolicy(getOption("bring-online-request-restore-policy",
+            config.getBringOnlineRequestRestorePolicy()));
         config.setPutRequestRestorePolicy(getOption("put-request-restore-policy",
             config.getPutRequestRestorePolicy()));
         config.setCopyRequestRestorePolicy(getOption("copy-request-restore-policy",
@@ -932,17 +958,21 @@ public class Storage
         }
     }
 
-    public String fh_cancelall= " Syntax: cancel [-get] [-put] [-copy] <pattern> ";
-    public String hh_cancelall= " [-get] [-put] [-copy] <pattern> ";
+    public String fh_cancelall= " Syntax: cancel [-get] [-put] [-copy] [-bring] [-reserve] <pattern> ";
+    public String hh_cancelall= " [-get] [-put] [-copy] [-bring] [-reserve] <pattern> ";
     public String ac_cancelall_$_1(Args args) {
         try {
             boolean get=args.getOpt("get") != null;
             boolean put=args.getOpt("put") != null;
             boolean copy=args.getOpt("copy") != null;
-            if( !get && !put && !copy ) {
+            boolean bring=args.getOpt("bring") != null;
+            boolean reserve=args.getOpt("reserve") != null;
+            if( !get && !put && !copy && !bring && !reserve) {
                 get=true;
                 put=true;
                 copy=true;
+                bring=true;
+                reserve=true;
 
             }
             String pattern = args.argv(0);
@@ -950,6 +980,10 @@ public class Storage
             if(get) {
                 say("calling srm.cancelAllGetRequest(\""+pattern+"\")");
                 srm.cancelAllGetRequest(sb, pattern);
+            }
+            if(bring) {
+                say("calling srm.cancelAllBringOnlineRequest(\""+pattern+"\")");
+                srm.cancelAllBringOnlineRequest(sb, pattern);
             }
             if(put) {
                 say("calling srm.cancelAllPutRequest(\""+pattern+"\")");
@@ -959,21 +993,26 @@ public class Storage
                 say("calling srm.cancelAllCopyRequest(\""+pattern+"\")");
                 srm.cancelAllCopyRequest(sb, pattern);
             }
+            if(reserve) {
+                say("calling srm.cancelAllReserveSpaceRequest(\""+pattern+"\")");
+                srm.cancelAllReserveSpaceRequest(sb, pattern);
+            }
             return sb.toString();
         }catch (Exception e) {
             esay(e);
             return e.toString();
         }
     }
-    public String fh_ls= " Syntax: ls [-get] [-put] [-copy] [-bring] [-l] [<id>] "+
+    public String fh_ls= " Syntax: ls [-get] [-put] [-copy] [-bring] [-reserve] [-l] [<id>] "+
             "#will list all requests";
-    public String hh_ls= " [-get] [-put] [-copy] [-bring] [-l] [<id>]";
+    public String hh_ls= " [-get] [-put] [-copy] [-bring] [-reserve] [-l] [<id>]";
     public String ac_ls_$_0_1(Args args) {
         try {
             boolean get=args.getOpt("get") != null;
             boolean put=args.getOpt("put") != null;
             boolean copy=args.getOpt("copy") != null;
             boolean bring=args.getOpt("bring") != null;
+            boolean reserve=args.getOpt("reserve") != null;
             boolean longformat = args.getOpt("l") != null;
             StringBuffer sb = new StringBuffer();
             if(args.argc() == 1) {
@@ -984,12 +1023,12 @@ public class Storage
                     return "id must be an integer, you gave id="+args.argv(0);
                 }
             } else {
-                if( !get && !put && !copy && !bring) {
+                if( !get && !put && !copy && !bring && !reserve) {
                     get=true;
                     put=true;
                     copy=true;
+                    reserve=true;
                     bring=true;
-
                 }
                 if(get) {
                     sb.append("Get Requests:\n");
@@ -1009,6 +1048,11 @@ public class Storage
                 if(copy) {
                     sb.append("Bring Online Requests:\n");
                     srm.listBringOnlineRequests(sb);
+                    sb.append('\n');
+                }
+                if(reserve) {
+                    sb.append("Reserve Space Requests:\n");
+                    srm.listReserveSpaceRequests(sb);
                     sb.append('\n');
                 }
             }
@@ -1266,6 +1310,20 @@ public class Storage
         srm.getGetRequestScheduler().setMaxReadyJobs(value);
         say("get-req-max-ready-requests="+value);
         return "get-req-max-ready-requests="+value;
+    }
+
+    public String fh_set_max_ready_bring_online= " Syntax: set max ready bring online <count>"+
+            " #will set a maximum number of bring online requests in the ready state";
+    public String hh_set_max_ready_bring_online= " <count>";
+    public String ac_set_max_ready_bring_online_$_1(Args args) throws Exception{
+        if(args.argc() != 1) {
+            throw new IllegalArgumentException("count is not specified");
+        }
+        int value = Integer.parseInt(args.argv(0));
+        config.setBringOnlineMaxReadyJobs(value);
+        srm.getBringOnlineRequestScheduler().setMaxReadyJobs(value);
+        say("bring-online-req-max-ready-requests="+value);
+        return "bring-online-req-max-ready-requests="+value;
     }
 
       public String fh_dir_creators_ls= " Syntax: dir creators ls [-l]  "+

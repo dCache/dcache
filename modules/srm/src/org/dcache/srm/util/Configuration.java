@@ -166,7 +166,17 @@ public class Configuration {
     private long getRetryTimeout=60000;
     private int getMaxRunningBySameOwner=10;
     private String getRequestRestorePolicy=ON_RESTART_WAIT_FOR_UPDATE_REQUEST;
-    
+
+    private int bringOnlineReqTQueueSize=1000;
+    private int bringOnlineThreadPoolSize=30;
+    private int bringOnlineMaxWaitingRequests=1000;
+    private int bringOnlineReadyQueueSize=1000;
+    private int bringOnlineMaxReadyJobs=60;
+    private int bringOnlineMaxNumOfRetries=10;
+    private long bringOnlineRetryTimeout=60000;
+    private int bringOnlineMaxRunningBySameOwner=10;
+    private String bringOnlineRequestRestorePolicy=ON_RESTART_WAIT_FOR_UPDATE_REQUEST;
+
     private int putReqTQueueSize=1000;
     private int putThreadPoolSize=30;
     private int putMaxWaitingRequests=1000;
@@ -187,6 +197,7 @@ public class Configuration {
     
     
     private long getLifetime = 24*60*60*1000;
+    private long bringOnlineLifetime = 24*60*60*1000;
     private long putLifetime = 24*60*60*1000;
     private long copyLifetime = 24*60*60*1000;
     private long defaultSpaceLifetime = 24*60*60*1000;
@@ -224,6 +235,7 @@ public class Configuration {
     private String lambda_station_script=null;
     private boolean lambda_station_enabled=false;
     private String getPriorityPolicyPlugin="DefaultJobAppraiser";
+    private String bringOnlinePriorityPolicyPlugin="DefaultJobAppraiser";
     private String putPriorityPolicyPlugin="DefaultJobAppraiser";
     private String copyPriorityPolicyPlugin="DefaultJobAppraiser";
     private int numDaysHistory = 30;
@@ -388,6 +400,34 @@ public class Configuration {
                 "       \""+ON_RESTART_WAIT_FOR_UPDATE_REQUEST+"\" - will cause the system not to execute the restored requests\n"+
                 "                         unless srmcp client attempts to update the status of the request");
         
+
+        put(document,root,"bringOnlineReqTQueueSize",Integer.toString(bringOnlineReqTQueueSize),
+                "bringOnlineReqTQueueSize");
+        put(document,root,"bringOnlineThreadPoolSize",Integer.toString(bringOnlineThreadPoolSize),
+                "bringOnlineThreadPoolSize");
+        put(document,root,"bringOnlineMaxWaitingRequests",Integer.toString(bringOnlineMaxWaitingRequests),
+                "bringOnlineMaxWaitingRequests");
+        put(document,root,"bringOnlineReadyQueueSize",Integer.toString(bringOnlineReadyQueueSize),
+                "bringOnlineReadyQueueSize");
+        put(document,root,"bringOnlineMaxReadyJobs",Integer.toString(bringOnlineMaxReadyJobs),
+                "bringOnlineMaxReadyJobs");
+        put(document,root,"bringOnlineMaxNumOfRetries",Integer.toString(bringOnlineMaxNumOfRetries),
+                "Maximum Number Of Retries for bringOnline file request");
+        put(document,root,"bringOnlineRetryTimeout",Long.toString(bringOnlineRetryTimeout),
+                "bringOnline request Retry Timeout in milliseconds");
+        
+        put(document,root,"bringOnlineMaxRunningBySameOwner",Integer.toString(bringOnlineMaxRunningBySameOwner),
+                "bringOnlineMaxRunningBySameOwner");
+        put(document,root,"bringOnlineRequestRestorePolicy",bringOnlineRequestRestorePolicy ,
+                "bringOnlineRequestRestorePolicy determines what happens with the pending/runnig bringOnline request\n"+
+                "       request, when srm is restarted, the possble values are:\n"+
+                "       \""+ON_RESTART_FAIL_REQUEST+"\", \""+ON_RESTART_RESTORE_REQUEST+"\" and \""+
+                ON_RESTART_WAIT_FOR_UPDATE_REQUEST+"\\n"+
+                "       \""+ON_RESTART_FAIL_REQUEST+"\"  will lead to the failure of the restored bringOnline requests\n"+
+                "       \""+ON_RESTART_RESTORE_REQUEST+"\" - will cause the execution of the restored bringOnline requests\n"+
+                "       \""+ON_RESTART_WAIT_FOR_UPDATE_REQUEST+"\" - will cause the system not to execute the restored requests\n"+
+                "                         unless srmcp client attempts to update the status of the request");
+        
         
         put(document,root,"putReqTQueueSize",Integer.toString(putReqTQueueSize),
                 "putReqTQueueSize");
@@ -443,6 +483,8 @@ public class Configuration {
         
         put(document,root,"getLifetime",Long.toString(getLifetime),
                 "getLifetime");
+        put(document,root,"bringOnlineLifetime",Long.toString(bringOnlineLifetime),
+                "bringOnlineLifetime");
         put(document,root,"putLifetime",Long.toString(putLifetime),
                 "putLifetime");
         put(document,root,"copyLifetime",Long.toString(copyLifetime),
@@ -602,6 +644,33 @@ public class Configuration {
                         ON_RESTART_WAIT_FOR_UPDATE_REQUEST+"\" "+
                         " but received value="+value);
             }
+        } else if(name.equals("bringOnlineReqTQueueSize")) {
+            bringOnlineReqTQueueSize= Integer.parseInt(value);
+        } else if(name.equals("bringOnlineThreadPoolSize")) {
+            bringOnlineThreadPoolSize = Integer.parseInt(value);
+        } else if(name.equals("bringOnlineMaxWaitingRequests")) {
+            bringOnlineMaxWaitingRequests= Integer.parseInt(value);
+        } else if(name.equals("bringOnlineReadyQueueSize")) {
+            bringOnlineReadyQueueSize= Integer.parseInt(value);
+        } else if(name.equals("bringOnlineMaxReadyJobs")) {
+            bringOnlineMaxReadyJobs= Integer.parseInt(value);
+        } else if(name.equals("bringOnlineMaxNumOfRetries")) {
+            bringOnlineMaxNumOfRetries= Integer.parseInt(value);
+        } else if(name.equals("bringOnlineRetryTimeout")) {
+            bringOnlineRetryTimeout= Long.parseLong(value);
+        } else if(name.equals("bringOnlineMaxRunningBySameOwner")) {
+            bringOnlineMaxRunningBySameOwner= Integer.parseInt(value);
+        } else if(name.equals("bringOnlineRequestRestorePolicy")) {
+            if(value.equalsIgnoreCase(ON_RESTART_FAIL_REQUEST) ||
+                    value.equalsIgnoreCase(ON_RESTART_RESTORE_REQUEST) ||
+                    value.equalsIgnoreCase(ON_RESTART_RESTORE_REQUEST) ) {
+                bringOnlineRequestRestorePolicy = value;
+            } else {
+                throw new IllegalArgumentException("bringOnlineRequestRestorePolicy value must be one of "+
+                        "\""+ON_RESTART_FAIL_REQUEST+"\", \""+ON_RESTART_RESTORE_REQUEST+"\" or \""+
+                        ON_RESTART_WAIT_FOR_UPDATE_REQUEST+"\" "+
+                        " but received value="+value);
+            }
         } else if(name.equals("putReqTQueueSize")) {
             putReqTQueueSize= Integer.parseInt(value);
         } else if(name.equals("putThreadPoolSize")) {
@@ -654,6 +723,8 @@ public class Configuration {
             }
         } else if(name.equals("getLifetime")) {
             getLifetime=Long.parseLong(value);
+        } else if(name.equals("bringOnlineLifetime")) {
+            bringOnlineLifetime=Long.parseLong(value);
         } else if(name.equals("putLifetime")) {
             putLifetime=Long.parseLong(value);
         } else if(name.equals("copyLifetime")) {
@@ -1112,6 +1183,7 @@ public class Configuration {
         sb.append("SRM Configuration:");
         sb.append("\n\t\"defaultSpaceLifetime\"  request lifetime: ").append(this.defaultSpaceLifetime );
         sb.append("\n\t\"get\"  request lifetime: ").append(this.getLifetime );
+        sb.append("\n\t\"bringOnline\"  request lifetime: ").append(this.bringOnlineLifetime );
         sb.append("\n\t\"put\"  request lifetime: ").append(this.putLifetime );
         sb.append("\n\t\"copy\" request lifetime: ").append(this.copyLifetime);
         sb.append("\n\tdebug=").append(this.debug);
@@ -1163,6 +1235,20 @@ public class Configuration {
         sb.append("\n\t\t maximum number of jobs running created");
         sb.append("\n\t\t by the same owner if other jobs are queued =").append(this.getMaxRunningBySameOwner);
         sb.append("\n\t\t getRequestRestorePolicy=").append(this.getRequestRestorePolicy);
+        
+        
+        sb.append("\n\t\t *** BringOnlineRequests Scheduler  Parameters **");
+        sb.append("\n\t\t request Lifetime in miliseconds =").append(this.bringOnlineLifetime);
+        sb.append("\n\t\t max thread queue size =").append(this.bringOnlineReqTQueueSize);
+        sb.append("\n\t\t max number of threads =").append(this.bringOnlineThreadPoolSize);
+        sb.append("\n\t\t max number of waiting file requests =").append(this.bringOnlineMaxWaitingRequests);
+        sb.append("\n\t\t max ready queue size =").append(this.bringOnlineReadyQueueSize);
+        sb.append("\n\t\t max number of ready file requests =").append(this.bringOnlineMaxReadyJobs);
+        sb.append("\n\t\t maximum number of retries = ").append(this.bringOnlineMaxNumOfRetries);
+        sb.append("\n\t\t retry timeout in miliseconds =").append(this.bringOnlineRetryTimeout);
+        sb.append("\n\t\t maximum number of jobs running created");
+        sb.append("\n\t\t by the same owner if other jobs are queued =").append(this.bringOnlineMaxRunningBySameOwner);
+        sb.append("\n\t\t bringOnlineRequestRestorePolicy=").append(this.bringOnlineRequestRestorePolicy);
         
         
         sb.append("\n\t\t *** PuRequests Scheduler  Parameters **");
@@ -2312,6 +2398,94 @@ public class Configuration {
    
     public void setLambda_station_script(String lambda_station_script) {
         this.lambda_station_script = lambda_station_script;
+    }
+
+    public int getBringOnlineReqTQueueSize() {
+        return bringOnlineReqTQueueSize;
+    }
+
+    public void setBringOnlineReqTQueueSize(int bringOnlineReqTQueueSize) {
+        this.bringOnlineReqTQueueSize = bringOnlineReqTQueueSize;
+    }
+
+    public int getBringOnlineThreadPoolSize() {
+        return bringOnlineThreadPoolSize;
+    }
+
+    public void setBringOnlineThreadPoolSize(int bringOnlineThreadPoolSize) {
+        this.bringOnlineThreadPoolSize = bringOnlineThreadPoolSize;
+    }
+
+    public int getBringOnlineMaxWaitingRequests() {
+        return bringOnlineMaxWaitingRequests;
+    }
+
+    public void setBringOnlineMaxWaitingRequests(int bringOnlineMaxWaitingRequests) {
+        this.bringOnlineMaxWaitingRequests = bringOnlineMaxWaitingRequests;
+    }
+
+    public int getBringOnlineReadyQueueSize() {
+        return bringOnlineReadyQueueSize;
+    }
+
+    public void setBringOnlineReadyQueueSize(int bringOnlineReadyQueueSize) {
+        this.bringOnlineReadyQueueSize = bringOnlineReadyQueueSize;
+    }
+
+    public int getBringOnlineMaxReadyJobs() {
+        return bringOnlineMaxReadyJobs;
+    }
+
+    public void setBringOnlineMaxReadyJobs(int bringOnlineMaxReadyJobs) {
+        this.bringOnlineMaxReadyJobs = bringOnlineMaxReadyJobs;
+    }
+
+    public int getBringOnlineMaxNumOfRetries() {
+        return bringOnlineMaxNumOfRetries;
+    }
+
+    public void setBringOnlineMaxNumOfRetries(int bringOnlineMaxNumOfRetries) {
+        this.bringOnlineMaxNumOfRetries = bringOnlineMaxNumOfRetries;
+    }
+
+    public long getBringOnlineRetryTimeout() {
+        return bringOnlineRetryTimeout;
+    }
+
+    public void setBringOnlineRetryTimeout(long bringOnlineRetryTimeout) {
+        this.bringOnlineRetryTimeout = bringOnlineRetryTimeout;
+    }
+
+    public int getBringOnlineMaxRunningBySameOwner() {
+        return bringOnlineMaxRunningBySameOwner;
+    }
+
+    public void setBringOnlineMaxRunningBySameOwner(int bringOnlineMaxRunningBySameOwner) {
+        this.bringOnlineMaxRunningBySameOwner = bringOnlineMaxRunningBySameOwner;
+    }
+
+    public String getBringOnlineRequestRestorePolicy() {
+        return bringOnlineRequestRestorePolicy;
+    }
+
+    public void setBringOnlineRequestRestorePolicy(String bringOnlineRequestRestorePolicy) {
+        this.bringOnlineRequestRestorePolicy = bringOnlineRequestRestorePolicy;
+    }
+
+    public long getBringOnlineLifetime() {
+        return bringOnlineLifetime;
+    }
+
+    public void setBringOnlineLifetime(long bringOnlineLifetime) {
+        this.bringOnlineLifetime = bringOnlineLifetime;
+    }
+
+    public String getBringOnlinePriorityPolicyPlugin() {
+        return bringOnlinePriorityPolicyPlugin;
+    }
+
+    public void setBringOnlinePriorityPolicyPlugin(String bringOnlinePriorityPolicyPlugin) {
+        this.bringOnlinePriorityPolicyPlugin = bringOnlinePriorityPolicyPlugin;
     }
     
 }
