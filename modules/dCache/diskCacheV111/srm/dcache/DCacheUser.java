@@ -104,10 +104,11 @@ import java.util.Arrays;
  */
 public class DCacheUser extends RequestUser {
     
-    private String name;
-    private String voGroup;
-    private String voRole;
-    private String root;
+    private final String dn;
+    private final String name;
+    private final String voGroup;
+    private final String voRole;
+    private final String root;
     
     private int uid=-1;
     private int[] gids;
@@ -115,11 +116,12 @@ public class DCacheUser extends RequestUser {
     private static final long serialVersionUID = 9164781252174549638L;    
     
     /** Creates a new instance of User */
-    public DCacheUser(String name, String voGroup, String voRole, String root, int uid, int[] gids) {
+    public DCacheUser(String dn, String name, String voGroup, String voRole, String root, int uid, int[] gids) {
         super(name);
         if(name == null || root == null) {
             throw new IllegalArgumentException("name == null || root == null");
         }
+        this.dn = dn;
         this.name = name;
         this.voGroup = voGroup;
         this.voRole = voRole;
@@ -180,4 +182,8 @@ public class DCacheUser extends RequestUser {
     public String getVoGroup() {
         return voGroup;
     }
+
+    public String getDN() {
+        return dn;
+}
 }

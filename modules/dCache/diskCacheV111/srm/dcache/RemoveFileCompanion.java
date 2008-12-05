@@ -93,6 +93,8 @@ import diskCacheV111.vehicles.PnfsDeleteEntryMessage;
 import org.dcache.srm.RemoveFileCallbacks;
 import diskCacheV111.util.FileMetaData;
 import diskCacheV111.util.CacheException;
+import diskCacheV111.vehicles.DoorRequestInfoMessage;
+import dmg.cells.nucleus.NoRouteToCellException;
 import org.apache.log4j.Logger;
 import java.util.Arrays;
 
@@ -207,6 +209,7 @@ public class RemoveFileCompanion implements CellMessageAnswerable {
 				if(state == WAITING_FOR_PNFS_DELETE_MESSAGE) {
 					state = RECEIVED_PNFS_DELETE_MESSAGE;
 					if(delete_reply.getReturnCode() == 0) {
+                        sendRemoveInfoToBilling(path);
 						callbacks.RemoveFileSucceeded();
 					}
 					else {
@@ -380,6 +383,24 @@ public class RemoveFileCompanion implements CellMessageAnswerable {
             return false;
         }
  
+   private final static CellPath _billingCellPath = new CellPath("billing");
+
+    private void sendRemoveInfoToBilling(String pathInPnfs) {
+        try {
+            DoorRequestInfoMessage infoRemove =
+                new DoorRequestInfoMessage(cell.getNucleus().getCellName() + "@" +
+                cell.getNucleus().getCellDomainName(), "remove");
+            infoRemove.setOwner(user.getDN());
+            infoRemove.setGid(user.getGid());
+            infoRemove.setUid(user.getUid());
+            infoRemove.setPath(pathInPnfs);            
+
+            cell.sendMessage(new CellMessage(_billingCellPath, infoRemove));
+        } catch (NoRouteToCellException e) {
+            _log.error("Can't send remove message to " + " billing: " + e.getMessage());
+        }
+    }
+
 }
 
 
