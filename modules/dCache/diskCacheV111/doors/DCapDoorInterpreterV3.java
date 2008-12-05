@@ -59,7 +59,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
     private Date    _lastCommandTS   = null ;
     private boolean _authorizationRequired = false ;
     private boolean _authorizationStrong   = false ;
-
+    protected final CellPath _billingCellPath = new CellPath("billing");
     /**
      * user record to use.
      */
@@ -1027,7 +1027,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
             println( problem ) ;
             try{
                 _cell.sendMessage(
-                new CellMessage( new CellPath("billing") ,
+                new CellMessage( _billingCellPath ,
                 _info ) ) ;
             }catch(Exception ee){
                 _cell.esay("Couldn't send billing info : "+ee );
@@ -1504,6 +1504,7 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
 
                     try {
                         _pnfs.deletePnfsEntry( path );
+                        sendRemoveInfoToBilling( path );
                         sb.append("ok");
                     }catch( CacheException e) {
                         sb.append("failed 22 \"" + e.getMessage() + "\"");
@@ -2806,4 +2807,21 @@ public class DCapDoorInterpreterV3 implements KeepAliveListener {
         }
     }
 
+    private void sendRemoveInfoToBilling(String pathToBeRemoved) {
+ 	    try {
+            DoorRequestInfoMessage infoRemove = 
+       	       new DoorRequestInfoMessage(_cell.getNucleus().getCellName()+"@"+
+                                         _cell.getNucleus().getCellDomainName(), "remove");
+	        infoRemove.setOwner(_user.getName());
+	        infoRemove.setUid(_userAuthRecord.UID);
+            infoRemove.setGid(_userAuthRecord.GID);
+            infoRemove.setPath(pathToBeRemoved);
+ 
+	       _cell.sendMessage(new CellMessage(_billingCellPath, infoRemove));
+ 	       } catch (NoRouteToCellException e) {
+		      _cell.esay("DCap Door : Can't send remove message to " +
+			    	 "billing database: " + e.getMessage()); 
+           }
+     }
+    
 }
