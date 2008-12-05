@@ -642,6 +642,7 @@ public abstract class AbstractFtpDoorV1
     protected String _pathRoot;
     protected String _curDirV;
     protected String _xferMode = "S";
+    protected final CellPath _billingCellPath = new CellPath("billing");
 
     /**
      *   NEW
@@ -788,7 +789,7 @@ public abstract class AbstractFtpDoorV1
         {
             try {
                 info.setResult(code, msg);
-                sendMessage(new CellMessage(new CellPath("billing") , info));
+                sendMessage(new CellMessage(_billingCellPath , info));
             } catch (NoRouteToCellException e) {
                 error("FTP Door: couldn't send door request data to " +
                       "billing database: " + e.getMessage());
@@ -1691,6 +1692,7 @@ public abstract class AbstractFtpDoorV1
                 return;
             }
         }
+        sendRemoveInfoToBilling(pathInPnfs);
         reply("200 file deleted");
     }
 
@@ -4538,4 +4540,22 @@ public abstract class AbstractFtpDoorV1
             reply(String.valueOf(e.getCode()) + " " + e.getReply());
         }
     }
+    
+    private void sendRemoveInfoToBilling(String pathInPnfs) {
+ 	    try {
+    	    DoorRequestInfoMessage infoRemove = 
+        	    new DoorRequestInfoMessage(getNucleus().getCellName()+"@"+
+                                           getNucleus().getCellDomainName(), "remove");
+    	    infoRemove.setOwner(_dnUser == null? _user : _dnUser);
+            infoRemove.setGid(_pwdRecord.GID);
+            infoRemove.setUid(_pwdRecord.UID);
+            infoRemove.setPath(pathInPnfs);
+            infoRemove.setClient(_client_data_host);  
+
+    	    sendMessage(new CellMessage(_billingCellPath, infoRemove));
+    	    } catch (NoRouteToCellException e) {
+     		     error("FTP Door: Can't send remove message to " +
+      			    	 "billing database: " + e.getMessage()); 
+            }
+     }
 }
