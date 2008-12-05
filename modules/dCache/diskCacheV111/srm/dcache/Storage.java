@@ -1197,7 +1197,7 @@ public class Storage
     public String ac_reserve_$_7(Args args) {
         String voGroup=args.argv(0);
         String voRole = args.argv(1);
-        DCacheUser duser = new DCacheUser("timur",voGroup,
+        DCacheUser duser = new DCacheUser("/DN=" , "timur",voGroup,
                 voRole,
                 "/pnfs/fnal.gov/usr/cms/WAX",
                 10401,

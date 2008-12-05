@@ -285,7 +285,7 @@ public final class DCacheAuthorization implements SRMAuthorization {
             }
            _logAuth.error(" Warning: user parameters for user "+ user+ " have changed ");
         }
-        DCacheUser user = new DCacheUser(username,voGroup,voRole,root,uid,gids);
+        DCacheUser user = new DCacheUser(user_rec.DN, username,voGroup,voRole,root,uid,gids);
         user.saveCreator();
         return user;
         

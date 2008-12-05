@@ -17,6 +17,11 @@ public class DoorRequestInfoMessage extends PnfsFileInfoMessage {
         super("request", "door", cellName, null);
     }
 
+    public DoorRequestInfoMessage(String cellName, String action) {
+    	//action: "remove"
+    	super(action, "door", cellName, null);
+    }
+    
     public void setTransactionTime(long transactionTime) {
         _transactionTime = transactionTime;
     }
