@@ -65,6 +65,10 @@ public class MigrationModuleServer
     public Message messageArrived(PoolMigrationUpdateReplicaMessage message)
         throws CacheException
     {
+        if (message.isReply()) {
+            return null;
+        }
+
         PnfsId pnfsId = message.getPnfsId();
         EntryState targetState = message.getState();
         CacheEntry entry = _repository.getEntry(pnfsId);
@@ -114,6 +118,10 @@ public class MigrationModuleServer
         messageArrived(CellMessage envelope, PoolMigrationCopyReplicaMessage message)
         throws UnknownHostException
     {
+        if (message.isReply()) {
+            return null;
+        }
+
         final long taskId = message.getTaskId();
         final PnfsId pnfsId = message.getPnfsId();
         final String pool = message.getPool();
@@ -169,6 +177,10 @@ public class MigrationModuleServer
 
     synchronized public Message messageArrived(PoolMigrationPingMessage message)
     {
+        if (message.isReply()) {
+            return null;
+        }
+
         long taskId = message.getTaskId();
         String pool = message.getPool();
         Request request = new Request(pool, taskId);
@@ -185,6 +197,10 @@ public class MigrationModuleServer
     synchronized public Message messageArrived(PoolMigrationCancelMessage message)
         throws CacheException
     {
+        if (message.isReply()) {
+            return null;
+        }
+
         long taskId = message.getTaskId();
         String pool = message.getPool();
         Request request = new Request(pool, taskId);
