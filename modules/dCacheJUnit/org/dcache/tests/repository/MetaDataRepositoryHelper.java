@@ -229,19 +229,14 @@ public class MetaDataRepositoryHelper implements MetaDataRepository {
             }
         }
 
-        public void setPrecious(boolean force) throws CacheException
+        public void setPrecious() throws CacheException
         {
             try {
-                _state.setPrecious(force);
+                _state.setPrecious();
 
             } catch (IllegalStateException e) {
                 throw new CacheException(e.getMessage());
             }
-        }
-
-        public void setPrecious() throws CacheException
-        {
-            setPrecious(false);
         }
 
         public void setReceivingFromClient() throws CacheException

@@ -241,15 +241,9 @@ public class PoolRepository {
 
 		entry.setCached();
 		entry.setBad(true);
+                entry.setPrecious();
+                assertTrue("Entry should still be bad", entry.isBad());
 
-		try {
-			entry.setPrecious();
-			fail("IllegalStateException should be thrown on attempt to set bad file precious");
-		} catch ( CacheException ise ) {
-			// OK
-		}
-
-		entry.setPrecious(true);
 		_repository.removeEntry(entry);
 	}
 
@@ -458,10 +452,10 @@ public class PoolRepository {
 
         entry.setSize(17);
 
-        entry.setPrecious(true);
+        entry.setPrecious();
 
         long preciousSize = _repository.getPreciousSpace();
-        entry.setPrecious(true);
+        entry.setPrecious();
 
         assertEquals("set precious two times calculates file size twice",
                 preciousSize,  _repository.getPreciousSpace() );
