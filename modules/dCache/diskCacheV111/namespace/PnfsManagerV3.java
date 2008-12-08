@@ -755,7 +755,7 @@ public class PnfsManagerV3 extends CellAdapter {
             msg.setFailed( CacheException.UNEXPECTED_SYSTEM_EXCEPTION , e.getMessage() ) ;
         }
         if( msg.getReturnCode() != 0 ) {
-            _xgetChecksum.failed();
+            _xlistChecksumTypes.failed();
         }
     }
 
@@ -897,7 +897,6 @@ public class PnfsManagerV3 extends CellAdapter {
         } catch (FileNotFoundCacheException fnf ) {
             	pnfsMessage.setFailed(CacheException.FILE_NOT_FOUND, fnf.getMessage() );
         } catch (Exception e){
-            _xclearCacheLocation.failed() ;
             esay("Exception in clearCacheLocation for : "+pnfsId+" -> "+e);
             esay(e) ;
             pnfsMessage.setFailed(CacheException.UNEXPECTED_SYSTEM_EXCEPTION, e.getMessage() );
@@ -1088,11 +1087,9 @@ public class PnfsManagerV3 extends CellAdapter {
         	// file is gone.....
         	pnfsMessage.setFailed( CacheException.FILE_NOT_FOUND , fnf.getMessage() ) ;
         }catch(CacheException ee ){
-            _xsetStorageInfo.failed() ;
             esay( "Failed : "+ee ) ;
             pnfsMessage.setFailed( ee.getRc() , ee.getMessage() ) ;
         }catch(Exception iee ){
-            _xsetStorageInfo.failed() ;
             esay( "Failed : "+iee ) ;
             esay(iee);
             pnfsMessage.setFailed( CacheException.UNEXPECTED_SYSTEM_EXCEPTION , iee.getMessage() ) ;
@@ -1206,7 +1203,7 @@ public class PnfsManagerV3 extends CellAdapter {
         }
 
         if( pnfsMessage.getReturnCode() != 0 ) {
-            _xgetStorageInfo.failed() ;
+            _xgetMetadataInfo.failed();
         }
 
     }
@@ -1220,6 +1217,12 @@ public class PnfsManagerV3 extends CellAdapter {
             _nameSpaceProvider.setFileMetaData(pnfsId, meta);
         }catch ( Exception e) {
             esay(e);
+            pnfsMessage.setFailed(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                                  e.getMessage());
+        }
+
+        if (pnfsMessage.getReturnCode() != 0) {
+            _xsetMetadataInfo.failed();
         }
 
         return ;
@@ -1626,6 +1629,9 @@ public class PnfsManagerV3 extends CellAdapter {
 			esay(e);
 		}
 
+                if (pnfsMessage.getReturnCode() != 0) {
+                    _xfileFlushed.failed();
+                }
 	}
 
 	public static int fileMetaDataToUnixMode( FileMetaData meta){
