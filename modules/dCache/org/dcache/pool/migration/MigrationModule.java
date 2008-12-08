@@ -581,6 +581,10 @@ public class MigrationModule
     public synchronized
         void messageArrived(PoolMigrationCopyFinishedMessage message)
     {
+        if (message.isReply()) {
+            return;
+        }
+
         /* To avoid callbacks or an extra update thread, we lazily
          * move jobs out of _alive.
          */

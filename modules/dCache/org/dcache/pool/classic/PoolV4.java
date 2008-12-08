@@ -1568,6 +1568,10 @@ public class PoolV4
 
     public PoolMoverKillMessage messageArrived(PoolMoverKillMessage kill)
     {
+        if (kill.isReply()) {
+            return null;
+        }
+
         try {
             mover_kill(kill.getMoverId(), false);
             kill.setSucceeded();
@@ -1581,16 +1585,20 @@ public class PoolV4
     public void messageArrived(CellMessage envelope, PoolIoFileMessage msg)
         throws CacheException
     {
+        if (msg.isReply()) {
+            return;
+        }
+         
         if ((msg instanceof PoolAcceptFileMessage
              && _poolMode.isDisabled(PoolV2Mode.DISABLED_STORE))
             || (msg instanceof PoolDeliverFileMessage
                 && _poolMode.isDisabled(PoolV2Mode.DISABLED_FETCH))) {
 
             _log.warn("PoolIoFileMessage request rejected due to "
-                       + _poolMode);
+                      + _poolMode);
             throw new CacheException(104, "Pool is disabled");
         }
-
+        
         msg.setReply();
         ioFile(envelope, msg);
     }
