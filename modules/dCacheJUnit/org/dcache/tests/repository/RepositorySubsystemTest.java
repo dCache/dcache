@@ -463,7 +463,6 @@ public class RepositorySubsystemTest
                               final boolean failSetLength,
                               final boolean failAddCacheLocation,
                               final boolean cancel,
-                              final boolean keep,
                               final EntryState transferState,
                               final EntryState finalState)
         throws Throwable
@@ -527,7 +526,7 @@ public class RepositorySubsystemTest
     public void testCreateEntry()
         throws Throwable
     {
-        createEntry4(0, false, false, false, false, FROM_CLIENT, PRECIOUS);
+        createEntry4(0, false, false, false, FROM_CLIENT, PRECIOUS);
         assertCanOpen(id4, size4, PRECIOUS);
         assertSpaceRecord(5120, 1024, 2048, 1024);
     }
@@ -537,7 +536,7 @@ public class RepositorySubsystemTest
         throws Throwable
     {
         try {
-            createEntry4(0, true, false, false, false, FROM_CLIENT, PRECIOUS);
+            createEntry4(100, true, false, false, FROM_CLIENT, PRECIOUS);
         } finally {
             assertCacheEntry(repository.getEntry(id4), id4, size4, BROKEN);
             assertSpaceRecord(5120, 1024, 1024, 1024);
@@ -549,7 +548,7 @@ public class RepositorySubsystemTest
     public void testCreateEntryUnderallocation()
         throws Throwable
     {
-        createEntry4(-100, false, false, false, false, FROM_CLIENT, PRECIOUS);
+        createEntry4(-100, false, false, false, FROM_CLIENT, PRECIOUS);
         assertCanOpen(id4, size4, PRECIOUS);
         assertSpaceRecord(5120, 1024, 2048, 1024);
         // TODO: Check notification
@@ -559,7 +558,7 @@ public class RepositorySubsystemTest
     public void testCreateEntryOverallocation()
         throws Throwable
     {
-        createEntry4(100, false, false, false, false, FROM_CLIENT, PRECIOUS);
+        createEntry4(100, false, false, false, FROM_CLIENT, PRECIOUS);
         assertCanOpen(id4, size4, PRECIOUS);
         assertSpaceRecord(5120, 1024, 2048, 1024);
         // TODO: Check notification
@@ -569,7 +568,7 @@ public class RepositorySubsystemTest
     public void testCreateEntryOverallocationFail()
         throws Throwable
     {
-        createEntry4(100, false, false, true, true, FROM_CLIENT, PRECIOUS);
+        createEntry4(100, false, false, true, FROM_CLIENT, PRECIOUS);
         assertCacheEntry(repository.getEntry(id4), id4, size4, BROKEN);
         assertSpaceRecord(5120, 1024, 1024, 1024);
         // TODO: Check notification
@@ -589,7 +588,7 @@ public class RepositorySubsystemTest
         throws Throwable
     {
         repository.setSize(3072);
-        createEntry4(0,false, false, false, false, FROM_CLIENT, PRECIOUS);
+        createEntry4(0,false, false, false, FROM_CLIENT, PRECIOUS);
         assertCanOpen(id4, size4, PRECIOUS);
         assertSpaceRecord(3072, 0, 2048, 0);
         // TODO: Check notification

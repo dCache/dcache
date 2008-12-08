@@ -167,6 +167,7 @@ class WriteHandleImpl implements WriteHandle
                 allocate(length - _allocated);
             } else if (_allocated > length) {
                 _monitor.freeSpace(_allocated - length);
+                _allocated = length;
             }
             _entry.setSize(length);
         } catch (InterruptedException e) {
