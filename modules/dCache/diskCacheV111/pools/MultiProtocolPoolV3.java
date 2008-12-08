@@ -2432,7 +2432,7 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
             } else if (entry.isCached()) {
 
                 if (persistencyMessage.isPrecious())
-                    entry.setPrecious(true);
+                    entry.setPrecious();
 
             } else {
 
@@ -2516,12 +2516,12 @@ public class MultiProtocolPoolV3 extends CellAdapter implements Logable {
                         int fileMode = _poolMessage.getDestinationFileStatus();
                         if (fileMode != Pool2PoolTransferMsg.UNDETERMINED) {
                             if (fileMode == Pool2PoolTransferMsg.PRECIOUS)
-                                entry.setPrecious(true);
+                                entry.setPrecious();
                         } else {
                             if ((_lfsMode == LFS_PRECIOUS)
                                 && (_p2pFileMode == P2P_PRECIOUS)) {
 
-                                entry.setPrecious(true);
+                                entry.setPrecious();
 
                             }
                         }

@@ -255,7 +255,7 @@ public class CacheRepositoryEntryImpl implements CacheRepositoryEntry {
         }
     }
 
-    public void setPrecious(boolean force) throws CacheException {
+    public void setPrecious() throws CacheException {
         try {
 
 
@@ -264,7 +264,7 @@ public class CacheRepositoryEntryImpl implements CacheRepositoryEntry {
                 _eventProcessor.processEvent(EventType.AVAILABLE, availableEvent);
             }
 
-            _state.setPrecious(force);
+            _state.setPrecious();
 
             CacheRepositoryEvent preciousEvent = new CacheRepositoryEvent(_eventProcessor, clone() );
             _eventProcessor.processEvent(EventType.PRECIOUS, preciousEvent);
@@ -274,10 +274,6 @@ public class CacheRepositoryEntryImpl implements CacheRepositoryEntry {
         } catch (IOException e) {
             throw new CacheException(e.getMessage());
         }
-    }
-
-    public void setPrecious() throws CacheException {
-        setPrecious(false);
     }
 
     public void setReceivingFromClient() throws CacheException {
