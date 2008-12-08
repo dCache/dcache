@@ -90,24 +90,6 @@ public class CacheRepositoryEntryState {
 		return ret;
 	}
 
-	/**
-	 *
-	 * @return true if file not precious, not sticky and not used now
-	 */
-
-	public boolean canRemove() {
-
-		boolean ret = false;
-		_stateLock.readLock().lock();
-		try {
-			ret =  !( _precious.isSet() || isBusy() || _sticky.isSet() || _error.isSet() );
-		}finally{
-			_stateLock.readLock().unlock();
-		}
-
-		return ret;
-	}
-
 
     public boolean removeExpiredStickyFlags()
     {
@@ -138,11 +120,6 @@ public class CacheRepositoryEntryState {
 
 		_stateLock.writeLock().lock();
 		try {
-			if( _error.isSet() ) {
-				throw new IllegalStateException("No state transition for files in error state");
-			}
-
-			// too late
 			if( _removed.isSet() ) {
 				throw new IllegalStateException("Entry in removed state");
 			}
@@ -173,15 +150,10 @@ public class CacheRepositoryEntryState {
 		}
 	}
 
-	public void setPrecious(boolean force) throws IllegalStateException, IOException {
+	public void setPrecious() throws IllegalStateException, IOException {
 
 		_stateLock.writeLock().lock();
 		try {
-
-			if( ! force && _error.isSet() ) {
-				throw new IllegalStateException("No state transition for files in error state");
-			}
-
 			// too late
 			if( _removed.isSet() ) {
 				throw new IllegalStateException("Entry in removed state");
@@ -206,11 +178,6 @@ public class CacheRepositoryEntryState {
 		_stateLock.writeLock().lock();
 		try {
 
-			if( _error.isSet() ) {
-				throw new IllegalStateException("No state transition for files in error state");
-			}
-
-			// too late
 			if( _removed.isSet() ) {
 				throw new IllegalStateException("Entry in removed state");
 			}
@@ -232,10 +199,6 @@ public class CacheRepositoryEntryState {
 
 		_stateLock.writeLock().lock();
 		try {
-
-			if( _error.isSet() ) {
-				throw new IllegalStateException("No state transition for files in error state");
-			}
 
 			// too late
 			if( _removed.isSet() ) {
@@ -259,10 +222,6 @@ public class CacheRepositoryEntryState {
 
 		_stateLock.writeLock().lock();
 		try {
-
-			if( _error.isSet() ) {
-				throw new IllegalStateException("No state transition for files in error state");
-			}
 
 			// too late
 			if( _removed.isSet() ) {
@@ -288,10 +247,6 @@ public class CacheRepositoryEntryState {
 		_stateLock.writeLock().lock();
 		try {
 
-			if( _error.isSet() ) {
-				throw new IllegalStateException("No state transition for files in error state");
-			}
-
 			// too late
 			if( _removed.isSet() ) {
 				throw new IllegalStateException("Entry in removed state");
@@ -312,10 +267,6 @@ public class CacheRepositoryEntryState {
 
 		_stateLock.writeLock().lock();
 		try {
-
-			if( _error.isSet() ) {
-				throw new IllegalStateException("No state transition for files in error state");
-			}
 
 			// too late
 			if( _removed.isSet() ) {

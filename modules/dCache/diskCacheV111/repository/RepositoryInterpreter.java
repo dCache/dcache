@@ -365,7 +365,7 @@ public class RepositoryInterpreter {
         return (entry.isReceivingFromClient() || entry.isReceivingFromStore());
     }
 
-    public String hh_rep_set_precious = "<pnfsId> [-force]" ;
+    public String hh_rep_set_precious = "<pnfsId>";
     public String ac_rep_set_precious_$_1( Args args ) throws CacheException {
        PnfsId pnfsId  = new PnfsId( args.argv(0) ) ;
 
@@ -375,7 +375,7 @@ public class RepositoryInterpreter {
 
        CacheRepositoryEntry entry = _repository.getEntry( pnfsId ) ;
 
-       entry.setPrecious( args.getOpt("force") != null ) ;
+       entry.setPrecious();
 
        return "" ;
     }

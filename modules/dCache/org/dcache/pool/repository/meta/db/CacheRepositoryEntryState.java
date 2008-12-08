@@ -95,16 +95,6 @@ public class CacheRepositoryEntryState implements Serializable
         return _toStore || _toClient || _fromClient || _fromStore;
     }
 
-    /**
-     *
-     * @return true if file not precious, not sticky and not used now
-     */
-    public synchronized boolean canRemove()
-    {
-        return !(_precious || isBusy() || isSticky() || _error);
-    }
-
-
     /*
      * State getters
      */
@@ -192,10 +182,6 @@ public class CacheRepositoryEntryState implements Serializable
     public synchronized void setSticky(String owner, long expire, boolean overwrite)
         throws IllegalStateException
     {
-        if (_error) {
-            throw new IllegalStateException("No state transition for files in error state");
-        }
-
         // too late
         if (_removed) {
             throw new IllegalStateException("Entry in removed state");
@@ -243,13 +229,9 @@ public class CacheRepositoryEntryState implements Serializable
         markDirty();
     }
 
-    public synchronized void setPrecious(boolean force)
+    public synchronized void setPrecious()
         throws IllegalStateException
     {
-        if (!force && _error) {
-            throw new IllegalStateException("No state transition for files in error state");
-        }
-
         // too late
         if (_removed) {
             throw new IllegalStateException("Entry in removed state");
@@ -266,10 +248,6 @@ public class CacheRepositoryEntryState implements Serializable
 
     public synchronized void setCached() throws IllegalStateException
     {
-        if (_error) {
-            throw new IllegalStateException("No state transition for files in error state");
-        }
-
         // too late
         if (_removed) {
             throw new IllegalStateException("Entry in removed state");
@@ -286,10 +264,6 @@ public class CacheRepositoryEntryState implements Serializable
 
     public synchronized void setFromClient() throws IllegalStateException
     {
-        if (_error) {
-            throw new IllegalStateException("No state transition for files in error state");
-        }
-
         // too late
         if (_removed) {
             throw new IllegalStateException("Entry in removed state");
@@ -306,10 +280,6 @@ public class CacheRepositoryEntryState implements Serializable
 
     public synchronized void setFromStore() throws IllegalStateException
     {
-        if (_error) {
-            throw new IllegalStateException("No state transition for files in error state");
-        }
-
         // too late
         if (_removed) {
             throw new IllegalStateException("Entry in removed state");
@@ -326,10 +296,6 @@ public class CacheRepositoryEntryState implements Serializable
 
     public synchronized void setToClient() throws IllegalStateException
     {
-        if (_error) {
-            throw new IllegalStateException("No state transition for files in error state");
-        }
-
         // too late
         if (_removed) {
             throw new IllegalStateException("Entry in removed state");
@@ -346,10 +312,6 @@ public class CacheRepositoryEntryState implements Serializable
 
     public synchronized void setToStore() throws IllegalStateException
     {
-        if (_error) {
-            throw new IllegalStateException("No state transition for files in error state");
-        }
-
         // too late
         if (_removed) {
             throw new IllegalStateException("Entry in removed state");

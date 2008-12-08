@@ -63,7 +63,6 @@ public interface CacheRepositoryEntry {
 
    public void setCached() throws CacheException ;
    public void setPrecious() throws CacheException ;
-   public void setPrecious(boolean force) throws CacheException ;
    public void setReceivingFromClient() throws CacheException ;
    public void setReceivingFromStore() throws CacheException ;
    public void setSendingToStore( boolean sending ) throws CacheException ;
