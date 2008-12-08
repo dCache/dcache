@@ -430,7 +430,7 @@ public class CacheRepositoryV5
                 break;
             case PRECIOUS:
                 entry.setBad(false);
-                entry.setPrecious(true);
+                entry.setPrecious();
                 break;
             case REMOVED:
                 _repository.removeEntry(entry);

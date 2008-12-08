@@ -311,25 +311,20 @@ public class CacheRepositoryEntryImpl implements CacheRepositoryEntry
         }
     }
 
-    public void setPrecious(boolean force) throws CacheException
+    public void setPrecious() throws CacheException
     {
         try {
             if (_state.isReceivingFromClient()) {
                 generateEvent(EventType.AVAILABLE);
             }
 
-            _state.setPrecious(force);
+            _state.setPrecious();
             storeStateIfDirty();
 
             generateEvent(EventType.PRECIOUS);
         } catch (IllegalStateException e) {
             throw new CacheException(e.getMessage());
         }
-    }
-
-    public void setPrecious() throws CacheException
-    {
-        setPrecious(false);
     }
 
     public void setReceivingFromClient() throws CacheException
