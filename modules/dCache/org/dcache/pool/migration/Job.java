@@ -404,6 +404,9 @@ public class Job
         }
 
         setState(State.SLEEPING);
+        if (_state == State.RUNNING) {
+            setState(State.SLEEPING);
+        }
     }
 
     /** Callback from task: Task is done, remove it. */
