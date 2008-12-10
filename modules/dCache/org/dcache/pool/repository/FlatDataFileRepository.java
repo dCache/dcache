@@ -15,17 +15,17 @@ import diskCacheV111.util.PnfsId;
 public class FlatDataFileRepository implements DataFileRepository
 {
     private final File _dataDir;
-    
+
     public FlatDataFileRepository(File baseDir) throws FileNotFoundException
     {
         if (!baseDir.exists()) {
             throw new FileNotFoundException(baseDir + " does not exist.");
         }
-        
+
         if (!baseDir.isDirectory()) {
             throw new FileNotFoundException(baseDir + " Not a directory.");
         }
-        
+
         _dataDir = new File(baseDir, "data");
 
         if (!_dataDir.isDirectory()) {
@@ -33,12 +33,12 @@ public class FlatDataFileRepository implements DataFileRepository
         }
     }
 
-    public File get(PnfsId id) 
+    public File get(PnfsId id)
     {
         return new File(_dataDir, id.toString());
     }
 
-    public List<PnfsId> list() 
+    public List<PnfsId> list()
     {
         String[] files = _dataDir.list();
         List<PnfsId> ids = new ArrayList<PnfsId>(files.length);
@@ -50,16 +50,16 @@ public class FlatDataFileRepository implements DataFileRepository
                 // data file contains foreign key
             }
         }
-        
+
         return ids;
     }
 
-    public long getFreeSpace() 
+    public long getFreeSpace()
     {
         return 0;// return _dataDir.getFreeSpace();
     }
 
-    public long getTotalSpace() 
+    public long getTotalSpace()
     {
         return 0;// return _dataDir.getTotalSpace();
     }
