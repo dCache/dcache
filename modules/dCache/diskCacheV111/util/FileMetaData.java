@@ -33,7 +33,7 @@ public class FileMetaData implements Serializable {
     private boolean _isLink = false;
 
     private static final SimpleDateFormat __formatter = new SimpleDateFormat(
-            "MM.dd-hh:mm:ss");
+            "MM.dd-HH:mm:ss");
 
     private Permissions _user = new Permissions();
     private Permissions _group = new Permissions();
