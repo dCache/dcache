@@ -874,13 +874,13 @@
 	    <copy file="${libDir}/opensaml/slf4j-simple-1.5.0.jar" todir="${binDir}/classes/opensaml" />
 	    <copy file="${libDir}/opensaml/velocity-1.5.jar" todir="${binDir}/classes/opensaml" />
 	    <copy file="${libDir}/opensaml/xalan-2.6.0.jar" todir="${binDir}/classes/opensaml" />
-	    <copy file="${libDir}/opensaml/xercesImpl-2.9.1.jar" todir="${binDir}/classes/opensaml" />
 	    <copy file="${libDir}/opensaml/xml-security-1.4.1.jar" todir="${binDir}/classes/opensaml" />
 	    <copy file="${libDir}/opensaml/xmltooling-1.0.1.jar" todir="${binDir}/classes/opensaml" />
 
 	    <!-- endorsed -->
 	    <mkdir dir="${binDir}/classes/endorsed" />
 	    <copy file="${libDir}/endorsed/xml-apis-2.9.1.jar" todir="${binDir}/classes/endorsed" />
+	    <copy file="${libDir}/endorsed/xercesImpl-2.9.1.jar" todir="${binDir}/classes/endorsed" />
 	</target>
 
 
