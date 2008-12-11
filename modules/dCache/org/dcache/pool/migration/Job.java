@@ -303,7 +303,8 @@ public class Job
     {
         if (_state == State.CANCELLING && _running.isEmpty()) {
             setState(State.CANCELLED);
-        } else if (_queued.isEmpty() && _running.isEmpty()) {
+        } else if (_state != State.INITIALIZING 
+                   && _queued.isEmpty() && _running.isEmpty()) {
             setState(State.FINISHED);
         } else if (_state == State.RUNNING) {
             Iterator<PnfsId> i = _queued.iterator();
