@@ -564,7 +564,21 @@ public class MigrationModule
         "   SUSPENDED      Job suspended by user; no tasks are scheduled\n" +
         "   CANCELLING     Job cancelled by user; waiting for tasks to stop\n" +
         "   CANCELLED      Job cancelled by user; no tasks are running\n" +
-        "   FINISHED       Job completed";
+        "   FINISHED       Job completed\n\n" +
+        "Job tasks may be in any of the following states:\n\n" +
+        "   Queued               Queued for execution\n" +
+        "   GettingLocations     Querying PnfsManager for file locations\n" +
+        "   UpdatingExistingFile Updating the state of existing target file\n" +
+        "   CancellingUpdate     Task cancelled, waiting for update to complete\n" +
+        "   InitiatingCopy       Request send to target, waiting for confirmation\n" +
+        "   Copying              Waiting for target to complete the transfer\n" +
+        "   Pinging              Ping send to target, waiting for reply\n" +
+        "   NoResponse           Cell connection to target lost\n" +
+        "   Finishing            Waiting for final confirmation from target\n" +
+        "   Cancelling           Attempting to cancel transfer\n" +
+        "   Cancelled            Task cancelled, file was not copied\n" +
+        "   Failed               The task failed\n" +
+        "   Done                 The task completed successfully";
     public synchronized String ac_migration_info_$_1(Args args)
         throws NoSuchElementException
     {
