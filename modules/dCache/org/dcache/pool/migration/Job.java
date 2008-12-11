@@ -69,7 +69,7 @@ import org.apache.log4j.Logger;
 public class Job
     implements StateChangeListener
 {
-    enum State { INITIALIZING, RUNNING, SLEEPING, SUSPENDED, 
+    enum State { INITIALIZING, RUNNING, SLEEPING, SUSPENDED,
             CANCELLING, CANCELLED, FINISHED }
 
     private final static Logger _log = Logger.getLogger(Job.class);
@@ -207,7 +207,7 @@ public class Job
      */
     public synchronized void cancel(boolean force)
     {
-        if (_state != State.RUNNING && _state != State.SUSPENDED 
+        if (_state != State.RUNNING && _state != State.SUSPENDED
             && _state != State.CANCELLING && _state != State.SLEEPING) {
             throw new IllegalStateException("The job cannot be cancelled in its present state");
         }
@@ -266,10 +266,10 @@ public class Job
             case RUNNING:
                 schedule();
                 break;
-                
+
             case SLEEPING:
                 _configuration.getExecutor().schedule(new LoggingTask(new Runnable() {
-                        public void run() 
+                        public void run()
                         {
                             synchronized (Job.this) {
                                 if (getState() == State.SLEEPING) {
@@ -279,7 +279,7 @@ public class Job
                         }
                     }), 10, TimeUnit.SECONDS);
                 break;
-                
+
             case FINISHED:
             case CANCELLED:
                 _queued.clear();
@@ -303,7 +303,7 @@ public class Job
     {
         if (_state == State.CANCELLING && _running.isEmpty()) {
             setState(State.CANCELLED);
-        } else if (_state != State.INITIALIZING 
+        } else if (_state != State.INITIALIZING
                    && _queued.isEmpty() && _running.isEmpty()) {
             setState(State.FINISHED);
         } else if (_state == State.RUNNING) {
@@ -404,7 +404,6 @@ public class Job
             _queued.add(pnfsId);
         }
 
-        setState(State.SLEEPING);
         if (_state == State.RUNNING) {
             setState(State.SLEEPING);
         }
