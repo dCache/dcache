@@ -8,7 +8,7 @@ import java.util.Map;
 import java.util.Collections;
 import java.util.List;
 import java.util.ArrayList;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.HashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
 
@@ -42,8 +42,7 @@ public class P2PClient
     private final static Logger _log = Logger.getLogger(P2PClient.class);
     private final static Acceptor _acceptor = new Acceptor();
 
-    private final Map<Integer, Companion> _sessions =
-        new ConcurrentHashMap<Integer, Companion>();
+    private final Map<Integer, Companion> _companions = new HashMap();
     private final ExecutorService _executor =
         Executors.newSingleThreadExecutor();
     private Repository _repository;
@@ -58,62 +57,92 @@ public class P2PClient
     {
     }
 
-    public void setRepository(Repository repository)
+    public synchronized void setRepository(Repository repository)
     {
         _repository = repository;
     }
 
-    public void setChecksumModule(ChecksumModuleV1 csm)
+    public synchronized void setChecksumModule(ChecksumModuleV1 csm)
     {
         _checksumModule = csm;
     }
 
-    public void setPnfs(CellStub pnfs)
+    public synchronized void setPnfs(CellStub pnfs)
     {
         _pnfs = pnfs;
     }
 
-    public void setPool(CellStub pool)
+    public synchronized void setPool(CellStub pool)
     {
         _pool = pool;
     }
 
-    public void shutdown()
+    public synchronized void shutdown()
     {
         _executor.shutdown();
     }
 
-    public int getActiveJobs()
+    public synchronized int getActiveJobs()
     {
-        return (_sessions.size() <= _maxActive) ? _sessions.size() : _maxActive;
+        return (_companions.size() <= _maxActive) ? _companions.size() : _maxActive;
     }
 
-    public int getMaxActiveJobs()
+    public synchronized int getMaxActiveJobs()
     {
         return _maxActive;
     }
 
-    public int getQueueSize()
+    public synchronized int getQueueSize()
     {
         return
-            (_sessions.size() > _maxActive)
-            ? (_sessions.size() - _maxActive)
+            (_companions.size() > _maxActive)
+            ? (_companions.size() - _maxActive)
             : 0;
     }
 
-    public void messageArrived(DoorTransferFinishedMessage message)
+    public synchronized void messageArrived(DoorTransferFinishedMessage message)
     {
         DCapProtocolInfo pinfo = (DCapProtocolInfo)message.getProtocolInfo();
         int sessionId = pinfo.getSessionId();
-        Companion companion = _sessions.get(sessionId);
+        Companion companion = _companions.get(sessionId);
         if (companion != null) {
             companion.messageArrived(message);
         }
     }
 
     /**
+     * Adds a companion to the _companions map.
+     */
+    private synchronized int addCompanion(Companion companion)
+    {
+        int sessionId = companion.getId();
+        _companions.put(sessionId, companion);
+        return sessionId;
+    }
+
+    /**
+     * Removes a companion from the _companions map.
+     */
+    private synchronized void removeCompanion(int sessionId)
+    {
+        _companions.remove(sessionId);
+    }
+
+    /**
+     * Cancels all companions for a given file.
+     */
+    private synchronized void cancelCompanions(PnfsId pnfsId, String cause)
+    {
+        for (Companion companion: _companions.values()) {
+            if (pnfsId.equals(companion.getPnfsId())) {
+                companion.cancel(cause);
+            }
+        }
+    }
+
+    /**
      * Small wrapper for the real callback. Will remove the companion
-     * from the <code>_sessions</code> map.
+     * from the <code>_companions</code> map.
      */
     private class Callback implements CacheFileAvailable
     {
@@ -146,23 +175,34 @@ public class P2PClient
                 if (_callback != null) {
                     _callback.cacheFileAvailable(pnfsId, t);
                 }
-                _sessions.remove(getId());
+                removeCompanion(getId());
+
+                /* In case of a successfull transfer, there is no
+                 * reason to keep other companions on the same file
+                 * around.
+                 */
+                if (t == null) {
+                    cancelCompanions(new PnfsId(pnfsId), 
+                                     "Replica already exists");
+                }
             } catch (InterruptedException e) {
                 // Ignored, typically happens at cell shutdown
             }
         }
     }
 
-    public int newCompanion(PnfsId pnfsId,
-                            String poolName,
-                            StorageInfo storageInfo,
-                            EntryState targetState,
-                            List<StickyRecord> stickyRecords,
-                            CacheFileAvailable callback)
+    public synchronized int newCompanion(PnfsId pnfsId,
+                                         String poolName,
+                                         StorageInfo storageInfo,
+                                         EntryState targetState,
+                                         List<StickyRecord> stickyRecords,
+                                         CacheFileAvailable callback)
         throws UnknownHostException
     {
         if (getCellEndpoint() == null)
             throw new IllegalStateException("Endpoint must be set");
+        if (_repository.getState(pnfsId) != EntryState.NEW)
+            throw new IllegalStateException("Replica already exists");
 
         Callback cb = new Callback(callback);
 
@@ -174,10 +214,8 @@ public class P2PClient
                           poolName, targetState, stickyRecords,
                           cb);
 
-        int id = companion.getId();
-        _sessions.put(id, companion);
+        int id = addCompanion(companion);
         cb.setId(id);
-
         return id;
     }
 
@@ -185,22 +223,22 @@ public class P2PClient
      * Cancels a transfer. Returns true unless the transfer is already
      * completed.
      */
-    public boolean cancel(int id)
+    public synchronized boolean cancel(int id)
     {
-        Companion companion = _sessions.get(id);
+        Companion companion = _companions.get(id);
         return (companion == null)
                 ? false
                 : companion.cancel("Transfer was cancelled");
     }
 
-    public void getInfo(PrintWriter pw)
+    public synchronized void getInfo(PrintWriter pw)
     {
         pw.println("  Listener   : " + _acceptor);
         pw.println("  Max Active : " + _maxActive);
         pw.println("Pnfs Timeout : " + (_pnfs.getTimeout() / 1000L) + " seconds ");
     }
 
-    public void printSetup(PrintWriter pw)
+    public synchronized void printSetup(PrintWriter pw)
     {
         pw.println("#\n#  Pool to Pool (P2P) [$Id: P2PClient.java,v 1.21 2007-10-31 17:27:11 radicke Exp $]\n#");
         pw.println("pp set port " + _acceptor.getPort());
@@ -208,30 +246,30 @@ public class P2PClient
         pw.println("pp set pnfs timeout " + (_pnfs.getTimeout() / 1000L));
     }
 
-    public String hh_pp_set_pnfs_timeout = "<Timeout/sec>";
-    public String ac_pp_set_pnfs_timeout_$_1(Args args)
+    public final String hh_pp_set_pnfs_timeout = "<Timeout/sec>";
+    public synchronized String ac_pp_set_pnfs_timeout_$_1(Args args)
     {
         long timeout = Long.parseLong(args.argv(0));
         _pnfs.setTimeout(timeout * 1000L);
         return "Pnfs timeout set to " + timeout + " seconds";
     }
 
-    public String hh_pp_set_max_active = "<normalization>";
-    public String ac_pp_set_max_active_$_1(Args args)
+    public final String hh_pp_set_max_active = "<normalization>";
+    public synchronized String ac_pp_set_max_active_$_1(Args args)
     {
         _maxActive = Integer.parseInt(args.argv(0));
         return "";
     }
 
-    public String hh_pp_set_port = "<listenPort>";
-    public String ac_pp_set_port_$_1(Args args)
+    public final String hh_pp_set_port = "<listenPort>";
+    public synchronized String ac_pp_set_port_$_1(Args args)
     {
         _acceptor.setPort(Integer.parseInt(args.argv(0)));
         return "";
     }
 
-    public String hh_pp_get_file = "<pnfsId> <pool>";
-    public String ac_pp_get_file_$_2(Args args)
+    public final String hh_pp_get_file = "<pnfsId> <pool>";
+    public synchronized String ac_pp_get_file_$_2(Args args)
         throws CacheException, UnknownHostException
     {
         PnfsId pnfsId = new PnfsId(args.argv(0));
@@ -241,22 +279,22 @@ public class P2PClient
         return "Transfer Initiated";
     }
 
-    public String hh_pp_remove = "<id>";
-    public String ac_pp_remove_$_1(Args args)
+    public final String hh_pp_remove = "<id>";
+    public synchronized String ac_pp_remove_$_1(Args args)
         throws NumberFormatException
     {
-        Companion companion = _sessions.remove(Integer.valueOf(args.argv(0)));
+        Companion companion = _companions.remove(Integer.valueOf(args.argv(0)));
         if (companion == null || !companion.cancel("Cancelled by user"))
             throw new IllegalArgumentException("Id not found: " + args.argv(0));
         return "";
     }
 
-    public String hh_pp_ls = " # get the list of companions";
-    public String ac_pp_ls(Args args)
+    public final String hh_pp_ls = " # get the list of companions";
+    public synchronized String ac_pp_ls(Args args)
     {
         StringBuilder sb = new StringBuilder();
 
-        for (Companion c : _sessions.values()) {
+        for (Companion c : _companions.values()) {
             sb.append(c.toString()).append("\n");
         }
         return sb.toString();
