@@ -151,6 +151,14 @@ class Companion
     }
 
     /**
+     * Returns the PNFS ID of the file to be transfered.
+     */
+    synchronized public PnfsId getPnfsId()
+    {
+        return _pnfsId;
+    }
+
+    /**
      * Cancels the transfer. Returns true unless the transfer is
      * already completed.
      */
@@ -424,10 +432,6 @@ class Companion
     synchronized void setStorageInfo(StorageInfo info)
     {
         _storageInfo = info;
-        String value = _storageInfo.getKey("flag-s");
-        if (value != null && value.length() > 0) {
-            _stickyRecords.add(new StickyRecord("system", -1));
-        }
     }
 
     /** Asynchronously requests delivery from the source pool. */
@@ -449,8 +453,8 @@ class Companion
     }
 
     /**
-     * Called at the end of the transfer to free call callbacks and
-     * free resources associated with the transfer.
+     * Called at the end of the transfer to call callbacks and free
+     * resources associated with the transfer.
      */
     synchronized void done()
     {
@@ -506,9 +510,9 @@ class Companion
     /**
      * Helper class implementing the MessageCallback interface,
      * forwarding all messages as events to the state machine. Events
-     * a forwarded via an executor to guarantee asynchronous delivery
-     * (SMC state machines do not allow transitions to be triggered
-     * from within transitions).
+     * are forwarded via an executor to guarantee asynchronous
+     * delivery (SMC state machines do not allow transitions to be
+     * triggered from within transitions).
      */
     class Callback<T extends Message> implements MessageCallback<T>
     {
