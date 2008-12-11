@@ -43,8 +43,7 @@ public class P2PClient
     private final static Acceptor _acceptor = new Acceptor();
 
     private final Map<Integer, Companion> _companions = new HashMap();
-    private final ExecutorService _executor =
-        Executors.newSingleThreadExecutor();
+    private ExecutorService _executor;
     private Repository _repository;
     private ChecksumModuleV1 _checksumModule;
 
@@ -55,6 +54,11 @@ public class P2PClient
 
     public P2PClient()
     {
+    }
+
+    public synchronized void setExecutor(ExecutorService executor)
+    {
+        _executor = executor;
     }
 
     public synchronized void setRepository(Repository repository)
@@ -75,11 +79,6 @@ public class P2PClient
     public synchronized void setPool(CellStub pool)
     {
         _pool = pool;
-    }
-
-    public synchronized void shutdown()
-    {
-        _executor.shutdown();
     }
 
     public synchronized int getActiveJobs()
@@ -200,7 +199,17 @@ public class P2PClient
         throws UnknownHostException
     {
         if (getCellEndpoint() == null)
-            throw new IllegalStateException("Endpoint must be set");
+            throw new IllegalStateException("Endpoint not initialized");
+        if (_pool == null)
+            throw new IllegalStateException("Pool stub not initialized");
+        if (_executor == null)
+            throw new IllegalStateException("Executor not initialized");
+        if (_repository == null)
+            throw new IllegalStateException("Repository not initialized");
+        if (_checksumModule == null)
+            throw new IllegalStateException("Checksum module not initialized");
+        if (_pnfs == null)
+            throw new IllegalStateException("PNFS stub not initialized");
         if (_repository.getState(pnfsId) != EntryState.NEW)
             throw new IllegalStateException("Replica already exists");
 
