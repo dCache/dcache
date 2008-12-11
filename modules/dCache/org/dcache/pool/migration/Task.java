@@ -7,9 +7,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.NoSuchElementException;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.FutureTask;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.io.PrintWriter;
 
@@ -50,14 +49,9 @@ public class Task
 
     private final CacheEntryMode _targetMode;
 
-    private ScheduledFuture _pingTask;
+    private ScheduledFuture _timerTask;
     private List<String> _locations = Collections.emptyList();
     private CellPath _target;
-
-    /**
-     * Used by ping mechanism to detect timeouts.
-     */
-    private boolean _alive;
 
     public Task(Job job,
                 CellStub pool,
@@ -86,6 +80,30 @@ public class Task
     public long getFileSize()
     {
         return _entry.getReplicaSize();
+    }
+
+    /** Time in milliseconds between pings. */
+    public long getPingPeriod()
+    {
+        return _pool.getTimeout() * 2;
+    }
+
+    /**
+     * Time in milliseconds before we fail the task if we loose the
+     * cell connection.
+     */
+    public long getNoResponseTimeout()
+    {
+        return _pool.getTimeout() * 2;
+    }
+
+    /**
+     * Time in milliseconds before we fail the task if we do not get
+     * CopyFinished.
+     */
+    public long getTaskDeadTimeout()
+    {
+        return _pool.getTimeout();
     }
 
     /** Returns the intended entry state of the target replica. */
@@ -266,62 +284,41 @@ public class Task
     }
 
     /** FSM Action */
-    synchronized void startPing()
+    synchronized void startTimer(long delay)
     {
-        if (_pingTask != null) {
-            throw new IllegalStateException("Ping task already running");
-        }
-
-        pong();
-
         Runnable task =
-            new LoggingTask(new Runnable()
+            new Runnable()
+            {
+                public void run()
                 {
-                    public void run()
-                    {
-                        ping();
+                    synchronized (Task.this) {
+                        if (_timerTask != null) {
+                            _fsm.timer();
+                            _timerTask = null;
+                        }
                     }
-                });
-
-        long timeout = _pool.getTimeout();
-        _pingTask =
-            _executor.scheduleWithFixedDelay(task, timeout, 2 * timeout,
-                                             TimeUnit.MILLISECONDS);
+                }
+            };
+        _timerTask = 
+            _executor.schedule(new LoggingTask(task), 
+                               delay, TimeUnit.MILLISECONDS);
     }
 
     /** FSM Action */
-    synchronized void stopPing()
+    synchronized void stopTimer()
     {
-        if (_pingTask != null) {
-            _pingTask.cancel(false);
-            _pingTask = null;
+        if (_timerTask != null) {
+            _timerTask.cancel(false);
+            _timerTask = null;
         }
     }
 
-    /** Confirms receiption of successful ping reply. */
-    synchronized private void pong()
+    /** FSM Action */
+    synchronized void ping()
     {
-        _alive = true;
-    }
-
-    /** Sends ping to target pool. */
-    synchronized private void ping()
-    {
-        Callback callback = new Callback() {
-                public void success() 
-                {
-                    pong();
-                }
-            };
-
-        if (!_alive) {
-            callback.timeout();
-        } else {
-            _alive = false;
-            _pool.send(_target,
-                       new PoolMigrationPingMessage(_source, getPnfsId(), _id),
-                       PoolMigrationPingMessage.class, callback);
-        }
+        _pool.send(_target,
+                   new PoolMigrationPingMessage(_source, getPnfsId(), _id),
+                   PoolMigrationPingMessage.class, new Callback());
     }
 
     /**
