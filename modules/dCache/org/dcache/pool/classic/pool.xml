@@ -168,13 +168,17 @@
     <property name="destination" value="PoolManager"/>
   </bean>
   
-  <bean id="pp" class="org.dcache.pool.p2p.P2PClient"
-        destroy-method="shutdown">
+  <bean id="pp" class="org.dcache.pool.p2p.P2PClient">
     <description>Pool to pool transfer manager</description>
     <property name="repository" ref="rep"/>
     <property name="checksumModule" ref="csm"/>
     <property name="pnfs" ref="pnfsStub"/>
     <property name="pool" ref="poolStub"/>
+    <property name="executor">
+      <bean class="java.util.concurrent.Executors"
+            factory-method="newCachedThreadPool"
+            destroy-method="shutdown"/>
+    </property>
   </bean>
 
   <bean id="migration" class="org.dcache.pool.migration.MigrationModule">
@@ -196,5 +200,4 @@
     <property name="repository" ref="rep"/>
     <property name="PPClient" ref="pp"/>    
   </bean>
-
 </beans>
