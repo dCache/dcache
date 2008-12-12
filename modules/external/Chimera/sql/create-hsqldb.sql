@@ -190,9 +190,19 @@ CREATE TABLE t_storageinfo (
    ihsmName VARCHAR(64) NOT NULL,
    istorageGroup VARCHAR(64) NOT NULL,
    istorageSubGroup VARCHAR(64) NOT NULL,   
+   FOREIGN KEY (ipnfsid) REFERENCES t_inodes( ipnfsid ) ON DELETE CASCADE
+);
+
+CREATE TABLE t_access_latency (
+   ipnfsid CHAR(36) PRIMARY KEY,
    iaccessLatency INT NOT NULL,
+   FOREIGN KEY (ipnfsid) REFERENCES t_inodes( ipnfsid ) ON DELETE CASCADE
+);
+
+CREATE TABLE t_retention_policy (
+   ipnfsid CHAR(36) PRIMARY KEY,
    iretentionPolicy INT NOT NULL,
-   FOREIGN KEY (ipnfsid) REFERENCES t_inodes( ipnfsid )
+   FOREIGN KEY (ipnfsid) REFERENCES t_inodes( ipnfsid ) ON DELETE CASCADE
 );
 
 CREATE TABLE t_locationinfo (
