@@ -218,7 +218,7 @@ public class RepositoryEntryHealer
          */
         if (entry == null) {
             _log.warn("Missing meta data for " + id);
-            entry = reconstruct(file, id);
+            return reconstruct(file, id);
         } else if (entry.isBad()) {
             /* Make sure that the cache location is registered and
              * remove the replica if the file has been deleted, but
@@ -259,6 +259,7 @@ public class RepositoryEntryHealer
                     _log.warn(id + " was deleted. Removing replica.");
                     _metaRepository.remove(id);
                     file.delete();
+                    return null;
                 } else if (e.getRc() == CacheException.NOT_IN_TRASH) {
                     _log.warn(id + " is not in trash. Keep replica...");
                 } else {
