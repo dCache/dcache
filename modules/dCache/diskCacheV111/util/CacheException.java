@@ -102,6 +102,8 @@ public class CacheException extends Exception {
 
     private static String setMessage( String message ){
 
+      if( message == null ) return "";
+
       StringBuilder sb = new StringBuilder() ;
 
       for( int i = 0 ; i < message.length() ; i++ ){
