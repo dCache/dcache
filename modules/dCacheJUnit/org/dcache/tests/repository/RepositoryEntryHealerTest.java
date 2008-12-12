@@ -17,6 +17,7 @@ import org.dcache.tests.cells.CellAdapterHelper;
 import org.dcache.tests.cells.GenericMockCellHelper;
 
 import diskCacheV111.repository.CacheRepositoryEntry;
+import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.OSMStorageInfo;
@@ -113,6 +114,61 @@ public class RepositoryEntryHealerTest {
        CacheRepositoryEntry repositoryEntry = _repositoryEntryHealer.entryOf(pnfsId);
 
        assertFalse("Entry not recovered", e.isReceivingFromClient() );
+
+    }
+
+    @Test
+    public void testFromClientNotExist() throws Exception {
+
+
+        PnfsId pnfsId = new PnfsId("000000000000000000000000000000000001");
+        FsInode inode = _repositoryHealerTestChimeraHelper.add(pnfsId);
+        inode.setSize(17);
+
+
+        CacheRepositoryEntry e =  _metaDataRepository.create(pnfsId);
+        e.setReceivingFromClient();
+
+        StorageInfo info = new OSMStorageInfo("h1", "rawd");
+        e.setStorageInfo(info);
+
+        PnfsGetStorageInfoMessage getStorageInfoMessage = new PnfsGetStorageInfoMessage(pnfsId);
+        getStorageInfoMessage.setReply(CacheException.FILE_NOT_FOUND, "file not found");
+
+        PnfsAddCacheLocationMessage addCacheLocationMessage = new PnfsAddCacheLocationMessage(pnfsId, "RepositoryEntryHealerTestCell");
+
+        addCacheLocationMessage.setReply(CacheException.FILE_NOT_FOUND, "file not found");
+
+       GenericMockCellHelper.prepareMessage(new CellPath("PnfsManager"), getStorageInfoMessage);
+       GenericMockCellHelper.prepareMessage(new CellPath("PnfsManager"), addCacheLocationMessage);
+
+
+       CacheRepositoryEntry repositoryEntry = _repositoryEntryHealer.entryOf(pnfsId);
+
+       assertNull("Missing entry not recognized", repositoryEntry );
+    }
+
+    @Test
+    public void testNoMetadataNotExists() throws Exception {
+
+
+        PnfsId pnfsId = new PnfsId("000000000000000000000000000000000001");
+        FsInode inode = _repositoryHealerTestChimeraHelper.add(pnfsId);
+        inode.setSize(17);
+
+
+
+       PnfsGetStorageInfoMessage getStorageInfoMessage = new PnfsGetStorageInfoMessage(pnfsId);
+       getStorageInfoMessage.setReply(CacheException.FILE_NOT_FOUND, "file not found");
+
+       PnfsAddCacheLocationMessage addCacheLocationMessage = new PnfsAddCacheLocationMessage(pnfsId, "RepositoryEntryHealerTestCell");
+
+       addCacheLocationMessage.setReply(CacheException.FILE_NOT_FOUND, "file not found");
+
+       GenericMockCellHelper.prepareMessage(new CellPath("PnfsManager"), getStorageInfoMessage);
+       GenericMockCellHelper.prepareMessage(new CellPath("PnfsManager"), addCacheLocationMessage);
+
+       CacheRepositoryEntry repositoryEntry = _repositoryEntryHealer.entryOf(pnfsId);
 
     }
 
