@@ -33,6 +33,22 @@ public class FlatDataFileRepository implements DataFileRepository
         }
     }
 
+    /**
+     * Returns the path to the file store.
+     */
+    public String getPath()
+    {
+        return _dataDir.toString();
+    }
+
+    /**
+     * Returns a human readable description of the file store.
+     */
+    public String toString()
+    {
+        return _dataDir.toString();
+    }
+
     public File get(PnfsId id) 
     {
         return new File(_dataDir, id.toString());
