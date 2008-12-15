@@ -84,7 +84,7 @@ public class RepositoryEntryHealerTest {
         * CacheException(TIMEOUT) will indicate that we tried to modify file size in Pnfs
         */
        CacheRepositoryEntry repositoryEntry = _repositoryEntryHealer.entryOf(pnfsId);
-
+       assertTrue("Bad flag not set", repositoryEntry.isBad() );
     }
 
     @Test
