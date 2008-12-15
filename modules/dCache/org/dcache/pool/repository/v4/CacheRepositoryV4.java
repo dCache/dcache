@@ -427,7 +427,7 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
         if (!_allEntries.isEmpty())
             throw new IllegalStateException("Repository already has an inventory");
 
-        _log.info("Generating inventory");
+        _log.warn("Reading inventory from " + _dataRepository);
 
         List<PnfsId> ids = _dataRepository.list();
         long usedDataSpace = 0L;
@@ -442,7 +442,7 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
         Collections.sort(ids);
 
         RepositoryEntryHealer healer =
-            new RepositoryEntryHealer(pnfs, 
+            new RepositoryEntryHealer(pnfs,
                                       _checksumModule,
                                       _dataRepository,
                                       _metaRepository,
@@ -452,7 +452,10 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
         try {
             _runningInventory = true;
 
-            _log.info("Checking repository consistency");
+            _log.warn("Reading meta data from " + _metaRepository);
+            if (_importRepository != null) {
+                _log.warn(String.format("NOTICE: Importing any missing meta data from %s. This should only be used to convert an existing repository and never as a permanent setup.", _importRepository));
+            }
 
             /* Collect all entries.
              */
