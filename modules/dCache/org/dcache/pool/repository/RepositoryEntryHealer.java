@@ -44,7 +44,7 @@ public class RepositoryEntryHealer
         "Recovering: Setting size of %1$s in PNFS to %2$d";
 
     private final static String BAD_MSG =
-        "Marking %1$s as bad: %2$s"; 
+        "Marking %1$s as bad: %2$s";
     private final static String BAD_SIZE_MSG =
         "File size mismatch for %1$s. Expected %2$d bytes, but found %3$d bytes.";
 
@@ -107,9 +107,9 @@ public class RepositoryEntryHealer
             (entry == null) ||
             (entry.getStorageInfo() == null) ||
             (entry.getStorageInfo().getFileSize() != entry.getSize()) ||
-            (!entry.isPrecious() && !entry.isCached()) || 
+            (!entry.isPrecious() && !entry.isCached()) ||
             entry.isBad();
-        
+
         if (entry == null) {
             _log.warn(String.format(MISSING_MSG, id));
             entry = _metaRepository.create(id);
@@ -161,15 +161,15 @@ public class RepositoryEntryHealer
                 }
 
                 /* Compute and update checksum. May fail if there is a
-                 * mismatch. 
+                 * mismatch.
                  */
                 if (_checksumModule != null) {
-                    ChecksumFactory factory = 
+                    ChecksumFactory factory =
                         _checksumModule.getDefaultChecksumFactory();
-                    _checksumModule.setMoverChecksums(id, file, factory, 
+                    _checksumModule.setMoverChecksums(id, file, factory,
                                                       null, null);
                 }
-            
+
                 /* Update the size in the storage info and in PNFS if
                  * file size is unknown.
                  */
@@ -187,7 +187,7 @@ public class RepositoryEntryHealer
                     for (StickyRecord record: PoolIOWriteTransfer.getStickyRecords(info)) {
                         entry.setSticky(record.owner(), record.expire(), false);
                     }
-            
+
                     if (PoolIOWriteTransfer.getTargetState(info) == EntryState.PRECIOUS) {
                         entry.setPrecious();
                     } else {
@@ -218,8 +218,8 @@ public class RepositoryEntryHealer
                  * is no difference between the PnfsManager being down
                  * and it timing out. We therefore masquerade the
                  * exception as a timeout.
-                 */ 
-                throw new CacheException(CacheException.TIMEOUT, 
+                 */
+                throw new CacheException(CacheException.TIMEOUT,
                                          "Timeout talking to PnfsManager");
             }
         }
