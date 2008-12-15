@@ -37,7 +37,7 @@ public class RepositoryEntryHealer
     private final static String PARTIAL_FROM_TAPE_MSG =
         "Recovering: Removing %1$s because it was not fully staged.";
     private final static String MISSING_SI_MSG =
-        "Recovering: Storage info for %1$s was lost.";
+        "Recovering: Getting storage info for %1$s from PNFS.";
     private final static String FILE_NOT_FOUND_MSG =
         "Recovering: Removing %1$s because name space entry was deleted.";
     private final static String UPDATE_SIZE_MSG =
@@ -137,10 +137,13 @@ public class RepositoryEntryHealer
                 /* In particular with the file backend, it could
                  * happen that the SI files was deleted outside of
                  * dCache. If storage info is missing, we try to fetch
-                 * a new copy from PNFS.
+                 * a new copy from PNFS. We also fetch storage info if
+                 * the entry is neither cached nor precious; just to
+                 * be sure that information about size and the stored
+                 * bit is up to date.
                  */
                 StorageInfo info = entry.getStorageInfo();
-                if (info == null) {
+                if (info == null || (!entry.isCached() && !entry.isPrecious())) {
                     _log.warn(String.format(MISSING_SI_MSG, id));
                     info = _pnfsHandler.getStorageInfo(id.toString());
                     entry.setStorageInfo(info);
@@ -188,7 +191,7 @@ public class RepositoryEntryHealer
                         entry.setSticky(record.owner(), record.expire(), false);
                     }
             
-                    if (PoolIOWriteTransfer.getTargetState(info) == EntryState.PRECIOUS) {
+                    if (PoolIOWriteTransfer.getTargetState(info) == EntryState.PRECIOUS && !info.isStored()) {
                         entry.setPrecious();
                     } else {
                         entry.setCached();
