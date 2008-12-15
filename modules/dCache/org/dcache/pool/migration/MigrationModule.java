@@ -519,8 +519,6 @@ public class MigrationModule
         return getJobSummary(id);
     }
 
-    public final static String hh_migration_clear =
-        "<job>";
     public final static String fh_migration_clear =
         "Removes completed migration jobs. For reference, information about\n" +
         "migration jobs are kept until explicitly cleared.\n";
