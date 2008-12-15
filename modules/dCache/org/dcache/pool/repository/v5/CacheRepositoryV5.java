@@ -384,7 +384,7 @@ public class CacheRepositoryV5
      *
      * @return snapshot of current space usage record
      */
-    public synchronized SpaceRecord getSpaceRecord()
+    public SpaceRecord getSpaceRecord()
     {
         // REVISIT: This is not atomic!
         return new SpaceRecord(_repository.getTotalSpace(),
@@ -704,7 +704,7 @@ public class CacheRepositoryV5
 
     }
 
-    public synchronized void getInfo(PrintWriter pw)
+    public void getInfo(PrintWriter pw)
     {
         pw.println("Check Repository  : " + _checkRepository);
 
