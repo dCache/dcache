@@ -881,6 +881,29 @@ yaim_state_service_restart_needed()
     RET=$YAIM_STATE_DCACHE_RESTART
 }
 
+
+yaim_state_nameserver_unmount()
+{
+  local mountedDev
+  mountedDev=$(mount |  grep pnfs |  sed -e "s/ .*$//" )
+  if [ -n "${mountedDev}" ] ; then
+    umount ${mountedDev}
+  fi
+}
+
+yaim_state_nameserver_stop()
+{
+  yaim_query_conf_node_dcache_name_type
+  nameserverType=$RET
+  if [ "${nameserverType}" = "pnfs" ] ; then
+    config_pnfs_stop
+  fi
+  if [ "${nameserverType}" = "chimera" ] ; then
+    chimera_create_nfs_stop
+  fi
+}
+
+
 yaim_state_service_restart_needed_do()
 {
     local has_pnfsserver

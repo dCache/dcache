@@ -565,7 +565,12 @@ config_sedcache_pgsql()
     rcrmpgsql=$?
     if [ "$rcrmpgsql" == "1" ]
     then
-      config_pnfs_stop
+      yaim_query_conf_node_dcache_name_server
+      rcnameserver=$?
+      if [ "$rcrmpgsql" == "1" ] ; then
+        yaim_state_nameserver_unmount
+        yaim_state_nameserver_stop
+      fi
       config_pgsql_uninstall
       RESET_DCACHE_PNFS=yes
       config_pgsql_install
