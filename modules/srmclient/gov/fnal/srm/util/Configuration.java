@@ -110,7 +110,14 @@ public class Configuration {
 	public static final String SRMCPCONFIGNAMESPACE="srmcp.srm.fnal.gov";
 	private static final String webservice_pathv1 = "srm/managerv1";
 	private static final String webservice_pathv2 = "srm/managerv2";
-        
+        private static final String HOME_DIRECTORY=System.getProperty("user.home");
+        private static final String PATH_SEPARATOR=System.getProperty("file.separator");
+        private static final String CONFIGURATION_DIRECTORY=".srmconfig";
+        private String DEFAULT_CONFIG_FILE=HOME_DIRECTORY+
+                PATH_SEPARATOR+
+                CONFIGURATION_DIRECTORY+
+                PATH_SEPARATOR+"config.xml";
+
         @Option(
                 name = "default_port",
                 description = "default SRM port number",
@@ -1334,14 +1341,14 @@ public class Configuration {
 	private String getRequestStatusSurl;
 
          @Option(
-                name = "request_id",
-                description =  "request token",
-                defaultValue = "0",
-                required=false,
-                log=true
-                )
+                 name = "request_id",
+                 description =  "request token",
+                 defaultValue = "0",
+                 required=false,
+                 log=true
+                 )
                  private int getRequestStatusId;
-
+        
         public int getGetRequestStatusId() {
 		return getRequestStatusId;
 	}
@@ -1896,7 +1903,7 @@ public class Configuration {
 				general_options;
 		}
 		if(getSpaceTokens) {
-                        String getSpaceTokensOptions="get-space-tokens-options :\n"+
+                        String getSpaceTokensOptions="get-space-tokens options :\n"+
                                 OptionParser.printOptions(this,"space_desc");
 			return
 				"\nUsage:get-space-tokens [command line options]  srmurl\n\n"+
@@ -1912,13 +1919,15 @@ public class Configuration {
 				general_options;
 		}
 		if (getRequestStatus) {
+                        String getRequestStatusOptions=" get-request-status options :\n"+
+                                OptionParser.printOptions(this,"request_id");
 			return
-				"\nUsage:get-request-status  [command line options]  srmurl requestId\n\n"+
+				"\nUsage:get-request-status  [command line options]  srmurl \n\n"+
 				"       where srmurl is one of the surl specified in the original request\n" +
 				"       and is used for determening the srm endpoint location\n"+
 				"       default options can be set in configuration file \n"+
 				"       or overriden by the command line options\n\n"+
-				general_options;
+				(isHelp()==true?general_options+getRequestStatusOptions:getRequestStatusOptions);
 		}
 		if (copy) {
                         String copy_options=" srmcp options :\n"+
@@ -1972,7 +1981,7 @@ public class Configuration {
 				(isHelp()==true?general_options+copy_options:copy_options);
 		}
 		if (bringOnline) {
-                        String bring_online_options=" srm-abort-files options: \n"+
+                        String bring_online_options=" srm-bring-online options: \n"+
                                 OptionParser.printOptions(this,
                                                           "storagetype",
                                                           "protocols",
@@ -2242,13 +2251,23 @@ public class Configuration {
                 OptionParser.setDefaults(this);
                 //
                 // Need to parse "conf" option first, so we set the value
-                // of config_file field.
+                // of config_file field. Make sure "conf" options is specified.
                 // 
-                OptionParser.parseOption(this,"conf",_args);
-		File f = new File(config_file);
-		if (f.exists() && f.canRead()) {
+                if (_args.getOpt("conf")!=null) {
+                    OptionParser.parseOption(this,"conf",_args);
+                }
+                else { 
+                        config_file=DEFAULT_CONFIG_FILE;
+                }
+                File f = new File(config_file);
+                if (f.exists() && f.canRead()) {
 			read(config_file);
-		}
+                }
+                else { 
+                        if (_args.getOpt("conf")!=null) {
+                                throw new IOException("specified configuratioin file \""+config_file+"\" does not exist or can not be read");
+                        }
+                }
                 //
                 // Now parse only specified options, so we achieve a situation where
                 // class fields are set to defaults, then possibly overriden by 
