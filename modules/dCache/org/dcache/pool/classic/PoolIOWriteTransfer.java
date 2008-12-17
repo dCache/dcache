@@ -130,7 +130,7 @@ public class PoolIOWriteTransfer
                     ChecksumMover cm = (ChecksumMover)_mover;
                     _checksumFactory = cm.getChecksumFactory(_protocolInfo);
                     if (_checksumFactory == null) {
-                        _checksumFactory = 
+                        _checksumFactory =
                             _checksumModule.getDefaultChecksumFactory();
                     }
                     cm.setDigest(_checksumFactory.create());
@@ -161,10 +161,10 @@ public class PoolIOWriteTransfer
     {
         try {
             if (_checksumFactory == null) {
-                _checksumFactory = 
+                _checksumFactory =
                     _checksumModule.getDefaultChecksumFactory();
             }
-            
+
             _checksumModule.setMoverChecksums(_pnfsId,
                                               _file,
                                               _checksumFactory,
