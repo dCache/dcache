@@ -173,11 +173,16 @@ public class PoolIOWriteTransfer
             _handle.commit(null);
         } finally {
             _handle.close();
+
+            /* Temporary workaround to ensure that the correct size is
+             * logged in billing and send back to the door.
+             */
+            _storageInfo.setFileSize(getFileSize());
         }
     }
 
     public long getFileSize()
     {
-        return _size;
+        return _file.length();
     }
 }
