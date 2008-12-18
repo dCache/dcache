@@ -916,7 +916,6 @@ public class SRM {
             client_host,
             null);
             say(" Copy Request = "+r);
-            copyStorage.saveJob(r,true);
             // RequesScheduler will take care of the rest
             r.schedule(copyRequestScheduler);
             
@@ -987,7 +986,6 @@ public class SRM {
             null,
             client_host);
             r.setScheduler(getRequestScheduler.getId(),0);
-            getStorage.saveJob(r,true);
             
             r.schedule(getRequestScheduler);
             // RequestScheduler will take care of the rest
@@ -1261,7 +1259,6 @@ public class SRM {
             null
             );
             r.setScheduler(putRequestScheduler.getId(),0);
-            putStorage.saveJob(r,true);
             //requestScheduler will pick up from here
             r.schedule(putRequestScheduler);
             // return status

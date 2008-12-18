@@ -288,7 +288,6 @@ public class SrmPrepareToGet {
 	    }
 	    
             r.setScheduler(getScheduler.getId(),0);
-            getStorage.saveJob(r,true);
             
             r.schedule(getScheduler);
             // RequestScheduler will take care of the rest

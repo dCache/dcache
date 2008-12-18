@@ -863,8 +863,8 @@ public void updatePendingJobs() throws SQLException, InterruptedException,org.dc
         }
     }
     // this method returns ids as a set of "Long" id
-    protected java.util.Set getJobIdsByCondition(String sqlCondition) throws SQLException{
-        Set jobIds = new java.util.HashSet();
+    protected java.util.Set<Long> getJobIdsByCondition(String sqlCondition) throws SQLException{
+        Set<Long> jobIds = new java.util.HashSet();
         Connection _con =null;
         try {
             _con = pool.getConnection();

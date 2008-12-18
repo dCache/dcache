@@ -253,7 +253,6 @@ public class SrmBringOnline {
 
 
             r.setScheduler(bringOnlineScheduler.getId(),0);
-            bringOnlineStorage.saveJob(r,true);
             
             r.schedule(bringOnlineScheduler);
             // RequestScheduler will take care of the rest
