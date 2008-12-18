@@ -185,7 +185,6 @@ public class SrmReserveSpace {
                 description,
                client_host);
            
-            reserverSpaceRequestStorage.saveJob(reserveRequest,true);
             reserveRequest.schedule(scheduler);
          return reserveRequest.getSrmReserveSpaceResponse();
        }

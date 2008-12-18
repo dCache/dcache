@@ -884,8 +884,22 @@ public abstract class Job  {
      *
      */
     public void setScheduler(java.lang.String schedulerId,long schedulerTimeStamp) {
-        this.schedulerTimeStamp = schedulerTimeStamp;
-        this.schedulerId = schedulerId;
+        //  check if the values have indeed changed
+        // If they are the same, we do not need to do anythign.
+        if(this.schedulerTimeStamp != schedulerTimeStamp ||
+            this.schedulerId != schedulerId) {
+            this.schedulerTimeStamp = schedulerTimeStamp;
+            this.schedulerId = schedulerId;
+
+            // we need to save job every time the scheduler is set
+            // even if the jbbc monitoring log is disabled,
+            // as we use scheduler id to identify who this job belongs to.
+            try {
+                this.jobStorage.saveJob(this,true);        
+            }catch (java.sql.SQLException sqle) {
+                esay(sqle);
+            }
+        }
     }
     
     /** Getter for property schedulerTimeStamp.

@@ -341,7 +341,6 @@ public class SrmPrepareToPut {
             }
 	    
             r.setScheduler(putScheduler.getId(),0);
-            putStorage.saveJob(r,true);
             
             r.schedule(putScheduler);
             // RequestScheduler will take care of the rest

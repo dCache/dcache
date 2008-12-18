@@ -224,7 +224,6 @@ public class SrmCopy {
                     }
                 }
             }
-            copyRequestStorage.saveJob(r,true);
             r.schedule(scheduler);
             response = ((CopyRequest)r).getSrmCopyResponse();
             return response;
