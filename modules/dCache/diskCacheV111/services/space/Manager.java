@@ -1803,6 +1803,19 @@ public class Manager
 		return (File)o;
 	}
 
+	public File selectFileFromSpaceForUpdate(Connection connection,
+                                                String pnfsPath,
+                                                long reservationId) throws SQLException{
+		say("executing statement: "+
+                    FileIO.SELECT_TRANSIENT_FILES_BY_PNFSPATH_AND_RESERVATIONID+
+                    ",?="+pnfsPath+","+reservationId);
+		return (File)manager.selectForUpdate(connection,
+                                                     new FileIO(),
+                                                     FileIO.SELECT_TRANSIENT_FILES_BY_PNFSPATH_AND_RESERVATIONID,
+                                                     pnfsPath, reservationId);
+	}
+
+
 	public void removeFileFromSpace(long id) throws SQLException {
 		boolean found = false;
 		Connection connection = null;
@@ -2809,6 +2822,17 @@ public class Manager
 			throw new SQLException("found two records with pnfsPath="+pnfsPath);
 		}
 		return (File)files.toArray()[0];
+	}
+
+	public Set getFiles(String pnfsPath)  throws SQLException{
+		pnfsPath =new FsPath(pnfsPath).toString();
+		HashSet files = manager.selectPrepared(new FileIO(),
+						       FileIO.SELECT_BY_PNFSPATH,
+						       pnfsPath);
+		if (files.isEmpty()==true) {
+			throw new SQLException("file with pnfsPath="+pnfsPath+" is not found");
+		}
+		return files;
 	}
 
 	public File getFile(long id)  throws SQLException{
@@ -3883,7 +3907,10 @@ public class Manager
 		try {
 			connection = connection_pool.getConnection();
 			connection.setAutoCommit(false);
-			File f = selectFileForUpdate(connection,pnfsPath);
+                        File f=selectFileFromSpaceForUpdate(connection,pnfsPath,reservationId);
+                        //
+                        // no NPE below as we get exception if file is not found
+                        //
 			if(f.getState() == FileState.RESERVED ||
 			   f.getState() == FileState.TRANSFERRING) {
 				removeFileFromSpace(connection,f);
@@ -3894,18 +3921,17 @@ public class Manager
 
 		}
 		catch(SQLException sqle) {
-			esay("cancelUseSpace failed with ");
-			esay(sqle);
+			esay("cancelUseSpace for path "+ pnfsPath + " failed with "+sqle);
 			if (connection!=null) {
 				connection.rollback();
 				connection_pool.returnFailedConnection(connection);
 				connection = null;
 			}
-			throw sqle;
 		}
 		finally {
 			if(connection != null) {
 				connection_pool.returnConnection(connection);
+                                connection = null;
 			}
 		}
 	}
@@ -4094,8 +4120,14 @@ public class Manager
 		}
 		File file = null;
 		try {
-			say("selectPool: getFile("+pnfsPath+")");
-			file = getFile(pnfsPath);
+			say("selectPool: getFiles("+pnfsPath+")");
+                        Set<File> files = getFiles(pnfsPath);
+                        for (File f: files) { 
+                                if (f.getPnfsId()==null) { 
+                                        file=f;
+                                        break;
+                                }
+                        }
 		}
 		catch (Exception e) {
 			esay(e);
