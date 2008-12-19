@@ -22,6 +22,7 @@ import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.UOID;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.cells.nucleus.Reply;
+import dmg.cells.nucleus.KillEvent;
 
 import org.dcache.util.PinboardAppender;
 import org.dcache.util.ReflectionUtils;
@@ -286,6 +287,15 @@ public class AbstractCell extends CellAdapter
      * delivery is needed.
      */
     protected void init() throws Exception {}
+
+    /**
+     * Overwritten to ensure deregistration from PinboardAppender.
+     */
+    public void prepareRemoval(KillEvent ce)
+    {
+        super.prepareRemoval(ce);
+        PinboardAppender.removeCell(this);
+    }
 
     /**
      * Returns the friendly cell name used for logging. It defaults to

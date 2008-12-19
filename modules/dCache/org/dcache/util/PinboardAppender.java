@@ -20,6 +20,11 @@ public class PinboardAppender extends AppenderSkeleton
         _cells.put(cell.getCellName(), new WeakReference(cell));
     }
 
+    public static void removeCell(CellAdapter cell)
+    {
+        _cells.remove(cell.getCellName());
+    }
+
     protected void append(LoggingEvent event)
     {
         WeakReference<CellAdapter> ref = _cells.get(event.getMDC("cell"));
