@@ -360,7 +360,7 @@ public class MigrationModule
     }
 
     public final static String hh_migration_concurrency = "<job> <n>";
-    public final static String fh_migration_concurrency = 
+    public final static String fh_migration_concurrency =
         "Adjusts the concurrency of a job.";
     public String ac_migration_concurrency_$_2(Args args)
     {
@@ -556,7 +556,7 @@ public class MigrationModule
     public final static String fh_migration_info =
         "Shows detailed information about a migration job. Possible\n" +
         "job states are:\n\n" +
-        "   INITIALIZING   Initial scan of repository\n" + 
+        "   INITIALIZING   Initial scan of repository\n" +
         "   RUNNING        Job runs (schedules new tasks)\n" +
         "   SLEEPING       A task failed; no tasks are scheduled for 10 seconds\n" +
         "   SUSPENDED      Job suspended by user; no tasks are scheduled\n" +
