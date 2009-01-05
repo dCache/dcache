@@ -40,11 +40,11 @@ usage()
     echo "   start [ <domain or service> ... ]"
     echo "   status"
     echo "   stop [ <domain or service> ... ]"
+    echo "   version"
     echo
     echo "Size is specified in bytes, or optionally followed by K, M, G or T"
     echo "for powers of 1024. Size is rounded down to the nearest integer "
     echo "number of GiB."
-#    echo "   version"
     exit 2
 } 1>&2
 
@@ -1102,6 +1102,13 @@ determineHostName()
     fi
 }
 
+
+# display dCache package version
+showVersion()
+{
+    ${java} -jar ${classesDir}/dcache.jar
+}
+
 # Parse global options
 parseOptions "d" $*
 shift $?
@@ -1196,6 +1203,10 @@ case "$1" in
 	    printf "%-13s%s\n" "${service}" "$(getDomains ${service})"
 	done
 	;;
+
+    version)
+        showVersion
+    ;;
 
     pool)
         shift
