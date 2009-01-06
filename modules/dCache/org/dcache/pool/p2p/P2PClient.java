@@ -125,6 +125,7 @@ public class P2PClient
     private synchronized void removeCompanion(int sessionId)
     {
         _companions.remove(sessionId);
+        notifyAll();
     }
 
     /**
@@ -181,7 +182,7 @@ public class P2PClient
                  * around.
                  */
                 if (t == null) {
-                    cancelCompanions(new PnfsId(pnfsId), 
+                    cancelCompanions(new PnfsId(pnfsId),
                                      "Replica already exists");
                 }
             } catch (InterruptedException e) {
@@ -229,8 +230,9 @@ public class P2PClient
     }
 
     /**
-     * Cancels a transfer. Returns true unless the transfer is already
-     * completed.
+     * Cancels a transfer. Returns true if the transfer was
+     * cancelled. Returns false if the transfer was already completed
+     * or did not exist.
      */
     public synchronized boolean cancel(int id)
     {
@@ -238,6 +240,20 @@ public class P2PClient
         return (companion == null)
                 ? false
                 : companion.cancel("Transfer was cancelled");
+    }
+
+    /**
+     * Cancels all transfers.
+     */
+    public synchronized void shutdown()
+        throws InterruptedException
+    {
+        for (Companion companion: _companions.values()) {
+            companion.cancel("Pool is going down");
+        }
+        while (!_companions.isEmpty()) {
+            wait();
+        }
     }
 
     public synchronized void getInfo(PrintWriter pw)
@@ -292,9 +308,9 @@ public class P2PClient
     public synchronized String ac_pp_remove_$_1(Args args)
         throws NumberFormatException
     {
-        Companion companion = _companions.remove(Integer.valueOf(args.argv(0)));
-        if (companion == null || !companion.cancel("Cancelled by user"))
-            throw new IllegalArgumentException("Id not found: " + args.argv(0));
+        int id = Integer.valueOf(args.argv(0));
+        if (!cancel(id))
+            throw new IllegalArgumentException("Id not found: " + id);
         return "";
     }
 
