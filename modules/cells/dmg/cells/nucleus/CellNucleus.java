@@ -1,6 +1,7 @@
 package dmg.cells.nucleus;
 
 import dmg.util.Args;
+import dmg.util.PinboardAppender;
 import java.io.*;
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
@@ -510,6 +511,8 @@ public class CellNucleus implements Runnable, ThreadFactory {
             __cellGlue.destroy(this);
             _state =  DEAD;
             nsay("killerThread : stopped");
+
+            PinboardAppender.removePinboard(_cellName);
         }
     }
 

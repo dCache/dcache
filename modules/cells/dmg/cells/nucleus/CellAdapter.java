@@ -811,28 +811,31 @@ public class   CellAdapter
     public String hh_show_pinboard =
         "[<lines>] # dumps the last <lines> to the terminal";
     public String ac_show_pinboard_$_0_1(Args args) {
-        if (_pinboard == null)return "No Pinboard defined";
-        StringBuffer sb = new StringBuffer();
-        if (args.argc() > 0)
-            _pinboard.dump(sb, Integer.parseInt(args.argv(0)));
-        else
-            _pinboard.dump(sb, 20);
+        synchronized (_pinBoardLock) {
+            if (_pinboard == null)return "No Pinboard defined";
+            StringBuffer sb = new StringBuffer();
+            if (args.argc() > 0)
+                _pinboard.dump(sb, Integer.parseInt(args.argv(0)));
+            else
+                _pinboard.dump(sb, 20);
 
-        return sb.toString();
+            return sb.toString();
+        }
 
     }
     public String hh_dump_pinboard =
         "<filename> # dumps the full pinboard to <filename>";
     public String ac_dump_pinboard_$_1(Args args) {
-        if (_pinboard == null)return "No Pinboard defined";
+        synchronized (_pinBoardLock) {
+            if (_pinboard == null)return "No Pinboard defined";
 
-        try {
-            _pinboard.dump(new File(args.argv(0)));
-        } catch (Exception e) {
-            return "Dump Failed : "+e;
+            try {
+                _pinboard.dump(new File(args.argv(0)));
+            } catch (Exception e) {
+                return "Dump Failed : "+e;
+            }
+            return "Pinboard dumped to "+args.argv(0);
         }
-        return "Pinboard dumped to "+args.argv(0);
-
     }
     public String hh_pin = "<comment> # obsolete";
     public String ac_pin_$_1(Args args) {
@@ -859,31 +862,33 @@ public class   CellAdapter
     // package private (we need it in CellShell)
     //
     void dumpPinboard() {
-        try {
-            Dictionary context = getDomainContext();
-            String dumpDir = (String)getDomainContext().get("dumpDirectory");
-            if (dumpDir == null) {
-                _nucleus.say("Pinboard not dumped (dumpDirectory not sp.)");
-                return;
-            }
-            File dir = new File(dumpDir);
-            if (! dir.isDirectory()) {
-                _nucleus.say(
-                             "Pinboard not dumped (dumpDirectory[="+dumpDir+"] not found)");
-                return;
-            }
-            if (_pinboard == null) {
-                _nucleus.say("Pinboard not dumped (no pinboard defined)");
-                return;
-            }
+        synchronized (_pinBoardLock) {
+            try {
+                Dictionary context = getDomainContext();
+                String dumpDir = (String)getDomainContext().get("dumpDirectory");
+                if (dumpDir == null) {
+                    _nucleus.say("Pinboard not dumped (dumpDirectory not sp.)");
+                    return;
+                }
+                File dir = new File(dumpDir);
+                if (! dir.isDirectory()) {
+                    _nucleus.say(
+                                 "Pinboard not dumped (dumpDirectory[="+dumpDir+"] not found)");
+                    return;
+                }
+                if (_pinboard == null) {
+                    _nucleus.say("Pinboard not dumped (no pinboard defined)");
+                    return;
+                }
 
-            File dump = new File(dir,
-                                 getCellDomainName()+"-"+
-                                 getCellName()+"-"+
-                                 Long.toHexString(System.currentTimeMillis()));
-            _pinboard.dump(dump);
-        } catch (Throwable t) {
-            _nucleus.esay("Dumping pinboard failed : "+t);
+                File dump = new File(dir,
+                                     getCellDomainName()+"-"+
+                                     getCellName()+"-"+
+                                     Long.toHexString(System.currentTimeMillis()));
+                _pinboard.dump(dump);
+            } catch (Throwable t) {
+                _nucleus.esay("Dumping pinboard failed : "+t);
+            }
         }
     }
     /**
