@@ -68,17 +68,7 @@ public class MetaDataRepositoryDatabase
         storageInfoDatabase =
             env.openDatabase(null, STORAGE_INFO_STORE, dbConfig);
         stateDatabase = env.openDatabase(null, STATE_STORE, dbConfig);
-
-        Runtime.getRuntime().addShutdownHook(new Thread() {
-                public void run() {
-                    try {
-                        close();
-                    } catch (DatabaseException e) {
-                        // Not much we can do about this now.
-                    }
-                }
-            });
-     }
+    }
 
     private synchronized void setFailed()
     {
@@ -90,7 +80,7 @@ public class MetaDataRepositoryDatabase
         return _failed;
     }
 
-    public void close()
+    public synchronized void close()
         throws DatabaseException
     {
         if (!_closed) {
