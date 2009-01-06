@@ -1,9 +1,7 @@
 package dmg.util;
 
 import java.util.Map;
-import java.util.HashMap;
-import java.util.Collections;
-import java.lang.ref.WeakReference;
+import java.util.concurrent.ConcurrentHashMap;
 
 import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CDC;
@@ -24,23 +22,23 @@ import org.apache.log4j.AppenderSkeleton;
  */
 public class PinboardAppender extends AppenderSkeleton
 {
-    static private Map<String,WeakReference<Pinboard>> _pinboards =
-        Collections.synchronizedMap(new HashMap());
+    static private Map<String,Pinboard> _pinboards = new ConcurrentHashMap();
 
     public static void addPinboard(String cellName, Pinboard pinboard)
     {
-        _pinboards.put(cellName, new WeakReference(pinboard));
+        _pinboards.put(cellName, pinboard);
+    }
+
+    public static void removePinboard(String cellName)
+    {
+        _pinboards.remove(cellName);
     }
 
     protected void append(LoggingEvent event)
     {
-        WeakReference<Pinboard> ref =
-            _pinboards.get(event.getMDC(CDC.MDC_CELL));
-        if (ref != null) {
-            Pinboard pinboard = ref.get();
-            if (pinboard != null) {
-                pinboard.pin(layout.format(event));
-            }
+        Pinboard pinboard = _pinboards.get(event.getMDC(CDC.MDC_CELL));
+        if (pinboard != null) {
+            pinboard.pin(layout.format(event));
         }
     }
 
