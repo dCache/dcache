@@ -359,6 +359,22 @@ public class MigrationModule
         return id;
     }
 
+    /**
+     * Immediately cancels all jobs.
+     */
+    public synchronized void cancelAll()
+    {
+        for (Job job: _jobs.values()) {
+            try {
+                job.cancel(true);
+            } catch (IllegalStateException e) {
+                // Jobs cannot always be cancelled. This should be
+                // fixed in the Job. For now we silently ignore this
+                // error.
+            }
+        }
+    }
+
     public final static String hh_migration_concurrency = "<job> <n>";
     public final static String fh_migration_concurrency = 
         "Adjusts the concurrency of a job.";
