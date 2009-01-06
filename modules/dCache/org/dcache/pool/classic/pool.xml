@@ -168,7 +168,8 @@
     <property name="destination" value="PoolManager"/>
   </bean>
   
-  <bean id="pp" class="org.dcache.pool.p2p.P2PClient">
+  <bean id="pp" class="org.dcache.pool.p2p.P2PClient"
+        destroy-method="shutdown">
     <description>Pool to pool transfer manager</description>
     <property name="repository" ref="rep"/>
     <property name="checksumModule" ref="csm"/>
@@ -181,7 +182,8 @@
     </property>
   </bean>
 
-  <bean id="migration" class="org.dcache.pool.migration.MigrationModule">
+  <bean id="migration" class="org.dcache.pool.migration.MigrationModule"
+        destroy-method="cancelAll">
     <description>Replica migration module client</description>
     <property name="repository" ref="rep"/>
     <property name="executor">
