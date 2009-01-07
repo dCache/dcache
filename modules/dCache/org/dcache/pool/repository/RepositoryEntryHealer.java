@@ -32,19 +32,25 @@ public class RepositoryEntryHealer
     private final static Logger _log =
         Logger.getLogger(RepositoryEntryHealer.class);
 
+    private final static String RECOVERING_MSG =
+        "Recovering %1$s...";
     private final static String MISSING_MSG =
-        "Recovering: Missing meta data entry for %1$s.";
+        "Recovering: Reconstructing meta data for %1$s";
     private final static String PARTIAL_FROM_TAPE_MSG =
-        "Recovering: Removing %1$s because it was not fully staged.";
+        "Recovering: Removed %1$s because it was not fully staged";
     private final static String MISSING_SI_MSG =
-        "Recovering: Getting storage info for %1$s from PNFS.";
+        "Recovering: Fetched storage info for %1$s from PNFS";
     private final static String FILE_NOT_FOUND_MSG =
-        "Recovering: Removing %1$s because name space entry was deleted.";
+        "Recovering: Removed %1$s because name space entry was deleted";
     private final static String UPDATE_SIZE_MSG =
-        "Recovering: Setting size of %1$s in PNFS to %2$d";
+        "Recovering: Set size of %1$s in PNFS to %2$d";
+    private final static String PRECIOUS_MSG =
+        "Recovering: Marked %1$s precious";
+    private final static String CACHED_MSG =
+        "Recovering: Marked %1$s cached";
 
     private final static String BAD_MSG =
-        "Marking %1$s as bad: %2$s"; 
+        "Marked %1$s bad: %2$s";
     private final static String BAD_SIZE_MSG =
         "File size mismatch for %1$s. Expected %2$d bytes, but found %3$d bytes.";
 
@@ -97,9 +103,9 @@ public class RepositoryEntryHealer
         if (entry == null && _oldRepository != null) {
             entry = _oldRepository.get(id);
             if (entry != null) {
+                entry = _metaRepository.create(entry);
                 _log.warn("Imported meta data for " + id
                           + " from " + _oldRepository.toString());
-                entry = _metaRepository.create(entry);
             }
         }
 
@@ -110,21 +116,24 @@ public class RepositoryEntryHealer
             (!entry.isPrecious() && !entry.isCached()) || 
             entry.isBad();
         
-        if (entry == null) {
-            _log.warn(String.format(MISSING_MSG, id));
-            entry = _metaRepository.create(id);
-        }
 
         if (isBroken) {
+            if (entry == null) {
+                entry = _metaRepository.create(id);
+                _log.warn(String.format(MISSING_MSG, id));
+            }
+
             try {
+                _log.warn(String.format(RECOVERING_MSG, id));
+
                 /* It is safe to remove FROM_STORE files: We have a copy
                  * on HSM anyway.
                  */
                 if (entry.isReceivingFromStore()) {
-                    _log.info(String.format(PARTIAL_FROM_TAPE_MSG, id));
                     _metaRepository.remove(id);
                     file.delete();
                     _pnfsHandler.clearCacheLocation(id);
+                    _log.info(String.format(PARTIAL_FROM_TAPE_MSG, id));
                     return null;
                 }
 
@@ -144,9 +153,9 @@ public class RepositoryEntryHealer
                  */
                 StorageInfo info = entry.getStorageInfo();
                 if (info == null || (!entry.isCached() && !entry.isPrecious())) {
-                    _log.warn(String.format(MISSING_SI_MSG, id));
                     info = _pnfsHandler.getStorageInfo(id.toString());
                     entry.setStorageInfo(info);
+                    _log.warn(String.format(MISSING_SI_MSG, id));
                 }
 
                 /* If the intended file size is known, then compare it
@@ -177,10 +186,10 @@ public class RepositoryEntryHealer
                  * file size is unknown.
                  */
                 if (entry.isReceivingFromClient() && info.getFileSize() == 0) {
-                    _log.warn(String.format(UPDATE_SIZE_MSG, id, length));
                     _pnfsHandler.setFileSize(id, length);
                     info.setFileSize(length);
                     entry.setStorageInfo(info);
+                    _log.warn(String.format(UPDATE_SIZE_MSG, id, length));
                 }
 
                 /* If not already precious or cached, we move the entry to
@@ -193,8 +202,10 @@ public class RepositoryEntryHealer
             
                     if (PoolIOWriteTransfer.getTargetState(info) == EntryState.PRECIOUS && !info.isStored()) {
                         entry.setPrecious();
+                        _log.warn(String.format(PRECIOUS_MSG, id));
                     } else {
                         entry.setCached();
+                        _log.warn(String.format(CACHED_MSG, id));
                     }
                 }
 
@@ -202,18 +213,18 @@ public class RepositoryEntryHealer
             } catch (CacheException e) {
                 switch (e.getRc()) {
                 case CacheException.FILE_NOT_FOUND:
-                    _log.warn(String.format(FILE_NOT_FOUND_MSG, id));
                     _metaRepository.remove(id);
                     file.delete();
                     _pnfsHandler.clearCacheLocation(id);
+                    _log.warn(String.format(FILE_NOT_FOUND_MSG, id));
                     return null;
 
                 case CacheException.TIMEOUT:
                     throw e;
 
                 default:
-                    _log.error(String.format(BAD_MSG, id, e.getMessage()));
                     entry.setBad(true);
+                    _log.error(String.format(BAD_MSG, id, e.getMessage()));
                     break;
                 }
             } catch (NoRouteToCellException e) {
