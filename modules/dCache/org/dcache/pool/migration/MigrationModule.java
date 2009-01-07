@@ -157,8 +157,6 @@ public class MigrationModule
 
         List<CacheEntryFilter> filters = new ArrayList();
 
-        filters.add(new NotFilter(new StateFilter(EntryState.BROKEN)));
-
         if (sc != null) {
             filters.add(new StorageClassFilter(sc));
         }
@@ -167,14 +165,14 @@ public class MigrationModule
             filters.add(new PnfsIdFilter(new PnfsId(pnfsid)));
         }
 
-        if (state != null) {
-            if (state.equals("cached")) {
-                filters.add(new StateFilter(EntryState.CACHED));
-            } else if (state.equals("precious")) {
-                filters.add(new StateFilter(EntryState.PRECIOUS));
-            } else {
-                throw new IllegalArgumentException(state + ": Invalid state");
-            }
+        if (state == null) {
+            filters.add(new StateFilter(EntryState.CACHED, EntryState.PRECIOUS));
+        } else if (state.equals("cached")) {
+            filters.add(new StateFilter(EntryState.CACHED));
+        } else if (state.equals("precious")) {
+            filters.add(new StateFilter(EntryState.PRECIOUS));
+        } else {
+            throw new IllegalArgumentException(state + ": Invalid state");
         }
 
         if (sticky != null) {
