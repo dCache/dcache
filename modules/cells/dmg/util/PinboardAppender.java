@@ -36,9 +36,12 @@ public class PinboardAppender extends AppenderSkeleton
 
     protected void append(LoggingEvent event)
     {
-        Pinboard pinboard = _pinboards.get(event.getMDC(CDC.MDC_CELL));
-        if (pinboard != null) {
-            pinboard.pin(layout.format(event));
+        Object cell = event.getMDC(CDC.MDC_CELL);
+        if (cell != null) {
+            Pinboard pinboard = _pinboards.get(cell);
+            if (pinboard != null) {
+                pinboard.pin(layout.format(event));
+            }
         }
     }
 
