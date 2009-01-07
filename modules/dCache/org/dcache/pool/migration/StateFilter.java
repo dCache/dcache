@@ -4,19 +4,24 @@ import org.dcache.pool.repository.CacheEntry;
 import org.dcache.pool.repository.EntryState;
 
 /**
- * Repository entry filter accepting entries in a particular state.
+ * Repository entry filter accepting entries in particular states.
  */
 public class StateFilter implements CacheEntryFilter
 {
-    private final EntryState _state;
+    private final EntryState[] _states;
 
-    public StateFilter(EntryState state)
+    public StateFilter(EntryState... states)
     {
-        _state = state;
+        _states = states;
     }
 
     public boolean accept(CacheEntry entry)
     {
-        return entry.getState() == _state;
+        for (EntryState state: _states) {
+            if (entry.getState() == state) {
+                return true;
+            }
+        }
+        return false;
     }
 }
