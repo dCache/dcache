@@ -72,6 +72,11 @@ public class Task
         _targetMode = targetMode;
     }
 
+    public long getId()
+    {
+        return _id;
+    }
+
     public PnfsId getPnfsId()
     {
         return _entry.getPnfsId();
@@ -299,8 +304,8 @@ public class Task
                     }
                 }
             };
-        _timerTask = 
-            _executor.schedule(new LoggingTask(task), 
+        _timerTask =
+            _executor.schedule(new LoggingTask(task),
                                delay, TimeUnit.MILLISECONDS);
     }
 
