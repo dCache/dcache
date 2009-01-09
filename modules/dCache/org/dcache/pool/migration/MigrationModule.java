@@ -607,7 +607,7 @@ public class MigrationModule
     public synchronized
         void messageArrived(PoolMigrationCopyFinishedMessage message)
     {
-        if (message.isReply()) {
+        if (!message.getPool().equals(_configuration.getPoolName())) {
             return;
         }
 
