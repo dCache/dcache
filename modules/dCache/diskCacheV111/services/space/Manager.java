@@ -71,6 +71,7 @@ import diskCacheV111.vehicles.PoolRemoveFilesMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.GridProtocolInfo;
 import diskCacheV111.vehicles.PnfsDeleteEntryNotificationMessage;
+import diskCacheV111.vehicles.PnfsGetFileMetaDataMessage;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.FQAN;
 import diskCacheV111.util.CacheException;
@@ -81,6 +82,7 @@ import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.util.DBManager;
 import diskCacheV111.util.IoPackage;
+import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.namespace.StorageInfoProvider;
 import org.dcache.util.JdbcConnectionPool;
 import org.apache.log4j.Logger;
@@ -1157,6 +1159,39 @@ public class Manager
                 }
                 return "please specify  \"-id=\" or \"-pnfsId=\" option";
         }
+
+    private static final Object fixMissingSizeLock = new Object();
+
+    private static final String SELECT_RECORDS_WITH_MISSING_SIZE =
+            String.format("select f.* from srmspacefile f, srmspace s where f.state=%d and f.sizeinbytes=0 and f.spacereservationid=s.id and s.state=%d", FileState.STORED.getStateId(), SpaceState.RESERVED.getStateId());
+    public static final String hh_fix_missing_size =
+        "# See full help for details";
+    public static final String fh_fix_missing_size =
+        "Cleans up after a bug that was present in dCache 1.9.1-1 to 1.9.1-3. That \n" +
+        "bug caused files to be registered with a wrong size in the space manager.";
+    public String ac_fix_missing_size(Args args)
+        throws SQLException, CacheException
+    {
+        synchronized (fixMissingSizeLock) {
+            PnfsHandler pnfs =
+                new PnfsHandler(this, new CellPath("PnfsManager"));
+            HashSet<File> files =
+                manager.select(new FileIO(), SELECT_RECORDS_WITH_MISSING_SIZE);
+            for (File file: files) {
+                PnfsGetFileMetaDataMessage msg =
+                    pnfs.getFileMetaDataById(file.getPnfsId());
+                long size = msg.getMetaData().getFileSize();
+                updateSpaceFile(file.getId(),
+                                null,
+                                null,
+                                null,
+                                size,
+                                null,
+                                null);
+            }
+            return String.format("Updated %d records", files.size());
+        }
+    }
 
 
 	private static final String selectNextToken = "SELECT nexttoken  FROM "+ManagerSchemaConstants.SpaceManagerNextIdTableName;
