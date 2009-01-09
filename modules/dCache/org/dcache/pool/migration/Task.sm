@@ -175,7 +175,7 @@ Entry
 {
         startTimer(ctxt.getPingPeriod());
 }
-Entry
+Exit
 {
         stopTimer();
 }
