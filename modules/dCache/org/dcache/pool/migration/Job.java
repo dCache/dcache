@@ -28,6 +28,8 @@ import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
+import java.util.Comparator;
+import java.util.Collections;
 import java.io.PrintWriter;
 
 import org.apache.log4j.Logger;
@@ -175,7 +177,14 @@ public class Job
 
         pw.println("Concurrency: " + _concurrency);
         pw.println("Running tasks:");
-        for (Task task: _running.values()) {
+        ArrayList<Task> tasks = new ArrayList(_running.values());
+        Collections.sort(tasks, new Comparator<Task>() {
+                public int compare(Task t1, Task t2)
+                {
+                    return (int)Math.signum(t1.getId() - t2.getId());
+                }
+            });
+        for (Task task: tasks) {
             task.getInfo(pw);
         }
     }
