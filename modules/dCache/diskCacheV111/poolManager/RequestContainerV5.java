@@ -53,6 +53,11 @@ public class RequestContainerV5 implements Runnable {
     //
     //
 
+    /**
+     * State of CheckFilePingHandler.
+     */
+    private enum PingState { STOPPED, WAITING, QUERYING };
+
     private static final String POOL_UNKNOWN_STRING  = "<unknown>" ;
 
     private static final String STRING_NEVER      = "never" ;
@@ -728,56 +733,101 @@ public class RequestContainerV5 implements Runnable {
         private PoolManagerParameter           _parameter         = _partitionManager.getParameterCopyOf() ;
 
         private class CheckFilePingHandler {
-           private   long         _timeInterval = 0 ;
-           private   long         _timer        = 0 ;
-           private   String       _candidate    = null ;
+            private long _timeInterval = 0;
+            private long _timer = 0;
+            private String _candidate;
+            private PingState _state = PingState.STOPPED;
+            private String _query;
 
-           private CheckFilePingHandler( long timerInterval ){
-              _timeInterval = timerInterval ;
-           }
-           private void start( String candidate ){
-              if( _timeInterval <= 0L )return ;
-              _candidate = candidate ;
-              _timer = _timeInterval + System.currentTimeMillis() ;
-           }
-           private void stop(){
-              _candidate = null ;
-              synchronized( _messageHash ){
-                 if( _waitingFor != null )_messageHash.remove( _waitingFor ) ;
-              }
-           }
-           private void alive(){
-             say("CheckFilePingHandler : alive called");
-             if( ( _candidate == null ) || ( _timer == 0L ) )return ;
+            private CheckFilePingHandler(long timerInterval)
+            {
+                _timeInterval = timerInterval;
+            }
 
-             long now = System.currentTimeMillis() ;
-             say("CheckFilePingHandler : checking alive timer");
-             if( now > _timer ){
-                say("CheckFilePingHandler : sending ping to "+_candidate);
-                sendPingMessage() ;
-                _timer = _timeInterval + now ;
-             }
+            private void startP2P(String candidate)
+            {
+                if (_timeInterval <= 0L || candidate == null)
+                    return;
+                _candidate = candidate;
+                _timer = _timeInterval + System.currentTimeMillis();
+                _state = PingState.WAITING;
+                _query = "pp ls";
+            }
 
+            private void startStage(String candidate)
+            {
+                if (_timeInterval <= 0L || candidate == null)
+                    return;
+                _candidate = candidate;
+                _timer = _timeInterval + System.currentTimeMillis();
+                _state = PingState.WAITING;
+                _query = "rh ls";
+            }
 
-           }
-           private void sendPingMessage(){
-	     CellMessage cellMessage = new CellMessage(
-                                 new CellPath( _candidate ),
-	                         new PoolCheckFileMessage(
-                                         _candidate,
-                                         _pnfsId          )
-                                 );
-             synchronized( _messageHash ){
-                try{
-                  _cell.sendMessage( cellMessage );
-                  _waitingFor = cellMessage.getUOID() ;
-                  _messageHash.put( _waitingFor , PoolRequestHandler.this ) ;
-                }catch(Exception ee ){
-                    esay("Can't send pool ping to "+_candidate + " :");
-                    esay(ee);
+            private void stop()
+            {
+                _candidate = null;
+                _state = PingState.STOPPED;
+                synchronized (_messageHash) {
+                    if (_waitingFor != null)
+                        _messageHash.remove(_waitingFor);
                 }
-             }
-           }
+            }
+
+            private void alive()
+            {
+                if ((_candidate == null) || (_timer == 0L))
+                    return;
+
+                long now = System.currentTimeMillis();
+                if (now > _timer) {
+                    switch (_state) {
+                    case WAITING:
+                        say("CheckFilePingHandler : sending " + _query + " to " + _candidate);
+                        sendQuery();
+                        _state = PingState.QUERYING;
+                        break;
+
+                    case QUERYING:
+                        say("CheckFilePingHandler : requests died");
+                        /* No reply since last query.
+                         */
+                        errorHandler();
+                        break;
+
+                    case STOPPED:
+                        return;
+                    }
+                    _timer = _timeInterval + now;
+                }
+            }
+
+            private void gotReply(Object object)
+            {
+                if (_state == PingState.QUERYING && object instanceof String) {
+                    String s = (String) object;
+                    if (s.contains(_pnfsId.toString())) {
+                        say("CheckFilePingHandler : request is alive");
+                        _state = PingState.WAITING;
+                    }
+                }
+            }
+
+            private void sendQuery()
+            {
+                CellMessage envelope =
+                    new CellMessage(new CellPath(_candidate), _query);
+                synchronized (_messageHash) {
+                    try {
+                        _cell.sendMessage(envelope);
+                        _waitingFor = envelope.getUOID();
+                        _messageHash.put(_waitingFor, PoolRequestHandler.this);
+                    } catch (Exception e) {
+                        esay("Can't send pool ping to " + _candidate + " :");
+                        esay(e);
+                    }
+                }
+            }
         }
 
         public PoolRequestHandler( PnfsId pnfsId , String canonicalName ){
@@ -1359,7 +1409,7 @@ public class RequestContainerV5 implements Runnable {
                        nextStep( ST_WAITING_FOR_POOL_2_POOL , WAIT ) ;
                        _state = "Pool2Pool "+_formatter.format(new Date()) ;
                        setError(0,"");
-                       _pingHandler.start(_p2pPoolCandidateInfo.getPoolName()) ;
+                       _pingHandler.startP2P(_p2pPoolCandidateInfo.getPoolName()) ;
 
                        if (_sendHitInfo ) sendHitMsg(  _pnfsId,
                                (_p2pSourcePoolInfo!=null)?
@@ -1482,7 +1532,7 @@ public class RequestContainerV5 implements Runnable {
                        nextStep( ST_WAITING_FOR_STAGING , WAIT ) ;
                        _state = "Staging "+_formatter.format(new Date()) ;
                        setError(0,"");
-                       _pingHandler.start(_poolCandidateInfo.getPoolName()) ;
+                       _pingHandler.startStage(_poolCandidateInfo.getPoolName()) ;
 
                     }else if( rc == RT_OUT_OF_RESOURCES ){
 
@@ -1528,9 +1578,7 @@ public class RequestContainerV5 implements Runnable {
                     handleCommandObject( (Object []) inputObject ) ;
 
                  }else{
-                      //
-                      // this message was not for us
-                      //
+                     _pingHandler.gotReply(inputObject);
                  }
 
               break ;
@@ -1557,7 +1605,7 @@ public class RequestContainerV5 implements Runnable {
                     handleCommandObject( (Object []) inputObject ) ;
 
                  }else{
-
+                     _pingHandler.gotReply(inputObject);
                  }
               break ;
               case ST_SUSPENDED :
@@ -1645,7 +1693,7 @@ public class RequestContainerV5 implements Runnable {
                            "File not found");
                   break;
               default:
-                  esay("Fetching storage info failed: " + 
+                  esay("Fetching storage info failed: " +
                        getStorageInfo.getErrorObject());
                   break;
               }
@@ -1724,12 +1772,6 @@ public class RequestContainerV5 implements Runnable {
 
                  return rc;
 
-              }else if( messageArrived instanceof PoolCheckFileMessage ){
-                 PoolCheckFileMessage check = (PoolCheckFileMessage)messageArrived ;
-                 say("PoolCheckFileMessage arrived with "+check );
-                 return check.getWaiting() ? RT_CONTINUE :
-                        check.getHave()    ? RT_OK    :
-                                             RT_ERROR ;
               }else{
                  throw new
                  CacheException(204,"Invalid message arrived : "+
@@ -1762,12 +1804,6 @@ public class RequestContainerV5 implements Runnable {
                     return RT_ERROR ;
 
                  }
-              }else if( messageArrived instanceof PoolCheckFileMessage ){
-                 PoolCheckFileMessage check = (PoolCheckFileMessage)messageArrived ;
-                 say("PoolCheckFileMessage arrived with "+check );
-                 return check.getWaiting() ? RT_CONTINUE :
-                        check.getHave()    ? RT_OK    :
-                                             RT_ERROR ;
               }else{
 
                  throw new
