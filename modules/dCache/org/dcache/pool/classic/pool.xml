@@ -22,6 +22,7 @@
         lfs=none
         pnfsmanager=PnfsManager
         flushMessageTarget=broadcast
+        sweeper=org.dcache.pool.classic.SpaceSweeper2
       </value>
     </property>
   </bean>
@@ -32,7 +33,6 @@
     <description>Main pool component</description>
     <constructor-arg index="0" value="${poolname}"/>
     <constructor-arg index="1" value="
-        -recover-control=yes 
         -io-queues=${poolIoQueue} 
         ${arguments}"/>
 
@@ -88,7 +88,7 @@
     <property name="checksumModule" ref="csm"/>
   </bean>
 
-  <bean id="sweeper" class="org.dcache.pool.classic.SpaceSweeper2">
+  <bean id="sweeper" class="${sweeper}">
     <description>Pool garbage collector</description>
     <constructor-arg ref="pnfs"/>
     <constructor-arg ref="legacy-repository"/>
