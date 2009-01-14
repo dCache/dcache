@@ -2656,7 +2656,7 @@ public abstract class AbstractFtpDoorV1
                 Subject subject = new Subject(_pwdRecord.UID, _pwdRecord.GID);
                 try {
                     if (!_permissionHandler.canReadFile(subject, _transfer.path, _origin)) {
-                        if(!setNextPwdRecord()) {
+                        if(setNextPwdRecord()) {
                             retrieve(file, offset, size,
                                      mode, xferMode,
                                      parallelStart, parallelMin, parallelMax,
