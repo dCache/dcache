@@ -2658,7 +2658,7 @@ public abstract class AbstractFtpDoorV1
                 Subject subject = new Subject(_pwdRecord.UID, _pwdRecord.GID);
                 try {
                     if (!_permissionHandler.canReadFile(subject, _transfer.path, _origin)) {
-                        if(!setNextPwdRecord()) {
+                        if(setNextPwdRecord()) {
                             retrieve(file, offset, size,
                                      mode, xferMode,
                                      parallelStart, parallelMin, parallelMax,
@@ -4520,7 +4520,7 @@ public abstract class AbstractFtpDoorV1
             reply(String.valueOf(e.getCode()) + " " + e.getReply());
         }
     }
-    
+
     private void sendRemoveInfoToBilling(String pathInPnfs) {
  	    try {
     	    DoorRequestInfoMessage infoRemove = 
@@ -4535,7 +4535,7 @@ public abstract class AbstractFtpDoorV1
     	    sendMessage(new CellMessage(_billingCellPath, infoRemove));
     	    } catch (NoRouteToCellException e) {
      		     error("FTP Door: Can't send remove message to " +
-      			    	 "billing database: " + e.getMessage()); 
+      			    	 "billing database: " + e.getMessage());
             }
      }
 }
