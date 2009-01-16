@@ -22,6 +22,7 @@ import com.sun.corba.se.impl.io.OptionalDataException;
 
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.RetentionPolicy;
+import diskCacheV111.vehicles.GenericStorageInfo;
 import diskCacheV111.vehicles.StorageInfo;
 
 public class StorageInfoTest {
@@ -102,7 +103,138 @@ public class StorageInfoTest {
         }
     }
 
+    @Test
+    public void testSameEquals() {
+        
+        StorageInfo storageInfo = new GenericStorageInfo("osm", "h1:raw");
 
+        assertTrue("equal storageInfo did not pass", storageInfo.equals(storageInfo) );
+
+    }
+
+    @Test
+    public void testEquals() {
+        
+        StorageInfo storageInfo = new GenericStorageInfo("osm", "h1:raw");
+        StorageInfo otherInfo = new GenericStorageInfo("osm", "h1:raw");
+
+        assertTrue("equal storageInfo did not pass", storageInfo.equals(otherInfo) );
+        assertTrue("equals requre hash codes to be the same", storageInfo.hashCode() == otherInfo.hashCode());
+    }
+
+    @Test
+    public void testNotEquals() {
+        
+        StorageInfo storageInfo = new GenericStorageInfo("osm", "h1:raw");
+        StorageInfo otherInfo = new GenericStorageInfo("osm", "h1:rawd");
+
+        assertFalse("not equal storageInfo pass", storageInfo.equals(otherInfo) );
+    }
+
+
+    @Test
+    public void testNotEqualsByAP() {
+        
+        StorageInfo storageInfo = new GenericStorageInfo("osm", "h1:raw");
+        storageInfo.setRetentionPolicy(RetentionPolicy.REPLICA);
+
+        StorageInfo otherInfo = new GenericStorageInfo("osm", "h1:raw");
+        otherInfo.setRetentionPolicy(RetentionPolicy.OUTPUT);
+
+        assertFalse("not equal by RetantionPolicy storageInfo pass", storageInfo.equals(otherInfo) );
+    }
+
+    @Test
+    public void testNotEqualsByAL() {
+        
+        StorageInfo storageInfo = new GenericStorageInfo("osm", "h1:raw");
+        storageInfo.setAccessLatency(AccessLatency.NEARLINE);
+
+        StorageInfo otherInfo = new GenericStorageInfo("osm", "h1:raw");
+        otherInfo.setAccessLatency(AccessLatency.ONLINE);
+
+        assertFalse("not equal by AccessLatency storageInfo pass", storageInfo.equals(otherInfo) );
+    }
+
+    @Test
+    public void testNotEqualsByHSM() {
+        
+        StorageInfo storageInfo = new GenericStorageInfo("osm", "h1:raw");
+        StorageInfo otherInfo = new GenericStorageInfo("enstore", "h1:raw");
+
+        assertFalse("not equal by HSM storageInfo pass", storageInfo.equals(otherInfo) );
+    }
+
+    @Test
+    public void testNotEqualsByFileSize() {
+        
+        StorageInfo storageInfo = new GenericStorageInfo("osm", "h1:raw");
+        storageInfo.setFileSize(17);
+        StorageInfo otherInfo = new GenericStorageInfo("osm", "h1:raw");
+        otherInfo.setFileSize(21);
+        
+        assertFalse("not equal by file size storageInfo pass", storageInfo.equals(otherInfo) );
+    }
+
+    @Test
+    public void testNotEqualsByMap() {
+        
+        StorageInfo storageInfo = new GenericStorageInfo("osm", "h1:raw");
+        storageInfo.setKey("bla", "bla");
+        StorageInfo otherInfo = new GenericStorageInfo("osm", "h1:raw");
+        otherInfo.setKey("not bla", "bla");
+
+        assertFalse("not equal by file size storageInfo pass", storageInfo.equals(otherInfo) );
+    }
+
+
+    @Test
+    public void testNotEqualsByLocation() throws Exception {
+
+        StorageInfo storageInfo = new GenericStorageInfo("osm", "h1:raw");
+        storageInfo.addLocation(new URI("osm://osm?bf1"));
+        StorageInfo otherInfo = new GenericStorageInfo("osm", "h1:raw");
+        otherInfo.addLocation(new URI("enstore://enstore?bf2"));
+
+        assertFalse("not equal by location storageInfo pass", storageInfo.equals(otherInfo) );
+    }
+
+
+    @Test
+    public void testNotEqualsByIsStored() throws Exception {
+
+        StorageInfo storageInfo = new GenericStorageInfo("osm", "h1:raw");
+        StorageInfo otherInfo = new GenericStorageInfo("osm", "h1:raw");
+
+        storageInfo.setIsStored(false);
+        otherInfo.setIsStored(true);
+
+        assertFalse("not equal by isSored storageInfo pass", storageInfo.equals(otherInfo) );
+    }
+
+    @Test
+    public void testNotEqualsByIsNew() throws Exception {
+
+        StorageInfo storageInfo = new GenericStorageInfo("osm", "h1:raw");
+        StorageInfo otherInfo = new GenericStorageInfo("osm", "h1:raw");
+
+        storageInfo.setIsNew(false);
+        otherInfo.setIsNew(true);
+
+        assertFalse("not equal by isNew storageInfo pass", storageInfo.equals(otherInfo) );
+    }
+
+    @Test
+    public void testNotEqualsByBitfileId() throws Exception {
+
+        StorageInfo storageInfo = new GenericStorageInfo("osm", "h1:raw");
+        StorageInfo otherInfo = new GenericStorageInfo("osm", "h1:raw");
+
+        storageInfo.setBitfileId("1");
+        otherInfo.setBitfileId("2");
+
+        assertFalse("not equal by BitfileId storageInfo pass", storageInfo.equals(otherInfo) );
+    }
 
     private static StorageInfo readStorageInfo(File objIn) throws IOException {
 
