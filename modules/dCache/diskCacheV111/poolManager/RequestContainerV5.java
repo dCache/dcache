@@ -22,6 +22,7 @@ import dmg.cells.nucleus.CellAdapter;
 import dmg.cells.nucleus.CellMessage;
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.UOID;
+import dmg.cells.nucleus.CDC;
 import dmg.cells.nucleus.NoRouteToCellException;
 import dmg.util.Args;
 
@@ -704,6 +705,8 @@ public class RequestContainerV5 implements Runnable {
         protected PnfsId       _pnfsId;
         protected final List<CellMessage>    _messages = new ArrayList<CellMessage>() ;
         protected int          _retryCounter = -1 ;
+        private final CDC _cdc = new CDC();
+
 
         private   UOID         _waitingFor    = null ;
         private   long         _waitUntil     = 0 ;
@@ -1091,9 +1094,11 @@ public class RequestContainerV5 implements Runnable {
 
         public class RunEngine implements ExtendedRunnable {
            public void run(){
+               _cdc.apply(true);
               try{
                  stateLoop() ;
               }finally{
+                  _cdc.clear();
                  synchronized( _fifo ){
                    _stateEngineActive = false ;
                  }
