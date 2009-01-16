@@ -70,14 +70,30 @@ public class CDC
 
     /**
      * Applies the cells diagnostic context to the calling thread.
+     * May only be called once. Equivalent to calling
+     * <code>apply(false)</code>.
      */
     public void apply()
+    {
+        apply(false);
+    }
+
+    /**
+     * Applies the cells diagnostic context to the calling thread.  If
+     * <code>clone</code> is false, then the <code>apply</code> can
+     * only be called once for this CDC. If <code>clone</code> is
+     * true, then the CDC may be applied several times, however the
+     * operation is more expensive.
+     *
+     * @param clone whether to apply a clone of the NDC stack
+     */
+    public void apply(boolean clone)
     {
         setMdc(MDC_DOMAIN, _domain);
         setMdc(MDC_CELL, _cell);
         setMdc(MDC_SESSION, _session);
         NDC.clear();
-        NDC.inherit(_ndc);
+        NDC.inherit(clone ? (Stack) _ndc.clone() : _ndc);
     }
 
     /**
