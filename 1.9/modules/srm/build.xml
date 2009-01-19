@@ -1,0 +1,239 @@
+<!-- $Id: build.xml,v 1.6 2006-10-18 16:54:31 timur Exp $ -->
+
+<project name="SRM" default="help" basedir=".">
+
+  <!-- When the external libs are moved to the 'external' module from 'srm/lib',
+       the thins marked with 'LIB_TRANSITION' have to be changed -->
+
+  <!-- LIB_TRANSITION: As long as the srm dir still contains the external libs in lib/
+       we use this as a replacement. This overwrites stuff in common.xml -->
+  <property name="internalLibDir" location="new-lib" />
+
+  <!-- import the common part -->
+
+  <import file="common/common.xml"/>
+
+  <!--
+          Properties  -  the following properties, paths, and selectors
+                         define the locations and files for Cells
+  -->
+
+  <!-- Output Files 
+       For each of these jar files there are targets below -->
+
+  <property name="srm.jar" location="${classesDir}/srm.jar" />
+  <property name="srm-tomcat.jar" location="${classesDir}/srm-tomcat.jar" />
+
+  <!-- this should be in 'common.xml' but that didnt work -->
+  <target name="cleanall" depends="clean,libs.clean,docs.clean" description="Remove everything produced by me." >
+    <delete file="${srm.jar}" />
+    <delete file="${srm-tomcat.jar}" />
+  </target>
+
+  <!-- Java sources
+       These have been derived from packageSets/core.pl and packageSets/protocols.pl -->
+
+  <property name="sourceDir" location="src" />
+
+  <!-- Packages for srm.jar -->
+
+  <selector id="srm.selector">
+    <not>
+      <filename name="**/*Tomcat*" />
+    </not>
+  </selector>
+
+  <!-- Packages for srm-tomcat.jar -->
+
+  <selector id="srm-tomcat.selector">
+    <filename name="**/*Tomcat*" />
+  </selector>
+
+  <!-- Classpath for srm.jar and srm-tomcat.jar -->
+
+  <selector id="srm.classpath.selector">
+    <or>
+      <filename name="**/cells.jar"/>
+      <filename name="jdom/jdom.jar"/>
+      <filename name="cog/**/*.jar"/>
+      <filename name="axis/**/*.jar"/>
+      <filename name="glue/**/GLUE-STD.jar"/>
+      <filename name="glue/**/dom.jar"/>
+      <filename name="glue/**/jnet.jar"/>
+      <filename name="glue/**/jsse.jar"/>
+      <filename name="glue/**/jcert.jar"/>
+      <filename name="glue/**/servlet.jar"/>
+      <filename name="tomcat/apache-tomcat-5.5.20/bin/*.jar"/>
+      <filename name="tomcat/apache-tomcat-5.5.20/common/lib/*.jar"/>
+      <filename name="tomcat/apache-tomcat-5.5.20/server/lib/*.jar"/>
+    </or>
+  </selector>
+
+  <path id="srm.classpath">
+    <fileset dir="${classesDir}" >                  <!-- This way the produced classes have precedence over the external ones -->
+      <selector refid="srm.classpath.selector" />
+    </fileset>
+    <fileset dir="${libDir}" >
+      <selector refid="srm.classpath.selector" />
+    </fileset>
+    <!-- LIB_TRANSITION: This is the fallback for things not in the external module yet. -->
+    <!-- <fileset dir="lib" >
+      <selector refid="srm.classpath.selector" />
+    </fileset> -->
+  </path>
+
+  <!--       =======
+             TARGETS
+             =======          -->
+
+
+  <!--
+          Copy external libraries to ${internalLibDir} with CVS
+  -->
+
+  <target name="libs.cvs" description="Fetch external libs from CVS">
+
+    <!-- One cvs checkout for each dependency -->
+    <cvs command="checkout" cvsroot="${cvs.cvsroot}" cvsrsh="ssh" dest="${internalLibDir}"
+      package="external/cells" />
+
+    <cvs command="checkout" cvsroot="${cvs.cvsroot}" cvsrsh="ssh" dest="${internalLibDir}"
+      package="external/jdom" />
+
+    <cvs command="checkout" cvsroot="${cvs.cvsroot}" cvsrsh="ssh" dest="${internalLibDir}"
+      package="external/axis" />
+
+    <cvs command="checkout" cvsroot="${cvs.cvsroot}" cvsrsh="ssh" dest="${internalLibDir}"
+      package="external/tomcat" />
+
+    <cvs command="checkout" cvsroot="${cvs.cvsroot}" cvsrsh="ssh" dest="${internalLibDir}"
+      package="external/cog" />
+
+    <cvs command="checkout" cvsroot="${cvs.cvsroot}" cvsrsh="ssh" dest="${internalLibDir}"
+      package="external/glue" />
+
+    <move file="${internalLibDir}/external/cells" todir="${internalLibDir}" />
+    <move file="${internalLibDir}/external/jdom" todir="${internalLibDir}" />
+    <move file="${internalLibDir}/external/axis" todir="${internalLibDir}" />
+    <move file="${internalLibDir}/external/tomcat" todir="${internalLibDir}" />
+    <move file="${internalLibDir}/external/cog" todir="${internalLibDir}" />
+    <move file="${internalLibDir}/external/glue" todir="${internalLibDir}" />
+    <delete dir="${internalLibDir}/external" />
+
+  </target>
+
+  <!-- 
+             Targets for srm.jar
+  -->
+
+  <!-- Depend -->
+
+  <target name="srm.depend" depends="prepare,lib.tomcat.untar,lib.axis.untar,lib.cog.untar,lib.glue.untar" >
+
+    <property name="srm.classpath.value" refid="srm.classpath"/>
+
+    <!-- Debug/Info only -->
+    <!-- <echo>Classpath of cells: ${srm.classpath.value} </echo> -->
+    
+    <!-- This is a list of classes which are needed from external libs -->
+    <checkclass classname="dmg.util.CommandInterpreter" classpath="${srm.classpath.value}" />          <!-- Cells -->
+    <checkclass classname="org.jdom.input.SAXBuilder" classpath="${srm.classpath.value}" />            <!-- JDom -->
+    <checkclass classname="org.apache.axis.types.URI" classpath="${srm.classpath.value}" />            <!-- Axis  -->
+    <checkclass classname="org.globus.gsi.GlobusCredential" classpath="${srm.classpath.value}" />      <!-- COG (jglobus) -->
+    <!-- <checkclass classname="" classpath="${srm.classpath.value}" />                                     TODO: Appropriate classes for Tomcat  -->
+    <!-- <checkclass classname="" classpath="${srm.classpath.value}" />                                     TODO: Appropriate classes for Glue  -->
+    
+    <checkclassfail>.
+        The following classes are missing in the classpath.
+        They might be fetchted from CVS with 'ant libs.cvs'.
+    </checkclassfail>
+   
+  </target>
+
+  <!-- Compile -->
+
+  <target name="srm.compile" depends="prepare,srm.depend">
+
+    <javac destdir="${buildDir}" 
+           classpath="${srm.classpath.value}" 
+           source="${javac.source}" 
+           target="${javac.target}" 
+           debug="${javac.debug}" 
+           verbose="${javac.verbose}">
+      <src path="${sourceDir}" />
+      <and>
+	<selector refid="srm.selector" />
+	<filename name="**/*.java" />
+      </and>
+    </javac>
+
+  </target>
+
+  <target name="srm.jar" depends="srm.compile" description="Create srm.jar" >
+
+    <jar jarfile="${srm.jar}">
+      <fileset dir="${buildDir}" >
+	<and>
+	  <selector refid="srm.selector" />
+	  <filename name="**/*.class" />
+	</and>
+      </fileset>
+    </jar>
+
+  </target>
+
+  <!-- 
+             Targets for srm-tomcat.jar
+  -->
+
+  <!-- Depend: same as srm -->
+
+  <!-- Compile -->
+
+  <target name="srm-tomcat.compile" depends="prepare,srm.depend">
+
+    <javac destdir="${buildDir}" 
+           classpath="${srm.classpath.value}" 
+           source="${javac.source}" 
+           target="${javac.target}" 
+           debug="${javac.debug}" 
+           verbose="${javac.verbose}">
+      <src path="${sourceDir}" />
+      <and>
+	<selector refid="srm-tomcat.selector" />
+	<filename name="**/*.java" />
+      </and>
+    </javac>
+
+  </target>
+
+  <target name="srm-tomcat.jar" depends="srm-tomcat.compile" description="Create srm-tomcat.jar" >
+
+    <jar jarfile="${srm-tomcat.jar}">
+      <fileset dir="${buildDir}" >
+	<and>
+	  <selector refid="srm-tomcat.selector" />
+	  <filename name="**/*.class" />
+	</and>
+      </fileset>
+    </jar>
+
+  </target>
+
+  <!--
+          Generate Doc
+  -->
+
+  <target name="docs" depends="prepare" description="Generate Javadoc in ${distDir}/doc/javadoc" >
+    
+    <javadoc destdir="${distDir}/doc/javadoc" sourcepath="${sourceDir}" packagenames="org.dcache.srm.*" linksource="true"/>
+    
+  </target>
+
+  <target name="docs.clean" >
+    
+    <delete dir="${distDir}/doc" />
+    
+  </target>
+
+</project>

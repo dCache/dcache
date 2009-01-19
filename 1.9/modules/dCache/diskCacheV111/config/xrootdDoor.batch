@@ -1,0 +1,61 @@
+#
+# $Id: xrootdDoor.batch,v 1.8 2007-05-09 12:29:07 radicke Exp $
+#
+set printout default 2 
+set printout CellGlue none
+onerror shutdown
+#
+check -strong setupFile
+#
+copy file:${setupFile} context:setupContext
+#
+#  import the variables into our $context.
+#  don't overwrite already existing variables.
+#
+import context -c setupContext
+#
+#   Make sure we got what we need.
+#
+check -strong serviceLocatorPort serviceLocatorHost 
+check -strong xrootdPort
+
+#
+create dmg.cells.services.RoutingManager  RoutingMgr
+#
+#   The LocationManagerc Part
+#
+create dmg.cells.services.LocationManager lm \
+       "${serviceLocatorHost} ${serviceLocatorPort}"
+#
+#
+onerror continue
+#  set context -c xrootdAuthzPlugin org.dcache.xrootd.security.plugins.tokenauthz.TokenAuthorizationFactory
+  set context -c xrootdIsReadOnly true
+  set context -c xrootdAllowedPaths ""
+  set context -c xrootdIoQueue ""
+  set context -c xrootdAuthzPlugin none
+  set context -c xrootdAuthzKeystore /opt/d-cache/etc/keystore
+  set context -c xrootdMaxLogin 50
+  set context -c xrootdMaxOpenFilesPerConnection 5000
+onerror shutdown
+#
+#
+create dmg.cells.services.login.LoginManager Xrootd-${thisHostname} \
+           "${xrootdPort}                \
+             org.dcache.doors.XrootdDoor \
+             -export                     \
+             -prot=telnet -localOk       \
+             -maxLogin=${xrootdMaxLogin} \
+             -clientVersion=0.0          \
+             -brokerUpdateTime=30        \
+             -protocolFamily=root        \
+             -protocolVersion=2.4	     \
+             -loginBroker=LoginBroker    \
+             -isReadOnly=${xrootdIsReadOnly}	\
+             -authzPlugin=${xrootdAuthzPlugin}       \
+             -keystore=${xrootdAuthzKeystore} \
+             -io-queue=${xrootdIoQueue} \
+             -allowedPaths=${xrootdAllowedPaths} \
+             -maxFileOpensPerLogin=${xrootdMaxOpenFilesPerConnection} \
+"
+

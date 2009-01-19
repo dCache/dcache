@@ -1,0 +1,15 @@
+#!/bin/sh
+src=$1
+dst=$2
+export X509_USER_PROXY=$3
+chmod 600 $X509_USER_PROXY
+echo X509_USER_PROXY = $X509_USER_PROXY
+echo src = $src
+echo dst= $dst
+GLOBUS_LOCATION=/usr/local/globus
+. /usr/local/globus/etc/globus-user-env.sh
+echo  globus-url-copy -dbg $src $dst
+eval globus-url-copy -dbg $src $dst
+ec=$?
+echo globus-url-copy exit code is $ec
+exit $ec

@@ -1,0 +1,240 @@
+<!-- $Id: dcap-build.xml,v 1.9 2007-04-24 09:43:18 tigran Exp $ -->
+
+<project name="dCap" default="help" basedir=".">
+
+  <!-- package name. have to be the same as in the cvs -->
+  <property name="package" value="dcap" />
+
+
+
+  <!-- import the common part -->
+
+  <import file="${buildTop}/common/common.xml"/>
+
+  <!--
+          Properties  -  the following properties, paths, and selectors
+                         define the locations and files for dCap
+  -->
+
+  <!-- Output Files
+       For each of these jar files there are targets below -->
+
+  <property name="javatunnel.jar" location="${classesDir}/javatunnel.jar" />
+
+  <!-- this should be in 'common.xml' but that didnt work -->
+  <target name="cleanall" depends="clean" description="Remove everything produced by me." >
+    <delete file="${javatunnel.jar}" />
+  </target>
+
+  <!-- Java sources
+       These have been derived from packageSets/core.pl and packageSets/protocols.pl -->
+
+  <property name="javatunnel.sourceDir" location="${sourceDir}/security_plugins" />
+
+  <!-- Packages for javatunnel.jar -->
+
+  <selector id="javatunnel.selector">
+    <or>
+      <filename name="javatunnel/**" />
+    </or>
+  </selector>
+
+  <!-- Classpath for javatunnel.jar -->
+
+  <selector id="javatunnel.classpath.selector">
+    <or>
+      <filename name="**/cog-jglobus.jar"/>
+      <filename name="**/glite/**/glite*.jar" />
+      <filename name="**/cells.jar"/>
+    </or>
+  </selector>
+
+  <path id="javatunnel.classpath">
+    <fileset dir="${classesDir}" >
+      <selector refid="javatunnel.classpath.selector" />
+    </fileset>
+    <fileset dir="${libDir}" >
+      <selector refid="javatunnel.classpath.selector" />
+    </fileset>
+  </path>
+
+  <!--       =======
+             TARGETS
+             =======          -->
+
+  <!--
+          Untar COG and globus C libraries
+  -->
+
+  <property name="cog.libDir" value="${libDir}/cog" />
+
+  <!-- globus C libs for gsi tunnel -->
+
+    <property name="globus.libDir" value="${libDir}/globus" />
+
+    <!-- TODO: This property has to depend on OS and CPU -->
+    <property name="globus.tar32Name" value="${globus.libDir}/globus-4.0.3-Linux-2.6-i686.tgz" />       <!-- A pattern uniquely identifying one tar file -->
+    <property name="globus.tar64Name" value="${globus.libDir}/globus-4.0.3-Linux-2.6-x86_64.tgz" />       <!-- A pattern uniquely identifying one tar file -->
+    <property name="globus.untaredTo" value="${globus.libDir}/globus-4.0.3" />                        <!-- This is the dir the tar will create         -->
+
+    <uptodate property="lib.globus32.uptodate" targetfile="${globus.untaredTo}" >
+      <srcfiles dir="${globus.libDir}" includes="${globus.tar32Name}" />
+    </uptodate>
+
+    <uptodate property="lib.globus64.uptodate" targetfile="${globus.untaredTo}" >
+      <srcfiles dir="${globus.libDir}" includes="${globus.tar64Name}" />
+    </uptodate>
+
+    <target name="lib.globus32.untar" unless="lib.globus32.uptodate" >
+
+        <echo>Unpacking to ${globus.untaredTo}</echo>
+        <untar src="${globus.tar32Name}" dest="${globus.libDir}" compression="gzip" />
+
+    </target>
+
+    <target name="lib.globus64.untar" unless="lib.globus64.uptodate" >
+
+        <echo>Unpacking to ${globus.untaredTo}</echo>
+        <untar src="${globus.tar64Name}" dest="${globus.libDir}" compression="gzip" />
+
+    </target>
+
+    <!-- heimdal C libs for gss tunnel -->
+
+    <property name="heimdal.libDir" value="${libDir}/heimdal" />
+    <property name="heimdal.tarName" value="${heimdal.libDir}/heimdal-20060830-devel.tgz" />   <!-- A pattern uniquely identifying one tar file -->
+    <property name="heimdal.untaredTo" value="${heimdal.libDir}/heimdal" />                    <!-- This is the dir the tar will create -->
+
+    <uptodate property="lib.heimdal.uptodate" targetfile="${heimdal.untaredTo}" >
+      <srcfiles dir="${heimdal.libDir}" includes="${heimdal.tarName}" />
+    </uptodate>
+
+    <target name="lib.heimdal.untar" unless="lib.heimdal.uptodate" >
+
+      <echo>Unpacking to ${heimdal.untaredTo}</echo>
+      <untar src="${heimdal.tarName}" dest="${heimdal.libDir}" compression="gzip" />
+
+    </target>
+
+
+  <!--
+             Targets for javatunnel.jar
+  -->
+
+  <property name="javatunnel.classpath.value" refid="javatunnel.classpath"/>
+
+  <!-- Compile -->
+
+
+  <target name="javatunnel.compile" depends="prepare" description="Compile Java code for javatunnel.jar" >
+
+    <javac destdir="${buildDir}"
+           classpath="${javatunnel.classpath.value}"
+           source="${javac.source}"
+           target="${javac.target}"
+           debug="${javac.debug}"
+           verbose="${javac.verbose}">
+      <src path="${javatunnel.sourceDir}" />
+      <and>
+	<selector refid="javatunnel.selector" />
+	<filename name="**/*.java" />
+      </and>
+    </javac>
+
+  </target>
+
+  <target name="javatunnel.jar" depends="javatunnel.compile" description="Create javatunnel.jar" >
+
+    <jar jarfile="${javatunnel.jar}">
+      <fileset dir="${buildDir}" >
+	<and>
+	  <selector refid="javatunnel.selector" />
+	  <filename name="**/*.class" />
+	</and>
+      </fileset>
+    </jar>
+
+  </target>
+
+
+
+  <target name="javatunnel-bin" depends="javatunnel.jar" description="Create javatunnel.jar" >
+
+	<mkdir dir="${binDir}/classes" />
+	<copy file="${javatunnel.jar}" todir="${binDir}/classes" />
+
+  </target>
+
+
+  <!--
+             Targets for dcap libraries
+  -->
+
+  <!-- Compile -->
+
+  <target name="dcap32.compile" depends="lib.globus32.untar,lib.heimdal.untar" description="Compile dCap client libraries" >
+
+	<mkdir dir="${buildDir}" />
+
+  	<!-- make install == make cleanall; make all; cp output to BIN_PATH -->
+    <echo>make install BIN_PATH=${distDir}</echo>
+    <exec executable="make" dir="${sourceDir}" failonerror="true" output="${buildDir}/dcap.log" append="true" >
+      <arg value="install" />
+      <arg value="BIN_PATH=${distDir}" />
+    </exec>
+
+    <echo>cd security_plugins/gssapi
+make -f Makefile.gsi clean</echo>
+    <exec executable="make" dir="${sourceDir}/security_plugins/gssapi" failonerror="true" output="${buildDir}/dcap.log" append="true">
+      <arg value="-f" />
+      <arg value="Makefile.gsi" />
+      <arg value="clean" />
+    </exec>
+
+    <echo>cd security_plugins/gssapi
+make -f Makefile.gsi GSI=${globus.untaredTo}</echo>
+    <exec executable="make" dir="${sourceDir}/security_plugins/gssapi" failonerror="true" output="${buildDir}/dcap.log" append="true" >
+      <arg value="-f" />
+      <arg value="Makefile.gsi" />
+      <arg value="GSI=${globus.untaredTo}" />
+
+    </exec>
+
+    <copy file="${sourceDir}/security_plugins/gssapi/libgsiTunnel.so" todir="${distDir}/lib" />
+
+  </target>
+
+
+    <target name="dcap64.compile" depends="lib.globus64.untar" description="Compile dCap client libraries" >
+
+      <mkdir dir="${buildDir}" />
+
+      <!-- make install == make cleanall; make all; cp output to BIN_PATH -->
+      <echo>make install BIN_PATH=${distDir}</echo>
+      <exec executable="make" dir="${sourceDir}" failonerror="true" output="${buildDir}/dcap.log" append="true" >
+        <arg value="install" />
+        <arg value="BIN_PATH=${distDir}" />
+      </exec>
+
+      <echo>cd security_plugins/gssapi
+  make -f Makefile.gsi clean</echo>
+      <exec executable="make" dir="${sourceDir}/security_plugins/gssapi" failonerror="true" output="${buildDir}/dcap.log" append="true">
+        <arg value="-f" />
+        <arg value="Makefile.gsi" />
+        <arg value="clean" />
+      </exec>
+
+      <echo>cd security_plugins/gssapi
+  make -f Makefile.gsi-ia64 GSI=${globus.untaredTo}</echo>
+      <exec executable="make" dir="${sourceDir}/security_plugins/gssapi" failonerror="true" output="${buildDir}/dcap.log" append="true" >
+        <arg value="-f" />
+        <arg value="Makefile.gsi-ia64" />
+        <arg value="GSI=${globus.untaredTo}" />
+      </exec>
+
+      <copy file="${sourceDir}/security_plugins/gssapi/libgsiTunnel.so" todir="${distDir}/lib" />
+
+    </target>
+
+
+</project>

@@ -1,0 +1,546 @@
+/*
+ COPYRIGHT STATUS:
+  Dec 1st 2001, Fermi National Accelerator Laboratory (FNAL) documents and
+  software are sponsored by the U.S. Department of Energy under Contract No.
+  DE-AC02-76CH03000. Therefore, the U.S. Government retains a  world-wide
+  non-exclusive, royalty-free license to publish or reproduce these documents
+  and software for U.S. Government purposes.  All documents and software
+  available from this server are protected under the U.S. and Foreign
+  Copyright Laws, and FNAL reserves all rights.
+
+
+ Distribution of the software available from this server is free of
+ charge subject to the user following the terms of the Fermitools
+ Software Legal Information.
+
+ Redistribution and/or modification of the software shall be accompanied
+ by the Fermitools Software Legal Information  (including the copyright
+ notice).
+
+ The user is asked to feed back problems, benefits, and/or suggestions
+ about the software to the Fermilab Software Providers.
+
+
+ Neither the name of Fermilab, the  URA, nor the names of the contributors
+ may be used to endorse or promote products derived from this software
+ without specific prior written permission.
+
+
+
+  DISCLAIMER OF LIABILITY (BSD):
+
+  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+  "AS IS" AND ANY EXPRESS OR IMPLIED  WARRANTIES, INCLUDING, BUT NOT
+  LIMITED TO, THE IMPLIED  WARRANTIES OF MERCHANTABILITY AND FITNESS
+  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL FERMILAB,
+  OR THE URA, OR THE U.S. DEPARTMENT of ENERGY, OR CONTRIBUTORS BE LIABLE
+  FOR  ANY  DIRECT, INDIRECT,  INCIDENTAL, SPECIAL, EXEMPLARY, OR
+  CONSEQUENTIAL DAMAGES  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT
+  OF SUBSTITUTE  GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
+  BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY  OF
+  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT  OF THE USE OF THIS
+  SOFTWARE, EVEN IF ADVISED OF THE  POSSIBILITY OF SUCH DAMAGE.
+
+
+  Liabilities of the Government:
+
+  This software is provided by URA, independent from its Prime Contract
+  with the U.S. Department of Energy. URA is acting independently from
+  the Government and in its own private capacity and is not acting on
+  behalf of the U.S. Government, nor as its contractor nor its agent.
+  Correspondingly, it is understood and agreed that the U.S. Government
+  has no connection to this software and in no manner whatsoever shall
+  be liable for nor assume any responsibility or obligation for any claim,
+  cost, or damages arising out of or resulting from the use of the software
+  available from this server.
+
+
+  Export Control:
+
+  All documents and software available from this server are subject to U.S.
+  export control laws.  Anyone downloading information from this server is
+  obligated to secure any necessary Government licenses before exporting
+  documents or software obtained from this server.
+ */
+
+package diskCacheV111.util;
+
+import java.util.*;
+import java.io.*;
+import java.net.*;
+
+import diskCacheV111.doors.EDataBlock;
+import dmg.cells.nucleus.CellAdapter;
+
+class SocketRedirector extends Thread {
+    private Socket _input, _output;
+    private SocketAdapter _parent;
+    private boolean _modeE;
+
+    public void say(String s) {
+        _parent.say("SocketRedirector(" + getName() + "):" + s);
+    }
+
+    public void esay(String s) {
+        _parent.esay("SocketRedirector(" + getName() + "):" + s);
+    }
+
+    public void esay(Throwable t) {
+        _parent.esay(t);
+    }
+
+    public SocketRedirector(SocketAdapter parent,
+                            Socket input,
+                            Socket output) {
+        this(parent, input, output, false);
+    }
+
+    public SocketRedirector(SocketAdapter parent,
+                            Socket input,
+                            Socket output,
+                            boolean modeE) {
+        super("SocketRedirector");
+        _parent = parent;
+        _input = input;
+        _output = output;
+        _modeE = modeE;
+    }
+
+    public void modeERedirect() {
+        try {
+            say("Starting a SocketRedirector");
+            EDataBlock eDataBlock = new EDataBlock(getName());
+
+            InputStream istr;
+            OutputStream ostr;
+
+            // FileOutputStream fstr = new FileOutputStream( new File("/tmp/SocketAdapter.debug"));
+
+            try {
+                istr = _input.getInputStream();
+                ostr = _output.getOutputStream();
+
+                boolean eod = false;
+
+                while (!eod && (int) eDataBlock.read(istr) > -1) {
+                    //If we're running a modeE demux then check for end of channel
+                    //allow the block to be forwarded as it may have data
+                    if (eDataBlock.isDescriptorSet(EDataBlock.EOF_DESCRIPTOR)) {
+                        int dataChannelCount = (int) eDataBlock.getDataChannelCount();
+
+                        say(" Setting data channel count to " +dataChannelCount);
+                        synchronized (_parent) {
+                            _parent.setDataChannelCount(dataChannelCount);
+                        }
+                        //Change the dc count to 1 for the pool
+                        eDataBlock.setDCCountTo1();
+                    }
+
+                    if (eDataBlock.isDescriptorSet(EDataBlock.EOD_DESCRIPTOR)) {
+                        eod = true;
+
+                        //Turn off the eod flag
+                        say("EOD received");
+                        eDataBlock.unsetDescriptor(EDataBlock.EOD_DESCRIPTOR);
+                        synchronized (_parent) {
+                            _parent.addEODSeen();
+                        }
+                    }
+
+                    synchronized (_parent) {
+                        ostr.write(eDataBlock.getHeader());
+                        ostr.write(eDataBlock.getData());
+                        ostr.flush();
+                    }
+                    //say("Done writing");
+                }
+                say("Adapter: done, EOD received ? = " + eod);
+            } catch (IOException e) {
+                esay(e);
+                // what can we do here ??
+
+                // TIMUR: I think it does not make sence to continue,
+                // better to end this thread
+                esay("we failed: calling _parent.SubtractDataChannel()");
+                _parent.subtractDataChannel();
+                return;
+            }
+
+            synchronized (_parent) {
+                _parent.subtractDataChannel();
+
+                if (_parent.getDataChannelsClosed() == _parent.getDataChannelCount()) {
+                    if (_parent.getEODSeen() == _parent.getDataChannelsClosed()) {
+                        //Send the real eod
+                        byte[] eodPacket = new byte[EDataBlock.HEADER_LENGTH];
+                        eodPacket[0] = EDataBlock.EOD_DESCRIPTOR;
+                        synchronized (_parent) {
+                            ostr.write(eodPacket, 0, EDataBlock.HEADER_LENGTH);
+                        }
+                    } else {
+                        esay("The last socket is closing, but we didn't see enough EOD's. Not going to send EOD to pool.  Transfer failed");
+                        throw new IOException();
+                    }
+                }
+            }
+        } catch (IOException e) {
+            esay("Failed to write eod packet");
+            esay(e);
+        }
+    }
+
+    public void streamRedirect() {
+        say("Starting a SocketRedirector");
+        byte[] buffer = new byte[128 * 1024];
+        int n;
+        InputStream istr;
+        OutputStream ostr;
+
+        try {
+
+            istr = _input.getInputStream();
+            ostr = _output.getOutputStream();
+
+            while ((n = istr.read(buffer)) != -1) {
+                synchronized (_parent) {
+                    ostr.write(buffer, 0, n);
+                }
+            }
+
+            ostr.flush();
+
+        } catch (IOException e) {
+            esay("IOException :");
+            esay(e);
+            // what can we do here ??
+            // TIMUR:I think it does not make sence to continue,
+            // better to end this thread
+            _parent.subtractDataChannel();
+            return;
+        }
+
+        synchronized (_parent) {
+            _parent.subtractDataChannel();
+        }
+    }
+
+    public void run() {
+        try {
+            if (_modeE) {
+                modeERedirect();
+            } else {
+                streamRedirect();
+            }
+        } finally {
+            //Close the input because we're now the owner
+            try {
+                _input.close();
+                _input = null;
+            } catch (IOException ioe) {}
+
+            if (!_modeE) {
+                // 	Close the output since we have no peers in stream mode
+                try {
+                    _output.close();
+                    _output = null;
+                } catch (IOException ioe) {}
+            }
+        }
+    }
+}
+
+
+public class SocketAdapter extends Thread {
+    private ServerSocket _clientListenerSock = null;
+    private ServerSocket _poolListenerSock = null;
+    private int _dataChannelConnections = 0;
+    private boolean _modeE = false;
+    private int _dataChannelCount = 1; // for stream mode
+    private int _dataChannelsClosed = 0;
+    private int _EODSeen = 0;
+    private int _bufferSize = 0;
+    private int _maxStreams = -1; // -1 = unlimited
+
+    boolean clientToPool = true;
+    private CellAdapter door;
+
+    public SocketAdapter(int bufferSize, CellAdapter door) throws IOException {
+        this(door);
+        _bufferSize = bufferSize;
+    }
+
+    public SocketAdapter(CellAdapter door) throws IOException {
+        super();
+        this.door = door;
+        try {
+            _clientListenerSock = new ServerSocket(0);
+            _poolListenerSock   = new ServerSocket(0);
+        } catch (IOException ex) {
+            close();
+            throw ex;
+        }
+        clientToPool = true;
+        _modeE = false;
+        _EODSeen = 0;
+    }
+
+    public SocketAdapter(CellAdapter door, int lowPort, int highPort) throws IOException {
+        super();
+        this.door = door;
+        if (lowPort > highPort) {
+            throw new IllegalArgumentException("lowPort > highPort");
+        }
+
+        say("Port range=" + lowPort + " - " + highPort);
+        if (lowPort > 0) {
+            for (int i = lowPort; i <= highPort; i++) {
+                try {
+                    say("Trying Port " + i);
+                    _clientListenerSock = new ServerSocket(i);
+                    break;
+                } catch (BindException ee) {
+                    say("Problems trying port " + i + " " + ee);
+                    if (i == highPort) {
+                        throw ee;
+                    }
+                }
+            }
+        } else {
+            _clientListenerSock = new ServerSocket(0);
+        }
+
+        try {
+            _poolListenerSock = new ServerSocket(0);
+        } catch (IOException ex) {
+            close();  // close _clientListenerSock, it was open
+            throw ex; // rethrow exception
+        }
+        clientToPool = true;
+        _modeE = false;
+        _EODSeen = 0;
+    }
+
+    public void say(String s) {
+        door.say("SocketAdapter: " + s);
+    }
+
+    public void esay(String s) {
+        door.esay("SocketAdapter: " + s);
+    }
+
+    public void esay(Throwable t) {
+        door.esay("SocketAdapter exception:");
+        door.esay(t);
+    }
+
+    public void setMaxStreams(int n) {
+        _maxStreams = n;
+    }
+
+    public void addEODSeen() {
+        _EODSeen++;
+    }
+
+    public int getEODSeen() {
+        return _EODSeen;
+    }
+
+    public int getDataChannelCount() {
+        return _dataChannelCount;
+    }
+
+    public void setDataChannelCount(int dataChannelCount) {
+        _dataChannelCount = dataChannelCount;
+    }
+
+    public int getDataChannelsClosed() {
+        return _dataChannelsClosed;
+    }
+
+    public void setDataChannelsClosed(int dataChannelsClosed) {
+        _dataChannelsClosed = dataChannelsClosed;
+    }
+
+    public void setModeE(boolean modeE) {
+        _modeE = modeE;
+        setDataChannelCount(modeE ? -1 : 1); // -1 = unknown until EODC
+    }
+
+    public int getClientListenerPort() {
+        return _clientListenerSock.getLocalPort();
+    }
+
+    public Socket acceptOnClientListener() throws IOException {
+        return _clientListenerSock.accept();
+    }
+
+    public int getPoolListenerPort() {
+        return _poolListenerSock.getLocalPort();
+    }
+
+    public void setDirClientToPool() {
+        clientToPool = true;
+    }
+
+    public void setDirPoolToClient() {
+        clientToPool = false;
+    }
+
+    public void run() {
+        ServerSocket inputSock;
+        ServerSocket outputSock;
+        Stack redirectors = new Stack();
+        int totalStreams = 0;
+        boolean accept_connections = true;
+        Socket output = null;
+
+        try {
+            if (clientToPool) {
+                inputSock = _clientListenerSock;
+                outputSock = _poolListenerSock;
+            } else {
+                inputSock = _poolListenerSock;
+                outputSock = _clientListenerSock;
+            }
+
+            say("Accepting output connection on port " + outputSock.getLocalPort() + " ... ");
+            output = outputSock.accept();
+
+            // don't need ServerSocket any more
+            closeServerSoc( outputSock );
+
+            if (_bufferSize > 0) {
+                output.setReceiveBufferSize(_bufferSize);
+                output.setSendBufferSize(_bufferSize);
+            }
+            say("Accepted output connection");
+
+            //keeping listening until there has been at least one connection
+            //and all connections have been closed.
+
+            inputSock.setSoTimeout(30);
+
+            do {
+                Socket input = null;
+                try {
+                    // say("Accepting input on port " + inputSock.getLocalPort());
+                    input = inputSock.accept();
+
+                    totalStreams++;
+                    if (_bufferSize > 0) {
+                        input.setReceiveBufferSize(_bufferSize);
+                        input.setSendBufferSize(_bufferSize);
+                    }
+
+                    say("Accepted input connection from client");
+
+                    say("creating socket redirector");
+                    SocketRedirector redir = new SocketRedirector(this, input, output, _modeE);
+                    /** @todo not synchronized _dataChannelConnections */
+                    _dataChannelConnections++;
+                    redirectors.push(redir);
+                    redir.start();
+                } catch (SocketTimeoutException e) {
+                    say("Caught SocketTimeoutException: Do nothing, just allow looping to continue");
+                    //other junk will be caught by outer loop
+                } catch (Exception ex) {
+                    closeSoc( input );
+                    closeServerSoc( inputSock );
+                    throw ex; // Rethrow exception
+
+                    /** @todo when exception thrown we do not join() threads which were started.
+                     thus we do not close() output, at least close it on time */
+                }
+
+                /** @todo not synchronized _dataChannelConnections */
+
+                if ( (_maxStreams > 0 &&
+                      _dataChannelConnections >= _maxStreams)
+                     ||
+                     (_dataChannelCount > 0 &&
+                      totalStreams >= _dataChannelCount)) {
+
+                    /** @todo not synchronized _dataChannelConnections */
+
+                    if (_maxStreams > 0 &&
+                        _dataChannelConnections >= _maxStreams) {
+                        say("maximum number of data channels is reached, closing server socket");
+                    }
+                    inputSock.close();
+                    inputSock = null;
+                    accept_connections = false;
+                }
+            } while (accept_connections);
+
+            say("we opened " + totalStreams + " streams in total ");
+            // wait for all redirectors to finish
+
+            /** @todo I believe x.join() block shall be in "finally" - ak */
+            say("wait for all redirectors to finish");
+            while (!redirectors.empty()) {
+                SocketRedirector redir;
+                redir = (SocketRedirector) redirectors.pop();
+                try {
+                    redir.join();
+                } catch (Exception e) {
+                    esay(e);
+                }
+            }
+
+        } catch (Exception e) {
+            esay(e);
+            // what can we do here ??
+        } finally {
+            say("Closing  output socket");
+            closeSoc( output );
+            close(); // close listener sockets. It's safe even they were closed thru other reference
+        }
+    }
+
+    public synchronized void subtractDataChannel() {
+        _dataChannelConnections--;
+        _dataChannelsClosed++;
+        say("Closing data channel: " + getDataChannelsClosed() +
+            " remaining: " + _dataChannelConnections +
+            " eodc says there will be: " + getDataChannelCount());
+    }
+
+    private void closeServerSoc(ServerSocket s) {
+        try {
+            s.close();
+        } catch (IOException ignored) {}
+    }
+
+    private void closeSoc(Socket s) {
+        try {
+            s.close();
+        } catch (IOException ignored) {}
+    }
+
+    public void close() {
+        if (_clientListenerSock != null) {
+            try {
+                say("Closing client listener socket");
+                _clientListenerSock.close();
+                _clientListenerSock = null;
+            } catch (IOException e) {
+                esay("_clientListenerSock.close() failed with IOException, ignoring");
+                esay(e);
+            }
+        }
+
+        if ( _poolListenerSock != null ) {
+            try {
+                say("Closing pool listener socket");
+                _poolListenerSock.close();
+                _poolListenerSock = null;
+            } catch (IOException e) {
+                esay("_poolListenerSock.close() failed with IOException, ignoring");
+                esay(e);
+            }
+        }
+        // Null this out to avoid a circular reference chain that has confused GCs
+        // this.door = null;
+    }
+}

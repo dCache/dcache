@@ -1,0 +1,161 @@
+/*
+ * HsmDriverOSM.java
+ *
+ * Created on January 17, 2005, 12:46 AM
+ */
+
+package diskCacheV111.hsmControl;
+import java.util.* ;
+
+import java.io.* ;
+import java.text.* ;
+import java.lang.reflect.*;
+import dmg.util.* ;
+import dmg.cells.nucleus.* ;
+
+import diskCacheV111.vehicles.hsmControl.* ;
+import diskCacheV111.vehicles.Message ;
+import diskCacheV111.vehicles.StorageInfo ;
+import diskCacheV111.vehicles.OSMStorageInfo ;
+import diskCacheV111.util.* ;
+
+/**
+ *
+ * @author  patrick
+ */
+    public class HsmDriverOSM implements HsmControllable  {
+        private Args _global = null ;
+        private Args _local  = null ;
+        private String _command = null ;
+        private Logable _log    = null ;
+
+        public HsmDriverOSM( Args global , Args local , Logable log ) throws Exception {
+            _global = global ;
+            _local  = local ;
+            _log    = log ;
+            _command = local.getOpt("command");
+
+            if( ( _command == null ) || ( _command.equals("") ))
+                throw new
+                IllegalArgumentException("command  option not found");
+
+        }
+        public void getBfDetails( StorageInfo storageInfo ) throws Exception {
+            setBfDetails( storageInfo ) ;
+            try{
+                setVolumeDetails( storageInfo );
+            }catch(Exception ee){
+                _log.elog("Can't get volume details "+ee);
+            }
+
+        }
+        public String toString(){
+
+            return "HSM control driver for OSM ("+_command+")";
+        }
+        private void setVolumeDetails( StorageInfo storageInfo )throws Exception {
+            if( ! ( storageInfo instanceof OSMStorageInfo ) )
+                 throw new
+                 IllegalArgumentException( "not an OSM storage info "+storageInfo.getClass().getName());
+
+             OSMStorageInfo osm = (OSMStorageInfo)storageInfo ;
+
+             String tape  = osm.getKey( "hsm.osm.volumeName" ) ;
+             String store = osm.getStore() ;
+
+             if( ( tape == null )  || ( tape.equals("")  ) ||
+                 ( store == null ) || ( store.equals("") )    )
+                 throw new
+                 IllegalArgumentException("Not enough info in storageInfo (volumeName)");
+
+             String command = _command+" -S "+store+" lsvol -l "+tape ;
+
+             RunSystem system = new RunSystem( command , 1000, 10000L );
+             system.go();
+
+             int    rc     = system.getExitValue() ;
+             String error  = system.getErrorString() ;
+             String output = system.getOutputString() ;
+
+             if( ( rc != 0 ) || ( error.length() != 0 )  || ( output.length() == 0 ) )
+                 throw new
+                 IllegalArgumentException( error == null ?
+                                           "Unknow error in responds to >"+command+"<":
+                                           error);
+
+             _log.log("Output : "+output);
+
+             String volNbf   = null ;
+             String volStat  = null ;
+             String volCap   = null ;
+             String line     = null ;
+             try{
+                 StringTokenizer st = new StringTokenizer( output , "\n");
+                 line = st.nextToken() ; line = st.nextToken() ;
+                 st = new StringTokenizer( line );
+                 for( int i = 0 ; i < 3 ; i++ )st.nextToken() ;
+                 volNbf = st.nextToken() ;
+                 for( int i = 0 ; i < 3 ; i++ )st.nextToken() ;
+                 volCap  = st.nextToken() ;
+                 volStat = st.nextToken() ;
+             }catch(Exception ee ){
+                throw new
+                IllegalArgumentException("Format error in output of >"+command+"< : "+output);
+             }
+             String details = "volumeNbf="+volNbf+";volumeStatus="+volStat+";volumeCapacity="+volCap+";";
+             String tmp = osm.getKey("hsm.details");
+             osm.setKey("hsm.details" , tmp == null ? details : ( tmp+details ));
+             osm.setKey("hsm.osm.volumeNbf",volNbf);
+             osm.setKey("hsm.osm.volumeStatus",volStat);
+             osm.setKey("hsm.osm.volumeCapacity",volCap );
+        }
+        private void setBfDetails( StorageInfo storageInfo )throws Exception {
+            if( ! ( storageInfo instanceof OSMStorageInfo ) )
+                 throw new
+                 IllegalArgumentException( "not an OSM storage info "+storageInfo.getClass().getName());
+
+             OSMStorageInfo osm = (OSMStorageInfo)storageInfo ;
+             String store = osm.getStore() ;
+             String bfid  = osm.getBitfileId() ;
+             if( ( store == null ) || ( store.equals("") ) ||
+                 ( bfid  == null ) || ( bfid.equals("")  )    )
+                 throw new
+                 IllegalArgumentException("Not enough info in storageInfo");
+
+             String command = _command+" -S "+store+" lsbf -a "+bfid ;
+
+             RunSystem system = new RunSystem( command , 1000, 10000L );
+             system.go();
+
+             int    rc     = system.getExitValue() ;
+             String error  = system.getErrorString() ;
+             String output = system.getOutputString() ;
+
+             if( ( rc != 0 ) || ( error.length() != 0 )  || ( output.length() == 0 ) )
+                 throw new
+                 IllegalArgumentException( error == null ?
+                                           "Unknow error in responds to >"+command+"<":
+                                           error);
+
+             _log.log("Output : "+output);
+
+             String tape   = null ;
+             String status = null ;
+             String line   = null ;
+             try{
+                 StringTokenizer st = new StringTokenizer( output , "\n");
+                 line = st.nextToken() ; line = st.nextToken() ;
+                 st = new StringTokenizer( line );
+                 for( int i = 0 ; i < 15 ; i++ )st.nextToken() ;
+                 tape = st.nextToken() ;
+                 for( int i = 0 ; i < 6 ; i++ )st.nextToken() ;
+                 status = st.nextToken() ;
+             }catch(Exception ee ){
+                throw new
+                IllegalArgumentException("Format error in output of >"+command+"< : "+output);
+             }
+             osm.setKey("hsm.details","volumeName="+tape+";bfStatus="+status+";");
+             osm.setKey("hsm.osm.volumeName",tape);
+             osm.setKey("hsm.osm.bfStatus",status);
+        }
+    }

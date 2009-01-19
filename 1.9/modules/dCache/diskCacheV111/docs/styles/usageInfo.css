@@ -1,0 +1,55 @@
+span.layout_precious
+{
+  color: red;
+}
+
+span.layout_used
+{
+  color: green;
+}
+
+span.layout_free
+{
+  color: yellow;
+}
+
+td.layout > div
+{
+  margin-left: auto;
+  margin-right: auto;
+  width: 300px;
+  height: 10px;
+}
+
+div.layout_precious
+{
+  float: left;
+  background: red;
+  height: 10px;
+}
+
+div.layout_rest
+{
+  float: left;
+  background: #ff00ff;
+  height: 10px;
+}
+
+div.layout_used
+{
+  float: left;
+  background: green;
+  height: 10px;
+}
+
+div.layout_free
+{
+  float: left;
+  background: yellow; 
+  height: 10px;
+}
+
+.errorcode, .errormessage
+{ 
+  color: red;
+}

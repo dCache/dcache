@@ -1,0 +1,406 @@
+%{
+// 
+%}
+
+%class Task
+%package org.dcache.pool.migration
+%access package
+%import diskCacheV111.vehicles.*
+
+%start TASK::Queued
+%map TASK
+%%
+Queued
+{
+        run
+                GettingLocations
+                {
+                }
+}
+
+GettingLocations
+Entry
+{       
+        queryLocations();
+}
+{
+        timeout
+                Failed
+                {
+                }
+        noroute
+                Failed
+                {
+                }
+        failure(rc: int)
+                Failed
+                {
+                }
+        cancel
+                Cancelled
+                {
+                }
+        success
+                [ ctxt.hasMoreLocations() ]
+                UpdatingExistingFile
+                {
+                        updateExistingReplica();
+                }
+        success
+                InitiatingCopy
+                {
+                }
+}
+
+// We got existing copies. Try to update one of them. Keep
+// trying until we succeed or we tried them all.
+UpdatingExistingFile
+{
+        timeout
+                [ ctxt.hasMoreLocations() ]
+                nil
+                {
+                        updateExistingReplica();
+                }
+        timeout
+                InitiatingCopy
+                {
+                }
+        noroute
+                [ ctxt.hasMoreLocations() ]
+                nil
+                {
+                        updateExistingReplica();
+                }
+        noroute
+                InitiatingCopy
+                {
+                }
+        failure(rc: int)
+                [ ctxt.hasMoreLocations() ]
+                nil
+                {
+                        updateExistingReplica();
+                }
+        failure(rc: int)
+                InitiatingCopy
+                {
+                }
+        success
+                Done
+                {
+                }
+        cancel
+                Cancelled
+                {
+                }
+}
+
+// Update got cancelled. We simply wait for the previous update
+// operation to finish and then go to either Cancelled or Done.
+CancellingUpdate
+{
+        timeout
+                Cancelled
+                {
+                }
+        noroute
+                Cancelled
+                {
+                }
+        failure(rc: int)
+                Cancelled
+                {
+                }
+        success
+                Done
+                {
+                }
+        cancel
+                nil
+                {
+                }
+}
+
+// Ask pool to copy the file.
+InitiatingCopy
+Entry
+{
+        initiateCopy();
+}
+{
+        success
+                Copying
+                {
+                }
+        nopools
+                Failed
+                {
+                }
+        noroute
+                Failed
+                {
+                }
+        failure(rc: int)
+                Failed
+                {
+                }
+        timeout
+                Finishing
+                {
+                        // No reply, but message could have been 
+                        // received anyway, so try to cancel it.
+                        cancelCopy();
+                }
+        cancel
+                Cancelling
+                {
+                }
+        messageArrived(message: PoolMigrationCopyFinishedMessage)
+                [ message.getReturnCode() != 0 ]
+                Failed
+                {
+                }
+        messageArrived(message: PoolMigrationCopyFinishedMessage)
+                [ message.getReturnCode() == 0 ]
+                Done
+                {
+                }
+}
+
+// Pool accepted the task. Wait for it to finish and 
+// periodically send a ping to verify it is alive.
+Copying
+Entry
+{
+        startTimer(ctxt.getPingPeriod());
+}
+Exit
+{
+        stopTimer();
+}
+{                
+        timer
+                Pinging
+                {
+                }
+        messageArrived(message: PoolMigrationCopyFinishedMessage)
+                [ message.getReturnCode() != 0 ]
+                Failed
+                {
+                }
+        messageArrived(message: PoolMigrationCopyFinishedMessage)
+                [ message.getReturnCode() == 0 ]
+                Done
+                {
+                }
+        cancel
+                Cancelling
+                {
+                }
+}
+
+// Send a ping.
+Pinging
+Entry
+{
+        ping();
+}
+{                
+        success
+                Copying
+                {
+                        // Task is alive
+                }
+        failure(rc: int)
+                Finishing
+                {
+                        // Task is gone
+                }
+        noroute
+                NoResponse
+                {
+                        // We cannot talk to the pool
+                }
+        timeout
+                NoResponse
+                {
+                        // Pool does not respond.
+                }
+        messageArrived(message: PoolMigrationCopyFinishedMessage)
+                [ message.getReturnCode() != 0 ]
+                Failed
+                {
+                }
+        messageArrived(message: PoolMigrationCopyFinishedMessage)
+                [ message.getReturnCode() == 0 ]
+                Done
+                {
+                }
+        cancel
+                Cancelling
+                {
+                }
+}
+
+// Pool did not reply to ping. Let's give it some time
+// and ping it again. 
+NoResponse
+Entry
+{
+        startTimer(ctxt.getNoResponseTimeout());
+}
+Exit
+{       
+        stopTimer();
+}
+{                
+        timer
+                nil
+                {
+                        ping();
+                }
+        success
+                Copying
+                {
+                        // Task is alive
+                }
+        failure(rc: int)
+                Finishing
+                {
+                        // Task is gone
+                }
+        noroute
+                Failed
+                {
+                        // We still cannot talk to the pool
+                }
+        timeout
+                Failed
+                {
+                        // Message timed out again
+                }
+        messageArrived(message: PoolMigrationCopyFinishedMessage)
+                [ message.getReturnCode() != 0 ]
+                Failed
+                {
+                }
+        messageArrived(message: PoolMigrationCopyFinishedMessage)
+                [ message.getReturnCode() == 0 ]
+                Done
+                {
+                }
+        cancel
+                Cancelling
+                {
+                }
+}
+
+// Target pool no longer has the task. Let's wait for
+// the CopyFinished message.
+Finishing
+Entry
+{
+        startTimer(ctxt.getTaskDeadTimeout());
+}
+Entry
+{
+        stopTimer();
+}
+{                
+        timer
+                Failed
+                {
+                }
+        messageArrived(message: PoolMigrationCopyFinishedMessage)
+                [ message.getReturnCode() != 0 ]
+                Failed
+                {
+                }
+        messageArrived(message: PoolMigrationCopyFinishedMessage)
+                [ message.getReturnCode() == 0 ]
+                Done
+                {
+                }
+        Default
+                nil
+                {
+                }
+}
+
+// User requested to abort the task, but we already asked
+// a pool to copy the file. Let's try to cancel the copy 
+// and wait for CopyFinished. 
+Cancelling
+Entry
+{
+        cancelCopy();
+        startTimer(ctxt.getTaskDeadTimeout());
+}
+Exit
+{
+        stopTimer();
+}
+{
+        timer
+                Failed
+                {
+                }
+        messageArrived(message: PoolMigrationCopyFinishedMessage)
+                [ message.getReturnCode() != 0 ]
+                Cancelled
+                {
+                }
+        messageArrived(message: PoolMigrationCopyFinishedMessage)
+                [ message.getReturnCode() == 0 ]
+                Done
+                {
+                }
+        Default
+                nil
+                {
+                }
+}
+
+// Successfully cancelled task. We got confirmation that the
+// transfer did not go through
+Cancelled
+Entry
+{
+        notifyCancelled();
+}
+{
+        Default
+                nil
+                {
+                }
+}
+
+// Something went wrong. In some cases the transfer could have
+// succeeded, but we don't know.
+Failed
+Entry
+{
+        notifyFailed();
+}
+{
+        Default
+                nil
+                {
+                }   
+}
+
+// Transfer completed.
+Done
+Entry
+{
+        notifyCompleted();
+}
+{    
+        Default
+                nil
+                {
+                }   
+}
+
+%%

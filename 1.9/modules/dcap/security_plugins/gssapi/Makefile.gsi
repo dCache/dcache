@@ -1,0 +1,77 @@
+#
+#  $Id: Makefile.gsi,v 1.4.2.3 2006-10-16 14:06:03 tigran Exp $
+#
+
+.PHONY: libgssTunnel.so client server
+
+# Your compiler/linker options here
+
+CFLAGS = -g -DGSIGSS
+LDFLAGS = -shared
+SYS_LIBS = -lcrypt -lresolv -lc
+
+
+
+GSI  = /opt/globus-24
+SSL = /products/ssl
+
+CFLAGS  += -I$(GSI)/include/gcc32dbg -DGLOBUS_BUG
+#LIBS = -L$(GSI)/lib \
+#	-lglobus_gss_assist_gcc32dbg -lglobus_gssapi_gsi_gcc32dbg \
+#	-lglobus_gsi_cert_utils_gcc32dbg \
+#	-lglobus_gsi_credential_gcc32dbg -lglobus_openssl_error_gcc32dbg\
+#	-lglobus_gsi_callback_gcc32dbg -lglobus_gsi_sysconfig_gcc32dbg \
+#	-lglobus_gsi_proxy_core_gcc32dbg -lglobus_oldgaa_gcc32dbg \
+#	-lglobus_proxy_ssl_gcc32dbg -lglobus_openssl_gcc32dbg \
+#	-lglobus_common_gcc32dbg \
+#	-L$(SSL)/lib \
+#	-lssl -lcrypto $(SYS_LIBS)
+
+
+
+LIBS = -static -L$(GSI)/lib  \
+	-lglobus_gssapi_gsi_gcc32dbg \
+	-lglobus_gsi_callback_gcc32dbg \
+	-lglobus_gsi_cert_utils_gcc32dbg \
+	-lglobus_gsi_proxy_core_gcc32dbg \
+	-lglobus_gsi_credential_gcc32dbg \
+	-lglobus_openssl_gcc32dbg \
+	-lglobus_gsi_sysconfig_gcc32dbg \
+	-lglobus_openssl_error_gcc32dbg \
+	-lglobus_oldgaa_gcc32dbg \
+	-lglobus_proxy_ssl_gcc32dbg \
+	-lssl_gcc32dbg \
+	-lcrypto_gcc32dbg \
+	-lglobus_common_gcc32dbg \
+	-lltdl_gcc32dbg \
+        -Bdynamic \
+	-ldl \
+	-L$(SSL)/lib \
+	$(SYS_LIBS)
+#	-lssl -lcrypto $(SYS_LIBS)
+
+PLUGIN = libgsiTunnel.so
+		
+OBJS = base64.o gssIoTunnel.o util.o tunnelQueue.o
+
+
+all: $(PLUGIN)
+
+
+$(PLUGIN): $(OBJS) Makefile.gsi
+	$(LD) $(LDFLAGS) -o $(PLUGIN) $(OBJS) $(LIBS)
+
+$(OBJS): Makefile
+
+
+client: $(PLUGIN) client.o
+	$(CC) -o client client.o $(OBJS) $(LIBS)
+
+server: $(PLUGIN) server.o
+	$(CC) -o server server.o $(OBJS) $(LIBS)
+
+clean:
+	@rm -f *.o core client server $(PLUGIN) *\~ *.BAK
+
+.c.o:
+	$(CC) -c $(CFLAGS) $<

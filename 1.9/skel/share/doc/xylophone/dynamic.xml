@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--+ 
+    |  An example of arbitrary dynamic data, as mentioned in the
+    |  README.txt documentation.
+    +-->
+
+<animals>
+  <animal class="bird">
+    <type>African Grey</type>
+    <name>Polly</name>
+  </animal>
+
+  <animal class="bird">
+    <type>Budgerigar</type>
+    <name>Bill</name>
+  </animal>
+
+  <animal class="snake">
+    <type>Ball Python</type>
+    <name>Fred</name>
+  </animal>
+
+  <animal class="dog">
+    <type>Labrador</type>
+    <name>Dexter</name>
+    <colour>Black</colour>
+  </animal>
+</animals>

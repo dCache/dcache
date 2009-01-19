@@ -1,0 +1,1536 @@
+         Xylophone .. presenting XML data as LDIF.
+
+
+Xylophone is a set of XSLT style-sheets that provide an LDIF rendering
+of information stored in XML.  LDIF is a standard serialisation of
+LDAP information that many LDAP server software can read to update
+their content.
+
+
+
+
+What you will need.
+
+
+When building an LDIF output, you will need the following:
+
+	o  software that understands XSLT: an XSLT processor,
+	o  the set of XSLT style-sheets; that is, Xylophone,
+	o  the Xylophone file: an XML file for Xylophone with a specific
+	   format,
+
+and, optionally:
+
+	o  the "dynamic file": an additional, arbitrary XML file.
+
+The XSLT-processor software can be any program that understands the
+XSLT version 1.0 standard and provides the commonly available EXSL
+node-set() extension function.
+
+Occasionally, this document refers to a specific XSLT processor to
+give a complete example of Xylophone's usage.  In these places,
+xsltproc is used as a specific example.  However, other XSLT
+processors, such as xalan and saxon, should also work with no changes
+to the XSLT.
+
+Also, please note that the path for the Xylophone XSLT is specified
+assuming the current working directory is this directory
+(Documentation).
+
+To illustrate this, the following three commands should give identical
+LDIF (except for the preamble comments, which describes which
+processor was used), converting the Xylophone file example.xml into
+LDIF using xsltproc, xalan and saxon, respectively.
+
+  xsltproc ../xsl/xylophone.xsl hello-world.xml
+
+  xalan -xsl ../xsl/xylophone.xsl -in hello-world.xml
+
+  java -classpath /usr/share/java/saxon.jar com.icl.saxon.StyleSheet \
+       hello-world.xml ../xsl/xylophone.xsl
+
+The Xylophone file is a well-formed XML file that, in general terms,
+describes how the LDIF should look and how to construct the published
+values.  This Xylophone file has a specific format, which this
+document describes.  You must specify a Xylophone file to create the
+LDIF output.
+
+The optional dynamic file can be any well-formed XML document.
+Xylophone provides some facilities to extract values from this dynamic
+file or to repeat LDAP object declarations based on repetitions within
+this file.  This is based on declarations within the Xylophone file
+and will be explained below.
+
+
+
+
+Tree nomenclature.
+
+
+Both XML and LDAP are hierarchical structures, which means information
+is arranged in a particular format, so that each part has another part
+that "above" it, except for the top-most part.  In LDAP these parts
+are called "objects" and in XML they are called "elements", however
+they have some behaviour in common.  This section gives a brief
+overview of tree structures.
+
+A tree is a structure that has nodes (places where information is
+attached) and arcs (connections between nodes).  If two nodes are
+connected by an arc, they form a parent-child relationship: one node
+is the parent of the other, and visa versa.
+
+A node may have any number of children.  Each node has exactly one
+parent node, except for the top-most node, which has none.  Nodes with
+the same parent are siblings
+
+For example, with the following graph:
+
+  first
+   |
+   +-- one
+   |    |
+   |    +-- a
+   |    |
+   |    +-- b
+   |
+   +-- two
+   |    |
+   |    +-- c
+   |
+   +-- three
+ 
+the node "one" is the parent of both "a" and "b", and "first" is the
+parent of "one", "two" and "three".  Nodes "a" and "b" are children of
+"one", and "one", "two" and "three" are children of "first".
+
+Nodes "a" and "b" are siblings, but "c" has no siblings.  The elements
+"one", "two" and "three" are all siblings.
+
+
+
+
+A brief introduction to LDAP and LDIF.
+
+
+LDAP is a protocol through which information can be queried.  An LDAP
+server supports this protocol and answers queries using locally stored
+data.  The data is organised into Attributes and Objects, with some
+control placed on the Attributes by ObjectClasses.
+
+Attributes are (keyword, value-set) pairs.  An attribute may be single
+valued or have multiple values, for example: "UsedSpace = 0",
+"People={Bjön, Ralf, Paul}".  Each Attribute has an associated Object,
+which it might share with other Attributes, so an Object can have
+multiple Attributes.  Usually, the group of Attributes with a common
+Object provide related information.
+
+Objects form a hierarchy of stored information: the Directory
+Information Tree (DIT).  Each stored Object within the DIT is a child
+of some other Object, except for the top-most- (or root-) Object.
+Each Object has a unique label, its Distinguished Name (DN), that
+describes the Object's location within the DIT; the DN of the root
+Object is the "Base DN".  All other Objects form the DN by prefix one
+of their Attributes (as "keyword=value") to the DN of its parent
+Object, separated by a comma.  So an Object's DN gives an absolute
+path, locating the Object within the DIT, and is a comma-separated
+list of Attribute values.  For example,
+"Mds-Vo-name=DESY-HH,Mds-Vo-name=local,o=grid" is the DN of an Object
+with attribute Mds-VoName = "DESY-HH" and has two parent Objects, one
+with attribute Mds-Vo-name = "local" and one with o = "grid".
+
+An ObjectClass provides rules about Attributes; for example, whether a
+particular Attributes must be present, how many values an Attribute
+can take, in what form an Attribute's value will be, whether queries
+should treat the text as case-sensitive.  By adopting an ObjectClass,
+an Object must adhere to the these Attribute rules.  Objects may have
+more than one ObjectClass, but it must then adhere to all the
+ObjectClass rules.
+
+The available ObjectClasses may form a separate hierarchy, which is
+completely independent of the DIT.  An ObjectClass that has another
+ObjectClass as its parent will inherit that parent's rules.  So, an
+Object that adopts a ObjectClass must adhere to that ObjectClass rules
+and those of all that ObjectClass's parents.
+
+One interpretation is that ObjectClasses are classes of things (a
+person, a room, a building), Object are specific instances of the
+ObjectClasses they adopt (Charles Babbage, Office number 042, the main
+building) and an Object's Attributes describe this specific Object
+(FirstName=Charles, NumberOfOccupants=3, HasParkingSpace=True).  The
+ObjectClass hierarchy describes subsumption relationships (general
+concepts become more specific when descending the ObjectClass
+hierarchy).  The DIT hierarchy is less well defined, but often
+represents some form of collection or aggregation.
+
+
+
+A brief introduction to XML.
+
+
+An XML document describes a structure of information by marking up
+sections using start- and end- element markers; for example,
+<el>something</el> marks up "something" with the "el" element.  Empty
+elements may be written in a more compact format; rather than writing
+<el></el>, they can be written as: <el/>.
+
+Comments start with <!-- sequence and ending with --> and may not
+contain a double-hyphen character sequence.  Comments are completely
+ignored by the Xylophone style-sheets.
+
+If the document contains an XML declaration, for example:
+
+   <?xml version="1.0" ?>
+
+then the very first character of the document must be
+left-angle-bracket ('<').  No white space or comments are allowed
+before this character.
+
+An element contains zero or more attributes.  Attributes are
+keyword-value pairs, where the keyword may not repeated in the element
+and the value must be in quote marks.  Attributes are written within
+the start or empty element; for example,
+    <fruit type="banana" size="medium"/>
+or  <emphasis style="bold">important!</emphasis>
+
+Elements may contain elements within them, so forming a hierarchy; for
+example:
+
+  <first>
+    <one>
+      <a>Contents of a element</a>
+      <b>Contents of b element</b>
+    </one>
+
+    <two>
+      <!-- Element c is empty -->
+      <c/>
+    </two>
+
+    <three/>
+  </first>
+
+
+
+
+Invoking the Xylophone.
+
+
+The most basic usage is:
+
+  xsltproc ../xsl/xylophone.xsl example.xml
+
+This should produce LDIF output to standard-out (stdout), based on the
+contents of example.xml.  Here's a simple example.xml file:
+
+  <?xml version="1.0" encoding="utf-8"?>
+
+  <xylophone>
+    <publish>
+      <object rdn="item">
+        <attr name="item">test</attr>
+        <attr name="message">Hello world!</attr>
+      </object>
+    </publish>
+  </xylophone>
+
+A copy of this file, with an additional comment, is available as
+hello-world.xml (in the Documentation directory).
+
+The following invocation of xsltproc will use Xylophone to produce the
+corresponding LDIF:
+
+  xsltproc ../xsl/xylophone.xsl hello-world.xml
+
+You should see the following output:
+
+  #
+  #  LDIF generated by Xylophone v0.1
+  #
+  #  XSLT processing using libxslt 1.0 (http://xmlsoft.org/XSLT/)
+  #
+  
+  
+  dn: item=test
+  item: test
+  message: Hello world!
+
+
+
+
+Overview of the Xylophone file.
+
+
+Here's an overview of how the Xylophone XML file is organised.  The
+top-most element must be Xylophone.  The allowed immediate children of
+this element are:
+     publish,
+     mapping,
+     lists,
+     scale,
+     constants,
+and  classes.
+
+Or, as an empty example file:
+
+  <?xml version="1.0" encoding="utf-8"?>
+
+  <xylophone>
+    <publish/>
+    <lists/>
+    <mapping/>
+    <scale/>
+    <constants/>
+    <classes/>
+  </xylophone>
+
+The ordering of these high-level elements is unimportant.
+
+The child elements underneath the publish element describe the LDAP
+structure: the LDAP objects and those object's attributes.
+
+The lists element contains any number of list elements.  This provides
+support for (static) lists of items.  Lists can be used to publish a
+set of attributes of an object, or for publishing a set of objects.
+
+The mapping element contains any number of map elements.  These
+describe how to alter string values, and is most useful for values
+taken from the dynamic XML file and for processing lists.
+
+The scale element allows for multiplying or dividing a number by some
+other number.  Typically, this can be used to change units.
+
+The constants element contains definitions that can be substituted at
+different places within the LDIF output.
+
+Finally, classes may contain any number of class elements.  These
+provide support for publishing data as LDAP classes.
+
+Each of these ideas will be introduced in the following sections.
+
+
+
+
+Describing LDAP structure.
+
+
+In this section we describe how to publish very simple LDIF structure
+limiting ourselves to just the object and attr XML elements.  The
+object elements are children of either the publish element, or another
+object element; the attr elements are always children of an object
+element.
+
+Each object element describes an LDAP object within the LDAP
+hierarchy.  You must have precisely one (XML) object element for each
+LDAP object in the LDAP hierarchy you wish to publish.  This includes
+all parent objects of the objects you wish to publish, even if you you
+don't want to publish these parents---more on this in a moment.
+
+The XML object hierarchy matches that of the LDAP.  Each object has zero
+or more attributes associated with it.  Each object has a special
+attribute, called the relative domain name (RDN), that distinguishes
+the object from its siblings.
+
+  <?xml version="1.0" encoding="utf-8"?>
+  <xylophone>
+    <publish>
+
+      <!-- The "o=grid" LDAP object -->
+      <object rdn="o">
+        <attr name="o">grid</attr>
+
+        <!-- "mds-vo-name=resource,o=grid" object -->
+        <object rdn="mds-vo-name">
+          <attr name="mds-vo-name">resource</attr>
+
+          <!-- "resource=test,mds-vo-name=resource,o=grid" -->
+          <object rdn="resource">
+            <attr name="resource">test</attr>
+
+          </object>
+        </object> 
+
+        <!-- "mds-vo-name=local,o=grid" -->
+        <object rdn="mds-vo-name">
+          <attr name="mds-vo-name">local</attr>
+        </object> 
+      </object>
+    </publish>
+  </xylophone>
+
+
+This will produce the following output (excluding the preamble
+comment).
+
+  dn: o=grid
+  o: grid
+
+  dn: mds-vo-name=resource,o=grid
+  mds-vo-name: resource
+
+  dn: resource=test,mds-vo-name=resource,o=grid
+  resource: test
+
+  dn: mds-vo-name=local,o=grid
+  mds-vo-name: local
+
+For some output you might wish to suppress output the RDN
+attribute. To do this, simply include a non-zero "hidden" XML
+attribute in the attr element.  For example:
+
+  <?xml version="1.0" encoding="utf-8"?>
+  <xylophone>
+    <publish>
+
+      <!-- o=grid -->
+      <object rdn="o">
+        <attr hidden="1" name="o">grid</attr>
+
+        <!-- mds-vo-name=resource,o=grid -->
+        <object rdn="mds-vo-name">
+          <attr name="mds-vo-name">resource</attr>
+
+          <!-- resource=test,mds-vo-name=resource,o=grid -->
+          <object rdn="resource">
+            <attr name="resource">test</attr>
+          </object>
+        </object>
+
+        <!-- mds-vo-name=local,o=grid -->
+        <object rdn="mds-vo-name">
+          <attr name="mds-vo-name">local</attr>
+        </object> 
+      </object>
+    </publish>
+  </xylophone>
+
+This produces the following output:
+
+  dn: o=grid
+
+  dn: mds-vo-name=resource,o=grid
+  mds-vo-name: resource
+
+  dn: resource=test,mds-vo-name=resource,o=grid
+  resource: test
+
+  dn: mds-vo-name=local,o=grid
+  mds-vo-name: local
+
+To suppress publishing an object, add a hidden attribute to the object
+with a non-zero value.  The following example demonstrates this by not
+publishing the parent ("o=grid") object.
+
+  <?xml version="1.0" encoding="utf-8"?>
+  <xylophone>
+    <publish>
+
+      <!-- o=grid -->
+      <object hidden="1" rdn="o">
+        <attr name="o">grid</attr>
+
+        <!-- mds-vo-name=resource,o=grid -->
+        <object rdn="mds-vo-name">
+          <attr name="mds-vo-name">resource</attr>
+
+          <!-- resource=test,mds-vo-name=resource,o=grid" -->
+          <object rdn="resource">
+            <attr name="resource">test</attr>
+
+          </object>
+        </object> 
+
+
+        <!-- mds-vo-name=local,o=grid -->
+        <object rdn="mds-vo-name">
+          <attr name="mds-vo-name">local</attr>
+        </object> 
+      </object>
+    </publish>
+  </xylophone>
+
+This will produce the following output:
+
+  dn: mds-vo-name=resource,o=grid
+  mds-vo-name: resource
+
+  dn: resource=test,mds-vo-name=resource,o=grid
+  resource: test
+
+  dn: mds-vo-name=local,o=grid
+  mds-vo-name: local
+
+Additional attributes may be specified by including additional attr
+XML elements.  Any number of attributes may be specified.
+
+To publishing a multi-valued LDAP property, simply repeat the attr
+element with the same name value.
+
+  <?xml version="1.0" encoding="utf-8"?>
+  <xylophone>
+    <publish>
+
+      <!-- o=grid -->
+      <object rdn="o" hidden="1">
+        <attr name="o">grid</attr>
+
+        <!-- mds-vo-name=resource,o=grid -->
+        <object rdn="mds-vo-name" hidden="1">
+          <attr name="mds-vo-name">resource</attr>
+
+	  <!-- AuthList=My-authz-rules,mds-vo-name=resource,o=grid -->
+          <object rdn="AuthList">
+            <attr name="AuthList">My-authz-rules</attr>
+	    <attr name="Operations">read</attr>
+	    <attr name="Operations">write</attr>
+	    <attr name="Operations">list</attr>
+	    <attr name="Operations">delete</attr>
+            <attr name="Authorized">User:alice</attr>
+  	    <attr name="Authorized">User:dick</attr>
+  	    <attr name="Authorized">User:harry</attr>
+	    <attr name="Authorized">Group:sysadmins</attr>
+          </object>
+	</object>
+
+      </object>
+    </publish>
+  </xylophone>
+
+This will produce the following output:
+
+  dn: AuthList=My-authz-rules,mds-vo-name=resource,o=grid
+  AuthList: My-authz-rules
+  Operations: read
+  Operations: write
+  Operations: list
+  Operations: delete
+  Authorized: User:alice
+  Authorized: User:dick
+  Authorized: User:harry
+  Authorized: Group:sysadmins
+
+Some attributes have dynamic values.  Sometimes it is desirable to
+refrain from publishing an attribute if the result would be empty.
+Setting the not-empty attribute of an attr element to a non-zero value
+will result in that attribute being suppressed should its value be
+empty.  For example:
+
+  <?xml version="1.0" encoding="utf-8"?>
+  <xylophone>
+    <publish>
+
+      <!-- o=grid -->
+      <object rdn="example">
+        <attr name="example">suppress-empty</attr>
+	<attr name="first-empty"></attr>
+	<attr name="first-non-empty">non-empty</attr>
+	<attr not-empty="1" name="second-empty"></attr>
+	<attr not-empty="1" name="second-non-empty">non-empty</attr>
+      </object>
+    </publish>
+  </xylophone>
+
+This will produce the following output:
+
+  dn: example=suppress-empty
+  example: suppress-empty
+  first-empty:
+  first-non-empty: non-empty
+  second-non-empty: non-empty
+
+
+
+
+Classes.
+
+
+Objects may be a member of any number of (LDAP) classes by specifying
+them as a space-separated list within the classes attribute.  For
+example:
+
+  <?xml version="1.0" encoding="utf-8"?>
+  <xylophone>
+    <publish>
+
+      <!-- o=MyCompany -->
+      <object rdn="o" classes="InfoTop InfoCompany">
+        <attr name="o" hidden="1">MyCompany</attr>
+        <attr name="InfoCompanyRegisteredID">RJQ1212</attr>
+      </object>
+
+    </publish>
+  </xylophone>
+
+This produces the following output:
+
+  dn: o=MyCompany
+  objectClass: InfoTop
+  objectClass: InfoCompany
+  InfoCompanyRegisteredID: RJQ1212
+
+The classes can define additional attributes through the classes
+high-level object.
+
+  <?xml version="1.0" encoding="utf-8"?>
+  <xylophone>
+    <publish>
+
+      <!-- o=MyCompany -->
+      <object rdn="o" classes="InfoTop InfoCompany">
+        <attr name="o" hidden="1">MyCompany</attr>
+      </object>
+    </publish>
+
+    <classes>
+      <class name="InfoTop"/>
+
+      <class name="InfoCompany"> 
+        <attr name="InfoCompanyRegisteredID">RJQ1212</attr>
+      </class>
+    </classes>
+  </xylophone>
+
+This produces identical output to the previous example, but in this
+version, the "o=MyCompany" object has the InfoCompanyRegisteredID
+attribute by virtue of its membership of the InfoCompany class.
+
+The empty InfoTop class is included to demonstrate that it is
+acceptable to include an empty definition, as above.
+
+The value of an attribute declared within an XML class element is
+expanded in the same way as object-specific attributes (those declared
+as attr XML elements that are children of some object element).  These
+expansions are discussed in the following sections, where they are
+illustrated using object-specific attributes.  However, it's worth
+emphasising that the same expansions may be used for class-declared
+attributes.
+
+Sometimes different objects are members of the same class, but the
+attributes they should publish as a member of that class varies in a
+complex fashion.  To accommodate this, the publish-as attribute may be
+specified in the XML class declaration.
+
+To illustrate this, the following example describes several
+OrganisationalUnits within an Organisation.
+
+  <?xml version="1.0" encoding="utf-8"?>
+  <xylophone>
+    <publish>
+
+      <!-- o=MyCompany -->
+      <object rdn="o" hidden="1">
+        <attr name="o">MyCompany</attr>
+
+	<!-- "ou=Personnel,o=MyCompany" -->
+	<object rdn="ou" classes="Services-OUInfo">
+	  <attr name="ou">Personnel</attr>
+	</object>
+
+	<!-- "ou=Payroll,o=MyCompany" -->
+	<object rdn="ou" classes="Services-OUInfo">
+	  <attr name="ou">Payroll</attr>
+	</object>
+
+	<!-- "ou=Product-X,o=MyCompany" -->
+	<object rdn="ou" classes="ProdDev-OUInfo">
+	  <attr name="ou">Product-X</attr>
+	</object>
+
+	<!-- "ou=Product-Y,o=MyCompany" -->
+	<object rdn="ou" classes="ProdDev-OUInfo">
+	  <attr name="ou">Product-Y</attr>
+	</object>
+
+	<!-- "ou=BlueSkies,o=MyCompany" -->
+	<object rdn="ou" classes="ProdDev-OUInfo">
+	  <attr name="ou">BlueSkies</attr>
+	</object>
+
+	<!-- "ou=USASalesTeam,o=MyCompany" -->
+	<object rdn="ou" classes="Sales-OUInfo">
+	  <attr name="ou">USASalesTeam</attr>
+	</object>
+
+	<!-- "ou=EuropeanSalesTeam,o=MyCompany" -->
+	<object rdn="ou" classes="Sales-OUInfo">
+	  <attr name="ou">EuropeanSalesTeam</attr>
+	</object>
+
+      </object>
+    </publish>
+
+
+    <classes>
+      <class name="Services-OUInfo" publish-as="OUInfo">
+        <attr name="OUInfoType">001</attr>
+        <attr name="OUInfoTypeName">Services</attr>
+      </class>
+
+      <class name="ProdDev-OUInfo" publish-as="OUInfo">
+        <attr name="OUInfoType">002</attr>
+	<attr name="OUInfoTypeName">Product development</attr>
+      </class>
+
+      <class name="Sales-OUInfo" publish-as="OUInfo">
+        <attr name="OUInfoType">003</attr>
+	<attr name="OUInfoTypeName">Sales</attr>
+      </class>
+    </classes>
+  </xylophone>
+
+This generates the following output:
+
+  dn: ou=Personnel,o=MyCompany
+  objectClass: OUInfo         
+  OUInfoType: 001             
+  OUInfoTypeName: Services    
+  ou: Personnel               
+
+  dn: ou=Payroll,o=MyCompany
+  objectClass: OUInfo       
+  OUInfoType: 001           
+  OUInfoTypeName: Services  
+  ou: Payroll               
+
+  dn: ou=Product-X,o=MyCompany
+  objectClass: OUInfo         
+  OUInfoType: 002             
+  OUInfoTypeName: Product development
+  ou: Product-X                      
+
+  dn: ou=Product-Y,o=MyCompany
+  objectClass: OUInfo
+  OUInfoType: 002
+  OUInfoTypeName: Product development
+  ou: Product-Y
+
+  dn: ou=BlueSkies,o=MyCompany
+  objectClass: OUInfo
+  OUInfoType: 002
+  OUInfoTypeName: Product development
+  ou: BlueSkies
+
+  dn: ou=USASalesTeam,o=MyCompany
+  objectClass: OUInfo
+  OUInfoType: 003
+  OUInfoTypeName: Sales
+  ou: USASalesTeam
+
+  dn: ou=EuropeanSalesTeam,o=MyCompany
+  objectClass: OUInfo
+  OUInfoType: 003
+  OUInfoTypeName: Sales
+  ou: EuropeanSalesTeam
+
+Please note there are two limitations with the current support for
+classes in Xylophone:
+
+First, classes in Xylophone are flat.  Unlike with LDAP, the XML
+structure file format has no concept of one class inheriting
+attributes from another class.  Each class is independent of the
+others.
+
+Second, in LDAP an object's membership of a class dictates which
+attributes may be present, which must be present and are the valid
+values attributes may take.  None of that information is captured with
+the above XML; any arbitrary collection of attributes may be included
+in class definitions.
+
+
+
+
+Constants.
+
+
+Constants are places where direct literal substitutions can take
+place.  Using constants is completely optional, the same output can be
+obtained by substituting the content directly; however, constants are
+useful to express how the LDAP structure might be customised and to
+normalise information if a value is repeated in different locations.
+
+Constants are defined within the constants high-level XML element and
+each must have a unique ID.  Their content can then be referred to
+within the publish high-level element by their ID.
+
+For example:
+
+  <?xml version="1.0" encoding="utf-8"?>
+  <xylophone>
+    <constants>
+      <constant id="my-name">Fred Flintstone</constant>
+    </constants>
+
+    <publish>
+      <object rdn="tree" hidden="1">
+        <attr name="tree">test</attr>
+
+        <object rdn="FQDN">
+           <attr name="FQDN">www.example.org</attr>
+           <attr name="Owner"><constant id="my-name"/></attr>
+        </object>
+
+        <object rdn="FQDN">
+           <attr name="FQDN">db-server.example.org</attr>
+           <attr name="Owner"><constant id="my-name"/></attr>
+        </object>
+
+      </object>
+    </publish>
+  </xylophone>
+
+This will produce the following output:
+
+  dn: FQDN=www.example.org,tree=test
+  FQDN: www.example.org
+  Owner: Fred Flintstone
+
+  dn: FQDN=db-server.example.org,tree=test
+  FQDN: db-server.example.org
+  Owner: Fred Flintstone
+
+
+
+
+Altering string data.
+
+
+It is often useful to change one string into another in a controlled
+fashion.  A map is a named sequence of potential changes.  This are
+all applied, in turn, to a source string.  Any number of the
+transitions may be triggered, resulting in a different string.
+
+Within the map definition three main operations are provided: sub,
+remove and translate, and an optional default can be specified.
+
+A sub element describes how one string sequence is replaced by
+another.  The match attribute describes the substring to match and the
+replace-with attribute describes which element to substitute.  All
+complete occurrences are replaced in order, so the following
+declaration:
+
+        <sub match="murmur" replace-with="whisper"/>
+
+will replace "murmurmur" with "whispermur" and "murmurmurmur" with
+"whisperwhisper".
+
+A remove element results in those matching characters being removed
+from the string, reducing the string's length.  The chars attribute
+lists those characters that are to be removed.  For example:
+
+        <remove chars="aeiou"/>
+
+will replace "murmur" with "mrmr".
+
+A translate element alters the characters in a string without reducing
+the string's length.  The mode attribute can be set to one three
+possible values: to-lower, to-upper and convert; if the mode attribute
+is not set, the convert mode is used as the default.
+
+Both to-lower and to-upper modes require no additional attributes.
+They convert the string to use completely lower-case letters and
+upper-case letters respectively.
+
+The convert mode requires two additional attributes: from and to.
+These attributes should be the same length.  Any occurrence of a
+character in the from attribute is replaced by the corresponding
+character in the to attribute.  If a character is repeated in the from
+attribute, the first occurrence is used and the latter ones ignored.
+
+If a default element is specified, its value is used when no sub
+elements match.  The default value can be specified either by
+including a value attribute (only for constant default values) or as
+the contents within the default element.  If the latter is chosen and
+the default element contains an item element, the item element is
+replaced by the original (non-matching) text.  For example:
+
+  <?xml version="1.0" encoding="utf-8"?>
+
+  <xylophone>
+    <mapping>
+      <map name="userid-to-username">
+        <sub match="fred" replace-with="Fred Flintstone"/>
+        <!-- other <sub/> elements may be included here -->
+        <default value="An unknown user"/>
+      </map>
+    </mapping>
+  </xylophone>
+
+or, to include the name of the unknown user:
+
+  <?xml version="1.0" encoding="utf-8"?>
+
+  <xylophone>
+    <mapping>
+      <map name="userid-to-username">
+        <sub match="fred" replace-with="Fred Flintstone"/>
+        <!-- Other <sub/> elements here -->
+        <default>Unknown user: <item/></default>
+      </map>
+    </mapping>
+  </xylophone>
+  
+The following example demonstrates the features of maps:
+
+  <?xml version="1.0" encoding="utf-8"?>
+
+  <xylophone>
+    <publish>
+      <object rdn="tree">
+        <attr name="tree">test</attr>
+        <attr name="Username"><map name="userid-to-username">fred</map></attr>
+        <attr name="Username"><map name="userid-to-username">barney</map></attr>
+        <attr name="Username"><map name="userid-to-username">joe</map></attr>
+        <attr name="Username"><map name="userid-to-username">wilma</map></attr>
+        <attr name="Example"><map name="contrived">beethoven</map></attr>
+      </object>
+    </publish>
+
+    <mapping>
+      <map name="userid-to-username">
+        <sub match="fred" replace-with="Fred Flintstone"/>
+        <sub match="barney" replace-with="Barney Rubble"/>
+        <sub match="joe" replace-with="Joe Rockhead"/>
+        <default>Unknown user: <item/></default>
+      </map>
+
+      <map name="contrived">
+        <sub match="oven" replace-with="stove"/>
+        <remove chars="aeiou"/>
+        <translate mode="to-upper"/>
+        <sub match="STV" replace-with="stv"/>
+      </map>
+    </mapping>
+  </xylophone>
+
+
+This gives the following output
+
+  dn: tree=test
+  tree: test
+  Username: Fred Flintstone
+  Username: Barney Rubble
+  Username: Joe Rockhead
+  Username: Unknown user: wilma
+  Example: BTHstv
+
+
+
+
+Providing the sum of numerical data.
+
+
+Numerical data can be added together using the sum element.  Any fixed
+number of term elements can be included within the sum element, which
+are added together; for example:
+
+  <?xml version="1.0" encoding="utf-8"?>
+
+  <xylophone>
+    <publish>
+      <object rdn="tree">
+        <attr name="tree">test</attr>
+        <attr name="sum">
+          <sum>
+            <term>10</term>
+            <term>20</term>
+            <term>30</term>
+          </sum>
+        </attr>
+      </object>
+    </publish>
+  </xylophone>
+
+This will produce the following output:
+
+  dn: tree=test
+  sum: 60
+
+
+
+
+Scaling numerical data
+
+
+It is possible to scale numerical data.  This is typically useful for
+converting from one units to another (B to kiB or MiB).  For example:
+
+  <?xml version="1.0" encoding="utf-8"?>
+
+  <xylophone>
+    <publish>
+      <object rdn="tree">
+        <attr name="tree">test</attr>
+        <attr name="Capacity">
+          <scale factor="bytes-to-kibibytes">2000</scale>
+        </attr>
+      </object>
+    </publish>
+
+    <scale>
+      <factor name="bytes-to-kibibytes" mode="divide">1024</factor>
+    </scale>
+  </xylophone>
+
+This produces the following output:
+
+  dn: tree=test
+  tree: test
+  Capacity: 1.953125
+
+The factor XML elements (children of the scale high-level XML element)
+may have a mode attribute of either "multiply" or "divide", indicating
+how the given number should be applied.
+
+If the result of scaling should be converted into an integer, the
+to-integer attribute within the scale element is specified.  This
+attribute's value must be either "floor", "ceiling" or "round".
+
+    floor   -- largest integer less than the number ("round down"),
+    ceiling -- smallest integer greater than the number ("round up"),
+    round   -- if number - floor(number) < 0.5, then floor, otherwise 
+               ceiling ("round").
+
+  <?xml version="1.0" encoding="utf-8"?>
+
+  <xylophone>
+    <publish>
+      <object rdn="class" hidden="1">
+        <attr name="class">examples</attr>
+
+	<object rdn="example">
+          <attr name="example">1</attr>
+          <attr name="Capacity">
+            <scale factor="bytes-to-kibibytes">2000</scale>
+          </attr>
+          <attr name="round">
+            <scale factor="bytes-to-kibibytes"
+	           to-integer="round">2000</scale>
+          </attr>
+          <attr name="floor">
+            <scale factor="bytes-to-kibibytes"
+	           to-integer="floor">2000</scale>
+          </attr>
+          <attr name="ceiling">
+            <scale factor="bytes-to-kibibytes"
+	           to-integer="ceiling">2000</scale>
+          </attr>
+        </object>
+
+	<object rdn="example">
+          <attr name="example">2</attr>
+          <attr name="Capacity">
+            <scale factor="bytes-to-kibibytes">1500</scale>
+          </attr>
+          <attr name="round">
+            <scale factor="bytes-to-kibibytes"
+	           to-integer="round">1500</scale>
+          </attr>
+          <attr name="floor">
+            <scale factor="bytes-to-kibibytes"
+	           to-integer="floor">1500</scale>
+          </attr>
+          <attr name="ceiling">
+            <scale factor="bytes-to-kibibytes"
+	           to-integer="ceiling">1500</scale>
+          </attr>
+        </object>
+      </object>
+    </publish>
+
+    <scale>
+      <factor name="bytes-to-kibibytes" mode="divide">1024</factor>
+    </scale>
+  </xylophone>
+
+This produces the following output:
+
+  dn: example=1,class=examples
+  example: 1
+  Capacity: 1.953125
+  round: 2
+  floor: 1
+  ceiling: 2
+  
+  dn: example=2,class=examples
+  example: 2
+  Capacity: 1.46484375
+  round: 1
+  floor: 1
+  ceiling: 2
+
+
+
+
+Repetitions based on lists.
+
+
+Sometimes it is desirable to declare multiple objects or multiple
+attributes that have only small changes between them.  To achieve
+this, one can define a list and refer to that list.  Lists are defined
+in the lists high-level element and have a unique name.
+
+The attr and object elements can take this list name as the list
+attribute.  The object or attribute is repeated for each item in the
+named list.
+
+There is a special element: item.  If present, this is replaced by the
+current item from the list
+
+For example:
+
+  <?xml version="1.0" encoding="utf-8"?>
+  <xylophone>
+    <publish>
+
+      <!-- o=grid -->
+      <object rdn="o" hidden="1">
+        <attr name="o">grid</attr>
+
+        <!-- mds-vo-name=resource,o=grid -->
+        <object rdn="mds-vo-name" hidden="1">
+          <attr name="mds-vo-name">resource</attr>
+
+	  <!-- AuthList=My-authz-rules,mds-vo-name=resource,o=grid -->
+          <object rdn="AuthList">
+            <attr name="AuthList">My-authz-rules</attr>
+	    <attr name="Operations" list="all-operations"><item/></attr>
+            <attr name="Authorized" list="extra-sysadmins">User:<item/></attr>
+	    <attr name="Authorized">Group:sysadmins</attr>
+          </object>
+	</object>
+
+      </object>
+    </publish>
+
+    <lists>
+      <list name="extra-sysadmins">
+        <item>alice</item>
+        <item>dick</item>
+        <item>harry</item>
+      </list>
+
+      <list name="all-operations">
+        <item>read</item>
+        <item>write</item>
+        <item>list</item>
+        <item>delete</item>
+      </list>
+    </lists>
+  </xylophone>
+
+This produces the following output:
+
+  dn: AuthList=My-authz-rules,mds-vo-name=resource,o=grid
+  AuthList: My-authz-rules
+  Operations: read
+  Operations: write
+  Operations: list
+  Operations: delete
+  Authorized: User:alice
+  Authorized: User:dick
+  Authorized: User:harry
+  Authorized: Group:sysadmins
+
+Although not recommended, it is also possible to include the item
+within the attribute itself by including the word item, in capitals
+and in square brackets (i.e., "[ITEM]").
+
+Lists can also be used to specifying repeated object declarations.
+The item element is expanded, as before, allowing each object to be
+specialised.  This, together with mapping, allow for powerful
+declarations; for example:
+
+  <?xml version="1.0" encoding="utf-8"?>
+  <xylophone>
+    <publish>
+
+      <!-- tree=test -->
+      <object rdn="tree" hidden="1">
+        <attr name="tree">test</attr>
+
+        <!-- user=ID,tree=test -->
+        <object rdn="UserID" list="userid">
+	  <attr name="UserID"><item/></attr>
+
+	  <attr name="Name">
+	    <map name="userid-to-name">
+	      <item/>
+	    </map>
+	  </attr>
+
+	  <attr name="Phone">
+	    <map name="userid-to-phone-extension">
+	      <item/>
+	    </map>
+	  </attr>
+	</object>
+
+      </object>
+    </publish>
+
+    <lists>
+      <list name="userid">
+        <item>fred</item>
+        <item>barney</item>
+        <item>joe</item>
+	<item>wilma</item>
+      </list>
+    </lists>
+
+    <mapping>
+      <map name="userid-to-name">
+        <sub match="fred" replace-with="Fred Flintstone"/>
+        <sub match="wilma" replace-with="Wilma Flintstone"/>
+        <sub match="barney" replace-with="Barney Rubble"/>
+        <sub match="joe" replace-with="Joe Rockhead"/>
+        <default>Unknown user: <item/></default>
+      </map>
+
+      <map name="userid-to-phone-extension">
+        <sub match="fred" replace-with="5132"/>
+        <sub match="wilma" replace-with="3152"/>
+        <sub match="barney" replace-with="1298"/>
+        <sub match="joe" replace-with="7420"/>
+        <default>Unknown number for: <item/></default>
+      </map>
+    </mapping>
+  </xylophone>
+
+This will produce the following LDIF:
+
+  dn: UserID=fred,tree=test
+  UserID: fred
+  Name: Fred Flintstone
+  Phone: 5132
+
+  dn: UserID=barney,tree=test
+  UserID: barney
+  Name: Barney Rubble
+  Phone: 1298
+
+  dn: UserID=joe,tree=test
+  UserID: joe
+  Name: Joe Rockhead
+  Phone: 7420
+
+  dn: UserID=wilma,tree=test
+  UserID: wilma
+  Name: Wilma Flintstone
+  Phone: 3152
+
+
+
+
+Adding dynamic data into output
+
+
+The lookup XML element allows individual data to be extracted from a
+separate XML document (providing "dynamic" information), which can be
+any well-formed XML file.  Elements of this dynamic file may be
+included within the LDAP output by specifying the correct lookup
+element.
+
+It is perfectly valid for a Xylophone XML document (which describes
+how the LDAP is formatted) to have no lookup elements.  If this is so,
+the output from that document is always the same.
+
+The location of the dynamic content can be specified using the
+xml-src-uri parameter.  How to specifying this XSLT parameter will
+depend on the XSLT processor being used.  For xsltproc, the parameter
+is specified by stringparam parameter:
+
+  xsltproc -stringparam xml-src-uri dynamic.xml ../xsl/xylophone.xsl \
+           structure.xml
+
+where dynamic.xml is the arbitrary dynamic XML file, xylophone.xsl is
+the (top-level) Xylophone XSLT style-sheet and structure.xml is the XML
+file describing how to publish data as LDIF.  If no xml-src-uri
+parameter is specified, a default value of 'dynamic.xml' is used.
+
+The value of xml-src-uri is a URI.  The XSLT processor may support a
+number of different URI schemes, such as HTTP.  If it does support
+HTTP, then the dynamic XML data may be downloaded by specifying the
+correct URI for the XML data:
+
+  xsltproc -stringparam xml-src-uri http://www.example.org/data \
+           ../xsl/xylophone.xsl structure.xml
+
+To locate the information that should be included, a path describing
+the information's location within the dynamic file must be specified.
+This path may be specified as the path attribute of lookup, or be
+provided within the lookup element; for example, both
+
+  <lookup path="/animals/animal/name"/>
+
+and
+
+  <lookup>/animals/animal/name</lookup>
+
+will always produce identical output.
+
+If the dynamic file contains:
+
+  <?xml version="1.0" encoding="utf-8"?>
+
+  <animals>
+    <animal class="bird">
+      <type>African Grey</type>
+      <name>Polly</name>
+    </animal>
+
+    <animal class="bird">
+      <type>Budgerigar</type>
+      <name>Bill</name>
+    </animal>
+
+    <animal class="snake">
+      <type>Ball Python</type>
+      <name>Fred</name>
+    </animal>
+
+    <animal class="dog">
+      <type>Labrador</type>
+      <name>Dexter</name>
+      <colour>Black</colour>
+    </animal>
+  </animals>
+
+then a lookup XML element with path "/animals/animal/name"
+
+  <lookup path="/animals/animal/name"/>
+
+will be replaced with the string "Polly".
+
+Additional constrains are allowed, in square brackets.  The following
+path selects the name of the third animal:
+
+  <lookup path="/animals/animal[3]/name"/>
+
+The following selects the name of the first bird:
+
+  <lookup path="/animals/animal[class=bird]/name"/>
+
+The following selects the second bird
+
+  <lookup path="/animals/animal[class=bird][2]/name"/>
+
+As a special case, if the last path component with a '@' then the
+lookup element selects the attribute with the same name.  So,
+
+  <lookup path="/animals/animal/@class"/>
+
+returns the class of the first animal.
+
+
+
+
+Repeating objects and attributes based on dynamic XML.
+
+
+As with lists, the dynamic XML file may be used to trigger declaring
+repeated objects or attributes.  In this case the select attribute is
+used instead of the list attribute.
+
+Unlike with lists, when declaring multiple objects or attributes, the
+lookup XML element is used to include instance-specific information.
+If the path does not start with a slash, the position is taken
+relative to the element within the dynamic file.
+
+So, with the above data (stored as the dynamic XML file dynamic.xml),
+the following will generate an LDAP object for each animal:
+
+  <?xml version="1.0" encoding="utf-8"?>
+
+  <xylophone>
+    <publish>
+      <object rdn="group" hidden="1">
+        <attr name="group">pet</attr>
+
+        <object rdn="Name" select="/animals/animal">
+          <attr name="Name"><lookup path="name"/></attr>
+          <attr name="Class"><lookup path="@class"/></attr>
+          <attr name="Type"><lookup path="type"/></attr>
+          <attr name="Colour" not-empty="1"><lookup path="colour"/></attr>
+        </object>
+      </object>
+    </publish>
+  </xylophone>
+
+This gives the following output:
+
+  dn: Name=Polly,group=pet
+  Name: Polly
+  Class: bird
+  Type: African Grey
+  
+  dn: Name=Bill,group=pet
+  Name: Bill
+  Class: bird
+  Type: Budgerigar
+  
+  dn: Name=Fred,group=pet
+  Name: Fred
+  Class: snake
+  Type: Ball Python
+  
+  dn: Name=Dexter,group=pet
+  Name: Dexter
+  Class: dog
+  Type: Labrador
+  Colour: black
+
+Again, using the above example file, the following will generate an
+attribute for each animal:
+
+  <?xml version="1.0" encoding="utf-8"?>
+
+  <xylophone>
+    <publish>
+      <object rdn="group">
+        <attr name="group">pets</attr>
+	<attr name="Name" select="/animals/animal"><lookup path="name"/></attr>
+      </object>
+    </publish>
+  </xylophone>
+
+giving the following output:
+
+  dn: group=pets
+  group: pets
+  Name: Polly
+  Name: Bill
+  Name: Fred
+  Name: Dexter
+
+A lookup XML elements may have a default value.  This is used when the
+lookup fails to locate any matches, for whatever reason.  The default
+can be specified in one of two ways: either by specifying the default
+XML attribute, or by marking up the default inside the lookup and
+specifying the child XML attribute has a value of 'default'.  If no
+default is specified, a lookup that fails to locate data will expand
+to an empty string.
+
+So, there are three ways of looking up a particular element within a
+dynamic XML file and, should that value not be found, using zero as a
+default value:
+
+1. using a static path with static default value:
+
+  <lookup default="0" path="/test/element[1]"/>
+
+2. using a computed path with static default.  The child XML
+   attribute value is not necessary:
+
+  <lookup default="0" child="path">/test/element[1]<lookup/>
+
+3. using a static path and computed default value:
+
+  <lookup child="default" path="/test/element[1]">0<lookup/>
+
+
+
+
+
+Suppressing or allowing list items.
+
+
+There may be occasions where it is easier to specify that all items on
+a list, except for those matching a specific condition, are to be
+published.
+
+An object XML element may have any number of suppress XML elements.
+Each suppress element describes a predicate that, if satisfied, will
+prevent the object from being published.  Unlike with an object's
+hidden attribute, a suppressed object will also prevent the publishing
+of any child LDAP objects.
+
+A suppress XML element must have a test XML attribute and may have a
+check XML attribute.  The check attribute, if specified, must be one
+of the following: 'equals', 'starts-with', 'ends-with' or 'contains'.
+If no check attribute is specified then 'equals' is assumed.  The
+check attribute describes how the compare the contents with the value
+contained as the test attribute: 'equals' requires both to be
+identical before the object is suppressed, 'starts-with' requires that
+the string is the same size as test attribute value or longer and that
+the first characters match, etc.
+
+Each of the following would result in the object being suppressed:
+
+  <suppress test="beethoven">beethoven</suppress>
+  <suppress test="beethoven" check="equals">beethoven</suppress>
+  <suppress test="beet" check="starts-with">beethoven</suppress>
+  <suppress test="ven" check="ends-with">beethoven</suppress>
+  <suppress test="thov" check="contains">beethoven</suppress>
+
+This is perhaps most useful when evaluating a list, perhaps in
+combination with a map, and not all items on the list should be
+included.
+
+  <?xml version="1.0" encoding="utf-8"?>
+
+  <xylophone>
+    <publish>
+      <object rdn="group" hidden="1">
+        <attr name="group">pets-not-birds</attr>
+
+        <object rdn="Name" select="/animals/animal">
+          <attr name="Name"><lookup path="name"/></attr>
+          <attr name="Class"><lookup path="@class"/></attr>
+          <attr name="Type"><lookup path="type"/></attr>
+          <attr name="Colour" not-empty="1"><lookup path="colour"/></attr>
+
+          <!-- Exclude all birds -->
+          <suppress test="bird"><lookup path="@class"/></suppress>
+        </object>
+      </object>
+    </publish>
+  </xylophone>
+
+This produces the following output:
+
+  dn: Name=Fred,group=pets-not-birds
+  Name: Fred
+  Class: snake
+  Type: Ball Python
+  
+  dn: Name=Dexter,group=pets-not-birds
+  Name: Dexter
+  Class: dog
+  Type: Labrador
+  Colour: black
+
+It is also possible to, by default, not publish objects and choose
+which ones to publish using the allow XML element by assigning the
+select-mode attribute to have value 'default-suppress'.  Objects are
+then only published if an allow element passes.  The allow elements
+have the same form as the suppress elements.
+
+  <?xml version="1.0" encoding="utf-8"?>
+
+  <xylophone>
+    <publish>
+      <object rdn="group" hidden="1">
+        <attr name="group">birds</attr>
+
+        <object rdn="Name"
+                select="/animals/animal"
+	        select-mode="default-suppress">
+          <attr name="Name"><lookup path="name"/></attr>
+          <attr name="Type"><lookup path="type"/></attr>
+          <attr name="Colour" not-empty="1"><lookup path="colour"/></attr>
+
+          <!-- Allow only birds -->
+          <allow test="bird"><lookup path="@class"/></allow>
+        </object>
+      </object>
+    </publish>
+  </xylophone>
+
+This produces the following output:
+
+  dn: Name=Polly,group=birds
+  Name: Polly
+  Type: African gray
+  
+  dn: Name=Bill,group=birds
+  Name: Bill
+  Type: Budgerigar

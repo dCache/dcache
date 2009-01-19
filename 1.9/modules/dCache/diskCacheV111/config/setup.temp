@@ -1,0 +1,41 @@
+#
+# Created by dcache_1(diskCacheV111.pools.MultiProtocolPool2) at Tue Nov 02 11:25:00 CET 2004
+#
+set max diskspace 100g
+set heartbeat 30
+set sticky allowed
+set report remove on
+set breakeven 0.7
+set gap 4294967296
+set duplicate request none
+set p2p separated
+#
+# Flushing Thread setup
+#
+flush set max active 1000
+flush set interval 60
+flush set retry delay 60
+#
+# HsmStorageHandler2(diskCacheV111.pools.HsmStorageHandler2)
+#
+rh set max active 0
+st set max active 0
+rh set timeout 14400
+st set timeout 14400
+# hsm set osm -hsmBase=/work/data/nfs/qcdperm
+# hsm set osm -pnfs=/pnfs/fs
+# hsm set osm -command=/opt/d-cache/jobs/hsmcpV4.sh
+#
+# Nothing from the diskCacheV111.pools.SpaceSweeper0#
+mover set max active 10
+p2p set max active 10
+#
+#  Pool to Pool (P2P) [$Id: setup.temp,v 1.7 2007-03-21 14:11:42 radicke Exp $]
+#
+pp set port 0
+pp set max active 10
+jtm set timeout -queue=io -lastAccess=0 -total=0
+jtm set timeout -queue=p2p -lastAccess=0 -total=0
+csm set checksumtype adler32
+csm set policy -frequently=off
+csm set policy -onread=off -onwrite=on -onrestore=off -ontransfer=off -enforcecrc=on -getcrcfromhsm=off

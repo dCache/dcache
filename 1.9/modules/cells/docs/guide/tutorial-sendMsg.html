@@ -1,0 +1,158 @@
+<html>
+<head><title>Tutorial : Exchanging Messages</title></head>
+<body bgcolor=white>
+<center><h1>Exchanging Messages</h1></center>
+
+<h3>Sending a message to a wellknown cell</h3>
+<blockquote>
+To exchange messages, you need
+<ul>
+<li>the message, which can be any object which implements
+    <em>java.io.Serializable</em>.
+<li>the <em>dmg.cells.nucleus.CellPath</em> to the destination cell.
+    The easiest way to construct the CellPath to the destination is
+    <pre>
+    CellPath path = new CellPath( "&lt;destinationCellName&gt;" ) ;
+    </pre>
+</ul>
+A typical codelet to send an argument list to 
+a server cell ( let's say 'anyServer' ) would look like :
+<pre>
+   CellPath path = new CellPath( "anyServer" ) ;
+   
+   Object [] argList = new Object[3] ;
+   
+   argList[0] = "set-request" ;
+   argList[1] = "timeout" ;
+   argList[2] = new Integer(2000) ;
+   
+   <strong>CellMessage message = new CellMessage( path , argList ) ;</strong>
+   try{
+      <strong>sendMessage( message ) ;</strong>
+      say( "Message ID : "+message.getUOID() ) ;
+   }catch( Exception e ){
+      esay( "Got an exception : "+e ) ;
+   }
+</pre>
+The <em>CellPath</em> 'path' is generated  and the message object 'argList'.
+Both is combined to create the <em>CellMessage</em>.
+The CellMessage is send by <em>sendMessage</em>.
+There are mainly two types of exceptions which can occure.
+<ul>
+<li>The message object 'argList' or parts of it, is not 
+    serializable. (NotSerializableException)
+<li>The destination path doesn't exist or is not reachable.
+    <a href=../api/dmg/cells/nucleus/NoRouteToCellException.html>
+    dmg.cells.nucleus.NoRouteToCellException</a>.
+</ul>
+After the call to <em>sendMessage</em> the 'message' object
+contains an UnifiedObjectIdentifier
+<a href=../api/dmg/cells/nucleus/UOID.html>dmg.cells.nucleus.UOID</a>.
+This <em>UOID</em> can be used to identify the answer which may expected
+from the server.
+</blockquote>
+<h3>Receiving Messages</h3>
+<blockquote>
+The <em>CellAdapter</em> provides a member function with needs to
+be overwritten to receive messages : 
+<pre>
+<strong>messageArrived( CellMessage message )</strong>
+</pre>
+The <em>messageArrived</em> method is called in a seprarated
+thread. The argument is the
+<a href=../api/dmg/cells/nucleus/CellMessage>
+dmg.cells.nucleus.CellMessage
+</a>.
+The <em>CellMessage</em> can be inspected to get the
+source path and the message object.
+<pre>
+public void messageArrived( CellMessage message ){
+
+   CellPath  sourcePath = <strong>message.getSourcePath() ;</strong>
+   Object    obj        = <strong>message.getMessageObject() ;</strong>
+   Object [] array      = (Object []) obj ;
+   String    reqType    = (String) array[0] ;
+   say( "Request received from : "+sourcePath ) ;
+   say( "Request type          : "+reqType ) ;
+
+}
+</pre>
+</blockquote>
+<h3>Replying a message</h3>
+<blockquote>
+In most cases, a server cell is not interested in the source of a
+request it has to process. So the <em>CellMessage</em> provides 
+mechanisms to easily return the answer to the sender.
+Extending the example from above, the message object might
+by changed.
+<pre>
+   array[0] = "set-answer" ;
+   array[1] = "O.K." ;
+   arrry[2] = null ;
+</pre>
+Because the <em>message.getMessageObject()</em> returns a reference
+to the original message ( and not a copy ) a modification of <em>array</em>
+changes the object which we need to send back.
+<p>
+The <em>message.setMessageObject</em> method allows to reply a 
+totally different object.
+<pre>
+   Vector vec = new Vector() ;
+   vec.add( "set-answer" ) ;
+   vec.add( "O.K." ) ;
+   <strong>message.setMessageObject( vec ) ; </strong>
+</pre>
+To actually send the message  back, the direction has to be
+reverted first.
+<pre>
+   <strong>message.revertDirection() ;</strong>
+   
+   try{
+   
+      <strong>sendMessage( message ) ;</strong>
+      
+      say( "Message ID : "+message.getUOID() ) ;
+   }catch( Exception e ){
+      esay( "Got an exception : "+e ) ;
+   }
+
+    
+}
+</pre>
+A new <em>UOID</em> is assigned to the message, but the
+original <em>UOID</em> can be obtained by the new destination,
+the former source, by calling the <em>message.getLastUOID()</em>
+method.
+</blockquote>
+<h3>Examples</h3>
+<blockquote>
+The <a href=tutorial-sendMsg-e.html>XchangeMessage.java</a> example
+can be started as client or as server, depending on the number of arguments. 
+Without arguments it's a server. Providing one or more arguments
+lets it become a client. The first argument is the
+destination, which is the name of the serverCell and the second, optional 
+argument is the number of seconds between two requests.
+In addition the example code shows how to use arguments when starting
+a cell.
+Copy the code into a file named XchangeMessage.java, compile
+it and run it within the standard domain as described in 
+<a href=tutorial-firstCell.html>My First Cell</a>.
+Log into the domain and start a server and two clients.
+<pre>
+create XchangeMessage pingServer
+create XchangeMessage clientA   pingServer
+create XchangeMesssge clientB  "pingServer  4"
+</pre>
+Try to find out what happens if you kill the
+<em>PingServer</em>.<p>
+Because a client is as well a server, you may create a chain of
+ping cells.
+<pre>
+create XchangeMessage serverOnly
+create XchangeMessage clientServer  serverOnly
+create XchangeMessage clientOnly    clientServer
+</pre>
+</blockquote>
+
+</body>
+</html>

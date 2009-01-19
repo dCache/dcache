@@ -1,0 +1,49 @@
+#bird_small
+{
+  float: left;
+}
+
+#bird_large
+{
+  display: none;
+}
+
+h1, h2
+{
+  text-align: center;
+  color: blue;
+}
+
+table
+{
+  width: auto;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+tr.total th, tr.total td
+{
+  background: #0000FF;
+  color: white;
+}
+
+a
+{
+  color: white;
+}
+
+.action
+{
+  width: 40%;
+}
+
+.count, .failures
+{
+  width: 30%;
+}
+
+.pool_pool, p.ool_storageclass, .pool_transfers, 
+.pool_restores, .pool_stores, .pool_errors
+{
+  width: 20%;
+}

@@ -1,0 +1,47 @@
+#
+# $Id: infoProvider.batch,v 1.2 2005-10-27 14:21:47 patrick Exp $
+#
+
+set printout default 3
+set printout CellGlue none
+
+onerror shutdown 
+
+#
+check -strong setupFile
+#
+copy file:${setupFile} context:setupContext
+#
+#  import the variables into our $context.
+#  don't overwrite already existing variables.
+#
+import context -c setupContext 
+#
+#   Make sure we got what we need.
+#
+check -strong serviceLocatorHost serviceLocatorPort
+
+create dmg.cells.services.RoutingManager  RoutingMgr
+
+create dmg.cells.services.LocationManager lm \
+     "${serviceLocatorHost} ${serviceLocatorPort}"
+
+#
+#          /**
+#            * 
+#            *  USAGE :
+#            *     -schema=SCHEMA_TYPE
+#            *     -interval=SLEEP_IN_SECONDS   #  default = 60 seconds
+#            *     -listenPort=TCP_LISTEN_PORT  #  default = 22111
+#            *
+#            */
+#
+create  org.dcache.services.infoProvider.InfoCollector InfoCollector \
+         "default   \
+          -export   \
+#         -schema=org.dcache.services.infoCollector.GlueSchemaV1_2  \
+#         -interval=60   \
+#         -listenPort=22111 \
+"
+#
+#

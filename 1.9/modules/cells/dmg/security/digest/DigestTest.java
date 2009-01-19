@@ -1,0 +1,61 @@
+package dmg.security.digest ;
+
+public class DigestTest {
+
+  static public String byteToHexString( byte b ) {
+       String s = Integer.toHexString( ( b < 0 ) ? ( 256 + (int)b ) : (int)b  ) ;
+       if( s.length() == 1 )return "0"+s ;
+       else return s ;
+  }
+  static public String byteToHexString( byte [] b ) {
+      
+	  StringBuilder sb = new StringBuilder(b.length +1);
+	  
+       for( int i = 0 ; i < b.length ; i ++ ) {
+          sb.append(byteToHexString( b[i] ) ).append(" " ) ;
+       }
+       return sb.toString() ;    
+  }
+  private static String _use = "DigestTest crc32|zipcrc32|md5  <data>" ;
+  
+  public static void main( String [] args ){
+     if( args.length < 1 ){
+        System.out.println( " Usage : "+_use ) ;
+        System.exit(2) ;
+     }
+     String  type = args[0] ;
+     byte [] data = args[1].getBytes() ;
+     MsgDigest digest = null ;
+     if( type.equals( "crc32" ) ){
+        digest = new Crc32() ;
+     }else if( type.equals( "zipcrc32" ) ){
+        digest = new ZipCrc32() ;
+     }else if( type.equals( "md5" ) ){
+        try{
+            digest = new Md5() ;
+        }catch( Exception e ){
+           System.out.println( " Exception  : "+ e ) ;
+        }
+     }else{
+        try{
+            digest = new GenDigest( type ) ;
+        }catch( Exception e ){
+           System.out.println( " Exception  : "+ e ) ;
+           System.out.println( " Usage : "+_use ) ;
+           System.exit(2) ;
+        }
+     }
+     
+     digest.update( data  ) ;
+     
+     byte [] res = digest.digest() ;
+     
+     System.out.println( " Data   : "+args[1] ) ;
+     System.out.println( " Type   : "+type ) ;
+     System.out.println( " Result : "+byteToHexString( res ) ) ;
+     
+  
+  }
+
+
+}

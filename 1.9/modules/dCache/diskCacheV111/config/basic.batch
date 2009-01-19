@@ -1,0 +1,289 @@
+set printout default 3
+set printout CellGlue none
+onerror shutdown
+#
+#
+#
+check -strong dcacheHome
+set context config    ${dcacheHome}/config/devel
+set context setupFile ${config}/dCacheSetup
+
+#
+copy file:${setupFile} context:setupContext
+#
+#  import the variables into our $context.
+#  don't overwrite already existing variables.
+#
+import context -c setupContext
+echo "IMAGES : ${images}"
+#
+#   Make sure we got what we need.
+#
+################################################################
+#
+#          Admin Door
+#
+################################################################
+#
+check -strong  adminPort
+#
+set context keyBase ${config}
+#
+set context knownUsersFile    ${keyBase}/authorized_keys
+set context serverKeyFile     ${keyBase}/server_key
+set context hostKeyFile       ${keyBase}/host_key
+set env     AccessControlCell acm
+set context userPasswordFile  cell:pam
+#
+#
+#   the rest is the ssh control path.
+#   The current setup allows localhost login
+#   without password. The 'server_key' and the
+#   'host_key' are assumed to be in the .../config'
+#   directory .
+#
+#    ssh-keygen -t rsa1 -b  768 -f ./server_key -N ""
+#    ssh-keygen -t rsa1 -b 1024 -f ./host_key   -N ""
+#
+#    server_key :  768 bits
+#    host_key   : 1024 bits
+#
+#
+#
+create dmg.cells.services.login.SshKeyManager    skm
+
+create dmg.cells.services.login.LoginManager alm \
+      "${adminPort} -dCacheInstance=otto \
+       dmg.cells.services.login.StreamObjectCell \
+       -prot=ssh -auth=dmg.cells.services.login.SshSAuth_A \
+       diskCacheV111.admin.UserAdminShell"     
+
+create dmg.cells.services.login.user.AclCell ${AccessControlCell} ${keyBase}/users 
+
+create diskCacheV111.admin.PAMAuthentificator pam " -syspassword=/etc/shadow"
+#
+define context broadcasterSetup endDefine
+   register diskCacheV111.vehicles.PoolRemoveFilesMessage         billing
+   register diskCacheV111.vehicles.PoolStatusChangedMessage       billing
+   register diskCacheV111.vehicles.PnfsModifyCacheLocationMessage billing
+endDefine
+#
+create  dmg.cells.services.multicaster.BroadcastCell broadcaster
+#
+#  first version of a pool data copy facility
+#
+create diskCacheV111.replicaManager.CopyManager      copy
+#
+################################################################
+#
+#      Pool Manager
+#
+################################################################
+#
+#
+create diskCacheV111.poolManager.PoolManagerV5 PoolManager \
+   "${config}/PoolManager.conf   \
+    -poolStatusRelay=broadcaster \
+    -watchdog \
+    -replyObject    \
+   "
+#
+#
+#
+################################################################
+#
+#      Pnfs Manager  (version 2 and (3) )
+#
+################################################################
+#
+#
+#set env InfoExtractor diskCacheV111.util.EnstoreInfoExtractor
+set env InfoExtractor diskCacheV111.util.OsmInfoExtractor
+#
+#
+create diskCacheV111.cells.PnfsManager2 PnfsManager \
+        "${InfoExtractor} \
+          -threads=4 \
+          -cmRelay=broadcaster \
+#          -defaultPnfsServer=${defaultPnfsServer} \
+          -pnfs=${pnfs}"
+#
+#create diskCacheV111.namespace.PnfsManagerV3 PnfsManager \
+#        "${InfoExtractor} \
+#         -threads=4  \
+#         -default=${defaultPnfsServer} \
+#         -pnfs=${pnfs} \
+#         -dbURL=<...> -jdbcDrv=<...> -dbUser=<...> -dbPass=<...> \
+#        "
+#
+#
+################################################################
+#
+#         Cleaner V2 (only if there is a valid ${trash})
+#
+################################################################
+#
+#
+define context cleanerRunner endDefine
+   create diskCacheV111.cells.CleanerV2 cleaner  \
+               " -trash=${trash}   \
+                 -db=${trashDb}    \
+                 -recover=2        \
+                 -refresh=30       "
+endDefine
+#
+onerror continue
+check -strong trashDb trash
+#
+#exec context -run -shell cleanerRunner -ifok
+   create diskCacheV111.cells.CleanerV2 cleaner  \
+               " -trash=${trash}   \
+                 -db=${trashDb}    \
+                 -recover=2        \
+                 -reportRemove=broadcaster \
+                 -refresh=30       "
+#
+onerror shutdown
+#
+################################################################
+#
+#       dCap D o o r
+#
+################################################################
+#
+check -strong  adminPort
+#
+#    dCap    D o o r
+#
+create dmg.cells.services.login.LoginManager DCap \
+            "${dCapPort} \
+             diskCacheV111.doors.DCapDoor \
+             -prot=telnet -localOk \
+             -maxLogin=30 \
+             -brokerUpdateTime=30 \
+             -protocolFamily=dcap \
+             -protocolVersion=3.0 \
+             -loginBroker=LoginBroker"
+
+#
+#
+check -strong billingDb statisticsDb
+#
+#
+create diskCacheV111.cells.BillingCell billing \
+      "${billingDb} \
+       -printMode=2 \
+#        -useSQL -jdbcUrl=<> -jdbcDriver=<> -dbUser=<> -dbPass=<> \
+      "
+#
+create diskCacheV111.services.PoolStatisticsV0 PoolStatistics  \
+      "${statisticsDb} \
+       -domain=d2Cache-Desy-HH  \
+      "
+
+create dmg.cells.network.TopoCell topo "none -update=240"
+#
+#
+#
+create dmg.cells.services.login.LoginBroker LoginBroker
+#
+define context TransferObserverSetup endDefine
+  table define large 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16
+  table define small 6,8,4,5,9,10,11,15
+endDefine
+#
+create diskCacheV111.cells.TransferObserverV1 TransferObserver \
+              "default \
+               -loginBroker=LoginBroker \
+               -update=60 \
+               -fieldMap=diskCacheV111.util.MapInfoFields \
+               -mapFile=/etc/passwd "
+#
+#   The web server part
+#
+set env osmDetails     "hsm.osm.volumeName,hsm.osm.bfStatus,hsm.osm.volumeStatus"
+set context hsmDetails "addHsmInfo details=bfid,size,new,stored,sClass,${osmDetails}"
+#
+define context httpdSetup endDefine
+   set alias <home>    file  ${dcacheHome}/config/devel/home-skin1.html
+   set alias images    directory ${images}
+   set alias offline   context offline.html 
+   set alias context   context *
+   set alias <default> context ${dcacheHome}/config/devel/home-skin1.html 
+   set alias cellInfo  context cellInfoTable.html  -onError=offline
+   set alias usageInfo context poolUsageTable.html -onError=offline
+   set alias queueInfo context poolQueueTable.html -onError=offline
+   set alias poolInfo  class diskCacheV111.poolManager.HttpPoolMgrEngineV3 "addStorageInfo ${hsmDetails}"
+   set alias billing   class diskCacheV111.cells.HttpBillingEngine
+   set alias system    class dmg.cells.services.HttpSystemService
+   set alias stat directory ${statisticsDb}
+   set alias pictures  class diskCacheV111.services.web.ContextPictureEngine
+   set alias favicon.ico  file ${images}/favicon.ico
+endDefine
+
+define context offline.html endDefine
+<html>
+<head><title>dCache OFFLINE</title></head>
+<body background="/images/bg.jpg">
+<center><img src="/images/eagle-main.gif"></center>
+<p>
+<center>
+<table border=0 width="80%">
+<tr>
+<td align=right width="50%"><img src="/images/trudey.gif"></td>
+<td align=left width="50%"><img src="/images/sorry.gif"></td>
+</tr>
+</table>
+</center>
+</body>
+</html>
+endDefine
+
+define context online.html endDefine
+<html>
+<head><title>dCache OFFLINE</title></head>
+<body bgcolor=blue >
+<center><img src="/images/eagle_logo.gif"></center>
+<p>
+<center>
+<table border=0 width="90%" cellspacing=0 cellpadding=6>
+<tr>
+<td bgcolor=yellow align=left width="50%">Pool : poolA</td>
+<td bgcolor=yellow align=right width="50%">4/5/2001</td>
+</tr>
+</table>
+</center>
+</body>
+</html>
+endDefine
+#
+# copy context:online.html context:setup.html
+#
+create diskCacheV111.services.web.WebPicturesV0 WebPictures \
+      "default \
+#      -imageSize=300:200 -interval=300 -archive=${config}/webArchive \
+#      -dontstart \
+      "
+#
+create dmg.cells.services.HttpServiceCell  httpd  ${httpdPort}
+#
+create diskCacheV111.cells.WebCollectorV3 collector \
+         "PnfsManager PoolManager -replyObject"
+#
+define context MoverMap endDefine
+   movermap define DCap-3  diskCacheV111.movers.DCapProtocol_3_nio
+endDefine
+#
+copy file:${config}/basic.poollist context:poolList
+check  poolList
+#
+#
+define context startPools endDefine
+  create diskCacheV111.pools.MultiProtocolPool2 \
+      ${0} "!MoverMap ${1} -${2} -${3} -${4} -${5} -${6} -${7} -${8}"
+endDefine
+#
+# oh weia
+#
+exec -run -loop=poolList context startPools
+#
