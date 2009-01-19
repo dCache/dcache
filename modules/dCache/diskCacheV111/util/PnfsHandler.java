@@ -30,6 +30,7 @@ import diskCacheV111.vehicles.PnfsRenameMessage;
 import diskCacheV111.vehicles.PnfsSetFileMetaDataMessage;
 import diskCacheV111.vehicles.PnfsSetLengthMessage;
 import diskCacheV111.vehicles.PnfsSetStorageInfoMessage;
+import diskCacheV111.vehicles.PnfsGetParentMessage;
 import diskCacheV111.vehicles.PoolFileFlushedMessage;
 import diskCacheV111.vehicles.StorageInfo;
 
@@ -426,6 +427,14 @@ public class PnfsHandler
     return (PnfsGetFileMetaDataMessage)pnfsRequest( fileMetaData ) ;
 }
 
+
+    public PnfsId getParentOf(PnfsId pnfsId) 
+        throws CacheException
+    {
+        PnfsGetParentMessage message = 
+            (PnfsGetParentMessage) pnfsRequest(new PnfsGetParentMessage(pnfsId));
+        return message.getParent();
+    }
 
    public void deletePnfsEntry( String path )  throws CacheException {
 

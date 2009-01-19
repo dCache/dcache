@@ -425,4 +425,9 @@ public class ChimeraNameSpaceProvider implements NameSpaceProvider, StorageInfoP
 
     }
 
+    public PnfsId getParentOf(PnfsId id)
+    {
+        // TODO!
+        return null;
+    }
 }

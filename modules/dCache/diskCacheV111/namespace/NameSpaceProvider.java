@@ -58,6 +58,8 @@ public interface NameSpaceProvider extends DcacheNameSpaceProvider {
     String pnfsidToPath( PnfsId pnfsId) throws Exception ;
     PnfsId pathToPnfsid( String path, boolean followLinks) throws Exception;
 
+    PnfsId getParentOf(PnfsId pnfsId) throws Exception;
+
     String[] getFileAttributeList(PnfsId pnfsId);
     Object getFileAttribute( PnfsId pnfsId, String attribute);
     void removeFileAttribute( PnfsId pnfsId, String attribute);

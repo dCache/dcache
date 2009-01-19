@@ -999,4 +999,9 @@ public class BasicNameSpaceProvider implements NameSpaceProvider, StorageInfoPro
        }
     }
 
+    public PnfsId getParentOf(PnfsId pnfsId) throws Exception 
+    {
+        File mp = _pathManager.getMountPointByPnfsId(pnfsId);
+        return new PnfsId(parentOf(mp, pnfsId.toString()));
+    }
 }

@@ -95,6 +95,7 @@ public class PnfsManagerV3 extends CellAdapter {
     private final StatItem _xgetChecksum           = new StatItem("getChecksum");
     private final StatItem _xsetChecksum           = new StatItem("setChecksum");
     private final StatItem _xlistChecksumTypes     = new StatItem("listChecksumTypes");
+    private final StatItem _xgetParent             = new StatItem("getParent");
 
     private int _logSlowThreshold;
 
@@ -116,7 +117,8 @@ public class PnfsManagerV3 extends CellAdapter {
             _xmapPath2Id,
             _xmapId2Path,
             _xgetMetadataInfo,
-            _xsetMetadataInfo
+            _xsetMetadataInfo,
+            _xgetParent
     } ;
 
 
@@ -1410,6 +1412,27 @@ public class PnfsManagerV3 extends CellAdapter {
         }
     }
 
+    private void getParent(PnfsGetParentMessage msg)
+    {
+        try {
+            PnfsId pnfsId = msg.getPnfsId();
+            if (pnfsId == null ) {
+                throw new InvalidMessageCacheException("no pnfsid defined");
+            }
+            msg.setParent(_nameSpaceProvider.getParentOf(pnfsId));
+        } catch (CacheException e) {
+            esay(e);
+            msg.setFailed(e.getRc(), e.getMessage());
+        } catch (Exception e) {
+            esay(e);
+            msg.setFailed(CacheException.UNEXPECTED_SYSTEM_EXCEPTION,
+                          e.getMessage());
+        }
+        if (msg.getReturnCode() != 0) {
+            _xgetChecksum.failed();
+        }
+    }
+
     public void getCacheStatistics(PnfsGetCacheStatisticsMessage pnfsMessage){
         PnfsId pnfsId = pnfsMessage.getPnfsId();
         say("get cache statistics for "+pnfsId);
@@ -1584,6 +1607,10 @@ public class PnfsManagerV3 extends CellAdapter {
         else if ( pnfsMessage instanceof PnfsGetChecksumAllMessage ){
             _xlistChecksumTypes.request();
             listChecksumTypes((PnfsGetChecksumAllMessage)pnfsMessage);
+        }
+        else if (pnfsMessage instanceof PnfsGetParentMessage){
+            _xgetParent.request();
+            getParent((PnfsGetParentMessage)pnfsMessage);
         }
 
         else {
