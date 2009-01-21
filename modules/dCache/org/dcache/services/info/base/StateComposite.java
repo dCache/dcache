@@ -161,7 +161,7 @@ public class StateComposite implements StateComponent {
 	public boolean hasExpired() {
 		Date now = new Date();
 		
-		return _whenIShouldExpire != null ? now.after(_whenIShouldExpire) : false;
+		return _whenIShouldExpire != null ? !now.before(_whenIShouldExpire) : false;
 	}
 	
 	/**
