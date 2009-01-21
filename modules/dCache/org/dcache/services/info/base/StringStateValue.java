@@ -17,8 +17,7 @@ public class StringStateValue extends StateValue {
 	 * @param value the String to be stored.
 	 */
 	public StringStateValue( String value) {
-		super( false);
-		_storage = value;
+		this( value, false);
 	}
 	
 	/**
@@ -41,10 +40,12 @@ public class StringStateValue extends StateValue {
 		_storage = value;
 	}
 	
+	@Override
 	public String toString() {
 		return _storage != null ? _storage : "(null)";
 	}
 	
+	@Override
 	public String getTypeName() {
 		return "string";
 	}
@@ -53,6 +54,7 @@ public class StringStateValue extends StateValue {
 	/**
 	 * Needed for the Visitor pattern.  See StateVisitor interface for more details. 
 	 */
+	@Override
 	public void acceptVisitor( StatePath path, StateVisitor visitor) {
 		visitor.visitString( path, this);
 	}

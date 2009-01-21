@@ -17,8 +17,7 @@ public class FloatingPointStateValue extends StateValue {
 	 * @param value the value to be stored.
 	 */
 	public FloatingPointStateValue( double value) {
-		super( false);
-		_storage = value;
+		this( value, false);
 	}
 	
 	
