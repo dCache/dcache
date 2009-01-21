@@ -14,8 +14,7 @@ public class BooleanStateValue extends StateValue {
 	 * Create a new Ephemeral Boolean StateValue.
 	 */
 	public BooleanStateValue( boolean value) {
-		super(false);
-		_storage = value;
+		this( value, false);
 	}
 	
 	

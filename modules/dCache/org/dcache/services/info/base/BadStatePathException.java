@@ -26,6 +26,7 @@ public class BadStatePathException extends Exception {
 		_msg = msg;
 	}
 	
+	@Override
 	public String toString(){
 		return _msg;
 	}
