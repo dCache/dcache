@@ -586,8 +586,8 @@ public class GridftpClient
         }
     }
 
-   public Checksum negotiateCksm(String path) 
-   throws IOException, 
+   public Checksum negotiateCksm(String path)
+   throws IOException,
        ServerException,
        ChecksumNotSupported,
        ChecksumValueFormatException
@@ -648,10 +648,10 @@ public class GridftpClient
                     }
             }
         say("closing client : "+_client);
-	try { 
+	try {
 		_client.close(false);
 	}
-	catch (IOException e) { 
+	catch (IOException e) {
 	}
         say("closed client");
 
@@ -1003,10 +1003,10 @@ public class GridftpClient
           public int getCode(){ return code; }
           private int code;
     }
-    
+
    public static class ChecksumValueFormatException extends Exception {
-          public ChecksumValueFormatException(String msg){ 
-              super(msg); 
+          public ChecksumValueFormatException(String msg){
+              super(msg);
           }
     }
 
@@ -1164,8 +1164,8 @@ public class GridftpClient
             }
         }
 
-        public String getCksmValue(String type,String path) 
-        throws IOException, 
+        public String getCksmValue(String type,String path)
+        throws IOException,
             ServerException,
             ChecksumNotSupported,
             ChecksumValueFormatException
@@ -1181,20 +1181,20 @@ public class GridftpClient
             }
         }
 
-        private String validateChecksumTypeValue(String type,String value) 
+        private String validateChecksumTypeValue(String type,String value)
         throws ChecksumValueFormatException {
             if(type.equalsIgnoreCase("adler32")) {
                 try {
                   long lvalue = Long.parseLong(value,16);
                 } catch(Exception e) {
-                    throw new 
+                    throw new
                         ChecksumValueFormatException("value = "+value+
                         " caused by:"+ e.getMessage());
                 }
             }
-            
+
             return value;
-            
+
         }
         private int parseCode(String msg){
          try {
