@@ -182,6 +182,22 @@ public class StatePath {
 	 */
 	public boolean equalsOrHasChild( StatePath otherPath) {
 
+
+               /**
+                *  A StatePath variable with value null corresponds to
+                *  the root element of the info tree.  All non-null
+                *  StatePath objects correspond to a location in the
+                *  info tree below the root element.
+                *
+                *  When given null as an argument, the query is against
+                *  the root element.  Any object where the
+                *  equalsOrHasChild() method is being called is not
+                *  null (obviously), therefore is not the root
+                *  element.
+                */
+		if( otherPath == null)
+			return false;
+		
 		// Check for an obviously mismatch.
 		if( _elements.size() > otherPath._elements.size())
 			return false;
