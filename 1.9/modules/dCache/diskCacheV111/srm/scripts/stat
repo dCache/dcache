@@ -1,2 +1,0 @@
-#!/bin/sh
-stat -t $1 | awk '{ print $2 }'

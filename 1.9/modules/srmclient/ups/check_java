@@ -1,9 +1,0 @@
-#!/bin/sh
-java_rev=`java -version 2>&1 | grep "java version" | cut -f2 -d\"`
-
-min_rev="1\.4"
-if [ `echo $java_rev | grep -c "^$min_rev"` -ne 1 ]; then
-	echo `date` ERROR Incorrect java version.  Found $java_rev  need at least $min_rev
-        exit 1
-fi
-exit 0

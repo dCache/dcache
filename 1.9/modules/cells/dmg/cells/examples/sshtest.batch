@@ -1,5 +1,0 @@
-create dmg.cells.services.SshKeyManager km
-set printout km all
-create dmg.cells.services.SshLoginManager lm "22223 dmg.cells.services.StreamLoginCell"
-set printout lm all
-kill batch
