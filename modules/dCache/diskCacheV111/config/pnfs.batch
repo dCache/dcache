@@ -51,6 +51,7 @@ set context -c defaultPnfsServer localhost
 set context -c pnfs /pnfs/fs
 set context -c pnfsInfoExtractor diskCacheV111.util.OsmInfoExtractor
 set context -c pnfsNumberOfThreads 4
+set context -c pnfsNumberOfThreadGroups 1
 set context -c namespaceProvider diskCacheV111.namespace.provider.BasicNameSpaceProviderFactory
 set context -c pnfsDbUser        srmdcache
 set context -c pnfsDbPassword    srmdcache
@@ -64,6 +65,7 @@ create diskCacheV111.namespace.PnfsManagerV3 PnfsManager \
         -cmRelay=broadcast \
         -pnfsDeleteRelay=SrmSpaceManager \
         -threads=${pnfsNumberOfThreads} \
+        -threadGroups=${pnfsNumberOfThreadGroups} \
         -default=${defaultPnfsServer} \
         -pnfs=${pnfs} \
         -namespace-provider=${namespaceProvider} \
