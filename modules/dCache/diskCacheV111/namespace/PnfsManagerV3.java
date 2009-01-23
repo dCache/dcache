@@ -27,6 +27,7 @@ public class PnfsManagerV3 extends CellAdapter {
     private final CellNucleus _nucleus   ;
     private final Random      _random   = new Random(System.currentTimeMillis());
     private int          _threads  = 1 ;
+    private int          _threadGroups  = 1 ;
     private final BlockingQueue<CellMessage> [] _fifos    ;
 
     private CellPath     _cacheModificationRelay = null ;
@@ -152,8 +153,16 @@ public class PnfsManagerV3 extends CellAdapter {
             if( tmp != null ){
                 try{
                     _threads = Integer.parseInt(tmp) ;
-                }catch(Exception e){
+                }catch(NumberFormatException e){
                     esay( "Threads not changed ("+e+")");
+                }
+            }
+            tmp = _args.getOpt("threadGroups") ;
+            if( tmp != null ){
+                try{
+                    _threadGroups = Integer.parseInt(tmp) ;
+                }catch(NumberFormatException e){
+                    esay( "Thread groups not changed ("+e+")");
                 }
             }
             tmp = _args.getOpt("cmRelay") ;
@@ -232,9 +241,9 @@ public class PnfsManagerV3 extends CellAdapter {
             //
             // and now the thread and fifos
             //
-            say("Starting "+_threads+" threads");
-            _fifos = new BlockingQueue[_threads] ;
-            for( int i = 0 ; i < _threads ; i++ ){
+            _fifos = new BlockingQueue[_threads * _threadGroups];
+            say("Starting " + _fifos.length + " threads");
+            for( int i = 0 ; i < _fifos.length ; i++ ){
                 _fifos[i] = new LinkedBlockingQueue<CellMessage>() ;
                 _nucleus.newThread( new ProcessThread(_fifos[i]), "proc-"+i ).start();
             }
@@ -264,11 +273,20 @@ public class PnfsManagerV3 extends CellAdapter {
         pw.println("Default Access   Latency: " + _defaultAccessLatency);
         pw.println("Default Retention Policy: " + _defaultRetentionPolicy);
         pw.println();
-        pw.println("Threads ("+_threads+") Queue" ) ;
-        for( int i = 0 ; i < _threads ; i++ ){
-            pw.println( "    ["+i+"] "+_fifos[i].size() ) ;
+        pw.println("Threads (" + _fifos.length + ") Queue");
+        for (int i = 0; i < _fifos.length; i++) {
+            pw.println("    [" + i + "] " + _fifos[i].size());
         }
         pw.println();
+        pw.println("Thread groups (" + _threadGroups + ")");
+        for (int i = 0; i < _threadGroups; i++) {
+            int total = 0;
+            for (int j = 0; j < _threads; j++) {
+                total += _fifos[i * _threads + j].size();
+            }
+            pw.println("    [" + i + "] " + total);
+            pw.println();
+        }
         pw.println( "Statistics:" ) ;
         for( int i = 0 , n = _requestSet.length ; i < n ; i++ ){
             pw.println("  " + _requestSet[i].toString());
@@ -1467,6 +1485,7 @@ public class PnfsManagerV3 extends CellAdapter {
         }
         PnfsMessage pnfs   = (PnfsMessage)pnfsMessage ;
         PnfsId      pnfsId = pnfs.getPnfsId() ;
+        String      path = pnfs.getPnfsPath() ;
 
         if( ( _cacheModificationRelay != null ) &&
                 ( ( pnfs instanceof PnfsAddCacheLocationMessage   ) ||
@@ -1476,15 +1495,20 @@ public class PnfsManagerV3 extends CellAdapter {
             forwardModifyCacheLocationMessage( pnfs ) ;
 
         }
-        int hashIndex = 0 ;
-        if( pnfsId == null ){
-            hashIndex = _random.nextInt(_threads) ;
-        }else{
-            hashIndex = pnfsId.hashCode() ;
-            hashIndex = hashIndex == Integer.MIN_VALUE ? 0 : ( Math.abs(hashIndex) % _threads ) ;
+
+        int index;
+        if (pnfsId != null) {
+            index =
+                (pnfsId.getDatabaseId() % _threadGroups) * _threads +
+                (Math.abs(pnfsId.hashCode()) % _threads);
+        } else if (path != null) {
+            index =
+                (Math.abs(path.hashCode()) % (_threads * _threadGroups));
+        } else {
+            index = _random.nextInt(_fifos.length);
         }
-        say( "Using thread ["+pnfsId+"] "+hashIndex);
-        BlockingQueue<CellMessage> fifo = _fifos[hashIndex] ;
+        say("Using thread [" + pnfsId + "] " + index);
+        BlockingQueue<CellMessage> fifo = _fifos[index];
 
         try {
 			fifo.put( message ) ;
