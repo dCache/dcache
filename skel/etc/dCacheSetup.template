@@ -574,6 +574,15 @@ pnfs=/pnfs/fs
 #
 #pnfsNumberOfThreads=4
 
+#  ---- Number of cache location threads
+#
+#   The number of threads used for cache location updates and 
+#   lookups. If 0 then the regular pnfs manager thread queues are
+#   used for cache location lookups. If non-zero then dedicated 
+#   threads for cache location operations are created.
+#
+#pnfsNumberOfLocationThreads=0
+
 #  ---- Number of thread groups
 #
 #   A PNFS tree may be split into multiple databases. Each database

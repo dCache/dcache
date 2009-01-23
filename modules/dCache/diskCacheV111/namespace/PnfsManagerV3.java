@@ -28,7 +28,19 @@ public class PnfsManagerV3 extends CellAdapter {
     private final Random      _random   = new Random(System.currentTimeMillis());
     private int          _threads  = 1 ;
     private int          _threadGroups  = 1 ;
+
+    /**
+     * Tasks queues used for cache location messges. Depending on
+     * configuration, this may be the same as <code>_fifos</code>.
+     */
+    private final BlockingQueue<CellMessage> [] _locationFifos;
+
+    /**
+     * Tasks queues used for messages that do not operate on cache
+     * locations.
+     */
     private final BlockingQueue<CellMessage> [] _fifos    ;
+
 
     private CellPath     _cacheModificationRelay = null ;
     private boolean      _simulateLargeFiles     = false ;
@@ -241,13 +253,27 @@ public class PnfsManagerV3 extends CellAdapter {
             }
 
             //
-            // and now the thread and fifos
+            // and now the threads and fifos
             //
             _fifos = new BlockingQueue[_threads * _threadGroups];
             say("Starting " + _fifos.length + " threads");
             for( int i = 0 ; i < _fifos.length ; i++ ){
                 _fifos[i] = new LinkedBlockingQueue<CellMessage>() ;
                 _nucleus.newThread( new ProcessThread(_fifos[i]), "proc-"+i ).start();
+            }
+
+            tmp = _args.getOpt("cachelocation-threads");
+            int threads = (tmp == null) ? 0 : Integer.parseInt(tmp);
+            if (threads > 0) {
+                say("Starting " +  threads + " cache location threads");
+                _locationFifos = new BlockingQueue[threads];
+                for (int i = 0; i < _locationFifos.length; i++) {
+                    _locationFifos[i] = new LinkedBlockingQueue();
+                    _nucleus.newThread(new ProcessThread(_locationFifos[i]),
+                                       "proc-loc-" + i).start();
+                }
+            } else {
+                _locationFifos = _fifos;
             }
         } catch (Exception e){
             esay ("Exception occurred: "+e);
@@ -287,8 +313,16 @@ public class PnfsManagerV3 extends CellAdapter {
                 total += _fifos[i * _threads + j].size();
             }
             pw.println("    [" + i + "] " + total);
+        }
+            pw.println();
+        if (_fifos != _locationFifos) {
+            pw.println("Cache Location Queues");
+            for (int i = 0; i < _locationFifos.length; i++) {
+                pw.println("    [" + i + "] " + _locationFifos[i].size());
+        }
             pw.println();
         }
+
         pw.println( "Statistics:" ) ;
         for( int i = 0 , n = _requestSet.length ; i < n ; i++ ){
             pw.println("  " + _requestSet[i].toString());
@@ -1519,25 +1553,43 @@ public class PnfsManagerV3 extends CellAdapter {
 
         }
 
-        int index;
-        if (pnfsId != null) {
-            index =
-                (pnfsId.getDatabaseId() % _threadGroups) * _threads +
-                (Math.abs(pnfsId.hashCode()) % _threads);
-        } else if (path != null) {
-            index =
-                (Math.abs(path.hashCode()) % (_threads * _threadGroups));
-        }else{
-            index = _random.nextInt(_fifos.length);
+        boolean isCacheOperation =
+            ((pnfs instanceof PnfsAddCacheLocationMessage) ||
+             (pnfs instanceof PnfsClearCacheLocationMessage) ||
+             (pnfs instanceof PnfsGetCacheLocationsMessage));
+        BlockingQueue<CellMessage> fifo;
+        if (isCacheOperation && _locationFifos != _fifos) {
+            int index;
+            if (pnfsId != null) {
+                index = (Math.abs(pnfsId.hashCode()) % _locationFifos.length);
+                say("Using location thread [" + pnfsId + "] " + index);
+            } else {
+                index = _random.nextInt(_locationFifos.length);
+                say("Using location thread [" + path + "] " + index);
+            }
+            fifo = _locationFifos[index];
+        } else {
+            int index;
+            if (pnfsId != null) {
+                index =
+                    (pnfsId.getDatabaseId() % _threadGroups) * _threads +
+                    (Math.abs(pnfsId.hashCode()) % _threads);
+                say("Using thread [" + pnfsId + "] " + index);
+            } else if (path != null) {
+                index = Math.abs(path.hashCode()) % _fifos.length;
+                say("Using thread [" + path + "] " + index);
+            } else {
+                index = _random.nextInt(_fifos.length);
+                say("Using thread [" + pnfsId + "] " + index);
+            }
+            fifo = _fifos[index];
         }
-        say("Using thread [" + pnfsId + "] " + index);
-        BlockingQueue<CellMessage> fifo = _fifos[index];
 
         try {
-			fifo.put( message ) ;
-		} catch (InterruptedException e) {
-			esay("failed to add a message into queue "+e.getMessage()) ;
-		}
+            fifo.put( message ) ;
+        } catch (InterruptedException e) {
+            esay("failed to add a message into queue "+e.getMessage()) ;
+        }
     }
     private void forwardModifyCacheLocationMessage( PnfsMessage message ){
         try{
