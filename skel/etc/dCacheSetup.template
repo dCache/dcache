@@ -567,12 +567,29 @@ pnfs=/pnfs/fs
 #
 #pnfsInfoExtractor=diskCacheV111.util.OsmInfoExtractor
 
-#  ---- Number of threads
+#  ---- Number of threads per thread group
 #
-#   Depending on how powerful is your pnfs server host you may set
+#   Depending on how powerful your pnfs server host is you may set
 #   this to up to 50.
 #
 #pnfsNumberOfThreads=4
+
+#  ---- Number of thread groups
+#
+#   A PNFS tree may be split into multiple databases. Each database
+#   is single threaded and hence accessing the same database from 
+#   multiple threads provides only a minor speed-up. To ensure good 
+#   load balancing when using multiple databases, the PnfsManager 
+#   support thread groups. Any database is assigned to one and only
+#   one thread group, thus databases assigned to different thread 
+#   groups are guaranteed not to block each other. Each thread group
+#   will have $pnfsNumberOfThreads threads.
+#
+#   For best performance isolation, set this to the equal the largest 
+#   database ID defined in PNFS. When increasing pnfsNumberOfThreadGroups,
+#   you may one to lower pnfsNumberOfThreads.
+#
+#pnfsNumberOfThreadGroups=1
 
 #   -- don't change this
 #
