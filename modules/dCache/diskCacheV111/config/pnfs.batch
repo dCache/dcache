@@ -38,6 +38,8 @@ onerror continue
 set env cacheInfoProvider diskCacheV111.namespace.provider.BasicNameSpaceProviderFactory
 define context setcontext.exe endDefine
   set env cacheInfoProvider diskCacheV111.namespace.provider.SQLCacheLocationProviderFactory
+  set context -c pnfsNumberOfLocationThreads 0
+  set env locationThreads ${pnfsNumberOfLocationThreads}
 endDefine
 eval ${cacheInfo} companion ==
 exec context setcontext.exe -run -ifok=rc
@@ -56,6 +58,7 @@ set context -c namespaceProvider diskCacheV111.namespace.provider.BasicNameSpace
 set context -c pnfsDbUser        srmdcache
 set context -c pnfsDbPassword    srmdcache
 set context -c pnfsPasswordFile  ""
+set env -c locationThreads 0
 onerror shutdown
 #
 create diskCacheV111.namespace.PnfsManagerV3 PnfsManager \
@@ -75,6 +78,7 @@ create diskCacheV111.namespace.PnfsManagerV3 PnfsManager \
         -cachelocation-provider-dbUser=${pnfsDbUser} \
         -cachelocation-provider-dbPass=${pnfsDbPassword} \
         -cachelocation-provider-pgPass=${pnfsPasswordFile}  \
+        -cachelocation-threads=${locationThreads} \
        "
 #
 #   The 'remove' handler (informs the dCache about pfns removes)
