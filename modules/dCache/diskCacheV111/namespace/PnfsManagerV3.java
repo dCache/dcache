@@ -21,14 +21,26 @@ public class PnfsManagerV3 extends CellAdapter {
 
     private static final Logger _logDeveloper = Logger.getLogger(PnfsManagerV3.class.getName());
     private static final int THRESHOLD_DISABLED = 0;
-    
+
     private final String      _cellName  ;
     private final Args        _args      ;
     private final CellNucleus _nucleus   ;
     private final Random      _random   = new Random(System.currentTimeMillis());
     private int          _threads  = 1 ;
     private int          _threadGroups  = 1 ;
+
+    /**
+     * Tasks queues used for cache location messges. Depending on
+     * configuration, this may be the same as <code>_fifos</code>.
+     */
+    private final BlockingQueue<CellMessage> [] _locationFifos;
+
+    /**
+     * Tasks queues used for messages that do not operate on cache
+     * locations.
+     */
     private final BlockingQueue<CellMessage> [] _fifos    ;
+
 
     private CellPath     _cacheModificationRelay = null ;
     private boolean      _simulateLargeFiles     = false ;
@@ -85,7 +97,7 @@ public class PnfsManagerV3 extends CellAdapter {
     private final StatItem _xgetChecksum           = new StatItem("getChecksum");
     private final StatItem _xsetChecksum           = new StatItem("setChecksum");
     private final StatItem _xlistChecksumTypes     = new StatItem("listChecksumTypes");
-    
+
     private int _logSlowThreshold;
 
     private final StatItem [] _requestSet = {
@@ -206,15 +218,28 @@ public class PnfsManagerV3 extends CellAdapter {
             DcacheNameSpaceProviderFactory storageInfoProviderFactory = (DcacheNameSpaceProviderFactory) Class.forName(storageInfo_provider).newInstance();
             _storageInfoProvider = (StorageInfoProvider)storageInfoProviderFactory.getProvider(_args, _nucleus);
 
-
             //
-            // and now the thread and fifos
+            // and now the threads and fifos
             //
             _fifos = new BlockingQueue[_threads * _threadGroups];
             say("Starting " + _fifos.length + " threads");
             for( int i = 0 ; i < _fifos.length ; i++ ){
                 _fifos[i] = new LinkedBlockingQueue<CellMessage>() ;
                 _nucleus.newThread( new ProcessThread(_fifos[i]), "proc-"+i ).start();
+            }
+
+            tmp = _args.getOpt("cachelocation-threads");
+            int threads = (tmp == null) ? 0 : Integer.parseInt(tmp);
+            if (threads > 0) {
+                say("Starting " +  threads + " cache location threads");
+                _locationFifos = new BlockingQueue[threads];
+                for (int i = 0; i < _locationFifos.length; i++) {
+                    _locationFifos[i] = new LinkedBlockingQueue();
+                    _nucleus.newThread(new ProcessThread(_locationFifos[i]),
+                                       "proc-loc-" + i).start();
+                }
+            } else {
+                _locationFifos = _fifos;
             }
         } catch (Exception e){
             esay ("Exception occurred: "+e);
@@ -251,6 +276,13 @@ public class PnfsManagerV3 extends CellAdapter {
                 total += _fifos[i * _threads + j].size();
             }
             pw.println("    [" + i + "] " + total);
+        }
+            pw.println();
+        if (_fifos != _locationFifos) {
+            pw.println("Cache Location Queues");
+            for (int i = 0; i < _locationFifos.length; i++) {
+                pw.println("    [" + i + "] " + _locationFifos[i].size());
+        }
             pw.println();
         }
 
@@ -646,37 +678,37 @@ public class PnfsManagerV3 extends CellAdapter {
 
     	return checkSum == null ? "" : checkSum;
     }
-    
+
     public String hh_set_log_slow_threshold = "<timeout in ms>";
     public String fh_set_log_slow_threshold = "Set the threshold for reporting slow PNFS interactions.";
     public String ac_set_log_slow_threshold_$_1(Args args) {
-    	
+
     	int newTimeout;
-    	
+
     	try {
     		newTimeout = Integer.parseInt( args.argv(0));
     	} catch ( NumberFormatException e) {
     		return "Badly formatted number " + args.argv(0);
     	}
-    	
+
     	if( newTimeout <= 0) {
-    		return "Timeout must be greater than zero"; 
+    		return "Timeout must be greater than zero";
     	}
-    	
+
     	_logSlowThreshold = newTimeout;
-    	
+
     	return "";
     }
-    
+
     public String fh_get_log_slow_threshold = "Return the current threshold for reporting slow PNFS interactions.";
     public String ac_get_log_slow_threshold_$_0( Args args) {
     	if( _logSlowThreshold == THRESHOLD_DISABLED)
     		return "disabled";
-    	
+
     	return Integer.toString( _logSlowThreshold) + " ms";
     }
-    
-    
+
+
     public String fh_set_log_slow_threshold_disabled = "Disable reporting of slow PNFS interactions.";
     public String ac_set_log_slow_threshold_disabled_$_0( Args args) {
     	_logSlowThreshold = THRESHOLD_DISABLED;
@@ -1192,30 +1224,30 @@ public class PnfsManagerV3 extends CellAdapter {
         String path = pnfsMessage.getPath();
         PnfsId pnfsId = pnfsMessage.getPnfsId();
         PnfsId currentId = null;
-        
+
         try {
-            
+
             if( path == null && pnfsId == null) {
                 throw new CacheException(CacheException.INVALID_ARGS, "pnfsid or path have to be defined for PnfsDeleteEntryMessage");
             }
-            
+
             if( path != null ) {
                 currentId = _nameSpaceProvider.pathToPnfsid(path, false);
                 /*
                  * raice condition check:
-                 * 
+                 *
                  * in some cases ( srm overwrite ) one failed transfer may remove a file
                  * which belongs to an other transfer.
-                 * 
+                 *
                  * If both path and id defined check that path points to defined id
                  */
-                if( pnfsId != null ) {                    
+                if( pnfsId != null ) {
                     if( !currentId.equals(pnfsId) ) {
                          esay("request to remove a file by path providing wrong pnfsid: " + path + "  " + pnfsId + "("+ currentId +")" );
                         throw new FileNotFoundCacheException("pnfsid do not corresopnds to provided file");
                     }
                 }
-                
+
                 say("delete PNFS entry for "+ path );
                 _nameSpaceProvider.deleteEntry(path);
             } else {
@@ -1435,25 +1467,43 @@ public class PnfsManagerV3 extends CellAdapter {
 
         }
 
-        int index;
-        if (pnfsId != null) {
-            index =
-                (pnfsId.getDatabaseId() % _threadGroups) * _threads +
-                (Math.abs(pnfsId.hashCode()) % _threads);
-        } else if (path != null) {
-            index =
-                (Math.abs(path.hashCode()) % (_threads * _threadGroups));
-        }else{
-            index = _random.nextInt(_fifos.length);
+        boolean isCacheOperation =
+            ((pnfs instanceof PnfsAddCacheLocationMessage) ||
+             (pnfs instanceof PnfsClearCacheLocationMessage) ||
+             (pnfs instanceof PnfsGetCacheLocationsMessage));
+        BlockingQueue<CellMessage> fifo;
+        if (isCacheOperation && _locationFifos != _fifos) {
+            int index;
+            if (pnfsId != null) {
+                index = (Math.abs(pnfsId.hashCode()) % _locationFifos.length);
+                say("Using location thread [" + pnfsId + "] " + index);
+            } else {
+                index = _random.nextInt(_locationFifos.length);
+                say("Using location thread [" + path + "] " + index);
+            }
+            fifo = _locationFifos[index];
+        } else {
+            int index;
+            if (pnfsId != null) {
+                index =
+                    (pnfsId.getDatabaseId() % _threadGroups) * _threads +
+                    (Math.abs(pnfsId.hashCode()) % _threads);
+                say("Using thread [" + pnfsId + "] " + index);
+            } else if (path != null) {
+                index = Math.abs(path.hashCode()) % _fifos.length;
+                say("Using thread [" + path + "] " + index);
+            } else {
+                index = _random.nextInt(_fifos.length);
+                say("Using thread [" + pnfsId + "] " + index);
+            }
+            fifo = _fifos[index];
         }
-        say("Using thread [" + pnfsId + "] " + index);
-        BlockingQueue<CellMessage> fifo = _fifos[index];
 
         try {
-			fifo.put( message ) ;
-		} catch (InterruptedException e) {
-			esay("failed to add a message into queue "+e.getMessage()) ;
-		}
+            fifo.put( message ) ;
+        } catch (InterruptedException e) {
+            esay("failed to add a message into queue "+e.getMessage()) ;
+        }
     }
     private void forwardModifyCacheLocationMessage( PnfsMessage message ){
         try{
@@ -1558,14 +1608,14 @@ public class PnfsManagerV3 extends CellAdapter {
         if( pnfsMessage.getReturnCode() == CacheException.INVALID_ARGS ) {
             _logDeveloper.error("Inconsistent message " + pnfsMessage.getClass() + " received form " + message.getSourceAddress() );
         }
-        
+
         long duration = System.currentTimeMillis() - ctime;
         String logMsg = pnfsMessage.getClass() + " processed in " + duration + " ms";
         if( _logSlowThreshold != THRESHOLD_DISABLED && duration > _logSlowThreshold)
         	esay( logMsg);
         else
         	say( logMsg);
-        
+
 
         if (! ((Message)pnfsMessage).getReplyRequired() ){
             return;
