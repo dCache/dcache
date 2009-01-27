@@ -793,26 +793,34 @@ public class StateComposite implements StateComponent {
 			}
 		}
 	}
-	
+
 
 	/**
-	 * Honour the equals() / hashCode() contract
+	 * Return a hash-code that honours the equals() / hashCode() contract.
 	 */
 	@Override
 	public int hashCode() {
-		return 1;
+		return _children.hashCode();
 	}
 	
 	/**
-	 * Override the public equals method.  All StateComposites are considered equal.
+	 * Override the public equals method.  All StateComposites are considered equal if
+	 * they have the same children are the same type and have the same expiry date
+	 * (if mortal).
+	 * 
+	 * This is significant for when considering whether a StatePredicate has been triggered.
 	 */
 	@Override
-	public boolean equals( Object other) {
+	public boolean equals( Object other) {		
+		if( other == this)
+			return true;
+
 		if( !(other instanceof StateComposite))
 			return false;
-		
-		// All StateComposites are considered equal.
-		return true;
+
+		StateComposite otherSc = (StateComposite) other;
+
+		return otherSc._children.equals( _children);
 	}
-	
+
 }
