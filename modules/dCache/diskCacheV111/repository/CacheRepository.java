@@ -33,15 +33,6 @@ public interface CacheRepository extends SpaceMonitor {
    public boolean removeEntry(  CacheRepositoryEntry entry )
           throws CacheException ;
 
-   public void reserveSpace( long space , boolean blocking )
-          throws CacheException , InterruptedException ;
-   public void freeReservedSpace( long space )
-          throws CacheException ;
-   public void applyReservedSpace( long space )
-          throws CacheException ;
-
-   public long getReservedSpace() ;
-
    public Iterator<PnfsId> pnfsids() throws CacheException ;
    public List<CacheRepositoryEntryInfo> getValidCacheRepostoryEntryInfoList() ;
    public List<PnfsId> getValidPnfsidList() ;

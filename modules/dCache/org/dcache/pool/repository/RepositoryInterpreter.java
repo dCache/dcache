@@ -438,29 +438,4 @@ public class RepositoryInterpreter
         }
         return "Done";
     }
-    public String hh_rep_sr_ls = "";
-    public String ac_rep_sr_ls(Args args) {
-        return " Reserved Space : "+_repository.getReservedSpace();
-    }
-    public String hh_rep_sr_reserve = "[-blocking] <Space to reserve (bytes)>";
-    public String ac_rep_sr_reserve_$_1(Args args)
-        throws CacheException,
-               InterruptedException {
-
-        boolean blocking = args.getOpt("blocking") != null;
-        _repository.reserveSpace(Long.parseLong(args.argv(0)), blocking);
-        return "";
-    }
-    public String hh_rep_sr_free = "<Space to free from reserve (bytes)>";
-    public String ac_rep_sr_free_$_1(Args args) throws CacheException {
-
-        _repository.freeReservedSpace(Long.parseLong(args.argv(0)));
-        return "";
-    }
-    public String hh_rep_sr_apply = "<Space to apply from reserve (bytes)>";
-    public String ac_rep_sr_apply_$_1(Args args) throws CacheException {
-
-        _repository.applyReservedSpace(Long.parseLong(args.argv(0)));
-        return "";
-    }
 }

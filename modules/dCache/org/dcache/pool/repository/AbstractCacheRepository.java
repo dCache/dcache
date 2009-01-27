@@ -59,17 +59,6 @@ public abstract class AbstractCacheRepository
     private final Set<PnfsId> _precious = new HashSet<PnfsId>();
 
     /**
-     * Space reservation.
-     */
-    private final Object _spaceReservationLock = new Object();
-
-    /**
-     * Current amount of reserved space. Protected against concurrent
-     * access by _spaceReservationLock.
-     */
-    private long _reservedSpace = 0L;
-
-    /**
      * Utility class to bridge between space monitor and repository
      * event system.
      */
@@ -260,8 +249,7 @@ public abstract class AbstractCacheRepository
     	_logSpaceAllocation.debug("ALLOC: <UNKNOWN> : " + space );
         if (millis == SpaceMonitor.NONBLOCKING) {
             synchronized (_spaceMonitor) {
-                if ((_spaceMonitor.getTotalSpace() -
-                     getPreciousSpace() - _reservedSpace ) < space)
+                if (_spaceMonitor.getFreeSpace() < space)
                     throw new
 	                MissingResourceException("Not enough space left",
                                                  this.getClass().getName(),
@@ -298,79 +286,10 @@ public abstract class AbstractCacheRepository
         _spaceMonitor.setTotalSpace(space);
     }
 
-    protected abstract void storeReservedSpace() throws CacheException;
-
-    public void reserveSpace(long space, boolean blocking)
-        throws CacheException, InterruptedException
-    {
-        if (space < 0L) {
-            throw new
-                IllegalArgumentException("Space to reserve must be > 0");
-        }
-
-        allocateSpace(space,
-                      blocking
-                      ? SpaceMonitor.BLOCKING
-                      : SpaceMonitor.NONBLOCKING);
-
-        synchronized (_spaceReservationLock) {
-            _reservedSpace += space;
-            try {
-                storeReservedSpace();
-            } catch (CacheException e) {
-                _reservedSpace -= space;
-                throw e;
-            }
-        }
-    }
-
-    public void freeReservedSpace(long space) throws CacheException
-    {
-        modifyReservedSpace(space, true);
-    }
-
-    public void modifyReservedSpace(long space, boolean freeSpace)
-        throws CacheException
-    {
-        if (space < 0L) {
-            throw new IllegalArgumentException("Space to free must be > 0");
-        }
-
-        if ((_reservedSpace - space) < 0L) {
-            throw new IllegalArgumentException("Inconsistent space request (result<0)");
-        }
-
-        if (freeSpace) {
-            freeSpace(space);
-        }
-
-        synchronized (_spaceReservationLock) {
-            _reservedSpace -= space;
-            try {
-                storeReservedSpace();
-            } catch (CacheException ee) {
-                _reservedSpace += space;
-                throw ee;
-            }
-        }
-    }
-
-    public void applyReservedSpace(long space) throws CacheException
-    {
-        modifyReservedSpace(space, false);
-    }
-
     public long getPreciousSpace()
     {
         synchronized (_precious) {
             return _preciousSpace;
-        }
-    }
-
-    public long getReservedSpace()
-    {
-        synchronized (_spaceReservationLock) {
-            return _reservedSpace;
         }
     }
 }

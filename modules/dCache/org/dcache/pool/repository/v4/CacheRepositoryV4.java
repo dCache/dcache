@@ -72,12 +72,6 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
         "org.dcache.pool.repository.meta.file.FileMetaDataRepository";
 
     /**
-     * File containing the information about the current amount of
-     * reserved space.
-     */
-    private final File _spaceReservation;
-
-    /**
      * Reader-writer lock used for most access to the cache
      * repository.
      */
@@ -184,9 +178,6 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
         } else {
             _importRepository = null;
         }
-
-        _spaceReservation =
-            new File(directory, SPACE_RESERVATION);
     }
 
     public void setChecksumModule(ChecksumModuleV1 checksumModule)
@@ -617,22 +608,6 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
                 super.processEvent(type, event);
             }
             break;
-        }
-    }
-
-    protected void storeReservedSpace() throws CacheException
-    {
-        try {
-            PrintWriter pw =
-                new PrintWriter(new FileOutputStream(_spaceReservation));
-            try {
-                pw.println(getReservedSpace());
-            } finally {
-                pw.close();
-            }
-        } catch (IOException e) {
-            throw new
-                CacheException(103, "IO Exception, writing " + _spaceReservation) ;
         }
     }
 
