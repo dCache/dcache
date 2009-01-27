@@ -93,7 +93,7 @@ public class CDC
         setMdc(MDC_CELL, _cell);
         setMdc(MDC_SESSION, _session);
         NDC.clear();
-        NDC.inherit(clone ? (Stack) _ndc.clone() : _ndc);
+        NDC.inherit((clone && _ndc != null) ? (Stack) _ndc.clone() : _ndc);
     }
 
     /**

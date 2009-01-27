@@ -164,7 +164,7 @@ public class RepositorySubsystemTest
         repository.setPnfsHandler(pnfs);
         repository.setSize(5120);
         repository.setLegacyRepository(rep);
-        repository.setSweeper(new diskCacheV111.pools.SpaceSweeper2(pnfs, rep));
+        repository.setSweeper(new org.dcache.pool.classic.SpaceSweeper2(pnfs, rep));
         repository.addListener(this);
         repository.init(0);
 

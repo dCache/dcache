@@ -22,7 +22,7 @@ import org.dcache.pool.repository.EventType;
 import org.dcache.pool.repository.v4.CacheRepositoryV4;
 
 import diskCacheV111.pools.SpaceSweeper;
-import diskCacheV111.pools.SpaceSweeper2;
+import org.dcache.pool.classic.SpaceSweeper2;
 import diskCacheV111.repository.CacheRepositoryEntry;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.FileNotInCacheException;
