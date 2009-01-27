@@ -10,7 +10,7 @@ import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
 import java.util.Enumeration;
 
-import diskCacheV111.movers.MoverProtocol;
+import org.dcache.pool.movers.MoverProtocol;
 import diskCacheV111.repository.SpaceMonitor;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.PoolPassiveIoFileMessage;

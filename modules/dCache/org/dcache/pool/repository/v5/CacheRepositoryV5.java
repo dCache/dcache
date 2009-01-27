@@ -1,7 +1,6 @@
 package org.dcache.pool.repository.v5;
 
 import diskCacheV111.pools.SpaceSweeper;
-import diskCacheV111.repository.RepositoryInterpreter;
 import diskCacheV111.repository.CacheRepositoryEntry;
 import diskCacheV111.util.event.CacheRepositoryListener;
 import diskCacheV111.util.event.CacheRepositoryEvent;
