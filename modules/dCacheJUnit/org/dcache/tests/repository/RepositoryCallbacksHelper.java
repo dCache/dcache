@@ -3,7 +3,6 @@ package org.dcache.tests.repository;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import diskCacheV111.util.event.CacheEvent;
-import diskCacheV111.util.event.CacheNeedSpaceEvent;
 import diskCacheV111.util.event.CacheRepositoryEvent;
 import diskCacheV111.util.event.CacheRepositoryListener;
 
@@ -17,7 +16,6 @@ public class RepositoryCallbacksHelper implements CacheRepositoryListener {
     private final AtomicInteger _scanedCalled        = new AtomicInteger(0);
     private final AtomicInteger _touchedCalled       = new AtomicInteger(0);
     private final AtomicInteger _preciousCalled      = new AtomicInteger(0);
-    private final AtomicInteger _needspaceCalled     = new AtomicInteger(0);
     private final AtomicInteger _stickyCalled        = new AtomicInteger(0);
 
 
@@ -35,10 +33,6 @@ public class RepositoryCallbacksHelper implements CacheRepositoryListener {
 
     public void destroyed(CacheRepositoryEvent event) {
         _destroyedCalled.getAndIncrement();
-    }
-
-    public void needSpace(CacheNeedSpaceEvent event) {
-        _needspaceCalled.getAndIncrement();
     }
 
     public void precious(CacheRepositoryEvent event) {
@@ -95,10 +89,6 @@ public class RepositoryCallbacksHelper implements CacheRepositoryListener {
 
     public int getPreciousCalled() {
         return _preciousCalled.get();
-    }
-
-    public int getNeedspaceCalled() {
-        return _needspaceCalled.get();
     }
 
     public int getStickyCalled() {

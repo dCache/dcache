@@ -18,10 +18,10 @@ import org.junit.Test;
 
 import dmg.util.Args;
 
+import org.dcache.pool.repository.Account;
 import org.dcache.pool.repository.EventType;
 import org.dcache.pool.repository.v4.CacheRepositoryV4;
 
-import diskCacheV111.pools.SpaceSweeper;
 import org.dcache.pool.classic.SpaceSweeper2;
 import diskCacheV111.repository.CacheRepositoryEntry;
 import diskCacheV111.util.CacheException;
@@ -34,221 +34,225 @@ import diskCacheV111.vehicles.StorageInfo;
 public class PoolRepository {
 
 
-	private CacheRepositoryV4 _repository;
-	private File _base;
-	@Before
-	public void setUp() throws Exception {
+    private CacheRepositoryV4 _repository;
+    private Account _account;
+    private File _base;
+    @Before
+    public void setUp() throws Exception {
 
-	    Logger.getLogger("logger.org.dcache.repository").setLevel(Level.ERROR);
+        Logger.getLogger("logger.org.dcache.repository").setLevel(Level.ERROR);
 
-		_base = new File("/tmp/repository");
+        _base = new File("/tmp/repository");
 
-		_base.mkdirs();
-		new File(_base, "control").mkdir();
-		new File(_base, "data").mkdir();
+        _base.mkdirs();
+        new File(_base, "control").mkdir();
+        new File(_base, "data").mkdir();
 
-		_repository = new CacheRepositoryV4(_base, new Args(""));
-	}
-
-
-	@After
-	public void tearDown() throws Exception {
-
-	    // TODO: remove /tmp/repository
-
-	}
-
-	/*
-	 *  in all tests we are using Chimera id's
-	 */
-	 static  String generateNewID() {
-	     return UUID.randomUUID().toString().toUpperCase().replace('-','0');
-	 }
-	@Test
-	public void testCreate() throws Exception {
-
-		String id = generateNewID();
-		PnfsId pnfsId = new PnfsId(id);
-		_repository.createEntry(pnfsId);
-
-		assertEquals(true, _repository.contains(pnfsId));
-
-		/*
-		 * increment link count and then remove
-		 */
+        _account = new Account();
+        _account.setTotal(1024);
+        _repository = new CacheRepositoryV4(_base, new Args(""));
+        _repository.setAccount(_account);
+    }
 
 
-		CacheRepositoryEntry entry = _repository.getEntry(pnfsId);
-		entry.incrementLinkCount();
+    @After
+    public void tearDown() throws Exception {
 
-		assertEquals(1, entry.getLinkCount());
+        // TODO: remove /tmp/repository
 
-		_repository.removeEntry(entry);
+    }
 
-		try {
-			assertNull("Removed entry shold not be accessable", _repository.getEntry(pnfsId));
-		}catch(FileNotInCacheException e) {
-			// OK
-		}
+    /*
+     *  in all tests we are using Chimera id's
+     */
+    static  String generateNewID() {
+        return UUID.randomUUID().toString().toUpperCase().replace('-','0');
+    }
+    @Test
+    public void testCreate() throws Exception {
 
-		assertNotNull("Removed entry accessable as generic", _repository.getGenericEntry(pnfsId));
+        String id = generateNewID();
+        PnfsId pnfsId = new PnfsId(id);
+        _repository.createEntry(pnfsId);
 
-	}
+        assertEquals(true, _repository.contains(pnfsId));
 
-	@Test
-	public void testSticky() throws Exception {
-
-		String id = generateNewID();
-		PnfsId pnfsId = new PnfsId(id);
-		_repository.createEntry(pnfsId);
-
-
-		CacheRepositoryEntry entry = _repository.getEntry(pnfsId);
-
-		entry.setCached();
-		entry.setSticky("repository test", System.currentTimeMillis() + 5000, true);
-
-		assertEquals("setSticky makes file sticky",true, entry.isSticky());
-		Thread.sleep(5100);
-		assertEquals("entry shold be not stich when life time is over",false, entry.isSticky());
-
-		_repository.removeEntry(entry);
-	}
-
-	@Test
-	public void testStatTransitions() throws Exception {
-
-		String id = generateNewID();
-		PnfsId pnfsId = new PnfsId(id);
-
-		CacheRepositoryEntry entry = _repository.createEntry(pnfsId);
-
-		try {
-                    /* Setting sticky early should be allowed, as
-                     * there is otherwise no way to set cached +
-                     * sticky without either going via precious or
-                     * risking the file to be garbage collected.
-                     */
-                    entry.setSticky(true);
-                    assertTrue("Sticky not set", entry.isSticky());
-		}catch(CacheException e) {
-                    fail("Setting sticky should not throw an exception");
-		}
-
-		try {
-			entry.setReceivingFromClient();
-			assertEquals("Recieving from client not set",true, entry.isReceivingFromClient());
-
-			entry.setReceivingFromStore();
-			fail("transition from-client => from-store should throws exception");
-		}catch(CacheException e) {
-			// OK illegal state
-		}
-
-		try {
-			// we are in from client state
-			entry.setCached();
-			assertEquals("Cached not set",true, entry.isCached());
-
-		}catch(CacheException e) {
-			fail("Valid transition from-clent => cached");
-		}
-
-		try {
-			// we are in cached state
-			entry.setPrecious();
-			assertEquals("Precious not set",true, entry.isPrecious());
-
-		}catch(CacheException e) {
-			fail("Transition cached => precious should not throw exception");
-		}
+        /*
+         * increment link count and then remove
+         */
 
 
-		try {
-			// we are in precious state
-			entry.setReceivingFromClient();
-			fail("Transition precious => from-clent should throw exception");
+        CacheRepositoryEntry entry = _repository.getEntry(pnfsId);
+        entry.incrementLinkCount();
 
-		}catch(CacheException e) {
-			// OK
-		}
+        assertEquals(1, entry.getLinkCount());
 
-		try {
-			// we are in precious state
-			entry.setReceivingFromStore();
-			fail("Transition precious => from-store should throw exception");
+        _repository.removeEntry(entry);
 
-		}catch(CacheException e) {
-			// OK
-		}
+        try {
+            assertNull("Removed entry shold not be accessable", _repository.getEntry(pnfsId));
+        }catch(FileNotInCacheException e) {
+            // OK
+        }
 
-		try {
-			// we are in precious state
-			entry.setSendingToStore(true);
-			assertEquals("TO Store not set",true, entry.isSendingToStore());
+        assertNotNull("Removed entry accessable as generic", _repository.getGenericEntry(pnfsId));
 
-		}catch(CacheException e) {
-			fail("transition precious => to store should not throw exception");
-		}
+    }
 
-		try {
-			// we are in precious state
-			entry.setCached();
-			assertEquals("Cached not set",true, entry.isCached());
+    @Test
+    public void testSticky() throws Exception {
 
-		}catch(CacheException e) {
-			fail("Transition precious => cached should not throw exception");
-		}
-
-		try {
-			// we are in cached state
-			entry.setReceivingFromClient();
-			fail("Transition cached => from-client should throw exception");
-
-		}catch(CacheException e) {
-			// OK
-		}
-
-		try {
-			// we are in caches state
-			entry.setReceivingFromStore();
-			fail("Transition cached => from-store should throw exception");
-
-		}catch(CacheException e) {
-			// OK
-		}
-
-		try {
-			// we are in cached state
-			entry.setSendingToStore(true);
-			assertEquals("Cached files can't be in TO STORE state",true, entry.isSendingToStore());
-
-		}catch(CacheException e) {
-			// OK
-		}
+        String id = generateNewID();
+        PnfsId pnfsId = new PnfsId(id);
+        _repository.createEntry(pnfsId);
 
 
-		_repository.removeEntry(entry);
-	}
+        CacheRepositoryEntry entry = _repository.getEntry(pnfsId);
 
-	@Test
-	public void testBad2Precious() throws Exception {
+        entry.setCached();
+        entry.setSticky("repository test", System.currentTimeMillis() + 5000, true);
 
-		String id = generateNewID();
-		PnfsId pnfsId = new PnfsId(id);
+        assertEquals("setSticky makes file sticky",true, entry.isSticky());
+        Thread.sleep(5100);
+        assertEquals("entry shold be not stich when life time is over",false, entry.isSticky());
 
-		CacheRepositoryEntry entry = _repository.createEntry(pnfsId);
+        _repository.removeEntry(entry);
+    }
 
-		entry.setCached();
-		entry.setBad(true);
-                entry.setPrecious();
-                assertTrue("Entry should still be bad", entry.isBad());
+    @Test
+    public void testStatTransitions() throws Exception {
 
-		_repository.removeEntry(entry);
-	}
+        String id = generateNewID();
+        PnfsId pnfsId = new PnfsId(id);
 
-	@Test
-	public void testReadTransient() throws Exception {
+        CacheRepositoryEntry entry = _repository.createEntry(pnfsId);
+
+        try {
+            /* Setting sticky early should be allowed, as
+             * there is otherwise no way to set cached +
+             * sticky without either going via precious or
+             * risking the file to be garbage collected.
+             */
+            entry.setSticky(true);
+            assertTrue("Sticky not set", entry.isSticky());
+        }catch(CacheException e) {
+            fail("Setting sticky should not throw an exception");
+        }
+
+        try {
+            entry.setReceivingFromClient();
+            assertEquals("Recieving from client not set",true, entry.isReceivingFromClient());
+
+            entry.setReceivingFromStore();
+            fail("transition from-client => from-store should throws exception");
+        }catch(CacheException e) {
+            // OK illegal state
+        }
+
+        try {
+            // we are in from client state
+            entry.setCached();
+            assertEquals("Cached not set",true, entry.isCached());
+
+        }catch(CacheException e) {
+            fail("Valid transition from-clent => cached");
+        }
+
+        try {
+            // we are in cached state
+            entry.setPrecious();
+            assertEquals("Precious not set",true, entry.isPrecious());
+
+        }catch(CacheException e) {
+            fail("Transition cached => precious should not throw exception");
+        }
+
+
+        try {
+            // we are in precious state
+            entry.setReceivingFromClient();
+            fail("Transition precious => from-clent should throw exception");
+
+        }catch(CacheException e) {
+            // OK
+        }
+
+        try {
+            // we are in precious state
+            entry.setReceivingFromStore();
+            fail("Transition precious => from-store should throw exception");
+
+        }catch(CacheException e) {
+            // OK
+        }
+
+        try {
+            // we are in precious state
+            entry.setSendingToStore(true);
+            assertEquals("TO Store not set",true, entry.isSendingToStore());
+
+        }catch(CacheException e) {
+            fail("transition precious => to store should not throw exception");
+        }
+
+        try {
+            // we are in precious state
+            entry.setCached();
+            assertEquals("Cached not set",true, entry.isCached());
+
+        }catch(CacheException e) {
+            fail("Transition precious => cached should not throw exception");
+        }
+
+        try {
+            // we are in cached state
+            entry.setReceivingFromClient();
+            fail("Transition cached => from-client should throw exception");
+
+        }catch(CacheException e) {
+            // OK
+        }
+
+        try {
+            // we are in caches state
+            entry.setReceivingFromStore();
+            fail("Transition cached => from-store should throw exception");
+
+        }catch(CacheException e) {
+            // OK
+        }
+
+        try {
+            // we are in cached state
+            entry.setSendingToStore(true);
+            assertEquals("Cached files can't be in TO STORE state",true, entry.isSendingToStore());
+
+        }catch(CacheException e) {
+            // OK
+        }
+
+
+        _repository.removeEntry(entry);
+    }
+
+    @Test
+    public void testBad2Precious() throws Exception {
+
+        String id = generateNewID();
+        PnfsId pnfsId = new PnfsId(id);
+
+        CacheRepositoryEntry entry = _repository.createEntry(pnfsId);
+
+        entry.setCached();
+        entry.setBad(true);
+        entry.setPrecious();
+        assertTrue("Entry should still be bad", entry.isBad());
+
+        _repository.removeEntry(entry);
+    }
+
+    @Test
+    public void testReadTransient() throws Exception {
 
         String id = generateNewID();
         PnfsId pnfsId = new PnfsId(id);
@@ -257,36 +261,36 @@ public class PoolRepository {
 
         entry.setReceivingFromStore();
 
-	}
+    }
 
 
-	@Test
-	public void testBad2Good() throws Exception {
+    @Test
+    public void testBad2Good() throws Exception {
 
-		String id = generateNewID();
-		PnfsId pnfsId = new PnfsId(id);
-		_repository.createEntry(pnfsId);
-
-
-		CacheRepositoryEntry entry = _repository.getEntry(pnfsId);
-
-		entry.setCached();
-		entry.setBad(true);
-		assertTrue("setBad(true) did not change the state to BAD", entry.isBad());
-
-		entry.setBad(false);
-		assertFalse("setBad(false) did not remove BAD state", entry.isBad());
-
-		_repository.removeEntry(entry);
-	}
+        String id = generateNewID();
+        PnfsId pnfsId = new PnfsId(id);
+        _repository.createEntry(pnfsId);
 
 
-	@Test
-	public void testCallBackAvailable() throws Exception {
+        CacheRepositoryEntry entry = _repository.getEntry(pnfsId);
 
-	    RepositoryCallbacksHelper listener = new RepositoryCallbacksHelper();
+        entry.setCached();
+        entry.setBad(true);
+        assertTrue("setBad(true) did not change the state to BAD", entry.isBad());
 
-	    _repository.addCacheRepositoryListener(listener);
+        entry.setBad(false);
+        assertFalse("setBad(false) did not remove BAD state", entry.isBad());
+
+        _repository.removeEntry(entry);
+    }
+
+
+    @Test
+    public void testCallBackAvailable() throws Exception {
+
+        RepositoryCallbacksHelper listener = new RepositoryCallbacksHelper();
+
+        _repository.addCacheRepositoryListener(listener);
 
         String id = generateNewID();
         PnfsId pnfsId = new PnfsId(id);
@@ -299,7 +303,7 @@ public class PoolRepository {
 
         assertEquals("Available callback not called", 1, listener.getAvailableCalled());
 
-	}
+    }
 
     @Test
     public void testCallBackCached() throws Exception {
@@ -382,30 +386,6 @@ public class PoolRepository {
 
     }
 
-
-    @Test
-    public void testNeedSpaceCasting() throws Exception {
-
-        RepositoryCallbacksHelper listener = new RepositoryCallbacksHelper();
-
-        _repository.addCacheRepositoryListener(listener);
-
-        String id = generateNewID();
-        PnfsId pnfsId = new PnfsId(id);
-
-        CacheRepositoryEntry entry = _repository.createEntry(pnfsId);
-
-        entry.setPrecious();
-
-        CacheRepositoryEvent repositoryEvent = new CacheRepositoryEvent(this, entry );
-        try {
-            _repository.processEvent(EventType.SPACE, repositoryEvent);
-            fail("NeedSpace even should react on wrong event type");
-        } catch (IllegalArgumentException iae) {
-            // OK
-        }
-    }
-
     @Test
     public void testFileSize() throws Exception {
 
@@ -426,19 +406,21 @@ public class PoolRepository {
         String id = generateNewID();
         PnfsId pnfsId = new PnfsId(id);
 
-        SpaceSweeper sweeper2 = new SpaceSweeper2(null, _repository);
+        SpaceSweeper2 sweeper2 = new SpaceSweeper2();
+        sweeper2.setRepository(_repository);
+        sweeper2.setAccount(_account);
 
         CacheRepositoryEntry entry = _repository.createEntry(pnfsId);
 
         entry.setSize(17);
         entry.setCached();
 
-        long cachedSize2 = sweeper2.getRemovableSpace();
+        long cachedSize2 = _account.getRemovable();
 
         entry.setCached();
 
         assertEquals("SpaceSweeper2 on set cached two times calculates file size twice",
-                cachedSize2,  sweeper2.getRemovableSpace() );
+                     cachedSize2,  _account.getRemovable() );
     }
 
     @Test
@@ -454,26 +436,26 @@ public class PoolRepository {
 
         entry.setPrecious();
 
-        long preciousSize = _repository.getPreciousSpace();
+        long preciousSize = _account.getPrecious();
         entry.setPrecious();
 
         assertEquals("set precious two times calculates file size twice",
-                preciousSize,  _repository.getPreciousSpace() );
+                     preciousSize,  _account.getPrecious() );
 
     }
 
-	@Test(timeout = 500)
-	public void testSpaceAllocation() {
+    @Test(timeout = 500)
+    public void testSpaceAllocation() {
 
-		/* for now this test is impossible due to repository design */
+        /* for now this test is impossible due to repository design */
 
-		// try {
-		// _repository.allocateSpace(10);
-		// fail("out of index shold be thrown");
-		// } catch (InterruptedException e) {
-		// fail("Allocation failed with exception : " + e.getMessage());
-		// }
+        // try {
+        // _repository.allocateSpace(10);
+        // fail("out of index shold be thrown");
+        // } catch (InterruptedException e) {
+        // fail("Allocation failed with exception : " + e.getMessage());
+        // }
 
-	}
+    }
 
 }

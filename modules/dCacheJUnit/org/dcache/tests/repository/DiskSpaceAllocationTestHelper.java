@@ -2,9 +2,7 @@ package org.dcache.tests.repository;
 
 import java.util.concurrent.CountDownLatch;
 
-import org.dcache.pool.repository.PoolSpaceAllocatable;
-
-import diskCacheV111.repository.SpaceRequestable;
+import org.dcache.pool.repository.Account;
 
 public class DiskSpaceAllocationTestHelper {
 
@@ -15,14 +13,14 @@ public class DiskSpaceAllocationTestHelper {
 
 
 
-    public static void freeEntry( final PoolSpaceAllocatable<Long> spaceAllocator, final Long entry, final long millis) {
+    public static void freeEntry( final Account spaceAllocator, final long size, final long millis) {
 
         new Thread("DiskSpaceAllocationTestHelper") {
             @Override
             public void run() {
                 try {
                     Thread.sleep(millis);
-                    spaceAllocator.free(entry);
+                    spaceAllocator.free(size);
                 }catch(Exception e) {
                     // ignore
                 }
@@ -32,14 +30,14 @@ public class DiskSpaceAllocationTestHelper {
     }
 
 
-    public static void addSpace( final PoolSpaceAllocatable<Long> spaceAllocator,final long newSpace, final long millis) {
+    public static void addSpace( final Account spaceAllocator,final long newSpace, final long millis) {
 
         new Thread("DiskSpaceAllocationTestHelper") {
             @Override
             public void run() {
                 try {
                     Thread.sleep(millis);
-                    spaceAllocator.setTotalSpace(newSpace);
+                    spaceAllocator.setTotal(newSpace);
                 }catch(Exception e) {
                     // ignore
                 }
@@ -48,27 +46,14 @@ public class DiskSpaceAllocationTestHelper {
 
     }
 
-    public static SpaceRequestable cleanOnDemand( final PoolSpaceAllocatable<Long> spaceAllocator, final Long entry) {
-
-        return new SpaceRequestable() {
-
-            public void spaceNeeded(long space) {
-                spaceAllocator.free(entry);
-
-            }
-
-        };
-
-    }
-
-    public static Thread allocateInThread( final PoolSpaceAllocatable<Long> spaceAllocator, final Long entry, final long millis, final long size) {
+    public static Thread allocateInThread( final Account spaceAllocator, final long size) {
 
 
         Thread t = new Thread("DiskSpaceAllocationTestHelper") {
             @Override
             public void run() {
                 try {
-                    spaceAllocator.allocate(entry, size, millis);
+                    spaceAllocator.allocate(size);
                 }catch(Exception e) {
                     // ignore
                 }

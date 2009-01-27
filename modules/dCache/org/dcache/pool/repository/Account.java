@@ -66,6 +66,10 @@ public class Account
         if (space < 0) {
             throw new IllegalArgumentException("Cannot free negative space");
         }
+        if (_used < space) {
+            throw new IllegalArgumentException("Cannot set used space to a negattive value");
+        }
+
         notifyAll();
         _used -= space;
     }

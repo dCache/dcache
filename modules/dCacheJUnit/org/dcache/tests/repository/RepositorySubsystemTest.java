@@ -23,10 +23,13 @@ import org.dcache.tests.cells.CellAdapterHelper;
 import org.dcache.tests.cells.CellStubHelper;
 import org.dcache.tests.cells.Message;
 
+import org.dcache.pool.repository.Account;
 import org.dcache.pool.repository.v4.CacheRepositoryV4;
 import org.dcache.pool.repository.v5.CacheRepositoryV5;
 import org.dcache.pool.repository.IllegalTransitionException;
 
+import org.dcache.pool.classic.FairQueueAllocation;
+import org.dcache.pool.classic.SpaceSweeper2;
 import org.dcache.pool.repository.SpaceRecord;
 import org.dcache.pool.repository.EntryState;
 import static org.dcache.pool.repository.EntryState.*;
@@ -58,6 +61,7 @@ public class RepositorySubsystemTest
 
     private PnfsHandler pnfs;
 
+    private Account account;
     private CacheRepositoryV5 repository;
 
     private File root;
@@ -146,7 +150,10 @@ public class RepositorySubsystemTest
 
         args = "-metaDataRepository=org.dcache.pool.repository.meta.db.BerkeleyDBMetaDataRepository";
 
+        account = new Account();
+        account.setTotal(5120);
         CacheRepositoryV4 rep = new CacheRepositoryV4(root, new Args(args));
+        rep.setAccount(account);
         rep.runInventory();
         createEntry(rep, id1, info1).setPrecious();
         createEntry(rep, id2, info2).setCached();
@@ -155,16 +162,24 @@ public class RepositorySubsystemTest
         entry.setSticky(true);
         rep.close();
 
+        account = new Account();
+        account.setTotal(5120);
         stateChangeEvents = new LinkedBlockingQueue<StateChangeEvent>();
         rep = new CacheRepositoryV4(root, new Args(args));
+        rep.setAccount(account);
         cell = new CellAdapterHelper("pool", args);
         pnfs = new PnfsHandler(new CellPath("pnfs"), "pool");
         pnfs.setCellEndpoint(cell);
+        SpaceSweeper2 sweeper = new SpaceSweeper2();
+        sweeper.setAccount(account);
+        sweeper.setRepository(rep);
+        FairQueueAllocation allocator = new FairQueueAllocation();
+        allocator.setAccount(account);
         repository = new CacheRepositoryV5();
+        repository.setAccount(account);
+        repository.setAllocator(allocator);
         repository.setPnfsHandler(pnfs);
-        repository.setSize(5120);
         repository.setLegacyRepository(rep);
-        repository.setSweeper(new org.dcache.pool.classic.SpaceSweeper2(pnfs, rep));
         repository.addListener(this);
         repository.init(0);
 
@@ -349,20 +364,20 @@ public class RepositorySubsystemTest
     @Test
     public void testSetSize()
     {
-        repository.setSize(3072);
+        account.setTotal(3072);
         assertSpaceRecord(3072, 0, 1024, 1024);
     }
 
     @Test(expected=IllegalArgumentException.class)
     public void testSetSizeToSmall()
     {
-        repository.setSize(3071);
+        account.setTotal(3071);
     }
 
     @Test(expected=IllegalArgumentException.class)
     public void testSetSizeNegative()
     {
-        repository.setSize(-1);
+        account.setTotal(-1);
     }
 
     @Test
@@ -587,7 +602,7 @@ public class RepositorySubsystemTest
     public void testCreateEntryOutOfSpace()
         throws Throwable
     {
-        repository.setSize(3072);
+        account.setTotal(3072);
         createEntry4(0,false, false, false, FROM_CLIENT, PRECIOUS);
         assertCanOpen(id4, size4, PRECIOUS);
         assertSpaceRecord(3072, 0, 2048, 0);
