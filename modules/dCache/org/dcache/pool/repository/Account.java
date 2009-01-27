@@ -3,13 +3,13 @@ package org.dcache.pool.repository;
 
 /**
  * Encapsulation of space accounting information for a
- * repository. 
+ * repository.
  *
  * Used as a synchronisation point between several repository
  * components. The object is thread safe and external synchronisations
  * are allowed. Any modification of the object triggers a call to
  * notifyAll on the object.
- */ 
+ */
 public class Account
 {
     private long _total;
@@ -63,6 +63,9 @@ public class Account
      */
     public synchronized void free(long space)
     {
+        if (space < 0) {
+            throw new IllegalArgumentException("Cannot free negative space");
+        }
         notifyAll();
         _used -= space;
     }
@@ -75,6 +78,9 @@ public class Account
      */
     public synchronized boolean allocateNow(long request)
     {
+        if (request < 0) {
+            throw new IllegalArgumentException("Cannot allocate negative space");
+        }
         if (request > getFree()) {
             return false;
         }
@@ -90,9 +96,12 @@ public class Account
      * call blocks. Space is not allocated until the complete request
      * can be served. For this reason, large requests can starve.
      */
-    public synchronized void allocate(long request) 
+    public synchronized void allocate(long request)
         throws InterruptedException
     {
+        if (request < 0) {
+            throw new IllegalArgumentException("Cannot allocate negative space");
+        }
         _requested += request;
         try {
             while (request > getFree()) {
@@ -108,13 +117,27 @@ public class Account
 
     public synchronized void adjustRemovable(long delta)
     {
-        _removable += delta;
+        long removable = _removable + delta;
+        if (removable < 0) {
+            throw new IllegalArgumentException("Negative removable space is not allowed");
+        }
+        if (removable > _total) {
+            throw new IllegalArgumentException("Removable space would exceed repository size");
+        }
+        _removable = removable;
         notifyAll();
     }
 
     public synchronized void adjustPrecious(long delta)
     {
-        _precious += delta;
+        long precious = _precious + delta;
+        if (precious < 0) {
+            throw new IllegalArgumentException("Negative precious space is not allowed");
+        }
+        if (precious > _total) {
+            throw new IllegalArgumentException("Precious space would exceed repository size");
+        }
+        _precious = precious;
         notifyAll();
     }
 
@@ -131,6 +154,6 @@ public class Account
         long lru = (System.currentTimeMillis() - _lru) / 1000L;
         return new SpaceRecord(_total, getFree(), _precious, _removable, lru);
     }
-    
+
 
 }
