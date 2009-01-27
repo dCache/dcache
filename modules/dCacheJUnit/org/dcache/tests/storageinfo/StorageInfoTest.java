@@ -9,6 +9,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InvalidClassException;
+import java.io.OptionalDataException;
 import java.io.ObjectInputStream;
 import java.io.StreamCorruptedException;
 import java.net.URI;
@@ -17,8 +18,6 @@ import java.util.Map;
 
 import org.junit.Before;
 import org.junit.Test;
-
-import com.sun.corba.se.impl.io.OptionalDataException;
 
 import diskCacheV111.util.AccessLatency;
 import diskCacheV111.util.RetentionPolicy;
