@@ -20,7 +20,7 @@ import dmg.util.CommandInterpreter;
 public class LinkGroupInfoTest {
 
 
-    private static GenericMockCellHelper _cell = new GenericMockCellHelper("PoolMonitorTestCell", "");
+    private static GenericMockCellHelper _cell = new GenericMockCellHelper("LinkGroupInfoTestCell", "");
     private PoolSelectionUnit _selectionUnit;
     private CostModule _costModule ;
     private CommandInterpreter _ci;
