@@ -37,11 +37,13 @@ public class BooleanStateValue extends StateValue {
 		_storage = value;
 	}
 	
+	@Override
 	public String toString() {
 		return Boolean.toString( _storage);
 	}
 
 
+	@Override
 	public String getTypeName() {
 		return "boolean";
 	}
@@ -51,6 +53,7 @@ public class BooleanStateValue extends StateValue {
 	 *  Leaf-node specific support for the Visitor pattern.  See StateValue for inherited
 	 *  actual implementation and StateVisitor interface for more details. 
 	 */
+	@Override
 	public void acceptVisitor(StatePath path, StateVisitor visitor) {
 		visitor.visitBoolean( path, this);
 	}
