@@ -91,7 +91,9 @@ abstract public class StateValue implements StateComponent {
 	
 	
 	/** Force subclasses to override equals and hashCode */
+	@Override
 	public abstract boolean equals( Object other);
+	@Override
 	public abstract int hashCode();
 	
 	

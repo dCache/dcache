@@ -27,8 +27,7 @@ public class IntegerStateValue extends StateValue {
 	 * @param value the Integer to store.
 	 */
 	public IntegerStateValue( long value) {
-		super( false);
-		_storage = value;
+		this( value, false);
 	}
 
 	
@@ -46,11 +45,12 @@ public class IntegerStateValue extends StateValue {
 	/**
 	 * Return a string representation.
 	 */
+	@Override
 	public String toString() {
 		return Long.toString( _storage);
 	}
 
-	
+	@Override
 	public String getTypeName() {
 		return "integer";
 	}
@@ -67,6 +67,7 @@ public class IntegerStateValue extends StateValue {
 	 *  Leaf-node specific support for the Visitor pattern.  See StateValue for inherited
 	 *  actual implementation and StateVisitor interface for more details. 
 	 */
+	@Override
 	public void acceptVisitor( StatePath path, StateVisitor visitor) {
 		visitor.visitInteger( path, this);
 	}

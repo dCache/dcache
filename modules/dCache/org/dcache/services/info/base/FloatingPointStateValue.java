@@ -44,10 +44,12 @@ public class FloatingPointStateValue extends StateValue {
 		_storage = value;
 	}
 
+	@Override
 	public String getTypeName() {
 		return "float";
 	}
 	
+	@Override
 	public String toString() {
 		return Double.toString( _storage);
 	}
@@ -56,6 +58,7 @@ public class FloatingPointStateValue extends StateValue {
 	 *  Leaf-node specific support for the Visitor pattern.  See StateValue for inherited
 	 *  actual implementation and StateVisitor interface for more details. 
 	 */
+	@Override
 	public void acceptVisitor(StatePath path, StateVisitor visitor) {
 		visitor.visitFloatingPoint( path, this);
 	}
