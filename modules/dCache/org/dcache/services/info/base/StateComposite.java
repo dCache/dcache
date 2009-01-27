@@ -330,28 +330,48 @@ public class StateComposite implements StateComponent {
 		visitor.visitCompositePostDescend(ourPath, branchMetadata);
 	}
 
+
 	/**
 	 * Visit a specific child.  This is somewhat tricky as we must be careful, when there is
 	 * a transition, which child we visit.
 	 */
 	private void visitNamedChild( StateVisitor visitor, StatePath ourPath, String childName, StatePath startPath, StateTransition transition, StateChangeSet changeSet) {
 
-		StateComponent child = null;
-		
-		if( changeSet != null) {
-			StateComponent freshChild = changeSet.getFreshChildValue( childName);			
-			child = freshChild != null ? freshChild : _children.get( childName); 
-		} else {
-			child = _children.get( childName);
+		StateComponent childToVisit = _children.get( childName);
+
+		if( changeSet != null) {			
+			/**
+			 *  A fresh child is one that is either new or an updated value for
+			 *  an existing child.
+			 */
+			StateComponent freshChild = changeSet.getFreshChildValue( childName);
+
+			/**  
+			 *  If the child is new then _children.containsKey( childName) is false.   If
+			 *  this is so, we always visit it.
+			 *  
+			 *  If the is an updated value then things are slightly more tricky.
+			 *  If updated child is a StateValue (i.e., a metric), then always
+			 *  visit the updated value.  If the child is a StateComposite (a branch) then
+			 *  visit the existing child.  This is because changes are recorded against
+			 *  the existing StateComposites whenever an existing StateComposite exists.
+			 *
+			 *  NB.  Here we assume that childToVisit != null is
+			 *       equivalent to _children.containsKey( childName).
+			 *       In the absence of bugs, this is true since null
+			 *       is not an allowed StateComponent
+			 */
+			if( freshChild != null && !(childToVisit != null && childToVisit instanceof StateComposite))
+				childToVisit = freshChild;
 		}
-		
-		if( child == null) {
+
+		if( childToVisit == null) {
 			_log.error("Tried to visit null child in " + ourPath != null ? ourPath : "(top)");
 			return;
 		}
-		
+
 		StatePath childStartPath = startPath != null ? startPath.childPath() : null;
-		child.acceptVisitor( transition, buildChildPath( ourPath, childName), childStartPath, visitor);
+		childToVisit.acceptVisitor( transition, buildChildPath( ourPath, childName), childStartPath, visitor);
 	}
 	
 	/**
