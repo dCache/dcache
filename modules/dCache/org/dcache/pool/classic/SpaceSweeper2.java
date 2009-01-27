@@ -7,6 +7,8 @@ import diskCacheV111.util.*;
 import diskCacheV111.util.event.*;
 import diskCacheV111.vehicles.StorageInfo;
 import org.dcache.cells.CellCommandListener;
+import org.dcache.cells.CellSetupProvider;
+import org.dcache.pool.repository.Account;
 
 import dmg.util.*;
 import dmg.cells.nucleus.*;
@@ -17,33 +19,34 @@ import java.io.PrintWriter;
 import org.apache.log4j.Logger;
 
 public class SpaceSweeper2
-    extends AbstractSpaceSweeper
+    extends AbstractCacheRepositoryListener
     implements Runnable, CellCommandListener
 {
     private final static Logger _log = Logger.getLogger(SpaceSweeper2.class);
 
-    private final CacheRepository _repository;
-
-    private final Set<PnfsId> _list  = new LinkedHashSet<PnfsId>();
-
-    private long            _spaceNeeded = 0;
-
-    private long            _removableSpace = 0;
-
     private static SimpleDateFormat __format =
         new SimpleDateFormat("HH:mm-MM/dd");
 
-    public SpaceSweeper2(PnfsHandler pnfs, CacheRepository repository)
-    {
-        _repository = repository;
+    private final Set<PnfsId> _list  = new LinkedHashSet<PnfsId>();
 
-        _repository.addCacheRepositoryListener(this);
-        new Thread(this, "sweeper").start();
+    private CacheRepository _repository;
+
+    private Account _account;
+
+    public SpaceSweeper2()
+    {
     }
 
-    public synchronized long getRemovableSpace()
+    public void setRepository(CacheRepository repository)
     {
-        return _removableSpace;
+        _repository = repository;
+        _repository.addCacheRepositoryListener(this);
+    }
+
+    public void setAccount(Account account)
+    {
+        _account = account;
+        new Thread(this, "sweeper").start();
     }
 
     /**
@@ -71,6 +74,32 @@ public class SpaceSweeper2
     }
 
     /**
+     * Returns the pnfsid of the eldest removable entry.
+     */
+    private synchronized PnfsId getEldest()
+    {
+        if (_list.size() == 0)
+            return null;
+        return _list.iterator().next();
+    }
+
+    /**
+     * Returns the last accss time of the eldest removable entry.
+     */
+    private long getLRU()
+    {
+        try {
+            PnfsId id = getEldest();
+            if (id == null)
+                return 0;
+
+            return _repository.getEntry(id).getLastAccessTime();
+        } catch (CacheException e) {
+            return 0L;
+        }
+    }
+
+    /**
      * Add entry to the queue unless it is already on the queue.
      *
      * @throws IllegalArgumentException if entry is precious or not cached
@@ -83,10 +112,14 @@ public class SpaceSweeper2
 
         PnfsId id = entry.getPnfsId();
         try {
+            if (_list.isEmpty()) {
+                _account.setLRU(entry.getLastAccessTime());
+            }
+
             if (_list.add(id)) {
                 _log.debug("Added " + id + " to sweeper");
                 entry.touch();
-                _removableSpace += entry.getSize();
+                _account.adjustRemovable(entry.getSize());
 
                 /* The sweeper thread may be waiting for more files to
                  * delete.
@@ -104,33 +137,16 @@ public class SpaceSweeper2
     {
         PnfsId id = entry.getPnfsId();
         long size = entry.getSize();
+        boolean eldest = id.equals(getEldest());
         if (_list.remove(id)) {
             _log.debug("Removed " + id + " from sweeper");
-            _removableSpace -= size;
+            _account.adjustRemovable(-size);
+            if (eldest) {
+                _account.setLRU(getLRU());
+            }
             return true;
         }
         return false;
-    }
-
-    private synchronized PnfsId getLRUId()
-    {
-        if (_list.size() == 0)
-            return null;
-        return _list.iterator().next();
-    }
-
-    public long getLRUSeconds()
-    {
-        try {
-            PnfsId id = getLRUId();
-            if (id == null)
-                return 0;
-
-            CacheRepositoryEntry e = _repository.getEntry(id);
-            return (System.currentTimeMillis() - e.getLastAccessTime()) / 1000L;
-        } catch (CacheException e) {
-            return 0L;
-        }
     }
 
     public synchronized void precious(CacheRepositoryEvent event)
@@ -156,6 +172,8 @@ public class SpaceSweeper2
         CacheRepositoryEntry entry = event.getRepositoryEntry();
         PnfsId id = entry.getPnfsId();
 
+        boolean eldest = id.equals(getEldest());
+
         if (_list.remove(id)) {
             _log.debug("touched : " + entry);
             try {
@@ -165,20 +183,16 @@ public class SpaceSweeper2
             }
             _list.add(id);
         }
+
+        if (eldest) {
+            _account.setLRU(getLRU());
+        }
     }
 
     public synchronized void removed(CacheRepositoryEvent event)
     {
         CacheRepositoryEntry entry = event.getRepositoryEntry();
         remove(entry);
-    }
-
-    public synchronized void needSpace(CacheNeedSpaceEvent event)
-    {
-        long space = event.getRequiredSpace();
-        _spaceNeeded += space;
-        _log.info("Added " + space + " bytes to reclamation queue");
-        notifyAll();
     }
 
     public synchronized void scanned(CacheRepositoryEvent event)
@@ -203,22 +217,29 @@ public class SpaceSweeper2
     public String hh_sweeper_purge = "# Purges all removable files from pool";
     public synchronized String ac_sweeper_purge(Args args) throws Exception
     {
-        long toFree = getRemovableSpace();
-        _spaceNeeded += toFree;
-        notifyAll();
-        _log.info("Added " + toFree + " bytes to reclamation queue");
-        return String.format("%d bytes added to reclamation queue", toFree);
+        final long toFree = _account.getRemovable();
+        new Thread("sweeper-free") {
+            public void run() 
+            {
+                reclaim(toFree);
+            }
+        }.start();
+        return String.format("Reclaiming %d bytes", toFree);
     }
 
     public String hh_sweeper_free = "<bytesToFree>";
     public synchronized String ac_sweeper_free_$_1(Args args)
         throws NumberFormatException
     {
-        long toFree = Long.parseLong(args.argv(0));
-        _spaceNeeded += toFree;
-        notifyAll();
-        _log.info("Added " + toFree + " bytes to reclamation queue");
-        return String.format("%d bytes added to reclamation queue", toFree);
+        final long toFree = Long.parseLong(args.argv(0));
+        new Thread("sweeper-free") {
+            public void run() 
+            {
+                reclaim(toFree);
+            }
+        }.start();
+
+        return String.format("Reclaiming %d bytes", toFree);
     }
 
     public String hh_sweeper_ls = " [-l] [-s]";
@@ -234,23 +255,27 @@ public class SpaceSweeper2
         }
         int i = 0;
         for (PnfsId id : list) {
-            CacheRepositoryEntry entry = _repository.getEntry(id);
-            if (l) {
-                sb.append(Formats.field(""+i,3,Formats.RIGHT)).append(" ");
-                sb.append(id.toString()).append("  ");
-                sb.append(entry.getState()).append("  ");
-                sb.append(Formats.field(""+entry.getSize(), 11, Formats.RIGHT));
-                sb.append(" ");
-                sb.append(__format.format(new Date(entry.getCreationTime()))).append(" ");
-                sb.append(__format.format(new Date(entry.getLastAccessTime()))).append(" ");
-                StorageInfo info = entry.getStorageInfo();
-                if ((info != null) && s)
-                    sb.append("\n    ").append(info.toString());
-                sb.append("\n");
-            } else {
-                sb.append(entry.toString()).append("\n");
+            try {
+                CacheRepositoryEntry entry = _repository.getEntry(id);
+                if (l) {
+                    sb.append(Formats.field(""+i,3,Formats.RIGHT)).append(" ");
+                    sb.append(id.toString()).append("  ");
+                    sb.append(entry.getState()).append("  ");
+                    sb.append(Formats.field(""+entry.getSize(), 11, Formats.RIGHT));
+                    sb.append(" ");
+                    sb.append(__format.format(new Date(entry.getCreationTime()))).append(" ");
+                    sb.append(__format.format(new Date(entry.getLastAccessTime()))).append(" ");
+                    StorageInfo info = entry.getStorageInfo();
+                    if ((info != null) && s)
+                        sb.append("\n    ").append(info.toString());
+                    sb.append("\n");
+                } else {
+                    sb.append(entry.toString()).append("\n");
+                }
+                i++;
+            } catch (FileNotInCacheException e) {
+                // Ignored
             }
-            i++;
         }
         return sb.toString();
     }
@@ -274,80 +299,105 @@ public class SpaceSweeper2
 
         return sb.toString() ;
     }
+
     public String hh_sweeper_get_lru = "[-f] # return lru in seconds [-f means formatted]";
     public String ac_sweeper_get_lru( Args args )
     {
-        long lru = getLRUSeconds();
+        long lru = (System.currentTimeMillis() - getLRU()) / 1000L;
         boolean f = args.getOpt("f") != null;
         return f ? getTimeString(lru) : ("" + lru);
     }
 
-    public void run()
+    private long reclaim(long amount)
     {
-        long spaceNeeded = 0;
         List<CacheRepositoryEntry> tmpList =
             new ArrayList<CacheRepositoryEntry>();
 
-        try {
-            while (!Thread.interrupted()) {
-                /* Take the needed space out of the 'queue'.
-                 */
-                synchronized (this) {
-                    while (spaceNeeded + _spaceNeeded == 0 || _list.isEmpty()) {
-                        wait();
-                    }
-                    spaceNeeded += _spaceNeeded;
-                    _spaceNeeded = 0;
-                }
+        _log.info(String.format("Sweeper trying to reclaim %d bytes", amount));
 
-                _log.info(String.format("Sweeper trying to reclaim %d bytes", spaceNeeded));
+        /* We copy the entries into a tmp list to avoid
+         * ConcurrentModificationException.
+         */
+        synchronized (this) {
+            Iterator<PnfsId> i = _list.iterator();
+            long minSpaceNeeded = amount;
 
-                /* We copy the entries into a tmp list to avoid the
-                 * ConcurrentModificationException.
-                 */
+            while (i.hasNext() && minSpaceNeeded > 0) {
+                PnfsId id = i.next();
                 try {
-                    Iterator<PnfsId> i = _list.iterator();
-                    long minSpaceNeeded = spaceNeeded;
+                    CacheRepositoryEntry entry = _repository.getEntry(id);
 
-                    while (i.hasNext() && minSpaceNeeded > 0) {
-                        PnfsId id = i.next();
-                        try {
-                            CacheRepositoryEntry entry = _repository.getEntry(id);
-
-                            //
-                            //  we are not allowed to remove the
-                            //  file if
-                            //    a) it is locked
-                            //    b) it is still in use.
-                            //
-                            if (entry.isLocked()) {
-                                _log.warn("File skipped by sweeper (locked): " + entry);
-                                continue;
-                            }
-                            if (entry.getLinkCount() > 0) {
-                                _log.warn("file skipped by sweeeper (in use): " + entry);
-                                continue;
-                            }
-                            if (!isRemovable(entry)) {
-                                _log.fatal("file skipped by sweeper (not removable): " + entry);
-                                continue;
-                            }
-                            long size = entry.getSize();
-                            tmpList.add(entry);
-                            minSpaceNeeded -= size;
-                            _log.debug("adds to remove list : " + entry.getPnfsId()
-                                       + " " + size + " -> " + spaceNeeded);
-                        } catch (CacheException e) {
-                            _log.error(e.getMessage());
-                        }
+                    //
+                    //  we are not allowed to remove the
+                    //  file if
+                    //    a) it is locked
+                    //    b) it is still in use.
+                    //
+                    if (entry.isLocked()) {
+                        _log.warn("File skipped by sweeper (locked): " + entry);
+                        continue;
                     }
-                } catch (ConcurrentModificationException e) {
-                    /* Loop exited, this is not an error.  We are not
-                     * supposed to do exact space allocation.
-                     */
+                    if (entry.getLinkCount() > 0) {
+                        _log.warn("file skipped by sweeeper (in use): " + entry);
+                        continue;
+                    }
+                    if (!isRemovable(entry)) {
+                        _log.fatal("file skipped by sweeper (not removable): " + entry);
+                        continue;
+                    }
+                    long size = entry.getSize();
+                    tmpList.add(entry);
+                    minSpaceNeeded -= size;
+                    _log.debug("adds to remove list : " + entry.getPnfsId()
+                               + " " + size);
+                } catch (CacheException e) {
+                    _log.error(e.getMessage());
                 }
+            }
+        }
+        
+        /* Delete the files.
+         */
+        long deleted = 0;
+        for (CacheRepositoryEntry entry: tmpList) {
+            try {
+                long size = entry.getSize();
+                _log.error("trying to remove " + entry.getPnfsId());
+                if (_repository.removeEntry(entry)) {
+                    deleted += size;
+                } else {
+                    _log.info("locked (not removed): " + entry.getPnfsId());
+                }
+            } catch (CacheException e) {
+                _log.error(e.toString());
+            }
+        }
 
-                if (tmpList.isEmpty()) {
+        return deleted;
+    }
+
+    /**
+     * Blocks until the requested space is larger than the free space
+     * and removable space exists. Returns the number of requested
+     * space exceeding the amount of free space.
+     */
+    public long waitForRequests()
+        throws InterruptedException
+    {
+        synchronized (_account) {
+            while (_account.getRequested() <= _account.getFree() ||
+                   _account.getRemovable() == 0) {
+                _account.wait();
+            }
+            return _account.getRequested() - _account.getFree();
+        }
+    }
+
+    public void run()
+    {
+        try {
+            while (true) {
+                if (reclaim(waitForRequests()) == 0) {
                     /* The list maintained by the sweeper is imperfect
                      * in the sense that it can contain locked entries
                      * or entries in use. Thus we could be caught in a
@@ -358,27 +408,10 @@ public class SpaceSweeper2
                      */
                     Thread.currentThread().sleep(10000);
                 }
-
-                /* Delete the files.
-                 */
-                for (CacheRepositoryEntry entry : tmpList) {
-                    try {
-                        long size = entry.getSize();
-                        _log.error("trying to remove " + entry.getPnfsId());
-                        if (_repository.removeEntry(entry)) {
-                            spaceNeeded -= size;
-                        } else {
-                            _log.info("locked (not removed): " + entry.getPnfsId());
-                        }
-                    } catch (CacheException e) {
-                        _log.error(e.toString());
-                    }
-                }
-                spaceNeeded = Math.max(spaceNeeded, 0);
-                tmpList.clear();
             }
         } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
+            /* Signals that the sweeper should quit.
+             */
         } finally {
             _repository.removeCacheRepositoryListener(this);
         }

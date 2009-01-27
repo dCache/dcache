@@ -15,7 +15,6 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.event.CacheRepositoryListener;
 import diskCacheV111.util.event.CacheRepositoryEvent;
-import diskCacheV111.util.event.CacheNeedSpaceEvent;
 import diskCacheV111.util.event.CacheEvent;
 
 
@@ -134,10 +133,6 @@ public class StickyInspector implements CacheRepositoryListener
     public void sticky(CacheRepositoryEvent event)
     {
         schedule(event.getRepositoryEntry());
-    }
-
-    public void needSpace(CacheNeedSpaceEvent event)
-    {
     }
 
     public void actionPerformed(CacheEvent event)

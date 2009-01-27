@@ -62,12 +62,6 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
     private static Logger _log =
         Logger.getLogger("logger.org.dcache.repository");
 
-    /**
-     * Name of file in which space reservation information is stored.
-     */
-    private static final String SPACE_RESERVATION = "SPACE_RESERVATION";
-
-
     private static final String DEFAULT_META_DATA_REPOSITORY =
         "org.dcache.pool.repository.meta.file.FileMetaDataRepository";
 
@@ -474,7 +468,7 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
 
             /* Detect overbooking.
              */
-            long total = getTotalSpace();
+            long total = _account.getTotal();
             if (usedDataSpace > total) {
                 String error =
                     "Overbooked, " + usedDataSpace +
@@ -511,13 +505,13 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
                 }
             }
 
-            if (usedDataSpace != getTotalSpace() - getFreeSpace()) {
-                throw new RuntimeException(String.format("Bug detected: Allocated space is not what we expected (%d vs %d)", usedDataSpace, getTotalSpace() - getFreeSpace()));
+            if (usedDataSpace != _account.getUsed()) {
+                throw new RuntimeException(String.format("Bug detected: Allocated space is not what we expected (%d vs %d)", usedDataSpace, _account.getUsed()));
             }
 
             _log.info(String.format("Inventory contains %d files; total size is %d; used space is %d; free space is %d.",
-                                    _allEntries.size(), getTotalSpace(),
-                                    usedDataSpace, getFreeSpace()));
+                                    _allEntries.size(), _account.getTotal(),
+                                    usedDataSpace, _account.getFree()));
 
             /* We have to create the sticky inspector as the last
              * thing. Otherwise we would risk that it changes the

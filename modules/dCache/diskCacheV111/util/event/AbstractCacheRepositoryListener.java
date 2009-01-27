@@ -15,6 +15,5 @@ public class AbstractCacheRepositoryListener
     public void scanned(CacheRepositoryEvent event) {}
     public void available(CacheRepositoryEvent event) {}
     public void sticky(CacheRepositoryEvent event) {}
-    public void needSpace(CacheNeedSpaceEvent event) {}
     public void actionPerformed(CacheEvent event) {}
 }

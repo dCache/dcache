@@ -47,5 +47,4 @@ public interface CacheRepositoryListener extends CacheEventListener {
       * @param event
       */
      public void sticky( CacheRepositoryEvent event ) ;
-     public void needSpace( CacheNeedSpaceEvent event ) ;
 }

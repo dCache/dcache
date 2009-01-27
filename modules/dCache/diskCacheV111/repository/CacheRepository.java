@@ -9,7 +9,8 @@ import diskCacheV111.util.PnfsId ;
 import diskCacheV111.util.PnfsHandler ;
 import diskCacheV111.util.event.CacheRepositoryListener ;
 
-public interface CacheRepository extends SpaceMonitor {
+public interface CacheRepository
+{
    public static final int ERROR_IO_DISK = 204 ;
    public static final int ALLOW_CONTROL_RECOVERY = 0x1 ;
    public static final int ALLOW_INFO_RECOVERY    = 0x2 ;
@@ -47,7 +48,6 @@ public interface CacheRepository extends SpaceMonitor {
    public void runInventory(PnfsHandler pnfs , int flags )
           throws CacheException ;
 
-   public long getPreciousSpace() ;
    public boolean contains(PnfsId pnfsId );
 
    public boolean isRepositoryOk() ;

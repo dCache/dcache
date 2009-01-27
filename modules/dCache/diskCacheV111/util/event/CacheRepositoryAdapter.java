@@ -13,6 +13,5 @@ public class CacheRepositoryAdapter implements CacheRepositoryListener {
      public void destroyed( CacheRepositoryEvent event ) {}
      public void scanned( CacheRepositoryEvent event ) {}
      public void available( CacheRepositoryEvent event ){}
-     public void needSpace( CacheNeedSpaceEvent event ) {}
      public void actionPerformed( CacheEvent event ) {}
 }

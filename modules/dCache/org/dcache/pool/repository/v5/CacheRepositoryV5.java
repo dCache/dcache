@@ -1,10 +1,8 @@
 package org.dcache.pool.repository.v5;
 
-import diskCacheV111.pools.SpaceSweeper;
 import diskCacheV111.repository.CacheRepositoryEntry;
 import diskCacheV111.util.event.CacheRepositoryListener;
 import diskCacheV111.util.event.CacheRepositoryEvent;
-import diskCacheV111.util.event.CacheNeedSpaceEvent;
 import diskCacheV111.util.event.CacheEvent;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.PnfsId;
@@ -26,6 +24,8 @@ import org.dcache.pool.repository.EntryState;
 import org.dcache.pool.repository.SpaceRecord;
 import org.dcache.pool.repository.IllegalTransitionException;
 import org.dcache.pool.repository.Repository;
+import org.dcache.pool.repository.Account;
+import org.dcache.pool.repository.Allocator;
 import org.dcache.pool.FaultEvent;
 import org.dcache.pool.FaultListener;
 import org.dcache.pool.FaultAction;
@@ -78,8 +78,16 @@ public class CacheRepositoryV5
      */
     private boolean _initialised = false;
 
-    private long _size = Long.MAX_VALUE;
-    private SpaceSweeper _sweeper;
+    /**
+     * Shared repository account object for tracking space.
+     */
+    private Account _account;
+    
+    /**
+     * Allocator used for when allocating space for new entries.
+     */
+    private Allocator _allocator;
+
     private PnfsHandler _pnfs;
     private boolean _checkRepository = true;
     private boolean _volatile = false;
@@ -116,12 +124,6 @@ public class CacheRepositoryV5
         _checkRepository = enable;
     }
 
-    public synchronized void setSweeper(SpaceSweeper sweeper)
-    {
-        assertNotInitialised();
-        _sweeper = sweeper;
-    }
-
     public synchronized boolean getVolatile()
     {
         return _volatile;
@@ -139,30 +141,31 @@ public class CacheRepositoryV5
     }
 
     /**
-     * Sets the size of the repository.
-     *
-     * @param size in bytes
-     * @throws IllegalArgumentException if new size is smaller than
-     * current non removable space.
-     */
-    public synchronized void setSize(long size) throws IllegalArgumentException
-    {
-        if (size < 0)
-            throw new IllegalArgumentException("Size must not be negative");
-        _size = size;
-        if (_repository != null)
-            _repository.setTotalSpace(_size);
-    }
-
-    /**
      * Sets the cache repository used internally to track repository
      * entries.
      */
     public synchronized void setLegacyRepository(CacheRepositoryV4 repository)
     {
         _repository = repository;
-        _repository.setTotalSpace(_size);
         _repository.addCacheRepositoryListener(this);
+    }
+
+    /**
+     * 
+     */
+    public synchronized void setAccount(Account account)
+    {
+        assertNotInitialised();
+        _account = account;
+    }
+
+    /**
+     *
+     */
+    public synchronized void setAllocator(Allocator allocator)
+    {
+        assertNotInitialised();
+        _allocator = allocator;
     }
 
     /**
@@ -178,6 +181,8 @@ public class CacheRepositoryV5
     {
         assert _pnfs != null : "Pnfs handler must be set";
         assert _repository != null : "Repository must be set";
+        assert _account != null : "Account must be set";
+        assert _allocator != null : "Account must be set";
 
         try {
             if (_initialised)
@@ -245,7 +250,7 @@ public class CacheRepositoryV5
                 }
 
                 WriteHandle handle = new WriteHandleImpl(this,
-                                                         _repository,
+                                                         _allocator,
                                                          _pnfs,
                                                          entry,
                                                          info,
@@ -385,12 +390,7 @@ public class CacheRepositoryV5
      */
     public SpaceRecord getSpaceRecord()
     {
-        // REVISIT: This is not atomic!
-        return new SpaceRecord(_repository.getTotalSpace(),
-                               _repository.getFreeSpace(),
-                               _repository.getPreciousSpace(),
-                               _sweeper.getRemovableSpace(),
-                               _sweeper.getLRUSeconds());
+        return _account.getSpaceRecord();
     }
 
     /**
@@ -692,12 +692,6 @@ public class CacheRepositoryV5
     }
 
     /** Callback. */
-    public void needSpace(CacheNeedSpaceEvent event)
-    {
-
-    }
-
-    /** Callback. */
     public void actionPerformed(CacheEvent event)
     {
 
@@ -728,7 +722,7 @@ public class CacheRepositoryV5
 
     public synchronized void printSetup(PrintWriter pw)
     {
-        pw.println("set max diskspace " + _repository.getTotalSpace());
+        pw.println("set max diskspace " + _account.getTotal());
     }
 
     public void shutdown()

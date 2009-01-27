@@ -6,5 +6,5 @@ package org.dcache.pool.repository;
 public enum EventType 
 {
     CACHED, PRECIOUS, CREATE, REMOVE, TOUCH, DESTROY, 
-        SCAN, SPACE, AVAILABLE, STICKY;
+        SCAN, AVAILABLE, STICKY;
 }

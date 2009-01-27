@@ -3,7 +3,6 @@ package org.dcache.pool.repository.v5;
 import org.apache.log4j.Logger;
 
 import diskCacheV111.repository.CacheRepositoryEntry;
-import diskCacheV111.repository.SpaceMonitor;
 import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.util.PnfsHandler;
 import diskCacheV111.util.CacheException;
@@ -14,6 +13,7 @@ import org.dcache.pool.repository.FileSizeMismatchException;
 import org.dcache.pool.repository.CacheEntry;
 import org.dcache.pool.repository.WriteHandle;
 import org.dcache.pool.repository.EntryState;
+import org.dcache.pool.repository.Allocator;
 
 import java.util.List;
 import java.util.concurrent.TimeoutException;
@@ -38,8 +38,8 @@ class WriteHandleImpl implements WriteHandle
 
     private final CacheRepositoryV5 _repository;
 
-    /** Space allocation is delegated to this space monitor. */
-    private final SpaceMonitor _monitor;
+    /** Space allocation is delegated to this allocator. */
+    private final Allocator _allocator;
 
     /** The handler provides access to this entry. */
     private final CacheRepositoryEntry _entry;
@@ -63,7 +63,7 @@ class WriteHandleImpl implements WriteHandle
     private long _allocated;
 
     WriteHandleImpl(CacheRepositoryV5 repository,
-                    SpaceMonitor monitor,
+                    Allocator allocator,
                     PnfsHandler pnfs,
                     CacheRepositoryEntry entry,
                     StorageInfo info,
@@ -90,7 +90,7 @@ class WriteHandleImpl implements WriteHandle
         }
 
         _repository = repository;
-        _monitor = monitor;
+        _allocator = allocator;
         _pnfs = pnfs;
         _entry = entry;
         _initialState = initialState;
@@ -128,7 +128,7 @@ class WriteHandleImpl implements WriteHandle
         if (_state != HandleState.OPEN)
             throw new IllegalStateException("Handle is closed");
 
-        _monitor.allocateSpace(size);
+        _allocator.allocate(size);
         _allocated += size;
         _entry.setSize(_allocated);
     }
@@ -155,7 +155,7 @@ class WriteHandleImpl implements WriteHandle
                 _log.error("Under allocation detected. This is a bug. Please report it.");
                 allocate(length - _allocated);
             } else if (_allocated > length) {
-                _monitor.freeSpace(_allocated - length);
+                _allocator.free(_allocated - length);
                 _allocated = length;
             }
             _entry.setSize(length);

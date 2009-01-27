@@ -45,6 +45,7 @@ import org.dcache.pool.repository.CacheEntry;
 import org.dcache.pool.repository.StateChangeListener;
 import org.dcache.pool.repository.StateChangeEvent;
 import org.dcache.pool.repository.StickyRecord;
+import org.dcache.pool.repository.Account;
 import org.dcache.pool.p2p.P2PClient;
 import org.dcache.pool.movers.MoverProtocol;
 import org.dcache.cells.CellCommandListener;
@@ -73,8 +74,6 @@ import diskCacheV111.util.RetentionPolicy;
 import diskCacheV111.util.SimpleJobScheduler;
 import diskCacheV111.util.SysTimer;
 import diskCacheV111.util.UnitInteger;
-import diskCacheV111.util.event.CacheEvent;
-import diskCacheV111.util.event.CacheNeedSpaceEvent;
 import diskCacheV111.vehicles.DCapProtocolInfo;
 import diskCacheV111.vehicles.InfoMessage;
 import diskCacheV111.vehicles.DoorTransferFinishedMessage;
@@ -165,6 +164,8 @@ public class PoolV4
     private PnfsHandler _pnfs;
     private StorageClassContainer _storageQueue;
     private CacheRepositoryV5 _repository;
+
+    private Account _account;
 
     private String _pnfsManagerName = "PnfsManager";
     private String _poolManagerName = "PoolManager";
@@ -359,6 +360,11 @@ public class PoolV4
         _repository.setVolatile(_lfsMode == LFS_VOLATILE);
     }
 
+    public void setAccount(Account account)
+    {
+        _account = account;
+    }
+
     public void setChecksumModule(ChecksumModuleV1 module)
     {
         assertNotRunning("Cannot set checksum module after initialization");
@@ -420,6 +426,7 @@ public class PoolV4
         assert _timeoutManager != null : "Timeout manager must be set";
         assert _flushingThread != null : "Flush controller must be set";
         assert _p2pClient != null : "P2P client must be set";
+        assert _account != null : "Account must be set";
 
         _p2pQueue = new SimpleJobScheduler("P2P");
         _ioQueue = new IoQueueManager(_args.getOpt("io-queues"));
@@ -2379,7 +2386,7 @@ public class PoolV4
     public String ac_set_max_diskspace_$_1(Args args)
     {
         long maxDisk = UnitInteger.parseUnitLong(args.argv(0));
-        _repository.setSize(maxDisk);
+        _account.setTotal(maxDisk);
         _log.info("set maximum diskspace to " + UnitInteger.toUnitString(maxDisk));
         return "";
     }

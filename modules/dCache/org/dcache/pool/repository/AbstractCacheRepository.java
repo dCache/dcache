@@ -8,14 +8,10 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.apache.log4j.Logger;
 
-import diskCacheV111.repository.SpaceMonitor;
-import diskCacheV111.repository.SpaceRequestable;
 import diskCacheV111.repository.CacheRepository;
-import diskCacheV111.repository.FairQueueAllocation;
 import diskCacheV111.repository.CacheRepositoryEntry;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.CacheException;
-import diskCacheV111.util.event.CacheNeedSpaceEvent;
 import diskCacheV111.util.event.CacheRepositoryEvent;
 import diskCacheV111.util.event.CacheRepositoryListener;
 
@@ -34,7 +30,6 @@ public abstract class AbstractCacheRepository
 {
     private static Logger _log =
         Logger.getLogger("logger.org.dcache.repository");
-    private final static Logger _logSpaceAllocation = Logger.getLogger("logger.dev.org.dcache.poolspacemonitor." + AbstractCacheRepository.class.getName());
 
     /**
      * Registered event listeners.
@@ -43,36 +38,22 @@ public abstract class AbstractCacheRepository
         new CopyOnWriteArrayList<CacheRepositoryListener>();
 
     /**
-     * Space monitor for bookkeeping.
+     * Keeps track of how space is used.
      */
-    private final SpaceMonitor _spaceMonitor;
-
-    /**
-     * Amount of precious space in the repository. This is the sum of
-     * the size of all entries in <code>_precious</code>.
-     */
-    private long _preciousSpace = 0;
+    protected Account _account;
 
     /**
      * Set of precious entries.
      */
     private final Set<PnfsId> _precious = new HashSet<PnfsId>();
 
-    /**
-     * Utility class to bridge between space monitor and repository
-     * event system.
-     */
-    private class NeedSpace implements SpaceRequestable
-    {
-        public void spaceNeeded(long space) {
-            processEvent(EventType.SPACE, new CacheNeedSpaceEvent(this, space));
-        }
-    }
-
     public AbstractCacheRepository()
     {
-        _spaceMonitor  = new FairQueueAllocation(0);
-        _spaceMonitor.addSpaceRequestListener(new NeedSpace());
+    }
+
+    public void setAccount(Account account)
+    {
+        _account = account;
     }
 
     /**
@@ -98,11 +79,6 @@ public abstract class AbstractCacheRepository
         _repositoryListners.remove(listener);
     }
 
-    public void addSpaceRequestListener(SpaceRequestable listener)
-    {
-        throw new IllegalArgumentException("Not supported");
-    }
-
     /**
      * Adds an entry to the list of precious files. If the entry is
      * already in the list, then nothin happens.
@@ -112,7 +88,7 @@ public abstract class AbstractCacheRepository
         long size = entry.getSize();
         synchronized (_precious) {
             if (_precious.add(entry.getPnfsId())) {
-                _preciousSpace += size;
+                _account.adjustPrecious(size);
             }
         }
     }
@@ -126,7 +102,7 @@ public abstract class AbstractCacheRepository
         long size = entry.getSize();
         synchronized (_precious) {
             if (_precious.remove(entry.getPnfsId())) {
-                _preciousSpace -= size;
+                _account.adjustPrecious(-size);
             }
         }
     }
@@ -177,9 +153,7 @@ public abstract class AbstractCacheRepository
 
         case DESTROY:
             entry = event.getRepositoryEntry();
-            _logSpaceAllocation.debug("FREE: " + entry.getPnfsId() 
-                                      + " : " + entry.getSize() );
-            freeSpace(entry.getSize());
+            _account.free(entry.getSize());
             removePrecious(entry);
             for (CacheRepositoryListener listener : _repositoryListners) {
                 listener.destroyed(event);
@@ -189,14 +163,12 @@ public abstract class AbstractCacheRepository
         case SCAN:
             try {
                 entry = event.getRepositoryEntry();
-                allocateSpace(entry.getSize(), SpaceMonitor.NONBLOCKING);
+                if (!_account.allocateNow(entry.getSize())) {
+                    throw new RuntimeException("File registration failed: Pool is out of space.");
+                }
                 if (entry.isPrecious()) {
                     addPrecious(entry);
                 }
-            } catch (InterruptedException e) {
-                throw new RuntimeException("Bug detected", e);
-            } catch (MissingResourceException e) {
-                throw new RuntimeException("File registration failed: Pool is out of space.", e);
             } catch (CacheException ignored) {
             }
 
@@ -216,80 +188,6 @@ public abstract class AbstractCacheRepository
                 listener.sticky(event);
             }
             break;
-
-        case SPACE:
-            if (!(event instanceof CacheNeedSpaceEvent))
-                throw new IllegalArgumentException("SPACE events must be CacheNeedSpaceEvent");
-            for (CacheRepositoryListener listener : _repositoryListners) {
-                listener.needSpace((CacheNeedSpaceEvent)event);
-            }
-            break;
 	}
-    }
-
-    /**
-     * Move <i>space</i> bytes from free space into used space.
-     * Remove some entries if space is needed. Blocks as long as space
-     * is not available.
-     */
-    public void allocateSpace(long space) throws InterruptedException
-    {
-    	_logSpaceAllocation.debug("ALLOC: <UNKNOWN> : " + space );
-        _spaceMonitor.allocateSpace(space);
-    }
-
-    /**
-     * Move <i>space</i> bytes from free space into used space.
-     * Remove some entries if space is needed. Blocks as long as space
-     * is not available, but at most <i>millis</i>.
-     */
-    public void allocateSpace(long space, long millis)
-        throws InterruptedException, MissingResourceException
-    {
-    	_logSpaceAllocation.debug("ALLOC: <UNKNOWN> : " + space );
-        if (millis == SpaceMonitor.NONBLOCKING) {
-            synchronized (_spaceMonitor) {
-                if (_spaceMonitor.getFreeSpace() < space)
-                    throw new
-	                MissingResourceException("Not enough space left",
-                                                 this.getClass().getName(),
-                                                 "Space");
-                _spaceMonitor.allocateSpace(space);
-            }
-        } else if (millis == SpaceMonitor.BLOCKING) {
-            _spaceMonitor.allocateSpace(space);
-        } else {
-            _spaceMonitor.allocateSpace(space, millis);
-        }
-    }
-
-    /**
-     * Move <i>space</i> bytes from used into free space.
-     */
-    public void freeSpace(long space)
-    {
-        _spaceMonitor.freeSpace(space);
-    }
-
-    public long getFreeSpace()
-    {
-        return _spaceMonitor.getFreeSpace();
-    }
-
-    public long getTotalSpace()
-    {
-        return _spaceMonitor.getTotalSpace();
-    }
-
-    public void setTotalSpace(long space)
-    {
-        _spaceMonitor.setTotalSpace(space);
-    }
-
-    public long getPreciousSpace()
-    {
-        synchronized (_precious) {
-            return _preciousSpace;
-        }
     }
 }

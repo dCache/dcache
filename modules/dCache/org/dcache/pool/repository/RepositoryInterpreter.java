@@ -21,10 +21,16 @@ public class RepositoryInterpreter
     private final static Logger _log =
         Logger.getLogger(RepositoryInterpreter.class);
     private CacheRepository _repository;
+    private Account _account;
 
     public RepositoryInterpreter(CacheRepository repository)
     {
         _repository = repository;
+    }
+
+    public void setAccount(Account account)
+    {
+        _account = account;
     }
 
     private void displayEntry(CacheRepositoryEntry entry, StringBuffer sb)throws CacheException {
@@ -223,8 +229,8 @@ public class RepositoryInterpreter
                             if (args.getOpt("sum") != null) {
                                 long[] counter = new long[10];
                                 map.put("total", counter);
-                                counter[0] = _repository.getTotalSpace();
-                                counter[1] = _repository.getFreeSpace();
+                                counter[0] = _account.getTotal();
+                                counter[1] = _account.getFree();
                                 counter[2] = removable;
                             }
 
