@@ -9,7 +9,7 @@ import  java.net.*;
 
 import org.apache.log4j.Logger;
 
-import  diskCacheV111.repository.SpaceMonitor;
+import org.dcache.pool.repository.Allocator;
 
 public class FtpProtocol_1
     implements MoverProtocol           {
@@ -48,7 +48,7 @@ public class FtpProtocol_1
                       ProtocolInfo protocol,
                       StorageInfo  storage,
                       PnfsId       pnfsId ,
-                      SpaceMonitor spaceMonitor,
+                      Allocator    allocator,
                       int          access)
 
         throws Exception {
@@ -56,7 +56,7 @@ public class FtpProtocol_1
         _lastTransferred = System.currentTimeMillis();
         if((access & MoverProtocol.WRITE) != 0){
             _wasChanged = true;
-            runRemoteToDisk(diskFile, protocol, storage, pnfsId.toString(), spaceMonitor);
+            runRemoteToDisk(diskFile, protocol, storage, pnfsId.toString(), allocator);
         }else{
             runDiskToRemote(diskFile, protocol, storage, pnfsId.toString() );
         }
@@ -68,7 +68,7 @@ public class FtpProtocol_1
                                 ProtocolInfo protocol,
                                 StorageInfo  storage,
                                 String       pnfsId ,
-                                SpaceMonitor spaceMonitor )
+                                Allocator allocator)
 
         throws Exception {
 
@@ -96,7 +96,7 @@ public class FtpProtocol_1
                 while((_spaceUsed + nbytes) > _spaceAllocated){
                     _status = "WaitingForSpace("+_allocationSpace+")";
                     _logSpaceAllocation.debug("ALLOC: " + pnfsId + " : " + _allocationSpace);
-                    spaceMonitor.allocateSpace(_allocationSpace);
+                    allocator.allocate(_allocationSpace);
                     _spaceAllocated += _allocationSpace;
                     _status = "";
                 }
@@ -120,14 +120,7 @@ public class FtpProtocol_1
                 say("TransferRate : "+rate+" MBytes/sec");
             }
             say("SysTimer : "+sysTimer.getDifference().toString());
-            long freeIt = _spaceAllocated - _spaceUsed;
-            if(freeIt > 0){
-                _logSpaceAllocation.debug("FREE: " + pnfsId + " : " + freeIt);
-                spaceMonitor.freeSpace(freeIt);
-            }
         }
-
-
     }
 
     public void runDiskToRemote(RandomAccessFile  diskFile,

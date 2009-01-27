@@ -12,8 +12,8 @@ import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.PnfsFile;
-import diskCacheV111.repository.SpaceMonitor;
 import diskCacheV111.util.CacheException;
+import org.dcache.pool.repository.Allocator;
 
 import org.apache.log4j.Logger;
 
@@ -75,7 +75,7 @@ public class DCapClientProtocol_1 implements MoverProtocol
                        ProtocolInfo protocol ,
                        StorageInfo  storage ,
                        PnfsId       pnfsId  ,
-                       SpaceMonitor spaceMonitor ,
+                       Allocator    allocator ,
                        int          access)
         throws Exception
     {
@@ -133,7 +133,7 @@ public class DCapClientProtocol_1 implements MoverProtocol
 
         if((access & MoverProtocol.WRITE) != 0)
             {
-                dcapReadFile(dcap_socket,diskFile,spaceMonitor);
+                dcapReadFile(dcap_socket,diskFile,allocator);
             }
         else
             {
@@ -179,7 +179,7 @@ public class DCapClientProtocol_1 implements MoverProtocol
 
     private void dcapReadFile(Socket _socket,
                               RandomAccessFile _dataFile,
-                              SpaceMonitor _repository) throws Exception
+                              Allocator allocator) throws Exception
     {
         last_transfer_time    = System.currentTimeMillis();
         DataInputStream in   = new DataInputStream(_socket.getInputStream());
@@ -223,7 +223,7 @@ public class DCapClientProtocol_1 implements MoverProtocol
         }
         long filesize = in.readLong();
         say("<WaitingForSpace-"+filesize+">");
-        _repository.allocateSpace(filesize);
+        allocator.allocate(filesize);
         //
         in.readLong();   // file position
 

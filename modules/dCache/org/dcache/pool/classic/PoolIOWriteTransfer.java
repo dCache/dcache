@@ -16,7 +16,6 @@ import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.StorageInfo;
 import org.dcache.pool.movers.MoverProtocol;
 import org.dcache.pool.movers.ChecksumMover;
-import diskCacheV111.repository.SpaceMonitor;
 import diskCacheV111.repository.CacheRepository;
 
 import dmg.cells.nucleus.NoRouteToCellException;
@@ -38,7 +37,6 @@ public class PoolIOWriteTransfer
     private final WriteHandle _handle;
     private final File _file;
     private final ChecksumModuleV1 _checksumModule;
-    private final SpaceMonitor _monitor;
 
     private ChecksumFactory _checksumFactory;
     private Checksum _clientChecksum;
@@ -104,7 +102,6 @@ public class PoolIOWriteTransfer
                                          stickyRecords);
         _file = _handle.getFile();
         _file.createNewFile();
-        _monitor = new WriteHandleSpaceMonitorAdapter(repository, _handle);
     }
 
     private void runMover(RandomAccessFile raf)
@@ -114,7 +111,7 @@ public class PoolIOWriteTransfer
                      _protocolInfo,
                      _storageInfo,
                      _pnfsId,
-                     _monitor,
+                     _handle,
                      MoverProtocol.WRITE
                      | MoverProtocol.READ);
     }

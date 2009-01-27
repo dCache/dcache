@@ -2,7 +2,7 @@ package org.dcache.pool.movers;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.util.PnfsId;
-import diskCacheV111.repository.SpaceMonitor;
+import org.dcache.pool.repository.Allocator;
 
 import java.io.RandomAccessFile;
 
@@ -11,11 +11,15 @@ public interface MoverProtocol
     public static final int READ = 1;
     public static final int WRITE  = 2;
 
+    /**
+     * @param allocator Space allocator. May be null for a read-only
+     * transfer.
+     */
     public void runIO(RandomAccessFile diskFile,
                       ProtocolInfo protocol,
                       StorageInfo  storage,
                       PnfsId       pnfsId,
-                      SpaceMonitor spaceMonitor,
+                      Allocator    allocator,
                       int          access)
         throws Exception;
 

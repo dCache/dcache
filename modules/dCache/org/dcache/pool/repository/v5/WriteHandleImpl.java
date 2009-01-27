@@ -123,6 +123,8 @@ class WriteHandleImpl implements WriteHandle
     public void allocate(long size)
         throws IllegalStateException, IllegalArgumentException, InterruptedException
     {
+        if (size <0)
+            throw new IllegalArgumentException("Size is negative");
         if (_state != HandleState.OPEN)
             throw new IllegalStateException("Handle is closed");
 
@@ -132,26 +134,13 @@ class WriteHandleImpl implements WriteHandle
     }
 
     /**
-     * Allocate space and block specified time until space becomes available.
-     *
-     * @param size in bytes
-     * @param time to block in milliseconds
-     * @throws InterruptedException
-     * @throws IllegalStateException if EntryIODescriptor is closed or READ-ONLY
-     * @throws TimeoutException if request timed out
-     * @throws IllegalArgumentException if either<code>size</code> or
-     *             <code>time</code> is negative.
+     * Freeing space through a write handle is not supported. This
+     * method always throws IllegalStateException.
      */
-    public void allocate(long size, long time)
-        throws IllegalStateException, IllegalArgumentException,
-               InterruptedException, TimeoutException
+    public void free(long size)
+        throws IllegalStateException
     {
-        if (_state != HandleState.OPEN)
-            throw new IllegalStateException("Handle is closed");
-
-        _monitor.allocateSpace(size, time);
-        _allocated += size;
-        _entry.setSize(_allocated);
+        throw new IllegalStateException("Space cannot be freed through a write handle");
     }
 
     /**
@@ -177,7 +166,7 @@ class WriteHandleImpl implements WriteHandle
              *
              * Should only happen during shutdown, so no harm done.
              */
-            _log.warn("Failed to adjust space reservation because the operation was interrupted. The pool is now over allocated.");            
+            _log.warn("Failed to adjust space reservation because the operation was interrupted. The pool is now over allocated.");
             throw e;
         }
     }
@@ -239,7 +228,7 @@ class WriteHandleImpl implements WriteHandle
             long now = System.currentTimeMillis();
             _entry.setSticky("self", now + HOLD_TIME, false);
         }
-        
+
         /* Move entry to target state.
          */
         for (StickyRecord record: _stickyRecords) {
@@ -290,7 +279,7 @@ class WriteHandleImpl implements WriteHandle
         }
     }
 
-    /** 
+    /**
      * Fails the operation. Called by close without a successfulc
      * commit. The file is either removed or marked bad, depending on
      * its state.

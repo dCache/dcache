@@ -7,7 +7,6 @@ import diskCacheV111.util.FileNotInCacheException;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.vehicles.ProtocolInfo;
 import diskCacheV111.vehicles.StorageInfo;
-import diskCacheV111.repository.SpaceMonitor;
 import diskCacheV111.repository.CacheRepository;
 import org.dcache.pool.movers.MoverProtocol;
 
@@ -23,7 +22,6 @@ public class PoolIOReadTransfer
     extends PoolIOTransfer
 {
     private final ReadHandle _handle;
-    private final SpaceMonitor _monitor;
     private final long _size;
 
     public PoolIOReadTransfer(PnfsId pnfsId,
@@ -36,8 +34,6 @@ public class PoolIOReadTransfer
         super(pnfsId, protocolInfo, storageInfo, mover);
         _handle = repository.openEntry(pnfsId);
         _size = _handle.getFile().length();
-        _monitor =
-            new RepositorySpaceMonitorAdapter(repository);
     }
 
     public void transfer()
@@ -57,7 +53,7 @@ public class PoolIOReadTransfer
                              _protocolInfo,
                              _storageInfo,
                              _pnfsId,
-                             _monitor,
+                             null,
                              MoverProtocol.READ);
             } finally {
                 /* This may throw an IOException, although it

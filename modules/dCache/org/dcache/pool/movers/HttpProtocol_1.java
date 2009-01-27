@@ -9,9 +9,9 @@ package org.dcache.pool.movers;
 import diskCacheV111.vehicles.*;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.PnfsFile;
-import diskCacheV111.repository.SpaceMonitor;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.HttpConnectionHandler;
+import org.dcache.pool.repository.Allocator;
 
 import dmg.cells.nucleus.*;
 import java.io.*;
@@ -58,12 +58,12 @@ public class HttpProtocol_1 implements MoverProtocol
                        ProtocolInfo protocol,
                        StorageInfo  storage,
                        PnfsId       pnfsId ,
-                       SpaceMonitor spaceMonitor,
+                       Allocator    allocator,
                        int          access)
         throws Exception
     {
         say("runIO("+diskFile+",\n"+
-            protocol+",\n"+storage+",\n"+pnfsId+",\n"+spaceMonitor+",\n"+access+")");
+            protocol+",\n"+storage+",\n"+pnfsId+",\n"+access+")");
         if(! (protocol instanceof HttpProtocolInfo))
             {
                 throw new  CacheException(44, "protocol info not HttpProtocolInfo");

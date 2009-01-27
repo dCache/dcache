@@ -23,9 +23,9 @@ import dmg.util.Args;
 
 import org.dcache.net.ProtocolConnectionPool;
 import org.dcache.net.ProtocolConnectionPoolFactory;
+import org.dcache.pool.repository.Allocator;
 
 import diskCacheV111.repository.CacheRepository;
-import diskCacheV111.repository.SpaceMonitor;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.Checksum;
 import diskCacheV111.util.DCapProrocolChallenge;
@@ -92,13 +92,13 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
 
     private class SpaceMonitorHandler {
 
-        private SpaceMonitor _spaceMonitor    = null;
+        private final Allocator _allocator;
         private long         _spaceAllocated  = 0;
         private long          _allocationSpace = INC_SPACE;
         private long         _spaceUsed       = 0;
         private long         _initialSpace    = 0L;
-        private SpaceMonitorHandler(SpaceMonitor spaceMonitor){
-            _spaceMonitor = spaceMonitor;
+        private SpaceMonitorHandler(Allocator allocator){
+            _allocator = allocator;
         }
         private void setAllocationSpace(long allocSpace){
             _allocationSpace = allocSpace;
@@ -112,13 +112,13 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
             return "{a="+_spaceAllocated+";u="+_spaceUsed+"}";
         }
         private void getSpace(long newEof) throws InterruptedException{
-            if(_spaceMonitor == null)return;
+            if (_allocator == null)return;
 
             while(newEof > _spaceAllocated){
                 _status = "WaitingForSpace("+_allocationSpace+")";
                 debug("Allocating new space : "+_allocationSpace);
                 _logSpaceAllocation.debug("ALLOC: " + _pnfsId + " : " + _allocationSpace);
-                _spaceMonitor.allocateSpace(_allocationSpace);
+                _allocator.allocate(_allocationSpace);
                 _spaceAllocated += _allocationSpace;
                 debug("Allocated new space : "+_allocationSpace);
                 _status = "";
@@ -134,46 +134,6 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
             throws IllegalStateException,
                    InterruptedException {
 
-            if(_spaceMonitor == null)return;
-
-            long freeIt = _spaceAllocated - _spaceUsed;
-            debug("Returning "+freeIt+" bytes");
-            if(freeIt > 0) {
-                _logSpaceAllocation.debug("FREE: " + _pnfsId + " : " + freeIt);
-                _spaceMonitor.freeSpace(freeIt);
-            }
-            if(freeIt < 0)esay("Panic : didn't allocate enough Space");
-
-            if(realFileSize != _spaceUsed  ){
-
-                esay("Seems to be an IO error : diskFileSize ("+
-                      realFileSize+
-                      ") != _spaceUsed("+
-                      _spaceUsed+")");
-                //
-                // Beside the fact that the code could be wrong, this
-                // can only happen if there is a disk problem.
-                // Most likely the disk was full and we added
-                // something to _spaceUsed which was not added
-                // to the file itself. Because as soon as we
-                // return here, spacemanagement is done on
-                // filesize, we have to adjust the management
-                // acordingly.
-                //
-                freeIt = _spaceUsed - realFileSize ;
-                if(freeIt > 0){
-                    esay("Adjusting : Releasing "+freeIt+" bytes");
-                    _spaceMonitor.freeSpace(freeIt);
-                }else if(freeIt < 0){
-                    esay("Adjusting : Allocating "+(- freeIt) +" bytes");
-                    _logSpaceAllocation.debug("FREE: " + _pnfsId + " : " + (- freeIt));
-                    _spaceMonitor.allocateSpace(- freeIt);
-                }
-                throw new
-                    IllegalStateException(
-                                          "Mismatch : diskFileSize ("+realFileSize+
-                                          ") != _spaceUsed("+_spaceUsed+")");
-            }
         }
     }
     //
@@ -305,12 +265,11 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
         return _cell.getCellInfo().getDomainName();
     }
 
-    public void runIO(
-                      RandomAccessFile  diskFile,
+    public void runIO(RandomAccessFile  diskFile,
                       ProtocolInfo protocol,
                       StorageInfo  storage,
                       PnfsId       pnfsId,
-                      SpaceMonitor spaceMonitor,
+                      Allocator    allocator,
                       int          access  )
 
         throws Exception {
@@ -322,7 +281,7 @@ public class DCapProtocol_3_nio implements MoverProtocol, ChecksumMover {
                 CacheException(44, "protocol info not DCapProtocolInfo");
 
         _pnfsId              = pnfsId;
-        _spaceMonitorHandler = new SpaceMonitorHandler(spaceMonitor);
+        _spaceMonitorHandler = new SpaceMonitorHandler(allocator);
 
         ////////////////////////////////////////////////////////////////////////
         //                                                                    //

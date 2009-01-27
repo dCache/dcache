@@ -20,36 +20,8 @@ import java.io.File;
  * disk. It is the reponsibility of the write handle to release any
  * over allocation after the transfer has completed.
  */
-public interface WriteHandle
+public interface WriteHandle extends Allocator
 {
-    /**
-     * Allocates space and blocks until space becomes available.
-     *
-     * @param size in bytes
-     * @throws InterruptedException
-     * @throws IllegalStateException if handle has been closed.
-     * @throws IllegalArgumentException if <code>size</code> is less
-     * than 0.
-     */
-    void allocate(long size)
-        throws IllegalStateException, IllegalArgumentException, InterruptedException;
-
-    /**
-     * Allocates space and blocks specified time until space becomes
-     * available.
-     *
-     * @param size in bytes
-     * @param time to block in milliseconds
-     * @throws InterruptedException
-     * @throws IllegalStateException if handle has been closed.
-     * @throws TimeoutException if request timed out.
-     * @throws IllegalArgumentException if either<code>size</code> or
-     *             <code>time</code> is negative.
-     */
-    void allocate(long size, long time)
-        throws IllegalStateException, IllegalArgumentException,
-               InterruptedException, TimeoutException;
-
     /**
      * Signal successful creation of the replica.
      *

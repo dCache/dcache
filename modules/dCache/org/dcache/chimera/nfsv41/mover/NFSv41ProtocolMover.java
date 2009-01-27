@@ -11,7 +11,7 @@ import java.net.NetworkInterface;
 import java.util.Enumeration;
 
 import org.dcache.pool.movers.MoverProtocol;
-import diskCacheV111.repository.SpaceMonitor;
+import org.dcache.pool.repository.Allocator;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.PoolPassiveIoFileMessage;
 import diskCacheV111.vehicles.ProtocolInfo;
@@ -63,7 +63,7 @@ public class NFSv41ProtocolMover implements MoverProtocol {
 
     public void runIO(RandomAccessFile fileChannel, ProtocolInfo protocol,
             StorageInfo storage, PnfsId pnfsId,
-            SpaceMonitor spaceMonitor, int access)
+            Allocator allocator, int access)
             throws Exception {
 
 

@@ -32,7 +32,7 @@ import diskCacheV111.util.ChecksumFactory;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.SysTimer;
-import diskCacheV111.repository.SpaceMonitor;
+import org.dcache.pool.repository.Allocator;
 
 import org.apache.log4j.Logger;
 import org.dcache.ftp.*;
@@ -110,10 +110,10 @@ public class GFtpProtocol_2_nio
     protected long         _lastTransferred;
 
     /**
-     * The space monitor is used to preallocate space when receiving
+     * The space allocator is used to preallocate space when receiving
      * data.
      */
-    protected SpaceMonitor _spaceMonitor;
+    protected Allocator _allocator;
 
     /**
      * All communication is asynchronous.
@@ -256,7 +256,7 @@ public class GFtpProtocol_2_nio
      * Receive a file.
      */
     public void transfer(RandomAccessFile file, Role role,
-                         Mode mode, SpaceMonitor spaceMonitor)
+                         Mode mode, Allocator allocator)
 	throws Exception
     {
 	/* Initialise transfer parameters.
@@ -265,7 +265,7 @@ public class GFtpProtocol_2_nio
 	_bytesTransferred = 0;
 	_blockLog         = new BlockLog(this);
 	_fileChannel      = file.getChannel();
-	_spaceMonitor     = spaceMonitor;
+	_allocator        = allocator;
 	_reservedSpace    = 0;
 	_spaceUsed        = 0;
 	_status           = "None";
@@ -418,7 +418,7 @@ public class GFtpProtocol_2_nio
 		      ProtocolInfo protocol,
 		      StorageInfo  storage,
 		      PnfsId       pnfsId,
-		      SpaceMonitor spaceMonitor,
+		      Allocator    allocator,
 		      int          access)
 	throws Exception
     {
@@ -581,37 +581,13 @@ public class GFtpProtocol_2_nio
 	}
 
 	try {
-	    transfer(file, role, mode, spaceMonitor);
+	    transfer(file, role, mode, allocator);
 	} finally {
 	    /* Log some useful information about the transfer. This
              * will be send back to the door by the pool cell.
 	     */
 	    ftp.setBytesTransferred(getBytesTransferred());
 	    ftp.setTransferTime(getTransferTime());
-
-	    /* Release any over allocation.
-             *
-             * In case of interrupts, this may fail because
-             * RandomAccessFile.length throws an exception. There is
-             * nothing we can do about this at the moment. The pool
-             * should use the SpaceMonitorWatch decorator to protect
-             * against accounting errors in these cases.
-	     */
-            if (spaceMonitor != null && role == Role.Receiver) {
-                long overAllocation = _reservedSpace - file.length();
-                if (overAllocation > 0) {
-                    _logSpaceAllocation.debug("FREE: " + overAllocation);
-                    spaceMonitor.freeSpace(overAllocation);
-                } else if (overAllocation < 0) {
-                    /* This can only happen as a consequence of a bug
-                     * in the Mode implementation. We do our best to
-                     * recover from it by allocating some extra space.
-                     */
-                    esay("File is larger than expected (this is a bug - please report it");
-                    _logSpaceAllocation.debug("ALLOC: " + (-overAllocation));
-                    spaceMonitor.allocateSpace(-overAllocation);
-                }
-            }
 	}
     }
 
@@ -764,12 +740,10 @@ public class GFtpProtocol_2_nio
 
 	if (position > _reservedSpace) {
 	    long additional = Math.max(position - _reservedSpace, SPACE_INC);
-	    if (_spaceMonitor != null) {
-		_status = "WaitingForSpace(" + additional + ")";
-		_logSpaceAllocation.debug("ALLOC: " + additional );
-		_spaceMonitor.allocateSpace(additional);
-		_status = "None";
-	    }
+            _status = "WaitingForSpace(" + additional + ")";
+            _logSpaceAllocation.debug("ALLOC: " + additional );
+            _allocator.allocate(additional);
+            _status = "None";
 	    _reservedSpace += additional;
 	}
 	_spaceUsed = Math.max(_spaceUsed, position);

@@ -347,8 +347,7 @@ public class XrootdMoverListener implements StreamListener {
 
                 try {
                     _logSpaceAllocation.debug("ALLOC: " + mover.getPnfsId() + " : " + (expectedBlocks - usedBlocks) * BLOCK_SIZE );
-                    mover.getSpaceMonitor().allocateSpace(
-                                                          (expectedBlocks - usedBlocks) * BLOCK_SIZE);
+                    mover.getAllocator().allocate((expectedBlocks - usedBlocks) * BLOCK_SIZE);
                 } catch (InterruptedException e) {
                     handleIOError(request.getFileHandle(), request.getRequestID(), new IOException(e.getMessage()));
                     return;
@@ -443,17 +442,6 @@ public class XrootdMoverListener implements StreamListener {
     private void closeFile() {
 
         if (!fileIsClosed) {
-
-            if (!isReadOnly) {
-
-                // free nonused space
-                int spaceToFree = BLOCK_SIZE
-                    - (int) (currentFileSize % BLOCK_SIZE);
-                _logSpaceAllocation.debug("FREE: " + mover.getPnfsId() + " : " + spaceToFree );
-                mover.getSpaceMonitor().freeSpace(spaceToFree);
-                _log.info("freeing " + spaceToFree + " bytes");
-
-            }
 
             try {
                 mover.getDiskFile().close();

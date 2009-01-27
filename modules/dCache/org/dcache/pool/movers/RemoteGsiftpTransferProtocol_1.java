@@ -68,7 +68,7 @@
 
 package org.dcache.pool.movers;
 
-import diskCacheV111.repository.SpaceMonitor;
+import org.dcache.pool.repository.Allocator;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.Checksum;
 import diskCacheV111.util.ChecksumFactory;
@@ -266,7 +266,7 @@ public class RemoteGsiftpTransferProtocol_1
                       ProtocolInfo protocol,
                       StorageInfo storage,
                       PnfsId pnfsId,
-                      SpaceMonitor spaceMonitor,
+                      Allocator allocator,
                       int access)
         throws CacheException, IOException,
                NoRouteToCellException,
@@ -292,13 +292,10 @@ public class RemoteGsiftpTransferProtocol_1
         if ((access & MoverProtocol.WRITE) != 0) {
             gridFTPRead(remoteGsiftpProtocolInfo,
                         storage,
-                        spaceMonitor
-                        );
+                        allocator);
         } else {
             gridFTPWrite(remoteGsiftpProtocolInfo,
-                         storage,
-                         spaceMonitor
-                         );
+                         storage);
         }
         say(" runIO() done");
     }
@@ -351,8 +348,7 @@ public class RemoteGsiftpTransferProtocol_1
 
     public void gridFTPRead(RemoteGsiftpTransferProtocolInfo protocolInfo,
                             StorageInfo storage,
-                            final SpaceMonitor spaceMonitor
-                            )
+                            Allocator allocator)
         throws CacheException
     {
         try {
@@ -362,7 +358,7 @@ public class RemoteGsiftpTransferProtocol_1
             say(" received a file size info: " + size +
                 " allocating space on the pool");
             _logSpaceAllocation.debug("ALLOC: " + _pnfsId + " : " + size );
-            spaceMonitor.allocateSpace(size);
+            allocator.allocate(size);
             say(" allocated space " + size);
             DiskDataSourceSink sink =
                 new DiskDataSourceSink(protocolInfo.getBufferSize(),
@@ -377,19 +373,6 @@ public class RemoteGsiftpTransferProtocol_1
                      * send an empty line at the end of the
                      * session. Therefore we ignore this exception.
                      */
-                } finally {
-                    /* Adjust space reservation to fit the final size of
-                     * the file.
-                     */
-                    long overAllocation = size - sink.length();
-                    if (overAllocation > 0) {
-                        say("Returning space : " + overAllocation);
-                        _logSpaceAllocation.debug("FREE: " + _pnfsId + " : " + overAllocation );
-                        spaceMonitor.freeSpace(overAllocation);
-                    } else if (overAllocation < 0) {
-                        say("Allocating more space : " + -overAllocation);
-                        spaceMonitor.allocateSpace(-overAllocation);
-                    }
                 }
             }
         } catch (Exception e) {
@@ -399,9 +382,7 @@ public class RemoteGsiftpTransferProtocol_1
     }
 
     public void gridFTPWrite(RemoteGsiftpTransferProtocolInfo protocolInfo,
-                             StorageInfo storage,
-                             final SpaceMonitor spaceMonitor
-                             )
+                             StorageInfo storage)
         throws CacheException
     {
         say("gridFTPWrite started");

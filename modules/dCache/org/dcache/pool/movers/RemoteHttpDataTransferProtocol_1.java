@@ -9,9 +9,9 @@ package org.dcache.pool.movers;
 import diskCacheV111.vehicles.*;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.util.PnfsFile;
-import diskCacheV111.repository.SpaceMonitor;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.HttpConnectionHandler;
+import org.dcache.pool.repository.Allocator;
 
 import dmg.cells.nucleus.*;
 import java.io.*;
@@ -68,7 +68,7 @@ public class RemoteHttpDataTransferProtocol_1 implements MoverProtocol
                        ProtocolInfo protocol,
                        StorageInfo  storage,
                        PnfsId       pnfsId ,
-                       SpaceMonitor spaceMonitor,
+                       Allocator    allocator,
                        int          access)
         throws Exception
     {
@@ -111,7 +111,7 @@ public class RemoteHttpDataTransferProtocol_1 implements MoverProtocol
                 byte[] buffer = new byte[remoteHttpProtocolInfo.getBufferSize()];
                 int read = 0;
                 _logSpaceAllocation.debug("ALLOC: " + pnfsId + " : " + INC_SPACE);
-                spaceMonitor.allocateSpace(INC_SPACE);
+                allocator.allocate(INC_SPACE);
                 allocated_space+=INC_SPACE;
 
                 while((read = httpinput.read(buffer)) != -1)
@@ -120,7 +120,7 @@ public class RemoteHttpDataTransferProtocol_1 implements MoverProtocol
                         if(transfered+read > allocated_space)
                             {
                                 _logSpaceAllocation.debug("ALLOC: " + pnfsId + " : " + INC_SPACE);
-                                spaceMonitor.allocateSpace(INC_SPACE);
+                                allocator.allocate(INC_SPACE);
                                 allocated_space+=INC_SPACE;
 
                             }
@@ -129,11 +129,6 @@ public class RemoteHttpDataTransferProtocol_1 implements MoverProtocol
                         transfered +=read;
                     }
 
-                if(allocated_space - transfered >0)
-                    {
-                        _logSpaceAllocation.debug("FREE: " + pnfsId + " : " + (allocated_space - transfered));
-                        spaceMonitor.freeSpace(allocated_space - transfered);
-                    }
                 say("runIO() wrote "+transfered+"bytes");
             }
         else

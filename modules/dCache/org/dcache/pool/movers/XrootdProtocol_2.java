@@ -21,7 +21,7 @@ import org.dcache.vehicles.XrootdProtocolInfo;
 import org.dcache.xrootd.core.connection.PhysicalXrootdConnection;
 import org.dcache.xrootd.protocol.XrootdProtocol;
 
-import diskCacheV111.repository.SpaceMonitor;
+import org.dcache.pool.repository.Allocator;
 import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.ProtocolInfo;
@@ -43,7 +43,7 @@ public class XrootdProtocol_2 implements MoverProtocol {
     private ProtocolInfo protocolInfo;
     private StorageInfo storageInfo;
     private PnfsId pnfsId;
-    private SpaceMonitor spaceMonitor;
+    private Allocator allocator;
     private long lastTransferred;
     private long transferTime;
     private long bytesTransferred;
@@ -67,13 +67,13 @@ public class XrootdProtocol_2 implements MoverProtocol {
     }
 
 
-    public void runIO(RandomAccessFile diskFile, ProtocolInfo protocol, StorageInfo storage, PnfsId pnfsId, SpaceMonitor spaceMonitor, int access) throws Exception {
+    public void runIO(RandomAccessFile diskFile, ProtocolInfo protocol, StorageInfo storage, PnfsId pnfsId, Allocator allocator, int access) throws Exception {
 
         this.diskFile = diskFile;
         this.protocolInfo = protocol;
         this.storageInfo = storage;
         this.pnfsId = pnfsId;
-        this.spaceMonitor = spaceMonitor;
+        this.allocator = allocator;
 
 
         //
@@ -256,8 +256,8 @@ public class XrootdProtocol_2 implements MoverProtocol {
     }
 
 
-    public SpaceMonitor getSpaceMonitor() {
-        return spaceMonitor;
+    public Allocator getAllocator() {
+        return allocator;
     }
 
 
