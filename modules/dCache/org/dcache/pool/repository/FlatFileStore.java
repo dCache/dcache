@@ -9,14 +9,14 @@ import java.util.List;
 import diskCacheV111.util.PnfsId;
 
 /**
- * A data file repository layout keeping all files in a single
- * subdirectory called "data".
+ * A file store layout keeping all files in a single subdirectory
+ * called "data".
  */
-public class FlatDataFileRepository implements DataFileRepository
+public class FlatFileStore implements FileStore
 {
     private final File _dataDir;
 
-    public FlatDataFileRepository(File baseDir) throws FileNotFoundException
+    public FlatFileStore(File baseDir) throws FileNotFoundException
     {
         if (!baseDir.exists()) {
             throw new FileNotFoundException(baseDir + " does not exist.");

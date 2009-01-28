@@ -20,6 +20,10 @@ import dmg.util.Args;
 
 import org.dcache.pool.repository.Account;
 import org.dcache.pool.repository.EventType;
+import org.dcache.pool.repository.FileStore;
+import org.dcache.pool.repository.FlatFileStore;
+import org.dcache.pool.repository.MetaDataStore;
+import org.dcache.pool.repository.meta.db.BerkeleyDBMetaDataRepository;
 import org.dcache.pool.repository.v4.CacheRepositoryV4;
 
 import org.dcache.pool.classic.SpaceSweeper2;
@@ -50,8 +54,13 @@ public class PoolRepository {
 
         _account = new Account();
         _account.setTotal(1024);
-        _repository = new CacheRepositoryV4(_base, new Args(""));
+        _repository = new CacheRepositoryV4(_base);
+        FileStore fileStore = new FlatFileStore(_base);
+        MetaDataStore metaDataStore =
+            new BerkeleyDBMetaDataRepository(fileStore, _repository, _base);
         _repository.setAccount(_account);
+        _repository.setMetaDataStore(metaDataStore);
+        _repository.setFileStore(fileStore);
     }
 
 

@@ -4,11 +4,11 @@ import java.io.File;
 import java.io.IOException;
 import org.apache.log4j.Logger;
 
-import org.dcache.pool.repository.DataFileRepository;
+import org.dcache.pool.repository.FileStore;
 import org.dcache.pool.repository.DuplicateEntryException;
 import org.dcache.pool.repository.EventProcessor;
 import org.dcache.pool.repository.EventType;
-import org.dcache.pool.repository.MetaDataRepository;
+import org.dcache.pool.repository.MetaDataStore;
 import org.dcache.pool.repository.v3.RepositoryException;
 
 import diskCacheV111.repository.CacheRepositoryEntry;
@@ -22,23 +22,23 @@ import diskCacheV111.util.event.CacheRepositoryEvent;
  * access method.
  */
 public class FileMetaDataRepository
-    implements MetaDataRepository, EventProcessor
+    implements MetaDataStore, EventProcessor
 {
     private static Logger _log =
         Logger.getLogger("logger.org.dcache.repository");
 
     private static final String DIRECTORY_NAME = "control";
 
-    private DataFileRepository _dataRepository;
+    private FileStore _fileStore;
     private EventProcessor _eventProcessor;
     private File _metadir;
 
-    public FileMetaDataRepository(DataFileRepository dataRepository,
+    public FileMetaDataRepository(FileStore fileStore,
                                   EventProcessor eventProcessor,
                                   File baseDir)
 
     {
-    	_dataRepository = dataRepository;
+    	_fileStore = fileStore;
     	_eventProcessor = eventProcessor;
     	_metadir = new File(baseDir, DIRECTORY_NAME);
     }
@@ -49,7 +49,7 @@ public class FileMetaDataRepository
         try {
             File controlFile = new File(_metadir, id.toString());
             File siFile = new File(_metadir, "SI-" + id.toString());
-            File dataFile = _dataRepository.get(id);
+            File dataFile = _fileStore.get(id);
 
             /* We call get() to check whether the entry exists and is
              * intact.
@@ -90,7 +90,7 @@ public class FileMetaDataRepository
             File siFile = new File(_metadir, "SI-"+id.toString());
             if (siFile.exists()) {
                 File controlFile = new File(_metadir, id.toString());
-                File dataFile = _dataRepository.get(id);
+                File dataFile = _fileStore.get(id);
 
                 return new CacheRepositoryEntryImpl(_eventProcessor, id, controlFile, dataFile, siFile);
             }

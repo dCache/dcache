@@ -39,6 +39,11 @@ import org.dcache.pool.repository.CacheEntry;
 import org.dcache.pool.repository.StateChangeListener;
 import org.dcache.pool.repository.StateChangeEvent;
 import org.dcache.pool.repository.StickyRecord;
+import org.dcache.pool.repository.MetaDataStore;
+import org.dcache.pool.repository.FileStore;
+import org.dcache.pool.repository.FlatFileStore;
+import org.dcache.pool.repository.RepositoryEntryHealer;
+import org.dcache.pool.repository.meta.db.BerkeleyDBMetaDataRepository;
 import org.dcache.pool.repository.v3.RepositoryException;
 
 public class RepositorySubsystemTest
@@ -68,9 +73,9 @@ public class RepositorySubsystemTest
     private File metaDir;
     private File dataDir;
 
-    private BlockingQueue<StateChangeEvent> stateChangeEvents;
+    private BlockingQueue<StateChangeEvent> stateChangeEvents =
+        new LinkedBlockingQueue<StateChangeEvent>();
 
-    private String args;
     private CellAdapterHelper cell;
 
     private void createFile(File file, long size)
@@ -148,28 +153,47 @@ public class RepositorySubsystemTest
         if (!metaDir.mkdir())
             throw new IOException("Could not create meta dir");
 
-        args = "-metaDataRepository=org.dcache.pool.repository.meta.db.BerkeleyDBMetaDataRepository";
+        cell = new CellAdapterHelper("pool", "");
+        pnfs = new PnfsHandler(new CellPath("pnfs"), "pool");
+        pnfs.setCellEndpoint(cell);
 
+        /* Create test data.
+         */
+        CacheRepositoryV4 rep = new CacheRepositoryV4(root);
+        FileStore fileStore = new FlatFileStore(root);
+        MetaDataStore metaDataStore =
+            new BerkeleyDBMetaDataRepository(fileStore, rep, root);
+        RepositoryEntryHealer healer =
+            new RepositoryEntryHealer(pnfs, null, fileStore, metaDataStore);
         account = new Account();
         account.setTotal(5120);
-        CacheRepositoryV4 rep = new CacheRepositoryV4(root, new Args(args));
         rep.setAccount(account);
+        rep.setRepositoryEntryHealer(healer);
+        rep.setMetaDataStore(metaDataStore);
+        rep.setFileStore(fileStore);
         rep.runInventory();
         createEntry(rep, id1, info1).setPrecious();
         createEntry(rep, id2, info2).setCached();
         CacheRepositoryEntry entry = createEntry(rep, id3, info3);
         entry.setCached();
         entry.setSticky(true);
+        metaDataStore.close();
         rep.close();
 
+        /* Create repository.
+         */
         account = new Account();
         account.setTotal(5120);
-        stateChangeEvents = new LinkedBlockingQueue<StateChangeEvent>();
-        rep = new CacheRepositoryV4(root, new Args(args));
+        rep = new CacheRepositoryV4(root);
+        fileStore = new FlatFileStore(root);
+        metaDataStore = new BerkeleyDBMetaDataRepository(fileStore, rep, root);
+        healer =
+            new RepositoryEntryHealer(pnfs, null, fileStore, metaDataStore);
         rep.setAccount(account);
-        cell = new CellAdapterHelper("pool", args);
-        pnfs = new PnfsHandler(new CellPath("pnfs"), "pool");
-        pnfs.setCellEndpoint(cell);
+        rep.setRepositoryEntryHealer(healer);
+        rep.setMetaDataStore(metaDataStore);
+        rep.setFileStore(fileStore);
+
         SpaceSweeper2 sweeper = new SpaceSweeper2();
         sweeper.setAccount(account);
         sweeper.setRepository(rep);
@@ -185,9 +209,7 @@ public class RepositorySubsystemTest
 
         /* Remove scan notifications from queue.
          */
-        stateChangeEvents.take();
-        stateChangeEvents.take();
-        stateChangeEvents.take();
+        stateChangeEvents.clear();
     }
 
     @After

@@ -6,10 +6,10 @@ import java.util.List;
 import diskCacheV111.util.PnfsId;
 
 /**
- * The DataFileRepository interface provides an abstraction of the
- * file layout of the pool data directory.
+ * The FileStore interface provides an abstraction of the file layout
+ * of the pool data directory.
  */
-public interface DataFileRepository
+public interface FileStore
 {
     /**
      * Returns the path to the data file for the given PNFS id.
@@ -35,7 +35,7 @@ public interface DataFileRepository
     public long getTotalSpace();
 
     /**
-     * Returns whether the repository appears healthy. How this is
+     * Returns whether the store appears healthy. How this is
      * determined is up to the implementation.
      */
     public boolean isOk();

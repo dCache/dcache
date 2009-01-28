@@ -12,7 +12,7 @@ import dmg.cells.nucleus.CellPath;
 import java.net.URI;
 
 import org.dcache.chimera.FsInode;
-import org.dcache.pool.repository.MetaDataRepository;
+import org.dcache.pool.repository.MetaDataStore;
 import org.dcache.pool.repository.RepositoryEntryHealer;
 import org.dcache.tests.cells.CellAdapterHelper;
 import org.dcache.tests.cells.GenericMockCellHelper;
@@ -35,7 +35,7 @@ public class RepositoryEntryHealerTest {
     private PnfsHandler      _pnfsHandler;
     private RepositoryEntryHealer _repositoryEntryHealer;
     private RepositoryHealerTestChimeraHelper _repositoryHealerTestChimeraHelper;
-    private MetaDataRepository _metaDataRepository;
+    private MetaDataStore _metaDataRepository;
 
 
     @Before

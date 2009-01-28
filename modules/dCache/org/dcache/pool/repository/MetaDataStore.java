@@ -7,10 +7,10 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.repository.CacheRepositoryEntry;
 
 /**
- * The MetaDataRepository interface provides an abstraction of how
+ * The MetaDataStore interface provides an abstraction of how
  * CacheRepositoryEntry objects are created, retrieved and removed.
  */
-public interface MetaDataRepository
+public interface MetaDataStore
 {
     /**
      * Retrieves an existing entry previously created with
@@ -38,12 +38,12 @@ public interface MetaDataRepository
      * have the same PNFS id and the same field values as the existing
      * entry.
      *
-     * No entry with the same PNFS id must exist in the repository
-     * prior to this call. This implies that the existing entry must
-     * be from another repository.
+     * No entry with the same PNFS id must exist in the store prior to
+     * this call. This implies that the existing entry must be from
+     * another store.
      *
      * Typically used by the entry healer to import old entries into a
-     * new repository.
+     * new store.
      *
      * Limitations:
      * <ul>
@@ -71,11 +71,11 @@ public interface MetaDataRepository
     void remove(PnfsId id);
 
     /**
-     * Returns whether the repository appears healthy. How this is
+     * Returns whether the store appears healthy. How this is
      * determined is up to the implementation.
      */
     boolean isOk();
 
-    /** Closes the repository and frees any associated resources. */
+    /** Closes the store and frees any associated resources. */
     void close();
 }

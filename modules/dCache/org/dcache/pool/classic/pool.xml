@@ -15,7 +15,7 @@
         waitForRepositoryReady=false
         gsiftpAllowPassivePool=true
         metaDataRepository=org.dcache.pool.repository.meta.file.FileMetaDataRepository
-        metaDataRepositoryImport=
+        metaDataRepositoryImport=org.dcache.pool.repository.meta.EmptyMetaDataRepository
         gsiftpReadAhead=16777216
         allowCleaningPreciousFiles=false
         poolupDestination=PoolManager
@@ -79,16 +79,40 @@
         destroy-method="close">
     <description>Legacy repository manager</description>
     <constructor-arg value="${pooldir}"/>
-    <constructor-arg>
-      <bean class="dmg.util.Args">
-        <constructor-arg value="
-          -metaDataRepository=${metaDataRepository}
-          -metaDataRepositoryImport=${metaDataRepositoryImport}"/> 
-      </bean>
-    </constructor-arg>
+    <property name="metaDataStore" ref="meta-store"/>
+    <property name="fileStore" ref="file-store"/>
+    <property name="repositoryEntryHealer">
+      <bean class="org.dcache.pool.repository.RepositoryEntryHealer">
+        <constructor-arg ref="csm"/>
+        <constructor-arg ref="pnfs"/>
+        <constructor-arg ref="file-store"/>
+        <constructor-arg ref="meta-store"/>
+        <constructor-arg ref="import-store"/>
+       </bean>
+    </property>
     <property name="account" ref="account"/>
-    <property name="checksumModule" ref="csm"/>
   </bean>
+
+  <bean id="file-store" class="org.dcache.pool.repository.FlatFileStore">
+    <description>Store for pool files</description>
+    <constructor-arg value="${pooldir}"/>
+  </bean>
+
+  <bean id="meta-store" class="${metaDataRepository}"
+        destroy-method="close">
+    <description>Store for pool meta data</description>
+    <constructor-arg ref="file-store"/>
+    <constructor-arg ref="legacy-repository"/>
+    <constructor-arg value="${pooldir}"/>
+  </bean>
+
+  <bean id="import-store" class="${metaDataRepositoryImport}"
+        destroy-method="close">
+    <description>Store for imported pool meta data</description>
+    <constructor-arg ref="file-store"/>
+    <constructor-arg ref="legacy-repository"/>
+    <constructor-arg value="${pooldir}"/>
+   </bean>
 
   <bean id="sweeper" class="${sweeper}">
     <description>Pool garbage collector</description>

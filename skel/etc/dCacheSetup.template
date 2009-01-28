@@ -194,9 +194,9 @@ kpwdFile=${ourHomeDir}/etc/dcache.kpwd
 #   Valid values are:
 #         org.dcache.pool.repository.meta.file.FileMetaDataRepository
 #         org.dcache.pool.repository.meta.db.BerkeleyDBMetaDataRepository
-#         ""
+#         org.dcache.pool.repository.meta.EmptyMetaDataRepository
 #   The default is:
-#         ""
+#         org.dcache.pool.repository.meta.EmptyMetaDataRepository
 #
 #   This variable selects which meta data repository to import data
 #   from if the information is missing from the main repository. This
@@ -204,7 +204,7 @@ kpwdFile=${ourHomeDir}/etc/dcache.kpwd
 #   another, without having to fetch all the information from the
 #   central PNFS manager.
 #
-#metaDataRepositoryImport=""
+#metaDataRepositoryImport=org.dcache.pool.repository.meta.EmptyMetaDataRepository
 
 
 

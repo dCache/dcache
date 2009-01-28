@@ -4,13 +4,9 @@ import org.apache.log4j.Logger;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.io.FileOutputStream;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.ArrayList;
@@ -19,18 +15,12 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.Collections;
 
-import com.sleepycat.je.DatabaseException;
-
-import dmg.util.Args;
-
-import org.dcache.pool.classic.ChecksumModuleV1;
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.pool.repository.v3.StickyInspector;
 import org.dcache.pool.repository.EventType;
 import org.dcache.pool.repository.AbstractCacheRepository;
-import org.dcache.pool.repository.MetaDataRepository;
-import org.dcache.pool.repository.DataFileRepository;
-import org.dcache.pool.repository.FlatDataFileRepository;
+import org.dcache.pool.repository.MetaDataStore;
+import org.dcache.pool.repository.FileStore;
 import org.dcache.pool.repository.RepositoryEntryHealer;
 import org.dcache.pool.repository.CacheEntryLRUOrder;
 import org.dcache.pool.repository.DuplicateEntryException;
@@ -46,11 +36,8 @@ import diskCacheV111.repository.CacheRepositoryEntryInfo;
 
 /**
  * The CacheRepositoryV4 is an implementation of the CacheRepository
- * interface. It is based on the DataFileRepository and
- * MetaDataRepository interfaces.
- *
- * Currently the class hard-codes the use of a flat data repository
- * layout and of a Berkeley DB based meta data repoository.
+ * interface. It is based on the FileStore and MetaDataStore
+ * interfaces.
  *
  * The class employs a reader-writer lock to control concurrent
  * access.  For compatibility with older implementations of the
@@ -61,9 +48,6 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
 {
     private static Logger _log =
         Logger.getLogger("logger.org.dcache.repository");
-
-    private static final String DEFAULT_META_DATA_REPOSITORY =
-        "org.dcache.pool.repository.meta.file.FileMetaDataRepository";
 
     /**
      * Reader-writer lock used for most access to the cache
@@ -81,28 +65,22 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
     /**
      * File layout within pool.
      */
-    private final DataFileRepository _dataRepository;
+    private FileStore _fileStore;
 
     /**
      * Meta data about files in the pool.
      */
-    private final MetaDataRepository _metaRepository;
-
-    /**
-     * Meta data to import of <i>_metaRepository</i> does not contain
-     * it.
-     */
-    private final MetaDataRepository _importRepository;
-
-    /**
-     * Used to verify checksums during startup.
-     */
-    private ChecksumModuleV1 _checksumModule;
+    private MetaDataStore _metaDataStore;
 
     /**
      * The sticky inspector expires running
      */
     private StickyInspector _stickyInspector;
+
+    /**
+     * Healer through which entries are read during startup.
+     */
+    private RepositoryEntryHealer _healer;
 
     /**
      * True while an inventory is build. During this period we block
@@ -116,67 +94,29 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
      */
     private File _basedir;
 
-    private MetaDataRepository
-        createMetaDataRepository(String name, DataFileRepository data,
-                                 File directory)
-    {
-        _basedir = directory;
-
-        try {
-            Class [] argClass = {
-                org.dcache.pool.repository.DataFileRepository.class,
-                org.dcache.pool.repository.EventProcessor.class,
-                java.io.File.class
-            };
-            Class       repositoryClass = Class.forName(name);
-            Constructor con             = repositoryClass.getConstructor(argClass);
-            Object []   args         = { data, this, directory };
-            return (MetaDataRepository)con.newInstance(args);
-        } catch (ClassNotFoundException e) {
-            throw new IllegalArgumentException("Class " + name + " could not be found");
-        } catch (NoSuchMethodException e) {
-            throw new IllegalArgumentException("Class " + name + " does not implement expected constructor");
-        } catch (InstantiationException e) {
-            throw new IllegalArgumentException("Class " + name + " could not be instantiated", e);
-        } catch (InvocationTargetException e) {
-            throw new IllegalArgumentException("Class " + name + " could not be instantiated", e);
-        } catch (ClassCastException e) {
-            throw new IllegalArgumentException("Class " + name + " does not implement MetaDataRepository");
-        } catch (IllegalAccessException e) {
-            throw new IllegalArgumentException("Class " + name + " could not be accessed", e);
-        }
-    }
-
     /**
      * Creates a new instance.
      *
      * @param directory the pool base directory.
      */
-    public CacheRepositoryV4(File directory, Args args)
-        throws FileNotFoundException, DatabaseException
+    public CacheRepositoryV4(File directory)
     {
-        String importClass = args.getOpt("metaDataRepositoryImport");
-        String metaClass = args.getOpt("metaDataRepository");
-        if (metaClass == null) {
-            metaClass = DEFAULT_META_DATA_REPOSITORY;
-        }
-
-        _dataRepository =
-            new FlatDataFileRepository(directory);
-        _metaRepository =
-            createMetaDataRepository(metaClass, _dataRepository, directory);
-        if (importClass != null && importClass.length() != 0) {
-            _importRepository = createMetaDataRepository(importClass,
-                                                         _dataRepository,
-                                                         directory);
-        } else {
-            _importRepository = null;
-        }
+        _basedir = directory;
     }
 
-    public void setChecksumModule(ChecksumModuleV1 checksumModule)
+    public void setRepositoryEntryHealer(RepositoryEntryHealer healer)
     {
-        _checksumModule = checksumModule;
+        _healer = healer;
+    }
+
+    public void setMetaDataStore(MetaDataStore store)
+    {
+        _metaDataStore = store;
+    }
+
+    public void setFileStore(FileStore store)
+    {
+        _fileStore = store;
     }
 
     public boolean contains(PnfsId pnfsId)
@@ -198,7 +138,7 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
 
         _operationLock.writeLock().lock();
         try {
-            File dataFile = _dataRepository.get(pnfsId);
+            File dataFile = _fileStore.get(pnfsId);
             if (_allEntries.containsKey(pnfsId) || dataFile.exists()) {
                 _log.warn("Entry already exists: " + pnfsId);
                 throw new
@@ -207,12 +147,12 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
 
             CacheRepositoryEntry entry;
             try {
-                entry = _metaRepository.create(pnfsId);
+                entry = _metaDataStore.create(pnfsId);
             } catch (DuplicateEntryException e) {
                 _log.warn("Deleting orphaned meta data entry for " + pnfsId);
-                _metaRepository.remove(pnfsId);
+                _metaDataStore.remove(pnfsId);
                 try {
-                    entry = _metaRepository.create(pnfsId);
+                    entry = _metaDataStore.create(pnfsId);
                 } catch (DuplicateEntryException f) {
                     throw
                         new RuntimeException("Unexpected repository error", e);
@@ -382,8 +322,7 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
      * Reads an entry from a RepositoryEntryHealer. Retries
      * indefinitely in case of timeouts.
      */
-    private CacheRepositoryEntry readEntry(RepositoryEntryHealer healer,
-                                           PnfsId id)
+    private CacheRepositoryEntry readEntry(PnfsId id)
         throws CacheException, IOException, InterruptedException
     {
         /* In case of communication problems with the pool, there is
@@ -393,7 +332,7 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
          */
         while (!Thread.interrupted()) {
             try {
-                return healer.entryOf(id);
+                return _healer.entryOf(id);
             } catch (CacheException e) {
                 if (e.getRc() != CacheException.TIMEOUT)
                     throw e;
@@ -412,9 +351,9 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
         if (!_allEntries.isEmpty())
             throw new IllegalStateException("Repository already has an inventory");
 
-        _log.warn("Reading inventory from " + _dataRepository);
+        _log.warn("Reading inventory from " + _fileStore);
 
-        List<PnfsId> ids = _dataRepository.list();
+        List<PnfsId> ids = _fileStore.list();
         long usedDataSpace = 0L;
         long removableSpace = 0L;
 
@@ -426,26 +365,16 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
          */
         Collections.sort(ids);
 
-        RepositoryEntryHealer healer =
-            new RepositoryEntryHealer(pnfs,
-                                      _checksumModule,
-                                      _dataRepository,
-                                      _metaRepository,
-                                      _importRepository);
-
         _operationLock.writeLock().lock();
         try {
             _runningInventory = true;
 
-            _log.warn("Reading meta data from " + _metaRepository);
-            if (_importRepository != null) {
-                _log.warn(String.format("NOTICE: Importing any missing meta data from %s. This should only be used to convert an existing repository and never as a permanent setup.", _importRepository));
-            }
+            _log.warn("Reading meta data from " + _metaDataStore);
 
             /* Collect all entries.
              */
             for (PnfsId id: ids) {
-                CacheRepositoryEntry entry = readEntry(healer, id);
+                CacheRepositoryEntry entry = readEntry(id);
                 if (entry == null)  {
                     continue;
                 }
@@ -537,7 +466,7 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
     public boolean isRepositoryOk()
     {
        try {
-           if (!_metaRepository.isOk() || !_dataRepository.isOk())
+           if (!_metaDataStore.isOk() || !_fileStore.isOk())
                return false;
 
            File setup = new File(_basedir, "setup");
@@ -565,8 +494,8 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
     /**
      * Removes an entry from the in-memory cache and erases the data
      * file. Since <code>destroyEntry</code> is called as a result of
-     * the entry being removed from the meta data repository, the
-     * method does not remove the entry from the meta data repository.
+     * the entry being removed from the meta data store, the
+     * method does not remove the entry from the meta data store.
      */
     private void destroyEntry(CacheRepositoryEntry entry)
     {
@@ -574,7 +503,7 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
         try {
             PnfsId id = entry.getPnfsId();
             _allEntries.remove(id);
-            _dataRepository.get(id).delete();
+            _fileStore.get(id).delete();
         } finally {
             _operationLock.writeLock().unlock();
         }
@@ -610,6 +539,5 @@ public class CacheRepositoryV4 extends AbstractCacheRepository
         if (_stickyInspector != null) {
             _stickyInspector.close();
         }
-        _metaRepository.close();
     }
 }

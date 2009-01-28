@@ -6,9 +6,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.dcache.pool.repository.DataFileRepository;
+import org.dcache.pool.repository.FileStore;
 import org.dcache.pool.repository.DuplicateEntryException;
-import org.dcache.pool.repository.MetaDataRepository;
+import org.dcache.pool.repository.MetaDataStore;
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.pool.repository.meta.db.CacheRepositoryEntryState;
 import org.dcache.pool.repository.v3.RepositoryException;
@@ -19,7 +19,7 @@ import diskCacheV111.util.CacheException;
 import diskCacheV111.util.PnfsId;
 import diskCacheV111.vehicles.StorageInfo;
 
-public class MetaDataRepositoryHelper implements MetaDataRepository {
+public class MetaDataRepositoryHelper implements MetaDataStore {
 
 
 
@@ -39,9 +39,9 @@ public class MetaDataRepositoryHelper implements MetaDataRepository {
 
         private long _lockUntil = 0;
         private StorageInfo _storageInfo;
-        private final DataFileRepository _repository;
+        private final FileStore _repository;
 
-        public CacheRepositoryEntryImpl(DataFileRepository repository, PnfsId pnfsId)
+        public CacheRepositoryEntryImpl(FileStore repository, PnfsId pnfsId)
         {
             _repository = repository;
             _pnfsId = pnfsId;
@@ -50,7 +50,7 @@ public class MetaDataRepositoryHelper implements MetaDataRepository {
             _size = getDataFile().length();
         }
 
-        public CacheRepositoryEntryImpl(DataFileRepository repository,
+        public CacheRepositoryEntryImpl(FileStore repository,
                                         CacheRepositoryEntry entry)
             throws CacheException
         {
@@ -351,8 +351,8 @@ public class MetaDataRepositoryHelper implements MetaDataRepository {
 
 
     private final Map<PnfsId, CacheRepositoryEntry> _entryList = new HashMap<PnfsId, CacheRepositoryEntry>();
-    private final DataFileRepository _repository;
-    public MetaDataRepositoryHelper(DataFileRepository repository) {
+    private final FileStore _repository;
+    public MetaDataRepositoryHelper(FileStore repository) {
         _repository = repository;
     }
 

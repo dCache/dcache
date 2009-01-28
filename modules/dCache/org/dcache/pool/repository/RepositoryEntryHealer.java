@@ -6,8 +6,9 @@ import java.io.IOException;
 import org.apache.log4j.Logger;
 import org.dcache.pool.classic.ChecksumModuleV1;
 import org.dcache.pool.classic.PoolIOWriteTransfer;
-import org.dcache.pool.repository.DataFileRepository;
-import org.dcache.pool.repository.MetaDataRepository;
+import org.dcache.pool.repository.FileStore;
+import org.dcache.pool.repository.MetaDataStore;
+import org.dcache.pool.repository.meta.EmptyMetaDataStore;
 
 import diskCacheV111.repository.CacheRepositoryEntry;
 import diskCacheV111.util.AccessLatency;
@@ -25,7 +26,7 @@ import dmg.cells.nucleus.NoRouteToCellException;
 /**
  * The RepositoryEntryHealer encapsulates the logic for recovering
  * CacheRepositoryEntry objects from PNFS in case they are missing or
- * broken in a MetaDataRepository.
+ * broken in a MetaDataStore.
  */
 public class RepositoryEntryHealer
 {
@@ -55,57 +56,62 @@ public class RepositoryEntryHealer
         "File size mismatch for %1$s. Expected %2$d bytes, but found %3$d bytes.";
 
     private final PnfsHandler _pnfsHandler;
-    private final MetaDataRepository _metaRepository;
-    private final DataFileRepository _dataRepository;
-    private final MetaDataRepository _oldRepository;
+    private final MetaDataStore _metaDataStore;
+    private final FileStore _fileStore;
+    private final MetaDataStore _importStore;
     private final ChecksumModuleV1 _checksumModule;
 
     public RepositoryEntryHealer(PnfsHandler pnfsHandler,
                                  ChecksumModuleV1 checksumModule,
-                                 DataFileRepository dataRepository,
-                                 MetaDataRepository metaRepository)
+                                 FileStore fileStore,
+                                 MetaDataStore metaDataStore)
     {
-        this(pnfsHandler,checksumModule, dataRepository, metaRepository, null);
+        this(pnfsHandler,checksumModule, fileStore, metaDataStore,
+             new EmptyMetaDataStore());
     }
 
     public RepositoryEntryHealer(PnfsHandler pnfsHandler,
                                  ChecksumModuleV1 checksumModule,
-                                 DataFileRepository dataRepository,
-                                 MetaDataRepository metaRepository,
-                                 MetaDataRepository oldRepository)
+                                 FileStore fileStore,
+                                 MetaDataStore metaDataStore,
+                                 MetaDataStore importStore)
     {
         _pnfsHandler = pnfsHandler;
         _checksumModule = checksumModule;
-        _dataRepository = dataRepository;
-        _metaRepository = metaRepository;
-        _oldRepository = oldRepository;
+        _fileStore = fileStore;
+        _metaDataStore = metaDataStore;
+        _importStore = importStore;
+
+        if (!(_importStore instanceof EmptyMetaDataStore)) {
+            _log.warn(String.format("NOTICE: Importing any missing meta data from %s. This should only be used to convert an existing repository and never as a permanent setup.", _importStore));
+        }
     }
 
     /**
-     * Retrieves a CacheRepositoryEntry from a MetaDataRepository. If
-     * the entry is missing or fails consistency checks, the entry is
+     * Retrieves a CacheRepositoryEntry from a MetaDataStore. If the
+     * entry is missing or fails consistency checks, the entry is
      * reconstructed with information from PNFS.
      */
     public CacheRepositoryEntry entryOf(PnfsId id)
         throws IOException, IllegalArgumentException, CacheException,
                InterruptedException
     {
-        File file = _dataRepository.get(id);
+        File file = _fileStore.get(id);
         if (!file.isFile()) {
             throw new IllegalArgumentException("File not does exist: " + id);
         }
 
         long length = file.length();
-        CacheRepositoryEntry entry = _metaRepository.get(id);
+        CacheRepositoryEntry entry = _metaDataStore.get(id);
 
-        /* Import from old repository if possible.
-         */
-        if (entry == null && _oldRepository != null) {
-            entry = _oldRepository.get(id);
+        if (entry == null) {
+            /* Import from old repository.
+             */
+            entry = _importStore.get(id);
             if (entry != null) {
-                entry = _metaRepository.create(entry);
+                entry = _metaDataStore.create(entry);
                 _log.warn("Imported meta data for " + id
-                          + " from " + _oldRepository.toString());
+                          + " from " + _importStore.toString());
             }
         }
 
@@ -119,7 +125,7 @@ public class RepositoryEntryHealer
 
         if (isBroken) {
             if (entry == null) {
-                entry = _metaRepository.create(id);
+                entry = _metaDataStore.create(id);
                 _log.warn(String.format(MISSING_MSG, id));
             }
 
@@ -130,7 +136,7 @@ public class RepositoryEntryHealer
                  * on HSM anyway.
                  */
                 if (entry.isReceivingFromStore()) {
-                    _metaRepository.remove(id);
+                    _metaDataStore.remove(id);
                     file.delete();
                     _pnfsHandler.clearCacheLocation(id);
                     _log.info(String.format(PARTIAL_FROM_TAPE_MSG, id));
@@ -213,7 +219,7 @@ public class RepositoryEntryHealer
             } catch (CacheException e) {
                 switch (e.getRc()) {
                 case CacheException.FILE_NOT_FOUND:
-                    _metaRepository.remove(id);
+                    _metaDataStore.remove(id);
                     file.delete();
                     _pnfsHandler.clearCacheLocation(id);
                     _log.warn(String.format(FILE_NOT_FOUND_MSG, id));

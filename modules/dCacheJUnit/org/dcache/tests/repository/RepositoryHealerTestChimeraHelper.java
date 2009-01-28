@@ -16,11 +16,11 @@ import org.dcache.chimera.ChimeraFsException;
 import org.dcache.chimera.IOHimeraFsException;
 import org.dcache.chimera.JdbcFs;
 import org.dcache.chimera.XMLconfig;
-import org.dcache.pool.repository.DataFileRepository;
+import org.dcache.pool.repository.FileStore;
 
 import diskCacheV111.util.PnfsId;
 
-public class RepositoryHealerTestChimeraHelper implements DataFileRepository {
+public class RepositoryHealerTestChimeraHelper implements FileStore {
 
 
     private Connection _conn;
