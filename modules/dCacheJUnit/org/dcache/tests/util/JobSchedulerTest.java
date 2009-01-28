@@ -67,12 +67,13 @@ public class JobSchedulerTest {
     @Test
     public void testSimpleJobQueue() throws InvocationTargetException, InterruptedException {
 
-        int jobsCount = 10;
-        long waitTime = 1000;
+        int jobsCount = 5;
+        long waitTime = 500;
         CountDownLatch doneCounter = new CountDownLatch(jobsCount);
 
-        _jobScheduler.setMaxActiveJobs(10);
+        _jobScheduler.setMaxActiveJobs( jobsCount);
 
+        // Fill queue
         for (int i = 0; i < jobsCount; i++) {
             _jobScheduler.add(new ExampleJob("S-" + i, null,  doneCounter, waitTime));
         }
