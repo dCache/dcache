@@ -150,7 +150,7 @@ public class CDC
         if (domain == null)
             throw new IllegalStateException("Missing domain name in MDC");
 
-        setSession(domain.toString());
+        createSession(domain.toString());
     }
 
     /**
