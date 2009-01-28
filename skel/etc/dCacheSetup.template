@@ -585,18 +585,24 @@ pnfs=/pnfs/fs
 
 #  ---- Number of thread groups
 #
-#   A PNFS tree may be split into multiple databases. Each database
-#   is single threaded and hence accessing the same database from 
-#   multiple threads provides only a minor speed-up. To ensure good 
-#   load balancing when using multiple databases, the PnfsManager 
-#   support thread groups. Any database is assigned to one and only
-#   one thread group, thus databases assigned to different thread 
+#   A PNFS tree may be split into multiple databases. Each database is
+#   single threaded and hence accessing the same database from
+#   multiple threads provides only a minor speed-up. To ensure good
+#   load balancing when using multiple databases, the PnfsManager
+#   supports thread groups. Any database is assigned to one and only
+#   one thread group, thus databases assigned to different thread
 #   groups are guaranteed not to block each other. Each thread group
 #   will have $pnfsNumberOfThreads threads.
 #
-#   For best performance isolation, set this to the equal the largest 
-#   database ID defined in PNFS. When increasing pnfsNumberOfThreadGroups,
-#   you may one to lower pnfsNumberOfThreads.
+#   For best performance isolation, set this to be equal the largest
+#   database ID defined in PNFS. When increasing
+#   pnfsNumberOfThreadGroups, you may want to lower
+#   pnfsNumberOfThreads.
+#
+#   Notice that PNFS access is still subject to the number of threads
+#   created in the PNFS daemon. If this number is lower than the
+#   number of concurrent requests, then contention may still occur
+#   even though multiple databases are used.
 #
 #pnfsNumberOfThreadGroups=1
 
