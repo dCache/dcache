@@ -63,7 +63,12 @@ UpdatingExistingFile
                         updateExistingReplica();
                 }
         timeout
+                [ ctxt.isEager() ]
                 InitiatingCopy
+                {
+                }
+        timeout
+                Failed
                 {
                 }
         noroute
@@ -73,7 +78,12 @@ UpdatingExistingFile
                         updateExistingReplica();
                 }
         noroute
+                [ ctxt.isEager() ]
                 InitiatingCopy
+                {
+                }
+        noroute
+                Failed
                 {
                 }
         failure(rc: int)

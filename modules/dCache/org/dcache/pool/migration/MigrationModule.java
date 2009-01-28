@@ -72,7 +72,7 @@ import org.apache.log4j.Logger;
  * job, then it is added to the transfer queue of the job. A permanent
  * job does not terminate, even if its transfer queue becomes
  * empty. Permanent jobs are saved to the pool setup file and restored
- * on pool start. (PERMANENT JOBS HAVE NOT BEEN IMPLEMENTD YET!)
+ * on pool start.
  *
  * Each job schedules transfer tasks. Whereas a job defines a bulk
  * operation, a task encapsulates a transfer of a single replica.
@@ -297,6 +297,7 @@ public class MigrationModule
     {
         String exclude = args.getOpt("exclude");
         boolean permanent = (args.getOpt("permanent") != null);
+        boolean eager = (args.getOpt("eager") != null);
         String sourceMode = args.getOpt("smode");
         String targetMode = args.getOpt("tmode");
         String select = args.getOpt("select");
@@ -341,7 +342,9 @@ public class MigrationModule
                               createPoolSelectionStrategy(select),
                               createPoolList(1.0, 0.0, target, targets,
                                              excluded),
-                              Integer.valueOf(refresh) * 1000);
+                              Integer.valueOf(refresh) * 1000,
+                              permanent,
+                              eager);
 
         if (definition.targetMode.state == CacheEntryMode.State.DELETE
             || definition.targetMode.state == CacheEntryMode.State.REMOVABLE) {
@@ -392,7 +395,10 @@ public class MigrationModule
 
         "The operation is idempotent, that is, it can safely be repeated\n" +
         "without creating extra copies of the files. If the replica exists\n" +
-        "on any of the target pools, then it is not copied again.\n\n" +
+        "on any of the target pools, then it is not copied again. If the\n" +
+        "target pool with the existing replica fails to respond, then the\n" +
+        "operation is retried indefinitely, unless the job is marked as\n" +
+        "eager.\n\n" +
 
         "Both the state of the local replica and that of the target replica\n" +
         "can be specified. If the target replica already exists, the state\n" +
@@ -400,10 +406,13 @@ public class MigrationModule
         "that is, the lifetime of sticky bits is extended, but never reduced,\n" +
         "and cached can be changed to precious, but never the opposite.\n\n" +
 
-//         "Jobs can be marked permanent. Permanent jobs never terminate and\n" +
-//         "are stored in the pool setup file with the 'save' command. Permanent\n" +
-//         "jobs watch the repository and copy any new replicas that match the\n" +
-//         "selection criteria.\n\n" +
+        "Jobs can be marked permanent. Permanent jobs never terminate and\n" +
+        "are stored in the pool setup file with the 'save' command. Permanent\n" +
+        "jobs watch the repository for state changes and copy any replicas\n" +
+        "that match the selection criteria, even replicas added after the\n" +
+        "job was created. Notice that any state change will cause a replica\n" +
+        "to be reconsidered and enqueued if it matches the selection\n" +
+        "criteria - also replicas that have been copied before.\n\n" +
 
         "Syntax:\n" +
         "  copy [options] <target> ...\n\n" +
@@ -451,9 +460,12 @@ public class MigrationModule
         "          Exclude target pools.\n" +
         "  -concurrency=<concurrency>\n" +
         "          Specifies how many concurrent transfers to perform.\n" +
-        "          Defaults to 1.\n";
-//         "  -permanent\n" +
-//         "          Mark job as permanent.\n" +
+        "          Defaults to 1.\n" +
+        "  -eager\n" +
+        "          Copy replicas rather than retrying when pools with\n" +
+        "          existing replicas fail to respond.\n" +
+        "  -permanent\n" +
+        "          Mark job as permanent.\n";
 //         "  -dry-run\n" +
 //         "          Perform all the steps without actually copying anything\n" +
 //         "          or updating the state.";
@@ -624,6 +636,23 @@ public class MigrationModule
                 break;
             default:
                 job.messageArrived(message);
+            }
+        }
+    }
+
+    public synchronized void getInfo(PrintWriter pw)
+    {
+        for (int id: _jobs.keySet()) {
+            pw.println(getJobSummary(id));
+        }
+    }
+
+    public synchronized void printSetup(PrintWriter pw)
+    {
+        pw.println("#\n# MigrationModule\n#");
+        for (Job job: _jobs.values()) {
+            if (job.getDefinition().isPermanent) {
+                pw.println(_commands.get(job));
             }
         }
     }

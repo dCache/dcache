@@ -111,6 +111,16 @@ public class Task
         return _pool.getTimeout();
     }
 
+    /**
+     * Eager tasks copy files if attempts to update existing copies
+     * timeout or fail due to communication problems. Other tasks fail
+     * in this situation.
+     */
+    public boolean isEager()
+    {
+        return _job.getDefinition().isEager;
+    }
+
     /** Returns the intended entry state of the target replica. */
     private EntryState getTargetState()
     {

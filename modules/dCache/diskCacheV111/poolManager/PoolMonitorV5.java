@@ -644,7 +644,7 @@ public class PoolMonitorV5 {
                 String poolName = poolMessage.getPoolName();
                 if (have) {
 
-                    PoolCostCheckable cost = 
+                    PoolCostCheckable cost =
                         _costModule.getPoolCost(poolName, filesize);
                     if (cost != null) {
                         PoolCheckAdapter check = new PoolCheckAdapter(cost);
@@ -766,29 +766,24 @@ public class PoolMonitorV5 {
         return list ;
     }
 
-    private List<String>
-        getPoolNames(Iterator<PoolSelectionUnit.SelectionPool> pools)
-    {
-       List<String> names = new ArrayList();
-       while (pools.hasNext()) {
-           PoolSelectionUnit.SelectionPool pool = pools.next();
-           if (pool.isActive()) {
-               names.add(pool.getName());
-           }
-       }
-       return names;
-    }
-
     private Collection<PoolManagerPoolInformation>
-        getPoolInformation(Collection<String> pools)
+        getPoolInformation(Iterator<PoolSelectionUnit.SelectionPool> pools)
         throws InterruptedException
     {
-        List<PoolManagerPoolInformation> result = new ArrayList(pools.size());
-        for (PoolCostCheckable pool: queryPoolsForCost(pools.iterator(), 0)) {
+        List<PoolManagerPoolInformation> result = new ArrayList();
+        while (pools.hasNext()) {
+            PoolSelectionUnit.SelectionPool pool = pools.next();
+            String name = pool.getName();
+            PoolCostCheckable cost = _costModule.getPoolCost(name, 0);
             PoolManagerPoolInformation info =
-                new PoolManagerPoolInformation(pool.getPoolName());
-            info.setSpaceCost(pool.getSpaceCost());
-            info.setCpuCost(pool.getPerformanceCost());
+                new PoolManagerPoolInformation(name);
+            if (!pool.isActive() || cost == null) {
+                info.setSpaceCost(Double.POSITIVE_INFINITY);
+                info.setCpuCost(Double.POSITIVE_INFINITY);
+            } else {
+                info.setSpaceCost(cost.getSpaceCost());
+                info.setCpuCost(cost.getPerformanceCost());
+            }
             result.add(info);
         }
         return result;
@@ -800,7 +795,7 @@ public class PoolMonitorV5 {
     {
         PoolSelectionUnit.SelectionLink link =
             _selectionUnit.getLinkByName(linkName);
-        return getPoolInformation(getPoolNames(link.pools()));
+        return getPoolInformation(link.pools());
     }
 
     public Collection<PoolManagerPoolInformation>
@@ -809,6 +804,6 @@ public class PoolMonitorV5 {
     {
         Collection<PoolSelectionUnit.SelectionPool> pools =
             _selectionUnit.getPoolsByPoolGroup(poolGroup);
-        return getPoolInformation(getPoolNames(pools.iterator()));
+        return getPoolInformation(pools.iterator());
     }
 }

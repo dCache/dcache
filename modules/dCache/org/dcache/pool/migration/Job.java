@@ -116,6 +116,11 @@ public class Job
             }));
     }
 
+    public synchronized JobDefinition getDefinition()
+    {
+        return _definition;
+    }
+
     public synchronized int getConcurrency()
     {
         return _concurrency;
@@ -195,19 +200,25 @@ public class Job
      */
     private void populate()
     {
-        Repository repository = _configuration.getRepository();
-        for (PnfsId pnfsId: repository) {
-            try {
-                synchronized (this) {
-                    CacheEntry entry = repository.getEntry(pnfsId);
-                    if (accept(entry)) {
-                        add(entry);
+        try {
+            Repository repository = _configuration.getRepository();
+            for (PnfsId pnfsId: repository) {
+                try {
+                    synchronized (this) {
+                        CacheEntry entry = repository.getEntry(pnfsId);
+                        if (accept(entry)) {
+                            add(entry);
+                        }
                     }
+                } catch (FileNotInCacheException e) {
+                    // File was removed before we got to it - not a
+                    // problem.
                 }
-            } catch (FileNotInCacheException e) {
-                // File was removed before we got to it - not a
-                // problem.
             }
+        } catch (IllegalStateException e) {
+            // This means the repository was not initialized yet. Not
+            // a big problem, since we will be notified about each
+            // entry during initialization.
         }
     }
 
@@ -312,7 +323,7 @@ public class Job
     {
         if (_state == State.CANCELLING && _running.isEmpty()) {
             setState(State.CANCELLED);
-        } else if (_state != State.INITIALIZING
+        } else if (_state != State.INITIALIZING && !_definition.isPermanent
                    && _queued.isEmpty() && _running.isEmpty()) {
             setState(State.FINISHED);
         } else if (_state == State.RUNNING) {
@@ -362,16 +373,18 @@ public class Job
             long size = entry.getReplicaSize();
             _queued.add(pnfsId);
             _sizes.put(pnfsId, size);
+            schedule();
         }
     }
 
     /** Removes a task from the job. */
     private synchronized void remove(PnfsId pnfsId)
     {
-        _queued.remove(pnfsId);
-        Task task = _running.remove(pnfsId);
+        Task task = _running.get(pnfsId);
         if (task != null) {
             task.cancel();
+        } else if (_queued.remove(pnfsId)) {
+            _sizes.remove(pnfsId);
         }
     }
 
@@ -388,6 +401,8 @@ public class Job
                     CacheEntry entry = repository.getEntry(pnfsId);
                     if (!accept(entry)) {
                         remove(pnfsId);
+                    } else if (_definition.isPermanent) {
+                        add(entry);
                     }
                 }
             } catch (FileNotInCacheException e) {
