@@ -1,7 +1,5 @@
 package org.dcache.tests.repository;
 
-import java.util.concurrent.CountDownLatch;
-
 import org.dcache.pool.repository.Account;
 
 public class DiskSpaceAllocationTestHelper {
@@ -12,8 +10,14 @@ public class DiskSpaceAllocationTestHelper {
     }
 
 
-
-    public static void freeEntry( final Account spaceAllocator, final long size, final long millis) {
+    /**
+     * Execute the <code>spaceAllocator</code> object's <code>free()</code> method
+     * for the given entry after a delay of at least milli milliseconds.
+     * @param spaceAllocator The Account object to free space within
+     * @param entry The size of data to remove
+     * @param millis The minimum delay, in milliseconds, before executing spaceAllocator.free(). 
+     */
+    public static void delayedFreeEntry( final Account spaceAllocator, final long size, final long millis) {
 
         new Thread("DiskSpaceAllocationTestHelper") {
             @Override
@@ -30,7 +34,7 @@ public class DiskSpaceAllocationTestHelper {
     }
 
 
-    public static void addSpace( final Account spaceAllocator,final long newSpace, final long millis) {
+    public static void delayedAddSpace( final Account spaceAllocator,final long newSpace, final long millis) {
 
         new Thread("DiskSpaceAllocationTestHelper") {
             @Override
