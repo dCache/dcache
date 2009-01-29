@@ -312,7 +312,7 @@ public abstract class DatabaseRequestStorage extends DatabaseJobStorage implemen
         }
         else
         {
-            __verify(nextIndex+5,columnIndex,tableName, columnName, columnType);
+            __verify(nextIndex+6,columnIndex,tableName, columnName, columnType);
         }
    }
        
