@@ -32,7 +32,7 @@ onerror continue
   set context -c gsiftpAllowPassivePool true
   set context -c gsiftpAllowMmap        false
   set context -c metaDataRepository     org.dcache.pool.repository.meta.file.FileMetaDataRepository
-  set context -c metaDataRepositoryImport org.dcache.pool.repository.meta.EmptyMetaDataRepository
+  set context -c metaDataRepositoryImport org.dcache.pool.repository.meta.EmptyMetaDataStore
   set context -c gsiftpReadAhead        16777216
   set context -c allowCleaningPreciousFiles false
   set context -c poolupDestination      PoolManager

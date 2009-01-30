@@ -15,7 +15,7 @@
         waitForRepositoryReady=false
         gsiftpAllowPassivePool=true
         metaDataRepository=org.dcache.pool.repository.meta.file.FileMetaDataRepository
-        metaDataRepositoryImport=org.dcache.pool.repository.meta.EmptyMetaDataRepository
+        metaDataRepositoryImport=org.dcache.pool.repository.meta.EmptyMetaDataStore
         gsiftpReadAhead=16777216
         allowCleaningPreciousFiles=false
         poolupDestination=PoolManager
