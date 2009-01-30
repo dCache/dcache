@@ -56,12 +56,9 @@ public abstract class DatabaseFileRequestStorage extends DatabaseJobStorage  imp
      */
     protected void _dbInit() throws SQLException{
        
-        String indexName = "r_"+getTableName().toLowerCase();
-         String createStatement = "CREATE INDEX " + indexName + " ON "+
-                getTableName()+" ( REQUESTID ) ";
-	 //  createIndex(indexName, createStatement);
-         
-                // Table does not exist
+	    String columns[] = {
+		    "REQUESTID"};
+	   createIndex(columns, getTableName().toLowerCase());
     }
     
        
