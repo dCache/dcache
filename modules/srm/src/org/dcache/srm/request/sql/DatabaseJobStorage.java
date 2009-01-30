@@ -241,11 +241,18 @@ public abstract class DatabaseJobStorage implements JobStorage, Runnable {
 	    //
 	    String columns[] = {
 		    "NEXTJOBID",
-		    "CREATIONTIME",
 		    "STATE",
 		    "SCHEDULERID"};
 	    createIndex(columns, getTableName().toLowerCase());
+            //
+            // create index on expirationtime (CREATIONTIME+LIFETIME)
+            // which is used to find requests that can be removed from DB
+            //
+            createIndex(getTableName().toLowerCase()+"_expirationtime_idx",
+                "(CREATIONTIME+LIFETIME)".toLowerCase(),
+                getTableName().toLowerCase());
 	    
+ 
 
 	    String history_columns[] = {
 		    "STATEID",
@@ -1200,6 +1207,7 @@ public void updatePendingJobs() throws SQLException, InterruptedException,org.dc
 			}
 			if (listOfColumnsToBeIndexed.size()==0) { 
 				say("all indexes were already made for table "+tableName);
+                                _con.setAutoCommit(false);
 				pool.returnConnection(_con);
 				_con =null;
 				return;
@@ -1208,17 +1216,7 @@ public void updatePendingJobs() throws SQLException, InterruptedException,org.dc
 			while(i.hasNext()) { 
 				String columnName=(String)i.next();
 				String indexName=tableName.toLowerCase()+"_"+columnName+INDEX_SUFFIX;
-				String createIndexStatementText = "CREATE INDEX "+indexName+" ON "+tableName+" ("+columnName+")";
-				Statement createIndexStatement = _con.createStatement();
-				say("Executing "+createIndexStatementText);
-				try { 
-					createIndexStatement.executeUpdate(createIndexStatementText);
-				}
-				catch (Exception e) { 
-					esay("failed to execute : "+createIndexStatementText);
-					esay(e);
-				}
-                                createIndexStatement.close();
+                                createIndex(_con,indexName,  tableName,columnName);
 			}
 			_con.setAutoCommit(false);
 			pool.returnConnection(_con);
@@ -1246,6 +1244,80 @@ public void updatePendingJobs() throws SQLException, InterruptedException,org.dc
 			}
 		}
 	}
+        
+	protected void createIndex(String indexname, 
+                                   String  expression,
+				   String tableName) 
+		throws SQLException {
+                indexname=indexname.toLowerCase();
+		Connection _con =null;
+		try {
+			pool = JdbcConnectionPool.getPool(jdbcUrl, jdbcClass, user, pass);
+			_con = pool.getConnection();
+			_con.setAutoCommit(true);
+			DatabaseMetaData dbMetaData = _con.getMetaData();
+			ResultSet index_rset        = dbMetaData.getIndexInfo(null, 
+									      null, 
+									      tableName, 
+									      false, 
+									      false);
+			
+			while (index_rset.next()) {
+				String s = index_rset.getString("index_name").toLowerCase();
+				if (indexname.equals(s)){
+                                    say("index "+indexname+" already exists");
+                                    _con.setAutoCommit(false);
+                                    pool.returnConnection(_con);
+                                    _con =null;
+                                    return;
+				}
+			}
+                        createIndex(_con,indexname,  tableName,expression);
+			_con.setAutoCommit(false);
+			pool.returnConnection(_con);
+			_con =null;
+		}
+		catch (SQLException sqe) {
+			if(_con != null) {
+				pool.returnFailedConnection(_con);
+				_con = null;
+			}
+			throw sqe;
+		}
+		catch (Exception ex) {
+			esay(ex);
+			if(_con != null) {
+				pool.returnFailedConnection(_con);
+				_con = null;
+			}
+			throw new SQLException(ex.toString());
+		}
+		finally {
+			if(_con != null) {
+				_con.setAutoCommit(false);
+				pool.returnConnection(_con);
+			}
+		}
+	}
+
+
+    protected void createIndex( final Connection _con, 
+        final String indexName,  
+        final String tableName,
+        final String column_or_expression) throws SQLException {
+        String createIndexStatementText = "CREATE INDEX "+indexName+
+            " ON "+tableName+" ("+column_or_expression+")";
+        Statement createIndexStatement = _con.createStatement();
+        say("Executing "+createIndexStatementText);
+        try { 
+        	createIndexStatement.executeUpdate(createIndexStatementText);
+        }
+        catch (Exception e) { 
+        	esay("failed to execute : "+createIndexStatementText);
+        	esay(e);
+        }
+        createIndexStatement.close();
+    }
 
  
 
