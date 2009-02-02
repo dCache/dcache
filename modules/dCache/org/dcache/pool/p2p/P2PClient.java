@@ -9,8 +9,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ScheduledExecutorService;
 
 import org.apache.log4j.Logger;
 import org.dcache.pool.classic.ChecksumModuleV1;
@@ -43,7 +42,7 @@ public class P2PClient
     private final static Acceptor _acceptor = new Acceptor();
 
     private final Map<Integer, Companion> _companions = new HashMap();
-    private ExecutorService _executor;
+    private ScheduledExecutorService _executor;
     private Repository _repository;
     private ChecksumModuleV1 _checksumModule;
 
@@ -56,7 +55,7 @@ public class P2PClient
     {
     }
 
-    public synchronized void setExecutor(ExecutorService executor)
+    public synchronized void setExecutor(ScheduledExecutorService executor)
     {
         _executor = executor;
     }

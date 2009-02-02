@@ -2,7 +2,9 @@ package org.dcache.pool.p2p;
 
 import java.util.List;
 import java.util.ArrayList;
-import java.util.concurrent.Executor;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.io.DataInputStream;
@@ -34,6 +36,7 @@ import diskCacheV111.vehicles.PoolDeliverFileMessage;
 import diskCacheV111.vehicles.DCapProtocolInfo;
 import diskCacheV111.vehicles.DoorTransferFinishedMessage;
 import diskCacheV111.vehicles.Message;
+import diskCacheV111.vehicles.IoJobInfo;
 import diskCacheV111.movers.DCapConstants;
 
 import dmg.cells.nucleus.CellMessage;
@@ -57,6 +60,8 @@ class Companion
 {
     private final static Logger _log = Logger.getLogger(Companion.class);
 
+    private final static long PING_PERIOD = 5 * 60 * 1000; // 5 minutes
+
     private final Acceptor _acceptor;
     private final Repository _repository;
     private final ChecksumModuleV1 _checksumModule;
@@ -66,7 +71,7 @@ class Companion
     private final List<StickyRecord> _stickyRecords;
     private final CacheFileAvailable _callback;
     private final InetSocketAddress _address;
-    private final Executor _executor;
+    private final ScheduledExecutorService _executor;
     private final CellStub _pnfs;
     private final CellStub _pool;
 
@@ -84,6 +89,12 @@ class Companion
 
     /** The thread performing the actual file transfer. */
     private Thread _thread;
+
+    /** Used to implement the startTimer and stopTimer actions. */
+    private ScheduledFuture _timerTask;
+
+    /** ID of the mover on the source pool. */
+    private int _moverId;
 
     /**
      * Creates a new instance.
@@ -103,7 +114,7 @@ class Companion
      * @param callback    Callback to which success or failure is reported
      * @throws UnknownHostException if the host address could not be found
      */
-    Companion(Executor executor,
+    Companion(ScheduledExecutorService executor,
               Acceptor acceptor,
               Repository repository,
               ChecksumModuleV1 checksumModule,
@@ -158,6 +169,11 @@ class Companion
         return _pnfsId;
     }
 
+    synchronized public long getPingPeriod()
+    {
+        return PING_PERIOD;
+    }
+
     /**
      * Cancels the transfer. Returns true unless the transfer is
      * already completed.
@@ -205,8 +221,10 @@ class Companion
         WriteHandle handle;
         synchronized (this) {
             try {
-                if (_fsm.getState() != CompanionContext.FSM.WaitingForConnection)
-                    throw new IllegalStateException("Connection denied");
+                CompanionContext.CompanionState state = _fsm.getState();
+                if (state != CompanionContext.FSM.CreatingMover &&
+                    state != CompanionContext.FSM.WaitingForConnection)
+                    throw new IllegalStateException("Wrong state [" + state + "]");
 
                 handle = _repository.createEntry(_pnfsId,
                                                  _storageInfo,
@@ -227,7 +245,7 @@ class Companion
                 File file = handle.getFile();
                 CacheEntry entry = handle.getEntry();
                 long size = entry.getStorageInfo().getFileSize();
-                
+
                 handle.allocate(size);
                 runIO(in, out, file, size);
             } finally {
@@ -395,16 +413,16 @@ class Companion
     // state machine.
     /////////////////////////////////////////////////////////////////
 
-    /**
-     * Marks the transfer as failed.
-     *
-     * @param error Description of the cause of the failure.
-     */
     synchronized void setError(Object error)
     {
         if (_error == null) {
             _error = error;
         }
+    }
+
+    synchronized void clearError()
+    {
+        _error = null;
     }
 
     /** Returns true iff storage info is known. */
@@ -434,6 +452,35 @@ class Companion
         _storageInfo = info;
     }
 
+    /** FSM Action */
+    synchronized void startTimer(long delay)
+    {
+        Runnable task =
+            new Runnable()
+            {
+                public void run()
+                {
+                    synchronized (Companion.this) {
+                        if (_timerTask != null) {
+                            _fsm.timer();
+                            _timerTask = null;
+                        }
+                    }
+                }
+            };
+        _timerTask =
+            _executor.schedule(task, delay, TimeUnit.MILLISECONDS);
+    }
+
+    /** FSM Action */
+    synchronized void stopTimer()
+    {
+        if (_timerTask != null) {
+            _timerTask.cancel(false);
+            _timerTask = null;
+        }
+    }
+
     /** Asynchronously requests delivery from the source pool. */
     synchronized void sendDeliveryRequest()
     {
@@ -449,6 +496,26 @@ class Companion
 
         _pool.send(new CellPath(_poolName),
                    request, PoolDeliverFileMessage.class,
+                   new Callback<PoolDeliverFileMessage>()
+                   {
+                       @Override
+                       public void success(PoolDeliverFileMessage message)
+                       {
+                           setMoverId(message.getMoverId());
+                           super.success(message);
+                       }
+                   });
+    }
+
+    synchronized void setMoverId(int moverId)
+    {
+        _moverId = moverId;
+    }
+
+    synchronized void ping()
+    {
+        _pool.send(new CellPath(_poolName),
+                   "mover ls -binary " + _moverId, IoJobInfo.class,
                    new Callback());
     }
 
@@ -514,7 +581,7 @@ class Companion
      * delivery (SMC state machines do not allow transitions to be
      * triggered from within transitions).
      */
-    class Callback<T extends Message> implements MessageCallback<T>
+    class Callback<T> implements MessageCallback<T>
     {
         public void success(T message)
         {

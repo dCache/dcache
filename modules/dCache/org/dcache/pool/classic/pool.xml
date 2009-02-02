@@ -23,6 +23,7 @@
         pnfsmanager=PnfsManager
         flushMessageTarget=broadcast
         sweeper=org.dcache.pool.classic.SpaceSweeper2
+        workerThreads=5
       </value>
     </property>
   </bean>
@@ -195,6 +196,14 @@
     <property name="timeout" value="120000"/>
     <property name="destination" value="PoolManager"/>
   </bean>
+
+  <bean id="threadPool"
+        class="java.util.concurrent.Executors"
+        factory-method="newScheduledThreadPool"
+        destroy-method="shutdown">
+    <constructor-arg value="${workerThreads}"/>
+  </bean>
+  
   
   <bean id="pp" class="org.dcache.pool.p2p.P2PClient"
         destroy-method="shutdown">
@@ -203,22 +212,14 @@
     <property name="checksumModule" ref="csm"/>
     <property name="pnfs" ref="pnfsStub"/>
     <property name="pool" ref="poolStub"/>
-    <property name="executor">
-      <bean class="java.util.concurrent.Executors"
-            factory-method="newCachedThreadPool"
-            destroy-method="shutdown"/>
-    </property>
+    <property name="executor" ref="threadPool"/>
   </bean>
 
   <bean id="migration" class="org.dcache.pool.migration.MigrationModule"
         destroy-method="cancelAll">
     <description>Replica migration module client</description>
     <property name="repository" ref="rep"/>
-    <property name="executor">
-      <bean class="java.util.concurrent.Executors"
-            factory-method="newSingleThreadScheduledExecutor"
-            destroy-method="shutdown"/>
-    </property>
+    <property name="executor" ref="threadPool"/>
     <property name="pnfsStub" ref="pnfsStub"/>
     <property name="poolStub" ref="poolStub"/>
     <property name="poolManagerStub" ref="poolManagerStub"/>

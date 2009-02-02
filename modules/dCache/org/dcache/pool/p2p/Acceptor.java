@@ -159,12 +159,7 @@ class Acceptor implements Runnable
                                 companion.transfer(in, out);
                             }
                         } catch (IllegalStateException e) {
-                            /* We only log this at debug level since
-                             * the companion most likely already
-                             * logged an error message.
-                             */
-                            _log.debug("Companion refused transfer: "
-                                       + e.getMessage());
+                            _log.error("Transfer denied: " + e.getMessage());
                         } catch (IOException e) {
                             /* This happens if we fail to read the
                              * session ID. Not much we can do about

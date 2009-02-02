@@ -21,7 +21,7 @@ Init
                 }
         start
                 [ ctxt.hasStorageInfo() ]
-                WaitingForConnection
+                CreatingMover
                 {
                 }
 }
@@ -48,21 +48,24 @@ Entry
                         setError("Failed to get storage info (" + cause + ")");
                 }
         success()
-                WaitingForConnection
+                CreatingMover
                 {
                 }
 }
 
-WaitingForConnection
+CreatingMover
 Entry
 {
         sendDeliveryRequest();
 }
 {
-        createEntryFailed
-                Failed
+        success
+                WaitingForConnection
                 {
-                        setError("Replica already exists");
+                }
+        connected
+                Connected
+                {
                 }
         failure(rc: Integer, cause: Object)
                 Failed
@@ -72,24 +75,49 @@ Entry
         timeout
                 Failed
                 {
-                        setError("Source pool failed (no respons)");
+                        setError("Source pool failed (no response)");
                 }
         noroute
                 Failed
                 {
                         setError("Source pool failed (no route to cell)");
                 }
-        messageArrived(message: DoorTransferFinishedMessage)
-                [ message.getReturnCode() != 0]
-                Failed
+}
+
+WaitingForConnection
+Entry
+{
+        startTimer(ctxt.getPingPeriod());
+}
+Exit
+{
+        stopTimer();
+}
+{
+        timer
+                nil
                 {
-                        setError(message.getErrorObject());
+                        ping();
                 }
-        messageArrived(message: DoorTransferFinishedMessage)
-                [ message.getReturnCode() == 0]
+        success
+                nil
+                {
+                        startTimer(ctxt.getPingPeriod());
+                }
+        timeout
                 Failed
                 {
-                        setError("Source pool claims transfer completion, but no transfer happened");
+                        setError("Ping failed (no response)");
+                }
+        noroute
+                Failed
+                {
+                        setError("Ping failed (no route to cell)");
+                }
+        failure(rc: Integer, cause: Object)
+                Failed
+                {
+                        setError("Ping failed (" + cause + ")");
                 }
         connected
                 Connected
@@ -99,34 +127,24 @@ Entry
 
 Connected
 {
-        failure(rc: Integer, cause: Object)
-                Failing
-                {
-                        setError("Source pool failed (" + cause + ")");
-                }
-        messageArrived(message: DoorTransferFinishedMessage)
-                [ message.getReturnCode() != 0]
-                Failing
-                {
-                }
         messageArrived(message: DoorTransferFinishedMessage)
                 [ message.getReturnCode() == 0]
                 DoorFinished
                 {
                 }
+        messageArrived(message: DoorTransferFinishedMessage)
+                [ message.getReturnCode() != 0]
+                Cancelling
+                {
+                        setError(message.getErrorObject());
+                }
         disconnected(error: Object)
                 [ error == null ]
-                Disconnected
+                Done
                 {
-                }
-        disconnected(error: Object)
-                [ error != null ]
-                Failed
-                {
-                        setError(error);
                 }
         cancel(error: Object)
-                Failing
+                Cancelling
                 { 
                         setError(error);
                 }
@@ -140,43 +158,24 @@ DoorFinished
                 Done
                 {
                 }
-        disconnected(error: Object)
-                [ error != null ]
-                Failed
-                {
-                        setError(error);
-                }
         cancel(error: Object)
-                Failing
+                Cancelling
                 {
                         setError(error);
                 }
 }
 
-Failing
+Cancelling
 Entry
 {
         interrupt();
 }
 {
         disconnected(error: Object)
-                Failed
-                {
-                }
-}
-
-Disconnected
-{
-        messageArrived(message: DoorTransferFinishedMessage)
-                [ message.getReturnCode() != 0]
-                Failed
-                {
-                        setError(message.getErrorObject());
-                }
-        messageArrived(message: DoorTransferFinishedMessage)
-                [ message.getReturnCode() == 0]
+                [ error == null ]
                 Done
                 {
+                        clearError();
                 }
 }
 
@@ -198,7 +197,24 @@ Entry
 
 Default
 {
+        createEntryFailed
+                Failed
+                {
+                        setError("Replica already exists");
+                }
         cancel(error: Object)
+                Failed
+                {
+                        setError(error);
+                }
+        messageArrived(message: DoorTransferFinishedMessage)
+                [ message.getReturnCode() != 0]
+                Failed
+                {
+                        setError(message.getErrorObject());
+                }
+        disconnected(error: Object)
+                [ error != null ]
                 Failed
                 {
                         setError(error);
