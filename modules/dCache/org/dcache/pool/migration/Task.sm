@@ -27,14 +27,17 @@ Entry
         timeout
                 Failed
                 {
+                        fail("PnfsManager failed (no response)");
                 }
         noroute
                 Failed
                 {
+                        fail("PnfsManager failed (no route to cell)");
                 }
-        failure(rc: int)
+        failure(rc: int, cause: Object)
                 Failed
                 {
+                        fail("PnfsManager failed (" + cause + ")");
                 }
         cancel
                 Cancelled
@@ -86,13 +89,13 @@ UpdatingExistingFile
                 Failed
                 {
                 }
-        failure(rc: int)
+        failure(rc: int, cause: Object)
                 [ ctxt.hasMoreLocations() ]
                 nil
                 {
                         updateExistingReplica();
                 }
-        failure(rc: int)
+        failure(rc: int, cause: Object)
                 InitiatingCopy
                 {
                 }
@@ -124,7 +127,7 @@ CancellingUpdate
                 Cancelled
                 {
                 }
-        failure(rc: int)
+        failure(rc: int, cause: Object)
                 Cancelled
                 {
                 }
@@ -132,6 +135,7 @@ CancellingUpdate
                 [ ctxt.getMustMovePins() ]
                 Failed
                 {
+                        fail("Failed to cancel task");
                 }
         success
                 Done
@@ -157,14 +161,19 @@ Entry
         nopools
                 Failed
                 {
+                        fail(String.format("No targets"));
                 }
         noroute
                 Failed
                 {
+                        fail(String.format("Pool %s failed (no route to cell)",
+                                           ctxt.getTarget()));
                 }
-        failure(rc: int)
+        failure(rc: int, cause: Object)
                 Failed
                 {
+                        fail(String.format("Pool %s failed (%s)",
+                                           ctxt.getTarget(), cause));
                 }
         timeout
                 Waiting
@@ -181,6 +190,9 @@ Entry
                 [ message.getReturnCode() != 0 ]
                 Failed
                 {
+                        fail(String.format("Transfer to %s failed (%s)",
+                                           ctxt.getTarget(), 
+                                           message.getErrorObject()));
                 }
         messageArrived(message: PoolMigrationCopyFinishedMessage)
                 [ message.getReturnCode() == 0 && ctxt.getMustMovePins() ]
@@ -214,6 +226,9 @@ Exit
                 [ message.getReturnCode() != 0 ]
                 Failed
                 {
+                        fail(String.format("Transfer to %s failed (%s)",
+                                           ctxt.getTarget(), 
+                                           message.getErrorObject()));
                 }
         messageArrived(message: PoolMigrationCopyFinishedMessage)
                 [ message.getReturnCode() == 0 && ctxt.getMustMovePins() ]
@@ -243,7 +258,7 @@ Entry
                 {
                         // Task is alive
                 }
-        failure(rc: int)
+        failure(rc: int, cause: Object)
                 Waiting
                 {
                         // Task is gone
@@ -262,6 +277,9 @@ Entry
                 [ message.getReturnCode() != 0 ]
                 Failed
                 {
+                        fail(String.format("Transfer to %s failed (%s)",
+                                           ctxt.getTarget(), 
+                                           message.getErrorObject()));
                 }
         messageArrived(message: PoolMigrationCopyFinishedMessage)
                 [ message.getReturnCode() == 0 && ctxt.getMustMovePins() ]
@@ -301,7 +319,7 @@ Exit
                 {
                         // Task is alive
                 }
-        failure(rc: int)
+        failure(rc: int, cause: Object)
                 Waiting
                 {
                         // Task is gone
@@ -310,16 +328,23 @@ Exit
                 Failed
                 {
                         // We still cannot talk to the pool
+                        fail(String.format("Pool %s failed (no route to cell)",
+                                           ctxt.getTarget()));
                 }
         timeout
                 Failed
                 {
                         // Message timed out again
+                        fail(String.format("Pool %s failed (no response)",
+                                           ctxt.getTarget()));
                 }
         messageArrived(message: PoolMigrationCopyFinishedMessage)
                 [ message.getReturnCode() != 0 ]
                 Failed
                 {
+                        fail(String.format("Transfer to %s failed (%s)",
+                                           ctxt.getTarget(), 
+                                           message.getErrorObject()));
                 }
         messageArrived(message: PoolMigrationCopyFinishedMessage)
                 [ message.getReturnCode() == 0 && ctxt.getMustMovePins() ]
@@ -352,11 +377,16 @@ Entry
         timer
                 Failed
                 {
+                        fail(String.format("Pool %s failed (no response)",
+                                           ctxt.getTarget()));
                 }
         messageArrived(message: PoolMigrationCopyFinishedMessage)
                 [ message.getReturnCode() != 0 ]
                 Failed
                 {
+                        fail(String.format("Transfer to %s failed (%s)",
+                                           ctxt.getTarget(), 
+                                           message.getErrorObject()));
                 }
         messageArrived(message: PoolMigrationCopyFinishedMessage)
                 [ message.getReturnCode() == 0 && ctxt.getMustMovePins() ]
@@ -384,21 +414,25 @@ Entry
                 Done
                 {
                 }
-        failure(rc: int)
+        failure(rc: int, cause: Object)
                 Failed
                 {
+                        fail("Pin manager failed (" + cause + ")");
                 }
         noroute
                 Failed
                 {
+                        fail("Pin manager failed (no route to cell)");
                 }
         timeout
                 Failed
                 {
+                        fail("Pin manager failed (timeout)");
                 }
         cancel
                 Failed
                 {
+                        fail("Failed to cancel task");
                 }
 }
 
@@ -419,6 +453,8 @@ Exit
         timer
                 Failed
                 {
+                        fail(String.format("Pool %s failed (no response)",
+                                           ctxt.getTarget()));
                 }
         messageArrived(message: PoolMigrationCopyFinishedMessage)
                 [ message.getReturnCode() != 0 ]
@@ -429,6 +465,7 @@ Exit
                 [ message.getReturnCode() == 0 && ctxt.getMustMovePins() ]
                 Failed
                 {
+                        fail("Failed to cancel task");
                 }
         messageArrived(message: PoolMigrationCopyFinishedMessage)
                 [ message.getReturnCode() == 0 ]
@@ -458,10 +495,6 @@ Entry
 // Something went wrong. In some cases the transfer could have
 // succeeded, but we don't know.
 Failed
-Entry
-{
-        notifyFailed();
-}
 {
         Default
                 nil

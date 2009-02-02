@@ -18,6 +18,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.Collection;
 import java.util.Map;
 import java.util.List;
@@ -80,6 +82,7 @@ public class Job
     private final Map<PnfsId,Long> _sizes = new HashMap();
     private final Map<PnfsId,Task> _running = new HashMap();
     private final Future _refreshTask;
+    private final BlockingQueue<Error> _errors = new ArrayBlockingQueue(15);
 
     private final JobStatistics _statistics = new JobStatistics();
     private final ModuleConfiguration _configuration;
@@ -191,6 +194,13 @@ public class Job
             });
         for (Task task: tasks) {
             task.getInfo(pw);
+        }
+
+        if (!_errors.isEmpty()) {
+            pw.println("Most recent errors:");
+            for (Error error: _errors) {
+                pw.println(error);
+            }
         }
     }
 
@@ -425,7 +435,7 @@ public class Job
     }
 
     /** Callback from task: Task failed, reschedule it. */
-    synchronized void taskFailed(Task task)
+    synchronized void taskFailed(Task task, String msg)
     {
         PnfsId pnfsId = task.getPnfsId();
         if (task == _running.remove(pnfsId)) {
@@ -436,6 +446,11 @@ public class Job
             setState(State.SLEEPING);
         } else {
             schedule();
+        }
+
+        Error error = new Error(task.getId(), pnfsId, msg);
+        while (!_errors.offer(error)) {
+            _errors.poll();
         }
     }
 
@@ -599,6 +614,28 @@ public class Job
             } catch (Exception e) {
                 _log.error(e, e);
             }
+        }
+    }
+
+    protected class Error
+    {
+        private final long _id;
+        private final long _time;
+        private final PnfsId _pnfsId;
+        private final String _error;
+
+        public Error(long id, PnfsId pnfsId, String error)
+        {
+            _id = id;
+            _time = System.currentTimeMillis();
+            _pnfsId = pnfsId;
+            _error = error;
+        }
+
+        public String toString()
+        {
+            return String.format("%tT [%d] %s: %s",
+                                 _time, _id, _pnfsId, _error);
         }
     }
 }

@@ -128,6 +128,14 @@ public class Task
     }
 
     /**
+     * Returns the current target pool, if any.
+     */
+    public String getTarget()
+    {
+        return _target == null ? "" : _target.toSmallString();
+    }
+
+    /**
      * Eager tasks copy files if attempts to update existing copies
      * timeout or fail due to communication problems. Other tasks fail
      * in this situation.
@@ -184,7 +192,7 @@ public class Task
                                      _id,
                                      _entry.getPnfsId(),
                                      _fsm.getState(),
-                                     _target));
+                                     _target.toSmallString()));
         } else {
             pw.println(String.format("[%d] %s: %s",
                                      _id,
@@ -330,12 +338,12 @@ public class Task
     }
 
     /** FSM Action */
-    void notifyFailed()
+    void fail(final String message)
     {
         _executor.execute(new LoggingTask(new Runnable() {
                 public void run()
                 {
-                    _job.taskFailed(Task.this);
+                    _job.taskFailed(Task.this, message);
                 }
             }));
     }
@@ -431,7 +439,7 @@ public class Task
             _executor.execute(new LoggingTask(new Runnable() {
                     public void run() {
                         synchronized (Task.this) {
-                            _fsm.failure(rc);
+                            _fsm.failure(rc, cause);
                         }
                     }
                 }));
