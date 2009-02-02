@@ -337,10 +337,12 @@ public class Job
                     Task task = new Task(this,
                                          _configuration.getPoolStub(),
                                          _configuration.getPnfsStub(),
+                                         _configuration.getPinManagerStub(),
                                          _configuration.getExecutor(),
                                          _configuration.getPoolName(),
                                          entry,
-                                         _definition.targetMode);
+                                         _definition.targetMode,
+                                         _definition.mustMovePins);
                     _running.put(pnfsId, task);
                     _statistics.addAttempt();
                     task.run();
@@ -397,13 +399,15 @@ public class Job
             remove(pnfsId);
         } else {
             try {
-                synchronized (this) {
-                    CacheEntry entry = repository.getEntry(pnfsId);
-                    if (!accept(entry)) {
-                        remove(pnfsId);
-                    } else if (_definition.isPermanent) {
-                        add(entry);
+                CacheEntry entry = repository.getEntry(pnfsId);
+                if (!accept(entry)) {
+                    synchronized (this) {
+                        if (!_running.containsKey(pnfsId)) {
+                            remove(pnfsId);
+                        }
                     }
+                } else if (_definition.isPermanent) {
+                    add(entry);
                 }
             } catch (FileNotInCacheException e) {
                 remove(pnfsId);
@@ -430,6 +434,8 @@ public class Job
 
         if (_state == State.RUNNING) {
             setState(State.SLEEPING);
+        } else {
+            schedule();
         }
     }
 
@@ -508,26 +514,54 @@ public class Job
         return false;
     }
 
+    /**
+     * Returns true if and only if <code>record</code> is owned by the
+     * pin manager.
+     */
+    private synchronized boolean isPin(StickyRecord record)
+    {
+        String prefix = _configuration.getPinManagerStub()
+            .getDestinationPath().getDestinationAddress().getCellName();
+        return record.owner().startsWith(prefix);
+    }
+
+    /**
+     * Returns true if and only if the given entry has any sticky
+     * records owned by the pin manager.
+     */
+    private synchronized boolean isPinned(CacheEntry entry)
+    {
+        for (StickyRecord record: entry.getStickyRecords()) {
+            if (isPin(record)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     /** Apply source mode update to replica. */
-    synchronized void applySourceMode(PnfsId pnfsId)
+    private synchronized void applySourceMode(PnfsId pnfsId)
     {
         try {
             CacheEntryMode mode = _definition.sourceMode;
             Repository repository = _configuration.getRepository();
+            CacheEntry entry = repository.getEntry(pnfsId);
             switch (mode.state) {
             case SAME:
                 applySticky(pnfsId, mode.stickyRecords);
                 break;
             case DELETE:
-                repository.setState(pnfsId, EntryState.REMOVED);
-                break;
+                if (!isPinned(entry)) {
+                    repository.setState(pnfsId, EntryState.REMOVED);
+                    break;
+                }
+                // Fall through
             case REMOVABLE:
-                CacheEntry entry = repository.getEntry(pnfsId);
                 List<StickyRecord> list = mode.stickyRecords;
                 applySticky(pnfsId, list);
                 for (StickyRecord record: entry.getStickyRecords()) {
                     String owner = record.owner();
-                    if (!containsOwner(list, owner)) {
+                    if (!isPin(record) && !containsOwner(list, owner)) {
                         repository.setSticky(pnfsId, owner, 0, true);
                     }
                 }

@@ -203,6 +203,12 @@
         destroy-method="shutdown">
     <constructor-arg value="${workerThreads}"/>
   </bean>
+
+  <bean id="pinManagerStub" class="org.dcache.cells.CellStub">
+    <description>Pin manager cell stub</description>
+    <property name="timeout" value="120000"/>
+    <property name="destination" value="PinManager"/>
+  </bean>
   
   
   <bean id="pp" class="org.dcache.pool.p2p.P2PClient"
@@ -223,6 +229,7 @@
     <property name="pnfsStub" ref="pnfsStub"/>
     <property name="poolStub" ref="poolStub"/>
     <property name="poolManagerStub" ref="poolManagerStub"/>
+    <property name="pinManagerStub" ref="pinManagerStub"/>
   </bean>
   
   <bean id="migration-server" 

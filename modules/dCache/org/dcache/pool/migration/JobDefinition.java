@@ -16,6 +16,7 @@ public class JobDefinition
     public final long refreshPeriod;
     public final boolean isPermanent;
     public final boolean isEager;
+    public final boolean mustMovePins;
 
     public JobDefinition(List<CacheEntryFilter> filters,
                          CacheEntryMode sourceMode,
@@ -24,7 +25,9 @@ public class JobDefinition
                          RefreshablePoolList poolList,
                          long refreshPeriod,
                          boolean isPermanent,
-                         boolean isEager)
+                         boolean isEager,
+                         boolean mustMovePins)
+
     {
         this.filters = Collections.unmodifiableList(filters);
         this.sourceMode = sourceMode;
@@ -34,5 +37,6 @@ public class JobDefinition
         this.refreshPeriod = refreshPeriod;
         this.isPermanent = isPermanent;
         this.isEager = isEager;
+        this.mustMovePins = mustMovePins;
     }
 }

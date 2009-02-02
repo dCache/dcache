@@ -129,6 +129,11 @@ public class MigrationModule
         _configuration.setPoolStub(stub);
     }
 
+    public void setPinManagerStub(CellStub stub)
+    {
+        _configuration.setPinManagerStub(stub);
+    }
+
     /** Returns the job with the given id. */
     private synchronized Job getJob(int id)
         throws NoSuchElementException
@@ -293,7 +298,8 @@ public class MigrationModule
                                   String defaultTarget,
                                   String defaultSourceMode,
                                   String defaultTargetMode,
-                                  String defaultRefresh)
+                                  String defaultRefresh,
+                                  String defaultPins)
     {
         String exclude = args.getOpt("exclude");
         boolean permanent = (args.getOpt("permanent") != null);
@@ -304,6 +310,7 @@ public class MigrationModule
         String target = args.getOpt("target");
         String refresh = args.getOpt("refresh");
         String concurrency = args.getOpt("concurrency");
+        String pins = args.getOpt("pins");
 
         if (select == null) {
             select = defaultSelect;
@@ -323,6 +330,9 @@ public class MigrationModule
         if (concurrency == null) {
             concurrency = "1";
         }
+        if (pins == null) {
+            pins = defaultPins;
+        }
 
         List<String> targets = new ArrayList();
         for (int i = 0; i < args.argc(); i++) {
@@ -335,6 +345,15 @@ public class MigrationModule
             excluded.addAll(Arrays.asList(exclude.split(",")));
         }
 
+        boolean mustMovePins;
+        if (pins.equals("keep")) {
+            mustMovePins = false;
+        } else if (pins.equals("move")) {
+            mustMovePins = true;
+        } else {
+            throw new IllegalArgumentException(pins + ": Invalid value for option -pins");
+        }
+
         JobDefinition definition =
             new JobDefinition(createFilters(args),
                               createCacheEntryMode(sourceMode),
@@ -344,7 +363,8 @@ public class MigrationModule
                                              excluded),
                               Integer.valueOf(refresh) * 1000,
                               permanent,
-                              eager);
+                              eager,
+                              mustMovePins);
 
         if (definition.targetMode.state == CacheEntryMode.State.DELETE
             || definition.targetMode.state == CacheEntryMode.State.REMOVABLE) {
@@ -419,7 +439,7 @@ public class MigrationModule
         "Options:\n" +
         "  -state=cached|precious\n" +
         "          Only copy replicas in the given state.\n"+
-        "  -sticky[=<owner>[,<owner> ...]]\n" +
+        "  -sticky[=<owner>[,<owner>...]]\n" +
         "          Only copy sticky replicas. Can optionally be limited to\n" +
         "          the list of owners. A sticky flag for each owner must be\n" +
         "          present for the replica to be selected.\n" +
@@ -428,35 +448,56 @@ public class MigrationModule
         "  -pnfsid=<pnfsid>\n" +
         "          Only copy the replica with the given PNFS ID.\n" +
         "  -smode=same|cached|precious|removable|delete[+<owner>[(<lifetime>)] ...]\n" +
-        "          Update the local replica to the given mode after transfer.\n" +
-        "          'same' does not change the local state (this is the\n" +
-        "          default), 'cached' marks it cached, 'precious' marks it\n" +
-        "          precious, 'removable' marks it cached and strips all\n" +
-        "          existing sticky flags, and 'delete' deletes the replica.\n" +
+        "          Update the local replica to the given mode after transfer:\n" +
+        "          same:\n" +
+        "              does not change the local state (this is the default).\n" +
+        "          cached:\n" +
+        "              marks it cached.\n" +
+        "          precious:\n" +
+        "              marks it precious.\n" +
+        "          removable:\n" +
+        "              marks it cached and strips all existing sticky flags\n" +
+        "              exluding pins.\n" +
+        "          delete:\n" +
+        "              deletes the replica unless it is pinned.\n" +
         "          An optional list of sticky flags can be specified. The\n" +
         "          lifetime is in seconds. A lifetime of 0 causes the flag\n" +
-        "          to immediate expire. Notice that existing sticky flags\n" +
+        "          to immediately expire. Notice that existing sticky flags\n" +
         "          of the same owner are overwritten.\n" +
-        "  -tmode=same|cached|precious[+<owner>[(<lifetime>)] ...]\n" +
-        "          Set the mode of the target replica. 'same' applies the\n" +
-        "          state and sticky bits of the local replica (this is the\n" +
-        "          default), 'cached' marks it cached, 'precious' marks it\n" +
-        "          precious. An optional list of sticky flags can be\n" +
-        "          specified. The lifetime is in seconds.\n" +
+        "  -tmode=same|cached|precious[+<owner>[(<lifetime>)]...]\n" +
+        "          Set the mode of the target replica:\n" +
+        "          same:\n" +
+        "              applies the state and sticky bits excluding pins\n" +
+        "              of the local replica (this is the default).\n" +
+        "          cached:\n" +
+        "              marks it cached.\n" +
+        "          precious:\n" +
+        "              marks it precious.\n" +
+        "          An optional list of sticky flags can be specified. The\n" +
+        "          lifetime is in seconds.\n" +
+        "  -pins=move|keep\n" +
+        "          Controls how sticky flags owned by the pin manager is handled:\n" +
+        "          move:\n" +
+        "              Ask pin manager to move pins to the target pool.\n" +
+        "          keep:\n" +
+        "              Keep pin on the source pool.\n" +
         "  -select=proportional|best|random\n" +
-        "          Determines how a pool is selected from the set of target\n" +
-        "          pools. 'proportional' selects a pool with a probability\n" +
-        "          inversely proportional to the cost of the pool. 'best'\n" +
-        "          selects the pool with the lowest cost. 'random' selects\n" +
-        "          a pool randomly. The default is 'proportional'.\n" +
+        "          Determines how a pool is selected from the set of target pools:\n" +
+        "          proportional:\n" +
+        "              selects a pool with a probability inversely proportional\n" +
+        "              to the cost of the pool.\n" +
+        "          best:\n" +
+        "              selects the pool with the lowest cost.\n" +
+        "          random:\n" +
+        "              selects a pool randomly.\n" +
+        "          The default is 'proportional'.\n" +
         "  -target=pool|pgroup|link\n" +
-        "          Determines the interpretation of the target names. 'pool'\n" +
-        "          is the default.\n" +
+        "          Determines the interpretation of the target names. The\n" +
+        "          default is 'pool'.\n" +
         "  -refresh=<time>\n" +
-        "          Specifies the period in seconds of when target pool\n" +
-        "          information is queried from the pool manager. The\n" +
-        "          default is 300 seconds.\n" +
-        "  -exclude=<pool>[,<pool> ...]\n" +
+        "          Specifies the period in seconds of when target pool information\n" +
+        "          is queried from the pool manager. The default is 300 seconds.\n" +
+        "  -exclude=<pool>[,<pool>...]\n" +
         "          Exclude target pools.\n" +
         "  -concurrency=<concurrency>\n" +
         "          Specifies how many concurrent transfers to perform.\n" +
@@ -471,7 +512,7 @@ public class MigrationModule
 //         "          or updating the state.";
     public synchronized String ac_migration_copy_$_1_99(Args args)
     {
-        int id = copy(args, "proportional", "pool", "same", "same", "300");
+        int id = copy(args, "proportional", "pool", "same", "same", "300", "keep");
         String command = "migration copy " + args.toString();
         _commands.put(_jobs.get(id), command);
         return getJobSummary(id);
@@ -481,10 +522,10 @@ public class MigrationModule
     public final static String fh_migration_move =
         "Moves replicas to other pools. The source replica is deleted.\n" +
         "Accepts the same options as 'migration copy'. Corresponds to\n\n" +
-        "     migration copy -smode=delete -tmode=same\n";
+        "     migration copy -smode=delete -tmode=same -pins=move\n";
     public String ac_migration_move_$_1_99(Args args)
     {
-        int id = copy(args, "proportional", "pool", "delete", "same", "300");
+        int id = copy(args, "proportional", "pool", "delete", "same", "300", "move");
         String command = "migration move " + args.toString();
         _commands.put(_jobs.get(id), command);
         return getJobSummary(id);
@@ -498,7 +539,7 @@ public class MigrationModule
         "     migration copy -smode=same -tmode=cached\n";
     public String ac_migration_cache_$_1_99(Args args)
     {
-        int id = copy(args, "proportional", "pool", "same", "cached", "300");
+        int id = copy(args, "proportional", "pool", "same", "cached", "300", "keep");
         String command = "migration cache " + args.toString();
         _commands.put(_jobs.get(id), command);
         return getJobSummary(id);
@@ -598,7 +639,8 @@ public class MigrationModule
         "   Copying              Waiting for target to complete the transfer\n" +
         "   Pinging              Ping send to target, waiting for reply\n" +
         "   NoResponse           Cell connection to target lost\n" +
-        "   Finishing            Waiting for final confirmation from target\n" +
+        "   Waiting              Waiting for final confirmation from target\n" +
+        "   MovingPin            Waiting for pin manager to move pin\n" +
         "   Cancelling           Attempting to cancel transfer\n" +
         "   Cancelled            Task cancelled, file was not copied\n" +
         "   Failed               The task failed\n" +
