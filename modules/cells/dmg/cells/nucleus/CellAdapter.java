@@ -934,6 +934,8 @@ public class   CellAdapter
                      (obj instanceof CommandRequestable))) {
 
                     Object o;
+                    UOID uoid = msg.getUOID();
+                    EventLogger.deliverBegin(msg);
                     try {
                         _currentMessage = msg;
                         o =  executeLocalCommand(obj);
@@ -944,6 +946,7 @@ public class   CellAdapter
                     } catch (Throwable te) {
                         o = te;
                     } finally {
+                        EventLogger.deliverEnd(msg.getSession(), uoid);
                         _currentMessage = null;
                     }
 
@@ -973,7 +976,13 @@ public class   CellAdapter
                         _nucleus.esay("Couldn't revert PingMessage : "+ee);
                     }
                 } else {
-                    messageArrived(msg);
+                    UOID uoid = msg.getUOID();
+                    EventLogger.deliverBegin(msg);
+                    try {
+                        messageArrived(msg);
+                    } finally {
+                        EventLogger.deliverEnd(msg.getSession(), uoid);
+                    }
                 }
             } else {
                 //
@@ -1000,7 +1009,13 @@ public class   CellAdapter
                         _nucleus.esay("Couldn't forward PingMessage : "+ee);
                     }
                 } else {
-                    messageToForward(msg);
+                    UOID uoid = msg.getUOID();
+                    EventLogger.deliverBegin(msg);
+                    try {
+                        messageToForward(msg);
+                    } finally {
+                        EventLogger.deliverEnd(msg.getSession(), uoid);
+                    }
                 }
             }
         }

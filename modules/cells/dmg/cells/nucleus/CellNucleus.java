@@ -243,8 +243,13 @@ public class CellNucleus implements Runnable, ThreadFactory {
         if (!msg.isStreamMode()) {
             msg.touch();
         }
-        __cellGlue.sendMessage(this, msg, locally, remotely);
 
+        EventLogger.sendBegin(this, msg, "async");
+        try {
+            __cellGlue.sendMessage(this, msg, locally, remotely);
+        } finally {
+            EventLogger.sendEnd(msg);
+        }
     }
     public CellMessage   sendAndWait(CellMessage msg, long timeout)
         throws SerializationException,
@@ -265,6 +270,7 @@ public class CellNucleus implements Runnable, ThreadFactory {
             msg.touch();
         }
 
+        EventLogger.sendBegin(this, msg, "blocking");
         UOID uoid = msg.getUOID();
         try {
             CellLock lock = new CellLock();
@@ -304,6 +310,7 @@ public class CellNucleus implements Runnable, ThreadFactory {
             synchronized (_waitHash) {
                 _waitHash.remove(uoid);
             }
+            EventLogger.sendEnd(msg);
         }
     }
 
@@ -339,7 +346,9 @@ public class CellNucleus implements Runnable, ThreadFactory {
         // we will end up in a deadlock (NO LOCKS WHILE CALLING CALLBACKS)
         //
         for (CellLock lock: expired) {
-            lock.getCallback().answerTimedOut(lock.getMessage());
+            CellMessage envelope = lock.getMessage();
+            EventLogger.sendEnd(envelope);
+            lock.getCallback().answerTimedOut(envelope);
         }
 
         return size;
@@ -356,6 +365,7 @@ public class CellNucleus implements Runnable, ThreadFactory {
             msg.touch();
         }
 
+        EventLogger.sendBegin(this, msg, "callback");
         UOID uoid = msg.getUOID();
         boolean success = false;
         try {
@@ -374,6 +384,7 @@ public class CellNucleus implements Runnable, ThreadFactory {
                 synchronized (_waitHash) {
                     _waitHash.remove(uoid);
                 }
+                EventLogger.sendEnd(msg);
             }
         }
     }
@@ -432,6 +443,7 @@ public class CellNucleus implements Runnable, ThreadFactory {
 
                 try {
                     event = _eventQueue.take();
+                    EventLogger.queueEnd(event);
                 } catch (InterruptedException e) {
                     done = true;
                     continue;
@@ -637,6 +649,7 @@ public class CellNucleus implements Runnable, ThreadFactory {
                                         public void run() {
                                             nsay("Starting async callback");
                                             try {
+                                                EventLogger.sendEnd(asyncLock.getMessage());
                                                 if (asyncObj instanceof Exception) {
                                                     asyncCallback.
                                                         exceptionArrived(asyncLock.getMessage(),
@@ -655,6 +668,7 @@ public class CellNucleus implements Runnable, ThreadFactory {
 
                             } else {
                                 try {
+                                    EventLogger.sendEnd(lock.getMessage());
                                     if (obj instanceof Exception) {
                                         callback.exceptionArrived(lock.getMessage(),
                                                                   (Exception)obj);
@@ -677,6 +691,7 @@ public class CellNucleus implements Runnable, ThreadFactory {
         }        // end of : ce instanceof MessageEvent
 
         try {
+            EventLogger.queueBegin(ce);
             _eventQueue.put(ce);
         } catch (InterruptedException e) {
             nesay("addToEventQueue : failed to add : "+e);
