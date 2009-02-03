@@ -58,6 +58,7 @@ public class EventLogger
     {
         if (deliver.isInfoEnabled()) {
             deliver.info(String.format("event=%s uoid=%s session=%s",
+                                       DELIVER_END,
                                        uoid, toString(session)));
         }
     }
