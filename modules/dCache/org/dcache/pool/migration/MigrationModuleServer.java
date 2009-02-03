@@ -79,6 +79,7 @@ public class MigrationModuleServer
          * modifying the entry after the requestor has timed out.
          */
         if (ttl < System.currentTimeMillis()) {
+            _log.warn("PoolMigrationUpdateReplica message discarded: TTL exceeded");
             return null;
         }
 
@@ -219,8 +220,8 @@ public class MigrationModuleServer
 
     private static class Request
     {
-        String pool;
-        long taskId;
+        final String pool;
+        final long taskId;
 
         public Request(String pool, long taskId)
         {
