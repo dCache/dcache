@@ -38,27 +38,7 @@ public class       OsmInfoExtractor
           CacheException( 37 , "Not a valid PnfsId "+pnfsId ) ;
        }
 
-
-       // FIXME: HACK -  AccessLatency and RetentionPolicy stored as a flags
-       try {
-	       CacheInfo info   = new CacheInfo( pnfsFile ) ;
-	       CacheInfo.CacheFlags flags = info.getFlags() ;
-
-	       if( storageInfo.isSetAccessLatency() ) {
-	           flags.put( "al" , storageInfo.getAccessLatency().toString() ) ;
-	       }
-
-	       if(storageInfo.isSetRetentionPolicy() ) {
-	    	   flags.put( "rp" , storageInfo.getRetentionPolicy().toString() ) ;
-	       }
-
-           info.writeCacheInfo( pnfsFile ) ;
-
-       }catch(IOException ee ){
-           throw new
-           CacheException(107,"Problem in set(OSM)StorageInfo : "+ee ) ;
-        }
-
+       storeAlRpInLevel2(storageInfo, pnfsFile);
 
        if( storageInfo.isSetBitFileId() ) {
 
@@ -145,6 +125,36 @@ public class       OsmInfoExtractor
 
        return ;
     }
+    
+    /**
+	 * 	HACK -  AccessLatency and RetentionPolicy stored as a flags
+     * FIXME: this information shouldn't be stored here.
+     * @param storageInfo
+     * @param pnfsFile
+     * @throws CacheException
+     */
+	protected void storeAlRpInLevel2(StorageInfo storageInfo, PnfsFile pnfsFile)
+			throws CacheException {
+		   try {
+		       CacheInfo info   = new CacheInfo( pnfsFile ) ;
+		       CacheInfo.CacheFlags flags = info.getFlags() ;
+
+		       if( storageInfo.isSetAccessLatency() ) {
+		           flags.put( "al" , storageInfo.getAccessLatency().toString() ) ;
+		       }
+
+		       if(storageInfo.isSetRetentionPolicy() ) {
+		    	   flags.put( "rp" , storageInfo.getRetentionPolicy().toString() ) ;
+		       }
+
+		       info.writeCacheInfo( pnfsFile ) ;
+
+		   }catch(IOException ee ){
+		       throw new
+		       CacheException(107,"Problem in set(OSM)StorageInfo : "+ee ) ;
+		    }
+	}
+	
     public StorageInfo getStorageInfo( String mp , PnfsId pnfsId )
            throws CacheException {
        try{
@@ -171,8 +181,8 @@ public class       OsmInfoExtractor
        }
 
     }
-    private OSMStorageInfo extractDirectory( String mp , PnfsFile x )
-            throws Exception {
+    protected OSMStorageInfo extractDirectory( String mp , PnfsFile x )
+            throws CacheException {
 
            PnfsFile parentDir = null ;
            if( x.isDirectory() ){
