@@ -24,6 +24,8 @@ public abstract class UserAuthBase extends Object implements java.io.Serializabl
         this.DN = DN;
         if(fqan != null) {
             this.fqan =  new FQAN(fqan);
+        } else {
+            this.fqan =  new FQAN(user);
         }
         ReadOnly = readOnly;
         this.priority = priority;
@@ -39,6 +41,8 @@ public abstract class UserAuthBase extends Object implements java.io.Serializabl
         Username = user;
         if(fqan != null) {
             this.fqan =  new FQAN(fqan);
+        } else {
+            this.fqan =  new FQAN(user);
         }
         ReadOnly = readOnly;
         this.priority = priority;
@@ -54,6 +58,8 @@ public abstract class UserAuthBase extends Object implements java.io.Serializabl
         Username = user;
         if(fqan != null) {
             this.fqan =  new FQAN(fqan);
+        } else {
+            this.fqan =  new FQAN(user);
         }
         ReadOnly = readOnly;
         UID = uid;
