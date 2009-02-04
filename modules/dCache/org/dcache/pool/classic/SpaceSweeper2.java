@@ -118,7 +118,6 @@ public class SpaceSweeper2
 
             if (_list.add(id)) {
                 _log.debug("Added " + id + " to sweeper");
-                entry.touch();
                 _account.adjustRemovable(entry.getSize());
 
                 /* The sweeper thread may be waiting for more files to
@@ -176,11 +175,6 @@ public class SpaceSweeper2
 
         if (_list.remove(id)) {
             _log.debug("touched : " + entry);
-            try {
-                entry.touch();
-            } catch (CacheException e) {
-                _log.warn("Failed to touch data file: " + e.getMessage());
-            }
             _list.add(id);
         }
 
@@ -219,7 +213,7 @@ public class SpaceSweeper2
     {
         final long toFree = _account.getRemovable();
         new Thread("sweeper-free") {
-            public void run() 
+            public void run()
             {
                 reclaim(toFree);
             }
@@ -233,7 +227,7 @@ public class SpaceSweeper2
     {
         final long toFree = Long.parseLong(args.argv(0));
         new Thread("sweeper-free") {
-            public void run() 
+            public void run()
             {
                 reclaim(toFree);
             }
@@ -355,7 +349,7 @@ public class SpaceSweeper2
                 }
             }
         }
-        
+
         /* Delete the files.
          */
         long deleted = 0;
