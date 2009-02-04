@@ -436,6 +436,8 @@ public class CacheRepositoryEntryImpl implements CacheRepositoryEntry
         long now = System.currentTimeMillis();
         file.setLastModified(now);
         setLastAccess(now);
+
+        generateEvent(EventType.TOUCH);
     }
 
     public List<StickyRecord> stickyRecords()

@@ -309,7 +309,9 @@ public class CacheRepositoryV5
         }
 
         try {
-            return new ReadHandleImpl(this, _repository.getEntry(id));
+            CacheRepositoryEntry entry = _repository.getEntry(id);
+            entry.touch();
+            return new ReadHandleImpl(this, entry);
         } catch (FileNotInCacheException e) {
             /* Somebody got the idea that we have the file, so we make
              * sure to remove any stray pointers.

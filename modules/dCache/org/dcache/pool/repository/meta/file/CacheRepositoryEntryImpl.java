@@ -321,7 +321,7 @@ public class CacheRepositoryEntryImpl implements CacheRepositoryEntry {
     public void removeExpiredStickyFlags()
     {
         if (_state.removeExpiredStickyFlags() && !_state.isSticky()) {
-            CacheRepositoryEvent event = 
+            CacheRepositoryEvent event =
                 new CacheRepositoryEvent(_eventProcessor, clone());
             _eventProcessor.processEvent(EventType.STICKY, event);
         }
@@ -427,6 +427,9 @@ public class CacheRepositoryEntryImpl implements CacheRepositoryEntry {
         _lastAccess = System.currentTimeMillis();
         _dataFile.setLastModified(_lastAccess);
 
+        CacheRepositoryEvent event =
+            new CacheRepositoryEvent(_eventProcessor, clone());
+        _eventProcessor.processEvent(EventType.TOUCH, event);
     }
 
 

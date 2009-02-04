@@ -82,19 +82,14 @@ public class SpaceSweeper2
         }
 
         PnfsId id = entry.getPnfsId();
-        try {
-            if (_list.add(id)) {
-                _log.debug("Added " + id + " to sweeper");
-                entry.touch();
-                _removableSpace += entry.getSize();
+        if (_list.add(id)) {
+            _log.debug("Added " + id + " to sweeper");
+            _removableSpace += entry.getSize();
 
-                /* The sweeper thread may be waiting for more files to
-                 * delete.
-                 */
-                notifyAll();
-            }
-        } catch (CacheException e) {
-            _log.error("Failed to add " + id.toString() + " to sweeper: " + e);
+            /* The sweeper thread may be waiting for more files to
+             * delete.
+             */
+            notifyAll();
         }
     }
 
@@ -158,11 +153,6 @@ public class SpaceSweeper2
 
         if (_list.remove(id)) {
             _log.debug("touched : " + entry);
-            try {
-                entry.touch();
-            } catch (CacheException e) {
-                _log.warn("Failed to touch data file: " + e.getMessage());
-            }
             _list.add(id);
         }
     }
