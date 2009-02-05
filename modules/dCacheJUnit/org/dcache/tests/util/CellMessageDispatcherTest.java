@@ -137,7 +137,7 @@ public class CellMessageDispatcherTest
     @Before
     public void setUp()
     {
-        dispatcher = new CellMessageDispatcher();
+        dispatcher = new CellMessageDispatcher("messageArrived");
         listener1 = new Listener1();
         listener2 = new Listener2();
         dispatcher.addMessageListener(listener1);
@@ -154,7 +154,7 @@ public class CellMessageDispatcherTest
     {
         try {
             return
-                dispatcher.messageArrived(new CellMessage(new CellPath(""), msg));
+                dispatcher.call(new CellMessage(new CellPath(""), msg));
         } finally {
             assertEquals(listener1.delivered, result1);
             assertEquals(listener2.delivered, result2);
