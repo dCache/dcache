@@ -2,6 +2,7 @@ package diskCacheV111.util ;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -262,8 +263,8 @@ public class       OsmInfoExtractor
            return info ;
     }
 
-    private StorageInfo extractFile(String mp, PnfsFile pnfsFile)
-        throws Exception
+    protected StorageInfo extractFile(String mp, PnfsFile pnfsFile)
+        throws CacheException
     {
         OSMStorageInfo storageInfo;
 
@@ -277,8 +278,16 @@ public class       OsmInfoExtractor
         }else{
            BufferedReader br = null ;
            try{
-              br = new BufferedReader(new FileReader(level));
-              String line = br.readLine() ;
+        	   String line;
+		   // TODO: catch these exceptions in main try/catch section
+        	  try {
+        		  br = new BufferedReader(new FileReader(level));
+        		  line = br.readLine() ;
+        	  } catch( FileNotFoundException e) {
+                  throw new CacheException(37, "File not found when opening level-1 "+level);
+        	  } catch( IOException e) {
+                  throw new CacheException(37, "Failed to read from level-1 "+level);
+        	  }
               if ((line == null) || line.length() == 0) {
                   throw new
                       CacheException(37, "Level 1 content of "
@@ -302,12 +311,17 @@ public class       OsmInfoExtractor
                HsmLocation location = new OsmLocationExtractor(levels);
                storageInfo.addLocation(location.location());
 
-               while ((line = br.readLine()) != null) {
-                   if (line.length() != 0) {
-                       levels.put(1, line);
-                       location = new OsmLocationExtractor(levels);
-                       storageInfo.addLocation(location.location());
-                   }
+	       // TODO: catch these exceptions in main try/catch section
+               try {
+            	   while ((line = br.readLine()) != null) {
+            		   if (line.length() != 0) {
+            			   levels.put(1, line);
+            			   location = new OsmLocationExtractor(levels);
+            			   storageInfo.addLocation(location.location());
+            		   }
+            	   }
+               } catch( IOException e) {
+            	   throw new CacheException( 38, "Received IO exception when reading level-1: " + level);
                }
 
            } catch (IllegalArgumentException e) {
