@@ -17,6 +17,9 @@ public class PoolCostInfo implements java.io.Serializable {
     public PoolCostInfo( String poolName ){ _poolName = poolName ; }
     public String getPoolName(){ return _poolName ; }
     public class NamedPoolQueueInfo extends PoolQueueInfo {
+
+        static final long serialVersionUID = -7097362707394583875L;
+
         private String _name = null ;
         private NamedPoolQueueInfo( String name , int active , int maxActive , int queued ){
            super( active , maxActive , queued ) ;
@@ -30,6 +33,8 @@ public class PoolCostInfo implements java.io.Serializable {
         }
     }
     public class PoolQueueInfo implements java.io.Serializable {
+
+        static final long serialVersionUID = 1304697767284208011L;
 
         private int _active    = 0;
         private int _maxActive =0 ;
@@ -62,9 +67,11 @@ public class PoolCostInfo implements java.io.Serializable {
     public PoolQueueInfo getP2pClientQueue(){ return _p2pClient ; }
     public PoolSpaceInfo getSpaceInfo(){ return _space ; }
 
-    public static class PoolSpaceInfo implements java.io.Serializable {
+    public class PoolSpaceInfo implements java.io.Serializable {
 
     	static final long serialVersionUID = -8966065301943351970L;
+
+
 
         private long _total = 0 , _free = 0 , _precious = 0 , _removable = 0 , _lru = 0 ;
         private long _gap   = 0 ;
