@@ -150,8 +150,8 @@ public class AbstractCell extends CellAdapter
     /**
      * Helper object used to dispatch message to message listeners.
      */
-    private final CellMessageDispatcher _messageDispatcher =
-        new CellMessageDispatcher();
+    protected final CellMessageDispatcher _messageDispatcher =
+        new CellMessageDispatcher("messageArrived");
 
     /**
      * Name of context variable to execute during setup, or null.
@@ -739,7 +739,7 @@ public class AbstractCell extends CellAdapter
     {
         UOID uoid = envelope.getUOID();
         boolean isReply = isReply(envelope);
-        Object result = _messageDispatcher.messageArrived(envelope);
+        Object result = _messageDispatcher.call(envelope);
 
         if (result != null && !isReply) {
             if (!uoid.equals(envelope.getUOID())) {

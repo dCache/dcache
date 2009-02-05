@@ -513,7 +513,7 @@ public class UniversalSpringCell
                 Object bean = getBean(name);
                 if (CellMessageReceiver.class.isInstance(bean)) {
                     Collection<Class> types =
-                        CellMessageDispatcher.getMessageTypes(bean.getClass());
+                        _messageDispatcher.getMessageTypes(bean);
                     map.put(name, types);
                 }
             }
@@ -536,7 +536,7 @@ public class UniversalSpringCell
             if (CellMessageReceiver.class.isInstance(bean)) {
                 StringBuilder s = new StringBuilder();
                 Collection<Class> types =
-                    CellMessageDispatcher.getMessageTypes(bean.getClass());
+                    _messageDispatcher.getMessageTypes(bean);
                 for (Class t : types) {
                     s.append(getMessageName(t)).append('\n');
                 }
