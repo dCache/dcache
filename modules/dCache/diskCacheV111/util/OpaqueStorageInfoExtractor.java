@@ -43,8 +43,10 @@ public class OpaqueStorageInfoExtractor extends OsmInfoExtractor {
         if( pnfsFile == null )
            throw new CacheException( 37 , "Not a valid PnfsId "+pnfsId ) ;
 		
-		StorageInfo info = extractDirectory( pnfsMountpoint, pnfsFile);
+        // NB we assume that this file has no level-1 content
+		StorageInfo info = extractFile( pnfsMountpoint, pnfsFile);
 		
+		// Manually add a dummy URI if the required level is present.
         File levelFile = pnfsFile.getLevelFile( _pnfsLevel);
         
         if( levelFile.length() > 0)
