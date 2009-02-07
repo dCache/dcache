@@ -139,7 +139,7 @@ public class AbstractCell extends CellAdapter
      * Task for calling the Cell nucleus message timeout mechanism.
      */
     private TimerTask _timeoutTask;
-    
+
     /**
      * Logger for the package of the instantiated class. Notice that
      * this is not a static field, as the logger instance to use
@@ -201,7 +201,7 @@ public class AbstractCell extends CellAdapter
             _timeoutTask.cancel();
         }
     }
-    
+
     /**
      * Constructs an AbstractCell.
      *
@@ -277,7 +277,7 @@ public class AbstractCell extends CellAdapter
         startTimeoutTask();
     }
 
-    
+
     /**
      * Start the timeout task.
      *
@@ -287,12 +287,12 @@ public class AbstractCell extends CellAdapter
      */
     protected void startTimeoutTask()
     {
-        if (_timeoutTask != null) 
+        if (_timeoutTask != null)
             throw new IllegalStateException("Timeout task is already running");
-        
+
         final CDC cdc = new CDC();
         _timeoutTask = new TimerTask() {
-                public void run() 
+                public void run()
                 {
                     cdc.apply();
                     try {
