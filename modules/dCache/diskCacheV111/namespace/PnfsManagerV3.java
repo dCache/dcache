@@ -30,7 +30,7 @@ public class PnfsManagerV3 extends CellAdapter {
     private int          _threadGroups  = 1 ;
 
     /**
-     * Tasks queues used for cache location messges. Depending on
+     * Tasks queues used for cache location messages. Depending on
      * configuration, this may be the same as <code>_fifos</code>.
      */
     private final BlockingQueue<CellMessage> [] _locationFifos;
@@ -158,6 +158,7 @@ public class PnfsManagerV3 extends CellAdapter {
                         "-enableLargeFileSimulation "+
                         "-logSlowThreshold=<min. time in milliseconds> " +
                         "-storeFilesize "+
+                        "-queueMaxSize=<pnfs message queue>" +
                 "<StorageInfoExctractorClass>");
 
             //
@@ -252,14 +253,20 @@ public class PnfsManagerV3 extends CellAdapter {
                 _defaultRetentionPolicy = RetentionPolicy.CUSTODIAL;
             }
 
+            String queueMaxSizeOption = _args.getOpt("queueMaxSize");
+            int queueMaxSize =  queueMaxSizeOption == null ? 0 : Integer.parseInt(queueMaxSizeOption);
             //
             // and now the threads and fifos
             //
             _fifos = new BlockingQueue[_threads * _threadGroups];
             say("Starting " + _fifos.length + " threads");
-            for( int i = 0 ; i < _fifos.length ; i++ ){
-                _fifos[i] = new LinkedBlockingQueue<CellMessage>() ;
-                _nucleus.newThread( new ProcessThread(_fifos[i]), "proc-"+i ).start();
+            for (int i = 0; i < _fifos.length; i++) {
+                if (queueMaxSize > 0) {
+                    _fifos[i] = new LinkedBlockingQueue<CellMessage>(queueMaxSize);
+                } else {
+                    _fifos[i] = new LinkedBlockingQueue<CellMessage>();
+                }
+                _nucleus.newThread(new ProcessThread(_fifos[i]), "proc-" + i).start();
             }
 
             tmp = _args.getOpt("cachelocation-threads");
@@ -1585,11 +1592,23 @@ public class PnfsManagerV3 extends CellAdapter {
             fifo = _fifos[index];
         }
 
-        try {
-			fifo.put( message ) ;
-		} catch (InterruptedException e) {
-			esay("failed to add a message into queue "+e.getMessage()) ;
-		}
+        /*
+         * try to add a message into queue.
+         * tell requester, that queue is full
+         */
+        if (!fifo.offer(message)) {
+
+                pnfs.setFailed(CacheException.RESOURCE,
+                        new MissingResourceCacheException(
+                                "PnfsManager queue limit exceeded"));
+                try {
+                    message.revertDirection();
+                    sendMessage(message);
+                } catch (NoRouteToCellException e){
+                    esay("Requester cell disappeared: " + e.getMessage());
+                }
+        }
+
     }
     private void forwardModifyCacheLocationMessage( PnfsMessage message ){
         try{

@@ -91,6 +91,12 @@ public class CacheException extends Exception {
      */
     public final static int NOT_IN_TRASH = 10016;
 
+	/**
+	 * There are no sufficient resources to process current request.
+	 * Typically returned if some limits excided.
+	 */
+	public final static int RESOURCE = 10017;
+
     /**
      * default error code.
      * <b>It's recommended to use more specific error codes</b>
