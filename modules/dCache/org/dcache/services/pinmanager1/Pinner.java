@@ -57,15 +57,15 @@ class Pinner extends SMCTask
     private PinManager getManager() {
         return (PinManager)_cell;
     }
-    
+
     private void info(String s) {
         getManager().info("Pinner: "+s);
     }
-    
+
     private void error(String s) {
         getManager().error("Pinner: "+s);
     }
-    
+
     /** Returns the current state of the pinner. */
     public String toString()
     {
@@ -131,13 +131,13 @@ class Pinner extends SMCTask
         }
         PoolSetStickyMessage setStickyRequest =
             new PoolSetStickyMessage(_readPoolName,
-            _pnfsId, 
+            _pnfsId,
             true,
-            //Use a pin specific name, so multiple pins of the same file 
+            //Use a pin specific name, so multiple pins of the same file
             // by the pin manager would be possible
-            // needed if the unpinning is started and new pin request 
+            // needed if the unpinning is started and new pin request
             // has arrived
-            getCellName()+_pin.getId(), 
+            getCellName()+_pin.getId(),
             stickyBitExpiration);
         sendMessage(new CellPath(_readPoolName), setStickyRequest,
                     60 * 60 * 1000);

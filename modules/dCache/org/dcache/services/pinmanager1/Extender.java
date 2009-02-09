@@ -24,9 +24,9 @@ class Extender extends SMCTask
     protected final PinManagerMessage _extendMessage ;
 
     protected final ExtenderContext _fsm;
-    protected final long _expiration; 
-    public Extender(PinManager manager,  
-        Pin pin, 
+    protected final long _expiration;
+    public Extender(PinManager manager,
+        Pin pin,
         PinRequest pinRequest,
         CellMessage envelope,
         PinManagerMessage extendMessage,
@@ -36,7 +36,7 @@ class Extender extends SMCTask
 
         _pin = pin;
         _pinRequest = pinRequest;
-        
+
         _expiration = expiration;
         _envelope = envelope;
         _extendMessage = extendMessage;
@@ -57,7 +57,7 @@ class Extender extends SMCTask
     private PinManager getManager() {
         return (PinManager)_cell;
     }
-     
+
     public String toString()
     {
         return _fsm.getState().toString();
@@ -86,7 +86,7 @@ class Extender extends SMCTask
         } catch (PinException pe) {
             error(pe.toString());
         }
-        
+
         //_pin.unpinSucceeded();
     }
 
@@ -101,7 +101,7 @@ class Extender extends SMCTask
            info("extend sticky flag  in "+poolName+" for "+
                 _pin.getPnfsId()+" stickyBitNameName:"+stickyBitName);
 
-            PoolSetStickyMessage setStickyRequest = 
+            PoolSetStickyMessage setStickyRequest =
                 new PoolSetStickyMessage(poolName,
                 _pin.getPnfsId(), true,stickyBitName,_expiration);
             setStickyRequest.setReplyRequired(true);

@@ -15,7 +15,7 @@ import diskCacheV111.util.PnfsId;
  * @author timur
  */
 public class PinManagerPin {
-    
+
     private long id;
     private PnfsId pnfsId;
     private String pool;
@@ -23,8 +23,8 @@ public class PinManagerPin {
     private long expirationTime;
     private long srmRequestId;
     private PinManagerPinState state;
-    
-    
+
+
     /** Creates a new instance of PinManagerPin */
     public PinManagerPin(long id,
      PnfsId pnfsId,
@@ -89,13 +89,13 @@ public class PinManagerPin {
     public void setSrmRequestId(long srmRequestId) {
         this.srmRequestId = srmRequestId;
     }
-    
+
     public String toString(){
         StringBuffer sb = new StringBuffer();
         toStringBuffer(sb);
         return sb.toString();
     }
-    
+
     public void toStringBuffer(StringBuffer sb){
         sb.append(id).append(' ');
         sb.append("PnfsId:").append(pnfsId).append(' ');

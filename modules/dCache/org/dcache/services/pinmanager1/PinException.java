@@ -14,14 +14,14 @@ package org.dcache.services.pinmanager1;
  * @author timur
  */
 public class PinException extends diskCacheV111.util.CacheException {
-    
+
     /** Creates a new instance of PinException */
     public PinException(String msg) {
        super(msg);
     }
-    
+
     public PinException(int rc , String msg ) {
         super(rc,msg);
     }
-    
+
 }

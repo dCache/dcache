@@ -25,7 +25,7 @@ Init
         go
                 ExtendingStickyFlags
                 {
-                        
+
                 }
 }
 
@@ -36,7 +36,7 @@ Entry
 }
 {
 
-           timeout 
+           timeout
                 nil
                 {
                         extendStickyFlagLifetime();
@@ -47,13 +47,13 @@ Entry
                 Done
                 {
                         succeed();
-                        
+
                 }
         answerArrived(message: PoolSetStickyMessage)
                 Done
                 {
-                       fail(message.getErrorObject());    
-                        
+                       fail(message.getErrorObject());
+
                 }
 }
 
@@ -68,12 +68,12 @@ Default
                 [ message.getReturnCode() != 0 ]
                 Done
                 {
-                        fail(message.getErrorObject());    
+                        fail(message.getErrorObject());
                 }
         answerArrived(message: Message)
                 Done
                 {
-                        fail("Unexpected answer received in state " 
+                        fail("Unexpected answer received in state "
                              + context.getState().getName()
                              + ": " + context.getTransition());
                 }
@@ -81,12 +81,12 @@ Default
                 [ message.getReturnCode() != 0 ]
                 Done
                 {
-                        fail(message.getErrorObject());    
+                        fail(message.getErrorObject());
                 }
         answerArrived(message: PoolSetStickyMessage)
                 Done
                 {
-                        fail("Unexpected answer received in state " 
+                        fail("Unexpected answer received in state "
                              + context.getState().getName()
                              + ": " + context.getTransition());
                 }

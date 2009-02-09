@@ -23,7 +23,7 @@ public class PinRequest {
     private long expirationTime;
     private transient Pin pin;
     private AuthorizationRecord authorizationRecord;
-    
+
     /** Creates a new instance of PinRequest */
     public PinRequest(   long id,
         long srmRequestId,
@@ -70,7 +70,7 @@ public class PinRequest {
     public void setPin(Pin pin) {
         this.pin = pin;
     }
-    
+
     public String toString() {
         return ""+ id+
             " pinId:"+pinId+
@@ -79,9 +79,9 @@ public class PinRequest {
             " expires:"+ (expirationTime==-1?"Never":new Date(expirationTime).toString())+
             " authRec:"+authorizationRecord;
     }
-    
+
     public AuthorizationRecord getAuthorizationRecord() {
         return authorizationRecord;
     }
-    
+
 }

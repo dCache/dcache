@@ -44,23 +44,23 @@ Entry
                 {
                         deletePnfsFlags();
                 }
-        answerArrived(message: PnfsFlagMessage) 
+        answerArrived(message: PnfsFlagMessage)
                 [ message.getReturnCode() == 0 ]
                 FindingCacheLocations
                 {
 
                 }
 
-        answerArrived(message: PnfsFlagMessage) 
+        answerArrived(message: PnfsFlagMessage)
                [ ctxt.isRetry() ]
                GettingPnfsMetaData
                {
                }
 
-        answerArrived(message: PnfsFlagMessage) 
+        answerArrived(message: PnfsFlagMessage)
                Done
                {
-                        fail(message.getErrorObject());    
+                        fail(message.getErrorObject());
                }
  }
 
@@ -75,16 +75,16 @@ Entry
                 {
                         getPnfsMetadata();
                 }
-        answerArrived(message: PnfsGetFileMetaDataMessage) 
+        answerArrived(message: PnfsGetFileMetaDataMessage)
                 [ message.getReturnCode() != 0 ]
                 Done
                 {
                    fileRemoved();
                 }
-        answerArrived(message: PnfsGetFileMetaDataMessage) 
+        answerArrived(message: PnfsGetFileMetaDataMessage)
                 UnsettingStickyFlags
                 {
-                  
+
                 }
 }
 
@@ -95,7 +95,7 @@ Entry
         findCacheLocations();
 }
 {
-        timeout 
+        timeout
                 nil
                 {
                         findCacheLocations();
@@ -105,13 +105,13 @@ Entry
                 UnsettingStickyFlags
                 {
                         setLocations(message.getCacheLocations());
-                        
+
                 }
         answerArrived(message: PnfsGetCacheLocationsMessage)
                 Done
                 {
                         fail(message.getErrorObject());
-                        
+
                 }
 }
 
@@ -127,7 +127,7 @@ Entry
                    succeed();
                 }
 
-           timeout 
+           timeout
                 nil
                 {
                         unsetStickyFlags();
@@ -139,14 +139,14 @@ Entry
                 Done
                 {
                         succeed();
-                        
+
                 }
 
         answerArrived(message: PoolSetStickyMessage)
                 Done
                 {
                         fail(message.getErrorObject());
-                        
+
                 }
 
 }
@@ -162,12 +162,12 @@ Default
                 [ message.getReturnCode() != 0 ]
                 Done
                 {
-                        fail(message.getErrorObject());    
+                        fail(message.getErrorObject());
                 }
         answerArrived(message: Message)
                 Done
                 {
-                        fail("Unexpected answer received in state " 
+                        fail("Unexpected answer received in state "
                              + context.getState().getName()
                              + ": " + context.getTransition());
                 }
@@ -175,12 +175,12 @@ Default
                 [ message.getReturnCode() != 0 ]
                 Done
                 {
-                        fail(message.getErrorObject());    
+                        fail(message.getErrorObject());
                 }
         answerArrived(message: PnfsFlagMessage)
                 Done
                 {
-                        fail("Unexpected answer received in state " 
+                        fail("Unexpected answer received in state "
                              + context.getState().getName()
                              + ": " + context.getTransition());
                 }
@@ -188,12 +188,12 @@ Default
                 [ message.getReturnCode() != 0 ]
                 Done
                 {
-                        fail(message.getErrorObject());    
+                        fail(message.getErrorObject());
                 }
         answerArrived(message: PnfsGetFileMetaDataMessage)
                 Done
                 {
-                        fail("Unexpected answer received in state " 
+                        fail("Unexpected answer received in state "
                              + context.getState().getName()
                              + ": " + context.getTransition());
                 }
@@ -201,12 +201,12 @@ Default
                 [ message.getReturnCode() != 0 ]
                 Done
                 {
-                        fail(message.getErrorObject());    
+                        fail(message.getErrorObject());
                 }
         answerArrived(message: PnfsGetCacheLocationsMessage)
                 Done
                 {
-                        fail("Unexpected answer received in state " 
+                        fail("Unexpected answer received in state "
                              + context.getState().getName()
                              + ": " + context.getTransition());
                 }
@@ -214,12 +214,12 @@ Default
                 [ message.getReturnCode() != 0 ]
                 Done
                 {
-                        fail(message.getErrorObject());    
+                        fail(message.getErrorObject());
                 }
         answerArrived(message: PoolSetStickyMessage)
                 Done
                 {
-                        fail("Unexpected answer received in state " 
+                        fail("Unexpected answer received in state "
                              + context.getState().getName()
                              + ": " + context.getTransition());
                 }

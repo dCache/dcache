@@ -17,5 +17,5 @@ import org.dcache.auth.AuthorizationRecord;
 public interface PinManagerPolicy {
     public boolean canUnpin(AuthorizationRecord requester, PinRequest pinRequest);
     public boolean canExtend(AuthorizationRecord requester, PinRequest pinRequest);
-    
+
 }
