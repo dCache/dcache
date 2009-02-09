@@ -28,11 +28,11 @@ public class Pin {
     private String pool;
     private PinManagerPinState state;
     private transient Set<PinRequest> requests = Collections.emptySet();
-    
+
     /** Creates a new instance of Pin */
     public Pin(long id,
-        PnfsId pnfsId, 
-        StorageInfo storageInfo, 
+        PnfsId pnfsId,
+        StorageInfo storageInfo,
         long creationTime,
         long expirationTime,
         String pool,
@@ -59,7 +59,7 @@ public class Pin {
     public StorageInfo getStorageInfo() {
         return storageInfo;
     }
-    
+
     public void setStorageInfo (StorageInfo info) {
         storageInfo = info;
     }
@@ -87,7 +87,7 @@ public class Pin {
     public void setState(PinManagerPinState state) {
         this.state = state;
     }
-    
+
     public String toString() {
         return ""+ id+
             " PnfsId:"+pnfsId+
@@ -97,7 +97,7 @@ public class Pin {
             " pool:"+pool+
             " stateChangedAt:"+ new Date(stateTransitionTime).toString()+
             " state:"+ state+" ";
-                
+
     }
 
     public long getStateTransitionTime() {
@@ -119,10 +119,10 @@ public class Pin {
         assert requests != null;
         this.requests = requests;
     }
-    
+
     public int getRequestsNum() {
         return requests.size();
     }
 
-    
+
 }

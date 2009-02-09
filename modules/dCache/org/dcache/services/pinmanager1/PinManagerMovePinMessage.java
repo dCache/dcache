@@ -1,7 +1,7 @@
 package org.dcache.services.pinmanager1;
 
 import diskCacheV111.util.PnfsId;
-import diskCacheV111.vehicles.Message;
+import diskCacheV111.vehicles.PinManagerMessage;
 import org.dcache.pool.repository.StickyRecord;
 import java.util.Collection;
 
@@ -25,7 +25,7 @@ import java.util.Collection;
  * knowledge about any other sticky records on the source pool, then
  * it should remove those too.
  */
-public class PinManagerMovePinMessage extends Message
+public class PinManagerMovePinMessage extends PinManagerMessage
 {
     private final PnfsId _pnfsId;
     private final Collection<StickyRecord> _records;

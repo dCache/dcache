@@ -24,7 +24,7 @@ class Unpinner extends SMCTask
     protected  final List<String> locations = new ArrayList<String>();
     protected final boolean isOldStylePin;
     protected final boolean _retry;
-    
+
     public Unpinner(PinManager manager, PnfsId pnfsId, Pin pin, boolean retry)
     {
         super(manager);
@@ -111,11 +111,11 @@ class Unpinner extends SMCTask
         pfm.setReplyRequired(true);
         sendMessage(_pnfsManager, pfm, 60*60*1000);
     }
-    
-    void  getPnfsMetadata() 
+
+    void  getPnfsMetadata()
     {
         info("getPnfsMetadata");
-        PnfsGetFileMetaDataMessage getMetadata = 
+        PnfsGetFileMetaDataMessage getMetadata =
             new PnfsGetFileMetaDataMessage(_pnfsId);
         getMetadata.setReplyRequired(true);
         sendMessage(_pnfsManager, getMetadata, 60*60*1000);
@@ -133,7 +133,7 @@ class Unpinner extends SMCTask
         if(locations != null) {
             info("setLocations");
             this.locations.addAll(locations);
-        } else { 
+        } else {
             info("setLocations - no locations found");
         }
     }
