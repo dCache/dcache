@@ -8,15 +8,15 @@ import org.dcache.util.Checksum;
 
 public class PnfsGetFileMetaDataMessage extends PnfsMessage {
 
-    private FileMetaData _metaData    = null ; 
+    private FileMetaData _metaData    = null ;
     private boolean      _resolve     = true ;
     private boolean _checksumsRequested = false ;
 
     private Set<Checksum> _checksums = null;
-    
+
     private static final long serialVersionUID = 1591894346369251468L;
-    
-    public PnfsGetFileMetaDataMessage(){ 
+
+    public PnfsGetFileMetaDataMessage(){
        super() ;
        setReplyRequired(true);
     }
@@ -54,7 +54,7 @@ public class PnfsGetFileMetaDataMessage extends PnfsMessage {
     public void setChecksumsRequested(boolean checksumsRequested) {
         _checksumsRequested = checksumsRequested;
     }
-    
+
     public void requestChecksum() {
         _checksumsRequested = true;
     }

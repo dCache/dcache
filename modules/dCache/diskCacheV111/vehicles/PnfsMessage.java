@@ -6,12 +6,12 @@ import  diskCacheV111.util.PnfsId ;
 
 
 public class PnfsMessage extends Message {
-    
+
     private PnfsId _pnfsId = null;
-    private String _path   = null ;    
+    private String _path   = null ;
 
     private static final long serialVersionUID = -3686370854772807059L;
-    
+
     public PnfsMessage(String pnfsId){
 	_pnfsId = new PnfsId( pnfsId );
     }
@@ -20,26 +20,26 @@ public class PnfsMessage extends Message {
     }
 
     public PnfsMessage(){ }
-    
+
     public void setPnfsPath( String pnfsPath ){ _path = pnfsPath ; }
-    public String getPnfsPath(){ return _path ;} 
+    public String getPnfsPath(){ return _path ;}
 
     public PnfsId getPnfsId(){
 	return _pnfsId;
     }
-    
+
     public void setPnfsId(String pnfsId){
 	_pnfsId = new PnfsId(pnfsId);
     }
     public void setPnfsId(PnfsId pnfsId){
 	_pnfsId = pnfsId ;
     }
-    public String toString(){ 
+    public String toString(){
         return _pnfsId==null?
                (_path==null?"NULL":("Path="+_path)):
-               ("PnfsId="+_pnfsId.toString()) ; 
+               ("PnfsId="+_pnfsId.toString()) ;
     }
 }
 
 
-    
+
