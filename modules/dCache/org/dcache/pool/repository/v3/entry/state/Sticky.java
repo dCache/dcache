@@ -17,7 +17,7 @@ import org.dcache.pool.repository.StickyRecord;
 
 public class Sticky {
 
-	private final Map<String,StickyRecord> _records = new HashMap<String,StickyRecord>();
+    private final Map<String,StickyRecord> _records = new HashMap<String,StickyRecord>();
 
 
     synchronized public boolean isSticky() {
@@ -34,9 +34,9 @@ public class Sticky {
         return false;
     }
 
-	public boolean isSet() {
-		return isSticky();
-	}
+    public boolean isSet() {
+        return isSticky();
+    }
 
     synchronized public boolean addRecord(String owner, long expire, boolean overwrite)
     {
@@ -67,24 +67,24 @@ public class Sticky {
         return true;
     }
 
-	synchronized public String stringValue() {
+    synchronized public String stringValue() {
 
-		StringBuilder sb = new StringBuilder();
+        StringBuilder sb = new StringBuilder();
 
-		long now = System.currentTimeMillis();
+        long now = System.currentTimeMillis();
 
-		for( StickyRecord record: _records.values() ) {
-			if( record.isValidAt(now) ) {
-				sb.append("sticky:").append(record.owner()).append(":").append(record.expire()).append("\n");
-			}
-		}
+        for( StickyRecord record: _records.values() ) {
+            if( record.isValidAt(now) ) {
+                sb.append("sticky:").append(record.owner()).append(":").append(record.expire()).append("\n");
+            }
+        }
 
-		return sb.toString();
-	}
+        return sb.toString();
+    }
 
-	synchronized public List<StickyRecord> records() {
-		return new ArrayList<StickyRecord>(_records.values());
-	}
+    synchronized public List<StickyRecord> records() {
+        return new ArrayList<StickyRecord>(_records.values());
+    }
 
     /**
      * Removes expired flags. Returns true when modified, false
