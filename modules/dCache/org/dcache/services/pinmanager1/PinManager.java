@@ -107,12 +107,15 @@ import diskCacheV111.vehicles.PinManagerExtendLifetimeMessage;
 import diskCacheV111.vehicles.StorageInfo;
 import diskCacheV111.vehicles.PoolRemoveFilesMessage;
 import diskCacheV111.util.PnfsId;
+import diskCacheV111.util.CacheException;
 import java.util.Set;
+import java.util.HashSet;
 import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.Map;
 import org.dcache.services.Option;
 import org.dcache.services.AbstractCell;
+import org.dcache.pool.repository.StickyRecord;
 
 
 /**
@@ -456,6 +459,7 @@ public class PinManager extends AbstractCell implements Runnable  {
     }
 
     private void forceUnpinning(final Pin pin, boolean retry) {
+        debug("forceUnpinning "+pin);
         Collection<PinRequest> pinRequests = pin.getRequests();
         if(pinRequests.isEmpty()) {
             new Unpinner(this,pin.getPnfsId(),pin,retry);
@@ -508,6 +512,10 @@ public class PinManager extends AbstractCell implements Runnable  {
                 PoolRemoveFilesMessage removeFile = 
                         (PoolRemoveFilesMessage) message;
                 removeFiles(removeFile);
+            } else if (message instanceof  PinManagerMovePinMessage) {
+                PinManagerMovePinMessage movePin =
+                        (PinManagerMovePinMessage) message;
+                movePin(movePin, cellMessage);
             } else {
                 error("unknown to Pin Manager message type :"+
                         message.getClass().getName()+" value: "+message);
@@ -1436,6 +1444,265 @@ public class PinManager extends AbstractCell implements Runnable  {
         }
     }
   
-    
+     private void movePin(PinManagerMovePinMessage movePin,
+        CellMessage envelope ) {
+        PnfsId pnfsId = movePin.getPnfsId();
+        String srcPool = movePin.getSourcePool();
+        String dstPool = movePin.getTargetPool();
+        //Collection<StickyRecord> records = movePin.getRecords();
+
+        if(pnfsId == null ) {
+            error("pnfsid is not set");
+            movePin.setFailed(CacheException.INVALID_ARGS,"pnfsid is not set");
+            return;
+        }
+        if(srcPool == null ) {
+            error(" source pool is not set");
+            movePin.setFailed(CacheException.INVALID_ARGS,"source pool is not set");
+            return;
+        }
+        if(dstPool == null ) {
+            error("destination pool is not set");
+            movePin.setFailed(CacheException.INVALID_ARGS,"destination pool is not set");
+            return;
+        }
+
+        try {
+            try {
+                db.initDBConnection();
+                Set<Pin> pins = db.allPinsByPnfsId(pnfsId);
+                Set<Pin> pinsToMove = new HashSet<Pin>();
+                for(Pin srcPin : pins) {
+                    if(srcPin.getState().equals(PinManagerPinState.PINNED)
+                    && srcPin.getPool().equals(srcPool)) {
+                        pinsToMove.add(srcPin);
+                    }
+                }
+                if(pinsToMove.isEmpty()) {
+                    error("pins for "+pnfsId+" in "+srcPool+ " in pinned state are not  found");
+                    movePin.setFailed(1,"pins for "+pnfsId+" in "+srcPool+ " in pinned state are not  found");
+                    return;
+                }
+                if(pinsToMove.size() >1) {
+                    error("more than one pin found, which is not yet supported ");
+                    movePin.setFailed(1,"more than one pin found, which is not yet supported ");
+                    return;
+                }
+
+                for(Pin srcPin : pinsToMove) {
+                        long expirationTime = srcPin.getExpirationTime();
+                        info(" file "+pnfsId+" is  being moved, changing pin request" +srcPin );
+                        Pin dstPin =
+                            db.newPinForPinMove(pnfsId,dstPool,expirationTime);
+                        movePin.setReplyRequired(false);
+                        new PinMover(this,
+                            pnfsId,
+                            srcPin,
+                            dstPin,
+                            dstPool,
+                            expirationTime,
+                            movePin,
+                             envelope);
+                }
+            } finally {
+                db.commitDBOperations();
+            }
+        } catch (PinDBException pdbe) {
+            error(pdbe);
+        }
+    }
+
+    /**
+     * this method is called after the pinning of the file in the new pool
+     * is successful, but before the unpinning has begun
+     * @return true is unpinning should proceed
+     *         false if not
+     */
+    public boolean pinMoveToNewPoolPinSucceeded(
+        Pin  srcPin ,
+        Pin  dstPin ,
+        String pool,
+        long expiration,
+        PinManagerMovePinMessage movePin,
+        CellMessage  envelope)
+        throws PinException {
+        debug("pinMoveToNewPoolPinSucceeded, srcPin="+srcPin+
+            " dstPin="+dstPin+
+            " pool="+pool+
+            " expiration="+expiration);
+        boolean success = true;
+        String error =null;
+        Set<PinRequest> pinRequests ;
+        db.initDBConnection();
+        try {
+            srcPin = db.getPinForUpdate(srcPin.getId());
+            if(srcPin == null) {
+                warn("src pin "+srcPin+" has been removed by the time move succeeded");
+
+                // there are no more requests pinning the original file
+                // so the target should not be pinned either
+                cleanMovedStickyFlag(dstPin);
+
+                //return succes
+                returnResponse(movePin, envelope);
+                return false;
+            }
+
+            if(!srcPin.getState().equals(PinManagerPinState.PINNED)) {
+                    pinMoveFailed(dstPin,movePin,envelope,
+                        "state of source pin has changed to "+
+                        srcPin.getState() +
+                        " by the time move succeeded");
+                cleanMovedStickyFlag(dstPin);
+
+                return false;
+            }
+
+            dstPin = db.getPinForUpdate(dstPin.getId());
+            if(dstPin == null) {
+                pinMoveFailed(dstPin,movePin,envelope,
+                    "dst pin has been removed by the time move succeeded");
+                return false;
+            }
+            if(!dstPin.getState().equals(PinManagerPinState.MOVING)) {
+                pinMoveFailed(dstPin,movePin,envelope,
+                    "state of destination pin has changed to "+
+                    dstPin.getState() +
+                    " by the time move succeeded");
+                return false;
+            }
+            pinRequests = srcPin.getRequests();
+            //new pin is pinned
+            debug("change dst pin"+dstPin+" to PINNED state");
+
+            db.updatePin(dstPin.getId(),null,null,PinManagerPinState.PINNED);
+
+            // move the requests to the new pin
+            debug("move src pin requests to dest pin");
+            for(PinRequest pinRequest:pinRequests) {
+                db.movePinRequest(pinRequest.getId(),dstPin.getId());
+                debug("pinRequest "+pinRequest+" moved");
+            }
+            debug("change src pin"+srcPin+" to UNPINNING state");
+            db.updatePin(srcPin.getId(),null,null,
+                PinManagerPinState.UNPINNING);
+         } catch (PinDBException pdbe ) {
+            error("Exception in pinMoveSucceeded: "+pdbe);
+            db.rollbackDBOperations();
+            pinMoveFailed(dstPin,movePin,envelope,
+                "Exception in pinMoveSucceeded: "+pdbe);
+            db.initDBConnection();
+            try {
+                cleanMovedStickyFlag(dstPin);
+
+            } catch (PinDBException pdbe1) {
+                 error("Exception in cleanMovedStickyFlag: "+pdbe1);
+
+            } finally {
+                db.commitDBOperations();
+            }
+            return false;
+         }
+        finally {
+            db.commitDBOperations();
+        }
+
+        //proceed to unpinnning of the src pin
+        // only if the file is safely pinned in the new pool
+        // and the file requests are moved to the new record
+
+        return true;
+     }
+
+    public void pinMoveSucceeded (
+        Pin  srcPin ,
+        Pin  dstPin ,
+        String pool,
+        long expiration,
+        PinManagerMovePinMessage movePin,
+        CellMessage  envelope)
+        throws PinException {
+        debug("pinMoveSucceeded, srcPin="+srcPin+
+            " dstPin="+dstPin+
+            " pool="+pool+
+            " expiration="+expiration);
+        boolean success = true;
+        String error =null;
+        Set<PinRequest> pinRequests ;
+        db.initDBConnection();
+        try {
+            srcPin = db.getPinForUpdate(srcPin.getId());
+            if(srcPin == null) {
+                warn("src pin "+srcPin+" has been removed by the time move succeeded");
+
+                //return succes
+                returnResponse(movePin, envelope);
+                return;
+            }
+            debug("pinMoveSucceeded, deleting original pin");
+            db.deletePin(srcPin.getId());
+         } catch (PinDBException pdbe ) {
+            error("Exception in pinMoveSucceeded: "+pdbe);
+            db.rollbackDBOperations();
+
+            //return success anyway, as the pin was unpined in the source, but
+            // db update failed, pin is in unpinning state in db
+            returnResponse(movePin, envelope);
+            return;
+        }
+        finally {
+            db.commitDBOperations();
+        }
+        //return success
+        returnResponse(movePin, envelope);
+    }
+
+    private void cleanMovedStickyFlag(final Pin dstPin) throws PinDBException {
+        if(dstPin == null ) {
+            error("cleanMovedStickyFlag: dstPin is null");
+            return;
+        }
+        // start removing of the sticky flag we just set
+        // in the new pool
+        db.updatePin(dstPin.getId(),null,null,
+        PinManagerPinState.UNPINNING);
+        new Unpinner(this,dstPin.getPnfsId(),dstPin,false);
+    }
+
+    public void pinMoveFailed (
+        Pin  srcPin ,
+        Pin  dstPin ,
+        String pool,
+        long expiration,
+        PinManagerMovePinMessage movePin,
+        CellMessage  envelope,
+        Object error) throws PinException {
+        error("pinMoveFailed, error="+error+" srcPin="+srcPin+
+            " dstPin="+dstPin+
+            " pool="+pool+
+            " expiration="+expiration);
+
+        db.initDBConnection();
+        try {
+            pinMoveFailed(dstPin,movePin,envelope,error);
+        } catch (PinDBException pdbe ) {
+            db.rollbackDBOperations();
+        }
+        finally {
+            db.commitDBOperations();
+        }
+    }
+
+    private void pinMoveFailed (
+        Pin  dstPin ,
+        PinManagerMovePinMessage movePin,
+        CellMessage  envelope,
+        Object error) throws PinException {
+        returnFailedResponse(error,movePin,envelope);
+        db.deletePin(dstPin.getId());
+        db.commitDBOperations();
+    }
+
+   
  
 }

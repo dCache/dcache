@@ -66,7 +66,7 @@ public class PinRequest {
     public void setPin(Pin pin) {
         this.pin = pin;
     }
-    
+
     public String toString() {
         return ""+ id+
             " pinId:"+pinId+

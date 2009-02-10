@@ -842,7 +842,7 @@ class PinManagerDatabase
                 " WHERE  id = ?";
     private void updatePinRequest(Connection _con,long id,long expiration)
     throws SQLException {
-        info("executing statement: "+updatePinRequest);
+        info("executing statement: "+updatePinRequest+" ?="+expiration+" ?="+id);
         PreparedStatement sqlStatement =
                 _con.prepareStatement(updatePinRequest);
         try {
@@ -854,7 +854,53 @@ class PinManagerDatabase
         }
 
     }
+    
+   /**
+    * @return number of records updated
+    */
+    public void movePinRequest(
+        long requestid,
+        long newPinId) throws PinDBException {
+        Connection _con = getThreadLocalConnection();
+        if(_con == null) {
+           throw new PinDBException(1,"DB is not initialized in this thread!!!");
+        }
 
+        try {
+            if( 1 !=  movePinRequest(
+                    _con,
+                    requestid,
+                    newPinId)) {
+                throw new PinDBException(" pin request update failed in database");
+            }
+
+        } catch (SQLException sqle) {
+            throw new PinDBException(sqle.toString());
+        }
+    }
+    
+
+   private static final String movePinRequest = "UPDATE  "+ PinManagerRequestsTableName +
+                " SET  PinId =?"+
+                " WHERE  id = ?";
+   /**
+    * @return number of records updated
+    */
+    private int movePinRequest(Connection _con,long requestid,long newPinId)
+    throws SQLException {
+        debug("executing statement: "+movePinRequest+"; ?="+newPinId+" ?="+requestid);
+        PreparedStatement sqlStatement =
+                _con.prepareStatement(movePinRequest);
+        try {
+            sqlStatement.setLong(1,newPinId);
+            sqlStatement.setLong(2,requestid);
+            return sqlStatement.executeUpdate();
+        }finally{
+            SqlHelper.tryToClose(sqlStatement);
+        }
+
+    }
+    
     private static final String selectPin =
             "SELECT * FROM "+ PinManagerPinsTableName +
             " WHERE  id = ?";
@@ -1313,6 +1359,7 @@ class PinManagerDatabase
             PinManagerRequestsTableName+".PinId "+
        " ) AS AllPinIds \n"+
         " WHERE  AllPinIds.PinId IS NULL AND "  +
+        " AllPinIds.Expiration != -1 AND " +
         " AllPinIds.Expiration < ?";
 
 
@@ -1435,6 +1482,30 @@ class PinManagerDatabase
         } catch(SQLException sqle) {
             sqle.printStackTrace();
             throw new PinDBException("insertPinRequestIntoNewOrExistingPin failed: "+sqle);
+        }
+    }
+
+    public Pin newPinForPinMove(
+        PnfsId pnfsId,
+        String newPool,
+        long expirationTime) throws PinDBException {
+        Connection _con = getThreadLocalConnection();
+        if(_con == null) {
+           throw new PinDBException(1,"DB is not initialized in this thread!!!");
+        }
+
+        try {
+            long id = nextLong(_con);
+            insertPin(_con,
+                id,
+                pnfsId,
+                expirationTime,
+                newPool,
+                PinManagerPinState.MOVING);
+            return getPin( _con, id);
+        } catch(SQLException sqle) {
+            sqle.printStackTrace();
+            throw new PinDBException("newPinForPinMove failed: "+sqle);
         }
     }
 
