@@ -72,6 +72,7 @@ package org.dcache.srm.server;
 
 import java.rmi.RemoteException;
 import org.dcache.srm.SRM;
+import org.dcache.srm.util.JDC;
 import org.dcache.srm.v2_2.SrmAbortFilesRequest;
 import org.dcache.srm.v2_2.SrmAbortFilesResponse;
 import org.dcache.srm.v2_2.SrmAbortRequestRequest;
@@ -166,7 +167,7 @@ import java.util.Collection;
 import org.gridforum.jgss.ExtendedGSSContext;
 
 
-public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM {
+public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM  {
     
     // log4j Logger
     public Logger log;
@@ -176,6 +177,7 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM {
     private AbstractStorageElement storage;
     
     public SRMServerV2() throws java.rmi.RemoteException{
+    	JDC.setSchedulerContext("SRMServerV2");
         try {
             // srmConn = SrmDCacheConnector.getInstance();
             log = Logger.getLogger("logger.org.dcache.authorization."+
@@ -218,6 +220,7 @@ public class SRMServerV2 implements org.dcache.srm.v2_2.ISRM {
                 Character.toUpperCase(requestName.charAt(0))+
                 requestName.substring(1);
         try {
+            JDC.createSession("v2:"+requestName+":");
             Class requestClass = request.getClass();
             log.debug("Entering SRMServerV2."+requestName+"()");
             String authorizationID  = null;

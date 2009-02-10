@@ -12,7 +12,7 @@
     
     <!-- layout class="org.apache.log4j.SimpleLayout"/ -->
     <layout class="org.apache.log4j.PatternLayout">
-      <param name="ConversionPattern" value="%d{yyyy-MM-dd HH:mm:ss.SSS} %l %p - %m%n"/>
+      <param name="ConversionPattern" value="%d{yyyy-MM-dd HH:mm:ss.SSS} %X{srm.session} %x %l %p - %m%n"/>
       <!-- param name="ConversionPattern" value="%d [%t] %p - %m%n"/ -->
     </layout>
   </appender>
@@ -26,7 +26,7 @@
     
     <!-- layout class="org.apache.log4j.SimpleLayout"/ -->
     <layout class="org.apache.log4j.PatternLayout">
-      <param name="ConversionPattern" value="%d{yyyy-MM-dd HH:mm:ss} %C{1} %p %M %F %L - %m%n"/>
+      <param name="ConversionPattern" value="%d{yyyy-MM-dd HH:mm:ss} %X{srm.session} %C{1} %p %M %F %L - %m%n"/>
       <!-- param name="ConversionPattern" value="%d [%t] %p - %m%n"/ -->
     </layout>
   </appender>
