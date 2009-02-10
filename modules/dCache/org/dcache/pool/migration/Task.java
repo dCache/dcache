@@ -4,6 +4,7 @@ import java.util.TimerTask;
 import java.util.Timer;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.NoSuchElementException;
 import java.util.concurrent.ScheduledExecutorService;
@@ -22,6 +23,7 @@ import org.dcache.pool.repository.StickyRecord;
 import org.dcache.pool.repository.CacheEntry;
 import org.dcache.cells.CellStub;
 import org.dcache.cells.MessageCallback;
+import org.dcache.services.pinmanager1.PinManagerMovePinMessage;
 
 import dmg.cells.nucleus.CellPath;
 import dmg.cells.nucleus.CellMessage;
@@ -40,8 +42,11 @@ public class Task
 
     private final CellStub _pool;
     private final CellStub _pnfs;
+    private final CellStub _pinManager;
     private final ScheduledExecutorService _executor;
     private final String _source;
+    private final String _pinPrefix;
+    private final boolean _mustMovePins;
 
     private final long _id;
 
@@ -56,20 +61,31 @@ public class Task
     public Task(Job job,
                 CellStub pool,
                 CellStub pnfs,
+                CellStub pinManager,
                 ScheduledExecutorService executor,
                 String source,
                 CacheEntry entry,
-                CacheEntryMode targetMode)
+                CacheEntryMode targetMode,
+                boolean mustMovePins)
     {
         _id = _counter.getAndIncrement();
         _fsm = new TaskContext(this);
         _job = job;
         _pool = pool;
         _pnfs = pnfs;
+        _pinManager = pinManager;
         _executor = executor;
         _source = source;
         _entry = entry;
         _targetMode = targetMode;
+        _mustMovePins = mustMovePins;
+        _pinPrefix =
+            _pinManager.getDestinationPath().getDestinationAddress().getCellName();
+    }
+
+    public boolean getMustMovePins()
+    {
+        return _mustMovePins;
     }
 
     public PnfsId getPnfsId()
@@ -106,6 +122,15 @@ public class Task
         return _pool.getTimeout();
     }
 
+    /**
+     * Returns true if and only if <code>record</code> is owned by the
+     * pin manager.
+     */
+    private boolean isPin(StickyRecord record)
+    {
+        return record.owner().startsWith(_pinPrefix);
+    }
+
     /** Returns the intended entry state of the target replica. */
     private EntryState getTargetState()
     {
@@ -126,7 +151,11 @@ public class Task
     {
         List<StickyRecord> result = new ArrayList();
         if (_targetMode.state == CacheEntryMode.State.SAME) {
-            result.addAll(_entry.getStickyRecords());
+            for (StickyRecord record: _entry.getStickyRecords()) {
+                if (!isPin(record)) {
+                    result.add(record);
+                }
+            }
         }
         result.addAll(_targetMode.stickyRecords);
         return result;
@@ -196,13 +225,13 @@ public class Task
     synchronized void updateExistingReplica()
     {
         long ttl = System.currentTimeMillis() + (_pool.getTimeout() / 2);
-        String target = _locations.remove(0);
         Message message =
             new PoolMigrationUpdateReplicaMessage(getPnfsId(),
                                                   getTargetState(),
                                                   getTargetStickyRecords(),
                                                   ttl);
-        _pool.send(new CellPath(target), message,
+        _target = new CellPath(_locations.remove(0));
+        _pool.send(_target, message,
                    PoolMigrationUpdateReplicaMessage.class,
                    new Callback());
 
@@ -248,6 +277,30 @@ public class Task
                    new PoolMigrationCancelMessage(_source, getPnfsId(), _id),
                    PoolMigrationCancelMessage.class,
                    new Callback());
+    }
+
+    /** FSM Action */
+    synchronized void movePin()
+    {
+        Collection<StickyRecord> records = new ArrayList();
+        for (StickyRecord record: _entry.getStickyRecords()) {
+            String owner = record.owner();
+            if (isPin(record)) {
+                records.add(record);
+            }
+        }
+
+        Callback callback = new Callback();
+        if (records.isEmpty()) {
+            callback.success(null);
+        } else {
+            String target = _target.getDestinationAddress().getCellName();
+            PinManagerMovePinMessage message =
+                new PinManagerMovePinMessage(getPnfsId(), records, _source, target);
+            _pinManager.send(message,
+                             PinManagerMovePinMessage.class,
+                             callback);
+        }
     }
 
     /** FSM Action */
@@ -299,8 +352,8 @@ public class Task
                     }
                 }
             };
-        _timerTask = 
-            _executor.schedule(new LoggingTask(task), 
+        _timerTask =
+            _executor.schedule(new LoggingTask(task),
                                delay, TimeUnit.MILLISECONDS);
     }
 

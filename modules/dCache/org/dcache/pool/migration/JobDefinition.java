@@ -14,13 +14,15 @@ public class JobDefinition
     public final PoolSelectionStrategy selectionStrategy;
     public final RefreshablePoolList poolList;
     public final long refreshPeriod;
+    public final boolean mustMovePins;
 
     public JobDefinition(List<CacheEntryFilter> filters,
                          CacheEntryMode sourceMode,
                          CacheEntryMode targetMode,
                          PoolSelectionStrategy selectionStrategy,
                          RefreshablePoolList poolList,
-                         long refreshPeriod)
+                         long refreshPeriod,
+                         boolean mustMovePins)
     {
         this.filters = Collections.unmodifiableList(filters);
         this.sourceMode = sourceMode;
@@ -28,5 +30,6 @@ public class JobDefinition
         this.selectionStrategy = selectionStrategy;
         this.poolList = poolList;
         this.refreshPeriod = refreshPeriod;
+        this.mustMovePins = mustMovePins;
     }
 }

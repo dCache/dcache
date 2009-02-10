@@ -17,6 +17,7 @@ public class ModuleConfiguration
     private CellStub _pool;
     private CellStub _pnfs;
     private CellStub _poolManager;
+    private CellStub _pinManager;
     private Repository _repository;
 
     public String getPoolName()
@@ -67,6 +68,16 @@ public class ModuleConfiguration
     public void setPoolManagerStub(CellStub poolManager)
     {
         _poolManager = poolManager;
+    }
+
+    public CellStub getPinManagerStub()
+    {
+        return _pinManager;
+    }
+
+    public void setPinManagerStub(CellStub pinManager)
+    {
+        _pinManager = pinManager;
     }
 
     public Repository getRepository()
