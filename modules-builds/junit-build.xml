@@ -1,66 +1,71 @@
 <!-- $Id: junit-build.xml,v 1.4 2007-10-25 14:05:31 tigran Exp $ -->
 
-<project name="Cells" basedir=".">
+<project name="junit" basedir=".">
+
+    <property name="unittest.build.dir" location="${buildDir}/junit" />
+
+    <!-- JUnit test suite -->
+
+    <path id="junit.classpath">
+        <pathelement location="${classesDir}/cells.jar" />
+        <pathelement location="${classesDir}/dcache.jar" />
+        <pathelement location="${classesDir}/gplazma.jar" />
+        <pathelement location="${classesDir}/xrootd-tokenauthz.jar" />
+        <pathelement location="${libDir}/Chimera/chimera-core.jar" />
+        <pathelement location="${libDir}/Chimera/chimera-acl.jar" />
+        <pathelement location="${libDir}/Chimera/hsqldb.jar" />
+        <pathelement location="${libDir}/dbcp/c3p0-0.9.1.2.jar" />
+        <pathelement location="${libDir}/junit/junit-4.3.1.jar" />
+        <pathelement location="${libDir}/log4j/log4j-1.2.8.jar" />
+        <pathelement location="${libDir}/berkeleyDB/je-3.2.76.jar" />
+        <pathelement location="${libDir}/cog/cog-srmlib/cog-jglobus.jar" />
+        <pathelement location="${libDir}/persistence/persistence-api-1.0.jar" />
+
+        <pathelement location="${unittest.build.dir}" />
+        <pathelement location="${buildTop}/modules/dCache/diskCacheV111/config" />
+    </path>
 
 
-        <!-- import the common part -->
+    <!--
+        compile junit tests
+    -->
+    <target name="-compile.junit">
 
-        <import file="${buildTop}/common/common.xml"/>
+        <mkdir dir="${unittest.build.dir}" />
+        <javac classpathref="junit.classpath" destdir="${unittest.build.dir}" source="${javac.source}" target="${javac.target}" debug="${javac.debug}" verbose="${javac.verbose}" encoding="${javac.encoding}" deprecation="on">
+            <src path="${unittest.src}" />
+        </javac>
+
+    </target>
 
 
-	   <!-- JUnit test suite -->
+    <!--
+        run all avalible tests
+           exclude files with name *Helper and all inner classes
+    -->
+    <target name="-run.junit" depends="-compile.junit">
 
-	    <path id="junit.classpath">
-	        <pathelement location="${classesDir}/cells.jar"/>
-	        <pathelement location="${classesDir}/dcache.jar"/>
-	        <pathelement location="${classesDir}/gplazma.jar"/>
-	    	<pathelement location="${classesDir}/xrootd-tokenauthz.jar"/>
-	        <pathelement location="${libDir}/Chimera/chimera-core.jar"/>
-	        <pathelement location="${libDir}/Chimera/chimera-acl.jar"/>
-	        <pathelement location="${libDir}/Chimera/hsqldb.jar"/>
-	        <pathelement location="${libDir}/dbcp/c3p0-0.9.1.2.jar"/>
-	        <pathelement location="${libDir}/junit/junit-4.3.1.jar"/>
-	        <pathelement location="${libDir}/log4j/log4j-1.2.8.jar"/>
-	        <pathelement location="${libDir}/berkeleyDB/je-3.2.76.jar" />
-	    	<pathelement location="${libDir}/cog/cog-srmlib/cog-jglobus.jar" />
-                <pathelement location="${libDir}/persistence/persistence-api-1.0.jar" />
+        <property name="tests.report.home" location="${buildDir}/junit-reports" />
+        <mkdir dir="${tests.report.home}" />
 
-	        <pathelement location="${buildDir}/junit"/>
-            <pathelement location="${buildTop}/modules/dCache/diskCacheV111/config" />
-	    </path>
+        <junit fork="true">
+            <classpath refid="junit.classpath" />
+            <formatter type="xml" usefile="true" />
+            <formatter type="brief" usefile="false" />
+            <test name="${testcase}" if="testcase" todir="${tests.report.home}" />
+            <batchtest todir="${tests.report.home}" haltonfailure="no" unless="testcase">
+                <fileset dir="${unittest.build.dir}">
+                    <include name="**/*.class" />
 
-	
-	    <target name="compile_junit" description="compile junit tests">
-	    	
-	        <mkdir dir="${buildDir}/junit" />
-	        <javac classpathref="junit.classpath" destdir="${buildDir}/junit" source="${javac.source}" target="${javac.target}" debug="${javac.debug}" verbose="${javac.verbose}"  encoding="${javac.encoding}" deprecation="on">
-	            <src path="${sourceDir}" />
-	        </javac>
-	    	
-	    </target>
-	
-	    <target name="run_junit.core" depends="compile_junit">
+                    <!-- Ignore any classes that are not, by themselves, test-cases -->
+                    <exclude name="**/*$*.class" />
+                    <exclude name="**/*Helper.class" />
+                    <exclude name="org/dcache/tests/cells/Message.class" />
+                    <exclude name="org/dcache/services/info/base/InfoBaseTest.class" />
+                </fileset>
+            </batchtest>
+        </junit>
 
-	        <property name="tests.report.home" location="${buildDir}/junit-reports"/>
-	        <mkdir dir="${tests.report.home}" />
-	    	
-	        <junit fork="true">
-	            <classpath refid="junit.classpath" />
-	            <formatter type="xml" usefile="true" />
-	            <formatter type="brief" usefile="false" />
-	            <batchtest todir="${tests.report.home}" haltonfailure="no" >
-	                <fileset dir="${buildDir}/junit" >
-	                    <include name="**/*.class" />
-	                	
-	                	<!-- Ignore any classes that are not, by themselves, test-cases -->
-	                    <exclude name="**/*$*.class" />
-	                    <exclude name="**/*Helper.class" />
-                        <exclude name="org/dcache/tests/cells/Message.class"/>
-	                	<exclude name="org/dcache/services/info/base/InfoBaseTest.class"/>
-	                </fileset>
-	            </batchtest>
-                </junit>
-
-	    </target>
+    </target>
 
 </project>

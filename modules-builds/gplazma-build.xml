@@ -2,100 +2,90 @@
 
 <project name="gPlazma" default="help" basedir=".">
 
-  <!-- package name. have to be the same as in the cvs -->
-  <property name="package" value="gPlazma" />
-
-  <!-- import the common part -->
-  <import file="${buildTop}/common/common.xml"/>
-  
-  <!--
+    <property name="gplazma.build.dir" location="${buildDir}/gplazma" />
+    <!--
           Properties  -  the following properties, paths, and selectors
                          define the locations and files for gPlazma
-  -->
+    -->
 
-  <!-- Output Files
+    <!-- Output Files
        For each of these jar files there are targets below -->
 
-  <property name="gplazma.jar" location="${classesDir}/gplazma.jar" />
+    <property name="gplazma.jar" location="${classesDir}/gplazma.jar" />
 
-  <!-- this should be in 'common.xml' but that didnt work -->
-  <target name="cleanall" depends="clean" description="Remove everything produced by me." >
-    <delete file="${gplazma.jar}" />
-  </target>
-  
-  <!-- Java sources -->
-
-    <target name="isUptodate.gplazma.jar">
+    <!--
+        check is jar file up to date
+    -->
+    <target name="-isUptodate.gplazma.jar">
         <condition property="gplazma.jar.upToDate">
             <and>
                 <available file="${gplazma.jar}" type="file" />
-	            <uptodate targetfile="${gplazma.jar}">
-	          	<srcfiles dir="${sourceDir}">
-	          	    <include name="**/*.java" />
-	          	</srcfiles>
-	          </uptodate>
+                <uptodate targetfile="${gplazma.jar}">
+                    <srcfiles dir="${gplazma.src}">
+                        <include name="**/*.java" />
+                    </srcfiles>
+                </uptodate>
             </and>
-	</condition>
+        </condition>
     </target>
-	
-  <!-- Packages for gplazma.jar -->
 
-  <selector id="gplazma.selector">
-    <or>
-      <filename name="gplazma/**" />
-    </or>
-  </selector>
-  
-	<!-- Classpath for gplazma.jar. -->
-    
+    <!-- Packages for gplazma.jar -->
+
+    <selector id="gplazma.selector">
+        <or>
+            <filename name="gplazma/**" />
+        </or>
+    </selector>
+
+    <!-- Classpath for gplazma.jar. -->
+
     <path id="gplazma.classpath">
-      <fileset dir="${axis.untared}" includes="**/*.jar" />
-      <fileset dir="${libDir}/cog" includes="**/*.jar" />
-      <pathelement location="${libDir}/security/bcprov-jdk15-133.jar" />
-      <fileset dir="${glite.untarred}" includes="**/*.jar" />
-      <fileset dir="${libDir}/opensaml" includes="**/*.jar" />
-      <fileset dir="${libDir}/gplazma" includes="**/*.jar" />
+        <fileset dir="${axis.untared}" includes="**/*.jar" />
+        <fileset dir="${libDir}/cog" includes="**/*.jar" />
+        <pathelement location="${libDir}/security/bcprov-jdk15-133.jar" />
+        <fileset dir="${glite.untarred}" includes="**/*.jar" />
+        <fileset dir="${libDir}/opensaml" includes="**/*.jar" />
+        <fileset dir="${libDir}/gplazma" includes="**/*.jar" />
     </path>
-	
-  <!--
-             Targets for gplazma.jar
-  -->
 
-  <!-- Compile -->
 
-  <target name="gplazma.compile" depends="prepare,lib.glite.untar" unless="gplazma.jar.upToDate" description="Compile Java code for gplazma.jar" >
+    <!--
+        compile sources
+    -->
 
-    <javac destdir="${buildDir}"
-           source="${javac.source}"
-           target="${javac.target}"
-           classpathref="gplazma.classpath"
-           debug="${javac.debug}"
-           verbose="${javac.verbose}">
-      <src path="${sourceDir}" />
-      <and>
-	  <filename name="**/*.java" />
-      </and>
-    </javac>
+    <target name="-gplazma.compile" unless="-gplazma.jar.upToDate">
 
-  </target>
-  
-  <target name="gplazma.jar" depends="isUptodate.gplazma.jar,gplazma.compile" unless="gplazma.jar.upToDate" description="Create gplazma.jar" >
+        <mkdir dir="${gplazma.build.dir}" />
 
-    <jar jarfile="${gplazma.jar}">
-      <fileset dir="${buildDir}" >
-	<and>
-	  <selector refid="gplazma.selector" />
-	  <filename name="**/*.class" />
-	</and>
-      </fileset>
-    </jar>
+        <javac destdir="${gplazma.build.dir}" source="${javac.source}" target="${javac.target}" classpathref="gplazma.classpath" debug="${javac.debug}" verbose="${javac.verbose}">
+            <src path="${gplazma.src}" />
+            <and>
+                <filename name="**/*.java" />
+            </and>
+        </javac>
 
-  </target>
+    </target>
 
-  <!-- For deployment -->
-  <target name="gplazma-bin" depends="gplazma.jar">  
-      <mkdir dir="${binDir}/classes/gplazma" />
-      <copy file="${classesDir}/gplazma.jar" todir="${binDir}/classes/gplazma" />
-  </target>
-	  
+    <!--
+        build gplazma jar
+    -->
+    <target name="-gplazma.jar" depends="-isUptodate.gplazma.jar,-gplazma.compile" unless="gplazma.jar.upToDate">
+
+        <jar jarfile="${gplazma.jar}">
+            <fileset dir="${gplazma.build.dir}">
+                <and>
+                    <selector refid="gplazma.selector" />
+                    <filename name="**/*.class" />
+                </and>
+            </fileset>
+        </jar>
+
+    </target>
+
+    <!-- For deployment -->
+    <target name="-gplazma.bin" depends="-gplazma.jar">
+        <mkdir dir="${server.bin.dir}/classes/gplazma" />
+        <copy file="${classesDir}/gplazma.jar" todir="${server.bin.dir}/classes/gplazma" />
+    </target>
+
 </project>

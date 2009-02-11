@@ -2,106 +2,50 @@
 
 <project name="Core" default="help" basedir=".">
 
-  <!-- package name. have to be the same as in the cvs -->
-  <property name="package" value="dCache" />
-
-
-	<!-- import the common part -->
-
-	<import file="${buildTop}/common/common.xml"/>
-
-	<!--
+    <property name="dcache.build.dir" location="${buildDir}/dcache" />
+    <!--
           Properties  -  the following properties, paths, and selectors
                          define the locations and files for dCache
-  -->
+    -->
 
-	<!-- Output Files
+    <!-- Output Files
        For each of these jar files there are targets below -->
 
-	<property name="dcache.jar" location="${classesDir}/dcache.jar" />
-	<property name="dcache-replica.jar" location="${classesDir}/dcache-replica.jar" />
-	<property name="dcache-srm.jar" location="${classesDir}/dcache-srm.jar" />
-	<property name="xrootd-tokenauthz.jar" location="${classesDir}/xrootd-tokenauthz.jar" />
-
-	<!-- this should be in 'common.xml' but that didnt work -->
-	<target name="cleanall" depends="clean" description="Remove everything produced by me.">
-		<delete file="${dcache.jar}" />
-		<delete file="${dcache-srm.jar}" />
-		<delete file="${xrootd-tokenauthz.jar}" />
-		<delete file="${info.jar}" />
-	</target>
+    <property name="dcache.jar" location="${classesDir}/dcache.jar" />
+    <property name="xrootd-tokenauthz.jar" location="${classesDir}/xrootd-tokenauthz.jar" />
 
 
-	<target name="isUptodate.dcache.jar">
-		  <condition property="dcache.jar.upToDate">
-		    <and>
-              <available file="${dcache.jar}" type="file" />
-	          <uptodate targetfile="${dcache.jar}">
-	          	<srcfiles dir="${sourceDir}">
-	          		<include name="**/*.java" />
-	          	</srcfiles>
-	          </uptodate>
-		    </and>
-		  </condition>
-	</target>
+    <target name="-isUptodate.dcache.jar">
+        <condition property="dcache.jar.upToDate">
+            <and>
+                <available file="${dcache.jar}" type="file" />
+                <uptodate targetfile="${dcache.jar}">
+                    <srcfiles dir="${dcache.src}">
+                        <include name="**/*.java" />
+                    </srcfiles>
+                </uptodate>
+            </and>
+        </condition>
+    </target>
 
-	<target name="isUptodate.dcache-srm.jar">
-		  <condition property="dcache-srm.jar.upToDate">
-		    <and>
-              <available file="${dcache-srm.jar}" type="file" />
-	          <uptodate targetfile="${dcache-srm.jar}">
-	          	<srcfiles dir="${sourceDir}">
-	          		<include name="**/*.java" />
-	          		<include name="**/*.jdo" />
-	          	</srcfiles>
-	          </uptodate>
-		    </and>
-		  </condition>
-	</target>
+    <target name="-isUptodate.xrootd-tokenauthz.jar">
+        <condition property="xrootd-tokenauthz.jar.upToDate">
+            <and>
+                <available file="${xrootd-tokenauthz.jar}" type="file" />
+                <uptodate targetfile="${xrootd-tokenauthz.jar}">
+                    <srcfiles dir="${dcache.src}">
+                        <include name="**/*.java" />
+                    </srcfiles>
+                </uptodate>
+            </and>
+        </condition>
+    </target>
 
-	<target name="isUptodate.xrootd-tokenauthz.jar">
-		  <condition property="xrootd-tokenauthz.jar.upToDate">
-		    <and>
-              <available file="${xrootd-tokenauthz.jar}" type="file" />
-	          <uptodate targetfile="${xrootd-tokenauthz.jar}">
-	          	<srcfiles dir="${sourceDir}">
-	          		<include name="**/*.java" />
-	          	</srcfiles>
-	          </uptodate>
-		    </and>
-		  </condition>
-	</target>
+    <target name="-isDependPresent">
+        <whichresource class="org.apache.tools.ant.taskdefs.optional.jdepend.JDependTask" property="depend.present" />
+    </target>
 
-	<target name="isUptodate.info.jar">
-		<condition property="info.jar.upToDate">
-			<and>
-				<available file="${info.jar}" type="file" />
-				<uptodate targetfile="${info.jar}">
-					<srcfiles dir="${sourceDir}">
-						<include name="**/*.java"/>
-					</srcfiles>
-				</uptodate>
-			</and>
-		</condition>
-	</target>
-
-        <target name="isDependPresent">
-          <whichresource
-              class="org.apache.tools.ant.taskdefs.optional.jdepend.JDependTask"
-              property="depend.present"/>
-        </target>
-
-	<!-- Java sources
-       These have been derived from packageSets/core.pl and packageSets/protocols.pl -->
-
-	<property name="dcache.packagePrefix" value="diskCacheV111" />
-
-	<!-- Classpath for dcache.jar -->
-
-    <path id="cells.classpath">
-        <pathelement location="${classesDir}/cells.jar" />
-        <pathelement location="${libDir}/log4j/log4j-1.2.8.jar" />
-    </path>
+    <!-- Classpath for dcache.jar -->
 
     <path id="chimera.classpath">
         <pathelement location="${classesDir}/gplazma.jar" />
@@ -112,23 +56,39 @@
         <pathelement location="${libDir}/Chimera/chimera-acl.jar" />
     </path>
 
-    <path id="replica.classpath">
-       <pathelement location="${libDir}/dbcp/commons-pool.jar" />
-       <pathelement location="${libDir}/dbcp/commons-dbcp.jar" />
-    </path>
-
-	<path id="dcache.classpath">
-        <path refid="cells.classpath"/>
+    <path id="dcache.classpath">
+        <path refid="cells.classpath" />
         <path refid="chimera.classpath" />
-        <path refid="replica.classpath" />
-		<pathelement location="${classesDir}/srm.jar" />
-		<pathelement location="${classesDir}/gplazma.jar" />
-		<pathelement location="${libDir}/dbcp/c3p0-0.9.1.2.jar" />
-		<pathelement location="${libDir}/berkeleyDB/je-3.2.76.jar" />
-		<fileset dir="${libDir}/spring/" includes="spring-*.jar" />
-		<pathelement location="${libDir}/smc/statemap.jar" />
+        <pathelement location="${classesDir}/cells.jar" />
+        <pathelement location="${classesDir}/srm.jar" />
+        <pathelement location="${classesDir}/gplazma.jar" />
+        <pathelement location="${libDir}/dbcp/c3p0-0.9.1.2.jar" />
+        <pathelement location="${libDir}/berkeleyDB/je-3.2.76.jar" />
+        <fileset dir="${libDir}/spring/" includes="spring-*.jar" />
+        <pathelement location="${libDir}/smc/statemap.jar" />
         <pathelement location="${libDir}/persistence/persistence-api-1.0.jar" />
-	</path>
+        <pathelement location="${libDir}/dbcp/commons-pool.jar" />
+        <pathelement location="${libDir}/dbcp/commons-dbcp.jar" />
+        <path refid="authz.classpath" />
+        <fileset dir="${axis.untared}" includes="**/*.jar" />
+        <fileset dir="${tomcat.untared}/common/lib/" includes="*.jar" />
+        <fileset dir="${tomcat.untared}/server/lib/" includes="*.jar" />
+        <fileset dir="${libDir}/cog" includes="**/*.jar" />
+        <fileset dir="${libDir}/security" includes="**/*.jar" />
+        <fileset dir="${glite.untarred}" includes="**/*.jar" />
+        <fileset dir="${libDir}/terapaths" includes="*.jar" />
+        <pathelement location="${libDir}/jdom/jdom.jar" />
+        <pathelement location="${glue.untared}/GLUE-STD.jar" />
+        <pathelement location="${glue.untared}/dom.jar" />
+        <pathelement location="${glue.untared}/jnet.jar" />
+        <pathelement location="${glue.untared}/jsse.jar" />
+        <pathelement location="${glue.untared}/jcert.jar" />
+        <pathelement location="${glue.untared}/servlet.jar" />
+        <pathelement location="${classesDir}/dcache.jar" />
+        <pathelement location="${classesDir}/srm.jar" />
+        <pathelement location="${libDir}/jpox/jdo2-api-2.0.jar" />
+        <pathelement location="${libDir}/jpox/jpox-core-1.2.2.jar" />
+    </path>
 
 
 
@@ -141,34 +101,9 @@
         <fileset dir="${libDir}/cog" includes="**/*.jar" />
     </path>
 
- 	<!-- Classpath for dcache-srm.jar - This is the same as for srm.jar in the srm CVS module -->
+    <!-- Classpath for enhancement -->
 
-	<path id="dcache-srm.classpath">
-      <path refid="authz.classpath" />
-      <fileset dir="${axis.untared}" includes="**/*.jar" />
-      <fileset dir="${tomcat.untared}/common/lib/" includes="*.jar" />
-      <fileset dir="${tomcat.untared}/server/lib/" includes="*.jar" />
-      <fileset dir="${libDir}/cog" includes="**/*.jar" />
-      <fileset dir="${libDir}/security" includes="**/*.jar" />
-      <fileset dir="${glite.untarred}" includes="**/*.jar" />
-      <fileset dir="${libDir}/terapaths" includes="*.jar" />
-      <pathelement location="${libDir}/jdom/jdom.jar" />
-      <pathelement location="${glue.untared}/GLUE-STD.jar" />
-      <pathelement location="${glue.untared}/dom.jar" />
-      <pathelement location="${glue.untared}/jnet.jar" />
-      <pathelement location="${glue.untared}/jsse.jar" />
-      <pathelement location="${glue.untared}/jcert.jar" />
-      <pathelement location="${glue.untared}/servlet.jar" />
-      <pathelement location="${classesDir}/dcache.jar" />
-      <pathelement location="${classesDir}/srm.jar" />
-      <pathelement location="${libDir}/jpox/jdo2-api-2.0.jar" />
-      <pathelement location="${libDir}/jpox/jpox-core-1.2.2.jar" />
-	</path>
-
-
-	<!-- Classpath for enhancement -->
-
-	<path id="dcache-srm-enhance.classpath">
+    <path id="dcache-srm-enhance.classpath">
         <pathelement location="${classesDir}/gplazma.jar" />
         <pathelement location="${libDir}/jpox/jdo2-api-2.0.jar" />
         <pathelement location="${libDir}/jpox/jpox-core-1.2.2.jar" />
@@ -176,111 +111,96 @@
         <pathelement location="${libDir}/jpox/jpox-java5-1.2.2.jar" />
         <pathelement location="${libDir}/jpox/bcel-5.1.jar" />
         <pathelement location="${libDir}/asm/asm-3.1.jar" />
-	    <pathelement path="${buildDir}/dcache-srm"/>
-        <pathelement path="${buildDir}/core"/>
-	</path>
+        <pathelement path="${buildDir}/dcache-srm" />
+        <pathelement path="${dcache.build.dir}" />
+    </path>
 
-	<!-- Classpath for xrootd-tokenauthz.jar -->
+    <!-- Classpath for xrootd-tokenauthz.jar -->
 
-	<path id="xrootd-tokenauthz.classpath">
+    <path id="xrootd-tokenauthz.classpath">
         <pathelement location="${libDir}/security/bcprov-jdk15-133.jar" />
-	</path>
+    </path>
 
-	<!--       =======
-             TARGETS
-             =======          -->
+    <!--
+        Targets for dcache.jar
+    -->
 
-	<!--
-             Targets for dcache.jar
-  -->
+    <!-- Depend -->
 
-	<!-- Depend -->
+    <target name="-dcache.depend" depends="-isDependPresent" if="depend.present">
+        <depend srcdir="${dcache.src}" destdir="${dcache.build.dir}" />
+    </target>
 
-        <target name="dcache.depend" depends="isDependPresent"
-                if="depend.present">
-          <depend srcdir="${sourceDir}"
-                  destdir="${buildDir}/core"/>
-        </target>
-
-        <!-- The SMC invocation part. Without the ant-contrib tasks, we
+    <!-- The SMC invocation part. Without the ant-contrib tasks, we
              need to add each .sm file one by one below. -->
-        <target name="dcache.smc"
-                description="Compile state machines using SMC">
-          <mkdir dir="${buildDir}/core/org/dcache/services/pinmanager1"/>
-          <mkdir dir="${buildDir}/core/org/dcache/pool/migration"/>
-          <smc target="java"
-               smfile="${sourceDir}/org/dcache/services/pinmanager1/Extender.sm"
-               destdir="${buildDir}/core/org/dcache/services/pinmanager1/"
-               smcjar="${smc.jar}"/>
-          <smc target="java"
-               smfile="${sourceDir}/org/dcache/services/pinmanager1/Unpinner.sm"
-               destdir="${buildDir}/core/org/dcache/services/pinmanager1/"
-               smcjar="${smc.jar}"/>
-          <smc target="java"
-               smfile="${sourceDir}/org/dcache/services/pinmanager1/PinMover.sm"
-               destdir="${buildDir}/core/org/dcache/services/pinmanager1/"
-               smcjar="${smc.jar}"/>
-          <smc target="java"
-               smfile="${sourceDir}/org/dcache/pool/migration/Task.sm"
-               destdir="${buildDir}/core/org/dcache/pool/migration/"
-               smcjar="${smc.jar}"/>
-          <smc target="java"
-               smfile="${sourceDir}/org/dcache/services/pinmanager1/Pinner.sm"
-               destdir="${buildDir}/core/org/dcache/services/pinmanager1/"
-               smcjar="${smc.jar}"/>
+    <!--
+        Compile state machines using SMC
+    -->
+    <target name="-dcache.smc">
+        <mkdir dir="${dcache.build.dir}/org/dcache/services/pinmanager1" />
+        <mkdir dir="${dcache.build.dir}/org/dcache/pool/migration" />
+        
+        <smc target="java"
+            smfile="${dcache.src}/org/dcache/services/pinmanager1/Extender.sm"
+            destdir="${dcache.build.dir}/org/dcache/services/pinmanager1/"
+            smcjar="${smc.jar}"
+        />
+        <smc target="java"
+            smfile="${dcache.src}/org/dcache/services/pinmanager1/Unpinner.sm"
+            destdir="${dcache.build.dir}/org/dcache/services/pinmanager1/"
+            smcjar="${smc.jar}"
+        />
+        <smc target="java"
+            smfile="${dcache.src}/org/dcache/pool/migration/Task.sm"
+            destdir="${dcache.build.dir}/org/dcache/pool/migration/"
+            smcjar="${smc.jar}"
+        />
+        <smc target="java"
+            smfile="${dcache.src}/org/dcache/services/pinmanager1/Pinner.sm"
+            destdir="${dcache.build.dir}/org/dcache/services/pinmanager1/"
+            smcjar="${smc.jar}"
+        />
+        <smc target="java"
+            smfile="${dcache.src}/org/dcache/services/pinmanager1/PinMover.sm"
+            destdir="${dcache.build.dir}/org/dcache/services/pinmanager1/"
+            smcjar="${smc.jar}"
+         />
 
-          <mkdir dir="${buildDir}/core/org/dcache/pool/p2p"/>
-          <smc target="java"
-               smfile="${sourceDir}/org/dcache/pool/p2p/Companion.sm"
-               destdir="${buildDir}/core/org/dcache/pool/p2p/"
-               smcjar="${smc.jar}"/>
-        </target>
+        <mkdir dir="${dcache.build.dir}/org/dcache/pool/p2p" />
+        <smc target="java"
+            smfile="${dcache.src}/org/dcache/pool/p2p/Companion.sm"
+            destdir="${dcache.build.dir}/org/dcache/pool/p2p/"
+            smcjar="${smc.jar}"
+        />
+    </target>
 
-	<!-- Compile -->
+    <!--
+        compile dcache code
+    -->
 
-	<target name="dcache.compile"
-                depends="prepare,dcache.smc,dcache.depend"
-                unless="dcache.jar.upToDate"
-                description="Compile Java code for dcache.jar">
+    <target name="-dcache.compile" depends="-prepare,-dcache.smc,-dcache.depend" unless="dcache.jar.upToDate">
 
-		<mkdir dir="${buildDir}/core" />
+        <mkdir dir="${dcache.build.dir}" />
 
-		<javac destdir="${buildDir}/core" source="${javac.source}" target="${javac.target}" debug="${javac.debug}" verbose="${javac.verbose}"  encoding="${javac.encoding}">
+        <javac destdir="${dcache.build.dir}" source="${javac.source}" target="${javac.target}" debug="${javac.debug}" verbose="${javac.verbose}" encoding="${javac.encoding}">
 
-			<src path="${sourceDir}" />
-			<src path="${buildDir}/core" />
+            <src path="${dcache.src}" />
+            <src path="${dcache.build.dir}" />
 
             <classpath refid="dcache.classpath" />
-			<classpath refid="authz.classpath" />
+            <classpath refid="authz.classpath" />
 
-			<include name="${dcache.packagePrefix}/**" />
-			<include name="${dcache.packagePrefix}/services/authorization/**" />
-			<include name="org/**" />
-			<exclude name="${dcache.packagePrefix}/srm/**" />
-			<exclude name="${dcache.packagePrefix}/vehicles/srm/**" />
-			<exclude name="${dcache.packagePrefix}/scripts/**" />
-			<exclude name="${dcache.packagePrefix}/tomcat/**" />
-			<exclude name="${dcache.packagePrefix}/services/GsiftpTransferManager.java" />
-			<exclude name="${dcache.packagePrefix}/services/TransferManager.java" />
-			<exclude name="${dcache.packagePrefix}/services/TransferManagerHandler.java" />
-			<exclude name="${dcache.packagePrefix}/services/TransferManagerHandlerBackup.java" />
-			<exclude name="${dcache.packagePrefix}/services/TransferManagerHandlerState.java" />
-			<exclude name="org/dcache/xrootd/security/plugins/**" />
-			<exclude name="org/dcache/xrootd/tests/**" />
-			<exclude name="${dcache.packagePrefix}/replicaManager/Semaphore.java" />
-			<exclude name="${dcache.packagePrefix}/replicaManager/ReplicaManagerV2.java" />
-			<exclude name="${dcache.packagePrefix}/replicaManager/ReplicaManager.java" />
-			<exclude name="${dcache.packagePrefix}/replicaManager/ReplicaManagerExample.java" />
-			<exclude name="${dcache.packagePrefix}/replicaManager/ReplicaDbV1.java" />
-			<exclude name="${dcache.packagePrefix}/replicaManager/ReplicaDbV0.java" />
-			<exclude name="${dcache.packagePrefix}/replicaManager/ReplicaDb1.java" />
-			<exclude name="${dcache.packagePrefix}/replicaManager/ReplicaDb.java" />
-			<exclude name="${dcache.packagePrefix}/replicaManager/DCacheCoreController.java" />
-			<exclude name="${dcache.packagePrefix}/replicaManager/DCacheCoreControllerV2.java" />
+            <include name="diskCacheV111/**" />
+            <include name="diskCacheV111/services/authorization/**" />
+            <include name="org/**" />
+            <exclude name="diskCacheV111/scripts/**" />
+            <exclude name="diskCacheV111/tomcat/**" />
+            <exclude name="diskCacheV111/replicaManager/ReplicaManagerExample.java" />
+            <exclude name="org/dcache/xrootd/security/plugins/**" />
+            <exclude name="org/dcache/xrootd/tests/**" />
+        </javac>
 
-		</javac>
-
-	</target>
+    </target>
 
     <path id="dcache-auth-enhance.classpath">
         <pathelement location="${classesDir}/gplazma.jar" />
@@ -292,510 +212,427 @@
         <pathelement location="${libDir}/jpox/jpox-rdbms-1.2.2.jar" />
         <pathelement location="${libDir}/persistence/persistence-api-1.0.jar" />
         <pathelement location="${libDir}/asm/asm-3.1.jar" />
-        <pathelement location="${buildDir}/core"/>
+        <pathelement location="${dcache.build.dir}" />
     </path>
 
-	<target name="dcache-auth.check.enhanced">
-		<condition property="dcache-auth.is.enhanced">
-			<and>
-				<available file="${buildDir}/core/META-INF/persistence.xml" type="file" />
-			</and>
-		</condition>
-	</target>
+    <target name="-dcache-auth.check.enhanced">
+        <condition property="dcache-auth.is.enhanced">
+            <and>
+                <available file="${dcache.build.dir}/META-INF/persistence.xml" type="file" />
+            </and>
+        </condition>
+    </target>
 
-        <!-- Enhance auth record -->
-    <target name="dcache-auth.enhance" depends="dcache.compile,dcache-auth.check.enhanced" unless="dcache-auth.is.enhanced" description="Generate JPA Persistency code" >
+    <!--
+        Enhance auth record
+        generate JPA Persistency code
+    -->
+    <target name="-dcache-auth.enhance" depends="-dcache.compile,-dcache-auth.check.enhanced" unless="dcache-auth.is.enhanced">
 
-        <mkdir dir="${buildDir}/core/META-INF" />
-	<copy file="${sourceDir}/${dcache.packagePrefix}/config/persistence.xml" todir="${buildDir}/core/META-INF" />
-	<copy file="${sourceDir}/org/dcache/auth/AuthRecordORM.xml" todir="${buildDir}/core/org/dcache/auth/" />
+        <mkdir dir="${dcache.build.dir}/META-INF" />
+        <copy file="${dcache.src}/diskCacheV111/config/persistence.xml" todir="${dcache.build.dir}/META-INF" />
+        <copy file="${dcache.src}/org/dcache/auth/AuthRecordORM.xml" todir="${dcache.build.dir}/org/dcache/auth/" />
         <!-- define the task enhancer -->
         <taskdef name="enhancer" classname="org.jpox.enhancer.tools.EnhancerTask">
-            <classpath refid="dcache-auth-enhance.classpath"/>
+            <classpath refid="dcache-auth-enhance.classpath" />
         </taskdef>
 
         <!-- enhance -->
-        <enhancer classpathref="dcache-auth-enhance.classpath" dir="${buildDir}/core" verbose="true" api="JPA" persistenceUnit="AuthRecordPersistenceUnit">
-            <sysproperty key="log4j.configuration" value="file:/home/timur/cvs/dCacheBuild/log4j.properties"/>
+        <enhancer classpathref="dcache-auth-enhance.classpath" dir="${dcache.build.dir}" verbose="true" api="JPA" persistenceUnit="AuthRecordPersistenceUnit">
+            <sysproperty key="log4j.configuration" value="file:/home/timur/cvs/dCacheBuild/log4j.properties" />
         </enhancer>
     </target>
 
-	<target name="dcache.jar" depends="isUptodate.dcache.jar,dcache.compile" unless="dcache.jar.upToDate" description="Create dcache.jar">
+    <!--
+        build dcache.jar, compile if reqiered
+    -->
+    <target name="-dcache.jar" depends="-isUptodate.dcache.jar,-dcache.enhance" unless="dcache.jar.upToDate">
 
-        <mkdir dir="${buildDir}/core/META-INF" />
-	<copy file="${sourceDir}/${dcache.packagePrefix}/config/persistence.xml" todir="${buildDir}/core/META-INF" />
-	<copy file="${sourceDir}/org/dcache/auth/AuthRecordORM.xml" todir="${buildDir}/core/org/dcache/auth/" />
-		<jar jarfile="${dcache.jar}">
-                        <fileset dir="${sourceDir}" includes="**/*.xml" excludes="diskCacheV111/config/*,**/WEB-INF/*.xml" />
-			<fileset dir="${buildDir}/core" includes="**/*.class,META-INF/*.xml" />
-			<manifest>
-				<section name="Shared">
-					<attribute name="Title" value="dCache Core" />
-					<attribute name="Vendor" value="dCache.ORG" />
-					<attribute name="Date" value="${jar.timestamp}" />
-				</section>
-				<section name="Copyright">
-					<attribute name="Copy" value="(C) dCache.ORG  2000 - 2008" />
-				</section>
-				<attribute name="Main-Class" value="diskCacheV111.util.Version" />
-				<attribute name="Class-Path" value="cells.jar" />
-				<attribute name="Specification-Version" value="${release.name}" />
-				<attribute name="Specification-Vendor" value="dCache.ORG (DESY,FERMI)" />
-				<attribute name="Package-Title" value="dmg.util" />
-				<attribute name="Package-Version" value="${release.name}" />
-				<attribute name="Package-Vendor" value="dCache.ORG (DESY,FERMI)"	/>
-			</manifest>
-		</jar>
+        <mkdir dir="${dcache.build.dir}/META-INF" />
+        <copy file="${dcache.src}/diskCacheV111/config/persistence.xml" todir="${dcache.build.dir}/META-INF" />
+        <copy file="${dcache.src}/org/dcache/auth/AuthRecordORM.xml" todir="${dcache.build.dir}/org/dcache/auth/" />
+        <jar jarfile="${dcache.jar}">
+            <fileset dir="${dcache.src}" includes="**/*.xml" excludes="diskCacheV111/config/*,**/WEB-INF/*.xml" />
+            <fileset dir="${dcache.build.dir}" includes="**/*.class,META-INF/*.xml" />
+            <manifest>
+                <section name="Shared">
+                    <attribute name="Title" value="dCache Core" />
+                    <attribute name="Vendor" value="${vendor}" />
+                    <attribute name="Date" value="${jar.timestamp}" />
+                </section>
+                <section name="Copyright">
+                    <attribute name="Copy" value="${copyright}" />
+                </section>
+                <attribute name="Main-Class" value="diskCacheV111.util.Version" />
+                <attribute name="Class-Path" value="cells.jar" />
+                <attribute name="Specification-Version" value="${release.name}" />
+                <attribute name="Specification-Vendor" value="${vendor}" />
+                <attribute name="Package-Title" value="dmg.util" />
+                <attribute name="Package-Version" value="${release.name}" />
+                <attribute name="Package-Vendor" value="${vendor}" />
+            </manifest>
+        </jar>
 
-	</target>
+    </target>
 
-        <target name="dcache-replica.compile" depends="dcache.jar" >
+    <!-- xrootd-tokenauthorization plugin -->
+    <target name="-xrootd-tokenauthz.compile" unless="xrootd-tokenauthz.jar.upToDate" depends="-dcache.jar">
 
-             <mkdir dir="${buildDir}/replicaManager" />
+        <mkdir dir="${buildDir}/xrootd-tokenauthz" />
 
-             <javac destdir="${buildDir}/replicaManager" source="${javac.source}" target="${javac.target}" debug="${javac.debug}" verbose="${javac.verbose}"  encoding="${javac.encoding}">
-
-                  <src path="${sourceDir}" />
-
-                  <classpath refid="cells.classpath" />
-                  <classpath refid="replica.classpath" />
-                  
-                  <include name="${dcache.packagePrefix}/replicaManager/**" />
-                  <exclude name="${dcache.packagePrefix}/replicaManager/ReplicaManagerExample.java" />
-                  <exclude name="${dcache.packagePrefix}/replicaManager/CopyManager.java" />
-                  <exclude name="${dcache.packagePrefix}/replicaManager/EasyCopyCellModule.java" />
-
-             </javac>
-
-        </target>
-
-	<target name="dcache-replica.jar" depends="dcache-replica.compile" >
-                <jar jarfile="${dcache-replica.jar}">
-                        <fileset dir="${buildDir}/replicaManager" includes="**/*.class" />
-                        <manifest>
-                                <section name="Shared">
-                                        <attribute name="Title" value="dCache Replica Manager" />
-                                        <attribute name="Vendor" value="dCache.ORG" />
-                                        <attribute name="Date" value="${jar.timestamp}" />
-                                </section>
-                                <section name="Copyright">
-                                        <attribute name="Copy" value="(C) dCache.ORG  2000 - 2008" />
-                                </section>
-                                <attribute name="Class-Path" value="dcache.jar" />
-                                <attribute name="Specification-Version" value="${release.name}" />
-                                <attribute name="Specification-Vendor" value="dCache.ORG (DESY,FERMI)" />
-                                <attribute name="Package-Title" value="dmg.util" />
-                                <attribute name="Package-Version" value="${release.name}" />
-                                <attribute name="Package-Vendor" value="dCache.ORG (DESY,FERMI)"        />
-                        </manifest>
-                </jar>
-
-        </target>
-
-	<!-- xrootd-tokenauthorization plugin -->
-	<target name="xrootd-tokenauthz.compile" unless="xrootd-tokenauthz.jar.upToDate" depends="dcache.jar">
-
-		<mkdir dir="${buildDir}/xrootd-tokenauthz" />
-
-		<javac destdir="${buildDir}/xrootd-tokenauthz" source="${javac.source}" target="${javac.target}" debug="${javac.debug}" verbose="${javac.verbose}">
-			<src path="${sourceDir}" />
+        <javac destdir="${buildDir}/xrootd-tokenauthz" source="${javac.source}" target="${javac.target}" debug="${javac.debug}" verbose="${javac.verbose}">
+            <src path="${dcache.src}" />
 
             <classpath refid="cells.classpath" />
-			<classpath refid="dcache.classpath"/>
-			<classpath refid="xrootd-tokenauthz.classpath"/>
+            <classpath refid="dcache.classpath" />
+            <classpath refid="xrootd-tokenauthz.classpath" />
 
-			<include name="org/dcache/xrootd/security/plugins/tokenauthz/**" />
-		</javac>
-	</target>
+            <include name="org/dcache/xrootd/security/plugins/tokenauthz/**" />
+        </javac>
+    </target>
 
-	<target name="xrootd-tokenauthz.jar" depends="isUptodate.xrootd-tokenauthz.jar,xrootd-tokenauthz.compile" unless="xrootd-tokenauthz.jar.upToDate" description="Create xrootd-tokenauthz.jar">
+    <!--
+        build xrootd-tokenauthz.jar, compile if required
+    -->
+    <target name="-xrootd-tokenauthz.jar" depends="-isUptodate.xrootd-tokenauthz.jar,-xrootd-tokenauthz.compile" unless="xrootd-tokenauthz.jar.upToDate">
 
-		<jar jarfile="${xrootd-tokenauthz.jar}">
-			<fileset dir="${buildDir}/xrootd-tokenauthz" />
+        <jar jarfile="${xrootd-tokenauthz.jar}">
+            <fileset dir="${buildDir}/xrootd-tokenauthz" />
 
-			<manifest>
-				<section name="Shared">
-					<attribute name="Title" value="dCache-xrootd tokenauthorization plugin" />
-					<attribute name="Vendor" value="dCache.ORG" />
-					<attribute name="Date" value="${jar.timestamp}" />
-				</section>
-				<section name="Copyright">
-					<attribute name="Copy" value="(C) dCache.ORG  2000 - 2008" />
-				</section>
-			</manifest>
-		</jar>
+            <manifest>
+                <section name="Shared">
+                    <attribute name="Title" value="dCache-xrootd tokenauthorization plugin" />
+                    <attribute name="Vendor" value="${vendor}" />
+                    <attribute name="Date" value="${jar.timestamp}" />
+                </section>
+                <section name="Copyright">
+                    <attribute name="Copy" value="${copyright}" />
+                </section>
+            </manifest>
+        </jar>
 
-	</target>
+    </target>
 
-	<!--
-             Targets for dcache-srm.jar
-  -->
+    <!-- Enhance -->
 
-	<!-- Compile -->
-
-	<target name="dcache-srm.compile" depends="prepare" unless="dcache-srm.jar.upToDate" description="Compile Java code for dcache-srm.jar">
-
-		<mkdir dir="${buildDir}/dcache-srm" />
-
-		<javac destdir="${buildDir}/dcache-srm" source="${javac.source}" target="${javac.target}" debug="${javac.debug}" verbose="${javac.verbose}">
-			<src path="${sourceDir}" />
-
-			<classpath refid="dcache-srm.classpath"/>
-			<classpath refid="dcache.classpath"/>
-
-			<include name="${dcache.packagePrefix}/doors/GsiFtpDoorV1.java" />
-			<include name="${dcache.packagePrefix}/movers/RemoteGsiftpTransferProtocol_1.java" />
-			<include name="${dcache.packagePrefix}/services/TransferManager.java" />
-			<include name="${dcache.packagePrefix}/services/TransferManagerHandler.java" />
-			<include name="${dcache.packagePrefix}/services/TransferManagerHandlerBackup.java" />
-			<include name="${dcache.packagePrefix}/services/GsiftpTransferManager.java" />
-			<include name="${dcache.packagePrefix}/doors/GssFtpDoorV1.java" />
-			<include name="${dcache.packagePrefix}/doors/KerberosFtpDoorV1.java" />
-			<include name="${dcache.packagePrefix}/srm/**" />
-			<exclude name="${dcache.packagePrefix}/srm/v2_1/**" />
-			<exclude name="${dcache.packagePrefix}/srm/security/**" />
-
-		</javac>
-
-	</target>
+    <!--
+        generate JDO persistency backend
+    -->
+    <target name="-dcache.enhance" depends="-dcache.compile">
+        <java classname="org.jpox.enhancer.JPOXEnhancer" classpathref="dcache-srm-enhance.classpath" fork="true" failonerror="true">
+            <arg value="${dcache.src}/diskCacheV111/services/package.jdo" />
+            <sysproperty key="log4j.configuration" value="file:${dcache.src}/diskCacheV111/services/log4j.properties" />
+        </java>
+    </target>
 
 
-	<!-- Enhance -->
+    <!-- directory layout :
 
-
-        <target name="dcache-srm.enhance" depends="dcache-srm.compile" description="Generate JDO persistency backend">
-           <java classname="org.jpox.enhancer.JPOXEnhancer" classpathref="dcache-srm-enhance.classpath" fork="true" failonerror="true">
-             <arg value="${sourceDir}/diskCacheV111/services/package.jdo"/>
-             <sysproperty key="log4j.configuration" value="file:${sourceDir}/diskCacheV111/services/log4j.properties"/>
-           </java>
-        </target>
-
-
-
-
-
-	<target name="dcache-srm.jar" depends="isUptodate.dcache-srm.jar,dcache-srm.enhance" unless="dcache-srm.jar.upToDate" description="Create dcache-srm.jar">
-
-		<jar jarfile="${dcache-srm.jar}">
-			<fileset dir="${buildDir}/dcache-srm" />
-			<fileset dir="${sourceDir}" includes="**/*.jdo" />
-
-			<manifest>
-				<section name="Shared">
-					<attribute name="Title" value="dCache SRM" />
-					<attribute name="Vendor" value="dCache.ORG" />
-					<attribute name="Date" value="${jar.timestamp}" />
-				</section>
-				<section name="Copyright">
-					<attribute name="Copy" value="(C) dCache.ORG  2000 - 2008" />
-				</section>
-				<attribute name="Class-Path" value="dcache.jar" />
-				<attribute name="Specification-Title" value="dCache SRM" />
-				<attribute name="Specification-Version" value="${release.name}" />
-				<attribute name="Specification-Vendor" value="dCache.ORG (DESY,FERMI)" />
-				<attribute name="Package-Title" value="dCache SRM" />
-				<attribute name="Package-Version" value="${release.name}" />
-				<attribute name="Package-Vendor" value="dCache.ORG (DESY,FERMI)"	/>
-			</manifest>
-		</jar>
-
-	</target>
-
-
-
-	<!-- directory layout :
-
-	    <dCache home>-|
-					  |-classes
-					  |-jobs
-					  |-config-|
+      <dCache home>-|
+            |-classes
+            |-jobs
+            |-config-|
                                |-users-|
                                        |-acls
                                        |-meta
                                        |-relations
-					  |-docs-|
-					         |-images
-	-->
+            |-docs-|
+                   |-images
+    -->
 
 
-	<target name="dcache-bin" depends="dcache.jar,dcache-replica.jar">
+    <target name="-dcache.bin" depends="-dcache.jar">
 
-		<mkdir dir="${binDir}/classes" />
-		<mkdir dir="${binDir}/jobs" />
-		<mkdir dir="${binDir}/config" />
-		<mkdir dir="${binDir}/config/users" />
-		<mkdir dir="${binDir}/config/users/meta" />
-		<mkdir dir="${binDir}/config/users/relations" />
-		<mkdir dir="${binDir}/config/users/acls" />
-		<mkdir dir="${binDir}/docs" />
-		<mkdir dir="${binDir}/docs/images" />
-		<mkdir dir="${binDir}/docs/skins" />
-		<mkdir dir="${binDir}/docs/styles" />
-		<mkdir dir="${binDir}/docs/scripts" />
-		<mkdir dir="${binDir}/docs/scripts/sorting" />
+        <mkdir dir="${server.bin.dir}/classes" />
+        <mkdir dir="${server.bin.dir}/jobs" />
+        <mkdir dir="${server.bin.dir}/config" />
+        <mkdir dir="${server.bin.dir}/config/users" />
+        <mkdir dir="${server.bin.dir}/config/users/meta" />
+        <mkdir dir="${server.bin.dir}/config/users/relations" />
+        <mkdir dir="${server.bin.dir}/config/users/acls" />
+        <mkdir dir="${server.bin.dir}/docs" />
+        <mkdir dir="${server.bin.dir}/docs/images" />
+        <mkdir dir="${server.bin.dir}/docs/skins" />
+        <mkdir dir="${server.bin.dir}/docs/styles" />
+        <mkdir dir="${server.bin.dir}/docs/scripts" />
+        <mkdir dir="${server.bin.dir}/docs/scripts/sorting" />
 
-		<!-- jar file  -->
-		<copy file="${classesDir}/dcache.jar" todir="${binDir}/classes" />
-		<copy file="${classesDir}/dcache-replica.jar" todir="${binDir}/classes" />
+        <!-- jar file  -->
+        <copy file="${classesDir}/dcache.jar" todir="${server.bin.dir}/classes" />
 
-		<!-- .batch file - e.g. domains  -->
-		<copy file="${sourceDir}/${dcache.packagePrefix}/config/dCache.batch" todir="${binDir}/config" />
-		<copy file="${sourceDir}/${dcache.packagePrefix}/config/pnfs.batch" todir="${binDir}/config" />
-		<copy file="${sourceDir}/${dcache.packagePrefix}/config/lm.batch" todir="${binDir}/config" />
-		<copy file="${sourceDir}/${dcache.packagePrefix}/config/dir.batch" todir="${binDir}/config" />
-		<copy file="${sourceDir}/${dcache.packagePrefix}/config/door.batch" todir="${binDir}/config" />
-	    <copy file="${sourceDir}/${dcache.packagePrefix}/config/authdoor.batch" todir="${binDir}/config" />
-		<copy file="${sourceDir}/${dcache.packagePrefix}/config/adminDoor.batch" todir="${binDir}/config" />
-		<copy file="${sourceDir}/${dcache.packagePrefix}/config/httpd.batch" todir="${binDir}/config" />
-		<copy file="${sourceDir}/${dcache.packagePrefix}/config/infoProvider.batch" todir="${binDir}/config" />
-		<copy file="${sourceDir}/${dcache.packagePrefix}/config/pool.batch" todir="${binDir}/config" />
-		<copy file="${sourceDir}/${dcache.packagePrefix}/config/replica.batch" todir="${binDir}/config" />
-		<copy file="${sourceDir}/${dcache.packagePrefix}/config/utility.batch" todir="${binDir}/config" />
-		<copy file="${sourceDir}/${dcache.packagePrefix}/config/statistics.batch" todir="${binDir}/config" />
-		<copy file="${sourceDir}/${dcache.packagePrefix}/config/xrootdDoor.batch" todir="${binDir}/config" />
-		<copy file="${sourceDir}/${dcache.packagePrefix}/config/chimera.batch" todir="${binDir}/config" />
-		<copy file="${sourceDir}/${dcache.packagePrefix}/config/info.batch" todir="${binDir}/config" />
-		<!--<copy file="${sourceDir}/${dcache.packagePrefix}/config/aclcell.batch" todir="${binDir}/config" /> -->
-		<!-- configs  -->
-		<copy file="${sourceDir}/${dcache.packagePrefix}/config/PoolManager.conf" todir="${binDir}/config" />
-		<copy file="${sourceDir}/${dcache.packagePrefix}/config/lm.config" todir="${binDir}/config" />
+        <!-- .batch file - e.g. domains  -->
+        <copy file="${dcache.src}/diskCacheV111/config/dCache.batch" todir="${server.bin.dir}/config" />
+        <copy file="${dcache.src}/diskCacheV111/config/pnfs.batch" todir="${server.bin.dir}/config" />
+        <copy file="${dcache.src}/diskCacheV111/config/lm.batch" todir="${server.bin.dir}/config" />
+        <copy file="${dcache.src}/diskCacheV111/config/dir.batch" todir="${server.bin.dir}/config" />
+        <copy file="${dcache.src}/diskCacheV111/config/door.batch" todir="${server.bin.dir}/config" />
+        <copy file="${dcache.src}/diskCacheV111/config/authdoor.batch" todir="${server.bin.dir}/config" />
+        <copy file="${dcache.src}/diskCacheV111/config/adminDoor.batch" todir="${server.bin.dir}/config" />
+        <copy file="${dcache.src}/diskCacheV111/config/httpd.batch" todir="${server.bin.dir}/config" />
+        <copy file="${dcache.src}/diskCacheV111/config/infoProvider.batch" todir="${server.bin.dir}/config" />
+        <copy file="${dcache.src}/diskCacheV111/config/pool.batch" todir="${server.bin.dir}/config" />
+        <copy file="${dcache.src}/diskCacheV111/config/replica.batch" todir="${server.bin.dir}/config" />
+        <copy file="${dcache.src}/diskCacheV111/config/utility.batch" todir="${server.bin.dir}/config" />
+        <copy file="${dcache.src}/diskCacheV111/config/statistics.batch" todir="${server.bin.dir}/config" />
+        <copy file="${dcache.src}/diskCacheV111/config/xrootdDoor.batch" todir="${server.bin.dir}/config" />
+        <copy file="${dcache.src}/diskCacheV111/config/chimera.batch" todir="${server.bin.dir}/config" />
+        <copy file="${dcache.src}/diskCacheV111/config/info.batch" todir="${server.bin.dir}/config" />
+        <!--<copy file="${dcache.src}/diskCacheV111/config/aclcell.batch" todir="${server.bin.dir}/config" /> -->
+        <!-- configs  -->
+        <copy file="${dcache.src}/diskCacheV111/config/PoolManager.conf" todir="${server.bin.dir}/config" />
+        <copy file="${dcache.src}/diskCacheV111/config/lm.config" todir="${server.bin.dir}/config" />
 
-		<!-- pool setup template  -->
-		<copy file="${sourceDir}/${dcache.packagePrefix}/config/setup.temp" todir="${binDir}/config" />
+        <!-- pool setup template  -->
+        <copy file="${dcache.src}/diskCacheV111/config/setup.temp" todir="${server.bin.dir}/config" />
 
-		<!-- httpd images, etc -->
-		<copy todir="${binDir}/docs/images">
-			<fileset dir="${sourceDir}/${dcache.packagePrefix}/docs/images" />
-		</copy>
-		<copy todir="${binDir}/docs/styles">
-			<fileset dir="${sourceDir}/${dcache.packagePrefix}/docs/styles" />
-		</copy>
-		<copy todir="${binDir}/docs/scripts">
-			<fileset dir="${sourceDir}/${dcache.packagePrefix}/docs/scripts" />
-		</copy>
-		<copy file="${sourceDir}/${dcache.packagePrefix}/docs/skins/home-skin-basic.html" todir="${binDir}/docs/skins" />
-	    <copy file="${sourceDir}/${dcache.packagePrefix}/docs/statisticsHelp.html" todir="${binDir}/docs" />
-		<!-- startup scripts  for official distribution -->
-		<!-- common -->
-		<copy file="${sourceDir}/${dcache.packagePrefix}/jobs/generic.lib.sh" todir="${binDir}/jobs" />
-		<copy file="${sourceDir}/${dcache.packagePrefix}/jobs/wrapper2.sh" todir="${binDir}/jobs" />
-		<copy file="${sourceDir}/${dcache.packagePrefix}/jobs/initPackage.sh" todir="${binDir}/jobs" />
-		<copy file="${sourceDir}/${dcache.packagePrefix}/jobs/needFulThings.sh" todir="${binDir}/jobs" />
+        <!-- httpd images, etc -->
+        <copy todir="${server.bin.dir}/docs/images">
+            <fileset dir="${dcache.src}/diskCacheV111/docs/images" />
+        </copy>
+        <copy todir="${server.bin.dir}/docs/styles">
+            <fileset dir="${dcache.src}/diskCacheV111/docs/styles" />
+        </copy>
+        <copy todir="${server.bin.dir}/docs/scripts">
+            <fileset dir="${dcache.src}/diskCacheV111/docs/scripts" />
+        </copy>
+        <copy file="${dcache.src}/diskCacheV111/docs/skins/home-skin-basic.html" todir="${server.bin.dir}/docs/skins" />
+        <copy file="${dcache.src}/diskCacheV111/docs/statisticsHelp.html" todir="${server.bin.dir}/docs" />
+        <!-- startup scripts  for official distribution -->
+        <!-- common -->
+        <copy file="${dcache.src}/diskCacheV111/jobs/generic.lib.sh" todir="${server.bin.dir}/jobs" />
+        <copy file="${dcache.src}/diskCacheV111/jobs/wrapper2.sh" todir="${server.bin.dir}/jobs" />
+        <copy file="${dcache.src}/diskCacheV111/jobs/initPackage.sh" todir="${server.bin.dir}/jobs" />
+        <copy file="${dcache.src}/diskCacheV111/jobs/needFulThings.sh" todir="${server.bin.dir}/jobs" />
 
-		<!-- HSM flush scripts -->
-		<copy file="${sourceDir}/${dcache.packagePrefix}/jobs/encp.sh" todir="${binDir}/jobs" />
-		<copy file="${sourceDir}/${dcache.packagePrefix}/jobs/hsmcp.sh" todir="${binDir}/jobs" />
-		<copy file="${sourceDir}/${dcache.packagePrefix}/jobs/hsmcpV4.sh" todir="${binDir}/jobs" />
-		<copy file="${sourceDir}/${dcache.packagePrefix}/jobs/hsmcp.rb" todir="${binDir}/jobs" />
+        <!-- HSM flush scripts -->
+        <copy file="${dcache.src}/diskCacheV111/jobs/encp.sh" todir="${server.bin.dir}/jobs" />
+        <copy file="${dcache.src}/diskCacheV111/jobs/hsmcp.sh" todir="${server.bin.dir}/jobs" />
+        <copy file="${dcache.src}/diskCacheV111/jobs/hsmcpV4.sh" todir="${server.bin.dir}/jobs" />
+        <copy file="${dcache.src}/diskCacheV111/jobs/hsmcp.rb" todir="${server.bin.dir}/jobs" />
 
-	    <chmod dir="${binDir}/jobs"  includes="**/*" perm="ugo+rx" />
+        <chmod dir="${server.bin.dir}/jobs" includes="**/*" perm="ugo+rx" />
 
-		<!-- Chimera -->
-		<mkdir dir="${binDir}/classes/chimera" />
-		<copy file="${libDir}/Chimera/chimera-core.jar" todir="${binDir}/classes/chimera" />
-	    <copy file="${libDir}/Chimera/chimera-acl.jar" todir="${binDir}/classes/chimera" />
-		<copy file="${libDir}/Chimera/chimera-config.xml" todir="${binDir}/config" />
-	    <copy file="${libDir}/Chimera/oncrpc.jar" todir="${binDir}/classes/chimera" />
-	    <copy file="${libDir}/Chimera/portmap.jar" todir="${binDir}/classes/chimera" />
-	    <copy file="${libDir}/Chimera/chimera-nfs.jar" todir="${binDir}/classes/chimera" />
-		<copy file="${libDir}/Chimera/commons-cli-1.0.jar" todir="${binDir}/classes/chimera" />
-		<copy file="${libDir}/Chimera/commons-logging.jar" todir="${binDir}/classes/chimera" />
-		<copy file="${libDir}/dbcp/c3p0.properties" todir="${binDir}/config" />
-		<copy file="${libDir}/dbcp/c3p0-0.9.1.2.jar" todir="${binDir}/classes/dbcp" />
-	    <copy file="${libDir}/Chimera/run.xml" tofile="${binDir}/libexec/chimera/chimera-nfs-run.xml" />
-	    <copy file="${libDir}/Chimera/chimera-nfs-run.sh" tofile="${binDir}/libexec/chimera/chimera-nfs-run.sh" />
-		<copy file="${libDir}/Chimera/chimera-get-acl.sh" tofile="${binDir}/libexec/chimera/chimera-get-acl.sh" />
-		<copy file="${libDir}/Chimera/chimera-set-acl.sh" tofile="${binDir}/libexec/chimera/chimera-set-acl.sh" />
-		<copy file="${libDir}/Chimera/pnfs2chimera.sh" tofile="${binDir}/libexec/chimera/pnfs2chimera.sh" />
-		<copy file="${libDir}/Chimera/pool2chimera.sh" tofile="${binDir}/libexec/chimera/pool2chimera.sh" />
-		<copy file="${libDir}/Chimera/chimera-cli.sh" tofile="${binDir}/libexec/chimera/chimera-cli.sh" />
-	    <chmod file="${binDir}/libexec/chimera/chimera-nfs-run.sh"  perm="ugo+rx" />
-	    <chmod file="${binDir}/libexec/chimera/chimera-set-acl.sh"  perm="ugo+rx" />
-	    <chmod file="${binDir}/libexec/chimera/chimera-get-acl.sh"  perm="ugo+rx" />
-	    <chmod file="${binDir}/libexec/chimera/pnfs2chimera.sh"  perm="ugo+rx" />
-	    <chmod file="${binDir}/libexec/chimera/pool2chimera.sh"  perm="ugo+rx" />
-		<chmod file="${binDir}/libexec/chimera/chimera-cli.sh"  perm="ugo+rx" />
-	    <copy todir="${binDir}/libexec/chimera/sql">
-	        <fileset dir="${libDir}/Chimera/sql" />
-	    </copy>
+        <!-- Chimera -->
+        <mkdir dir="${server.bin.dir}/classes/chimera" />
+        <copy file="${libDir}/Chimera/chimera-core.jar" todir="${server.bin.dir}/classes/chimera" />
+        <copy file="${libDir}/Chimera/chimera-acl.jar" todir="${server.bin.dir}/classes/chimera" />
+        <copy file="${libDir}/Chimera/chimera-config.xml" todir="${server.bin.dir}/config" />
+        <copy file="${libDir}/Chimera/oncrpc.jar" todir="${server.bin.dir}/classes/chimera" />
+        <copy file="${libDir}/Chimera/portmap.jar" todir="${server.bin.dir}/classes/chimera" />
+        <copy file="${libDir}/Chimera/chimera-nfs.jar" todir="${server.bin.dir}/classes/chimera" />
+        <copy file="${libDir}/Chimera/commons-cli-1.0.jar" todir="${server.bin.dir}/classes/chimera" />
+        <copy file="${libDir}/Chimera/commons-logging.jar" todir="${server.bin.dir}/classes/chimera" />
+        <copy file="${libDir}/dbcp/c3p0.properties" todir="${server.bin.dir}/config" />
+        <copy file="${libDir}/dbcp/c3p0-0.9.1.2.jar" todir="${server.bin.dir}/classes/dbcp" />
+        <copy file="${libDir}/Chimera/run.xml" tofile="${server.bin.dir}/libexec/chimera/chimera-nfs-run.xml" />
+        <copy file="${libDir}/Chimera/chimera-nfs-run.sh" tofile="${server.bin.dir}/libexec/chimera/chimera-nfs-run.sh" />
+        <copy file="${libDir}/Chimera/chimera-get-acl.sh" tofile="${server.bin.dir}/libexec/chimera/chimera-get-acl.sh" />
+        <copy file="${libDir}/Chimera/chimera-set-acl.sh" tofile="${server.bin.dir}/libexec/chimera/chimera-set-acl.sh" />
+        <copy file="${libDir}/Chimera/pnfs2chimera.sh" tofile="${server.bin.dir}/libexec/chimera/pnfs2chimera.sh" />
+        <copy file="${libDir}/Chimera/pool2chimera.sh" tofile="${server.bin.dir}/libexec/chimera/pool2chimera.sh" />
+        <copy file="${libDir}/Chimera/chimera-cli.sh" tofile="${server.bin.dir}/libexec/chimera/chimera-cli.sh" />
+        <chmod file="${server.bin.dir}/libexec/chimera/chimera-nfs-run.sh" perm="ugo+rx" />
+        <chmod file="${server.bin.dir}/libexec/chimera/chimera-set-acl.sh" perm="ugo+rx" />
+        <chmod file="${server.bin.dir}/libexec/chimera/chimera-get-acl.sh" perm="ugo+rx" />
+        <chmod file="${server.bin.dir}/libexec/chimera/pnfs2chimera.sh" perm="ugo+rx" />
+        <chmod file="${server.bin.dir}/libexec/chimera/pool2chimera.sh" perm="ugo+rx" />
+        <chmod file="${server.bin.dir}/libexec/chimera/chimera-cli.sh" perm="ugo+rx" />
+        <copy todir="${server.bin.dir}/libexec/chimera/sql">
+            <fileset dir="${libDir}/Chimera/sql" />
+        </copy>
 
-	   <!-- ACL -->
-	   <!--<copy file="${buildTop}/common/acl.properties" todir="${binDir}/config" /> -->
-	   
-	    <!-- glite -->
-	    <mkdir dir="${binDir}/classes/glite" />
-	    <copy todir="${binDir}/classes/glite" flatten="true">
-              <fileset dir="${glite.untarred}">
+        <!-- ACL -->
+        <!--<copy file="${buildTop}/common/acl.properties" todir="${server.bin.dir}/config" /> -->
+
+        <!-- glite -->
+        <mkdir dir="${server.bin.dir}/classes/glite" />
+        <copy todir="${server.bin.dir}/classes/glite" flatten="true">
+            <fileset dir="${glite.untarred}">
                 <include name="**/glite*.jar" />
-              </fileset>
-            </copy>	
-	    
-       <!-- log4j -->
-       <mkdir dir="${binDir}/classes/log4j" />
-       <property name="log4jVersion" value="1.2.8" />
-       <copy file="${libDir}/log4j/log4j-${log4jVersion}.jar" todir="${binDir}/classes/log4j" />
+            </fileset>
+        </copy>
 
-		<!-- log4j properties file -->
-		<copy file="${sourceDir}/${dcache.packagePrefix}/config/log4j.properties" todir="${binDir}/config" />
+        <!-- log4j -->
+        <mkdir dir="${server.bin.dir}/classes/log4j" />
+        <property name="log4jVersion" value="1.2.8" />
+        <copy file="${libDir}/log4j/log4j-${log4jVersion}.jar" todir="${server.bin.dir}/classes/log4j" />
 
-		<!-- BerkeleyDB -->
-		<mkdir dir="${binDir}/classes/berkeleyDB/" />
-		<copy file="${libDir}/berkeleyDB/je-3.2.76.jar" todir="${binDir}/classes/berkeleyDB/" />
+        <!-- log4j properties file -->
+        <copy file="${dcache.src}/diskCacheV111/config/log4j.properties" todir="${server.bin.dir}/config" />
 
-		<!-- Spring -->
-		<mkdir dir="${binDir}/classes/spring/" />
-		<copy todir="${binDir}/classes/spring">
-			<fileset dir="${libDir}/spring/">
-				<include name="*.jar" />
-			</fileset>
-		</copy>
+        <!-- BerkeleyDB -->
+        <mkdir dir="${server.bin.dir}/classes/berkeleyDB/" />
+        <copy file="${libDir}/berkeleyDB/je-3.2.76.jar" todir="${server.bin.dir}/classes/berkeleyDB/" />
 
-		<!-- SMC -->
-		<mkdir dir="${binDir}/classes/smc/" />
-		<copy file="${libDir}/smc/statemap.jar" todir="${binDir}/classes/smc/" />
+        <!-- Spring -->
+        <mkdir dir="${server.bin.dir}/classes/spring/" />
+        <copy todir="${server.bin.dir}/classes/spring">
+            <fileset dir="${libDir}/spring/">
+                <include name="*.jar" />
+            </fileset>
+        </copy>
 
-	    <!-- JDBC -->
-	    <mkdir dir="${binDir}/classes/jdbc-drivers" />
-	    <copy file="${libDir}/postgres-jdbc/postgresql-8.1-405.jdbc3.jar"  todir="${binDir}/classes/jdbc-drivers" />
+        <!-- SMC -->
+        <mkdir dir="${server.bin.dir}/classes/smc/" />
+        <copy file="${libDir}/smc/statemap.jar" todir="${server.bin.dir}/classes/smc/" />
 
-	    <!-- DBCP for Replica Manager -->
-	    <copy file="${libDir}/dbcp/commons-dbcp.jar" todir="${binDir}/classes/jdbc-drivers" />
-	    <copy file="${libDir}/dbcp/commons-pool.jar" todir="${binDir}/classes/jdbc-drivers" />
-           
-            <!-- TopLink files -->
-	    <mkdir dir="${binDir}/classes/toplink" />
-	    <copy file="${libDir}/toplink/toplink-essentials.jar"  todir="${binDir}/classes/toplink" />
-	    
-            <!-- opensaml -->
-	    <mkdir dir="${binDir}/classes/opensaml" />
-	    <copy file="${libDir}/opensaml/commons-collections-3.1.jar" todir="${binDir}/classes/opensaml" />
-	    <copy file="${libDir}/opensaml/commons-lang-2.1.jar" todir="${binDir}/classes/opensaml" />
-	    <copy file="${libDir}/opensaml/joda-time-1.5.2.jar" todir="${binDir}/classes/opensaml" />
-	    <copy file="${libDir}/opensaml/opensaml-1.0.1.jar" todir="${binDir}/classes/opensaml" />
-	    <copy file="${libDir}/opensaml/opensaml-2.2.0.jar" todir="${binDir}/classes/opensaml" />
-	    <copy file="${libDir}/opensaml/openws-1.1.0.jar" todir="${binDir}/classes/opensaml" />
-	    <copy file="${libDir}/opensaml/slf4j-api-1.5.0.jar" todir="${binDir}/classes/opensaml" />
-	    <copy file="${libDir}/opensaml/slf4j-simple-1.5.0.jar" todir="${binDir}/classes/opensaml" />
-	    <copy file="${libDir}/opensaml/velocity-1.5.jar" todir="${binDir}/classes/opensaml" />
-	    <copy file="${libDir}/opensaml/xalan-2.6.0.jar" todir="${binDir}/classes/opensaml" />
-	    <copy file="${libDir}/opensaml/xml-security-1.4.1.jar" todir="${binDir}/classes/opensaml" />
-	    <copy file="${libDir}/opensaml/xmltooling-1.0.1.jar" todir="${binDir}/classes/opensaml" />
+        <!-- JDBC -->
+        <mkdir dir="${server.bin.dir}/classes/jdbc-drivers" />
+        <copy file="${libDir}/postgres-jdbc/postgresql-8.1-405.jdbc3.jar" todir="${server.bin.dir}/classes/jdbc-drivers" />
 
-	    <!-- endorsed -->
-	    <mkdir dir="${binDir}/classes/endorsed" />
-	    <copy file="${libDir}/endorsed/xml-apis-2.9.1.jar" todir="${binDir}/classes/endorsed" />
-	    <copy file="${libDir}/endorsed/xercesImpl-2.9.1.jar" todir="${binDir}/classes/endorsed" />
-	    
-	</target>
+        <!-- DBCP for Replica Manager -->
+        <copy file="${libDir}/dbcp/commons-dbcp.jar" todir="${server.bin.dir}/classes/jdbc-drivers" />
+        <copy file="${libDir}/dbcp/commons-pool.jar" todir="${server.bin.dir}/classes/jdbc-drivers" />
+
+        <!-- TopLink files -->
+        <mkdir dir="${server.bin.dir}/classes/toplink" />
+        <copy file="${libDir}/toplink/toplink-essentials.jar" todir="${server.bin.dir}/classes/toplink" />
+
+        <!-- opensaml -->
+        <mkdir dir="${server.bin.dir}/classes/opensaml" />
+        <copy file="${libDir}/opensaml/commons-collections-3.1.jar" todir="${server.bin.dir}/classes/opensaml" />
+        <copy file="${libDir}/opensaml/commons-lang-2.1.jar" todir="${server.bin.dir}/classes/opensaml" />
+        <copy file="${libDir}/opensaml/joda-time-1.5.2.jar" todir="${server.bin.dir}/classes/opensaml" />
+        <copy file="${libDir}/opensaml/opensaml-1.0.1.jar" todir="${server.bin.dir}/classes/opensaml" />
+        <copy file="${libDir}/opensaml/opensaml-2.2.0.jar" todir="${server.bin.dir}/classes/opensaml" />
+        <copy file="${libDir}/opensaml/openws-1.1.0.jar" todir="${server.bin.dir}/classes/opensaml" />
+        <copy file="${libDir}/opensaml/slf4j-api-1.5.0.jar" todir="${server.bin.dir}/classes/opensaml" />
+        <copy file="${libDir}/opensaml/slf4j-simple-1.5.0.jar" todir="${server.bin.dir}/classes/opensaml" />
+        <copy file="${libDir}/opensaml/velocity-1.5.jar" todir="${server.bin.dir}/classes/opensaml" />
+        <copy file="${libDir}/opensaml/xalan-2.6.0.jar" todir="${server.bin.dir}/classes/opensaml" />
+        <copy file="${libDir}/opensaml/xml-security-1.4.1.jar" todir="${server.bin.dir}/classes/opensaml" />
+        <copy file="${libDir}/opensaml/xmltooling-1.0.1.jar" todir="${server.bin.dir}/classes/opensaml" />
+
+        <!-- endorsed -->
+        <mkdir dir="${server.bin.dir}/classes/endorsed" />
+        <copy file="${libDir}/endorsed/xml-apis-2.9.1.jar" todir="${server.bin.dir}/classes/endorsed" />
+        <copy file="${libDir}/endorsed/xercesImpl-2.9.1.jar" todir="${server.bin.dir}/classes/endorsed" />
+
+        <!-- jar file  -->
+        <copy file="${classesDir}/srm.jar" todir="${server.bin.dir}/classes" />
+        <copy file="${classesDir}/cells-protocols.jar" todir="${server.bin.dir}/classes" />
+
+        <!-- .batch file - e.g. domains  -->
+        <copy file="${dcache.src}/diskCacheV111/config/srm.batch" todir="${server.bin.dir}/config" />
+        <copy file="${dcache.src}/diskCacheV111/config/gridftpdoor.batch" todir="${server.bin.dir}/config" />
+        <copy file="${dcache.src}/diskCacheV111/config/gsidcapdoor.batch" todir="${server.bin.dir}/config" />
+        <copy file="${dcache.src}/diskCacheV111/config/gPlazma.batch" todir="${server.bin.dir}/config" />
+
+        <!-- Web services stuff   -->
+        <copy file="${dcache.src}/diskCacheV111/config/JHRM.map" todir="${server.bin.dir}/config" />
+
+        <!-- LCG specific -->
+        <copy file="${dcache.src}/diskCacheV111/jobs/infoDynamicSE-plugin-dcache" todir="${server.bin.dir}/jobs" />
+        <copy file="${dcache.src}/diskCacheV111/jobs/infoDynamicSE-provider-dcache" todir="${server.bin.dir}/jobs" />
+
+        <!-- most of this stuff have nothing to do with dCache, but I can't find beter place -->
+
+        <!-- external jars -->
+        <!-- axis -->
+        <mkdir dir="${server.bin.dir}/classes/axis" />
+        <copy todir="${server.bin.dir}/classes/axis">
+            <fileset dir="${axis.untared}/lib/">
+                <include name="*.jar" />
+            </fileset>
+        </copy>
+
+        <!-- cog -->
+        <mkdir dir="${server.bin.dir}/classes/cog" />
+        <property name="cogVersion" value="cog-srmlib" />
+        <copy todir="${server.bin.dir}/classes/cog">
+            <fileset dir="${libDir}/cog/${cogVersion}">
+                <include name="*.jar" />
+            </fileset>
+        </copy>
+
+        <!-- glue -->
+        <mkdir dir="${server.bin.dir}/classes/glue" />
+        <copy todir="${server.bin.dir}/classes/glue">
+            <fileset dir="${glue.untared}">
+                <include name="*.jar" />
+            </fileset>
+        </copy>
+
+        <!-- jdom -->
+        <mkdir dir="${server.bin.dir}/classes/jdom" />
+        <copy file="${libDir}/jdom/jdom.jar" todir="${server.bin.dir}/classes/jdom" />
+
+        <!-- gplazma -->
+        <mkdir dir="${server.bin.dir}/classes/gplazma" />
+        <copy todir="${server.bin.dir}/classes/gplazma">
+            <fileset dir="${libDir}/gplazma">
+                <include name="*.jar" />
+            </fileset>
+        </copy>
+
+        <!-- jpox -->
+        <mkdir dir="${server.bin.dir}/classes/jpox" />
+        <copy file="${libDir}/jpox/jdo2-api-2.0.jar" todir="${server.bin.dir}/classes/jpox" />
+        <copy file="${libDir}/jpox/jpox-core-1.2.2.jar" todir="${server.bin.dir}/classes/jpox" />
+        <copy file="${libDir}/jpox/jpox-rdbms-1.2.2.jar" todir="${server.bin.dir}/classes/jpox" />
+
+        <!-- bouncy castle -->
+        <mkdir dir="${server.bin.dir}/classes/security" />
+        <copy todir="${server.bin.dir}/classes/security">
+            <fileset dir="${libDir}/security">
+                <include name="bcprov-jdk15-133.jar" />
+            </fileset>
+        </copy>
+
+        <!-- terapaths -->
+        <mkdir dir="${server.bin.dir}/classes/terapaths" />
+        <copy todir="${server.bin.dir}/classes/terapaths">
+            <fileset dir="${libDir}/terapaths">
+                <include name="*.jar" />
+            </fileset>
+        </copy>
+
+    </target>
+
+    <target name="-xrootd-tokenauthz.bin" depends="-xrootd-tokenauthz.jar">
+
+        <mkdir dir="${server.bin.dir}/classes" />
+
+        <!-- jar file  -->
+        <copy file="${classesDir}/xrootd-tokenauthz.jar" todir="${server.bin.dir}/classes" />
+
+    </target>
 
 
-	<target name="dcache-srm-bin" depends="dcache-srm.jar">
+    <property name="batik.home" location="${libDir}/batik-1.7" />
+    <property name="output.image" value="${server.bin.dir}/docs/images/bg.jpg" />
+    <property name="input.svg" value="dCache-web-bg-logo.svg" />
 
-		<mkdir dir="${binDir}/classes" />
-		<mkdir dir="${binDir}/config" />
+    <target name="-is.batik.present" >
+        <available file="${batik.home}" type="dir"   property="batik.present"/>
+    </target>
 
-		<!-- jar file  -->
-		<copy file="${classesDir}/srm.jar" todir="${binDir}/classes" />
-		<copy file="${classesDir}/dcache-srm.jar" todir="${binDir}/classes" />
-		<copy file="${classesDir}/cells-protocols.jar" todir="${binDir}/classes" />
+    <!--
+        generate dcache home page background images with version number
+    -->
+    <target name="-gen.bg.image" depends="-is.batik.present" if="batik.present" >
 
-		<!-- .batch file - e.g. domains  -->
-		<copy file="${sourceDir}/${dcache.packagePrefix}/config/srm.batch" todir="${binDir}/config" />
-		<copy file="${sourceDir}/${dcache.packagePrefix}/config/gridftpdoor.batch" todir="${binDir}/config" />
-		<copy file="${sourceDir}/${dcache.packagePrefix}/config/gsidcapdoor.batch" todir="${binDir}/config" />
-		<copy file="${sourceDir}/${dcache.packagePrefix}/config/gPlazma.batch" todir="${binDir}/config" />
+        <mkdir dir="${buildDir}/batik" />
+        <taskdef name="rasterize" classname="org.apache.tools.ant.taskdefs.optional.RasterizerTask">
+            <classpath>
+                <pathelement location="${batik.home}/batik-rasterizer.jar" />
+                <pathelement location="${batik.home}/RasterizerTask.jar" />
+            </classpath>
+        </taskdef>
 
-		<!-- Web services stuff   -->
-		<copy file="${sourceDir}/${dcache.packagePrefix}/config/JHRM.map" todir="${binDir}/config" />
+        <copy todir="${buildDir}/batik" file="${dcache.src}/diskCacheV111/docs/images/${input.svg}"
+            overwrite="true">
+            <filterset>
+                <filter token="VERSION" value="${version}-${patch}"/>
+            </filterset>
+        </copy>
 
-		<!-- LCG specific -->
-		<copy file="${sourceDir}/${dcache.packagePrefix}/jobs/infoDynamicSE-plugin-dcache" todir="${binDir}/jobs" />
-		<copy file="${sourceDir}/${dcache.packagePrefix}/jobs/infoDynamicSE-provider-dcache" todir="${binDir}/jobs" />
+        <echo message="Generating version specific backgroud image" />
+        <rasterize result="image/jpeg" src="${buildDir}/batik/${input.svg}"
+            dest="${output.image}"
+        />
 
-		<!-- most of this stuff have nothing to do with dCache, but I can't find beter place -->
-
-		<!-- external jars -->
-		<!-- axis -->
-		<mkdir dir="${binDir}/classes/axis" />
-		<copy todir="${binDir}/classes/axis">
-			<fileset dir="${axis.untared}/lib/">
-				<include name="*.jar" />
-			</fileset>
-		</copy>
-
-		<!-- cog -->
-		<mkdir dir="${binDir}/classes/cog" />
-		<property name="cogVersion" value="cog-srmlib" />
-		<copy todir="${binDir}/classes/cog">
-			<fileset dir="${libDir}/cog/${cogVersion}">
-				<include name="*.jar" />
-			</fileset>
-		</copy>
-
-
-		<!-- glue -->
-		<mkdir dir="${binDir}/classes/glue" />
-		<copy todir="${binDir}/classes/glue">
-			<fileset dir="${glue.untared}">
-				<include name="*.jar" />
-			</fileset>
-		</copy>
-
-
-		<!-- jdom -->
-		<mkdir dir="${binDir}/classes/jdom" />
-		<copy file="${libDir}/jdom/jdom.jar" todir="${binDir}/classes/jdom" />
-
-		<!-- gplazma -->
-		<mkdir dir="${binDir}/classes/gplazma" />
-		<property name="gplazmaLibsVersion" value="" />
-		<copy todir="${binDir}/classes/gplazma">
-			<fileset dir="${libDir}/gplazma/${gplazmaLibsVersion}">
-				<include name="*.jar" />
-			</fileset>
-		</copy>
-
-
-		<!-- jpox -->
-		<mkdir dir="${binDir}/classes/jpox" />
-		<copy file="${libDir}/jpox/jdo2-api-2.0.jar" todir="${binDir}/classes/jpox" />
-		<copy file="${libDir}/jpox/jpox-core-1.2.2.jar" todir="${binDir}/classes/jpox" />
-		<copy file="${libDir}/jpox/jpox-rdbms-1.2.2.jar" todir="${binDir}/classes/jpox" />
-
-		<!-- bouncy castle -->
-		<mkdir dir="${binDir}/classes/security" />
-		<copy todir="${binDir}/classes/security">
-			<fileset dir="${libDir}/security">
-				<include name="bcprov-jdk15-133.jar" />
-			</fileset>
-		</copy>
-
-		<!-- terapaths -->
-		<mkdir dir="${binDir}/classes/terapaths" />
-		<copy todir="${binDir}/classes/terapaths">
-			<fileset dir="${libDir}/terapaths">
-				<include name="*.jar" />
-			</fileset>
-		</copy>
-
-	</target>
-    
-	<target name="xrootd-tokenauthz-bin" depends="xrootd-tokenauthz.jar">
-
-		<mkdir dir="${binDir}/classes" />
-
-		<!-- jar file  -->
-		<copy file="${classesDir}/xrootd-tokenauthz.jar" todir="${binDir}/classes" />
-
-		<!-- external jars -->
-		<!-- bouncy castle -->
-		<mkdir dir="${binDir}/classes/security" />
-		<copy todir="${binDir}/classes/security">
-			<fileset dir="${libDir}/security">
-				<include name="bcprov-jdk15-133.jar" />
-			</fileset>
-		</copy>
-	</target>
+    </target>
 
 </project>
 

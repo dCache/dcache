@@ -1,0 +1,25 @@
+<project name="server-sol-package-build">
+
+
+    <target name="server.solpkg" depends="install-server">
+
+        <copy tofile="${package.root.dir}/server/pkginfo" file="${buildTop}/pkgs/solaris/pkginfo.template"
+            overwrite="true">
+            <filterset>
+                <filter token="VERSION" value="${version}-${patch}"/>
+                <filter token="VENDOR" value="${vendor}" />
+            </filterset>
+        </copy>
+
+        <exec executable="/bin/sh" dir="${buildTop}">
+              <arg value="${buildTop}/pkgs/solaris/mk-sol-pkg.sh" />
+              <arg value="${package.root.dir}/server" />
+              <arg value="${buildDir}" />
+              <arg value="${distDir}" />
+              <arg value="${version}-${patch}" />
+        </exec>
+
+    </target>
+
+
+</project>

@@ -2,598 +2,165 @@
 
 <project name="dCacheBuild" default="help" basedir=".">
 
-    <!-- overwriting libDir from common.xml -->
-
-    <property name="dCacheBox-module" location="modules" />
-    <property name="libDir" location="${dCacheBox-module}/external" />
     <property name="buildTop" location="${basedir}" />
 
+    <!--
+        build constants.
+        If you want to change default values use -D option in command line,
+        or modify property file
+    -->
+    <loadproperties srcfile="build.properties" />
 
-	<property name="build.id.store" value="version.build" />
+    <!--
+
+        dCache build version number composed form:
+
+
+        version = ${code.base}.${release.major.id}.${release.minor.id}
+        patch   = ${patch.number}
+
+        ${release.id}-${version}-${patch}
+
+        production-1.9.0-6
+
+    -->
+    <loadproperties srcFile="release.properties" />
+    <loadproperties srcFile="version.build" />
+    <loadproperties srcFile="patch.build" />
+    <property name="patch.number" value="${patch.id}rc" />
+
+    <property name="version" value="${code.base}.${release.major.id}.${release.minor.id}" />
+    <property name="patch" value="${patch.number}" />
+
+    <property name="build.name" value="${release.id}-${version}-${patch}" />
+    <echo message="Current Build version : ${build.name}" />
 
 
     <!-- import the common part -->
     <import file="common/common.xml" />
 
-    <!-- RPM related constants -->
-    <!-- modify values in property file ant not here -->
-    <property file="common/rpms.properties" />
-
-    <!-- build minor version taken from stored in SCM file, but updated on relese builds only -->
-    <loadproperties srcFile="${build.id.store}" />
+    <!--
+        build minor version taken from stored in SCM file,
+        but updated on release builds only
+    -->
 
     <tstamp>
-       <format property="file-timestamp" pattern="yyyyMMddhhmmss" />
+       <format property="buildtimestamp" pattern="yyyyMMddhhmmss" />
     </tstamp>
 
-	<!-- defalut minor version is next official RC -->
-    <property name="build.minor.number" value="${build.number}rc" />
+    <property name="release.version.id" value="${build.name}"/>
+    <property name="release.name" value="${release.version.id}" />
 
 
-    <loadproperties srcFile="release.properties" />
-    <property name="release.version.id" value="${release.id}-${build.minor.number}-${file-timestamp}"/>
-	<property name="release.name" value="${release.version.id}" />
-
-    <!--
-          The other Modules
-    -->
-
-    <property name="coreDir" location="${dCacheBox-module}/dCache/diskCacheV111" />
-    <property name="cellsDir" location="${dCacheBox-module}/cells" />
-    <property name="srmDir" location="${dCacheBox-module}/srm" />
-    <property name="srmclientDir" location="${dCacheBox-module}/srmclient" />
-    <property name="infoProviderDir" location="${dCacheBox-module}/infoProvider" />
-    <property name="dcapDir" location="${dCacheBox-module}/dcap" />
-
-    <!--
-          Server RPM
-    -->
-
-    <property name="rpmTemplateDir" location="rpm" />
-    <property name="server.skelDir" location="skel" />
-
-    <property name="rpmRpmDir" location="${distDir}" />
-    <property name="rpmSrpmDir" location="${distDir}" />
-
-    <property name="server.rpmTopDir" location="${buildDir}/server-rpm" />
-    <!-- These is the temporary dir for RPM -->
-    <property name="server.rpmBuildrootDir" location="${server.rpmTopDir}/root" />
-
-    <property name="server.rpmRcFile" location="${server.rpmTopDir}/rpmrc" />
-    <property name="server.rpmMacrosFile" location="${server.rpmTopDir}/rpmmacros" />
-    <property name="server.rpmSpecFile" location="${server.rpmTopDir}/dcache-server.spec" />
-
-    <property name="rpmPrefix" value="opt/d-cache" />
-    <property name="server.rpmDcacheDir" location="${server.rpmBuildrootDir}/${rpmPrefix}" />
-    <property name="server.rpmClassesDir" location="${server.rpmDcacheDir}/classes" />
-    <property name="server.rpmConfigDir" location="${server.rpmDcacheDir}/config" />
-
-    <target name="server.rpmprepare">
-        <property name="bookDir" location="${server.rpmDcacheDir}" />
+    <target name="-init">
+      <mkdir dir="${buildDir}" />
+      <mkdir dir="${classesDir}" />
     </target>
 
-    <target name="server.rpminstall" depends="server.rpmprepare,srm.bin,dcache-srm.bin,infoProvider.bin,xrootd-tokenauthz.bin,javatunnel.bin,dcache-classpath">
+    <!-- init dirs, unpack external libraries -->
+    <target name="-prepare" depends="-init,-lib.tomcat.untar,-lib.axis.untar,-lib.glite.untar,-lib.glue.untar" />
+
+    <!--=======================================================================
+            import component specific build modules here
+    -=======================================================================-->
+    <import file="modules-builds/cells-build.xml"/>
+    <import file="modules-builds/gplazma-build.xml"/>
+    <import file="modules-builds/dcache-core-build.xml"/>
+    <import file="modules-builds/srm-build.xml"/>
+    <import file="modules-builds/infoProvider-build.xml"/>
+    <import file="modules-builds/dcap-build.xml"/>
+    <import file="modules-builds/srmclient-build.xml" />
+    <import file="modules-builds/junit-build.xml" />
+
+    <target name="cells" depends="-prepare,-cells.bin"
+                  description="Compile cells package and create cells.jar"/>
+
+    <target name="gplazma" depends="cells,-gplazma.bin"
+                  description="Compile gPlazma package and create gplazma.jar"/>
+
+    <target name="srm" depends="gplazma,-srm.bin"
+                  description="Compile srm package and create srm.jar and srm-tomcat.jar" />
+
+    <target name="dcache" depends="srm,-dcache.bin,-gen.bg.image,-xrootd-tokenauthz.bin,-compile.junit"
+                  description="Compile dcache package and create dcache.jar" />
+
+    <target name="xrootd-tokenauthz" depends="dcache,-xrootd-tokenauthz.bin"
+                  description="Compile xrootd tokenauthorization package and create xrootd-tokenauthz.jar" />
+
+    <target name="infoprovider" depends="dcache,-infoProvider.bin"
+                  description="Compile infoProvider package and create infoProvider.jar" />
+
+    <target name="javatunnel" depends="-prepare,-javatunnel.bin"
+                  description="Compile javatunnel package and create javatunnel.jar" />
+
+    <target name="srmclient" depends="srm,-srmclient.bin"
+                  description="Compile srmclient package" />
+
+    <target name="test" depends="dcache,-xrootd-tokenauthz.bin" description="Run Unit tests" >
+        <antcall target="-run.junit" />
+    </target>
+
+    <!--
+          Server package
+    -->
+
+    <target name="install-server"
+              depends="dcache,
+                       infoprovider,xrootd-tokenauthz,javatunnel,-dcache-classpath"
+                description="build deploy-ready server package">
 
         <!-- rpm directory structure with some defaults scripts -->
-        <copy todir="${server.rpmDcacheDir}">
-            <fileset dir="${server.skelDir}" />
-        </copy>
-        <chmod dir="${server.rpmDcacheDir}/bin" includes="**/*" perm="ugo+rx" />
-
-        <!-- classes, jobs, config, docs -->
-        <copy todir="${server.rpmDcacheDir}/classes">
-            <fileset dir="${binDir}/classes" />
+        <copy todir="${server.bin.dir}">
+            <fileset dir="${skelDir}" />
         </copy>
 
-        <copy todir="${server.rpmDcacheDir}/jobs">
-            <fileset dir="${binDir}/jobs" />
-        </copy>
-
-        <copy todir="${server.rpmDcacheDir}/config">
-            <fileset dir="${binDir}/config" />
-        </copy>
-
-        <copy todir="${server.rpmDcacheDir}/docs">
-            <fileset dir="${binDir}/docs" />
-        </copy>
-
-        <copy todir="${server.rpmDcacheDir}/etc">
-            <fileset dir="${binDir}/etc" />
-        </copy>
-
-        <copy todir="${server.rpmDcacheDir}/install">
-            <fileset dir="${binDir}/install" />
-        </copy>
-
-        <copy todir="${server.rpmDcacheDir}/external">
-            <fileset dir="${binDir}/external" />
-        </copy>
-
-        <copy todir="${server.rpmDcacheDir}/libexec">
-            <fileset dir="${binDir}/libexec" />
-        </copy>
-
-        <chmod dir="${server.rpmDcacheDir}/bin"     includes="**/*" perm="ugo+rx" />
-        <chmod dir="${server.rpmDcacheDir}/install" includes="**/*" perm="ugo+rx" />
-        <chmod dir="${server.rpmDcacheDir}/jobs"    includes="**/*" perm="ugo+rx" />
+        <chmod dir="${server.bin.dir}/bin"     includes="**/*" perm="ugo+rx" />
+        <chmod dir="${server.bin.dir}/install" includes="**/*" perm="ugo+rx" />
+        <chmod dir="${server.bin.dir}/jobs"    includes="**/*" perm="ugo+rx" />
 
     </target>
 
-    <!-- Call RPM. The rpm task is not sufficient since it doesnt have the rcfile option -->
+    <!--
+        package type specific build modules for dcache-server
+    -->
+    <import file="modules-builds/server-rpm-build.xml" />
+    <import file="modules-builds/server-tgz-build.xml" />
+    <import file="modules-builds/server-deb-build.xml" />
+    <import file="modules-builds/server-sol-pkg-build.xml" />
 
-    <target name="server.rpm" depends="server.rpminstall" description="Build the dcache-server-xxx.rpm">
+    <!--
+        package type specific build modules for srmclient
+    -->
+    <import file="modules-builds/srmclient-rpm-build.xml" />
+    <import file="modules-builds/dcap-rpm-build.xml" />
 
-        <!-- Create config files for RPM from Templates -->
-
-        <copy todir="${server.rpmTopDir}" overwrite="true">
-            <fileset dir="${rpmTemplateDir}">
-                <or>
-                    <filename name="rpm*.template" />
-                    <filename name="dcache-server.spec.template" />
-                </or>
-            </fileset>
-            <mapper type="glob" from="*.template" to="*" />
-            <filterset>
-                <filter token="rpmMacrosFile" value="${server.rpmMacrosFile}" />
-                <!-- This is only used in the rpmrc file -->
-
-                <filter token="rpmRpmDir" value="${rpmRpmDir}" />
-                <!-- These are used in the rpmmacros file -->
-                <filter token="rpmSrpmDir" value="${rpmSrpmDir}" />
-                <filter token="rpmTopDir" value="${server.rpmTopDir}" />
-
-                <filter token="Version" value="${server.version}" />
-                <filter token="Release" value="${build.minor.number}" />
-            </filterset>
-        </copy>
-
-
-        <exec dir="${server.rpmTopDir}" executable="rpmbuild" failonerror="true">
-            <!-- output="${buildDir}/rpm.log" -->
-            <arg value="--buildroot" />
-            <arg file="${server.rpmBuildrootDir}" />
-            <arg value="--rcfile" />
-            <arg file="/usr/lib/rpm/rpmrc:${server.rpmRcFile}" />
-            <!-- some documentation claims that /usr/lib/rpm/rpmrc
-                                                            will always be parsed. But it currently isnt if not set here -->
-            <arg value="-bb" />
-            <arg file="${server.rpmSpecFile}" />
-        </exec>
-
-    </target>
-
-
-
-    <target name="server.tgz" depends="server.rpminstall" description="Build the dcache-server-xxx.tar">
-
-        <!-- Create config files for RPM from Templates -->
-
-
-        <tar destfile="${distDir}/dcache-server-${server.version}-${build.minor.number}.tgz"
-             basedir="${server.rpmBuildrootDir}"
-             compression="gzip" />
-    </target>
     <!--
         Client RPM dCap + SRM
     -->
 
-    <property name="client.skelDir" location="skel" />
-
-    <property name="rpmRpmDir" location="${distDir}" />
-    <property name="rpmSrpmDir" location="${distDir}" />
-
-    <property name="client.rpmTopDir" location="${buildDir}/client-rpm" />
-    <!-- These is the temporary dir for RPM -->
-    <property name="client.rpmBuildrootDir" location="${client.rpmTopDir}/root" />
-
-    <property name="client.rpmRcFile" location="${client.rpmTopDir}/rpmrc" />
-    <property name="client.rpmMacrosFile" location="${client.rpmTopDir}/rpmmacros" />
-    <property name="client.rpmSpecFile" location="${client.rpmTopDir}/dcache-client.spec" />
-    <property name="dcap.rpmSpecFile" location="${client.rpmTopDir}/dcache-dcap.spec" />
-    <property name="srmclient.rpmSpecFile" location="${client.rpmTopDir}/dcache-srmclient.spec" />
-
-    <property name="rpmPrefix" value="opt/d-cache" />
-    <property name="client.rpmDcacheDir" location="${client.rpmBuildrootDir}/${rpmPrefix}" />
-    <property name="client.rpmClassesDir" location="${client.rpmDcacheDir}/classes" />
-    <property name="clinet.rpmConfigDir" location="${client.rpmDcacheDir}/config" />
-
-
-
-    <target name="dcapclient32.rpminstall" depends="dcap32.bin">
-
-        <!-- DCAP -->
-        <mkdir dir="${client.rpmDcacheDir}/dcap" />
-        <copy todir="${client.rpmDcacheDir}/dcap">
-            <fileset dir="${binDir}/dcap" />
-        </copy>
-
-    </target>
-
-    <target name="dcapclient64.rpminstall" depends="dcap64.bin">
-
-        <!-- DCAP -->
-        <mkdir dir="${client.rpmDcacheDir}/dcap" />
-        <copy todir="${client.rpmDcacheDir}/dcap">
-            <fileset dir="${binDir}/dcap" />
-        </copy>
-
-    </target>
-
-
-    <target name="srmclient.rpminstall" depends="srmclient.bin">
-
-        <!-- SRM client -->
-        <mkdir dir="${client.rpmDcacheDir}/srm" />
-        <copy todir="${client.rpmDcacheDir}/srm">
-            <fileset dir="${binDir}/srm" />
-        </copy>
-
-    </target>
-
-    <!-- Dcap + SRM -->
-
-    <target name="client32.rpm" depends="dcapclient32.rpminstall,srmclient.rpminstall" description="Build the dcache-client-xxx.rpm">
-
-
-        <!-- Create config files for RPM from Templates -->
-
-        <copy todir="${client.rpmTopDir}" overwrite="true">
-            <fileset dir="${rpmTemplateDir}">
-                <or>
-                    <filename name="rpm*.template" />
-                    <filename name="dcache-client.spec.template" />
-                </or>
-            </fileset>
-            <mapper type="glob" from="*.template" to="*" />
-            <filterset>
-                <filter token="rpmMacrosFile" value="${client.rpmMacrosFile}" />
-                <!-- This is only used in the rpmrc file -->
-
-                <filter token="rpmRpmDir" value="${rpmRpmDir}" />
-                <!-- These are used in the rpmmacros file -->
-                <filter token="rpmSrpmDir" value="${rpmSrpmDir}" />
-                <filter token="rpmTopDir" value="${client.rpmTopDir}" />
-
-                <filter token="Version" value="${client.version}" />
-                <filter token="Release" value="${build.minor.number}" />
-                <filter token="Arch" value="i586" />
-
-            </filterset>
-        </copy>
-
-        <!-- Call RPM. The rpm task is not sufficient since it doesnt have the rcfile option -->
-
-        <exec dir="${client.rpmTopDir}" executable="rpmbuild" failonerror="true">
-            <!-- output="${buildDir}/rpm.log" -->
-            <arg value="--buildroot" />
-            <arg file="${client.rpmBuildrootDir}" />
-            <arg value="--rcfile" />
-            <arg file="/usr/lib/rpm/rpmrc:${client.rpmRcFile}" />
-            <!-- some documentation claims that /usr/lib/rpm/rpmrc
-                                                        will always be parsed. But it currently isnt if not set here -->
-            <arg value="-bb" />
-            <arg file="${client.rpmSpecFile}" />
-        </exec>
-
-
-
-    </target>
-
-
-    <target name="client64.rpm" depends="dcapclient64.rpminstall,srmclient.rpminstall" description="Build the dcache-client-xxx.rpm">
-
-
-        <!-- Create config files for RPM from Templates -->
-
-        <copy todir="${client.rpmTopDir}" overwrite="true">
-            <fileset dir="${rpmTemplateDir}">
-                <or>
-                    <filename name="rpm*.template" />
-                    <filename name="dcache-client.spec.template" />
-                </or>
-            </fileset>
-            <mapper type="glob" from="*.template" to="*" />
-            <filterset>
-                <filter token="rpmMacrosFile" value="${client.rpmMacrosFile}" />
-                <!-- This is only used in the rpmrc file -->
-
-                <filter token="rpmRpmDir" value="${rpmRpmDir}" />
-                <!-- These are used in the rpmmacros file -->
-                <filter token="rpmSrpmDir" value="${rpmSrpmDir}" />
-                <filter token="rpmTopDir" value="${client.rpmTopDir}" />
-
-                <filter token="Version" value="${client.version}" />
-                <filter token="Release" value="${build.minor.number}" />
-                <filter token="Arch" value="x86_64" />
-            </filterset>
-        </copy>
-
-        <!-- Call RPM. The rpm task is not sufficient since it doesnt have the rcfile option -->
-
-        <exec dir="${client.rpmTopDir}" executable="rpmbuild" failonerror="true">
-            <!-- output="${buildDir}/rpm.log" -->
-            <arg value="--buildroot" />
-            <arg file="${client.rpmBuildrootDir}" />
-            <arg value="--rcfile" />
-            <arg file="/usr/lib/rpm/rpmrc:${client.rpmRcFile}" />
-            <!-- some documentation claims that /usr/lib/rpm/rpmrc
-                                                        will always be parsed. But it currently isnt if not set here -->
-            <arg value="-bb" />
-            <arg file="${client.rpmSpecFile}" />
-        </exec>
-
-
-
-    </target>
-
-
-    <!-- dcap ONLY -->
-    <target name="dcap32.rpm" depends="dcapclient32.rpminstall" description="Build the dcache-dcap-xxx.rpm">
-
-
-        <!-- Create config files for RPM from Templates -->
-
-        <copy todir="${client.rpmTopDir}" overwrite="true">
-            <fileset dir="${rpmTemplateDir}">
-                <or>
-                    <filename name="rpm*.template" />
-                    <filename name="dcache-dcap.spec.template" />
-                </or>
-            </fileset>
-            <mapper type="glob" from="*.template" to="*" />
-            <filterset>
-                <filter token="rpmMacrosFile" value="${client.rpmMacrosFile}" />
-                <!-- This is only used in the rpmrc file -->
-
-                <filter token="rpmRpmDir" value="${rpmRpmDir}" />
-                <!-- These are used in the rpmmacros file -->
-                <filter token="rpmSrpmDir" value="${rpmSrpmDir}" />
-                <filter token="rpmTopDir" value="${client.rpmTopDir}" />
-
-                <filter token="Version" value="${client.version}" />
-                <filter token="Release" value="${build.minor.number}" />
-                <filter token="Arch" value="i586" />
-
-            </filterset>
-        </copy>
-
-        <!-- Call RPM. The rpm task is not sufficient since it doesnt have the rcfile option -->
-
-        <exec dir="${client.rpmTopDir}" executable="rpmbuild" failonerror="true">
-            <!-- output="${buildDir}/rpm.log" -->
-            <arg value="--buildroot" />
-            <arg file="${client.rpmBuildrootDir}" />
-            <arg value="--rcfile" />
-            <arg file="/usr/lib/rpm/rpmrc:${client.rpmRcFile}" />
-            <!-- some documentation claims that /usr/lib/rpm/rpmrc
-                                                        will always be parsed. But it currently isnt if not set here -->
-            <arg value="-bb" />
-            <arg file="${dcap.rpmSpecFile}" />
-        </exec>
-
-    </target>
-
-    <target name="dcap64.rpm" depends="dcapclient64.rpminstall" description="Build the dcache-client-xxx.rpm">
-
-
-        <!-- Create config files for RPM from Templates -->
-
-        <copy todir="${client.rpmTopDir}" overwrite="true">
-            <fileset dir="${rpmTemplateDir}">
-                <or>
-                    <filename name="rpm*.template" />
-                    <filename name="dcache-dcap.spec.template" />
-                </or>
-            </fileset>
-            <mapper type="glob" from="*.template" to="*" />
-            <filterset>
-                <filter token="rpmMacrosFile" value="${client.rpmMacrosFile}" />
-                <!-- This is only used in the rpmrc file -->
-
-                <filter token="rpmRpmDir" value="${rpmRpmDir}" />
-                <!-- These are used in the rpmmacros file -->
-                <filter token="rpmSrpmDir" value="${rpmSrpmDir}" />
-                <filter token="rpmTopDir" value="${client.rpmTopDir}" />
-
-                <filter token="Version" value="${client.version}" />
-                <filter token="Release" value="${build.minor.number}" />
-                <filter token="Arch" value="x86_64" />
-            </filterset>
-        </copy>
-
-        <!-- Call RPM. The rpm task is not sufficient since it doesnt have the rcfile option -->
-
-        <exec dir="${client.rpmTopDir}" executable="rpmbuild" failonerror="true">
-            <!-- output="${buildDir}/rpm.log" -->
-            <arg value="--buildroot" />
-            <arg file="${client.rpmBuildrootDir}" />
-            <arg value="--rcfile" />
-            <arg file="/usr/lib/rpm/rpmrc:${client.rpmRcFile}" />
-            <!-- some documentation claims that /usr/lib/rpm/rpmrc
-                                                        will always be parsed. But it currently isnt if not set here -->
-            <arg value="-bb" />
-            <arg file="${dcap.rpmSpecFile}" />
-        </exec>
-
-
-
-    </target>
-
-    <!-- SRM only -->
-
-    <target name="srmclient.rpm" depends="srmclient.rpminstall" description="Build the dcache-srmclient-xxx.rpm">
-
-
-        <!-- Create config files for RPM from Templates -->
-
-        <copy todir="${client.rpmTopDir}" overwrite="true">
-            <fileset dir="${rpmTemplateDir}">
-                <or>
-                    <filename name="rpm*.template" />
-                    <filename name="dcache-srmclient.spec.template" />
-                </or>
-            </fileset>
-            <mapper type="glob" from="*.template" to="*" />
-            <filterset>
-                <filter token="rpmMacrosFile" value="${client.rpmMacrosFile}" />
-                <!-- This is only used in the rpmrc file -->
-
-                <filter token="rpmRpmDir" value="${rpmRpmDir}" />
-                <!-- These are used in the rpmmacros file -->
-                <filter token="rpmSrpmDir" value="${rpmSrpmDir}" />
-                <filter token="rpmTopDir" value="${client.rpmTopDir}" />
-
-                <filter token="Version" value="${client.version}" />
-                <filter token="Release" value="${build.minor.number}" />
-            </filterset>
-        </copy>
-
-        <!-- Call RPM. The rpm task is not sufficient since it doesnt have the rcfile option -->
-
-        <exec dir="${client.rpmTopDir}" executable="rpmbuild" failonerror="true">
-            <!-- output="${buildDir}/rpm.log" -->
-            <arg value="--buildroot" />
-            <arg file="${client.rpmBuildrootDir}" />
-            <arg value="--rcfile" />
-            <arg file="/usr/lib/rpm/rpmrc:${client.rpmRcFile}" />
-            <!-- some documentation claims that /usr/lib/rpm/rpmrc
-                                                            will always be parsed. But it currently isnt if not set here -->
-            <arg value="-bb" />
-            <arg file="${srmclient.rpmSpecFile}" />
-        </exec>
-
-    </target>
+    <target name="install-dcap32" depends="-dcap32.compile"
+        description="build deploy-ready dcap client"/>
+    <target name="install-dcap64" depends="-dcap64.compile"
+        description="build deploy-ready dcap64 client"/>
+    <target name="install-srmclient" depends="srmclient"
+        description="build deploy-ready srm client"/>
 
     <!--
           Find Bugs
     -->
 
-    <property name="findbugs.home" value="${libDir}/findbugs" />
-    <target name="findbugs" depends="srm.bin,dcache-srm.bin,infoProvider.bin,xrootd-tokenauthz.bin,javatunnel.bin" description="bug hunting">
-        <taskdef name="findbugs" classname="edu.umd.cs.findbugs.anttask.FindBugsTask" classpath="${libDir}/findbugs/lib/findbugs-ant.jar"/>
-        <findbugs home="${findbugs.home}"
-                    output="html"
-                    outputFile="${distDir}/findbugs.html"
-                    jvmargs="-Xmx256M"
-                    timeout="3600000"
-                    omitVisitors="FindDeadLocalStores,UnreadFields,Naming,FindUncalledPrivateMethods" >
-
-            <auxClasspath path="" />
-            <class location="${classesDir}/cells.jar" />
-            <class location="${classesDir}/dcache.jar" />
-            <class location="${classesDir}/dcache-srm.jar" />
-            <class location="${classesDir}/srm.jar" />
-            <class location="${classesDir}/srm-tomcat.jar" />
-            <class location="${classesDir}/javatunnel.jar" />
-            <class location="${classesDir}/infoDynamicSE.jar" />
-            <class location="${classesDir}/xrootd-tokenauthz.jar" />
-        </findbugs>
-    </target>
-
-    <target name="findbugs-testbuild" depends="srm.bin,dcache-srm.bin,infoProvider.bin,xrootd-tokenauthz.bin,javatunnel.bin" description="bug hunting">
-        <taskdef name="findbugs" classname="edu.umd.cs.findbugs.anttask.FindBugsTask" classpath="${libDir}/findbugs/lib/findbugs-ant.jar"/>
-        <findbugs home="${findbugs.home}"
-                    output="xml:withMessages"
-                    outputFile="${distDir}/findbugs.xml"
-                    jvmargs="-Xmx512M"
-                    timeout="36000000"
-                    omitVisitors="FindDeadLocalStores,UnreadFields,Naming,FindUncalledPrivateMethods" >
-
-            <auxClasspath path="" />
-            <class location="${classesDir}/cells.jar" />
-            <class location="${classesDir}/dcache.jar" />
-            <class location="${classesDir}/dcache-srm.jar" />
-            <class location="${classesDir}/srm.jar" />
-            <class location="${classesDir}/srm-tomcat.jar" />
-            <class location="${classesDir}/javatunnel.jar" />
-            <class location="${classesDir}/infoDynamicSE.jar" />
-            <class location="${classesDir}/xrootd-tokenauthz.jar" />
-            <sourcePath path="modules/cells" />
-            <sourcePath path="modules/dCache" />
-            <sourcePath path="modules/srm/src" />
-            <sourcePath path="modules/srmclient" />
-
-        </findbugs>
-    </target>
-
-    <target name="findbugs.cells" depends="cells.bin" description="bug hunting">
-        <taskdef name="findbugs" classname="edu.umd.cs.findbugs.anttask.FindBugsTask" classpath="${libDir}/findbugs/lib/findbugs-ant.jar"/>
-        <findbugs home="${findbugs.home}"
-                    output="html"
-                    outputFile="${distDir}/findbugs-cells.html"
-                    jvmargs="-Xmx256M"
-                    timeout="3600000"
-                    omitVisitors="FindDeadLocalStores,UnreadFields,Naming,FindUncalledPrivateMethods" >
-
-            <auxClasspath path="" />
-            <class location="${classesDir}/cells.jar" />
-        </findbugs>
-    </target>
-
-    <target name="findbugs.dcache" depends="dcache.bin" description="bug hunting">
-        <taskdef name="findbugs" classname="edu.umd.cs.findbugs.anttask.FindBugsTask" classpath="${libDir}/findbugs/lib/findbugs-ant.jar"/>
-        <findbugs home="${findbugs.home}"
-                    output="html"
-                    outputFile="${distDir}/findbugs-dcache.html"
-                    jvmargs="-Xmx256M"
-                    timeout="3600000"
-                    omitVisitors="FindDeadLocalStores,UnreadFields,Naming,FindUncalledPrivateMethods" >
-
-            <auxClasspath path="" />
-            <class location="${classesDir}/dcache.jar" />
-            <sourcePath path="modules/dCache" />
-        </findbugs>
-    </target>
-
-    <target name="findbugs.dcache-srm" depends="dcache-srm.bin" description="bug hunting">
-        <taskdef name="findbugs" classname="edu.umd.cs.findbugs.anttask.FindBugsTask" classpath="${libDir}/findbugs/lib/findbugs-ant.jar"/>
-        <findbugs home="${findbugs.home}"
-                    output="html"
-                    outputFile="${distDir}/findbugs-dcache-srm.html"
-                    jvmargs="-Xmx256M"
-                    timeout="3600000"
-                    omitVisitors="FindDeadLocalStores,UnreadFields,Naming,FindUncalledPrivateMethods" >
-
-            <auxClasspath path="" />
-            <class location="${classesDir}/dcache-srm.jar" />
-            <class location="${classesDir}/javatunnel.jar" />
-        </findbugs>
-    </target>
-
-    <target name="findbugs.srm" depends="dcache-srm.bin" description="bug hunting">
-        <taskdef name="findbugs" classname="edu.umd.cs.findbugs.anttask.FindBugsTask" classpath="${libDir}/findbugs/lib/findbugs-ant.jar"/>
-        <findbugs home="${findbugs.home}"
-                    output="html"
-                    outputFile="${distDir}/findbugs-dcache-srm.html"
-                    jvmargs="-Xmx256M"
-                    timeout="3600000"
-                    omitVisitors="FindDeadLocalStores,UnreadFields,Naming,FindUncalledPrivateMethods" >
-
-            <auxClasspath path="" />
-            <class location="${classesDir}/srm.jar" />
-            <class location="${classesDir}/srm-tomcat.jar" />
-        </findbugs>
-    </target>
+    <import file="modules-builds/findbugs-build.xml"/>
 
     <!--
           Clean Targets
     -->
 
-    <target name="cleanall" description="Remove everything produced by me.">
-        <delete dir="${distDir}" />
-        <delete dir="${buildDir}" />
+    <target name="cleanall" depends="clean" description="Remove everything produced by me.">
+             <delete dir="${distDir}" />
     </target>
 
-
-    <!--
-          Debian Targets
-    -->
-
-    <target name="server.deb" depends="server.rpm" description="Build dcache-server_xxx.deb">
-        <!--echo message="${rpmRpmDir}/noarch/dcache-server-${server.version}-${build.minor.number}.noarch.rpm"/-->
-        <exec dir="${rpmRpmDir}/noarch" executable="fakeroot" failonerror="true">
-            <arg line="alien -k dcache-server-${server.version}-${build.minor.number}.noarch.rpm"/>
-        </exec>
+    <target name="clean" description="Remove temporary generated files.">
+        <delete dir="${buildDir}" />
     </target>
 
     <!--
@@ -608,38 +175,10 @@
     -->
     <target name="release" description="Make new release">
 
-        <echo message="building new release : ${release.id}-${build.number}" />
+        <ant antfile="build.xml" target="cleanall" inheritall="false">
+             <property name="patch.number" value="${patch.id}" />
+        </ant>
 
-        <!-- STEP 1 snd 2 : set rpm/tar name to release id -->
-        <antcall target="server.rpm">
-             <param name="build.minor.number" value="${build.number}" />
-             <param name="release.name" value="${release.id}-${build.number}" />
-        </antcall>
-        <antcall target="server.tgz">
-             <param name="build.minor.number" value="${build.number}" />
-             <param name="release.name" value="${release.id}-${build.number}" />
-        </antcall>
-
-
-        <!-- get repository current  revision -->
-        <svn>
-            <status path="." revisionProperty="current.revision" />
-        </svn>
-
-        <!-- STEP 3 : copy current revision to a tag -->
-        <svn>
-            <copy revision="${current.revision}"
-                message="New Version ${release.id}-${build.number}"
-                srcUrl="svn+ssh://svn.dcache.org/data/svn/dCache/${svn.branch}"
-                destUrl="svn+ssh://svn.dcache.org/data/svn/dCache/tags/${release.id}-${build.number}" />
-        </svn>
-
-        <!-- STEP 4 : bump up version number and commit -->
-        <!-- this will increase build number -->
-        <buildnumber file="${build.id.store}" />
-        <svn>
-            <commit message="New Version ${release.id}-${build.number}" file="${build.id.store}"  />
-        </svn>
     </target>
 
 
@@ -666,29 +205,73 @@
 
         <!-- STEP 1 snd 2 : set rpm name to release id and build -->
 
-	<antcall target="srmclient.rpm">
+        <antcall target="srmclient.rpm">
              <param name="build.minor.number" value="b${current.revision}" />
              <param name="release.name" value="b${current.revision}" />
         </antcall>
-	<antcall target="server.rpm">
+        <antcall target="server.rpm">
              <param name="build.minor.number" value="b${current.revision}" />
              <param name="release.name" value="b${current.revision}" />
         </antcall>
     </target>
 
-    <!-- pick up jar files located at antlib -->
-    <selector id="antlib.classpath.selector">
-    <or>
-        <filename name="**/*.jar" />
-    </or>
-    </selector>
+   <target name="help">
+       <echo message="" />
+       <echo message="" />
+       <echo message="Defined targets:" />
+       <echo message="" />
+       <echo message="     clean             : Remove intermidiet files (.class )" />
+       <echo message="" />
+       <echo message="     cleanall          : Remove all generated files." />
+       <echo message="" />
+       <echo message="     cells             : Compile cells package" />
+       <echo message="" />
+       <echo message="     gplazma           : Compile gplazma and depended packages" />
+       <echo message="" />
+       <echo message="     srm               : Compile srm and dependent packages" />
+       <echo message="" />
+       <echo message="     dcache            : Compile dcache and dependent packages" />
+       <echo message="" />
+       <echo message="     infoprovider      : Compile infoProvider and dependent packages" />
+       <echo message="" />
+       <echo message="     xrootd-tokenauthz : Compile xrootd-tokenauthz and dependent packages" />
+       <echo message="" />
+       <echo message="     javatunnel        : Compile javatunnel and dependent packages" />
+       <echo message="" />
+       <echo message="     install-server    : build deploy-ready server package" />
+       <echo message="                       : to overwrite default location use" />
+       <echo message="                       : -Dserver.bin.dir=/path/to/install" />
+       <echo message="" />
+       <echo message="     install-srmclient : build deploy-ready srmcleint" />
+       <echo message="                       : to overwrite default location use" />
+       <echo message="                       : -Dsrmclient.bin.dir=/path/to/install" />
+       <echo message="" />
+       <echo message="     install-dcap32    : build deploy-ready dcap32 client" />
+       <echo message="                       : to overwrite default location" />
+       <echo message="                       : -Ddcapclient.bin.dir=/path/to/install " />
+       <echo message="" />
+       <echo message="     server.rpm        : generate dcache-server-xxx.rpm" />
+       <echo message="     server.tgz        : generate dcache-server-xxx.tgz" />
+       <echo message="     server.dep        : generate dcache-server-xxx.dep" />
+       <echo message="" />
+       <echo message="     srmclient.rpm     : generate srmclient-xxx.rpm" />
+       <echo message="" />
+       <echo message="     test              : run all available unit tests" />
+       <echo message="                       : use -Dtestcase=test.class.name" />
+       <echo message="                       : to run single test only." />
+       <echo message="" />
+       <echo message="" />
+       <echo message="" />
+       <echo message=" Use -Dpatch.number=XXX to change default patch number value" />
+   </target>
 
-   <path id="antlib.classpath">
-    <fileset dir="antlib">
-        <selector refid="antlib.classpath.selector" />
-    </fileset>
-   </path>
 
-   <taskdef  resource="svntask.properties" classpathref="antlib.classpath"/>
+   <!-- ========================================================================
+            DEBUG STAFF
+   ==========================================================================-->
 
+
+    <target name="debug">
+        <echoproperties />
+    </target>
 </project>

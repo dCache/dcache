@@ -3,232 +3,192 @@
 <project name="Cells" default="help" basedir=".">
 
 
-  <!-- package name. have to be the same as in the cvs -->
-  <property name="package" value="cells" />
-
-
-  <!-- import the common part -->
-
-
-  <import file="${buildTop}/common/common.xml"/>
-
-  <!--
+    <!--
           Properties  -  the following properties, paths, and selectors
                          define the locations and files for Cells
   -->
 
-  <!-- Output Files
+    <!-- Output Files
        For each of these jar files there are targets below -->
 
-  <property name="cells.jar" location="${classesDir}/cells.jar" />
-  <property name="cells-protocols.jar" location="${classesDir}/cells-protocols.jar" />
+    <property name="cells.jar" location="${classesDir}/cells.jar" />
+    <property name="cells-protocols.jar" location="${classesDir}/cells-protocols.jar" />
+    <property name="cells.build.dir" location="${buildDir}/cells" />
 
-  <!-- this should be in 'common.xml' but that didnt work -->
-  <target name="cleanall" depends="clean" description="Remove everything produced by me." >
-    <delete file="${cells.jar}" />
-    <delete file="${cells-protocols.jar}" />
-  </target>
+    <target name="-isUptodate.cells.jar">
+        <condition property="cells.jar.upToDate">
+            <and>
+                <available file="${cells.jar}" type="file" />
+                <uptodate targetfile="${cells.jar}">
+                    <srcfiles dir="${cells.src}">
+                        <include name="**/*.java" />
+                    </srcfiles>
+                </uptodate>
+            </and>
+        </condition>
+    </target>
 
-  <!-- Java sources
-       These have been derived from packageSets/core.pl and packageSets/protocols.pl -->
-
-
-
-	<target name="isUptodate.cells.jar">
-		  <condition property="cells.jar.upToDate">
-		    <and>
-              <available file="${cells.jar}" type="file" />
-	          <uptodate targetfile="${cells.jar}">
-	          	<srcfiles dir="${sourceDir}">
-	          		<include name="**/*.java" />
-	          	</srcfiles>
-	          </uptodate>
-		    </and>
-		  </condition>
-	</target>
-
-	<target name="isUptodate.cells-protocols.jar">
-		  <condition property="cells-protocols.jar.upToDate">
-		    <and>
-              <available file="${cells-protocols.jar}" type="file" />
-	          <uptodate targetfile="${cells-protocols.jar}">
-	          	<srcfiles dir="${sourceDir}">
-	          		<include name="**/*.java" />
-	          	</srcfiles>
-	          </uptodate>
-		    </and>
-		  </condition>
-	</target>
+    <target name="-isUptodate.cells-protocols.jar">
+        <condition property="cells-protocols.jar.upToDate">
+            <and>
+                <available file="${cells-protocols.jar}" type="file" />
+                <uptodate targetfile="${cells-protocols.jar}">
+                    <srcfiles dir="${cells.src}">
+                        <include name="**/*.java" />
+                    </srcfiles>
+                </uptodate>
+            </and>
+        </condition>
+    </target>
 
 
 
-  <!-- Packages for cells.jar -->
+    <!-- Packages for cells.jar -->
 
-  <selector id="cells.selector">
-    <or>
-      <filename name="dmg/util/*" />
-      <filename name="dmg/util/cdb/*" />
-      <filename name="dmg/util/edb/*" />
-      <filename name="dmg/cells/network/*" />
-      <filename name="dmg/cells/nucleus/*" />
-      <filename name="dmg/cells/nucleus/protocols/env/*" />
-      <filename name="dmg/cells/nucleus/protocols/context/*" />
-      <filename name="dmg/cells/nucleus/protocols/cell/*" />
-      <filename name="dmg/cells/services/*" />
-      <filename name="dmg/cells/services/login/*" />
-      <filename name="dmg/cells/services/login/user/*" />
-      <filename name="dmg/cells/services/gui/*" />
-      <filename name="dmg/cells/services/multicaster/*" />
-      <filename name="dmg/cells/applets/*" />
-      <filename name="dmg/cells/applets/spy/*" />
-      <filename name="dmg/cells/applets/login/*" />
-      <filename name="dmg/cells/applets/alias/*" />
-      <filename name="dmg/security/*" />
-      <filename name="dmg/security/cipher/*" />
-      <filename name="dmg/security/cipher/rsa/*" />
-      <filename name="dmg/security/cipher/idea/*" />
-      <filename name="dmg/security/cipher/pgp/*" />
-      <filename name="dmg/security/cipher/des/*" />
-      <filename name="dmg/security/cipher/blowfish/*" />
-      <filename name="dmg/security/digest/*" />
-      <filename name="dmg/protocols/telnet/*" />
-      <filename name="dmg/protocols/snmp/*" />
-      <filename name="dmg/protocols/ssh/*" />
-      <filename name="dmg/protocols/kerberos/*" />
-      <filename name="dmg/protocols/ber/*" />
-      <filename name="org/pcells/**/*" />
-    </or>
-  </selector>
+    <selector id="cells.selector">
+        <or>
+            <filename name="dmg/util/*" />
+            <filename name="dmg/util/cdb/*" />
+            <filename name="dmg/util/edb/*" />
+            <filename name="dmg/cells/network/*" />
+            <filename name="dmg/cells/nucleus/*" />
+            <filename name="dmg/cells/nucleus/protocols/env/*" />
+            <filename name="dmg/cells/nucleus/protocols/context/*" />
+            <filename name="dmg/cells/nucleus/protocols/cell/*" />
+            <filename name="dmg/cells/services/*" />
+            <filename name="dmg/cells/services/login/*" />
+            <filename name="dmg/cells/services/login/user/*" />
+            <filename name="dmg/cells/services/gui/*" />
+            <filename name="dmg/cells/services/multicaster/*" />
+            <filename name="dmg/cells/applets/*" />
+            <filename name="dmg/cells/applets/spy/*" />
+            <filename name="dmg/cells/applets/login/*" />
+            <filename name="dmg/cells/applets/alias/*" />
+            <filename name="dmg/security/*" />
+            <filename name="dmg/security/cipher/*" />
+            <filename name="dmg/security/cipher/rsa/*" />
+            <filename name="dmg/security/cipher/idea/*" />
+            <filename name="dmg/security/cipher/pgp/*" />
+            <filename name="dmg/security/cipher/des/*" />
+            <filename name="dmg/security/cipher/blowfish/*" />
+            <filename name="dmg/security/digest/*" />
+            <filename name="dmg/protocols/telnet/*" />
+            <filename name="dmg/protocols/snmp/*" />
+            <filename name="dmg/protocols/ssh/*" />
+            <filename name="dmg/protocols/kerberos/*" />
+            <filename name="dmg/protocols/ber/*" />
+            <filename name="org/pcells/**/*" />
+        </or>
+    </selector>
 
-  <!-- Maybe this one should be used for cells.jar   (from Tigrans build.xml)    -->
+    <!-- Maybe this one should be used for cells.jar   (from Tigrans build.xml)    -->
 
-  <selector id="cells.selector.new">
-      <filename negate="true" name="dmg/apps/**" />
-  </selector>
+    <selector id="cells.selector.new">
+        <filename negate="true" name="dmg/apps/**" />
+    </selector>
 
-  <!-- Packages for cells-protocols.jar -->
+    <!-- Packages for cells-protocols.jar -->
 
-  <selector id="cells-protocols.selector">
-    <or>
-      <filename name="dmg/cells/nucleus/protocols/env/*" />
-      <filename name="dmg/cells/nucleus/protocols/context/*" />
-      <filename name="dmg/cells/nucleus/protocols/cell/*" />
-    </or>
-  </selector>
+    <selector id="cells-protocols.selector">
+        <or>
+            <filename name="dmg/cells/nucleus/protocols/env/*" />
+            <filename name="dmg/cells/nucleus/protocols/context/*" />
+            <filename name="dmg/cells/nucleus/protocols/cell/*" />
+        </or>
+    </selector>
 
 
-  <!-- Classpath for cells.jar -->
+    <!-- Classpath for cells.jar -->
 
     <path id="cells.classpath">
         <pathelement location="${libDir}/log4j/log4j-1.2.8.jar" />
-        <fileset dir="${libDir}/jline" includes="jline*.jar"/>
+        <fileset dir="${libDir}/jline" includes="jline*.jar" />
     </path>
 
-
-  <!--       =======
-             TARGETS
-             =======          -->
-
-
-  <!--
+    <!--
              Targets for cells.jar
-  -->
+    -->
 
-  <!-- Compile -->
+    <!--
+        Compile cells
+    -->
 
-  <target name="cells.compile" depends="prepare" unless="cells.jar.upToDate" description="Compile Java code for cells.jar" >
+    <target name="-cells.compile" unless="-cells.jar.upToDate">
 
-    <javac destdir="${buildDir}"
-           source="${javac.source}"
-           target="${javac.target}"
-           classpathref="cells.classpath"
-           debug="${javac.debug}"
-           verbose="${javac.verbose}">
-      <src path="${sourceDir}" />
-      <and>
-		<selector refid="cells.selector" />
-		<filename name="**/*.java" />
-      </and>
-    </javac>
+        <mkdir dir="${cells.build.dir}" />
 
-  </target>
+        <javac destdir="${cells.build.dir}" source="${javac.source}" target="${javac.target}" classpathref="cells.classpath" debug="${javac.debug}" verbose="${javac.verbose}">
+            <src path="${cells.src}" />
+            <and>
+                <selector refid="cells.selector" />
+                <filename name="**/*.java" />
+            </and>
+        </javac>
 
-  <target name="cells.jar" depends="isUptodate.cells.jar,cells.compile" unless="cells.jar.upToDate" description="Create cells.jar" >
+    </target>
 
-    <jar jarfile="${cells.jar}">
-      <fileset dir="${buildDir}" >
-	<and>
-	  <selector refid="cells.selector" />
-	  <filename name="**/*.class" />
-	</and>
-      </fileset>
-    </jar>
+    <!--
+        build cells.jar
+    -->
+    <target name="-cells.jar" depends="-isUptodate.cells.jar,-cells.compile" unless="cells.jar.upToDate">
 
-  </target>
+        <jar jarfile="${cells.jar}">
+            <fileset dir="${cells.build.dir}">
+                <and>
+                    <selector refid="cells.selector" />
+                    <filename name="**/*.class" />
+                </and>
+            </fileset>
+        </jar>
 
-  <!--
-          Target for cells-protocols.jar
-  -->
+    </target>
 
-  <target name="cells-protocols.compile" depends="prepare" description="Compile Java code for cells-protocols.jar" >
+    <!--
+          build protocls.jar
+    -->
+    <target name="-cells-protocols.jar" depends="-cells.compile">
 
-    <javac destdir="${buildDir}"
-           source="${javac.source}"
-           target="${javac.target}"
-           debug="${javac.debug}"
-           verbose="${javac.verbose}">
-      <src path="${sourceDir}" />
-      <and>
-		<selector refid="cells-protocols.selector" />
-		<filename name="**/*.java" />
-      </and>
-    </javac>
+        <jar jarfile="${cells-protocols.jar}">
+            <fileset dir="${cells.build.dir}">
+                <and>
+                    <selector refid="cells-protocols.selector" />
+                    <filename name="**/*.class" />
+                </and>
+            </fileset>
+        </jar>
 
-  </target>
-
-  <target name="cells-protocols.jar" depends="cells-protocols.compile" description="Create cells-protocols.jar" >
-
-    <jar jarfile="${cells-protocols.jar}">
-      <fileset dir="${buildDir}" >
-	<and>
-	  <selector refid="cells-protocols.selector" />
-	  <filename name="**/*.class" />
-	</and>
-      </fileset>
-    </jar>
-
-  </target>
+    </target>
 
 
-	<target name="cells-bin" depends="cells.jar">
+    <target name="-cells.bin" depends="-cells.jar,-cells-protocols.jar">
 
-	<!-- directory layout :
+        <!-- directory layout :
 
-	    <dCache home>-|
-					  |-classes
-	-->
+        <dCache home>-|
+                      |-classes
+    -->
 
-		<mkdir dir="${binDir}/classes" />
-		<copy file="${classesDir}/cells.jar" todir="${binDir}/classes" />
-		<copy todir="${binDir}/classes/jline">
-			<fileset dir="${libDir}/jline/">
-				<include name="*.jar" />
-			</fileset>
-		</copy>
-	</target>
+        <mkdir dir="${server.bin.dir}/classes" />
+        <copy file="${classesDir}/cells.jar" todir="${server.bin.dir}/classes" />
+        <copy todir="${server.bin.dir}/classes/jline">
+            <fileset dir="${libDir}/jline/">
+                <include name="*.jar" />
+            </fileset>
+        </copy>
+    </target>
 
-	<target name="cells-protocols-bin" depends="cells.jar,cells-protocols.jar">
+    <target name="-cells-protocols-bin" depends="-cells.jar,-cells-protocols.jar">
 
-	<!-- directory layout :
+        <!-- directory layout :
 
-	    <dCache home>-|
-					  |-classes
-	-->
+        <dCache home>-|
+                      |-classes
+    -->
 
-		<mkdir dir="${binDir}/classes" />
-		<copy file="${classesDir}/cells.jar" todir="${binDir}/classes" />
-		<copy file="${classesDir}/cells-protocols.jar" todir="${binDir}/classes" />
-	</target>
+        <mkdir dir="${server.bin.dir}/classes" />
+        <copy file="${classesDir}/cells.jar" todir="${server.bin.dir}/classes" />
+        <copy file="${classesDir}/cells-protocols.jar" todir="${server.bin.dir}/classes" />
+    </target>
 
 
 </project>

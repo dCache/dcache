@@ -1,0 +1,8 @@
+<project name="server-tgz-build">
+
+    <target name="server.tgz" depends="install-server" description="Build the dcache-server-xxx.tar">
+
+        <tar destfile="${distDir}/dcache-server-${version}-${patch}.tgz" basedir="${package.root.dir}/server" compression="gzip" />
+    </target>
+
+</project>
