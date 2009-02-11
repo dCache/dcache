@@ -1,17 +1,20 @@
-// $Id: RepositoryInterpreter.java,v 1.25 2007-10-16 19:28:45 behrmann Exp $
-
 package org.dcache.pool.repository;
 
-import diskCacheV111.repository.CacheRepository;
-import diskCacheV111.repository.CacheRepositoryEntry;
-import diskCacheV111.vehicles.*;
-import diskCacheV111.util.*;
-import dmg.util.*;
-import java.util.*;
-import dmg.cells.nucleus.CellMessage;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.ArrayList;
+
+import dmg.util.Args;
+import dmg.util.Formats;
 import dmg.cells.nucleus.DelayedReply;
 import dmg.cells.nucleus.NoRouteToCellException;
 import org.dcache.cells.CellCommandListener;
+import diskCacheV111.vehicles.StorageInfo;
+import diskCacheV111.util.PnfsId;
+import diskCacheV111.util.CacheException;
+import diskCacheV111.util.FileNotInCacheException;
 
 import org.apache.log4j.Logger;
 
@@ -20,10 +23,14 @@ public class RepositoryInterpreter
 {
     private final static Logger _log =
         Logger.getLogger(RepositoryInterpreter.class);
-    private CacheRepository _repository;
+    private Repository _repository;
     private Account _account;
 
-    public RepositoryInterpreter(CacheRepository repository)
+    public RepositoryInterpreter()
+    {
+    }
+
+    public void setRepository(Repository repository)
     {
         _repository = repository;
     }
@@ -33,79 +40,46 @@ public class RepositoryInterpreter
         _account = account;
     }
 
-    private void displayEntry(CacheRepositoryEntry entry, StringBuffer sb)throws CacheException {
-        String status =
-            entry.isPrecious()?"precious":
-            entry.isCached()?"cached":
-            entry.isReceivingFromClient()?"Recv. from client":
-            entry.isReceivingFromStore()? "Recv. from store":
-            "<undefined>";
-        StorageInfo info = entry.getStorageInfo();
-        if (info != null) {
-            sb.append(Formats.field(info.getHsm(),8,Formats.LEFT));
-            String sClass = info.getStorageClass();
-            sClass = sClass == null ? "-" : sClass;
-            String cClass = info.getCacheClass();
-            cClass = cClass == null ? "-" : cClass;
-            sb.append(Formats.field(sClass,20,Formats.LEFT)).
-                append(Formats.field(cClass,20,Formats.LEFT));
-        }
-        sb.append(status+(entry.isLocked()?"(locked)":""));
-    }
-    public String hh_rep_set_sticky = "[-o=<owner>] [-l=<lifetime in ms>] <pnfsid> on|off";
-    public String ac_rep_set_sticky_$_2(Args args) throws CacheException {
-        PnfsId pnfsId  = new PnfsId(args.argv(0));
-        String state   = args.argv(1);
+    public String hh_rep_set_sticky =
+        "[-o=<owner>] [-l=<lifetime in ms>] <pnfsid> on|off";
+    public String ac_rep_set_sticky_$_2(Args args) throws CacheException
+    {
+        PnfsId pnfsId = new PnfsId(args.argv(0));
+        String state = args.argv(1);
         String owner = "system";
         if (args.getOpt("o") != null) {
-            owner=args.getOpt("o");
+            owner = args.getOpt("o");
         }
 
-        long lifetime = -1;
+        long expire = -1;
         if (args.getOpt("l") != null) {
-            lifetime= System.currentTimeMillis()+Long.parseLong(args.getOpt("l"));
+            expire =
+                System.currentTimeMillis() + Long.parseLong(args.getOpt("l"));
         }
 
-        CacheRepositoryEntry entry = _repository.getEntry(pnfsId);
         if (state.equals("on")) {
-            entry.setSticky(owner, lifetime, true);
+            _repository.setSticky(pnfsId, owner, expire, true);
         } else if (state.equals("off")) {
-            entry.setSticky(owner, 0, true);
-        } else
+            _repository.setSticky(pnfsId, owner, 0, true);
+        } else {
             throw new
-                IllegalArgumentException("invalid sticky state : "+state);
-
+                IllegalArgumentException("invalid sticky state : " + state);
+        }
         return "";
     }
 
     public String hh_rep_sticky_ls = "<pnfsid>";
-    public String ac_rep_sticky_ls_$_1(Args args) throws CacheException {
+    public String ac_rep_sticky_ls_$_1(Args args) throws CacheException
+    {
         PnfsId pnfsId  = new PnfsId(args.argv(0));
-        CacheRepositoryEntry entry = _repository.getEntry(pnfsId);
-        List<StickyRecord> records = entry.stickyRecords();
-        StringBuffer sb = new StringBuffer();
-        for(StickyRecord record: records) {
+        CacheEntry entry = _repository.getEntry(pnfsId);
+        StringBuilder sb = new StringBuilder();
+        for(StickyRecord record: entry.getStickyRecords()) {
             sb.append(record).append('\n');
         }
         return sb.toString();
     }
 
-    public String hh_rep_set_bad = "<pnfsid> on|off";
-    public String ac_rep_set_bad_$_2(Args args) throws CacheException {
-        PnfsId pnfsId  = new PnfsId(args.argv(0));
-        String state   = args.argv(1);
-
-        CacheRepositoryEntry entry = _repository.getEntry(pnfsId);
-        if (state.equals("on")) {
-            entry.setBad(true);
-        } else if (state.equals("off")) {
-            entry.setBad(false);
-        } else
-            throw new
-                IllegalArgumentException("invalid 'bad' state : "+state);
-
-        return "";
-    }
     public String fh_rep_ls =
         "\n"+
         " Format I  :  [<pnfsId> [<pnfsId> [...]]]\n"+
@@ -148,14 +122,7 @@ public class RepositoryInterpreter
             StringBuilder sb   = new StringBuilder();
             for (int i = 0; i < args.argc(); i++) {
                 PnfsId pnfsid = new PnfsId(args.argv(i));
-                CacheRepositoryEntry entry = _repository.getGenericEntry(pnfsid);
-                try {
-                    sb.append(entry.toString());
-                } catch(Exception ce) {
-                    sb.append(pnfsid.toString()).
-                        append(" : ").
-                        append(ce.getMessage());
-                }
+                sb.append(_repository.getEntry(pnfsid));
                 sb.append("\n");
             }
             return sb.toString();
@@ -177,140 +144,131 @@ public class RepositoryInterpreter
 
                 public void run()
                 {
-                    try {
-                        StringBuilder sb = new StringBuilder();
-                        String stat = args.getOpt("s");
-                        if (stat != null) {
-                            long dev = 1;
-                            dev = (stat.indexOf("k") > -1) ||
-                                (stat.indexOf("K") > -1) ? 1024L : dev;
-                            dev = (stat.indexOf("m") > -1) ||
-                                (stat.indexOf("M") > -1) ? (1024L*1024L) : dev;
-                            dev = (stat.indexOf("g") > -1) ||
-                                (stat.indexOf("G") > -1) ? (1024L*1024L*1024L) : dev;
-                            dev = (stat.indexOf("t") > -1) ||
-                                (stat.indexOf("T") > -1) ? (1024L*1024L*1024L*1024L) : dev;
-
-                            Iterator<PnfsId>       e1  = _repository.pnfsids();
-                            HashMap<String,long[]> map = new HashMap<String,long[]>();
-                            long removable = 0L;
-                            while (e1.hasNext()) {
-                                CacheRepositoryEntry entry = _repository.getGenericEntry(e1.next());
-                                //
-                                // info can be null if we are 'static' or a write
-                                // pool and the storageInfo has not arrived.
-                                //
+                    StringBuilder sb = new StringBuilder();
+                    String stat = args.getOpt("s");
+                    if (stat != null) {
+                        long dev = 1;
+                        dev = (stat.indexOf("k") > -1) ||
+                            (stat.indexOf("K") > -1) ? 1024L : dev;
+                        dev = (stat.indexOf("m") > -1) ||
+                            (stat.indexOf("M") > -1) ? (1024L*1024L) : dev;
+                        dev = (stat.indexOf("g") > -1) ||
+                            (stat.indexOf("G") > -1) ? (1024L*1024L*1024L) : dev;
+                        dev = (stat.indexOf("t") > -1) ||
+                            (stat.indexOf("T") > -1) ? (1024L*1024L*1024L*1024L) : dev;
+                        Map<String,long[]> map = new HashMap<String,long[]>();
+                        long removable = 0L;
+                        for (PnfsId id: _repository) {
+                            try {
+                                CacheEntry entry = _repository.getEntry(id);
                                 StorageInfo info = entry.getStorageInfo();
                                 if (info == null) continue;
-                                String sc = info.getStorageClass() + "@" + info.getHsm();
+                                String sc = info.getStorageClass()
+                                    + "@" + info.getHsm();
 
                                 long[] counter = map.get(sc);
                                 if (counter == null)
                                     map.put(sc, counter = new long[8]);
 
-                                long entrySize = info.getFileSize();
+                                boolean sticky = entry.isSticky();
+                                boolean precious =
+                                    (entry.getState() == EntryState.PRECIOUS);
+                                long entrySize = entry.getReplicaSize();
 
                                 counter[0] += entrySize;
                                 counter[1]++;
-                                if (entry.isPrecious()) {
+
+                                if (precious) {
                                     counter[2] += entrySize;
                                     counter[3]++;
                                 }
-                                if (entry.isSticky()) {
+                                if (sticky) {
                                     counter[4] += entrySize;
                                     counter[5]++;
                                 }
-                                if (!entry.isSticky() && !entry.isPrecious()) {
+                                if (!precious && !sticky) {
                                     counter[6] += entrySize;
                                     removable  += entrySize;
                                     counter[7]++;
                                 }
-                            }
-                            if (args.getOpt("sum") != null) {
-                                long[] counter = new long[10];
-                                map.put("total", counter);
-                                counter[0] = _account.getTotal();
-                                counter[1] = _account.getFree();
-                                counter[2] = removable;
-                            }
-
-                            Iterator<String> e2 = map.keySet().iterator();
-                            if (args.getOpt("binary") != null) {
-                                Object [] result = new Object[map.size()];
-                                for (int i = 0; e2.hasNext(); i++) {
-                                    Object[] ex =  new Object[2];
-                                    ex[0]  = e2.next();
-                                    ex[1]  = map.get(ex[0]);
-                                    result[i] = ex;
-                                }
-                                reply(result);
-                                return;
-                            }
-
-                            while (e2.hasNext()) {
-                                String sc = e2.next();
-                                long[] counter = map.get(sc);
-                                sb.append(Formats.field(sc,24,Formats.LEFT)).
-                                    append("  ").
-                                    append(Formats.field(""+counter[0]/dev,10,Formats.RIGHT)).
-                                    append("  ").
-                                    append(Formats.field(""+counter[1],8,Formats.RIGHT)).
-                                    append("  ").
-                                    append(Formats.field(""+counter[2]/dev,10,Formats.RIGHT)).
-                                    append("  ").
-                                    append(Formats.field(""+counter[3],8,Formats.RIGHT)).
-                                    append("  ").
-                                    append(Formats.field(""+counter[4]/dev,10,Formats.RIGHT)).
-                                    append("  ").
-                                    append(Formats.field(""+counter[5],8,Formats.RIGHT)).
-                                    append("  ").
-                                    append(Formats.field(""+counter[6]/dev,10,Formats.RIGHT)).
-                                    append("  ").
-                                    append(Formats.field(""+counter[7],8,Formats.RIGHT)).
-                                    append("\n");
-                            }
-                        } else  {
-                            String format = args.getOpt("l");
-                            format = format == null ? "" : format;
-
-                            boolean notcached = format.indexOf("nc") > -1;
-                            boolean precious  = format.indexOf('p')  > -1;
-                            boolean locked    = format.indexOf('l')  > -1;
-                            boolean sticky    = format.indexOf('s')  > -1;
-                            boolean used      = format.indexOf('u')  > -1;
-                            boolean bad       = format.indexOf('e')  > -1;
-
-                            Iterator<PnfsId> e = _repository.pnfsids();
-                            while (e.hasNext()) {
-                                CacheRepositoryEntry entry = _repository.getGenericEntry(e.next());
-                                try {
-                                    if (format.length() == 0) {
-                                        sb.append(entry.toString()).append("\n");
-                                    } else if (notcached && !entry.isCached()) {
-                                        sb.append(entry.toString()).append("\n");
-                                    } else if (locked && entry.isLocked()) {
-                                        sb.append(entry.toString()).append("\n");
-                                    } else if (precious && entry.isPrecious()) {
-                                        sb.append(entry.toString()).append("\n");
-                                    } else if (sticky && entry.isSticky()) {
-                                        sb.append(entry.toString()).append("\n");
-                                    } else if (bad && entry.isBad()) {
-                                        sb.append(entry.toString()).append("\n");
-                                    } else if (used && (entry.getLinkCount() > 0)) {
-                                        sb.append(entry.toString()).append("\n");
-                                    }
-                                } catch (Exception ce) {
-                                    sb.append(entry.getPnfsId().toString()).
-                                        append(" : ").
-                                        append(ce.getMessage()).
-                                        append("\n");
-                                }
+                            } catch (FileNotInCacheException e) {
+                                // Entry deleted - no problem
                             }
                         }
-                        reply(sb.toString());
-                    } catch (CacheException e) {
-                        reply(e);
+                        if (args.getOpt("sum") != null) {
+                            long[] counter = new long[10];
+                            map.put("total", counter);
+                            SpaceRecord record = _repository.getSpaceRecord();
+                            counter[0] = record.getTotalSpace();
+                            counter[1] = record.getFreeSpace();
+                            counter[2] = removable;
+                        }
+
+                        Iterator<String> e2 = map.keySet().iterator();
+                        if (args.getOpt("binary") != null) {
+                            Object [] result = new Object[map.size()];
+                            for (int i = 0; e2.hasNext(); i++) {
+                                Object[] ex =  new Object[2];
+                                ex[0]  = e2.next();
+                                ex[1]  = map.get(ex[0]);
+                                result[i] = ex;
+                            }
+                            reply(result);
+                            return;
+                        }
+
+                        while (e2.hasNext()) {
+                            String sc = e2.next();
+                            long[] counter = map.get(sc);
+                            sb.append(Formats.field(sc,24,Formats.LEFT)).
+                                append("  ").
+                                append(Formats.field(""+counter[0]/dev,10,Formats.RIGHT)).
+                                append("  ").
+                                append(Formats.field(""+counter[1],8,Formats.RIGHT)).
+                                append("  ").
+                                append(Formats.field(""+counter[2]/dev,10,Formats.RIGHT)).
+                                append("  ").
+                                append(Formats.field(""+counter[3],8,Formats.RIGHT)).
+                                append("  ").
+                                append(Formats.field(""+counter[4]/dev,10,Formats.RIGHT)).
+                                append("  ").
+                                append(Formats.field(""+counter[5],8,Formats.RIGHT)).
+                                append("  ").
+                                append(Formats.field(""+counter[6]/dev,10,Formats.RIGHT)).
+                                append("  ").
+                                append(Formats.field(""+counter[7],8,Formats.RIGHT)).
+                                append("\n");
+                        }
+                    } else  {
+                        String format = args.getOpt("l");
+                        format = format == null ? "" : format;
+
+                        boolean notcached = format.indexOf("nc") > -1;
+                        boolean precious  = format.indexOf('p')  > -1;
+                        boolean locked    = format.indexOf('l')  > -1;
+                        boolean sticky    = format.indexOf('s')  > -1;
+                        boolean used      = format.indexOf('u')  > -1;
+                        boolean broken    = format.indexOf('e')  > -1;
+
+                        for (PnfsId id: _repository) {
+                            try {
+                                CacheEntry entry = _repository.getEntry(id);
+                                EntryState state = entry.getState();
+                                if (format.length() == 0 ||
+                                    (notcached && state != EntryState.CACHED) ||
+                                    (precious && state == EntryState.PRECIOUS) ||
+                                    (sticky && entry.isSticky()) ||
+                                    (broken && state == EntryState.BROKEN) ||
+                                    (used && entry.getLinkCount() > 0)) {
+
+                                    sb.append(entry).append('\n');
+                                }
+                            } catch (FileNotInCacheException e) {
+                                // Entry was deleted; no problem
+                            }
+                        }
                     }
+                    reply(sb.toString());
                 }
             };
         task.start();
@@ -324,124 +282,77 @@ public class RepositoryInterpreter
         new Thread(new Runnable() {
                 public void run()
                 {
-                    try {
-                        List<CacheRepositoryEntry> map =
-                            new ArrayList<CacheRepositoryEntry>();
-                        Iterator<PnfsId> i
-                            = _repository.pnfsids();
-                        while (i.hasNext()) {
-                            PnfsId pnfsId = i.next();
-                            CacheRepositoryEntry entry =
-                                _repository.getGenericEntry(pnfsId);
-                            //
-                            // info can be null if we are 'static' or a write
-                            // pool and the storageInfo has not arrived.
-                            //
-                            StorageInfo info = entry.getStorageInfo();
-                            if (info != null) {
-                                String sc = info.getStorageClass();
-                                if (sc.equals(storageClassName)) map.add(entry);
-                            }
-                        }
+                    for (PnfsId id: _repository) {
+                        try {
+                            CacheEntry entry = _repository.getEntry(id);
 
-                        for (CacheRepositoryEntry e : map) {
-                            if (!e.isReceivingFromClient() && !e.isReceivingFromStore()) {
-                                _repository.removeEntry(e);
-                                Thread.currentThread().sleep(100);
+                            StorageInfo info = entry.getStorageInfo();
+                            if (info == null) continue;
+                            String sc = info.getStorageClass();
+                            if (sc.equals(storageClassName)) {
+                                _repository.setState(id, EntryState.REMOVED);
                             }
+                        } catch (FileNotInCacheException e) {
+                            // File was deleted - no problem
+                        } catch (IllegalTransitionException e) {
+                            // File is transient - no problem
                         }
-                    } catch (Exception e) {
                     }
                 }
-            }, "Background-remove").start();
+            }, "rmclass").start();
         return "Backgrounded";
     }
 
     public String fh_rep_rm =
-        " rep rm <pnfsid> [-force]\n" +
-        "        removes the <pnfsid> from the cache repository.\n"+
-        "        The file is only removed if in 'cached' state, which\n"+
-        "        means it is not precious and not in an receiving state.\n"+
+        " rep rm [-force] <pnfsid>\n" +
+        "        removes <pnfsid> from the pool. The file is only \n"+
+        "        removed if it is CACHED and not STICKY.\n"+
         "  -force overwrites this protection and tries to remove the file\n"+
         "         in any case. If the link count is not yet 0, the file\n"+
         "         exists until zero is reached.\n"+
         "  SEE ALSO :\n"+
         "     rep rmclass ...\n";
     public String hh_rep_rm = "<pnfsid> [-force]# removes the pnfsfile from the cache";
-    public String ac_rep_rm_$_1_(Args args)throws Exception {
+    public String ac_rep_rm_$_1_(Args args) throws Exception
+    {
         boolean forced = args.getOpt("force") != null;
         PnfsId pnfsId  = new PnfsId(args.argv(0));
-        CacheRepositoryEntry entry = _repository.getEntry(pnfsId);
+        CacheEntry entry = _repository.getEntry(pnfsId);
         int client = 0;
-        if (forced || entry.isCached()) {
-            _log.error("Repository Interpreter: removing "+pnfsId+" by admin request");
-            boolean rc = _repository.removeEntry(_repository.getEntry(pnfsId));
-            return rc ? ("Removed "+pnfsId) : ("Failed to remove "+pnfsId);
-        } else if (entry.isPrecious()) {
-            throw new
-                CacheException(13, "Pnfsid is still precious : "+pnfsId);
-        } else if (entry.isReceivingFromClient() || entry.isReceivingFromStore()) {
-            throw new
-                CacheException(13, "Pnfsid is still receiving  : "+pnfsId);
+        if (forced ||
+            (entry.getState() == EntryState.CACHED && !entry.isSticky())) {
+            _log.warn("rep rm: removing " + pnfsId);
+            _repository.setState(pnfsId, EntryState.REMOVED);
+            return "Removed " + pnfsId;
+        } else {
+            return "File is not removable; use -force to override";
         }
-        throw new
-            CacheException(13, "Pnfsid is in an undefined state : "+pnfsId);
-    }
-
-    protected boolean isWriting(PnfsId id) throws CacheException
-    {
-        CacheRepositoryEntry entry = _repository.getEntry(id);
-        return (entry.isReceivingFromClient() || entry.isReceivingFromStore());
     }
 
     public String hh_rep_set_precious = "<pnfsId>";
-    public String ac_rep_set_precious_$_1(Args args) throws CacheException {
-        PnfsId pnfsId  = new PnfsId(args.argv(0));
-
-        if (isWriting(pnfsId)) {
-            return "File is still being written. The state has not been changed.";
-        }
-
-        CacheRepositoryEntry entry = _repository.getEntry(pnfsId);
-
-        entry.setPrecious();
-
+    public String ac_rep_set_precious_$_1(Args args)
+        throws IllegalTransitionException
+    {
+        PnfsId pnfsId = new PnfsId(args.argv(0));
+        _repository.setState(pnfsId, EntryState.PRECIOUS);
         return "";
     }
+
     public String hh_rep_set_cached = "<pnfsId> # DON'T USE, Potentially dangerous";
-    public String ac_rep_set_cached_$_1(Args args) throws CacheException {
-        PnfsId pnfsId  = new PnfsId(args.argv(0));
-
-        if (isWriting(pnfsId)) {
-            return "File is still being written. The state has not been changed.";
-        }
-
-        CacheRepositoryEntry entry = _repository.getEntry(pnfsId);
-
-        entry.setCached();
-
+    public String ac_rep_set_cached_$_1(Args args)
+        throws IllegalTransitionException
+    {
+        PnfsId pnfsId = new PnfsId(args.argv(0));
+        _repository.setState(pnfsId, EntryState.CACHED);
         return "";
     }
-    public String hh_rep_lock = "<pnfsId> [on | off | <time/sec>]";
-    public String ac_rep_lock_$_1_2(Args args)throws Exception {
-        long time = 0;
-        boolean lock = false;
-        if (args.argc() < 2) {
-            lock = true;
-            time = 0;
-        } else {
-            String value = args.argv(1);
-            if (value.equals("on") || value.equals("off")) {
-                lock = value.equals("on");
-            } else {
-                time = (long)(Integer.parseInt(value) * 1000);
-            }
-        }
-        synchronized(_repository) {
-            CacheRepositoryEntry entry = _repository.getEntry(new PnfsId(args.argv(0)));
-            if (time > 0)entry.lock(time);
-            else entry.lock(lock);
-        }
-        return "Done";
+
+    public String hh_rep_set_broken = "<pnfsid>";
+    public String ac_rep_set_broken_$_1(Args args)
+        throws IllegalTransitionException
+    {
+        PnfsId pnfsId  = new PnfsId(args.argv(0));
+        _repository.setState(pnfsId, EntryState.BROKEN);
+        return "";
     }
 }

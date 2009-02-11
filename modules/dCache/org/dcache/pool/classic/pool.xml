@@ -134,7 +134,7 @@
   
   <bean id="repository-interpreter" class="org.dcache.pool.repository.RepositoryInterpreter">
     <description>Repository user interface</description>
-    <constructor-arg ref="legacy-repository"/>
+    <property name="repository" ref="rep"/>
     <property name="account" ref="account"/>
   </bean>
 

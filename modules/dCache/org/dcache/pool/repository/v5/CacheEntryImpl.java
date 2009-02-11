@@ -20,6 +20,7 @@ public class CacheEntryImpl implements CacheEntry
     private final EntryState _state;
     private final long _created_at;
     private final long _accessed_at;
+    private final int _linkCount;
     private final boolean _isSticky;
     private final Collection<StickyRecord> _sticky;
 
@@ -31,76 +32,119 @@ public class CacheEntryImpl implements CacheEntry
         _info = entry.getStorageInfo();
         _created_at = entry.getCreationTime();
         _accessed_at = entry.getLastAccessTime();
+        _linkCount = entry.getLinkCount();
         _isSticky = entry.isSticky();
         _sticky = entry.stickyRecords();
         _state = state;
     }
 
     /**
-     * Get the PnfsId of this entry.
+     * @see org.dcache.pool.repository.CacheEntry#getPnfsId()
      */
+    @Override
     public PnfsId getPnfsId()
     {
         return _id;
     }
 
     /**
-     * Get the size of the replica.
+     * @see org.dcache.pool.repository.CacheEntry#getReplicaSize()
      */
+    @Override
     public long getReplicaSize()
     {
         return _size;
     }
 
     /**
-     * Get the storage info of the related entry.
-     * @return storage info of the entry or null if storage info is not available yet.
+     * @see org.dcache.pool.repository.CacheEntry#getStorageInfo()
      */
+    @Override
     public StorageInfo getStorageInfo()
     {
         return _info;
     }
 
     /**
-     *
-     * @return entry state
+     * @see org.dcache.pool.repository.CacheEntry#getState()
      */
+    @Override
     public EntryState getState()
     {
         return _state;
     }
 
     /**
-     *
-     * @return entry creation time in milliseconds
+     * @see org.dcache.pool.repository.CacheEntry#getCreationTime()
      */
+    @Override
     public long getCreationTime()
     {
         return _created_at;
     }
 
     /**
-     *
-     * @return entry last access time in milliseconds.
+     * @see org.dcache.pool.repository.CacheEntry#getLastAccessTime()
      */
+    @Override
     public long getLastAccessTime()
     {
         return _accessed_at;
     }
 
     /**
-     * @return true iff entry is sticky.
+     * @see org.dcache.pool.repository.CacheEntry#getLinkCount()
      */
+    @Override
+    public int getLinkCount()
+    {
+        return _linkCount;
+    }
+
+    /**
+     * @see org.dcache.pool.repository.CacheEntry#isSticky()
+     */
+    @Override
     public boolean isSticky()
     {
         return _isSticky;
     }
 
     /**
-     * @return the sticky records for this entry.
+     * @see org.dcache.pool.repository.CacheEntry#getStickyRecords()
      */
+    @Override
     public Collection<StickyRecord> getStickyRecords()
     {
         return _sticky;
+    }
+
+    @Override
+    public String toString()
+    {
+        StringBuilder sb = new StringBuilder();
+
+        sb.append(_id);
+
+        sb.append(" <");
+        sb.append((_state == EntryState.CACHED)      ? "C" : "-");
+        sb.append((_state == EntryState.PRECIOUS)    ? "P" : "-");
+        sb.append((_state == EntryState.FROM_CLIENT) ? "C" : "-");
+        sb.append((_state == EntryState.FROM_STORE)  ? "S" : "-");
+        sb.append("-");
+        sb.append("-");
+        sb.append((_state == EntryState.REMOVED)     ? "R" : "-");
+        sb.append((_state == EntryState.DESTROYED)   ? "D" : "-");
+        sb.append(isSticky()                         ? "X" : "-");
+        sb.append((_state == EntryState.BROKEN)      ? "E" : "-");
+        sb.append("-");
+        sb.append("L(0)[").append(_linkCount).append("]");
+        sb.append("> ");
+
+        sb.append(_size);
+        sb.append(" si={")
+            .append(_info == null ? "<unknown>" : _info.getStorageClass())
+            .append("}");
+        return sb.toString();
     }
 }

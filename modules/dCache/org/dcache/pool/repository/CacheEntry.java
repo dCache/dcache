@@ -43,6 +43,11 @@ public interface CacheEntry
     public long getLastAccessTime();
 
     /**
+     * @return current link count
+     */
+    public int getLinkCount();
+
+    /**
      * @return true iff entry is sticky.
      */
     public boolean isSticky();
