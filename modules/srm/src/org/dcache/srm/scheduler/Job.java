@@ -220,6 +220,7 @@ import java.util.Iterator;
 import org.dcache.srm.SRMAbortedException;
 import org.dcache.srm.SRMReleasedException;
 import org.dcache.srm.SRMException;
+import org.dcache.srm.util.JDC;
 /**
  *
  * @author  timur
@@ -270,6 +271,7 @@ public abstract class Job  {
     
     private TimerTask retryTimer;
     
+
     public static final void registerJobStorage(JobStorage jobStorage) {
         synchronized(jobStorages) {
             jobStorages.add(jobStorage);
@@ -386,8 +388,7 @@ public abstract class Job  {
         synchronized (weakJobStorage) {
             weakJobStorage.put(id, new WeakReference(this));
         }
-        jobHistory.add( new JobHistory(generator.nextLong(),state,"created",lastStateTransitionTime));
-        
+        jobHistory.add( new JobHistory(generator.nextLong(),state,"created",lastStateTransitionTime));        
     }
     
     
@@ -408,6 +409,8 @@ public abstract class Job  {
     // this method is called whenever the state of the job changes, or when the job's
     // place in queue changes, so the
     private boolean savedInFinalState = false;
+
+	private JDC jdc;
     
     public void saveJob()  {
         //  by making sure that the saving of the job in final state happens 
@@ -1212,6 +1215,13 @@ public abstract class Job  {
 
     public void setRetryTimer(TimerTask retryTimer) {
         this.retryTimer = retryTimer;
-    }
-    
+    }   
+
+	public JDC getJdc() {
+        return this.jdc;
+	}
+
+	public void setJdc(JDC jdc) {
+        this.jdc = jdc;
+	}
 }

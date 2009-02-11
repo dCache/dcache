@@ -190,6 +190,7 @@ import java.sql.SQLException;
 import org.dcache.srm.Logger;
 import org.dcache.srm.request.*;
 import org.dcache.srm.scheduler.policies.*;
+import org.dcache.srm.util.JDC;
 /**
  *
  * @author  timur
@@ -352,8 +353,11 @@ public final class Scheduler implements Runnable, PropertyChangeListener {
 		if(! running) {
 			throw new IllegalStateException("scheduler is not running");
 		}
+
+        job.setJdc(new JDC());
+
 		synchronized(job) {
-			State state = job.getState();
+			State state = job.getState();						
 			if(state != State.RESTORED &&
 			   state != State.PENDING &&
 			   state != State.ASYNCWAIT &&
@@ -852,6 +856,7 @@ public final class Scheduler implements Runnable, PropertyChangeListener {
     private boolean notified;
 
     public void run() {
+        JDC.setSchedulerContext(getId());
         while(true) {
             try {
 
@@ -882,10 +887,8 @@ public final class Scheduler implements Runnable, PropertyChangeListener {
                 esay(sqle);
             }
             catch(Throwable t)
-            {
-                esay("Sheduler(id="+getId()+") update thread caught an exception !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-                esay("Sheduler(id="+getId()+") update thread caught an exception !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-                esay("Sheduler(id="+getId()+") update thread caught an exception !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+            {              
+                esay("Sheduler(id="+getId()+") update thread caught an exception !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");                
                 esay(t);
             }
         }
@@ -896,10 +899,9 @@ public final class Scheduler implements Runnable, PropertyChangeListener {
 
     private class JobWrapper implements Runnable {
         Job job;
-        boolean started = false;
+        boolean started = false;		
         public JobWrapper(Job job) {
-            this.job = job;
-
+            this.job = job;       
         }
 
         public synchronized void waitStartup() throws InterruptedException{
@@ -914,7 +916,13 @@ public final class Scheduler implements Runnable, PropertyChangeListener {
             notifyAll();
         }
 
-        public void run() {
+        public void run() {        	
+            JDC jdc = this.job.getJdc();
+
+            if ( jdc != null )
+                jdc.apply();
+
+            JDC.setJobContext(job);
             try {
                 increaseNumberOfRunningThreads(job);
                 State state;
@@ -1084,6 +1092,7 @@ public final class Scheduler implements Runnable, PropertyChangeListener {
                     Scheduler.this.notifyAll();
                     notified = true;
                 }
+                JDC.clearJobContext();
             }
         }
     }
