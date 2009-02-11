@@ -549,6 +549,7 @@ config_pgsql_install()
   yaimlog DEBUG "function config_pgsql_install stop"
 }
 
+
 config_sedcache_pgsql() 
 {
 # Check to see if postgres should be reinstalled
@@ -565,7 +566,12 @@ config_sedcache_pgsql()
     rcrmpgsql=$?
     if [ "$rcrmpgsql" == "1" ]
     then
-      config_pnfs_stop
+      yaim_query_conf_node_dcache_name_server
+      rcnameserver=$?
+      if [ "$rcrmpgsql" == "1" ] ; then
+	yaim_state_nameserver_unmount
+	yaim_state_nameserver_stop
+      fi
       config_pgsql_uninstall
       RESET_DCACHE_PNFS=yes
       config_pgsql_install
@@ -584,7 +590,10 @@ config_sedcache_pgsql()
   fi
   yaimlog DEBUG "function config_sedcache_pgsql stop"
 }
-
+config_pgsql_check() 
+{
+  return 0
+}
 config_pgsql_run()
 {
    config_sedcache_pgsql

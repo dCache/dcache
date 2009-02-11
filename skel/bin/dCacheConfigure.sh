@@ -174,15 +174,25 @@ done
 for module in `ls ${MODULEDIR}/`
 do
   if [ -f "${MODULEDIR}/$module" ] ; then
-    . ${MODULEDIR}/${module}
-    #echo ${module}_check
-    ${module}_check 2> /dev/null
-    moduleRet=$?
-    if [ "${moduleRet}" == "0" ] ;  then
-      AVAILABLEMODS="${AVAILABLEMODS} ${module}"
+    worthSrcing=$(grep ${module}_check ${MODULEDIR}/$module)
+    # Evil code which should be deleted when lfield fixes his code
+    if [ "${module}" == "config_bdii_only" -o "${module}" == "config_gip_only" ] ; then
+      worthSrcing="yes"
+    fi
+    # Evil code end.
+    if [ -n "${worthSrcing}" ] ; then
+      . ${MODULEDIR}/${module}
+      #echo ${module}_check
+      ${module}_check 2> /dev/null
+      moduleRet=$?
+      if [ "${moduleRet}" == "0" ] ;  then
+        AVAILABLEMODS="${AVAILABLEMODS} ${module}"
+      fi
+    else
+      echo "INFO module '$module' does not have a ${module}_check function."
     fi
   else
-    echo "ERROR MODULE '$module' not found"
+    echo "INFO module '$module' not found"
     exit 1
   fi
 done
