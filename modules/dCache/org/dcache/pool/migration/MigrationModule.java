@@ -27,6 +27,7 @@ import org.dcache.cells.CellStub;
 import org.dcache.pool.repository.Repository;
 import org.dcache.pool.repository.StickyRecord;
 import org.dcache.pool.repository.EntryState;
+import org.dcache.util.Interval;
 
 import dmg.util.Args;
 import dmg.cells.nucleus.CellEndpoint;
@@ -154,11 +155,14 @@ public class MigrationModule
     }
 
     private List<CacheEntryFilter> createFilters(Args args)
+        throws IllegalArgumentException, NumberFormatException
     {
         String state = args.getOpt("state");
         String sticky = args.getOpt("sticky");
         String sc = args.getOpt("storage");
         String pnfsid = args.getOpt("pnfsid");
+        String accessed = args.getOpt("accessed");
+        String size = args.getOpt("size");
 
         List<CacheEntryFilter> filters = new ArrayList();
 
@@ -167,7 +171,11 @@ public class MigrationModule
         }
 
         if (pnfsid != null) {
-            filters.add(new PnfsIdFilter(new PnfsId(pnfsid)));
+            Collection<PnfsId> ids = new HashSet<PnfsId>();
+            for (String id: pnfsid.split(",")) {
+                ids.add(new PnfsId(id));
+            }
+            filters.add(new PnfsIdFilter(ids));
         }
 
         if (state == null) {
@@ -188,6 +196,14 @@ public class MigrationModule
                     filters.add(new StickyOwnerFilter(owner));
                 }
             }
+        }
+
+        if (size != null) {
+            filters.add(new SizeFilter(Interval.parseInterval(size)));
+        }
+
+        if (accessed != null) {
+            filters.add(new AccessedFilter(Interval.parseInterval(accessed)));
         }
 
         return filters;
@@ -300,6 +316,7 @@ public class MigrationModule
                                   String defaultTargetMode,
                                   String defaultRefresh,
                                   String defaultPins)
+        throws IllegalArgumentException, NumberFormatException
     {
         String exclude = args.getOpt("exclude");
         boolean permanent = (args.getOpt("permanent") != null);
@@ -445,8 +462,17 @@ public class MigrationModule
         "          present for the replica to be selected.\n" +
         "  -storage=<class>\n" +
         "          Only copy replicas with the given storage class.\n" +
-        "  -pnfsid=<pnfsid>\n" +
-        "          Only copy the replica with the given PNFS ID.\n" +
+        "  -pnfsid=<pnfsid>[,<pnfsid>] ...\n" +
+        "          Only copy replicas with one of the given PNFS IDs.\n" +
+        "  -accessed=<n>|[<n>]..[<m>]\n"+
+        "          Only copy replicas accessed n seconds ago, or accessed\n" +
+        "          within the given, possibly open-ended, interval. E.g.\n" +
+        "          -accessed=0..60 matches files accessed within the last\n" +
+        "          minute; -accesed=60.. matches files accessed one minute\n" +
+        "          or more ago.\n" +
+        "  -size=<n>|[<n>]..[<m>]\n"+
+        "          Only copy replicas with size n, or a size within the\n" +
+        "          given, possibly open-ended, interval.\n" +
         "  -smode=same|cached|precious|removable|delete[+<owner>[(<lifetime>)] ...]\n" +
         "          Update the local replica to the given mode after transfer:\n" +
         "          same:\n" +
@@ -511,6 +537,7 @@ public class MigrationModule
 //         "          Perform all the steps without actually copying anything\n" +
 //         "          or updating the state.";
     public synchronized String ac_migration_copy_$_1_99(Args args)
+        throws IllegalArgumentException, NumberFormatException
     {
         int id = copy(args, "proportional", "pool", "same", "same", "300", "keep");
         String command = "migration copy " + args.toString();
@@ -524,6 +551,7 @@ public class MigrationModule
         "Accepts the same options as 'migration copy'. Corresponds to\n\n" +
         "     migration copy -smode=delete -tmode=same -pins=move\n";
     public String ac_migration_move_$_1_99(Args args)
+        throws IllegalArgumentException, NumberFormatException
     {
         int id = copy(args, "proportional", "pool", "delete", "same", "300", "move");
         String command = "migration move " + args.toString();
@@ -538,6 +566,7 @@ public class MigrationModule
         "'migration copy'. Corresponds to\n\n" +
         "     migration copy -smode=same -tmode=cached\n";
     public String ac_migration_cache_$_1_99(Args args)
+        throws IllegalArgumentException, NumberFormatException
     {
         int id = copy(args, "proportional", "pool", "same", "cached", "300", "keep");
         String command = "migration cache " + args.toString();

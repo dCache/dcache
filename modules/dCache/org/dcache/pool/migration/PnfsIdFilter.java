@@ -2,22 +2,24 @@ package org.dcache.pool.migration;
 
 import org.dcache.pool.repository.CacheEntry;
 import diskCacheV111.util.PnfsId;
+import java.util.Collection;
+import java.util.HashSet;
 
 /**
- * Repository entry filter which only accepts entries with a specific
- * PNFS id.
+ * Repository entry filter which only accepts entries with specific
+ * PNFS ids.
  */
 public class PnfsIdFilter implements CacheEntryFilter
 {
-    private PnfsId _pnfsId;
+    private Collection<PnfsId> _pnfsIds;
 
-    public PnfsIdFilter(PnfsId pnfsId)
+    public PnfsIdFilter(Collection<PnfsId> pnfsIds)
     {
-        _pnfsId = pnfsId;
+        _pnfsIds = new HashSet(pnfsIds);
     }
 
     public boolean accept(CacheEntry entry)
     {
-        return _pnfsId.equals(entry.getPnfsId());
+        return _pnfsIds.contains(entry.getPnfsId());
     }
 }
