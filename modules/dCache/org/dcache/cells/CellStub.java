@@ -43,6 +43,11 @@ public class CellStub
         _destination = destination;
     }
 
+    public CellPath getDestinationPath()
+    {
+        return _destination;
+    }
+
     /**
      * Sets the communication timeout of the stub.
      * @param timeout the timeout in milliseconds

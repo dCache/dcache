@@ -194,6 +194,13 @@
     <property name="pnfsStub" ref="pnfsStub"/>
     <property name="poolStub" ref="poolStub"/>
     <property name="poolManagerStub" ref="poolManagerStub"/>
+    <property name="pinManagerStub" ref="pinManagerStub"/>
+  </bean>
+
+  <bean id="pinManagerStub" class="org.dcache.cells.CellStub">
+    <description>Pin manager cell stub</description>
+    <property name="timeout" value="120000"/>
+    <property name="destination" value="PinManager"/>
   </bean>
   
   <bean id="migration-server" 

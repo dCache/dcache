@@ -87,6 +87,11 @@ UpdatingExistingFile
                 {
                 }
         success
+                [ ctxt.getMustMovePins() ]
+                MovingPin
+                {
+                }
+        success
                 Done
                 {
                 }
@@ -96,8 +101,9 @@ UpdatingExistingFile
                 }
 }
 
-// Update got cancelled. We simply wait for the previous update
-// operation to finish and then go to either Cancelled or Done.
+// Update got cancelled. We simply wait for the previous update 
+// operation to finish and then go to either Cancelled, Done or
+// Failed.
 CancellingUpdate
 {
         timeout
@@ -110,6 +116,11 @@ CancellingUpdate
                 }
         failure(rc: int)
                 Cancelled
+                {
+                }
+        success
+                [ ctxt.getMustMovePins() ]
+                Failed
                 {
                 }
         success
@@ -146,7 +157,7 @@ Entry
                 {
                 }
         timeout
-                Finishing
+                Waiting
                 {
                         // No reply, but message could have been 
                         // received anyway, so try to cancel it.
@@ -159,6 +170,11 @@ Entry
         messageArrived(message: PoolMigrationCopyFinishedMessage)
                 [ message.getReturnCode() != 0 ]
                 Failed
+                {
+                }
+        messageArrived(message: PoolMigrationCopyFinishedMessage)
+                [ message.getReturnCode() == 0 && ctxt.getMustMovePins() ]
+                MovingPin
                 {
                 }
         messageArrived(message: PoolMigrationCopyFinishedMessage)
@@ -190,6 +206,11 @@ Exit
                 {
                 }
         messageArrived(message: PoolMigrationCopyFinishedMessage)
+                [ message.getReturnCode() == 0 && ctxt.getMustMovePins() ]
+                MovingPin
+                {
+                }
+        messageArrived(message: PoolMigrationCopyFinishedMessage)
                 [ message.getReturnCode() == 0 ]
                 Done
                 {
@@ -213,7 +234,7 @@ Entry
                         // Task is alive
                 }
         failure(rc: int)
-                Finishing
+                Waiting
                 {
                         // Task is gone
                 }
@@ -230,6 +251,11 @@ Entry
         messageArrived(message: PoolMigrationCopyFinishedMessage)
                 [ message.getReturnCode() != 0 ]
                 Failed
+                {
+                }
+        messageArrived(message: PoolMigrationCopyFinishedMessage)
+                [ message.getReturnCode() == 0 && ctxt.getMustMovePins() ]
+                MovingPin
                 {
                 }
         messageArrived(message: PoolMigrationCopyFinishedMessage)
@@ -266,7 +292,7 @@ Exit
                         // Task is alive
                 }
         failure(rc: int)
-                Finishing
+                Waiting
                 {
                         // Task is gone
                 }
@@ -286,6 +312,11 @@ Exit
                 {
                 }
         messageArrived(message: PoolMigrationCopyFinishedMessage)
+                [ message.getReturnCode() == 0 && ctxt.getMustMovePins() ]
+                MovingPin
+                {
+                }
+        messageArrived(message: PoolMigrationCopyFinishedMessage)
                 [ message.getReturnCode() == 0 ]
                 Done
                 {
@@ -298,7 +329,7 @@ Exit
 
 // Target pool no longer has the task. Let's wait for
 // the CopyFinished message.
-Finishing
+Waiting
 Entry
 {
         startTimer(ctxt.getTaskDeadTimeout());
@@ -318,12 +349,45 @@ Entry
                 {
                 }
         messageArrived(message: PoolMigrationCopyFinishedMessage)
+                [ message.getReturnCode() == 0 && ctxt.getMustMovePins() ]
+                MovingPin
+                {
+                }
+        messageArrived(message: PoolMigrationCopyFinishedMessage)
                 [ message.getReturnCode() == 0 ]
                 Done
                 {
                 }
         Default
                 nil
+                {
+                }
+}
+
+MovingPin
+Entry
+{
+        movePin();
+}
+{
+        success
+                Done
+                {
+                }
+        failure(rc: int)
+                Failed
+                {
+                }
+        noroute
+                Failed
+                {
+                }
+        timeout
+                Failed
+                {
+                }
+        cancel
+                Failed
                 {
                 }
 }
@@ -349,6 +413,11 @@ Exit
         messageArrived(message: PoolMigrationCopyFinishedMessage)
                 [ message.getReturnCode() != 0 ]
                 Cancelled
+                {
+                }
+        messageArrived(message: PoolMigrationCopyFinishedMessage)
+                [ message.getReturnCode() == 0 && ctxt.getMustMovePins() ]
+                Failed
                 {
                 }
         messageArrived(message: PoolMigrationCopyFinishedMessage)
